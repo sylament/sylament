@@ -708,6 +708,41 @@ it('takes a hand-supplied item under a load-only hook without demanding a schema
         ->and($added->getBody())->toBe('written');
 });
 
+it('takes a hand-supplied item through a nested relationship hook', function (): void {
+    $entityManager = $this::getContainer()->get(EntityManagerInterface::class);
+    [$post] = seedSectionedPost($entityManager);
+    [$ada] = seedSectionAuthorPair($entityManager);
+
+    $repeater = Repeater::make('sections')
+        ->relationship()
+        ->components([
+            TextInput::make('heading'),
+            TextInput::make('body')->loadStateFromRelationshipsUsing(static fn (): string => 'loaded'),
+            Select::make('author')->relationship(titleAttribute: 'name'),
+        ]);
+
+    [$schema] = wireRelationshipRepeater($repeater, $post);
+
+    $schema->fill($post);
+
+    $state = $schema->getState();
+    $state['sections']['hand-supplied'] = [
+        'heading' => 'three',
+        'body' => 'written',
+        'author' => (string) $ada->getId(),
+    ];
+
+    $schema->getData($state);
+
+    $added = $post->getSections()->last();
+    assert($added instanceof PostSection);
+
+    expect($post->getSections()->count())->toBe(3)
+        ->and($added->getHeading())->toBe('three')
+        ->and($added->getBody())->toBe('written')
+        ->and($added->getAuthor())->toBe($ada);
+});
+
 it('refuses a hooked select in a decoration schema loudly', function (): void {
     $entityManager = $this::getContainer()->get(EntityManagerInterface::class);
     [$post] = seedSectionedPost($entityManager);
@@ -722,6 +757,37 @@ it('refuses a hooked select in a decoration schema loudly', function (): void {
 
     expect(fn (): Schema => $schema->fill($post))
         ->toThrow(LogicException::class, 'without routing the hooks beneath it');
+});
+
+it('refuses a dotted decoration path whose remainder names an item hook', function (): void {
+    $entityManager = $this::getContainer()->get(EntityManagerInterface::class);
+    [$post] = seedSectionedPost($entityManager);
+
+    [$schema] = wireRelationshipRepeater(
+        Repeater::make('sections')
+            ->relationship()
+            ->belowContent([Select::make('meta.author')->relationship(titleAttribute: 'name')])
+            ->components([TextInput::make('heading'), Select::make('author')->relationship(titleAttribute: 'name')]),
+        $post,
+    );
+
+    expect(fn (): Schema => $schema->fill($post))
+        ->toThrow(LogicException::class, 'Declare relationship() on that component');
+});
+
+it('refuses a hooked field inside a plain-array repeater', function (): void {
+    $entityManager = $this::getContainer()->get(EntityManagerInterface::class);
+    [$post] = seedSectionedPost($entityManager);
+
+    $repeater = Repeater::make('extras')
+        ->components([TextInput::make('heading'), Select::make('author')->relationship(titleAttribute: 'name')]);
+
+    [$schema, $host] = wireRelationshipRepeater($repeater, $post);
+
+    $host->data['extras'] = [['heading' => 'one', 'author' => null]];
+
+    expect(fn (): object => $schema->getData(['extras' => [['heading' => 'one', 'author' => null]]]))
+        ->toThrow(LogicException::class, 'Declare relationship() on that component');
 });
 
 it('refuses relationship() beside another item mode', function (): void {

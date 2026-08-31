@@ -213,11 +213,12 @@ class Repeater extends Field implements CanConcealComponents, HasExtraItemAction
 
     /**
      * A relationship repeater routes the hooks its *items* declare: the path has
-     * to name an item and then something the item schema declares a hook at, read
-     * from the very discovery the two edges route from. A path with no item
-     * segment is a decoration schema's — `belowContent()` and its nine siblings
-     * hang off the repeater itself, and neither edge walks them — so it stays
-     * refused rather than silently never firing.
+     * to name one of the items it currently holds and then something the item
+     * schema declares a hook at, read from the very discovery the two edges route
+     * from. Anything else is a decoration schema's — `belowContent()` and its nine
+     * siblings hang off the repeater itself, and neither edge walks them, so a
+     * dotted path of theirs must not be vouched for by a remainder that happens to
+     * name an item hook — and it stays refused rather than silently never firing.
      */
     public function routesNestedRelationshipHookAt(string $path): bool
     {
@@ -228,6 +229,10 @@ class Repeater extends Field implements CanConcealComponents, HasExtraItemAction
         $separator = mb_strpos($path, '.');
 
         if (($separator === false) || ($separator === 0)) {
+            return false;
+        }
+
+        if (! array_key_exists(mb_substr($path, 0, $separator), $this->getCachedDefaultChildSchemas())) {
             return false;
         }
 
@@ -370,18 +375,13 @@ class Repeater extends Field implements CanConcealComponents, HasExtraItemAction
         $items = [];
 
         foreach (array_keys($rawState) as $itemKey) {
-            $itemKey = (string) $itemKey;
-            $itemSchema = $this->getChildSchema()?->statePath($itemKey)->key($itemKey)->getClone();
+            $itemSchema = $this->makeItemSchema((string) $itemKey);
 
             if (! $itemSchema instanceof Schema) {
                 continue;
             }
 
-            if ($this->hasRelationship() && str_starts_with($itemKey, self::RECORD_ITEM_KEY_PREFIX)) {
-                $itemSchema->record(fn (): object|string|null => $this->findItemRecordByKey($itemKey) ?? $this->getSoftRelationshipTargetClass());
-            }
-
-            $items[$itemKey] = $itemSchema;
+            $items[(string) $itemKey] = $itemSchema;
         }
 
         return $items;
@@ -1807,22 +1807,45 @@ class Repeater extends Field implements CanConcealComponents, HasExtraItemAction
 
     /**
      * The schema of a submitted item, whose components are the very ones the
-     * record path map dropped in this repeater's favour. Only asked for where
-     * the template declares a **save** hook to route — the one edge that reads
-     * it — so an item a caller added to the state it handed `getData()` still
-     * takes the leaf-only path it always did.
+     * record path map dropped in this repeater's favour. An item key the built
+     * ones do not cover — one a caller added to the state it handed `getData()`
+     * rather than to the repeater's own — is built the same way they are, so a
+     * hand-supplied item routes the hooks its template declares exactly as a
+     * rendered one does.
      *
-     * @throws LogicException when the item has no schema, which a routed item
-     *                        cannot reach: the item schemas are built from the
-     *                        same raw state the submission came from
+     * @throws LogicException when the repeater declares no item schema at all,
+     *                        leaving the hooks the template carries nothing to
+     *                        run from
      */
     private function getItemSchemaOrFail(string $itemKey): Schema
     {
-        return $this->getChildSchema($itemKey) ?? throw new LogicException(sprintf(
-            'The [%s] repeater is saving item "%s", which carries no item schema — the schemas are built from the raw state this submission was read from, so the two cannot disagree.',
-            (string) $this->getName(),
-            $itemKey,
-        ));
+        return $this->getChildSchema($itemKey)
+            ?? $this->makeItemSchema($itemKey)
+            ?? throw new LogicException(sprintf(
+                'The [%s] repeater is saving item "%s" and has no item schema to route the relationship hooks beneath it from. Give the repeater components(), or drop the hook.',
+                (string) $this->getName(),
+                $itemKey,
+            ));
+    }
+
+    /**
+     * One item's schema, re-pathed onto its key and — under relationship(), for
+     * an item naming a child — stamped with the child it maps, falling back to
+     * the target class the template already carries.
+     */
+    private function makeItemSchema(string $itemKey): ?Schema
+    {
+        $itemSchema = $this->getChildSchema()?->statePath($itemKey)->key($itemKey)->getClone();
+
+        if (! $itemSchema instanceof Schema) {
+            return null;
+        }
+
+        if ($this->hasRelationship() && str_starts_with($itemKey, self::RECORD_ITEM_KEY_PREFIX)) {
+            $itemSchema->record(fn (): object|string|null => $this->findItemRecordByKey($itemKey) ?? $this->getSoftRelationshipTargetClass());
+        }
+
+        return $itemSchema;
     }
 
     /**

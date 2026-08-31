@@ -331,11 +331,15 @@ is the only record the hook could ever have meant.
 
 The vouch answers from the walk that routes, so the two cannot disagree — and
 the walk is [`Schema::getNestedRelationshipHooks()`](../schemas/belongs-to-record.md),
-whose keys are already item-relative. What that leaves refused is deliberate and
-loud: a hooked component in a **decoration** schema (`belowContent()` and its
-nine siblings hang off the repeater itself, and neither edge walks them) carries
-no item segment, so the vouch says no and the map refuses it by name rather than
-letting it never fire.
+whose keys are already item-relative. Both halves of the path are checked, and
+the first half is the one easy to skip: the leading segment has to name one of
+the items the repeater currently holds, and only then is the remainder matched
+against the template's hooks. What that leaves refused is deliberate and loud: a
+hooked component in a **decoration** schema (`belowContent()` and its nine
+siblings hang off the repeater itself, and neither edge walks them) names no
+item, so the vouch says no and the map refuses it by name rather than letting it
+never fire — and a *dotted* decoration path is refused for that same reason,
+rather than vouched for by a remainder that happens to spell an item's hook.
 
 The two edges discover from different places, and the asymmetry is forced.
 `fill()` runs before a single item exists — the raw state is still empty, so
@@ -344,10 +348,12 @@ child schema, off a clone, the same discipline
 [`getItemStatePaths()`](#every-item-schema-is-keyed-as-well-as-re-pathed) uses.
 The save has the real thing, so it reads the **per-item** schema, whose
 components are the very ones the map dropped. It asks for that schema only where
-the template declares a **save** hook — the one edge that reads it — which is
-what keeps an item a caller added by hand to the array it passed `getData()` on
-the leaf-only path it always took; where a save hook *is* routed, an item with no
-schema is a broken invariant and throws.
+the template declares a **save** hook — the one edge that reads it — and an item
+key the built schemas do not cover, one a caller added by hand to the array it
+passed `getData()`, is built on the spot exactly as they are. So a hand-supplied
+item routes the hooks its template declares, and behaves the same whether or not
+the repeater carries one; the only shape left to throw is a repeater with no item
+schema at all, which has nothing to route from.
 
 Claimed paths leave the leaf walk — the hook's own key and everything under
 `key.` — and the subtraction is **per edge**, mirroring the root edges exactly:

@@ -165,7 +165,7 @@ milestone.
 | Filters / TrashedFilter | [`Filters/TrashedFilter.php`](../../../vendor/filament/tables/src/Filters/TrashedFilter.php) | todo | — |
 | Grouping / Group | [`Grouping/Group.php`](../../../vendor/filament/tables/src/Grouping/Group.php) | todo | — |
 | IconColumn | [`Columns/IconColumn.php`](../../../vendor/filament/tables/src/Columns/IconColumn.php) | todo | — |
-| ImageColumn | [`Columns/ImageColumn.php`](../../../vendor/filament/tables/src/Columns/ImageColumn.php) | todo | — |
+| [`ImageColumn`](../../../packages/tables/src/Columns/ImageColumn.php) | [`Columns/ImageColumn.php`](../../../vendor/filament/tables/src/Columns/ImageColumn.php) | in progress | [image-column.md](image-column.md) |
 | SelectColumn | [`Columns/SelectColumn.php`](../../../vendor/filament/tables/src/Columns/SelectColumn.php) | todo | — |
 | TagsColumn | [`Columns/TagsColumn.php`](../../../vendor/filament/tables/src/Columns/TagsColumn.php) | todo | — |
 | [`TextColumn`](../../../packages/tables/src/Columns/TextColumn.php) | [`src/Columns/TextColumn.php`](../../../vendor/filament/tables/src/Columns/TextColumn.php) | in progress | [text-column.md](text-column.md) |

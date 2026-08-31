@@ -27,6 +27,13 @@ final class NoteResource extends Resource
 
     protected static ?string $recordTitleAttribute = 'title';
 
+    /**
+     * The panel registers articles first, so a negative sort is what proves the
+     * global search provider orders its categories by the sort rather than by
+     * the registration order.
+     */
+    protected static ?int $globalSearchSort = -1;
+
     public function form(Schema $schema): Schema
     {
         return $schema->components([

@@ -50,6 +50,9 @@ do.
 | [`getGlobalSearchSort()`](../../../packages/panels/src/Resources/Resource/Concerns/HasGlobalSearch.php) | `HasGlobalSearch::getGlobalSearchSort()` | done | — | — |
 | `globalSearchSort(?int)` | `HasGlobalSearch::globalSearchSort()` | skipped | — | [diverges](#the-resource-opt-in-mode-and-the-globalsearchsort-setter-are-not-ported) |
 | Resource opt-in mode | `canGloballySearch()`'s `ReflectionProperty` dance | skipped | — | [diverges](#the-resource-opt-in-mode-and-the-globalsearchsort-setter-are-not-ported) |
+| [`GlobalSearchProvider`](../../../packages/panels/src/GlobalSearch/Providers/Contracts/GlobalSearchProvider.php) | [`Providers/Contracts/GlobalSearchProvider.php`](../../../vendor/filament/filament/src/GlobalSearch/Providers/Contracts/GlobalSearchProvider.php) | done | — | — |
+| [`DefaultGlobalSearchProvider`](../../../packages/panels/src/GlobalSearch/Providers/DefaultGlobalSearchProvider.php) | [`Providers/DefaultGlobalSearchProvider.php`](../../../vendor/filament/filament/src/GlobalSearch/Providers/DefaultGlobalSearchProvider.php) | done | — | [semantics](#the-default-provider-searches-the-current-panel-and-sorts-before-it-skips) · [diverges](#the-default-provider-narrows-the-contracts-nullable-return) |
+| [`GlobalSearchProviderRegistry`](../../../packages/panels/src/GlobalSearch/GlobalSearchProviderRegistry.php) | — | done | — | [diverges](#the-provider-is-resolved-through-a-tagged-registry-rather-than-app) |
 | _rest not audited yet_ | | | | |
 
 ## Details
@@ -73,6 +76,17 @@ for some of its records returns fewer results than the limit, never a topped-up
 page. Filament's `limit()`-then-`filter()` chain does exactly the same thing;
 re-deriving it the other way round (filter, then cap) would quietly change how
 many results a group shows.
+
+### The default provider searches the current panel, and sorts before it skips
+
+The resources it walks are the **current** panel's
+(`CurrentPanel::get() ?? PanelRegistry::getDefault()`), so the same provider
+service answers differently per request — Filament reads the same thing off its
+`Filament` facade. It sorts that whole list by
+`getGlobalSearchSort() ?? 0` **before** dropping the unsearchable and the
+empty-handed, so a resource's sort is independent of how many of the resources
+around it answered; `usort()` is stable, so resources that share a sort — every
+resource that sets none — keep the panel's registration order.
 
 ## Divergences
 
@@ -132,6 +146,32 @@ per-attribute seam a subclass would want is
 [`SearchConstraint::forColumn()`](../../../packages/tables/src/Query/SearchConstraint.php),
 which is also what resolves a dot-path into a correlated `EXISTS` subselect
 rather than a join.
+
+### The provider is resolved through a tagged registry rather than `app()`
+
+Filament resolves a provider with `app($panel->getGlobalSearchProvider())`,
+its container answering any class-string. Symfony's does not, so the seam is a
+tag: every `GlobalSearchProvider` implementation is autoconfigured with
+`sylament.panels.global_search_provider`,
+[`GlobalSearchProviderPass`](../../../packages/panels/src/DependencyInjection/Compiler/GlobalSearchProviderPass.php)
+collects the tagged definitions into a class-keyed `ServiceLocator`, and
+[`GlobalSearchProviderRegistry`](../../../packages/panels/src/GlobalSearch/GlobalSearchProviderRegistry.php)
+reads that locator — the same three-piece shape
+[`ResourceRegistry`](../../../packages/panels/src/Resources/ResourceRegistry.php)
+has, down to the `LogicException` a miss throws. The registry name has no
+Filament source; the [renames trail](../renames.md) carries it. A custom
+provider therefore has to be a registered service, which is also what lets it
+take constructor dependencies — the default one takes three.
+
+### The default provider narrows the contract's nullable return
+
+The contract keeps Filament's `?GlobalSearchResults`: `null` is a custom
+provider saying it answered nothing at all, which is not the same as a result
+set with no categories in it. `DefaultGlobalSearchProvider::getResults()`
+always hands back the builder, so its own signature narrows to
+`GlobalSearchResults` — level max rejects a nullable return a method never
+returns, and the covariant narrowing states the guarantee rather than hiding
+it.
 
 ### The resource opt-in mode and the `globalSearchSort()` setter are not ported
 

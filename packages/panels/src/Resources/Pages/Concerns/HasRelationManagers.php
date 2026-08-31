@@ -99,6 +99,8 @@ trait HasRelationManagers
         $manager = $managers[$firstKey];
 
         if ($manager instanceof RelationGroup) {
+            $manager->ownerRecord($this->getRecord())->pageClass(static::class);
+
             return Group::make($this->makeRelationGroupEmbeds($manager));
         }
 
@@ -163,12 +165,13 @@ trait HasRelationManagers
     }
 
     /**
+     * The group arrives with its owner and page already on it — both arms set
+     * them before they ask it for anything, exactly as Filament's do.
+     *
      * @return list<LiveComponent>
      */
     private function makeRelationGroupEmbeds(RelationGroup $group): array
     {
-        $group->ownerRecord($this->getRecord())->pageClass(static::class);
-
         $embeds = [];
 
         foreach ($group->getManagers() as $groupKey => $manager) {

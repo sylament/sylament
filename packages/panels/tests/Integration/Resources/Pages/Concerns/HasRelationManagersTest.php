@@ -8,6 +8,7 @@ use Sylament\Panels\Tests\Fixtures\Doctrine\Entity\Project;
 use Sylament\Panels\Tests\Fixtures\Doctrine\Entity\Task;
 use Sylament\Panels\Tests\Fixtures\Doctrine\EntityManagerFactory;
 use Sylament\Panels\Tests\Fixtures\Resources\Pages\EditConfiguredRelationProject;
+use Sylament\Panels\Tests\Fixtures\Resources\Pages\EditFilteredRelationProject;
 use Sylament\Panels\Tests\Fixtures\Resources\Pages\EditGroupedRelationProject;
 use Sylament\Panels\Tests\Fixtures\Resources\Pages\EditProject;
 use Sylament\Panels\Tests\Fixtures\Resources\Pages\EditSingleRelationProject;
@@ -209,6 +210,40 @@ it('spreads a registration configuration over the manager defaults', function ()
             'ownerRecord' => $key,
             'pageClass' => EditConfiguredRelationProject::class,
             'tag' => 'configured',
+        ]);
+});
+
+it('drops a manager the record hides and a group that names none', function (): void {
+    [$client, $key] = relationManagersPageClient();
+
+    $page = $this->createLiveComponent(EditFilteredRelationProject::class, ['record' => $key], client: $client)->component();
+
+    // Three registrations, one survivor: without the filter the page would take
+    // the tabs arm and mount the hidden manager beside an empty group's tab.
+    expect(array_keys($page->getCachedRelationManagers()))->toBe(['tagged'])
+        ->and(relationManagersContent($page)[0])->toBeInstanceOf(LiveComponent::class)
+        ->and($page->activeRelationManager)->toBe('tagged');
+
+    $crawler = $this->createLiveComponent(EditFilteredRelationProject::class, ['record' => $key], client: $client)
+        ->render()
+        ->crawler();
+
+    expect($crawler->filter('[role="tab"]')->count())->toBe(0)
+        ->and($crawler->filter('section.sy-pa-relation-manager')->count())->toBe(1);
+});
+
+it('spreads the manager own default properties into a bare registration', function (): void {
+    [$client, $key] = relationManagersPageClient();
+
+    $page = $this->createLiveComponent(EditFilteredRelationProject::class, ['record' => $key], client: $client)->component();
+
+    $embed = relationManagersContent($page)[0];
+
+    expect($embed->getComponent())->toBe(TaggedTasksRelationManager::class)
+        ->and($embed->getData())->toBe([
+            'ownerRecord' => $key,
+            'pageClass' => EditFilteredRelationProject::class,
+            'tag' => 'default',
         ]);
 });
 

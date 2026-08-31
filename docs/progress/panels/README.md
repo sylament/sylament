@@ -1800,6 +1800,20 @@ already on the page rather than a second way to save it, which is what Filament'
 resolver makes it. `EditRecordTest` pins exactly that sequence, so the day the
 behaviour changes it changes visibly.
 
+The second cost, also Filament's: **while the modal is open, the page carries the
+form's ids twice.** One schema rendered in two places emits one set of ids in two
+places — on `EditArticle` with the modal mounted, the document holds
+`id="form.title"` and `id="form.slug"` twice each, and `label[for="form.title"]`
+twice. That is invalid HTML, `document.getElementById()` collides, and clicking
+the modal's own label focuses the input *behind* the modal, because the browser
+matches the first element in document order. It is new at this commit — while the
+modal was a second tree on `mountedActionsData.0.*` the two sets of ids were
+distinct — and it follows from what an embed is: the schema has one id path, not
+one per place it renders. Closing it needs a render-time id scope on
+`EmbeddedSchema`, which Filament has no counterpart for either, so it is recorded
+rather than papered over — and "open the header Edit modal, then click a field
+label" belongs on the browser checklist of any epic that touches this arm.
+
 ## Divergences
 
 ### `badge()` preserves a badge colour set before it
@@ -3101,9 +3115,11 @@ resolve: `ListRecords`, `EditRecord` and `ViewRecord` each build
 to the resource's `form()`, and the full-page `defaultForm()` does the same with
 an inline-labels arm (`vendor/filament/filament/src/Resources/Pages/ListRecords.php:94`,
 `EditRecord.php:300`, `CreateRecord.php:315`). The port's resolvers pass the
-seeded schema through untouched:
+seeded schema through untouched — the list page's, which still carries both
+actions on one arm, reads:
 
 ```php
+// ListRecords::getDefaultActionSchemaResolver()
 $action instanceof CreateAction, $action instanceof EditAction => $this->form(...),
 ```
 

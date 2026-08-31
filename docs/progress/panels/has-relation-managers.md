@@ -45,7 +45,9 @@ Reference — the Filament source this is diffed against:
 
 [`Integration/Resources/Pages/Concerns/HasRelationManagersTest`](../../../packages/panels/tests/Integration/Resources/Pages/Concerns/HasRelationManagersTest.php)
 covers all four arms, the registration-key preservation, the string cast, the
-self-healing default, a configuration's properties, both group arms, and the two
+self-healing default, a manager's own default properties and a configuration's
+properties over them, both filter branches (a manager whose `canViewForRecord()`
+answers `false`, and a group that names none), both group arms, and the two
 render shapes — a lone manager under the page form, and one manager at a time
 behind the tab bar with a live switch between them.
 
@@ -64,7 +66,11 @@ builder below depends on.
 
 The `canViewForRecord()` answer is `true` for every manager until the
 authorization epic ([relation-manager.md](relation-manager.md#every-registered-manager-is-reachable-by-anyone-until-the-authorization-epic)),
-so today the filter only ever drops an empty group.
+so the only registration a *shipped* manager ever loses to the filter is an empty
+group. The other branch is real all the same — a consumer overriding the hook
+today already gets it — so the suite pins both with a fixture manager that
+answers `false` beside a `RelationGroup::make('Empty', [])`, rather than leaving
+the whole `array_filter()` deletable with the suite green.
 
 ### Four arms, one component, and the registration keys are the identities
 
@@ -94,6 +100,15 @@ Every embed is keyed too, because an unkeyed embed cannot keep a stable child id
 across renders ([live-component.md](../schemas/live-component.md)): the plain arms
 key by the manager class, and a group's embeds by `"{class}-{groupKey}"`, so the
 same manager registered in two groups still keeps two identities.
+
+A **group's** embed array is the one place the keys are dropped rather than kept:
+Filament maps its group's managers through `collect()->map()->all()`, which
+preserves the registration keys, and ours builds a plain `list`. Nothing reads
+them — `HasComponents::components()` does not treat an array key as an identity,
+and the group key is already on every embed's explicit `->key()` — so this is a
+recorded departure rather than a defect. It is called out because the sibling
+array two arms up (the tabs) preserves its keys *on purpose*, and a reader who
+knows that will wonder why this one does not.
 
 The mount props are `ownerRecord` (the page's record **key**) and `pageClass`
 (`static::class`), then the manager's own `getDefaultProperties()`, then a
@@ -151,6 +166,13 @@ render, from `content()`, and therefore keeps the property's **self-healing**
 property: an `activeRelationManager` no longer named by the registrations falls
 back to the first key on every render rather than leaving the page with no active
 tab.
+
+The move narrows the visibility with it: Filament's `renderingHasRelationManagers()`
+is `public` because Livewire dispatches lifecycle hooks by name and a `private`
+one would never be called, whereas ours is a `private` helper of the builder that
+calls it. The cost is that a subclass can no longer override the defaulting on its
+own — it overrides `getRelationManagersContentComponent()` instead, which is public
+and is where the two lines now run.
 
 One correction rides with the move. Filament writes `array_key_first($managers)`
 straight into a `?string` property, so a list-shaped `getRelations()` puts an
@@ -212,8 +234,9 @@ managers.
 - **A group's embeds are preserved only in theory.** The `RelationGroup` arms are
   covered by the render rig, which renders every child in full; child
   *preservation* across a parent re-render is only observable in a browser, and no
-  consumer groups managers yet. The single-manager and tabs arms are browser-proven
-  through the demo; the group arms are not.
+  consumer groups managers yet. The single-manager and tabs arms are the ones the
+  demo registers, so they are what the epic's browser pass covers; the group arms
+  are not, and no pass has run at the commit this page landed in.
 - **Every registered manager is POST-reachable by anyone.** The page filters with
   `canViewForRecord()`, which answers `true` until the authorization epic — so
   hiding a tab hides nothing. Stated in full on

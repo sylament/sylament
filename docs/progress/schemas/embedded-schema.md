@@ -47,6 +47,19 @@ would throw there. The host is reached the way every component reaches it —
 `getLiveComponent()` off the container chain — which is exactly what Filament's
 `toEmbeddedHtml()` does (`$this->getLivewire()->getSchema(...)`).
 
+### Embedding a schema that is already on the page duplicates its ids
+
+The embed renders the host's schema object itself, and a schema's ids come from
+its own key path — not from where it is rendered. So a page that embeds a schema
+it *also* renders in place emits every id in that tree twice, and a `<label for>`
+in the second copy resolves to the first copy's input. The live case is the edit
+page's own edit modal
+([panels](../panels/README.md#the-edit-pages-own-edit-modal-is-the-page-form-itself)),
+where the modal is a magnified view of the form behind it — the component's only
+consumer today, and the only shape that hits this at all: embedding a schema the
+page does *not* otherwise render costs nothing. Filament has the same shape and no
+id scope to fix it with.
+
 ## Divergences
 
 ### The constructor argument arrives through the setter

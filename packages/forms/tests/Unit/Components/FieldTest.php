@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace Sylament\Forms\Tests\Unit\Components;
 
+use InvalidArgumentException;
 use Sylament\Actions\Action;
 use Sylament\Forms\Components\Field;
+use Sylament\Forms\Tests\Fixtures\Components\FixtureDefaultNameField;
 use Sylament\Forms\Tests\Fixtures\Components\FixtureField;
 use Sylament\Schemas\Components\Icon;
 use Sylament\Schemas\Components\Text;
@@ -20,11 +22,18 @@ it('seeds the name and state path from make', function (): void {
         ->and($field->getStatePath(isAbsolute: false))->toBe('title');
 });
 
-it('has a null name and state path when made without a name', function (): void {
-    $field = FixtureField::make();
+it('requires a name on make', function (): void {
+    expect(fn (): Field => FixtureField::make())
+        ->toThrow(InvalidArgumentException::class, 'must have a unique name');
+});
 
-    expect($field->getName())->toBeNull()
-        ->and($field->getStatePath(isAbsolute: false))->toBeNull();
+it('falls back to the class default name', function (): void {
+    $field = FixtureDefaultNameField::make();
+
+    expect($field->getName())->toBe('defaultNamed')
+        ->and($field->getStatePath(isAbsolute: false))->toBe('defaultNamed')
+        ->and(FixtureDefaultNameField::make('title')->getName())->toBe('title')
+        ->and(Field::getDefaultName())->toBeNull();
 });
 
 it('humanizes the name into a default label', function (string $name, string $label): void {
@@ -40,8 +49,8 @@ it('prefers an explicit label over the humanized default', function (): void {
     expect(FixtureField::make('title')->label('Custom')->getLabel())->toBe('Custom');
 });
 
-it('has a null label when both the name and the label are null', function (): void {
-    expect(FixtureField::make()->getLabel())->toBeNull();
+it('has a null label when the name is nulled and no label is set', function (): void {
+    expect(FixtureField::make('title')->name(null)->getLabel())->toBeNull();
 });
 
 it('is not marked as required by default', function (): void {

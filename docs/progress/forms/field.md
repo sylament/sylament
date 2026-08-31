@@ -41,7 +41,7 @@ a concern's own file.
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
-| Construction &amp; `make()` | [`Components/Field.php`](../../../vendor/filament/forms/src/Components/Field.php) | done | — | [diverges](#make-drops-getdefaultname-and-the-unique-name-exception) |
+| Construction &amp; `make()` / `getDefaultName()` | [`Components/Field.php`](../../../vendor/filament/forms/src/Components/Field.php) | done | — | [diverges](#the-name-moves-from-the-constructor-to-a-setter) |
 | [`HasName`](../../../packages/schemas/src/Components/Concerns/HasName.php) (schemas) | [`Concerns/HasName.php`](../../../vendor/filament/schemas/src/Components/Concerns/HasName.php) | done | — | — |
 | [`HasLabel`](../../../packages/schemas/src/Components/Concerns/HasLabel.php) (schemas) | [`Concerns/HasLabel.php`](../../../vendor/filament/schemas/src/Components/Concerns/HasLabel.php) | done | — | — |
 | State-path seeding ([`HasState`](../../../packages/schemas/src/Components/Concerns/HasState.php), schemas) | [`Concerns/HasState.php`](../../../vendor/filament/schemas/src/Components/Concerns/HasState.php) | done | — | — |
@@ -286,29 +286,47 @@ harmless unused setter. Reversible by dropping `use HasPlaceholder` from `Field`
 and composing it per-component if a field ever needs a conflicting `placeholder()`
 meaning.
 
-### `make()` drops getDefaultName and the unique-name exception
+### The name moves from the constructor to a setter
 
-Filament's `make()` resolves `static::getDefaultName()` and throws
-`InvalidArgumentException` when the name is still null, before constructing
-through `app($fieldClass, ['name' => $name])`. The port's
-[`make()`](../../../packages/forms/src/Components/Field.php) is
-`static::newInstance(); $field->name($name); $field->statePath($name);
-$field->configure();` — construction goes through
+Filament's `final __construct(string $name)` is dropped, as everywhere else in
+the port — the resolver path takes no constructor arguments. `make()` resolves
+the name (argument, then `static::getDefaultName()`), refuses a blank one, then
+`newInstance()` → `name()` → `statePath()` → `configure()`, matching
+[`Column::make()`](../tables/column.md) and
+[`BaseFilter::make()`](../tables/base-filter.md#the-name-moves-from-the-constructor-to-a-setter).
+Construction goes through
 [`Component::newInstance()`](../../../packages/support/src/Components/Component.php)
-(the container when the app registered the class, `new $class()` otherwise), the
-same seam every other `make()` in the epic uses, so a `Field` subclass can
-already declare constructor-injected dependencies. What is still missing is the
-name handling either side of that seam: there is no `getDefaultName()` hook and
-no unique-name guard, so `name(?string $name)` accepts and keeps a null
-name — anonymous fields are allowed (a null name yields a null state path and a
-null label, both covered by tests) where Filament's would throw.
+(the container when the app registered the class, `new $class()` otherwise), so a
+`Field` subclass can declare constructor-injected dependencies where Filament's
+`final` constructor would have to be worked around. Both name assignments still
+land before `configure()`, which is where the constructor put them, so a
+`configureUsing()` closure reads the same field either way.
+
+The guard is one notch stricter than the class it ports. Filament's `Field::make()`
+tests `$name === null`; ours tests `blank($name)`, so `make('')` is refused
+too — an empty name seeds an empty state path, which leaves the same silently
+inert field a null name would. Filament guards its own `Column` and `BaseFilter`
+with `blank()`, so this is its newer shape rather than a new one. The exception
+class stays faithful per class rather than uniform across the three:
+`InvalidArgumentException` here, `LogicException` in the two tables ports, because
+that is what each original throws — and the first extends the second, so a single
+`catch (LogicException)` still covers all three.
+
+A name is therefore never null coming out of `make()`. It can still be nulled
+afterwards: the inherited
+[`HasName::name()`](../../../packages/schemas/src/Components/Concerns/HasName.php)
+and [`HasState::statePath()`](../../../packages/schemas/src/Components/Concerns/HasState.php)
+setters are both nullable, and the label and validation-dehydration paths that
+read them keep their null branches.
 
 ### `getDefaultLabel` drops label translation
 
 Filament's `getDefaultLabel` runs the humanized string through `__()` when
 `shouldTranslateLabel` is set and always returns a non-null `string`. The port's
 [`getDefaultLabel`](../../../packages/forms/src/Components/Field.php) returns
-`?string` (null when the name is null, per the anonymous-field divergence) and has
+`?string` (null when the name is null — which
+[`make()` no longer produces](#the-name-moves-from-the-constructor-to-a-setter),
+though the nullable `name()` setter still admits it) and has
 no translation step — the label-translation surface (`translateLabel()`) is not
 ported. Humanization itself is faithful:
 `u($name)->afterLast('.')->kebab()->replace('-', ' ')->title()` matches Filament's

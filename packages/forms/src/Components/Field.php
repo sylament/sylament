@@ -6,6 +6,7 @@ namespace Sylament\Forms\Components;
 
 use BackedEnum;
 use Closure;
+use InvalidArgumentException;
 use LogicException;
 use Sylament\Actions\Action;
 use Sylament\Actions\ActionGroup;
@@ -27,6 +28,7 @@ use Sylament\Schemas\State\Casts\EnumStateCast;
 use Sylament\Support\Enums\Size;
 use Twig\Markup;
 
+use function Sylament\Support\blank;
 use function Sylament\Support\filled;
 use function Symfony\Component\String\u;
 
@@ -74,6 +76,12 @@ abstract class Field extends Component implements HasValidationConstraints
 
     public static function make(?string $name = null): static
     {
+        $name ??= static::getDefaultName();
+
+        if (blank($name)) {
+            throw new InvalidArgumentException(sprintf('Field of class [%s] must have a unique name, passed to the [make()] method.', static::class));
+        }
+
         $field = static::newInstance();
 
         $field->name($name);
@@ -82,6 +90,11 @@ abstract class Field extends Component implements HasValidationConstraints
         $field->configure();
 
         return $field;
+    }
+
+    public static function getDefaultName(): ?string
+    {
+        return null;
     }
 
     public function getLabel(): string|Markup|null

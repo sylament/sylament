@@ -340,7 +340,7 @@ it('dehydrates nothing without constraints', function (): void {
 });
 
 it('dehydrates nothing without a state path', function (): void {
-    $field = wireField(FixtureField::make()->required());
+    $field = wireField(FixtureField::make('title')->statePath(null)->required());
 
     $constraints = [];
     $field->dehydrateValidationConstraints($constraints);

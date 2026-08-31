@@ -17,6 +17,9 @@ class Author
     #[ORM\Column]
     private string $name = '';
 
+    #[ORM\ManyToOne]
+    private ?Handle $handle = null;
+
     public function getId(): ?int
     {
         return $this->id;
@@ -30,5 +33,15 @@ class Author
     public function setName(string $name): void
     {
         $this->name = $name;
+    }
+
+    public function getHandle(): ?Handle
+    {
+        return $this->handle;
+    }
+
+    public function setHandle(?Handle $handle): void
+    {
+        $this->handle = $handle;
     }
 }

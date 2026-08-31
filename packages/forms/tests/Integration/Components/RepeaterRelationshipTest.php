@@ -16,6 +16,7 @@ use Sylament\Forms\Tests\Fixtures\Doctrine\Entity\Post;
 use Sylament\Forms\Tests\Fixtures\Doctrine\Entity\PostSection;
 use Sylament\Forms\Tests\Fixtures\Doctrine\Entity\SectionNote;
 use Sylament\Forms\Tests\Fixtures\Doctrine\Entity\Tag;
+use Sylament\Schemas\Components\Section;
 use Sylament\Schemas\Schema;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
 
@@ -570,6 +571,39 @@ it('recurses into a nested relationship repeater', function (): void {
     expect($entityManager->find(SectionNote::class, $droppedId))->toBeNull();
 });
 
+it("routes an entangled owner nested inside an item onto that item's child", function (): void {
+    $entityManager = $this::getContainer()->get(EntityManagerInterface::class);
+    [$post, $one, $two] = seedSectionedPost($entityManager);
+    [$ada, $bob] = seedSectionAuthorPair($entityManager);
+
+    $one->setAuthor($ada);
+    $two->setAuthor($bob);
+    $entityManager->flush();
+
+    $repeater = Repeater::make('sections')
+        ->relationship()
+        ->components([
+            TextInput::make('heading'),
+            Section::make()->relationship('author')->components([TextInput::make('name')]),
+        ]);
+
+    [$schema, $host] = wireRelationshipRepeater($repeater, $post);
+
+    $schema->fill($post);
+
+    expect($host->data['sections']['record-' . $one->getId()]['author']['name'])->toBe('ada')
+        ->and($host->data['sections']['record-' . $two->getId()]['author']['name'])->toBe('bob');
+
+    $host->data['sections']['record-' . $one->getId()]['author']['name'] = 'ada lovelace';
+
+    $schema->getData();
+
+    expect($ada->getName())->toBe('ada lovelace')
+        ->and($bob->getName())->toBe('bob')
+        ->and($one->getAuthor())->toBe($ada)
+        ->and($two->getAuthor())->toBe($bob);
+});
+
 it('stamps item schemas with the child record', function (): void {
     $entityManager = $this::getContainer()->get(EntityManagerInterface::class);
     [$post, $one] = seedSectionedPost($entityManager);
@@ -593,6 +627,28 @@ it('stamps item schemas with the child record', function (): void {
         ->and($loadedField?->getRecordClass())->toBe(PostSection::class)
         ->and($addedField?->getRecord())->toBeNull()
         ->and($addedField?->getRecordClass())->toBe(PostSection::class);
+});
+
+it('derives an item field requirement from the child the item is stamped with', function (): void {
+    $entityManager = $this::getContainer()->get(EntityManagerInterface::class);
+    [$post, $one] = seedSectionedPost($entityManager);
+
+    $repeater = Repeater::make('sections')
+        ->relationship()
+        ->components([TextInput::make('heading'), TextInput::make('body')]);
+
+    [$schema] = wireRelationshipRepeater($repeater, $post);
+
+    $schema->fill($post);
+
+    $itemSchema = $repeater->getChildSchema('record-' . $one->getId());
+    $heading = $itemSchema?->getComponent('heading');
+    $body = $itemSchema?->getComponent('body');
+
+    expect($heading)->toBeInstanceOf(TextInput::class)
+        ->and($body)->toBeInstanceOf(TextInput::class)
+        ->and($heading instanceof TextInput ? $heading->isRequired() : null)->toBeTrue()
+        ->and($body instanceof TextInput ? $body->isRequired() : null)->toBeFalse();
 });
 
 it('lets a mutate hook rewrite a delegated key', function (): void {

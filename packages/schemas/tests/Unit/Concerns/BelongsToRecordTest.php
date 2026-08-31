@@ -762,7 +762,7 @@ it('keeps refusing a hooked leaf beneath a non-vouching subtree owner', function
         ]);
 
     expect(fn (): array => $schema->recordPathMap())
-        ->toThrow(LogicException::class, 'Declare relationship() on');
+        ->toThrow(LogicException::class, 'Declare relationship() on that component');
 });
 
 it('keeps refusing a path-less hooked component beneath a vouching owner', function (): void {
@@ -811,7 +811,7 @@ it('attributes a hooked leaf to the nearest owner, not the outermost', function 
         ]);
 
     expect(fn (): array => $schema->recordPathMap())
-        ->toThrow(LogicException::class, 'Declare relationship() on');
+        ->toThrow(LogicException::class, 'Declare relationship() on that component');
 });
 
 it('keeps refusing the earlier of two hooked components sharing a record path beneath a vouching owner', function (): void {
@@ -826,5 +826,5 @@ it('keeps refusing the earlier of two hooked components sharing a record path be
         ]);
 
     expect(fn (): array => $schema->recordPathMap())
-        ->toThrow(LogicException::class, 'Declare relationship() on');
+        ->toThrow(LogicException::class, 'Declare relationship() on that component');
 });

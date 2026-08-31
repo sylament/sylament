@@ -148,7 +148,7 @@ it('still refuses a hook beneath an owner that does not route', function (): voi
     [$schema] = wireHookedComponent($owner, $post);
 
     expect(fn (): Schema => $schema->fill($post))
-        ->toThrow(LogicException::class, 'Declare relationship() on');
+        ->toThrow(LogicException::class, 'Declare relationship() on that component');
 });
 
 it('does not refuse a hook beneath a routing owner', function (): void {

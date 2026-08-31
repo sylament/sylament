@@ -5,12 +5,14 @@ declare(strict_types=1);
 use Sylament\Panels\GlobalSearch\Providers\DefaultGlobalSearchProvider;
 use Sylament\Panels\Panel;
 use Sylament\Panels\PanelRegistry;
+use Sylament\Panels\Tests\Fixtures\Resources\UntitledResource;
 
 /*
  * The setter cases build a bare `Panel::make()` — container-built inside a
- * booted kernel, so `evaluate()` reaches the real Invoker — while the two
- * `isGlobalSearchEnabled()` cases need the fixture panel's registered
- * resources, so they go through `PanelRegistry`.
+ * booted kernel, so `evaluate()` reaches the real Invoker and the `#[Required]`
+ * `ResourceRegistry` setter fires — while the two `isGlobalSearchEnabled()`
+ * cases that need a *searchable* resource want the fixture panel's registered
+ * ones, so they go through `PanelRegistry`.
  */
 
 function globalSearchPanel(): Panel
@@ -93,5 +95,9 @@ it('is disabled when the provider is switched off', function (): void {
 });
 
 it('is disabled when no registered resource is globally searchable', function (): void {
+    expect(globalSearchPanel()->resources([UntitledResource::class])->isGlobalSearchEnabled())->toBeFalse();
+});
+
+it('is disabled when the panel registers no resources at all', function (): void {
     expect(globalSearchPanel()->isGlobalSearchEnabled())->toBeFalse();
 });

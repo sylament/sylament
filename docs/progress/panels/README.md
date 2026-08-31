@@ -2238,7 +2238,7 @@ The pass alone was the original shape, and it was wrong. UX does not recognise a
 live component by its container tag — it **reflects for the attribute**:
 `LiveComponentStack::isLiveComponent()` is
 `[] !== new \ReflectionClass($classname)->getAttributes(AsLiveComponent::class)`
-(`vendor/symfony/ux-live-component/src/Util/LiveComponentStack.php:45-48`), and
+(`vendor/symfony/ux-live-component/src/Util/LiveComponentStack.php:46-49`), and
 that class is `final` with the method `private`, so there is no seam to teach it
 about a tag. A tag-only page is therefore not a live *parent*: every live
 component nested inside it is silently re-created on each re-render, with no

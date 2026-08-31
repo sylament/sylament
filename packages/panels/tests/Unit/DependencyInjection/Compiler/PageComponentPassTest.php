@@ -71,8 +71,9 @@ it('throws when a page class lacks the AsLiveComponent attribute', function (): 
 it('replaces the attribute-derived twig.component tag rather than doubling it', function (): void {
     $container = pageComponentContainer();
     $definition = $container->getDefinition(SettingsPage::class);
-    // What `AttributeAutoconfigurationPass` + `ResolveInstanceofConditionalsPass`
-    // have already materialized from the bare attribute by the time this pass runs.
+    // A keyless stand-in for the tag attribute autoconfiguration materializes from the
+    // bare attribute before this pass runs (the real one carries six keys, none of them
+    // `key` - `AsLiveComponent::serviceConfig()` with the null entries filtered).
     $definition->addTag('twig.component', ['live' => true]);
 
     new PageComponentPass()->process($container);

@@ -400,7 +400,12 @@ mint a temporary URL would hand the browser a public link to a file the user
 marked private. Both `temporaryUrl()` and `publicUrl()` are guarded by
 `method_exists()`, since neither is on `FilesystemOperator`, and by their
 `UnableToGenerate*` exceptions. Every URL leaves through
-[`sanitize_url()`](../support/helpers.md).
+[`sanitize_url()`](../support/helpers.md). Those mechanics shipped here first
+and were hoisted to
+[`FilesystemRegistry::getFileUrl()`](../support/filesystem-registry.md#getfileurl-mints-the-browser-facing-url)
+when tables' [`ImageColumn`](../tables/image-column.md) became their second
+consumer — `getUploadedFileUrl()` is now a one-line delegate, and the
+invariants above are pinned at the registry beside this file's own URL cases.
 
 **Recorded gap:** no serving route ships. A private file on a local storage gets
 no URL at all — no thumbnail, no open, no download — until a

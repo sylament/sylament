@@ -49,9 +49,37 @@ what has to land first. _Detail_ carries **diverges** → the permanent note in
 | [`sylament.default_filesystem_disk` — scalar, default null](../../../packages/support/src/SylamentSupportBundle.php) | [`config('filament.default_filesystem_disk')`](../../../vendor/filament/forms/src/Components/BaseFileUpload.php) | done | — | [configuration.md](../../configuration.md#storage) |
 | [`sylament.temporary_file_url_expiry_minutes` — integer ≥ 1, default 30](../../../packages/support/src/SylamentSupportBundle.php) | [`config('filament.temporary_file_url_expiry_minutes', 30)`](../../../vendor/filament/forms/src/Components/BaseFileUpload.php) | done | — | [configuration.md](../../configuration.md#storage) |
 | [The `flysystem.storage` tag contract](../../../packages/support/src/SylamentSupportBundle.php) | — | done | — | [semantics](#a-consumer-without-the-bundle-tags-its-own-operator) |
-| Per-disk URL generation (`publicUrl()` / `temporaryUrl()`) | `Storage::disk()->url()` / `temporaryUrl()` | skipped | — | Not the registry's job: those are methods on the operator flysystem already hands back, and only the caller knows whether the file it is describing is public. `forms`' `BaseFileUpload` calls them directly on the operator this returns |
+| Per-disk URL generation (`publicUrl()` / `temporaryUrl()`) | `Storage::disk()->url()` / `temporaryUrl()` | done | — | Overturned: this row was **skipped** ("not the registry's job — `forms`' `BaseFileUpload` calls them directly on the operator this returns") until tables' [`ImageColumn`](../tables/image-column.md) became the second component needing the identical minting logic, at which point the parallel copy the skip implied was the worse of the two shapes. Shipped as `getFileUrl()` below |
+| [`getFileUrl(FilesystemOperator $storage, string $path, ?string $visibility = null)`](../../../packages/support/src/Filesystem/FilesystemRegistry.php) | inline in [`BaseFileUpload::getUploadedFile()`](../../../vendor/filament/forms/src/Components/BaseFileUpload.php) and [`ImageColumn::getImageUrl()`](../../../vendor/filament/tables/src/Columns/ImageColumn.php) | done | — | [semantics](#getfileurl-mints-the-browser-facing-url) |
 
 ## Semantics
+
+### `getFileUrl()` mints the browser-facing URL
+
+One method holds the URL semantics both consumers share — forms'
+[`BaseFileUpload::getUploadedFileUrl()`](../forms/file-upload.md#visibility-defers-to-the-storage-and-a-private-file-never-falls-through-to-a-public-url)
+delegates to it (where the logic originally shipped, hoisted here when tables'
+[`ImageColumn`](../tables/image-column.md) became its second consumer), and the
+invariants are unchanged from that divergence note. A null `$visibility` is
+read from the storage per file; an unreadable one is read as **private**; and
+the private arm returns `null` rather than falling through to `publicUrl()` —
+otherwise a storage that cannot mint a temporary URL would hand the browser a
+public link to a file the user marked private. `temporaryUrl()` and
+`publicUrl()` are both guarded by `method_exists()`, since neither is on
+`FilesystemOperator`, and by their `UnableToGenerate*` exceptions; a temporary
+URL expires `getTemporaryUrlExpiryMinutes()` from now
+([the rounding note](#the-expiry-is-handed-out-in-minutes-and-the-caller-owns-the-rounding)
+carries the dropped `endOfHour()`); and every URL leaves through
+[`sanitize_url()`](helpers.md). The operator is a *parameter* rather than
+resolved from a name, so the method adds no new reach into flysystem symbols
+beyond what the guard below already covers: nothing runs it without an
+operator in hand. Pinned end to end by
+[`FilesystemRegistryTest`](../../../packages/support/tests/Unit/Filesystem/FilesystemRegistryTest.php)'s
+seven URL cases — the public mint, the storage-read visibility, the
+unreadable-visibility-never-falls-through case (over a `DecoratedAdapter`
+whose `visibility()` throws), the expiry handed to a recording generator, the
+unsignable private file, the URL-less public storage, and a minted
+`javascript:` URL refused.
 
 ### An unknown storage is a `LogicException`, not an empty filesystem
 
@@ -89,7 +117,12 @@ The `endOfHour()` rounding is deliberate on their side (it makes the signed URL
 stable within the hour so a page can be cached), and it belongs with the caller
 that decides how long a link is allowed to live in a page, not with the registry
 that only carries the setting. A registry returning a `DateTimeImmutable` would
-have to guess that rounding for every consumer.
+have to guess that rounding for every consumer. Since
+[`getFileUrl()`](#getfileurl-mints-the-browser-facing-url) landed, the shared
+caller lives here too: it mints a plain `+N minutes` with no rounding — the
+shape forms shipped from the start — so a signed URL differs per request, and a
+consumer wanting Filament's within-the-hour stability builds its own instant
+from this getter.
 
 ### A consumer without the bundle tags its own operator
 

@@ -4,9 +4,16 @@ declare(strict_types=1);
 
 namespace Sylament\Support\Tests\Unit\Filesystem;
 
+use DateTimeInterface;
+use League\Flysystem\Config;
+use League\Flysystem\DecoratedAdapter;
+use League\Flysystem\FileAttributes;
 use League\Flysystem\Filesystem;
 use League\Flysystem\FilesystemOperator;
 use League\Flysystem\Local\LocalFilesystemAdapter;
+use League\Flysystem\UnableToRetrieveMetadata;
+use League\Flysystem\UrlGeneration\PublicUrlGenerator;
+use League\Flysystem\UrlGeneration\TemporaryUrlGenerator;
 use LogicException;
 use stdClass;
 use Sylament\Support\Filesystem\FilesystemRegistry;
@@ -73,4 +80,81 @@ it('carries the configured temporary-url expiry', function (): void {
 
     expect($registry->getTemporaryUrlExpiryMinutes())->toBe(5)
         ->and($registry->getNames())->toBe([]);
+});
+
+it('mints a public url for a public file', function (): void {
+    $storage = new Filesystem(new LocalFilesystemAdapter(sys_get_temp_dir() . '/sylament-registry-' . bin2hex(random_bytes(4))), ['public_url' => '/files']);
+    $storage->write('covers/a.png', 'the bytes');
+
+    expect(registryWith([])->getFileUrl($storage, 'covers/a.png', 'public'))->toBe('/files/covers/a.png');
+});
+
+it('reads an unset visibility from the storage', function (): void {
+    $storage = new Filesystem(new LocalFilesystemAdapter(sys_get_temp_dir() . '/sylament-registry-' . bin2hex(random_bytes(4))), ['public_url' => '/files']);
+    $storage->write('covers/a.png', 'the bytes', ['visibility' => 'public']);
+
+    expect(registryWith([])->getFileUrl($storage, 'covers/a.png'))->toBe('/files/covers/a.png');
+});
+
+it('treats an unreadable visibility as private and never falls through to a public url', function (): void {
+    // The storage can mint a public url, but the visibility read throws — the private arm must
+    // return null rather than hand out the public link.
+    $adapter = new class (new LocalFilesystemAdapter(sys_get_temp_dir() . '/sylament-registry-' . bin2hex(random_bytes(4)))) extends DecoratedAdapter {
+        public function visibility(string $path): FileAttributes
+        {
+            throw UnableToRetrieveMetadata::visibility($path);
+        }
+    };
+    $storage = new Filesystem($adapter, ['public_url' => '/files']);
+    $storage->write('covers/a.png', 'the bytes');
+
+    expect(registryWith([])->getFileUrl($storage, 'covers/a.png'))->toBeNull();
+});
+
+it('mints a temporary url for a private file using the configured expiry', function (): void {
+    $generator = new class implements TemporaryUrlGenerator {
+        public ?DateTimeInterface $expiresAt = null;
+
+        public function temporaryUrl(string $path, DateTimeInterface $expiresAt, Config $config): string
+        {
+            $this->expiresAt = $expiresAt;
+
+            return 'https://signed.example/' . $path;
+        }
+    };
+    $storage = new Filesystem(new LocalFilesystemAdapter(sys_get_temp_dir() . '/sylament-registry-' . bin2hex(random_bytes(4))), temporaryUrlGenerator: $generator);
+    $storage->write('covers/a.png', 'the bytes');
+
+    $registry = new FilesystemRegistry(new ServiceLocator([]), temporaryUrlExpiryMinutes: 5);
+
+    expect($registry->getFileUrl($storage, 'covers/a.png', 'private'))->toBe('https://signed.example/covers/a.png')
+        ->and($generator->expiresAt?->getTimestamp())->toBeGreaterThan(time() + 4 * 60)
+        ->and($generator->expiresAt?->getTimestamp())->toBeLessThan(time() + 6 * 60);
+});
+
+it('returns null for a private file the storage cannot sign', function (): void {
+    $storage = new Filesystem(new LocalFilesystemAdapter(sys_get_temp_dir() . '/sylament-registry-' . bin2hex(random_bytes(4))), ['public_url' => '/files']);
+    $storage->write('covers/b.png', 'the bytes');
+
+    expect(registryWith([])->getFileUrl($storage, 'covers/b.png', 'private'))->toBeNull();
+});
+
+it('returns null for a public file on a storage with no public url', function (): void {
+    $storage = localOperator();
+    $storage->write('covers/a.png', 'the bytes');
+
+    expect(registryWith([])->getFileUrl($storage, 'covers/a.png', 'public'))->toBeNull();
+});
+
+it('sanitizes the minted url', function (): void {
+    $generator = new class implements PublicUrlGenerator {
+        public function publicUrl(string $path, Config $config): string
+        {
+            return 'javascript:alert(1)';
+        }
+    };
+    $storage = new Filesystem(new LocalFilesystemAdapter(sys_get_temp_dir() . '/sylament-registry-' . bin2hex(random_bytes(4))), publicUrlGenerator: $generator);
+    $storage->write('covers/a.png', 'the bytes');
+
+    expect(registryWith([])->getFileUrl($storage, 'covers/a.png', 'public'))->toBeNull();
 });

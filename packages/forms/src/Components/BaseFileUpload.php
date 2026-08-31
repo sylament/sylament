@@ -5,14 +5,10 @@ declare(strict_types=1);
 namespace Sylament\Forms\Components;
 
 use Closure;
-use DateTimeImmutable;
 use League\Flysystem\FilesystemOperator;
 use League\Flysystem\UnableToCheckFileExistence;
-use League\Flysystem\UnableToGeneratePublicUrl;
-use League\Flysystem\UnableToGenerateTemporaryUrl;
 use League\Flysystem\UnableToRetrieveMetadata;
 use League\Flysystem\UnableToSetVisibility;
-use League\Flysystem\Visibility;
 use LogicException;
 use Sylament\Forms\Components\Contracts\HasNestedRecursiveValidationConstraints;
 use Sylament\Forms\Uploads\TemporaryUploadedFile;
@@ -1015,42 +1011,7 @@ abstract class BaseFileUpload extends Field implements AcceptsUploadedFiles, Has
 
     protected function getUploadedFileUrl(string $file): ?string
     {
-        $storage = $this->getDisk();
-        $visibility = $this->getVisibility();
-
-        try {
-            // Security: an unreadable visibility is read as private, and the private arm never
-            // falls through to publicUrl() — otherwise a storage that cannot mint a temporary URL
-            // would hand the browser a public link to a file the user marked private.
-            $visibility ??= $storage->visibility($file);
-        } catch (UnableToRetrieveMetadata) {
-            $visibility = Visibility::PRIVATE;
-        }
-
-        if ($visibility === Visibility::PRIVATE) {
-            if (! method_exists($storage, 'temporaryUrl')) {
-                return null;
-            }
-
-            try {
-                return sanitize_url($storage->temporaryUrl(
-                    $file,
-                    new DateTimeImmutable('+' . $this->getFilesystemRegistry()->getTemporaryUrlExpiryMinutes() . ' minutes'),
-                ));
-            } catch (UnableToGenerateTemporaryUrl) {
-                return null;
-            }
-        }
-
-        if (! method_exists($storage, 'publicUrl')) {
-            return null;
-        }
-
-        try {
-            return sanitize_url($storage->publicUrl($file));
-        } catch (UnableToGeneratePublicUrl) {
-            return null;
-        }
+        return $this->getFilesystemRegistry()->getFileUrl($this->getDisk(), $file, $this->getVisibility());
     }
 
     /**

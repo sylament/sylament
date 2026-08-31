@@ -7,6 +7,7 @@ use Sylament\Panels\Tests\Fixtures\Doctrine\Entity\Article;
 use Sylament\Panels\Tests\Fixtures\Doctrine\EntityManagerFactory;
 use Sylament\Panels\Tests\Fixtures\Resources\Pages\EditArticle;
 use Sylament\Panels\Tests\Fixtures\Resources\Pages\EditHookedArticle;
+use Sylament\Schemas\Components\EmbeddedSchema;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -154,49 +155,66 @@ function pushRequestWithSession(): void
     test()->getContainer()->get(RequestStack::class)->push($request);
 }
 
-it('edits the record through the header modal and refreshes the page form', function (): void {
+it('opens its own edit modal over the page form itself', function (): void {
+    [$client, , $key] = editRecordClient();
+
+    $host = $this->createLiveComponent(EditArticle::class, ['record' => $key], client: $client)->component();
+    $host->mountAction('edit', [], []);
+
+    $schema = $host->getMountedActionSchema();
+    $components = array_values($schema?->getComponents() ?? []);
+    $embedded = $components[0] ?? null;
+
+    // One tree, not two: the modal embeds the page's own `form` schema — the
+    // same object the page beneath it is bound to — so there is no second state
+    // path and no second error bag to keep in step.
+    expect($components)->toHaveCount(1)
+        ->and($embedded)->toBeInstanceOf(EmbeddedSchema::class)
+        ->and($embedded?->getName())->toBe('form')
+        ->and($embedded?->getLiveComponent()->getSchema('form'))->toBe($host->getSchema('form'));
+});
+
+it('renders the page form inside its own edit modal', function (): void {
+    [$client, , $key] = editRecordClient();
+
+    $crawler = $this->createLiveComponent(EditArticle::class, ['record' => $key], client: $client)
+        ->call('mountAction', ['name' => 'edit', 'arguments' => [], 'context' => []])
+        ->render()
+        ->crawler();
+
+    // The modal's inputs write to the page's own state path, which is what makes
+    // the two views the same form rather than two copies of it.
+    expect($crawler->filter('.sy-modal input[data-model$="data.title"]')->count())->toBe(1)
+        ->and($crawler->filter('.sy-modal input[data-model$="data.title"]')->attr('value'))->toBe('Alpha');
+});
+
+it('leaves the writing to the page save when its own edit modal submits', function (): void {
     [$client, $entityManager, $key] = editRecordClient();
 
     pushRequestWithSession();
 
     $host = $this->createLiveComponent(EditArticle::class, ['record' => $key], client: $client)->component();
     $host->mountAction('edit', [], []);
-    $host->mountedActionsData[0]['title'] = 'Alpha, edited';
+
+    // The modal's inputs are the page form's, so this is what typing in the
+    // modal does.
+    $host->data['title'] = 'Alpha, edited';
     $host->callMountedAction();
 
-    // The page form is a second component tree over the same record, so the
-    // page would keep showing the pre-modal values without the refill.
-    $formTitle = $host->getSchema('form')->getRawState()['title'] ?? null;
+    // Read without clearing: the page holds the managed entity, and clearing
+    // would detach the one its own save is about to write.
+    $afterModal = $entityManager->find(Article::class, (int) $key)?->getTitle();
+
+    $host->save();
 
     $entityManager->clear();
 
-    expect($entityManager->find(Article::class, (int) $key)?->getTitle())->toBe('Alpha, edited')
-        ->and($formTitle)->toBe('Alpha, edited')
-        ->and($host->mountedActions)->toBe([]);
-});
-
-it('refills through the fill mutator and hooks after a header edit', function (): void {
-    [$client, $entityManager, $key] = editRecordClient();
-
-    pushRequestWithSession();
-
-    $host = $this->createLiveComponent(EditHookedArticle::class, ['record' => $key], client: $client)->component();
-    $host->calls = [];
-
-    $host->mountAction('edit', [], []);
-    $host->mountedActionsData[0]['title'] = 'Alpha, edited';
-    $host->callMountedAction();
-
-    // The refill runs `fillForm()`, so the page's fill mutator lower-cases the
-    // saved title exactly as it did at mount; a bare `fill($record)` would show
-    // the record's own casing and skip both hooks.
-    $formTitle = $host->getSchema('form')->getRawState()['title'] ?? null;
-
-    $entityManager->clear();
-
-    expect($entityManager->find(Article::class, (int) $key)?->getTitle())->toBe('Alpha, edited')
-        ->and($formTitle)->toBe('alpha, edited')
-        ->and($host->calls)->toBe(['beforeFill', 'mutateFill', 'afterFill']);
+    // The embed carries no state of its own, so the action's own schema is empty
+    // and its write maps nothing onto the record: the page's `save()` is the
+    // writer, exactly as in Filament, where this arm is the same one line.
+    expect($host->mountedActions)->toBe([])
+        ->and($afterModal)->toBe('Alpha')
+        ->and($entityManager->find(Article::class, (int) $key)?->getTitle())->toBe('Alpha, edited');
 });
 
 it('deletes the record from the header and redirects to the index', function (): void {

@@ -524,9 +524,14 @@ What is ported, by cluster:
   objects, the provider contract and the panel knobs — are
   [global-search.md](global-search.md); nothing about it is repeated here.
 
+- **Relations.** `getRelations()` returns the relation managers a record page of
+  this resource mounts, keyed by the identity each one's tab is activated under.
+  It is an instance method where Filament's is static, for the reason every other
+  hook here is — [HasRelationManagers](has-relation-managers.md#getrelations-is-an-instance-method-like-every-other-resource-hook).
+
 Deferred, all todo: authorization (`canAccess()` and the whole `HasAuthorization`
 cluster), widgets, sub-navigation, clusters, tenancy,
-nested/parent resources, resource configurations, and `getRelations()`.
+nested/parent resources, and resource configurations.
 `configureTable()`'s seeding of table-level labels landed with the tables label
 surface — on [`ListRecords::table()`](#the-list-pages-table-is-stamped-query-first-and-resource-last),
 the instance seam that stands in for Filament's static one. The title-case **toggle** is
@@ -1034,7 +1039,8 @@ in place.
 ```php
 abstract class EditRecord extends Page implements InteractsWithSchemas
 {
-    use HasSchemas;   // Sylament\Schemas\Concerns
+    use HasRelationManagers;   // Sylament\Panels\Resources\Pages\Concerns
+    use HasSchemas;            // Sylament\Schemas\Concerns
 }
 ```
 
@@ -1048,10 +1054,11 @@ wire, and each has its own divergence:
 - `mount(int|string $record)` assigns `(string) $record`, then calls
   `fillForm()`: `callHook('beforeFill')`, a fill from
   `mutateFormDataBeforeFill($schema->getStateFromRecord($record))`, and
-  `callHook('afterFill')`. `fillForm()` is Filament's own method name and it is
-  extracted rather than inlined because it has a second caller —
-  `afterActionCalled()` below, which must give a refill the same treatment mount
-  gave the first fill. The union is on the **mount parameter**, which is Filament's
+  `callHook('afterFill')`. `fillForm()` is Filament's own method name, kept as a
+  method of its own so a page that mutates or hooks on fill has one place to
+  reach — it had a second caller until the page's own edit modal became
+  [the page's own form](#the-edit-pages-own-edit-modal-is-the-page-form-itself).
+  The union is on the **mount parameter**, which is Filament's
   signature and is legal there; the property underneath it cannot be one. Route
   parameters arrive as strings ([`componentProps`](#routing)), so the cast is a
   formality for a hand-mounted component.
@@ -1064,7 +1071,17 @@ wire, and each has its own divergence:
   `InteractsWithRecord::getRecord()` does `abort_unless(… instanceof Model, 404)`
   for the same effect.
 - `form(Schema)` is the create page's with `record($this->getRecord())` — the
-  **instance** arm — and `Operation::Edit`. `schemas()` is `['form']`.
+  **instance** arm — and `Operation::Edit`.
+- `content(Schema)` holds the one component
+  [`HasRelationManagers`](has-relation-managers.md) builds out of the resource's
+  `getRelations()`, and `schemas()` is `['form', 'content']`. The template renders
+  it with a single `renderSchema('content')` after `</form>`, which is
+  [a deliberately narrow reading of Filament's `content()`](has-relation-managers.md#content-ships-in-a-narrow-shape).
+  Naming it in `schemas()` also means it is rebuilt on **every** live request of
+  the page — [the tab statics are on that path](has-relation-managers.md#the-content-schema-is-built-on-every-live-request).
+- `hasRecord()` and `getRecordKey()` answer off the raw `$record` prop, which is
+  what an embedded relation manager is mounted with —
+  [the record probes read the wire value](has-relation-managers.md#the-record-probes-read-the-wire-value-not-the-resolved-record).
 - `save()` is the `#[LiveAction]`.
 
 The lifecycle, ours against Filament's:
@@ -1131,29 +1148,36 @@ edit-page GET.
   — right for every single-panel application, wrong for a resource mounted only
   in a non-default panel, and one more instance against
   [M6 · 6](../roadmap.md#m6--panel-depth)'s multi-panel URL row.
-- `getDefaultActionSchemaResolver()` is the list page's three arms, over the
-  **resource's** `form()` rather than this page's schema —
-  [the edit page's own edit modal is a second tree](#the-edit-pages-own-edit-modal-is-a-second-tree-re-filled-after-it-saves).
+- `getDefaultActionSchemaResolver()` is the list page's create and view arms over
+  the **resource's** `form()`, and an edit arm that is not: an `EditAction` on
+  this page resolves to `$schema->components([EmbeddedSchema::make('form')])`,
+  which is Filament's own body and mounts
+  [the page's own form rather than a second tree](#the-edit-pages-own-edit-modal-is-the-page-form-itself).
 - `getMountedActionSchemaRecord()` is the resource's record class for a
   `CreateAction` and the guarded record otherwise —
   [it answers for the top frame, depends on the seed being lazy, and is
   unreachable on every page shipped today](#the-mounted-schemas-record-answers-for-the-top-frame-and-depends-on-the-seeds-laziness).
-- `afterActionCalled()` re-fills the page form through `fillForm()` when an
-  `EditAction` on the page's own record reports success, for the second-tree
-  reason above. The hook is Filament's, the body is not — theirs resets a deleted
-  record, which the redirect above makes unnecessary here.
+- `afterActionCalled()` is **not** overridden. It re-filled the page form after a
+  modal edit while the modal was a second tree over the same record; with one
+  tree there is nothing to re-fill and a re-fill would discard what the user just
+  typed. Filament's own use of the hook here — nulling the record after a delete —
+  stays unported for the reason above: the redirect ends the request first.
 
 **The template.** `partials/EditRecord/index.html.twig` is the create page's with
 `live_action('save:prevent', event: 'submit')` and a `Save` button — same root
 class family (`sy-pa-resource-edit-record-page`), same required record-level error
-outlet, same `Modals` outlet.
+outlet, same `Modals` outlet — plus one line the create page has no use for:
+`{{ renderSchema('content') }}`, **after** `</form>`, where the relation managers
+render. After rather than inside, because a manager hosts forms of its own and a
+nested `<form>` is invalid HTML the browser silently unnests.
 
 Deferred, all todo: `refreshFormData()` (it needs a partial fill),
 `saveFormComponentOnly()`,
 database transactions, `previousUrl` and cancel-via-history, the unsaved-changes
-alert, the record events, the authorization arms, relation managers
-(`HasRelationManagers` and the content tabs),
-`getFormActions()` as `Action` objects, `content()`, and the navigation-icon /
+alert, the record events, the authorization arms, the combined content tab that
+puts the form itself in the relation-manager tab bar
+([HasRelationManagers](has-relation-managers.md#the-combined-content-tab-does-not-port)),
+`getFormActions()` as `Action` objects, and the navigation-icon /
 navigation-label statics Filament's edit page carries for sub-navigation.
 
 Divergences, the three shared with the create page plus six of its own:
@@ -1164,8 +1188,11 @@ Divergences, the three shared with the create page plus six of its own:
 [staying on the page is a `null` redirect](#staying-on-the-page-after-a-save-is-a-null-redirect-not-a-caught-authorization-exception),
 [the document title carries the record label](#the-document-title-of-an-edit-page-carries-the-record-label-not-the-record-title),
 [a create modal on it is anonymous](#a-create-modal-on-a-record-page-is-anonymous),
-[its own edit modal is a second tree](#the-edit-pages-own-edit-modal-is-a-second-tree-re-filled-after-it-saves),
 and [a modal's schema keeps the resource form's own column count](#a-modals-schema-keeps-the-resource-forms-own-column-count).
+Its own edit modal is no longer one of them —
+[it is the page's own form](#the-edit-pages-own-edit-modal-is-the-page-form-itself),
+and the relation managers under it are
+[HasRelationManagers](has-relation-managers.md)'.
 
 ## Features
 
@@ -1180,6 +1207,7 @@ they sit per subsystem:
 | --- | --- | --- | --- |
 | [`DependencyInjection\Compiler\PageComponentPass`](../../../packages/panels/src/DependencyInjection/Compiler/PageComponentPass.php) | [`Panel/Concerns/HasComponents.php`](../../../vendor/filament/filament/src/Panel/Concerns/HasComponents.php) — `registerLivewireComponents()` / `queueLivewireComponentForRegistration()` | in progress | every `Page` service is autoconfigured `sylament.panels.page`; the pass throws for a page class missing the bare `#[AsLiveComponent]` UX reflects for, clears the attribute-derived `twig.component` tag and re-adds a live one keyed by `Page::getComponentName()`, rendering through `template_from_method: getTemplate`; it also builds the class-keyed `ServiceLocator` `PageController` reads pages from — [the attribute and the pass, and why both](#pages-register-as-live-components-through-a-compiler-pass-over-a-per-class-attribute) |
 | [`DependencyInjection\Compiler\RelationManagerComponentPass`](../../../packages/panels/src/DependencyInjection/Compiler/RelationManagerComponentPass.php) | [`Panel/Concerns/HasComponents.php`](../../../vendor/filament/filament/src/Panel/Concerns/HasComponents.php) — the same Livewire component registration, which Filament reaches for relation managers through a resource's `getRelations()` | in progress | every `RelationManager` service is autoconfigured `sylament.panels.relation_manager`, and the pass is `PageComponentPass` minus the controller locator — [the attribute, the tag swap, and why a manager needs both](relation-manager.md#a-manager-must-carry-aslivecomponent-and-the-pass-enforces-it) |
+| [`Resources\Pages\Concerns\HasRelationManagers`](../../../packages/panels/src/Resources/Pages/Concerns/HasRelationManagers.php) (+ [`Resource::getRelations()`](../../../packages/panels/src/Resources/Resource.php) and [`EditRecord::content()`](../../../packages/panels/src/Resources/Pages/EditRecord.php)) | [`Resources/Pages/Concerns/HasRelationManagers.php`](../../../vendor/filament/filament/src/Resources/Pages/Concerns/HasRelationManagers.php), [`Resources/Resource.php`](../../../vendor/filament/filament/src/Resources/Resource.php) `getRelations()` | in progress | the registrations a record page mounts, filtered by the record, and the one component that carries them — a tab bar, a bare embed, a group's embeds, or a hidden group — [HasRelationManagers](has-relation-managers.md) |
 | [`DependencyInjection\Compiler\ResourcePass`](../../../packages/panels/src/DependencyInjection/Compiler/ResourcePass.php) | no Filament counterpart — resource discovery is [`Panel/Concerns/HasComponents.php`](../../../vendor/filament/filament/src/Panel/Concerns/HasComponents.php) `discoverResources()`, a filesystem scan | in progress | every `Resource` service is autoconfigured `sylament.panels.resource` and the pass collects the non-abstract ones into the class-keyed `ServiceLocator` `ResourceRegistry` reads — [Resources](#resources) |
 | [`DependencyInjection\Compiler\GlobalSearchProviderPass`](../../../packages/panels/src/DependencyInjection/Compiler/GlobalSearchProviderPass.php) | no Filament counterpart — a provider class-string is handed straight to `app()` | in progress | the same three-piece shape one feature over: every `GlobalSearchProvider` service is autoconfigured `sylament.panels.global_search_provider` and the pass collects the tagged definitions into the class-keyed `ServiceLocator` `GlobalSearchProviderRegistry` reads — [global-search.md](global-search.md#the-provider-is-resolved-through-a-tagged-registry-rather-than-app) |
 | _rest not audited yet_ | | | |
@@ -1743,6 +1771,34 @@ which calls `getMountedAction()`, which caches the whole mounted stack — from
 inside the very call that is building and caching a frame's schema. The laziness
 is what keeps that from re-entering, and it is why this override is safe where an
 apparently equivalent eager one would not be.
+
+### The edit page's own edit modal is the page form itself
+
+`EditRecord::getDefaultActionSchemaResolver()` gives an `EditAction`
+`fn (Schema $schema): Schema => $schema->components([EmbeddedSchema::make('form')])`
+— Filament's own body, one line for one line. The modal renders the page's **own**
+`form` schema: the same object the page beneath it is bound to, on the same state
+path, with the same error bag. The arm waited on
+[`EmbeddedSchema`](../schemas/embedded-schema.md), which M6 · 1 pulled forward to
+mount relation managers and which this was the first consumer of.
+
+What that retires is the port's one-epic divergence: the modal used to be a
+**second component tree** over the same record — its own state path, its own
+validation — which was correct for the modal and wrong for the page behind it,
+still showing the values it was filled with at mount. `afterActionCalled()` closed
+that gap by re-filling the page form through `fillForm()` whenever a modal edit of
+the page's own record succeeded. Both are gone: one tree cannot drift from itself,
+and a re-fill would now discard what the user just typed.
+
+The cost, and it is Filament's too: **the modal's own submit writes nothing.** An
+embed carries no state of its own, so the action's schema — bound to
+`mountedActionsData.0` — is empty, and `EditAction`'s write maps that empty array
+onto the record before reporting success. The typing is real, because it went
+straight into the page's `data`; it is the page's own **Save** that persists it.
+A header `EditAction` on an edit page is therefore a magnified view of the form
+already on the page rather than a second way to save it, which is what Filament's
+resolver makes it. `EditRecordTest` pins exactly that sequence, so the day the
+behaviour changes it changes visibly.
 
 ## Divergences
 
@@ -3037,44 +3093,6 @@ Revisit with relation managers ([M6 · 1](../roadmap.md#m6--panel-depth)), which
 is when a create modal on a record page will have a parent to be told about and a
 relationship arm to read it.
 
-### The edit page's own edit modal is a second tree, re-filled after it saves
-
-Filament's `EditRecord::getDefaultActionSchemaResolver()` gives an `EditAction`
-`fn (Schema $schema) => $schema->components([EmbeddedSchema::make('form')])` — the
-modal renders the page's *own* `form` schema, the same object the page beneath it
-is bound to. One tree, one state path; saving in the modal and saving on the page
-are the same form.
-
-`EmbeddedSchema` does not exist here, and this arm is its only M4·2 consumer, so
-the port folds the `EditAction` arm into the `CreateAction` one: both are
-`$resource->form(...)` over the schema the host seeds, Filament's
-`columns(2)` default dropped
-[for the reason the list page's is](#a-modals-schema-keeps-the-resource-forms-own-column-count). That renders a **second component tree** over the
-same record — its own state path, its own validation, its own components — which
-is fine for the modal itself (it fills from the record and writes to the record,
-so the round trip is correct) and wrong for the page behind it, which is still
-showing the values it was filled with at mount.
-
-`afterActionCalled()` is what closes that gap: when an `EditAction` reports
-`ActionStatus::Success` and its record is identical to the page's, the page calls
-`fillForm()` again. Going through `fillForm()` rather than inlining a `fill()` is
-deliberate — it is the same method `mount()` uses, so a page that declares
-`mutateFormDataBeforeFill()` or a `beforeFill` / `afterFill` hook gets that
-treatment on the refill too, which an inlined copy would quietly skip.
-
-The identity check (`$action->getRecord() === $this->getRecord()`) is what keeps
-this narrow: a row's `EditAction` in a table on some other page, or an edit of a
-different record, must not trigger a refill of a form it has nothing to do with.
-On the edit page the two are the same managed entity, so identity is the right
-comparison rather than a key match.
-
-The residue is that the two trees can disagree while the modal is open — the page
-form holds pre-modal values until the modal's save lands — and that a page-level
-validation error and a modal-level one are separate error bags. Both go away with
-`EmbeddedSchema`, which belongs to [M5 · 2](../roadmap.md#m5--view-page--infolists)
-and [M6 · 1](../roadmap.md#m6--panel-depth) — the view page and relation managers
-are what make an embedded schema pay for itself.
-
 ### A modal's schema keeps the resource form's own column count
 
 Filament's resource pages force a two-column grid onto every modal schema they
@@ -3091,7 +3109,10 @@ $action instanceof CreateAction, $action instanceof EditAction => $this->form(..
 
 (the arrow function collapses to a first-class callable once the wrapper is gone
 — the schema still arrives by name, `HasSchema::getSchema()` injecting `$schema`
-along with `form` and `infolist`).
+along with `form` and `infolist`). The edit page's own `EditAction` no longer
+takes this arm at all: it embeds
+[the page's own form](#the-edit-pages-own-edit-modal-is-the-page-form-itself),
+already configured, leaving the create and view arms to it.
 
 The `hasCustomColumns()` guard reads as "the *action* may override it", but the
 schema it guards is the blank one the host seeds per mount — a resource form is

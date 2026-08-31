@@ -34,6 +34,10 @@
                         <twig:SylamentSupport:Button type="submit">Save</twig:SylamentSupport:Button>
                     </div>
                 </form>
+
+                {# After the form element, never inside it: a relation manager hosts
+                   forms of its own, which cannot nest in the page's. #}
+                {{ renderSchema('content') }}
             </div>
         </div>
     </div>

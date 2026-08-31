@@ -16,6 +16,9 @@ use Sylament\Panels\Navigation\NavigationItem;
 use Sylament\Panels\Panel;
 use Sylament\Panels\PanelRegistry;
 use Sylament\Panels\Resources\Pages\PageRegistration;
+use Sylament\Panels\Resources\RelationManagers\RelationGroup;
+use Sylament\Panels\Resources\RelationManagers\RelationManager;
+use Sylament\Panels\Resources\RelationManagers\RelationManagerConfiguration;
 use Sylament\Panels\Resources\Resource\Concerns\HasGlobalSearch;
 use Sylament\Schemas\Schema;
 use Sylament\Schemas\State\PropertyAccessor;
@@ -107,6 +110,17 @@ abstract class Resource
      * @return array<string, PageRegistration>
      */
     public function getPages(): array
+    {
+        return [];
+    }
+
+    /**
+     * The relation managers a record page of this resource mounts, keyed by the
+     * identity its tab is activated under.
+     *
+     * @return array<class-string<RelationManager>|RelationGroup|RelationManagerConfiguration>
+     */
+    public function getRelations(): array
     {
         return [];
     }

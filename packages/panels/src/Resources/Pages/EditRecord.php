@@ -11,9 +11,10 @@ use Sylament\Actions\Action;
 use Sylament\Actions\CreateAction;
 use Sylament\Actions\DeleteAction;
 use Sylament\Actions\EditAction;
-use Sylament\Actions\Enums\ActionStatus;
 use Sylament\Actions\ViewAction;
 use Sylament\Notifications\Notification;
+use Sylament\Panels\Resources\Pages\Concerns\HasRelationManagers;
+use Sylament\Schemas\Components\EmbeddedSchema;
 use Sylament\Schemas\Concerns\HasSchemas;
 use Sylament\Schemas\Contracts\InteractsWithSchemas;
 use Sylament\Schemas\Schema;
@@ -26,9 +27,11 @@ use Symfony\UX\LiveComponent\Attribute\LiveProp;
 use Twig\Markup;
 
 use function Sylament\Support\blank;
+use function Sylament\Support\filled;
 
 abstract class EditRecord extends Page implements InteractsWithSchemas
 {
+    use HasRelationManagers;
     use HasSchemas;
 
     protected ?string $template = '@SylamentPanels/partials/EditRecord/index.html.twig';
@@ -85,6 +88,20 @@ abstract class EditRecord extends Page implements InteractsWithSchemas
         return $this->record;
     }
 
+    public function hasRecord(): bool
+    {
+        return filled($this->record);
+    }
+
+    /**
+     * The record's route key as the wire carries it — the value an embedded
+     * child is mounted with, where the record object itself cannot travel.
+     */
+    public function getRecordKey(): ?string
+    {
+        return $this->record;
+    }
+
     public function getRecord(): object
     {
         if ($this->resolvedRecord !== null) {
@@ -119,12 +136,25 @@ abstract class EditRecord extends Page implements InteractsWithSchemas
     }
 
     /**
+     * The relation managers this record shows, in the one component the four
+     * arms answer with. The form chrome stays in the template, so this is
+     * narrower than Filament's `content()`, which owns the whole page body.
+     */
+    public function content(Schema $schema): Schema
+    {
+        return $schema->components([
+            $this->getRelationManagersContentComponent(),
+        ]);
+    }
+
+    /**
      * @return array<string>
      */
     public function schemas(): array
     {
         return [
             'form',
+            'content',
         ];
     }
 
@@ -205,7 +235,10 @@ abstract class EditRecord extends Page implements InteractsWithSchemas
         $resource = $this->getResourceInstance();
 
         return match (true) {
-            $action instanceof CreateAction, $action instanceof EditAction => $resource->form(...),
+            $action instanceof CreateAction => $resource->form(...),
+            // The page's own edit modal is the page's own form: one tree, one
+            // state path, so the two views cannot drift apart.
+            $action instanceof EditAction => static fn (Schema $schema): Schema => $schema->components([EmbeddedSchema::make('form')]),
             $action instanceof ViewAction => fn (Schema $schema): Schema => $resource->infolist($resource->form($schema)),
             default => null,
         };
@@ -226,25 +259,6 @@ abstract class EditRecord extends Page implements InteractsWithSchemas
         }
 
         return $this->getRecord();
-    }
-
-    /**
-     * The modal renders a second component tree over the same record, so the
-     * page form is refilled from it rather than left showing pre-modal values.
-     * The refill goes through `fillForm()`, so a page that mutates or hooks on
-     * fill sees the same treatment it got at mount.
-     */
-    protected function afterActionCalled(Action $action): void
-    {
-        parent::afterActionCalled($action);
-
-        if (! $action instanceof EditAction || $action->getStatus() !== ActionStatus::Success || $this->record === null) {
-            return;
-        }
-
-        if ($action->getRecord() === $this->getRecord()) {
-            $this->fillForm();
-        }
     }
 
     /**

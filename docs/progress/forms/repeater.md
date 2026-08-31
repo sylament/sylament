@@ -184,6 +184,7 @@ meets the [existing loud refusal](../schemas/belongs-to-record.md#a-branch-the-r
 
 ### An item field derives no requirement from the record
 
+This is the **plain-array** repeater, and it is where the heading holds.
 [Derived requirement](can-be-validated.md#requirement-is-derived-from-the-records-write-side-types)
 reads the record's write-side type at the field's record path, and at
 `tags.{uuid}.name` there is nothing to read: the walk stops at `tags` (a plain
@@ -191,12 +192,24 @@ reads the record's write-side type at the field's record path, and at
 [docblock generics are invisible by design](../schemas/record-type-reader.md#docblock-generics-are-invisible-and-that-is-the-point)),
 `describe()` answers null, and null means
 [keep the pre-types behaviour](../schemas/record-type-reader.md#a-null-recordtarget-means-no-type-answer-not-no-such-property).
-So item fields are never auto-required and never auto-suppressed — an item
-field that must be filled says `required()` out loud, which validates per item
-through the ordinary collector. The repeater itself also derives nothing, by
-the existing `isCollection` skip. This is acceptance, not a gap to close:
-teaching `describe()` to see through an item segment would need element types
-that do not exist in the language.
+So such item fields are never auto-required and never auto-suppressed — one that
+must be filled says `required()` out loud, which validates per item through the
+ordinary collector. The repeater itself also derives nothing, by the existing
+`isCollection` skip. This is acceptance, not a gap to close: teaching
+`describe()` to see through an item segment would need element types that do not
+exist in the language.
+
+Under `relationship()` it is the other way round, since M3 · 10. Each item schema
+[binds the child it maps](#an-item-schema-is-stamped-with-the-child-it-maps), so
+the item schema *is*
+[the nearest record frame](../schemas/belongs-to-record.md#the-nearest-record-frame-is-the-first-node-above-a-component-that-binds-one)
+and the field's path is read against the child class with the item segment
+already stripped — no element type needed, because the association's target
+declares one. A `TextInput::make('heading')` over a non-nullable child property
+derives required; one over a nullable property does not. A `DateTimePicker`
+inside such an item reads its object class from that same frame. Nothing above
+changes: a plain-array repeater has no class to frame, so it derives nothing as
+it always did.
 
 ### Unmanaged item keys round-trip through the client
 
@@ -408,9 +421,15 @@ and from every flat walk, and an eager `require*()` there would relocate the fil
 and save edges' refusals into all of them. The cost is one accepted freeze:
 `Schema` memoizes its evaluated record, so the first read of an item schema wins
 and a structural read taken before the owner was bound can leave the class-string
-where a later read would have produced the instance. Correctness does not depend
-on it — a hook receives its record explicitly, and target resolution and the
-constraint frame need only the class.
+where a later read would have produced the instance. Almost nothing depends on
+which arm won — a hook receives its record explicitly, and target resolution and
+the constraint frame need only the class. The exception is `unique()`'s ignore
+arm, which reads the **instance** (a class-string binding answers `getRecord()`
+with `null` and does not walk to the parent for one), so a frozen item schema
+degrades it to no-ignore and the row being edited can be flagged as its own
+duplicate. No traced lifecycle reaches that freeze — every read of an item schema
+happens after the owner is bound — but it is the reason the freeze is recorded
+rather than dismissed.
 
 The stamp reaches past the routing, and that is the point rather than a side
 effect: every closure inside a stamped **item** is injected the child as

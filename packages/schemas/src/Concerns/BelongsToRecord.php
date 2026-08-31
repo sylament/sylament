@@ -34,6 +34,17 @@ trait BelongsToRecord
     }
 
     /**
+     * Whether this schema carries a binding of its own rather than inheriting one
+     * — the unevaluated property, so a class-string and a closure both count.
+     * Neither getter can answer it: {@see getRecord()} is null for a class-string
+     * binding and {@see getRecordClass()} walks the parent chain.
+     */
+    public function hasOwnRecord(): bool
+    {
+        return $this->record !== null;
+    }
+
+    /**
      * @return class-string|null
      */
     public function getRecordClass(): ?string

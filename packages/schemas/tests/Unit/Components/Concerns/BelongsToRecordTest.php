@@ -9,8 +9,10 @@ use Sylament\Schemas\Schema;
 use Sylament\Schemas\State\Get;
 use Sylament\Schemas\State\Set;
 use Sylament\Schemas\Tests\Fixtures\Components\StateField;
+use Sylament\Schemas\Tests\Fixtures\Components\StateGroup;
 use Sylament\Schemas\Tests\Fixtures\Concerns\RecordFixture;
 use Sylament\Schemas\Tests\Fixtures\Concerns\StateHostFixture;
+use Sylament\Schemas\Tests\Fixtures\State\PageRecord;
 
 it('falls back to the container record and class', function (): void {
     $record = new RecordFixture();
@@ -144,4 +146,67 @@ it('returns the whole path when it does not sit under the root prefix', function
     expect($field->getStatePath())->toBe('title')
         ->and($schema->getStatePath())->toBe('data')
         ->and($field->getRecordStatePath())->toBe('title');
+});
+
+it('frames a component on the root container when nothing between it binds a record', function (): void {
+    $field = Schema::make(new StateHostFixture())
+        ->statePath('data')
+        ->record(new RecordFixture())
+        ->components([StateField::make('author.name')])
+        ->getComponents()[0];
+
+    expect($field->getNearestRecordClass())->toBe(RecordFixture::class)
+        ->and($field->getNearestRecordStatePath())->toBe($field->getRecordStatePath())
+        ->and($field->getNearestRecordStatePath())->toBe('author.name');
+});
+
+it('frames a component on an intermediate component binding a record of its own', function (): void {
+    $schema = Schema::make(new StateHostFixture())
+        ->statePath('data')
+        ->record(new PageRecord())
+        ->components([
+            StateGroup::make()
+                ->statePath('author')
+                ->record(RecordFixture::class)
+                ->components([StateField::make('name')]),
+        ]);
+
+    $field = $schema->getFlatComponents(withActions: false)[1];
+
+    expect($field->getNearestRecordClass())->toBe(RecordFixture::class)
+        ->and($field->getNearestRecordStatePath())->toBe('name')
+        ->and($field->getRecordStatePath())->toBe('author.name');
+});
+
+it('frames a component on an intermediate child schema binding a record of its own', function (): void {
+    $host = new StateHostFixture();
+
+    $group = StateGroup::make()->components(
+        Schema::make($host)
+            ->statePath('author')
+            ->record(RecordFixture::class)
+            ->components([StateField::make('name')]),
+    );
+
+    $schema = Schema::make($host)
+        ->statePath('data')
+        ->record(new PageRecord())
+        ->components([$group]);
+
+    $field = $schema->getFlatComponents(withActions: false)[1];
+
+    expect($field->getNearestRecordClass())->toBe(RecordFixture::class)
+        ->and($field->getNearestRecordStatePath())->toBe('name')
+        ->and($field->getRecordStatePath())->toBe('author.name');
+});
+
+it('has no nearest record state path when the component carries no state path', function (): void {
+    $section = Schema::make(new StateHostFixture())
+        ->statePath('data')
+        ->record(new RecordFixture())
+        ->components([Section::make('Profile')])
+        ->getComponents()[0];
+
+    expect($section->getNearestRecordClass())->toBe(RecordFixture::class)
+        ->and($section->getNearestRecordStatePath())->toBeNull();
 });

@@ -58,6 +58,7 @@ Sylament-only.
 | [`getRecordClass()`](../../../packages/schemas/src/Concerns/BelongsToRecord.php) | [`getModel()`](../../../vendor/filament/schemas/src/Concerns/BelongsToModel.php) | done | — | [diverges](#the-record-vocabulary-collapses-onto-record) |
 | [`getRecord(bool $withParentComponentRecord = true)`](../../../packages/schemas/src/Concerns/BelongsToRecord.php) | [`getRecord()`](../../../vendor/filament/schemas/src/Concerns/BelongsToModel.php) | done | — | — |
 | [`getRecordInstance()`](../../../packages/schemas/src/Concerns/BelongsToRecord.php) | [`getModelInstance()`](../../../vendor/filament/schemas/src/Concerns/BelongsToModel.php) | done | — | [diverges](#getrecordinstance-constructs-with-new-not-the-container) |
+| [`hasOwnRecord()`](../../../packages/schemas/src/Concerns/BelongsToRecord.php) | — | done | — | [semantics](#the-nearest-record-frame-is-the-first-node-above-a-component-that-binds-one) |
 | [`getData(?array $state = null)`](../../../packages/schemas/src/Concerns/BelongsToRecord.php) | — | done | — | [diverges](#reads-are-lenient-writes-are-strict) · [diverges](#mapping-walks-the-record-graph-by-declared-leaf-paths) · [diverges](#a-missing-singular-intermediate-is-constructed-from-its-declared-type) · [semantics](#a-caller-that-has-already-validated-hands-the-state-in) · [semantics](#a-refused-submit-on-the-query-lane-shows-in-the-row-until-the-next-request) |
 | [`getData()`'s record-validation tail](../../../packages/schemas/src/Concerns/BelongsToRecord.php) + [`getRecordViolationPathTranslator()`](../../../packages/schemas/src/Concerns/BelongsToRecord.php) | — | done | — | [diverges](can-be-validated.md#record-sourced-constraints-are-validated-on-the-mapped-object) · [diverges](can-be-validated.md#a-refused-submit-leaves-the-record-mutated) · [detail](violation-path-translator.md) |
 | [`getNullableBranches()` + the branch pass in `getData()`](../../../packages/schemas/src/Concerns/BelongsToRecord.php) | — | done | — | [diverges](#a-declared-branch-is-nulled-whole-before-its-leaves-are-written) · [diverges](#a-component-can-own-its-whole-record-subtree) · [semantics](#a-branch-the-bag-no-longer-carries-is-skipped-not-nulled) · [semantics](#a-branch-the-record-cannot-null-is-refused-loudly) · [semantics](#a-nullable-branch-with-no-state-path-is-refused-not-ignored) · [semantics](#branches-are-ordered-by-path-depth-because-tree-order-is-not-path-order) |
@@ -77,6 +78,8 @@ Sylament-only.
 | [`getRecord(bool $withContainerRecord = true)`](../../../packages/schemas/src/Components/Concerns/BelongsToRecord.php) | [`getRecord()`](../../../vendor/filament/schemas/src/Components/Concerns/BelongsToModel.php) | done | — | [diverges](#the-record-type-probe-is-instanceof-not-a-model-gate) |
 | [`getRecordInstance()`](../../../packages/schemas/src/Components/Concerns/BelongsToRecord.php) | [`getModelInstance()`](../../../vendor/filament/schemas/src/Components/Concerns/BelongsToModel.php) | done | — | [diverges](#getrecordinstance-constructs-with-new-not-the-container) |
 | [`getRecordStatePath()`](../../../packages/schemas/src/Components/Concerns/BelongsToRecord.php) | — | done | — | [semantics](#getrecordstatepath-is-the-one-definition-of-record-relative-and-both-walks-must-share-it) |
+| [`hasOwnRecord()`](../../../packages/schemas/src/Components/Concerns/BelongsToRecord.php) | — | done | — | [semantics](#the-nearest-record-frame-is-the-first-node-above-a-component-that-binds-one) |
+| [`getNearestRecordClass()` / `getNearestRecordStatePath()`](../../../packages/schemas/src/Components/Concerns/BelongsToRecord.php) | — | done | — | [semantics](#the-nearest-record-frame-is-the-first-node-above-a-component-that-binds-one) |
 | [`ownsRecordSubtree()`](../../../packages/schemas/src/Components/Concerns/HasChildComponents.php) | — | done | — | [diverges](#a-component-can-own-its-whole-record-subtree) · [semantics](#two-components-cannot-both-map-one-record-path-wholesale) |
 | [`nullWhenBlank()` / `isNullableBranch()` / `shouldNullBranch()` / `isBlankStateValue()`](../../../packages/schemas/src/Components/Concerns/HasNullableBranch.php) | — | done | — | [diverges](#a-declared-branch-is-nulled-whole-before-its-leaves-are-written) · [semantics](#the-built-in-blank-test-asks-the-branchs-own-leaves) · [semantics](#a-branch-the-bag-no-longer-carries-is-skipped-not-nulled) · [semantics](#a-branch-the-record-cannot-null-is-refused-loudly) · [diverges](#a-nullwhenblank-closure-sees-two-different-bags) · [diverges](#a-doctrine-embeddable-cannot-be-nulled) |
 | [`loadStateFromRelationshipsUsing()` / `hasLoadStateFromRelationships()` / `loadStateFromRelationships(object $record)`](../../../packages/schemas/src/Components/Concerns/BelongsToRecord.php) | [`loadStateFromRelationshipsUsing()` / `loadStateFromRelationships()`](../../../vendor/filament/schemas/src/Components/Concerns/BelongsToModel.php) | done | — | [diverges](#the-relationship-hooks-are-consulted-by-the-two-mapping-edges-not-by-a-schema-level-walk) · [diverges](#the-exists-guarded-members-are-not-ported) · [semantics](#a-hook-the-record-path-map-does-not-carry-is-refused) |
@@ -160,7 +163,12 @@ tier by
 per-call re-evaluation, the detached-component all-null case and its still-working
 typed-closure evaluation, record injection, and `Get`/`Set` by type under
 non-mapped parameter names, which is what proves the by-type arm rather than the
-pre-existing by-name one); the fill walk by
+pre-existing by-name one; plus the nearest-frame pair — the root container when
+nothing between binds, where the path half must equal `getRecordStatePath()`, an
+intermediate **component** binding and an intermediate **child schema** binding,
+each framing the class and stripping its own prefix while the root-framed twin
+still spells the whole path, and a path-less component answering the class with a
+null path); the fill walk by
 [`Unit/Concerns/HasStateTest`](../../../packages/schemas/tests/Unit/Concerns/HasStateTest.php)
 (scoped read, null-fill of what the record cannot supply, uninitialized-property
 and object-value skips with both arms of the state-cast exemption beside them,
@@ -293,6 +301,40 @@ tests membership after the owner pass, so it costs no extra traversal and sees
 the map exactly as the two edges will consult it. It fires from `fill()` as well
 as `getData()` — both go through the map — so a misconfigured hook is reported
 on the first render, not first on submit.
+
+### The nearest record frame is the first node above a component that binds one
+
+`getRecordStatePath()` is root-framed: it strips the **root** container's state
+path, so its result indexes the root record. That is right for the map, which is
+built once at the root — and wrong for a component asking what its own path
+indexes once a subtree is bound to a different record, where the path segment
+naming the item (`record-4.author`) belongs to no property of anything.
+`getNearestRecordClass()` and `getNearestRecordStatePath()` are the frame-relative
+twins: the class of the nearest node above the component that binds a record of
+its own — container schemas and the components they hang off alike, **the
+component itself excluded** — and the component's path with that node's stripped.
+Both come off one private walk, so the class and the path can never name
+different frames. With nothing between, the frame is the root container and the
+path half equals `getRecordStatePath()`; the two diverge only where something in
+between binds.
+
+The probe the walk asks is `hasOwnRecord()`, new on both tiers, and it reads the
+**unevaluated** property. Neither existing getter can stand in: `getRecord()`
+returns `null` for a class-string binding, which is exactly the binding a subtree
+stamp uses, and `getRecordClass()` walks the chain, so it answers the same for a
+node that binds and one that inherits. Reading the raw property is also what
+keeps the walk free of side effects — the root tier
+[memoizes what it evaluates](#the-root-tier-memoizes-a-closure-record-the-component-tier-re-evaluates-it),
+and a frame walk that evaluated every node it passed would freeze closure
+bindings it merely looked at.
+
+The path half returns `null` twice over: for a component carrying no state path
+of its own, and for one whose path does not nest under the frame's. That second
+arm is where it parts company with `getRecordStatePath()`, which returns the
+whole path unstripped in the same situation. A path that does not nest under the
+frame's is not a path into the frame's record, and handing it to a type reader
+would answer about the wrong object; `null` is the caller's signal to fall back
+to whatever it did before a frame was involved.
 
 ### Two components cannot both map one record path wholesale
 

@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace Sylament\Schemas\Components\Concerns;
 
 use Closure;
+use Sylament\Schemas\Components\Component;
+use Sylament\Schemas\Schema;
 
 use function Sylament\Support\filled;
 
@@ -32,6 +34,17 @@ trait BelongsToRecord
         $this->record = $record;
 
         return $this;
+    }
+
+    /**
+     * Whether this component carries a binding of its own rather than inheriting
+     * one — the unevaluated property, so a class-string and a closure both count.
+     * Neither getter can answer it: {@see getRecord()} is null for a class-string
+     * binding and {@see getRecordClass()} walks the container chain.
+     */
+    public function hasOwnRecord(): bool
+    {
+        return $this->record !== null;
     }
 
     /**
@@ -101,6 +114,82 @@ trait BelongsToRecord
         return ($prefix !== '' && str_starts_with($path, $prefix))
             ? mb_substr($path, mb_strlen($prefix))
             : $path;
+    }
+
+    /**
+     * The record class of the nearest node framing this component — its own
+     * binding ignored, so a component asking what record its path is indexed
+     * against gets the answer the frame gives, not its own.
+     *
+     * @return class-string|null
+     */
+    public function getNearestRecordClass(): ?string
+    {
+        return $this->getNearestRecordFrame()?->getRecordClass();
+    }
+
+    /**
+     * This component's state path relative to the node framing it — the twin of
+     * {@see getRecordStatePath()}, which is always root-framed. Null when the
+     * component carries no path of its own or its path does not nest under the
+     * frame's, which is a caller's signal to fall back rather than to index the
+     * frame's record with a path that does not belong to it.
+     */
+    public function getNearestRecordStatePath(): ?string
+    {
+        $frame = $this->getNearestRecordFrame();
+
+        if (($frame === null) || ! $this->hasStatePath()) {
+            return null;
+        }
+
+        $path = $this->getStatePath();
+
+        if (! filled($path)) {
+            return null;
+        }
+
+        $framePath = $frame->getStatePath();
+
+        if (! filled($framePath)) {
+            return $path;
+        }
+
+        $prefix = $framePath . '.';
+
+        return str_starts_with($path, $prefix) ? mb_substr($path, mb_strlen($prefix)) : null;
+    }
+
+    /**
+     * The first node above this component — container schemas and the components
+     * they hang off alike, this component excluded — that binds a record of its
+     * own, else the root container. Null only while the container back-reference
+     * is unbound. One walk, so {@see getNearestRecordClass()} and
+     * {@see getNearestRecordStatePath()} cannot name different frames.
+     */
+    private function getNearestRecordFrame(): Schema|Component|null
+    {
+        if (! isset($this->container)) {
+            return null;
+        }
+
+        $container = $this->getContainer();
+
+        while (! $container->hasOwnRecord()) {
+            $parentComponent = $container->getParentComponent();
+
+            if ($parentComponent === null) {
+                return $container;
+            }
+
+            if ($parentComponent->hasOwnRecord()) {
+                return $parentComponent;
+            }
+
+            $container = $parentComponent->getContainer();
+        }
+
+        return $container;
     }
 
     public function getRecordInstance(): ?object

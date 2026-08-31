@@ -53,8 +53,12 @@ and the host-id minting in
 [`Unit/Concerns/HasSchemasTest`](../../../packages/schemas/tests/Unit/Concerns/HasSchemasTest.php).
 [`Integration/Components/LiveComponentRenderTest`](../../../packages/schemas/tests/Integration/Components/LiveComponentRenderTest.php)
 renders a real live host holding two embeds and asserts each child mounts once,
-carries its own `data()`, is a live root of its own, and gets the id its key
-derives.
+carries its own `data()`, is a live root of its own, gets the id its key derives,
+and — the property the whole design rests on — answers the **same** ids after a
+live round trip, which is what fails the moment `$schemasHostId` stops being a
+`LiveProp`. The host's two embeds name the same child differently, one by its
+registered `twig_component` name and one by its class-string, so both mount forms
+are covered.
 
 ## Semantics
 
@@ -63,8 +67,12 @@ derives.
 At the schema root tier `getComponent()` is the finder —
 [`Schema::getComponent($key)`](schema.md) walks the tree and returns a
 `Component`. Here it answers the **string** the embed will mount: a registered
-`twig_component` name, or a class-string for a class registered under its own
-FQCN (which is how panels registers a relation manager). The collision is
+`twig_component` name, or the class-string of any class-backed component, which
+`ComponentFactory::metadataFor()` resolves to that name through the
+class-string-keyed map `TwigComponentPass` builds
+([`ComponentFactory.php:63-68`](../../../vendor/symfony/ux-twig-component/src/ComponentFactory.php)) —
+so a relation manager can be embedded by class-string whatever name panels
+registered it under. The collision is
 Filament's — both members carry these names over there too — and it is worth
 knowing before reading a call site.
 
@@ -115,7 +123,20 @@ everything outside `[A-Za-z0-9_-]` replaced by `-` and prefixed `sy-live-`.
 The public API stays `key()` — Filament's vocabulary — but a keyless embed is a
 **`LogicException`**, not a silent fallback: Filament's keyless branch keys by
 component name, which gives two embeds of the same child one identity, and here
-that is not a cosmetic collision but two live components sharing a DOM id.
+that is not a cosmetic collision but two live components sharing a DOM id. The
+throw covers a keyless embed *under* a live host too, not only a hostless one —
+`getLiveComponentKey()` answers `null` on a blank key, matching
+[Filament's own `blank($key)` guard](../../../vendor/filament/schemas/src/Components/Concerns/HasKey.php),
+so `sy-live-{host id}-` can never be handed out as an id.
+
+The sanitiser is lossy, and deliberately so: it maps *every* character outside
+`[A-Za-z0-9_-]` to `-`, so two keys differing only in a separator (`a.b` and
+`a-b`) collapse onto one id. Keys are author-written and scoped to one host, so
+the collision needs two embeds keyed on purpose to differ only there — but the
+group arm keys an embed `"{class}-{group key}"` off a backslash-heavy
+class-string, which is exactly the shape where separators carry the meaning.
+Reach for a hash-style disambiguator if that ever bites; do not widen the
+character class, since the id lands raw in an HTML attribute.
 
 ### The host id is minted by the host, because UX has no stable component id
 

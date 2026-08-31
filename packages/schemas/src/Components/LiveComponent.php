@@ -41,9 +41,9 @@ class LiveComponent extends Component
     }
 
     /**
-     * The registered name of the live component to mount — a
-     * `twig_component.defaults`-derived name or, for a class registered under
-     * its own FQCN, that class-string.
+     * The name of the live component to mount — its registered
+     * `twig_component` name, or the class-string of a class-backed component,
+     * which UX resolves to that name through its component class map.
      */
     public function getComponent(): string
     {

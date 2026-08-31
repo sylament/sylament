@@ -302,7 +302,10 @@ announces `form-validation-error`, and `dispatchClientSideStateReset()` is
 ported here as a one-method surface on `Schema` announcing
 `reset-schema-component-state` with `{schemaKey: getKey()}` (Filament sends
 `livewireId` beside the key; a browser event dispatched on the host's own root
-has nothing left for an id to disambiguate — [renames.md](../renames.md#idiom)). Nothing in the port **calls** the reset yet — Filament's callers are
+has nothing left for an id to disambiguate — the host id that *does* exist,
+[`getSchemasHostId()`](live-component.md#the-host-id-is-minted-by-the-host-because-ux-has-no-stable-component-id),
+is a DOM-key prefix, not a listener filter). Nothing in the port **calls** the
+reset yet — Filament's callers are
 `CreateRecord`'s create-another and `CreateAction`, neither of which has landed —
 so it ships as the announcement half of a wired pair, exercised by a fixture
 action in `HasSchemasValidationTest`.

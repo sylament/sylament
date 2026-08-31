@@ -36,8 +36,6 @@ it('evaluates a data closure with the component injection', function (): void {
 });
 
 it('mounts the child with its data and no implicit record prop', function (): void {
-    // UX's hydrator refuses an unknown prop where Livewire ignores it, so the
-    // embed never adds Filament's implicit `record`.
     expect(LiveComponent::make('ChildComponent', ['a' => 1])->getComponentProperties())
         ->toBe(['a' => 1]);
 });
@@ -69,6 +67,14 @@ it('falls back to the bare key when the embed has no live host', function (): vo
 it('throws when a keyless embed is asked for its child id', function (): void {
     $embed = LiveComponent::make('ChildComponent');
     Schema::make()->components([$embed])->getComponents();
+
+    expect(fn (): string => $embed->getChildId())
+        ->toThrow(LogicException::class, 'key()');
+});
+
+it('throws for a keyless embed even under a live host', function (): void {
+    $embed = LiveComponent::make('ChildComponent');
+    Schema::make(new HasSchemasFixture())->components([$embed])->getComponents();
 
     expect(fn (): string => $embed->getChildId())
         ->toThrow(LogicException::class, 'key()');

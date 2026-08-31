@@ -1,1 +1,4 @@
-{{ component(component.getComponent, component.getComponentProperties|merge({id: component.getChildId})) }}
+{{ component(component.getComponent, {
+    ...component.getComponentProperties,
+    id: component.getChildId,
+}) }}

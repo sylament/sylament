@@ -14,7 +14,8 @@ use Symfony\UX\LiveComponent\DefaultActionTrait;
 /**
  * A live host whose schema embeds two keyed children, so one render proves both
  * that a child is mounted and that two embeds off the same partial line keep
- * distinct identities.
+ * distinct identities. The two name the same child differently — by registered
+ * name and by class-string — so both mount forms are exercised.
  */
 #[AsLiveComponent(name: 'EmbedHost', template: '@SchemasFixtures/components/EmbedHost.html.twig')]
 class EmbedHost implements InteractsWithSchemas
@@ -27,7 +28,7 @@ class EmbedHost implements InteractsWithSchemas
         return $schema->components([
             LiveComponent::make('EmbeddedChild', ['label' => 'first'])
                 ->key('first'),
-            LiveComponent::make('EmbeddedChild', ['label' => 'second'])
+            LiveComponent::make(EmbeddedChild::class, ['label' => 'second'])
                 ->key('second'),
         ]);
     }

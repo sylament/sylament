@@ -30,6 +30,15 @@ it('gives each embed the id derived from its own key', function (): void {
     ]);
 });
 
+it('keeps each child id stable across a live round trip', function (): void {
+    $component = $this->createLiveComponent('EmbedHost');
+
+    $first = $component->render()->crawler()->filter('.embedded-child')->extract(['id']);
+    $second = $component->refresh()->render()->crawler()->filter('.embedded-child')->extract(['id']);
+
+    expect($second)->toBe($first);
+});
+
 it('mounts each child as a live component of its own', function (): void {
     $roots = $this->createLiveComponent('EmbedHost')
         ->render()

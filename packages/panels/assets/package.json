@@ -11,6 +11,11 @@
   },
   "symfony": {
     "controllers": {
+      "global-search": {
+        "main": "dist/controllers/global_search_controller.js",
+        "fetch": "eager",
+        "enabled": true
+      },
       "sidebar": {
         "main": "dist/controllers/sidebar_controller.js",
         "fetch": "eager",

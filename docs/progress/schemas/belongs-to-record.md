@@ -86,7 +86,7 @@ Sylament-only.
 | [`nullWhenBlank()` / `isNullableBranch()` / `shouldNullBranch()` / `isBlankStateValue()`](../../../packages/schemas/src/Components/Concerns/HasNullableBranch.php) | — | done | — | [diverges](#a-declared-branch-is-nulled-whole-before-its-leaves-are-written) · [semantics](#the-built-in-blank-test-asks-the-branchs-own-leaves) · [semantics](#a-branch-the-bag-no-longer-carries-is-skipped-not-nulled) · [semantics](#a-branch-the-record-cannot-null-is-refused-loudly) · [diverges](#a-nullwhenblank-closure-sees-two-different-bags) · [diverges](#a-doctrine-embeddable-cannot-be-nulled) |
 | [`loadStateFromRelationshipsUsing()` / `hasLoadStateFromRelationships()` / `loadStateFromRelationships(object $record)`](../../../packages/schemas/src/Components/Concerns/BelongsToRecord.php) | [`loadStateFromRelationshipsUsing()` / `loadStateFromRelationships()`](../../../vendor/filament/schemas/src/Components/Concerns/BelongsToModel.php) | done | — | [diverges](#the-relationship-hooks-are-consulted-by-the-two-mapping-edges-not-by-a-schema-level-walk) · [diverges](#the-exists-guarded-members-are-not-ported) · [semantics](#a-hook-the-record-path-map-does-not-carry-is-refused) |
 | [`saveRelationshipsUsing()` / `hasSaveRelationships()` / `saveRelationships(object $record, mixed $state)`](../../../packages/schemas/src/Components/Concerns/BelongsToRecord.php) | [`saveRelationshipsUsing()` / `saveRelationships()`](../../../vendor/filament/schemas/src/Components/Concerns/BelongsToModel.php) | done | — | [diverges](#the-relationship-hooks-are-consulted-by-the-two-mapping-edges-not-by-a-schema-level-walk) · [diverges](#the-exists-guarded-members-are-not-ported) · [semantics](#a-hook-the-record-path-map-does-not-carry-is-refused) · [semantics](#nullwhenblank-cannot-compose-with-a-save-hook) |
-| Nested hook delegation beneath a subtree owner | [`Schema::saveRelationships()`'s tree walk](../../../vendor/filament/schemas/src/Concerns/BelongsToModel.php) · [`Repeater::saveToRelationship()`'s `$item->model($record)->saveRelationships()`](../../../vendor/filament/forms/src/Components/Repeater.php) | in progress | — | [detail](#a-relationship-hook-beneath-a-subtree-owner-has-nowhere-to-fire) · [semantics](#a-hook-a-subtree-owner-routes-is-delegated-rather-than-refused) |
+| Nested hook delegation beneath a subtree owner | [`Schema::saveRelationships()`'s tree walk](../../../vendor/filament/schemas/src/Concerns/BelongsToModel.php) · [`Repeater::saveToRelationship()`'s `$item->model($record)->saveRelationships()`](../../../vendor/filament/forms/src/Components/Repeater.php) | done | — | [detail](#a-relationship-hook-beneath-a-subtree-owner-has-nowhere-to-fire) · [semantics](#a-hook-a-subtree-owner-routes-is-delegated-rather-than-refused) |
 | [`setAssociationReader()` / `getAssociationReader()`](../../../packages/schemas/src/Components/Concerns/CanAccessAssociations.php) — composed from `CanAccessAssociations` | — | done | — | [semantics](#every-component-reaches-the-association-reader-through-a-required-setter) |
 | `saveRelationshipsBeforeChildrenUsing()` / `saveRelationshipsBeforeChildren()` | [`Components/Concerns/BelongsToModel.php`](../../../vendor/filament/schemas/src/Components/Concerns/BelongsToModel.php) | skipped | — | [diverges](#the-relationship-hooks-are-consulted-by-the-two-mapping-edges-not-by-a-schema-level-walk) |
 | `saveRelationshipsWhenDisabled()` / `saveRelationshipsWhenHidden()` / their `should*` readers | [`Components/Concerns/BelongsToModel.php`](../../../vendor/filament/schemas/src/Components/Concerns/BelongsToModel.php) | skipped | — | [diverges](#the-exists-guarded-members-are-not-ported) |
@@ -218,37 +218,20 @@ than the `new`-built fallback).
 
 ### A relationship hook beneath a subtree owner has nowhere to fire
 
-The mapper's half of the delegation is
-[in place](#a-hook-a-subtree-owner-routes-is-delegated-rather-than-refused): an
-owner can vouch for an owner-relative path through
-`routesNestedRelationshipHookAt()`, `getNestedRelationshipHooks()` is the walk it
-answers from, and `getNearestRecordClass()` / `getNearestRecordStatePath()` frame
-a nested component on the record its subtree actually maps. What is missing is
-every consumer of all three: **no owner overrides the vouch yet**, so the default
-`false` still refuses a relation-backed field inside a
-[`Repeater::relationship()`](../forms/repeater.md) or an
-[entangled layout component](entangles-state-with-singular-relationship.md) —
-Filament's ordinary shape for a join entity carrying a payload, a repeater over
-`ArticleContributor` with a `Select::make('author')` mapping that row's
-`ManyToOne` inside it.
-
-Two things are still absent, one per owner-side piece.
-
-**Neither owner binds its subtree to the record it maps.** A hook is called with
-the record it writes onto, and the repeater stamps no item schema with its child
-— `getRecord()` falls through the parent chain to the root record, so a hook that
-did fire would be handed the wrong object. The singular owner carries the same
-hole under a row of its own,
-[the child schema is not re-rooted](entangles-state-with-singular-relationship.md#the-child-schema-is-not-re-rooted-onto-the-related-record).
-
-**Both owners map their subtree by scalar leaf path only.** Each reads a declared
-leaf off the related record and skips the value when it is an object
-(`Repeater::getItemsFromRelationship()`,
-`EntanglesStateWithSingularRelationship::getStateFromRelationship()`), and each
-writes it back through `PropertyAccessor::setOnRecord()`. An association is an
-object on the way in and needs an entity on the way out, so until each walk runs
-the hooks the discovery hands it — and subtracts the paths it claimed from its
-own leaf read and write — the leaf walk can neither fill one nor save one.
+Closed under M3 · 10, in the shape
+[the mapper's half](#a-hook-a-subtree-owner-routes-is-delegated-rather-than-refused)
+anticipated: both owners now vouch through `routesNestedRelationshipHookAt()`,
+answer it from `getNestedRelationshipHooks()`, and route what they vouched for —
+[the repeater by the item](../forms/repeater.md#a-nested-relation-backed-field-is-routed-by-the-item-not-by-the-map),
+[the entangled layout components onto the related record](entangles-state-with-singular-relationship.md#the-subtree-is-re-rooted-and-its-nested-hooks-are-routed-onto-the-related-record)
+— each stamping its subtree with the record it maps
+([the item stamp](../forms/repeater.md#an-item-schema-is-stamped-with-the-child-it-maps),
+[the trait's `getChildSchema()` override](entangles-state-with-singular-relationship.md#the-stamp-is-a-closure-floored-at-the-target-class))
+and subtracting the claimed paths from its scalar leaf walk, per edge. The
+join-entity shape that opened the epic — a contributors repeater whose
+`Select::make('author')` maps the row's own `ManyToOne` — fills, saves, swaps
+and clears through the delegation, and the demo's article form is the
+browser-proven vertical.
 
 Both exits the refusal names are still dead for that shape until they land. The
 field cannot move out from under the owner without leaving the item it describes,
@@ -397,7 +380,12 @@ node that binds and one that inherits. Reading the raw property is also what
 keeps the walk free of side effects — the root tier
 [memoizes what it evaluates](#the-root-tier-memoizes-a-closure-record-the-component-tier-re-evaluates-it),
 and a frame walk that evaluated every node it passed would freeze closure
-bindings it merely looked at.
+bindings it merely looked at. The trade runs the other way too: those getters
+memoize the *evaluated* value back onto the property, so a closure binding that
+resolves `null` answers the probe `true` before any getter runs and `false`
+after — two different frames across calls. Unreachable through the shipped
+stamps, whose resolution floors at the target class-string and yields `null`
+only in trees where every frame answer is `null` anyway.
 
 The path half returns `null` twice over: for a component carrying no state path
 of its own, and for one whose path does not nest under the frame's. That second

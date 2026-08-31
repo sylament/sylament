@@ -91,7 +91,7 @@ there. Milestones prove out here (see `docs/progress/roadmap.md`).
   the demo seed (idempotent per table; `app:demo:seed --fresh` truncates and
   reseeds); `task test` is the demo gate — it creates/migrates the test
   database, runs the demo's own PHPStan (level max over `src/`, with a frozen
-  baseline holding nine errors and `reportUnmatchedIgnoredErrors` off, unlike
+  baseline holding ten errors and `reportUnmatchedIgnoredErrors` off, unlike
   the monorepo), and PHPUnit. DB-touching tools must run through the Symfony
   CLI (`symfony php vendor/bin/phpunit`) — the docker Postgres publishes a
   random host port and only the CLI injects the matching `DATABASE_URL`. The

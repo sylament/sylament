@@ -260,7 +260,7 @@ to the object property — the write
 
 Filament binds the child schema to a value it has already resolved —
 `$this->getCachedExistingRecord() ?? $this->getRelatedModel()`, an instance or a
-class-string. Ours is a closure instead, re-applied on every uncached
+class-string. Ours is a closure instead, re-applied on every
 `getChildSchema()` call, and its resolution is **soft**: the association object
 when the record holds one, else the target class the mapping names, else null.
 Two facts force the shape. A record that evaluates to `null` falls through to the

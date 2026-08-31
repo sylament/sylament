@@ -76,6 +76,16 @@ registered it under. The collision is
 Filament's — both members carry these names over there too — and it is worth
 knowing before reading a call site.
 
+### Preservation rides on the child declaring no updateFromParent props
+
+A child with no `updateFromParent` prop has an empty fingerprint, and an empty
+fingerprint is what makes a parent re-render preserve the child wholesale — an
+untouched `data-live-preserve` stub, zero requests, state intact. Declaring
+`updateFromParent: true` on any prop re-opens the parent-pushes-props channel
+and with it the re-render; a relation manager deliberately declares none, since
+its owner cannot change within a page's life (a different owner is a different
+URL, i.e. a fresh mount).
+
 ## Divergences
 
 ### The two constructor arguments arrive through setters

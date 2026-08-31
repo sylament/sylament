@@ -146,6 +146,15 @@ leaves the manager's table. The Integration suite pins it, because the obvious
 reading (a `DeleteAction` on a resource-shaped host sends you to the index) is
 what the resource pages do and what a reader would expect here.
 
+### There is no refresh-after-save eventing, and that is parity
+
+Filament v5.7.6 defines no relation-manager listener, no emitted event and no
+parent-saved refresh signal — a preserved child deliberately does not re-render
+on the parent page's save, and this port matches it. A consumer who wants one
+wires it themselves with `emitUp()` + a `#[LiveListener]` on the manager — never
+a bare `emit()`, which is a page-wide broadcast costing one HTTP request per
+receiving listener.
+
 ## Divergences
 
 ### The manager stands beside the resource page base rather than under it

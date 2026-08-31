@@ -1310,10 +1310,11 @@ same shape as `@sylament/notifications`: three Stimulus controllers build to its
 compiles into support's single built CSS. The built `dist` is mapped into
 AssetMapper as `@sylament/panels`. The ten style files carry the `sy-pa-*` rules
 mobile-first — off-canvas drawer below `lg`, two-column grid at `lg` and up — and
-they are imported in **shell-nesting** order rather than alphabetically
-(`layout`, `logo`, `sidebar`, `topbar`, `global-search`, `user-menu`,
-`theme-switcher`, `header`, `page`, `resources`), so the file reads outside-in
-the way the DOM nests. Three of them are worth naming:
+the first nine are imported in **shell-nesting** order rather than alphabetically
+(`layout`, `logo`, `sidebar`, `topbar`, `user-menu`, `theme-switcher`, `header`,
+`page`, `resources`), so the file reads outside-in the way the DOM nests.
+`global-search` is the exception: it is appended tenth rather than sitting at its
+nesting position inside the topbar. Three of them are worth naming:
 
 - `layout.css` owns `.sy-pa-body`, the shell root, and the two custom properties
   the shell reads off it: `--sy-sidebar-width` (the drawer's width, a

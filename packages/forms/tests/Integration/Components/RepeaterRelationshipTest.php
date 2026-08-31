@@ -649,6 +649,65 @@ it('vouches only for an item path its items declare a hook at', function (): voi
         ->and($repeater->routesNestedRelationshipHookAt('.author'))->toBeFalse();
 });
 
+it('leaves a decoration schema on the owner record', function (): void {
+    $entityManager = $this::getContainer()->get(EntityManagerInterface::class);
+    [$post] = seedSectionedPost($entityManager);
+
+    $seen = 'unset';
+
+    $repeater = Repeater::make('sections')
+        ->relationship()
+        ->belowContent([
+            TextInput::make('note')->label(static function (?object $record) use (&$seen): string {
+                $seen = $record;
+
+                return 'note';
+            }),
+        ])
+        ->components([TextInput::make('heading')]);
+
+    [$schema] = wireRelationshipRepeater($repeater, $post);
+
+    $schema->fill($post);
+
+    $decoration = $repeater->getChildSchema(Repeater::BELOW_CONTENT_SCHEMA_KEY);
+    $decoration?->getComponents(withActions: false)[0]->getLabel();
+
+    expect($seen)->toBe($post)
+        ->and($decoration?->hasOwnRecord())->toBeFalse()
+        ->and($repeater->getChildSchema()?->hasOwnRecord())->toBeTrue();
+});
+
+it('takes a hand-supplied item under a load-only hook without demanding a schema', function (): void {
+    $entityManager = $this::getContainer()->get(EntityManagerInterface::class);
+    [$post] = seedSectionedPost($entityManager);
+
+    $repeater = Repeater::make('sections')
+        ->relationship()
+        ->components([
+            TextInput::make('heading'),
+            TextInput::make('body')->loadStateFromRelationshipsUsing(static fn (): string => 'loaded'),
+        ]);
+
+    [$schema, $host] = wireRelationshipRepeater($repeater, $post);
+
+    $schema->fill($post);
+
+    expect(array_first($host->data['sections'])['body'])->toBe('loaded');
+
+    $state = $schema->getState();
+    $state['sections']['hand-supplied'] = ['heading' => 'three', 'body' => 'written'];
+
+    $schema->getData($state);
+
+    $added = $post->getSections()->last();
+    assert($added instanceof PostSection);
+
+    expect($post->getSections()->count())->toBe(3)
+        ->and($added->getHeading())->toBe('three')
+        ->and($added->getBody())->toBe('written');
+});
+
 it('refuses a hooked select in a decoration schema loudly', function (): void {
     $entityManager = $this::getContainer()->get(EntityManagerInterface::class);
     [$post] = seedSectionedPost($entityManager);

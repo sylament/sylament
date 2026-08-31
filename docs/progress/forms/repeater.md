@@ -344,10 +344,10 @@ child schema, off a clone, the same discipline
 [`getItemStatePaths()`](#every-item-schema-is-keyed-as-well-as-re-pathed) uses.
 The save has the real thing, so it reads the **per-item** schema, whose
 components are the very ones the map dropped. It asks for that schema only where
-the template declares a hook to route, which is what keeps an item a caller added
-by hand to the array it passed `getData()` on the leaf-only path it always took;
-where a hook *is* routed, an item with no schema is a broken invariant and
-throws.
+the template declares a **save** hook — the one edge that reads it — which is
+what keeps an item a caller added by hand to the array it passed `getData()` on
+the leaf-only path it always took; where a save hook *is* routed, an item with no
+schema is a broken invariant and throws.
 
 Claimed paths leave the leaf walk — the hook's own key and everything under
 `key.` — and the subtraction is **per edge**, mirroring the root edges exactly:
@@ -375,9 +375,18 @@ stamp, so each item schema carries one, in Filament's own two arms: a `record-`
 item resolves the child off the owner's collection by
 [record key](../schemas/association-reader.md), and a client-added item, having
 no child yet, floors at the association's target class-string. Ours stamps the
-class-string one level earlier as well — on the item **template**, and through it
-on every child schema of a relationship repeater — because the fill discovers
-from that template, before an item schema exists to have been stamped.
+class-string one level earlier as well — on the item **template**, the `default`
+key every item schema is cloned from — because the fill discovers from that
+template, before an item schema exists to have been stamped.
+
+The stamp stops at that key, and the boundary is the same one the vouch draws.
+A **decoration** schema (`belowContent()` and its nine siblings) belongs to the
+repeater rather than to an item, neither edge walks one, and its components map
+nothing of the child — so framing one on the child would answer every `$record`
+inside it with `null` (a `Schema` holding a class-string returns no instance and
+does not walk to its parent for one) and would make it the nearest record frame
+for a derivation that means the owner. Decoration schemas keep the owner's
+record, inherited, exactly as they did before `relationship()` was declared.
 
 The floor is load-bearing rather than tidy. `Schema`'s record getters walk to the
 parent when their own binding evaluates to `null`, so a stamp that could resolve
@@ -398,7 +407,7 @@ on it — a hook receives its record explicitly, and target resolution and the
 constraint frame need only the class.
 
 The stamp reaches past the routing, and that is the point rather than a side
-effect: every closure inside a stamped item is injected the **child** as
+effect: every closure inside a stamped **item** is injected the child as
 `$record`, and everything derived from `getRecordClass()` follows it — a nested
 field's own association resolution, and the entity a `unique()` or `exists()`
 probes when it names none. Filament reads the same way (`getRecord()` walks to

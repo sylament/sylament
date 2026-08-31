@@ -1519,18 +1519,21 @@ class Repeater extends Field implements CanConcealComponents, HasExtraItemAction
     }
 
     /**
-     * Every child schema of a relationship repeater — the item template, the item
-     * schemas built from it, and the decoration schemas alike — is stamped with
-     * the association's target class, so a component inside one resolves the
-     * child's class before any child exists to resolve. The resolution is soft
-     * on purpose: this seam runs from every structural read, and the fill and
-     * save edges own the refusals a mapping failure earns.
+     * The item **template** of a relationship repeater is stamped with the
+     * association's target class, so a component inside an item resolves the
+     * child's class before any child exists to resolve — and only the template,
+     * which is the `default` key every item schema is cloned from. A decoration
+     * schema is the repeater's own, not an item's: neither edge walks one, so
+     * framing it on the child would hand its closures a record its own component
+     * never maps. The resolution is soft on purpose: this seam runs from every
+     * structural read, and the fill and save edges own the refusals a mapping
+     * failure earns.
      */
     protected function configureChildSchema(Schema $schema, string $key): Schema
     {
         $schema = parent::configureChildSchema($schema, $key);
 
-        if (! $this->hasRelationship()) {
+        if (($key !== 'default') || ! $this->hasRelationship()) {
             return $schema;
         }
 
@@ -1705,7 +1708,10 @@ class Repeater extends Field implements CanConcealComponents, HasExtraItemAction
         $accessor = $this->getPropertyAccessor();
         $itemStatePaths = $this->getItemStatePaths();
         $orderColumn = $this->getOrderColumn();
-        $routesNestedHooks = $this->getTemplateNestedRelationshipHooks() !== [];
+        $routesSaveHooks = array_any(
+            $this->getTemplateNestedRelationshipHooks(),
+            static fn (Component $component): bool => $component->hasSaveRelationships(),
+        );
 
         $related = $accessor->getFromRecord($record, $name);
 
@@ -1747,7 +1753,7 @@ class Repeater extends Field implements CanConcealComponents, HasExtraItemAction
                 'drop relationship() and add the records by hand after getData().',
             );
 
-            $saveHooks = $routesNestedHooks
+            $saveHooks = $routesSaveHooks
                 ? array_filter(
                     $this->getItemSchemaOrFail((string) $itemKey)->getNestedRelationshipHooks(),
                     static fn (Component $component): bool => $component->hasSaveRelationships(),
@@ -1802,8 +1808,9 @@ class Repeater extends Field implements CanConcealComponents, HasExtraItemAction
     /**
      * The schema of a submitted item, whose components are the very ones the
      * record path map dropped in this repeater's favour. Only asked for where
-     * the template declares a hook to route, so an item a caller added to the
-     * state it handed `getData()` still takes the leaf-only path it always did.
+     * the template declares a **save** hook to route — the one edge that reads
+     * it — so an item a caller added to the state it handed `getData()` still
+     * takes the leaf-only path it always did.
      *
      * @throws LogicException when the item has no schema, which a routed item
      *                        cannot reach: the item schemas are built from the

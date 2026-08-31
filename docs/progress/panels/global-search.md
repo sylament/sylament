@@ -58,19 +58,23 @@ do.
 | [`globalSearchDebounce()`](../../../packages/panels/src/Panel/Concerns/HasGlobalSearch.php) | `Panel\Concerns\HasGlobalSearch::globalSearchDebounce()` | done | — | — |
 | [`getGlobalSearchDebounce()`](../../../packages/panels/src/Panel/Concerns/HasGlobalSearch.php) | `Panel\Concerns\HasGlobalSearch::getGlobalSearchDebounce()` | done | — | — |
 | [`getGlobalSearchDebounceMilliseconds()`](../../../packages/panels/src/Panel/Concerns/HasGlobalSearch.php) | — | done | — | [semantics](#the-debounce-is-translated-for-ux-live-component-the-way-tables-already-does-it) |
-| [`globalSearchKeyBindings()`](../../../packages/panels/src/Panel/Concerns/HasGlobalSearch.php) | `Panel\Concerns\HasGlobalSearch::globalSearchKeyBindings()` | done | — | — |
-| [`getGlobalSearchKeyBindings()`](../../../packages/panels/src/Panel/Concerns/HasGlobalSearch.php) | `Panel\Concerns\HasGlobalSearch::getGlobalSearchKeyBindings()` | done | — | — |
+| [`globalSearchKeyBindings()`](../../../packages/panels/src/Panel/Concerns/HasGlobalSearch.php) | `Panel\Concerns\HasGlobalSearch::globalSearchKeyBindings()` | done | — | [diverges](#the-key-binding-is-suppressed-while-a-modal-is-open) |
+| [`getGlobalSearchKeyBindings()`](../../../packages/panels/src/Panel/Concerns/HasGlobalSearch.php) | `Panel\Concerns\HasGlobalSearch::getGlobalSearchKeyBindings()` | done | — | [diverges](#the-key-binding-is-suppressed-while-a-modal-is-open) |
 | [`globalSearchFieldSuffix()`](../../../packages/panels/src/Panel/Concerns/HasGlobalSearch.php) | `Panel\Concerns\HasGlobalSearch::globalSearchFieldSuffix()` | done | — | — |
 | [`getGlobalSearchFieldSuffix()`](../../../packages/panels/src/Panel/Concerns/HasGlobalSearch.php) | `Panel\Concerns\HasGlobalSearch::getGlobalSearchFieldSuffix()` | done | — | — |
 | [`isGlobalSearchEnabled()`](../../../packages/panels/src/Panel/Concerns/HasGlobalSearch.php) | `FilamentManager::isGlobalSearchEnabled()` | done | — | [semantics](#isglobalsearchenabled-moved-off-the-manager-onto-the-panel) |
 | `globalSearchPosition` | `HasGlobalSearch::globalSearch()`'s `$position` | skipped | — | [diverges](#the-panels-position-platform-suffix-and-opt-in-arms-are-not-ported) |
 | `globalSearchFieldKeyBindingSuffix()` | `Panel\Concerns\HasGlobalSearch::globalSearchFieldKeyBindingSuffix()` | skipped | — | [diverges](#the-panels-position-platform-suffix-and-opt-in-arms-are-not-ported) |
 | `globalSearchResourceOptIn()` | `Panel\Concerns\HasGlobalSearch::globalSearchResourceOptIn()` | skipped | — | [diverges](#the-panels-position-platform-suffix-and-opt-in-arms-are-not-ported) |
-| [`GlobalSearch` component](../../../packages/panels/src/Twig/Components/GlobalSearch.php) | [`Livewire/GlobalSearch.php`](../../../vendor/filament/filament/src/Livewire/GlobalSearch.php) | done | — | [semantics](#the-component-restores-its-panel-onto-a-live-request) · [diverges](#nothing-dispatches-an-open-event-a-morph-reopens-the-panel) |
+| [`GlobalSearch` component](../../../packages/panels/src/Twig/Components/GlobalSearch.php) | [`Livewire/GlobalSearch.php`](../../../vendor/filament/filament/src/Livewire/GlobalSearch.php) | done | — | [semantics](#the-component-restores-its-panel-onto-a-live-request) · [diverges](#nothing-dispatches-an-open-event-a-morph-reopens-the-panel) · [diverges](#the-searched-term-is-trimmed) |
 | [Search template](../../../packages/panels/templates/components/GlobalSearch/index.html.twig) | [`livewire/global-search.blade.php`](../../../vendor/filament/filament/resources/views/livewire/global-search.blade.php) | done | — | [semantics](#the-stimulus-controller-rides-the-inner-element-not-the-live-root) |
 | [Topbar mount](../../../packages/panels/templates/components/Topbar/index.html.twig) | [`livewire/topbar.blade.php`](../../../vendor/filament/filament/resources/views/livewire/topbar.blade.php)'s `fi-topbar-end` | done | — | [semantics](#the-topbar-mount-is-a-threaded-flag-rather-than-a-facade-call) |
 | [`PanelsIconAlias::GLOBAL_SEARCH_FIELD`](../../../packages/panels/src/Twig/PanelsIconAlias.php) | `PanelsIconAlias::GLOBAL_SEARCH_FIELD` | done | — | — |
+| The `sylament--panels--global-search` Stimulus controller | the field's `x-mousetrap.global` binding and the results container's inline Alpine `x-data` | done | — | [diverges](#the-key-binding-is-suppressed-while-a-modal-is-open) |
 | Render hooks around the field | `PanelsRenderHook::GLOBAL_SEARCH_*` | skipped | — | [diverges](#the-render-hooks-around-the-field-have-no-port-target) |
+| Busy indicator on the field | the input wrapper's `wire:target="search"` in [`livewire/global-search.blade.php`](../../../vendor/filament/filament/resources/views/livewire/global-search.blade.php) | blocked | a loading branch on support's [`InputWrapper`](../../../packages/support/templates/components/InputWrapper/index.html.twig) | [diverges](#the-field-carries-no-busy-indicator) |
+| Results panel enter/leave fade | `x-transition:enter-start` / `x-transition:leave-end` on `fi-global-search-results-ctn` | skipped | — | [diverges](#the-panel-opens-and-closes-with-no-fade) |
+| Topbar-end `x-persist` | [`livewire/topbar.blade.php`](../../../vendor/filament/filament/resources/views/livewire/topbar.blade.php)'s `x-persist="topbar.end.panel-…"` | skipped | — | [diverges](#there-is-no-spa-navigation-for-the-field-to-survive) |
 | _rest not audited yet_ | | | | |
 
 ## Details
@@ -301,3 +305,78 @@ redeclaring the property as `false` on the base it shares. And the static
 configures its sort by redeclaring `$globalSearchSort`, the same way it
 redeclares every other static on this concern. The `getGlobalSearchSort()`
 getter **is** ported, and the provider sorts by it.
+
+### The searched term is trimmed
+
+`GlobalSearch::getResults()` trims once and searches the trimmed term. Filament
+trims too — but only for the guard: `$search = trim($this->search)` decides
+whether to bail, and the line after it hands the provider **`$this->search`**,
+the untrimmed prop. So typing `"  ada "` there searches for `"  ada "`, and what
+that costs depends on the term splitter: with `shouldSplitGlobalSearchTerms()`
+on, the splitter drops the blank words and the query is the same; switch it off
+and the padded string is the `LIKE` pattern, matching nothing. Ours cannot
+disagree with itself that way, and the shape is
+[`CanSearchRecords::getTableSearch()`](../../../packages/tables/src/Concerns/CanSearchRecords.php)'s
+— `mb_trim()`, blank treated as nothing searched for — already the port's answer
+for the table search field one package down. Two search inputs in the same shell
+answering the same keystrokes differently would be the stranger result.
+
+### The key binding is suppressed while a modal is open
+
+Filament binds ⌘K through `x-mousetrap.global`, which fires wherever focus is —
+including inside an open modal, where the shortcut pulls focus out of a dialog
+the user is still answering and past the modal's own focus trap. The
+`sylament--panels--global-search` controller tests for a visible
+`[aria-modal="true"]` element that does not contain the search field before it
+takes the keystroke, and does nothing when it finds one. That is a deliberate
+behaviour difference rather than a mechanism translation, and it is the reason
+the binding is a bare `keydown` listener with a hand-written modifier test
+rather than Stimulus' own key filters: those demand an exact modifier match, so
+one `mod+k` binding covering both platforms cannot be expressed as a descriptor
+— the same call
+[`sidebar_controller.ts`](../../../packages/panels/assets/src/controllers/sidebar_controller.ts)
+already makes for its Escape handler. The binding **values** are Filament's
+mousetrap-style combos, unchanged.
+
+### The panel opens and closes with no fade
+
+Filament's results container is Alpine-driven: `x-show="isOpen"` plus
+`x-transition:enter-start="fi-transition-enter-start"` and
+`x-transition:leave-end="fi-transition-leave-end"`, a pair of opacity classes
+that fade the panel in and out. Ours is the bare `hidden` attribute — the
+controller sets it to close, and the next morph re-stamps the server's markup
+without it — so both directions are instant. `hidden` is `display: none`, which
+a plain CSS transition does not animate in or out of, so keeping the fade would
+mean re-introducing the two state classes and the timing that sequences them
+against the attribute, for an affordance a server-driven open/close already
+makes unambiguous. The two `fi-transition-*` rules are therefore not ported
+either.
+
+### There is no SPA navigation for the field to survive
+
+Filament wraps its whole `fi-topbar-end` in
+`x-persist="topbar.end.panel-{id}"`, so a Livewire SPA navigation re-uses the
+existing topbar DOM instead of re-rendering it and a half-typed query survives
+the page change. Our shell does full page loads —
+[it is not live](README.md#the-shell-is-not-live), and nothing in it
+teleports across a navigation — so there is no re-render for the directive to
+skip. It returns only if the shell ever gains SPA navigation, and then for the
+whole topbar rather than for the search alone.
+
+### The field carries no busy indicator
+
+Filament passes `wire:target="search"` to its input wrapper, which swaps the
+prefix magnifying glass for a spinner while the search request is in flight.
+Support's [`InputWrapper`](../../../packages/support/templates/components/InputWrapper/index.html.twig)
+has no loading branch, and adding one is a cross-package template change six
+suites render against — so v1 ships without the affordance and the gap is
+recorded here rather than worked around locally.
+
+The design when it lands: ux-live-component ships a `LoadingPlugin` that reads
+`data-loading` off any element inside a live root and scopes it to one action or
+model (`data-loading="model(search)|…"`, the direct translation of
+`wire:target="search"`), so the seam is a prop on `InputWrapper` — a loading
+target it stamps onto the prefix slot — rather than anything global search owns.
+Doing it that way is what makes the same indicator available to tables' search
+field and to every text-like forms control, which is also why it is not worth
+half-building inside this template.

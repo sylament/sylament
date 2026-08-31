@@ -128,10 +128,23 @@ client-side, and the only interactive parts (the mobile drawer, per-group
 collapse) are markup plus one Stimulus controller. A live shell would buy
 re-rendering on the server and cost a component round-trip on every page.
 
-Revisit when something in the shell must change without a navigation — the
-database-backed notifications trigger is the first candidate, since an unread
-count in the topbar is a server fact that changes between page loads. Until then
-the divergence is a simplification, not a gap.
+One thing in the shell has since needed exactly that round trip, and it is not
+the one this entry predicted. M6 · 4's [global search](global-search.md) asks
+the server between navigations — a query in, matching records out — so the
+topbar now carries a live root. It is a **sibling** of the static shell rather
+than a wrapper around it: `Topbar` stays anonymous and renders
+`<twig:SylamentPanels:GlobalSearch />` inside `sy-pa-topbar-end`, which is where
+the live boundary begins and ends. So the round trip is paid by the one element
+that needs it, and everything else in the bar still renders once per page. That
+component is also the toolkit's **first** `#[AsLiveComponent]` in `packages/*/src`
+— panels' pages are live too, but they are registered by
+[a compiler pass](#pages-register-as-live-components-through-a-compiler-pass-not-per-class-attributes)
+rather than by the attribute.
+
+Revisit the rest when something else in the shell must change without a
+navigation — the database-backed notifications trigger is the next candidate,
+since an unread count in the topbar is a server fact that changes between page
+loads. Until then the divergence is a simplification, not a gap.
 
 ## Components
 
@@ -162,6 +175,10 @@ The panel surface —
 | [`Resources\Pages\ListRecords`](../../../packages/panels/src/Resources/Pages/ListRecords.php) | [`Resources/Pages/ListRecords.php`](../../../vendor/filament/filament/src/Resources/Pages/ListRecords.php) | in progress | [ListRecords](#listrecords) |
 | [`Resources\Pages\CreateRecord`](../../../packages/panels/src/Resources/Pages/CreateRecord.php) | [`Resources/Pages/CreateRecord.php`](../../../vendor/filament/filament/src/Resources/Pages/CreateRecord.php) | in progress | [CreateRecord](#createrecord) |
 | [`Resources\Pages\EditRecord`](../../../packages/panels/src/Resources/Pages/EditRecord.php) | [`Resources/Pages/EditRecord.php`](../../../vendor/filament/filament/src/Resources/Pages/EditRecord.php), [`Resources/Pages/Concerns/InteractsWithRecord.php`](../../../vendor/filament/filament/src/Resources/Pages/Concerns/InteractsWithRecord.php) | in progress | [EditRecord](#editrecord) |
+| [`GlobalSearch\GlobalSearchResult`](../../../packages/panels/src/GlobalSearch/GlobalSearchResult.php), [`GlobalSearchResults`](../../../packages/panels/src/GlobalSearch/GlobalSearchResults.php) | [`GlobalSearch/GlobalSearchResult.php`](../../../vendor/filament/filament/src/GlobalSearch/GlobalSearchResult.php), [`GlobalSearchResults.php`](../../../vendor/filament/filament/src/GlobalSearch/GlobalSearchResults.php) | in progress | [global-search.md](global-search.md) |
+| [`GlobalSearch\Providers\DefaultGlobalSearchProvider`](../../../packages/panels/src/GlobalSearch/Providers/DefaultGlobalSearchProvider.php) and its [contract](../../../packages/panels/src/GlobalSearch/Providers/Contracts/GlobalSearchProvider.php) | [`GlobalSearch/Providers`](../../../vendor/filament/filament/src/GlobalSearch/Providers) | in progress | [global-search.md](global-search.md) |
+| [`GlobalSearch\GlobalSearchProviderRegistry`](../../../packages/panels/src/GlobalSearch/GlobalSearchProviderRegistry.php) | no Filament counterpart — a provider is resolved with `app($panel->getGlobalSearchProvider())` | in progress | [global-search.md](global-search.md#the-provider-is-resolved-through-a-tagged-registry-rather-than-app) |
+| [`Twig\Components\GlobalSearch`](../../../packages/panels/src/Twig/Components/GlobalSearch.php) | [`Livewire/GlobalSearch.php`](../../../vendor/filament/filament/src/Livewire/GlobalSearch.php) | in progress | [global-search.md](global-search.md), and [the shell's first live root](#the-shell-is-not-live) |
 | _rest not audited yet_ | | | |
 
 ### NavigationItem
@@ -313,7 +330,7 @@ pick the mini one for.
 ### Panel
 
 The definition surface a panel provider configures, plus the two services that
-collect and locate panels. `Panel` composes six of Filament's `Panel/Concerns`
+collect and locate panels. `Panel` composes seven of Filament's `Panel/Concerns`
 traits — `HasId` (write-once id, fatal when read unset), `HasRoutes` (the path
 only), `HasComponents` ([`pages()` and `resources()`, each accumulating,
 de-duplicated and
@@ -321,8 +338,19 @@ re-indexed](#getpages-re-indexes-where-filament-keeps-array_uniques-gapped-keys)
 `HasNavigation` (`navigationGroups()`/`navigationItems()` registration plus
 `getNavigation()`), `HasSidebar` (`collapsibleNavigationGroups()` alone — the
 panel-level default [`NavigationGroup::isCollapsible()`](#navigationgroup) falls
-back to) and `HasBrandName` — with `default()`/`isDefault()` on the class itself,
-matching Filament.
+back to), `HasBrandName` and
+[`HasGlobalSearch`](global-search.md) (the provider switch plus the field's
+debounce, key bindings and suffix) — with `default()`/`isDefault()` on the class
+itself, matching Filament.
+
+`HasGlobalSearch` carries one member Filament files elsewhere:
+`isGlobalSearchEnabled()` is a `FilamentManager` method over there, and there is
+no manager here — a panel is reached through `PanelRegistry`/`CurrentPanel` — so
+it sits on the panel under its **unchanged** Filament name. A relocation, not a
+rename, which is why it earns no row in
+[the rename table](../renames.md) and is recorded
+[here and in global-search.md](global-search.md#isglobalsearchenabled-moved-off-the-manager-onto-the-panel)
+instead.
 
 `getNavigation()` is the assembly step: it clones every item each registered page
 contributes, then every item each registered resource contributes, then the
@@ -381,7 +409,7 @@ route loader is where a non-`Resource` entry is caught. Both readers are live:
 [`PanelRouteLoader`](#routing) mounts every page a registered resource declares,
 and `getNavigation()` above merges the item that resource contributes.
 
-Deferred, all todo: the other 28 `Panel/Concerns` traits (auth, tenancy, colors,
+Deferred, all todo: the other 27 `Panel/Concerns` traits (auth, tenancy, colors,
 assets, render hooks, middleware, plugins, …); `discoverResources()` /
 `discoverPages()`, Filament's filesystem-scanning registration arms, which the
 [tag-collected](#resources-are-collected-from-a-tag-not-discovered-on-the-filesystem)
@@ -486,9 +514,16 @@ What is ported, by cluster:
   [`Panel::getNavigation()`](#panel) is what calls it — the resource never pushes
   its item anywhere, which is the
   [pull model](#resource-navigation-is-pulled-through-the-registry-not-pushed-by-the-resource).
+- **Global search.** The one cluster that is a **trait** rather than a section of
+  `Resource` itself, filed exactly where Filament files it:
+  `Sylament\Panels\Resources\Resource\Concerns\HasGlobalSearch`, which is what
+  created the package's first `Resources/Resource/Concerns/` directory. Its
+  surface, what it defers, and the whole feature around it — the two value
+  objects, the provider contract and the panel knobs — are
+  [global-search.md](global-search.md); nothing about it is repeated here.
 
 Deferred, all todo: authorization (`canAccess()` and the whole `HasAuthorization`
-cluster), global search, widgets, sub-navigation, clusters, tenancy,
+cluster), widgets, sub-navigation, clusters, tenancy,
 nested/parent resources, resource configurations, and `getRelations()`.
 `configureTable()`'s seeding of table-level labels landed with the tables label
 surface — on [`ListRecords::table()`](#the-list-pages-table-is-stamped-query-first-and-resource-last),
@@ -532,10 +567,15 @@ Divergences, each with its own entry:
 and [a `new`-built resource fails fast](#a-new-built-resource-fails-fast-rather-than-degrading).
 
 **One structural decision is deferred, not settled.** Filament splits its
-`Resource` across five traits in
-[`Resources/Resource/Concerns`](../../../vendor/filament/filament/src/Resources/Resource/Concerns)
-— `HasLabels`, `HasPages`, `HasRoutes`, `HasNavigation`, `CanGenerateUrls` — and
-ours is one file. That is deliberate for now rather than a miss: the class is the
+`Resource` across twelve traits in
+[`Resources/Resource/Concerns`](../../../vendor/filament/filament/src/Resources/Resource/Concerns),
+five of which cover what shipped first — `HasLabels`, `HasPages`, `HasRoutes`,
+`HasNavigation`, `CanGenerateUrls` — and ours holds all five in one file.
+`HasGlobalSearch` is the exception and does not reopen the question: it arrived
+whole, as one self-contained cluster with nothing of the original five entangled
+in it, so there was no guess to make about where its members belong. That is the
+bar the rest of the split has to clear too. The one file is deliberate for now
+rather than a miss: the class is the
 largest new file the resource epic added, but the deferred list above is longer
 than what shipped, so splitting now would file each trait against a guess at
 where the unported members land — and a trait whose contents are guessed is
@@ -1138,6 +1178,7 @@ they sit per subsystem:
 | --- | --- | --- | --- |
 | [`DependencyInjection\Compiler\PageComponentPass`](../../../packages/panels/src/DependencyInjection/Compiler/PageComponentPass.php) | [`Panel/Concerns/HasComponents.php`](../../../vendor/filament/filament/src/Panel/Concerns/HasComponents.php) — `registerLivewireComponents()` / `queueLivewireComponentForRegistration()` | in progress | every `Page` service is autoconfigured `sylament.panels.page` and the pass tags it as a live `twig.component` keyed by `Page::getComponentName()`, rendering through `template_from_method: getTemplate`; it also builds the class-keyed `ServiceLocator` `PageController` reads pages from — [why a pass rather than an attribute](#pages-register-as-live-components-through-a-compiler-pass-not-per-class-attributes) |
 | [`DependencyInjection\Compiler\ResourcePass`](../../../packages/panels/src/DependencyInjection/Compiler/ResourcePass.php) | no Filament counterpart — resource discovery is [`Panel/Concerns/HasComponents.php`](../../../vendor/filament/filament/src/Panel/Concerns/HasComponents.php) `discoverResources()`, a filesystem scan | in progress | every `Resource` service is autoconfigured `sylament.panels.resource` and the pass collects the non-abstract ones into the class-keyed `ServiceLocator` `ResourceRegistry` reads — [Resources](#resources) |
+| [`DependencyInjection\Compiler\GlobalSearchProviderPass`](../../../packages/panels/src/DependencyInjection/Compiler/GlobalSearchProviderPass.php) | no Filament counterpart — a provider class-string is handed straight to `app()` | in progress | the same three-piece shape one feature over: every `GlobalSearchProvider` service is autoconfigured `sylament.panels.global_search_provider` and the pass collects the tagged definitions into the class-keyed `ServiceLocator` `GlobalSearchProviderRegistry` reads — [global-search.md](global-search.md#the-provider-is-resolved-through-a-tagged-registry-rather-than-app) |
 | _rest not audited yet_ | | | |
 
 ## Supporting surface
@@ -1152,8 +1193,8 @@ Enums, contracts, HTTP layer, events, templates —
 | Item | Ports | Status | Detail |
 | --- | --- | --- | --- |
 | [Layout templates](../../../packages/panels/templates/components) | [`resources/views/components`](../../../vendor/filament/filament/resources/views/components) | in progress | [Layout templates](#layout-templates) |
-| [`Twig\PanelsIconAlias`](../../../packages/panels/src/Twig/PanelsIconAlias.php) | [`View/PanelsIconAlias.php`](../../../vendor/filament/filament/src/View/PanelsIconAlias.php) | in progress | seven constants: six of Filament's 32 — the sidebar group chevron, the topbar hamburger, the three theme-switcher glyphs ([Layout templates](#layout-templates)) and the dashboard's navigation icon ([Dashboard](#dashboard)) — plus [the user-menu trigger, which is an invention](#user_menu_trigger-is-an-addition-not-a-rename) |
-| [Assets (JS/CSS)](../../../packages/panels/assets) | [`resources/js/`](../../../vendor/filament/filament/resources/js), [`resources/css/`](../../../vendor/filament/filament/resources/css) | in progress | the `@sylament/panels` workspace ships two Stimulus controllers (`sidebar`, `theme`) and the `sy-pa-*` rules, which compile into support's stylesheet — [Assets](#assets) |
+| [`Twig\PanelsIconAlias`](../../../packages/panels/src/Twig/PanelsIconAlias.php) | [`View/PanelsIconAlias.php`](../../../vendor/filament/filament/src/View/PanelsIconAlias.php) | in progress | eight constants: seven of Filament's 32 — the sidebar group chevron, the topbar hamburger, the three theme-switcher glyphs ([Layout templates](#layout-templates)), the dashboard's navigation icon ([Dashboard](#dashboard)) and the global search field's magnifying glass ([global-search.md](global-search.md)) — plus [the user-menu trigger, which is an invention](#user_menu_trigger-is-an-addition-not-a-rename) |
+| [Assets (JS/CSS)](../../../packages/panels/assets) | [`resources/js/`](../../../vendor/filament/filament/resources/js), [`resources/css/`](../../../vendor/filament/filament/resources/css) | in progress | the `@sylament/panels` workspace ships three Stimulus controllers (`sidebar`, `theme`, `global-search`) and the `sy-pa-*` rules, which compile into support's stylesheet — [Assets](#assets) |
 | [`Routing\PanelRouteLoader`](../../../packages/panels/src/Routing/PanelRouteLoader.php) | [`routes/web.php`](../../../vendor/filament/filament/routes/web.php) — the per-panel route group and its `$page::registerRoutes($panel)` / `$resource::registerRoutes($panel)` loops, [`Pages/Concerns/HasRoutes.php`](../../../vendor/filament/filament/src/Pages/Concerns/HasRoutes.php) `routes()`, [`Resources/Resource/Concerns/HasRoutes.php`](../../../vendor/filament/filament/src/Resources/Resource/Concerns/HasRoutes.php) `registerRoutes()` | in progress | [Routing](#routing) |
 | [`Controllers\PageController`](../../../packages/panels/src/Controllers/PageController.php) | no Filament counterpart — a Filament page **is** its own route action | in progress | [Routing](#routing) |
 | [Document template](../../../packages/panels/templates/partials/Document/index.html.twig) | [`components/layout/base.blade.php`](../../../vendor/filament/filament/resources/views/components/layout/base.blade.php) | in progress | [Routing](#routing) |
@@ -1264,15 +1305,15 @@ and [the render tests sit under
 ### Assets
 
 `packages/panels/assets` is the `@sylament/panels` pnpm workspace, JS-only in the
-same shape as `@sylament/notifications`: two Stimulus controllers build to its own
+same shape as `@sylament/notifications`: three Stimulus controllers build to its own
 `dist`, while `src/styles/index.css` is imported by support's stylesheet and
 compiles into support's single built CSS. The built `dist` is mapped into
-AssetMapper as `@sylament/panels`. The nine style files carry the `sy-pa-*` rules
+AssetMapper as `@sylament/panels`. The ten style files carry the `sy-pa-*` rules
 mobile-first — off-canvas drawer below `lg`, two-column grid at `lg` and up — and
 they are imported in **shell-nesting** order rather than alphabetically
-(`layout`, `logo`, `sidebar`, `topbar`, `user-menu`, `theme-switcher`, `header`,
-`page`, `resources`), so the file reads outside-in the way the DOM nests.
-Three of them are worth naming:
+(`layout`, `logo`, `sidebar`, `topbar`, `global-search`, `user-menu`,
+`theme-switcher`, `header`, `page`, `resources`), so the file reads outside-in
+the way the DOM nests. Three of them are worth naming:
 
 - `layout.css` owns `.sy-pa-body`, the shell root, and the two custom properties
   the shell reads off it: `--sy-sidebar-width` (the drawer's width, a
@@ -1290,6 +1331,18 @@ Three of them are worth naming:
 
 The active sidebar item paints from the
 [fixed `primary` palette](#the-active-sidebar-item-paints-a-fixed-primary-shade).
+
+The third controller, `global-search`, arrived with
+[the topbar search](global-search.md), and where it binds is load-bearing: it
+rides the inner `.sy-pa-global-search` div rather than the live root above it,
+because that root's attribute bag already carries `data-controller="live"` and
+[`attrs()` replaces a repeated attribute rather than appending](global-search.md#the-stimulus-controller-rides-the-inner-element-not-the-live-root).
+It is declared `fetch: eager` like the other two, and it shares their failure
+mode: a consuming app that leaves the block out of `assets/controllers.json`
+gets a field that renders and searches — `data-model` is what queries the
+server — but no ⌘K binding, no Escape, no click-away and no arrow-key walk
+through the results, with no error anywhere
+([installation.md](../../installation.md)).
 
 **The panel's font is Inter, and it is scoped.** `.sy-pa-body` sets
 `font-(family-name:--sy-font)`, where `--sy-font` is a support-level token

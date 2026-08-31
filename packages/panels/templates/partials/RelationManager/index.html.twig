@@ -1,0 +1,11 @@
+{% set heading = this.getTitle(this.getOwnerRecord, this.getPageClass) %}
+
+<section {{ attrs({class: 'sy sy-pa-relation-manager'}, attributes.all) }}>
+    <header class="sy-pa-relation-manager-header">
+        <h3 class="sy-pa-relation-manager-heading">{{ heading }}</h3>
+    </header>
+
+    {{ renderTable() }}
+
+    <twig:SylamentActions:Modals />
+</section>

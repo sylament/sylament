@@ -179,6 +179,8 @@ The panel surface —
 | [`GlobalSearch\Providers\DefaultGlobalSearchProvider`](../../../packages/panels/src/GlobalSearch/Providers/DefaultGlobalSearchProvider.php) and its [contract](../../../packages/panels/src/GlobalSearch/Providers/Contracts/GlobalSearchProvider.php) | [`GlobalSearch/Providers`](../../../vendor/filament/filament/src/GlobalSearch/Providers) | in progress | [global-search.md](global-search.md) |
 | [`GlobalSearch\GlobalSearchProviderRegistry`](../../../packages/panels/src/GlobalSearch/GlobalSearchProviderRegistry.php) | no Filament counterpart — a provider is resolved with `app($panel->getGlobalSearchProvider())` | in progress | [global-search.md](global-search.md#the-provider-is-resolved-through-a-tagged-registry-rather-than-app) |
 | [`Twig\Components\GlobalSearch`](../../../packages/panels/src/Twig/Components/GlobalSearch.php) | [`Livewire/GlobalSearch.php`](../../../vendor/filament/filament/src/Livewire/GlobalSearch.php) | in progress | [global-search.md](global-search.md), and [the shell's first live root](#the-shell-is-not-live) |
+| [`Resources\RelationManagers\RelationManager`](../../../packages/panels/src/Resources/RelationManagers/RelationManager.php) | [`Resources/RelationManagers/RelationManager.php`](../../../vendor/filament/filament/src/Resources/RelationManagers/RelationManager.php), [`Resources/Concerns/InteractsWithRelationshipTable.php`](../../../vendor/filament/filament/src/Resources/Concerns/InteractsWithRelationshipTable.php) | in progress | [RelationManager](relation-manager.md) |
+| [`Resources\RelationManagers\RelationGroup`](../../../packages/panels/src/Resources/RelationManagers/RelationGroup.php) (+ `RelationManagerConfiguration`) | [`Resources/RelationManagers/RelationGroup.php`](../../../vendor/filament/filament/src/Resources/RelationManagers/RelationGroup.php), [`Resources/RelationManagers/RelationManagerConfiguration.php`](../../../vendor/filament/filament/src/Resources/RelationManagers/RelationManagerConfiguration.php) | in progress | [RelationGroup](relation-group.md) |
 | _rest not audited yet_ | | | |
 
 ### NavigationItem
@@ -1177,6 +1179,7 @@ they sit per subsystem:
 | Feature | Ports | Status | Detail |
 | --- | --- | --- | --- |
 | [`DependencyInjection\Compiler\PageComponentPass`](../../../packages/panels/src/DependencyInjection/Compiler/PageComponentPass.php) | [`Panel/Concerns/HasComponents.php`](../../../vendor/filament/filament/src/Panel/Concerns/HasComponents.php) — `registerLivewireComponents()` / `queueLivewireComponentForRegistration()` | in progress | every `Page` service is autoconfigured `sylament.panels.page`; the pass throws for a page class missing the bare `#[AsLiveComponent]` UX reflects for, clears the attribute-derived `twig.component` tag and re-adds a live one keyed by `Page::getComponentName()`, rendering through `template_from_method: getTemplate`; it also builds the class-keyed `ServiceLocator` `PageController` reads pages from — [the attribute and the pass, and why both](#pages-register-as-live-components-through-a-compiler-pass-over-a-per-class-attribute) |
+| [`DependencyInjection\Compiler\RelationManagerComponentPass`](../../../packages/panels/src/DependencyInjection/Compiler/RelationManagerComponentPass.php) | [`Panel/Concerns/HasComponents.php`](../../../vendor/filament/filament/src/Panel/Concerns/HasComponents.php) — the same Livewire component registration, which Filament reaches for relation managers through a resource's `getRelations()` | in progress | every `RelationManager` service is autoconfigured `sylament.panels.relation_manager`, and the pass is `PageComponentPass` minus the controller locator — [the attribute, the tag swap, and why a manager needs both](relation-manager.md#a-manager-must-carry-aslivecomponent-and-the-pass-enforces-it) |
 | [`DependencyInjection\Compiler\ResourcePass`](../../../packages/panels/src/DependencyInjection/Compiler/ResourcePass.php) | no Filament counterpart — resource discovery is [`Panel/Concerns/HasComponents.php`](../../../vendor/filament/filament/src/Panel/Concerns/HasComponents.php) `discoverResources()`, a filesystem scan | in progress | every `Resource` service is autoconfigured `sylament.panels.resource` and the pass collects the non-abstract ones into the class-keyed `ServiceLocator` `ResourceRegistry` reads — [Resources](#resources) |
 | [`DependencyInjection\Compiler\GlobalSearchProviderPass`](../../../packages/panels/src/DependencyInjection/Compiler/GlobalSearchProviderPass.php) | no Filament counterpart — a provider class-string is handed straight to `app()` | in progress | the same three-piece shape one feature over: every `GlobalSearchProvider` service is autoconfigured `sylament.panels.global_search_provider` and the pass collects the tagged definitions into the class-keyed `ServiceLocator` `GlobalSearchProviderRegistry` reads — [global-search.md](global-search.md#the-provider-is-resolved-through-a-tagged-registry-rather-than-app) |
 | _rest not audited yet_ | | | |
@@ -1202,7 +1205,8 @@ Enums, contracts, HTTP layer, events, templates —
 | [ListRecords template](../../../packages/panels/templates/partials/ListRecords/index.html.twig) | no Filament counterpart — v5's list page has no view of its own; [`ListRecords::content()`](../../../vendor/filament/filament/src/Resources/Pages/ListRecords.php) returns a schema holding an [`EmbeddedTable`](../../../vendor/filament/schemas/src/Components/EmbeddedTable.php) | in progress | [ListRecords](#listrecords) |
 | [CreateRecord template](../../../packages/panels/templates/partials/CreateRecord/index.html.twig) | no Filament counterpart — v5's create page has no view either; [`CreateRecord::content()`](../../../vendor/filament/filament/src/Resources/Pages/CreateRecord.php) returns a schema holding a `Form` wrapping an `EmbeddedSchema` and the form `Actions` | in progress | [CreateRecord](#createrecord) |
 | [EditRecord template](../../../packages/panels/templates/partials/EditRecord/index.html.twig) | same — [`EditRecord::content()`](../../../vendor/filament/filament/src/Resources/Pages/EditRecord.php) | in progress | [EditRecord](#editrecord) |
-| [`SylamentPanelsBundle`](../../../packages/panels/src/SylamentPanelsBundle.php) | [`FilamentServiceProvider.php`](../../../vendor/filament/filament/src/FilamentServiceProvider.php) | in progress | autoconfigures the three tags (`sylament.panels.panel_provider` / `.page` / `.resource`), registers `PageComponentPass` and `ResourcePass`, wires `Panel`, the two registries, `CurrentPanel`, `PageController` and the `routing.route_loader`, and prepends `@sylament/panels` into AssetMapper — [providers are collected by tag](#panels-are-collected-from-tagged-providers-not-registered-imperatively), [pages register through a pass](#pages-register-as-live-components-through-a-compiler-pass-over-a-per-class-attribute), [resources from a tag](#resources-are-collected-from-a-tag-not-discovered-on-the-filesystem) |
+| [RelationManager template](../../../packages/panels/templates/partials/RelationManager/index.html.twig) | [`resources/views/resources/relation-manager.blade.php`](../../../vendor/filament/filament/resources/views/resources/relation-manager.blade.php) | in progress | [RelationManager](relation-manager.md#the-manager-renders-a-template-not-a-content-schema) |
+| [`SylamentPanelsBundle`](../../../packages/panels/src/SylamentPanelsBundle.php) | [`FilamentServiceProvider.php`](../../../vendor/filament/filament/src/FilamentServiceProvider.php) | in progress | autoconfigures the four tags (`sylament.panels.panel_provider` / `.page` / `.resource` / `.relation_manager`), registers `PageComponentPass`, `RelationManagerComponentPass` and `ResourcePass`, wires `Panel`, the two registries, `CurrentPanel`, `PageController` and the `routing.route_loader`, and prepends `@sylament/panels` into AssetMapper — [providers are collected by tag](#panels-are-collected-from-tagged-providers-not-registered-imperatively), [pages register through a pass](#pages-register-as-live-components-through-a-compiler-pass-over-a-per-class-attribute), [relation managers through their own](relation-manager.md#a-manager-must-carry-aslivecomponent-and-the-pass-enforces-it), [resources from a tag](#resources-are-collected-from-a-tag-not-discovered-on-the-filesystem) |
 | _rest not audited yet_ | | | |
 
 ### Layout templates
@@ -1308,13 +1312,14 @@ and [the render tests sit under
 same shape as `@sylament/notifications`: three Stimulus controllers build to its own
 `dist`, while `src/styles/index.css` is imported by support's stylesheet and
 compiles into support's single built CSS. The built `dist` is mapped into
-AssetMapper as `@sylament/panels`. The ten style files carry the `sy-pa-*` rules
+AssetMapper as `@sylament/panels`. The eleven style files carry the `sy-pa-*` rules
 mobile-first — off-canvas drawer below `lg`, two-column grid at `lg` and up — and
 the first nine are imported in **shell-nesting** order rather than alphabetically
 (`layout`, `logo`, `sidebar`, `topbar`, `user-menu`, `theme-switcher`, `header`,
 `page`, `resources`), so the file reads outside-in the way the DOM nests.
-`global-search` is the exception: it is appended tenth rather than sitting at its
-nesting position inside the topbar. Three of them are worth naming:
+`global-search` and `relation-manager` are the exceptions: appended tenth and
+eleventh rather than sitting at their nesting positions. Four of them are worth
+naming:
 
 - `layout.css` owns `.sy-pa-body`, the shell root, and the two custom properties
   the shell reads off it: `--sy-sidebar-width` (the drawer's width, a
@@ -1329,6 +1334,10 @@ nesting position inside the topbar. Three of them are worth naming:
   (`.sy-pa-resource-form-actions`) and the record-level error list
   (`.sy-pa-resource-form-errors`, reading the `danger` palette the way forms'
   per-field errors do).
+- `relation-manager.css` is the [manager's](relation-manager.md) three rules:
+  the column that stacks its header over its table, the header row, and the
+  heading's own type — the chrome Filament's `Table::heading()` would otherwise
+  carry.
 
 The active sidebar item paints from the
 [fixed `primary` palette](#the-active-sidebar-item-paints-a-fixed-primary-shade).

@@ -8,3 +8,4 @@
 @import './components/page.css' layer(components);
 @import './components/resources.css' layer(components);
 @import './components/global-search.css' layer(components);
+@import './components/relation-manager.css' layer(components);

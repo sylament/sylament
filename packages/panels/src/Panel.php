@@ -7,6 +7,7 @@ namespace Sylament\Panels;
 use Closure;
 use Sylament\Panels\Panel\Concerns\HasBrandName;
 use Sylament\Panels\Panel\Concerns\HasComponents;
+use Sylament\Panels\Panel\Concerns\HasGlobalSearch;
 use Sylament\Panels\Panel\Concerns\HasId;
 use Sylament\Panels\Panel\Concerns\HasNavigation;
 use Sylament\Panels\Panel\Concerns\HasRoutes;
@@ -17,6 +18,7 @@ class Panel extends Component
 {
     use HasBrandName;
     use HasComponents;
+    use HasGlobalSearch;
     use HasId;
     use HasNavigation;
     use HasRoutes;

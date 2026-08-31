@@ -53,6 +53,19 @@ do.
 | [`GlobalSearchProvider`](../../../packages/panels/src/GlobalSearch/Providers/Contracts/GlobalSearchProvider.php) | [`Providers/Contracts/GlobalSearchProvider.php`](../../../vendor/filament/filament/src/GlobalSearch/Providers/Contracts/GlobalSearchProvider.php) | done | — | — |
 | [`DefaultGlobalSearchProvider`](../../../packages/panels/src/GlobalSearch/Providers/DefaultGlobalSearchProvider.php) | [`Providers/DefaultGlobalSearchProvider.php`](../../../vendor/filament/filament/src/GlobalSearch/Providers/DefaultGlobalSearchProvider.php) | done | — | [semantics](#the-default-provider-searches-the-current-panel-and-sorts-before-it-skips) · [diverges](#the-default-provider-narrows-the-contracts-nullable-return) |
 | [`GlobalSearchProviderRegistry`](../../../packages/panels/src/GlobalSearch/GlobalSearchProviderRegistry.php) | — | done | — | [diverges](#the-provider-is-resolved-through-a-tagged-registry-rather-than-app) |
+| [`globalSearch()`](../../../packages/panels/src/Panel/Concerns/HasGlobalSearch.php) | `Panel\Concerns\HasGlobalSearch::globalSearch()` | done | — | [diverges](#the-provider-is-resolved-through-a-tagged-registry-rather-than-app) · [diverges](#the-panels-position-platform-suffix-and-opt-in-arms-are-not-ported) |
+| [`getGlobalSearchProviderClass()`](../../../packages/panels/src/Panel/Concerns/HasGlobalSearch.php) | `Panel\Concerns\HasGlobalSearch::getGlobalSearchProvider()` | done | — | [diverges](#the-provider-is-resolved-through-a-tagged-registry-rather-than-app) |
+| [`globalSearchDebounce()`](../../../packages/panels/src/Panel/Concerns/HasGlobalSearch.php) | `Panel\Concerns\HasGlobalSearch::globalSearchDebounce()` | done | — | — |
+| [`getGlobalSearchDebounce()`](../../../packages/panels/src/Panel/Concerns/HasGlobalSearch.php) | `Panel\Concerns\HasGlobalSearch::getGlobalSearchDebounce()` | done | — | — |
+| [`getGlobalSearchDebounceMilliseconds()`](../../../packages/panels/src/Panel/Concerns/HasGlobalSearch.php) | — | done | — | [semantics](#the-debounce-is-translated-for-ux-live-component-the-way-tables-already-does-it) |
+| [`globalSearchKeyBindings()`](../../../packages/panels/src/Panel/Concerns/HasGlobalSearch.php) | `Panel\Concerns\HasGlobalSearch::globalSearchKeyBindings()` | done | — | — |
+| [`getGlobalSearchKeyBindings()`](../../../packages/panels/src/Panel/Concerns/HasGlobalSearch.php) | `Panel\Concerns\HasGlobalSearch::getGlobalSearchKeyBindings()` | done | — | — |
+| [`globalSearchFieldSuffix()`](../../../packages/panels/src/Panel/Concerns/HasGlobalSearch.php) | `Panel\Concerns\HasGlobalSearch::globalSearchFieldSuffix()` | done | — | — |
+| [`getGlobalSearchFieldSuffix()`](../../../packages/panels/src/Panel/Concerns/HasGlobalSearch.php) | `Panel\Concerns\HasGlobalSearch::getGlobalSearchFieldSuffix()` | done | — | — |
+| [`isGlobalSearchEnabled()`](../../../packages/panels/src/Panel/Concerns/HasGlobalSearch.php) | `FilamentManager::isGlobalSearchEnabled()` | done | — | [semantics](#isglobalsearchenabled-moved-off-the-manager-onto-the-panel) |
+| `globalSearchPosition` | `HasGlobalSearch::globalSearch()`'s `$position` | skipped | — | [diverges](#the-panels-position-platform-suffix-and-opt-in-arms-are-not-ported) |
+| `globalSearchFieldKeyBindingSuffix()` | `Panel\Concerns\HasGlobalSearch::globalSearchFieldKeyBindingSuffix()` | skipped | — | [diverges](#the-panels-position-platform-suffix-and-opt-in-arms-are-not-ported) |
+| `globalSearchResourceOptIn()` | `Panel\Concerns\HasGlobalSearch::globalSearchResourceOptIn()` | skipped | — | [diverges](#the-panels-position-platform-suffix-and-opt-in-arms-are-not-ported) |
 | _rest not audited yet_ | | | | |
 
 ## Details
@@ -87,6 +100,29 @@ service answers differently per request — Filament reads the same thing off it
 empty-handed, so a resource's sort is independent of how many of the resources
 around it answered; `usort()` is stable, so resources that share a sort — every
 resource that sets none — keep the panel's registration order.
+
+### The debounce is translated for ux-live-component the way tables already does it
+
+`getGlobalSearchDebounce()` keeps Filament's duration string (`500ms` by
+default, evaluated so a closure may answer it), and
+`getGlobalSearchDebounceMilliseconds()` turns it into the bare integer
+`data-model="debounce(N)|search"` wants — `1s` → 1000, a bare `300` → 300,
+anything unparseable → 500. The body is
+[`CanSearchRecords::getSearchDebounceMilliseconds()`](../../../packages/tables/src/Table/Concerns/CanSearchRecords.php)
+verbatim, the same translation tables' own search field already needed; the
+name has no Filament source and the [renames trail](../renames.md) carries it
+beside the tables one.
+
+### `isGlobalSearchEnabled()` moved off the manager onto the panel
+
+Filament puts this on `FilamentManager`, which delegates every other question
+here to the current panel anyway. There is no manager in this port — a panel is
+reached through `PanelRegistry`/`CurrentPanel` — so the method sits on `Panel`
+under its Filament name: false when the provider is switched off, otherwise
+true as soon as one registered resource `canGloballySearch()`. Filament
+memoises the answer per request because each resource's check runs an
+authorization policy; ours only asks whether a resource named searchable
+attributes, so it re-reads them instead.
 
 ## Divergences
 
@@ -150,7 +186,11 @@ rather than a join.
 ### The provider is resolved through a tagged registry rather than `app()`
 
 Filament resolves a provider with `app($panel->getGlobalSearchProvider())`,
-its container answering any class-string. Symfony's does not, so the seam is a
+its container answering any class-string — so the panel's getter answers an
+**instance**. Ours answers the class: `getGlobalSearchProviderClass()`
+(`false` → `null`, `true` → `DefaultGlobalSearchProvider::class`, a validated
+class-string straight through), and the caller resolves it. Symfony's container
+does not answer an arbitrary class-string, so the seam is a
 tag: every `GlobalSearchProvider` implementation is autoconfigured with
 `sylament.panels.global_search_provider`,
 [`GlobalSearchProviderPass`](../../../packages/panels/src/DependencyInjection/Compiler/GlobalSearchProviderPass.php)
@@ -172,6 +212,21 @@ always hands back the builder, so its own signature narrows to
 `GlobalSearchResults` — level max rejects a nullable return a method never
 returns, and the covariant narrowing states the guarantee rather than hiding
 it.
+
+### The panel's position, platform-suffix and opt-in arms are not ported
+
+Three arms of Filament's panel concern stay out, so `globalSearch()` takes the
+provider alone. `GlobalSearchPosition` and the `$position` parameter buy a
+sidebar mount for a shell that may have no topbar; ours always has one, so
+there is nothing to choose between. `globalSearchFieldKeyBindingSuffix()` —
+which renders the first key binding as a platform glyph (`⌘K` on a Mac, `CTRL+K`
+elsewhere) — rides on `Support\Enums\Platform`, a User-Agent sniff with no port
+yet; `globalSearchFieldSuffix()` **is** ported, so a panel spells the hint out
+itself. And `globalSearchResourceOptIn()` is the panel half of the resource
+opt-in mode dropped
+[below](#the-resource-opt-in-mode-and-the-globalsearchsort-setter-are-not-ported)
+— with no `ReflectionProperty` dance on the resource side there is no switch
+for it to flip.
 
 ### The resource opt-in mode and the `globalSearchSort()` setter are not ported
 

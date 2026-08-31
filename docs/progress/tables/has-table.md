@@ -124,7 +124,7 @@ instead.
 | `getTableQueryForExport()` | [`Concerns\HasRecords::getTableQueryForExport()`](../../../vendor/filament/tables/src/Concerns/HasRecords.php) | blocked | the export surface | It bypasses the seams above, re-reading `getTable()->getQuery()` and re-applying filters, search and sorting itself, to assemble a query for Filament's export action — a surface with no counterpart here and on no milestone, the same one [`ExportColumn`](column.md#hascellstate-is-relocated-into-the-column-tier) waits on. It lands with that action or not at all |
 | [`CanPaginateRecords` — `$tablePage`, `$tableRecordsPerPage`, `gotoTablePage()`, `getTablePage()`, `getTableRecordsPerPage()`, `dehydrateTableRecordsPerPage()`, `updatedTableRecordsPerPage()`, `paginateTableQuery()`](../../../packages/tables/src/Concerns/CanPaginateRecords.php) | [`Concerns\CanPaginateRecords`](../../../vendor/filament/tables/src/Concerns/CanPaginateRecords.php) | in progress | — | [detail](#the-page-state-has-its-query-lane-and-no-session-or-url-half) · [diverges](#gototablepage-replaces-livewires-paginator-trio) · [diverges](#per-page-is-validated-in-the-getter-on-every-read) · [diverges](#the-writable-props-dehydrate-in-their-elements-wire-vocabulary) · [diverges](#the-recordsperpage-injection-is-nullable) · [diverges](#no-table-state-is-persisted-in-the-session) |
 | [`CanSortRecords` — `$tableSort`, `sortTable()`, `getTableSortColumn()`, `getTableSortDirection()`, `applySortingToTableQuery()`](../../../packages/tables/src/Concerns/CanSortRecords.php) | [`Concerns\CanSortRecords`](../../../vendor/filament/tables/src/Concerns/CanSortRecords.php) | in progress | — | [detail](#sorting-composes-the-users-order-the-default-and-the-identifier-tiebreaker) · [diverges](#sorttable-ignores-a-column-the-table-did-not-declare-sortable) · [diverges](#a-default-sort-closures-replacement-builder-reaches-the-caller-where-filaments-is-discarded) · [diverges](#the-identifier-tiebreaker-is-suppressed-only-by-the-qualified-key) · [semantics](#a-column-name-containing-a-colon-cannot-be-cycled) · [diverges](#no-table-state-is-persisted-in-the-session) |
-| [`CanSearchRecords` — `$tableSearch`, `updatedTableSearch()`, `getTableSearch()`, `dehydrateTableSearch()`, `applySearchToTableQuery()`, `applyGlobalSearchToTableQuery()`, `extractTableSearchWords()`](../../../packages/tables/src/Concerns/CanSearchRecords.php) | [`Concerns\CanSearchRecords`](../../../vendor/filament/tables/src/Concerns/CanSearchRecords.php) | in progress | — | [detail](#search-is-the-global-term-only) · [diverges](#the-writable-props-dehydrate-in-their-elements-wire-vocabulary) · [diverges](#no-table-state-is-persisted-in-the-session) · [table.md](table.md#getsortablevisiblecolumn-has-no-hidden-arm-to-check) |
+| [`CanSearchRecords` — `$tableSearch`, `updatedTableSearch()`, `getTableSearch()`, `dehydrateTableSearch()`, `applySearchToTableQuery()`, `applyGlobalSearchToTableQuery()`, `extractTableSearchWords()`](../../../packages/tables/src/Concerns/CanSearchRecords.php), the last delegating to [`Query\SearchTermSplitter`](../../../packages/tables/src/Query/SearchTermSplitter.php) | [`Concerns\CanSearchRecords`](../../../vendor/filament/tables/src/Concerns/CanSearchRecords.php) | in progress | — | [detail](#search-is-the-global-term-only) · [diverges](#the-writable-props-dehydrate-in-their-elements-wire-vocabulary) · [diverges](#no-table-state-is-persisted-in-the-session) · [table.md](table.md#getsortablevisiblecolumn-has-no-hidden-arm-to-check) |
 | Table state in the URL — `#[Url]`-style query-string binding for page, sort and search | [`getIdentifiedTableQueryStringPropertyNameFor()`](../../../vendor/filament/tables/src/Concerns/InteractsWithTable.php) | todo | — | [diverges](#no-table-state-is-bound-to-the-url) |
 | Per-column search — `$tableColumnSearches`, `updatedTableColumnSearches()`, the reserved keys | [`Concerns\CanSearchRecords`](../../../vendor/filament/tables/src/Concerns/CanSearchRecords.php) | todo | — | [detail](#search-is-the-global-term-only) |
 | Deferred loading — `$isTableLoaded`, `loadTable()`, `isTableLoaded()` | [`CanDeferLoading`](../../../vendor/filament/tables/src/Concerns/CanDeferLoading.php) | todo | — | [table.md](table.md#loading-affordances-are-deferred-with-the-javascript-that-would-drive-them) |
@@ -599,10 +599,12 @@ constrains the builder it was handed, and a *replacement* builder returned from
 it is discarded — unlike
 [a `defaultSort()` closure](table.md#the-default-sort-is-a-secondary-order-and-its-direction-rules-the-tiebreaker),
 whose returned builder wins. Otherwise the term is broken into **words** —
-`splitSearchTerms()` is on by default, and `extractTableSearchWords()` normalises
-the Unicode blanks Filament names (`\x{3164}`, `\x{1160}`) to spaces before
-`str_getcsv()` splits on them, so a `"quoted phrase"` survives as one word — and
-each word gets **its own `Orx`**: every globally searchable column applies
+`splitSearchTerms()` is on by default, and `extractTableSearchWords()` is a
+one-line delegate to
+[`Query\SearchTermSplitter::split()`](../../../packages/tables/src/Query/SearchTermSplitter.php),
+which normalises the Unicode blanks Filament names (`\x{3164}`, `\x{1160}`) to
+spaces before `str_getcsv()` splits on them, so a `"quoted phrase"` survives as
+one word — and each word gets **its own `Orx`**: every globally searchable column applies
 [itself](column.md#a-search-closure-returns-its-expression-where-filaments-mutates-an-orwhere-group)
 into it, the table's
 [extra searchable columns](table.md#extra-searchable-columns-take-closures-that-return-their-expression)
@@ -621,7 +623,12 @@ and its [narrower reach](table.md#the-default-search-comparison-assumes-a-string
 As of M3·4, `like()` itself lives in
 [`Sylament\Schemas\Query\SearchConstraint`](../schemas/search-constraint.md)
 — tables' class delegates — so forms' relationship search reuses it without
-depending on `sylament/tables`.
+depending on `sylament/tables`. The word splitter took the same shape one tier
+down for the same reason: the body sat in a **host trait**, so the only way to
+reach it was to be a table host, and panels' global search is not one. Hoisting
+it into `Query\SearchTermSplitter` — a pure static, the tier tables' other query
+helpers already live at — makes it callable from a panel resource, and leaves the
+trait method in place at its own visibility so no caller and no override moved.
 Of the search **indicators**, the global one ships —
 `getTableSearchIndicator()` mints the `Filters\Indicator` chip for the current
 term, labelled `Search: <term>` (Filament's

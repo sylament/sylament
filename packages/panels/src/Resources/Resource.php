@@ -16,6 +16,7 @@ use Sylament\Panels\Navigation\NavigationItem;
 use Sylament\Panels\Panel;
 use Sylament\Panels\PanelRegistry;
 use Sylament\Panels\Resources\Pages\PageRegistration;
+use Sylament\Panels\Resources\Resource\Concerns\HasGlobalSearch;
 use Sylament\Schemas\Schema;
 use Sylament\Schemas\State\PropertyAccessor;
 use Sylament\Tables\Table;
@@ -33,6 +34,8 @@ use function Symfony\Component\String\u;
 
 abstract class Resource
 {
+    use HasGlobalSearch;
+
     /**
      * @var class-string|null
      */

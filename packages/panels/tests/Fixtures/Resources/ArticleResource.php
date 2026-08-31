@@ -59,6 +59,34 @@ final class ArticleResource extends Resource
             ]);
     }
 
+    /**
+     * @return array<string|array<string>>
+     */
+    public function getGloballySearchableAttributes(): array
+    {
+        return ['title', 'slug', 'author.name'];
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    public function getGlobalSearchResultDetails(object $record): array
+    {
+        assert($record instanceof Article);
+
+        return ['Status' => $record->getStatus()];
+    }
+
+    /**
+     * @return array<Action>
+     */
+    public function getGlobalSearchResultActions(object $record): array
+    {
+        return [
+            Action::make('preview')->url('/preview'),
+        ];
+    }
+
     public function getPages(): array
     {
         return [

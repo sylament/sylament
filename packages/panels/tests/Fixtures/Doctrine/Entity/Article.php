@@ -23,6 +23,9 @@ class Article
     #[ORM\Column(length: 32)]
     private string $status = 'draft';
 
+    #[ORM\ManyToOne]
+    private ?Author $author = null;
+
     public function getId(): ?int
     {
         return $this->id;
@@ -60,6 +63,18 @@ class Article
     public function setStatus(string $status): static
     {
         $this->status = $status;
+
+        return $this;
+    }
+
+    public function getAuthor(): ?Author
+    {
+        return $this->author;
+    }
+
+    public function setAuthor(?Author $author): static
+    {
+        $this->author = $author;
 
         return $this;
     }

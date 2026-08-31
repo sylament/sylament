@@ -333,9 +333,7 @@ trait HasState
 
     public function hasDehydratedComponent(string $statePath): bool
     {
-        if ($this->dehydratedComponentsCache === null) {
-            $this->dehydratedComponentsCache = $this->buildDehydratedComponentsCache();
-        }
+        $this->dehydratedComponentsCache ??= $this->buildDehydratedComponentsCache();
 
         return $this->dehydratedComponentsCache[$statePath] ?? false;
     }

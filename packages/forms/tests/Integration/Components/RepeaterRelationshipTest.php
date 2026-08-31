@@ -621,6 +621,34 @@ it('lets a mutate hook rewrite a delegated key', function (): void {
     expect($one->getAuthor())->toBe($bob);
 });
 
+it('vouches only for an item path its items declare a hook at', function (): void {
+    $entityManager = $this::getContainer()->get(EntityManagerInterface::class);
+    [$post, $one] = seedSectionedPost($entityManager);
+
+    $repeater = Repeater::make('sections')
+        ->relationship()
+        ->components([
+            TextInput::make('heading'),
+            Select::make('author')->relationship(titleAttribute: 'name'),
+            Repeater::make('notes')->relationship()->components([TextInput::make('body')]),
+        ]);
+
+    [$schema] = wireRelationshipRepeater($repeater, $post);
+
+    $schema->fill($post);
+
+    $itemKey = 'record-' . $one->getId();
+
+    expect(array_keys($repeater->getChildSchema($itemKey)?->getNestedRelationshipHooks() ?? []))
+        ->toBe(['author', 'notes'])
+        ->and($repeater->routesNestedRelationshipHookAt($itemKey . '.author'))->toBeTrue()
+        ->and($repeater->routesNestedRelationshipHookAt($itemKey . '.notes'))->toBeTrue()
+        ->and($repeater->routesNestedRelationshipHookAt($itemKey . '.body'))->toBeFalse()
+        ->and($repeater->routesNestedRelationshipHookAt('author'))->toBeFalse()
+        ->and($repeater->routesNestedRelationshipHookAt($itemKey . '.'))->toBeFalse()
+        ->and($repeater->routesNestedRelationshipHookAt('.author'))->toBeFalse();
+});
+
 it('refuses a hooked select in a decoration schema loudly', function (): void {
     $entityManager = $this::getContainer()->get(EntityManagerInterface::class);
     [$post] = seedSectionedPost($entityManager);

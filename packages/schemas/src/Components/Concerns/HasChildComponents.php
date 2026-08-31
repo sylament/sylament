@@ -106,6 +106,19 @@ trait HasChildComponents
         return false;
     }
 
+    /**
+     * Whether this owner's own walks route a relationship hook declared at
+     * `$path` — owner-relative, this component's record path stripped. An owner
+     * answering true takes delegation of that hook, so the map dropping the path
+     * is the owner speaking for it rather than the hook having nowhere to fire.
+     * An owner must answer from the same walk that routes, so the two cannot
+     * drift apart.
+     */
+    public function routesNestedRelationshipHookAt(string $path): bool
+    {
+        return false;
+    }
+
     public function getChildSchema(?string $key = null): ?Schema
     {
         if (($key !== null) && ($key !== 'default') && !array_key_exists($key, $this->childComponents)) {

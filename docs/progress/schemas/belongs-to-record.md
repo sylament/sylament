@@ -62,6 +62,7 @@ Sylament-only.
 | [`getData(?array $state = null)`](../../../packages/schemas/src/Concerns/BelongsToRecord.php) | — | done | — | [diverges](#reads-are-lenient-writes-are-strict) · [diverges](#mapping-walks-the-record-graph-by-declared-leaf-paths) · [diverges](#a-missing-singular-intermediate-is-constructed-from-its-declared-type) · [semantics](#a-caller-that-has-already-validated-hands-the-state-in) · [semantics](#a-refused-submit-on-the-query-lane-shows-in-the-row-until-the-next-request) |
 | [`getData()`'s record-validation tail](../../../packages/schemas/src/Concerns/BelongsToRecord.php) + [`getRecordViolationPathTranslator()`](../../../packages/schemas/src/Concerns/BelongsToRecord.php) | — | done | — | [diverges](can-be-validated.md#record-sourced-constraints-are-validated-on-the-mapped-object) · [diverges](can-be-validated.md#a-refused-submit-leaves-the-record-mutated) · [detail](violation-path-translator.md) |
 | [`getNullableBranches()` + the branch pass in `getData()`](../../../packages/schemas/src/Concerns/BelongsToRecord.php) | — | done | — | [diverges](#a-declared-branch-is-nulled-whole-before-its-leaves-are-written) · [diverges](#a-component-can-own-its-whole-record-subtree) · [semantics](#a-branch-the-bag-no-longer-carries-is-skipped-not-nulled) · [semantics](#a-branch-the-record-cannot-null-is-refused-loudly) · [semantics](#a-nullable-branch-with-no-state-path-is-refused-not-ignored) · [semantics](#branches-are-ordered-by-path-depth-because-tree-order-is-not-path-order) |
+| [`getNestedRelationshipHooks()`](../../../packages/schemas/src/Concerns/BelongsToRecord.php) | — | done | — | [semantics](#a-hook-a-subtree-owner-routes-is-delegated-rather-than-refused) |
 | [`fill(object …)` object arm](../../../packages/schemas/src/Concerns/HasState.php) + [`readStateFromRecord()`](../../../packages/schemas/src/Concerns/BelongsToRecord.php) | — | done | — | [diverges](#fillobject-reads-only-the-paths-the-schema-declares) · [diverges](#mapping-walks-the-record-graph-by-declared-leaf-paths) · [diverges](#fillobject-does-not-bind-the-record) |
 | [`getStateFromRecord()`](../../../packages/schemas/src/Concerns/BelongsToRecord.php) | — | done | — | the public reading of `readStateFromRecord()` — Eloquent's `attributesToArray()` has no port target, so this is a gap fill rather than a rename. [Declared paths only](#fillobject-reads-only-the-paths-the-schema-declares), so a column the schema does not carry is absent; the fill-side mutators read it instead of filling twice. |
 | [`$record` property](../../../packages/schemas/src/Concerns/BelongsToRecord.php) | [`public $model`](../../../vendor/filament/schemas/src/Concerns/BelongsToModel.php) | done | — | [diverges](#the-root-record-property-is-protected) |
@@ -81,10 +82,11 @@ Sylament-only.
 | [`hasOwnRecord()`](../../../packages/schemas/src/Components/Concerns/BelongsToRecord.php) | — | done | — | [semantics](#the-nearest-record-frame-is-the-first-node-above-a-component-that-binds-one) |
 | [`getNearestRecordClass()` / `getNearestRecordStatePath()`](../../../packages/schemas/src/Components/Concerns/BelongsToRecord.php) | — | done | — | [semantics](#the-nearest-record-frame-is-the-first-node-above-a-component-that-binds-one) |
 | [`ownsRecordSubtree()`](../../../packages/schemas/src/Components/Concerns/HasChildComponents.php) | — | done | — | [diverges](#a-component-can-own-its-whole-record-subtree) · [semantics](#two-components-cannot-both-map-one-record-path-wholesale) |
+| [`routesNestedRelationshipHookAt()`](../../../packages/schemas/src/Components/Concerns/HasChildComponents.php) | — | done | — | [semantics](#a-hook-a-subtree-owner-routes-is-delegated-rather-than-refused) |
 | [`nullWhenBlank()` / `isNullableBranch()` / `shouldNullBranch()` / `isBlankStateValue()`](../../../packages/schemas/src/Components/Concerns/HasNullableBranch.php) | — | done | — | [diverges](#a-declared-branch-is-nulled-whole-before-its-leaves-are-written) · [semantics](#the-built-in-blank-test-asks-the-branchs-own-leaves) · [semantics](#a-branch-the-bag-no-longer-carries-is-skipped-not-nulled) · [semantics](#a-branch-the-record-cannot-null-is-refused-loudly) · [diverges](#a-nullwhenblank-closure-sees-two-different-bags) · [diverges](#a-doctrine-embeddable-cannot-be-nulled) |
 | [`loadStateFromRelationshipsUsing()` / `hasLoadStateFromRelationships()` / `loadStateFromRelationships(object $record)`](../../../packages/schemas/src/Components/Concerns/BelongsToRecord.php) | [`loadStateFromRelationshipsUsing()` / `loadStateFromRelationships()`](../../../vendor/filament/schemas/src/Components/Concerns/BelongsToModel.php) | done | — | [diverges](#the-relationship-hooks-are-consulted-by-the-two-mapping-edges-not-by-a-schema-level-walk) · [diverges](#the-exists-guarded-members-are-not-ported) · [semantics](#a-hook-the-record-path-map-does-not-carry-is-refused) |
 | [`saveRelationshipsUsing()` / `hasSaveRelationships()` / `saveRelationships(object $record, mixed $state)`](../../../packages/schemas/src/Components/Concerns/BelongsToRecord.php) | [`saveRelationshipsUsing()` / `saveRelationships()`](../../../vendor/filament/schemas/src/Components/Concerns/BelongsToModel.php) | done | — | [diverges](#the-relationship-hooks-are-consulted-by-the-two-mapping-edges-not-by-a-schema-level-walk) · [diverges](#the-exists-guarded-members-are-not-ported) · [semantics](#a-hook-the-record-path-map-does-not-carry-is-refused) · [semantics](#nullwhenblank-cannot-compose-with-a-save-hook) |
-| Nested hook delegation beneath a subtree owner | [`Schema::saveRelationships()`'s tree walk](../../../vendor/filament/schemas/src/Concerns/BelongsToModel.php) · [`Repeater::saveToRelationship()`'s `$item->model($record)->saveRelationships()`](../../../vendor/filament/forms/src/Components/Repeater.php) | todo | — | [detail](#a-relationship-hook-beneath-a-subtree-owner-has-nowhere-to-fire) |
+| Nested hook delegation beneath a subtree owner | [`Schema::saveRelationships()`'s tree walk](../../../vendor/filament/schemas/src/Concerns/BelongsToModel.php) · [`Repeater::saveToRelationship()`'s `$item->model($record)->saveRelationships()`](../../../vendor/filament/forms/src/Components/Repeater.php) | in progress | — | [detail](#a-relationship-hook-beneath-a-subtree-owner-has-nowhere-to-fire) · [semantics](#a-hook-a-subtree-owner-routes-is-delegated-rather-than-refused) |
 | [`setAssociationReader()` / `getAssociationReader()`](../../../packages/schemas/src/Components/Concerns/CanAccessAssociations.php) — composed from `CanAccessAssociations` | — | done | — | [semantics](#every-component-reaches-the-association-reader-through-a-required-setter) |
 | `saveRelationshipsBeforeChildrenUsing()` / `saveRelationshipsBeforeChildren()` | [`Components/Concerns/BelongsToModel.php`](../../../vendor/filament/schemas/src/Components/Concerns/BelongsToModel.php) | skipped | — | [diverges](#the-relationship-hooks-are-consulted-by-the-two-mapping-edges-not-by-a-schema-level-walk) |
 | `saveRelationshipsWhenDisabled()` / `saveRelationshipsWhenHidden()` / their `should*` readers | [`Components/Concerns/BelongsToModel.php`](../../../vendor/filament/schemas/src/Components/Concerns/BelongsToModel.php) | skipped | — | [diverges](#the-exists-guarded-members-are-not-ported) |
@@ -133,7 +135,18 @@ both class names and the offending path; plus the owner arms of the branch pass 
 an owner nulled from the presence of its own path in a bag carrying no leaf path
 at all, with the leaf walk then not writing its value back over the null, an
 owner holding one all-blank item kept alive, a hidden owner left alone, and an
-owner over a non-nullable `array` property meeting the same loud refusal);
+owner over a non-nullable `array` property meeting the same loud refusal; plus
+the delegation set over a routing-owner fixture — a hooked leaf beneath a
+vouching owner neither refused nor mapped, and the five shapes that keep
+refusing beside it: a non-vouching owner, a path-less hook, a non-owner
+container hook, an inner non-vouching owner inside an outer vouching one, and
+the earlier of two hooked components sharing one record path); the discovery
+walk by
+[`Unit/Concerns/NestedRelationshipHooksTest`](../../../packages/schemas/tests/Unit/Concerns/NestedRelationshipHooksTest.php)
+(schema-relative keys through a plain container, a hooked nested owner taken as
+one entry with nothing beneath it, a hook-less component and a path-less hooked
+one both absent, last declaration winning a shared key, and an empty result for
+a schema declaring no hook);
 the branch declaration itself by
 [`Unit/Components/Concerns/HasNullableBranchTest`](../../../packages/schemas/tests/Unit/Components/Concerns/HasNullableBranchTest.php)
 (the default, the declaration, blank and filled leaves, a nested sub-branch on
@@ -194,36 +207,32 @@ otherwise skip as an object-valued leaf, a save hook taking the write off
 object collection still meeting the refusal — the pin that keeps the bypass
 opt-in — the `nullWhenBlank()`-plus-save-hook refusal, the three
 map-exclusion refusals, one per exclusion: a container whose children carry the
-mapped paths, a component with no state path, and a component beneath a subtree
-owner — each raised from `fill()`, which is the earlier of the two edges to reach
-the map — and a container-built component receiving the container's
-`AssociationReader` rather than the `new`-built fallback).
+mapped paths, a component with no state path, and a component beneath an owner
+that does not route it — each raised from `fill()`, which is the earlier of the
+two edges to reach the map — the delegated arm beside that last one, where a
+routing owner carries a hooked child through both edges without a refusal, and a
+container-built component receiving the container's `AssociationReader` rather
+than the `new`-built fallback).
 
 ## Details
 
 ### A relationship hook beneath a subtree owner has nowhere to fire
 
-The map drops every path under a
-[subtree owner](#a-component-can-own-its-whole-record-subtree) and then
-[refuses](#a-hook-the-record-path-map-does-not-carry-is-refused) any dropped
-component that declared a hook. The refusal is right — nothing would run the
-hook — but the capability behind it is missing rather than rejected: a
-relation-backed field cannot sit inside a
+The mapper's half of the delegation is
+[in place](#a-hook-a-subtree-owner-routes-is-delegated-rather-than-refused): an
+owner can vouch for an owner-relative path through
+`routesNestedRelationshipHookAt()`, `getNestedRelationshipHooks()` is the walk it
+answers from, and `getNearestRecordClass()` / `getNearestRecordStatePath()` frame
+a nested component on the record its subtree actually maps. What is missing is
+every consumer of all three: **no owner overrides the vouch yet**, so the default
+`false` still refuses a relation-backed field inside a
 [`Repeater::relationship()`](../forms/repeater.md) or an
-[entangled layout component](entangles-state-with-singular-relationship.md),
-which is Filament's ordinary shape for a join entity carrying a payload — a
-repeater over `ArticleContributor` with a `Select::make('author')` mapping that
-row's `ManyToOne` inside it.
+[entangled layout component](entangles-state-with-singular-relationship.md) —
+Filament's ordinary shape for a join entity carrying a payload, a repeater over
+`ArticleContributor` with a `Select::make('author')` mapping that row's
+`ManyToOne` inside it.
 
-Three things are absent, each a separate piece of work.
-
-**Both owners map their subtree by scalar leaf path only.** Each reads a declared
-leaf off the related record and skips the value when it is an object
-(`Repeater::getItemsFromRelationship()`,
-`EntanglesStateWithSingularRelationship::getStateFromRelationship()`), and each
-writes it back through `PropertyAccessor::setOnRecord()`. An association is an
-object on the way in and needs an entity on the way out, so the leaf walk can
-neither fill one nor save one.
+Two things are still absent, one per owner-side piece.
 
 **Neither owner binds its subtree to the record it maps.** A hook is called with
 the record it writes onto, and the repeater stamps no item schema with its child
@@ -232,27 +241,21 @@ did fire would be handed the wrong object. The singular owner carries the same
 hole under a row of its own,
 [the child schema is not re-rooted](entangles-state-with-singular-relationship.md#the-child-schema-is-not-re-rooted-onto-the-related-record).
 
-**The map has no delegation edge.** Dropping the paths beneath an owner is the
-whole of the owner pass; there is no seam through which an owner could ask the
-subtree it swallowed for the paths and hooks it carries, and route the ones its
-own walk cannot map.
+**Both owners map their subtree by scalar leaf path only.** Each reads a declared
+leaf off the related record and skips the value when it is an object
+(`Repeater::getItemsFromRelationship()`,
+`EntanglesStateWithSingularRelationship::getStateFromRelationship()`), and each
+writes it back through `PropertyAccessor::setOnRecord()`. An association is an
+object on the way in and needs an entity on the way out, so until each walk runs
+the hooks the discovery hands it — and subtracts the paths it claimed from its
+own leaf read and write — the leaf walk can neither fill one nor save one.
 
-Filament needs none of the three for that shape, and not because its walk is
-richer. A to-one `Select` over there is named for the **foreign-key column** and
-stays dehydrated (`Select::relationship()` sets
-`dehydrated(fn (Select $component): bool => (! $component->isMultiple()) && $component->isSaved())`),
-so `$record->fill($itemData)` writes `author_id` as an ordinary attribute and the
-hook is not load-bearing; `Repeater::saveToRelationship()` recurses with
-`$item->model($record)->saveRelationships()` only for the items it just created,
-never for the ones it updates. Doctrine maps the association and no foreign-key
-scalar beside it, so the write has no attribute to land on and the hook is the
-only route — which is why the port meets a wall Filament does not, and why
-closing it is a mapper change rather than a transcription.
-
-Both exits the refusal names are dead for this shape. The field cannot move out
-from under the owner without leaving the item it describes, and dropping the hook
-leaves the owner writing a raw identifier into an entity-typed property, which
-`setOnRecord()` hands to the property accessor and the setter rejects.
+Both exits the refusal names are still dead for that shape until they land. The
+field cannot move out from under the owner without leaving the item it describes,
+and dropping the hook leaves the owner writing a raw identifier into an
+entity-typed property, which `setOnRecord()` hands to the property accessor and
+the setter rejects. The third exit the message now names — declaring
+`relationship()` on the owner — is the one that becomes true.
 
 **Next step:** [M3 · 10](../roadmap.md#m3--forms-widening).
 
@@ -278,7 +281,7 @@ naming the component, which exclusion it met, and the way back into the map:
 | --- | --- | --- |
 | carries no state path (or one that resolves to no record path) | the map is keyed by record path | give it the `statePath()` of the association it maps |
 | nests path-bearing components without [owning its subtree](#a-component-can-own-its-whole-record-subtree) | the map takes its leaves, never the container | declare `ownsRecordSubtree()` so it maps whole |
-| sits beneath a subtree owner | the owner speaks for every path under its own | move it out from under that owner |
+| sits beneath a subtree owner that [does not route it](#a-hook-a-subtree-owner-routes-is-delegated-rather-than-refused) | the owner speaks for every path under its own | declare `relationship()` on that owner, or move it out from under it |
 
 Left as a silent skip, a hook on any of the three would be the worst shape this
 mapper can produce: no error, no write, no trace — a relationship that simply
@@ -290,17 +293,85 @@ mapper takes on a foreign path nesting under an owner, and the same one
 [`nullWhenBlank()` without a state path](#a-nullable-branch-with-no-state-path-is-refused-not-ignored)
 takes two lines away.
 
-The **third** row is the one a relation-backed field hits, and it is the row
-whose stated exit does not exist: a `Select` mapping a to-one association from
-inside a relationship repeater has nowhere to move to, and dropping its hook only
-moves the failure to the owner's own write.
-[The capability is missing, not rejected](#a-relationship-hook-beneath-a-subtree-owner-has-nowhere-to-fire).
+The **third** row is the one a relation-backed field hits, and it is the only one
+with an exit the owner can open: an owner that
+[routes the hooks beneath it](#a-hook-a-subtree-owner-routes-is-delegated-rather-than-refused)
+takes delegation of that path and the refusal never fires. Until one does, the
+row's other exits stay dead for that shape — a `Select` mapping a to-one
+association from inside a relationship repeater has nowhere to move to, and
+dropping its hook only moves the failure to the owner's own write.
+[What each owner still owes](#a-relationship-hook-beneath-a-subtree-owner-has-nowhere-to-fire).
+The first two rows have no such exit at any depth: a path-less component and a
+path-bearing non-owner container are unroutable shapes, so they keep refusing
+beneath a routing owner exactly as they do anywhere else.
 
 The guard collects hook-declaring components in the map build's own walk and
 tests membership after the owner pass, so it costs no extra traversal and sees
 the map exactly as the two edges will consult it. It fires from `fill()` as well
 as `getData()` — both go through the map — so a misconfigured hook is reported
 on the first render, not first on submit.
+
+### A hook a subtree owner routes is delegated rather than refused
+
+An owner swallows the paths beneath it, so a hook down there can only fire if the
+owner runs it. `routesNestedRelationshipHookAt(string $path)` — on
+`HasChildComponents` beside `ownsRecordSubtree()`, default `false` — is where the
+owner says it will: the mapper asks it, per **owner-relative** path (the owner's
+own record path stripped), whether its walks route a hook there, and a `true`
+turns the third refusal arm into a delegation. `getNestedRelationshipHooks()` on
+the root tier is the walk behind both halves — the owner answers the vouch from
+it and routes from it — which is what keeps a vouch from outliving the routing it
+promises.
+
+Three rules decide which component a delegation reaches, and each is the reason a
+neighbouring shape still refuses.
+
+**The nearest owner is asked, never the outermost.** `$owners` is walked in flat
+order, outer before inner, so an outer owner's pass drops an inner owner's
+descendants before the inner owner's pass ever sees them —
+[`isInsideOwnerTree()`](#a-component-can-own-its-whole-record-subtree) answers
+"any ancestor", which cannot tell the two apart. Attribution walks the container
+chain to the *first* owner instead, so a hook under a non-routing owner nested
+inside a routing one is still refused, and the message names the owner that would
+have had to route it.
+
+**Only the map's last claimant is delegated.** The owner pass records the
+component it unsets per path, which is by construction the one that survived the
+map's last-wins overwrite. Two hooked components sharing one record path under an
+owner therefore split: the survivor is delegated, the earlier one was never in
+the map, never dropped, never recorded — and keeps refusing. That is also the
+component the owner's discovery would have dropped, so mapper and discovery name
+the same survivor.
+
+**Only the `default` arm can be skipped.** A hook with no record path and a hook
+on a path-bearing non-owner container are unroutable whatever sits above them, so
+they refuse beneath a routing owner exactly as they do at the root. So do the two
+wholesale-claimant refusals and the foreign-path one, which the owner pass raises
+before any of this.
+
+Loudness survives by construction, and that is the invariant to protect when a
+new owner is written: because the vouch is answered from the routing walk itself,
+every component the mapper stops refusing is one an owner's walk will actually
+run. Concretely still refused, each naming the component: a path-less or
+non-owner-container hook anywhere; a hook in a child schema the owner's walks
+never consult; the earlier of two hooked components sharing a record path; a hook
+under an owner whose vouch is off, a plain-array repeater or an undeclared
+relationship among them; and a hook under an inner non-routing owner inside an
+outer routing one. An owner that vouches for a path it does not route would break
+that invariant — and would break it silently, which is the one failure this
+mapper exists to prevent.
+
+Discovery membership is a smaller set than the map's, and deliberately so: every
+flat component with a load **or** save hook whose state path nests under the
+schema's own, minus anything with an intermediate owner between it and the
+schema. A nested owner is one entry itself when it declares a hook, and
+everything beneath it belongs to that owner — which is how recursion falls out
+with no recursive code: the outer owner runs the inner owner's hook, and the
+inner owner repeats the whole scheme one level down. Keys are relative to the
+schema asked, not to the root, so an item schema and the root schema answer in
+their own terms; the derivation is
+[the one `getRecordStatePath()` uses](#getrecordstatepath-is-the-one-definition-of-record-relative-and-both-walks-must-share-it),
+against the schema's own state path rather than the root's.
 
 ### The nearest record frame is the first node above a component that binds one
 
@@ -954,7 +1025,7 @@ carries, which is a strictly smaller set. A hook declared on a component outside
 it is refused at map time rather than left to no-op —
 [a hook the record path map does not carry is refused](#a-hook-the-record-path-map-does-not-carry-is-refused).
 
-Three consequences follow from collapsing the third pass into the two edges.
+Four consequences follow from collapsing the third pass into the two edges.
 
 **The ordering member loses its reason to exist.**
 `saveRelationshipsBeforeChildrenUsing()` is the seam that lets a component write
@@ -987,6 +1058,29 @@ hydration. Here the load hook's value enters the ordinary state array
 `callAfterStateHydrated()` / `fillStateWithNull()` sequence already casts it —
 the same array arm a hand-written `fill([...])` takes. Skipped as a member with
 nothing left to do.
+
+**A hook beneath a subtree owner is pulled by the owner, not pushed by the map.**
+Filament's walk reaches a nested hook because it descends the component tree;
+ours reaches only what the map carries, and an owner's paths are dropped from it.
+The seam that closes the gap is
+[a vouch plus a discovery walk the owner runs itself](#a-hook-a-subtree-owner-routes-is-delegated-rather-than-refused),
+not a sub-map the owner pass hands over at map-build time — and the asymmetry
+that rules the handoff out is the repeater's fill side. At `fill($record)` the
+raw state is still empty, so no item schema exists yet, so nothing under the
+owner is in the flat walk and there is no sub-map to hand anywhere; the owner
+discovers from its **template** child schema at that moment instead, and from the
+per-item schema at save. A handoff would also park mutable state on the owner
+between map builds, and the map is built per edge and again by the
+[violation translator](violation-path-translator.md).
+
+The correction that comes with it, because the shape it describes is easy to
+misread and this file said it wrong: Filament's own recursion is **not** limited
+to newly created items. `Repeater::saveToRelationship()` re-runs
+`$item->model($record)->saveRelationships()` only for the items it just created,
+which is true of that method read alone — but `Schema::saveRelationships()`, the
+tree walk it sits inside, descends children-first over **every** item's schema
+before the item's own save runs, so the behaviour recurses for updated items too.
+Read the walk, not the method.
 
 ### The `exists`-guarded members are not ported
 

@@ -9,6 +9,7 @@ use Sylament\Schemas\Components\Component;
 use Sylament\Schemas\Components\Section;
 use Sylament\Schemas\Schema;
 use Sylament\Schemas\State\AssociationReader;
+use Sylament\Schemas\Tests\Fixtures\Components\RoutingSubtreeOwner;
 use Sylament\Schemas\Tests\Fixtures\Components\StateField;
 use Sylament\Schemas\Tests\Fixtures\Components\SubtreeOwner;
 use Sylament\Schemas\Tests\Fixtures\Concerns\StateHostFixture;
@@ -137,7 +138,7 @@ it('refuses a hook on a component with no state path', function (): void {
         ->toThrow(LogicException::class, 'names no record path');
 });
 
-it('refuses a hook on a component beneath a subtree owner', function (): void {
+it('still refuses a hook beneath an owner that does not route', function (): void {
     $post = seedPost();
 
     $owner = SubtreeOwner::make('sections')->components([
@@ -147,7 +148,28 @@ it('refuses a hook on a component beneath a subtree owner', function (): void {
     [$schema] = wireHookedComponent($owner, $post);
 
     expect(fn (): Schema => $schema->fill($post))
-        ->toThrow(LogicException::class, 'owns its record subtree');
+        ->toThrow(LogicException::class, 'Declare relationship() on');
+});
+
+it('does not refuse a hook beneath a routing owner', function (): void {
+    $post = seedPost();
+
+    $owner = RoutingSubtreeOwner::make('sections')
+        ->loadStateFromRelationshipsUsing(fn (): array => ['title' => 'Intro'])
+        ->saveRelationshipsUsing(function (Post $record): void {
+            $record->setTitle('routed');
+        })
+        ->components([
+            StateField::make('title')->saveRelationshipsUsing(fn (): null => null),
+        ]);
+
+    [$schema, $host] = wireHookedComponent($owner, $post);
+
+    $schema->fill($post);
+
+    expect($host->data['sections'])->toBe(['title' => 'Intro'])
+        ->and($schema->getData())->toBe($post)
+        ->and($post->getTitle())->toBe('routed');
 });
 
 it('injects the container association reader into a container-built component', function (): void {

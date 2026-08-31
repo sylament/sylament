@@ -123,7 +123,8 @@ trait BelongsToRecord
      * @throws LogicException when a component declared outside an owner's tree
      *                        carries a state path nesting under the owner's, or
      *                        when a component the map does not carry declares a
-     *                        relationship hook
+     *                        relationship hook no enclosing owner routes
+     *                        ({@see Component::routesNestedRelationshipHookAt()})
      */
     protected function getRecordPathMap(): array
     {
@@ -170,6 +171,8 @@ trait BelongsToRecord
             }
         }
 
+        $dropped = [];
+
         foreach ($owners as $ownerPath => $owner) {
             $prefix = $ownerPath . '.';
 
@@ -193,17 +196,70 @@ trait BelongsToRecord
                     ));
                 }
 
+                $dropped[$path] = $component;
+
                 unset($map[$path]);
             }
         }
 
         foreach ($hooked as $component) {
-            if (! in_array($component, $map, true)) {
-                $this->refuseUnmappedRelationshipHook($component);
+            if (in_array($component, $map, true)) {
+                continue;
             }
+
+            if (in_array($component, $dropped, true) && $this->isDelegatedToSubtreeOwner($component)) {
+                continue;
+            }
+
+            $this->refuseUnmappedRelationshipHook($component);
         }
 
         return $map;
+    }
+
+    /**
+     * Every relationship hook declared beneath this schema that no nested subtree
+     * owner speaks for, keyed by the hook-declaring component's state path
+     * relative to this schema's own — the same derivation
+     * {@see Component::getRecordStatePath()} takes against the root, so an owner
+     * routing its subtree and the mapper vouching for it read one definition of
+     * relative. A nested owner is one entry itself when it declares a hook, and
+     * everything beneath it belongs to that owner instead; two components
+     * sharing a key leave the last one declared, mirroring the map's own
+     * overwrite.
+     *
+     * @return array<string, Component>
+     */
+    public function getNestedRelationshipHooks(): array
+    {
+        $ownStatePath = $this->getStatePath();
+        $prefix = filled($ownStatePath) ? $ownStatePath . '.' : '';
+
+        $hooks = [];
+
+        foreach ($this->getFlatComponents(withActions: false) as $component) {
+            if (! $component->hasLoadStateFromRelationships() && ! $component->hasSaveRelationships()) {
+                continue;
+            }
+
+            if (! $component->hasStatePath()) {
+                continue;
+            }
+
+            $statePath = $component->getStatePath();
+
+            if (($statePath === null) || (($prefix !== '') && ! str_starts_with($statePath, $prefix))) {
+                continue;
+            }
+
+            if ($this->hasSubtreeOwnerBetween($component)) {
+                continue;
+            }
+
+            $hooks[mb_substr($statePath, mb_strlen($prefix))] = $component;
+        }
+
+        return $hooks;
     }
 
     /**
@@ -222,9 +278,88 @@ trait BelongsToRecord
             match (true) {
                 $component->getRecordStatePath() === null => 'it names no record path. Give it the statePath() of the association it maps, or drop the hook.',
                 $component->hasPathBearingDescendants() && ! $component->ownsRecordSubtree() => 'the map takes the paths of the components nested inside it instead of its own. Declare ownsRecordSubtree() so it maps whole, or drop the hook.',
-                default => 'a component above it owns its record subtree and speaks for every path beneath. Move it out from under that component, or drop the hook.',
+                default => 'a component above it owns its record subtree without routing the hooks beneath it. Declare relationship() on that component, move this one out from under it, or drop the hook.',
             },
         ));
+    }
+
+    /**
+     * Whether the owner that dropped `$component` from the map routes its hook
+     * itself. Only the innermost owner is asked — an outer one drops an inner
+     * owner's descendants first, and it is the inner owner's walk that would run
+     * them — and the vouch is put in that owner's own terms, its record path
+     * stripped off the component's. An owner the map could not path never
+     * delegated anything.
+     */
+    private function isDelegatedToSubtreeOwner(Component $component): bool
+    {
+        $owner = $this->findNearestSubtreeOwner($component);
+
+        if ($owner === null) {
+            return false;
+        }
+
+        $ownerPath = $owner->getRecordStatePath();
+        $componentPath = $component->getRecordStatePath();
+
+        if (($ownerPath === null) || ($componentPath === null)) {
+            return false;
+        }
+
+        $prefix = $ownerPath . '.';
+
+        if (! str_starts_with($componentPath, $prefix)) {
+            return false;
+        }
+
+        return $owner->routesNestedRelationshipHookAt(mb_substr($componentPath, mb_strlen($prefix)));
+    }
+
+    /**
+     * The innermost component above `$component` owning its record subtree —
+     * where {@see isInsideOwnerTree()} answers "any ancestor", this answers
+     * "which one", which is what separates an inner owner from the outer one
+     * whose pass dropped the path first.
+     */
+    private function findNearestSubtreeOwner(Component $component): ?Component
+    {
+        $ancestor = $component->getContainer()->getParentComponent();
+
+        while ($ancestor instanceof Component) {
+            if ($ancestor->ownsRecordSubtree()) {
+                return $ancestor;
+            }
+
+            $ancestor = $ancestor->getContainer()->getParentComponent();
+        }
+
+        return null;
+    }
+
+    /**
+     * Whether a component between `$component` and this schema owns its record
+     * subtree — the ancestor walk bounded at this schema, so a hook belongs to
+     * the innermost owner enclosing it and never to a schema further out.
+     */
+    private function hasSubtreeOwnerBetween(Component $component): bool
+    {
+        $container = $component->getContainer();
+
+        while ($container !== $this) {
+            $parentComponent = $container->getParentComponent();
+
+            if (!$parentComponent instanceof Component) {
+                return false;
+            }
+
+            if ($parentComponent->ownsRecordSubtree()) {
+                return true;
+            }
+
+            $container = $parentComponent->getContainer();
+        }
+
+        return false;
     }
 
     /**

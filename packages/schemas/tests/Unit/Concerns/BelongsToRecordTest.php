@@ -7,6 +7,7 @@ namespace Sylament\Schemas\Tests\Unit\Concerns;
 use LogicException;
 use Sylament\Schemas\Components\Section;
 use Sylament\Schemas\Schema;
+use Sylament\Schemas\Tests\Fixtures\Components\RoutingSubtreeOwner;
 use Sylament\Schemas\Tests\Fixtures\Components\StateField;
 use Sylament\Schemas\Tests\Fixtures\Components\StateGroup;
 use Sylament\Schemas\Tests\Fixtures\Components\SubtreeOwner;
@@ -733,4 +734,97 @@ it('refuses to null a record-subtree owner the record declares non-nullable', fu
 
     expect(fn (): object => $schema->getData())
         ->toThrow(LogicException::class, 'nullWhenBlank()');
+});
+
+it('does not refuse a hooked leaf beneath a vouching subtree owner', function (): void {
+    $schema = RecordPathMapSchemaFixture::make(new StateHostFixture())
+        ->statePath('data')
+        ->record(new Post())
+        ->components([
+            RoutingSubtreeOwner::make('meta')->components([
+                StateField::make('author')->loadStateFromRelationshipsUsing(fn (): null => null),
+            ]),
+        ]);
+
+    expect(array_keys($schema->recordPathMap()))->toBe(['meta']);
+});
+
+it('keeps refusing a hooked leaf beneath a non-vouching subtree owner', function (): void {
+    $schema = RecordPathMapSchemaFixture::make(new StateHostFixture())
+        ->statePath('data')
+        ->record(new Post())
+        ->components([
+            RoutingSubtreeOwner::make('meta')
+                ->routedPaths([])
+                ->components([
+                    StateField::make('author')->loadStateFromRelationshipsUsing(fn (): null => null),
+                ]),
+        ]);
+
+    expect(fn (): array => $schema->recordPathMap())
+        ->toThrow(LogicException::class, 'Declare relationship() on');
+});
+
+it('keeps refusing a path-less hooked component beneath a vouching owner', function (): void {
+    $schema = RecordPathMapSchemaFixture::make(new StateHostFixture())
+        ->statePath('data')
+        ->record(new Post())
+        ->components([
+            RoutingSubtreeOwner::make('meta')->components([
+                StateGroup::make()->loadStateFromRelationshipsUsing(fn (): null => null),
+            ]),
+        ]);
+
+    expect(fn (): array => $schema->recordPathMap())
+        ->toThrow(LogicException::class, 'names no record path');
+});
+
+it('keeps refusing a hooked non-owner container beneath a vouching owner', function (): void {
+    $schema = RecordPathMapSchemaFixture::make(new StateHostFixture())
+        ->statePath('data')
+        ->record(new Post())
+        ->components([
+            RoutingSubtreeOwner::make('meta')->components([
+                StateGroup::make()
+                    ->statePath('seo')
+                    ->saveRelationshipsUsing(fn (): null => null)
+                    ->components([StateField::make('title')]),
+            ]),
+        ]);
+
+    expect(fn (): array => $schema->recordPathMap())
+        ->toThrow(LogicException::class, 'ownsRecordSubtree()');
+});
+
+it('attributes a hooked leaf to the nearest owner, not the outermost', function (): void {
+    $schema = RecordPathMapSchemaFixture::make(new StateHostFixture())
+        ->statePath('data')
+        ->record(new Post())
+        ->components([
+            RoutingSubtreeOwner::make('meta')->components([
+                RoutingSubtreeOwner::make('inner')
+                    ->routedPaths([])
+                    ->components([
+                        StateField::make('author')->loadStateFromRelationshipsUsing(fn (): null => null),
+                    ]),
+            ]),
+        ]);
+
+    expect(fn (): array => $schema->recordPathMap())
+        ->toThrow(LogicException::class, 'Declare relationship() on');
+});
+
+it('keeps refusing the earlier of two hooked components sharing a record path beneath a vouching owner', function (): void {
+    $schema = RecordPathMapSchemaFixture::make(new StateHostFixture())
+        ->statePath('data')
+        ->record(new Post())
+        ->components([
+            RoutingSubtreeOwner::make('meta')->components([
+                StateField::make('author')->loadStateFromRelationshipsUsing(fn (): null => null),
+                StateField::make('author')->loadStateFromRelationshipsUsing(fn (): null => null),
+            ]),
+        ]);
+
+    expect(fn (): array => $schema->recordPathMap())
+        ->toThrow(LogicException::class, 'Declare relationship() on');
 });

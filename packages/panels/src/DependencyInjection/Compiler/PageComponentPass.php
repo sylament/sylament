@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Sylament\Panels\DependencyInjection\Compiler;
 
 use LogicException;
+use ReflectionClass;
 use Sylament\Panels\Controllers\PageController;
 use Sylament\Panels\Pages\Page;
 use Symfony\Component\DependencyInjection\Compiler\CompilerPassInterface;
@@ -12,6 +13,7 @@ use Symfony\Component\DependencyInjection\Compiler\ServiceLocatorTagPass;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Reference;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
+use Symfony\UX\LiveComponent\Attribute\AsLiveComponent;
 
 final class PageComponentPass implements CompilerPassInterface
 {
@@ -33,6 +35,13 @@ final class PageComponentPass implements CompilerPassInterface
                 continue;
             }
 
+            if ([] === new ReflectionClass($class)->getAttributes(AsLiveComponent::class)) {
+                throw new LogicException(sprintf(
+                    'Panel page "%s" must carry a bare #[AsLiveComponent] attribute. UX Live Components recognises a live parent by reflecting for it; without it every live component nested in this page is silently re-created on each re-render.',
+                    $class,
+                ));
+            }
+
             $name = $class::getComponentName();
 
             if (isset($names[$name])) {
@@ -42,6 +51,7 @@ final class PageComponentPass implements CompilerPassInterface
             $names[$name] = $id;
 
             $definition
+                ->clearTag('twig.component')
                 ->addTag('twig.component', [
                     'key' => $name,
                     'live' => true,

@@ -6,6 +6,7 @@ namespace Sylament\Panels\Tests\Fixtures\Resources\Pages;
 
 use Sylament\Panels\Resources\Pages\CreateRecord;
 use Sylament\Panels\Tests\Fixtures\Resources\ArticleResource;
+use Symfony\UX\LiveComponent\Attribute\AsLiveComponent;
 use Symfony\UX\LiveComponent\Attribute\LiveProp;
 
 /**
@@ -13,6 +14,7 @@ use Symfony\UX\LiveComponent\Attribute\LiveProp;
  * recording, over the create lifecycle, where the mutator runs *before*
  * `beforeCreate` rather than after the write hook the way the edit page's does.
  */
+#[AsLiveComponent]
 final class CreateHookedArticle extends CreateRecord
 {
     protected static string $resource = ArticleResource::class;

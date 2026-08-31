@@ -8,8 +8,10 @@ use BackedEnum;
 use Closure;
 use Sylament\Panels\Twig\PanelsIconAlias;
 use Sylament\Support\Icons\IconManager;
+use Symfony\UX\LiveComponent\Attribute\AsLiveComponent;
 use Twig\Markup;
 
+#[AsLiveComponent]
 class Dashboard extends Page
 {
     protected static ?string $title = 'Dashboard';

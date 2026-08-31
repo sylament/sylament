@@ -9,7 +9,9 @@ use Sylament\Actions\DeleteAction;
 use Sylament\Actions\EditAction;
 use Sylament\Panels\Resources\Pages\EditRecord;
 use Sylament\Panels\Tests\Fixtures\Resources\ArticleResource;
+use Symfony\UX\LiveComponent\Attribute\AsLiveComponent;
 
+#[AsLiveComponent]
 final class EditArticle extends EditRecord
 {
     protected static string $resource = ArticleResource::class;

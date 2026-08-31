@@ -9,8 +9,10 @@ use Sylament\Actions\CreateAction;
 use Sylament\Notifications\Notification;
 use Sylament\Panels\Resources\Pages\ListRecords;
 use Sylament\Panels\Tests\Fixtures\Resources\ArticleResource;
+use Symfony\UX\LiveComponent\Attribute\AsLiveComponent;
 use Symfony\UX\LiveComponent\Attribute\LiveProp;
 
+#[AsLiveComponent]
 final class ListArticles extends ListRecords
 {
     protected static string $resource = ArticleResource::class;

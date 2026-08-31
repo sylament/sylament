@@ -303,8 +303,8 @@ Deferred, all todo:
 Three deltas against Filament's page:
 [`$navigationGroup` is string-only](#navigationgroup-is-string-only-on-page-too),
 [`getNavigationItems()` and `getRouteName()` take the panel](#getnavigationitems-takes-the-panel-rather-than-reaching-a-facade),
-and [a page registers as a live component through a compiler pass rather than an
-attribute](#pages-register-as-live-components-through-a-compiler-pass-not-per-class-attributes).
+and [a concrete page carries a bare `#[AsLiveComponent]` that a compiler pass
+registers over](#pages-register-as-live-components-through-a-compiler-pass-over-a-per-class-attribute).
 
 ### Dashboard
 
@@ -1176,7 +1176,7 @@ they sit per subsystem:
 
 | Feature | Ports | Status | Detail |
 | --- | --- | --- | --- |
-| [`DependencyInjection\Compiler\PageComponentPass`](../../../packages/panels/src/DependencyInjection/Compiler/PageComponentPass.php) | [`Panel/Concerns/HasComponents.php`](../../../vendor/filament/filament/src/Panel/Concerns/HasComponents.php) — `registerLivewireComponents()` / `queueLivewireComponentForRegistration()` | in progress | every `Page` service is autoconfigured `sylament.panels.page` and the pass tags it as a live `twig.component` keyed by `Page::getComponentName()`, rendering through `template_from_method: getTemplate`; it also builds the class-keyed `ServiceLocator` `PageController` reads pages from — [why a pass rather than an attribute](#pages-register-as-live-components-through-a-compiler-pass-not-per-class-attributes) |
+| [`DependencyInjection\Compiler\PageComponentPass`](../../../packages/panels/src/DependencyInjection/Compiler/PageComponentPass.php) | [`Panel/Concerns/HasComponents.php`](../../../vendor/filament/filament/src/Panel/Concerns/HasComponents.php) — `registerLivewireComponents()` / `queueLivewireComponentForRegistration()` | in progress | every `Page` service is autoconfigured `sylament.panels.page`; the pass throws for a page class missing the bare `#[AsLiveComponent]` UX reflects for, clears the attribute-derived `twig.component` tag and re-adds a live one keyed by `Page::getComponentName()`, rendering through `template_from_method: getTemplate`; it also builds the class-keyed `ServiceLocator` `PageController` reads pages from — [the attribute and the pass, and why both](#pages-register-as-live-components-through-a-compiler-pass-over-a-per-class-attribute) |
 | [`DependencyInjection\Compiler\ResourcePass`](../../../packages/panels/src/DependencyInjection/Compiler/ResourcePass.php) | no Filament counterpart — resource discovery is [`Panel/Concerns/HasComponents.php`](../../../vendor/filament/filament/src/Panel/Concerns/HasComponents.php) `discoverResources()`, a filesystem scan | in progress | every `Resource` service is autoconfigured `sylament.panels.resource` and the pass collects the non-abstract ones into the class-keyed `ServiceLocator` `ResourceRegistry` reads — [Resources](#resources) |
 | [`DependencyInjection\Compiler\GlobalSearchProviderPass`](../../../packages/panels/src/DependencyInjection/Compiler/GlobalSearchProviderPass.php) | no Filament counterpart — a provider class-string is handed straight to `app()` | in progress | the same three-piece shape one feature over: every `GlobalSearchProvider` service is autoconfigured `sylament.panels.global_search_provider` and the pass collects the tagged definitions into the class-keyed `ServiceLocator` `GlobalSearchProviderRegistry` reads — [global-search.md](global-search.md#the-provider-is-resolved-through-a-tagged-registry-rather-than-app) |
 | _rest not audited yet_ | | | |
@@ -1202,7 +1202,7 @@ Enums, contracts, HTTP layer, events, templates —
 | [ListRecords template](../../../packages/panels/templates/partials/ListRecords/index.html.twig) | no Filament counterpart — v5's list page has no view of its own; [`ListRecords::content()`](../../../vendor/filament/filament/src/Resources/Pages/ListRecords.php) returns a schema holding an [`EmbeddedTable`](../../../vendor/filament/schemas/src/Components/EmbeddedTable.php) | in progress | [ListRecords](#listrecords) |
 | [CreateRecord template](../../../packages/panels/templates/partials/CreateRecord/index.html.twig) | no Filament counterpart — v5's create page has no view either; [`CreateRecord::content()`](../../../vendor/filament/filament/src/Resources/Pages/CreateRecord.php) returns a schema holding a `Form` wrapping an `EmbeddedSchema` and the form `Actions` | in progress | [CreateRecord](#createrecord) |
 | [EditRecord template](../../../packages/panels/templates/partials/EditRecord/index.html.twig) | same — [`EditRecord::content()`](../../../vendor/filament/filament/src/Resources/Pages/EditRecord.php) | in progress | [EditRecord](#editrecord) |
-| [`SylamentPanelsBundle`](../../../packages/panels/src/SylamentPanelsBundle.php) | [`FilamentServiceProvider.php`](../../../vendor/filament/filament/src/FilamentServiceProvider.php) | in progress | autoconfigures the three tags (`sylament.panels.panel_provider` / `.page` / `.resource`), registers `PageComponentPass` and `ResourcePass`, wires `Panel`, the two registries, `CurrentPanel`, `PageController` and the `routing.route_loader`, and prepends `@sylament/panels` into AssetMapper — [providers are collected by tag](#panels-are-collected-from-tagged-providers-not-registered-imperatively), [pages register through a pass](#pages-register-as-live-components-through-a-compiler-pass-not-per-class-attributes), [resources from a tag](#resources-are-collected-from-a-tag-not-discovered-on-the-filesystem) |
+| [`SylamentPanelsBundle`](../../../packages/panels/src/SylamentPanelsBundle.php) | [`FilamentServiceProvider.php`](../../../vendor/filament/filament/src/FilamentServiceProvider.php) | in progress | autoconfigures the three tags (`sylament.panels.panel_provider` / `.page` / `.resource`), registers `PageComponentPass` and `ResourcePass`, wires `Panel`, the two registries, `CurrentPanel`, `PageController` and the `routing.route_loader`, and prepends `@sylament/panels` into AssetMapper — [providers are collected by tag](#panels-are-collected-from-tagged-providers-not-registered-imperatively), [pages register through a pass](#pages-register-as-live-components-through-a-compiler-pass-over-a-per-class-attribute), [resources from a tag](#resources-are-collected-from-a-tag-not-discovered-on-the-filesystem) |
 | _rest not audited yet_ | | | |
 
 ### Layout templates
@@ -1483,7 +1483,7 @@ multiply the ways to collide (two pages sharing a `$slug`, two resources sharing
 a slug, a resource page landing on a page's name). Every mount now goes through
 one `addRoute()` that records the name's owner and throws a `LogicException`
 naming both mounts when a second claims it. The compile-time
-[component-name check](#pages-register-as-live-components-through-a-compiler-pass-not-per-class-attributes)
+[component-name check](#pages-register-as-live-components-through-a-compiler-pass-over-a-per-class-attribute)
 does not cover this and cannot: it keys on the FQCN, which is exactly what
 differs when two classes derive one slug.
 
@@ -2188,7 +2188,7 @@ console; `boot()` installs per-request global state — `FilamentColor::register
 
 Neither has a job here. Component registration is a **container** concern, done
 once at compile time by
-[`PageComponentPass`](#pages-register-as-live-components-through-a-compiler-pass-not-per-class-attributes)
+[`PageComponentPass`](#pages-register-as-live-components-through-a-compiler-pass-over-a-per-class-attribute)
 rather than per request by the panel. And `boot()`'s remaining work is exactly
 the mutable global state
 [the shell is worker-safe](#the-shell-is-turbo-indifferent-and-worker-safe)
@@ -2224,44 +2224,67 @@ through `make()` unless `make()` stops doing it — a change to the one factory
 shape the whole toolkit shares, for a closure nobody has written yet. Revisit the
 moment a consumer hits it.
 
-### Pages register as live components through a compiler pass, not per-class attributes
+### Pages register as live components through a compiler pass over a per-class attribute
 
 Filament registers a panel's pages as Livewire components imperatively, from
 `Panel::register()` through `registerLivewireComponents()` and
-`queueLivewireComponentForRegistration()`. The literal Symfony translation is
-`#[AsLiveComponent]` on every concrete `Page` subclass, and it was staged as an
-open decision for this epic. It is not the one taken.
-
-Class attributes do not inherit: `registerAttributeForAutoconfiguration()` reads
-the attribute off the class being registered, so putting `#[AsLiveComponent]` on
-the abstract `Page` base does nothing for its subclasses — every page a consumer
-writes has to repeat it. Forgetting it fails badly. The page is still a service,
-so the route still mounts and the request still reaches
-[`PageController`](#routing); the failure surfaces at the point where the
-document renders `{{ component(componentName) }}` and ux-twig-component has no
-component under that name — a render-time error about a component the user never
-typed, at a name derived from the FQCN, several layers from the missing
-attribute.
-
-So the tag is applied for them.
+`queueLivewireComponentForRegistration()`. The Symfony translation is split in
+two, and both halves are load-bearing: a **bare `#[AsLiveComponent]`** on every
+concrete page class, and
 [`PageComponentPass`](../../../packages/panels/src/DependencyInjection/Compiler/PageComponentPass.php)
-walks everything autoconfigured `sylament.panels.page` and replicates what the
-attribute would have produced: the **same two tags** the LiveComponent extension
-adds — `twig.component` carrying `AsLiveComponent::serviceConfig()`'s payload
-(`key`, `live`, `route`, `method`, `url_reference_type`, `expose_public_props`,
-`attributes_var` and `template_from_method: 'getTemplate'`, the two nullable
-entries the extension filters away being simply not written) plus
-`controller.service_arguments`. `template_from_method` is the payload the
-attribute's `new FromMethod('getTemplate')` form produces, and it is the arm that
-matters: a literal `template:` string is fixed at compile time, where
-`getTemplate()` lets the base class supply the default and a subclass override
-`$template`.
+writing the registration over the top of it.
 
-The pass also owns two things an attribute could not. Two pages deriving the same
-component name throw at compile time naming both services, where a duplicate
-attribute key would silently leave one registration standing. And the pass builds
-the class-keyed `ServiceLocator` `PageController` resolves pages through, so the
-same tag that makes a page renderable makes it reachable.
+The pass alone was the original shape, and it was wrong. UX does not recognise a
+live component by its container tag — it **reflects for the attribute**:
+`LiveComponentStack::isLiveComponent()` is
+`[] !== new \ReflectionClass($classname)->getAttributes(AsLiveComponent::class)`
+(`vendor/symfony/ux-live-component/src/Util/LiveComponentStack.php:45-48`), and
+that class is `final` with the method `private`, so there is no seam to teach it
+about a tag. A tag-only page is therefore not a live *parent*: every live
+component nested inside it is silently re-created on each re-render, with no
+error anywhere. Relation managers are exactly that nesting, which is what forced
+the attribute in. It is also the idiomatic answer (principles §2) — the
+ecosystem already ships the marker for "this class is a live component", and
+tagging without it was the deviation.
+
+Class attributes do not inherit, and neither does the reflection check, so the
+attribute cannot be hoisted onto the abstract `Page` base: every concrete page a
+consumer writes repeats one line. Forgetting it used to fail badly and silently.
+Now the pass throws at compile time, naming the class and the fix — the missing
+marker is a container-build error rather than a live child that quietly loses its
+state.
+
+What the attribute does *not* do is register the component usefully. Attribute
+autoconfiguration
+(`LiveComponentExtension.php:94-102`) adds `twig.component` carrying
+`AsLiveComponent::serviceConfig()` with the null and empty entries filtered — a
+tag with **no `key`** and no template, which would leave `TwigComponentPass`
+deriving a name from the FQCN against the *application's*
+`twig_component.defaults` and throwing for a class outside them. So the pass
+`clearTag('twig.component')` and re-adds the full eight-key payload (`key`,
+`live`, `route`, `method`, `url_reference_type`, `expose_public_props`,
+`attributes_var` and `template_from_method: 'getTemplate'`), plus
+`controller.service_arguments`, which is harmlessly duplicated. The ordering that
+makes the clear work is Symfony's own: `AttributeAutoconfigurationPass` and
+`ResolveInstanceofConditionalsPass` run at beforeOptimization **priority 100**,
+so by the time this pass runs at priority 10 the attribute-derived tag is already
+materialized, and `TwigComponentPass` at priority 0 sees exactly one tag with an
+explicit key. `template_from_method` is the payload the attribute's
+`new FromMethod('getTemplate')` form produces, and it is the arm that matters: a
+literal `template:` string is fixed at compile time, where `getTemplate()` lets
+the base class supply the default and a subclass override `$template`.
+
+Owning the tag rather than accepting the attribute's is what buys the two things
+an attribute could not do. Two pages deriving the same component name throw at
+compile time naming both services, where a duplicate attribute key would silently
+leave one registration standing (`TwigComponentPass` has no duplicate guard on
+the explicit-key path). And the pass builds the class-keyed `ServiceLocator`
+`PageController` resolves pages through, so the same tag that makes a page
+renderable makes it reachable.
+
+The pass' shape — *clear the attribute-derived tag, re-add ours, throw without
+the attribute* — is the contract every live-component pass in this package
+follows.
 
 What the pass tags is every `Page` service the application registers, not every
 page a panel lists — `pages()` is read by [`PanelRouteLoader`](#routing), never by
@@ -2276,8 +2299,10 @@ authorization gate belongs on the component mount, not on the panel routes**. A 
 `_sylament_page`) secures exactly the half of the surface the pass did not create,
 and leaves the POST endpoint open under a name derived from the page's own FQCN.
 
-The cost is the ordinary one for compile-time magic: nothing in a page class says
-it is a live component, so the fact lives here and in the bundle's `build()`.
+The cost is an authoring-surface addition Filament does not have: one
+`#[AsLiveComponent]` line per concrete page class, which a consumer coming from
+Filament has no reason to expect. It buys the only live-parent recognition UX
+offers, and the throw means it is never *silently* missing.
 
 ### `getNavigationItems()` takes the panel rather than reaching a facade
 
@@ -2588,7 +2613,7 @@ replaces the second with the tag — `SylamentPanelsBundle::build()` autoconfigu
 [`ResourcePass`](../../../packages/panels/src/DependencyInjection/Compiler/ResourcePass.php)
 collects the non-abstract ones into a class-keyed `ServiceLocator` on
 `ResourceRegistry`. This is the same move [pages
-made](#pages-register-as-live-components-through-a-compiler-pass-not-per-class-attributes),
+made](#pages-register-as-live-components-through-a-compiler-pass-over-a-per-class-attribute),
 and for a related reason: a resource must be a **service** to hold dependencies,
 and a Symfony application already declares its services with a PSR-4 glob in
 `services.yaml`. A filesystem scan on top of that would be a second discovery
@@ -2970,7 +2995,7 @@ Filament has the same problem and solves it with `original_request()`, a
 Livewire helper that reaches the request that rendered the component rather than
 the one carrying the update. The fix here is the same shape: the panel id is
 already known at render time, so a page can carry it (a `LiveProp`, or the
-component name the [page pass](#pages-register-as-live-components-through-a-compiler-pass-not-per-class-attributes)
+component name the [page pass](#pages-register-as-live-components-through-a-compiler-pass-over-a-per-class-attribute)
 registers) and pass `panel:` explicitly to `getUrl()`. Deferred rather than
 declined — it wants a decision about where panel identity lives on a live
 component, which multi-panel navigation will force anyway.

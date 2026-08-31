@@ -6,8 +6,10 @@ namespace Sylament\Panels\Tests\Fixtures\Resources\Pages;
 
 use Sylament\Panels\Pages\Page;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
+use Symfony\UX\LiveComponent\Attribute\AsLiveComponent;
 use Symfony\UX\LiveComponent\Attribute\LiveProp;
 
+#[AsLiveComponent]
 final class RecordProbePage extends Page
 {
     /**

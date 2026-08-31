@@ -7,7 +7,9 @@ namespace Sylament\Panels\Tests\Fixtures\Resources\Pages;
 use Sylament\Actions\CreateAction;
 use Sylament\Panels\Resources\Pages\ListRecords;
 use Sylament\Panels\Tests\Fixtures\Resources\NoteResource;
+use Symfony\UX\LiveComponent\Attribute\AsLiveComponent;
 
+#[AsLiveComponent]
 final class ListNotes extends ListRecords
 {
     protected static string $resource = NoteResource::class;

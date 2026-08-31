@@ -1347,12 +1347,13 @@ carry the same setter name and the same payload set, which is what makes
 thing to read. `record()` on a component is otherwise Filament's behaviour
 exactly, container fallback included.
 
-One consumer deliberately does not read it: forms' derived requirement resolves
-the record class in the **root** frame, because the path it looks the class up by
-is root-relative
-([the frame rule](../forms/can-be-validated.md#requirement-is-derived-from-the-records-write-side-types)).
-A component-tier binding therefore serves closure injection and
-mapping-independent reads, not derivation.
+A binding here is read in the same frame as the path it is looked up by, which is
+what [the nearest-frame pair](#the-nearest-record-frame-is-the-first-node-above-a-component-that-binds-one)
+exists for: forms' derived requirement and the date picker's write-side class
+both take class and path from the nearest binding
+([the frame rule](../forms/can-be-validated.md#requirement-is-derived-from-the-records-write-side-types)),
+so a component-tier binding serves those as well as closure injection and
+mapping-independent reads. The map itself stays root-framed.
 
 ### The `$model` closure parameter is not ported
 

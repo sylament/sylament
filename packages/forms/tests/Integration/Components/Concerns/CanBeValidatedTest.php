@@ -214,7 +214,7 @@ it('nulls the branch on getData() when only the checkbox holds its resting value
         ->and($article->getAuthor())->toBeNull();
 });
 
-it('derives from the root record class when a mid-tree record() binding intervenes', function (): void {
+it('derives from the record a mid-tree record() binding puts on the subtree', function (): void {
     $schema = Schema::make(new FieldRenderHost())
         ->statePath('data')
         ->record(Article::class)
@@ -230,7 +230,7 @@ it('derives from the root record class when a mid-tree record() binding interven
     expect($schema->getComponentByStatePath('data.author.name')->isRequired())->toBeTrue();
 });
 
-it('does not derive from a mid-tree binding alone', function (): void {
+it('derives from a mid-tree binding the root record does not stand behind', function (): void {
     $schema = Schema::make(new FieldRenderHost())
         ->statePath('data')
         ->components([
@@ -242,7 +242,7 @@ it('does not derive from a mid-tree binding alone', function (): void {
 
     $schema->rawState(['author' => ['name' => null]]);
 
-    expect($schema->getComponentByStatePath('data.author.name')->isRequired())->toBeFalse();
+    expect($schema->getComponentByStatePath('data.author.name')->isRequired())->toBeTrue();
 });
 
 /**

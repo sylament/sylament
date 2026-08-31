@@ -309,10 +309,11 @@ class DateTimePicker extends Field implements Contracts\HasAffixes
     }
 
     /**
-     * The write-side type the bound record declares, when it is one this field
-     * can produce. Null — no container, no bound record, a path the record does
-     * not declare, or any other target type — leaves the cast writing a string in
-     * {@see getFormat()}, which is what Filament's own cast always writes.
+     * The write-side type the record framing this field declares, when it is one
+     * this field can produce. Null — no container, no record on the frame, a path
+     * that escapes it or that the record does not declare, or any other target
+     * type — leaves the cast writing a string in {@see getFormat()}, which is what
+     * Filament's own cast always writes.
      *
      * @return class-string<DateTimeInterface>|null
      */
@@ -322,8 +323,8 @@ class DateTimePicker extends Field implements Contracts\HasAffixes
             return null;
         }
 
-        $recordClass = $this->getRootContainer()->getRecordClass();
-        $recordPath = $this->getRecordStatePath();
+        $recordClass = $this->getNearestRecordClass();
+        $recordPath = $this->getNearestRecordStatePath();
 
         if ($recordClass === null || $recordPath === null) {
             return null;

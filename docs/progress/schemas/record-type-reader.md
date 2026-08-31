@@ -114,8 +114,10 @@ decision from one place into three.
 Every consumer above reads the reader at write time. M3·2 added the first that
 reads it at *configure* time:
 [`DateTimePicker::getDateTimeObjectClass()`](../forms/date-time-picker.md) walks
-the same guard chain forms' `isRequiredByRecord()` does — root container →
-record class → `getRecordStatePath()` → `describe()` — and hands the target's
+the same guard chain forms' `isRequiredByRecord()` does —
+[`getNearestRecordClass()`](belongs-to-record.md#the-nearest-record-frame-is-the-first-node-above-a-component-that-binds-one)
+→ `getNearestRecordStatePath()` → `describe()`, class and path off one frame walk
+so the two agree — and hands the target's
 `objectClass` to [`DateTimeStateCast`](date-time-state-cast.md), so one
 `DateTimePicker::make('publishedAt')` writes a `DateTimeImmutable` to an
 immutable property, a `DateTime` to a mutable one, and a formatted string when

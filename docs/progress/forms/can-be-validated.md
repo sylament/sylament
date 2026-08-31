@@ -131,8 +131,15 @@ record bound on the root schema, suppressed under a blank nullable branch,
 resumed once the branch is filled, applied when the branch is not declared
 nullable, unmoved by a path-less `nullWhenBlank()` container (asserted against two
 values of an unrelated sibling field, so a walk reading the whole bag fails it),
-and an explicit `required()` staying strict inside a blank branch — by
+an explicit `required()` staying strict inside a blank branch, and a mid-tree
+`record()` binding deriving for the fields beneath it both under a bound root and
+without one — by
 [`Integration/CanBeValidatedTest`](../../../packages/forms/tests/Integration/Components/Concerns/CanBeValidatedTest.php);
+the record frame itself — the class taken from the nearest binding, the root no
+longer reaching inside a subtree that re-roots, a field outside the frame still
+reading the root, and a memoized path that escapes the frame deriving nothing —
+by
+[`CanBeValidatedRecordFrameTest`](../../../packages/forms/tests/Integration/Components/Concerns/CanBeValidatedRecordFrameTest.php);
 the `isMarkedAsRequired()` fallback by
 [`FieldTest`](../../../packages/forms/tests/Unit/Components/FieldTest.php); the
 `TextInput` arms and their ordering by
@@ -734,18 +741,29 @@ is not a question a Filament schema can ask. Their equivalent is three manual
 declarations that must be kept in sync with the schema by hand — fields left
 un-`required()`, `requiredWith()` on the siblings, `condition:` on the container.
 
-**The class is read in the root frame**, `getRootContainer()->getRecordClass()`,
-not from the nearest binding up the chain. Class and path have to name the same
-frame: `getRecordStatePath()` is root-relative by
-[definition](../schemas/belongs-to-record.md#getrecordstatepath-is-the-one-definition-of-record-relative-and-both-walks-must-share-it),
-and it is the frame `getData()` maps in. Reading the class nearest-first mixed
-the two — `Section::make('author')->statePath('author')->record(Author::class)`
-asked `describe(Author::class, 'author.name')`, which no type answers, and the
-walk then derived **not required** rather than failing. So a component-tier
-`record()` binding feeds
-[closure injection and mapping-independent reads](../schemas/belongs-to-record.md#the-component-tier-gains-record)
-and never derivation; a field that wants a derived requirement is bound through
-the schema its path is relative to.
+**Class and path are both read in the nearest record frame** —
+`getNearestRecordClass()` and `getNearestRecordStatePath()`, the first node above
+the field that binds a record of its own, else the root container. The two have
+to name the same frame, and
+[the pair comes off one walk](../schemas/belongs-to-record.md#the-nearest-record-frame-is-the-first-node-above-a-component-that-binds-one)
+**so the two agree**. What the trait shipped with instead was the root frame for
+both halves, chosen because reading only the class nearest-first mixed them:
+`Section::make('author')->statePath('author')->record(Author::class)` asked
+`describe(Author::class, 'author.name')`, which no type answers, and the walk
+derived **not required** rather than failing. Framing both halves is the fix —
+that section now asks `describe(Author::class, 'name')`, so **a field inside a
+class-stamped frame over a non-nullable property derives required**. It is also
+the half a stamped subtree needs: with the frame in place, a
+[relationship repeater](repeater.md) item or an
+[entangled subtree](../schemas/entangles-state-with-singular-relationship.md)
+binding its own record derives against that record instead of asking the root
+about a `record-<id>` segment no property answers. Where the field's path does
+not nest under the frame's, the path half is null and derivation gives up rather
+than indexing the frame's record with a path that is not its own.
+[`getRecordStatePath()`](../schemas/belongs-to-record.md#getrecordstatepath-is-the-one-definition-of-record-relative-and-both-walks-must-share-it)
+is untouched and the map stays root-framed; only this derivation moved, and a
+component-tier `record()` binding now feeds it as well as
+[closure injection and mapping-independent reads](../schemas/belongs-to-record.md#the-component-tier-gains-record).
 
 The signature widens to carry it: `required(bool|Closure|null $condition = true)`,
 where Filament's is `bool|Closure`. **`required(null)` is a new public arm** and
@@ -777,9 +795,10 @@ Two behaviours make this safe to have on by default, and both are load-bearing:
   elsewhere on the page.
   [The mapper now refuses that declaration outright](../schemas/belongs-to-record.md#a-nullable-branch-with-no-state-path-is-refused-not-ignored);
   the two walks agree on what a branch is.
-- **It answers `false` wherever it cannot be sure.** No container, no bound record
-  class, no record-relative path, a path the record does not declare, or a
-  collection-typed target — each returns false rather than guessing. The
+- **It answers `false` wherever it cannot be sure.** No container, no record on
+  the frame, no frame-relative path — a field carrying none of its own, or one
+  whose path escapes the frame — a path the record does not declare, or a
+  collection-typed target: each returns false rather than guessing. The
   collection skip uses the wide `isCollection` flag, since a blank value says
   nothing about whether an `array` target accepts it.
 

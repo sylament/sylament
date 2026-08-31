@@ -95,7 +95,11 @@ with the `native()` switch itself by
 The rendered control, the validation run through a live host and the record
 round-trip against `DateTimeImmutable`, `DateTime`, `DateTimeInterface` and
 `string` properties are covered by
-[`Integration/DateTimePickerTest`](../../../packages/forms/tests/Integration/Components/DateTimePickerTest.php).
+[`Integration/DateTimePickerTest`](../../../packages/forms/tests/Integration/Components/DateTimePickerTest.php);
+the frame the write-side class is resolved in — a picker inside a subtree bound
+to another record reading that record's types, one outside it still reading the
+root, and a memoized path escaping the frame resolving nothing — by
+[`DateTimePickerRecordFrameTest`](../../../packages/forms/tests/Integration/Components/DateTimePickerRecordFrameTest.php).
 
 ## Details
 
@@ -245,10 +249,14 @@ So the port's cast takes a fourth constructor argument, `objectClass`, and this
 field fills it from the record's own write-side type. `getDateTimeObjectClass()`
 walks the same guard chain
 [`isRequiredByRecord()`](can-be-validated.md#requirement-is-derived-from-the-records-write-side-types)
-walks — root container → bound record class → record-relative path →
+walks — [nearest record frame](../schemas/belongs-to-record.md#the-nearest-record-frame-is-the-first-node-above-a-component-that-binds-one)
+→ that frame's record class → the field's path relative to it →
 [type reader](../schemas/record-type-reader.md) — and returns the target's class
-only when it is `DateTime` or `DateTimeImmutable`. Anything else, including no
-record at all, leaves it null and the cast writes Filament's string in
+only when it is `DateTime` or `DateTimeImmutable`. Class and path come off one
+walk **so the two agree**, which is what lets a picker inside a subtree bound to
+a different record resolve against that record instead of asking the root about a
+path it does not own. Anything else, including no record at all and a path that
+escapes the frame, leaves it null and the cast writes Filament's string in
 [`getFormat()`](#format-is-the-record-side-shape-and-getinternalformat-the-wire-side-one).
 This is the first cast in the port whose *shape* is chosen from a record type
 rather than declared by the caller.

@@ -52,6 +52,7 @@ permanent note in [Divergences](#divergences).
 | Sibling merge across components sharing one relationship | [both closures' `findComponentsWithThisRelationship`](../../../vendor/filament/schemas/src/Components/Concerns/EntanglesStateWithSingularRelationship.php) | skipped | — | [diverges](#two-components-entangling-one-relationship-throw-rather-than-merge) |
 | `cachedExistingRecord()` / `getCachedExistingRecord()` / `clearCachedExistingRecord()` | [the cache trio](../../../vendor/filament/schemas/src/Components/Concerns/EntanglesStateWithSingularRelationship.php) | skipped | — | [diverges](#the-existing-record-is-read-off-the-graph-rather-than-cached-on-the-component) |
 | Child schema re-rooted onto the related record | [`getChildSchema()` override](../../../vendor/filament/schemas/src/Components/Concerns/EntanglesStateWithSingularRelationship.php) | todo | — | [detail](#the-child-schema-is-not-re-rooted-onto-the-related-record) |
+| Relation-backed fields inside the entangled subtree | [`Schema::saveRelationships()`'s tree walk](../../../vendor/filament/schemas/src/Concerns/BelongsToModel.php) | blocked | [nested hook delegation](belongs-to-record.md#a-relationship-hook-beneath-a-subtree-owner-has-nowhere-to-fire) | [detail](#a-relation-backed-field-cannot-sit-inside-the-entangled-subtree) |
 | `mutateRelationshipDataBeforeFill/Create/Save` | [the three mutation hooks](../../../vendor/filament/schemas/src/Components/Concerns/EntanglesStateWithSingularRelationship.php) | todo | — | [detail](#the-three-mutation-hooks-are-not-ported-here-yet) |
 | Hidden-component skip (`shouldSaveRelationshipsWhenHidden()`) | [the save closure's `isHidden()` guard](../../../vendor/filament/schemas/src/Components/Concerns/EntanglesStateWithSingularRelationship.php) | todo | `shouldSaveRelationshipsWhenHidden()` | [detail](#the-hidden-component-skip-waits-on-its-flag) |
 | Translatable content driver | [`makeFilamentTranslatableContentDriver()` branches](../../../vendor/filament/schemas/src/Components/Concerns/EntanglesStateWithSingularRelationship.php) | skipped | — | [diverges](#the-translatable-content-driver-has-no-port) |
@@ -85,9 +86,31 @@ outer record, and nothing inside it reads the wrong one today: state lives in th
 live bag, and the model-sourced validation constraints read
 `getRootContainer()->getRecordClass()` — the root schema — so re-rooting an
 intermediate child schema would not reach them anyway. What it would buy is a
-nested component asking `getRecord()` for the related object. Next step: give the
-trait a `configureChildSchema()` override once a consumer needs it, and move the
-constraint lookup off the root container in the same change, so the two agree.
+nested component asking `getRecord()` for the related object — which is exactly
+what a nested relationship hook would need, and half of why
+[a relation-backed field cannot sit inside the subtree](#a-relation-backed-field-cannot-sit-inside-the-entangled-subtree).
+Next step: give the trait a `configureChildSchema()` override once a consumer
+needs it, and move the constraint lookup off the root container in the same
+change, so the two agree.
+
+### A relation-backed field cannot sit inside the entangled subtree
+
+The same wall the forms
+[`Repeater`](../forms/repeater.md#a-relation-backed-field-cannot-sit-inside-a-relationship-repeater)
+meets, one owner over: this component
+[owns its record subtree](belongs-to-record.md#a-component-can-own-its-whole-record-subtree),
+so the mapper drops the paths beneath it and
+[refuses](belongs-to-record.md#a-hook-the-record-path-map-does-not-carry-is-refused)
+a nested component's relationship hook — a `Select` mapping the related record's
+own to-one association throws at map time rather than saving.
+`getRelatedStatePaths()` collects leaves and `getStateFromRelationship()` skips
+an object-valued one, so the walk carries scalar columns and nothing else, and
+the child schema is not bound to the related record either (the row above). The grounds, and why Filament
+needs no equivalent, are in
+[the schemas write-up](belongs-to-record.md#a-relationship-hook-beneath-a-subtree-owner-has-nowhere-to-fire).
+
+**Next step:** [M3 · 10](../roadmap.md#m3--forms-widening) — the re-rooting above
+is one of its pieces, so the two rows close together.
 
 ### The three mutation hooks are not ported here yet
 

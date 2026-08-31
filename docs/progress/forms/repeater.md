@@ -97,7 +97,8 @@ or `—`. A row with no _Ports_ link is Sylament-only.
 | `extraItemActions()` (`HasExtraItemActions`) | [`HasExtraItemActions.php`](../../../vendor/filament/forms/src/Components/Concerns/HasExtraItemActions.php) | done | — | [semantics](#an-extra-item-action-reads-its-items-state) |
 | Items grid (`HasContainerGridLayout`) | [`Repeater.php`](../../../vendor/filament/forms/src/Components/Repeater.php) | done | — | [semantics](#the-items-grid-is-supports-grid) |
 | `table()` mode (`table()` / `getTableColumns()` / `isTable()` / `toTableEmbeddedHtml()`; the `TableColumn` class keeps [its own README row](README.md#components)) | [`Repeater.php`](../../../vendor/filament/forms/src/Components/Repeater.php) | done | — | [semantics](#table-mode-pairs-columns-by-position) · [diverges](#hidden-fields-render-in-a-trailing-hidden-cell) |
-| Relationship family — **shipped**: `relationship()`, `hasRelationship()` / `getRelationshipName()`, `orderColumn()` / `getOrderColumn()`, the three setters `mutateRelationshipDataBeforeFillUsing()` / `mutateRelationshipDataBeforeCreateUsing()` / `mutateRelationshipDataBeforeSaveUsing()`, the fill and save arms (Filament's `fillFromRelationship()` / `getStateFromRelatedRecords()` / `saveToRelationship()`, here the two [component-tier hooks](../schemas/belongs-to-record.md#the-relationship-hooks-are-consulted-by-the-two-mapping-edges-not-by-a-schema-level-walk)). **Not ported**: `getRelationship()` / `getRelatedModel()` (Eloquent objects with no Doctrine counterpart — `AssociationTarget` answers both), `getCachedExistingRecords()` / `clearCachedExistingRecords()`, `afterCreate()` / `afterUpdate()` / `afterDelete()`, the three public callers `mutateRelationshipDataBeforeFill()` / `mutateRelationshipDataBeforeCreate()` / `mutateRelationshipDataBeforeSave()` (the arms call the callbacks through one private helper instead), the `getLabel()` override, item `constantState()` / record stamping | [`Repeater.php`](../../../vendor/filament/forms/src/Components/Repeater.php) | done | — | [semantics](#a-relationship-repeater-keys-its-items-by-identity-and-diffs-the-collection) · [diverges](#the-relationship-family-loses-its-caches-its-lifecycle-hooks-and-its-query-scope) |
+| Relationship family — **shipped**: `relationship()`, `hasRelationship()` / `getRelationshipName()`, `orderColumn()` / `getOrderColumn()`, the three setters `mutateRelationshipDataBeforeFillUsing()` / `mutateRelationshipDataBeforeCreateUsing()` / `mutateRelationshipDataBeforeSaveUsing()`, the fill and save arms (Filament's `fillFromRelationship()` / `getStateFromRelatedRecords()` / `saveToRelationship()`, here the two [component-tier hooks](../schemas/belongs-to-record.md#the-relationship-hooks-are-consulted-by-the-two-mapping-edges-not-by-a-schema-level-walk)). **Not ported**: `getRelationship()` / `getRelatedModel()` (Eloquent objects with no Doctrine counterpart — `AssociationTarget` answers both), `getCachedExistingRecords()` / `clearCachedExistingRecords()`, `afterCreate()` / `afterUpdate()` / `afterDelete()`, the three public callers `mutateRelationshipDataBeforeFill()` / `mutateRelationshipDataBeforeCreate()` / `mutateRelationshipDataBeforeSave()` (the arms call the callbacks through one private helper instead), the `getLabel()` override, item `constantState()` / record stamping — whose record half now carries [a row of its own](#a-relation-backed-field-cannot-sit-inside-a-relationship-repeater), since a nested relationship hook cannot fire without it | [`Repeater.php`](../../../vendor/filament/forms/src/Components/Repeater.php) | done | — | [semantics](#a-relationship-repeater-keys-its-items-by-identity-and-diffs-the-collection) · [diverges](#the-relationship-family-loses-its-caches-its-lifecycle-hooks-and-its-query-scope) |
+| Relation-backed fields inside an item — Filament's `$item->model($record)->saveRelationships()` recursion, plus the item-schema record stamp it needs | [`Repeater::saveToRelationship()`](../../../vendor/filament/forms/src/Components/Repeater.php) | blocked | schemas' [nested hook delegation](../schemas/belongs-to-record.md#a-relationship-hook-beneath-a-subtree-owner-has-nowhere-to-fire) | [detail](#a-relation-backed-field-cannot-sit-inside-a-relationship-repeater) |
 | `partiallyRenderAfterActionsCalled()` / `shouldPartiallyRenderAfterActionsCalled()` | [`Repeater.php`](../../../vendor/filament/forms/src/Components/Repeater.php) | blocked | UX LiveComponent partial-render equivalent | — |
 | `array_move_before()` / `array_move_after()` (`packages/forms/src/helpers.php`, the reorder bodies) | [`helpers.php`](../../../vendor/filament/forms/src/helpers.php) | done | — | — |
 | Deprecated members (`createItemButtonLabel()`, `disableItemCreation()` / `disableItemDeletion()` / `disableItemMovement()`, `orderable()`, `inset()`) | [`Repeater.php`](../../../vendor/filament/forms/src/Components/Repeater.php) | skipped | — | [diverges](#deprecated-filament-members-are-not-ported) |
@@ -116,6 +117,38 @@ live in their own files — the record-walk changes in
 the wrapper heading arm in [field.md](field.md#labeltag-is-a-boolean-labelasheading),
 and `distinct()`'s three arms in
 [can-be-validated.md](can-be-validated.md#distinct-is-three-arms-of-one-first-party-constraint-not-laravels-rule).
+
+### A relation-backed field cannot sit inside a `relationship()` repeater
+
+`Select::make('author')->relationship()` inside
+`Repeater::make('contributors')->relationship()` — the join-entity-with-a-payload
+shape — throws at map time rather than saving: the repeater
+[owns its record subtree](#a-repeater-owns-its-record-subtree), so the mapper
+drops the field's path and then
+[refuses its hook](../schemas/belongs-to-record.md#a-hook-the-record-path-map-does-not-carry-is-refused),
+correctly, because nothing here would ever run it. The refusal fires from
+`fill()` as well as `getData()`, so an owner record that already holds such an
+item breaks its edit page too, and a repeater standing empty is what defers the
+throw to the first save.
+
+Two halves are missing on this side, and
+[the schemas write-up](../schemas/belongs-to-record.md#a-relationship-hook-beneath-a-subtree-owner-has-nowhere-to-fire)
+carries the third. `getItemsFromRelationship()` skips an object-valued leaf and
+`saveItemsToRelationship()` writes each leaf through
+`PropertyAccessor::setOnRecord()`, so the item walk can carry a scalar column and
+nothing else — an association needs an entity written, not the identifier the
+field speaks. And no item schema is stamped with the child it maps, the record
+half of
+[the stamp this epic did not do](#an-item-schema-carries-no-constant-state-or-inline-label-stamp),
+so a hook that did fire would receive the root record rather than the item's.
+
+The workarounds do not reach it either. `mutateRelationshipDataBeforeSaveUsing()`
+receives the child and could set the association by hand, but its create sibling
+runs before the child exists and `mutateRelationshipDataBeforeFillUsing()`
+receives no record at all, so the fill side cannot be recovered from a callback.
+
+**Next step:** [M3 · 10](../roadmap.md#m3--forms-widening), whose schemas half
+lands first.
 
 ## Semantics
 

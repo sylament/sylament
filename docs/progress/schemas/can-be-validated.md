@@ -435,7 +435,7 @@ identities; the fix, when a consumer needs it, is to prefer the child schema's o
 key whenever it differs from the default child schema's.
 
 Reverses only if child-schema validation stops being a thing — the Wizard is its
-first consumer and relation managers will be the second.
+first consumer, and relation managers became the second at M6 · 1.
 
 ### The throwing branch announces form-validation-error, carrying the schema identity
 

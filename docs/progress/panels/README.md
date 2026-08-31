@@ -11,7 +11,12 @@ resources, pages, navigation.
 The tables below are structure plus the first ported rows; nothing has been
 audited end to end yet.
 [`support/component.md`](../support/component.md) is the shape each detail file
-follows.
+follows. The package's docs are in a deliberate mixed state: most detail lives as
+in-file anchors in this README (a recorded divergence from the tree rule), while
+M6 · 1 started the first per-component detail files —
+[relation-manager.md](relation-manager.md), [relation-group.md](relation-group.md),
+[has-relation-managers.md](has-relation-managers.md) — and new surfaces follow that
+shape; the inline sections stay until each is migrated.
 
 ## Carried decisions
 
@@ -3089,10 +3094,12 @@ editing.
 
 That is coherent in Filament because a create modal on a record page is nearly
 always a *relationship* create, where the page record is the parent the new row
-hangs off, and Eloquent's relationship arm reads it as exactly that. We have no
-relationship arm on `CreateAction` yet — it waits on relation managers — so the
-same default would be read the only other way it can be: as the record the create
-is *about*. A `CreateAction` seeded with an existing record fills its modal from
+hangs off, and Eloquent's relationship arm reads it as exactly that. Our
+relationship arm exists — `CreateAction::relationship()` shipped with M4 · 8 and a
+relation manager answers `getDefaultActionRelationship()` since M6 · 1 — but it
+hangs off the *table* and the manager, never off an ambient page record, so on the
+page itself the same default would still be read the only other way it can be: as
+the record the create is *about*. A `CreateAction` seeded with an existing record fills its modal from
 that record and, on submit, maps state onto it. The create modal would silently
 become an edit of the page's record.
 

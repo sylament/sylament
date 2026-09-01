@@ -15,12 +15,16 @@ use Sylament\Panels\CurrentPanel;
 use Sylament\Panels\Navigation\NavigationItem;
 use Sylament\Panels\Panel;
 use Sylament\Panels\PanelRegistry;
+use Sylament\Panels\Resources\Pages\Page;
 use Sylament\Panels\Resources\Pages\PageRegistration;
 use Sylament\Panels\Resources\RelationManagers\RelationGroup;
 use Sylament\Panels\Resources\RelationManagers\RelationManager;
 use Sylament\Panels\Resources\RelationManagers\RelationManagerConfiguration;
+use Sylament\Panels\Resources\Resource\Concerns\BelongsToParent;
+use Sylament\Panels\Resources\Resource\Concerns\HasBreadcrumbs;
 use Sylament\Panels\Resources\Resource\Concerns\HasGlobalSearch;
 use Sylament\Schemas\Schema;
+use Sylament\Schemas\State\AssociationReader;
 use Sylament\Schemas\State\PropertyAccessor;
 use Sylament\Tables\Table;
 use Symfony\Component\HttpFoundation\RequestStack;
@@ -37,6 +41,8 @@ use function Symfony\Component\String\u;
 
 abstract class Resource
 {
+    use BelongsToParent;
+    use HasBreadcrumbs;
     use HasGlobalSearch;
 
     /**
@@ -76,6 +82,10 @@ abstract class Resource
 
     private ?PropertyAccessor $propertyAccessor = null;
 
+    private ?AssociationReader $associationReader = null;
+
+    private ?ResourceRegistry $resources = null;
+
     #[Required]
     public function setResourceServices(
         EntityManagerInterface $entityManager,
@@ -83,12 +93,16 @@ abstract class Resource
         CurrentPanel $currentPanel,
         PanelRegistry $panels,
         PropertyAccessor $propertyAccessor,
+        AssociationReader $associationReader,
+        ResourceRegistry $resources,
     ): void {
         $this->entityManager = $entityManager;
         $this->urlGenerator = $urlGenerator;
         $this->currentPanel = $currentPanel;
         $this->panels = $panels;
         $this->propertyAccessor = $propertyAccessor;
+        $this->associationReader = $associationReader;
+        $this->resources = $resources;
     }
 
     public function form(Schema $schema): Schema
@@ -232,9 +246,24 @@ abstract class Resource
             ->from($this->getRecordClass(), 'record');
     }
 
-    public function resolveRecordRouteBinding(int|string $key): ?object
+    /**
+     * The record one route key names, or null. The modifier receives the record
+     * query and returns the one to key against — a different builder, such as a
+     * parent-scoped one, is what narrows a nested resource's binding.
+     */
+    public function resolveRecordRouteBinding(int|string $key, ?Closure $modifyQuery = null): ?object
     {
         $query = clone $this->getRecordQuery();
+
+        if ($modifyQuery instanceof Closure) {
+            $modifiedQuery = $modifyQuery($query);
+
+            if ($modifiedQuery !== null && ! $modifiedQuery instanceof QueryBuilder) {
+                throw new LogicException(sprintf('The query modifier passed to [%s::resolveRecordRouteBinding()] must return a query builder or null; it returned %s.', static::class, get_debug_type($modifiedQuery)));
+            }
+
+            $query = $modifiedQuery ?? $query;
+        }
 
         $rootAlias = $query->getRootAliases()[0]
             ?? throw new LogicException(sprintf('The record query of resource [%s] names no root alias to resolve a record against.', static::class));
@@ -285,22 +314,42 @@ abstract class Resource
 
     public function getRouteBaseName(Panel $panel): string
     {
+        if ($this->getParentResourceRegistration() instanceof ParentResourceRegistration) {
+            return $this->getParentResourceInstance()->getRouteBaseName($panel) . '.' . u($this->getParentRelationshipName())->kebab()->toString();
+        }
+
         return sprintf('sylament.%s.resources.%s', $panel->getId(), str_replace('/', '.', $this->getSlug()));
     }
 
     /**
      * @param array<string, mixed> $parameters
      */
-    public function getUrl(?string $name = null, array $parameters = [], bool $isAbsolute = true, Panel|string|null $panel = null): string
+    public function getUrl(?string $name = null, array $parameters = [], bool $isAbsolute = true, Panel|string|null $panel = null, bool $shouldGuessMissingParameters = false): string
     {
         if (blank($name)) {
-            return $this->getIndexUrl($parameters, $isAbsolute, $panel);
+            return $this->getIndexUrl($parameters, $isAbsolute, $panel, $shouldGuessMissingParameters);
         }
 
+        $chain = $this->getAncestorChain();
+        $records = [];
         $record = $parameters['record'] ?? null;
 
         if (is_object($record)) {
+            $records['record'] = $record;
             $parameters['record'] = $this->getRecordRouteKey($record);
+        }
+
+        foreach ($chain as $link) {
+            $ancestorRecord = $parameters[$link['parameter']] ?? null;
+
+            if (is_object($ancestorRecord)) {
+                $records[$link['parameter']] = $ancestorRecord;
+                $parameters[$link['parameter']] = $link['resource']->getRecordRouteKey($ancestorRecord);
+            }
+        }
+
+        if ($shouldGuessMissingParameters) {
+            $parameters = $this->guessAncestorParameters($chain, $parameters, $records);
         }
 
         return $this->getUrlGenerator()->generate(
@@ -311,15 +360,51 @@ abstract class Resource
     }
 
     /**
+     * The listing these records are reached through. A nested resource is listed
+     * by its parent, so the arms run over the parent's pages — one keyed by the
+     * relationship, else its view, else its edit page, all three carrying the
+     * parent record, else its index, which takes no parent key — and only a
+     * resource no parent lists falls through to an index page of its own.
+     *
      * @param array<string, mixed> $parameters
      */
-    public function getIndexUrl(array $parameters = [], bool $isAbsolute = true, Panel|string|null $panel = null): string
+    public function getIndexUrl(array $parameters = [], bool $isAbsolute = true, Panel|string|null $panel = null, bool $shouldGuessMissingParameters = false): string
     {
+        if ($this->getParentResourceRegistration() instanceof ParentResourceRegistration) {
+            $parentResource = $this->getParentResourceInstance();
+            $parentParameterName = $this->getParentRouteParameterName();
+            $parentRecord = $parameters[$parentParameterName] ?? null;
+            unset($parameters[$parentParameterName]);
+
+            $relationshipPage = u($this->getParentRelationshipName())->kebab()->toString();
+
+            foreach ([$relationshipPage, 'view', 'edit'] as $pageKey) {
+                if ($parentResource->hasPage($pageKey)) {
+                    return $parentResource->getUrl($pageKey, [...$parameters, 'record' => $parentRecord], $isAbsolute, $panel, $shouldGuessMissingParameters);
+                }
+            }
+
+            if ($parentResource->hasPage('index')) {
+                return $parentResource->getUrl('index', $parameters, $isAbsolute, $panel, $shouldGuessMissingParameters);
+            }
+        }
+
         if (! $this->hasPage('index')) {
             throw new LogicException('The resource [' . static::class . '] does not have an [index] page. Define [getIndexUrl()] for alternative routing.');
         }
 
-        return $this->getUrl('index', $parameters, $isAbsolute, $panel);
+        return $this->getUrl('index', $parameters, $isAbsolute, $panel, $shouldGuessMissingParameters);
+    }
+
+    /**
+     * The record sub-navigation a page of this resource renders — none by
+     * default.
+     *
+     * @return array<NavigationItem>
+     */
+    public function getRecordSubNavigation(Page $page): array
+    {
+        return [];
     }
 
     /**
@@ -416,6 +501,16 @@ abstract class Resource
     protected function getPropertyAccessor(): PropertyAccessor
     {
         return $this->propertyAccessor ?? throw $this->missingServices();
+    }
+
+    protected function getAssociationReader(): AssociationReader
+    {
+        return $this->associationReader ?? throw $this->missingServices();
+    }
+
+    protected function getResourceRegistry(): ResourceRegistry
+    {
+        return $this->resources ?? throw $this->missingServices();
     }
 
     /**

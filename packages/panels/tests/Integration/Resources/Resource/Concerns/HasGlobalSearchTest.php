@@ -8,13 +8,16 @@ use Sylament\Panels\Resources\Resource;
 use Sylament\Panels\Resources\ResourceRegistry;
 use Sylament\Panels\Tests\Fixtures\Doctrine\Entity\Article;
 use Sylament\Panels\Tests\Fixtures\Doctrine\Entity\Author;
+use Sylament\Panels\Tests\Fixtures\Doctrine\Entity\Chapter;
 use Sylament\Panels\Tests\Fixtures\Doctrine\Entity\Note;
+use Sylament\Panels\Tests\Fixtures\Doctrine\Entity\Verse;
 use Sylament\Panels\Tests\Fixtures\Doctrine\EntityManagerFactory;
 use Sylament\Panels\Tests\Fixtures\Resources\ArticleResource;
 use Sylament\Panels\Tests\Fixtures\Resources\LimitedSearchResource;
 use Sylament\Panels\Tests\Fixtures\Resources\NoteResource;
 use Sylament\Panels\Tests\Fixtures\Resources\ScopedSearchResource;
 use Sylament\Panels\Tests\Fixtures\Resources\UntitledResource;
+use Sylament\Panels\Tests\Fixtures\Resources\VerseResource;
 
 /*
  * Every flow here reads through the container: the fixture database is an
@@ -179,6 +182,25 @@ it('lets modifyGlobalSearchQuery narrow the query', function (): void {
     $results = panelsGlobalSearchResource(ScopedSearchResource::class)->getGlobalSearchResults('post');
 
     expect(panelsGlobalSearchTitles($results))->toBe(['Alpha post']);
+});
+
+/**
+ * A nested resource is searchable and still answers nothing: every one of its
+ * pages needs parent keys a result carries none of, so the blank URL drops the
+ * record from the results the provider groups.
+ */
+it('yields no global search results for a nested resource', function (): void {
+    $chapter = new Chapter()->setTitle('Genesis');
+    $verse = new Verse()->setHeading('Alpha verse')->setChapter($chapter);
+
+    EntityManagerFactory::seed(panelsGlobalSearchEntityManager(), $chapter, $verse);
+
+    $resource = panelsGlobalSearchResource(VerseResource::class);
+
+    expect($resource->canGloballySearch())->toBeTrue()
+        ->and($resource->getGloballySearchableAttributes())->toBe(['heading'])
+        ->and($resource->getGlobalSearchResultUrl($verse))->toBeNull()
+        ->and($resource->getGlobalSearchResults('alpha'))->toBe([]);
 });
 
 it('carries the split, case and sort switches off its static properties', function (): void {

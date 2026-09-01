@@ -2,7 +2,12 @@
 
 declare(strict_types=1);
 
+use Sylament\Panels\Navigation\NavigationGroup;
+use Sylament\Panels\Navigation\NavigationItem;
 use Sylament\Panels\PanelRegistry;
+use Sylament\Panels\Resources\ResourceRegistry;
+use Sylament\Panels\Tests\Fixtures\Resources\LineResource;
+use Sylament\Panels\Tests\Fixtures\Resources\VerseResource;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\RequestStack;
 
@@ -51,6 +56,48 @@ it('renders a registered resource as a sidebar item pointing at its index page',
         ->and($crawler->filter('a.sy-pa-sidebar-item-btn[href="/probe/articles"][aria-current]')->count())->toBe(0)
         ->and($crawler->filter('a.sy-pa-sidebar-item-btn[href="/probe"][aria-current="page"]')->count())->toBe(1)
         ->and(mb_substr_count($html, 'aria-current="page"'))->toBe(1);
+});
+
+/**
+ * `LineResource` is what makes this a real guard: it registers an index page of
+ * its own, so only the nested check keeps it out of the sidebar.
+ */
+it('leaves every nested resource out of the navigation', function (): void {
+    $panel = $this::getContainer()->get(PanelRegistry::class)->get('nest');
+
+    expect($panel)->not->toBeNull();
+
+    $labels = [];
+
+    foreach ($panel?->getNavigation() ?? [] as $group) {
+        expect($group)->toBeInstanceOf(NavigationGroup::class);
+
+        foreach ($group->getItems() as $item) {
+            expect($item)->toBeInstanceOf(NavigationItem::class);
+
+            $labels[] = $item->getLabel();
+        }
+    }
+
+    sort($labels);
+
+    expect($labels)->toBe(['Chapters', 'Dashboard']);
+});
+
+it('keeps a nested resource registering navigation in every other sense', function (): void {
+    $registry = $this::getContainer()->get(ResourceRegistry::class);
+
+    expect($registry)->toBeInstanceOf(ResourceRegistry::class);
+    assert($registry instanceof ResourceRegistry);
+
+    $panel = $this::getContainer()->get(PanelRegistry::class)->get('nest');
+
+    expect($panel)->not->toBeNull();
+    assert($panel !== null);
+
+    expect($registry->get(VerseResource::class)->shouldRegisterNavigation())->toBeTrue()
+        ->and($registry->get(LineResource::class)->shouldRegisterNavigation())->toBeTrue()
+        ->and($registry->get(LineResource::class)->getNavigationItems($panel))->toHaveCount(1);
 });
 
 /**

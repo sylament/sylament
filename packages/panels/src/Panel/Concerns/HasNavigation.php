@@ -88,6 +88,10 @@ trait HasNavigation
                 continue;
             }
 
+            if ($resource->getParentResourceRegistration() !== null) {
+                continue;
+            }
+
             foreach ($resource->getNavigationItems($this) as $item) {
                 $items[] = clone $item;
             }

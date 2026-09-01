@@ -9,6 +9,7 @@ use Sylament\Panels\Resources\Resource;
 use Sylament\Panels\Tests\Fixtures\Doctrine\Entity\Article;
 use Sylament\Panels\Tests\Fixtures\Pages\SettingsPage;
 use Sylament\Panels\Tests\Fixtures\Resources\ArticleResource;
+use Sylament\Panels\Tests\Fixtures\Resources\Pages\EditArticle;
 use Sylament\Schemas\Schema;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Symfony\Component\Routing\RequestContext;
@@ -296,4 +297,20 @@ it('returns the schema untouched from infolist()', function (): void {
 
 it('derives the record label through the support helper', function (): void {
     expect(new ArticleResource()->getRecordLabel())->toBe(get_record_label(Article::class));
+});
+
+it('breadcrumbs with the title-case plural record label unless one is declared', function (): void {
+    $named = new class extends Resource {
+        protected static ?string $recordClass = Article::class;
+
+        protected static ?string $breadcrumb = 'All posts';
+    };
+
+    expect(new ArticleResource()->getBreadcrumb())->toBe('Articles')
+        ->and(new BlogPostResource()->getBreadcrumb())->toBe('Blog Posts')
+        ->and($named->getBreadcrumb())->toBe('All posts');
+});
+
+it('contributes no record sub-navigation by default', function (): void {
+    expect(new ArticleResource()->getRecordSubNavigation(new EditArticle()))->toBe([]);
 });

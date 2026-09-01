@@ -66,8 +66,17 @@ trait HasGlobalSearch
         return $this->getRecordTitle($record);
     }
 
+    /**
+     * A nested resource answers none: its pages need the parent records a search
+     * result carries no parameters for, so a resource under a parent links
+     * nowhere until it overrides this.
+     */
     public function getGlobalSearchResultUrl(object $record): ?string
     {
+        if ($this->getParentResourceRegistration() !== null) {
+            return null;
+        }
+
         if ($this->hasPage('view')) {
             return $this->getUrl('view', ['record' => $record]);
         }

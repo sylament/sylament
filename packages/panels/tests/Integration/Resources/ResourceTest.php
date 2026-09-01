@@ -9,6 +9,9 @@ use Sylament\Panels\Resources\Resource;
 use Sylament\Panels\Resources\ResourceRegistry;
 use Sylament\Panels\Tests\Fixtures\Doctrine\Entity\Article;
 use Sylament\Panels\Tests\Fixtures\Resources\ArticleResource;
+use Sylament\Panels\Tests\Fixtures\Resources\ChapterResource;
+use Sylament\Panels\Tests\Fixtures\Resources\VerseResource;
+use Sylament\Schemas\State\AssociationReader;
 use Sylament\Schemas\State\PropertyAccessor;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 
@@ -32,12 +35,16 @@ function panelsWireResource(Resource $resource): Resource
     $currentPanel = $container->get(CurrentPanel::class);
     $panels = $container->get(PanelRegistry::class);
     $propertyAccessor = $container->get(PropertyAccessor::class);
+    $associationReader = $container->get(AssociationReader::class);
+    $resources = $container->get(ResourceRegistry::class);
 
     expect($entityManager)->toBeInstanceOf(EntityManagerInterface::class)
         ->and($urlGenerator)->toBeInstanceOf(UrlGeneratorInterface::class)
         ->and($currentPanel)->toBeInstanceOf(CurrentPanel::class)
         ->and($panels)->toBeInstanceOf(PanelRegistry::class)
-        ->and($propertyAccessor)->toBeInstanceOf(PropertyAccessor::class);
+        ->and($propertyAccessor)->toBeInstanceOf(PropertyAccessor::class)
+        ->and($associationReader)->toBeInstanceOf(AssociationReader::class)
+        ->and($resources)->toBeInstanceOf(ResourceRegistry::class);
 
     /**
      * @var EntityManagerInterface $entityManager
@@ -45,8 +52,10 @@ function panelsWireResource(Resource $resource): Resource
      * @var CurrentPanel           $currentPanel
      * @var PanelRegistry          $panels
      * @var PropertyAccessor       $propertyAccessor
+     * @var AssociationReader      $associationReader
+     * @var ResourceRegistry       $resources
      */
-    $resource->setResourceServices($entityManager, $urlGenerator, $currentPanel, $panels, $propertyAccessor);
+    $resource->setResourceServices($entityManager, $urlGenerator, $currentPanel, $panels, $propertyAccessor, $associationReader, $resources);
 
     return $resource;
 }
@@ -109,3 +118,21 @@ it('keys and resolves a record by the declared route key name', function (): voi
 it('refuses to key a record the resource does not speak for', function (): void {
     panelsArticleResource()->getRecordRouteKey(new stdClass());
 })->throws(LogicException::class, 'it cannot key a [stdClass]');
+
+/**
+ * The registry a resource is injected with holds that very resource, so setter
+ * injection behind the lazy locator is the only thing keeping the pair out of a
+ * circular reference — this case is the proof it does.
+ */
+it('injects the resource registry a resource is itself registered in', function (): void {
+    $registry = $this::getContainer()->get(ResourceRegistry::class);
+
+    expect($registry)->toBeInstanceOf(ResourceRegistry::class);
+    assert($registry instanceof ResourceRegistry);
+
+    $verse = $registry->get(VerseResource::class);
+
+    expect($verse)->toBeInstanceOf(VerseResource::class)
+        ->and($verse->getParentResourceRegistration()?->parentResource)->toBe(ChapterResource::class)
+        ->and($verse->getParentRelationshipName())->toBe('verses');
+});

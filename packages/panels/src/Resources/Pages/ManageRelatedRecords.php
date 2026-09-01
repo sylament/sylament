@@ -41,10 +41,10 @@ abstract class ManageRelatedRecords extends Page implements InteractsWithSchemas
     use HasTable;
     use InteractsWithRecord;
     /*
-     * `getDefaultActionUrl` needs no exclusion here: `HasActions` arrives
-     * through the parent class, where a trait on this one wins by ordinary
-     * precedence. The insert stays ungrouped for the reason the relation
-     * manager's does — a split one loses its adaptations.
+     * `getDefaultActionUrl` needs no exclusion here: `HasActions` arrives through
+     * the parent class, where a trait on this one wins by ordinary precedence.
+     * The insert stays ungrouped because Rector splits a grouped one and drops
+     * the `insteadof` with it, which turns the composition into a fatal.
      */
     use InteractsWithRelationshipTable {
         InteractsWithRelationshipTable::makeTable insteadof HasTable;
@@ -116,6 +116,19 @@ abstract class ManageRelatedRecords extends Page implements InteractsWithSchemas
         return $action instanceof CreateAction
             ? $this->getTable()->getRecordLabel()
             : parent::getDefaultActionRecordLabel($action);
+    }
+
+    /**
+     * The owner titles the frames that carry it, and only those: a create writes
+     * a listed record and a table frame is titled by the table itself.
+     */
+    public function getDefaultActionRecordTitle(Action $action): ?string
+    {
+        if ($action instanceof CreateAction || $action->getTable() instanceof Table) {
+            return null;
+        }
+
+        return $this->getRecordTitle();
     }
 
     public function getDefaultActionSchemaResolver(Action $action): ?Closure

@@ -46,8 +46,8 @@ abstract class RelationManager implements InteractsWithActions, InteractsWithSch
     use HasTable;
     /*
      * One `use` statement per trait, and the exclusions naming traits inserted
-     * above: `single_trait_insert_per_statement` splits a grouped insert and
-     * drops the adaptations with it, which turns the composition into a fatal.
+     * above: Rector's `SeparateMultiUseImportsRector` splits a grouped insert and
+     * drops every `insteadof` with it, which turns the composition into a fatal.
      */
     use InteractsWithRelationshipTable {
         InteractsWithRelationshipTable::makeTable insteadof HasTable;

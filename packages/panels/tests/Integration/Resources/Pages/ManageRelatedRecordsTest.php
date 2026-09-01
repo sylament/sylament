@@ -3,19 +3,25 @@
 declare(strict_types=1);
 
 use Doctrine\ORM\EntityManagerInterface;
+use Sylament\Actions\Action;
+use Sylament\Actions\ActionGroup;
+use Sylament\Actions\CreateAction;
 use Sylament\Panels\CurrentPanel;
 use Sylament\Panels\PanelRegistry;
+use Sylament\Panels\Resources\Pages\ManageRelatedRecords;
 use Sylament\Panels\Resources\Pages\PageRegistration;
 use Sylament\Panels\Resources\Resource;
 use Sylament\Panels\Resources\ResourceRegistry;
 use Sylament\Panels\Tests\Fixtures\Doctrine\Entity\Project;
 use Sylament\Panels\Tests\Fixtures\Doctrine\Entity\Task;
+use Sylament\Panels\Tests\Fixtures\Resources\MrrProjectResource;
 use Sylament\Panels\Tests\Fixtures\Resources\MrrTaskResource;
 use Sylament\Panels\Tests\Fixtures\Resources\Pages\CreateMrrTask;
 use Sylament\Panels\Tests\Fixtures\Resources\Pages\EditMrrProject;
 use Sylament\Panels\Tests\Fixtures\Resources\Pages\EditMrrTask;
 use Sylament\Panels\Tests\Fixtures\Resources\Pages\ManageMrrProjectChecklist;
 use Sylament\Panels\Tests\Fixtures\Resources\Pages\ManageMrrProjectTasks;
+use Sylament\Schemas\Schema;
 use Sylament\Schemas\State\AssociationReader;
 use Sylament\Schemas\State\PropertyAccessor;
 use Sylament\Schemas\State\RecordTypeReader;
@@ -26,6 +32,8 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Component\PropertyAccess\PropertyAccess;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
+use Symfony\Component\Validator\Validator\ValidatorInterface;
+use Symfony\UX\LiveComponent\LiveResponder;
 use Symfony\UX\LiveComponent\Test\InteractsWithLiveComponents;
 
 uses(InteractsWithLiveComponents::class);
@@ -36,10 +44,10 @@ uses(InteractsWithLiveComponents::class);
  * a reboot between two requests would hand the second one a freshly-migrated,
  * empty one.
  *
- * The two resources at the bottom are declared here rather than under
- * `tests/Fixtures/`: they mount no routes of their own and exist only to key a
- * manage page wrongly, which the Kernel's PSR-4 glob would register as a real
- * resource of the panel.
+ * The classes at the bottom are declared here rather than under
+ * `tests/Fixtures/`: they mount no routes of their own — two resources keying a
+ * manage page wrongly, and a manage page relating to no resource at all — and
+ * the Kernel's PSR-4 glob would register each as a real member of the panel.
  */
 
 /**
@@ -190,6 +198,51 @@ it('carries the owner record into no table action of its own', function (): void
     expect($component->component()->getMountedAction()?->getRecord())->toBeNull();
 });
 
+it('titles a frame carrying the owner with the owner record and a table frame with nothing', function (): void {
+    [$client, , $project] = manageRelatedClient();
+
+    $page = $this->createLiveComponent(ManageMrrProjectChecklist::class, [
+        'record' => (string) $project->getId(),
+        'panelId' => 'mrr',
+    ], client: $client)->component();
+
+    // A create writes one of the listed records and a table frame is titled by
+    // the table it belongs to, so only a page-level frame reaches the owner —
+    // and reaches it through the host default, which is where the modal heading
+    // of an action carrying no record of its own comes from.
+    expect($page->getDefaultActionRecordTitle(Action::make('probe')))->toBe('Apollo')
+        ->and($page->getDefaultActionRecordTitle(CreateAction::make()))->toBeNull()
+        ->and($page->getDefaultActionRecordTitle(Action::make('probe')->table($page->getTable())))->toBeNull()
+        ->and(Action::make('probe')->liveComponent($page)->getRecordTitle())->toBe('Apollo');
+});
+
+it('opens the modal on the page schema where the tier relates to no resource', function (): void {
+    [, , $project] = manageRelatedClient();
+
+    $container = test()->getContainer();
+
+    $page = new ManageRelatedlessTasks();
+    $page->setResourceRegistry($container->get(ResourceRegistry::class));
+    $page->setSchemaStateValidator($container->get(ValidatorInterface::class));
+    $page->setLiveResponder(new LiveResponder());
+    $page->mount((string) $project->getId());
+
+    $page->mountAction('create');
+
+    $schema = $page->getMountedActionSchema();
+
+    // Nothing stamps the tier: the related `form()` arm hands the schema back
+    // untouched, so the modal opens on the page's own — empty here, since the
+    // page declares no components of its own — while the record class and the
+    // label still come off the relationship table.
+    expect($page->getMountedAction())->toBeInstanceOf(CreateAction::class)
+        ->and($schema)->toBeInstanceOf(Schema::class)
+        ->and($schema?->getComponents())->toBe([])
+        ->and($page->getDefaultActionRecordClass(CreateAction::make()))->toBe(Task::class)
+        ->and($page->getDefaultActionRecordLabel(CreateAction::make()))->toBe('task')
+        ->and($page->infolist($infolist = Schema::make()))->toBe($infolist);
+});
+
 it('links each row at the related resource edit page under the same owner', function (): void {
     [$client, $entityManager, $project] = manageRelatedClient();
 
@@ -308,6 +361,26 @@ it('falls past a manage page the parent keys by anything else', function (): voi
     expect($registry->get(MisKeyedTaskResource::class)->getIndexUrl(['project' => $project]))
         ->toBe(sprintf('http://localhost/mrr/projects/%s/edit', $project->getId()));
 });
+
+/**
+ * The `tasks` association listed by a page relating to no resource: nothing
+ * stamps the table and nothing configures the modal schema, so the page's own
+ * arms are all that answer.
+ */
+final class ManageRelatedlessTasks extends ManageRelatedRecords
+{
+    protected static string $resource = MrrProjectResource::class;
+
+    protected static string $relationship = 'tasks';
+
+    /**
+     * @return array<Action|ActionGroup>
+     */
+    public function getHeaderActions(): array
+    {
+        return [CreateAction::make()];
+    }
+}
 
 /**
  * The same nesting with the manage page keyed wrongly. It reuses the panel's

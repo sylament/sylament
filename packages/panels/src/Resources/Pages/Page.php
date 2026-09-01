@@ -58,7 +58,7 @@ abstract class Page extends BasePage implements InteractsWithActions
 
     private ?ResourceRegistry $resourceRegistry = null;
 
-    private ?CurrentPanel $currentPanel = null;
+    private ?CurrentPanel $panelContext = null;
 
     private ?RequestStack $requests = null;
 
@@ -76,13 +76,13 @@ abstract class Page extends BasePage implements InteractsWithActions
     #[Required]
     public function setPanelContext(CurrentPanel $currentPanel, RequestStack $requests): void
     {
-        $this->currentPanel = $currentPanel;
+        $this->panelContext = $currentPanel;
         $this->requests = $requests;
     }
 
     public function getPanelId(): ?string
     {
-        return $this->panelId ??= $this->currentPanel?->get()?->getId();
+        return $this->panelId ??= $this->panelContext?->get()?->getId();
     }
 
     #[PostHydrate]

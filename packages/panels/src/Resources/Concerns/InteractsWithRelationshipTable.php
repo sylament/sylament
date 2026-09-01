@@ -48,7 +48,7 @@ trait InteractsWithRelationshipTable
     public static function getRelationshipName(): string
     {
         if (! isset(static::$relationship)) {
-            throw new LogicException(sprintf('The relation manager [%s] names no relationship — set the $relationship static property to the owner association it manages.', static::class));
+            throw new LogicException(sprintf('The relationship table [%s] names no relationship — set the $relationship static property to the owner association it lists.', static::class));
         }
 
         return static::$relationship;

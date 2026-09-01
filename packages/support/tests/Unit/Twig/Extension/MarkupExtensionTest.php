@@ -47,7 +47,7 @@ it('uses the environment charset', function (): void {
 it('registers the filled test with the PHP helper semantics', function (): void {
     $tests = new MarkupExtension()->getTests();
 
-    expect($tests)->toHaveCount(1)
+    expect($tests)->toHaveCount(2)
         ->and($tests[0]->getName())->toBe('filled');
 
     $callable = $tests[0]->getCallable();
@@ -57,4 +57,16 @@ it('registers the filled test with the PHP helper semantics', function (): void 
         ->and($callable(null))->toBeFalse()
         ->and($callable(new Markup('  ', 'UTF-8')))->toBeFalse()
         ->and($callable(new Markup('<em>Hi</em>', 'UTF-8')))->toBeTrue();
+});
+
+it('registers the markup test matching Markup instances only', function (): void {
+    $tests = new MarkupExtension()->getTests();
+
+    expect($tests[1]->getName())->toBe('markup');
+
+    $callable = $tests[1]->getCallable();
+
+    expect($callable(new Markup('<svg></svg>', 'UTF-8')))->toBeTrue()
+        ->and($callable('<svg></svg>'))->toBeFalse()
+        ->and($callable(null))->toBeFalse();
 });

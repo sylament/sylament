@@ -34,6 +34,7 @@ class MarkupExtension extends AbstractExtension
     {
         return [
             new TwigTest('filled', filled(...)),
+            new TwigTest('markup', static fn (mixed $value): bool => $value instanceof Markup),
         ];
     }
 

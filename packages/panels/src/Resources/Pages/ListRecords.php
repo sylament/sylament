@@ -25,12 +25,32 @@ abstract class ListRecords extends Page implements InteractsWithSchemas, Interac
 
     protected ?string $template = '@SylamentPanels/partials/ListRecords/index.html.twig';
 
+    /**
+     * Nothing here resolves anything, and the parent keys are still taken as a
+     * mount argument rather than left to the property assignment that follows a
+     * mount: a page that scopes its own query cannot depend on that order.
+     *
+     * @param array<string, string> $parentRecords
+     */
+    public function mount(array $parentRecords = []): void
+    {
+        $this->parentRecords = $parentRecords;
+    }
+
+    /**
+     * A nested list shows one parent's records: the scoped query is rooted at
+     * the same `record` alias the plain one is, so the resource's columns,
+     * sorts and searches are the same either way.
+     */
     public function table(Table $table): Table
     {
         $resource = $this->getResourceInstance();
+        $parentRecord = $this->getParentRecord();
 
         return $resource->table($table
-            ->query(fn (): QueryBuilder => $resource->getRecordQuery())
+            ->query($parentRecord === null
+                ? $resource->getRecordQuery(...)
+                : fn (): QueryBuilder => $resource->getParentScopedRecordQuery($parentRecord))
             ->recordLabel($resource->getRecordLabel(...))
             ->pluralRecordLabel($resource->getPluralRecordLabel(...))
             ->recordTitleAttribute($resource->getRecordTitleAttribute(...))

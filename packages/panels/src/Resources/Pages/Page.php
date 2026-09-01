@@ -14,6 +14,8 @@ use Sylament\Actions\EditAction;
 use Sylament\Actions\Exceptions\ActionNotResolvableException;
 use Sylament\Actions\ViewAction;
 use Sylament\Panels\CurrentPanel;
+use Sylament\Panels\Navigation\NavigationItem;
+use Sylament\Panels\Pages\Enums\SubNavigationPosition;
 use Sylament\Panels\Pages\Page as BasePage;
 use Sylament\Panels\Resources\Pages\Concerns\InteractsWithParentRecord;
 use Sylament\Panels\Resources\Resource;
@@ -312,6 +314,60 @@ abstract class Page extends BasePage implements InteractsWithActions
         }
 
         return new Relationship($parentRecord, $this->getResourceInstance()->getParentRelationshipName());
+    }
+
+    /**
+     * The page static still wins on a resource page; the resource is what
+     * answers underneath it, rather than the panel directly.
+     */
+    public function getSubNavigationPosition(): SubNavigationPosition
+    {
+        return static::$subNavigationPosition ?? $this->getResourceInstance()->getSubNavigationPosition();
+    }
+
+    /**
+     * The band item for a sibling page of a resource: its own resource mints the
+     * URL, keyed by the registration the page is mounted under and pathed like
+     * every other navigation item panels emit. A page the resource registers
+     * nowhere contributes nothing — Filament's `hasPage()` gates skip it just as
+     * silently.
+     *
+     * @param class-string<BasePage> $pageClass
+     * @param array<string, mixed>   $parameters
+     *
+     * @return array<NavigationItem>
+     */
+    protected function generateResourcePageNavigationItems(string $pageClass, array $parameters): array
+    {
+        if (! is_subclass_of($pageClass, self::class)) {
+            return [];
+        }
+
+        $resource = $this->getResourceRegistry()->get($pageClass::getResource());
+        $pageKey = null;
+
+        foreach ($resource->getPages() as $key => $registration) {
+            if ($registration->page === $pageClass) {
+                $pageKey = (string) $key;
+
+                break;
+            }
+        }
+
+        if ($pageKey === null) {
+            return [];
+        }
+
+        return [
+            NavigationItem::make($pageClass::getNavigationLabel())
+                ->group($pageClass::getNavigationGroup())
+                ->icon($pageClass::getNavigationIcon())
+                ->activeIcon($pageClass::getActiveNavigationIcon())
+                ->sort($pageClass::getNavigationSort())
+                ->badge($pageClass::getNavigationBadge(), color: $pageClass::getNavigationBadgeColor())
+                ->url($resource->getUrl($pageKey, $parameters, isAbsolute: false, shouldGuessMissingParameters: true))
+                ->isActiveWhen(fn (): bool => $pageClass === static::class),
+        ];
     }
 
     /**

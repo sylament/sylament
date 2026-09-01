@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Sylament\Panels\Resources\Pages\Concerns;
 
+use Sylament\Panels\Navigation\NavigationGroup;
+use Sylament\Panels\Navigation\NavigationItem;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\UX\LiveComponent\Attribute\LiveProp;
 use Twig\Markup;
@@ -110,6 +112,30 @@ trait InteractsWithRecord
         $breadcrumbs[] = $this->getBreadcrumb();
 
         return $breadcrumbs;
+    }
+
+    /**
+     * A record page's band is the resource's, built around this page.
+     *
+     * @return array<NavigationGroup|NavigationItem>
+     */
+    public function getSubNavigation(): array
+    {
+        return $this->getResourceInstance()->getRecordSubNavigation($this);
+    }
+
+    /**
+     * What a sibling page's URL is minted from: this record, and the ancestors
+     * it hangs under — a nested page's siblings live under the same chain.
+     *
+     * @return array<string, mixed>
+     */
+    public function getSubNavigationParameters(): array
+    {
+        return [
+            'record' => $this->getRecordKey(),
+            ...$this->parentRecords,
+        ];
     }
 
     /**

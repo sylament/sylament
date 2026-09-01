@@ -6,16 +6,25 @@ use Sylament\Actions\Action;
 use Sylament\Actions\ActionGroup;
 use Sylament\Actions\CreateAction;
 use Sylament\Actions\Exceptions\ActionNotResolvableException;
+use Sylament\Panels\Navigation\NavigationItem;
+use Sylament\Panels\Pages\Enums\SubNavigationPosition;
 use Sylament\Panels\Resources\Pages\CreateRecord;
 use Sylament\Panels\Resources\Pages\EditRecord;
 use Sylament\Panels\Resources\Pages\ListRecords;
 use Sylament\Panels\Resources\Pages\Page as ResourcePage;
 use Sylament\Panels\Resources\Pages\PageRegistration;
+use Sylament\Panels\Resources\Resource;
 use Sylament\Panels\Tests\Fixtures\Doctrine\Entity\Article;
+use Sylament\Panels\Tests\Fixtures\Doctrine\EntityManagerFactory;
 use Sylament\Panels\Tests\Fixtures\Resources\ArticleResource;
+use Sylament\Panels\Tests\Fixtures\Resources\ChapterResource;
+use Sylament\Panels\Tests\Fixtures\Resources\NestedResourceRig;
 use Sylament\Panels\Tests\Fixtures\Resources\Pages\CreateArticle;
 use Sylament\Panels\Tests\Fixtures\Resources\Pages\EditArticle;
+use Sylament\Panels\Tests\Fixtures\Resources\Pages\EditChapter;
+use Sylament\Panels\Tests\Fixtures\Resources\Pages\EditVerse;
 use Sylament\Panels\Tests\Fixtures\Resources\Pages\ListArticles;
+use Sylament\Panels\Tests\Fixtures\Resources\Pages\ListChapters;
 
 final class UnwiredResourcePage extends ResourcePage
 {
@@ -58,6 +67,51 @@ final class HeaderActionsPage extends ResourcePage
             ActionGroup::make([Action::make('archive')]),
         ];
     }
+}
+
+final class PositionedResource extends Resource
+{
+    protected static ?string $recordClass = Article::class;
+
+    protected static ?SubNavigationPosition $subNavigationPosition = SubNavigationPosition::Top;
+}
+
+/**
+ * Names no position of its own, so the resource's is what it must answer.
+ */
+final class ResourcePositionedPage extends ResourcePage
+{
+    protected static string $resource = PositionedResource::class;
+
+    public function getResourceInstance(): PositionedResource
+    {
+        return new PositionedResource();
+    }
+}
+
+final class PagePositionedPage extends ResourcePage
+{
+    protected static string $resource = PositionedResource::class;
+
+    /**
+     * Redeclared rather than inherited: `static::$subNavigationPosition = …`
+     * would otherwise write the base page's property.
+     */
+    protected static ?SubNavigationPosition $subNavigationPosition = SubNavigationPosition::End;
+
+    public function getResourceInstance(): PositionedResource
+    {
+        return new PositionedResource();
+    }
+}
+
+/**
+ * A page of a registered resource that the resource itself registers nowhere —
+ * declared here rather than under `Fixtures/`, which the kernel would register.
+ */
+final class UnregisteredChapterPage extends ResourcePage
+{
+    protected static string $resource = ChapterResource::class;
 }
 
 /**
@@ -174,6 +228,54 @@ it('answers the host default record class and label off the resource', function 
 
     expect($page->getDefaultActionRecordClass($action))->toBe(Article::class)
         ->and($page->getDefaultActionRecordLabel($action))->toBe('article');
+});
+
+it('lets a resource page name a sub-navigation position the resource does not', function (): void {
+    expect(new ResourcePositionedPage()->getSubNavigationPosition())->toBe(SubNavigationPosition::Top)
+        ->and(new PagePositionedPage()->getSubNavigationPosition())->toBe(SubNavigationPosition::End);
+});
+
+it('builds one band item per sibling page, active on the page it is asked from', function (): void {
+    $entityManager = EntityManagerFactory::create();
+    [$chapter] = NestedResourceRig::records($entityManager);
+
+    $page = NestedResourceRig::page($entityManager, EditChapter::class);
+    $page->mountRecord((string) $chapter->getId());
+
+    $items = $page->generateNavigationItems([ListChapters::class, EditChapter::class]);
+
+    expect($items)->toHaveCount(2)
+        ->and(array_map(fn (NavigationItem $item): string => $item->getLabel(), $items))->toBe(['List Chapters', 'Edit Chapter'])
+        ->and($items[0]->isActive())->toBeFalse()
+        ->and($items[1]->isActive())->toBeTrue()
+        ->and($items[1]->getUrl())->toBe(sprintf('/nest/chapters/%s/edit', $chapter->getId()));
+});
+
+it('mints a nested band url with the whole chain in it', function (): void {
+    $entityManager = EntityManagerFactory::create();
+    [$chapter, $verse] = NestedResourceRig::records($entityManager);
+
+    $page = NestedResourceRig::page($entityManager, EditVerse::class);
+    $page->mountRecord((string) $verse->getId(), ['chapter' => (string) $chapter->getId()]);
+
+    // The parameters come off the page itself, so the ancestors ride along with
+    // the record — a sibling of a nested page lives under the same chain.
+    expect($page->getSubNavigationParameters())->toBe([
+        'record' => (string) $verse->getId(),
+        'chapter' => (string) $chapter->getId(),
+    ])
+        ->and($page->generateNavigationItems([EditVerse::class])[0]->getUrl())
+        ->toBe(sprintf('/nest/chapters/%s/verses/%s/edit', $chapter->getId(), $verse->getId()));
+});
+
+it('skips a band entry for a page its resource registers nowhere', function (): void {
+    $entityManager = EntityManagerFactory::create();
+    [$chapter] = NestedResourceRig::records($entityManager);
+
+    $page = NestedResourceRig::page($entityManager, EditChapter::class);
+    $page->mountRecord((string) $chapter->getId());
+
+    expect($page->generateNavigationItems([UnregisteredChapterPage::class]))->toBe([]);
 });
 
 it('refuses a record key that is not an identifier before it reaches the resource', function (): void {

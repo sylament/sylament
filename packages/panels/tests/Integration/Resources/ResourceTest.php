@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use Doctrine\ORM\EntityManagerInterface;
 use Sylament\Panels\CurrentPanel;
+use Sylament\Panels\Pages\Enums\SubNavigationPosition;
 use Sylament\Panels\PanelRegistry;
 use Sylament\Panels\Resources\Resource;
 use Sylament\Panels\Resources\ResourceRegistry;
@@ -135,4 +136,17 @@ it('injects the resource registry a resource is itself registered in', function 
     expect($verse)->toBeInstanceOf(VerseResource::class)
         ->and($verse->getParentResourceRegistration()?->parentResource)->toBe(ChapterResource::class)
         ->and($verse->getParentRelationshipName())->toBe('verses');
+});
+
+it('positions the sub-navigation band by its own static, else by the panel', function (): void {
+    $positioned = new class extends Resource {
+        protected static ?string $recordClass = Article::class;
+
+        protected static ?SubNavigationPosition $subNavigationPosition = SubNavigationPosition::End;
+    };
+
+    // The fixture panel names no position of its own, so a resource naming none
+    // either answers the panel's own default.
+    expect(panelsWireResource($positioned)->getSubNavigationPosition())->toBe(SubNavigationPosition::End)
+        ->and(panelsArticleResource()->getSubNavigationPosition())->toBe(SubNavigationPosition::Start);
 });

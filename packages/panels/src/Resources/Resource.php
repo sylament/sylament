@@ -13,6 +13,7 @@ use LogicException;
 use Stringable;
 use Sylament\Panels\CurrentPanel;
 use Sylament\Panels\Navigation\NavigationItem;
+use Sylament\Panels\Pages\Enums\SubNavigationPosition;
 use Sylament\Panels\Panel;
 use Sylament\Panels\PanelRegistry;
 use Sylament\Panels\Resources\Pages\Page;
@@ -71,6 +72,8 @@ abstract class Resource
     protected static ?string $navigationGroup = null;
 
     protected static bool $shouldRegisterNavigation = true;
+
+    protected static ?SubNavigationPosition $subNavigationPosition = null;
 
     private ?EntityManagerInterface $entityManager = null;
 
@@ -408,6 +411,16 @@ abstract class Resource
     public function getRecordSubNavigation(Page $page): array
     {
         return [];
+    }
+
+    /**
+     * Where the band of every page of this resource is drawn: the resource's own
+     * static, else the panel's knob — a page naming a position of its own still
+     * wins over both.
+     */
+    public function getSubNavigationPosition(): SubNavigationPosition
+    {
+        return static::$subNavigationPosition ?? $this->resolvePanel(null)->getSubNavigationPosition();
     }
 
     /**

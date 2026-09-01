@@ -7,6 +7,8 @@ namespace Sylament\Panels\Tests\Fixtures\Resources;
 use Closure;
 use Doctrine\ORM\EntityManagerInterface;
 use Sylament\Panels\CurrentPanel;
+use Sylament\Panels\Panel;
+use Sylament\Panels\PanelProvider;
 use Sylament\Panels\PanelRegistry;
 use Sylament\Panels\Resources\Pages\Page;
 use Sylament\Panels\Resources\Resource;
@@ -67,7 +69,16 @@ final class NestedResourceRig
             $routes->add($name, new Route($path));
         }
 
-        $panels = new PanelRegistry([new NestedPanelProvider()]);
+        // Outside a kernel no request names the current panel, so the rig makes
+        // the nested one the default — a URL minted here names its routes.
+        $panels = new PanelRegistry([
+            new class extends PanelProvider {
+                public function panel(Panel $panel): Panel
+                {
+                    return new NestedPanelProvider()->panel($panel)->default();
+                }
+            },
+        ]);
         $propertyAccessor = new PropertyAccessor(PropertyAccess::createPropertyAccessor(), new RecordTypeReader());
 
         foreach ($resources as $resource) {

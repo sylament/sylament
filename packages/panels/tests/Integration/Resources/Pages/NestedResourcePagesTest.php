@@ -206,6 +206,24 @@ it('leaves an untitled record out of the trail', function (): void {
     ]);
 });
 
+it('lists only the records of the parent a nested list page hangs under', function (): void {
+    [$client, $entityManager, $chapter, $verse] = nestedPagesClient();
+
+    $sibling = new Verse()->setHeading('Second')->setChapter($chapter);
+    $foreignLine = new Line()->setContent('Under another verse')->setVerse($sibling);
+
+    $entityManager->persist($sibling);
+    $entityManager->persist($foreignLine);
+    $entityManager->flush();
+
+    $crawler = $client->request('GET', sprintf('/nest/chapters/%s/verses/%s/lines', $chapter->getId(), $verse->getId()));
+    $rows = $crawler->filter('tbody .sy-ta-row');
+
+    expect($client->getResponse()->getStatusCode())->toBe(200)
+        ->and($rows->count())->toBe(1)
+        ->and($rows->text())->toContain('Let there be light');
+});
+
 it('creates a record under the parent the create page was opened from', function (): void {
     [$client, $entityManager, $chapter] = nestedPagesClient();
 

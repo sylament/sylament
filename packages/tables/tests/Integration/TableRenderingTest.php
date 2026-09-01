@@ -29,6 +29,7 @@ use Sylament\Tables\Twig\Extension\TableExtension;
 use Symfony\Component\DomCrawler\Crawler;
 use Twig\Environment;
 use Twig\Error\RuntimeError;
+use Twig\Markup;
 
 /*
  * The browsing chrome of the shipped `Table` partial — sortable headers, the
@@ -695,4 +696,203 @@ it('marks a bulk action group on its dropdown root and leaves a plain group unwr
         ->and($wrapped->filter('div.sy.sy-dropdown[data-sy-table-bulk-only]')->count())->toBe(1)
         ->and($start->children()->eq(1)->attr('data-sy-table-bulk-only'))->toBeNull()
         ->and($start->children()->eq(1)->filter('[data-sy-table-bulk-only]')->count())->toBe(0);
+});
+
+/**
+ * The row-behaviour lane: two records, whatever the caller configures on top,
+ * and the host's selection prop filled where a test needs a server-painted tint.
+ *
+ * @param list<string> $selectedKeys
+ */
+function rowBehaviourTableHtml(Closure $configureTable, array $selectedKeys = []): string
+{
+    $component = new TableHost(fn (Table $table): Table => $configureTable(
+        $table
+            ->records(fn (): array => [
+                new Song('Airbag', 'OK Computer', id: 1),
+                new Song('Let Down', 'OK Computer', id: 2),
+            ])
+            ->columns([TextColumn::make('title')]),
+    ));
+
+    $component->selectedTableRecordKeys = $selectedKeys;
+
+    return renderTableHost($component);
+}
+
+it('wraps every cell in a div and leaves the row unmarked without a url or an action', function (): void {
+    $crawler = new Crawler(rowBehaviourTableHtml(fn (Table $table): Table => $table));
+
+    expect($crawler->filter('tbody > tr.sy-ta-row')->count())->toBe(2)
+        ->and($crawler->filter('tbody > tr > td.sy-ta-cell > div.sy-ta-col')->count())->toBe(2)
+        ->and($crawler->filter('tbody > tr.sy-clickable')->count())->toBe(0)
+        ->and($crawler->filter('tbody > tr > td a, tbody > tr > td button')->count())->toBe(0);
+});
+
+it('wraps the cell in an anchor for a record url and marks the row clickable', function (): void {
+    $crawler = new Crawler(rowBehaviourTableHtml(fn (Table $table): Table => $table
+        ->recordUrl(fn (Song $record): string => '/songs/' . $record->id)));
+
+    $anchors = $crawler->filter('tbody > tr > td.sy-ta-cell > a.sy-ta-col');
+
+    expect($crawler->filter('tbody > tr.sy-ta-row.sy-clickable')->count())->toBe(2)
+        ->and($anchors->count())->toBe(2)
+        ->and($anchors->each(fn (Crawler $anchor): ?string => $anchor->attr('href')))->toBe(['/songs/1', '/songs/2'])
+        ->and($anchors->first()->attr('target'))->toBeNull()
+        ->and(mb_trim($anchors->first()->text()))->toBe('Airbag');
+});
+
+it('opens the record anchor in a new tab and stamps the extra link attributes', function (): void {
+    $crawler = new Crawler(rowBehaviourTableHtml(fn (Table $table): Table => $table
+        ->recordUrl('/songs', shouldOpenInNewTab: true)
+        ->extraRecordLinkAttributes(fn (Song $record): array => ['data-song' => $record->title, 'class' => 'sy-probe'])));
+
+    $anchor = $crawler->filter('tbody > tr > td.sy-ta-cell > a.sy-ta-col')->first();
+
+    expect($anchor->attr('target'))->toBe('_blank')
+        ->and($anchor->attr('data-song'))->toBe('Airbag')
+        ->and($anchor->attr('class'))->toBe('sy-ta-col sy-probe');
+});
+
+it('drops a record url the sanitizer refuses back to a plain div', function (): void {
+    $crawler = new Crawler(rowBehaviourTableHtml(fn (Table $table): Table => $table
+        ->recordUrl('javascript:alert(1)')));
+
+    expect($crawler->filter('tbody > tr > td.sy-ta-cell > div.sy-ta-col')->count())->toBe(2)
+        ->and($crawler->filter('tbody > tr.sy-clickable')->count())->toBe(0);
+});
+
+it('wraps the cell in a button mounting a registered record action', function (): void {
+    $crawler = new Crawler(rowBehaviourTableHtml(fn (Table $table): Table => $table
+        ->recordActions([Action::make('view')])
+        ->recordAction('view')));
+
+    $button = $crawler->filter('tbody > tr > td.sy-ta-cell > button.sy-ta-col')->first();
+
+    expect($crawler->filter('tbody > tr.sy-ta-row.sy-clickable')->count())->toBe(2)
+        ->and($button->attr('type'))->toBe('button')
+        ->and($button->attr('data-loading'))->toBe('addAttribute(disabled)')
+        ->and($button->attr('data-action'))->toContain('live#action')
+        ->and($button->attr('data-live-action-param'))->toBe('mountAction')
+        ->and($button->attr('data-live-name-param'))->toBe('view')
+        ->and($button->attr('data-live-context-param'))->toBe('{"recordKey":"1","table":true}');
+});
+
+it('calls an unregistered record action name straight on the host with the record key', function (): void {
+    $crawler = new Crawler(rowBehaviourTableHtml(fn (Table $table): Table => $table->recordAction('openMyThing')));
+
+    $button = $crawler->filter('tbody > tr > td.sy-ta-cell > button.sy-ta-col')->last();
+
+    expect($button->attr('data-live-action-param'))->toBe('openMyThing')
+        ->and($button->attr('data-live-record-key-param'))->toBe('2')
+        ->and($button->attr('data-live-name-param'))->toBeNull();
+});
+
+it('lets the record url beat the record action', function (): void {
+    $crawler = new Crawler(rowBehaviourTableHtml(fn (Table $table): Table => $table
+        ->recordActions([Action::make('view')])
+        ->recordAction('view')
+        ->recordUrl('/songs')));
+
+    expect($crawler->filter('tbody > tr > td.sy-ta-cell > a.sy-ta-col')->count())->toBe(2)
+        ->and($crawler->filter('tbody > tr > td.sy-ta-cell > button.sy-ta-col')->count())->toBe(0);
+});
+
+it('keeps the checkbox and the actions cells outside every wrapper', function (): void {
+    $crawler = new Crawler(rowBehaviourTableHtml(fn (Table $table): Table => $table
+        ->recordUrl('/songs')
+        ->recordActions([Action::make('edit')])
+        ->toolbarActions([BulkAction::make('archive')])));
+
+    $row = $crawler->filter('tbody > tr.sy-ta-row')->first();
+
+    expect($row->filter('td.sy-ta-selection-cell > input.sy-ta-record-checkbox')->count())->toBe(1)
+        ->and($row->filter('td > div.sy-ta-actions')->count())->toBe(1)
+        ->and($row->filter('a input, a .sy-ta-actions, button input, button .sy-ta-actions')->count())->toBe(0);
+});
+
+it('stripes the odd rows only when striping is on', function (): void {
+    $striped = new Crawler(rowBehaviourTableHtml(fn (Table $table): Table => $table->striped()));
+    $plain = new Crawler(rowBehaviourTableHtml(fn (Table $table): Table => $table));
+
+    expect($striped->filter('tbody > tr')->first()->attr('class'))->toBe('sy-ta-row')
+        ->and($striped->filter('tbody > tr')->last()->attr('class'))->toBe('sy-ta-row sy-striped')
+        ->and($plain->filter('tbody > tr.sy-striped')->count())->toBe(0);
+});
+
+it('appends the record classes after ours, from a string, a list and a map', function (): void {
+    $fromString = new Crawler(rowBehaviourTableHtml(fn (Table $table): Table => $table->recordClasses('sy-one sy-two')));
+    $fromList = new Crawler(rowBehaviourTableHtml(fn (Table $table): Table => $table->recordClasses(['sy-one', 'sy-two'])));
+    $fromMap = new Crawler(rowBehaviourTableHtml(fn (Table $table): Table => $table->recordClasses(
+        fn (Song $record): array => ['sy-first' => $record->id === 1, 'sy-second' => $record->id === 2],
+    )));
+
+    expect($fromString->filter('tbody > tr')->first()->attr('class'))->toBe('sy-ta-row sy-one sy-two')
+        ->and($fromList->filter('tbody > tr')->first()->attr('class'))->toBe('sy-ta-row sy-one sy-two')
+        ->and($fromMap->filter('tbody > tr')->first()->attr('class'))->toBe('sy-ta-row sy-first')
+        ->and($fromMap->filter('tbody > tr')->last()->attr('class'))->toBe('sy-ta-row sy-second');
+});
+
+it('paints the selected tint on the server for a selected key', function (): void {
+    $crawler = new Crawler(rowBehaviourTableHtml(
+        fn (Table $table): Table => $table->toolbarActions([BulkAction::make('archive')]),
+        selectedKeys: ['2'],
+    ));
+
+    expect($crawler->filter('tbody > tr')->first()->attr('class'))->toBe('sy-ta-row')
+        ->and($crawler->filter('tbody > tr')->last()->attr('class'))->toBe('sy-ta-row sy-selected');
+});
+
+it('leaves the tint off a row the table refuses to select', function (): void {
+    $crawler = new Crawler(rowBehaviourTableHtml(
+        fn (Table $table): Table => $table
+            ->toolbarActions([BulkAction::make('archive')])
+            ->checkIfRecordIsSelectableUsing(fn (Song $record): bool => $record->id === 1),
+        selectedKeys: ['1', '2'],
+    ));
+
+    expect($crawler->filter('tbody > tr')->first()->attr('class'))->toBe('sy-ta-row sy-selected')
+        ->and($crawler->filter('tbody > tr')->last()->attr('class'))->toBe('sy-ta-row');
+});
+
+it('renders the visible empty state actions under the description', function (): void {
+    $crawler = new Crawler(renderTableHost(new TableHost(fn (Table $table): Table => $table
+        ->records(fn (): array => [])
+        ->columns([TextColumn::make('title')])
+        ->emptyStateActions([
+            Action::make('create')->label('New song'),
+            Action::make('import')->hidden(),
+        ]))));
+
+    $actions = $crawler->filter('.sy-ta-empty-state .sy-ta-empty-state-actions');
+
+    expect($actions->count())->toBe(1)
+        ->and($actions->filter('button.sy-ac')->count())->toBe(1)
+        ->and(mb_trim($actions->filter('button.sy-ac')->text()))->toBe('New song')
+        ->and($crawler->filter('.sy-ta-empty-state-description')->text())->toContain('Create a record to get started.');
+});
+
+it('replaces the whole empty state block with the custom markup', function (): void {
+    $crawler = new Crawler(renderTableHost(new TableHost(fn (Table $table): Table => $table
+        ->records(fn (): array => [])
+        ->columns([TextColumn::make('title')])
+        ->emptyState(new Markup('<p class="sy-probe">Nothing at all</p>', 'UTF-8'))
+        ->emptyStateActions([Action::make('create')]))));
+
+    expect($crawler->filter('p.sy-probe')->count())->toBe(1)
+        ->and($crawler->filter('.sy-ta-empty-state')->count())->toBe(0)
+        ->and($crawler->filter('.sy-ta-empty-state-actions')->count())->toBe(0);
+});
+
+it('demotes the empty state heading below a table heading', function (): void {
+    $withHeading = new Crawler(renderTableHost(new TableHost(fn (Table $table): Table => $table
+        ->records(fn (): array => [])
+        ->columns([TextColumn::make('title')])
+        ->heading('Songs'))));
+    $without = new Crawler(renderTableHost(new TableHost(fn (Table $table): Table => $table
+        ->records(fn (): array => [])
+        ->columns([TextColumn::make('title')]))));
+
+    expect($withHeading->filter('h3.sy-ta-empty-state-heading')->count())->toBe(1)
+        ->and($without->filter('h2.sy-ta-empty-state-heading')->count())->toBe(1);
 });

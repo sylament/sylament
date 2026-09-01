@@ -37,8 +37,13 @@
 {% set checkboxTrailing = isSelectionEnabled and component.getRecordCheckboxPosition.name == 'AfterCells' %}
 {% set allSelectableCount = isSelectionEnabled ? component.getLiveComponent.getAllSelectableTableRecordsCount : null %}
 
+{% set isStriped = component.isStriped %}
+
+{% set emptyState = component.getEmptyState %}
 {% set emptyStateIcon = component.getEmptyStateIcon %}
+{% set emptyStateHeadingTag = heading ? component.getHeadingTag(1) : headingTag %}
 {% set emptyStateDescription = component.getEmptyStateDescription %}
+{% set emptyStateActions = component.getEmptyStateActions|filter(action => action.isVisible) %}
 
 <div {{ attrs({
     class: 'sy sy-ta',
@@ -250,21 +255,33 @@
         {% endif %}
 
         {% if records is empty %}
-            <div class="sy-ta-empty-state" role="status">
-                <div class="sy-ta-empty-state-content">
-                    <div class="sy-ta-empty-state-icon-bg">
-                        <twig:SylamentSupport:Icon
-                            :icon="emptyStateIcon ?? 'heroicons:x-mark'"
-                            :alias="emptyStateIcon ? null : constant('Sylament\\Tables\\Twig\\TablesIconAlias::EMPTY_STATE')"
-                            size="lg"
-                        />
+            {% if emptyState %}
+                {{ emptyState }}
+            {% else %}
+                <div class="sy-ta-empty-state" role="status">
+                    <div class="sy-ta-empty-state-content">
+                        <div class="sy-ta-empty-state-icon-bg">
+                            <twig:SylamentSupport:Icon
+                                :icon="emptyStateIcon ?? 'heroicons:x-mark'"
+                                :alias="emptyStateIcon ? null : constant('Sylament\\Tables\\Twig\\TablesIconAlias::EMPTY_STATE')"
+                                size="lg"
+                            />
+                        </div>
+                        <{{ emptyStateHeadingTag }} class="sy-ta-empty-state-heading">{{ component.getEmptyStateHeading }}</{{ emptyStateHeadingTag }}>
+                        {% if emptyStateDescription %}
+                            <p class="sy-ta-empty-state-description">{{ emptyStateDescription }}</p>
+                        {% endif %}
+
+                        {% if emptyStateActions is not empty %}
+                            <div class="sy-ta-empty-state-actions">
+                                {% for action in emptyStateActions %}
+                                    {{ renderComponent(action) }}
+                                {% endfor %}
+                            </div>
+                        {% endif %}
                     </div>
-                    <h3 class="sy-ta-empty-state-heading">{{ component.getEmptyStateHeading }}</h3>
-                    {% if emptyStateDescription %}
-                        <p class="sy-ta-empty-state-description">{{ emptyStateDescription }}</p>
-                    {% endif %}
                 </div>
-            </div>
+            {% endif %}
         {% else %}
             {% set actionsHeaderCell %}<th scope="col" aria-label="Actions" class="sy-ta-actions-header-cell sy-ta-empty-header-cell"></th>{% endset %}
 
@@ -323,6 +340,31 @@
                 </thead>
                 <tbody>
                     {% for recordKey, record in records %}
+                        {% set recordUrl = component.getRecordUrl(record) %}
+                        {% set recordAction = component.getRecordAction(record) %}
+                        {% set openRecordUrlInNewTab = component.shouldOpenRecordUrlInNewTab(record) %}
+                        {% set recordIsSelectable = isSelectionEnabled and component.isRecordSelectable(record) %}
+
+                        {# Column-level url/action arms slot in above the record-level ones — M4 · 4 #}
+                        {% set cellWrapperTag = recordUrl is not null
+                            ? 'a'
+                            : (recordAction is not null ? 'button' : 'div') %}
+                        {% set cellWrapperAttributes = cellWrapperTag == 'a'
+                            ? {
+                                href: recordUrl,
+                                target: openRecordUrlInNewTab ? '_blank' : null,
+                                ...component.getExtraRecordLinkAttributes(record),
+                            }
+                            : (cellWrapperTag == 'button'
+                                ? {
+                                    type: 'button',
+                                    'data-loading': 'addAttribute(disabled)',
+                                    ...stimulus_action('live', 'action', parameters: component.getAction(recordAction)
+                                        ? {action: 'mountAction', name: recordAction, context: {recordKey: recordKey ~ '', table: true}}
+                                        : {action: recordAction, recordKey: recordKey ~ ''}),
+                                }
+                                : {}) %}
+
                         {% set actionsCell %}{% if hasRecordActions %}
                             <td class="sy-ta-cell">
                                 <div class="sy-ta-actions">
@@ -335,7 +377,7 @@
 
                         {% set selectionCell %}{% if isSelectionEnabled %}
                             <td class="sy-ta-cell sy-ta-selection-cell">
-                                {% if component.isRecordSelectable(record) %}
+                                {% if recordIsSelectable %}
                                     <input {{ attrs({
                                         type: 'checkbox',
                                         class: 'sy-checkbox sy-ta-record-checkbox',
@@ -347,7 +389,14 @@
                             </td>
                         {% endif %}{% endset %}
 
-                        <tr class="sy-ta-row" id="{{ hostId ~ '.table.records.' ~ recordKey }}">
+                        <tr {{ attrs({
+                            class: classes('sy-ta-row', {
+                                'sy-clickable': recordUrl is not null or recordAction is not null,
+                                'sy-striped': isStriped and loop.index0 is odd,
+                                'sy-selected': recordIsSelectable and component.getLiveComponent.isTableRecordSelected(recordKey),
+                            }, component.getRecordClasses(record)),
+                            id: hostId ~ '.table.records.' ~ recordKey,
+                        }) }}>
                             {% if actionsBeforeCells %}{{ actionsCell }}{% endif %}
                             {% if checkboxLeading %}{{ selectionCell }}{% endif %}
                             {% if actionsBeforeColumns %}{{ actionsCell }}{% endif %}
@@ -355,7 +404,7 @@
                                 {% do column.record(record) %}
                                 {% do column.recordKey(recordKey) %}
                                 <td class="sy-ta-cell" id="{{ hostId ~ '.table.record.' ~ recordKey ~ '.column.' ~ column.getName }}">
-                                    <div class="sy-ta-col">{{ renderComponent(column) }}</div>
+                                    <{{ cellWrapperTag }} {{ attrs({class: 'sy-ta-col'}, cellWrapperAttributes) }}>{{ renderComponent(column) }}</{{ cellWrapperTag }}>
                                 </td>
                             {% endfor %}
                             {% if actionsAfterColumns %}{{ actionsCell }}{% endif %}

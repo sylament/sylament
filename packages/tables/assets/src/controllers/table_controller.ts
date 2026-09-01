@@ -9,6 +9,8 @@ const TRACKING_MODEL = "isTrackingDeselectedTableRecords";
 const SELECT_ALL_ACTION = "selectAllTableRecords";
 
 const RECORD_CHECKBOX_SELECTOR = ".sy-ta-record-checkbox";
+const ROW_SELECTOR = ".sy-ta-row";
+const SELECTED_ROW_CLASS = "sy-selected";
 const BULK_ONLY_SELECTOR = "[data-sy-table-bulk-only]";
 const COUNT_PLACEHOLDER = ":count";
 
@@ -261,7 +263,10 @@ export default class extends Controller<HTMLElement> {
     const state = this.#state();
 
     for (const checkbox of this.recordCheckboxTargets) {
-      checkbox.checked = this.#isSelected(state, checkbox.value);
+      const isSelected = this.#isSelected(state, checkbox.value);
+
+      checkbox.checked = isSelected;
+      checkbox.closest(ROW_SELECTOR)?.classList.toggle(SELECTED_ROW_CLASS, isSelected);
     }
 
     if (this.hasPageCheckboxTarget) {

@@ -6,6 +6,7 @@ namespace Sylament\Panels\Resources\Pages\Concerns;
 
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\UX\LiveComponent\Attribute\LiveProp;
+use Twig\Markup;
 
 use function Sylament\Support\blank;
 use function Sylament\Support\filled;
@@ -76,13 +77,39 @@ trait InteractsWithRecord
             throw new NotFoundHttpException(sprintf('The page [%s] carries no record key to resolve.', static::class));
         }
 
-        $record = $this->getResourceInstance()->resolveRecordRouteBinding($key);
+        $record = $this->getResourceInstance()->resolveRecordRouteBinding($key, $this->getParentRecordScope());
 
         if ($record === null) {
             throw new NotFoundHttpException(sprintf('No record matching [%s] exists for the resource [%s].', $key, static::getResource()));
         }
 
         return $this->resolvedRecord = $record;
+    }
+
+    /**
+     * The resource trail, then this record — titled, and linked to the page that
+     * shows it where the resource has one — then the page's own crumb. A record
+     * the resource titles by nothing at all leaves the trail as it is.
+     *
+     * @return array<int|string, string|Markup>
+     */
+    public function getBreadcrumbs(): array
+    {
+        $breadcrumbs = $this->getResourceBreadcrumbs();
+        $resource = $this->getResourceInstance();
+        $key = $this->getRecordKey();
+
+        if ($key !== null && $resource->hasRecordTitle()) {
+            $breadcrumbs = $this->appendBreadcrumb(
+                $breadcrumbs,
+                $this->getRecordBreadcrumbUrl($resource, $this->parentRecords, $key),
+                $this->getRecordTitle(),
+            );
+        }
+
+        $breadcrumbs[] = $this->getBreadcrumb();
+
+        return $breadcrumbs;
     }
 
     /**

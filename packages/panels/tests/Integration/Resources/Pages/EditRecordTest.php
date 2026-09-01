@@ -72,20 +72,23 @@ it('serves the edit page with the record filled in', function (): void {
         ->and($html)->toContain('<title>Edit Article — Test Admin</title>');
 });
 
-it('trails the resource above the edit heading', function (): void {
+it('trails the resource and the record above the edit heading', function (): void {
     [$client, , $key] = editRecordClient();
 
     $crawler = $client->request('GET', sprintf('/admin/articles/%s/edit', $key));
 
     $items = $crawler->filter('.sy-pa-header-has-breadcrumbs .sy-breadcrumbs-item');
 
-    // The record's own title stays out of the trail — the page crumb is the
-    // static one, exactly as in Filament.
-    expect($items->count())->toBe(2)
+    // The record crumb links to the page that shows it — the resource registers
+    // no view page, so its edit page is that page — and only the page's own
+    // crumb is plain text.
+    expect($items->count())->toBe(3)
         ->and($items->eq(0)->filter('a.sy-breadcrumbs-item-label')->attr('href'))->toEndWith('/admin/articles')
         ->and($items->eq(0)->filter('a.sy-breadcrumbs-item-label')->text())->toBe('Articles')
-        ->and($items->eq(1)->filter('span.sy-breadcrumbs-item-label')->text())->toBe('Edit')
-        ->and($items->eq(1)->filter('span.sy-breadcrumbs-item-label')->attr('aria-current'))->toBe('page');
+        ->and($items->eq(1)->filter('a.sy-breadcrumbs-item-label')->attr('href'))->toEndWith(sprintf('/admin/articles/%s/edit', $key))
+        ->and($items->eq(1)->filter('a.sy-breadcrumbs-item-label')->text())->toBe('Alpha')
+        ->and($items->eq(2)->filter('span.sy-breadcrumbs-item-label')->text())->toBe('Edit')
+        ->and($items->eq(2)->filter('span.sy-breadcrumbs-item-label')->attr('aria-current'))->toBe('page');
 });
 
 it('declines to link a record-bound edit action to the page already showing it', function (): void {

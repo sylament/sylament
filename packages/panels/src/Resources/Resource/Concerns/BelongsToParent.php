@@ -173,10 +173,13 @@ trait BelongsToParent
     /**
      * The ancestor route parameters a caller left out, read off the records it
      * did pass: each level's parent is the property the level below points at
-     * it through, walked from the nearest known record upwards. A level nothing
-     * can be read from — a many-to-many step, an unset property, no record at
-     * all — stops the walk, leaving the generator to refuse the missing
-     * parameter.
+     * it through, walked from the nearest known record object upwards. A level
+     * the caller passed as a key rather than a record is walked *through* — the
+     * anchor stays where it was and the path to the next level grows — so a
+     * caller mixing a record with ancestor keys still guesses what it left out.
+     * A level nothing can be read from — a many-to-many step, an unset
+     * property, no record at all — drops the anchor, leaving the generator to
+     * refuse whatever is still missing.
      *
      * @param list<array{parameter: string, resource: Resource, property: string|null}> $chain
      * @param array<string, mixed>                                                      $parameters
@@ -188,25 +191,42 @@ trait BelongsToParent
     {
         $anchorRecord = $records['record'] ?? null;
 
+        /** @var list<string> $anchorPath */
+        $anchorPath = [];
+
         foreach ($chain as $link) {
-            if (filled($parameters[$link['parameter']] ?? null)) {
-                $anchorRecord = $records[$link['parameter']] ?? null;
+            $passedRecord = $records[$link['parameter']] ?? null;
+
+            if ($passedRecord !== null) {
+                $anchorRecord = $passedRecord;
+                $anchorPath = [];
 
                 continue;
             }
 
-            if ($anchorRecord === null || $link['property'] === null) {
-                return $parameters;
+            if ($link['property'] === null) {
+                $anchorRecord = null;
+
+                continue;
             }
 
-            $ancestorRecord = $this->getPropertyAccessor()->getFromRecord($anchorRecord, $link['property']);
+            $anchorPath[] = $link['property'];
+
+            if ($anchorRecord === null || filled($parameters[$link['parameter']] ?? null)) {
+                continue;
+            }
+
+            $ancestorRecord = $this->getPropertyAccessor()->getFromRecord($anchorRecord, implode('.', $anchorPath));
 
             if (! is_object($ancestorRecord)) {
-                return $parameters;
+                $anchorRecord = null;
+
+                continue;
             }
 
             $parameters[$link['parameter']] = $link['resource']->getRecordRouteKey($ancestorRecord);
             $anchorRecord = $ancestorRecord;
+            $anchorPath = [];
         }
 
         return $parameters;

@@ -10,14 +10,18 @@ use Sylament\Panels\PanelRegistry;
 use Sylament\Panels\Resources\Pages\PageRegistration;
 use Sylament\Panels\Resources\Resource;
 use Sylament\Panels\Resources\ResourceRegistry;
+use Sylament\Panels\Tests\Fixtures\Doctrine\Entity\Anthology;
 use Sylament\Panels\Tests\Fixtures\Doctrine\Entity\Chapter;
 use Sylament\Panels\Tests\Fixtures\Doctrine\Entity\Line;
+use Sylament\Panels\Tests\Fixtures\Doctrine\Entity\Poem;
 use Sylament\Panels\Tests\Fixtures\Doctrine\Entity\Verse;
 use Sylament\Panels\Tests\Fixtures\Doctrine\EntityManagerFactory;
 use Sylament\Panels\Tests\Fixtures\NestedPanelProvider;
+use Sylament\Panels\Tests\Fixtures\Resources\AnthologyResource;
 use Sylament\Panels\Tests\Fixtures\Resources\ChapterResource;
 use Sylament\Panels\Tests\Fixtures\Resources\LineResource;
 use Sylament\Panels\Tests\Fixtures\Resources\Pages\EditChapter;
+use Sylament\Panels\Tests\Fixtures\Resources\PoemResource;
 use Sylament\Panels\Tests\Fixtures\Resources\VerseResource;
 use Sylament\Schemas\State\AssociationReader;
 use Sylament\Schemas\State\PropertyAccessor;
@@ -125,6 +129,7 @@ function panelsNestedUrlRoutes(): RouteCollection
         'sylament.nest.resources.chapters.verses.edit' => '/nest/chapters/{chapter}/verses/{record}/edit',
         'sylament.nest.resources.chapters.verses.lines.index' => '/nest/chapters/{chapter}/verses/{verse}/lines',
         'sylament.nest.resources.chapters.verses.lines.edit' => '/nest/chapters/{chapter}/verses/{verse}/lines/{record}/edit',
+        'sylament.nest.resources.anthologies.poems.edit' => '/nest/anthologies/{anthologies}/poems/{record}/edit',
         'sylament.nest.resources.relation-page-parents.verses' => '/nest/relation-page-parents/{record}/verses',
         'sylament.nest.resources.relation-page-parents.edit' => '/nest/relation-page-parents/{record}/edit',
         'sylament.nest.resources.view-page-parents.view' => '/nest/view-page-parents/{record}',
@@ -143,6 +148,8 @@ function panelsNestedUrlRegistry(EntityManagerInterface $entityManager): Resourc
         ChapterResource::class => new ChapterResource(),
         VerseResource::class => new VerseResource(),
         LineResource::class => new LineResource(),
+        AnthologyResource::class => new AnthologyResource(),
+        PoemResource::class => new PoemResource(),
         RelationPageParentResource::class => new RelationPageParentResource(),
         RelationPageChildResource::class => new RelationPageChildResource(),
         ViewPageParentResource::class => new ViewPageParentResource(),
@@ -261,6 +268,31 @@ it('guesses the remaining ancestor from an ancestor the caller passed', function
         ->toBe(sprintf('/nest/chapters/%s/verses/%s/lines', $chapter->getId(), $verse->getId()));
 });
 
+it('guesses past an ancestor the caller passed as a key rather than a record', function (): void {
+    $panel = Panel::make()->id('nest');
+    $entityManager = EntityManagerFactory::create();
+    $registry = panelsNestedUrlRegistry($entityManager);
+    [$chapter, $verse, $line] = panelsNestedUrlRecords($entityManager);
+
+    expect($registry->get(LineResource::class)->getUrl('edit', ['record' => $line, 'verse' => (string) $verse->getId()], isAbsolute: false, panel: $panel, shouldGuessMissingParameters: true))
+        ->toBe(sprintf('/nest/chapters/%s/verses/%s/lines/%s/edit', $chapter->getId(), $verse->getId(), $line->getId()));
+});
+
+it('cannot guess a many-to-many ancestor, leaving the generator to refuse it', function (): void {
+    $panel = Panel::make()->id('nest');
+    $entityManager = EntityManagerFactory::create();
+    $registry = panelsNestedUrlRegistry($entityManager);
+
+    $anthology = new Anthology()->setTitle('Georgics');
+    $poem = new Poem()->setTitle('Book I')->addAnthology($anthology);
+
+    $entityManager->persist($anthology);
+    $entityManager->persist($poem);
+    $entityManager->flush();
+
+    $registry->get(PoemResource::class)->getUrl('edit', ['record' => $poem], isAbsolute: false, panel: $panel, shouldGuessMissingParameters: true);
+})->throws(MissingMandatoryParametersException::class);
+
 it('leaves a missing ancestor to the generator when there is no record to guess from', function (): void {
     $panel = Panel::make()->id('nest');
     $registry = panelsNestedUrlRegistry(EntityManagerFactory::create());
@@ -314,6 +346,16 @@ it('falls back to the parent index page, which takes no parent key', function ()
     [$chapter] = panelsNestedUrlRecords($entityManager);
 
     expect($registry->get(IndexPageChildResource::class)->getIndexUrl(['chapter' => $chapter], isAbsolute: false, panel: $panel))
+        ->toBe('/nest/index-page-parents');
+});
+
+it('spends a scalar parent key on the parent page rather than trailing it as a query string', function (): void {
+    $panel = Panel::make()->id('nest');
+    $registry = panelsNestedUrlRegistry(EntityManagerFactory::create());
+
+    expect($registry->get(VerseResource::class)->getIndexUrl(['chapter' => '3'], isAbsolute: false, panel: $panel))
+        ->toBe('/nest/chapters/3/edit')
+        ->and($registry->get(IndexPageChildResource::class)->getIndexUrl(['chapter' => '3'], isAbsolute: false, panel: $panel))
         ->toBe('/nest/index-page-parents');
 });
 

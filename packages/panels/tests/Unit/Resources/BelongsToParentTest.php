@@ -15,9 +15,13 @@ use Sylament\Panels\Tests\Fixtures\Doctrine\Entity\Tome;
 use Sylament\Panels\Tests\Fixtures\Doctrine\Entity\Verse;
 use Sylament\Panels\Tests\Fixtures\Doctrine\EntityManagerFactory;
 use Sylament\Panels\Tests\Fixtures\NestedPanelProvider;
+use Sylament\Panels\Tests\Fixtures\Resources\AnthologyResource;
 use Sylament\Panels\Tests\Fixtures\Resources\ChapterResource;
+use Sylament\Panels\Tests\Fixtures\Resources\FolioResource;
 use Sylament\Panels\Tests\Fixtures\Resources\LeafResource;
 use Sylament\Panels\Tests\Fixtures\Resources\LineResource;
+use Sylament\Panels\Tests\Fixtures\Resources\PlateResource;
+use Sylament\Panels\Tests\Fixtures\Resources\PoemResource;
 use Sylament\Panels\Tests\Fixtures\Resources\TomeResource;
 use Sylament\Panels\Tests\Fixtures\Resources\VerseResource;
 use Sylament\Schemas\State\AssociationReader;
@@ -45,6 +49,10 @@ function panelsParentRegistry(EntityManagerInterface $entityManager, array $extr
         LineResource::class => new LineResource(),
         TomeResource::class => new TomeResource(),
         LeafResource::class => new LeafResource(),
+        AnthologyResource::class => new AnthologyResource(),
+        PoemResource::class => new PoemResource(),
+        FolioResource::class => new FolioResource(),
+        PlateResource::class => new PlateResource(),
     ];
 
     foreach ($extraResources as $extraResource) {
@@ -105,6 +113,20 @@ it('derives the parent relationship and route parameter from the mapping', funct
         ->and($registry->get(VerseResource::class)->getParentRouteParameterName())->toBe('chapter')
         ->and($registry->get(LineResource::class)->getParentRelationshipName())->toBe('lines')
         ->and($registry->get(LineResource::class)->getParentRouteParameterName())->toBe('verse');
+});
+
+it('reads the route parameter off the inverse field when the parent owns the association', function (): void {
+    $registry = panelsParentRegistry(EntityManagerFactory::create());
+
+    expect($registry->get(FolioResource::class)->getParentRelationshipName())->toBe('folios')
+        ->and($registry->get(FolioResource::class)->getParentRouteParameterName())->toBe('collections');
+});
+
+it('names the route parameter after the parent record when the mapping completes nowhere', function (): void {
+    $registry = panelsParentRegistry(EntityManagerFactory::create());
+
+    expect($registry->get(PlateResource::class)->getParentRelationshipName())->toBe('plates')
+        ->and($registry->get(PlateResource::class)->getParentRouteParameterName())->toBe('anthology');
 });
 
 it('refuses to derive a relationship when the parent record targets the child twice', function (): void {

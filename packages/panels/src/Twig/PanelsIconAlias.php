@@ -10,7 +10,11 @@ class PanelsIconAlias
 
     public const string PAGES_DASHBOARD_NAVIGATION_ITEM = 'pages.dashboard.navigation-item';
 
+    public const string RESOURCES_PAGES_MANAGE_RELATED_RECORDS_NAVIGATION_ITEM = 'resources.pages.manage-related-records.navigation-item';
+
     public const string SIDEBAR_GROUP_COLLAPSE_BUTTON = 'sidebar.group.collapse-button';
+
+    public const string SUB_NAVIGATION_MOBILE_MENU_BUTTON = 'sub-navigation.mobile-menu.button';
 
     public const string THEME_SWITCHER_DARK_BUTTON = 'theme-switcher.dark-button';
 

@@ -5,7 +5,12 @@
 
 <twig:SylamentSupport:Dropdown class="sy-pa-sub-navigation-dropdown">
     <twig:block name="trigger">
-        <twig:SylamentSupport:Button color="gray" icon="heroicons:chevron-down-20-solid" iconPosition="after">
+        <twig:SylamentSupport:Button
+            color="gray"
+            icon="heroicons:chevron-down-20-solid"
+            :iconAlias="constant('Sylament\\Panels\\Twig\\PanelsIconAlias::SUB_NAVIGATION_MOBILE_MENU_BUTTON')"
+            iconPosition="after"
+        >
             {{- triggerItem ? triggerItem.getLabel : '' -}}
         </twig:SylamentSupport:Button>
     </twig:block>

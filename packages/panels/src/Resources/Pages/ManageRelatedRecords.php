@@ -1,0 +1,149 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Sylament\Panels\Resources\Pages;
+
+use BackedEnum;
+use Closure;
+use Sylament\Actions\Action;
+use Sylament\Actions\CreateAction;
+use Sylament\Actions\EditAction;
+use Sylament\Actions\ViewAction;
+use Sylament\Panels\Resources\Concerns\InteractsWithRelationshipTable;
+use Sylament\Panels\Resources\Pages\Concerns\InteractsWithRecord;
+use Sylament\Panels\Twig\PanelsIconAlias;
+use Sylament\Schemas\Concerns\HasSchemas;
+use Sylament\Schemas\Contracts\InteractsWithSchemas;
+use Sylament\Schemas\Schema;
+use Sylament\Schemas\State\Relationship;
+use Sylament\Support\Icons\IconManager;
+use Sylament\Tables\Concerns\HasTable;
+use Sylament\Tables\Contracts\InteractsWithTable;
+use Sylament\Tables\Table;
+use Twig\Markup;
+
+/**
+ * One owner record's association as a page of its own: the routed sibling of a
+ * relation manager, and the listing a nested resource's records are reached
+ * through.
+ *
+ * The registration key this page is mounted under **must** be the kebab-cased
+ * relationship name — `'tasks' => ManageProjectTasks::route('/{record}/tasks')`
+ * for a `tasks` association. {@see Resource::getIndexUrl()} looks the page up on
+ * the parent resource by exactly that key, so a page registered under any other
+ * one is never the listing its related resource answers with: the URL falls
+ * through to the parent's view or edit page instead.
+ */
+abstract class ManageRelatedRecords extends Page implements InteractsWithSchemas, InteractsWithTable
+{
+    use HasSchemas;
+    use HasTable;
+    use InteractsWithRecord;
+    /*
+     * `getDefaultActionUrl` needs no exclusion here: `HasActions` arrives
+     * through the parent class, where a trait on this one wins by ordinary
+     * precedence. The insert stays ungrouped for the reason the relation
+     * manager's does — a split one loses its adaptations.
+     */
+    use InteractsWithRelationshipTable {
+        InteractsWithRelationshipTable::makeTable insteadof HasTable;
+    }
+
+    protected ?string $template = '@SylamentPanels/partials/ManageRelatedRecords/index.html.twig';
+
+    /**
+     * @param array<string, string> $parentRecords
+     */
+    public function mount(int|string $record, array $parentRecords = []): void
+    {
+        $this->mountRecord($record, $parentRecords);
+    }
+
+    public function getOwnerRecord(): object
+    {
+        return $this->getRecord();
+    }
+
+    public static function getNavigationLabel(): string
+    {
+        return static::$navigationLabel ?? static::getHumanizedRelationshipName();
+    }
+
+    public static function getNavigationIcon(): string|BackedEnum|Markup|Closure|null
+    {
+        return static::$navigationIcon
+            ?? static fn (IconManager $icons): string|BackedEnum|Markup => $icons->resolve(PanelsIconAlias::RESOURCES_PAGES_MANAGE_RELATED_RECORDS_NAVIGATION_ITEM) ?? 'heroicons:rectangle-stack';
+    }
+
+    public function getTitle(): string|Markup
+    {
+        return static::$title ?? sprintf('Manage %s %s', $this->getRecordTitle(), $this->getRelationshipTitle());
+    }
+
+    public function getBreadcrumb(): string
+    {
+        return static::$breadcrumb ?? $this->getRelationshipTitle();
+    }
+
+    /**
+     * The page's own record is the owner, so a frame carrying one of the listed
+     * records — a row frame, or a create writing a new one — takes none of it.
+     *
+     * @return object|array<string, mixed>|null
+     */
+    public function getDefaultActionRecord(Action $action): object|array|null
+    {
+        if ($action instanceof CreateAction || $action->getTable() instanceof Table) {
+            return null;
+        }
+
+        return $this->getRecord();
+    }
+
+    /**
+     * @return class-string|null
+     */
+    public function getDefaultActionRecordClass(Action $action): ?string
+    {
+        return $action instanceof CreateAction
+            ? $this->getTable()->getRecordClass()
+            : parent::getDefaultActionRecordClass($action);
+    }
+
+    public function getDefaultActionRecordLabel(Action $action): ?string
+    {
+        return $action instanceof CreateAction
+            ? $this->getTable()->getRecordLabel()
+            : parent::getDefaultActionRecordLabel($action);
+    }
+
+    public function getDefaultActionSchemaResolver(Action $action): ?Closure
+    {
+        return match (true) {
+            $action instanceof CreateAction, $action instanceof EditAction => $this->form(...),
+            $action instanceof ViewAction => fn (Schema $schema): Schema => $this->infolist($this->form($schema)),
+            default => null,
+        };
+    }
+
+    /**
+     * A record created here joins the association this page lists, not the one
+     * the page's own resource hangs under.
+     */
+    public function getDefaultActionRelationship(Action $action): ?Relationship
+    {
+        return $action instanceof CreateAction ? $this->getRelationship() : null;
+    }
+
+    /**
+     * The page declares no named schema of its own: an action modal's schema is
+     * minted per mount and cached, so discovery has nothing to walk.
+     *
+     * @return array<string>
+     */
+    public function schemas(): array
+    {
+        return [];
+    }
+}

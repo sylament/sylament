@@ -12,11 +12,14 @@ use Sylament\Panels\Tests\Fixtures\Pages\SubNavigationProbePage;
 use Sylament\Panels\Tests\Fixtures\Resources\Pages\CreateArticle;
 use Sylament\Panels\Tests\Fixtures\Resources\Pages\EditArticle;
 use Sylament\Panels\Tests\Fixtures\Resources\Pages\ListArticles;
+use Sylament\Panels\Twig\PanelsIconAlias;
+use Sylament\Support\Icons\IconManager;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Component\DomCrawler\Crawler;
 use Symfony\UX\LiveComponent\Test\InteractsWithLiveComponents;
+use Symfony\UX\TwigComponent\Test\InteractsWithTwigComponents;
 
-uses(InteractsWithLiveComponents::class);
+uses(InteractsWithLiveComponents::class, InteractsWithTwigComponents::class);
 
 beforeEach(function (): void {
     SubNavigationProbePage::probe(null);
@@ -113,6 +116,19 @@ it('draws the mobile dropdown in every position, labelled by the active item', f
     [SubNavigationPosition::End],
     [SubNavigationPosition::Top],
 ]);
+
+it('draws the mobile dropdown trigger through an overridable icon alias', function (): void {
+    $icons = $this::getContainer()->get(IconManager::class);
+
+    expect($icons)->toBeInstanceOf(IconManager::class);
+    $icons->register([PanelsIconAlias::SUB_NAVIGATION_MOBILE_MENU_BUTTON => 'images/menu-down.svg']);
+
+    $html = (string) $this->renderTwigComponent('SylamentPanels:SubNavigationMobileMenu', [
+        'navigation' => [NavigationGroup::make()->items([NavigationItem::make('Overview')->url('/admin/overview')])],
+    ]);
+
+    expect($html)->toContain('src="images/menu-down.svg"');
+});
 
 it('marks the page root with the band and its position', function (SubNavigationPosition $position): void {
     SubNavigationProbePage::probe($position, probeSubNavigation());

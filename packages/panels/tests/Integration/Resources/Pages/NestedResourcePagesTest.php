@@ -3,12 +3,16 @@
 declare(strict_types=1);
 
 use Doctrine\ORM\EntityManagerInterface;
+use Sylament\Actions\CreateAction;
+use Sylament\Actions\EditAction;
 use Sylament\Panels\Tests\Fixtures\Doctrine\Entity\Chapter;
 use Sylament\Panels\Tests\Fixtures\Doctrine\Entity\Line;
 use Sylament\Panels\Tests\Fixtures\Doctrine\Entity\Verse;
 use Sylament\Panels\Tests\Fixtures\Resources\NestedResourceRig;
+use Sylament\Panels\Tests\Fixtures\Resources\Pages\CreateVerse;
 use Sylament\Panels\Tests\Fixtures\Resources\Pages\EditLine;
 use Sylament\Panels\Tests\Fixtures\Resources\Pages\EditVerse;
+use Sylament\Panels\Tests\Fixtures\Resources\Pages\ListLines;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\RequestStack;
@@ -200,6 +204,88 @@ it('leaves an untitled record out of the trail', function (): void {
         1 => 'Lines',
         2 => 'Edit',
     ]);
+});
+
+it('creates a record under the parent the create page was opened from', function (): void {
+    [$client, $entityManager, $chapter] = nestedPagesClient();
+
+    $component = $this->createLiveComponent(CreateVerse::class, [
+        'parentRecords' => ['chapter' => (string) $chapter->getId()],
+        'panelId' => 'nest',
+    ], client: $client);
+
+    $component->set('data', ['heading' => 'A new verse']);
+    $component->call('create');
+
+    $entityManager->clear();
+    $created = $entityManager->getRepository(Verse::class)->findOneBy(['heading' => 'A new verse']);
+
+    // The join column refuses null, so a record that reached the database at all
+    // is one the page attached to its parent before the flush.
+    expect($created)->toBeInstanceOf(Verse::class)
+        ->and($created?->getChapter()?->getId())->toBe($chapter->getId())
+        ->and($component->response()->isRedirection())->toBeTrue()
+        ->and((string) $component->response()->headers->get('Location'))
+        ->toEndWith(sprintf('/nest/chapters/%s/verses/%s/edit', $chapter->getId(), $created?->getId()));
+});
+
+it('attaches what a create modal on a nested page writes', function (): void {
+    [$client, $entityManager, $chapter, $verse] = nestedPagesClient();
+
+    $this->createLiveComponent(EditVerse::class, [
+        'record' => (string) $verse->getId(),
+        'parentRecords' => ['chapter' => (string) $chapter->getId()],
+        'panelId' => 'nest',
+    ], client: $client)
+        ->call('mountAction', ['name' => 'create', 'arguments' => [], 'context' => []])
+        ->set('mountedActionsData.0.heading', 'From the modal')
+        ->call('callMountedAction');
+
+    $entityManager->clear();
+    $created = $entityManager->getRepository(Verse::class)->findOneBy(['heading' => 'From the modal']);
+
+    expect($created)->toBeInstanceOf(Verse::class)
+        ->and($created?->getChapter()?->getId())->toBe($chapter->getId());
+});
+
+it('sends a delete on a nested page back to the parent page that lists it', function (): void {
+    [$client, $entityManager, $chapter, $verse] = nestedPagesClient();
+
+    $response = $this->createLiveComponent(EditVerse::class, [
+        'record' => (string) $verse->getId(),
+        'parentRecords' => ['chapter' => (string) $chapter->getId()],
+        'panelId' => 'nest',
+    ], client: $client)
+        ->call('mountAction', ['name' => 'delete', 'arguments' => [], 'context' => []])
+        ->call('callMountedAction')
+        ->response();
+
+    $entityManager->clear();
+
+    // The verses have no index page of their own: their listing is the chapter's
+    // own record page, which is where the redirect lands.
+    expect($response->isRedirection())->toBeTrue()
+        ->and((string) $response->headers->get('Location'))->toEndWith(sprintf('/nest/chapters/%s/edit', $chapter->getId()))
+        ->and($entityManager->getRepository(Verse::class)->find((int) $verse->getId()))->toBeNull();
+});
+
+it('carries the chain into the urls a link-style action on a nested page mints', function (): void {
+    [$client, , $chapter, $verse, $line] = nestedPagesClient();
+
+    $host = $this->createLiveComponent(ListLines::class, [
+        'parentRecords' => [
+            'chapter' => (string) $chapter->getId(),
+            'verse' => (string) $verse->getId(),
+        ],
+        'panelId' => 'nest',
+    ], client: $client)->component();
+
+    pushNestedPanelRequest();
+
+    $prefix = sprintf('/nest/chapters/%s/verses/%s/lines', $chapter->getId(), $verse->getId());
+
+    expect($host->getDefaultActionUrl(CreateAction::make()))->toEndWith($prefix . '/create')
+        ->and($host->getDefaultActionUrl(EditAction::make()->record($line)))->toEndWith(sprintf('%s/%s/edit', $prefix, $line->getId()));
 });
 
 it('404s a mounted frame naming a record of another parent', function (): void {

@@ -18,6 +18,7 @@ use Sylament\Panels\Pages\Page as BasePage;
 use Sylament\Panels\Resources\Pages\Concerns\InteractsWithParentRecord;
 use Sylament\Panels\Resources\Resource;
 use Sylament\Panels\Resources\ResourceRegistry;
+use Sylament\Schemas\State\Relationship;
 use Sylament\Tables\Contracts\InteractsWithTable;
 use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
@@ -284,18 +285,33 @@ abstract class Page extends BasePage implements InteractsWithActions
         $ownsRecordClass = $recordClass === null || $recordClass === $resource->getRecordClass();
 
         if ($action instanceof CreateAction && $resource->hasPage('create') && $ownsRecordClass) {
-            return $resource->getUrl('create');
+            return $resource->getUrl('create', [...$this->parentRecords]);
         }
 
         if ($action instanceof EditAction && $resource->hasPage('edit') && ! $this instanceof EditRecord && $ownsRecordClass && $action->getRecord() !== null) {
-            return $resource->getUrl('edit', ['record' => $action->getRecord()]);
+            return $resource->getUrl('edit', [...$this->parentRecords, 'record' => $action->getRecord()]);
         }
 
         if ($action instanceof ViewAction && $resource->hasPage('view') && $ownsRecordClass && $action->getRecord() !== null) {
-            return $resource->getUrl('view', ['record' => $action->getRecord()]);
+            return $resource->getUrl('view', [...$this->parentRecords, 'record' => $action->getRecord()]);
         }
 
         return null;
+    }
+
+    /**
+     * A record created on a nested page joins the parent it was created under —
+     * the relationship a `CreateAction`'s own write flushes it through.
+     */
+    public function getDefaultActionRelationship(Action $action): ?Relationship
+    {
+        $parentRecord = $this->getParentRecord();
+
+        if (! $action instanceof CreateAction || $parentRecord === null) {
+            return null;
+        }
+
+        return new Relationship($parentRecord, $this->getResourceInstance()->getParentRelationshipName());
     }
 
     /**

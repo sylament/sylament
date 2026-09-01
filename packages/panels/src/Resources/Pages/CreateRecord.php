@@ -46,8 +46,13 @@ abstract class CreateRecord extends Page implements InteractsWithSchemas
         $this->entityManager = $entityManager;
     }
 
-    public function mount(): void
+    /**
+     * @param array<string, string> $parentRecords
+     */
+    public function mount(array $parentRecords = []): void
     {
+        $this->parentRecords = $parentRecords;
+
         $this->callHook('beforeFill');
 
         $this->getSchema('form')->fill();
@@ -134,10 +139,21 @@ abstract class CreateRecord extends Page implements InteractsWithSchemas
         return static::$breadcrumb ?? 'Create';
     }
 
+    /**
+     * A record created under a parent joins it in the same flush — an
+     * association the mapping refuses to leave empty would otherwise fail the
+     * write rather than the form.
+     */
     protected function handleRecordCreation(object $record): object
     {
         $entityManager = $this->entityManager
             ?? throw new LogicException(sprintf('The resource page [%s] was built outside the container, so it holds no entity manager; register it as an autowired service.', static::class));
+
+        $parentRecord = $this->getParentRecord();
+
+        if ($parentRecord !== null) {
+            $this->getResourceInstance()->attachRecordToParent($record, $parentRecord);
+        }
 
         $entityManager->persist($record);
         $entityManager->flush();
@@ -168,9 +184,9 @@ abstract class CreateRecord extends Page implements InteractsWithSchemas
         $resource = $this->getResourceInstance();
 
         if ($resource->hasPage('edit')) {
-            return $resource->getUrl('edit', ['record' => $this->getRecord()]);
+            return $resource->getUrl('edit', [...$this->parentRecords, 'record' => $this->getRecord()]);
         }
 
-        return $resource->getIndexUrl();
+        return $resource->getIndexUrl([...$this->parentRecords]);
     }
 }

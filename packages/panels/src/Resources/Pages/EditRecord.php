@@ -174,7 +174,7 @@ abstract class EditRecord extends Page implements InteractsWithSchemas
 
     public function getDefaultActionSuccessRedirectUrl(Action $action): ?string
     {
-        return $action instanceof DeleteAction ? $this->getResourceInstance()->getIndexUrl() : null;
+        return $action instanceof DeleteAction ? $this->getResourceInstance()->getIndexUrl([...$this->parentRecords]) : null;
     }
 
     public function getDefaultActionSchemaResolver(Action $action): ?Closure

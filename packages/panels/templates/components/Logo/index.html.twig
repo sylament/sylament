@@ -1,5 +1,34 @@
-{% props brandName = null %}
+{% props
+    brandName = null,
+    brandLogo = null,
+    darkModeBrandLogo = null,
+    brandLogoHeight = null
+%}
 
-{% if brandName %}
-    <span {{ attrs({class: 'sy sy-pa-logo'}, attributes.all) }}>{{ brandName }}</span>
-{% endif %}
+{% set hasDarkModeBrandLogo = darkModeBrandLogo is filled %}
+{% set logoHeight = brandLogoHeight ?? '1.5rem' %}
+{% set renditions = hasDarkModeBrandLogo
+    ? [{logo: brandLogo, dark: false}, {logo: darkModeBrandLogo, dark: true}]
+    : [{logo: brandLogo, dark: false}] %}
+
+{% for rendition in renditions %}
+    {% set logoClasses = {
+        sy: true,
+        'sy-pa-logo': true,
+        'sy-pa-logo-light': hasDarkModeBrandLogo and not rendition.dark,
+        'sy-pa-logo-dark': rendition.dark,
+    } %}
+
+    {% if rendition.logo is markup %}
+        <div {{ attrs({class: logoClasses, style: ['height: ' ~ logoHeight]}, attributes.all) }}>{{ rendition.logo }}</div>
+    {% elseif rendition.logo is filled %}
+        <img {{ attrs({
+            alt: (brandName ~ ' logo')|trim,
+            src: rendition.logo,
+            class: logoClasses,
+            style: ['height: ' ~ logoHeight],
+        }, attributes.all) }} />
+    {% elseif brandName %}
+        <span {{ attrs({class: logoClasses}, attributes.all) }}>{{ brandName }}</span>
+    {% endif %}
+{% endfor %}

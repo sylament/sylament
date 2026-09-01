@@ -337,7 +337,7 @@ pick the mini one for.
 ### Panel
 
 The definition surface a panel provider configures, plus the two services that
-collect and locate panels. `Panel` composes seven of Filament's `Panel/Concerns`
+collect and locate panels. `Panel` composes eight of Filament's `Panel/Concerns`
 traits — `HasId` (write-once id, fatal when read unset), `HasRoutes` (the path
 only), `HasComponents` ([`pages()` and `resources()`, each accumulating,
 de-duplicated and
@@ -345,7 +345,10 @@ re-indexed](#getpages-re-indexes-where-filament-keeps-array_uniques-gapped-keys)
 `HasNavigation` (`navigationGroups()`/`navigationItems()` registration plus
 `getNavigation()`), `HasSidebar` (`collapsibleNavigationGroups()` alone — the
 panel-level default [`NavigationGroup::isCollapsible()`](#navigationgroup) falls
-back to), `HasBrandName` and
+back to), `HasBrandName`, `HasBrandLogo` (`brandLogo()`/`darkModeBrandLogo()`,
+each `string|Markup|Closure|null` under the standing `Htmlable` → `Markup`
+translation, plus `brandLogoHeight()` — consumed by the [`Logo`
+template](#layout-templates)) and
 [`HasGlobalSearch`](global-search.md) (the provider switch plus the field's
 debounce, key bindings and suffix) — with `default()`/`isDefault()` on the class
 itself, matching Filament.
@@ -1276,13 +1279,28 @@ sits *under* it and the bar spans the viewport. It holds the drawer toggle, a
 unconditional: it is where the shell's own chrome goes, so it renders whether or
 not a caller fills the block.
 
-`Logo` is the brand name as a `<span class="sy-pa-logo">`, rendered twice — once
-in the topbar start (hidden below `lg`) and once in the sidebar's own mobile
-header, which is where the brand appears while the drawer is open. It renders
-**nothing at all** when the panel has no brand name, which is what leaves a
-brandless mobile header an empty strip rather than a gap with a heading in it.
-Filament's `logo.blade.php` also carries the `brandLogo()` / `darkModeBrandLogo()`
-image arms; neither is ported, since [`Panel`](#panel) has no such setting.
+`Logo` is the port of `logo.blade.php`'s three arms, rendered twice — once in
+the topbar start (hidden below `lg`) and once in the sidebar's own mobile
+header, which is where the brand appears while the drawer is open. A `Markup`
+brand logo renders raw inside a `<div class="sy-pa-logo">`, a string one as an
+`<img>` whose alt is the brand name plus ` logo` (Filament's
+`layout.logo.alt` translation, hardcoded English while i18n is parked), and
+with neither the brand name falls back as a `<span>` — which still renders
+**nothing at all** when the panel has no brand name either, which is what
+leaves a brandless mobile header an empty strip rather than a gap with a
+heading in it. The `Markup`-vs-string branch is Blade's `$logo instanceof
+Htmlable`, and porting it is what added the `markup` `TwigTest` to support's
+`MarkupExtension` (`rendition.logo is markup`) beside the existing `filled`
+test — the reusable Twig-side half of the `Htmlable` → `Markup` escaping
+contract. The logo arms carry an inline `height:` style
+(`brandLogoHeight() ?? '1.5rem'`, defaulted in the template as Filament does);
+the text fallback carries none, matching the Blade. When
+`darkModeBrandLogo()` is set both renditions render, the light one stamped
+`sy-pa-logo-light` (`dark:hidden`) and the dark one `sy-pa-logo-dark`
+(`hidden dark:flex`) — Filament's `fi-logo-light`/`fi-logo-dark` pair,
+CSS-toggled so no JS is involved. The three settings thread as props down the
+same `Document` → `Layout` → `Topbar`/`Sidebar` chain `brandName` already
+rides, where Filament's blade reads the `filament()` facade in place.
 
 `ThemeSwitcher` and `UserMenu` are the topbar-end pair. The switcher is a
 `role="group"` of three buttons — light, dark, system — each carrying its

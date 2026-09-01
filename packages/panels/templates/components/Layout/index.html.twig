@@ -1,6 +1,9 @@
 {% props
     navigation = [],
     brandName = null,
+    brandLogo = null,
+    darkModeBrandLogo = null,
+    brandLogoHeight = null,
     hasGlobalSearch = false,
 
     content = markup(block('content') ?? null)
@@ -13,12 +16,24 @@
 <div {{ attrs({class: 'sy sy-pa-body'}, sidebarStimulus, attributes.all) }}>
     <a href="#sy-pa-main" class="sy-pa-skip-link">Skip to content</a>
 
-    <twig:SylamentPanels:Topbar :brandName="brandName" :hasGlobalSearch="hasGlobalSearch" />
+    <twig:SylamentPanels:Topbar
+        :brandName="brandName"
+        :brandLogo="brandLogo"
+        :darkModeBrandLogo="darkModeBrandLogo"
+        :brandLogoHeight="brandLogoHeight"
+        :hasGlobalSearch="hasGlobalSearch"
+    />
 
     <div class="sy-pa-layout">
         <div {{ attrs({class: 'sy-pa-sidebar-overlay'}, stimulus_action(sidebarController, 'close', 'click')) }}></div>
 
-        <twig:SylamentPanels:Sidebar :navigation="navigation" :brandName="brandName" />
+        <twig:SylamentPanels:Sidebar
+            :navigation="navigation"
+            :brandName="brandName"
+            :brandLogo="brandLogo"
+            :darkModeBrandLogo="darkModeBrandLogo"
+            :brandLogoHeight="brandLogoHeight"
+        />
 
         <div class="sy-pa-main-ctn">
             <main id="sy-pa-main" class="sy-pa-main">

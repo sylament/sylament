@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Sylament\Panels;
 
 use Closure;
+use Sylament\Panels\Panel\Concerns\HasBrandLogo;
 use Sylament\Panels\Panel\Concerns\HasBrandName;
 use Sylament\Panels\Panel\Concerns\HasComponents;
 use Sylament\Panels\Panel\Concerns\HasGlobalSearch;
@@ -16,6 +17,7 @@ use Sylament\Support\Components\Component;
 
 class Panel extends Component
 {
+    use HasBrandLogo;
     use HasBrandName;
     use HasComponents;
     use HasGlobalSearch;

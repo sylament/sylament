@@ -1,5 +1,8 @@
 {% props
     brandName = null,
+    brandLogo = null,
+    darkModeBrandLogo = null,
+    brandLogoHeight = null,
     hasGlobalSearch = false,
 
     end = markup(block('end') ?? null)
@@ -24,7 +27,12 @@
         </button>
 
         <div class="sy-pa-topbar-start">
-            <twig:SylamentPanels:Logo :brandName="brandName" />
+            <twig:SylamentPanels:Logo
+                :brandName="brandName"
+                :brandLogo="brandLogo"
+                :darkModeBrandLogo="darkModeBrandLogo"
+                :brandLogoHeight="brandLogoHeight"
+            />
         </div>
 
         <div class="sy-pa-topbar-end">

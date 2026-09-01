@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use Sylament\Panels\Panel;
+use Twig\Markup;
 
 it('holds id, path, pages, brand and default flag fluently', function (): void {
     $panel = Panel::make()
@@ -55,4 +56,31 @@ it('evaluates closures for brand, default and collapsible settings', function ()
     expect($panel->getBrandName())->toBe('Closure Brand')
         ->and($panel->isDefault())->toBeTrue()
         ->and($panel->hasCollapsibleNavigationGroups())->toBeFalse();
+});
+
+it('holds the brand logo settings fluently, defaulting to null', function (): void {
+    $logo = new Markup('<svg></svg>', 'UTF-8');
+
+    $panel = Panel::make()
+        ->brandLogo('/images/logo.svg')
+        ->darkModeBrandLogo($logo)
+        ->brandLogoHeight('2rem');
+
+    expect($panel->getBrandLogo())->toBe('/images/logo.svg')
+        ->and($panel->getDarkModeBrandLogo())->toBe($logo)
+        ->and($panel->getBrandLogoHeight())->toBe('2rem')
+        ->and(Panel::make()->getBrandLogo())->toBeNull()
+        ->and(Panel::make()->getDarkModeBrandLogo())->toBeNull()
+        ->and(Panel::make()->getBrandLogoHeight())->toBeNull();
+});
+
+it('evaluates closures for the brand logo settings', function (): void {
+    $panel = Panel::make()
+        ->brandLogo(fn (): string => '/images/closure-logo.svg')
+        ->darkModeBrandLogo(fn (): string => '/images/closure-logo-dark.svg')
+        ->brandLogoHeight(fn (): string => '1.75rem');
+
+    expect($panel->getBrandLogo())->toBe('/images/closure-logo.svg')
+        ->and($panel->getDarkModeBrandLogo())->toBe('/images/closure-logo-dark.svg')
+        ->and($panel->getBrandLogoHeight())->toBe('1.75rem');
 });

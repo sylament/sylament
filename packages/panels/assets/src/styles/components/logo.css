@@ -1,3 +1,11 @@
 .sy-pa-logo {
-    @apply text-xl leading-5 font-bold tracking-tight text-gray-950 dark:text-white;
+    @apply flex text-xl leading-5 font-bold tracking-tight text-gray-950 dark:text-white;
+
+    &.sy-pa-logo-light {
+        @apply dark:hidden;
+    }
+
+    &.sy-pa-logo-dark {
+        @apply hidden dark:flex;
+    }
 }

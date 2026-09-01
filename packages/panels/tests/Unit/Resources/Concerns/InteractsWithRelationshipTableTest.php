@@ -214,6 +214,7 @@ function mrrUnitRecords(): array
 it('refuses a host that names no relationship, related resource or not', function (): void {
     expect(NamelessRelatedProbe::getRelationshipName(...))
         ->toThrow(LogicException::class, NamelessRelatedProbe::class)
+        ->toThrow(LogicException::class, 'The relationship table')
         ->and(NestedRelatedProbe::getRelationshipName())->toBe('tasks');
 });
 

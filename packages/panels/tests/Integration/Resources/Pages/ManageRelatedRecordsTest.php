@@ -14,6 +14,7 @@ use Sylament\Panels\Tests\Fixtures\Resources\MrrTaskResource;
 use Sylament\Panels\Tests\Fixtures\Resources\Pages\CreateMrrTask;
 use Sylament\Panels\Tests\Fixtures\Resources\Pages\EditMrrProject;
 use Sylament\Panels\Tests\Fixtures\Resources\Pages\EditMrrTask;
+use Sylament\Panels\Tests\Fixtures\Resources\Pages\ManageMrrProjectChecklist;
 use Sylament\Panels\Tests\Fixtures\Resources\Pages\ManageMrrProjectTasks;
 use Sylament\Schemas\State\AssociationReader;
 use Sylament\Schemas\State\PropertyAccessor;
@@ -128,6 +129,65 @@ it('links the header create action at the related resource create page', functio
     expect($create->count())->toBe(1)
         ->and($create->attr('href'))->toEndWith(sprintf('/mrr/projects/%s/tasks/create', $project->getId()))
         ->and($create->attr('data-live-action-param'))->toBeNull();
+});
+
+it('mounts the header create action where the related resource registers no create page', function (): void {
+    [$client, , $project] = manageRelatedClient();
+
+    $crawler = $client->request('GET', sprintf('/mrr/projects/%s/checklist', $project->getId()));
+    $create = $crawler->filter('.sy-pa-header-actions button');
+
+    // The related resource has an edit page and no create page, so the hoisted
+    // url arm declines and the trigger mounts instead of linking. Its label is
+    // the related record's — the page's own resource speaks for projects.
+    expect($client->getResponse()->getStatusCode())->toBe(200)
+        ->and($crawler->filter('.sy-pa-header-actions a')->count())->toBe(0)
+        ->and($create->attr('data-live-name-param'))->toBe('create')
+        ->and($create->text())->toContain('New task');
+});
+
+it('creates a record from the header modal and joins it to the owner', function (): void {
+    [$client, $entityManager, $project] = manageRelatedClient();
+
+    $component = $this->createLiveComponent(ManageMrrProjectChecklist::class, [
+        'record' => (string) $project->getId(),
+        'panelId' => 'mrr',
+    ], client: $client)
+        ->call('mountAction', ['name' => 'create', 'arguments' => [], 'context' => []]);
+
+    $modal = $component->render();
+
+    // The schema resolver hands the modal the related resource's form, and the
+    // record class and label come off the relationship table rather than off
+    // the page's own resource.
+    expect((string) $modal)->toContain('Create Task')
+        ->and($modal->crawler()->filter('input[data-model$="mountedActionsData.0.title"]')->count())->toBe(1);
+
+    $component->set('mountedActionsData.0.title', 'Gamma')->call('callMountedAction');
+
+    $entityManager->clear();
+
+    $created = $entityManager->getRepository(Task::class)->findOneBy(['title' => 'Gamma']);
+
+    // The relationship hook is what joins it: without one the task is written
+    // orphaned, and nothing else on the page would notice.
+    expect($created)->toBeInstanceOf(Task::class)
+        ->and($created?->getProject()?->getId())->toBe($project->getId())
+        ->and($component->component()->mountedActions)->toBe([]);
+});
+
+it('carries the owner record into no table action of its own', function (): void {
+    [$client, , $project] = manageRelatedClient();
+
+    $component = $this->createLiveComponent(ManageMrrProjectChecklist::class, [
+        'record' => (string) $project->getId(),
+        'panelId' => 'mrr',
+    ], client: $client)
+        ->call('mountAction', ['name' => 'probe', 'arguments' => [], 'context' => ['table' => true]]);
+
+    // A table frame carrying no record of its own gets none: the page's record
+    // is the owner, never one of the records the table lists.
+    expect($component->component()->getMountedAction()?->getRecord())->toBeNull();
 });
 
 it('links each row at the related resource edit page under the same owner', function (): void {

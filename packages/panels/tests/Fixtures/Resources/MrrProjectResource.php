@@ -10,6 +10,7 @@ use Sylament\Panels\Resources\Resource;
 use Sylament\Panels\Tests\Fixtures\Doctrine\Entity\Project;
 use Sylament\Panels\Tests\Fixtures\Resources\Pages\EditMrrProject;
 use Sylament\Panels\Tests\Fixtures\Resources\Pages\ListMrrProjects;
+use Sylament\Panels\Tests\Fixtures\Resources\Pages\ManageMrrProjectChecklist;
 use Sylament\Panels\Tests\Fixtures\Resources\Pages\ManageMrrProjectTasks;
 use Sylament\Schemas\Schema;
 use Sylament\Tables\Columns\TextColumn;
@@ -46,6 +47,7 @@ final class MrrProjectResource extends Resource
             'index' => ListMrrProjects::route('/'),
             'edit' => EditMrrProject::route('/{record}/edit'),
             'tasks' => ManageMrrProjectTasks::route('/{record}/tasks'),
+            'checklist' => ManageMrrProjectChecklist::route('/{record}/checklist'),
         ];
     }
 

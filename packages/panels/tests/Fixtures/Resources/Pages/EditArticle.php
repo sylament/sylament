@@ -14,6 +14,8 @@ use Symfony\UX\LiveComponent\Attribute\AsLiveComponent;
 #[AsLiveComponent]
 final class EditArticle extends EditRecord
 {
+    use ProbesSubNavigation;
+
     protected static string $resource = ArticleResource::class;
 
     /**

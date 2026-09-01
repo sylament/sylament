@@ -11,5 +11,7 @@ use Symfony\UX\LiveComponent\Attribute\AsLiveComponent;
 #[AsLiveComponent]
 final class CreateArticle extends CreateRecord
 {
+    use ProbesSubNavigation;
+
     protected static string $resource = ArticleResource::class;
 }

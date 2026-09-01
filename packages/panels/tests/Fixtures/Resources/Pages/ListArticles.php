@@ -15,6 +15,8 @@ use Symfony\UX\LiveComponent\Attribute\LiveProp;
 #[AsLiveComponent]
 final class ListArticles extends ListRecords
 {
+    use ProbesSubNavigation;
+
     protected static string $resource = ArticleResource::class;
 
     /**

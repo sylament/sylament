@@ -96,6 +96,12 @@ admit a class someone wrote on purpose.
 
 ### The marker interface mirrors the mechanism Laravel deprecated, not the one it replaced it with
 
+Its first implementor is forms'
+[`RequiredValue`](../forms/can-be-validated.md#required-carries-laravels-blank-set-not-symfonys),
+the constraint `required()` builds: it is not a `NotBlank` subclass, so nothing
+in the list above would have matched it and the gate would have dropped the one
+constraint whose whole job is to reject the blank string.
+
 `ImplicitConstraint` is a bare marker, and Laravel's user-facing opt-in has not
 been one since rule objects moved to `ValidationRule`: today a consumer writes
 `public $implicit = true;` on the rule, and
@@ -136,7 +142,7 @@ Laravel's second branch treats a present-but-`null` value as present and runs th
 rules; the port does the same, and the test is `is_string()` first for exactly
 that reason. Nothing is lost by it — every constraint in the ported subset
 already returns without a violation on `null`, which is what
-[`nullable()`'s promise](../forms/can-be-validated.md#nullable-removes-the-notblank-and-nothing-else)
+[`nullable()`'s promise](../forms/can-be-validated.md#nullable-removes-the-required-constraint-and-nothing-else)
 rests on — and gating `null` would change behaviour nobody asked to change:
 `NotNull` is in the implicit set, so it would survive, but a consumer's own
 non-implicit constraint that *wants* to see `null` would stop being run.
@@ -235,8 +241,8 @@ codebase's own blank test would be the surprising thing. Permanent.
   spelled with a condition here.
 - `isNotNullIfMarkedAsNullable()` short-circuits the remaining rules once
   `nullable` is present and the value is null. It has no work to do: the port's
-  [`nullable()`](../forms/can-be-validated.md#nullable-removes-the-notblank-and-nothing-else)
-  is the *absence* of `NotBlank`, not a rule in the list, and every ported
+  [`nullable()`](../forms/can-be-validated.md#nullable-removes-the-required-constraint-and-nothing-else)
+  is the *absence* of the required constraint, not a rule in the list, and every ported
   constraint already returns on `null`.
 - `hasNotFailedPreviousRuleIfPresenceRule()` — despite the name, not a presence
   check at all: its body is `in_array($rule, ['Unique', 'Exists']) ? !

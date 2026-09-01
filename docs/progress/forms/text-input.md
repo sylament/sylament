@@ -119,7 +119,7 @@ that left the override: [`regex()`](can-be-validated.md) has since shipped, and
 a second `Regex` beside it.
 
 The reason is **composition order**. These arms must land last — the order is
-`NotBlank` → length → escape hatch → type arms, pinned by `TextInputTest` — and a
+`RequiredValue` → length → escape hatch → type arms, pinned by `TextInputTest` — and a
 `constraint()` call from `setUp()` would file them among the escape-hatch pairs
 instead, ahead of anything the user registers later. The override is what keeps
 them at the tail, and it keeps the five arms in one block, ordered the way
@@ -331,7 +331,7 @@ unguarded, because the asymmetry is still latent in them: reached with `''`,
 any bound, and only the gate in front stands between that and a user's screen.
 `TextInputTest`'s `reports neither bound against the empty string a cleared input
 submits` pins the outcome, holding a `null` state skipping both arms beside it,
-and `still reports both bounds on a required field, whose NotBlank survives the
+and `still reports both bounds on a required field, whose RequiredValue survives the
 gate` pins that `required()` is untouched.
 
 ### Input mode is a bespoke getter, not the `HasInputMode` concern

@@ -111,14 +111,21 @@ here. `required()` is what rejects that case.
 
 ### required() on a checkbox means "must be checked"
 
-`required()` produces a `NotBlank` constraint
-([`CanBeValidated`](can-be-validated.md)), and Symfony's `NotBlank` rejects
-`false` outright — `false === $value` is the first clause of
+The field overrides `getRequiredConstraint()` to Symfony's `NotBlank`, which
+rejects `false` outright — `false === $value` is the first clause of
 [`NotBlankValidator`](../../../vendor/symfony/validator/Constraints/NotBlankValidator.php).
 That agrees with the native `required` attribute the template emits, which
 browsers read as "this box must be ticked", so the client and the server say the
 same thing. [`accepted()`](can-be-accepted.md) is the explicit spelling of the
 same rule and is what to reach for when the intent matters to a reader.
+
+The override is what carries that meaning, and it has been explicit only since
+the shared constraint stopped supplying it: `required()` builds
+[`RequiredValue`](can-be-validated.md#required-carries-laravels-blank-set-not-symfonys),
+which follows Laravel in reading `false` as present. Until then the checkbox
+inherited "must be ticked" from a default that meant it by accident — the same
+accident that made every *other* field over a non-nullable `bool` column
+unsubmittable while off.
 
 **[`Toggle`](toggle.md#required-means-presence-not-truth) deliberately does the
 opposite** — it overrides `getRequiredConstraint()` to `NotNull`, so a required

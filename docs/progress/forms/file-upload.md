@@ -103,7 +103,7 @@ _Ports_ cell is `—` has no Filament counterpart.
 
 Coverage:
 [`Unit/Components/BaseFileUploadTest`](../../../packages/forms/tests/Unit/Components/BaseFileUploadTest.php)
-— the constraint split read through the public getter (one `NotBlank`, never
+— the constraint split read through the public getter (one `RequiredValue`, never
 two), the aspect-ratio constraints, the three record arms of
 `getOriginalFilePaths()`, the disk fallback, both filename arms, the nullable
 visibility, the state cast, the PHP ceiling, and the hydration filter;
@@ -326,7 +326,7 @@ The split hangs off `buildValidationConstraints()`, never the public
 `getValidationConstraints()` — which is
 `applyValidationMessages(buildValidationConstraints())` and whose parent hook
 already emits the required constraint. Overriding the getter would render
-`NotBlank` twice and skip the message layer; six shipped fields override the
+`RequiredValue` twice and skip the message layer; six shipped fields override the
 hook and none the getter. `getUploadedFileConstraints()` returns through
 `applyValidationMessages()` too, so a field's own message overrides reach an
 upload refusal.

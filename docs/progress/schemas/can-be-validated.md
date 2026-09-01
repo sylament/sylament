@@ -231,7 +231,7 @@ populated yet.
 
 The hole is closed from the other side, by
 [deriving requirement from the record's write-side types](../forms/can-be-validated.md#requirement-is-derived-from-the-records-write-side-types):
-a field bound to a non-nullable target emits `NotBlank` on its own, so the blank
+a field bound to a non-nullable target emits its required constraint on its own, so the blank
 submit fails *field* validation — asterisk, native `required` attribute, message
 under the input, sticky field-by-field clearing — and the mapper crash becomes
 unreachable rather than merely loud.
@@ -241,7 +241,7 @@ reason it does not: derivation reads a **type**, not a constraint. Nullability
 comes from `ReflectionExtractor` reading the property's mutator, so there is no
 `#[Assert]` metadata being pulled forward, no typed constraint evaluated against
 raw pre-cast state, and no second message pipeline — the field emits the same
-`NotBlank` it would have emitted from an explicit `required()`. Entity-declared
+constraint it would have emitted from an explicit `required()`. Entity-declared
 constraints all travel the one post-mapping route.
 
 Permanent — reverses only if Symfony Validator stops being the engine. Filament

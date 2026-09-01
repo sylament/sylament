@@ -291,17 +291,21 @@ explicit `false` satisfies it just as much as `true`. Laravel agrees — its
 `Countable`, so `Toggle::make('x')->required()` in Filament passes with the
 switch off. Two consequences, both divergences from the port's own defaults:
 
-- **The constraint is `NotNull`, not `NotBlank`.** Symfony's `NotBlank` violates
-  on `false === $value`
-  ([`NotBlankValidator`](../../../vendor/symfony/validator/Constraints/NotBlankValidator.php)),
-  so the shared `CanBeValidated` constraint would make a required toggle
-  unsubmittable while off — `required()` would silently mean `accepted()`. The
-  toggle overrides `getRequiredConstraint()`, the
+- **The constraint is `NotNull`.** The toggle overrides
+  `getRequiredConstraint()`, the
   [subclass seam](can-be-validated.md#the-required-constraint-is-swappable-per-field)
   that ports Filament's `getRequiredValidationRule()` hook, and returns
-  `NotNull`. A message for it therefore keys `NotNull::class`, not
-  `NotBlank::class` — the constraint the field actually emits, which is the whole
-  rule under
+  `NotNull`. It was written when the shared constraint was Symfony's `NotBlank`,
+  which violates on `false === $value` and so would have made a required toggle
+  unsubmittable while off — `required()` silently meaning `accepted()`. The
+  shared constraint is now
+  [`RequiredValue`](can-be-validated.md#required-carries-laravels-blank-set-not-symfonys),
+  which reads `false` as present, so the override no longer carries that job; it
+  still says something narrower, namely that presence here is *not null* and
+  nothing more, so the blank string a tampered payload could put on a boolean
+  path passes where the shared constraint would violate. A message for it keys
+  `NotNull::class`, not `RequiredValue::class` — the constraint the field actually
+  emits, which is the whole rule under
   [class keying](can-be-validated.md#validation-messages-apply-after-the-constraints-are-built).
 - **No `required` attribute on the input.** `TextInput` and `Textarea` emit it
   from `isMarkedAsRequired()`; the toggle does not, because a native `required`
@@ -313,8 +317,8 @@ Consumers wanting "must be on" call `accepted()`, which builds the constraint
 that actually says so. The label asterisk is unaffected: it follows
 `isMarkedAsRequired()`, which is still true.
 
-**[`Checkbox`](checkbox.md#required-on-a-checkbox-means-must-be-checked) keeps
-the shared `NotBlank` on purpose**, so `required()` there does mean "must be
+**[`Checkbox`](checkbox.md#required-on-a-checkbox-means-must-be-checked) swaps to
+Symfony's `NotBlank` on purpose**, so `required()` there does mean "must be
 checked". That is not an inconsistency waiting to be tidied away: the checkbox
 emits the native `required` attribute and the toggle does not, so each field's
 server constraint says exactly what its own markup already enforces in the

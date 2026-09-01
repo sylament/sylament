@@ -193,7 +193,7 @@ typed `?InteractsWithSchemas`, so no `instanceof` guard is needed) — and the
 `FieldWrapper` template loops the whole list.
 That is the Symfony violation-list idiom: a `ConstraintViolationList` is
 naturally plural, and the count is small in practice because every constraint
-except `NotBlank` skips a `null` value, so a single field rarely produces two.
+except the required one skips a `null` value, so a single field rarely produces two.
 A blank *string* used to be a different matter — `Length(min:)`,
 `Type('numeric')` and `GreaterThanOrEqual` each violate on `''` where they skip
 `null` — until the [presence gate](../schemas/presence-gate.md) stopped them

@@ -56,7 +56,7 @@ _Detail_ links a permanent note in [Semantics](#semantics) /
 | `getIconAlias()` — no Filament source; which of the `boolean()` icons is an overridable default | — | done | — | [semantics](#the-boolean-icons-resolve-their-alias-at-render-not-at-call-time) |
 | `hasNullableBooleanState()` | [`Components/ToggleButtons.php`](../../../vendor/filament/forms/src/Components/ToggleButtons.php) | done | — | [semantics](field.md#hasnullablebooleanstate-has-exactly-one-consumer) |
 | `getInValidationConstraintValues()` / `hasInValidationOnMultipleValues()` → `buildValidationConstraints()` — replaced by a user `in()` list | [`Components/ToggleButtons.php`](../../../vendor/filament/forms/src/Components/ToggleButtons.php) | done | — | [semantics](select.md#the-choice-constraint-is-the-fields-only-server-side-guard) · [semantics](select.md#the-choice-choices-cover-both-forms-the-raw-state-can-take) · [semantics](can-be-validated.md#a-user-in-list-is-emitted-in-both-spellings-and-replaces-the-derived-check) |
-| `required()` — the standard `NotBlank`, in both multiplicities | [`Concerns/CanBeValidated.php`](../../../vendor/filament/forms/src/Components/Concerns/CanBeValidated.php) | done | — | [semantics](#required-means-at-least-one-answer-in-both-multiplicities) |
+| `required()` — the standard `RequiredValue`, in both multiplicities | [`Concerns/CanBeValidated.php`](../../../vendor/filament/forms/src/Components/Concerns/CanBeValidated.php) | done | — | [semantics](#required-means-at-least-one-answer-in-both-multiplicities) |
 | Tooltips — the per-option hover text | [`Components/ToggleButtons.php`](../../../vendor/filament/forms/src/Components/ToggleButtons.php) | done | — | [diverges](#a-tooltip-renders-as-a-native-title) |
 | The grid, and its `Column` default | [`Components/ToggleButtons.php`](../../../vendor/filament/forms/src/Components/ToggleButtons.php) | done | — | [semantics](has-grid-direction.md#the-column-default-belongs-to-the-field-not-to-this-getter) |
 | [`HasOptions`](../../../packages/forms/src/Components/Concerns/HasOptions.php) | [`Concerns/HasOptions.php`](../../../vendor/filament/forms/src/Components/Concerns/HasOptions.php) | done | — | [detail](has-options.md) |
@@ -318,28 +318,26 @@ it.
 
 ### `required()` means at least one answer, in both multiplicities
 
-`required()` builds the default `NotBlank`
-([`CanBeValidated`](can-be-validated.md)) and the field overrides
-`getRequiredConstraint()` nowhere, exactly as
+`required()` builds the default
+[`RequiredValue`](can-be-validated.md#required-carries-laravels-blank-set-not-symfonys)
+and the field overrides `getRequiredConstraint()` nowhere, exactly as
 [`Radio`](radio.md#required-means-presence-and-needs-no-override) does. Both
 multiplicities land where they should, for reasons worth stating rather than
 assuming:
 
 - **Single.** The resting state is `null` and the false option of a `boolean()`
-  field is `int 0`.
-  [`NotBlankValidator`](../../../vendor/symfony/validator/Constraints/NotBlankValidator.php)
-  reads `false === $value || (! $value && '0' != $value)`, so it rejects `null`
-  and accepts `0` and `'0'` — a required `boolean()` field rejects only *no
-  answer*, which is the whole argument radio.md makes.
-- **Multiple.** The resting state is `[]`, which is falsy and unequal to `'0'`, so
-  `NotBlank` fails it: required means "pick at least one". No `Count(min: 1)` is
+  field is `int 0`. `filled()` counts `null` blank and both `0` and `'0'` present,
+  so a required `boolean()` field rejects only *no answer*, which is the whole
+  argument radio.md makes.
+- **Multiple.** The resting state is `[]`, which `filled()` counts blank, so the
+  constraint fails it: required means "pick at least one". No `Count(min: 1)` is
   needed and none is added.
 
 The interaction with `buildValidationConstraints()` is what makes both work
 without a special case: the method short-circuits on a
 [blank *raw* state](select.md#the-filled-gate-reads-the-raw-state-because-a-cast-can-null-a-tampered-value-out)
-before it adds any `Choice`, so an empty required field is failed by `NotBlank`
-alone rather than by a `Choice` that would have had to admit emptiness. Reading
+before it adds any `Choice`, so an empty required field is failed by the required
+constraint alone rather than by a `Choice` that would have had to admit emptiness. Reading
 the raw state is what keeps that carve-out to genuinely empty fields: a payload
 that wrote something the enum cast cannot resolve is not empty, and meets the
 `Choice`.

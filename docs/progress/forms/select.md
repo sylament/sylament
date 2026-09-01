@@ -384,7 +384,7 @@ value matching no case, and
 [`EnumArrayStateCast`](../schemas/enum-array-state-cast.md) drops every such
 element. So a tampered `'deleted-by-hand'` on an enum-backed field casts to
 `null`, a *cast* gate reads "nothing selected", the `Choice` is never appended,
-and the field is left holding `NotBlank` alone — which a non-blank string passes.
+and the field is left holding the required constraint alone — which a non-blank string passes.
 [`HasSchemas::validateSchema()`](../../../packages/schemas/src/Concerns/HasSchemas.php)
 then validates the **raw** bag entry against that empty guard, so the tampered
 value clears validation and reaches the record write, where a typed setter throws
@@ -393,8 +393,8 @@ a `TypeError` — a 500 where a rejection belonged.
 The raw gate splits the two cases the cast gate had conflated:
 
 - **Nothing was submitted** — the raw state is `null`, `''` or `[]` — and the
-  `Choice` is still skipped, so an unanswered required field is failed by
-  `NotBlank` alone and an optional one passes untouched. Unchanged, and pinned by
+  `Choice` is still skipped, so an unanswered required field is failed by the
+  required constraint alone and an optional one passes untouched. Unchanged, and pinned by
   the required and blank-state cases in all four suites.
 - **Something was submitted that resolves to nothing** — the raw state is filled,
   so the `Choice` runs and

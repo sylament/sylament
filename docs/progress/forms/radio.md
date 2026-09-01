@@ -46,7 +46,7 @@ _Detail_ links the write-up in [Details](#details) or a permanent note in
 | `getDefaultStateCasts()` — `OptionStateCast(isNullable: true)` unless custom casts or an enum | [`Components/Radio.php`](../../../vendor/filament/forms/src/Components/Radio.php) | done | — | [semantics](#the-cast-chain-collapses-to-whatever-boolean-installs) |
 | `hasNullableBooleanState()` | [`Components/Radio.php`](../../../vendor/filament/forms/src/Components/Radio.php) | done | — | [semantics](field.md#hasnullablebooleanstate-has-exactly-one-consumer) |
 | `getInValidationConstraintValues()` → `buildValidationConstraints()`, a `Choice` over the enabled options — replaced by a user `in()` list | [`Components/Radio.php`](../../../vendor/filament/forms/src/Components/Radio.php) | done | — | [semantics](select.md#the-choice-constraint-is-the-fields-only-server-side-guard) · [semantics](select.md#the-choice-choices-cover-both-forms-the-raw-state-can-take) · [semantics](can-be-validated.md#a-user-in-list-is-emitted-in-both-spellings-and-replaces-the-derived-check) |
-| `required()` — the standard `NotBlank` | [`Concerns/CanBeValidated.php`](../../../vendor/filament/forms/src/Components/Concerns/CanBeValidated.php) | done | — | [semantics](#required-means-presence-and-needs-no-override) |
+| `required()` — the standard `RequiredValue` | [`Concerns/CanBeValidated.php`](../../../vendor/filament/forms/src/Components/Concerns/CanBeValidated.php) | done | — | [semantics](#required-means-presence-and-needs-no-override) |
 | The grid, and its `Column` default | [`Components/Radio.php`](../../../vendor/filament/forms/src/Components/Radio.php) | done | — | [semantics](has-grid-direction.md#the-column-default-belongs-to-the-field-not-to-this-getter) |
 | [`HasOptions`](../../../packages/forms/src/Components/Concerns/HasOptions.php) | [`Concerns/HasOptions.php`](../../../vendor/filament/forms/src/Components/Concerns/HasOptions.php) | done | — | [detail](has-options.md) |
 | [`CanDisableOptions`](../../../packages/forms/src/Components/Concerns/CanDisableOptions.php) + [contract](../../../packages/forms/src/Components/Contracts/CanDisableOptions.php) | [`Concerns/CanDisableOptions.php`](../../../vendor/filament/forms/src/Components/Concerns/CanDisableOptions.php) | done | — | [detail](can-disable-options.md) |
@@ -163,11 +163,12 @@ write.
 
 ### required() means presence, and needs no override
 
-`required()` builds the default `NotBlank`
-([`CanBeValidated`](can-be-validated.md)) and the field overrides
-`getRequiredConstraint()` nowhere, so a required radio with nothing selected
-fails and any selected option passes. Nothing in the option vocabulary needs the
-carve-outs the two boolean fields argued over: `Checkbox` keeps `NotBlank`
+`required()` builds the default
+[`RequiredValue`](can-be-validated.md#required-carries-laravels-blank-set-not-symfonys)
+and the field overrides `getRequiredConstraint()` nowhere, so a required radio
+with nothing selected fails and any selected option passes. Nothing in the option
+vocabulary needs the carve-outs the two boolean fields argued over: `Checkbox`
+swaps to Symfony's `NotBlank`
 because [it means "must be ticked"](checkbox.md#required-on-a-checkbox-means-must-be-checked)
 against the native `required` attribute it emits, and `Toggle` swaps to `NotNull`
 because [it means presence, not truth](toggle.md#required-means-presence-not-truth).
@@ -178,17 +179,12 @@ A radio sits outside that argument because its resting state is `null`, not
 `required` attribute for a browser to disagree with.
 
 The case worth checking rather than assuming is the `boolean()` arm's **No**
-option, whose key is `0`.
-[`NotBlankValidator`](../../../vendor/symfony/validator/Constraints/NotBlankValidator.php)
-reads `false === $value || (! $value && '0' != $value)`, so it rejects `null`,
-`''` and `false` but **accepts** `int 0` and the string `'0'` a browser submits —
-the `'0' != $value` clause exists for exactly this. A required `boolean()` radio
-therefore accepts either answer and rejects only *no answer*, which is what
-`required()` should mean and what the constraint would not have given a field
-whose false value were `false` itself. That is the whole reason
-[`Toggle`](toggle.md#required-means-presence-not-truth) needed an override and
-this field does not; `RadioTest` pins the **No** case so a future change to the
-cast cannot quietly turn `required()` into
+option, whose key is `0`. `RequiredValue` is one call to
+[`filled()`](../support/helpers.md), which counts `null` and `''` blank but
+**accepts** `int 0` and the string `'0'` a browser submits. A required `boolean()`
+radio therefore accepts either answer and rejects only *no answer*, which is what
+`required()` should mean. `RadioTest` pins the **No** case so a future change to
+the cast cannot quietly turn `required()` into
 [`accepted()`](can-be-accepted.md).
 
 ## Divergences

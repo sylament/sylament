@@ -61,7 +61,7 @@ _Detail_ links the write-up in [Details](#details) or a permanent note in
 | `getEnumDefaultStateCast()` — `EnumArrayStateCast` | [`Components/CheckboxList.php`](../../../vendor/filament/forms/src/Components/CheckboxList.php) | done | — | [semantics](#the-list-rests-at-an-array-and-that-is-load-bearing) |
 | `getDefaultStateCasts()` — `[OptionsArrayStateCast]` unless custom casts or an enum | [`Components/CheckboxList.php`](../../../vendor/filament/forms/src/Components/CheckboxList.php) | done | — | [semantics](#the-list-rests-at-an-array-and-that-is-load-bearing) |
 | `getInValidationConstraintValues()` / `hasInValidationOnMultipleValues()` → `buildValidationConstraints()`, a `Choice(multiple: true)` over the enabled options — replaced by a user `in()` list | [`Components/CheckboxList.php`](../../../vendor/filament/forms/src/Components/CheckboxList.php) | done | — | [semantics](#the-three-server-side-guards-are-ordered-so-they-never-collide) · [semantics](can-be-validated.md#a-user-in-list-is-emitted-in-both-spellings-and-replaces-the-derived-check) |
-| `required()` — the standard `NotBlank` | [`Concerns/CanBeValidated.php`](../../../vendor/filament/forms/src/Components/Concerns/CanBeValidated.php) | done | — | [semantics](#required-rejects-the-empty-list-with-notblank-alone) |
+| `required()` — the standard `RequiredValue` | [`Concerns/CanBeValidated.php`](../../../vendor/filament/forms/src/Components/Concerns/CanBeValidated.php) | done | — | [semantics](#required-rejects-the-empty-list-with-the-required-constraint-alone) |
 | `bulkToggleable()` / `isBulkToggleable()` | [`Components/CheckboxList.php`](../../../vendor/filament/forms/src/Components/CheckboxList.php) | done | — | [diverges](#the-bulk-toggle-actions-render-but-never-dispatch) |
 | `getSelectAllAction()` / `selectAllAction()` / `getSelectAllActionName()` | [`Components/CheckboxList.php`](../../../vendor/filament/forms/src/Components/CheckboxList.php) | done | — | [diverges](#the-bulk-toggle-actions-render-but-never-dispatch) · [diverges](#the-bulk-toggle-labels-are-untranslated-literals) |
 | `getDeselectAllAction()` / `deselectAllAction()` / `getDeselectAllActionName()` | [`Components/CheckboxList.php`](../../../vendor/filament/forms/src/Components/CheckboxList.php) | done | — | [diverges](#the-bulk-toggle-actions-render-but-never-dispatch) · [diverges](#the-bulk-toggle-labels-are-untranslated-literals) |
@@ -308,14 +308,13 @@ which the port has no wildcard path for
 `Choice(multiple: true)` validates element by element natively, so the
 per-element check lands on the one path without one.
 
-### required() rejects the empty list with `NotBlank` alone
+### required() rejects the empty list with the required constraint alone
 
-`required()` builds the default `NotBlank`
-([`CanBeValidated`](can-be-validated.md)) and this field overrides
-`getRequiredConstraint()` nowhere. That is enough:
-[`NotBlankValidator`](../../../vendor/symfony/validator/Constraints/NotBlankValidator.php)
-reads `false === $value || (! $value && '0' != $value)`, and an empty array is
-falsy, so `[]` fails and any non-empty selection passes.
+`required()` builds the default
+[`RequiredValue`](can-be-validated.md#required-carries-laravels-blank-set-not-symfonys)
+and this field overrides `getRequiredConstraint()` nowhere. That is enough: the
+constraint is one call to [`filled()`](../support/helpers.md), which counts an
+empty array blank, so `[]` fails and any non-empty selection passes.
 
 `Count(min: 1)` would say the same thing with a worse message and a second way
 to spell one rule, so it is not what `required()` builds — the split

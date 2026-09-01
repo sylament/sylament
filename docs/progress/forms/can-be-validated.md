@@ -72,7 +72,7 @@ _Detail_ now carries a **semantics** link (a permanent note in
 | [`required(null)`](../../../packages/forms/src/Components/Concerns/CanBeValidated.php) — undeclare, falling back to derivation | — | done | — | [diverges](#requirement-is-derived-from-the-records-write-side-types) |
 | [`isRequiredByRecord()`](../../../packages/forms/src/Components/Concerns/CanBeValidated.php) — the derivation seam, overridden to `false` on [`Checkbox`](checkbox.md) and [`Toggle`](toggle.md) | — | done | — | [diverges](#requirement-is-derived-from-the-records-write-side-types) · [semantics](#a-boolean-field-opts-out-of-derivation-but-selectboolean-does-not) |
 | [`getRequiredConstraint()`](../../../packages/forms/src/Components/Concerns/CanBeValidated.php) | [`getRequiredValidationRule()`](../../../vendor/filament/forms/src/Components/Concerns/CanBeValidated.php) | done | — | [diverges](#the-required-constraint-is-swappable-per-field) |
-| [`nullable()`](../../../packages/forms/src/Components/Concerns/CanBeValidated.php) | [`CanBeValidated::nullable()`](../../../vendor/filament/forms/src/Components/Concerns/CanBeValidated.php) | done | — | [semantics](#nullable-removes-the-notblank-and-nothing-else) |
+| [`nullable()`](../../../packages/forms/src/Components/Concerns/CanBeValidated.php) | [`CanBeValidated::nullable()`](../../../vendor/filament/forms/src/Components/Concerns/CanBeValidated.php) | done | — | [semantics](#nullable-removes-the-required-constraint-and-nothing-else) |
 | [`constraint()` / `constraints()`](../../../packages/forms/src/Components/Concerns/CanBeValidated.php) | [`rule()` / `rules()`](../../../vendor/filament/forms/src/Components/Concerns/CanBeValidated.php) | done | — | [diverges](#rule-and-rules-become-constraint-and-constraints-over-symfony-constraint-objects) |
 | [`getValidationConstraints()`](../../../packages/forms/src/Components/Concerns/CanBeValidated.php) | [`getValidationRules()`](../../../vendor/filament/forms/src/Components/Concerns/CanBeValidated.php) | done | — | [diverges](#the-condition-pair-walk-drops-filaments-numeric-key-rule-shorthand) |
 | [`dehydrateValidationConstraints()`](../../../packages/forms/src/Components/Concerns/CanBeValidated.php) | [`dehydrateValidationRules()`](../../../vendor/filament/forms/src/Components/Concerns/CanBeValidated.php) | done | — | — |
@@ -103,14 +103,17 @@ _Detail_ now carries a **semantics** link (a permanent note in
 | [`HasNestedRecursiveValidationConstraints`](../../../packages/forms/src/Components/Concerns/HasNestedRecursiveValidationConstraints.php) + its contract | [`HasNestedRecursiveValidationRules`](../../../vendor/filament/forms/src/Components/Concerns/HasNestedRecursiveValidationRules.php) | done | — | [diverges](#nested-constraints-land-as-one-all-where-laravel-keys-a-path) |
 | [`Prohibited`](../../../packages/forms/src/Validation/Prohibited.php), [`Distinct`](../../../packages/forms/src/Validation/Distinct.php), [`MatchesField`](../../../packages/forms/src/Validation/MatchesField.php), [`StartsWith`](../../../packages/forms/src/Validation/StartsWith.php), [`EndsWith`](../../../packages/forms/src/Validation/EndsWith.php), [`Alpha`](../../../packages/forms/src/Validation/Alpha.php), [`AlphaDash`](../../../packages/forms/src/Validation/AlphaDash.php), [`AlphaNum`](../../../packages/forms/src/Validation/AlphaNum.php), [`Ascii`](../../../packages/forms/src/Validation/Ascii.php), [`ActiveUrl`](../../../packages/forms/src/Validation/ActiveUrl.php) + their validators — no Filament source | [`CanBeValidated`](../../../vendor/filament/forms/src/Components/Concerns/CanBeValidated.php) | done | — | [diverges](#the-format-sugar-is-stock-where-a-constraint-fits-and-first-party-where-none-does) |
 | [`UniqueValue`](../../../packages/forms/src/Validation/UniqueValue.php), [`ExistingValue`](../../../packages/forms/src/Validation/ExistingValue.php) + their validators — no Filament source | [`CanBeValidated::unique()` / `exists()`](../../../vendor/filament/forms/src/Components/Concerns/CanBeValidated.php) | done | — | [diverges](#unique-and-exists-are-one-dql-probe-behind-a-container-service) |
+| [`RequiredValue`](../../../packages/forms/src/Validation/RequiredValue.php) + its validator — no Filament source | [`CanBeValidated::required()`](../../../vendor/filament/forms/src/Components/Concerns/CanBeValidated.php) | done | — | [diverges](#required-carries-laravels-blank-set-not-symfonys) |
 
-Coverage: the trait end to end (required default, `NotBlank` build, the
+Coverage: the trait end to end (required default, `RequiredValue` build, the
 `nullable()` inversion, closure conditions, the derivation set — required from a
-non-nullable property, through a nested path, `NotBlank` built from a derived
+non-nullable property, through a nested path, `RequiredValue` built from a derived
 requirement, not-required from a nullable one, from a collection one, from a path
 the record does not declare, from no bound record and from a field no schema
 contains, plus explicit `required(false)` and `nullable()` each beating the
-derived value — the escape hatch behind true and
+derived value, and the blank set the constraint carries — `false` accepted on a
+field required by a non-nullable `bool` column and on an explicitly required one,
+`null` and `''` still refused — the escape hatch behind true and
 false conditions, closure constraints returning a single constraint or an array,
 the message post-pass — string and option-map forms, closure leaves, blank
 fallback, exact-class matching, clone-on-write, the ignored-key arm and all three
@@ -166,7 +169,7 @@ null partner both compared, and the humanised fallback when no component answers
 to the partner path; the conditional family — the loose/strict matrix in **both**
 directions, the accepted and declined lists, `requiredUnless` on an absent
 sibling, all four `*With*` arms, an enum unwrapped, a boolean field keeping
-`NotNull`, no second `NotBlank` on an already-required field, `isRequired()` and
+`NotNull`, no second `RequiredValue` on an already-required field, `isRequired()` and
 `isMarkedAsRequired()` both staying false, the four `prohibited*` arms and
 `prohibits()`'s pre-rendered label; `filled()` and `multipleOf()` including the
 closure that resolves to nothing; every format arm's class **and its options**;
@@ -188,6 +191,11 @@ multi-value fields; the contract on all four consumers; and the data layer —
 the entity class and property resolved from the schema's record, the identifier
 ignored and not ignored across four arms, an explicit `ignorable:` winning, no
 constraint without an entity class, and `modifyQueryUsing` reaching the Invoker.
+The required constraint's blank set runs there too, through the real validator
+against a record: `false` clearing on a `Hidden` derived-required by
+`Article::$featured` and on an explicitly required one, `null` and `''` still
+reported on a required `TextInput` — the last of which is what bounds the
+widening, the gate having to keep an implicit constraint for it to fire at all.
 
 The constraints themselves are driven against a real Symfony validator, one file
 per class under
@@ -263,9 +271,9 @@ No member of the conditional-required family writes `$isRequired`, upstream or
 here, so `requiredIf()` renders no asterisk and no native `required` attribute.
 A conditionally-required field that should be starred says
 [`markAsRequired()`](../schemas/can-be-marked-as-required.md). What the family
-emits is the field's **own** `getRequiredConstraint()` — `NotBlank`, or
-[`Toggle`](toggle.md)'s `NotNull` — so a boolean field keeps its presence
-semantics, where a bare `NotBlank` would call a `false` toggle absent. Both are
+emits is the field's **own** `getRequiredConstraint()` — `RequiredValue`,
+[`Checkbox`](checkbox.md)'s `NotBlank` or [`Toggle`](toggle.md)'s `NotNull` — so a
+boolean field keeps the presence semantics its own markup states. All three are
 implicit, so [the presence gate](../schemas/presence-gate.md) keeps them on the
 blank input the rule exists to catch; `Prohibited` is not implicit, and the gate
 dropping it on a blank string is exactly right.
@@ -275,7 +283,7 @@ builder has put that constraint in the list once, and a second copy reports the
 same message twice.
 
 Derived requirement is the caller's to reconcile. A field bound to a non-nullable
-record property already derives `NotBlank`
+record property already derives `RequiredValue`
 ([derivation](#requirement-is-derived-from-the-records-write-side-types)), which
 makes a `requiredUnless()` on it dead. The family does not suppress derivation
 the way `nullable()` does — it never writes the flag Filament never wrote either
@@ -364,9 +372,10 @@ something the target rejects*. Read off the state casts:
 | `Select::boolean()` | `BooleanStateCast(isStoredAsInt: true)`, `isNullable` defaulting **true** | the placeholder dehydrates to **null** |
 
 So a non-nullable `bool` target always accepts what a checkbox or a toggle
-produces, and deriving requirement there would silently mean *"must be ticked"*:
-`NotBlank` violates on `false`, and the checkbox template emits a native
-`required` attribute, so an unticked box becomes unsubmittable. Only an explicit
+produces, and deriving requirement there would silently mean *"must be ticked"*
+on the checkbox: [its own required constraint](checkbox.md#required-on-a-checkbox-means-must-be-checked)
+violates on `false`, and its template emits a native `required` attribute, so an
+unticked box becomes unsubmittable. Only an explicit
 [`required()`](toggle.md#required-means-presence-not-truth) may say that. A
 `Select::boolean()` placeholder, by contrast, really does dehydrate null onto
 `setFeatured(bool)` — the exact crash this derivation exists to prevent — so
@@ -389,14 +398,14 @@ never null. `Select::boolean()` needs no override on this side either, and for
 the same reason as the last: its placeholder already dehydrates null, which the
 default test reads as blank.
 
-### nullable() removes the NotBlank and nothing else
+### nullable() removes the required constraint and nothing else
 
 `nullable()` is Filament's inversion verbatim — it calls
 `required(fn () => ! evaluate($condition))`, so it is a *setter for the same
 flag*, not an independent one, and a later `required()` overwrites it. There is
 deliberately no Symfony counterpart constraint to add: every constraint in the
 ported subset returns without a violation for `null`, so "optional" is the
-absence of `NotBlank` — matching Laravel's implicit-rule skip, which is what made
+absence of the required constraint — matching Laravel's implicit-rule skip, which is what made
 Filament's `nullable()` a pure inverse of `required()` in the first place.
 
 That parity holds for the empty string a cleared input submits as well, but not
@@ -421,8 +430,9 @@ in front of `validateSchema()`'s per-path run — which is why an escape-hatch
 adding a new sugared arm here needs no blank guard of its own.
 
 Two consequences land on this trait's surface. `required()` is unaffected —
-`NotBlank` is implicit, so it still runs and still violates on `''` — and so is
-[`nullable()`](#nullable-removes-the-notblank-and-nothing-else), whose promise the
+`RequiredValue` implements the gate's `ImplicitConstraint` marker, so it still
+runs and still violates on `''` — and so is
+[`nullable()`](#nullable-removes-the-required-constraint-and-nothing-else), whose promise the
 gate is what completes. What each Symfony validator would have done with `''`, and
 the `mb_trim` / `null` / `blank()` decisions the gate makes, are recorded
 [there](../schemas/presence-gate.md#what-each-symfony-validator-does-with-the-empty-string-and-why-the-gate-is-not-defensive)
@@ -918,7 +928,7 @@ handle a numeric-keyed shorthand (a bare rule string arriving where a pair was
 expected) plus `getInValidationRule()`'s `In`/`Enum` special case. With
 `Constraint` objects there is no shorthand to disambiguate: the walk is
 condition-then-evaluate-then-append, and the composition order is otherwise
-Filament's — `NotBlank` first, then the
+Filament's — the required constraint first, then the
 [length constraints](can-be-length-constrained.md) when the field implements
 `Contracts\CanBeLengthConstrained`, then the escape-hatch pairs in declaration
 order, then any subclass arms appended by a `buildValidationConstraints()` override
@@ -929,7 +939,7 @@ order, then any subclass arms appended by a `buildValidationConstraints()` overr
 Filament's `validationAttribute()` / `getValidationAttribute()` supply the field
 name Laravel interpolates into `:attribute` in a rule message, defaulting to the
 field's label. Symfony's violation messages carry no field-name placeholder —
-`NotBlank`'s default is "This value should not be blank." with no slot to fill —
+`RequiredValue`'s default is "This value should not be blank." with no slot to fill —
 and the message that reaches the user is rendered *next to* its field by the
 `FieldWrapper`, so the name is redundant. **Skipped**; a user who wants the name
 in the text writes it into `validationMessages()`. Reverses only if a
@@ -944,13 +954,56 @@ typing the list `list<string|Markup>` and threading a per-field flag into the
 wrapper template for no consumer. **Skipped** — a `Markup` message would be the
 port's shape if it is ever wanted, not a boolean flag.
 
+### required() carries Laravel's blank set, not Symfony's
+
+Filament's `required()` is Laravel's `required` rule, which
+[fails only on `null`, a string that trims to `''`, an empty `Countable` and a
+pathless file](../../../vendor/laravel/framework/src/Illuminate/Validation/Concerns/ValidatesAttributes.php).
+Symfony's `NotBlank` has a wider blank set: `false === $value` is the *first*
+clause of
+[`NotBlankValidator`](../../../vendor/symfony/validator/Constraints/NotBlankValidator.php).
+Translating `required` to the stock constraint therefore said something Filament
+never says — that a boolean field cannot submit while off — and it says it
+invisibly, because the field a consumer hits it on is usually one with no visible
+control to correct.
+
+The port emits [`RequiredValue`](../../../packages/forms/src/Validation/RequiredValue.php)
+instead, whose validator is one call to the house
+[`filled()`](../support/helpers.md) — which is Laravel's test, and which makes
+this constraint the exact negation of the `Prohibited` beside it, as Laravel's
+own `validateProhibited()` is of `validateRequired()`. Four things follow.
+
+- **`false` is present.** `Hidden::make('isApproved')->default(false)` over a
+  non-nullable `bool` column — the shape a consumer reported on 2026-09-01 —
+  derives a requirement it can now satisfy. Under `NotBlank` that field 422'd on
+  every submit with nothing on screen to fix.
+- **`0` and `'0'` stay present**, as they already were: `NotBlank` carves them
+  out with its `'0' != $value` clause and `filled()` never counted them blank, so
+  the `boolean()` arms of [`Radio`](radio.md) and [`Select`](select.md) are
+  unchanged.
+- **A whitespace-only string is now absent.** `blank()` trims with `mb_trim`
+  where `NotBlank` tested truthiness, so `'   '` violates `required()` where it
+  used to pass. That is Laravel's behaviour and the only widening beyond the
+  boolean case.
+- **It is implicit.** `RequiredValue` is the first implementor of schemas'
+  [`ImplicitConstraint`](../schemas/presence-gate.md) marker, without which the
+  presence gate would drop it for exactly the blank string it exists to reject.
+
+The name is `RequiredValue` rather than `Required` for the reason
+[`UniqueValue` is not `Unique`](../renames.md#names-with-no-filament-source):
+Symfony ships `Symfony\Contracts\Service\Attribute\Required`, the DI attribute
+this trait itself imports for `setRecordTypeReader()`, so the two collide in one
+import list — and a `validationMessages()` key auto-imported from the wrong one
+is silently ignored by design.
+
 ### The required constraint is swappable per field
 
 Filament's `getRequiredValidationRule()` returns `'required'` or `'nullable'` for
 a subclass to swap — `RichEditor` overrides it to reject a document that is
 structurally empty. The port keeps the seam and translates the name with the rest
 of the [rule → constraint vocabulary](../renames.md#laravel-rule-vocabulary-becomes-symfony-constraint-vocabulary):
-`getRequiredConstraint(): Constraint` returns the `NotBlank` that
+`getRequiredConstraint(): Constraint` returns the
+[`RequiredValue`](#required-carries-laravels-blank-set-not-symfonys) that
 `buildValidationConstraints()` prepends when `isRequired()`. It carries no
 message of its own — one is written afterwards by the
 [post-pass](#validation-messages-apply-after-the-constraints-are-built) if the
@@ -960,16 +1013,24 @@ Two shape changes ride along. It is **protected**, not public: it is a subclass
 seam, and nothing outside the field calls it — `getValidationConstraints()` is
 the public read. And there is no `'nullable'` arm to return, because optionality
 in Symfony is the *absence* of the constraint
-([above](#nullable-removes-the-notblank-and-nothing-else)) — the caller asks
-`isRequired()` first, so the method is only reached when a constraint is wanted.
+([above](#nullable-removes-the-required-constraint-and-nothing-else)) — the
+caller asks `isRequired()` first, so the method is only reached when a constraint
+is wanted.
 
-[`Toggle`](toggle.md#required-means-presence-not-truth) is the first overrider:
-`NotBlank` violates on `false`, which would turn `required()` into `accepted()`
-on a boolean field, so it returns `NotNull` instead. That is also the one place
-class-keyed messages are less forgiving than Filament's `required` key was — a
-`Toggle` message keys `NotNull::class`, not `NotBlank::class`. Under class keying
-that is the rule with no exception rather than a special case: key the constraint
-your field emits.
+Two fields override it, in opposite directions.
+[`Toggle`](toggle.md#required-means-presence-not-truth) returns `NotNull`, which
+is presence and nothing else — it tolerates the blank string a tampered payload
+could put on a boolean path, where the shared constraint would violate.
+[`Checkbox`](checkbox.md#required-on-a-checkbox-means-must-be-checked) returns
+Symfony's `NotBlank`, whose blank set *does* hold `false`, because the checkbox
+emits the native `required` attribute and a browser reads that as "must be
+ticked": the server would otherwise accept a submit the client had blocked.
+
+That is also where class-keyed messages are less forgiving than Filament's
+`required` key was — a `Toggle` message keys `NotNull::class` and a `Checkbox`
+one `NotBlank::class`, neither of them the `RequiredValue::class` every other
+field emits. Under class keying that is the rule with no exception rather than a
+special case: key the constraint your field emits.
 
 ### The date comparison family builds constraints where Filament builds rule strings
 
@@ -1068,7 +1129,7 @@ all run at the same moment, and it splits them by **constraint class**:
   first-party [`MinFileSize`](../../../packages/forms/src/Validation/MinFileSize.php)
   leave through `getUploadedFileConstraints()` and are validated against the real
   `UploadedFile` at **upload** time;
-- everything else — the required `NotBlank` this trait emits, `Count` for the
+- everything else — the `RequiredValue` this trait emits, `Count` for the
   file counts, the path-tampering `Callback`, and every non-`File` user
   constraint — stays on `buildValidationConstraints()` and validates the stored
   **collection** at save.

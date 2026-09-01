@@ -13,11 +13,19 @@ use Sylament\Tables\Query\JoinCardinality;
 use Symfony\UX\LiveComponent\Attribute\LiveAction;
 use Symfony\UX\LiveComponent\Attribute\LiveArg;
 use Symfony\UX\LiveComponent\Attribute\LiveProp;
+use Symfony\UX\LiveComponent\Metadata\UrlMapping;
 
 trait CanPaginateRecords
 {
-    #[LiveProp]
+    #[LiveProp(modifier: 'modifyTablePageProp')]
     public int $tablePage = 1;
+
+    public function modifyTablePageProp(LiveProp $liveProp): LiveProp
+    {
+        $mapping = $this->getTableUrlMapping('page');
+
+        return $mapping instanceof UrlMapping ? $liveProp->withUrl($mapping) : $liveProp;
+    }
 
     /**
      * Stored as the raw client string; `getTableRecordsPerPage()` is the only
@@ -44,9 +52,14 @@ trait CanPaginateRecords
         $this->flushCachedTableRecords();
     }
 
+    /**
+     * Floored, because the prop is non-nullable and a `?page=` in the query
+     * string coerces to `0` on the way in — seeding writes straight through the
+     * property accessor, so `gotoTablePage()`'s clamp never sees it.
+     */
     public function getTablePage(): int
     {
-        return $this->tablePage;
+        return max(1, $this->tablePage);
     }
 
     public function updatedTableRecordsPerPage(mixed $previousValue = null): void

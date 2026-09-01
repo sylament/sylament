@@ -26,6 +26,7 @@ use Sylament\Tables\Table\Concerns\HasHeader;
 use Sylament\Tables\Table\Concerns\HasHeaderActions;
 use Sylament\Tables\Table\Concerns\HasHeadings;
 use Sylament\Tables\Table\Concerns\HasQuery;
+use Sylament\Tables\Table\Concerns\HasQueryStringIdentifier;
 use Sylament\Tables\Table\Concerns\HasRecordAction;
 use Sylament\Tables\Table\Concerns\HasRecordActions;
 use Sylament\Tables\Table\Concerns\HasRecordClasses;
@@ -53,6 +54,7 @@ class Table extends ViewComponent
     use HasHeaderActions;
     use HasHeadings;
     use HasQuery;
+    use HasQueryStringIdentifier;
     use HasRecordAction;
     use HasRecordActions;
     use HasRecordClasses;

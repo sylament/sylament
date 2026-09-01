@@ -11,6 +11,7 @@ use Sylament\Tables\Query\ColumnPathResolver;
 use Symfony\UX\LiveComponent\Attribute\LiveAction;
 use Symfony\UX\LiveComponent\Attribute\LiveArg;
 use Symfony\UX\LiveComponent\Attribute\LiveProp;
+use Symfony\UX\LiveComponent\Metadata\UrlMapping;
 
 use function Sylament\Support\blank;
 
@@ -20,8 +21,15 @@ trait CanSortRecords
      * `column:direction`, or a bare column meaning ascending; null when
      * unsorted. Mutated only by `sortTable()`, so it stays checksummed.
      */
-    #[LiveProp]
+    #[LiveProp(modifier: 'modifyTableSortProp')]
     public ?string $tableSort = null;
+
+    public function modifyTableSortProp(LiveProp $liveProp): LiveProp
+    {
+        $mapping = $this->getTableUrlMapping('sort');
+
+        return $mapping instanceof UrlMapping ? $liveProp->withUrl($mapping) : $liveProp;
+    }
 
     /**
      * A request naming a column that is not declared sortable is ignored, so

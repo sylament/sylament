@@ -18,6 +18,7 @@ use Sylament\Tables\Query\JoinCardinality;
 use Sylament\Tables\Table;
 use Symfony\Component\PropertyAccess\Exception\AccessException;
 use Symfony\UX\LiveComponent\Attribute\LiveProp;
+use Symfony\UX\LiveComponent\Metadata\UrlMapping;
 
 use function Sylament\Support\blank;
 
@@ -62,6 +63,47 @@ trait HasTable
     protected function makeTable(): Table
     {
         return Table::make($this);
+    }
+
+    /**
+     * Where a host binds one of its table-state props to the query string —
+     * `page`, `sort`, `search`, `filters` or `tab`. Null everywhere by default,
+     * so a card, a modal or a relation manager carries no URL state at all and
+     * only a routed page opts in.
+     *
+     * Read from the `LiveProp` modifiers, which UX runs during hydration before
+     * any `#[PostHydrate]` hook: an override must stay cheap and side-effect
+     * free, and must never reach the table, the panel, a record or the database.
+     */
+    protected function getTableUrlMapping(string $prop): ?UrlMapping
+    {
+        return null;
+    }
+
+    /**
+     * The prefix distinguishing this host's query-string parameters from
+     * another table's on the same page. Modifier-safe by construction — a host
+     * answers it from a static value, never from its table.
+     */
+    public function getTableQueryStringIdentifier(): ?string
+    {
+        return null;
+    }
+
+    /**
+     * Never call this from a `LiveProp` modifier: it reads the table, and a
+     * table built during hydration resolves against a request the panel
+     * attribute has not been stamped onto yet, then memoises that answer.
+     */
+    public function getIdentifiedTableQueryStringPropertyNameFor(string $property): string
+    {
+        $identifier = $this->getTable()->getQueryStringIdentifier() ?? $this->getTableQueryStringIdentifier();
+
+        if (blank($identifier)) {
+            return $property;
+        }
+
+        return $identifier . ucfirst($property);
     }
 
     public function getFilteredTableQuery(): ?QueryBuilder

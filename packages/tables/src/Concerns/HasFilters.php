@@ -15,6 +15,7 @@ use Symfony\UX\LiveComponent\Attribute\LiveAction;
 use Symfony\UX\LiveComponent\Attribute\LiveArg;
 use Symfony\UX\LiveComponent\Attribute\LiveProp;
 use Symfony\UX\LiveComponent\Attribute\PostHydrate;
+use Symfony\UX\LiveComponent\Metadata\UrlMapping;
 use Symfony\UX\TwigComponent\Attribute\PostMount;
 
 use function Sylament\Support\filled;
@@ -26,8 +27,15 @@ trait HasFilters
      *
      * @var array<string, mixed>
      */
-    #[LiveProp(writable: true, onUpdated: 'updatedTableFilters')]
+    #[LiveProp(writable: true, onUpdated: 'updatedTableFilters', modifier: 'modifyTableFiltersProp')]
     public array $tableFilters = [];
+
+    public function modifyTableFiltersProp(LiveProp $liveProp): LiveProp
+    {
+        $mapping = $this->getTableUrlMapping('filters');
+
+        return $mapping instanceof UrlMapping ? $liveProp->withUrl($mapping) : $liveProp;
+    }
 
     /**
      * The draft the filters form binds to while filters are deferred.

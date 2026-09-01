@@ -296,9 +296,9 @@ silently building a broken resource-page item. It looks the page's key up by
 scanning its **own** resource's `getPages()` for the registration whose `page`
 matches, then mints `$resource->getUrl($key, $parameters, isAbsolute: false,
 shouldGuessMissingParameters: true)` — a path, where Filament's are absolute
-(`getNavigationUrl()` leaves `getUrl()`'s `$isAbsolute = true` default alone).
-A page no resource registers contributes
-nothing, silently — which is what Filament's `hasPage()` gates do too.
+(`getNavigationUrl()` leaves `getUrl()`'s `$isAbsolute = true` default alone). A
+page no resource registers contributes nothing, silently — which is what
+Filament's `hasPage()` gates do too.
 
 Two consequences worth naming. The sibling's **own** resource mints the URL, so a
 band may list pages of another resource. And this epic therefore routes *around*

@@ -298,13 +298,17 @@ unless something else fills it.
 
 Two more members arrived with M6 · 3. `shouldRegisterNavigation()` and its
 `protected static bool $shouldRegisterNavigation = true` are Filament's, and the
-[sub-navigation band](has-sub-navigation.md) is so far their **only** consumer:
-`Panel::getNavigation()`'s page loop does not consult the flag, where Filament's
-`registerNavigationItems()` early-returns on it, so a page opting out today is
-still listed in the **sidebar** and absent only from a band. That is a one-line
-gap in the panel loop — the resource half of the same guard is already there —
-and it is recorded rather than closed because this epic touched that loop only
-for [nested resources](nested-resources.md#the-suppressions-sit-where-the-trail-already-put-them).
+flag gates both surfaces: the [sub-navigation band](has-sub-navigation.md)
+filters on it, and `Panel::getNavigation()`'s page loop `continue`s on it in the
+same shape the resource half of that loop already used — which is the position
+Filament's `Pages\Page::registerNavigationItems()` early-returns from. So a page
+opting out is absent from a band and from the **sidebar** alike, pinned by an
+`OptedOutNavigationPage` fixture registered and routed like its siblings, which
+leaves the gate the only thing keeping it out. The other two arms of that method
+stay unported on the terms the
+[resource loop](#resource-navigation-is-pulled-through-the-registry-not-pushed-by-the-resource)
+already states: `getCluster()` guards an unported subsystem, and `canAccess()`
+waits on authorization.
 
 The base also composes [`Pages\Concerns\HasSubNavigation`](has-sub-navigation.md), so
 **every** panel page can draw a band: `getSubNavigation()` returns `[]` by
@@ -1057,11 +1061,13 @@ record handlers per page too.
 
 - `mount(array $parentRecords = [])` assigns the ancestor keys first — the
   [chain is a mount argument everywhere](nested-resources.md#the-chain-rides-one-liveprop-of-keys-assigned-inside-mount)
-  — then `callHook('beforeFill')`, `$this->getSchema('form')->fill()` and
-  `callHook('afterFill')`. The fill takes no argument, so `Schema::fill(null)`
-  hydrates with `applyDefaults: true` and every component's `default()` lands;
-  there is no fill mutator here, because Filament has none on its create page
-  either.
+  — then calls `fillForm()`: `callHook('beforeFill')`,
+  `$this->getSchema('form')->fill()` and `callHook('afterFill')`. `fillForm()` is
+  Filament's own method name, kept as a method of its own — mirroring
+  [`EditRecord`'s](#editrecord) — so a page that mutates or hooks on fill has one
+  place to reach. The fill takes no argument, so `Schema::fill(null)` hydrates
+  with `applyDefaults: true` and every component's `default()` lands; there is no
+  fill mutator here, because Filament has none on its create page either.
 - `form(Schema)` stamps `statePath('data')`, `record($resource->getRecordClass())`
   — the **class-string** arm of `BelongsToRecord`, which defers `new $class()` to
   `getRecordInstance()` at save time — and `operation(Operation::Create->value)`,

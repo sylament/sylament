@@ -187,11 +187,10 @@ other associations, and nothing would fill it. The demo carries `sections` on
 both surfaces on purpose — `SectionsRelationManager` as a tab on the article edit
 page ([M6 · 1](relation-manager.md), the modal flow) beside `ManageArticleSections`
 as a routed page (this epic, the link flow) — so the one association shows what
-each flow looks like rather than either standing in for the other.
-Record-filter tabs are skipped for
-a different reason: `HasTabs` is the list-page tabs seam that arrives with
-[M4 · 3](../roadmap.md#m4--tables-widening), and this page will take it when
-`ListRecords` does.
+each flow looks like rather than either standing in for the other. Record-filter
+tabs are skipped for a different reason: `HasTabs` is the list-page tabs seam
+that arrives with [M4 · 3](../roadmap.md#m4--tables-widening), and this page will
+take it when `ListRecords` does.
 
 ### The page renders a template, not a content schema
 

@@ -5,11 +5,13 @@ declare(strict_types=1);
 namespace Sylament\Panels\Tests\Fixtures\Resources;
 
 use Sylament\Forms\Components\TextInput;
+use Sylament\Panels\Resources\Pages\PageRegistration;
 use Sylament\Panels\Resources\Resource;
 use Sylament\Panels\Tests\Fixtures\Doctrine\Entity\Line;
 use Sylament\Panels\Tests\Fixtures\Resources\Pages\CreateLine;
 use Sylament\Panels\Tests\Fixtures\Resources\Pages\EditLine;
 use Sylament\Panels\Tests\Fixtures\Resources\Pages\ListLines;
+use Sylament\Panels\Tests\Fixtures\Resources\Pages\ParentRecordProbePage;
 use Sylament\Schemas\Schema;
 use Sylament\Tables\Columns\TextColumn;
 use Sylament\Tables\Table;
@@ -43,6 +45,7 @@ final class LineResource extends Resource
             'index' => ListLines::route('/'),
             'create' => CreateLine::route('/create'),
             'edit' => EditLine::route('/{record}/edit'),
+            'parent-probe' => new PageRegistration(ParentRecordProbePage::class, '/{record}/parent-probe'),
         ];
     }
 }

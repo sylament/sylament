@@ -5,11 +5,13 @@ declare(strict_types=1);
 namespace Sylament\Panels\Tests\Fixtures\Resources;
 
 use Sylament\Forms\Components\TextInput;
+use Sylament\Panels\Resources\Pages\PageRegistration;
 use Sylament\Panels\Resources\Resource;
 use Sylament\Panels\Tests\Fixtures\Doctrine\Entity\Chapter;
 use Sylament\Panels\Tests\Fixtures\Resources\Pages\CreateChapter;
 use Sylament\Panels\Tests\Fixtures\Resources\Pages\EditChapter;
 use Sylament\Panels\Tests\Fixtures\Resources\Pages\ListChapters;
+use Sylament\Panels\Tests\Fixtures\Resources\Pages\ParentRecordProbePage;
 use Sylament\Schemas\Schema;
 use Sylament\Tables\Columns\TextColumn;
 use Sylament\Tables\Table;
@@ -42,6 +44,7 @@ final class ChapterResource extends Resource
             'index' => ListChapters::route('/'),
             'create' => CreateChapter::route('/create'),
             'edit' => EditChapter::route('/{record}/edit'),
+            'parent-probe' => new PageRegistration(ParentRecordProbePage::class, '/{record}/parent-probe'),
         ];
     }
 }

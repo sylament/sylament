@@ -1,0 +1,3 @@
+{% set parents = parentRecords is null ? 'none' : parentRecords|map((recordKey, name) => name ~ '=' ~ recordKey)|join(',') %}
+
+<div {{ attributes }} data-probe-record="{{ record ?? '' }}" data-probe-parents="{{ parents }}">probe</div>

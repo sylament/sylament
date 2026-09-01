@@ -73,6 +73,32 @@ it('leaves a resource index page without a record prop', function (): void {
         ->and($crawler->filter('[data-probe-record=""]')->count())->toBe(1);
 });
 
+it('hands a nested page its parent key under the name the route spells, and not as a prop of its own', function (): void {
+    $client = $this::getContainer()->get('test.client');
+    $crawler = $client->request('GET', '/nest/chapters/1/verses/7/parent-probe');
+
+    expect($client->getResponse()->getStatusCode())->toBe(200)
+        ->and($crawler->filter('[data-probe-record="7"][data-probe-parents="chapter=1"]')->count())->toBe(1)
+        ->and($crawler->filter('[chapter]')->count())->toBe(0);
+});
+
+it('keeps a two-deep page parent keys in root-first order', function (): void {
+    $client = $this::getContainer()->get('test.client');
+    $crawler = $client->request('GET', '/nest/chapters/1/verses/7/lines/9/parent-probe');
+
+    expect($client->getResponse()->getStatusCode())->toBe(200)
+        ->and($crawler->filter('[data-probe-record="9"][data-probe-parents="chapter=1,verse=7"]')->count())->toBe(1)
+        ->and($crawler->filter('[chapter], [verse]')->count())->toBe(0);
+});
+
+it('passes no parent records at all to a page outside a nesting', function (): void {
+    $client = $this::getContainer()->get('test.client');
+    $crawler = $client->request('GET', '/nest/chapters/5/parent-probe');
+
+    expect($client->getResponse()->getStatusCode())->toBe(200)
+        ->and($crawler->filter('[data-probe-record="5"][data-probe-parents="none"]')->count())->toBe(1);
+});
+
 it('turns a mount-time NotFoundHttpException into a 404 response', function (): void {
     $client = $this::getContainer()->get('test.client');
     $client->catchExceptions(true);

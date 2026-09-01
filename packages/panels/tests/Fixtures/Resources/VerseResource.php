@@ -5,10 +5,12 @@ declare(strict_types=1);
 namespace Sylament\Panels\Tests\Fixtures\Resources;
 
 use Sylament\Forms\Components\TextInput;
+use Sylament\Panels\Resources\Pages\PageRegistration;
 use Sylament\Panels\Resources\Resource;
 use Sylament\Panels\Tests\Fixtures\Doctrine\Entity\Verse;
 use Sylament\Panels\Tests\Fixtures\Resources\Pages\CreateVerse;
 use Sylament\Panels\Tests\Fixtures\Resources\Pages\EditVerse;
+use Sylament\Panels\Tests\Fixtures\Resources\Pages\ParentRecordProbePage;
 use Sylament\Schemas\Schema;
 
 /**
@@ -35,6 +37,7 @@ final class VerseResource extends Resource
         return [
             'create' => CreateVerse::route('/create'),
             'edit' => EditVerse::route('/{record}/edit'),
+            'parent-probe' => new PageRegistration(ParentRecordProbePage::class, '/{record}/parent-probe'),
         ];
     }
 }

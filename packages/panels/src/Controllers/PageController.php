@@ -71,6 +71,21 @@ final readonly class PageController
             return [];
         }
 
+        $parentParams = $parameters['_sylament_parent_params'] ?? null;
+
+        if (is_array($parentParams)) {
+            $parentRecords = [];
+
+            foreach ($parentParams as $name) {
+                if (is_string($name) && is_scalar($parameters[$name] ?? null)) {
+                    $parentRecords[$name] = (string) $parameters[$name];
+                    unset($parameters[$name]);
+                }
+            }
+
+            $parameters['parentRecords'] = $parentRecords;
+        }
+
         return array_filter(
             $parameters,
             static fn (int|string $name): bool => is_string($name) && ! str_starts_with($name, '_'),

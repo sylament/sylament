@@ -8,6 +8,7 @@ use BackedEnum;
 use Closure;
 use ReflectionClass;
 use Sylament\Panels\Navigation\NavigationItem;
+use Sylament\Panels\Pages\Concerns\HasSubNavigation;
 use Sylament\Panels\Panel;
 use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
@@ -19,6 +20,7 @@ use function Symfony\Component\String\u;
 abstract class Page
 {
     use DefaultActionTrait;
+    use HasSubNavigation;
 
     protected static ?string $title = null;
 
@@ -33,6 +35,8 @@ abstract class Page
     protected static ?int $navigationSort = null;
 
     protected static ?string $navigationGroup = null;
+
+    protected static bool $shouldRegisterNavigation = true;
 
     protected ?string $template = null;
 
@@ -114,6 +118,11 @@ abstract class Page
     public static function getNavigationGroup(): ?string
     {
         return static::$navigationGroup;
+    }
+
+    public static function shouldRegisterNavigation(): bool
+    {
+        return static::$shouldRegisterNavigation;
     }
 
     public static function getNavigationBadge(): ?string

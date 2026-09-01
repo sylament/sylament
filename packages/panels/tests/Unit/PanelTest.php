@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use Sylament\Panels\Pages\Enums\SubNavigationPosition;
 use Sylament\Panels\Panel;
 use Twig\Markup;
 
@@ -83,4 +84,16 @@ it('evaluates closures for the brand logo settings', function (): void {
     expect($panel->getBrandLogo())->toBe('/images/closure-logo.svg')
         ->and($panel->getDarkModeBrandLogo())->toBe('/images/closure-logo-dark.svg')
         ->and($panel->getBrandLogoHeight())->toBe('1.75rem');
+});
+
+it('holds the sub-navigation position fluently, defaulting to the start edge', function (): void {
+    expect(Panel::make()->getSubNavigationPosition())->toBe(SubNavigationPosition::Start)
+        ->and(Panel::make()->subNavigationPosition(SubNavigationPosition::Top)->getSubNavigationPosition())->toBe(SubNavigationPosition::Top)
+        ->and(Panel::make()->subNavigationPosition(SubNavigationPosition::End)->subNavigationPosition(null)->getSubNavigationPosition())->toBe(SubNavigationPosition::Start);
+});
+
+it('evaluates a closure for the sub-navigation position', function (): void {
+    $panel = Panel::make()->subNavigationPosition(fn (): SubNavigationPosition => SubNavigationPosition::End);
+
+    expect($panel->getSubNavigationPosition())->toBe(SubNavigationPosition::End);
 });

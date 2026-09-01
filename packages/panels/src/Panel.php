@@ -13,6 +13,7 @@ use Sylament\Panels\Panel\Concerns\HasId;
 use Sylament\Panels\Panel\Concerns\HasNavigation;
 use Sylament\Panels\Panel\Concerns\HasRoutes;
 use Sylament\Panels\Panel\Concerns\HasSidebar;
+use Sylament\Panels\Panel\Concerns\HasSubNavigation;
 use Sylament\Support\Components\Component;
 
 class Panel extends Component
@@ -25,6 +26,7 @@ class Panel extends Component
     use HasNavigation;
     use HasRoutes;
     use HasSidebar;
+    use HasSubNavigation;
 
     protected bool|Closure $isDefault = false;
 

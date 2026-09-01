@@ -51,7 +51,9 @@ trait HasSubNavigation
 
     /**
      * The band's own navigation, normalized to groups: every ungrouped item in one
-     * label-less group first, then a group per label. Memoized for the render.
+     * label-less group first — a declared group carrying no label of its own folds
+     * its items in there rather than drawing a second one — then a group per label.
+     * Memoized for the render.
      *
      * @return array<NavigationGroup>
      */
@@ -63,18 +65,25 @@ trait HasSubNavigation
 
         $items = [];
         $groups = [];
+        $ungroupedItems = [];
 
         foreach ($this->getSubNavigation() as $entry) {
             if ($entry instanceof NavigationGroup) {
-                $groups[$entry->getLabel() ?? ''] = $entry;
+                $label = $entry->getLabel();
+
+                if (filled($label)) {
+                    $groups[$label] = $entry;
+
+                    continue;
+                }
+
+                $ungroupedItems = [...$ungroupedItems, ...$entry->getItems()];
 
                 continue;
             }
 
             $items[] = $entry;
         }
-
-        $ungroupedItems = [];
 
         foreach ($this->sortVisibleNavigationItems($items) as $item) {
             $group = $item->getGroup();
@@ -94,6 +103,8 @@ trait HasSubNavigation
                 ->items($this->sortVisibleNavigationItems($group->getItems()))
                 ->collapsible(false);
         }
+
+        $ungroupedItems = $this->sortVisibleNavigationItems($ungroupedItems);
 
         return $this->cachedSubNavigation = [
             ...($ungroupedItems === [] ? [] : [NavigationGroup::make()->items($ungroupedItems)->collapsible(false)]),
@@ -135,6 +146,7 @@ trait HasSubNavigation
             }
 
             $items[] = NavigationItem::make($component::getNavigationLabel())
+                ->group($component::getNavigationGroup())
                 ->icon($component::getNavigationIcon())
                 ->sort($component::getNavigationSort())
                 ->badge($component::getNavigationBadge(), color: $component::getNavigationBadgeColor())

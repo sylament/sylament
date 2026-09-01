@@ -34,6 +34,13 @@ final class SubNavigationUnregisteredPage extends Page
     protected static bool $shouldRegisterNavigation = false;
 }
 
+final class SubNavigationGroupedPage extends Page
+{
+    protected static ?string $navigationLabel = 'Grouped';
+
+    protected static ?string $navigationGroup = 'System';
+}
+
 final class SubNavigationRecordPage extends ResourcePage
 {
 }
@@ -193,6 +200,26 @@ it('folds grouped items into label-keyed groups behind the ungrouped one', funct
         ->and(array_map(fn (NavigationItem $item): string => $item->getLabel(), $groups[2]->getItems()))->toBe(['Grouped']);
 });
 
+it('folds a declared group carrying no label into the ungrouped one', function (): void {
+    // Two label-less groups would draw as two unlabelled bands with nothing to
+    // tell them apart; Filament's normalization ends with exactly one.
+    $page = subNavigationPage([
+        NavigationItem::make('Loose')->sort(2),
+        NavigationGroup::make()->items([
+            NavigationItem::make('Declared')->sort(1),
+            NavigationItem::make('Concealed')->hidden(),
+        ]),
+        NavigationGroup::make('System')->items([NavigationItem::make('Settings')]),
+    ]);
+
+    $groups = $page->getCachedSubNavigation();
+
+    expect($groups)->toHaveCount(2)
+        ->and($groups[0]->getLabel())->toBeNull()
+        ->and(array_map(fn (NavigationItem $item): string => $item->getLabel(), $groups[0]->getItems()))->toBe(['Declared', 'Loose'])
+        ->and($groups[1]->getLabel())->toBe('System');
+});
+
 it('sorts the items inside a declared group', function (): void {
     $page = subNavigationPage([
         NavigationGroup::make('System')->items([
@@ -275,6 +302,17 @@ it('builds one item per plain page, active on the page it is asked from', functi
         ->and($items[1]->getLabel())->toBe('Beta')
         ->and($items[1]->getUrl())->toBe('/sylament.admin.pages.sub-navigation-beta-page')
         ->and($items[1]->isActive())->toBeFalse();
+});
+
+it('carries a page navigation group onto the item it builds', function (): void {
+    $page = wireSubNavigationServices(new SubNavigationAlphaPage());
+
+    $items = $page->generateNavigationItems([SubNavigationGroupedPage::class]);
+    $groups = subNavigationPage($items)->getCachedSubNavigation();
+
+    expect($items[0]->getGroup())->toBe('System')
+        ->and($groups)->toHaveCount(1)
+        ->and($groups[0]->getLabel())->toBe('System');
 });
 
 it('skips a page that opts out of navigation registration', function (): void {

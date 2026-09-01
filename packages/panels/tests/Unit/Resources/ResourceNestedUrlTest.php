@@ -349,6 +349,17 @@ it('falls back to the parent index page, which takes no parent key', function ()
         ->toBe('/nest/index-page-parents');
 });
 
+it('names the record parameter when a nested index url is asked for without its parent', function (): void {
+    $panel = Panel::make()->id('nest');
+    $registry = panelsNestedUrlRegistry(EntityManagerFactory::create());
+
+    // The parent key is left out rather than passed as null, so the generator
+    // refuses a *missing* record rather than an invalid one — the difference
+    // between a legible failure and an opaque one.
+    expect(fn (): string => $registry->get(VerseResource::class)->getIndexUrl(isAbsolute: false, panel: $panel))
+        ->toThrow(MissingMandatoryParametersException::class, 'record');
+});
+
 it('spends a scalar parent key on the parent page rather than trailing it as a query string', function (): void {
     $panel = Panel::make()->id('nest');
     $registry = panelsNestedUrlRegistry(EntityManagerFactory::create());

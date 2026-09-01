@@ -380,7 +380,10 @@ abstract class Resource
 
             foreach ([$relationshipPage, 'view', 'edit'] as $pageKey) {
                 if ($parentResource->hasPage($pageKey)) {
-                    return $parentResource->getUrl($pageKey, [...$parameters, 'record' => $parentRecord], $isAbsolute, $panel, $shouldGuessMissingParameters);
+                    // A null parent key is left out rather than passed: the generator
+                    // then names `record` as the missing parameter instead of refusing
+                    // a null one it cannot describe.
+                    return $parentResource->getUrl($pageKey, [...$parameters, ...($parentRecord === null ? [] : ['record' => $parentRecord])], $isAbsolute, $panel, $shouldGuessMissingParameters);
                 }
             }
 

@@ -44,6 +44,7 @@ trait CanSearchRecords
 
         $this->tablePage = 1;
         $this->flushCachedTableRecords();
+        $this->persistTableSearchInSession();
     }
 
     /**
@@ -60,6 +61,7 @@ trait CanSearchRecords
         $this->tableSearch = '';
         $this->tablePage = 1;
         $this->flushCachedTableRecords();
+        $this->persistTableSearchInSession();
     }
 
     /**

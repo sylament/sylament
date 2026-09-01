@@ -35,6 +35,20 @@ trait HasFilters
 
     protected bool|Closure $shouldDeselectAllRecordsWhenFiltered = true;
 
+    protected bool|Closure $persistsFiltersInSession = false;
+
+    public function persistFiltersInSession(bool|Closure $condition = true): static
+    {
+        $this->persistsFiltersInSession = $condition;
+
+        return $this;
+    }
+
+    public function persistsFiltersInSession(): bool
+    {
+        return (bool) $this->evaluate($this->persistsFiltersInSession);
+    }
+
     /**
      * @param array<BaseFilter> $filters
      */

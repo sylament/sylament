@@ -61,6 +61,7 @@ trait CanSortRecords
         $this->tableSort = $direction === null ? null : "{$column}:{$direction}";
         $this->tablePage = 1;
         $this->flushCachedTableRecords();
+        $this->persistTableSortInSession();
     }
 
     public function getTableSortColumn(): ?string

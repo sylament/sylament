@@ -70,6 +70,7 @@ trait CanPaginateRecords
 
         $this->tablePage = 1;
         $this->flushCachedTableRecords();
+        $this->persistTableRecordsPerPageInSession();
     }
 
     /**

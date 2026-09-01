@@ -26,6 +26,7 @@ trait HasTable
 {
     use CanAccessProperties;
     use CanPaginateRecords;
+    use CanPersistTableState;
     use CanSearchRecords;
     use CanSortRecords;
     use HasBulkActions;

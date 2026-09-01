@@ -13,12 +13,12 @@ use Sylament\Actions\Contracts\InteractsWithActions;
 use Sylament\Actions\CreateAction;
 use Sylament\Actions\EditAction;
 use Sylament\Actions\ViewAction;
+use Sylament\Panels\Resources\Concerns\InteractsWithRelationshipTable;
 use Sylament\Panels\Resources\Pages\Page;
 use Sylament\Panels\Resources\ResourceRegistry;
 use Sylament\Schemas\Components\Tabs\Tab;
 use Sylament\Schemas\Concerns\HasSchemas;
 use Sylament\Schemas\Contracts\InteractsWithSchemas;
-use Sylament\Schemas\Schema;
 use Sylament\Schemas\State\Relationship;
 use Sylament\Support\Enums\IconPosition;
 use Sylament\Tables\Concerns\HasTable;
@@ -31,7 +31,6 @@ use Symfony\UX\LiveComponent\DefaultActionTrait;
 use Twig\Markup;
 
 use function Sylament\Support\blank;
-use function Symfony\Component\String\u;
 
 /**
  * One owner record's association, as a live component of its own: a table
@@ -45,6 +44,9 @@ abstract class RelationManager implements InteractsWithActions, InteractsWithSch
     use HasActions;
     use HasSchemas;
     use HasTable;
+    use InteractsWithRelationshipTable {
+        InteractsWithRelationshipTable::makeTable as makeBaseRelationshipTable;
+    }
 
     /**
      * The owner's route key, never the record itself — the wire carries a
@@ -59,8 +61,6 @@ abstract class RelationManager implements InteractsWithActions, InteractsWithSch
      */
     #[LiveProp(dehydrateWith: 'dehydratePageClass')]
     public ?string $pageClass = null;
-
-    protected static string $relationship;
 
     protected static ?string $title = null;
 
@@ -99,18 +99,9 @@ abstract class RelationManager implements InteractsWithActions, InteractsWithSch
         return str_replace('\\', ':', static::class);
     }
 
-    public static function getRelationshipName(): string
-    {
-        if (! isset(static::$relationship)) {
-            throw new LogicException(sprintf('The relation manager [%s] names no relationship — set the $relationship static property to the owner association it manages.', static::class));
-        }
-
-        return static::$relationship;
-    }
-
     public static function getTitle(object $ownerRecord, string $pageClass): string
     {
-        return static::$title ?? u(static::getRelationshipName())->kebab()->replace('-', ' ')->title(allWords: true)->toString();
+        return static::$title ?? static::getHumanizedRelationshipName();
     }
 
     public static function getIcon(object $ownerRecord, string $pageClass): string|BackedEnum|Markup|null
@@ -213,22 +204,14 @@ abstract class RelationManager implements InteractsWithActions, InteractsWithSch
             throw new NotFoundHttpException(sprintf('The relation manager [%s] was mounted against [%s], which is not a resource page.', static::class, $pageClass));
         }
 
-        $registry = $this->resourceRegistry
-            ?? throw new LogicException(sprintf('The relation manager [%s] was built outside the container, so it holds no resource registry; register it as an autowired service.', static::class));
-
         $resourceClass = $pageClass::getResource();
-        $record = $registry->get($resourceClass)->resolveRecordRouteBinding($key);
+        $record = $this->getResourceRegistry()->get($resourceClass)->resolveRecordRouteBinding($key);
 
         if ($record === null) {
             throw new NotFoundHttpException(sprintf('No record matching [%s] exists for the resource [%s].', $key, $resourceClass));
         }
 
         return $this->cachedOwnerRecord = $record;
-    }
-
-    public function form(Schema $schema): Schema
-    {
-        return $schema;
     }
 
     public function getDefaultActionSchemaResolver(Action $action): ?Closure
@@ -241,11 +224,7 @@ abstract class RelationManager implements InteractsWithActions, InteractsWithSch
 
     public function getDefaultActionRelationship(Action $action): ?Relationship
     {
-        if (! $action instanceof CreateAction) {
-            return null;
-        }
-
-        return new Relationship($this->getOwnerRecord(), static::getRelationshipName());
+        return $action instanceof CreateAction ? $this->getRelationship() : null;
     }
 
     /**
@@ -261,11 +240,13 @@ abstract class RelationManager implements InteractsWithActions, InteractsWithSch
 
     protected function makeTable(): Table
     {
-        return Table::make($this)
-            ->relationship(fn (): Relationship => new Relationship(
-                $this->getOwnerRecord(),
-                static::getRelationshipName(),
-            ))
+        return $this->makeBaseRelationshipTable()
             ->heading(fn (): string => static::getTitle($this->getOwnerRecord(), $this->getPageClass()));
+    }
+
+    protected function getResourceRegistry(): ResourceRegistry
+    {
+        return $this->resourceRegistry
+            ?? throw new LogicException(sprintf('The relation manager [%s] was built outside the container, so it holds no resource registry; register it as an autowired service.', static::class));
     }
 }

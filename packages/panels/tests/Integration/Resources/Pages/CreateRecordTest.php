@@ -6,6 +6,7 @@ use Doctrine\ORM\EntityManagerInterface;
 use Sylament\Panels\Tests\Fixtures\Doctrine\Entity\Article;
 use Sylament\Panels\Tests\Fixtures\Resources\Pages\CreateArticle;
 use Sylament\Panels\Tests\Fixtures\Resources\Pages\CreateHookedArticle;
+use Sylament\Panels\Tests\Fixtures\Resources\Pages\CreatePrefilledArticle;
 use Sylament\Schemas\Exceptions\ValidationException;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Component\HttpFoundation\Request;
@@ -102,6 +103,14 @@ it('rejects an invalid submit with a validation error and persists nothing', fun
     $entityManager->clear();
 
     expect($entityManager->getRepository(Article::class)->count([]))->toBe(0);
+});
+
+it('fills the form through the fillForm seam a subclass can replace', function (): void {
+    [$client] = createRecordClient();
+
+    $host = $this->createLiveComponent(CreatePrefilledArticle::class, client: $client)->component();
+
+    expect($host->data)->toBe(['title' => 'Prefilled', 'slug' => 'prefilled']);
 });
 
 it('runs mutateFormDataBeforeCreate and the hooks in order', function (): void {

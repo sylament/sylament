@@ -106,6 +106,31 @@ it('registers the declared parent and memoizes the registration', function (): v
         ->and($verse->getParentResourceRegistration())->toBe($registration);
 });
 
+/**
+ * The getter is the seam a consumer reaches for when the parent is decided at
+ * runtime rather than declared — reading the static behind its back would make
+ * every such override a silent no-op.
+ */
+it('registers the parent a resource names through the getter alone', function (): void {
+    $resource = new class extends Resource {
+        protected static ?string $recordClass = Verse::class;
+
+        public function getParentResource(): string
+        {
+            return ChapterResource::class;
+        }
+    };
+
+    panelsParentRegistry(EntityManagerFactory::create(), [$resource]);
+
+    $registration = $resource->getParentResourceRegistration();
+
+    expect($registration)->toBeInstanceOf(ParentResourceRegistration::class)
+        ->and($registration?->parentResource)->toBe(ChapterResource::class)
+        ->and($registration?->childResource)->toBe($resource::class)
+        ->and($resource->getParentRelationshipName())->toBe('verses');
+});
+
 it('derives the parent relationship and route parameter from the mapping', function (): void {
     $registry = panelsParentRegistry(EntityManagerFactory::create());
 

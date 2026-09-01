@@ -7,6 +7,7 @@ namespace Sylament\Panels\Tests\Fixtures;
 use Sylament\Panels\Pages\Dashboard;
 use Sylament\Panels\Panel;
 use Sylament\Panels\PanelProvider;
+use Sylament\Panels\Tests\Fixtures\Pages\OptedOutNavigationPage;
 use Sylament\Panels\Tests\Fixtures\Pages\SettingsPage;
 use Sylament\Panels\Tests\Fixtures\Resources\ArticleResource;
 use Sylament\Panels\Tests\Fixtures\Resources\NoteResource;
@@ -21,7 +22,7 @@ final class TestPanelProvider extends PanelProvider
             ->default()
             ->brandName('Test Admin')
             ->navigationGroups(['Content'])
-            ->pages([Dashboard::class, SettingsPage::class])
+            ->pages([Dashboard::class, SettingsPage::class, OptedOutNavigationPage::class])
             ->resources([ArticleResource::class, NoteResource::class]);
     }
 }

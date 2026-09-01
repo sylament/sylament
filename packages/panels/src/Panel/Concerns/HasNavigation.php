@@ -76,6 +76,10 @@ trait HasNavigation
         $items = [];
 
         foreach ($this->getPages() as $page) {
+            if (! $page::shouldRegisterNavigation()) {
+                continue;
+            }
+
             foreach ($page::getNavigationItems($this) as $item) {
                 $items[] = clone $item;
             }

@@ -6,6 +6,7 @@ use Sylament\Panels\Navigation\NavigationGroup;
 use Sylament\Panels\Navigation\NavigationItem;
 use Sylament\Panels\PanelRegistry;
 use Sylament\Panels\Resources\ResourceRegistry;
+use Sylament\Panels\Tests\Fixtures\Pages\OptedOutNavigationPage;
 use Sylament\Panels\Tests\Fixtures\Resources\LineResource;
 use Sylament\Panels\Tests\Fixtures\Resources\VerseResource;
 use Symfony\Component\HttpFoundation\Request;
@@ -98,6 +99,30 @@ it('keeps a nested resource registering navigation in every other sense', functi
     expect($registry->get(VerseResource::class)->shouldRegisterNavigation())->toBeTrue()
         ->and($registry->get(LineResource::class)->shouldRegisterNavigation())->toBeTrue()
         ->and($registry->get(LineResource::class)->getNavigationItems($panel))->toHaveCount(1);
+});
+
+/**
+ * `OptedOutNavigationPage` is registered and routed like its two siblings, so only
+ * the gate keeps it out of the sidebar.
+ */
+it('leaves a page that opts out of navigation out of the navigation', function (): void {
+    $panel = $this::getContainer()->get(PanelRegistry::class)->get('admin');
+
+    expect($panel)->not->toBeNull();
+
+    $labels = [];
+
+    foreach ($panel?->getNavigation() ?? [] as $group) {
+        foreach ($group->getItems() as $item) {
+            $labels[] = $item->getLabel();
+        }
+    }
+
+    sort($labels);
+
+    expect($labels)->toBe(['Articles', 'Dashboard', 'Notes', 'Settings'])
+        ->and(OptedOutNavigationPage::shouldRegisterNavigation())->toBeFalse()
+        ->and(OptedOutNavigationPage::getNavigationItems($panel))->toHaveCount(1);
 });
 
 /**

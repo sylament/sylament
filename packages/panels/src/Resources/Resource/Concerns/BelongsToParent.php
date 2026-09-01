@@ -51,7 +51,7 @@ trait BelongsToParent
             return $this->parentResourceRegistration;
         }
 
-        $parentResource = static::$parentResource;
+        $parentResource = $this->getParentResource();
 
         if ($parentResource === null) {
             return null;

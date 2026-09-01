@@ -53,6 +53,11 @@ abstract class CreateRecord extends Page implements InteractsWithSchemas
     {
         $this->parentRecords = $parentRecords;
 
+        $this->fillForm();
+    }
+
+    protected function fillForm(): void
+    {
         $this->callHook('beforeFill');
 
         $this->getSchema('form')->fill();

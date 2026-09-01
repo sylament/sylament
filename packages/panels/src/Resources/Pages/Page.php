@@ -14,6 +14,7 @@ use Sylament\Actions\EditAction;
 use Sylament\Actions\Exceptions\ActionNotResolvableException;
 use Sylament\Actions\ViewAction;
 use Sylament\Panels\Pages\Page as BasePage;
+use Sylament\Panels\Resources\Pages\Concerns\InteractsWithParentRecord;
 use Sylament\Panels\Resources\Resource;
 use Sylament\Panels\Resources\ResourceRegistry;
 use Sylament\Tables\Contracts\InteractsWithTable;
@@ -28,6 +29,7 @@ abstract class Page extends BasePage implements InteractsWithActions
     use HasActions {
         getAction as private getCachedOrDeclaredAction;
     }
+    use InteractsWithParentRecord;
 
     /**
      * @var class-string<Resource>

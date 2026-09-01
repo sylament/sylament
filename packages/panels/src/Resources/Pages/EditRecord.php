@@ -14,45 +14,33 @@ use Sylament\Actions\EditAction;
 use Sylament\Actions\ViewAction;
 use Sylament\Notifications\Notification;
 use Sylament\Panels\Resources\Pages\Concerns\HasRelationManagers;
+use Sylament\Panels\Resources\Pages\Concerns\InteractsWithRecord;
 use Sylament\Schemas\Components\EmbeddedSchema;
 use Sylament\Schemas\Concerns\HasSchemas;
 use Sylament\Schemas\Contracts\InteractsWithSchemas;
 use Sylament\Schemas\Schema;
 use Sylament\Support\Enums\Operation;
 use Symfony\Component\HttpFoundation\RedirectResponse;
-use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\Contracts\Service\Attribute\Required;
 use Symfony\UX\LiveComponent\Attribute\LiveAction;
 use Symfony\UX\LiveComponent\Attribute\LiveProp;
 use Twig\Markup;
 
 use function Sylament\Support\blank;
-use function Sylament\Support\filled;
 
 abstract class EditRecord extends Page implements InteractsWithSchemas
 {
     use HasRelationManagers;
     use HasSchemas;
+    use InteractsWithRecord;
 
     protected ?string $template = '@SylamentPanels/partials/EditRecord/index.html.twig';
-
-    /**
-     * The record's route key, never the record itself — the wire carries a
-     * scalar and `getRecord()` resolves it. The type is a single nullable
-     * string rather than Filament's `int|string`, because
-     * `LiveComponentMetadataFactory` throws on any union-typed `LiveProp`;
-     * `mount()` takes the union instead.
-     */
-    #[LiveProp(dehydrateWith: 'dehydrateRecord')]
-    public ?string $record = null;
 
     /**
      * @var array<string, mixed>
      */
     #[LiveProp(writable: true)]
     public array $data = [];
-
-    protected ?object $resolvedRecord = null;
 
     private ?EntityManagerInterface $entityManager = null;
 
@@ -62,9 +50,12 @@ abstract class EditRecord extends Page implements InteractsWithSchemas
         $this->entityManager = $entityManager;
     }
 
-    public function mount(int|string $record): void
+    /**
+     * @param array<string, string> $parentRecords
+     */
+    public function mount(int|string $record, array $parentRecords = []): void
     {
-        $this->record = (string) $record;
+        $this->mountRecord($record, $parentRecords);
 
         $this->fillForm();
     }
@@ -77,50 +68,6 @@ abstract class EditRecord extends Page implements InteractsWithSchemas
         $schema->fill($this->mutateFormDataBeforeFill($schema->getStateFromRecord($this->getRecord())));
 
         $this->callHook('afterFill');
-    }
-
-    /**
-     * The wire value is the route key the property holds, not the entity
-     * `PropertyAccessor` reads out of the same-named `getRecord()`.
-     */
-    public function dehydrateRecord(mixed $value): ?string
-    {
-        return $this->record;
-    }
-
-    public function hasRecord(): bool
-    {
-        return filled($this->record);
-    }
-
-    /**
-     * The record's route key as the wire carries it — the value an embedded
-     * child is mounted with, where the record object itself cannot travel.
-     */
-    public function getRecordKey(): ?string
-    {
-        return $this->record;
-    }
-
-    public function getRecord(): object
-    {
-        if ($this->resolvedRecord !== null) {
-            return $this->resolvedRecord;
-        }
-
-        $key = $this->record;
-
-        if (blank($key)) {
-            throw new NotFoundHttpException(sprintf('The page [%s] carries no record key to resolve.', static::class));
-        }
-
-        $record = $this->getResourceInstance()->resolveRecordRouteBinding($key);
-
-        if ($record === null) {
-            throw new NotFoundHttpException(sprintf('No record matching [%s] exists for the resource [%s].', $key, static::getResource()));
-        }
-
-        return $this->resolvedRecord = $record;
     }
 
     public function form(Schema $schema): Schema
@@ -259,23 +206,6 @@ abstract class EditRecord extends Page implements InteractsWithSchemas
         }
 
         return $this->getRecord();
-    }
-
-    /**
-     * Pre-mount safe: `PageController` reads the document title off an
-     * un-mounted page, where the record key is still null.
-     */
-    public function getRecordTitle(): string
-    {
-        $resource = $this->getResourceInstance();
-
-        if ($this->record === null) {
-            return $resource->getTitleCaseRecordLabel();
-        }
-
-        return $resource->hasRecordTitle()
-            ? $resource->getRecordTitle($this->getRecord())
-            : $resource->getTitleCaseRecordLabel();
     }
 
     public function getTitle(): string|Markup

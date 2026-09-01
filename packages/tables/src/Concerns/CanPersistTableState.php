@@ -41,8 +41,7 @@ trait CanPersistTableState
         if ($table->persistsFiltersInSession() && $this->tableFilters === []) {
             $storedFilters = $this->readTableSessionState('filters');
 
-            if (is_array($storedFilters)) {
-                /** @var array<string, mixed> $storedFilters */
+            if (self::isPersistedTableFilterBag($storedFilters)) {
                 $this->tableFilters = $storedFilters;
             }
         }
@@ -143,6 +142,18 @@ trait CanPersistTableState
     protected function getTableStateMainRequest(): ?Request
     {
         return $this->tableStateRequestStack?->getMainRequest();
+    }
+
+    /**
+     * Whatever the session holds is as untrusted as a client value — it was put
+     * there by an earlier request whose table may have looked nothing like this
+     * one — so a bag that is not filter-keyed is left where it is.
+     *
+     * @phpstan-assert-if-true array<string, mixed> $value
+     */
+    private static function isPersistedTableFilterBag(mixed $value): bool
+    {
+        return is_array($value) && array_all(array_keys($value), static fn (int|string $key): bool => is_string($key));
     }
 
     /**

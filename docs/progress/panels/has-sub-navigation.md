@@ -22,8 +22,9 @@ behind it:
   **resource** page into an item.
 - Four templates — `SubNavigation` (the dispatcher),
   `SubNavigationSidebar` (`Start`/`End`), `SubNavigationTabs` (`Top`) and
-  `SubNavigationMobileMenu` (every position, below `md`) — mounted by the four
-  page partials, plus `sub-navigation.css` and two `page.css` rules.
+  `SubNavigationMobileMenu` (every position, below `md`) — mounted by the five
+  page partials (`Page`, `ListRecords`, `CreateRecord`, `EditRecord` and
+  `ManageRelatedRecords`), plus `sub-navigation.css` and two `page.css` rules.
 
 **Status:** in progress — see the
 [status vocabulary](../README.md#statuses).
@@ -67,9 +68,9 @@ do.
 | [`SubNavigationSidebar`](../../../packages/panels/templates/components/SubNavigationSidebar/index.html.twig) — `Start` / `End` | [`page/sub-navigation/sidebar.blade.php`](../../../vendor/filament/filament/resources/views/components/page/sub-navigation/sidebar.blade.php) | done | — | [semantics](#the-band-reuses-the-sidebar-group-and-prefixes-its-dom-ids) |
 | [`SubNavigationTabs`](../../../packages/panels/templates/components/SubNavigationTabs/index.html.twig) — `Top` | [`page/sub-navigation/tabs.blade.php`](../../../vendor/filament/filament/resources/views/components/page/sub-navigation/tabs.blade.php) | done | — | [semantics](#the-top-variant-is-the-first-pin-of-tabsitems-anchor-arm) |
 | [`SubNavigationMobileMenu`](../../../packages/panels/templates/components/SubNavigationMobileMenu/index.html.twig) | [`page/sub-navigation/mobile-menu.blade.php`](../../../vendor/filament/filament/resources/views/components/page/sub-navigation/mobile-menu.blade.php) | done | — | [diverges](#the-mobile-menu-renders-no-group-headers) |
-| The band on the four page partials + the root modifiers | the same block in `page/index.blade.php` | done | — | [semantics](#an-empty-band-never-resolves-a-panel) |
+| The band on the five page partials + the root modifiers | the same block in `page/index.blade.php` | done | — | [semantics](#an-empty-band-never-resolves-a-panel) |
 | [`sub-navigation.css`](../../../packages/panels/assets/src/styles/components/sub-navigation.css) + the two `page.css` rules | [`components/page.css`](../../../vendor/filament/filament/resources/css/components/page.css) | done | — | [diverges](#the-top-modifier-is-emitted-and-styled-by-nothing) |
-| The record pages' own `getNavigationLabel()` / `getNavigationIcon()` overrides — what labels an `EditRecord` in a band | [`Resources/Pages/EditRecord.php`](../../../vendor/filament/filament/src/Resources/Pages/EditRecord.php) and its `CreateRecord` / `ViewRecord` siblings | todo | — | [detail](#an-editrecord-in-a-band-is-labelled-by-its-class-name) |
+| The record pages' own `getNavigationLabel()` / `getNavigationIcon()` overrides — what labels an `EditRecord` in a band | [`Resources/Pages/EditRecord.php`](../../../vendor/filament/filament/src/Resources/Pages/EditRecord.php) and its `ViewRecord` sibling — `CreateRecord` declares neither | todo | — | [detail](#an-editrecord-in-a-band-is-labelled-by-its-class-name) |
 | `processParentNavigationItems()` — the `key` / `parentItem` / `childItems` nesting pass | same | todo | [`NavigationItem`'s nesting arm](README.md#navigationitem) | [detail](#three-v1-skips-item-nesting-collapsible-groups-and-badge-tooltips) |
 | Collapsible sub-navigation groups | the Alpine collapse key Filament namespaces per band | skipped | — | [detail](#three-v1-skips-item-nesting-collapsible-groups-and-badge-tooltips) |
 | `badgeTooltip` on a band item | `NavigationItem::badgeTooltip()` | skipped | — | [detail](#three-v1-skips-item-nesting-collapsible-groups-and-badge-tooltips) |
@@ -97,8 +98,13 @@ and its group dropdown; the sidebar variant before **and** after the content
 (adjacent-sibling selectors, so document order is asserted rather than presence);
 the band's groups staying expanded and off the sidebar controller; the mobile
 dropdown in all three positions, labelled by the active item and triggered
-through its icon alias; the root modifiers; the band on all three resource
-partials at both sidebar edges; and a page with no band drawing nothing at all.
+through its icon alias; the root modifiers; the band on the three resource
+partials it serves — `ListRecords`, `CreateRecord` and `EditRecord` — at both
+sidebar edges; and a page with no band drawing nothing at all. The fifth
+partial's band is rendered by
+[`Integration/Resources/Pages/ManageRelatedRecordsTest`](../../../packages/panels/tests/Integration/Resources/Pages/ManageRelatedRecordsTest.php)
+instead, which asserts it on both the edit page and the manage page and pins
+which of the two is active.
 [`Unit/PanelTest`](../../../packages/panels/tests/Unit/PanelTest.php) and
 [`Integration/Resources/ResourceTest`](../../../packages/panels/tests/Integration/Resources/ResourceTest.php)
 pin the panel knob (literal and closure) and the resource tier.
@@ -140,8 +146,9 @@ band therefore labels an edit page through the inherited chain on
 humanized class basename — so an `EditArticle` page reads *Edit Article* in the
 band where Filament reads *Edit*, and carries no icon unless the page declares
 one. Declaring the two statics on the page is the whole workaround, and porting
-Filament's overrides (with the `create-record` and `view-record` ones beside
-them) is what makes the Filament look the default. The gap existed before this
+Filament's overrides (with the `view-record` pair beside them — `CreateRecord`
+declares neither, and `PanelsIconAlias` ships no `create-record` navigation-item
+constant to port) is what makes the Filament look the default. The gap existed before this
 epic and was invisible: nothing read those methods on a resource page until the
 band did.
 
@@ -166,7 +173,7 @@ and `usort` is stable.
 
 ### An empty band never resolves a panel
 
-The four page partials read `this.getCachedSubNavigation` first and only ask for
+All five page partials read `this.getCachedSubNavigation` first and only ask for
 the **position** when that is non-empty:
 
 ```twig

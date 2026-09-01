@@ -10,6 +10,7 @@ use Sylament\Panels\Controllers\PageController;
 use Sylament\Panels\Pages\Page;
 use Sylament\Panels\Panel;
 use Sylament\Panels\PanelRegistry;
+use Sylament\Panels\Resources\ParentResourceRegistration;
 use Sylament\Panels\Resources\Resource;
 use Sylament\Panels\Resources\ResourceRegistry;
 use Symfony\Bundle\FrameworkBundle\Routing\RouteLoaderInterface;
@@ -51,7 +52,27 @@ final readonly class PanelRouteLoader implements RouteLoaderInterface
 
                 $resource = $this->resources->get($resourceClass);
                 $routeBaseName = $resource->getRouteBaseName($panel);
-                $resourcePath = $panelPath . '/' . mb_trim($resource->getSlug(), '/');
+
+                $prefix = $panelPath;
+                $parentParams = [];
+
+                foreach ($this->getAncestorLinks($resource) as [$parentResource, $childResource]) {
+                    if (! in_array($parentResource::class, $panel->getResources(), true)) {
+                        throw new LogicException(sprintf('Resource "%s" nests under "%s", which panel "%s" does not register — register the parent on the panel.', $childResource::class, $parentResource::class, $panel->getId()));
+                    }
+
+                    $param = $childResource->getParentRouteParameterName();
+
+                    if ($param === 'record' || in_array($param, $parentParams, true)) {
+                        throw new LogicException(sprintf('Nested resource "%s" derives the route parameter "{%s}", which collides with %s.', $childResource::class, $param, $param === 'record' ? 'the record parameter' : 'an ancestor parameter'));
+                    }
+
+                    $parentParams[] = $param;
+                    $prefix .= '/' . mb_trim($parentResource->getSlug(), '/') . '/{' . $param . '}';
+                }
+
+                $resourcePath = $prefix . '/' . mb_trim($resource->getSlug(), '/');
+                $extraDefaults = $parentParams === [] ? [] : ['_sylament_parent_params' => $parentParams];
 
                 foreach ($resource->getPages() as $key => $registration) {
                     if (! is_subclass_of($registration->page, Page::class)) {
@@ -60,7 +81,7 @@ final readonly class PanelRouteLoader implements RouteLoaderInterface
 
                     $path = '/' . mb_trim($resourcePath . '/' . mb_ltrim($registration->path, '/'), '/');
 
-                    $this->addRoute($routes, $owners, $routeBaseName . '.' . $key, $path, $panel, $registration->page, sprintf('resource page %s (%s)', $registration->page, $resourceClass));
+                    $this->addRoute($routes, $owners, $routeBaseName . '.' . $key, $path, $panel, $registration->page, sprintf('resource page %s (%s)', $registration->page, $resourceClass), $extraDefaults);
                     $this->trackClassFile($routes, $registration->page);
                 }
 
@@ -74,10 +95,33 @@ final readonly class PanelRouteLoader implements RouteLoaderInterface
     }
 
     /**
-     * @param array<string, string> $owners    route name => the mount that claimed it, accumulated across panels
-     * @param class-string<Page>    $pageClass
+     * The parent → child links above a resource, root-first: every level of the
+     * nesting a path has to walk down before it reaches the resource's own slug.
+     *
+     * @return list<array{Resource, Resource}>
      */
-    private function addRoute(RouteCollection $routes, array &$owners, string $name, string $path, Panel $panel, string $pageClass, string $ownerDescription): void
+    private function getAncestorLinks(Resource $resource): array
+    {
+        $links = [];
+        $child = $resource;
+
+        while (($registration = $child->getParentResourceRegistration()) instanceof ParentResourceRegistration) {
+            $parent = $this->resources->get($registration->parentResource);
+
+            array_unshift($links, [$parent, $child]);
+
+            $child = $parent;
+        }
+
+        return $links;
+    }
+
+    /**
+     * @param array<string, string> $owners        route name => the mount that claimed it, accumulated across panels
+     * @param class-string<Page>    $pageClass
+     * @param array<string, mixed>  $extraDefaults
+     */
+    private function addRoute(RouteCollection $routes, array &$owners, string $name, string $path, Panel $panel, string $pageClass, string $ownerDescription, array $extraDefaults = []): void
     {
         if (isset($owners[$name])) {
             throw new LogicException(sprintf('The route name "%s" is already mounted by %s — %s derives the same name.', $name, $owners[$name], $ownerDescription));
@@ -89,6 +133,7 @@ final readonly class PanelRouteLoader implements RouteLoaderInterface
             '_controller' => PageController::class,
             '_sylament_panel' => $panel->getId(),
             '_sylament_page' => $pageClass,
+            ...$extraDefaults,
         ], methods: ['GET']));
     }
 

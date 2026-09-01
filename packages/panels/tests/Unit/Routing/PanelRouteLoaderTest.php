@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use Sylament\Panels\Controllers\PageController;
+use Sylament\Panels\CurrentPanel;
 use Sylament\Panels\Pages\Dashboard;
 use Sylament\Panels\Pages\Page;
 use Sylament\Panels\Panel;
@@ -13,10 +14,26 @@ use Sylament\Panels\Resources\Resource;
 use Sylament\Panels\Resources\ResourceRegistry;
 use Sylament\Panels\Routing\PanelRouteLoader;
 use Sylament\Panels\Tests\Fixtures\Doctrine\Entity\Article;
+use Sylament\Panels\Tests\Fixtures\Doctrine\Entity\Line;
+use Sylament\Panels\Tests\Fixtures\Doctrine\Entity\Verse;
+use Sylament\Panels\Tests\Fixtures\Doctrine\EntityManagerFactory;
+use Sylament\Panels\Tests\Fixtures\NestedPanelProvider;
 use Sylament\Panels\Tests\Fixtures\Pages\SettingsPage;
+use Sylament\Panels\Tests\Fixtures\Resources\ChapterResource;
+use Sylament\Panels\Tests\Fixtures\Resources\LineResource;
+use Sylament\Panels\Tests\Fixtures\Resources\Pages\EditVerse;
 use Sylament\Panels\Tests\Fixtures\Resources\Pages\RecordProbePage;
 use Sylament\Panels\Tests\Fixtures\Resources\ProbeResource;
+use Sylament\Panels\Tests\Fixtures\Resources\VerseResource;
+use Sylament\Schemas\State\AssociationReader;
+use Sylament\Schemas\State\PropertyAccessor;
+use Sylament\Schemas\State\RecordTypeReader;
 use Symfony\Component\DependencyInjection\ServiceLocator;
+use Symfony\Component\HttpFoundation\RequestStack;
+use Symfony\Component\PropertyAccess\PropertyAccess;
+use Symfony\Component\Routing\Generator\UrlGenerator;
+use Symfony\Component\Routing\RequestContext;
+use Symfony\Component\Routing\RouteCollection;
 
 final class TwinSlugPage extends Page
 {
@@ -62,6 +79,47 @@ final class SlashlessPathResource extends Resource
 }
 
 /**
+ * Derives the record parameter as its parent's, so the two collide on the very
+ * pages it registers.
+ */
+final class RecordParameterResource extends Resource
+{
+    protected static ?string $recordClass = Verse::class;
+
+    protected static ?string $parentResource = ChapterResource::class;
+
+    public function getParentRouteParameterName(): string
+    {
+        return 'record';
+    }
+
+    public function getPages(): array
+    {
+        return ['edit' => new PageRegistration(RecordProbePage::class, '/{record}/edit')];
+    }
+}
+
+/**
+ * Derives the parameter its grandparent already travels under, two levels down.
+ */
+final class DuplicateParameterResource extends Resource
+{
+    protected static ?string $recordClass = Line::class;
+
+    protected static ?string $parentResource = VerseResource::class;
+
+    public function getParentRouteParameterName(): string
+    {
+        return 'chapter';
+    }
+
+    public function getPages(): array
+    {
+        return ['edit' => new PageRegistration(RecordProbePage::class, '/{record}/edit')];
+    }
+}
+
+/**
  * @param array<class-string<Resource>, Resource> $resources
  */
 function loaderFor(PanelProvider $provider, array $resources = []): PanelRouteLoader
@@ -73,6 +131,48 @@ function loaderFor(PanelProvider $provider, array $resources = []): PanelRouteLo
     }
 
     return new PanelRouteLoader(new PanelRegistry([$provider]), new ResourceRegistry(new ServiceLocator($factories)));
+}
+
+/**
+ * A loader whose resources carry the services a nested one reads its parent
+ * chain through — `loaderFor()` leaves them bare, which is all a flat resource
+ * needs.
+ *
+ * @param array<class-string<Resource>, Resource> $resources
+ */
+function wiredLoaderFor(PanelProvider $provider, array $resources): PanelRouteLoader
+{
+    $registry = new ResourceRegistry(new ServiceLocator(array_map(
+        static fn (Resource $resource): Closure => static fn (): Resource => $resource,
+        $resources,
+    )));
+
+    $panels = new PanelRegistry([$provider]);
+    $entityManager = EntityManagerFactory::create();
+    $propertyAccessor = new PropertyAccessor(PropertyAccess::createPropertyAccessor(), new RecordTypeReader());
+
+    foreach ($resources as $resource) {
+        $resource->setResourceServices(
+            $entityManager,
+            new UrlGenerator(new RouteCollection(), new RequestContext()),
+            new CurrentPanel(new RequestStack(), $panels),
+            $panels,
+            $propertyAccessor,
+            new AssociationReader($entityManager, $propertyAccessor),
+            $registry,
+        );
+    }
+
+    return new PanelRouteLoader($panels, $registry);
+}
+
+function nestedResourceLoader(): PanelRouteLoader
+{
+    return wiredLoaderFor(new NestedPanelProvider(), [
+        ChapterResource::class => new ChapterResource(),
+        VerseResource::class => new VerseResource(),
+        LineResource::class => new LineResource(),
+    ]);
 }
 
 function probeResourceLoader(): PanelRouteLoader
@@ -208,6 +308,79 @@ it('throws when two resources derive the same route names', function (): void {
         TwinSlugResource::class => new TwinSlugResource(),
     ])();
 })->throws(LogicException::class, 'already mounted');
+
+it('mounts a nested resource under its parent record', function (): void {
+    $route = nestedResourceLoader()()->get('sylament.nest.resources.chapters.verses.edit');
+
+    expect($route?->getPath())->toBe('/nest/chapters/{chapter}/verses/{record}/edit')
+        ->and($route->compile()->getVariables())->toBe(['chapter', 'record'])
+        ->and($route->getDefault('_sylament_parent_params'))->toBe(['chapter'])
+        ->and($route->getDefault('_sylament_page'))->toBe(EditVerse::class);
+});
+
+it('walks a two-deep chain root-first', function (): void {
+    $route = nestedResourceLoader()()->get('sylament.nest.resources.chapters.verses.lines.edit');
+
+    expect($route?->getPath())->toBe('/nest/chapters/{chapter}/verses/{verse}/lines/{record}/edit')
+        ->and($route->compile()->getVariables())->toBe(['chapter', 'verse', 'record'])
+        ->and($route->getDefault('_sylament_parent_params'))->toBe(['chapter', 'verse']);
+});
+
+it('collapses a nested index registration onto the nested resource root', function (): void {
+    expect(nestedResourceLoader()()->get('sylament.nest.resources.chapters.verses.lines.index')?->getPath())
+        ->toBe('/nest/chapters/{chapter}/verses/{verse}/lines');
+});
+
+it('leaves every unnested route without parent parameters', function (): void {
+    $routes = nestedResourceLoader()();
+
+    expect($routes->get('sylament.nest.resources.chapters.edit')?->getDefault('_sylament_parent_params'))->toBeNull()
+        ->and($routes->get('sylament.nest.resources.chapters.index')?->getDefault('_sylament_parent_params'))->toBeNull()
+        ->and($routes->get('sylament.nest.pages.dashboard')?->getDefault('_sylament_parent_params'))->toBeNull();
+});
+
+it('refuses a nested resource whose parent the panel leaves out', function (): void {
+    $provider = new class extends PanelProvider {
+        public function panel(Panel $panel): Panel
+        {
+            return $panel->id('nest')->path('nest')->resources([VerseResource::class]);
+        }
+    };
+
+    wiredLoaderFor($provider, [
+        ChapterResource::class => new ChapterResource(),
+        VerseResource::class => new VerseResource(),
+    ])();
+})->throws(LogicException::class, 'which panel "nest" does not register');
+
+it('refuses a parent parameter that collides with the record parameter', function (): void {
+    $provider = new class extends PanelProvider {
+        public function panel(Panel $panel): Panel
+        {
+            return $panel->id('nest')->path('nest')->resources([ChapterResource::class, RecordParameterResource::class]);
+        }
+    };
+
+    wiredLoaderFor($provider, [
+        ChapterResource::class => new ChapterResource(),
+        RecordParameterResource::class => new RecordParameterResource(),
+    ])();
+})->throws(LogicException::class, 'collides with the record parameter');
+
+it('refuses a parent parameter an ancestor already travels under', function (): void {
+    $provider = new class extends PanelProvider {
+        public function panel(Panel $panel): Panel
+        {
+            return $panel->id('nest')->path('nest')->resources([ChapterResource::class, VerseResource::class, DuplicateParameterResource::class]);
+        }
+    };
+
+    wiredLoaderFor($provider, [
+        ChapterResource::class => new ChapterResource(),
+        VerseResource::class => new VerseResource(),
+        DuplicateParameterResource::class => new DuplicateParameterResource(),
+    ])();
+})->throws(LogicException::class, 'collides with an ancestor parameter');
 
 it('rejects a resources() entry that is not a Resource subclass', function (): void {
     $provider = new class extends PanelProvider {

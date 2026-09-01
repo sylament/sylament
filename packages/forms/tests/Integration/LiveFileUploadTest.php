@@ -392,7 +392,7 @@ it('counts the collection at save and requires a file exactly once', function ()
     expect($counted->getSchema()->getComponentByStatePath('data.cover')->getErrorMessages())->toHaveCount(1);
 
     // Exactly one message: the override sits on `buildValidationConstraints()`, so the parent hook
-    // is still the only thing that emits `NotBlank`.
+    // is still the only thing that emits `RequiredValue`.
     $required = validated($this->createLiveComponent('FileUploadForm', ['isRequired' => true]));
 
     expect($required->getSchema()->getComponentByStatePath('data.cover')->getErrorMessages())

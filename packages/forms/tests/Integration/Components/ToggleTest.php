@@ -7,10 +7,10 @@ namespace Sylament\Forms\Tests\Integration\Components;
 use Sylament\Forms\Components\Toggle;
 use Sylament\Forms\Tests\Fixtures\Concerns\FieldRenderHost;
 use Sylament\Forms\Tests\Fixtures\Records\Article;
+use Sylament\Forms\Validation\RequiredValue;
 use Sylament\Schemas\Schema;
 use Sylament\Support\Colors\Color;
 use Symfony\Component\DomCrawler\Crawler;
-use Symfony\Component\Validator\Constraints\NotBlank;
 use Symfony\Component\Validator\Constraints\NotNull;
 use Symfony\Component\Validator\Constraints\Type;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
@@ -214,7 +214,7 @@ it('requires presence rather than truth', function (): void {
     ));
 
     expect($notNulls)->toHaveCount(1)
-        ->and(array_filter($constraints, fn (object $constraint): bool => $constraint instanceof NotBlank))->toBe([]);
+        ->and(array_filter($constraints, fn (object $constraint): bool => $constraint instanceof RequiredValue))->toBe([]);
 
     $field = Toggle::make('isFeatured')->required();
     hydratedToggleSchema($field);

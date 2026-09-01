@@ -495,9 +495,8 @@ it('fails a required radio with nothing selected', function (): void {
 
 /*
  * The `0`-keyed false option is the one required() case worth pinning rather than
- * assuming: NotBlank rejects null, '' and false but carves out `0` and '0', so a
- * required boolean() radio rejects only *no answer*. A cast that ever stored the
- * false option as a real `false` would silently turn required() into accepted().
+ * assuming: `RequiredValue` rejects null and '' but carves out `0` and '0', so a
+ * required boolean() radio rejects only *no answer* in either stored form.
  */
 it('accepts the false option of a required boolean() radio, in both stored forms', function (): void {
     $field = wireRadio(Radio::make('featured')->boolean()->required());

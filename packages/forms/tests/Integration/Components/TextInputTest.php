@@ -7,13 +7,13 @@ namespace Sylament\Forms\Tests\Integration\Components;
 use Sylament\Actions\Action;
 use Sylament\Forms\Components\TextInput;
 use Sylament\Forms\Tests\Fixtures\Concerns\FieldRenderHost;
+use Sylament\Forms\Validation\RequiredValue;
 use Sylament\Schemas\Schema;
 use Symfony\Component\DomCrawler\Crawler;
 use Symfony\Component\Validator\Constraints\Email;
 use Symfony\Component\Validator\Constraints\GreaterThanOrEqual;
 use Symfony\Component\Validator\Constraints\Length;
 use Symfony\Component\Validator\Constraints\LessThanOrEqual;
-use Symfony\Component\Validator\Constraints\NotBlank;
 use Symfony\Component\Validator\Constraints\Regex;
 use Symfony\Component\Validator\Constraints\Type;
 use Symfony\Component\Validator\Constraints\Url;
@@ -387,7 +387,7 @@ it('keeps required first and appends type arms after lengths', function (): void
     $constraints = TextInput::make('mail')->required()->maxLength(100)->email()->getValidationConstraints();
 
     expect($constraints)->toHaveCount(3)
-        ->and($constraints[0])->toBeInstanceOf(NotBlank::class)
+        ->and($constraints[0])->toBeInstanceOf(RequiredValue::class)
         ->and($constraints[1])->toBeInstanceOf(Length::class)
         ->and($constraints[2])->toBeInstanceOf(Email::class);
 });
@@ -565,7 +565,7 @@ it('reports neither bound against the empty string a cleared input submits', fun
     expect($host->getErrorsForSchemaStatePath('data.count'))->toBe([]);
 });
 
-it('still reports both bounds on a required field, whose NotBlank survives the gate', function (): void {
+it('still reports both bounds on a required field, whose RequiredValue survives the gate', function (): void {
     $host = new FieldRenderHost();
     $host->setSchemaStateValidator($this::getContainer()->get(ValidatorInterface::class));
 

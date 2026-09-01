@@ -11,6 +11,7 @@ use Sylament\Forms\Components\CheckboxList;
 use Sylament\Forms\Components\Contracts\HasNestedRecursiveValidationConstraints;
 use Sylament\Forms\Components\Field;
 use Sylament\Forms\Components\FileUpload;
+use Sylament\Forms\Components\Hidden;
 use Sylament\Forms\Components\Radio;
 use Sylament\Forms\Components\Repeater;
 use Sylament\Forms\Components\Select;
@@ -38,7 +39,7 @@ use Symfony\Component\Validator\Validator\ValidatorInterface;
  * whether the non-nullable leaves beneath it are required.
  *
  * The constraint-map assertions are the payoff: getData() validates before it
- * maps, so a leaf still carrying NotBlank here could never reach the branch
+ * maps, so a leaf still carrying RequiredValue here could never reach the branch
  * nulling pass.
  */
 
@@ -243,6 +244,56 @@ it('derives from a mid-tree binding the root record does not stand behind', func
     $schema->rawState(['author' => ['name' => null]]);
 
     expect($schema->getComponentByStatePath('data.author.name')->isRequired())->toBeTrue();
+});
+
+/**
+ * Wire a schema over the record and run the real validator against its state, the
+ * way a submit does — `isRequired()` alone cannot show whether the constraint the
+ * requirement builds actually accepts the value the field holds.
+ *
+ * @param array<string, mixed> $state
+ * @return list<string>
+ */
+function validateAgainstRecord(ValidatorInterface $validator, Field $field, array $state): array
+{
+    $host = new FieldRenderHost();
+    $host->setSchemaStateValidator($validator);
+
+    $schema = Schema::make($host)->statePath('data')->record(Article::class)->components([$field]);
+    $host->cacheSchema('schema', $schema);
+
+    $host->data = $state;
+    $host->validateSchema($schema, shouldThrow: false);
+
+    return $host->getErrorsForSchemaStatePath('data.' . $field->getName());
+}
+
+it('accepts false on a field required by a non-nullable bool column', function (): void {
+    // The consumer's shape: a hidden field defaulting to false over `Article::$featured`,
+    // which derivation marks required. Symfony's NotBlank would reject false outright,
+    // so this field could never submit — invisibly, there being nothing to correct.
+    $field = Hidden::make('featured')->default(false);
+    $validator = $this::getContainer()->get(ValidatorInterface::class);
+
+    expect(validateAgainstRecord($validator, $field, ['featured' => false]))->toBe([])
+        ->and($field->isRequired())->toBeTrue();
+});
+
+it('accepts false on an explicitly required field', function (): void {
+    $validator = $this::getContainer()->get(ValidatorInterface::class);
+
+    expect(validateAgainstRecord($validator, Hidden::make('featured')->required(), ['featured' => false]))->toBe([]);
+});
+
+it('still refuses null and the empty string on a required field', function (): void {
+    // The bound on the widening: only false leaves the blank set, and the constraint
+    // stays implicit, so the presence gate does not drop it for a blank string.
+    $validator = $this::getContainer()->get(ValidatorInterface::class);
+
+    expect(validateAgainstRecord($validator, TextInput::make('title')->required(), ['title' => null]))
+        ->toBe(['This value should not be blank.'])
+        ->and(validateAgainstRecord($validator, TextInput::make('title')->required(), ['title' => '']))
+        ->toBe(['This value should not be blank.']);
 });
 
 /**

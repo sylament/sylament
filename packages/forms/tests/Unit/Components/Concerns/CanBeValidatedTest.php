@@ -23,6 +23,7 @@ use Sylament\Forms\Validation\DateComparison;
 use Sylament\Forms\Validation\EndsWith;
 use Sylament\Forms\Validation\MatchesField;
 use Sylament\Forms\Validation\Prohibited;
+use Sylament\Forms\Validation\RequiredValue;
 use Sylament\Forms\Validation\StartsWith;
 use Sylament\Schemas\Schema;
 use Symfony\Component\Validator\Constraint;
@@ -99,11 +100,11 @@ it('is not required by default and builds no constraints', function (): void {
         ->and($field->getValidationConstraints())->toBe([]);
 });
 
-it('builds NotBlank when required', function (): void {
+it('builds RequiredValue when required', function (): void {
     $constraints = FixtureField::make('title')->required()->getValidationConstraints();
 
     expect($constraints)->toHaveCount(1)
-        ->and($constraints[0])->toBeInstanceOf(NotBlank::class)
+        ->and($constraints[0])->toBeInstanceOf(RequiredValue::class)
         ->and($constraints[0]->message)->toBe('This value should not be blank.');
 });
 
@@ -161,7 +162,7 @@ it('accepts a constraint list in constraints()', function (): void {
 it('applies a string message to the constraint message option', function (): void {
     $constraints = FixtureField::make('title')
         ->required()
-        ->validationMessages([NotBlank::class => 'Give it a title.'])
+        ->validationMessages([RequiredValue::class => 'Give it a title.'])
         ->getValidationConstraints();
 
     expect($constraints[0]->message)->toBe('Give it a title.');
@@ -195,7 +196,7 @@ it('evaluates a closure message and a closure leaf of an option map', function (
         ->required()
         ->maxLength(255)
         ->validationMessages([
-            NotBlank::class => fn (): string => 'Give it a title.',
+            RequiredValue::class => fn (): string => 'Give it a title.',
             Length::class => ['maxMessage' => fn (): string => 'Too long.'],
         ])
         ->getValidationConstraints();
@@ -207,7 +208,7 @@ it('evaluates a closure message and a closure leaf of an option map', function (
 it('leaves the constraint default in place for a blank message', function (): void {
     $constraints = FixtureField::make('title')
         ->required()
-        ->validationMessages([NotBlank::class => ''])
+        ->validationMessages([RequiredValue::class => ''])
         ->getValidationConstraints();
 
     expect($constraints[0]->message)->toBe('This value should not be blank.');
@@ -250,7 +251,7 @@ it('returns the same constraint instance when no message applies to it', functio
 
     $constraints = FixtureField::make('slug')
         ->constraint($regex)
-        ->validationMessages([NotBlank::class => 'Give it a title.'])
+        ->validationMessages([RequiredValue::class => 'Give it a title.'])
         ->getValidationConstraints();
 
     expect($constraints[0])->toBe($regex);
@@ -273,7 +274,7 @@ it('ignores a message keyed to a constraint the field does not build', function 
         ->getValidationConstraints();
 
     expect($constraints)->toHaveCount(1)
-        ->and($constraints[0])->toBeInstanceOf(NotBlank::class)
+        ->and($constraints[0])->toBeInstanceOf(RequiredValue::class)
         ->and($constraints[0]->message)->toBe('This value should not be blank.');
 });
 
@@ -314,7 +315,7 @@ it('appends the length constraints of a length-constrained field', function (): 
     $constraints = FixtureLengthField::make('title')->required()->maxLength(255)->getValidationConstraints();
 
     expect($constraints)->toHaveCount(2)
-        ->and($constraints[0])->toBeInstanceOf(NotBlank::class)
+        ->and($constraints[0])->toBeInstanceOf(RequiredValue::class)
         ->and($constraints[1])->toBeInstanceOf(Length::class)
         ->and($constraints[1]->max)->toBe(255);
 });
@@ -327,7 +328,7 @@ it('keys dehydrated constraints by state path', function (): void {
 
     expect(array_keys($constraints))->toBe([$field->getStatePath()])
         ->and($constraints['title'])->toHaveCount(1)
-        ->and($constraints['title'][0])->toBeInstanceOf(NotBlank::class);
+        ->and($constraints['title'][0])->toBeInstanceOf(RequiredValue::class);
 });
 
 it('dehydrates nothing without constraints', function (): void {
@@ -356,11 +357,11 @@ it('derives required through a nested record path', function (): void {
     expect(wireFieldToRecord(FixtureField::make('author.name'))->isRequired())->toBeTrue();
 });
 
-it('builds NotBlank from a derived requirement', function (): void {
+it('builds RequiredValue from a derived requirement', function (): void {
     $constraints = wireFieldToRecord(FixtureField::make('title'))->getValidationConstraints();
 
     expect($constraints)->toHaveCount(1)
-        ->and($constraints[0])->toBeInstanceOf(NotBlank::class);
+        ->and($constraints[0])->toBeInstanceOf(RequiredValue::class);
 });
 
 it('derives not-required from a nullable record property', function (): void {
@@ -630,10 +631,10 @@ it('falls back to the humanised path segment when no component answers to the pa
 });
 
 it('requires the field when the sibling matches, loosely for scalars', function (): void {
-    expect(constraintsOf(wireFieldToSiblings(FixtureField::make('a')->requiredIf('status', 'published'), ['status' => 'published']), NotBlank::class))->toHaveCount(1)
-        ->and(constraintsOf(wireFieldToSiblings(FixtureField::make('a')->requiredIf('status', 'published'), ['status' => 'draft']), NotBlank::class))->toBe([])
-        ->and(constraintsOf(wireFieldToSiblings(FixtureField::make('a')->requiredIf('status', ['a', 'b']), ['status' => 'b']), NotBlank::class))->toHaveCount(1)
-        ->and(constraintsOf(wireFieldToSiblings(FixtureField::make('a')->requiredIf('count', 1), ['count' => '1']), NotBlank::class))->toHaveCount(1);
+    expect(constraintsOf(wireFieldToSiblings(FixtureField::make('a')->requiredIf('status', 'published'), ['status' => 'published']), RequiredValue::class))->toHaveCount(1)
+        ->and(constraintsOf(wireFieldToSiblings(FixtureField::make('a')->requiredIf('status', 'published'), ['status' => 'draft']), RequiredValue::class))->toBe([])
+        ->and(constraintsOf(wireFieldToSiblings(FixtureField::make('a')->requiredIf('status', ['a', 'b']), ['status' => 'b']), RequiredValue::class))->toHaveCount(1)
+        ->and(constraintsOf(wireFieldToSiblings(FixtureField::make('a')->requiredIf('count', 1), ['count' => '1']), RequiredValue::class))->toHaveCount(1);
 });
 
 it("lets the sibling's own type decide the strictness, as Laravel does", function (): void {
@@ -641,54 +642,54 @@ it("lets the sibling's own type decide the strictness, as Laravel does", functio
     // *sibling* picks strict or loose, not the declared value. So a raw `true`
     // sibling is never matched by the string `'1'`, while a `'1'` sibling is
     // matched by `true` under PHP's loose comparison.
-    expect(constraintsOf(wireFieldToSiblings(FixtureField::make('a')->requiredIf('flag', true), ['flag' => true]), NotBlank::class))->toHaveCount(1)
-        ->and(constraintsOf(wireFieldToSiblings(FixtureField::make('a')->requiredIf('flag', '1'), ['flag' => true]), NotBlank::class))->toBe([])
-        ->and(constraintsOf(wireFieldToSiblings(FixtureField::make('a')->requiredIf('flag', true), ['flag' => '1']), NotBlank::class))->toHaveCount(1)
-        ->and(constraintsOf(wireFieldToSiblings(FixtureField::make('a')->requiredIf('flag', null), ['flag' => null]), NotBlank::class))->toHaveCount(1)
-        ->and(constraintsOf(wireFieldToSiblings(FixtureField::make('a')->requiredIf('flag', ''), ['flag' => null]), NotBlank::class))->toBe([]);
+    expect(constraintsOf(wireFieldToSiblings(FixtureField::make('a')->requiredIf('flag', true), ['flag' => true]), RequiredValue::class))->toHaveCount(1)
+        ->and(constraintsOf(wireFieldToSiblings(FixtureField::make('a')->requiredIf('flag', '1'), ['flag' => true]), RequiredValue::class))->toBe([])
+        ->and(constraintsOf(wireFieldToSiblings(FixtureField::make('a')->requiredIf('flag', true), ['flag' => '1']), RequiredValue::class))->toHaveCount(1)
+        ->and(constraintsOf(wireFieldToSiblings(FixtureField::make('a')->requiredIf('flag', null), ['flag' => null]), RequiredValue::class))->toHaveCount(1)
+        ->and(constraintsOf(wireFieldToSiblings(FixtureField::make('a')->requiredIf('flag', ''), ['flag' => null]), RequiredValue::class))->toBe([]);
 });
 
 it('unwraps a backed enum in the matched values', function (): void {
-    expect(constraintsOf(wireFieldToSiblings(FixtureField::make('a')->requiredIf('status', ValidationStatus::Published), ['status' => 'published']), NotBlank::class))->toHaveCount(1);
+    expect(constraintsOf(wireFieldToSiblings(FixtureField::make('a')->requiredIf('status', ValidationStatus::Published), ['status' => 'published']), RequiredValue::class))->toHaveCount(1);
 });
 
 it('requires the field when the sibling is accepted or declined', function (): void {
-    expect(constraintsOf(wireFieldToSiblings(FixtureField::make('a')->requiredIfAccepted('terms'), ['terms' => 'on']), NotBlank::class))->toHaveCount(1)
-        ->and(constraintsOf(wireFieldToSiblings(FixtureField::make('a')->requiredIfAccepted('terms'), ['terms' => true]), NotBlank::class))->toHaveCount(1)
-        ->and(constraintsOf(wireFieldToSiblings(FixtureField::make('a')->requiredIfAccepted('terms'), ['terms' => '1']), NotBlank::class))->toHaveCount(1)
-        ->and(constraintsOf(wireFieldToSiblings(FixtureField::make('a')->requiredIfAccepted('terms'), ['terms' => 'off']), NotBlank::class))->toBe([])
-        ->and(constraintsOf(wireFieldToSiblings(FixtureField::make('a')->requiredIfDeclined('terms'), ['terms' => 'off']), NotBlank::class))->toHaveCount(1)
-        ->and(constraintsOf(wireFieldToSiblings(FixtureField::make('a')->requiredIfDeclined('terms'), ['terms' => 'on']), NotBlank::class))->toBe([]);
+    expect(constraintsOf(wireFieldToSiblings(FixtureField::make('a')->requiredIfAccepted('terms'), ['terms' => 'on']), RequiredValue::class))->toHaveCount(1)
+        ->and(constraintsOf(wireFieldToSiblings(FixtureField::make('a')->requiredIfAccepted('terms'), ['terms' => true]), RequiredValue::class))->toHaveCount(1)
+        ->and(constraintsOf(wireFieldToSiblings(FixtureField::make('a')->requiredIfAccepted('terms'), ['terms' => '1']), RequiredValue::class))->toHaveCount(1)
+        ->and(constraintsOf(wireFieldToSiblings(FixtureField::make('a')->requiredIfAccepted('terms'), ['terms' => 'off']), RequiredValue::class))->toBe([])
+        ->and(constraintsOf(wireFieldToSiblings(FixtureField::make('a')->requiredIfDeclined('terms'), ['terms' => 'off']), RequiredValue::class))->toHaveCount(1)
+        ->and(constraintsOf(wireFieldToSiblings(FixtureField::make('a')->requiredIfDeclined('terms'), ['terms' => 'on']), RequiredValue::class))->toBe([]);
 });
 
 it('requires the field unless the sibling matches, an absent sibling included', function (): void {
-    expect(constraintsOf(wireFieldToSiblings(FixtureField::make('a')->requiredUnless('status', 'draft'), ['status' => 'published']), NotBlank::class))->toHaveCount(1)
-        ->and(constraintsOf(wireFieldToSiblings(FixtureField::make('a')->requiredUnless('status', 'draft'), ['status' => 'draft']), NotBlank::class))->toBe([])
-        ->and(constraintsOf(wireFieldToSiblings(FixtureField::make('a')->requiredUnless('status', 'draft'), ['status' => null]), NotBlank::class))->toHaveCount(1);
+    expect(constraintsOf(wireFieldToSiblings(FixtureField::make('a')->requiredUnless('status', 'draft'), ['status' => 'published']), RequiredValue::class))->toHaveCount(1)
+        ->and(constraintsOf(wireFieldToSiblings(FixtureField::make('a')->requiredUnless('status', 'draft'), ['status' => 'draft']), RequiredValue::class))->toBe([])
+        ->and(constraintsOf(wireFieldToSiblings(FixtureField::make('a')->requiredUnless('status', 'draft'), ['status' => null]), RequiredValue::class))->toHaveCount(1);
 });
 
 it('requires the field with, with all, without and without all', function (): void {
-    expect(constraintsOf(wireFieldToSiblings(FixtureField::make('a')->requiredWith('x,y'), ['x' => 'set', 'y' => '']), NotBlank::class))->toHaveCount(1)
-        ->and(constraintsOf(wireFieldToSiblings(FixtureField::make('a')->requiredWith('x,y'), ['x' => '', 'y' => '']), NotBlank::class))->toBe([])
-        ->and(constraintsOf(wireFieldToSiblings(FixtureField::make('a')->requiredWithAll(['x', 'y']), ['x' => 'set', 'y' => '']), NotBlank::class))->toBe([])
-        ->and(constraintsOf(wireFieldToSiblings(FixtureField::make('a')->requiredWithAll(['x', 'y']), ['x' => 'set', 'y' => 'set']), NotBlank::class))->toHaveCount(1)
-        ->and(constraintsOf(wireFieldToSiblings(FixtureField::make('a')->requiredWithout('x'), ['x' => '']), NotBlank::class))->toHaveCount(1)
-        ->and(constraintsOf(wireFieldToSiblings(FixtureField::make('a')->requiredWithout('x'), ['x' => 'set']), NotBlank::class))->toBe([])
-        ->and(constraintsOf(wireFieldToSiblings(FixtureField::make('a')->requiredWithoutAll(['x', 'y']), ['x' => '', 'y' => 'set']), NotBlank::class))->toBe([])
-        ->and(constraintsOf(wireFieldToSiblings(FixtureField::make('a')->requiredWithoutAll(['x', 'y']), ['x' => '', 'y' => '']), NotBlank::class))->toHaveCount(1);
+    expect(constraintsOf(wireFieldToSiblings(FixtureField::make('a')->requiredWith('x,y'), ['x' => 'set', 'y' => '']), RequiredValue::class))->toHaveCount(1)
+        ->and(constraintsOf(wireFieldToSiblings(FixtureField::make('a')->requiredWith('x,y'), ['x' => '', 'y' => '']), RequiredValue::class))->toBe([])
+        ->and(constraintsOf(wireFieldToSiblings(FixtureField::make('a')->requiredWithAll(['x', 'y']), ['x' => 'set', 'y' => '']), RequiredValue::class))->toBe([])
+        ->and(constraintsOf(wireFieldToSiblings(FixtureField::make('a')->requiredWithAll(['x', 'y']), ['x' => 'set', 'y' => 'set']), RequiredValue::class))->toHaveCount(1)
+        ->and(constraintsOf(wireFieldToSiblings(FixtureField::make('a')->requiredWithout('x'), ['x' => '']), RequiredValue::class))->toHaveCount(1)
+        ->and(constraintsOf(wireFieldToSiblings(FixtureField::make('a')->requiredWithout('x'), ['x' => 'set']), RequiredValue::class))->toBe([])
+        ->and(constraintsOf(wireFieldToSiblings(FixtureField::make('a')->requiredWithoutAll(['x', 'y']), ['x' => '', 'y' => 'set']), RequiredValue::class))->toBe([])
+        ->and(constraintsOf(wireFieldToSiblings(FixtureField::make('a')->requiredWithoutAll(['x', 'y']), ['x' => '', 'y' => '']), RequiredValue::class))->toHaveCount(1);
 });
 
 it("emits the field's own required constraint, so a boolean field keeps NotNull", function (): void {
     $field = wireFieldToSiblings(Toggle::make('a')->requiredIf('status', 'published'), ['status' => 'published']);
 
     expect(constraintsOf($field, NotNull::class))->toHaveCount(1)
-        ->and(constraintsOf($field, NotBlank::class))->toBe([]);
+        ->and(constraintsOf($field, RequiredValue::class))->toBe([]);
 });
 
 it('emits no second required constraint for a field that is already required', function (): void {
     $field = wireFieldToSiblings(FixtureField::make('a')->required()->requiredIf('status', 'published'), ['status' => 'published']);
 
-    expect(constraintsOf($field, NotBlank::class))->toHaveCount(1);
+    expect(constraintsOf($field, RequiredValue::class))->toHaveCount(1);
 });
 
 it('never marks the field required, so no asterisk appears', function (): void {
@@ -716,7 +717,7 @@ it('prohibits combining with a filled sibling, naming it in the message', functi
 });
 
 it('emits the required constraint under filled()', function (): void {
-    expect(constraintsOf(wireField(FixtureField::make('a')->filled()), NotBlank::class))->toHaveCount(1)
+    expect(constraintsOf(wireField(FixtureField::make('a')->filled()), RequiredValue::class))->toHaveCount(1)
         ->and(constraintsOf(wireField(Toggle::make('a')->filled()), NotNull::class))->toHaveCount(1)
         ->and(wireField(FixtureField::make('a')->filled())->isRequired())->toBeFalse();
 });

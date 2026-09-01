@@ -10,6 +10,8 @@ use Sylament\Forms\Components\Concerns\CanBeInline;
 use Sylament\Forms\Components\Concerns\HasExtraInputAttributes;
 use Sylament\Schemas\State\Casts\BooleanStateCast;
 use Sylament\Schemas\State\Casts\Contracts\StateCast;
+use Symfony\Component\Validator\Constraint;
+use Symfony\Component\Validator\Constraints\NotBlank;
 use Symfony\Component\Validator\Constraints\Type;
 
 class Checkbox extends Field
@@ -44,12 +46,23 @@ class Checkbox extends Field
      * A checkbox never dehydrates null — its state cast is non-nullable and its
      * default is false — so a non-nullable `bool` target always accepts what it
      * produces. Deriving requirement from that target would silently mean "must
-     * be ticked": `NotBlank` rejects false, and the template emits native
-     * `required`. Only an explicit {@see required()} may say so.
+     * be ticked": the constraint below rejects false, and the template emits
+     * native `required`. Only an explicit {@see required()} may say so.
      */
     protected function isRequiredByRecord(): bool
     {
         return false;
+    }
+
+    /**
+     * `NotBlank` rather than the shared `RequiredValue`, which follows Laravel in
+     * reading false as present. The checkbox emits the native `required`
+     * attribute, which a browser enforces as "must be ticked", so a server
+     * constraint accepting false would contradict the markup.
+     */
+    protected function getRequiredConstraint(): Constraint
+    {
+        return new NotBlank();
     }
 
     /**

@@ -17,6 +17,7 @@ use Sylament\Forms\Tests\Unit\Uploads\TemporaryUploadsRig;
 use Sylament\Forms\Uploads\TemporaryUploadedFile;
 use Sylament\Forms\Uploads\TemporaryUploads;
 use Sylament\Forms\Validation\MinFileSize;
+use Sylament\Forms\Validation\RequiredValue;
 use Sylament\Schemas\Schema;
 use Sylament\Schemas\State\Casts\FileUploadStateCast;
 use Sylament\Support\Filesystem\FilesystemRegistry;
@@ -28,7 +29,6 @@ use Symfony\Component\Validator\Constraints\Count;
 use Symfony\Component\Validator\Constraints\Email;
 use Symfony\Component\Validator\Constraints\File;
 use Symfony\Component\Validator\Constraints\Image;
-use Symfony\Component\Validator\Constraints\NotBlank;
 
 afterEach(function (): void {
     TemporaryUploadsRig::cleanUp();
@@ -141,10 +141,10 @@ it('routes a user File constraint to the upload set and every other one to the c
 
 it('emits the required constraint exactly once, through the parent hook', function (): void {
     // The regression the override's placement exists for: overriding the public getter instead of
-    // `buildValidationConstraints()` would emit `NotBlank` here twice and skip the message layer.
+    // `buildValidationConstraints()` would emit `RequiredValue` here twice and skip the message layer.
     [$upload] = wireFileUpload(FixtureFileUpload::make('cover')->required());
 
-    expect(array_filter($upload->getValidationConstraints(), fn (object $constraint): bool => $constraint instanceof NotBlank))->toHaveCount(1);
+    expect(array_filter($upload->getValidationConstraints(), fn (object $constraint): bool => $constraint instanceof RequiredValue))->toHaveCount(1);
 });
 
 it('counts the collection between minFiles and maxFiles', function (): void {

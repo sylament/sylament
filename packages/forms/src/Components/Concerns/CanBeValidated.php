@@ -26,6 +26,7 @@ use Sylament\Forms\Validation\EndsWith;
 use Sylament\Forms\Validation\ExistingValue;
 use Sylament\Forms\Validation\MatchesField;
 use Sylament\Forms\Validation\Prohibited;
+use Sylament\Forms\Validation\RequiredValue;
 use Sylament\Forms\Validation\StartsWith;
 use Sylament\Forms\Validation\UniqueValue;
 use Sylament\Schemas\Components\Component;
@@ -45,7 +46,6 @@ use Symfony\Component\Validator\Constraints\Json;
 use Symfony\Component\Validator\Constraints\LessThan;
 use Symfony\Component\Validator\Constraints\LessThanOrEqual;
 use Symfony\Component\Validator\Constraints\MacAddress;
-use Symfony\Component\Validator\Constraints\NotBlank;
 use Symfony\Component\Validator\Constraints\Regex;
 use Symfony\Component\Validator\Constraints\Sequentially;
 use Symfony\Component\Validator\Constraints\Type;
@@ -1415,7 +1415,7 @@ trait CanBeValidated
 
     protected function getRequiredConstraint(): Constraint
     {
-        return new NotBlank();
+        return new RequiredValue();
     }
 
     /**

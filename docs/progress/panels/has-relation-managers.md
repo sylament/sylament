@@ -16,6 +16,17 @@ of its own — a table, its actions and its modals — rather than a fragment of
 page. What the page hands it is a record **key** and its own class-string; the
 [`RelationManager`](relation-manager.md) resolves the owner from those.
 
+The embedded manager is one of **two** ways a record page shows an association
+since M6 · 3. The other is [`ManageRelatedRecords`](manage-related-records.md), a
+routed page of its own reached through the record's
+[sub-navigation](has-sub-navigation.md) rather than a tab, which lists the same
+records and — with a `$relatedResource` — turns its Create/Edit actions into
+links into that resource's own [nested pages](nested-resources.md) instead of
+modals. Both hosts compose one tier,
+[`InteractsWithRelationshipTable`](interacts-with-relationship-table.md); what
+this trait owns is the **embedded** arm alone, and nothing here changed with that
+epic.
+
 **Status:** in progress — see the [status vocabulary](../README.md#statuses).
 
 Reference — the Filament source this is diffed against:
@@ -219,6 +230,14 @@ exists but is used nowhere in this repo and is unproven on a **nested** live
 component, so v1 ships the property plain. This sits with the tables-wide `#[Url]`
 gap rather than on its own: when URL-bound props are taken on across the toolkit,
 `?relation=` rides with them.
+
+Two things now wait on it rather than one.
+[`Resource::getIndexUrl()`'s parent arms](nested-resources.md#the-parent-arms-carry-no-relation-parameter)
+omit the `relation` parameter Filament appends to them, because it would be inert
+noise in a copyable URL — and that omission is what makes two breadcrumb URLs
+coincide on a nested page, so
+[a crumb goes unlinked](nested-resources.md#a-crumb-whose-url-the-trail-already-spends-renders-unlinked)
+until the binding lands.
 
 ### The server-mode tab bar has no overflow dropdown
 

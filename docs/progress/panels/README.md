@@ -179,7 +179,8 @@ The panel surface —
 | [`Resources\Pages\Page`](../../../packages/panels/src/Resources/Pages/Page.php) | [`Resources/Pages/Page.php`](../../../vendor/filament/filament/src/Resources/Pages/Page.php), [`Pages/Concerns/InteractsWithHeaderActions.php`](../../../vendor/filament/filament/src/Pages/Concerns/InteractsWithHeaderActions.php) | in progress | [Resource pages](#resource-pages) |
 | [`Resources\Pages\ListRecords`](../../../packages/panels/src/Resources/Pages/ListRecords.php) | [`Resources/Pages/ListRecords.php`](../../../vendor/filament/filament/src/Resources/Pages/ListRecords.php) | in progress | [ListRecords](#listrecords) |
 | [`Resources\Pages\CreateRecord`](../../../packages/panels/src/Resources/Pages/CreateRecord.php) | [`Resources/Pages/CreateRecord.php`](../../../vendor/filament/filament/src/Resources/Pages/CreateRecord.php) | in progress | [CreateRecord](#createrecord) |
-| [`Resources\Pages\EditRecord`](../../../packages/panels/src/Resources/Pages/EditRecord.php) | [`Resources/Pages/EditRecord.php`](../../../vendor/filament/filament/src/Resources/Pages/EditRecord.php), [`Resources/Pages/Concerns/InteractsWithRecord.php`](../../../vendor/filament/filament/src/Resources/Pages/Concerns/InteractsWithRecord.php) | in progress | [EditRecord](#editrecord) |
+| [`Resources\Pages\EditRecord`](../../../packages/panels/src/Resources/Pages/EditRecord.php) | [`Resources/Pages/EditRecord.php`](../../../vendor/filament/filament/src/Resources/Pages/EditRecord.php) | in progress | [EditRecord](#editrecord) |
+| [`Resources\Pages\ManageRelatedRecords`](../../../packages/panels/src/Resources/Pages/ManageRelatedRecords.php) | [`Resources/Pages/ManageRelatedRecords.php`](../../../vendor/filament/filament/src/Resources/Pages/ManageRelatedRecords.php) | in progress | [ManageRelatedRecords](manage-related-records.md) |
 | [`GlobalSearch\GlobalSearchResult`](../../../packages/panels/src/GlobalSearch/GlobalSearchResult.php), [`GlobalSearchResults`](../../../packages/panels/src/GlobalSearch/GlobalSearchResults.php) | [`GlobalSearch/GlobalSearchResult.php`](../../../vendor/filament/filament/src/GlobalSearch/GlobalSearchResult.php), [`GlobalSearchResults.php`](../../../vendor/filament/filament/src/GlobalSearch/GlobalSearchResults.php) | in progress | [global-search.md](global-search.md) |
 | [`GlobalSearch\Providers\DefaultGlobalSearchProvider`](../../../packages/panels/src/GlobalSearch/Providers/DefaultGlobalSearchProvider.php) and its [contract](../../../packages/panels/src/GlobalSearch/Providers/Contracts/GlobalSearchProvider.php) | [`GlobalSearch/Providers`](../../../vendor/filament/filament/src/GlobalSearch/Providers) | in progress | [global-search.md](global-search.md) |
 | [`GlobalSearch\GlobalSearchProviderRegistry`](../../../packages/panels/src/GlobalSearch/GlobalSearchProviderRegistry.php) | no Filament counterpart — a provider is resolved with `app($panel->getGlobalSearchProvider())` | in progress | [global-search.md](global-search.md#the-provider-is-resolved-through-a-tagged-registry-rather-than-app) |
@@ -199,7 +200,10 @@ Deferred, all todo:
 - `key()` / `getKey()` — the identity a nested item is addressed by; it only
   earns its keep once items nest.
 - `parentItem()` / `getParentItem()` and `childItems()` / `getChildItems()` /
-  `isChildItemsActive()` — the nesting arm, deferred whole with `key`.
+  `isChildItemsActive()` — the nesting arm, deferred whole with `key`, which is
+  what makes
+  [the band's `processParentNavigationItems()` pass](has-sub-navigation.md#three-v1-skips-item-nesting-collapsible-groups-and-badge-tooltips)
+  wait too.
 - The badge tooltip (`HasBadgeTooltip`) — not ported in `support` yet.
 - Extra attributes. `Sylament\Support\Components\Concerns\HasExtraAttributes` is
   ported, but `NavigationItem` does not compose it: nothing in the sidebar
@@ -292,6 +296,22 @@ nothing, so a plain panel page — the [`Dashboard`](#dashboard) included — he
 no trail, and [`Page/index.html.twig`](#routing) renders no `Header` at all
 unless something else fills it.
 
+Two more members arrived with M6 · 3. `shouldRegisterNavigation()` and its
+`protected static bool $shouldRegisterNavigation = true` are Filament's, and the
+[sub-navigation band](has-sub-navigation.md) is so far their **only** consumer:
+`Panel::getNavigation()`'s page loop does not consult the flag, where Filament's
+`registerNavigationItems()` early-returns on it, so a page opting out today is
+still listed in the **sidebar** and absent only from a band. That is a one-line
+gap in the panel loop — the resource half of the same guard is already there —
+and it is recorded rather than closed because this epic touched that loop only
+for [nested resources](nested-resources.md#the-suppressions-sit-where-the-trail-already-put-them).
+
+The base also composes [`Pages\Concerns\HasSubNavigation`](has-sub-navigation.md), so
+**every** panel page can draw a band: `getSubNavigation()` returns `[]` by
+default, `getCachedSubNavigation()` normalizes whatever a page answers with, and
+`generateNavigationItems()` builds one item per sibling page. The page's own
+`$subNavigationPosition` static is the first rung of the position ladder.
+
 Deferred, all todo:
 
 - The `BasePage` split — Filament separates `BasePage` (the render/lifecycle
@@ -337,13 +357,17 @@ pick the mini one for.
 ### Panel
 
 The definition surface a panel provider configures, plus the two services that
-collect and locate panels. `Panel` composes eight of Filament's `Panel/Concerns`
+collect and locate panels. `Panel` composes nine of Filament's `Panel/Concerns`
 traits — `HasId` (write-once id, fatal when read unset), `HasRoutes` (the path
 only), `HasComponents` ([`pages()` and `resources()`, each accumulating,
 de-duplicated and
 re-indexed](#getpages-re-indexes-where-filament-keeps-array_uniques-gapped-keys)),
 `HasNavigation` (`navigationGroups()`/`navigationItems()` registration plus
-`getNavigation()`), `HasSidebar` (`collapsibleNavigationGroups()` alone — the
+`getNavigation()`, whose resource loop also
+[leaves a nested resource out](nested-resources.md#the-suppressions-sit-where-the-trail-already-put-them)),
+`HasSubNavigation` (`subNavigationPosition()` alone — the panel-wide default the
+[band's position ladder](has-sub-navigation.md#the-position-is-one-instance-method-with-no-static-twin)
+ends at), `HasSidebar` (`collapsibleNavigationGroups()` alone — the
 panel-level default [`NavigationGroup::isCollapsible()`](#navigationgroup) falls
 back to), `HasBrandName`, `HasBrandLogo` (`brandLogo()`/`darkModeBrandLogo()`,
 each `string|Markup|Closure|null` under the standing `Htmlable` → `Markup`
@@ -419,7 +443,7 @@ route loader is where a non-`Resource` entry is caught. Both readers are live:
 [`PanelRouteLoader`](#routing) mounts every page a registered resource declares,
 and `getNavigation()` above merges the item that resource contributes.
 
-Deferred, all todo: the other 27 `Panel/Concerns` traits (auth, tenancy, colors,
+Deferred, all todo: the other 26 `Panel/Concerns` traits (auth, tenancy, colors,
 assets, render hooks, middleware, plugins, …); `discoverResources()` /
 `discoverPages()`, Filament's filesystem-scanning registration arms, which the
 [tag-collected](#resources-are-collected-from-a-tag-not-discovered-on-the-filesystem)
@@ -504,9 +528,14 @@ What is ported, by cluster:
   path as data.
 - **Query and record binding.** `getRecordQuery()` is the
   [`getEloquentQuery()`](../renames.md#renames) port and the single overridable
-  base query. `resolveRecordRouteBinding()` resolves a URL segment
+  base query. `resolveRecordRouteBinding(int|string $key, ?Closure $modifyQuery = null)`
+  resolves a URL segment
   [through that query rather than `EntityManager::find()`](#a-record-is-resolved-through-the-resources-own-query),
-  reading the root alias off the builder so an overridden query still works, and
+  reading the root alias off the builder so an overridden query still works — the
+  second parameter is Filament's, restored with the
+  [nested resources](nested-resources.md) it belongs to, and it may answer with a
+  **different** builder, which is how a parent scope replaces the query rather
+  than adding a predicate to it — and
   `getRecordRouteKey()` is the generation side of the same key —
   `$recordRouteKeyName` when set, else the single identifier value off
   `ClassMetadata`. A composite identifier throws on both sides.
@@ -514,7 +543,11 @@ What is ported, by cluster:
   `UrlGeneratorInterface::generate()`, with Filament's `blank($name)` → index
   fallback and its verbatim "does not have an [index] page" message.
   `getRouteBaseName(Panel)` composes `sylament.<panel>.resources.<slug>` in
-  [exactly one place](#the-route-base-name-is-composed-in-one-place).
+  [exactly one place](#the-route-base-name-is-composed-in-one-place). All three
+  grew a nested arm with M6 · 3: the base name nests under the parent's plus the
+  kebab-cased relationship, `getUrl()` keys ancestor **objects** and takes
+  `shouldGuessMissingParameters`, and `getIndexUrl()` answers from the parent's
+  pages — [nested-resources.md](nested-resources.md) carries all three.
 - **Navigation.** `getNavigationItems(Panel)` contributes at most one item, only
   when an `index` page exists, matching Filament — including the
   `$activeNavigationIcon ?? $navigationIcon` fallback and the
@@ -538,8 +571,13 @@ What is ported, by cluster:
   hook here is — [HasRelationManagers](has-relation-managers.md#getrelations-is-an-instance-method-like-every-other-resource-hook).
 
 Deferred, all todo: authorization (`canAccess()` and the whole `HasAuthorization`
-cluster), widgets, sub-navigation, clusters, tenancy,
-nested/parent resources, and resource configurations.
+cluster), widgets, clusters, tenancy, and resource configurations. Two of that
+list came off it with M6 · 3: **nested/parent resources** ship as
+[`Resource\Concerns\BelongsToParent`](nested-resources.md) — the `$parentResource`
+static, the registration, the derived relationship name and route parameter, the
+parent-scoped query and the attach — and **sub-navigation** as
+`getRecordSubNavigation(Page)` plus `getSubNavigationPosition()`, the resource
+rungs of [the band](has-sub-navigation.md).
 `configureTable()`'s seeding of table-level labels landed with the tables label
 surface — on [`ListRecords::table()`](#the-list-pages-table-is-stamped-query-first-and-resource-last),
 the instance seam that stands in for Filament's static one. The title-case **toggle** is
@@ -550,22 +588,33 @@ the static silently no-ops; the two getters themselves are ported.
 `NavigationItem`'s `key()`, `parentItem()` and `badgeTooltip()` are skipped here
 because [they are not ported on the item yet](#navigationitem);
 `shouldRegisterNavigation()` is ported and, as in Filament, is consulted by the
-panel-side loop rather than by `getNavigationItems()` itself. So is
-`Resource\Concerns\HasBreadcrumbs` — Filament reaches the resource crumb's label
-through `static::$breadcrumb ?? static::getTitleCasePluralModelLabel()`, where
-ours calls `getTitleCasePluralRecordLabel()` directly from
-[the page base](#resource-pages), leaving the resource-level override hook a
-missing API rather than a divergence.
+panel-side loop rather than by `getNavigationItems()` itself.
+`Resource\Concerns\HasBreadcrumbs` is ported too, and it closes what this section
+used to record as a missing API: `protected static ?string $breadcrumb` with
+`getBreadcrumb(): string` answering `static::$breadcrumb ??
+getTitleCasePluralRecordLabel()`, which is Filament's default verbatim. Every
+crumb the [page base](#resource-pages) builds for a resource — this one's and
+each ancestor's — reads it, so a resource can rename itself in the trail without
+touching a page.
 
 One consequence of the breadcrumb trail lands here rather than on the page: a
-resource with no `index` page now **throws** the moment any of its pages
-renders, where before it merely contributed no navigation item. The trail's
-first crumb is `getIndexUrl()`, and that is Filament's verbatim *"does not have
-an [index] page. Define [getIndexUrl()] for alternative routing"* `LogicException`
+resource with no `index` page **throws** the moment any of its pages renders,
+where before the trail existed it merely contributed no navigation item. The
+trail's first crumb is `getIndexUrl()`, and that is Filament's verbatim *"does
+not have an [index] page. Define [getIndexUrl()] for alternative routing"*
+`LogicException`
 ([`CanGenerateUrls.php:122-123`](../../../vendor/filament/filament/src/Resources/Resource/Concerns/CanGenerateUrls.php)) —
 not a `RouteNotFoundException`, which is what Filament's own unconditional
 `getResourceUrl()` call would raise a layer further down. Parity, and the
 message names the fix.
+
+M6 · 3 narrows which resources can reach it. A **nested** resource's index is its
+parent's page, so `getIndexUrl()` answers from
+[four parent arms](nested-resources.md#the-parent-arms-carry-no-relation-parameter)
+before it ever tests `hasPage('index')` — which is the shape a generated nested
+resource has, `create` and `edit` and nothing else. What still throws is a
+resource that names no parent and registers no index page, which is the case the
+message was always about.
 
 Divergences, each with its own entry:
 [the record class is declared, never derived](#the-record-class-is-declared-never-derived-from-an-application-namespace),
@@ -577,7 +626,7 @@ Divergences, each with its own entry:
 [resources are collected from a tag, not discovered on the filesystem](#resources-are-collected-from-a-tag-not-discovered-on-the-filesystem),
 [a record is resolved through the resource's own query](#a-record-is-resolved-through-the-resources-own-query),
 [`getRecordTitle()` returns a plain string](#getrecordtitle-returns-a-plain-string),
-[`getUrl()` drops three parameters and widens a fourth](#geturl-drops-three-parameters-and-widens-a-fourth),
+[`getUrl()` drops two parameters and widens a third](#geturl-drops-two-parameters-and-widens-a-third),
 [active state is a route-name prefix match](#active-state-is-a-route-name-prefix-match),
 and [a `new`-built resource fails fast](#a-new-built-resource-fails-fast-rather-than-degrading).
 
@@ -616,7 +665,9 @@ silently shadowed by `HasActions`' null-returning default in any subclass that
 re-`use`d the trait —
 [the actions host sits on the base because a trait outranks an inherited method](#the-actions-host-sits-on-the-base-because-a-trait-outranks-an-inherited-method).
 
-Eleven members. `protected static string $resource` is the class-string a subclass
+Eleven members, plus what M6 · 3 added — the parent-record chain, the breadcrumb
+walk, `getDefaultActionRelationship()`, the sub-navigation position and item seam,
+and the `panelId` prop below. `protected static string $resource` is the class-string a subclass
 declares and `getResource()` reads — untyped-default exactly as in Filament, so a
 page that forgets it fails on the first read rather than resolving something
 plausible. `route(string $path): PageRegistration` is the registration factory a
@@ -705,8 +756,11 @@ for hosts with no resource behind them.
 
 `resolveMountedActionRecord(array $descriptor)` is the eighth: the class-body
 override that resolves a mounted frame's record key through the resource's own
-scoped query rather than a bare lookup, keeping both of the trait's skip guards
-and replacing its third —
+scoped query rather than a bare lookup — and, since M6 · 3, through
+[the page's parent scope](nested-resources.md#one-scope-serves-the-route-key-and-the-unchecksummed-action-key)
+as well, because that key is client-supplied and unchecksummed where the route
+key is not. It keeps both of the trait's skip guards
+and replaces its third —
 [the whole shape is a semantics note](#a-mounted-frames-record-key-resolves-through-the-resources-own-query).
 `callHook(string $hook)` is the ninth, Filament's convention dispatcher for the
 page lifecycle: [a hook is a method name, not a registration](#a-page-lifecycle-hook-is-a-method-name-not-a-registration).
@@ -734,13 +788,11 @@ The last two are the breadcrumb pair, and they are what puts a trail above every
 resource page. `protected static ?string $breadcrumb` with
 `getBreadcrumb(): string|Markup` is Filament's default verbatim
 (`static::$breadcrumb ?? $this->getTitle()`), and `getBreadcrumbs()` overrides
-the [base page's](#page) empty map with the two-crumb trail Filament builds:
-the resource's index URL keyed to its title-case plural label, then this page's
-own crumb as an **int**-keyed entry, which is what makes the last crumb plain
-text rather than a link to the page you are on. The three concrete pages narrow
-`getBreadcrumb()` to `string` and answer `List` / `Create` / `Edit` — v5's
-`list-records.breadcrumb`, `create-record.breadcrumb` and
-`edit-record.breadcrumb` lang values as literals, the same call
+the [base page's](#page) empty map with the trail Filament builds. The three
+concrete pages narrow `getBreadcrumb()` to `string` and answer
+`List` / `Create` / `Edit` — v5's `list-records.breadcrumb`,
+`create-record.breadcrumb` and `edit-record.breadcrumb` lang values as literals,
+the same call
 [the notification titles](#the-create-and-save-notification-titles-are-literals-not-translation-keys)
 made.
 
@@ -754,6 +806,43 @@ markup and then let the template escape it, breaking the
 narrowed overrides on the three concrete pages keep the common case a plain
 `string`.
 
+M6 · 3 filled that trail in. `getBreadcrumbs()` is now
+`[...getResourceBreadcrumbs(), $this->getBreadcrumb()]`, and
+`getResourceBreadcrumbs()` — with `hasResourceBreadcrumbs()` beside it, Filament's
+pair — walks the page's **already-resolved** ancestor chain root-first,
+contributing each ancestor's own listing and then the record itself, and ending
+with this resource's listing. It costs no queries beyond the chain resolution the
+page did anyway. A resource's listing crumb reads
+[`Resource::getBreadcrumb()`](#resources) rather than its plural label directly,
+so the resource-level override finally has a reader, and each record crumb links
+to that resource's `view` page, else its `edit` page, else nothing —
+[Filament's ladder with the authorization arms flattened](interacts-with-record.md#the-crumb-links-through-an-ungated-ladder).
+Two helpers carry it: `appendBreadcrumb()`, which emits a crumb whose URL the
+trail already spends as an int-keyed (unlinked) entry
+[rather than letting a repeated key collapse two crumbs into one](nested-resources.md#a-crumb-whose-url-the-trail-already-spends-renders-unlinked),
+and `getRecordBreadcrumbUrl()`, the view → edit → null ladder itself. A **record**
+page inserts its own record crumb between the two through
+[`InteractsWithRecord`](interacts-with-record.md#the-record-crumb-lands-on-plain-resources-too-and-that-is-new-behaviour),
+which is new behaviour for plain resources as well as nested ones: a titled
+resource's edit page trails three crumbs where it trailed two.
+
+A plain resource page therefore still trails
+`Articles → Create`; a titled record page trails `Articles → Alpha → Edit`; and a
+nested one trails the whole chain,
+`Articles → Genesis → Sections → In the beginning → Edit`.
+
+One `LiveProp` of the base's own arrived with M6 · 3, and it is not about
+nesting: `public ?string $panelId`, minted by its own getter's dehydration read
+and stamped back onto the request by a `#[PostHydrate]` hook, so a live request —
+which reaches ux's route and therefore carries no `_sylament_panel` attribute —
+resolves the panel the page was **opened in** rather than the default one. It is
+the [`GlobalSearch`](global-search.md#the-component-restores-its-panel-onto-a-live-request)
+mechanism ported one tier down, and it closes
+[the recorded multi-panel URL defect](#url-generation-inside-a-live-action-resolves-the-default-panel)
+for resource pages. Nesting is what forced it: on a non-default panel every live
+re-render of a nested page threw `RouteNotFoundException` for the default panel's
+route name, so the prop was a prerequisite rather than an improvement.
+
 Two divergences hang off this base:
 
 - [`route()` returns a registration rather than registering a route](#route-returns-a-registration-rather-than-registering-a-route)
@@ -763,8 +852,14 @@ Two divergences hang off this base:
   — every static describing a panel-mounted page is inherited and wrong here.
 
 Deferred, all todo: `getResourcePageName()` (Filament's reverse lookup of a
-page's own `getPages()` key), sub-navigation, the parent-record and
-authorization concerns, and `ViewRecord` / `ManageRecords` / `ManageRelatedRecords`.
+page's own `getPages()` key —
+[this epic deliberately routed around it](has-sub-navigation.md#a-resource-page-item-is-built-by-the-band-because-a-page-cannot-name-its-own-route)
+rather than forcing the parked decision), the authorization concern, and
+`ViewRecord` / `ManageRecords`. Three of that list came off it with M6 · 3:
+sub-navigation ([the position override and the band's item seam](has-sub-navigation.md)),
+the parent-record concern ([`InteractsWithParentRecord`](nested-resources.md), on
+this base exactly as Filament composes its own), and
+[`ManageRelatedRecords`](manage-related-records.md).
 
 ### ListRecords
 
@@ -817,6 +912,13 @@ trait's own package, not here.
 - `table(Table $table): Table` stamps the resource's query and its record
   labels and title attribute, then hands the table to the resource —
   [query first, resource last](#the-list-pages-table-is-stamped-query-first-and-resource-last).
+  Since M6 · 3 the query has a second arm: a list page hanging under a parent
+  record is seeded with
+  [that parent's relationship query](nested-resources.md#the-nested-list-page-ships-unexercised-by-any-shipped-page)
+  instead, rooted at the same `record` alias, so nothing else in the stamp
+  changes. `mount(array $parentRecords = [])` is declared for it — nothing here
+  resolves at mount, but a page that scopes its own query should not depend on
+  that staying true.
 - `getTitle()` is `static::$title ?? $resource->getTitleCasePluralRecordLabel()`,
   Filament verbatim with the static hop replaced by the instance one. It runs
   **before** the component mounts as well: [`PageController`](#routing) reads it
@@ -916,9 +1018,11 @@ Deferred, all todo: tabs (`HasTabs`, `$activeTab`, `modifyQueryWithActiveTab()`)
 `#[Url]` query-string binding of the browsing state — Filament url-binds six
 props and none of our tables props are url-bound either, so this is a tables-wide
 gap rather than a list-page one — `recordUrl` / `recordAction` row-click
-defaulting (see the divergence), the parent-record scoping arm, the deprecated
+defaulting (see the divergence), the deprecated
 `getTableQuery()` / `modelLabel()` seeding, `content()` and its `EmbeddedTable`,
-and the `ManageRecords` subclass.
+and the `ManageRecords` subclass. The parent-record scoping arm came off that
+list with M6 · 3, and the page partial gained
+[the sub-navigation band](has-sub-navigation.md) with the other three.
 
 Three divergences are the list page's:
 [the table is stamped query-first and resource-last](#the-list-pages-table-is-stamped-query-first-and-resource-last),
@@ -951,7 +1055,9 @@ same container-registration `LogicException`
 setter again rather than sharing a trait — two classes, and Filament keeps its
 record handlers per page too.
 
-- `mount()` is `callHook('beforeFill')`, `$this->getSchema('form')->fill()` and
+- `mount(array $parentRecords = [])` assigns the ancestor keys first — the
+  [chain is a mount argument everywhere](nested-resources.md#the-chain-rides-one-liveprop-of-keys-assigned-inside-mount)
+  — then `callHook('beforeFill')`, `$this->getSchema('form')->fill()` and
   `callHook('afterFill')`. The fill takes no argument, so `Schema::fill(null)`
   hydrates with `applyDefaults: true` and every component's `default()` lands;
   there is no fill mutator here, because Filament has none on its create page
@@ -1008,7 +1114,20 @@ on the page the browser lands on.
 
 `getRedirectUrl()` is the `edit` page when the resource has one, else the index —
 Filament's chain with the panel-level `getResourceCreatePageRedirect()` setting,
-the `view` arm and the two `can*()` guards all absent with their features.
+the `view` arm and the two `can*()` guards all absent with their features. Both
+arms spread the page's `parentRecords`, so a nested create lands on the nested
+edit page rather than raising a missing-parameter exception.
+
+`handleRecordCreation()` gained the parent arm with M6 · 3: with a parent record
+in hand it calls
+[`Resource::attachRecordToParent()`](nested-resources.md#the-attach-lands-on-the-resource-and-writes-the-owning-side-in-memory)
+before the `persist()`/`flush()` pair, so the new record joins the parent's
+association in the same flush — an association the mapping refuses to leave empty
+therefore fails the form rather than the write. A **modal** create on a nested
+page reaches the same place from the other side: the resource-page base answers
+`getDefaultActionRelationship()` with the parent relationship for a
+`CreateAction`, which is the hook
+[`CreateAction`](../actions/create-action.md) already consulted.
 
 **The template.** `partials/CreateRecord/index.html.twig` is the page root
 (`sy-pa-page sy-pa-resource-create-record-page`), the same
@@ -1031,8 +1150,9 @@ page's submit-and-stay button), database
 transactions (`CanUseDatabaseTransactions`), `previousUrl` and the
 cancel-via-history action, the unsaved-changes alert, the record events, the
 authorization arms, `getFormActions()` as `Action` objects (the submit is a plain
-`<button type="submit">` here), `content()` and its `Form`/`EmbeddedSchema`
-wrapper, and the parent-record association.
+`<button type="submit">` here), and `content()` and its `Form`/`EmbeddedSchema`
+wrapper. The parent-record association came off that list with M6 · 3, and the
+partial gained [the sub-navigation band](has-sub-navigation.md).
 
 Three divergences are shared with the edit page:
 [the notification titles are literals](#the-create-and-save-notification-titles-are-literals-not-translation-keys),
@@ -1049,17 +1169,30 @@ abstract class EditRecord extends Page implements InteractsWithSchemas
 {
     use HasRelationManagers;   // Sylament\Panels\Resources\Pages\Concerns
     use HasSchemas;            // Sylament\Schemas\Concerns
+    use InteractsWithRecord;   // Sylament\Panels\Resources\Pages\Concerns
 }
 ```
 
-Two `LiveProp`s: `$data` as on the create page, and `public ?string $record` —
-**the route key, never the record**. Both halves of that are constrained by the
-wire, and each has its own divergence:
+Two `LiveProp`s: `$data` here, and `public ?string $record` —
+**the route key, never the record** — on
+[`InteractsWithRecord`](interacts-with-record.md), which M6 · 3 extracted out of
+this class unchanged so `ManageRelatedRecords` (and `ViewRecord` at M5 · 2) could
+compose the same six members. Both halves of the record prop are constrained by
+the wire, and each has its own divergence:
 [the record prop carries the key and dehydrates through a bridge](#the-record-prop-carries-the-route-key-and-needs-a-dehydration-bridge).
 `protected ?object $resolvedRecord` memoises the resolution for the request.
 `#[Required] setRecordPersistence()` is the create page's, verbatim.
 
-- `mount(int|string $record)` assigns `(string) $record`, then calls
+What moved to the trait, verbatim: the `$record` prop and `dehydrateRecord()`,
+`hasRecord()`, `getRecordKey()`, `getRecord()` and `getRecordTitle()`. What the
+trait adds beyond them is this page's too — the record's own breadcrumb and the
+`getSubNavigation()` / `getSubNavigationParameters()` bridge to
+[the band](has-sub-navigation.md). The extraction landed with **zero test
+edits**, which is the whole evidence that it preserved behaviour.
+
+- `mount(int|string $record, array $parentRecords = [])` delegates to the trait's
+  `mountRecord()` — the parent keys assigned first, then the record key —
+  and calls
   `fillForm()`: `callHook('beforeFill')`, a fill from
   `mutateFormDataBeforeFill($schema->getStateFromRecord($record))`, and
   `callHook('afterFill')`. `fillForm()` is Filament's own method name, kept as a
@@ -1071,7 +1204,8 @@ wire, and each has its own divergence:
   parameters arrive as strings ([`componentProps`](#routing)), so the cast is a
   formality for a hand-mounted component.
 - `getRecord(): object` resolves through
-  `Resource::resolveRecordRouteBinding($key)` and memoises, throwing
+  `Resource::resolveRecordRouteBinding($key, $this->getParentRecordScope())` and
+  memoises, throwing
   `NotFoundHttpException` for a missing key and for a key that matches nothing.
   That is the whole 404 story: `PageController`
   [unwraps an `HttpExceptionInterface` out of Twig's render error](#a-mount-time-http-exception-is-unwrapped-from-twigs-render-error),
@@ -1121,7 +1255,7 @@ The toast then arrives on the same round trip: notifications'
 dispatches `sylament:notification` as a browser event, which the document
 outlet's controller shows.
 
-`getRecordTitle()` is `InteractsWithRecord::getRecordTitle()` plus one guard: it
+`getRecordTitle()` is the trait's, and it is Filament's plus one guard: it
 answers the resource's title-case record label when `$this->record` is null,
 because `getTitle()` is read off an **un-mounted** page for the document
 `<title>`. That guard is not a nicety —
@@ -1141,7 +1275,9 @@ edit-page GET.
 - `getDefaultActionRecordTitle()` is the already-guarded `getRecordTitle()`, so a
   mounted action's modal heading names the record rather than the record type.
 - `getDefaultActionSuccessRedirectUrl()` answers the resource's index URL for a
-  `DeleteAction` and `null` for everything else — the one non-null body of the
+  `DeleteAction` and `null` for everything else — spreading the page's
+  `parentRecords` into it, so a delete on a nested page lands on the parent's
+  page rather than on a URL missing an ancestor — the one non-null body of the
   hook anywhere in Filament's panels (it lives on the record-page concern edit
   and view share, and `ManageRelatedRecords` only *narrows* it, returning null
   for a table-context action), and what sends a header delete back to the list
@@ -1174,7 +1310,9 @@ edit-page GET.
 **The template.** `partials/EditRecord/index.html.twig` is the create page's with
 `live_action('save:prevent', event: 'submit')` and a `Save` button — same root
 class family (`sy-pa-resource-edit-record-page`), same required record-level error
-outlet, same `Modals` outlet — plus one line the create page has no use for:
+outlet, same `Modals` outlet, same
+[sub-navigation band](has-sub-navigation.md#an-empty-band-never-resolves-a-panel)
+around `sy-pa-page-content` — plus one line the create page has no use for:
 `{{ renderSchema('content') }}`, **after** `</form>`, where the relation managers
 render. After rather than inside, because a manager hosts forms of its own and a
 nested `<form>` is invalid HTML the browser silently unnests.
@@ -1185,8 +1323,15 @@ database transactions, `previousUrl` and cancel-via-history, the unsaved-changes
 alert, the record events, the authorization arms, the combined content tab that
 puts the form itself in the relation-manager tab bar
 ([HasRelationManagers](has-relation-managers.md#the-combined-content-tab-does-not-port)),
-`getFormActions()` as `Action` objects, and the navigation-icon /
-navigation-label statics Filament's edit page carries for sub-navigation.
+`getFormActions()` as `Action` objects, and the `getNavigationIcon()` /
+`getNavigationLabel()` overrides Filament's edit page carries **for**
+sub-navigation — which now have a consumer, so the gap is visible: an edit page
+in a band is labelled by
+[the inherited chain](#page) (`$navigationLabel`, then `$title`, then the
+humanized class basename, i.e. *Edit Article* for an `EditArticle` page) where
+Filament labels it *Edit* and gives it a pencil-square glyph. A page declaring
+the two statics gets Filament's look today; porting the overrides is what makes
+it the default.
 
 Divergences, the three shared with the create page plus six of its own:
 [the notification titles are literals](#the-create-and-save-notification-titles-are-literals-not-translation-keys),
@@ -1216,6 +1361,10 @@ they sit per subsystem:
 | [`DependencyInjection\Compiler\PageComponentPass`](../../../packages/panels/src/DependencyInjection/Compiler/PageComponentPass.php) | [`Panel/Concerns/HasComponents.php`](../../../vendor/filament/filament/src/Panel/Concerns/HasComponents.php) — `registerLivewireComponents()` / `queueLivewireComponentForRegistration()` | in progress | every `Page` service is autoconfigured `sylament.panels.page`; the pass throws for a page class missing the bare `#[AsLiveComponent]` UX reflects for, clears the attribute-derived `twig.component` tag and re-adds a live one keyed by `Page::getComponentName()`, rendering through `template_from_method: getTemplate`; it also builds the class-keyed `ServiceLocator` `PageController` reads pages from — [the attribute and the pass, and why both](#pages-register-as-live-components-through-a-compiler-pass-over-a-per-class-attribute) |
 | [`DependencyInjection\Compiler\RelationManagerComponentPass`](../../../packages/panels/src/DependencyInjection/Compiler/RelationManagerComponentPass.php) | [`Panel/Concerns/HasComponents.php`](../../../vendor/filament/filament/src/Panel/Concerns/HasComponents.php) — the same Livewire component registration, which Filament reaches for relation managers through a resource's `getRelations()` | in progress | every `RelationManager` service is autoconfigured `sylament.panels.relation_manager`, and the pass is `PageComponentPass` minus the controller locator — [the attribute, the tag swap, and why a manager needs both](relation-manager.md#a-manager-must-carry-aslivecomponent-and-the-pass-enforces-it) |
 | [`Resources\Pages\Concerns\HasRelationManagers`](../../../packages/panels/src/Resources/Pages/Concerns/HasRelationManagers.php) (+ [`Resource::getRelations()`](../../../packages/panels/src/Resources/Resource.php) and [`EditRecord::content()`](../../../packages/panels/src/Resources/Pages/EditRecord.php)) | [`Resources/Pages/Concerns/HasRelationManagers.php`](../../../vendor/filament/filament/src/Resources/Pages/Concerns/HasRelationManagers.php), [`Resources/Resource.php`](../../../vendor/filament/filament/src/Resources/Resource.php) `getRelations()` | in progress | the registrations a record page mounts, filtered by the record, and the one component that carries them — a tab bar, a bare embed, a group's embeds, or a hidden group — [HasRelationManagers](has-relation-managers.md) |
+| [`Resources\Pages\Concerns\InteractsWithRecord`](../../../packages/panels/src/Resources/Pages/Concerns/InteractsWithRecord.php) | [`Resources/Pages/Concerns/InteractsWithRecord.php`](../../../vendor/filament/filament/src/Resources/Pages/Concerns/InteractsWithRecord.php) | in progress | the record a page is opened on — the key on the wire, the scoped lazy resolution, the title, the record crumb and the sub-navigation bridge, extracted out of `EditRecord` for the second and third record pages — [InteractsWithRecord](interacts-with-record.md) |
+| [`Resource\Concerns\BelongsToParent`](../../../packages/panels/src/Resources/Resource/Concerns/BelongsToParent.php) (+ [`Resources\ParentResourceRegistration`](../../../packages/panels/src/Resources/ParentResourceRegistration.php), [`Pages\Concerns\InteractsWithParentRecord`](../../../packages/panels/src/Resources/Pages/Concerns/InteractsWithParentRecord.php)) | [`Resources/Resource/Concerns/BelongsToParent.php`](../../../vendor/filament/filament/src/Resources/Resource/Concerns/BelongsToParent.php), [`ParentResourceRegistration.php`](../../../vendor/filament/filament/src/Resources/ParentResourceRegistration.php), [`Resources/Pages/Concerns/InteractsWithParentRecord.php`](../../../vendor/filament/filament/src/Resources/Pages/Concerns/InteractsWithParentRecord.php) | in progress | a resource mounted under its parent's records: the derived relationship, the nested routes, the scoped bindings, the attach and the two suppressions — [nested-resources.md](nested-resources.md) |
+| [`Resources\Concerns\InteractsWithRelationshipTable`](../../../packages/panels/src/Resources/Concerns/InteractsWithRelationshipTable.php) | [`Resources/Concerns/InteractsWithRelationshipTable.php`](../../../vendor/filament/filament/src/Resources/Concerns/InteractsWithRelationshipTable.php) | in progress | the tier both relationship-table hosts compose — the association, the title, and the schemas, labels and page URLs a `$relatedResource` answers with — [interacts-with-relationship-table.md](interacts-with-relationship-table.md) |
+| [`Pages\Concerns\HasSubNavigation`](../../../packages/panels/src/Pages/Concerns/HasSubNavigation.php) (+ [`Pages\Enums\SubNavigationPosition`](../../../packages/panels/src/Pages/Enums/SubNavigationPosition.php), [`Panel\Concerns\HasSubNavigation`](../../../packages/panels/src/Panel/Concerns/HasSubNavigation.php)) | [`Pages/Concerns/HasSubNavigation.php`](../../../vendor/filament/filament/src/Pages/Concerns/HasSubNavigation.php), [`Pages/Enums/SubNavigationPosition.php`](../../../vendor/filament/filament/src/Pages/Enums/SubNavigationPosition.php) | in progress | the band of sibling pages, its normalization, its three positions and the four templates that draw it — [has-sub-navigation.md](has-sub-navigation.md) |
 | [`DependencyInjection\Compiler\ResourcePass`](../../../packages/panels/src/DependencyInjection/Compiler/ResourcePass.php) | no Filament counterpart — resource discovery is [`Panel/Concerns/HasComponents.php`](../../../vendor/filament/filament/src/Panel/Concerns/HasComponents.php) `discoverResources()`, a filesystem scan | in progress | every `Resource` service is autoconfigured `sylament.panels.resource` and the pass collects the non-abstract ones into the class-keyed `ServiceLocator` `ResourceRegistry` reads — [Resources](#resources) |
 | [`DependencyInjection\Compiler\GlobalSearchProviderPass`](../../../packages/panels/src/DependencyInjection/Compiler/GlobalSearchProviderPass.php) | no Filament counterpart — a provider class-string is handed straight to `app()` | in progress | the same three-piece shape one feature over: every `GlobalSearchProvider` service is autoconfigured `sylament.panels.global_search_provider` and the pass collects the tagged definitions into the class-keyed `ServiceLocator` `GlobalSearchProviderRegistry` reads — [global-search.md](global-search.md#the-provider-is-resolved-through-a-tagged-registry-rather-than-app) |
 | _rest not audited yet_ | | | |
@@ -1232,8 +1381,8 @@ Enums, contracts, HTTP layer, events, templates —
 | Item | Ports | Status | Detail |
 | --- | --- | --- | --- |
 | [Layout templates](../../../packages/panels/templates/components) | [`resources/views/components`](../../../vendor/filament/filament/resources/views/components) | in progress | [Layout templates](#layout-templates) |
-| [`Twig\PanelsIconAlias`](../../../packages/panels/src/Twig/PanelsIconAlias.php) | [`View/PanelsIconAlias.php`](../../../vendor/filament/filament/src/View/PanelsIconAlias.php) | in progress | eight constants: seven of Filament's 32 — the sidebar group chevron, the topbar hamburger, the three theme-switcher glyphs ([Layout templates](#layout-templates)), the dashboard's navigation icon ([Dashboard](#dashboard)) and the global search field's magnifying glass ([global-search.md](global-search.md)) — plus [the user-menu trigger, which is an invention](#user_menu_trigger-is-an-addition-not-a-rename) |
-| [Assets (JS/CSS)](../../../packages/panels/assets) | [`resources/js/`](../../../vendor/filament/filament/resources/js), [`resources/css/`](../../../vendor/filament/filament/resources/css) | in progress | the `@sylament/panels` workspace ships three Stimulus controllers (`sidebar`, `theme`, `global-search`) and the `sy-pa-*` rules, which compile into support's stylesheet — [Assets](#assets) |
+| [`Twig\PanelsIconAlias`](../../../packages/panels/src/Twig/PanelsIconAlias.php) | [`View/PanelsIconAlias.php`](../../../vendor/filament/filament/src/View/PanelsIconAlias.php) | in progress | ten constants: nine of Filament's 32 — the sidebar group chevron, the topbar hamburger, the three theme-switcher glyphs ([Layout templates](#layout-templates)), the dashboard's navigation icon ([Dashboard](#dashboard)), the global search field's magnifying glass ([global-search.md](global-search.md)), and the two this epic added, the sub-navigation mobile-menu chevron ([has-sub-navigation.md](has-sub-navigation.md)) and the manage-related-records navigation item ([manage-related-records.md](manage-related-records.md#the-navigation-label-and-icon-drop-their-related-resource-arms)) — plus [the user-menu trigger, which is an invention](#user_menu_trigger-is-an-addition-not-a-rename) |
+| [Assets (JS/CSS)](../../../packages/panels/assets) | [`resources/js/`](../../../vendor/filament/filament/resources/js), [`resources/css/`](../../../vendor/filament/filament/resources/css) | in progress | the `@sylament/panels` workspace ships three Stimulus controllers (`sidebar`, `theme`, `global-search`) and the `sy-pa-*` rules, which compile into support's stylesheet — [Assets](#assets); `sub-navigation.css` and `page.css`'s band modifiers are [has-sub-navigation.md](has-sub-navigation.md#the-top-modifier-is-emitted-and-styled-by-nothing) |
 | [`Routing\PanelRouteLoader`](../../../packages/panels/src/Routing/PanelRouteLoader.php) | [`routes/web.php`](../../../vendor/filament/filament/routes/web.php) — the per-panel route group and its `$page::registerRoutes($panel)` / `$resource::registerRoutes($panel)` loops, [`Pages/Concerns/HasRoutes.php`](../../../vendor/filament/filament/src/Pages/Concerns/HasRoutes.php) `routes()`, [`Resources/Resource/Concerns/HasRoutes.php`](../../../vendor/filament/filament/src/Resources/Resource/Concerns/HasRoutes.php) `registerRoutes()` | in progress | [Routing](#routing) |
 | [`Controllers\PageController`](../../../packages/panels/src/Controllers/PageController.php) | no Filament counterpart — a Filament page **is** its own route action | in progress | [Routing](#routing) |
 | [Document template](../../../packages/panels/templates/partials/Document/index.html.twig) | [`components/layout/base.blade.php`](../../../vendor/filament/filament/resources/views/components/layout/base.blade.php) | in progress | [Routing](#routing) |
@@ -1242,6 +1391,8 @@ Enums, contracts, HTTP layer, events, templates —
 | [CreateRecord template](../../../packages/panels/templates/partials/CreateRecord/index.html.twig) | no Filament counterpart — v5's create page has no view either; [`CreateRecord::content()`](../../../vendor/filament/filament/src/Resources/Pages/CreateRecord.php) returns a schema holding a `Form` wrapping an `EmbeddedSchema` and the form `Actions` | in progress | [CreateRecord](#createrecord) |
 | [EditRecord template](../../../packages/panels/templates/partials/EditRecord/index.html.twig) | same — [`EditRecord::content()`](../../../vendor/filament/filament/src/Resources/Pages/EditRecord.php) | in progress | [EditRecord](#editrecord) |
 | [RelationManager template](../../../packages/panels/templates/partials/RelationManager/index.html.twig) | [`resources/views/resources/relation-manager.blade.php`](../../../vendor/filament/filament/resources/views/resources/relation-manager.blade.php) | in progress | [RelationManager](relation-manager.md#the-manager-renders-a-template-not-a-content-schema) |
+| [ManageRelatedRecords template](../../../packages/panels/templates/partials/ManageRelatedRecords/index.html.twig) | no Filament counterpart — v5's page has no view either; [`ManageRelatedRecords::content()`](../../../vendor/filament/filament/src/Resources/Pages/ManageRelatedRecords.php) returns a schema holding an `EmbeddedTable` | in progress | [ManageRelatedRecords](manage-related-records.md#the-page-renders-a-template-not-a-content-schema) |
+| [SubNavigation templates](../../../packages/panels/templates/components/SubNavigation/index.html.twig) — the dispatcher plus the sidebar, tabs and mobile-menu components | [`components/page/sub-navigation/`](../../../vendor/filament/filament/resources/views/components/page/sub-navigation) | in progress | [has-sub-navigation.md](has-sub-navigation.md#three-sibling-components-not-one-with-variants) |
 | [`SylamentPanelsBundle`](../../../packages/panels/src/SylamentPanelsBundle.php) | [`FilamentServiceProvider.php`](../../../vendor/filament/filament/src/FilamentServiceProvider.php) | in progress | autoconfigures the four tags (`sylament.panels.panel_provider` / `.page` / `.resource` / `.relation_manager`), registers `PageComponentPass`, `RelationManagerComponentPass` and `ResourcePass`, wires `Panel`, the two registries, `CurrentPanel`, `RelationGroup`, `PageController` and the `routing.route_loader`, and prepends `@sylament/panels` into AssetMapper — [providers are collected by tag](#panels-are-collected-from-tagged-providers-not-registered-imperatively), [pages register through a pass](#pages-register-as-live-components-through-a-compiler-pass-over-a-per-class-attribute), [relation managers through their own](relation-manager.md#a-manager-must-carry-aslivecomponent-and-the-pass-enforces-it), [the group needs a definition of its own to reach the container](relation-group.md#the-two-constructor-arguments-arrive-through-setters), [resources from a tag](#resources-are-collected-from-a-tag-not-discovered-on-the-filesystem) |
 | _rest not audited yet_ | | | |
 
@@ -1525,6 +1676,21 @@ statics: route loading is therefore the first thing in a request that
 instantiates a resource service, and `getPages()` runs once at route-build time
 rather than per request.
 
+A resource that [names a parent](nested-resources.md) mounts the same family one
+level deeper: the loader walks the registration chain root-first, prefixing
+`<parent slug>/{<parent parameter>}` per ancestor, so
+`sylament.admin.resources.articles.sections.edit` sits at
+`/admin/articles/{article}/sections/{record}/edit`. The route name is the
+parent's plus the kebab-cased **relationship**, not the child's slug, and the
+duplicate-name guard below is what keeps two children of one parent apart. Such a
+route carries a fourth default, `_sylament_parent_params` — the ancestor
+parameter names, root-first — which `PageController` reads to fold exactly those
+route parameters into the page's one `parentRecords` prop, unsetting each so none
+lands in the component's attribute bag. A flat route carries neither. The loader
+refuses two shapes Filament builds silently: a chain naming a resource the panel
+does not register, and a parent parameter colliding with `record` or with an
+ancestor's.
+
 Two things beyond mounting. Every page class file, every resource class file and
 every provider class file is added to the collection as a `FileResource`: the
 routes are derived from method bodies (`getSlug()`, `$routePath`, `getPages()`,
@@ -1578,9 +1744,10 @@ builds, and renders the Document template with `panel`, `pageTitle`,
 service names the registration to add, since a page reached through `new` would
 have no dependencies injected.
 
-`componentProps` is the route → component bridge, and the whole rule is one
-line: every matched route parameter (`_route_params`) whose name does not start
-with `_`. That drops the two `_sylament_*` defaults the loader writes and keeps
+`componentProps` is the route → component bridge, and the rule is one line plus
+the nested arm above: every matched route parameter (`_route_params`) whose name
+does not start with `_`, after the ancestor parameters have been folded into
+`parentRecords`. That drops the two `_sylament_*` defaults the loader writes and keeps
 the user's own placeholders, so `/admin/articles/{record}/edit` hands the page
 `{record: '12'}`. The document spreads it into `component()`, where
 ux-twig-component matches each entry against the page's `mount()` parameters **by
@@ -2030,11 +2197,16 @@ flex container — where ours is live, so a short page's content container grows
 fill the wrapper instead of hugging its rows. Nothing visible differs today,
 because every page we ship fills its content anyway.
 
-It is a deliberate simplification, not a mistake: the port has neither
-sub-navigation nor `fullHeight`, and gating a rule on two classes nothing emits
-would be dead CSS. Revisit **at the `fullHeight` port**, which is where vendor's
-own `h-full` cascade lands on the same three elements and where the difference
-between "always a column" and "a column when asked" starts to matter.
+It is a deliberate simplification, not a mistake: gating a rule on a class
+nothing emits would be dead CSS. **Half of that gate is now live.** M6 · 3 ships
+[sub-navigation](has-sub-navigation.md), so `sy-pa-page-has-sub-navigation` is
+emitted and carries the two rules the band needs — `gap-8`, and `md:flex-row
+md:items-start` under the start/end modifiers — and the band behaves identically
+to vendor's on both edges. What stays unconditional here is the base
+`flex flex-col`, which vendor gates on the same class; that half, and the
+`fullHeight` half beside it, revisit **at the `fullHeight` port**, where vendor's
+own `h-full` cascade lands on the same three elements and the difference between
+"always a column" and "a column when asked" starts to matter.
 
 ### The drawer state class sits on the shell root, not on the sidebar
 
@@ -2216,9 +2388,11 @@ with the rest of plugins.
 
 So `registerNavigationItems()` has no port, and its four early returns are
 distributed rather than dropped: `shouldRegisterNavigation()` is ported and
-consulted by the panel-side loop, in Filament's own position; `getCluster()` and
-`getParentResourceRegistration()` guard unported subsystems; `canAccess()` waits
-on authorization. Each of those lands in the loop when its subsystem does, not
+consulted by the panel-side loop, in Filament's own position, and so is
+[`getParentResourceRegistration()`](nested-resources.md#the-suppressions-sit-where-the-trail-already-put-them)
+since M6 · 3 — a nested resource is skipped there and nowhere else, so it still
+answers `getNavigationItems()` when something asks it directly. `getCluster()`
+guards an unported subsystem; `canAccess()` waits on authorization. Each of those lands in the loop when its subsystem does, not
 back inside the resource — a resource that answers `getNavigationItems()` with an
 array cannot also decide it should not have been asked.
 
@@ -2570,7 +2744,7 @@ pieces of code that must agree. Ours composes
 the route loader reads it — one derivation, no lockstep to maintain. The
 `Panel $panel` parameter is explicit rather than defaulted from a facade,
 matching [`Page::getRouteName()`](#getnavigationitems-takes-the-panel-rather-than-reaching-a-facade)
-(the `Panel|string|null` widening is [`getUrl()`'s](#geturl-drops-three-parameters-and-widens-a-fourth),
+(the `Panel|string|null` widening is [`getUrl()`'s](#geturl-drops-two-parameters-and-widens-a-third),
 where a caller may hold only an id).
 
 ### Nothing is memoised in a static
@@ -2610,15 +2784,18 @@ first, for the "speaks for" guard, so a resource declaring `$recordRouteKeyName`
 without `$recordClass` throws the record-class `LogicException` rather than a key
 one — fail-fast ordering, and deliberate: the missing declaration is the fix.
 
-Filament's second parameter is dropped with the cluster it belongs to.
-`resolveRecordRouteBinding(int | string $key, ?Closure $modifyQuery = null)`
-takes a query modifier, and the only closure Filament ever passes it is the
-parent-record scope (`InteractsWithRecord::resolveRecord()` builds
-`scopeEloquentQueryToParent`), so it returns with
-[nested/parent resources](#resources) rather than being ported ahead of them.
-Until then a caller migrating that call gets an argument-count error, which is
-the one failure the trail has to name for it: the parameter is absent by
-decision, not by oversight.
+Filament's second parameter shipped with the cluster it belongs to.
+`resolveRecordRouteBinding(int|string $key, ?Closure $modifyQuery = null)` takes a
+query modifier, and the only closure Filament ever passes it is the parent-record
+scope — so it was deferred until
+[nested resources](nested-resources.md#the-parent-scope-is-the-readers-relationship-query-not-a-predicate-we-write)
+arrived and now carries exactly that one caller, plus the mounted-action key
+resolution the same scope guards. Two facts about the modifier are ours rather
+than Filament's: it is handed the cloned query and keys against **what it
+returns**, so a scope may replace the builder wholesale (the reader's
+relationship query does), and a closure returning anything but a `QueryBuilder`
+or null throws rather than being ignored — a `Closure` carries no return type,
+so this is the only place the wrong shape is detectable.
 
 ### `getRecordTitle()` returns a plain string
 
@@ -2663,19 +2840,24 @@ is a level-max error, the
 [`?string`-first order](../schemas/association-reader.md#the-record-key-is-tables-semantics-moved-onto-the-mapping)
 the association reader settled on for the same reason.
 
-### `getUrl()` drops three parameters and widens a fourth
+### `getUrl()` drops two parameters and widens a third
 
-Filament's signature carries seven parameters; ours carries four. `$tenant` and
+Filament's signature carries seven parameters; ours carries five. `$tenant` and
 `$configuration` belong to deferred features (tenancy, resource configurations)
-and `$shouldGuessMissingParameters` fills parent-resource route parameters from
-the original request — the nested-resource arm, deferred with it, and the one
-place Filament reaches `original_request()` inside URL generation. What survives
-is widened: Filament takes `?string $panel` (a panel id) where ours takes
+and are the whole of what is missing — `$shouldGuessMissingParameters` was the
+third until M6 · 3, and it ships with
+[nested resources](nested-resources.md#guessing-walks-the-records-own-associations-never-the-request)
+under Filament's name and a different mechanism: it walks the record's own
+associations, where Filament reads the original request. What survives is
+widened: Filament takes `?string $panel` (a panel id) where ours takes
 `Panel|string|null`, because the caller that already holds the panel object —
 `getNavigationItems()`, the route loader, a page — should not have to round-trip
 through the registry by id. A `null` still resolves the current panel, then the
 default one, which is Filament's `getCurrentOrDefaultPanel()` behaviour with the
 facade replaced by the two injected services.
+
+`getIndexUrl()` carries the flag too, since it delegates into `getUrl()` and
+feeds the parent arms.
 
 ### Active state is a route-name prefix match
 
@@ -2788,6 +2970,15 @@ predicted for the `can*()` statics. Fixing it means either dropping the statics
 to instance methods (which changes a Filament API shape) or carrying the page's
 registration key on the instance, and both are worth deciding once rather than
 twice, so it waits for the task that needs a resource page to name its own route.
+
+M6 · 3 was the first task that could have been it, and
+[deliberately routed around it](has-sub-navigation.md#a-resource-page-item-is-built-by-the-band-because-a-page-cannot-name-its-own-route):
+the sub-navigation band needs a sibling resource page's URL, which in Filament is
+`static::getUrl()` over `getResourcePageName()`. The band builder runs on a page
+**instance** holding the registry, so it scans the sibling's own resource
+`getPages()` for the entry whose `page` matches and mints the URL from the key it
+finds — a private helper, no new public static, and the parked decision stays
+parked.
 
 Until then this is a **known wrong-answer surface**, and it is narrow: nothing in
 the framework calls those statics on a resource page. `Panel::getNavigation()`
@@ -3095,12 +3286,26 @@ rather than a wrong page.
 
 Filament has the same problem and solves it with `original_request()`, a
 Livewire helper that reaches the request that rendered the component rather than
-the one carrying the update. The fix here is the same shape: the panel id is
-already known at render time, so a page can carry it (a `LiveProp`, or the
-component name the [page pass](#pages-register-as-live-components-through-a-compiler-pass-over-a-per-class-attribute)
-registers) and pass `panel:` explicitly to `getUrl()`. Deferred rather than
-declined — it wants a decision about where panel identity lives on a live
-component, which multi-panel navigation will force anyway.
+the one carrying the update.
+
+**M6 · 3 closed it for resource pages, and only for them.** The
+[resource-page base](#resource-pages) carries a `#[LiveProp] public ?string
+$panelId`, minted by the getter its dehydration reads and stamped back onto the
+request from a `#[PostHydrate]` hook — the mechanism
+[`GlobalSearch`](global-search.md#the-component-restores-its-panel-onto-a-live-request)
+already used, ported down a tier. So a live request that hydrates a resource page
+resolves the panel that page was opened in, and every URL that request mints —
+the trail, a redirect, an action link — answers for it. Nesting forced it: on a
+non-default panel, every live re-render of a nested page threw
+`RouteNotFoundException` before the prop existed.
+
+Two halves stay open. A plain [`Pages\Page`](#page) has no such prop, so a plain
+page in a non-default panel still mints default-panel sub-navigation URLs on a
+live request. And a **nested live component** hydrating on its own — a
+[relation manager](relation-manager.md#every-url-a-manager-generates-resolves-the-default-panel)
+answering a table sort — never hydrates its host page, so nothing stamps the
+attribute for it. Both close the same way, and both wait on
+[M6 · 6](../roadmap.md#m6--panel-depth)'s multi-panel URL row.
 
 ### A create modal on a record page is anonymous
 

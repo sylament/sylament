@@ -143,7 +143,7 @@ the live boundary begins and ends. So the round trip is paid by the one element
 that needs it, and everything else in the bar still renders once per page. That
 component is also the toolkit's **first** `#[AsLiveComponent]` in `packages/*/src`
 — panels' pages are live too, but they are registered by
-[a compiler pass](#pages-register-as-live-components-through-a-compiler-pass-not-per-class-attributes)
+[a compiler pass](#pages-register-as-live-components-through-a-compiler-pass-over-a-per-class-attribute)
 rather than by the attribute.
 
 Revisit the rest when something else in the shell must change without a

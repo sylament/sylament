@@ -754,6 +754,24 @@ it('opens the record anchor in a new tab and stamps the extra link attributes', 
         ->and($anchor->attr('class'))->toBe('sy-ta-col sy-probe');
 });
 
+it('evaluates the extra record link attributes once per record however many columns render', function (): void {
+    $calls = 0;
+
+    $crawler = new Crawler(rowBehaviourTableHtml(function (Table $table) use (&$calls): Table {
+        return $table
+            ->columns([TextColumn::make('title'), TextColumn::make('album')])
+            ->recordUrl('/songs')
+            ->extraRecordLinkAttributes(function () use (&$calls): array {
+                $calls++;
+
+                return ['data-probe' => 'yes'];
+            });
+    }));
+
+    expect($crawler->filter('tbody > tr > td.sy-ta-cell > a.sy-ta-col[data-probe="yes"]')->count())->toBe(4)
+        ->and($calls)->toBe(2);
+});
+
 it('drops a record url the sanitizer refuses back to a plain div', function (): void {
     $crawler = new Crawler(rowBehaviourTableHtml(fn (Table $table): Table => $table
         ->recordUrl('javascript:alert(1)')));

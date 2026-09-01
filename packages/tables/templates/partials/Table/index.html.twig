@@ -343,27 +343,8 @@
                         {% set recordUrl = component.getRecordUrl(record) %}
                         {% set recordAction = component.getRecordAction(record) %}
                         {% set openRecordUrlInNewTab = component.shouldOpenRecordUrlInNewTab(record) %}
+                        {% set recordLinkAttributes = recordUrl is not null ? component.getExtraRecordLinkAttributes(record) : {} %}
                         {% set recordIsSelectable = isSelectionEnabled and component.isRecordSelectable(record) %}
-
-                        {# Column-level url/action arms slot in above the record-level ones — M4 · 4 #}
-                        {% set cellWrapperTag = recordUrl is not null
-                            ? 'a'
-                            : (recordAction is not null ? 'button' : 'div') %}
-                        {% set cellWrapperAttributes = cellWrapperTag == 'a'
-                            ? {
-                                href: recordUrl,
-                                target: openRecordUrlInNewTab ? '_blank' : null,
-                                ...component.getExtraRecordLinkAttributes(record),
-                            }
-                            : (cellWrapperTag == 'button'
-                                ? {
-                                    type: 'button',
-                                    'data-loading': 'addAttribute(disabled)',
-                                    ...stimulus_action('live', 'action', parameters: component.getAction(recordAction)
-                                        ? {action: 'mountAction', name: recordAction, context: {recordKey: recordKey ~ '', table: true}}
-                                        : {action: recordAction, recordKey: recordKey ~ ''}),
-                                }
-                                : {}) %}
 
                         {% set actionsCell %}{% if hasRecordActions %}
                             <td class="sy-ta-cell">
@@ -403,6 +384,27 @@
                             {% for column in columns %}
                                 {% do column.record(record) %}
                                 {% do column.recordKey(recordKey) %}
+
+                                {# Column-level url/action arms slot in above the record-level ones — M4 · 4 #}
+                                {% set cellWrapperTag = recordUrl is not null
+                                    ? 'a'
+                                    : (recordAction is not null ? 'button' : 'div') %}
+                                {% set cellWrapperAttributes = cellWrapperTag == 'a'
+                                    ? {
+                                        href: recordUrl,
+                                        target: openRecordUrlInNewTab ? '_blank' : null,
+                                        ...recordLinkAttributes,
+                                    }
+                                    : (cellWrapperTag == 'button'
+                                        ? {
+                                            type: 'button',
+                                            'data-loading': 'addAttribute(disabled)',
+                                            ...stimulus_action('live', 'action', parameters: component.getAction(recordAction)
+                                                ? {action: 'mountAction', name: recordAction, context: {recordKey: recordKey ~ '', table: true}}
+                                                : {action: recordAction, recordKey: recordKey ~ ''}),
+                                        }
+                                        : {}) %}
+
                                 <td class="sy-ta-cell" id="{{ hostId ~ '.table.record.' ~ recordKey ~ '.column.' ~ column.getName }}">
                                     <{{ cellWrapperTag }} {{ attrs({class: 'sy-ta-col'}, cellWrapperAttributes) }}>{{ renderComponent(column) }}</{{ cellWrapperTag }}>
                                 </td>

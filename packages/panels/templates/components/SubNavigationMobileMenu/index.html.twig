@@ -1,0 +1,24 @@
+{% props navigation = [] %}
+
+{% set items = navigation|reduce((carry, group) => carry|merge(group.getItems), []) %}
+{% set triggerItem = items|filter(item => item.isActive)|first ?: items|first %}
+
+<twig:SylamentSupport:Dropdown class="sy-pa-sub-navigation-dropdown">
+    <twig:block name="trigger">
+        <twig:SylamentSupport:Button color="gray" icon="heroicons:chevron-down-20-solid" iconPosition="after">
+            {{- triggerItem ? triggerItem.getLabel : '' -}}
+        </twig:SylamentSupport:Button>
+    </twig:block>
+
+    <twig:block name="content">
+        {% for item in items %}
+            <twig:SylamentSupport:DropdownItem
+                tag="a"
+                :href="item.getUrl"
+                :target="item.shouldOpenUrlInNewTab ? '_blank' : null"
+                :icon="item.isActive ? (item.getActiveIcon ?? item.getIcon) : item.getIcon"
+                :aria-current="item.isActive ? 'page' : false"
+            >{{ item.getLabel }}</twig:SylamentSupport:DropdownItem>
+        {% endfor %}
+    </twig:block>
+</twig:SylamentSupport:Dropdown>

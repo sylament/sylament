@@ -9,3 +9,12 @@
 .sy-pa-page-content {
     @apply grid flex-1 auto-cols-fr gap-y-8;
 }
+
+.sy-pa-page-has-sub-navigation .sy-pa-page-main {
+    @apply gap-8;
+}
+
+.sy-pa-page-has-sub-navigation-start .sy-pa-page-main,
+.sy-pa-page-has-sub-navigation-end .sy-pa-page-main {
+    @apply md:flex-row md:items-start;
+}

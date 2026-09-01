@@ -3,7 +3,18 @@
 {% set subheading = this.getSubheading %}
 {% set headerActions = this.getCachedHeaderActions %}
 
-<div {{ attrs({class: 'sy sy-pa-page sy-pa-resource-list-records-page'}, attributes.all) }}>
+{% set subNavigation = this.getCachedSubNavigation %}
+{% set subNavigationPosition = subNavigation is not empty ? this.getSubNavigationPosition : null %}
+{% set subNavigationPositionClass = 'sy-pa-page-has-sub-navigation-' ~ (subNavigationPosition.value ?? 'none') %}
+
+<div
+    {{ attrs({
+        class: ['sy sy-pa-page sy-pa-resource-list-records-page', {
+            'sy-pa-page-has-sub-navigation': subNavigation is not empty,
+            (subNavigationPositionClass): subNavigationPosition is not null,
+        }],
+    }, attributes.all) }}
+>
     <div class="sy-pa-page-header-main-ctn">
         <twig:SylamentPanels:Header :breadcrumbs="breadcrumbs" :heading="heading" :subheading="subheading">
             <twig:block name="actions">
@@ -14,9 +25,17 @@
         </twig:SylamentPanels:Header>
 
         <div class="sy-pa-page-main">
+            {% if subNavigation is not empty %}
+                <twig:SylamentPanels:SubNavigation :navigation="subNavigation" :position="subNavigationPosition" />
+            {% endif %}
+
             <div class="sy-pa-page-content">
                 {{ renderTable() }}
             </div>
+
+            {% if subNavigation is not empty %}
+                <twig:SylamentPanels:SubNavigation :navigation="subNavigation" :position="subNavigationPosition" :end="true" />
+            {% endif %}
         </div>
     </div>
 

@@ -1,0 +1,37 @@
+{% props navigation = [] %}
+
+<twig:SylamentSupport:Tabs class="sy-pa-sub-navigation-tabs">
+    {% for group in navigation %}
+        {% if group.getLabel is not null %}
+            <twig:SylamentSupport:Dropdown>
+                <twig:block name="trigger">
+                    <twig:SylamentSupport:TabsItem :active="group.isActive" :icon="group.getIcon">{{ group.getLabel }}</twig:SylamentSupport:TabsItem>
+                </twig:block>
+
+                <twig:block name="content">
+                    {% for item in group.getItems %}
+                        <twig:SylamentSupport:DropdownItem
+                            tag="a"
+                            :href="item.getUrl"
+                            :target="item.shouldOpenUrlInNewTab ? '_blank' : null"
+                            :icon="item.isActive ? (item.getActiveIcon ?? item.getIcon) : item.getIcon"
+                            :aria-current="item.isActive ? 'page' : false"
+                        >{{ item.getLabel }}</twig:SylamentSupport:DropdownItem>
+                    {% endfor %}
+                </twig:block>
+            </twig:SylamentSupport:Dropdown>
+        {% else %}
+            {% for item in group.getItems %}
+                <twig:SylamentSupport:TabsItem
+                    tag="a"
+                    :href="item.getUrl"
+                    :target="item.shouldOpenUrlInNewTab ? '_blank' : null"
+                    :active="item.isActive"
+                    :icon="item.isActive ? (item.getActiveIcon ?? item.getIcon) : item.getIcon"
+                    :badge="item.getBadge"
+                    :badgeColor="item.getBadgeColor"
+                >{{ item.getLabel }}</twig:SylamentSupport:TabsItem>
+            {% endfor %}
+        {% endif %}
+    {% endfor %}
+</twig:SylamentSupport:Tabs>

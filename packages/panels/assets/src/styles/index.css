@@ -6,6 +6,7 @@
 @import './components/theme-switcher.css' layer(components);
 @import './components/header.css' layer(components);
 @import './components/page.css' layer(components);
+@import './components/sub-navigation.css' layer(components);
 @import './components/resources.css' layer(components);
 @import './components/global-search.css' layer(components);
 @import './components/relation-manager.css' layer(components);

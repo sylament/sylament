@@ -1,0 +1,9 @@
+{% props navigation = [] %}
+
+<div {{ attrs({class: 'sy sy-pa-sub-navigation-sidebar-ctn'}, attributes.all) }}>
+    <ul class="sy-pa-sub-navigation-sidebar">
+        {% for group in navigation %}
+            <twig:SylamentPanels:SidebarGroup :group="group" :groupIndex="'sub-' ~ loop.index0" />
+        {% endfor %}
+    </ul>
+</div>

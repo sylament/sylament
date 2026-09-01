@@ -1,0 +1,15 @@
+.sy-pa-sub-navigation-sidebar-ctn {
+    @apply hidden w-72 flex-col md:flex;
+}
+
+.sy-pa-sub-navigation-sidebar {
+    @apply flex flex-col gap-y-7;
+}
+
+.sy-pa-sub-navigation-tabs {
+    @apply hidden md:flex;
+}
+
+.sy-pa-sub-navigation-dropdown {
+    @apply md:hidden;
+}

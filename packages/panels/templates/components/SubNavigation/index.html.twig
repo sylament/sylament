@@ -1,0 +1,22 @@
+{% props
+    navigation = [],
+    position = null,
+
+    end = false
+%}
+
+{% set positionValue = position.value ?? null %}
+
+{% if end %}
+    {% if positionValue == 'end' %}
+        <twig:SylamentPanels:SubNavigationSidebar :navigation="navigation" />
+    {% endif %}
+{% else %}
+    <twig:SylamentPanels:SubNavigationMobileMenu :navigation="navigation" />
+
+    {% if positionValue == 'start' %}
+        <twig:SylamentPanels:SubNavigationSidebar :navigation="navigation" />
+    {% elseif positionValue == 'top' %}
+        <twig:SylamentPanels:SubNavigationTabs :navigation="navigation" />
+    {% endif %}
+{% endif %}

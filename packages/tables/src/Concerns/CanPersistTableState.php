@@ -145,9 +145,10 @@ trait CanPersistTableState
     }
 
     /**
-     * Whatever the session holds is as untrusted as a client value — it was put
-     * there by an earlier request whose table may have looked nothing like this
-     * one — so a bag that is not filter-keyed is left where it is.
+     * A filter bag arriving from outside the component — the session, whose
+     * contents an earlier request wrote against a table that may have looked
+     * nothing like this one, or the query string — is as untrusted as any other
+     * client value, so one that is not filter-name-keyed is left where it is.
      *
      * @phpstan-assert-if-true array<string, mixed> $value
      */

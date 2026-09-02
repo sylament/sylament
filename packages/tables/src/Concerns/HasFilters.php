@@ -163,11 +163,10 @@ trait HasFilters
 
         $seeded = $this->getTableStateMainRequest()?->query->all()[$mapping->as ?? 'tableFilters'] ?? null;
 
-        if (!is_array($seeded)) {
+        if (!self::isPersistedTableFilterBag($seeded)) {
             return;
         }
 
-        /** @var array<string, mixed> $seeded */
         $this->tableFilters = $seeded;
     }
 

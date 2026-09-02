@@ -94,9 +94,10 @@ _Blocked by_ names what has to land first. _Detail_ links a permanent note in
 | `editOptionForm()` / `updateOptionUsing()` / `fillEditOptionActionFormUsing()` / `editOptionAction()` / `getEditOptionAction()` | [`Components/Select.php`](../../../vendor/filament/forms/src/Components/Select.php) | done | — | [semantics](#the-option-actions-are-suffix-actions-with-doctrine-defaults) · [diverges](#geteditoptionactionformdata-also-answers-an-object) |
 | `refreshSelectedOptionLabel()` | [`Components/Select.php`](../../../vendor/filament/forms/src/Components/Select.php) | done | — | [diverges](#refreshselectedoptionlabel-dispatches-a-browser-event-the-control-answers-by-re-syncing) · [renames](../renames.md#names-with-no-filament-source) |
 | `manageOptionForm()` / `manageOptionActions()` / the two modal headings | [`Components/Select.php`](../../../vendor/filament/forms/src/Components/Select.php) | done | — | [semantics](#the-option-actions-are-suffix-actions-with-doctrine-defaults) · [diverges](#the-option-action-strings-are-untranslated-literals) |
-| `relationship()` `ignoreRecord:` | [`Components/Select.php`](../../../vendor/filament/forms/src/Components/Select.php) | todo | the `unique`/`exists` constraint family | — |
-| `pivotData()` | [`Concerns/HasPivotData.php`](../../../vendor/filament/forms/src/Components/Concerns/HasPivotData.php) | blocked | a join-entity recipe | [diverges](#the-save-arm-writes-a-desired-list-not-attachdetach) |
-| `CanFixIndistinctState` | [`Concerns/CanFixIndistinctState.php`](../../../vendor/filament/forms/src/Components/Concerns/CanFixIndistinctState.php) | todo | — | — |
+| `relationship()` `ignoreRecord:` | [`Components/Select.php`](../../../vendor/filament/forms/src/Components/Select.php) | done | — | [semantics](#ignorerecord-narrows-the-two-option-arms-and-neither-label-arm) · [diverges](#a-record-of-another-class-than-the-association-target-is-refused) |
+| `pivotData()` | [`Concerns/HasPivotData.php`](../../../vendor/filament/forms/src/Components/Concerns/HasPivotData.php) | skipped | — | [diverges](#the-save-arm-writes-a-desired-list-not-attachdetach) |
+| `CanFixIndistinctState` | [`Concerns/CanFixIndistinctState.php`](../../../vendor/filament/forms/src/Components/Concerns/CanFixIndistinctState.php) | done | — | [detail](can-fix-indistinct-state.md) |
+| `CanDisableOptionsWhenSelectedInSiblingRepeaterItems` | [`Concerns/CanDisableOptionsWhenSelectedInSiblingRepeaterItems.php`](../../../vendor/filament/forms/src/Components/Concerns/CanDisableOptionsWhenSelectedInSiblingRepeaterItems.php) | done | — | [detail](can-disable-options-when-selected-in-sibling-repeater-items.md) |
 | Affixes ([`HasAffixes`](../../../packages/forms/src/Components/Concerns/HasAffixes.php), `wrapInputHtml`) | [`Concerns/HasAffixes.php`](../../../vendor/filament/forms/src/Components/Concerns/HasAffixes.php) | done | — | [detail](has-affixes.md) · [semantics](#the-inline-prefix-class-counts-visible-actions-where-the-text-inputs-counts-all-of-them) |
 | [`required` drops when concealed](../../../packages/forms/templates/partials/Select/index.html.twig) — the native branch only; `aria-required` is ungated | [`toEmbeddedHtml()`](../../../vendor/filament/forms/src/Components/Select.php) | done | — | [can-be-concealed.md](../schemas/can-be-concealed.md) |
 
@@ -945,6 +946,34 @@ we wanted:
    list stays until the dropdown is closed and reopened. Ours bumps the id and
    clears the searching flag there, the way `closeDropdown()` does.
 
+### `ignoreRecord:` narrows the two option arms, and neither label arm
+
+`relationship(ignoreRecord: true)` excludes the bound record from the *pickable*
+set of a self-referential association, so a row cannot point at itself. It is
+applied at exactly two sites — `getOptionsFromRelationship()` and
+`getSearchResultsFromRelationship()` — and never inside
+`createScopedOptionQuery()`, which four arms share.
+
+The asymmetry is load-bearing rather than an oversight of Filament's. The two
+label arms (`getSelectedRecordUsing` and `getOptionLabelsFromRelationship()`) must
+keep resolving a value that already names the excluded row — legacy data, or a
+row written before the flag was added — or the control renders no label at all
+*and* the
+[`Choice` guard](#the-choice-constraint-is-the-fields-only-server-side-guard)
+rejects an untouched submission, so a self-parented row could not be saved at
+all. Narrowing the choke point instead would be one line shorter and corrupting.
+
+The option memo is bypassed whenever the flag is on, for the same reason a
+`modifyQueryUsing()` one is: the map is record-dependent, and
+[`getClone()`](../schemas/component.md) is a shallow clone, so a memoised map
+would be served to every repeater item that cloned the field.
+
+Note the default: `relationship(ignoreRecord:)` is `false` while
+[`unique(ignoreRecord:)`](can-be-validated.md) is `true`. Both are Filament's,
+and the contrast is deliberate — a uniqueness probe on an edit page almost
+always wants to skip the row being edited, while an option map almost never
+needs to.
+
 ## Divergences
 
 Deliberate deviations from Filament, and the reason each holds. Provisional ones
@@ -1108,10 +1137,17 @@ nothing declares `orphanRemoval` there — while a `OneToMany` that does declare
 deletes the child, which is Doctrine's contract and not something the select
 decides.
 
-`pivotData()` has no home in this shape at all: a Doctrine many-to-many with
-columns of its own is modelled as a join *entity*, which is a repeater over that
-entity rather than extra data on a select's write. It is blocked on that recipe,
-not on this arm.
+`pivotData()` has no home in this shape at all, and is **skipped** rather than
+blocked — for `Select` and for [`CheckboxList`](checkbox-list.md) alike. Filament's
+concern names extra columns to write onto a `BelongsToMany` pivot row. A Doctrine
+many-to-many has no columns to address: a join table the mapping owns is not a
+row object anything can set a column on, and a join carrying columns of its own is
+by definition a join *entity*. The recipe for one already ships, and M3 · 10 demoed
+it: `Repeater::relationship()` over the join entity, with a nested relation select
+inside the item schema for the far side, and one `Hidden::make('role')->default(…)`
+for a constant column. A `pivotData()` shim on top of that would be a second,
+worse spelling of the same thing, so none is added — the fatal names the missing
+method, which is the clearest signal available.
 
 The single-flush shape also removes Filament's `dehydrated(false)` for the
 multiple arm. Upstream it exists because a `BelongsToMany` cannot be written as a
@@ -1120,6 +1156,27 @@ here the save hook fires *from* the dehydrated bag
 ([`getData()`](../schemas/belongs-to-record.md)), so switching dehydration off
 would silence the hook instead of protecting it — the multiple relationship
 select stays dehydrated, deliberately.
+
+### A record of another class than the association target is refused
+
+Filament's exclusion clause is `where($record->getQualifiedKeyName(), '!=', $record->getKey())`
+— a fully qualified column from the *record's own* table. Pointed at a query over
+another table it produces `article_contributors.id != 7` inside a select over
+`authors`, which the database rejects. Loudly wrong.
+
+Our clause is `record.<identifier> <> :sylament_ignored_record` over the option
+query's own alias, so the same mistake produces perfectly valid DQL that silently
+excludes an unrelated row of the *target* table. The Doctrine shape is more
+dangerous than the original, so it carries a guard the original does not need: a
+bound record that is not an instance of the association's target throws a
+`LogicException` naming both classes. `ignoreRecord: true` only ever means a
+self-referential association, and a repeater item schema stamped with the child
+record is exactly the shape that would otherwise hit it.
+
+The quiet arms stay quiet: `null`, an array and a class-string record exclude
+nothing — a create page has no row to exclude — and neither does an unflushed
+entity, whose identifier
+[`findRecordKey()`](../schemas/association-reader.md) answers `null` for.
 
 ### The non-relationship schema record is read off the field, not off a `getActionSchemaModel()`
 

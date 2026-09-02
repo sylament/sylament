@@ -36,9 +36,9 @@ _Detail_ links the write-up in [Details](#details) or a permanent note in
 | `required()` — no attribute, and a `NotNull` constraint | [`Components/Toggle.php`](../../../vendor/filament/forms/src/Components/Toggle.php) | done | — | [diverges](#required-means-presence-not-truth) |
 | [`isBlankStateValue()`](../../../packages/forms/src/Components/Toggle.php) — an untouched switch reads blank | — | done | — | [semantics](../schemas/belongs-to-record.md#the-built-in-blank-test-asks-the-branchs-own-leaves) |
 | [`HasToggleColors`](../../../packages/forms/src/Components/Concerns/HasToggleColors.php) (`onColor()` / `offColor()`) | [`Concerns/HasToggleColors.php`](../../../vendor/filament/forms/src/Components/Concerns/HasToggleColors.php) | done | — | [diverges](#the-two-colours-ride-on-two-elements) |
-| `CanFixIndistinctState` (`fixIndistinctState()`) | [`Concerns/CanFixIndistinctState.php`](../../../vendor/filament/forms/src/Components/Concerns/CanFixIndistinctState.php) | todo | — | [detail](#fixindistinctstate-awaits-the-repeater) |
+| `CanFixIndistinctState` (`fixIndistinctState()`) | [`Concerns/CanFixIndistinctState.php`](../../../vendor/filament/forms/src/Components/Concerns/CanFixIndistinctState.php) | done | — | [detail](can-fix-indistinct-state.md) |
 | [`HasExtraInputAttributes`](../../../packages/forms/src/Components/Concerns/HasExtraInputAttributes.php) | [`Concerns/HasExtraInputAttributes.php`](../../../vendor/filament/forms/src/Components/Concerns/HasExtraInputAttributes.php) | done | — | [detail](has-extra-input-attributes.md) · [diverges](#the-toggle-carries-extra-input-attributes-filaments-does-not) |
-| Extra Alpine attributes (`HasExtraAlpineAttributes`) | [`support/Concerns/HasExtraAlpineAttributes.php`](../../../vendor/filament/support/src/Concerns/HasExtraAlpineAttributes.php) | todo | — | [detail](#the-alpine-attribute-concern-is-not-ported) |
+| Extra Alpine attributes (`HasExtraAlpineAttributes`) | [`support/Concerns/HasExtraAlpineAttributes.php`](../../../vendor/filament/support/src/Concerns/HasExtraAlpineAttributes.php) | skipped | — | [diverges](../support/component-attribute-bag.md#extra-alpine-attributes-are-not-ported) |
 
 Coverage:
 [`ToggleTest`](../../../packages/forms/tests/Integration/Components/ToggleTest.php)
@@ -63,31 +63,6 @@ for `false` and `null` but not
 `true`, the override that keeps a resting switch from holding a
 [`nullWhenBlank()` branch](../schemas/belongs-to-record.md#the-built-in-blank-test-asks-the-branchs-own-leaves)
 alive.
-
-## Details
-
-Specifics for rows that are not finished — what is in, what is left, the next
-step. Delete a subsection when its row flips to **done**.
-
-### fixIndistinctState awaits the repeater
-
-Filament's `fixIndistinctState()` composes `distinct()`, `live()` and an
-`afterStateUpdated()` hook that walks up to the parent `Repeater` and switches
-every sibling item off when this one is switched on. Every dependency ships now —
-`Repeater`, the parent-repeater lookup schemas' `CanBeRepeated` gives it
-([repeater.md](repeater.md)), and
-[`distinct()`](can-be-validated.md#distinct-is-three-arms-of-one-first-party-constraint-not-laravels-rule)
-as of M3 · 8 — so what is left is the hook itself, scheduled for
-[M3 · 9](../roadmap.md#m3--forms-widening)'s field sweep.
-
-### The Alpine attribute concern is not ported
-
-`HasExtraAlpineAttributes` lets a consumer hang arbitrary `x-*` bindings on the
-rendered element. It is a shared field concern with its own README row, not
-toggle-specific, and it is doubly moot here: the port renders no Alpine at all
-(see the divergence below). **Next step:** decide whether the concern gets a
-Stimulus-shaped equivalent at all, and record that decision on its own row rather
-than here.
 
 ## Divergences
 

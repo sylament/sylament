@@ -53,8 +53,8 @@ _Detail_ links the write-up in [Details](#details) or a permanent note in
 | [`HasDescriptions`](../../../packages/forms/src/Components/Concerns/HasDescriptions.php) | [`Concerns/HasDescriptions.php`](../../../vendor/filament/forms/src/Components/Concerns/HasDescriptions.php) | done | — | [detail](has-descriptions.md) |
 | [`HasGridDirection`](../../../packages/forms/src/Components/Concerns/HasGridDirection.php) | [`Concerns/HasGridDirection.php`](../../../vendor/filament/forms/src/Components/Concerns/HasGridDirection.php) | done | — | [detail](has-grid-direction.md) |
 | [`HasExtraInputAttributes`](../../../packages/forms/src/Components/Concerns/HasExtraInputAttributes.php) | [`Concerns/HasExtraInputAttributes.php`](../../../vendor/filament/forms/src/Components/Concerns/HasExtraInputAttributes.php) | done | — | [detail](has-extra-input-attributes.md) · [diverges](#extraattributes-stays-on-the-field-wrapper) |
-| `CanFixIndistinctState` | [`Concerns/CanFixIndistinctState.php`](../../../vendor/filament/forms/src/Components/Concerns/CanFixIndistinctState.php) | todo | — | [detail](#the-two-repeater-sibling-concerns-have-nothing-to-build-on) |
-| `CanDisableOptionsWhenSelectedInSiblingRepeaterItems` | [`Concerns/CanDisableOptionsWhenSelectedInSiblingRepeaterItems.php`](../../../vendor/filament/forms/src/Components/Concerns/CanDisableOptionsWhenSelectedInSiblingRepeaterItems.php) | blocked | repeater-item context (M3 · 6) | [detail](#the-two-repeater-sibling-concerns-have-nothing-to-build-on) |
+| `CanFixIndistinctState` | [`Concerns/CanFixIndistinctState.php`](../../../vendor/filament/forms/src/Components/Concerns/CanFixIndistinctState.php) | done | — | [detail](can-fix-indistinct-state.md) |
+| `CanDisableOptionsWhenSelectedInSiblingRepeaterItems` | [`Concerns/CanDisableOptionsWhenSelectedInSiblingRepeaterItems.php`](../../../vendor/filament/forms/src/Components/Concerns/CanDisableOptionsWhenSelectedInSiblingRepeaterItems.php) | done | — | [detail](can-disable-options-when-selected-in-sibling-repeater-items.md) |
 
 Coverage: one input per option with the shared group name and per-option ids and
 values; the `data-model` every input shares; `checked` on the matching option and
@@ -84,35 +84,6 @@ round-trip by
 against the
 [`RadioForm`](../../../packages/forms/tests/Fixtures/Twig/Components/RadioForm.php)
 fixture.
-
-## Details
-
-Specifics for rows that are not finished. Delete a subsection when its row flips
-to **done**.
-
-### The two repeater-sibling concerns have nothing to build on
-
-Neither is partly ported; each is **todo** rather than skipped, because both are
-wanted for parity.
-
-`CanFixIndistinctState` composes `distinct()`, `live()` and an
-`afterStateUpdated()` hook that walks up to the parent `Repeater` and clears the
-same option from every sibling item. Every dependency now ships: the
-parent-repeater lookup — schemas' `CanBeRepeated` gives every component
-`getParentRepeater()` / `getParentRepeaterItem()` / `getParentRepeaterItemIndex()`
-([repeater.md](repeater.md)) — and, as of M3 · 8,
-[`distinct()`](can-be-validated.md#distinct-is-three-arms-of-one-first-party-constraint-not-laravels-rule)
-itself. What is left is roughly sixty lines of hook over the same sibling read,
-scheduled for [M3 · 9](../roadmap.md#m3--forms-widening)'s field sweep. The same
-reading [`Checkbox`](checkbox.md) and
-[`Toggle`](toggle.md#fixindistinctstate-awaits-the-repeater) give it.
-
-`CanDisableOptionsWhenSelectedInSiblingRepeaterItems` is the same lookup wearing
-the other hat: it registers a `disableOptionWhen()` predicate that asks the
-sibling items which values they already hold. Its write-side dependency is the
-one Filament's
-[`Contracts\CanDisableOptions`](can-disable-options.md#the-contract-declares-the-read-surface-not-the-setter)
-exists for, which is why that interface's port declares the read surface instead.
 
 ## Semantics
 

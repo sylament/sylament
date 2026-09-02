@@ -81,10 +81,10 @@ _Detail_ links the write-up in [Details](#details) or a permanent note in
 | [`CanBeSearchable`](can-be-searchable.md) — the markup, the debounce override and the client-side filter | [`Concerns/CanBeSearchable.php`](../../../vendor/filament/forms/src/Components/Concerns/CanBeSearchable.php) | done | — | [detail](can-be-searchable.md#the-checkbox-list-search-is-client-side-only-and-mostly-select-only) · [diverges](#the-controller-is-the-only-behaviour-and-no-test-in-this-repo-runs-it) |
 | [`CanLimitItemsLength`](../../../packages/forms/src/Components/Concerns/CanLimitItemsLength.php) — `minItems()` / `maxItems()` as a `Count` | [`Concerns/CanLimitItemsLength.php`](../../../vendor/filament/forms/src/Components/Concerns/CanLimitItemsLength.php) | done | — | [detail](can-limit-items-length.md) · [semantics](#the-three-server-side-guards-are-ordered-so-they-never-collide) |
 | The search field's magnifying-glass icon and its [input wrapper](../support/input-wrapper.md) prefix slot | [`Components/CheckboxList.php`](../../../vendor/filament/forms/src/Components/CheckboxList.php) | done | — | [semantics](#the-search-box-is-the-one-wrapper-a-template-opens-by-hand) |
-| `HasPivotData` — `pivotData()` on the save arm | [`Concerns/HasPivotData.php`](../../../vendor/filament/forms/src/Components/Concerns/HasPivotData.php) | blocked | a join-entity mapping (M3 · 9) | [detail](#haspivotdata-has-no-join-row-to-write-to) |
+| `HasPivotData` — `pivotData()` on the save arm | [`Concerns/HasPivotData.php`](../../../vendor/filament/forms/src/Components/Concerns/HasPivotData.php) | skipped | — | [diverges](select.md#the-save-arm-writes-a-desired-list-not-attachdetach) |
 | [`HasNestedRecursiveValidationConstraints` + its contract](../../../packages/forms/src/Components/Concerns/HasNestedRecursiveValidationConstraints.php) — the per-element constraints | [`Concerns/HasNestedRecursiveValidationRules.php`](../../../vendor/filament/forms/src/Components/Concerns/HasNestedRecursiveValidationRules.php) | done | — | [diverges](can-be-validated.md#nested-constraints-land-as-one-all-where-laravel-keys-a-path) |
-| `CanFixIndistinctState` | [`Concerns/CanFixIndistinctState.php`](../../../vendor/filament/forms/src/Components/Concerns/CanFixIndistinctState.php) | todo | — | [detail](radio.md#the-two-repeater-sibling-concerns-have-nothing-to-build-on) |
-| `CanDisableOptionsWhenSelectedInSiblingRepeaterItems` | [`Concerns/CanDisableOptionsWhenSelectedInSiblingRepeaterItems.php`](../../../vendor/filament/forms/src/Components/Concerns/CanDisableOptionsWhenSelectedInSiblingRepeaterItems.php) | blocked | repeater-item context (M3 · 6) | [detail](radio.md#the-two-repeater-sibling-concerns-have-nothing-to-build-on) |
+| `CanFixIndistinctState` | [`Concerns/CanFixIndistinctState.php`](../../../vendor/filament/forms/src/Components/Concerns/CanFixIndistinctState.php) | done | — | [detail](can-fix-indistinct-state.md) |
+| `CanDisableOptionsWhenSelectedInSiblingRepeaterItems` | [`Concerns/CanDisableOptionsWhenSelectedInSiblingRepeaterItems.php`](../../../vendor/filament/forms/src/Components/Concerns/CanDisableOptionsWhenSelectedInSiblingRepeaterItems.php) | done | — | [detail](can-disable-options-when-selected-in-sibling-repeater-items.md) |
 | `getPublishedViewOverrideCheckPath()` | [`Components/CheckboxList.php`](../../../vendor/filament/forms/src/Components/CheckboxList.php) | skipped | — | [semantics](toggle-buttons.md#there-is-nothing-to-publish-a-view-override-against) |
 
 Coverage: one checkbox per option with per-option ids and values and no shared
@@ -127,24 +127,6 @@ against the
 [`CheckboxListForm`](../../../packages/forms/tests/Fixtures/Twig/Components/CheckboxListForm.php)
 fixture, which asserts the resting `[]` on the wire before it asserts anything
 about checking.
-
-## Details
-
-Specifics for rows that are not finished. Delete a subsection when its row flips
-to **done**.
-
-### `HasPivotData` has no join row to write to
-
-The concern declares extra columns to write onto a `BelongsToMany` pivot table
-when the selection is saved. The port's save arm
-[writes a desired list of managed references](select.md#the-save-arm-writes-a-desired-list-not-attachdetach)
-and lets Doctrine reconcile the join table, which for a plain `ManyToMany` is a
-table the mapping owns and the application never names — there is no row object
-to set a column on. Making `pivotData()` mean anything needs the join modelled
-as its own entity, which is
-[M3 · 9](../roadmap.md#m3--forms-widening)'s call for `Select` too; the row is
-**blocked** on the same decision rather than skipped, and the concern stays
-`blocked` in the [feature table](README.md#features) pointing at `Select`.
 
 ## Semantics
 

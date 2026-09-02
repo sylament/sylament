@@ -46,6 +46,33 @@ final class OtherTwinSlugPage extends Page
 }
 
 /**
+ * Mounts a placeholder its `mount()` never takes and no property of its own
+ * answers, which is exactly what ux paints onto the live root as a stray HTML
+ * attribute.
+ */
+final class UnmountablePlaceholderPage extends Page
+{
+    public static function getRoutePath(): string
+    {
+        return '/{thing}';
+    }
+}
+
+/**
+ * Takes the same placeholder through a public property rather than a mount
+ * parameter — the second admit of the guard.
+ */
+final class PropertyPlaceholderPage extends Page
+{
+    public ?string $thing = null;
+
+    public static function getRoutePath(): string
+    {
+        return '/{thing}';
+    }
+}
+
+/**
  * Carries `ProbeResource`'s slug, so the two mount the same route names.
  */
 final class TwinSlugResource extends Resource
@@ -392,3 +419,41 @@ it('rejects a resources() entry that is not a Resource subclass', function (): v
 
     loaderFor($provider)();
 })->throws(LogicException::class, 'stdClass');
+
+it('mounts a resource page whose mount takes the record placeholder', function (): void {
+    expect(probeResourceLoader()()->get('sylament.probe.resources.articles.probe')?->getPath())
+        ->toBe('/probe/articles/{record}/probe');
+});
+
+it('refuses a page mounted at a placeholder it cannot take', function (): void {
+    $provider = new class extends PanelProvider {
+        public function panel(Panel $panel): Panel
+        {
+            return $panel->id('admin')->path('admin')->pages([UnmountablePlaceholderPage::class]);
+        }
+    };
+
+    loaderFor($provider)();
+})->throws(LogicException::class, 'the route parameter "{thing}"');
+
+it('admits a placeholder a public property of the page answers', function (): void {
+    $provider = new class extends PanelProvider {
+        public function panel(Panel $panel): Panel
+        {
+            return $panel->id('admin')->path('admin')->pages([PropertyPlaceholderPage::class]);
+        }
+    };
+
+    expect(loaderFor($provider)()->get('sylament.admin.pages.property-placeholder-page')?->getPath())
+        ->toBe('/admin/{thing}');
+});
+
+it('never asks a nested page to mount the parent keys the loader folds itself', function (): void {
+    // `EditVerse::mount()` takes `$record` and `$parentRecords` — never a
+    // `$chapter` — so the parent parameter has to be admitted by the loader's
+    // own list rather than by the page.
+    $route = nestedResourceLoader()()->get('sylament.nest.resources.chapters.verses.lines.edit');
+
+    expect($route?->getPath())->toBe('/nest/chapters/{chapter}/verses/{verse}/lines/{record}/edit')
+        ->and($route->getDefault('_sylament_parent_params'))->toBe(['chapter', 'verse']);
+});

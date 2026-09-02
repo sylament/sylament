@@ -6,6 +6,7 @@ namespace Sylament\Panels\Routing;
 
 use LogicException;
 use ReflectionClass;
+use ReflectionParameter;
 use Sylament\Panels\Controllers\PageController;
 use Sylament\Panels\Pages\Page;
 use Sylament\Panels\Panel;
@@ -117,9 +118,9 @@ final readonly class PanelRouteLoader implements RouteLoaderInterface
     }
 
     /**
-     * @param array<string, string> $owners        route name => the mount that claimed it, accumulated across panels
-     * @param class-string<Page>    $pageClass
-     * @param array<string, mixed>  $extraDefaults
+     * @param array<string, string>                            $owners        route name => the mount that claimed it, accumulated across panels
+     * @param class-string<Page>                               $pageClass
+     * @param array{_sylament_parent_params?: list<string>}     $extraDefaults
      */
     private function addRoute(RouteCollection $routes, array &$owners, string $name, string $path, Panel $panel, string $pageClass, string $ownerDescription, array $extraDefaults = []): void
     {
@@ -129,12 +130,52 @@ final readonly class PanelRouteLoader implements RouteLoaderInterface
 
         $owners[$name] = $ownerDescription;
 
+        $this->assertPagePlaceholdersMount($path, $pageClass, $extraDefaults['_sylament_parent_params'] ?? []);
+
         $routes->add($name, new Route($path, [
             '_controller' => PageController::class,
             '_sylament_panel' => $panel->getId(),
             '_sylament_page' => $pageClass,
             ...$extraDefaults,
         ], methods: ['GET']));
+    }
+
+    /**
+     * Every placeholder of a mounted path has to reach the page: through a
+     * `mount()` parameter, through a public property the component hydrates, or
+     * as a parent key the loader folds in itself. Otherwise ux paints the
+     * leftover onto the live root as a stray HTML attribute and nothing reports
+     * it.
+     *
+     * @param class-string<Page> $pageClass
+     * @param list<string>       $parentParams the keys this mount threads itself
+     */
+    private function assertPagePlaceholdersMount(string $path, string $pageClass, array $parentParams): void
+    {
+        if (preg_match_all('/\{([^}]+)\}/', $path, $matches) === 0) {
+            return;
+        }
+
+        $reflection = new ReflectionClass($pageClass);
+        $mountParameters = $reflection->hasMethod('mount')
+            ? array_map(static fn (ReflectionParameter $parameter): string => $parameter->getName(), $reflection->getMethod('mount')->getParameters())
+            : [];
+
+        foreach ($matches[1] as $parameter) {
+            if (in_array($parameter, $parentParams, true)) {
+                continue;
+            }
+
+            if (in_array($parameter, $mountParameters, true)) {
+                continue;
+            }
+
+            if ($reflection->hasProperty($parameter) && $reflection->getProperty($parameter)->isPublic()) {
+                continue;
+            }
+
+            throw new LogicException(sprintf('Page "%s" is mounted at "%s" with the route parameter "{%s}" its mount() does not declare and no public property of that name accepts.', $pageClass, $path, $parameter));
+        }
     }
 
     /**

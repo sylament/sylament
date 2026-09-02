@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Sylament\Forms\Components;
 
 use Closure;
+use LogicException;
 use Sylament\Forms\Components\Concerns\CanBeAutocapitalized;
 use Sylament\Forms\Components\Concerns\CanBeAutocompleted;
 use Sylament\Forms\Components\Concerns\CanBeLengthConstrained;
@@ -13,10 +14,14 @@ use Sylament\Forms\Components\Concerns\HasAffixes;
 use Sylament\Forms\Components\Concerns\HasDatalistOptions;
 use Sylament\Forms\Components\Concerns\HasExtraInputAttributes;
 use Sylament\Forms\Components\Concerns\HasStep;
+use Sylament\Forms\Components\TextInput\Actions\CopyAction;
+use Sylament\Forms\Components\TextInput\Actions\HidePasswordAction;
+use Sylament\Forms\Components\TextInput\Actions\ShowPasswordAction;
 use Sylament\Schemas\Components\Concerns\CanStripCharactersFromState;
 use Sylament\Schemas\Components\Concerns\CanTrimState;
 use Sylament\Schemas\State\Casts\Contracts\StateCast;
 use Sylament\Schemas\State\Casts\StripCharactersStateCast;
+use Symfony\Component\Security\Core\Validator\Constraints\UserPassword;
 use Symfony\Component\Validator\Constraint;
 use Symfony\Component\Validator\Constraints\Email;
 use Symfony\Component\Validator\Constraints\GreaterThanOrEqual;
@@ -49,6 +54,12 @@ class TextInput extends Field implements Contracts\CanBeLengthConstrained, Contr
     protected bool|Closure $isNumeric = false;
 
     protected bool|Closure $isPassword = false;
+
+    protected bool|Closure $isRevealable = false;
+
+    protected bool|Closure $isCopyable = false;
+
+    protected bool|Closure $isCurrentPassword = false;
 
     protected bool|Closure $isTel = false;
 
@@ -110,6 +121,40 @@ class TextInput extends Field implements Contracts\CanBeLengthConstrained, Contr
     public function password(bool|Closure $condition = true): static
     {
         $this->isPassword = $condition;
+
+        return $this;
+    }
+
+    public function revealable(bool|Closure $condition = true): static
+    {
+        $this->isRevealable = $condition;
+        $this->suffixActions([
+            ShowPasswordAction::make()->visible($condition),
+            HidePasswordAction::make()->visible($condition),
+        ]);
+
+        return $this;
+    }
+
+    public function copyable(
+        bool|Closure $condition = true,
+        string|Closure|null $copyMessage = null,
+        int|Closure|null $copyMessageDuration = null,
+    ): static {
+        $this->isCopyable = $condition;
+        $this->suffixAction(
+            CopyAction::make()
+                ->copyMessage($copyMessage)
+                ->copyMessageDuration($copyMessageDuration)
+                ->visible($condition),
+        );
+
+        return $this;
+    }
+
+    public function currentPassword(bool|Closure $condition = true): static
+    {
+        $this->isCurrentPassword = $condition;
 
         return $this;
     }
@@ -216,6 +261,20 @@ class TextInput extends Field implements Contracts\CanBeLengthConstrained, Contr
         return (bool) $this->evaluate($this->isPassword);
     }
 
+    public function isPasswordRevealable(): bool
+    {
+        if (!$this->evaluate($this->isRevealable)) {
+            return false;
+        }
+
+        return $this->isPassword() ?: throw new LogicException("The text input [{$this->getStatePath()}] is not a [password()], so it cannot be [revealable()].");
+    }
+
+    public function isCopyable(): bool
+    {
+        return (bool) $this->evaluate($this->isCopyable);
+    }
+
     public function isTel(): bool
     {
         return (bool) $this->evaluate($this->isTel);
@@ -255,6 +314,12 @@ class TextInput extends Field implements Contracts\CanBeLengthConstrained, Contr
 
         if (filled($maxValue = $this->getMaxValue())) {
             $constraints[] = new LessThanOrEqual($maxValue);
+        }
+
+        if ($this->evaluate($this->isCurrentPassword)) {
+            class_exists(UserPassword::class) || throw new LogicException('currentPassword() needs symfony/security-core and a configured firewall (symfony/security-bundle) to validate against the signed-in user.');
+
+            $constraints[] = new UserPassword();
         }
 
         return $constraints;

@@ -48,7 +48,7 @@ class SylamentFormsBundle extends SylamentBundle
         $services = $configurator->services();
 
         $services
-            ->load(__NAMESPACE__ . '\\Components\\', __DIR__ . '/Components/{*,Repeater/*}.php')
+            ->load(__NAMESPACE__ . '\\Components\\', __DIR__ . '/Components/{*,Repeater/*,TextInput/Actions/*}.php')
             ->autowire()
             ->autoconfigure();
 

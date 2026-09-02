@@ -4,12 +4,19 @@ declare(strict_types=1);
 
 namespace Sylament\Forms\Tests\Integration\Components;
 
+use LogicException;
 use Sylament\Actions\Action;
 use Sylament\Forms\Components\TextInput;
+use Sylament\Forms\Components\TextInput\Actions\CopyAction;
+use Sylament\Forms\Components\TextInput\Actions\HidePasswordAction;
+use Sylament\Forms\Components\TextInput\Actions\ShowPasswordAction;
 use Sylament\Forms\Tests\Fixtures\Concerns\FieldRenderHost;
+use Sylament\Forms\Twig\FormsIconAlias;
 use Sylament\Forms\Validation\RequiredValue;
 use Sylament\Schemas\Schema;
+use Sylament\Support\Icons\IconManager;
 use Symfony\Component\DomCrawler\Crawler;
+use Symfony\Component\Security\Core\Validator\Constraints\UserPassword;
 use Symfony\Component\Validator\Constraints\Email;
 use Symfony\Component\Validator\Constraints\GreaterThanOrEqual;
 use Symfony\Component\Validator\Constraints\Length;
@@ -611,4 +618,105 @@ it('mutates state for validation only once trim, strip or a closure is set', fun
         ->and(TextInput::make('n')->trim()->mutatesStateForValidation())->toBeTrue()
         ->and(TextInput::make('n')->stripCharacters(',')->mutatesStateForValidation())->toBeTrue()
         ->and(TextInput::make('n')->mutateStateForValidationUsing(fn (): string => 'x')->mutatesStateForValidation())->toBeTrue();
+});
+
+it('registers both password actions as suffix actions and reads the password back as revealable', function (): void {
+    $field = TextInput::make('secret')->password()->revealable();
+    $actions = $field->getSuffixActions();
+
+    expect($field->isPasswordRevealable())->toBeTrue()
+        ->and(array_keys($actions))->toBe(['showPassword', 'hidePassword'])
+        ->and($actions['showPassword'])->toBeInstanceOf(ShowPasswordAction::class)
+        ->and($actions['hidePassword'])->toBeInstanceOf(HidePasswordAction::class)
+        ->and($actions['showPassword']->isVisible())->toBeTrue()
+        ->and($actions['hidePassword']->isVisible())->toBeTrue();
+});
+
+it('reads a plain text input back as not revealable and registers no affix action for it', function (): void {
+    $field = TextInput::make('title');
+
+    expect($field->isPasswordRevealable())->toBeFalse()
+        ->and($field->getSuffixActions())->toBe([]);
+});
+
+it('answers false for a revealable condition that resolves false, without reaching the password guard', function (): void {
+    expect(TextInput::make('title')->revealable(false)->isPasswordRevealable())->toBeFalse()
+        ->and(TextInput::make('title')->revealable(static fn (): bool => false)->isPasswordRevealable())->toBeFalse();
+});
+
+it('refuses to reveal an input that is not a password', function (): void {
+    $field = TextInput::make('title')->revealable();
+    Schema::make(new FieldRenderHost())->statePath('data')->components([$field])->getComponents();
+
+    expect(static fn (): bool => $field->isPasswordRevealable())
+        ->toThrow(LogicException::class, 'The text input [data.title] is not a [password()], so it cannot be [revealable()].');
+});
+
+it('hides both password actions behind a revealable condition that resolves false', function (): void {
+    $actions = TextInput::make('secret')->password()->revealable(false)->getSuffixActions();
+
+    expect($actions['showPassword']->isVisible())->toBeFalse()
+        ->and($actions['hidePassword']->isVisible())->toBeFalse();
+});
+
+it('registers the copy action as a suffix action and reads the field back as copyable', function (): void {
+    $field = TextInput::make('token')->copyable();
+    $actions = $field->getSuffixActions();
+
+    expect($field->isCopyable())->toBeTrue()
+        ->and(array_keys($actions))->toBe(['copy'])
+        ->and($actions['copy'])->toBeInstanceOf(CopyAction::class)
+        ->and($actions['copy']->isVisible())->toBeTrue();
+});
+
+it('carries the copy message and duration onto the registered action', function (): void {
+    $field = TextInput::make('token')->copyable(copyMessage: 'Token copied', copyMessageDuration: 5000);
+    Schema::make(new FieldRenderHost())->statePath('data')->components([$field])->getComponents();
+
+    $copy = $field->getSuffixActions()['copy'];
+
+    expect($copy)->toBeInstanceOf(CopyAction::class)
+        ->and($copy->getExtraAttributeBag()->toScalarAttributes())
+        ->toMatchArray([
+            'data-sylament--forms--text-input-message-param' => 'Token copied',
+            'data-sylament--forms--text-input-duration-param' => '5000',
+        ]);
+});
+
+it('reads a plain text input back as not copyable and hides a copy action behind a false condition', function (): void {
+    expect(TextInput::make('title')->isCopyable())->toBeFalse()
+        ->and(TextInput::make('token')->copyable(false)->isCopyable())->toBeFalse()
+        ->and(TextInput::make('token')->copyable(false)->getSuffixActions()['copy']->isVisible())->toBeFalse();
+});
+
+it('sees the render-time state in a copy message closure', function (): void {
+    $host = new FieldRenderHost();
+    $host->data = ['token' => 'abc'];
+
+    $field = TextInput::make('token')->copyable(copyMessage: static fn (mixed $state): string => "Copied {$state}");
+    Schema::make($host)->statePath('data')->components([$field])->getComponents();
+
+    expect($field->getSuffixActions()['copy']->getExtraAttributeBag()->toScalarAttributes())
+        ->toMatchArray(['data-sylament--forms--text-input-message-param' => 'Copied abc']);
+});
+
+it('appends the current-password constraint only behind the flag', function (): void {
+    $constraints = TextInput::make('password')->currentPassword()->getValidationConstraints();
+
+    expect($constraints)->toHaveCount(1)
+        ->and($constraints[0])->toBeInstanceOf(UserPassword::class)
+        ->and(TextInput::make('password')->getValidationConstraints())->toBe([])
+        ->and(TextInput::make('password')->currentPassword(false)->getValidationConstraints())->toBe([]);
+});
+
+it('builds the three affix actions through the container, so a registered alias replaces their icons', function (): void {
+    $this::getContainer()->get(IconManager::class)->register([
+        FormsIconAlias::COMPONENTS_TEXT_INPUT_ACTIONS_SHOW_PASSWORD => 'heroicons:star',
+        FormsIconAlias::COMPONENTS_TEXT_INPUT_ACTIONS_HIDE_PASSWORD => 'heroicons:star',
+        FormsIconAlias::COMPONENTS_TEXT_INPUT_ACTIONS_COPY => 'heroicons:star',
+    ]);
+
+    expect(ShowPasswordAction::make()->getIcon())->toBe('heroicons:star')
+        ->and(HidePasswordAction::make()->getIcon())->toBe('heroicons:star')
+        ->and(CopyAction::make()->getIcon())->toBe('heroicons:star');
 });

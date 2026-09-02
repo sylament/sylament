@@ -11,6 +11,11 @@
   },
   "symfony": {
     "controllers": {
+      "editable-cell": {
+        "main": "dist/controllers/editable_cell_controller.js",
+        "fetch": "eager",
+        "enabled": true
+      },
       "table": {
         "main": "dist/controllers/table_controller.js",
         "fetch": "eager",

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Sylament\Tables\Tests\Integration;
 
 use Closure;
+use stdClass;
 use Sylament\Actions\Action;
 use Sylament\Actions\ActionGroup;
 use Sylament\Actions\BulkAction;
@@ -1055,4 +1056,185 @@ it('demotes the empty state heading below a table heading', function (): void {
 
     expect($withHeading->filter('h3.sy-ta-empty-state-heading')->count())->toBe(1)
         ->and($without->filter('h2.sy-ta-empty-state-heading')->count())->toBe(1);
+});
+
+/*
+ * The column lane of the same rig: the interleaved cell wrapper, and the header
+ * and cell attribute assembly the column's own surface feeds.
+ */
+
+it('lets a column url beat the record url and marks the anchor as the columns own', function (): void {
+    $crawler = new Crawler(rowBehaviourTableHtml(fn (Table $table): Table => $table
+        ->columns([TextColumn::make('title')->url(fn (Song $record): string => '/columns/' . $record->id)])
+        ->recordUrl('/records')));
+
+    $anchor = $crawler->filter('tbody > tr > td.sy-ta-cell > a.sy-ta-col')->first();
+
+    expect($anchor->attr('href'))->toBe('/columns/1')
+        ->and($anchor->attr('class'))->toBe('sy-ta-col sy-ta-col-has-column-url');
+});
+
+it('lets a column action suppress the record url entirely', function (): void {
+    $crawler = new Crawler(rowBehaviourTableHtml(fn (Table $table): Table => $table
+        ->columns([TextColumn::make('title')->action(fn (): null => null)])
+        ->recordUrl('/records')));
+
+    expect($crawler->filter('tbody > tr > td.sy-ta-cell > a.sy-ta-col')->count())->toBe(0)
+        ->and($crawler->filter('tbody > tr > td.sy-ta-cell > button.sy-ta-col')->count())->toBe(2);
+});
+
+it('lets a column url beat a record action', function (): void {
+    $crawler = new Crawler(rowBehaviourTableHtml(fn (Table $table): Table => $table
+        ->columns([TextColumn::make('title')->url('/columns')])
+        ->recordAction('openMyThing')));
+
+    expect($crawler->filter('tbody > tr > td.sy-ta-cell > a.sy-ta-col')->count())->toBe(2)
+        ->and($crawler->filter('tbody > tr > td.sy-ta-cell > button.sy-ta-col')->count())->toBe(0);
+});
+
+it('collapses a click-disabled column to a div however the record is wired', function (): void {
+    $crawler = new Crawler(rowBehaviourTableHtml(fn (Table $table): Table => $table
+        ->columns([TextColumn::make('title')->url('/columns')->disabledClick()])
+        ->recordUrl('/records')
+        ->recordAction('openMyThing')));
+
+    expect($crawler->filter('tbody > tr > td.sy-ta-cell > div.sy-ta-col')->count())->toBe(2)
+        ->and($crawler->filter('tbody > tr > td a, tbody > tr > td button')->count())->toBe(0);
+});
+
+it('collapses a state-based column url to a div and leaves no wrapper href', function (): void {
+    $crawler = new Crawler(rowBehaviourTableHtml(fn (Table $table): Table => $table
+        ->columns([TextColumn::make('title')->url(fn (mixed $state): string => '/songs/' . $state)])
+        ->recordUrl('/records')));
+
+    expect($crawler->filter('tbody > tr > td.sy-ta-cell > div.sy-ta-col')->count())->toBe(2)
+        ->and($crawler->filter('tbody > tr > td.sy-ta-cell > a.sy-ta-col')->count())->toBe(0);
+});
+
+it('takes the new-tab flag from whichever arm supplied the href', function (): void {
+    $fromColumn = new Crawler(rowBehaviourTableHtml(fn (Table $table): Table => $table
+        ->columns([TextColumn::make('title')->url('/columns', shouldOpenInNewTab: true)])
+        ->recordUrl('/records')));
+    $fromRecord = new Crawler(rowBehaviourTableHtml(fn (Table $table): Table => $table
+        ->columns([TextColumn::make('title')->openUrlInNewTab()])
+        ->recordUrl('/records')));
+
+    expect($fromColumn->filter('a.sy-ta-col')->first()->attr('target'))->toBe('_blank')
+        ->and($fromRecord->filter('a.sy-ta-col')->first()->attr('target'))->toBeNull();
+});
+
+it('spreads the record link attributes only on the record fallback', function (): void {
+    $configure = fn (Table $table): Table => $table
+        ->recordUrl('/records')
+        ->extraRecordLinkAttributes(['data-probe' => 'yes']);
+
+    $columnArm = new Crawler(rowBehaviourTableHtml(fn (Table $table): Table => $configure($table)
+        ->columns([TextColumn::make('title')->url('/columns')])));
+    $recordArm = new Crawler(rowBehaviourTableHtml($configure));
+
+    expect($columnArm->filter('a.sy-ta-col')->first()->attr('data-probe'))->toBeNull()
+        ->and($recordArm->filter('a.sy-ta-col')->first()->attr('data-probe'))->toBe('yes');
+});
+
+it('mounts a column action instance and calls a column action closure by name', function (): void {
+    $mounting = new Crawler(rowBehaviourTableHtml(fn (Table $table): Table => $table
+        ->columns([TextColumn::make('title')->action(Action::make('view'))])));
+    $calling = new Crawler(rowBehaviourTableHtml(fn (Table $table): Table => $table
+        ->columns([TextColumn::make('title')->action(fn (): null => null)])));
+
+    $mounted = $mounting->filter('button.sy-ta-col')->first();
+    $called = $calling->filter('button.sy-ta-col')->first();
+
+    expect($mounted->attr('data-live-action-param'))->toBe('mountAction')
+        ->and($mounted->attr('data-live-name-param'))->toBe('view')
+        ->and($mounted->attr('data-live-context-param'))->toBe('{"recordKey":"1","table":true}')
+        ->and($called->attr('data-live-action-param'))->toBe('callTableColumnAction')
+        ->and($called->attr('data-live-name-param'))->toBe('title')
+        ->and($called->attr('data-live-record-key-param'))->toBe('1');
+});
+
+it('assembles the header cell from the columns own surface', function (): void {
+    $crawler = new Crawler(rowBehaviourTableHtml(fn (Table $table): Table => $table
+        ->columns([
+            TextColumn::make('releasedAt')
+                ->wrapHeader()
+                ->grow()
+                ->alignCenter()
+                ->hiddenFrom('md')
+                ->visibleFrom('lg')
+                ->headerTooltip('When it shipped')
+                ->extraHeaderAttributes(['data-probe' => 'yes']),
+        ])));
+
+    $header = $crawler->filter('thead > tr > th')->first();
+
+    expect($header->attr('class'))->toBe('sy-ta-header-cell sy-ta-header-cell-released-at sy-growable sy-wrapped sy-align-center md:sy-ta-hidden lg:sy-ta-visible')
+        ->and($header->attr('title'))->toBe('When it shipped')
+        ->and($header->attr('data-probe'))->toBe('yes')
+        ->and($header->attr('style'))->toBeNull();
+});
+
+it('drops the growable marker for a column that declares a width, and styles the width instead', function (): void {
+    $crawler = new Crawler(rowBehaviourTableHtml(fn (Table $table): Table => $table
+        ->columns([TextColumn::make('title')->grow()->width(200)])));
+
+    $header = $crawler->filter('thead > tr > th')->first();
+
+    expect($header->attr('class'))->toBe('sy-ta-header-cell sy-ta-header-cell-title')
+        ->and($header->attr('style'))->toBe('width: 200px');
+});
+
+it('flattens a markup header tooltip to text', function (): void {
+    $crawler = new Crawler(rowBehaviourTableHtml(fn (Table $table): Table => $table
+        ->columns([TextColumn::make('title')->headerTooltip(new Markup('<b>When</b> it shipped', 'UTF-8'))])));
+
+    expect($crawler->filter('thead > tr > th')->first()->attr('title'))->toBe('When it shipped');
+});
+
+it('swaps the sort control to a span for a markup label and names all three events', function (): void {
+    $markup = new Crawler(rowBehaviourTableHtml(fn (Table $table): Table => $table
+        ->columns([TextColumn::make('title')->label(new Markup('<em>Title</em>', 'UTF-8'))->sortable()])));
+    $plain = new Crawler(rowBehaviourTableHtml(fn (Table $table): Table => $table
+        ->columns([TextColumn::make('title')->sortable()])));
+
+    $span = $markup->filter('th span.sy-ta-header-cell-sort-btn')->first();
+
+    expect($markup->filter('th button.sy-ta-header-cell-sort-btn')->count())->toBe(0)
+        ->and($span->attr('role'))->toBe('button')
+        ->and($span->attr('tabindex'))->toBe('0')
+        ->and($span->attr('data-action'))->toBe('click->live#action keydown.enter->live#action keydown.space->live#action')
+        ->and($span->attr('data-live-action-param'))->toBe('sortTable')
+        ->and($span->filter('em')->text())->toBe('Title')
+        ->and($plain->filter('th button.sy-ta-header-cell-sort-btn')->count())->toBe(1)
+        ->and($plain->filter('th button.sy-ta-header-cell-sort-btn')->attr('data-action'))->toBe('live#action');
+});
+
+it('assembles the data cell from the columns own surface', function (): void {
+    $crawler = new Crawler(rowBehaviourTableHtml(fn (Table $table): Table => $table
+        ->columns([
+            TextColumn::make('artist.name')
+                ->alignEnd()
+                ->verticallyAlignStart()
+                ->hiddenFrom('sm')
+                ->visibleFrom('2xl')
+                ->extraCellAttributes(['data-probe' => 'yes']),
+        ])));
+
+    $cell = $crawler->filter('tbody > tr > td')->first();
+
+    expect($cell->attr('class'))->toBe('sy-ta-cell sy-ta-cell-artist.name sy-align-end sy-vertical-align-start sm:sy-ta-hidden 2xl:sy-ta-visible')
+        ->and($cell->attr('data-probe'))->toBe('yes');
+});
+
+it('hands each cell the row loop of the record being rendered', function (): void {
+    $crawler = new Crawler(rowBehaviourTableHtml(fn (Table $table): Table => $table
+        ->columns([TextColumn::make('title')->extraCellAttributes(fn (?stdClass $rowLoop): array => [
+            'data-iteration' => (string) ($rowLoop?->iteration ?? ''),
+            'data-count' => (string) ($rowLoop?->count ?? ''),
+        ])])));
+
+    $cells = $crawler->filter('tbody > tr > td.sy-ta-cell');
+
+    expect($cells->each(fn (Crawler $cell): ?string => $cell->attr('data-iteration')))->toBe(['1', '2'])
+        ->and($cells->first()->attr('data-count'))->toBe('2');
 });

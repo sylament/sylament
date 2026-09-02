@@ -77,15 +77,18 @@ against the deferred settings each names rather than **blocked**. (The
 precedence — **todo** upstairs, **blocked** in the component's file — so the two
 packages disagree until that one is revisited.)
 
-Thirty-four concerns the port has landed are **folded** into the detail file of
+Forty-three concerns the port has landed are **folded** into the detail file of
 the class that composes them and carry no row here, per
 [one row per file](../README.md#one-row-per-file-one-file-per-thing) — eleven
 `Table\Concerns\` traits (`BelongsToLivewire`, `CanPaginateRecords`,
 `CanSearchRecords`, `CanSortRecords`, `HasActions`, `HasAggregateValues`,
 `HasColumns`, `HasEmptyState`, `HasQuery`, `HasRecordActions`, `HasRecords`) into
-[`table.md`](table.md), seven `Columns\Concerns\` traits
-(`BelongsToTable`, `CanBeSearchable`, `CanBeSortable`, `HasLabel`, `HasName`,
-`HasRecord`, `InteractsWithTableQuery`) into [`column.md`](column.md), five
+[`table.md`](table.md), sixteen `Columns\Concerns\` traits
+(`BelongsToTable`, `CanBeDisabled`, `CanBeHiddenResponsively`, `CanBeInline`,
+`CanBeSearchable`, `CanBeSortable`, `CanCallAction`, `CanOpenUrl`,
+`HasExtraCellAttributes`, `HasExtraHeaderAttributes`, `HasLabel`, `HasName`,
+`HasRecord`, `HasRowLoopObject`, `HasTooltip`, `InteractsWithTableQuery`) into
+[`column.md`](column.md), five
 `Columns\Concerns\` traits
 (`CanFormatState`, `HasColor`, `HasDescription`, `HasIcon`, `HasIconColor`)
 into
@@ -105,7 +108,8 @@ each row is where the deferred half stays findable. `Filters\Concerns\HasOptions
 [`select-filter.md`](select-filter.md) rather than into `base-filter.md` with the
 eleven above. `Columns\Concerns\InteractsWithTableQuery` kept a row on the same
 grounds until [· 20](../roadmap.md#pulled-forward) landed its aggregate and
-eager-loading half, and folded when it did. Everything
+eager-loading half, and folded when it did; the nine the column catalog landed
+folded on arrival. Everything
 Filament ships that the port has **not** reached keeps its
 own per-file row below, the way
 [`actions`](../actions/README.md#features) tracks the concerns `Action` has not
@@ -176,7 +180,7 @@ milestone.
 | Filters / TrashedFilter | [`Filters/TrashedFilter.php`](../../../vendor/filament/tables/src/Filters/TrashedFilter.php) | todo | — |
 | Grouping / Group | [`Grouping/Group.php`](../../../vendor/filament/tables/src/Grouping/Group.php) | todo | — |
 | IconColumn | [`Columns/IconColumn.php`](../../../vendor/filament/tables/src/Columns/IconColumn.php) | todo | — |
-| [`ImageColumn`](../../../packages/tables/src/Columns/ImageColumn.php) | [`Columns/ImageColumn.php`](../../../vendor/filament/tables/src/Columns/ImageColumn.php) | in progress | [image-column.md](image-column.md) |
+| [`ImageColumn`](../../../packages/tables/src/Columns/ImageColumn.php) | [`Columns/ImageColumn.php`](../../../vendor/filament/tables/src/Columns/ImageColumn.php) | done | [image-column.md](image-column.md) |
 | SelectColumn | [`Columns/SelectColumn.php`](../../../vendor/filament/tables/src/Columns/SelectColumn.php) | todo | — |
 | TagsColumn | [`Columns/TagsColumn.php`](../../../vendor/filament/tables/src/Columns/TagsColumn.php) | todo | — |
 | [`TextColumn`](../../../packages/tables/src/Columns/TextColumn.php) | [`src/Columns/TextColumn.php`](../../../vendor/filament/tables/src/Columns/TextColumn.php) | in progress | [text-column.md](text-column.md) |
@@ -211,7 +215,7 @@ The prefix is load-bearing rather than decorative: twenty trait names occur in
 two of these tiers and five (`BelongsToTable`, `CanBeHidden`, `HasColumns`,
 `HasLabel`, `InteractsWithTableQuery`) in three, which is the same
 [read-by-import, never by the bare `use`](../../../CLAUDE.md) trap the schemas
-tiers carry. The thirty-four landed concerns folded into their component's detail
+tiers carry. The forty-three landed concerns folded into their component's detail
 file are named in the [preamble](#tables--port-progress) and carry no row here.
 
 `Contracts/HasTable.php` is not listed in
@@ -233,7 +237,7 @@ pairs with, so it shares the first row below.
 | Host / HasActions | [`Concerns/HasActions.php`](../../../vendor/filament/tables/src/Concerns/HasActions.php) | skipped | Every method in the file is a deprecated `*TableAction` delegate to the actions-package equivalent, and the project has never ported a deprecated Filament surface. What it fronts is built: mounting, resolution — the bulk map included — and record binding go through actions' [`HasActions`](../actions/has-actions.md#a-client-supplied-record-key-is-type-checked-before-the-lookup) and the [`InteractsWithTable`](has-table.md#the-contract-is-twenty-methods-of-filaments-forty-six) contract |
 | [`Host / HasBulkActions`](../../../packages/tables/src/Concerns/HasBulkActions.php) | [`Concerns/HasBulkActions.php`](../../../vendor/filament/tables/src/Concerns/HasBulkActions.php) | in progress | [has-table.md](has-table.md#the-selection-is-server-canonical-and-re-derived-on-every-read) |
 | Host / HasColumnManager | [`Concerns/HasColumnManager.php`](../../../vendor/filament/tables/src/Concerns/HasColumnManager.php) | todo | — |
-| Host / HasColumns | [`Concerns/HasColumns.php`](../../../vendor/filament/tables/src/Concerns/HasColumns.php) | todo | — |
+| [`Host / HasColumns`](../../../packages/tables/src/Concerns/HasColumns.php) | [`Concerns/HasColumns.php`](../../../vendor/filament/tables/src/Concerns/HasColumns.php) | in progress | [has-columns.md](has-columns.md) |
 | Host / HasContent | [`Concerns/HasContent.php`](../../../vendor/filament/tables/src/Concerns/HasContent.php) | todo | — |
 | Host / HasEmptyState | [`Concerns/HasEmptyState.php`](../../../vendor/filament/tables/src/Concerns/HasEmptyState.php) | skipped | The trait and all five members (`getTableEmptyState()`, `getTableEmptyStateActions()`, `getTableEmptyStateDescription()`, `getTableEmptyStateHeading()`, `getTableEmptyStateIcon()`) carry `@deprecated Override the \`table()\` method`, and the project has never ported a deprecated Filament surface — what they front is the table-side empty-state family, [**done** on `table.md`](table.md#surface) |
 | Host / HasFilters | [`Concerns/HasFilters.php`](../../../vendor/filament/tables/src/Concerns/HasFilters.php) | in progress | [has-table.md](has-table.md) |
@@ -257,28 +261,19 @@ pairs with, so it shares the first row below.
 | [`Table / HasHeaderActions`](../../../packages/tables/src/Table/Concerns/HasHeaderActions.php) | [`Table/Concerns/HasHeaderActions.php`](../../../vendor/filament/tables/src/Table/Concerns/HasHeaderActions.php) | in progress | [table.md](table.md#the-header-and-toolbar-setters-are-destructive-because-the-flat-bulk-map-is-the-checkbox-switch) |
 | Table / HasHeadings | [`Table/Concerns/HasHeadings.php`](../../../vendor/filament/tables/src/Table/Concerns/HasHeadings.php) | todo | — |
 | [`Table / HasQueryStringIdentifier`](../../../packages/tables/src/Table/Concerns/HasQueryStringIdentifier.php) | [`Table/Concerns/HasQueryStringIdentifier.php`](../../../vendor/filament/tables/src/Table/Concerns/HasQueryStringIdentifier.php) | done | [has-table.md](has-table.md#the-query-string-identifier-is-live-on-the-table-and-dead-in-the-modifiers) |
-| [`Table / HasRecordAction`](../../../packages/tables/src/Table/Concerns/HasRecordAction.php) | [`Table/Concerns/HasRecordAction.php`](../../../vendor/filament/tables/src/Table/Concerns/HasRecordAction.php) | done | [table.md](table.md#the-cell-wrapper-ships-the-record-arms-and-m4--4-interleaves-the-column-ones) |
+| [`Table / HasRecordAction`](../../../packages/tables/src/Table/Concerns/HasRecordAction.php) | [`Table/Concerns/HasRecordAction.php`](../../../vendor/filament/tables/src/Table/Concerns/HasRecordAction.php) | done | [table.md](table.md#the-cell-wrapper-interleaves-the-column-arms-with-the-record-ones) |
 | [`Table / HasRecordClasses`](../../../packages/tables/src/Table/Concerns/HasRecordClasses.php) | [`Table/Concerns/HasRecordClasses.php`](../../../vendor/filament/tables/src/Table/Concerns/HasRecordClasses.php) | done | [table.md](table.md#surface) |
-| [`Table / HasRecordUrl`](../../../packages/tables/src/Table/Concerns/HasRecordUrl.php) | [`Table/Concerns/HasRecordUrl.php`](../../../vendor/filament/tables/src/Table/Concerns/HasRecordUrl.php) | in progress | `getExtraRecordLinkAttributeBag()` alone is skipped — [table.md](table.md#the-cell-wrapper-ships-the-record-arms-and-m4--4-interleaves-the-column-ones) |
+| [`Table / HasRecordUrl`](../../../packages/tables/src/Table/Concerns/HasRecordUrl.php) | [`Table/Concerns/HasRecordUrl.php`](../../../vendor/filament/tables/src/Table/Concerns/HasRecordUrl.php) | in progress | `getExtraRecordLinkAttributeBag()` alone is skipped — [table.md](table.md#the-cell-wrapper-interleaves-the-column-arms-with-the-record-ones) |
 | [`Table / HasToolbarActions`](../../../packages/tables/src/Table/Concerns/HasToolbarActions.php) | [`Table/Concerns/HasToolbarActions.php`](../../../vendor/filament/tables/src/Table/Concerns/HasToolbarActions.php) | done | [table.md](table.md#the-header-and-toolbar-setters-are-destructive-because-the-flat-bulk-map-is-the-checkbox-switch) |
 | Column / BelongsToGroup | [`Columns/Concerns/BelongsToGroup.php`](../../../vendor/filament/tables/src/Columns/Concerns/BelongsToGroup.php) | todo | — |
 | Column / BelongsToLayout | [`Columns/Concerns/BelongsToLayout.php`](../../../vendor/filament/tables/src/Columns/Concerns/BelongsToLayout.php) | todo | — |
-| Column / CanBeCopied | [`Columns/Concerns/CanBeCopied.php`](../../../vendor/filament/tables/src/Columns/Concerns/CanBeCopied.php) | todo | — |
-| Column / CanBeDisabled | [`Columns/Concerns/CanBeDisabled.php`](../../../vendor/filament/tables/src/Columns/Concerns/CanBeDisabled.php) | todo | — |
+| Column / CanBeCopied | [`Columns/Concerns/CanBeCopied.php`](../../../vendor/filament/tables/src/Columns/Concerns/CanBeCopied.php) | skipped | The whole trait is a `@deprecated` shim over `Support\Concerns\CanBeCopied`, and the port has never landed a deprecated Filament surface — the support trait it fronts ships as [`can-be-copied.md`](../support/can-be-copied.md) ([renames.md](../renames.md)) |
 | Column / CanBeHidden | [`Columns/Concerns/CanBeHidden.php`](../../../vendor/filament/tables/src/Columns/Concerns/CanBeHidden.php) | todo | — |
-| Column / CanBeHiddenResponsively | [`Columns/Concerns/CanBeHiddenResponsively.php`](../../../vendor/filament/tables/src/Columns/Concerns/CanBeHiddenResponsively.php) | todo | — |
-| Column / CanBeInline | [`Columns/Concerns/CanBeInline.php`](../../../vendor/filament/tables/src/Columns/Concerns/CanBeInline.php) | todo | — |
 | Column / CanBeSummarized | [`Columns/Concerns/CanBeSummarized.php`](../../../vendor/filament/tables/src/Columns/Concerns/CanBeSummarized.php) | todo | — |
 | Column / CanBeToggled | [`Columns/Concerns/CanBeToggled.php`](../../../vendor/filament/tables/src/Columns/Concerns/CanBeToggled.php) | todo | — |
 | Column / CanBeValidated | [`Columns/Concerns/CanBeValidated.php`](../../../vendor/filament/tables/src/Columns/Concerns/CanBeValidated.php) | todo | — |
-| Column / CanCallAction | [`Columns/Concerns/CanCallAction.php`](../../../vendor/filament/tables/src/Columns/Concerns/CanCallAction.php) | todo | — |
-| Column / CanOpenUrl | [`Columns/Concerns/CanOpenUrl.php`](../../../vendor/filament/tables/src/Columns/Concerns/CanOpenUrl.php) | todo | — |
 | Column / CanUpdateState | [`Columns/Concerns/CanUpdateState.php`](../../../vendor/filament/tables/src/Columns/Concerns/CanUpdateState.php) | todo | — |
-| Column / HasExtraCellAttributes | [`Columns/Concerns/HasExtraCellAttributes.php`](../../../vendor/filament/tables/src/Columns/Concerns/HasExtraCellAttributes.php) | todo | — |
-| Column / HasExtraHeaderAttributes | [`Columns/Concerns/HasExtraHeaderAttributes.php`](../../../vendor/filament/tables/src/Columns/Concerns/HasExtraHeaderAttributes.php) | todo | — |
-| Column / HasRowLoopObject | [`Columns/Concerns/HasRowLoopObject.php`](../../../vendor/filament/tables/src/Columns/Concerns/HasRowLoopObject.php) | todo | [column.md](column.md#rowloop-waits-on-a-decision-about-twigs-loop-not-on-the-table-template) |
 | Column / HasSpace | [`Columns/Concerns/HasSpace.php`](../../../vendor/filament/tables/src/Columns/Concerns/HasSpace.php) | todo | — |
-| Column / HasTooltip | [`Columns/Concerns/HasTooltip.php`](../../../vendor/filament/tables/src/Columns/Concerns/HasTooltip.php) | todo | — |
 | Summarizer / BelongsToColumn | [`Columns/Summarizers/Concerns/BelongsToColumn.php`](../../../vendor/filament/tables/src/Columns/Summarizers/Concerns/BelongsToColumn.php) | todo | — |
 | Summarizer / CanBeHidden | [`Columns/Summarizers/Concerns/CanBeHidden.php`](../../../vendor/filament/tables/src/Columns/Summarizers/Concerns/CanBeHidden.php) | todo | — |
 | Summarizer / CanFormatState | [`Columns/Summarizers/Concerns/CanFormatState.php`](../../../vendor/filament/tables/src/Columns/Summarizers/Concerns/CanFormatState.php) | todo | — |

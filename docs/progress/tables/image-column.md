@@ -11,11 +11,10 @@ as [pulled-forward 25](../roadmap.md#pulled-forward). Everything
 [`Column`](column.md) carries — the name, the label, the record binding, the
 state read, the closure injections — is tracked there, not repeated here.
 
-**Status:** in progress — see the
-[status vocabulary](../README.md#statuses). The blocked rows below wait on
-`Column`-level concerns the M4 · 4 remainder owns (tooltip, url, placeholder,
-`inline()`, the wrapper `extraAttributes()`), not on anything of this class's
-own.
+**Status:** done — see the
+[status vocabulary](../README.md#statuses). The five rows that waited on
+`Column`-level concerns (tooltip, url, placeholder, `inline()`, the wrapper
+`extraAttributes()`) landed with the column catalog's base surface.
 
 Reference — the Filament source this is diffed against:
 
@@ -51,11 +50,11 @@ deleted once the row is **done**; **diverges** → the permanent note in
 | [`$template`](../../../packages/tables/src/Columns/ImageColumn.php) + [the partial it names](../../../packages/tables/templates/partials/ImageColumn/index.html.twig) | [`ImageColumn::toEmbeddedHtml()`](../../../vendor/filament/tables/src/Columns/ImageColumn.php) | done | — | [diverges](#the-cell-renders-a-twig-partial-where-filament-emits-an-embedded-view) |
 | [`getLimitedRemainingTextSizeClass()`](../../../packages/tables/src/Columns/ImageColumn.php) | — (Sylament-only) | done | — | [semantics](#the-sy-size-base-css-arm-is-not-ported) |
 | `size()` / `height()` / `width()` / `rounded()` — deprecated aliases | [`ImageColumn`](../../../vendor/filament/tables/src/Columns/ImageColumn.php) | skipped | — | The port ships no deprecated Filament surface — [renames.md](../renames.md) |
-| The tooltip arms (`getTooltip($stateItem)`, `getEmptyTooltip()`) | [`ImageColumn::toEmbeddedHtml()`](../../../vendor/filament/tables/src/Columns/ImageColumn.php) | todo | `tooltip()` on [`Column`](column.md) (M4 · 4) | — |
-| The link arm (`getUrl($stateItem)` wrapping each image in an `<a>`) | [`ImageColumn::toEmbeddedHtml()`](../../../vendor/filament/tables/src/Columns/ImageColumn.php) | todo | `url()` on [`Column`](column.md) (M4 · 4) | — |
-| The blank-state placeholder (`getPlaceholder()`) | [`ImageColumn::toEmbeddedHtml()`](../../../vendor/filament/tables/src/Columns/ImageColumn.php) | todo | `placeholder()` on [`Column`](column.md) (M4 · 4) | — |
-| `fi-inline` on the root | [`ImageColumn::toEmbeddedHtml()`](../../../vendor/filament/tables/src/Columns/ImageColumn.php) | todo | `inline()` on [`Column`](column.md) (M4 · 4) | — |
-| The wrapper `extraAttributes()` on the root div | [`Column::getExtraAttributeBag()`](../../../vendor/filament/tables/src/Columns/Column.php) | todo | `extraAttributes()` on [`Column`](column.md) (M4 · 4) | — |
+| [The tooltip arms — `title` per image from `getTooltip($stateItem)`, and on the blank root from `getEmptyTooltip()`](../../../packages/tables/templates/partials/ImageColumn/index.html.twig) | [`ImageColumn::toEmbeddedHtml()`](../../../vendor/filament/tables/src/Columns/ImageColumn.php) | done | — | [column.md](column.md#a-tooltip-renders-as-a-native-title-and-markup-is-flattened-to-text) |
+| [The link arm — `getUrl($stateItem)` wrapping each image in an `<a>`](../../../packages/tables/templates/partials/ImageColumn/index.html.twig) | [`ImageColumn::toEmbeddedHtml()`](../../../vendor/filament/tables/src/Columns/ImageColumn.php) | done | — | [column.md](column.md#geturl-answers-by-argument-count-so-a-closures-parameter-name-changes-the-dom) |
+| [The blank-state placeholder (`getPlaceholder()`)](../../../packages/tables/templates/partials/ImageColumn/index.html.twig) | [`ImageColumn::toEmbeddedHtml()`](../../../vendor/filament/tables/src/Columns/ImageColumn.php) | done | — | [semantics](#a-default-image-beats-the-placeholder) |
+| [`sy-inline` on the root, and the padding behind `:not(.sy-inline)`](../../../packages/tables/assets/src/styles/components/image-column.css) | [`ImageColumn::toEmbeddedHtml()`](../../../vendor/filament/tables/src/Columns/ImageColumn.php), [`columns/image.css`](../../../vendor/filament/tables/resources/css/columns/image.css) | done | — | — |
+| [The wrapper `extraAttributes()` on the root div](../../../packages/tables/templates/partials/ImageColumn/index.html.twig) | [`Column::getExtraAttributeBag()`](../../../vendor/filament/tables/src/Columns/Column.php) | done | — | — |
 
 The surface rows are covered by the Unit
 [`ImageColumnTest`](../../../packages/tables/tests/Unit/Columns/ImageColumnTest.php)
@@ -81,10 +80,30 @@ private file that gets no URL at all. The registry's own minting semantics are
 pinned one package down, in support's
 [`FilesystemRegistryTest`](../../../packages/support/tests/Unit/Filesystem/FilesystemRegistryTest.php).
 
+The five rows the column catalog unblocked are asserted in the same Integration
+file: the placeholder paragraph and the empty tooltip on a blank cell, a `Markup`
+empty tooltip flattened to text, a default image winning over the placeholder,
+`sy-inline` and the wrapper's extra attributes on the root, a per-item `title`
+resolved from each image's own state, each image wrapped in its own anchor with
+the configured target, and an image left unwrapped when the state-based URL is
+refused by the sanitizer.
+
 ## Semantics
 
 Faithful ports subtle enough that the next reader would misread the code.
 Permanent, and addressable by anchor.
+
+### A default image beats the placeholder
+
+The blank branch renders `<p class="sy-ta-placeholder">` and nothing else — but
+only when there is genuinely nothing to draw. `defaultImageUrl()` is applied
+*before* the emptiness test, in
+[`getStateItems()`](../../../packages/tables/src/Columns/ImageColumn.php): a
+blank state with a default image resolves to one item carrying that URL, so the
+cell renders that image and the placeholder never appears. Filament's order is
+the same (`$state = [null]` before the `blank($state)` check), and the practical
+reading is that the two settings are alternatives rather than a fallback chain —
+setting both means the placeholder is dead configuration.
 
 ### `getStateItems()` resolves URLs in PHP, not in the template
 

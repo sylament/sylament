@@ -373,22 +373,47 @@
                         {% if actionsBeforeColumns %}{{ actionsHeaderCell }}{% endif %}
                         {% for column in columns %}
                             {% set columnName = column.getName %}
+                            {% set columnLabel = column.getLabel %}
+                            {% set columnWidth = column.getWidth %}
+                            {% set columnHeaderTooltip = column.getHeaderTooltip %}
                             {% set isColumnSortable = column.isSortable and not isReordering %}
                             {% set isColumnSorted = isColumnSortable and sortColumn == columnName %}
+                            {% set columnHiddenFrom = column.getHiddenFrom %}
+                            {% set columnVisibleFrom = column.getVisibleFrom %}
+                            {% set columnResponsiveClasses = [
+                                columnHiddenFrom ? columnHiddenFrom ~ ':sy-ta-hidden' : null,
+                                columnVisibleFrom ? columnVisibleFrom ~ ':sy-ta-visible' : null,
+                            ] %}
+
+                            {# A markup label may hold interactive content, which is invalid inside a
+                               button, so the sort control becomes a span naming all three events. #}
+                            {% set sortControlTag = columnLabel is markup ? 'span' : 'button' %}
+                            {% set sortParameters = {action: 'sortTable', column: columnName} %}
+                            {% set sortControlAttributes = sortControlTag == 'span'
+                                ? {class: 'sy-ta-header-cell-sort-btn', role: 'button', tabindex: '0'}
+                                : {class: 'sy-ta-header-cell-sort-btn', type: 'button'} %}
+                            {% set sortControlBindings = sortControlTag == 'span'
+                                ? stimulus_action('live', 'action', 'click', sortParameters)
+                                    |stimulus_action('live', 'action', 'keydown.enter', sortParameters)
+                                    |stimulus_action('live', 'action', 'keydown.space', sortParameters)
+                                : stimulus_action('live', 'action', parameters: sortParameters) %}
+
                             <th
                                 scope="col"
                                 {{ attrs({
-                                    class: classes('sy-ta-header-cell', {'sy-ta-header-cell-sorted': isColumnSorted}),
+                                    class: classes('sy-ta-header-cell', column.getHeaderCellClassName, {
+                                        'sy-growable': not columnWidth and column.canGrow(false),
+                                        'sy-wrapped': column.canHeaderWrap,
+                                        'sy-ta-header-cell-sorted': isColumnSorted,
+                                    }, column.getAlignmentClass, columnResponsiveClasses),
+                                    style: columnWidth ? 'width: ' ~ columnWidth : null,
                                     'aria-sort': isColumnSortable ? (isColumnSorted ? (sortDirection == 'desc' ? 'descending' : 'ascending') : 'none') : null,
-                                }) }}
+                                    title: (columnHeaderTooltip is markup ? columnHeaderTooltip|striptags : columnHeaderTooltip) ?: null,
+                                }, column.getExtraHeaderAttributes) }}
                             >
                                 {% if isColumnSortable %}
-                                    <button
-                                        type="button"
-                                        class="sy-ta-header-cell-sort-btn"
-                                        {{ stimulus_action('live', 'action', parameters: {action: 'sortTable', column: columnName}) }}
-                                    >
-                                        {{ column.getLabel }}
+                                    <{{ sortControlTag }} {{ attrs(sortControlAttributes, sortControlBindings) }}>
+                                        {{ columnLabel }}
                                         <twig:SylamentSupport:Icon
                                             :icon="isColumnSorted and sortDirection == 'asc' ? 'heroicons:chevron-up-20-solid' : 'heroicons:chevron-down-20-solid'"
                                             :alias="isColumnSorted
@@ -397,9 +422,9 @@
                                                     : constant('Sylament\\Tables\\Twig\\TablesIconAlias::HEADER_CELL_SORT_DESC_BUTTON'))
                                                 : constant('Sylament\\Tables\\Twig\\TablesIconAlias::HEADER_CELL_SORT_BUTTON')"
                                         />
-                                    </button>
+                                    </{{ sortControlTag }}>
                                 {% else %}
-                                    {{ column.getLabel }}
+                                    {{ columnLabel }}
                                 {% endif %}
                             </th>
                         {% endfor %}
@@ -469,31 +494,59 @@
                             {% for column in columns %}
                                 {% do column.record(record) %}
                                 {% do column.recordKey(recordKey) %}
+                                {% do column.rowLoop(loop.parent.loop) %}
 
-                                {# Column-level url/action arms slot in above the record-level ones — M4 · 4 #}
-                                {% set cellWrapperTag = isReordering
-                                    ? 'div'
-                                    : (recordUrl is not null
-                                        ? 'a'
-                                        : (recordAction is not null ? 'button' : 'div')) %}
-                                {% set cellWrapperAttributes = cellWrapperTag == 'a'
-                                    ? {
-                                        ...recordLinkAttributes,
-                                        href: recordUrl,
-                                        ...(openRecordUrlInNewTab ? {target: '_blank'} : {}),
-                                    }
-                                    : (cellWrapperTag == 'button'
-                                        ? {
-                                            type: 'button',
-                                            'data-loading': 'addAttribute(disabled)',
-                                            ...stimulus_action('live', 'action', parameters: component.getAction(recordAction)
-                                                ? {action: 'mountAction', name: recordAction, context: {recordKey: recordKey ~ '', table: true}}
-                                                : {action: recordAction, recordKey: recordKey ~ ''}),
-                                        }
-                                        : {}) %}
+                                {% set columnName = column.getName %}
+                                {% set columnAction = column.getAction %}
+                                {% set columnActionKind = column.getActionKind %}
+                                {% set columnUrl = column.getUrl %}
+                                {% set columnHasStateBasedUrls = column.hasStateBasedUrls %}
+                                {% set isColumnClickDisabled = column.isClickDisabled or isReordering %}
+                                {% set columnHiddenFrom = column.getHiddenFrom %}
+                                {% set columnVisibleFrom = column.getVisibleFrom %}
 
-                                <td class="sy-ta-cell" id="{{ hostId ~ '.table.record.' ~ recordKey ~ '.column.' ~ column.getName }}">
-                                    <{{ cellWrapperTag }} {{ attrs({class: 'sy-ta-col'}, cellWrapperAttributes) }}>{{ renderComponent(column) }}</{{ cellWrapperTag }}>
+                                {# The column arms interleave with the record ones rather than sitting
+                                   above them: a column action suppresses the record url, a column url
+                                   does not suppress the record action, and a state-based url draws its
+                                   links inside the cell instead. #}
+                                {% set cellWrapperTag = (columnUrl or (recordUrl is not null and columnAction is null)) and not columnHasStateBasedUrls and not isColumnClickDisabled
+                                    ? 'a'
+                                    : ((columnAction or recordAction is not null) and not columnHasStateBasedUrls and not isColumnClickDisabled
+                                        ? 'button'
+                                        : 'div') %}
+
+                                {% if cellWrapperTag == 'a' %}
+                                    {% set cellWrapperAttributes = {
+                                        ...(columnUrl is null and recordUrl is not null ? recordLinkAttributes : {}),
+                                        href: columnUrl ?: recordUrl,
+                                        ...((columnUrl ? column.shouldOpenUrlInNewTab : openRecordUrlInNewTab) ? {target: '_blank'} : {}),
+                                    } %}
+                                {% elseif cellWrapperTag == 'button' %}
+                                    {% set cellWrapperAttributes = {
+                                        type: 'button',
+                                        'data-loading': 'addAttribute(disabled)',
+                                        ...stimulus_action('live', 'action', parameters: columnActionKind == 'action'
+                                            ? {action: 'mountAction', name: columnAction.getName, context: {recordKey: recordKey ~ '', table: true}}
+                                            : (columnActionKind == 'closure'
+                                                ? {action: 'callTableColumnAction', name: columnName, recordKey: recordKey ~ ''}
+                                                : (component.getAction(recordAction)
+                                                    ? {action: 'mountAction', name: recordAction, context: {recordKey: recordKey ~ '', table: true}}
+                                                    : {action: recordAction, recordKey: recordKey ~ ''}))),
+                                    } %}
+                                {% else %}
+                                    {% set cellWrapperAttributes = {} %}
+                                {% endif %}
+
+                                <td {{ attrs({
+                                    class: classes('sy-ta-cell', column.getCellClassName, column.getAlignmentClass, column.getVerticalAlignmentClass, [
+                                        columnHiddenFrom ? columnHiddenFrom ~ ':sy-ta-hidden' : null,
+                                        columnVisibleFrom ? columnVisibleFrom ~ ':sy-ta-visible' : null,
+                                    ]),
+                                    id: hostId ~ '.table.record.' ~ recordKey ~ '.column.' ~ columnName,
+                                }, column.getExtraCellAttributes) }}>
+                                    <{{ cellWrapperTag }} {{ attrs({
+                                        class: classes('sy-ta-col', {'sy-ta-col-has-column-url': cellWrapperTag == 'a' and columnUrl}),
+                                    }, cellWrapperAttributes) }}>{{ renderComponent(column) }}</{{ cellWrapperTag }}>
                                 </td>
                             {% endfor %}
                             {% if actionsAfterColumns %}{{ actionsCell }}{% endif %}

@@ -84,7 +84,7 @@ Rows never disappear — only their detail sections do.
 | [`emptyStateDescription()` / `getEmptyStateDescription()`](../../../packages/tables/src/Table/Concerns/HasEmptyState.php) + [the `setUp()` default](../../../packages/tables/src/Table.php) | [`HasEmptyState`](../../../vendor/filament/tables/src/Table/Concerns/HasEmptyState.php), [`Table::setUp()`](../../../vendor/filament/tables/src/Table.php) | done | — | [semantics](#the-empty-state-texts-read-the-record-labels) |
 | [`emptyStateIcon()` / `getEmptyStateIcon()`](../../../packages/tables/src/Table/Concerns/HasEmptyState.php) | [`HasEmptyState`](../../../vendor/filament/tables/src/Table/Concerns/HasEmptyState.php) | done | — | [diverges](#the-empty-state-icon-getter-returns-null-and-the-fallback-lives-in-the-template) |
 | [`$evaluationIdentifier = 'table'` + the `$liveComponent` name injection](../../../packages/tables/src/Table.php) | [`Table::resolveDefaultClosureDependencyForEvaluationByName()`](../../../vendor/filament/tables/src/Table.php) | done | — | — |
-| [`$template`](../../../packages/tables/src/Table.php) + [the partial it names](../../../packages/tables/templates/partials/Table/index.html.twig) | [`$view = 'filament-tables::index'`](../../../vendor/filament/tables/src/Table.php), [`index.blade.php`](../../../vendor/filament/tables/resources/views/index.blade.php) | done | — | [diverges](#the-partial-emits-no-header-scaffolding-and-no-content-wrapper) · [diverges](#every-rule-in-tablecss-is-scoped-under-the-sy-ta-root-one-class-above-vendors) · [diverges](#a-markup-header-label-does-not-switch-the-sortable-header-to-a-span) · [semantics](#aria-sort-is-dropped-with-null-because-false-would-render-as-a-string) · [diverges](#the-selection-cells-carry-no-header-cell-class-and-their-checkbox-skin-is-supports) |
+| [`$template`](../../../packages/tables/src/Table.php) + [the partial it names](../../../packages/tables/templates/partials/Table/index.html.twig) | [`$view = 'filament-tables::index'`](../../../vendor/filament/tables/src/Table.php), [`index.blade.php`](../../../vendor/filament/tables/resources/views/index.blade.php) | done | — | [diverges](#the-partial-emits-no-header-scaffolding-and-no-content-wrapper) · [diverges](#every-rule-in-tablecss-is-scoped-under-the-sy-ta-root-one-class-above-vendors) · [semantics](#a-markup-header-label-swaps-the-sort-control-for-a-span-that-names-its-three-events) · [semantics](#aria-sort-is-dropped-with-null-because-false-would-render-as-a-string) · [diverges](#the-selection-cells-carry-no-header-cell-class-and-their-checkbox-skin-is-supports) |
 | [`emptyState()` / `getEmptyState()` — the whole replacement block](../../../packages/tables/src/Table/Concerns/HasEmptyState.php) | [`HasEmptyState::emptyState()`](../../../vendor/filament/tables/src/Table/Concerns/HasEmptyState.php) | done | — | — |
 | [`emptyStateActions()` / `pushEmptyStateActions()` / `getEmptyStateActions()`](../../../packages/tables/src/Table/Concerns/HasEmptyState.php) | [`HasEmptyState`](../../../vendor/filament/tables/src/Table/Concerns/HasEmptyState.php) | done | — | — |
 | [Record labels and titles — `recordLabel()` / `pluralRecordLabel()` / `recordTitle()` / `recordTitleAttribute()` / `getRecordLabel()` / `getPluralRecordLabel()` / `getRecordTitle()` / `getRecordTitleAttribute()` / `hasCustomRecordTitle()`](../../../packages/tables/src/Table/Concerns/HasRecords.php) | [`HasRecords`](../../../vendor/filament/tables/src/Table/Concerns/HasRecords.php) | done | — | [rename](../renames.md#renames) · [semantics](#the-record-title-reads-the-attribute-through-the-accessor-and-falls-back-to-the-label) · [semantics](#the-empty-state-texts-read-the-record-labels) |
@@ -141,7 +141,7 @@ Rows never disappear — only their detail sections do.
 | `getExtraRecordLinkAttributeBag()` | [`HasRecordUrl`](../../../vendor/filament/tables/src/Table/Concerns/HasRecordUrl.php) | skipped | — | The bag wrapper has no consumer here: the row anchor spreads `getExtraRecordLinkAttributes()` through `attrs()`, which builds the bag itself — [and under the derived pair](#the-record-anchor-spreads-its-extra-attributes-first-so-the-derived-pair-wins) |
 | [`recordAction()` / `getRecordAction()`](../../../packages/tables/src/Table/Concerns/HasRecordAction.php) | [`HasRecordAction`](../../../vendor/filament/tables/src/Table/Concerns/HasRecordAction.php) | done | — | — |
 | [The row chrome — the clickable marker, the stripe and the selected tint](../../../packages/tables/templates/partials/Table/index.html.twig) + [`table.css`](../../../packages/tables/assets/src/styles/components/table.css), [`table_controller.ts`](../../../packages/tables/assets/src/controllers/table_controller.ts) | [`index.blade.php`'s `<tr>` class list](../../../vendor/filament/tables/resources/views/index.blade.php), [`row.css`](../../../vendor/filament/tables/resources/css/row.css) | in progress | grouping — the stripe's group reset and the collapsed row (M4 · 6) | — |
-| [The cell wrapper — `<a>` / `<button>` / `<div>` chosen per record](../../../packages/tables/templates/partials/Table/index.html.twig) | [`index.blade.php`'s `$columnWrapperTag` match](../../../vendor/filament/tables/resources/views/index.blade.php) | in progress | the column-level arms — `Column::url()` / `action()` / `disabledClick()` / `hasStateBasedUrls()` (M4 · 4) | [detail](#the-cell-wrapper-ships-the-record-arms-and-m4--4-interleaves-the-column-ones) |
+| [The cell wrapper — `<a>` / `<button>` / `<div>` chosen per record and per column](../../../packages/tables/templates/partials/Table/index.html.twig) | [`index.blade.php`'s `$columnWrapperTag` match](../../../vendor/filament/tables/resources/views/index.blade.php) | done | — | [semantics](#the-cell-wrapper-interleaves-the-column-arms-with-the-record-ones) |
 | [The reorder chrome — the toolbar trigger, the drag handle column, the sortable mount, the row markers and the indicator](../../../packages/tables/templates/partials/Table/index.html.twig) + [`table.css`](../../../packages/tables/assets/src/styles/components/table.css), [`table_controller.ts`](../../../packages/tables/assets/src/controllers/table_controller.ts) | [`index.blade.php`'s `fi-ta-reorder-*`](../../../vendor/filament/tables/resources/views/index.blade.php), [`sortable.js`](../../../vendor/filament/support/resources/js/sortable.js) | done | — | [diverges](#the-drag-control-mounts-per-mode-where-vendors-instance-outlives-every-render) · [tables-bundle.md](tables-bundle.md#the-table-controller-absorbs-four-jobs-livewire-does-with-attributes) |
 | [The empty state block — the replacement short-circuit, the demoted heading and the actions, beside the loading block the not-yet-loaded arm splits off into](../../../packages/tables/templates/partials/Table/index.html.twig) + [`table.css`](../../../packages/tables/assets/src/styles/components/table.css) | [`index.blade.php`'s `fi-ta-empty-state`](../../../vendor/filament/tables/resources/views/index.blade.php), [`empty-state.css`](../../../vendor/filament/tables/resources/css/empty-state.css) | done | — | [detail](#the-deferred-window-is-server-gated-and-client-closed) · [semantics](#the-empty-states-heading-tag-demotes-itself-when-the-table-has-no-heading) |
 | [The selection settings — `bulkActions()` / `pushBulkActions()` / `groupedBulkActions()` / `selectable()` / `isSelectionEnabled()` / `selectCurrentPageOnly()` / `selectsCurrentPageOnly()` / `checkIfRecordIsSelectableUsing()` / `checksIfRecordIsSelectable()` / `isRecordSelectable()` / `trackDeselectedRecords()` / `canTrackDeselectedRecords()` / `recordCheckboxPosition()` / `getRecordCheckboxPosition()` / `getAllSelectableRecordsCount()`](../../../packages/tables/src/Table/Concerns/HasBulkActions.php) + [`RecordCheckboxPosition`](../../../packages/tables/src/Enums/RecordCheckboxPosition.php) | [`Table\Concerns\HasBulkActions`](../../../vendor/filament/tables/src/Table/Concerns/HasBulkActions.php), [`Enums/RecordCheckboxPosition`](../../../vendor/filament/tables/src/Enums/RecordCheckboxPosition.php) | in progress | — | [detail](#the-selection-settings-ship-as-a-subset-and-the-rest-are-listed) · [semantics](#one-filter-setting-drives-three-selection-behaviours) · [has-table.md](has-table.md#the-selection-is-server-canonical-and-re-derived-on-every-read) |
@@ -180,9 +180,7 @@ What is still **in progress** is where a named gap sits inside a shipped member:
 the column set (the layouts and the manager), the header/toolbar/selection rows
 and the row chrome against grouping — the stripe's group reset and the collapsed
 row — the record-action position rows, the big `HasFilters` row against the four
-refused layouts, the cell wrapper against
-[M4 · 4's column arms](#the-cell-wrapper-ships-the-record-arms-and-m4--4-interleaves-the-column-ones),
-and the header row against `header()`'s Blade-`View` arm.
+refused layouts, and the header row against `header()`'s Blade-`View` arm.
 
 The relation arm · 20 added to the lane has no row of its own here, and that is
 the [one-row-per-file](../README.md#one-row-per-file-one-file-per-thing) rule
@@ -524,42 +522,6 @@ Livewire's
 `wire:poll` itself, and the interval this port hands the browser is a number with
 nowhere to carry them.
 
-### The cell wrapper ships the record arms, and M4 · 4 interleaves the column ones
-
-Every cell renders inside a wrapper element chosen per record: an `<a>` when
-`getRecordUrl()` answers, a `<button>` carrying the `live#action` when
-`getRecordAction()` does, and a `<div>` otherwise — plus a `<div>` unconditionally
-while [reordering](#the-drag-control-mounts-per-mode-where-vendors-instance-outlives-every-render),
-which is vendor's `$isColumnClickDisabled` reached from its `|| $isReordering` half.
-The record half is complete. What is missing is the **column** half —
-`Column::url()`, `Column::action()`, `disabledClick()` and `hasStateBasedUrls()` —
-and the shape it lands in is worth stating now, because it is not "add a branch
-above the existing ones".
-
-Vendor computes one `match (true)` in which the record and column conditions are
-**interleaved**, not layered:
-
-- the `'a'` arm is `($columnUrl || ($recordUrl && $columnAction === null)) && (! $columnHasStateBasedUrls) && (! $isColumnClickDisabled)`,
-- the `'button'` arm is `($columnAction || $recordAction) && (! $columnHasStateBasedUrls) && (! $isColumnClickDisabled)`.
-
-Three consequences for whoever lands M4 · 4. The column arms **override** the
-record ones rather than sitting above them: a column URL wins the `href`
-(`$columnUrl ?: $recordUrl`), and a column *action* suppresses the record URL's
-anchor entirely — that is what `$recordUrl && $columnAction === null` says, and a
-naive "check the column first, else fall through to the record" reading gets it
-wrong. The **new-tab** read becomes per-column with it:
-`$columnUrl ? $column->shouldOpenUrlInNewTab() : $openRecordUrlInNewTab`, so
-`shouldOpenRecordUrlInNewTab()` stops being the only source. And
-`getExtraRecordLinkAttributes()` is spread only under `blank($columnUrl) && filled($recordUrl)`
-— the record's link attributes belong to the record's link, so the guard belongs at
-the spread site rather than at the `{% set %}` that computes them. The two
-`hasStateBasedUrls()` negations are the fourth piece and have no record-level twin
-at all: a column whose URL is a function of its own state renders a `div` and lets
-its formatter emit the anchor.
-
-The template already carries a comment where the arms go; it says "slot in above",
-which is the reading this section exists to correct.
-
 ### Record actions register without the per-action modifier hook
 
 `recordActions()`, `pushRecordActions()`, `getRecordActions()` and
@@ -814,6 +776,62 @@ deferral is recorded on
 
 Faithful ports subtle enough that the next reader would misread the code.
 Permanent, and addressable by anchor.
+
+### A `Markup` header label swaps the sort control for a `<span>` that names its three events
+
+A column label is `string|Markup|Closure|null`, and a `Markup` label may contain
+interactive markup, which is invalid inside a `<button>`. The header cell follows
+vendor and swaps the sortable trigger to a `<span role="button" tabindex="0">`
+when the label
+[is `Markup`](../../../packages/support/src/Twig/Extension/MarkupExtension.php);
+a plain string keeps the `<button>`.
+
+The swap costs three bindings rather than one. A `<button>` gets Stimulus's
+default event for free, so `data-action="live#action"` is enough; a `<span>` has
+no default event, and Stimulus **skips a bare action on it silently** — no error,
+no console warning, a header that simply does not sort. So the span names
+`click`, `keydown.enter` and `keydown.space` explicitly, chained through the
+`|stimulus_action` filter rather than merged as three maps, because
+[`attrs()`](../../../packages/support/src/Twig/Extension/AttributeExtension.php)
+keeps only the last `data-action` it is handed and would drop the first two
+without complaint.
+
+### The cell wrapper interleaves the column arms with the record ones
+
+Every cell renders inside a wrapper element chosen from **both** tiers at once:
+an `<a>`, a `<button>` or a `<div>`, decided by one match in which the record and
+column conditions are interleaved rather than layered — vendor's, ported
+verbatim:
+
+- the `'a'` arm is `(columnUrl or (recordUrl is not null and columnAction is null)) and not columnHasStateBasedUrls and not isColumnClickDisabled`,
+- the `'button'` arm is `(columnAction or recordAction is not null) and not columnHasStateBasedUrls and not isColumnClickDisabled`,
+- everything else is a `'div'`, including every cell while
+  [reordering](#the-drag-control-mounts-per-mode-where-vendors-instance-outlives-every-render),
+  which is vendor's `$isColumnClickDisabled` reached through its `|| $isReordering` half.
+
+Four consequences a layered reading gets wrong. The column arms **override** the
+record ones rather than sitting above them: a column URL wins the `href`
+(`columnUrl ?: recordUrl`), and a column *action* suppresses the record URL's
+anchor entirely — that is what `recordUrl is not null and columnAction is null`
+says. The **new-tab** read is per arm with it —
+`columnUrl ? column.shouldOpenUrlInNewTab : openRecordUrlInNewTab` — so
+`shouldOpenRecordUrlInNewTab()` is not the only source. `getExtraRecordLinkAttributes()`
+spreads only under `columnUrl is null and recordUrl is not null`, because the
+record's link attributes belong to the record's link; the guard sits at the
+spread site rather than at the `{% set %}` that computes them. And a column whose
+URL is a function of its own state
+([`hasStateBasedUrls()`](column.md#geturl-answers-by-argument-count-so-a-closures-parameter-name-changes-the-dom))
+renders a `div` and lets its own partial draw one anchor per item — that
+negation has no record-level twin at all.
+
+The `<button>` arm's live wiring branches three ways, and Twig cannot type-sniff
+a closure against an `Action`, so the choice is made in PHP by
+[`Column::getActionKind()`](column.md): `action` mounts through the record-action
+wiring under the column's own name, `closure` calls the host's
+[`callTableColumnAction()`](has-columns.md), and `null` falls through to the
+record action unchanged. Each arm builds its whole attribute map **before** the
+single `attrs()` call, because `attrs()` keeps only the last `data-action` it is
+handed and two wiring sources meeting there would silently drop one.
 
 ### One filter setting drives three selection behaviours
 
@@ -1728,27 +1746,6 @@ paths, and page; what it cannot do is type into the search box against a relatio
 column, or declare an aggregate. Composite identifiers are out of the relation
 layer on the schemas side too, which is where the stance was set.
 
-### A `Markup` header label does not switch the sortable header to a `<span>`
-
-Filament's header cell renders its sortable trigger as a `<button>` **unless**
-the column label is an `Htmlable`, in which case it emits a `<span>` with the
-same click handler instead — the escape hatch for a label that already contains
-interactive markup and would nest a control inside a button. Sylament's partial
-always renders a `<button>`.
-
-Twig has no type test for `Markup` — `label is instanceof('Twig\Markup')` needs
-`twig/extra`'s `instanceof` test, which the port does not ship and does not want
-for one branch, and the alternative (a `Column::hasMarkupLabel()` getter existing
-solely to answer a template's type question) puts a rendering concern on the
-column. Against that, the case is currently unreachable in a useful way: a
-`Markup` label containing a control would already be broken inside the button,
-and no ported column produces one. YAGNI wins.
-
-Provisional, and the reversal is cheap when a real case appears — the branch is
-one `{% if %}` around the trigger element, and the accessible name is the same
-either way. Note what does **not** reverse it: a `Markup` label with no
-interactive content renders correctly inside the button today.
-
 ### The copy is English and hardcoded, because no i18n layer ships
 
 Filament's `getEmptyStateHeading()` falls back to
@@ -2020,7 +2017,7 @@ package, reused rather than re-declared, and `Repeater` was its first consumer.
 And the handle is a per-row `[data-sortable-handle]` element rather than a whole
 draggable row, so a click on a cell still follows the row's link while the mode is
 open… except that it does not: the
-[cell wrapper](#the-cell-wrapper-ships-the-record-arms-and-m4--4-interleaves-the-column-ones)
+[cell wrapper](#the-cell-wrapper-interleaves-the-column-arms-with-the-record-ones)
 falls back to a `div` while reordering, which is vendor's `$isColumnClickDisabled`
 carrying `|| $isReordering`.
 

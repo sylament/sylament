@@ -26,7 +26,7 @@ it('renders the label element for a prefix even with no visible label', function
         FixturePrefixedField::make('agree')->hiddenLabel(),
     ));
 
-    $label = $crawler->filter('label.sy-fo-field-label:not(.sy-fo-sr-only)');
+    $label = $crawler->filter('label.sy-fo-field-label:not(.sy-sr-only)');
     expect($label->count())->toBe(1)
         ->and($label->filter('.fixture-prefix')->count())->toBe(1)
         ->and($label->filter('.sy-fo-field-label-content')->count())->toBe(0);

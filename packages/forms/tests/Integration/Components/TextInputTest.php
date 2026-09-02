@@ -159,7 +159,7 @@ it('makes the label screen-reader-only with hiddenLabel', function (): void {
 
     $label = $crawler->filter('label.sy-fo-field-label');
     expect($label->count())->toBe(1)
-        ->and($label->attr('class'))->toContain('sy-fo-sr-only')
+        ->and($label->attr('class'))->toContain('sy-sr-only')
         ->and($label->attr('for'))->toBe('title')
         ->and($label->text())->toBe('Title');
 

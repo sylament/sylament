@@ -19,7 +19,7 @@
                 <thead>
                     <tr>
                         {% if hasReorderColumn %}
-                            <th scope="col" class="sy-fo-table-repeater-empty-header-cell"><span class="sy-fo-sr-only">Reorder</span></th>
+                            <th scope="col" class="sy-fo-table-repeater-empty-header-cell"><span class="sy-sr-only">Reorder</span></th>
                         {% endif %}
 
                         {% for column in tableColumns %}
@@ -31,7 +31,7 @@
                                     }) }}
                             >
                                 {% if column.isHeaderLabelHidden %}
-                                    <span class="sy-fo-sr-only">{{ column.getLabel }}</span>
+                                    <span class="sy-sr-only">{{ column.getLabel }}</span>
                                 {% else %}
                                     {{ column.getLabel }}{% if column.isMarkedAsRequired %}<sup class="sy-fo-table-repeater-header-required-mark">*</sup>{% endif %}
                                 {% endif %}
@@ -39,7 +39,7 @@
                         {% endfor %}
 
                         {% if hasActionsColumn %}
-                            <th scope="col" class="sy-fo-table-repeater-empty-header-cell"><span class="sy-fo-sr-only">Actions</span></th>
+                            <th scope="col" class="sy-fo-table-repeater-empty-header-cell"><span class="sy-sr-only">Actions</span></th>
                         {% endif %}
                     </tr>
                 </thead>

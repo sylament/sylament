@@ -443,7 +443,7 @@ export class Select {
       });
     }
 
-    this.statusRegion.className = "sy-fo-sr-only";
+    this.statusRegion.className = "sy-sr-only";
     this.statusRegion.setAttribute("role", "status");
     this.statusRegion.setAttribute("aria-live", "polite");
     this.statusRegion.setAttribute("aria-atomic", "true");

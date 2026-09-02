@@ -42,7 +42,3 @@
 .sy-fo-field-error-message {
     @apply text-sm text-danger-600 dark:text-danger-400;
 }
-
-.sy-fo-sr-only {
-    @apply sr-only;
-}

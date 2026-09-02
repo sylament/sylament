@@ -23,10 +23,10 @@
             {% if labelAsHeading %}
                 <div {{ attrs({
                     id: labelId,
-                    class: ['sy-fo-field-label', 'sy-fo-sr-only'],
+                    class: ['sy-fo-field-label', 'sy-sr-only'],
                 }) }}>{{ field.getLabel }}</div>
             {% else %}
-                <label for="{{ field.getId }}" class="sy-fo-field-label sy-fo-sr-only">{{ field.getLabel }}</label>
+                <label for="{{ field.getId }}" class="sy-fo-field-label sy-sr-only">{{ field.getLabel }}</label>
             {% endif %}
         {% endif %}
 
@@ -58,10 +58,10 @@
             {% if labelAsHeading %}
                 <div {{ attrs({
                     id: labelId,
-                    class: ['sy-fo-field-label', 'sy-fo-sr-only'],
+                    class: ['sy-fo-field-label', 'sy-sr-only'],
                 }) }}>{{ field.getLabel }}</div>
             {% else %}
-                <label for="{{ field.getId }}" class="sy-fo-field-label sy-fo-sr-only">{{ field.getLabel }}</label>
+                <label for="{{ field.getId }}" class="sy-fo-field-label sy-sr-only">{{ field.getLabel }}</label>
             {% endif %}
         {% endif %}
 

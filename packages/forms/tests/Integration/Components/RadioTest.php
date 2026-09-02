@@ -260,7 +260,7 @@ it('keeps aria-labelledby resolvable when the label is hidden', function (): voi
         Radio::make('status')->label('Status')->hiddenLabel()->options(['draft' => 'Draft']),
     ));
 
-    expect($crawler->filter('div.sy-fo-field-label.sy-fo-sr-only')->attr('id'))->toBe('status-label')
+    expect($crawler->filter('div.sy-fo-field-label.sy-sr-only')->attr('id'))->toBe('status-label')
         ->and($crawler->filter('div.sy-fo-radio')->attr('aria-labelledby'))->toBe('status-label');
 });
 

@@ -1,3 +1,14 @@
+/* The utility classes the whole toolkit shares: the palette swaps and shade
+   carriers the colour policies emit, and the plain utilities more than one
+   package needs. A utility only one package needs stays that package's. */
+
+/* Visually hidden, still read aloud — labels a sighted user reads from context
+   and a screen-reader user needs spelled out. */
+
+.sy-sr-only {
+    @apply sr-only;
+}
+
 /* Palette-swap classes for the dynamic `color` palette: component CSS uses
    `@apply bg-color-500` etc., and one of these classes (or inline `--sy-color-*`
    variables for arbitrary colors) selects which palette that resolves to. */

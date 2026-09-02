@@ -109,7 +109,7 @@ it('still renders the control when the label is hidden', function (): void {
         Checkbox::make('isFeatured')->label('Featured')->hiddenLabel(),
     ));
 
-    $visibleLabel = $crawler->filter('label.sy-fo-field-label:not(.sy-fo-sr-only)');
+    $visibleLabel = $crawler->filter('label.sy-fo-field-label:not(.sy-sr-only)');
 
     expect($crawler->filter('input.sy-fo-checkbox')->count())->toBe(1)
         ->and($visibleLabel->count())->toBe(1)

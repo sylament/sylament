@@ -50,13 +50,13 @@ it('renders the table shell: one header per column with its options, the reorder
 
     expect($root->attr('class'))->toContain('sy-compact')
         ->and($headers)->toHaveCount(5)
-        ->and($headers->eq(0)->filter('.sy-fo-sr-only')->text())->toBe('Reorder')
+        ->and($headers->eq(0)->filter('.sy-sr-only')->text())->toBe('Reorder')
         ->and($headers->eq(1)->text())->toContain('Name')
         ->and($headers->eq(1)->filter('.sy-fo-table-repeater-header-required-mark')->text())->toBe('*')
         ->and($headers->eq(2)->attr('class'))->toContain('sy-align-center')->toContain('sy-wrapped')
         ->and($headers->eq(2)->attr('style'))->toContain('width: 160px')
-        ->and($headers->eq(3)->filter('.sy-fo-sr-only')->text())->toBe('Active')
-        ->and($headers->eq(4)->filter('.sy-fo-sr-only')->text())->toBe('Actions');
+        ->and($headers->eq(3)->filter('.sy-sr-only')->text())->toBe('Active')
+        ->and($headers->eq(4)->filter('.sy-sr-only')->text())->toBe('Actions');
 
     $firstRow = $crawler->filter('tbody tr')->first();
     $cells = $firstRow->filter('td');

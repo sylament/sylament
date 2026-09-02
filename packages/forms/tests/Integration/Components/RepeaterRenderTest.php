@@ -147,7 +147,7 @@ it('renders the simple variant without a label on the inner field', function ():
         ->and($crawler->filter('.sy-fo-repeater')->count())->toBe(0)
         ->and($crawler->filter('.sy-fo-simple-repeater-item')->count())->toBe(2)
         ->and($crawler->filter('.sy-fo-simple-repeater-item input')->count())->toBe(2)
-        ->and($crawler->filter('.sy-fo-simple-repeater-item .sy-fo-field-label:not(.sy-fo-sr-only)')->count())->toBe(0)
+        ->and($crawler->filter('.sy-fo-simple-repeater-item .sy-fo-field-label:not(.sy-sr-only)')->count())->toBe(0)
         ->and($crawler->filter('.sy-fo-simple-repeater-item-actions [aria-label="Delete"]')->count())->toBe(2);
 });
 

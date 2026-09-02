@@ -75,7 +75,7 @@ it('renders the child fields through the plain wrapper branch', function (): voi
     $crawler = renderFusedGroup(priceRange());
 
     expect($crawler->filter('.sy-fo-fused-group .sy-fo-field')->count())->toBe(2)
-        ->and($crawler->filter('.sy-fo-fused-group label.sy-fo-field-label.sy-fo-sr-only')->count())->toBe(2)
+        ->and($crawler->filter('.sy-fo-fused-group label.sy-fo-field-label.sy-sr-only')->count())->toBe(2)
         ->and($crawler->filter('.sy-fo-fused-group .sy-fo-field-label-col')->count())->toBe(0)
         ->and($crawler->filter('.sy-fo-fused-group .sy-fo-field-content-col')->count())->toBe(0)
         ->and($crawler->filter('.sy-fo-fused-group .sy-input-wrp')->count())->toBe(2);
@@ -85,7 +85,7 @@ it('leaves a field outside a fused group on the full wrapper', function (): void
     $crawler = new Crawler(renderField(TextInput::make('title')->label('Title')));
 
     expect($crawler->filter('.sy-fo-field-label-col')->count())->toBe(1)
-        ->and($crawler->filter('label.sy-fo-field-label:not(.sy-fo-sr-only)')->count())->toBe(1)
+        ->and($crawler->filter('label.sy-fo-field-label:not(.sy-sr-only)')->count())->toBe(1)
         ->and($crawler->filter('.sy-fo-field-content-col')->count())->toBe(1);
 });
 

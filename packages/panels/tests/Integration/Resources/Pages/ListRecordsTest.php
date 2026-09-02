@@ -392,3 +392,20 @@ it('makes a row of a page-less resource mount its view action', function (): voi
         ->and($cell->attr('data-live-action-param'))->toBe('mountAction')
         ->and($cell->attr('data-live-name-param'))->toBe('view');
 });
+
+it('falls the row through to the next action when the first one is hidden', function (): void {
+    [$client] = seededNotesClient();
+
+    $crawler = $this->createLiveComponent(ListNotes::class, client: $client)
+        ->set('hidesViewAction', true)
+        ->render()
+        ->crawler();
+
+    $cell = $crawler->filter('tbody .sy-ta-row button.sy-ta-col')->first();
+
+    // A row must not mount an action it does not show, so the seeding skips the
+    // hidden view and lands on the edit beneath it.
+    expect($crawler->filter('tbody .sy-ta-row a.sy-ta-col')->count())->toBe(0)
+        ->and($cell->attr('data-live-action-param'))->toBe('mountAction')
+        ->and($cell->attr('data-live-name-param'))->toBe('edit');
+});

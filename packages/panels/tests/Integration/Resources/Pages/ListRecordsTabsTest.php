@@ -93,7 +93,11 @@ it('heals a bookmarked tab the list no longer declares', function (): void {
 
     $crawler = $client->request('GET', '/admin/articles?tab=nope');
 
+    // The strip has to heal with the query: a key nothing declares leaves every
+    // row showing, so a strip with nothing selected says the list is scoped when
+    // it is not.
     expect($client->getResponse()->getStatusCode())->toBe(200)
+        ->and($crawler->filter('.sy-sc-tabs .sy-tabs-item')->eq(0)->attr('aria-selected'))->toBe('true')
         ->and(tabbedRowTitles($crawler))->toHaveCount(3);
 });
 
@@ -143,8 +147,6 @@ it('heals a strip that first renders on a hydration', function (): void {
 });
 
 it('resets the page when the active tab changes', function (): void {
-    [$client] = tabbedArticlesClient();
-
     [$client] = tabbedArticlesClient();
 
     $component = $this->createLiveComponent(ListArticles::class, client: $client)

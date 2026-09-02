@@ -91,13 +91,15 @@ trait HasTabs
      * It also runs after UX's query-string seeding, which is a listener on the
      * same event ({@see \Symfony\UX\LiveComponent\EventListener\RequestInitializeSubscriber}
      * at priority 256, and every listener runs before the first `#[PostMount]`
-     * method) — so a `?tab=` naming a tab still wins here, and a blank one is
-     * healed before the props are dehydrated.
+     * method) — so a `?tab=` naming a tab still wins here, while a blank one and
+     * one naming a tab the host no longer declares are both healed before the
+     * props are dehydrated. Without the second arm a bookmarked key renders a
+     * strip with nothing selected over rows nothing scoped.
      */
     #[PostMount(priority: 30)]
     public function loadDefaultActiveTab(): void
     {
-        if (filled($this->activeTab)) {
+        if (filled($this->activeTab) && array_key_exists($this->activeTab, $this->getCachedTabs())) {
             return;
         }
 
@@ -149,8 +151,8 @@ trait HasTabs
 
     /**
      * A blank tab and a key the host no longer declares are both no-ops — the
-     * second is what heals a bookmarked `?tab=` naming a tab that has since
-     * gone.
+     * mount hook and the strip's own update heal the second one before it
+     * reaches here, so this is the fence for a query that runs ahead of either.
      */
     protected function modifyQueryWithActiveTab(QueryBuilder $query, bool $isResolvingRecord = false): QueryBuilder
     {

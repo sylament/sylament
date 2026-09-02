@@ -5,9 +5,12 @@ declare(strict_types=1);
 namespace Sylament\Panels\Tests\Fixtures\Resources\Pages;
 
 use Sylament\Actions\CreateAction;
+use Sylament\Actions\EditAction;
+use Sylament\Actions\ViewAction;
 use Sylament\Panels\Resources\Pages\ListRecords;
 use Sylament\Panels\Tests\Fixtures\Resources\NoteResource;
 use Sylament\Schemas\Components\Tabs\Tab;
+use Sylament\Tables\Table;
 use Symfony\UX\LiveComponent\Attribute\AsLiveComponent;
 use Symfony\UX\LiveComponent\Attribute\LiveProp;
 
@@ -18,6 +21,28 @@ final class ListNotes extends ListRecords
 
     #[LiveProp(writable: true)]
     public bool $showTabs = false;
+
+    /**
+     * Hides the first of the two actions the row-click seeding walks, so a case
+     * can tell the seeding skips a hidden one rather than making the row mount
+     * an action it never shows.
+     */
+    #[LiveProp(writable: true)]
+    public bool $hidesViewAction = false;
+
+    public function table(Table $table): Table
+    {
+        $table = parent::table($table);
+
+        if (!$this->hidesViewAction) {
+            return $table;
+        }
+
+        return $table->recordActions([
+            ViewAction::make()->hidden(),
+            EditAction::make(),
+        ]);
+    }
 
     /**
      * Tabs this listing declares only once it is told to, so the strip's first

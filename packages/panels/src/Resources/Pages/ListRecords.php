@@ -12,8 +12,6 @@ use Sylament\Actions\CreateAction;
 use Sylament\Actions\EditAction;
 use Sylament\Actions\ViewAction;
 use Sylament\Panels\Resources\Concerns\HasTabs;
-use Sylament\Schemas\Concerns\HasSchemas;
-use Sylament\Schemas\Contracts\InteractsWithSchemas;
 use Sylament\Schemas\Schema;
 use Sylament\Tables\Concerns\HasTable;
 use Sylament\Tables\Contracts\InteractsWithTable;
@@ -23,9 +21,8 @@ use Twig\Markup;
 
 use function Sylament\Support\filled;
 
-abstract class ListRecords extends Page implements InteractsWithSchemas, InteractsWithTable
+abstract class ListRecords extends Page implements InteractsWithTable
 {
-    use HasSchemas;
     /*
      * The alias stays ungrouped with the trait it renames: Rector splits a
      * grouped `use` and drops the adaptation block with it.
@@ -225,18 +222,5 @@ abstract class ListRecords extends Page implements InteractsWithSchemas, Interac
     protected function getMountedActionSchemaRecord(): object|array|string|null
     {
         return $this->getResourceInstance()->getRecordClass();
-    }
-
-    /**
-     * The filters form is cache-only and a list page declares no form of its
-     * own — so the discovery list is empty rather than the default `schema`,
-     * which would demand a `schema()` method on every dehydrate. `form()` and
-     * `infolist()` exist for the action schema resolver and are not discovered.
-     *
-     * @return array<string>
-     */
-    public function schemas(): array
-    {
-        return [];
     }
 }

@@ -6,36 +6,27 @@ namespace Sylament\Panels\Resources\Pages;
 
 use LogicException;
 use Sylament\Actions\Action;
-use Sylament\Actions\ActionGroup;
-use Sylament\Actions\Concerns\HasActions;
-use Sylament\Actions\Contracts\InteractsWithActions;
 use Sylament\Actions\CreateAction;
 use Sylament\Actions\EditAction;
 use Sylament\Actions\Exceptions\ActionNotResolvableException;
 use Sylament\Actions\ViewAction;
-use Sylament\Panels\CurrentPanel;
 use Sylament\Panels\Navigation\NavigationItem;
 use Sylament\Panels\Pages\Enums\SubNavigationPosition;
 use Sylament\Panels\Pages\Page as BasePage;
+use Sylament\Panels\Panel;
 use Sylament\Panels\Resources\Pages\Concerns\InteractsWithParentRecord;
 use Sylament\Panels\Resources\Resource;
 use Sylament\Panels\Resources\ResourceRegistry;
 use Sylament\Schemas\State\Relationship;
 use Sylament\Tables\Contracts\InteractsWithTable;
-use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\Contracts\Service\Attribute\Required;
-use Symfony\UX\LiveComponent\Attribute\LiveProp;
-use Symfony\UX\LiveComponent\Attribute\PostHydrate;
 use Twig\Markup;
 
 use function Sylament\Support\filled;
 
-abstract class Page extends BasePage implements InteractsWithActions
+abstract class Page extends BasePage
 {
-    use HasActions {
-        getAction as private getCachedOrDeclaredAction;
-    }
     use InteractsWithParentRecord;
 
     /**
@@ -45,54 +36,12 @@ abstract class Page extends BasePage implements InteractsWithActions
 
     protected static ?string $breadcrumb = null;
 
-    /**
-     * The panel this page was opened in. A live request reaches ux's own route,
-     * which carries no `_sylament_panel` default, so the prop restores it —
-     * without it every URL a re-render mints, from the trail to a record link,
-     * would answer for the *default* panel. Minted by the getter dehydration
-     * reads rather than in a mount, because a page's mount signature is the
-     * page's own.
-     */
-    #[LiveProp]
-    public ?string $panelId = null;
-
     private ?ResourceRegistry $resourceRegistry = null;
-
-    private ?CurrentPanel $panelContext = null;
-
-    private ?RequestStack $requests = null;
-
-    /**
-     * @var array<Action|ActionGroup>|null
-     */
-    private ?array $cachedHeaderActions = null;
 
     #[Required]
     public function setResourceRegistry(ResourceRegistry $resourceRegistry): void
     {
         $this->resourceRegistry = $resourceRegistry;
-    }
-
-    #[Required]
-    public function setPanelContext(CurrentPanel $currentPanel, RequestStack $requests): void
-    {
-        $this->panelContext = $currentPanel;
-        $this->requests = $requests;
-    }
-
-    public function getPanelId(): ?string
-    {
-        return $this->panelId ??= $this->panelContext?->get()?->getId();
-    }
-
-    #[PostHydrate]
-    public function stampPanelRequestAttribute(): void
-    {
-        if ($this->panelId === null) {
-            return;
-        }
-
-        $this->requests?->getCurrentRequest()?->attributes->set('_sylament_panel', $this->panelId);
     }
 
     /**
@@ -217,57 +166,18 @@ abstract class Page extends BasePage implements InteractsWithActions
     }
 
     /**
-     * @return array<Action|ActionGroup>
-     */
-    public function getHeaderActions(): array
-    {
-        return [];
-    }
-
-    /**
-     * The header list every page template renders, each entry bound to this page
-     * and registered under its own name, so an action built inline in the
-     * declaration reaches the host hooks its trigger renders from.
+     * A URL of this page's own resource, the record filled in from the page when
+     * it carries one and the parent keys threaded as every other URL arm does.
      *
-     * @return array<Action|ActionGroup>
+     * @param array<string, mixed> $parameters
      */
-    public function getCachedHeaderActions(): array
+    public function getResourceUrl(?string $name = null, array $parameters = [], bool $isAbsolute = true, Panel|string|null $panel = null, bool $shouldGuessMissingParameters = true): string
     {
-        if ($this->cachedHeaderActions !== null) {
-            return $this->cachedHeaderActions;
+        if (filled($name) && $name !== 'index' && method_exists($this, 'getRecordKey')) {
+            $parameters['record'] ??= $this->getRecordKey();
         }
 
-        $this->cachedHeaderActions = [];
-        $headerActions = $this->getHeaderActions();
-
-        foreach ($headerActions as $headerAction) {
-            if ($headerAction instanceof ActionGroup) {
-                $headerAction->liveComponent($this);
-
-                foreach ($headerAction->getFlatActions() as $groupedAction) {
-                    $this->cacheAction($groupedAction);
-                }
-
-                continue;
-            }
-
-            $this->cacheAction($headerAction);
-        }
-
-        return $this->cachedHeaderActions = $headerActions;
-    }
-
-    public function getAction(string $name): ?Action
-    {
-        $action = $this->getCachedOrDeclaredAction($name);
-
-        if ($action instanceof Action || $this->cachedHeaderActions !== null) {
-            return $action;
-        }
-
-        $this->getCachedHeaderActions();
-
-        return $this->getCachedOrDeclaredAction($name);
+        return $this->getResourceInstance()->getUrl($name, [...$this->parentRecords, ...$parameters], $isAbsolute, $panel, $shouldGuessMissingParameters);
     }
 
     public function getDefaultActionRecordClass(Action $action): ?string
@@ -396,18 +306,5 @@ abstract class Page extends BasePage implements InteractsWithActions
 
         return $this->getResourceInstance()->resolveRecordRouteBinding((string) $recordKey, $this->getParentRecordScope())
             ?? throw new NotFoundHttpException(sprintf('No record matching [%s] exists for the resource [%s].', (string) $recordKey, static::getResource()));
-    }
-
-    /**
-     * Filament's convention hook: `beforeSave`, `afterCreate`, … run when the
-     * page declares a method of that name, and are silent otherwise.
-     */
-    protected function callHook(string $hook): void
-    {
-        if (! method_exists($this, $hook)) {
-            return;
-        }
-
-        $this->{$hook}();
     }
 }

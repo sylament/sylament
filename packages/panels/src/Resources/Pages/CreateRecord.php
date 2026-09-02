@@ -7,8 +7,6 @@ namespace Sylament\Panels\Resources\Pages;
 use Doctrine\ORM\EntityManagerInterface;
 use LogicException;
 use Sylament\Notifications\Notification;
-use Sylament\Schemas\Concerns\HasSchemas;
-use Sylament\Schemas\Contracts\InteractsWithSchemas;
 use Sylament\Schemas\Schema;
 use Sylament\Support\Enums\Operation;
 use Symfony\Component\HttpFoundation\RedirectResponse;
@@ -19,10 +17,8 @@ use Twig\Markup;
 
 use function Sylament\Support\blank;
 
-abstract class CreateRecord extends Page implements InteractsWithSchemas
+abstract class CreateRecord extends Page
 {
-    use HasSchemas;
-
     protected ?string $template = '@SylamentPanels/partials/CreateRecord/index.html.twig';
 
     /**

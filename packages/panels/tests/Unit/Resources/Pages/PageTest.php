@@ -8,6 +8,7 @@ use Sylament\Actions\CreateAction;
 use Sylament\Actions\Exceptions\ActionNotResolvableException;
 use Sylament\Panels\Navigation\NavigationItem;
 use Sylament\Panels\Pages\Enums\SubNavigationPosition;
+use Sylament\Panels\Pages\Page as BasePage;
 use Sylament\Panels\Resources\Pages\CreateRecord;
 use Sylament\Panels\Resources\Pages\EditRecord;
 use Sylament\Panels\Resources\Pages\ListRecords;
@@ -213,8 +214,17 @@ it('keeps every action hook declared on the base for every shipped resource page
     'getDefaultActionRecordClass',
     'getDefaultActionRecordLabel',
     'resolveMountedActionRecord',
-    'callHook',
 ])->with([ResourcePage::class, ListRecords::class, CreateRecord::class, EditRecord::class]);
+
+/*
+ * The hook ladder itself sits one tier up, on the plain page every panel page
+ * shares — a resource page that re-declared it would silently take the actions
+ * host with it.
+ */
+it('keeps the convention-hook caller declared on the plain page for every shipped resource page', function (string $page): void {
+    expect(new ReflectionMethod($page, 'callHook')->getDeclaringClass()->getName())
+        ->toBe(BasePage::class);
+})->with([ResourcePage::class, ListRecords::class, CreateRecord::class, EditRecord::class]);
 
 it('declines the create link for an action that names another record class', function (): void {
     // The resource registers a create page, so only the record-class guard can
@@ -283,4 +293,39 @@ it('refuses a record key that is not an identifier before it reaches the resourc
     // has to answer one.
     expect(fn (): mixed => new RecordResolvingPage()->resolveRecord(['name' => 'edit', 'arguments' => [], 'context' => ['recordKey' => ['not', 'a', 'key']]]))
         ->toThrow(ActionNotResolvableException::class, 'Record key of type [array]');
+});
+
+it('mints a url of its own resource, filling the record in from the page', function (): void {
+    $entityManager = EntityManagerFactory::create();
+    [$chapter] = NestedResourceRig::records($entityManager);
+
+    $page = NestedResourceRig::page($entityManager, EditChapter::class);
+    $page->mountRecord((string) $chapter->getId());
+
+    // The index arm takes no record: a listing is the one page of a resource the
+    // record would be a wrong parameter for.
+    expect($page->getResourceUrl('edit', isAbsolute: false))->toBe(sprintf('/nest/chapters/%s/edit', $chapter->getId()))
+        ->and($page->getResourceUrl(isAbsolute: false))->toBe('/nest/chapters')
+        ->and($page->getResourceUrl('index', isAbsolute: false))->toBe('/nest/chapters');
+});
+
+it('threads the parent keys through a url of a nested resource page', function (): void {
+    $entityManager = EntityManagerFactory::create();
+    [$chapter, $verse] = NestedResourceRig::records($entityManager);
+
+    $page = NestedResourceRig::page($entityManager, EditVerse::class);
+    $page->mountRecord((string) $verse->getId(), ['chapter' => (string) $chapter->getId()]);
+
+    expect($page->getResourceUrl('edit', isAbsolute: false))
+        ->toBe(sprintf('/nest/chapters/%s/verses/%s/edit', $chapter->getId(), $verse->getId()));
+});
+
+it('lets an explicit record parameter win over the page record', function (): void {
+    $entityManager = EntityManagerFactory::create();
+    [$chapter] = NestedResourceRig::records($entityManager);
+
+    $page = NestedResourceRig::page($entityManager, EditChapter::class);
+    $page->mountRecord((string) $chapter->getId());
+
+    expect($page->getResourceUrl('edit', ['record' => '7'], isAbsolute: false))->toBe('/nest/chapters/7/edit');
 });

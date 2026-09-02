@@ -16,8 +16,6 @@ use Sylament\Notifications\Notification;
 use Sylament\Panels\Resources\Pages\Concerns\HasRelationManagers;
 use Sylament\Panels\Resources\Pages\Concerns\InteractsWithRecord;
 use Sylament\Schemas\Components\EmbeddedSchema;
-use Sylament\Schemas\Concerns\HasSchemas;
-use Sylament\Schemas\Contracts\InteractsWithSchemas;
 use Sylament\Schemas\Schema;
 use Sylament\Support\Enums\Operation;
 use Symfony\Component\HttpFoundation\RedirectResponse;
@@ -28,10 +26,9 @@ use Twig\Markup;
 
 use function Sylament\Support\blank;
 
-abstract class EditRecord extends Page implements InteractsWithSchemas
+abstract class EditRecord extends Page
 {
     use HasRelationManagers;
-    use HasSchemas;
     use InteractsWithRecord;
 
     protected ?string $template = '@SylamentPanels/partials/EditRecord/index.html.twig';

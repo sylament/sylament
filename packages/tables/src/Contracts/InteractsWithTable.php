@@ -47,6 +47,13 @@ interface InteractsWithTable
      */
     public function isTableReordering(): bool;
 
+    /**
+     * Whether the deferred window has closed — always true on a table that does
+     * not defer, so `Table::isLoaded()` answers for every table. Read by the
+     * partial as the gate on every records-touching call it makes.
+     */
+    public function isTableLoaded(): bool;
+
     public function getTableSortColumn(): ?string;
 
     public function getTableSortDirection(): ?string;

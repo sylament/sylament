@@ -62,6 +62,11 @@ final class BareTableHost implements InteractsWithTable
         return false;
     }
 
+    public function isTableLoaded(): bool
+    {
+        return true;
+    }
+
     public function getTableSortColumn(): ?string
     {
         return null;

@@ -118,7 +118,7 @@ Rows never disappear — only their detail sections do.
 | [`persistSearchInSession()` / `persistsSearchInSession()`](../../../packages/tables/src/Table/Concerns/CanSearchRecords.php) | [`Table\Concerns\CanSearchRecords`](../../../vendor/filament/tables/src/Table/Concerns/CanSearchRecords.php) | done | — | [has-table.md](has-table.md#no-table-state-is-persisted-in-the-session) |
 | `persistColumnSearchesInSession()`, `isSearchableByColumn()`, `hasSearch()`, `getColumnSearchIndicators()` | [`Table\Concerns\CanSearchRecords`](../../../vendor/filament/tables/src/Table/Concerns/CanSearchRecords.php) | todo | — | [detail](#the-unported-search-surface-splits-three-ways) |
 | `getExtraSearchableColumnRelationship()` | [`Table\Concerns\CanSearchRecords`](../../../vendor/filament/tables/src/Table/Concerns/CanSearchRecords.php) | skipped | — | It answers *is this dotted name's head a relationship*, so Filament's caller can switch to `whereRelation`. Here [one resolution](#a-dotted-name-is-resolved-against-the-mapping-before-it-is-refused) answers that inside `SearchConstraint::forColumn()` for every tier at once, so an extra searchable column crosses an association with nothing to ask first — there is no caller left to hold the branch this member exists to decide |
-| Deferred loading and polling — `deferLoading()`, `poll()` | [`CanDeferLoading`](../../../vendor/filament/tables/src/Table/Concerns/CanDeferLoading.php), [`CanPollRecords`](../../../vendor/filament/tables/src/Table/Concerns/CanPollRecords.php) | todo | — | [detail](#loading-affordances-are-deferred-with-the-javascript-that-would-drive-them) |
+| [`deferLoading()` / `isLoadingDeferred()` / `isLoaded()`](../../../packages/tables/src/Table/Concerns/CanDeferLoading.php) + [`poll()` / `getPollingInterval()` / `getPollingIntervalMilliseconds()`](../../../packages/tables/src/Table/Concerns/CanPollRecords.php) | [`CanDeferLoading`](../../../vendor/filament/tables/src/Table/Concerns/CanDeferLoading.php), [`CanPollRecords`](../../../vendor/filament/tables/src/Table/Concerns/CanPollRecords.php) | done | — | [detail](#the-deferred-window-is-server-gated-and-client-closed) · [diverges](#the-poll-interval-parses-strictly-and-carries-no-livewire-modifiers) · [has-table.md](has-table.md#the-contract-is-eighteen-methods-of-filaments-forty-six) |
 | [`filters()` / `pushFilters()` / `getFilters()` / `getFilter()` / `getFiltersFormSchema()` / `deferFilters()` / `hasDeferredFilters()` / `filtersLayout()` / `getFiltersLayout()` / `hasFiltersDropdown()` / `hasFiltersModal()` / `hasFiltersTrigger()` / `hasFiltersAboveContent()` / `hasFiltersBelowContent()` / `hasCollapsibleFilters()` / `getFiltersModalId()` / `filtersFormColumns()` / `getFiltersFormColumns()` / `filtersFormMaxHeight()` / `getFiltersFormMaxHeight()` / `filtersFormWidth()` / `getFiltersFormWidth()` / `filtersResetActionPosition()` / `getFiltersResetActionPosition()` / `isFilterable()` / `getActiveFiltersCount()` / `isFiltered()`](../../../packages/tables/src/Table/Concerns/HasFilters.php) + [`FiltersLayout`](../../../packages/tables/src/Enums/FiltersLayout.php), [`FiltersResetActionPosition`](../../../packages/tables/src/Enums/FiltersResetActionPosition.php) | [`Table\Concerns\HasFilters`](../../../vendor/filament/tables/src/Table/Concerns/HasFilters.php), [`Enums/FiltersLayout`](../../../vendor/filament/tables/src/Enums/FiltersLayout.php), [`Enums/FiltersResetActionPosition`](../../../vendor/filament/tables/src/Enums/FiltersResetActionPosition.php) | in progress | the four before/after-content layouts, and the width-from-columns match | [detail](#an-unshipped-filters-layout-is-refused-where-the-chrome-reads-it) · [detail](#the-filters-form-columns-follow-the-layout-the-width-does-not) |
 | [`hiddenFilterIndicators()` / `getFilterIndicators()`](../../../packages/tables/src/Table/Concerns/HasFilterIndicators.php) | [`Table\Concerns\HasFilterIndicators`](../../../vendor/filament/tables/src/Table/Concerns/HasFilterIndicators.php) | in progress | its column-search arm — the `getColumnSearchIndicators()` spread, with per-column search | [indicator.md](indicator.md#removal-is-structured-not-a-click-handler-string) · [has-table.md](has-table.md#search-is-the-global-term-only) |
 | [The three chrome actions — `filtersTriggerAction()` / `getFiltersTriggerAction()` / `filtersApplyAction()` / `getFiltersApplyAction()` / `filtersRemoveAllAction()` / `getFiltersRemoveAllAction()`](../../../packages/tables/src/Table/Concerns/HasFilters.php) | [`Table\Concerns\HasFilters`](../../../vendor/filament/tables/src/Table/Concerns/HasFilters.php) | done | — | [diverges](#the-trigger-opens-its-chrome-from-the-client-and-the-count-stays-a-template-chip) |
@@ -143,7 +143,7 @@ Rows never disappear — only their detail sections do.
 | [The row chrome — the clickable marker, the stripe and the selected tint](../../../packages/tables/templates/partials/Table/index.html.twig) + [`table.css`](../../../packages/tables/assets/src/styles/components/table.css), [`table_controller.ts`](../../../packages/tables/assets/src/controllers/table_controller.ts) | [`index.blade.php`'s `<tr>` class list](../../../vendor/filament/tables/resources/views/index.blade.php), [`row.css`](../../../vendor/filament/tables/resources/css/row.css) | in progress | grouping — the stripe's group reset and the collapsed row (M4 · 6) | — |
 | [The cell wrapper — `<a>` / `<button>` / `<div>` chosen per record](../../../packages/tables/templates/partials/Table/index.html.twig) | [`index.blade.php`'s `$columnWrapperTag` match](../../../vendor/filament/tables/resources/views/index.blade.php) | in progress | the column-level arms — `Column::url()` / `action()` / `disabledClick()` / `hasStateBasedUrls()` (M4 · 4) | — |
 | [The reorder chrome — the toolbar trigger, the drag handle column, the sortable mount, the row markers and the indicator](../../../packages/tables/templates/partials/Table/index.html.twig) + [`table.css`](../../../packages/tables/assets/src/styles/components/table.css), [`table_controller.ts`](../../../packages/tables/assets/src/controllers/table_controller.ts) | [`index.blade.php`'s `fi-ta-reorder-*`](../../../vendor/filament/tables/resources/views/index.blade.php), [`sortable.js`](../../../vendor/filament/support/resources/js/sortable.js) | done | — | — |
-| [The empty state block — the replacement short-circuit, the demoted heading and the actions](../../../packages/tables/templates/partials/Table/index.html.twig) + [`table.css`](../../../packages/tables/assets/src/styles/components/table.css) | [`index.blade.php`'s `fi-ta-empty-state`](../../../vendor/filament/tables/resources/views/index.blade.php), [`empty-state.css`](../../../vendor/filament/tables/resources/css/empty-state.css) | in progress | the not-yet-loaded arm — `$records === null` splits off with `deferLoading()` | — |
+| [The empty state block — the replacement short-circuit, the demoted heading and the actions, beside the loading block the not-yet-loaded arm splits off into](../../../packages/tables/templates/partials/Table/index.html.twig) + [`table.css`](../../../packages/tables/assets/src/styles/components/table.css) | [`index.blade.php`'s `fi-ta-empty-state`](../../../vendor/filament/tables/resources/views/index.blade.php), [`empty-state.css`](../../../vendor/filament/tables/resources/css/empty-state.css) | done | — | [detail](#the-deferred-window-is-server-gated-and-client-closed) |
 | [The selection settings — `bulkActions()` / `pushBulkActions()` / `groupedBulkActions()` / `selectable()` / `isSelectionEnabled()` / `selectCurrentPageOnly()` / `selectsCurrentPageOnly()` / `checkIfRecordIsSelectableUsing()` / `checksIfRecordIsSelectable()` / `isRecordSelectable()` / `trackDeselectedRecords()` / `canTrackDeselectedRecords()` / `recordCheckboxPosition()` / `getRecordCheckboxPosition()` / `getAllSelectableRecordsCount()`](../../../packages/tables/src/Table/Concerns/HasBulkActions.php) + [`RecordCheckboxPosition`](../../../packages/tables/src/Enums/RecordCheckboxPosition.php) | [`Table\Concerns\HasBulkActions`](../../../vendor/filament/tables/src/Table/Concerns/HasBulkActions.php), [`Enums/RecordCheckboxPosition`](../../../vendor/filament/tables/src/Enums/RecordCheckboxPosition.php) | in progress | — | [detail](#the-selection-settings-ship-as-a-subset-and-the-rest-are-listed) · [semantics](#one-filter-setting-drives-three-selection-behaviours) · [has-table.md](has-table.md#the-selection-is-server-canonical-and-re-derived-on-every-read) |
 | Grouping and summaries — `groups()`, `defaultGroup()`, the summarizers | [`CanGroupRecords`](../../../vendor/filament/tables/src/Table/Concerns/CanGroupRecords.php), [`CanSummarizeRecords`](../../../vendor/filament/tables/src/Table/Concerns/CanSummarizeRecords.php) | todo | — | — |
 | [Reordering — `reorderable()` / `isReorderable()` / `isReordering()` / `getReorderColumn()` / `getReorderDirection()` / `authorizeReorder()` / `isReorderAuthorized()` / `reorderRecordsTriggerAction()` / `getReorderRecordsTriggerAction()` / `beforeReordering()` / `afterReordering()` / `callBeforeReordering()` / `callAfterReordering()`](../../../packages/tables/src/Table/Concerns/CanReorderRecords.php) + [`HasReorderAnimationDuration`](../../../packages/support/src/Components/Concerns/HasReorderAnimationDuration.php) | [`CanReorderRecords`](../../../vendor/filament/tables/src/Table/Concerns/CanReorderRecords.php), [`Support\Concerns\HasReorderAnimationDuration`](../../../vendor/filament/support/src/Concerns/HasReorderAnimationDuration.php) | done | — | — |
@@ -416,21 +416,72 @@ says, so no companion method is needed.
 
 ### Loading affordances are deferred with the JavaScript that would drive them
 
-`deferLoading()` renders the table shell immediately and fetches records on a
-second request; `poll()` re-fetches on an interval. Both are **todo** rather than
-blocked — nothing structural is missing, and UX LiveComponent can express each
-(`data-live-action` on connect, `data-poll`).
+`deferLoading()` and `poll()` were held back until support had a loading
+affordance to render, and M4 · 3 is where they land: the deferred window renders
+support's `LoadingIndicator` at `2xl` inside a `sy-ta-table-loading-ctn`, and the
+poll interval is the table controller's `setInterval` over `component.render()`.
+The mechanics are the two sections below.
 
-What is missing is the affordance around them, and that is the reason to defer
-rather than ship them cheaply: a deferred table shows a loading skeleton, a
-polling one shows an in-flight indicator, and Filament's are Alpine-driven
-(`wire:loading`, `x-show`) with a `LoadingIndicator` contract and a
-`loading-indicator` view behind them — none of which is ported in support (both
-are **todo** rows in its
-[README](../support/README.md#components)). Shipping `poll()` without the
-indicator gives a table that silently changes under the reader, which is worse
-than one that does not poll. They land together, once support has a loading
-affordance to render.
+What is still deferred is the **in-flight** affordance — the indicator Filament
+shows *during* a request, driven by Alpine's `wire:loading`/`x-show` over a
+`LoadingIndicator` contract and a `loading-indicator` view. Nothing here renders
+one: a polling table repaints on arrival with no interim state, the search
+field's prefix holds its icon alone, and the selection banner has no spinner
+beside its count. That one waits on the in-flight mechanics rather than on the
+component, which support now ships.
+
+### The deferred window is server-gated and client-closed
+
+Filament's `wire:init="loadTable"` has no UX LiveComponent counterpart (R6 §2.2),
+so the window is ours end-to-end. The host carries `$isTableLoaded`, a
+non-writable `LiveProp` mutated only by the `loadTable()` action, and
+`isTableLoaded()` short-circuits to true on a table that does not defer — so
+`Table::isLoaded()` answers for every table and the flag is inert unless
+`deferLoading()` is on. The partial reads it once and gates **four** reads on the
+result: the preamble `getRecords`, the `getPaginator` read, the
+`getVisibleRecordActionsByRecordKey` map and the selectable-count query. Every
+one of them reaches the database, and each is pinned by
+[`TableDeferredLoadingTest`](../../../packages/tables/tests/Integration/TableDeferredLoadingTest.php)'s
+zero-read case: the fixture's data source counts its calls, so deleting any one
+gate fails there rather than only under a profiler.
+
+The body branch splits three ways where vendor's splits two. `records is null`
+is the loading block; `records is empty` is the empty state; anything else is the
+table. Before this, one `records is empty` carried both null and the empty list —
+Twig's `is empty` is true for `null` — which is exactly the conflation vendor
+avoids with `$records === null`. The selection banner gains the same gate, which
+is vendor's own `$isLoaded` guard on it.
+
+The controller closes the window: on connect it reads the flag back off the live
+store and, when the table defers and the flag is false, fires `loadTable` once. A
+reconnect after the load reads true and fires nothing, so the once-guard is the
+store rather than a controller flag. What it reads there is the **method's**
+answer, not the raw property — the prop and the getter share a name, so
+`PropertyAccessor` prefers `isTableLoaded()` when the hydrator dehydrates
+([the general mechanic](has-table.md#the-writable-props-dehydrate-in-their-elements-wire-vocabulary),
+which `$isTableReordering` carries too). That is the value the client wants: a
+table that does not defer publishes `true` however its flag stands, so the
+controller never fires an action into a window that was never open.
+
+### The poll interval parses strictly and carries no Livewire modifiers
+
+`wire:poll` reads a Livewire root, and the table partial does not own one —
+stamping the *page* would re-render everything on the page rather than the table
+(R6 §2.1/2.3). So `poll()` is server-side configuration and the interval is
+client-side machinery: `getPollingIntervalMilliseconds()` hands the controller a
+number and the controller owns the `setInterval`. It is emitted only while the
+table is not being reordered, matching vendor's `(! $isReordering)` guard, and
+regardless of the deferred state, because vendor polls through the deferred
+window too.
+
+Two divergences ride on that. The parse is **strict**: `10s` and `500ms` parse,
+and anything else — a bare number, a unit Filament never had, an empty string —
+throws `InvalidArgumentException` where Livewire silently falls back to 2000 ms.
+A table quietly polling at the wrong rate is invisible until it costs somebody a
+database, which is the fail-fast house rule's whole case. And Livewire's
+`.visible` / `.keep-alive` modifiers are **not** ported: both are properties of
+`wire:poll` itself, and the interval this port hands the browser is a number with
+nowhere to carry them.
 
 ### Record actions register without the per-action modifier hook
 
@@ -1756,9 +1807,10 @@ pass that takes the two count literals.
 
 The banner is server-gated on `isSelectionEnabled()` and client-gated on the
 count, as vendor's is, and it renders on an overflow (empty) page too: a
-selection outlives a page that lost its rows. Vendor's two extra server gates
-have no counterpart, `maxSelectableRecords(1)` and `deferLoading()` both being
-unported. So is the `fi-selected` row tint and its leading primary bar — that
+selection outlives a page that lost its rows. Of vendor's two extra server gates
+one is ported — the banner does not render while a deferred table's window is
+still open — while `maxSelectableRecords(1)` stays unported. So is the
+`fi-selected` row tint and its leading primary bar — that
 rides a class Filament's Alpine binds onto each `<tr>`, and the port stamps no
 per-row class from the client; the ticked checkbox carries the state visually
 until the row-click work of M4 · 3 revisits it.

@@ -6,8 +6,10 @@ import { resolveLiveHost } from "../utils/live_host.js";
 const SELECTED_MODEL = "selectedTableRecords";
 const DESELECTED_MODEL = "deselectedTableRecords";
 const TRACKING_MODEL = "isTrackingDeselectedTableRecords";
+const LOADED_MODEL = "isTableLoaded";
 const SELECT_ALL_ACTION = "selectAllTableRecords";
 const REORDER_ACTION = "reorderTable";
+const LOAD_ACTION = "loadTable";
 
 const RECORD_CHECKBOX_SELECTOR = ".sy-ta-record-checkbox";
 const ROW_SELECTOR = ".sy-ta-row";
@@ -37,6 +39,8 @@ export default class extends Controller<HTMLElement> {
     canTrack: { type: Boolean, default: false },
     pageOnly: { type: Boolean, default: false },
     allSelectableCount: Number,
+    deferred: { type: Boolean, default: false },
+    pollInterval: Number,
     countOne: String,
     countMany: String,
   };
@@ -55,6 +59,9 @@ export default class extends Controller<HTMLElement> {
   declare readonly pageOnlyValue: boolean;
   declare readonly hasAllSelectableCountValue: boolean;
   declare readonly allSelectableCountValue: number;
+  declare readonly deferredValue: boolean;
+  declare readonly hasPollIntervalValue: boolean;
+  declare readonly pollIntervalValue: number;
   declare readonly countOneValue: string;
   declare readonly countManyValue: string;
 
@@ -62,6 +69,7 @@ export default class extends Controller<HTMLElement> {
   #unsubscribe: (() => void) | null = null;
   #clickController: AbortController | null = null;
   #lastChecked: HTMLInputElement | null = null;
+  #pollTimer: ReturnType<typeof setInterval> | null = null;
   #generation = 0;
 
   async connect(): Promise<void> {
@@ -89,6 +97,8 @@ export default class extends Controller<HTMLElement> {
 
     this.#watchShiftClicks();
     this.#repaint();
+    this.#startPolling();
+    this.#closeDeferredWindow();
   }
 
   disconnect(): void {
@@ -99,6 +109,8 @@ export default class extends Controller<HTMLElement> {
 
     this.#clickController?.abort();
     this.#clickController = null;
+
+    this.#stopPolling();
 
     this.#component = null;
     this.#lastChecked = null;
@@ -173,14 +185,53 @@ export default class extends Controller<HTMLElement> {
    */
   async reorder(event: Event): Promise<void> {
     const items = (event as CustomEvent<{ items?: unknown }>).detail?.items;
+    const component = this.#component;
 
-    if (!Array.isArray(items)) {
+    if (!Array.isArray(items) || component === null) {
       return;
     }
 
-    const component = this.#component ?? (await resolveLiveHost(this.element));
-
     await component.action(REORDER_ACTION, { order: toKeys(items) });
+  }
+
+  /**
+   * The re-render loop `poll()` asked for, in milliseconds. It is independent of
+   * the deferred window — a table polls through one, as vendor's does.
+   */
+  #startPolling(): void {
+    this.#stopPolling();
+
+    if (!this.hasPollIntervalValue || this.pollIntervalValue <= 0) {
+      return;
+    }
+
+    this.#pollTimer = setInterval((): void => {
+      void this.#component?.render();
+    }, this.pollIntervalValue);
+  }
+
+  #stopPolling(): void {
+    if (this.#pollTimer === null) {
+      return;
+    }
+
+    clearInterval(this.#pollTimer);
+    this.#pollTimer = null;
+  }
+
+  /**
+   * The deferred table's second request, which is what puts records in the
+   * shell the first render carried. The store's own flag is the once-guard, so a
+   * reconnect after the load fires nothing.
+   */
+  #closeDeferredWindow(): void {
+    const component = this.#component;
+
+    if (component === null || !this.deferredValue || component.getData(LOADED_MODEL) === true) {
+      return;
+    }
+
+    void component.action(LOAD_ACTION);
   }
 
   #state(): SelectionState {

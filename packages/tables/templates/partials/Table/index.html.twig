@@ -1,10 +1,14 @@
-{% set records = component.getRecords %}
+{# Null until the deferred window closes, so every records-touching read below
+   stays gated on it — an ungated one queries a table that renders no rows. #}
+{% set records = component.isLoaded ? component.getRecords : null %}
 {% set columns = component.getColumns %}
 {% set hostId = component.getLiveComponent.getTableHostId %}
 {% set isReorderable = component.isReorderable %}
 {% set isReordering = component.isReordering %}
+{% set isDeferred = component.isLoadingDeferred %}
+{% set pollIntervalMilliseconds = isReordering ? null : component.getPollingIntervalMilliseconds %}
 
-{% set paginator = component.getPaginator %}
+{% set paginator = records is not null ? component.getPaginator : null %}
 {% set footerVisible = paginator and (paginator.getTotalRecordCount is null
     ? (paginator.count > 0 or not paginator.onFirstPage or paginator.hasMorePages)
     : paginator.getTotalRecordCount > 0) %}
@@ -38,7 +42,7 @@
 {% set headerActionsAdaptive = component.getHeaderActionsPosition is same as(constant('Sylament\\Tables\\Enums\\HeaderActionsPosition::Adaptive')) %}
 {% set toolbarVisible = isSearchable or filtersTriggerVisible or toolbarActions is not empty or isReorderable %}
 
-{% set recordActionsByKey = isReordering ? {} : component.getVisibleRecordActionsByRecordKey %}
+{% set recordActionsByKey = isReordering or records is null ? {} : component.getVisibleRecordActionsByRecordKey %}
 {% set hasRecordActions = recordActionsByKey|filter(actions => actions is not empty)|length > 0 %}
 {% set recordActionsPosition = component.getRecordActionsPosition.name %}
 {% set actionsBeforeCells = hasRecordActions and recordActionsPosition == 'BeforeCells' %}
@@ -50,7 +54,7 @@
 {% set hasSelection = isSelectionEnabled and component.getLiveComponent.hasSelectedTableRecords %}
 {% set checkboxLeading = isSelectionEnabled and not isReordering and component.getRecordCheckboxPosition.name == 'BeforeCells' %}
 {% set checkboxTrailing = isSelectionEnabled and not isReordering and component.getRecordCheckboxPosition.name == 'AfterCells' %}
-{% set allSelectableCount = isSelectionEnabled ? component.getLiveComponent.getAllSelectableTableRecordsCount : null %}
+{% set allSelectableCount = isSelectionEnabled and records is not null ? component.getLiveComponent.getAllSelectableTableRecordsCount : null %}
 
 {% set isStriped = component.isStriped %}
 
@@ -90,10 +94,12 @@
 
 <div {{ attrs({
     class: 'sy sy-ta',
-}, isSelectionEnabled or isReordering ? stimulus_controller('sylament--tables--table', {
+}, isSelectionEnabled or isReorderable or isDeferred or pollIntervalMilliseconds is not null ? stimulus_controller('sylament--tables--table', {
     canTrack: component.canTrackDeselectedRecords,
     pageOnly: component.selectsCurrentPageOnly,
     allSelectableCount: allSelectableCount,
+    deferred: isDeferred,
+    pollInterval: pollIntervalMilliseconds,
     countOne: '1 record selected',
     countMany: ':count records selected',
 }) : null) }}>
@@ -280,7 +286,7 @@
             <div class="sy-ta-reorder-indicator" role="status" aria-live="polite">
                 Drag and drop the records into order.
             </div>
-        {% elseif isSelectionEnabled %}
+        {% elseif isSelectionEnabled and records is not null %}
             <div {{ attrs({
                 class: 'sy-ta-selection-indicator',
                 role: 'status',
@@ -311,7 +317,13 @@
             </div>
         {% endif %}
 
-        {% if records is empty %}
+        {% if records is null %}
+            <div class="sy-ta-table-loading-ctn" role="status" aria-busy="true">
+                <twig:SylamentSupport:LoadingIndicator size="2xl" />
+
+                <span class="sy-ta-sr-only">Loading</span>
+            </div>
+        {% elseif records is empty %}
             {% if emptyState %}
                 {{ emptyState }}
             {% else %}

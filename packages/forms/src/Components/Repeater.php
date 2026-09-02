@@ -977,7 +977,7 @@ class Repeater extends Field implements CanConcealComponents, HasExtraItemAction
     {
         $action = Action::make($this->getDeleteActionName())
             ->label('Delete')
-            ->icon('heroicons:trash-20-solid')
+            ->icon($this->resolveActionIcon(FormsIconAlias::COMPONENTS_REPEATER_ACTIONS_DELETE, 'heroicons:trash-20-solid'))
             ->color('danger')
             ->action(function (array $arguments, Repeater $component): void {
                 $items = $component->getRawState();
@@ -1012,7 +1012,7 @@ class Repeater extends Field implements CanConcealComponents, HasExtraItemAction
     {
         $action = Action::make($this->getCloneActionName())
             ->label('Clone')
-            ->icon('heroicons:square-2-stack-20-solid')
+            ->icon($this->resolveActionIcon(FormsIconAlias::COMPONENTS_REPEATER_ACTIONS_CLONE, 'heroicons:square-2-stack-20-solid'))
             ->color('gray')
             ->action(function (array $arguments, Repeater $component): void {
                 $items = $component->getRawState();
@@ -1061,7 +1061,7 @@ class Repeater extends Field implements CanConcealComponents, HasExtraItemAction
     {
         $action = Action::make($this->getMoveUpActionName())
             ->label('Move up')
-            ->icon('heroicons:arrow-up-20-solid')
+            ->icon($this->resolveActionIcon(FormsIconAlias::COMPONENTS_REPEATER_ACTIONS_MOVE_UP, 'heroicons:arrow-up-20-solid'))
             ->color('gray')
             ->action(function (array $arguments, Repeater $component): void {
                 $items = $component->getRawState();
@@ -1093,7 +1093,7 @@ class Repeater extends Field implements CanConcealComponents, HasExtraItemAction
     {
         $action = Action::make($this->getMoveDownActionName())
             ->label('Move down')
-            ->icon('heroicons:arrow-down-20-solid')
+            ->icon($this->resolveActionIcon(FormsIconAlias::COMPONENTS_REPEATER_ACTIONS_MOVE_DOWN, 'heroicons:arrow-down-20-solid'))
             ->color('gray')
             ->action(function (array $arguments, Repeater $component): void {
                 $items = $component->getRawState();

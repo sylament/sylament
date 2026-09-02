@@ -64,9 +64,10 @@ The thirty values are pinned by
 which is what makes the de-prefixing below a decision rather than a typo. Nine
 of the thirty landed together, ahead of the code that reads them: the sweep that
 closes M3 declares the key-value pair, the text input's three affix actions and
-the repeater's four item actions in one change, so the fields and actions built
-across the rest of that epic resolve an alias that already exists rather than
-each adding its own. Three of the thirty reach their icon through a template. Two are the boolean pair, which
+the repeater's four item actions in one change, so the fields built across the
+rest of that epic resolve an alias that already exists rather than each adding
+its own — the repeater's four, whose actions already shipped, were wired to
+theirs immediately. Three of the thirty reach their icon through a template. Two are the boolean pair, which
 `ToggleButtons`' two templates pass to the `Icon` tag's `alias` prop, resolving
 [at render rather than at `boolean()` call time](toggle-buttons.md#the-boolean-icons-resolve-their-alias-at-render-not-at-call-time),
 and an override registered under `sylament.icons` is pinned replacing one of them
@@ -92,15 +93,14 @@ replacing the rendered icon by
 which is the second constant to have its override exercised against real markup
 rather than only its value asserted.
 
-The repeater's three take that same route, for the same reason — its collapse,
-expand and reorder actions are built in PHP. `Repeater` resolves them through an
-`IconManager` taken by the same `#[Required]` setter, in a private
-`resolveActionIcon()` the three factories call as they mint each action
+The repeater's seven take that same route, for the same reason — every one of its
+actions is built in PHP. `Repeater` resolves them through an `IconManager` taken
+by the same `#[Required]` setter, in a private `resolveActionIcon()` each factory
+calls as it mints its action
 ([the chrome actions](repeater.md#collapse-state-is-the-clients-once-the-controller-connects)
 and [the drag handle](repeater.md#the-drag-reorder-round-trip-accepts-the-clients-order)
-are where those icons land). The repeater's other four actions — clone, delete,
-move up, move down — still pass bare icon strings, so their aliases are among the
-20 below.
+are where the first three land; the item actions — clone, delete, move up, move
+down — followed once their four aliases existed to resolve).
 
 The file-upload editor's thirteen take that route as well: they resolve in PHP
 through [`FileUpload::getImageEditorActions()`](file-upload.md), whose `alias`

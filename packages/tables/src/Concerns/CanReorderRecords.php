@@ -60,8 +60,6 @@ trait CanReorderRecords
             array_filter($order, static fn (mixed $key): bool => is_scalar($key) && !is_bool($key)),
         ));
 
-        $table->callBeforeReordering($order);
-
         $column = (string) $table->getReorderColumn();
         $query = $table->hasQuery() ? $table->getQuery() : null;
         $entityManager = $table->getQueryEntityManager();
@@ -69,6 +67,8 @@ trait CanReorderRecords
         if (!$query instanceof QueryBuilder || $entityManager === null) {
             throw new LogicException(sprintf('Table [%s] reorders records it does not query; a position column is written through the [query()] and [relationship()] lanes only.', static::class));
         }
+
+        $table->callBeforeReordering($order);
 
         $records = $this->resolveReorderedTableRecords($query, $order);
         $accessor = $table->getPropertyAccessor();

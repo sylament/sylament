@@ -7,9 +7,11 @@ namespace Sylament\Tables\Tests\Integration;
 use Closure;
 use Sylament\Actions\Action;
 use Sylament\Actions\BulkAction;
+use Sylament\Support\Icons\IconManager;
 use Sylament\Tables\Columns\TextColumn;
 use Sylament\Tables\Table;
 use Sylament\Tables\Tests\Fixtures\Concerns\TableHost;
+use Sylament\Tables\Twig\TablesIconAlias;
 use Symfony\Component\DomCrawler\Crawler;
 
 use function Sylament\Tables\Tests\renderToHtml;
@@ -63,6 +65,18 @@ it('flips the trigger label while the mode is on', function (): void {
 
     expect($trigger->attr('aria-label'))->toBe('Finish reordering records')
         ->and($trigger->attr('data-live-action-param'))->toBe('toggleTableReordering');
+});
+
+it('lets a registered alias replace the trigger icon at render time', function (): void {
+    $this::getContainer()->get(IconManager::class)->register([
+        TablesIconAlias::ACTIONS_ENABLE_REORDERING => 'heroicons:x-mark-20-solid',
+    ]);
+
+    $icon = new Crawler(reorderingTableHtml())->filter('.sy-ta-header-toolbar-actions button.sy-icon-btn svg');
+
+    // The override fixture is a 20-unit icon; the shipped `heroicons:arrows-up-down` default is 24.
+    expect($icon->count())->toBe(1)
+        ->and($icon->attr('viewBox'))->toBe('0 0 20 20');
 });
 
 it('mounts the drag control and marks the rows only while reordering', function (): void {

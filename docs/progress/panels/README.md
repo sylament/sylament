@@ -1032,10 +1032,14 @@ Three of that list's seven came off it with M4 · 3. **Tabs** ship as
 `renderTable()` from the same `{% if tabs is not empty %}` guard all three
 tab-bearing partials carry. **Query-string binding** ships as
 [`getTableUrlMapping()`](../tables/has-table.md#the-url-binding-is-a-per-prop-liveprop-modifier-opted-into-by-the-page),
-overridden here to map five of Filament's six names — `page` (identifier-prefixed),
-`sort`, `search`, `filters` and `tab`; `reordering` is
+overridden here to map five of the seven names Filament binds — `page`
+(identifier-prefixed), `sort`, `search`, `filters` and `tab`. Of the two left,
+`reordering` is
 [deliberately unbound](../tables/has-table.md#the-url-binding-is-a-per-prop-liveprop-modifier-opted-into-by-the-page)
-and `grouping` has no prop until M4 · 6. And **row-click defaulting** ships as the
+and `grouping` has no prop until M4 · 6. Filament's own seven are **six `#[Url]`
+attributes plus `page`**, which rides Livewire's pagination binding rather than
+that attribute — one hook answers for all five here, which is the whole of the
+divergence. And **row-click defaulting** ships as the
 `recordAction()` / `recordUrl()` seeding in `makeTable()`, which
 [resource pages answer where no action does](#the-row-click-falls-through-to-the-resources-own-view-or-edit-page).
 

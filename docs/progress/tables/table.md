@@ -1251,12 +1251,17 @@ table's own document outline, and where there is no first level there is nothing
 sit under. `rootHeadingLevel()` moves both together, so a table dropped inside a
 section can push its whole outline down one and keep the relationship.
 
-Vendor computes the variable once at the top of the blade and feeds it to seven
-call sites — the empty state is one, and the rest belong to chrome this port has
-not built. Only the empty state reads it here, and the
-[filters panel](#the-panel-is-fixed-chrome-with-no-action-objects-behind-it) is the
-one place that deliberately does not: it takes a literal `headingLevel` of 3,
-because it is fixed chrome rather than part of the table's outline.
+Vendor computes the variable once at the top of the blade and feeds it to **nine**
+call sites, and only three of them are chrome this port has not built — the column
+manager (M4 · 5) and the two group headings (M4 · 6). The empty state is one more,
+and the remaining **five are the filters panel**, in all five of its layout
+positions: vendor hands the computed tag to `<x-filament-tables::filters>` every
+time. Ours does not, and that is the deliberate part — the panel takes a literal
+`headingLevel` of 3 ([`headingTag` → `headingLevel`](../renames.md#renames) is a
+recorded rename), because it is
+[fixed chrome](#the-panel-is-fixed-chrome-with-no-action-objects-behind-it) rather
+than part of the table's outline. So the empty state is the one place here that
+reads the demoting tag at all.
 
 ### The record title reads the attribute through the accessor and falls back to the label
 

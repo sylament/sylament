@@ -12,6 +12,10 @@ class TablesIconAlias
 
     public const string ACTIONS_FILTER = 'actions.filter';
 
+    public const string COLUMNS_ICON_COLUMN_FALSE = 'columns.icon-column.false';
+
+    public const string COLUMNS_ICON_COLUMN_TRUE = 'columns.icon-column.true';
+
     public const string EMPTY_STATE = 'table.empty-state';
 
     public const string FILTERS_REMOVE_ALL_BUTTON = 'filters.remove-all-button';

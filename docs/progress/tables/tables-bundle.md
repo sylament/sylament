@@ -57,7 +57,7 @@ a [Details](#details) write-up, a **diverges** link to
 | --- | --- | --- | --- | --- |
 | [`Columns\`, `Filters\` and `Colors\Components\` globs + `Table` component services](../../../packages/tables/src/SylamentTablesBundle.php) | — (Sylament-only; Filament's provider binds no services) | done | — | [diverges](#the-bundle-registers-container-services-which-filaments-provider-has-no-counterpart-for) |
 | [TableExtension → `twig.extension`](../../../packages/tables/src/SylamentTablesBundle.php) (`renderTable()`) | — (Sylament-only; mirrors schemas' [`renderSchema()`](../../../packages/schemas/src/Twig/Extension/SchemaExtension.php)) | done | — | [diverges](#the-bundle-registers-a-rendertable-twig-extension-which-filament-has-no-counterpart-for) |
-| [`TablesIconAlias` — `ACTIONS_DISABLE_REORDERING`, `ACTIONS_ENABLE_REORDERING`, `ACTIONS_FILTER`, `EMPTY_STATE`, `FILTERS_REMOVE_ALL_BUTTON`, the three `HEADER_CELL_SORT_*`, `REORDER_HANDLE`, `SEARCH_FIELD`](../../../packages/tables/src/Twig/TablesIconAlias.php) | [`TablesIconAlias`](../../../vendor/filament/tables/src/View/TablesIconAlias.php) | in progress | — | [detail](#the-alias-set-is-ten-constants-of-filaments-23) · [diverges](#the-empty-state-alias-value-drops-filaments-package-prefix) |
+| [`TablesIconAlias` — `ACTIONS_DISABLE_REORDERING`, `ACTIONS_ENABLE_REORDERING`, `ACTIONS_FILTER`, `COLUMNS_ICON_COLUMN_FALSE`, `COLUMNS_ICON_COLUMN_TRUE`, `EMPTY_STATE`, `FILTERS_REMOVE_ALL_BUTTON`, the three `HEADER_CELL_SORT_*`, `REORDER_HANDLE`, `SEARCH_FIELD`](../../../packages/tables/src/Twig/TablesIconAlias.php) | [`TablesIconAlias`](../../../vendor/filament/tables/src/View/TablesIconAlias.php) | in progress | — | [detail](#the-alias-set-is-a-subset-of-filaments-23) · [diverges](#the-empty-state-alias-value-drops-filaments-package-prefix) |
 | [`ext-mbstring` on the package manifest](../../../packages/tables/composer.json) | — (Sylament-only; Filament's manifest declares no extensions) | done | — | [diverges](#the-manifest-declares-ext-mbstring) |
 | [`sylament/forms` on the package manifest](../../../packages/tables/composer.json) | [`filament/forms` on Filament's](../../../vendor/filament/tables/composer.json) | done | — | [diverges](#the-manifest-declares-sylamentforms) |
 | [`@SylamentTables` view namespace](../../../packages/tables/templates) | [`->hasViews()`](../../../vendor/filament/tables/src/TablesServiceProvider.php) | done | — | [diverges](../schemas/schemas-bundle.md#the-view-namespace-is-registered-by-symfony-convention-not-by-an-explicit-provider-call) |
@@ -109,27 +109,29 @@ responsibilities have no coverage because they have no code.
 Specifics for rows that are not finished — what is already in, what is left, and
 what the next step is. Delete a subsection when its row flips to **done**.
 
-### The alias set is ten constants of Filament's 23
+### The alias set is a subset of Filament's 23
 
 Filament's `TablesIconAlias` declares 23 alias constants up front — every
-overridable icon slot in the whole table builder. Sylament ships **ten** —
+overridable icon slot in the whole table builder. Sylament ships **twelve** —
 `ACTIONS_FILTER` (the toolbar funnel), `EMPTY_STATE`,
 `FILTERS_REMOVE_ALL_BUTTON` (the indicators row's clear-all button), the three
 `HEADER_CELL_SORT_*` (unsorted, ascending, descending — the sortable header's
-chevron picks one by state), `SEARCH_FIELD`, and the three M4 · 3 added:
-`ACTIONS_ENABLE_REORDERING` and `ACTIONS_DISABLE_REORDERING` — the toolbar
+chevron picks one by state), `SEARCH_FIELD`, the three M4 · 3 added —
+`ACTIONS_ENABLE_REORDERING` and `ACTIONS_DISABLE_REORDERING`, the toolbar
 trigger's two states, resolved inside
 [`getReorderRecordsTriggerAction($isReordering)`](../../../packages/tables/src/Table/Concerns/CanReorderRecords.php)
-so one action object answers for both — and `REORDER_HANDLE`, the per-row grab
-handle. All ten have their consuming
-surface ported. Twelve of the remaining 13 belong to features that are not built
+so one action object answers for both, and `REORDER_HANDLE`, the per-row grab
+handle — and the two M4 · 4 added with
+[`IconColumn`](icon-column.md#the-alias-is-resolved-in-php-and-only-the-icons-have-one):
+`COLUMNS_ICON_COLUMN_TRUE` and `COLUMNS_ICON_COLUMN_FALSE`, the boolean check
+and cross. All twelve have their consuming
+surface ported. Ten of the remaining 11 belong to features that are not built
 yet: the filters query builder (the six
 `FILTERS_QUERY_BUILDER_CONSTRAINTS_*`), grouping (`ACTIONS_GROUP`,
 `GROUPING_COLLAPSE_BUTTON`), the column manager (`ACTIONS_COLUMN_MANAGER`) and
-the column catalog (`COLUMNS_COLLAPSE_BUTTON`, `COLUMNS_ICON_COLUMN_TRUE`,
-`COLUMNS_ICON_COLUMN_FALSE`).
+the column catalog's collapse button (`COLUMNS_COLLAPSE_BUTTON`).
 
-The thirteenth, `ACTIONS_OPEN_BULK_ACTIONS`, is the one exception, and it is worth
+The eleventh, `ACTIONS_OPEN_BULK_ACTIONS`, is the one exception, and it is worth
 naming because its feature **is** built: bulk actions landed with M4 · 1 and the
 alias still did not, because nothing reads it here.
 [`BulkActionGroup`](../actions/action-group.md) sets its trigger icon as a plain
@@ -143,18 +145,22 @@ it, so each constant lands in the same change as the component or feature that
 renders its icon — the same growth order
 [`SupportIconAlias`](../support/support-icon-alias.md#pagination-rtl-aliases)
 follows, and the four that arrived with the sort headers and the search toolbar,
-and the three that arrived with reordering, are that order in action. All ten are
-read by
+and the three that arrived with reordering, are that order in action. Ten of the
+twelve are read by
 [the table partial](../../../packages/tables/templates/partials/Table/index.html.twig)
 — `ACTIONS_FILTER` and `FILTERS_REMOVE_ALL_BUTTON` by the filters chrome, in its
 toolbar and its indicators row, rather than by the table's own rows, and the two
 reorder-trigger ones through the action the toolbar renders rather than from the
-markup directly — so every one of them is overridable end to end. Each of the
-three new ones needed a glyph added to
+markup directly — so every one of them is overridable end to end. The other two
+are read in PHP instead, by `IconColumn::getTrueIcon()` / `getFalseIcon()`, so a
+consumer's override is visible to a closure as well as to the markup
+([icon-column.md](icon-column.md#the-alias-is-resolved-in-php-and-only-the-icons-have-one)).
+Each of the three reordering ones needed a glyph added to
 [the fixture icon set](../../../packages/tables/tests/Fixtures/assets/icons/heroicons)
 (`arrows-up-down`, `check`, `bars-2`) and to the demo's, because ux-icons resolves
 a missing local icon by throwing rather than by rendering nothing — a hard error in
-a render test, not a blank button.
+a render test, not a blank button. The icon column's two defaults — `check-circle`
+and `x-circle` — are under the same requirement, and the fixture set carries both.
 
 ### Asset registration
 

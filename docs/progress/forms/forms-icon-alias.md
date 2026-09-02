@@ -67,8 +67,9 @@ closes M3 declares the key-value pair, the text input's three affix actions and
 the repeater's four item actions in one change, so the fields built across the
 rest of that epic resolve an alias that already exists rather than each adding
 its own — the repeater's four, whose actions already shipped, were wired to
-theirs immediately. Three of the thirty reach their icon through a template. Two are the boolean pair, which
-`ToggleButtons`' two templates pass to the `Icon` tag's `alias` prop, resolving
+theirs immediately. Three of the thirty reach their icon through a template. Two
+are the boolean pair, which `ToggleButtons`' two templates pass to the `Icon`
+tag's `alias` prop, resolving
 [at render rather than at `boolean()` call time](toggle-buttons.md#the-boolean-icons-resolve-their-alias-at-render-not-at-call-time),
 and an override registered under `sylament.icons` is pinned replacing one of them
 by

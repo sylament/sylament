@@ -24,11 +24,13 @@ Consumers never need Tailwind installed.
    and JS targets — inert until a component file or controller cares. A utility a
    component needs and support does not ship globally (`sy-invisible`, `sr-only`
    twins) is nested under that component's own class in its stylesheet (support's
-   `fieldset.css`, schemas' `section.css`), or published as a package-prefixed class
-   of its own when more than one component in that package needs it (panels'
-   `.sy-pa-skip-link`). A utility more than one *package* needs is support's,
-   code-less, in its `utilities.css` (`sy-sr-only`); a package-local twin is tolerated
-   until a second package needs it, at which point it moves there.
+   `fieldset.css`, schemas' `section.css`, tables' `.sy-ta-sr-only`), or published as
+   a package-prefixed class of its own when more than one component in that package
+   needs it — an escape nothing shipped uses today, forms' `.sy-fo-sr-only` having
+   been the only class that ever earned it before it outgrew the tier. A utility more
+   than one *package* needs is support's, code-less, in its `utilities.css`
+   (`sy-sr-only`); a package-local twin is tolerated until a second package needs it,
+   at which point it moves there.
 2. **Every component template's root element carries the bare `sy` marker class**
    (`<div class="sy sy-fo-field">`). It is how the scoped preflight identifies
    Sylament markup — exact-class matching, so a host app's own `sy-*`-like class names

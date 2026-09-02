@@ -41,6 +41,11 @@
         "main": "dist/controllers/dropdown_controller.js",
         "fetch": "eager",
         "enabled": true
+      },
+      "clipboard": {
+        "main": "dist/controllers/clipboard_controller.js",
+        "fetch": "eager",
+        "enabled": true
       }
     },
     "importmap": {

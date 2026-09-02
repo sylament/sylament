@@ -17,3 +17,4 @@
 @import './components/tabs.css' layer(components);
 @import './components/loading-indicator.css' layer(components);
 @import './components/sortable.css' layer(components);
+@import './components/copyable.css' layer(components);

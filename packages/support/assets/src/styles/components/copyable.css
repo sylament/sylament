@@ -1,0 +1,13 @@
+.sy-copyable {
+    @apply relative cursor-pointer rounded-md outline-none focus-visible:ring-2 focus-visible:ring-primary-600 dark:focus-visible:ring-primary-500;
+
+    &[data-copied]::after {
+        @apply absolute bottom-full left-1/2 z-10 mb-1 -translate-x-1/2 rounded-md bg-gray-950 px-1.5 py-0.5 text-xs font-medium whitespace-nowrap text-white dark:bg-white dark:text-gray-950;
+
+        content: attr(data-copy-message);
+    }
+}
+
+.sy-copyable-live-region {
+    @apply sr-only;
+}

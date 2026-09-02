@@ -6,24 +6,45 @@
 named after the record path it reads, bound to a [`Table`](table.md), and handed
 one record at a time. It ports Filament's
 [`Filament\Tables\Columns\Column`](../../../vendor/filament/tables/src/Columns/Column.php)
-together with the concern traits it composes — ten today
+together with the concern traits it composes — twenty-six today, fifteen of
+them landed by the column catalog. Sixteen live in the column tier
 ([`BelongsToTable`](../../../packages/tables/src/Columns/Concerns/BelongsToTable.php),
-[`HasName`](../../../packages/tables/src/Columns/Concerns/HasName.php),
-[`HasLabel`](../../../packages/tables/src/Columns/Concerns/HasLabel.php),
-[`HasRecord`](../../../packages/tables/src/Columns/Concerns/HasRecord.php),
-[`HasCellState`](../../../packages/tables/src/Columns/Concerns/HasCellState.php),
 [`CanAggregateRelatedRecords`](../../../packages/tables/src/Columns/Concerns/CanAggregateRelatedRecords.php),
-[`CanBeSortable`](../../../packages/tables/src/Columns/Concerns/CanBeSortable.php),
+[`CanBeDisabled`](../../../packages/tables/src/Columns/Concerns/CanBeDisabled.php),
+[`CanBeHiddenResponsively`](../../../packages/tables/src/Columns/Concerns/CanBeHiddenResponsively.php),
+[`CanBeInline`](../../../packages/tables/src/Columns/Concerns/CanBeInline.php),
 [`CanBeSearchable`](../../../packages/tables/src/Columns/Concerns/CanBeSearchable.php),
-[`InteractsWithTableQuery`](../../../packages/tables/src/Columns/Concerns/InteractsWithTableQuery.php),
-[`HasAlignment`](../../../packages/support/src/Components/Concerns/HasAlignment.php)),
+[`CanBeSortable`](../../../packages/tables/src/Columns/Concerns/CanBeSortable.php),
+[`CanCallAction`](../../../packages/tables/src/Columns/Concerns/CanCallAction.php),
+[`CanOpenUrl`](../../../packages/tables/src/Columns/Concerns/CanOpenUrl.php),
+[`HasCellState`](../../../packages/tables/src/Columns/Concerns/HasCellState.php),
+[`HasExtraCellAttributes`](../../../packages/tables/src/Columns/Concerns/HasExtraCellAttributes.php),
+[`HasExtraHeaderAttributes`](../../../packages/tables/src/Columns/Concerns/HasExtraHeaderAttributes.php),
+[`HasLabel`](../../../packages/tables/src/Columns/Concerns/HasLabel.php),
+[`HasName`](../../../packages/tables/src/Columns/Concerns/HasName.php),
+[`HasRecord`](../../../packages/tables/src/Columns/Concerns/HasRecord.php),
+[`HasRowLoopObject`](../../../packages/tables/src/Columns/Concerns/HasRowLoopObject.php),
+[`HasTooltip`](../../../packages/tables/src/Columns/Concerns/HasTooltip.php),
+[`InteractsWithTableQuery`](../../../packages/tables/src/Columns/Concerns/InteractsWithTableQuery.php)),
+and seven are support's, composed by a bare `use` line
+([`CanGrow`](../../../packages/support/src/Components/Concerns/CanGrow.php),
+[`CanWrapHeader`](../../../packages/support/src/Components/Concerns/CanWrapHeader.php),
+[`HasAlignment`](../../../packages/support/src/Components/Concerns/HasAlignment.php),
+[`HasExtraAttributes`](../../../packages/support/src/Components/Concerns/HasExtraAttributes.php),
+[`HasPlaceholder`](../../../packages/support/src/Components/Concerns/HasPlaceholder.php),
+[`HasVerticalAlignment`](../../../packages/support/src/Components/Concerns/HasVerticalAlignment.php),
+[`HasWidth`](../../../packages/support/src/Components/Concerns/HasWidth.php)),
+beside schemas'
+[`CanAccessProperties`](../../../packages/schemas/src/Components/Concerns/CanAccessProperties.php);
 thirty in Filament — twenty from its `Columns\Concerns\` and ten from
 `Support\Concerns\`, of which `HasCellState` and `CanAggregateRelatedModels`
 [moved package](#hascellstate-is-relocated-into-the-column-tier) (the second
-also [renamed](../renames.md#renames)) while `HasAlignment` stayed. Both of
+also [renamed](../renames.md#renames)) while `HasAlignment` stayed and
+`HasTooltip` [split in two](#the-tables-tier-tooltip-trio-sits-beside-supports-one-tooltip-trait).
+Both of
 Filament's tiers count toward that same thirty, which is why the support-hosted
-trio belongs in the numerator here as well. All ten are folded into the surface
-table below rather than earning rows upstairs, per
+group belongs in the numerator here as well. All of them are folded into the
+surface table below rather than earning rows upstairs, per
 [one row per file](../README.md#one-row-per-file-one-file-per-thing) —
 `InteractsWithTableQuery` gave up the per-file row it kept in the package
 [README](README.md#features) for its aggregate and eager-loading half when the
@@ -83,38 +104,47 @@ sections do.
 | [`name()` / `getName()`](../../../packages/tables/src/Columns/Concerns/HasName.php) | [`Concerns\HasName`](../../../vendor/filament/tables/src/Columns/Concerns/HasName.php) | done | — | — |
 | [`label()` / `getLabel()` — explicit value wins, else the name is humanised](../../../packages/tables/src/Columns/Concerns/HasLabel.php) | [`Concerns\HasLabel`](../../../vendor/filament/tables/src/Columns/Concerns/HasLabel.php) | done | — | [semantics](#the-default-label-reads-the-second-to-last-dotted-segment) |
 | [`record()` / `getRecord()`](../../../packages/tables/src/Columns/Concerns/HasRecord.php) | [`Concerns\HasRecord`](../../../vendor/filament/tables/src/Columns/Concerns/HasRecord.php) | in progress | — | [diverges](#the-record-union-is-plain-object-where-filaments-is-model) · [detail](#getrecord-has-no-layout-fallback) |
-| [`table()` / `getTable()` / `getLiveComponent()`](../../../packages/tables/src/Columns/Concerns/BelongsToTable.php) | [`Concerns\BelongsToTable`](../../../vendor/filament/tables/src/Columns/Concerns/BelongsToTable.php) | in progress | — | [detail](#an-unbound-column-fails-without-filaments-message) |
+| [`table()` / `getTable()` / `getLiveComponent()`](../../../packages/tables/src/Columns/Concerns/BelongsToTable.php) | [`Concerns\BelongsToTable`](../../../vendor/filament/tables/src/Columns/Concerns/BelongsToTable.php) | in progress | — | [detail](#gettable-refuses-without-filaments-three-source-chain) |
 | [`state()` / `getStateUsing()` / `getState()` — cached per record key](../../../packages/tables/src/Columns/Concerns/HasCellState.php) | [`Support\Concerns\HasCellState`](../../../vendor/filament/support/src/Concerns/HasCellState.php) | done | — | [diverges](#hascellstate-is-relocated-into-the-column-tier) · [diverges](#the-state-cache-keys-off-the-bound-record-key) · [semantics](#state-is-getstateusing-under-another-name) |
 | [`getStateFromRecord()` — object graph or array, by dotted path, fanning out over a collection](../../../packages/tables/src/Columns/Concerns/HasCellState.php) | [`HasCellState::getStateFromRecord()`](../../../vendor/filament/support/src/Concerns/HasCellState.php) | done | — | [diverges](#the-object-read-is-lenient-where-the-accessor-is-strict) · [diverges](#a-to-one-chain-keeps-the-raw-read-where-filaments-relationship-arm-drops-blanks) · [diverges](#the-list-shape-is-metadata-derived-where-filaments-is-cached-off-the-first-row) |
-| [`$evaluationIdentifier = 'column'` + the `$record` / `$state` / `$table` / `$liveComponent` name injections](../../../packages/tables/src/Columns/Column.php) | [`Column::resolveDefaultClosureDependencyForEvaluationByName()`](../../../vendor/filament/tables/src/Columns/Column.php) | in progress | — | [diverges](#the-by-type-record-injection-is-not-registered) · [detail](#rowloop-waits-on-a-decision-about-twigs-loop-not-on-the-table-template) |
+| [`$evaluationIdentifier = 'column'` + the `$record` / `$rowLoop` / `$state` / `$table` / `$liveComponent` name injections](../../../packages/tables/src/Columns/Column.php) | [`Column::resolveDefaultClosureDependencyForEvaluationByName()`](../../../vendor/filament/tables/src/Columns/Column.php) | in progress | — | [diverges](#the-by-type-record-injection-is-not-registered) · [semantics](#the-row-loop-is-a-blade-shaped-object-built-from-twigs-array) |
 | `translateLabel()` | [`Concerns\HasLabel`](../../../vendor/filament/tables/src/Columns/Concerns/HasLabel.php) | blocked | i18n ([table.md](table.md#the-copy-is-english-and-hardcoded-because-no-i18n-layer-ships)) | — |
 | `default()` / `getDefaultState()` | [`Support\Concerns\HasCellState`](../../../vendor/filament/support/src/Concerns/HasCellState.php) | todo | — | — |
 | `separator()` — split a string into a list | [`Support\Concerns\HasCellState`](../../../vendor/filament/support/src/Concerns/HasCellState.php) | todo | — | — |
 | [`distinctList()` / `isDistinctList()`](../../../packages/tables/src/Columns/Concerns/HasCellState.php) | [`Support\Concerns\HasCellState`](../../../vendor/filament/support/src/Concerns/HasCellState.php) | done | — | [semantics](#distinctlist-dedupes-entity-values-by-value-not-by-identity) |
-| `placeholder()` — the empty-cell copy | [`Support\Concerns\HasPlaceholder`](../../../vendor/filament/support/src/Concerns/HasPlaceholder.php) | todo | — | — |
+| [`placeholder()` / `getPlaceholder()` — the empty-cell copy](../../../packages/support/src/Components/Concerns/HasPlaceholder.php) | [`Support\Concerns\HasPlaceholder`](../../../vendor/filament/support/src/Concerns/HasPlaceholder.php) | done | — | [has-placeholder.md](../support/has-placeholder.md) |
 | [`clearCachedState()`](../../../packages/tables/src/Columns/Concerns/HasCellState.php) | [`Support\Concerns\HasCellState`](../../../vendor/filament/support/src/Concerns/HasCellState.php) | done | — | [diverges](#the-state-cache-keys-off-the-bound-record-key) |
 | [`recordKey()` / `getRecordKey()`](../../../packages/tables/src/Columns/Concerns/HasRecord.php) | [`Concerns\HasRecord`](../../../vendor/filament/tables/src/Columns/Concerns/HasRecord.php) | done | — | [diverges](#the-record-key-setter-admits-an-int) |
-| `getRowLoop()` — the `$rowLoop` injection | [`Concerns\HasRowLoopObject`](../../../vendor/filament/tables/src/Columns/Concerns/HasRowLoopObject.php) | todo | — | [detail](#rowloop-waits-on-a-decision-about-twigs-loop-not-on-the-table-template) |
+| [`rowLoop()` / `getRowLoop()` — the `$rowLoop` injection](../../../packages/tables/src/Columns/Concerns/HasRowLoopObject.php) | [`Concerns\HasRowLoopObject`](../../../vendor/filament/tables/src/Columns/Concerns/HasRowLoopObject.php) | done | — | [semantics](#the-row-loop-is-a-blade-shaped-object-built-from-twigs-array) |
 | Relationship traversal — `hasRelationship()`, `getRelationshipResults()`, `inverseRelationship()`, the seven name caches, `applyRelationshipAggregates()`, `applyEagerLoading()` | [`Support\Concerns\HasCellState`](../../../vendor/filament/support/src/Concerns/HasCellState.php), [`InteractsWithTableQuery`](../../../vendor/filament/tables/src/Columns/Concerns/InteractsWithTableQuery.php) | in progress | — | [detail](#relationship-traversal-ships-as-a-value-walk-a-side-store-and-one-kept-member) |
 | [`applyEagerLoading()` — fetch-join the to-one chains a visible name reads through](../../../packages/tables/src/Columns/Concerns/InteractsWithTableQuery.php) | [`InteractsWithTableQuery::applyEagerLoading()`](../../../vendor/filament/tables/src/Columns/Concerns/InteractsWithTableQuery.php) | done | — | [diverges](#a-to-many-relation-stays-lazy-where-filament-eager-loads-every-cardinality) · [has-table.md](has-table.md#eager-loading-runs-over-every-column-on-the-page-clone-alone) |
 | [The aggregate declarations — `avg()`, `counts()`, `exists()`, `max()`, `min()`, `sum()` and their getters](../../../packages/tables/src/Columns/Concerns/CanAggregateRelatedRecords.php) | [`Support\Concerns\CanAggregateRelatedModels`](../../../vendor/filament/support/src/Concerns/CanAggregateRelatedModels.php) | done | — | [rename](../renames.md#renames) · [diverges](#an-aggregate-column-names-itself-freely-where-filaments-must-match-laravels-alias) · [diverges](#the-illuminate-expression-arm-is-dropped-from-the-aggregated-column) · [diverges](#an-aggregate-declaration-that-claims-no-cell-computes-nothing) |
 | [`getCellAggregateDeclaration()` — which declaration this cell reads](../../../packages/tables/src/Columns/Concerns/CanAggregateRelatedRecords.php) | — (Sylament-only; Filament reads the value off the model as an attribute) | done | — | [diverges](#an-aggregate-column-names-itself-freely-where-filaments-must-match-laravels-alias) · [table.md](table.md#an-aggregate-is-a-batched-side-query-and-a-hidden-subselect-never-a-select-on-the-page-query) |
-| Visibility — `hidden()`, `visible()`, `hiddenFrom()`, `toggleable()` | [`CanBeHidden`](../../../vendor/filament/tables/src/Columns/Concerns/CanBeHidden.php), [`CanBeHiddenResponsively`](../../../vendor/filament/tables/src/Columns/Concerns/CanBeHiddenResponsively.php), [`CanBeToggled`](../../../vendor/filament/tables/src/Columns/Concerns/CanBeToggled.php) | todo | — | — |
+| Visibility — `hidden()`, `visible()`, `toggleable()` | [`CanBeHidden`](../../../vendor/filament/tables/src/Columns/Concerns/CanBeHidden.php), [`CanBeToggled`](../../../vendor/filament/tables/src/Columns/Concerns/CanBeToggled.php) | todo | — | — |
+| [`hiddenFrom()` / `visibleFrom()` — the responsive pair](../../../packages/tables/src/Columns/Concerns/CanBeHiddenResponsively.php) | [`Concerns\CanBeHiddenResponsively`](../../../vendor/filament/tables/src/Columns/Concerns/CanBeHiddenResponsively.php) | done | — | [diverges](#the-cache-guards-behind-filaments-memoised-cell-bag-are-not-ported) |
 | [`sortable()` / `isSortable()`](../../../packages/tables/src/Columns/Concerns/CanBeSortable.php) | [`Concerns\CanBeSortable`](../../../vendor/filament/tables/src/Columns/Concerns/CanBeSortable.php) | done | — | — |
 | [`searchable()` / `isSearchable()` / `isGloballySearchable()` / `isIndividuallySearchable()`](../../../packages/tables/src/Columns/Concerns/CanBeSearchable.php) | [`Concerns\CanBeSearchable`](../../../vendor/filament/tables/src/Columns/Concerns/CanBeSearchable.php) | done | — | [diverges](#a-closure-condition-on-searchable-is-evaluated-not-filed-as-a-search-column) |
 | [`getSortColumns()` / `getSearchColumns()`, `forceSearchCaseInsensitive()` / `isSearchForcedCaseInsensitive()`](../../../packages/tables/src/Columns/Concerns/CanBeSearchable.php) | [`CanBeSortable`](../../../vendor/filament/tables/src/Columns/Concerns/CanBeSortable.php), [`CanBeSearchable`](../../../vendor/filament/tables/src/Columns/Concerns/CanBeSearchable.php) | done | — | [diverges](#the-list-getters-take-no-record-and-there-is-no-getdefaultcolumns-pair) · [semantics](#an-undeclared-sortable-has-no-sort-columns-where-an-undeclared-searchable-has-its-name) |
 | `splitIndividualSearchTerms()` / `shouldSplitIndividualSearchTerms()` | [`CanBeSearchable`](../../../vendor/filament/tables/src/Columns/Concerns/CanBeSearchable.php) | blocked | per-column search ([has-table.md](has-table.md#search-is-the-global-term-only)) | Both members exist to govern how a column's **own** search input splits its term, and the only reader is Filament's `applyColumnSearchesToTableQuery()`. The global term's splitting is the table's `splitSearchTerms()`, which landed with the query lane and is a separate flag. Storing this one now would ship a setter no builder consults — worse than an absent one, because it reads as configured |
 | [`applySort()`, `applySearchConstraint()` — the column's query application](../../../packages/tables/src/Columns/Concerns/InteractsWithTableQuery.php) | [`InteractsWithTableQuery`](../../../vendor/filament/tables/src/Columns/Concerns/InteractsWithTableQuery.php) | done | — | [diverges](#sort-columns-apply-in-declared-order-where-filament-reverses-them) · [diverges](#a-search-closure-returns-its-expression-where-filaments-mutates-an-orwhere-group) · [table.md](table.md#a-relation-sort-joins-where-filaments-orders-by-a-correlated-subquery) · [table.md](table.md#a-relation-search-is-a-correlated-exists-at-every-cardinality) |
-| Actions and links — `action()`, `url()`, `openUrlInNewTab()`, `disabledClick()` | [`CanCallAction`](../../../vendor/filament/tables/src/Columns/Concerns/CanCallAction.php), [`CanOpenUrl`](../../../vendor/filament/tables/src/Columns/Concerns/CanOpenUrl.php) | todo | — | — |
+| [`action()` / `getAction()` / `getActionKind()`](../../../packages/tables/src/Columns/Concerns/CanCallAction.php) | [`Concerns\CanCallAction`](../../../vendor/filament/tables/src/Columns/Concerns/CanCallAction.php) | done | — | [table.md](table.md#the-cell-wrapper-interleaves-the-column-arms-with-the-record-ones) · [has-columns.md](has-columns.md) |
+| [`url()` / `openUrlInNewTab()` / `getUrl()` / `hasStateBasedUrls()` / `shouldOpenUrlInNewTab()`](../../../packages/tables/src/Columns/Concerns/CanOpenUrl.php) | [`Concerns\CanOpenUrl`](../../../vendor/filament/tables/src/Columns/Concerns/CanOpenUrl.php) | done | — | [diverges](#a-column-url-is-sanitized-where-filament-only-warns) · [semantics](#geturl-answers-by-argument-count-so-a-closures-parameter-name-changes-the-dom) |
+| [`disabled()` / `isDisabled()` / `isEnabled()` / `disabledClick()` / `isClickDisabled()`](../../../packages/tables/src/Columns/Concerns/CanBeDisabled.php) | [`Concerns\CanBeDisabled`](../../../vendor/filament/tables/src/Columns/Concerns/CanBeDisabled.php) | done | — | `disableClick()`, the deprecated alias, is skipped — [renames.md](../renames.md) |
 | Editing in place — `updateStateUsing()`, `rules()`, `disabled()` | [`CanUpdateState`](../../../vendor/filament/tables/src/Columns/Concerns/CanUpdateState.php), [`CanBeValidated`](../../../vendor/filament/tables/src/Columns/Concerns/CanBeValidated.php), [`CanBeDisabled`](../../../vendor/filament/tables/src/Columns/Concerns/CanBeDisabled.php) | todo | — | — |
 | [`alignment()` / `getAlignment()` / `getAlignmentClass()`](../../../packages/tables/src/Columns/Column.php) | [`HasAlignment`](../../../vendor/filament/support/src/Concerns/HasAlignment.php) | done | — | [has-alignment.md](../support/has-alignment.md) · [diverges](text-column.md#a-badge-row-ignores-alignment-for-want-of-a-justify-content-rule) |
-| Cell presentation — `verticalAlignment()`, `width()`, `grow()`, `inline()`, `tooltip()`, the extra-attribute bags | `HasAlignment`'s siblings in [`support/Concerns/`](../../../vendor/filament/support/src/Concerns), [`HasTooltip`](../../../vendor/filament/tables/src/Columns/Concerns/HasTooltip.php) | todo | — | — |
-| Cell rendering — `renderInLayout()`, `getCellAttributeHtml()`, `getCachedCellAttributeHtml()` | [`Column.php`](../../../vendor/filament/tables/src/Columns/Column.php) | todo | — | [detail](#the-cell-wrapper-belongs-to-the-table-template) |
-| Grouping and layout — `ColumnGroup`, `Columns\Layout\`, `BelongsToGroup`, `BelongsToLayout`, `summarize()` | [`ColumnGroup`](../../../vendor/filament/tables/src/Columns/ColumnGroup.php), [`Columns/Layout`](../../../vendor/filament/tables/src/Columns/Layout), [`CanBeSummarized`](../../../vendor/filament/tables/src/Columns/Concerns/CanBeSummarized.php) | todo | — | — |
+| [`verticalAlignment()` / `getVerticalAlignment()` / `getVerticalAlignmentClass()`](../../../packages/support/src/Components/Concerns/HasVerticalAlignment.php) | [`Support\Concerns\HasVerticalAlignment`](../../../vendor/filament/support/src/Concerns/HasVerticalAlignment.php) | done | — | [has-vertical-alignment.md](../support/has-vertical-alignment.md) |
+| [`width()` / `getWidth()`](../../../packages/support/src/Components/Concerns/HasWidth.php) | [`Support\Concerns\HasWidth`](../../../vendor/filament/support/src/Concerns/HasWidth.php) | done | — | — |
+| [`grow()` / `canGrow()`](../../../packages/support/src/Components/Concerns/CanGrow.php) | [`Support\Concerns\CanGrow`](../../../vendor/filament/support/src/Concerns/CanGrow.php) | done | — | the `<th>` asks `canGrow(false)`, so an undeclared column does not grow |
+| [`wrapHeader()` / `canHeaderWrap()`](../../../packages/support/src/Components/Concerns/CanWrapHeader.php) | [`Support\Concerns\CanWrapHeader`](../../../vendor/filament/support/src/Concerns/CanWrapHeader.php) | done | — | — |
+| [`inline()` / `isInline()`](../../../packages/tables/src/Columns/Concerns/CanBeInline.php) | [`Concerns\CanBeInline`](../../../vendor/filament/tables/src/Columns/Concerns/CanBeInline.php) | done | — | — |
+| [`tooltip()` / `headerTooltip()` / `emptyTooltip()` and their getters](../../../packages/tables/src/Columns/Concerns/HasTooltip.php) | [`Concerns\HasTooltip`](../../../vendor/filament/tables/src/Columns/Concerns/HasTooltip.php) | done | — | [diverges](#a-tooltip-renders-as-a-native-title-and-markup-is-flattened-to-text) · [semantics](#the-tables-tier-tooltip-trio-sits-beside-supports-one-tooltip-trait) |
+| [`extraAttributes()` / `extraCellAttributes()` / `extraHeaderAttributes()` and their getters](../../../packages/tables/src/Columns/Concerns/HasExtraCellAttributes.php) | [`Support\Concerns\HasExtraAttributes`](../../../vendor/filament/support/src/Concerns/HasExtraAttributes.php), [`HasExtraCellAttributes`](../../../vendor/filament/tables/src/Columns/Concerns/HasExtraCellAttributes.php), [`HasExtraHeaderAttributes`](../../../vendor/filament/tables/src/Columns/Concerns/HasExtraHeaderAttributes.php) | done | — | [diverges](#the-cache-guards-behind-filaments-memoised-cell-bag-are-not-ported) · [image-column.md](image-column.md#extra-img-attribute-registrations-merge-defaults-first) |
+| [`getCellClassName()` / `getHeaderCellClassName()` — the per-column hook classes](../../../packages/tables/src/Columns/Column.php) | [`index.blade.php`'s `str($columnName)->camel()->kebab()`](../../../vendor/filament/tables/resources/views/index.blade.php) | done | — | [semantics](#the-hook-class-kebabs-each-dotted-segment-on-its-own) |
+| Cell rendering — `getCellAttributeHtml()`, `getCachedCellAttributeHtml()` and the five `hasDynamic*()` cache guards | [`Column.php`](../../../vendor/filament/tables/src/Columns/Column.php) | skipped | — | [diverges](#the-cache-guards-behind-filaments-memoised-cell-bag-are-not-ported) |
+| Grouping and layout — `ColumnGroup`, `Columns\Layout\`, `renderInLayout()`, `BelongsToGroup`, `BelongsToLayout`, `CanSpanColumns`, `HasSpace`, `summarize()` | [`ColumnGroup`](../../../vendor/filament/tables/src/Columns/ColumnGroup.php), [`Columns/Layout`](../../../vendor/filament/tables/src/Columns/Layout), [`CanBeSummarized`](../../../vendor/filament/tables/src/Columns/Concerns/CanBeSummarized.php) | todo | — | — |
 | The rest of the catalog — `BadgeColumn`, `BooleanColumn`, `CheckboxColumn`, `ColorColumn`, `IconColumn`, `ImageColumn`, `SelectColumn`, `TagsColumn`, `TextInputColumn`, `ToggleColumn`, `ViewColumn` | [`src/Columns`](../../../vendor/filament/tables/src/Columns) | todo | — | — |
-| _rest not audited yet_ | | | | |
 
-Thirteen of the twenty-one **done**-or-partial rows are covered by
+Sixteen of the thirty-five **done**-or-partial rows are covered by
 [`ColumnTest`](../../../packages/tables/tests/Unit/Columns/ColumnTest.php) — the
 blank-name refusal, the three label derivations
 (`title` → *Title*, `releasedAt` → *Released at*, `artist.name` → *Artist*), an
@@ -127,7 +157,32 @@ name, the table binding reaching the host through `getLiveComponent()`, an
 integer record key stored as a string and `null` taken back, a second read of one
 key served from the cache — including a cached `null`, which is why the lookup is
 `array_key_exists()` and not `isset()` — a new key re-reading, an unkeyed column
-reading fresh every time, and `clearCachedState()` restoring the fresh read.
+reading fresh every time, `clearCachedState()` restoring the fresh read, the
+unmounted column naming itself in its refusal, the hook classes over a plain
+name, a camelCase one and a dotted one, and a `$rowLoop` closure receiving the
+translated object.
+
+The fourteen rows the column catalog landed are one Unit file per concern under
+[`tests/Unit/Columns/Concerns/`](../../../packages/tables/tests/Unit/Columns/Concerns) —
+each default, each setter's literal and closure arms, `getUrl()`'s two arities
+against a state-based and a plain URL and the sanitizer refusing both, the
+string action arm calling its host method with and without a record, the
+attribute stacks' replace-versus-merge and their
+[defaults-first](image-column.md#extra-img-attribute-registrations-merge-defaults-first)
+collision order, and the loop translation's countable and non-countable shapes —
+plus, for each one's effect on the markup, the header and cell assembly cases in
+the Integration
+[`TableRenderingTest`](../../../packages/tables/tests/Integration/TableRenderingTest.php):
+the whole `<th>` class list in one string, the growable marker yielding to a
+declared width, a `Markup` header tooltip flattened, the sort control swapping to
+a `span[role=button]` naming all three events, the whole `<td>` class list, and
+the wrapper matrix — a column URL beating the record URL and marking itself, a
+column action suppressing the record URL, a column URL beating a record action,
+`disabledClick()` and a state-based URL each collapsing to a `div`, the new-tab
+flag following whichever arm supplied the `href`, the record link attributes
+riding the record fallback alone, and the two column-action wirings. The four
+refusal arms of `callTableColumnAction()` are
+[`HasColumnsTest`](../../../packages/tables/tests/Integration/Concerns/HasColumnsTest.php)'s.
 
 Ten more cases in that file are the collection walk, and they are written so the
 **shape** rules cannot pass by accident: a `tags.name` list, a *single*-element
@@ -209,22 +264,21 @@ Specifics for rows that are not finished — what is already in, what is left, a
 what the next step is. Delete a subsection when its row flips to **done**; the
 table row and any divergence it earned stay behind.
 
-### An unbound column fails without Filament's message
+### `getTable()` refuses without Filament's three-source chain
 
 Filament's `Column::getTable()` chains three sources — the column's own table,
 its group's, its layout's — and throws
 `LogicException("The column [x] is not mounted to a table.")` when all three are
-absent. Sylament's
+absent.
 [`BelongsToTable::getTable()`](../../../packages/tables/src/Columns/Concerns/BelongsToTable.php)
-returns a non-nullable `Table` property, so an unbound column raises PHP's
-*"must not be accessed before initialization"* `Error` instead: it still fails
-loudly at the same point, with a worse message.
+throws that same message, naming the same column, because a `date()` or `url()`
+closure reaching the table on an unmounted column is a real path and PHP's
+*"must not be accessed before initialization"* `Error` names nothing useful.
 
-The chain is what the message belongs to, and neither link exists yet — column
-groups and column layouts are unported (their row is above). Adding a nullable
-property plus a hand-written throw now would encode a fallback with nothing to
-fall back to. The row flips when `BelongsToGroup` / `BelongsToLayout` land and
-the three-source chain is written in one piece, message included.
+What is still missing is the chain itself: column groups and column layouts are
+unported (their row is above), so there is nothing to fall back *to* and the
+getter reads one source. The row flips when `BelongsToGroup` / `BelongsToLayout`
+land and the two remaining links are written.
 
 ### `getRecord()` has no layout fallback
 
@@ -233,7 +287,7 @@ column carries none of its own, so a column nested in a `Columns\Layout\`
 component reads the row the layout was handed. That arm belongs to the unported
 column-layout tier (its row is above), so the getter returns the column's own
 record or null. It lands with `BelongsToLayout` — in one piece with the
-`getTable()` chain [waiting on the same tier](#an-unbound-column-fails-without-filaments-message),
+`getTable()` chain [waiting on the same tier](#gettable-refuses-without-filaments-three-source-chain),
 rather than as a lone `?->` bolted on ahead of the thing it falls back to.
 
 ### Relationship traversal ships as a value walk, a side store and one kept member
@@ -283,43 +337,71 @@ schemas and the tables side, refused rather than guessed. Neither blocks
 anything: a column with no summarizer and no polymorphic association reads,
 sorts, searches, counts and fetch-joins today.
 
-### `$rowLoop` waits on a decision about Twig's loop, not on the table template
-
-Filament registers a fifth name injection, `rowLoop`, carrying Blade's `$loop`
-object for the row being rendered — `rowLoop(?stdClass $loop)` on
-[`HasRowLoopObject`](../../../vendor/filament/tables/src/Columns/Concerns/HasRowLoopObject.php).
-It is dropped from the `match` here because nothing hands one over. The
-[table template](../../../packages/tables/templates/partials/Table/index.html.twig)
-shipped in M1 · 5 and iterates its records with a plain `{% for %}`, so a `loop`
-*is* in scope where a cell renders — but it is not Blade's, in shape or in type.
-Twig's is an **array** of `parent`, `index0`, `index` and `first`, gaining
-`length`, `revindex`, `revindex0` and `last` only when the iterated value is an
-array or `Countable`; Blade's is an object of `iteration`, `index`, `remaining`,
-`count`, `first`, `last`, `odd`, `even`, `depth` and `parent`, and its `index`
-counts from 0 where Twig's counts from 1. So porting the injection is a decision
-about what `rowLoop` carries here — Twig's array as it stands, or a Blade-shaped
-object built from it — and nothing has to land first for it to be made; it waits
-on a column feature that needs a row's position.
-
-### The cell wrapper belongs to the table template
-
-`renderInLayout()`, `getCellAttributeHtml()` and `getCachedCellAttributeHtml()`
-build the `<td>`/`<div>` wrapper in PHP, with the alignment, width, growth and
-responsive-visibility classes concatenated into an attribute bag. Sylament emits
-attributes from Twig through
-[`attrs()`](../../../packages/support/src/Twig/Extension/AttributeExtension.php),
-so the wrapper is the table template's job and these three methods have no
-counterpart to port one-for-one. That template shipped in M1 · 5 and already
-emits the `<td>` and its inner `<div>` with fixed classes, so what is left is not
-the wrapper but the *inputs* — alignment, width, grow, the extra-attribute bags —
-which stay listed because they are real API a migrating user will look for. They
-land on the cell-presentation row above, and the template grows the attributes
-that read them at the same time.
-
 ## Semantics
 
 Faithful ports subtle enough that the next reader would misread the code.
 Permanent, and addressable by anchor.
+
+### The row loop is a Blade-shaped object built from Twig's array
+
+`rowLoop()` takes what the cell loop can hand it — Twig's `loop` **array** for
+the record being rendered, reached as `loop.parent.loop` because the column loop
+is nested inside the record one — and stores the `stdClass` Filament's
+[`HasRowLoopObject`](../../../vendor/filament/tables/src/Columns/Concerns/HasRowLoopObject.php)
+declares, so a migrating `fn (stdClass $rowLoop) => $rowLoop->iteration` works
+unchanged. The two vocabularies do not line up: Twig's `index` counts from 1 and
+its `index0` from 0, where Blade's `iteration` counts from 1 and its `index` from
+0 — so `index` means opposite things on either side, and reading Twig's array
+through Blade's names would be off by one in silence. The translation is
+`iteration` ← `index`, `index` ← `index0`, `remaining` ← `revindex0`,
+`count` ← `length`, `first`/`last` straight across, `even` from `iteration % 2`
+with `odd` its inverse, `depth` fixed at `1`.
+
+Two entries carry nothing rather than guessing. Twig fills `length`, `revindex0`
+and `last` only for an array or a `Countable`, so on any other iterable they stay
+`null` — every table lane yields one of the two, so in practice they are filled.
+And Twig's own `parent` entry holds the **whole parent template context**, not a
+parent loop, so it is never copied: `parent` is always `null`. An `stdClass`
+handed in passes through untranslated, and `null` clears.
+
+### `getUrl()` answers by argument count, so a closure's parameter name changes the DOM
+
+`getUrl()` switches on `func_num_args()`: called with no argument it answers only
+a URL that does *not* read the state, and called with one — even `null` — only a
+URL that does. The two callers are different places in the markup. The cell
+wrapper calls it bare, so a state-based URL leaves the wrapper a plain `div`;
+each column partial calls it with one item's state, so the links are drawn per
+item inside the cell instead.
+
+Which arm a column is on is decided by **reflection**, not by configuration:
+`hasStateBasedUrls()` asks whether the closure declares a parameter named
+`$state`. So renaming that parameter — `fn ($state) => …` to `fn ($value) => …`,
+which any refactoring tool will offer — moves the whole cell from per-item
+anchors to one wrapping anchor, with no error anywhere. Filament behaves
+identically; the trap is inherited, not introduced.
+
+### The tables-tier tooltip trio sits beside support's one-tooltip trait
+
+`Sylament\Support\Components\Concerns\HasTooltip` ships one tooltip with no
+state injection; the column tier's
+[`HasTooltip`](../../../packages/tables/src/Columns/Concerns/HasTooltip.php)
+ships three — the per-item one, the header's and the blank-state one — and
+injects `state` into the first. That is Filament's own split
+(`Support\Concerns\HasTooltip` beside `Tables\Columns\Concerns\HasTooltip`),
+kept rather than collapsed, so widening support's would diverge from vendor for
+every non-column consumer. `Column` composes the column-tier one only. Read the
+import, never the bare `use HasTooltip;` — the two names are one letter apart in
+a class body.
+
+### The hook class kebabs each dotted segment on its own
+
+`getCellClassName()` and `getHeaderCellClassName()` split the column name on
+dots, camel-kebab each segment and rejoin with the dots intact, so `author.name`
+renders `sy-ta-cell-author.name` and `authorName` renders
+`sy-ta-cell-author-name` — two distinct hooks. Running the whole name through
+one `u()->camel()->kebab()` would eat the dot and collapse the two onto the same
+class; Laravel's `Str::camel()`, which Filament calls, leaves dots alone, so
+segment-wise is what reproduces vendor rather than what departs from it.
 
 ### The default label reads the second-to-last dotted segment
 
@@ -401,6 +483,53 @@ first and throw on any that are not `Stringable`.
 
 Deliberate deviations from Filament — permanent, and the reason they hold. Say
 what would reverse the decision when it is provisional.
+
+### A column url is sanitized where Filament only warns
+
+Filament's [`CanOpenUrl::url()`](../../../vendor/filament/tables/src/Columns/Concerns/CanOpenUrl.php)
+carries a comment telling the caller to validate a URL derived from user input
+against `javascript:` and validates nothing.
+[`getUrl()`](../../../packages/tables/src/Columns/Concerns/CanOpenUrl.php) runs
+both of its arities through
+[`sanitize_url()`](../../../packages/support/src/helpers.php) instead, which is
+what the record arm on the very same anchor already does
+([`HasRecordUrl::getRecordUrl()`](../../../packages/tables/src/Table/Concerns/HasRecordUrl.php))
+and what [`ImageColumn::getDefaultImageUrl()`](../../../packages/tables/src/Columns/ImageColumn.php)
+does. A refused URL answers `null`, so the cell falls back exactly as an unset
+one does — a `div` wrapper, or an unwrapped item — rather than emitting a live
+`javascript:` href. Two arms of one `<a>` disagreeing about whether a scheme is
+safe would be the surprising shape, not this.
+
+### A tooltip renders as a native `title`, and `Markup` is flattened to text
+
+Filament drives every tooltip through Alpine and Tippy (`x-tooltip`), with an
+`x-tooltip.html` variant that renders an `Htmlable` tooltip as markup. The
+toolkit ships no tooltip primitive — every tooltip in it is a native `title`
+attribute — so `tooltip()`, `headerTooltip()` and `emptyTooltip()` land as
+`title`, and a `Markup` value is flattened with `striptags` before it does,
+because an attribute value cannot hold markup. Filament's `allowHTML` therefore
+has no analogue: rich tooltips are text here. A floating tooltip control over
+support's already-bundled `@floating-ui/dom` is a support follow-up; when it
+arrives it replaces the rendering, not this PHP surface.
+
+### The cache guards behind Filament's memoised cell bag are not ported
+
+Filament builds the `<td>`'s attribute string in PHP —
+`getCellAttributeHtml()` — and memoises it through
+`getCachedCellAttributeHtml()`, which is only safe while nothing in the bag
+varies per row. Five `hasDynamic*()` predicates exist to answer that:
+`hasDynamicExtraCellAttributes()`, `hasDynamicHiddenFrom()`,
+`hasDynamicVisibleFrom()`, and the alignment pair already on support's traits.
+
+Here the `<td>` bag is assembled in Twig through
+[`attrs()`](../../../packages/support/src/Twig/Extension/AttributeExtension.php),
+so there is no PHP string to memoise and no cache to guard. Porting the three
+column-tier predicates would ship dead methods that read as configuration, so
+they are dropped: `HasExtraCellAttributes` and `CanBeHiddenResponsively` carry
+only their setters and getters. The two on support's traits stay, because they
+predate this and other consumers may read them. `getExtraCellAttributeBag()` and
+`getExtraHeaderAttributeBag()` go with the cache for the same reason — the
+template spreads a plain array through `attrs()` and never wants a bag.
 
 ### A `Closure` condition on `searchable()` is evaluated, not filed as a search column
 

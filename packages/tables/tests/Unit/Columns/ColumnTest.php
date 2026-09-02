@@ -294,3 +294,32 @@ it('scopes searchability with the isGlobal and isIndividual flags', function ():
         ->and($individual->isGloballySearchable())->toBeFalse()
         ->and($individual->isIndividuallySearchable())->toBeTrue();
 });
+
+it('refuses an unmounted column by name rather than raising an uninitialised property error', function (): void {
+    expect(fn (): Table => Column::make('title')->getTable())
+        ->toThrow(LogicException::class, 'The column [title] is not mounted to a table.');
+});
+
+it('kebab-cases each dotted segment of the name for the cell and header classes', function (): void {
+    expect(Column::make('title')->getCellClassName())->toBe('sy-ta-cell-title')
+        ->and(Column::make('releasedAt')->getCellClassName())->toBe('sy-ta-cell-released-at')
+        ->and(Column::make('author.fullName')->getCellClassName())->toBe('sy-ta-cell-author.full-name')
+        ->and(Column::make('authorFullName')->getCellClassName())->toBe('sy-ta-cell-author-full-name')
+        ->and(Column::make('releasedAt')->getHeaderCellClassName())->toBe('sy-ta-header-cell-released-at');
+});
+
+it('hands a closure the row loop it was given', function (): void {
+    $column = Column::make('title')->rowLoop(['index0' => 1, 'index' => 2, 'length' => 3, 'first' => false, 'last' => false, 'revindex0' => 1]);
+
+    expect($column->extraCellAttributes(fn (?stdClass $rowLoop): array => [
+        'data-iteration' => $rowLoop?->iteration,
+        'data-index' => $rowLoop?->index,
+        'data-remaining' => $rowLoop?->remaining,
+        'data-count' => $rowLoop?->count,
+    ])->getExtraCellAttributes())->toBe([
+        'data-iteration' => 2,
+        'data-index' => 1,
+        'data-remaining' => 1,
+        'data-count' => 3,
+    ]);
+});

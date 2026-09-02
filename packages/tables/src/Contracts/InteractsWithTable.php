@@ -63,6 +63,13 @@ interface InteractsWithTable
     public function getTableRecordsPerPage(): int|string|null;
 
     /**
+     * The page the table is showing, clamped to a page whose offset is still an
+     * integer. Read by `TextColumn::rowIndex()`, which turns a row's position on
+     * the page into its position in the whole set.
+     */
+    public function getTablePage(): int;
+
+    /**
      * The global-search chip for the indicators row, or null when nothing is
      * searched for. Read by `Table::getSearchIndicator()`.
      */

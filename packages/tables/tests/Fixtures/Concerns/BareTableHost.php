@@ -87,6 +87,11 @@ final class BareTableHost implements InteractsWithTable
         return null;
     }
 
+    public function getTablePage(): int
+    {
+        return 1;
+    }
+
     public function getTableSearchIndicator(): ?Indicator
     {
         return null;

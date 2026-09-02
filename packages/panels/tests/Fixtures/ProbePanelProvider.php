@@ -7,6 +7,9 @@ namespace Sylament\Panels\Tests\Fixtures;
 use Sylament\Panels\Pages\Dashboard;
 use Sylament\Panels\Panel;
 use Sylament\Panels\PanelProvider;
+use Sylament\Panels\Tests\Fixtures\Pages\CustomWidthPage;
+use Sylament\Panels\Tests\Fixtures\Pages\GuardedSettingsPage;
+use Sylament\Panels\Tests\Fixtures\Pages\SimpleProbePage;
 use Sylament\Panels\Tests\Fixtures\Resources\ProbeResource;
 
 final class ProbePanelProvider extends PanelProvider
@@ -17,6 +20,7 @@ final class ProbePanelProvider extends PanelProvider
             ->id('probe')
             ->path('probe')
             ->resources([ProbeResource::class])
-            ->pages([Dashboard::class]);
+            ->pages([Dashboard::class, GuardedSettingsPage::class, SimpleProbePage::class, CustomWidthPage::class])
+            ->unsavedChangesAlerts();
     }
 }

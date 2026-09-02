@@ -96,8 +96,16 @@ trait HasTabs
         return u($key)->replace('_', ' ')->replace('-', ' ')->title()->toString();
     }
 
+    /**
+     * The strip is the only element that writes this property, so a write is
+     * the untrusted edge: a blanked key is healed here, where the healed value
+     * still reaches the wire, rather than only at the render that would
+     * otherwise carry a null `data-value` off the page.
+     */
     public function updatedActiveTab(): void
     {
+        $this->loadDefaultActiveTab();
+
         $this->tablePage = 1;
 
         $this->flushCachedTableRecords();
@@ -107,9 +115,16 @@ trait HasTabs
      * The tab strip, in the server-driven mode that writes the active key back
      * onto this host — built at render time, so it costs nothing on a host that
      * declares no tabs.
+     *
+     * A null active key renders `data-value` as null and support's `TabsItem`
+     * refuses a null attribute, so the page 500s. The default is reloaded here
+     * as well as at the mount and the update, because the URL seeding runs
+     * *after* the mount and an empty `?tab=` overwrites what it left behind.
      */
     public function getTabsSchema(): Schema
     {
+        $this->loadDefaultActiveTab();
+
         return $this->makeSchema()
             ->key('tabs')
             ->components([

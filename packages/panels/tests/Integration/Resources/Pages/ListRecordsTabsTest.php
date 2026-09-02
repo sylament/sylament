@@ -96,6 +96,34 @@ it('heals a bookmarked tab the list no longer declares', function (): void {
         ->and(tabbedRowTitles($crawler))->toHaveCount(3);
 });
 
+it('heals a query string that names no tab at all', function (): void {
+    [$client] = tabbedArticlesClient();
+
+    // The seeding runs after the mount, so an empty `?tab=` overwrites the
+    // default the mount left behind — the render seam is what heals this one.
+    $crawler = $client->request('GET', '/admin/articles?tab=');
+
+    expect($client->getResponse()->getStatusCode())->toBe(200)
+        ->and($crawler->filter('.sy-sc-tabs .sy-tabs-item')->eq(0)->attr('aria-selected'))->toBe('true')
+        ->and(tabbedRowTitles($crawler))->toHaveCount(3);
+});
+
+it('heals an active tab the client blanks', function (): void {
+    [$client] = tabbedArticlesClient();
+
+    // The strip drives the property, so a client can write it back as null —
+    // and the render seam, not the mount, is what has to answer for that.
+    $component = $this->createLiveComponent(ListArticles::class, client: $client)
+        ->set('activeTab', null);
+
+    $crawler = $component->render()->crawler();
+
+    expect($client->getResponse()->getStatusCode())->toBe(200)
+        ->and($component->component()->activeTab)->toBe('all')
+        ->and($crawler->filter('.sy-sc-tabs .sy-tabs-item')->eq(0)->attr('aria-selected'))->toBe('true')
+        ->and(tabbedRowTitles($crawler))->toHaveCount(3);
+});
+
 it('resets the page when the active tab changes', function (): void {
     [$client] = tabbedArticlesClient();
 

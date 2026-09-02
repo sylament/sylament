@@ -8,6 +8,7 @@ use Sylament\Panels\Tests\Fixtures\Doctrine\Entity\Task;
 use Sylament\Panels\Tests\Fixtures\Doctrine\EntityManagerFactory;
 use Sylament\Panels\Tests\Fixtures\Resources\Pages\EditFilteredRelationProject;
 use Sylament\Panels\Tests\Fixtures\Resources\Pages\EditProject;
+use Sylament\Panels\Tests\Fixtures\Resources\RelationManagers\OwnerNamedTasksRelationManager;
 use Sylament\Panels\Tests\Fixtures\Resources\RelationManagers\PaginatedTasksRelationManager;
 use Sylament\Panels\Tests\Fixtures\Resources\RelationManagers\TaggedTasksRelationManager;
 use Sylament\Panels\Tests\Fixtures\Resources\RelationManagers\TasksRelationManager;
@@ -195,6 +196,23 @@ it('renders a tab strip that switches the manager but binds nothing', function (
     $narrowed = $component->set('activeTab', 'first')->render()->crawler();
 
     expect($narrowed->filter('tbody .sy-ta-row')->count())->toBe(1);
+});
+
+it('builds its tabs against the owner the mount carries', function (): void {
+    [$client, , $key] = seededProjectClient();
+
+    $crawler = $this->createLiveComponent(
+        OwnerNamedTasksRelationManager::class,
+        ['ownerRecord' => $key, 'pageClass' => EditProject::class],
+        client: $client,
+    )->render()->crawler();
+
+    $labels = $crawler->filter('section.sy-pa-relation-manager .sy-tabs-item')
+        ->each(fn (Crawler $item): string => mb_trim($item->text()));
+
+    // The owner is read while the tabs are built, and the tabs are built — and
+    // memoised — from `mount()`, so the mount must have both keys in hand.
+    expect($labels)->toBe(['Apollo', 'First']);
 });
 
 it('seeds a row action on a manager whose actions carry no url', function (): void {

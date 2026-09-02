@@ -77,7 +77,7 @@ against the deferred settings each names rather than **blocked**. (The
 precedence — **todo** upstairs, **blocked** in the component's file — so the two
 packages disagree until that one is revisited.)
 
-Forty-three concerns the port has landed are **folded** into the detail file of
+Forty-five concerns the port has landed are **folded** into the detail file of
 the class that composes them and carry no row here, per
 [one row per file](../README.md#one-row-per-file-one-file-per-thing) — eleven
 `Table\Concerns\` traits (`BelongsToLivewire`, `CanPaginateRecords`,
@@ -88,7 +88,10 @@ the class that composes them and carry no row here, per
 `CanBeSearchable`, `CanBeSortable`, `CanCallAction`, `CanOpenUrl`,
 `HasExtraCellAttributes`, `HasExtraHeaderAttributes`, `HasLabel`, `HasName`,
 `HasRecord`, `HasRowLoopObject`, `HasTooltip`, `InteractsWithTableQuery`) into
-[`column.md`](column.md), five
+[`column.md`](column.md), two more
+`Columns\Concerns\` traits (`CanBeValidated`, `CanUpdateState`) into
+[`has-columns.md`](has-columns.md) — the write-back seam that calls both, which
+all four editable columns link to rather than any one of them owning it — five
 `Columns\Concerns\` traits
 (`CanFormatState`, `HasColor`, `HasDescription`, `HasIcon`, `HasIconColor`)
 into

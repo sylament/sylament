@@ -1,30 +1,48 @@
+{% set controller = 'sylament--forms--textarea' %}
+
+{% set isAutosized = component.shouldAutosize %}
 {% set isGrammarlyDisabled = component.isGrammarlyDisabled %}
+
+{% set initialHeight = ((component.getRows ?? 2) * 1.5) + 0.75 %}
+
+{% set control %}<textarea {{ attrs({
+    class: 'sy-fo-input',
+    id: component.getId,
+    name: component.getName,
+    'data-model': component.getDataModel,
+    rows: component.getRows,
+    cols: component.getCols,
+    autocomplete: component.getAutocomplete,
+    placeholder: component.getPlaceholder ?: false,
+    maxlength: component.isConcealed ? null : component.getMaxLength,
+    minlength: component.isConcealed ? null : component.getMinLength,
+    required: component.isMarkedAsRequired and not component.isConcealed,
+    'aria-invalid': component.getErrorMessages is not empty,
+    readonly: component.isReadOnly,
+    disabled: component.isDisabled,
+    autofocus: component.isAutofocused,
+    'data-gramm': isGrammarlyDisabled ? 'false' : null,
+    'data-gramm_editor': isGrammarlyDisabled ? 'false' : null,
+    'data-enable-grammarly': isGrammarlyDisabled ? 'false' : null,
+}, component.getExtraInputAttributes, isAutosized ? stimulus_target(controller, 'textarea') : null) }}>{{- component.getState -}}</textarea>{% endset %}
+
+{% set content %}
+    {%- if isAutosized -%}
+        <div {{ attrs({
+            class: 'sy-fo-textarea-sizer',
+            style: 'height: ' ~ initialHeight ~ 'rem',
+        }, stimulus_controller(controller, {initialHeight: initialHeight})) }}>{{ control }}</div>
+    {%- else -%}
+        {{- control -}}
+    {%- endif -%}
+{% endset %}
 
 <twig:SylamentForms:FieldWrapper :field="component">
     <twig:SylamentSupport:InputWrapper
-        class="sy-fo-textarea"
+        :class="classes('sy-fo-textarea', {'sy-autosizable': isAutosized})"
         :disabled="component.isDisabled"
         :valid="component.getErrorMessages is empty"
     >
-        <textarea {{ attrs({
-            class: 'sy-fo-input',
-            id: component.getId,
-            name: component.getName,
-            'data-model': component.getDataModel,
-            rows: component.getRows,
-            cols: component.getCols,
-            autocomplete: component.getAutocomplete,
-            placeholder: component.getPlaceholder ?: false,
-            maxlength: component.isConcealed ? null : component.getMaxLength,
-            minlength: component.isConcealed ? null : component.getMinLength,
-            required: component.isMarkedAsRequired and not component.isConcealed,
-            'aria-invalid': component.getErrorMessages is not empty,
-            readonly: component.isReadOnly,
-            disabled: component.isDisabled,
-            autofocus: component.isAutofocused,
-            'data-gramm': isGrammarlyDisabled ? 'false' : null,
-            'data-gramm_editor': isGrammarlyDisabled ? 'false' : null,
-            'data-enable-grammarly': isGrammarlyDisabled ? 'false' : null,
-        }, component.getExtraInputAttributes) }}>{{- component.getState -}}</textarea>
+        {{ content }}
     </twig:SylamentSupport:InputWrapper>
 </twig:SylamentForms:FieldWrapper>

@@ -35,6 +35,18 @@ input[type='range'].sy-fo-input {
 
 .sy-fo-textarea {
     @apply overflow-hidden;
+
+    &.sy-autosizable {
+        & .sy-fo-textarea-sizer {
+            @apply overflow-hidden;
+        }
+
+        /* Beats `textarea.sy-fo-input` below on specificity, whichever order they
+           are emitted in: the controller sizes the sizer, and the control fills it. */
+        & textarea.sy-fo-input {
+            @apply h-full min-h-0 resize-none;
+        }
+    }
 }
 
 textarea.sy-fo-input {

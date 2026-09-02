@@ -162,3 +162,55 @@ it('renders the three Grammarly opt-out attributes only when disabled', function
         ->and($disabled->attr('data-gramm_editor'))->toBe('false')
         ->and($disabled->attr('data-enable-grammarly'))->toBe('false');
 });
+
+it('renders no sizer, no controller and no autosizable class without autosize()', function (): void {
+    $crawler = new Crawler(renderField(Textarea::make('excerpt')));
+
+    // The off arm is byte-identical to the template that shipped before autosize:
+    // the control is the wrapper's whole content, unwrapped. Vendor's other branch —
+    // a ResizeObserver mirroring the control's height onto the sizer — is not ported.
+    expect($crawler->filter('.sy-fo-textarea-sizer')->count())->toBe(0)
+        ->and($crawler->filter('div.sy-input-wrp [data-controller]')->count())->toBe(0)
+        ->and($crawler->filter('div.sy-input-wrp')->attr('class'))->toBe('sy sy-input-wrp sy-fo-textarea')
+        ->and($crawler->filter('.sy-input-wrp-content-ctn')->html())->toBe(
+            '<textarea class="sy-fo-input" id="excerpt" name="excerpt" data-model="norender|data.excerpt" aria-invalid="false"></textarea>' . "\n    ",
+        );
+});
+
+it('wraps the control in a controller-bound sizer under autosize()', function (): void {
+    $crawler = new Crawler(renderField(Textarea::make('excerpt')->autosize()));
+
+    $sizer = $crawler->filter('div.sy-fo-textarea-sizer');
+
+    expect($crawler->filter('div.sy-input-wrp')->attr('class'))->toBe('sy sy-input-wrp sy-fo-textarea sy-autosizable')
+        ->and($sizer->count())->toBe(1)
+        ->and($sizer->attr('data-controller'))->toBe('sylament--forms--textarea')
+        ->and($sizer->filter('textarea.sy-fo-input')->attr('data-sylament--forms--textarea-target'))->toBe('textarea');
+});
+
+it('derives the initial sizer height from the row count', function (): void {
+    $default = new Crawler(renderField(Textarea::make('excerpt')->autosize()))->filter('div.sy-fo-textarea-sizer');
+
+    expect($default->attr('style'))->toBe('height: 3.75rem')
+        ->and($default->attr('data-sylament--forms--textarea-initial-height-value'))->toBe('3.75')
+        // The height and the `rows` attribute are independent: an unset `rows` still
+        // renders a height, and never a `rows="2"` the user did not ask for.
+        ->and($default->filter('textarea.sy-fo-input')->attr('rows'))->toBeNull();
+
+    $eight = new Crawler(renderField(Textarea::make('excerpt')->rows(8)->autosize()))->filter('div.sy-fo-textarea-sizer');
+
+    expect($eight->attr('style'))->toBe('height: 12.75rem')
+        ->and($eight->attr('data-sylament--forms--textarea-initial-height-value'))->toBe('12.75')
+        ->and($eight->filter('textarea.sy-fo-input')->attr('rows'))->toBe('8');
+});
+
+it('resolves a closure autosize condition through evaluate', function (): void {
+    $off = new Crawler(renderField(Textarea::make('excerpt')->autosize(fn (): bool => false)));
+
+    expect($off->filter('div.sy-fo-textarea-sizer')->count())->toBe(0)
+        ->and($off->filter('div.sy-input-wrp [data-controller]')->count())->toBe(0);
+
+    $on = new Crawler(renderField(Textarea::make('excerpt')->autosize(fn (): bool => true)));
+
+    expect($on->filter('div.sy-fo-textarea-sizer')->count())->toBe(1);
+});

@@ -31,6 +31,8 @@ class Textarea extends Field implements Contracts\CanBeLengthConstrained
 
     protected int|Closure|null $cols = null;
 
+    protected bool|Closure $shouldAutosize = false;
+
     public function rows(int|Closure|null $rows): static
     {
         $this->rows = $rows;
@@ -45,6 +47,13 @@ class Textarea extends Field implements Contracts\CanBeLengthConstrained
         return $this;
     }
 
+    public function autosize(bool|Closure $condition = true): static
+    {
+        $this->shouldAutosize = $condition;
+
+        return $this;
+    }
+
     public function getRows(): ?int
     {
         return $this->evaluate($this->rows);
@@ -53,6 +62,11 @@ class Textarea extends Field implements Contracts\CanBeLengthConstrained
     public function getCols(): ?int
     {
         return $this->evaluate($this->cols);
+    }
+
+    public function shouldAutosize(): bool
+    {
+        return (bool) $this->evaluate($this->shouldAutosize);
     }
 
     public function mutateStateForValidation(mixed $state): mixed

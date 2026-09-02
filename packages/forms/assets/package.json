@@ -30,6 +30,11 @@
         "main": "dist/controllers/select_controller.js",
         "fetch": "eager",
         "enabled": true
+      },
+      "textarea": {
+        "main": "dist/controllers/textarea_controller.js",
+        "fetch": "eager",
+        "enabled": true
       }
     },
     "importmap": {

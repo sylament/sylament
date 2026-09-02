@@ -20,5 +20,8 @@ it('resolves a closure condition through evaluate', function (): void {
         fn (Textarea $component): bool => $component->getName() === 'excerpt',
     );
 
-    expect($field->isGrammarlyDisabled())->toBeTrue();
+    expect($field->isGrammarlyDisabled())->toBeTrue()
+        ->and(Textarea::make('summary')->disableGrammarly(
+            fn (Textarea $component): bool => $component->getName() === 'excerpt',
+        )->isGrammarlyDisabled())->toBeFalse();
 });

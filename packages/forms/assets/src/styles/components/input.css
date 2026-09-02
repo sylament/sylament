@@ -41,7 +41,6 @@ input[type='range'].sy-fo-input {
             @apply overflow-hidden;
         }
 
-        /* Beats `textarea.sy-fo-input` below on specificity, in either emission order. */
         & textarea.sy-fo-input {
             @apply h-full min-h-0 resize-none;
         }

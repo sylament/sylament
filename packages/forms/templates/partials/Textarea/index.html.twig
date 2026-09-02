@@ -24,7 +24,7 @@
     'data-gramm': isGrammarlyDisabled ? 'false' : null,
     'data-gramm_editor': isGrammarlyDisabled ? 'false' : null,
     'data-enable-grammarly': isGrammarlyDisabled ? 'false' : null,
-}, component.getExtraInputAttributes, isAutosized ? stimulus_target(controller, 'textarea') : null) }}>{{- component.getState -}}</textarea>{% endset %}
+}, component.getExtraInputAttributes, isAutosized ? stimulus_target(controller, 'textarea')|stimulus_action(controller, 'resize', 'input') : null) }}>{{- component.getState -}}</textarea>{% endset %}
 
 {% set content %}
     {%- if isAutosized -%}

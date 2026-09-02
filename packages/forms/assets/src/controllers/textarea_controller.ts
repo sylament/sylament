@@ -8,13 +8,10 @@ export default class extends Controller<HTMLElement> {
   declare readonly textareaTarget: HTMLTextAreaElement;
   declare readonly initialHeightValue: number;
 
-  #textarea: HTMLTextAreaElement | undefined;
   #observer: IntersectionObserver | undefined;
 
   connect(): void {
-    this.#textarea = this.textareaTarget;
-    this.#textarea.addEventListener("input", this.#handleResize);
-    window.addEventListener("resize", this.#handleResize);
+    window.addEventListener("resize", this.#handleWindowResize);
 
     this.#setInitialHeight();
 
@@ -26,31 +23,17 @@ export default class extends Controller<HTMLElement> {
       }
 
       this.#stopObserving();
-      this.#resize();
+      this.resize();
     });
     this.#observer.observe(this.element);
   }
 
   disconnect(): void {
-    this.#textarea?.removeEventListener("input", this.#handleResize);
-    this.#textarea = undefined;
-    window.removeEventListener("resize", this.#handleResize);
+    window.removeEventListener("resize", this.#handleWindowResize);
     this.#stopObserving();
   }
 
-  #handleResize = (): void => {
-    this.#resize();
-  };
-
-  #setInitialHeight(): void {
-    if (this.textareaTarget.scrollHeight <= 0) {
-      return;
-    }
-
-    this.element.style.height = `${this.initialHeightValue}rem`;
-  }
-
-  #resize(): void {
+  resize(): void {
     const textarea = this.textareaTarget;
 
     if (textarea.scrollHeight <= 0) {
@@ -72,6 +55,18 @@ export default class extends Controller<HTMLElement> {
     }
 
     this.element.style.height = newHeight;
+  }
+
+  #handleWindowResize = (): void => {
+    this.resize();
+  };
+
+  #setInitialHeight(): void {
+    if (this.textareaTarget.scrollHeight <= 0) {
+      return;
+    }
+
+    this.element.style.height = `${this.initialHeightValue}rem`;
   }
 
   #stopObserving(): void {

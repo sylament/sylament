@@ -28,10 +28,11 @@ _Detail_ links a permanent note in [Divergences](#divergences) or
 | Error display (`aria-invalid` on the `<textarea>`) | [`Components/Field.php`](../../../vendor/filament/forms/src/Components/Field.php) | done | — | [diverges](field.md#error-display-shows-every-message-for-the-path) |
 | Embedded view → Twig template | [`Textarea::toEmbeddedHtml()`](../../../vendor/filament/forms/src/Components/Textarea.php) | done | — | — |
 | Input wrapper (`wrapInputHtml`) — no affix API, Filament-exact | [`Textarea::toEmbeddedHtml()`](../../../vendor/filament/forms/src/Components/Textarea.php) | done | — | [semantics](field.md#the-wrapper-owns-the-chrome-and-the-control-is-transparent) · [diverges](#the-control-keeps-the-sy-fo-input-class-filaments-textarea-carries-none) |
-| [`autosize()` / `shouldAutosize()`](../../../packages/forms/src/Components/Textarea.php) | [`Components/Textarea.php`](../../../vendor/filament/forms/src/Components/Textarea.php) | done | — | [semantics](#the-sizer-grows-on-input-floors-at-the-initial-height-and-never-measures-a-hidden-control) · [diverges](#the-off-branchs-resize-mirror-is-not-ported) |
+| [`autosize()` / `shouldAutosize()`](../../../packages/forms/src/Components/Textarea.php) | [`Components/Textarea.php`](../../../vendor/filament/forms/src/Components/Textarea.php) | done | — | [semantics](#the-sizer-grows-on-input-floors-at-the-initial-height-and-never-measures-a-hidden-control) · [diverges](#the-off-branchs-resize-mirror-is-not-ported) · [diverges](#only-the-keyboard-re-measures-a-server-set-state-change-does-not) |
 | [Autocomplete (`CanBeAutocompleted`)](../../../packages/forms/src/Components/Concerns/CanBeAutocompleted.php) | [`Concerns/CanBeAutocompleted.php`](../../../vendor/filament/forms/src/Components/Concerns/CanBeAutocompleted.php) | done | — | [detail](can-be-autocompleted.md) |
 | [Read-only (`CanBeReadOnly`)](../../../packages/forms/src/Components/Concerns/CanBeReadOnly.php) | [`Concerns/CanBeReadOnly.php`](../../../vendor/filament/forms/src/Components/Concerns/CanBeReadOnly.php) | done | — | [detail](can-be-read-only.md) |
 | [Disable Grammarly (`CanDisableGrammarly`)](../../../packages/forms/src/Components/Concerns/CanDisableGrammarly.php) | [`Concerns/CanDisableGrammarly.php`](../../../vendor/filament/forms/src/Components/Concerns/CanDisableGrammarly.php) | done | — | — |
+| [`HasPlaceholder`](field.md) — already on `Field` here | [`Concerns/HasPlaceholder.php`](../../../vendor/filament/forms/src/Components/Concerns/HasPlaceholder.php) | done | — | [diverges](field.md#hasplaceholder-is-composed-on-the-base-field) |
 | [Extra input attributes (`HasExtraInputAttributes`)](../../../packages/forms/src/Components/Concerns/HasExtraInputAttributes.php) | [`Concerns/HasExtraInputAttributes.php`](../../../vendor/filament/forms/src/Components/Concerns/HasExtraInputAttributes.php) | done | — | [detail](has-extra-input-attributes.md) |
 | Extra Alpine attributes (`HasExtraAlpineAttributes`) | [`support/Concerns/HasExtraAlpineAttributes.php`](../../../vendor/filament/support/src/Concerns/HasExtraAlpineAttributes.php) | skipped | — | [diverges](../support/component-attribute-bag.md#extra-alpine-attributes-are-not-ported) |
 | [Trim state (`CanTrimState`)](../../../packages/schemas/src/Components/Concerns/CanTrimState.php) | [`schemas/Concerns/CanTrimState.php`](../../../vendor/filament/schemas/src/Components/Concerns/CanTrimState.php) | done | — | [semantics](#trim-reaches-the-saved-value-strip-reaches-it-through-a-cast-neither-reaches-the-raw-bag) |
@@ -82,14 +83,16 @@ that lets it fill. A measurement zeroes the control's height, reads
 initial height is a floor, so the box never shrinks below the row count the field
 asked for.
 
-Filament re-measures from an Alpine `$watch` on the entangled state; the state is
-the browser's own here, so the trigger is the control's DOM `input` event, plus a
-`window` resize listener and one `IntersectionObserver` firing once when the field
-first reaches the screen. Both members short-circuit on `scrollHeight <= 0`: a
-control inside an inactive [`Tab`](../schemas/tabs.md) measures zero, and writing
-that measurement would collapse the box the moment the tab is opened. The height
-the controller writes is an inline style, which survives a live re-render through
-the mutation tracker's `style` replay.
+Three things re-measure: the control's DOM `input` event, bound from the template
+through `stimulus_action` so a morph that replaces the control re-binds it; a
+`window` resize listener; and one `IntersectionObserver` firing once when the
+field first reaches the screen. `#setInitialHeight()` and `resize()` both
+short-circuit on `scrollHeight <= 0`: a control inside an inactive
+[`Tab`](../schemas/tabs.md) measures zero, and writing that measurement would
+collapse the box the moment the tab is opened. The height the controller writes
+is an inline style, which survives a live re-render through the mutation
+tracker's `style` replay — and that replay is also
+[why a server-written value never re-measures](#only-the-keyboard-re-measures-a-server-set-state-change-does-not).
 
 ## Divergences
 
@@ -110,6 +113,34 @@ accident.
 It reverses by rendering the sizer unconditionally and giving the controller the
 mirroring arm, which is worth doing only if the sizer ever carries chrome of its
 own — today it carries only a height.
+
+### Only the keyboard re-measures: a server-set state change does not
+
+Filament's `$watch('state')` fires on every change to the entangled state, whatever
+wrote it. Ours is a DOM `input` event, so only the user's own typing re-measures.
+The control's content is server-rendered from `getState()`, so a live action, a
+`Set()` from a sibling's `afterStateUpdated()`, or any other re-render can replace
+the value with no `input` event behind it — and the sizer keeps the height it was
+last measured at.
+
+The server-rendered `height` on the freshly morphed sizer does not rescue it. The
+controller writes `element.style.height` itself, which the live component's
+external mutation tracker records and
+[replays onto the morphed element](../../../vendor/symfony/ux-live-component/assets/dist/live_controller.js),
+so the stale JS height beats the re-rendered one — the same replay that makes the
+height survive an ordinary morph. Under autosize the sizer is `overflow-hidden`
+and the control is `resize-none`, so a value longer than the box does not grow it:
+the control scrolls internally with its grip off, which is the shape `autosize()`
+exists to avoid.
+
+Closing it needs a fourth trigger — the host's `render:finished`, which tables'
+[`table` controller](../tables/has-table.md) already subscribes to. That costs
+forms a copy of schemas' `live_host` resolver: this controller builds per-file and
+unbundled, so a bare `@sylament/schemas/utils/live_host.js` specifier would ship
+verbatim to the browser rather than being inlined the way
+[`FileUpload`'s bundled controller](forms-bundle.md#the-file-upload-controller-bundles-filepond-and-is-the-only-lazy-controller)
+takes it. Deliberate for now: every shipped arm drives the field from its own
+keyboard.
 
 ### The control keeps the `sy-fo-input` class, Filament's textarea carries none
 

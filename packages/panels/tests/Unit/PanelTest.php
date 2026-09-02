@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use Sylament\Panels\Pages\Enums\SubNavigationPosition;
 use Sylament\Panels\Panel;
+use Sylament\Support\Enums\Width;
 use Twig\Markup;
 
 it('holds id, path, pages, brand and default flag fluently', function (): void {
@@ -96,4 +97,17 @@ it('evaluates a closure for the sub-navigation position', function (): void {
     $panel = Panel::make()->subNavigationPosition(fn (): SubNavigationPosition => SubNavigationPosition::End);
 
     expect($panel->getSubNavigationPosition())->toBe(SubNavigationPosition::End);
+});
+
+it('chains the width and unsaved-changes knobs with the rest of the panel', function (): void {
+    $panel = Panel::make()
+        ->id('admin')
+        ->maxContentWidth(Width::SixExtraLarge)
+        ->simplePageMaxContentWidth(Width::Small)
+        ->unsavedChangesAlerts();
+
+    expect($panel->getId())->toBe('admin')
+        ->and($panel->getMaxContentWidth())->toBe(Width::SixExtraLarge)
+        ->and($panel->getSimplePageMaxContentWidth())->toBe(Width::Small)
+        ->and($panel->hasUnsavedChangesAlerts())->toBeTrue();
 });

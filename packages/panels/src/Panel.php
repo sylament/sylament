@@ -10,10 +10,12 @@ use Sylament\Panels\Panel\Concerns\HasBrandName;
 use Sylament\Panels\Panel\Concerns\HasComponents;
 use Sylament\Panels\Panel\Concerns\HasGlobalSearch;
 use Sylament\Panels\Panel\Concerns\HasId;
+use Sylament\Panels\Panel\Concerns\HasMaxContentWidth;
 use Sylament\Panels\Panel\Concerns\HasNavigation;
 use Sylament\Panels\Panel\Concerns\HasRoutes;
 use Sylament\Panels\Panel\Concerns\HasSidebar;
 use Sylament\Panels\Panel\Concerns\HasSubNavigation;
+use Sylament\Panels\Panel\Concerns\HasUnsavedChangesAlerts;
 use Sylament\Support\Components\Component;
 
 class Panel extends Component
@@ -23,10 +25,12 @@ class Panel extends Component
     use HasComponents;
     use HasGlobalSearch;
     use HasId;
+    use HasMaxContentWidth;
     use HasNavigation;
     use HasRoutes;
     use HasSidebar;
     use HasSubNavigation;
+    use HasUnsavedChangesAlerts;
 
     protected bool|Closure $isDefault = false;
 

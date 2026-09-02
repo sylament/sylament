@@ -21,6 +21,24 @@ it('pins the alias literals the repeater resolves its chrome-action icons throug
         ->and(FormsIconAlias::COMPONENTS_REPEATER_ACTIONS_REORDER)->toBe('components.repeater.actions.reorder');
 });
 
+it('pins the alias literals the repeater resolves its item-action icons through', function (): void {
+    expect(FormsIconAlias::COMPONENTS_REPEATER_ACTIONS_CLONE)->toBe('components.repeater.actions.clone')
+        ->and(FormsIconAlias::COMPONENTS_REPEATER_ACTIONS_DELETE)->toBe('components.repeater.actions.delete')
+        ->and(FormsIconAlias::COMPONENTS_REPEATER_ACTIONS_MOVE_DOWN)->toBe('components.repeater.actions.move-down')
+        ->and(FormsIconAlias::COMPONENTS_REPEATER_ACTIONS_MOVE_UP)->toBe('components.repeater.actions.move-up');
+});
+
+it('pins the alias literals the key-value field resolves its row-action icons through', function (): void {
+    expect(FormsIconAlias::COMPONENTS_KEY_VALUE_ACTIONS_DELETE)->toBe('components.key-value.actions.delete')
+        ->and(FormsIconAlias::COMPONENTS_KEY_VALUE_ACTIONS_REORDER)->toBe('components.key-value.actions.reorder');
+});
+
+it('pins the alias literals the text input resolves its affix-action icons through', function (): void {
+    expect(FormsIconAlias::COMPONENTS_TEXT_INPUT_ACTIONS_COPY)->toBe('components.text-input.actions.copy')
+        ->and(FormsIconAlias::COMPONENTS_TEXT_INPUT_ACTIONS_HIDE_PASSWORD)->toBe('components.text-input.actions.hide-password')
+        ->and(FormsIconAlias::COMPONENTS_TEXT_INPUT_ACTIONS_SHOW_PASSWORD)->toBe('components.text-input.actions.show-password');
+});
+
 it('pins the alias literals the file-upload editor resolves its toolbar icons through', function (): void {
     expect(FormsIconAlias::COMPONENTS_FILE_UPLOAD_EDITOR_ACTIONS_DRAG_CROP)->toBe('components.file-upload.editor.actions.drag-crop')
         ->and(FormsIconAlias::COMPONENTS_FILE_UPLOAD_EDITOR_ACTIONS_DRAG_MOVE)->toBe('components.file-upload.editor.actions.drag-move')

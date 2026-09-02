@@ -34,15 +34,33 @@ class FormsIconAlias
 
     public const string COMPONENTS_FILE_UPLOAD_EDITOR_ACTIONS_ZOOM_OUT = 'components.file-upload.editor.actions.zoom-out';
 
+    public const string COMPONENTS_KEY_VALUE_ACTIONS_DELETE = 'components.key-value.actions.delete';
+
+    public const string COMPONENTS_KEY_VALUE_ACTIONS_REORDER = 'components.key-value.actions.reorder';
+
+    public const string COMPONENTS_REPEATER_ACTIONS_CLONE = 'components.repeater.actions.clone';
+
     public const string COMPONENTS_REPEATER_ACTIONS_COLLAPSE = 'components.repeater.actions.collapse';
 
+    public const string COMPONENTS_REPEATER_ACTIONS_DELETE = 'components.repeater.actions.delete';
+
     public const string COMPONENTS_REPEATER_ACTIONS_EXPAND = 'components.repeater.actions.expand';
+
+    public const string COMPONENTS_REPEATER_ACTIONS_MOVE_DOWN = 'components.repeater.actions.move-down';
+
+    public const string COMPONENTS_REPEATER_ACTIONS_MOVE_UP = 'components.repeater.actions.move-up';
 
     public const string COMPONENTS_REPEATER_ACTIONS_REORDER = 'components.repeater.actions.reorder';
 
     public const string COMPONENTS_SELECT_ACTIONS_CREATE_OPTION = 'components.select.actions.create-option';
 
     public const string COMPONENTS_SELECT_ACTIONS_EDIT_OPTION = 'components.select.actions.edit-option';
+
+    public const string COMPONENTS_TEXT_INPUT_ACTIONS_COPY = 'components.text-input.actions.copy';
+
+    public const string COMPONENTS_TEXT_INPUT_ACTIONS_HIDE_PASSWORD = 'components.text-input.actions.hide-password';
+
+    public const string COMPONENTS_TEXT_INPUT_ACTIONS_SHOW_PASSWORD = 'components.text-input.actions.show-password';
 
     public const string COMPONENTS_TOGGLE_BUTTONS_BOOLEAN_FALSE = 'components.toggle-buttons.boolean.false';
 

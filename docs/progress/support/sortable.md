@@ -16,10 +16,14 @@ means. `support` is the base workspace — it cannot reach schemas'
 `resolveLiveHost`, and growing a live-component peer for one controller would
 push that dependency onto every consumer of the base package — so the write
 lives in the consumer, which binds the event and decides what to do with the
-keys. Forms' `sylament--forms--repeater` is the first consumer; tables'
-`reorderable()` (M4 · 3) and `KeyValue` (M3 · 9) are the next two. `FileUpload`
-is **not** one — FilePond owns its own list and reorders through its
-`allowReorder` option.
+keys. Two consumers ship. Forms' `sylament--forms--repeater` was the first;
+tables' [`reorderable()`](../tables/table.md#the-drag-control-mounts-per-mode-where-vendors-instance-outlives-every-render)
+is the second, and it binds the control differently — the `<tbody>` mounts it only
+while the table is in reorder mode, where a repeater's item list carries it
+always — which is the first proof that the control's live-host-agnostic contract
+survives being mounted and unmounted rather than only connected once. `KeyValue`
+(M3 · 9) is the next. `FileUpload` is **not** one — FilePond owns its own list and
+reorders through its `allowReorder` option.
 
 **Status:** done — see the
 [status vocabulary](../README.md#statuses).

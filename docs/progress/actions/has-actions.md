@@ -75,7 +75,7 @@ write-up in [Details](#details), **diverges** → the note in
 | [`$mountedActions`](../../../packages/actions/src/Concerns/HasActions.php) stack + `dehydrateMountedActions()` | `Concerns/InteractsWithActions.php` `$mountedActions` | done | — | [diverges](#the-mounted-action-stack-is-a-server-controlled-liveprop-not-a-client-writable-array) · [diverges](#the-mountedactions-liveprop-dehydrates-through-a-bridge-method) · [semantics](#the-mounted-action-descriptor-is-typed-string-keyed-and-the-client-fills-two-thirds-of-it) |
 | [`mountAction()`](../../../packages/actions/src/Concerns/HasActions.php) | `Concerns/InteractsWithActions.php` `mountAction()` | in progress | `CanBeAuthorized` | [detail](#mountaction-drops-authorization) · [diverges](#the-error-bag-reset-is-scoped-to-one-frame-not-a-global-reset) |
 | [`callMountedAction(array $arguments = [])`](../../../packages/actions/src/Concerns/HasActions.php) | `Concerns/InteractsWithActions.php` `callMountedAction()` | in progress | `CanBeRateLimited`, `CanBeAuthorized` | [detail](#callmountedaction-drops-rate-limiting-and-authorization) · [diverges](#a-redirect-leaves-the-pipeline-as-a-returned-response-not-through-a-framework-side-bag) · [diverges](#every-mounted-action-run-flushes-a-table-hosts-records-cache) · [semantics](#clearrecordafter-runs-at-both-of-filaments-sites) |
-| [`unmountAction(bool\|string\|null $cancelParentActions = null)`](../../../packages/actions/src/Concerns/HasActions.php) | `Concerns/InteractsWithActions.php` `unmountAction()` | in progress | `#[Url]` default-action state | [detail](#unmountaction-drops-the-default-action-reset) · [diverges](#the-stack-is-choreographed-declaratively-not-by-client-events) · [diverges](#the-error-bag-reset-is-scoped-to-one-frame-not-a-global-reset) · [semantics](#clearrecordafter-runs-at-both-of-filaments-sites) |
+| [`unmountAction(bool\|string\|null $cancelParentActions = null)`](../../../packages/actions/src/Concerns/HasActions.php) | `Concerns/InteractsWithActions.php` `unmountAction()` | in progress | the `defaultAction*` auto-mount machinery, not its URL binding | [detail](#unmountaction-drops-the-default-action-reset) · [diverges](#the-stack-is-choreographed-declaratively-not-by-client-events) · [diverges](#the-error-bag-reset-is-scoped-to-one-frame-not-a-global-reset) · [semantics](#clearrecordafter-runs-at-both-of-filaments-sites) |
 | [`replaceMountedAction()`](../../../packages/actions/src/Concerns/HasActions.php) | `Concerns/InteractsWithActions.php` `replaceMountedAction()` | done | — | [diverges](#a-frame-carries-two-identities-an-index-scoped-dialog-and-a-name-scoped-wrapper) |
 | [`getMountedAction(?int $actionNestingIndex = null)`](../../../packages/actions/src/Concerns/HasActions.php) | `Concerns/InteractsWithActions.php` `getMountedAction()` | done | — | [diverges](#getmountedaction-never-guards-its-own-read-with-a-catch) |
 | [`getMountedActions()`](../../../packages/actions/src/Concerns/HasActions.php) | `Concerns/InteractsWithActions.php` `getMountedActions()` | done | — | [diverges](#the-mountedactions-liveprop-dehydrates-through-a-bridge-method) |
@@ -95,7 +95,7 @@ write-up in [Details](#details), **diverges** → the note in
 | Modals rendering ([`Modals/index.html.twig`](../../../packages/actions/templates/components/Modals/index.html.twig) + [`Twig\Components\Modals`](../../../packages/actions/src/Twig/Components/Modals.php)) | [`components/modals.blade.php`](../../../vendor/filament/actions/resources/views/components/modals.blade.php) | done | — | [diverges](#the-modals-renderer-resolves-its-host-from-the-render-stack-not-from-template-scope) · [diverges](#the-modal-is-opened-by-rendered-state-not-by-the-dispatched-event) · [diverges](#the-modals-renderer-emits-no-wrapper-element) · [diverges](#there-is-no-single-render-guard) · [diverges](#an-unresolvable-host-throws-instead-of-rendering-nothing) |
 | [Action-schema integration](../../../packages/actions/src/Concerns/HasActions.php) (`getMountedActionSchema()` incl. `resolveMountedActionSchemaRecord()` / `getMountedActionSchemaOperation()`, `mountedActionHasSchema()`, deprecated `mountedActionHasForm`/`getMountedActionForm`, `getMountedActionSchemaName()`, `getMountedActionSchemaRecord()`) | `Concerns/InteractsWithActions.php` (same methods) | in progress | — | [has-schema.md](has-schema.md) · [semantics](#the-per-mount-schema-is-seeded-with-the-actions-record-and-the-dotted-operation) · [detail](#the-schema-integrations-remainder-is-a-name-and-two-deprecated-aliases) · [diverges](#per-mount-form-state-lives-in-a-sibling-bag-not-in-the-stack-descriptor) · [diverges](#the-has-schema-check-is-memoised-separately-because-the-schema-cache-cannot-hold-null) · [diverges](#set-and-get-are-unavailable-to-an-action-inside-a-mounted-action-schema) |
 | [`$mountedActionsData`](../../../packages/actions/src/Concerns/HasActions.php) + `getMountedActionData()` | `Concerns/InteractsWithActions.php` `mountedActions.{i}.data` | done | — | [diverges](#per-mount-form-state-lives-in-a-sibling-bag-not-in-the-stack-descriptor) |
-| `#[Url]`-bound default-action state (`defaultAction`, `defaultActionArguments`, `defaultActionContext`, `defaultTableAction*`) | `Concerns/InteractsWithActions.php` public `#[Url]` properties | todo | — | [detail](#url-bound-default-action-state-is-not-ported) |
+| `#[Url]`-bound default-action state (`defaultAction`, `defaultActionArguments`, `defaultActionContext`, `defaultTableAction*`) | `Concerns/InteractsWithActions.php` public `#[Url]` properties | todo | — | the query-string mechanism arrived with M4 · 3 and the auto-mount machinery did not — [detail](#url-bound-default-action-state-is-not-ported) |
 | [`getDefaultActionUrl()`](../../../packages/actions/src/Concerns/HasActions.php) | `Concerns/InteractsWithActions.php` `getDefaultActionUrl()` | done | — | [detail](#the-getdefaultaction-host-override-hooks-are-ported-the-authorization-pair-deferred) |
 | [`getDefaultActionSuccessRedirectUrl()`](../../../packages/actions/src/Concerns/HasActions.php) / [`getDefaultActionFailureRedirectUrl()`](../../../packages/actions/src/Concerns/HasActions.php) | `Concerns/InteractsWithActions.php` `getDefaultActionSuccessRedirectUrl()` / `getDefaultActionFailureRedirectUrl()` | done | — | [detail](#the-getdefaultaction-host-override-hooks-are-ported-the-authorization-pair-deferred) |
 | [`getDefaultActionSchemaResolver()`](../../../packages/actions/src/Concerns/HasActions.php) / [`getDefaultActionRecord()`](../../../packages/actions/src/Concerns/HasActions.php) / [`getDefaultActionRecordTitle()`](../../../packages/actions/src/Concerns/HasActions.php) / [`getDefaultActionRecordClass()`](../../../packages/actions/src/Concerns/HasActions.php) / [`getDefaultActionRecordLabel()`](../../../packages/actions/src/Concerns/HasActions.php) | `Concerns/InteractsWithActions.php` `getDefaultActionSchemaResolver()` / `getDefaultActionRecord()` / `getDefaultActionRecordTitle()` / `getDefaultActionModel()` / `getDefaultActionModelLabel()` | done | — | [detail](#the-getdefaultaction-host-override-hooks-are-ported-the-authorization-pair-deferred) |
@@ -283,7 +283,10 @@ What is still absent is the `defaultAction*` reset (those `#[Url]` properties
 are [not ported](#url-bound-default-action-state-is-not-ported)).
 `syncActionModals()` has no port and never will: see
 [declarative choreography](#the-stack-is-choreographed-declaratively-not-by-client-events).
-**Next step:** the `defaultAction*` reset lands with the `#[Url]` row.
+**Next step:** the `defaultAction*` reset lands with the properties it resets, and
+that is no longer the same thing as "the `#[Url]` row" — M4 · 3 shipped the
+query-string mechanism without the auto-mount machinery those properties feed, so
+this row waits on the machinery rather than on a binding.
 
 ### `getAction()` ports the generic method-discovery arm in full
 
@@ -337,9 +340,29 @@ Filament exposes `defaultAction`, `defaultActionArguments`,
 action can be pre-mounted from the query string on page load (and
 `unmountAction()` resets them to `[]` rather than `null` to avoid Livewire's
 `'null'`-string URL bug). None of these properties, nor any code that reads
-them to auto-mount an action, exist in the port. **Next step:** todo, no
-current consumer; would need the UX LiveComponent `#[LiveProp]`/query-string
-binding equivalent of Livewire's `#[Url]`.
+them to auto-mount an action, exist in the port.
+
+The **mechanism** stopped being the blocker with M4 · 3. UX LiveComponent's
+`#[LiveProp(url: …)]` — reached either statically or through a
+[per-prop `modifier:`](../tables/has-table.md#the-url-binding-is-a-per-prop-liveprop-modifier-opted-into-by-the-page)
+where the parameter name has to be computed — is Livewire's `#[Url]` equivalent,
+and it is now proved on six props across two packages. Binding these six the same
+way is a mechanical change.
+
+What is **not** built is everything the binding would feed. Filament's
+auto-mounting is `bootedInteractsWithActions()` calling `mountAction()` from those
+properties before the first render; the port has no equivalent moment, and the
+design questions behind it are its own — a mounted action's schema has to be
+filled and validated on a **GET** rather than on a live action, the six parameters
+are a client-supplied action name plus arguments plus a record key that all need
+the same untrusted-edge treatment a live mount already gets, and a modal opened by
+a URL has to survive a refresh without re-firing its side effects. None of that is
+adjacent to a query-string binding.
+
+**Next step:** todo, and no longer blocked on a mechanism — it needs the auto-mount
+design, and no consumer has asked for it. The four `defaultTableAction*` members
+would land with it or not at all: they exist so a *table* row action can be
+deep-linked, which is the same machinery one context over.
 
 ### The `getDefaultAction*` host override hooks are ported, the authorization pair deferred
 

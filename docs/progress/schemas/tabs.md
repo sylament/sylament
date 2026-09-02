@@ -41,7 +41,7 @@ a **diverges** link to the note in [Divergences](#divergences), a **semantics** 
 | [`activeTab()` / `getActiveTab()`](../../../packages/schemas/src/Components/Tabs.php) | [`Tabs::getActiveTab()`](../../../vendor/filament/schemas/src/Components/Tabs.php) | done | — | [diverges](#the-query-string-arm-compares-the-key-the-url-actually-carries) |
 | [`getActiveTabKey()`](../../../packages/schemas/src/Components/Tabs.php) — Sylament-only | — | done | — | [diverges](#two-sylament-only-accessors-carry-what-alpine-read-from-the-client) |
 | [`getActiveLiveComponentTab()`](../../../packages/schemas/src/Components/Tabs.php) — Sylament-only | — | done | — | [diverges](#two-sylament-only-accessors-carry-what-alpine-read-from-the-client) |
-| [`persistTabInQueryString()` / `getTabQueryStringKey()` / `isTabPersistedInQueryString()`](../../../packages/schemas/src/Components/Tabs.php) | [same three](../../../vendor/filament/schemas/src/Components/Tabs.php) | done | — | [diverges](#the-query-string-arm-compares-the-key-the-url-actually-carries) |
+| [`persistTabInQueryString()` / `getTabQueryStringKey()` / `isTabPersistedInQueryString()`](../../../packages/schemas/src/Components/Tabs.php) | [same three](../../../vendor/filament/schemas/src/Components/Tabs.php) | done | — | [diverges](#the-query-string-arm-compares-the-key-the-url-actually-carries) · [diverges](#the-query-string-arm-resets-on-the-first-live-round-trip-and-is-left-that-way) |
 | [`persistTab()` / `isTabPersisted()` (`CanPersistTab`)](../../../packages/schemas/src/Components/Concerns/CanPersistTab.php) | [`Concerns/CanPersistTab.php`](../../../vendor/filament/schemas/src/Components/Concerns/CanPersistTab.php) | done | — | [diverges](#canpersisttabs-property-is-protected-and-the-storage-key-drops-alpines-prefix) |
 | [`liveComponentProperty()` / `getLiveComponentProperty()`](../../../packages/schemas/src/Components/Tabs.php) | [`livewireProperty()`](../../../vendor/filament/schemas/src/Components/Tabs.php) | done | — | [renames.md](../renames.md) · [detail](#server-mode-is-the-livewireproperty-arm-translated-to-ux-live) |
 | [`configureChildSchema()` re-keying in server mode](../../../packages/schemas/src/Components/Tabs.php) | [`getDefaultChildComponents()`](../../../vendor/filament/schemas/src/Components/Tabs.php) | done | — | [semantics](#the-re-keying-hook-must-run-before-any-key-is-read) |
@@ -89,9 +89,11 @@ button carries `x-on:click="$set('activeTab', 'all')"`; ours carries
 label falls back to the host's `generateTabLabel($key)` when it has that method
 (`method_exists` probe, Filament-exact), and each `Tab` is re-keyed to its array key so
 the value written into the property matches. What is left is the piece Filament has too:
-nothing on the component — the row is **done**; the arm's consumer (list-page tabs,
-`ListRecords::getTabs()`) is not on the roadmap yet, and `Tab::query()` shipped as its
-seam.
+nothing on the component — the row is **done**. Its consumer arrived with M4 · 3:
+[panels' `HasTabs`](../panels/has-tabs.md) builds exactly this mode
+(`liveComponentProperty('activeTab')`, `contained(false)`) for a listing's record
+filters, and the `generateTabLabel()` probe above is the host method it answers
+with. `Tab::query()` shipped as the scope half of that seam.
 
 ### The render-hook trio waits on the render-hook design
 
@@ -223,6 +225,39 @@ component built with `new` has none and skips the read, which costs only that fi
 optimisation because the controller re-reads the query string on connect anyway. The value
 is read off `query->all()` rather than `query->get()`: `InputBag::get()` throws on an
 array-shaped `?tab[]=x`, and a hand-edited URL must not take the whole render down.
+
+### The query-string arm resets on the first live round trip, and is left that way
+
+`getActiveTab()`'s query-string read goes through `RequestStack::getMainRequest()`,
+and on a **live** round trip the main request is the live route's — UX posts to
+`/_components/…`, and the page's query string is not carried onto it. So the read
+finds no `tab` key, falls through to `$this->activeTab`, and the server renders
+the *declared* tab rather than the one the URL named.
+
+Whether that is visible depends on what the controller has recorded. On a first
+paint the controller's `#apply()` writes the same classes and `aria-selected`
+values the server already rendered, so `ExternalMutationTracker` records nothing
+and has nothing to replay — which means the first live round trip after a
+`?tab=`-restored load repaints the strip on tab 1. A user who has since clicked a
+tab is unaffected: that click is a recorded mutation and survives the morph
+([the ownership rule above](#the-active-tab-is-server-rendered-and-then-owned-by-the-controller)).
+
+**Filament ships the same defect**, for the same reason — its `getActiveTab()`
+reads `request()->query()`, and a Livewire round trip's request is likewise not the
+page's — masked over there only on `EditRecord`, which uses `livewireProperty()`
+instead and never reaches the query-string branch. It is recorded rather than
+fixed because nothing in this port consumes `persistTabInQueryString()`: the two
+live consumers of `Tabs` are the schema-side layout component (no persistence) and
+[panels' record filters](../panels/has-tabs.md), which use `liveComponentProperty()`
+and hold the key in a checksummed `LiveProp` — the shape that is
+[correct by construction](../tables/has-table.md#the-url-binding-is-a-per-prop-liveprop-modifier-opted-into-by-the-page)
+and the reason M4 · 3 bound table state through a `LiveProp` modifier rather than
+by reading the request at render time.
+
+The fix, when a consumer wants it, is the same mechanism: give `Tabs` a bound
+host property instead of a request read, or have the controller re-assert `#tab`
+on `render:finished` the way
+[tables' controller repaints its selection](../tables/tables-bundle.md#the-table-controller-absorbs-four-jobs-livewire-does-with-attributes).
 
 ### Two Sylament-only accessors carry what Alpine read from the client
 

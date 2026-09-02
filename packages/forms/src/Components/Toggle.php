@@ -7,6 +7,7 @@ namespace Sylament\Forms\Components;
 use Closure;
 use Sylament\Forms\Components\Concerns\CanBeAccepted;
 use Sylament\Forms\Components\Concerns\CanBeInline;
+use Sylament\Forms\Components\Concerns\CanFixIndistinctState;
 use Sylament\Forms\Components\Concerns\HasExtraInputAttributes;
 use Sylament\Forms\Components\Concerns\HasToggleColors;
 use Sylament\Forms\Components\Concerns\HasToggleIcons;
@@ -20,6 +21,7 @@ class Toggle extends Field
 {
     use CanBeAccepted;
     use CanBeInline;
+    use CanFixIndistinctState;
     use HasExtraInputAttributes;
     use HasToggleColors;
     use HasToggleIcons;

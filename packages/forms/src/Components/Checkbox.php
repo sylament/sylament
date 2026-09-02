@@ -7,6 +7,7 @@ namespace Sylament\Forms\Components;
 use Closure;
 use Sylament\Forms\Components\Concerns\CanBeAccepted;
 use Sylament\Forms\Components\Concerns\CanBeInline;
+use Sylament\Forms\Components\Concerns\CanFixIndistinctState;
 use Sylament\Forms\Components\Concerns\HasExtraInputAttributes;
 use Sylament\Schemas\State\Casts\BooleanStateCast;
 use Sylament\Schemas\State\Casts\Contracts\StateCast;
@@ -18,6 +19,7 @@ class Checkbox extends Field
 {
     use CanBeAccepted;
     use CanBeInline;
+    use CanFixIndistinctState;
     use HasExtraInputAttributes;
 
     protected string|Closure|null $template = '@SylamentForms/partials/Checkbox/index.html.twig';

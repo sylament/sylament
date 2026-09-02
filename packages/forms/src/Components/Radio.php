@@ -7,6 +7,7 @@ namespace Sylament\Forms\Components;
 use Closure;
 use LogicException;
 use Sylament\Forms\Components\Concerns\CanDisableOptions;
+use Sylament\Forms\Components\Concerns\CanFixIndistinctState;
 use Sylament\Forms\Components\Concerns\HasDescriptions;
 use Sylament\Forms\Components\Concerns\HasExtraInputAttributes;
 use Sylament\Forms\Components\Concerns\HasGridDirection;
@@ -23,6 +24,7 @@ use function Sylament\Support\filled;
 class Radio extends Field implements Contracts\CanDisableOptions
 {
     use CanDisableOptions;
+    use CanFixIndistinctState;
     use HasDescriptions;
     use HasExtraInputAttributes;
     use HasGridDirection;

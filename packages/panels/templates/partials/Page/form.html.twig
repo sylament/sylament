@@ -1,0 +1,30 @@
+{% extends '@SylamentPanels/partials/Page/index.html.twig' %}
+
+{% block content %}
+    {% set formErrors = this.getErrorsForSchemaStatePath(this.getSchema('form').getStatePath) %}
+    {% set formActions = this.getCachedFormActions %}
+
+    <form class="sy-pa-form" {{ live_action(this.getSubmitFormLiveComponentMethodName ~ ':prevent', event: 'submit') }}>
+        {% block form_errors %}
+            {# The schema's own state path belongs to no input, so a record-level refusal
+               that names no field folds here and would otherwise never reach the page. #}
+            {% if formErrors is not empty %}
+                <ul class="sy-pa-form-errors" data-record-errors>
+                    {% for message in formErrors %}
+                        <li>{{ message }}</li>
+                    {% endfor %}
+                </ul>
+            {% endif %}
+        {% endblock form_errors %}
+
+        {{ renderSchema('form') }}
+
+        {% block form_actions %}
+            {% if formActions is not empty %}
+                {{ renderSchema('formActions') }}
+            {% endif %}
+        {% endblock form_actions %}
+    </form>
+
+    {% block after_form %}{% endblock after_form %}
+{% endblock content %}

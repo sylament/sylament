@@ -175,7 +175,8 @@ The panel surface —
 | --- | --- | --- | --- |
 | [`Navigation\NavigationItem`](../../../packages/panels/src/Navigation/NavigationItem.php) | [`Navigation/NavigationItem.php`](../../../vendor/filament/filament/src/Navigation/NavigationItem.php) | in progress | [NavigationItem](#navigationitem) |
 | [`Navigation\NavigationGroup`](../../../packages/panels/src/Navigation/NavigationGroup.php) | [`Navigation/NavigationGroup.php`](../../../vendor/filament/filament/src/Navigation/NavigationGroup.php) | in progress | [NavigationGroup](#navigationgroup) |
-| [`Pages\Page`](../../../packages/panels/src/Pages/Page.php) | [`Pages/Page.php`](../../../vendor/filament/filament/src/Pages/Page.php) | in progress | [Page](#page) |
+| [`Pages\Page`](../../../packages/panels/src/Pages/Page.php) | [`Pages/Page.php`](../../../vendor/filament/filament/src/Pages/Page.php), [`Pages/Concerns/InteractsWithHeaderActions.php`](../../../vendor/filament/filament/src/Pages/Concerns/InteractsWithHeaderActions.php), [`InteractsWithFormActions.php`](../../../vendor/filament/filament/src/Pages/Concerns/InteractsWithFormActions.php), [`HasMaxWidth.php`](../../../vendor/filament/filament/src/Pages/Concerns/HasMaxWidth.php), [`HasTopbar.php`](../../../vendor/filament/filament/src/Pages/Concerns/HasTopbar.php), [`HasUnsavedDataChangesAlert.php`](../../../vendor/filament/filament/src/Pages/Concerns/HasUnsavedDataChangesAlert.php) | in progress | [Page](#page) |
+| [`Pages\SimplePage`](../../../packages/panels/src/Pages/SimplePage.php) | [`Pages/SimplePage.php`](../../../vendor/filament/filament/src/Pages/SimplePage.php) | in progress | [Page](#page) |
 | [`Pages\Dashboard`](../../../packages/panels/src/Pages/Dashboard.php) | [`Pages/Dashboard.php`](../../../vendor/filament/filament/src/Pages/Dashboard.php) | in progress | [Dashboard](#dashboard) |
 | [`Panel`](../../../packages/panels/src/Panel.php) | [`Panel.php`](../../../vendor/filament/filament/src/Panel.php) | in progress | [Panel](#panel) |
 | [`PanelProvider`](../../../packages/panels/src/PanelProvider.php) | [`PanelProvider.php`](../../../vendor/filament/filament/src/PanelProvider.php) | in progress | [Panel](#panel) |
@@ -184,7 +185,7 @@ The panel surface —
 | [`Resources\Resource`](../../../packages/panels/src/Resources/Resource.php) | [`Resources/Resource.php`](../../../vendor/filament/filament/src/Resources/Resource.php) and [`Resources/Resource/Concerns`](../../../vendor/filament/filament/src/Resources/Resource/Concerns) — `HasLabels`, `HasPages`, `HasRoutes`, `HasNavigation`, `CanGenerateUrls` | in progress | [Resources](#resources) |
 | [`Resources\ResourceRegistry`](../../../packages/panels/src/Resources/ResourceRegistry.php) | no Filament counterpart — a Filament resource is reached by calling its statics on the class-string | in progress | [Resources](#resources) |
 | [`Resources\Pages\PageRegistration`](../../../packages/panels/src/Resources/Pages/PageRegistration.php) | [`Resources/Pages/PageRegistration.php`](../../../vendor/filament/filament/src/Resources/Pages/PageRegistration.php) | in progress | [Resources](#resources) |
-| [`Resources\Pages\Page`](../../../packages/panels/src/Resources/Pages/Page.php) | [`Resources/Pages/Page.php`](../../../vendor/filament/filament/src/Resources/Pages/Page.php), [`Pages/Concerns/InteractsWithHeaderActions.php`](../../../vendor/filament/filament/src/Pages/Concerns/InteractsWithHeaderActions.php) | in progress | [Resource pages](#resource-pages) |
+| [`Resources\Pages\Page`](../../../packages/panels/src/Resources/Pages/Page.php) | [`Resources/Pages/Page.php`](../../../vendor/filament/filament/src/Resources/Pages/Page.php) | in progress | [Resource pages](#resource-pages) |
 | [`Resources\Pages\ListRecords`](../../../packages/panels/src/Resources/Pages/ListRecords.php) | [`Resources/Pages/ListRecords.php`](../../../vendor/filament/filament/src/Resources/Pages/ListRecords.php) | in progress | [ListRecords](#listrecords) |
 | [`Resources\Pages\CreateRecord`](../../../packages/panels/src/Resources/Pages/CreateRecord.php) | [`Resources/Pages/CreateRecord.php`](../../../vendor/filament/filament/src/Resources/Pages/CreateRecord.php) | in progress | [CreateRecord](#createrecord) |
 | [`Resources\Pages\EditRecord`](../../../packages/panels/src/Resources/Pages/EditRecord.php) | [`Resources/Pages/EditRecord.php`](../../../vendor/filament/filament/src/Resources/Pages/EditRecord.php) | in progress | [EditRecord](#editrecord) |
@@ -327,10 +328,8 @@ default, `getCachedSubNavigation()` normalizes whatever a page answers with, and
 Deferred, all todo:
 
 - The `BasePage` split — Filament separates `BasePage` (the render/lifecycle
-  half) from `Page` (the panel-aware half); the split lands with the half that
-  needs it.
-- Header actions — they need `InteractsWithHeaderActions` to move up from the
-  [resource-page base](#resource-pages), where they live today.
+  half) from `Page` (the panel-aware half); it waits on the auth epic, which is
+  what first needs a page that knows no panel.
 - The panel-level breadcrumb toggle. Filament's `Panel::breadcrumbs(bool)` /
   `hasBreadcrumbs()` switches the trail off for a whole panel and its
   `hasResourceBreadcrumbs()` does the same for resource pages alone; neither is
@@ -1115,7 +1114,7 @@ The lifecycle, ours against Filament's:
 | mutate | `mutateFormDataBeforeCreate($data)` | same, an identity default a page overrides |
 | write | `callHook('beforeCreate')` → `handleRecordCreation($data)` → `saveRelationships()` → `callHook('afterCreate')` | `callHook('beforeCreate')` → `handleRecordCreation($schema->getData($data))` → `callHook('afterCreate')` — `persist()` + `flush()`, no relationship pass |
 | events | `RecordCreated`, `RecordSaved` | — no event layer |
-| remember | `rememberData()` | — no unsaved-changes alert |
+| remember | `rememberData()` | same, through [`HasUnsavedDataChangesAlert`](../../../packages/panels/src/Pages/Concerns/HasUnsavedDataChangesAlert.php) |
 | notify | `getCreatedNotification()?->send()` | same |
 | create another | the `$another` branch | — deferred |
 | redirect | `$this->redirect($this->getRedirectUrl())` | `return new RedirectResponse($this->getRedirectUrl())` |
@@ -1174,9 +1173,8 @@ Deferred, all todo: page-level create-another (`$canCreateAnother`,
 [`CreateAction` modal](../actions/create-action.md) has its own, this is the
 page's submit-and-stay button), database
 transactions (`CanUseDatabaseTransactions`), `previousUrl` and the
-cancel-via-history action, the unsaved-changes alert, the record events, the
-authorization arms, `getFormActions()` as `Action` objects (the submit is a plain
-`<button type="submit">` here), and `content()` and its `Form`/`EmbeddedSchema`
+cancel-via-history action, the record events, the
+authorization arms, and `content()` and its `Form`/`EmbeddedSchema`
 wrapper. The parent-record association came off that list with M6 · 3, and the
 partial gained [the sub-navigation band](has-sub-navigation.md).
 
@@ -1262,7 +1260,7 @@ The lifecycle, ours against Filament's:
 | mutate | `mutateFormDataBeforeSave($data)` | same — **after** `beforeSave`, which fired inside the state read |
 | write | `handleRecordUpdate($record, $data)` → `callHook('afterSave')` | `handleRecordUpdate($schema->getData($data))` → `callHook('afterSave')` — `persist()` + `flush()` |
 | events | `RecordUpdated`, `RecordSaved` | — no event layer |
-| remember | `rememberData()` | — no unsaved-changes alert |
+| remember | `rememberData()` | same, through [`HasUnsavedDataChangesAlert`](../../../packages/panels/src/Pages/Concerns/HasUnsavedDataChangesAlert.php) |
 | notify | `getSavedNotification()?->send()` when `$shouldSendSavedNotification` | `getSavedNotification()?->send()` |
 | redirect | `redirect($url)` when `$shouldRedirect` and `getRedirectUrl()` is filled | `getRedirectUrl()` is `null`, so `save()` returns `null` and the page stays |
 
@@ -1345,11 +1343,11 @@ nested `<form>` is invalid HTML the browser silently unnests.
 
 Deferred, all todo: `refreshFormData()` (it needs a partial fill),
 `saveFormComponentOnly()`,
-database transactions, `previousUrl` and cancel-via-history, the unsaved-changes
-alert, the record events, the authorization arms, the combined content tab that
+database transactions, `previousUrl` and cancel-via-history,
+the record events, the authorization arms, the combined content tab that
 puts the form itself in the relation-manager tab bar
 ([HasRelationManagers](has-relation-managers.md#the-combined-content-tab-does-not-port)),
-`getFormActions()` as `Action` objects, and the `getNavigationIcon()` /
+and the `getNavigationIcon()` /
 `getNavigationLabel()` overrides Filament's edit page carries **for**
 sub-navigation — which now have a consumer, so the gap is visible: an edit page
 in a band is labelled by

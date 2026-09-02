@@ -4,6 +4,10 @@ declare(strict_types=1);
 
 namespace Sylament\Tables\Tests\Integration;
 
+use function Sylament\Tables\Tests\browseTo;
+use function Sylament\Tables\Tests\publishedProps;
+use function Sylament\Tables\Tests\renderedRowsOf;
+
 /*
  * The read side of a seeded filter bag, which the mount hook used to destroy:
  * it filled the form with the components' own defaults and — under the deferred

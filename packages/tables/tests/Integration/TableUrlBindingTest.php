@@ -4,8 +4,9 @@ declare(strict_types=1);
 
 namespace Sylament\Tables\Tests\Integration;
 
-use Symfony\Bundle\FrameworkBundle\KernelBrowser;
-use Symfony\Component\DomCrawler\Crawler;
+use function Sylament\Tables\Tests\browseTo;
+use function Sylament\Tables\Tests\publishedProps;
+use function Sylament\Tables\Tests\renderedRowsOf;
 
 /*
  * The query-string half of the browsing state, driven the only way it can be:
@@ -19,45 +20,6 @@ use Symfony\Component\DomCrawler\Crawler;
  * first may act on it. The table's select filter carries a real default, so a
  * seeded filter has something to beat.
  */
-
-/**
- * A GET of the fixture page. `test.client` is not a shared service, so a test
- * needing two requests in one session must hand the first client back in —
- * a second `get()` would come with an empty cookie jar.
- *
- * @return array{KernelBrowser, Crawler}
- */
-function browseTo(string $query = '', ?KernelBrowser $client = null): array
-{
-    $client ??= test()->getContainer()->get('test.client');
-    $client->disableReboot();
-
-    return [$client, $client->request('GET', '/fixtures/browsing-state' . $query)];
-}
-
-/**
- * The props one host published, decoded off its live root.
- *
- * @return array<string, mixed>
- */
-function publishedProps(Crawler $crawler, string $selector): array
-{
-    $props = json_decode($crawler->filter($selector . ' [data-live-props-value]')->attr('data-live-props-value') ?? '', true, flags: JSON_THROW_ON_ERROR);
-
-    expect($props)->toBeArray();
-    assert(is_array($props));
-
-    /** @var array<string, mixed> $props */
-    return $props;
-}
-
-/**
- * The text one host rendered, its own live root and everything under it.
- */
-function renderedRowsOf(Crawler $crawler, string $componentName): string
-{
-    return $crawler->filter(sprintf('[data-live-name-value="%s"]', $componentName))->text();
-}
 
 it('seeds page, sort, search and filters from the query string of the page it is on', function (): void {
     [, $crawler] = browseTo('?page=2&sort=title:desc&search=a&filters[plays][value]=200');

@@ -7,6 +7,12 @@ namespace Sylament\Tables\Tests\Integration;
 use Sylament\Tables\Tests\Fixtures\Twig\Components\UnboundSongsTable;
 use Sylament\Tables\Tests\Fixtures\Twig\Components\UrlBoundSongsTable;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
+use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\RequestStack;
+
+use function Sylament\Tables\Tests\browseTo;
+use function Sylament\Tables\Tests\publishedProps;
+use function Sylament\Tables\Tests\renderedRowsOf;
 
 /*
  * What a table remembers between two visits in one session. Both fixture hosts
@@ -130,12 +136,34 @@ it('writes nothing at all for a table that opted out', function (): void {
         ->and($keys)->toContain(sessionKeyFor(UrlBoundSongsTable::class, 'sort'));
 });
 
+it('lets a seeded search beat the remembered one, and remembers what the query string said', function (): void {
+    $client = seedTableSession([sessionKeyFor(UrlBoundSongsTable::class, 'search') => 'Karma']);
+
+    [, $crawler] = browseTo('?search=Airbag', $client);
+
+    expect(publishedProps($crawler, '#bound-table')['tableSearch'])->toBe('Airbag')
+        ->and(currentTableSession($client)[sessionKeyFor(UrlBoundSongsTable::class, 'search')])->toBe('Airbag');
+
+    [, $crawler] = browseTo(client: $client);
+
+    expect(publishedProps($crawler, '#bound-table')['tableSearch'])->toBe('Airbag');
+});
+
 it('lets a seeded filter beat the remembered one', function (): void {
     $client = seedTableSession([sessionKeyFor(UrlBoundSongsTable::class, 'filters') => ['plays' => ['value' => '200']]]);
 
     [, $crawler] = browseTo('?filters[plays][value]=100', $client);
 
     expect(publishedProps($crawler, '#bound-table')['tableFilters'])->toBe(['plays' => ['value' => '100'], 'featured' => ['value' => null]]);
+});
+
+it('leaves a remembered filter bag that is not filter-name-keyed where it is', function (): void {
+    $client = seedTableSession([sessionKeyFor(UrlBoundSongsTable::class, 'filters') => ['plays', 'featured']]);
+
+    [, $crawler] = browseTo(client: $client);
+
+    expect(publishedProps($crawler, '#bound-table')['tableFilters'])->toBe(['plays' => ['value' => '100'], 'featured' => ['value' => null]])
+        ->and(renderedRowsOf($crawler, 'UrlBoundSongsTable'))->toContain('Airbag');
 });
 
 it('writes the sort back on the round trip that changes it', function (): void {
@@ -178,7 +206,19 @@ it('forgets a per-page choice the table no longer offers', function (): void {
         ->and(currentTableSession($client))->not->toHaveKey(sessionKeyFor(UrlBoundSongsTable::class, 'per_page'));
 });
 
-it('touches no session at all when the request has none', function (): void {
+it('touches no session at all when there is no request to carry one', function (): void {
+    $host = $this::getContainer()->get(UrlBoundSongsTable::class);
+
+    $host->mountTablePersistedState();
+
+    expect($host->tableSort)->toBeNull()
+        ->and($host->tableSearch)->toBe('')
+        ->and($host->tableRecordsPerPage)->toBeNull();
+});
+
+it('touches no session on a request that carries none', function (): void {
+    $this::getContainer()->get(RequestStack::class)->push(new Request());
+
     $host = $this::getContainer()->get(UrlBoundSongsTable::class);
 
     $host->mountTablePersistedState();

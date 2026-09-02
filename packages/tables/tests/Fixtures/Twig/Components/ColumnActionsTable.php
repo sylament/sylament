@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Sylament\Tables\Tests\Fixtures\Twig\Components;
 
+use Sylament\Actions\Action;
 use Sylament\Tables\Columns\Column;
 use Sylament\Tables\Columns\TextColumn;
 use Sylament\Tables\Concerns\HasTable;
@@ -15,10 +16,10 @@ use Symfony\UX\LiveComponent\Attribute\LiveProp;
 use Symfony\UX\LiveComponent\DefaultActionTrait;
 
 /**
- * A live host whose columns carry both `action()` arms — a closure the host's
- * own live action evaluates, and a method name the string arm wraps. Each call
- * appends to a `LiveProp`, so what the action was handed survives the round trip
- * and the next render reads it.
+ * A live host whose columns carry all three `action()` arms — a closure the host's
+ * own live action evaluates, a method name the string arm wraps, and an `Action`
+ * object it refuses. Each call appends to a `LiveProp`, so what the action was
+ * handed survives the round trip and the next render reads it.
  */
 #[AsLiveComponent(name: 'ColumnActionsTable', template: '@TablesFixtures/components/ColumnActionsTable.html.twig')]
 class ColumnActionsTable implements InteractsWithTable
@@ -44,6 +45,7 @@ class ColumnActionsTable implements InteractsWithTable
                     $this->calls[] = sprintf('closure:%s:%s', $record->title, $column->getRecordKey() ?? '');
                 }),
                 TextColumn::make('album')->action('appendAlbumCall'),
+                TextColumn::make('actionObject')->state('view')->action(Action::make('view')),
                 TextColumn::make('id'),
             ]);
     }

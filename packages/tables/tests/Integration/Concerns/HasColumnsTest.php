@@ -50,3 +50,21 @@ it('refuses a column that carries no action at all', function (): void {
 it('evaluates the closure a string action name was wrapped into', function (): void {
     expect(columnActionCalls(['name' => 'album', 'recordKey' => '1']))->toBe(['string:Airbag']);
 });
+
+it('refuses a column whose action is an Action object', function (): void {
+    expect(columnActionCalls(['name' => 'actionObject', 'recordKey' => '1']))->toBe([]);
+});
+
+it('leaves the column unbound when its action is an Action object', function (): void {
+    $host = $this::getContainer()->get(ColumnActionsTable::class);
+
+    assert($host instanceof ColumnActionsTable);
+
+    $host->callTableColumnAction('actionObject', '1');
+
+    $column = $host->getTable()->getColumn('actionObject');
+
+    expect($host->calls)->toBe([])
+        ->and($column?->getRecord())->toBeNull()
+        ->and($column?->getRecordKey())->toBeNull();
+});

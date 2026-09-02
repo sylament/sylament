@@ -17,6 +17,7 @@ use Sylament\Forms\Components\Concerns\CanBeNative;
 use Sylament\Forms\Components\Concerns\CanBePreloaded;
 use Sylament\Forms\Components\Concerns\CanBeSearchable;
 use Sylament\Forms\Components\Concerns\CanDisableOptions;
+use Sylament\Forms\Components\Concerns\CanDisableOptionsWhenSelectedInSiblingRepeaterItems;
 use Sylament\Forms\Components\Concerns\CanFixIndistinctState;
 use Sylament\Forms\Components\Concerns\CanLimitItemsLength;
 use Sylament\Forms\Components\Concerns\CanSelectPlaceholder;
@@ -57,6 +58,7 @@ class Select extends Field implements Contracts\CanDisableOptions, Contracts\Has
     use CanBePreloaded;
     use CanBeSearchable;
     use CanDisableOptions;
+    use CanDisableOptionsWhenSelectedInSiblingRepeaterItems;
     use CanFixIndistinctState;
     use CanLimitItemsLength;
     use CanSelectPlaceholder;

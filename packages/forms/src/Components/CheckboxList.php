@@ -10,6 +10,7 @@ use Sylament\Actions\Action;
 use Sylament\Forms\Components\Concerns\CanAllowHtml;
 use Sylament\Forms\Components\Concerns\CanBeSearchable;
 use Sylament\Forms\Components\Concerns\CanDisableOptions;
+use Sylament\Forms\Components\Concerns\CanDisableOptionsWhenSelectedInSiblingRepeaterItems;
 use Sylament\Forms\Components\Concerns\CanFixIndistinctState;
 use Sylament\Forms\Components\Concerns\CanLimitItemsLength;
 use Sylament\Forms\Components\Concerns\HasDescriptions;
@@ -37,6 +38,7 @@ class CheckboxList extends Field implements Contracts\CanDisableOptions, HasNest
     use CanAllowHtml;
     use CanBeSearchable;
     use CanDisableOptions;
+    use CanDisableOptionsWhenSelectedInSiblingRepeaterItems;
     use CanFixIndistinctState;
     use CanLimitItemsLength;
     use Concerns\HasNestedRecursiveValidationConstraints;

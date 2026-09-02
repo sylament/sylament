@@ -78,7 +78,13 @@ trait HasOptions
         return $values;
     }
 
-    protected function normalizeOptionComparisonValue(mixed $value): string|int|null
+    /**
+     * The comparison vocabulary one option value speaks: an option's key as the
+     * template renders it, which an enum instance or a raw boolean does not.
+     * Public because a state-reading closure compares a sibling item's raw value
+     * against an option key through it, from outside the field's own scope.
+     */
+    public function normalizeOptionComparisonValue(mixed $value): string|int|null
     {
         return match (true) {
             $value instanceof BackedEnum => $value->value,

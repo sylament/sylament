@@ -17,6 +17,10 @@ use Symfony\UX\LiveComponent\Test\InteractsWithLiveComponents;
 
 uses(InteractsWithLiveComponents::class);
 
+afterEach(function (): void {
+    EditHookedArticle::$haltsBeforeSave = false;
+});
+
 /*
  * Kernel reboot is disabled for the same reason `ListRecordsTest` disables it:
  * the fixture database lives in memory on a container service, so a reboot
@@ -282,4 +286,36 @@ it('404s when a mounted frame names a record the resource cannot resolve', funct
     // scoped binding — which answers nothing for a record that never existed.
     expect(fn (): mixed => $host->mountAction('edit', [], ['recordKey' => '999999']))
         ->toThrow(NotFoundHttpException::class, 'No record matching [999999]');
+});
+
+it('aborts the save when a hook halts the ladder', function (): void {
+    [$client, $entityManager, $key] = editRecordClient();
+
+    EditHookedArticle::$haltsBeforeSave = true;
+
+    $host = $this->createLiveComponent(EditHookedArticle::class, ['record' => $key], client: $client)->component();
+
+    $host->calls = [];
+    $host->data = ['title' => 'alpha, edited', 'slug' => 'alpha'];
+
+    $result = $host->save();
+
+    $entityManager->clear();
+
+    // The ladder stops where the hook threw: no mutator, no write, no
+    // notification and no redirect — and today a `Halt` from here was a 500.
+    expect($result)->toBeNull()
+        ->and($host->calls)->toBe(['beforeValidate', 'afterValidate', 'beforeSave'])
+        ->and($entityManager->find(Article::class, (int) $key)?->getTitle())->toBe('Alpha');
+});
+
+it('leaves the saved-data marker null while the panel knob is off', function (): void {
+    [$client, , $key] = editRecordClient();
+
+    $host = $this->createLiveComponent(EditArticle::class, ['record' => $key], client: $client)->component();
+
+    // `admin` never arms `unsavedChangesAlerts()`, so the page composing the
+    // trait still marks nothing — the gate is the panel's, not the trait's.
+    expect($host->savedDataHash)->toBeNull()
+        ->and($host->hasUnsavedDataChangesAlert())->toBeFalse();
 });

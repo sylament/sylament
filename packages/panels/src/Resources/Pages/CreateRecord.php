@@ -6,9 +6,13 @@ namespace Sylament\Panels\Resources\Pages;
 
 use Doctrine\ORM\EntityManagerInterface;
 use LogicException;
+use Sylament\Actions\Action;
+use Sylament\Actions\ActionGroup;
 use Sylament\Notifications\Notification;
+use Sylament\Panels\Pages\Concerns\HasUnsavedDataChangesAlert;
 use Sylament\Schemas\Schema;
 use Sylament\Support\Enums\Operation;
+use Sylament\Support\Exceptions\Halt;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Contracts\Service\Attribute\Required;
 use Symfony\UX\LiveComponent\Attribute\LiveAction;
@@ -19,6 +23,8 @@ use function Sylament\Support\blank;
 
 abstract class CreateRecord extends Page
 {
+    use HasUnsavedDataChangesAlert;
+
     protected ?string $template = '@SylamentPanels/partials/CreateRecord/index.html.twig';
 
     /**
@@ -50,6 +56,7 @@ abstract class CreateRecord extends Page
         $this->parentRecords = $parentRecords;
 
         $this->fillForm();
+        $this->rememberData();
     }
 
     protected function fillForm(): void
@@ -88,23 +95,75 @@ abstract class CreateRecord extends Page
     {
         $schema = $this->getSchema('form');
 
-        $this->callHook('beforeValidate');
+        try {
+            $this->callHook('beforeValidate');
 
-        $data = $schema->getState();
+            $data = $schema->getState();
 
-        $this->callHook('afterValidate');
+            $this->callHook('afterValidate');
 
-        $data = $this->mutateFormDataBeforeCreate($data);
+            $data = $this->mutateFormDataBeforeCreate($data);
 
-        $this->callHook('beforeCreate');
+            $this->callHook('beforeCreate');
 
-        $this->record = $this->handleRecordCreation($schema->getData($data));
+            $this->record = $this->handleRecordCreation($schema->getData($data));
 
-        $this->callHook('afterCreate');
+            $this->callHook('afterCreate');
+        } catch (Halt) {
+            return null;
+        }
+
+        $this->rememberData();
 
         $this->getCreatedNotification()?->send();
 
         return new RedirectResponse($this->getRedirectUrl());
+    }
+
+    public function getSubmitFormLiveComponentMethodName(): string
+    {
+        return 'create';
+    }
+
+    /**
+     * @return list<string>
+     */
+    public function getPageClasses(): array
+    {
+        return [
+            'sy-pa-resource-create-record-page',
+            'sy-pa-resource-' . str_replace('/', '-', $this->getResourceInstance()->getSlug()),
+        ];
+    }
+
+    /**
+     * @return array<Action|ActionGroup>
+     */
+    protected function getFormActions(): array
+    {
+        return [
+            $this->getCreateFormAction(),
+            $this->getCancelFormAction(),
+        ];
+    }
+
+    protected function getCreateFormAction(): Action
+    {
+        return Action::make('create')
+            ->label('Create')
+            ->submit($this->getSubmitFormLiveComponentMethodName());
+    }
+
+    /**
+     * Filament's cancel is a client-side history-back the port has no seam for,
+     * so it links to the listing instead — form-actions.md.
+     */
+    protected function getCancelFormAction(): Action
+    {
+        return Action::make('cancel')
+            ->label('Cancel')
+            ->color('gray')
+            ->url($this->getResourceInstance()->getIndexUrl([...$this->parentRecords]));
     }
 
     /**

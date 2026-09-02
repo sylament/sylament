@@ -167,4 +167,16 @@ abstract class ManageRelatedRecords extends Page implements InteractsWithTable
     {
         return $action instanceof CreateAction ? $this->getRelationship() : null;
     }
+
+    /**
+     * @return list<string>
+     */
+    public function getPageClasses(): array
+    {
+        return [
+            'sy-pa-resource-manage-related-records-page',
+            'sy-pa-resource-' . str_replace('/', '-', $this->getResourceInstance()->getSlug()),
+            'sy-pa-resource-record-' . $this->getRecordKey(),
+        ];
+    }
 }

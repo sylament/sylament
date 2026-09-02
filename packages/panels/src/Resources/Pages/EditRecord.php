@@ -8,16 +8,19 @@ use Closure;
 use Doctrine\ORM\EntityManagerInterface;
 use LogicException;
 use Sylament\Actions\Action;
+use Sylament\Actions\ActionGroup;
 use Sylament\Actions\CreateAction;
 use Sylament\Actions\DeleteAction;
 use Sylament\Actions\EditAction;
 use Sylament\Actions\ViewAction;
 use Sylament\Notifications\Notification;
+use Sylament\Panels\Pages\Concerns\HasUnsavedDataChangesAlert;
 use Sylament\Panels\Resources\Pages\Concerns\HasRelationManagers;
 use Sylament\Panels\Resources\Pages\Concerns\InteractsWithRecord;
 use Sylament\Schemas\Components\EmbeddedSchema;
 use Sylament\Schemas\Schema;
 use Sylament\Support\Enums\Operation;
+use Sylament\Support\Exceptions\Halt;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Contracts\Service\Attribute\Required;
 use Symfony\UX\LiveComponent\Attribute\LiveAction;
@@ -29,6 +32,7 @@ use function Sylament\Support\blank;
 abstract class EditRecord extends Page
 {
     use HasRelationManagers;
+    use HasUnsavedDataChangesAlert;
     use InteractsWithRecord;
 
     protected ?string $template = '@SylamentPanels/partials/EditRecord/index.html.twig';
@@ -55,6 +59,7 @@ abstract class EditRecord extends Page
         $this->mountRecord($record, $parentRecords);
 
         $this->fillForm();
+        $this->rememberData();
     }
 
     protected function fillForm(): void
@@ -107,26 +112,74 @@ abstract class EditRecord extends Page
     {
         $schema = $this->getSchema('form');
 
-        $this->callHook('beforeValidate');
+        try {
+            $this->callHook('beforeValidate');
 
-        // Filament's order: `beforeSave` fires inside the state read, before the
-        // mutator below — normalising it would be a silent divergence.
-        $data = $schema->getState(afterValidate: function (): void {
-            $this->callHook('afterValidate');
-            $this->callHook('beforeSave');
-        });
+            // Filament's order: `beforeSave` fires inside the state read, before the
+            // mutator below — normalising it would be a silent divergence.
+            $data = $schema->getState(afterValidate: function (): void {
+                $this->callHook('afterValidate');
+                $this->callHook('beforeSave');
+            });
 
-        $data = $this->mutateFormDataBeforeSave($data);
+            $data = $this->mutateFormDataBeforeSave($data);
 
-        $this->handleRecordUpdate($schema->getData($data));
+            $this->handleRecordUpdate($schema->getData($data));
 
-        $this->callHook('afterSave');
+            $this->callHook('afterSave');
+        } catch (Halt) {
+            return null;
+        }
+
+        $this->rememberData();
 
         $this->getSavedNotification()?->send();
 
         $redirectUrl = $this->getRedirectUrl();
 
         return $redirectUrl === null ? null : new RedirectResponse($redirectUrl);
+    }
+
+    /**
+     * @return list<string>
+     */
+    public function getPageClasses(): array
+    {
+        return [
+            'sy-pa-resource-edit-record-page',
+            'sy-pa-resource-' . str_replace('/', '-', $this->getResourceInstance()->getSlug()),
+            'sy-pa-resource-record-' . $this->getRecordKey(),
+        ];
+    }
+
+    /**
+     * @return array<Action|ActionGroup>
+     */
+    protected function getFormActions(): array
+    {
+        return [
+            $this->getSaveFormAction(),
+            $this->getCancelFormAction(),
+        ];
+    }
+
+    protected function getSaveFormAction(): Action
+    {
+        return Action::make('save')
+            ->label('Save')
+            ->submit($this->getSubmitFormLiveComponentMethodName());
+    }
+
+    /**
+     * Filament's cancel is a client-side history-back the port has no seam for,
+     * so it links to the listing instead — form-actions.md.
+     */
+    protected function getCancelFormAction(): Action
+    {
+        return Action::make('cancel')
+            ->label('Cancel')
+            ->color('gray')
+            ->url($this->getResourceInstance()->getIndexUrl([...$this->parentRecords]));
     }
 
     /**

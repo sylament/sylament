@@ -223,4 +223,15 @@ abstract class ListRecords extends Page implements InteractsWithTable
     {
         return $this->getResourceInstance()->getRecordClass();
     }
+
+    /**
+     * @return list<string>
+     */
+    public function getPageClasses(): array
+    {
+        return [
+            'sy-pa-resource-list-records-page',
+            'sy-pa-resource-' . str_replace('/', '-', $this->getResourceInstance()->getSlug()),
+        ];
+    }
 }

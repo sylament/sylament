@@ -19,6 +19,12 @@ use Symfony\UX\LiveComponent\Attribute\LiveProp;
 #[AsLiveComponent]
 final class EditHookedArticle extends EditRecord
 {
+    /**
+     * Arms `beforeSave()` to abort the ladder, so the halt can be observed from
+     * the one hook Filament fires inside the state read.
+     */
+    public static bool $haltsBeforeSave = false;
+
     protected static string $resource = ArticleResource::class;
 
     /**
@@ -60,6 +66,10 @@ final class EditHookedArticle extends EditRecord
 
         $title = $this->getSchema('form')->getRawState()['title'] ?? null;
         $this->titleSeenBeforeSave = is_string($title) ? $title : null;
+
+        if (self::$haltsBeforeSave) {
+            $this->halt();
+        }
     }
 
     protected function afterSave(): void

@@ -21,6 +21,7 @@ use Sylament\Panels\Tests\Fixtures\Resources\ArticleResource;
 use Sylament\Panels\Tests\Fixtures\Resources\ChapterResource;
 use Sylament\Panels\Tests\Fixtures\Resources\NestedResourceRig;
 use Sylament\Panels\Tests\Fixtures\Resources\Pages\CreateArticle;
+use Sylament\Panels\Tests\Fixtures\Resources\Pages\CreateChapter;
 use Sylament\Panels\Tests\Fixtures\Resources\Pages\EditArticle;
 use Sylament\Panels\Tests\Fixtures\Resources\Pages\EditChapter;
 use Sylament\Panels\Tests\Fixtures\Resources\Pages\EditVerse;
@@ -328,4 +329,22 @@ it('lets an explicit record parameter win over the page record', function (): vo
     $page->mountRecord((string) $chapter->getId());
 
     expect($page->getResourceUrl('edit', ['record' => '7'], isAbsolute: false))->toBe('/nest/chapters/7/edit');
+});
+
+it('scopes each shipped resource page with its own root classes', function (): void {
+    $entityManager = EntityManagerFactory::create();
+    [$chapter] = NestedResourceRig::records($entityManager);
+
+    $list = NestedResourceRig::page($entityManager, ListChapters::class);
+    $create = NestedResourceRig::page($entityManager, CreateChapter::class);
+    $edit = NestedResourceRig::page($entityManager, EditChapter::class);
+    $edit->mountRecord((string) $chapter->getId());
+
+    expect($list->getPageClasses())->toBe(['sy-pa-resource-list-records-page', 'sy-pa-resource-chapters'])
+        ->and($create->getPageClasses())->toBe(['sy-pa-resource-create-record-page', 'sy-pa-resource-chapters'])
+        ->and($edit->getPageClasses())->toBe([
+            'sy-pa-resource-edit-record-page',
+            'sy-pa-resource-chapters',
+            'sy-pa-resource-record-' . $chapter->getId(),
+        ]);
 });

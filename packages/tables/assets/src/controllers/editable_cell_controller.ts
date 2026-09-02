@@ -37,33 +37,7 @@ export default class extends Controller<HTMLElement> {
   async connect(): Promise<void> {
     this.#repaint();
 
-    const generation = ++this.#generation;
-    let component: Component;
-
-    try {
-      component = await resolveLiveHost(this.element);
-    } catch {
-      // No live host answered, so there is nowhere to write: the control stays inert rather than
-      // throwing on every change. The cell needs both halves, and the missing half is the one
-      // this controller cannot supply.
-      return;
-    }
-
-    if (generation !== this.#generation) {
-      return;
-    }
-
-    this.#component = component;
-
-    const onRender = (): void => {
-      this.#renders++;
-      this.#repaint();
-    };
-
-    component.on("render:finished", onRender);
-    this.#unsubscribe = (): void => component.off("render:finished", onRender);
-
-    this.#repaint();
+    await this.#host();
   }
 
   disconnect(): void {
@@ -90,6 +64,7 @@ export default class extends Controller<HTMLElement> {
       return;
     }
 
+    const input = readInput(control);
     const component = await this.#host();
 
     if (component === null) {
@@ -107,7 +82,7 @@ export default class extends Controller<HTMLElement> {
       await component.action(UPDATE_ACTION, {
         column: this.columnValue,
         record: this.recordValue,
-        input: readInput(control),
+        input,
       });
     } finally {
       this.#writes--;
@@ -149,19 +124,45 @@ export default class extends Controller<HTMLElement> {
     control.value = this.stateValue;
   }
 
-  /** The host, resolved at connect and retried here so a control used before that race settles still writes. */
+  /**
+   * The host, resolved on connect and retried on first use so a control changed before that race
+   * settles still writes. Subscribing to the re-render is part of resolving it, because the
+   * repaint is what a resolution too late for `connect()` would otherwise have lost.
+   */
   async #host(): Promise<Component | null> {
     if (this.#component !== null) {
       return this.#component;
     }
 
+    const generation = this.#generation;
+    let component: Component;
+
     try {
-      this.#component = await resolveLiveHost(this.element);
+      component = await resolveLiveHost(this.element);
     } catch {
+      // No live host answered, so there is nowhere to write: the control stays inert rather than
+      // throwing on every change. The cell needs both halves, and the missing half is the one
+      // this controller cannot supply.
       return null;
     }
 
-    return this.#component;
+    if (generation !== this.#generation) {
+      return null;
+    }
+
+    this.#component = component;
+
+    const onRender = (): void => {
+      this.#renders++;
+      this.#repaint();
+    };
+
+    component.on("render:finished", onRender);
+    this.#unsubscribe = (): void => component.off("render:finished", onRender);
+
+    this.#repaint();
+
+    return component;
   }
 
   #control(): EditableControl | null {

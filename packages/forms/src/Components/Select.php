@@ -1437,11 +1437,12 @@ class Select extends Field implements Contracts\CanDisableOptions, Contracts\Has
         }
 
         $record = $this->getRecord();
-        $targetClass = $this->getRelationshipTarget()->targetClass;
 
         if (! is_object($record)) {
             return $query;
         }
+
+        $targetClass = $this->getRelationshipTarget()->targetClass;
 
         if (! $record instanceof $targetClass) {
             throw new LogicException(sprintf(

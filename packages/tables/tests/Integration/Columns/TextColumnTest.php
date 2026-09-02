@@ -393,9 +393,13 @@ it('ships the over-limit values hidden behind two toggles when the list is expan
         ->and($toggles->eq(0)->attr('role'))->toBe('button')
         ->and($toggles->eq(0)->attr('tabindex'))->toBeNull()
         ->and($toggles->eq(0)->attr('data-action'))->toContain('click->sylament--tables--limited-list#expand')
+        ->and($toggles->eq(0)->attr('data-action'))->toContain('keydown.enter->sylament--tables--limited-list#expand')
+        ->and($toggles->eq(0)->attr('data-action'))->toContain('keydown.space->sylament--tables--limited-list#expand')
         ->and($toggles->eq(1)->text())->toBe('Show 2 less')
         ->and($toggles->eq(1)->attr('hidden'))->not->toBeNull()
-        ->and($toggles->eq(1)->attr('data-action'))->toContain('click->sylament--tables--limited-list#collapse');
+        ->and($toggles->eq(1)->attr('data-action'))->toContain('click->sylament--tables--limited-list#collapse')
+        ->and($toggles->eq(1)->attr('data-action'))->toContain('keydown.enter->sylament--tables--limited-list#collapse')
+        ->and($toggles->eq(1)->attr('data-action'))->toContain('keydown.space->sylament--tables--limited-list#collapse');
 });
 
 it('keeps the static message when an expandable list has no line breaks to reveal', function (): void {

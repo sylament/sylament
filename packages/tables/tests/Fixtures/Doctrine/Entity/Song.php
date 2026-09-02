@@ -40,6 +40,24 @@ class Song
         #[ORM\Column(nullable: true)]
         private ?bool $isFeatured = null,
         /**
+         * The checkbox column's own target, so the toggle and the checkbox can sit
+         * on one table: `columns()` keys by name, and two columns sharing one would
+         * drop the first.
+         */
+        #[ORM\Column(nullable: true)]
+        private ?bool $isExplicit = null,
+        /**
+         * The select column's nullable target: a blank placeholder writes null here.
+         */
+        #[ORM\Column(nullable: true)]
+        private ?string $mood = null,
+        /**
+         * The select column's non-nullable target, which is what makes a blank
+         * placeholder a validation refusal rather than a type error.
+         */
+        #[ORM\Column]
+        private string $tempo = 'medium',
+        /**
          * The reorder lane's position column — a plain writable field the drag
          * write assigns 1..N onto.
          */
@@ -73,6 +91,49 @@ class Song
     public function isFeatured(): ?bool
     {
         return $this->isFeatured;
+    }
+
+    public function setIsFeatured(?bool $isFeatured): static
+    {
+        $this->isFeatured = $isFeatured;
+
+        return $this;
+    }
+
+    public function getIsExplicit(): ?bool
+    {
+        return $this->isExplicit;
+    }
+
+    public function setIsExplicit(?bool $isExplicit): static
+    {
+        $this->isExplicit = $isExplicit;
+
+        return $this;
+    }
+
+    public function getMood(): ?string
+    {
+        return $this->mood;
+    }
+
+    public function setMood(?string $mood): static
+    {
+        $this->mood = $mood;
+
+        return $this;
+    }
+
+    public function getTempo(): string
+    {
+        return $this->tempo;
+    }
+
+    public function setTempo(string $tempo): static
+    {
+        $this->tempo = $tempo;
+
+        return $this;
     }
 
     public function getPosition(): ?int

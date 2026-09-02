@@ -70,6 +70,15 @@ interface InteractsWithTable
     public function getTablePage(): int;
 
     /**
+     * The refusal a `updateTableColumnState()` write left against one cell on
+     * this request, or null. Read by an editable column's partial, which paints
+     * the message under the control and echoes the rejected input back.
+     *
+     * @return array{message: string, input: mixed}|null
+     */
+    public function getTableColumnStateError(string $column, string $recordKey): ?array;
+
+    /**
      * The global-search chip for the indicators row, or null when nothing is
      * searched for. Read by `Table::getSearchIndicator()`.
      */

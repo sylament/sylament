@@ -92,6 +92,14 @@ final class BareTableHost implements InteractsWithTable
         return 1;
     }
 
+    /**
+     * @return array{message: string, input: mixed}|null
+     */
+    public function getTableColumnStateError(string $column, string $recordKey): ?array
+    {
+        return null;
+    }
+
     public function getTableSearchIndicator(): ?Indicator
     {
         return null;

@@ -61,3 +61,19 @@ it('reports dynamic vertical alignment only for stored closures', function (): v
         ->and(new HasVerticalAlignmentFixture()->verticalAlignment(fn (): ?VerticalAlignment => null)->hasDynamicVerticalAlignment())->toBeTrue()
         ->and(new HasVerticalAlignmentFixture()->verticallyAlignStart()->hasDynamicVerticalAlignment())->toBeTrue();
 });
+
+it('builds the vertical alignment class from the enum value', function (): void {
+    $fixture = new HasVerticalAlignmentFixture()->verticalAlignment(VerticalAlignment::Center);
+
+    expect($fixture->getVerticalAlignmentClass())->toBe('sy-vertical-align-center');
+});
+
+it('passes a custom vertical alignment class string through', function (): void {
+    $fixture = new HasVerticalAlignmentFixture()->verticalAlignment('my-vertical-align');
+
+    expect($fixture->getVerticalAlignmentClass())->toBe('my-vertical-align');
+});
+
+it('has no vertical alignment class when unaligned', function (): void {
+    expect(new HasVerticalAlignmentFixture()->getVerticalAlignmentClass())->toBeNull();
+});

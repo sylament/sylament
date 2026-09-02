@@ -138,3 +138,21 @@ it('resolves an unresolvable untyped parameter to null when no identifier matche
 it('names the evaluating class in the unresolvable error', function (): void {
     new EvaluatesClosuresFixture()->evaluate(fn (string $missing): string => $missing);
 })->throws(RuntimeException::class, 'An attempt was made to evaluate a closure for [' . EvaluatesClosuresFixture::class . '], but [$missing] was unresolvable.');
+
+it('reports whether a closure declares a named parameter', function (): void {
+    $fixture = new EvaluatesClosuresFixture();
+
+    expect($fixture->callEvaluationValueIsFunctionAndHasParameter(fn (mixed $state): string => 'x', 'state'))->toBeTrue()
+        ->and($fixture->callEvaluationValueIsFunctionAndHasParameter(fn (mixed $record, mixed $state): string => 'x', 'state'))->toBeTrue()
+        ->and($fixture->callEvaluationValueIsFunctionAndHasParameter(fn (mixed $record): string => 'x', 'state'))->toBeFalse()
+        ->and($fixture->callEvaluationValueIsFunctionAndHasParameter(fn (): string => 'x', 'state'))->toBeFalse();
+});
+
+it('reports a non-closure value as no function at all', function (): void {
+    $fixture = new EvaluatesClosuresFixture();
+
+    expect($fixture->callEvaluationValueIsFunctionAndHasParameter('/records/1', 'state'))->toBeFalse()
+        ->and($fixture->callEvaluationValueIsFunctionAndHasParameter(null, 'state'))->toBeFalse()
+        // A callable string is a value here, exactly as `evaluate()` treats it.
+        ->and($fixture->callEvaluationValueIsFunctionAndHasParameter('strtoupper', 'string'))->toBeFalse();
+});

@@ -9,4 +9,9 @@ use Sylament\Support\Concerns\EvaluatesClosures;
 class EvaluatesClosuresFixture
 {
     use EvaluatesClosures;
+
+    public function callEvaluationValueIsFunctionAndHasParameter(mixed $value, string $parameterName): bool
+    {
+        return $this->evaluationValueIsFunctionAndHasParameter($value, $parameterName);
+    }
 }

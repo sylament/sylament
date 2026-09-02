@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Sylament\Support;
 
 use Countable;
+use DateTimeInterface;
 use Stringable;
 use Symfony\Component\String\Inflector\EnglishInflector;
 use Twig\Markup;
@@ -111,6 +112,40 @@ function sanitize_url(?string $url, array $allowedSchemes = ['http', 'https']): 
 }
 
 /**
+ * Null unless the string is a value the browser can only read as a colour — a hex
+ * triplet/quadruplet, a bare keyword, or one of the functional notations with the CSS
+ * metacharacters forbidden inside its parentheses; the trimmed string otherwise.
+ */
+function sanitize_css_color(?string $color): ?string
+{
+    if (blank($color)) {
+        return null;
+    }
+
+    $color = mb_trim($color);
+
+    // Accept hex colors: `#rgb`, `#rgba`, `#rrggbb`, `#rrggbbaa`.
+    if (preg_match('/^#(?:[0-9a-f]{3,4}|[0-9a-f]{6}|[0-9a-f]{8})$/i', $color) === 1) {
+        return $color;
+    }
+
+    // Accept a bare CSS keyword such as `red` or `transparent`.
+    if (preg_match('/^[a-z]+$/i', $color) === 1) {
+        return $color;
+    }
+
+    // Security: allow functional color notations, but forbid the CSS metacharacters
+    // `( ) ; : " '` inside the parentheses so the value cannot break out of the
+    // `background-color` declaration to inject additional properties (e.g.
+    // `red;position:fixed;background-image:url(//attacker)`) or extra function calls.
+    if (preg_match('/^(?:rgb|rgba|hsl|hsla|hwb|lab|lch|oklab|oklch|color)\([^();:"\']*\)$/i', $color) === 1) {
+        return $color;
+    }
+
+    return null;
+}
+
+/**
  * @template TValue
  *
  * @param array<TValue>|TValue|null $value
@@ -186,4 +221,37 @@ function only(array $array, array $keys): array
 function except(array $array, array $keys): array
 {
     return array_diff_key($array, array_flip($keys));
+}
+
+/**
+ * Carbon's `diffForHumans()` at its one-part default: the first non-zero unit of the
+ * difference between `$date` and `$now`, English-pluralised, read as `":time ago"`
+ * when `$date` is at or before `$now` and `":time from now"` when it is after. No
+ * thresholds and no rounding — 47 seconds is `47 seconds ago`, never `a minute ago`.
+ */
+function diff_for_humans(DateTimeInterface $date, DateTimeInterface $now): string
+{
+    $difference = $date->diff($now);
+
+    $counts = [
+        'year' => $difference->y,
+        'month' => $difference->m,
+        'week' => intdiv($difference->d, 7),
+        'day' => $difference->d % 7,
+        'hour' => $difference->h,
+        'minute' => $difference->i,
+        'second' => $difference->s,
+    ];
+
+    $time = '0 seconds';
+
+    foreach ($counts as $unit => $count) {
+        if ($count > 0) {
+            $time = $count . ' ' . ($count === 1 ? $unit : $unit . 's');
+
+            break;
+        }
+    }
+
+    return $difference->invert === 1 ? $time . ' from now' : $time . ' ago';
 }

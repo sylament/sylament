@@ -30,7 +30,7 @@ detail sections do.
 | [`Configurable`](../../../packages/support/src/Components/Concerns/Configurable.php) | [`Concerns/Configurable.php`](../../../vendor/filament/support/src/Concerns/Configurable.php) | done | — | — |
 | [`EvaluatesClosures`](../../../packages/support/src/Concerns/EvaluatesClosures.php) | [`Concerns/EvaluatesClosures.php`](../../../vendor/filament/support/src/Concerns/EvaluatesClosures.php) | done | — | [diverges](#closure-resolution-lives-in-a-service) · [diverges](#evaluated-flag-getters-are-not-re-cast-to-bool) |
 | [`newInstance()`](../../../packages/support/src/Components/Component.php) | `make()`'s `app(static::class, …)` call, inlined | done | — | [diverges](#newinstance-routes-every-make-through-a-locator) |
-| Arity probe | [`Concerns/EvaluatesClosures.php`](../../../vendor/filament/support/src/Concerns/EvaluatesClosures.php) | blocked | state-based-URL consumer | [detail](#the-arity-probe-is-deferred) |
+| [Arity probe](../../../packages/support/src/Concerns/EvaluatesClosures.php) | [`Concerns/EvaluatesClosures.php`](../../../vendor/filament/support/src/Concerns/EvaluatesClosures.php) | done | — | — |
 | Conditionable | [`Illuminate\Support\Traits\Conditionable`](../../../vendor/laravel/framework/src/Illuminate/Conditionable/Traits/Conditionable.php) | skipped | — | [diverges](#conditionable-and-tappable-are-not-ported) |
 | Tappable | [`Illuminate\Support\Traits\Tappable`](../../../vendor/laravel/framework/src/Illuminate/Support/Traits/Tappable.php) | skipped | — | [diverges](#conditionable-and-tappable-are-not-ported) |
 | Macroable | [`Concerns/Macroable.php`](../../../vendor/filament/support/src/Concerns/Macroable.php) | skipped | — | [diverges](#macroable-is-not-ported) |
@@ -40,21 +40,6 @@ detail sections do.
 Specifics for rows that are not finished — what is already in, what is left, and
 what the next step is. Delete a subsection when its row flips to **done**; the
 table row and any divergence it earned stay behind.
-
-### The arity probe is deferred
-
-`evaluationValueIsFunctionAndHasParameter()` — reports whether a closure declares
-a given parameter — is the one method of Filament's `EvaluatesClosures` we leave
-out. Its only callers are `hasStateBasedUrls()` on the **schemas** and **tables**
-`CanOpenUrl` concerns
-([schemas](../../../vendor/filament/schemas/src/Components/Concerns/CanOpenUrl.php),
-[tables](../../../vendor/filament/tables/src/Columns/Concerns/CanOpenUrl.php)),
-which ask whether a `url` closure wants a `state` argument. Neither is ported yet,
-and the `actions` `CanOpenUrl` we did port drops state-based URLs for now — so
-nothing consumes the probe today. State-based URLs are on the 1.0 roadmap, so the
-probe is **blocked** on their first consumer, not a non-goal: it returns in the
-same change as the `schemas` / `tables` `CanOpenUrl` port, where it finally has
-behavior to test against.
 
 ## Divergences
 

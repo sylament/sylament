@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace Sylament\Support\Concerns;
 
 use Closure;
+use ReflectionFunction;
+use ReflectionParameter;
 use Sylament\Support\Evaluation\ClosureParameter;
 use Sylament\Support\Evaluation\Invoker;
 use Symfony\Component\DependencyInjection\Container;
@@ -47,6 +49,15 @@ trait EvaluatesClosures
             $this->resolveClosureDependencyForEvaluation(...),
             $this::class,
         );
+    }
+
+    protected function evaluationValueIsFunctionAndHasParameter(mixed $value, string $parameterName): bool
+    {
+        if (!$value instanceof Closure) {
+            return false;
+        }
+
+        return array_any(new ReflectionFunction($value)->getParameters(), fn (ReflectionParameter $parameter): bool => $parameter->getName() === $parameterName);
     }
 
     protected function resolveClosureDependencyForEvaluation(string $parameterName, ?string $parameterType): ?ClosureParameter

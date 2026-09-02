@@ -44,6 +44,17 @@ trait HasVerticalAlignment
         return VerticalAlignment::tryFrom($alignment) ?? $alignment;
     }
 
+    public function getVerticalAlignmentClass(): ?string
+    {
+        $alignment = $this->getVerticalAlignment();
+
+        if ($alignment instanceof VerticalAlignment) {
+            return 'sy-vertical-align-' . $alignment->value;
+        }
+
+        return $alignment;
+    }
+
     public function hasDynamicVerticalAlignment(): bool
     {
         return $this->verticalAlignment instanceof Closure;

@@ -6,16 +6,20 @@ namespace Sylament\Support\Tests\Unit;
 
 use ArrayObject;
 use Countable;
+use DateTimeImmutable;
+use DateTimeZone;
 use stdClass;
 use Stringable;
 use Twig\Markup;
 
 use function Sylament\Support\blank;
+use function Sylament\Support\diff_for_humans;
 use function Sylament\Support\except;
 use function Sylament\Support\filled;
 use function Sylament\Support\get_record_label;
 use function Sylament\Support\only;
 use function Sylament\Support\plural;
+use function Sylament\Support\sanitize_css_color;
 use function Sylament\Support\sanitize_url;
 use function Sylament\Support\wrap;
 
@@ -125,3 +129,72 @@ it('pluralises the last word of a label', function (string $label, string $expec
     ['record', 'records'],
     ['', ''],
 ]);
+
+it('accepts a CSS colour the browser can only read as a colour', function (string $color, string $expected): void {
+    expect(sanitize_css_color($color))->toBe($expected);
+})->with([
+    'three-digit hex' => ['#fff', '#fff'],
+    'four-digit hex' => ['#fffa', '#fffa'],
+    'six-digit hex' => ['#FF00aa', '#FF00aa'],
+    'eight-digit hex' => ['#ff00aa80', '#ff00aa80'],
+    'keyword' => ['red', 'red'],
+    'transparent' => ['transparent', 'transparent'],
+    'rgb notation' => ['rgb(0,0,0)', 'rgb(0,0,0)'],
+    'rgba notation with spaces' => ['rgba(255, 0, 0, 0.5)', 'rgba(255, 0, 0, 0.5)'],
+    'hsl percentages' => ['hsl(120, 50%, 50%)', 'hsl(120, 50%, 50%)'],
+    'oklch notation' => ['oklch(62.7% 0.194 149.214)', 'oklch(62.7% 0.194 149.214)'],
+    'color() notation' => ['color(display-p3 1 0 0)', 'color(display-p3 1 0 0)'],
+    'surrounding whitespace is trimmed' => ['  red  ', 'red'],
+]);
+
+it('refuses a CSS colour that could break out of the declaration', function (?string $color): void {
+    expect(sanitize_css_color($color))->toBeNull();
+})->with([
+    'null' => [null],
+    'empty string' => [''],
+    'whitespace only' => ['   '],
+    'declaration injection' => ['red;color:blue'],
+    'url() is not a colour notation' => ['url(x)'],
+    'nested function call' => ['rgb(var(--x))'],
+    'a quote inside the parens' => ['rgb(0,0,0")'],
+    'a colon inside the parens' => ['rgb(0:0:0)'],
+    'a semicolon inside the parens' => ['rgb(0,0,0);position:fixed'],
+    'an unclosed notation' => ['rgb(0,0,0'],
+    'two-digit hex' => ['#ff'],
+    'five-digit hex' => ['#fffff'],
+    'seven-digit hex' => ['#fffffff'],
+    'non-hex characters' => ['#gggggg'],
+    'a keyword with a digit' => ['red1'],
+    'a keyword with a dash' => ['light-dark'],
+]);
+
+it('humanises a difference down to its first non-zero unit', function (string $date, string $expected): void {
+    $now = new DateTimeImmutable('2026-09-02 12:00:00', new DateTimeZone('UTC'));
+
+    expect(diff_for_humans(new DateTimeImmutable($date, new DateTimeZone('UTC')), $now))->toBe($expected);
+})->with([
+    'the same instant' => ['2026-09-02 12:00:00', '0 seconds ago'],
+    'one second' => ['2026-09-02 11:59:59', '1 second ago'],
+    'no rounding up to a minute' => ['2026-09-02 11:59:13', '47 seconds ago'],
+    'one minute' => ['2026-09-02 11:59:00', '1 minute ago'],
+    'minutes, seconds dropped' => ['2026-09-02 11:57:30', '2 minutes ago'],
+    'hours' => ['2026-09-02 09:00:00', '3 hours ago'],
+    'days below a week' => ['2026-08-30 12:00:00', '3 days ago'],
+    'exactly a week' => ['2026-08-26 12:00:00', '1 week ago'],
+    'a week and six days' => ['2026-08-20 12:00:00', '1 week ago'],
+    'two weeks' => ['2026-08-19 12:00:00', '2 weeks ago'],
+    'a month' => ['2026-08-02 12:00:00', '1 month ago'],
+    'months' => ['2026-06-02 12:00:00', '3 months ago'],
+    'a year' => ['2025-09-02 12:00:00', '1 year ago'],
+    'years' => ['2024-09-02 12:00:00', '2 years ago'],
+    'a future instant' => ['2026-09-02 14:00:00', '2 hours from now'],
+    'a future day' => ['2026-09-05 12:00:00', '3 days from now'],
+    'a future year' => ['2027-09-02 12:00:00', '1 year from now'],
+]);
+
+it('humanises across timezones by the absolute instant', function (): void {
+    $now = new DateTimeImmutable('2026-09-02 12:00:00', new DateTimeZone('UTC'));
+    $date = new DateTimeImmutable('2026-09-02 13:00:00', new DateTimeZone('Europe/Bratislava'));
+
+    expect(diff_for_humans($date, $now))->toBe('1 hour ago');
+});

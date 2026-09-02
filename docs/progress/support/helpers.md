@@ -6,10 +6,11 @@ Filament's own `helpers.php` **and** the Laravel global helpers Filament's code
 leans on but never defines (`blank()`, `filled()`, `Arr::wrap()`, `Arr::only()`,
 `Arr::except()`, `Str::plural()`) — Sylament has no Laravel runtime, so they are
 reimplemented here. Today the file holds those six Laravel foundations plus
-`sanitize_url()`, a `Str` macro Filament declares
-in its service provider rather than in `helpers.php`, and `get_record_label()`,
-the record-vocabulary port of Filament's `get_model_label()`; every function in
-it is pure, and that is now an invariant — see
+`sanitize_url()` and `sanitize_css_color()`, two `Str` macros Filament declares
+in its service provider rather than in `helpers.php`, `get_record_label()`,
+the record-vocabulary port of Filament's `get_model_label()`, and
+`diff_for_humans()`, the port of the one Carbon call the toolkit needs; every
+function in it is pure, and that is now an invariant — see
 [the divergence below](#generate_icon_html-moved-to-the-twig-extension).
 The rest of Filament's `helpers.php` surface is not built yet.
 
@@ -21,8 +22,8 @@ Reference — the Filament source this is diffed against:
 - [`support/src/helpers.php`](../../../vendor/filament/support/src/helpers.php)
   — the Filament helper set (the sixteen functions tracked below)
 - [`support/src/SupportServiceProvider.php`](../../../vendor/filament/support/src/SupportServiceProvider.php)
-  — `packageBooted()`'s `Str` macros, one of which (`sanitizeUrl`) lands here as
-  a function
+  — `packageBooted()`'s `Str` macros, two of which (`sanitizeUrl`,
+  `sanitizeCssColor`) land here as functions
 - [`Illuminate/Support/helpers.php`](../../../vendor/laravel/framework/src/Illuminate/Support/helpers.php)
   — Laravel's `blank()` / `filled()`, which Filament's file consumes
 - [`Illuminate/Collections/Arr.php`](../../../vendor/laravel/framework/src/Illuminate/Collections/Arr.php)
@@ -42,6 +43,8 @@ write-up in [Details](#details), and/or **diverges** → the permanent note in
 | [`filled()`](../../../packages/support/src/helpers.php) | [`Illuminate/Support/helpers.php`](../../../vendor/laravel/framework/src/Illuminate/Support/helpers.php) | done | — | — |
 | [`wrap()`](../../../packages/support/src/helpers.php) | [`Illuminate/Collections/Arr.php`](../../../vendor/laravel/framework/src/Illuminate/Collections/Arr.php) | done | — | [diverges](#wrap-and-the-laravel-globals-are-reimplemented-not-forwarded) |
 | [`sanitize_url()`](../../../packages/support/src/helpers.php) | [`Str::sanitizeUrl` in `SupportServiceProvider.php`](../../../vendor/filament/support/src/SupportServiceProvider.php) | done | — | [diverges](#sanitize_url-is-a-helper-because-the-macro-target-does-not-exist-here) |
+| [`sanitize_css_color()`](../../../packages/support/src/helpers.php) | [`Str::sanitizeCssColor` in `SupportServiceProvider.php`](../../../vendor/filament/support/src/SupportServiceProvider.php) | done | — | [diverges](#sanitize_css_color-is-the-second-macro-that-lands-as-a-helper) |
+| [`diff_for_humans()`](../../../packages/support/src/helpers.php) | [`CarbonInterval::forHumans()`](../../../vendor/nesbot/carbon/src/Carbon/CarbonInterval.php) at `$parts = 1` | done | — | [diverges](#diff_for_humans-is-a-carbon-port-not-a-carbon-dependency) |
 | [`get_record_label()`](../../../packages/support/src/helpers.php) | [`get_model_label()`](../../../vendor/filament/support/src/helpers.php) | done | — | [diverges](#get_record_label-is-a-rename-and-it-is-what-put-symfonystring-in-supports-manifest) |
 | [`only()`](../../../packages/support/src/helpers.php) | [`Illuminate/Collections/Arr.php`](../../../vendor/laravel/framework/src/Illuminate/Collections/Arr.php) | done | — | [diverges](#wrap-and-the-laravel-globals-are-reimplemented-not-forwarded) |
 | [`except()`](../../../packages/support/src/helpers.php) | [`Illuminate/Collections/Arr.php`](../../../vendor/laravel/framework/src/Illuminate/Collections/Arr.php) | done | — | [diverges](#wrap-and-the-laravel-globals-are-reimplemented-not-forwarded) |
@@ -64,11 +67,13 @@ write-up in [Details](#details), and/or **diverges** → the permanent note in
 
 ## Details
 
-Specifics for the rows that are not finished. The nine `done` rows are covered
+Specifics for the rows that are not finished. The eleven `done` rows are covered
 by [`tests/Unit/HelpersTest.php`](../../../packages/support/tests/Unit/HelpersTest.php)
 (`blank`/`filled` valueless-vs-meaningful data sets, the Markup text-semantics
 case, the `wrap` cases, the `sanitize_url` refusal set, the `get_record_label`
-derivations, the `only`/`except` key sets and the `plural()` last-word cases) and, for the icon row,
+derivations, the `only`/`except` key sets, the `plural()` last-word cases, the
+`sanitize_css_color` accept/refuse pair and the `diff_for_humans` interval table)
+and, for the icon row,
 [`tests/Unit/Twig/Extension/IconExtensionTest.php`](../../../packages/support/tests/Unit/Twig/Extension/IconExtensionTest.php)
 plus [its Integration counterpart](../../../packages/support/tests/Integration/Twig/Extension/IconExtensionTest.php)
 against the real ux-icons renderer; they carry no write-up here.
@@ -285,3 +290,60 @@ the helpers rule says the port lives here. Laravel's `$count`/`$prependCount`
 arms are not ported (nothing asks), and neither is its
 `locale_has_pluralization()` guard — i18n is deferred, so the port pluralises
 English unconditionally.
+
+### `sanitize_css_color()` is the second macro that lands as a helper
+
+Filament declares it as a `Str::macro` beside `sanitizeUrl` in
+[`SupportServiceProvider::packageBooted()`](../../../vendor/filament/support/src/SupportServiceProvider.php),
+so it lands here for the same reason
+[`sanitize_url()` does](#sanitize_url-is-a-helper-because-the-macro-target-does-not-exist-here):
+it is pure, it takes only its argument, and there is no `Str` to extend. The
+three accept branches are verbatim — hex `#rgb`/`#rgba`/`#rrggbb`/`#rrggbbaa`, a
+bare `[a-z]+` keyword, and the ten functional notations (`rgb`, `rgba`, `hsl`,
+`hsla`, `hwb`, `lab`, `lch`, `oklab`, `oklch`, `color`) with `( ) ; : " '`
+forbidden between the parentheses — as is the `// Security:` comment stating
+which injection that last refusal exists to stop. Three mechanical adjustments:
+the `BackedEnum` arm is dropped with the parameter typed `?string` (nothing in
+the port passes an enum, and a caller with one unwraps it at the call site),
+`preg_match()` results are compared `=== 1`, and `trim()` becomes `mb_trim()`
+for the reason [`blank()` uses it](#blank-trims-with-mb_trim-so-unicode-whitespace-counts-as-blank):
+a value padded with unicode whitespace (`"\u{00A0}red"`) is accepted here and
+refused upstream, and the accepted answer is the trimmed string, so the padding
+never reaches the declaration either way.
+
+**It is not `ColorManager::sanitizeCssColor()`**, which stays. That one answers a
+different question — "is this whole string safe to interpolate into a `--sy-*`
+custom property?" — with one permissive character-class regex, and returns `''`
+rather than `null` for a refusal, because a dropped declaration there must not
+become a syntax error in the emitted `<style>` block. This one asks "is this a
+CSS colour?" and answers `null` so a caller can render an unnamed, uncoloured
+swatch instead.
+
+### `diff_for_humans()` is a Carbon port, not a Carbon dependency
+
+`nesbot/carbon` is not adopted (the M4 · 4 decision): the one call the toolkit
+needs is `diffForHumans()` at its `$parts = 1` default, and its algorithm is
+forty lines over `DateTimeInterface::diff()`. The port walks
+`year → month → week → day → hour → minute → second`, taking the **first
+non-zero** unit and stopping — weeks are `intdiv($d, 7)` and days `$d % 7`, which
+is how Carbon derives its `weeks` / `daysExcludeWeeks` pair
+([`CarbonInterval::forHumans()`](../../../vendor/nesbot/carbon/src/Carbon/CarbonInterval.php))
+— and pluralises the count in English. There are no thresholds and no rounding,
+which is Carbon's behaviour too: `47 seconds ago`, never "a minute ago". An
+all-zero difference falls back to `0 seconds`.
+
+Two deliberate narrowings. Carbon's `$syntax`, `$short`, `$parts` and `$options`
+arguments have no port — the six behaviours they select (absolute phrasing,
+`before`/`after` instead of `ago`/`from now`, short units, multi-part output,
+`a_second`-style rounding, `JUST_NOW`) have no consumer, and adding one later is
+additive. And the English strings are literals rather than a translation
+catalogue, i18n being deferred.
+
+The `$now` argument is required rather than defaulted to "now", so the function
+stays pure and testable: the consuming column passes
+`new DateTimeImmutable('now', $timezone)`. The reading is
+`$date->diff($now)` — Carbon's own operand order
+([`Difference.php`](../../../vendor/nesbot/carbon/src/Carbon/Traits/Difference.php)
+`$this->diff($other)`) — so `invert === 1` means the date is in the future and
+reads `from now`, while everything at or before `$now`, the zero difference
+included, reads `ago`, exactly as Carbon does.

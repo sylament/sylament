@@ -109,8 +109,8 @@ sections do.
 | [`getStateFromRecord()` — object graph or array, by dotted path, fanning out over a collection](../../../packages/tables/src/Columns/Concerns/HasCellState.php) | [`HasCellState::getStateFromRecord()`](../../../vendor/filament/support/src/Concerns/HasCellState.php) | done | — | [diverges](#the-object-read-is-lenient-where-the-accessor-is-strict) · [diverges](#a-to-one-chain-keeps-the-raw-read-where-filaments-relationship-arm-drops-blanks) · [diverges](#the-list-shape-is-metadata-derived-where-filaments-is-cached-off-the-first-row) |
 | [`$evaluationIdentifier = 'column'` + the `$record` / `$rowLoop` / `$state` / `$table` / `$liveComponent` name injections](../../../packages/tables/src/Columns/Column.php) | [`Column::resolveDefaultClosureDependencyForEvaluationByName()`](../../../vendor/filament/tables/src/Columns/Column.php) | in progress | — | [diverges](#the-by-type-record-injection-is-not-registered) · [semantics](#the-row-loop-is-a-blade-shaped-object-built-from-twigs-array) |
 | `translateLabel()` | [`Concerns\HasLabel`](../../../vendor/filament/tables/src/Columns/Concerns/HasLabel.php) | blocked | i18n ([table.md](table.md#the-copy-is-english-and-hardcoded-because-no-i18n-layer-ships)) | — |
-| `default()` / `getDefaultState()` | [`Support\Concerns\HasCellState`](../../../vendor/filament/support/src/Concerns/HasCellState.php) | todo | — | — |
-| `separator()` — split a string into a list | [`Support\Concerns\HasCellState`](../../../vendor/filament/support/src/Concerns/HasCellState.php) | todo | — | — |
+| [`default()` / `getDefaultState()`](../../../packages/tables/src/Columns/Concerns/HasCellState.php) | [`Support\Concerns\HasCellState`](../../../vendor/filament/support/src/Concerns/HasCellState.php) | done | — | [semantics](#the-default-and-the-split-run-inside-the-per-record-cache-in-that-order) |
+| [`separator()` — split a string into a list](../../../packages/tables/src/Columns/Concerns/HasCellState.php) | [`Support\Concerns\HasCellState`](../../../vendor/filament/support/src/Concerns/HasCellState.php) | done | — | [semantics](#the-default-and-the-split-run-inside-the-per-record-cache-in-that-order) |
 | [`distinctList()` / `isDistinctList()`](../../../packages/tables/src/Columns/Concerns/HasCellState.php) | [`Support\Concerns\HasCellState`](../../../vendor/filament/support/src/Concerns/HasCellState.php) | done | — | [semantics](#distinctlist-dedupes-entity-values-by-value-not-by-identity) |
 | [`placeholder()` / `getPlaceholder()` — the empty-cell copy](../../../packages/support/src/Components/Concerns/HasPlaceholder.php) | [`Support\Concerns\HasPlaceholder`](../../../vendor/filament/support/src/Concerns/HasPlaceholder.php) | done | — | [has-placeholder.md](../support/has-placeholder.md) |
 | [`clearCachedState()`](../../../packages/tables/src/Columns/Concerns/HasCellState.php) | [`Support\Concerns\HasCellState`](../../../vendor/filament/support/src/Concerns/HasCellState.php) | done | — | [diverges](#the-state-cache-keys-off-the-bound-record-key) |
@@ -131,7 +131,7 @@ sections do.
 | [`url()` / `openUrlInNewTab()` / `getUrl()` / `hasStateBasedUrls()` / `shouldOpenUrlInNewTab()`](../../../packages/tables/src/Columns/Concerns/CanOpenUrl.php) | [`Concerns\CanOpenUrl`](../../../vendor/filament/tables/src/Columns/Concerns/CanOpenUrl.php) | done | — | [diverges](#a-column-url-is-sanitized-where-filament-only-warns) · [semantics](#geturl-answers-by-argument-count-so-a-closures-parameter-name-changes-the-dom) |
 | [`disabled()` / `isDisabled()` / `isEnabled()` / `disabledClick()` / `isClickDisabled()`](../../../packages/tables/src/Columns/Concerns/CanBeDisabled.php) | [`Concerns\CanBeDisabled`](../../../vendor/filament/tables/src/Columns/Concerns/CanBeDisabled.php) | done | — | `disableClick()`, the deprecated alias, is skipped — [renames.md](../renames.md) |
 | Editing in place — `updateStateUsing()`, `rules()`, `disabled()` | [`CanUpdateState`](../../../vendor/filament/tables/src/Columns/Concerns/CanUpdateState.php), [`CanBeValidated`](../../../vendor/filament/tables/src/Columns/Concerns/CanBeValidated.php), [`CanBeDisabled`](../../../vendor/filament/tables/src/Columns/Concerns/CanBeDisabled.php) | todo | — | — |
-| [`alignment()` / `getAlignment()` / `getAlignmentClass()`](../../../packages/tables/src/Columns/Column.php) | [`HasAlignment`](../../../vendor/filament/support/src/Concerns/HasAlignment.php) | done | — | [has-alignment.md](../support/has-alignment.md) · [diverges](text-column.md#a-badge-row-ignores-alignment-for-want-of-a-justify-content-rule) |
+| [`alignment()` / `getAlignment()` / `getAlignmentClass()`](../../../packages/tables/src/Columns/Column.php) | [`HasAlignment`](../../../vendor/filament/support/src/Concerns/HasAlignment.php) | done | — | [has-alignment.md](../support/has-alignment.md) · [diverges](text-column.md#alignment-reaches-a-badge-row-through-the-list-not-through-text-align) |
 | [`verticalAlignment()` / `getVerticalAlignment()` / `getVerticalAlignmentClass()`](../../../packages/support/src/Components/Concerns/HasVerticalAlignment.php) | [`Support\Concerns\HasVerticalAlignment`](../../../vendor/filament/support/src/Concerns/HasVerticalAlignment.php) | done | — | [has-vertical-alignment.md](../support/has-vertical-alignment.md) |
 | [`width()` / `getWidth()`](../../../packages/support/src/Components/Concerns/HasWidth.php) | [`Support\Concerns\HasWidth`](../../../vendor/filament/support/src/Concerns/HasWidth.php) | done | — | — |
 | [`grow()` / `canGrow()`](../../../packages/support/src/Components/Concerns/CanGrow.php) | [`Support\Concerns\CanGrow`](../../../vendor/filament/support/src/Concerns/CanGrow.php) | done | — | the `<th>` asks `canGrow(false)`, so an undeclared column does not grow |
@@ -213,7 +213,7 @@ string-to-enum resolution and the `sy-align-*` fragment are support's, pinned in
 [has-alignment.md](../support/has-alignment.md), and what tables owes is the
 class reaching the cell — asserted by the Integration
 [`TextColumnTest`](../../../packages/tables/tests/Integration/Columns/TextColumnTest.php),
-which is also where the [gap on a badge row](text-column.md#a-badge-row-ignores-alignment-for-want-of-a-justify-content-rule)
+which is also where [how it reaches a badge row](text-column.md#alignment-reaches-a-badge-row-through-the-list-not-through-text-align)
 is recorded.
 
 The remaining five rows split two ways. Three — the list getters, the query
@@ -460,6 +460,42 @@ column's own name. Both arms are pinned in
 [`InteractsWithTableQueryTest`](../../../packages/tables/tests/Unit/Columns/Concerns/InteractsWithTableQueryTest.php)
 so the initialisers cannot be "tidied" into agreement without a failing test.
 
+### The default and the split run inside the per-record cache, in that order
+
+`getState()` caches one value per record key, and both `separator()` and
+`default()` run **inside** that cache rather than around it — so a `default()`
+closure is evaluated once per record, not once per read, and a template asking
+for the state three times gets one evaluation. `ColumnTest`'s `'caches the
+defaulted state per record key'` case counts the calls, which is what a
+refactor moving either step outside `resolveState()` would break.
+
+The order is Filament's and it matters both ways. The split runs first, so a
+string state becomes a list before the blank test sees it — which is how a
+column whose whole value is `''` or `'   '` reaches `default()` at all: `explode()`
+yields one blank part, that single-blank case collapses to `[]`, and `[]` is
+blank. Reversing the two would leave `['']` — filled, list-shaped, and
+un-defaultable. The blank test runs second and reads the *post-split* value, so
+`default(['none'])` fills an emptied list exactly as `default('—')` fills an
+unset scalar.
+
+Two edges are worth naming because a reader reaches for the wrong one. The
+separator is read through `evaluate()` and then tested for **truthiness**, so
+`separator(null)` and `separator('')` both mean *do not split* rather than *split
+on nothing* — an empty separator would make `explode()` throw. And the blank test
+is [`blank()`](../support/helpers.md), not falsiness: a state of `0`, `'0'` or
+`false` is filled and survives, where a naive `?:` would replace it with the
+default.
+
+The single-blank collapse spells `mb_trim($parts[0]) === ''` rather than calling
+`blank()` on it, and that is a static-analysis constraint rather than a
+preference: `blank()` carries `@phpstan-assert-if-false !null $value`, so against
+an argument PHPStan already knows is a `string` the true branch is unreachable
+and the call is reported `function.impossibleType` at level max. `explode()`
+returns `list<string>`, which is exactly that case. Four other `src/` sites reach
+for the same spelling for the same reason; widening the assertion is support's to
+do, and until it happens a statically-known string cannot be passed to `blank()`
+anywhere in the toolkit.
+
 ### `distinctList()` dedupes entity values by value, not by identity
 
 `distinctList()` on a fanned-out path runs `array_unique($values, SORT_REGULAR)`,
@@ -667,15 +703,18 @@ compact, so dropping a blank there is not list hygiene but a **value rewrite**,
 and the one thing it changes is which of `''` and `null` a formatter or a
 `default()` sees. Filament can afford it because `getState()` immediately maps
 `blank($state)` onto `getDefaultState()` anyway, so the two collapse over there
-whenever a default is declared. Both halves of that are still out here (the
-`default()` row is above), which is exactly why the raw read is the honest one to
-ship first: adding the drop later is a one-line change, while a value silently
-rewritten to null before a default exists to catch it is indistinguishable from
-an unset property.
+whenever a default is declared.
 
-Revisit with `default()`: if that lands and the pair still disagree, the drop
-becomes a real behaviour difference a migrating table would notice, and this
-section says so rather than pretending it was never there.
+`default()` has since landed, which resolves the revisit this section reserved:
+`getState()` now runs the same blank-to-default step, so `''` and `null` collapse
+here exactly as they do upstream and the two ports answer alike at the only place
+a caller reads. What still differs is one level down —
+`getStateFromRecord()` returns `''` where Filament's relationship arm returns
+`null` — which is why
+[`ColumnTest`](../../../packages/tables/tests/Unit/Columns/ColumnTest.php)'s
+`'reads a to-one chain unchanged, blank leaf included'` case asserts the raw read
+**and** the defaulted one: the pair is what pins the divergence to that level and
+proves it does not surface above it.
 
 ### The list shape is metadata-derived, where Filament's is cached off the first row
 

@@ -86,7 +86,7 @@ not here.
 | [`HasBadgeTooltip`](../../../packages/support/src/Components/Concerns/HasBadgeTooltip.php) | [`Concerns/HasBadgeTooltip.php`](../../../vendor/filament/support/src/Concerns/HasBadgeTooltip.php) | done | — |
 | HasCellState → [`Tables\Columns\Concerns\HasCellState`](../../../packages/tables/src/Columns/Concerns/HasCellState.php) | [`Concerns/HasCellState.php`](../../../vendor/filament/support/src/Concerns/HasCellState.php) | done | [renames.md](../renames.md#namespace-segments) · [tables/column.md](../tables/column.md#hascellstate-is-relocated-into-the-column-tier) |
 | [`HasColor`](../../../packages/support/src/Components/Concerns/HasColor.php) | [`Concerns/HasColor.php`](../../../vendor/filament/support/src/Concerns/HasColor.php) | done | — |
-| HasDefaultDataFormattingSettings | [`Concerns/HasDefaultDataFormattingSettings.php`](../../../vendor/filament/support/src/Concerns/HasDefaultDataFormattingSettings.php) | todo | — |
+| [`Concerns\HasDefaultDataFormattingSettings`](../../../packages/support/src/Concerns/HasDefaultDataFormattingSettings.php) | [`Concerns/HasDefaultDataFormattingSettings.php`](../../../vendor/filament/support/src/Concerns/HasDefaultDataFormattingSettings.php) | done | [has-default-data-formatting-settings.md](has-default-data-formatting-settings.md) — support's root `Concerns/`, composed on `Tables\Table` today and on `Schema` in M5 |
 | HasExtraAlpineAttributes | [`Concerns/HasExtraAlpineAttributes.php`](../../../vendor/filament/support/src/Concerns/HasExtraAlpineAttributes.php) | todo | — |
 | [`HasExtraAttributes`](../../../packages/support/src/Components/Concerns/HasExtraAttributes.php) | [`Concerns/HasExtraAttributes.php`](../../../vendor/filament/support/src/Concerns/HasExtraAttributes.php) | done | — |
 | [`HasFontFamily`](../../../packages/support/src/Components/Concerns/HasFontFamily.php) | [`Concerns/HasFontFamily.php`](../../../vendor/filament/support/src/Concerns/HasFontFamily.php) | done | [has-font-family.md](has-font-family.md) |
@@ -141,7 +141,7 @@ name.
 | Item | Ports | Status | Detail |
 | --- | --- | --- | --- |
 | [`Alignment`](../../../packages/support/src/Enums/Alignment.php) | [`Enums/Alignment.php`](../../../vendor/filament/support/src/Enums/Alignment.php) | done | — |
-| ArgumentValue | [`Enums/ArgumentValue.php`](../../../vendor/filament/support/src/Enums/ArgumentValue.php) | todo | — |
+| [`ArgumentValue`](../../../packages/support/src/Enums/ArgumentValue.php) | [`Enums/ArgumentValue.php`](../../../vendor/filament/support/src/Enums/ArgumentValue.php) | done | the not-passed sentinel a pure enum makes unforgeable — `TextColumn::numeric()`'s two separators default to it, so `null` reads as *explicitly passed* and routes to `number_format()` ([text-column.md](../tables/text-column.md)) |
 | [`FontFamily`](../../../packages/support/src/Enums/FontFamily.php) | [`Enums/FontFamily.php`](../../../vendor/filament/support/src/Enums/FontFamily.php) | done | — |
 | [`FontWeight`](../../../packages/support/src/Enums/FontWeight.php) | [`Enums/FontWeight.php`](../../../vendor/filament/support/src/Enums/FontWeight.php) | done | — |
 | [`GridDirection`](../../../packages/support/src/Enums/GridDirection.php) | [`Enums/GridDirection.php`](../../../vendor/filament/support/src/Enums/GridDirection.php) | done | — |

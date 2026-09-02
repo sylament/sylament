@@ -8,6 +8,7 @@ use Closure;
 use Sylament\Schemas\Components\Concerns\CanAccessAssociations;
 use Sylament\Schemas\Components\Concerns\CanAccessProperties;
 use Sylament\Support\Components\ViewComponent;
+use Sylament\Support\Concerns\HasDefaultDataFormattingSettings;
 use Sylament\Support\Evaluation\ClosureParameter;
 use Sylament\Tables\Contracts\InteractsWithTable;
 use Sylament\Tables\Table\Concerns\BelongsToLiveComponent;
@@ -53,6 +54,7 @@ class Table extends ViewComponent
     use HasAggregateValues;
     use HasBulkActions;
     use HasColumns;
+    use HasDefaultDataFormattingSettings;
     use HasEmptyState;
     use HasFilterIndicators;
     use HasFilters;

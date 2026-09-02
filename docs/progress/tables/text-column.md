@@ -18,8 +18,9 @@ state read, the closure injections — is tracked there, not repeated here.
 
 It is a thin subclass on purpose. Filament's `TextColumn` is ~700 lines of
 badges, icons, colours, list flattening, date/money/number formatting and the
-embedded-view render; this is the state pipeline and a template path, and the
-gaps are the surface table below.
+embedded-view render; this is that surface minus the `iso*` family and the
+deprecated arms, over a state pipeline and a template path. The gaps are the
+surface table below.
 
 **Status:** in progress — see the
 [status vocabulary](../README.md#statuses).
@@ -31,8 +32,8 @@ Reference — the Filament source this is diffed against:
 - [`tables/src/Columns/Concerns/CanFormatState.php`](../../../vendor/filament/tables/src/Columns/Concerns/CanFormatState.php)
   — the formatting pipeline: `formatStateUsing`, the array-to-JSON coercion,
   the `HasLabel` unwrap, `limit()` / `words()`, `prefix()` / `suffix()` and
-  their escaping port here; `html()` / `markdown()`, the date/money/numeric
-  formatters and the list-flattening branches do not yet
+  their escaping, `html()` / `markdown()`, and the date, money and numeric
+  formatters all port here; the `iso*` family does not yet
 - [`tables/src/Columns/Concerns/HasColor.php`](../../../vendor/filament/tables/src/Columns/Concerns/HasColor.php)
   — the colour setter, the `colors()` map and the state-contract fallback
 - [`tables/src/Columns/Concerns/HasIcon.php`](../../../vendor/filament/tables/src/Columns/Concerns/HasIcon.php)
@@ -61,16 +62,19 @@ sections do.
 | `hasStateFormatting()` — the raw-state fast path | [`CanFormatState::hasStateFormatting()`](../../../vendor/filament/tables/src/Columns/Concerns/CanFormatState.php) | skipped | — | [diverges](#hasstateformatting-has-nothing-to-guard) |
 | [`limit()` / `words()` — character and word truncation](../../../packages/tables/src/Columns/Concerns/CanFormatState.php) | [`CanFormatState`](../../../vendor/filament/tables/src/Columns/Concerns/CanFormatState.php) | done | — | [diverges](#limit-composes-slice-rather-than-calling-symfonys-truncate) |
 | [`prefix()` / `suffix()`](../../../packages/tables/src/Columns/Concerns/CanFormatState.php) | [`CanFormatState`](../../../vendor/filament/tables/src/Columns/Concerns/CanFormatState.php) | done | — | [semantics](#a-markup-state-skips-truncation-and-affixing-escapes-whichever-side-is-not-already-markup) |
-| `html()` / `markdown()` — the sanitizer pass | [`CanFormatState`](../../../vendor/filament/tables/src/Columns/Concerns/CanFormatState.php) | todo | — | [detail](#html--markdown-need-a-sanitizer-decision) |
-| `date()` / `dateTime()` / `time()` / `since()` and the `iso*` variants, `timezone()` | [`CanFormatState`](../../../vendor/filament/tables/src/Columns/Concerns/CanFormatState.php) | todo | — | — |
-| `money()` / `numeric()` | [`CanFormatState`](../../../vendor/filament/tables/src/Columns/Concerns/CanFormatState.php) | todo | — | — |
-| [`badge()`](../../../packages/tables/src/Columns/TextColumn.php) — the badge shell | [`TextColumn::badge()`](../../../vendor/filament/tables/src/Columns/TextColumn.php), [`View\Components\BadgeComponent`](../../../vendor/filament/support/src/View/Components/BadgeComponent.php) | done | — | [diverges](#a-badged-icon-goes-through-the-badges-own-props-and-loses-iconcolor-doing-it) · [diverges](#badges-and-descriptions-share-one-wrapping-flex-line-where-filament-nests-a-list) · [diverges](#a-badge-row-ignores-alignment-for-want-of-a-justify-content-rule) |
+| [`html()` / `markdown()` / `commonMarkOptions()` / `commonMarkExtensions()` — the sanitizer pass](../../../packages/tables/src/Columns/Concerns/CanFormatState.php) | [`CanFormatState`](../../../vendor/filament/tables/src/Columns/Concerns/CanFormatState.php), [`Support\Concerns\CanConfigureCommonMark`](../../../vendor/filament/support/src/Concerns/CanConfigureCommonMark.php) | done | — | [semantics](#html-sanitizes-in-php-and-markdown-converts-before-it-does) · [diverges](#markdown-throws-for-the-package-it-suggests-rather-than-falling-through) |
+| [`date()` / `dateTime()` / `time()` / `since()`, the four `*Tooltip()` twins and `timezone()` / `getTimezone()`](../../../packages/tables/src/Columns/Concerns/CanFormatState.php) | [`CanFormatState`](../../../vendor/filament/tables/src/Columns/Concerns/CanFormatState.php) | done | — | [semantics](#one-timezone-chain-answers-for-every-date-arm) · [diverges](#the-date-family-formats-through-datetimeimmutable-so-only-english-reads-right) |
+| `isoDate()` / `isoDateTime()` / `isoTime()` and their three tooltips | [`CanFormatState`](../../../vendor/filament/tables/src/Columns/Concerns/CanFormatState.php) | blocked | i18n — the moment.js locale presets these take have no answer without ICU locale data | the three defaults they read are already carried, unread, by [`HasDefaultDataFormattingSettings`](../support/has-default-data-formatting-settings.md#the-three-iso-defaults-ship-with-no-reader) |
+| [`money()` / `numeric()`](../../../packages/tables/src/Columns/Concerns/CanFormatState.php) | [`CanFormatState`](../../../vendor/filament/tables/src/Columns/Concerns/CanFormatState.php) | done | — | [semantics](#the-money-and-numeric-arms-are-numberformatter-with-two-sentinels) · [diverges](#numeric-refuses-a-formatter-failure-rather-than-rendering-false) |
+| [`badge()`](../../../packages/tables/src/Columns/TextColumn.php) — the badge shell | [`TextColumn::badge()`](../../../vendor/filament/tables/src/Columns/TextColumn.php), [`View\Components\BadgeComponent`](../../../vendor/filament/support/src/View/Components/BadgeComponent.php) | done | — | [diverges](#a-badged-icon-goes-through-the-badges-own-props-and-loses-iconcolor-doing-it) · [diverges](#the-list-wrapper-appeared-with-the-list-arms-and-closed-a-css-divergence-with-it) · [diverges](#alignment-reaches-a-badge-row-through-the-list-not-through-text-align) |
 | [`color()`](../../../packages/tables/src/Columns/Concerns/HasColor.php) / [`icon()` / `iconPosition()`](../../../packages/tables/src/Columns/Concerns/HasIcon.php) / [`iconColor()`](../../../packages/tables/src/Columns/Concerns/HasIconColor.php) | [`Columns\Concerns\HasColor`](../../../vendor/filament/tables/src/Columns/Concerns/HasColor.php), [`HasIcon`](../../../vendor/filament/tables/src/Columns/Concerns/HasIcon.php), [`HasIconColor`](../../../vendor/filament/tables/src/Columns/Concerns/HasIconColor.php) | done | — | [semantics](#the-colour-and-icon-maps-resolve-last-match-wins-and-false-suppresses-the-state-contract-fallback) · [semantics](#gray-is-a-colour-on-the-item-and-the-absence-of-one-on-the-icon) · [diverges](#a-badged-icon-goes-through-the-badges-own-props-and-loses-iconcolor-doing-it) · [diverges](#an-explicit-true-colour-or-icon-throws-where-filament-lets-it-through-and-crashes) · [diverges](#a-colors-or-icons-closure-is-handed-the-item-state-where-filaments-is-handed-the-columns) |
 | [`description()` — the secondary line above or below](../../../packages/tables/src/Columns/Concerns/HasDescription.php) | [`Columns\Concerns\HasDescription`](../../../vendor/filament/tables/src/Columns/Concerns/HasDescription.php) | done | — | [semantics](#a-description-position-is-compared-never-evaluated) |
 | [`size()`](../../../packages/tables/src/Columns/TextColumn.php) / [`weight()`](../../../packages/support/src/Components/Concerns/HasWeight.php) / [`fontFamily()`](../../../packages/support/src/Components/Concerns/HasFontFamily.php) / [`lineClamp()`](../../../packages/support/src/Components/Concerns/HasLineClamp.php) | [`TextColumn::size()`](../../../vendor/filament/tables/src/Columns/TextColumn.php), [`HasWeight`](../../../vendor/filament/support/src/Concerns/HasWeight.php), [`HasFontFamily`](../../../vendor/filament/support/src/Concerns/HasFontFamily.php), [`HasLineClamp`](../../../vendor/filament/support/src/Concerns/HasLineClamp.php) | done | — | [diverges](#weight-and-fontfamily-are-column-level-where-filaments-are-per-item) · [diverges](#getsizeclass-is-sylament-only-and-the-partial-resolves-the-size-twice) |
-| [`wrap()`](../../../packages/support/src/Components/Concerns/CanWrap.php) | [`CanWrap`](../../../vendor/filament/support/src/Concerns/CanWrap.php) | done | — | [diverges](#badges-and-descriptions-share-one-wrapping-flex-line-where-filament-nests-a-list) |
-| `copyable()` | [`CanBeCopied`](../../../vendor/filament/support/src/Concerns/CanBeCopied.php) | todo | — | — |
-| Lists — `bulleted()`, `listWithLineBreaks()`, `limitList()`, `expandableLimitedList()` | [`TextColumn.php`](../../../vendor/filament/tables/src/Columns/TextColumn.php) | todo | [`separator()`](column.md) | [diverges](#an-iterable-state-renders-as-one-comma-joined-line-and-nothing-else) |
+| [`wrap()`](../../../packages/support/src/Components/Concerns/CanWrap.php) | [`CanWrap`](../../../vendor/filament/support/src/Concerns/CanWrap.php) | done | — | [diverges](#the-list-wrapper-appeared-with-the-list-arms-and-closed-a-css-divergence-with-it) |
+| [`copyable()` / `copyableState()` / `copyMessage()` / `copyMessageDuration()`](../../../packages/support/src/Components/Concerns/CanBeCopied.php) + [the control the partial renders](../../../packages/tables/templates/partials/TextColumn/index.html.twig) | [`Support\Concerns\CanBeCopied`](../../../vendor/filament/support/src/Concerns/CanBeCopied.php), [`TextColumn.php`'s `x-on:click.prevent.stop`](../../../vendor/filament/tables/src/Columns/TextColumn.php) | done | — | [copyable.md](../support/copyable.md) · [semantics](#the-copy-target-is-the-content-element-and-the-badge-pill-when-there-is-one) |
+| [Lists — `bulleted()`, `listWithLineBreaks()`, `limitList()`, `expandableLimitedList()`, `getStateOverListLimitCount()`](../../../packages/tables/src/Columns/TextColumn.php) + [`limited_list_controller.ts`](../../../packages/tables/assets/src/controllers/limited_list_controller.ts) | [`TextColumn.php`](../../../vendor/filament/tables/src/Columns/TextColumn.php) | done | — | [semantics](#getstateitems-is-the-cells-value-list) · [diverges](#the-expand-toggles-render-only-where-there-is-something-to-expand) |
+| [`rowIndex()`](../../../packages/tables/src/Columns/TextColumn.php) | [`TextColumn::rowIndex()`](../../../vendor/filament/tables/src/Columns/TextColumn.php) | done | — | [column.md](column.md) — the `$rowLoop` object it reads · [diverges](#rowindex-refuses-a-cell-with-no-row-loop-rather-than-numbering-it-null) |
+| `isoDate()`-adjacent deprecations — `BadgeColumn`, `BooleanColumn`, `enum()`, `getStateUsing()`'s deprecated twins | [`TextColumn.php`](../../../vendor/filament/tables/src/Columns/TextColumn.php) | skipped | — | Filament ships these for migration off v2/v3 APIs that never existed here |
 | _rest not audited yet_ | | | | |
 
 The state-pipeline rows are covered by
@@ -165,16 +169,17 @@ Specifics for rows that are not finished — what is already in, what is left, a
 what the next step is. Delete a subsection when its row flips to **done**; the
 table row and any divergence it earned stay behind.
 
-### `html()` / `markdown()` need a sanitizer decision
+### The `iso*` family waits on i18n, and only on that
 
-Filament runs a `RichContentAttribute` / `Htmlable` / markdown branch through
-`Str::sanitizeHtml()` before the state reaches the template. Sylament has
-ported neither setter: `symfony/html-sanitizer` is not a dependency of any
-bundle today, and picking it (or an alternative) is left for when these two
-land. Until then, a format callback returning [`Markup`](../renames.md#idiom)
-is the escape hatch — see
-[Semantics](#a-markup-state-skips-truncation-and-affixing-escapes-whichever-side-is-not-already-markup)
-for how the rest of the pipeline already treats it.
+`isoDate()`, `isoDateTime()`, `isoTime()` and their three tooltips take
+moment.js locale presets — `L`, `LLL`, `LT` — which name a *locale's* preferred
+date shape rather than a token sequence. `DateTimeImmutable::format()` has no
+such concept: handing it `'L'` emits the leap-year flag. Answering them means ICU
+locale data and a locale to read it under, which is the i18n epic's, so the six
+setters ship as one **blocked** row rather than as a partial port that formats
+wrongly. Nothing else blocks them — the three defaults they read are already on
+[`HasDefaultDataFormattingSettings`](../support/has-default-data-formatting-settings.md),
+carried unread for exactly this.
 
 ## Semantics
 
@@ -277,6 +282,87 @@ pair of properties to collapse into one that `getDescriptionAbove()` /
 `getDescriptionBelow()` then have to re-sort on every read. A caller wanting a
 conditional position writes the condition around two calls instead.
 
+### One timezone chain answers for every date arm
+
+`getTimezone()` is `evaluate($this->timezone) ?? date_default_timezone_get()`,
+and every date arm reads the same chain: the per-call `$timezone` argument first,
+then the column's `timezone()`, then the process default. Filament forks —
+`isDateTime()` reads `FilamentTimezone::get()` while everything else reads
+`config('app.timezone')`, and `time()` sets `isTime` but never `isDateTime`, so
+it lands on the config branch while `dateTime()` lands on the facade one. There
+is no `TimezoneManager` here to fork on, so the fork collapses; the forms
+`DateTimePicker` already reads the same process default, which is what makes one
+chain the consistent answer rather than merely the shorter one.
+
+The five family markers are set the way Filament sets them, asymmetries included:
+`dateTime()` sets `isDateTime` and then delegates to `date()`, which sets
+`isDate` as well, so a `dateTime()` column reports true for both. Reading
+`isDate()` as *"and not a datetime"* is the mistake the shape invites.
+
+### The money and numeric arms are `NumberFormatter` with two sentinels
+
+`money()` and `numeric()` share three guards before any formatting: a blank state
+returns `null`, a non-numeric state is passed through unchanged, and the locale
+is `$locale ?? $table->getDefaultNumberLocale() ?? \Locale::getDefault()` with a
+`BackedEnum` unwrapped at either end. Symfony's `Request::setLocale()` calls
+`\Locale::setDefault()`, so that tail *is* the request locale under a request —
+the translation of Filament's `config('app.locale')`.
+
+Two arguments are sentinels rather than plain defaults, and both are easy to
+misread. `money()`'s `$divideBy` defaults to **`0`**, and the division runs only
+when the evaluated value is truthy — so the default divides by nothing rather
+than by zero. And `numeric()`'s two separators default to
+[`ArgumentValue::Default`](../support/README.md), a pure enum no caller can
+forge: passing *either* separator — `null` included — routes the whole call to
+`number_format()`, while leaving both untouched keeps the locale-aware
+`NumberFormatter`. A boolean flag could not express that, because `null` is a
+legal separator value and would be indistinguishable from *not passed*.
+
+Precision follows Laravel's `Number::format()`: `maxDecimalPlaces` sets
+`MAX_FRACTION_DIGITS` and wins outright over `decimalPlaces`, which otherwise
+sets `FRACTION_DIGITS`; with neither, the formatter's locale default applies.
+
+### `html()` sanitizes in PHP, and `markdown()` converts before it does
+
+The fork sits in `formatState()` between the `HasLabel` / `BackedEnum` unwrap
+and the truncation gate, which is exactly where Filament's sits. When `isHtml()`
+— and `isHtml()` is true whenever `isMarkdown()` is, Filament's own definition —
+the state is converted from markdown if asked, then sanitized, then flagged
+`$isMarkup`. That flag is not new: the pipeline already reads it as *skip
+truncation* (cutting into escaped markup mid-tag would corrupt it) and as
+*escape the plain side* when an affix joins, so `html()` inherits both behaviours
+without a line of its own.
+
+The sanitizer runs **last**, always. A CommonMark converter passes raw HTML
+through by design — that is what `html_input` configures — so sanitizing before
+conversion would guard nothing, and it is the only guard standing in front of the
+`Markup` the template renders raw. It arrives through a `#[Required]` setter, so
+a column built with `new` rather than through the container has none and
+`html()` throws a `LogicException` naming the fix rather than emitting
+unsanitized markup.
+
+Symfony's `default` sanitizer is what a consumer gets unless it configures
+otherwise, and it strips relative `href`/`src`, `class` and `style`. A consumer
+that wants Filament's allowances configures
+`framework.html_sanitizer.sanitizers.default` — this port names no sanitizer of
+its own, so one application-level setting governs every column.
+
+### The copy target is the content element, and the badge pill when there is one
+
+`copyable()` is [support's `CanBeCopied`](../support/can-be-copied.md) and the
+markup is [support's `clipboard` controller](../support/copyable.md); what this
+column decides is *which* element carries them. On a plain item it is a
+`span.sy-copyable` wrapped around the content alone — not the whole item, so the
+focus ring hugs the text, and not a `<button>`, because the cell may render
+inside a record `<a>` where interactive content is invalid. On a badged item the
+attributes are spread onto the `Badge` component instead, so the pill *is* the
+control, which is what Filament does too.
+
+The copied text is `getCopyableState($item)` falling back to the item's
+**formatted** content — so a `money()` column copies `$1,234.50` rather than
+`1234.5` unless `copyableState()` says otherwise. The tooltip rides the same
+element when both are set, as one `title`.
+
 ### `getStateItems()` is the cell's value list
 
 `getStateItems()` is `getFormattedState()`'s per-item successor. A non-array
@@ -287,12 +373,28 @@ Collection`, `TextColumn.php:281-283`). [`wrap()`](../support/helpers.md)
 itself only spreads arrays — it leaves anything else, Traversable included, as
 one item — so this unwrap has to run first; only then does `wrap($state)` turn
 a scalar into one item and leave an array (native, or just materialized) as
-many. `count($values) > 1 && ! isBadge()` then picks the same collapse
-Filament defaults to
-([divergence](#an-iterable-state-renders-as-one-comma-joined-line-and-nothing-else))
-— every value formatted individually and joined with `', '` into a *single*
-item, unless the column is badged (or already single-valued), which keeps one
-item per value.
+many.
+
+Three steps then run, in Filament's order. The **slice** drops everything past
+`limitList()`'s limit — unless the column both breaks its list onto lines and is
+`expandableLimitedList()`, the one shape whose extra values have to reach the DOM
+for the client to reveal
+([divergence](#the-expand-toggles-render-only-where-there-is-something-to-expand)).
+`getStateOverListLimitCount()` counts what the limit excludes, off the *unsliced*
+list, and is what the partial's message reads; it is `ImageColumn`'s
+`getStateOverLimitCount()` under a name that says which limit it means. The
+**collapse** then joins what survives
+([why that is the default](#the-collapsed-join-is-filaments-default-not-a-simplification))
+— every value formatted individually and joined with `', '` into a *single* item
+— unless the column is badged, breaks onto lines (`bulleted()` forces that,
+`listWithLineBreaks()` asks for it), or is already single-valued. Each surviving
+value is finally paired with its formatted content.
+
+One subtlety in that gate: it counts the values **after** the slice, where
+Filament counts before it. The two differ only when a limit cuts a multi-value
+list down to one, and there the port emits that value formatted on its own while
+Filament emits it through an identity join — the same text either way, but the
+port's `state` stays the raw value, so a `colors()` map still matches it.
 
 The collapse is why each entry carries `state` and `content` separately rather
 than one value doing both jobs. In the per-item branches, `state` is the
@@ -329,6 +431,105 @@ under.
 
 Deliberate deviations from Filament — permanent, and the reason they hold. Say
 what would reverse the decision when it is provisional.
+
+### The date family formats through `DateTimeImmutable`, so only English reads right
+
+Filament parses with `Carbon::parse()` and prints with `translatedFormat()`,
+which is `date()`'s token set with month and day *names* translated. This port
+normalises with a three-arm match — a `DateTimeInterface` through
+`DateTimeImmutable::createFromInterface()`, an `int` as `@<timestamp>`, a string
+through `new DateTimeImmutable($state)` — and prints with `format()`. Carbon is
+not adopted: [principles §2](../../principles.md) sends us to the platform
+mechanism, and the whole of what Carbon adds here is the name translation.
+
+The consequence is exact and bounded: output is **byte-identical** to Carbon's
+for English, and for any other locale the month and day names stay English. That
+is the i18n epic's to close, and closing it does not change this API — only
+what `format()` is replaced with. `since()` has the same shape one level up: it
+reads [`diff_for_humans()`](../support/helpers.md), a pure port of
+`CarbonInterval::forHumans()`'s single-unit cascade, whose words are English by
+construction.
+
+A fourth arm is a throw rather than a coercion: a float, an array or an object
+that is not a `DateTimeInterface` names the column in a `LogicException` instead
+of being pushed through `new DateTimeImmutable((string) $state)`, which Carbon's
+`parse()` would attempt and fail at less legibly. A malformed *string* still
+throws from `DateTimeImmutable` itself, exactly as `parse()` does.
+
+### `markdown()` throws for the package it suggests, rather than falling through
+
+`league/commonmark` is a `suggest` of `sylament/tables`, not a `require` — a
+[guarded optional integration](../../../CLAUDE.md) like flysystem in support. The
+guard is `class_exists(GithubFlavoredMarkdownConverter::class)` at the one place
+the converter is constructed, and its else-arm is a `LogicException` naming the
+package and the command that installs it.
+
+The alternative — falling through to the unconverted text — is what makes this a
+divergence worth stating: it would render a document's raw markdown into the
+cell, sanitized and therefore *plausible*, with nothing in any log. A column that
+asked for markdown and silently got none is the failure this refuses.
+
+`markdown()` and `commonMarkOptions()` / `commonMarkExtensions()` themselves are
+unguarded — they only assign — so configuring a markdown column on an install
+without the package is legal right up to the render. That is deliberate: the
+throw names the column, which a container-time failure could not.
+
+The library is present in this repo's root vendor, so the *present* branch is
+exercised end-to-end. The absent branch cannot be exercised by uninstalling, so
+[`CanFormatStateTest`](../../../packages/tables/tests/Unit/Columns/Concerns/CanFormatStateTest.php)
+reads the guard site itself and
+[`SylamentTablesBundleTest`](../../../packages/tables/tests/Integration/SylamentTablesBundleTest.php)
+asserts the manifest keeps the package a `suggest` — together, deleting the guard
+or promoting the dependency fails the suite.
+
+### `numeric()` refuses a formatter failure rather than rendering `false`
+
+`NumberFormatter::format()` and `formatCurrency()` return `string|false`, and
+`false` stringifies to `''`. Filament goes through Laravel's `Number` helpers,
+which pass that straight out. Here both results run through one private check
+that throws a `LogicException` naming the column — so a currency code ICU cannot
+resolve surfaces as an error rather than as an empty cell, which is
+indistinguishable from a null state.
+
+### The expand toggles render only where there is something to expand
+
+Filament renders its two `Show N more` / `Show N less` controls whenever
+`expandableLimitedList()` is set and the list overflows — even when the
+over-limit items were sliced away, which happens for every combination except
+`listWithLineBreaks()` *and* expandable. Clicking them then reveals nothing.
+
+The partial ties the two together instead: the toggles render exactly when the
+hidden `<li>`s exist, and the static `and N more` message renders otherwise. The
+condition is the negation of the slice gate, so the invariant is structural
+rather than remembered — one expression decides both whether the values survive
+and whether a control that reveals them appears.
+
+The controls are `<span role="button">` with no served `tabindex`, for the reason
+[the copy control is](#the-copy-target-is-the-content-element-and-the-badge-pill-when-there-is-one):
+the cell may sit inside a record `<a>`. The
+[`limited-list` controller](../../../packages/tables/assets/src/controllers/limited_list_controller.ts)
+stamps the `tabindex` at connect, calls `preventDefault()` and
+`stopPropagation()` so a click does not follow the row's link, and keeps its
+state in an `expanded` Stimulus value — which a live morph replays, so an
+expanded cell stays expanded across a re-render. Filament's Alpine `x-data`
+scope is per-render and loses it.
+
+### `rowIndex()` refuses a cell with no row loop, rather than numbering it null
+
+Filament's `rowIndex()` closure type-hints `stdClass $rowLoop` and reads
+`$rowLoop->iteration` — the object Livewire's Blade loop always supplies. Here
+[`getRowLoop()`](column.md) is nullable, because a column can be rendered outside
+the table partial (a test, a card, a future layout), and a loop that carries no
+index is representable too.
+
+So the closure takes `?stdClass` and throws a `LogicException` naming the column
+when the index is not an integer, rather than emitting `''` from a null cast. A
+column numbering every row `0` is the failure this refuses, and it is one a
+render test would not catch — the cell renders, it is simply wrong.
+
+The offset itself is Filament's verbatim: `getTableRecordsPerPage()` is consulted
+and the page multiplication runs **only** when it is numeric, so a table showing
+`all` records numbers from one on every page rather than multiplying by a string.
 
 ### The cell renders a Twig partial where Filament emits an embedded view
 
@@ -367,41 +568,43 @@ where Filament's method needs `$stateItemAttributes` merged into `$attributes`
 before either is rendered, which a Twig template would have to express as a
 second copy of the markup.
 
-### Badges and descriptions share one wrapping flex line, where Filament nests a list
+### The list wrapper appeared with the list arms, and closed a CSS divergence with it
 
-Filament's cell keeps badges in a row *and* stacks descriptions because the two
-live at different depths: the outer `div` is `flex flex-col`, and the badge items
-sit inside a `<ul>` it contains, which the stylesheet gives `flex gap-x-1.5`
-(`ul&.fi-ta-text-has-badges, &.fi-ta-text-has-badges ul`). This port emits no
-such wrapper — the
-[one-shape rule](#the-item-element-is-never-merged-into-the-outer-div) puts every
-item directly under the outer `div` — so a flex-column container would stack the
-badges too, one per line.
+Until the list arms landed, every item sat directly under the outer `div` — the
+[one-shape rule](#the-item-element-is-never-merged-into-the-outer-div) taken one
+step further than Filament takes it — and `text-column.css` had to make one
+container do two jobs at once: `flex-row flex-wrap` so badges flowed along a
+line, plus `& > .sy-ta-text-description { w-full }` so a description could still
+claim one of its own. That worked, and it cost one behavioural delta: a badged
+cell *with descriptions* wrapped its badges whether or not
+[`wrap()`](../../../packages/support/src/Components/Concerns/CanWrap.php) was
+set, because a `width: 100%` flex item cannot force a line break in a
+non-wrapping container.
 
-`text-column.css` resolves it in CSS rather than by reintroducing the wrapper:
-with both classes present the container is `flex-row flex-wrap` with
-`gap-x-1.5 gap-y-2`, and `& > .sy-ta-text-description` takes `w-full` so each
-description claims a line of its own while the badges flow along the line between
-them. Same visual result as Filament's `<ul>`, one element fewer, and no branch
-in the template.
+The list arms removed the reason for it. A cell now emits `<ul>` whenever it has
+more than one item or is `bulleted()`, which is Filament's own rule, so the badge
+row is a nested flex container again and the outer `div` is free to be nothing
+but a column. The stylesheet follows: `.sy-ta-text-has-descriptions` and
+`.sy-ta-text-list-limited` make it `flex flex-col` with Filament's badge/non-badge
+gap fork, `& > ul` takes `flex gap-x-1.5`, `.sy-wrapped > ul` adds
+`flex-wrap gap-y-1` and `.sy-ta-text-has-line-breaks > ul` swaps to
+`flex-col gap-y-1`. `wrap()` is honoured on every combination, the `w-full`
+override is gone, and this port and Filament now differ in the outer element's
+tag alone — `div` here, `div` or `ul` there, depending on which branch of
+`toEmbeddedHtml()` ran.
 
-The wrap is not optional in this arrangement, and that is the one behavioural
-delta: `flex-wrap: nowrap` would put the descriptions back on the badge line,
-because a `width: 100%` flex item cannot force a line break in a non-wrapping
-container. So a badged cell **with descriptions** wraps its badges regardless of
-[`wrap()`](../../../packages/support/src/Components/Concerns/CanWrap.php), where
-Filament's would overflow the cell instead; the badges-without-descriptions case
-still honours `sy-wrapped` exactly as Filament does. Overflow is the worse of the
-two failure modes, so this is not treated as a regression to fix — but it is the
-reason `wrap()` looks inert on that one combination.
+The one-shape rule still holds where it was written: a **single** unbulleted
+value renders `span.sy-ta-text-item` under the `div` rather than being merged
+into it. What changed is only that a *list* now gets the wrapper its layout
+needs.
 
 `white-space` is a separate axis and follows Filament exactly: `.sy-wrapped` sets
-`whitespace-normal` on the cell whatever else it carries, with `& .sy-badge {
-whitespace-nowrap }` pinning the pills so only the descriptions around them wrap.
-Vendor guards that arm with a **compound** `:not(.fi-ta-text-has-badges.fi-ta-text-has-line-breaks)`,
-and [`listWithLineBreaks()` is unported](#an-iterable-state-renders-as-one-comma-joined-line-and-nothing-else),
-so the second half can never be present and the faithful collapse is no guard at
-all.
+`whitespace-normal` on the cell, with `& .sy-badge` and
+`& .sy-ta-text-list-limited-message` pinned `whitespace-nowrap` so only the
+descriptions around them wrap. Vendor's compound
+`:not(.fi-ta-text-has-badges.fi-ta-text-has-line-breaks)` guard now ports whole
+too — `listWithLineBreaks()` exists, so the second half of it can be present, and
+the rule stops badges from being pushed below their own bullets.
 
 ### A badged icon goes through the `Badge`'s own props, and loses `iconColor()` doing it
 
@@ -615,10 +818,11 @@ which has no print of its own in either framework.
 Filament's `hasStateFormatting()` reports whether *any* of twelve formatting
 properties is configured, so the embedded view can skip `formatState()` and emit
 the raw state — a fast path over a method that would otherwise run a dozen
-branches per cell. Seven of those twelve are the date, money, numeric and
-HTML/markdown flags, which do not exist here yet, so the predicate's condition
-would be more than half dead and a standing invitation to forget a property when
-adding one.
+branches per cell. All twelve now exist here: `formatStateUsing`, the four
+truncation properties, the two affixes, the two HTML flags and the four family
+markers `date()` / `dateTime()` / `time()` / `money()` / `numeric()` set. So the
+predicate would no longer be half dead — and it stays **skipped** anyway, for the
+reason below rather than for the one this paragraph used to give.
 
 Marked **skipped** rather than **todo** because it does not return with the
 formatting setters either: the branch it optimises is a Twig template reading one
@@ -626,23 +830,25 @@ getter, not a PHP method with a dozen inline steps. If the pipeline ever grows
 expensive enough to matter, the memo belongs on `getFormattedState()` — one
 place, no property list to keep in sync.
 
-Reassessed when `formatState()` grew from a null check plus one `evaluate()`
-into the full truncation/affix/label pipeline — six more properties now back
-it beside `formatStateUsing` (`characterLimit`, `characterLimitEnd`,
-`wordLimit`, `wordLimitEnd`, `prefix`, `suffix`). The guard would have more to
-check than before, but the branch it would optimise is still a Twig template
-reading one getter, not a hot inline path, so the row stays **skipped**.
+Reassessed twice. First when `formatState()` grew from a null check plus one
+`evaluate()` into the full truncation/affix/label pipeline; again when the date,
+money, numeric and HTML families landed and completed the property list. Both
+times the answer was the same: the guard would have more to check than before,
+but the branch it would optimise is still a Twig template reading one getter, not
+a hot inline path. The row stays **skipped**, and the standing invitation to
+forget a property when adding one is now the *only* argument against it — which
+is an argument for not writing it, not for writing it carefully.
 
-### An iterable state renders as one comma-joined line, and nothing else
+### The collapsed join is Filament's default, not a simplification
 
-Filament's cell has four list shapes: a multi-value state collapses to a single
-comma-joined item by default (`TextColumn.php:366-380`), `listWithLineBreaks()`
-keeps the items as separate lines, `bulleted()` renders them as a `<ul>`, and
-`limitList()` / `expandableLimitedList()` truncate the set with an expand
-trigger. Sylament ships the default arm only, and the other three have no setter
-to reach them.
+All four of Filament's list shapes ship: a multi-value state collapses to a
+single comma-joined item by default (`TextColumn.php:366-380`),
+`listWithLineBreaks()` keeps the items as separate lines, `bulleted()` renders
+them as a `<ul>` with markers, and `limitList()` / `expandableLimitedList()`
+truncate the set with an expand trigger. This section stays because the
+*default* is the one a reader mistakes for a missing feature.
 
-The collapse is the faithful half, and it is worth naming *why* it is Filament's
+It is worth naming *why* the collapse is Filament's
 *default* rather than a simplification: a `TextColumn` over
 `['symfony', 'forms']` renders `symfony, forms` in Filament because
 `toEmbeddedHtml()` reduces the column's state to one item per list entry
@@ -654,13 +860,6 @@ makes that same split, so the two coercions no longer compete: it formats each
 value on its own and joins the results, and the JSON arm only ever sees a value
 that is itself an array. The partial loops the item list, which is why the
 badged case keeps one element per value while the plain case gets one.
-
-Provisional. The three list setters are a **todo** row above, blocked on
-[`separator()`](column.md); when they land, the collapse branch in
-`getStateItems()` grows the two extra shapes beside it — `listWithLineBreaks()`
-and `bulleted()` both need per-item formatting, which is exactly what the item
-list already produces, so it is the flags rather than the machinery that are
-missing.
 
 A consumer wanting a *different* join reaches for
 [`state()`](column.md#state-is-getstateusing-under-another-name), and **not**
@@ -862,24 +1061,22 @@ and unlike those two it is proof rather than a policy about user input. It
 becomes reachable the moment a subclass overrides `formatState()` — which is
 public API — and then it names the column instead of failing inside Twig.
 
-### A badge row ignores `alignment()`, for want of a `justify-content` rule
+### `alignment()` reaches a badge row through the list, not through `text-align`
 
 `alignment()` puts `sy-align-center` / `sy-align-end` / `sy-align-justify` on the
 cell's outer `div.sy-ta-text`, and
 [`text-column.css`](../../../packages/tables/assets/src/styles/components/text-column.css)
-answers each with `text-center` / `text-end` / `text-justify`. `text-align` moves
-inline content, not flex items, and both of this element's badge branches make it
-a flex container — `flex gap-x-1.5` for badges alone, `flex-row flex-wrap` for
-badges beside descriptions
-([why](#badges-and-descriptions-share-one-wrapping-flex-line-where-filament-nests-a-list)).
-So on a badged column the alignment classes land, match their rules, and change
-nothing.
+answers each with `text-center` / `text-end` / `text-justify`. That moves inline
+content and does nothing to flex items, so while badges were flex children of the
+outer `div` the alignment classes landed, matched their rules, and changed
+nothing — a knowing gap this epic inherited.
 
-Filament does not have the gap: its `columns/text.css` pairs every `fi-align-*`
-with a `justify-*` under `ul&, & ul`, because its badges sit in a `<ul>` that is
-the flex container. The port needs no selector that specific — the badge branches
-*are* this element — so closing it is about nine lines: a `justify-center`,
-`justify-end` and `justify-between` beside the three `text-*` declarations
-already there. Left out of this epic deliberately and recorded as one of its
-[two knowing gaps](../roadmap.md), not deferred to a prerequisite: nothing has to
-land first.
+The list wrapper closed it. Badges are now flex children of a `<ul>`, exactly as
+in Filament, so each `sy-align-*` arm pairs its `text-*` with a `justify-*` under
+`& > ul` — `justify-center`, `justify-end`, `justify-between` — which is
+vendor's own pairing under `ul&, & ul` with one selector fewer, since this port's
+root is always the `div`.
+
+A single-value badge is the one case still governed by `text-align` alone, and
+correctly so: with one item there is no `<ul>` and no flex container, and the
+badge is inline content the alignment moves directly.

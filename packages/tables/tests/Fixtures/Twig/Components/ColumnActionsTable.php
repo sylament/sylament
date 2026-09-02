@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace Sylament\Tables\Tests\Fixtures\Twig\Components;
 
 use Sylament\Actions\Action;
+use Sylament\Actions\Concerns\HasActions;
+use Sylament\Actions\Contracts\InteractsWithActions;
 use Sylament\Tables\Columns\Column;
 use Sylament\Tables\Columns\TextColumn;
 use Sylament\Tables\Concerns\HasTable;
@@ -18,13 +20,15 @@ use Symfony\UX\LiveComponent\DefaultActionTrait;
 /**
  * A live host whose columns carry all three `action()` arms — a closure the host's
  * own live action evaluates, a method name the string arm wraps, and an `Action`
- * object it refuses. Each call appends to a `LiveProp`, so what the action was
- * handed survives the round trip and the next render reads it.
+ * object that lane refuses and a table-context `mountAction` resolves instead.
+ * Each call appends to a `LiveProp`, so what the action was handed survives the
+ * round trip and the next render reads it.
  */
 #[AsLiveComponent(name: 'ColumnActionsTable', template: '@TablesFixtures/components/ColumnActionsTable.html.twig')]
-class ColumnActionsTable implements InteractsWithTable
+class ColumnActionsTable implements InteractsWithActions, InteractsWithTable
 {
     use DefaultActionTrait;
+    use HasActions;
     use HasTable;
 
     /**
@@ -45,7 +49,9 @@ class ColumnActionsTable implements InteractsWithTable
                     $this->calls[] = sprintf('closure:%s:%s', $record->title, $column->getRecordKey() ?? '');
                 }),
                 TextColumn::make('album')->action('appendAlbumCall'),
-                TextColumn::make('actionObject')->state('view')->action(Action::make('view')),
+                TextColumn::make('actionObject')->state('view')->action(Action::make('view')->action(function (Song $record): void {
+                    $this->calls[] = 'object:' . $record->title;
+                })),
                 TextColumn::make('id'),
             ]);
     }

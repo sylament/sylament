@@ -834,6 +834,19 @@ record action unchanged. Each arm builds its whole attribute map **before** the
 single `attrs()` call, because `attrs()` keeps only the last `data-action` it is
 handed and two wiring sources meeting there would silently drop one.
 
+The `action` arm only resolves because the table-tier `columns()` caches the
+instance: after binding each column it walks the set again and `cacheAction()`s
+every `action()` that is an `Action` rather than a closure, so
+`Table::getAction()` — the map actions' `resolveTableAction()` reads — knows the
+name the wrapper mounts. Without it the mount unmounts silently, since
+`cacheMountedActions()` swallows the `ActionNotResolvableException`. Vendor's
+loop is ported as it stands, so none of the `defaultSize`/`defaultTemplate` the
+record arm applies is applied here: a column action is mounted from the cell,
+never rendered as a trigger.
+A second `columns()` call rebuilds the column map but **not** the action cache,
+so the replaced set's action stays reachable by name — Filament does not evict
+either, and the record-action arm behaves the same way here.
+
 ### One filter setting drives three selection behaviours
 
 `deselectAllRecordsWhenFiltered()` reads as a filter setting and files with the

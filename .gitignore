@@ -12,6 +12,7 @@
 packages/*/assets/src/styles/*.generated.css
 
 # Other
+/var
 /.php-cs-fixer.cache
 /.php-cs-fixer.php
 /.twig-cs-fixer.cache

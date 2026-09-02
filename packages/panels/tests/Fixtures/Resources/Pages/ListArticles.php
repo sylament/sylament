@@ -4,11 +4,13 @@ declare(strict_types=1);
 
 namespace Sylament\Panels\Tests\Fixtures\Resources\Pages;
 
+use Doctrine\ORM\QueryBuilder;
 use Sylament\Actions\Action;
 use Sylament\Actions\CreateAction;
 use Sylament\Notifications\Notification;
 use Sylament\Panels\Resources\Pages\ListRecords;
 use Sylament\Panels\Tests\Fixtures\Resources\ArticleResource;
+use Sylament\Schemas\Components\Tabs\Tab;
 use Symfony\UX\LiveComponent\Attribute\AsLiveComponent;
 use Symfony\UX\LiveComponent\Attribute\LiveProp;
 
@@ -25,6 +27,23 @@ final class ListArticles extends ListRecords
      */
     #[LiveProp]
     public bool $inlineRan = false;
+
+    /**
+     * Three tabs over one column: an unscoped first one, a labelled second and
+     * an underscored third whose label the trait generates.
+     *
+     * @return array<string, Tab>
+     */
+    public function getTabs(): array
+    {
+        return [
+            'all' => Tab::make(),
+            'published' => Tab::make('Live')
+                ->query(fn (QueryBuilder $query): QueryBuilder => $query->andWhere("record.status = 'published'")),
+            'in_review' => Tab::make()
+                ->query(fn (QueryBuilder $query): QueryBuilder => $query->andWhere("record.status = 'review'")),
+        ];
+    }
 
     /**
      * Declared as `<name>Action()` so a mounted header action resolves through

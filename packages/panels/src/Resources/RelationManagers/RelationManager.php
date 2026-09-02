@@ -52,6 +52,7 @@ abstract class RelationManager implements InteractsWithActions, InteractsWithSch
     use InteractsWithRelationshipTable {
         InteractsWithRelationshipTable::makeTable insteadof HasTable;
         InteractsWithRelationshipTable::makeTable as makeBaseRelationshipTable;
+        InteractsWithRelationshipTable::getTableQueryStringIdentifier insteadof HasTable;
         InteractsWithRelationshipTable::getDefaultActionUrl insteadof HasActions;
     }
 
@@ -91,6 +92,15 @@ abstract class RelationManager implements InteractsWithActions, InteractsWithSch
     public function setResourceRegistry(ResourceRegistry $resourceRegistry): void
     {
         $this->resourceRegistry = $resourceRegistry;
+    }
+
+    /**
+     * The manager is embedded rather than routed, so no query string reaches it
+     * — its first tab is the one it opens on.
+     */
+    public function mount(): void
+    {
+        $this->loadDefaultActiveTab();
     }
 
     /**

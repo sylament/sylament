@@ -82,8 +82,9 @@ do.
 | `getPageClasses()` — the record-keyed root classes | same | skipped | — | [diverges](#the-root-carries-one-page-class-not-three) |
 | `previousUrl` | `public ?string $previousUrl` | skipped | — | [diverges](#previousurl-is-not-ported-anywhere-in-the-port) |
 | `getRelationManagers()` + `HasRelationManagers` on this page | same | skipped | — | [diverges](#the-class-is-abstract-and-hosts-no-relation-managers-of-its-own) |
-| The record-filter tabs (`$activeTab`, `getTabsContentComponent()`) | `HasTabs`, through the tier | todo | list-page tabs (M4 · 3) | — |
-| The six `#[Url]`-bound browsing props (`tableFilters`, `tableSort`, `tableSearch`, `tableGrouping`, `isTableReordering`, `activeTab`) | same | todo | URL-bound live properties | — |
+| The record-filter tabs (`$activeTab`, the tab strip) | `HasTabs`, through the tier | done | — | the strip is built at render time, not declared in a `content()` schema |
+| [`getTableUrlMapping()`](../../../packages/panels/src/Resources/Pages/ManageRelatedRecords.php) — `page` (identifier-prefixed), `sort`, `search`, `filters`, `tab` | the `#[Url(as: …)]` block redeclared on the page | done | — | [has-table.md](../tables/has-table.md) |
+| The `reordering` and `grouping` URL binds | `#[Url(as: 'reordering')]`, `#[Url(as: 'grouping')]` | todo | reorder (M4 · 3) / grouping (M4 · 6) | — |
 | `canAccess()` / `authorizeAccess()` / `hydrate()` and the authorization response hooks | the same cluster | todo | the authorization epic | [detail](#the-page-is-reachable-by-anyone-who-can-reach-its-url) |
 | `getWidgetData()` and the widget half | same | todo | `sylament/widgets` | — |
 

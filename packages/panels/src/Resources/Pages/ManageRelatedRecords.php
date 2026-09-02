@@ -21,6 +21,7 @@ use Sylament\Support\Icons\IconManager;
 use Sylament\Tables\Concerns\HasTable;
 use Sylament\Tables\Contracts\InteractsWithTable;
 use Sylament\Tables\Table;
+use Symfony\UX\LiveComponent\Metadata\UrlMapping;
 use Twig\Markup;
 
 /**
@@ -48,6 +49,7 @@ abstract class ManageRelatedRecords extends Page implements InteractsWithSchemas
      */
     use InteractsWithRelationshipTable {
         InteractsWithRelationshipTable::makeTable insteadof HasTable;
+        InteractsWithRelationshipTable::getTableQueryStringIdentifier insteadof HasTable;
     }
 
     protected ?string $template = '@SylamentPanels/partials/ManageRelatedRecords/index.html.twig';
@@ -58,6 +60,28 @@ abstract class ManageRelatedRecords extends Page implements InteractsWithSchemas
     public function mount(int|string $record, array $parentRecords = []): void
     {
         $this->mountRecord($record, $parentRecords);
+
+        $this->loadDefaultActiveTab();
+    }
+
+    /**
+     * The browsing state this page carries in its own URL — the routed sibling
+     * of the relation manager, which maps nothing and stays unlinkable. Only
+     * the page parameter takes the tier's identifier, so a second listing on
+     * this route never shares a page number with it.
+     */
+    protected function getTableUrlMapping(string $prop): ?UrlMapping
+    {
+        $identifier = $this->getTableQueryStringIdentifier();
+
+        return match ($prop) {
+            'page' => new UrlMapping(as: $identifier === null ? 'page' : $identifier . 'Page'),
+            'sort' => new UrlMapping(as: 'sort'),
+            'search' => new UrlMapping(as: 'search'),
+            'filters' => new UrlMapping(as: 'filters'),
+            'tab' => new UrlMapping(as: 'tab'),
+            default => null,
+        };
     }
 
     public function getOwnerRecord(): object

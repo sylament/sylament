@@ -13,6 +13,7 @@ use Sylament\Schemas\Components\LiveComponent;
 use Sylament\Schemas\Components\Tabs;
 use Sylament\Schemas\Components\Tabs\Tab;
 use Symfony\UX\LiveComponent\Attribute\LiveProp;
+use Symfony\UX\LiveComponent\Metadata\UrlMapping;
 
 /**
  * The page half of relation managers: the registrations a resource declares,
@@ -21,7 +22,12 @@ use Symfony\UX\LiveComponent\Attribute\LiveProp;
  */
 trait HasRelationManagers
 {
-    #[LiveProp(writable: true)]
+    /**
+     * Bound statically because the trait is composed only by routed record
+     * pages, so the key is this page's own and no second component on the URL
+     * competes for it.
+     */
+    #[LiveProp(writable: true, url: new UrlMapping(as: 'relation'))]
     public ?string $activeRelationManager = null;
 
     /**

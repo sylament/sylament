@@ -1,4 +1,10 @@
+{% set tabs = this.getCachedTabs %}
+
 <section {{ attrs({class: 'sy sy-pa-relation-manager'}, attributes.all) }}>
+    {% if tabs is not empty %}
+        {{ renderComponent(this.getTabsSchema) }}
+    {% endif %}
+
     {{ renderTable() }}
 
     <twig:SylamentActions:Modals />

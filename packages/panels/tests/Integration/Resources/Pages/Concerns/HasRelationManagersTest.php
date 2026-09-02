@@ -228,7 +228,9 @@ it('drops a manager the record hides and a group that names none', function (): 
         ->render()
         ->crawler();
 
-    expect($crawler->filter('[role="tab"]')->count())->toBe(0)
+    // Scoped to the page's own bar: the surviving manager carries record-filter
+    // tabs of its own, which are a different strip on the same page.
+    expect($crawler->filter('[role="tab"][data-model="activeRelationManager"]')->count())->toBe(0)
         ->and($crawler->filter('section.sy-pa-relation-manager')->count())->toBe(1);
 });
 

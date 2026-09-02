@@ -366,3 +366,29 @@ it('replicates a note through its modal', function (): void {
         ->and($replica?->getBody())->toBe('the alpha body')
         ->and($entityManager->getRepository(Note::class)->count([]))->toBe(3);
 });
+
+it('links a row at the edit page its edit action carries', function (): void {
+    [$client, $entityManager] = seededArticlesClient();
+
+    $crawler = $client->request('GET', '/admin/articles');
+    $link = $crawler->filter('tbody .sy-ta-row a.sy-ta-col')->first();
+
+    // The resource registers an edit page, so `EditAction` carries a url: the
+    // row becomes that link, and the record-action seeding skips the action for
+    // exactly that reason.
+    expect($crawler->filter('tbody .sy-ta-row button.sy-ta-col')->count())->toBe(0)
+        ->and($link->attr('href'))->toEndWith(sprintf('/admin/articles/%s/edit', articleKey($entityManager, 'alpha')));
+});
+
+it('makes a row of a page-less resource mount its view action', function (): void {
+    [$client] = seededNotesClient();
+
+    $crawler = $client->request('GET', '/admin/notes');
+    $cell = $crawler->filter('tbody .sy-ta-row button.sy-ta-col')->first();
+
+    // No page is registered for a note, so no action carries a url — the first
+    // of `view`, `edit` becomes the row's click target instead.
+    expect($crawler->filter('tbody .sy-ta-row a.sy-ta-col')->count())->toBe(0)
+        ->and($cell->attr('data-live-action-param'))->toBe('mountAction')
+        ->and($cell->attr('data-live-name-param'))->toBe('view');
+});

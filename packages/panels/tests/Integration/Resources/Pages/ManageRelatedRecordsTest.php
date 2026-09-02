@@ -451,3 +451,29 @@ function misKeyedRegistry(): ResourceRegistry
 
     return $registry;
 }
+
+it('narrows the manage page to the tab its query string names', function (): void {
+    [$client, , $project] = manageRelatedClient();
+
+    $unfiltered = $client->request('GET', sprintf('/mrr/projects/%s/tasks', $project->getId()));
+
+    expect($unfiltered->filter('.sy-pa-page-content > .sy-sc .sy-sc-tabs')->count())->toBe(1)
+        ->and($unfiltered->filter('tbody .sy-ta-row')->count())->toBe(2);
+
+    $narrowed = $client->request('GET', sprintf('/mrr/projects/%s/tasks?tab=first', $project->getId()));
+    $rowText = implode(' ', $narrowed->filter('tbody .sy-ta-row')->each(fn (Crawler $row): string => $row->text()));
+
+    expect($narrowed->filter('tbody .sy-ta-row')->count())->toBe(1)
+        ->and($rowText)->toContain('Alpha');
+});
+
+it('links a row to the related resource page its edit action carries', function (): void {
+    [$client, $entityManager, $project] = manageRelatedClient();
+
+    $crawler = $client->request('GET', sprintf('/mrr/projects/%s/tasks', $project->getId()));
+    $link = $crawler->filter('tbody .sy-ta-row a.sy-ta-col')->first();
+
+    // The related resource registers an edit page, so its `edit` action carries
+    // a url and the row becomes that link rather than a mount trigger.
+    expect($link->attr('href'))->toEndWith(sprintf('/mrr/projects/%s/tasks/%s/edit', $project->getId(), manageRelatedTaskKey($entityManager, 'Alpha')));
+});

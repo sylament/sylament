@@ -6,6 +6,7 @@ namespace Sylament\Panels\Resources\Concerns;
 
 use LogicException;
 use Sylament\Actions\Action;
+use Sylament\Actions\ActionGroup;
 use Sylament\Actions\CreateAction;
 use Sylament\Actions\EditAction;
 use Sylament\Actions\ViewAction;
@@ -28,6 +29,12 @@ use function Symfony\Component\String\u;
  */
 trait InteractsWithRelationshipTable
 {
+    /*
+     * The insert stays ungrouped, like the `insteadof` blocks in both hosts:
+     * Rector splits a grouped `use` and drops the adaptations with it.
+     */
+    use HasTabs;
+
     protected static string $relationship;
 
     protected static ?string $relationshipTitle = null;
@@ -141,19 +148,79 @@ trait InteractsWithRelationshipTable
         return null;
     }
 
+    /**
+     * The prefix this tier's page parameter takes, so two listings reached
+     * through one URL never share a page number. Static by construction: a
+     * `LiveProp` modifier reads it during hydration, where the table cannot be
+     * built.
+     */
+    public function getTableQueryStringIdentifier(): ?string
+    {
+        return lcfirst(u(static::class)->afterLast('\\')->toString());
+    }
+
     protected static function getHumanizedRelationshipName(): string
     {
         return u(static::getRelationshipName())->kebab()->replace('-', ' ')->title(allWords: true)->toString();
     }
 
     /**
-     * The association seeds the table; a related resource stamps its labels and
-     * then configures it, so a column the resource declares lands here too.
+     * The association seeds the table, the active tab scopes it and the row is
+     * seeded to open the record — an action carrying no URL becomes the row's
+     * click target, one carrying a URL becomes its link. A related resource
+     * stamps its labels and then configures it, so a column the resource
+     * declares lands here too.
      */
     protected function makeTable(): Table
     {
         $table = Table::make($this)
-            ->relationship(fn (): Relationship => $this->getRelationship());
+            ->relationship(fn (): Relationship => $this->getRelationship())
+            ->modifyQueryUsing($this->modifyQueryWithActiveTab(...))
+            ->recordAction(static function (object $record, Table $table): ?string {
+                foreach (['view', 'edit'] as $name) {
+                    $action = $table->getAction($name);
+
+                    if (!$action instanceof Action) {
+                        continue;
+                    }
+
+                    $action = static::stampRecordOnActionChain($action, $record);
+
+                    if ($action->isHidden() || filled($action->getUrl())) {
+                        continue;
+                    }
+
+                    return $action->getName();
+                }
+
+                return null;
+            });
+
+        if (!$table->hasCustomRecordUrl()) {
+            $table->recordUrl(static function (object $record, Table $table): ?string {
+                foreach (['view', 'edit'] as $name) {
+                    $action = $table->getAction($name);
+
+                    if (!$action instanceof Action) {
+                        continue;
+                    }
+
+                    $action = static::stampRecordOnActionChain($action, $record);
+
+                    if ($action->isHidden()) {
+                        continue;
+                    }
+
+                    $url = $action->getUrl();
+
+                    if (filled($url)) {
+                        return $url;
+                    }
+                }
+
+                return null;
+            });
+        }
 
         $relatedResource = static::getRelatedResource();
 
@@ -170,6 +237,27 @@ trait InteractsWithRelationshipTable
             ->recordTitle($resource->getRecordTitle(...));
 
         return $resource->table($table);
+    }
+
+    /**
+     * The record an action is asked about rides its whole group chain: a hidden
+     * or URL arm reading the record through its group otherwise answers for the
+     * row the chain last carried.
+     */
+    protected static function stampRecordOnActionChain(Action $action, object $record): Action
+    {
+        $clone = $action->getClone();
+        $clone->record($record);
+
+        $group = $clone->getGroup();
+
+        while ($group instanceof ActionGroup) {
+            $group->record($record);
+
+            $group = $group->getGroup();
+        }
+
+        return $clone;
     }
 
     abstract protected function getResourceRegistry(): ResourceRegistry;

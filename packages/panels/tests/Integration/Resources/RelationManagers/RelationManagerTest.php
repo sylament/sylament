@@ -6,8 +6,10 @@ use Doctrine\ORM\EntityManagerInterface;
 use Sylament\Panels\Tests\Fixtures\Doctrine\Entity\Project;
 use Sylament\Panels\Tests\Fixtures\Doctrine\Entity\Task;
 use Sylament\Panels\Tests\Fixtures\Doctrine\EntityManagerFactory;
+use Sylament\Panels\Tests\Fixtures\Resources\Pages\EditFilteredRelationProject;
 use Sylament\Panels\Tests\Fixtures\Resources\Pages\EditProject;
 use Sylament\Panels\Tests\Fixtures\Resources\RelationManagers\PaginatedTasksRelationManager;
+use Sylament\Panels\Tests\Fixtures\Resources\RelationManagers\TaggedTasksRelationManager;
 use Sylament\Panels\Tests\Fixtures\Resources\RelationManagers\TasksRelationManager;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Component\DomCrawler\Crawler;
@@ -167,4 +169,46 @@ it('refuses an owner key the resource does not answer for', function (): void {
     // reaches a render.
     expect(fn (): object => $this->createLiveComponent(TasksRelationManager::class, ['ownerRecord' => '99999', 'pageClass' => EditProject::class], client: $client)->component())
         ->toThrow(NotFoundHttpException::class);
+});
+
+it('renders a tab strip that switches the manager but binds nothing', function (): void {
+    [$client, , $key] = seededProjectClient();
+
+    $component = $this->createLiveComponent(
+        TaggedTasksRelationManager::class,
+        ['ownerRecord' => $key, 'pageClass' => EditFilteredRelationProject::class],
+        client: $client,
+    );
+
+    $crawler = $component->render()->crawler();
+    $strip = $crawler->filter('section.sy-pa-relation-manager .sy-sc-tabs');
+
+    // The strip is the schemas `Tabs` in server-driven mode, so switching is a
+    // write to the manager's own property — and the manager maps no state onto
+    // the URL, which is the page's.
+    expect($strip->count())->toBe(1)
+        ->and($strip->filter('[data-model="activeTab"]')->count())->toBe(2)
+        ->and($crawler->filter('section.sy-pa-relation-manager[data-live-query-mapping-value]')->count())->toBe(0)
+        ->and($component->component()->activeTab)->toBe('all')
+        ->and($crawler->filter('tbody .sy-ta-row')->count())->toBe(3);
+
+    $narrowed = $component->set('activeTab', 'first')->render()->crawler();
+
+    expect($narrowed->filter('tbody .sy-ta-row')->count())->toBe(1);
+});
+
+it('seeds a row action on a manager whose actions carry no url', function (): void {
+    [$client, , $key] = seededProjectClient();
+
+    $crawler = $this->createLiveComponent(TasksRelationManager::class, ['ownerRecord' => $key, 'pageClass' => EditProject::class], client: $client)
+        ->render()
+        ->crawler();
+
+    $cell = $crawler->filter('tbody .sy-ta-row')->first()->filter('button.sy-ta-col')->first();
+
+    // The manager speaks for no resource, so its `edit` action has no url and
+    // becomes the row's click target rather than its link.
+    expect($crawler->filter('tbody .sy-ta-row a.sy-ta-col')->count())->toBe(0)
+        ->and($cell->attr('data-live-action-param'))->toBe('mountAction')
+        ->and($cell->attr('data-live-name-param'))->toBe('edit');
 });

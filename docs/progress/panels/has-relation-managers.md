@@ -43,7 +43,7 @@ Reference — the Filament source this is diffed against:
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
 | [`Resource::getRelations()`](../../../packages/panels/src/Resources/Resource.php) | [`Resource::getRelations()`](../../../vendor/filament/filament/src/Resources/Resource.php) | done | — | [diverges](#getrelations-is-an-instance-method-like-every-other-resource-hook) |
-| [`$activeRelationManager`](../../../packages/panels/src/Resources/Pages/Concerns/HasRelationManagers.php) | `#[Url(as: 'relation')] public ?string $activeRelationManager` | in progress | URL-bound live properties | [diverges](#the-active-manager-is-not-in-the-url) |
+| [`$activeRelationManager`](../../../packages/panels/src/Resources/Pages/Concerns/HasRelationManagers.php) | `#[Url(as: 'relation')] public ?string $activeRelationManager` | done | — | the trait is composed by routed record pages only, so the binding is static — `url: new UrlMapping(as: 'relation')` |
 | [`getCachedRelationManagers()` / `getRelationManagers()` / `getAllRelationManagers()`](../../../packages/panels/src/Resources/Pages/Concerns/HasRelationManagers.php) | the same three | done | — | [semantics](#the-registrations-are-read-once-per-request-and-filtered-by-the-record) |
 | [`normalizeRelationManagerClass()`](../../../packages/panels/src/Resources/Pages/Concerns/HasRelationManagers.php) | `normalizeRelationManagerClass()` | done | — | — |
 | [`getRelationManagersContentComponent()`](../../../packages/panels/src/Resources/Pages/Concerns/HasRelationManagers.php) | `getRelationManagersContentComponent()` | done | — | [semantics](#four-arms-one-component-and-the-registration-keys-are-the-identities) |

@@ -2,6 +2,7 @@
 {% set heading = this.getHeading %}
 {% set subheading = this.getSubheading %}
 {% set headerActions = this.getCachedHeaderActions %}
+{% set tabs = this.getCachedTabs %}
 
 {% set subNavigation = this.getCachedSubNavigation %}
 {% set subNavigationPosition = subNavigation is not empty ? this.getSubNavigationPosition : null %}
@@ -30,6 +31,10 @@
             {% endif %}
 
             <div class="sy-pa-page-content">
+                {% if tabs is not empty %}
+                    {{ renderComponent(this.getTabsSchema) }}
+                {% endif %}
+
                 {{ renderTable() }}
             </div>
 

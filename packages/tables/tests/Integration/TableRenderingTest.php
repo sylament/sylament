@@ -481,16 +481,40 @@ it('collapses the above-content panel into a details, open only while filters ar
         ->and($filtered->filter('details.sy-ta-filters-collapsible > .sy-ta-filters')->count())->toBe(1);
 });
 
+/*
+ * The fixture paginates deliberately: the records-array lane renders no
+ * `Pagination` at all, so "before the pagination" would be a claim about an
+ * element that is not in the document — a below-content block moved *after* the
+ * footer would still be the last child and the assertion would hold.
+ */
 it('renders the below-content panel after the table and before the pagination', function (): void {
     $crawler = new Crawler(filtersTableHtml(
-        filteredSongsTable(fn (Table $table): Table => $table->filters(songFilters(), FiltersLayout::BelowContent)),
+        fn (Table $table): Table => $table
+            ->records(function (int $page, int|string|null $recordsPerPage): Paginator {
+                assert(is_int($recordsPerPage));
+
+                return new Paginator(
+                    records: [['__key' => '1', 'title' => 'Airbag']],
+                    totalRecordCount: null,
+                    page: $page,
+                    recordsPerPage: $recordsPerPage,
+                    hasMoreRecords: true,
+                );
+            })
+            ->columns([TextColumn::make('title')])
+            ->paginated([2, 5])
+            ->filters(songFilters(), FiltersLayout::BelowContent),
     ));
 
-    $blocks = $crawler->filter('.sy-ta-ctn > *')->each(static fn (Crawler $node): string => $node->nodeName());
+    $children = $crawler->filter('.sy-ta-ctn > *');
+    $blocks = $children->each(static fn (Crawler $node): string => $node->nodeName());
+    $classes = $children->each(static fn (Crawler $node): string => $node->attr('class') ?? '');
 
     expect($crawler->filter('.sy-ta-filters-below-content-ctn > .sy-ta-filters')->count())->toBe(1)
         ->and($crawler->filter('.sy-ta-filters-trigger')->count())->toBe(0)
-        ->and($blocks)->toBe(['table', 'div']);
+        ->and($blocks)->toBe(['table', 'div', 'nav'])
+        ->and($classes[1])->toBe('sy-ta-filters-below-content-ctn')
+        ->and($classes[2])->toContain('sy-pagination');
 });
 
 it('renders the modal layout as a toolbar trigger carrying the invoker command for its dialog', function (): void {

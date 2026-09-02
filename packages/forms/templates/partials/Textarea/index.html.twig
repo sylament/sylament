@@ -1,3 +1,5 @@
+{% set isGrammarlyDisabled = component.isGrammarlyDisabled %}
+
 <twig:SylamentForms:FieldWrapper :field="component">
     <twig:SylamentSupport:InputWrapper
         class="sy-fo-textarea"
@@ -20,6 +22,9 @@
             readonly: component.isReadOnly,
             disabled: component.isDisabled,
             autofocus: component.isAutofocused,
+            'data-gramm': isGrammarlyDisabled ? 'false' : null,
+            'data-gramm_editor': isGrammarlyDisabled ? 'false' : null,
+            'data-enable-grammarly': isGrammarlyDisabled ? 'false' : null,
         }, component.getExtraInputAttributes) }}>{{- component.getState -}}</textarea>
     </twig:SylamentSupport:InputWrapper>
 </twig:SylamentForms:FieldWrapper>

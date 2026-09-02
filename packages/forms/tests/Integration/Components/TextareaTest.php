@@ -146,3 +146,19 @@ it('trims and strips exactly as TextInput does', function (): void {
         ->and($host->data['n'])->toBe(' 1,234 ')
         ->and($field->mutatesStateForValidation())->toBeTrue();
 });
+
+it('renders the three Grammarly opt-out attributes only when disabled', function (): void {
+    $default = new Crawler(renderField(Textarea::make('excerpt')))->filter('textarea.sy-fo-input');
+
+    expect($default->attr('data-gramm'))->toBeNull()
+        ->and($default->attr('data-gramm_editor'))->toBeNull()
+        ->and($default->attr('data-enable-grammarly'))->toBeNull();
+
+    $disabled = new Crawler(renderField(
+        Textarea::make('excerpt')->disableGrammarly(),
+    ))->filter('textarea.sy-fo-input');
+
+    expect($disabled->attr('data-gramm'))->toBe('false')
+        ->and($disabled->attr('data-gramm_editor'))->toBe('false')
+        ->and($disabled->attr('data-enable-grammarly'))->toBe('false');
+});

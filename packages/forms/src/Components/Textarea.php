@@ -8,6 +8,7 @@ use Closure;
 use Sylament\Forms\Components\Concerns\CanBeAutocompleted;
 use Sylament\Forms\Components\Concerns\CanBeLengthConstrained;
 use Sylament\Forms\Components\Concerns\CanBeReadOnly;
+use Sylament\Forms\Components\Concerns\CanDisableGrammarly;
 use Sylament\Forms\Components\Concerns\HasExtraInputAttributes;
 use Sylament\Schemas\Components\Concerns\CanStripCharactersFromState;
 use Sylament\Schemas\Components\Concerns\CanTrimState;
@@ -19,6 +20,7 @@ class Textarea extends Field implements Contracts\CanBeLengthConstrained
     use CanBeAutocompleted;
     use CanBeLengthConstrained;
     use CanBeReadOnly;
+    use CanDisableGrammarly;
     use CanStripCharactersFromState;
     use CanTrimState;
     use HasExtraInputAttributes;

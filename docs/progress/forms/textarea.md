@@ -31,9 +31,9 @@ _Detail_ links the write-up in [Details](#details), deleted once the row is
 | `autosize()` / `shouldAutosize()` | [`Components/Textarea.php`](../../../vendor/filament/forms/src/Components/Textarea.php) | todo | — | [detail](#autosize-is-not-ported) |
 | [Autocomplete (`CanBeAutocompleted`)](../../../packages/forms/src/Components/Concerns/CanBeAutocompleted.php) | [`Concerns/CanBeAutocompleted.php`](../../../vendor/filament/forms/src/Components/Concerns/CanBeAutocompleted.php) | done | — | [detail](can-be-autocompleted.md) |
 | [Read-only (`CanBeReadOnly`)](../../../packages/forms/src/Components/Concerns/CanBeReadOnly.php) | [`Concerns/CanBeReadOnly.php`](../../../vendor/filament/forms/src/Components/Concerns/CanBeReadOnly.php) | done | — | [detail](can-be-read-only.md) |
-| Disable Grammarly (`CanDisableGrammarly`) | [`Concerns/CanDisableGrammarly.php`](../../../vendor/filament/forms/src/Components/Concerns/CanDisableGrammarly.php) | todo | — | [detail](#the-input-attribute-concerns-are-not-ported) |
+| [Disable Grammarly (`CanDisableGrammarly`)](../../../packages/forms/src/Components/Concerns/CanDisableGrammarly.php) | [`Concerns/CanDisableGrammarly.php`](../../../vendor/filament/forms/src/Components/Concerns/CanDisableGrammarly.php) | done | — | — |
 | [Extra input attributes (`HasExtraInputAttributes`)](../../../packages/forms/src/Components/Concerns/HasExtraInputAttributes.php) | [`Concerns/HasExtraInputAttributes.php`](../../../vendor/filament/forms/src/Components/Concerns/HasExtraInputAttributes.php) | done | — | [detail](has-extra-input-attributes.md) |
-| Extra Alpine attributes (`HasExtraAlpineAttributes`) | [`support/Concerns/HasExtraAlpineAttributes.php`](../../../vendor/filament/support/src/Concerns/HasExtraAlpineAttributes.php) | todo | — | [detail](#the-input-attribute-concerns-are-not-ported) |
+| Extra Alpine attributes (`HasExtraAlpineAttributes`) | [`support/Concerns/HasExtraAlpineAttributes.php`](../../../vendor/filament/support/src/Concerns/HasExtraAlpineAttributes.php) | skipped | — | [diverges](../support/component-attribute-bag.md#extra-alpine-attributes-are-not-ported) |
 | [Trim state (`CanTrimState`)](../../../packages/schemas/src/Components/Concerns/CanTrimState.php) | [`schemas/Concerns/CanTrimState.php`](../../../vendor/filament/schemas/src/Components/Concerns/CanTrimState.php) | done | — | [semantics](#trim-reaches-the-saved-value-strip-reaches-it-through-a-cast-neither-reaches-the-raw-bag) |
 | [Strip characters (`CanStripCharactersFromState`)](../../../packages/schemas/src/Components/Concerns/CanStripCharactersFromState.php) | [`schemas/Concerns/CanStripCharactersFromState.php`](../../../vendor/filament/schemas/src/Components/Concerns/CanStripCharactersFromState.php) | done | — | [semantics](#trim-reaches-the-saved-value-strip-reaches-it-through-a-cast-neither-reaches-the-raw-bag) |
 | [State casts + `mutate*` / `mutates*` hooks](../../../packages/forms/src/Components/Textarea.php) | [`Components/Textarea.php`](../../../vendor/filament/forms/src/Components/Textarea.php) | done | — | [semantics](#trim-reaches-the-saved-value-strip-reaches-it-through-a-cast-neither-reaches-the-raw-bag) |
@@ -55,20 +55,6 @@ no Alpine wiring or wrapper height style. Porting it needs a `forms` JS/Alpine
 asset the bundle does not ship yet. **Next step:** add the autosize setter +
 getter and the (Stimulus) controller, then wire the wrapper height and
 `fi-autosizable`/`sy-fo-*` class into the template.
-
-### The input-attribute concerns are not ported
-
-Filament's `Textarea` composes `CanDisableGrammarly` (the `data-gramm*`
-attributes) and `HasExtraAlpineAttributes` (arbitrary `x-*` bindings). Neither is
-composed on the Sylament `Textarea`, and the template emits neither attribute.
-They are shared field concerns (their own README rows) that are simply not
-reached yet — each is a self-contained setter/getter plus a template attribute.
-**Next step:** port the concerns and emit their attributes on the `<textarea>`
-element. Filament composes three more alongside them,
-[`HasExtraInputAttributes`](has-extra-input-attributes.md),
-[`CanBeReadOnly`](can-be-read-only.md) and
-[`CanBeAutocompleted`](can-be-autocompleted.md); all three are absent from this
-list because they have landed.
 
 ## Semantics
 

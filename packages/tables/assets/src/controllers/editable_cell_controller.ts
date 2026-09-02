@@ -32,7 +32,6 @@ export default class extends Controller<HTMLElement> {
   #unsubscribe: (() => void) | null = null;
   #generation = 0;
   #writes = 0;
-  #renders = 0;
 
   async connect(): Promise<void> {
     this.#repaint();
@@ -72,7 +71,6 @@ export default class extends Controller<HTMLElement> {
     }
 
     const wasDisabled = control.disabled;
-    const renderMark = this.#renders;
 
     this.#writes++;
     this.element.classList.add(LOADING_CLASS);
@@ -91,11 +89,7 @@ export default class extends Controller<HTMLElement> {
         this.element.classList.remove(LOADING_CLASS);
       }
 
-      // A morph that ran during the write already carries the server's own `disabled`, so
-      // restoring ours would clobber a cell the write itself turned off.
-      if (this.#renders === renderMark) {
-        control.disabled = wasDisabled;
-      }
+      control.disabled = wasDisabled;
 
       this.#repaint();
     }
@@ -152,10 +146,7 @@ export default class extends Controller<HTMLElement> {
 
     this.#component = component;
 
-    const onRender = (): void => {
-      this.#renders++;
-      this.#repaint();
-    };
+    const onRender = (): void => this.#repaint();
 
     component.on("render:finished", onRender);
     this.#unsubscribe = (): void => component.off("render:finished", onRender);

@@ -80,9 +80,18 @@ nothing to solve. `disabledClick()` in `setUp()` collapses the cell wrapper to a
 Filament stamps `wire:loading.attr="disabled"` and a `wire:target` list on the
 control and lets Livewire manage it. The port has no such directive: the
 controller disables the control and puts `sy-loading` on the cell root for the
-duration of its own write, and restores the control only when no re-render ran
-in the meantime — a morph that did run already carries the server's own
-`disabled`, and clobbering it would re-enable a cell the write itself turned off.
+duration of its own write, and **always** restores the control when the write
+settles. It cannot condition that restore on whether a re-render ran in the
+meantime, because one always has: UX resolves an action's promise *after*
+`processRerender()`, which fires `render:finished` at its end
+([`live_controller.js`](../../../vendor/symfony/ux-live-component/assets/dist/live_controller.js)),
+so a "no re-render ran" guard never fires and the cell would stay disabled for
+the rest of the page's life. Removing the attribute is also what un-does the
+change UX's `ExternalMutationTracker` recorded when we set it — a tracked
+attribute whose original value was absent is *deleted* from the change map on
+removal — so the server's own `disabled` wins again from the next morph on. The
+residual is one render wide: a write whose own result disables the cell shows an
+enabled control until the next re-render.
 
 ## Semantics
 

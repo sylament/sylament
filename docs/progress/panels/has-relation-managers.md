@@ -222,22 +222,35 @@ own form in the tab bar beside the managers, which needs the faithful `content()
 above; and Filament ships them behind a hook that returns `false` with no
 override anywhere in its own source, so a default install never reaches them.
 
-### The active manager is not in the URL
+### The `relation` binding is the toolkit's only static `url:` mapping
 
 Filament binds the property with `#[Url(as: 'relation')]`, so a tab switch is
-back-button navigable and a manager is linkable. UX's `#[LiveProp(url: true)]`
-exists but is used nowhere in this repo and is unproven on a **nested** live
-component, so v1 ships the property plain. This sits with the tables-wide `#[Url]`
-gap rather than on its own: when URL-bound props are taken on across the toolkit,
-`?relation=` rides with them.
+linkable; M4 · 3 shipped the same binding, and it is the only place in the toolkit
+that reaches UX's `url:` argument **directly** rather than through a
+[`modifier:`](../tables/has-table.md#the-url-binding-is-a-per-prop-liveprop-modifier-opted-into-by-the-page).
+The reason is that the name is fixed. A table's `?page=` has to be disambiguated
+per host, so its mapping can only be computed at runtime; `?relation=` names one
+property on one trait that only routed record pages compose, so a
+`new UrlMapping(as: 'relation')` in the attribute says everything a modifier would
+and costs no method. The worry this section previously recorded — that `url:` was
+"unproven on a **nested** live component" — is answered rather than dodged: UX's
+[`RequestInitializeSubscriber`](../../../vendor/symfony/ux-live-component/src/EventListener/RequestInitializeSubscriber.php)
+hooks `PostMountEvent` for every live component, nested included, so the binding
+works on a manager embedded in a page as it does on the page itself. It is a
+routed page's prop either way, which is why it is bound here and a manager's own
+[`?tab=`](has-tabs.md) is not.
 
-Two things now wait on it rather than one.
+One thing that was said to wait on this **did not come with it**, and the reason
+has changed rather than gone.
 [`Resource::getIndexUrl()`'s parent arms](nested-resources.md#the-parent-arms-carry-no-relation-parameter)
-omit the `relation` parameter Filament appends to them, because it would be inert
-noise in a copyable URL — and that omission is what makes two breadcrumb URLs
-coincide on a nested page, so
-[a crumb goes unlinked](nested-resources.md#a-crumb-whose-url-the-trail-already-spends-renders-unlinked)
-until the binding lands.
+still omit the `relation` parameter Filament appends, and
+[a nested breadcrumb still renders unlinked](nested-resources.md#a-crumb-whose-url-the-trail-already-spends-renders-unlinked)
+because two trail URLs coincide without it. That was recorded as *"returns with
+the URL binding"*; the binding has landed and the omission stands on its own
+merits now — appending `?relation=<name>` to a breadcrumb URL is a real cost (it
+is noise in a URL a user copies, and it pins a tab the reader did not ask for)
+against a real benefit (the crumb links). It is a decision rather than a
+dependency, and it is the one piece of `?relation=` left open.
 
 ### The server-mode tab bar has no overflow dropdown
 

@@ -129,10 +129,8 @@ trait HasTabs
      * onto this host — built at render time, so it costs nothing on a host that
      * declares no tabs.
      *
-     * A null active key renders `data-value` as null and support's `TabsItem`
-     * refuses a null attribute, so the page 500s. The default is reloaded here
-     * as well as at the mount and the update, because the URL seeding runs
-     * *after* the mount and an empty `?tab=` overwrites what it left behind.
+     * The default is reloaded here as well as at the mount and the update: a host
+     * with tabs must never render the strip with a null active tab.
      */
     public function getTabsSchema(): Schema
     {

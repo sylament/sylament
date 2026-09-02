@@ -562,10 +562,14 @@ message that tells a caller what it forgot.
 
 Filament's arms 2 and 3 additionally append `'relation' => $relationshipName` to
 preselect the relation-manager tab through its `#[Url(as: 'relation')]` property.
-Ours is omitted, because
-[`$activeRelationManager` is deliberately not URL-bound](has-relation-managers.md#the-active-manager-is-not-in-the-url):
-the parameter would be inert noise in a URL a user can copy. It returns in the
-same change as the URL binding.
+Ours is omitted, and the reason narrowed with M4 · 3: the property **is** now
+[URL-bound](has-relation-managers.md#the-relation-binding-is-the-toolkits-only-static-url-mapping),
+so the parameter would no longer be inert — it would preselect the tab exactly as
+Filament's does. What is left is the judgment the omission always also rested on:
+it is noise in a URL a user copies, and it pins a tab the reader did not ask for.
+Kept omitted on those grounds rather than on the binding's absence, which means
+the [unlinked crumb below](#a-crumb-whose-url-the-trail-already-spends-renders-unlinked)
+is now a standing consequence rather than a temporary one.
 
 This is also what closes the recorded trap that a resource with no `index` page
 throws from its own breadcrumbs: a nested resource's index **is** its parent, so
@@ -642,8 +646,11 @@ plain text: `Articles → Genesis → Sections → In the beginning → Edit`, w
 never meets the edge — its arms 2 and 3 append `?relation=…`, which makes the two
 URLs differ — so this is an edge our
 [omission of that parameter](#the-parent-arms-carry-no-relation-parameter)
-creates, and it resolves the same way that omission does: when the URL binding
-lands, the URLs differ again and the crumb links.
+creates. It was recorded as resolving when the URL binding landed; the binding
+landed with M4 · 3 and the omission did not go with it, so the crumb stays
+unlinked until that omission is revisited on its own terms. Nothing else changed:
+the trail is still correct, and the unlinked crumb still points at the page the
+crumb above it already links.
 
 The test is on the whole trail, not on adjacency: any URL already spent is
 unlinked, which additionally makes a non-adjacent repeat impossible.

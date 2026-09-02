@@ -82,9 +82,9 @@ do.
 | `getPageClasses()` — the record-keyed root classes | same | skipped | — | [diverges](#the-root-carries-one-page-class-not-three) |
 | `previousUrl` | `public ?string $previousUrl` | skipped | — | [diverges](#previousurl-is-not-ported-anywhere-in-the-port) |
 | `getRelationManagers()` + `HasRelationManagers` on this page | same | skipped | — | [diverges](#the-class-is-abstract-and-hosts-no-relation-managers-of-its-own) |
-| The record-filter tabs (`$activeTab`, the tab strip) | `HasTabs`, through the tier | done | — | the strip is built at render time, not declared in a `content()` schema |
-| [`getTableUrlMapping()`](../../../packages/panels/src/Resources/Pages/ManageRelatedRecords.php) — `page` (identifier-prefixed), `sort`, `search`, `filters`, `tab` | the `#[Url(as: …)]` block redeclared on the page | done | — | [has-table.md](../tables/has-table.md) |
-| The `reordering` and `grouping` URL binds | `#[Url(as: 'reordering')]`, `#[Url(as: 'grouping')]` | todo | reorder (M4 · 3) / grouping (M4 · 6) | — |
+| The record-filter tabs (`$activeTab`, the tab strip) | `HasTabs`, through the tier | done | — | [has-tabs.md](has-tabs.md) — composed through [`InteractsWithRelationshipTable`](interacts-with-relationship-table.md), so this page and a relation manager offer the same filters; the strip is built at render time rather than declared in a `content()` schema |
+| [`getTableUrlMapping()`](../../../packages/panels/src/Resources/Pages/ManageRelatedRecords.php) — `page` (identifier-prefixed), `sort`, `search`, `filters`, `tab` | the `#[Url(as: …)]` block redeclared on the page | done | — | [has-table.md](../tables/has-table.md#the-url-binding-is-a-per-prop-liveprop-modifier-opted-into-by-the-page) · the prefix comes from [the host hook](interacts-with-relationship-table.md#the-table-side-querystringidentifier-is-deliberately-not-stamped), never from the `Table` setter |
+| The `reordering` and `grouping` URL binds | `#[Url(as: 'reordering')]`, `#[Url(as: 'grouping')]` | skipped / todo | grouping (M4 · 6) | `reordering` is **skipped**: reordering shipped with M4 · 3 and the bind did not, [deliberately](../tables/has-table.md#the-url-binding-is-a-per-prop-liveprop-modifier-opted-into-by-the-page) — a transient UI mode would leave a permanent `reordering=0` in every URL. `grouping` stays **todo** with no prop to attach to |
 | `canAccess()` / `authorizeAccess()` / `hydrate()` and the authorization response hooks | the same cluster | todo | the authorization epic | [detail](#the-page-is-reachable-by-anyone-who-can-reach-its-url) |
 | `getWidgetData()` and the widget half | same | todo | `sylament/widgets` | — |
 
@@ -189,17 +189,21 @@ both surfaces on purpose — `SectionsRelationManager` as a tab on the article e
 page ([M6 · 1](relation-manager.md), the modal flow) beside `ManageArticleSections`
 as a routed page (this epic, the link flow) — so the one association shows what
 each flow looks like rather than either standing in for the other. Record-filter
-tabs are skipped for a different reason: `HasTabs` is the list-page tabs seam
-that arrives with [M4 · 3](../roadmap.md#m4--tables-widening), and this page will
-take it when `ListRecords` does.
+tabs are the exception that did arrive: `HasTabs` landed with
+[M4 · 3](../roadmap.md#m4--tables-widening) on
+[the shared tier](interacts-with-relationship-table.md) rather than on
+`ListRecords` alone, so this page offers record filters over its own association
+without the manager wiring above coming with them — [has-tabs.md](has-tabs.md).
 
 ### The page renders a template, not a content schema
 
 Filament's `content()` returns a `Group` of the record-filter tabs, two render
 hooks and an `EmbeddedTable`, sibling to the relation-manager component. All four
-are deferred — `EmbeddedTable` and render hooks are unported, the tabs ride with
-M4 · 3, the managers are skipped above — which would leave a content schema
-wrapping one table and nothing else. So the page renders
+are deferred or placed elsewhere — `EmbeddedTable` and render hooks are unported,
+the managers are skipped above, and the tabs landed with M4 · 3 as a
+[schema the partial renders](has-tabs.md#the-strip-is-a-schema-a-partial-renders-not-a-component-a-content-schema-holds)
+rather than a component a `content()` would hold — which would leave a content
+schema wrapping one table and nothing else. So the page renders
 [`partials/ManageRelatedRecords/index.html.twig`](../../../packages/panels/templates/partials/ManageRelatedRecords/index.html.twig):
 the `ListRecords` skeleton (the page root, the header with its breadcrumbs and
 header actions, `{{ renderTable() }}` inside `sy-pa-page-content`, the

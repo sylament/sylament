@@ -53,15 +53,15 @@ Reference — the Filament source this is diffed against:
 | [`canViewForRecord()`](../../../packages/panels/src/Resources/RelationManagers/RelationManager.php) | `canViewForRecord()` | in progress | the authorization epic | [answers `true` unconditionally](#every-registered-manager-is-reachable-by-anyone-until-the-authorization-epic) |
 | `isReadOnly()` / `canReorder()`'s read-only arm | `isReadOnly()`, `canReorder()` | todo | the authorization epic | [inventory](#every-registered-manager-is-reachable-by-anyone-until-the-authorization-epic) |
 | `getDefaultActionAuthorizationResponse()` / `getDefaultActionIndividualRecordAuthorizationResponseResolver()` / `CanAuthorizeAccess` / `checkPolicyExistence()` / `skipAuthorization()` | [`RelationManager.php`](../../../vendor/filament/filament/src/Resources/RelationManagers/RelationManager.php), [`Concerns/CanAuthorizeAccess.php`](../../../vendor/filament/filament/src/Resources/RelationManagers/Concerns/CanAuthorizeAccess.php) | todo | the authorization epic | [inventory](#every-registered-manager-is-reachable-by-anyone-until-the-authorization-epic) |
-| `content()` — the manager's own tabs + `EmbeddedTable` | `content()` | todo | `EmbeddedTable`, record-filter tabs | [diverges](#the-manager-renders-a-template-not-a-content-schema) |
+| `content()` — the manager's own tabs + `EmbeddedTable` | `content()` | todo | `EmbeddedTable` | [diverges](#the-manager-renders-a-template-not-a-content-schema) — the record-filter tabs came off this blocker with M4 · 3 and render from the partial instead ([has-tabs.md](has-tabs.md)) |
 | `$isBadgeDeferred` / `isBadgeDeferred()` | `RelationManager.php` | skipped | — | [diverges](#deferred-tab-badges-do-not-port) |
 | `CanBeLazy` — `lazy()` / `isLazy()` | [`support/src/Concerns/CanBeLazy.php`](../../../vendor/filament/support/src/Concerns/CanBeLazy.php) | skipped | — | [diverges](#lazy-loading-does-not-port-so-the-default-properties-are-empty) |
 | The six `@deprecated` label statics + `$inverseRelationship` and their `makeTable()` `when()` arms | `RelationManager.php` | skipped | — | [diverges](#the-deprecated-label-statics-do-not-port) |
 | [`$relatedResource` / `getRelatedResource()`](../../../packages/panels/src/Resources/Concerns/InteractsWithRelationshipTable.php) and [`getDefaultActionUrl()`](../../../packages/panels/src/Resources/Concerns/InteractsWithRelationshipTable.php)'s related-resource arms | `RelationManager.php`, byte-identical to the copy on `ManageRelatedRecords` | done | — | [interacts-with-relationship-table.md](interacts-with-relationship-table.md#the-url-arms-are-hoisted-once-and-carry-the-owner-explicitly) |
 | `getRenderHookScopes()` / `HasRenderHookScopes`, `render()` / `getViewData()` | `RelationManager.php` | todo | M6 · 6 (render hooks) | — |
-| [`getTableQueryStringIdentifier()`](../../../packages/panels/src/Resources/Concerns/InteractsWithRelationshipTable.php) and the manager's own record-filter [`HasTabs`](../../../packages/panels/src/Resources/Concerns/HasTabs.php) | [`InteractsWithRelationshipTable`](../../../vendor/filament/filament/src/Resources/Concerns/InteractsWithRelationshipTable.php) | done | — | the manager maps no state onto the URL, so its tabs render unlinkable — Filament's own manager behaviour |
+| [`getTableQueryStringIdentifier()`](../../../packages/panels/src/Resources/Concerns/InteractsWithRelationshipTable.php) and the manager's own record-filter [`HasTabs`](../../../packages/panels/src/Resources/Concerns/HasTabs.php) | [`InteractsWithRelationshipTable`](../../../vendor/filament/filament/src/Resources/Concerns/InteractsWithRelationshipTable.php) | done | — | [has-tabs.md](has-tabs.md) · the manager maps no state onto the URL, so its tabs render unlinkable — Filament's own manager behaviour — and the identifier is [the host hook rather than the `Table` setter](interacts-with-relationship-table.md#the-table-side-querystringidentifier-is-deliberately-not-stamped) |
 | `mount()` — `loadDefaultActiveTab()` | `mount()` | done | — | [diverges](#the-default-active-tab-loads-at-post-mount-and-the-manager-keeps-no-mount-of-its-own) — the manager declares no `mount()`; the hook is a `#[PostMount]` on [`HasTabs`](../../../packages/panels/src/Resources/Concerns/HasTabs.php) |
-| [`recordAction()` / `recordUrl()` row-click seeding in `makeTable()`](../../../packages/panels/src/Resources/Concerns/InteractsWithRelationshipTable.php) | [`InteractsWithRelationshipTable::makeTable()`](../../../vendor/filament/filament/src/Resources/Concerns/InteractsWithRelationshipTable.php) | done | — | — |
+| [`recordAction()` / `recordUrl()` row-click seeding in `makeTable()`](../../../packages/panels/src/Resources/Concerns/InteractsWithRelationshipTable.php) | [`InteractsWithRelationshipTable::makeTable()`](../../../vendor/filament/filament/src/Resources/Concerns/InteractsWithRelationshipTable.php) | done | — | [diverges](interacts-with-relationship-table.md#both-seeding-probes-clone-the-action-where-vendor-clones-in-one-of-four) |
 | [`$relationshipTitle` / `getRelationshipTitle()`](../../../packages/panels/src/Resources/Concerns/InteractsWithRelationshipTable.php) | [`InteractsWithRelationshipTable`](../../../vendor/filament/filament/src/Resources/Concerns/InteractsWithRelationshipTable.php) | done | — | [diverges](interacts-with-relationship-table.md#the-title-is-an-instance-method-and-the-static-title-chain-never-reaches-the-related-resource) — the getter is an instance method, so the **static** `getTitle()` below never reaches its related arm |
 | _rest not audited yet_ | | | | |
 
@@ -334,11 +334,18 @@ band.
 ### The manager renders a template, not a content schema
 
 Filament's `content()` returns a schema holding the manager's own record-filter
-tabs, two render hooks and an `EmbeddedTable`. All four are deferred —
-`EmbeddedTable` and render hooks are unported, and the record-filter tabs ride
-with list-page tabs — which would leave a content schema wrapping one table and
-nothing else. So the manager renders a partial instead: the table and its own
-`<twig:SylamentActions:Modals />`, nothing more. The heading needs no chrome of
+tabs, two render hooks and an `EmbeddedTable`. `EmbeddedTable` and the render
+hooks are still unported, which would leave a content schema wrapping one table
+and nothing else. So the manager renders a partial instead: the tab strip when it
+has one, the table, and its own `<twig:SylamentActions:Modals />`, nothing more.
+
+The tabs are the piece that changed with M4 · 3 and did **not** move the decision:
+[`HasTabs`](has-tabs.md) ships on
+[the shared tier](interacts-with-relationship-table.md), so a manager declaring
+`getTabs()` renders a strip above its table — but as a
+[schema the partial renders](has-tabs.md#the-strip-is-a-schema-a-partial-renders-not-a-component-a-content-schema-holds),
+by the same two-line guard `ListRecords` uses, rather than as a component placed
+in a `content()` that still does not exist. The heading needs no chrome of
 the manager's — `makeTable()` seeds `Table::heading()` with `static::getTitle()`
 exactly as Filament's does, and the table's `sy-ta-header` band renders it
 inside the container, so the tab label and the table heading stay one string by

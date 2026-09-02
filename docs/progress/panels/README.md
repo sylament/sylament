@@ -13,10 +13,18 @@ audited end to end yet.
 [`support/component.md`](../support/component.md) is the shape each detail file
 follows. The package's docs are in a deliberate mixed state: most detail lives as
 in-file anchors in this README (a recorded divergence from the tree rule), while
-M6 · 1 started the first per-component detail files —
-[relation-manager.md](relation-manager.md), [relation-group.md](relation-group.md),
-[has-relation-managers.md](has-relation-managers.md) — and new surfaces follow that
-shape; the inline sections stay until each is migrated.
+M6 · 1 started the first per-component detail files and every surface since has
+followed that shape, ten so far — the relation-manager tier
+([relation-manager.md](relation-manager.md),
+[relation-group.md](relation-group.md),
+[has-relation-managers.md](has-relation-managers.md),
+[interacts-with-relationship-table.md](interacts-with-relationship-table.md),
+[manage-related-records.md](manage-related-records.md)), the record and
+navigation concerns ([interacts-with-record.md](interacts-with-record.md),
+[has-sub-navigation.md](has-sub-navigation.md),
+[nested-resources.md](nested-resources.md)),
+[global-search.md](global-search.md), and M4 · 3's
+[has-tabs.md](has-tabs.md). The inline sections stay until each is migrated.
 
 ## Carried decisions
 
@@ -1018,15 +1026,23 @@ ux-twig-component's `ComponentStack` — this is exactly why
 `components/`: it is rendered from PHP through `template_from_method`, and a
 `<twig:>` invocation would find no `this`.
 
-Deferred, all todo: tabs (`HasTabs`, `$activeTab`, `modifyQueryWithActiveTab()`),
-`#[Url]` query-string binding of the browsing state — Filament url-binds six
-props and none of our tables props are url-bound either, so this is a tables-wide
-gap rather than a list-page one — `recordUrl` / `recordAction` row-click
-defaulting (see the divergence), the deprecated
-`getTableQuery()` / `modelLabel()` seeding, `content()` and its `EmbeddedTable`,
-and the `ManageRecords` subclass. The parent-record scoping arm came off that
-list with M6 · 3, and the page partial gained
-[the sub-navigation band](has-sub-navigation.md) with the other three.
+Three of that list's seven came off it with M4 · 3. **Tabs** ship as
+[`HasTabs`](has-tabs.md) — `$activeTab`, `getTabs()`, `getCachedTabs()`,
+`getTabsSchema()` and `modifyQueryWithActiveTab()` — the strip rendered above
+`renderTable()` from the same `{% if tabs is not empty %}` guard all three
+tab-bearing partials carry. **Query-string binding** ships as
+[`getTableUrlMapping()`](../tables/has-table.md#the-url-binding-is-a-per-prop-liveprop-modifier-opted-into-by-the-page),
+overridden here to map five of Filament's six names — `page` (identifier-prefixed),
+`sort`, `search`, `filters` and `tab`; `reordering` is
+[deliberately unbound](../tables/has-table.md#the-url-binding-is-a-per-prop-liveprop-modifier-opted-into-by-the-page)
+and `grouping` has no prop until M4 · 6. And **row-click defaulting** ships as the
+`recordAction()` / `recordUrl()` seeding in `makeTable()`, which
+[resource pages answer where no action does](#the-row-click-falls-through-to-the-resources-own-view-or-edit-page).
+
+Still deferred, all todo: the deprecated `getTableQuery()` / `modelLabel()`
+seeding, `content()` and its `EmbeddedTable`, and the `ManageRecords` subclass.
+The parent-record scoping arm came off the list with M6 · 3, and the page partial
+gained [the sub-navigation band](has-sub-navigation.md) with it.
 
 Three divergences are the list page's:
 [the table is stamped query-first and resource-last](#the-list-pages-table-is-stamped-query-first-and-resource-last),
@@ -3029,18 +3045,37 @@ they buy is the whole [record-title chain](../actions/action.md#a-table-bound-ac
 for row actions — a `ViewAction`'s heading reads the record, and the empty state
 reads *"No articles"* rather than *"No records"*. What is still gone is the
 middle of the chain, each piece with its own reason — the deprecated
-`getTableQuery()` seeding is a deprecated delegate, tabs and parent records are
-deferred features, and the rest of `configureTable()`'s stamp
-(`authorizeReorder()`) is resource metadata whose table-side surface is
-unported.
+`getTableQuery()` seeding is a deprecated delegate, and the rest of
+`configureTable()`'s stamp (`authorizeReorder()`) is resource metadata whose
+table-side authorization arm is unported.
 
-The one that will be missed is **row-click defaulting**. Filament's `recordUrl`
-and `recordAction` closures make a table row clickable — falling through the
-table's own `view`/`edit` actions, then the resource's `view`/`edit` pages — and
-our `Table` has no `recordUrl()` / `recordAction()` surface at all, so there is
-nothing to stamp. It is deferred at the tables layer, not declined here; when
-those land, this method is where the fallthrough goes, still before the resource
-hop so a resource can override it.
+#### The row click falls through to the resource's own view or edit page
+
+Row-click defaulting was the one this method was predicted to miss, and M4 · 3
+landed it — in `makeTable()` rather than in `table()`, which is the placement the
+prediction got wrong and the reason matters. `table()` runs the resource hop last
+so a resource can override anything; `makeTable()` runs **before** `table()`, so
+seeding there means the resource's own `recordUrl()` still wins, which is the
+same precedence read from the other end and it composes with `parent::table()`
+being mandatory.
+
+The fallthrough is Filament's, plus one hop Filament does not have. Both closures
+walk `['view', 'edit']` against the table's own action set: `recordAction()`
+returns the first action that is visible and carries **no** URL (a URL'd action is
+a link, not a click target), and `recordUrl()` returns the first visible action's
+URL. Where neither answers — the usual case, since a resource declares its row
+actions as page links — `recordUrl()` falls through to
+`$resource->getUrl('view' | 'edit', [...$this->parentRecords, 'record' => $record])`,
+which is what makes a plain list's rows clickable with nothing declared at all.
+That last hop is the list page's alone: the
+[relation-manager tier](interacts-with-relationship-table.md) shares the two
+action probes verbatim and stops there, because a related record's page is
+reached through [`getDefaultActionUrl()`](interacts-with-relationship-table.md)
+instead.
+
+`recordUrl()` is stamped only `if (! $table->hasCustomRecordUrl())`, Filament's own
+guard, so a resource that sets one keeps it; `recordAction()` is stamped
+unconditionally, because it has no such predicate over there either.
 
 The query closure is worth one note: `->query()` takes a `Closure` rather than
 the builder, so `getRecordQuery()` runs at the table's first

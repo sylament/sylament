@@ -48,10 +48,10 @@ do.
 | [`makeTable()`](../../../packages/panels/src/Resources/Concerns/InteractsWithRelationshipTable.php) — the related-resource stamp | `makeTable()`'s `$relatedResource` block + `Resource::configureTable()` | done | — | [diverges](#the-related-stamp-is-configuretables-four-labels-not-filaments-double-set) |
 | [`getDefaultActionUrl()`](../../../packages/panels/src/Resources/Concerns/InteractsWithRelationshipTable.php) — the related create / edit / view arms | the byte-identical copies on both hosts | done | — | [diverges](#the-url-arms-are-hoisted-once-and-carry-the-owner-explicitly) |
 | `defaultForm()` / `defaultInfolist()` — the two-column wrappers | the same two | skipped | — | [diverges](relation-manager.md#the-defaultform-two-column-wrapper-does-not-port) |
-| [`makeTable()`](../../../packages/panels/src/Resources/Concerns/InteractsWithRelationshipTable.php) — the `recordAction()` / `recordUrl()` row-click seeding | the two closures walking `view` / `edit` | done | — | [diverges](#a-row-links-through-its-action-buttons-not-through-the-row-itself) |
-| [`getTableQueryStringIdentifier()`](../../../packages/panels/src/Resources/Concerns/InteractsWithRelationshipTable.php) | `makeTable()`'s `->queryStringIdentifier(Str::lcfirst(class_basename(static::class)))` | done | — | the host hook, not the `Table` setter — a `LiveProp` modifier cannot build a table |
+| [`makeTable()`](../../../packages/panels/src/Resources/Concerns/InteractsWithRelationshipTable.php) — the `recordAction()` / `recordUrl()` row-click seeding | the two closures walking `view` / `edit` | done | — | [diverges](#both-seeding-probes-clone-the-action-where-vendor-clones-in-one-of-four) · [diverges](#the-table-side-querystringidentifier-is-deliberately-not-stamped) |
+| [`getTableQueryStringIdentifier()`](../../../packages/panels/src/Resources/Concerns/InteractsWithRelationshipTable.php) | `makeTable()`'s `->queryStringIdentifier(Str::lcfirst(class_basename(static::class)))` | done | — | [diverges](#the-table-side-querystringidentifier-is-deliberately-not-stamped) |
 | [`makeTable()`](../../../packages/panels/src/Resources/Concerns/InteractsWithRelationshipTable.php) — the active-tab query stamp | `->modifyQueryUsing($this->modifyQueryWithActiveTab(...))` | done | — | stamped before the related-resource hop, so a tab scopes the query that resource then configures |
-| [`HasTabs` on the trait](../../../packages/panels/src/Resources/Concerns/HasTabs.php) | `use HasTabs;` | done | — | — |
+| [`HasTabs` on the trait](../../../packages/panels/src/Resources/Concerns/HasTabs.php) | `use HasTabs;` | done | — | [has-tabs.md](has-tabs.md) — composed here rather than on each host, so a relation manager and a `ManageRelatedRecords` page offer the same record filters. The insert stays [ungrouped](#the-composition-clauses-are-ungrouped-and-asymmetric-between-the-hosts) for the same Rector reason the `insteadof` blocks do |
 | `authorizeReorder()` in `makeTable()`, `getAuthorizationResponse()` and the 30-odd `can*()` / `get*AuthorizationResponse()` members | the same cluster | todo | the authorization epic | [detail](#the-authorization-half-of-the-trait-is-inventoried-not-ported) |
 | `checkPolicyExistence()` / `skipAuthorization()` / `shouldCheckPolicyExistence()` / `shouldSkipAuthorization()` | the same four | todo | the authorization epic | [detail](#the-authorization-half-of-the-trait-is-inventoried-not-ported) |
 
@@ -212,15 +212,58 @@ the identical hole (it passes no owner anywhere), so this is inventoried rather
 than fixed: the honest answer needs the caller to say which record fills the
 foreign parameter, which nothing in the tier knows.
 
-### A row links through its action buttons, not through the row itself
+### Both seeding probes clone the action, where vendor clones in one of four
 
-Filament's `makeTable()` seeds `recordAction()` and `recordUrl()` by walking the
-table's `view` and `edit` actions — so clicking anywhere on a row opens the
-related resource's page. Neither is ported: row-click seeding waits for
-[M4 · 3](../roadmap.md#m4--tables-widening) on the tables side. Until then the
-Filament-visible difference is exactly this: the row's **Edit button** links to
-the nested page (that is what the URL arms above do), and the row's body does
-not.
+`makeTable()` seeds `recordAction()` and `recordUrl()` by walking the table's
+`view` and `edit` actions, which M4 · 3 landed on this tier and on
+[`ListRecords`](README.md#the-row-click-falls-through-to-the-resources-own-view-or-edit-page)
+together — so a row's whole body opens the related record now, not only its Edit
+button. The two closures are Filament's, member for member, with one deliberate
+correction.
+
+Both probes have to bind the record before they can ask an action whether it is
+hidden or where it points, and both walk the action's **group chain** doing it,
+because a hidden-or-URL arm reading the record through its group would otherwise
+answer for whatever row the chain last carried. Filament writes that record onto
+the action the table caches. Across its four probes — two here, two on
+`ListRecords` — it does so on a **clone** exactly once, in `ListRecords`'
+`recordUrl()`; the other three mutate the shared action, so a probe run for row 7
+leaves the cached `edit` action carrying row 7's record for whatever reads it
+next. Ours clones in all four, through one shared
+`stampRecordOnActionChain(Action $action, object $record): Action` that returns a
+`getClone()` and stamps the chain on it.
+
+This is a **fix over upstream rather than a divergence for its own sake**, and it
+is recorded so nobody symmetrises it back to Filament's shape: the probes run
+once per rendered row, so the shared-mutation version leaves a per-request action
+object whose record is the last row's — invisible until something downstream reads
+`getRecord()` off the cached action, which the record-title chain does. The three
+uncloned vendor probes are a bug we are not obliged to reproduce.
+
+### The Table-side `queryStringIdentifier()` is deliberately not stamped
+
+Filament's `makeTable()` calls `->queryStringIdentifier(Str::lcfirst(class_basename(static::class)))`
+on the table object, so the `?page=` parameter of a relation-managed listing is
+prefixed by the manager's class name and two listings on one page never share a
+page number. The port answers the same question from the **host** instead: it
+overrides `getTableQueryStringIdentifier()` with the host class's own basename,
+lower-cased at the first letter, and leaves the `Table` setter alone.
+
+That is forced rather than preferred. The prefix is read while composing the
+`page` URL mapping, and a mapping is composed inside a `LiveProp` **modifier** —
+which UX runs during hydration, before `#[PostHydrate]` has stamped the panel onto
+the request. A modifier that built the table to read `getQueryStringIdentifier()`
+off it would resolve the default panel and memoise that answer for the rest of the
+request. So the identifier has to be readable without a table, and a static method
+on the host is the only thing that is.
+
+The `Table` setter still ships as parity surface, and the consequence of the two
+halves swapping roles is
+[recorded on the tables side](../tables/has-table.md#the-query-string-identifier-is-live-on-the-table-and-dead-in-the-modifiers):
+calling `->queryStringIdentifier('foo')` inside a `table()` body changes what
+`getIdentifiedTableQueryStringPropertyNameFor()` answers and does **not** change
+the query-string parameter, because the mapping was resolved before the table
+existed. A tier wanting a different prefix overrides the host hook.
 
 ### The composition clauses are ungrouped, and asymmetric between the hosts
 

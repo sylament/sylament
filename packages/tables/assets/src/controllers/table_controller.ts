@@ -7,6 +7,7 @@ const SELECTED_MODEL = "selectedTableRecords";
 const DESELECTED_MODEL = "deselectedTableRecords";
 const TRACKING_MODEL = "isTrackingDeselectedTableRecords";
 const SELECT_ALL_ACTION = "selectAllTableRecords";
+const REORDER_ACTION = "reorderTable";
 
 const RECORD_CHECKBOX_SELECTOR = ".sy-ta-record-checkbox";
 const ROW_SELECTOR = ".sy-ta-row";
@@ -164,6 +165,22 @@ export default class extends Controller<HTMLElement> {
   deselectAll(): void {
     this.#push({ selected: new Set(), deselected: new Set(), tracking: false });
     this.#repaint();
+  }
+
+  /**
+   * The drag control's new order, handed to the host's write action. The control never talks to
+   * a live component, so this is the whole bridge; the host re-resolves every key it is sent.
+   */
+  async reorder(event: Event): Promise<void> {
+    const items = (event as CustomEvent<{ items?: unknown }>).detail?.items;
+
+    if (!Array.isArray(items)) {
+      return;
+    }
+
+    const component = this.#component ?? (await resolveLiveHost(this.element));
+
+    await component.action(REORDER_ACTION, { order: toKeys(items) });
   }
 
   #state(): SelectionState {

@@ -1,6 +1,8 @@
 {% set records = component.getRecords %}
 {% set columns = component.getColumns %}
 {% set hostId = component.getLiveComponent.getTableHostId %}
+{% set isReorderable = component.isReorderable %}
+{% set isReordering = component.isReordering %}
 
 {% set paginator = component.getPaginator %}
 {% set footerVisible = paginator and (paginator.getTotalRecordCount is null
@@ -14,16 +16,16 @@
 {% set filterIndicators = component.getFilterIndicators %}
 {% set removableIndicatorCount = filterIndicators|filter(carrier => carrier.indicator.isRemovable)|length %}
 
-{% set headerActions = component.getHeaderActions|filter(action => action.isVisible) %}
-{% set toolbarActions = component.getToolbarActions|filter(action => action.isVisible) %}
+{% set headerActions = isReordering ? [] : component.getHeaderActions|filter(action => action.isVisible) %}
+{% set toolbarActions = isReordering ? [] : component.getToolbarActions|filter(action => action.isVisible) %}
 {% set heading = component.getHeading %}
 {% set description = component.getDescription %}
 {% set headingTag = component.getHeadingTag %}
 {% set headerVisible = heading or description or headerActions is not empty %}
 {% set headerActionsAdaptive = component.getHeaderActionsPosition is same as(constant('Sylament\\Tables\\Enums\\HeaderActionsPosition::Adaptive')) %}
-{% set toolbarVisible = isSearchable or filtersTriggerVisible or toolbarActions is not empty %}
+{% set toolbarVisible = isSearchable or filtersTriggerVisible or toolbarActions is not empty or isReorderable %}
 
-{% set recordActionsByKey = component.getVisibleRecordActionsByRecordKey %}
+{% set recordActionsByKey = isReordering ? {} : component.getVisibleRecordActionsByRecordKey %}
 {% set hasRecordActions = recordActionsByKey|filter(actions => actions is not empty)|length > 0 %}
 {% set recordActionsPosition = component.getRecordActionsPosition.name %}
 {% set actionsBeforeCells = hasRecordActions and recordActionsPosition == 'BeforeCells' %}
@@ -33,8 +35,8 @@
 
 {% set isSelectionEnabled = component.isSelectionEnabled %}
 {% set hasSelection = isSelectionEnabled and component.getLiveComponent.hasSelectedTableRecords %}
-{% set checkboxLeading = isSelectionEnabled and component.getRecordCheckboxPosition.name == 'BeforeCells' %}
-{% set checkboxTrailing = isSelectionEnabled and component.getRecordCheckboxPosition.name == 'AfterCells' %}
+{% set checkboxLeading = isSelectionEnabled and not isReordering and component.getRecordCheckboxPosition.name == 'BeforeCells' %}
+{% set checkboxTrailing = isSelectionEnabled and not isReordering and component.getRecordCheckboxPosition.name == 'AfterCells' %}
 {% set allSelectableCount = isSelectionEnabled ? component.getLiveComponent.getAllSelectableTableRecordsCount : null %}
 
 {% set isStriped = component.isStriped %}
@@ -47,7 +49,7 @@
 
 <div {{ attrs({
     class: 'sy sy-ta',
-}, isSelectionEnabled ? stimulus_controller('sylament--tables--table', {
+}, isSelectionEnabled or isReordering ? stimulus_controller('sylament--tables--table', {
     canTrack: component.canTrackDeselectedRecords,
     pageOnly: component.selectsCurrentPageOnly,
     allSelectableCount: allSelectableCount,
@@ -92,9 +94,11 @@
 
         {% if toolbarVisible %}
             <div class="sy-ta-header-toolbar">
-                {% if toolbarActions is not empty %}
+                {% if isReorderable or toolbarActions is not empty %}
                     <div class="sy-ta-header-toolbar-actions">
-                        {# reorder trigger slot — M4 · 3 #}
+                        {% if isReorderable %}
+                            {{ renderComponent(component.getReorderRecordsTriggerAction(isReordering)) }}
+                        {% endif %}
 
                         {% for action in toolbarActions %}
                             {% set isBulkOnly = action.isBulk is defined
@@ -223,7 +227,11 @@
             </div>
         {% endif %}
 
-        {% if isSelectionEnabled %}
+        {% if isReordering %}
+            <div class="sy-ta-reorder-indicator" role="status" aria-live="polite">
+                Drag and drop the records into order.
+            </div>
+        {% elseif isSelectionEnabled %}
             <div {{ attrs({
                 class: 'sy-ta-selection-indicator',
                 role: 'status',
@@ -295,15 +303,16 @@
                 </th>
             {% endset %}
 
-            <table class="sy-ta-table">
+            <table {{ attrs({class: classes('sy-ta-table', {'sy-ta-table-reordering': isReordering})}) }}>
                 <thead>
                     <tr>
+                        {% if isReordering %}<th scope="col" class="sy-ta-reorder-header-cell sy-ta-empty-header-cell"></th>{% endif %}
                         {% if actionsBeforeCells %}{{ actionsHeaderCell }}{% endif %}
                         {% if checkboxLeading %}{{ selectionHeaderCell }}{% endif %}
                         {% if actionsBeforeColumns %}{{ actionsHeaderCell }}{% endif %}
                         {% for column in columns %}
                             {% set columnName = column.getName %}
-                            {% set isColumnSortable = column.isSortable %}
+                            {% set isColumnSortable = column.isSortable and not isReordering %}
                             {% set isColumnSorted = isColumnSortable and sortColumn == columnName %}
                             <th
                                 scope="col"
@@ -338,7 +347,9 @@
                         {% if actionsAfterCells %}{{ actionsHeaderCell }}{% endif %}
                     </tr>
                 </thead>
-                <tbody>
+                <tbody {{ attrs(isReordering ? stimulus_controller('sylament--support--sortable', {
+                    animationDuration: component.getReorderAnimationDuration,
+                })|stimulus_action('sylament--tables--table', 'reorder', 'sylament--support--sortable:end') : null) }}>
                     {% for recordKey, record in records %}
                         {% set recordUrl = component.getRecordUrl(record) %}
                         {% set recordAction = component.getRecordAction(record) %}
@@ -377,7 +388,20 @@
                                 'sy-selected': recordIsSelectable and component.getLiveComponent.isTableRecordSelected(recordKey),
                             }, component.getRecordClasses(record)),
                             id: hostId ~ '.table.records.' ~ recordKey,
+                            'data-sortable-item': isReordering ? recordKey : null,
                         }) }}>
+                            {% if isReordering %}
+                                <td class="sy-ta-cell sy-ta-reorder-handle-cell">
+                                    <twig:SylamentSupport:IconButton
+                                        class="sy-ta-reorder-handle"
+                                        icon="heroicons:bars-2"
+                                        :iconAlias="constant('Sylament\\Tables\\Twig\\TablesIconAlias::REORDER_HANDLE')"
+                                        color="gray"
+                                        :label="'Reorder item ' ~ recordKey"
+                                        :data-sortable-handle="true"
+                                    />
+                                </td>
+                            {% endif %}
                             {% if actionsBeforeCells %}{{ actionsCell }}{% endif %}
                             {% if checkboxLeading %}{{ selectionCell }}{% endif %}
                             {% if actionsBeforeColumns %}{{ actionsCell }}{% endif %}
@@ -386,9 +410,11 @@
                                 {% do column.recordKey(recordKey) %}
 
                                 {# Column-level url/action arms slot in above the record-level ones — M4 · 4 #}
-                                {% set cellWrapperTag = recordUrl is not null
-                                    ? 'a'
-                                    : (recordAction is not null ? 'button' : 'div') %}
+                                {% set cellWrapperTag = isReordering
+                                    ? 'div'
+                                    : (recordUrl is not null
+                                        ? 'a'
+                                        : (recordAction is not null ? 'button' : 'div')) %}
                                 {% set cellWrapperAttributes = cellWrapperTag == 'a'
                                     ? {
                                         href: recordUrl,

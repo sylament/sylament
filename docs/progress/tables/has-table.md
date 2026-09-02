@@ -113,7 +113,7 @@ Reference — the Filament source this is diffed against:
 - [`tables/src/Concerns/HasBulkActions.php`](../../../vendor/filament/tables/src/Concerns/HasBulkActions.php)
   — the host-side selection state, its two resolution seams and the key enumeration
 - [`tables/src/Contracts/HasTable.php`](../../../vendor/filament/tables/src/Contracts/HasTable.php)
-  — the 46-method interface this reduces to twenty-one
+  — the 46-method interface this reduces to twenty-two
 
 ## Surface
 
@@ -131,7 +131,7 @@ instead.
 | [`makeTable(): Table`](../../../packages/tables/src/Concerns/HasTable.php) | [`InteractsWithTable::makeTable()`](../../../vendor/filament/tables/src/Concerns/InteractsWithTable.php) | done | — | [diverges](#maketable-seeds-nothing-from-deprecated-host-getters) |
 | [`getTableRecords()` — resolve the data source once, eager-load, re-key, fill the aggregate store, cache](../../../packages/tables/src/Concerns/HasTable.php) | [`Concerns\HasRecords::getTableRecords()`](../../../vendor/filament/tables/src/Concerns/HasRecords.php) | in progress | — | [detail](#the-records-injections-stop-at-seven-of-filaments-eight) · [semantics](#a-records-closure-resolves-public-container-services-by-type) · [diverges](#gettablerecords-returns-a-keyed-array-or-a-paginator-never-a-collection) · [diverges](#eager-loading-runs-over-every-column-on-the-page-clone-alone) |
 | [`getTablePaginator(): ?Paginator` — the carrier, unwrapped for the footer](../../../packages/tables/src/Concerns/HasTable.php) | — (Sylament-only; Filament's records **are** the paginator) | done | — | [pagination.md](../support/pagination.md) · [semantics](#the-paginator-is-a-return-value-not-a-state-holder) |
-| [`InteractsWithTable` — twenty-one methods](../../../packages/tables/src/Contracts/InteractsWithTable.php) | [`Contracts\HasTable`](../../../vendor/filament/tables/src/Contracts/HasTable.php) | in progress | — | [detail](#the-contract-is-twenty-methods-of-filaments-forty-six) |
+| [`InteractsWithTable` — twenty-two methods](../../../packages/tables/src/Contracts/InteractsWithTable.php) | [`Contracts\HasTable`](../../../vendor/filament/tables/src/Contracts/HasTable.php) | in progress | — | [detail](#the-contract-is-twenty-methods-of-filaments-forty-six) |
 | [`flushCachedTableRecords()`](../../../packages/tables/src/Concerns/HasTable.php) | [`Concerns\HasRecords::flushCachedTableRecords()`](../../../vendor/filament/tables/src/Concerns/HasRecords.php) | done | — | on the contract since M4 · 2 — actions' `callMountedAction()` calls it in a `finally` after any mounted action runs on a table host. [detail](#the-contract-is-twenty-methods-of-filaments-forty-six) |
 | [`getTableHostId()` + the `$tableHostId` `LiveProp`](../../../packages/tables/src/Concerns/HasTable.php) | [`Livewire\Component::getId()`](../../../vendor/filament/tables/resources/views/index.blade.php) | done | — | [diverges](#the-host-id-is-a-random-liveprop-rather-than-a-framework-component-id) |
 | [`getTableRecordKey(object\|array $record): string`](../../../packages/tables/src/Concerns/HasTable.php) | [`Concerns\HasRecords::getTableRecordKey()`](../../../vendor/filament/tables/src/Concerns/HasRecords.php) | done | — | [diverges](#object-records-are-keyed-by-a-readable-id-rather-than-an-eloquent-key) |
@@ -700,7 +700,7 @@ matching means.
 
 `Contracts\HasTable` declares 46 methods — the full host API a Filament table,
 column, filter, action, or test helper may call back into. Sylament's
-`InteractsWithTable` declares the twenty-one the shipped surface actually calls:
+`InteractsWithTable` declares the twenty-two the shipped surface actually calls:
 `getTable()` (the template and the column layer need the table from the host),
 `getTableRecords()` (which [`Table::getRecords()`](table.md#getrecords-delegates-to-the-host-and-fetches-nothing)
 delegates to), and three that arrived with the record-action lane (M1 · 6) —
@@ -845,6 +845,15 @@ host already answered it — [`CanPaginateRecords`](../../../packages/tables/src
 has carried the getter since the table-upgrades epic — so the change is the
 declaration alone, which is the growth order this whole section describes: a
 member joins when a shipped consumer calls it, never in anticipation.
+
+The same epic added the twenty-second, `getTableColumnStateError()`, on those
+same grounds one tier down: an editable column's partial paints the refusal a
+write left against its own cell, and it asks for it through
+[`CanUpdateState::getUpdateStateError()`](../../../packages/tables/src/Columns/Concerns/CanUpdateState.php),
+which reaches the host through a `getLiveComponent()` typed as this interface.
+The bag it reads lives on [`HasColumns`](has-columns.md#the-refusal-is-request-scoped-and-server-rendered-where-filaments-lives-on-the-client)
+and has no Filament counterpart at all — vendor holds that error on the client —
+so this member is Sylament's own rather than one of the forty-six.
 
 ### The selection is server-canonical, and re-derived on every read
 

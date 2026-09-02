@@ -154,7 +154,7 @@ milestone.
 | [`Column`](../../../packages/tables/src/Columns/Column.php) | [`src/Columns/Column.php`](../../../vendor/filament/tables/src/Columns/Column.php) | in progress | [column.md](column.md) |
 | BadgeColumn | [`Columns/BadgeColumn.php`](../../../vendor/filament/tables/src/Columns/BadgeColumn.php) | skipped | The whole class is a deprecated one-line override of [`TextColumn`](text-column.md) — its own deprecation notice names the spelling that ships, `TextColumn` plus `badge()`, and the project has never ported a deprecated Filament surface ([renames.md](../renames.md)) |
 | BooleanColumn | [`Columns/BooleanColumn.php`](../../../vendor/filament/tables/src/Columns/BooleanColumn.php) | skipped | The whole class is a deprecated one-line override of [`IconColumn`](icon-column.md) — its own deprecation notice names the spelling that ships, `IconColumn` plus `boolean()`, and the project has never ported a deprecated Filament surface ([renames.md](../renames.md)) |
-| CheckboxColumn | [`Columns/CheckboxColumn.php`](../../../vendor/filament/tables/src/Columns/CheckboxColumn.php) | todo | — |
+| [`CheckboxColumn`](../../../packages/tables/src/Columns/CheckboxColumn.php) | [`Columns/CheckboxColumn.php`](../../../vendor/filament/tables/src/Columns/CheckboxColumn.php) | done | [checkbox-column.md](checkbox-column.md) |
 | [`ColorColumn`](../../../packages/tables/src/Columns/ColorColumn.php) | [`Columns/ColorColumn.php`](../../../vendor/filament/tables/src/Columns/ColorColumn.php) | done | [color-column.md](color-column.md) |
 | ColumnGroup | [`Columns/ColumnGroup.php`](../../../vendor/filament/tables/src/Columns/ColumnGroup.php) | todo | — |
 | Columns / Layout / Component | [`Columns/Layout/Component.php`](../../../vendor/filament/tables/src/Columns/Layout/Component.php) | todo | — |
@@ -181,11 +181,11 @@ milestone.
 | Grouping / Group | [`Grouping/Group.php`](../../../vendor/filament/tables/src/Grouping/Group.php) | todo | — |
 | [`IconColumn`](../../../packages/tables/src/Columns/IconColumn.php) | [`Columns/IconColumn.php`](../../../vendor/filament/tables/src/Columns/IconColumn.php) | done | [icon-column.md](icon-column.md) |
 | [`ImageColumn`](../../../packages/tables/src/Columns/ImageColumn.php) | [`Columns/ImageColumn.php`](../../../vendor/filament/tables/src/Columns/ImageColumn.php) | done | [image-column.md](image-column.md) |
-| SelectColumn | [`Columns/SelectColumn.php`](../../../vendor/filament/tables/src/Columns/SelectColumn.php) | todo | — |
+| [`SelectColumn`](../../../packages/tables/src/Columns/SelectColumn.php) | [`Columns/SelectColumn.php`](../../../vendor/filament/tables/src/Columns/SelectColumn.php) | in progress | [select-column.md](select-column.md) |
 | TagsColumn | [`Columns/TagsColumn.php`](../../../vendor/filament/tables/src/Columns/TagsColumn.php) | skipped | The whole class is a deprecated `badge()` subclass of [`TextColumn`](text-column.md) whose own nested `limit()` is deprecated in favour of `limitList()`, and both spellings ship; the project has never ported a deprecated Filament surface ([renames.md](../renames.md)) |
 | [`TextColumn`](../../../packages/tables/src/Columns/TextColumn.php) | [`src/Columns/TextColumn.php`](../../../vendor/filament/tables/src/Columns/TextColumn.php) | in progress | [text-column.md](text-column.md) |
-| TextInputColumn | [`Columns/TextInputColumn.php`](../../../vendor/filament/tables/src/Columns/TextInputColumn.php) | todo | — |
-| ToggleColumn | [`Columns/ToggleColumn.php`](../../../vendor/filament/tables/src/Columns/ToggleColumn.php) | todo | — |
+| [`TextInputColumn`](../../../packages/tables/src/Columns/TextInputColumn.php) | [`Columns/TextInputColumn.php`](../../../vendor/filament/tables/src/Columns/TextInputColumn.php) | done | [text-input-column.md](text-input-column.md) |
+| [`ToggleColumn`](../../../packages/tables/src/Columns/ToggleColumn.php) | [`Columns/ToggleColumn.php`](../../../vendor/filament/tables/src/Columns/ToggleColumn.php) | done | [toggle-column.md](toggle-column.md) |
 | [`ViewColumn`](../../../packages/tables/src/Columns/ViewColumn.php) | [`Columns/ViewColumn.php`](../../../vendor/filament/tables/src/Columns/ViewColumn.php) | done | [view-column.md](view-column.md) |
 
 ## Features
@@ -271,8 +271,6 @@ pairs with, so it shares the first row below.
 | Column / CanBeHidden | [`Columns/Concerns/CanBeHidden.php`](../../../vendor/filament/tables/src/Columns/Concerns/CanBeHidden.php) | todo | — |
 | Column / CanBeSummarized | [`Columns/Concerns/CanBeSummarized.php`](../../../vendor/filament/tables/src/Columns/Concerns/CanBeSummarized.php) | todo | — |
 | Column / CanBeToggled | [`Columns/Concerns/CanBeToggled.php`](../../../vendor/filament/tables/src/Columns/Concerns/CanBeToggled.php) | todo | — |
-| Column / CanBeValidated | [`Columns/Concerns/CanBeValidated.php`](../../../vendor/filament/tables/src/Columns/Concerns/CanBeValidated.php) | todo | — |
-| Column / CanUpdateState | [`Columns/Concerns/CanUpdateState.php`](../../../vendor/filament/tables/src/Columns/Concerns/CanUpdateState.php) | todo | — |
 | Column / HasSpace | [`Columns/Concerns/HasSpace.php`](../../../vendor/filament/tables/src/Columns/Concerns/HasSpace.php) | todo | — |
 | Summarizer / BelongsToColumn | [`Columns/Summarizers/Concerns/BelongsToColumn.php`](../../../vendor/filament/tables/src/Columns/Summarizers/Concerns/BelongsToColumn.php) | todo | — |
 | Summarizer / CanBeHidden | [`Columns/Summarizers/Concerns/CanBeHidden.php`](../../../vendor/filament/tables/src/Columns/Summarizers/Concerns/CanBeHidden.php) | todo | — |
@@ -329,7 +327,7 @@ folds into [`text-column.md`](text-column.md) the same way, against
 | [`Colors\Components\TextColumnComponent\ItemComponent\IconComponent`](../../../packages/tables/src/Colors/Components/TextColumnComponent/ItemComponent/IconComponent.php) | [`View/Components/Columns/TextColumnComponent/ItemComponent/IconComponent.php`](../../../vendor/filament/tables/src/View/Components/Columns/TextColumnComponent/ItemComponent/IconComponent.php) | done | [text-column.md](text-column.md#gray-is-a-colour-on-the-item-and-the-absence-of-one-on-the-icon) |
 | [`Colors\Components\IconColumnComponent\IconComponent`](../../../packages/tables/src/Colors/Components/IconColumnComponent/IconComponent.php) | [`View/Components/Columns/IconColumnComponent/IconComponent.php`](../../../vendor/filament/tables/src/View/Components/Columns/IconColumnComponent/IconComponent.php) | done | [icon-column.md](icon-column.md#the-policy-carries-a-map-and-the-default-gray-contract-at-once) |
 | [`HeaderActionsPosition`](../../../packages/tables/src/Enums/HeaderActionsPosition.php) | [`Actions/HeaderActionsPosition.php`](../../../vendor/filament/tables/src/Actions/HeaderActionsPosition.php) | done | The enum ships whole; it files under `Enums/` rather than Filament's `Actions/` — [table.md](table.md#headeractionsposition-files-under-enums-where-filament-keeps-it-under-actions) |
-| Editable (contract) | [`Columns/Contracts/Editable.php`](../../../vendor/filament/tables/src/Columns/Contracts/Editable.php) | todo | — |
+| [`Editable` (contract)](../../../packages/tables/src/Columns/Contracts/Editable.php) | [`Columns/Contracts/Editable.php`](../../../vendor/filament/tables/src/Columns/Contracts/Editable.php) | done | folded into [has-columns.md](has-columns.md#surface), the seam its two members are called through |
 | ColumnManagerLayout | [`Enums/ColumnManagerLayout.php`](../../../vendor/filament/tables/src/Enums/ColumnManagerLayout.php) | todo | — |
 | ColumnManagerResetActionPosition | [`Enums/ColumnManagerResetActionPosition.php`](../../../vendor/filament/tables/src/Enums/ColumnManagerResetActionPosition.php) | todo | — |
 | [`FiltersLayout`](../../../packages/tables/src/Enums/FiltersLayout.php) | [`Enums/FiltersLayout.php`](../../../vendor/filament/tables/src/Enums/FiltersLayout.php) | in progress | The enum ships whole; six cases are honored — `Dropdown`, `Modal`, `AboveContent`, `AboveContentCollapsible`, `BelowContent` and `Hidden` — the four before/after-content ones refused where [the chrome reads them](table.md#an-unshipped-filters-layout-is-refused-where-the-chrome-reads-it) |

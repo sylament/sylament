@@ -130,7 +130,7 @@ sections do.
 | [`action()` / `getAction()` / `getActionKind()`](../../../packages/tables/src/Columns/Concerns/CanCallAction.php) | [`Concerns\CanCallAction`](../../../vendor/filament/tables/src/Columns/Concerns/CanCallAction.php) | done | — | [table.md](table.md#the-cell-wrapper-interleaves-the-column-arms-with-the-record-ones) · [has-columns.md](has-columns.md) |
 | [`url()` / `openUrlInNewTab()` / `getUrl()` / `hasStateBasedUrls()` / `shouldOpenUrlInNewTab()`](../../../packages/tables/src/Columns/Concerns/CanOpenUrl.php) | [`Concerns\CanOpenUrl`](../../../vendor/filament/tables/src/Columns/Concerns/CanOpenUrl.php) | done | — | [diverges](#a-column-url-is-sanitized-where-filament-only-warns) · [semantics](#geturl-answers-by-argument-count-so-a-closures-parameter-name-changes-the-dom) |
 | [`disabled()` / `isDisabled()` / `isEnabled()` / `disabledClick()` / `isClickDisabled()`](../../../packages/tables/src/Columns/Concerns/CanBeDisabled.php) | [`Concerns\CanBeDisabled`](../../../vendor/filament/tables/src/Columns/Concerns/CanBeDisabled.php) | done | — | `disableClick()`, the deprecated alias, is skipped — [renames.md](../renames.md) |
-| Editing in place — `updateStateUsing()`, `rules()`, `disabled()` | [`CanUpdateState`](../../../vendor/filament/tables/src/Columns/Concerns/CanUpdateState.php), [`CanBeValidated`](../../../vendor/filament/tables/src/Columns/Concerns/CanBeValidated.php), [`CanBeDisabled`](../../../vendor/filament/tables/src/Columns/Concerns/CanBeDisabled.php) | todo | — | — |
+| Editing in place — `updateStateUsing()` / `beforeStateUpdated()` / `afterStateUpdated()`, `constraint()` / `constraints()` / `validationMessages()`, `disabled()` | [`CanUpdateState`](../../../vendor/filament/tables/src/Columns/Concerns/CanUpdateState.php), [`CanBeValidated`](../../../vendor/filament/tables/src/Columns/Concerns/CanBeValidated.php), [`CanBeDisabled`](../../../vendor/filament/tables/src/Columns/Concerns/CanBeDisabled.php) | done | — | [diverges](#the-editable-write-is-not-authorization-checked) · [has-columns.md](has-columns.md#surface) |
 | [`alignment()` / `getAlignment()` / `getAlignmentClass()`](../../../packages/tables/src/Columns/Column.php) | [`HasAlignment`](../../../vendor/filament/support/src/Concerns/HasAlignment.php) | done | — | [has-alignment.md](../support/has-alignment.md) · [diverges](text-column.md#alignment-reaches-a-badge-row-through-the-list-not-through-text-align) |
 | [`verticalAlignment()` / `getVerticalAlignment()` / `getVerticalAlignmentClass()`](../../../packages/support/src/Components/Concerns/HasVerticalAlignment.php) | [`Support\Concerns\HasVerticalAlignment`](../../../vendor/filament/support/src/Concerns/HasVerticalAlignment.php) | done | — | [has-vertical-alignment.md](../support/has-vertical-alignment.md) |
 | [`width()` / `getWidth()`](../../../packages/support/src/Components/Concerns/HasWidth.php) | [`Support\Concerns\HasWidth`](../../../vendor/filament/support/src/Concerns/HasWidth.php) | done | — | — |
@@ -521,6 +521,25 @@ first and throw on any that are not `Stringable`.
 
 Deliberate deviations from Filament — permanent, and the reason they hold. Say
 what would reverse the decision when it is provisional.
+
+### The editable write is not authorization-checked
+
+The four editable columns write straight onto the record — no policy, no gate,
+nothing between the posted value and `persist()`/`flush()`. Filament carries a
+`// Security:` comment on each of its editable column classes saying exactly
+this, and naming `disabled()` as the restriction; the port carries the same
+comment at the write site in
+[`CanUpdateState::updateState()`](../../../packages/tables/src/Columns/Concerns/CanUpdateState.php),
+which is the one place a reader can act on it, and adds the part that is true
+here and not there: the toolkit ships **no** authorization layer at all, so
+`disabled()` is not merely the recommended gate, it is the only one there is.
+
+The host checks it — `updateTableColumnState()` binds the record **before**
+asking `isDisabled()`, so a per-row closure judges the row it was handed — and
+nothing else is checked. A write that must be restricted takes a `disabled()`
+closure, or the record is edited through a page or a modal action the
+application guards itself. The full seam is on
+[`has-columns.md`](has-columns.md#the-write-is-not-authorization-checked).
 
 ### A column url is sanitized where Filament only warns
 

@@ -110,22 +110,22 @@ Rows never disappear — only their detail sections do.
 | [`getSortableVisibleColumn()` / `getSortColumn()` / `getSortDirection()`](../../../packages/tables/src/Table/Concerns/CanSortRecords.php) | [`Table\Concerns\CanSortRecords`](../../../vendor/filament/tables/src/Table/Concerns/CanSortRecords.php) | done | — | [diverges](#getsortablevisiblecolumn-has-no-hidden-arm-to-check) |
 | [`defaultSort()` / `getDefaultSort()` / `getDefaultSortDirection()` / `defaultKeySort()` / `hasDefaultKeySort()`](../../../packages/tables/src/Table/Concerns/CanSortRecords.php) | [`Table\Concerns\CanSortRecords`](../../../vendor/filament/tables/src/Table/Concerns/CanSortRecords.php) | done | — | [semantics](#the-default-sort-is-a-secondary-order-and-its-direction-rules-the-tiebreaker) · [has-table.md](has-table.md#sorting-composes-the-users-order-the-default-and-the-identifier-tiebreaker) · [has-table.md](has-table.md#a-default-sort-closures-replacement-builder-reaches-the-caller-where-filaments-is-discarded) · [semantics](#the-mappings-order-is-the-relation-scoped-tables-default-sort) |
 | `defaultSortOptionLabel()` / `getDefaultSortOptionLabel()` | [`Table\Concerns\CanSortRecords`](../../../vendor/filament/tables/src/Table/Concerns/CanSortRecords.php) | skipped | — | It labels the "unsorted" entry of the mobile sort **dropdown**, which the port does not render and nothing else reads; it belongs to that layout rather than to sorting, and lands only if the layout does |
-| [`persistSortInSession()` / `persistsSortInSession()`](../../../packages/tables/src/Table/Concerns/CanSortRecords.php) | [`Table\Concerns\CanSortRecords`](../../../vendor/filament/tables/src/Table/Concerns/CanSortRecords.php) | done | — | [has-table.md](has-table.md#no-table-state-is-persisted-in-the-session) |
+| [`persistSortInSession()` / `persistsSortInSession()`](../../../packages/tables/src/Table/Concerns/CanSortRecords.php) | [`Table\Concerns\CanSortRecords`](../../../vendor/filament/tables/src/Table/Concerns/CanSortRecords.php) | done | — | [has-table.md](has-table.md#the-session-key-is-the-host-class-so-two-instances-of-one-page-share-it) |
 | [`searchable()` / `isSearchable()` / `getExtraSearchableColumns()`](../../../packages/tables/src/Table/Concerns/CanSearchRecords.php) | [`Table\Concerns\CanSearchRecords`](../../../vendor/filament/tables/src/Table/Concerns/CanSearchRecords.php) | done | — | [semantics](#a-table-is-searchable-when-a-column-says-so-and-searchable-overrides-in-both-directions) |
 | [The search chrome — `searchPlaceholder()`, `searchDebounce()`, `searchOnBlur()` and their getters](../../../packages/tables/src/Table/Concerns/CanSearchRecords.php) | [`Table\Concerns\CanSearchRecords`](../../../vendor/filament/tables/src/Table/Concerns/CanSearchRecords.php) | done | — | [diverges](#getsearchdebouncemilliseconds-is-a-sylament-only-translation-of-filaments-duration-string) · [diverges](#searchonblur-renders-onchange-because-ux-live-component-has-no-blur-event) · [diverges](#the-search-field-flattens-supports-input-wrapper-into-two-classes) · [diverges](#items-center-is-lifted-onto-the-search-field-because-the-prefix-that-carried-it-is-gone) · [diverges](#the-search-input-adds-an-outline-none-vendor-does-not-have) |
 | [`splitSearchTerms()` / `shouldSplitSearchTerms()`, `searchUsing()` / `hasSearchUsingCallback()` / `callSearchUsing()`, `applyExtraSearchConstraints()`](../../../packages/tables/src/Table/Concerns/CanSearchRecords.php) | [`Table\Concerns\CanSearchRecords`](../../../vendor/filament/tables/src/Table/Concerns/CanSearchRecords.php) | done | — | [has-table.md](has-table.md#search-is-the-global-term-only) · [semantics](#extra-searchable-columns-take-closures-that-return-their-expression) · [diverges](#the-default-search-comparison-assumes-a-string-typed-field) · [diverges](#a-search-term-is-not-escaped-for-like) |
-| [`getSearchIndicator()`](../../../packages/tables/src/Table/Concerns/CanSearchRecords.php) | [`Table\Concerns\CanSearchRecords`](../../../vendor/filament/tables/src/Table/Concerns/CanSearchRecords.php) | done | — | [has-table.md](has-table.md#the-contract-is-eighteen-methods-of-filaments-forty-six) · [detail](#the-unported-search-surface-splits-three-ways) |
-| [`persistSearchInSession()` / `persistsSearchInSession()`](../../../packages/tables/src/Table/Concerns/CanSearchRecords.php) | [`Table\Concerns\CanSearchRecords`](../../../vendor/filament/tables/src/Table/Concerns/CanSearchRecords.php) | done | — | [has-table.md](has-table.md#no-table-state-is-persisted-in-the-session) |
+| [`getSearchIndicator()`](../../../packages/tables/src/Table/Concerns/CanSearchRecords.php) | [`Table\Concerns\CanSearchRecords`](../../../vendor/filament/tables/src/Table/Concerns/CanSearchRecords.php) | done | — | [has-table.md](has-table.md#the-contract-is-twenty-methods-of-filaments-forty-six) · [detail](#the-unported-search-surface-splits-three-ways) |
+| [`persistSearchInSession()` / `persistsSearchInSession()`](../../../packages/tables/src/Table/Concerns/CanSearchRecords.php) | [`Table\Concerns\CanSearchRecords`](../../../vendor/filament/tables/src/Table/Concerns/CanSearchRecords.php) | done | — | [has-table.md](has-table.md#the-session-key-is-the-host-class-so-two-instances-of-one-page-share-it) |
 | `persistColumnSearchesInSession()`, `isSearchableByColumn()`, `hasSearch()`, `getColumnSearchIndicators()` | [`Table\Concerns\CanSearchRecords`](../../../vendor/filament/tables/src/Table/Concerns/CanSearchRecords.php) | todo | — | [detail](#the-unported-search-surface-splits-three-ways) |
 | `getExtraSearchableColumnRelationship()` | [`Table\Concerns\CanSearchRecords`](../../../vendor/filament/tables/src/Table/Concerns/CanSearchRecords.php) | skipped | — | It answers *is this dotted name's head a relationship*, so Filament's caller can switch to `whereRelation`. Here [one resolution](#a-dotted-name-is-resolved-against-the-mapping-before-it-is-refused) answers that inside `SearchConstraint::forColumn()` for every tier at once, so an extra searchable column crosses an association with nothing to ask first — there is no caller left to hold the branch this member exists to decide |
-| [`deferLoading()` / `isLoadingDeferred()` / `isLoaded()`](../../../packages/tables/src/Table/Concerns/CanDeferLoading.php) + [`poll()` / `getPollingInterval()` / `getPollingIntervalMilliseconds()`](../../../packages/tables/src/Table/Concerns/CanPollRecords.php) | [`CanDeferLoading`](../../../vendor/filament/tables/src/Table/Concerns/CanDeferLoading.php), [`CanPollRecords`](../../../vendor/filament/tables/src/Table/Concerns/CanPollRecords.php) | done | — | [detail](#the-deferred-window-is-server-gated-and-client-closed) · [diverges](#the-poll-interval-parses-strictly-and-carries-no-livewire-modifiers) · [has-table.md](has-table.md#the-contract-is-eighteen-methods-of-filaments-forty-six) |
+| [`deferLoading()` / `isLoadingDeferred()` / `isLoaded()`](../../../packages/tables/src/Table/Concerns/CanDeferLoading.php) + [`poll()` / `getPollingInterval()` / `getPollingIntervalMilliseconds()`](../../../packages/tables/src/Table/Concerns/CanPollRecords.php) | [`CanDeferLoading`](../../../vendor/filament/tables/src/Table/Concerns/CanDeferLoading.php), [`CanPollRecords`](../../../vendor/filament/tables/src/Table/Concerns/CanPollRecords.php) | done | — | [detail](#the-deferred-window-is-server-gated-and-client-closed) · [diverges](#the-poll-interval-parses-strictly-and-carries-no-livewire-modifiers) · [has-table.md](has-table.md#the-contract-is-twenty-methods-of-filaments-forty-six) |
 | [`filters()` / `pushFilters()` / `getFilters()` / `getFilter()` / `getFiltersFormSchema()` / `deferFilters()` / `hasDeferredFilters()` / `filtersLayout()` / `getFiltersLayout()` / `hasFiltersDropdown()` / `hasFiltersModal()` / `hasFiltersTrigger()` / `hasFiltersAboveContent()` / `hasFiltersBelowContent()` / `hasCollapsibleFilters()` / `getFiltersModalId()` / `filtersFormColumns()` / `getFiltersFormColumns()` / `filtersFormMaxHeight()` / `getFiltersFormMaxHeight()` / `filtersFormWidth()` / `getFiltersFormWidth()` / `filtersResetActionPosition()` / `getFiltersResetActionPosition()` / `isFilterable()` / `getActiveFiltersCount()` / `isFiltered()`](../../../packages/tables/src/Table/Concerns/HasFilters.php) + [`FiltersLayout`](../../../packages/tables/src/Enums/FiltersLayout.php), [`FiltersResetActionPosition`](../../../packages/tables/src/Enums/FiltersResetActionPosition.php) | [`Table\Concerns\HasFilters`](../../../vendor/filament/tables/src/Table/Concerns/HasFilters.php), [`Enums/FiltersLayout`](../../../vendor/filament/tables/src/Enums/FiltersLayout.php), [`Enums/FiltersResetActionPosition`](../../../vendor/filament/tables/src/Enums/FiltersResetActionPosition.php) | in progress | the four before/after-content layouts, and the width-from-columns match | [detail](#an-unshipped-filters-layout-is-refused-where-the-chrome-reads-it) · [detail](#the-filters-form-columns-follow-the-layout-the-width-does-not) |
 | [`hiddenFilterIndicators()` / `getFilterIndicators()`](../../../packages/tables/src/Table/Concerns/HasFilterIndicators.php) | [`Table\Concerns\HasFilterIndicators`](../../../vendor/filament/tables/src/Table/Concerns/HasFilterIndicators.php) | in progress | its column-search arm — the `getColumnSearchIndicators()` spread, with per-column search | [indicator.md](indicator.md#removal-is-structured-not-a-click-handler-string) · [has-table.md](has-table.md#search-is-the-global-term-only) |
 | [The three chrome actions — `filtersTriggerAction()` / `getFiltersTriggerAction()` / `filtersApplyAction()` / `getFiltersApplyAction()` / `filtersRemoveAllAction()` / `getFiltersRemoveAllAction()`](../../../packages/tables/src/Table/Concerns/HasFilters.php) | [`Table\Concerns\HasFilters`](../../../vendor/filament/tables/src/Table/Concerns/HasFilters.php) | done | — | [diverges](#the-trigger-opens-its-chrome-from-the-client-and-the-count-stays-a-template-chip) |
 | The filters form seam — `getFiltersForm()` / `filtersFormSchema()` | [`Table\Concerns\HasFilters`](../../../vendor/filament/tables/src/Table/Concerns/HasFilters.php) | todo | — | — |
-| [`persistFiltersInSession()` / `persistsFiltersInSession()`](../../../packages/tables/src/Table/Concerns/HasFilters.php) | [`Table\Concerns\HasFilters`](../../../vendor/filament/tables/src/Table/Concerns/HasFilters.php) | done | — | [has-table.md](has-table.md#no-table-state-is-persisted-in-the-session) |
+| [`persistFiltersInSession()` / `persistsFiltersInSession()`](../../../packages/tables/src/Table/Concerns/HasFilters.php) | [`Table\Concerns\HasFilters`](../../../vendor/filament/tables/src/Table/Concerns/HasFilters.php) | done | — | [has-table.md](has-table.md#the-session-key-is-the-host-class-so-two-instances-of-one-page-share-it) |
 | [`deselectAllRecordsWhenFiltered()` / `shouldDeselectAllRecordsWhenFiltered()`](../../../packages/tables/src/Table/Concerns/HasFilters.php) | [`Table\Concerns\HasFilters`](../../../vendor/filament/tables/src/Table/Concerns/HasFilters.php) | done | — | [semantics](#one-filter-setting-drives-three-selection-behaviours) |
-| [The query-string identifier — `queryStringIdentifier()` / `getQueryStringIdentifier()`](../../../packages/tables/src/Table/Concerns/HasQueryStringIdentifier.php) | [`HasQueryStringIdentifier`](../../../vendor/filament/tables/src/Table/Concerns/HasQueryStringIdentifier.php) | done | — | [has-table.md](has-table.md#no-table-state-is-bound-to-the-url) |
+| [The query-string identifier — `queryStringIdentifier()` / `getQueryStringIdentifier()`](../../../packages/tables/src/Table/Concerns/HasQueryStringIdentifier.php) | [`HasQueryStringIdentifier`](../../../vendor/filament/tables/src/Table/Concerns/HasQueryStringIdentifier.php) | done | — | [has-table.md](has-table.md#the-url-binding-is-a-per-prop-liveprop-modifier-opted-into-by-the-page) |
 | [`recordActions()` / `pushRecordActions()` / `getRecordActions()` / `getFlatRecordActions()`](../../../packages/tables/src/Table/Concerns/HasRecordActions.php) | [`Table\Concerns\HasRecordActions`](../../../vendor/filament/tables/src/Table/Concerns/HasRecordActions.php) | in progress | — | [detail](#record-actions-register-without-the-per-action-modifier-hook) |
 | [`recordActionsPosition()` / `getRecordActionsPosition()`](../../../packages/tables/src/Table/Concerns/HasRecordActions.php) + [`RecordActionsPosition`](../../../packages/tables/src/Enums/RecordActionsPosition.php) | [`HasRecordActions`](../../../vendor/filament/tables/src/Table/Concerns/HasRecordActions.php), [`Enums/RecordActionsPosition`](../../../vendor/filament/tables/src/Enums/RecordActionsPosition.php) | in progress | — | [detail](#the-position-default-has-no-content-arm-to-choose-between-yet) · [diverges](#the-position-setter-drops-filaments-string-arm) · [diverges](#the-four-rendered-positions-collapse-to-two) |
 | [`getVisibleRecordActionsByRecordKey()` — per-record clones, record-bound, hidden dropped](../../../packages/tables/src/Table/Concerns/HasRecordActions.php) | [`index.blade.php`'s `$reduceVisibleRecordActions` / `$recordActionsByRecordKey`](../../../vendor/filament/tables/resources/views/index.blade.php) | done | — | [diverges](#the-visible-action-map-is-a-table-method-and-is-not-short-circuited) |
@@ -141,29 +141,48 @@ Rows never disappear — only their detail sections do.
 | `getExtraRecordLinkAttributeBag()` | [`HasRecordUrl`](../../../vendor/filament/tables/src/Table/Concerns/HasRecordUrl.php) | skipped | — | The bag wrapper has no consumer here: the row anchor spreads `getExtraRecordLinkAttributes()` through `attrs()`, which builds the bag itself |
 | [`recordAction()` / `getRecordAction()`](../../../packages/tables/src/Table/Concerns/HasRecordAction.php) | [`HasRecordAction`](../../../vendor/filament/tables/src/Table/Concerns/HasRecordAction.php) | done | — | — |
 | [The row chrome — the clickable marker, the stripe and the selected tint](../../../packages/tables/templates/partials/Table/index.html.twig) + [`table.css`](../../../packages/tables/assets/src/styles/components/table.css), [`table_controller.ts`](../../../packages/tables/assets/src/controllers/table_controller.ts) | [`index.blade.php`'s `<tr>` class list](../../../vendor/filament/tables/resources/views/index.blade.php), [`row.css`](../../../vendor/filament/tables/resources/css/row.css) | in progress | grouping — the stripe's group reset and the collapsed row (M4 · 6) | — |
-| [The cell wrapper — `<a>` / `<button>` / `<div>` chosen per record](../../../packages/tables/templates/partials/Table/index.html.twig) | [`index.blade.php`'s `$columnWrapperTag` match](../../../vendor/filament/tables/resources/views/index.blade.php) | in progress | the column-level arms — `Column::url()` / `action()` / `disabledClick()` / `hasStateBasedUrls()` (M4 · 4) | — |
-| [The reorder chrome — the toolbar trigger, the drag handle column, the sortable mount, the row markers and the indicator](../../../packages/tables/templates/partials/Table/index.html.twig) + [`table.css`](../../../packages/tables/assets/src/styles/components/table.css), [`table_controller.ts`](../../../packages/tables/assets/src/controllers/table_controller.ts) | [`index.blade.php`'s `fi-ta-reorder-*`](../../../vendor/filament/tables/resources/views/index.blade.php), [`sortable.js`](../../../vendor/filament/support/resources/js/sortable.js) | done | — | — |
-| [The empty state block — the replacement short-circuit, the demoted heading and the actions, beside the loading block the not-yet-loaded arm splits off into](../../../packages/tables/templates/partials/Table/index.html.twig) + [`table.css`](../../../packages/tables/assets/src/styles/components/table.css) | [`index.blade.php`'s `fi-ta-empty-state`](../../../vendor/filament/tables/resources/views/index.blade.php), [`empty-state.css`](../../../vendor/filament/tables/resources/css/empty-state.css) | done | — | [detail](#the-deferred-window-is-server-gated-and-client-closed) |
+| [The cell wrapper — `<a>` / `<button>` / `<div>` chosen per record](../../../packages/tables/templates/partials/Table/index.html.twig) | [`index.blade.php`'s `$columnWrapperTag` match](../../../vendor/filament/tables/resources/views/index.blade.php) | in progress | the column-level arms — `Column::url()` / `action()` / `disabledClick()` / `hasStateBasedUrls()` (M4 · 4) | [detail](#the-cell-wrapper-ships-the-record-arms-and-m4--4-interleaves-the-column-ones) |
+| [The reorder chrome — the toolbar trigger, the drag handle column, the sortable mount, the row markers and the indicator](../../../packages/tables/templates/partials/Table/index.html.twig) + [`table.css`](../../../packages/tables/assets/src/styles/components/table.css), [`table_controller.ts`](../../../packages/tables/assets/src/controllers/table_controller.ts) | [`index.blade.php`'s `fi-ta-reorder-*`](../../../vendor/filament/tables/resources/views/index.blade.php), [`sortable.js`](../../../vendor/filament/support/resources/js/sortable.js) | done | — | [diverges](#the-drag-control-mounts-per-mode-where-vendors-instance-outlives-every-render) · [tables-bundle.md](tables-bundle.md#the-table-controller-absorbs-four-jobs-livewire-does-with-attributes) |
+| [The empty state block — the replacement short-circuit, the demoted heading and the actions, beside the loading block the not-yet-loaded arm splits off into](../../../packages/tables/templates/partials/Table/index.html.twig) + [`table.css`](../../../packages/tables/assets/src/styles/components/table.css) | [`index.blade.php`'s `fi-ta-empty-state`](../../../vendor/filament/tables/resources/views/index.blade.php), [`empty-state.css`](../../../vendor/filament/tables/resources/css/empty-state.css) | done | — | [detail](#the-deferred-window-is-server-gated-and-client-closed) · [semantics](#the-empty-states-heading-tag-demotes-itself-when-the-table-has-no-heading) |
 | [The selection settings — `bulkActions()` / `pushBulkActions()` / `groupedBulkActions()` / `selectable()` / `isSelectionEnabled()` / `selectCurrentPageOnly()` / `selectsCurrentPageOnly()` / `checkIfRecordIsSelectableUsing()` / `checksIfRecordIsSelectable()` / `isRecordSelectable()` / `trackDeselectedRecords()` / `canTrackDeselectedRecords()` / `recordCheckboxPosition()` / `getRecordCheckboxPosition()` / `getAllSelectableRecordsCount()`](../../../packages/tables/src/Table/Concerns/HasBulkActions.php) + [`RecordCheckboxPosition`](../../../packages/tables/src/Enums/RecordCheckboxPosition.php) | [`Table\Concerns\HasBulkActions`](../../../vendor/filament/tables/src/Table/Concerns/HasBulkActions.php), [`Enums/RecordCheckboxPosition`](../../../vendor/filament/tables/src/Enums/RecordCheckboxPosition.php) | in progress | — | [detail](#the-selection-settings-ship-as-a-subset-and-the-rest-are-listed) · [semantics](#one-filter-setting-drives-three-selection-behaviours) · [has-table.md](has-table.md#the-selection-is-server-canonical-and-re-derived-on-every-read) |
 | Grouping and summaries — `groups()`, `defaultGroup()`, the summarizers | [`CanGroupRecords`](../../../vendor/filament/tables/src/Table/Concerns/CanGroupRecords.php), [`CanSummarizeRecords`](../../../vendor/filament/tables/src/Table/Concerns/CanSummarizeRecords.php) | todo | — | — |
 | [Reordering — `reorderable()` / `isReorderable()` / `isReordering()` / `getReorderColumn()` / `getReorderDirection()` / `authorizeReorder()` / `isReorderAuthorized()` / `reorderRecordsTriggerAction()` / `getReorderRecordsTriggerAction()` / `beforeReordering()` / `afterReordering()` / `callBeforeReordering()` / `callAfterReordering()`](../../../packages/tables/src/Table/Concerns/CanReorderRecords.php) + [`HasReorderAnimationDuration`](../../../packages/support/src/Components/Concerns/HasReorderAnimationDuration.php) | [`CanReorderRecords`](../../../vendor/filament/tables/src/Table/Concerns/CanReorderRecords.php), [`Support\Concerns\HasReorderAnimationDuration`](../../../vendor/filament/support/src/Concerns/HasReorderAnimationDuration.php) | done | — | — |
 | [`heading()` / `description()`](../../../packages/tables/src/Table/Concerns/HasHeader.php) + [`rootHeadingLevel()` / `getHeadingLevel()` / `getHeadingTag()`](../../../packages/tables/src/Table/Concerns/HasHeadings.php) | [`Table\Concerns\HasHeader`](../../../vendor/filament/tables/src/Table/Concerns/HasHeader.php), [`Table\Concerns\HasHeadings`](../../../vendor/filament/tables/src/Table/Concerns/HasHeadings.php) | in progress | `header()` — the custom-header arm takes a Blade `View`, and its Twig analogue waits for a consumer | [detail](#the-partial-emits-no-header-scaffolding-and-no-content-wrapper) |
 | [`striped()` / `isStriped()`](../../../packages/tables/src/Table/Concerns/CanBeStriped.php) | [`CanBeStriped`](../../../vendor/filament/tables/src/Table/Concerns/CanBeStriped.php) | done | — | — |
 | [`recordClasses()` / `getRecordClasses()`](../../../packages/tables/src/Table/Concerns/HasRecordClasses.php) | [`HasRecordClasses`](../../../vendor/filament/tables/src/Table/Concerns/HasRecordClasses.php) | done | — | — |
-| Presentation — `stackedOnMobile()`, `content()` | [`CanBeStriped`](../../../vendor/filament/tables/src/Table/Concerns/CanBeStriped.php) and its siblings | todo | — | — |
+| Presentation — `stackedOnMobile()` / `isStackedOnMobile()`, `content()` / `getContent()` / `contentGrid()` / `getContentGrid()` / `contentFooter()` / `getContentFooter()` | [`Table\Concerns\CanBeStackedOnMobile`](../../../vendor/filament/tables/src/Table/Concerns/CanBeStackedOnMobile.php), [`Table\Concerns\HasContent`](../../../vendor/filament/tables/src/Table/Concerns/HasContent.php) | blocked | the layout columns (M4 · 7) | Both configure the **card** rendering rather than the table one — `content()` replaces the `<table>` with a caller-supplied list and `stackedOnMobile()` is the responsive half of that list, whose whole point is the label-above-value stack a `<td>` cannot make. Neither has anything to switch on until `Columns\Layout`'s `Split`/`Stack`/`Panel`/`Grid` and `contentGrid()` land, and [`AfterContent` renders nothing](#the-partial-emits-no-header-scaffolding-and-no-content-wrapper) for the same reason. Split off the striping row with M4 · 3, which shipped `striped()` and `recordClasses()` and left these two behind |
 | `HasArguments`, `HasExtraAttributes`, `HasDefaultDataFormattingSettings` | [`Table.php`'s remaining composed traits](../../../vendor/filament/tables/src/Table.php) | todo | — | — |
 
-The twenty-three **done** rows are `make()`, the host binding, the data-source
-declaration, the query-lane declaration and the two members that read off it
-(`hasQuery()`, `getRecordClass()`), the host-delegating `getRecords()`,
-`getPaginator()` and `getRecordKey()`, the morph-stable row and cell keys built
-on the last of those, the empty-state heading and icon, the closure-injection
-wiring, the per-record visible-action map, the pagination surface, the
-sort-resolution surface and the default-sort family beside it, the three search
-rows — the declaration, the chrome, and the query half · 12 landed — the
-toolbar action set and the filter setting the whole selection story reads, and
-the partial that renders all of it; the column set, the empty-state description
-and the four remaining action rows are partly in, one step behind them.
+Forty-seven rows are **done**, fourteen **in progress**, six **skipped**, nine
+**todo** and one **blocked**. Rather than name all forty-seven, here is what the
+done set covers, feature by feature. The **object itself**: `make()`, the host
+binding, the closure-injection wiring, and the partial that renders everything
+below. The **data lanes**: the `records()` declaration, the whole `query()` lane
+with the two members that read off it (`hasQuery()`, `getRecordClass()`), the
+relation-scoped lane · 20 added, and the host-delegating `getRecords()`,
+`getPaginator()` and `getRecordKey()` with the morph-stable row and cell keys built
+on the last of those. The **browsing state**: the pagination surface,
+`paginatedWhileReordering()`, the sort-resolution surface with the default-sort
+family beside it, the three search rows — the declaration, the chrome, and the
+query half · 12 landed — the query-string identifier, and the session-persistence
+trio (`persistSortInSession()`, `persistSearchInSession()`,
+`persistFiltersInSession()`). The **filters chrome**: the indicators row, the
+panel component, the dropdown, modal, above- and below-content layouts, and the
+three chrome actions. The **rows**: `recordUrl()` with its new-tab and
+extra-link members, `recordAction()`, `recordClasses()`, `striped()`, the record
+labels and titles the empty state reads, and the whole reorder surface with its
+chrome. The **record actions**: the per-record visible-action map and the toolbar
+action set. And the **empty state**, whole — heading, description, icon, the
+replacement block and its actions — beside `deferLoading()` and `poll()`, which
+share a row.
+
+What is still **in progress** is where a named gap sits inside a shipped member:
+the column set (the layouts and the manager), the header/toolbar/selection rows
+and the row chrome against grouping — the stripe's group reset and the collapsed
+row — the record-action position rows, the big `HasFilters` row against the four
+refused layouts, the cell wrapper against
+[M4 · 4's column arms](#the-cell-wrapper-ships-the-record-arms-and-m4--4-interleaves-the-column-ones),
+and the header row against `header()`'s Blade-`View` arm.
 
 The relation arm · 20 added to the lane has no row of its own here, and that is
 the [one-row-per-file](../README.md#one-row-per-file-one-file-per-thing) rule
@@ -353,13 +372,12 @@ enum is Filament's verbatim, three pure cases in declaration order; the getter i
 typed `PaginationMode` where Filament declares `?PaginationMode` over a body that
 cannot return null.
 
-`paginatedWhileReordering()` reads on a table that is being reordered, and
-reordering is unported (its row is above). `scrollToTopOnPageChange()` is an
-Alpine `$el.scrollIntoView()` in Filament's view; the port has no scroll
-affordance and it belongs with the
-[loading affordances](#loading-affordances-are-deferred-with-the-javascript-that-would-drive-them)
-rather than with pagination configuration. Each returns with the feature it
-drives.
+`paginatedWhileReordering()` came off this list with M4 · 3 and has a **done** row
+of its own — the table it reads on now exists. `scrollToTopOnPageChange()` is the
+one still here: an Alpine `$el.scrollIntoView()` in Filament's view, where the port
+has no scroll affordance at all, so it belongs with the
+[in-flight affordance](#loading-affordances-are-deferred-with-the-javascript-that-would-drive-them)
+that is still out rather than with pagination configuration, and returns with it.
 
 ### The unported search surface splits three ways
 
@@ -367,11 +385,13 @@ Filament's `Table\Concerns\CanSearchRecords` is 300 lines; the port keeps the
 declaration, the chrome and — since · 12 — the query half. What the surface
 divides into stays worth naming, because two of the three arms are still out.
 
-**Session persistence** — `persistSearchInSession()` and
-`persistColumnSearchesInSession()` — is the
-[toolkit-wide omission](has-table.md#no-table-state-is-persisted-in-the-session)
-recorded on the host side, and returns with that decision rather than with
-search.
+**Session persistence** split in two with M4 · 3. `persistSearchInSession()` ships,
+against the host-side
+[`CanPersistTableState`](has-table.md#the-session-key-is-the-host-class-so-two-instances-of-one-page-share-it)
+that arrived with it, and has a **done** row of its own.
+`persistColumnSearchesInSession()` does not, and the reason is no longer the
+session: there is no `$tableColumnSearches` bag to persist until per-column search
+lands, so it returns with that (M4 · 5) rather than with the session decision.
 
 **The query lane's members landed with · 12** and have a **done** row of their own:
 `splitSearchTerms()`, which governs how the term is broken up *before* being
@@ -410,7 +430,7 @@ delegates to a host method that arrives with it; `getColumnSearchIndicators()`
 returns one `Filters\Indicator` per column-scoped term and waits on that same
 per-column search. Only the global one ships: `getSearchIndicator()` is a
 nullable delegate to the host's `getTableSearchIndicator()` — the
-[tenth contract method](has-table.md#the-contract-is-eighteen-methods-of-filaments-forty-six)
+[tenth contract method](has-table.md#the-contract-is-twenty-methods-of-filaments-forty-six)
 — where the null return carries what Filament's separate `hasSearch()` gate
 says, so no companion method is needed.
 
@@ -493,10 +513,51 @@ Two divergences ride on that. The parse is **strict**: `10s` and `500ms` parse,
 and anything else — a bare number, a unit Filament never had, an empty string —
 throws `InvalidArgumentException` where Livewire silently falls back to 2000 ms.
 A table quietly polling at the wrong rate is invisible until it costs somebody a
-database, which is the fail-fast house rule's whole case. And Livewire's
+database, which is the fail-fast house rule's whole case. One consequence of the
+reorder guard sitting *above* that parse in the template — `isReordering ? null :
+component.getPollingIntervalMilliseconds` — is that a malformed interval does not
+throw while a table is in reorder mode: the getter is never reached, so the page
+renders, and the exception arrives on the render that leaves the mode. And
+Livewire's
 `.visible` / `.keep-alive` modifiers are **not** ported: both are properties of
 `wire:poll` itself, and the interval this port hands the browser is a number with
 nowhere to carry them.
+
+### The cell wrapper ships the record arms, and M4 · 4 interleaves the column ones
+
+Every cell renders inside a wrapper element chosen per record: an `<a>` when
+`getRecordUrl()` answers, a `<button>` carrying the `live#action` when
+`getRecordAction()` does, and a `<div>` otherwise — plus a `<div>` unconditionally
+while [reordering](#the-drag-control-mounts-per-mode-where-vendors-instance-outlives-every-render),
+which is vendor's `$isColumnClickDisabled` reached from its `|| $isReordering` half.
+The record half is complete. What is missing is the **column** half —
+`Column::url()`, `Column::action()`, `disabledClick()` and `hasStateBasedUrls()` —
+and the shape it lands in is worth stating now, because it is not "add a branch
+above the existing ones".
+
+Vendor computes one `match (true)` in which the record and column conditions are
+**interleaved**, not layered:
+
+- the `'a'` arm is `($columnUrl || ($recordUrl && $columnAction === null)) && (! $columnHasStateBasedUrls) && (! $isColumnClickDisabled)`,
+- the `'button'` arm is `($columnAction || $recordAction) && (! $columnHasStateBasedUrls) && (! $isColumnClickDisabled)`.
+
+Three consequences for whoever lands M4 · 4. The column arms **override** the
+record ones rather than sitting above them: a column URL wins the `href`
+(`$columnUrl ?: $recordUrl`), and a column *action* suppresses the record URL's
+anchor entirely — that is what `$recordUrl && $columnAction === null` says, and a
+naive "check the column first, else fall through to the record" reading gets it
+wrong. The **new-tab** read becomes per-column with it:
+`$columnUrl ? $column->shouldOpenUrlInNewTab() : $openRecordUrlInNewTab`, so
+`shouldOpenRecordUrlInNewTab()` stops being the only source. And
+`getExtraRecordLinkAttributes()` is spread only under `blank($columnUrl) && filled($recordUrl)`
+— the record's link attributes belong to the record's link, so the guard belongs at
+the spread site rather than at the `{% set %}` that computes them. The two
+`hasStateBasedUrls()` negations are the fourth piece and have no record-level twin
+at all: a column whose URL is a function of its own state renders a `div` and lets
+its formatter emit the anchor.
+
+The template already carries a comment where the arms go; it says "slot in above",
+which is the reading this section exists to correct.
 
 ### Record actions register without the per-action modifier hook
 
@@ -1178,6 +1239,24 @@ off, exactly as in Filament. `hasAction('create')` reads the
 [shared flat map](#the-flat-action-map-keeps-one-trim-and-its-caller), so a
 `create` action declared as a record, header or toolbar action all count.
 
+### The empty state's heading tag demotes itself when the table has no heading
+
+`emptyStateHeadingTag` is `getHeadingTag(1)` when the table renders a heading of
+its own and plain `getHeadingTag()` when it does not — so the same empty state is
+an `<h3>` under a headed table and an `<h2>` under a headless one. That reads like
+an inconsistency and is vendor's `$secondLevelHeadingTag` verbatim, computed at the
+top of the blade the same way: the empty-state heading is the *second* level of the
+table's own document outline, and where there is no first level there is nothing to
+sit under. `rootHeadingLevel()` moves both together, so a table dropped inside a
+section can push its whole outline down one and keep the relationship.
+
+Vendor computes the variable once at the top of the blade and feeds it to seven
+call sites — the empty state is one, and the rest belong to chrome this port has
+not built. Only the empty state reads it here, and the
+[filters panel](#the-panel-is-fixed-chrome-with-no-action-objects-behind-it) is the
+one place that deliberately does not: it takes a literal `headingLevel` of 3,
+because it is fixed chrome rather than part of the table's outline.
+
 ### The record title reads the attribute through the accessor and falls back to the label
 
 `getRecordTitle()` tries the `recordTitle()` closure first — the record injected
@@ -1750,10 +1829,12 @@ same work. The stylesheet addition is one rule, `max-w-full shrink-0` — vendor
 `& > * { flex min-h-9 items-center gap-x-4 }` already supplies.
 
 The group's contents keep Filament's order exactly — [reorder trigger]
-[toolbar actions] [grouping selector] — with the first and last as comment slots
-(M4 · 3 and M4 · 6), and the end group reserving a third for the column manager
-(M4 · 5). Getting that order wrong is what forces a restructure two epics later,
-so the comments are load-bearing rather than decorative. Header actions rendered
+[toolbar actions] [grouping selector] — with the reorder trigger now filled by
+M4 · 3 and the grouping selector still a comment slot (M4 · 6), and the end group
+reserving a third for the column manager (M4 · 5). Getting that order wrong is
+what forces a restructure two epics later, so the slots were load-bearing rather
+than decorative — the reorder trigger dropped into its reserved position with no
+restructure, which is the payoff. Header actions rendered
 here as a stopgap while no `sy-ta-header` band existed; they moved into the band
 (`sy-ta-header-actions` — named, not `fi-ta-actions`, for the same
 record-actions-collision reason as the start group) when the heading rows
@@ -1824,11 +1905,15 @@ The banner is server-gated on `isSelectionEnabled()` and client-gated on the
 count, as vendor's is, and it renders on an overflow (empty) page too: a
 selection outlives a page that lost its rows. Of vendor's two extra server gates
 one is ported — the banner does not render while a deferred table's window is
-still open — while `maxSelectableRecords(1)` stays unported. So is the
-`fi-selected` row tint and its leading primary bar — that
-rides a class Filament's Alpine binds onto each `<tr>`, and the port stamps no
-per-row class from the client; the ticked checkbox carries the state visually
-until the row-click work of M4 · 3 revisits it.
+still open — while `maxSelectableRecords(1)` stays unported. The `fi-selected`
+row tint is no longer among them: M4 · 3 gave the controller a `#repaint()` pass
+over each checkbox's closest `.sy-ta-row`, so `sy-selected` is stamped from the
+client exactly as Filament's Alpine binds it, and the row chrome rather than the
+ticked checkbox carries the state now — the tint and its leading primary bar are
+`row.css`'s two rules ported verbatim, the bar as a `::before` on the row's first
+child. Vendor's *second* copy of that bar, in its `table.css`, is not ported: it
+paints the same stripe for the mobile-stacked block layout, which
+[has no chrome here](#surface) until the layout columns land.
 
 ### The selection cells carry no header-cell class, and their checkbox skin is support's
 
@@ -1866,6 +1951,41 @@ The two ARIA labels are Filament's own strings with one word translated —
 what vendor's translation calls an item, and the page checkbox says which rows it
 covers because our header cell is the only place that label appears.
 
+
+### The drag control mounts per mode, where vendor's instance outlives every render
+
+Filament stamps `x-sortable` on the `<tbody>` whenever the table
+`isReorderable()` — the *capability* — and gates only the per-row
+`x-sortable-item` / `x-sortable-handle` on `isReordering()`, the *mode*. So its
+Sortable instance exists on every render of a reorderable table and is simply
+childless while the mode is off. Ours stamps
+[`sylament--support--sortable`](../support/sortable.md) on the `<tbody>` only
+while `isReordering` is true, so the instance is created when the mode opens and
+gone when it closes.
+
+The reason is what a Stimulus controller costs across a morph. UX re-renders the
+table into the same DOM, so an always-mounted control would have to survive
+idiomorph rewriting the rows underneath it — and SortableJS binds listeners to the
+child elements it was given. It would then need either a `data-live-ignore` island
+(which would freeze the rows the server is trying to update) or a re-initialisation
+on every morph, and the reward for either is an instance that can do nothing,
+because there are no `[data-sortable-item]` children to drag until the mode is on.
+Mounting per mode makes `connect()` and `disconnect()` line up exactly with the
+window in which dragging is legal, and it is the same reason the poll attribute is
+dropped rather than ignored while reordering
+([the timer is ours](#the-poll-interval-parses-strictly-and-carries-no-livewire-modifiers)).
+
+Two things stay Filament's. The animation duration is
+[support's shared `HasReorderAnimationDuration`](../../../packages/support/src/Components/Concerns/HasReorderAnimationDuration.php),
+composed by the table's `CanReorderRecords` exactly as Filament's composes its own
+`Support\Concerns\HasReorderAnimationDuration` — the same trait in the same base
+package, reused rather than re-declared, and `Repeater` was its first consumer.
+And the handle is a per-row `[data-sortable-handle]` element rather than a whole
+draggable row, so a click on a cell still follows the row's link while the mode is
+open… except that it does not: the
+[cell wrapper](#the-cell-wrapper-ships-the-record-arms-and-m4--4-interleaves-the-column-ones)
+falls back to a `div` while reordering, which is vendor's `$isColumnClickDisabled`
+carrying `|| $isReordering`.
 
 ### Every rule in `table.css` is scoped under the `.sy-ta` root, one class above vendor's
 
@@ -2075,8 +2195,12 @@ In Filament the pairs are distinct because there is a third thing in the row.
 reorder handle; `*Columns` sits between them and the data columns — so
 `BeforeCells` puts the actions before the checkbox and `BeforeColumns` after it.
 M4 · 1 landed the checkbox and split the branches back apart at exactly those two
-points; reordering is the remaining absentee, and its handle joins the row at the
-same two points when M4 · 3 lands it.
+points, and M4 · 3 landed the handle — but only the checkbox separates the pairs,
+because the two modes are mutually exclusive: reordering drops the checkbox cells
+*and* empties the action sets, so a row being dragged carries a handle, its
+columns, and no action cell at any of the four positions. The distinctness a
+handle would add is therefore never observable, and the sentence above stands as
+written: with selection off, each pair lands the same cell in the same place.
 
 `AfterContent` renders nothing on purpose rather than by omission: it is the
 columns-*layout* position, where records render as cards rather than rows and the
@@ -2139,7 +2263,7 @@ nested *inside* the button is a click on the button already.
 `getFiltersTriggerAction()`, `getFiltersApplyAction()` and
 `getFiltersRemoveAllAction()` are Filament's three, each with its
 `filters*Action(?Closure)` seam taking the single `action` injection and falling
-back to the untouched action. Three things differ.
+back to the untouched action. Four things differ.
 
 The trigger wires **no click of its own** — `liveComponentClickHandlerEnabled(false)`,
 vendor's `livewireClickHandlerEnabled(false)` — because the surrounding chrome
@@ -2160,6 +2284,15 @@ the `badge($value)` family is unported, so porting it here would mean smuggling
 a whole actions feature into a tables epic. The chip therefore keeps its
 [existing composition](#the-trigger-badge-is-composed-in-the-table-partial-because-iconbutton-has-no-slot)
 one level out from the trigger, and the actions trail keeps the row.
+
+The **apply action is sized**, and vendor's is not. `defaultSize(Size::Small)` is
+stamped on both the apply and the remove-all buttons here, where Filament sizes the
+remove-all alone and leaves apply at the default. That is an addition rather than a
+port: the two buttons sit in the same filters footer, and one rendering a size
+larger than the other read as a mistake in the panel. `defaultSize()` is the
+[non-destructive setter](../actions/action.md), so a caller's own `size()` through
+`filtersApplyAction()` still wins — which is what keeps an addition from being a
+restriction.
 
 The icons resolve through a closure the action evaluates
 (`static fn (?IconManager $icons = null) => …`) rather than an injected manager
@@ -2194,6 +2327,13 @@ than pinning it (`ChangingItemsTracker::setItem()`, `:955`). Without that replay
 the seed would be a defect rather than a default: idiomorph's own
 `beforeAttributeUpdated` is a no-op (`:422`), so `syncNodeFrom()` (`:546`) would
 copy the server's opinion straight back over the user's.
+
+The record is durable for the **component's** lifetime, not for one round trip,
+and the seed is a value rather than a live reference — so a user who collapses the
+panel while no filter is active keeps it collapsed even after the active count
+rises and the server starts rendering `open` again. That is the intended reading of
+"seed": it decides the first paint and loses to the user from then on, and only a
+fresh mount (a full page load) hands the decision back to the server.
 
 The residue is support's
 [accepted gap](../support/dropdown.md#the-open-state-is-a-controller-field-re-asserted-through-a-mutationobserver),
@@ -2239,10 +2379,17 @@ morph re-applies it — the dialog is never de-rendered mid-edit, which is what 
 button (a live action fired from inside the open dialog) both depend on. It does
 **not** inherit the `<details>`' replacement gap: `getFiltersModalId()` gives it a
 stable `id`, and idiomorph matches on the id set first, so the dialog is always
-morphed in place. Were the attribute ever lost anyway, support's modal controller
-could not recover it — `#normalizeModality()` returns on `!this.element.open` and
-its only other open path is the `open` prop this template never sets — which is
-the half-closed state [that controller's docblock](../support/modal.md) describes.
+morphed in place.
+
+Were the attribute ever lost anyway, the controller's own attribute observer could
+not put it back: it fires on any change to `open` and calls `#normalizeModality()`,
+which returns on `!this.element.open` — the observer **promotes** a dialog that is
+already open into the top layer, it does not open a closed one. That is the
+half-closed state [that controller's docblock](../support/modal.md) describes. Two
+paths would reopen it, and neither is wired here: the `open` `LiveProp`, which this
+template never sets, and the `sylament-open-modal` window event — the same one-line
+escape the Baseline paragraph above names, which is why that escape covers both
+failure modes rather than only the old-browser one.
 
 ### The filters panel teleports, because the scroll container wraps the toolbar too
 

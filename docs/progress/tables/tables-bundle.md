@@ -57,7 +57,7 @@ a [Details](#details) write-up, a **diverges** link to
 | --- | --- | --- | --- | --- |
 | [`Columns\`, `Filters\` and `Colors\Components\` globs + `Table` component services](../../../packages/tables/src/SylamentTablesBundle.php) | — (Sylament-only; Filament's provider binds no services) | done | — | [diverges](#the-bundle-registers-container-services-which-filaments-provider-has-no-counterpart-for) |
 | [TableExtension → `twig.extension`](../../../packages/tables/src/SylamentTablesBundle.php) (`renderTable()`) | — (Sylament-only; mirrors schemas' [`renderSchema()`](../../../packages/schemas/src/Twig/Extension/SchemaExtension.php)) | done | — | [diverges](#the-bundle-registers-a-rendertable-twig-extension-which-filament-has-no-counterpart-for) |
-| [`TablesIconAlias` — `ACTIONS_FILTER`, `EMPTY_STATE`, `FILTERS_REMOVE_ALL_BUTTON`, the three `HEADER_CELL_SORT_*`, `SEARCH_FIELD`](../../../packages/tables/src/Twig/TablesIconAlias.php) | [`TablesIconAlias`](../../../vendor/filament/tables/src/View/TablesIconAlias.php) | in progress | — | [detail](#the-alias-set-is-seven-constants-of-filaments-23) · [diverges](#the-empty-state-alias-value-drops-filaments-package-prefix) |
+| [`TablesIconAlias` — `ACTIONS_DISABLE_REORDERING`, `ACTIONS_ENABLE_REORDERING`, `ACTIONS_FILTER`, `EMPTY_STATE`, `FILTERS_REMOVE_ALL_BUTTON`, the three `HEADER_CELL_SORT_*`, `REORDER_HANDLE`, `SEARCH_FIELD`](../../../packages/tables/src/Twig/TablesIconAlias.php) | [`TablesIconAlias`](../../../vendor/filament/tables/src/View/TablesIconAlias.php) | in progress | — | [detail](#the-alias-set-is-ten-constants-of-filaments-23) · [diverges](#the-empty-state-alias-value-drops-filaments-package-prefix) |
 | [`ext-mbstring` on the package manifest](../../../packages/tables/composer.json) | — (Sylament-only; Filament's manifest declares no extensions) | done | — | [diverges](#the-manifest-declares-ext-mbstring) |
 | [`sylament/forms` on the package manifest](../../../packages/tables/composer.json) | [`filament/forms` on Filament's](../../../vendor/filament/tables/composer.json) | done | — | [diverges](#the-manifest-declares-sylamentforms) |
 | [`@SylamentTables` view namespace](../../../packages/tables/templates) | [`->hasViews()`](../../../vendor/filament/tables/src/TablesServiceProvider.php) | done | — | [diverges](../schemas/schemas-bundle.md#the-view-namespace-is-registered-by-symfony-convention-not-by-an-explicit-provider-call) |
@@ -109,23 +109,27 @@ responsibilities have no coverage because they have no code.
 Specifics for rows that are not finished — what is already in, what is left, and
 what the next step is. Delete a subsection when its row flips to **done**.
 
-### The alias set is seven constants of Filament's 23
+### The alias set is ten constants of Filament's 23
 
 Filament's `TablesIconAlias` declares 23 alias constants up front — every
-overridable icon slot in the whole table builder. Sylament ships **seven** —
+overridable icon slot in the whole table builder. Sylament ships **ten** —
 `ACTIONS_FILTER` (the toolbar funnel), `EMPTY_STATE`,
 `FILTERS_REMOVE_ALL_BUTTON` (the indicators row's clear-all button), the three
 `HEADER_CELL_SORT_*` (unsorted, ascending, descending — the sortable header's
-chevron picks one by state) and `SEARCH_FIELD`. All seven have their consuming
-surface ported. Fifteen of the remaining 16 belong to features that are not built
-yet: reordering (`ACTIONS_ENABLE_REORDERING`, `ACTIONS_DISABLE_REORDERING`,
-`REORDER_HANDLE`), the filters query builder (the six
+chevron picks one by state), `SEARCH_FIELD`, and the three M4 · 3 added:
+`ACTIONS_ENABLE_REORDERING` and `ACTIONS_DISABLE_REORDERING` — the toolbar
+trigger's two states, resolved inside
+[`getReorderRecordsTriggerAction($isReordering)`](../../../packages/tables/src/Table/Concerns/CanReorderRecords.php)
+so one action object answers for both — and `REORDER_HANDLE`, the per-row grab
+handle. All ten have their consuming
+surface ported. Twelve of the remaining 13 belong to features that are not built
+yet: the filters query builder (the six
 `FILTERS_QUERY_BUILDER_CONSTRAINTS_*`), grouping (`ACTIONS_GROUP`,
 `GROUPING_COLLAPSE_BUTTON`), the column manager (`ACTIONS_COLUMN_MANAGER`) and
 the column catalog (`COLUMNS_COLLAPSE_BUTTON`, `COLUMNS_ICON_COLUMN_TRUE`,
 `COLUMNS_ICON_COLUMN_FALSE`).
 
-The sixteenth, `ACTIONS_OPEN_BULK_ACTIONS`, is the one exception, and it is worth
+The thirteenth, `ACTIONS_OPEN_BULK_ACTIONS`, is the one exception, and it is worth
 naming because its feature **is** built: bulk actions landed with M4 · 1 and the
 alias still did not, because nothing reads it here.
 [`BulkActionGroup`](../actions/action-group.md) sets its trigger icon as a plain
@@ -138,12 +142,19 @@ with its **reader**, and this one has none yet.
 it, so each constant lands in the same change as the component or feature that
 renders its icon — the same growth order
 [`SupportIconAlias`](../support/support-icon-alias.md#pagination-rtl-aliases)
-follows, and the four that arrived with the sort headers and the search toolbar
-are that order in action. All seven are read by
+follows, and the four that arrived with the sort headers and the search toolbar,
+and the three that arrived with reordering, are that order in action. All ten are
+read by
 [the table partial](../../../packages/tables/templates/partials/Table/index.html.twig)
 — `ACTIONS_FILTER` and `FILTERS_REMOVE_ALL_BUTTON` by the filters chrome, in its
-toolbar and its indicators row, rather than by the table's own rows — so every
-one of them is overridable end to end.
+toolbar and its indicators row, rather than by the table's own rows, and the two
+reorder-trigger ones through the action the toolbar renders rather than from the
+markup directly — so every one of them is overridable end to end. Each of the
+three new ones needed a glyph added to
+[the fixture icon set](../../../packages/tables/tests/Fixtures/assets/icons/heroicons)
+(`arrows-up-down`, `check`, `bars-2`) and to the demo's, because ux-icons resolves
+a missing local icon by throwing rather than by rendering nothing — a hard error in
+a render test, not a blank button.
 
 ### Asset registration
 
@@ -162,10 +173,13 @@ support's single stylesheet compile, unchanged.
 
 This section previously predicted that the registration would arrive with the
 interactive columns, "which is when the four `AlpineComponent`s are ported."
-**Selection got there first.** What the workspace ships today is one controller,
+**Selection got there first.** What the workspace ships today is still one
+controller,
 [`table_controller.ts`](../../../packages/tables/assets/src/controllers/table_controller.ts)
-(`sylament--tables--table`, `fetch: eager`), the client half of record selection
-— the port of Filament's `filamentTable` Alpine data
+(`sylament--tables--table`, `fetch: eager`), and it now carries
+[five responsibilities](#the-table-controller-absorbs-four-jobs-livewire-does-with-attributes)
+rather than the one it started with. Its core is still the port of Filament's
+`filamentTable` Alpine data
 ([`resources/js/components/table.js`](../../../vendor/filament/tables/resources/js/components/table.js)),
 minus everything that is not selection: the filters-dropdown positioning (support's
 `Dropdown` owns that here), the group-collapse arm (M4 · 6), the two props no
@@ -199,7 +213,13 @@ server-rendered `checked` attribute — is what wins after the first morph. And,
 like [actions' page-wide `dispatch` controller](../actions/actions-bundle.md#the-dispatch-controller-is-page-wide-and-filament-has-no-counterpart-for-it),
 a consuming app that leaves `@sylament/tables` out of its `assets/controllers.json`
 loses every one of those behaviours with no error anywhere: the checkboxes render
-and do nothing. Filament needs Alpine the same way.
+and do nothing. Filament needs Alpine the same way — but the cost of that omission
+rose with M4 · 3, and one arm of it is no longer silent-but-usable. A
+`deferLoading()` table renders its loading indicator and **nothing else, forever**:
+the second request that fetches the records is the controller's `loadTable` call on
+`connect()`, and with no controller there is no connect. That is the one place a
+missing `controllers.json` block takes a page from degraded to broken, so it is
+worth naming beside the selection case rather than folding into it.
 
 **Next step:** the four interactive columns (checkbox, select, text input, toggle)
 land as controllers in this same workspace — the `AlpineComponent`s exist for
@@ -394,6 +414,39 @@ Integration suite at all — the same trap schemas' kernel already documents. Tw
 registration: the booted kernel's Twig loader lists a `SylamentForms` namespace
 under which the checkbox partial resolves, and a real `Checkbox` renders inside a
 `Schema` bound to a `data`-bag host.
+
+### The table controller absorbs four jobs Livewire does with attributes
+
+Filament's `filamentTable` Alpine data does selection and nothing else; the other
+four behaviours this controller carries are `wire:*` attributes over there —
+`wire:poll` for the interval, `wire:init` for the deferred second request,
+`x-on:end` for the drag write, and an `x-bind:class` for the selected-row tint.
+None of those has a UX LiveComponent counterpart that reads a **table** rather than
+a page, so each landed in the one controller the table already mounts.
+
+Selection is the first job: the three props, the tri-state header checkbox and the
+banner. The **selected-row tint** is the second — `#repaint()` toggles `sy-selected`
+on each checkbox's closest `.sy-ta-row`, the same class Filament's Alpine binds,
+which the port previously left to the server and could not keep in step once a tick
+stopped costing a request. The **reorder bridge** is the third: it binds support's
+non-bubbling `sylament--support--sortable:end` event and turns the new order into
+the `reorderTable` action, which is the whole bridge, because
+[the drag control never talks to a live component](../support/sortable.md). The
+**poll timer** is the fourth, started and restarted from `pollIntervalValueChanged()`
+rather than only at connect, because a morph never re-runs `connect()` and
+[the attribute is dropped while reordering](table.md#the-poll-interval-parses-strictly-and-carries-no-livewire-modifiers).
+The **deferred kick** is the fifth and the only one that binds no event at all: it
+fires `loadTable` once on connect, guarded by the flag it reads back out of the
+store rather than by a field of its own, so a reconnect after the load fires
+nothing.
+
+The element gate is what keeps the cost proportional, and it is the reason the five
+did not become five controllers. The partial stamps
+`stimulus_controller('sylament--tables--table', …)` only when the table is
+selectable, reorderable, deferred or polling — a plain read-only table mounts
+nothing — and every value the jobs read (`canTrack`, `pageOnly`,
+`allSelectableCount`, `deferred`, `pollInterval`) rides that one stamp. Adding a
+responsibility widened the gate rather than adding a second `data-controller`.
 
 ### The selection controller diverges from `table.js` in four places
 

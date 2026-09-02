@@ -57,6 +57,11 @@ final class BareTableHost implements InteractsWithTable
         throw new LogicException('The bare table host resolves no record keys.');
     }
 
+    public function isTableReordering(): bool
+    {
+        return false;
+    }
+
     public function getTableSortColumn(): ?string
     {
         return null;

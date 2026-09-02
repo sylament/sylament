@@ -94,6 +94,17 @@ trait CanSortRecords
     protected function applySortingToTableQuery(QueryBuilder $query): QueryBuilder
     {
         $table = $this->getTable();
+
+        // A drag orders the rows itself, so the reorder column replaces every
+        // ordering the table would otherwise apply — the user's sort, the
+        // default sort and the identifier tiebreaker alike.
+        if ($this->isTableReordering()) {
+            return $query->orderBy(
+                ColumnPathResolver::resolveOrderable($query, (string) $table->getReorderColumn()),
+                $table->getReorderDirection() === 'desc' ? 'desc' : 'asc',
+            );
+        }
+
         $tableSortColumn = $this->getTableSortColumn();
 
         if ($tableSortColumn !== null) {

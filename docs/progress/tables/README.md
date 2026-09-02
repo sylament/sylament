@@ -215,7 +215,7 @@ pairs with, so it shares the first row below.
 | Host / CanGroupRecords | [`Concerns/CanGroupRecords.php`](../../../vendor/filament/tables/src/Concerns/CanGroupRecords.php) | todo | — |
 | Host / CanPaginateRecords | [`Concerns/CanPaginateRecords.php`](../../../vendor/filament/tables/src/Concerns/CanPaginateRecords.php) | in progress | [has-table.md](has-table.md#the-page-state-has-its-query-lane-and-no-session-or-url-half) |
 | Host / CanPollRecords | [`Concerns/CanPollRecords.php`](../../../vendor/filament/tables/src/Concerns/CanPollRecords.php) | skipped | The whole trait is a deprecated host getter (`getTablePollingInterval()`), and the project has never ported a deprecated Filament surface — the interval it fronts is `Table::poll()`, the `Table / CanPollRecords` row below ([has-table.md](has-table.md)) |
-| Host / CanReorderRecords | [`Concerns/CanReorderRecords.php`](../../../vendor/filament/tables/src/Concerns/CanReorderRecords.php) | todo | — |
+| Host / CanReorderRecords | [`Concerns/CanReorderRecords.php`](../../../vendor/filament/tables/src/Concerns/CanReorderRecords.php) | in progress | [has-table.md](has-table.md) |
 | Host / CanSearchRecords | [`Concerns/CanSearchRecords.php`](../../../vendor/filament/tables/src/Concerns/CanSearchRecords.php) | in progress | [has-table.md](has-table.md#search-is-the-global-term-only) |
 | Host / CanSortRecords | [`Concerns/CanSortRecords.php`](../../../vendor/filament/tables/src/Concerns/CanSortRecords.php) | in progress | [has-table.md](has-table.md#sorting-composes-the-users-order-the-default-and-the-identifier-tiebreaker) |
 | Host / CanSummarizeRecords | [`Concerns/CanSummarizeRecords.php`](../../../vendor/filament/tables/src/Concerns/CanSummarizeRecords.php) | todo | — |
@@ -234,7 +234,7 @@ pairs with, so it shares the first row below.
 | Table / CanDeferLoading | [`Table/Concerns/CanDeferLoading.php`](../../../vendor/filament/tables/src/Table/Concerns/CanDeferLoading.php) | todo | [table.md](table.md#loading-affordances-are-deferred-with-the-javascript-that-would-drive-them) |
 | Table / CanGroupRecords | [`Table/Concerns/CanGroupRecords.php`](../../../vendor/filament/tables/src/Table/Concerns/CanGroupRecords.php) | todo | — |
 | Table / CanPollRecords | [`Table/Concerns/CanPollRecords.php`](../../../vendor/filament/tables/src/Table/Concerns/CanPollRecords.php) | todo | [table.md](table.md#loading-affordances-are-deferred-with-the-javascript-that-would-drive-them) |
-| Table / CanReorderRecords | [`Table/Concerns/CanReorderRecords.php`](../../../vendor/filament/tables/src/Table/Concerns/CanReorderRecords.php) | todo | — |
+| Table / CanReorderRecords | [`Table/Concerns/CanReorderRecords.php`](../../../vendor/filament/tables/src/Table/Concerns/CanReorderRecords.php) | done | [table.md](table.md) |
 | Table / CanSummarizeRecords | [`Table/Concerns/CanSummarizeRecords.php`](../../../vendor/filament/tables/src/Table/Concerns/CanSummarizeRecords.php) | todo | — |
 | Table / HasArguments | [`Table/Concerns/HasArguments.php`](../../../vendor/filament/tables/src/Table/Concerns/HasArguments.php) | todo | — |
 | [`Table / HasBulkActions`](../../../packages/tables/src/Table/Concerns/HasBulkActions.php) | [`Table/Concerns/HasBulkActions.php`](../../../vendor/filament/tables/src/Table/Concerns/HasBulkActions.php) | in progress | [table.md](table.md#the-selection-settings-ship-as-a-subset-and-the-rest-are-listed) |

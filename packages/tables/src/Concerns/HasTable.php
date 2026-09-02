@@ -27,6 +27,7 @@ trait HasTable
     use CanAccessProperties;
     use CanPaginateRecords;
     use CanPersistTableState;
+    use CanReorderRecords;
     use CanSearchRecords;
     use CanSortRecords;
     use HasBulkActions;
@@ -283,7 +284,7 @@ trait HasTable
             $column->applyEagerLoading($query);
         }
 
-        if (!$table->isPaginated()) {
+        if (!$table->isPaginated() || ($this->isTableReordering() && !$table->isPaginatedWhileReordering())) {
             /** @var list<object|array<string, mixed>> $records */
             $records = $query->getQuery()->getResult();
 

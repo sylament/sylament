@@ -40,6 +40,13 @@ interface InteractsWithTable
      */
     public function getTableRecordKey(object|array $record): string;
 
+    /**
+     * Whether the table is in drag-reorder mode — re-gated by the definition, so
+     * it is false on a table that declares no reorder column. Read by the
+     * partial to suppress everything a drag must not compete with.
+     */
+    public function isTableReordering(): bool;
+
     public function getTableSortColumn(): ?string;
 
     public function getTableSortDirection(): ?string;

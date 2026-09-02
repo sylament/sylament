@@ -41,7 +41,8 @@ trait CanReorderRecords
      * The new order the drag produced, as record keys. Every key is untrusted,
      * so the write re-resolves them through the table's own query and assigns
      * positions 1..N by array position — a key the query does not answer for is
-     * dropped without consuming a position, and one flush carries the lot, so
+     * skipped, and its slot is left as a gap in the numbering, exactly as
+     * vendor's unmatched WHEN arm does, and one flush carries the lot, so
      * lifecycle callbacks, versioning and the unit of work stay honest.
      *
      * @param array<mixed> $order

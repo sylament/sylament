@@ -71,7 +71,7 @@ it('reverses before numbering when the direction is descending', function (): vo
     expect(storedPositions($entityManager))->toBe([1 => 2, 2 => 1, 3 => 3]);
 });
 
-it('drops a key the query does not answer for and still numbers the rest', function (): void {
+it('leaves a gap where a key the query does not answer for sat, numbering the rest', function (): void {
     [$host, $entityManager] = reorderRig(fn (Table $table): Table => $table
         ->modifyQueryUsing(fn (QueryBuilder $query): QueryBuilder => $query->andWhere('song.id != 2')));
 

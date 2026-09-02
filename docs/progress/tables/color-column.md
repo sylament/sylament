@@ -45,7 +45,7 @@ _Detail_ carries **diverges** → the permanent note in
 | [`wrap()` / `canWrap()`](../../../packages/support/src/Components/Concerns/CanWrap.php) | [`Support\Concerns\CanWrap`](../../../vendor/filament/support/src/Concerns/CanWrap.php) | done | — | [support/README.md](../support/README.md#supporting-surface) |
 | [`getStateItems()` — the cell's swatch list](../../../packages/tables/src/Columns/ColorColumn.php) | — (Sylament-only; Filament resolves each item inside `toEmbeddedHtml()`) | done | — | [semantics](#the-copy-values-are-resolved-only-for-a-copyable-swatch) |
 | [The sanitized `background-color`](../../../packages/tables/templates/partials/ColorColumn/index.html.twig) | [`Str::sanitizeCssColor`](../../../vendor/filament/support/src/SupportServiceProvider.php) | done | — | [helpers.md](../support/helpers.md#sanitize_css_color-is-the-second-macro-that-lands-as-a-helper) · [diverges](#a-backed-enum-state-is-unwrapped-before-the-sanitizer-sees-it) |
-| [The `role="img"` swatch and its `aria-label`](../../../packages/tables/templates/partials/ColorColumn/index.html.twig) | [`ColorColumn::toEmbeddedHtml()`](../../../vendor/filament/tables/src/Columns/ColorColumn.php) | done | — | [semantics](#an-unsanitizable-value-paints-nothing-and-names-nothing) |
+| [The `role="img"` swatch and its `aria-label`](../../../packages/tables/templates/partials/ColorColumn/index.html.twig) | [`ColorColumn::toEmbeddedHtml()`](../../../vendor/filament/tables/src/Columns/ColorColumn.php) | done | — | [semantics](#an-unsanitizable-value-paints-nothing-and-a-plain-swatch-names-nothing) |
 | [The copyable swatch — `role="button"`, `aria-label="Copy …"` and the clipboard controller](../../../packages/tables/templates/partials/ColorColumn/index.html.twig) | [`ColorColumn::toEmbeddedHtml()`](../../../vendor/filament/tables/src/Columns/ColorColumn.php) | done | — | [diverges](#the-copyable-swatch-is-named-where-filament-leaves-it-nameless) · [copyable.md](../support/copyable.md) |
 | [`$template`](../../../packages/tables/src/Columns/ColorColumn.php) + [the partial it names](../../../packages/tables/templates/partials/ColorColumn/index.html.twig) | [`ColorColumn::toEmbeddedHtml()`](../../../vendor/filament/tables/src/Columns/ColorColumn.php) | done | — | [diverges](text-column.md#the-cell-renders-a-twig-partial-where-filament-emits-an-embedded-view) |
 | [The blank-state placeholder and the empty tooltip](../../../packages/tables/templates/partials/ColorColumn/index.html.twig) | [`ColorColumn::toEmbeddedHtml()`](../../../vendor/filament/tables/src/Columns/ColorColumn.php) | done | — | [column.md](column.md#a-tooltip-renders-as-a-native-title-and-markup-is-flattened-to-text) |
@@ -64,8 +64,9 @@ which renders columns inside a real table and reads the cell out of
 `td.sy-ta-cell > div.sy-ta-col > div.sy.sy-ta-color`: the painted and named
 swatch, the unsanitizable one that paints and names nothing, the copyable one
 carrying the clipboard controller's three values and the three activation
-bindings with no server-rendered `tabindex`, the wrapped list, the placeholder,
-and the per-item `title`.
+bindings with no server-rendered `tabindex`, the copyable **and** unsanitizable
+one that paints nothing and still names itself, the wrapped list, the
+placeholder, and the per-item `title`.
 
 ## Details
 
@@ -79,16 +80,24 @@ moving to **in progress** or **blocked** grows one.
 
 Behaviour that is faithful to Filament but easy to misread here.
 
-### An unsanitizable value paints nothing and names nothing
+### An unsanitizable value paints nothing, and a plain swatch names nothing
 
 `sanitize_css_color()` answers `null` for anything that is not unambiguously a
-CSS colour, and the partial keys **three** attributes off that one answer: the
-`style`, the `role` and the `aria-label`. So a cell holding
+CSS colour, and on a **plain** swatch the partial keys **three** attributes off
+that one answer: the `style`, the `role` and the `aria-label`. So a cell holding
 `red;position:fixed` renders `<span class="sy-ta-color-item"></span>` — an
 empty, unnamed, uncoloured square — rather than a swatch announcing a value the
 browser never painted. Naming a colour the page does not show would be worse
 than staying silent, which is why the three travel together rather than the
 `aria-label` falling back to the raw state.
+
+A **copyable** swatch keys only the `style` off the sanitizer. Its `role` is
+`button` for every value, because the copy control exists whatever the colour
+is, so the name cannot be dropped with the paint: a nameless `role="button"`
+carrying the clipboard controller is a focusable, operable control with no
+accessible name. The unsanitizable arm therefore falls back to the colour-free
+`Copy colour` — the verb without the value, since there is no value the page
+shows to say.
 
 The swatch still renders. It is not dropped from the list, so a row of five
 values always shows five squares and a bad one reads as a gap in the row rather
@@ -133,9 +142,11 @@ controller, so no `tabindex` is served inside a cell that may sit within a
 record `<a>`. A non-copyable swatch keeps `role="img"` and the bare colour as its
 name.
 
-The name is the **sanitized** colour in both arms, so the two labels differ only
-by the verb — and an unsanitizable copyable swatch is nameless again, because
-there is no colour to say.
+The name is the **sanitized** colour wherever there is one, so the two arms'
+labels differ only by the verb. Where there is none the arms part: the plain
+swatch drops its `role` and its name together and goes inert, while the copyable
+one keeps both and names itself `Copy colour`, because the control is still
+there to operate.
 
 ### A backed enum state is unwrapped before the sanitizer sees it
 

@@ -42,9 +42,9 @@
                     item.copyable ? 'sy-copyable' : null,
                 ],
                 role: item.copyable ? 'button' : (item.color is not null ? 'img' : null),
-                'aria-label': item.color is not null
-                    ? (item.copyable ? 'Copy ' ~ item.color : item.color)
-                    : null,
+                'aria-label': item.copyable
+                    ? (item.color is not null ? 'Copy ' ~ item.color : 'Copy colour')
+                    : item.color,
                 title: (itemTooltip is markup ? itemTooltip|striptags : itemTooltip) ?: null,
                 style: item.color is not null ? 'background-color: ' ~ item.color : null,
             }, itemCopyAttributes) }}></span>

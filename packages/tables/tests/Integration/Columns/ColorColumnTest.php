@@ -60,6 +60,21 @@ it('turns a copyable swatch into a named button carrying the clipboard controlle
         ->and($swatch->attr('tabindex'))->toBeNull();
 });
 
+/*
+ * The copyable arm is a focusable, operable control the moment the clipboard controller connects,
+ * so it needs a name for every value the sanitizer refuses too — the swatch still copies the raw
+ * state, and a colour-free verb is the only name left to give it.
+ */
+it('names a copyable swatch whose colour is unsanitizable without painting it', function (): void {
+    $swatch = colorCell(ColorColumn::make('color')->copyable(), 'brand-blue')->filter('span.sy-ta-color-item');
+
+    expect($swatch->attr('role'))->toBe('button')
+        ->and($swatch->attr('aria-label'))->toBe('Copy colour')
+        ->and($swatch->attr('style'))->toBeNull()
+        ->and($swatch->attr('data-controller'))->toBe('sylament--support--clipboard')
+        ->and($swatch->attr('data-sylament--support--clipboard-text-value'))->toBe('brand-blue');
+});
+
 it('binds the copy action to click and both activation keys', function (): void {
     $swatch = colorCell(ColorColumn::make('color')->copyable(), '#00ff00')->filter('span.sy-ta-color-item');
     $action = $swatch->attr('data-action') ?? '';

@@ -13,9 +13,9 @@ use Sylament\Tables\Table;
 use Symfony\UX\LiveComponent\Attribute\AsLiveComponent;
 
 /**
- * A manager whose tabs name the owner: it can only build them once the mount
- * has assigned the owner key, so it pins that the manager's own `mount()` takes
- * the keys as arguments rather than waiting for the assignment that follows.
+ * A manager whose tabs name the owner: it can only build them once the owner
+ * key has landed, so it pins that the tabs are built after the mount data is
+ * assigned rather than while the mount is still running.
  */
 #[AsLiveComponent]
 final class OwnerNamedTasksRelationManager extends RelationManager

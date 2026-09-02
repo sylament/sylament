@@ -95,24 +95,6 @@ abstract class RelationManager implements InteractsWithActions, InteractsWithSch
     }
 
     /**
-     * The manager is embedded rather than routed, so no query string reaches it
-     * — its first tab is the one it opens on. Both keys are taken as mount
-     * arguments rather than left to the property assignment that follows a
-     * mount ({@see \Symfony\UX\TwigComponent\ComponentFactory::mountFromObject()}
-     * assigns only what `mount()` did not consume, and only once it has run):
-     * a manager whose tabs read their owner cannot depend on that order.
-     *
-     * @param class-string<Page>|null $pageClass
-     */
-    public function mount(?string $ownerRecord = null, ?string $pageClass = null): void
-    {
-        $this->ownerRecord = $ownerRecord;
-        $this->pageClass = $pageClass;
-
-        $this->loadDefaultActiveTab();
-    }
-
-    /**
      * @param array<string, mixed> $properties
      */
     public static function make(array $properties = []): RelationManagerConfiguration

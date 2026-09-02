@@ -60,8 +60,6 @@ abstract class ManageRelatedRecords extends Page implements InteractsWithSchemas
     public function mount(int|string $record, array $parentRecords = []): void
     {
         $this->mountRecord($record, $parentRecords);
-
-        $this->loadDefaultActiveTab();
     }
 
     /**

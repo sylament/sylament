@@ -60,7 +60,7 @@ Reference — the Filament source this is diffed against:
 | [`$relatedResource` / `getRelatedResource()`](../../../packages/panels/src/Resources/Concerns/InteractsWithRelationshipTable.php) and [`getDefaultActionUrl()`](../../../packages/panels/src/Resources/Concerns/InteractsWithRelationshipTable.php)'s related-resource arms | `RelationManager.php`, byte-identical to the copy on `ManageRelatedRecords` | done | — | [interacts-with-relationship-table.md](interacts-with-relationship-table.md#the-url-arms-are-hoisted-once-and-carry-the-owner-explicitly) |
 | `getRenderHookScopes()` / `HasRenderHookScopes`, `render()` / `getViewData()` | `RelationManager.php` | todo | M6 · 6 (render hooks) | — |
 | [`getTableQueryStringIdentifier()`](../../../packages/panels/src/Resources/Concerns/InteractsWithRelationshipTable.php) and the manager's own record-filter [`HasTabs`](../../../packages/panels/src/Resources/Concerns/HasTabs.php) | [`InteractsWithRelationshipTable`](../../../vendor/filament/filament/src/Resources/Concerns/InteractsWithRelationshipTable.php) | done | — | the manager maps no state onto the URL, so its tabs render unlinkable — Filament's own manager behaviour |
-| [`mount()`](../../../packages/panels/src/Resources/RelationManagers/RelationManager.php) — `loadDefaultActiveTab()` | `mount()` | done | — | takes `$ownerRecord`/`$pageClass` as **arguments** and assigns them first — ux-twig-component runs `mount()` before assigning the rest of the mount data, so tabs reading the owner would otherwise resolve none |
+| `mount()` — `loadDefaultActiveTab()` | `mount()` | done | — | [diverges](#the-default-active-tab-loads-at-post-mount-and-the-manager-keeps-no-mount-of-its-own) — the manager declares no `mount()`; the hook is a `#[PostMount]` on [`HasTabs`](../../../packages/panels/src/Resources/Concerns/HasTabs.php) |
 | [`recordAction()` / `recordUrl()` row-click seeding in `makeTable()`](../../../packages/panels/src/Resources/Concerns/InteractsWithRelationshipTable.php) | [`InteractsWithRelationshipTable::makeTable()`](../../../vendor/filament/filament/src/Resources/Concerns/InteractsWithRelationshipTable.php) | done | — | — |
 | [`$relationshipTitle` / `getRelationshipTitle()`](../../../packages/panels/src/Resources/Concerns/InteractsWithRelationshipTable.php) | [`InteractsWithRelationshipTable`](../../../vendor/filament/filament/src/Resources/Concerns/InteractsWithRelationshipTable.php) | done | — | [diverges](interacts-with-relationship-table.md#the-title-is-an-instance-method-and-the-static-title-chain-never-reaches-the-related-resource) — the getter is an instance method, so the **static** `getTitle()` below never reaches its related arm |
 | _rest not audited yet_ | | | | |
@@ -249,6 +249,29 @@ construction — a deferred badge is structurally unreachable there. The
 consequence is an invariant on the consumer: the badge statics run on **every**
 live request of the owning page, so keep them O(1).
 
+### The default active tab loads at post-mount, and the manager keeps no `mount()` of its own
+
+Filament loads it from `mount()` (`RelationManager.php:120-123`), which is safe
+there because Livewire populates a nested component's matching properties
+*before* `mount()` runs. ux-twig-component is the other way round:
+[`ComponentFactory::mountFromObject()`](../../../vendor/symfony/ux-twig-component/src/ComponentFactory.php)
+invokes `mount()` first and only then assigns the mount data `mount()` did not
+consume, so anything the hook reads is still at its declared default. That is
+not academic for a manager: loading the default active tab **memoises the tab
+set**, so a `getTabs()` reading the owner key, or a registration property like
+`TaggedTasksRelationManager::$tag`, would build its tabs — and, through
+`modifyQueryWithActiveTab()`, scope the table — against values nobody set yet.
+
+So the hook is a `#[PostMount(priority: 30)]` on
+[`HasTabs`](../../../packages/panels/src/Resources/Concerns/HasTabs.php) shared
+by all three tabbed hosts, and no host calls it from `mount()`. Post-mount runs
+after every property is assigned, and after UX's own query-string seeding
+(`RequestInitializeSubscriber` listens on `PostMountEvent` at priority 256, and
+every listener runs before the first `#[PostMount]` method), which buys a second
+thing: a blank `?tab=` is healed while the props can still be dehydrated with
+the healed value. The manager is therefore left with no `mount()` at all — its
+two keys are assigned by the property loop like any other prop.
+
 ### Lazy loading does not port, so the default properties are empty
 
 Filament's `getDefaultProperties()` carries exactly one entry, `lazy`, from
@@ -260,7 +283,8 @@ already mounts exactly one manager at a time, so the arm buys nothing. The
 method ships answering `[]` because it is the seam a subclass overrides.
 Revisit for single-manager pages with heavy tables — adopt UX's `loading:
 'lazy'`, don't rebuild Livewire's semantics. Corollary invariant: **no expensive
-work in a manager's `mount()`**.
+work on a manager's mount path** — it has no `mount()` of its own, so that means
+the `#[PostMount]` hooks its traits carry.
 
 ### The manager answers the host's relationship hook where Filament's leaves it null
 

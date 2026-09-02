@@ -10,6 +10,7 @@ use Sylament\Schemas\Components\Tabs\Tab;
 use Sylament\Schemas\Schema;
 use Symfony\UX\LiveComponent\Attribute\LiveProp;
 use Symfony\UX\LiveComponent\Metadata\UrlMapping;
+use Symfony\UX\TwigComponent\Attribute\PostMount;
 
 use function Sylament\Support\blank;
 use function Sylament\Support\filled;
@@ -79,9 +80,21 @@ trait HasTabs
     }
 
     /**
-     * Called from `mount()`, which runs before the query string is seeded — so
-     * a `?tab=` in the URL still wins over the default this leaves behind.
+     * The mount hook, and the one seam that builds — and memoises — the tabs on
+     * a first render. It runs at post-mount rather than from `mount()` because
+     * only there is every property in place: {@see \Symfony\UX\TwigComponent\ComponentFactory::mountFromObject()}
+     * assigns whatever `mount()` did not consume *after* it has run, so a
+     * `getTabs()` reading any other property would otherwise build against the
+     * declared default. Above the table's own post-mount hooks, so anything
+     * they reach reads a resolved tab.
+     *
+     * It also runs after UX's query-string seeding, which is a listener on the
+     * same event ({@see \Symfony\UX\LiveComponent\EventListener\RequestInitializeSubscriber}
+     * at priority 256, and every listener runs before the first `#[PostMount]`
+     * method) — so a `?tab=` naming a tab still wins here, and a blank one is
+     * healed before the props are dehydrated.
      */
+    #[PostMount(priority: 30)]
     public function loadDefaultActiveTab(): void
     {
         if (filled($this->activeTab)) {

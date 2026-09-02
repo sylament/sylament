@@ -37,12 +37,16 @@ final class TaggedTasksRelationManager extends RelationManager
      * Tabs on a manager render and switch, but bind to nothing: the manager
      * shares its page's URL and maps no state onto it.
      *
+     * The first tab is named after the registration property, which lands only
+     * in the assignment that follows a mount — so its label is right only if
+     * the tabs are built once every property is in place.
+     *
      * @return array<string, Tab>
      */
     public function getTabs(): array
     {
         return [
-            'all' => Tab::make(),
+            'all' => Tab::make($this->tag),
             'first' => Tab::make()
                 ->query(fn (QueryBuilder $query): QueryBuilder => $query->andWhere('record.position = 1')),
         ];

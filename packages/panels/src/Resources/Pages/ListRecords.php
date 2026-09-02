@@ -38,17 +38,11 @@ abstract class ListRecords extends Page implements InteractsWithSchemas, Interac
     protected ?string $template = '@SylamentPanels/partials/ListRecords/index.html.twig';
 
     /**
-     * Nothing here resolves anything, and the parent keys are still taken as a
-     * mount argument rather than left to the property assignment that follows a
-     * mount: a page that scopes its own query cannot depend on that order.
-     *
      * @param array<string, string> $parentRecords
      */
     public function mount(array $parentRecords = []): void
     {
         $this->parentRecords = $parentRecords;
-
-        $this->loadDefaultActiveTab();
     }
 
     /**

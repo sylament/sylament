@@ -198,7 +198,7 @@ it('renders a tab strip that switches the manager but binds nothing', function (
     expect($narrowed->filter('tbody .sy-ta-row')->count())->toBe(1);
 });
 
-it('builds its tabs against the owner the mount carries', function (): void {
+it('builds its tabs against the owner it is mounted with', function (): void {
     [$client, , $key] = seededProjectClient();
 
     $crawler = $this->createLiveComponent(
@@ -210,9 +210,26 @@ it('builds its tabs against the owner the mount carries', function (): void {
     $labels = $crawler->filter('section.sy-pa-relation-manager .sy-tabs-item')
         ->each(fn (Crawler $item): string => mb_trim($item->text()));
 
-    // The owner is read while the tabs are built, and the tabs are built — and
-    // memoised — from `mount()`, so the mount must have both keys in hand.
+    // The owner is read while the tabs are built, and the tab set is memoised,
+    // so the build has to come after the mount data lands.
     expect($labels)->toBe(['Apollo', 'First']);
+});
+
+it('builds its tabs against a registration property assigned after the mount', function (): void {
+    [$client, , $key] = seededProjectClient();
+
+    // The page embeds the manager, so this is the manager's own mount render —
+    // the one every page render produces.
+    $crawler = $this->createLiveComponent(EditFilteredRelationProject::class, ['record' => $key], client: $client)
+        ->render()
+        ->crawler();
+
+    $labels = $crawler->filter('section.sy-pa-relation-manager .sy-tabs-item')
+        ->each(fn (Crawler $item): string => mb_trim($item->text()));
+
+    // The registration property is assigned by the loop that follows the mount,
+    // so tabs memoised inside it would carry a null one's generated label.
+    expect($labels)->toBe(['default', 'First']);
 });
 
 it('seeds a row action on a manager whose actions carry no url', function (): void {

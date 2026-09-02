@@ -6,6 +6,7 @@ use Doctrine\ORM\EntityManagerInterface;
 use Sylament\Panels\Tests\Fixtures\Doctrine\Entity\Article;
 use Sylament\Panels\Tests\Fixtures\Doctrine\EntityManagerFactory;
 use Sylament\Panels\Tests\Fixtures\Resources\Pages\ListArticles;
+use Sylament\Panels\Tests\Fixtures\Resources\Pages\ListNotes;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Component\DomCrawler\Crawler;
 use Symfony\UX\LiveComponent\Test\InteractsWithLiveComponents;
@@ -99,8 +100,9 @@ it('heals a bookmarked tab the list no longer declares', function (): void {
 it('heals a query string that names no tab at all', function (): void {
     [$client] = tabbedArticlesClient();
 
-    // The seeding runs after the mount, so an empty `?tab=` overwrites the
-    // default the mount left behind — the render seam is what heals this one.
+    // The seeding runs on the same event as the mount hook and above it, so an
+    // empty `?tab=` is overwritten by the default rather than the other way
+    // round.
     $crawler = $client->request('GET', '/admin/articles?tab=');
 
     expect($client->getResponse()->getStatusCode())->toBe(200)
@@ -122,6 +124,22 @@ it('heals an active tab the client blanks', function (): void {
         ->and($component->component()->activeTab)->toBe('all')
         ->and($crawler->filter('.sy-sc-tabs .sy-tabs-item')->eq(0)->attr('aria-selected'))->toBe('true')
         ->and(tabbedRowTitles($crawler))->toHaveCount(3);
+});
+
+it('heals a strip that first renders on a hydration', function (): void {
+    [$client] = tabbedArticlesClient();
+
+    // The notes listing declares its tabs only once told to, so this strip is
+    // first rendered by a request that runs no mount hook at all — and the
+    // render seam is the only one left to load the default.
+    $component = $this->createLiveComponent(ListNotes::class, client: $client)
+        ->set('showTabs', true);
+
+    $crawler = $component->render()->crawler();
+
+    expect($client->getResponse()->getStatusCode())->toBe(200)
+        ->and($crawler->filter('.sy-sc-tabs .sy-tabs-item')->count())->toBe(2)
+        ->and($crawler->filter('.sy-sc-tabs .sy-tabs-item')->eq(0)->attr('aria-selected'))->toBe('true');
 });
 
 it('resets the page when the active tab changes', function (): void {

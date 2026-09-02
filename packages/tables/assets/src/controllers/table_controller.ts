@@ -121,6 +121,15 @@ export default class extends Controller<HTMLElement> {
     this.#repaint();
   }
 
+  /**
+   * A morph rewrites the interval in place without reconnecting the controller, so the loop is
+   * re-read here rather than only at connect: entering reorder mode drops the attribute (D19) and
+   * must stop the timer, leaving it stops nothing.
+   */
+  pollIntervalValueChanged(): void {
+    this.#startPolling();
+  }
+
   toggleRecord(event: Event): void {
     const checkbox = event.target;
 
@@ -196,12 +205,14 @@ export default class extends Controller<HTMLElement> {
 
   /**
    * The re-render loop `poll()` asked for, in milliseconds. It is independent of
-   * the deferred window — a table polls through one, as vendor's does.
+   * the deferred window — a table polls through one, as vendor's does. Idempotent, because both
+   * `connect()` and the value callback reach it; the host must be resolved, so a callback firing
+   * before `connect()` (Stimulus starts the value observer first) leaves connect to start it.
    */
   #startPolling(): void {
     this.#stopPolling();
 
-    if (!this.hasPollIntervalValue || this.pollIntervalValue <= 0) {
+    if (this.#component === null || !this.hasPollIntervalValue || this.pollIntervalValue <= 0) {
       return;
     }
 

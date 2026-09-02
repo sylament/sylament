@@ -469,10 +469,25 @@ controller never fires an action into a window that was never open.
 stamping the *page* would re-render everything on the page rather than the table
 (R6 §2.1/2.3). So `poll()` is server-side configuration and the interval is
 client-side machinery: `getPollingIntervalMilliseconds()` hands the controller a
-number and the controller owns the `setInterval`. It is emitted only while the
-table is not being reordered, matching vendor's `(! $isReordering)` guard, and
-regardless of the deferred state, because vendor polls through the deferred
-window too.
+number and the controller owns the `setInterval`. The attribute is emitted only
+while the table is not being reordered, matching vendor's `(! $isReordering)`
+guard, and regardless of the deferred state, because vendor polls through the
+deferred window too.
+
+Owning the timer is what makes that guard cost something Livewire's does not.
+`wire:poll` is re-read whenever the attribute is morphed, so removing it stops
+the loop; the table partial's root carries no id, key or `data-live-ignore`, so
+a live re-render morphs it **in place** and Stimulus never re-runs `connect()` —
+a timer started there would keep firing `render()` through a drag, morphing the
+rows out from under SortableJS, which is exactly what the suppression exists to
+prevent. So the loop is (re)started from `pollIntervalValueChanged()` rather than
+only at connect: Stimulus fires that callback when the attribute is added,
+changed, and removed (with the value's default), which stops the timer on the
+way into reorder mode, restarts it on the way out, and picks up a new interval
+from a `poll()` closure whose answer changed. `#startPolling()` is idempotent
+(it stops first) and returns unless the host is resolved, so the callback
+Stimulus fires *before* `connect()` — the value observer starts first — leaves
+the start to `connect()`.
 
 Two divergences ride on that. The parse is **strict**: `10s` and `500ms` parse,
 and anything else — a bare number, a unit Filament never had, an empty string —

@@ -234,6 +234,20 @@ it('names each icon, preferring the tooltip and then the boolean copy', function
         ->and($boolean->getStateItems()[0]['alternative'])->toBe('No');
 });
 
+/*
+ * The boolean copy sits above the label contract in Filament's `match`, and the two arms overlap
+ * whenever an explicit `boolean()` meets a `HasLabel` state — the auto-detect off, the enum still
+ * carrying a label. Swapping the two arms passes every other case here, so this is what pins the
+ * order.
+ */
+it('puts the boolean copy above the label contract', function (): void {
+    $boolean = IconColumn::make('status')->boolean()->state(fn (): IconColumnState => IconColumnState::Draft);
+    $plain = IconColumn::make('status')->state(fn (): IconColumnState => IconColumnState::Draft);
+
+    expect($boolean->getStateItems()[0]['alternative'])->toBe('Yes')
+        ->and($plain->getStateItems()[0]['alternative'])->toBe('Drafted');
+});
+
 it('names an icon from the label, the enum value, markup and a scalar', function (mixed $state, ?string $alternative): void {
     $column = IconColumn::make('status')->icon('heroicons:star')->state(fn (): mixed => $state);
 

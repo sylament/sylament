@@ -153,7 +153,7 @@ name.
 | [`SlideOverPosition`](../../../packages/support/src/Enums/SlideOverPosition.php) | [`Enums/SlideOverPosition.php`](../../../vendor/filament/support/src/Enums/SlideOverPosition.php) | done | — |
 | [`TextSize`](../../../packages/support/src/Enums/TextSize.php) | [`Enums/TextSize.php`](../../../vendor/filament/support/src/Enums/TextSize.php) | done | — |
 | [`VerticalAlignment`](../../../packages/support/src/Enums/VerticalAlignment.php) | [`Enums/VerticalAlignment.php`](../../../vendor/filament/support/src/Enums/VerticalAlignment.php) | done | [vertical-alignment.md](vertical-alignment.md) |
-| Width | [`Enums/Width.php`](../../../vendor/filament/support/src/Enums/Width.php) | todo | — |
+| [`Width`](../../../packages/support/src/Enums/Width.php) | [`Enums/Width.php`](../../../vendor/filament/support/src/Enums/Width.php) | done | consumed by panels' page and panel width surfaces; the modal and filters ladders keep their string tokens — see [`support/modal.md`](modal.md) and [`tables/table.md`](../tables/table.md) |
 | Collapsible | [`Contracts/Collapsible.php`](../../../vendor/filament/support/src/Contracts/Collapsible.php) | todo | — |
 | [`HasColor` (state contract)](../../../packages/support/src/Contracts/HasColor.php) | [`Contracts/HasColor.php`](../../../vendor/filament/support/src/Contracts/HasColor.php) | done | — |
 | [`HasDescription`](../../../packages/support/src/Contracts/HasDescription.php) | [`Contracts/HasDescription.php`](../../../vendor/filament/support/src/Contracts/HasDescription.php) | done | — |

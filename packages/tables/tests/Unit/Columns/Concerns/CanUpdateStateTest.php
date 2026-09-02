@@ -31,14 +31,36 @@ final class ShoutingStateCast implements StateCast
     }
 }
 
-final class ShoutingTextInputColumn extends TextInputColumn
+/**
+ * A cast that does not commute with the shouting one in either direction: its
+ * marker carries a capital the shout would flatten on the way out, and prepending
+ * before rather than after the shout would uppercase the marker on the way in.
+ */
+final class PrefixingStateCast implements StateCast
+{
+    private const string MARKER = 'The ';
+
+    public function get(mixed $state): mixed
+    {
+        return is_string($state) ? self::MARKER . $state : $state;
+    }
+
+    public function set(mixed $state): mixed
+    {
+        return is_string($state) && str_starts_with($state, self::MARKER)
+            ? mb_substr($state, mb_strlen(self::MARKER))
+            : $state;
+    }
+}
+
+final class CastingTextInputColumn extends TextInputColumn
 {
     /**
      * @return array<StateCast>
      */
     public function getStateCasts(): array
     {
-        return [new ShoutingStateCast()];
+        return [new ShoutingStateCast(), new PrefixingStateCast()];
     }
 }
 
@@ -228,11 +250,11 @@ it('has no cell state error, and no client state to draw from one, without a rec
         ->and($column->getClientState())->toBe('Airbag');
 });
 
-it('casts a posted value into the record vocabulary before the hook and the write', function (): void {
+it('casts a posted value into the record vocabulary, outermost first, before the hook and the write', function (): void {
     [$entityManager, $table] = songWriteRig();
     $seen = [];
 
-    ShoutingTextInputColumn::make('title')
+    CastingTextInputColumn::make('title')
         ->table($table)
         ->record($entityManager->find(Song::class, 1))
         ->beforeStateUpdated(function (mixed $state) use (&$seen): void {
@@ -242,17 +264,17 @@ it('casts a posted value into the record vocabulary before the hook and the writ
 
     $entityManager->clear();
 
-    expect($seen)->toBe(['BONES'])
-        ->and($entityManager->find(Song::class, 1)?->getTitle())->toBe('BONES');
+    expect($seen)->toBe(['The BONES'])
+        ->and($entityManager->find(Song::class, 1)?->getTitle())->toBe('The BONES');
 });
 
-it('reverses the casts for the client state, so the control speaks the wire vocabulary', function (): void {
-    [$entityManager, $table] = songWriteRig();
+it('reverses the casts for the client state, unwinding the outermost one last', function (): void {
+    [, $table] = songWriteRig();
 
-    $column = ShoutingTextInputColumn::make('title')
+    $column = CastingTextInputColumn::make('title')
         ->table($table)
-        ->record($entityManager->find(Song::class, 1))
-        ->recordKey('1');
+        ->record(new Song(2, 'The AIRBAG', 100))
+        ->recordKey('2');
 
     expect($column->getClientState())->toBe('airbag');
 });

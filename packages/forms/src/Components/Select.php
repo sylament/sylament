@@ -104,6 +104,8 @@ class Select extends Field implements Contracts\CanDisableOptions, Contracts\Has
 
     protected bool|Closure|null $hasDynamicOptions = null;
 
+    protected bool $shouldIgnoreRelationshipRecord = false;
+
     /**
      * @var array<Component|Action|ActionGroup>|Closure|null
      */
@@ -394,10 +396,16 @@ class Select extends Field implements Contracts\CanDisableOptions, Contracts\Has
      * installed unconditionally, so a `createOptionUsing()` — or a
      * `getOptionLabelUsing()` — of your own has to follow `relationship()` to
      * survive.
+     *
+     * `$ignoreRecord` narrows the pickable set of a self-referential association
+     * so a record cannot point at itself. Filament defaults it `false`, unlike
+     * `unique(ignoreRecord:)`, which defaults `true`.
      */
-    public function relationship(string|Closure|null $name = null, string|Closure|null $titleAttribute = null, ?Closure $modifyQueryUsing = null): static
+    public function relationship(string|Closure|null $name = null, string|Closure|null $titleAttribute = null, ?Closure $modifyQueryUsing = null, bool $ignoreRecord = false): static
     {
         $this->traitRelationship($name, $titleAttribute, $modifyQueryUsing);
+
+        $this->shouldIgnoreRelationshipRecord = $ignoreRecord;
 
         $this->getSearchResultsUsing(static fn (Select $component, ?string $search): array => $component->getSearchResultsFromRelationship($search));
 
@@ -460,11 +468,11 @@ class Select extends Field implements Contracts\CanDisableOptions, Contracts\Has
             return [];
         }
 
-        if (!$this->modifyRelationshipQueryUsing instanceof Closure && $this->cachedRelationshipOptions !== null) {
+        if (!$this->modifyRelationshipQueryUsing instanceof Closure && ! $this->shouldIgnoreRelationshipRecord && $this->cachedRelationshipOptions !== null) {
             return $this->cachedRelationshipOptions;
         }
 
-        $query = $this->createScopedOptionQuery();
+        $query = $this->applyIgnoredRecord($this->createScopedOptionQuery());
 
         $this->limitOptionQuery($query, shouldLimit: $this->isSearchable() && filled($this->getSearchColumns()));
         $this->orderOptionQueryByTitleAttribute($query);
@@ -474,7 +482,7 @@ class Select extends Field implements Contracts\CanDisableOptions, Contracts\Has
 
         $options = $this->getOptionsFromRecords($records);
 
-        if (!$this->modifyRelationshipQueryUsing instanceof Closure) {
+        if (!$this->modifyRelationshipQueryUsing instanceof Closure && ! $this->shouldIgnoreRelationshipRecord) {
             $this->cachedRelationshipOptions = $options;
         }
 
@@ -502,7 +510,7 @@ class Select extends Field implements Contracts\CanDisableOptions, Contracts\Has
             return [];
         }
 
-        $query = $this->createScopedOptionQuery($search);
+        $query = $this->applyIgnoredRecord($this->createScopedOptionQuery($search));
         $isForcedCaseInsensitive = $this->isSearchForcedCaseInsensitive();
         $fieldNames = $this->getRelationshipFieldNames($query);
 
@@ -1404,6 +1412,56 @@ class Select extends Field implements Contracts\CanDisableOptions, Contracts\Has
     private function getRelationshipIdentifierFieldName(): string
     {
         return $this->getAssociationReader()->getIdentifierFieldName($this->getRelationshipTarget()->targetClass);
+    }
+
+    /**
+     * The option query with the bound record excluded, for the self-referential
+     * association `relationship(ignoreRecord: true)` is meant for. Only the two
+     * option arms apply it: the label arms must keep resolving a stored value that
+     * already names the excluded row, or an untouched submission fails `Choice`.
+     *
+     * A record that is not an instance of the association's target is refused
+     * rather than excluded — its identifier means something else against this
+     * query's root, and our `record` alias would make the mismatch valid DQL that
+     * silently drops an unrelated row. `null`, an array and a class-string record
+     * bind nothing, and neither does an unflushed one: a create page has no row to
+     * exclude.
+     *
+     * @throws LogicException when the bound record is an object of another class
+     *                        than the association's target
+     */
+    private function applyIgnoredRecord(QueryBuilder $query): QueryBuilder
+    {
+        if (! $this->shouldIgnoreRelationshipRecord) {
+            return $query;
+        }
+
+        $record = $this->getRecord();
+        $targetClass = $this->getRelationshipTarget()->targetClass;
+
+        if (! is_object($record)) {
+            return $query;
+        }
+
+        if (! $record instanceof $targetClass) {
+            throw new LogicException(sprintf(
+                'The [%s] field declares relationship("%s", ignoreRecord: true), which needs a self-referential association: the bound record is a %s while the options are %s, so its identifier names no row this query could exclude.',
+                (string) $this->getName(),
+                $this->getRelationshipNameOrFail(),
+                $record::class,
+                $targetClass,
+            ));
+        }
+
+        $identifier = $this->getAssociationReader()->findRecordKey($record);
+
+        if ($identifier === null) {
+            return $query;
+        }
+
+        return $query
+            ->andWhere("record.{$this->getRelationshipIdentifierFieldName()} <> :sylament_ignored_record")
+            ->setParameter('sylament_ignored_record', $identifier);
     }
 
     /**

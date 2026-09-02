@@ -8,6 +8,8 @@ use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\PersistentCollection;
 use Doctrine\ORM\QueryBuilder;
 use LogicException;
+use ReflectionMethod;
+use Sylament\Forms\Components\CheckboxList;
 use Sylament\Forms\Components\Select;
 use Sylament\Forms\Tests\Fixtures\Concerns\FieldRenderHost;
 use Sylament\Forms\Tests\Fixtures\Doctrine\Entity\Author;
@@ -697,4 +699,140 @@ it('keeps the full-map Choice on a relationship select that is not searchable', 
 
     expect($choice)->toHaveCount(1)
         ->and($choice[0]->choices)->toBe([(string) $ada->getId(), (string) $bob->getId()]);
+});
+
+/**
+ * A flushed tag tree: `child` parented to `root`, with `other` as the third row.
+ * Every tag is managed, so `getRecord()` answers a real identifier.
+ *
+ * @return array{Tag, Tag, Tag}
+ */
+function seedParentedTags(EntityManagerInterface $entityManager): array
+{
+    $root = new Tag();
+    $root->setName('root');
+
+    $other = new Tag();
+    $other->setName('other');
+
+    $child = new Tag();
+    $child->setName('child');
+    $child->setParent($root);
+
+    $entityManager->persist($root);
+    $entityManager->persist($other);
+    $entityManager->persist($child);
+    $entityManager->flush();
+
+    return [$root, $other, $child];
+}
+
+it('omits the bound record from the options under ignoreRecord', function (): void {
+    $entityManager = $this::getContainer()->get(EntityManagerInterface::class);
+    [$root, $other, $child] = seedParentedTags($entityManager);
+
+    $select = Select::make('parent')->relationship(titleAttribute: 'name', ignoreRecord: true);
+    wireRecordSelect($select, $root);
+
+    expect($select->getOptions())->toBe([
+        $child->getId() => 'child',
+        $other->getId() => 'other',
+    ])
+        ->and($root->getId())->not->toBeNull();
+});
+
+it('omits the bound record from the search results under ignoreRecord', function (): void {
+    $entityManager = $this::getContainer()->get(EntityManagerInterface::class);
+    [$root, $other] = seedParentedTags($entityManager);
+
+    $select = Select::make('parent')->searchable(['name'])->relationship(titleAttribute: 'name', ignoreRecord: true);
+    wireRecordSelect($select, $root);
+
+    // 'root' matches the term too, and is the row the flag takes out.
+    expect($select->getSearchResults('o'))->toBe([$other->getId() => 'other']);
+});
+
+it('still resolves the label of an excluded record it already holds', function (): void {
+    $entityManager = $this::getContainer()->get(EntityManagerInterface::class);
+    [$root] = seedParentedTags($entityManager);
+
+    // A stored self-reference is legacy data the label arms must keep speaking, or an
+    // untouched submission fails Choice against an option map that no longer holds it.
+    $select = Select::make('parent')->relationship(titleAttribute: 'name', ignoreRecord: true);
+    wireRecordSelect($select, $root);
+    $select->state((string) $root->getId());
+
+    expect($select->getSelectedRecord())->toBe($root)
+        ->and($select->getOptionLabel())->toBe('root')
+        ->and($select->getOptionLabelsFromRelationship([(string) $root->getId()]))->toBe([$root->getId() => 'root']);
+});
+
+it('excludes nothing for an unflushed record', function (): void {
+    $entityManager = $this::getContainer()->get(EntityManagerInterface::class);
+    [$root, $other, $child] = seedParentedTags($entityManager);
+
+    $select = Select::make('parent')->relationship(titleAttribute: 'name', ignoreRecord: true);
+    wireRecordSelect($select, new Tag());
+
+    expect(array_values($select->getOptions()))->toBe(['child', 'other', 'root'])
+        ->and([$root, $other, $child])->toHaveCount(3);
+});
+
+it('excludes nothing when the schema names a record class rather than an instance', function (): void {
+    $entityManager = $this::getContainer()->get(EntityManagerInterface::class);
+    seedParentedTags($entityManager);
+
+    // The create-page shape: `getRecord()` answers null for a class-string binding,
+    // and there is no row to take out. An array record lands on the same branch.
+    $host = new FieldRenderHost();
+    $select = Select::make('parent')->relationship(titleAttribute: 'name', ignoreRecord: true);
+
+    Schema::make($host)->statePath('data')->record(Tag::class)->components([$select])->getComponents();
+
+    expect(array_values($select->getOptions()))->toBe(['child', 'other', 'root']);
+});
+
+it('refuses a bound record of another class than the association target', function (): void {
+    $entityManager = $this::getContainer()->get(EntityManagerInterface::class);
+    [$post] = seedAuthoredPost($entityManager);
+
+    // `author` is not self-referential: the record is a Post while the options are
+    // Authors, so the Post's identifier would silently exclude an unrelated Author.
+    $select = Select::make('author')->relationship(titleAttribute: 'name', ignoreRecord: true);
+    wireRecordSelect($select, $post);
+
+    expect(fn (): array => $select->getOptions())
+        ->toThrow(LogicException::class, 'self-referential');
+});
+
+it('never memoizes the option map under ignoreRecord, so a clone answers for its own record', function (): void {
+    $entityManager = $this::getContainer()->get(EntityManagerInterface::class);
+    [$root, $other] = seedParentedTags($entityManager);
+
+    $select = Select::make('parent')->relationship(titleAttribute: 'name', ignoreRecord: true);
+    wireRecordSelect($select, $root);
+
+    expect(array_values($select->getOptions()))->toBe(['child', 'other']);
+
+    $clone = $select->getClone();
+    $clone->record($other);
+
+    expect(array_values($clone->getOptions()))->toBe(['child', 'root']);
+});
+
+it('binds no exclusion parameter by default', function (): void {
+    $entityManager = $this::getContainer()->get(EntityManagerInterface::class);
+    [$root] = seedParentedTags($entityManager);
+
+    $select = Select::make('parent')->relationship(titleAttribute: 'name');
+    wireRecordSelect($select, $root);
+
+    expect(array_values($select->getOptions()))->toBe(['child', 'other', 'root']);
+});
+
+it('leaves the shared relationship() signature at three parameters', function (): void {
+    // `ignoreRecord:` is a Select surface upstream; CheckboxList inherits the trait's
+    // setter verbatim, so widening the trait would move it away from Filament's.
+    expect(new ReflectionMethod(CheckboxList::class, 'relationship')->getNumberOfParameters())->toBe(3)
+        ->and(new ReflectionMethod(Select::class, 'relationship')->getNumberOfParameters())->toBe(4);
 });

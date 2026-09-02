@@ -17,6 +17,14 @@ class Tag
     #[ORM\Column]
     private string $name = '';
 
+    /**
+     * The self-referential association `relationship(ignoreRecord: true)` needs:
+     * the option query's root and the bound record are the same entity, so the
+     * record must be able to exclude itself from its own parent options.
+     */
+    #[ORM\ManyToOne(targetEntity: self::class)]
+    private ?self $parent = null;
+
     public function getId(): ?int
     {
         return $this->id;
@@ -30,5 +38,15 @@ class Tag
     public function setName(string $name): void
     {
         $this->name = $name;
+    }
+
+    public function getParent(): ?self
+    {
+        return $this->parent;
+    }
+
+    public function setParent(?self $parent): void
+    {
+        $this->parent = $parent;
     }
 }

@@ -133,6 +133,21 @@ it('mints a header action url for the panel the page was opened in, not the defa
     expect($crawler->filter('.sy-pa-header-actions a')->attr('href'))->toEndWith('/probe/articles');
 });
 
+it('stamps the panel before a mounted action rebuilds the header, not after', function (): void {
+    [$client, $key] = probeArticleClient();
+
+    // The second request hydrates a mounted action, so the header walk runs
+    // inside actions' own hook rather than at render: the stamp has to have
+    // answered before it, or every URL the walk mints names the default panel.
+    $crawler = $this->createLiveComponent(PreviewProbePage::class, ['record' => $key, 'panelId' => 'probe'], client: $client)
+        ->call('mountAction', ['name' => 'ping', 'arguments' => [], 'context' => []])
+        ->call('callMountedAction')
+        ->render()
+        ->crawler();
+
+    expect($crawler->filter('.sy-pa-header-actions a')->attr('href'))->toEndWith('/probe/articles');
+});
+
 it('re-marks the saved data across a save', function (): void {
     $client = $this::getContainer()->get('test.client');
 

@@ -41,6 +41,9 @@ final class PreviewProbePage extends Page
      */
     public function getHeaderActions(): array
     {
-        return [Action::make('back')->label('Back')->url($this->getResourceUrl('index'))];
+        return [
+            Action::make('back')->label('Back')->url($this->getResourceUrl('index')),
+            Action::make('ping')->label('Ping')->requiresConfirmation()->action(fn (): null => null),
+        ];
     }
 }

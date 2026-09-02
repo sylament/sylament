@@ -17,6 +17,7 @@ use Sylament\Forms\Components\Concerns\HasExtraFieldWrapperAttributes;
 use Sylament\Forms\Components\Concerns\HasHelperText;
 use Sylament\Forms\Components\Concerns\HasHint;
 use Sylament\Forms\Components\Concerns\HasPlaceholder;
+use Sylament\Forms\Components\Concerns\ResolvesRepeaterSiblingContext;
 use Sylament\Schemas\Components\Component;
 use Sylament\Schemas\Components\Concerns\CanBeMarkedAsRequired;
 use Sylament\Schemas\Components\Concerns\HasLabel;
@@ -46,6 +47,7 @@ abstract class Field extends Component implements HasValidationConstraints
     }
     use HasName;
     use HasPlaceholder;
+    use ResolvesRepeaterSiblingContext;
 
     public const string ABOVE_LABEL_SCHEMA_KEY = 'above_label';
 

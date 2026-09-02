@@ -971,31 +971,15 @@ trait CanBeValidated
             return null;
         }
 
-        $repeater = $this->getParentRepeater();
-        $item = $this->getParentRepeaterItem();
-        $statePath = $this->getStatePath();
+        $context = $this->resolveRepeaterSiblingContext();
 
-        if ($repeater === null || $item === null || $statePath === null) {
-            return null;
-        }
-
-        $itemPath = (string) $item->getStatePath();
-        $itemKey = (string) $item->getStatePath(isAbsolute: false);
-
-        // The field's path *within* an item, taken by stripping the item schema's own
-        // prefix rather than by string surgery on the first dot — an item key may hold
-        // one, and a layout component between the two contributes no segment either way.
-        $fieldPath = mb_substr($statePath, mb_strlen($itemPath) + 1);
-        $itemsPrefix = mb_substr($itemPath, 0, mb_strlen($itemPath) - mb_strlen($itemKey));
-        $siblingKeys = array_keys(array_diff_key(wrap($repeater->getRawState()), [$itemKey => true]));
-
-        if ($siblingKeys === []) {
+        if ($context === null) {
             return null;
         }
 
         $siblingValues = array_map(
-            fn (int|string $siblingKey): mixed => $this->resolveSiblingRawState("{$itemsPrefix}{$siblingKey}.{$fieldPath}", isStatePathAbsolute: true),
-            $siblingKeys,
+            fn (int|string $siblingKey): mixed => $this->resolveSiblingRawState("{$context->itemsPrefix}{$siblingKey}.{$context->fieldPath}", isStatePathAbsolute: true),
+            $context->siblingKeys,
         );
 
         if (is_bool($rawState)) {

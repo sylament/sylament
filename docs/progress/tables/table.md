@@ -91,6 +91,7 @@ Rows never disappear — only their detail sections do.
 | [Record identity — `getRecordKey()`](../../../packages/tables/src/Table/Concerns/HasRecords.php) | [`HasRecords::getRecordKey()`](../../../vendor/filament/tables/src/Table/Concerns/HasRecords.php) | done | — | [semantics](#getrecords-delegates-to-the-host-and-fetches-nothing) |
 | [Morph-stable row and cell keys](../../../packages/tables/templates/partials/Table/index.html.twig) | [`index.blade.php`'s `wire:key` stamps](../../../vendor/filament/tables/resources/views/index.blade.php) | done | — | [diverges](#the-morph-key-is-an-id-attribute-not-wirekey) · [semantics](#the-row-and-cell-morph-keys-disagree-on-record-vs-records) |
 | [The filters trigger — the toolbar dropdown, the funnel icon button and the active-count badge](../../../packages/tables/templates/partials/Table/index.html.twig) | [`index.blade.php`'s `FiltersLayout::Dropdown` branch](../../../vendor/filament/tables/resources/views/index.blade.php) | done | — | [diverges](#the-trigger-badge-is-composed-in-the-table-partial-because-iconbutton-has-no-slot) · [diverges](#the-filters-panel-teleports-because-the-scroll-container-wraps-the-toolbar-too) |
+| [The above- and below-content layouts, the collapsible `<details>` and the filters modal](../../../packages/tables/templates/partials/Table/index.html.twig) | [`index.blade.php`'s `AboveContent`, `BelowContent` and `Modal` branches](../../../vendor/filament/tables/resources/views/index.blade.php) | done | — | [diverges](#the-collapsible-panel-is-a-details-element-and-the-modal-opens-through-an-invoker-command) |
 | [The filters panel — `<twig:SylamentTables:Filters>`](../../../packages/tables/templates/components/Filters/index.html.twig) | [`views/components/filters.blade.php`](../../../vendor/filament/tables/resources/views/components/filters.blade.php) | done | — | [diverges](#the-panel-is-fixed-chrome-with-no-action-objects-behind-it) |
 | [The indicators row — the active-filters label, the chips and the remove-all button](../../../packages/tables/templates/partials/Table/index.html.twig) | [`index.blade.php`'s `fi-ta-filter-indicators` block](../../../vendor/filament/tables/resources/views/index.blade.php) | done | — | [diverges](#the-chip-is-one-badge-and-the-delete-affordance-is-supports) |
 | The pivot surface — `hasPivotRecordKeys()`, `allowDuplicates()`, `selectPivotDataInQuery()` | [`HasRecords`](../../../vendor/filament/tables/src/Table/Concerns/HasRecords.php), [`Table\Concerns\HasQuery`](../../../vendor/filament/tables/src/Table/Concerns/HasQuery.php) | skipped | — | The `BelongsToMany` pivot arm: a Doctrine association table carrying payload is an entity of its own rather than a pivot with casts, so there is no pivot model to key rows by, to allow duplicates of, or to alias columns out of |
@@ -118,9 +119,10 @@ Rows never disappear — only their detail sections do.
 | `persistColumnSearchesInSession()`, `isSearchableByColumn()`, `hasSearch()`, `getColumnSearchIndicators()` | [`Table\Concerns\CanSearchRecords`](../../../vendor/filament/tables/src/Table/Concerns/CanSearchRecords.php) | todo | — | [detail](#the-unported-search-surface-splits-three-ways) |
 | `getExtraSearchableColumnRelationship()` | [`Table\Concerns\CanSearchRecords`](../../../vendor/filament/tables/src/Table/Concerns/CanSearchRecords.php) | skipped | — | It answers *is this dotted name's head a relationship*, so Filament's caller can switch to `whereRelation`. Here [one resolution](#a-dotted-name-is-resolved-against-the-mapping-before-it-is-refused) answers that inside `SearchConstraint::forColumn()` for every tier at once, so an extra searchable column crosses an association with nothing to ask first — there is no caller left to hold the branch this member exists to decide |
 | Deferred loading and polling — `deferLoading()`, `poll()` | [`CanDeferLoading`](../../../vendor/filament/tables/src/Table/Concerns/CanDeferLoading.php), [`CanPollRecords`](../../../vendor/filament/tables/src/Table/Concerns/CanPollRecords.php) | todo | — | [detail](#loading-affordances-are-deferred-with-the-javascript-that-would-drive-them) |
-| [`filters()` / `pushFilters()` / `getFilters()` / `getFilter()` / `getFiltersFormSchema()` / `deferFilters()` / `hasDeferredFilters()` / `filtersLayout()` / `getFiltersLayout()` / `hasFiltersDropdown()` / `filtersFormColumns()` / `getFiltersFormColumns()` / `filtersFormMaxHeight()` / `getFiltersFormMaxHeight()` / `filtersFormWidth()` / `getFiltersFormWidth()` / `filtersResetActionPosition()` / `getFiltersResetActionPosition()` / `isFilterable()` / `getActiveFiltersCount()` / `isFiltered()`](../../../packages/tables/src/Table/Concerns/HasFilters.php) + [`FiltersLayout`](../../../packages/tables/src/Enums/FiltersLayout.php), [`FiltersResetActionPosition`](../../../packages/tables/src/Enums/FiltersResetActionPosition.php) | [`Table\Concerns\HasFilters`](../../../vendor/filament/tables/src/Table/Concerns/HasFilters.php), [`Enums/FiltersLayout`](../../../vendor/filament/tables/src/Enums/FiltersLayout.php), [`Enums/FiltersResetActionPosition`](../../../vendor/filament/tables/src/Enums/FiltersResetActionPosition.php) | in progress | — | [detail](#an-unshipped-filters-layout-is-refused-where-the-chrome-reads-it) · [detail](#the-filters-form-columns-default-to-one-without-filaments-responsive-branch) |
+| [`filters()` / `pushFilters()` / `getFilters()` / `getFilter()` / `getFiltersFormSchema()` / `deferFilters()` / `hasDeferredFilters()` / `filtersLayout()` / `getFiltersLayout()` / `hasFiltersDropdown()` / `hasFiltersModal()` / `hasFiltersTrigger()` / `hasFiltersAboveContent()` / `hasFiltersBelowContent()` / `hasCollapsibleFilters()` / `getFiltersModalId()` / `filtersFormColumns()` / `getFiltersFormColumns()` / `filtersFormMaxHeight()` / `getFiltersFormMaxHeight()` / `filtersFormWidth()` / `getFiltersFormWidth()` / `filtersResetActionPosition()` / `getFiltersResetActionPosition()` / `isFilterable()` / `getActiveFiltersCount()` / `isFiltered()`](../../../packages/tables/src/Table/Concerns/HasFilters.php) + [`FiltersLayout`](../../../packages/tables/src/Enums/FiltersLayout.php), [`FiltersResetActionPosition`](../../../packages/tables/src/Enums/FiltersResetActionPosition.php) | [`Table\Concerns\HasFilters`](../../../vendor/filament/tables/src/Table/Concerns/HasFilters.php), [`Enums/FiltersLayout`](../../../vendor/filament/tables/src/Enums/FiltersLayout.php), [`Enums/FiltersResetActionPosition`](../../../vendor/filament/tables/src/Enums/FiltersResetActionPosition.php) | in progress | the four before/after-content layouts, and the width-from-columns match | [detail](#an-unshipped-filters-layout-is-refused-where-the-chrome-reads-it) · [detail](#the-filters-form-columns-follow-the-layout-the-width-does-not) |
 | [`hiddenFilterIndicators()` / `getFilterIndicators()`](../../../packages/tables/src/Table/Concerns/HasFilterIndicators.php) | [`Table\Concerns\HasFilterIndicators`](../../../vendor/filament/tables/src/Table/Concerns/HasFilterIndicators.php) | in progress | its column-search arm — the `getColumnSearchIndicators()` spread, with per-column search | [indicator.md](indicator.md#removal-is-structured-not-a-click-handler-string) · [has-table.md](has-table.md#search-is-the-global-term-only) |
-| The filters form seam and its chrome actions — `getFiltersForm()`, `filtersFormSchema()`, `filtersTriggerAction()`, `filtersApplyAction()`, `filtersRemoveAllAction()` and their getters | [`Table\Concerns\HasFilters`](../../../vendor/filament/tables/src/Table/Concerns/HasFilters.php) | todo | — | — |
+| [The three chrome actions — `filtersTriggerAction()` / `getFiltersTriggerAction()` / `filtersApplyAction()` / `getFiltersApplyAction()` / `filtersRemoveAllAction()` / `getFiltersRemoveAllAction()`](../../../packages/tables/src/Table/Concerns/HasFilters.php) | [`Table\Concerns\HasFilters`](../../../vendor/filament/tables/src/Table/Concerns/HasFilters.php) | done | — | [diverges](#the-trigger-opens-its-chrome-from-the-client-and-the-count-stays-a-template-chip) |
+| The filters form seam — `getFiltersForm()` / `filtersFormSchema()` | [`Table\Concerns\HasFilters`](../../../vendor/filament/tables/src/Table/Concerns/HasFilters.php) | todo | — | — |
 | [`persistFiltersInSession()` / `persistsFiltersInSession()`](../../../packages/tables/src/Table/Concerns/HasFilters.php) | [`Table\Concerns\HasFilters`](../../../vendor/filament/tables/src/Table/Concerns/HasFilters.php) | done | — | [has-table.md](has-table.md#no-table-state-is-persisted-in-the-session) |
 | [`deselectAllRecordsWhenFiltered()` / `shouldDeselectAllRecordsWhenFiltered()`](../../../packages/tables/src/Table/Concerns/HasFilters.php) | [`Table\Concerns\HasFilters`](../../../vendor/filament/tables/src/Table/Concerns/HasFilters.php) | done | — | [semantics](#one-filter-setting-drives-three-selection-behaviours) |
 | [The query-string identifier — `queryStringIdentifier()` / `getQueryStringIdentifier()`](../../../packages/tables/src/Table/Concerns/HasQueryStringIdentifier.php) | [`HasQueryStringIdentifier`](../../../vendor/filament/tables/src/Table/Concerns/HasQueryStringIdentifier.php) | done | — | [has-table.md](has-table.md#no-table-state-is-bound-to-the-url) |
@@ -618,24 +620,28 @@ pinned by [`TableTest`](../../../packages/tables/tests/Unit/TableTest.php).
 ### An unshipped filters layout is refused where the chrome reads it
 
 [`FiltersLayout`](../../../packages/tables/src/Enums/FiltersLayout.php) ships all
-ten of Filament's cases, and the epic renders two of them. `Dropdown` puts the
-filters form behind the toolbar's trigger; `Hidden` renders no filter chrome at
-all while the filters themselves still constrain the query, nothing in the
-application path consulting the layout. The other eight —
-`Modal`, `AboveContent`, `AboveContentCollapsible`, `BelowContent`,
+ten of Filament's cases, and the chrome consumes six. `Dropdown` puts the filters
+form behind the toolbar's trigger; `Modal` behind a trigger that opens support's
+`Modal`; `AboveContent` and `AboveContentCollapsible` render a panel between the
+indicator row and the table, the collapsible one inside a `<details>`;
+`BelowContent` renders it after the table and before the pagination; and `Hidden`
+renders no filter chrome at all while the filters themselves still constrain the
+query, nothing in the application path consulting the layout. The other four —
 `BeforeContent`, `BeforeContentCollapsible`, `AfterContent`,
-`AfterContentCollapsible` — each need chrome the toolkit has not built: a modal
-host for the form, or a content-adjacent panel with its own collapse state.
+`AfterContentCollapsible` — need chrome the toolkit has not built: vendor's is a
+sidebar from `lg` up and a floating-ui dropdown below it, one hybrid over two
+behaviours (R3 §2.3).
 
-The enum ships whole rather than trimmed to two, because the case *names* are
-the API a migrating user greps for and a missing case is a fatal
+The enum ships whole rather than trimmed, because the case *names* are the API a
+migrating user greps for and a missing case is a fatal
 `Error: undefined constant` at the call site with nothing to explain it. What
 the port refuses instead is the *consumption*, and it does so in
-`hasFiltersDropdown()` — the method the toolbar calls to decide whether to
-render the trigger and its panel — with a `LogicException` naming the case and
-the two that work. `getFiltersLayout()` stays total: it evaluates the closure
-arm and returns whatever was set, so a reader, a test or a future layout can ask
-what the table wants without tripping the refusal.
+`getConsumableFiltersLayout()` — the private probe every layout question in
+`HasFilters` runs through, and the toolbar reaches at least one of them for any
+filterable table — with a `LogicException` naming the case and the six that work.
+`getFiltersLayout()` stays total: it evaluates the closure arm and returns
+whatever was set, so a reader, a test or `getFiltersFormColumns()`'s fallback can
+ask what the table wants without tripping the refusal.
 
 That split is [`PaginationMode::Cursor`'s](#the-pagination-mode-ships-two-cases-and-two-setters-wait-on-their-features)
 precedent applied a second time — refuse where the value is consumed, not where
@@ -644,33 +650,30 @@ time, so a setter-side check would be unenforceable for exactly the callers most
 likely to need it. Each refused case lifts as its chrome lands; nothing about
 the enum changes when it does.
 
-The declaration **order** differs: ours leads with the two shipped cases,
-Filament leads with `AboveContent` and declares `Dropdown` eighth. The cases are
-pure — no backing values, no interface — so the only thing that can observe it is
+The declaration **order** differs: ours leads with the shipped cases, Filament
+leads with `AboveContent` and declares `Dropdown` eighth. The cases are pure — no
+backing values, no interface — so the only thing that can observe it is
 `FiltersLayout::cases()`, which nothing reads today. Left as declared rather than
-re-sorted to vendor, since the order that reads best is the one that puts what
-ships first.
+re-sorted to vendor.
 
-### The filters form columns default to one, without Filament's responsive branch
+### The filters form columns follow the layout, the width does not
 
-Filament's `getFiltersFormColumns()` falls back to
-`['sm' => 2, 'lg' => 3, 'xl' => 4, '2xl' => 5]` for the `AboveContent`,
-`AboveContentCollapsible` and `BelowContent` layouts and to `1` for everything
-else. The port keeps the `1` and drops the match.
+`getFiltersFormColumns()` carries Filament's match whole: a configured count
+wins, and the fallback is `['sm' => 2, 'lg' => 3, 'xl' => 4, '2xl' => 5]` for
+`AboveContent`, `AboveContentCollapsible` and `BelowContent`, `1` for everything
+else. The responsive arm is not a general default — it is the full-width layouts'
+default, and it is what makes an above-content filter bar look like a bar instead
+of a column. The match runs over `getFiltersLayout()` rather than the consumable
+probe, so a refused layout still answers `1` instead of throwing from a sizing
+getter.
 
-The responsive arm is not a general default — it is the full-width layouts'
-default, and it reads as one only because the layout is in scope. All three
-layouts it names are [unported](#an-unshipped-filters-layout-is-refused-where-the-chrome-reads-it),
-so the branch as written would be dead code choosing between two answers where
-only one is reachable. `getFiltersFormWidth()` is trimmed on the same grounds and
-in the other direction: Filament's derives a `Width` enum case from the column
-count for the dropdown panel, and support ships no `Width` enum, so the getter is
-the plain evaluated value with a `null` default — a width the caller states or
-does not.
+`getFiltersFormWidth()` stays trimmed in the other direction: Filament's derives
+a `Width` enum case from the column count for the dropdown panel, and support
+ships no `Width` enum, so the getter is the plain evaluated value with a `null`
+default — a width the caller states or does not. The modal layout falls back to
+`'md'` in the template for the same reason. That match returns if and when a
+`Width` enum lands in support.
 
-Both arms return with the layouts they belong to — the column match with the
-above/below-content chrome, the width match if and when a `Width` enum lands in
-support.
 
 ## Semantics
 
@@ -2064,6 +2067,70 @@ same two points are `start-full` + `ms-2` and `-top-1`. The wrapper also carries
 `pointer-events-none`, which vendor needs no equivalent of: a click on a badge
 nested *inside* the button is a click on the button already.
 
+### The trigger opens its chrome from the client, and the count stays a template chip
+
+`getFiltersTriggerAction()`, `getFiltersApplyAction()` and
+`getFiltersRemoveAllAction()` are Filament's three, each with its
+`filters*Action(?Closure)` seam taking the single `action` injection and falling
+back to the untouched action. Three things differ.
+
+The trigger wires **no click of its own** — `liveComponentClickHandlerEnabled(false)`,
+vendor's `livewireClickHandlerEnabled(false)` — because the surrounding chrome
+owns the opening: support's `Dropdown` for the dropdown layout, and for the modal
+layout an `command="show-modal"` / `commandfor` pair the builder stamps on
+through `extraAttributes()`. Vendor reaches the same place through Alpine, and
+carries `modalSubmitAction(false)` plus an `extraModalFooterActions()` pair
+besides, because its modal *is* the action's own modal; ours is a plain
+`<twig:SylamentSupport:Modal>` the template renders, so the eighteen
+modal-customization settings vendor hand-copies off the trigger have nothing to
+copy onto and are **not** ported. A caller wanting a different filters modal
+changes the layout, not the trigger.
+
+The **active-count badge stays a template chip**. Vendor calls
+`$filtersTriggerAction->badge($activeFiltersCount)` at each render site; our
+`Action::badge()` takes no value — it selects the badge *template variant* — and
+the `badge($value)` family is unported, so porting it here would mean smuggling
+a whole actions feature into a tables epic. The chip therefore keeps its
+[existing composition](#the-trigger-badge-is-composed-in-the-table-partial-because-iconbutton-has-no-slot)
+one level out from the trigger, and the actions trail keeps the row.
+
+The icons resolve through a closure the action evaluates
+(`static fn (?IconManager $icons = null) => …`) rather than an injected manager
+field, because [`CanReorderRecords`](../../../packages/tables/src/Table/Concerns/CanReorderRecords.php)
+already declares a `#[Required] setIconManager()` on `Table` and a second trait
+declaring the same method is a fatal collision. The parameter is nullable with a
+`null` default so the Invoker's container arm answers inside DI and its
+default-value arm answers outside it, which keeps the fallback glyph readable
+from a unit fixture.
+
+### The collapsible panel is a `<details>` element, and the modal opens through an invoker command
+
+Vendor's `AboveContentCollapsible` is an Alpine `areFiltersOpen` flag toggled by
+a trigger rendered *below* the form, inside the same container. Ours is a native
+`<details>`, the panel its content and the toggle its `<summary>`, `open` while
+any filter is active — zero JavaScript, and the collapse survives a live morph
+because the attribute is server-rendered.
+
+The summary's funnel is a **hand-built** `IconButton` with `tag="span"`, not the
+trigger action. A `<button>` inside a `<summary>` becomes the event's activation
+target, so the `<details>` would never toggle — the disclosure is the summary's
+job and nothing interactive may sit inside it. `getFiltersTriggerAction()` is
+therefore consumed by the dropdown and modal layouts only, which is also where
+vendor's `$hasFiltersTrigger` puts it once the before/after layouts are out of
+scope.
+
+The `Modal` layout opens the same way — from the client, with no server round
+trip — through the HTML invoker command pair `command="show-modal"` /
+`commandfor`, pointing at the dialog id `getFiltersModalId()` mints under the
+table host id. The dialog is support's `Modal` rendered inline in the partial;
+`showModal()` puts it in the top layer, so the modal controller's open-attribute
+observer finds it already `:modal` and returns, and Escape, click-away and focus
+restoration are the platform's. That keeps the whole layout inside this lane's
+templates with no controller of its own. Vendor's body is the **raw** filters
+form rather than the `Filters` component, and ours follows it: the component
+would put a second "Filters" heading and a second reset under the modal's own,
+so apply and reset sit in the modal footer instead.
+
 ### The filters panel teleports, because the scroll container wraps the toolbar too
 
 The mount passes `:teleport="true"`; Filament's does not. The reason is one level
@@ -2105,18 +2172,17 @@ the content wrapper [the partial deliberately omits](#the-partial-emits-no-heade
 
 Filament's `filters.blade.php` takes an `applyAction` object and reads
 `isVisible()` off it; the header reset is a `link` with `tag="button"` built
-through `prepare_inherited_attributes()`, the footer reset a `button`. Ours
-takes a plain `applyVisible` boolean and renders support's `Link` and `Button`
-directly, wired with `stimulus_action('live', 'action', …)`. The trigger, apply
-and remove-all actions plus their `modify*Using` seams wait on table-context
-`Action` rendering; `filtersFormSchema()` — the whole-form override closure —
-rides the same follow-up. Only `Dropdown` and `Hidden` are honored;
-`getFiltersLayout()` stays total and `hasFiltersDropdown()` — the one layout read
-this markup makes — throws for every other case, refused where consumed on the
-`PaginationMode::Cursor` pattern. `Hidden` renders no trigger and no panel while
-the filtering itself stays applied: the layout is read in that one template
-branch and nowhere in the query or indicator lanes, so a hidden filter still
-constrains the query and still produces its indicators — and the
+through `prepare_inherited_attributes()`, the footer reset a `button`. Ours takes
+both an `applyAction` and the `applyVisible` boolean that gates the footer, and
+renders the action through `renderComponent()` — Filament's shape, once the
+[three chrome actions](#the-trigger-opens-its-chrome-from-the-client-and-the-count-stays-a-template-chip)
+landed. The two resets stay hand-built support `Link`/`Button`s wired with
+`stimulus_action('live', 'action', …)`, exactly as vendor's are;
+`filtersFormSchema()` — the whole-form override closure — is the one seam still
+deferred. `Hidden` renders no trigger and no panel while the filtering itself
+stays applied: the layout is read in the chrome branches and nowhere in the query
+or indicator lanes, so a hidden filter still constrains the query and still
+produces its indicators — and the
 [indicators row](#the-chip-is-one-badge-and-the-delete-affordance-is-supports)
 renders them, because it is gated on the indicator list alone.
 
@@ -2144,9 +2210,12 @@ where Filament interpolates a `removeLivewireClickHandler()` expression string.
 The X is drawn under `SupportIconAlias::BADGE_DELETE_BUTTON`, so the chip's icon
 is overridable through the same alias a Filament app would use.
 
-The remove-all button follows Filament exactly — an x-mark icon button under the
-`FILTERS_REMOVE_ALL_BUTTON` alias, rendered only when at least one chip is
-removable, and the row's one `IconButton`. The row is gated on the indicator list
+The remove-all button follows Filament exactly — the `removeAllFilters` action,
+an x-mark icon button under the `FILTERS_REMOVE_ALL_BUTTON` alias, rendered only
+when at least one chip is removable, and the row's one icon button. Its
+`.sy-ta-filter-indicators-remove-all-btn` hook rides on the action's
+`extraAttributes()` rather than a template class, since `renderComponent()` takes
+no attributes from its call site. The row is gated on the indicator list
 being non-empty and on nothing else, so a `Hidden` filters layout still shows its
 chips. Five cases in
 [`TableRenderingTest`](../../../packages/tables/tests/Integration/TableRenderingTest.php)

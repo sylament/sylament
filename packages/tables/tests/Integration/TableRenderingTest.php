@@ -360,6 +360,9 @@ it('renders neither trigger nor panel for the hidden filters layout, and keeps t
 
     expect($html)->not->toContain('sy-ta-filters-trigger')
         ->and($html)->not->toContain('sy-ta-filters-dropdown')
+        ->and($html)->not->toContain('sy-ta-filters-above-content-ctn')
+        ->and($html)->not->toContain('sy-ta-filters-below-content-ctn')
+        ->and($html)->not->toContain('sy-modal')
         ->and($html)->not->toContain('sy-ta-header-toolbar')
         ->and($chips->count())->toBe(2)
         ->and(mb_trim($chips->eq(0)->filter('.sy-badge-label')->text()))->toBe('Plays: Two hundred');
@@ -397,6 +400,21 @@ it('renders no footer at all when filters are live and the reset sits in the hea
         ->and($reset->attr('data-live-action-param'))->toBe('resetTableFiltersForm');
 });
 
+it('takes the panel footer from the apply action a customization made visible', function (): void {
+    $crawler = new Crawler(filtersTableHtml(
+        filteredSongsTable(fn (Table $table): Table => $table
+            ->filters(songFilters())
+            ->deferFilters(false)
+            ->filtersApplyAction(static fn (Action $action): Action => $action->visible()->label('Refilter'))),
+    ));
+
+    $apply = $crawler->filter('.sy-ta-filters .sy-ta-filters-actions-ctn button.sy-btn');
+
+    expect($apply->count())->toBe(1)
+        ->and(mb_trim($apply->text()))->toBe('Refilter')
+        ->and($apply->attr('data-live-action-param'))->toBe('applyTableFilters');
+});
+
 it('moves the reset control into the footer for the footer position', function (): void {
     $crawler = new Crawler(filtersTableHtml(
         filteredSongsTable(fn (Table $table): Table => $table
@@ -413,16 +431,98 @@ it('moves the reset control into the footer for the footer position', function (
 });
 
 /*
- * The refusal is a `LogicException` from `hasFiltersDropdown()`, and Twig wraps
+ * The refusal is a `LogicException` from the layout probe, and Twig wraps
  * anything a template throws in a `RuntimeError` carrying the original message
  * (`Template::yield()`), so that is what a consumer sees — the same shape
  * actions' `ModalsRenderTest` pins for its host-resolution throw.
  */
-it('refuses an unshipped filters layout on render', function (): void {
+it('refuses an unshipped filters layout on render', function (FiltersLayout $layout): void {
     expect(static fn (): string => filtersTableHtml(
+        filteredSongsTable(fn (Table $table): Table => $table->filters(songFilters(), $layout)),
+    ))->toThrow(RuntimeError::class, '[' . $layout->name . '] filters layout');
+})->with([
+    FiltersLayout::BeforeContent,
+    FiltersLayout::BeforeContentCollapsible,
+    FiltersLayout::AfterContent,
+    FiltersLayout::AfterContentCollapsible,
+]);
+
+it('renders the above-content panel between the indicators and the table, with no trigger', function (): void {
+    $crawler = new Crawler(filtersTableHtml(
         filteredSongsTable(fn (Table $table): Table => $table->filters(songFilters(), FiltersLayout::AboveContent)),
-    ))->toThrow(RuntimeError::class, '[AboveContent] filters layout');
+        ['plays' => ['value' => '200']],
+    ));
+
+    $panel = $crawler->filter('.sy-ta-filters-above-content-ctn > .sy-ta-filters');
+    $blocks = $crawler->filter('.sy-ta-ctn > *')->each(static fn (Crawler $node): string => $node->attr('class') ?? '');
+
+    expect($panel->count())->toBe(1)
+        ->and($panel->filter('select.sy-fo-select')->count())->toBe(1)
+        ->and($crawler->filter('.sy-ta-filters-trigger')->count())->toBe(0)
+        ->and($crawler->filter('.sy-ta-header-toolbar')->count())->toBe(0)
+        ->and($crawler->filter('details')->count())->toBe(0)
+        ->and(array_search('sy-ta-filters-above-content-ctn', $blocks, true))
+        ->toBe(array_search('sy-ta-filter-indicators', $blocks, true) + 1);
 });
+
+it('collapses the above-content panel into a details, open only while filters are active', function (): void {
+    $configure = fn (Table $table): Table => $table->filters(songFilters(), FiltersLayout::AboveContentCollapsible);
+
+    $unfiltered = new Crawler(filtersTableHtml(filteredSongsTable($configure)));
+    $filtered = new Crawler(filtersTableHtml(filteredSongsTable($configure), ['plays' => ['value' => '200']]));
+
+    $summary = $filtered->filter('details.sy-ta-filters-collapsible > summary.sy-ta-filters-summary');
+
+    expect($unfiltered->filter('details.sy-ta-filters-collapsible')->attr('open'))->toBeNull()
+        ->and($filtered->filter('details.sy-ta-filters-collapsible')->attr('open'))->not->toBeNull()
+        ->and($summary->filter('span.sy-icon-btn')->count())->toBe(1)
+        ->and($summary->filter('button')->count())->toBe(0)
+        ->and(mb_trim($summary->filter('.sy-ta-filters-trigger-badge')->text()))->toBe('1')
+        ->and($filtered->filter('details.sy-ta-filters-collapsible > .sy-ta-filters')->count())->toBe(1);
+});
+
+it('renders the below-content panel after the table and before the pagination', function (): void {
+    $crawler = new Crawler(filtersTableHtml(
+        filteredSongsTable(fn (Table $table): Table => $table->filters(songFilters(), FiltersLayout::BelowContent)),
+    ));
+
+    $blocks = $crawler->filter('.sy-ta-ctn > *')->each(static fn (Crawler $node): string => $node->nodeName());
+
+    expect($crawler->filter('.sy-ta-filters-below-content-ctn > .sy-ta-filters')->count())->toBe(1)
+        ->and($crawler->filter('.sy-ta-filters-trigger')->count())->toBe(0)
+        ->and($blocks)->toBe(['table', 'div']);
+});
+
+it('renders the modal layout as a toolbar trigger carrying the invoker command for its dialog', function (): void {
+    $crawler = new Crawler(filtersTableHtml(
+        filteredSongsTable(fn (Table $table): Table => $table->filters(songFilters(), FiltersLayout::Modal)),
+    ));
+
+    $trigger = $crawler->filter('.sy-ta-header-toolbar-end .sy-ta-filters-trigger button.sy-icon-btn');
+    $dialog = $crawler->filter('dialog.sy-modal');
+
+    expect($trigger->count())->toBe(1)
+        ->and($trigger->attr('data-action'))->toBeNull()
+        ->and($trigger->attr('command'))->toBe('show-modal')
+        ->and($trigger->attr('commandfor'))->toBe($dialog->attr('id'))
+        ->and($crawler->filter('.sy-ta-filters-dropdown')->count())->toBe(0)
+        ->and(mb_trim($dialog->filter('.sy-modal-heading')->text()))->toBe('Filters')
+        ->and($dialog->filter('.sy-modal-content select.sy-fo-select')->count())->toBe(1)
+        ->and($dialog->filter('.sy-modal-content .sy-ta-filters')->count())->toBe(0);
+});
+
+it('puts apply and reset in the filters modal footer', function (): void {
+    $crawler = new Crawler(filtersTableHtml(
+        filteredSongsTable(fn (Table $table): Table => $table->filters(songFilters(), FiltersLayout::Modal)),
+    ));
+
+    $footerButtons = $crawler->filter('dialog.sy-modal .sy-modal-footer-actions button.sy-btn');
+
+    expect($footerButtons->count())->toBe(2)
+        ->and($footerButtons->eq(0)->attr('data-live-action-param'))->toBe('applyTableFilters')
+        ->and($footerButtons->eq(1)->attr('data-live-action-param'))->toBe('resetTableFiltersForm');
+});
+
 
 it('renders one removable chip per indicator under the active-filters label', function (): void {
     $crawler = new Crawler(filtersTableHtml(

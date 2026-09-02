@@ -86,9 +86,9 @@ into
 folds the same way, into `table.md`'s `$template` row.
 `Table\Concerns\HasFilters` and `Table\Concerns\HasFilterIndicators` are two
 landed concerns that keep a row anyway, for the same reason: both are built and
-folded into [`table.md`](table.md) while the trigger, apply and remove-all
-actions, the `filtersFormSchema()` override and the column-search indicators are
-not — so each row is where the deferred half stays findable. `Filters\Concerns\HasOptions` and
+folded into [`table.md`](table.md) while the `filtersFormSchema()` override, the
+four before/after-content layouts and the column-search indicators are not — so
+each row is where the deferred half stays findable. `Filters\Concerns\HasOptions` and
 `Filters\Concerns\HasPlaceholder` keep rows for a different reason: they ship for
 `SelectFilter` alone, so they fold into
 [`select-filter.md`](select-filter.md) rather than into `base-filter.md` with the
@@ -325,7 +325,7 @@ folds into [`text-column.md`](text-column.md) the same way, against
 | Editable (contract) | [`Columns/Contracts/Editable.php`](../../../vendor/filament/tables/src/Columns/Contracts/Editable.php) | todo | — |
 | ColumnManagerLayout | [`Enums/ColumnManagerLayout.php`](../../../vendor/filament/tables/src/Enums/ColumnManagerLayout.php) | todo | — |
 | ColumnManagerResetActionPosition | [`Enums/ColumnManagerResetActionPosition.php`](../../../vendor/filament/tables/src/Enums/ColumnManagerResetActionPosition.php) | todo | — |
-| [`FiltersLayout`](../../../packages/tables/src/Enums/FiltersLayout.php) | [`Enums/FiltersLayout.php`](../../../vendor/filament/tables/src/Enums/FiltersLayout.php) | in progress | The enum ships whole; `Dropdown` and `Hidden` are honored, the other eight refused where [the chrome reads them](table.md#an-unshipped-filters-layout-is-refused-where-the-chrome-reads-it) |
+| [`FiltersLayout`](../../../packages/tables/src/Enums/FiltersLayout.php) | [`Enums/FiltersLayout.php`](../../../vendor/filament/tables/src/Enums/FiltersLayout.php) | in progress | The enum ships whole; six cases are honored — `Dropdown`, `Modal`, `AboveContent`, `AboveContentCollapsible`, `BelowContent` and `Hidden` — the four before/after-content ones refused where [the chrome reads them](table.md#an-unshipped-filters-layout-is-refused-where-the-chrome-reads-it) |
 | [`FiltersResetActionPosition`](../../../packages/tables/src/Enums/FiltersResetActionPosition.php) | [`Enums/FiltersResetActionPosition.php`](../../../vendor/filament/tables/src/Enums/FiltersResetActionPosition.php) | done | [table.md](table.md) |
 | [`PaginationMode`](../../../packages/tables/src/Enums/PaginationMode.php) | [`Enums/PaginationMode.php`](../../../vendor/filament/tables/src/Enums/PaginationMode.php) | in progress | The enum ships whole; `Default` and `Simple` are read by [`paginateTableQuery()`](has-table.md#the-page-state-has-its-query-lane-and-no-session-or-url-half), `Cursor` is refused until a keyset carrier exists — [table.md](table.md#the-pagination-mode-ships-two-cases-and-two-setters-wait-on-their-features) |
 | [`RecordActionsPosition`](../../../packages/tables/src/Enums/RecordActionsPosition.php) | [`Enums/RecordActionsPosition.php`](../../../vendor/filament/tables/src/Enums/RecordActionsPosition.php) | done | [table.md](table.md#the-position-default-has-no-content-arm-to-choose-between-yet) |

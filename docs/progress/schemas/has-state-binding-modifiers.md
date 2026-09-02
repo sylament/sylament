@@ -30,6 +30,7 @@ row is **done**), a **diverges** link to [Divergences](#divergences), or `—`.
 | [`lazy()` → `on(change)` blur binding](../../../packages/schemas/src/Components/Concerns/HasStateBindingModifiers.php) | [`lazy()`](../../../vendor/filament/schemas/src/Concerns/HasStateBindingModifiers.php) | done | — | — |
 | [`debounce(delay)` → `debounce(ms)` binding](../../../packages/schemas/src/Components/Concerns/HasStateBindingModifiers.php) | [`debounce()`](../../../vendor/filament/schemas/src/Concerns/HasStateBindingModifiers.php) | done | — | — |
 | [`getDataModel()` UX `data-model` string builder](../../../packages/schemas/src/Components/Concerns/HasStateBindingModifiers.php) | [`applyStateBindingModifiers()`](../../../vendor/filament/schemas/src/Concerns/HasStateBindingModifiers.php) | done | — | [diverges](#livewire-modifier-array-grammar-becomes-a-single-getdatamodel-data-model-string) |
+| [`getDataModel(statePath)` over a caller-supplied path](../../../packages/schemas/src/Components/Concerns/HasStateBindingModifiers.php) | — (no Filament equivalent) | done | — | [diverges](#the-optional-state-path-is-a-sylament-addition) |
 | [`getLiveDebounce()`](../../../packages/schemas/src/Components/Concerns/HasStateBindingModifiers.php) | [`getLiveDebounce()`](../../../vendor/filament/schemas/src/Concerns/HasStateBindingModifiers.php) | done | — | — |
 | [`reactive()` alias of `live()`](../../../packages/schemas/src/Components/Concerns/HasStateBindingModifiers.php) | [`reactive()`](../../../vendor/filament/schemas/src/Concerns/HasStateBindingModifiers.php) | in progress | — | [detail](#reactive-and-islivedebounced-are-ported-but-untested) |
 | [`isLive()` / `isLiveOnBlur()` container fallback](../../../packages/schemas/src/Components/Concerns/HasStateBindingModifiers.php) | [`isLive()`](../../../vendor/filament/schemas/src/Concerns/HasStateBindingModifiers.php) | in progress | — | [detail](#the-container-and-parent-fallback-arms-are-untested) · [diverges](#the-trait-carries-the-component-flavor-while-schema-overrides-the-getters) |
@@ -98,6 +99,20 @@ idiom translation, and it is stable: the two client runtimes have incompatible
 binding grammars, so it will not reverse. `stateBindingModifiers()`,
 `applyStateBindingModifiers()`, and `getStateBindingModifiers()` are therefore
 intentionally absent (**skipped**), not pending.
+
+### The optional state path is a Sylament addition
+
+`getDataModel()` takes an optional `?string $statePath`: `null` — every one of the
+eleven shipped templates that calls it, and the only shape Filament's
+`applyStateBindingModifiers()` has — builds the directive over the component's own
+path, while a string builds the same `norender|` / `on(change)|` / `debounce(N)|`
+directive over the path the caller names. It exists because a component can render
+more than one bound input: [`KeyValue`](../forms/key-value.md) binds a key and a
+value cell per row at `<own path>.<index>.key` / `.value`, and those cells must
+inherit the field's own `live()` / `lazy()` / `debounce()` rather than re-deriving
+them. Filament needs no counterpart — its `KeyValue` rows are Alpine-owned and
+never carry a binding of their own. No interface declares the method and no
+subclass overrides it, so widening the signature reached every caller at once.
 
 ### The trait carries the component flavor while `Schema` overrides the getters
 

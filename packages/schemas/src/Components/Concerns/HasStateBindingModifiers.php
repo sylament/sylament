@@ -46,9 +46,14 @@ trait HasStateBindingModifiers
         return $this;
     }
 
-    public function getDataModel(): ?string
+    /**
+     * The `data-model` directive this component's modifiers build, over its own
+     * state path or over a path the caller names — a component rendering several
+     * bound inputs binds each of them at the same liveness.
+     */
+    public function getDataModel(?string $statePath = null): ?string
     {
-        $statePath = $this->getStatePath();
+        $statePath ??= $this->getStatePath();
 
         if (! $this->isLive()) {
             return "norender|{$statePath}";

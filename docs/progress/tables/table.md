@@ -2107,9 +2107,34 @@ from a unit fixture.
 
 Vendor's `AboveContentCollapsible` is an Alpine `areFiltersOpen` flag toggled by
 a trigger rendered *below* the form, inside the same container. Ours is a native
-`<details>`, the panel its content and the toggle its `<summary>`, `open` while
-any filter is active — zero JavaScript, and the collapse survives a live morph
-because the attribute is server-rendered.
+`<details>`, the panel its content and the toggle its `<summary>` — zero
+JavaScript.
+
+The server-rendered `open` is a **seed, not the state**: it is
+`activeFiltersCount > 0`, and being server-rendered is what makes it survive a
+morph *the user has not toggled through*. What carries a manual toggle across
+one is UX Live's `ExternalMutationTracker`, the same mechanism
+[the searchable select's id handoff](../forms/select.md#the-hidden-select-lends-its-id-to-the-combobox-button)
+and [Tabs' active-class writes](../schemas/tabs.md#the-active-tab-is-server-rendered-and-then-owned-by-the-controller)
+already ride. The browser's own write of `open` is an attribute mutation on a
+node inside the host, so it is recorded
+([`live_controller.js:1197`](../../../vendor/symfony/ux-live-component/assets/dist/live_controller.js))
+and replayed onto the *incoming* node before idiomorph syncs attributes off it
+(`:917`, applied at `:1043`) — a user's collapse therefore outlives every later
+round trip, the `deferFilters(false)` re-render fired by each field edit
+included, and a re-toggle back to the seeded value cancels the record rather
+than pinning it (`ChangingItemsTracker::setItem()`, `:955`). Without that replay
+the seed would be a defect rather than a default: idiomorph's own
+`beforeAttributeUpdated` is a no-op (`:422`), so `syncNodeFrom()` (`:546`) would
+copy the server's opinion straight back over the user's.
+
+The residue is support's
+[accepted gap](../support/dropdown.md#the-open-state-is-a-controller-field-re-asserted-through-a-mutationobserver),
+inherited on the same terms: an element idiomorph *replaces* rather than morphs
+carries no record forward, and the `<details>` has no id forcing a match. No belt
+is added here — the dropdown could afford one because its controller owned the
+open state anyway, while a disclosure whose whole point is zero JavaScript would
+have to grow a controller to hold it.
 
 The summary's funnel is a **hand-built** `IconButton` with `tag="span"`, not the
 trigger action. A `<button>` inside a `<summary>` becomes the event's activation
@@ -2130,6 +2155,27 @@ templates with no controller of its own. Vendor's body is the **raw** filters
 form rather than the `Filters` component, and ours follows it: the component
 would put a second "Filters" heading and a second reset under the modal's own,
 so apply and reset sit in the modal footer instead.
+
+**`command`/`commandfor` is Baseline newly-available** — Chrome 135, Firefox 141,
+Safari 26, September 2025 — and it degrades **silently**: on anything older the
+trigger is an ordinary `<button>` that does nothing, with no error and no
+fallback path. That is the price of a layout with no JavaScript of its own; the
+alternative is one line in the table controller dispatching support's
+`sylament-open-modal` window event, which is where this goes if the supported
+floor ever has to drop below that.
+
+The dialog itself is rendered **inside** the morphed tree, so its open state
+rides the same `ExternalMutationTracker` replay the `<details>` above does:
+`showModal()` sets the `open` content attribute, that write is recorded, and the
+morph re-applies it — the dialog is never de-rendered mid-edit, which is what a
+`deferFilters(false)` modal (a live request per field change) and the Reset
+button (a live action fired from inside the open dialog) both depend on. It does
+**not** inherit the `<details>`' replacement gap: `getFiltersModalId()` gives it a
+stable `id`, and idiomorph matches on the id set first, so the dialog is always
+morphed in place. Were the attribute ever lost anyway, support's modal controller
+could not recover it — `#normalizeModality()` returns on `!this.element.open` and
+its only other open path is the `open` prop this template never sets — which is
+the half-closed state [that controller's docblock](../support/modal.md) describes.
 
 ### The filters panel teleports, because the scroll container wraps the toolbar too
 

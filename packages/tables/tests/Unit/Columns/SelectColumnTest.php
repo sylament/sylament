@@ -2,8 +2,17 @@
 
 declare(strict_types=1);
 
+use Sylament\Schemas\State\Casts\EnumStateCast;
 use Sylament\Tables\Columns\Contracts\Editable;
 use Sylament\Tables\Columns\SelectColumn;
+use Sylament\Tables\Tests\Fixtures\Records\Format;
+use Symfony\Component\Validator\Constraint;
+use Symfony\Component\Validator\Constraints\Choice;
+
+enum PureSelectColumnEnum
+{
+    case Digital;
+}
 
 it('is editable, click-disabled and placeholder-selectable out of the box', function (): void {
     $column = SelectColumn::make('mood');
@@ -15,8 +24,32 @@ it('is editable, click-disabled and placeholder-selectable out of the box', func
         ->and($column->getOptions())->toBe([]);
 });
 
-it('carries no state casts, which is what keeps the option traits usable', function (): void {
-    expect(SelectColumn::make('mood')->getStateCasts())->toBe([]);
+it('carries no state casts for a plain option map, which is what keeps the option traits usable', function (): void {
+    expect(SelectColumn::make('mood')->options(['calm' => 'Calm'])->getStateCasts())->toBe([]);
+});
+
+it('seeds an enum state cast for an enum option map', function (): void {
+    $casts = SelectColumn::make('format')->options(Format::class)->getStateCasts();
+
+    expect($casts)->toHaveCount(1)
+        ->and($casts[0])->toBeInstanceOf(EnumStateCast::class)
+        ->and($casts[0]->get('vinyl'))->toBe(Format::Vinyl)
+        ->and($casts[0]->set(Format::Vinyl))->toBe('vinyl');
+});
+
+it('keeps the Choice seed speaking option keys once the enum cast is in play', function (): void {
+    $choices = array_values(array_filter(
+        SelectColumn::make('format')->options(Format::class)->getValidationConstraints(),
+        fn (Constraint $constraint): bool => $constraint instanceof Choice,
+    ));
+
+    expect($choices)->toHaveCount(1)
+        ->and($choices[0]->choices)->toBe(['digital', 'vinyl']);
+});
+
+it('refuses a pure enum, whose cases cannot round-trip through a select', function (): void {
+    expect(fn (): array => SelectColumn::make('format')->options(PureSelectColumnEnum::class)->getStateCasts())
+        ->toThrow(LogicException::class, 'which is not a backed enum');
 });
 
 it('reads an option map, an enum and a closure', function (): void {

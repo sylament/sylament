@@ -233,9 +233,19 @@ accessor is compiled without `strict_types`, so a *numeric* string reaches an
 `int` or `float` property coerced and silent — but any other string raises its
 `InvalidTypeException` (`Expected argument of type "?int", "string" given`), and
 an object-typed property (`DateTimeImmutable`, a backed enum) has no coercion to
-reach at all. A column over such a property therefore takes an
-`updateStateUsing()` closure to cast, where Filament would have leaned on an
-Eloquent cast. The boolean columns are
+reach at all. `CanUpdateState` therefore declares `getStateCasts()` — `[]` by
+default, which is the truth for every control whose values are the record's own
+— and `updateState()` runs each cast's `get()` over the posted value *after* the
+blank normalisation and *before* the before-hook and the write, with
+`getClientState()` running `set()` back in reverse order so the control still
+speaks the wire vocabulary. One column overrides it today:
+[`SelectColumn`](select-column.md#the-only-state-cast-a-column-carries-is-the-enum-arms)
+seeds a schemas `EnumStateCast` for an enum option map, which is where Filament
+would have leaned on an Eloquent cast. Order is what keeps validation honest —
+the host validates the **wire** value, so a `Choice` seeded from string option
+keys still judges the string the browser sent. A column over any other
+object-typed property still takes an `updateStateUsing()` closure to cast. The
+boolean columns are
 unaffected — the controller posts a JSON boolean for a checkbox.
 
 ### The action binds the record **and** its key, and only one of the two invalidations is observable

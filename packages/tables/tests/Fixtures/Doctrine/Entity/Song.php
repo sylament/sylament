@@ -7,6 +7,7 @@ namespace Sylament\Tables\Tests\Fixtures\Doctrine\Entity;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
+use Sylament\Tables\Tests\Fixtures\Records\Format;
 
 #[ORM\Entity]
 class Song
@@ -62,7 +63,13 @@ class Song
          * write assigns 1..N onto.
          */
         #[ORM\Column(nullable: true)]
-        private ?int $position = null
+        private ?int $position = null,
+        /**
+         * The select column's enum-typed target: a posted backing string only
+         * reaches it through the column's state cast.
+         */
+        #[ORM\Column(nullable: true, enumType: Format::class)]
+        private ?Format $format = null
     ) {
         $this->genres = new ArrayCollection();
         $this->collaborators = new ArrayCollection();
@@ -132,6 +139,18 @@ class Song
     public function setTempo(string $tempo): static
     {
         $this->tempo = $tempo;
+
+        return $this;
+    }
+
+    public function getFormat(): ?Format
+    {
+        return $this->format;
+    }
+
+    public function setFormat(?Format $format): static
+    {
+        $this->format = $format;
 
         return $this;
     }

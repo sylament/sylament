@@ -14,6 +14,7 @@ use Sylament\Tables\Concerns\HasTable;
 use Sylament\Tables\Contracts\InteractsWithTable;
 use Sylament\Tables\Table;
 use Sylament\Tables\Tests\Fixtures\Doctrine\Entity\Song;
+use Sylament\Tables\Tests\Fixtures\Records\Format;
 use Symfony\Component\Validator\Constraints\Length;
 use Symfony\UX\LiveComponent\Attribute\AsLiveComponent;
 use Symfony\UX\LiveComponent\DefaultActionTrait;
@@ -27,7 +28,10 @@ use Symfony\UX\LiveComponent\DefaultActionTrait;
  * The toggle and the checkbox sit on different fields because `columns()` keys
  * by name; the first two selects are the nullable and the non-nullable arm of
  * the presence gate. The query keeps the loudest songs out, so a record key the
- * database holds but the table does not reach has something to point at.
+ * database holds but the table does not reach has something to point at. The
+ * format select is the enum arm: its option map is a backed enum class, so the
+ * posted backing string only reaches the enum-typed property through the
+ * column's state cast.
  *
  * Two columns carry hooks that exist to make an invariant observable. The title
  * column's `beforeStateUpdated()` reads the old state — what a hook comparing
@@ -72,6 +76,7 @@ final class EditableSongsTable implements InteractsWithTable
                     ->options(['calm' => 'Calm', 'wild' => 'Wild'])
                     ->disableOptionWhen(fn (mixed $value): bool => $value === 'wild'),
                 SelectColumn::make('tempo')->options(['slow' => 'Slow', 'fast' => 'Fast']),
+                SelectColumn::make('format')->options(Format::class),
                 SelectColumn::make('position')
                     ->options([1 => 'First', 2 => 'Second'])
                     ->updateStateUsing(function (Song $record, mixed $state): void {

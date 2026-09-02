@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use Doctrine\ORM\EntityManager;
+use Sylament\Schemas\State\Casts\Contracts\StateCast;
 use Sylament\Tables\Columns\CheckboxColumn;
 use Sylament\Tables\Columns\SelectColumn;
 use Sylament\Tables\Columns\TextInputColumn;
@@ -12,6 +13,34 @@ use Sylament\Tables\Tests\Fixtures\Concerns\TableHost;
 use Sylament\Tables\Tests\Fixtures\Doctrine\Entity\Artist;
 use Sylament\Tables\Tests\Fixtures\Doctrine\Entity\Song;
 use Sylament\Tables\Tests\Fixtures\Doctrine\EntityManagerFactory;
+
+/**
+ * A cast whose two directions are distinguishable from every other conversion the
+ * cell makes, so removing either application leaves a failure behind.
+ */
+final class ShoutingStateCast implements StateCast
+{
+    public function get(mixed $state): mixed
+    {
+        return is_string($state) ? mb_strtoupper($state) : $state;
+    }
+
+    public function set(mixed $state): mixed
+    {
+        return is_string($state) ? mb_strtolower($state) : $state;
+    }
+}
+
+final class ShoutingTextInputColumn extends TextInputColumn
+{
+    /**
+     * @return array<StateCast>
+     */
+    public function getStateCasts(): array
+    {
+        return [new ShoutingStateCast()];
+    }
+}
 
 /*
  * The write half of the editable seam, over a real in-memory entity manager the
@@ -197,4 +226,33 @@ it('has no cell state error, and no client state to draw from one, without a rec
 
     expect($column->getUpdateStateError())->toBeNull()
         ->and($column->getClientState())->toBe('Airbag');
+});
+
+it('casts a posted value into the record vocabulary before the hook and the write', function (): void {
+    [$entityManager, $table] = songWriteRig();
+    $seen = [];
+
+    ShoutingTextInputColumn::make('title')
+        ->table($table)
+        ->record($entityManager->find(Song::class, 1))
+        ->beforeStateUpdated(function (mixed $state) use (&$seen): void {
+            $seen[] = $state;
+        })
+        ->updateState('bones');
+
+    $entityManager->clear();
+
+    expect($seen)->toBe(['BONES'])
+        ->and($entityManager->find(Song::class, 1)?->getTitle())->toBe('BONES');
+});
+
+it('reverses the casts for the client state, so the control speaks the wire vocabulary', function (): void {
+    [$entityManager, $table] = songWriteRig();
+
+    $column = ShoutingTextInputColumn::make('title')
+        ->table($table)
+        ->record($entityManager->find(Song::class, 1))
+        ->recordKey('1');
+
+    expect($column->getClientState())->toBe('airbag');
 });

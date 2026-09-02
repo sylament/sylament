@@ -36,13 +36,13 @@ deleted once the row is **done**; **diverges** → the permanent note in
 | --- | --- | --- | --- | --- |
 | [`Editable` — `validate()` + `updateState()`](../../../packages/tables/src/Columns/Contracts/Editable.php) | [`Contracts\Editable`](../../../vendor/filament/tables/src/Columns/Contracts/Editable.php) | done | — | [has-columns.md](has-columns.md#surface) |
 | [`setUp()` — `disabledClick()` and the default placeholder](../../../packages/tables/src/Columns/SelectColumn.php) | [`SelectColumn::setUp()`](../../../vendor/filament/tables/src/Columns/SelectColumn.php) | done | — | [semantics](#the-placeholder-copy-is-english-and-hardcoded) |
-| [`options()` / `getOptions()`](../../../packages/forms/src/Components/Concerns/HasOptions.php) | [`Forms\Concerns\HasOptions`](../../../vendor/filament/forms/src/Components/Concerns/HasOptions.php) | done | — | — |
+| [`options()` / `getOptions()`](../../../packages/forms/src/Components/Concerns/HasOptions.php) | [`Forms\Concerns\HasOptions`](../../../vendor/filament/forms/src/Components/Concerns/HasOptions.php) | done | — | [diverges](#the-option-comparison-reads-the-client-state-not-getoptioncomparisonstate) |
 | [`rememberOptions()` / `areOptionsRemembered()` — memoise a closure option map](../../../packages/tables/src/Columns/SelectColumn.php) | [`SelectColumn::rememberOptions()`](../../../vendor/filament/tables/src/Columns/SelectColumn.php) | done | — | [semantics](#remembered-options-are-memoised-per-column-instance-not-per-row) |
 | [`enum()` and its option/label derivation](../../../packages/forms/src/Components/Concerns/HasEnum.php) | [`Forms\Concerns\HasEnum`](../../../vendor/filament/forms/src/Components/Concerns/HasEnum.php) | done | — | — |
-| [`disableOptionWhen()` / `isOptionDisabled()` / `getEnabledOptions()`](../../../packages/forms/src/Components/Concerns/CanDisableOptions.php) | [`Forms\Concerns\CanDisableOptions`](../../../vendor/filament/forms/src/Components/Concerns/CanDisableOptions.php) | done | — | [diverges](#the-column-declares-a-getstatecasts-stub-so-the-option-trait-works) |
+| [`disableOptionWhen()` / `isOptionDisabled()` / `getEnabledOptions()`](../../../packages/forms/src/Components/Concerns/CanDisableOptions.php) | [`Forms\Concerns\CanDisableOptions`](../../../vendor/filament/forms/src/Components/Concerns/CanDisableOptions.php) | done | — | [diverges](#the-only-state-cast-a-column-carries-is-the-enum-arms) |
 | [`selectablePlaceholder()` / `canSelectPlaceholder()`](../../../packages/forms/src/Components/Concerns/CanSelectPlaceholder.php) | [`Forms\Concerns\CanSelectPlaceholder`](../../../vendor/filament/forms/src/Components/Concerns/CanSelectPlaceholder.php) | done | — | — |
 | [`extraInputAttributes()`](../../../packages/forms/src/Components/Concerns/HasExtraInputAttributes.php) | [`Forms\Concerns\HasExtraInputAttributes`](../../../vendor/filament/forms/src/Components/Concerns/HasExtraInputAttributes.php) | done | — | — |
-| [`getStateCasts()` — the `[]` stub](../../../packages/tables/src/Columns/SelectColumn.php) | — (Sylament-only) | done | — | [diverges](#the-column-declares-a-getstatecasts-stub-so-the-option-trait-works) |
+| [`getStateCasts()` — the enum arm's `EnumStateCast`, else `[]`](../../../packages/tables/src/Columns/SelectColumn.php) | [`Select::getEnumDefaultStateCast()`](../../../vendor/filament/forms/src/Components/Select.php) (Eloquent casts in Filament's column) | done | — | [diverges](#the-only-state-cast-a-column-carries-is-the-enum-arms) |
 | [The `Choice` seed over the enabled option keys](../../../packages/tables/src/Columns/SelectColumn.php) | [`SelectColumn::getRules()`](../../../vendor/filament/tables/src/Columns/SelectColumn.php) | done | — | [diverges](#rulein-becomes-a-choice-over-string-cast-keys-rebuilt-per-validation) |
 | [`$template`](../../../packages/tables/src/Columns/SelectColumn.php) + [the partial it names](../../../packages/tables/templates/partials/SelectColumn/index.html.twig) | [`SelectColumn::toEmbeddedHtml()`](../../../vendor/filament/tables/src/Columns/SelectColumn.php) | done | — | [semantics](#the-chrome-is-supports-inputwrapper-around-forms-sy-fo-select) |
 | [`getClientState()` on the root + the `sylament--tables--editable-cell` controller](../../../packages/tables/templates/partials/SelectColumn/index.html.twig) | `selectTableColumn()` Alpine data | done | — | [has-columns.md](has-columns.md#the-cell-repaints-from-the-root-because-a-touched-control-is-pinned-through-every-morph) |
@@ -64,23 +64,33 @@ Every built row is covered by the Unit
 [`SelectColumnTest`](../../../packages/tables/tests/Unit/Columns/SelectColumnTest.php)
 and the Integration
 [`SelectColumnTest`](../../../packages/tables/tests/Integration/Columns/SelectColumnTest.php);
-the write and the disabled-option refusal are
+the write, the disabled-option refusal and the enum arm's round trip over a
+real enum-typed column are
 [`HasColumnsTest`](../../../packages/tables/tests/Integration/Concerns/HasColumnsTest.php)'s.
 
 ## Divergences
 
-### The column declares a `getStateCasts()` stub so the option trait works
+### The only state cast a column carries is the enum arm's
 
 Forms' `CanDisableOptions::getEnabledOptionValues()` runs each option key back
 through the component's state casts before comparing — a schemas-tier idea, and
 `getStateCasts()` is declared only by schemas' `HasState`, which a `Column` does
 not compose. Rather than fork the trait or widen the column into a schema
-component, `SelectColumn` declares `getStateCasts(): array` returning `[]`: a
-column carries no state casts, because the option keys the template renders are
-the vocabulary the browser posts back with nothing between them and the record.
-The stub is what keeps the trait's string-casting `getEnabledOptionValues()`
-usable as the [`Choice` seed](#rulein-becomes-a-choice-over-string-cast-keys-rebuilt-per-validation),
-and it is what keeps PHPStan green over the composition.
+component, the write-back seam declares the method itself:
+[`CanUpdateState`](has-columns.md#the-write-goes-through-the-accessor-so-a-dotted-path-walks-the-to-one-chain)
+answers `[]`, which is the truth for every editable cell whose control speaks
+the record's own values, and `SelectColumn` overrides it for the one arm that
+does not. An enum option map's keys are backing values, so the column seeds
+`[new EnumStateCast($enum)]` exactly as forms'
+[`Select::getEnumDefaultStateCast()`](../forms/select.md) does minus the
+multiple arm — a column select is never multiple. A **pure** enum throws, in the
+column's own vocabulary, because its cases have no backing value to post.
+
+The cast leaves the [`Choice` seed](#rulein-becomes-a-choice-over-string-cast-keys-rebuilt-per-validation)
+alone, which is the point of `getEnabledOptionValues()` reversing the list
+through `set()`: `EnumStateCast::set()` hands a non-enum straight back, so an
+option key stays the string the `<select>` posts and validation still runs on
+the wire value.
 
 ### `Rule::in()` becomes a `Choice` over string-cast keys, rebuilt per validation
 
@@ -149,4 +159,7 @@ stripped. Grouped options render as `<optgroup>`, a disabled option carries
 `disabled` from `isOptionDisabled()`, and the selected option is the one matching
 the cell root's `state` value — which is the record's own state normally and the
 **refused input** while the host holds a refusal for the cell, so the user's
-choice stays on screen beside the message explaining it.
+choice stays on screen beside the message explaining it. An enum-typed record
+value reaches that comparison as its backing string, because `getClientState()`
+runs the [state casts](#the-only-state-cast-a-column-carries-is-the-enum-arms)
+back through `set()` before the string conversion.

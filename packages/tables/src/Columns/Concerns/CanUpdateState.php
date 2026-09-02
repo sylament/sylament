@@ -10,6 +10,7 @@ use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\Persistence\ManagerRegistry;
 use LogicException;
 use Stringable;
+use Sylament\Schemas\State\Casts\Contracts\StateCast;
 use Symfony\Contracts\Service\Attribute\Required;
 
 use function Sylament\Support\blank;
@@ -28,6 +29,18 @@ trait CanUpdateState
     public function setManagerRegistry(?ManagerRegistry $managerRegistry = null): void
     {
         $this->managerRegistry = $managerRegistry;
+    }
+
+    /**
+     * The conversions standing between the vocabulary the browser posts and the
+     * one the record holds, outermost first: `get()` runs over the posted value
+     * on the way in, `set()` in reverse order on the way back out to the control.
+     *
+     * @return array<StateCast>
+     */
+    public function getStateCasts(): array
+    {
+        return [];
     }
 
     public function updateStateUsing(?Closure $callback): static
@@ -55,6 +68,10 @@ trait CanUpdateState
     {
         if (blank($state)) {
             $state = null;
+        }
+
+        foreach ($this->getStateCasts() as $stateCast) {
+            $state = $stateCast->get($state);
         }
 
         $this->callBeforeStateUpdated($state);
@@ -128,6 +145,10 @@ trait CanUpdateState
     {
         $error = $this->getUpdateStateError();
         $state = $error === null ? $this->getState() : $error['input'];
+
+        foreach (array_reverse($this->getStateCasts()) as $stateCast) {
+            $state = $stateCast->set($state);
+        }
 
         if ($this->hasBooleanClientState()) {
             return $state ? '1' : '0';

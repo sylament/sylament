@@ -6,6 +6,7 @@ namespace Sylament\Tables\Tests\Integration\Concerns;
 
 use Doctrine\ORM\EntityManagerInterface;
 use Sylament\Tables\Tests\Fixtures\Doctrine\Entity\Song;
+use Sylament\Tables\Tests\Fixtures\Records\Format;
 use Sylament\Tables\Tests\Fixtures\Twig\Components\ColumnActionsTable;
 use Sylament\Tables\Tests\Fixtures\Twig\Components\EditableSongsTable;
 use Symfony\Component\DomCrawler\Crawler;
@@ -271,6 +272,16 @@ it('clears the cell state a hook cached before the write, so the next read is no
     $host->updateTableColumnState('title', '1', 'Bones');
 
     expect($host->getTable()->getColumn('title')?->getState())->toBe('Bones');
+});
+
+it('casts a posted option onto an enum-typed property and marks it selected in the same re-render', function (): void {
+    [$component, $entityManager] = editableSongsRig();
+
+    $html = (string) writeTableCell($component, 'format', '1', 'vinyl')->render();
+    $cell = new Crawler($html)->filter('div.sy-ta-select[data-sylament--tables--editable-cell-state-value="vinyl"]');
+
+    expect(refreshedSong($entityManager, 1)->getFormat())->toBe(Format::Vinyl)
+        ->and($cell->filter('option[selected]')->attr('value'))->toBe('vinyl');
 });
 
 it('runs the after hook on the override arm, over an integer-keyed option map', function (): void {

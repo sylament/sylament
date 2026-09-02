@@ -4,8 +4,14 @@ declare(strict_types=1);
 
 namespace Sylament\Tables\Tests\Integration\Concerns;
 
+use Doctrine\ORM\EntityManagerInterface;
+use Sylament\Tables\Tests\Fixtures\Doctrine\Entity\Song;
 use Sylament\Tables\Tests\Fixtures\Twig\Components\ColumnActionsTable;
+use Sylament\Tables\Tests\Fixtures\Twig\Components\EditableSongsTable;
 use Symfony\UX\LiveComponent\Test\InteractsWithLiveComponents;
+use Symfony\UX\LiveComponent\Test\TestLiveComponent;
+
+use function Sylament\Tables\Tests\seededGenresClient;
 
 uses(InteractsWithLiveComponents::class);
 
@@ -67,4 +73,182 @@ it('leaves the column unbound when its action is an Action object', function ():
     expect($host->calls)->toBe([])
         ->and($column?->getRecord())->toBeNull()
         ->and($column?->getRecordKey())->toBeNull();
+});
+
+/*
+ * The host's write-back live action, over a real database. Every outcome is read
+ * off the container's entity manager and off the re-render — never off
+ * `->component()`, which re-hydrates a fresh host and would make a refusal pass
+ * whatever the write did.
+ */
+
+/**
+ * The editable fixture over songs 1, 2 and 3, with song 4 seeded outside the
+ * table's own query so a key the database holds but the table cannot reach has
+ * something to point at.
+ *
+ * @return array{TestLiveComponent, EntityManagerInterface}
+ */
+function editableSongsRig(): array
+{
+    [$client, $entityManager] = seededGenresClient();
+
+    $entityManager->persist(new Song(3, 'Exit Music', 300));
+    $entityManager->persist(new Song(4, 'Hidden Track', 5000));
+    $entityManager->flush();
+
+    return [test()->createLiveComponent(EditableSongsTable::class, client: $client), $entityManager];
+}
+
+function writeTableCell(TestLiveComponent $component, string $column, string $record, mixed $input): TestLiveComponent
+{
+    return $component->call('updateTableColumnState', ['column' => $column, 'record' => $record, 'input' => $input]);
+}
+
+function refreshedSong(EntityManagerInterface $entityManager, int $id): Song
+{
+    $song = $entityManager->find(Song::class, $id);
+
+    assert($song instanceof Song);
+
+    $entityManager->refresh($song);
+
+    return $song;
+}
+
+it('writes the posted state onto the record and shows it in the same re-render', function (): void {
+    [$component, $entityManager] = editableSongsRig();
+
+    $html = (string) writeTableCell($component, 'title', '1', 'Bones')->render();
+
+    expect(refreshedSong($entityManager, 1)->getTitle())->toBe('Bones')
+        ->and($html)->toContain('value="Bones"')
+        ->and($html)->toContain('data-sylament--tables--editable-cell-state-value="Bones"');
+});
+
+it('writes a boolean toggle through to the record', function (): void {
+    [$component, $entityManager] = editableSongsRig();
+
+    writeTableCell($component, 'isFeatured', '1', true);
+
+    expect(refreshedSong($entityManager, 1)->isFeatured())->toBeTrue();
+});
+
+it('writes a false checkbox rather than reading it as blank', function (): void {
+    [$component, $entityManager] = editableSongsRig();
+
+    writeTableCell($component, 'isExplicit', '1', true);
+    writeTableCell($component, 'isExplicit', '1', false);
+
+    expect(refreshedSong($entityManager, 1)->getIsExplicit())->toBeFalse();
+});
+
+it('accepts a null input, which the live request drops rather than carrying', function (): void {
+    [$component, $entityManager] = editableSongsRig();
+
+    writeTableCell($component, 'mood', '1', 'calm');
+    writeTableCell($component, 'mood', '1', null);
+
+    expect(refreshedSong($entityManager, 1)->getMood())->toBeNull();
+});
+
+it('paints a refused input under the control, echoed back and carried as the cell state', function (): void {
+    [$component, $entityManager] = editableSongsRig();
+
+    $html = (string) writeTableCell($component, 'title', '1', 'ab')->render();
+
+    expect(refreshedSong($entityManager, 1)->getTitle())->toBe('Airbag')
+        ->and($html)->toContain('sy-ta-cell-error')
+        ->and($html)->toContain('too short')
+        ->and($html)->toContain('value="ab"')
+        ->and($html)->toContain('data-sylament--tables--editable-cell-state-value="ab"')
+        ->and($html)->toContain('aria-invalid="true"');
+});
+
+it('leaves the next request clean, because the error bag lives for one request', function (): void {
+    [$component] = editableSongsRig();
+
+    $refused = (string) writeTableCell($component, 'title', '1', 'ab')->render();
+    $clean = (string) writeTableCell($component, 'title', '1', 'Bones')->render();
+
+    expect($refused)->toContain('sy-ta-cell-error')
+        ->and($clean)->not->toContain('sy-ta-cell-error');
+});
+
+it('refuses a blank against a record type that rejects null', function (): void {
+    [$component, $entityManager] = editableSongsRig();
+
+    $html = (string) writeTableCell($component, 'tempo', '1', '')->render();
+
+    expect(refreshedSong($entityManager, 1)->getTempo())->toBe('medium')
+        ->and($html)->toContain('sy-ta-cell-error');
+});
+
+it('refuses an option the column disabled', function (): void {
+    [$component, $entityManager] = editableSongsRig();
+
+    $html = (string) writeTableCell($component, 'mood', '1', 'wild')->render();
+
+    expect(refreshedSong($entityManager, 1)->getMood())->toBeNull()
+        ->and($html)->toContain('sy-ta-cell-error');
+});
+
+it('refuses a column the table does not declare, without effect', function (): void {
+    [$component, $entityManager] = editableSongsRig();
+
+    $html = (string) writeTableCell($component, 'nonesuch', '1', 'Bones')->render();
+
+    expect(refreshedSong($entityManager, 1)->getTitle())->toBe('Airbag')
+        ->and($html)->not->toContain('sy-ta-cell-error');
+});
+
+it('refuses a column that is not editable, without effect', function (): void {
+    [$component, $entityManager] = editableSongsRig();
+
+    writeTableCell($component, 'plays', '1', '999');
+
+    expect(refreshedSong($entityManager, 1)->getPlays())->toBe(100);
+});
+
+it('refuses a record key the table does not carry, without effect', function (): void {
+    [$component, $entityManager] = editableSongsRig();
+
+    writeTableCell($component, 'title', '99', 'Bones');
+
+    expect(refreshedSong($entityManager, 1)->getTitle())->toBe('Airbag');
+});
+
+it('refuses a record the table query filters out, without effect', function (): void {
+    [$component, $entityManager] = editableSongsRig();
+
+    writeTableCell($component, 'title', '4', 'Bones');
+
+    expect(refreshedSong($entityManager, 4)->getTitle())->toBe('Hidden Track');
+});
+
+it('refuses a write to a cell the column disabled for that row', function (): void {
+    [$component, $entityManager] = editableSongsRig();
+
+    writeTableCell($component, 'isFeatured', '3', true);
+    writeTableCell($component, 'isFeatured', '2', true);
+
+    expect(refreshedSong($entityManager, 3)->isFeatured())->toBeNull()
+        ->and(refreshedSong($entityManager, 2)->isFeatured())->toBeTrue();
+});
+
+it('files a refusal against one cell only, and answers null for every other', function (): void {
+    seededGenresClient();
+
+    $host = $this::getContainer()->get(EditableSongsTable::class);
+
+    assert($host instanceof EditableSongsTable);
+
+    expect($host->getTableColumnStateError('title', '1'))->toBeNull();
+
+    $host->updateTableColumnState('title', '1', 'ab');
+
+    expect($host->getTableColumnStateError('title', '1'))->toMatchArray(['input' => 'ab'])
+        ->and($host->getTableColumnStateError('title', '1')['message'] ?? null)->toContain('too short')
+        ->and($host->getTableColumnStateError('title', '2'))->toBeNull()
+        ->and($host->getTableColumnStateError('mood', '1'))->toBeNull();
 });

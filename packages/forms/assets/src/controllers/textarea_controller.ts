@@ -1,11 +1,6 @@
 import { Controller } from "@hotwired/stimulus";
 
-/**
- * Grows the sizer around an autosizing textarea to the height of its content.
- *
- * The measurement writes the sizer, never the control: the control is `height: 100%`
- * of the sizer, so writing its own height would fight the rule that lets it fill.
- */
+/** Grows the sizer around an autosizing textarea to the height of the control's content. */
 export default class extends Controller<HTMLElement> {
   static targets = ["textarea"];
   static values = { initialHeight: Number };
@@ -18,13 +13,13 @@ export default class extends Controller<HTMLElement> {
 
   connect(): void {
     this.#textarea = this.textareaTarget;
-    this.#textarea.addEventListener("input", this.#onResize);
-    window.addEventListener("resize", this.#onResize);
+    this.#textarea.addEventListener("input", this.#handleResize);
+    window.addEventListener("resize", this.#handleResize);
 
     this.#setInitialHeight();
 
-    // A textarea that connects inside a hidden container measures zero, so the first
-    // resize waits for the element to be on screen rather than running on connect.
+    // A control that connects inside a hidden container measures zero, so the first
+    // resize waits for the field to reach the screen rather than running on connect.
     this.#observer = new IntersectionObserver((entries) => {
       if (!entries.some((entry) => entry.isIntersecting)) {
         return;
@@ -37,13 +32,13 @@ export default class extends Controller<HTMLElement> {
   }
 
   disconnect(): void {
-    this.#textarea?.removeEventListener("input", this.#onResize);
+    this.#textarea?.removeEventListener("input", this.#handleResize);
     this.#textarea = undefined;
-    window.removeEventListener("resize", this.#onResize);
+    window.removeEventListener("resize", this.#handleResize);
     this.#stopObserving();
   }
 
-  #onResize = (): void => {
+  #handleResize = (): void => {
     this.#resize();
   };
 
@@ -62,8 +57,8 @@ export default class extends Controller<HTMLElement> {
       return;
     }
 
-    // The control is measured at zero height so `scrollHeight` reports the content
-    // rather than the box it currently sits in, then put back before the browser paints.
+    // Zeroed first so `scrollHeight` reports the content rather than the box the
+    // control currently sits in, then put back before the browser paints.
     const previousHeight = textarea.style.height;
     textarea.style.height = "0px";
     const contentHeight = textarea.scrollHeight;

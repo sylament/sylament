@@ -55,11 +55,19 @@ trait CanPaginateRecords
     /**
      * Floored, because the prop is non-nullable and a `?page=` in the query
      * string coerces to `0` on the way in — seeding writes straight through the
-     * property accessor, so `gotoTablePage()`'s clamp never sees it.
+     * property accessor, so `gotoTablePage()`'s clamp never sees it. Ceilinged
+     * at the last page whose offset is still an integer, because that same
+     * seeding accepts `PHP_INT_MAX` and the multiplication below it overflows
+     * to a float that `setFirstResult()` refuses.
      */
     public function getTablePage(): int
     {
-        return max(1, $this->tablePage);
+        $recordsPerPage = $this->getTableRecordsPerPage();
+        $lastComputablePage = is_int($recordsPerPage) && $recordsPerPage > 0
+            ? intdiv(PHP_INT_MAX, $recordsPerPage)
+            : PHP_INT_MAX;
+
+        return max(1, min($this->tablePage, $lastComputablePage));
     }
 
     public function updatedTableRecordsPerPage(mixed $previousValue = null): void

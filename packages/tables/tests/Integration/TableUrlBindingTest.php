@@ -50,6 +50,15 @@ it('floors a blank page rather than paginating from zero', function (): void {
         ->and(renderedRowsOf($crawler, 'UrlBoundSongsTable'))->toContain('Airbag');
 });
 
+it('caps a page no offset can be computed from rather than overflowing one', function (): void {
+    [$client, $crawler] = browseTo('?page=99999999999999999999');
+
+    // The prop dehydrates through `getTablePage()`, so the cap is what reaches
+    // the wire as well as what the offset is computed from.
+    expect($client->getResponse()->getStatusCode())->toBe(200)
+        ->and(publishedProps($crawler, '#bound-table')['tablePage'])->toBe(intdiv(PHP_INT_MAX, 2));
+});
+
 it('leaves the seeded page alone, because a seeded search fires no update hook', function (): void {
     [, $crawler] = browseTo('?page=2&search=o');
 
@@ -72,14 +81,29 @@ it('seeds nothing into a host that binds nothing, from the very same URL', funct
         ->and(renderedRowsOf($crawler, 'UnboundSongsTable'))->toContain('Airbag');
 });
 
-it('ignores a seeded sort naming a column the table never declared sortable', function (): void {
+it('drops a seeded sort naming a column the table never declared sortable', function (): void {
     [, $crawler] = browseTo('?sort=isFeatured:desc');
 
     $rows = renderedRowsOf($crawler, 'UrlBoundSongsTable');
 
-    expect($rows)->toContain('No Surprises')
-        ->and($rows)->toContain('Let Down')
-        ->and(publishedProps($crawler, '#bound-table')['tableSort'])->toBe('isFeatured:desc');
+    // Cleared at mount rather than only at apply time, so the raw client string
+    // reaches neither the ordering nor the `sortColumn` a closure is handed —
+    // both of which read it back off this property.
+    expect(publishedProps($crawler, '#bound-table')['tableSort'])->toBeNull()
+        ->and($rows)->toContain('Airbag')
+        ->and($rows)->toContain('Exit Music');
+});
+
+it('drops a seeded sort naming a real column with a direction that is not one', function (): void {
+    [, $crawler] = browseTo('?sort=title:sideways');
+
+    expect(publishedProps($crawler, '#bound-table')['tableSort'])->toBeNull();
+});
+
+it('keeps a seeded sort the table does declare sortable', function (): void {
+    [, $crawler] = browseTo('?sort=title');
+
+    expect(publishedProps($crawler, '#bound-table')['tableSort'])->toBe('title');
 });
 
 it('rebuilds the URL with the mapped names after a live round trip', function (): void {

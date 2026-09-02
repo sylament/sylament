@@ -208,6 +208,31 @@ it('hands the modal-layout trigger the invoker command that opens the dialog', f
     ]);
 });
 
+it('stamps the invoker command over a customization that replaced the trigger attributes', function (): void {
+    $table = filterConfigTable(static fn (Table $table): Table => $table
+        ->filters([Filter::make('isPublished')], FiltersLayout::Modal)
+        ->filtersTriggerAction(static fn (Action $action): Action => $action->extraAttributes(['data-probe' => 'yes'])));
+
+    // `extraAttributes()` replaces by default, so a stamp made before the
+    // closure runs leaves the modal with no opening mechanism at all.
+    expect($table->getFiltersTriggerAction()->getExtraAttributes())->toBe([
+        'command' => 'show-modal',
+        'commandfor' => $table->getFiltersModalId(),
+        'data-probe' => 'yes',
+    ]);
+});
+
+it('stamps the remove-all class over a customization that replaced its attributes', function (): void {
+    $table = filterConfigTable(static fn (Table $table): Table => $table
+        ->filters([Filter::make('isPublished')])
+        ->filtersRemoveAllAction(static fn (Action $action): Action => $action->extraAttributes(['data-probe' => 'yes'])));
+
+    expect($table->getFiltersRemoveAllAction()->getExtraAttributes())->toBe([
+        'class' => ['sy-ta-filter-indicators-remove-all-btn'],
+        'data-probe' => 'yes',
+    ]);
+});
+
 it('builds the apply action, its visibility carrying the defer flag', function (): void {
     $deferred = filterConfigTable(static fn (Table $table): Table => $table->filters([Filter::make('isPublished')]));
     $live = filterConfigTable(static fn (Table $table): Table => $table

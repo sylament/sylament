@@ -151,6 +151,12 @@ trait HasFilters
      * filter state ever is. Reading the parameter here is immune to that, and
      * idempotent with UX's own seeding wherever an application's property-info
      * chain does resolve the bag from its docblock.
+     *
+     * Which is also why declining a malformed bag has to empty it rather than
+     * return: UX has already assigned whatever the parameter carried, so leaving
+     * it alone would keep a list in a filter-name-keyed prop and suppress every
+     * filter's declared default. The parameter's absence stays a no-op — there
+     * is nothing for either seeding to have assigned.
      */
     #[PostMount(priority: 20)]
     public function mountTableFiltersFromQueryString(): void
@@ -161,13 +167,16 @@ trait HasFilters
             return;
         }
 
-        $seeded = $this->getTableStateMainRequest()?->query->all()[$mapping->as ?? 'tableFilters'] ?? null;
+        $query = $this->getTableStateMainRequest()?->query;
+        $parameter = $mapping->as ?? 'tableFilters';
 
-        if (!self::isPersistedTableFilterBag($seeded)) {
+        if ($query === null || !$query->has($parameter)) {
             return;
         }
 
-        $this->tableFilters = $seeded;
+        $seeded = $query->all()[$parameter];
+
+        $this->tableFilters = self::isPersistedTableFilterBag($seeded) ? $seeded : [];
     }
 
     /**

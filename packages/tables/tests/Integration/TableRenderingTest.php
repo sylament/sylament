@@ -544,9 +544,11 @@ it('puts apply and reset in the filters modal footer', function (): void {
 
     expect($footerButtons->count())->toBe(2)
         ->and($footerButtons->eq(0)->attr('data-live-action-param'))->toBe('applyTableFilters')
-        ->and($footerButtons->eq(1)->attr('data-live-action-param'))->toBe('resetTableFiltersForm');
+        ->and($footerButtons->eq(1)->attr('data-live-action-param'))->toBe('resetTableFiltersForm')
+        // Both footer buttons are the small size the apply action declares.
+        ->and($footerButtons->eq(0)->attr('class'))->toContain('sy-size-sm')
+        ->and($footerButtons->eq(1)->attr('class'))->toContain('sy-size-sm');
 });
-
 
 it('renders one removable chip per indicator under the active-filters label', function (): void {
     $crawler = new Crawler(filtersTableHtml(
@@ -876,6 +878,22 @@ it('opens the record anchor in a new tab and stamps the extra link attributes', 
     expect($anchor->attr('target'))->toBe('_blank')
         ->and($anchor->attr('data-song'))->toBe('Airbag')
         ->and($anchor->attr('class'))->toBe('sy-ta-col sy-probe');
+});
+
+it('keeps the sanitized url and the new-tab target over extra link attributes naming either', function (): void {
+    $overriding = fn (Table $table): Table => $table
+        ->extraRecordLinkAttributes(['href' => 'javascript:alert(1)', 'target' => '_top']);
+
+    $newTab = new Crawler(rowBehaviourTableHtml(fn (Table $table): Table => $overriding($table->recordUrl('/songs', shouldOpenInNewTab: true))));
+    $sameTab = new Crawler(rowBehaviourTableHtml(fn (Table $table): Table => $overriding($table->recordUrl('/songs'))));
+
+    // The author's bag is spread first, so neither key can route around the
+    // sanitizer — and the same-tab arm renders no target of its own, which is
+    // what leaves the author's one standing.
+    expect($newTab->filter('a.sy-ta-col')->first()->attr('href'))->toBe('/songs')
+        ->and($newTab->filter('a.sy-ta-col')->first()->attr('target'))->toBe('_blank')
+        ->and($sameTab->filter('a.sy-ta-col')->first()->attr('href'))->toBe('/songs')
+        ->and($sameTab->filter('a.sy-ta-col')->first()->attr('target'))->toBe('_top');
 });
 
 it('evaluates the extra record link attributes once per record however many columns render', function (): void {

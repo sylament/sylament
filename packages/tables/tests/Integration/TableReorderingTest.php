@@ -128,7 +128,12 @@ it('suppresses the selection chrome while reordering, swapping the banner for th
 
     $indicator = $on->filter('.sy-ta-reorder-indicator');
 
-    expect($on->filter('.sy-ta-record-checkbox')->count())->toBe(0)
+    // The count is what the suppressed banner and select-all link read, so the
+    // query behind it is skipped for the whole of the mode rather than computed
+    // for nobody — the dropped value is the only surface that shows it.
+    expect($off->filter('div.sy.sy-ta')->attr('data-sylament--tables--table-all-selectable-count-value'))->toBe('3')
+        ->and($on->filter('div.sy.sy-ta')->attr('data-sylament--tables--table-all-selectable-count-value'))->toBeNull()
+        ->and($on->filter('.sy-ta-record-checkbox')->count())->toBe(0)
         ->and($on->filter('.sy-ta-page-checkbox')->count())->toBe(0)
         ->and($on->filter('.sy-ta-selection-indicator')->count())->toBe(0)
         ->and($indicator->count())->toBe(1)

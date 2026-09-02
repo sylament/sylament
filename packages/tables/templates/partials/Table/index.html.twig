@@ -54,7 +54,7 @@
 {% set hasSelection = isSelectionEnabled and component.getLiveComponent.hasSelectedTableRecords %}
 {% set checkboxLeading = isSelectionEnabled and not isReordering and component.getRecordCheckboxPosition.name == 'BeforeCells' %}
 {% set checkboxTrailing = isSelectionEnabled and not isReordering and component.getRecordCheckboxPosition.name == 'AfterCells' %}
-{% set allSelectableCount = isSelectionEnabled and records is not null ? component.getLiveComponent.getAllSelectableTableRecordsCount : null %}
+{% set allSelectableCount = isSelectionEnabled and not isReordering and records is not null ? component.getLiveComponent.getAllSelectableTableRecordsCount : null %}
 
 {% set isStriped = component.isStriped %}
 
@@ -223,7 +223,7 @@
                             {{ renderComponent(filtersApplyAction) }}
                         {% endif %}
 
-                        <twig:SylamentSupport:Button color="danger" {{ ...filtersResetAttributes }}>Reset</twig:SylamentSupport:Button>
+                        <twig:SylamentSupport:Button color="danger" size="sm" {{ ...filtersResetAttributes }}>Reset</twig:SylamentSupport:Button>
                     </div>
                 </twig:block>
             </twig:SylamentSupport:Modal>
@@ -478,9 +478,9 @@
                                         : (recordAction is not null ? 'button' : 'div')) %}
                                 {% set cellWrapperAttributes = cellWrapperTag == 'a'
                                     ? {
-                                        href: recordUrl,
-                                        target: openRecordUrlInNewTab ? '_blank' : null,
                                         ...recordLinkAttributes,
+                                        href: recordUrl,
+                                        ...(openRecordUrlInNewTab ? {target: '_blank'} : {}),
                                     }
                                     : (cellWrapperTag == 'button'
                                         ? {

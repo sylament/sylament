@@ -79,8 +79,11 @@ trait HasRecordUrl
     }
 
     /**
-     * Security: the values are rendered unescaped into the record anchor, so a
-     * user-derived attribute must be sanitized before it is handed over.
+     * The values are attribute-escaped like any other, so the bag carries no
+     * markup risk; what it must not carry is a URL. The record anchor spreads it
+     * *under* the derived pair, so an `href` named here never reaches the
+     * element and `getRecordUrl()`'s sanitizer cannot be routed around — while a
+     * `target` stands only where the table opens no new tab of its own.
      *
      * @param array<mixed>|Closure $attributes
      */

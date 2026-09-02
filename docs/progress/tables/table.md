@@ -802,7 +802,6 @@ default — a width the caller states or does not. The modal layout falls back t
 `'md'` in the template for the same reason. That match returns if and when a
 `Width` enum lands in support.
 
-
 ## Semantics
 
 Faithful ports subtle enough that the next reader would misread the code.

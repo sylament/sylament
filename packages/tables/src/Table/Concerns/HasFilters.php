@@ -333,6 +333,11 @@ trait HasFilters
      * the surrounding component's, the modal is reached by the invoker command
      * stamped on for that layout — so the trigger wires no click of its own and
      * never reaches the server.
+     *
+     * The command is stamped after the customization, as Filament stamps its
+     * own: `extraAttributes()` replaces unless told to merge, so a closure
+     * setting attributes of its own would otherwise leave the modal layout with
+     * nothing that opens it.
      */
     public function getFiltersTriggerAction(): Action
     {
@@ -344,11 +349,13 @@ trait HasFilters
             ->liveComponentClickHandlerEnabled(false)
             ->table($this);
 
+        $action = $this->evaluate($this->modifyFiltersTriggerActionUsing, ['action' => $action]) ?? $action;
+
         if ($this->hasFiltersModal()) {
             $action->extraAttributes(['command' => 'show-modal', 'commandfor' => $this->getFiltersModalId()], merge: true);
         }
 
-        return $this->evaluate($this->modifyFiltersTriggerActionUsing, ['action' => $action]) ?? $action;
+        return $action;
     }
 
     /**
@@ -368,6 +375,11 @@ trait HasFilters
         return $this->evaluate($this->modifyFiltersApplyActionUsing, ['action' => $action]) ?? $action;
     }
 
+    /**
+     * The layout class is stamped after the customization for the reason the
+     * trigger's command is, at lower stakes: a closure setting attributes of its
+     * own would otherwise drop the chip row's own styling hook.
+     */
     public function getFiltersRemoveAllAction(): Action
     {
         $action = Action::make('removeAllFilters')
@@ -377,10 +389,13 @@ trait HasFilters
             ->icon($this->resolveFiltersIcon(TablesIconAlias::FILTERS_REMOVE_ALL_BUTTON, 'heroicons:x-mark-20-solid'))
             ->color('gray')
             ->defaultSize(Size::Small)
-            ->extraAttributes(['class' => 'sy-ta-filter-indicators-remove-all-btn'], merge: true)
             ->table($this);
 
-        return $this->evaluate($this->modifyFiltersRemoveAllActionUsing, ['action' => $action]) ?? $action;
+        $action = $this->evaluate($this->modifyFiltersRemoveAllActionUsing, ['action' => $action]) ?? $action;
+
+        $action->extraAttributes(['class' => 'sy-ta-filter-indicators-remove-all-btn'], merge: true);
+
+        return $action;
     }
 
     /**

@@ -68,6 +68,17 @@ it('normalizes a seeded null the same way, leaving the unseeded filter empty rat
     ]);
 });
 
+it('clears a seeded bag that is not filter-name-keyed, rather than leaving it where UX put it', function (): void {
+    [$client, $crawler] = browseTo('?filters[]=abc');
+
+    // UX assigns the bag before the seeding hook runs, so declining it has to
+    // mean emptying it — a bag left holding a list suppresses every declared
+    // default and keeps an integer key in an `array<string, mixed>` prop.
+    expect($client->getResponse()->getStatusCode())->toBe(200)
+        ->and(publishedProps($crawler, '#bound-table')['tableFilters'])->toBe(['plays' => ['value' => '100'], 'featured' => ['value' => null]])
+        ->and(renderedRowsOf($crawler, 'UrlBoundSongsTable'))->toContain('Airbag');
+});
+
 it('falls back to every filter default when the query string names none', function (): void {
     [, $crawler] = browseTo();
 

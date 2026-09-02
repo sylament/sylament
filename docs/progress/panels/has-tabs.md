@@ -84,14 +84,16 @@ Permanent, and addressable by anchor.
 ### The cache is nullable because a typed uninitialised property cannot be asked
 
 Filament declares `protected array $cachedTabs;` with no initialiser and reads it
-through `??=`, which works there because `??=` on an uninitialised typed property
-is not an error in PHP. The port declares `protected ?array $cachedTabs = null`
-and branches on `!== null` instead. The behaviour is identical and the reason for
-the change is not style: this trait is composed onto **live components**, whose
-properties are walked by UX's hydrator and by `PropertyAccessor`, and an
-uninitialised typed property throws the moment anything reads it reflectively
-rather than through the `??=`. An explicit null is the only shape that survives
-being looked at.
+through `??=`, which is legal — `??` and `??=` use `isset()` semantics and do not
+throw on an uninitialised typed property. The port declares
+`protected ?array $cachedTabs = null` and branches on `!== null` instead. The
+behaviour is identical; what changes is that nothing can be surprised by the
+property. An uninitialised typed property throws for any *direct* read —
+`ReflectionProperty::getValue()`, `var_dump()`, a debugger, a `PropertyAccessor`
+walk — and this trait is composed onto **live components**, which are reflected
+over more than an ordinary object is. The explicit null is also the house shape
+for a memo field (`HasTable`'s `protected ?Table $cachedTable = null` is the same
+line one package over), so the two reasons agree.
 
 The memoisation itself is load-bearing rather than an optimisation.
 `getCachedTabs()` **mutates** the tabs it caches — it stamps a generated label
@@ -148,8 +150,8 @@ and `modifyActiveTabProp()` asks the host's `getTableUrlMapping('tab')` and call
 `$liveProp->withUrl($mapping)` when it answers one. The **page** still decides —
 that is the point of routing it through the same hook the four table props use —
 but the decision is now a method the host overrides rather than a property it
-redeclares, and one hook answers for all five names instead of five attributes in
-two places.
+redeclares, and one hook answers for `tab` alongside the four table props instead
+of an attribute per property spread over the page and the trait.
 
 Two consequences. `writable: true` is required and is not a widening: the strip
 writes the key back through `live#update`, so the client is the property's only
@@ -227,7 +229,7 @@ its `EmbeddedTable`. The port has no `content()` on a list page and no
 partials render the table directly. `getTabsSchema()` therefore returns a whole
 `Schema` — keyed `tabs`, holding the same `Tabs` keyed `resourceTabs` with
 `liveComponentProperty('activeTab')` and `contained(false)` — which
-[`renderComponent()`](../support/component.md) can render on its own.
+[`renderComponent()`](../support/view-component.md) can render on its own.
 
 The rename is recorded in [renames.md](../renames.md#renames); it is a reshape
 rather than a spelling change, and `Schema` is what the returned object now is.
@@ -244,7 +246,10 @@ and the render are **byte-identical in three partials** —
 deliberate. A shared partial would need `this` to be the host, which an
 `{% include %}` preserves but a `<twig:>` component does not
 ([the `renderTable()` trap](README.md#listrecords)), and the two lines are the
-whole of it. Filament duplicates the same call the same way, once per page class.
+whole of it. Filament duplicates its own call three times for the same reason —
+`ListRecords::content()`, `ManageRelatedRecords::content()` and
+`RelationManager::content()` each place `getTabsContentComponent()` into their own
+schema, once per class.
 
 ### The seeding and the strip are duplicated across the two tiers, as Filament's are
 

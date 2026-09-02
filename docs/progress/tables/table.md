@@ -137,8 +137,8 @@ Rows never disappear — only their detail sections do.
 | [`headerActions()` / `pushHeaderActions()` / `getHeaderActions()` / `headerActionsPosition()` / `getHeaderActionsPosition()`](../../../packages/tables/src/Table/Concerns/HasHeaderActions.php) + [`HeaderActionsPosition`](../../../packages/tables/src/Enums/HeaderActionsPosition.php) | [`Table\Concerns\HasHeaderActions`](../../../vendor/filament/tables/src/Table/Concerns/HasHeaderActions.php), [`Actions/HeaderActionsPosition`](../../../vendor/filament/tables/src/Actions/HeaderActionsPosition.php) | in progress | — | [detail](#the-header-and-toolbar-setters-are-destructive-because-the-flat-bulk-map-is-the-checkbox-switch) · [diverges](#headeractionsposition-files-under-enums-where-filament-keeps-it-under-actions) |
 | [The two-group toolbar — the start actions group, its three reserved slots and the widened render gate](../../../packages/tables/templates/partials/Table/index.html.twig) + [`header-toolbar.css`](../../../packages/tables/assets/src/styles/components/header-toolbar.css) | [`index.blade.php`'s `fi-ta-header-toolbar`](../../../vendor/filament/tables/resources/views/index.blade.php), [`container.css`](../../../vendor/filament/tables/resources/css/container.css) | in progress | grouping · the column manager — two slots stand empty | [diverges](#the-toolbars-start-group-carries-its-own-class-and-renders-only-when-it-has-content) · [diverges](#a-bulk-only-trigger-is-hidden-by-a-wrapper-span) · [diverges](#the-partial-emits-no-header-scaffolding-and-no-content-wrapper) |
 | [The selection chrome — the checkbox cells, the tri-state page checkbox and the selection banner](../../../packages/tables/templates/partials/Table/index.html.twig) + [`selection.css`](../../../packages/tables/assets/src/styles/components/selection.css) | [`index.blade.php`'s selection cells and `fi-ta-selection-indicator`](../../../vendor/filament/tables/resources/views/index.blade.php), [`support/…/input/checkbox.css`](../../../vendor/filament/support/resources/css/components/input/checkbox.css) | in progress | grouping — the group checkbox | [diverges](#the-selection-banner-flattens-vendors-second-wrapper-and-renders-supports-link) · [diverges](#the-selection-cells-carry-no-header-cell-class-and-their-checkbox-skin-is-supports) · [tables-bundle.md](tables-bundle.md#the-selection-controller-diverges-from-tablejs-in-four-places) |
-| [`recordUrl()` / `openRecordUrlInNewTab()` / `hasCustomRecordUrl()` / `getRecordUrl()` / `shouldOpenRecordUrlInNewTab()` / `extraRecordLinkAttributes()` / `getExtraRecordLinkAttributes()`](../../../packages/tables/src/Table/Concerns/HasRecordUrl.php) | [`HasRecordUrl`](../../../vendor/filament/tables/src/Table/Concerns/HasRecordUrl.php) | done | — | — |
-| `getExtraRecordLinkAttributeBag()` | [`HasRecordUrl`](../../../vendor/filament/tables/src/Table/Concerns/HasRecordUrl.php) | skipped | — | The bag wrapper has no consumer here: the row anchor spreads `getExtraRecordLinkAttributes()` through `attrs()`, which builds the bag itself |
+| [`recordUrl()` / `openRecordUrlInNewTab()` / `hasCustomRecordUrl()` / `getRecordUrl()` / `shouldOpenRecordUrlInNewTab()` / `extraRecordLinkAttributes()` / `getExtraRecordLinkAttributes()`](../../../packages/tables/src/Table/Concerns/HasRecordUrl.php) | [`HasRecordUrl`](../../../vendor/filament/tables/src/Table/Concerns/HasRecordUrl.php) | done | — | [semantics](#the-record-anchor-spreads-its-extra-attributes-first-so-the-derived-pair-wins) |
+| `getExtraRecordLinkAttributeBag()` | [`HasRecordUrl`](../../../vendor/filament/tables/src/Table/Concerns/HasRecordUrl.php) | skipped | — | The bag wrapper has no consumer here: the row anchor spreads `getExtraRecordLinkAttributes()` through `attrs()`, which builds the bag itself — [and under the derived pair](#the-record-anchor-spreads-its-extra-attributes-first-so-the-derived-pair-wins) |
 | [`recordAction()` / `getRecordAction()`](../../../packages/tables/src/Table/Concerns/HasRecordAction.php) | [`HasRecordAction`](../../../vendor/filament/tables/src/Table/Concerns/HasRecordAction.php) | done | — | — |
 | [The row chrome — the clickable marker, the stripe and the selected tint](../../../packages/tables/templates/partials/Table/index.html.twig) + [`table.css`](../../../packages/tables/assets/src/styles/components/table.css), [`table_controller.ts`](../../../packages/tables/assets/src/controllers/table_controller.ts) | [`index.blade.php`'s `<tr>` class list](../../../vendor/filament/tables/resources/views/index.blade.php), [`row.css`](../../../vendor/filament/tables/resources/css/row.css) | in progress | grouping — the stripe's group reset and the collapsed row (M4 · 6) | — |
 | [The cell wrapper — `<a>` / `<button>` / `<div>` chosen per record](../../../packages/tables/templates/partials/Table/index.html.twig) | [`index.blade.php`'s `$columnWrapperTag` match](../../../vendor/filament/tables/resources/views/index.blade.php) | in progress | the column-level arms — `Column::url()` / `action()` / `disabledClick()` / `hasStateBasedUrls()` (M4 · 4) | [detail](#the-cell-wrapper-ships-the-record-arms-and-m4--4-interleaves-the-column-ones) |
@@ -1262,6 +1262,30 @@ recorded rename), because it is
 than part of the table's outline. So the empty state is the one place here that
 reads the demoting tag at all.
 
+### The record anchor spreads its extra attributes first, so the derived pair wins
+
+`extraRecordLinkAttributes()` lets a caller put arbitrary attributes on the row's
+`<a>`. The anchor builds its hash as `{...recordLinkAttributes, href: recordUrl,
+...(openRecordUrlInNewTab ? {target: '_blank'} : {})}` — the caller's bag **first**,
+the derived pair after it. A Twig hash literal is last-wins, so that ordering is
+what makes `href` and the new-tab `target` unoverridable from the bag.
+
+The order reads backwards and is vendor's outcome exactly. Blade emits
+`generate_href_html($recordUrl, …)` *before* `{{ $getExtraRecordLinkAttributeBag($record) }}`,
+and duplicate attributes in HTML are **first**-wins — so vendor's first-emitted
+`href` is the one the browser keeps. Ours reaches the same place through the
+opposite spelling, because `attrs()` merges a hash where the last writer wins. Get
+it the other way round and it is not a cosmetic difference: `getRecordUrl()` pushes
+its answer through [`sanitize_url()`](../support/helpers.md), and a bag-supplied
+`href` would be a documented way around that sanitizer.
+
+`target` is the one key that behaves differently from `href`, and deliberately: it
+is only in the literal when `shouldOpenRecordUrlInNewTab()` is true, so a caller
+*can* set a `target` of their own on a table that opens no new tab, and cannot
+contradict one that does. Everything else in the bag lands untouched, escaped like
+any other attribute — the values carry no markup risk, which is why the concern the
+setter's docblock names is the URL rather than the escaping.
+
 ### The record title reads the attribute through the accessor and falls back to the label
 
 `getRecordTitle()` tries the `recordTitle()` closure first — the record injected
@@ -2268,13 +2292,20 @@ nested *inside* the button is a click on the button already.
 `getFiltersTriggerAction()`, `getFiltersApplyAction()` and
 `getFiltersRemoveAllAction()` are Filament's three, each with its
 `filters*Action(?Closure)` seam taking the single `action` injection and falling
-back to the untouched action. Four things differ.
+back to the untouched action — and, on two of the three, the port's own chrome is
+stamped **after** that seam runs, exactly where Filament stamps its own. That
+ordering is not incidental: `extraAttributes()` replaces unless told to merge, so a
+closure setting attributes of its own would otherwise wipe the
+`command`/`commandfor` pair the modal layout is opened by, leaving a trigger that
+silently does nothing, and would drop the indicator row's `sy-ta-filter-indicators-remove-all-btn`
+styling hook from the remove-all button. Four things differ.
 
 The trigger wires **no click of its own** — `liveComponentClickHandlerEnabled(false)`,
 vendor's `livewireClickHandlerEnabled(false)` — because the surrounding chrome
 owns the opening: support's `Dropdown` for the dropdown layout, and for the modal
 layout an `command="show-modal"` / `commandfor` pair the builder stamps on
-through `extraAttributes()`. Vendor reaches the same place through Alpine, and
+through `extraAttributes(…, merge: true)` once the customization closure has had
+the action. Vendor reaches the same place through Alpine, and
 carries `modalSubmitAction(false)` plus an `extraModalFooterActions()` pair
 besides, because its modal *is* the action's own modal; ours is a plain
 `<twig:SylamentSupport:Modal>` the template renders, so the eighteen
@@ -2292,9 +2323,10 @@ one level out from the trigger, and the actions trail keeps the row.
 
 The **apply action is sized**, and vendor's is not. `defaultSize(Size::Small)` is
 stamped on both the apply and the remove-all buttons here, where Filament sizes the
-remove-all alone and leaves apply at the default. That is an addition rather than a
-port: the two buttons sit in the same filters footer, and one rendering a size
-larger than the other read as a mistake in the panel. `defaultSize()` is the
+remove-all alone and leaves apply at the default; the modal footer's hand-built
+Reset `Button` takes an explicit `size="sm"` for the same reason. That is an
+addition rather than a port: the three sit two to a footer, and one rendering a
+size larger than its neighbour read as a mistake in the panel. `defaultSize()` is the
 [non-destructive setter](../actions/action.md), so a caller's own `size()` through
 `filtersApplyAction()` still wins — which is what keeps an addition from being a
 restriction.

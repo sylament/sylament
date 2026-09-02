@@ -53,7 +53,7 @@ carries two links: **diverges** → the permanent note in
 | [`getTabs()` — the user hook](../../../packages/panels/src/Resources/Concerns/HasTabs.php) | [`HasTabs::getTabs()`](../../../vendor/filament/filament/src/Resources/Concerns/HasTabs.php) | done | — | [renames.md](../renames.md#names-with-no-filament-source) — the name collides with schemas' own `Tabs::getTabs()`, which answers what a component holds rather than declaring what a page offers. Both spellings are Filament's, and the collision is Filament's too |
 | [`getCachedTabs()` — the memoised set, with generated labels stamped](../../../packages/panels/src/Resources/Concerns/HasTabs.php) | [`HasTabs::getCachedTabs()`](../../../vendor/filament/filament/src/Resources/Concerns/HasTabs.php) | done | — | [semantics](#the-cache-is-nullable-because-a-typed-uninitialised-property-cannot-be-asked) |
 | [`getDefaultActiveTab()`](../../../packages/panels/src/Resources/Concerns/HasTabs.php) | [`HasTabs::getDefaultActiveTab()`](../../../vendor/filament/filament/src/Resources/Concerns/HasTabs.php) | done | — | typed `?string` where Filament's is `string \| int \| null`, because the key is a `LiveProp`'s value and the wire carries strings |
-| [`loadDefaultActiveTab()` — the `#[PostMount(priority: 30)]` hook](../../../packages/panels/src/Resources/Concerns/HasTabs.php) | [`HasTabs::loadDefaultActiveTab()`](../../../vendor/filament/filament/src/Resources/Concerns/HasTabs.php), called from [`ListRecords::mount()`](../../../vendor/filament/filament/src/Resources/Pages/ListRecords.php) | done | — | [diverges](#the-default-loads-from-a-post-mount-hook-and-again-at-render) |
+| [`loadDefaultActiveTab()` — the `#[PostMount(priority: 30)]` hook, healing a blank key **and** one the host no longer declares](../../../packages/panels/src/Resources/Concerns/HasTabs.php) | [`HasTabs::loadDefaultActiveTab()`](../../../vendor/filament/filament/src/Resources/Concerns/HasTabs.php), called from [`ListRecords::mount()`](../../../vendor/filament/filament/src/Resources/Pages/ListRecords.php) | done | — | [diverges](#the-default-loads-from-a-post-mount-hook-and-again-at-render) |
 | [`generateTabLabel()`](../../../packages/panels/src/Resources/Concerns/HasTabs.php) | [`HasTabs::generateTabLabel()`](../../../vendor/filament/filament/src/Resources/Concerns/HasTabs.php) | done | — | [semantics](#the-label-generator-is-two-replaces-because-symfonystring-takes-one-needle) |
 | [`updatedActiveTab()`](../../../packages/panels/src/Resources/Concerns/HasTabs.php) | [`HasTabs::updatedActiveTab()`](../../../vendor/filament/filament/src/Resources/Concerns/HasTabs.php) | done | — | [diverges](#the-update-hook-heals-flushes-and-resets-where-filaments-resets-and-rebuilds-columns) |
 | [`getTabsSchema()`](../../../packages/panels/src/Resources/Concerns/HasTabs.php) | [`HasTabs::getTabsContentComponent()`](../../../vendor/filament/filament/src/Resources/Concerns/HasTabs.php) | done | — | [diverges](#the-strip-is-a-schema-a-partial-renders-not-a-component-a-content-schema-holds) · [renames.md](../renames.md#renames) |
@@ -118,9 +118,16 @@ a translation like this silently loses one.
 answers `shouldExcludeQueryWhenResolvingRecord()` while a single record is being
 resolved. All three are Filament's, and the middle one is the load-bearing one: a
 bookmarked `?tab=drafts` on a listing that has since dropped its Drafts tab
-narrows nothing rather than throwing, so the page serves every record and the
-strip renders with no tab selected. That is a **silent** heal by design; the loud
-alternative would 404 a link a user saved months ago.
+narrows nothing rather than throwing, so the page serves every record. That is a
+**silent** degradation by design; the loud alternative would 404 a link a user
+saved months ago.
+
+Here it is a fence rather than the user-visible behaviour, because
+[the mount hook resets a stale key](#the-default-loads-from-a-post-mount-hook-and-again-at-render)
+before the query is ever built — the arm answers only for a query assembled ahead
+of a heal, and for the paths (a `records()` closure, a directly-called scope) that
+reach it without one. Filament, whose mount does not reset, leans on this arm as
+the whole of its answer.
 
 The third arm is the one that reads oddly. A tab's scope normally applies to the
 single-record lookup too, so a row action cannot reach a record the active tab
@@ -173,11 +180,27 @@ anything they reach reads a resolved tab.
 
 Priority 30 also puts it *below* UX's query-string seeding, which is a listener on
 the same event at priority 256 — and every listener runs before the first
-`#[PostMount]` method. So a `?tab=` naming a tab wins here, and an **empty**
-`?tab=` is healed rather than honoured: the seeding writes `''` over whatever the
-mount left, `filled()` is false, and the default is loaded on top. That is the
-Filament-identical outcome reached from the other end — over there `?tab=` seeds
-before `mount()` runs, and `filled()` rejects the empty string just the same.
+`#[PostMount]` method. So a `?tab=` naming a tab the host declares wins here, and
+the two ways it can fail are both healed rather than honoured. An **empty** `?tab=`
+is the first: the seeding writes `''` over whatever the mount left, `filled()` is
+false, and the default is loaded on top. That much is Filament-identical, reached
+from the other end — over there `?tab=` seeds before `mount()` runs, and `filled()`
+rejects the empty string just the same.
+
+The second is **ours**, and it is a divergence. The guard is
+`filled($this->activeTab) && array_key_exists($this->activeTab, $this->getCachedTabs())`,
+so a key the host no longer declares — a bookmark from before a tab was renamed or
+dropped — is reset to the default too. Filament's guard is `filled()` alone, so a
+stale key survives its mount and renders a strip with **nothing selected** over
+rows nothing scoped: `modifyQueryWithActiveTab()`'s unknown-key arm returns the
+query untouched, which is the right thing for the query and leaves the chrome
+saying something false about it. Healing is the [self-heal semantics the port
+already applies one tier over](has-relation-managers.md#the-relation-binding-is-the-toolkits-only-static-url-mapping)
+— `healActiveRelationManager()` resets an `activeRelationManager` the registrations
+no longer carry, and this guard is deliberately its mirror image. The
+[unknown-key no-op](#a-blank-key-and-an-unknown-key-are-both-no-ops-and-that-is-what-heals-a-bookmark)
+stays as the fence for a query that runs ahead of either heal, rather than as the
+thing the user sees.
 
 The second load is the one with no Filament counterpart:
 [`getTabsSchema()`](#the-strip-is-a-schema-a-partial-renders-not-a-component-a-content-schema-holds)

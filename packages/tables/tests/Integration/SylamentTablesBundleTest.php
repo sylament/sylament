@@ -119,3 +119,33 @@ it('resolves the live-host helper the table controller imports', function (): vo
     expect($asset)->not->toBeNull()
         ->and($asset->logicalPath)->toBe('@sylament/tables/utils/live_host.js');
 });
+
+/*
+ * The present half of `markdown()`'s guarded optional integration: the library is in the root
+ * vendor, so the conversion runs — and it runs through the container-injected sanitizer, which
+ * is the only thing standing between a converted document and raw HTML in the cell.
+ */
+it('converts and sanitizes markdown through the container-built column', function (): void {
+    $this::getContainer();
+
+    $column = TextColumn::make('body')->markdown();
+
+    expect((string) $column->formatState('**bold** <script>alert(1)</script>'))
+        ->toContain('<strong>bold</strong>')
+        ->not->toContain('<script>');
+});
+
+/*
+ * The absent half: `league/commonmark` must stay a `suggest`, never a `require`, or the guard
+ * in `CanFormatState` is unreachable and the package it names is not optional after all. The two
+ * unconditional imports the same file gained are asserted beside it, since the split repo
+ * resolves this manifest alone.
+ */
+it('suggests commonmark and requires the sanitizer and intl the column always reaches', function (): void {
+    $manifest = json_decode((string) file_get_contents(dirname(__DIR__, 2) . '/composer.json'), true, flags: JSON_THROW_ON_ERROR);
+
+    expect($manifest['suggest'])->toHaveKey('league/commonmark')
+        ->and($manifest['require'])->not->toHaveKey('league/commonmark')
+        ->and($manifest['require'])->toHaveKey('symfony/html-sanitizer')
+        ->and($manifest['require'])->toHaveKey('ext-intl');
+});

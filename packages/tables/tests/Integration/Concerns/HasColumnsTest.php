@@ -8,6 +8,7 @@ use Doctrine\ORM\EntityManagerInterface;
 use Sylament\Tables\Tests\Fixtures\Doctrine\Entity\Song;
 use Sylament\Tables\Tests\Fixtures\Twig\Components\ColumnActionsTable;
 use Sylament\Tables\Tests\Fixtures\Twig\Components\EditableSongsTable;
+use Symfony\Component\DomCrawler\Crawler;
 use Symfony\UX\LiveComponent\Test\InteractsWithLiveComponents;
 use Symfony\UX\LiveComponent\Test\TestLiveComponent;
 
@@ -193,6 +194,15 @@ it('refuses an option the column disabled', function (): void {
         ->and($html)->toContain('sy-ta-cell-error');
 });
 
+it('keeps a refused option selected, because the rejected input is the state the partial compares', function (): void {
+    [$component] = editableSongsRig();
+
+    $html = (string) writeTableCell($component, 'mood', '1', 'wild')->render();
+    $cell = new Crawler($html)->filter('div.sy-ta-select[data-sylament--tables--editable-cell-state-value="wild"]');
+
+    expect($cell->filter('option[selected]')->attr('value'))->toBe('wild');
+});
+
 it('refuses a column the table does not declare, without effect', function (): void {
     [$component, $entityManager] = editableSongsRig();
 
@@ -234,6 +244,41 @@ it('refuses a write to a cell the column disabled for that row', function (): vo
 
     expect(refreshedSong($entityManager, 3)->isFeatured())->toBeNull()
         ->and(refreshedSong($entityManager, 2)->isFeatured())->toBeTrue();
+});
+
+it('binds the record and its key onto the column before it judges or writes the cell', function (): void {
+    seededGenresClient();
+
+    $host = $this::getContainer()->get(EditableSongsTable::class);
+
+    assert($host instanceof EditableSongsTable);
+
+    $host->updateTableColumnState('title', '2', 'Bones');
+
+    $column = $host->getTable()->getColumn('title');
+
+    expect($column?->getRecord())->toBeInstanceOf(Song::class)
+        ->and($column?->getRecordKey())->toBe('2');
+});
+
+it('clears the cell state a hook cached before the write, so the next read is not stale', function (): void {
+    seededGenresClient();
+
+    $host = $this::getContainer()->get(EditableSongsTable::class);
+
+    assert($host instanceof EditableSongsTable);
+
+    $host->updateTableColumnState('title', '1', 'Bones');
+
+    expect($host->getTable()->getColumn('title')?->getState())->toBe('Bones');
+});
+
+it('runs the after hook on the override arm, over an integer-keyed option map', function (): void {
+    [$component, $entityManager] = editableSongsRig();
+
+    writeTableCell($component, 'position', '1', '2');
+
+    expect(refreshedSong($entityManager, 1)->getPosition())->toBe(102);
 });
 
 it('files a refusal against one cell only, and answers null for every other', function (): void {

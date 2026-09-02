@@ -95,6 +95,23 @@ every selection. And the seed is rebuilt on every `getValidationConstraints()`
 call rather than in `setUp()`, so a closure option map is read at the moment the
 input is judged.
 
+### The option comparison reads the client state, not `getOptionComparisonState()`
+
+Forms' `Select` selects an option by comparing each key against
+[`HasOptions::getOptionComparisonState()`](../forms/has-options.md), and the
+column composes that trait, so the method is inherited and available. The
+partial deliberately does not call it: `getOptionComparisonState()` reads
+`getState()`, which on a refusal is the record's **unchanged** value, so the
+choice the user just made would vanish from the control the moment it was
+refused. The comparison therefore runs against
+[`getClientState()`](has-columns.md#the-cell-repaints-from-the-root-because-a-touched-control-is-pinned-through-every-morph)
+— the same value the cell root publishes for the controller — which normalises a
+`BackedEnum` to its value exactly as the forms method does and answers the
+refused input while the host holds one. The refused option staying selected is
+pinned over the wire by
+[`HasColumnsTest`](../../../packages/tables/tests/Integration/Concerns/HasColumnsTest.php);
+nothing in the port calls `getOptionComparisonState()` on a column.
+
 ### The cell is native-only, and `native()` is not shipped as an inert flag
 
 The whole searchable/preloaded/relationship group above is one decision: the

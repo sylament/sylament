@@ -32,7 +32,7 @@ deleted once the row is **done**; **diverges** → the permanent note in
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
 | [`callTableColumnAction(string $name, string $recordKey)` — run a column's `action()` closure for one record](../../../packages/tables/src/Concerns/HasColumns.php) | [`HasColumns::callTableColumnAction()`](../../../vendor/filament/tables/src/Concerns/HasColumns.php) | done | — | [diverges](#a-live-action-answers-nothing-so-the-return-value-is-dropped) · [detail](#the-hidden-column-gate-waits-on-column-visibility) |
-| [`updateTableColumnState(string $column, string $record, mixed $input)` — the editable columns' write-back](../../../packages/tables/src/Concerns/HasColumns.php) | [`HasColumns::updateTableColumnState()`](../../../vendor/filament/tables/src/Concerns/HasColumns.php) | done | — | [diverges](#a-live-action-answers-nothing-so-the-return-value-is-dropped) · [semantics](#a-json-null-input-arrives-as-null-without-a-declared-default) · [detail](#the-hidden-column-gate-waits-on-column-visibility) |
+| [`updateTableColumnState(string $column, string $record, mixed $input)` — the editable columns' write-back](../../../packages/tables/src/Concerns/HasColumns.php) | [`HasColumns::updateTableColumnState()`](../../../vendor/filament/tables/src/Concerns/HasColumns.php) | done | — | [diverges](#a-live-action-answers-nothing-so-the-return-value-is-dropped) · [semantics](#a-json-null-input-arrives-as-null-without-a-declared-default) · [semantics](#the-action-binds-the-record-and-its-key-and-only-one-of-the-two-invalidations-is-observable) · [detail](#the-hidden-column-gate-waits-on-column-visibility) |
 | [`getTableColumnStateError()` + the request-scoped `$tableColumnStateErrors` bag](../../../packages/tables/src/Concerns/HasColumns.php) | — (Sylament-only, replacing Filament's client-held error) | done | — | [diverges](#the-refusal-is-request-scoped-and-server-rendered-where-filaments-lives-on-the-client) |
 | [`Columns\Concerns\CanUpdateState` — the column half of the write](../../../packages/tables/src/Columns/Concerns/CanUpdateState.php) | [`Columns\Concerns\CanUpdateState`](../../../vendor/filament/tables/src/Columns/Concerns/CanUpdateState.php) | done | — | [semantics](#the-write-goes-through-the-accessor-so-a-dotted-path-walks-the-to-one-chain) · [diverges](#an-array-record-throws-where-filament-writes-nothing) · [diverges](#the-write-is-not-authorization-checked) |
 | [`Columns\Concerns\CanBeValidated` — the column half of the refusal](../../../packages/tables/src/Columns/Concerns/CanBeValidated.php) | [`Columns\Concerns\CanBeValidated`](../../../vendor/filament/tables/src/Columns/Concerns/CanBeValidated.php) | done | — | [diverges](#validation-speaks-symfony-constraints-and-rules-is-not-ported) · [semantics](#a-record-type-that-rejects-null-seeds-a-presence-constraint) |
@@ -54,7 +54,15 @@ which drives the live fixture
 [`EditableSongsTable`](../../../packages/tables/tests/Fixtures/Twig/Components/EditableSongsTable.php)
 over the wire and reads every outcome off the **container's** entity manager and
 off `(string) ->render()` — never off `->component()`, which re-hydrates a fresh
-host and would let a refusal pass whatever the write actually did.
+host and would let a refusal pass whatever the write actually did. Between them
+those cases cover the write itself and its re-render, the boolean and `null`
+arrivals, the refusal's paragraph and echo and its one-request life, every
+refusal arm (unknown column, non-editable column, unknown key, filtered-out key,
+disabled cell, disabled option, a blank against a non-nullable type), the
+record-and-key bind, the state-cache invalidation, the refused option keeping
+its `selected`, and the override arm — an `updateStateUsing()` closure doing the
+write itself, over an integer-keyed option map, with `afterStateUpdated()` still
+running on top of the early return.
 
 `callTableColumnAction()`'s five arms are covered by
 [`HasColumnsTest`](../../../packages/tables/tests/Integration/Concerns/HasColumnsTest.php),
@@ -220,10 +228,41 @@ it; `CanUpdateState` catches that and re-throws it naming the column, which is
 what the reader of a table has in hand.
 
 One consequence has no Eloquent counterpart: a `<select>` and a text input post
-**strings**, and the record's declared PHP type is what receives them. A column
-over an `int`-typed property therefore needs an `updateStateUsing()` closure to
-cast, where Filament would have leaned on an Eloquent cast. The boolean columns
-are unaffected — the controller posts a JSON boolean for a checkbox.
+**strings**, and the record's declared PHP type is what receives them. Symfony's
+accessor is compiled without `strict_types`, so a *numeric* string reaches an
+`int` or `float` property coerced and silent — but any other string raises its
+`InvalidTypeException` (`Expected argument of type "?int", "string" given`), and
+an object-typed property (`DateTimeImmutable`, a backed enum) has no coercion to
+reach at all. A column over such a property therefore takes an
+`updateStateUsing()` closure to cast, where Filament would have leaned on an
+Eloquent cast. The boolean columns are
+unaffected — the controller posts a JSON boolean for a checkbox.
+
+### The action binds the record **and** its key, and only one of the two invalidations is observable
+
+`updateTableColumnState()` binds `record($tableRecord)->recordKey($record)`
+before it asks `isDisabled()`, so every closure the write path evaluates —
+`disabled()`, `updateStateUsing()`, `beforeStateUpdated()`, `afterStateUpdated()`
+— is handed a column that knows both which record it is judging and under which
+key. The key half reaches no *shipped* consumer inside the trait (the error bag
+is keyed by the `$record` argument, and the partial's key comes from the row
+loop), so it is pinned directly instead: an Integration case calls the action on
+the container-built host and reads `getRecord()` / `getRecordKey()` back off the
+column.
+
+After the write the trait invalidates two caches, and they are not equally
+provable. `clearCachedState()` is load-bearing and pinned: `getState()` memoises
+per record key, so a hook that read the old state — the natural shape of a
+`beforeStateUpdated()` comparing old against new — would leave the re-render
+painting the value the user just replaced. `flushCachedTableRecords()` is
+**defensive and unpinned**: on the query lane the cached page holds the very
+entities Doctrine's identity map just mutated, so re-reading them changes
+nothing, and nothing in a live request resolves the record page *before* the
+action runs. Deleting it fails no test. It stays because the host is a public
+seam — an application calling `getTableRecords()` earlier in the request, or a
+future lane whose records are not identity-mapped, is exactly the case it covers
+— and because the alternative to a cheap null-assignment is a stale page nobody
+would think to look for.
 
 ### A record type that rejects null seeds a presence constraint
 

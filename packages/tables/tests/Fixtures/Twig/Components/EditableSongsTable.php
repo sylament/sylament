@@ -25,9 +25,18 @@ use Symfony\UX\LiveComponent\DefaultActionTrait;
  * next request re-hydrates.
  *
  * The toggle and the checkbox sit on different fields because `columns()` keys
- * by name; the two selects are the nullable and the non-nullable arm of the
- * presence gate. The query keeps the loudest songs out, so a record key the
+ * by name; the first two selects are the nullable and the non-nullable arm of
+ * the presence gate. The query keeps the loudest songs out, so a record key the
  * database holds but the table does not reach has something to point at.
+ *
+ * Two columns carry hooks that exist to make an invariant observable. The title
+ * column's `beforeStateUpdated()` reads the old state — what a hook comparing
+ * old against new does — which caches it under the record key, so the write's
+ * own `clearCachedState()` is what the re-render's new value depends on. The
+ * position select is the override arm: integer option keys against the string
+ * the browser posts, an `updateStateUsing()` closure doing the write itself
+ * instead of the accessor, and an `afterStateUpdated()` hook adding 100 on top,
+ * so the wire can see the hook run on the arm that returns early.
  */
 #[AsLiveComponent(name: 'EditableSongsTable', template: '@TablesFixtures/components/EditableSongsTable.html.twig')]
 final class EditableSongsTable implements InteractsWithTable
@@ -56,12 +65,22 @@ final class EditableSongsTable implements InteractsWithTable
                 CheckboxColumn::make('isExplicit'),
                 TextInputColumn::make('title')
                     ->constraint(new Length(min: 3))
+                    ->beforeStateUpdated(fn (TextInputColumn $component): mixed => $component->getState())
                     ->placeholder('Untitled')
                     ->prefix('#', isInline: true),
                 SelectColumn::make('mood')
                     ->options(['calm' => 'Calm', 'wild' => 'Wild'])
                     ->disableOptionWhen(fn (mixed $value): bool => $value === 'wild'),
                 SelectColumn::make('tempo')->options(['slow' => 'Slow', 'fast' => 'Fast']),
+                SelectColumn::make('position')
+                    ->options([1 => 'First', 2 => 'Second'])
+                    ->updateStateUsing(function (Song $record, mixed $state): void {
+                        $record->setPosition($state === null ? null : (int) $state);
+                    })
+                    ->afterStateUpdated(function (Song $record): void {
+                        $record->setPosition(($record->getPosition() ?? 0) + 100);
+                        $this->entityManager->flush();
+                    }),
             ]);
     }
 }

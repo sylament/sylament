@@ -57,21 +57,24 @@ off `(string) ->render()` — never off `->component()`, which re-hydrates a fre
 host and would let a refusal pass whatever the write actually did. Between them
 those cases cover the write itself and its re-render, the boolean and `null`
 arrivals, the refusal's paragraph and echo and its one-request life, every
-refusal arm (unknown column, non-editable column, unknown key, filtered-out key,
-disabled cell, disabled option, a blank against a non-nullable type), the
-record-and-key bind, the state-cache invalidation, the refused option keeping
+refusal arm (unknown column, non-editable column, a column the developer hid,
+unknown key, filtered-out key, disabled cell, disabled option, a blank against a
+non-nullable type), the write the gate lets through for a column the *user* hid,
+the record-and-key bind, the state-cache invalidation, the refused option keeping
 its `selected`, and the override arm — an `updateStateUsing()` closure doing the
 write itself, over an integer-keyed option map, with `afterStateUpdated()` still
 running on top of the early return.
 
-`callTableColumnAction()`'s five arms are covered by
+`callTableColumnAction()`'s eight arms are covered by
 [`HasColumnsTest`](../../../packages/tables/tests/Integration/Concerns/HasColumnsTest.php),
 which calls the live action on a real live host over the wire and reads what the
 bound closure recorded off a `LiveProp`: the record and its key reaching the
 closure, an unknown record key, an unknown column name, a column carrying no
-action at all, and the closure a `string` action name was wrapped into calling
-its host method. The wiring that fires it — the cell wrapper's `button` arm
-choosing `callTableColumnAction` over `mountAction` by
+action at all, a column the developer hid, the column a user toggled hidden that
+the gate still runs, the column set a second `columns()` call replaced, and the
+closure a `string` action name was wrapped into calling its host method. The
+wiring that fires it — the cell wrapper's `button` arm choosing
+`callTableColumnAction` over `mountAction` by
 [`Column::getActionKind()`](column.md) — is pinned in
 [`TableRenderingTest`](../../../packages/tables/tests/Integration/TableRenderingTest.php).
 
@@ -233,7 +236,19 @@ closures [`CanBeHidden`](column.md) evaluates against this host — never a
 client-supplied column set and never the column manager's applied state. A
 column toggled off through the manager is `isToggledHidden()`, which is a
 different question and deliberately not asked: the user chose to stop looking at
-it, which is not the same as being forbidden it.
+it, which is not the same as being forbidden it. Refusing their own writes on
+the strength of a preference they set for themselves would protect nobody, and
+[`Column::isToggleable()`](../../../packages/tables/src/Columns/Concerns/CanBeToggled.php)
+asks `isHidden()` on its way to answering, so a gate that folded the toggle back
+in would ask itself. The rendered set — the one
+[`Table::getVisibleColumns()`](table.md) memoises — is the intersection of the
+two, and it is what the partial walks; the gate is not. None of that is visible
+from a suite that only ever posts columns the user left on, so both fixtures
+carry a `toggleable(isToggledHiddenByDefault: true)` column beside their hidden
+one and an Integration case apiece asserts `isToggledHidden()` first and then
+that the call went through — the pair that fails the moment either gate grows an
+`|| $column->isToggledHidden()`, which is a plausible-looking change and the
+wrong one.
 
 Position is vendor's in both, and the two differ because the cheap check comes
 first in each. `updateTableColumnState()` resolves the column by name, requires
@@ -244,6 +259,15 @@ then resolves the record, binds it and asks `isDisabled()`.
 record the user cannot reach is simply absent; then the column by name; **then**
 the hidden gate; then the action, which must be a `Closure` — an `Action`
 instance mounts through the modal lane instead and a `null` action does nothing.
+
+The gate is the **closure lane and the write lane, not the wire as a whole**.
+[`Table::columns()`](table.md) caches an `Action` for every column it is handed,
+hidden ones included, so a hidden column's action object is still resolvable by
+name out of `$flatActions` and `mountAction` still opens its modal. Vendor
+caches unconditionally too and gates only these two live actions, so this is
+parity rather than a hole left behind — but it is why a column action that must
+be unreachable while its column is hidden carries its own `visible()` on the
+`Action`.
 
 The gate stays correct under a column reorder. `Table::columns()` called a
 second time does not evict the first set's cached column actions

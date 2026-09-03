@@ -76,6 +76,21 @@ it('refuses a hidden column, whose closure a rendered page never offered', funct
     expect(columnActionCalls(['name' => 'secret', 'recordKey' => '1']))->toBe([]);
 });
 
+it('leaves a column the user toggled hidden reachable, because the gate is not their preference', function (): void {
+    $component = test()->createLiveComponent(ColumnActionsTable::class);
+    $mounted = $component->component();
+
+    assert($mounted instanceof ColumnActionsTable);
+
+    expect($mounted->getTable()->getColumn('toggled')?->isToggledHidden())->toBeTrue();
+
+    $host = $component->call('callTableColumnAction', ['name' => 'toggled', 'recordKey' => '1'])->component();
+
+    assert($host instanceof ColumnActionsTable);
+
+    expect($host->calls)->toBe(['toggled:Airbag']);
+});
+
 it('resolves both refusal and call off the table a column reorder re-columned', function (): void {
     $component = test()->createLiveComponent(ColumnActionsTable::class);
 
@@ -85,7 +100,7 @@ it('resolves both refusal and call off the table a column reorder re-columned', 
 
     assert($refused instanceof ColumnActionsTable);
 
-    expect(array_column($refused->tableColumns, 'name'))->toBe(['secret', 'id', 'actionObject', 'album', 'title'])
+    expect(array_column($refused->tableColumns, 'name'))->toBe(['toggled', 'secret', 'id', 'actionObject', 'album', 'title'])
         ->and($refused->calls)->toBe([]);
 
     $called = $component->call('callTableColumnAction', ['name' => 'title', 'recordKey' => '2'])->component();
@@ -256,6 +271,20 @@ it('refuses a write to a hidden column, without effect and without a refusal to 
 
     expect(refreshedSong($entityManager, 1)->getTitle())->toBe('Airbag')
         ->and($html)->not->toContain('sy-ta-cell-error');
+});
+
+it('writes to a column the user toggled hidden, because the gate is not their preference', function (): void {
+    [$component, $entityManager] = editableSongsRig();
+
+    $host = $component->component();
+
+    assert($host instanceof EditableSongsTable);
+
+    expect($host->getTable()->getColumn('toggledTitle')?->isToggledHidden())->toBeTrue();
+
+    writeTableCell($component, 'toggledTitle', '1', 'Bones');
+
+    expect(refreshedSong($entityManager, 1)->getTitle())->toBe('Bones');
 });
 
 it('refuses a column that is not editable, without effect', function (): void {

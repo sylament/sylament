@@ -24,10 +24,13 @@ use Symfony\UX\LiveComponent\DefaultActionTrait;
  * Each call appends to a `LiveProp`, so what the action was handed survives the
  * round trip and the next render reads it.
  *
- * The last column is hidden and carries a closure of its own, so the host's
- * hidden-column gate has something to refuse: a name the client can post, an
- * action that would leave a trace, and no way for a rendered page to have
- * offered it.
+ * The last two columns are the gate's pair, and neither renders. One is hidden
+ * and carries a closure of its own, so the host's hidden-column gate has
+ * something to refuse: a name the client can post, an action that would leave a
+ * trace, and no way for a rendered page to have offered it. The other is
+ * `toggleable()` and hidden by default, so the wire also carries a name the
+ * *user* hid — which the gate must still let through, because that is their own
+ * preference rather than the developer's visibility.
  *
  * Its columns are reorderable, so every case here runs on a table the column
  * manager has already re-`columns()`ed — the one interaction that could have
@@ -64,6 +67,9 @@ class ColumnActionsTable implements InteractsWithActions, InteractsWithTable
                 TextColumn::make('id'),
                 TextColumn::make('secret')->hidden()->action(function (): void {
                     $this->calls[] = 'hidden';
+                }),
+                TextColumn::make('toggled')->toggleable(isToggledHiddenByDefault: true)->action(function (Song $record): void {
+                    $this->calls[] = 'toggled:' . $record->title;
                 }),
             ])
             ->reorderableColumns();

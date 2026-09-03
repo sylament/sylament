@@ -29,8 +29,8 @@ trait HasColumns
      * names. Every client value is untrusted: the key resolves through the
      * query lane with the table's filters re-applied, so a filtered-out record
      * is simply absent, and the column resolves by name off the table. A
-     * missing record, a hidden column, an unknown column or an action that is
-     * not a closure returns without effect.
+     * missing record, an unknown column, a column the developer hid or an
+     * action that is not a closure returns without effect.
      */
     #[LiveAction]
     public function callTableColumnAction(#[LiveArg] string $name, #[LiveArg] string $recordKey): void
@@ -43,7 +43,11 @@ trait HasColumns
 
         $column = $this->getTable()->getColumn($name);
 
-        if (!$column instanceof Column || $column->isHidden()) {
+        if (!$column instanceof Column) {
+            return;
+        }
+
+        if ($column->isHidden()) {
             return;
         }
 
@@ -58,14 +62,14 @@ trait HasColumns
 
     /**
      * Writes one editable cell's new state back to its record. Every client
-     * value is untrusted: the column resolves by name off the table and must be
-     * `Editable` and not hidden, the record key resolves through the query lane
-     * with the table's filters re-applied, and the input is validated before any
-     * write —
-     * with the record bound first, so a `disabled()` closure judges the row it
-     * was handed. Each refusal returns without effect; a validation refusal, and
-     * a value the record's own type turns the write down, are filed against this
-     * cell for the re-render to paint.
+     * value is untrusted: the column resolves by name off the table, must be
+     * `Editable` and must not be one the developer hid, the record key resolves
+     * through the query lane with the table's filters re-applied, and the input
+     * is validated before any write — with the record bound first, so a
+     * `disabled()` closure judges the row it was handed. Each refusal returns
+     * without effect; a validation refusal, and a value the record's own type
+     * turns the write down, are filed against this cell for the re-render to
+     * paint.
      *
      * The write is deliberately not authorization-checked — see
      * {@see \Sylament\Tables\Columns\Concerns\CanUpdateState::updateState()}.
@@ -75,7 +79,11 @@ trait HasColumns
     {
         $tableColumn = $this->getTable()->getColumn($column);
 
-        if (!$tableColumn instanceof Column || !$tableColumn instanceof Editable || $tableColumn->isHidden()) {
+        if (!$tableColumn instanceof Column || !$tableColumn instanceof Editable) {
+            return;
+        }
+
+        if ($tableColumn->isHidden()) {
             return;
         }
 

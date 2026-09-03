@@ -13,6 +13,7 @@ use Sylament\Actions\BulkActionGroup;
 use Sylament\Support\Pagination\Paginator;
 use Sylament\Tables\Columns\TextColumn;
 use Sylament\Tables\Contracts\InteractsWithTable;
+use Sylament\Tables\Enums\ColumnManagerLayout;
 use Sylament\Tables\Enums\ColumnManagerResetActionPosition;
 use Sylament\Tables\Enums\FiltersLayout;
 use Sylament\Tables\Enums\FiltersResetActionPosition;
@@ -1423,4 +1424,38 @@ it('binds every manager checkbox to the controller through a target and a change
 
     expect($checkbox->attr('data-sylament--tables--column-manager-target'))->toBe('checkbox')
         ->and($checkbox->attr('data-action'))->toBe('change->sylament--tables--column-manager#toggle');
+});
+
+it('renders the manager modal layout as a toolbar trigger carrying the invoker command for its dialog', function (): void {
+    $host = columnManagerTableHost(static fn (Table $table): Table => $table
+        ->columnManagerLayout(ColumnManagerLayout::Modal));
+    $hostId = $host->getTableHostId();
+
+    $crawler = new Crawler(renderTableHost($host));
+    $trigger = $crawler->filter('.sy-ta-header-toolbar-end button.sy-icon-btn[aria-label="Column manager"]');
+    $dialog = $crawler->filter('dialog.sy-modal');
+
+    expect($trigger->count())->toBe(1)
+        ->and($trigger->attr('data-action'))->toBeNull()
+        ->and($trigger->attr('command'))->toBe('show-modal')
+        ->and($trigger->attr('commandfor'))->toBe($hostId . '.table.column-manager')
+        ->and($dialog->attr('id'))->toBe($hostId . '.table.column-manager')
+        ->and($crawler->filter('.sy-ta-col-manager-dropdown')->count())->toBe(0)
+        ->and(mb_trim($dialog->filter('.sy-modal-heading')->text()))->toBe('Columns')
+        ->and($dialog->filter('.sy-modal-content .sy-ta-col-manager-items .sy-ta-col-manager-checkbox')->count())->toBe(3)
+        ->and($dialog->filter('.sy-modal-content .sy-ta-col-manager')->count())->toBe(0);
+});
+
+it('puts apply and reset in the manager modal footer', function (): void {
+    $deferred = new Crawler(columnManagerTableHtml(static fn (Table $table): Table => $table
+        ->columnManagerLayout(ColumnManagerLayout::Modal)));
+    $live = new Crawler(columnManagerTableHtml(static fn (Table $table): Table => $table
+        ->columnManagerLayout(ColumnManagerLayout::Modal)
+        ->deferColumnManager(false)));
+
+    $footerButtons = $deferred->filter('dialog.sy-modal .sy-modal-footer-actions button.sy-btn');
+
+    expect($footerButtons->each(static fn (Crawler $button): string => mb_trim($button->text())))->toBe(['Apply columns', 'Reset'])
+        ->and($footerButtons->last()->attr('data-live-action-param'))->toBe('resetTableColumnManager')
+        ->and($live->filter('dialog.sy-modal .sy-modal-footer-actions button.sy-btn')->each(static fn (Crawler $button): string => mb_trim($button->text())))->toBe(['Reset']);
 });

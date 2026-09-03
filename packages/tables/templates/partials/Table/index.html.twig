@@ -275,6 +275,37 @@
             </twig:SylamentSupport:Modal>
         {% endif %}
 
+        {% if columnManagerModalVisible %}
+            {% set columnManagerResetAttributes = stimulus_action('live', 'action', parameters: {action: 'resetTableColumnManager'}) %}
+
+            <twig:SylamentSupport:Modal
+                :id="component.getColumnManagerModalId"
+                heading="Columns"
+                :width="component.getColumnManagerWidth ?? 'md'"
+            >
+                <twig:block name="content">
+                    <twig:SylamentTables:ColumnManagerContent
+                        :hostId="hostId"
+                        :items="columnManagerItems"
+                        :gridColumns="component.getColumnManagerColumns"
+                        :reorderable="component.hasReorderableColumns"
+                        :reorderAnimationDuration="component.getReorderAnimationDuration"
+                        :live="not columnManagerApplyVisible"
+                    />
+                </twig:block>
+
+                <twig:block name="footer">
+                    <div class="sy-modal-footer-actions">
+                        {% if columnManagerApplyVisible %}
+                            {{ renderComponent(columnManagerApplyAction) }}
+                        {% endif %}
+
+                        <twig:SylamentSupport:Button color="danger" size="sm" {{ ...columnManagerResetAttributes }}>Reset</twig:SylamentSupport:Button>
+                    </div>
+                </twig:block>
+            </twig:SylamentSupport:Modal>
+        {% endif %}
+
         {% if filterIndicators is not empty %}
             <div class="sy-ta-filter-indicators">
                 <div class="sy-ta-filter-indicators-ctn">

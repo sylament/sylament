@@ -1406,7 +1406,7 @@ Enums, contracts, HTTP layer, events, templates —
 | --- | --- | --- | --- |
 | [Layout templates](../../../packages/panels/templates/components) | [`resources/views/components`](../../../vendor/filament/filament/resources/views/components) | in progress | [Layout templates](#layout-templates) |
 | [`Twig\PanelsIconAlias`](../../../packages/panels/src/Twig/PanelsIconAlias.php) | [`View/PanelsIconAlias.php`](../../../vendor/filament/filament/src/View/PanelsIconAlias.php) | in progress | ten constants: nine of Filament's 32 — the sidebar group chevron, the topbar hamburger, the three theme-switcher glyphs ([Layout templates](#layout-templates)), the dashboard's navigation icon ([Dashboard](#dashboard)), the global search field's magnifying glass ([global-search.md](global-search.md)), and the two this epic added, the sub-navigation mobile-menu chevron ([has-sub-navigation.md](has-sub-navigation.md)) and the manage-related-records navigation item ([manage-related-records.md](manage-related-records.md#the-navigation-label-and-icon-drop-their-related-resource-arms)) — plus [the user-menu trigger, which is an invention](#user_menu_trigger-is-an-addition-not-a-rename) |
-| [Assets (JS/CSS)](../../../packages/panels/assets) | [`resources/js/`](../../../vendor/filament/filament/resources/js), [`resources/css/`](../../../vendor/filament/filament/resources/css) | in progress | the `@sylament/panels` workspace ships three Stimulus controllers (`sidebar`, `theme`, `global-search`) and the `sy-pa-*` rules, which compile into support's stylesheet — [Assets](#assets); `sub-navigation.css` and `page.css`'s band modifiers are [has-sub-navigation.md](has-sub-navigation.md#the-top-modifier-is-emitted-and-styled-by-nothing) |
+| [Assets (JS/CSS)](../../../packages/panels/assets) | [`resources/js/`](../../../vendor/filament/filament/resources/js), [`resources/css/`](../../../vendor/filament/filament/resources/css) | in progress | the `@sylament/panels` workspace ships four Stimulus controllers (`sidebar`, `theme`, `global-search`, `unsaved-changes`) and the `sy-pa-*` rules, which compile into support's stylesheet — [Assets](#assets); `sub-navigation.css` and `page.css`'s band modifiers are [has-sub-navigation.md](has-sub-navigation.md#the-top-modifier-is-emitted-and-styled-by-nothing) |
 | [`Routing\PanelRouteLoader`](../../../packages/panels/src/Routing/PanelRouteLoader.php) | [`routes/web.php`](../../../vendor/filament/filament/routes/web.php) — the per-panel route group and its `$page::registerRoutes($panel)` / `$resource::registerRoutes($panel)` loops, [`Pages/Concerns/HasRoutes.php`](../../../vendor/filament/filament/src/Pages/Concerns/HasRoutes.php) `routes()`, [`Resources/Resource/Concerns/HasRoutes.php`](../../../vendor/filament/filament/src/Resources/Resource/Concerns/HasRoutes.php) `registerRoutes()` | in progress | [Routing](#routing) |
 | [`Controllers\PageController`](../../../packages/panels/src/Controllers/PageController.php) | no Filament counterpart — a Filament page **is** its own route action | in progress | [Routing](#routing) |
 | [Document template](../../../packages/panels/templates/partials/Document/index.html.twig) | [`components/layout/base.blade.php`](../../../vendor/filament/filament/resources/views/components/layout/base.blade.php) | in progress | [Routing](#routing) |
@@ -1572,9 +1572,13 @@ and [the render tests sit under
 ### Assets
 
 `packages/panels/assets` is the `@sylament/panels` pnpm workspace, JS-only in the
-same shape as `@sylament/notifications`: three Stimulus controllers build to its own
+same shape as `@sylament/notifications`: four Stimulus controllers build to its own
 `dist`, while `src/styles/index.css` is imported by support's stylesheet and
-compiles into support's single built CSS. The built `dist` is mapped into
+compiles into support's single built CSS. Since M6 · 2 it carries
+`@symfony/ux-live-component` as a JS peer — in both `peerDependencies` and
+`devDependencies`, the workspace being `strictPeerDependencies: true` — which
+stays a bare specifier the consuming app's importmap resolves, exactly as in
+`@sylament/tables` and `@sylament/schemas`. The built `dist` is mapped into
 AssetMapper as `@sylament/panels`. The eleven style files carry the `sy-pa-*` rules
 mobile-first — off-canvas drawer below `lg`, two-column grid at `lg` and up — and
 the first nine are imported in **shell-nesting** order rather than alphabetically
@@ -1671,6 +1675,28 @@ non-collapsible group (same label class, no disclosure attributes — see
 stale localStorage entry can never collapse a group that has no control to
 reopen it.
 
+The fourth controller, `unsaved-changes`, arrived with M6 · 2's page tier and is
+the port of Filament's `unsaved-changes-alert.js`. It binds the sentinel div the
+[page partial](#routing) emits rather than the live root above it — the same
+constraint the `global-search` controller lives under, since
+[`attrs()` replaces a repeated attribute rather than appending](global-search.md#the-stimulus-controller-rides-the-inner-element-not-the-live-root)
+and a second `data-controller` there would take the live binding down. It reads
+the host's state through `resolveLiveHost()` — `assets/src/utils/live_host.ts`,
+the third byte-identical copy of the helper schemas and tables carry, because
+schemas' `exports` map points at `src/`, which the split repo `export-ignore`s,
+and panels' `BUNDLED_ENTRIES` is empty, so the util ships per-file beside the
+controller and its logical path has to resolve on its own (which is what the
+second case in `SylamentPanelsBundleTest` pins). It only ever **reads** —
+`getData()`, `valueStore.getDirtyProps()` and the `mountedActions` prop — and
+never `set()`s one: `savedDataHash` is not writable, so a write would surface as
+a `HydrationException` on the next request rather than as a client-side error.
+It is declared `fetch: eager` like the other three, and for a sharper reason
+than they have: a guard that arms late is absent exactly when it matters. It
+shares their failure mode too — a consuming app that leaves the block out of
+`assets/controllers.json` navigates away from unsaved edits with no prompt and
+no error anywhere ([installation.md](../../installation.md)); the page itself
+still renders and still saves, so the omission is degraded, not broken.
+
 What Filament's panel assets have and this does not, all todo:
 
 - Desktop collapse (the icon-only rail) and its width/tooltip state — the
@@ -1678,11 +1704,12 @@ What Filament's panel assets have and this does not, all todo:
   setting a panel carries (`collapsibleNavigationGroups()`); the desktop-rail
   settings behind this are still unported.
 - `scroll-sidebar.js` — restoring sidebar scroll position across navigations.
-- `unsaved-changes-alert.js` and `error-notifications.js` — the surface they
-  serve now exists (M2 · 3's [`CreateRecord`](#createrecord) /
-  [`EditRecord`](#editrecord) forms, error outlet included), but neither script
-  is ported, so a user still navigates away from unsaved edits without a prompt
-  and a validation failure below the fold is silent.
+- `error-notifications.js` — the surface it serves exists (M2 · 3's
+  [`CreateRecord`](#createrecord) / [`EditRecord`](#editrecord) forms, error
+  outlet included), but the script is not ported, so a validation failure below
+  the fold is silent. Its sibling `unsaved-changes-alert.js` **is** ported, as
+  the `unsaved-changes` controller above, minus Filament's SPA arm: that one
+  hangs off `Livewire.navigate`, which has no counterpart here.
 - `echo.js` and the resource/page scripts — none of the surfaces they serve
   exist yet. `dark-mode.js` is the one that now has a counterpart: ours is the
   `theme` controller plus the document head script, and what is still missing is

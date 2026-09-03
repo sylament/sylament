@@ -25,6 +25,11 @@
         "main": "dist/controllers/theme_controller.js",
         "fetch": "eager",
         "enabled": true
+      },
+      "unsaved-changes": {
+        "main": "dist/controllers/unsaved_changes_controller.js",
+        "fetch": "eager",
+        "enabled": true
       }
     },
     "importmap": {
@@ -32,10 +37,12 @@
     }
   },
   "peerDependencies": {
-    "@hotwired/stimulus": "^3.0.0"
+    "@hotwired/stimulus": "^3.0.0",
+    "@symfony/ux-live-component": "^3.2.0"
   },
   "devDependencies": {
     "@hotwired/stimulus": "^3.0.0",
+    "@symfony/ux-live-component": "^3.2.0",
     "esbuild": "^0.28.0",
     "typescript": "^6.0.3"
   }

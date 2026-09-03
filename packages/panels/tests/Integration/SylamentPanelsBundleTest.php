@@ -27,6 +27,18 @@ it('maps the built assets directory into AssetMapper under @sylament/panels', fu
         ->and($asset->logicalPath)->toBe('@sylament/panels/controllers/sidebar_controller.js');
 });
 
+it('maps the unsaved-changes controller and the live-host helper it imports', function (): void {
+    // The per-file build ships `utils/live_host.js` standalone beside the controller that
+    // imports it, so its logical path must resolve too or the browser 404s on the import.
+    $assetMapper = $this::getContainer()->get(AssetMapperInterface::class);
+    $dist = dirname(__DIR__, 2) . '/assets/dist';
+
+    expect($assetMapper->getAssetFromSourcePath($dist . '/controllers/unsaved_changes_controller.js')?->logicalPath)
+        ->toBe('@sylament/panels/controllers/unsaved_changes_controller.js')
+        ->and($assetMapper->getAssetFromSourcePath($dist . '/utils/live_host.js')?->logicalPath)
+        ->toBe('@sylament/panels/utils/live_host.js');
+});
+
 it('builds navigation items through the container, non-shared', function (): void {
     $this::getContainer();
 

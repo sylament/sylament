@@ -20,6 +20,7 @@ use Sylament\Support\Evaluation\ClosureParameter;
 use Sylament\Tables\Columns\Concerns\BelongsToTable;
 use Sylament\Tables\Columns\Concerns\CanAggregateRelatedRecords;
 use Sylament\Tables\Columns\Concerns\CanBeDisabled;
+use Sylament\Tables\Columns\Concerns\CanBeHidden;
 use Sylament\Tables\Columns\Concerns\CanBeHiddenResponsively;
 use Sylament\Tables\Columns\Concerns\CanBeInline;
 use Sylament\Tables\Columns\Concerns\CanBeSearchable;
@@ -45,6 +46,7 @@ class Column extends ViewComponent
     use CanAccessProperties;
     use CanAggregateRelatedRecords;
     use CanBeDisabled;
+    use CanBeHidden;
     use CanBeHiddenResponsively;
     use CanBeInline;
     use CanBeSearchable;

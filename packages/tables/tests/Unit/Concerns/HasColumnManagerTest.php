@@ -146,6 +146,69 @@ it('reads the draft through the normalizer, so a forged draft yields no rows', f
     expect($host->getTableColumnManagerItems())->toBe([]);
 });
 
+it('refuses a forged state whole rather than salvaging the items it can read', function (): void {
+    $host = columnManagerHost([TextColumn::make('title'), TextColumn::make('plays')], fn (Table $table): Table => $table->reorderableColumns());
+
+    $host->applyTableColumnManager([
+        'second' => ['type' => 'column', 'name' => 'plays', 'isToggled' => true, 'isToggledHiddenByDefault' => null],
+        'first' => ['type' => 'column', 'name' => 'title', 'isToggled' => true, 'isToggledHiddenByDefault' => null],
+    ]);
+
+    expect(array_column($host->tableColumns, 'name'))->toBe(['title', 'plays']);
+
+    $host->applyTableColumnManager([
+        ['type' => 'column', 'name' => 'plays', 'isToggled' => true, 'isToggledHiddenByDefault' => null],
+        ['type' => 'column', 'name' => 'title', 'isToggled' => true, 'isToggledHiddenByDefault' => null],
+        ['type' => 'column', 'isToggled' => true, 'isToggledHiddenByDefault' => null],
+    ]);
+
+    expect(array_column($host->tableColumns, 'name'))->toBe(['title', 'plays']);
+});
+
+it('appends a newly declared column to a reordered state and slots it into an unreordered one', function (): void {
+    $reordered = columnManagerHost(
+        [TextColumn::make('title'), TextColumn::make('plays'), TextColumn::make('position')],
+        fn (Table $table): Table => $table->reorderableColumns(),
+    );
+    $declared = columnManagerHost(
+        [TextColumn::make('title'), TextColumn::make('plays'), TextColumn::make('position')],
+        fn (Table $table): Table => $table->reorderableColumns(),
+    );
+
+    $reordered->applyTableColumnManager([
+        ['type' => 'column', 'name' => 'position', 'isToggled' => true, 'isToggledHiddenByDefault' => null],
+        ['type' => 'column', 'name' => 'title', 'isToggled' => true, 'isToggledHiddenByDefault' => null],
+    ]);
+    $declared->applyTableColumnManager([
+        ['type' => 'column', 'name' => 'title', 'isToggled' => true, 'isToggledHiddenByDefault' => null],
+        ['type' => 'column', 'name' => 'position', 'isToggled' => true, 'isToggledHiddenByDefault' => null],
+    ]);
+
+    expect(array_column($reordered->tableColumns, 'name'))->toBe(['position', 'title', 'plays'])
+        ->and(array_keys($reordered->getTable()->getColumns()))->toBe(['position', 'title', 'plays'])
+        ->and(array_column($declared->tableColumns, 'name'))->toBe(['title', 'plays', 'position'])
+        ->and(array_keys($declared->getTable()->getColumns()))->toBe(['title', 'plays', 'position']);
+});
+
+it('reads a toggle that is not a boolean as on', function (): void {
+    $host = columnManagerHost([TextColumn::make('title')->toggleable(isToggledHiddenByDefault: true)]);
+
+    $host->applyTableColumnManager([['type' => 'column', 'name' => 'title', 'isToggled' => 'on', 'isToggledHiddenByDefault' => true]]);
+
+    expect($host->isTableColumnToggledHidden('title'))->toBeFalse();
+});
+
+it('lists no row for a stored entry that is not a column', function (): void {
+    $host = columnManagerHost([TextColumn::make('title')]);
+
+    $host->tableDeferredColumns = [
+        ['type' => TableHost::TABLE_COLUMN_MANAGER_GROUP_TYPE, 'name' => 'title', 'isToggled' => true, 'isToggledHiddenByDefault' => null],
+        ['type' => 'column', 'name' => 'title', 'isToggled' => true, 'isToggledHiddenByDefault' => null],
+    ];
+
+    expect($host->getTableColumnManagerItems())->toHaveCount(1);
+});
+
 it('restores the declared order on reset however many applies reordered it', function (): void {
     $host = columnManagerHost(
         [TextColumn::make('title'), TextColumn::make('plays'), TextColumn::make('position')],

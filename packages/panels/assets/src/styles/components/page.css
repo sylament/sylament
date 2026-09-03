@@ -18,3 +18,11 @@
 .sy-pa-page-has-sub-navigation-end .sy-pa-page-main {
     @apply md:flex-row md:items-start;
 }
+
+.sy-pa-form {
+    @apply flex flex-col gap-6;
+}
+
+.sy-pa-form-errors {
+    @apply grid gap-y-1 rounded-lg bg-danger-50 px-4 py-3 text-sm text-danger-600 dark:bg-danger-400/10 dark:text-danger-400;
+}

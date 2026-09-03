@@ -75,7 +75,7 @@ do.
 | [`getDefaultActionSchemaResolver()`](../../../packages/panels/src/Resources/Pages/ManageRelatedRecords.php) | same | done | — | [semantics](#the-schema-resolver-is-the-hosts-not-the-tiers) |
 | [`getDefaultActionUrl()`](../../../packages/panels/src/Resources/Concerns/InteractsWithRelationshipTable.php) | the copy on this class | done | — | [diverges](interacts-with-relationship-table.md#the-url-arms-are-hoisted-once-and-carry-the-owner-explicitly) |
 | [`schemas()`](../../../packages/panels/src/Resources/Pages/ManageRelatedRecords.php) | no counterpart — Livewire has no schema-discovery list | done | — | — |
-| [`$template`](../../../packages/panels/templates/partials/ManageRelatedRecords/index.html.twig) | `content()` — a `Group` of tabs, render hooks and an `EmbeddedTable` | done | — | [diverges](#the-page-renders-a-template-not-a-content-schema) |
+| [`$template`](../../../packages/panels/templates/partials/Page/table.html.twig) | `content()` — a `Group` of tabs, render hooks and an `EmbeddedTable` | done | — | [diverges](#the-page-renders-a-template-not-a-content-schema) |
 | The sub-navigation band on the partial | the band block in `page/index.blade.php` | done | — | [has-sub-navigation.md](has-sub-navigation.md) |
 | `getDefaultActionSuccessRedirectUrl()`'s table-context narrowing | same | todo | — | [detail](#the-table-context-redirect-narrowing-is-not-ported) |
 | `getPageClass()` | same | skipped | — | [diverges](#getpageclass-has-no-reader-here) |
@@ -204,14 +204,20 @@ are deferred or placed elsewhere — `EmbeddedTable` and render hooks are unport
 the managers are skipped above, and the tabs landed with M4 · 3 as a
 [schema the partial renders](has-tabs.md#the-strip-is-a-schema-a-partial-renders-not-a-component-a-content-schema-holds)
 rather than a component a `content()` would hold — which would leave a content
-schema wrapping one table and nothing else. So the page renders
-[`partials/ManageRelatedRecords/index.html.twig`](../../../packages/panels/templates/partials/ManageRelatedRecords/index.html.twig):
-the `ListRecords` skeleton (the page root, the header with its breadcrumbs and
-header actions, `{{ renderTable() }}` inside `sy-pa-page-content`, the
-sub-navigation band around it) plus `<twig:SylamentActions:Modals />`, which is
+schema wrapping one table and nothing else. So the page renders a template
+instead — since M6 · 2 the shared table variant
+[`partials/Page/table.html.twig`](../../../packages/panels/templates/partials/Page/table.html.twig),
+which `{% extends %}` the base page chrome and fills its `content` block with the
+tabs strip and `{{ renderTable() }}`. The page root, the header with its
+breadcrumbs and header actions, the sub-navigation band and
+`<twig:SylamentActions:Modals />` all come from the chrome, and the outlet is
 [not optional](relation-manager.md#the-manager-renders-a-template-not-a-content-schema)
 — without it every action the page mounts renders nothing at all. It is the same
-call [`ListRecords`](README.md#listrecords) already made, one page over.
+call [`ListRecords`](README.md#listrecords) already made, one page over — and
+since M6 · 2 it is literally the same **file**: this page's own partial was
+deleted along with the list and create ones, the three shapes collapsing onto two
+variants of one chrome, and the per-page root class moving to
+[`getPageClasses()`](custom-pages.md#getpageclasses-is-the-only-source-of-a-per-page-root-class).
 
 ### The navigation label and icon drop their related-resource arms
 

@@ -197,9 +197,17 @@ Filament's `content()` owns the whole edit-page body: the `Form` component, the
 form-level `Actions` (Save/Cancel), and the relation managers, with
 `ContentTabPosition` deciding whether the form itself is a tab beside them. Ours
 holds **only** the relation-manager component; the `<form>` element, the
-record-level error outlet, the Save button and the `Modals` outlet stay in
-[the template](../../../packages/panels/templates/partials/EditRecord/index.html.twig),
-which gained a single `{{ renderSchema('content') }}` line after `</form>`.
+record-level error outlet, the Save button and the `Modals` outlet stay in the
+template — since M6 · 2 the shared
+[form variant](form-actions.md) and the base page chrome above it, with
+[`partials/EditRecord/index.html.twig`](../../../packages/panels/templates/partials/EditRecord/index.html.twig)
+reduced to a seven-line child of the variant whose only content is an
+`after_form` block holding `{{ renderSchema('content') }}`. `EditRecord::content()`
+is likewise now an **override of the base's** identity
+[`Pages\Page::content()`](custom-pages.md#content-resolves-by-bare-name-so-an-empty-body-costs-a-live-request-nothing)
+rather than the only `content()` in the hierarchy — which is what makes the
+narrowing below a narrowing of Filament's method rather than a different method
+with the same name.
 
 The reduction is deliberate: the faithful shape needs `Form` and form-level
 `Actions` — neither ported — plus a rewrite of all three record-page templates,

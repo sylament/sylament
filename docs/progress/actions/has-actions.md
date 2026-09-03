@@ -1459,25 +1459,43 @@ renders at most once per request. It needs that because
 `<x-filament-actions::modals />` is baked into shared panel layouts —
 [`page/index.blade.php`](../../../vendor/filament/filament/resources/views/components/page/index.blade.php),
 `topbar.blade.php`, `sidebar.blade.php` — which can nest, so a page can include it
-several times without asking. Sylament has no `panels` package and therefore no
-layout that places the tag implicitly: every call site is a host author writing the
-tag, and writing it twice would emit two full stacks of `<dialog>`s sharing the
-same [host- and index-scoped ids](#a-frame-carries-two-identities-an-index-scoped-dialog-and-a-name-scoped-wrapper) —
-the ids are unique per host and frame, not per *rendering* of the tag.
-No flag is ported, and none is on `HasActions`. Reverses with `panels`, if a shared
-layout ever places the tag on the author's behalf.
+several times without asking.
+
+Sylament's `panels` package **does** now place the tag on the author's behalf, and
+the flag still does not ship, because the placement is arranged so that placing it
+twice is not something a page can do by accident. The outlet is emitted **once**,
+by [the base page chrome](../panels/README.md#routing) — after the header-main
+container, as the page root's last child — and every shipped page template reaches
+it by `{% extends %}`ing that chrome and overriding a block, so a page inherits
+exactly one outlet however many blocks it fills.
+[`SimplePage`](../panels/simple-page.md)'s partial carries its own single copy for
+the same reason its chrome is a copy. The rule that follows is the one a page
+author needs: **a child template must never add a `<twig:SylamentActions:Modals />`
+of its own** — writing it twice would emit two full stacks of `<dialog>`s sharing
+the same [host- and index-scoped ids](#a-frame-carries-two-identities-an-index-scoped-dialog-and-a-name-scoped-wrapper),
+since the ids are unique per host and frame, not per *rendering* of the tag.
+
+A nested host is not a second rendering of the same stack: a
+[relation manager](../panels/relation-manager.md) mounts its own outlet inside its
+own live root, and each outlet resolves the nearest host by walking the
+`ComponentStack`, so the two stacks are different components' and neither
+duplicates the other. Reverses only if a layout ever places the tag somewhere a
+page template cannot see it and therefore cannot avoid doubling.
 
 ### An unresolvable host throws instead of rendering nothing
 
 Filament guards with `@if ($this instanceof \Filament\Actions\Contracts\HasActions …)`,
 silently rendering nothing when the surrounding Livewire component is not an action
-host — again because the shared panel layouts render it for every component,
-host or not. With no such layout here, every occurrence of the tag is deliberate,
-so `getLiveComponent()` throws a `LogicException` naming both fixes (place it inside
-a host, or pass `:liveComponent`) rather than rendering nothing. Silence is the
-worse failure for the problem this component exists to solve — a modal that never
-appears and says nothing about why. Reverses with `panels` if a shared layout needs
-the tolerant form; at that point the guard belongs in the layout, not here.
+host — because its shared panel layouts render the tag for every component, host or
+not. That guard has no work to do here: every panel page **is** an actions host
+since M6 · 2 made [`Pages\Page`](../panels/custom-pages.md) implement
+`InteractsWithActions`, and outside a panel every occurrence of the tag is a host
+author writing it deliberately. So `getLiveComponent()` throws a `LogicException`
+naming both fixes (place it inside a host, or pass `:liveComponent`) rather than
+rendering nothing. Silence is the worse failure for the problem this component
+exists to solve — a modal that never appears and says nothing about why. Reverses
+only if a shell ever renders the tag around something that is not a host, at which
+point the guard belongs in that shell rather than here.
 
 _See also:_ the [rename table](../renames.md) for the `Has*` / `InteractsWith*`
 **swap** this whole file is the Sylament side of, and the systematic

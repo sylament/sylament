@@ -68,7 +68,7 @@ do.
 | [`SubNavigationSidebar`](../../../packages/panels/templates/components/SubNavigationSidebar/index.html.twig) — `Start` / `End` | [`page/sub-navigation/sidebar.blade.php`](../../../vendor/filament/filament/resources/views/components/page/sub-navigation/sidebar.blade.php) | done | — | [semantics](#the-band-reuses-the-sidebar-group-and-prefixes-its-dom-ids) |
 | [`SubNavigationTabs`](../../../packages/panels/templates/components/SubNavigationTabs/index.html.twig) — `Top` | [`page/sub-navigation/tabs.blade.php`](../../../vendor/filament/filament/resources/views/components/page/sub-navigation/tabs.blade.php) | done | — | [semantics](#the-top-variant-is-the-first-pin-of-tabsitems-anchor-arm) |
 | [`SubNavigationMobileMenu`](../../../packages/panels/templates/components/SubNavigationMobileMenu/index.html.twig) | [`page/sub-navigation/mobile-menu.blade.php`](../../../vendor/filament/filament/resources/views/components/page/sub-navigation/mobile-menu.blade.php) | done | — | [diverges](#the-mobile-menu-renders-no-group-headers) |
-| The band on the five page partials + the root modifiers | the same block in `page/index.blade.php` | done | — | [semantics](#an-empty-band-never-resolves-a-panel) |
+| The band on the base page chrome + the root modifiers | the same block in `page/index.blade.php` | done | — | [semantics](#an-empty-band-never-resolves-a-panel) |
 | [`sub-navigation.css`](../../../packages/panels/assets/src/styles/components/sub-navigation.css) + the two `page.css` rules | [`components/page.css`](../../../vendor/filament/filament/resources/css/components/page.css) | done | — | [diverges](#the-top-modifier-is-emitted-and-styled-by-nothing) |
 | The record pages' own `getNavigationLabel()` / `getNavigationIcon()` overrides — what labels an `EditRecord` in a band | [`Resources/Pages/EditRecord.php`](../../../vendor/filament/filament/src/Resources/Pages/EditRecord.php) and its `ViewRecord` sibling — `CreateRecord` declares neither | todo | — | [detail](#an-editrecord-in-a-band-is-labelled-by-its-class-name) |
 | `processParentNavigationItems()` — the `key` / `parentItem` / `childItems` nesting pass | same | todo | [`NavigationItem`'s nesting arm](README.md#navigationitem) | [detail](#three-v1-skips-item-nesting-collapsible-groups-and-badge-tooltips) |
@@ -173,8 +173,12 @@ and `usort` is stable.
 
 ### An empty band never resolves a panel
 
-All five page partials read `this.getCachedSubNavigation` first and only ask for
-the **position** when that is non-empty:
+The band is emitted **once**, by
+[the base page chrome](README.md#routing) every page template extends — it was
+five copies across five partials until M6 · 2 collapsed them, and the copies were
+byte-identical, which is why nothing about the band changed in that move. The
+chrome reads `this.getCachedSubNavigation` first and only asks for the
+**position** when that is non-empty:
 
 ```twig
 {% set subNavigation = this.getCachedSubNavigation %}
@@ -187,6 +191,10 @@ render just to pick a class it then does not emit. With the guard, a page with n
 sub-navigation emits neither root modifier and touches no panel at all — which is
 also what keeps the trait usable on a page built with `new`, holding no services:
 it answers `Start` and nothing asks.
+
+[`SimplePage`](simple-page.md)'s own partial is the one page template that draws
+no band at all: a centred card has no room for one, so it reads neither the
+navigation nor the position.
 
 ### The band reuses the sidebar group and prefixes its DOM ids
 

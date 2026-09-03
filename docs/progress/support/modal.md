@@ -405,6 +405,16 @@ Filament defaults `width` to `'sm'`; Sylament defaults it to `'md'`. The width i
 emitted verbatim as a `sy-modal-<value>` class rather than resolved through the
 `Width` enum's `fi-width-*` / `fi-width-screen` logic.
 
+[`Sylament\Support\Enums\Width`](../../../packages/support/src/Enums/Width.php)
+**now exists** — M6 · 2 landed all 26 cases for panels' page and panel width
+surfaces — so the trigger this note was waiting on has fired and the back-fill is
+merely **deferred**: `width()` still takes a plain string, the class is still
+`sy-modal-<value>`, and nothing here was retyped. Doing it means narrowing the
+property's type, mapping each case to a modal class and re-deriving the
+`sy-modal-screen` arm, which is a modal-sized change of its own rather than a
+rider on a page epic. The same deferral, for the same reason, is recorded on
+[`Table::filtersFormWidth()`](../tables/table.md#surface).
+
 ### The open state is a Stimulus value, not only an event
 
 Filament opens a modal purely by event — `x-on:open-modal.window="… open()"` — and

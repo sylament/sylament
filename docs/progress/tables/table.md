@@ -797,10 +797,18 @@ getter.
 
 `getFiltersFormWidth()` stays trimmed in the other direction: Filament's derives
 a `Width` enum case from the column count for the dropdown panel, and support
-ships no `Width` enum, so the getter is the plain evaluated value with a `null`
-default — a width the caller states or does not. The modal layout falls back to
-`'md'` in the template for the same reason. That match returns if and when a
-`Width` enum lands in support.
+shipped no `Width` enum when this landed, so the getter is the plain evaluated
+value with a `null` default — a width the caller states or does not. The modal
+layout falls back to `'md'` in the template for the same reason.
+
+[`Sylament\Support\Enums\Width`](../../../packages/support/src/Enums/Width.php)
+**now exists** — M6 · 2 landed all 26 cases for panels' page and panel width
+surfaces — so the condition that sentence named has been met and the back-fill is
+**deferred** rather than blocked: nothing here was retyped, `filtersFormWidth()`
+still takes and answers a plain string, and re-deriving the column-count match
+plus narrowing the property is a filters-sized change of its own. The identical
+deferral is recorded on
+[the modal's own ladder](../support/modal.md#the-default-width-is-md-not-sm).
 
 ## Semantics
 

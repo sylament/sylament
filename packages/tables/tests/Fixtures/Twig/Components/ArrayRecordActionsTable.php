@@ -19,7 +19,7 @@ use Symfony\UX\LiveComponent\DefaultActionTrait;
  * this table carries are what its parameter has to admit.
  */
 #[AsLiveComponent(name: 'ArrayRecordActionsTable', template: '@TablesFixtures/components/ArrayRecordActionsTable.html.twig')]
-class ArrayRecordActionsTable implements InteractsWithTable
+final class ArrayRecordActionsTable implements InteractsWithTable
 {
     use DefaultActionTrait;
     use HasTable;

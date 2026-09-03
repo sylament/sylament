@@ -332,7 +332,10 @@ and that is the only shape a control ever posts; a `string` property asks for
 `string`, a `bool` for `bool`. An enum, an object, a collection and a type that
 cannot be read ask for nothing — the enum arm belongs to
 [`SelectColumn`](select-column.md)'s `Choice` and its state cast, and a column
-over any other object-typed property takes an `updateStateUsing()` closure.
+over any other object-typed property takes an `updateStateUsing()` closure. Like
+the presence seed, it is derived from the column's **own** path whether or not
+such a closure redirects the write — a column writing somewhere else declares the
+constraints it wants itself, and a declared `Type` is what turns the seed off.
 
 That leaves a gap the seed cannot close, and the write seam closes it instead:
 where nothing could be derived, `CanUpdateState` raises its own

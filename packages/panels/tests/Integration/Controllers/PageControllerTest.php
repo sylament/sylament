@@ -164,7 +164,11 @@ it('wraps a simple page in the centred card shell, with no sidebar or topbar', f
         ->and($crawler->filter('main.sy-pa-simple-main.sy-width-md')->count())->toBe(1)
         ->and($crawler->filter('#sy-pa-sidebar, #sy-pa-topbar')->count())->toBe(0)
         ->and($crawler->filter('.sy-pa-simple-page > .sy-pa-simple-page-content > .sy-pa-simple-header')->count())->toBe(1)
-        ->and((string) $client->getResponse()->getContent())->toContain('simple body');
+        ->and((string) $client->getResponse()->getContent())->toContain('simple body')
+        // The guard rides the simple page too, as an inner element: the live
+        // root's own controller binding stays exactly `live`.
+        ->and($crawler->filter('.sy-pa-simple-page > .sy-pa-unsaved-changes[data-controller="sylament--panels--unsaved-changes"]')->count())->toBe(1)
+        ->and($crawler->filter('.sy-pa-simple-page')->attr('data-controller'))->toBe('live');
 });
 
 it('refuses a page that names a layout the toolkit does not ship', function (): void {

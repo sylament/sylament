@@ -51,7 +51,7 @@ Every member is exercised by
 [`HasDefaultDataFormattingSettingsTest`](../../../packages/support/tests/Unit/Concerns/HasDefaultDataFormattingSettingsTest.php)
 — the eight defaults, a literal and a closure through every setter, and the
 nullable locale taken back to `null` — over a fixture that composes the trait
-with [`EvaluatesClosures`](evaluates-closures.md), which is the trait's only
+with [`EvaluatesClosures`](component.md#surface), which is the trait's only
 requirement of its host.
 
 ## Details

@@ -857,11 +857,11 @@ never rendered as a trigger.
 
 A second `columns()` call rebuilds the column map but **not** the action cache,
 so the replaced set's action stays reachable by name — Filament does not evict
-either, and the record-action arm behaves the same way here (only
-`toolbarActions()` evicts, through `removeCachedActions()`). Worth knowing before
-the column manager (M4 · 5) starts swapping column sets at runtime: a stale
-column action stays mountable by name, and that is inherited behaviour rather
-than a decision this port took.
+either, and the record-action arm behaves the same way here (the two setters
+that do evict are `toolbarActions()` and `headerActions()`, both through
+`removeCachedActions()`). Worth knowing before the column manager (M4 · 5)
+starts swapping column sets at runtime: a stale column action stays mountable by
+name, and that is inherited behaviour rather than a decision this port took.
 
 ### One filter setting drives three selection behaviours
 

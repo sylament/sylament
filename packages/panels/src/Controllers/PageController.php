@@ -55,7 +55,12 @@ final readonly class PageController
         $isSimple = $layout === SimplePage::LAYOUT;
         $layoutData = $page->getLayoutData();
         $declaredWidth = $layoutData['maxContentWidth'] ?? null;
-        $maxContentWidth = ($declaredWidth instanceof Width || is_string($declaredWidth) ? $declaredWidth : null)
+
+        if ($declaredWidth !== null && ! $declaredWidth instanceof Width && ! is_string($declaredWidth)) {
+            throw new LogicException(sprintf('The page %s names a %s under `maxContentWidth` in its layout data; only %s, a class string and null ship.', $pageClass, get_debug_type($declaredWidth), Width::class));
+        }
+
+        $maxContentWidth = $declaredWidth
             ?? $page->getMaxContentWidth()
             ?? ($isSimple
                 ? ($panel->getSimplePageMaxContentWidth() ?? Width::Large)

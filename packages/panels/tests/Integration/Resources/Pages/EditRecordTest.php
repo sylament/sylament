@@ -8,6 +8,7 @@ use Sylament\Panels\Tests\Fixtures\Doctrine\EntityManagerFactory;
 use Sylament\Panels\Tests\Fixtures\Resources\Pages\EditArticle;
 use Sylament\Panels\Tests\Fixtures\Resources\Pages\EditHookedArticle;
 use Sylament\Schemas\Components\EmbeddedSchema;
+use Sylament\Schemas\Exceptions\ValidationException;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -304,6 +305,23 @@ it('404s when a mounted frame names a record the resource cannot resolve', funct
     // scoped binding — which answers nothing for a record that never existed.
     expect(fn (): mixed => $host->mountAction('edit', [], ['recordKey' => '999999']))
         ->toThrow(NotFoundHttpException::class, 'No record matching [999999]');
+});
+
+it('rejects an invalid submit with a validation error and persists nothing', function (): void {
+    [$client, $entityManager, $key] = editRecordClient();
+
+    $host = $this->createLiveComponent(EditArticle::class, ['record' => $key], client: $client)->component();
+    $host->data = ['title' => '', 'slug' => 'alpha'];
+
+    // The save ladder catches `Halt` alone, so a required-field violation
+    // escapes it as the 422 rather than returning null and persisting nothing
+    // in silence.
+    expect(fn (): mixed => $host->save())
+        ->toThrow(ValidationException::class);
+
+    $entityManager->clear();
+
+    expect($entityManager->find(Article::class, (int) $key)?->getTitle())->toBe('Alpha');
 });
 
 it('aborts the save when a hook halts the ladder', function (): void {

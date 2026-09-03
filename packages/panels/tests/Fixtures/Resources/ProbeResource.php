@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Sylament\Panels\Tests\Fixtures\Resources;
 
 use Sylament\Panels\Navigation\NavigationItem;
-use Sylament\Panels\Pages\Page;
+use Sylament\Panels\Resources\Pages\Page;
 use Sylament\Panels\Resources\Pages\PageRegistration;
 use Sylament\Panels\Resources\Resource;
 use Sylament\Panels\Tests\Fixtures\Doctrine\Entity\Article;

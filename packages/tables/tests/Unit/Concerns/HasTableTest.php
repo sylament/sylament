@@ -771,8 +771,8 @@ it('injects the table state into the records closure lazily', function (): void 
     $host = new TableHost(function (Table $t) use (&$seen): Table {
         return $t
             ->columns([TextColumn::make('title')->sortable()])
-            ->records(function (int $page, int|string|null $recordsPerPage, ?string $search, array $sort, ?string $sortColumn, ?string $sortDirection, array $filters) use (&$seen): array {
-                $seen = ['page' => $page, 'recordsPerPage' => $recordsPerPage, 'search' => $search, 'sort' => $sort, 'sortColumn' => $sortColumn, 'sortDirection' => $sortDirection, 'filters' => $filters];
+            ->records(function (int $page, int|string|null $recordsPerPage, ?string $search, array $columnSearches, array $sort, ?string $sortColumn, ?string $sortDirection, array $filters) use (&$seen): array {
+                $seen = ['page' => $page, 'recordsPerPage' => $recordsPerPage, 'search' => $search, 'columnSearches' => $columnSearches, 'sort' => $sort, 'sortColumn' => $sortColumn, 'sortDirection' => $sortDirection, 'filters' => $filters];
 
                 return [];
             });
@@ -781,6 +781,7 @@ it('injects the table state into the records closure lazily', function (): void 
     $host->sortTable('title', 'desc');
     $host->gotoTablePage(3);
     $host->tableSearch = 'radiohead';
+    $host->tableColumnSearches = ['title' => ' bends '];
     $host->tableFilters = ['status' => ['value' => 'published']];
     $host->getTableRecords();
 
@@ -788,6 +789,7 @@ it('injects the table state into the records closure lazily', function (): void 
         'page' => 3,
         'recordsPerPage' => 10,
         'search' => 'radiohead',
+        'columnSearches' => ['title' => 'bends'],
         'sort' => ['title', 'desc'],
         'sortColumn' => 'title',
         'sortDirection' => 'desc',

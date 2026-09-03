@@ -132,7 +132,7 @@ instead.
 | [`table(Table $table): Table` — the identity default a host overrides](../../../packages/tables/src/Concerns/HasTable.php) | [`InteractsWithTable::table()`](../../../vendor/filament/tables/src/Concerns/InteractsWithTable.php) | done | — | — |
 | [`getTable(): Table` — build once, cache](../../../packages/tables/src/Concerns/HasTable.php) | [`InteractsWithTable::getTable()`](../../../vendor/filament/tables/src/Concerns/InteractsWithTable.php) | done | — | [diverges](#the-table-is-built-lazily-on-first-gettable-not-in-a-booted-hook) |
 | [`makeTable(): Table`](../../../packages/tables/src/Concerns/HasTable.php) | [`InteractsWithTable::makeTable()`](../../../vendor/filament/tables/src/Concerns/InteractsWithTable.php) | done | — | [diverges](#maketable-seeds-nothing-from-deprecated-host-getters) |
-| [`getTableRecords()` — resolve the data source once, eager-load, re-key, fill the aggregate store, cache](../../../packages/tables/src/Concerns/HasTable.php) | [`Concerns\HasRecords::getTableRecords()`](../../../vendor/filament/tables/src/Concerns/HasRecords.php) | in progress | — | [detail](#the-records-injections-stop-at-seven-of-filaments-eight) · [semantics](#a-records-closure-resolves-public-container-services-by-type) · [diverges](#gettablerecords-returns-a-keyed-array-or-a-paginator-never-a-collection) · [diverges](#eager-loading-runs-over-the-visible-columns-on-the-page-clone-alone) |
+| [`getTableRecords()` — resolve the data source once, eager-load, re-key, fill the aggregate store, cache](../../../packages/tables/src/Concerns/HasTable.php) | [`Concerns\HasRecords::getTableRecords()`](../../../vendor/filament/tables/src/Concerns/HasRecords.php) | in progress | — | [detail](#the-records-injections-match-filaments-eight) · [semantics](#a-records-closure-resolves-public-container-services-by-type) · [diverges](#gettablerecords-returns-a-keyed-array-or-a-paginator-never-a-collection) · [diverges](#eager-loading-runs-over-the-visible-columns-on-the-page-clone-alone) |
 | [`getTablePaginator(): ?Paginator` — the carrier, unwrapped for the footer](../../../packages/tables/src/Concerns/HasTable.php) | — (Sylament-only; Filament's records **are** the paginator) | done | — | [pagination.md](../support/pagination.md) · [semantics](#the-paginator-is-a-return-value-not-a-state-holder) |
 | [`InteractsWithTable` — twenty-four methods](../../../packages/tables/src/Contracts/InteractsWithTable.php) | [`Contracts\HasTable`](../../../vendor/filament/tables/src/Contracts/HasTable.php) | in progress | — | [detail](#the-contract-is-twenty-methods-of-filaments-forty-six) |
 | [`flushCachedTableRecords()`](../../../packages/tables/src/Concerns/HasTable.php) | [`Concerns\HasRecords::flushCachedTableRecords()`](../../../vendor/filament/tables/src/Concerns/HasRecords.php) | done | — | on the contract since M4 · 2 — actions' `callMountedAction()` calls it in a `finally` after any mounted action runs on a table host. [detail](#the-contract-is-twenty-methods-of-filaments-forty-six) |
@@ -148,7 +148,7 @@ instead.
 | [Table state in the URL — the `getTableUrlMapping()` opt-in hook, the four `modifyTable*Prop()` `LiveProp` modifiers, `getTableQueryStringIdentifier()` and `getIdentifiedTableQueryStringPropertyNameFor()`](../../../packages/tables/src/Concerns/HasTable.php) | [`getIdentifiedTableQueryStringPropertyNameFor()`](../../../vendor/filament/tables/src/Concerns/InteractsWithTable.php), the six-attribute `#[Url]` block on [`ListRecords`](../../../vendor/filament/filament/src/Resources/Pages/ListRecords.php) and Livewire's own [`queryStringHandlesPagination()`](../../../vendor/livewire/livewire/src/Features/SupportPagination/HandlesPagination.php) for `page` | done | — | [diverges](#the-url-binding-is-a-per-prop-liveprop-modifier-opted-into-by-the-page) · [diverges](#the-query-string-identifier-is-live-on-the-table-and-dead-in-the-modifiers) |
 | The `reordering` URL bind | [`#[Url(as: 'reordering')]` redeclared on `ListRecords`](../../../vendor/filament/filament/src/Resources/Pages/ListRecords.php) | skipped | — | A transient UI mode rather than browsing state, and binding it would leave a permanent `reordering=0` in every URL under [the residue constraint](#the-url-binding-is-a-per-prop-liveprop-modifier-opted-into-by-the-page); the `grouping` bind has no prop to attach to until grouping lands |
 | [Table state in the session — `CanPersistTableState`: the `RequestStack` setter, `getTableSessionKey()`, `persistTableStateToSession()`, `readTableSessionState()`, `forgetTableSessionState()`, the four per-prop writers and the `#[PostMount(priority: 10)]` read hook](../../../packages/tables/src/Concerns/CanPersistTableState.php) | [`Concerns\InteractsWithTable::bootedInteractsWithTable()`](../../../vendor/filament/tables/src/Concerns/InteractsWithTable.php) | done | — | [diverges](#the-session-key-is-the-host-class-so-two-instances-of-one-page-share-it) |
-| [Per-column search — the `$tableColumnSearches` bag with its `hydrateTableColumnSearches()` / `dehydrateTableColumnSearches()` pair, `mountTableColumnSearches()`, `afterTableColumnSearchesHydrated()`, `getTableColumnSearch()` / `getTableColumnSearches()`, `applyColumnSearchesToTableQuery()`, `handleTableColumnSearchUpdates()` and the `resetTableColumnSearch()` / `resetTableColumnSearches()` actions](../../../packages/tables/src/Concerns/CanSearchRecords.php) | [`Concerns\CanSearchRecords`](../../../vendor/filament/tables/src/Concerns/CanSearchRecords.php) | in progress | its chips, the session half and the search row that renders the inputs | [detail](#search-is-the-global-term-only) · [diverges](#a-full-seed-replaces-filaments-reserved-key-list-and-a-blank-is-kept) · [diverges](#the-per-column-change-is-read-off-a-first-call-hydration-snapshot) |
+| [Per-column search — the `$tableColumnSearches` bag with its `hydrateTableColumnSearches()` / `dehydrateTableColumnSearches()` pair, `mountTableColumnSearches()`, `afterTableColumnSearchesHydrated()`, `getTableColumnSearch()` / `getTableColumnSearches()`, `applyColumnSearchesToTableQuery()`, `handleTableColumnSearchUpdates()`, `getTableColumnSearchIndicators()` and the `resetTableColumnSearch()` / `resetTableColumnSearches()` actions](../../../packages/tables/src/Concerns/CanSearchRecords.php) | [`Concerns\CanSearchRecords`](../../../vendor/filament/tables/src/Concerns/CanSearchRecords.php) | in progress | the session half and the search row that renders the inputs | [detail](#search-is-the-global-term-only) · [diverges](#a-full-seed-replaces-filaments-reserved-key-list-and-a-blank-is-kept) · [diverges](#the-per-column-change-is-read-off-a-first-call-hydration-snapshot) |
 | [Deferred loading — `$isTableLoaded`, `loadTable()`, `isTableLoaded()`](../../../packages/tables/src/Concerns/CanDeferLoading.php) | [`CanDeferLoading`](../../../vendor/filament/tables/src/Concerns/CanDeferLoading.php) | done | — | the trait's fourth member, `isTableLoadingDeferred()`, is `@deprecated Override the table() method` and is not ported — what it fronts is [`Table::deferLoading()`](table.md#the-deferred-window-is-server-gated-and-client-closed). [table.md](table.md#the-deferred-window-is-server-gated-and-client-closed) |
 | Host polling — `getTablePollingInterval()` | [`CanPollRecords`](../../../vendor/filament/tables/src/Concerns/CanPollRecords.php) | skipped | — | The whole trait is `@deprecated Override the table() method to configure the table.`, one host getter returning null, and the project has never ported a deprecated Filament surface. The interval it fronts is [`Table::poll()`](table.md#the-poll-interval-parses-strictly-and-carries-no-livewire-modifiers), which ships |
 | [`Concerns\HasFilters` — the `$tableFilters` / `$tableDeferredFilters` bags, `getTableFilterState()`, `getTableFilterFormState()`, `parseTableFilterName()`, `getTableFiltersForm()`, the `#[PostMount]` fill and the `#[PostHydrate(priority: 10)]` re-cache](../../../packages/tables/src/Concerns/HasFilters.php) | [`Concerns\HasFilters`](../../../vendor/filament/tables/src/Concerns/HasFilters.php) | in progress | — | [diverges](#the-filter-bags-are-arrays-never-null-and-carry-no-getters) · [diverges](#one-filter-slice-is-a-plain-array-read-not-a-propertyaccessor-walk) · [diverges](#a-seeded-filter-bag-fills-the-form-instead-of-the-declared-defaults) · [semantics](#updatedtablefilters-fires-for-a-whole-prop-write-never-for-a-field-inside-it) · [diverges](#the-session-key-is-the-host-class-so-two-instances-of-one-page-share-it) · [semantics](#the-two-filter-bags-round-trip-differently-and-the-difference-is-the-whole-deferredlive-split) |
@@ -521,31 +521,31 @@ and UX sorts equal priorities with a stable `arsort()`, which would resolve a ti
 by reflection order over flattened traits; and `#[PostHydrate(priority: -4)]`,
 which re-derives both bags before any read of either.
 
-### The `records()` injections stop at seven of Filament's eight
+### The `records()` injections match Filament's eight
 
 Filament evaluates the data source with eight named injections —
 `columnSearches`, `filters`, `page`, `recordsPerPage`, `search`, `sort`,
 `sortColumn`, `sortDirection` — each a closure reading the corresponding piece of
 host state, so a userland `records()` closure can paginate, sort and filter its
-own result set. Sylament passes **seven**, in the same shape (a `fn ()` per name,
-so the state is read only if the closure asks for it): `filters`, `page`,
-`recordsPerPage`, `search`, `sort`, `sortColumn` and `sortDirection`. Every one is
+own result set. Sylament passes **all eight**, in the same shape (a `fn ()` per
+name, so the state is read only if the closure asks for it). Every one is
 Filament's name, Filament's arity and Filament's value — `sort` is the same
 `[$column, $direction]` pair, redundant with the two singular names and kept
-because a migrating closure destructures it.
+because a migrating closure destructures it, and `columnSearches` is the same
+flat, dotted, trimmed map `getTableColumnSearches()` hands the query lane, so
+`['artist' => ['name' => ' x ']]` reaches the closure as `['artist.name' => 'x']`
+exactly as it reaches Filament's.
 
-One name is still missing, and it is the same reason all eight were missing
-before the table-upgrades epic: `columnSearches` waits on per-column search (its
-**todo** row above) and arrives in the change that lands it. `filters` arrived
-here, with the layer that gives it state — the raw applied `tableFilters` bag,
-read lazily like every other name, so a closure-lane table filters its own data
-exactly as it paginates and sorts it. The value is typed `array` where Filament
-types it `?array`: our prop is
+Each arrived with the layer that gave it state, which is why the list was
+incomplete for two epics: `filters` came with the filter bags, `columnSearches`
+with [per-column search](#a-full-seed-replaces-filaments-reserved-key-list-and-a-blank-is-kept).
+Two values differ in **type** rather than in content. `filters` is typed `array`
+where Filament types it `?array`: our prop is
 [an array and never null](#the-filter-bags-are-arrays-never-null-and-carry-no-getters),
 so a migrating `fn (?array $filters)` still matches and a `fn (array $filters)`
-needs no null guard. One other value differs rather than being absent:
-`recordsPerPage` is [nullable here](#the-recordsperpage-injection-is-nullable)
-where Filament types it `int|string`.
+needs no null guard. And `recordsPerPage` is
+[nullable here](#the-recordsperpage-injection-is-nullable) where Filament types
+it `int|string`.
 
 Everything the evaluation path resolves without a named injection resolves as
 before: `$table` — by the parameter name, which is `Table`'s

@@ -267,6 +267,7 @@ trait HasTable
 
         if ($dataSource instanceof Closure) {
             return $this->keyDataSourceRecords($table->evaluate($dataSource, [
+                'columnSearches' => fn (): array => $this->getTableColumnSearches(),
                 'filters' => fn (): array => $this->tableFilters,
                 'page' => fn (): int => $this->getTablePage(),
                 'recordsPerPage' => fn (): int|string|null => $this->getTableRecordsPerPage(),

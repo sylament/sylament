@@ -8,6 +8,7 @@ use Closure;
 use Doctrine\ORM\Query\Expr\Orx;
 use Doctrine\ORM\QueryBuilder;
 use Stringable;
+use Sylament\Tables\Columns\Column;
 use Sylament\Tables\Filters\Indicator;
 use Sylament\Tables\Query\SearchConstraint;
 
@@ -208,6 +209,25 @@ trait CanSearchRecords
 
             $searchExpression->add(SearchConstraint::forColumn($query, $column, $search, forceCaseInsensitive: null));
         }
+    }
+
+    /**
+     * Whether any visible column wants an input of its own — the search row's
+     * gate, and a per-column-only table's whole affordance, since the toolbar
+     * reads the global flag alone. A column the *user* toggled off still counts:
+     * only the developer's own `hidden()` takes the input away.
+     */
+    public function isSearchableByColumn(): bool
+    {
+        return array_any($this->getColumns(), static fn (Column $column): bool => $column->isIndividuallySearchable() && !$column->isHidden());
+    }
+
+    /**
+     * @return array<string, Indicator> keyed by column name
+     */
+    public function getColumnSearchIndicators(): array
+    {
+        return $this->getLiveComponent()->getTableColumnSearchIndicators();
     }
 
     public function getSearchIndicator(): ?Indicator

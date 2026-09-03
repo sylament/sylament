@@ -134,13 +134,18 @@ the control scrolls internally with its grip off, which is the shape `autosize()
 exists to avoid.
 
 Closing it needs a fourth trigger — the host's `render:finished`, which tables'
-[`table` controller](../tables/has-table.md) already subscribes to. That costs
-forms a copy of schemas' `live_host` resolver: this controller builds per-file and
-unbundled, so a bare `@sylament/schemas/utils/live_host.js` specifier would ship
-verbatim to the browser rather than being inlined the way
-[`FileUpload`'s bundled controller](forms-bundle.md#the-file-upload-controller-bundles-filepond-and-is-the-only-lazy-controller)
-takes it. Deliberate for now: every shipped arm drives the field from its own
-keyboard.
+[`table` controller](../tables/has-table.md) already subscribes to. The resolver
+that reaches the host is not part of the cost: the same sweep landed forms' own
+[`utils/live_host.ts`](../../../packages/forms/assets/src/utils/live_host.ts) for
+the `key-value` and `tags-input` controllers, and this one builds per-file and
+unbundled exactly as those two do, so it would take the identical relative
+`../utils/live_host.js` import. What is left is the subscription and the shape
+[`tags_input_controller.ts`](../../../packages/forms/assets/src/controllers/tags_input_controller.ts)
+already carries around one: an `async connect()` that returns quietly when no live
+host answers, a generation counter so a disconnect during the resolve cannot bind a
+listener on behalf of a dead element, and a `disconnect()` that calls
+`component.off()`. Deliberate for now, on that smaller ground: every shipped arm
+drives the field from its own keyboard.
 
 ### The control keeps the `sy-fo-input` class, Filament's textarea carries none
 

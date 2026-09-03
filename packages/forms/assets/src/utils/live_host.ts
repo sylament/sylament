@@ -1,4 +1,4 @@
-/** A deliberate copy of schemas' `utils/live_host.ts`, as tables' is: the per-file build ships specifiers verbatim, so a cross-package import would have to be a bare specifier every consumer's importmap resolves. */
+/** A deliberate copy of schemas' `utils/live_host.ts`, as tables' and panels' are: the per-file build ships specifiers verbatim, so a cross-package import would have to be a bare specifier every consumer's importmap resolves. */
 import { type Component, getComponent } from "@symfony/ux-live-component";
 
 /**

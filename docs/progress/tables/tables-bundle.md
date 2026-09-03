@@ -61,7 +61,7 @@ a [Details](#details) write-up, a **diverges** link to
 | --- | --- | --- | --- | --- |
 | [`Columns\`, `Filters\` and `Colors\Components\` globs + `Table` component services](../../../packages/tables/src/SylamentTablesBundle.php) | — (Sylament-only; Filament's provider binds no services) | done | — | [diverges](#the-bundle-registers-container-services-which-filaments-provider-has-no-counterpart-for) |
 | [TableExtension → `twig.extension`](../../../packages/tables/src/SylamentTablesBundle.php) (`renderTable()`) | — (Sylament-only; mirrors schemas' [`renderSchema()`](../../../packages/schemas/src/Twig/Extension/SchemaExtension.php)) | done | — | [diverges](#the-bundle-registers-a-rendertable-twig-extension-which-filament-has-no-counterpart-for) |
-| [`TablesIconAlias` — `ACTIONS_DISABLE_REORDERING`, `ACTIONS_ENABLE_REORDERING`, `ACTIONS_FILTER`, `COLUMNS_ICON_COLUMN_FALSE`, `COLUMNS_ICON_COLUMN_TRUE`, `EMPTY_STATE`, `FILTERS_REMOVE_ALL_BUTTON`, the three `HEADER_CELL_SORT_*`, `REORDER_HANDLE`, `SEARCH_FIELD`](../../../packages/tables/src/Twig/TablesIconAlias.php) | [`TablesIconAlias`](../../../vendor/filament/tables/src/View/TablesIconAlias.php) | in progress | — | [detail](#the-alias-set-is-twelve-constants-of-filaments-23) · [diverges](#the-empty-state-alias-value-drops-filaments-package-prefix) |
+| [`TablesIconAlias` — `ACTIONS_COLUMN_MANAGER`, `ACTIONS_DISABLE_REORDERING`, `ACTIONS_ENABLE_REORDERING`, `ACTIONS_FILTER`, `COLUMNS_ICON_COLUMN_FALSE`, `COLUMNS_ICON_COLUMN_TRUE`, `EMPTY_STATE`, `FILTERS_REMOVE_ALL_BUTTON`, the three `HEADER_CELL_SORT_*`, `REORDER_HANDLE`, `SEARCH_FIELD`](../../../packages/tables/src/Twig/TablesIconAlias.php) | [`TablesIconAlias`](../../../vendor/filament/tables/src/View/TablesIconAlias.php) | in progress | — | [detail](#the-alias-set-is-thirteen-constants-of-filaments-23) · [diverges](#the-empty-state-alias-value-drops-filaments-package-prefix) |
 | [`ext-mbstring` on the package manifest](../../../packages/tables/composer.json) | — (Sylament-only; Filament's manifest declares no extensions) | done | — | [diverges](#the-manifest-declares-ext-mbstring) |
 | [`sylament/forms` on the package manifest](../../../packages/tables/composer.json) | [`filament/forms` on Filament's](../../../vendor/filament/tables/composer.json) | done | — | [diverges](#the-manifest-declares-sylamentforms) |
 | [`ext-intl`, `symfony/html-sanitizer` and `symfony/validator` on the package manifest](../../../packages/tables/composer.json) | [`ext-intl` on `filament/support`'s](../../../vendor/filament/support/composer.json); the two Symfony packages have no Filament counterpart | done | — | [diverges](#the-manifest-grew-three-requires-and-one-suggest-for-the-column-catalog) |
@@ -125,10 +125,10 @@ because they have no code.
 Specifics for rows that are not finished — what is already in, what is left, and
 what the next step is. Delete a subsection when its row flips to **done**.
 
-### The alias set is twelve constants of Filament's 23
+### The alias set is thirteen constants of Filament's 23
 
 Filament's `TablesIconAlias` declares 23 alias constants up front — every
-overridable icon slot in the whole table builder. Sylament ships **twelve** —
+overridable icon slot in the whole table builder. Sylament ships **thirteen** —
 `ACTIONS_FILTER` (the toolbar funnel), `EMPTY_STATE`,
 `FILTERS_REMOVE_ALL_BUTTON` (the indicators row's clear-all button), the three
 `HEADER_CELL_SORT_*` (unsorted, ascending, descending — the sortable header's
@@ -139,13 +139,15 @@ trigger's two states, resolved inside
 so one action object answers for both, and `REORDER_HANDLE`, the per-row grab
 handle — and the two the column catalog added, `COLUMNS_ICON_COLUMN_TRUE` and
 `COLUMNS_ICON_COLUMN_FALSE`, the boolean glyph pair
-[`IconColumn::boolean()`](icon-column.md) falls back to. All twelve have their
-consuming surface ported. Ten of the remaining 11 belong to features that are not
-built yet: the filters query builder (the six
+[`IconColumn::boolean()`](icon-column.md) falls back to, and the column
+manager's `ACTIONS_COLUMN_MANAGER`, the toolbar trigger's glyph, resolved inside
+[`getColumnManagerTriggerAction()`](../../../packages/tables/src/Table/Concerns/HasColumnManager.php).
+All thirteen have their consuming surface ported. Nine of the remaining 10 belong
+to features that are not built yet: the filters query builder (the six
 `FILTERS_QUERY_BUILDER_CONSTRAINTS_*`), grouping (`ACTIONS_GROUP`,
-`GROUPING_COLLAPSE_BUTTON`), the column manager (`ACTIONS_COLUMN_MANAGER`) and
-the layout columns' `COLUMNS_COLLAPSE_BUTTON` (M4 · 7 — it collapses a
-`Columns\Layout\Stack`, which this package does not render yet).
+`GROUPING_COLLAPSE_BUTTON`) and the layout columns' `COLUMNS_COLLAPSE_BUTTON`
+(M4 · 7 — it collapses a `Columns\Layout\Stack`, which this package does not
+render yet).
 
 The eleventh, `ACTIONS_OPEN_BULK_ACTIONS`, is the one exception, and it is worth
 naming because its feature **is** built: bulk actions landed with M4 · 1 and the

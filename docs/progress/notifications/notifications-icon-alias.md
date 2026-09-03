@@ -61,7 +61,7 @@ an application could register an override for that nothing would ever read.
 de-prefixed value the five below already use (`database.modal.empty-state`). This
 is the growth order
 [`SupportIconAlias`](../support/support-icon-alias.md#pagination-rtl-aliases)
-and [`TablesIconAlias`](../tables/tables-bundle.md#the-alias-set-is-twelve-constants-of-filaments-23)
+and [`TablesIconAlias`](../tables/tables-bundle.md#the-alias-set-is-thirteen-constants-of-filaments-23)
 already follow.
 
 ## Divergences

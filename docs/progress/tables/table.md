@@ -97,7 +97,7 @@ Rows never disappear — only their detail sections do.
 | The pivot surface — `hasPivotRecordKeys()`, `allowDuplicates()`, `selectPivotDataInQuery()` | [`HasRecords`](../../../vendor/filament/tables/src/Table/Concerns/HasRecords.php), [`Table\Concerns\HasQuery`](../../../vendor/filament/tables/src/Table/Concerns/HasQuery.php) | skipped | — | The `BelongsToMany` pivot arm: a Doctrine association table carrying payload is an entity of its own rather than a pivot with casts, so there is no pivot model to key rows by, to allow duplicates of, or to alias columns out of |
 | [`columns()` / `getColumns()` / `getColumn()` / `getVisibleColumns()` / `flushCachedVisibleColumns()`](../../../packages/tables/src/Table/Concerns/HasColumns.php) | [`Table\Concerns\HasColumns`](../../../vendor/filament/tables/src/Table/Concerns/HasColumns.php) | in progress | — | [column.md](column.md) · [detail](#columns-takes-columns-only-and-does-not-push) · [semantics](#the-visible-set-asks-each-column-twice-and-is-memoised-until-columns-is-called-again) |
 | Column grouping and layouts — `pushColumns()`, `getColumnsLayout()`, `hasColumnGroups()` | [`Table\Concerns\HasColumns`](../../../vendor/filament/tables/src/Table/Concerns/HasColumns.php) | todo | — | [detail](#columns-takes-columns-only-and-does-not-push) |
-| The column manager — user-toggleable column visibility | [`HasColumnManager`](../../../vendor/filament/tables/src/Table/Concerns/HasColumnManager.php) | todo | — | — |
+| [The column manager — `columnManager()` / `deferColumnManager()` / `reorderableColumns()` / `persistColumnsInSession()` / `columnManagerLayout()` / `columnManagerResetActionPosition()` / `columnManagerColumns()` / `columnManagerMaxHeight()` / `columnManagerWidth()` and the trigger and apply actions](../../../packages/tables/src/Table/Concerns/HasColumnManager.php) | [`Table\Concerns\HasColumnManager`](../../../vendor/filament/tables/src/Table/Concerns/HasColumnManager.php) | in progress | — | [has-table.md](has-table.md) · [detail](#the-column-managers-table-tier-ships-whole-and-its-chrome-does-not-yet) |
 | [The `query()` lane — `query()` / `getQuery()` / `modifyQueryUsing()` / `applyQueryScopes()` / `getQueryEntityManager()`](../../../packages/tables/src/Table/Concerns/HasQuery.php) | [`Table\Concerns\HasQuery`](../../../vendor/filament/tables/src/Table/Concerns/HasQuery.php) | done | — | [semantics](#every-read-clones-a-memoised-base-query) |
 | [`hasQuery()`](../../../packages/tables/src/Table/Concerns/HasRecords.php) | [`HasRecords::hasQuery()`](../../../vendor/filament/tables/src/Table/Concerns/HasRecords.php) | done | — | [semantics](#the-query-lane-is-on-exactly-while-no-records-closure-is-set) |
 | [`getRecordClass()`](../../../packages/tables/src/Table/Concerns/HasRecords.php) | [`HasRecords::getModel()`](../../../vendor/filament/tables/src/Table/Concerns/HasRecords.php) | done | — | [rename](../renames.md#renames) · [semantics](#the-record-class-is-read-off-the-base-querys-root-entity) |
@@ -353,6 +353,39 @@ bound once and reused — the single bug the per-record clone exists to prevent.
 Specifics for rows that are not finished — what is already in, what is left, and
 what the next step is. Delete a subsection when its row flips to **done**; the
 table row and any divergence it earned stay behind.
+
+### The column manager's table tier ships whole, and its chrome does not yet
+
+Every setting Filament's `Table\Concerns\HasColumnManager` carries is here:
+`columnManager()` (an explicit answer, else derived — the manager appears for
+whatever it would have to edit, `hasReorderableColumns() || hasToggleableColumns()`),
+`deferColumnManager()` and `persistColumnsInSession()` (both defaulting **on**,
+and the session one is the only persistence flag in the package that does),
+`reorderableColumns()`, `columnManagerLayout()`, `columnManagerResetActionPosition()`,
+`columnManagerColumns()`, `columnManagerMaxHeight()`, `columnManagerWidth()` and
+the two action-modifying closures. The state the settings govern lives one tier
+up, on [`Concerns\HasColumnManager`](has-table.md#the-column-state-is-re-derived-against-the-definition-on-every-read).
+
+Three narrowings from vendor. The width is a raw CSS length rather than a `Width`
+enum, which this package does not carry, so `getColumnManagerWidth()` is genuinely
+nullable. The eight deprecated `toggleColumns*` / `columnToggleForm*` aliases are
+skipped, as every deprecated Filament surface is. And the trigger carries none of
+vendor's modal-footer machinery — the manager's apply and reset render in the
+partial in both layouts, exactly as the filters pair does.
+
+The two actions mirror that filters pair, which the same file already holds.
+`getColumnManagerTriggerAction()` opens client-side and never reaches the server:
+`liveComponentClickHandlerEnabled(false)`, and under the modal layout an invoker
+`command` / `commandfor` pair stamped **after** the customization closure has
+run, so a closure setting extra attributes of its own cannot leave the modal with
+nothing that opens it. `getColumnManagerApplyAction()`'s visibility *is* the defer
+flag. `resolveColumnManagerIcon()` is `resolveFiltersIcon()`'s twin rather than a
+shared helper — the two are three lines each and hoisting one is a docs-lane
+tidy, not a behaviour.
+
+What is left is the chrome: the `ColumnManager` and `ColumnManagerContent` Twig
+components, the `sylament--tables--column-manager` controller that writes the
+draft, the stylesheet and the partial's branch.
 
 ### The pagination mode ships two cases, and two setters wait on their features
 

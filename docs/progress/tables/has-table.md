@@ -116,7 +116,7 @@ Reference — the Filament source this is diffed against:
 - [`tables/src/Concerns/HasBulkActions.php`](../../../vendor/filament/tables/src/Concerns/HasBulkActions.php)
   — the host-side selection state, its two resolution seams and the key enumeration
 - [`tables/src/Contracts/HasTable.php`](../../../vendor/filament/tables/src/Contracts/HasTable.php)
-  — the 46-method interface this reduces to twenty-three
+  — the 46-method interface this reduces to twenty-four
 
 ## Surface
 
@@ -134,7 +134,7 @@ instead.
 | [`makeTable(): Table`](../../../packages/tables/src/Concerns/HasTable.php) | [`InteractsWithTable::makeTable()`](../../../vendor/filament/tables/src/Concerns/InteractsWithTable.php) | done | — | [diverges](#maketable-seeds-nothing-from-deprecated-host-getters) |
 | [`getTableRecords()` — resolve the data source once, eager-load, re-key, fill the aggregate store, cache](../../../packages/tables/src/Concerns/HasTable.php) | [`Concerns\HasRecords::getTableRecords()`](../../../vendor/filament/tables/src/Concerns/HasRecords.php) | in progress | — | [detail](#the-records-injections-stop-at-seven-of-filaments-eight) · [semantics](#a-records-closure-resolves-public-container-services-by-type) · [diverges](#gettablerecords-returns-a-keyed-array-or-a-paginator-never-a-collection) · [diverges](#eager-loading-runs-over-the-visible-columns-on-the-page-clone-alone) |
 | [`getTablePaginator(): ?Paginator` — the carrier, unwrapped for the footer](../../../packages/tables/src/Concerns/HasTable.php) | — (Sylament-only; Filament's records **are** the paginator) | done | — | [pagination.md](../support/pagination.md) · [semantics](#the-paginator-is-a-return-value-not-a-state-holder) |
-| [`InteractsWithTable` — twenty-three methods](../../../packages/tables/src/Contracts/InteractsWithTable.php) | [`Contracts\HasTable`](../../../vendor/filament/tables/src/Contracts/HasTable.php) | in progress | — | [detail](#the-contract-is-twenty-methods-of-filaments-forty-six) |
+| [`InteractsWithTable` — twenty-four methods](../../../packages/tables/src/Contracts/InteractsWithTable.php) | [`Contracts\HasTable`](../../../vendor/filament/tables/src/Contracts/HasTable.php) | in progress | — | [detail](#the-contract-is-twenty-methods-of-filaments-forty-six) |
 | [`flushCachedTableRecords()`](../../../packages/tables/src/Concerns/HasTable.php) | [`Concerns\HasRecords::flushCachedTableRecords()`](../../../vendor/filament/tables/src/Concerns/HasRecords.php) | done | — | on the contract since M4 · 2 — actions' `callMountedAction()` calls it in a `finally` after any mounted action runs on a table host. [detail](#the-contract-is-twenty-methods-of-filaments-forty-six) |
 | [`getTableHostId()` + the `$tableHostId` `LiveProp`](../../../packages/tables/src/Concerns/HasTable.php) | [`Livewire\Component::getId()`](../../../vendor/filament/tables/resources/views/index.blade.php) | done | — | [diverges](#the-host-id-is-a-random-liveprop-rather-than-a-framework-component-id) |
 | [`getTableRecordKey(object\|array $record): string`](../../../packages/tables/src/Concerns/HasTable.php) | [`Concerns\HasRecords::getTableRecordKey()`](../../../vendor/filament/tables/src/Concerns/HasRecords.php) | done | — | [diverges](#object-records-are-keyed-by-a-readable-id-rather-than-an-eloquent-key) |
@@ -164,7 +164,8 @@ instead.
 | `reorderTable()`'s `BelongsToMany` pivot-column arm | [`Concerns\CanReorderRecords`](../../../vendor/filament/tables/src/Concerns/CanReorderRecords.php) | skipped | — | It reorders a position column that lives on the **pivot** rather than on the record, keyed by the pivot class under `allowsDuplicates()`. The pivot surface is skipped whole on Doctrine grounds — an association table carrying payload is an entity of its own, so there is no pivot query to reorder and no pivot class to key by ([table.md](table.md#surface), [renames.md](../renames.md#renames)) — and a join table with a position column is reordered here as the entity it is |
 | The deprecated host reorder shims — `isTablePaginationEnabledWhileReordering()`, `getTableReorderColumn()` | [`Concerns\CanReorderRecords`](../../../vendor/filament/tables/src/Concerns/CanReorderRecords.php) | skipped | — | Both are documented "Override the `table()` method" bridges, and the project has never ported a deprecated Filament surface; what they front is [`Table\Concerns\CanPaginateRecords::isPaginatedWhileReordering()`](../../../packages/tables/src/Table/Concerns/CanPaginateRecords.php) and [`Table\Concerns\CanReorderRecords::getReorderColumn()`](../../../packages/tables/src/Table/Concerns/CanReorderRecords.php) |
 | The deprecated host presentation shims — `isTableStriped()`, `getTableEmptyState()`, `getTableEmptyStateActions()`, `getTableEmptyStateDescription()`, `getTableEmptyStateHeading()`, `getTableEmptyStateIcon()` | [`Concerns\CanBeStriped`](../../../vendor/filament/tables/src/Concerns/CanBeStriped.php), [`Concerns\HasEmptyState`](../../../vendor/filament/tables/src/Concerns/HasEmptyState.php) | skipped | — | Both files carry `@deprecated Override the \`table()\` method` on the trait *and* on every member, and the project has never ported a deprecated Filament surface. What they front ships on the table object — `striped()` and the whole empty-state family, [both **done** there](table.md#surface) |
-| The column manager, `HasContent`, `HasHeader` | [`HasColumnManager`](../../../vendor/filament/tables/src/Concerns/HasColumnManager.php) and two siblings | todo | — | — |
+| [The column manager — the two column bags, `mountTableColumnManager()`, `afterTableColumnManagerHydrated()`, `applyTableColumnManager()`, `resetTableColumnManager()`, `getDefaultTableColumnState()`, `isTableColumnToggledHidden()`, `getTableColumnManagerItems()`](../../../packages/tables/src/Concerns/HasColumnManager.php) | [`Concerns\HasColumnManager`](../../../vendor/filament/tables/src/Concerns/HasColumnManager.php) | in progress | — | [table.md](table.md) · [detail](#the-column-state-is-re-derived-against-the-definition-on-every-read) |
+| `HasContent`, `HasHeader` | [`Concerns\HasContent`](../../../vendor/filament/tables/src/Concerns/HasContent.php), [`Concerns\HasHeader`](../../../vendor/filament/tables/src/Concerns/HasHeader.php) | todo | — | — |
 | Translatable content driver — `getActiveTableLocale()`, `makeFilamentTranslatableContentDriver()` | [`Contracts\HasTable`](../../../vendor/filament/tables/src/Contracts/HasTable.php) | todo | — | [has-schemas.md](../schemas/has-schemas.md#the-translatable-content-driver-is-not-ported) |
 
 Sixteen rows are **done**. Ten are the trait's own core — the build-once pair with
@@ -449,6 +450,43 @@ Specifics for rows that are not finished — what is left and what the next step
 is. Delete a subsection when its row flips to **done**; the row and any
 divergence stay behind.
 
+### The column state is re-derived against the definition on every read
+
+The applied bag `$tableColumns` and the client-writable draft `$tableDeferredColumns`
+are both **derived** values, never sources of truth. The definition — the columns
+`table()` declared — owns identity and toggleability; the stored state owns only
+the toggle, and the order too while
+[`reorderableColumns()`](table.md#surface) is on. `syncTableColumnState()` runs
+that merge at every entry point: the mount hook, the hydrate hook and both live
+actions. So a column the definition dropped disappears from the state, a column
+it added arrives at its declared place, a column that cannot be toggled is forced
+on however the state reads, and a column whose stored sentinel says it was not
+toggleable when it was stored is re-seeded from the definition's current default
+rather than left at a stale choice.
+
+Everything arriving from outside goes through `normalizeTableColumnState()`
+first — the session, whose contents an earlier version of this table wrote, and
+the writable draft, which is a client value like any other. It refuses a non-list
+or an item without a string `type` and `name` **whole**, and the caller then falls
+back to the definition's own state rather than to a partially-trusted one; a
+non-boolean toggle reads as on. The stored shape carries a `type` at all because
+Filament's manager lists column *groups* beside columns — `group` is honoured on
+read so a state a later version writes still loads, and is never produced here.
+
+The state exists for any column the manager could toggle or move, whether or not
+the chrome that edits it is rendered: `hasColumnManager()` gates the trigger
+alone, so `columnManager(false)` over toggleable columns still honours their
+declared `toggledHiddenByDefault()`. What is left is the chrome itself — the
+manager's two Twig components, its Stimulus controller and the partial's branch.
+
+The two hooks take priorities the rest of the package has to leave free:
+`#[PostMount(priority: 4)]`, below `CanPersistTableState`'s read at 10 and above
+the filters mount at 0, because 5 is
+[`CanSortRecords::healSeededTableSort()`](#sorting-composes-the-users-order-the-default-and-the-identifier-tiebreaker)'s
+and UX sorts equal priorities with a stable `arsort()`, which would resolve a tie
+by reflection order over flattened traits; and `#[PostHydrate(priority: -4)]`,
+which re-derives both bags before any read of either.
+
 ### The `records()` injections stop at seven of Filament's eight
 
 Filament evaluates the data source with eight named injections —
@@ -703,7 +741,7 @@ matching means.
 
 `Contracts\HasTable` declares 46 methods — the full host API a Filament table,
 column, filter, action, or test helper may call back into. Sylament's
-`InteractsWithTable` declares the twenty-three the shipped surface actually calls:
+`InteractsWithTable` declares the twenty-four the shipped surface actually calls:
 `getTable()` (the template and the column layer need the table from the host),
 `getTableRecords()` (which [`Table::getRecords()`](table.md#getrecords-delegates-to-the-host-and-fetches-nothing)
 delegates to), and three that arrived with the record-action lane (M1 · 6) —
@@ -867,6 +905,15 @@ is what calls it. What is published is again the **question** rather than the
 state: `$tableColumns` and `$tableDeferredColumns` stay off the contract, so a
 host that answers `false` without composing `HasColumnManager` renders every
 column and is correct.
+
+The manager's chrome added the twenty-fourth, `getTableColumnManagerItems()`,
+and this one is there for a **template** rather than for a column: the partial
+renders one row per item, so it reads the list off the host exactly as it reads
+`getTableRecordsPerPage()`, and
+[`TemplateHostCallsTest`](../../../packages/tables/tests/Architecture/TemplateHostCallsTest.php)
+would fail the moment it did so without the declaration. It publishes the rows
+rather than the bag they are derived from, so the two column props stay off the
+contract as before.
 
 ### The selection is server-canonical, and re-derived on every read
 

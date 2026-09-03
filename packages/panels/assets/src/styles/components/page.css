@@ -26,3 +26,8 @@
 .sy-pa-form-errors {
     @apply grid gap-y-1 rounded-lg bg-danger-50 px-4 py-3 text-sm text-danger-600 dark:bg-danger-400/10 dark:text-danger-400;
 }
+
+.sy-pa-simple-page-content {
+    @apply grid auto-cols-fr gap-y-6;
+}
+

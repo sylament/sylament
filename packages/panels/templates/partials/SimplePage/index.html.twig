@@ -1,0 +1,38 @@
+{% set panel = this.getPanel %}
+{% set heading = this.getHeading %}
+{% set subheading = this.getSubheading %}
+{% set hasLogo = this.hasLogo %}
+
+{% set hasUnsavedDataChangesAlert = this.hasUnsavedDataChangesAlert %}
+{% set guardsActionChanges = this.getPanel.hasUnsavedChangesAlerts %}
+{% set savedDataHash = hasUnsavedDataChangesAlert ? this.savedDataHash : null %}
+
+<div {{ attrs({class: ['sy sy-pa-simple-page', this.getPageClasses]}, attributes.all) }}>
+    <div class="sy-pa-simple-page-content">
+        {% block header %}
+            {% if heading is filled or hasLogo or subheading is filled %}
+                <twig:SylamentPanels:SimpleHeader
+                    :heading="heading"
+                    :subheading="subheading"
+                    :logo="hasLogo"
+                    :brandName="panel.getBrandName"
+                    :brandLogo="panel.getBrandLogo"
+                    :darkModeBrandLogo="panel.getDarkModeBrandLogo"
+                    :brandLogoHeight="panel.getBrandLogoHeight"
+                />
+            {% endif %}
+        {% endblock header %}
+
+        {% block content %}{{ renderSchema('content') }}{% endblock content %}
+    </div>
+
+    <twig:SylamentActions:Modals />
+
+    {% if hasUnsavedDataChangesAlert or guardsActionChanges %}
+        <div class="sy-pa-unsaved-changes" {{ stimulus_controller('sylament--panels--unsaved-changes', {
+            savedHash: savedDataHash ?? '',
+            dataModel: hasUnsavedDataChangesAlert ? 'data' : '',
+            guardActions: guardsActionChanges,
+        }) }}></div>
+    {% endif %}
+</div>

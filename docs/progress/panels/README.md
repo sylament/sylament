@@ -1414,8 +1414,11 @@ Enums, contracts, HTTP layer, events, templates —
 | [Page form variant](../../../packages/panels/templates/partials/Page/form.html.twig) | no Filament counterpart — v5's create and edit pages have no view of their own; [`CreateRecord::content()`](../../../vendor/filament/filament/src/Resources/Pages/CreateRecord.php) and [`EditRecord::content()`](../../../vendor/filament/filament/src/Resources/Pages/EditRecord.php) return a schema holding a `Form` wrapping an `EmbeddedSchema` and the form `Actions` | in progress | [CreateRecord](#createrecord), [EditRecord](#editrecord) |
 | [Page table variant](../../../packages/panels/templates/partials/Page/table.html.twig) | no Filament counterpart — v5's list and manage-related pages have no view either; [`ListRecords::content()`](../../../vendor/filament/filament/src/Resources/Pages/ListRecords.php) and [`ManageRelatedRecords::content()`](../../../vendor/filament/filament/src/Resources/Pages/ManageRelatedRecords.php) return a schema holding an [`EmbeddedTable`](../../../vendor/filament/schemas/src/Components/EmbeddedTable.php) | in progress | [ListRecords](#listrecords), [ManageRelatedRecords](manage-related-records.md#the-page-renders-a-template-not-a-content-schema) |
 | [EditRecord template](../../../packages/panels/templates/partials/EditRecord/index.html.twig) | same — the two-block child of the form variant, holding the relation managers below the form | in progress | [EditRecord](#editrecord) |
+| [SimplePage template](../../../packages/panels/templates/partials/SimplePage/index.html.twig) | [`components/page/simple.blade.php`](../../../vendor/filament/filament/resources/views/components/page/simple.blade.php) | in progress | [Layout templates](#layout-templates) |
 | [RelationManager template](../../../packages/panels/templates/partials/RelationManager/index.html.twig) | [`resources/views/resources/relation-manager.blade.php`](../../../vendor/filament/filament/resources/views/resources/relation-manager.blade.php) | in progress | [RelationManager](relation-manager.md#the-manager-renders-a-template-not-a-content-schema) |
 | [SubNavigation templates](../../../packages/panels/templates/components/SubNavigation/index.html.twig) — the dispatcher plus the sidebar, tabs and mobile-menu components | [`components/page/sub-navigation/`](../../../vendor/filament/filament/resources/views/components/page/sub-navigation) | in progress | [has-sub-navigation.md](has-sub-navigation.md#three-sibling-components-not-one-with-variants) |
+| [SimpleLayout template](../../../packages/panels/templates/components/SimpleLayout/index.html.twig) | [`components/layout/simple.blade.php`](../../../vendor/filament/filament/resources/views/components/layout/simple.blade.php) | in progress | [Layout templates](#layout-templates) |
+| [SimpleHeader template](../../../packages/panels/templates/components/SimpleHeader/index.html.twig) | [`components/header/simple.blade.php`](../../../vendor/filament/filament/resources/views/components/header/simple.blade.php) | in progress | [Layout templates](#layout-templates) |
 | [`SylamentPanelsBundle`](../../../packages/panels/src/SylamentPanelsBundle.php) | [`FilamentServiceProvider.php`](../../../vendor/filament/filament/src/FilamentServiceProvider.php) | in progress | autoconfigures the four tags (`sylament.panels.panel_provider` / `.page` / `.resource` / `.relation_manager`), registers `PageComponentPass`, `RelationManagerComponentPass` and `ResourcePass`, wires `Panel`, the two registries, `CurrentPanel`, `RelationGroup`, `PageController` and the `routing.route_loader`, and prepends `@sylament/panels` into AssetMapper — [providers are collected by tag](#panels-are-collected-from-tagged-providers-not-registered-imperatively), [pages register through a pass](#pages-register-as-live-components-through-a-compiler-pass-over-a-per-class-attribute), [relation managers through their own](relation-manager.md#a-manager-must-carry-aslivecomponent-and-the-pass-enforces-it), [the group needs a definition of its own to reach the container](relation-group.md#the-two-constructor-arguments-arrive-through-setters), [resources from a tag](#resources-are-collected-from-a-tag-not-discovered-on-the-filesystem) |
 | _rest not audited yet_ | | | |
 
@@ -1528,6 +1531,22 @@ tokens. Which shell wraps the page is the page's own `getLayout()`, read by
 `PageController`: only `SylamentPanels:Layout` and `SylamentPanels:SimpleLayout`
 ship, and any other value is a `LogicException` naming the page — a third shell
 is a `Document` template override, not a `getLayout()` value.
+
+`SimpleLayout` and `SimpleHeader` are the second shell, the one a `SimplePage`
+picks through `getLayout()`: a centred card on an empty ground, with no sidebar,
+no topbar and no navigation at all. The layout carries the shell body classes
+(`sy sy-pa-body sy-pa-simple-layout`), and under `hasTopbar()` a skip link and a
+`sy-pa-simple-layout-header` strip pinned to the top end corner; the header
+renders the panel's `Logo`, an `h1` and a `p`, each only when it has something
+to show. Where Filament gates that strip twice on `auth()->check()` and fills it
+with database notifications and a `SimpleUserMenu`, ours is gated on
+`hasTopbar()` alone and holds the existing `UserMenu` — with auth parked, that
+menu is the only theme affordance a page with no topbar would otherwise have,
+and `SimpleUserMenu` is not ported. The page partial is a deliberate copy rather
+than a child of the base one: the two share the unsaved-changes preamble and the
+sentinel verbatim, but a simple page has no header band, no breadcrumbs and no
+sub-navigation, so there is no common parent left to extend — a `{% extends %}`
+would inherit a chrome whose every element the child would have to empty.
 
 What Filament's shell has and this does not, all todo:
 

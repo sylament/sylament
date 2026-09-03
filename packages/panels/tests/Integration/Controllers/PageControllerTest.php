@@ -155,6 +155,18 @@ it('emits a width that is no token as the page own class, with no ladder prefix'
         ->not->toContain('sy-width-');
 });
 
+it('wraps a simple page in the centred card shell, with no sidebar or topbar', function (): void {
+    $client = $this::getContainer()->get('test.client');
+    $crawler = $client->request('GET', '/probe/simple');
+
+    expect($client->getResponse()->getStatusCode())->toBe(200)
+        ->and($crawler->filter('body > .sy-pa-simple-layout')->count())->toBe(1)
+        ->and($crawler->filter('main.sy-pa-simple-main.sy-width-md')->count())->toBe(1)
+        ->and($crawler->filter('#sy-pa-sidebar, #sy-pa-topbar')->count())->toBe(0)
+        ->and($crawler->filter('.sy-pa-simple-page > .sy-pa-simple-page-content > .sy-pa-simple-header')->count())->toBe(1)
+        ->and((string) $client->getResponse()->getContent())->toContain('simple body');
+});
+
 it('refuses a page that names a layout the toolkit does not ship', function (): void {
     $request = Request::create('/probe/bad-layout');
     $request->attributes->set('_sylament_panel', 'probe');

@@ -1,0 +1,22 @@
+{% props
+    hasTopbar = true,
+    maxContentWidthClass = 'sy-width-lg',
+
+    content = markup(block('content') ?? null)
+%}
+
+<div {{ attrs({class: 'sy sy-pa-body sy-pa-simple-layout'}, attributes.all) }}>
+    {% if hasTopbar %}
+        <a href="#sy-pa-main" class="sy-pa-skip-link">Skip to content</a>
+
+        <div class="sy-pa-simple-layout-header">
+            <twig:SylamentPanels:UserMenu />
+        </div>
+    {% endif %}
+
+    <div class="sy-pa-simple-main-ctn">
+        <main {{ attrs({id: 'sy-pa-main', class: ['sy-pa-simple-main', maxContentWidthClass]}) }}>
+            {{ content }}
+        </main>
+    </div>
+</div>

@@ -1,0 +1,24 @@
+{% props
+    heading = null,
+    subheading = null,
+    logo = true,
+
+    brandName = null,
+    brandLogo = null,
+    darkModeBrandLogo = null,
+    brandLogoHeight = null
+%}
+
+<header {{ attrs({class: 'sy sy-pa-simple-header'}, attributes.all) }}>
+    {% if logo %}
+        <twig:SylamentPanels:Logo :brandName="brandName" :brandLogo="brandLogo" :darkModeBrandLogo="darkModeBrandLogo" :brandLogoHeight="brandLogoHeight" />
+    {% endif %}
+
+    {% if heading is filled %}
+        <h1 class="sy-pa-simple-header-heading">{{ heading }}</h1>
+    {% endif %}
+
+    {% if subheading is filled %}
+        <p class="sy-pa-simple-header-subheading">{{ subheading }}</p>
+    {% endif %}
+</header>

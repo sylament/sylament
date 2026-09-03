@@ -54,3 +54,19 @@
         @apply justify-between;
     }
 }
+
+.sy-pa-simple-header {
+    @apply flex flex-col items-center;
+
+    & .sy-pa-logo {
+        @apply mb-4;
+    }
+}
+
+.sy-pa-simple-header-heading {
+    @apply text-center text-2xl font-bold tracking-tight text-gray-950 dark:text-white;
+}
+
+.sy-pa-simple-header-subheading {
+    @apply mt-2 text-center text-sm text-gray-500 dark:text-gray-400;
+}

@@ -106,6 +106,27 @@ it('titles a swatch with its per-item tooltip', function (): void {
     expect(colorCell($column, '#fff')->filter('span.sy-ta-color-item')->attr('title'))->toBe('Brand #fff');
 });
 
+it('links a swatch the column answers a state-based url for', function (): void {
+    $column = ColorColumn::make('color')->url(fn (mixed $state): string => '/colours/' . mb_trim((string) $state, '#'), shouldOpenInNewTab: true);
+    $link = colorCell($column, '#ff0000')->filter('a');
+
+    expect($link->count())->toBe(1)
+        ->and($link->attr('href'))->toBe('/colours/ff0000')
+        ->and($link->attr('target'))->toBe('_blank')
+        ->and($link->filter('span.sy-ta-color-item')->count())->toBe(1);
+});
+
+it('leaves a swatch unlinked when the column url does not read the state', function (): void {
+    $host = new TableHost(fn (Table $table): Table => $table
+        ->records(fn (): array => [['color' => '#ff0000']])
+        ->columns([ColorColumn::make('color')->url('/colours')]));
+
+    $cell = new Crawler(renderToHtml($host->getTable()))->filter('td.sy-ta-cell');
+
+    expect($cell->filter('a div.sy-ta-color span.sy-ta-color-item')->count())->toBe(1)
+        ->and($cell->filter('div.sy-ta-color a')->count())->toBe(0);
+});
+
 it('marks an inline column and carries the wrapper extra attributes', function (): void {
     $cell = colorCell(ColorColumn::make('color')->inline()->extraAttributes(['data-probe' => 'color']), '#fff');
 

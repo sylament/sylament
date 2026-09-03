@@ -26,10 +26,11 @@ class ColorColumn extends Column
     /**
      * The cell's swatches, one entry per state value: the sanitized CSS colour the
      * swatch paints and names itself with — null for a value no CSS colour syntax
-     * admits — the copy control's three values when the item is copyable, and the
-     * raw value the per-item tooltip closure was handed.
+     * admits — the copy control's three values when the item is copyable, the
+     * per-item link where the column's `url()` reads the state, and the raw value
+     * the per-item tooltip closure was handed.
      *
-     * @return list<array{state: mixed, color: ?string, copyable: bool, copyableState: ?string, copyMessage: ?string, copyMessageDuration: ?int, tooltip: string|Markup|null}>
+     * @return list<array{state: mixed, color: ?string, copyable: bool, copyableState: ?string, copyMessage: ?string, copyMessageDuration: ?int, url: ?string, tooltip: string|Markup|null}>
      */
     public function getStateItems(): array
     {
@@ -44,6 +45,7 @@ class ColorColumn extends Column
                     'copyableState' => $isCopyable ? ($this->getCopyableState($value) ?? $this->stringify($value)) : null,
                     'copyMessage' => $isCopyable ? $this->getCopyMessage($value) : null,
                     'copyMessageDuration' => $isCopyable ? $this->getCopyMessageDuration($value) : null,
+                    'url' => $this->getUrl($value),
                     'tooltip' => $this->getTooltip($value),
                 ];
             },

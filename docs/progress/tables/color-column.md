@@ -50,6 +50,7 @@ _Detail_ carries **diverges** → the permanent note in
 | [`$template`](../../../packages/tables/src/Columns/ColorColumn.php) + [the partial it names](../../../packages/tables/templates/partials/ColorColumn/index.html.twig) | [`ColorColumn::toEmbeddedHtml()`](../../../vendor/filament/tables/src/Columns/ColorColumn.php) | done | — | [diverges](text-column.md#the-cell-renders-a-twig-partial-where-filament-emits-an-embedded-view) |
 | [The blank-state placeholder and the empty tooltip](../../../packages/tables/templates/partials/ColorColumn/index.html.twig) | [`ColorColumn::toEmbeddedHtml()`](../../../vendor/filament/tables/src/Columns/ColorColumn.php) | done | — | [column.md](column.md#a-tooltip-renders-as-a-native-title-and-markup-is-flattened-to-text) |
 | [The per-item tooltip](../../../packages/tables/templates/partials/ColorColumn/index.html.twig) | [`ColorColumn::toEmbeddedHtml()`](../../../vendor/filament/tables/src/Columns/ColorColumn.php) | done | — | [column.md](column.md#a-tooltip-renders-as-a-native-title-and-markup-is-flattened-to-text) |
+| [The per-item `<a>` for a state-based `url()`](../../../packages/tables/templates/partials/ColorColumn/index.html.twig) | — (Sylament-only; Filament's swatch is never a link) | done | — | [diverges](#the-swatch-honours-the-column-wide-url-where-filaments-ignores-it) |
 | [`sy-inline`, the alignment class and the wrapper `extraAttributes()`](../../../packages/tables/templates/partials/ColorColumn/index.html.twig) | [`ColorColumn::toEmbeddedHtml()`](../../../vendor/filament/tables/src/Columns/ColorColumn.php) | done | — | — |
 | [`color-column.css`](../../../packages/tables/assets/src/styles/components/color-column.css) | [`resources/css/columns/color.css`](../../../vendor/filament/tables/resources/css/columns/color.css) | done | — | [diverges](#the-copyable-focus-ring-lives-in-supports-sheet-rather-than-this-one) · [diverges](#the-stacked-on-mobile-rule-has-nothing-to-select) |
 
@@ -66,7 +67,9 @@ swatch, the unsanitizable one that paints and names nothing, the copyable one
 carrying the clipboard controller's three values and the three activation
 bindings with no server-rendered `tabindex`, the copyable **and** unsanitizable
 one that paints nothing and still names itself, the wrapped list, the
-placeholder, and the per-item `title`.
+placeholder, the per-item `title`, and the two `url()` arities — a state-based
+one wrapping each swatch in its own `<a>`, and a plain one leaving the wrapper
+anchor to carry the cell alone.
 
 ## Details
 
@@ -147,6 +150,21 @@ labels differ only by the verb. Where there is none the arms part: the plain
 swatch drops its `role` and its name together and goes inert, while the copyable
 one keeps both and names itself `Copy colour`, because the control is still
 there to operate.
+
+### The swatch honours the column-wide `url()` where Filament's ignores it
+
+`ColorColumn::toEmbeddedHtml()` renders no anchor at all, so upstream's
+`->url(fn ($state) => …)` on a colour column silently links nothing: the cell
+wrapper is forced to a `div` by the state-based arm of
+[`getUrl()`'s arity switch](column.md#geturl-answers-by-argument-count-so-a-closures-parameter-name-changes-the-dom),
+and no per-item link takes its place.
+
+`url()` is declared on the `Column` base here, so it is a column-wide contract
+rather than a per-subclass one, and this partial honours it the way
+[`IconColumn`](icon-column.md)'s does — each swatch inside its own `<a>`, taking
+`target="_blank"` from `openUrlInNewTab()`. The two arms stay mutually exclusive:
+a URL that does not read the state answers on the wrapper alone, so a swatch is
+never nested inside two anchors.
 
 ### A backed enum state is unwrapped before the sanitizer sees it
 

@@ -291,8 +291,13 @@ exactly once per change. Vendor's `error` and `isLoading` fields are dropped
 (written but never read upstream, and UX's own overlay is the failure signal), and
 its `reorderTopLevel()` array rebuild is fixed rather than copied: an entry the
 list never rendered keeps its place after the rendered ones instead of falling out
-of the state. Both apply and reset stay plain live actions — the dirty draft rides
-every request, so nothing in the footer needs a hand from this controller.
+of the state. Vendor's `init()` also `$watch`es its `columns` array to re-seed the
+client draft whenever the applied state changes under it; there is no counterpart
+here because the draft is a **server** prop — `afterTableColumnManagerHydrated()`
+re-derives `tableDeferredColumns` on every hydrate — so a dirty draft rides the
+request and survives a morph the user did not ask for, and a successful apply is
+what replaces it. Both apply and reset stay plain live actions — the dirty draft
+rides every request, so nothing in the footer needs a hand from this controller.
 
 **Next step:** grouping's collapse arm follows with M4 · 6. Filament's four
 interactive-column `AlpineComponent`s have no successors left to port —

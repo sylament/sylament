@@ -36,6 +36,7 @@
 {% set columnManagerApplyAction = hasColumnManager ? component.getColumnManagerApplyAction : null %}
 {% set columnManagerApplyVisible = columnManagerApplyAction is not null and columnManagerApplyAction.isVisible %}
 {% set columnManagerResetActionPosition = hasColumnManager ? component.getColumnManagerResetActionPosition : null %}
+{% set columnManagerToggleable = hasColumnManager and component.hasToggleableColumns %}
 {% set columnManagerItems = hasColumnManager ? component.getLiveComponent.getTableColumnManagerItems : [] %}
 
 {% set filterIndicators = component.getFilterIndicators %}
@@ -114,6 +115,7 @@
             :resetActionPosition="columnManagerResetActionPosition"
             :items="columnManagerItems"
             :gridColumns="component.getColumnManagerColumns"
+            :toggleable="columnManagerToggleable"
             :reorderable="component.hasReorderableColumns"
             :reorderAnimationDuration="component.getReorderAnimationDuration"
             :live="not columnManagerApplyVisible"
@@ -288,6 +290,7 @@
                         :hostId="hostId"
                         :items="columnManagerItems"
                         :gridColumns="component.getColumnManagerColumns"
+                        :toggleable="columnManagerToggleable"
                         :reorderable="component.hasReorderableColumns"
                         :reorderAnimationDuration="component.getReorderAnimationDuration"
                         :live="not columnManagerApplyVisible"

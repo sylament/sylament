@@ -1311,6 +1311,23 @@ it('offers the manager for reorderable columns alone and never under columnManag
 });
 
 /*
+ * A reorder-only manager has nothing to tick, so the checkbox does not render at
+ * all rather than rendering permanently disabled: an inert control the user can
+ * never satisfy is worse than none, and gating the input is what Filament does.
+ */
+it('renders the manager rows without a checkbox when no column is toggleable', function (): void {
+    $crawler = new Crawler(columnManagerTableHtml(static fn (Table $table): Table => $table
+        ->columns([TextColumn::make('title'), TextColumn::make('plays')])
+        ->reorderableColumns()));
+
+    expect($crawler->filter('.sy-ta-col-manager-item')->count())->toBe(2)
+        ->and($crawler->filter('.sy-ta-col-manager-checkbox')->count())->toBe(0)
+        ->and($crawler->filter('.sy-ta-col-manager-reorder-handle')->count())->toBe(2)
+        ->and($crawler->filter('.sy-ta-col-manager-item-label')->each(static fn (Crawler $label): string => mb_trim($label->text())))
+        ->toBe(['Title', 'Plays']);
+});
+
+/*
  * The state is the host's and the chrome is the table's, so turning the chrome
  * off leaves every declared default standing: `album` is still hidden because it
  * asked to be, and nothing on the page can put it back.
@@ -1415,6 +1432,24 @@ it('arms the drag control and its handles only for reorderable columns', functio
         ->and($reorderable->filter('.sy-ta-col-manager-item')->each(static fn (Crawler $item): ?string => $item->attr('data-sortable-item')))
         ->toBe(['column::title', 'column::plays', 'column::album'])
         ->and($reorderable->filter('.sy-ta-col-manager-reorder-handle[data-sortable-handle]')->count())->toBe(3);
+});
+
+/*
+ * `columnManagerColumns()` reaches the DOM as support's grid in its **column**
+ * direction, which is what the stylesheet's `-mt-6` / `break-inside-avoid` trick
+ * is built on — the row direction would swap it for a CSS grid and leave those
+ * rules inert without failing anything else. A bare integer is support's
+ * shorthand for that many columns from `lg` up and one below it, so the table
+ * tier hands the count through untouched and the grid does the widening.
+ */
+it('lays the manager items out as a multi-column grid', function (): void {
+    $items = new Crawler(columnManagerTableHtml(static fn (Table $table): Table => $table->columnManagerColumns(2)))
+        ->filter('.sy-ta-col-manager-items');
+
+    expect($items->attr('class'))->toContain('sy-grid-direction-col')
+        ->and($items->attr('class'))->toContain('lg:sy-grid-cols')
+        ->and($items->attr('style'))->toContain('--cols-lg: 2')
+        ->and($items->attr('style'))->toContain('--cols-default: 1');
 });
 
 it('binds every manager checkbox to the controller through a target and a change action', function (): void {

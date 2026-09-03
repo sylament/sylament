@@ -3773,7 +3773,7 @@ var Select = class {
         }
       });
     }
-    this.statusRegion.className = "sy-fo-sr-only";
+    this.statusRegion.className = "sy-sr-only";
     this.statusRegion.setAttribute("role", "status");
     this.statusRegion.setAttribute("aria-live", "polite");
     this.statusRegion.setAttribute("aria-atomic", "true");

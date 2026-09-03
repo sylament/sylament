@@ -357,6 +357,17 @@ it('lets the query string beat the remembered per-column terms', function (): vo
         ->and(renderedRowsOf($crawler, 'ColumnSearchUrlTable'))->toContain('Let Down');
 });
 
+it('remembers a per-column term the query string seeded, on the visit after it', function (): void {
+    [$client] = browseTo('?columnSearches[title]=Let');
+
+    expect(currentTableSession($client)[sessionKeyFor(ColumnSearchUrlTable::class, 'column_search')])->toBe(['title' => 'Let']);
+
+    [, $crawler] = browseTo(client: $client);
+
+    expect(publishedProps($crawler, '#column-search-table')['tableColumnSearches'])->toBe(['title' => 'Let'])
+        ->and(renderedRowsOf($crawler, 'ColumnSearchUrlTable'))->toContain('Let Down');
+});
+
 it('writes no per-column terms for a table that did not opt in', function (): void {
     [$client] = browseTo();
 

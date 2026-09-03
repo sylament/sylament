@@ -384,6 +384,23 @@ it('table-level searchable([...]) reaches a relation path', function (): void {
         ->and($query?->getDQLPart('join'))->toBe([]);
 });
 
+it('leaves a hidden column out of the global search group', function (): void {
+    $entityManager = searchableSongs();
+    $configure = fn (bool $isHidden): Closure => fn (Table $table): Table => $table
+        ->query($entityManager->createQueryBuilder()->select('song')->from(Song::class, 'song'))
+        ->columns([TextColumn::make('title')->searchable()->hidden($isHidden)]);
+
+    $visible = new TableHost($configure(false));
+    $hidden = new TableHost($configure(true));
+
+    $visible->tableSearch = 'Silent';
+    $hidden->tableSearch = 'Silent';
+
+    expect($visible->getFilteredTableQuery()?->getDQL() ?? '')->toContain('LIKE')
+        ->and($hidden->getFilteredTableQuery()?->getDQL() ?? '')->not->toContain('LIKE')
+        ->and($hidden->getFilteredTableQuery()?->getDQLPart('where'))->toBeNull();
+});
+
 it('seeds every individually searchable column, nesting a dotted name', function (): void {
     $host = new TableHost(fn (Table $table): Table => $table->columns([
         TextColumn::make('title')->searchable(isIndividual: true),

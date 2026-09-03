@@ -373,6 +373,20 @@ it('drops the values past the limit and counts them in a static message', functi
  * server has to ship them hidden. Dropping the `listWithLineBreaks()` half of the slice gate
  * would leave the toggles behind with nothing to reveal, which the next case pins.
  */
+it('keeps its own controller over one a consumer put in the extra attributes', function (): void {
+    $cell = textCell(
+        fn (): TextColumn => TextColumn::make('tags')
+            ->listWithLineBreaks()
+            ->limitList(2)
+            ->expandableLimitedList()
+            ->extraAttributes(['data-controller' => 'app--probe']),
+        ['a', 'b', 'c', 'd'],
+        'tags',
+    );
+
+    expect($cell->attr('data-controller'))->toBe('sylament--tables--limited-list');
+});
+
 it('ships the over-limit values hidden behind two toggles when the list is expandable', function (): void {
     $cell = textCell(
         fn (): TextColumn => TextColumn::make('tags')->listWithLineBreaks()->limitList(2)->expandableLimitedList(),

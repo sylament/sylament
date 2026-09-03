@@ -155,9 +155,15 @@ its modals, and ours escapes them through
 
 - **The engine lives in forms, and only inside the bundle.** `utils/select.ts`
   is filed here because forms is its only consumer; it moves to a support
-  workspace on the second one — tables' `SelectColumn` (M4 · 4, whose vendor
-  `columns/select.js` imports the same utility) — under the house promotion
-  rule, the same deferral the `schema_component_method.ts` note carries.
+  workspace on the second one — under the house promotion rule, the same
+  deferral the `schema_component_method.ts` note carries. Tables'
+  `SelectColumn` was the candidate, and it did **not** trigger the promotion:
+  the column catalog (M4 · 4) shipped it
+  [native-only](../tables/select-column.md), a plain `<select>` with no JS
+  control of its own, so the engine still has exactly one consumer. Vendor's
+  `columns/select.js` does import the same utility, so the trigger comes back
+  the day the searchable/relationship arms land — which is the deferral that
+  row is blocked on, not a separate one.
   AssetMapper is what makes that a real move rather than a re-export: it
   resolves a bare import only through the root importmap
   (`JavaScriptImportPathCompiler::findAssetForBareImport()`), so an

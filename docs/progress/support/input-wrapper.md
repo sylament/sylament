@@ -10,10 +10,18 @@ An affix holds up to three things — actions, an icon, a label — and is rende
 only when it holds at least one.
 
 It lives in **support**, not forms, because Filament files it here too and
-because M4 · 4's editable table columns must reach it without tables depending
-on forms. The classes are `sy-input-wrp*` — no package code in the name, the
-same choice `sy-btn` makes, because support is the package everything else
-builds on.
+because a second package now renders it: the column catalog's
+[`TextInputColumn`](../tables/text-input-column.md) and
+[`SelectColumn`](../tables/select-column.md) put their controls inside
+`<twig:SylamentSupport:InputWrapper>` directly. The placement stands, but not on
+the argument that was written here first — *"so tables can reach it without
+depending on forms"* — because tables **does** depend on forms
+([tables-bundle.md](../tables/tables-bundle.md#the-manifest-declares-sylamentforms))
+and the editable cells reuse forms' `sy-fo-input` / `sy-fo-select` skins besides.
+What the placement rests on is the plain one: two packages render it, and
+support is where a component two packages render belongs. The classes are
+`sy-input-wrp*` — no package code in the name, the same choice `sy-btn` makes,
+because support is the package everything else builds on.
 
 Forms consumes it: every text-like control renders inside it, and
 `.sy-fo-input` / `.sy-fo-select` went transparent in the same epic
@@ -22,7 +30,12 @@ Its render coverage lives over there too —
 [`InputWrapperRenderTest`](../../../packages/forms/tests/Integration/Components/InputWrapperRenderTest.php)
 — because support's own fixture Kernel registers no TwigComponentBundle, so a
 shipped component's render tests live wherever its first consumer does, the
-split [pagination.md](pagination.md) and [badge.md](badge.md) record.
+split [pagination.md](pagination.md) and [badge.md](badge.md) record. Tables is
+the second home as of the column catalog: its
+[`TextInputColumnTest`](../../../packages/tables/tests/Integration/Columns/TextInputColumnTest.php)
+and [`SelectColumnTest`](../../../packages/tables/tests/Integration/Columns/SelectColumnTest.php)
+render the wrapper's markup around a cell control, so a change to this template
+has to be verified in two suites rather than one.
 
 **Status:** in progress — see the
 [status vocabulary](../README.md#statuses).

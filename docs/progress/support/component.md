@@ -7,8 +7,13 @@ Twig-rendering subclass `ViewComponent` and the `ComponentManager` that
 `Configurable` calls into have their own rows in the [package README](README.md)
 and earn detail files of their own when they are audited.
 
-**Status:** in progress — see the
-[status vocabulary](../README.md#statuses).
+**Status:** done — see the
+[status vocabulary](../README.md#statuses). Every row below is settled: four
+**done** and the three Laravel traits **skipped**, the last of them — the arity
+probe — flipped by the column catalog (M4 · 4), whose `Column::hasStateBasedUrls()`
+is the reader that earned it. The table carries no unaudited row, so *done* here
+is the whole base component, not the two subclasses: `ViewComponent` and
+`ComponentManager` keep their own rows in the [package README](README.md).
 
 Reference — the Filament source this is diffed against:
 
@@ -40,6 +45,8 @@ detail sections do.
 Specifics for rows that are not finished — what is already in, what is left, and
 what the next step is. Delete a subsection when its row flips to **done**; the
 table row and any divergence it earned stay behind.
+
+No row has a write-up here.
 
 ## Divergences
 

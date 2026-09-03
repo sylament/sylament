@@ -179,6 +179,19 @@ and `HasStep` and `HasDatalistOptions` by `TextInput` and the
 `HasEnum` stays below too, on the other test: `Field` composes it, so every
 field has it.
 
+One of the folded five has a **support** sibling as of the column catalog
+(M4 · 4), and the dedupe is a standing follow-up rather than debt.
+[`Support\Components\Concerns\HasPlaceholder`](../support/has-placeholder.md)
+landed for the cell tier beside this `Field` copy and tables'
+`Filters\Concerns\HasPlaceholder`, which is Filament's own three-namespace
+arrangement kept rather than collapsed — and the two lower copies are
+**narrower** (`string|Closure|null`, an input's `placeholder` attribute, where a
+cell's placeholder is rendered content and takes `Markup`), so repointing them
+would widen a published signature. Revisit only if a fourth copy is wanted; the
+files a repoint would touch (`TextInput.php`, `Textarea.php`, `Select.php`) are
+M3 · 9's, which is why M4 · 4 parked it rather than doing it
+([has-placeholder.md](../support/has-placeholder.md#three-copies-of-this-trait-ship-and-that-is-filaments-shape-too)).
+
 Every concern that was listed here **ahead of** the field composing it now has
 that field, and each then went one of two ways.
 [`HasDescriptions`](has-descriptions.md) is `Radio`'s and `CheckboxList`'s and

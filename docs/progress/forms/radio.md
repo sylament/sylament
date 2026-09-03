@@ -264,7 +264,7 @@ each input instead, with
 keying its danger arm off `[aria-invalid='true']`.
 
 This is not a Radio decision — it is the translation already made for
-[`checkbox.css`](../../../packages/forms/assets/src/styles/components/checkbox.css)
+[`checkbox.css`](../../../packages/support/assets/src/styles/components/checkbox.css)
 and [`select.css`](../../../packages/forms/assets/src/styles/components/select.css),
 whose vendor sources key off `.fi-invalid` in exactly the same way, and it holds
 for the same two reasons: the attribute is the part a screen reader reads, and one

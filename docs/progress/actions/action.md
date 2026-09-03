@@ -1640,11 +1640,13 @@ same-origin state-changing link (Filament's own use case: actions that must
 not be triggered by a GET, e.g. destructive links without JS).
 
 The state-based `url` closure parameter Filament's **schemas** / **tables**
-`CanOpenUrl` siblings support (the reason support's
-[arity probe](../support/component.md#the-arity-probe-is-deferred) stays
-deferred) never applied here: Filament's own **actions** `CanOpenUrl` — the
-source this row ports — never had a `$state` argument to begin with, so nothing
-was dropped on that front.
+`CanOpenUrl` siblings support never applied here: Filament's own **actions**
+`CanOpenUrl` — the source this row ports — never had a `$state` argument to
+begin with, so nothing was dropped on that front. Support's
+[arity probe](../support/component.md#surface), which is what tells those
+siblings apart, shipped with the column catalog (M4 · 4) as
+`EvaluatesClosures::evaluationValueIsFunctionAndHasParameter()` and reads the
+tables one; this row is unaffected either way.
 
 ### The notification arm is a guarded soft integration, not a `require`
 

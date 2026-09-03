@@ -52,12 +52,13 @@ Deliberate deviations from Filament — permanent, and the reason they hold.
 Filament's `getFontFamily(mixed $state = null)` threads `'state' => $state` into
 `evaluate()` so a `fn ($state) => …` font-family closure can branch on the
 column/entry's per-row state. Sylament's `getFontFamily()` takes no argument and
-evaluates with no injected state, because the state layer that feeds that
-argument is not ported yet — the same deferral that leaves the arity probe and
-state-based URLs out of the base
-[`Component`](component.md#the-arity-probe-is-deferred). Re-add the parameter in
-the same change as the first state-carrying text consumer, where it finally has
-state to pass and behavior to test.
+evaluates with no injected state, because nothing here passes one yet. The base
+[`Component`](component.md#surface)'s arity probe is no longer part of that
+reason: it shipped with the column catalog (M4 · 4) as
+`EvaluatesClosures::evaluationValueIsFunctionAndHasParameter()`, the predicate
+`Column::hasStateBasedUrls()` asks. Re-add the parameter in the same change as
+the first state-carrying text consumer, where it finally has state to pass and
+behavior to test.
 
 ### `getFontFamilyClass()` centralizes the class ternary
 

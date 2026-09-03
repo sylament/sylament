@@ -332,6 +332,14 @@ is how Carbon derives its `weeks` / `daysExcludeWeeks` pair
 which is Carbon's behaviour too: `47 seconds ago`, never "a minute ago". An
 all-zero difference falls back to `0 seconds`.
 
+One consequence of taking the **first** non-zero unit is that the `day` arm's
+`% 7` is unobservable: dropping it (`'day' => $d`) changes no answer, because the
+walk only reaches `day` when `intdiv($d, 7)` is zero and `$d` is therefore
+already under seven. It is written the Carbon way anyway — the modulo is what
+makes the arm read as *days beyond the weeks*, which is what the next reader will
+need the moment `$parts` grows past one — so a surviving mutant there is an
+equivalent one, not a coverage hole.
+
 Two deliberate narrowings. Carbon's `$syntax`, `$short`, `$parts` and `$options`
 arguments have no port — the six behaviours they select (absolute phrasing,
 `before`/`after` instead of `ago`/`from now`, short units, multi-part output,

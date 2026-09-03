@@ -534,7 +534,12 @@ dialog's. It stays put because the engine installs a capture-phase `scroll`
 listener while its panel is open and repositions on every scroll, the window's
 included. The class name is the prefix rename of Filament's marker pair, and
 nothing in support reads it — the markers carry no rules of their own in Filament
-either. Tables' content container will carry the same one when M4 · 4 ports it.
-This only works because the window's open state settles at `scale: none` /
+either. Tables' content container will carry the same one when it lands, which is
+M4 · 7's [`content()`](../tables/table.md#surface) rather than the column
+catalog's: M4 · 4 shipped `SelectColumn` as a **native** `<select>`, which the
+browser positions itself and which reads no marker class at all
+([select-column.md](../tables/select-column.md)), so the first table surface that
+will need the marker is the one that replaces the `<table>` with a caller-supplied
+list. This only works because the window's open state settles at `scale: none` /
 `translate: none`; see the transform trap
 [above](#transitions-are-css-native-not-js-driven).

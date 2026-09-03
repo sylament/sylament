@@ -119,7 +119,7 @@ alias pass yet.
 so each constant lands in the same change as the field or feature that renders
 its icon — the growth order
 [`SupportIconAlias`](../support/support-icon-alias.md#pagination-rtl-aliases),
-[`TablesIconAlias`](../tables/tables-bundle.md#the-alias-set-is-ten-constants-of-filaments-23)
+[`TablesIconAlias`](../tables/tables-bundle.md#the-alias-set-is-twelve-constants-of-filaments-23)
 and
 [`NotificationsIconAlias`](../notifications/notifications-icon-alias.md#the-sixth-constant-waits-for-the-panel-that-renders-it)
 all follow.

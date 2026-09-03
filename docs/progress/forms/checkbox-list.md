@@ -378,7 +378,7 @@ idiomorph matches on when a re-render replaces the list.
 
 Filament puts `fi-valid` or `fi-invalid` on every checkbox input. The port emits
 neither and writes `aria-invalid` on each input instead, with
-[`checkbox.css`](../../../packages/forms/assets/src/styles/components/checkbox.css)
+[`checkbox.css`](../../../packages/support/assets/src/styles/components/checkbox.css)
 keying its danger arm off `[aria-invalid='true']`.
 
 This is not a CheckboxList decision — it is the translation
@@ -393,7 +393,7 @@ for the option set in `forms/resources/css/components/checkbox-list.css`, and a
 package-code-less `fi-checkbox-input` for the control itself in
 `support/resources/css/components/input/checkbox.css`. The port already ships
 that control as **`.sy-fo-checkbox`** — [`Checkbox`](checkbox.md) emits it and
-[`checkbox.css`](../../../packages/forms/assets/src/styles/components/checkbox.css)
+[`checkbox.css`](../../../packages/support/assets/src/styles/components/checkbox.css)
 styles it — so this field reuses it rather than minting a second name for the
 identical control, and
 [`checkbox-list.css`](../../../packages/forms/assets/src/styles/components/checkbox-list.css)

@@ -51,6 +51,7 @@ What a template writes, and what the element does. Consumers build against this.
 | Values | `text` (String, the string written to the clipboard); `message` (String, default `Copied`); `duration` (Number, default `2000`) |
 | Actions | `copy` — bound explicitly to `click`, `keydown.enter` and `keydown.space`, because the element is a `span` and Stimulus binds no default event on one |
 | Element contract | the template renders `role="button"` and the class `sy-copyable`; `tabindex="0"` is **not** server-rendered — the controller stamps it at `connect()` |
+| Accessible name | **the consuming template's**, never the controller's. `role="button"` names itself from the element's text content, which is right for a text item or a badge pill and empty for a contentless control — [`ColorColumn`](../tables/color-column.md)'s swatch is the live case, a `<span>` painted by `background-color` with nothing inside it, so its partial writes `aria-label="Copy <colour>"` of its own. A copyable element that renders no text owes an `aria-label`; the controller stamps none, because only the template knows what the copy is *of* |
 | While confirming | the element carries `data-copied` and `data-copy-message="<message>"` for `duration` ms, and one `div.sy-copyable-live-region` at the end of `<body>` carries the message as its text |
 
 ## Semantics

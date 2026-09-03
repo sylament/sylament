@@ -302,6 +302,13 @@ it('scopes searchability with the isGlobal and isIndividual flags', function ():
         ->and($individual->isIndividuallySearchable())->toBeTrue();
 });
 
+it('defers term splitting to the table until the column decides for itself', function (): void {
+    expect(TextColumn::make('title')->shouldSplitIndividualSearchTerms())->toBeNull()
+        ->and(TextColumn::make('title')->splitIndividualSearchTerms()->shouldSplitIndividualSearchTerms())->toBeTrue()
+        ->and(TextColumn::make('title')->splitIndividualSearchTerms(false)->shouldSplitIndividualSearchTerms())->toBeFalse()
+        ->and(TextColumn::make('title')->splitIndividualSearchTerms(fn (): bool => false)->shouldSplitIndividualSearchTerms())->toBeFalse();
+});
+
 it('refuses an unmounted column by name rather than raising an uninitialised property error', function (): void {
     expect(fn (): Table => Column::make('title')->getTable())
         ->toThrow(LogicException::class, 'The column [title] is not mounted to a table.');

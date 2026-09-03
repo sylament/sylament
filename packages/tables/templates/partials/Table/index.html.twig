@@ -495,21 +495,27 @@
                                 {% endif %}
 
                                 {% for column in columns %}
+                                    {% set columnName = column.getName %}
                                     {% set columnLabel = column.getLabel %}
                                     {% set columnAriaLabel = (columnLabel is markup ? columnLabel|striptags : columnLabel)|trim ?: null %}
                                     {% set isColumnIndividuallySearchable = column.isIndividuallySearchable %}
                                     {% set columnHiddenFrom = column.getHiddenFrom %}
                                     {% set columnVisibleFrom = column.getVisibleFrom %}
+                                    {% set columnSearchCellId = hostId ~ '.table.column-search.' ~ columnName %}
 
-                                    <td {{ attrs({class: classes('sy-ta-cell', {'sy-ta-individual-search-cell': isColumnIndividuallySearchable}, [
-                                        columnHiddenFrom ? columnHiddenFrom ~ ':sy-ta-hidden' : null,
-                                        columnVisibleFrom ? columnVisibleFrom ~ ':sy-ta-visible' : null,
-                                    ])}) }}>
+                                    <td {{ attrs({
+                                        class: classes('sy-ta-cell', {'sy-ta-individual-search-cell': isColumnIndividuallySearchable}, [
+                                            columnHiddenFrom ? columnHiddenFrom ~ ':sy-ta-hidden' : null,
+                                            columnVisibleFrom ? columnVisibleFrom ~ ':sy-ta-visible' : null,
+                                        ]),
+                                        id: columnSearchCellId,
+                                    }) }}>
                                         {% if isColumnIndividuallySearchable %}
                                             <twig:SylamentTables:SearchField
+                                                :id="columnSearchCellId ~ '.input'"
                                                 :label="columnAriaLabel ? 'Search ' ~ columnAriaLabel : 'Search'"
-                                                :model="'tableColumnSearches.' ~ column.getName"
-                                                :value="component.getLiveComponent.getTableColumnSearch(column.getName)"
+                                                :model="'tableColumnSearches.' ~ columnName"
+                                                :value="component.getLiveComponent.getTableColumnSearch(columnName)"
                                                 :onBlur="searchOnBlur"
                                                 :debounceMs="searchDebounceMs"
                                             />

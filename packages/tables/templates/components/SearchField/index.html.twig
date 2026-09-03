@@ -1,4 +1,6 @@
 {% props
+    id = null,
+
     label = 'Search',
     placeholder = 'Search',
 
@@ -17,6 +19,7 @@
         :alias="constant('Sylament\\Tables\\Twig\\TablesIconAlias::SEARCH_FIELD')"
     />
     <input {{ attrs({
+        id: id,
         type: 'search',
         class: 'sy-ta-search-input',
         autocomplete: 'off',

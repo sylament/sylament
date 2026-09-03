@@ -1684,6 +1684,70 @@ it('matches the header cell count with leading record actions and a trailing che
         ->and($searchRow->filter('input.sy-ta-search-input')->count())->toBe(2);
 });
 
+/*
+ * The search cells are the one per-column element this epic makes mobile — a
+ * reorder or a toggle changes their order and their number — and idiomorph
+ * pairs unkeyed siblings by position, which would leave a dirty input bound to
+ * another column's model. Both the cell and its input carry the host-scoped key
+ * the record cell already carries.
+ */
+it('keys every search cell and its input by column name', function (): void {
+    $host = columnSearchTableHost(static fn (Table $table): Table => $table);
+    $hostId = $host->getTableHostId();
+    $searchRow = new Crawler(renderTableHost($host))->filter('tr.sy-ta-column-search-row');
+
+    expect($searchRow->filter('td')->each(static fn (Crawler $cell): ?string => $cell->attr('id')))
+        ->toBe([
+            $hostId . '.table.column-search.title',
+            $hostId . '.table.column-search.album',
+            $hostId . '.table.column-search.id',
+        ])
+        ->and($searchRow->filter('input.sy-ta-search-input')->each(static fn (Crawler $input): ?string => $input->attr('id')))
+        ->toBe([
+            $hostId . '.table.column-search.title.input',
+            $hostId . '.table.column-search.album.input',
+        ]);
+});
+
+/*
+ * The chrome spacers were pinned in their two non-default positions only, which
+ * left the arms an ordinary table actually renders — record actions after the
+ * columns, the checkbox before the cells — free to be dropped without failing
+ * anything.
+ */
+it('matches the header cell count in the default action and checkbox positions', function (): void {
+    $crawler = new Crawler(columnSearchTableHtml(static fn (Table $table): Table => $table
+        ->recordActions([Action::make('edit')])
+        ->toolbarActions([BulkAction::make('archive')])));
+
+    $searchRow = $crawler->filter('tr.sy-ta-column-search-row');
+
+    expect($searchRow->filter('td')->count())->toBe($crawler->filter('thead > tr > th')->count())
+        ->and($searchRow->filter('td')->count())->toBe(5)
+        ->and($searchRow->filter('td')->first()->attr('class'))->toBe('sy-ta-cell')
+        ->and($searchRow->filter('td')->last()->attr('class'))->toBe('sy-ta-cell');
+});
+
+/*
+ * The trailing half of the header's records gate had no case at all: it only
+ * matters when a table has zero records AND puts its checkbox after the cells,
+ * and every zero-records case in this file uses the default leading position.
+ * Without it the header keeps a selection cell the search row has already
+ * dropped, and every input sits one cell left of its column.
+ */
+it('drops the trailing header spacers with the records, so the search row still matches', function (): void {
+    $crawler = new Crawler(columnSearchTableHtml(static fn (Table $table): Table => $table
+        ->records(static fn (): array => [])
+        ->toolbarActions([BulkAction::make('archive')])
+        ->recordCheckboxPosition(RecordCheckboxPosition::AfterCells)));
+
+    $searchRow = $crawler->filter('tr.sy-ta-column-search-row');
+
+    expect($searchRow->filter('td')->count())->toBe($crawler->filter('thead > tr > th')->count())
+        ->and($searchRow->filter('td')->count())->toBe(3)
+        ->and($crawler->filter('thead > tr > th.sy-ta-selection-cell')->count())->toBe(0);
+});
+
 it('collapses the leading spacers to one while the records are being reordered', function (): void {
     $host = columnSearchTableHost(static fn (Table $table): Table => $table
         ->reorderable('id')

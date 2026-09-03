@@ -151,7 +151,10 @@ and `guardActions` (the panel knob).
    `live()`, whose value *has* reached the store.
 3. **A mounted action.** `component.getData('mountedActions')` is non-empty and
    `guardActions` is on — Filament's `setUpUnsavedActionChangesAlert` over
-   `HasActions`' existing prop.
+   `HasActions`' existing prop. The prop it reads is the page host's own: a nested relation manager keeps its
+   own `mountedActions`, so a modal opened from a manager does not arm the page
+   guard — Filament's page-level alert has the same scope (observed in the M6 · 2
+   browser pass, recorded rather than fixed).
 
 The controller only ever **reads**: `getData()`, `valueStore.getDirtyProps()`
 and the `mountedActions` prop, never `set()`. `savedDataHash` is not writable, so

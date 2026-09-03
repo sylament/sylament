@@ -103,7 +103,7 @@ intentionally absent (**skipped**), not pending.
 ### The optional state path is a Sylament addition
 
 `getDataModel()` takes an optional `?string $statePath`: `null` — every one of the
-eleven shipped templates that calls it, and the only shape Filament's
+twelve shipped templates that calls it that way, and the only shape Filament's
 `applyStateBindingModifiers()` has — builds the directive over the component's own
 path, while a string builds the same `norender|` / `on(change)|` / `debounce(N)|`
 directive over the path the caller names. It exists because a component can render

@@ -203,11 +203,12 @@ it('seeds a string type constraint from a string record property', function (): 
         ->and(fn () => $column->validate(['x' => 'y']))->toThrow(ValidationException::class);
 });
 
-it('seeds a boolean type constraint from a boolean record property', function (): void {
-    $column = validatableColumn(TextInputColumn::make('isExplicit'));
+it('leaves a boolean record property unseeded, so a string-posting column still writes', function (): void {
+    $textInput = validatableColumn(TextInputColumn::make('isExplicit'));
+    $select = validatableColumn(SelectColumn::make('isExplicit')->options([1 => 'Yes', 0 => 'No']));
 
-    expect(fn () => $column->validate(true))->not->toThrow(ValidationException::class)
-        ->and(fn () => $column->validate('yes'))->toThrow(ValidationException::class);
+    expect($textInput->getValidationConstraints())->toBe([])
+        ->and(fn () => $select->validate('1'))->not->toThrow(ValidationException::class);
 });
 
 it('seeds no type arm for an object or enum record property', function (): void {

@@ -235,10 +235,12 @@ trait CanBeValidated
      * asks for, so a value that type refuses is a refusal painted under the
      * control rather than the write's type error. An `int` or `float` asks for
      * `numeric` rather than its own name: the accessor coerces a numeric string,
-     * which is the only shape a control ever posts. An enum, an object, a
-     * collection and an unreadable type ask for nothing — the enum arm is the
-     * option `Choice` and the state cast's. Null on a lane with no record class
-     * to read a type off.
+     * which is the only shape a control ever posts. A `bool` asks for nothing on
+     * those same grounds: only a checkbox posts a JSON boolean, and the two
+     * columns whose control does seed their own `Type('bool')`. An enum, an
+     * object, a collection and an unreadable type ask for nothing either — the
+     * enum arm is the option `Choice` and the state cast's. Null on a lane with
+     * no record class to read a type off.
      */
     protected function getRecordTypeConstraint(): ?Type
     {
@@ -251,7 +253,6 @@ trait CanBeValidated
         $type = match ($this->getPropertyAccessor()->getBuiltinTypeOnRecord($recordClass, $this->getName())) {
             'int', 'float' => 'numeric',
             'string' => 'string',
-            'bool' => 'bool',
             default => null,
         };
 

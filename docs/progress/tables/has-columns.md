@@ -329,8 +329,14 @@ unless the column already declares a `Type` of its own, which is why
 keep exactly the one they seed themselves. An `int` or `float` property asks for
 `numeric` rather than its own name, because the accessor coerces a numeric string
 and that is the only shape a control ever posts; a `string` property asks for
-`string`, a `bool` for `bool`. An enum, an object, a collection and a type that
-cannot be read ask for nothing — the enum arm belongs to
+`string`. A `bool` property asks for **nothing**, and that is the same argument
+run to its end: only a checkbox posts a JSON boolean, every other control posts
+`control.value`, a string — so a derived `Type('bool')` would be reachable only
+from [`TextInputColumn`](text-input-column.md) and
+[`SelectColumn`](select-column.md), where it refuses every write the browser can
+make, while the two columns whose control *does* post a boolean seed their own
+and suppress it. The boolean arm is theirs. An enum, an object, a collection and
+a type that cannot be read ask for nothing either — the enum arm belongs to
 [`SelectColumn`](select-column.md)'s `Choice` and its state cast, and a column
 over any other object-typed property takes an `updateStateUsing()` closure. Like
 the presence seed, it is derived from the column's **own** path whether or not

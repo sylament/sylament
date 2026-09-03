@@ -69,7 +69,15 @@ class Song
          * reaches it through the column's state cast.
          */
         #[ORM\Column(nullable: true, enumType: Format::class)]
-        private ?Format $format = null
+        private ?Format $format = null,
+        /**
+         * A field named after one of Filament's 26 reserved JavaScript array
+         * property names, and — unlike `length` — neither a SQL keyword nor a
+         * DQL function, so a column can carry it and prove the reserved list is
+         * unnecessary here.
+         */
+        #[ORM\Column(nullable: true)]
+        private ?int $entries = null
     ) {
         $this->genres = new ArrayCollection();
         $this->collaborators = new ArrayCollection();
@@ -158,6 +166,11 @@ class Song
     public function getPosition(): ?int
     {
         return $this->position;
+    }
+
+    public function getEntries(): ?int
+    {
+        return $this->entries;
     }
 
     public function setPosition(?int $position): static

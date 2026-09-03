@@ -6,6 +6,7 @@ namespace Sylament\Tables\Tests\Integration;
 
 use Sylament\Tables\Tests\Fixtures\Twig\Components\ColumnManagerTable;
 use Sylament\Tables\Tests\Fixtures\Twig\Components\LiveColumnManagerTable;
+use Sylament\Tables\Tests\Fixtures\Twig\Components\ColumnSearchUrlTable;
 use Sylament\Tables\Tests\Fixtures\Twig\Components\UnboundSongsTable;
 use Sylament\Tables\Tests\Fixtures\Twig\Components\UrlBoundSongsTable;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
@@ -335,4 +336,29 @@ it('reads a remembered column state even for a table that opted out of writing o
 
     expect(array_column($host->tableColumns, 'name'))->toBe(['position', 'title', 'plays', 'isFeatured'])
         ->and($host->isTableColumnToggledHidden('plays'))->toBeTrue();
+});
+
+it('remembers the per-column terms the table asked it to persist', function (): void {
+    $client = seedTableSession([sessionKeyFor(ColumnSearchUrlTable::class, 'column_search') => ['title' => 'Air']]);
+
+    [, $crawler] = browseTo(client: $client);
+
+    expect(publishedProps($crawler, '#column-search-table')['tableColumnSearches'])->toBe(['title' => 'Air'])
+        ->and(renderedRowsOf($crawler, 'ColumnSearchUrlTable'))->toContain('Airbag')
+        ->and(renderedRowsOf($crawler, 'ColumnSearchUrlTable'))->not->toContain('Let Down');
+});
+
+it('lets the query string beat the remembered per-column terms', function (): void {
+    $client = seedTableSession([sessionKeyFor(ColumnSearchUrlTable::class, 'column_search') => ['title' => 'Air']]);
+
+    [, $crawler] = browseTo('?columnSearches[title]=Let', client: $client);
+
+    expect(publishedProps($crawler, '#column-search-table')['tableColumnSearches'])->toBe(['title' => 'Let'])
+        ->and(renderedRowsOf($crawler, 'ColumnSearchUrlTable'))->toContain('Let Down');
+});
+
+it('writes no per-column terms for a table that did not opt in', function (): void {
+    [$client] = browseTo();
+
+    expect(currentTableSession($client))->not->toHaveKey(sessionKeyFor(UrlBoundSongsTable::class, 'column_search'));
 });

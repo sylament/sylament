@@ -129,3 +129,12 @@ it('rebuilds the URL with the mapped names after a live round trip', function ()
         ->and($rebuilt)->toContain('filters%5Bplays%5D%5Bvalue%5D=100')
         ->and($rebuilt)->not->toContain('tableSort');
 });
+
+it('seeds a per-column term into the only host that maps it', function (): void {
+    [, $crawler] = browseTo('?columnSearches[title]=Air');
+
+    expect(publishedProps($crawler, '#column-search-table')['tableColumnSearches'])->toBe(['title' => 'Air'])
+        ->and(publishedProps($crawler, '#bound-table')['tableColumnSearches'])->toBe([])
+        ->and(renderedRowsOf($crawler, 'ColumnSearchUrlTable'))->toContain('Airbag')
+        ->and(renderedRowsOf($crawler, 'ColumnSearchUrlTable'))->not->toContain('Let Down');
+});

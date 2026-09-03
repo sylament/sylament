@@ -32,6 +32,7 @@ trait HasTable
     use CanSearchRecords;
     use CanSortRecords;
     use HasBulkActions;
+    use HasColumnManager;
     use HasColumns;
     use HasFilters;
 

@@ -142,4 +142,9 @@ final class BareTableHost implements InteractsWithTable
     {
         //
     }
+
+    public function isTableColumnToggledHidden(string $name): bool
+    {
+        return false;
+    }
 }

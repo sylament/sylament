@@ -120,7 +120,7 @@ sections do.
 | [`applyEagerLoading()` — fetch-join the to-one chains a visible name reads through](../../../packages/tables/src/Columns/Concerns/InteractsWithTableQuery.php) | [`InteractsWithTableQuery::applyEagerLoading()`](../../../vendor/filament/tables/src/Columns/Concerns/InteractsWithTableQuery.php) | done | — | [diverges](#a-to-many-relation-stays-lazy-where-filament-eager-loads-every-cardinality) · [has-table.md](has-table.md#eager-loading-runs-over-every-column-on-the-page-clone-alone) |
 | [The aggregate declarations — `avg()`, `counts()`, `exists()`, `max()`, `min()`, `sum()` and their getters](../../../packages/tables/src/Columns/Concerns/CanAggregateRelatedRecords.php) | [`Support\Concerns\CanAggregateRelatedModels`](../../../vendor/filament/support/src/Concerns/CanAggregateRelatedModels.php) | done | — | [rename](../renames.md#renames) · [diverges](#an-aggregate-column-names-itself-freely-where-filaments-must-match-laravels-alias) · [diverges](#the-illuminate-expression-arm-is-dropped-from-the-aggregated-column) · [diverges](#an-aggregate-declaration-that-claims-no-cell-computes-nothing) |
 | [`getCellAggregateDeclaration()` — which declaration this cell reads](../../../packages/tables/src/Columns/Concerns/CanAggregateRelatedRecords.php) | — (Sylament-only; Filament reads the value off the model as an attribute) | done | — | [diverges](#an-aggregate-column-names-itself-freely-where-filaments-must-match-laravels-alias) · [table.md](table.md#an-aggregate-is-a-batched-side-query-and-a-hidden-subselect-never-a-select-on-the-page-query) |
-| Visibility — `hidden()`, `visible()`, `toggleable()` | [`CanBeHidden`](../../../vendor/filament/tables/src/Columns/Concerns/CanBeHidden.php), [`CanBeToggled`](../../../vendor/filament/tables/src/Columns/Concerns/CanBeToggled.php) | todo | — | — |
+| Visibility — [`hidden()` / `visible()` / `hiddenOn()` / `visibleOn()` / `isHidden()` / `isVisible()`](../../../packages/tables/src/Columns/Concerns/CanBeHidden.php) and [`toggleable()` / `toggledHiddenByDefault()` / `isToggleable()` / `isToggledHidden()`](../../../packages/tables/src/Columns/Concerns/CanBeToggled.php) | [`CanBeHidden`](../../../vendor/filament/tables/src/Columns/Concerns/CanBeHidden.php), [`CanBeToggled`](../../../vendor/filament/tables/src/Columns/Concerns/CanBeToggled.php) | done | — | [diverges](#istoggleables-blank-label-group-arm-is-dropped-with-columngroup) |
 | [`hiddenFrom()` / `visibleFrom()` — the responsive pair](../../../packages/tables/src/Columns/Concerns/CanBeHiddenResponsively.php) | [`Concerns\CanBeHiddenResponsively`](../../../vendor/filament/tables/src/Columns/Concerns/CanBeHiddenResponsively.php) | done | — | [diverges](#the-cache-guards-behind-filaments-memoised-cell-bag-are-not-ported) |
 | [`sortable()` / `isSortable()`](../../../packages/tables/src/Columns/Concerns/CanBeSortable.php) | [`Concerns\CanBeSortable`](../../../vendor/filament/tables/src/Columns/Concerns/CanBeSortable.php) | done | — | — |
 | [`searchable()` / `isSearchable()` / `isGloballySearchable()` / `isIndividuallySearchable()`](../../../packages/tables/src/Columns/Concerns/CanBeSearchable.php) | [`Concerns\CanBeSearchable`](../../../vendor/filament/tables/src/Columns/Concerns/CanBeSearchable.php) | done | — | [diverges](#a-closure-condition-on-searchable-is-evaluated-not-filed-as-a-search-column) |
@@ -532,6 +532,16 @@ first and throw on any that are not `Stringable`.
 
 Deliberate deviations from Filament — permanent, and the reason they hold. Say
 what would reverse the decision when it is provisional.
+
+### `isToggleable()`'s blank-label group arm is dropped with `ColumnGroup`
+
+Filament's
+[`isToggleable()`](../../../vendor/filament/tables/src/Columns/Concerns/CanBeToggled.php)
+returns true unconditionally for a column whose label is blank and whose group
+is a `ColumnGroup`, so the manager can toggle a whole group through its
+members. There is no group tier here — [grouping and layout](#surface) is a
+todo row — so the arm would read a `getGroup()` that does not exist. It returns
+with `ColumnGroup`; nothing else in the trait diverges.
 
 ### The editable write is not authorization-checked
 

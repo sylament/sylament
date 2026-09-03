@@ -130,4 +130,11 @@ interface InteractsWithTable
      * and by a bulk action that deselects after completion.
      */
     public function deselectAllTableRecords(): void;
+
+    /**
+     * Whether the column named is toggled off in the applied column state; a
+     * name the state does not carry reads as hidden. Read by a toggleable
+     * column through the table.
+     */
+    public function isTableColumnToggledHidden(string $name): bool;
 }

@@ -53,6 +53,8 @@ it('declares the table state as LiveProps with the intended writability, hooks a
     'selected records' => ['selectedTableRecordKeys', true, null, null, false, 'selectedTableRecords'],
     'deselected records' => ['deselectedTableRecords', true, null, null, false, 'deselectedTableRecords'],
     'deselect tracking' => ['isTrackingDeselectedTableRecords', true, null, null, false, 'isTrackingDeselectedTableRecords'],
+    'columns' => ['tableColumns', false, null, null, false, 'tableColumns'],
+    'deferred columns' => ['tableDeferredColumns', true, null, null, false, 'tableDeferredColumns'],
 ]);
 
 it('exposes the table state mutations as live actions with live args', function (string $method, array $argNames): void {

@@ -17,6 +17,7 @@ use Sylament\Tables\Enums\ColumnManagerLayout;
 use Sylament\Tables\Enums\ColumnManagerResetActionPosition;
 use Sylament\Tables\Enums\FiltersLayout;
 use Sylament\Tables\Enums\FiltersResetActionPosition;
+use Sylament\Tables\Enums\RecordActionsPosition;
 use Sylament\Tables\Enums\RecordCheckboxPosition;
 use Sylament\Tables\Filters\BaseFilter;
 use Sylament\Tables\Filters\Filter;
@@ -1518,4 +1519,248 @@ it('puts apply and reset in the manager modal footer', function (): void {
     expect($footerButtons->each(static fn (Crawler $button): string => mb_trim($button->text())))->toBe(['Apply columns', 'Reset'])
         ->and($footerButtons->last()->attr('data-live-action-param'))->toBe('resetTableColumnManager')
         ->and($live->filter('dialog.sy-modal .sy-modal-footer-actions button.sy-btn')->each(static fn (Crawler $button): string => mb_trim($button->text())))->toBe(['Reset']);
+});
+
+/*
+ * The per-column search row: its gate, the field each searchable column carries,
+ * the spacer cells that keep it aligned with the header, and the branch that
+ * keeps the whole table on screen once a term matches nothing. The bag is the
+ * host's — these cases fill it and read what the partial makes of it.
+ */
+
+/**
+ * Two individually searchable columns and one plain one over two records, with
+ * the host's own bag seeded as its mount hook would seed it.
+ *
+ * @param array<string, mixed> $columnSearches
+ */
+function columnSearchTableHost(Closure $configureTable, array $columnSearches = []): TableHost
+{
+    $host = new TableHost(static fn (Table $table): Table => $configureTable(
+        $table
+            ->records(static fn (): array => [
+                new Song('Airbag', 'OK Computer', id: 1),
+                new Song('Let Down', 'OK Computer', id: 2),
+            ])
+            ->columns([
+                TextColumn::make('title')->searchable(isIndividual: true),
+                TextColumn::make('album')->searchable(isIndividual: true),
+                TextColumn::make('id'),
+            ]),
+    ));
+
+    $host->tableColumnSearches = $columnSearches;
+    $host->mountTableColumnSearches();
+
+    return $host;
+}
+
+/**
+ * @param array<string, mixed> $columnSearches
+ */
+function columnSearchTableHtml(Closure $configureTable, array $columnSearches = []): string
+{
+    return renderTableHost(columnSearchTableHost($configureTable, $columnSearches));
+}
+
+it('opens the body with a search row that is not a record row', function (): void {
+    $crawler = new Crawler(columnSearchTableHtml(static fn (Table $table): Table => $table));
+
+    $firstRow = $crawler->filter('tbody > tr')->first();
+
+    expect($firstRow->attr('class'))->toBe('sy-ta-column-search-row')
+        ->and($firstRow->attr('data-sortable-item'))->toBeNull()
+        ->and($crawler->filter('tbody > tr')->count())->toBe(3)
+        ->and($crawler->filter('tbody > tr.sy-ta-row')->count())->toBe(2)
+        ->and($firstRow->filter('td')->count())->toBe(3)
+        ->and($firstRow->filter('td')->each(static fn (Crawler $cell): ?string => $cell->attr('class')))->toBe([
+            'sy-ta-cell sy-ta-individual-search-cell',
+            'sy-ta-cell sy-ta-individual-search-cell',
+            'sy-ta-cell',
+        ])
+        ->and($firstRow->filter('td.sy-ta-individual-search-cell label.sy-ta-search-field')->count())->toBe(2)
+        ->and($firstRow->filter('td:not(.sy-ta-individual-search-cell) label.sy-ta-search-field')->count())->toBe(0);
+});
+
+it('binds each search field to its own nested model, labelled by the column', function (): void {
+    $inputs = new Crawler(columnSearchTableHtml(
+        static fn (Table $table): Table => $table,
+        ['title' => ' Air ', 'album' => ''],
+    ))->filter('tr.sy-ta-column-search-row input.sy-ta-search-input');
+
+    expect($inputs->count())->toBe(2)
+        ->and($inputs->each(static fn (Crawler $input): ?string => $input->attr('data-model')))->toBe([
+            'debounce(500)|tableColumnSearches.title',
+            'debounce(500)|tableColumnSearches.album',
+        ])
+        ->and($inputs->each(static fn (Crawler $input): ?string => $input->attr('aria-label')))->toBe([
+            'Search Title',
+            'Search Album',
+        ])
+        ->and($inputs->each(static fn (Crawler $input): ?string => $input->attr('value')))->toBe([' Air ', ''])
+        ->and($inputs->first()->attr('type'))->toBe('search');
+});
+
+it('binds the search fields on change for a table that asks for it', function (): void {
+    $inputs = new Crawler(columnSearchTableHtml(static fn (Table $table): Table => $table->searchOnBlur()))
+        ->filter('tr.sy-ta-column-search-row input.sy-ta-search-input');
+
+    expect($inputs->each(static fn (Crawler $input): ?string => $input->attr('data-model')))->toBe([
+        'on(change)|tableColumnSearches.title',
+        'on(change)|tableColumnSearches.album',
+    ]);
+});
+
+it('flattens a markup column label into the search field label', function (): void {
+    $inputs = new Crawler(columnSearchTableHtml(static fn (Table $table): Table => $table->columns([
+        TextColumn::make('title')->label(new Markup('<span>Song <em>title</em></span>', 'UTF-8'))->searchable(isIndividual: true),
+    ])))->filter('tr.sy-ta-column-search-row input.sy-ta-search-input');
+
+    expect($inputs->attr('aria-label'))->toBe('Search Song title');
+});
+
+it('renders no search row when no column asks for an input of its own', function (): void {
+    $html = columnSearchTableHtml(static fn (Table $table): Table => $table->columns([
+        TextColumn::make('title')->searchable(),
+        TextColumn::make('album'),
+    ]));
+
+    expect($html)->not->toContain('sy-ta-column-search-row')
+        ->and(new Crawler($html)->filter('tbody > tr')->count())->toBe(2);
+});
+
+it('takes the search row away with the last unhidden individually searchable column', function (): void {
+    $html = columnSearchTableHtml(static fn (Table $table): Table => $table->columns([
+        TextColumn::make('title'),
+        TextColumn::make('album')->searchable(isIndividual: true)->hidden(),
+    ]));
+
+    expect($html)->not->toContain('sy-ta-column-search-row');
+});
+
+it('keeps the search row for a column the user toggled off, spacers only', function (): void {
+    $host = columnSearchTableHost(static fn (Table $table): Table => $table->columns([
+        TextColumn::make('title'),
+        TextColumn::make('album')->searchable(isIndividual: true)->toggleable(),
+    ]));
+    $host->tableColumns = [['type' => 'column', 'name' => 'album', 'isToggled' => false, 'isToggledHiddenByDefault' => false]];
+
+    $searchRow = new Crawler(renderTableHost($host))->filter('tr.sy-ta-column-search-row');
+
+    expect($searchRow->count())->toBe(1)
+        ->and($searchRow->filter('td')->count())->toBe(1)
+        ->and($searchRow->filter('td')->attr('class'))->toBe('sy-ta-cell')
+        ->and($searchRow->filter('input')->count())->toBe(0);
+});
+
+it('carries the responsive breakpoint classes the header cell carries', function (): void {
+    $crawler = new Crawler(columnSearchTableHtml(static fn (Table $table): Table => $table->columns([
+        TextColumn::make('title')->searchable(isIndividual: true)->hiddenFrom('md'),
+        TextColumn::make('album')->visibleFrom('lg'),
+    ])));
+
+    $searchCells = $crawler->filter('tr.sy-ta-column-search-row > td');
+
+    expect($crawler->filter('thead > tr > th')->count())->toBe($searchCells->count())
+        ->and($searchCells->eq(0)->attr('class'))->toBe('sy-ta-cell sy-ta-individual-search-cell md:sy-ta-hidden')
+        ->and($searchCells->eq(1)->attr('class'))->toBe('sy-ta-cell lg:sy-ta-visible')
+        ->and($crawler->filter('thead > tr > th')->eq(0)->attr('class'))->toContain('md:sy-ta-hidden')
+        ->and($crawler->filter('thead > tr > th')->eq(1)->attr('class'))->toContain('lg:sy-ta-visible');
+});
+
+it('matches the header cell count with leading record actions and a trailing checkbox', function (): void {
+    $crawler = new Crawler(columnSearchTableHtml(static fn (Table $table): Table => $table
+        ->recordActions([Action::make('edit')])
+        ->recordActionsPosition(RecordActionsPosition::BeforeCells)
+        ->toolbarActions([BulkAction::make('archive')])
+        ->recordCheckboxPosition(RecordCheckboxPosition::AfterCells)));
+
+    $searchRow = $crawler->filter('tr.sy-ta-column-search-row');
+
+    expect($searchRow->filter('td')->count())->toBe($crawler->filter('thead > tr > th')->count())
+        ->and($searchRow->filter('td')->count())->toBe(5)
+        ->and($searchRow->filter('td')->first()->attr('class'))->toBe('sy-ta-cell')
+        ->and($searchRow->filter('td')->last()->attr('class'))->toBe('sy-ta-cell')
+        ->and($searchRow->filter('input.sy-ta-search-input')->count())->toBe(2);
+});
+
+it('collapses the leading spacers to one while the records are being reordered', function (): void {
+    $host = columnSearchTableHost(static fn (Table $table): Table => $table
+        ->reorderable('id')
+        ->toolbarActions([BulkAction::make('archive')]));
+    $host->isTableReordering = true;
+
+    $crawler = new Crawler(renderTableHost($host));
+    $searchRow = $crawler->filter('tr.sy-ta-column-search-row');
+
+    expect($searchRow->filter('td')->count())->toBe($crawler->filter('thead > tr > th')->count())
+        ->and($searchRow->filter('td')->count())->toBe(4)
+        ->and($searchRow->filter('td')->first()->attr('class'))->toBe('sy-ta-cell');
+});
+
+it('keeps the table, its header and the search row when a term matches nothing', function (): void {
+    $html = columnSearchTableHtml(static fn (Table $table): Table => $table->records(static fn (): array => []));
+    $crawler = new Crawler($html);
+
+    expect($crawler->filter('table.sy-ta-table')->count())->toBe(1)
+        ->and($crawler->filter('thead > tr > th')->count())->toBe(3)
+        ->and($crawler->filter('tbody > tr')->count())->toBe(1)
+        ->and($crawler->filter('tbody > tr.sy-ta-column-search-row input.sy-ta-search-input')->count())->toBe(2)
+        ->and($crawler->filter('.sy-ta-empty-state')->count())->toBe(1)
+        ->and(mb_strpos($html, '</table>'))->toBeLessThan((int) mb_strpos($html, 'sy-ta-empty-state'));
+});
+
+it('drops the header spacers with the records so the search row still matches', function (): void {
+    $crawler = new Crawler(columnSearchTableHtml(static fn (Table $table): Table => $table
+        ->records(static fn (): array => [])
+        ->recordActions([Action::make('edit')])
+        ->toolbarActions([BulkAction::make('archive')])));
+
+    $searchRow = $crawler->filter('tr.sy-ta-column-search-row');
+
+    expect($crawler->filter('thead > tr > th')->count())->toBe(3)
+        ->and($searchRow->filter('td')->count())->toBe(3)
+        ->and($crawler->filter('thead > tr > th.sy-ta-selection-cell')->count())->toBe(0);
+});
+
+it('drops the reorder header cell with the records too', function (): void {
+    $host = columnSearchTableHost(static fn (Table $table): Table => $table
+        ->records(static fn (): array => [])
+        ->reorderable('id'));
+    $host->isTableReordering = true;
+
+    $crawler = new Crawler(renderTableHost($host));
+
+    expect($crawler->filter('thead > tr > th')->count())->toBe(3)
+        ->and($crawler->filter('thead > tr > th.sy-ta-reorder-header-cell')->count())->toBe(0)
+        ->and($crawler->filter('tr.sy-ta-column-search-row > td')->count())->toBe(3);
+});
+
+it('swaps the whole table for the empty state when no column is individually searchable', function (): void {
+    $crawler = new Crawler(columnSearchTableHtml(static fn (Table $table): Table => $table
+        ->records(static fn (): array => [])
+        ->columns([TextColumn::make('title')])));
+
+    expect($crawler->filter('table.sy-ta-table')->count())->toBe(0)
+        ->and($crawler->filter('.sy-ta-empty-state')->count())->toBe(1);
+});
+
+it('renders the loading block alone while the deferred window is open', function (): void {
+    $host = columnSearchTableHost(static fn (Table $table): Table => $table->deferLoading());
+
+    $crawler = new Crawler(renderTableHost($host));
+
+    expect($crawler->filter('.sy-ta-table-loading-ctn')->count())->toBe(1)
+        ->and($crawler->filter('table.sy-ta-table')->count())->toBe(0)
+        ->and($crawler->filter('.sy-ta-column-search-row')->count())->toBe(0)
+        ->and($crawler->filter('.sy-ta-empty-state')->count())->toBe(0);
+});
+
+it('renders no toolbar for a table whose only search is per column', function (): void {
+    $crawler = new Crawler(columnSearchTableHtml(static fn (Table $table): Table => $table->columns([
+        TextColumn::make('title')->searchable(isIndividual: true, isGlobal: false),
+    ])));
+
+    expect($crawler->filter('.sy-ta-header-toolbar')->count())->toBe(0)
+        ->and($crawler->filter('tr.sy-ta-column-search-row input.sy-ta-search-input')->count())->toBe(1);
 });

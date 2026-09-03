@@ -147,4 +147,9 @@ final class BareTableHost implements InteractsWithTable
     {
         return false;
     }
+
+    public function getTableColumnManagerItems(): array
+    {
+        return [];
+    }
 }

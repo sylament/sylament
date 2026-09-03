@@ -2,9 +2,22 @@
 
 declare(strict_types=1);
 
+use Sylament\Tables\Columns\Column;
 use Sylament\Tables\Columns\TextColumn;
 use Sylament\Tables\Table;
 use Sylament\Tables\Tests\Fixtures\Concerns\TableHost;
+
+/**
+ * @param list<Column> $columns
+ */
+function columnManagerHost(array $columns, ?Closure $configure = null): TableHost
+{
+    return new TableHost(function (Table $table) use ($columns, $configure): Table {
+        $table->columns($columns);
+
+        return $configure instanceof Closure ? $configure($table) : $table;
+    });
+}
 
 it('drops the toggle memo and the table visible-column cache when the column set is replaced', function (): void {
     $host = new TableHost(fn (Table $table): Table => $table->columns([
@@ -24,4 +37,126 @@ it('drops the toggle memo and the table visible-column cache when the column set
 
     expect($host->isTableColumnToggledHidden('plays'))->toBeTrue()
         ->and(array_keys($host->getTable()->getVisibleColumns()))->toBe(['title']);
+});
+
+it('builds the default state from the definition', function (): void {
+    $host = columnManagerHost([
+        TextColumn::make('title'),
+        TextColumn::make('plays')->toggleable(),
+        TextColumn::make('album')->toggleable(isToggledHiddenByDefault: true),
+    ]);
+
+    expect($host->getDefaultTableColumnState())->toBe([
+        ['type' => 'column', 'name' => 'title', 'isToggled' => true, 'isToggledHiddenByDefault' => null],
+        ['type' => 'column', 'name' => 'plays', 'isToggled' => true, 'isToggledHiddenByDefault' => false],
+        ['type' => 'column', 'name' => 'album', 'isToggled' => false, 'isToggledHiddenByDefault' => true],
+    ]);
+});
+
+it('keeps the stored toggle, drops a vanished column and merges a new one at its declared place', function (): void {
+    $host = columnManagerHost([TextColumn::make('title')->toggleable(), TextColumn::make('plays')->toggleable()]);
+
+    $host->applyTableColumnManager([
+        ['type' => 'column', 'name' => 'gone', 'isToggled' => false, 'isToggledHiddenByDefault' => false],
+        ['type' => 'column', 'name' => 'title', 'isToggled' => false, 'isToggledHiddenByDefault' => false],
+    ]);
+
+    expect(array_column($host->tableColumns, 'isToggled', 'name'))->toBe(['title' => false, 'plays' => true])
+        ->and($host->isTableColumnToggledHidden('title'))->toBeTrue()
+        ->and($host->isTableColumnToggledHidden('plays'))->toBeFalse()
+        ->and($host->isTableColumnToggledHidden('gone'))->toBeTrue()
+        ->and($host->tableDeferredColumns)->toBe($host->tableColumns)
+        ->and(array_keys($host->getTable()->getVisibleColumns()))->toBe(['plays']);
+});
+
+it('forces a non-toggleable column on and re-seeds a column that just became toggleable', function (): void {
+    $host = columnManagerHost([TextColumn::make('title'), TextColumn::make('plays')->toggleable(isToggledHiddenByDefault: true)]);
+
+    $host->applyTableColumnManager([
+        ['type' => 'column', 'name' => 'title', 'isToggled' => false, 'isToggledHiddenByDefault' => false],
+        ['type' => 'column', 'name' => 'plays', 'isToggled' => true, 'isToggledHiddenByDefault' => null],
+    ]);
+
+    expect(array_column($host->tableColumns, 'isToggled', 'name'))->toBe(['title' => true, 'plays' => false]);
+});
+
+it('keeps the stored order only while columns are reorderable, and reset restores the declared one', function (): void {
+    $reorderable = columnManagerHost([TextColumn::make('title'), TextColumn::make('plays')], fn (Table $table): Table => $table->reorderableColumns());
+    $static = columnManagerHost([TextColumn::make('title'), TextColumn::make('plays')]);
+    $reversed = [
+        ['type' => 'column', 'name' => 'plays', 'isToggled' => true, 'isToggledHiddenByDefault' => null],
+        ['type' => 'column', 'name' => 'title', 'isToggled' => true, 'isToggledHiddenByDefault' => null],
+    ];
+
+    $reorderable->applyTableColumnManager($reversed);
+    $static->applyTableColumnManager($reversed);
+
+    expect(array_keys($reorderable->getTable()->getVisibleColumns()))->toBe(['plays', 'title'])
+        ->and(array_keys($static->getTable()->getVisibleColumns()))->toBe(['title', 'plays']);
+
+    $reorderable->resetTableColumnManager();
+
+    expect(array_keys($reorderable->getTable()->getVisibleColumns()))->toBe(['title', 'plays']);
+});
+
+it('applies the draft when no state is handed in, and nothing forged', function (): void {
+    $host = columnManagerHost([TextColumn::make('title')->toggleable()]);
+
+    $host->tableDeferredColumns = [['type' => 'column', 'name' => 'title', 'isToggled' => false, 'isToggledHiddenByDefault' => false]];
+    $host->applyTableColumnManager();
+
+    expect($host->isTableColumnToggledHidden('title'))->toBeTrue();
+
+    $host->applyTableColumnManager(['not' => 'a list']);
+    expect($host->tableColumns)->toBe($host->getDefaultTableColumnState());
+});
+
+it('lists the manager rows from the draft, skipping hidden columns', function (): void {
+    $host = columnManagerHost([TextColumn::make('title'), TextColumn::make('secret')->hidden(), TextColumn::make('plays')->toggleable()]);
+    $host->mountTableColumnManager();
+
+    expect(array_column($host->getTableColumnManagerItems(), 'name'))->toBe(['title', 'plays'])
+        ->and($host->getTableColumnManagerItems()[0])->toMatchArray(['isToggleable' => false, 'isToggled' => true])
+        ->and($host->getTableColumnManagerItems()[1])->toMatchArray(['isToggleable' => true, 'isToggled' => true]);
+});
+
+it('keeps the state, and the defaults, when the manager chrome is switched off', function (): void {
+    $host = columnManagerHost([
+        TextColumn::make('title'),
+        TextColumn::make('plays')->toggleable(),
+        TextColumn::make('album')->toggleable(isToggledHiddenByDefault: true),
+    ], fn (Table $table): Table => $table->columnManager(false));
+    $host->mountTableColumnManager();
+
+    expect($host->getTable()->hasColumnManager())->toBeFalse()
+        ->and(array_keys($host->getTable()->getVisibleColumns()))->toBe(['title', 'plays']);
+});
+
+it('refuses a labelless column only when columns are reorderable', function (): void {
+    columnManagerHost([TextColumn::make('title')->label('')])->getDefaultTableColumnState();
+
+    expect(fn (): array => columnManagerHost([TextColumn::make('title')->label('')], fn (Table $table): Table => $table->reorderableColumns())->getDefaultTableColumnState())
+        ->toThrow(LogicException::class, 'All columns must have labels when they are reorderable.');
+});
+
+it('reads the draft through the normalizer, so a forged draft yields no rows', function (): void {
+    $host = columnManagerHost([TextColumn::make('title')], fn (Table $table): Table => $table->columnManager());
+    $host->tableDeferredColumns = ['x'];
+
+    expect($host->getTableColumnManagerItems())->toBe([]);
+});
+
+it('restores the declared order on reset however many applies reordered it', function (): void {
+    $host = columnManagerHost(
+        [TextColumn::make('title'), TextColumn::make('plays'), TextColumn::make('position')],
+        fn (Table $table): Table => $table->reorderableColumns(),
+    );
+    $reversed = array_reverse($host->getDefaultTableColumnState());
+
+    $host->applyTableColumnManager($reversed);
+    $host->applyTableColumnManager($reversed);
+    $host->resetTableColumnManager();
+
+    expect(array_column($host->tableColumns, 'name'))->toBe(['title', 'plays', 'position'])
+        ->and(array_keys($host->getTable()->getColumns()))->toBe(['title', 'plays', 'position']);
 });

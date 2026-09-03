@@ -75,6 +75,8 @@ it('exposes the table state mutations as live actions with live args', function 
     'resetTableFiltersForm' => ['resetTableFiltersForm', []],
     'resetTableSearch' => ['resetTableSearch', []],
     'selectAllTableRecords' => ['selectAllTableRecords', []],
+    'applyTableColumnManager' => ['applyTableColumnManager', ['state']],
+    'resetTableColumnManager' => ['resetTableColumnManager', []],
 ]);
 
 it('leaves every bound LiveProp untouched when the host maps nothing', function (): void {

@@ -9,6 +9,7 @@ use Sylament\Schemas\Schema;
 use Sylament\Support\Pagination\Paginator;
 use Sylament\Tables\Filters\Indicator;
 use Sylament\Tables\Table;
+use Twig\Markup;
 
 interface InteractsWithTable
 {
@@ -137,4 +138,13 @@ interface InteractsWithTable
      * column through the table.
      */
     public function isTableColumnToggledHidden(string $name): bool;
+
+    /**
+     * The column manager's rows in the draft's order — every declared, unhidden
+     * column with its label, whether the user may toggle it and whether it is
+     * on. Read by the partial to render the manager.
+     *
+     * @return list<array{name: string, label: string|Markup, isToggleable: bool, isToggled: bool}>
+     */
+    public function getTableColumnManagerItems(): array;
 }

@@ -14,7 +14,7 @@ audited end to end yet.
 follows. The package's docs are in a deliberate mixed state: most detail lives as
 in-file anchors in this README (a recorded divergence from the tree rule), while
 M6 · 1 started the first per-component detail files and every surface since has
-followed that shape, ten so far — the relation-manager tier
+followed that shape, fourteen so far — the relation-manager tier
 ([relation-manager.md](relation-manager.md),
 [relation-group.md](relation-group.md),
 [has-relation-managers.md](has-relation-managers.md),
@@ -22,7 +22,10 @@ followed that shape, ten so far — the relation-manager tier
 [manage-related-records.md](manage-related-records.md)), the record and
 navigation concerns ([interacts-with-record.md](interacts-with-record.md),
 [has-sub-navigation.md](has-sub-navigation.md),
-[nested-resources.md](nested-resources.md)),
+[nested-resources.md](nested-resources.md)), the page tier
+([custom-pages.md](custom-pages.md), [form-actions.md](form-actions.md),
+[simple-page.md](simple-page.md),
+[unsaved-changes-alert.md](unsaved-changes-alert.md)),
 [global-search.md](global-search.md), and M4 · 3's
 [has-tabs.md](has-tabs.md). The inline sections stay until each is migrated.
 
@@ -717,7 +720,10 @@ base; what stayed is everything that needs a **resource**.
 
 Eleven members, plus what M6 · 3 added — the parent-record chain, the breadcrumb
 walk, `getDefaultActionRelationship()`, the sub-navigation position and item seam
-— and what M6 · 2 added, `getResourceUrl()` and `getPageClasses()`.
+— and what M6 · 2 added, `getResourceUrl()`.
+[`getPageClasses()`](custom-pages.md#getpageclasses-is-the-only-source-of-a-per-page-root-class)
+is **not** one of them: it arrives one tier up, on
+[`Pages\Page`](#page), and each concrete page overrides it.
 `protected static string $resource` is the class-string a subclass
 declares and `getResource()` reads — untyped-default exactly as in Filament, so a
 page that forgets it fails on the first read rather than resolving something
@@ -1512,7 +1518,7 @@ Enums, contracts, HTTP layer, events, templates —
 | [Page template](../../../packages/panels/templates/partials/Page/index.html.twig) | [`components/page/index.blade.php`](../../../vendor/filament/filament/resources/views/components/page/index.blade.php) | in progress | [Routing](#routing) |
 | [Page form variant](../../../packages/panels/templates/partials/Page/form.html.twig) | no Filament counterpart — v5's create and edit pages have no view of their own; [`CreateRecord::content()`](../../../vendor/filament/filament/src/Resources/Pages/CreateRecord.php) and [`EditRecord::content()`](../../../vendor/filament/filament/src/Resources/Pages/EditRecord.php) return a schema holding a `Form` wrapping an `EmbeddedSchema` and the form `Actions` | in progress | [CreateRecord](#createrecord), [EditRecord](#editrecord) |
 | [Page table variant](../../../packages/panels/templates/partials/Page/table.html.twig) | no Filament counterpart — v5's list and manage-related pages have no view either; [`ListRecords::content()`](../../../vendor/filament/filament/src/Resources/Pages/ListRecords.php) and [`ManageRelatedRecords::content()`](../../../vendor/filament/filament/src/Resources/Pages/ManageRelatedRecords.php) return a schema holding an [`EmbeddedTable`](../../../vendor/filament/schemas/src/Components/EmbeddedTable.php) | in progress | [ListRecords](#listrecords), [ManageRelatedRecords](manage-related-records.md#the-page-renders-a-template-not-a-content-schema) |
-| [EditRecord template](../../../packages/panels/templates/partials/EditRecord/index.html.twig) | same — the two-block child of the form variant, holding the relation managers below the form | in progress | [EditRecord](#editrecord) |
+| [EditRecord template](../../../packages/panels/templates/partials/EditRecord/index.html.twig) | same — the one-block child of the form variant, overriding `after_form` to hold the relation managers below the form | in progress | [EditRecord](#editrecord) |
 | [SimplePage template](../../../packages/panels/templates/partials/SimplePage/index.html.twig) | [`components/page/simple.blade.php`](../../../vendor/filament/filament/resources/views/components/page/simple.blade.php) | in progress | [Layout templates](#layout-templates) |
 | [RelationManager template](../../../packages/panels/templates/partials/RelationManager/index.html.twig) | [`resources/views/resources/relation-manager.blade.php`](../../../vendor/filament/filament/resources/views/resources/relation-manager.blade.php) | in progress | [RelationManager](relation-manager.md#the-manager-renders-a-template-not-a-content-schema) |
 | [SubNavigation templates](../../../packages/panels/templates/components/SubNavigation/index.html.twig) — the dispatcher plus the sidebar, tabs and mobile-menu components | [`components/page/sub-navigation/`](../../../vendor/filament/filament/resources/views/components/page/sub-navigation) | in progress | [has-sub-navigation.md](has-sub-navigation.md#three-sibling-components-not-one-with-variants) |

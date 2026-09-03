@@ -712,17 +712,32 @@ it('appends the current-password constraint only behind the flag', function (): 
         ->and(TextInput::make('password')->currentPassword(false)->getValidationConstraints())->toBe([]);
 });
 
-it('builds the three affix actions through the container, so a registered alias replaces their icons', function (): void {
-    $this::getContainer()->get(IconManager::class)->register([
-        FormsIconAlias::COMPONENTS_TEXT_INPUT_ACTIONS_SHOW_PASSWORD => 'heroicons:star',
-        FormsIconAlias::COMPONENTS_TEXT_INPUT_ACTIONS_HIDE_PASSWORD => 'heroicons:star',
-        FormsIconAlias::COMPONENTS_TEXT_INPUT_ACTIONS_COPY => 'heroicons:star',
-    ]);
+// One alias per case, and the two actions it does not name are asserted to keep their shipped
+// defaults: registering all three at once to the same glyph passes just as happily when two
+// actions read the same alias constant, which is the only mistake this test exists to catch.
+it('builds the three affix actions through the container, so a registered alias replaces one icon', function (string $alias, string $overridden): void {
+    $this::getContainer()->get(IconManager::class)->register([$alias => 'heroicons:star']);
 
-    expect(ShowPasswordAction::make()->getIcon())->toBe('heroicons:star')
-        ->and(HidePasswordAction::make()->getIcon())->toBe('heroicons:star')
-        ->and(CopyAction::make()->getIcon())->toBe('heroicons:star');
-});
+    $defaults = [
+        ShowPasswordAction::class => 'heroicons:eye-20-solid',
+        HidePasswordAction::class => 'heroicons:eye-slash-20-solid',
+        CopyAction::class => 'heroicons:clipboard-document-list-20-solid',
+    ];
+
+    $icons = [
+        ShowPasswordAction::class => ShowPasswordAction::make()->getIcon(),
+        HidePasswordAction::class => HidePasswordAction::make()->getIcon(),
+        CopyAction::class => CopyAction::make()->getIcon(),
+    ];
+
+    foreach ($icons as $class => $icon) {
+        expect($icon)->toBe($class === $overridden ? 'heroicons:star' : $defaults[$class]);
+    }
+})->with([
+    'show password' => [FormsIconAlias::COMPONENTS_TEXT_INPUT_ACTIONS_SHOW_PASSWORD, ShowPasswordAction::class],
+    'hide password' => [FormsIconAlias::COMPONENTS_TEXT_INPUT_ACTIONS_HIDE_PASSWORD, HidePasswordAction::class],
+    'copy' => [FormsIconAlias::COMPONENTS_TEXT_INPUT_ACTIONS_COPY, CopyAction::class],
+]);
 
 it('marks the wrapper as a text input but binds no controller when neither behaviour is on', function (): void {
     $crawler = new Crawler(renderField(TextInput::make('title')));

@@ -137,8 +137,8 @@ instead.
 | [`makeTable(): Table`](../../../packages/tables/src/Concerns/HasTable.php) | [`InteractsWithTable::makeTable()`](../../../vendor/filament/tables/src/Concerns/InteractsWithTable.php) | done | — | [diverges](#maketable-seeds-nothing-from-deprecated-host-getters) |
 | [`getTableRecords()` — resolve the data source once, eager-load, re-key, fill the aggregate store, cache](../../../packages/tables/src/Concerns/HasTable.php) | [`Concerns\HasRecords::getTableRecords()`](../../../vendor/filament/tables/src/Concerns/HasRecords.php) | in progress | — | [detail](#the-records-injections-match-filaments-eight) · [semantics](#a-records-closure-resolves-public-container-services-by-type) · [diverges](#gettablerecords-returns-a-keyed-array-or-a-paginator-never-a-collection) · [diverges](#eager-loading-runs-over-the-visible-columns-on-the-page-clone-alone) |
 | [`getTablePaginator(): ?Paginator` — the carrier, unwrapped for the footer](../../../packages/tables/src/Concerns/HasTable.php) | — (Sylament-only; Filament's records **are** the paginator) | done | — | [pagination.md](../support/pagination.md) · [semantics](#the-paginator-is-a-return-value-not-a-state-holder) |
-| [`InteractsWithTable` — twenty-six methods](../../../packages/tables/src/Contracts/InteractsWithTable.php) | [`Contracts\HasTable`](../../../vendor/filament/tables/src/Contracts/HasTable.php) | in progress | — | [detail](#the-contract-is-twenty-methods-of-filaments-forty-six) |
-| [`flushCachedTableRecords()`](../../../packages/tables/src/Concerns/HasTable.php) | [`Concerns\HasRecords::flushCachedTableRecords()`](../../../vendor/filament/tables/src/Concerns/HasRecords.php) | done | — | on the contract since M4 · 2 — actions' `callMountedAction()` calls it in a `finally` after any mounted action runs on a table host. [detail](#the-contract-is-twenty-methods-of-filaments-forty-six) |
+| [`InteractsWithTable` — twenty-six methods](../../../packages/tables/src/Contracts/InteractsWithTable.php) | [`Contracts\HasTable`](../../../vendor/filament/tables/src/Contracts/HasTable.php) | in progress | — | [detail](#the-contract-is-twenty-six-methods-of-filaments-forty-six) |
+| [`flushCachedTableRecords()`](../../../packages/tables/src/Concerns/HasTable.php) | [`Concerns\HasRecords::flushCachedTableRecords()`](../../../vendor/filament/tables/src/Concerns/HasRecords.php) | done | — | on the contract since M4 · 2 — actions' `callMountedAction()` calls it in a `finally` after any mounted action runs on a table host. [detail](#the-contract-is-twenty-six-methods-of-filaments-forty-six) |
 | [`getTableHostId()` + the `$tableHostId` `LiveProp`](../../../packages/tables/src/Concerns/HasTable.php) | [`Livewire\Component::getId()`](../../../vendor/filament/tables/resources/views/index.blade.php) | done | — | [diverges](#the-host-id-is-a-random-liveprop-rather-than-a-framework-component-id) |
 | [`getTableRecordKey(object\|array $record): string`](../../../packages/tables/src/Concerns/HasTable.php) | [`Concerns\HasRecords::getTableRecordKey()`](../../../vendor/filament/tables/src/Concerns/HasRecords.php) | done | — | [diverges](#object-records-are-keyed-by-a-readable-id-rather-than-an-eloquent-key) |
 | [`getTableRecord(?string $key)` with its `resolveQueryTableRecord()` query arm](../../../packages/tables/src/Concerns/HasTable.php) | [`Concerns\HasRecords::getTableRecord()`](../../../vendor/filament/tables/src/Concerns/HasRecords.php) | done | — | [diverges](#gettablerecord-reads-fresh-when-the-render-cache-is-cold) · [diverges](#record-resolution-applies-no-limit-1-where-filaments-find-does) |
@@ -771,7 +771,7 @@ Of the search **indicators**, the global one ships —
 term, labelled `Search: <term>` (Filament's
 `filament-tables::table.fields.search.indicator` at its English value,
 [hardcoded like the rest of the copy](table.md#the-copy-is-english-and-hardcoded-because-no-i18n-layer-ships)),
-and is the [tenth contract method](#the-contract-is-twenty-methods-of-filaments-forty-six).
+and is the [tenth contract method](#the-contract-is-twenty-six-methods-of-filaments-forty-six).
 [`Table::getFilterIndicators()`](indicator.md#removal-is-structured-not-a-click-handler-string)
 pairs it with the `resetTableSearch` live action and puts it first in
 [the row](table.md#the-chip-is-one-badge-and-the-delete-affordance-is-supports),
@@ -787,7 +787,7 @@ are built from is the trimmed one. On the records lane none of this runs:
 the `search` injection hands the closure a string and the closure decides what
 matching means.
 
-### The contract is twenty methods of Filament's forty-six
+### The contract is twenty-six methods of Filament's forty-six
 
 `Contracts\HasTable` declares 46 methods — the full host API a Filament table,
 column, filter, action, or test helper may call back into. Sylament's
@@ -1082,7 +1082,7 @@ exactly as Filament's does; the alternative was a ceiling-less banner on a table
 that can perfectly well be counted.
 
 So the `?int` is contract slack rather than a case this trait reaches: it is
-typed nullable because [the contract](#the-contract-is-twenty-methods-of-filaments-forty-six)
+typed nullable because [the contract](#the-contract-is-twenty-six-methods-of-filaments-forty-six)
 lets a host satisfy it without this trait, and because the chrome has to render
 *something* for a host that answers null — the banner falls back to counting the
 page, and the select-all-across-pages link, which needs a ceiling, does not
@@ -1515,6 +1515,37 @@ a scoped run over the package that *owns* the trait cannot see the errors that
 exist only in a using class's context, which is why the whole set arrived at
 once in a lane that had touched neither package — only the unscoped
 `composer test:static` sees them.
+
+### Two `TableColumnState` vocabularies meet on one host, and both are Filament's
+
+`updateTableColumnState()` writes **one editable cell's value** —
+[`has-columns.md`](has-columns.md#surface) owns it, and the state it names is a
+record's property. `getDefaultTableColumnState()`, `syncTableColumnState()`,
+`normalizeTableColumnState()`, `isReorderedTableColumnState()`,
+`hasTableColumnState()` and `setTableColumns()` all concern
+[the column manager's visibility-and-order bag](#the-column-state-is-re-derived-against-the-definition-on-every-read),
+which is about which columns render at all. The two have nothing to do with each
+other, they flatten into the same host class, and the phrase *table column state*
+means a different thing in each.
+
+The collision is **inherited, not minted**. Vendor's
+[`Concerns\HasColumns`](../../../vendor/filament/tables/src/Concerns/HasColumns.php)
+declares `updateTableColumnState(string $column, string $record, mixed $input)`
+and vendor's
+[`Concerns\HasColumnManager`](../../../vendor/filament/tables/src/Concerns/HasColumnManager.php)
+declares `getDefaultTableColumnState()` and `setTableColumns()`; Filament ships
+both vocabularies on the same host, so preserving its public API means
+preserving the ambiguity. Renaming the four coinages this port added
+(`normalizeTableColumnState`, `isReorderedTableColumnState`,
+`hasTableColumnState`, `syncTableColumnState` — the last collapsing Filament's
+`syncStaticColumnsFromTableColumnState()` and
+`syncReorderableColumnsFromDefaultTableColumnState()`) away from that stem would
+leave them inconsistent with the two Filament names they sit beside, which reads
+worse than the ambiguity does.
+
+The disambiguator is the **argument**, not the name: the editable write takes a
+column name *and a record key*, and every manager member takes a state array or
+nothing. A reader arriving at either family from the other should start there.
 
 ## Divergences
 
@@ -2377,7 +2408,7 @@ fall-through counts it.
 Nothing in the package reads the method yet. Filament's two callers are its
 `assertCountTableRecords()` test helper and panels' `ExposesTableToWidgets`,
 which hands the number to a page's widgets; neither is ported. So it stays off
-the [contract](#the-contract-is-twenty-methods-of-filaments-forty-six), which grows
+the [contract](#the-contract-is-twenty-six-methods-of-filaments-forty-six), which grows
 only for members a shipped consumer calls, and it ships whole rather than in the
 half the closure lane could have answered on its own.
 

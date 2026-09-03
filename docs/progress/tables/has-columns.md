@@ -12,6 +12,13 @@ the **table**-tier trait of the same name that owns `columns()` / `getColumns()`
 `getColumn()` and folds into [`table.md`](table.md). Filament ships both names in
 both tiers and the port keeps them; read the import, never the bare `use`.
 
+Do not confuse the **state** either. `updateTableColumnState()` below writes one
+editable cell's value onto a record; the `…TableColumnState` family on
+[`Concerns\HasColumnManager`](column-manager.md) means the column manager's
+visibility-and-order bag. Both vocabularies are Filament's own and both flatten
+into the same host class —
+[why they were kept](has-table.md#two-tablecolumnstate-vocabularies-meet-on-one-host-and-both-are-filaments).
+
 **Status:** in progress — see the
 [status vocabulary](../README.md#statuses).
 

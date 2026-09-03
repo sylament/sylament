@@ -140,6 +140,12 @@ and the Stimulus controllers through `assets/controllers.json`:
             "notifications": { "enabled": true, "fetch": "eager" },
             "notification":  { "enabled": true, "fetch": "eager" }
         },
+        "@sylament/panels": {
+            "sidebar":         { "enabled": true, "fetch": "eager" },
+            "theme":           { "enabled": true, "fetch": "eager" },
+            "global-search":   { "enabled": true, "fetch": "eager" },
+            "unsaved-changes": { "enabled": true, "fetch": "eager" }
+        },
         "@sylament/schemas": {
             "schema": { "enabled": true, "fetch": "eager" },
             "tabs":   { "enabled": true, "fetch": "eager" },
@@ -169,8 +175,8 @@ and the Stimulus controllers through `assets/controllers.json`:
 List a block for each Sylament package you installed. In a Flex app you do not
 write this by hand — `composer` runs the package-json synchronizer, which copies
 each package's declared `enabled`/`fetch` in for you; the block above is what it
-produces for `support`, `schemas`, `forms`, `notifications`, `actions` and
-`tables` together.
+produces for `support`, `schemas`, `forms`, `notifications`, `actions`, `tables`
+and `panels` together.
 
 Support's `core` controller carries the `autoimport` that pulls in the
 stylesheet; the other four power collapsible sections, modals, dropdown
@@ -217,6 +223,23 @@ trigger after every render. Like `@sylament/actions` below, omitting it fails
 silently and fails total: the checkboxes render, nothing reacts to them, the
 banner never appears and no bulk action ever becomes available. A table with no
 bulk action and no `selectable()` renders no checkboxes and needs none of this.
+
+Panels' four are the admin shell, and every one of them is `eager` because each
+has to be right on the first paint. `sidebar` owns the mobile drawer and the
+per-group collapse state it restores from local storage; `theme` applies the
+stored light/dark/system choice and keeps the switcher in sync — the *first*
+paint is handled earlier still, by an inline script the panel document renders
+before its stylesheet, so leaving `theme` out costs you the switcher, not a flash
+of the wrong theme. `global-search` is the topbar field's keyboard half: without
+it the field still renders and still searches, but there is no ⌘K binding, no
+Escape, no click-away and no arrow-key walk through the results.
+`unsaved-changes` is the navigation guard — it watches the page's form state and
+any open modal action, and raises the browser's own "leave site?" prompt when you
+navigate away with either outstanding. Omit that block and the guard is simply
+absent: the page renders and saves exactly as before, and unsaved edits are lost
+without a word. A panel that never arms the alert — the default, until a page
+composes the alert trait or the panel calls `unsavedChangesAlerts()` — renders no
+guard element at all and needs none of it.
 
 **`@sylament/actions` is easy to leave out and fails silently.** Its single
 `dispatch` controller binds to no element of its own — it registers one

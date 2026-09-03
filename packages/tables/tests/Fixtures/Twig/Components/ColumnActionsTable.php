@@ -23,6 +23,11 @@ use Symfony\UX\LiveComponent\DefaultActionTrait;
  * object that lane refuses and a table-context `mountAction` resolves instead.
  * Each call appends to a `LiveProp`, so what the action was handed survives the
  * round trip and the next render reads it.
+ *
+ * The last column is hidden and carries a closure of its own, so the host's
+ * hidden-column gate has something to refuse: a name the client can post, an
+ * action that would leave a trace, and no way for a rendered page to have
+ * offered it.
  */
 #[AsLiveComponent(name: 'ColumnActionsTable', template: '@TablesFixtures/components/ColumnActionsTable.html.twig')]
 class ColumnActionsTable implements InteractsWithActions, InteractsWithTable
@@ -53,6 +58,9 @@ class ColumnActionsTable implements InteractsWithActions, InteractsWithTable
                     $this->calls[] = 'object:' . $record->title;
                 })),
                 TextColumn::make('id'),
+                TextColumn::make('secret')->hidden()->action(function (): void {
+                    $this->calls[] = 'hidden';
+                }),
             ]);
     }
 

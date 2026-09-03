@@ -41,6 +41,11 @@ use Symfony\UX\LiveComponent\DefaultActionTrait;
  * the browser posts, an `updateStateUsing()` closure doing the write itself
  * instead of the accessor, and an `afterStateUpdated()` hook adding 100 on top,
  * so the wire can see the hook run on the arm that returns early.
+ *
+ * One more column is hidden and writes the title through a closure of its own,
+ * under a name no record property carries. It is what the host's hidden-column
+ * gate refuses: without the gate the write lands on a real field and the test
+ * reads it back off the database.
  */
 #[AsLiveComponent(name: 'EditableSongsTable', template: '@TablesFixtures/components/EditableSongsTable.html.twig')]
 final class EditableSongsTable implements InteractsWithTable
@@ -77,6 +82,13 @@ final class EditableSongsTable implements InteractsWithTable
                     ->disableOptionWhen(fn (mixed $value): bool => $value === 'wild'),
                 SelectColumn::make('tempo')->options(['slow' => 'Slow', 'fast' => 'Fast']),
                 SelectColumn::make('format')->options(Format::class),
+                TextInputColumn::make('secretTitle')
+                    ->hidden()
+                    ->state(fn (Song $record): string => $record->getTitle())
+                    ->updateStateUsing(function (Song $record, mixed $state): void {
+                        $record->setTitle(is_string($state) ? $state : '');
+                        $this->entityManager->flush();
+                    }),
                 SelectColumn::make('position')
                     ->options([1 => 'First', 2 => 'Second'])
                     ->updateStateUsing(function (Song $record, mixed $state): void {

@@ -72,6 +72,10 @@ it('evaluates the closure a string action name was wrapped into', function (): v
     expect(columnActionCalls(['name' => 'album', 'recordKey' => '1']))->toBe(['string:Airbag']);
 });
 
+it('refuses a hidden column, whose closure a rendered page never offered', function (): void {
+    expect(columnActionCalls(['name' => 'secret', 'recordKey' => '1']))->toBe([]);
+});
+
 it('refuses a column whose action is an Action object', function (): void {
     expect(columnActionCalls(['name' => 'actionObject', 'recordKey' => '1']))->toBe([]);
 });
@@ -221,6 +225,15 @@ it('refuses a column the table does not declare, without effect', function (): v
     [$component, $entityManager] = editableSongsRig();
 
     $html = (string) writeTableCell($component, 'nonesuch', '1', 'Bones')->render();
+
+    expect(refreshedSong($entityManager, 1)->getTitle())->toBe('Airbag')
+        ->and($html)->not->toContain('sy-ta-cell-error');
+});
+
+it('refuses a write to a hidden column, without effect and without a refusal to paint', function (): void {
+    [$component, $entityManager] = editableSongsRig();
+
+    $html = (string) writeTableCell($component, 'secretTitle', '1', 'Bones')->render();
 
     expect(refreshedSong($entityManager, 1)->getTitle())->toBe('Airbag')
         ->and($html)->not->toContain('sy-ta-cell-error');

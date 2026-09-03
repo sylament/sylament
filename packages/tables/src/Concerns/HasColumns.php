@@ -29,8 +29,8 @@ trait HasColumns
      * names. Every client value is untrusted: the key resolves through the
      * query lane with the table's filters re-applied, so a filtered-out record
      * is simply absent, and the column resolves by name off the table. A
-     * missing record, an unknown column or an action that is not a closure
-     * returns without effect.
+     * missing record, a hidden column, an unknown column or an action that is
+     * not a closure returns without effect.
      */
     #[LiveAction]
     public function callTableColumnAction(#[LiveArg] string $name, #[LiveArg] string $recordKey): void
@@ -43,7 +43,7 @@ trait HasColumns
 
         $column = $this->getTable()->getColumn($name);
 
-        if (!$column instanceof Column) {
+        if (!$column instanceof Column || $column->isHidden()) {
             return;
         }
 
@@ -59,8 +59,9 @@ trait HasColumns
     /**
      * Writes one editable cell's new state back to its record. Every client
      * value is untrusted: the column resolves by name off the table and must be
-     * `Editable`, the record key resolves through the query lane with the
-     * table's filters re-applied, and the input is validated before any write —
+     * `Editable` and not hidden, the record key resolves through the query lane
+     * with the table's filters re-applied, and the input is validated before any
+     * write —
      * with the record bound first, so a `disabled()` closure judges the row it
      * was handed. Each refusal returns without effect; a validation refusal, and
      * a value the record's own type turns the write down, are filed against this
@@ -74,7 +75,7 @@ trait HasColumns
     {
         $tableColumn = $this->getTable()->getColumn($column);
 
-        if (!$tableColumn instanceof Column || !$tableColumn instanceof Editable) {
+        if (!$tableColumn instanceof Column || !$tableColumn instanceof Editable || $tableColumn->isHidden()) {
             return;
         }
 

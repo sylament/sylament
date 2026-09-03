@@ -31,8 +31,8 @@ deleted once the row is **done**; **diverges** → the permanent note in
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
-| [`callTableColumnAction(string $name, string $recordKey)` — run a column's `action()` closure for one record](../../../packages/tables/src/Concerns/HasColumns.php) | [`HasColumns::callTableColumnAction()`](../../../vendor/filament/tables/src/Concerns/HasColumns.php) | done | — | [diverges](#a-live-action-answers-nothing-so-the-return-value-is-dropped) · [detail](#the-hidden-column-gate-waits-on-column-visibility) |
-| [`updateTableColumnState(string $column, string $record, mixed $input)` — the editable columns' write-back](../../../packages/tables/src/Concerns/HasColumns.php) | [`HasColumns::updateTableColumnState()`](../../../vendor/filament/tables/src/Concerns/HasColumns.php) | done | — | [diverges](#a-live-action-answers-nothing-so-the-return-value-is-dropped) · [semantics](#a-record-type-the-input-cannot-hold-seeds-a-type-constraint-and-the-write-refuses-the-rest) · [semantics](#a-json-null-input-arrives-as-null-without-a-declared-default) · [semantics](#the-action-binds-the-record-and-its-key-and-only-one-of-the-two-invalidations-is-observable) · [detail](#the-hidden-column-gate-waits-on-column-visibility) |
+| [`callTableColumnAction(string $name, string $recordKey)` — run a column's `action()` closure for one record](../../../packages/tables/src/Concerns/HasColumns.php) | [`HasColumns::callTableColumnAction()`](../../../vendor/filament/tables/src/Concerns/HasColumns.php) | done | — | [diverges](#a-live-action-answers-nothing-so-the-return-value-is-dropped) · [semantics](#a-hidden-column-is-unreachable-from-the-wire-on-both-actions) |
+| [`updateTableColumnState(string $column, string $record, mixed $input)` — the editable columns' write-back](../../../packages/tables/src/Concerns/HasColumns.php) | [`HasColumns::updateTableColumnState()`](../../../vendor/filament/tables/src/Concerns/HasColumns.php) | done | — | [diverges](#a-live-action-answers-nothing-so-the-return-value-is-dropped) · [semantics](#a-record-type-the-input-cannot-hold-seeds-a-type-constraint-and-the-write-refuses-the-rest) · [semantics](#a-json-null-input-arrives-as-null-without-a-declared-default) · [semantics](#the-action-binds-the-record-and-its-key-and-only-one-of-the-two-invalidations-is-observable) · [semantics](#a-hidden-column-is-unreachable-from-the-wire-on-both-actions) |
 | [`getTableColumnStateError()` + the request-scoped `$tableColumnStateErrors` bag](../../../packages/tables/src/Concerns/HasColumns.php) | — (Sylament-only, replacing Filament's client-held error) | done | — | [diverges](#the-refusal-is-request-scoped-and-server-rendered-where-filaments-lives-on-the-client) |
 | [`Columns\Concerns\CanUpdateState` — the column half of the write](../../../packages/tables/src/Columns/Concerns/CanUpdateState.php) | [`Columns\Concerns\CanUpdateState`](../../../vendor/filament/tables/src/Columns/Concerns/CanUpdateState.php) | done | — | [semantics](#the-write-goes-through-the-accessor-so-a-dotted-path-walks-the-to-one-chain) · [diverges](#an-array-record-throws-where-filament-writes-nothing) · [diverges](#the-pivot-column-arm-has-nothing-to-write-through) · [diverges](#the-write-is-not-authorization-checked) |
 | [`Columns\Concerns\CanBeValidated` — the column half of the refusal](../../../packages/tables/src/Columns/Concerns/CanBeValidated.php) | [`Columns\Concerns\CanBeValidated`](../../../vendor/filament/tables/src/Columns/Concerns/CanBeValidated.php) | done | — | [diverges](#validation-speaks-symfony-constraints-and-rules-is-not-ported) · [semantics](#a-record-type-that-rejects-null-seeds-a-presence-constraint) · [semantics](#a-record-type-the-input-cannot-hold-seeds-a-type-constraint-and-the-write-refuses-the-rest) |
@@ -80,23 +80,6 @@ choosing `callTableColumnAction` over `mountAction` by
 Specifics for rows that are not finished — what is already in, what is left, and
 what the next step is. Delete a subsection when its row flips to **done**; the
 table row and any divergence it earned stay behind.
-
-### The hidden-column gate waits on column visibility
-
-Filament refuses the call when `$column->isHidden()` — a column the user cannot
-see must not be reachable from the wire, whatever the client posts. `hidden()`,
-`visible()` and `toggleable()` are unported (their rows are on
-[`column.md`](column.md)), so there is no predicate to ask and the guard is
-absent rather than stubbed true. It lands with `CanBeHidden`, in the same change
-that gives `updateTableColumnState()` its copy of the same gate.
-
-Nothing else is missing from the resolution order, and the order itself is
-vendor's: the record resolves **first**, through
-[`getTableRecord()`](has-table.md), so the table's filters are re-applied and a
-record the user cannot reach is simply absent; then the column by name off the
-table; then the action, which must be a `Closure` — an `Action` instance mounts
-through the modal lane instead and a `null` action does nothing. Each refusal
-returns without effect, exactly as vendor's returns `null`.
 
 ### The cell repaints from the root because a touched control is pinned through every morph
 
@@ -234,6 +217,39 @@ A closure that wants to change what the user sees writes host state (a
 than returning something.
 
 ## Semantics
+
+### A hidden column is unreachable from the wire, on both actions
+
+Both live actions refuse a column whose `isHidden()` answers true, and they
+refuse the **whole** call rather than only the write: a silent early `return`,
+no error-bag entry and no exception, exactly as vendor's two `return null`s. A
+column the user cannot see was never offered by a rendered page, so a name
+posted for one is a forged argument like any other, and the shape a forged
+argument earns here is the shape every other refusal in these two actions
+already has.
+
+The gate reads the **column's own** hidden state — the `hidden()` / `visible()`
+closures [`CanBeHidden`](column.md) evaluates against this host — never a
+client-supplied column set and never the column manager's applied state. A
+column toggled off through the manager is `isToggledHidden()`, which is a
+different question and deliberately not asked: the user chose to stop looking at
+it, which is not the same as being forbidden it.
+
+Position is vendor's in both, and the two differ because the cheap check comes
+first in each. `updateTableColumnState()` resolves the column by name, requires
+it to be a `Column` and `Editable`, **then** asks whether it is hidden, and only
+then resolves the record, binds it and asks `isDisabled()`.
+`callTableColumnAction()` resolves the record **first**, through
+[`getTableRecord()`](has-table.md), so the table's filters are re-applied and a
+record the user cannot reach is simply absent; then the column by name; **then**
+the hidden gate; then the action, which must be a `Closure` — an `Action`
+instance mounts through the modal lane instead and a `null` action does nothing.
+
+The gate stays correct under a column reorder. `Table::columns()` called a
+second time does not evict the first set's cached column actions
+([table.md](table.md)), but neither action reads that cache: each resolves its
+column by name off the table as it stands after the manager's sync, so the
+column it asks `isHidden()` of is the one the current definition holds.
 
 ### A JSON `null` input arrives as `null` without a declared default
 

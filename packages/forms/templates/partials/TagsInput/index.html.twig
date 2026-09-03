@@ -1,0 +1,86 @@
+{% set controller = 'sylament--forms--tags-input' %}
+
+{% set state = component.getState %}
+{% set tags = state is iterable ? state : [] %}
+{% set suggestions = component.getSuggestions %}
+
+{% set color = component.getColor ?? 'primary' %}
+{% set tagPrefix = component.getTagPrefix %}
+{% set tagSuffix = component.getTagSuffix %}
+
+{% set isDisabled = component.isDisabled %}
+{% set isReorderable = component.isReorderable and not isDisabled %}
+{% set deleteAttributes = stimulus_action(controller, 'deleteTag', 'click') %}
+
+{% set prefixActions = component.getPrefixActions %}
+{% set suffixActions = component.getSuffixActions %}
+{% set hasInlinePrefix = component.isPrefixInline and (prefixActions|length > 0 or component.getPrefixIcon or component.getPrefixLabel is filled) %}
+{% set hasInlineSuffix = component.isSuffixInline and (suffixActions|length > 0 or component.getSuffixIcon or component.getSuffixLabel is filled) %}
+
+<twig:SylamentForms:FieldWrapper :field="component">
+    <twig:SylamentSupport:InputWrapper
+        class="sy-fo-tags-input"
+        :disabled="isDisabled"
+        :valid="component.getErrorMessages is empty"
+        :inlinePrefix="component.isPrefixInline"
+        :inlineSuffix="component.isSuffixInline"
+        :prefix="component.getPrefixLabel"
+        :prefixActions="prefixActions"
+        :prefixIcon="component.getPrefixIcon"
+        :prefixIconColor="component.getPrefixIconColor ?? 'gray'"
+        :suffix="component.getSuffixLabel"
+        :suffixActions="suffixActions"
+        :suffixIcon="component.getSuffixIcon"
+        :suffixIconColor="component.getSuffixIconColor ?? 'gray'"
+        {{ ...stimulus_controller(controller, {
+            statePath: component.getStatePath,
+            modelBinding: component.getDataModel,
+            splitKeys: component.getSplitKeys,
+            suggestions: suggestions,
+            tagAddedMessage: 'Added: :tag',
+            tagRemovedMessage: 'Removed: :tag',
+        }) }}
+    >
+        {% import '@SylamentForms/partials/TagsInput/Chip.html.twig' as tagsInput %}
+
+        <input {{ attrs({
+            class: ['sy-fo-input', {
+                'sy-fo-input-has-inline-prefix': hasInlinePrefix,
+                'sy-fo-input-has-inline-suffix': hasInlineSuffix,
+            }],
+            type: 'text',
+            id: component.getId,
+            list: component.getId ~ '-suggestions',
+            autocomplete: 'off',
+            placeholder: component.getPlaceholder ?: false,
+            disabled: isDisabled,
+            autofocus: component.isAutofocused,
+        }, component.getExtraInputAttributes, stimulus_target(controller, 'input')
+            |stimulus_action(controller, 'keydown', 'keydown')
+            |stimulus_action(controller, 'createTag', 'blur')
+            |stimulus_action(controller, 'paste', 'paste')) }}>
+
+        <div {{ attrs({
+            class: 'sy-fo-tags-input-tags-ctn',
+            id: component.getId ~ '-tags',
+            'data-live-ignore': true,
+        }, stimulus_target(controller, 'chips'), isReorderable
+            ? stimulus_controller('sylament--support--sortable', {animationDuration: component.getReorderAnimationDuration})
+                |stimulus_action(controller, 'reorder', 'sylament--support--sortable:end')
+            : null) }}>
+            <div class="sy-sr-only" aria-live="polite" {{ stimulus_target(controller, 'liveRegion') }}></div>
+
+            <datalist id="{{ component.getId }}-suggestions" {{ stimulus_target(controller, 'datalist') }}>
+                {% for suggestion in suggestions|filter(suggestion => suggestion not in tags) %}
+                    <option value="{{ suggestion }}"></option>
+                {% endfor %}
+            </datalist>
+
+            {% for tag in tags %}
+                {{ tagsInput.chip(tag, color, tagPrefix, tagSuffix, isReorderable, deleteAttributes) }}
+            {% endfor %}
+        </div>
+
+        <template {{ stimulus_target(controller, 'chipTemplate') }}>{{ tagsInput.chip('', color, tagPrefix, tagSuffix, isReorderable, deleteAttributes) }}</template>
+    </twig:SylamentSupport:InputWrapper>
+</twig:SylamentForms:FieldWrapper>

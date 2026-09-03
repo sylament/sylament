@@ -1,0 +1,21 @@
+.sy-fo-tags-input {
+    &.sy-disabled {
+        & .sy-badge-delete-btn {
+            @apply hidden;
+        }
+    }
+
+    & .sy-fo-tags-input-tags-ctn {
+        @apply flex w-full flex-wrap gap-1.5 border-t border-t-gray-200 p-2 dark:border-t-white/10;
+
+        & > .sy-badge {
+            &.sy-reorderable {
+                @apply cursor-move;
+            }
+
+            & .sy-badge-label-ctn {
+                @apply text-start select-none;
+            }
+        }
+    }
+}

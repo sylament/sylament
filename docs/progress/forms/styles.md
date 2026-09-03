@@ -412,7 +412,7 @@ support's own
 now holds the rule in place, since every emitter of it lives in another package.
 
 What did not move with it is the rest of the port's screen-reader markup. Seven
-component rules across five packages still write `@apply sr-only` into a rule of
+component rules across four packages still write `@apply sr-only` into a rule of
 their own rather than reaching the shared class: forms' `.sy-fo-toggle-input`,
 panels'
 [`.sy-pa-skip-link`](../../../packages/panels/assets/src/styles/components/layout.css)

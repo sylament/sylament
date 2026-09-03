@@ -159,16 +159,17 @@ through the same `merge()` and render through the same `toHtml()`, byte for byte
 Porting it would ship a second name for one behaviour, and that holds whether or
 not the toolkit ever grows an Alpine-shaped surface to justify the name.
 
-Every consumer's row points here, support's own
-[`HasExtraAlpineAttributes` row](README.md) included.
-[`Section`](../schemas/section.md), [`Tabs`](../schemas/tabs.md) and
-[`Wizard`](../schemas/wizard.md) reached the same decision component by component
-before it had one home and keep their own divergences; the fields settled since —
+Every consumer's row links this heading, support's own
+[`HasExtraAlpineAttributes` row](README.md) included. Four of them link a
+divergence of their own beside it, each written component by component before the
+decision had one home: [`Section`](../schemas/section.md),
+[`Tabs`](../schemas/tabs.md), [`Wizard`](../schemas/wizard.md) and the
+[date pickers](../forms/date-time-picker.md), where the trait is one half of a
+wider Alpine-and-published-view gap. The fields settled since —
 [`TextInput`](../forms/text-input.md), [`Textarea`](../forms/textarea.md),
 [`Toggle`](../forms/toggle.md), [`KeyValue`](../forms/key-value.md) and
-[`TagsInput`](../forms/tags-input.md) — link this heading instead. The
-[date pickers](../forms/date-time-picker.md) keep theirs too, the trait being one
-half of a wider Alpine-and-published-view gap there. Nothing reverses it.
+[`TagsInput`](../forms/tags-input.md) — carry this one alone. Nothing reverses
+it.
 
 ### The bag renders its own `html_attr()`-faithful output
 

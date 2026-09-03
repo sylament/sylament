@@ -62,11 +62,11 @@ _Detail_ carries **detail** → the write-up in [Semantics](#semantics), and/or
 
 What a consumer writes, and what it gets back. This table is the interface —
 forms' repeater partials emit it, forms' repeater controller binds it, and the
-two later consumers build against it unchanged.
+three later consumers build against it unchanged.
 
 | Piece | Value |
 | --- | --- |
-| Identifier | `sylament--support--sortable`, on the **list element** (the repeater's items `<ul>`, the simple list `<ul>`, the table `<tbody>`) |
+| Identifier | `sylament--support--sortable`, on the **list element** (the repeater's items `<ul>`, the simple list `<ul>`, the table `<tbody>`, the key-value rows' `<tbody>`, the tags input's chip container `<div>`) |
 | Values | `animationDuration` (Number, default `300`); `group` (String, default `""`) |
 | Item marker | `data-sortable-item="<key>"` on each draggable child — it is Sortable's `draggable` selector **and** its `dataIdAttr`, so a child without it is neither draggable nor enumerated, which is exactly how a list may interleave chrome (the repeater's between-items `<li>`s) that stays put |
 | Handle marker | `data-sortable-handle` on the element a drag starts from; a list whose items carry no handle is undraggable |

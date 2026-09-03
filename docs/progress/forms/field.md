@@ -60,7 +60,7 @@ a concern's own file.
 | [`HasHelperText`](../../../packages/forms/src/Components/Concerns/HasHelperText.php) | [`Components/Concerns/HasHelperText.php`](../../../vendor/filament/forms/src/Components/Concerns/HasHelperText.php) | done | — | — |
 | [`HasHint`](../../../packages/forms/src/Components/Concerns/HasHint.php) | [`Components/Concerns/HasHint.php`](../../../vendor/filament/forms/src/Components/Concerns/HasHint.php) | done | — | [diverges](#setuphint-narrows-its-parameter-to-field), [diverges](#gethintactions-returns-a-list-not-a-gapped-array) |
 | [`HasPlaceholder`](../../../packages/forms/src/Components/Concerns/HasPlaceholder.php) | [`Components/Concerns/HasPlaceholder.php`](../../../vendor/filament/forms/src/Components/Concerns/HasPlaceholder.php) | done | — | [diverges](#hasplaceholder-is-composed-on-the-base-field) |
-| [`ResolvesRepeaterSiblingContext`](../../../packages/forms/src/Components/Concerns/ResolvesRepeaterSiblingContext.php) — no Filament concern of its own; the sibling arithmetic `distinct()` and the two repeater-sibling concerns share | [`Components/Concerns/CanFixIndistinctState.php`](../../../vendor/filament/forms/src/Components/Concerns/CanFixIndistinctState.php) | done | — | [diverges](can-fix-indistinct-state.md#the-five-sibling-facts-are-one-value-object-not-string-surgery) |
+| [`ResolvesRepeaterSiblingContext`](../../../packages/forms/src/Components/Concerns/ResolvesRepeaterSiblingContext.php) — no Filament concern of its own; the sibling arithmetic `distinct()` and the two repeater-sibling concerns share, split off `CanBeValidated` | [`Components/Concerns/CanFixIndistinctState.php`](../../../vendor/filament/forms/src/Components/Concerns/CanFixIndistinctState.php) | done | — | [diverges](can-fix-indistinct-state.md#the-five-sibling-facts-are-one-value-object-not-string-surgery) |
 | [`data-field-wrapper` on the wrapper root](../../../packages/forms/templates/components/FieldWrapper/index.html.twig) — the scroll target schemas' root controller reveals a validation error at | [`field-wrapper.blade.php`](../../../vendor/filament/forms/resources/views/components/field-wrapper.blade.php) · [`plain-field-wrapper.blade.php`](../../../vendor/filament/forms/resources/views/components/plain-field-wrapper.blade.php) | done | — | — |
 
 ## Semantics
@@ -224,10 +224,13 @@ accessibility addition of this port, not a translation, and it renders with a
 on an `aria-*` name to the strings `"true"` / `"false"` instead of dropping a
 false one.
 [`TagsInput`](tags-input.md#the-text-box-is-scratch-state-and-carries-no-data-model)
-is the one text-like control that renders none: its box holds the tag being typed
-rather than the field's value, so the invalid state rides the input wrapper's
-`sy-invalid` and the field wrapper's messages alone — which is also where
-Filament leaves it.
+and [`KeyValue`](key-value.md#every-cell-binds-by-row-index-and-a-disabled-cell-keeps-its-binding)
+are the two text-like controls that render none, for one reason: neither has a
+control that *is* the field's value. The tags input's box holds the tag being
+typed rather than the state, and the key-value field has no single control at all
+— each cell binds one half of one row — so in both the invalid state rides the
+input wrapper's `sy-invalid` and the field wrapper's messages alone, which is
+also where Filament leaves it.
 
 The two classes the list renders under drop Filament's `-wrp-` segment —
 `.sy-fo-field-error-list` / `.sy-fo-field-error-message` for

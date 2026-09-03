@@ -58,7 +58,7 @@ a **diverges** link to the note in [Divergences](#divergences), a **semantics** 
 | [`tabs.css`](../../../packages/schemas/assets/src/styles/components/tabs.css) | [`components/tabs.css`](../../../vendor/filament/schemas/resources/css/components/tabs.css) | done | — | — |
 | Stimulus controller (`sylament--schemas--tabs`) | [`resources/js/index.js`](../../../vendor/filament/schemas/resources/js) | in progress | — | [schemas-bundle.md](schemas-bundle.md) |
 | `startRenderHooks()` / `endRenderHooks()` / `getRenderHookScopes()` | [the three methods](../../../vendor/filament/schemas/src/Components/Tabs.php) | blocked | render hooks (M6 · 6) | [detail](#the-render-hook-trio-waits-on-the-render-hook-design) |
-| `HasExtraAlpineAttributes` | [`Concerns/HasExtraAlpineAttributes`](../../../vendor/filament/support/src/Concerns/HasExtraAlpineAttributes.php) | skipped | — | [diverges](#alpine-only-surface-is-skipped-not-deferred) |
+| `HasExtraAlpineAttributes` | [`Concerns/HasExtraAlpineAttributes`](../../../vendor/filament/support/src/Concerns/HasExtraAlpineAttributes.php) | skipped | — | [diverges](#alpine-only-surface-is-skipped-not-deferred), [diverges](../support/component-attribute-bag.md#extra-alpine-attributes-are-not-ported) |
 | `getTabVisibilityJs()` (`hiddenJs`/`visibleJs` per tab) | [the closure in `toEmbeddedHtml()`](../../../vendor/filament/schemas/src/Components/Tabs.php) | skipped | — | [diverges](#alpine-only-surface-is-skipped-not-deferred) |
 
 Covered by

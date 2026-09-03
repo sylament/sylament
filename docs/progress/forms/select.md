@@ -30,7 +30,7 @@ the option map is the whole truth, and by
 [probing the value's label](#the-choice-constraint-is-the-fields-only-server-side-guard)
 where it is not.
 
-**Status:** in progress — see the [status vocabulary](../README.md#statuses).
+**Status:** done — see the [status vocabulary](../README.md#statuses).
 
 Reference — the Filament source this is diffed against:
 

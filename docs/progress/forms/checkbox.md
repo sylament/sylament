@@ -10,7 +10,7 @@ and composes the two shared boolean concerns
 ships no JavaScript: the control is a real checkbox bound with `data-model`, and
 `ux-live-component` reads `element.checked` natively.
 
-**Status:** in progress — see the [status vocabulary](../README.md#statuses).
+**Status:** done — see the [status vocabulary](../README.md#statuses).
 
 Reference — the Filament source this is diffed against:
 

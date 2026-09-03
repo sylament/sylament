@@ -8,6 +8,7 @@ use Sylament\Forms\Components\Checkbox;
 use Sylament\Forms\Components\CheckboxList;
 use Sylament\Forms\Components\Radio;
 use Sylament\Forms\Components\Select;
+use Sylament\Forms\Components\TagsInput;
 use Sylament\Forms\Components\Textarea;
 use Sylament\Forms\Components\TextInput;
 use Sylament\Forms\Components\Toggle;
@@ -57,4 +58,5 @@ it('is composed on every field that renders a control, one or one per option', f
     Radio::class,
     ToggleButtons::class,
     CheckboxList::class,
+    TagsInput::class,
 ]);

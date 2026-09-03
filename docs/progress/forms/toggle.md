@@ -8,7 +8,7 @@ thumb. It composes the two shared boolean concerns
 ([`CanBeInline`](can-be-inline.md), [`CanBeAccepted`](can-be-accepted.md)) and
 adds its own on/off icon pair.
 
-**Status:** in progress — see the [status vocabulary](../README.md#statuses).
+**Status:** done — see the [status vocabulary](../README.md#statuses).
 
 Reference — the Filament source this is diffed against:
 

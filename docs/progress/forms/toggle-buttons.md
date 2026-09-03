@@ -24,7 +24,7 @@ file folds in: [`HasColors`](#hascolors-hasicons-and-hastooltips-are-this-fields
 and checkboxes bound with `data-model`, and `ux-live-component` reads and repaints
 them natively.
 
-**Status:** in progress — see the [status vocabulary](../README.md#statuses).
+**Status:** done — see the [status vocabulary](../README.md#statuses).
 
 Reference — the Filament source this is diffed against:
 

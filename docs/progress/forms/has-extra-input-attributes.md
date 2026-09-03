@@ -52,12 +52,12 @@ _Blocked by_ names what has to land first. _Detail_ links a permanent note in
 Coverage: the empty default, the replace and merge arms, closure resolution
 through `evaluate()`, and the bag getter, by
 [`HasExtraInputAttributesTest`](../../../packages/forms/tests/Unit/Components/Concerns/HasExtraInputAttributesTest.php),
-which also pins that the eight fields named in its dataset compose it. The
-tree's other three composers are covered away from that dataset:
-[`TagsInput`](tags-input.md), M3 · 9's eleventh composer, by a render case of its
-own
+which also pins that the nine fields named in its dataset compose it —
+[`TagsInput`](tags-input.md), M3 · 9's addition, among them, and it carries a
+render case of its own besides
 ([`TagsInputTest`](../../../packages/forms/tests/Integration/Components/TagsInputTest.php),
-_appends the extra input attributes without unbinding the controller_),
+_appends the extra input attributes without unbinding the controller_). The
+tree's other two composers are covered away from that dataset:
 [`FileUpload`](file-upload.md) by
 [`FileUploadTest`](../../../packages/forms/tests/Integration/Components/FileUploadTest.php)
 (_carries the extra input attributes onto the file input_), and

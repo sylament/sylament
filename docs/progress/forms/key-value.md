@@ -17,7 +17,7 @@ mounted actions
 puts every flag, label and gate under PHP test and leaves ~50 lines of
 JavaScript.
 
-**Status:** in progress — see the [status vocabulary](../README.md#statuses).
+**Status:** done — see the [status vocabulary](../README.md#statuses).
 The field ships end to end; the one unfinished row is the inline-label
 stylesheet rule, which waits on schemas' `HasInlineLabel` like every other
 field's.

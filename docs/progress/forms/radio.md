@@ -19,7 +19,7 @@ from a field template and the first to ask the wrapper for a
 `<label for>`. It ships no JavaScript: the controls are real radios bound with
 `data-model`, and `ux-live-component` reads and repaints them natively.
 
-**Status:** in progress — see the [status vocabulary](../README.md#statuses).
+**Status:** done — see the [status vocabulary](../README.md#statuses).
 
 Reference — the Filament source this is diffed against:
 

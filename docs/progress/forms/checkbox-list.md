@@ -33,7 +33,7 @@ target server side, and
 [`checkbox_list_controller`](../../../packages/forms/assets/src/controllers/checkbox_list_controller.ts)
 supplies the search filtering and the bulk toggle on top of it.
 
-**Status:** in progress — see the [status vocabulary](../README.md#statuses).
+**Status:** done — see the [status vocabulary](../README.md#statuses).
 
 Reference — the Filament source this is diffed against:
 

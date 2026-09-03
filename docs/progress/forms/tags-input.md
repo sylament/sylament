@@ -241,6 +241,23 @@ edit saves the whole list as strings, where Filament's `x-for` leaves the untouc
 numbers numeric; a column that must stay numeric needs a `dehydrateStateUsing()` of
 its own.
 
+### `nullWhenBlank()` is inert on this field, as on every array-valued leaf
+
+`nullWhenBlank()` is composed onto the base `Component`, so it is offered here and
+silently does nothing: the record mapper reaches a nullable branch only through
+`ownsRecordSubtree()` — which `Repeater` declares and a field does not — or through
+`hasDehydratedBranchLeaf()`, which scans the leaves *beneath* a branch path. A
+`TagsInput` is a leaf with neither, so `shouldNullBranch()` never runs and an
+emptied field writes `[]` into its column rather than `null`. Schemas records the
+same refusal from the mapper's side
+([belongs-to-record.md](../schemas/belongs-to-record.md#a-nullable-branch-with-no-state-path-is-refused-not-ignored)
+sits next to the pinned case, "a `nullWhenBlank()` leaf writing nothing because a
+leaf declares no branch"), where it is a tested refusal rather than an oversight; it reads as a gap only from
+the field, which is why it is restated here. A column that must go `null` when the
+list empties takes a `dehydrateStateUsing()` on the field — the demo's admin arm
+does exactly that — and the same holds for [`KeyValue`](key-value.md) and any other
+field whose state is an array it owns whole.
+
 ### `getSplitKeys()` keeps a strict array return
 
 Filament writes `return $this->evaluate($this->splitKeys) ?? [];` over a

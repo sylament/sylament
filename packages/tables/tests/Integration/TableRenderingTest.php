@@ -13,6 +13,7 @@ use Sylament\Actions\BulkActionGroup;
 use Sylament\Support\Pagination\Paginator;
 use Sylament\Tables\Columns\TextColumn;
 use Sylament\Tables\Contracts\InteractsWithTable;
+use Sylament\Tables\Enums\ColumnManagerResetActionPosition;
 use Sylament\Tables\Enums\FiltersLayout;
 use Sylament\Tables\Enums\FiltersResetActionPosition;
 use Sylament\Tables\Enums\RecordCheckboxPosition;
@@ -1253,4 +1254,173 @@ it('leaves a toggled-hidden column out of the header and every row', function ()
     expect($crawler->filter('th.sy-ta-header-cell')->each(static fn (Crawler $header): string => mb_trim($header->text())))->toBe(['Title'])
         ->and($crawler->filter('tbody > tr')->count())->toBe(2)
         ->and($crawler->filter('tbody > tr > td.sy-ta-cell')->count())->toBe(2);
+});
+
+/*
+ * The column manager's chrome: the toolbar trigger, the dropdown panel and the
+ * modal layout beside it, the item list the host's state renders, and the two
+ * places the reset action can sit. The state itself is the host's — these cases
+ * mount it and then read what the partial and the two components make of it.
+ */
+
+function columnManagerTableHost(Closure $configureTable): TableHost
+{
+    $host = new TableHost(fn (Table $table): Table => $configureTable(
+        $table
+            ->records(fn (): array => [['__key' => '1', 'title' => 'Airbag', 'plays' => '100', 'album' => 'OK Computer']])
+            ->columns([
+                TextColumn::make('title'),
+                TextColumn::make('plays')->toggleable(),
+                TextColumn::make('album')->toggleable(isToggledHiddenByDefault: true),
+            ]),
+    ));
+    $host->mountTableColumnManager();
+
+    return $host;
+}
+
+function columnManagerTableHtml(Closure $configureTable, array $tableColumns = []): string
+{
+    $host = columnManagerTableHost($configureTable);
+
+    if ($tableColumns !== []) {
+        $host->applyTableColumnManager($tableColumns);
+    }
+
+    return renderTableHost($host);
+}
+
+it('renders the column manager trigger in the toolbar end group', function (): void {
+    $crawler = new Crawler(columnManagerTableHtml(static fn (Table $table): Table => $table));
+
+    $trigger = $crawler->filter('.sy-ta-header-toolbar-end button.sy-icon-btn[aria-label="Column manager"]');
+
+    expect($trigger->count())->toBe(1)
+        ->and($trigger->filter('svg.sy-icon')->count())->toBe(1);
+});
+
+it('offers the manager for reorderable columns alone and never under columnManager(false)', function (): void {
+    $reorderable = new Crawler(columnManagerTableHtml(static fn (Table $table): Table => $table
+        ->columns([TextColumn::make('title')])
+        ->reorderableColumns()));
+    $refused = new Crawler(columnManagerTableHtml(static fn (Table $table): Table => $table->columnManager(false)));
+
+    expect($reorderable->filter('button.sy-icon-btn[aria-label="Column manager"]')->count())->toBe(1)
+        ->and($refused->filter('button.sy-icon-btn[aria-label="Column manager"]')->count())->toBe(0);
+});
+
+/*
+ * The state is the host's and the chrome is the table's, so turning the chrome
+ * off leaves every declared default standing: `album` is still hidden because it
+ * asked to be, and nothing on the page can put it back.
+ */
+it('keeps the toggle defaults when the manager chrome is turned off', function (): void {
+    $crawler = new Crawler(columnManagerTableHtml(static fn (Table $table): Table => $table->columnManager(false)));
+
+    expect($crawler->filter('.sy-ta-col-manager-content')->count())->toBe(0)
+        ->and($crawler->filter('th.sy-ta-header-cell')->each(static fn (Crawler $header): string => mb_trim($header->text())))
+        ->toBe(['Title', 'Plays']);
+});
+
+it('opens the toolbar for a table whose only chrome is the column manager', function (): void {
+    $crawler = new Crawler(columnManagerTableHtml(static fn (Table $table): Table => $table));
+
+    $toolbar = $crawler->filter('.sy-ta-header-toolbar');
+
+    expect($toolbar->count())->toBe(1)
+        ->and($toolbar->filter('.sy-ta-search-field')->count())->toBe(0)
+        ->and($toolbar->filter('.sy-ta-filters-trigger')->count())->toBe(0)
+        ->and($toolbar->filter('.sy-ta-header-toolbar-actions')->count())->toBe(0);
+});
+
+it('teleports the column manager panel so a short table cannot clip it', function (): void {
+    $crawler = new Crawler(columnManagerTableHtml(static fn (Table $table): Table => $table));
+
+    expect($crawler->filter('.sy-ta-col-manager-dropdown')->attr('data-sylament--support--dropdown-teleport-value'))->toBe('true');
+});
+
+it('renders one manager item per unhidden column, keyed and checked from the state', function (): void {
+    $host = columnManagerTableHost(static fn (Table $table): Table => $table);
+    $hostId = $host->getTableHostId();
+
+    $crawler = new Crawler(renderTableHost($host));
+    $checkboxes = $crawler->filter('.sy-ta-col-manager-items .sy-ta-col-manager-item input.sy-ta-col-manager-checkbox');
+
+    expect($checkboxes->each(static fn (Crawler $checkbox): ?string => $checkbox->attr('value')))->toBe(['title', 'plays', 'album'])
+        ->and($checkboxes->each(static fn (Crawler $checkbox): ?string => $checkbox->attr('id')))->toBe([
+            $hostId . '.table.column-manager.title',
+            $hostId . '.table.column-manager.plays',
+            $hostId . '.table.column-manager.album',
+        ])
+        ->and($checkboxes->each(static fn (Crawler $checkbox): bool => $checkbox->attr('checked') !== null))->toBe([true, true, false])
+        ->and($checkboxes->each(static fn (Crawler $checkbox): bool => $checkbox->attr('disabled') !== null))->toBe([true, false, false])
+        ->and($crawler->filter('.sy-ta-col-manager-item .sy-ta-col-manager-item-label')->each(static fn (Crawler $label): string => mb_trim($label->text())))
+        ->toBe(['Title', 'Plays', 'Album']);
+});
+
+/*
+ * `hidden()` is the developer's, so the column is not the user's to restore: it
+ * leaves the manager, the header and every row at once. The cell counts are
+ * exact because this fixture renders no record actions, no selection column and
+ * no reorder handle — all three would also carry `sy-ta-cell`.
+ */
+it('leaves a hidden column out of the manager, the header and every row', function (): void {
+    $crawler = new Crawler(columnManagerTableHtml(static fn (Table $table): Table => $table->columns([
+        TextColumn::make('title'),
+        TextColumn::make('plays')->toggleable(),
+        TextColumn::make('album')->hidden(),
+    ])));
+
+    expect($crawler->filter('.sy-ta-col-manager-checkbox')->each(static fn (Crawler $checkbox): ?string => $checkbox->attr('value')))->toBe(['title', 'plays'])
+        ->and($crawler->filter('th.sy-ta-header-cell')->count())->toBe(2)
+        ->and($crawler->filter('tbody > tr > td.sy-ta-cell')->count())->toBe(2);
+});
+
+it('puts the reset action in the panel header by default and in its footer on request', function (): void {
+    $header = new Crawler(columnManagerTableHtml(static fn (Table $table): Table => $table));
+    $footer = new Crawler(columnManagerTableHtml(static fn (Table $table): Table => $table
+        ->columnManagerResetActionPosition(ColumnManagerResetActionPosition::Footer)));
+
+    expect(mb_trim($header->filter('.sy-ta-col-manager-header-actions button.sy-link')->text()))->toBe('Reset')
+        ->and($header->filter('.sy-ta-col-manager-header-actions button.sy-link')->attr('data-live-action-param'))->toBe('resetTableColumnManager')
+        ->and($footer->filter('.sy-ta-col-manager-header-actions')->count())->toBe(0)
+        ->and(mb_trim($footer->filter('.sy-ta-col-manager-actions-ctn button.sy-btn')->last()->text()))->toBe('Reset');
+});
+
+it('renders the apply action only while the manager defers, and marks the panel live when it does not', function (): void {
+    $deferred = new Crawler(columnManagerTableHtml(static fn (Table $table): Table => $table));
+    $live = new Crawler(columnManagerTableHtml(static fn (Table $table): Table => $table->deferColumnManager(false)));
+
+    expect(mb_trim($deferred->filter('.sy-ta-col-manager-actions-ctn button.sy-btn')->first()->text()))->toBe('Apply columns')
+        ->and($deferred->filter('.sy-ta-col-manager-content')->attr('data-sylament--tables--column-manager-live-value'))->toBe('false')
+        ->and($live->filter('.sy-ta-col-manager-actions-ctn')->count())->toBe(0)
+        ->and($live->filter('.sy-ta-col-manager-content')->attr('data-sylament--tables--column-manager-live-value'))->toBe('true');
+});
+
+it('arms the drag control and its handles only for reorderable columns', function (): void {
+    $static = new Crawler(columnManagerTableHtml(static fn (Table $table): Table => $table));
+    $reorderable = new Crawler(columnManagerTableHtml(static fn (Table $table): Table => $table
+        ->reorderableColumns()
+        ->reorderAnimationDuration(120)));
+
+    $items = $reorderable->filter('.sy-ta-col-manager-items');
+
+    expect($static->filter('.sy-ta-col-manager-items')->attr('data-controller'))->toBeNull()
+        ->and($static->filter('[data-sortable-item]')->count())->toBe(0)
+        ->and($static->filter('.sy-ta-col-manager-reorder-handle')->count())->toBe(0)
+        ->and($items->attr('data-controller'))->toContain('sylament--support--sortable')
+        ->and($items->attr('data-sylament--support--sortable-animation-duration-value'))->toBe('120')
+        ->and($items->attr('data-action'))->toContain('sylament--support--sortable:end->sylament--tables--column-manager#reorder')
+        ->and($reorderable->filter('.sy-ta-col-manager-item')->each(static fn (Crawler $item): ?string => $item->attr('data-sortable-item')))
+        ->toBe(['column::title', 'column::plays', 'column::album'])
+        ->and($reorderable->filter('.sy-ta-col-manager-reorder-handle[data-sortable-handle]')->count())->toBe(3);
+});
+
+it('binds every manager checkbox to the controller through a target and a change action', function (): void {
+    $crawler = new Crawler(columnManagerTableHtml(static fn (Table $table): Table => $table));
+
+    $checkbox = $crawler->filter('.sy-ta-col-manager-checkbox')->first();
+
+    expect($checkbox->attr('data-sylament--tables--column-manager-target'))->toBe('checkbox')
+        ->and($checkbox->attr('data-action'))->toBe('change->sylament--tables--column-manager#toggle');
 });

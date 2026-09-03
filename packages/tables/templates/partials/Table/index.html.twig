@@ -30,6 +30,14 @@
 {% set filtersResetActionPosition = isFilterable ? component.getFiltersResetActionPosition : null %}
 {% set filtersForm = filtersChromeVisible ? renderComponent(component.getLiveComponent.getTableFiltersForm) : null %}
 
+{% set hasColumnManager = component.hasColumnManager %}
+{% set columnManagerDropdownVisible = hasColumnManager and component.hasColumnManagerDropdown %}
+{% set columnManagerModalVisible = hasColumnManager and component.hasColumnManagerModal %}
+{% set columnManagerApplyAction = hasColumnManager ? component.getColumnManagerApplyAction : null %}
+{% set columnManagerApplyVisible = columnManagerApplyAction is not null and columnManagerApplyAction.isVisible %}
+{% set columnManagerResetActionPosition = hasColumnManager ? component.getColumnManagerResetActionPosition : null %}
+{% set columnManagerItems = hasColumnManager ? component.getLiveComponent.getTableColumnManagerItems : [] %}
+
 {% set filterIndicators = component.getFilterIndicators %}
 {% set removableIndicatorCount = filterIndicators|filter(carrier => carrier.indicator.isRemovable)|length %}
 
@@ -40,7 +48,7 @@
 {% set headingTag = component.getHeadingTag %}
 {% set headerVisible = heading or description or headerActions is not empty %}
 {% set headerActionsAdaptive = component.getHeaderActionsPosition is same as(constant('Sylament\\Tables\\Enums\\HeaderActionsPosition::Adaptive')) %}
-{% set toolbarVisible = isSearchable or filtersTriggerVisible or toolbarActions is not empty or isReorderable %}
+{% set toolbarVisible = isSearchable or filtersTriggerVisible or toolbarActions is not empty or isReorderable or hasColumnManager %}
 
 {% set recordActionsByKey = isReordering or records is null ? {} : component.getVisibleRecordActionsByRecordKey %}
 {% set hasRecordActions = recordActionsByKey|filter(actions => actions is not empty)|length > 0 %}
@@ -88,6 +96,29 @@
             :schema="filtersForm"
             :applyVisible="filtersApplyVisible"
             :applyAction="filtersApplyAction"
+        />
+    {% endset %}
+{% endif %}
+
+{% set columnManagerTriggerControl = null %}
+{% if hasColumnManager %}
+    {% set columnManagerTriggerControl %}{{ renderComponent(component.getColumnManagerTriggerAction) }}{% endset %}
+{% endif %}
+
+{% set columnManagerPanel = null %}
+{% if columnManagerDropdownVisible %}
+    {% set columnManagerPanel %}
+        <twig:SylamentTables:ColumnManager
+            :hostId="hostId"
+            :headingLevel="3"
+            :resetActionPosition="columnManagerResetActionPosition"
+            :items="columnManagerItems"
+            :gridColumns="component.getColumnManagerColumns"
+            :reorderable="component.hasReorderableColumns"
+            :reorderAnimationDuration="component.getReorderAnimationDuration"
+            :live="not columnManagerApplyVisible"
+            :applyVisible="columnManagerApplyVisible"
+            :applyAction="columnManagerApplyAction"
         />
     {% endset %}
 {% endif %}
@@ -202,7 +233,22 @@
                         {{ filtersTriggerControl }}
                     {% endif %}
 
-                    {# column manager slot — M4 · 5 #}
+                    {% if columnManagerDropdownVisible %}
+                        <twig:SylamentSupport:Dropdown
+                            class="sy-ta-col-manager-dropdown"
+                            placement="bottom-end"
+                            :flip="false"
+                            :teleport="true"
+                            :width="component.getColumnManagerWidth"
+                            :maxHeight="component.getColumnManagerMaxHeight"
+                        >
+                            <twig:block name="trigger">{{ columnManagerTriggerControl }}</twig:block>
+
+                            <twig:block name="content">{{ columnManagerPanel }}</twig:block>
+                        </twig:SylamentSupport:Dropdown>
+                    {% elseif columnManagerModalVisible %}
+                        {{ columnManagerTriggerControl }}
+                    {% endif %}
                 </div>
             </div>
         {% endif %}

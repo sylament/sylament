@@ -109,6 +109,15 @@ it('maps the built assets directory into AssetMapper under @sylament/tables', fu
         ->and($asset->logicalPath)->toBe('@sylament/tables/controllers/table_controller.js');
 });
 
+it('maps the column manager controller into AssetMapper beside the table one', function (): void {
+    $asset = $this::getContainer()->get(AssetMapperInterface::class)->getAssetFromSourcePath(
+        dirname(__DIR__, 2) . '/assets/dist/controllers/column_manager_controller.js',
+    );
+
+    expect($asset)->not->toBeNull()
+        ->and($asset->logicalPath)->toBe('@sylament/tables/controllers/column_manager_controller.js');
+});
+
 it('resolves the live-host helper the table controller imports', function (): void {
     // The per-file build ships `utils/live_host.js` standalone beside the controller that
     // imports it, so its logical path must resolve too or the browser 404s on the import.

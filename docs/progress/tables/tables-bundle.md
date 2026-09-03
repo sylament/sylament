@@ -94,11 +94,13 @@ _"There are no registered paths for namespace `SylamentTables`"_ until
 (the [`sylament/forms` declaration](#the-manifest-declares-sylamentforms), whose
 test-kernel half is what those two cases can actually assert).
 The **in progress** asset row is covered there too, by the same standard: the
-booted `AssetMapperInterface` resolves both built files —
-`assets/dist/controllers/table_controller.js` and the `assets/dist/utils/live_host.js`
-it imports — to their `@sylament/tables/...` logical paths, which is exactly the
-lookup StimulusBundle's `ControllersMapGenerator` performs and exactly what
-returns null without the `prependExtension()` hook.
+booted `AssetMapperInterface` resolves three built files —
+`assets/dist/controllers/table_controller.js`, the
+`assets/dist/controllers/column_manager_controller.js` beside it and the
+`assets/dist/utils/live_host.js` they both import — to their `@sylament/tables/...`
+logical paths, which is exactly the lookup StimulusBundle's
+`ControllersMapGenerator` performs and exactly what returns null without the
+`prependExtension()` hook.
 `renderTable()` itself is covered twice: by the Unit
 [`TableExtensionTest`](../../../packages/tables/tests/Unit/Twig/Extension/TableExtensionTest.php)
 against an `ArrayLoader` stub — the function name, the render, and both
@@ -197,7 +199,7 @@ support's single stylesheet compile, unchanged.
 
 This section previously predicted that the registration would arrive with the
 interactive columns, "which is when the four `AlpineComponent`s are ported."
-**Selection got there first.** The workspace ships **three** controllers today,
+**Selection got there first.** The workspace ships **four** controllers today,
 all `fetch: eager`.
 [`table_controller.ts`](../../../packages/tables/assets/src/controllers/table_controller.ts)
 (`sylament--tables--table`) was the first, and it carries
@@ -276,9 +278,25 @@ sign that the value did not stick, because the commit is the controller's
 editable column has to carry `@sylament/tables` in `assets/controllers.json`, and
 that is not something a test in this repo can enforce.
 
-**Next step:** the column manager's own component follows with M4 · 5, and
-grouping's collapse arm with M4 · 6. Filament's four interactive-column
-`AlpineComponent`s have no successors left to port — `editable-cell` is all four.
+The column manager added the fourth.
+[`column_manager_controller.ts`](../../../packages/tables/assets/src/controllers/column_manager_controller.ts)
+(`sylament--tables--column-manager`) mounts on the items component's root in both
+the dropdown and the modal layout, and ports vendor's
+[`components/column-manager.js`](../../../vendor/filament/tables/resources/js/components/column-manager.js)
+over the same ValueStore mechanism the selection controller uses: a tick or a
+drag rewrites the **whole** `tableDeferredColumns` array through
+`component.set(model, value, false)` and repaints the checkboxes from it, so a
+deferred manager reaches the server only when Apply is pressed and a live one
+exactly once per change. Vendor's `error` and `isLoading` fields are dropped
+(written but never read upstream, and UX's own overlay is the failure signal), and
+its `reorderTopLevel()` array rebuild is fixed rather than copied: an entry the
+list never rendered keeps its place after the rendered ones instead of falling out
+of the state. Both apply and reset stay plain live actions — the dirty draft rides
+every request, so nothing in the footer needs a hand from this controller.
+
+**Next step:** grouping's collapse arm follows with M4 · 6. Filament's four
+interactive-column `AlpineComponent`s have no successors left to port —
+`editable-cell` is all four.
 
 ### `Make*` commands + stub publishing
 

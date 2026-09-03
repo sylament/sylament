@@ -45,7 +45,7 @@ what has to land first. _Detail_ links a permanent note in
 | The template receives the column as `component` | [`$viewIdentifier = 'column'`](../../../vendor/filament/tables/src/Columns/Column.php) | done | — | [diverges](../support/view-component.md#the-instance-is-always-exposed-as-component) |
 | [Fail-fast on a missing template](../../../packages/tables/src/Columns/ViewColumn.php) | [`ViewComponent::getView()`](../../../vendor/filament/support/src/Components/ViewComponent.php) | done | — | [diverges](../forms/view-field.md#the-missing-template-throw-lives-on-viewfield-rather-than-the-base) |
 | The cell wrapper is the table partial's, not the template's | [`Column::renderInLayout()`](../../../vendor/filament/tables/src/Columns/Column.php) | done | — | [diverges](#the-cell-wrapper-is-served-around-the-template-not-by-it) |
-| `$record` in template scope | [`support/Components/ViewComponent.php`](../../../vendor/filament/support/src/Components/ViewComponent.php) | skipped | — | [diverges](#no-record-variable-is-exposed-the-getter-is-the-api) |
+| `$record` in template scope | [`support/Components/ViewComponent.php`](../../../vendor/filament/support/src/Components/ViewComponent.php) | skipped | — | [diverges](#no-record-variable-is-exposed--the-getter-is-the-api) |
 
 Coverage: a fixture template rendering with the column in scope as `component`
 (reading `getName()`, `getState()` and `getRecord()` off it), `templateData`

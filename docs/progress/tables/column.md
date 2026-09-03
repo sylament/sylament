@@ -405,6 +405,16 @@ one `u()->camel()->kebab()` would eat the dot and collapse the two onto the same
 class; Laravel's `Str::camel()`, which Filament calls, leaves dots alone, so
 segment-wise is what reproduces vendor rather than what departs from it.
 
+The hook class is derived from a user-supplied name while the `<th>` also carries
+state classes in the same namespace, so the two can collide: a column literally
+named `sorted` emits `sy-ta-header-cell-sorted`, which is *also* the class the
+header stamps on the column the table is currently sorted by, so a stylesheet
+written against the state would paint that column unconditionally. Filament has
+the identical collision on `fi-ta-header-cell-sorted` and does nothing about it,
+so neither does this port — prefixing or escaping the hook would break the
+[styling contract](../../styling.md) that the class *is* the column's name — but
+it is worth knowing before naming a column after a table state.
+
 ### The default label reads the second-to-last dotted segment
 
 `getDefaultLabel()` runs `beforeLast('.')` **then** `afterLast('.')`, which looks

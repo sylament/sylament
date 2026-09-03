@@ -117,7 +117,12 @@ which renders columns inside a real table and reads the cells back through a
 the state is the asserted one: a dotted path and a `formatStateUsing()` closure
 landing in the cell, an iterable state joining into one, a null state rendering
 the outer element empty rather than dropping it, and — reaching one level
-deeper, into the `span.sy-ta-text-item` the partial always emits — a badge per
+deeper, into the `.sy-ta-text-item` element the partial always emits, whose tag
+follows the [list wrapper](#the-list-wrapper-appeared-with-the-list-arms-and-closed-a-css-divergence-with-it)
+(`span` for a single unbulleted value, `li` inside the `<ul>` otherwise, so a
+**multi-value badged** cell is `div.sy-ta-text > ul > li.sy-ta-text-item > span.sy-badge`
+where a single-value one is `div.sy-ta-text > span.sy-ta-text-item > span.sy-badge`)
+— a badge per
 value carrying its colour classes, the descriptions bracketing the item above
 and below, the size/weight/font-family classes with the line-clamp variable, the
 badged icon landing **inside** the badge rather than beside it, a **non**-badged

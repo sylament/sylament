@@ -44,8 +44,8 @@ deleted once the row is **done**; **diverges** → the permanent note in
 | [`extraInputAttributes()`](../../../packages/forms/src/Components/Concerns/HasExtraInputAttributes.php) | [`Forms\Concerns\HasExtraInputAttributes`](../../../vendor/filament/forms/src/Components/Concerns/HasExtraInputAttributes.php) | done | — | — |
 | [`getStateCasts()` — the enum arm's `EnumStateCast`, else `[]`](../../../packages/tables/src/Columns/SelectColumn.php) | [`Select::getEnumDefaultStateCast()`](../../../vendor/filament/forms/src/Components/Select.php) (Eloquent casts in Filament's column) | done | — | [diverges](#the-only-state-cast-a-column-carries-is-the-enum-arms) |
 | [The `Choice` seed over the enabled option keys](../../../packages/tables/src/Columns/SelectColumn.php) | [`SelectColumn::getRules()`](../../../vendor/filament/tables/src/Columns/SelectColumn.php) | done | — | [diverges](#rulein-becomes-a-choice-over-string-cast-keys-rebuilt-per-validation) |
-| [`$template`](../../../packages/tables/src/Columns/SelectColumn.php) + [the partial it names](../../../packages/tables/templates/partials/SelectColumn/index.html.twig) | [`SelectColumn::toEmbeddedHtml()`](../../../vendor/filament/tables/src/Columns/SelectColumn.php) | done | — | [semantics](#the-chrome-is-supports-inputwrapper-around-forms-sy-fo-select) |
-| [`getClientState()` on the root + the `sylament--tables--editable-cell` controller](../../../packages/tables/templates/partials/SelectColumn/index.html.twig) | `selectTableColumn()` Alpine data | done | — | [has-columns.md](has-columns.md#the-cell-repaints-from-the-root-because-a-touched-control-is-pinned-through-every-morph) |
+| [`$template`](../../../packages/tables/src/Columns/SelectColumn.php) + [the partial it names](../../../packages/tables/templates/partials/SelectColumn/index.html.twig) | [`SelectColumn::toEmbeddedHtml()`](../../../vendor/filament/tables/src/Columns/SelectColumn.php) | done | — | [semantics](#the-chrome-is-supports-inputwrapper-around-forms-sy-fo-select) · [diverges](#the-option-comparison-reads-the-client-state-not-getoptioncomparisonstate) |
+| [`getClientState()` on the root + the `sylament--tables--editable-cell` controller](../../../packages/tables/templates/partials/SelectColumn/index.html.twig) | `selectTableColumn()` Alpine data | done | — | [has-columns.md](has-columns.md#the-cell-repaints-from-the-root-because-a-touched-control-is-pinned-through-every-morph) · [diverges](#the-option-comparison-reads-the-client-state-not-getoptioncomparisonstate) |
 | [The refusal chrome — `aria-invalid` and `<p class="sy-ta-cell-error">`](../../../packages/tables/templates/partials/SelectColumn/index.html.twig) | the Alpine `error` binding | done | — | [has-columns.md](has-columns.md#the-refusal-is-request-scoped-and-server-rendered-where-filaments-lives-on-the-client) |
 | [`sy-inline`, `min-w-48` and the padding on the root](../../../packages/tables/assets/src/styles/components/select-column.css) | [`columns/select.css`](../../../vendor/filament/tables/resources/css/columns/select.css) | done | — | [toggle-column.md](toggle-column.md#the-stacked-on-mobile-arm-is-not-ported) |
 | `wire:loading.attr` / `wire:target` on the control | [`SelectColumn::toEmbeddedHtml()`](../../../vendor/filament/tables/src/Columns/SelectColumn.php) | done | — | [toggle-column.md](toggle-column.md#the-in-flight-affordance-is-the-controllers-not-a-loading-attribute) |
@@ -85,6 +85,14 @@ does not. An enum option map's keys are backing values, so the column seeds
 [`Select::getEnumDefaultStateCast()`](../forms/select.md) does minus the
 multiple arm — a column select is never multiple. A **pure** enum throws, in the
 column's own vocabulary, because its cases have no backing value to post.
+
+That throw is a **second copy** of forms' `assertBackedEnum()`: forms declares it
+on `Field`, which a `Column` does not extend, so the four lines and their message
+are duplicated here rather than reached. Neither support nor forms is the obvious
+home — support has no enum-option concept and forms' copy sits on the field
+base — so the dedupe waits for a third caller to say where it belongs. Recorded
+as an adjacent issue, not as a divergence: nothing about the behaviour differs
+from forms', only the file it is written in.
 
 The cast leaves the [`Choice` seed](#rulein-becomes-a-choice-over-string-cast-keys-rebuilt-per-validation)
 alone, which is the point of `getEnabledOptionValues()` reversing the list

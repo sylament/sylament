@@ -18,7 +18,8 @@ lane ([· 12](../roadmap.md#pulled-forward)), the relation arm
 ([· 25](../roadmap.md#pulled-forward)) — plus, from
 [M4](../roadmap.md#m4--tables-widening), the header/toolbar/bulk-action epic
 (· 1), modal-mode record actions (· 2), row behaviour and query-string state
-(· 3) and relation-scoped tables (· 8), are what has landed so far
+(· 3), the column catalog (· 4) and relation-scoped tables (· 8), are what has
+landed so far
 — a linked first-column name is built and carries a real
 [status](../README.md#statuses), with a detail file wherever a divergence, an
 open gap or real sub-structure earns one; a plain-text name is not built yet and
@@ -77,17 +78,19 @@ against the deferred settings each names rather than **blocked**. (The
 precedence — **todo** upstairs, **blocked** in the component's file — so the two
 packages disagree until that one is revisited.)
 
-Forty-five concerns the port has landed are **folded** into the detail file of
+Forty-seven concerns the port has landed are **folded** into the detail file of
 the class that composes them and carry no row here, per
 [one row per file](../README.md#one-row-per-file-one-file-per-thing) — eleven
 `Table\Concerns\` traits (`BelongsToLivewire`, `CanPaginateRecords`,
 `CanSearchRecords`, `CanSortRecords`, `HasActions`, `HasAggregateValues`,
 `HasColumns`, `HasEmptyState`, `HasQuery`, `HasRecordActions`, `HasRecords`) into
-[`table.md`](table.md), sixteen `Columns\Concerns\` traits
-(`BelongsToTable`, `CanBeDisabled`, `CanBeHiddenResponsively`, `CanBeInline`,
+[`table.md`](table.md), eighteen `Columns\Concerns\` traits
+(`BelongsToTable`, `CanAggregateRelatedRecords`, `CanBeDisabled`,
+`CanBeHiddenResponsively`, `CanBeInline`,
 `CanBeSearchable`, `CanBeSortable`, `CanCallAction`, `CanOpenUrl`,
-`HasExtraCellAttributes`, `HasExtraHeaderAttributes`, `HasLabel`, `HasName`,
-`HasRecord`, `HasRowLoopObject`, `HasTooltip`, `InteractsWithTableQuery`) into
+`HasCellState`, `HasExtraCellAttributes`, `HasExtraHeaderAttributes`, `HasLabel`,
+`HasName`, `HasRecord`, `HasRowLoopObject`, `HasTooltip`,
+`InteractsWithTableQuery`) into
 [`column.md`](column.md), two more
 `Columns\Concerns\` traits (`CanBeValidated`, `CanUpdateState`) into
 [`has-columns.md`](has-columns.md) — the write-back seam that calls both, which
@@ -111,8 +114,12 @@ each row is where the deferred half stays findable. `Filters\Concerns\HasOptions
 [`select-filter.md`](select-filter.md) rather than into `base-filter.md` with the
 eleven above. `Columns\Concerns\InteractsWithTableQuery` kept a row on the same
 grounds until [· 20](../roadmap.md#pulled-forward) landed its aggregate and
-eager-loading half, and folded when it did; the nine the column catalog landed
-folded on arrival. Everything
+eager-loading half, and folded when it did; the eleven the column catalog landed
+folded on arrival — nine into `column.md`, and `CanUpdateState` / `CanBeValidated`
+into `has-columns.md` rather than into any one of the four editable columns that
+compose them. `HasCellState` and `CanAggregateRelatedRecords` are counted here
+too, and were not before: both have been folded into `column.md` since · 20, and
+were missing from this list rather than from that file. Everything
 Filament ships that the port has **not** reached keeps its
 own per-file row below, the way
 [`actions`](../actions/README.md#features) tracks the concerns `Action` has not
@@ -218,7 +225,7 @@ The prefix is load-bearing rather than decorative: twenty trait names occur in
 two of these tiers and five (`BelongsToTable`, `CanBeHidden`, `HasColumns`,
 `HasLabel`, `InteractsWithTableQuery`) in three, which is the same
 [read-by-import, never by the bare `use`](../../../CLAUDE.md) trap the schemas
-tiers carry. The forty-three landed concerns folded into their component's detail
+tiers carry. The forty-seven landed concerns folded into their component's detail
 file are named in the [preamble](#tables--port-progress) and carry no row here.
 
 `Contracts/HasTable.php` is not listed in
@@ -281,7 +288,7 @@ pairs with, so it shares the first row below.
 | Summarizer / HasLabel | [`Columns/Summarizers/Concerns/HasLabel.php`](../../../vendor/filament/tables/src/Columns/Summarizers/Concerns/HasLabel.php) | todo | — |
 | Summarizer / InteractsWithTableQuery | [`Columns/Summarizers/Concerns/InteractsWithTableQuery.php`](../../../vendor/filament/tables/src/Columns/Summarizers/Concerns/InteractsWithTableQuery.php) | todo | — |
 | [`Filter / HasOptions`](../../../packages/tables/src/Filters/Concerns/HasOptions.php) | [`Filters/Concerns/HasOptions.php`](../../../vendor/filament/tables/src/Filters/Concerns/HasOptions.php) | in progress | the `options()` / `getOptions()` pair ships for `SelectFilter`; the enum and `Arrayable` arms and the three `getOption*Using()` seams wait on a tables filters epic — [select-filter.md](select-filter.md) |
-| [`Filter / HasPlaceholder`](../../../packages/tables/src/Filters/Concerns/HasPlaceholder.php) | [`Filters/Concerns/HasPlaceholder.php`](../../../vendor/filament/tables/src/Filters/Concerns/HasPlaceholder.php) | done | ships for `SelectFilter`, folded into [select-filter.md](select-filter.md) |
+| [`Filter / HasPlaceholder`](../../../packages/tables/src/Filters/Concerns/HasPlaceholder.php) | [`Filters/Concerns/HasPlaceholder.php`](../../../vendor/filament/tables/src/Filters/Concerns/HasPlaceholder.php) | done | ships for `SelectFilter`, folded into [select-filter.md](select-filter.md). The column catalog (M4 · 4) landed a third copy — [`Support\Components\Concerns\HasPlaceholder`](../support/has-placeholder.md), which `Column` composes — and did **not** repoint this one: three copies under Filament's own three namespaces, the two lower ones narrower (`string\|Closure\|null` against the support trait's `Markup`-carrying union), so a repoint would widen a published signature. The dedupe is a follow-up to revisit only if a fourth copy is wanted, and it waits on M3 · 9, whose lanes own forms' copy ([has-placeholder.md](../support/has-placeholder.md#three-copies-of-this-trait-ship-and-that-is-filaments-shape-too)) |
 | Filter / HasRelationship | [`Filters/Concerns/HasRelationship.php`](../../../vendor/filament/tables/src/Filters/Concerns/HasRelationship.php) | todo | — |
 | Group / BelongsToTable | [`Grouping/Concerns/BelongsToTable.php`](../../../vendor/filament/tables/src/Grouping/Concerns/BelongsToTable.php) | todo | — |
 
@@ -322,10 +329,10 @@ folds into [`text-column.md`](text-column.md) the same way, against
 | Item | Ports | Status | Detail |
 | --- | --- | --- | --- |
 | [`TableExtension`](../../../packages/tables/src/Twig/Extension/TableExtension.php) (`renderTable()`) | — (Sylament-only; mirrors schemas' [`SchemaExtension`](../../../packages/schemas/src/Twig/Extension/SchemaExtension.php)) | done | [tables-bundle.md](tables-bundle.md#the-bundle-registers-a-rendertable-twig-extension-which-filament-has-no-counterpart-for) |
-| [`TablesIconAlias`](../../../packages/tables/src/Twig/TablesIconAlias.php) | [`View/TablesIconAlias.php`](../../../vendor/filament/tables/src/View/TablesIconAlias.php) | in progress | [tables-bundle.md](tables-bundle.md#the-alias-set-is-ten-constants-of-filaments-23) |
+| [`TablesIconAlias`](../../../packages/tables/src/Twig/TablesIconAlias.php) | [`View/TablesIconAlias.php`](../../../vendor/filament/tables/src/View/TablesIconAlias.php) | in progress | [tables-bundle.md](tables-bundle.md#the-alias-set-is-twelve-constants-of-filaments-23) |
 | [`SylamentTablesBundle`](../../../packages/tables/src/SylamentTablesBundle.php) | [`TablesServiceProvider.php`](../../../vendor/filament/tables/src/TablesServiceProvider.php) | in progress | [tables-bundle.md](tables-bundle.md) |
-| [Styles](../../../packages/tables/assets/src/styles) | [`resources/css/`](../../../vendor/filament/tables/resources/css) | in progress | `table.css`, `header-toolbar.css`, `text-column.css` and `filters.css` ship — the third split along Filament's own line into the cell's layout, the item's type and the description ([text-column.md](text-column.md#the-item-element-is-never-merged-into-the-outer-div)) and since the list arms carrying vendor's `<ul>` rules too ([text-column.md](text-column.md#the-list-wrapper-appeared-with-the-list-arms-and-closed-a-css-divergence-with-it)), the fourth carrying the filters panel, its trigger and the indicator row; the remaining column, summary and column-manager sheets follow their features |
-| [Scripts](../../../packages/tables/assets/src) | [`resources/js/`](../../../vendor/filament/tables/resources/js) | in progress | the `@sylament/tables` workspace — the seventh, JS-only, added with record selection — ships two Stimulus controllers. [`table`](../../../packages/tables/assets/src/controllers/table_controller.ts) ports the **selection half** of vendor's [`components/table.js`](../../../vendor/filament/tables/resources/js/components/table.js) — the filters-dropdown positioning (support's `Dropdown` owns that), the group-collapse arm (M4 · 6) and five smaller arms are dropped, and four behaviours diverge, all listed in [tables-bundle.md](tables-bundle.md#asset-registration). [`limited-list`](../../../packages/tables/assets/src/controllers/limited_list_controller.ts) is the second, and replaces the inline `x-data="{ isLimited: true }"` a `TextColumn` with `expandableLimitedList()` carries — the state moves into a Stimulus value a live morph replays, which Alpine's per-render scope loses ([text-column.md](text-column.md#the-expand-toggles-render-only-where-there-is-something-to-expand)). Vendor's `components/column-manager.js` and the four editable-column components follow their features. The workspace's one import outside Stimulus, `table`'s `utils/live_host.ts`, is the sanctioned copy of schemas' — [tables-bundle.md](tables-bundle.md#asset-registration) |
+| [Styles](../../../packages/tables/assets/src/styles) | [`resources/css/`](../../../vendor/filament/tables/resources/css) | in progress | Fourteen sheets ship, each imported into [`index.css`](../../../packages/tables/assets/src/styles/index.css) alphabetically under `layer(components)`. The chrome: `table.css` (the container, rows, `<th>`/`<td>`, the cell wrapper, the empty state and the reorder handle), `header.css`, `header-toolbar.css`, `filters.css` (the panel, its trigger and the indicator row) and `selection.css`. The columns, one sheet each: `text-column.css` — split along Filament's own line into the cell's layout, the item's type and the description ([text-column.md](text-column.md#the-item-element-is-never-merged-into-the-outer-div)), and carrying vendor's `<ul>` rules since the list arms ([text-column.md](text-column.md#the-list-wrapper-appeared-with-the-list-arms-and-closed-a-css-divergence-with-it)) — `image-column.css`, and the column catalog's `icon-column.css`, `color-column.css`, `toggle-column.css`, `checkbox-column.css`, `select-column.css` and `text-input-column.css`, plus `editable-cell.css`, which is Sylament-only: the two rules every editable cell shares (`.sy-ta-cell-error` and the in-flight `.sy-loading`) belong to none of the four columns that render them ([has-columns.md](has-columns.md#the-refusal-is-request-scoped-and-server-rendered-where-filaments-lives-on-the-client)). The four editable sheets are thin because the controls reuse forms' skins rather than restating them ([tables-bundle.md](tables-bundle.md#the-manifest-declares-sylamentforms)). Vendor's `content.css`, `column-manager.css`, `columns/layout/` and `columns/summaries/` follow their features |
+| [Scripts](../../../packages/tables/assets/src) | [`resources/js/`](../../../vendor/filament/tables/resources/js) | in progress | the `@sylament/tables` workspace — the seventh, JS-only, added with record selection — ships three Stimulus controllers, all `fetch: eager`. [`table`](../../../packages/tables/assets/src/controllers/table_controller.ts) ports the **selection half** of vendor's [`components/table.js`](../../../vendor/filament/tables/resources/js/components/table.js) — the filters-dropdown positioning (support's `Dropdown` owns that), the group-collapse arm (M4 · 6) and five smaller arms are dropped, and four behaviours diverge, all listed in [tables-bundle.md](tables-bundle.md#asset-registration). [`limited-list`](../../../packages/tables/assets/src/controllers/limited_list_controller.ts) replaces the inline `x-data="{ isLimited: true }"` a `TextColumn` with `expandableLimitedList()` carries — the state moves into a Stimulus value a live morph replays, which Alpine's per-render scope loses ([text-column.md](text-column.md#the-expand-toggles-render-only-where-there-is-something-to-expand)). [`editable-cell`](../../../packages/tables/assets/src/controllers/editable_cell_controller.ts) is one controller where Filament ships four Alpine components (`columns/checkbox`, `columns/select`, `columns/text-input`, `columns/toggle`): it commits the control's value through the host's write action and repaints the control from the cell root's authoritative `state` value, which is what makes the seam server-canonical ([has-columns.md](has-columns.md#the-cell-repaints-from-the-root-because-a-touched-control-is-pinned-through-every-morph)). Vendor's `components/column-manager.js` follows its feature. The workspace's one import outside Stimulus, [`utils/live_host.ts`](../../../packages/tables/assets/src/utils/live_host.ts), which `table` and `editable-cell` share, is the sanctioned copy of schemas' — [tables-bundle.md](tables-bundle.md#asset-registration) |
 | [`Colors\Components\TextColumnComponent\ItemComponent`](../../../packages/tables/src/Colors/Components/TextColumnComponent/ItemComponent.php) | [`View/Components/Columns/TextColumnComponent/ItemComponent.php`](../../../vendor/filament/tables/src/View/Components/Columns/TextColumnComponent/ItemComponent.php) | done | [text-column.md](text-column.md#the-item-policy-measures-the-dark-surface-against-gray-900) |
 | [`Colors\Components\TextColumnComponent\ItemComponent\IconComponent`](../../../packages/tables/src/Colors/Components/TextColumnComponent/ItemComponent/IconComponent.php) | [`View/Components/Columns/TextColumnComponent/ItemComponent/IconComponent.php`](../../../vendor/filament/tables/src/View/Components/Columns/TextColumnComponent/ItemComponent/IconComponent.php) | done | [text-column.md](text-column.md#gray-is-a-colour-on-the-item-and-the-absence-of-one-on-the-icon) |
 | [`Colors\Components\IconColumnComponent\IconComponent`](../../../packages/tables/src/Colors/Components/IconColumnComponent/IconComponent.php) | [`View/Components/Columns/IconColumnComponent/IconComponent.php`](../../../vendor/filament/tables/src/View/Components/Columns/IconColumnComponent/IconComponent.php) | done | [icon-column.md](icon-column.md#the-policy-carries-a-map-and-the-default-gray-contract-at-once) |

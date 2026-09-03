@@ -11,10 +11,11 @@ overridable icon slots). It ports Filament's
 via [`SylamentBundle`](../../../packages/support/src/SylamentBundle.php)) and
 Filament's [`View/TablesIconAlias`](../../../vendor/filament/tables/src/View/TablesIconAlias.php).
 
-Today `loadExtension()` wires exactly what the minimal tables vertical ships: the
-`Columns\` component tier, the [`Table`](table.md) root object, the two
-[`TextColumn`](text-column.md) colour policies under `Colors\Components\`, and
-the `twig.extension`-tagged `TableExtension`. The first three have **no** counterpart in
+Today `loadExtension()` wires the `Columns\` component tier, the
+[`Table`](table.md) root object, the three colour policies under
+`Colors\Components\` — two [`TextColumn`](text-column.md) ones and, since the
+column catalog, [`IconColumn`](icon-column.md)'s — and the `twig.extension`-tagged
+`TableExtension`. The first three have **no** counterpart in
 Filament's provider — it binds no container services at all — and they are what
 makes `make()` return an autowired, non-shared instance, which is in turn what
 lets [`CanAccessProperties`](../../../packages/schemas/src/Components/Concerns/CanAccessProperties.php)'
@@ -26,15 +27,18 @@ costs the bundle no code, since TwigBundle maps `packages/tables/templates` by
 convention the moment the directory exists. Asset registration is live too, as
 of the selection controller: `prependExtension()` maps `assets/dist` into
 AssetMapper under `@sylament/tables`, and the package joined the pnpm workspace
-to build what goes there — [below](#asset-registration). The four
-interactive-column Alpine components that registration also carries in Filament,
-the three `make:` commands and their stubs, translations, and the six Livewire
-testing mixins are unported.
+to build what goes there — [below](#asset-registration). The column catalog
+brought the four interactive-column Alpine components that registration also
+carries in Filament, as **one** `editable-cell` controller rather than four; the
+three `make:` commands and their stubs, translations, and the six Livewire
+testing mixins are still unported.
 The package manifest gained `sylament/forms` with the filter layer: a filter
 builds its control out of real form fields (`Checkbox`, `Select`), so `src/`
 imports `Sylament\Forms\Components\Field` directly and the split-repo dependency
 rule makes that a `require` rather than something inherited through a sibling —
-[below](#the-manifest-declares-sylamentforms).
+[below](#the-manifest-declares-sylamentforms). The column catalog added four more
+lines to it, three requires and a suggest —
+[below](#the-manifest-grew-three-requires-and-one-suggest-for-the-column-catalog).
 
 **Status:** in progress — see the [status vocabulary](../README.md#statuses).
 
@@ -57,16 +61,18 @@ a [Details](#details) write-up, a **diverges** link to
 | --- | --- | --- | --- | --- |
 | [`Columns\`, `Filters\` and `Colors\Components\` globs + `Table` component services](../../../packages/tables/src/SylamentTablesBundle.php) | — (Sylament-only; Filament's provider binds no services) | done | — | [diverges](#the-bundle-registers-container-services-which-filaments-provider-has-no-counterpart-for) |
 | [TableExtension → `twig.extension`](../../../packages/tables/src/SylamentTablesBundle.php) (`renderTable()`) | — (Sylament-only; mirrors schemas' [`renderSchema()`](../../../packages/schemas/src/Twig/Extension/SchemaExtension.php)) | done | — | [diverges](#the-bundle-registers-a-rendertable-twig-extension-which-filament-has-no-counterpart-for) |
-| [`TablesIconAlias` — `ACTIONS_DISABLE_REORDERING`, `ACTIONS_ENABLE_REORDERING`, `ACTIONS_FILTER`, `EMPTY_STATE`, `FILTERS_REMOVE_ALL_BUTTON`, the three `HEADER_CELL_SORT_*`, `REORDER_HANDLE`, `SEARCH_FIELD`](../../../packages/tables/src/Twig/TablesIconAlias.php) | [`TablesIconAlias`](../../../vendor/filament/tables/src/View/TablesIconAlias.php) | in progress | — | [detail](#the-alias-set-is-ten-constants-of-filaments-23) · [diverges](#the-empty-state-alias-value-drops-filaments-package-prefix) |
+| [`TablesIconAlias` — `ACTIONS_DISABLE_REORDERING`, `ACTIONS_ENABLE_REORDERING`, `ACTIONS_FILTER`, `COLUMNS_ICON_COLUMN_FALSE`, `COLUMNS_ICON_COLUMN_TRUE`, `EMPTY_STATE`, `FILTERS_REMOVE_ALL_BUTTON`, the three `HEADER_CELL_SORT_*`, `REORDER_HANDLE`, `SEARCH_FIELD`](../../../packages/tables/src/Twig/TablesIconAlias.php) | [`TablesIconAlias`](../../../vendor/filament/tables/src/View/TablesIconAlias.php) | in progress | — | [detail](#the-alias-set-is-twelve-constants-of-filaments-23) · [diverges](#the-empty-state-alias-value-drops-filaments-package-prefix) |
 | [`ext-mbstring` on the package manifest](../../../packages/tables/composer.json) | — (Sylament-only; Filament's manifest declares no extensions) | done | — | [diverges](#the-manifest-declares-ext-mbstring) |
 | [`sylament/forms` on the package manifest](../../../packages/tables/composer.json) | [`filament/forms` on Filament's](../../../vendor/filament/tables/composer.json) | done | — | [diverges](#the-manifest-declares-sylamentforms) |
+| [`ext-intl`, `symfony/html-sanitizer` and `symfony/validator` on the package manifest](../../../packages/tables/composer.json) | [`ext-intl` on `filament/support`'s](../../../vendor/filament/support/composer.json); the two Symfony packages have no Filament counterpart | done | — | [diverges](#the-manifest-grew-three-requires-and-one-suggest-for-the-column-catalog) |
+| [`league/commonmark` as a `suggest`](../../../packages/tables/composer.json) | [`Str::markdown()`, which Laravel requires outright](../../../vendor/filament/tables/src/Columns/Concerns/CanFormatState.php) | done | — | [diverges](#the-manifest-grew-three-requires-and-one-suggest-for-the-column-catalog) · [text-column.md](text-column.md#markdown-throws-for-the-package-it-suggests-rather-than-falling-through) |
 | [`@SylamentTables` view namespace](../../../packages/tables/templates) | [`->hasViews()`](../../../vendor/filament/tables/src/TablesServiceProvider.php) | done | — | [diverges](../schemas/schemas-bundle.md#the-view-namespace-is-registered-by-symfony-convention-not-by-an-explicit-provider-call) |
 | [Asset registration](../../../packages/tables/src/SylamentTablesBundle.php) (`Js::make('tables')` + four column `AlpineComponent`s) | [`packageBooted()`](../../../vendor/filament/tables/src/TablesServiceProvider.php) | in progress | — | [detail](#asset-registration) · [diverges](#the-selection-controller-diverges-from-tablejs-in-four-places) |
 | `Make*` commands + stub publishing | [`configurePackage()`](../../../vendor/filament/tables/src/TablesServiceProvider.php), [`packageBooted()`](../../../vendor/filament/tables/src/TablesServiceProvider.php) | todo | — | [detail](#make-commands--stub-publishing) |
 | Translations (`hasTranslations`) | [`configurePackage()`](../../../vendor/filament/tables/src/TablesServiceProvider.php) | todo | — | [detail](#translations) |
 | `Testable::mixin(...)` — the six tables mixins | [`packageBooted()`](../../../vendor/filament/tables/src/TablesServiceProvider.php) | skipped | — | [diverges](#livewire-specific-provider-responsibilities-are-dropped-not-ported) |
 
-Four of the five **done** rows are covered by
+Four of the seven **done** rows are covered by
 [`SylamentTablesBundleTest`](../../../packages/tables/tests/Integration/SylamentTablesBundleTest.php),
 which asserts each in the shape that fails without the registration rather
 than the shape that passes either way: the container's twig service exposes
@@ -99,37 +105,49 @@ against an `ArrayLoader` stub — the function name, the render, and both
 `RuntimeException` guards — and by its Integration
 [twin](../../../packages/tables/tests/Integration/Twig/Extension/TableExtensionTest.php),
 which renders a `<twig:SongsTable />` host through the real Twig so the shipped
-partial is in the loop. The fifth — the `ext-mbstring` declaration — is a
-manifest fact with no runtime to assert; what would catch its absence is CI
-installing the split package on a build without the extension. The unported
-responsibilities have no coverage because they have no code.
+partial is in the loop. The other three are manifest facts with no runtime to
+assert — `ext-mbstring`, the column catalog's `ext-intl` /
+`symfony/html-sanitizer` / `symfony/validator` trio, and the `league/commonmark`
+suggest — and what would catch any of them missing is CI installing the split
+package on a build without the extension or the library. The **suggest** is the
+one of the four with a guard, and the guard is pinned:
+[`CanFormatStateTest`](../../../packages/tables/tests/Unit/Columns/Concerns/CanFormatStateTest.php)
+reads the guard site itself, asserting the `class_exists()` check and the package
+name in the message, because the absent-library branch cannot be reached on an
+install that has the library. Deleting the guard, or replacing the throw with a
+silent fall-through to raw text, fails that case — the same standard tables'
+[`RecordActionsResolutionTest`](../../../packages/tables/tests/Integration/RecordActionsResolutionTest.php)
+holds its own soft dependency to. The unported responsibilities have no coverage
+because they have no code.
 
 ## Details
 
 Specifics for rows that are not finished — what is already in, what is left, and
 what the next step is. Delete a subsection when its row flips to **done**.
 
-### The alias set is ten constants of Filament's 23
+### The alias set is twelve constants of Filament's 23
 
 Filament's `TablesIconAlias` declares 23 alias constants up front — every
-overridable icon slot in the whole table builder. Sylament ships **ten** —
+overridable icon slot in the whole table builder. Sylament ships **twelve** —
 `ACTIONS_FILTER` (the toolbar funnel), `EMPTY_STATE`,
 `FILTERS_REMOVE_ALL_BUTTON` (the indicators row's clear-all button), the three
 `HEADER_CELL_SORT_*` (unsorted, ascending, descending — the sortable header's
-chevron picks one by state), `SEARCH_FIELD`, and the three M4 · 3 added:
-`ACTIONS_ENABLE_REORDERING` and `ACTIONS_DISABLE_REORDERING` — the toolbar
+chevron picks one by state), `SEARCH_FIELD`, the three M4 · 3 added —
+`ACTIONS_ENABLE_REORDERING` and `ACTIONS_DISABLE_REORDERING`, the toolbar
 trigger's two states, resolved inside
 [`getReorderRecordsTriggerAction($isReordering)`](../../../packages/tables/src/Table/Concerns/CanReorderRecords.php)
-so one action object answers for both — and `REORDER_HANDLE`, the per-row grab
-handle. All ten have their consuming
-surface ported. Twelve of the remaining 13 belong to features that are not built
-yet: the filters query builder (the six
+so one action object answers for both, and `REORDER_HANDLE`, the per-row grab
+handle — and the two the column catalog added, `COLUMNS_ICON_COLUMN_TRUE` and
+`COLUMNS_ICON_COLUMN_FALSE`, the boolean glyph pair
+[`IconColumn::boolean()`](icon-column.md) falls back to. All twelve have their
+consuming surface ported. Ten of the remaining 11 belong to features that are not
+built yet: the filters query builder (the six
 `FILTERS_QUERY_BUILDER_CONSTRAINTS_*`), grouping (`ACTIONS_GROUP`,
 `GROUPING_COLLAPSE_BUTTON`), the column manager (`ACTIONS_COLUMN_MANAGER`) and
-the column catalog (`COLUMNS_COLLAPSE_BUTTON`, `COLUMNS_ICON_COLUMN_TRUE`,
-`COLUMNS_ICON_COLUMN_FALSE`).
+the layout columns' `COLUMNS_COLLAPSE_BUTTON` (M4 · 7 — it collapses a
+`Columns\Layout\Stack`, which this package does not render yet).
 
-The thirteenth, `ACTIONS_OPEN_BULK_ACTIONS`, is the one exception, and it is worth
+The eleventh, `ACTIONS_OPEN_BULK_ACTIONS`, is the one exception, and it is worth
 naming because its feature **is** built: bulk actions landed with M4 · 1 and the
 alias still did not, because nothing reads it here.
 [`BulkActionGroup`](../actions/action-group.md) sets its trigger icon as a plain
@@ -143,18 +161,22 @@ it, so each constant lands in the same change as the component or feature that
 renders its icon — the same growth order
 [`SupportIconAlias`](../support/support-icon-alias.md#pagination-rtl-aliases)
 follows, and the four that arrived with the sort headers and the search toolbar,
-and the three that arrived with reordering, are that order in action. All ten are
-read by
+the three that arrived with reordering and the two that arrived with
+`IconColumn`, are that order in action. Ten of the twelve are read by
 [the table partial](../../../packages/tables/templates/partials/Table/index.html.twig)
 — `ACTIONS_FILTER` and `FILTERS_REMOVE_ALL_BUTTON` by the filters chrome, in its
 toolbar and its indicators row, rather than by the table's own rows, and the two
 reorder-trigger ones through the action the toolbar renders rather than from the
-markup directly — so every one of them is overridable end to end. Each of the
-three new ones needed a glyph added to
+markup directly. The other two are the first read from **PHP** rather than from a
+template: [`IconColumn`](icon-column.md)'s `getTrueIcon()` / `getFalseIcon()`
+resolve them through the icon manager before the partial ever sees an icon,
+because the boolean fallback has to survive a `trueIcon()` the caller set. Either
+way all twelve are overridable end to end. Each new one needs a glyph in
 [the fixture icon set](../../../packages/tables/tests/Fixtures/assets/icons/heroicons)
-(`arrows-up-down`, `check`, `bars-2`) and to the demo's, because ux-icons resolves
-a missing local icon by throwing rather than by rendering nothing — a hard error in
-a render test, not a blank button.
+— `arrows-up-down`, `check` and `bars-2` for the reorder trio, `check-circle` and
+`x-circle` for the boolean pair — because ux-icons resolves a missing local icon
+by throwing rather than by rendering nothing: a hard error in a render test, not
+a blank button. The demo's set needs the same additions when it renders them.
 
 ### Asset registration
 
@@ -173,10 +195,10 @@ support's single stylesheet compile, unchanged.
 
 This section previously predicted that the registration would arrive with the
 interactive columns, "which is when the four `AlpineComponent`s are ported."
-**Selection got there first.** What the workspace ships today is still one
-controller,
+**Selection got there first.** The workspace ships **three** controllers today,
+all `fetch: eager`.
 [`table_controller.ts`](../../../packages/tables/assets/src/controllers/table_controller.ts)
-(`sylament--tables--table`, `fetch: eager`), and it now carries
+(`sylament--tables--table`) was the first, and it carries
 [five responsibilities](#the-table-controller-absorbs-four-jobs-livewire-does-with-attributes)
 rather than the one it started with. Its core is still the port of Filament's
 `filamentTable` Alpine data
@@ -189,11 +211,32 @@ three models just before mounting — every tick already pushes them, so there i
 nothing left to flush — the `scrollToTopOfTable` listener, and the
 `deselectAllTableRecords` browser event the host broadcasts to clear a selection,
 which lands as a re-render the repaint reads instead. What is ported behaves as
-Filament's does in all but [four places](#the-selection-controller-diverges-from-tablejs-in-four-places). `BUNDLED_ENTRIES` in the copied
+Filament's does in all but [four places](#the-selection-controller-diverges-from-tablejs-in-four-places).
+
+The column catalog added the other two, and neither is a port of an
+`AlpineComponent` one-to-one.
+[`limited_list_controller.ts`](../../../packages/tables/assets/src/controllers/limited_list_controller.ts)
+(`sylament--tables--limited-list`) replaces the inline
+`x-data="{ isLimited: true }"` a `TextColumn` with `expandableLimitedList()`
+carries: the state has to survive a morph, and an Alpine scope minted per render
+does not, so it moves into a Stimulus value
+([text-column.md](text-column.md#the-expand-toggles-render-only-where-there-is-something-to-expand)).
+[`editable_cell_controller.ts`](../../../packages/tables/assets/src/controllers/editable_cell_controller.ts)
+(`sylament--tables--editable-cell`) is **one** controller where Filament ships
+**four** components — `columns/checkbox`, `columns/select`, `columns/text-input`
+and `columns/toggle` — because the four differ only in which DOM property carries
+the value, and the seam they share (commit through the host's write action, then
+repaint from the cell root's authoritative `state`) is the whole of each. Its
+`finally` restores the control and repaints unconditionally, because UX resolves
+an action's promise *after* `render:finished`
+([has-columns.md](has-columns.md#the-cell-repaints-from-the-root-because-a-touched-control-is-pinned-through-every-morph)).
+
+`BUNDLED_ENTRIES` in the copied
 [`build-js.mjs`](../../../packages/tables/assets/scripts/build-js.mjs) is empty:
 every file builds per-file and unbundled, and the only third-party import in the
 tree — `@symfony/ux-live-component`, reached by
-[`utils/live_host.ts`](../../../packages/tables/assets/src/utils/live_host.ts) —
+[`utils/live_host.ts`](../../../packages/tables/assets/src/utils/live_host.ts),
+which `table` and `editable-cell` both import —
 stays a bare specifier the consuming app's importmap resolves, exactly as schemas'
 does. That helper is a **deliberate ten-line copy** of
 [schemas'](../../../packages/schemas/assets/src/utils/live_host.ts), the same
@@ -221,9 +264,19 @@ the second request that fetches the records is the controller's `loadTable` call
 missing `controllers.json` block takes a page from degraded to broken, so it is
 worth naming beside the selection case rather than folding into it.
 
-**Next step:** the four interactive columns (checkbox, select, text input, toggle)
-land as controllers in this same workspace — the `AlpineComponent`s exist for
-exactly those — and the column manager's own component follows with M4 · 5.
+The column catalog made that omission cost three things rather than one, and
+graded them differently. Without the block a `limitList()` cell renders its
+`and N more` toggles inert — degraded, and the visible items are still there. An
+**editable** cell is the third case, and it is the worst of them: the control
+renders, the user changes it, and nothing is written — no request, no error, no
+sign that the value did not stick, because the commit is the controller's
+`change` action and there is no controller. Every consuming app that ships an
+editable column has to carry `@sylament/tables` in `assets/controllers.json`, and
+that is not something a test in this repo can enforce.
+
+**Next step:** the column manager's own component follows with M4 · 5, and
+grouping's collapse arm with M4 · 6. Filament's four interactive-column
+`AlpineComponent`s have no successors left to port — `editable-cell` is all four.
 
 ### `Make*` commands + stub publishing
 
@@ -361,6 +414,39 @@ a split repo breaks. `mb_trim()` is used rather than `trim()` deliberately: it i
 the same
 [NBSP-and-em-space](../support/helpers.md) semantics `blank()` already applies to
 user input, so a search box containing only a non-breaking space reads as empty.
+
+### The manifest grew three requires and one suggest for the column catalog
+
+`ext-intl` joins `ext-mbstring` as the second declared extension, on the same
+correction grounds: [`TextColumn`](text-column.md)'s `money()` and `numeric()`
+format through `NumberFormatter`, which is intl's, so the package that calls it
+is the package that declares it. Filament declares `ext-intl` too, but on
+**`filament/support`** rather than on `filament/tables`, and inheriting an
+extension through a sibling is the shape the split-repo rule exists to stop — so
+the declaration lands here, where the call is. The alternative considered and
+rejected was a guard around `NumberFormatter` with the two families throwing when
+intl is absent: a formatting column that throws at render time is worse than a
+manifest a composer install refuses.
+
+`symfony/html-sanitizer` and `symfony/validator` are the two Symfony requires,
+both under the [blanket `symfony/*` approval](../../../CLAUDE.md) and both
+imported unconditionally by `src/` — the sanitizer by
+[`CanFormatState`](text-column.md#html-sanitizes-in-php-and-markdown-converts-before-it-does)'s
+`#[Required]` setter, the validator by
+[`CanBeValidated`](has-columns.md#validation-speaks-symfony-constraints-and-rules-is-not-ported)'s.
+Neither is reachable through a sibling: forms requires the validator, but the
+split-repo rule counts what this package's own `src/` imports.
+
+`league/commonmark` is the fourth, and it is a **suggest** rather than a require —
+the fourth [guarded optional integration](../../../CLAUDE.md) the toolkit ships,
+beside AssetMapper, tables' own `InteractsWithTable` branch in actions, and
+support's flysystem registry. The guard is a `class_exists()` around the one
+conversion call, and its failure mode is a `LogicException` naming the package
+rather than a silent fall-through to raw text
+([text-column.md](text-column.md#markdown-throws-for-the-package-it-suggests-rather-than-falling-through)),
+which is what makes the softer link safe: `markdown()` is opt-in, and a column
+that never calls it never reaches the branch. Upgrading to a require is one line
+if M5's `TextEntry` wants markdown too.
 
 ### The empty-state alias value drops Filament's package prefix
 

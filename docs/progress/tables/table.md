@@ -154,8 +154,8 @@ Rows never disappear — only their detail sections do.
 | [`HasDefaultDataFormattingSettings` — the eight formatting defaults, composed here](../../../packages/tables/src/Table.php) | [`Table.php`'s composed `Support\Concerns\HasDefaultDataFormattingSettings`](../../../vendor/filament/tables/src/Table.php) | done | — | [has-default-data-formatting-settings.md](../support/has-default-data-formatting-settings.md) — the trait is support's, and `TextColumn`'s date, money and numeric families are what read it off the table |
 | `HasArguments`, `HasExtraAttributes` | [`Table.php`'s remaining composed traits](../../../vendor/filament/tables/src/Table.php) | todo | — | — |
 
-Forty-seven rows are **done**, fourteen **in progress**, six **skipped**, nine
-**todo** and one **blocked**. Rather than name all forty-seven, here is what the
+Forty-nine rows are **done**, thirteen **in progress**, six **skipped**, nine
+**todo** and one **blocked**. Rather than name all forty-nine, here is what the
 done set covers, feature by feature. The **object itself**: `make()`, the host
 binding, the closure-injection wiring, and the partial that renders everything
 below. The **data lanes**: the `records()` declaration, the whole `query()` lane
@@ -172,10 +172,14 @@ panel component, the dropdown, modal, above- and below-content layouts, and the
 three chrome actions. The **rows**: `recordUrl()` with its new-tab and
 extra-link members, `recordAction()`, `recordClasses()`, `striped()`, the record
 labels and titles the empty state reads, and the whole reorder surface with its
-chrome. The **record actions**: the per-record visible-action map and the toolbar
-action set. And the **empty state**, whole — heading, description, icon, the
-replacement block and its actions — beside `deferLoading()` and `poll()`, which
-share a row.
+chrome. The **cell wrapper**, which the column catalog finished: the four-way
+tag choice is now decided from both tiers at once, and the row flipped with the
+`Column`-level arms it was waiting on. The **record actions**: the per-record
+visible-action map and the toolbar action set. The **formatting defaults**:
+support's `HasDefaultDataFormattingSettings`, composed here and read by
+`TextColumn`'s date, money and numeric families. And the **empty state**, whole —
+heading, description, icon, the replacement block and its actions — beside
+`deferLoading()` and `poll()`, which share a row.
 
 What is still **in progress** is where a named gap sits inside a shipped member:
 the column set (the layouts and the manager), the header/toolbar/selection rows
@@ -819,8 +823,13 @@ says. The **new-tab** read is per arm with it —
 `shouldOpenRecordUrlInNewTab()` is not the only source. `getExtraRecordLinkAttributes()`
 spreads only under `columnUrl is null and recordUrl is not null`, because the
 record's link attributes belong to the record's link; the guard sits at the
-spread site rather than at the `{% set %}` that computes them. And a column whose
-URL is a function of its own state
+spread site rather than at the `{% set %}` that computes them. It spreads
+**first** in the `'a'` arm's map, ahead of `href` and `target`, so the derived
+pair wins a collision — a caller's `extraRecordLinkAttributes(['href' => …])`
+cannot displace the URL the table just computed, because a later key wins in a
+Twig hash literal. That is the same ordering the
+[row anchor](#the-record-anchor-spreads-its-extra-attributes-first-so-the-derived-pair-wins)
+uses, for the same reason. And a column whose URL is a function of its own state
 ([`hasStateBasedUrls()`](column.md#geturl-answers-by-argument-count-so-a-closures-parameter-name-changes-the-dom))
 renders a `div` and lets its own partial draw one anchor per item — that
 negation has no record-level twin at all.
@@ -828,7 +837,9 @@ negation has no record-level twin at all.
 The `<button>` arm's live wiring branches three ways, and Twig cannot type-sniff
 a closure against an `Action`, so the choice is made in PHP by
 [`Column::getActionKind()`](column.md): `action` mounts through the record-action
-wiring under the column's own name, `closure` calls the host's
+wiring under the **action's** own name (`columnAction.getName`, not the column's —
+the two coincide only when the column happens to name its action after itself),
+`closure` calls the host's
 [`callTableColumnAction()`](has-columns.md), and `null` falls through to the
 record action unchanged. Each arm builds its whole attribute map **before** the
 single `attrs()` call, because `attrs()` keeps only the last `data-action` it is
@@ -843,9 +854,14 @@ name the wrapper mounts. Without it the mount unmounts silently, since
 loop is ported as it stands, so none of the `defaultSize`/`defaultTemplate` the
 record arm applies is applied here: a column action is mounted from the cell,
 never rendered as a trigger.
+
 A second `columns()` call rebuilds the column map but **not** the action cache,
 so the replaced set's action stays reachable by name — Filament does not evict
-either, and the record-action arm behaves the same way here.
+either, and the record-action arm behaves the same way here (only
+`toolbarActions()` evicts, through `removeCachedActions()`). Worth knowing before
+the column manager (M4 · 5) starts swapping column sets at runtime: a stale
+column action stays mountable by name, and that is inherited behaviour rather
+than a decision this port took.
 
 ### One filter setting drives three selection behaviours
 

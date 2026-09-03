@@ -100,8 +100,9 @@ returns without effect, exactly as vendor's returns `null`.
 
 ### The cell repaints from the root because a touched control is pinned through every morph
 
-UX LiveComponent's
-[`UnsyncedInputsTracker`](../../../vendor/symfony/ux-live-component/assets/src/Component/UnsyncedInputsTracker.ts)
+UX LiveComponent's `UnsyncedInputsTracker` (the package ships only the built
+[`live_controller.js`](../../../vendor/symfony/ux-live-component/assets/dist/live_controller.js),
+so that bundle is where to read it)
 records every input the user has touched — an `input` event anywhere under the
 live root adds the element to a bucket it never empties — and
 `beforeNodeMorphed` then stamps the **live** value back onto the incoming server
@@ -121,6 +122,17 @@ on every `render:finished`, skipping only while its own write is in flight or
 while the control is focused and its value differs from the root's (a text input
 mid-edit under a poll). It is the same fact the `table` controller's checkbox
 repaint exists for.
+
+The ordering that makes the repaint the *last* word is UX's own, and it is worth
+knowing before reading the controller's `finally`: `Component.performRequest()`
+calls `processRerender()` — whose closing line triggers `render:finished` — and
+only *then* resolves the promise `component.action()` handed back. So by the time
+the controller's `await` returns, the morph has already run and the repaint
+subscribed to `render:finished` has already fired. That is why the `finally`
+restores the control's `disabled` **unconditionally** to what it was before the
+write, rather than deferring to whatever the fresh markup carried, and why it
+calls the repaint once more on the way out: the two are the controller's own
+last-writer-wins pass over a DOM the server has already replaced.
 
 The PHP suite cannot see the repaint — it renders markup, it does not run
 Stimulus — so the tests pin the two halves it can: that the root carries the
@@ -245,8 +257,8 @@ would have leaned on an Eloquent cast. Order is what keeps validation honest —
 the host validates the **wire** value, so a `Choice` seeded from string option
 keys still judges the string the browser sent. A column over any other
 object-typed property still takes an `updateStateUsing()` closure to cast. The
-boolean columns are
-unaffected — the controller posts a JSON boolean for a checkbox.
+boolean columns are unaffected — the controller posts a JSON boolean for a
+checkbox.
 
 ### The action binds the record **and** its key, and only one of the two invalidations is observable
 

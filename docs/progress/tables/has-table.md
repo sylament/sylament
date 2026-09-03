@@ -2380,6 +2380,29 @@ One Filament caution ports with it: that enumeration has **no limit and no
 chunking**. On a filtered set of a million rows it returns a million strings and
 puts them all in a prop.
 
+### The editable seam is server-canonical too, and the cell controller repaints
+
+The column catalog's write-back is the same inversion one tier down, and it is
+worth naming beside select-all because the two are the toolkit's only places
+where a client control's value and the server's disagree mid-request.
+`updateTableColumnState()` is a `#[LiveAction]` returning `void`: the browser
+posts the control's new value, the host validates it, writes it onto the record
+and re-renders, and the re-render is the whole reply — a refusal reaches the
+screen as a `<p class="sy-ta-cell-error">` the same request paints, from a bag
+that is a plain property rather than a `LiveProp`, so it lives for exactly that
+one response ([has-columns.md](has-columns.md#the-refusal-is-request-scoped-and-server-rendered-where-filaments-lives-on-the-client)).
+Filament holds that error in Alpine on the client instead, and re-renders
+nothing.
+
+The one thing a re-render cannot do here is correct the control itself. UX pins
+every input the user has touched through every morph, so the authoritative value
+rides the cell **root** — a `div` the tracker ignores — and the
+`sylament--tables--editable-cell` controller writes it onto the control after
+each render. That is the same mechanism the selection checkboxes use, for the
+same reason: after the first morph the client state, not the server-rendered
+attribute, is what the DOM shows unless something puts the server's answer back
+([has-columns.md](has-columns.md#the-cell-repaints-from-the-root-because-a-touched-control-is-pinned-through-every-morph)).
+
 ### The filter bags are arrays, never null, and carry no getters
 
 Filament types both filter props `?array` and defaults them to `null`

@@ -97,7 +97,7 @@ Rows never disappear — only their detail sections do.
 | The pivot surface — `hasPivotRecordKeys()`, `allowDuplicates()`, `selectPivotDataInQuery()` | [`HasRecords`](../../../vendor/filament/tables/src/Table/Concerns/HasRecords.php), [`Table\Concerns\HasQuery`](../../../vendor/filament/tables/src/Table/Concerns/HasQuery.php) | skipped | — | The `BelongsToMany` pivot arm: a Doctrine association table carrying payload is an entity of its own rather than a pivot with casts, so there is no pivot model to key rows by, to allow duplicates of, or to alias columns out of |
 | [`columns()` / `getColumns()` / `getColumn()` / `getVisibleColumns()` / `flushCachedVisibleColumns()`](../../../packages/tables/src/Table/Concerns/HasColumns.php) | [`Table\Concerns\HasColumns`](../../../vendor/filament/tables/src/Table/Concerns/HasColumns.php) | in progress | — | [column.md](column.md) · [detail](#columns-takes-columns-only-and-does-not-push) · [semantics](#the-visible-set-asks-each-column-twice-and-is-memoised-until-columns-is-called-again) |
 | Column grouping and layouts — `pushColumns()`, `getColumnsLayout()`, `hasColumnGroups()` | [`Table\Concerns\HasColumns`](../../../vendor/filament/tables/src/Table/Concerns/HasColumns.php) | todo | — | [detail](#columns-takes-columns-only-and-does-not-push) |
-| [The column manager — `columnManager()` / `deferColumnManager()` / `reorderableColumns()` / `persistColumnsInSession()` / `columnManagerLayout()` / `columnManagerResetActionPosition()` / `columnManagerColumns()` / `columnManagerMaxHeight()` / `columnManagerWidth()` and the trigger and apply actions](../../../packages/tables/src/Table/Concerns/HasColumnManager.php) | [`Table\Concerns\HasColumnManager`](../../../vendor/filament/tables/src/Table/Concerns/HasColumnManager.php) | in progress | — | [has-table.md](has-table.md) · [detail](#the-column-managers-table-tier-ships-whole-and-its-chrome-does-not-yet) |
+| [The column manager — `columnManager()` / `deferColumnManager()` / `reorderableColumns()` / `persistColumnsInSession()` / `columnManagerLayout()` / `columnManagerResetActionPosition()` / `columnManagerColumns()` / `columnManagerMaxHeight()` / `columnManagerWidth()` and the trigger and apply actions](../../../packages/tables/src/Table/Concerns/HasColumnManager.php) | [`Table\Concerns\HasColumnManager`](../../../vendor/filament/tables/src/Table/Concerns/HasColumnManager.php) | in progress | — | [column-manager.md](column-manager.md) · [has-table.md](has-table.md#the-column-state-is-re-derived-against-the-definition-on-every-read) · [detail](#the-column-managers-table-tier-ships-whole-and-the-chrome-around-it-now-does-too) |
 | [The `query()` lane — `query()` / `getQuery()` / `modifyQueryUsing()` / `applyQueryScopes()` / `getQueryEntityManager()`](../../../packages/tables/src/Table/Concerns/HasQuery.php) | [`Table\Concerns\HasQuery`](../../../vendor/filament/tables/src/Table/Concerns/HasQuery.php) | done | — | [semantics](#every-read-clones-a-memoised-base-query) |
 | [`hasQuery()`](../../../packages/tables/src/Table/Concerns/HasRecords.php) | [`HasRecords::hasQuery()`](../../../vendor/filament/tables/src/Table/Concerns/HasRecords.php) | done | — | [semantics](#the-query-lane-is-on-exactly-while-no-records-closure-is-set) |
 | [`getRecordClass()`](../../../packages/tables/src/Table/Concerns/HasRecords.php) | [`HasRecords::getModel()`](../../../vendor/filament/tables/src/Table/Concerns/HasRecords.php) | done | — | [rename](../renames.md#renames) · [semantics](#the-record-class-is-read-off-the-base-querys-root-entity) |
@@ -356,7 +356,11 @@ Specifics for rows that are not finished — what is already in, what is left, a
 what the next step is. Delete a subsection when its row flips to **done**; the
 table row and any divergence it earned stay behind.
 
-### The column manager's table tier ships whole, and its chrome does not yet
+### The column manager's table tier ships whole, and the chrome around it now does too
+
+The feature as a whole — both tiers, the two enums, the components, the
+controller and every divergence — is [`column-manager.md`](column-manager.md);
+what follows is the table tier's own share of it.
 
 Every setting Filament's `Table\Concerns\HasColumnManager` carries is here:
 `columnManager()` (an explicit answer, else derived — the manager appears for
@@ -403,9 +407,14 @@ still carries the closure shape, so `ACTIONS_FILTER` and
 registering an alias and reading the trigger's icon back unchanged. It is the
 only other site in `packages/*/src` with that shape.
 
-What is left is the chrome: the `ColumnManager` and `ColumnManagerContent` Twig
-components, the `sylament--tables--column-manager` controller that writes the
-draft, the stylesheet and the partial's branch.
+The chrome those two actions are rendered into landed in the same epic — the
+`ColumnManager` and `ColumnManagerContent` Twig components, the
+`sylament--tables--column-manager` controller that writes the draft,
+`column-manager.css`, and the partial's two branches — so what keeps this row
+**in progress** is neither tier's plumbing but two deferrals recorded there:
+[`ColumnGroup`](column-manager.md#the-columngroup-half-is-the-whole-of-what-is-left)
+and the [`Width` enum](column-manager.md#the-width-is-a-css-length-and-the-columns-to-width-match-is-not-ported)
+`columnManagerWidth()` shares with `filtersFormWidth()` above.
 
 ### The pagination mode ships two cases, and two setters wait on their features
 

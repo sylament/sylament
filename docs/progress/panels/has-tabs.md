@@ -262,9 +262,8 @@ than building a schema in order to hide it, and it is why the strip's absence on
 tabless list is a template branch rather than a component state.
 
 One consequence is worth naming because it will look like duplication: the guard
-and the render are **byte-identical in three partials** —
-`ListRecords/index.html.twig`, `ManageRelatedRecords/index.html.twig` and
-`RelationManager/index.html.twig` all carry the same
+and the render are **byte-identical in two partials** —
+`Page/table.html.twig` and `RelationManager/index.html.twig` both carry the same
 `{% set tabs = this.getCachedTabs %}` and the same two-line `{% if %}`. That is
 deliberate. A shared partial would need `this` to be the host, which an
 `{% include %}` preserves but a `<twig:>` component does not

@@ -1464,10 +1464,12 @@ several times without asking.
 Sylament's `panels` package **does** now place the tag on the author's behalf, and
 the flag still does not ship, because the placement is arranged so that placing it
 twice is not something a page can do by accident. The outlet is emitted **once**,
-by [the base page chrome](../panels/README.md#routing) — after the header-main
-container, as the page root's last child — and every shipped page template reaches
-it by `{% extends %}`ing that chrome and overriding a block, so a page inherits
-exactly one outlet however many blocks it fills.
+by [the base page chrome](../panels/README.md#routing) — after the content,
+outside the header-main container, with the
+[unsaved-changes sentinel](../panels/unsaved-changes-alert.md#the-sentinel-is-an-inner-element-because-a-second-data-controller-would-take-the-live-binding-down)
+following it when the page or its panel arms the guard — and every shipped page
+template reaches it by `{% extends %}`ing that chrome and overriding a block, so
+a page inherits exactly one outlet however many blocks it fills.
 [`SimplePage`](../panels/simple-page.md)'s partial carries its own single copy for
 the same reason its chrome is a copy. The rule that follows is the one a page
 author needs: **a child template must never add a `<twig:SylamentActions:Modals />`

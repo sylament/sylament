@@ -196,9 +196,11 @@ open-in-new-tab work where Filament's do not.
 
 **The default cancel URL fails fast on a resource that registers no index page.**
 `Resource::getIndexUrl()` mints the `index` route, and a resource without one
-raises `RouteNotFoundException` the moment the form row is built. Filament fails
-identically — its `CanGenerateUrls::getUrl(null)` resolves the same missing route
-— so this is parity rather than a new constraint, but it is the one shape a
+raises a `LogicException` naming the resource and pointing at `getIndexUrl()`
+the moment the form row is built — before any route is consulted. Filament fails
+identically — its `CanGenerateUrls::getUrl(null)` fails on the same missing
+route, there as a `RouteNotFoundException` — so this is parity rather than a new
+constraint, but it is the one shape a
 custom record page hits: a page whose resource has no listing overrides
 `getFormActions()` to return the submit action alone. The six relation-manager
 fixture pages in the panels suite do exactly that, which is what keeps them

@@ -21,10 +21,6 @@ class KeyValue extends Field
 {
     use HasReorderAnimationDuration;
 
-    /**
-     * The row the field pads an empty bag with, and re-pads with when the last
-     * row is deleted.
-     */
     private const array BLANK_ROW = ['key' => '', 'value' => ''];
 
     protected string|Closure|null $template = '@SylamentForms/partials/KeyValue/index.html.twig';
@@ -285,11 +281,19 @@ class KeyValue extends Field
 
     public function isAddable(): bool
     {
+        if ($this->isDisabled()) {
+            return false;
+        }
+
         return (bool) $this->evaluate($this->isAddable);
     }
 
     public function isDeletable(): bool
     {
+        if ($this->isDisabled()) {
+            return false;
+        }
+
         return (bool) $this->evaluate($this->isDeletable);
     }
 
@@ -305,6 +309,10 @@ class KeyValue extends Field
 
     public function isReorderable(): bool
     {
+        if ($this->isDisabled()) {
+            return false;
+        }
+
         return (bool) $this->evaluate($this->isReorderable);
     }
 
@@ -343,14 +351,6 @@ class KeyValue extends Field
         return $this->evaluate($this->valuePlaceholder);
     }
 
-    /**
-     * The raw bag holds a list of `['key' => …, 'value' => …]` rows, and the
-     * per-cell bindings name a row by its index — so a rest point with no rows
-     * would leave the first keystroke writing a path the server never rendered.
-     * Padding an empty list with one blank row is what the Filament client does
-     * on its own state; the three structural actions keep the invariant from
-     * there, since neither the casts nor this hook run on a live request.
-     */
     public function hydrateRows(): void
     {
         $this->rawState($this->padRows($this->getRawRows()));
@@ -367,12 +367,6 @@ class KeyValue extends Field
         ];
     }
 
-    /**
-     * Validation reads the raw bag, which is the row list — and always holds at
-     * least the blank row — so the constraints are handed the cast map instead:
-     * `required()` fails on a blank-only field and the `Count` family counts real
-     * rows.
-     */
     public function mutateStateForValidation(mixed $state): mixed
     {
         foreach ($this->getStateCasts() as $stateCast) {
@@ -435,11 +429,6 @@ class KeyValue extends Field
             'rows' => $rows,
             'addAction' => $this->getAction($this->getAddActionName()),
             'reorderAction' => $this->getAction($this->getReorderActionName()),
-            'isAddable' => $this->isAddable(),
-            'isDeletable' => $this->isDeletable(),
-            'isReorderable' => $this->isReorderable(),
-            'canEditKeys' => $this->canEditKeys(),
-            'canEditValues' => $this->canEditValues(),
             'animationDuration' => $this->getReorderAnimationDuration(),
         ];
     }

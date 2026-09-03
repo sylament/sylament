@@ -2,9 +2,12 @@
 {% set sortableController = 'sylament--support--sortable' %}
 
 {% set isDisabled = component.isDisabled %}
-{% set hasReorderColumn = isReorderable and not isDisabled %}
-{% set hasActionsColumn = isDeletable and not isDisabled %}
-{% set hasAddAction = isAddable and not isDisabled %}
+{% set canEditKeys = component.canEditKeys %}
+{% set canEditValues = component.canEditValues %}
+
+{% set hasReorderColumn = component.isReorderable %}
+{% set hasActionsColumn = component.isDeletable %}
+{% set hasAddAction = component.isAddable %}
 
 {% set keyLabel = component.getKeyLabel %}
 {% set valueLabel = component.getValueLabel %}

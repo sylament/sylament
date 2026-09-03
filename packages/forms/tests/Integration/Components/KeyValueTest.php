@@ -7,7 +7,9 @@ namespace Sylament\Forms\Tests\Integration\Components;
 use Sylament\Forms\Components\KeyValue;
 use Sylament\Forms\Tests\Fixtures\Concerns\FieldRenderHost;
 use Sylament\Forms\Tests\Fixtures\Doctrine\Entity\Post;
+use Sylament\Forms\Twig\FormsIconAlias;
 use Sylament\Schemas\Schema;
+use Sylament\Support\Icons\IconManager;
 use Symfony\Component\DomCrawler\Crawler;
 use Symfony\Component\Validator\Constraints\Count;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
@@ -117,7 +119,12 @@ it('carries the reorder column, the sortable chain and the per-row handle only w
         ->and($tbody->attr('data-sylament--support--sortable-animation-duration-value'))->toBe('300')
         ->and($tbody->attr('data-action'))->toBe('sylament--support--sortable:end->sylament--forms--key-value#reorder')
         ->and($crawler->filter('tbody tr')->attr('data-sortable-item'))->toBe('0')
-        ->and($crawler->filter('td.sy-fo-key-value-action-col .sy-fo-key-value-table-row-sortable-handle button[data-sortable-handle]'))->toHaveCount(1);
+        ->and($crawler->filter('td.sy-fo-key-value-action-col .sy-fo-key-value-table-row-sortable-handle button[data-sortable-handle]'))->toHaveCount(1)
+        // The handle is a grab target, never a live trigger: a plain click on it would
+        // otherwise mount `reorder` with no `items` and throw at the user.
+        ->and($crawler->filter('button[data-sortable-handle]')->attr('data-action'))->toBeNull()
+        ->and($crawler->filter('button[data-sortable-handle]')->attr('data-live-action-param'))->toBeNull()
+        ->and($crawler->filter('button[data-sortable-handle]')->attr('data-live-name-param'))->toBeNull();
 
     $plain = renderKeyValue(KeyValue::make('meta'), ['meta' => [['key' => 'a', 'value' => 'one']]]);
 
@@ -210,6 +217,29 @@ it('points the table at the heading the wrapper minted, whether the label is vis
     expect($hidden->filter('table')->attr('aria-labelledby'))->toBe('schema.meta-label')
         ->and($hidden->filter('div[id="schema.meta-label"]')->attr('class'))->toContain('sy-sr-only');
 });
+
+it('lets a registered alias replace a structural action icon at render time', function (bool $reorderable, string $alias, string $selector): void {
+    // The star fixture is a 24-unit icon; both shipped defaults are 20-unit ones.
+    $this::getContainer()->get(IconManager::class)->register([$alias => 'heroicons:star']);
+
+    // The field is built after the container is up on purpose: an override only
+    // reaches an action whose field had its `#[Required]` icon-manager setter run,
+    // which a field built outside the container never does.
+    $field = KeyValue::make('meta')->reorderable($reorderable);
+
+    expect(renderKeyValue($field)->filter($selector)->attr('viewBox'))->toBe('0 0 24 24');
+})->with([
+    'delete' => [
+        false,
+        FormsIconAlias::COMPONENTS_KEY_VALUE_ACTIONS_DELETE,
+        'td.sy-fo-key-value-action-col button[data-live-name-param="delete"] svg',
+    ],
+    'reorder' => [
+        true,
+        FormsIconAlias::COMPONENTS_KEY_VALUE_ACTIONS_REORDER,
+        '.sy-fo-key-value-table-row-sortable-handle button svg',
+    ],
+]);
 
 it("binds each row's delete trigger to that row's index", function (): void {
     $crawler = renderKeyValue(KeyValue::make('meta'), ['meta' => [['key' => 'a', 'value' => 'one'], ['key' => 'b', 'value' => 'two']]]);

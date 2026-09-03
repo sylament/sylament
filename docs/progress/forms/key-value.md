@@ -69,11 +69,13 @@ Coverage:
 [`KeyValueTest`](../../../packages/forms/tests/Unit/Components/KeyValueTest.php)
 (Unit) covers the fluent API against a wired field — the shipped defaults, the
 seven literals and each setter overriding one, every flag closure evaluated, the
-label closure receiving the field, `hydrateRows()` over `[]` / `null` / a
-garbage-bearing list, `getState()` answering the map, `state()` writing a map
-back as rows, the mutate pair, the three action names and their built shapes, a
-modifier reshaping and a modifier declining, the per-row delete clone, the
-template-data flags, and the absence of the seven deprecated members.
+label closure receiving the field, `disabled()` short-circuiting the three
+structural flags while the two cell flags stay on, `hydrateRows()` over `[]` /
+`null` / a garbage-bearing list, `getState()` answering the map, `state()`
+writing a map back as rows, the mutate pair, the three action names and their
+built shapes, a modifier reshaping and a modifier declining, the per-row delete
+clone, the template data holding only what a getter cannot answer, and the
+absence of the seven deprecated members.
 [`KeyValueTest`](../../../packages/forms/tests/Integration/Components/KeyValueTest.php)
 (Integration) renders through the real Twig stack: the table shell over the
 padded blank row, one row per raw row with its labels/placeholders/values, the
@@ -82,18 +84,22 @@ and `deletable(false)` each dropping their chrome, `disabled()` dropping both
 chrome columns and the add trigger and disabling both cells, `editableKeys(false)`
 / `editableValues(false)` disabling one cell while it keeps its binding, the
 per-cell `data-model` for a plain / `live()` / `live(debounce: 300)` / `lazy()`
-field, the controller present in all three modes, the `aria-labelledby` pairing
-against a visible and a hidden label, each delete trigger's `row` argument,
+field, the controller present in all three modes, the drag handle carrying no
+live trigger of its own, the `aria-labelledby` pairing against a visible and a
+hidden label, a registered icon alias reaching the delete and the reorder
+trigger, each delete trigger's `row` argument,
 `getState()` dropping the blank row, `required()` failing on a blank-only bag and
 passing on one keyed row, a `Count` constraint counting real rows rather than the
 padding, and the `Post::$meta` round trip in both directions.
 [`LiveKeyValueTest`](../../../packages/forms/tests/Integration/LiveKeyValueTest.php)
 drives the three actions through a real round-trip on a shipped-shape
 `#[AsLiveComponent]` host: the resting blank row, `add`, `delete` (including the
-re-pad, the numeric-string index, the four refused arguments and the dirty cell
-write that rides the same request), `reorder` (the permutation, the dropped and
-appended indexes, and the three refused `items` shapes), a client-written row
-list surviving untouched, and the state hooks seeing the map.
+re-pad, the numeric-string index, the four refused arguments, a value written in
+an earlier request following its row, and the cell writes the delete request
+itself carried landing before the action body runs), `reorder` (the permutation,
+the dropped and appended indexes, and the three refused `items` shapes), all
+three actions refused on a `disabled()` field, a client-written row list
+surviving untouched, and the state hooks seeing the map.
 
 ## Details
 
@@ -121,9 +127,9 @@ Every cell binds by row index, so a rest point with no rows would leave the firs
 keystroke writing `data.meta.0.key` — a path the server never rendered, which UX
 Live refuses as `Invalid model name`. `afterStateHydrated` therefore runs
 `hydrateRows()`, which pads an empty list with one `['key' => '', 'value' => '']`
-row (the Filament client pushes the same blank row into its own state), and every
-structural action ends with `array_values()` so the list never re-encodes as a
-JSON object.
+row (the Filament client pushes the same blank row into its own state), `delete`
+re-pads with that same row when it removes the last one, and every structural
+action ends with `array_values()` so the list never re-encodes as a JSON object.
 
 The invariant is kept at exactly two kinds of place, and knowing which matters:
 `fill()` — the only path that runs the state casts and the hydration hooks — and
@@ -161,15 +167,34 @@ for why the index the client names is still the row it meant.
 ### The reorder order is hardened and the indexes it names are sound
 
 `reorder`'s `items` must be a list; anything else throws. Within it, an index the
-list does not hold is dropped and an index the order omitted is appended in its
-old position — the [repeater's contract](repeater.md#the-drag-reorder-round-trip-accepts-the-clients-order),
+list does not hold is dropped, and an index the order omitted is appended after
+the named ones, in its old relative order — the
+[repeater's contract](repeater.md#the-drag-reorder-round-trip-accepts-the-clients-order),
 so a stale drag can reorder but never lose or invent a row.
 
 Naming rows by index across a request looks fragile and is not: UX Live applies
-the request's dirty model writes during hydration, **before** the action runs, so
-the cell values the user typed have already landed at their old indexes by the
-time the list is permuted. That is also why deleting row 0 keeps a value typed
-into row 1 — the write lands at index 1, then the splice moves it to 0.
+the request's dirty model writes during hydration
+([`LiveComponentSubscriber::hydrateComponent()`](../../../vendor/symfony/ux-live-component/src/EventListener/LiveComponentSubscriber.php)),
+**before** the action runs, so the cell values the user typed have already landed
+at their old indexes by the time the list is permuted. That is also why deleting
+row 0 keeps a value typed into row 1 — the write lands at index 1, then the
+splice moves it to 0. The live suite pins that ordering in one request rather
+than two, through an argument-less action on the host, because
+`TestLiveComponent::call()` carries no model writes and `submitForm()` carries no
+action arguments.
+
+### A disabled field has no structural actions at all
+
+`isAddable()`, `isDeletable()` and `isReorderable()` open with the
+[repeater's guard](repeater.md) — `disabled()` short-circuits all three to
+`false` before the declared flag is evaluated. That is not only about the chrome:
+each of the three actions is `visible()` on its flag, and a hidden action is
+`isDisabled()` to [`mountAction()`](../actions/has-actions.md), which unmounts it
+and returns. Without the guard the template would hide the triggers while a
+hand-made live request could still add, delete and reorder the rows of a field
+the user was never offered. `canEditKeys()` / `canEditValues()` are deliberately
+*not* guarded: they are cell-level, and the template already pairs each with
+`disabled()` on the input itself.
 
 ### A structural action fires the field's afterStateUpdated hooks itself
 

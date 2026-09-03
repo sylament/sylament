@@ -201,19 +201,28 @@ it("binds each row's delete trigger to that row", function (): void {
         ->and($data['rows'][1]['deleteAction']?->getInvokedArguments())->toBe(['row' => 1]);
 });
 
-it('hands the template every flag the chrome reads', function (): void {
+it('hands the template the values a single getter cannot give it', function (): void {
     [$field] = wireKeyValue(KeyValue::make('meta')->reorderable()->reorderAnimationDuration(150));
 
     $data = $field->getExtraTemplateData();
 
-    expect($data['isAddable'])->toBeTrue()
-        ->and($data['isDeletable'])->toBeTrue()
-        ->and($data['isReorderable'])->toBeTrue()
-        ->and($data['canEditKeys'])->toBeTrue()
-        ->and($data['canEditValues'])->toBeTrue()
+    expect($data)->toHaveKeys(['rows', 'addAction', 'reorderAction', 'animationDuration'])
         ->and($data['animationDuration'])->toBe(150)
         ->and($data['addAction'])->not->toBeNull()
-        ->and($data['reorderAction'])->not->toBeNull();
+        ->and($data['reorderAction'])->not->toBeNull()
+        // Each flag is one getter call, so the template reads it off the component.
+        ->and($data)->not->toHaveKeys(['isAddable', 'isDeletable', 'isReorderable', 'canEditKeys', 'canEditValues']);
+});
+
+it('turns off every structural action while the field is disabled', function (): void {
+    [$field] = wireKeyValue(KeyValue::make('meta')->reorderable()->disabled());
+
+    expect($field->isAddable())->toBeFalse()
+        ->and($field->isDeletable())->toBeFalse()
+        ->and($field->isReorderable())->toBeFalse()
+        // The cell-level flags are not gated: the template pairs each with `disabled()`.
+        ->and($field->canEditKeys())->toBeTrue()
+        ->and($field->canEditValues())->toBeTrue();
 });
 
 it("does not carry Filament's deprecated surface", function (string $method): void {

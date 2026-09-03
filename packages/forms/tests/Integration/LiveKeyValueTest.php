@@ -66,7 +66,7 @@ it('re-pads with the blank row when the last row is deleted', function (): void 
     expect($component->component()->data['meta'])->toBe([['key' => '', 'value' => '']]);
 });
 
-it('keeps the dirty cell writes the delete request carried, at the index they land on', function (): void {
+it('carries a cell value written in an earlier request through a later delete', function (): void {
     $component = $this->createLiveComponent('KeyValueForm', [
         'data' => ['meta' => [['key' => 'a', 'value' => 'one'], ['key' => 'b', 'value' => 'two']]],
     ])
@@ -75,6 +75,33 @@ it('keeps the dirty cell writes the delete request carried, at the index they la
 
     expect($component->component()->data['meta'])->toBe([['key' => 'b', 'value' => 'x']]);
 });
+
+it('applies the cell writes the delete request itself carried before the action runs', function (): void {
+    // `submitForm()` is the one helper that sends dirty model writes and an action
+    // in a single POST — at the cost of carrying no action arguments, which is why
+    // the host wraps this delete in an argument-less live action.
+    $component = $this->createLiveComponent('KeyValueForm', [
+        'data' => ['meta' => [['key' => 'a', 'value' => 'one'], ['key' => 'b', 'value' => 'two']]],
+    ])->submitForm(['data' => ['meta' => [1 => ['value' => 'x']]]], 'deleteFirstMetaRow');
+
+    expect($component->component()->data['meta'])->toBe([['key' => 'b', 'value' => 'x']]);
+});
+
+it('leaves the row list alone when a structural action is mounted on a disabled field', function (array $mount): void {
+    $component = $this->createLiveComponent('KeyValueForm', [
+        'data' => ['meta' => [['key' => 'a', 'value' => 'one'], ['key' => 'b', 'value' => 'two']]],
+        'disabled' => true,
+    ])->call('mountAction', $mount);
+
+    expect($component->component()->data['meta'])->toBe([
+        ['key' => 'a', 'value' => 'one'],
+        ['key' => 'b', 'value' => 'two'],
+    ]);
+})->with([
+    'add' => [keyValueMount('add')],
+    'delete' => [keyValueMount('delete', ['row' => 0])],
+    'reorder' => [keyValueMount('reorder', ['items' => ['1', '0']])],
+]);
 
 it('refuses a delete naming no row of the list', function (array $arguments): void {
     $this->createLiveComponent('KeyValueForm', ['data' => ['meta' => [['key' => 'a', 'value' => 'one']]]])

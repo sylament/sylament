@@ -22,7 +22,7 @@
     <div class="sy-pa-page-header-main-ctn">
         {% block header %}
             {% if headerActions is not empty or breadcrumbs is not empty or heading is filled or subheading is filled %}
-                <twig:SylamentPanels:Header :breadcrumbs="breadcrumbs" :heading="heading" :subheading="subheading">
+                <twig:SylamentPanels:Header :breadcrumbs="breadcrumbs" :heading="heading" :subheading="subheading" :actionsAlignment="headerActionsAlignment">
                     <twig:block name="actions">
                         {% for action in headerActions %}
                             {{ renderComponent(action) }}

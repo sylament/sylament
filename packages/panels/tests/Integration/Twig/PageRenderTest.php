@@ -49,6 +49,14 @@ it('renders a plain page with its header actions, its form row and its unsaved-c
         ->and($crawler->filter('.sy-modal')->count())->toBe(0);
 });
 
+it('aligns the header actions of a page that asks for it', function (): void {
+    $client = $this::getContainer()->get('test.client');
+    $crawler = $client->request('GET', '/probe/settings');
+
+    expect($client->getResponse()->getStatusCode())->toBe(200)
+        ->and($crawler->filter('.sy-pa-header-actions-ctn > .sy-pa-header-actions.sy-align-end')->count())->toBe(1);
+});
+
 it('arms the actions guard alone on a page of an alerting panel that hosts no data', function (): void {
     $client = $this::getContainer()->get('test.client');
     $crawler = $client->request('GET', '/probe');

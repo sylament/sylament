@@ -3,7 +3,8 @@
     heading = null,
     subheading = null,
 
-    actions = markup(block('actions') ?? null)
+    actions = markup(block('actions') ?? null),
+    actionsAlignment = null
 %}
 
 {% set hasBreadcrumbs = breadcrumbs is not empty %}
@@ -11,6 +12,7 @@
 {% set hasSubheading = subheading is filled %}
 {% set hasHeadings = hasHeading or hasSubheading %}
 {% set hasActions = actions is filled %}
+{% set actionsAlignmentClass = actionsAlignment is not null ? 'sy-align-' ~ (actionsAlignment.value ?? actionsAlignment) : null %}
 
 <header {{ attrs({class: ['sy sy-pa-header', {'sy-pa-header-has-breadcrumbs': hasBreadcrumbs}]}, attributes.all) }}>
     {% if hasBreadcrumbs or hasHeadings %}
@@ -30,8 +32,10 @@
     {% endif %}
 
     {% if hasActions %}
-        <div class="sy-pa-header-actions">
-            {{ actions }}
+        <div class="sy-pa-header-actions-ctn">
+            <div {{ attrs({class: ['sy-pa-header-actions', actionsAlignmentClass]}) }}>
+                {{ actions }}
+            </div>
         </div>
     {% endif %}
 </header>

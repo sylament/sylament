@@ -5,6 +5,7 @@ declare(strict_types=1);
 use Sylament\Panels\Navigation\NavigationGroup;
 use Sylament\Panels\Navigation\NavigationItem;
 use Sylament\Panels\Twig\PanelsIconAlias;
+use Sylament\Support\Enums\Alignment;
 use Sylament\Support\Icons\IconManager;
 use Symfony\UX\TwigComponent\Test\InteractsWithTwigComponents;
 
@@ -92,7 +93,16 @@ it('renders the actions block inside the header actions wrapper', function (): v
         'heading' => 'Articles',
     ], blocks: ['actions' => '<button type="button" id="header-action">Create</button>']);
 
-    expect($html)->toMatch('/<div class="sy-pa-header-actions">\s*<button type="button" id="header-action">Create<\/button>\s*<\/div>/');
+    expect($html)->toMatch('/<div class="sy-pa-header-actions-ctn">\s*<div class="sy-pa-header-actions">\s*<button type="button" id="header-action">Create<\/button>\s*<\/div>\s*<\/div>/');
+});
+
+it('stamps the alignment on the actions row, not on its container', function (): void {
+    $html = (string) $this->renderTwigComponent('SylamentPanels:Header', [
+        'heading' => 'Articles',
+        'actionsAlignment' => Alignment::End,
+    ], blocks: ['actions' => '<button type="button" id="header-action">Create</button>']);
+
+    expect($html)->toContain('<div class="sy-pa-header-actions sy-align-end">');
 });
 
 it('leaves the topbar without a global search field by default', function (): void {

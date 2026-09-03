@@ -118,6 +118,8 @@ Rows never disappear — only their detail sections do.
 | [`persistSearchInSession()` / `persistsSearchInSession()`](../../../packages/tables/src/Table/Concerns/CanSearchRecords.php) | [`Table\Concerns\CanSearchRecords`](../../../vendor/filament/tables/src/Table/Concerns/CanSearchRecords.php) | done | — | [has-table.md](has-table.md#the-session-key-is-the-host-class-so-two-instances-of-one-page-share-it) |
 | [`persistColumnSearchesInSession()` / `persistsColumnSearchesInSession()`](../../../packages/tables/src/Table/Concerns/CanSearchRecords.php) | [`Table\Concerns\CanSearchRecords`](../../../vendor/filament/tables/src/Table/Concerns/CanSearchRecords.php) | done | — | [has-table.md](has-table.md#the-session-key-is-the-host-class-so-two-instances-of-one-page-share-it) |
 | [`isSearchableByColumn()`, `getColumnSearchIndicators()`](../../../packages/tables/src/Table/Concerns/CanSearchRecords.php) | [`Table\Concerns\CanSearchRecords`](../../../vendor/filament/tables/src/Table/Concerns/CanSearchRecords.php) | done | — | [has-table.md](has-table.md#a-full-seed-replaces-filaments-reserved-key-list-and-a-blank-is-kept) · [detail](#the-unported-search-surface-splits-three-ways) |
+| [The per-column search row — the first body row, one search field per individually searchable column and a spacer for every other cell](../../../packages/tables/templates/partials/Table/index.html.twig) + [`search-field.css`](../../../packages/tables/assets/src/styles/components/search-field.css) | [`index.blade.php`'s `fi-ta-individual-search-cell` row](../../../vendor/filament/tables/resources/views/index.blade.php) | done | — | [semantics](#the-search-cells-carry-morph-keys-because-they-are-the-one-per-column-element-that-moves) · [diverges](#the-search-row-carries-the-responsive-classes-vendor-puts-only-on-the-header) · [diverges](#the-search-cell-drops-vendors-per-column-class-hook-and-the-rows-sy-ta-row) |
+| The search field's Enter → refresh keyup | [`search-field.blade.php`](../../../vendor/filament/tables/resources/views/components/search-field.blade.php) | todo | — | Filament binds `x-on:keyup.enter="$wire.$refresh()"` so a term typed and confirmed before the debounce elapses applies at once. It was unported while the toolbar field was inline markup and stayed so when [`SearchField`](../../../packages/tables/templates/components/SearchField/index.html.twig) was extracted, since the extraction promised the toolbar's markup unchanged; it lands on the component and serves both call sites at once |
 | `hasSearch()` | [`Table\Concerns\CanSearchRecords`](../../../vendor/filament/tables/src/Table/Concerns/CanSearchRecords.php) | skipped | — | It answers *is a global term set*, which [`getSearchIndicator()`'s nullable return says once](has-table.md#search-is-the-global-term-and-one-term-per-column); the per-column half needs no equivalent either, an empty `getColumnSearchIndicators()` being its own gate |
 | `getExtraSearchableColumnRelationship()` | [`Table\Concerns\CanSearchRecords`](../../../vendor/filament/tables/src/Table/Concerns/CanSearchRecords.php) | skipped | — | It answers *is this dotted name's head a relationship*, so Filament's caller can switch to `whereRelation`. Here [one resolution](#a-dotted-name-is-resolved-against-the-mapping-before-it-is-refused) answers that inside `SearchConstraint::forColumn()` for every tier at once, so an extra searchable column crosses an association with nothing to ask first — there is no caller left to hold the branch this member exists to decide |
 | [`deferLoading()` / `isLoadingDeferred()` / `isLoaded()`](../../../packages/tables/src/Table/Concerns/CanDeferLoading.php) + [`poll()` / `getPollingInterval()` / `getPollingIntervalMilliseconds()`](../../../packages/tables/src/Table/Concerns/CanPollRecords.php) | [`CanDeferLoading`](../../../vendor/filament/tables/src/Table/Concerns/CanDeferLoading.php), [`CanPollRecords`](../../../vendor/filament/tables/src/Table/Concerns/CanPollRecords.php) | done | — | [detail](#the-deferred-window-is-server-gated-and-client-closed) · [diverges](#the-poll-interval-parses-strictly-and-carries-no-livewire-modifiers) · [has-table.md](has-table.md#the-contract-is-twenty-six-methods-of-filaments-forty-six) |
@@ -1338,6 +1340,34 @@ break any consumer that matched Filament's shape, which is the one thing porting
 the value verbatim buys. Keep both spellings if this template is ever
 restructured; they are not two spellings of one constant.
 
+### The search cells carry morph keys, because they are the one per-column element that moves
+
+Every other per-column element in the table is stationary within a render: a
+header cell and a record cell are rebuilt together and idiomorph's positional
+pairing is right by construction. The search cells are not. A reorder
+re-`columns()` the table in the stored order and a toggle drops a cell outright,
+so the row's children are the one place in the epic where the **set** and the
+**order** of siblings both change under a live morph — and idiomorph pairs
+unkeyed siblings by position
+(`isIdSetMatch` → `findIdSetMatch` → `findSoftMatch`).
+
+Two failures fall out of that, and they need different keys. After a reorder, a
+*dirty* input pairs with whichever column now occupies its position, so the term
+is applied to one column and typed into another — fixed by an `id` on the
+**cell**, which is what makes id-set pairing correct. And when the leading spacer
+count changes — which is exactly what happens the moment a search matches
+nothing, on the default configuration — the input node is destroyed and rebuilt,
+losing focus and every keystroke typed during the round trip; fixed by a second
+`id` on the **input**, which keeps the node alive across the shift.
+
+Both are the host-scoped `id` this repo already uses in place of Livewire's
+`wire:key` — the same translation
+[the record row and cell](#the-row-and-cell-morph-keys-disagree-on-record-vs-records)
+carry two loops away, so this is parity arriving late rather than a divergence.
+The toolbar's own field is deliberately left unkeyed: it has one instance with no
+siblings to be confused with, and [its markup is promised
+unchanged](#the-search-field-flattens-supports-input-wrapper-into-two-classes).
+
 ### The host binding is required, where the schemas one is optional
 
 `Table::make()` takes a non-optional `InteractsWithTable`, and
@@ -2271,6 +2301,47 @@ it removes no outline anyone renders and blocks no rule anyone writes.
 Recorded rather than reverted, and provisional on exactly that inertness — it is
 an addition with no vendor counterpart and no reader, so it goes in the change
 that first wants a resting outline on this input, with nothing to migrate.
+
+### The search row carries the responsive classes vendor puts only on the header
+
+M4 · 4's `hiddenFrom()` / `visibleFrom()` emit a breakpoint class on **both** the
+header `<th>` and the record `<td>`, because a `<td>` that stays while its `<th>`
+goes leaves the whole row misaligned below that breakpoint. Vendor emits them on
+the `<th>` and on a `ColumnGroup`'s header cell only
+([`index.blade.php`](../../../vendor/filament/tables/resources/views/index.blade.php)),
+and its own search `<td>` carries `fi-ta-cell` plus the two search hooks and
+nothing else.
+
+Copying that here would break the thing the classes exist to protect. Our search
+row is a row of real cells in the same table, so a search cell with no breakpoint
+class stays visible at a width where its header and its records have both gone —
+one column wider than everything above and below it. So the search-row loop
+hoists `getHiddenFrom()` / `getVisibleFrom()` exactly as the record-cell loop does
+and spreads the same two entries into the cell's `classes()` call.
+
+It is the rare divergence where *departing* from vendor is what preserves the
+rendering: the difference is downstream of M4 · 4's own divergence, not a fresh
+choice, and it would have to be reversed the same day that one was.
+
+### The search cell drops vendor's per-column class hook, and the row's `sy-ta-row`
+
+Two class names vendor's search row carries are deliberately absent. The
+per-column hook `fi-ta-individual-search-cell-<kebab>` — a second class beside
+`fi-ta-individual-search-cell`, carrying the column's camel-then-kebab name — is
+not emitted: nothing in vendor's own stylesheet selects it, the package emits no
+per-*record*-column analogue for a body cell to match it, and a name derived by
+two string transforms is exactly the kind of hook that is cheap to add on demand
+and expensive to keep faithful (a column named `artist.name` kebabs to something
+a user would have to read the source to predict). Applications that want to reach
+one cell have the cell's `id`, which is stable and documented.
+
+The row itself carries `sy-ta-column-search-row` **alone**, where vendor's
+carries `fi-ta-row` beside it. That is not thrift: `sy-ta-row` is the class every
+record row carries and a dozen shipped assertions read
+`tbody > tr` classes against an exact string, so putting it on a chrome row that
+holds no record would make "the rows" mean two different things in the stylesheet
+and in every test. The stripe, the selected tint and the clickable marker are all
+`sy-ta-row` rules, and none of them has anything to say about a row of inputs.
 
 ### The visible action map is a `Table` method, and is not short-circuited
 

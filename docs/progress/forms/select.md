@@ -968,6 +968,13 @@ The option memo is bypassed whenever the flag is on, for the same reason a
 [`getClone()`](../schemas/component.md) is a shallow clone, so a memoised map
 would be served to every repeater item that cloned the field.
 
+The bypass is written twice — the read is guarded and so is the write — and each
+half is redundant on its own: an instance that never writes the memo has none to
+read, and one that never reads it does not serve a stale map either. Only the
+pair is pinned by a test, because no public call sequence can populate the memo
+while the flag is on. The redundancy is kept for fidelity to Filament, whose own
+guard is at four sites.
+
 Note the default: `relationship(ignoreRecord:)` is `false` while
 [`unique(ignoreRecord:)`](can-be-validated.md) is `true`. Both are Filament's,
 and the contrast is deliberate — a uniqueness probe on an edit page almost

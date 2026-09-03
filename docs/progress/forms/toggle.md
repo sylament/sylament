@@ -21,8 +21,8 @@ Reference — the Filament source this is diffed against:
 
 Every point this field adds over `Field`. `Field`'s own surface is tracked in
 [`field.md`](field.md), not here. _Blocked by_ names what has to land first.
-_Detail_ links the write-up in [Details](#details) or a permanent note in
-[Divergences](#divergences); a **done** row without a permanent note reads `—`.
+_Detail_ links a permanent note in [Divergences](#divergences); a **done** row
+without a permanent note reads `—`.
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |

@@ -4,11 +4,16 @@ declare(strict_types=1);
 
 namespace Sylament\Tables\Tests\Integration;
 
+use Sylament\Tables\Tests\Fixtures\Twig\Components\ColumnManagerTable;
+use Sylament\Tables\Tests\Fixtures\Twig\Components\LiveColumnManagerTable;
 use Sylament\Tables\Tests\Fixtures\Twig\Components\UnboundSongsTable;
 use Sylament\Tables\Tests\Fixtures\Twig\Components\UrlBoundSongsTable;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
+use Symfony\Component\DomCrawler\Crawler;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\RequestStack;
+use Symfony\Component\HttpFoundation\Session\Session;
+use Symfony\Component\HttpFoundation\Session\Storage\MockArraySessionStorage;
 
 use function Sylament\Tables\Tests\browseTo;
 use function Sylament\Tables\Tests\publishedProps;
@@ -58,6 +63,16 @@ function seedTableSession(array $state): KernelBrowser
 function currentTableSession(KernelBrowser $client): array
 {
     return $client->getRequest()->getSession()->all();
+}
+
+/**
+ * The header labels the column-manager host rendered on the page.
+ *
+ * @return list<string>
+ */
+function columnManagerHeaders(Crawler $crawler): array
+{
+    return $crawler->filter('#column-manager-table thead .sy-ta-header-cell')->each(static fn (Crawler $cell): string => mb_trim($cell->text()));
 }
 
 it('remembers a sort the table asked it to persist', function (): void {
@@ -226,4 +241,48 @@ it('touches no session on a request that carries none', function (): void {
     expect($host->tableSort)->toBeNull()
         ->and($host->tableSearch)->toBe('')
         ->and($host->tableRecordsPerPage)->toBeNull();
+});
+
+it('renders a table without the column its remembered state toggled off', function (): void {
+    $client = seedTableSession([sessionKeyFor(ColumnManagerTable::class, 'columns') => [
+        ['type' => 'column', 'name' => 'title', 'isToggled' => true, 'isToggledHiddenByDefault' => null],
+        ['type' => 'column', 'name' => 'plays', 'isToggled' => false, 'isToggledHiddenByDefault' => false],
+    ]]);
+
+    [, $crawler] = browseTo(client: $client);
+
+    expect(columnManagerHeaders($crawler))->toBe(['Title']);
+});
+
+it('remembers the declared column state on a first visit, columns being the one state that persists unasked', function (): void {
+    [$client, $crawler] = browseTo();
+
+    expect(columnManagerHeaders($crawler))->toBe(['Title', 'Plays'])
+        ->and(currentTableSession($client))->toHaveKey(sessionKeyFor(ColumnManagerTable::class, 'columns'))
+        ->and(currentTableSession($client)[sessionKeyFor(ColumnManagerTable::class, 'columns')])->toBe([
+            ['type' => 'column', 'name' => 'title', 'isToggled' => true, 'isToggledHiddenByDefault' => null],
+            ['type' => 'column', 'name' => 'plays', 'isToggled' => true, 'isToggledHiddenByDefault' => false],
+            ['type' => 'column', 'name' => 'position', 'isToggled' => false, 'isToggledHiddenByDefault' => true],
+            ['type' => 'column', 'name' => 'isFeatured', 'isToggled' => true, 'isToggledHiddenByDefault' => null],
+        ]);
+});
+
+it('falls back to the declared columns when the remembered state is not a list of items', function (): void {
+    $client = seedTableSession([sessionKeyFor(ColumnManagerTable::class, 'columns') => ['plays' => false]]);
+
+    [, $crawler] = browseTo(client: $client);
+
+    expect(columnManagerHeaders($crawler))->toBe(['Title', 'Plays']);
+});
+
+it('writes no column state for a table that opted out', function (): void {
+    $request = new Request();
+    $request->setSession(new Session(new MockArraySessionStorage()));
+    $this::getContainer()->get(RequestStack::class)->push($request);
+
+    $this::getContainer()->get(ColumnManagerTable::class)->mountTableColumnManager();
+    $this::getContainer()->get(LiveColumnManagerTable::class)->mountTableColumnManager();
+
+    expect($request->getSession()->all())->toHaveKey(sessionKeyFor(ColumnManagerTable::class, 'columns'))
+        ->and($request->getSession()->all())->not->toHaveKey(sessionKeyFor(LiveColumnManagerTable::class, 'columns'));
 });

@@ -152,4 +152,17 @@ final class BareTableHost implements InteractsWithTable
     {
         return [];
     }
+
+    public function getTableColumnSearch(string $column): string
+    {
+        return '';
+    }
+
+    /**
+     * @return array<string, Indicator>
+     */
+    public function getTableColumnSearchIndicators(): array
+    {
+        return [];
+    }
 }

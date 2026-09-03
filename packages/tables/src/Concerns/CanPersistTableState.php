@@ -116,6 +116,15 @@ trait CanPersistTableState
         $this->persistTableStateToSession('search', $this->tableSearch);
     }
 
+    protected function persistTableColumnSearchesInSession(): void
+    {
+        if (!$this->getTable()->persistsColumnSearchesInSession()) {
+            return;
+        }
+
+        $this->persistTableStateToSession('column_search', $this->tableColumnSearches);
+    }
+
     protected function persistTableFiltersInSession(): void
     {
         if (!$this->getTable()->persistsFiltersInSession()) {

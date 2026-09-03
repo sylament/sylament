@@ -23,10 +23,11 @@ function modifyTableUrlProps(UrlMappedTableHost $host): array
         'sort' => $host->modifyTableSortProp(new LiveProp()),
         'search' => $host->modifyTableSearchProp(new LiveProp()),
         'filters' => $host->modifyTableFiltersProp(new LiveProp()),
+        'columnSearches' => $host->modifyTableColumnSearchesProp(new LiveProp()),
     ];
 }
 
-it('declares the table state as LiveProps with the intended writability, hooks and wire bridges', function (string $property, bool $writable, ?string $onUpdated, ?string $dehydrateWith, bool $url, string $fieldName, ?string $modifier = null): void {
+it('declares the table state as LiveProps with the intended writability, hooks and wire bridges', function (string $property, bool $writable, ?string $onUpdated, ?string $dehydrateWith, bool $url, string $fieldName, ?string $modifier = null, ?string $hydrateWith = null): void {
     $attributes = new ReflectionProperty(TableHost::class, $property)->getAttributes(LiveProp::class);
 
     expect($attributes)->toHaveCount(1);
@@ -38,9 +39,10 @@ it('declares the table state as LiveProps with the intended writability, hooks a
         ->and($prop->dehydrateMethod())->toBe($dehydrateWith)
         ->and($prop->url())->toBe($url)
         ->and($prop->modifier())->toBe($modifier)
+        ->and($prop->hydrateMethod())->toBe($hydrateWith)
         ->and($prop->calculateFieldName(new TableHost(), $property))->toBe($fieldName);
 
-    foreach (array_filter([$onUpdated, $dehydrateWith, $modifier]) as $method) {
+    foreach (array_filter([$onUpdated, $dehydrateWith, $modifier, $hydrateWith]) as $method) {
         expect(method_exists(TableHost::class, $method))->toBeTrue();
     }
 })->with([
@@ -55,6 +57,7 @@ it('declares the table state as LiveProps with the intended writability, hooks a
     'deselect tracking' => ['isTrackingDeselectedTableRecords', true, null, null, false, 'isTrackingDeselectedTableRecords'],
     'columns' => ['tableColumns', false, null, null, false, 'tableColumns'],
     'deferred columns' => ['tableDeferredColumns', true, null, null, false, 'tableDeferredColumns'],
+    'column searches' => ['tableColumnSearches', true, null, 'dehydrateTableColumnSearches', false, 'tableColumnSearches', 'modifyTableColumnSearchesProp', 'hydrateTableColumnSearches'],
 ]);
 
 it('exposes the table state mutations as live actions with live args', function (string $method, array $argNames): void {
@@ -74,6 +77,8 @@ it('exposes the table state mutations as live actions with live args', function 
     'removeTableFilters' => ['removeTableFilters', []],
     'resetTableFiltersForm' => ['resetTableFiltersForm', []],
     'resetTableSearch' => ['resetTableSearch', []],
+    'resetTableColumnSearch' => ['resetTableColumnSearch', ['column']],
+    'resetTableColumnSearches' => ['resetTableColumnSearches', []],
     'selectAllTableRecords' => ['selectAllTableRecords', []],
     'applyTableColumnManager' => ['applyTableColumnManager', ['state']],
     'resetTableColumnManager' => ['resetTableColumnManager', []],
@@ -91,6 +96,7 @@ it('binds a LiveProp to the URL under the name the host maps for it', function (
         'sort' => new UrlMapping(as: 'sort'),
         'search' => new UrlMapping(as: 'search'),
         'filters' => new UrlMapping(as: 'filters'),
+        'columnSearches' => new UrlMapping(as: 'columnSearches'),
     ];
 
     foreach (modifyTableUrlProps(new UrlMappedTableHost($mappings)) as $prop => $liveProp) {
@@ -108,7 +114,8 @@ it('maps one prop without touching its siblings', function (): void {
     expect($liveProps['sort']->url())->toBeInstanceOf(UrlMapping::class)
         ->and($liveProps['page']->url())->toBeFalse()
         ->and($liveProps['search']->url())->toBeFalse()
-        ->and($liveProps['filters']->url())->toBeFalse();
+        ->and($liveProps['filters']->url())->toBeFalse()
+        ->and($liveProps['columnSearches']->url())->toBeFalse();
 });
 
 it('builds no table while modifying a prop, so nothing resolves before the component is hydrated', function (): void {
@@ -118,6 +125,7 @@ it('builds no table while modifying a prop, so nothing resolves before the compo
             'sort' => new UrlMapping(as: 'sort'),
             'search' => new UrlMapping(as: 'search'),
             'filters' => new UrlMapping(as: 'filters'),
+            'columnSearches' => new UrlMapping(as: 'columnSearches'),
         ],
         refusesTable: true,
     );

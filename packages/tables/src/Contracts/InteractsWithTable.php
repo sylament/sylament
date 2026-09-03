@@ -147,4 +147,19 @@ interface InteractsWithTable
      * @return list<array{name: string, label: string|Markup, isToggleable: bool, isToggled: bool}>
      */
     public function getTableColumnManagerItems(): array;
+
+    /**
+     * One column's stored search term, raw — what its input renders as `value`.
+     * Read by the search row.
+     */
+    public function getTableColumnSearch(string $column): string;
+
+    /**
+     * The per-column chips for the indicators row, one per visible individually
+     * searchable column holding a term, keyed by column name. Read by
+     * `Table::getColumnSearchIndicators()`.
+     *
+     * @return array<string, Indicator>
+     */
+    public function getTableColumnSearchIndicators(): array;
 }

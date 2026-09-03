@@ -148,7 +148,7 @@ instead.
 | [Table state in the URL — the `getTableUrlMapping()` opt-in hook, the four `modifyTable*Prop()` `LiveProp` modifiers, `getTableQueryStringIdentifier()` and `getIdentifiedTableQueryStringPropertyNameFor()`](../../../packages/tables/src/Concerns/HasTable.php) | [`getIdentifiedTableQueryStringPropertyNameFor()`](../../../vendor/filament/tables/src/Concerns/InteractsWithTable.php), the six-attribute `#[Url]` block on [`ListRecords`](../../../vendor/filament/filament/src/Resources/Pages/ListRecords.php) and Livewire's own [`queryStringHandlesPagination()`](../../../vendor/livewire/livewire/src/Features/SupportPagination/HandlesPagination.php) for `page` | done | — | [diverges](#the-url-binding-is-a-per-prop-liveprop-modifier-opted-into-by-the-page) · [diverges](#the-query-string-identifier-is-live-on-the-table-and-dead-in-the-modifiers) |
 | The `reordering` URL bind | [`#[Url(as: 'reordering')]` redeclared on `ListRecords`](../../../vendor/filament/filament/src/Resources/Pages/ListRecords.php) | skipped | — | A transient UI mode rather than browsing state, and binding it would leave a permanent `reordering=0` in every URL under [the residue constraint](#the-url-binding-is-a-per-prop-liveprop-modifier-opted-into-by-the-page); the `grouping` bind has no prop to attach to until grouping lands |
 | [Table state in the session — `CanPersistTableState`: the `RequestStack` setter, `getTableSessionKey()`, `persistTableStateToSession()`, `readTableSessionState()`, `forgetTableSessionState()`, the four per-prop writers and the `#[PostMount(priority: 10)]` read hook](../../../packages/tables/src/Concerns/CanPersistTableState.php) | [`Concerns\InteractsWithTable::bootedInteractsWithTable()`](../../../vendor/filament/tables/src/Concerns/InteractsWithTable.php) | done | — | [diverges](#the-session-key-is-the-host-class-so-two-instances-of-one-page-share-it) |
-| Per-column search — `$tableColumnSearches`, `updatedTableColumnSearches()`, the reserved keys | [`Concerns\CanSearchRecords`](../../../vendor/filament/tables/src/Concerns/CanSearchRecords.php) | todo | — | [detail](#search-is-the-global-term-only) |
+| [Per-column search — the `$tableColumnSearches` bag with its `hydrateTableColumnSearches()` / `dehydrateTableColumnSearches()` pair, `mountTableColumnSearches()`, `afterTableColumnSearchesHydrated()`, `getTableColumnSearch()` / `getTableColumnSearches()`, `applyColumnSearchesToTableQuery()`, `handleTableColumnSearchUpdates()` and the `resetTableColumnSearch()` / `resetTableColumnSearches()` actions](../../../packages/tables/src/Concerns/CanSearchRecords.php) | [`Concerns\CanSearchRecords`](../../../vendor/filament/tables/src/Concerns/CanSearchRecords.php) | in progress | its chips, the session half and the search row that renders the inputs | [detail](#search-is-the-global-term-only) · [diverges](#a-full-seed-replaces-filaments-reserved-key-list-and-a-blank-is-kept) · [diverges](#the-per-column-change-is-read-off-a-first-call-hydration-snapshot) |
 | [Deferred loading — `$isTableLoaded`, `loadTable()`, `isTableLoaded()`](../../../packages/tables/src/Concerns/CanDeferLoading.php) | [`CanDeferLoading`](../../../vendor/filament/tables/src/Concerns/CanDeferLoading.php) | done | — | the trait's fourth member, `isTableLoadingDeferred()`, is `@deprecated Override the table() method` and is not ported — what it fronts is [`Table::deferLoading()`](table.md#the-deferred-window-is-server-gated-and-client-closed). [table.md](table.md#the-deferred-window-is-server-gated-and-client-closed) |
 | Host polling — `getTablePollingInterval()` | [`CanPollRecords`](../../../vendor/filament/tables/src/Concerns/CanPollRecords.php) | skipped | — | The whole trait is `@deprecated Override the table() method to configure the table.`, one host getter returning null, and the project has never ported a deprecated Filament surface. The interval it fronts is [`Table::poll()`](table.md#the-poll-interval-parses-strictly-and-carries-no-livewire-modifiers), which ships |
 | [`Concerns\HasFilters` — the `$tableFilters` / `$tableDeferredFilters` bags, `getTableFilterState()`, `getTableFilterFormState()`, `parseTableFilterName()`, `getTableFiltersForm()`, the `#[PostMount]` fill and the `#[PostHydrate(priority: 10)]` re-cache](../../../packages/tables/src/Concerns/HasFilters.php) | [`Concerns\HasFilters`](../../../vendor/filament/tables/src/Concerns/HasFilters.php) | in progress | — | [diverges](#the-filter-bags-are-arrays-never-null-and-carry-no-getters) · [diverges](#one-filter-slice-is-a-plain-array-read-not-a-propertyaccessor-walk) · [diverges](#a-seeded-filter-bag-fills-the-form-instead-of-the-declared-defaults) · [semantics](#updatedtablefilters-fires-for-a-whole-prop-write-never-for-a-field-inside-it) · [diverges](#the-session-key-is-the-host-class-so-two-instances-of-one-page-share-it) · [semantics](#the-two-filter-bags-round-trip-differently-and-the-difference-is-the-whole-deferredlive-split) |
@@ -2652,6 +2652,64 @@ pinning cases assert both halves.
 `updatedTableFilters()` is kept rather than deleted: it is the whole-bag write
 path — a server-side assignment, a test, a `data-model="tableFilters"` binding —
 and it is what mirrors an applied write back into the deferred bag.
+
+### A full seed replaces Filament's reserved-key list, and a blank is kept
+
+Filament seeds `$tableColumnSearches` with **26** names only — `at`, `concat`,
+`constructor`, `entries`, `length`, `map`, `sort`, `values` and the rest of
+`getReservedTableColumnSearchKeys()` — because Alpine reads the bag through a
+JavaScript proxy, where a column named `length` would resolve to the array's own
+property rather than to the entry. Every other name is left out on the reasoning
+its own comment states: *other names already read back as an empty search from a
+JSON array*. And on a write it **forgets** a blanked key (`Arr::forget`) unless
+the key is reserved, in which case it is reset to `''`.
+
+Neither half ports. UX's client throws `Invalid model name` for a `data-model`
+path the published props do not carry, so a key that is missing — or one that was
+forgotten on the previous keystroke — is not an empty read but a thrown error on
+the next one. `mountTableColumnSearches()` therefore seeds **every**
+individually searchable column, `''` by default and a dotted name **nested**
+(`artist.name` lands as `['artist' => ['name' => '']]`), and
+`resetTableColumnSearch()` writes `''` where Filament would unset. The seed runs
+again inside
+[the post-hydrate hook](#the-per-column-change-is-read-off-a-first-call-hydration-snapshot),
+so a column that *became* individually searchable between two requests has its
+key before the render that binds an input to it.
+
+The reserved list is then unnecessary rather than merely unported: the bag holds
+a key for every searchable column whenever any column is searchable, so it never
+serialises as a JSON array in the first place, which is the collision the list
+exists to prevent. A fixture column named `entries` — on Filament's list, and
+unlike `length` neither a SQL keyword nor a DQL function, so a `Song` field can
+carry it — pins that it round-trips like any other name.
+
+Filament's own limit is inherited unchanged: a column named `author` cannot be
+individually searchable beside one named `author.name`, because the nesting
+collides — the second write turns the first's string into an array, or the other
+way about, depending on order.
+
+### The per-column change is read off a first-call hydration snapshot
+
+A `LiveProp`'s `onUpdated` hook fires for a write to the **property**, never for
+a write to a path inside it —
+[the same fact the filter bag records](#updatedtablefilters-fires-for-a-whole-prop-write-never-for-a-field-inside-it)
+— and every per-column term is exactly such a nested write. Filament has the
+opposite problem and no work to do: Livewire's `updatedTableColumnSearches()`
+receives the key that changed.
+
+So the change is read off the bag itself. `hydrateTableColumnSearches()` keeps
+the value it was handed **on its first call only** (`??=`), which is the bag as
+it arrived, before any update the request carries; `afterTableColumnSearchesHydrated()`
+— `#[PostHydrate(priority: -5)]`, below panels' panel stamp at `0` and above
+schemas' state pass at `-10` — compares the hydrated bag against it and runs
+`handleTableColumnSearchUpdates()` only when they differ. Both sides are seeded
+and cast through the same two helpers before the compare, so a column that became
+searchable since the last request (a blank on both sides) and a leaf that arrived
+as a number rather than a string (`100` against `'100'`) are both *not* an edit.
+The handler is the same choreography the global term's `onUpdated` runs —
+deselect if the table says so, page back to `1`, flush the record cache, write
+the session — so a per-column keystroke and a global one are indistinguishable
+downstream.
 
 _See also: the global [rename table](../renames.md) — the interface⇄trait label
 swap (`InteractsWithTable` trait → `HasTable` trait, `HasTable` interface →

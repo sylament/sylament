@@ -34,6 +34,8 @@ trait CanSearchRecords
 
     protected bool|Closure $persistsSearchInSession = false;
 
+    protected bool|Closure $persistsColumnSearchesInSession = false;
+
     public function persistSearchInSession(bool|Closure $condition = true): static
     {
         $this->persistsSearchInSession = $condition;
@@ -44,6 +46,18 @@ trait CanSearchRecords
     public function persistsSearchInSession(): bool
     {
         return (bool) $this->evaluate($this->persistsSearchInSession);
+    }
+
+    public function persistColumnSearchesInSession(bool|Closure $condition = true): static
+    {
+        $this->persistsColumnSearchesInSession = $condition;
+
+        return $this;
+    }
+
+    public function persistsColumnSearchesInSession(): bool
+    {
+        return (bool) $this->evaluate($this->persistsColumnSearchesInSession);
     }
 
     /**

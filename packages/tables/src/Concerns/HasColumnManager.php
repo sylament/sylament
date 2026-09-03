@@ -21,6 +21,20 @@ trait HasColumnManager
     /** @var array<string, bool>|null */
     private ?array $tableColumnsToggleStateByName = null;
 
+    /**
+     * Replaces the applied column set, dropping everything memoised from the
+     * old one: this trait's per-name toggle map and the table's visible set.
+     *
+     * @param list<array{type: string, name: string, isToggled: bool, isToggledHiddenByDefault: bool|null}> $tableColumns
+     */
+    protected function setTableColumns(array $tableColumns): void
+    {
+        $this->tableColumns = $tableColumns;
+        $this->tableColumnsToggleStateByName = null;
+
+        $this->getTable()->flushCachedVisibleColumns();
+    }
+
     public function isTableColumnToggledHidden(string $name): bool
     {
         return !($this->getTableColumnsToggleStateByName()[$name] ?? false);

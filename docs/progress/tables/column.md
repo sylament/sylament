@@ -6,15 +6,17 @@
 named after the record path it reads, bound to a [`Table`](table.md), and handed
 one record at a time. It ports Filament's
 [`Filament\Tables\Columns\Column`](../../../vendor/filament/tables/src/Columns/Column.php)
-together with the concern traits it composes — twenty-six today, fifteen of
-them landed by the column catalog. Sixteen live in the column tier
+together with the concern traits it composes — twenty-eight today, fifteen of
+them landed by the column catalog. Twenty live in the column tier
 ([`BelongsToTable`](../../../packages/tables/src/Columns/Concerns/BelongsToTable.php),
 [`CanAggregateRelatedRecords`](../../../packages/tables/src/Columns/Concerns/CanAggregateRelatedRecords.php),
 [`CanBeDisabled`](../../../packages/tables/src/Columns/Concerns/CanBeDisabled.php),
+[`CanBeHidden`](../../../packages/tables/src/Columns/Concerns/CanBeHidden.php),
 [`CanBeHiddenResponsively`](../../../packages/tables/src/Columns/Concerns/CanBeHiddenResponsively.php),
 [`CanBeInline`](../../../packages/tables/src/Columns/Concerns/CanBeInline.php),
 [`CanBeSearchable`](../../../packages/tables/src/Columns/Concerns/CanBeSearchable.php),
 [`CanBeSortable`](../../../packages/tables/src/Columns/Concerns/CanBeSortable.php),
+[`CanBeToggled`](../../../packages/tables/src/Columns/Concerns/CanBeToggled.php),
 [`CanCallAction`](../../../packages/tables/src/Columns/Concerns/CanCallAction.php),
 [`CanOpenUrl`](../../../packages/tables/src/Columns/Concerns/CanOpenUrl.php),
 [`HasCellState`](../../../packages/tables/src/Columns/Concerns/HasCellState.php),
@@ -117,7 +119,7 @@ sections do.
 | [`recordKey()` / `getRecordKey()`](../../../packages/tables/src/Columns/Concerns/HasRecord.php) | [`Concerns\HasRecord`](../../../vendor/filament/tables/src/Columns/Concerns/HasRecord.php) | done | — | [diverges](#the-record-key-setter-admits-an-int) |
 | [`rowLoop()` / `getRowLoop()` — the `$rowLoop` injection](../../../packages/tables/src/Columns/Concerns/HasRowLoopObject.php) | [`Concerns\HasRowLoopObject`](../../../vendor/filament/tables/src/Columns/Concerns/HasRowLoopObject.php) | done | — | [semantics](#the-row-loop-is-a-blade-shaped-object-built-from-twigs-array) |
 | Relationship traversal — `hasRelationship()`, `getRelationshipResults()`, `inverseRelationship()`, the seven name caches, `applyRelationshipAggregates()`, `applyEagerLoading()` | [`Support\Concerns\HasCellState`](../../../vendor/filament/support/src/Concerns/HasCellState.php), [`InteractsWithTableQuery`](../../../vendor/filament/tables/src/Columns/Concerns/InteractsWithTableQuery.php) | in progress | — | [detail](#relationship-traversal-ships-as-a-value-walk-a-side-store-and-one-kept-member) |
-| [`applyEagerLoading()` — fetch-join the to-one chains a visible name reads through](../../../packages/tables/src/Columns/Concerns/InteractsWithTableQuery.php) | [`InteractsWithTableQuery::applyEagerLoading()`](../../../vendor/filament/tables/src/Columns/Concerns/InteractsWithTableQuery.php) | done | — | [diverges](#a-to-many-relation-stays-lazy-where-filament-eager-loads-every-cardinality) · [has-table.md](has-table.md#eager-loading-runs-over-every-column-on-the-page-clone-alone) |
+| [`applyEagerLoading()` — fetch-join the to-one chains a visible name reads through](../../../packages/tables/src/Columns/Concerns/InteractsWithTableQuery.php) | [`InteractsWithTableQuery::applyEagerLoading()`](../../../vendor/filament/tables/src/Columns/Concerns/InteractsWithTableQuery.php) | done | — | [diverges](#a-to-many-relation-stays-lazy-where-filament-eager-loads-every-cardinality) · [has-table.md](has-table.md#eager-loading-runs-over-the-visible-columns-on-the-page-clone-alone) |
 | [The aggregate declarations — `avg()`, `counts()`, `exists()`, `max()`, `min()`, `sum()` and their getters](../../../packages/tables/src/Columns/Concerns/CanAggregateRelatedRecords.php) | [`Support\Concerns\CanAggregateRelatedModels`](../../../vendor/filament/support/src/Concerns/CanAggregateRelatedModels.php) | done | — | [rename](../renames.md#renames) · [diverges](#an-aggregate-column-names-itself-freely-where-filaments-must-match-laravels-alias) · [diverges](#the-illuminate-expression-arm-is-dropped-from-the-aggregated-column) · [diverges](#an-aggregate-declaration-that-claims-no-cell-computes-nothing) |
 | [`getCellAggregateDeclaration()` — which declaration this cell reads](../../../packages/tables/src/Columns/Concerns/CanAggregateRelatedRecords.php) | — (Sylament-only; Filament reads the value off the model as an attribute) | done | — | [diverges](#an-aggregate-column-names-itself-freely-where-filaments-must-match-laravels-alias) · [table.md](table.md#an-aggregate-is-a-batched-side-query-and-a-hidden-subselect-never-a-select-on-the-page-query) |
 | Visibility — [`hidden()` / `visible()` / `hiddenOn()` / `visibleOn()` / `isHidden()` / `isVisible()`](../../../packages/tables/src/Columns/Concerns/CanBeHidden.php) and [`toggleable()` / `toggledHiddenByDefault()` / `isToggleable()` / `isToggledHidden()`](../../../packages/tables/src/Columns/Concerns/CanBeToggled.php) | [`CanBeHidden`](../../../vendor/filament/tables/src/Columns/Concerns/CanBeHidden.php), [`CanBeToggled`](../../../vendor/filament/tables/src/Columns/Concerns/CanBeToggled.php) | done | — | [diverges](#istoggleables-blank-label-group-arm-is-dropped-with-columngroup) |
@@ -146,7 +148,7 @@ sections do.
 | `BadgeColumn`, `BooleanColumn`, `TagsColumn` — the deprecated one-line subclasses | [`src/Columns`](../../../vendor/filament/tables/src/Columns) | skipped | — | The spellings their own deprecation notices name all ship; the project has never ported a deprecated Filament surface ([renames.md](../renames.md)) |
 | The rest of the catalog — `CheckboxColumn`, `SelectColumn`, `TextInputColumn`, `ToggleColumn` | [`src/Columns`](../../../vendor/filament/tables/src/Columns) | todo | — | — |
 
-Sixteen of the thirty-five **done**-or-partial rows are covered by
+Sixteen of the forty **done**-or-partial rows are covered by
 [`ColumnTest`](../../../packages/tables/tests/Unit/Columns/ColumnTest.php) — the
 blank-name refusal, the three label derivations
 (`title` → *Title*, `releasedAt` → *Released at*, `artist.name` → *Artist*), an
@@ -464,7 +466,7 @@ initialiser, and it is invisible in the getter that looks symmetric.
 
 It is also harmless where a table reaches these getters, because it never reaches
 them on a column that declared nothing: a sort resolves its column through
-[`Table::getSortableVisibleColumn()`](table.md#getsortablevisiblecolumn-has-no-hidden-arm-to-check),
+[`Table::getSortableVisibleColumn()`](table.md#the-global-search-loop-still-has-no-hidden-arm-to-check),
 which returns nothing for a column that is not sortable, and a search reaches
 only the columns that answer `isGloballySearchable()`. Where it shows is a column
 asked directly — a hand-built `Column` in a test, or a caller reaching past the

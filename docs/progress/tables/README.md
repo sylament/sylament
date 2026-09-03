@@ -78,16 +78,17 @@ against the deferred settings each names rather than **blocked**. (The
 precedence — **todo** upstairs, **blocked** in the component's file — so the two
 packages disagree until that one is revisited.)
 
-Forty-seven concerns the port has landed are **folded** into the detail file of
+Forty-nine concerns the port has landed are **folded** into the detail file of
 the class that composes them and carry no row here, per
 [one row per file](../README.md#one-row-per-file-one-file-per-thing) — eleven
 `Table\Concerns\` traits (`BelongsToLivewire`, `CanPaginateRecords`,
 `CanSearchRecords`, `CanSortRecords`, `HasActions`, `HasAggregateValues`,
 `HasColumns`, `HasEmptyState`, `HasQuery`, `HasRecordActions`, `HasRecords`) into
-[`table.md`](table.md), eighteen `Columns\Concerns\` traits
-(`BelongsToTable`, `CanAggregateRelatedRecords`, `CanBeDisabled`,
+[`table.md`](table.md), twenty `Columns\Concerns\` traits
+(`BelongsToTable`, `CanAggregateRelatedRecords`, `CanBeDisabled`, `CanBeHidden`,
 `CanBeHiddenResponsively`, `CanBeInline`,
-`CanBeSearchable`, `CanBeSortable`, `CanCallAction`, `CanOpenUrl`,
+`CanBeSearchable`, `CanBeSortable`, `CanBeToggled`, `CanCallAction`,
+`CanOpenUrl`,
 `HasCellState`, `HasExtraCellAttributes`, `HasExtraHeaderAttributes`, `HasLabel`,
 `HasName`, `HasRecord`, `HasRowLoopObject`, `HasTooltip`,
 `InteractsWithTableQuery`) into
@@ -225,7 +226,7 @@ The prefix is load-bearing rather than decorative: twenty trait names occur in
 two of these tiers and five (`BelongsToTable`, `CanBeHidden`, `HasColumns`,
 `HasLabel`, `InteractsWithTableQuery`) in three, which is the same
 [read-by-import, never by the bare `use`](../../../CLAUDE.md) trap the schemas
-tiers carry. The forty-seven landed concerns folded into their component's detail
+tiers carry. The forty-nine landed concerns folded into their component's detail
 file are named in the [preamble](#tables--port-progress) and carry no row here.
 
 `Contracts/HasTable.php` is not listed in
@@ -246,7 +247,7 @@ pairs with, so it shares the first row below.
 | Host / CanSummarizeRecords | [`Concerns/CanSummarizeRecords.php`](../../../vendor/filament/tables/src/Concerns/CanSummarizeRecords.php) | todo | — |
 | Host / HasActions | [`Concerns/HasActions.php`](../../../vendor/filament/tables/src/Concerns/HasActions.php) | skipped | Every method in the file is a deprecated `*TableAction` delegate to the actions-package equivalent, and the project has never ported a deprecated Filament surface. What it fronts is built: mounting, resolution — the bulk map included — and record binding go through actions' [`HasActions`](../actions/has-actions.md#a-client-supplied-record-key-is-type-checked-before-the-lookup) and the [`InteractsWithTable`](has-table.md#the-contract-is-twenty-methods-of-filaments-forty-six) contract |
 | [`Host / HasBulkActions`](../../../packages/tables/src/Concerns/HasBulkActions.php) | [`Concerns/HasBulkActions.php`](../../../vendor/filament/tables/src/Concerns/HasBulkActions.php) | in progress | [has-table.md](has-table.md#the-selection-is-server-canonical-and-re-derived-on-every-read) |
-| Host / HasColumnManager | [`Concerns/HasColumnManager.php`](../../../vendor/filament/tables/src/Concerns/HasColumnManager.php) | todo | — |
+| [`Host / HasColumnManager`](../../../packages/tables/src/Concerns/HasColumnManager.php) | [`Concerns/HasColumnManager.php`](../../../vendor/filament/tables/src/Concerns/HasColumnManager.php) | in progress | [has-table.md](has-table.md) |
 | [`Host / HasColumns`](../../../packages/tables/src/Concerns/HasColumns.php) | [`Concerns/HasColumns.php`](../../../vendor/filament/tables/src/Concerns/HasColumns.php) | in progress | [has-columns.md](has-columns.md) |
 | Host / HasContent | [`Concerns/HasContent.php`](../../../vendor/filament/tables/src/Concerns/HasContent.php) | todo | — |
 | Host / HasEmptyState | [`Concerns/HasEmptyState.php`](../../../vendor/filament/tables/src/Concerns/HasEmptyState.php) | skipped | The trait and all five members (`getTableEmptyState()`, `getTableEmptyStateActions()`, `getTableEmptyStateDescription()`, `getTableEmptyStateHeading()`, `getTableEmptyStateIcon()`) carry `@deprecated Override the \`table()\` method`, and the project has never ported a deprecated Filament surface — what they front is the table-side empty-state family, [**done** on `table.md`](table.md#surface) |
@@ -278,9 +279,7 @@ pairs with, so it shares the first row below.
 | Column / BelongsToGroup | [`Columns/Concerns/BelongsToGroup.php`](../../../vendor/filament/tables/src/Columns/Concerns/BelongsToGroup.php) | todo | — |
 | Column / BelongsToLayout | [`Columns/Concerns/BelongsToLayout.php`](../../../vendor/filament/tables/src/Columns/Concerns/BelongsToLayout.php) | todo | — |
 | Column / CanBeCopied | [`Columns/Concerns/CanBeCopied.php`](../../../vendor/filament/tables/src/Columns/Concerns/CanBeCopied.php) | skipped | The whole trait is a `@deprecated` shim over `Support\Concerns\CanBeCopied`, and the port has never landed a deprecated Filament surface — the support trait it fronts ships as [`can-be-copied.md`](../support/can-be-copied.md) ([renames.md](../renames.md)) |
-| Column / CanBeHidden | [`Columns/Concerns/CanBeHidden.php`](../../../vendor/filament/tables/src/Columns/Concerns/CanBeHidden.php) | todo | — |
 | Column / CanBeSummarized | [`Columns/Concerns/CanBeSummarized.php`](../../../vendor/filament/tables/src/Columns/Concerns/CanBeSummarized.php) | todo | — |
-| Column / CanBeToggled | [`Columns/Concerns/CanBeToggled.php`](../../../vendor/filament/tables/src/Columns/Concerns/CanBeToggled.php) | todo | — |
 | Column / HasSpace | [`Columns/Concerns/HasSpace.php`](../../../vendor/filament/tables/src/Columns/Concerns/HasSpace.php) | todo | — |
 | Summarizer / BelongsToColumn | [`Columns/Summarizers/Concerns/BelongsToColumn.php`](../../../vendor/filament/tables/src/Columns/Summarizers/Concerns/BelongsToColumn.php) | todo | — |
 | Summarizer / CanBeHidden | [`Columns/Summarizers/Concerns/CanBeHidden.php`](../../../vendor/filament/tables/src/Columns/Summarizers/Concerns/CanBeHidden.php) | todo | — |

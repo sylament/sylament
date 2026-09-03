@@ -107,7 +107,7 @@ Rows never disappear — only their detail sections do.
 | [`paginationMode()` / `getPaginationMode()`](../../../packages/tables/src/Table/Concerns/CanPaginateRecords.php) + [`PaginationMode`](../../../packages/tables/src/Enums/PaginationMode.php) | [`Table\Concerns\CanPaginateRecords`](../../../vendor/filament/tables/src/Table/Concerns/CanPaginateRecords.php), [`Enums/PaginationMode`](../../../vendor/filament/tables/src/Enums/PaginationMode.php) | in progress | its `Cursor` arm — a keyset carrier ([pagination.md](../support/pagination.md)) | [detail](#the-pagination-mode-ships-two-cases-and-two-setters-wait-on-their-features) · [has-table.md](has-table.md#the-page-state-has-its-query-lane-and-no-session-or-url-half) |
 | [`paginatedWhileReordering()` / `isPaginatedWhileReordering()`](../../../packages/tables/src/Table/Concerns/CanPaginateRecords.php) | [`Table\Concerns\CanPaginateRecords`](../../../vendor/filament/tables/src/Table/Concerns/CanPaginateRecords.php) | done | — | — |
 | `scrollToTopOnPageChange()` | [`Table\Concerns\CanPaginateRecords`](../../../vendor/filament/tables/src/Table/Concerns/CanPaginateRecords.php) | todo | — | [detail](#the-pagination-mode-ships-two-cases-and-two-setters-wait-on-their-features) |
-| [`getSortableVisibleColumn()` / `getSortColumn()` / `getSortDirection()`](../../../packages/tables/src/Table/Concerns/CanSortRecords.php) | [`Table\Concerns\CanSortRecords`](../../../vendor/filament/tables/src/Table/Concerns/CanSortRecords.php) | done | — | [diverges](#getsortablevisiblecolumn-has-no-hidden-arm-to-check) |
+| [`getSortableVisibleColumn()` / `getSortColumn()` / `getSortDirection()`](../../../packages/tables/src/Table/Concerns/CanSortRecords.php) | [`Table\Concerns\CanSortRecords`](../../../vendor/filament/tables/src/Table/Concerns/CanSortRecords.php) | done | — | [diverges](#the-global-search-loop-still-has-no-hidden-arm-to-check) |
 | [`defaultSort()` / `getDefaultSort()` / `getDefaultSortDirection()` / `defaultKeySort()` / `hasDefaultKeySort()`](../../../packages/tables/src/Table/Concerns/CanSortRecords.php) | [`Table\Concerns\CanSortRecords`](../../../vendor/filament/tables/src/Table/Concerns/CanSortRecords.php) | done | — | [semantics](#the-default-sort-is-a-secondary-order-and-its-direction-rules-the-tiebreaker) · [has-table.md](has-table.md#sorting-composes-the-users-order-the-default-and-the-identifier-tiebreaker) · [has-table.md](has-table.md#a-default-sort-closures-replacement-builder-reaches-the-caller-where-filaments-is-discarded) · [semantics](#the-mappings-order-is-the-relation-scoped-tables-default-sort) |
 | `defaultSortOptionLabel()` / `getDefaultSortOptionLabel()` | [`Table\Concerns\CanSortRecords`](../../../vendor/filament/tables/src/Table/Concerns/CanSortRecords.php) | skipped | — | It labels the "unsorted" entry of the mobile sort **dropdown**, which the port does not render and nothing else reads; it belongs to that layout rather than to sorting, and lands only if the layout does |
 | [`persistSortInSession()` / `persistsSortInSession()`](../../../packages/tables/src/Table/Concerns/CanSortRecords.php) | [`Table\Concerns\CanSortRecords`](../../../vendor/filament/tables/src/Table/Concerns/CanSortRecords.php) | done | — | [has-table.md](has-table.md#the-session-key-is-the-host-class-so-two-instances-of-one-page-share-it) |
@@ -1523,22 +1523,24 @@ in the change that lands grouping, and this row is listed as a divergence rather
 than a gap because the *shipped* getter is complete for every table that can
 exist today.
 
-### `getSortableVisibleColumn()` has no hidden arm to check
+### The global search loop still has no hidden arm to check
 
-Filament's rejects three things — an unknown column, a **hidden** one, and an
-unsortable one. The port drops the middle check because column visibility is
-unported (`hidden()` / `visible()` / `toggleable()` are a **todo** row in
-[column.md](column.md)), so `isHidden()` does not exist to call. The name keeps
-the word *visible* deliberately: it is Filament's, the check returns with the
-concern, and renaming the method for the duration would break the API a migrating
-user greps for.
+Filament rejects a hidden column in two places, and the port omitted both for one
+reason: there was no `isHidden()` to call. Half of that is now false.
+`getSortableVisibleColumn()` rejects three things — an unknown column, a
+**hidden** one, and an unsortable one — and the middle check ships, because
+[`CanBeHidden` and `CanBeToggled`](column.md#surface) landed on the column. A
+column the developer hid, or the user toggled off, can no longer be sorted by.
+The name keeps the word *visible* deliberately: it is Filament's, and renaming it
+would break the API a migrating user greps for.
 
-The host's [global search loop](has-table.md#search-is-the-global-term-only) has
-the same omission for the same reason: Filament skips a hidden column before
-asking whether it is globally searchable, and the port asks only the second
-question. Both arms return in the change that ports visibility, and neither can
-be written before it — there is no third behaviour here, only a check that has
-nothing to call.
+The host's [global search loop](has-table.md#search-is-the-global-term-only) is
+the half still missing. Filament skips a hidden column before asking whether it
+is globally searchable; the port loops over `getColumns()` and asks only the
+second question, so a hidden column is still searched — a term matching nothing a
+reader can see narrows the page anyway. Nothing blocks it now: it is the same
+check in the one place that has not taken it yet, and it lands with the
+per-column half of that loop.
 
 ### `getSearchDebounceMilliseconds()` is a Sylament-only translation of Filament's duration string
 

@@ -126,6 +126,12 @@ Neither button carries a live mount attribute: each action is
 emits only the `data-action` its `extraAttributes()` supplies, and a click costs
 no round trip. The same holds for the copy button.
 
+The controller binds only when `revealable()` or `copyable()` is on, and so does
+the input's `input` target — a plain text input renders the `sy-fo-text-input`
+class and nothing else, the way [`CheckboxList`](checkbox-list.md),
+[`Select`](select.md) and [`Repeater`](repeater.md) each gate theirs. Filament
+gates the equivalent `x-data` the same way.
+
 ### The copy message closure sees the render-time state
 
 `CopyAction::getCopyMessage()` and `getCopyMessageDuration()` are evaluated when
@@ -138,10 +144,19 @@ rendered, not whatever has been typed since; the value that actually reaches the
 clipboard is the input's live one
 ([divergence](#copy-writes-the-live-input-value-and-confirms-through-a-status-region)).
 
-Inside a [`Repeater`](repeater.md) item, `state` is the **repeater's array**
-rather than the field's own value: `Action::getSchemaComponentState()` walks up
-to the nearest ancestor with a state path, and for an affix action that is the
-repeater. A message closure written for a repeated field has to expect that.
+Inside a [`Repeater`](repeater.md) item it is still the **field's own** value,
+not the repeater's array. `Action::getSchemaComponentState()` walks up to the
+nearest ancestor with a state path only while it has a schema *container*, and
+`prepareAction()` sets `schemaComponent()` alone — an affix action never gets a
+container, so `getSchemaContainer()` is null, the walk does not run, and the
+field's `getState()` is what comes back. The walk is there for the modal and
+group actions that do carry one. `TextInputTest`'s _sees the field own state in
+a copy message closure inside a repeater item_ pins it.
+
+On the client the message survives one more step: Stimulus JSON-parses every
+action param, so a message of `'2024'` or `'null'` reaches `copy()` as a number
+or as `null`. The controller coerces whatever arrives back to a string, and only
+an absent param falls back to 'Copied'.
 
 ### The affix actions resolve their own icons
 
@@ -186,7 +201,6 @@ the `DateTimeStateCast` kind rather than a text-input one. Two divergences here
 wait on it — the [integer regex](#integer-validates-with-a-regex-not-a-type-constraint)
 and the [comparison bounds](#the-value-bounds-are-comparison-constraints-not-laravels-min-and-max)
 both say what changes once a real number reaches validation.
-
 
 ## Divergences
 
@@ -470,22 +484,30 @@ controller connects, and CSS shows only the reveal one — and fails safe.
 Filament's `CopyAction` builds an Alpine click handler that copies
 `Js::from($state)`, the value **as rendered**, and confirms through its
 `$tooltip` magic (tippy). The port copies `inputTarget.value`, the value on
-screen at the moment of the click, and confirms by unhiding a pre-rendered
-`<span role="status" aria-live="polite">` inside the input wrapper for
-`copyMessageDuration` milliseconds.
+screen at the moment of the click, and confirms by writing the message into a
+`<span role="status" aria-live="polite">` the wrapper already carries, clearing
+it again after `copyMessageDuration` milliseconds.
+
+That span is rendered **empty rather than `hidden`**, and the distinction is the
+whole point of it: `[hidden]` is `display: none`, which keeps the element out of
+the accessibility tree, and a live region that enters the tree already holding
+its text is not reliably announced. So the region ships on every copyable field
+and only its text moves; `text-input.css` hides it while it is `:empty`, through
+`opacity` rather than `display` or `visibility`, both of which would take it out
+of the tree again.
 
 Neither half of Filament's has an equivalent here: `support` ships no tooltip
 primitive, and the only notification API is server-rendered, so saying "Copied"
 through it would buy a live round trip for a purely client-side event. The
-status region announces to a screen reader, which the tooltip did not. Copying
-the live value is the smaller change in practice and the one a user expects — a
-field edited since the last render would otherwise put the stale value on the
-clipboard.
+status region is announced to a screen reader, which the tooltip was not.
+Copying the live value is the smaller change in practice and the one a user
+expects — a field edited since the last render would otherwise put the stale
+value on the clipboard.
 
 `navigator.clipboard` is `undefined` outside a secure context, so the controller
 checks for it and returns; a rejected `writeText()` is caught the same way. A
 plain-HTTP page therefore gets a button that does nothing rather than a console
-error, and the message shows only after a copy that actually happened.
+error, and the message is written only after a copy that actually happened.
 
 ### `currentPassword()` drops Filament's guard argument
 

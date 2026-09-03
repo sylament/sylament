@@ -15,5 +15,9 @@
 
     & .sy-fo-text-input-copy-message {
         @apply pointer-events-none absolute end-0 bottom-full z-10 mb-1 rounded-md bg-gray-950 px-2 py-1 text-xs whitespace-nowrap text-white shadow-sm dark:bg-white dark:text-gray-950;
+
+        &:empty {
+            @apply opacity-0;
+        }
     }
 }

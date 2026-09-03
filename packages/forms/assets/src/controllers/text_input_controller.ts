@@ -29,8 +29,11 @@ export default class extends Controller<HTMLElement> {
    * The input's **live** value, not the state the server rendered — what the user sees is what
    * lands on the clipboard. `navigator.clipboard` is undefined outside a secure context, and a
    * denied permission rejects, so both arms leave the field untouched rather than throwing.
+   *
+   * Stimulus JSON-parses every action param, so a message of `'null'` or `'2024'` arrives as
+   * `null` or a number; both are coerced back to the string the action configured.
    */
-  async copy({ params }: { params: { message?: string; duration?: number } }): Promise<void> {
+  async copy({ params }: { params: { message?: unknown; duration?: unknown } }): Promise<void> {
     if (navigator.clipboard === undefined) {
       return;
     }
@@ -41,21 +44,27 @@ export default class extends Controller<HTMLElement> {
       return;
     }
 
-    this.#announce(params.message ?? "Copied", params.duration ?? 2000);
+    this.#announce(
+      params.message === undefined ? "Copied" : String(params.message),
+      typeof params.duration === "number" ? params.duration : 2000,
+    );
   }
 
+  /**
+   * Only the text moves: a live region has to already be in the accessibility tree when its
+   * content changes, so the span is never hidden — CSS hides it while it is `:empty`.
+   */
   #announce(message: string, duration: number): void {
     if (!this.hasCopyMessageTarget) {
       return;
     }
 
     this.copyMessageTarget.textContent = message;
-    this.copyMessageTarget.hidden = false;
 
     clearTimeout(this.#timer);
     this.#timer = setTimeout(() => {
       if (this.hasCopyMessageTarget) {
-        this.copyMessageTarget.hidden = true;
+        this.copyMessageTarget.textContent = "";
       }
     }, duration);
   }

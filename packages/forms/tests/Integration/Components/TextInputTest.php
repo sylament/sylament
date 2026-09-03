@@ -6,6 +6,7 @@ namespace Sylament\Forms\Tests\Integration\Components;
 
 use LogicException;
 use Sylament\Actions\Action;
+use Sylament\Forms\Components\Repeater;
 use Sylament\Forms\Components\TextInput;
 use Sylament\Forms\Components\TextInput\Actions\CopyAction;
 use Sylament\Forms\Components\TextInput\Actions\HidePasswordAction;
@@ -723,17 +724,27 @@ it('builds the three affix actions through the container, so a registered alias 
         ->and(CopyAction::make()->getIcon())->toBe('heroicons:star');
 });
 
-it('marks the wrapper as a text input, binds the controller and targets the control', function (): void {
+it('marks the wrapper as a text input but binds no controller when neither behaviour is on', function (): void {
     $crawler = new Crawler(renderField(TextInput::make('title')));
 
     $wrapper = $crawler->filter('div.sy-input-wrp.sy-fo-text-input');
     expect($wrapper->count())->toBe(1)
-        ->and($wrapper->attr('data-controller'))->toBe('sylament--forms--text-input');
+        ->and($wrapper->attr('data-controller'))->toBeNull();
 
     $input = $crawler->filter('input.sy-fo-input');
-    expect($input->attr('data-sylament--forms--text-input-target'))->toBe('input')
+    expect($input->attr('data-sylament--forms--text-input-target'))->toBeNull()
         ->and($input->attr('class'))->not->toContain('sy-revealable')
         ->and($crawler->filter('.sy-fo-text-input-copy-message')->count())->toBe(0);
+});
+
+it('binds the controller and targets the control once a behaviour asks for it', function (): void {
+    $revealable = new Crawler(renderField(TextInput::make('secret')->password()->revealable()));
+    $copyable = new Crawler(renderField(TextInput::make('token')->copyable()));
+
+    expect($revealable->filter('div.sy-fo-text-input')->attr('data-controller'))->toBe('sylament--forms--text-input')
+        ->and($revealable->filter('input.sy-fo-input')->attr('data-sylament--forms--text-input-target'))->toBe('input')
+        ->and($copyable->filter('div.sy-fo-text-input')->attr('data-controller'))->toBe('sylament--forms--text-input')
+        ->and($copyable->filter('input.sy-fo-input')->attr('data-sylament--forms--text-input-target'))->toBe('input');
 });
 
 it('renders both reveal buttons with their glyphs and client bindings, and mounts no live action', function (): void {
@@ -751,7 +762,6 @@ it('renders both reveal buttons with their glyphs and client bindings, and mount
         ->and($hide->attr('data-action'))->toBe('sylament--forms--text-input#conceal')
         ->and($hide->attr('aria-label'))->toBe('Hide password')
         ->and($hide->attr('data-live-action-param'))->toBeNull()
-        // The eye-slash glyph: ux-icons renders nothing at all for a name it cannot resolve.
         ->and($hide->filter('svg')->count())->toBe(1);
 });
 
@@ -781,14 +791,14 @@ it('renders the copy button with its message and duration params beside a live r
         ->and($copy->attr('data-sylament--forms--text-input-message-param'))->toBe('Token copied')
         ->and($copy->attr('data-sylament--forms--text-input-duration-param'))->toBe('5000')
         ->and($copy->attr('data-live-action-param'))->toBeNull()
-        // The clipboard glyph, on the same terms as the eye-slash one above.
         ->and($copy->filter('svg')->count())->toBe(1);
 
     $message = $crawler->filter('span.sy-fo-text-input-copy-message');
     expect($message->count())->toBe(1)
         ->and($message->attr('role'))->toBe('status')
         ->and($message->attr('aria-live'))->toBe('polite')
-        ->and($message->attr('hidden'))->not->toBeNull()
+        // Never `hidden`: a live region must be in the accessibility tree before its text changes.
+        ->and($message->attr('hidden'))->toBeNull()
         ->and($message->attr('data-sylament--forms--text-input-target'))->toBe('copyMessage')
         ->and($message->text())->toBe('');
 });
@@ -803,4 +813,26 @@ it('renders a copy message closure against the render-time state', function (): 
 
     expect(new Crawler($html)->filter('button.sy-fo-text-input-copy')->attr('data-sylament--forms--text-input-message-param'))
         ->toBe('Copied abc');
+});
+
+it('sees the field own state in a copy message closure inside a repeater item', function (): void {
+    $this::getContainer();
+
+    $host = new FieldRenderHost();
+    $host->data = ['tags' => [['name' => 'a']]];
+
+    $repeater = Repeater::make('tags')->components([
+        TextInput::make('name')->copyable(
+            copyMessage: static fn (mixed $state): string => is_array($state) ? 'the repeater array' : "Copied {$state}",
+        ),
+    ]);
+    Schema::make($host)->statePath('data')->components([$repeater])->getComponents();
+
+    $repeater->hydrateItems();
+
+    $field = $repeater->getItems()[array_key_first($host->data['tags'])]->getComponents()[0];
+    assert($field instanceof TextInput);
+
+    expect($field->getSuffixActions()['copy']->getExtraAttributeBag()->toScalarAttributes())
+        ->toMatchArray(['data-sylament--forms--text-input-message-param' => 'Copied a']);
 });

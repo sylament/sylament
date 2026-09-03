@@ -3,6 +3,7 @@
 {% set datalistOptions = component.getDatalistOptions %}
 {% set isPasswordRevealable = component.isPasswordRevealable %}
 {% set isCopyable = component.isCopyable %}
+{% set hasController = isPasswordRevealable or isCopyable %}
 
 {% set prefixActions = component.getPrefixActions %}
 {% set suffixActions = component.getSuffixActions %}
@@ -24,7 +25,7 @@
         :suffixActions="suffixActions"
         :suffixIcon="component.getSuffixIcon"
         :suffixIconColor="component.getSuffixIconColor ?? 'gray'"
-        {{ ...stimulus_controller(controller) }}
+        {{ ...(hasController ? stimulus_controller(controller) : {}) }}
     >
         <input {{ attrs({
             class: ['sy-fo-input', {
@@ -52,14 +53,13 @@
             readonly: component.isReadOnly,
             disabled: component.isDisabled,
             autofocus: component.isAutofocused,
-        }, component.getExtraInputAttributes, stimulus_target(controller, 'input')) }}>
+        }, component.getExtraInputAttributes, hasController ? stimulus_target(controller, 'input') : null) }}>
 
         {% if isCopyable %}
             <span {{ attrs({
                 class: ['sy-fo-text-input-copy-message'],
                 role: 'status',
                 'aria-live': 'polite',
-                hidden: true,
             }, stimulus_target(controller, 'copyMessage')) }}></span>
         {% endif %}
 

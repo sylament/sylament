@@ -31,8 +31,7 @@ export default class extends Controller<HTMLElement> {
   #timer: number | undefined;
 
   connect(): void {
-    // Stamped here rather than served: the element may render inside a record
-    // `<a>`, where a `tabindex` descendant is invalid markup.
+    // Never server-rendered: a `tabindex` inside a record `<a>` is invalid markup.
     this.element.setAttribute("tabindex", "0");
   }
 

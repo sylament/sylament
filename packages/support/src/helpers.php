@@ -129,7 +129,6 @@ function sanitize_css_color(?string $color): ?string
         return $color;
     }
 
-    // Accept a bare CSS keyword such as `red` or `transparent`.
     if (preg_match('/^[a-z]+$/i', $color) === 1) {
         return $color;
     }

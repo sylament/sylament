@@ -25,8 +25,8 @@ Reference — the Filament source this is diffed against:
 Every point of this component. _Blocked by_ names what has to land first.
 _Detail_ carries up to two links here: **detail** → the write-up in Details,
 deleted once the row is **done**; **semantics** → the permanent note in
-[Semantics](#semantics). This component has no divergences of its own — the
-write-back's live at [`has-columns.md`](has-columns.md#divergences). Rows never
+[Semantics](#semantics). This component has no divergences of its own; the
+write-back's are on [`has-columns.md`](has-columns.md#divergences). Rows never
 disappear — only their detail sections do.
 
 | Feature | Ports | Status | Blocked by | Detail |

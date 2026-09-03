@@ -122,11 +122,11 @@ follows the [list wrapper](#the-list-wrapper-appeared-with-the-list-arms-and-clo
 (`span` for a single unbulleted value, `li` inside the `<ul>` otherwise, so a
 **multi-value badged** cell is `div.sy-ta-text > ul > li.sy-ta-text-item > span.sy-badge`
 where a single-value one is `div.sy-ta-text > span.sy-ta-text-item > span.sy-badge`)
-— a badge per
-value carrying its colour classes, the descriptions bracketing the item above
-and below, the size/weight/font-family classes with the line-clamp variable, the
-badged icon landing **inside** the badge rather than beside it, a **non**-badged
-`->color()` reaching the item policy and a `->iconColor()` reaching the icon
+— a badge per value carrying its colour classes, the descriptions bracketing the
+item above and below, the size/weight/font-family classes with the line-clamp
+variable, the badged icon landing **inside** the badge rather than beside it, a
+**non**-badged `->color()` reaching the item policy and a `->iconColor()`
+reaching the icon
 policy, the column's alignment class reaching the outer element, and a blank
 description dropping both its `<p>` and the layout class it would otherwise
 flip — in the plain-string form and again as a whitespace-only

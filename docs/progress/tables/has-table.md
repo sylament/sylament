@@ -171,15 +171,19 @@ instead.
 | `HasContent`, `HasHeader` | [`Concerns\HasContent`](../../../vendor/filament/tables/src/Concerns/HasContent.php), [`Concerns\HasHeader`](../../../vendor/filament/tables/src/Concerns/HasHeader.php) | todo | — | — |
 | Translatable content driver — `getActiveTableLocale()`, `makeFilamentTranslatableContentDriver()` | [`Contracts\HasTable`](../../../vendor/filament/tables/src/Contracts/HasTable.php) | todo | — | [has-schemas.md](../schemas/has-schemas.md#the-translatable-content-driver-is-not-ported) |
 
-Sixteen rows are **done**. Ten are the trait's own core — the build-once pair with
+Seventeen rows are **done**. Ten are the trait's own core — the build-once pair with
 `makeTable()`, the record key, the by-key lookup with its flush, the all-records
 count, the three filtered-query seams, the host id, and the paginator peek — and
-six arrived with the state layer since: the filter mutations and `resetTableSearch()`
-from the filter epic, and M4 · 3's
+seven arrived with the state layer since: the filter mutations and `resetTableSearch()`
+from the filter epic, M4 · 3's
 [URL binding](#the-url-binding-is-a-per-prop-liveprop-modifier-opted-into-by-the-page),
 [session persistence](#the-session-key-is-the-host-class-so-two-instances-of-one-page-share-it),
 [deferred loading](table.md#the-deferred-window-is-server-gated-and-client-closed)
-and [reordering](#the-reorder-write-is-a-unit-of-work-flush-not-one-mass-case-update).
+and [reordering](#the-reorder-write-is-a-unit-of-work-flush-not-one-mass-case-update),
+and M4 · 5's
+[per-column search](#search-is-the-global-term-and-one-term-per-column) — the
+column manager beside it being the one member of that epic still **in progress**,
+against [`ColumnGroup`](column-manager.md#the-columngroup-half-is-the-whole-of-what-is-left).
 Those four carry Integration suites of their own —
 [`TableUrlBindingTest`](../../../packages/tables/tests/Integration/TableUrlBindingTest.php),
 [`TableSessionPersistenceTest`](../../../packages/tables/tests/Integration/TableSessionPersistenceTest.php),
@@ -1855,15 +1859,24 @@ half of the same contract, and it is what lets a closure branch on
 
 ### The session key is the host class, so two instances of one page share it
 
-Filament persists four pieces of table state in the Laravel session, each keyed by
+Filament persists five pieces of table state in the Laravel session, each keyed by
 `md5(static::class)` plus a suffix: the sort (`persistsSortInSession()`, opt-in),
 the search and the column searches (`persistSearchInSession()` /
 `persistColumnSearchesInSession()`, opt-in), the filters
-(`persistsFiltersInSession()`, opt-in), and the per-page option —
+(`persistsFiltersInSession()`, opt-in), the
+[column manager's state](column-manager.md#the-session-is-written-at-the-end-of-every-mutation-rather-than-once-per-request)
+(`persistColumnsInSession()`, opt-**out** — the only one of the five that
+defaults on, and the only one whose read is ungated), and the per-page option —
 **unconditionally**, with no setter to turn it off. M4 · 3 shipped all of it but
-the column searches, which arrived in M4 · 5 with
-[the bag they persist](#a-full-seed-replaces-filaments-reserved-key-list-and-a-blank-is-kept),
-in [`CanPersistTableState`](../../../packages/tables/src/Concerns/CanPersistTableState.php):
+the column searches and the column state, which arrived together in M4 · 5 with
+[the bag they persist](#a-full-seed-replaces-filaments-reserved-key-list-and-a-blank-is-kept)
+and [the bag the manager edits](#the-column-state-is-re-derived-against-the-definition-on-every-read).
+All six suffixes go through
+[`CanPersistTableState`](../../../packages/tables/src/Concerns/CanPersistTableState.php)'s
+two helpers, but only five are read by its `#[PostMount(priority: 10)]` hook: the
+sixth, `columns`, is read in the manager's own mount hook at priority 4 instead,
+because the state it seeds has to settle before anything asks a column whether it
+is visible.
 `getTableSessionKey()` is `sprintf('sylament.tables.%s_%s', md5(static::class), $suffix)`,
 Filament's shape verbatim, and per-page persists whether or not anything opted in,
 so every **paginated** table host with a session starts remembering per-page

@@ -158,23 +158,27 @@ Rows never disappear — only their detail sections do.
 | [`HasDefaultDataFormattingSettings` — the eight formatting defaults, composed here](../../../packages/tables/src/Table.php) | [`Table.php`'s composed `Support\Concerns\HasDefaultDataFormattingSettings`](../../../vendor/filament/tables/src/Table.php) | done | — | [has-default-data-formatting-settings.md](../support/has-default-data-formatting-settings.md) — the trait is support's, and `TextColumn`'s date, money and numeric families are what read it off the table |
 | `HasArguments`, `HasExtraAttributes` | [`Table.php`'s remaining composed traits](../../../vendor/filament/tables/src/Table.php) | todo | — | — |
 
-Forty-nine rows are **done**, thirteen **in progress**, six **skipped**, nine
-**todo** and one **blocked**. Rather than name all forty-nine, here is what the
-done set covers, feature by feature. The **object itself**: `make()`, the host
-binding, the closure-injection wiring, and the partial that renders everything
-below. The **data lanes**: the `records()` declaration, the whole `query()` lane
+Fifty-three rows are **done**, thirteen **in progress**, seven **skipped**,
+eight **todo** and one **blocked**. Rather than name all fifty-three, here is
+what the done set covers, feature by feature. The **object itself**: `make()`,
+the host binding, the closure-injection wiring, and the partial that renders
+everything below. The **data lanes**: the `records()` declaration, the whole `query()` lane
 with the two members that read off it (`hasQuery()`, `getRecordClass()`), the
 relation-scoped lane · 20 added, and the host-delegating `getRecords()`,
 `getPaginator()` and `getRecordKey()` with the morph-stable row and cell keys built
 on the last of those. The **browsing state**: the pagination surface,
 `paginatedWhileReordering()`, the sort-resolution surface with the default-sort
-family beside it, the three search rows — the declaration, the chrome, and the
-query half · 12 landed — the query-string identifier, and the session-persistence
-trio (`persistSortInSession()`, `persistSearchInSession()`,
+family beside it, the eight search rows — the declaration, the chrome, the query
+half · 12 landed, the global indicator, the two session flags, and M4 · 5's
+per-column pair with the search row it renders — and the query-string
+identifier, beside the session-persistence quartet (`persistSortInSession()`,
+`persistSearchInSession()`, `persistColumnSearchesInSession()`,
 `persistFiltersInSession()`). The **filters chrome**: the indicators row, the
 panel component, the dropdown, modal, above- and below-content layouts, and the
-three chrome actions. The **rows**: `recordUrl()` with its new-tab and
-extra-link members, `recordAction()`, `recordClasses()`, `striped()`, the record
+three chrome actions. The **column manager**, everything but its two deferrals:
+the nine settings, the trigger and apply actions, both layouts and both reset
+positions ([column-manager.md](column-manager.md)). The **rows**: `recordUrl()`
+with its new-tab and extra-link members, `recordAction()`, `recordClasses()`, `striped()`, the record
 labels and titles the empty state reads, and the whole reorder surface with its
 chrome. The **cell wrapper**, which the column catalog finished: the four-way
 tag choice is now decided from both tiers at once, and the row flipped with the
@@ -186,7 +190,8 @@ heading, description, icon, the replacement block and its actions — beside
 `deferLoading()` and `poll()`, which share a row.
 
 What is still **in progress** is where a named gap sits inside a shipped member:
-the column set (the layouts and the manager), the header/toolbar/selection rows
+the column set (the layouts, and the manager against `ColumnGroup` and the
+`Width` enum), the header/toolbar/selection rows
 and the row chrome against grouping — the stripe's group reset and the collapsed
 row — the record-action position rows, the big `HasFilters` row against the four
 refused layouts, and the header row against `header()`'s Blade-`View` arm.

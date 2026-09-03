@@ -107,9 +107,9 @@ into
 folds the same way, into `table.md`'s `$template` row.
 `Table\Concerns\HasFilters` and `Table\Concerns\HasFilterIndicators` are two
 landed concerns that keep a row anyway, for the same reason: both are built and
-folded into [`table.md`](table.md) while the `filtersFormSchema()` override, the
-four before/after-content layouts and the column-search indicators are not — so
-each row is where the deferred half stays findable. `Filters\Concerns\HasOptions` and
+folded into [`table.md`](table.md) while the `filtersFormSchema()` override and
+the four before/after-content layouts are not — so each row is where the deferred
+half stays findable. `Filters\Concerns\HasOptions` and
 `Filters\Concerns\HasPlaceholder` keep rows for a different reason: they ship for
 `SelectFilter` alone, so they fold into
 [`select-filter.md`](select-filter.md) rather than into `base-filter.md` with the
@@ -242,7 +242,7 @@ pairs with, so it shares the first row below.
 | Host / CanPaginateRecords | [`Concerns/CanPaginateRecords.php`](../../../vendor/filament/tables/src/Concerns/CanPaginateRecords.php) | in progress | [has-table.md](has-table.md#the-page-state-has-its-query-lane-and-no-session-or-url-half) |
 | Host / CanPollRecords | [`Concerns/CanPollRecords.php`](../../../vendor/filament/tables/src/Concerns/CanPollRecords.php) | skipped | The whole trait is a deprecated host getter (`getTablePollingInterval()`), and the project has never ported a deprecated Filament surface — the interval it fronts is `Table::poll()`, the shipped `Table / CanPollRecords` row below ([has-table.md](has-table.md#surface), [table.md](table.md#the-poll-interval-parses-strictly-and-carries-no-livewire-modifiers)) |
 | [`Host / CanReorderRecords`](../../../packages/tables/src/Concerns/CanReorderRecords.php) | [`Concerns/CanReorderRecords.php`](../../../vendor/filament/tables/src/Concerns/CanReorderRecords.php) | done | [has-table.md](has-table.md#the-reorder-write-is-a-unit-of-work-flush-not-one-mass-case-update) |
-| Host / CanSearchRecords | [`Concerns/CanSearchRecords.php`](../../../vendor/filament/tables/src/Concerns/CanSearchRecords.php) | in progress | [has-table.md](has-table.md#search-is-the-global-term-only) |
+| Host / CanSearchRecords | [`Concerns/CanSearchRecords.php`](../../../vendor/filament/tables/src/Concerns/CanSearchRecords.php) | in progress | [has-table.md](has-table.md#search-is-the-global-term-and-one-term-per-column) |
 | Host / CanSortRecords | [`Concerns/CanSortRecords.php`](../../../vendor/filament/tables/src/Concerns/CanSortRecords.php) | in progress | [has-table.md](has-table.md#sorting-composes-the-users-order-the-default-and-the-identifier-tiebreaker) |
 | Host / CanSummarizeRecords | [`Concerns/CanSummarizeRecords.php`](../../../vendor/filament/tables/src/Concerns/CanSummarizeRecords.php) | todo | — |
 | Host / HasActions | [`Concerns/HasActions.php`](../../../vendor/filament/tables/src/Concerns/HasActions.php) | skipped | Every method in the file is a deprecated `*TableAction` delegate to the actions-package equivalent, and the project has never ported a deprecated Filament surface. What it fronts is built: mounting, resolution — the bulk map included — and record binding go through actions' [`HasActions`](../actions/has-actions.md#a-client-supplied-record-key-is-type-checked-before-the-lookup) and the [`InteractsWithTable`](has-table.md#the-contract-is-twenty-methods-of-filaments-forty-six) contract |
@@ -359,7 +359,7 @@ folds into [`text-column.md`](text-column.md) the same way, against
 | views/components/column-manager/content | [`views/components/column-manager/content.blade.php`](../../../vendor/filament/tables/resources/views/components/column-manager/content.blade.php) | todo | — |
 | views/components/columns/layout | [`views/components/columns/layout.blade.php`](../../../vendor/filament/tables/resources/views/components/columns/layout.blade.php) | todo | — |
 | views/components/filters | [`views/components/filters.blade.php`](../../../vendor/filament/tables/resources/views/components/filters.blade.php) | todo | — |
-| views/components/search-field | [`views/components/search-field.blade.php`](../../../vendor/filament/tables/resources/views/components/search-field.blade.php) | in progress | ported **inline** into the [table partial](../../../packages/tables/templates/partials/Table/index.html.twig)'s toolbar rather than as a component of its own — its `wireModel` prop exists to serve the per-column search field, the second call site, which is unported ([has-table.md](has-table.md#search-is-the-global-term-only)); it becomes a component in the change that lands one |
+| views/components/search-field | [`views/components/search-field.blade.php`](../../../vendor/filament/tables/resources/views/components/search-field.blade.php) | in progress | ported **inline** into the [table partial](../../../packages/tables/templates/partials/Table/index.html.twig)'s toolbar rather than as a component of its own — its `wireModel` prop exists to serve the per-column search field, the second call site, which is unported ([has-table.md](has-table.md#search-is-the-global-term-and-one-term-per-column)); it becomes a component in the change that lands one |
 | views/components/summary | [`views/components/summary/index.blade.php`](../../../vendor/filament/tables/resources/views/components/summary/index.blade.php) | todo | — |
 | views/components/summary/row | [`views/components/summary/row.blade.php`](../../../vendor/filament/tables/resources/views/components/summary/row.blade.php) | todo | — |
 | Translations | [`resources/lang/`](../../../vendor/filament/tables/resources/lang) | todo | — |

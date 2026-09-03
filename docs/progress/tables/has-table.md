@@ -61,7 +61,7 @@ live action), from M4 · 1, and the three M4 · 3 added:
 a per-file row below rather than a folded one, per
 [one row per file](../README.md#one-row-per-file-one-file-per-thing). What
 Filament's nineteen-trait host does beyond them — grouping, summaries, the column
-manager, and the per-column half of search — is unported and listed below.
+manager and summaries — is unported and listed below.
 
 The trait presumes no host property beyond the fourteen `#[LiveProp]`s it and its
 concerns declare: `?string $tableHostId` (the persisted half of
@@ -144,11 +144,11 @@ instead.
 | `getTableQueryForExport()` | [`Concerns\HasRecords::getTableQueryForExport()`](../../../vendor/filament/tables/src/Concerns/HasRecords.php) | blocked | the export surface | It bypasses the seams above, re-reading `getTable()->getQuery()` and re-applying filters, search and sorting itself, to assemble a query for Filament's export action — a surface with no counterpart here and on no milestone, the same one [`ExportColumn`](column.md#hascellstate-is-relocated-into-the-column-tier) waits on. It lands with that action or not at all |
 | [`CanPaginateRecords` — `$tablePage`, `$tableRecordsPerPage`, `gotoTablePage()`, `getTablePage()`, `getTableRecordsPerPage()`, `dehydrateTableRecordsPerPage()`, `updatedTableRecordsPerPage()`, `paginateTableQuery()`](../../../packages/tables/src/Concerns/CanPaginateRecords.php) | [`Concerns\CanPaginateRecords`](../../../vendor/filament/tables/src/Concerns/CanPaginateRecords.php) | in progress | — | [detail](#the-page-state-has-its-query-lane-and-no-session-or-url-half) · [diverges](#gototablepage-replaces-livewires-paginator-trio) · [diverges](#per-page-is-validated-in-the-getter-on-every-read) · [diverges](#the-writable-props-dehydrate-in-their-elements-wire-vocabulary) · [diverges](#the-recordsperpage-injection-is-nullable) · [diverges](#the-session-key-is-the-host-class-so-two-instances-of-one-page-share-it) |
 | [`CanSortRecords` — `$tableSort`, `sortTable()`, `healSeededTableSort()`, `getTableSortColumn()`, `getTableSortDirection()`, `applySortingToTableQuery()`](../../../packages/tables/src/Concerns/CanSortRecords.php) | [`Concerns\CanSortRecords`](../../../vendor/filament/tables/src/Concerns/CanSortRecords.php) | in progress | — | [detail](#sorting-composes-the-users-order-the-default-and-the-identifier-tiebreaker) · [diverges](#sorttable-ignores-a-column-the-table-did-not-declare-sortable) · [diverges](#a-default-sort-closures-replacement-builder-reaches-the-caller-where-filaments-is-discarded) · [diverges](#the-identifier-tiebreaker-is-suppressed-only-by-the-qualified-key) · [semantics](#a-column-name-containing-a-colon-cannot-be-cycled) · [diverges](#a-seeded-sort-is-healed-at-mount-where-filaments-is-trusted-to-the-query) · [diverges](#the-session-key-is-the-host-class-so-two-instances-of-one-page-share-it) |
-| [`CanSearchRecords` — `$tableSearch`, `updatedTableSearch()`, `getTableSearch()`, `dehydrateTableSearch()`, `applySearchToTableQuery()`, `applyGlobalSearchToTableQuery()`, `extractTableSearchWords()`](../../../packages/tables/src/Concerns/CanSearchRecords.php), the last delegating to [`Query\SearchTermSplitter`](../../../packages/tables/src/Query/SearchTermSplitter.php) | [`Concerns\CanSearchRecords`](../../../vendor/filament/tables/src/Concerns/CanSearchRecords.php) | in progress | — | [detail](#search-is-the-global-term-only) · [diverges](#the-writable-props-dehydrate-in-their-elements-wire-vocabulary) · [diverges](#the-session-key-is-the-host-class-so-two-instances-of-one-page-share-it) · [table.md](table.md#the-global-search-loop-still-has-no-hidden-arm-to-check) |
+| [`CanSearchRecords` — `$tableSearch`, `updatedTableSearch()`, `getTableSearch()`, `dehydrateTableSearch()`, `applySearchToTableQuery()`, `applyGlobalSearchToTableQuery()`, `extractTableSearchWords()`](../../../packages/tables/src/Concerns/CanSearchRecords.php), the last delegating to [`Query\SearchTermSplitter`](../../../packages/tables/src/Query/SearchTermSplitter.php) | [`Concerns\CanSearchRecords`](../../../vendor/filament/tables/src/Concerns/CanSearchRecords.php) | in progress | — | [detail](#search-is-the-global-term-and-one-term-per-column) · [diverges](#the-writable-props-dehydrate-in-their-elements-wire-vocabulary) · [diverges](#the-session-key-is-the-host-class-so-two-instances-of-one-page-share-it) · [table.md](table.md#the-two-hidden-column-arms-landed-with-column-visibility-an-epic-after-their-loops) |
 | [Table state in the URL — the `getTableUrlMapping()` opt-in hook, the five `modifyTable*Prop()` `LiveProp` modifiers, `getTableQueryStringIdentifier()` and `getIdentifiedTableQueryStringPropertyNameFor()`](../../../packages/tables/src/Concerns/HasTable.php) | [`getIdentifiedTableQueryStringPropertyNameFor()`](../../../vendor/filament/tables/src/Concerns/InteractsWithTable.php), the six-attribute `#[Url]` block on [`ListRecords`](../../../vendor/filament/filament/src/Resources/Pages/ListRecords.php) and Livewire's own [`queryStringHandlesPagination()`](../../../vendor/livewire/livewire/src/Features/SupportPagination/HandlesPagination.php) for `page` | done | — | [diverges](#the-url-binding-is-a-per-prop-liveprop-modifier-opted-into-by-the-page) · [diverges](#the-query-string-identifier-is-live-on-the-table-and-dead-in-the-modifiers) |
 | The `reordering` URL bind | [`#[Url(as: 'reordering')]` redeclared on `ListRecords`](../../../vendor/filament/filament/src/Resources/Pages/ListRecords.php) | skipped | — | A transient UI mode rather than browsing state, and binding it would leave a permanent `reordering=0` in every URL under [the residue constraint](#the-url-binding-is-a-per-prop-liveprop-modifier-opted-into-by-the-page); the `grouping` bind has no prop to attach to until grouping lands |
 | [Table state in the session — `CanPersistTableState`: the `RequestStack` setter, `getTableSessionKey()`, `persistTableStateToSession()`, `readTableSessionState()`, `forgetTableSessionState()`, the five per-prop writers and the `#[PostMount(priority: 10)]` read hook](../../../packages/tables/src/Concerns/CanPersistTableState.php) | [`Concerns\InteractsWithTable::bootedInteractsWithTable()`](../../../vendor/filament/tables/src/Concerns/InteractsWithTable.php) | done | — | [diverges](#the-session-key-is-the-host-class-so-two-instances-of-one-page-share-it) |
-| [Per-column search — the `$tableColumnSearches` bag with its `hydrateTableColumnSearches()` / `dehydrateTableColumnSearches()` pair, `mountTableColumnSearches()`, `afterTableColumnSearchesHydrated()`, `getTableColumnSearch()` / `getTableColumnSearches()`, `applyColumnSearchesToTableQuery()`, `handleTableColumnSearchUpdates()`, `getTableColumnSearchIndicators()`, `persistTableColumnSearchesInSession()` and the `resetTableColumnSearch()` / `resetTableColumnSearches()` actions](../../../packages/tables/src/Concerns/CanSearchRecords.php) | [`Concerns\CanSearchRecords`](../../../vendor/filament/tables/src/Concerns/CanSearchRecords.php) | in progress | the search row that renders the inputs | [detail](#search-is-the-global-term-only) · [diverges](#a-full-seed-replaces-filaments-reserved-key-list-and-a-blank-is-kept) · [diverges](#the-per-column-change-is-read-off-a-first-call-hydration-snapshot) · [diverges](#the-session-key-is-the-host-class-so-two-instances-of-one-page-share-it) |
+| [Per-column search — the `$tableColumnSearches` bag with its `hydrateTableColumnSearches()` / `dehydrateTableColumnSearches()` pair, `mountTableColumnSearches()`, `afterTableColumnSearchesHydrated()`, `getTableColumnSearch()` / `getTableColumnSearches()`, `applyColumnSearchesToTableQuery()`, `handleTableColumnSearchUpdates()`, `getTableColumnSearchIndicators()`, `persistTableColumnSearchesInSession()` and the `resetTableColumnSearch()` / `resetTableColumnSearches()` actions](../../../packages/tables/src/Concerns/CanSearchRecords.php) | [`Concerns\CanSearchRecords`](../../../vendor/filament/tables/src/Concerns/CanSearchRecords.php) | in progress | the search row that renders the inputs | [detail](#search-is-the-global-term-and-one-term-per-column) · [diverges](#a-full-seed-replaces-filaments-reserved-key-list-and-a-blank-is-kept) · [diverges](#the-per-column-change-is-read-off-a-first-call-hydration-snapshot) · [diverges](#the-session-key-is-the-host-class-so-two-instances-of-one-page-share-it) |
 | [Deferred loading — `$isTableLoaded`, `loadTable()`, `isTableLoaded()`](../../../packages/tables/src/Concerns/CanDeferLoading.php) | [`CanDeferLoading`](../../../vendor/filament/tables/src/Concerns/CanDeferLoading.php) | done | — | the trait's fourth member, `isTableLoadingDeferred()`, is `@deprecated Override the table() method` and is not ported — what it fronts is [`Table::deferLoading()`](table.md#the-deferred-window-is-server-gated-and-client-closed). [table.md](table.md#the-deferred-window-is-server-gated-and-client-closed) |
 | Host polling — `getTablePollingInterval()` | [`CanPollRecords`](../../../vendor/filament/tables/src/Concerns/CanPollRecords.php) | skipped | — | The whole trait is `@deprecated Override the table() method to configure the table.`, one host getter returning null, and the project has never ported a deprecated Filament surface. The interval it fronts is [`Table::poll()`](table.md#the-poll-interval-parses-strictly-and-carries-no-livewire-modifiers), which ships |
 | [`Concerns\HasFilters` — the `$tableFilters` / `$tableDeferredFilters` bags, `getTableFilterState()`, `getTableFilterFormState()`, `parseTableFilterName()`, `getTableFiltersForm()`, the `#[PostMount]` fill and the `#[PostHydrate(priority: 10)]` re-cache](../../../packages/tables/src/Concerns/HasFilters.php) | [`Concerns\HasFilters`](../../../vendor/filament/tables/src/Concerns/HasFilters.php) | in progress | — | [diverges](#the-filter-bags-are-arrays-never-null-and-carry-no-getters) · [diverges](#one-filter-slice-is-a-plain-array-read-not-a-propertyaccessor-walk) · [diverges](#a-seeded-filter-bag-fills-the-form-instead-of-the-declared-defaults) · [semantics](#updatedtablefilters-fires-for-a-whole-prop-write-never-for-a-field-inside-it) · [diverges](#the-session-key-is-the-host-class-so-two-instances-of-one-page-share-it) · [semantics](#the-two-filter-bags-round-trip-differently-and-the-difference-is-the-whole-deferredlive-split) |
@@ -627,7 +627,7 @@ project-wide rule and are not ported at all.
 composes three orderings onto whatever the declared query already carries — a
 user-authored `orderBy()` in `query()` stays in front of all of them. First the
 user's: `getTableSortColumn()` is resolved through
-[`getSortableVisibleColumn()`](table.md#the-global-search-loop-still-has-no-hidden-arm-to-check)
+[`getSortableVisibleColumn()`](table.md#the-two-hidden-column-arms-landed-with-column-visibility-an-epic-after-their-loops)
 and the column applies **itself** through
 [`Column::applySort()`](column.md#sort-columns-apply-in-declared-order-where-filament-reverses-them),
 so a `sortable(query:)` closure or a multi-column `sortable([…])` list decides
@@ -702,18 +702,25 @@ and reset the page. Filament needs them as separate members because Livewire
 calls them for a *property write*; `$tableSort` is not writable here, so nothing
 else can change it. The three `@deprecated` host getters are not ported.
 
-### Search is the global term only
+### Search is the global term, and one term per column
 
-`$tableSearch`, its trimmed getter, and the query application over it are ported.
-Filament's trait carries a second, larger half — `$tableColumnSearches`,
-`updatedTableColumnSearches()`, `getReservedTableColumnSearchKeys()` and
-`applyColumnSearchesToTableQuery()` — which is **per-column search**, a feature
-with a UI of its own (an input in each header cell) rather than a variant of this
-one. It has its own **todo** row above, it is what the missing `columnSearches`
-injection reads, and it is why `applySearchToTableQuery()` exists as a one-line
-delegate to `applyGlobalSearchToTableQuery()` rather than being collapsed into
-it: the column half becomes a second call inside it — ahead of the global one,
-the order Filament applies them in.
+Both halves of Filament's trait are ported, and they are two features rather than
+two settings: the global term is one input over every globally searchable column,
+where **per-column search** is an input per column, with a UI of its own (a row
+under the header) and a bag of its own. `applySearchToTableQuery()` is where they
+meet — it applies the column terms first and the global term second, the order
+Filament applies them in — which is what it existed as a one-line delegate to
+prepare for.
+
+The per-column half is the [seeded bag](#a-full-seed-replaces-filaments-reserved-key-list-and-a-blank-is-kept)
+and its [first-call hydration snapshot](#the-per-column-change-is-read-off-a-first-call-hydration-snapshot),
+both recorded below; its query pass mirrors the global one word for word — the
+column's own `splitIndividualSearchTerms()` overriding the table's
+`splitSearchTerms()` wherever it answers non-null, an `Orx` per word,
+`andWhere()`-d only if the column joined it — over exactly the columns that are
+**visible** and **individually** searchable, so a term left on a column the
+developer later hid, or on one that is only globally searchable, constrains
+nothing. It is what the `columnSearches` injection reads.
 
 The global half composes like this. A blank term is a no-op — `getTableSearch()`
 already answers null for it, so nothing is applied and the query is returned as
@@ -736,9 +743,10 @@ into it, the table's
 follow, and the group is `andWhere()`-d only if something joined it. So the
 composition is `OR` within a word and `AND` between words — *every* word must
 match *something* — and a table with nothing searchable adds no `WHERE` at all
-rather than an empty parenthesis or a false predicate. Filament's loop also skips
-a **hidden** column first; the port has no visibility to check and drops that arm
-[with its sorting sibling](table.md#the-global-search-loop-still-has-no-hidden-arm-to-check).
+rather than an empty parenthesis or a false predicate. The loop skips a **hidden**
+column before asking whether it is globally searchable, Filament's own order — an
+arm that could not be written until column visibility landed, and that arrived
+[with its sorting sibling](table.md#the-two-hidden-column-arms-landed-with-column-visibility-an-epic-after-their-loops).
 
 Two members of Filament's do not port. The `generate_search_term_expression()` /
 `generate_search_column_expression()` pair is Eloquent-and-driver-specific
@@ -764,10 +772,14 @@ and is the [tenth contract method](#the-contract-is-twenty-methods-of-filaments-
 pairs it with the `resetTableSearch` live action and puts it first in
 [the row](table.md#the-chip-is-one-badge-and-the-delete-affordance-is-supports),
 so the chip's X clears the term and resets the page.
-`getTableColumnSearchIndicators()` still waits — on per-column search rather than
-on the indicator class, the same **todo** row above — and that same
-`getFilterIndicators()` is where its half slots in when it lands, second, ahead
-of the filters' own chips. On the records lane none of this runs:
+`getTableColumnSearchIndicators()` fills the slot beside it, second and ahead of
+the filters' own chips: one `<label>: <term>` chip per **visible**, individually
+searchable column holding a non-blank term, keyed by column name so
+`getFilterIndicators()` can pair each with `resetTableColumnSearch` and the
+`column` argument it takes. Two things differ from Filament's, both consequences
+of keying rather than listing: the chips follow the bag's key order rather than
+declaration order, and the label carries the **trimmed** term, since the map they
+are built from is the trimmed one. On the records lane none of this runs:
 the `search` injection hands the closure a string and the closure decides what
 matching means.
 
@@ -1171,7 +1183,7 @@ Permanent, and addressable by anchor.
 
 The name is Filament's and it is now accurate: the body is
 `applySearchToTableQuery($this->applyFiltersToTableQuery($query))` — filters
-first, then [the global search](#search-is-the-global-term-only), Filament's
+first, then [the global search](#search-is-the-global-term-and-one-term-per-column), Filament's
 order. `applyFiltersToTableQuery()` runs two passes over the one builder, every
 visible filter's `applyToBaseQuery()` before every visible filter's `apply()`,
 and returns the same builder both times. The composition around it is Filament's
@@ -1799,10 +1811,10 @@ Filament persists four pieces of table state in the Laravel session, each keyed 
 the search and the column searches (`persistSearchInSession()` /
 `persistColumnSearchesInSession()`, opt-in), the filters
 (`persistsFiltersInSession()`, opt-in), and the per-page option —
-**unconditionally**, with no setter to turn it off. M4 · 3 ships all of that except
-the column searches, which ride
-[per-column search](#search-is-the-global-term-only), in
-[`CanPersistTableState`](../../../packages/tables/src/Concerns/CanPersistTableState.php):
+**unconditionally**, with no setter to turn it off. M4 · 3 shipped all of it but
+the column searches, which arrived in M4 · 5 with
+[the bag they persist](#a-full-seed-replaces-filaments-reserved-key-list-and-a-blank-is-kept),
+in [`CanPersistTableState`](../../../packages/tables/src/Concerns/CanPersistTableState.php):
 `getTableSessionKey()` is `sprintf('sylament.tables.%s_%s', md5(static::class), $suffix)`,
 Filament's shape verbatim, and per-page persists whether or not anything opted in,
 so every **paginated** table host with a session starts remembering per-page
@@ -1823,8 +1835,11 @@ precedence rule. UX's own query-string seeding is a `PostMountEvent` listener at
 priority 256 and every listener runs before the first `#[PostMount]` method, so a
 bound prop already carries the URL's value when the hook reads: the session fills
 only what the URL left blank (`blank($this->tableSearch)`, `blank($this->tableSort)`,
-`$this->tableFilters === []`), which is Filament's own precedence proved from the
-other end. The read runs above the filters mount hook and below the filters'
+`$this->tableFilters === []`, `$this->tableColumnSearches === []`), which is
+Filament's own precedence proved from the other end. The per-column bag is read
+above [its own seed](#a-full-seed-replaces-filaments-reserved-key-list-and-a-blank-is-kept)
+at priority 3 for the same reason the sort is read above its heal: a stored bag is
+filled out by the seed rather than replaced by it. The read runs above the filters mount hook and below the filters'
 [query-string seed](#a-seeded-filter-bag-fills-the-form-instead-of-the-declared-defaults),
 so a session-restored bag reaches the same normalizer a URL-seeded one does — and
 above [the sort heal](#a-seeded-sort-is-healed-at-mount-where-filaments-is-trusted-to-the-query)
@@ -2366,7 +2381,7 @@ It read `getColumns()` until column visibility landed, and that was an absence
 rather than a decision: with no `isHidden()` to ask, every column *was* the
 visible set. Now a to-one column the developer hid, or the user toggled off,
 costs no share of a `LEFT JOIN`. The
-[global search loop](table.md#the-global-search-loop-still-has-no-hidden-arm-to-check)
+[global search loop](table.md#the-two-hidden-column-arms-landed-with-column-visibility-an-epic-after-their-loops)
 is the last place still recording the old gap.
 
 The remaining delta is the **clone**, and it is deliberate. Filament's placement puts the

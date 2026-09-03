@@ -107,22 +107,22 @@ Rows never disappear — only their detail sections do.
 | [`paginationMode()` / `getPaginationMode()`](../../../packages/tables/src/Table/Concerns/CanPaginateRecords.php) + [`PaginationMode`](../../../packages/tables/src/Enums/PaginationMode.php) | [`Table\Concerns\CanPaginateRecords`](../../../vendor/filament/tables/src/Table/Concerns/CanPaginateRecords.php), [`Enums/PaginationMode`](../../../vendor/filament/tables/src/Enums/PaginationMode.php) | in progress | its `Cursor` arm — a keyset carrier ([pagination.md](../support/pagination.md)) | [detail](#the-pagination-mode-ships-two-cases-and-two-setters-wait-on-their-features) · [has-table.md](has-table.md#the-page-state-has-its-query-lane-and-no-session-or-url-half) |
 | [`paginatedWhileReordering()` / `isPaginatedWhileReordering()`](../../../packages/tables/src/Table/Concerns/CanPaginateRecords.php) | [`Table\Concerns\CanPaginateRecords`](../../../vendor/filament/tables/src/Table/Concerns/CanPaginateRecords.php) | done | — | — |
 | `scrollToTopOnPageChange()` | [`Table\Concerns\CanPaginateRecords`](../../../vendor/filament/tables/src/Table/Concerns/CanPaginateRecords.php) | todo | — | [detail](#the-pagination-mode-ships-two-cases-and-two-setters-wait-on-their-features) |
-| [`getSortableVisibleColumn()` / `getSortColumn()` / `getSortDirection()`](../../../packages/tables/src/Table/Concerns/CanSortRecords.php) | [`Table\Concerns\CanSortRecords`](../../../vendor/filament/tables/src/Table/Concerns/CanSortRecords.php) | done | — | [diverges](#the-global-search-loop-still-has-no-hidden-arm-to-check) |
+| [`getSortableVisibleColumn()` / `getSortColumn()` / `getSortDirection()`](../../../packages/tables/src/Table/Concerns/CanSortRecords.php) | [`Table\Concerns\CanSortRecords`](../../../vendor/filament/tables/src/Table/Concerns/CanSortRecords.php) | done | — | [diverges](#the-two-hidden-column-arms-landed-with-column-visibility-an-epic-after-their-loops) |
 | [`defaultSort()` / `getDefaultSort()` / `getDefaultSortDirection()` / `defaultKeySort()` / `hasDefaultKeySort()`](../../../packages/tables/src/Table/Concerns/CanSortRecords.php) | [`Table\Concerns\CanSortRecords`](../../../vendor/filament/tables/src/Table/Concerns/CanSortRecords.php) | done | — | [semantics](#the-default-sort-is-a-secondary-order-and-its-direction-rules-the-tiebreaker) · [has-table.md](has-table.md#sorting-composes-the-users-order-the-default-and-the-identifier-tiebreaker) · [has-table.md](has-table.md#a-default-sort-closures-replacement-builder-reaches-the-caller-where-filaments-is-discarded) · [semantics](#the-mappings-order-is-the-relation-scoped-tables-default-sort) |
 | `defaultSortOptionLabel()` / `getDefaultSortOptionLabel()` | [`Table\Concerns\CanSortRecords`](../../../vendor/filament/tables/src/Table/Concerns/CanSortRecords.php) | skipped | — | It labels the "unsorted" entry of the mobile sort **dropdown**, which the port does not render and nothing else reads; it belongs to that layout rather than to sorting, and lands only if the layout does |
 | [`persistSortInSession()` / `persistsSortInSession()`](../../../packages/tables/src/Table/Concerns/CanSortRecords.php) | [`Table\Concerns\CanSortRecords`](../../../vendor/filament/tables/src/Table/Concerns/CanSortRecords.php) | done | — | [has-table.md](has-table.md#the-session-key-is-the-host-class-so-two-instances-of-one-page-share-it) |
 | [`searchable()` / `isSearchable()` / `getExtraSearchableColumns()`](../../../packages/tables/src/Table/Concerns/CanSearchRecords.php) | [`Table\Concerns\CanSearchRecords`](../../../vendor/filament/tables/src/Table/Concerns/CanSearchRecords.php) | done | — | [semantics](#a-table-is-searchable-when-a-column-says-so-and-searchable-overrides-in-both-directions) |
 | [The search chrome — `searchPlaceholder()`, `searchDebounce()`, `searchOnBlur()` and their getters](../../../packages/tables/src/Table/Concerns/CanSearchRecords.php) | [`Table\Concerns\CanSearchRecords`](../../../vendor/filament/tables/src/Table/Concerns/CanSearchRecords.php) | done | — | [diverges](#getsearchdebouncemilliseconds-is-a-sylament-only-translation-of-filaments-duration-string) · [diverges](#searchonblur-renders-onchange-because-ux-live-component-has-no-blur-event) · [diverges](#the-search-field-flattens-supports-input-wrapper-into-two-classes) · [diverges](#items-center-is-lifted-onto-the-search-field-because-the-prefix-that-carried-it-is-gone) · [diverges](#the-search-input-adds-an-outline-none-vendor-does-not-have) |
-| [`splitSearchTerms()` / `shouldSplitSearchTerms()`, `searchUsing()` / `hasSearchUsingCallback()` / `callSearchUsing()`, `applyExtraSearchConstraints()`](../../../packages/tables/src/Table/Concerns/CanSearchRecords.php) | [`Table\Concerns\CanSearchRecords`](../../../vendor/filament/tables/src/Table/Concerns/CanSearchRecords.php) | done | — | [has-table.md](has-table.md#search-is-the-global-term-only) · [semantics](#extra-searchable-columns-take-closures-that-return-their-expression) · [diverges](#the-default-search-comparison-assumes-a-string-typed-field) · [diverges](#a-search-term-is-not-escaped-for-like) |
+| [`splitSearchTerms()` / `shouldSplitSearchTerms()`, `searchUsing()` / `hasSearchUsingCallback()` / `callSearchUsing()`, `applyExtraSearchConstraints()`](../../../packages/tables/src/Table/Concerns/CanSearchRecords.php) | [`Table\Concerns\CanSearchRecords`](../../../vendor/filament/tables/src/Table/Concerns/CanSearchRecords.php) | done | — | [has-table.md](has-table.md#search-is-the-global-term-and-one-term-per-column) · [semantics](#extra-searchable-columns-take-closures-that-return-their-expression) · [diverges](#the-default-search-comparison-assumes-a-string-typed-field) · [diverges](#a-search-term-is-not-escaped-for-like) |
 | [`getSearchIndicator()`](../../../packages/tables/src/Table/Concerns/CanSearchRecords.php) | [`Table\Concerns\CanSearchRecords`](../../../vendor/filament/tables/src/Table/Concerns/CanSearchRecords.php) | done | — | [has-table.md](has-table.md#the-contract-is-twenty-methods-of-filaments-forty-six) · [detail](#the-unported-search-surface-splits-three-ways) |
 | [`persistSearchInSession()` / `persistsSearchInSession()`](../../../packages/tables/src/Table/Concerns/CanSearchRecords.php) | [`Table\Concerns\CanSearchRecords`](../../../vendor/filament/tables/src/Table/Concerns/CanSearchRecords.php) | done | — | [has-table.md](has-table.md#the-session-key-is-the-host-class-so-two-instances-of-one-page-share-it) |
 | [`persistColumnSearchesInSession()` / `persistsColumnSearchesInSession()`](../../../packages/tables/src/Table/Concerns/CanSearchRecords.php) | [`Table\Concerns\CanSearchRecords`](../../../vendor/filament/tables/src/Table/Concerns/CanSearchRecords.php) | done | — | [has-table.md](has-table.md#the-session-key-is-the-host-class-so-two-instances-of-one-page-share-it) |
 | [`isSearchableByColumn()`, `getColumnSearchIndicators()`](../../../packages/tables/src/Table/Concerns/CanSearchRecords.php) | [`Table\Concerns\CanSearchRecords`](../../../vendor/filament/tables/src/Table/Concerns/CanSearchRecords.php) | done | — | [has-table.md](has-table.md#a-full-seed-replaces-filaments-reserved-key-list-and-a-blank-is-kept) · [detail](#the-unported-search-surface-splits-three-ways) |
-| `hasSearch()` | [`Table\Concerns\CanSearchRecords`](../../../vendor/filament/tables/src/Table/Concerns/CanSearchRecords.php) | skipped | — | It answers *is a global term set*, which [`getSearchIndicator()`'s nullable return says once](has-table.md#search-is-the-global-term-only); the per-column half needs no equivalent either, an empty `getColumnSearchIndicators()` being its own gate |
+| `hasSearch()` | [`Table\Concerns\CanSearchRecords`](../../../vendor/filament/tables/src/Table/Concerns/CanSearchRecords.php) | skipped | — | It answers *is a global term set*, which [`getSearchIndicator()`'s nullable return says once](has-table.md#search-is-the-global-term-and-one-term-per-column); the per-column half needs no equivalent either, an empty `getColumnSearchIndicators()` being its own gate |
 | `getExtraSearchableColumnRelationship()` | [`Table\Concerns\CanSearchRecords`](../../../vendor/filament/tables/src/Table/Concerns/CanSearchRecords.php) | skipped | — | It answers *is this dotted name's head a relationship*, so Filament's caller can switch to `whereRelation`. Here [one resolution](#a-dotted-name-is-resolved-against-the-mapping-before-it-is-refused) answers that inside `SearchConstraint::forColumn()` for every tier at once, so an extra searchable column crosses an association with nothing to ask first — there is no caller left to hold the branch this member exists to decide |
 | [`deferLoading()` / `isLoadingDeferred()` / `isLoaded()`](../../../packages/tables/src/Table/Concerns/CanDeferLoading.php) + [`poll()` / `getPollingInterval()` / `getPollingIntervalMilliseconds()`](../../../packages/tables/src/Table/Concerns/CanPollRecords.php) | [`CanDeferLoading`](../../../vendor/filament/tables/src/Table/Concerns/CanDeferLoading.php), [`CanPollRecords`](../../../vendor/filament/tables/src/Table/Concerns/CanPollRecords.php) | done | — | [detail](#the-deferred-window-is-server-gated-and-client-closed) · [diverges](#the-poll-interval-parses-strictly-and-carries-no-livewire-modifiers) · [has-table.md](has-table.md#the-contract-is-twenty-methods-of-filaments-forty-six) |
 | [`filters()` / `pushFilters()` / `getFilters()` / `getFilter()` / `getFiltersFormSchema()` / `deferFilters()` / `hasDeferredFilters()` / `filtersLayout()` / `getFiltersLayout()` / `hasFiltersDropdown()` / `hasFiltersModal()` / `hasFiltersTrigger()` / `hasFiltersAboveContent()` / `hasFiltersBelowContent()` / `hasCollapsibleFilters()` / `getFiltersModalId()` / `filtersFormColumns()` / `getFiltersFormColumns()` / `filtersFormMaxHeight()` / `getFiltersFormMaxHeight()` / `filtersFormWidth()` / `getFiltersFormWidth()` / `filtersResetActionPosition()` / `getFiltersResetActionPosition()` / `isFilterable()` / `getActiveFiltersCount()` / `isFiltered()`](../../../packages/tables/src/Table/Concerns/HasFilters.php) + [`FiltersLayout`](../../../packages/tables/src/Enums/FiltersLayout.php), [`FiltersResetActionPosition`](../../../packages/tables/src/Enums/FiltersResetActionPosition.php) | [`Table\Concerns\HasFilters`](../../../vendor/filament/tables/src/Table/Concerns/HasFilters.php), [`Enums/FiltersLayout`](../../../vendor/filament/tables/src/Enums/FiltersLayout.php), [`Enums/FiltersResetActionPosition`](../../../vendor/filament/tables/src/Enums/FiltersResetActionPosition.php) | in progress | the four before/after-content layouts, and the width-from-columns match | [detail](#an-unshipped-filters-layout-is-refused-where-the-chrome-reads-it) · [detail](#the-filters-form-columns-follow-the-layout-the-width-does-not) |
-| [`hiddenFilterIndicators()` / `getFilterIndicators()`](../../../packages/tables/src/Table/Concerns/HasFilterIndicators.php) | [`Table\Concerns\HasFilterIndicators`](../../../vendor/filament/tables/src/Table/Concerns/HasFilterIndicators.php) | done | — | [indicator.md](indicator.md#removal-is-structured-not-a-click-handler-string) · [has-table.md](has-table.md#search-is-the-global-term-only) |
+| [`hiddenFilterIndicators()` / `getFilterIndicators()`](../../../packages/tables/src/Table/Concerns/HasFilterIndicators.php) | [`Table\Concerns\HasFilterIndicators`](../../../vendor/filament/tables/src/Table/Concerns/HasFilterIndicators.php) | done | — | [indicator.md](indicator.md#removal-is-structured-not-a-click-handler-string) · [has-table.md](has-table.md#search-is-the-global-term-and-one-term-per-column) |
 | [The three chrome actions — `filtersTriggerAction()` / `getFiltersTriggerAction()` / `filtersApplyAction()` / `getFiltersApplyAction()` / `filtersRemoveAllAction()` / `getFiltersRemoveAllAction()`](../../../packages/tables/src/Table/Concerns/HasFilters.php) | [`Table\Concerns\HasFilters`](../../../vendor/filament/tables/src/Table/Concerns/HasFilters.php) | done | — | [diverges](#the-trigger-opens-its-chrome-from-the-client-and-the-count-stays-a-template-chip) |
 | The filters form seam — `getFiltersForm()` / `filtersFormSchema()` | [`Table\Concerns\HasFilters`](../../../vendor/filament/tables/src/Table/Concerns/HasFilters.php) | todo | — | — |
 | [`persistFiltersInSession()` / `persistsFiltersInSession()`](../../../packages/tables/src/Table/Concerns/HasFilters.php) | [`Table\Concerns\HasFilters`](../../../vendor/filament/tables/src/Table/Concerns/HasFilters.php) | done | — | [has-table.md](has-table.md#the-session-key-is-the-host-class-so-two-instances-of-one-page-share-it) |
@@ -442,13 +442,13 @@ declaration, the chrome, the query half (since · 12) and the global session hal
 (since M4 · 3). What the surface divides into stays worth naming, because one of
 the three arms is out whole and a second is half in.
 
-**Session persistence** split in two with M4 · 3. `persistSearchInSession()` ships,
-against the host-side
-[`CanPersistTableState`](has-table.md#the-session-key-is-the-host-class-so-two-instances-of-one-page-share-it)
-that arrived with it, and has a **done** row of its own.
-`persistColumnSearchesInSession()` does not, and the reason is no longer the
-session: there is no `$tableColumnSearches` bag to persist until per-column search
-lands, so it returns with that (M4 · 5) rather than with the session decision.
+**Session persistence** split in two with M4 · 3 and closed in M4 · 5. Both
+setters ship against the host-side
+[`CanPersistTableState`](has-table.md#the-session-key-is-the-host-class-so-two-instances-of-one-page-share-it):
+`persistSearchInSession()` arrived with that layer, and
+`persistColumnSearchesInSession()` with the bag it had nothing to persist
+without — its own `column_search` key, read at mount between the search and sort
+blocks and written back beside them.
 
 **The query lane's members landed with · 12** and have a **done** row of their own:
 `splitSearchTerms()`, which governs how the term is broken up *before* being
@@ -467,7 +467,7 @@ the way a column's `searchable(query:)` does. So a table declaring
 `searchable(['author.name'])` searches by it — across the association since · 20,
 where · 12 needed the join declared in `query()` — rather than merely reading as
 searchable. The composition around them —
-[one group per word, `AND`-ed](has-table.md#search-is-the-global-term-only) — is
+[one group per word, `AND`-ed](has-table.md#search-is-the-global-term-and-one-term-per-column) — is
 the host's.
 
 One member of the group is **skipped** rather than pending:
@@ -480,16 +480,18 @@ and returns either a `LIKE` or a correlated `EXISTS` — so
 `searchable(['author.name'])` searches across the association with nothing
 declared, and no caller is left holding the branch this member exists to decide.
 
-**Everything else waits on a neighbouring feature.** `isSearchableByColumn()`
-answers whether any column wants its own input, which is
-[per-column search](has-table.md#search-is-the-global-term-only); `hasSearch()`
-delegates to a host method that arrives with it; `getColumnSearchIndicators()`
-returns one `Filters\Indicator` per column-scoped term and waits on that same
-per-column search. Only the global one ships: `getSearchIndicator()` is a
-nullable delegate to the host's `getTableSearchIndicator()` — the
+**The per-column arm arrived in M4 · 5**, so only one member of it stays out.
+`isSearchableByColumn()` answers whether any column wants its own input — the
+search row's gate — and `getColumnSearchIndicators()` delegates to the host for
+one `Filters\Indicator` per column-scoped term, keyed by column name so the
+[indicators row](has-table.md#search-is-the-global-term-and-one-term-per-column)
+can pair each with `resetTableColumnSearch`. `hasSearch()` is **skipped** on the
+same grounds its global sibling records: `getSearchIndicator()` is a nullable
+delegate to the host's `getTableSearchIndicator()` — the
 [tenth contract method](has-table.md#the-contract-is-twenty-methods-of-filaments-forty-six)
-— where the null return carries what Filament's separate `hasSearch()` gate
-says, so no companion method is needed.
+— where the null return carries what Filament's separate gate says, and an empty
+`getColumnSearchIndicators()` says it for the per-column half, so neither needs a
+companion method.
 
 ### Loading affordances are deferred with the JavaScript that would drive them
 
@@ -1263,9 +1265,9 @@ said*, which is what makes the column-derived answer reachable, and it is why
 make the second source contradict the explicit false. A column marked
 `searchable(isGlobal: false, isIndividual: true)` deliberately does **not** make
 the table searchable, because it asked for its own input, not for the global
-field; that field arrives with
-[per-column search](has-table.md#search-is-the-global-term-only). All of it is
-Filament's, expressed the same way.
+field; it gets one of its own from
+[per-column search](has-table.md#search-is-the-global-term-and-one-term-per-column)
+instead. All of it is Filament's, expressed the same way.
 
 ### Extra searchable columns take closures that return their expression
 
@@ -1576,24 +1578,25 @@ in the change that lands grouping, and this row is listed as a divergence rather
 than a gap because the *shipped* getter is complete for every table that can
 exist today.
 
-### The global search loop still has no hidden arm to check
+### The two hidden-column arms landed with column visibility, an epic after their loops
 
 Filament rejects a hidden column in two places, and the port omitted both for one
-reason: there was no `isHidden()` to call. Half of that is now false.
-`getSortableVisibleColumn()` rejects three things — an unknown column, a
-**hidden** one, and an unsortable one — and the middle check ships, because
-[`CanBeHidden` and `CanBeToggled`](column.md#surface) landed on the column. A
-column the developer hid, or the user toggled off, can no longer be sorted by.
-The name keeps the word *visible* deliberately: it is Filament's, and renaming it
-would break the API a migrating user greps for.
+reason: there was no `isHidden()` to call. Both arms ship now, one wave apart
+inside M4 · 5, because [`CanBeHidden` and `CanBeToggled`](column.md#surface)
+landed on the column first.
 
-The host's [global search loop](has-table.md#search-is-the-global-term-only) is
-the half still missing. Filament skips a hidden column before asking whether it
-is globally searchable; the port loops over `getColumns()` and asks only the
-second question, so a hidden column is still searched — a term matching nothing a
-reader can see narrows the page anyway. Nothing blocks it now: it is the same
-check in the one place that has not taken it yet, and it lands with the
-per-column half of that loop.
+`getSortableVisibleColumn()` rejects three things — an unknown column, a
+**hidden** one, and an unsortable one — and the middle check is the one that was
+missing. A column the developer hid, or the user toggled off, can no longer be
+sorted by. The name keeps the word *visible* deliberately: it is Filament's, and
+renaming it would break the API a migrating user greps for.
+
+The host's [global search loop](has-table.md#search-is-the-global-term-and-one-term-per-column)
+took the same check with the per-column half of that loop: it skips a hidden
+column before asking whether the column is globally searchable, Filament's own
+order. Until it did, a term matching nothing a reader could see narrowed the page
+anyway. Neither arm reads a client-supplied column set — both ask the column
+itself, after the visibility sync.
 
 ### `getSearchDebounceMilliseconds()` is a Sylament-only translation of Filament's duration string
 

@@ -36,11 +36,11 @@ _Detail_ links a permanent note in [Semantics](#semantics) /
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
-| Construction &amp; rendering — the unbound text box, the chip list, the delete button and the live region | [`Components/TagsInput.php`](../../../vendor/filament/forms/src/Components/TagsInput.php) | done | — | [semantics](#the-text-box-is-scratch-state-and-carries-no-data-model) · [semantics](#the-chip-list-is-client-owned-after-the-first-paint) · [diverges](#the-alpine-data-object-becomes-a-stimulus-controller-over-a-cloned-twig-chip) |
+| Construction &amp; rendering — the unbound text box, the chip list, the delete button and the live region | [`Components/TagsInput.php`](../../../vendor/filament/forms/src/Components/TagsInput.php) | done | — | [semantics](#the-text-box-is-scratch-state-and-carries-no-data-model) · [semantics](#the-chip-list-is-client-owned-after-the-first-paint) · [semantics](#the-controller-is-the-only-behaviour-and-no-test-in-this-repo-runs-it) · [diverges](#the-alpine-data-object-becomes-a-stimulus-controller-over-a-cloned-twig-chip) · [diverges](#an-empty-list-keeps-the-container-and-drops-its-chrome) · [diverges](#a-non-string-tag-is-read-and-rewritten-as-a-string) |
 | `setUp()` — `default([])`, the hydration hook, the dehydration closure, the placeholder and the 100 ms reorder animation | [`Components/TagsInput.php`](../../../vendor/filament/forms/src/Components/TagsInput.php) | done | — | [semantics](#an-emptied-separator-field-dehydrates-to-an-empty-string) |
 | `hydrateTags()` — the non-array state, the `explode()` and the single-blank collapse | [`Components/TagsInput.php`](../../../vendor/filament/forms/src/Components/TagsInput.php) | done | — | [semantics](#hydratetags-runs-off-afterstatehydrated-so-only-a-fill-explodes-the-string) · [diverges](#three-lines-are-retyped-for-strict-types) |
 | `separator()` / `getSeparator()` | [`Components/TagsInput.php`](../../../vendor/filament/forms/src/Components/TagsInput.php) | done | — | [semantics](#an-emptied-separator-field-dehydrates-to-an-empty-string) |
-| `splitKeys()` / `getSplitKeys()` — the keys that end a tag, and the paste split | [`Components/TagsInput.php`](../../../vendor/filament/forms/src/Components/TagsInput.php) | done | — | — |
+| `splitKeys()` / `getSplitKeys()` — the keys that end a tag, and the paste split | [`Components/TagsInput.php`](../../../vendor/filament/forms/src/Components/TagsInput.php) | done | — | [diverges](#getsplitkeys-keeps-a-strict-array-return) |
 | `suggestions()` / `getSuggestions()` and the `<datalist>` | [`Components/TagsInput.php`](../../../vendor/filament/forms/src/Components/TagsInput.php) | done | — | [semantics](#the-datalist-lives-inside-the-ignored-container-and-the-controller-owns-its-options) · [diverges](#suggestions-drops-the-arrayable-arm) |
 | `tagPrefix()` / `getTagPrefix()` and `tagSuffix()` / `getTagSuffix()` | [`Components/TagsInput.php`](../../../vendor/filament/forms/src/Components/TagsInput.php) | done | — | — |
 | `reorderable()` / `isReorderable()` and the drag-and-drop reorder | [`Components/TagsInput.php`](../../../vendor/filament/forms/src/Components/TagsInput.php) | done | — | [semantics](#a-duplicate-tag-is-refused-on-entry-but-a-seeded-one-renders-twice) · [diverges](#the-alpine-data-object-becomes-a-stimulus-controller-over-a-cloned-twig-chip) |
@@ -78,6 +78,14 @@ carries only the field `id` (the `<label for>` target), `list`,
 `autocomplete="off"`, the placeholder, `disabled` and the extra input
 attributes. It carries no `name` and no `required` either: it is not the field.
 
+It carries no `aria-invalid` either, which every other text-like control here does.
+The box holds the tag being typed, so a validation failure is never *its* state
+that is invalid — the field's list is. The invalid state rides
+[`InputWrapper`](../support/input-wrapper.md)'s `sy-invalid` on the chrome around
+the box and [`FieldWrapper`](field.md)'s messages under it, which is
+Filament's shape too: its `$inputAttributes` bag carries no `aria-invalid`
+either. The departure is from our own `TextInput` and `Select`, not from vendor.
+
 ### The binding modifiers reach the controller as a string, and only two of them are read
 
 `modelBinding` is `getDataModel()` verbatim, and the controller's `parseBinding()`
@@ -93,8 +101,16 @@ Enter until the box lost focus.
 
 `div.sy-fo-tags-input-tags-ctn` carries `data-live-ignore`, so the morph never
 descends into it, and the controller is what keeps it in step: on `connect()` and
-on every `render:finished` it re-reads `valueStore.get(statePath)` and rebuilds
-the chips when that list differs from the `data-value`s on screen. Its `id` is
+on every `render:finished` it re-reads `valueStore.get(statePath)` and reconciles
+the chips against that list whenever it differs from the `data-value`s on screen.
+Reconciles, not rebuilds: a chip whose value is still in the list keeps its node
+and moves only if its position changed, and only a value with no node left to
+claim is cloned from the `<template>`. That reuse is load-bearing rather than an
+optimisation — the delete button lives on the chip, and a repaint that removed it
+between `mousedown` and `mouseup` dispatches the `click` at the container instead,
+losing the delete silently. A chip clicked while half-typed text sits in the box
+sets exactly that up, since the blur fires `createTag()` first. Alpine's keyed
+`x-for` gives Filament the same reuse. Its `id` is
 `{fieldId}-tags` — a **constant**, and it has to be: idiomorph runs its
 id-mismatch branch *before* the ignore branch, so an id that moved with the state
 (a hash of the tags, say) would blow the client-owned subtree away on the first
@@ -171,6 +187,17 @@ delete buttons under it. The controller does not rely on that: `createTag()`,
 `inputTarget.disabled`, so a scripted click or a drag started before the field
 was disabled writes nothing.
 
+### The controller is the only behaviour, and no test in this repo runs it
+
+Creating a tag, splitting a paste, deleting, reordering, rebuilding the datalist,
+announcing into the live region and every repaint of the chip list live in
+[`tags_input_controller`](../../../packages/forms/assets/src/controllers/tags_input_controller.ts)
+alone. The three PHP suites cover the server's first paint, the state layer and
+the live round trip; none of them runs a line of the controller, the same gap
+[`CheckboxList`](checkbox-list.md#the-controller-is-the-only-behaviour-and-no-test-in-this-repo-runs-it)
+records. Every row above is `done` on the strength of the epic's browser pass for
+that half — read the surface table with that in mind.
+
 ## Divergences
 
 ### The Alpine data object becomes a Stimulus controller over a cloned Twig chip
@@ -187,6 +214,44 @@ shared `sylament--support--sortable` control rather than a `x-sortable`
 directive, and the vendor stylesheet's `& > template { hidden }` rule is dropped
 because the blueprint sits outside the chip container (a `<template>` is
 `display: none` by the UA stylesheet anyway).
+
+### An empty list keeps the container and drops its chrome
+
+Filament wraps the chip container in `<template x-cloak x-if="state?.length">`, so
+an empty field has no container element at all. Ours has to keep it: it is the
+controller's `chips` target, the morph finds it by the id its `data-live-ignore`
+hangs off, and the live region and the `<datalist>` sit inside it. So the element
+stays and the stylesheet takes the chrome away instead —
+`&:not(:has(> .sy-badge)) { @apply border-t-0 p-0; }` — leaving a flex box of zero
+height where Filament leaves nothing. Without that rule an empty field paints a
+full-width rule and 16 px of padding under the input, which vendor never shows;
+hiding the container outright is not the alternative, because a `display: none`
+live region announces nothing.
+
+### A non-string tag is read and rewritten as a string
+
+The state is whatever the record holds, and a JSON column of `[1, 2]` is a legal
+tag list: Twig renders `data-value="1"` for it, so the controller reads the store's
+members as the strings the server already rendered rather than filtering the list
+to strings. Filtering would find none, wipe both chips on the first sync, and let
+the next write persist a list missing them. A member that is neither a string nor
+a number carries no chip and is dropped. The cost is that the first write after any
+edit saves the whole list as strings, where Filament's `x-for` leaves the untouched
+numbers numeric; a column that must stay numeric needs a `dehydrateStateUsing()` of
+its own.
+
+### `getSplitKeys()` keeps a strict array return
+
+Filament writes `return $this->evaluate($this->splitKeys) ?? [];` over a
+**non-nullable** `array | Closure` property, so that coalesce can only ever answer
+for a closure returning `null`. Ours cannot carry it: PHPStan at level max infers
+a non-nullable `array<string>` out of `evaluate()` and reports the `??` as
+`nullCoalesce.expr`, and widening the property to nullable to earn the guard back
+would be weakening a type to route around the analyser. So `splitKeys(fn () => null)`
+is a `TypeError` here where Filament yields `[]`. `getSuggestions()` keeps its
+`?? []` because its own property is nullable in Filament as well
+(`array | Arrayable | Closure | null`), and that is the whole of the asymmetry
+between the pair.
 
 ### `suggestions()` drops the `Arrayable` arm
 

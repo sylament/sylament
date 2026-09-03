@@ -48,6 +48,21 @@ function strings(values: unknown[]): string[] {
   return values.filter((value): value is string => typeof value === "string");
 }
 
+/** The state list as the strings the server rendered into `data-value`; a member with no chip is dropped. */
+function tagList(values: unknown[]): string[] {
+  const tags: string[] = [];
+
+  for (const value of values) {
+    if (typeof value === "string") {
+      tags.push(value);
+    } else if (typeof value === "number" || typeof value === "bigint") {
+      tags.push(String(value));
+    }
+  }
+
+  return tags;
+}
+
 function same(left: string[], right: string[]): boolean {
   return left.length === right.length && left.every((tag, index) => tag === right[index]);
 }
@@ -57,8 +72,9 @@ function same(left: string[], right: string[]): boolean {
  * (Filament's `newTag`) carrying no `data-model`, so this controller owns the write: every change
  * goes to the host's value store through `component.set()` with the modifiers the field's binding
  * directive declares. The chips live inside a `data-live-ignore` container the morph never visits,
- * so they are repainted here — by cloning the server-rendered `<template>` chip — on every
- * `render:finished` whose list differs from the one on screen.
+ * so they are repainted here — reusing the chips already on screen and cloning the
+ * server-rendered `<template>` for the rest — on every `render:finished` whose list differs
+ * from the one on screen.
  */
 export default class extends Controller<HTMLElement> {
   static targets = ["input", "chips", "chipTemplate", "datalist", "liveRegion"];
@@ -143,7 +159,9 @@ export default class extends Controller<HTMLElement> {
       return;
     }
 
-    const tag = input.value.trim();
+    input.value = input.value.trim();
+
+    const tag = input.value;
 
     if (tag === "") {
       return;
@@ -233,7 +251,7 @@ export default class extends Controller<HTMLElement> {
 
     const value: unknown = component.valueStore.get(this.statePathValue);
 
-    return Array.isArray(value) ? strings(value) : [];
+    return Array.isArray(value) ? tagList(value) : [];
   }
 
   #renderedTags(): string[] {
@@ -269,50 +287,81 @@ export default class extends Controller<HTMLElement> {
     component.set(this.statePathValue, [...tags], this.#binding.render, this.#binding.debounce);
   }
 
+  /** Reuses the node of a chip still in the list: a chip removed under the cursor is a delete click lost. */
   #renderChips(tags: string[]): void {
     if (!this.hasChipsTarget || !this.hasChipTemplateTarget) {
       return;
     }
 
-    for (const chip of this.chipsTarget.querySelectorAll(CHIP_SELECTOR)) {
-      chip.remove();
+    const spare = new Map<string, HTMLElement[]>();
+
+    for (const chip of this.chipsTarget.querySelectorAll<HTMLElement>(CHIP_SELECTOR)) {
+      const value = chip.getAttribute(VALUE_ATTRIBUTE) ?? "";
+      const bucket = spare.get(value);
+
+      if (bucket === undefined) {
+        spare.set(value, [chip]);
+      } else {
+        bucket.push(chip);
+      }
     }
 
-    const blueprint = this.chipTemplateTarget.content.firstElementChild;
-
-    if (blueprint === null) {
-      return;
-    }
+    let previous: HTMLElement | null = null;
 
     for (const tag of tags) {
-      const chip = blueprint.cloneNode(true);
+      const chip = spare.get(tag)?.shift() ?? this.#buildChip(tag);
 
-      if (!(chip instanceof HTMLElement)) {
+      if (chip === null) {
         continue;
       }
 
-      chip.setAttribute(VALUE_ATTRIBUTE, tag);
+      const expected: Element | null =
+        previous === null
+          ? this.chipsTarget.querySelector(CHIP_SELECTOR)
+          : previous.nextElementSibling;
 
-      if (chip.hasAttribute(SORTABLE_ITEM_ATTRIBUTE)) {
-        chip.setAttribute(SORTABLE_ITEM_ATTRIBUTE, tag);
+      if (chip !== expected) {
+        this.chipsTarget.insertBefore(chip, expected);
       }
 
-      const label = chip.querySelector(LABEL_SELECTOR);
-
-      if (label !== null) {
-        label.textContent = tag;
-      }
-
-      const deleteButton = chip.querySelector(DELETE_BUTTON_SELECTOR);
-
-      const deleteLabel = deleteButton === null ? null : deleteButton.getAttribute("aria-label");
-
-      if (deleteButton !== null && deleteLabel !== null) {
-        deleteButton.setAttribute("aria-label", `${deleteLabel}: ${tag}`);
-      }
-
-      this.chipsTarget.appendChild(chip);
+      previous = chip;
     }
+
+    for (const unclaimed of spare.values()) {
+      for (const chip of unclaimed) {
+        chip.remove();
+      }
+    }
+  }
+
+  #buildChip(tag: string): HTMLElement | null {
+    const blueprint = this.chipTemplateTarget.content.firstElementChild;
+    const chip = blueprint === null ? null : blueprint.cloneNode(true);
+
+    if (!(chip instanceof HTMLElement)) {
+      return null;
+    }
+
+    chip.setAttribute(VALUE_ATTRIBUTE, tag);
+
+    if (chip.hasAttribute(SORTABLE_ITEM_ATTRIBUTE)) {
+      chip.setAttribute(SORTABLE_ITEM_ATTRIBUTE, tag);
+    }
+
+    const label = chip.querySelector(LABEL_SELECTOR);
+
+    if (label !== null) {
+      label.textContent = tag;
+    }
+
+    const deleteButton = chip.querySelector(DELETE_BUTTON_SELECTOR);
+    const deleteLabel = deleteButton?.getAttribute("aria-label") ?? null;
+
+    if (deleteButton !== null && deleteLabel !== null) {
+      deleteButton.setAttribute("aria-label", `${deleteLabel}: ${tag}`);
+    }
+
+    return chip;
   }
 
   #renderSuggestions(tags: string[]): void {
@@ -343,7 +392,6 @@ export default class extends Controller<HTMLElement> {
       return;
     }
 
-    // The vendor's escaping, character for character (`tags-input.js:93`).
     const pattern = splitKeys.map((key) => key.replace(/[/\-\\^$*+?.()|[\]{}]/g, "\\$&")).join("|");
     const input = this.inputTarget;
 

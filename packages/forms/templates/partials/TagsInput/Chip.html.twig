@@ -1,17 +1,13 @@
 {#
-    One tag chip, emitted both for the server-rendered initial tags and once inside the
-    <template> the controller clones, so the two can never drift: a macro inherits no
-    context, and every value it needs is a parameter. It lives in its own file because
-    `_self` inside a <twig:> block resolves to the embedded component template, which
-    carries none of the outer template's macros. The tag text is `value` rather than
-    `tag` because the Badge's own `tag` prop would otherwise win inside its content block.
+    Kept in its own file: `_self` inside a <twig:> block resolves to the embedded component
+    template, which carries none of the outer template's macros.
 #}
 {% macro chip(value, color, prefix, suffix, reorderable, delete_attributes) %}
     <twig:SylamentSupport:Badge
         size="md"
         :color="color"
         :deletable="true"
-        deleteLabel="Delete"
+        :deleteLabel="value is empty ? 'Delete' : 'Delete: ' ~ value"
         :deleteAttributes="delete_attributes"
         :data-value="value"
         {{ ...(reorderable ? {class: 'sy-reorderable', 'data-sortable-item': value, 'data-sortable-handle': true} : {}) }}

@@ -112,6 +112,15 @@ it('ignores the chip container on morph and gives it an id that cannot change', 
         ->and($container->attr('data-sylament--forms--tags-input-target'))->toBe('chips');
 });
 
+it('renders no chip at all for an empty list', function (): void {
+    $container = new Crawler(renderField(TagsInput::make('tags')->suggestions(['php'])))
+        ->filter('div.sy-fo-tags-input-tags-ctn');
+
+    // The stylesheet drops the container's rule and padding on exactly this condition
+    // (`:not(:has(> .sy-badge))`), so an empty field paints no chip chrome at all.
+    expect($container->filter('span.sy-badge')->count())->toBe(0);
+});
+
 it('puts the polite live region and the datalist inside the ignored container', function (): void {
     $container = new Crawler(renderField(TagsInput::make('tags')->suggestions(['php'])))
         ->filter('div.sy-fo-tags-input-tags-ctn');
@@ -156,7 +165,9 @@ it('gives every chip the badge delete button, its label and the shared delete ic
 
     expect($button->count())->toBe(1)
         ->and($button->attr('type'))->toBe('button')
-        ->and($button->attr('aria-label'))->toBe('Delete')
+        // Filament binds the tag into every chip's label; without it a seeded field ships
+        // N delete buttons a screen reader cannot tell apart.
+        ->and($button->attr('aria-label'))->toBe('Delete: php')
         ->and($button->attr('data-action'))->toBe('click->sylament--forms--tags-input#deleteTag')
         ->and($button->filter('svg.sy-icon')->count())->toBe(1);
 });
@@ -192,7 +203,10 @@ it('renders one blueprint chip in a template the controller clones', function ()
         ->and($crawler->filter('div.sy-fo-tags-input-tags-ctn template')->count())->toBe(0)
         ->and($template->filter('span.sy-badge')->count())->toBe(1)
         ->and($template->filter('span.sy-badge')->attr('data-value'))->toBe('')
-        ->and($template->filter('span.sy-fo-tags-input-tag-label')->text())->toBe('');
+        ->and($template->filter('span.sy-fo-tags-input-tag-label')->text())->toBe('')
+        // The clone path appends `: <tag>` to whatever the blueprint carries, so this one
+        // stays bare.
+        ->and($template->filter('button.sy-badge-delete-btn')->attr('aria-label'))->toBe('Delete');
 });
 
 it('drags through the shared sortable control only once reorderable and enabled', function (): void {
@@ -222,6 +236,22 @@ it('marks each chip as a sortable item and its own handle only when reorderable'
         ->and($plain->attr('data-sortable-item'))->toBeNull()
         ->and($plain->attr('data-sortable-handle'))->toBeNull()
         ->and($plain->attr('class'))->not->toContain('sy-reorderable');
+});
+
+it('appends the extra input attributes without unbinding the controller', function (): void {
+    $input = new Crawler(renderField(TagsInput::make('tags')->extraInputAttributes([
+        'class' => 'custom',
+        'data-action' => 'x->y#z',
+    ])))->filter('input.sy-fo-input');
+
+    // The extras are spread before the Stimulus chain, so a user's own `data-action` cannot
+    // take the box off its controller.
+    expect($input->attr('class'))->toBe('sy-fo-input custom')
+        ->and($input->attr('data-action'))->toBe(
+            'keydown->sylament--forms--tags-input#keydown '
+            . 'blur->sylament--forms--tags-input#createTag '
+            . 'paste->sylament--forms--tags-input#paste',
+        );
 });
 
 it('renders its affixes through the shared input wrapper', function (): void {

@@ -411,24 +411,31 @@ support's own
 [`CssScreenReaderUtilityTest`](../../../packages/support/tests/Architecture/CssScreenReaderUtilityTest.php)
 now holds the rule in place, since every emitter of it lives in another package.
 
-What did not move with it is the rest of the port's screen-reader markup. Seven
+What did not move with it is the rest of the port's screen-reader markup. Eight
 component rules across four packages still write `@apply sr-only` into a rule of
 their own rather than reaching the shared class: forms' `.sy-fo-toggle-input`,
 panels'
 [`.sy-pa-skip-link`](../../../packages/panels/assets/src/styles/components/layout.css)
 and `.sy-pa-global-search-label`, schemas' `.sy-sc-section-label-hidden`,
 `.sy-sc-wizard-header-step-label-hidden` and `.sy-sc-wizard-header-step-status`,
-and support's own hidden `<legend>` under `.sy-fieldset-label-hidden`. Each is one
-line, and each is a place a change to the utility has to be repeated by hand.
-Closing it is seven deletions plus seven class swaps in the emitting templates,
-with no behavioural change either way, which is why it stayed out of a sweep that
-had no reason to touch those templates.
+and support's own hidden `<legend>` under `.sy-fieldset-label-hidden` plus the
+[`.sy-copyable-live-region`](../../../packages/support/assets/src/styles/components/copyable.css)
+its clipboard controller mints. Each is one line, and each is a place a change to
+the utility has to be repeated by hand. Closing it is eight deletions plus eight
+class swaps, seven of them in the emitting templates; support's live region is the
+odd one, emitted from
+[`clipboard_controller.ts`](../../../packages/support/assets/src/controllers/clipboard_controller.ts)
+rather than from Twig and named there by a `querySelector` that finds the region it
+already minted, so that class stays on the element *beside* `.sy-sr-only` instead of
+being replaced by it. There is no behavioural change either way, which is why it all
+stayed out of a sweep that had no reason to touch those emitters.
 
 Tables'
 [`.sy-ta-sr-only`](../../../packages/tables/assets/src/styles/components/table.css)
-is the eighth copy and a different case: a *named* package-local twin nested under
-`.sy-ta-table`, which [styling.md rule 1](../../styling.md) tolerates until a
-second package needs it. It is listed here for completeness, not as work.
+is the ninth copy and a different case: a *named* package-local twin nested under
+`.sy-ta` — the table root, not the `<table>` element, so the loading label outside
+the table is hidden too — which [styling.md rule 1](../../styling.md) tolerates
+until a second package needs it. It is listed here for completeness, not as work.
 
 ### The checkbox skin moved to support when tables became its second consumer
 

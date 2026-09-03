@@ -5,6 +5,7 @@ declare(strict_types=1);
 use Sylament\Actions\Action;
 use Sylament\Tables\Columns\Column;
 use Sylament\Tables\Tests\Fixtures\Records\Song;
+use Sylament\Tables\Tests\Fixtures\Twig\Components\ArrayRecordActionsTable;
 use Sylament\Tables\Tests\Fixtures\Twig\Components\ColumnActionsTable;
 
 it('carries no action by default', function (): void {
@@ -35,6 +36,16 @@ it('wraps a method name into a closure calling the host with the record', functi
 
     expect($action($host, new Song('Airbag', 'OK Computer', id: 1)))->toBe('called')
         ->and($host->calls)->toBe(['string:Airbag']);
+});
+
+it('hands an array record to the host method, as the records lane carries it', function (): void {
+    $action = Column::make('title')->action('appendTitleCall')->getAction();
+    $host = new ArrayRecordActionsTable();
+
+    assert($action instanceof Closure);
+
+    expect($action($host, ['title' => 'Airbag', '__key' => '1']))->toBe('called')
+        ->and($host->calls)->toBe(['array:Airbag']);
 });
 
 it('calls the host method with no arguments when no record is bound', function (): void {

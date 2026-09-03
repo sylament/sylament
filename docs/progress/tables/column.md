@@ -168,7 +168,8 @@ The fourteen rows the column catalog landed are one Unit file per concern under
 [`tests/Unit/Columns/Concerns/`](../../../packages/tables/tests/Unit/Columns/Concerns) —
 each default, each setter's literal and closure arms, `getUrl()`'s two arities
 against a state-based and a plain URL and the sanitizer refusing both, the
-string action arm calling its host method with and without a record, the
+string action arm calling its host method with an object record, an array one
+and none at all, the
 attribute stacks' replace-versus-merge and their
 [defaults-first](image-column.md#extra-img-attribute-registrations-merge-defaults-first)
 collision order, and the loop translation's countable and non-countable shapes —
@@ -809,6 +810,13 @@ applied to the column tier: there is no base class every Doctrine entity extends
 so `object` is the widest true bound, and a plain DTO, a value object or an
 entity are all equally valid rows. Nothing in the column asks the record what it
 is — `getStateFromRecord()` branches on `is_array()` alone.
+
+The string `action()` arm carries the same union for the same reason. Filament
+wraps a method name into a closure typed `?Model $record`; the port types it
+`object|array|null`, because the Invoker injects by name whatever
+`getTableRecord()` answered, and on the `records()` lane that is an array row —
+which a `?object` hint would meet with a `TypeError` out of the live action
+rather than a call.
 
 ### The record key setter admits an `int`
 

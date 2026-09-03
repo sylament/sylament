@@ -15,7 +15,7 @@ trait CanCallAction
     public function action(Closure|Action|string|null $action): static
     {
         if (is_string($action)) {
-            $action = static function (InteractsWithTable $liveComponent, ?object $record) use ($action): mixed {
+            $action = static function (InteractsWithTable $liveComponent, object|array|null $record) use ($action): mixed {
                 if ($record !== null) {
                     return $liveComponent->{$action}($record);
                 }

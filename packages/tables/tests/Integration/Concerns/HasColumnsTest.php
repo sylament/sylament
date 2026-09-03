@@ -8,6 +8,7 @@ use Doctrine\ORM\EntityManagerInterface;
 use LogicException;
 use Sylament\Tables\Tests\Fixtures\Doctrine\Entity\Song;
 use Sylament\Tables\Tests\Fixtures\Records\Format;
+use Sylament\Tables\Tests\Fixtures\Twig\Components\ArrayRecordActionsTable;
 use Sylament\Tables\Tests\Fixtures\Twig\Components\ColumnActionsTable;
 use Sylament\Tables\Tests\Fixtures\Twig\Components\EditableSongsTable;
 use Sylament\Tables\Tests\Fixtures\Twig\Components\TypeRefusalSongsTable;
@@ -43,6 +44,16 @@ function columnActionCalls(array $arguments): array
 
 it('binds the record and its key before evaluating the column closure', function (): void {
     expect(columnActionCalls(['name' => 'title', 'recordKey' => '2']))->toBe(['closure:Let Down:2']);
+});
+
+it('binds an array record before evaluating a string action', function (): void {
+    $host = test()->createLiveComponent(ArrayRecordActionsTable::class)
+        ->call('callTableColumnAction', ['name' => 'title', 'recordKey' => '2'])
+        ->component();
+
+    assert($host instanceof ArrayRecordActionsTable);
+
+    expect($host->calls)->toBe(['array:Let Down']);
 });
 
 it('refuses a record key the table does not carry', function (): void {

@@ -139,6 +139,14 @@ future action) pads it itself or the invariant is gone. `hydrateRows()` also
 normalises: whatever the bag held becomes a list of `key`/`value` pairs, so an
 index is always a position and a row always answers both cells.
 
+One consequence of registering the pad through `afterStateHydrated()` is that a
+consumer who calls that setter on a `KeyValue` **replaces** the pad rather than
+running beside it — the setter assigns, it does not append — and the field then
+rests on an empty bag whose first keystroke is the `Invalid model name` this
+section opens with. `Repeater` carries the identical exposure for
+`hydrateItems()`, so the shape is the house pattern rather than this field's
+choice; a consumer wanting both calls `hydrateRows()` from their own hook.
+
 `addable(false)` and the padded row coexist by design — the field still rests on
 one editable row, it just offers no way to add a second.
 

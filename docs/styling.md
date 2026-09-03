@@ -26,9 +26,10 @@ Consumers never need Tailwind installed.
    twins) is nested under that component's own class in its stylesheet (support's
    `fieldset.css`, schemas' `section.css`, tables' `.sy-ta-sr-only`), or published as
    a package-prefixed class of its own when more than one component in that package
-   needs it — an escape nothing shipped uses today, forms' `.sy-fo-sr-only` having
-   been the only class that ever earned it before it outgrew the tier. A utility more
-   than one *package* needs is support's, code-less, in its `utilities.css`
+   needs it — panels' `.sy-pa-skip-link` is the one class occupying that tier
+   today, emitted by both `Layout` and `SimpleLayout`; forms' `.sy-fo-sr-only`
+   held it too until a second package needed it and it moved down to support.
+   A utility more than one *package* needs is support's, code-less, in its `utilities.css`
    (`sy-sr-only`); a package-local twin is tolerated until a second package needs it,
    at which point it moves there.
 2. **Every component template's root element carries the bare `sy` marker class**

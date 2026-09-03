@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use Sylament\Panels\Controllers\PageController;
 use Sylament\Panels\Pages\Page;
+use Sylament\Panels\Tests\Fixtures\Pages\BadLayoutPage;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\RequestStack;
@@ -126,6 +127,41 @@ it('renders the notifications outlet in the document', function (): void {
     $crawler = $client->request('GET', '/admin');
 
     expect($crawler->filter('body > [data-controller~="sylament--notifications--notifications"]')->count())->toBe(1);
+});
+
+it('gives the shell main the panel default width class', function (): void {
+    $client = $this::getContainer()->get('test.client');
+    $client->request('GET', '/admin');
+
+    expect((string) $client->getResponse()->getContent())
+        ->toContain('<main id="sy-pa-main" class="sy-pa-main sy-width-7xl">');
+});
+
+it('gives the shell main the width a page declares, and the body its extra attributes', function (): void {
+    $client = $this::getContainer()->get('test.client');
+    $client->request('GET', '/probe/settings');
+
+    expect((string) $client->getResponse()->getContent())
+        ->toContain('<main id="sy-pa-main" class="sy-pa-main sy-width-4xl">')
+        ->toContain('<body data-probe-body="settings">');
+});
+
+it('emits a width that is no token as the page own class, with no ladder prefix', function (): void {
+    $client = $this::getContainer()->get('test.client');
+    $client->request('GET', '/probe/wide');
+
+    expect((string) $client->getResponse()->getContent())
+        ->toContain('<main id="sy-pa-main" class="sy-pa-main max-w-[42rem]">')
+        ->not->toContain('sy-width-');
+});
+
+it('refuses a page that names a layout the toolkit does not ship', function (): void {
+    $request = Request::create('/probe/bad-layout');
+    $request->attributes->set('_sylament_panel', 'probe');
+    $request->attributes->set('_sylament_page', BadLayoutPage::class);
+
+    expect(fn () => invokePageController($this::getContainer(), $request))
+        ->toThrow(LogicException::class, 'Nope');
 });
 
 it('refuses a request that names no panel', function (): void {

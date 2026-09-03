@@ -24,12 +24,21 @@ it('renders the full shell with stable landmarks', function (): void {
         ->toContain('href="#sy-pa-main"')
         ->toContain('<div class="sy sy-pa-topbar-ctn">')
         ->toContain('<nav id="sy-pa-topbar" class="sy-pa-topbar" aria-label="Topbar">')
-        ->toContain('<main id="sy-pa-main" class="sy-pa-main">')
+        ->toContain('<main id="sy-pa-main" class="sy-pa-main sy-width-7xl">')
         ->toContain('id="sy-pa-sidebar"')
         ->toContain('Demo Admin')
         ->toContain('<p>Body</p>')
         ->toContain('class="sy-pa-sidebar-overlay" data-action="click-&gt;sylament--panels--sidebar#close"')
         ->toMatch('/sy-pa-topbar-ctn.+<div class="sy-pa-layout">.+sy-pa-sidebar-overlay.+id="sy-pa-sidebar".+<div class="sy-pa-main-ctn">.+<main id="sy-pa-main"/s');
+});
+
+it('carries the width class the document resolved on the main element', function (): void {
+    $html = (string) $this->renderTwigComponent('SylamentPanels:Layout', [
+        'navigation' => [],
+        'maxContentWidthClass' => 'sy-width-4xl',
+    ], content: '<p>Body</p>');
+
+    expect($html)->toContain('<main id="sy-pa-main" class="sy-pa-main sy-width-4xl">');
 });
 
 it('renders the brand through the logo inside the topbar start slot', function (): void {

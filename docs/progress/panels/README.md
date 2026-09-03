@@ -1510,6 +1510,25 @@ without touching a template. Every value drops Filament's `panels::` prefix
 ([rename](../renames.md)); the constant names are Filament's, except the
 user-menu one, which Filament has no equivalent for.
 
+`Layout`'s `<main>` always carries a width class beside `sy-pa-main`. The
+controller resolves one value per request — a page's
+`getLayoutData()['maxContentWidth']`, else its `getMaxContentWidth()`, else the
+panel's (`Width::SevenExtraLarge` for the shell, `Width::Large` for a simple
+page) — and threads it through the `Document` as `maxContentWidthClass`. A
+`Width` case becomes `sy-width-<token>`; a string that is no token is emitted
+verbatim, Filament's escape hatch for a consumer's own class. The ladder is 26
+rules in `layout.css` nested under `.sy-pa-main, .sy-pa-simple-main`, and
+`.sy-pa-main` carries no `max-w-*` of its own, so the class is the single
+source. The `sy-width-*` name is shared with schemas' `sy-width-full`
+deliberately: that rule is compound-scoped under `.sy-sc-actions-ctn` and can
+never match a `<main>`. All 26 tokens compile under the installed Tailwind
+4.3.0 — `@apply container` expands to a base rule plus its five breakpoint
+rules, so the compiled sheet carries more `sy-width-` rules than there are
+tokens. Which shell wraps the page is the page's own `getLayout()`, read by
+`PageController`: only `SylamentPanels:Layout` and `SylamentPanels:SimpleLayout`
+ship, and any other value is a `LogicException` naming the page — a third shell
+is a `Document` template override, not a `getLayout()` value.
+
 What Filament's shell has and this does not, all todo:
 
 - Desktop collapse (the narrow icon-only rail) and the collapsed-state tooltips

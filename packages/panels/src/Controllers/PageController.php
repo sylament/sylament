@@ -8,6 +8,8 @@ use LogicException;
 use Psr\Container\ContainerInterface;
 use Sylament\Panels\CurrentPanel;
 use Sylament\Panels\Pages\Page;
+use Sylament\Panels\Pages\SimplePage;
+use Sylament\Support\Enums\Width;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Exception\HttpExceptionInterface;
@@ -44,10 +46,29 @@ final readonly class PageController
             throw new LogicException(sprintf('The page locator returned a non-page service for %s.', $pageClass));
         }
 
+        $layout = $page->getLayout();
+
+        if (! in_array($layout, [Page::LAYOUT, SimplePage::LAYOUT], true)) {
+            throw new LogicException(sprintf('The page %s names the layout "%s"; only %s and %s ship — a third layout is a Document template override.', $pageClass, $layout, Page::LAYOUT, SimplePage::LAYOUT));
+        }
+
+        $isSimple = $layout === SimplePage::LAYOUT;
+        $layoutData = $page->getLayoutData();
+        $declaredWidth = $layoutData['maxContentWidth'] ?? null;
+        $maxContentWidth = ($declaredWidth instanceof Width || is_string($declaredWidth) ? $declaredWidth : null)
+            ?? $page->getMaxContentWidth()
+            ?? ($isSimple
+                ? ($panel->getSimplePageMaxContentWidth() ?? Width::Large)
+                : ($panel->getMaxContentWidth() ?? Width::SevenExtraLarge));
+
         try {
             $document = $this->twig->render('@SylamentPanels/partials/Document/index.html.twig', [
                 'panel' => $panel,
                 'pageTitle' => $page->getTitle(),
+                'layout' => $layout,
+                'maxContentWidthClass' => $this->resolveMaxContentWidthClass($maxContentWidth),
+                'hasTopbar' => (bool) ($layoutData['hasTopbar'] ?? true),
+                'bodyAttributes' => $page->getExtraBodyAttributes(),
                 'componentName' => $pageClass::getComponentName(),
                 'componentProps' => $this->getComponentProps($request),
             ]);
@@ -58,6 +79,19 @@ final readonly class PageController
         }
 
         return new Response($document);
+    }
+
+    /**
+     * A token becomes its ladder class; a string that is no token is the
+     * consumer's own class, emitted as it is — Filament's escape hatch.
+     */
+    private function resolveMaxContentWidthClass(Width|string $width): string
+    {
+        if (is_string($width)) {
+            $width = Width::tryFrom($width) ?? $width;
+        }
+
+        return $width instanceof Width ? 'sy-width-' . $width->value : $width;
     }
 
     /**

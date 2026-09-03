@@ -23,19 +23,28 @@
             {% block importmap %}{{ importmap('app') }}{% endblock importmap %}
         {% endblock javascripts %}
     </head>
-    <body>
-        <twig:SylamentPanels:Layout
-            :navigation="panel.getNavigation"
-            :brandName="panel.getBrandName"
-            :brandLogo="panel.getBrandLogo"
-            :darkModeBrandLogo="panel.getDarkModeBrandLogo"
-            :brandLogoHeight="panel.getBrandLogoHeight"
-            :hasGlobalSearch="panel.isGlobalSearchEnabled"
-        >
-            <twig:block name="content">
-                {{ component(componentName, componentProps) }}
-            </twig:block>
-        </twig:SylamentPanels:Layout>
+    <body {{ attrs(bodyAttributes) }}>
+        {% if layout == 'SylamentPanels:SimpleLayout' %}
+            <twig:SylamentPanels:SimpleLayout :hasTopbar="hasTopbar" :maxContentWidthClass="maxContentWidthClass">
+                <twig:block name="content">
+                    {{ component(componentName, componentProps) }}
+                </twig:block>
+            </twig:SylamentPanels:SimpleLayout>
+        {% else %}
+            <twig:SylamentPanels:Layout
+                :navigation="panel.getNavigation"
+                :brandName="panel.getBrandName"
+                :brandLogo="panel.getBrandLogo"
+                :darkModeBrandLogo="panel.getDarkModeBrandLogo"
+                :brandLogoHeight="panel.getBrandLogoHeight"
+                :hasGlobalSearch="panel.isGlobalSearchEnabled"
+                :maxContentWidthClass="maxContentWidthClass"
+            >
+                <twig:block name="content">
+                    {{ component(componentName, componentProps) }}
+                </twig:block>
+            </twig:SylamentPanels:Layout>
+        {% endif %}
 
         <twig:SylamentNotifications:Notifications />
     </body>

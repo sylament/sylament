@@ -37,7 +37,8 @@ final class ArticleResource extends Resource
     {
         return $table
             ->columns([
-                TextColumn::make('title')->sortable()->searchable(),
+                TextColumn::make('title')->sortable()->searchable(isIndividual: true),
+                TextColumn::make('slug')->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('status'),
             ])
             ->paginated([5, 10])

@@ -14,6 +14,9 @@ use Sylament\Panels\Tests\Fixtures\Resources\RelationManagers\TaggedTasksRelatio
 use Sylament\Panels\Tests\Fixtures\Resources\RelationManagers\TasksRelationManager;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Component\DomCrawler\Crawler;
+use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\RequestStack;
+use Symfony\Component\HttpFoundation\Session\SessionInterface;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\UX\LiveComponent\Test\InteractsWithLiveComponents;
 
@@ -54,6 +57,28 @@ function seededProjectClient(): array
     $key = $project->getId() ?? throw new LogicException('The seeded project carries no identifier.');
 
     return [$client, $entityManager, (string) $key];
+}
+
+function projectKey(EntityManagerInterface $entityManager, string $name): string
+{
+    $project = $entityManager->getRepository(Project::class)->findOneBy(['name' => $name]);
+
+    expect($project)->toBeInstanceOf(Project::class);
+
+    return (string) $project?->getId();
+}
+
+/**
+ * A hand-built live component mounts in-process, off the request stack, so the
+ * remembered table state a page-embedded manager reads on every render is out
+ * of reach — this puts the client's own session back where the next mount looks.
+ */
+function pushSessionOnto(SessionInterface $session): void
+{
+    $request = new Request();
+    $request->setSession($session);
+
+    test()->getContainer()->get(RequestStack::class)->push($request);
 }
 
 function taskKey(EntityManagerInterface $entityManager, string $title): string
@@ -246,4 +271,35 @@ it('seeds a row action on a manager whose actions carry no url', function (): vo
     expect($crawler->filter('tbody .sy-ta-row a.sy-ta-col')->count())->toBe(0)
         ->and($cell->attr('data-live-action-param'))->toBe('mountAction')
         ->and($cell->attr('data-live-name-param'))->toBe('edit');
+});
+
+it('carries one remembered column state across two owners of one manager class', function (): void {
+    [$client, $entityManager, $key] = seededProjectClient();
+
+    $this->createLiveComponent(TasksRelationManager::class, ['ownerRecord' => $key, 'pageClass' => EditProject::class], client: $client)
+        ->call('applyTableColumnManager', ['state' => [
+            ['type' => 'column', 'name' => 'title', 'isToggled' => false, 'isToggledHiddenByDefault' => false],
+            ['type' => 'column', 'name' => 'position', 'isToggled' => true, 'isToggledHiddenByDefault' => null],
+        ]]);
+
+    $session = $client->getRequest()->getSession();
+
+    pushSessionOnto($session);
+
+    $crawler = $this->createLiveComponent(
+        TasksRelationManager::class,
+        ['ownerRecord' => projectKey($entityManager, 'Gemini'), 'pageClass' => EditProject::class],
+        client: $client,
+    )->render()->crawler();
+
+    $headers = $crawler->filter('section.sy-pa-relation-manager thead .sy-ta-header-cell')
+        ->each(fn (Crawler $cell): string => mb_trim($cell->text()));
+
+    // The key is the manager class alone — no owner in it — so hiding `title` on
+    // Apollo's tasks hides it on Gemini's, which is Filament's own semantics and
+    // what a second owner is here to pin. The one row is Gemini's own task, so
+    // the header this reads is the second manager's rather than the first's.
+    expect($session->get(sprintf('sylament.tables.%s_columns', md5(TasksRelationManager::class))))->toBeArray()
+        ->and($headers)->toBe(['Position'])
+        ->and($crawler->filter('tbody .sy-ta-row')->count())->toBe(1);
 });

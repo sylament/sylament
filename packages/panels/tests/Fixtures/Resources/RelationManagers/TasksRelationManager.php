@@ -35,7 +35,7 @@ final class TasksRelationManager extends RelationManager
     {
         return $table
             ->columns([
-                TextColumn::make('title'),
+                TextColumn::make('title')->toggleable(),
                 TextColumn::make('position'),
             ])
             ->headerActions([CreateAction::make()])

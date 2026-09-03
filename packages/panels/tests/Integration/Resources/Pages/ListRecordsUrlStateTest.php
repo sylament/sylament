@@ -74,6 +74,9 @@ it("maps every browsing prop of a routed list onto Filament's query-string names
 
     $crawler = $client->request('GET', '/admin/articles');
 
+    // Five, and the count is the assertion: a browsing prop the page does not
+    // map is absent rather than defaulted, which is what keeps the per-column
+    // search bag off the URL of every routed list.
     expect(urlStateQueryMapping($crawler, '.sy-pa-resource-list-records-page'))->toBe([
         'activeTab' => ['name' => 'tab'],
         'tableFilters' => ['name' => 'filters'],

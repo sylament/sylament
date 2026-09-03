@@ -1,0 +1,49 @@
+.sy-fo-key-value {
+    & .sy-fo-key-value-table-ctn {
+        @apply divide-y divide-gray-200 dark:divide-white/10;
+    }
+
+    & .sy-fo-key-value-table {
+        @apply w-full table-auto divide-y divide-gray-200 dark:divide-white/5;
+
+        & > thead {
+            & > tr {
+                & > th {
+                    @apply px-3 py-2 text-start text-sm font-medium text-gray-700 dark:text-gray-200;
+
+                    &.sy-fo-key-value-action-col {
+                        @apply w-9 p-0;
+                    }
+                }
+            }
+        }
+
+        & > tbody {
+            @apply divide-y divide-gray-200 dark:divide-white/5;
+
+            & > tr {
+                @apply divide-x divide-gray-200 rtl:divide-x-reverse dark:divide-white/5;
+
+                & > td {
+                    @apply w-1/2 p-0;
+
+                    &.sy-fo-key-value-action-col {
+                        @apply w-auto p-0.5;
+
+                        & .sy-fo-key-value-table-row-sortable-handle {
+                            @apply flex;
+                        }
+                    }
+
+                    & .sy-fo-input {
+                        @apply font-mono;
+                    }
+                }
+            }
+        }
+    }
+
+    & .sy-fo-key-value-add-action-ctn {
+        @apply flex justify-center px-3 py-2;
+    }
+}

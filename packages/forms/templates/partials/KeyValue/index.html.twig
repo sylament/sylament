@@ -1,0 +1,97 @@
+{% set keyValueController = 'sylament--forms--key-value' %}
+{% set sortableController = 'sylament--support--sortable' %}
+
+{% set isDisabled = component.isDisabled %}
+{% set hasReorderColumn = isReorderable and not isDisabled %}
+{% set hasActionsColumn = isDeletable and not isDisabled %}
+{% set hasAddAction = isAddable and not isDisabled %}
+
+{% set keyLabel = component.getKeyLabel %}
+{% set valueLabel = component.getValueLabel %}
+{% set keyPlaceholder = component.getKeyPlaceholder %}
+{% set valuePlaceholder = component.getValuePlaceholder %}
+{% set statePath = component.getStatePath %}
+
+{% set keyValueStimulus = stimulus_controller(keyValueController, {key: component.getKey}) %}
+{% set sortableStimulus = hasReorderColumn ? stimulus_controller(sortableController, {
+    animationDuration: animationDuration,
+})|stimulus_action(keyValueController, 'reorder', sortableController ~ ':end') : null %}
+
+<twig:SylamentForms:FieldWrapper :field="component" :labelAsHeading="true">
+    <twig:SylamentSupport:InputWrapper
+        class="sy-fo-key-value"
+        :disabled="isDisabled"
+        :valid="component.getErrorMessages is empty"
+    >
+        <div {{ attrs({class: 'sy-fo-key-value-table-ctn'}, keyValueStimulus) }}>
+            <table
+                    {{ attrs({
+                        class: 'sy-fo-key-value-table',
+                        id: component.getId,
+                        'aria-labelledby': component.getLabel is not null ? component.getId ~ '-label' : null,
+                    }) }}
+            >
+                <thead>
+                    <tr>
+                        {% if hasReorderColumn %}
+                            <th scope="col" class="sy-fo-key-value-action-col"><span class="sy-sr-only">Reorder</span></th>
+                        {% endif %}
+
+                        <th scope="col">{{ keyLabel }}</th>
+                        <th scope="col">{{ valueLabel }}</th>
+
+                        {% if hasActionsColumn %}
+                            <th scope="col" class="sy-fo-key-value-action-col"><span class="sy-sr-only">Actions</span></th>
+                        {% endif %}
+                    </tr>
+                </thead>
+
+                <tbody {{ attrs(sortableStimulus) }}>
+                    {% for row in rows %}
+                        <tr {{ attrs({'data-sortable-item': hasReorderColumn ? row.index : null}) }}>
+                            {% if hasReorderColumn %}
+                                <td class="sy-fo-key-value-action-col">
+                                    <div class="sy-fo-key-value-table-row-sortable-handle">{{ renderComponent(reorderAction) }}</div>
+                                </td>
+                            {% endif %}
+
+                            <td>
+                                <input {{ attrs({
+                                    class: 'sy-fo-input',
+                                    type: 'text',
+                                    'aria-label': keyLabel,
+                                    'data-model': component.getDataModel(statePath ~ '.' ~ row.index ~ '.key'),
+                                    value: row.key ?? '',
+                                    placeholder: keyPlaceholder ?: false,
+                                    disabled: not canEditKeys or isDisabled,
+                                }) }}>
+                            </td>
+
+                            <td>
+                                <input {{ attrs({
+                                    class: 'sy-fo-input',
+                                    type: 'text',
+                                    'aria-label': valueLabel,
+                                    'data-model': component.getDataModel(statePath ~ '.' ~ row.index ~ '.value'),
+                                    value: row.value ?? '',
+                                    placeholder: valuePlaceholder ?: false,
+                                    disabled: not canEditValues or isDisabled,
+                                }) }}>
+                            </td>
+
+                            {% if hasActionsColumn %}
+                                <td class="sy-fo-key-value-action-col">
+                                    {% if row.deleteAction %}{{ renderComponent(row.deleteAction) }}{% endif %}
+                                </td>
+                            {% endif %}
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+
+            {% if hasAddAction %}
+                <div class="sy-fo-key-value-add-action-ctn">{{ renderComponent(addAction) }}</div>
+            {% endif %}
+        </div>
+    </twig:SylamentSupport:InputWrapper>
+</twig:SylamentForms:FieldWrapper>

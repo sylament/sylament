@@ -21,6 +21,11 @@
         "fetch": "lazy",
         "enabled": true
       },
+      "key-value": {
+        "main": "dist/controllers/key_value_controller.js",
+        "fetch": "eager",
+        "enabled": true
+      },
       "repeater": {
         "main": "dist/controllers/repeater_controller.js",
         "fetch": "eager",

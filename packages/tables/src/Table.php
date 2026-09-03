@@ -22,6 +22,7 @@ use Sylament\Tables\Table\Concerns\CanSortRecords;
 use Sylament\Tables\Table\Concerns\HasActions;
 use Sylament\Tables\Table\Concerns\HasAggregateValues;
 use Sylament\Tables\Table\Concerns\HasBulkActions;
+use Sylament\Tables\Table\Concerns\HasColumnManager;
 use Sylament\Tables\Table\Concerns\HasColumns;
 use Sylament\Tables\Table\Concerns\HasEmptyState;
 use Sylament\Tables\Table\Concerns\HasFilterIndicators;
@@ -53,6 +54,7 @@ class Table extends ViewComponent
     use HasActions;
     use HasAggregateValues;
     use HasBulkActions;
+    use HasColumnManager;
     use HasColumns;
     use HasDefaultDataFormattingSettings;
     use HasEmptyState;

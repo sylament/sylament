@@ -6,6 +6,8 @@ namespace Sylament\Tables\Twig;
 
 class TablesIconAlias
 {
+    public const string ACTIONS_COLUMN_MANAGER = 'actions.column-manager';
+
     public const string ACTIONS_DISABLE_REORDERING = 'actions.disable-reordering';
 
     public const string ACTIONS_ENABLE_REORDERING = 'actions.enable-reordering';

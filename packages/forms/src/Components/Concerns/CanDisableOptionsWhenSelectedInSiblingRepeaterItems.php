@@ -57,10 +57,6 @@ trait CanDisableOptionsWhenSelectedInSiblingRepeaterItems
                         continue;
                     }
 
-                    // Both sides are strings: an option's value is an array key, so a
-                    // numeric one is an int, while the same value off the wire is the
-                    // string the browser submitted. Comparing the two strictly would
-                    // disable nothing at all on an int-keyed option map.
                     if ((string) $normalized === (string) $value) {
                         return true;
                     }

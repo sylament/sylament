@@ -21,7 +21,7 @@ Reference — the Filament source this is diffed against:
 ## Surface
 
 _Blocked by_ names what has to land first. _Detail_ links a permanent note in
-[Semantics](#semantics) or [Divergences](#divergences), or `—`.
+[Semantics](#semantics), or `—`.
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
@@ -31,7 +31,8 @@ _Blocked by_ names what has to land first. _Detail_ links a permanent note in
 | Enum and boolean sibling values compared by their option vocabulary | [`Concerns/CanDisableOptionsWhenSelectedInSiblingRepeaterItems.php`](../../../vendor/filament/forms/src/Components/Concerns/CanDisableOptionsWhenSelectedInSiblingRepeaterItems.php) | done | — | [semantics](#both-sides-are-normalised-and-then-compared-as-strings) |
 | The sibling path arithmetic | [`Concerns/CanFixIndistinctState.php`](../../../vendor/filament/forms/src/Components/Concerns/CanFixIndistinctState.php) | done | — | [diverges](can-fix-indistinct-state.md#the-five-sibling-facts-are-one-value-object-not-string-surgery) |
 
-Coverage: the installs and that all four fields compose it, by
+Coverage: the `distinct()` and `live()` installs, the predicate's presence and
+that all four fields compose it, by
 [`CanDisableOptionsWhenSelectedInSiblingRepeaterItemsTest`](../../../packages/forms/tests/Unit/Components/Concerns/CanDisableOptionsWhenSelectedInSiblingRepeaterItemsTest.php);
 the predicate itself — a sibling's value disabled and the others not, a value
 this item also holds left enabled, blank siblings disabling nothing, an enum

@@ -10,6 +10,7 @@ use Sylament\Forms\Components\Checkbox;
 use Sylament\Forms\Components\CheckboxList;
 use Sylament\Forms\Components\Repeater;
 use Sylament\Forms\Components\Select;
+use Sylament\Forms\Tests\Fixtures\Components\Concerns\OptionStatus;
 use Sylament\Schemas\Concerns\HasSchemas;
 use Sylament\Schemas\Contracts\InteractsWithSchemas;
 use Sylament\Schemas\Schema;
@@ -62,6 +63,7 @@ class IndistinctRepeaterForm implements InteractsWithActions, InteractsWithSchem
                 Repeater::make('rows')->components([
                     Checkbox::make('primary')->fixIndistinctState($this->isFixed),
                     Select::make('topic')->options(['a' => 'A', 'b' => 'B', 'c' => 'C'])->fixIndistinctState($this->isFixed),
+                    Select::make('status')->options(OptionStatus::class)->fixIndistinctState($this->isFixed),
                     CheckboxList::make('roles')->options(['a' => 'A', 'b' => 'B', 'c' => 'C'])->fixIndistinctState($this->isFixed),
                 ]),
             ]);

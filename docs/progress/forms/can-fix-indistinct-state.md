@@ -25,8 +25,8 @@ _Blocked by_ names what has to land first. _Detail_ links a permanent note in
 | --- | --- | --- | --- | --- |
 | `fixIndistinctState(bool\|Closure $condition = true)` | [`Concerns/CanFixIndistinctState.php`](../../../vendor/filament/forms/src/Components/Concerns/CanFixIndistinctState.php) | done | — | — |
 | The `distinct()` + `live(condition:)` installs | [`Concerns/CanFixIndistinctState.php`](../../../vendor/filament/forms/src/Components/Concerns/CanFixIndistinctState.php) | done | — | — |
-| The array arm — the picked values subtracted from a sibling selection, reindexed | [`Concerns/CanFixIndistinctState.php`](../../../vendor/filament/forms/src/Components/Concerns/CanFixIndistinctState.php) | done | — | [semantics](#the-array-arm-cascades-because-our-hooks-fire-for-every-changed-path) |
-| The scalar / bool arm — a matching sibling becomes `false` if it was `true`, else `null` | [`Concerns/CanFixIndistinctState.php`](../../../vendor/filament/forms/src/Components/Concerns/CanFixIndistinctState.php) | done | — | [semantics](#the-false-skip-comes-before-the-blank-test-and-nothing-can-observe-it) |
+| The array arm — the picked values subtracted from a sibling selection, reindexed | [`Concerns/CanFixIndistinctState.php`](../../../vendor/filament/forms/src/Components/Concerns/CanFixIndistinctState.php) | done | — | [semantics](#the-array-arm-cascades-because-our-hooks-fire-for-every-changed-path), [diverges](#the-comparison-reads-the-raw-state-not-the-cast-one) |
+| The scalar / bool arm — a matching sibling becomes `false` if it was `true`, else `null` | [`Concerns/CanFixIndistinctState.php`](../../../vendor/filament/forms/src/Components/Concerns/CanFixIndistinctState.php) | done | — | [semantics](#the-false-skip-comes-before-the-blank-test-and-nothing-can-observe-it), [diverges](#the-comparison-reads-the-raw-state-not-the-cast-one) |
 | The sibling path arithmetic | [`Concerns/CanFixIndistinctState.php`](../../../vendor/filament/forms/src/Components/Concerns/CanFixIndistinctState.php) | done | — | [diverges](#the-five-sibling-facts-are-one-value-object-not-string-surgery) |
 
 Coverage: the installs and the condition arm (literal and closure), and that all
@@ -40,8 +40,11 @@ against the
 fixture — one field per arm: the scalar clear and the untouched
 different-valued sibling, the ticked sibling flipping to `false` and the two
 unticked ones left alone, the array subtraction reindexed from zero, the
-three-item cascade pinned in both directions, the `blank()` guard, a `false`
-condition and a field outside any repeater. Item keys are read back off the
+three-item cascade pinned in both directions, an enum-backed field repaired by
+its backing value, a cleared value leaving its former twin alone, a `false`
+condition and a field outside any repeater. One case renders: the corrected
+sibling's `<select>` comes back with no `selected` option and its checkbox with
+no `checked` attribute, which is what the user actually sees. Item keys are read back off the
 mounted bag, never written into a test — a mount re-keys every item by uuid.
 
 ## Semantics
@@ -79,6 +82,13 @@ state can be `false` are `Checkbox` and `Toggle`, and their non-nullable
 orderings leave the same bag. The step is kept for vendor fidelity and for the
 day a boolean-valued field ships without that cast.
 
+The hook's opening `blank()` return is unobservable in exactly the same way, and
+for a plainer reason: every sibling that reaches the equality test is filled, so
+a blank subject matches none of them, and the array arm intersects against an
+empty picked list. It is a short-circuit, not a behaviour — the test named after
+it asserts what a reader can actually see, that clearing a value leaves the
+sibling which held it alone.
+
 ### An option value that is not a scalar takes no part in the subtraction
 
 The array arm compares through `array_diff()` / `array_intersect()`, which
@@ -90,6 +100,23 @@ an entry does not survive a repair of the sibling holding it.
 
 Deliberate deviations from Filament, and the reason each holds. Provisional ones
 say what would reverse them.
+
+### The comparison reads the raw state, not the cast one
+
+Filament hands the hook `$state` — the state a component's casts have already
+been applied to — and compares it against sibling values plucked straight out of
+the repeater's **raw** item bag. The two vocabularies agree only while a field
+has no state cast. Give one an enum and they part: `$state` is a `BackedEnum`
+instance while a sibling holds its backing string, so `'draft' !== Status::Draft`
+skips every sibling and the array arm's scalar filter drops the picked values
+altogether. The repair silently does nothing, and `distinct()` — which compares
+raw to raw — still refuses the submission the concern exists to prevent.
+
+Ours takes `$rawState` instead, so both sides of every comparison and every
+value written back speak the item bag's vocabulary. Nothing else moves: an
+uncast field sees the identical values it saw before, and the three arms are
+unchanged. An enum-backed field repaired by its backing value is the test that
+separates the two.
 
 ### The five sibling facts are one value object, not string surgery
 

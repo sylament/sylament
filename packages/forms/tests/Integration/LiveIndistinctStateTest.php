@@ -113,7 +113,9 @@ it('does not cascade back into an item the walk has already passed', function ()
         ->and($component->component()->data['rows'][$keys[2]]['roles'])->toBe(['a']);
 });
 
-it('returns on a blank picked value', function (): void {
+it('leaves the sibling that held a value alone when this item clears its own', function (): void {
+    // The `blank()` guard returns here, but nothing observes it: a blank subject
+    // matches no filled sibling, so the arms below would leave the same bag.
     [$component, $keys] = mountIndistinctRows([['topic' => 'a'], ['topic' => 'a']]);
 
     $component->set("data.rows.{$keys[1]}.topic", null);
@@ -125,11 +127,14 @@ it('repaints the corrected sibling in the rendered control', function (): void {
     [$component, $keys] = mountIndistinctRows([['topic' => 'a', 'primary' => true], ['topic' => null, 'primary' => false]]);
 
     $component->set("data.rows.{$keys[1]}.topic", 'a');
+    $component->set("data.rows.{$keys[1]}.primary", true);
 
     $crawler = $component->render()->crawler();
 
     expect($crawler->filter("select[data-model$=\"data.rows.{$keys[0]}.topic\"] option[selected]")->count())->toBe(0)
-        ->and($crawler->filter("select[data-model$=\"data.rows.{$keys[1]}.topic\"] option[selected]")->attr('value'))->toBe('a');
+        ->and($crawler->filter("select[data-model$=\"data.rows.{$keys[1]}.topic\"] option[selected]")->attr('value'))->toBe('a')
+        ->and($crawler->filter("input[data-model$=\"data.rows.{$keys[0]}.primary\"]")->attr('checked'))->toBeNull()
+        ->and($crawler->filter("input[data-model$=\"data.rows.{$keys[1]}.primary\"]")->attr('checked'))->not->toBeNull();
 });
 
 it('does nothing under a false condition', function (): void {
@@ -148,4 +153,13 @@ it('does nothing for a field outside any repeater', function (): void {
     expect($component->component()->data['loose'])->toBe('a')
         ->and($component->component()->data['rows'][$keys[0]]['topic'])->toBe('a')
         ->and($component->component()->data['rows'][$keys[1]]['topic'])->toBe('a');
+});
+
+it('clears an enum-backed value a sibling item already held', function (): void {
+    [$component, $keys] = mountIndistinctRows([['status' => 'draft'], ['status' => null]]);
+
+    $component->set("data.rows.{$keys[1]}.status", 'draft');
+
+    expect($component->component()->data['rows'][$keys[0]]['status'])->toBeNull()
+        ->and($component->component()->data['rows'][$keys[1]]['status'])->toBe('draft');
 });

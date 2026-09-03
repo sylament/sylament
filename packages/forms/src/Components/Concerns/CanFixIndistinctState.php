@@ -21,7 +21,8 @@ trait CanFixIndistinctState
      * same value. `distinct()` is the server-side refusal and `live(condition:)`
      * is what makes each pick a round trip; this hook is what edits the siblings.
      *
-     * The three arms are the picked value's PHP type. An array subtracts the
+     * The three arms are the picked value's PHP type, read raw so that both sides
+     * of the comparison speak the item bag's vocabulary. An array subtracts the
      * picked values from each sibling's own selection and reindexes it; `true`
      * becomes `false` in a sibling, because a checkbox that is not ticked is
      * still a value; anything else becomes `null`.
@@ -31,12 +32,12 @@ trait CanFixIndistinctState
         $this->distinct($condition);
         $this->live(condition: $condition);
 
-        $this->afterStateUpdated(static function (Field $component, mixed $state, Set $set) use ($condition): void {
+        $this->afterStateUpdated(static function (Field $component, mixed $rawState, Set $set) use ($condition): void {
             if (! $component->evaluate($condition)) {
                 return;
             }
 
-            if (blank($state)) {
+            if (blank($rawState)) {
                 return;
             }
 
@@ -60,13 +61,13 @@ trait CanFixIndistinctState
                 $siblingPath = "{$context->itemsPrefix}{$siblingKey}.{$context->fieldPath}";
                 $siblingValue = $accessor->getFromArray($siblingItem, $context->fieldPath);
 
-                if (is_array($state)) {
+                if (is_array($rawState)) {
                     if (! is_array($siblingValue)) {
                         continue;
                     }
 
                     $siblingOptionValues = array_filter($siblingValue, is_scalar(...));
-                    $pickedOptionValues = array_filter($state, is_scalar(...));
+                    $pickedOptionValues = array_filter($rawState, is_scalar(...));
 
                     if (array_intersect($siblingOptionValues, $pickedOptionValues) === []) {
                         continue;
@@ -77,10 +78,7 @@ trait CanFixIndistinctState
                     continue;
                 }
 
-                // `false` is skipped before the blank test, not after: `blank(false)` is
-                // false, so an unticked sibling would otherwise reach the equality test
-                // against an unticked subject and be written to null.
-                if ($siblingValue === false || blank($siblingValue) || $siblingValue !== $state) {
+                if ($siblingValue === false || blank($siblingValue) || $siblingValue !== $rawState) {
                     continue;
                 }
 

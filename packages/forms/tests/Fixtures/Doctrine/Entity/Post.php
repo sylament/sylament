@@ -6,6 +6,7 @@ namespace Sylament\Forms\Tests\Fixtures\Doctrine\Entity;
 
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
+use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Validator\Constraints as Assert;
 
@@ -22,6 +23,12 @@ class Post
 
     #[ORM\ManyToOne]
     private ?Author $author = null;
+
+    /**
+     * @var array<array-key, mixed>|null
+     */
+    #[ORM\Column(type: Types::JSON, nullable: true)]
+    private ?array $meta = null;
 
     /**
      * @var Collection<int, PostSection>
@@ -66,6 +73,22 @@ class Post
     public function setAuthor(?Author $author): void
     {
         $this->author = $author;
+    }
+
+    /**
+     * @return array<array-key, mixed>|null
+     */
+    public function getMeta(): ?array
+    {
+        return $this->meta;
+    }
+
+    /**
+     * @param array<array-key, mixed>|null $meta
+     */
+    public function setMeta(?array $meta): void
+    {
+        $this->meta = $meta;
     }
 
     /**

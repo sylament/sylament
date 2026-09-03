@@ -52,9 +52,10 @@ Reference — the Filament source this is diffed against:
 
 - [`forms/resources/css/components/`](../../../vendor/filament/forms/resources/css/components/)
   — the twenty per-component stylesheets: `checkbox-list.css`, `field.css`,
-  `file-upload.css`, `radio.css`, `repeater.css` and `toggle-buttons.css` ported
-  directly, `textarea.css` folded into `input.css`, `text-input.css`, `select.css`
-  and `date-time-picker.css` partly, the other ten unported
+  `file-upload.css`, `key-value.css`, `radio.css`, `repeater.css`,
+  `tags-input.css` and `toggle-buttons.css` ported directly, `textarea.css`
+  folded into `input.css`, `text-input.css`, `select.css` and
+  `date-time-picker.css` partly, the other eight unported
 - [`support/resources/css/components/input/`](../../../vendor/filament/support/resources/css/components/input/)
   — `index.css`, `radio.css` and `select.css`, the three control sources still
   ported into this tree, plus the `wrapper.css` chrome the port collapses into
@@ -88,19 +89,22 @@ _Blocked by_ names what unblocks the missing rules. _Detail_ carries a
 | [`checkbox-list.css` — the `.sy-fo-checkbox-list` option set, its search row and its no-results line](../../../packages/forms/assets/src/styles/components/checkbox-list.css) | [`components/checkbox-list.css`](../../../vendor/filament/forms/resources/css/components/checkbox-list.css) | done | — | [diverges](checkbox-list.md#the-control-class-is-the-existing-sy-fo-checkbox) |
 | `checkbox.css` — gone from this tree; the box, tick, dash and invalid arms are [support's `.sy-checkbox`](../../../packages/support/assets/src/styles/components/checkbox.css), which the two emitting templates carry beside their own `sy-fo-checkbox` hook | [`support/…/input/checkbox.css`](../../../vendor/filament/support/resources/css/components/input/checkbox.css) | done | — | [diverges](#the-checkbox-skin-moved-to-support-when-tables-became-its-second-consumer) |
 | [`date-time-picker.css` — its one native-control rule, ported into `input.css` as `.sy-fo-input::-webkit-datetime-edit`](../../../packages/forms/assets/src/styles/components/input.css) | [`components/date-time-picker.css`](../../../vendor/filament/forms/resources/css/components/date-time-picker.css) | in progress | the JS calendar vertical ([date-time-picker.md](date-time-picker.md#the-js-calendar-family-waits-on-a-js-vertical-of-its-own)) | [detail](#the-date-time-picker-stylesheet-is-one-native-rule-and-a-calendar-panel) |
-| [`field.css` — the `.sy-fo-field` wrapper grid, label column, content column and error list](../../../packages/forms/assets/src/styles/components/field.css) | [`components/field.css`](../../../vendor/filament/forms/resources/css/components/field.css) | in progress | schemas' `HasInlineLabel` · support's `HasVerticalAlignment` | [detail](#the-field-stylesheet-omits-the-leading-schema-un-grow) · [diverges](#field-css-is-flat-where-filament-nests) · [diverges](#sy-fo-sr-only-is-a-support-utility-authored-as-a-forms-component-class) |
+| [`field.css` — the `.sy-fo-field` wrapper grid, label column, content column and error list](../../../packages/forms/assets/src/styles/components/field.css) | [`components/field.css`](../../../vendor/filament/forms/resources/css/components/field.css) | in progress | schemas' `HasInlineLabel` · support's `HasVerticalAlignment` | [detail](#the-field-stylesheet-omits-the-leading-schema-un-grow) · [diverges](#field-css-is-flat-where-filament-nests) · [diverges](#most-screen-reader-markup-still-inlines-the-utility-instead-of-the-shared-class) |
 | [`file-upload.css` — vendor's root layout (the `flex flex-col gap-y-2` root, the `sy-align-*` arms, the avatar input container's width and the error message), the `.sy-fo-file-upload` wrapper's FilePond overrides, the two JS-built action anchors and the editor dialog's skin](../../../packages/forms/assets/src/styles/components/file-upload.css) | [`components/file-upload.css`](../../../vendor/filament/forms/resources/css/components/file-upload.css) | done | — | [diverges](#the-filepond-base-stylesheet-is-redistributed-scoped-by-the-build) · [diverges](#filepond--label-action-takes-the-link-colour-policy-not-vendors-hardcoded-shade) · [diverges](#the-download-and-open-action-anchors-are-the-ports-own) · [diverges](#the-dark-backdrop-arm-sits-in-an-variant-dark-block) |
 | `filepond.generated.css` — FilePond's own base stylesheet, rewritten under `.sy-fo-file-upload` by support's `scope-vendor-css.mjs` (generated, gitignored) | `filepond/dist/filepond.css` + `filepond-plugin-image-preview/dist/filepond-plugin-image-preview.css` + `filepond-plugin-image-edit/dist/filepond-plugin-image-edit.css` (npm, not Filament) | done | — | [diverges](#the-filepond-base-stylesheet-is-redistributed-scoped-by-the-build) |
 | `cropper.generated.css` — Cropper.js's own stylesheet, rewritten under `.sy-fo-file-upload-editor` by support's `scope-vendor-css.mjs` (generated, gitignored) | `cropperjs/dist/cropper.css` (npm, not Filament) | done | — | [diverges](#the-filepond-base-stylesheet-is-redistributed-scoped-by-the-build) |
 | [`fused-group.css` — the `.sy-fo-fused-group` ring, dividers and corner rules](../../../packages/forms/assets/src/styles/components/fused-group.css) | [`schemas/…/components/fused-group.css`](../../../vendor/filament/schemas/resources/css/components/fused-group.css) | done | — | [diverges](../schemas/styles.md#fused-group-css-was-ported-into-the-forms-package) · [semantics](fused-group.md#the-corner-rules-reach-through-two-elements-the-schema-partial-nests) |
-| [`input.css` — `.sy-fo-input`, the text control for `TextInput`, `Textarea` and the three pickers](../../../packages/forms/assets/src/styles/components/input.css) | [`support/…/input/index.css`](../../../vendor/filament/support/resources/css/components/input/index.css) + [`support/…/input/wrapper.css`](../../../vendor/filament/support/resources/css/components/input/wrapper.css) + [`components/textarea.css`](../../../vendor/filament/forms/resources/css/components/textarea.css) + [`components/date-time-picker.css`](../../../vendor/filament/forms/resources/css/components/date-time-picker.css) | in progress | an alignment setter | [detail](#the-input-and-select-stylesheets-stop-at-the-alignment-arms) · [diverges](#the-input-wrapper-invents-a-hover-ring) · [diverges](#the-textarea-rule-is-the-ports-own-because-nothing-autosizes) |
+| [`input.css` — `.sy-fo-input`, the text control for `TextInput`, `Textarea` and the three pickers](../../../packages/forms/assets/src/styles/components/input.css) | [`support/…/input/index.css`](../../../vendor/filament/support/resources/css/components/input/index.css) + [`support/…/input/wrapper.css`](../../../vendor/filament/support/resources/css/components/input/wrapper.css) + [`components/textarea.css`](../../../vendor/filament/forms/resources/css/components/textarea.css) + [`components/date-time-picker.css`](../../../vendor/filament/forms/resources/css/components/date-time-picker.css) | in progress | an alignment setter | [detail](#the-input-and-select-stylesheets-stop-at-the-alignment-arms) · [diverges](#the-input-wrapper-invents-a-hover-ring) · [diverges](#the-textarea-rule-is-the-ports-own-and-autosize-overrides-it) |
+| [`key-value.css` — the `.sy-fo-key-value` table skin, its two chrome columns and the add row](../../../packages/forms/assets/src/styles/components/key-value.css) | [`components/key-value.css`](../../../vendor/filament/forms/resources/css/components/key-value.css) | in progress | schemas' `HasInlineLabel` | [detail](key-value.md#the-inline-label-rule-waits-on-hasinlinelabel) |
 | [`radio.css` — the `.sy-fo-radio` option set and the `.sy-fo-radio-input` control](../../../packages/forms/assets/src/styles/components/radio.css) | [`components/radio.css`](../../../vendor/filament/forms/resources/css/components/radio.css) + [`support/…/input/radio.css`](../../../vendor/filament/support/resources/css/components/input/radio.css) | done | — | [diverges](#the-control-stylesheets-carry-forms-coded-names-for-support-tier-classes) · [diverges](radio.md#the-option-inputs-carry-aria-invalid-instead-of-a-fi-valid--fi-invalid-class-pair) |
 | [`repeater.css` — `.sy-fo-repeater`, `.sy-fo-simple-repeater` and `.sy-fo-table-repeater` item chrome](../../../packages/forms/assets/src/styles/components/repeater.css) | [`components/repeater.css`](../../../vendor/filament/forms/resources/css/components/repeater.css) | in progress | infolists | [detail](#the-repeater-stylesheet-waits-on-infolists-for-two-rules) · [diverges](#the-repeater-item-lists-take-supports-grid) |
 | [`select.css` — `.sy-fo-select`, the native control and its chevron, and the `.sy-fo-select-*` skin the JS control renders into](../../../packages/forms/assets/src/styles/components/select.css) | [`support/…/input/select.css`](../../../vendor/filament/support/resources/css/components/input/select.css) + [`support/…/input/wrapper.css`](../../../vendor/filament/support/resources/css/components/input/wrapper.css) | in progress | schemas' `HasInlineLabel` | [detail](#the-input-and-select-stylesheets-stop-at-the-alignment-arms) · [diverges](#the-input-wrapper-invents-a-hover-ring) · [diverges](#the-js-select-skin-is-filaments-on-the-ported-controls-container) |
+| [`tags-input.css` — the `.sy-fo-tags-input` chip container and its reorderable chips](../../../packages/forms/assets/src/styles/components/tags-input.css) | [`components/tags-input.css`](../../../vendor/filament/forms/resources/css/components/tags-input.css) | in progress | schemas' `HasInlineLabel` | [diverges](tags-input.md#the-alpine-data-object-becomes-a-stimulus-controller-over-a-cloned-twig-chip) · [diverges](tags-input.md#an-empty-list-keeps-the-container-and-drops-its-chrome) |
+| [`text-input.css` — the `.sy-fo-text-input` wrapper, the revealable input and the copy status region](../../../packages/forms/assets/src/styles/components/text-input.css) | [`components/text-input.css`](../../../vendor/filament/forms/resources/css/components/text-input.css) | in progress | — | [detail](#two-vendor-stylesheets-are-partly-rather-than-wholly-unported) |
 | [`toggle-buttons.css` — the `.sy-fo-toggle-buttons` option set and its hidden inputs](../../../packages/forms/assets/src/styles/components/toggle-buttons.css) | [`components/toggle-buttons.css`](../../../vendor/filament/forms/resources/css/components/toggle-buttons.css) | in progress | schemas' `HasInlineLabel` | [semantics](toggle-buttons.md#the-grouped-labels-must-stay-direct-children-of-the-group) · [semantics](toggle-buttons.md#the-selected-state-is-painted-from-the-sibling-input-in-both-variants) · [diverges](toggle-buttons.md#extraattributes-stays-on-the-field-wrapper) |
 | [`toggle.css` — the `.sy-fo-toggle` root, track, thumb and icon pair](../../../packages/forms/assets/src/styles/components/toggle.css) | [`support/…/components/toggle.css`](../../../vendor/filament/support/resources/css/components/toggle.css) | done | — | [diverges](toggle.md#the-toggle-is-a-styled-checkbox-not-a-button) · [diverges](toggle.md#the-icon-rules-select-by-name-where-filament-selects-by-position) · [diverges](toggle.md#the-two-colours-ride-on-two-elements) |
-| `text-input.css` / `select.css` — the rules no port carries | [`components/`](../../../vendor/filament/forms/resources/css/components/) | blocked | `revealable()` · schemas' `HasInlineLabel` | [detail](#two-vendor-stylesheets-are-partly-rather-than-wholly-unported) |
-| `builder.css` / `code-editor.css` / `color-picker.css` / `file-upload/filepond-plugin-media-preview.css` / `key-value.css` / `markdown-editor.css` / `modal-table-select.css` / `rich-editor.css` / `slider.css` / `tags-input.css` | [`components/`](../../../vendor/filament/forms/resources/css/components/) | blocked | Builder, CodeEditor, ColorPicker, the media-preview plugin, KeyValue, MarkdownEditor, ModalTableSelect, RichEditor, Slider, TagsInput | [detail](#the-ten-unported-forms-stylesheets) |
+| `select.css` — the two rules no port carries | [`components/`](../../../vendor/filament/forms/resources/css/components/) | blocked | schemas' `HasInlineLabel` | [detail](#two-vendor-stylesheets-are-partly-rather-than-wholly-unported) |
+| `builder.css` / `code-editor.css` / `color-picker.css` / `file-upload/filepond-plugin-media-preview.css` / `markdown-editor.css` / `modal-table-select.css` / `rich-editor.css` / `slider.css` | [`components/`](../../../vendor/filament/forms/resources/css/components/) | blocked | Builder, CodeEditor, ColorPicker, the media-preview plugin, MarkdownEditor, ModalTableSelect, RichEditor, Slider | [detail](#the-eight-unported-forms-stylesheets) |
 
 This table carries no [unaudited row](../README.md#an-unaudited-table-says-so):
 every one of the twenty stylesheets in
@@ -115,7 +119,7 @@ to support's audit.
 
 No test exercises CSS. The render tests assert that the class hooks these rules
 attach to (`sy-fo-field` and its label/content/error descendants,
-`sy-fo-field-label-inline-control`, `sy-fo-sr-only`, `sy-fo-input`,
+`sy-fo-field-label-inline-control`, `sy-sr-only`, `sy-fo-input`,
 `sy-fo-select`, `sy-fo-checkbox` beside the shared `sy-checkbox`, the six
 `sy-fo-toggle-*` classes, the
 `sy-fo-radio*` family, the `sy-fo-toggle-buttons*` trio with the `sy-btn-group`
@@ -225,14 +229,25 @@ onto the DOM a port of Filament's own select utility builds:
 
 ### Two vendor stylesheets are partly rather than wholly unported
 
-`text-input.css` holds two rules. `.fi-fo-text-input { @apply overflow-hidden }`
-is the text input's half of the pair named above — the element exists now, so it
-is a one-line class away rather than blocked, and it is unported only because
-nothing has clipped past the wrapper's corners here yet. The other,
-`& input.fi-revealable { @apply [&::-ms-reveal]:hidden }`, suppresses Edge's
-native password-reveal glyph for a field that ships its own reveal button —
-[`revealable()`](text-input.md) is **todo** there, blocked on the prebuilt
-`TextInput/Actions`, and the rule lands with it.
+`text-input.css` holds two rules, and one of them now ships.
+`& input.fi-revealable { @apply [&::-ms-reveal]:hidden }` suppresses Edge's
+native password-reveal glyph for a field that ships its own reveal button;
+[`revealable()`](text-input.md#a-revealable-input-is-rendered-as-a-password-server-side)
+landed with M3 · 9 and the rule came with it, as
+`& input.sy-revealable`, in forms'
+[`text-input.css`](../../../packages/forms/assets/src/styles/components/text-input.css)
+— which is why that sheet now has a row of its own above, beside the two
+`sy-revealed` visibility arms and the copy-confirmation region, neither of which
+vendor has a counterpart for.
+
+The other, `.fi-fo-text-input { @apply overflow-hidden }`, is still unported, and
+it is now a deliberate hold rather than an oversight: the copy confirmation is an
+absolutely-positioned `role="status"` span that sits *above* the wrapper box
+(`bottom-full`) and is always rendered, hidden only by `opacity` while `:empty`
+([detail](text-input.md#copy-writes-the-live-input-value-and-confirms-through-a-status-region)),
+so `overflow: hidden` on `.sy-fo-text-input` would clip it. Filament does not hit
+this because tippy portals its tooltip to the body. Porting the rule means moving
+the status region out of the wrapper first.
 
 Vendor's `select.css` holds two more. `.fi-fo-select .fi-hidden { @apply hidden }`
 can never match, for the hidden-placeholder reason above; and
@@ -263,17 +278,16 @@ the pseudo-element exists only on date and time inputs. Next step: the file
 appears when the calendar does, and this rule moves into it if the calendar
 brings a wrapper element with it.
 
-### The ten unported forms stylesheets
+### The eight unported forms stylesheets
 
-`builder.css`, `code-editor.css`, `color-picker.css`, `key-value.css`,
-`markdown-editor.css`, `modal-table-select.css`, `rich-editor.css`,
-`slider.css` and `tags-input.css` have no `sy-fo-*` counterpart. Each is
-**blocked** on its field — every one of those fields is **todo** in the
-[package README](README.md#components) — because the styling lands in the same
-change as the Twig template it targets and there is nothing to author against
-until then. Next step for each: port when its field does.
+`builder.css`, `code-editor.css`, `color-picker.css`, `markdown-editor.css`,
+`modal-table-select.css`, `rich-editor.css` and `slider.css` have no `sy-fo-*`
+counterpart. Each is **blocked** on its field — every one of those fields is
+**todo** in the [package README](README.md#components) — because the styling
+lands in the same change as the Twig template it targets and there is nothing to
+author against until then. Next step for each: port when its field does.
 
-The tenth is the odd one out: `file-upload/filepond-plugin-media-preview.css` is
+The eighth is the odd one out: `file-upload/filepond-plugin-media-preview.css` is
 nested under a stylesheet that *is* ported, and is blocked on the media-preview
 plugin rather than on a field — `FileUpload` ships with FilePond's core plus
 every plugin but this one: the two validators (`file-validate-size`,
@@ -381,33 +395,40 @@ rather than from this choice. Reverses by nesting the nine rules back under
 `.sy-fo-field`, which is a mechanical change whenever the specificity is wanted
 back.
 
-### `sy-fo-sr-only` is a support utility authored as a forms component class
+### Most screen-reader markup still inlines the utility instead of the shared class
 
 Filament's screen-reader class is `.fi-sr-only`, defined in
 [`support/resources/css/utilities.css`](../../../vendor/filament/support/resources/css/utilities.css)
-at line 453 and emitted from eight of its packages — forms' field wrapper,
-`Repeater`, `KeyValue` and `TagsInput`, tables' search field, icon column and
-summarizers, infolists' entry wrapper, and on through schemas, actions, support,
-notifications and the panel builder. It is a *utility* with no package code, so
-its port belongs in
-[`packages/support/assets/src/styles/utilities.css`](../../../packages/support/assets/src/styles/utilities.css)
-as `sy-sr-only`. The port instead defines `.sy-fo-sr-only` at the bottom of
-forms' `field.css`: wrong tier, wrong package code, and wrong kind of file.
+at line 453 and emitted from eight of its packages. Sylament's is
+[`.sy-sr-only`](../../../packages/support/assets/src/styles/utilities.css), filed
+the same way — a code-less utility in support, on the tier that lets any package
+name it. It was forms' `.sy-fo-sr-only` at the bottom of `field.css` until the
+field sweep that closed M3, when the new fields' live region and chrome headers
+made forms' own copy the wrong tier for the second time; the move renamed it and
+retargeted every reference (the field wrapper's four labels, the table repeater's
+three headers, the select control's status region, ten test assertions), and
+support's own
+[`CssScreenReaderUtilityTest`](../../../packages/support/tests/Architecture/CssScreenReaderUtilityTest.php)
+now holds the rule in place, since every emitter of it lives in another package.
 
-Nothing breaks today — its two emitters are both forms', the field wrapper and
-the `sylament--forms--select` controller's `role="status"` live region, so the
-class is always reachable where it is written — and the reason it is flagged
-rather than fixed is that relocating it is cross-package churn for no
-behavioural gain. What the misplacement actually costs shows up on the *second*
-consumer, and that consumer already exists: every other place in the port that
-needs the same effect writes `@apply sr-only` into a component rule of its own
-rather than reaching a shared class — panels'
-[`.sy-pa-skip-link`](../../../packages/panels/assets/src/styles/components/layout.css),
-schemas' `.sy-sc-section-label-hidden`, support's hidden `<legend>` and forms'
-own `.sy-fo-toggle-input`. So the port has four hand-inlined copies of a utility
-and one class that could have been it, filed where only forms can name it. Closing
-it is a move plus a rename, and the four inlined copies collapse onto it in the
-same change.
+What did not move with it is the rest of the port's screen-reader markup. Seven
+component rules across five packages still write `@apply sr-only` into a rule of
+their own rather than reaching the shared class: forms' `.sy-fo-toggle-input`,
+panels'
+[`.sy-pa-skip-link`](../../../packages/panels/assets/src/styles/components/layout.css)
+and `.sy-pa-global-search-label`, schemas' `.sy-sc-section-label-hidden`,
+`.sy-sc-wizard-header-step-label-hidden` and `.sy-sc-wizard-header-step-status`,
+and support's own hidden `<legend>` under `.sy-fieldset-label-hidden`. Each is one
+line, and each is a place a change to the utility has to be repeated by hand.
+Closing it is seven deletions plus seven class swaps in the emitting templates,
+with no behavioural change either way, which is why it stayed out of a sweep that
+had no reason to touch those templates.
+
+Tables'
+[`.sy-ta-sr-only`](../../../packages/tables/assets/src/styles/components/table.css)
+is the eighth copy and a different case: a *named* package-local twin nested under
+`.sy-ta-table`, which [styling.md rule 1](../../styling.md) tolerates until a
+second package needs it. It is listed here for completeness, not as work.
 
 ### The checkbox skin moved to support when tables became its second consumer
 
@@ -508,18 +529,21 @@ one place a reviewer reads them. Deepening the shade is not a fix; it would
 invent a dark hover Filament has no counterpart for on top of a light one it
 already has none for.
 
-### The textarea rule is the port's own, because nothing autosizes
+### The textarea rule is the port's own, and autosize overrides it
 
 `textarea.sy-fo-input { @apply min-h-20 resize-y }` ports nothing. Vendor's
 counterpart is `.fi-fo-textarea.fi-autosizable textarea { @apply resize-none }` —
 it sets no minimum height and *disables* the resize handle, because its textarea
-grows with its content under an Alpine autosize binding.
-[Autosize is not ported](textarea.md#autosize-is-not-ported), so disabling the
-handle would leave a fixed-height box the user cannot enlarge; `resize-y` hands
-that back to the platform and `min-h-20` gives the box a floor that is not one
-row. Both are inventions rather than translations, and both reverse when autosize
-lands: the rule becomes vendor's, gated on the same `sy-fo-*` class the autosize
-controller keys off.
+grows with its content. Ours keeps the handle on the default control:
+[autosize is opt-in](textarea.md#the-off-branchs-resize-mirror-is-not-ported), so
+without it a `resize-none` box would be a fixed height the user cannot enlarge;
+`resize-y` hands that back to the platform and `min-h-20` gives the box a floor
+that is not one row. Both are inventions rather than translations, and
+`autosize()` overrides both rather than reversing them:
+`.sy-fo-textarea.sy-autosizable textarea.sy-fo-input { @apply h-full min-h-0
+resize-none }` beats the shared rule on specificity in either emission order, so
+the two rules disagree with no declaration moving off the shared one
+([textarea.md](textarea.md#the-control-keeps-the-sy-fo-input-class-filaments-textarea-carries-none)).
 
 ### The repeater item lists take support's grid
 
@@ -666,9 +690,10 @@ written: the visible focus ring is `.sy-input-wrp`'s `focus-within:ring-2`, and
 the button is a real tab stop, so without this the UA paints a second ring on top
 of it.
 
-**`sy-fo-sr-only` is reused for the status region**, rather than a second copy of
-the utility — the same support-tier-class-under-a-forms-name case recorded
-[above](#sy-fo-sr-only-is-a-support-utility-authored-as-a-forms-component-class).
+**`sy-sr-only` is reused for the status region**, rather than a second copy of
+the utility — the controller writes support's shared class onto the live region
+it mints, which is the tier that class now sits on
+([above](#most-screen-reader-markup-still-inlines-the-utility-instead-of-the-shared-class)).
 
 **The selected-option arm moved down to support.** Vendor paints the highlighted
 option through the shared `.fi-dropdown-list-item.fi-selected`; the port emits

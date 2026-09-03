@@ -202,7 +202,10 @@ record it is rendering has no identifier — that is the throw. A `unique()`
 constraint asking "which row should I exclude from the probe?" has no bug at all
 — a create form's record is unflushed by definition, and the honest answer is
 "nothing to exclude", which is exactly what `null` means to
-[`UniqueValue`](../forms/can-be-validated.md).
+[`UniqueValue`](../forms/can-be-validated.md). M3 · 9 added a third caller on the
+same terms: `Select::relationship(…, ignoreRecord:)` reads this pair to drop one
+record from an option list, and an unflushed one drops nothing
+([select.md](../forms/select.md)).
 
 Only the empty-identifier arm moved. The composite-identifier refusal stays on
 `findRecordKey()`, so both callers still get it, and so does the "not a printable

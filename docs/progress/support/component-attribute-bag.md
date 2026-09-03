@@ -135,10 +135,40 @@ slots the Alpine bag between the extras and the field's own attributes, which is
 a precedence choice, not a capability). Against this bag the last difference goes
 too: a ported `extraAlpineAttributes()` landing on the same element would
 accumulate through the same `merge()` and render through the same `toHtml()`, and
-so emit **byte-identical** output to `extraInputAttributes()`. Whoever picks up
-that trait's **todo** row should weigh that first — it is the argument that the
-port would be shipping a synonym, and it holds whether or not the toolkit ever
-grows an Alpine-shaped surface to justify the name.
+so emit **byte-identical** output to `extraInputAttributes()`. That is the
+argument that settled the trait's row — the port would be shipping a synonym —
+and it is written up as a divergence of its own
+[below](#extra-alpine-attributes-are-not-ported).
+
+### Extra Alpine attributes are not ported
+
+Filament composes
+[`HasExtraAlpineAttributes`](../../../vendor/filament/support/src/Concerns/HasExtraAlpineAttributes.php)
+onto layout components and fields alike, letting a caller hang arbitrary `x-*`
+attributes on the rendered element. There is no Alpine here and the client wiring
+a component needs is its Stimulus controller, so the trait is **skipped**;
+`extraAttributes()` still passes anything a caller wants onto the same element.
+
+The second reason is this bag's, and it is why the decision is filed here rather
+than on any one component: against it the trait is a
+[synonym](#merge-drops-the-escape-and-appendable-value-machinery-and-does-not-deduplicate).
+It merges with `escape: false` exactly as
+[`HasExtraInputAttributes`](../forms/has-extra-input-attributes.md) does, so a
+ported `extraAlpineAttributes()` landing on the same element would accumulate
+through the same `merge()` and render through the same `toHtml()`, byte for byte.
+Porting it would ship a second name for one behaviour, and that holds whether or
+not the toolkit ever grows an Alpine-shaped surface to justify the name.
+
+Every consumer's row points here, support's own
+[`HasExtraAlpineAttributes` row](README.md) included.
+[`Section`](../schemas/section.md), [`Tabs`](../schemas/tabs.md) and
+[`Wizard`](../schemas/wizard.md) reached the same decision component by component
+before it had one home and keep their own divergences; the fields settled since —
+[`TextInput`](../forms/text-input.md), [`Textarea`](../forms/textarea.md),
+[`Toggle`](../forms/toggle.md), [`KeyValue`](../forms/key-value.md) and
+[`TagsInput`](../forms/tags-input.md) — link this heading instead. The
+[date pickers](../forms/date-time-picker.md) keep theirs too, the trait being one
+half of a wider Alpine-and-published-view gap there. Nothing reverses it.
 
 ### The bag renders its own `html_attr()`-faithful output
 

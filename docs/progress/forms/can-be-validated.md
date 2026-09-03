@@ -564,8 +564,12 @@ uuid-keyed repeater is one rename away from breaking that.
 
 Item-level error placement comes free, because the constraint sits on the item
 field's own path. `fixIndistinctState()` and
-`disableOptionsWhenSelectedInSiblingRepeaterItems()` are **not** in this epic;
-their rows name M3 · 9.
+`disableOptionsWhenSelectedInSiblingRepeaterItems()` landed with M3 · 9 and read
+the same arithmetic: the five values this builder derived inline moved to
+[`RepeaterSiblingContext`](can-fix-indistinct-state.md#the-five-sibling-facts-are-one-value-object-not-string-surgery)
+behind `ResolvesRepeaterSiblingContext`, which `Field` composes and all three
+consumers call. Semantics are unchanged — the extraction preserved every `null`
+return, and these tests are what characterized it.
 
 ### The format sugar is stock where a constraint fits, and first-party where none does
 
@@ -715,11 +719,12 @@ message, and the option fields' `Type('array')`-then-return arm already speaks f
 a non-array.
 
 Consumers: [`Select`](select.md), [`CheckboxList`](checkbox-list.md),
-[`ToggleButtons`](toggle-buttons.md) and [`BaseFileUpload`](file-upload.md).
+[`ToggleButtons`](toggle-buttons.md), [`TagsInput`](tags-input.md) and
+[`BaseFileUpload`](file-upload.md).
 `ToggleButtons` gets the **contract** as well as the trait, which fixes an upstream
 defect where its nested rules are silently dropped.
-[`FusedGroup`](fused-group.md) stays skipped — it is not a field —
-and `TagsInput` is M3 · 9's consumer. For a file field the `All` is a non-`File`
+[`FusedGroup`](fused-group.md) stays skipped — it is not a field — and
+[`TagsInput`](tags-input.md) joined the list with M3 · 9. For a file field the `All` is a non-`File`
 constraint and so stays on the collection set at save.
 
 Messages reach the nested members, which is a divergence in our favour: the

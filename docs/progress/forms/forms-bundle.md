@@ -35,6 +35,10 @@ _Detail_ carries a **detail** link to a [Details](#details) write-up, a
 | [`sylament--forms--select`](../../../packages/forms/assets/src/controllers/select_controller.ts) — the JS select control, a port of Filament's select utility ([`utils/select.ts`](../../../packages/forms/assets/src/utils/select.ts)) bound to the live host, plus the [`callSchemaComponentMethod`](../../../packages/schemas/assets/src/utils/schema_component_method.ts) helper it searches through, now imported from `@sylament/schemas` | [`resources/js/components/select.js`](../../../vendor/filament/forms/resources/js/components/select.js) + [`support/…/js/utilities/select.js`](../../../vendor/filament/support/resources/js/utilities/select.js) | done | — | [diverges](#the-select-controller-binds-a-port-of-filaments-select-utility-to-the-live-host) |
 | [`sylament--forms--repeater`](../../../packages/forms/assets/src/controllers/repeater_controller.ts) — the client half of the repeater's chrome: per-item collapse state (`data-collapsed`), collapse-all/expand-all, the validation `expand` reveal, and the bridge from support's drag control to the host's `reorder` action | [`Components/Repeater.php`](../../../vendor/filament/forms/src/Components/Repeater.php) (the embedded view's Alpine object) | done | — | [diverges](#the-repeater-controller-owns-the-items-collapse-state-and-bridges-the-drag-control-to-the-reorder-action) |
 | [`sylament--forms--file-upload`](../../../packages/forms/assets/src/controllers/file_upload_controller.ts) — FilePond 4.32 plus its eight plugins (`file-validate-size`, `file-validate-type`, `image-crop`, `image-edit`, `image-exif-orientation`, `image-preview`, `image-resize`, `image-transform`) and Cropper.js 1.6, all bundled; uploads ride the schemas seam ([`uploadSchemaComponentFile`](../../../packages/schemas/assets/src/utils/schema_component_method.ts)) and the three mutators ride `callSchemaComponentMethod`; its skin is [`file-upload.css`](../../../packages/forms/assets/src/styles/components/file-upload.css) over the scoped `filepond.generated.css` and `cropper.generated.css` | [`resources/js/components/file-upload.js`](../../../vendor/filament/forms/resources/js/components/file-upload.js) | done | — | [diverges](#the-file-upload-controller-bundles-filepond-and-is-the-only-lazy-controller) |
+| [`sylament--forms--key-value`](../../../packages/forms/assets/src/controllers/key_value_controller.ts) — the reorder bridge (support's drag control's `end` event → the host's `reorder` action) plus the capture-phase blur that keeps WebKit's unfocused button click from letting the morph restore a stale cell value | [`resources/js/components/key-value.js`](../../../vendor/filament/forms/resources/js/components/key-value.js) | done | — | [diverges](key-value.md#the-controller-is-a-reorder-bridge-and-a-focus-guard-not-a-row-store) |
+| [`sylament--forms--tags-input`](../../../packages/forms/assets/src/controllers/tags_input_controller.ts) — the chip list, client-owned behind `data-live-ignore` after the first paint: it clones a server-rendered `<template>` badge per tag, reconciles by value on every `render:finished`, and writes the array through the host's value store rather than any `data-model` | [`resources/js/components/tags-input.js`](../../../vendor/filament/forms/resources/js/components/tags-input.js) | done | — | [diverges](tags-input.md#the-alpine-data-object-becomes-a-stimulus-controller-over-a-cloned-twig-chip) |
+| [`sylament--forms--textarea`](../../../packages/forms/assets/src/controllers/textarea_controller.ts) — the autosize sizer: it grows the control on the `input` event bound from the template, floors at the initial height, re-measures on a `window` resize and once through an `IntersectionObserver`, and never measures a hidden control | [`resources/js/components/textarea.js`](../../../vendor/filament/forms/resources/js/components/textarea.js) | done | — | [semantics](textarea.md#the-sizer-grows-on-input-floors-at-the-initial-height-and-never-measures-a-hidden-control) · [diverges](textarea.md#only-the-keyboard-re-measures-a-server-set-state-change-does-not) |
+| [`sylament--forms--text-input`](../../../packages/forms/assets/src/controllers/text_input_controller.ts) — the client half of the text input's affix actions: `reveal()` / `conceal()` swap the input's `type` and toggle `sy-revealed` on the wrapper root, `copy()` writes the input's live value through a guarded `navigator.clipboard` and writes the confirmation into an always-rendered `role="status"` region for the action's duration parameter. Bound only on a field that is `revealable()` or `copyable()` | — | done | — | [diverges](text-input.md#copy-writes-the-live-input-value-and-confirms-through-a-status-region) |
 | `Make*` commands + stub publishing | [`configurePackage()`](../../../vendor/filament/forms/src/FormsServiceProvider.php) | todo | — | [detail](#make-commands--stub-publishing) |
 | Translations (`hasTranslations`) | [`configurePackage()`](../../../vendor/filament/forms/src/FormsServiceProvider.php) | todo | — | [detail](#translations) |
 | `Livewire::component('table-select', …)` | [`packageBooted()`](../../../vendor/filament/forms/src/FormsServiceProvider.php) | blocked | TableSelect field feature | [diverges](#livewire-specific-provider-responsibilities-are-dropped-not-ported) |
@@ -87,18 +91,31 @@ That registration now exists, which is what moves the row to **in progress**: it
 is the whole path for the package's built JS, and
 [`SylamentFormsBundleTest`](../../../packages/forms/tests/Integration/SylamentFormsBundleTest.php)
 pins it by resolving the built `checkbox-list` and `select` controllers through
-`AssetMapperInterface`. What is still partial is the **inventory** — three of the
+`AssetMapperInterface`. What is still partial is the **inventory** — six of the
 twelve are ported
 ([`checkbox-list`](checkbox-list.md#the-controller-is-the-only-behaviour-and-no-test-in-this-repo-runs-it),
-[`select`](#the-select-controller-binds-a-port-of-filaments-select-utility-to-the-live-host)
-and [`file-upload`](#the-file-upload-controller-bundles-filepond-and-is-the-only-lazy-controller))
-and the other nine belong to fields that do not exist here yet. The workspace's
-other controller,
+[`select`](#the-select-controller-binds-a-port-of-filaments-select-utility-to-the-live-host),
+[`file-upload`](#the-file-upload-controller-bundles-filepond-and-is-the-only-lazy-controller),
+and M3 · 9's
+[`key-value`](key-value.md#the-controller-is-a-reorder-bridge-and-a-focus-guard-not-a-row-store),
+[`tags-input`](tags-input.md#the-chip-list-is-client-owned-after-the-first-paint)
+and [`textarea`](textarea.md#the-sizer-grows-on-input-floors-at-the-initial-height-and-never-measures-a-hidden-control)).
+Of the six left, five belong to fields that do not exist here yet
+(`code-editor`, `color-picker`, `markdown-editor`, `rich-editor`, `slider`); the
+sixth, `date-time-picker`, belongs to a field that does, and waits with
+[the JS calendar](can-be-native.md#nativefalse-throws-rather-than-falling-back-to-the-native-control)
+rather than with its field. Two of the workspace's eight controllers are not
+among the twelve at all:
 [`repeater`](#the-repeater-controller-owns-the-items-collapse-state-and-bridges-the-drag-control-to-the-reorder-action),
-is not one of the twelve: Filament embeds the repeater's Alpine object in the
-component's own view rather than registering it as an asset. **Next step:**
-nothing bundle-side — each remaining controller ships with its field and needs
-no further wiring, since the path is registered once for the directory. The `select` assertion is the one that
+because Filament embeds the repeater's Alpine object in the component's own view
+rather than registering it as an asset, and
+[`text-input`](text-input.md#copy-writes-the-live-input-value-and-confirms-through-a-status-region),
+because Filament's reveal and copy are `x-data` on the field plus an
+`alpineClickHandler()` per action — so neither has a vendor counterpart in this
+inventory, and neither counts against the arithmetic above.
+**Next step:** nothing bundle-side — each remaining controller ships with its
+field and needs no further wiring, since the path is registered once for the
+directory. The `select` assertion is the one that
 depends on a committed artifact: the controller is a `BUNDLED_ENTRIES` build,
 so its `dist/controllers/select_controller.js` exists only when the rebuilt dist
 is committed, and `AssetMapperRepository::findLogicalPath()` answers `null` for

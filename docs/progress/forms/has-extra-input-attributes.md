@@ -5,8 +5,9 @@ for attributes on a field's **control element**, the sibling of `Field`'s
 [`HasExtraFieldWrapperAttributes`](field.md), which reaches the wrapper `<div>`
 instead. Every field that renders a control composes it — one control or one per
 option: `TextInput`, `Textarea`, `Select`, `Checkbox`, `Radio`,
-`ToggleButtons` and `CheckboxList` — Filament's own set among the ported fields
-— plus `Toggle`, which Filament pointedly leaves out and the port composes anyway
+`ToggleButtons`, `CheckboxList` and `TagsInput` — Filament's own set among the
+ported fields — plus `Toggle`, which Filament pointedly leaves out and the port
+composes anyway
 ([divergence](toggle.md#the-toggle-carries-extra-input-attributes-filaments-does-not)).
 [`Radio`](radio.md) is the first composer whose control is not singular, and it
 reaches **every** radio in the group rather than picking one; the trait itself is
@@ -47,9 +48,13 @@ _Blocked by_ names what has to land first. _Detail_ links a permanent note in
 Coverage: the empty default, the replace and merge arms, closure resolution
 through `evaluate()`, and the bag getter, by
 [`HasExtraInputAttributesTest`](../../../packages/forms/tests/Unit/Components/Concerns/HasExtraInputAttributesTest.php),
-which also pins that all eight fields compose it. That each template merges the
-extras onto the right element, and that they outrank what the field computes, is
-pinned per field by the `merges extra input attributes` case in
+which also pins that the eight fields named in its dataset compose it;
+[`TagsInput`](tags-input.md), M3 · 9's ninth composer, is pinned by a render case
+of its own instead
+([`TagsInputTest`](../../../packages/forms/tests/Integration/Components/TagsInputTest.php),
+_appends the extra input attributes without unbinding the controller_). That each
+template merges the extras onto the right element, and that they outrank what the
+field computes, is pinned per field by the `merges extra input attributes` case in
 [`TextInputTest`](../../../packages/forms/tests/Integration/Components/TextInputTest.php),
 [`TextareaTest`](../../../packages/forms/tests/Integration/Components/TextareaTest.php),
 [`SelectTest`](../../../packages/forms/tests/Integration/Components/SelectTest.php),
@@ -77,6 +82,10 @@ five of the seven fields it also composes the trait on: `TextInput`, `Textarea`,
 `Select`, `Radio` and `CheckboxList` each build the control's attributes
 as `$this->getExtraInputAttributeBag()->merge([…the field's own…])`, and a bag's
 `merge()` treats its argument as **defaults** — so the extras are what survives.
+[`Select`](select.md) and [`TagsInput`](tags-input.md) spell the same precedence
+Twig-side, `attrs()` taking the extras before the field's own attributes, with
+the Stimulus chain applied last on purpose so a caller's own `data-action`
+cannot unbind the controller.
 
 The other two invert it, and the port overrides both to the order above.
 [`Checkbox`](checkbox.md#the-checkboxs-extra-input-attributes-win-where-filaments-lose)

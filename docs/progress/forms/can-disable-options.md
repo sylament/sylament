@@ -93,8 +93,12 @@ Filament's `Contracts\CanDisableOptions` declares exactly one member,
 is
 [`CanDisableOptionsWhenSelectedInSiblingRepeaterItems`](../../../vendor/filament/forms/src/Components/Concerns/CanDisableOptionsWhenSelectedInSiblingRepeaterItems.php),
 which intersects `Component & CanDisableOptions` so a closure can call the setter
-on whatever field it is handed. That concern is unported — it needs the
-`Repeater` — so the setter has nothing here to type-check it.
+on whatever field it is handed. That concern
+[now ships](can-disable-options-when-selected-in-sibling-repeater-items.md), and
+its predicate calls no setter on the component it is handed — it reads
+`resolveRepeaterSiblingContext()` and
+[`normalizeOptionComparisonValue()`](has-options.md), both public — so the
+intersection hint Filament needs the write side for has no counterpart here.
 
 The port's
 [interface](../../../packages/forms/src/Components/Contracts/CanDisableOptions.php)

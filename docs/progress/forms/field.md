@@ -60,6 +60,7 @@ a concern's own file.
 | [`HasHelperText`](../../../packages/forms/src/Components/Concerns/HasHelperText.php) | [`Components/Concerns/HasHelperText.php`](../../../vendor/filament/forms/src/Components/Concerns/HasHelperText.php) | done | — | — |
 | [`HasHint`](../../../packages/forms/src/Components/Concerns/HasHint.php) | [`Components/Concerns/HasHint.php`](../../../vendor/filament/forms/src/Components/Concerns/HasHint.php) | done | — | [diverges](#setuphint-narrows-its-parameter-to-field), [diverges](#gethintactions-returns-a-list-not-a-gapped-array) |
 | [`HasPlaceholder`](../../../packages/forms/src/Components/Concerns/HasPlaceholder.php) | [`Components/Concerns/HasPlaceholder.php`](../../../vendor/filament/forms/src/Components/Concerns/HasPlaceholder.php) | done | — | [diverges](#hasplaceholder-is-composed-on-the-base-field) |
+| [`ResolvesRepeaterSiblingContext`](../../../packages/forms/src/Components/Concerns/ResolvesRepeaterSiblingContext.php) — no Filament concern of its own; the sibling arithmetic `distinct()` and the two repeater-sibling concerns share | [`Components/Concerns/CanFixIndistinctState.php`](../../../vendor/filament/forms/src/Components/Concerns/CanFixIndistinctState.php) | done | — | [diverges](can-fix-indistinct-state.md#the-five-sibling-facts-are-one-value-object-not-string-surgery) |
 | [`data-field-wrapper` on the wrapper root](../../../packages/forms/templates/components/FieldWrapper/index.html.twig) — the scroll target schemas' root controller reveals a validation error at | [`field-wrapper.blade.php`](../../../vendor/filament/forms/resources/views/components/field-wrapper.blade.php) · [`plain-field-wrapper.blade.php`](../../../vendor/filament/forms/resources/views/components/plain-field-wrapper.blade.php) | done | — | — |
 
 ## Semantics
@@ -222,6 +223,11 @@ accessibility addition of this port, not a translation, and it renders with a
 [`ComponentAttributeBag`](../support/component-attribute-bag.md) maps a boolean
 on an `aria-*` name to the strings `"true"` / `"false"` instead of dropping a
 false one.
+[`TagsInput`](tags-input.md#the-text-box-is-scratch-state-and-carries-no-data-model)
+is the one text-like control that renders none: its box holds the tag being typed
+rather than the field's value, so the invalid state rides the input wrapper's
+`sy-invalid` and the field wrapper's messages alone — which is also where
+Filament leaves it.
 
 The two classes the list renders under drop Filament's `-wrp-` segment —
 `.sy-fo-field-error-list` / `.sy-fo-field-error-message` for
@@ -365,6 +371,12 @@ anything further, a `tabindex` of `-1`),
 wrapper, never a route for a user-supplied value — so each of those five carries
 a `sy-fo-*-wrp` hook of its own into the port as it lands, and reading the
 parameter as a `ToggleButtons` quirk would silently cost the other four theirs.
+Two of the five landed with M3 · 9 and took **no** hook with them:
+[`TagsInput`](tags-input.md) and [`KeyValue`](key-value.md) each render inside the
+shared field wrapper with no extra element, because the one rule vendor's hook
+carries is inline-label padding, which waits on schemas' `HasInlineLabel` exactly
+as [`field.css` and `select.css`](styles.md#the-input-and-select-stylesheets-stop-at-the-alignment-arms)
+already do. The hook arrives with the rule, not before it.
 
 The port puts neither setter on an inner element: the
 [input wrapper now renders](#the-wrapper-owns-the-chrome-and-the-control-is-transparent)

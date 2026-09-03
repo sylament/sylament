@@ -578,7 +578,7 @@ fills the last one. The demo's table card is the live example, declaring
 The reorder and actions columns are conditional in their own right: the reorder
 header cell renders only with more than one item *and* some reorder surface on,
 and the actions header cell only when the row can carry an extra item action, a
-clone or a delete. Each header cell carries an `sy-fo-sr-only` label ("Reorder",
+clone or a delete. Each header cell carries an `sy-sr-only` label ("Reorder",
 "Actions") so the table is still readable to a screen reader. An item schema
 that contains anything other than a schema component — an `Action`, say — is
 refused with a `LogicException` naming the class, because there is no cell such

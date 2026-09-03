@@ -4,10 +4,19 @@
 `Sylament\Forms\Components\Contracts\HasAffixes` — the prefix/suffix surface of
 the text-like controls: a label, an icon (with its own colour), and any number
 of actions on either side of the input, plus the inline flag that decides
-whether each side sits inside the input wrapper's border or beside it. Three
-fields compose it — [`TextInput`](text-input.md), [`Select`](select.md) and
-[`DateTimePicker`](date-time-picker.md), the last passing it down to
-[`DatePicker`](date-picker.md) and [`TimePicker`](time-picker.md).
+whether each side sits inside the input wrapper's border or beside it. Four
+fields compose it — [`TextInput`](text-input.md), [`Select`](select.md),
+[`TagsInput`](tags-input.md) and [`DateTimePicker`](date-time-picker.md), the
+last passing it down to [`DatePicker`](date-picker.md) and
+[`TimePicker`](time-picker.md).
+
+Three prebuilt affix actions ship against it, all
+[`TextInput`](text-input.md)'s — `ShowPasswordAction`, `HidePasswordAction` and
+`CopyAction` — and it is `cacheSuffixActions()`'s `prepareAction()` that gives
+`CopyAction`'s `copyMessage()` / `copyMessageDuration()` closures their `state`
+injection. That state is the **field's own**, even inside a repeater item, since
+`prepareAction()` calls `schemaComponent()` and nothing else
+([detail](text-input.md#the-copy-message-closure-sees-the-render-time-state)).
 
 The contract extends schemas'
 [`HasAffixActions`](../schemas/has-actions.md#the-affix-contract-is-typed-as-a-name-keyed-map), which is what lets

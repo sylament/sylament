@@ -295,7 +295,8 @@ rather than rendered, so a no-JS page keeps a visible nav.
 
 ### Alpine-only surface is skipped, not deferred
 
-`HasExtraAlpineAttributes` (the trait's third "skip" in this trail) and the per-tab
+`HasExtraAlpineAttributes` (a skip the trail now settles in
+[one place](../support/component-attribute-bag.md#extra-alpine-attributes-are-not-ported)) and the per-tab
 `hiddenJs`/`visibleJs` visibility expressions have no meaning without Alpine: both exist to
 hand raw Alpine expressions to `x-bind`. The port's client-side visibility rules live in the
 Stimulus controller, and a hidden tab is filtered out server-side by

@@ -15,6 +15,8 @@
 {% set sortColumn = component.getSortColumn %}
 {% set sortDirection = component.getSortDirection %}
 {% set isSearchable = component.isSearchable %}
+{% set searchOnBlur = component.isSearchOnBlur %}
+{% set searchDebounceMs = component.getSearchDebounceMilliseconds %}
 {% set isFilterable = component.isFilterable %}
 {% set filtersTriggerVisible = isFilterable and component.hasFiltersTrigger %}
 {% set filtersDropdownVisible = isFilterable and component.hasFiltersDropdown %}
@@ -201,21 +203,11 @@
 
                 <div class="sy-ta-header-toolbar-end">
                     {% if isSearchable %}
-                        <label class="sy-ta-search-field">
-                            <twig:SylamentSupport:Icon
-                                icon="heroicons:magnifying-glass-20-solid"
-                                :alias="constant('Sylament\\Tables\\Twig\\TablesIconAlias::SEARCH_FIELD')"
-                            />
-                            <input
-                                type="search"
-                                class="sy-ta-search-input"
-                                autocomplete="off"
-                                maxlength="1000"
-                                placeholder="{{ component.getSearchPlaceholder ?? 'Search' }}"
-                                aria-label="Search"
-                                data-model="{{ component.isSearchOnBlur ? 'on(change)|tableSearch' : 'debounce(' ~ component.getSearchDebounceMilliseconds ~ ')|tableSearch' }}"
-                            >
-                        </label>
+                        <twig:SylamentTables:SearchField
+                            :placeholder="component.getSearchPlaceholder ?? 'Search'"
+                            :onBlur="searchOnBlur"
+                            :debounceMs="searchDebounceMs"
+                        />
                     {% endif %}
 
                     {% if filtersDropdownVisible %}

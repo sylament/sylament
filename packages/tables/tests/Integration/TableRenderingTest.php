@@ -154,6 +154,31 @@ it('renders the search field bound to tableSearch with the debounce', function (
         ->and($crawler->filter('.sy-ta-search-field > svg.sy-icon')->attr('class'))->toContain('sy-size-md');
 });
 
+it('keeps the toolbar field on the extracted component, unbound to a value', function (): void {
+    $crawler = new Crawler(browsableTableHtml());
+    $field = $crawler->filter('.sy-ta-header-toolbar-end > label.sy.sy-ta-search-field');
+    $input = $field->filter('input.sy-ta-search-input');
+
+    expect($field->count())->toBe(1)
+        ->and($input->attr('maxlength'))->toBe('1000')
+        ->and($input->attr('autocomplete'))->toBe('off')
+        ->and($input->attr('aria-label'))->toBe('Search')
+        ->and($input->attr('value'))->toBeNull();
+});
+
+it('binds the toolbar field on change rather than on a debounce for a table that asks', function (): void {
+    $crawler = new Crawler(renderTableHost(new TableHost(static fn (Table $table): Table => $table
+        ->records(fn (): array => [new Song('Airbag', 'OK Computer', id: 1)])
+        ->columns([TextColumn::make('title')->searchable()])
+        ->searchOnBlur()
+        ->searchPlaceholder('Find a song'))));
+
+    $input = $crawler->filter('.sy-ta-header-toolbar-end input.sy-ta-search-input');
+
+    expect($input->attr('data-model'))->toBe('on(change)|tableSearch')
+        ->and($input->attr('placeholder'))->toBe('Find a song');
+});
+
 it('renders the pagination footer with overview, gapped window, and per-page select', function (): void {
     $crawler = new Crawler(browsableTableHtml());
 

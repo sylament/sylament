@@ -34,7 +34,7 @@ deleted once the row is **done**; **diverges** → the permanent note in
 | [`callTableColumnAction(string $name, string $recordKey)` — run a column's `action()` closure for one record](../../../packages/tables/src/Concerns/HasColumns.php) | [`HasColumns::callTableColumnAction()`](../../../vendor/filament/tables/src/Concerns/HasColumns.php) | done | — | [diverges](#a-live-action-answers-nothing-so-the-return-value-is-dropped) · [detail](#the-hidden-column-gate-waits-on-column-visibility) |
 | [`updateTableColumnState(string $column, string $record, mixed $input)` — the editable columns' write-back](../../../packages/tables/src/Concerns/HasColumns.php) | [`HasColumns::updateTableColumnState()`](../../../vendor/filament/tables/src/Concerns/HasColumns.php) | done | — | [diverges](#a-live-action-answers-nothing-so-the-return-value-is-dropped) · [semantics](#a-json-null-input-arrives-as-null-without-a-declared-default) · [semantics](#the-action-binds-the-record-and-its-key-and-only-one-of-the-two-invalidations-is-observable) · [detail](#the-hidden-column-gate-waits-on-column-visibility) |
 | [`getTableColumnStateError()` + the request-scoped `$tableColumnStateErrors` bag](../../../packages/tables/src/Concerns/HasColumns.php) | — (Sylament-only, replacing Filament's client-held error) | done | — | [diverges](#the-refusal-is-request-scoped-and-server-rendered-where-filaments-lives-on-the-client) |
-| [`Columns\Concerns\CanUpdateState` — the column half of the write](../../../packages/tables/src/Columns/Concerns/CanUpdateState.php) | [`Columns\Concerns\CanUpdateState`](../../../vendor/filament/tables/src/Columns/Concerns/CanUpdateState.php) | done | — | [semantics](#the-write-goes-through-the-accessor-so-a-dotted-path-walks-the-to-one-chain) · [diverges](#an-array-record-throws-where-filament-writes-nothing) · [diverges](#the-write-is-not-authorization-checked) |
+| [`Columns\Concerns\CanUpdateState` — the column half of the write](../../../packages/tables/src/Columns/Concerns/CanUpdateState.php) | [`Columns\Concerns\CanUpdateState`](../../../vendor/filament/tables/src/Columns/Concerns/CanUpdateState.php) | done | — | [semantics](#the-write-goes-through-the-accessor-so-a-dotted-path-walks-the-to-one-chain) · [diverges](#an-array-record-throws-where-filament-writes-nothing) · [diverges](#the-pivot-column-arm-has-nothing-to-write-through) · [diverges](#the-write-is-not-authorization-checked) |
 | [`Columns\Concerns\CanBeValidated` — the column half of the refusal](../../../packages/tables/src/Columns/Concerns/CanBeValidated.php) | [`Columns\Concerns\CanBeValidated`](../../../vendor/filament/tables/src/Columns/Concerns/CanBeValidated.php) | done | — | [diverges](#validation-speaks-symfony-constraints-and-rules-is-not-ported) · [semantics](#a-record-type-that-rejects-null-seeds-a-presence-constraint) |
 | [`getClientState()` — the display state the cell root publishes](../../../packages/tables/src/Columns/Concerns/CanUpdateState.php) | — (Sylament-only, for [the repaint](#the-cell-repaints-from-the-root-because-a-touched-control-is-pinned-through-every-morph)) | done | — | [detail](#the-cell-repaints-from-the-root-because-a-touched-control-is-pinned-through-every-morph) |
 | `callTableColumnMethod()` — dispatch to an `#[ExposedLivewireMethod]` on a column | [`HasColumns::callTableColumnMethod()`](../../../vendor/filament/tables/src/Concerns/HasColumns.php) | blocked | the select-engine promotion ([forms-bundle.md](../forms/forms-bundle.md#the-select-controller-binds-a-port-of-filaments-select-utility-to-the-live-host)) | Its only Filament consumer is `SelectColumn`'s searchable arm, which ships native-only |
@@ -171,6 +171,23 @@ edit is worse than saying so:
 
 `updateStateUsing()` is the escape, and it is checked first, so the array lane is
 editable the moment the application says how.
+
+### The pivot-column arm has nothing to write through
+
+Filament's `updateState()` carries a third target beside "the record" and "the
+far side of a to-one relationship": when the **table** is scoped to a
+`BelongsToMany` and the column names one of that relation's pivot columns, the
+write lands on the pivot row rather than on either entity
+(`$record->getRelationValue($tableRelationship->getPivotAccessor())`). That arm
+is skipped, and the reason is structural rather than a judgment. Eloquent's
+`BelongsToMany` hands back a pivot **model** with its own attributes, which is
+what makes it a write target; Doctrine's many-to-many is a join table with no
+entity behind it, so
+[`Table::relationship()`](table.md#the-relationship-query-is-the-base-query-rooted-at-the-target)
+roots its query at the *target* entity and there is no third object to address.
+An application that wants columns on the join models it as an entity in its own
+right — Doctrine's own advice — at which point the association is two to-manys
+and the pivot is an ordinary record the dotted path already reaches.
 
 ### The write is not authorization-checked
 

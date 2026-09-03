@@ -493,6 +493,19 @@ unconditionally by `src/` — the test the
 `support`, `doctrine/orm` and its own Symfony deps, and nothing in forms
 references tables.
 
+The column catalog widened what that `require` buys, from a PHP symbol to a set
+of **CSS classes**: the four editable columns render their controls inside
+support's `InputWrapper` wearing forms' own `sy-fo-toggle*`, `sy-fo-input` and
+`sy-fo-select` skins rather than restating them, which is why
+`toggle-column.css`, `text-input-column.css` and `select-column.css` are seven
+to sixteen lines each. Reaching across a hard dependency for a class is not a
+package-boundary break — the styling contract's own test is whether the emitting
+package could be absent, and forms cannot be — but hoisting those three skins
+into support under code-less names, the way `checkbox.css` already went, is the
+cleaner end state and stays a follow-up, because it would touch forms files this
+epic deliberately left alone
+([forms/styles.md](../forms/styles.md#the-checkbox-skin-moved-to-support-when-tables-became-its-second-consumer)).
+
 The test-kernel half rides along: `tests/Fixtures/Kernel.php` registers
 `SylamentFormsBundle`, without which a filter form cannot be built in the
 Integration suite at all — the same trap schemas' kernel already documents. Two

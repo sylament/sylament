@@ -425,6 +425,21 @@ no package code being [styling.md rule 1](../../styling.md)'s own wording. The
 same escalation `InputWrapper` made one component earlier, and Filament's own
 layering restored.
 
+Three sibling skins have **not** made that move, and their second consumer has
+now arrived. The column catalog (M4 · 4) renders tables' editable cells inside
+forms' own classes — `sy-fo-toggle*` on
+[`ToggleColumn`](../tables/toggle-column.md), `sy-fo-input` on
+[`TextInputColumn`](../tables/text-input-column.md) and `sy-fo-select` on
+[`SelectColumn`](../tables/select-column.md), each inside support's
+`InputWrapper` — which is a class reuse across a hard dependency (tables
+requires forms) rather than a package-boundary break, and deliberately not the
+escalation above: the hoist would touch three forms stylesheets and every
+template that emits them, which are M3 · 9's files. So the escape clause is
+**owed** on all three and not yet taken, and the note stands here rather than in
+tables so the next reader of *this* tree finds it. Taking it means moving
+`toggle.css`, `input.css` and `select.css`'s control halves into support under
+code-less names, the way `checkbox.css` went.
+
 `sy-fo-checkbox` did **not** go with it. Both emitting templates —
 [`Checkbox`](../../../packages/forms/templates/partials/Checkbox/index.html.twig)
 and

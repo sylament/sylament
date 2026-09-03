@@ -273,6 +273,10 @@
             @apply text-sm leading-6 text-gray-400 dark:text-gray-500;
         }
 
+        &.sy-ta-individual-search-cell {
+            @apply min-w-48 px-3 py-2;
+        }
+
         &:has(.sy-ta-actions) {
             @apply px-3 py-4 whitespace-nowrap first-of-type:ps-4 last-of-type:pe-4 sm:first-of-type:ps-6 sm:last-of-type:pe-6;
         }

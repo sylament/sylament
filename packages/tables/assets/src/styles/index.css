@@ -7,6 +7,7 @@
 @import './components/header-toolbar.css' layer(components);
 @import './components/icon-column.css' layer(components);
 @import './components/image-column.css' layer(components);
+@import './components/search-field.css' layer(components);
 @import './components/select-column.css' layer(components);
 @import './components/selection.css' layer(components);
 @import './components/table.css' layer(components);

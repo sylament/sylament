@@ -1,0 +1,19 @@
+.sy-fo-text-input {
+    @apply relative;
+
+    & input.sy-revealable {
+        @apply [&::-ms-reveal]:hidden;
+    }
+
+    &:not(.sy-revealed) .sy-fo-text-input-hide-password {
+        @apply hidden;
+    }
+
+    &.sy-revealed .sy-fo-text-input-show-password {
+        @apply hidden;
+    }
+
+    & .sy-fo-text-input-copy-message {
+        @apply pointer-events-none absolute end-0 bottom-full z-10 mb-1 rounded-md bg-gray-950 px-2 py-1 text-xs whitespace-nowrap text-white shadow-sm dark:bg-white dark:text-gray-950;
+    }
+}

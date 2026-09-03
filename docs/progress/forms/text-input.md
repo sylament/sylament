@@ -1,16 +1,21 @@
 # TextInput (forms)
 
 `Sylament\Forms\Components\TextInput` — the single-line text field, extending
-[`Field`](../../../packages/forms/src/Components/Field.php). An early subset of
+[`Field`](../../../packages/forms/src/Components/Field.php). Most of
 Filament's `TextInput`: the type sugar
 (`type`/`email`/`integer`/`numeric`/`password`/`tel`/`url`), its
 `getType`/`getInputMode` derivation, length constraints via the shared
 [`CanBeLengthConstrained`](can-be-length-constrained.md) concern, the
 `maxValue()` / `minValue()` magnitude bounds, the `Email` / numeric `Type` /
 integer and tel `Regex` / `Url` / comparison validation arms that sugar
-contributes to [`CanBeValidated`](can-be-validated.md), and the `step` interval
-`numeric()` and `integer()` seed. The affix/mask/copy/reveal/state-cast surface
-is not ported yet.
+contributes to [`CanBeValidated`](can-be-validated.md), the `step` interval
+`numeric()` and `integer()` seed, the affix chrome, the `revealable()` /
+`copyable()` affix actions with their Stimulus controller, `currentPassword()`
+over Symfony's `UserPassword`, and the trim/strip state casts. Two rows are
+still open: `mask()`, which waits on
+[a masking-engine decision](#input-masking-waits-on-an-engine-decision-and-rawjs-is-not-it),
+and the `NumberStateCast` arm of `getDefaultStateCasts()`, which waits on
+schemas' cast — which is why the field is **in progress** rather than done.
 
 Two concerns this file used to fold have left it: `HasStep` and
 `HasDatalistOptions` are [`DateTimePicker`](date-time-picker.md)'s too now, so
@@ -47,11 +52,16 @@ _Detail_ links a permanent note in [Semantics](#semantics) /
 | [`integer()` / `isInteger()`](../../../packages/forms/src/Components/TextInput.php) | [`TextInput.php`](../../../vendor/filament/forms/src/Components/TextInput.php) | done | — | [semantics](#integer-delegates-to-numeric-so-both-arms-ship-and-the-step-order-matters) · [diverges](#integer-validates-with-a-regex-not-a-type-constraint) · [diverges](#numeric-seeds-the-step-through-isnumeric-not-the-captured-condition) |
 | [`tel()` / `telRegex()` / `isTel()`](../../../packages/forms/src/Components/TextInput.php) | [`TextInput.php`](../../../vendor/filament/forms/src/Components/TextInput.php) | done | — | [diverges](#tel-writes-the-shared-regex-slot) |
 | [`url()` / `isUrl()`](../../../packages/forms/src/Components/TextInput.php) | [`TextInput.php`](../../../vendor/filament/forms/src/Components/TextInput.php) | done | — | [diverges](#the-type-sugar-constraint-arms-live-in-an-override-not-in-the-setters) |
-| `currentPassword()` | [`TextInput.php`](../../../vendor/filament/forms/src/Components/TextInput.php) | todo | authentication layer | — |
+| [`currentPassword()`](../../../packages/forms/src/Components/TextInput.php) | [`TextInput.php`](../../../vendor/filament/forms/src/Components/TextInput.php) | done | — | [semantics](#currentpassword-names-security-core-while-the-validator-is-securitybundles) · [diverges](#currentpassword-drops-filaments-guard-argument) |
 | [`maxValue()` / `minValue()` / `getMaxValue()` / `getMinValue()`](../../../packages/forms/src/Components/TextInput.php) | [`TextInput.php`](../../../vendor/filament/forms/src/Components/TextInput.php) | done | — | [diverges](#the-value-bounds-are-comparison-constraints-not-laravels-min-and-max) |
-| `mask()` / `getMask()` | [`TextInput.php`](../../../vendor/filament/forms/src/Components/TextInput.php) | todo | `RawJs` | — |
-| `revealable()` / `isPasswordRevealable()` | [`TextInput.php`](../../../vendor/filament/forms/src/Components/TextInput.php) | todo | `TextInput/Actions` | — |
-| `copyable()` / `isCopyable()` | [`TextInput.php`](../../../vendor/filament/forms/src/Components/TextInput.php) | todo | `TextInput/Actions` | — |
+| `mask()` / `getMask()` | [`TextInput.php`](../../../vendor/filament/forms/src/Components/TextInput.php) | blocked | a masking-engine decision | [diverges](#input-masking-waits-on-an-engine-decision-and-rawjs-is-not-it) |
+| [`revealable()` / `isPasswordRevealable()`](../../../packages/forms/src/Components/TextInput.php) | [`TextInput.php`](../../../vendor/filament/forms/src/Components/TextInput.php) | done | — | [semantics](#both-reveal-buttons-render-and-css-hides-the-inapplicable-one) · [diverges](#a-revealable-input-is-rendered-as-a-password-server-side) |
+| [`copyable()` / `isCopyable()`](../../../packages/forms/src/Components/TextInput.php) | [`TextInput.php`](../../../vendor/filament/forms/src/Components/TextInput.php) | done | — | [semantics](#the-copy-message-closure-sees-the-render-time-state) · [diverges](#copy-writes-the-live-input-value-and-confirms-through-a-status-region) |
+| [`TextInput\Actions\ShowPasswordAction`](../../../packages/forms/src/Components/TextInput/Actions/ShowPasswordAction.php) | [`TextInput/Actions/ShowPasswordAction.php`](../../../vendor/filament/forms/src/Components/TextInput/Actions/ShowPasswordAction.php) | done | — | [semantics](#the-affix-actions-resolve-their-own-icons) · [diverges](#a-revealable-input-is-rendered-as-a-password-server-side) |
+| [`TextInput\Actions\HidePasswordAction`](../../../packages/forms/src/Components/TextInput/Actions/HidePasswordAction.php) | [`TextInput/Actions/HidePasswordAction.php`](../../../vendor/filament/forms/src/Components/TextInput/Actions/HidePasswordAction.php) | done | — | [semantics](#the-affix-actions-resolve-their-own-icons) · [diverges](#a-revealable-input-is-rendered-as-a-password-server-side) |
+| [`TextInput\Actions\CopyAction`](../../../packages/forms/src/Components/TextInput/Actions/CopyAction.php) | [`TextInput/Actions/CopyAction.php`](../../../vendor/filament/forms/src/Components/TextInput/Actions/CopyAction.php) | done | — | [semantics](#the-affix-actions-resolve-their-own-icons) · [diverges](#copy-writes-the-live-input-value-and-confirms-through-a-status-region) |
+| [`CopyAction::copyMessage()` / `getCopyMessage()`](../../../packages/forms/src/Components/TextInput/Actions/CopyAction.php) | [`TextInput/Actions/CopyAction.php`](../../../vendor/filament/forms/src/Components/TextInput/Actions/CopyAction.php) | done | — | [semantics](#the-copy-message-closure-sees-the-render-time-state) |
+| [`CopyAction::copyMessageDuration()` / `getCopyMessageDuration()`](../../../packages/forms/src/Components/TextInput/Actions/CopyAction.php) | [`TextInput/Actions/CopyAction.php`](../../../vendor/filament/forms/src/Components/TextInput/Actions/CopyAction.php) | done | — | [semantics](#the-copy-message-closure-sees-the-render-time-state) |
 | [`HasStep`](../../../packages/forms/src/Components/Concerns/HasStep.php) | [`Concerns/HasStep.php`](../../../vendor/filament/forms/src/Components/Concerns/HasStep.php) | done | — | [detail](has-step.md) |
 | [`HasAffixes`](../../../packages/forms/src/Components/Concerns/HasAffixes.php) (concern) | [`Concerns/HasAffixes.php`](../../../vendor/filament/forms/src/Components/Concerns/HasAffixes.php) | done | — | [detail](has-affixes.md) |
 | [`HasDatalistOptions`](../../../packages/forms/src/Components/Concerns/HasDatalistOptions.php) | [`Concerns/HasDatalistOptions.php`](../../../vendor/filament/forms/src/Components/Concerns/HasDatalistOptions.php) | done | — | [detail](has-datalist-options.md) |
@@ -60,8 +70,11 @@ _Detail_ links a permanent note in [Semantics](#semantics) /
 | [`CanBeAutocompleted`](../../../packages/forms/src/Components/Concerns/CanBeAutocompleted.php) | [`Concerns/CanBeAutocompleted.php`](../../../vendor/filament/forms/src/Components/Concerns/CanBeAutocompleted.php) | done | — | [detail](can-be-autocompleted.md) |
 | [`CanBeReadOnly`](../../../packages/forms/src/Components/Concerns/CanBeReadOnly.php) | [`Concerns/CanBeReadOnly.php`](../../../vendor/filament/forms/src/Components/Concerns/CanBeReadOnly.php) | done | — | [detail](can-be-read-only.md) |
 | [`HasExtraInputAttributes`](../../../packages/forms/src/Components/Concerns/HasExtraInputAttributes.php) | [`Concerns/HasExtraInputAttributes.php`](../../../vendor/filament/forms/src/Components/Concerns/HasExtraInputAttributes.php) | done | — | [detail](has-extra-input-attributes.md) |
-| `HasExtraAlpineAttributes` (concern) | [`support/Concerns/HasExtraAlpineAttributes.php`](../../../vendor/filament/support/src/Concerns/HasExtraAlpineAttributes.php) | todo | — | — |
-| State casts + trim/strip (`getDefaultStateCasts`, `mutate*State`) | [`TextInput.php`](../../../vendor/filament/forms/src/Components/TextInput.php) | todo | schemas state-cast surface | — |
+| `HasExtraAlpineAttributes` (concern) | [`support/Concerns/HasExtraAlpineAttributes.php`](../../../vendor/filament/support/src/Concerns/HasExtraAlpineAttributes.php) | skipped | — | [diverges](../support/component-attribute-bag.md#extra-alpine-attributes-are-not-ported) |
+| [Trim state (`CanTrimState`)](../../../packages/schemas/src/Components/Concerns/CanTrimState.php) | [`schemas/Concerns/CanTrimState.php`](../../../vendor/filament/schemas/src/Components/Concerns/CanTrimState.php) | done | — | [semantics](#trim-and-stripcharacters-reach-the-validated-and-saved-values-never-the-raw-bag) |
+| [Strip characters (`CanStripCharactersFromState`)](../../../packages/schemas/src/Components/Concerns/CanStripCharactersFromState.php) | [`schemas/Concerns/CanStripCharactersFromState.php`](../../../vendor/filament/schemas/src/Components/Concerns/CanStripCharactersFromState.php) | done | — | [semantics](#trim-and-stripcharacters-reach-the-validated-and-saved-values-never-the-raw-bag) |
+| [State casts + `mutate*` / `mutates*` hooks](../../../packages/forms/src/Components/TextInput.php) | [`TextInput.php`](../../../vendor/filament/forms/src/Components/TextInput.php) | done | — | [semantics](#trim-and-stripcharacters-reach-the-validated-and-saved-values-never-the-raw-bag) |
+| `NumberStateCast` arm of `getDefaultStateCasts()` | [`TextInput.php`](../../../vendor/filament/forms/src/Components/TextInput.php) | blocked | schemas' [`NumberStateCast`](../schemas/README.md) | [diverges](#integer-validates-with-a-regex-not-a-type-constraint) · [diverges](#the-value-bounds-are-comparison-constraints-not-laravels-min-and-max) |
 | [Native constraint attributes drop when concealed](../../../packages/forms/templates/partials/TextInput/index.html.twig) — `required`, `min`, `max`, `minlength`, `maxlength` | [`toEmbeddedHtml()`](../../../vendor/filament/forms/src/Components/TextInput.php) | done | — | [can-be-concealed.md](../schemas/can-be-concealed.md) |
 
 ## Semantics
@@ -95,6 +108,85 @@ accept; what it adds is a second violation on the same value, and
 calling `numeric()`, which is where the step, the `number` type and the input
 mode all come from. `TextInputTest`'s _validates an integer with the numeric arm
 plus a regex that accepts a numeric string_ holds both arms and their order.
+
+### Both reveal buttons render, and CSS hides the inapplicable one
+
+`revealable()` registers `ShowPasswordAction` **and** `HidePasswordAction` as
+suffix actions, and both render on every revealable field — the server cannot
+know which state the input is in, and nothing on the client templates a second
+button in later. `text-input.css` hides whichever does not apply off a
+`sy-revealed` class the `sylament--forms--text-input` controller toggles on the
+wrapper root: without it the hide button is `display: none`, with it the show
+button is. The controller's `reveal()` / `conceal()` set `input.type` in the
+same call, so the attribute and the class always move together — which is what
+lets the live component's mutation tracker replay both across a morph.
+
+Neither button carries a live mount attribute: each action is
+`liveComponentClickHandlerEnabled(false)`, so `Action`'s IconButton template
+emits only the `data-action` its `extraAttributes()` supplies, and a click costs
+no round trip. The same holds for the copy button.
+
+### The copy message closure sees the render-time state
+
+`CopyAction::getCopyMessage()` and `getCopyMessageDuration()` are evaluated when
+the field renders, with `state` injected — Filament-exact, and the injection
+works because an affix action is prepared through
+[`HasAffixes::cacheSuffixActions()`](has-affixes.md) → `prepareAction()`, which
+is what gives the action its schema component. So
+`copyMessage(fn ($state) => "Copied {$state}")` describes the value the server
+rendered, not whatever has been typed since; the value that actually reaches the
+clipboard is the input's live one
+([divergence](#copy-writes-the-live-input-value-and-confirms-through-a-status-region)).
+
+Inside a [`Repeater`](repeater.md) item, `state` is the **repeater's array**
+rather than the field's own value: `Action::getSchemaComponentState()` walks up
+to the nearest ancestor with a state path, and for an affix action that is the
+repeater. A message closure written for a repeated field has to expect that.
+
+### The affix actions resolve their own icons
+
+Each of the three actions carries a `#[Required] setIconManager(IconManager)`
+and resolves its `FormsIconAlias::COMPONENTS_TEXT_INPUT_ACTIONS_*` override
+itself, falling back to the shipped heroicon. That is the shape
+[`Repeater`](repeater.md) uses on the **field**, moved onto the action, and it
+works only because the components glob is now
+`{*,Repeater/*,TextInput/Actions/*}`, which makes the classes container-built.
+An action built outside DI falls back to a bare `IconManager` and resolves no
+user override — which is why `TextInputTest`'s alias case reaches the container
+before it builds anything.
+
+### `currentPassword()` names security-core while the validator is SecurityBundle's
+
+`currentPassword()` appends Symfony's `UserPassword` constraint behind a
+`class_exists()` guard whose `LogicException` names **`symfony/security-core`**,
+the package the constraint class ships in. The validator behind it is
+SecurityBundle's `security.validator.user_password`, resolved through the same
+`ContainerConstraintValidatorFactory` route forms' own validators take. So an
+application that installs security-core but configures no firewall clears the
+guard and fails later, at validate time, with the factory's `ValidatorException`.
+Both packages are `suggest`s on `sylament/forms`; neither is a `require`, since
+a form that never calls `currentPassword()` needs neither.
+
+### `trim()` and `stripCharacters()` reach the validated and saved values, never the raw bag
+
+`TextInput` composes schemas' `CanTrimState` and `CanStripCharactersFromState`
+and overrides the mutation members plus `getDefaultStateCasts()`. `trim()`
+reaches the validated value through `mutateStateForValidation()` and the saved
+one through `mutateDehydratedState()`; `stripCharacters()` reaches the validated
+value the same way but the saved one through a `StripCharactersStateCast`
+appended to the default casts. Neither reaches the raw bag the browser wrote, so
+what the user typed stays on screen while what is validated and stored is
+cleaned. The surface is identical on [`Textarea`](textarea.md#trim-reaches-the-saved-value-strip-reaches-it-through-a-cast-neither-reaches-the-raw-bag),
+which carries the same three rows.
+
+Filament's `getDefaultStateCasts()` also appends a `NumberStateCast` on a
+numeric field, casting the state to `float`. That arm is **blocked**: schemas
+ships no `NumberStateCast`, and adding one is a type-derived-cast question of
+the `DateTimeStateCast` kind rather than a text-input one. Two divergences here
+wait on it — the [integer regex](#integer-validates-with-a-regex-not-a-type-constraint)
+and the [comparison bounds](#the-value-bounds-are-comparison-constraints-not-laravels-min-and-max)
+both say what changes once a real number reaches validation.
+
 
 ## Divergences
 
@@ -363,3 +455,71 @@ stays regardless: the
 [step seed](#integer-delegates-to-numeric-so-both-arms-ship-and-the-step-order-matters)
 and the [validation arm](#integer-validates-with-a-regex-not-a-type-constraint)
 both read it.
+
+### A revealable input is rendered as a password server-side
+
+Filament renders **no** `type` attribute at all on a revealable input and lets
+Alpine bind it (`x-bind:type="isPasswordRevealed ? 'text' : 'password'"`). An
+input with no `type` is a text input, so a page whose JavaScript never boots
+shows the password in clear. The port renders `type="password"` and lets the
+controller swap it, which costs nothing — the buttons are inert until the
+controller connects, and CSS shows only the reveal one — and fails safe.
+
+### Copy writes the live input value and confirms through a status region
+
+Filament's `CopyAction` builds an Alpine click handler that copies
+`Js::from($state)`, the value **as rendered**, and confirms through its
+`$tooltip` magic (tippy). The port copies `inputTarget.value`, the value on
+screen at the moment of the click, and confirms by unhiding a pre-rendered
+`<span role="status" aria-live="polite">` inside the input wrapper for
+`copyMessageDuration` milliseconds.
+
+Neither half of Filament's has an equivalent here: `support` ships no tooltip
+primitive, and the only notification API is server-rendered, so saying "Copied"
+through it would buy a live round trip for a purely client-side event. The
+status region announces to a screen reader, which the tooltip did not. Copying
+the live value is the smaller change in practice and the one a user expects — a
+field edited since the last render would otherwise put the stale value on the
+clipboard.
+
+`navigator.clipboard` is `undefined` outside a secure context, so the controller
+checks for it and returns; a rejected `writeText()` is caught the same way. A
+plain-HTTP page therefore gets a button that does nothing rather than a console
+error, and the message shows only after a copy that actually happened.
+
+### `currentPassword()` drops Filament's guard argument
+
+Filament's signature is
+`currentPassword(bool | Closure $condition = true, ?string $guard = null)`, the
+guard naming the Laravel auth guard its `current_password` rule validates
+against. Symfony's `UserPassword` takes no such argument: the token it compares
+against comes from the token storage of whichever firewall handled the request,
+so the choice belongs in `security.yaml` rather than on the field. The parameter
+is dropped rather than mapped onto anything.
+
+There is no public `isCurrentPassword()` either, matching Filament — the flag is
+protected and only `buildValidationConstraints()` reads it.
+
+### Input masking waits on an engine decision, and `RawJs` is not it
+
+`mask()` and `getMask()` ship nothing, and the row's *blocked by* no longer says
+`RawJs`, which named the wrong prerequisite. `RawJs` is a subclass of Laravel's
+`Illuminate\Support\Js` whose whole job is to mark a string as JavaScript
+rather than as text; porting it would import a Laravel idiom for no reason
+beyond Filament's mask API accepting one.
+
+The real blocker is the engine. Filament's `mask()` emits `x-mask` /
+`x-mask:dynamic`, handled by `@alpinejs/mask`, which is nowhere on disk here,
+and the toolkit ships no masking of its own. Three routes exist and all three
+need a decision before any code: grant a JavaScript dependency (a Martin-only
+call under the dependency policy), write a first-party masker (which would be
+the codebase's first principles-§2 *Replace*), or keep shipping nothing. Under
+either of the first two the dynamic arm still needs a Sylament-shaped
+replacement for `RawJs` — most likely a pattern-resolving callback rather than a
+marker type.
+
+The other half of Filament's masking story already ships:
+[`stripCharacters()`](#trim-and-stripcharacters-reach-the-validated-and-saved-values-never-the-raw-bag)
+is what removes a mask's decorative characters before the value is validated and
+saved, so a consumer masking with their own JavaScript already has the save path.
+

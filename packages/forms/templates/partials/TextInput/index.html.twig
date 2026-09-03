@@ -1,4 +1,8 @@
+{% set controller = 'sylament--forms--text-input' %}
+
 {% set datalistOptions = component.getDatalistOptions %}
+{% set isPasswordRevealable = component.isPasswordRevealable %}
+{% set isCopyable = component.isCopyable %}
 
 {% set prefixActions = component.getPrefixActions %}
 {% set suffixActions = component.getSuffixActions %}
@@ -7,6 +11,7 @@
 
 <twig:SylamentForms:FieldWrapper :field="component">
     <twig:SylamentSupport:InputWrapper
+        class="sy-fo-text-input"
         :disabled="component.isDisabled"
         :valid="component.getErrorMessages is empty"
         :inlinePrefix="component.isPrefixInline"
@@ -19,11 +24,13 @@
         :suffixActions="suffixActions"
         :suffixIcon="component.getSuffixIcon"
         :suffixIconColor="component.getSuffixIconColor ?? 'gray'"
+        {{ ...stimulus_controller(controller) }}
     >
         <input {{ attrs({
             class: ['sy-fo-input', {
                 'sy-fo-input-has-inline-prefix': hasInlinePrefix,
                 'sy-fo-input-has-inline-suffix': hasInlineSuffix,
+                'sy-revealable': isPasswordRevealable,
             }],
             type: component.getType,
             id: component.getId,
@@ -45,7 +52,16 @@
             readonly: component.isReadOnly,
             disabled: component.isDisabled,
             autofocus: component.isAutofocused,
-        }, component.getExtraInputAttributes) }}>
+        }, component.getExtraInputAttributes, stimulus_target(controller, 'input')) }}>
+
+        {% if isCopyable %}
+            <span {{ attrs({
+                class: ['sy-fo-text-input-copy-message'],
+                role: 'status',
+                'aria-live': 'polite',
+                hidden: true,
+            }, stimulus_target(controller, 'copyMessage')) }}></span>
+        {% endif %}
 
         {% if datalistOptions %}
             <datalist id="{{ component.getId }}-list">

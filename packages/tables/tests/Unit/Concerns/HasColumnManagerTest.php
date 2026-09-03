@@ -6,6 +6,8 @@ use Sylament\Tables\Columns\Column;
 use Sylament\Tables\Columns\TextColumn;
 use Sylament\Tables\Table;
 use Sylament\Tables\Tests\Fixtures\Concerns\TableHost;
+use Symfony\UX\LiveComponent\Attribute\PostHydrate;
+use Symfony\UX\TwigComponent\Attribute\PostMount;
 
 /**
  * @param list<Column> $columns
@@ -77,7 +79,14 @@ it('forces a non-toggleable column on and re-seeds a column that just became tog
         ['type' => 'column', 'name' => 'plays', 'isToggled' => true, 'isToggledHiddenByDefault' => null],
     ]);
 
-    expect(array_column($host->tableColumns, 'isToggled', 'name'))->toBe(['title' => true, 'plays' => false]);
+    expect(array_column($host->tableColumns, 'isToggled', 'name'))->toBe(['title' => true, 'plays' => false])
+        ->and(array_column($host->tableColumns, 'isToggledHiddenByDefault', 'name'))->toBe(['title' => null, 'plays' => true]);
+
+    $state = $host->tableColumns;
+    $state[1]['isToggled'] = true;
+    $host->applyTableColumnManager($state);
+
+    expect($host->isTableColumnToggledHidden('plays'))->toBeFalse();
 });
 
 it('keeps the stored order only while columns are reorderable, and reset restores the declared one', function (): void {
@@ -92,7 +101,9 @@ it('keeps the stored order only while columns are reorderable, and reset restore
     $static->applyTableColumnManager($reversed);
 
     expect(array_keys($reorderable->getTable()->getVisibleColumns()))->toBe(['plays', 'title'])
-        ->and(array_keys($static->getTable()->getVisibleColumns()))->toBe(['title', 'plays']);
+        ->and(array_keys($static->getTable()->getVisibleColumns()))->toBe(['title', 'plays'])
+        ->and(array_column($reorderable->getTableColumnManagerItems(), 'name'))->toBe(['plays', 'title'])
+        ->and(array_column($static->getTableColumnManagerItems(), 'name'))->toBe(['title', 'plays']);
 
     $reorderable->resetTableColumnManager();
 
@@ -198,8 +209,8 @@ it('reads a toggle that is not a boolean as on', function (): void {
     expect($host->isTableColumnToggledHidden('title'))->toBeFalse();
 });
 
-it('lists no row for a stored entry that is not a column', function (): void {
-    $host = columnManagerHost([TextColumn::make('title')]);
+it('lists no row for a stored entry that is not a column, and never matches one on its name alone', function (): void {
+    $host = columnManagerHost([TextColumn::make('title')->toggleable()]);
 
     $host->tableDeferredColumns = [
         ['type' => TableHost::TABLE_COLUMN_MANAGER_GROUP_TYPE, 'name' => 'title', 'isToggled' => true, 'isToggledHiddenByDefault' => null],
@@ -207,6 +218,12 @@ it('lists no row for a stored entry that is not a column', function (): void {
     ];
 
     expect($host->getTableColumnManagerItems())->toHaveCount(1);
+
+    $host->applyTableColumnManager([
+        ['type' => TableHost::TABLE_COLUMN_MANAGER_GROUP_TYPE, 'name' => 'title', 'isToggled' => false, 'isToggledHiddenByDefault' => false],
+    ]);
+
+    expect($host->isTableColumnToggledHidden('title'))->toBeFalse();
 });
 
 it('restores the declared order on reset however many applies reordered it', function (): void {
@@ -222,4 +239,71 @@ it('restores the declared order on reset however many applies reordered it', fun
 
     expect(array_column($host->tableColumns, 'name'))->toBe(['title', 'plays', 'position'])
         ->and(array_keys($host->getTable()->getColumns()))->toBe(['title', 'plays', 'position']);
+});
+
+it('re-applies a stored order on a round trip that is not an apply', function (): void {
+    $host = columnManagerHost([TextColumn::make('title'), TextColumn::make('plays')], fn (Table $table): Table => $table->reorderableColumns());
+    $host->tableColumns = array_reverse($host->getDefaultTableColumnState());
+    $host->tableDeferredColumns = $host->tableColumns;
+
+    $host->afterTableColumnManagerHydrated();
+
+    expect(array_keys($host->getTable()->getColumns()))->toBe(['plays', 'title'])
+        ->and(array_column($host->tableColumns, 'name'))->toBe(['plays', 'title']);
+});
+
+it('re-derives the draft against the definition, so a column declared since carries a row again', function (): void {
+    $host = columnManagerHost([TextColumn::make('title')->toggleable(), TextColumn::make('plays')->toggleable()]);
+    $host->tableDeferredColumns = [
+        ['type' => 'column', 'name' => 'title', 'isToggled' => true, 'isToggledHiddenByDefault' => false],
+    ];
+
+    $host->afterTableColumnManagerHydrated();
+
+    expect(array_column($host->getTableColumnManagerItems(), 'name'))->toBe(['title', 'plays']);
+});
+
+it('drops a stored column the definition no longer declares from a reordered state', function (): void {
+    $host = columnManagerHost([TextColumn::make('title'), TextColumn::make('plays')], fn (Table $table): Table => $table->reorderableColumns());
+
+    $host->applyTableColumnManager([
+        ['type' => 'column', 'name' => 'plays', 'isToggled' => true, 'isToggledHiddenByDefault' => null],
+        ['type' => 'column', 'name' => 'gone', 'isToggled' => true, 'isToggledHiddenByDefault' => null],
+        ['type' => 'column', 'name' => 'title', 'isToggled' => true, 'isToggledHiddenByDefault' => null],
+    ]);
+
+    expect(array_column($host->tableColumns, 'name'))->toBe(['plays', 'title']);
+});
+
+it('seeds a state for a table that is only reorderable, and none for one with nothing to edit', function (): void {
+    $reorderable = columnManagerHost([TextColumn::make('title'), TextColumn::make('plays')], fn (Table $table): Table => $table->reorderableColumns());
+    $plain = columnManagerHost([TextColumn::make('title'), TextColumn::make('plays')]);
+
+    $reorderable->mountTableColumnManager();
+    $plain->mountTableColumnManager();
+    $plain->afterTableColumnManagerHydrated();
+
+    expect(array_column($reorderable->getTableColumnManagerItems(), 'name'))->toBe(['title', 'plays'])
+        ->and($plain->tableColumns)->toBe([])
+        ->and($plain->tableDeferredColumns)->toBe([]);
+});
+
+it('lists no row for a manager asked for over columns it can neither toggle nor move', function (): void {
+    $host = columnManagerHost([TextColumn::make('title')], fn (Table $table): Table => $table->columnManager());
+
+    $host->mountTableColumnManager();
+
+    expect($host->getTable()->hasColumnManager())->toBeTrue()
+        ->and($host->tableColumns)->toBe([])
+        ->and($host->getTableColumnManagerItems())->toBe([]);
+});
+
+it('holds both hooks at the priorities the occupied slots left free', function (): void {
+    $mount = new ReflectionMethod(TableHost::class, 'mountTableColumnManager')->getAttributes(PostMount::class);
+    $hydrate = new ReflectionMethod(TableHost::class, 'afterTableColumnManagerHydrated')->getAttributes(PostHydrate::class);
+
+    expect($mount)->toHaveCount(1)
+        ->and($mount[0]->newInstance()->priority)->toBe(4)
+        ->and($hydrate)->toHaveCount(1)
+        ->and($hydrate[0]->newInstance()->priority)->toBe(-4);
 });

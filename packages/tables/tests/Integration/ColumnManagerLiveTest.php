@@ -80,3 +80,18 @@ it('applies nothing from a forged draft', function (): void {
 
     expect(renderedHeaders($component))->toBe(['Title', 'Plays']);
 });
+
+it('keeps the stored order across a round trip that is not a manager action', function (): void {
+    $component = $this->createLiveComponent('LiveColumnManagerTable');
+
+    $state = array_reverse($component->component()->tableColumns);
+    $state[1]['isToggled'] = true;
+
+    $component->call('applyTableColumnManager', ['state' => $state]);
+
+    expect(renderedHeaders($component))->toBe(['Position', 'Plays', 'Title']);
+
+    $component->set('tableRecordsPerPage', 5);
+
+    expect(renderedHeaders($component))->toBe(['Position', 'Plays', 'Title']);
+});

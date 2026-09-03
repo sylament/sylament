@@ -479,6 +479,40 @@ alone, so `columnManager(false)` over toggleable columns still honours their
 declared `toggledHiddenByDefault()`. What is left is the chrome itself — the
 manager's two Twig components, its Stimulus controller and the partial's branch.
 
+The other direction of that gate is a **divergence**, and a deliberate one.
+`hasTableColumnState()` asks only whether a column could be toggled or moved, so
+an explicit `columnManager(true)` over columns that are neither seeds no state
+and lists no rows — a manager over nothing editable is an empty panel here, where
+Filament's `initTableColumnManager()` gates on `hasColumnsLayout()` alone and
+would list every column with its toggle off. Widening the gate to
+`hasColumnManager()` would cost every **plain** table two extra walks of
+`isToggleable()` over every column, on both hooks, which is the O(N) closure cost
+the [visible set](table.md#the-visible-set-asks-each-column-twice-and-is-memoised-until-columns-is-called-again)
+already pays twice; the chrome guards on the row count instead.
+
+Two costs are carried rather than optimised away, both Filament-exact. The mount
+gate walks **every** column's `isToggleable()` closure, since
+`hasToggleableColumns()` is `array_any()` over the declared set and no cheaper
+gate was substituted for it. And Filament memoises its reorderable answer once
+per host (`hasReorderableTableColumns()`, a `??=` on a host property); the port
+asks `Table::hasReorderableColumns()` afresh at each of its four sites, one of
+them inside the per-column default-state build, so a
+`reorderableColumns(fn () => …)` closure is evaluated O(N) times per request
+instead of once. The memo is droppable because it has no invalidation seam of its
+own and the table is built once per request; the cost is recorded here rather
+than paid for with a second uninvalidated memo beside the two `setTableColumns()`
+already drops.
+
+The session **read** is ungated while the **write** is gated, unlike the three
+sibling flags on [`CanPersistTableState`](#surface), which gate each read. This
+is Filament's own shape — vendor's `loadTableColumnsFromSession()` is called
+unconditionally and only `persistTableColumns()` consults the flag — so
+`persistColumnsInSession(false)` means "stop writing", not "stop reading", and a
+state stored before the flag was turned off keeps applying. Kept for parity and
+pinned by a case that seeds a key for the opted-out fixture and reads it back;
+gating the read is a behaviour change rather than a bug fix, and belongs with
+whoever wants it.
+
 The two hooks take priorities the rest of the package has to leave free:
 `#[PostMount(priority: 4)]`, below `CanPersistTableState`'s read at 10 and above
 the filters mount at 0, because 5 is

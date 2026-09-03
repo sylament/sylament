@@ -76,6 +76,25 @@ it('refuses a hidden column, whose closure a rendered page never offered', funct
     expect(columnActionCalls(['name' => 'secret', 'recordKey' => '1']))->toBe([]);
 });
 
+it('resolves both refusal and call off the table a column reorder re-columned', function (): void {
+    $component = test()->createLiveComponent(ColumnActionsTable::class);
+
+    $component->call('applyTableColumnManager', ['state' => array_reverse($component->component()->tableColumns)]);
+
+    $refused = $component->call('callTableColumnAction', ['name' => 'secret', 'recordKey' => '1'])->component();
+
+    assert($refused instanceof ColumnActionsTable);
+
+    expect(array_column($refused->tableColumns, 'name'))->toBe(['secret', 'id', 'actionObject', 'album', 'title'])
+        ->and($refused->calls)->toBe([]);
+
+    $called = $component->call('callTableColumnAction', ['name' => 'title', 'recordKey' => '2'])->component();
+
+    assert($called instanceof ColumnActionsTable);
+
+    expect($called->calls)->toBe(['closure:Let Down:2']);
+});
+
 it('refuses a column whose action is an Action object', function (): void {
     expect(columnActionCalls(['name' => 'actionObject', 'recordKey' => '1']))->toBe([]);
 });

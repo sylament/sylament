@@ -286,3 +286,53 @@ it('writes no column state for a table that opted out', function (): void {
     expect($request->getSession()->all())->toHaveKey(sessionKeyFor(ColumnManagerTable::class, 'columns'))
         ->and($request->getSession()->all())->not->toHaveKey(sessionKeyFor(LiveColumnManagerTable::class, 'columns'));
 });
+
+it('remembers a manager apply, and the declared state again after a reset', function (): void {
+    $request = new Request();
+    $request->setSession(new Session(new MockArraySessionStorage()));
+    $this::getContainer()->get(RequestStack::class)->push($request);
+
+    $host = $this::getContainer()->get(ColumnManagerTable::class);
+    $host->mountTableColumnManager();
+
+    $applied = $host->tableColumns;
+    $applied[1]['isToggled'] = false;
+    $host->applyTableColumnManager($applied);
+
+    $key = sessionKeyFor(ColumnManagerTable::class, 'columns');
+
+    expect($request->getSession()->get($key))->toBe($host->tableColumns)
+        ->and($host->tableColumns[1]['isToggled'])->toBeFalse();
+
+    $host->resetTableColumnManager();
+
+    expect($request->getSession()->get($key))->toBe($host->getDefaultTableColumnState());
+});
+
+it('merges a column declared since the remembered state was written back at its declared place', function (): void {
+    $client = seedTableSession([sessionKeyFor(ColumnManagerTable::class, 'columns') => [
+        ['type' => 'column', 'name' => 'title', 'isToggled' => true, 'isToggledHiddenByDefault' => null],
+    ]]);
+
+    [, $crawler] = browseTo(client: $client);
+
+    expect(columnManagerHeaders($crawler))->toBe(['Title', 'Plays']);
+});
+
+it('reads a remembered column state even for a table that opted out of writing one', function (): void {
+    $request = new Request();
+    $request->setSession(new Session(new MockArraySessionStorage()));
+    $request->getSession()->set(sessionKeyFor(LiveColumnManagerTable::class, 'columns'), [
+        ['type' => 'column', 'name' => 'position', 'isToggled' => true, 'isToggledHiddenByDefault' => true],
+        ['type' => 'column', 'name' => 'title', 'isToggled' => true, 'isToggledHiddenByDefault' => null],
+        ['type' => 'column', 'name' => 'plays', 'isToggled' => false, 'isToggledHiddenByDefault' => false],
+        ['type' => 'column', 'name' => 'isFeatured', 'isToggled' => true, 'isToggledHiddenByDefault' => null],
+    ]);
+    $this::getContainer()->get(RequestStack::class)->push($request);
+
+    $host = $this::getContainer()->get(LiveColumnManagerTable::class);
+    $host->mountTableColumnManager();
+
+    expect(array_column($host->tableColumns, 'name'))->toBe(['position', 'title', 'plays', 'isFeatured'])
+        ->and($host->isTableColumnToggledHidden('plays'))->toBeTrue();
+});

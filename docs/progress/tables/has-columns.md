@@ -249,7 +249,9 @@ The gate stays correct under a column reorder. `Table::columns()` called a
 second time does not evict the first set's cached column actions
 ([table.md](table.md)), but neither action reads that cache: each resolves its
 column by name off the table as it stands after the manager's sync, so the
-column it asks `isHidden()` of is the one the current definition holds.
+column it asks `isHidden()` of is the one the current definition holds. The
+fixture is reorderable for exactly that reason, so every case in this file runs
+on a table the manager has already re-`columns()`ed.
 
 ### A JSON `null` input arrives as `null` without a declared default
 

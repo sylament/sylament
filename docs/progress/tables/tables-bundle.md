@@ -149,7 +149,7 @@ to features that are not built yet: the filters query builder (the six
 (M4 · 7 — it collapses a `Columns\Layout\Stack`, which this package does not
 render yet).
 
-The eleventh, `ACTIONS_OPEN_BULK_ACTIONS`, is the one exception, and it is worth
+The tenth, `ACTIONS_OPEN_BULK_ACTIONS`, is the one exception, and it is worth
 naming because its feature **is** built: bulk actions landed with M4 · 1 and the
 alias still did not, because nothing reads it here.
 [`BulkActionGroup`](../actions/action-group.md) sets its trigger icon as a plain

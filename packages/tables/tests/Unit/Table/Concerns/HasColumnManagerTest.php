@@ -88,12 +88,17 @@ it('shows the apply action only while deferring and hands both actions to their 
     $customised = new TableHost(fn (Table $table): Table => $table
         ->columns([TextColumn::make('title')->toggleable()])
         ->columnManagerLayout(ColumnManagerLayout::Modal)
-        ->columnManagerTriggerAction(fn (Action $action): Action => $action->label('Columns…'))
+        ->columnManagerTriggerAction(fn (Action $action): Action => $action->label('Columns…')->extraAttributes(['data-probe' => 'yes']))
         ->columnManagerApplyAction(fn (Action $action): Action => $action->label('Go')))->getTable();
 
     expect(new TableHost()->getTable()->getColumnManagerApplyAction()->isVisible())->toBeTrue()
         ->and($live->getColumnManagerApplyAction()->isVisible())->toBeFalse()
         ->and($customised->getColumnManagerTriggerAction()->getLabel())->toBe('Columns…')
         ->and($customised->getColumnManagerApplyAction()->getLabel())->toBe('Go')
-        ->and($customised->getColumnManagerTriggerAction()->getExtraAttributes())->toHaveKey('command');
+        ->and($customised->getColumnManagerApplyAction()->getAction())->toBe('applyTableColumnManager')
+        ->and($customised->getColumnManagerTriggerAction()->getExtraAttributes())->toMatchArray([
+            'data-probe' => 'yes',
+            'command' => 'show-modal',
+            'commandfor' => $customised->getColumnManagerModalId(),
+        ]);
 });

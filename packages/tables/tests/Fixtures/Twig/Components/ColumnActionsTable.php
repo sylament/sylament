@@ -28,6 +28,10 @@ use Symfony\UX\LiveComponent\DefaultActionTrait;
  * hidden-column gate has something to refuse: a name the client can post, an
  * action that would leave a trace, and no way for a rendered page to have
  * offered it.
+ *
+ * Its columns are reorderable, so every case here runs on a table the column
+ * manager has already re-`columns()`ed — the one interaction that could have
+ * made the gate resolve a stale column.
  */
 #[AsLiveComponent(name: 'ColumnActionsTable', template: '@TablesFixtures/components/ColumnActionsTable.html.twig')]
 class ColumnActionsTable implements InteractsWithActions, InteractsWithTable
@@ -61,7 +65,8 @@ class ColumnActionsTable implements InteractsWithActions, InteractsWithTable
                 TextColumn::make('secret')->hidden()->action(function (): void {
                     $this->calls[] = 'hidden';
                 }),
-            ]);
+            ])
+            ->reorderableColumns();
     }
 
     public function appendAlbumCall(?object $record = null): string

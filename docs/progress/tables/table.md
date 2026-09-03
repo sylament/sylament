@@ -379,9 +379,27 @@ The two actions mirror that filters pair, which the same file already holds.
 `command` / `commandfor` pair stamped **after** the customization closure has
 run, so a closure setting extra attributes of its own cannot leave the modal with
 nothing that opens it. `getColumnManagerApplyAction()`'s visibility *is* the defer
-flag. `resolveColumnManagerIcon()` is `resolveFiltersIcon()`'s twin rather than a
-shared helper — the two are three lines each and hoisting one is a docs-lane
-tidy, not a behaviour.
+flag.
+
+`resolveColumnManagerIcon()` reads the alias off an **injected** `IconManager`,
+the way [`CanReorderRecords`](../../../packages/tables/src/Table/Concerns/CanReorderRecords.php)
+and [`IconColumn`](icon-column.md) do, falling back to a bare manager — which
+resolves nothing — for a table built outside the container. It is deliberately
+*not* `resolveFiltersIcon()`'s twin, which returns a closure taking
+`?IconManager $icons = null` and lets the evaluator fill it: the `Invoker` holds
+`service_container` and `IconManager` is a **private** service, so `has()` is
+false, the parameter takes its `null` default and the alias is never resolved at
+all. The injection is named `setColumnManagerIconManager()` rather than
+`setIconManager()` because `Table` flattens `CanReorderRecords` into the same
+class and a second setter under that name is a trait collision, not a second
+injection.
+
+**Adjacent, pre-existing, and deliberately not fixed here:**
+[`HasFilters::resolveFiltersIcon()`](../../../packages/tables/src/Table/Concerns/HasFilters.php)
+still carries the closure shape, so `ACTIONS_FILTER` and
+`FILTERS_REMOVE_ALL_BUTTON` never resolve an application override — verified by
+registering an alias and reading the trigger's icon back unchanged. It is the
+only other site in `packages/*/src` with that shape.
 
 What is left is the chrome: the `ColumnManager` and `ColumnManagerContent` Twig
 components, the `sylament--tables--column-manager` controller that writes the

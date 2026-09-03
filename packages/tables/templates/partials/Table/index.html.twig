@@ -1,7 +1,7 @@
 {# Null until the deferred window closes, so every records-touching read below
    stays gated on it — an ungated one queries a table that renders no rows. #}
 {% set records = component.isLoaded ? component.getRecords : null %}
-{% set columns = component.getColumns %}
+{% set columns = component.getVisibleColumns %}
 {% set hostId = component.getLiveComponent.getTableHostId %}
 {% set isReorderable = component.isReorderable %}
 {% set isReordering = component.isReordering %}

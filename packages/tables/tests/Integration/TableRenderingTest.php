@@ -1238,3 +1238,19 @@ it('hands each cell the row loop of the record being rendered', function (): voi
     expect($cells->each(fn (Crawler $cell): ?string => $cell->attr('data-iteration')))->toBe(['1', '2'])
         ->and($cells->first()->attr('data-count'))->toBe('2');
 });
+
+it('leaves a toggled-hidden column out of the header and every row', function (): void {
+    $host = new TableHost(fn (Table $table): Table => $table
+        ->records(fn (): array => [
+            new Song('Airbag', 'OK Computer', id: 1),
+            new Song('Let Down', 'OK Computer', id: 2),
+        ])
+        ->columns([TextColumn::make('title'), TextColumn::make('album')->toggleable()]));
+    $host->tableColumns = [['type' => 'column', 'name' => 'album', 'isToggled' => false, 'isToggledHiddenByDefault' => false]];
+
+    $crawler = new Crawler(renderTableHost($host));
+
+    expect($crawler->filter('th.sy-ta-header-cell')->each(static fn (Crawler $header): string => mb_trim($header->text())))->toBe(['Title'])
+        ->and($crawler->filter('tbody > tr')->count())->toBe(2)
+        ->and($crawler->filter('tbody > tr > td.sy-ta-cell')->count())->toBe(2);
+});

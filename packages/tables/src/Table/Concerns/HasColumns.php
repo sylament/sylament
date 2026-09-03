@@ -15,11 +15,17 @@ trait HasColumns
     protected array $columns = [];
 
     /**
+     * @var array<string, Column>|null
+     */
+    protected ?array $cachedVisibleColumns = null;
+
+    /**
      * @param array<Column> $columns
      */
     public function columns(array $columns): static
     {
         $this->columns = [];
+        $this->cachedVisibleColumns = null;
 
         foreach ($columns as $column) {
             $column->table($this);
@@ -46,6 +52,26 @@ trait HasColumns
     public function getColumns(): array
     {
         return $this->columns;
+    }
+
+    /**
+     * The columns the table renders — the developer's visibility first, the
+     * user's manager choice second. Memoised: every render walks it three
+     * times and the toggle half hops through the host.
+     *
+     * @return array<string, Column>
+     */
+    public function getVisibleColumns(): array
+    {
+        return $this->cachedVisibleColumns ??= array_filter(
+            $this->getColumns(),
+            static fn (Column $column): bool => $column->isVisible() && !$column->isToggledHidden(),
+        );
+    }
+
+    public function flushCachedVisibleColumns(): void
+    {
+        $this->cachedVisibleColumns = null;
     }
 
     public function getColumn(string $name): ?Column

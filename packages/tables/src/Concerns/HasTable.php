@@ -283,7 +283,7 @@ trait HasTable
             throw new LogicException(sprintf('Table [%s] must have [records()], [query()] or [relationship()].', static::class));
         }
 
-        foreach ($table->getColumns() as $column) {
+        foreach ($table->getVisibleColumns() as $column) {
             $column->applyEagerLoading($query);
         }
 
@@ -392,7 +392,7 @@ trait HasTable
             return;
         }
 
-        foreach ($table->getColumns() as $column) {
+        foreach ($table->getVisibleColumns() as $column) {
             $declaration = $column->getCellAggregateDeclaration();
 
             if (!$declaration instanceof AggregateDeclaration) {

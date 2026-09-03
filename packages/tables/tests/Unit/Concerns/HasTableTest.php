@@ -1034,6 +1034,29 @@ it('adds no eager join to the standalone count or to record resolution', functio
         ->and($recorder->statements()[0])->not->toContain('LEFT JOIN');
 });
 
+it('fetch-joins nothing for a hidden or a toggled-hidden to-one column', function (): void {
+    $recorder = new RecordingMiddleware();
+    $entityManager = songsWithRelations($recorder);
+    $configure = fn (Table $table): Table => $table
+        ->query($entityManager->createQueryBuilder()->select('song')->from(DoctrineSong::class, 'song'))
+        ->paginated(false);
+    $hidden = new TableHost(fn (Table $table): Table => $configure($table)->columns([TextColumn::make('artist.label.name')->hidden()]));
+    $toggled = new TableHost(fn (Table $table): Table => $configure($table)->columns([TextColumn::make('artist.label.name')->toggleable()]));
+    $toggled->tableColumns = [['type' => 'column', 'name' => 'artist.label.name', 'isToggled' => false, 'isToggledHiddenByDefault' => false]];
+
+    $recorder->reset();
+    $hidden->getTableRecords();
+    $hiddenStatements = $recorder->statements();
+
+    $recorder->reset();
+    $toggled->getTableRecords();
+
+    expect($hiddenStatements)->toHaveCount(1)
+        ->and($hiddenStatements[0])->not->toContain('LEFT JOIN')
+        ->and($recorder->statements())->toHaveCount(1)
+        ->and($recorder->statements()[0])->not->toContain('LEFT JOIN');
+});
+
 it('renders a column named after an association without joining it', function (): void {
     $recorder = new RecordingMiddleware();
     $entityManager = songsWithRelations($recorder);

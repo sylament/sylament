@@ -95,7 +95,7 @@ Rows never disappear — only their detail sections do.
 | [The filters panel — `<twig:SylamentTables:Filters>`](../../../packages/tables/templates/components/Filters/index.html.twig) | [`views/components/filters.blade.php`](../../../vendor/filament/tables/resources/views/components/filters.blade.php) | done | — | [diverges](#the-panel-is-fixed-chrome-with-no-action-objects-behind-it) |
 | [The indicators row — the active-filters label, the chips and the remove-all button](../../../packages/tables/templates/partials/Table/index.html.twig) | [`index.blade.php`'s `fi-ta-filter-indicators` block](../../../vendor/filament/tables/resources/views/index.blade.php) | done | — | [diverges](#the-chip-is-one-badge-and-the-delete-affordance-is-supports) |
 | The pivot surface — `hasPivotRecordKeys()`, `allowDuplicates()`, `selectPivotDataInQuery()` | [`HasRecords`](../../../vendor/filament/tables/src/Table/Concerns/HasRecords.php), [`Table\Concerns\HasQuery`](../../../vendor/filament/tables/src/Table/Concerns/HasQuery.php) | skipped | — | The `BelongsToMany` pivot arm: a Doctrine association table carrying payload is an entity of its own rather than a pivot with casts, so there is no pivot model to key rows by, to allow duplicates of, or to alias columns out of |
-| [`columns()` / `getColumns()` / `getColumn()`](../../../packages/tables/src/Table/Concerns/HasColumns.php) | [`Table\Concerns\HasColumns`](../../../vendor/filament/tables/src/Table/Concerns/HasColumns.php) | in progress | — | [column.md](column.md) · [detail](#columns-takes-columns-only-and-does-not-push) |
+| [`columns()` / `getColumns()` / `getColumn()` / `getVisibleColumns()` / `flushCachedVisibleColumns()`](../../../packages/tables/src/Table/Concerns/HasColumns.php) | [`Table\Concerns\HasColumns`](../../../vendor/filament/tables/src/Table/Concerns/HasColumns.php) | in progress | — | [column.md](column.md) · [detail](#columns-takes-columns-only-and-does-not-push) · [semantics](#the-visible-set-asks-each-column-twice-and-is-memoised-until-columns-is-called-again) |
 | Column grouping and layouts — `pushColumns()`, `getColumnsLayout()`, `hasColumnGroups()` | [`Table\Concerns\HasColumns`](../../../vendor/filament/tables/src/Table/Concerns/HasColumns.php) | todo | — | [detail](#columns-takes-columns-only-and-does-not-push) |
 | The column manager — user-toggleable column visibility | [`HasColumnManager`](../../../vendor/filament/tables/src/Table/Concerns/HasColumnManager.php) | todo | — | — |
 | [The `query()` lane — `query()` / `getQuery()` / `modifyQueryUsing()` / `applyQueryScopes()` / `getQueryEntityManager()`](../../../packages/tables/src/Table/Concerns/HasQuery.php) | [`Table\Concerns\HasQuery`](../../../vendor/filament/tables/src/Table/Concerns/HasQuery.php) | done | — | [semantics](#every-read-clones-a-memoised-base-query) |
@@ -781,6 +781,23 @@ deferral is recorded on
 
 Faithful ports subtle enough that the next reader would misread the code.
 Permanent, and addressable by anchor.
+
+### The visible set asks each column twice, and is memoised until `columns()` is called again
+
+`getVisibleColumns()` filters on `isVisible() && !isToggledHidden()`, and the
+second half reaches `isToggleable()`, which asks `isHidden()` again — so one
+walk evaluates a column's `visible()` closure **twice**, Filament-exactly. A
+closure with a side effect (a counter, a log line, a query) therefore fires
+twice per walk, which is the reason to keep such closures pure.
+
+The walk itself is memoised on `$cachedVisibleColumns`, because the header, the
+row loop and the eager-loading pass each read it and the toggle half hops
+Column → Table → host → the applied column state on every column. Two things
+clear it: `flushCachedVisibleColumns()`, the seam a host takes after writing
+new column state within one request, and `columns()` itself, since re-declaring
+the columns mid-request is how a reorder lands. Nothing else invalidates it — a column
+mutated in place after the first read keeps its old verdict for the rest of the
+request.
 
 ### A `Markup` header label swaps the sort control for a `<span>` that names its three events
 

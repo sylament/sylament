@@ -7,6 +7,9 @@ namespace Sylament\Tables\Tests\Integration;
 use Symfony\Component\DomCrawler\Crawler;
 use Symfony\UX\LiveComponent\Test\InteractsWithLiveComponents;
 
+use function Sylament\Tables\Tests\browseTo;
+use function Sylament\Tables\Tests\publishedProps;
+
 uses(InteractsWithLiveComponents::class);
 
 /*
@@ -88,4 +91,11 @@ it('renders the chip between the search chip and the filter chips and clears it 
 
     expect($component->component()->tableColumnSearches['title'])->toBe('')
         ->and((string) $component->render())->toContain('Paranoid Android');
+});
+
+it('publishes the seed on the first, non-live page render', function (): void {
+    [, $crawler] = browseTo();
+
+    expect(publishedProps($crawler, '#column-search-table')['tableColumnSearches'])->toBe(['title' => ''])
+        ->and(publishedProps($crawler, '#bound-table')['tableColumnSearches'])->toBe([]);
 });

@@ -8,7 +8,9 @@ use Sylament\Tables\Tests\Fixtures\Concerns\UrlMappedTableHost;
 use Symfony\UX\LiveComponent\Attribute\LiveAction;
 use Symfony\UX\LiveComponent\Attribute\LiveArg;
 use Symfony\UX\LiveComponent\Attribute\LiveProp;
+use Symfony\UX\LiveComponent\Attribute\PostHydrate;
 use Symfony\UX\LiveComponent\Metadata\UrlMapping;
+use Symfony\UX\TwigComponent\Attribute\PostMount;
 
 /**
  * Each bound prop's modifier applied to a fresh `LiveProp`, keyed by the name
@@ -58,6 +60,27 @@ it('declares the table state as LiveProps with the intended writability, hooks a
     'columns' => ['tableColumns', false, null, null, false, 'tableColumns'],
     'deferred columns' => ['tableDeferredColumns', true, null, null, false, 'tableDeferredColumns'],
     'column searches' => ['tableColumnSearches', true, null, 'dehydrateTableColumnSearches', false, 'tableColumnSearches', 'modifyTableColumnSearchesProp', 'hydrateTableColumnSearches'],
+]);
+
+/*
+ * The mount and hydrate hooks the host flattens into one class, each pinned at
+ * the slot it was assigned rather than at whatever `ReflectionClass` order a
+ * later trait edit happens to produce — `TwigComponentPass` sorts both lists
+ * with a *stable* `arsort`, so two hooks sharing a slot resolve silently.
+ */
+it('runs each mount and hydrate hook at the priority it was assigned', function (string $method, string $attribute, int $priority): void {
+    $attributes = new ReflectionMethod(TableHost::class, $method)->getAttributes($attribute);
+
+    expect($attributes)->toHaveCount(1)
+        ->and($attributes[0]->newInstance()->priority)->toBe($priority);
+})->with([
+    'filters from the query string' => ['mountTableFiltersFromQueryString', PostMount::class, 20],
+    'the persisted state read' => ['mountTablePersistedState', PostMount::class, 10],
+    'the seeded sort heal' => ['healSeededTableSort', PostMount::class, 5],
+    'the per-column seed' => ['mountTableColumnSearches', PostMount::class, 3],
+    'the filters mount' => ['mountTableFilters', PostMount::class, 0],
+    'the filters form re-cache' => ['afterTableFiltersFormHydrated', PostHydrate::class, 10],
+    'the per-column compare' => ['afterTableColumnSearchesHydrated', PostHydrate::class, -5],
 ]);
 
 it('exposes the table state mutations as live actions with live args', function (string $method, array $argNames): void {

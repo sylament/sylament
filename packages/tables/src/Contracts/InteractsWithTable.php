@@ -155,9 +155,10 @@ interface InteractsWithTable
     public function getTableColumnSearch(string $column): string;
 
     /**
-     * The per-column chips for the indicators row, one per visible individually
-     * searchable column holding a term, keyed by column name. Read by
-     * `Table::getColumnSearchIndicators()`.
+     * The per-column chips for the indicators row, one per individually
+     * searchable column the developer has not hidden and that holds a term,
+     * keyed by column name. A column the *user* toggled off still yields one.
+     * Read by `Table::getColumnSearchIndicators()`.
      *
      * @return array<string, Indicator>
      */

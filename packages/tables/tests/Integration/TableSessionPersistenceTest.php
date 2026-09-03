@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace Sylament\Tables\Tests\Integration;
 
 use Sylament\Tables\Tests\Fixtures\Twig\Components\ColumnManagerTable;
-use Sylament\Tables\Tests\Fixtures\Twig\Components\LiveColumnManagerTable;
 use Sylament\Tables\Tests\Fixtures\Twig\Components\ColumnSearchUrlTable;
+use Sylament\Tables\Tests\Fixtures\Twig\Components\LiveColumnManagerTable;
 use Sylament\Tables\Tests\Fixtures\Twig\Components\UnboundSongsTable;
 use Sylament\Tables\Tests\Fixtures\Twig\Components\UrlBoundSongsTable;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
@@ -372,4 +372,39 @@ it('writes no per-column terms for a table that did not opt in', function (): vo
     [$client] = browseTo();
 
     expect(currentTableSession($client))->not->toHaveKey(sessionKeyFor(UrlBoundSongsTable::class, 'column_search'));
+});
+
+it('reads back no per-column terms for a table that did not opt in', function (): void {
+    $client = seedTableSession([sessionKeyFor(UnboundSongsTable::class, 'column_search') => ['title' => 'Karma']]);
+
+    [, $crawler] = browseTo(client: $client);
+
+    expect(publishedProps($crawler, '#unbound-table')['tableColumnSearches'])->toBe([]);
+});
+
+it('leaves a remembered per-column bag that is not column-name-keyed where it is', function (): void {
+    $client = seedTableSession([sessionKeyFor(ColumnSearchUrlTable::class, 'column_search') => ['title' => 'Air', 0 => 'plays']]);
+
+    [, $crawler] = browseTo(client: $client);
+
+    expect(publishedProps($crawler, '#column-search-table')['tableColumnSearches'])->toBe(['title' => '']);
+});
+
+it('writes the per-column terms back on the round trip that changes them', function (): void {
+    [$client, $crawler] = browseTo();
+
+    $root = $crawler->filter('#column-search-table [data-live-props-value]');
+
+    $client->request(
+        'POST',
+        $root->attr('data-live-url-value') ?? '',
+        parameters: ['data' => json_encode([
+            'props' => json_decode($root->attr('data-live-props-value') ?? '', true, flags: JSON_THROW_ON_ERROR),
+            'updated' => ['tableColumnSearches.title' => 'Air'],
+        ], flags: JSON_THROW_ON_ERROR)],
+        server: ['HTTP_X_REQUESTED_WITH' => 'XMLHttpRequest'],
+    );
+
+    expect($client->getResponse()->getStatusCode())->toBe(200)
+        ->and(currentTableSession($client)[sessionKeyFor(ColumnSearchUrlTable::class, 'column_search')])->toBe(['title' => 'Air']);
 });

@@ -144,9 +144,21 @@ trait CanSearchRecords
         $this->persistTableSearchInSession();
     }
 
+    /**
+     * The chip's channel, over a client-supplied column name — so the write is
+     * gated on the seed's own predicate. Keeping a blank rather than forgetting
+     * it means an ungated write would *add* a key permanently, and a dotted one
+     * would replace a real leaf with a map.
+     */
     #[LiveAction]
     public function resetTableColumnSearch(#[LiveArg] string $column): void
     {
+        $resolved = $this->getTable()->getColumn($column);
+
+        if (!$resolved instanceof Column || !$resolved->isIndividuallySearchable()) {
+            return;
+        }
+
         $this->tableColumnSearches = self::writeTableColumnSearch($this->tableColumnSearches, $column, '');
 
         $this->handleTableColumnSearchUpdates();
@@ -354,7 +366,10 @@ trait CanSearchRecords
 
     /**
      * Every leaf a string, every nested map kept — the shape the session and the
-     * client both hand back is the one the seed and the flatten expect.
+     * client both hand back is the one the seed and the flatten expect. A key
+     * that is not a string names no column and is dropped rather than cast: PHP
+     * re-coerces a numeric string back to an `int` array key, so `(string) $key`
+     * would leave one in the bag for `Table::getColumn(string)` to fatal on.
      *
      * @param array<array-key, mixed> $searches
      *
@@ -365,7 +380,11 @@ trait CanSearchRecords
         $cast = [];
 
         foreach ($searches as $key => $value) {
-            $cast[(string) $key] = match (true) {
+            if (!is_string($key)) {
+                continue;
+            }
+
+            $cast[$key] = match (true) {
                 is_array($value) => self::castTableColumnSearches($value),
                 is_scalar($value), $value instanceof Stringable => (string) $value,
                 default => '',
@@ -376,6 +395,9 @@ trait CanSearchRecords
     }
 
     /**
+     * A non-string key is dropped here too, so a bag assigned server-side rather
+     * than cast on its way in cannot reach `Table::getColumn(string)` as an int.
+     *
      * @param array<array-key, mixed> $searches
      *
      * @return array<string, string>
@@ -385,7 +407,11 @@ trait CanSearchRecords
         $flattened = [];
 
         foreach ($searches as $key => $value) {
-            $path = $prefix === '' ? (string) $key : $prefix . '.' . $key;
+            if (!is_string($key)) {
+                continue;
+            }
+
+            $path = $prefix === '' ? $key : $prefix . '.' . $key;
 
             if (is_array($value)) {
                 $flattened = [...$flattened, ...self::flattenTableColumnSearches($value, $path)];

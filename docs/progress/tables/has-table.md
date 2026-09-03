@@ -53,25 +53,28 @@ layer,
 three selection props, the two resolution seams and the `selectAllTableRecords()`
 live action), from M4 · 1, and the three M4 · 3 added:
 [`CanPersistTableState`](../../../packages/tables/src/Concerns/CanPersistTableState.php)
-(the session key, the read hook and the four per-prop writers),
+(the session key, the read hook and the five per-prop writers),
 [`CanReorderRecords`](../../../packages/tables/src/Concerns/CanReorderRecords.php)
 (the reorder mode flag, its toggle and the `reorderTable()` write) and
 [`CanDeferLoading`](../../../packages/tables/src/Concerns/CanDeferLoading.php)
 (the deferred window's flag and the `loadTable()` action that closes it). Each is
 a per-file row below rather than a folded one, per
 [one row per file](../README.md#one-row-per-file-one-file-per-thing). What
-Filament's nineteen-trait host does beyond them — grouping, summaries, the column
-manager and summaries — is unported and listed below.
+Filament's nineteen-trait host does beyond them — grouping, summaries and the
+column manager — is unported and listed below.
 
-The trait presumes no host property beyond the fourteen `#[LiveProp]`s it and its
+The trait presumes no host property beyond the fifteen `#[LiveProp]`s it and its
 concerns declare: `?string $tableHostId` (the persisted half of
 [`getTableHostId()`](#the-host-id-is-a-random-liveprop-rather-than-a-framework-component-id)),
 `int $tablePage`, `?string $tableSort`, `array $tableColumns` (the column
 manager's *applied* set, non-writable so the client reaches it only through the
 manager's own action), the two mode flags
 `bool $isTableReordering` and `bool $isTableLoaded` — each mutated only by its own
-`#[LiveAction]`, so both stay checksummed — and the eight **writable** props the
+`#[LiveAction]`, so both stay checksummed — and the nine **writable** props the
 chrome binds to: `?string $tableRecordsPerPage`, `?string $tableSearch`,
+`array $tableColumnSearches` (the
+[per-column terms](#a-full-seed-replaces-filaments-reserved-key-list-and-a-blank-is-kept),
+nested and seeded),
 `array $tableDeferredColumns` (the manager's unapplied draft), the
 two [filter bags](#the-filter-bags-are-arrays-never-null-and-carry-no-getters),
 `array $tableFilters` and `array $tableDeferredFilters`, and the three
@@ -116,7 +119,7 @@ Reference — the Filament source this is diffed against:
 - [`tables/src/Concerns/HasBulkActions.php`](../../../vendor/filament/tables/src/Concerns/HasBulkActions.php)
   — the host-side selection state, its two resolution seams and the key enumeration
 - [`tables/src/Contracts/HasTable.php`](../../../vendor/filament/tables/src/Contracts/HasTable.php)
-  — the 46-method interface this reduces to twenty-four
+  — the 46-method interface this reduces to twenty-six
 
 ## Surface
 
@@ -134,7 +137,7 @@ instead.
 | [`makeTable(): Table`](../../../packages/tables/src/Concerns/HasTable.php) | [`InteractsWithTable::makeTable()`](../../../vendor/filament/tables/src/Concerns/InteractsWithTable.php) | done | — | [diverges](#maketable-seeds-nothing-from-deprecated-host-getters) |
 | [`getTableRecords()` — resolve the data source once, eager-load, re-key, fill the aggregate store, cache](../../../packages/tables/src/Concerns/HasTable.php) | [`Concerns\HasRecords::getTableRecords()`](../../../vendor/filament/tables/src/Concerns/HasRecords.php) | in progress | — | [detail](#the-records-injections-match-filaments-eight) · [semantics](#a-records-closure-resolves-public-container-services-by-type) · [diverges](#gettablerecords-returns-a-keyed-array-or-a-paginator-never-a-collection) · [diverges](#eager-loading-runs-over-the-visible-columns-on-the-page-clone-alone) |
 | [`getTablePaginator(): ?Paginator` — the carrier, unwrapped for the footer](../../../packages/tables/src/Concerns/HasTable.php) | — (Sylament-only; Filament's records **are** the paginator) | done | — | [pagination.md](../support/pagination.md) · [semantics](#the-paginator-is-a-return-value-not-a-state-holder) |
-| [`InteractsWithTable` — twenty-four methods](../../../packages/tables/src/Contracts/InteractsWithTable.php) | [`Contracts\HasTable`](../../../vendor/filament/tables/src/Contracts/HasTable.php) | in progress | — | [detail](#the-contract-is-twenty-methods-of-filaments-forty-six) |
+| [`InteractsWithTable` — twenty-six methods](../../../packages/tables/src/Contracts/InteractsWithTable.php) | [`Contracts\HasTable`](../../../vendor/filament/tables/src/Contracts/HasTable.php) | in progress | — | [detail](#the-contract-is-twenty-methods-of-filaments-forty-six) |
 | [`flushCachedTableRecords()`](../../../packages/tables/src/Concerns/HasTable.php) | [`Concerns\HasRecords::flushCachedTableRecords()`](../../../vendor/filament/tables/src/Concerns/HasRecords.php) | done | — | on the contract since M4 · 2 — actions' `callMountedAction()` calls it in a `finally` after any mounted action runs on a table host. [detail](#the-contract-is-twenty-methods-of-filaments-forty-six) |
 | [`getTableHostId()` + the `$tableHostId` `LiveProp`](../../../packages/tables/src/Concerns/HasTable.php) | [`Livewire\Component::getId()`](../../../vendor/filament/tables/resources/views/index.blade.php) | done | — | [diverges](#the-host-id-is-a-random-liveprop-rather-than-a-framework-component-id) |
 | [`getTableRecordKey(object\|array $record): string`](../../../packages/tables/src/Concerns/HasTable.php) | [`Concerns\HasRecords::getTableRecordKey()`](../../../vendor/filament/tables/src/Concerns/HasRecords.php) | done | — | [diverges](#object-records-are-keyed-by-a-readable-id-rather-than-an-eloquent-key) |
@@ -717,10 +720,11 @@ and its [first-call hydration snapshot](#the-per-column-change-is-read-off-a-fir
 both recorded below; its query pass mirrors the global one word for word — the
 column's own `splitIndividualSearchTerms()` overriding the table's
 `splitSearchTerms()` wherever it answers non-null, an `Orx` per word,
-`andWhere()`-d only if the column joined it — over exactly the columns that are
-**visible** and **individually** searchable, so a term left on a column the
+`andWhere()`-d only if the column joined it — over exactly the **individually**
+searchable columns the developer has not hidden, so a term left on a column the
 developer later hid, or on one that is only globally searchable, constrains
-nothing. It is what the `columnSearches` injection reads.
+nothing. A column the *user* toggled off still constrains, exactly as it still
+renders an input. It is what the `columnSearches` injection reads.
 
 The global half composes like this. A blank term is a no-op — `getTableSearch()`
 already answers null for it, so nothing is applied and the query is returned as
@@ -787,7 +791,7 @@ matching means.
 
 `Contracts\HasTable` declares 46 methods — the full host API a Filament table,
 column, filter, action, or test helper may call back into. Sylament's
-`InteractsWithTable` declares the twenty-four the shipped surface actually calls:
+`InteractsWithTable` declares the twenty-six the shipped surface actually calls:
 `getTable()` (the template and the column layer need the table from the host),
 `getTableRecords()` (which [`Table::getRecords()`](table.md#getrecords-delegates-to-the-host-and-fetches-nothing)
 delegates to), and three that arrived with the record-action lane (M1 · 6) —
@@ -960,6 +964,18 @@ renders one row per item, so it reads the list off the host exactly as it reads
 would fail the moment it did so without the declaration. It publishes the rows
 rather than the bag they are derived from, so the two column props stay off the
 contract as before.
+
+Per-column search added the twenty-fifth and twenty-sixth together, one on each
+of the two grounds. `getTableColumnSearch(string $column)` is a **template**
+read — the search row binds each input's `value` to it — so
+`TemplateHostCallsTest` enforces it the way it enforced the ninth.
+`getTableColumnSearchIndicators()` is the tenth's shape:
+[`Table::getColumnSearchIndicators()`](table.md#surface) delegates to it off a
+`getLiveComponent()` typed as this interface, so at level max the delegate
+cannot compile against a method the interface does not declare. What is
+published is again the finished answer rather than the state — the writable
+`$tableColumnSearches` bag stays off, on the same grounds `$tableSearch` does,
+and so do the two reset actions, which are called only over the wire.
 
 ### The selection is server-canonical, and re-derived on every read
 
@@ -1909,7 +1925,8 @@ and Livewire does not, so the two halves collapse into one hook here.
 
 The lever is `modifier:`, not `fieldName:`. Each URL-candidate `LiveProp` names a
 two-line modifier (`modifyTablePageProp()`, `modifyTableSortProp()`,
-`modifyTableSearchProp()`, `modifyTableFiltersProp()`, and `HasTabs`'
+`modifyTableSearchProp()`, `modifyTableColumnSearchesProp()`,
+`modifyTableFiltersProp()`, and `HasTabs`'
 `modifyActiveTabProp()`), each asking the host's
 `getTableUrlMapping(string $prop): ?UrlMapping` and calling `$liveProp->withUrl($mapping)`
 when it answers one. `withUrl()` clones the attribute, `LiveComponentMetadata`
@@ -2685,7 +2702,15 @@ forgotten on the previous keystroke — is not an empty read but a thrown error 
 the next one. `mountTableColumnSearches()` therefore seeds **every**
 individually searchable column, `''` by default and a dotted name **nested**
 (`artist.name` lands as `['artist' => ['name' => '']]`), and
-`resetTableColumnSearch()` writes `''` where Filament would unset. The seed runs
+`resetTableColumnSearch()` writes `''` where Filament would unset. That write is
+the one place the divergence costs something, so it is gated: Filament's
+`Arr::forget` is destructive only and cannot invent a key, while an always-write
+takes a **client-supplied** column name and would add one permanently — a merely
+global column's name accumulating in the bag, the session and the wire, and a
+dotted one (`title.x`) replacing a real leaf with a map. So the action resolves
+the name against the table first and returns silently unless the column is
+individually searchable, which is exactly the seed's own predicate: the bag's key
+set can only ever be the seed's. The seed runs
 again inside
 [the post-hydrate hook](#the-per-column-change-is-read-off-a-first-call-hydration-snapshot),
 so a column that *became* individually searchable between two requests has its
@@ -2715,8 +2740,8 @@ receives the key that changed.
 So the change is read off the bag itself. `hydrateTableColumnSearches()` keeps
 the value it was handed **on its first call only** (`??=`), which is the bag as
 it arrived, before any update the request carries; `afterTableColumnSearchesHydrated()`
-— `#[PostHydrate(priority: -5)]`, below panels' panel stamp at `0` and above
-schemas' state pass at `-10` — compares the hydrated bag against it and runs
+— `#[PostHydrate(priority: -5)]`, below the panel stamp every panels page runs
+at `20` and above schemas' state pass at `-10` — compares the hydrated bag against it and runs
 `handleTableColumnSearchUpdates()` only when they differ. Both sides are seeded
 and cast through the same two helpers before the compare, so a column that became
 searchable since the last request (a blank on both sides) and a leaf that arrived

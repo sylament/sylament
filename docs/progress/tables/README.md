@@ -78,12 +78,13 @@ against the deferred settings each names rather than **blocked**. (The
 precedence — **todo** upstairs, **blocked** in the component's file — so the two
 packages disagree until that one is revisited.)
 
-Forty-nine concerns the port has landed are **folded** into the detail file of
+Fifty concerns the port has landed are **folded** into the detail file of
 the class that composes them and carry no row here, per
-[one row per file](../README.md#one-row-per-file-one-file-per-thing) — eleven
+[one row per file](../README.md#one-row-per-file-one-file-per-thing) — twelve
 `Table\Concerns\` traits (`BelongsToLivewire`, `CanPaginateRecords`,
 `CanSearchRecords`, `CanSortRecords`, `HasActions`, `HasAggregateValues`,
-`HasColumns`, `HasEmptyState`, `HasQuery`, `HasRecordActions`, `HasRecords`) into
+`HasColumns`, `HasEmptyState`, `HasFilterIndicators`, `HasQuery`,
+`HasRecordActions`, `HasRecords`) into
 [`table.md`](table.md), twenty `Columns\Concerns\` traits
 (`BelongsToTable`, `CanAggregateRelatedRecords`, `CanBeDisabled`, `CanBeHidden`,
 `CanBeHiddenResponsively`, `CanBeInline`,
@@ -105,11 +106,11 @@ into
 `HasSchema`, `InteractsWithTableQuery`) into
 [`base-filter.md`](base-filter.md). Filament's `resources/views/index.blade.php`
 folds the same way, into `table.md`'s `$template` row.
-`Table\Concerns\HasFilters` and `Table\Concerns\HasFilterIndicators` are two
-landed concerns that keep a row anyway, for the same reason: both are built and
-folded into [`table.md`](table.md) while the `filtersFormSchema()` override and
-the four before/after-content layouts are not — so each row is where the deferred
-half stays findable. `Filters\Concerns\HasOptions` and
+`Table\Concerns\HasFilters` is a landed concern that keeps a row anyway, for a
+reason of its own: it is built and folded into [`table.md`](table.md) while the
+`filtersFormSchema()` override and the four before/after-content layouts are not
+— so the row is where the deferred half stays findable.
+`Filters\Concerns\HasOptions` and
 `Filters\Concerns\HasPlaceholder` keep rows for a different reason: they ship for
 `SelectFilter` alone, so they fold into
 [`select-filter.md`](select-filter.md) rather than into `base-filter.md` with the
@@ -266,7 +267,6 @@ pairs with, so it shares the first row below.
 | [`Table / HasBulkActions`](../../../packages/tables/src/Table/Concerns/HasBulkActions.php) | [`Table/Concerns/HasBulkActions.php`](../../../vendor/filament/tables/src/Table/Concerns/HasBulkActions.php) | in progress | [table.md](table.md#the-selection-settings-ship-as-a-subset-and-the-rest-are-listed) |
 | [`Table / HasColumnManager`](../../../packages/tables/src/Table/Concerns/HasColumnManager.php) | [`Table/Concerns/HasColumnManager.php`](../../../vendor/filament/tables/src/Table/Concerns/HasColumnManager.php) | in progress | [table.md](table.md) |
 | Table / HasContent | [`Table/Concerns/HasContent.php`](../../../vendor/filament/tables/src/Table/Concerns/HasContent.php) | blocked | the layout columns (M4 · 7) — `content()` replaces the `<table>` with a caller-supplied list, and there is no list until `Columns\Layout` ships ([table.md](table.md#surface)) |
-| [`Table / HasFilterIndicators`](../../../packages/tables/src/Table/Concerns/HasFilterIndicators.php) | [`Table/Concerns/HasFilterIndicators.php`](../../../vendor/filament/tables/src/Table/Concerns/HasFilterIndicators.php) | in progress | [table.md](table.md) |
 | [`Table / HasFilters`](../../../packages/tables/src/Table/Concerns/HasFilters.php) | [`Table/Concerns/HasFilters.php`](../../../vendor/filament/tables/src/Table/Concerns/HasFilters.php) | in progress | [table.md](table.md) |
 | Table / HasHeader | [`Table/Concerns/HasHeader.php`](../../../vendor/filament/tables/src/Table/Concerns/HasHeader.php) | todo | — |
 | [`Table / HasHeaderActions`](../../../packages/tables/src/Table/Concerns/HasHeaderActions.php) | [`Table/Concerns/HasHeaderActions.php`](../../../vendor/filament/tables/src/Table/Concerns/HasHeaderActions.php) | in progress | [table.md](table.md#the-header-and-toolbar-setters-are-destructive-because-the-flat-bulk-map-is-the-checkbox-switch) |

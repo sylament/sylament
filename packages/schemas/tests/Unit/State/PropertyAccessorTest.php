@@ -352,6 +352,16 @@ it('reads nullability through an object hop rather than off the root', function 
         ->and(accessor()->acceptsNullOnRecord(TypedRecord::class, 'money.amount'))->toBeFalse();
 });
 
+it('answers the native type a record declares at a path', function (): void {
+    expect(accessor()->getBuiltinTypeOnRecord(TypedRecord::class, 'slug'))->toBe('string')
+        ->and(accessor()->getBuiltinTypeOnRecord(TypedRecord::class, 'money.amount'))->toBe('int');
+});
+
+it('answers no native type for an object leaf or a path it cannot read', function (): void {
+    expect(accessor()->getBuiltinTypeOnRecord(TypedRecord::class, 'status'))->toBeNull()
+        ->and(accessor()->getBuiltinTypeOnRecord(Post::class, 'meta.seo'))->toBeNull();
+});
+
 it('reports a present leaf in a detached array', function (): void {
     expect(accessor()->hasInArray(['author' => ['name' => 'Ada']], 'author.name'))->toBeTrue();
 });

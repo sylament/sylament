@@ -49,6 +49,7 @@ exists. _Blocked by_ names what has to land first. _Detail_ carries a
 | [`setAssociationOnRecord()`](../../../packages/schemas/src/State/PropertyAccessor.php) — write an association value onto a record property, past `setOnRecord()`'s object-collection refusal | — (Sylament-invented) | done | — | [semantics](#the-association-write-is-the-collection-refusals-counterpart) |
 | [`hasInArray()`](../../../packages/schemas/src/State/PropertyAccessor.php) — whether a dotted path exists in a detached array (absent vs present-null) | [`Arr::has()`](../../../vendor/laravel/framework/src/Illuminate/Collections/Arr.php) | done | — | — |
 | [`acceptsNullOnRecord()`](../../../packages/schemas/src/State/PropertyAccessor.php) — whether the record's declared write-side type at a dotted path takes null (true when the type cannot be read) | — (Sylament-invented) | done | — | [semantics](#the-nullability-probe-lives-here-because-the-type-reader-does) |
+| [`getBuiltinTypeOnRecord()`](../../../packages/schemas/src/State/PropertyAccessor.php) — the native type the record declares at a dotted path (null for an object, a collection, a union or a type that cannot be read) | — (Sylament-invented) | done | — | [semantics](#the-nullability-probe-lives-here-because-the-type-reader-does) |
 | [`constructRecord()`](../../../packages/schemas/src/State/PropertyAccessor.php) — build a record the mapper has to create for itself, refusing a constructor that requires arguments with the caller's own subject and advice | — (Sylament-invented) | done | — | [semantics](#the-mappers-construct-or-refuse-is-one-method-three-callers-borrow) |
 | [Service wiring](../../../packages/schemas/src/State/PropertyAccessor.php) — registration and class alias, injected through `CanAccessProperties` | — (Sylament-invented) | done | — | [diverges](#the-accessor-is-injected-not-reached-for) |
 
@@ -73,7 +74,9 @@ rather than the root record; `hasInArray()`'s present, present-null, absent and
 past-scalar answers; and
 `acceptsNullOnRecord()`'s four — a nullable property, a non-nullable one, a path
 whose type cannot be read, and one read through an object hop rather than off the
-root; and `constructRecord()` through the intermediate construction and the
+root; `getBuiltinTypeOnRecord()`'s builtin leaf, its leaf read through an object
+hop, and its two null answers — an object leaf and an unreadable path; and
+`constructRecord()` through the intermediate construction and the
 refusal that reach it), a
 wiring test
 ([`PropertyAccessorBootTest`](../../../packages/schemas/tests/Integration/State/PropertyAccessorBootTest.php))
@@ -171,6 +174,16 @@ schema could reach a reader its own accessor was constructed with.
 Note what it does **not** do: it never asserts. A path whose type cannot be read
 answers `true`, so an unreadable target keeps the behaviour it had before types
 were consulted, and every "should this throw" decision stays with the caller.
+
+`getBuiltinTypeOnRecord()` is the same probe one step further out, and lives here
+for the same reason: it answers the record's declared *native* type at a path —
+`int`, `string`, `bool` — or null where the leaf is an object, a collection, a
+union or unreadable, which is the shape a caller deriving a check from it needs
+(null means "derive nothing", never "no such property"). Its consumer is tables'
+[editable-column validation](../tables/has-columns.md#a-record-type-the-input-cannot-hold-seeds-a-type-constraint-and-the-write-refuses-the-rest),
+which turns the answer into a Symfony `Type` constraint so a value the record
+cannot hold is refused before `setOnRecord()` is reached at all — the same
+"refuse first with a message of its own" trade the nullability probe makes.
 
 ## Divergences
 

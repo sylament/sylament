@@ -8,6 +8,7 @@ use Closure;
 use Sylament\Schemas\Exceptions\ValidationException;
 use Sylament\Tables\Columns\Column;
 use Sylament\Tables\Columns\Contracts\Editable;
+use Sylament\Tables\Exceptions\RecordWriteException;
 use Symfony\UX\LiveComponent\Attribute\LiveAction;
 use Symfony\UX\LiveComponent\Attribute\LiveArg;
 
@@ -61,8 +62,9 @@ trait HasColumns
      * `Editable`, the record key resolves through the query lane with the
      * table's filters re-applied, and the input is validated before any write —
      * with the record bound first, so a `disabled()` closure judges the row it
-     * was handed. Each refusal returns without effect; a validation refusal is
-     * filed against this cell for the re-render to paint.
+     * was handed. Each refusal returns without effect; a validation refusal, and
+     * a value the record's own type turns the write down, are filed against this
+     * cell for the re-render to paint.
      *
      * The write is deliberately not authorization-checked — see
      * {@see \Sylament\Tables\Columns\Concerns\CanUpdateState::updateState()}.
@@ -101,7 +103,16 @@ trait HasColumns
             return;
         }
 
-        $tableColumn->updateState($input);
+        try {
+            $tableColumn->updateState($input);
+        } catch (RecordWriteException $recordWriteException) {
+            $this->tableColumnStateErrors[$column][$record] = [
+                'message' => $recordWriteException->getMessage(),
+                'input' => $input,
+            ];
+
+            return;
+        }
 
         $tableColumn->clearCachedState();
         $this->flushCachedTableRecords();

@@ -13,6 +13,7 @@ use Sylament\Tables\Tests\Fixtures\Doctrine\Entity\Song;
 use Sylament\Tables\Tests\Fixtures\Doctrine\EntityManagerFactory;
 use Symfony\Component\Validator\Constraints\Length;
 use Symfony\Component\Validator\Constraints\NotBlank;
+use Symfony\Component\Validator\Constraints\Type;
 use Symfony\Component\Validator\Validation;
 
 /*
@@ -153,7 +154,7 @@ it('has no presence arm without a record class to read a type off', function ():
     $onRecords->table(new TableHost(fn (Table $table): Table => $table->records(fn (): array => []))->getTable());
 
     expect($onRecords->getValidationConstraints())->toBe([])
-        ->and(validatableColumn(TextInputColumn::make('tempo'))->getValidationConstraints())->toHaveCount(1);
+        ->and(validatableColumn(TextInputColumn::make('tempo'))->getValidationConstraints())->toHaveCount(2);
 });
 
 it('seeds a boolean type constraint on the toggle column', function (): void {
@@ -186,4 +187,44 @@ it('rebuilds the choice seed per validation, so a changed option map is honoured
     $allowed = ['calm', 'wild'];
 
     expect(fn () => $column->validate('wild'))->not->toThrow(ValidationException::class);
+});
+
+it('seeds a numeric type constraint from an integer record property', function (): void {
+    $column = validatableColumn(TextInputColumn::make('plays'));
+
+    expect(fn () => $column->validate('12'))->not->toThrow(ValidationException::class)
+        ->and(fn () => $column->validate('abc'))->toThrow(ValidationException::class);
+});
+
+it('seeds a string type constraint from a string record property', function (): void {
+    $column = validatableColumn(TextInputColumn::make('mood'));
+
+    expect(fn () => $column->validate('calm'))->not->toThrow(ValidationException::class)
+        ->and(fn () => $column->validate(['x' => 'y']))->toThrow(ValidationException::class);
+});
+
+it('seeds a boolean type constraint from a boolean record property', function (): void {
+    $column = validatableColumn(TextInputColumn::make('isExplicit'));
+
+    expect(fn () => $column->validate(true))->not->toThrow(ValidationException::class)
+        ->and(fn () => $column->validate('yes'))->toThrow(ValidationException::class);
+});
+
+it('seeds no type arm for an object or enum record property', function (): void {
+    expect(validatableColumn(TextInputColumn::make('format'))->getValidationConstraints())->toBe([])
+        ->and(validatableColumn(TextInputColumn::make('artist'))->getValidationConstraints())->toBe([]);
+});
+
+it('leaves the type arm to a declared type constraint', function (): void {
+    $declared = validatableColumn(TextInputColumn::make('plays')->constraint(new Type('string')));
+    $seeded = validatableColumn(ToggleColumn::make('isFeatured'));
+
+    $types = array_values(array_filter(
+        $declared->getValidationConstraints(),
+        fn (object $constraint): bool => $constraint instanceof Type,
+    ));
+
+    expect($types)->toHaveCount(1)
+        ->and($types[0]->type)->toBe('string')
+        ->and($seeded->getValidationConstraints())->toHaveCount(1);
 });

@@ -15,6 +15,7 @@ use Sylament\Schemas\Validation\PresenceGate;
 use Symfony\Component\Validator\Constraint;
 use Symfony\Component\Validator\Constraints\NotBlank;
 use Symfony\Component\Validator\Constraints\NotNull;
+use Symfony\Component\Validator\Constraints\Type;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
 use Symfony\Contracts\Service\Attribute\Required;
 
@@ -161,6 +162,12 @@ trait CanBeValidated
             array_unshift($constraints, new RequiredValue());
         }
 
+        $recordType = self::hasTypeConstraint($constraints) ? null : $this->getRecordTypeConstraint();
+
+        if ($recordType instanceof Type) {
+            array_unshift($constraints, $recordType);
+        }
+
         return $constraints;
     }
 
@@ -221,6 +228,42 @@ trait CanBeValidated
         }
 
         return !$this->getPropertyAccessor()->acceptsNullOnRecord($recordClass, $this->getName());
+    }
+
+    /**
+     * The type constraint the record's own declared type at this column's path
+     * asks for, so a value that type refuses is a refusal painted under the
+     * control rather than the write's type error. An `int` or `float` asks for
+     * `numeric` rather than its own name: the accessor coerces a numeric string,
+     * which is the only shape a control ever posts. An enum, an object, a
+     * collection and an unreadable type ask for nothing — the enum arm is the
+     * option `Choice` and the state cast's. Null on a lane with no record class
+     * to read a type off.
+     */
+    protected function getRecordTypeConstraint(): ?Type
+    {
+        $recordClass = isset($this->table) ? $this->getTable()->getRecordClass() : null;
+
+        if ($recordClass === null) {
+            return null;
+        }
+
+        $type = match ($this->getPropertyAccessor()->getBuiltinTypeOnRecord($recordClass, $this->getName())) {
+            'int', 'float' => 'numeric',
+            'string' => 'string',
+            'bool' => 'bool',
+            default => null,
+        };
+
+        return $type === null ? null : new Type($type);
+    }
+
+    /**
+     * @param list<Constraint> $constraints
+     */
+    private static function hasTypeConstraint(array $constraints): bool
+    {
+        return array_any($constraints, static fn (Constraint $constraint): bool => $constraint instanceof Type);
     }
 
     /**

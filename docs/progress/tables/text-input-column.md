@@ -55,6 +55,14 @@ and the Integration
 the write itself is
 [`HasColumnsTest`](../../../packages/tables/tests/Integration/Concerns/HasColumnsTest.php)'s.
 
+This is the one editable column that declares no constraint of its own — the two
+boolean columns seed a `Type('bool')` and `SelectColumn` a `Choice` — so what
+stands between a posted value and the record is entirely what
+[`CanBeValidated` derives from the record's declared type](has-columns.md#a-record-type-the-input-cannot-hold-seeds-a-type-constraint-and-the-write-refuses-the-rest):
+`Type('numeric')` over an `int` or `float` property, `Type('string')` over a
+`string` one, and, where nothing can be derived, the write seam's own refusal
+filed against the cell.
+
 ## Divergences
 
 ### `inputMode()` is a member of the class because forms has no `HasInputMode` yet

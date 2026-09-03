@@ -92,6 +92,20 @@ it('offers no class to construct for an enum property', function (): void {
         ->and($target->isNullable)->toBeTrue();
 });
 
+it('names the native type of a builtin property and none for an object or collection one', function (): void {
+    $reader = new RecordTypeReader();
+
+    expect($reader->describeProperty(TypedRecord::class, 'slug')?->builtinType)->toBe('string')
+        ->and($reader->describeProperty(Post::class, 'meta')?->builtinType)->toBeNull()
+        ->and($reader->describeProperty(TypedRecord::class, 'tags')?->builtinType)->toBeNull()
+        ->and($reader->describeProperty(TypedRecord::class, 'status')?->builtinType)->toBeNull();
+});
+
+it('reads the native type through the nullable wrapper rather than off it', function (): void {
+    expect(new RecordTypeReader()->describeProperty(TypedRecord::class, 'happenedAt')?->builtinType)->toBeNull()
+        ->and(new RecordTypeReader()->describe(TypedRecord::class, 'money.amount')?->builtinType)->toBe('int');
+});
+
 it('walks a dotted path through object segments', function (): void {
     $reader = new RecordTypeReader();
 

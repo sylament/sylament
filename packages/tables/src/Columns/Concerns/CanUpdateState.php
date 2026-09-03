@@ -11,6 +11,7 @@ use Doctrine\Persistence\ManagerRegistry;
 use LogicException;
 use Stringable;
 use Sylament\Schemas\State\Casts\Contracts\StateCast;
+use Sylament\Tables\Exceptions\RecordWriteException;
 use Symfony\Contracts\Service\Attribute\Required;
 
 use function Sylament\Support\blank;
@@ -197,16 +198,18 @@ trait CanUpdateState
     }
 
     /**
-     * The accessor refuses a path whose leaf is an object collection, in the
-     * vocabulary of the schema component that would map it; re-thrown here
-     * naming the column, which is what the reader of a table has in hand.
+     * The accessor refuses a path whose leaf is an object collection, and a value
+     * the record's declared type cannot hold, each in its own vocabulary;
+     * re-thrown here naming the column, which is what the reader of a table has
+     * in hand, and as the write seam's own class, which is what lets the host
+     * file the refusal against the cell rather than let it out.
      */
     private function writeStateOntoRecord(object $record, mixed $state): void
     {
         try {
             $this->getPropertyAccessor()->setOnRecord($record, $this->getName(), $state);
         } catch (LogicException $logicException) {
-            throw new LogicException(sprintf(
+            throw new RecordWriteException(sprintf(
                 'The editable column [%s] cannot write to its record: %s',
                 $this->getName(),
                 $logicException->getMessage(),

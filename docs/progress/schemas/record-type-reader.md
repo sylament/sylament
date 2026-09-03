@@ -45,12 +45,16 @@ a _Ports_ link.
 | [`RecordTarget::$objectClass`](../../../packages/schemas/src/State/RecordTarget.php) — the class to construct for an object segment, else null | done | — | [diverges](#objectclass-is-gated-on-instantiability-so-it-is-a-promise-not-a-hint) |
 | [`RecordTarget::$isNullable`](../../../packages/schemas/src/State/RecordTarget.php) — whether null may be **written** | done | — | [semantics](#nullability-is-the-mutators-even-when-the-getter-disagrees) |
 | [`RecordTarget::$isCollection` / `$isObjectCollection`](../../../packages/schemas/src/State/RecordTarget.php) — any collection, and the object-item arms only | done | — | [diverges](#two-collection-flags-because-a-plain-array-is-a-collection-and-is-still-mappable) |
+| [`RecordTarget::$builtinType`](../../../packages/schemas/src/State/RecordTarget.php) — the declared native type (`int`, `string`, `bool`, …), null for an object, a collection, a union or an unreadable type | done | — | [semantics](#nullability-is-the-mutators-even-when-the-getter-disagrees) |
 | [Service wiring](../../../packages/schemas/src/SylamentSchemasBundle.php) — `sylament_schemas.record_type_reader` plus a class alias, registered with **no** extractor argument | done | — | [diverges](#the-extractor-is-pinned-to-reflection-and-must-not-be-autowired) |
 | Generic collection element types (`array<int, Tag>`) | skipped | — | [diverges](#docblock-generics-are-invisible-and-that-is-the-point) |
 
 Every row is **done** or **skipped** — the unit suite
 ([`RecordTypeReaderTest`](../../../packages/schemas/tests/Unit/State/RecordTypeReaderTest.php))
-covers both nullability arms, the getter/setter asymmetry, the array,
+covers both nullability arms, the getter/setter asymmetry, the native type a
+builtin property names against the three that name none (an object, a collection
+and an enum) and the same type read through the nullable wrapper and through an
+object hop, the array,
 `Traversable` and adder-derived `list<Tag>` collection arms and the two flags
 separating them, the enum arm that `class_exists()` alone would have waved
 through, the `DateTimeInterface` carve-out, the dotted-path walk, and both null

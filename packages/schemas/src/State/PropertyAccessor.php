@@ -209,6 +209,19 @@ final readonly class PropertyAccessor
     }
 
     /**
+     * The native type the record declares at a dotted path — `int`, `string`,
+     * `bool`, … — or null where the leaf names an object, a collection, a union,
+     * or a type that cannot be read, so a caller deriving a check from it
+     * derives nothing there rather than guessing.
+     *
+     * @param class-string $recordClass
+     */
+    public function getBuiltinTypeOnRecord(string $recordClass, string $path): ?string
+    {
+        return $this->typeReader->describe($recordClass, $path)?->builtinType;
+    }
+
+    /**
      * Build a record the mapper has to create for itself, refusing a class whose
      * constructor requires arguments — the mapper has nothing to pass it. The two
      * clauses that differ per caller come in: `$subject` is what is being mapped,

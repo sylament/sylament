@@ -10,6 +10,7 @@ use ReflectionClass;
 use Symfony\Component\PropertyInfo\Extractor\ReflectionExtractor;
 use Symfony\Component\PropertyInfo\PropertyTypeExtractorInterface;
 use Symfony\Component\TypeInfo\Type;
+use Symfony\Component\TypeInfo\Type\BuiltinType;
 use Symfony\Component\TypeInfo\Type\CollectionType;
 use Symfony\Component\TypeInfo\Type\NullableType;
 use Symfony\Component\TypeInfo\Type\ObjectType;
@@ -68,6 +69,7 @@ final readonly class RecordTypeReader
             isNullable: $type->isNullable(),
             isCollection: $this->isCollection($unwrapped),
             isObjectCollection: $this->isObjectCollection($unwrapped),
+            builtinType: $unwrapped instanceof BuiltinType ? $unwrapped->getTypeIdentifier()->value : null,
         );
     }
 

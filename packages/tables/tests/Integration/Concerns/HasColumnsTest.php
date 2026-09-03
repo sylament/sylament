@@ -5,10 +5,12 @@ declare(strict_types=1);
 namespace Sylament\Tables\Tests\Integration\Concerns;
 
 use Doctrine\ORM\EntityManagerInterface;
+use LogicException;
 use Sylament\Tables\Tests\Fixtures\Doctrine\Entity\Song;
 use Sylament\Tables\Tests\Fixtures\Records\Format;
 use Sylament\Tables\Tests\Fixtures\Twig\Components\ColumnActionsTable;
 use Sylament\Tables\Tests\Fixtures\Twig\Components\EditableSongsTable;
+use Sylament\Tables\Tests\Fixtures\Twig\Components\TypeRefusalSongsTable;
 use Symfony\Component\DomCrawler\Crawler;
 use Symfony\UX\LiveComponent\Test\InteractsWithLiveComponents;
 use Symfony\UX\LiveComponent\Test\TestLiveComponent;
@@ -307,4 +309,69 @@ it('files a refusal against one cell only, and answers null for every other', fu
         ->and($host->getTableColumnStateError('title', '1')['message'] ?? null)->toContain('too short')
         ->and($host->getTableColumnStateError('title', '2'))->toBeNull()
         ->and($host->getTableColumnStateError('mood', '1'))->toBeNull();
+});
+
+/*
+ * The types the record itself declares, which the column derives a `Type`
+ * constraint from and the accessor enforces where it cannot. Every arm is a
+ * refusal painted under the control: a wrong-typed value never leaves the live
+ * action as a 500.
+ */
+
+/**
+ * @return array{TestLiveComponent, EntityManagerInterface}
+ */
+function typeRefusalRig(): array
+{
+    [$client, $entityManager] = seededGenresClient();
+
+    return [test()->createLiveComponent(TypeRefusalSongsTable::class, client: $client), $entityManager];
+}
+
+it('refuses a non-scalar input against a string record property, without a write', function (): void {
+    [$component, $entityManager] = typeRefusalRig();
+
+    $html = (string) writeTableCell($component, 'mood', '1', ['x' => 'y'])->render();
+
+    expect(refreshedSong($entityManager, 1)->getMood())->toBeNull()
+        ->and($html)->toContain('sy-ta-cell-error')
+        ->and($html)->toContain('should be of type string');
+});
+
+it('refuses a non-numeric input against an integer record property', function (): void {
+    [$component, $entityManager] = typeRefusalRig();
+
+    $html = (string) writeTableCell($component, 'plays', '1', 'abc')->render();
+
+    expect(refreshedSong($entityManager, 1)->getPlays())->toBe(100)
+        ->and($html)->toContain('sy-ta-cell-error');
+});
+
+it('coerces a numeric string onto an integer record property', function (): void {
+    [$component, $entityManager] = typeRefusalRig();
+
+    writeTableCell($component, 'plays', '1', '12');
+
+    expect(refreshedSong($entityManager, 1)->getPlays())->toBe(12);
+});
+
+it('files a write the record type refuses, where no constraint could be seeded', function (): void {
+    [$component, $entityManager] = typeRefusalRig();
+
+    $html = (string) writeTableCell($component, 'artist', '1', 'Radiohead')->render();
+
+    expect(refreshedSong($entityManager, 1)->getArtist())->toBeNull()
+        ->and($html)->toContain('sy-ta-cell-error')
+        ->and($html)->toContain('cannot write to its record');
+});
+
+it('lets a throwing updateStateUsing out, because the write seam swallows only its own refusal', function (): void {
+    seededGenresClient();
+
+    $host = $this::getContainer()->get(TypeRefusalSongsTable::class);
+
+    assert($host instanceof TypeRefusalSongsTable);
+
+    expect(fn () => $host->updateTableColumnState('tempo', '1', 'fast'))
+        ->toThrow(LogicException::class, 'The override arm refused this write.');
 });

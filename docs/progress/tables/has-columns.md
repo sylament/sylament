@@ -32,10 +32,10 @@ deleted once the row is **done**; **diverges** → the permanent note in
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
 | [`callTableColumnAction(string $name, string $recordKey)` — run a column's `action()` closure for one record](../../../packages/tables/src/Concerns/HasColumns.php) | [`HasColumns::callTableColumnAction()`](../../../vendor/filament/tables/src/Concerns/HasColumns.php) | done | — | [diverges](#a-live-action-answers-nothing-so-the-return-value-is-dropped) · [detail](#the-hidden-column-gate-waits-on-column-visibility) |
-| [`updateTableColumnState(string $column, string $record, mixed $input)` — the editable columns' write-back](../../../packages/tables/src/Concerns/HasColumns.php) | [`HasColumns::updateTableColumnState()`](../../../vendor/filament/tables/src/Concerns/HasColumns.php) | done | — | [diverges](#a-live-action-answers-nothing-so-the-return-value-is-dropped) · [semantics](#a-json-null-input-arrives-as-null-without-a-declared-default) · [semantics](#the-action-binds-the-record-and-its-key-and-only-one-of-the-two-invalidations-is-observable) · [detail](#the-hidden-column-gate-waits-on-column-visibility) |
+| [`updateTableColumnState(string $column, string $record, mixed $input)` — the editable columns' write-back](../../../packages/tables/src/Concerns/HasColumns.php) | [`HasColumns::updateTableColumnState()`](../../../vendor/filament/tables/src/Concerns/HasColumns.php) | done | — | [diverges](#a-live-action-answers-nothing-so-the-return-value-is-dropped) · [semantics](#a-record-type-the-input-cannot-hold-seeds-a-type-constraint-and-the-write-refuses-the-rest) · [semantics](#a-json-null-input-arrives-as-null-without-a-declared-default) · [semantics](#the-action-binds-the-record-and-its-key-and-only-one-of-the-two-invalidations-is-observable) · [detail](#the-hidden-column-gate-waits-on-column-visibility) |
 | [`getTableColumnStateError()` + the request-scoped `$tableColumnStateErrors` bag](../../../packages/tables/src/Concerns/HasColumns.php) | — (Sylament-only, replacing Filament's client-held error) | done | — | [diverges](#the-refusal-is-request-scoped-and-server-rendered-where-filaments-lives-on-the-client) |
 | [`Columns\Concerns\CanUpdateState` — the column half of the write](../../../packages/tables/src/Columns/Concerns/CanUpdateState.php) | [`Columns\Concerns\CanUpdateState`](../../../vendor/filament/tables/src/Columns/Concerns/CanUpdateState.php) | done | — | [semantics](#the-write-goes-through-the-accessor-so-a-dotted-path-walks-the-to-one-chain) · [diverges](#an-array-record-throws-where-filament-writes-nothing) · [diverges](#the-pivot-column-arm-has-nothing-to-write-through) · [diverges](#the-write-is-not-authorization-checked) |
-| [`Columns\Concerns\CanBeValidated` — the column half of the refusal](../../../packages/tables/src/Columns/Concerns/CanBeValidated.php) | [`Columns\Concerns\CanBeValidated`](../../../vendor/filament/tables/src/Columns/Concerns/CanBeValidated.php) | done | — | [diverges](#validation-speaks-symfony-constraints-and-rules-is-not-ported) · [semantics](#a-record-type-that-rejects-null-seeds-a-presence-constraint) |
+| [`Columns\Concerns\CanBeValidated` — the column half of the refusal](../../../packages/tables/src/Columns/Concerns/CanBeValidated.php) | [`Columns\Concerns\CanBeValidated`](../../../vendor/filament/tables/src/Columns/Concerns/CanBeValidated.php) | done | — | [diverges](#validation-speaks-symfony-constraints-and-rules-is-not-ported) · [semantics](#a-record-type-that-rejects-null-seeds-a-presence-constraint) · [semantics](#a-record-type-the-input-cannot-hold-seeds-a-type-constraint-and-the-write-refuses-the-rest) |
 | [`getClientState()` — the display state the cell root publishes](../../../packages/tables/src/Columns/Concerns/CanUpdateState.php) | — (Sylament-only, for [the repaint](#the-cell-repaints-from-the-root-because-a-touched-control-is-pinned-through-every-morph)) | done | — | [detail](#the-cell-repaints-from-the-root-because-a-touched-control-is-pinned-through-every-morph) |
 | `callTableColumnMethod()` — dispatch to an `#[ExposedLivewireMethod]` on a column | [`HasColumns::callTableColumnMethod()`](../../../vendor/filament/tables/src/Concerns/HasColumns.php) | blocked | the select-engine promotion ([forms-bundle.md](../forms/forms-bundle.md#the-select-controller-binds-a-port-of-filaments-select-utility-to-the-live-host)) | Its only Filament consumer is `SelectColumn`'s searchable arm, which ships native-only |
 | `getTableColumns()` | [`HasColumns::getTableColumns()`](../../../vendor/filament/tables/src/Concerns/HasColumns.php) | skipped | — | The whole method carries `@deprecated Override the \`table()\` method`, and the port has never landed a deprecated Filament surface — [renames.md](../renames.md) |
@@ -262,7 +262,10 @@ accessor is compiled without `strict_types`, so a *numeric* string reaches an
 `int` or `float` property coerced and silent — but any other string raises its
 `InvalidTypeException` (`Expected argument of type "?int", "string" given`), and
 an object-typed property (`DateTimeImmutable`, a backed enum) has no coercion to
-reach at all. `CanUpdateState` therefore declares `getStateCasts()` — `[]` by
+reach at all. Neither raise reaches the browser as a 500: the column seeds a
+`Type` constraint from the record's own declared type, and what no seed can
+catch the write seam files against the cell — see
+[the type seed](#a-record-type-the-input-cannot-hold-seeds-a-type-constraint-and-the-write-refuses-the-rest). `CanUpdateState` therefore declares `getStateCasts()` — `[]` by
 default, which is the truth for every control whose values are the record's own
 — and `updateState()` runs each cast's `get()` over the posted value *after* the
 blank normalisation and *before* the before-hook and the write, with
@@ -314,3 +317,31 @@ placeholder written against a non-nullable property would reach the write and
 raise a bare `TypeError`; with it, the blank is a refusal painted under the
 control. A lane with no record class to read a type off — `records()` — seeds
 nothing.
+
+### A record type the input cannot hold seeds a type constraint, and the write refuses the rest
+
+Beside the presence arm, `getValidationConstraints()` prepends a Symfony `Type`
+built from the record's declared native type at the column's path
+(`PropertyAccessor::getBuiltinTypeOnRecord()`, the nullability probe's twin) —
+unless the column already declares a `Type` of its own, which is why
+[`ToggleColumn`](toggle-column.md) and [`CheckboxColumn`](checkbox-column.md)
+keep exactly the one they seed themselves. An `int` or `float` property asks for
+`numeric` rather than its own name, because the accessor coerces a numeric string
+and that is the only shape a control ever posts; a `string` property asks for
+`string`, a `bool` for `bool`. An enum, an object, a collection and a type that
+cannot be read ask for nothing — the enum arm belongs to
+[`SelectColumn`](select-column.md)'s `Choice` and its state cast, and a column
+over any other object-typed property takes an `updateStateUsing()` closure.
+
+That leaves a gap the seed cannot close, and the write seam closes it instead:
+where nothing could be derived, `CanUpdateState` raises its own
+[`RecordWriteException`](../../../packages/tables/src/Exceptions/RecordWriteException.php)
+and `updateTableColumnState()` files it into the error bag exactly as it files a
+validation refusal, so the cell paints the refusal and the request answers 200.
+The catch is that class alone, deliberately: a throwing `updateStateUsing()` is
+user code and still propagates, as does a misconfigured column's own
+`LogicException`. All four arms — the two seeded ones, the object property no
+seed reaches, and the throwing override — are pinned over the
+[`TypeRefusalSongsTable`](../../../packages/tables/tests/Fixtures/Twig/Components/TypeRefusalSongsTable.php)
+fixture, whose columns carry no constraints of their own so the derivation is the
+only thing under test.

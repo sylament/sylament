@@ -32,7 +32,7 @@ abstract class ListRecords extends Page implements InteractsWithTable
     }
     use HasTabs;
 
-    protected ?string $template = '@SylamentPanels/partials/ListRecords/index.html.twig';
+    protected ?string $template = '@SylamentPanels/partials/Page/table.html.twig';
 
     /**
      * @param array<string, string> $parentRecords

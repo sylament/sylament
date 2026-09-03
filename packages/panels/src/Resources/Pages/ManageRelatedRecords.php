@@ -49,7 +49,7 @@ abstract class ManageRelatedRecords extends Page implements InteractsWithTable
         InteractsWithRelationshipTable::getTableQueryStringIdentifier insteadof HasTable;
     }
 
-    protected ?string $template = '@SylamentPanels/partials/ManageRelatedRecords/index.html.twig';
+    protected ?string $template = '@SylamentPanels/partials/Page/table.html.twig';
 
     /**
      * @param array<string, string> $parentRecords

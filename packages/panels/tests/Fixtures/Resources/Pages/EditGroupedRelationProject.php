@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Sylament\Panels\Tests\Fixtures\Resources\Pages;
 
+use Sylament\Actions\Action;
+use Sylament\Actions\ActionGroup;
 use Sylament\Panels\Resources\Pages\EditRecord;
 use Sylament\Panels\Tests\Fixtures\Resources\GroupedRelationProjectResource;
 use Symfony\UX\LiveComponent\Attribute\AsLiveComponent;
@@ -26,5 +28,16 @@ final class EditGroupedRelationProject extends EditRecord
     public function getBreadcrumbs(): array
     {
         return [];
+    }
+
+    /**
+     * The same missing route the trail dodges: with no index page there is
+     * nowhere for the default cancel link to point, so the rig submits only.
+     *
+     * @return array<Action|ActionGroup>
+     */
+    protected function getFormActions(): array
+    {
+        return [$this->getSaveFormAction()];
     }
 }

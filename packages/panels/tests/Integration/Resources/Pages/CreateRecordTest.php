@@ -45,8 +45,26 @@ it('serves the create page with the resource form', function (): void {
         ->and($crawler->filter('h1.sy-pa-header-heading')->text())->toBe('Create Article')
         ->and($crawler->filter('.sy-pa-resource-create-record-page > .sy-pa-page-header-main-ctn > .sy-pa-page-main > .sy-pa-page-content > form')->count())->toBe(1)
         ->and($crawler->filter('.sy-pa-resource-create-record-page input[data-model$="data.title"]')->count())->toBe(1)
-        ->and($crawler->filter('.sy-pa-resource-form-actions button[type="submit"]')->text())->toContain('Create')
+        ->and($crawler->filter('form.sy-pa-form .sy-sc-actions button[type="submit"]')->text())->toContain('Create')
         ->and($html)->toContain('<title>Create Article — Test Admin</title>');
+});
+
+it('sits a gray cancel link beside the create submit', function (): void {
+    [$client] = createRecordClient();
+
+    $crawler = $client->request('GET', '/admin/articles/create');
+
+    $cancel = $crawler->filter('form.sy-pa-form .sy-sc-actions a');
+    $submit = $crawler->filter('form.sy-pa-form .sy-sc-actions button[type="submit"]');
+
+    // `gray` is the Button policy's default and `HasDefaultGrayColor` emits no
+    // class for it, so the absence of any `sy-color` token *is* the gray arm —
+    // which is what tells the cancel link apart from the primary submit.
+    expect($cancel->count())->toBe(1)
+        ->and($cancel->text())->toContain('Cancel')
+        ->and($cancel->attr('href'))->toEndWith('/admin/articles')
+        ->and($cancel->attr('class'))->not->toContain('sy-color')
+        ->and($submit->attr('class'))->toContain('sy-color-primary');
 });
 
 it('trails the resource above the create heading', function (): void {

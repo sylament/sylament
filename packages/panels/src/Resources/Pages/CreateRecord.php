@@ -25,7 +25,7 @@ abstract class CreateRecord extends Page
 {
     use HasUnsavedDataChangesAlert;
 
-    protected ?string $template = '@SylamentPanels/partials/CreateRecord/index.html.twig';
+    protected ?string $template = '@SylamentPanels/partials/Page/form.html.twig';
 
     /**
      * @var array<string, mixed>

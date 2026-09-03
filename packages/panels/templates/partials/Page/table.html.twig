@@ -1,0 +1,11 @@
+{% extends '@SylamentPanels/partials/Page/index.html.twig' %}
+
+{% block content %}
+    {% set tabs = this.getCachedTabs %}
+
+    {% if tabs is not empty %}
+        {{ renderComponent(this.getTabsSchema) }}
+    {% endif %}
+
+    {{ renderTable() }}
+{% endblock content %}

@@ -203,12 +203,3 @@
         }
     }
 }
-
-.sy-ta-col-has-column-url .sy-ta-text-item {
-    @apply hover:underline focus-visible:underline;
-
-    & .sy-icon,
-    & > .sy-badge {
-        @apply hover:no-underline focus-visible:no-underline;
-    }
-}

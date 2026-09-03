@@ -517,7 +517,9 @@ stamps the `tabindex` at connect, calls `preventDefault()` and
 `stopPropagation()` so a click does not follow the row's link, and keeps its
 state in an `expanded` Stimulus value — which a live morph replays, so an
 expanded cell stays expanded across a re-render. Filament's Alpine `x-data`
-scope is per-render and loses it.
+scope is per-render and loses it. Its attributes are spread onto the cell root
+**after** `extraAttributes()`, as the four editable partials spread theirs, so a
+consumer's own `data-controller` cannot silently unbind the toggles.
 
 ### `rowIndex()` refuses a cell with no row loop, rather than numbering it null
 

@@ -54,7 +54,7 @@
             hasDescriptions ? 'sy-ta-text-has-descriptions' : null,
             overLimitCount > 0 ? 'sy-ta-text-list-limited' : null,
         ],
-    }, listStimulus, component.getExtraAttributes) }}>
+    }, component.getExtraAttributes, listStimulus) }}>
         {%- if descriptionAbove is filled -%}
             <p class="sy-ta-text-description">{{ descriptionAbove }}</p>
         {%- endif -%}

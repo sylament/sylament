@@ -16,13 +16,13 @@
         "fetch": "eager",
         "enabled": true
       },
-      "table": {
-        "main": "dist/controllers/table_controller.js",
+      "limited-list": {
+        "main": "dist/controllers/limited_list_controller.js",
         "fetch": "eager",
         "enabled": true
       },
-      "limited-list": {
-        "main": "dist/controllers/limited_list_controller.js",
+      "table": {
+        "main": "dist/controllers/table_controller.js",
         "fetch": "eager",
         "enabled": true
       }

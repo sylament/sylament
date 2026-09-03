@@ -140,15 +140,22 @@ trait CanUpdateState
      * The display state the cell root publishes for its controller to repaint
      * the control from: the refused input while the host holds one for this
      * cell, else the record's own state — `'1'`/`'0'` for a boolean control and
-     * the string form (`''` for null) otherwise.
+     * the string form (`''` for null) otherwise. Only the record's state is
+     * unwound through the casts; a refused input is echoed as it was posted,
+     * because it is already the vocabulary the control speaks.
      */
     public function getClientState(): string
     {
         $error = $this->getUpdateStateError();
-        $state = $error === null ? $this->getState() : $error['input'];
 
-        foreach (array_reverse($this->getStateCasts()) as $stateCast) {
-            $state = $stateCast->set($state);
+        if ($error === null) {
+            $state = $this->getState();
+
+            foreach (array_reverse($this->getStateCasts()) as $stateCast) {
+                $state = $stateCast->set($state);
+            }
+        } else {
+            $state = $error['input'];
         }
 
         if ($this->hasBooleanClientState()) {

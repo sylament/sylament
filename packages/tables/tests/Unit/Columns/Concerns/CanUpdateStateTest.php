@@ -13,6 +13,8 @@ use Sylament\Tables\Tests\Fixtures\Concerns\TableHost;
 use Sylament\Tables\Tests\Fixtures\Doctrine\Entity\Artist;
 use Sylament\Tables\Tests\Fixtures\Doctrine\Entity\Song;
 use Sylament\Tables\Tests\Fixtures\Doctrine\EntityManagerFactory;
+use Symfony\Component\Validator\Constraints\Length;
+use Symfony\Component\Validator\Validation;
 
 /**
  * A cast whose two directions are distinguishable from every other conversion the
@@ -266,6 +268,24 @@ it('casts a posted value into the record vocabulary, outermost first, before the
 
     expect($seen)->toBe(['The BONES'])
         ->and($entityManager->find(Song::class, 1)?->getTitle())->toBe('The BONES');
+});
+
+it('echoes a refused input back as it was posted, without unwinding the casts over it', function (): void {
+    $entityManager = EntityManagerFactory::create();
+    EntityManagerFactory::seed($entityManager, new Song(1, 'Airbag', 100));
+
+    $host = new TableHost(fn (Table $table): Table => $table
+        ->query($entityManager->createQueryBuilder()->select('song')->from(Song::class, 'song'))
+        ->columns([CastingTextInputColumn::make('title')->constraint(new Length(min: 30))]));
+
+    $column = $host->getTable()->getColumn('title');
+
+    assert($column instanceof CastingTextInputColumn);
+    $column->setValidator(Validation::createValidator());
+
+    $host->updateTableColumnState('title', '1', 'The AB');
+
+    expect($column->getClientState())->toBe('The AB');
 });
 
 it('reverses the casts for the client state, unwinding the outermost one last', function (): void {

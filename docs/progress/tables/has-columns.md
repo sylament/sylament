@@ -269,8 +269,9 @@ catch the write seam files against the cell — see
 default, which is the truth for every control whose values are the record's own
 — and `updateState()` runs each cast's `get()` over the posted value *after* the
 blank normalisation and *before* the before-hook and the write, with
-`getClientState()` running `set()` back in reverse order so the control still
-speaks the wire vocabulary. One column overrides it today:
+`getClientState()` running `set()` back in reverse order over the record's own
+state so the control still speaks the wire vocabulary — a *refused* input is
+echoed as it was posted, being that vocabulary already. One column overrides it today:
 [`SelectColumn`](select-column.md#the-only-state-cast-a-column-carries-is-the-enum-arms)
 seeds a schemas `EnumStateCast` for an enum option map, which is where Filament
 would have leaned on an Eloquent cast. Order is what keeps validation honest —

@@ -161,3 +161,26 @@ it('mounts no controller for a table that neither selects, polls, defers nor reo
 
     expect(new Crawler(renderToHtml($host->getTable()))->filter('div.sy.sy-ta')->attr('data-controller'))->toBeNull();
 });
+
+it('reads no records for a grouped table while the window is open', function (): void {
+    $reads = 0;
+    $host = deferrableTableHost($reads, fn (Table $table): Table => $table
+        ->deferLoading()
+        ->defaultGroup('title'));
+
+    $crawler = new Crawler(renderToHtml($host->getTable()));
+
+    expect($reads)->toBe(0)
+        ->and($crawler->filter('tr.sy-ta-group-header-row')->count())->toBe(0)
+        ->and($crawler->filter('.sy-ta-table-loading-ctn')->count())->toBe(1);
+});
+
+it('opens the group header rows for the same table once the window has closed', function (): void {
+    $reads = 0;
+    $host = deferrableTableHost($reads, fn (Table $table): Table => $table->defaultGroup('title'));
+
+    $crawler = new Crawler(renderToHtml($host->getTable()));
+
+    expect($reads)->toBeGreaterThan(0)
+        ->and($crawler->filter('tr.sy-ta-group-header-row')->count())->toBe(3);
+});

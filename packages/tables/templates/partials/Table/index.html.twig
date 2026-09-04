@@ -42,6 +42,21 @@
 {% set columnManagerToggleable = hasColumnManager and component.hasToggleableColumns %}
 {% set columnManagerItems = hasColumnManager ? component.getLiveComponent.getTableColumnManagerItems : [] %}
 
+{# The grouping in force and the settings that describe it — every read here is
+   preamble-safe, since none of them touches a record. The per-row boundaries are
+   read beside the loop instead, inside the loaded branch. #}
+{% set group = component.getGrouping %}
+{% set groups = component.getGroups %}
+{% set isGroupsOnly = component.isGroupsOnly and group is not null %}
+{% set groupingVisible = not isReordering and groups is not empty and not component.areGroupingSettingsHidden %}
+{% set groupingDirectionHidden = component.isGroupingDirectionSettingHidden %}
+{% set groupingInDropdownOnDesktop = component.areGroupingSettingsInDropdownOnDesktop %}
+{% set groupColumn = group is not null ? group.getId : null %}
+{% set groupDirection = component.getLiveComponent.getTableGroupingDirection ?? 'asc' %}
+{% set groupCollapsible = group is not null and group.isCollapsible %}
+{% set groupsCollapsed = groupCollapsible and component.areGroupsCollapsedByDefault %}
+{% set groupLabelPrefix = group is not null and group.isTitlePrefixedWithLabel ? group.getLabel : null %}
+
 {% set filterIndicators = component.getFilterIndicators %}
 {% set removableIndicatorCount = filterIndicators|filter(carrier => carrier.indicator.isRemovable)|length %}
 
@@ -62,7 +77,7 @@
 {% set actionsAfterColumns = hasRecordActions and recordActionsPosition == 'AfterColumns' %}
 {% set actionsAfterCells = hasRecordActions and recordActionsPosition == 'AfterCells' %}
 
-{% set isSelectionEnabled = component.isSelectionEnabled %}
+{% set isSelectionEnabled = component.isSelectionEnabled and not isGroupsOnly %}
 {% set hasSelection = isSelectionEnabled and component.getLiveComponent.hasSelectedTableRecords %}
 {% set checkboxLeading = isSelectionEnabled and not isReordering and records is not empty and component.getRecordCheckboxPosition.name == 'BeforeCells' %}
 {% set checkboxTrailing = isSelectionEnabled and not isReordering and records is not empty and component.getRecordCheckboxPosition.name == 'AfterCells' %}
@@ -130,12 +145,13 @@
 
 <div {{ attrs({
     class: 'sy sy-ta',
-}, isSelectionEnabled or isReorderable or isDeferred or pollIntervalMilliseconds is not null ? stimulus_controller('sylament--tables--table', {
+}, isSelectionEnabled or isReorderable or isDeferred or pollIntervalMilliseconds is not null or groupingVisible or group is not null ? stimulus_controller('sylament--tables--table', {
     canTrack: component.canTrackDeselectedRecords,
     pageOnly: component.selectsCurrentPageOnly,
     allSelectableCount: allSelectableCount,
     deferred: isDeferred,
     pollInterval: pollIntervalMilliseconds,
+    groupsCollapsedByDefault: component.areGroupsCollapsedByDefault,
     countOne: '1 record selected',
     countMany: ':count records selected',
 }) : null) }}>
@@ -372,13 +388,15 @@
                 </div>
 
                 <div class="sy-ta-selection-indicator-actions-ctn">
-                    <twig:SylamentSupport:Link
-                        tag="button"
-                        color="primary"
-                        :hidden="true"
-                        {{ ...stimulus_target('sylament--tables--table', 'selectAll') }}
-                        {{ ...stimulus_action('sylament--tables--table', 'selectAll', 'click') }}
-                    >Select all{{ allSelectableCount is not null ? ' ' ~ allSelectableCount : '' }}</twig:SylamentSupport:Link>
+                    {% if not component.selectsGroupsOnly %}
+                        <twig:SylamentSupport:Link
+                            tag="button"
+                            color="primary"
+                            :hidden="true"
+                            {{ ...stimulus_target('sylament--tables--table', 'selectAll') }}
+                            {{ ...stimulus_action('sylament--tables--table', 'selectAll', 'click') }}
+                        >Select all{{ allSelectableCount is not null ? ' ' ~ allSelectableCount : '' }}</twig:SylamentSupport:Link>
+                    {% endif %}
 
                     <twig:SylamentSupport:Link
                         tag="button"
@@ -402,13 +420,24 @@
 
                 {% set selectionHeaderCell %}
                     <th scope="col" class="sy-ta-selection-cell">
-                        <input {{ attrs({
-                            type: 'checkbox',
-                            class: 'sy-checkbox sy-ta-page-checkbox',
-                            'aria-label': 'Select/deselect all records on this page for bulk actions.',
-                        }, stimulus_target('sylament--tables--table', 'pageCheckbox'), stimulus_action('sylament--tables--table', 'togglePage', 'change')) }}>
+                        {# The cell stays under `selectGroupsOnly()` so the column count holds; only
+                           the page-wide control it carries goes. #}
+                        {% if not component.selectsGroupsOnly %}
+                            <input {{ attrs({
+                                type: 'checkbox',
+                                class: 'sy-checkbox sy-ta-page-checkbox',
+                                'aria-label': 'Select/deselect all records on this page for bulk actions.',
+                            }, stimulus_target('sylament--tables--table', 'pageCheckbox'), stimulus_action('sylament--tables--table', 'togglePage', 'change')) }}>
+                        {% endif %}
                     </th>
                 {% endset %}
+
+                {# The cells the header row spans: one per visible column, one for the record
+                   actions wherever they sit, and one for the checkbox in whichever position it
+                   takes. The reorder header cell is not counted — a drag nulls the grouping, so
+                   the two never coexist. #}
+                {% set columnsCount = columns|length + (hasRecordActions ? 1 : 0) + (checkboxLeading or checkboxTrailing ? 1 : 0) %}
+                {% set groupBoundaries = group is not null ? component.getLiveComponent.getTableRecordGroupBoundaries : {} %}
 
                 <table {{ attrs({class: classes('sy-ta-table', {'sy-ta-table-reordering': isReordering})}) }}>
                     <thead>
@@ -537,6 +566,80 @@
                             {% set openRecordUrlInNewTab = component.shouldOpenRecordUrlInNewTab(record) %}
                             {% set recordLinkAttributes = recordUrl is not null ? component.getExtraRecordLinkAttributes(record) : {} %}
                             {% set recordIsSelectable = isSelectionEnabled and component.isRecordSelectable(record) %}
+                            {% set boundary = groupBoundaries[recordKey] ?? null %}
+
+                            {% if boundary is not null and boundary.isFirstOfGroup and not isGroupsOnly %}
+                                {% set groupKey = boundary.key %}
+                                {% set groupTitle = boundary.title ~ '' %}
+                                {% set groupRowId = hostId ~ '.table.groups.' ~ (groupKey ?? '') %}
+
+                                {% set groupSelectionCell %}{% if isSelectionEnabled %}
+                                    {% set groupKeys = component.getLiveComponent.getGroupedSelectableTableRecordKeys(groupKey) %}
+                                    {% set groupSelectedCount = groupKeys|filter(key => component.getLiveComponent.isTableRecordSelected(key))|length %}
+
+                                    <td class="sy-ta-cell sy-ta-group-selection-cell">
+                                        <input {{ attrs({
+                                            type: 'checkbox',
+                                            class: 'sy-checkbox sy-ta-group-checkbox',
+                                            id: groupRowId ~ '.checkbox',
+                                            checked: groupKeys is not empty and groupSelectedCount == groupKeys|length,
+                                            'data-sy-group-keys': groupKeys|json_encode,
+                                            'aria-label': 'Select/deselect every record in group ' ~ groupTitle ~ ' for bulk actions.',
+                                        }, stimulus_target('sylament--tables--table', 'groupCheckbox'), stimulus_action('sylament--tables--table', 'toggleGroupRecords', 'change')) }}>
+                                    </td>
+                                {% endif %}{% endset %}
+
+                                <tr {{ attrs({
+                                    class: 'sy-ta-row sy-ta-group-header-row',
+                                    id: groupRowId,
+                                    'data-sy-group': groupTitle,
+                                }) }}>
+                                    {% if actionsBeforeCells and checkboxLeading %}<td class="sy-ta-cell"></td>{% endif %}
+                                    {% if checkboxLeading %}{{ groupSelectionCell }}{% endif %}
+
+                                    {# Vendor's own arithmetic: the row spans every cell the thead
+                                       emits but the ones it lays out itself — the checkbox cell,
+                                       and the placeholder its one two-leading-cells case needs. #}
+                                    <td {{ attrs({
+                                        class: 'sy-ta-group-header-cell',
+                                        colspan: columnsCount
+                                            - (isSelectionEnabled ? 1 : 0)
+                                            - (isSelectionEnabled and checkboxLeading and hasRecordActions and actionsBeforeCells ? 1 : 0),
+                                    }) }}>
+                                        <div {{ attrs({
+                                            class: classes('sy-ta-group-header', {
+                                                'sy-collapsible': groupCollapsible,
+                                                'sy-collapsed': groupsCollapsed,
+                                            }),
+                                        }, groupCollapsible ? stimulus_action('sylament--tables--table', 'toggleGroup', 'click') : null) }}>
+                                            <div>
+                                                <{{ emptyStateHeadingTag }} class="sy-ta-group-heading">
+                                                    {%- if groupLabelPrefix is not empty %}{{ groupLabelPrefix }}: {% endif -%}
+                                                    {{- boundary.title -}}
+                                                </{{ emptyStateHeadingTag }}>
+
+                                                {% if boundary.description is not empty %}
+                                                    <p class="sy-ta-group-description">{{ boundary.description }}</p>
+                                                {% endif %}
+                                            </div>
+
+                                            {% if groupCollapsible %}
+                                                <twig:SylamentSupport:IconButton
+                                                    icon="heroicons:chevron-up-20-solid"
+                                                    :iconAlias="constant('Sylament\\Tables\\Twig\\TablesIconAlias::GROUPING_COLLAPSE_BUTTON')"
+                                                    size="sm"
+                                                    color="gray"
+                                                    :label="groupLabelPrefix is not empty ? groupLabelPrefix ~ ': ' ~ groupTitle : groupTitle"
+                                                    :aria-expanded="groupsCollapsed ? 'false' : 'true'"
+                                                    {{ ...stimulus_action('sylament--tables--table', 'toggleGroup', 'click') }}
+                                                />
+                                            {% endif %}
+                                        </div>
+                                    </td>
+
+                                    {% if checkboxTrailing %}{{ groupSelectionCell }}{% endif %}
+                                </tr>
+                            {% endif %}
 
                             {% set actionsCell %}{% if hasRecordActions %}
                                 <td class="sy-ta-cell">
@@ -565,11 +668,13 @@
                             <tr {{ attrs({
                                 class: classes('sy-ta-row', {
                                     'sy-clickable': recordUrl is not null or recordAction is not null,
-                                    'sy-striped': isStriped and loop.index0 is odd,
+                                    'sy-striped': isStriped and (boundary is not null ? boundary.indexInGroup is odd : loop.index0 is odd),
                                     'sy-selected': recordIsSelectable and component.getLiveComponent.isTableRecordSelected(recordKey),
+                                    'sy-collapsed': groupsCollapsed,
                                 }, component.getRecordClasses(record)),
                                 id: hostId ~ '.table.records.' ~ recordKey,
                                 'data-sortable-item': isReordering ? recordKey : null,
+                                'data-sy-group': boundary is not null ? boundary.title ~ '' : null,
                             }) }}>
                                 {% if isReordering %}
                                     <td class="sy-ta-cell sy-ta-reorder-handle-cell">

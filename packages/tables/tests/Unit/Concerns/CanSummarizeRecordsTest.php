@@ -242,7 +242,7 @@ it('reads a to-one relation column off one join it reuses', function (): void {
     $state = $host->getTableSummarySelectedState($query);
 
     expect($state)->toBe(['sy_summary_0' => 6, 'sy_summary_1' => 6])
-        ->and(substr_count($query?->getDQL() ?? '', 'LEFT JOIN song.artist'))->toBe(1);
+        ->and(mb_substr_count($query?->getDQL() ?? '', 'LEFT JOIN song.artist'))->toBe(1);
 });
 
 it('reads an embeddable path off the root alias', function (): void {
@@ -251,6 +251,15 @@ it('reads an embeddable path off the root alias', function (): void {
     ], recordsPerPage: 'all');
 
     expect($host->getTableSummarySelectedState($host->getAllTableSummaryQuery()))->toBe(['sy_summary_0' => 6]);
+});
+
+it('resolves no expression for a column whose summarizers all sit out the batch', function (): void {
+    $host = summaryStateHost(summaryStateSongs(), [
+        TextColumn::make('genres.name')->summarize(Values::make()),
+        TextColumn::make('plays')->summarize(Sum::make()),
+    ], recordsPerPage: 'all');
+
+    expect($host->getTableSummarySelectedState($host->getAllTableSummaryQuery()))->toBe(['sy_summary_0' => 210]);
 });
 
 it('refuses a column summarized through a to-many association', function (): void {

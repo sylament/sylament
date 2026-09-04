@@ -98,6 +98,11 @@ class Summarizer extends ViewComponent
      * value is filled, so an aggregate that came back null over an empty set is not
      * re-run to arrive at the same null.
      *
+     * A `using()` closure answers ahead of every refusal the aggregate path makes —
+     * it is the way out each of their messages names — and is handed the column's own
+     * name beside the query, as upstream, since the expression it needs is its own to
+     * build.
+     *
      * @throws LogicException on a `records()` table, whose rows no query produced,
      *                        and on a column reading a relationship aggregate
      */
@@ -115,10 +120,6 @@ class Summarizer extends ViewComponent
             throw new LogicException(sprintf('Cannot summarize [%s]: summaries read their figures from the table query, and this table lists records() rows the toolkit never queried. Use query() or relationship(), or drop the summarizer.', $attribute));
         }
 
-        if ($column->getCellAggregateDeclaration() instanceof AggregateDeclaration) {
-            throw new LogicException(sprintf('Cannot summarize [%s]: the column reads a relationship aggregate, which is filled in per record from a side store and which DQL cannot aggregate again. Take the summary over with Summarizer::using().', $attribute));
-        }
-
         $query = clone $query;
 
         if ($this->hasQueryModification()) {
@@ -127,8 +128,6 @@ class Summarizer extends ViewComponent
             $query = $scoped instanceof QueryBuilder ? $scoped : $query;
         }
 
-        $attribute = SummaryQuery::qualifyAttribute($query, $attribute);
-
         if ($this->using instanceof Closure) {
             return $this->evaluate($this->using, [
                 'attribute' => $attribute,
@@ -136,7 +135,11 @@ class Summarizer extends ViewComponent
             ]);
         }
 
-        return $this->summarize($query, $attribute);
+        if ($column->getCellAggregateDeclaration() instanceof AggregateDeclaration) {
+            throw new LogicException(sprintf('Cannot summarize [%s]: the column reads a relationship aggregate, which is filled in per record from a side store and which DQL cannot aggregate again. Take the summary over with Summarizer::using().', $attribute));
+        }
+
+        return $this->summarize($query, SummaryQuery::qualifyAttribute($query, $attribute));
     }
 
     public function getSelectedState(): mixed

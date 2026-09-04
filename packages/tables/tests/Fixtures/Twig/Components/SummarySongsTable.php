@@ -57,11 +57,11 @@ class SummarySongsTable implements InteractsWithTable
 
         EntityManagerFactory::seed(
             $entityManager,
-            new Song(id: 1, title: 'Airbag', plays: 10, position: 1, mood: 'calm'),
-            new Song(id: 2, title: 'Airport', plays: 20, position: 2, mood: 'calm'),
-            new Song(id: 3, title: 'Jóga', plays: 30, position: 3, mood: 'bright'),
-            new Song(id: 4, title: 'Hyperballad', plays: 40, position: 4, mood: 'bright'),
-            new Song(id: 5, title: 'Bachelorette', plays: 50, position: 5, mood: 'dark'),
+            new Song(id: 1, title: 'Airbag', plays: 10, mood: 'calm', position: 1),
+            new Song(id: 2, title: 'Airport', plays: 20, mood: 'calm', position: 2),
+            new Song(id: 3, title: 'Jóga', plays: 30, mood: 'bright', position: 3),
+            new Song(id: 4, title: 'Hyperballad', plays: 40, mood: 'bright', position: 4),
+            new Song(id: 5, title: 'Bachelorette', plays: 50, mood: 'dark', position: 5),
         );
 
         return $this->entityManager = $entityManager;

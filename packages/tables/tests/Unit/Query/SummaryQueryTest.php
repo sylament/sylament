@@ -144,7 +144,7 @@ it('reuses a join a qualified path already crossed rather than adding a second',
     SummaryQuery::qualifyAttribute($query, 'artist.name');
     SummaryQuery::qualifyAttribute($query, 'artist.label.name');
 
-    expect(substr_count($query->getDQL(), 'LEFT JOIN song.artist'))->toBe(1);
+    expect(mb_substr_count($query->getDQL(), 'LEFT JOIN song.artist'))->toBe(1);
 });
 
 it('refuses to qualify a path crossing a to-many association', function (): void {

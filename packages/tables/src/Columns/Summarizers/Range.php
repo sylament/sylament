@@ -36,7 +36,7 @@ class Range extends Summarizer
 
         $row = SummaryQuery::readRow($query, ["MIN({$attribute}) AS sy_min", "MAX({$attribute}) AS sy_max"]);
 
-        return [self::toRangeValue($row['sy_min'] ?? null), self::toRangeValue($row['sy_max'] ?? null)];
+        return [$this->toRangeValue($row['sy_min'] ?? null), $this->toRangeValue($row['sy_max'] ?? null)];
     }
 
     public function excludeNull(bool|Closure $condition = true): static
@@ -168,7 +168,7 @@ class Range extends Summarizer
      * A numeric end normalised as every other numeric figure is, anything else — a
      * title, a driver's own date string — left as the driver handed it over.
      */
-    private static function toRangeValue(mixed $value): mixed
+    private function toRangeValue(mixed $value): mixed
     {
         return is_numeric($value) ? self::toNumber($value) : $value;
     }

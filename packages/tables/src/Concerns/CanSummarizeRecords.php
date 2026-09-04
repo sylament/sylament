@@ -7,7 +7,6 @@ namespace Sylament\Tables\Concerns;
 use Doctrine\ORM\QueryBuilder;
 use Sylament\Support\Pagination\Paginator;
 use Sylament\Tables\Columns\Summarizers\Contracts\HasSelectAlias;
-use Sylament\Tables\Columns\Summarizers\Summarizer;
 use Sylament\Tables\Query\AggregateDeclaration;
 use Sylament\Tables\Query\SummaryQuery;
 
@@ -66,7 +65,10 @@ trait CanSummarizeRecords
      * Three summarizers never reach the statement: one that scopes the query itself,
      * because the batch's figure is not the scoped one; one that emits no statement at
      * all, a range or a list; and every summarizer of an aggregate column, whose value
-     * lives in a side store — that one is refused where it is read, not here.
+     * lives in a side store — that one is refused where it is read, not here. The
+     * column's expression is resolved only once one of its summarizers has passed all
+     * three, so a path the qualifier refuses is refused for the summarizers that would
+     * have aggregated it and for nobody else.
      *
      * @return array<string, mixed> alias ⇒ raw driver value, empty when nothing batches
      */
@@ -86,13 +88,14 @@ trait CanSummarizeRecords
                 continue;
             }
 
-            $attribute = SummaryQuery::qualifyAttribute($query, $column->getName());
+            $attribute = null;
 
             foreach ($summarizers as $summarizer) {
                 if (!$summarizer instanceof HasSelectAlias || $summarizer->hasQueryModification()) {
                     continue;
                 }
 
+                $attribute ??= SummaryQuery::qualifyAttribute($query, $column->getName());
                 $statements = $summarizer->selectAlias('sy_summary_' . $ordinal)->getSelectStatements($attribute);
                 $ordinal++;
 

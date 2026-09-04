@@ -6,7 +6,6 @@ namespace Sylament\Tables\Columns\Summarizers;
 
 use Doctrine\ORM\QueryBuilder;
 use Sylament\Tables\Columns\Summarizers\Concerns\HasSelectAlias;
-use Sylament\Tables\Columns\Summarizers\Contracts;
 use Sylament\Tables\Query\SummaryQuery;
 
 class Sum extends Summarizer implements Contracts\HasSelectAlias

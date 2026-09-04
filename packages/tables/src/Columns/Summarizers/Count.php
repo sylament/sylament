@@ -7,7 +7,6 @@ namespace Sylament\Tables\Columns\Summarizers;
 use Doctrine\ORM\QueryBuilder;
 use LogicException;
 use Sylament\Tables\Columns\Summarizers\Concerns\HasSelectAlias;
-use Sylament\Tables\Columns\Summarizers\Contracts;
 use Sylament\Tables\Query\SummaryQuery;
 
 class Count extends Summarizer implements Contracts\HasSelectAlias

@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use Doctrine\ORM\QueryBuilder;
 use Sylament\Tables\Columns\Summarizers\Values;
 use Sylament\Tables\Columns\TextColumn;
 use Sylament\Tables\Table;
@@ -50,7 +51,7 @@ it('reads an empty set as an empty list', function (): void {
     $query = $summarizer->getQuery();
 
     expect($query)->not->toBeNull();
-    assert($query !== null);
+    assert($query instanceof QueryBuilder);
 
     expect($summarizer->query($query->andWhere('song.id = 999'))->getState())->toBe([]);
 });

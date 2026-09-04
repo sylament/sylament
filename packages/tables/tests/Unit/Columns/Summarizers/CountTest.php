@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
+use Sylament\Tables\Columns\Column;
 use Sylament\Tables\Columns\IconColumn;
 use Sylament\Tables\Columns\Summarizers\Count;
 use Sylament\Tables\Columns\Summarizers\Summarizer;
-use Sylament\Tables\Columns\Column;
 use Sylament\Tables\Columns\TextColumn;
 use Sylament\Tables\Table;
 use Sylament\Tables\Tests\Fixtures\Concerns\TableHost;

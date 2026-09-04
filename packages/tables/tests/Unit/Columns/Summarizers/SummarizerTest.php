@@ -73,13 +73,38 @@ it('summarizes nothing, batches nothing and holds no selected state', function (
         ->and($summarizer->getState())->toBeNull();
 });
 
-it('takes a using() closure over the summarize() body', function (): void {
+it('takes a using() closure over the summarize() body, with the column name beside the query', function (): void {
     $summarizer = summarizerOnSongs(
-        Summarizer::make()->using(fn (string $attribute, QueryBuilder $query): mixed => $query->select("MAX({$attribute})")->getQuery()->getSingleScalarResult()),
+        Summarizer::make()->using(fn (string $attribute, QueryBuilder $query): mixed => $query->select("MAX(song.{$attribute})")->getQuery()->getSingleScalarResult()),
         summarizerSongs(),
     );
 
     expect($summarizer->getState())->toEqual(20);
+});
+
+/*
+ * Both refusals name `using()` as the way out, so both have to let one through: a
+ * closure computing the figure itself needs neither the aggregate the column reads nor
+ * an expression the qualifier would refuse to build.
+ */
+it('lets a using() closure past the aggregate column refusal', function (): void {
+    $summarizer = summarizerOnSongs(
+        Summarizer::make()->using(fn (): int => 7),
+        summarizerSongs(),
+        TextColumn::make('genres_count')->counts('genres'),
+    );
+
+    expect($summarizer->getState())->toBe(7);
+});
+
+it('lets a using() closure past a path the qualifier refuses', function (): void {
+    $summarizer = summarizerOnSongs(
+        Summarizer::make()->using(fn (string $attribute): string => $attribute),
+        summarizerSongs(),
+        TextColumn::make('genres.name'),
+    );
+
+    expect($summarizer->getState())->toBe('genres.name');
 });
 
 it('injects the live component, the table, the query and itself into a closure', function (): void {

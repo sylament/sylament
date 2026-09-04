@@ -51,7 +51,7 @@
 {% set groupingVisible = not isReordering and groups is not empty and not component.areGroupingSettingsHidden %}
 {% set groupingDirectionHidden = component.isGroupingDirectionSettingHidden %}
 {% set groupingInDropdownOnDesktop = component.areGroupingSettingsInDropdownOnDesktop %}
-{% set groupColumn = group is not null ? group.getId : null %}
+{% set groupColumn = component.getLiveComponent.getTableGroupingColumn %}
 {% set groupDirection = component.getLiveComponent.getTableGroupingDirection ?? 'asc' %}
 {% set groupCollapsible = group is not null and group.isCollapsible %}
 {% set groupsCollapsed = groupCollapsible and component.areGroupsCollapsedByDefault %}
@@ -658,7 +658,7 @@
                                 {% set groupKey = boundary.key %}
                                 {% set groupTitle = boundary.title ~ '' %}
                                 {% set groupTitleText = (boundary.title is markup ? boundary.title|striptags : boundary.title) ~ '' %}
-                                {% set groupRowId = hostId ~ '.table.groups.' ~ (groupKey ?? '') %}
+                                {% set groupRowId = hostId ~ '.table.groups.' ~ ((groupKey ?? '')|url_encode) %}
 
                                 {% set groupSelectionCell %}{% if isSelectionEnabled %}
                                     {% set groupKeys = component.getLiveComponent.getGroupedSelectableTableRecordKeys(groupKey) %}

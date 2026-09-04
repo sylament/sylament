@@ -335,7 +335,7 @@ it('gives each group checkbox an id of its own', function (): void {
 
     expect($ids)->toHaveCount(2)
         ->and($ids[0])->toEndWith('.table.groups.Radiohead.checkbox')
-        ->and($ids[1])->toEndWith('.table.groups.Björk.checkbox')
+        ->and($ids[1])->toEndWith('.table.groups.Bj%C3%B6rk.checkbox')
         ->and($ids[0])->not->toBe($ids[1]);
 });
 
@@ -423,4 +423,38 @@ it('keeps the controller and its values with the page checkbox gone', function (
         ->and($root->attr('data-sylament--tables--table-all-selectable-count-value'))->toBe('6')
         ->and($root->attr('data-sylament--tables--table-groups-collapsed-by-default-value'))->toBe('false')
         ->and($root->attr('data-sylament--tables--table-count-one-value'))->toBe('1 record selected');
+});
+
+it('percent-encodes a group key carrying whitespace into the ids it mints', function (): void {
+    $crawler = new Crawler(groupedTableHtml(
+        grouping: 'album',
+        configure: fn (Table $table): Table => $table->bulkActions([BulkAction::make('archive')]),
+    ));
+
+    $header = $crawler->filter('tr.sy-ta-group-header-row')->first();
+
+    // An id may not carry ASCII whitespace, and the key is the user's string —
+    // `data-sy-group` keeps it verbatim, because it is the collapse key the
+    // header row and its records share.
+    expect($header->attr('id'))->toEndWith('.table.groups.OK%20Computer')
+        ->and($header->attr('id'))->not->toContain(' ')
+        ->and($header->filter('input.sy-ta-group-checkbox')->attr('id'))->toEndWith('.table.groups.OK%20Computer.checkbox')
+        ->and($header->attr('data-sy-group'))->toBe('OK Computer')
+        ->and($crawler->filter('tbody tr[id*=".table.records."]')->first()->attr('data-sy-group'))->toBe('OK Computer');
+});
+
+it('hides the direction field while a non-selectable default group is in force', function (): void {
+    $crawler = new Crawler(groupedTableHtml(
+        grouping: null,
+        configure: fn (Table $table): Table => $table->defaultGroup('title'),
+    ));
+
+    $fields = $crawler->filter('.sy-ta-grouping-settings-fields')->first();
+
+    // The selects speak the client's own selection rather than the resolved
+    // group: a default nothing selected leaves the group select blank, and a
+    // direction select beside a blank group select would send nothing.
+    expect($crawler->filter('tr.sy-ta-group-header-row')->count())->toBe(6)
+        ->and($fields->filter('[data-sylament--tables--table-target="groupColumn"] option[selected]')->attr('value'))->toBe('')
+        ->and($fields->filter('[data-sylament--tables--table-target="groupDirectionField"]')->attr('hidden'))->not->toBeNull();
 });

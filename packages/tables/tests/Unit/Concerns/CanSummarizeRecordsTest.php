@@ -464,3 +464,157 @@ it('scopes a date group to the whole day its key names', function (): void {
     expect($host->getTableSummarySelectedState($host->getGroupedTableSummaryQuery($records[1])))->toBe(['sy_summary_0' => 30])
         ->and($host->getTableSummarySelectedState($host->getGroupedTableSummaryQuery($records[3])))->toBe(['sy_summary_0' => 30]);
 });
+
+it('renders no trailing grouped summary for a record that is not there', function (): void {
+    $host = groupedSummaryHost(summaryStateSongs());
+
+    expect($host->shouldRenderTrailingGroupedTableSummary(null))->toBeFalse();
+});
+
+it('renders the trailing grouped summary where no next page can continue the group', function (): void {
+    $unpaginated = groupedSummaryHost(summaryStateSongs(), recordsPerPage: null);
+    $lastPage = groupedSummaryHost(summaryStateSongs(), page: 3);
+    $wholeTableOnOnePage = groupedSummaryHost(summaryStateSongs(), recordsPerPage: 'all');
+
+    expect($unpaginated->shouldRenderTrailingGroupedTableSummary($unpaginated->getTableRecords()[6]))->toBeTrue()
+        ->and($lastPage->shouldRenderTrailingGroupedTableSummary($lastPage->getTableRecords()->getRecords()[6]))->toBeTrue()
+        ->and($wholeTableOnOnePage->shouldRenderTrailingGroupedTableSummary($wholeTableOnOnePage->getTableRecords()->getRecords()[6]))->toBeTrue();
+});
+
+it('renders the trailing grouped summary on a table that groups nothing', function (): void {
+    $host = groupedSummaryHost(summaryStateSongs());
+    $host->tableGrouping = null;
+
+    expect($host->shouldRenderTrailingGroupedTableSummary($host->getTableRecords()->getRecords()[2]))->toBeTrue();
+});
+
+/*
+ * The whole point of the probe: the first two songs are two thirds of one artist's
+ * three, so summarizing that group here would put two records' figure under a
+ * heading that names three.
+ */
+it('suppresses the trailing grouped summary when the next page continues the group', function (): void {
+    $host = groupedSummaryHost(summaryStateSongs());
+
+    expect($host->shouldRenderTrailingGroupedTableSummary($host->getTableRecords()->getRecords()[2]))->toBeFalse();
+});
+
+it('renders the trailing grouped summary when the next page starts a new group', function (): void {
+    $host = groupedSummaryHost(summaryStateSongs(), recordsPerPage: 3);
+
+    expect($host->shouldRenderTrailingGroupedTableSummary($host->getTableRecords()->getRecords()[3]))->toBeTrue();
+});
+
+/*
+ * The paginator counted the rows before the look-ahead reads them, so a page that
+ * claims a successor can still be followed by nothing at all.
+ */
+it('renders the trailing grouped summary when the next page turns out to be empty', function (): void {
+    $entityManager = summaryStateSongs();
+    $host = groupedSummaryHost($entityManager);
+
+    $lastRecord = $host->getTableRecords()->getRecords()[2];
+
+    $entityManager->createQuery('DELETE FROM ' . Song::class . ' song WHERE song.id > 2')->execute();
+
+    expect($host->getTablePaginator()?->hasMorePages())->toBeTrue()
+        ->and($host->shouldRenderTrailingGroupedTableSummary($lastRecord))->toBeTrue();
+});
+
+/*
+ * A `date()` group keys by the day, so the look-ahead compares days too: two songs
+ * released hours apart across a page break are still one group, and one released the
+ * next morning is not.
+ */
+it('compares the days of a date group across the page break', function (): void {
+    $entityManager = EntityManagerFactory::create();
+
+    EntityManagerFactory::seed(
+        $entityManager,
+        new Song(id: 1, title: 'Airbag', plays: 10, releasedAt: new DateTimeImmutable('2026-09-02 09:00:00')),
+        new Song(id: 2, title: 'Let Down', plays: 20, releasedAt: new DateTimeImmutable('2026-09-02 21:30:00')),
+        new Song(id: 3, title: 'No Surprises', plays: 30, releasedAt: new DateTimeImmutable('2026-09-02 23:45:00')),
+        new Song(id: 4, title: 'Jóga', plays: 40, releasedAt: new DateTimeImmutable('2026-09-03 01:15:00')),
+    );
+
+    $dated = fn (int $recordsPerPage): TableHost => groupedSummaryHost(
+        $entityManager,
+        recordsPerPage: $recordsPerPage,
+        configure: fn (Table $table): Table => $table->groups([Group::make('releasedAt')->date()]),
+    );
+
+    $sameDay = $dated(2);
+    $sameDay->tableGrouping = 'releasedAt';
+
+    $nextDay = $dated(3);
+    $nextDay->tableGrouping = 'releasedAt';
+
+    expect($sameDay->shouldRenderTrailingGroupedTableSummary($sameDay->getTableRecords()->getRecords()[2]))->toBeFalse()
+        ->and($nextDay->shouldRenderTrailingGroupedTableSummary($nextDay->getTableRecords()->getRecords()[3]))->toBeTrue();
+});
+
+it('costs one statement to look ahead, and none where an early return answers', function (): void {
+    $recorder = new RecordingMiddleware();
+    $entityManager = summaryStateSongs($recorder);
+
+    $host = groupedSummaryHost($entityManager);
+    $lastRecord = $host->getTableRecords()->getRecords()[2];
+
+    $recorder->reset();
+
+    expect($host->shouldRenderTrailingGroupedTableSummary($lastRecord))->toBeFalse()
+        ->and($recorder->statements())->toHaveCount(1);
+
+    $lastPage = groupedSummaryHost($entityManager, page: 3);
+    $lastPageRecord = $lastPage->getTableRecords()->getRecords()[6];
+
+    $recorder->reset();
+
+    expect($lastPage->shouldRenderTrailingGroupedTableSummary($lastPageRecord))->toBeTrue()
+        ->and($recorder->statements())->toBe([]);
+});
+
+/*
+ * A to-many fetch join makes rows and records different things, so the naive window
+ * of one hands back a row of the record the page already ended on — the same trap
+ * `paginateTableQuery()` routes around, and the same way out.
+ */
+it('reads past a fetch-joined to-many through the paginator', function (): void {
+    $entityManager = EntityManagerFactory::create();
+
+    $radiohead = new Artist(1, 'Radiohead');
+    $portishead = new Artist(2, 'Portishead');
+    $rock = new Genre(1, 'Rock');
+    $tripHop = new Genre(2, 'Trip hop');
+    $airbag = new Song(id: 1, title: 'Airbag', plays: 10, artist: $radiohead);
+
+    // Two genres on the page's first song, so the fetch join makes the window of
+    // one land inside that song rather than on the record after the page.
+    $airbag->getGenres()->add($rock);
+    $airbag->getGenres()->add($tripHop);
+
+    EntityManagerFactory::seed(
+        $entityManager,
+        $radiohead,
+        $portishead,
+        $rock,
+        $tripHop,
+        $airbag,
+        new Song(id: 2, title: 'Let Down', plays: 20, artist: $radiohead),
+        new Song(id: 3, title: 'Glory Box', plays: 30, artist: $portishead),
+        new Song(id: 4, title: 'Roads', plays: 40, artist: $portishead),
+    );
+
+    $host = new TableHost(fn (Table $table): Table => $table
+        ->query($entityManager->createQueryBuilder()
+            ->select('song', 'sy_genres')
+            ->from(Song::class, 'song')
+            ->leftJoin('song.genres', 'sy_genres')
+            ->orderBy('song.id', 'ASC'))
+        ->columns([TextColumn::make('plays')->summarize(Sum::make())])
+        ->groups(['artist.name'])
+        ->paginated([2]));
+    $host->tableGrouping = 'artist.name';
+
+    expect($host->shouldRenderTrailingGroupedTableSummary($host->getTableRecords()->getRecords()[2]))->toBeTrue();
+});

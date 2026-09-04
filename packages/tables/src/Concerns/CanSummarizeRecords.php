@@ -5,7 +5,9 @@ declare(strict_types=1);
 namespace Sylament\Tables\Concerns;
 
 use Doctrine\ORM\QueryBuilder;
+use Doctrine\ORM\Tools\Pagination\Paginator as DoctrinePaginator;
 use Sylament\Support\Pagination\Paginator;
+use Sylament\Tables\Query\JoinCardinality;
 use Sylament\Tables\Columns\Summarizers\Contracts\HasSelectAlias;
 use Sylament\Tables\Grouping\Group;
 use Sylament\Tables\Query\AggregateDeclaration;
@@ -80,6 +82,59 @@ trait CanSummarizeRecords
     }
 
     /**
+     * Whether the group the page's last record closed is finished, or continues onto
+     * the next page — where its summary row would put a partial figure under a
+     * heading naming the whole group.
+     *
+     * Four shapes answer without asking the database, in Filament's own order: there
+     * is no record to summarize; no next page exists to continue anything, which
+     * covers an unpaginated table, the last page and a page holding every record;
+     * nothing is grouped; or there is no query to look ahead in. Only what is left
+     * pays for the look-ahead, and it pays once.
+     *
+     * A record rather than a scalar key, because the key may be a
+     * `getKeyFromRecordUsing()` closure's answer and the closure needs the record.
+     *
+     * Off the contract on purpose: the boundary map and the summary band are the
+     * only callers, and both reach it through the host they already hold.
+     *
+     * @param object|array<string, mixed>|null $lastRecord
+     */
+    public function shouldRenderTrailingGroupedTableSummary(object|array|null $lastRecord): bool
+    {
+        if ($lastRecord === null) {
+            return false;
+        }
+
+        $paginator = $this->getTablePaginator();
+
+        if (!$paginator instanceof Paginator || !$paginator->hasMorePages()) {
+            return true;
+        }
+
+        $group = $this->getTableGrouping();
+
+        if (!$group instanceof Group) {
+            return true;
+        }
+
+        $query = $this->getFilteredSortedTableQuery();
+        $recordsPerPage = $paginator->getRecordsPerPage();
+
+        if (!$query instanceof QueryBuilder || $recordsPerPage === 'all') {
+            return true;
+        }
+
+        $nextPageFirstRecord = $this->readTableRecordAtOffset($query, $paginator->getPage() * $recordsPerPage);
+
+        if ($nextPageFirstRecord === null) {
+            return true;
+        }
+
+        return $group->getStringKey($nextPageFirstRecord) !== $group->getStringKey($lastRecord);
+    }
+
+    /**
      * One statement carrying every batchable summarizer of every visible column,
      * hydrated as one flat alias ⇒ value row for the whole summary row to read.
      *
@@ -132,5 +187,34 @@ trait CanSummarizeRecords
         }
 
         return $selects === [] ? [] : SummaryQuery::readRow($query, $selects);
+    }
+
+    /**
+     * The one record sitting at `$offset` in the sorted query, or null where the
+     * query ends before it — the paginator counted its rows before this read runs,
+     * so a page that claims a successor can still be followed by nothing.
+     *
+     * A window of one is a window over *rows*, and a to-many fetch join makes rows
+     * and records different things, so that shape is read through Doctrine's own
+     * paginator instead — the guard `paginateTableQuery()` applies to a whole page,
+     * over a page of one.
+     *
+     * @return object|array<string, mixed>|null
+     */
+    private function readTableRecordAtOffset(QueryBuilder $query, int $offset): object|array|null
+    {
+        $probe = $query->setFirstResult($offset)->setMaxResults(1);
+
+        if (JoinCardinality::joinsCollection($probe)) {
+            /** @var list<object|array<string, mixed>> $records */
+            $records = iterator_to_array(new DoctrinePaginator($probe->getQuery(), true)->getIterator(), preserve_keys: false);
+
+            return $records[0] ?? null;
+        }
+
+        /** @var list<object|array<string, mixed>> $records */
+        $records = $probe->getQuery()->getResult();
+
+        return $records[0] ?? null;
     }
 }

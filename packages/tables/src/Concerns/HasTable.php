@@ -75,9 +75,8 @@ trait HasTable
     /**
      * Where a host binds one of its table-state props to the query string —
      * `page`, `sort`, `search`, `filters`, `grouping` or `tab`. Null everywhere
-     * by default,
-     * so a card, a modal or a relation manager carries no URL state at all and
-     * only a routed page opts in.
+     * by default, so a card, a modal or a relation manager carries no URL state
+     * at all and only a routed page opts in.
      *
      * Read from the `LiveProp` modifiers, which UX runs during hydration before
      * any `#[PostHydrate]` hook: an override must stay cheap and side-effect

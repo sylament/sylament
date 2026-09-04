@@ -280,9 +280,6 @@ it('leaves a seeded grouping standing over a selectable default', function (): v
 
     $host->mountTableGrouping();
 
-    // Filament seeds the default unconditionally, which discards a bookmarked
-    // `?grouping=`; every neighbouring seed in that method guards on blank and
-    // this one does not.
     expect($host->tableGrouping)->toBe('artist.name:desc');
 });
 

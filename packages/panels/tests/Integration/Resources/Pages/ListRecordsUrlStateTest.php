@@ -45,7 +45,10 @@ function urlStateArticlesClient(): array
  */
 function urlStateRowTitles(Crawler $crawler): array
 {
-    return $crawler->filter('tbody .sy-ta-row')->each(fn (Crawler $row): string => mb_trim($row->filter('td')->first()->text()));
+    // Record rows only: a group header row carries `sy-ta-row` too, so the class
+    // alone reads a grouped table's headings as rows.
+    return $crawler->filter('tbody tr[id*=".table.records."]')
+        ->each(fn (Crawler $row): string => mb_trim($row->filter('td')->first()->text()));
 }
 
 /**

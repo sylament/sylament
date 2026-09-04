@@ -67,7 +67,7 @@
 {% set headingTag = component.getHeadingTag %}
 {% set headerVisible = heading or description or headerActions is not empty %}
 {% set headerActionsAdaptive = component.getHeaderActionsPosition is same as(constant('Sylament\\Tables\\Enums\\HeaderActionsPosition::Adaptive')) %}
-{% set toolbarVisible = isSearchable or filtersTriggerVisible or toolbarActions is not empty or isReorderable or hasColumnManager %}
+{% set toolbarVisible = isSearchable or filtersTriggerVisible or toolbarActions is not empty or isReorderable or hasColumnManager or groupingVisible %}
 
 {% set recordActionsByKey = isReordering or records is null ? {} : component.getVisibleRecordActionsByRecordKey %}
 {% set hasRecordActions = recordActionsByKey|filter(actions => actions is not empty)|length > 0 %}
@@ -143,6 +143,54 @@
     {% endset %}
 {% endif %}
 
+{# One capture, emitted twice: a dropdown copy for the narrow viewport and an
+   inline one for the wide, which is the split vendor draws with three cosmetic
+   differences the port drops. The changed select is the controller's authority,
+   so the two copies never disagree for longer than one tick. #}
+{% set groupingFields = null %}
+{% if groupingVisible %}
+    {% set groupingFields %}
+        <label class="sy-ta-grouping-settings-field">
+            <span class="sy-ta-grouping-settings-field-label">Group</span>
+
+            <twig:SylamentSupport:InputWrapper>
+                <select {{ attrs({
+                    class: 'sy-fo-select',
+                    'aria-label': 'Group',
+                }, stimulus_target('sylament--tables--table', 'groupColumn'), stimulus_action('sylament--tables--table', 'group', 'change')) }}>
+                    <option {{ attrs({value: '', selected: groupColumn is null}) }}>-</option>
+
+                    {% for groupOption in groups %}
+                        <option {{ attrs({
+                            value: groupOption.getId,
+                            selected: groupColumn == groupOption.getId,
+                        }) }}>{{ groupOption.getLabel }}</option>
+                    {% endfor %}
+                </select>
+            </twig:SylamentSupport:InputWrapper>
+        </label>
+
+        {% if not groupingDirectionHidden %}
+            <label {{ attrs({
+                class: 'sy-ta-grouping-settings-field',
+                hidden: groupColumn is null,
+            }, stimulus_target('sylament--tables--table', 'groupDirectionField')) }}>
+                <span class="sy-ta-grouping-settings-field-label">Direction</span>
+
+                <twig:SylamentSupport:InputWrapper>
+                    <select {{ attrs({
+                        class: 'sy-fo-select',
+                        'aria-label': 'Group direction',
+                    }, stimulus_target('sylament--tables--table', 'groupDirection'), stimulus_action('sylament--tables--table', 'group', 'change')) }}>
+                        <option {{ attrs({value: 'asc', selected: groupDirection != 'desc'}) }}>Ascending</option>
+                        <option {{ attrs({value: 'desc', selected: groupDirection == 'desc'}) }}>Descending</option>
+                    </select>
+                </twig:SylamentSupport:InputWrapper>
+            </label>
+        {% endif %}
+    {% endset %}
+{% endif %}
+
 <div {{ attrs({
     class: 'sy sy-ta',
 }, isSelectionEnabled or isReorderable or isDeferred or pollIntervalMilliseconds is not null or groupingVisible or group is not null ? stimulus_controller('sylament--tables--table', {
@@ -193,7 +241,7 @@
 
         {% if toolbarVisible %}
             <div class="sy-ta-header-toolbar">
-                {% if isReorderable or toolbarActions is not empty %}
+                {% if isReorderable or toolbarActions is not empty or groupingVisible %}
                     <div class="sy-ta-header-toolbar-actions">
                         {% if isReorderable %}
                             {{ renderComponent(component.getReorderRecordsTriggerAction(isReordering)) }}
@@ -214,7 +262,25 @@
                             {% endif %}
                         {% endfor %}
 
-                        {# grouping selector slot — M4 · 6 #}
+                        {% if groupingVisible %}
+                            <div {{ attrs({
+                                class: classes('sy-ta-grouping-settings', {
+                                    'sy-ta-grouping-settings-dropdown-on-desktop': groupingInDropdownOnDesktop,
+                                }),
+                            }) }}>
+                                <twig:SylamentSupport:Dropdown placement="bottom-start" :teleport="true" width="20rem">
+                                    <twig:block name="trigger">{{ renderComponent(component.getGroupRecordsTriggerAction) }}</twig:block>
+
+                                    <twig:block name="content">
+                                        <div class="sy-ta-grouping-settings-fields">{{ groupingFields }}</div>
+                                    </twig:block>
+                                </twig:SylamentSupport:Dropdown>
+
+                                {% if not groupingInDropdownOnDesktop %}
+                                    <div class="sy-ta-grouping-settings-fields">{{ groupingFields }}</div>
+                                {% endif %}
+                            </div>
+                        {% endif %}
                     </div>
                 {% endif %}
 

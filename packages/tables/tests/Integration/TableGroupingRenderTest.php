@@ -85,6 +85,92 @@ function unknownArtistTableHtml(): string
     return renderToHtml($host->getTable());
 }
 
+it('renders no grouping chrome, and no toolbar at all, for a table declaring no groups', function (): void {
+    $crawler = new Crawler(groupedTableHtml(grouping: null, configure: fn (Table $table): Table => $table->groups([])));
+
+    expect($crawler->filter('.sy-ta-grouping-settings')->count())->toBe(0)
+        ->and($crawler->filter('.sy-ta-header-toolbar')->count())->toBe(0);
+});
+
+it('opens the toolbar for a table whose only member is the grouping selector', function (): void {
+    $crawler = new Crawler(groupedTableHtml());
+
+    expect($crawler->filter('.sy-ta-header-toolbar')->count())->toBe(1)
+        ->and($crawler->filter('.sy-ta-header-toolbar-actions')->count())->toBe(1)
+        ->and($crawler->filter('.sy-ta-header-toolbar-actions > .sy-ta-grouping-settings')->count())->toBe(1);
+});
+
+it('offers one option per registered group beside a blank one', function (): void {
+    $selects = new Crawler(groupedTableHtml(grouping: null))
+        ->filter('.sy-ta-grouping-settings [data-sylament--tables--table-target="groupColumn"]');
+
+    expect($selects->count())->toBe(2)
+        ->and($selects->first()->attr('data-action'))->toBe('change->sylament--tables--table#group')
+        ->and($selects->first()->attr('aria-label'))->toBe('Group')
+        ->and($selects->first()->filter('option')->each(fn (Crawler $option): ?string => $option->attr('value')))
+        ->toBe(['', 'artist.name', 'album'])
+        ->and($selects->first()->filter('option')->each(fn (Crawler $option): string => $option->text()))
+        ->toBe(['-', 'Artist', 'Album'])
+        ->and($selects->first()->filter('option[selected]')->attr('value'))->toBe('');
+});
+
+it('marks the option of the group in force', function (): void {
+    $crawler = new Crawler(groupedTableHtml('album'));
+    $selected = $crawler->filter('[data-sylament--tables--table-target="groupColumn"]')->first()->filter('option[selected]');
+
+    expect($selected->count())->toBe(1)
+        ->and($selected->attr('value'))->toBe('album');
+});
+
+it('reveals the direction select once a group is in force and drops it on request', function (): void {
+    $ungrouped = new Crawler(groupedTableHtml(grouping: null));
+    $grouped = new Crawler(groupedTableHtml('album:desc'));
+
+    $ungroupedField = $ungrouped->filter('[data-sylament--tables--table-target="groupDirectionField"]')->first();
+    $groupedField = $grouped->filter('[data-sylament--tables--table-target="groupDirectionField"]')->first();
+    $directionSelect = $groupedField->filter('[data-sylament--tables--table-target="groupDirection"]');
+
+    expect($ungroupedField->attr('hidden'))->not->toBeNull()
+        ->and($groupedField->attr('hidden'))->toBeNull()
+        ->and($directionSelect->attr('data-action'))->toBe('change->sylament--tables--table#group')
+        ->and($directionSelect->filter('option')->each(fn (Crawler $option): string => $option->text()))
+        ->toBe(['Ascending', 'Descending'])
+        ->and($directionSelect->filter('option[selected]')->attr('value'))->toBe('desc');
+
+    $hidden = new Crawler(groupedTableHtml('album', fn (Table $table): Table => $table->groupingDirectionSettingHidden()));
+
+    expect($hidden->filter('[data-sylament--tables--table-target="groupDirectionField"]')->count())->toBe(0)
+        ->and($hidden->filter('[data-sylament--tables--table-target="groupColumn"]')->count())->toBe(2);
+});
+
+it('hides the whole selector under groupingSettingsHidden() while the grouping still applies', function (): void {
+    $crawler = new Crawler(groupedTableHtml(configure: fn (Table $table): Table => $table->groupingSettingsHidden()));
+
+    expect($crawler->filter('.sy-ta-grouping-settings')->count())->toBe(0)
+        ->and($crawler->filter('.sy-ta-header-toolbar')->count())->toBe(0)
+        ->and($crawler->filter('tr.sy-ta-group-header-row')->count())->toBe(2);
+});
+
+it('renders the trigger in a dropdown and keeps the inline copy off the desktop on request', function (): void {
+    $crawler = new Crawler(groupedTableHtml());
+    $settings = $crawler->filter('.sy-ta-grouping-settings');
+    $trigger = $settings->filter('.sy-dropdown .sy-dropdown-trigger button.sy-icon-btn');
+
+    expect($settings->attr('class'))->not->toContain('sy-ta-grouping-settings-dropdown-on-desktop')
+        ->and($settings->filter('.sy-ta-grouping-settings-fields')->count())->toBe(2)
+        ->and($settings->filter('.sy-dropdown')->attr('data-sylament--support--dropdown-teleport-value'))->toBe('true')
+        ->and($settings->filter('.sy-dropdown .sy-dropdown-panel')->attr('style'))->toContain('--sy-dropdown-width: 20rem')
+        ->and($trigger->count())->toBe(1)
+        ->and($trigger->attr('aria-label'))->toBe('Group')
+        ->and($trigger->filter('svg.sy-icon')->attr('viewBox'))->toBe('0 0 20 20');
+
+    $onDesktop = new Crawler(groupedTableHtml(configure: fn (Table $table): Table => $table
+        ->groupingSettingsInDropdownOnDesktop()))->filter('.sy-ta-grouping-settings');
+
+    expect($onDesktop->attr('class'))->toContain('sy-ta-grouping-settings-dropdown-on-desktop')
+        ->and($onDesktop->filter('.sy-ta-grouping-settings-fields')->count())->toBe(1);
+});
+
 it('opens a group header row at each boundary and nowhere else', function (): void {
     $crawler = new Crawler(groupedTableHtml());
     $rows = $crawler->filter('tbody > tr');

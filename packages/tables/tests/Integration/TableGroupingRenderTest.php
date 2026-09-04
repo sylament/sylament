@@ -371,6 +371,21 @@ it('renders no group checkbox for a table with no bulk actions', function (): vo
         ->and($crawler->filter('tr.sy-ta-group-header-row')->count())->toBe(2);
 });
 
+it('opens no group header row and no selection chrome under groupsOnly()', function (): void {
+    $crawler = new Crawler(groupedTableHtml(configure: fn (Table $table): Table => $table
+        ->bulkActions([BulkAction::make('archive')])
+        ->groupsOnly()));
+
+    // The rows the heading moves onto are the summary band's, which lands with
+    // the summaries half of this epic; what is pinned here is that the two
+    // gates hold — no header row of ours, and no checkbox of any kind.
+    expect($crawler->filter('tr.sy-ta-group-header-row')->count())->toBe(0)
+        ->and($crawler->filter('input.sy-ta-group-checkbox')->count())->toBe(0)
+        ->and($crawler->filter('input.sy-ta-record-checkbox')->count())->toBe(0)
+        ->and($crawler->filter('thead th.sy-ta-selection-cell')->count())->toBe(0)
+        ->and($crawler->filter('.sy-ta-selection-indicator')->count())->toBe(0);
+});
+
 it('drops the page checkbox but keeps its cell under selectGroupsOnly()', function (): void {
     $crawler = new Crawler(groupedTableHtml(configure: fn (Table $table): Table => $table
         ->bulkActions([BulkAction::make('archive')])

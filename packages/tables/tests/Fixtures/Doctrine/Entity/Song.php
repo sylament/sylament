@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace Sylament\Tables\Tests\Fixtures\Doctrine\Entity;
 
+use DateTimeImmutable;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
+use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 use Sylament\Tables\Tests\Fixtures\Records\Format;
 
@@ -64,6 +66,20 @@ class Song
          */
         #[ORM\Column(nullable: true)]
         private ?int $position = null,
+        /**
+         * A `date()` group's datetime target: the day is computed in PHP and
+         * scoped as a half-open range, so an instant inside the day still
+         * matches the day key.
+         */
+        #[ORM\Column(type: Types::DATETIME_IMMUTABLE, nullable: true)]
+        private ?DateTimeImmutable $releasedAt = null,
+        /**
+         * A `date()` group's date target, whose own DBAL type is what the range
+         * parameters have to be bound as — an untyped datetime literal compares
+         * as text against a date column and answers the neighbouring day.
+         */
+        #[ORM\Column(type: Types::DATE_IMMUTABLE, nullable: true)]
+        private ?DateTimeImmutable $chartedOn = null,
         /**
          * The select column's enum-typed target: a posted backing string only
          * reaches it through the column's state cast.
@@ -176,6 +192,30 @@ class Song
     public function setPosition(?int $position): static
     {
         $this->position = $position;
+
+        return $this;
+    }
+
+    public function getReleasedAt(): ?DateTimeImmutable
+    {
+        return $this->releasedAt;
+    }
+
+    public function setReleasedAt(?DateTimeImmutable $releasedAt): static
+    {
+        $this->releasedAt = $releasedAt;
+
+        return $this;
+    }
+
+    public function getChartedOn(): ?DateTimeImmutable
+    {
+        return $this->chartedOn;
+    }
+
+    public function setChartedOn(?DateTimeImmutable $chartedOn): static
+    {
+        $this->chartedOn = $chartedOn;
 
         return $this;
     }

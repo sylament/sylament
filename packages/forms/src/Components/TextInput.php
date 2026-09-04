@@ -317,7 +317,9 @@ class TextInput extends Field implements Contracts\CanBeLengthConstrained, Contr
         }
 
         if ($this->evaluate($this->isCurrentPassword)) {
-            class_exists(UserPassword::class) || throw new LogicException('currentPassword() needs symfony/security-core and a configured firewall (symfony/security-bundle) to validate against the signed-in user.');
+            if (!class_exists(UserPassword::class)) {
+                throw new LogicException('currentPassword() needs symfony/security-core and a configured firewall (symfony/security-bundle) to validate against the signed-in user.');
+            }
 
             $constraints[] = new UserPassword();
         }

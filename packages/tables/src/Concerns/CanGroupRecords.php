@@ -29,6 +29,15 @@ trait CanGroupRecords
     public ?string $tableGrouping = null;
 
     /**
+     * Invalidated with the records it describes: `flushCachedTableRecords()` nulls
+     * it beside `cachedTableRecords`, so nothing that reshapes the page — a new
+     * grouping, sort, filter, search or page — can leave a stale map behind.
+     *
+     * @var array<array-key, array{key: ?string, title: string|Markup|null, description: string|Markup|null, isFirstOfGroup: bool, isLastOfGroup: bool, indexInGroup: int}>|null
+     */
+    private ?array $cachedTableRecordGroupBoundaries = null;
+
+    /**
      * The wire value is the property, not the `Group` the dehydration pass reads
      * through the same-named getter — Symfony's property accessor prefers an
      * accessor over the property, and a `Group` carries no property type to
@@ -184,9 +193,21 @@ trait CanGroupRecords
      * The key type is `getTableRecords()`'s and for its reason: PHP coerces a
      * numeric-string record key to an int.
      *
+     * Memoised, because on a summarized table the map costs the trailing probe's
+     * statement and it has two readers by design — the group header rows and the
+     * trailing summary row — either of which a template may read per record.
+     *
      * @return array<array-key, array{key: ?string, title: string|Markup|null, description: string|Markup|null, isFirstOfGroup: bool, isLastOfGroup: bool, indexInGroup: int}>
      */
     public function getTableRecordGroupBoundaries(): array
+    {
+        return $this->cachedTableRecordGroupBoundaries ??= $this->resolveTableRecordGroupBoundaries();
+    }
+
+    /**
+     * @return array<array-key, array{key: ?string, title: string|Markup|null, description: string|Markup|null, isFirstOfGroup: bool, isLastOfGroup: bool, indexInGroup: int}>
+     */
+    private function resolveTableRecordGroupBoundaries(): array
     {
         $group = $this->getTableGrouping();
 

@@ -187,6 +187,7 @@ trait HasTable
     {
         $this->cachedTableRecords = null;
         $this->cachedGroupedSelectableTableRecordKeys = [];
+        $this->cachedTableRecordGroupBoundaries = null;
     }
 
     /**

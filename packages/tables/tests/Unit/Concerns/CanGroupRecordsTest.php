@@ -479,3 +479,36 @@ it('still closes the last group where the next page starts a new one', function 
 
     expect(array_last($boundaries)['isLastOfGroup'])->toBeTrue();
 });
+
+/*
+ * The map has two readers by design — the group header rows and the trailing
+ * summary row — and on a summarized table each read would otherwise pay the
+ * probe's statement, once per record where a template reads it inside the loop.
+ */
+it('answers a second read of the boundary map from the memo', function (): void {
+    $recorder = new RecordingMiddleware();
+    $host = groupedBoundaryHost(groupedSongsFixture($recorder), summarized: true);
+
+    $first = $host->getTableRecordGroupBoundaries();
+
+    $recorder->reset();
+
+    expect($host->getTableRecordGroupBoundaries())->toBe($first)
+        ->and($recorder->statements())->toBe([]);
+});
+
+it('recomputes the boundary map once the records cache is flushed', function (): void {
+    $recorder = new RecordingMiddleware();
+    $host = groupedBoundaryHost(groupedSongsFixture($recorder), summarized: true);
+
+    $byArtist = array_column($host->getTableRecordGroupBoundaries(), 'title');
+
+    $host->groupTable('plays');
+
+    $recorder->reset();
+
+    $byPlays = array_column($host->getTableRecordGroupBoundaries(), 'title');
+
+    expect($recorder->statements())->not->toBe([])
+        ->and($byPlays)->not->toBe($byArtist);
+});

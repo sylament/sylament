@@ -7,6 +7,7 @@ namespace Sylament\Tables\Tests\Integration;
 use Closure;
 use Sylament\Actions\Action;
 use Sylament\Actions\BulkAction;
+use Sylament\Tables\Columns\Summarizers\Count;
 use Sylament\Tables\Columns\TextColumn;
 use Sylament\Tables\Table;
 use Sylament\Tables\Tests\Fixtures\Concerns\TableHost;
@@ -183,4 +184,23 @@ it('opens the group header rows for the same table once the window has closed', 
 
     expect($reads)->toBeGreaterThan(0)
         ->and($crawler->filter('tr.sy-ta-group-header-row')->count())->toBe(3);
+});
+
+it('reads no records for a grouped, summarized table while the window is open', function (): void {
+    $reads = 0;
+    $host = deferrableTableHost($reads, fn (Table $table): Table => $table
+        ->deferLoading()
+        ->defaultGroup('title')
+        ->columns([TextColumn::make('title')->summarize(Count::make())]));
+
+    $crawler = new Crawler(renderToHtml($host->getTable()));
+
+    // Every summary read sits inside the loaded branch beside the boundary map,
+    // so a deferred table asks for no figure and publishes no band: the page
+    // query resolves the paginator, which is a read of the records themselves.
+    expect($reads)->toBe(0)
+        ->and($crawler->filter('tr.sy-ta-summary-row')->count())->toBe(0)
+        ->and($crawler->filter('tr.sy-ta-summary-header-row')->count())->toBe(0)
+        ->and($crawler->filter('tr.sy-ta-group-header-row')->count())->toBe(0)
+        ->and($crawler->filter('.sy-ta-table-loading-ctn')->count())->toBe(1);
 });

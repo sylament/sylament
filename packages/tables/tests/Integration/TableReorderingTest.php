@@ -8,6 +8,7 @@ use Closure;
 use Sylament\Actions\Action;
 use Sylament\Actions\BulkAction;
 use Sylament\Support\Icons\IconManager;
+use Sylament\Tables\Columns\Summarizers\Count;
 use Sylament\Tables\Columns\TextColumn;
 use Sylament\Tables\Table;
 use Sylament\Tables\Tests\Fixtures\Concerns\TableHost;
@@ -192,5 +193,17 @@ it('suppresses the grouping selector, the group headers and the group checkboxes
         ->and($on->filter('tr.sy-ta-group-header-row')->count())->toBe(0)
         ->and($on->filter('input.sy-ta-group-checkbox')->count())->toBe(0)
         ->and($on->filter('tr[data-sy-group]')->count())->toBe(0)
+        ->and($on->filter('tr[data-sortable-item]')->count())->toBe(3);
+});
+
+it('suppresses every summary row while reordering', function (): void {
+    $summarized = fn (Table $table): Table => $table->columns([TextColumn::make('title')->summarize(Count::make())]);
+
+    $off = new Crawler(reorderingTableHtml(configure: $summarized));
+    $on = new Crawler(reorderingTableHtml(true, $summarized));
+
+    expect($off->filter('tr.sy-ta-summary-row')->count())->toBe(1)
+        ->and($on->filter('tr.sy-ta-summary-row')->count())->toBe(0)
+        ->and($on->filter('tr.sy-ta-summary-header-row')->count())->toBe(0)
         ->and($on->filter('tr[data-sortable-item]')->count())->toBe(3);
 });

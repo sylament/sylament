@@ -71,7 +71,7 @@ reason inline instead.
 | [`getDescriptionFromRecordUsing()` / `getDescription()`](../../../packages/tables/src/Grouping/Group.php) | [`Grouping\Group::getDescription()`](../../../vendor/filament/tables/src/Grouping/Group.php) | done | — | — |
 | `getDescriptionUsing()` | [`Grouping\Group`](../../../vendor/filament/tables/src/Grouping/Group.php) | skipped | — | `@deprecated Use the getDescriptionFromRecordUsing() method instead.`, and the project has never ported a deprecated Filament surface; the spelling its own notice names ships ([renames.md](../renames.md#renames)) |
 | [`orderQuery()` / `orderQueryUsing()`](../../../packages/tables/src/Grouping/Group.php) | [`Grouping\Group`](../../../vendor/filament/tables/src/Grouping/Group.php) | done | — | [semantics](#the-group-order-is-appended-first-so-every-later-sort-breaks-ties-inside-a-group) · [table.md](table.md#a-relation-sort-joins-where-filaments-orders-by-a-correlated-subquery) |
-| [`scopeQuery()` / `scopeQueryUsing()` / `scopeQueryByKey()` / `scopeQueryByKeyUsing()`](../../../packages/tables/src/Grouping/Group.php) | [`Grouping\Group`](../../../vendor/filament/tables/src/Grouping/Group.php) | done | — | [diverges](#the-blank-key-scopes-with-one-is-null-where-filaments-or-pair-drops-the-querys-other-predicates) · [diverges](#a-scopequeryusing-closures-builder-reaches-the-caller-where-filaments-is-discarded) · [semantics](#a-date-group-is-a-half-open-day-range-bound-with-the-fields-own-type) |
+| [`scopeQuery()` / `scopeQueryUsing()` / `scopeQueryByKey()` / `scopeQueryByKeyUsing()`](../../../packages/tables/src/Grouping/Group.php) | [`Grouping\Group`](../../../vendor/filament/tables/src/Grouping/Group.php) | done | — | [diverges](#the-blank-key-scopes-with-one-is-null-where-filaments-or-pair-drops-the-querys-other-predicates) · [diverges](#the-closure-query-seams-keep-the-builders-mutation-and-drop-its-return-where-filament-coalesces-it) · [semantics](#a-date-group-is-a-half-open-day-range-bound-with-the-fields-own-type) |
 | [`applyEagerLoading()`](../../../packages/tables/src/Grouping/Group.php) | [`Grouping\Group::applyEagerLoading()`](../../../vendor/filament/tables/src/Grouping/Group.php) | done | — | one call to [`RelationJoiner::fetchJoinPath()`](../../../packages/tables/src/Query/RelationJoiner.php), the body [hoisted off the column trait](column.md#relationship-traversal-ships-as-a-value-walk-a-side-store-and-one-kept-member) so the two share an implementation rather than a copy |
 | `groupQuery()` / `groupQueryUsing()` | [`Grouping\Group::groupQuery()`](../../../vendor/filament/tables/src/Grouping/Group.php) | skipped | — | [diverges](#groupquery-is-superseded-by-the-per-group-scoped-query) |
 | `getRelationship()` / `getRelationshipName()` / `getRelationshipAttribute()` | [`Grouping\Group`](../../../vendor/filament/tables/src/Grouping/Group.php) | skipped | — | The lexical split of a dotted column into *relationship* and *attribute*, which [`RelationPathResolver`](table.md#a-dotted-name-is-resolved-against-the-mapping-before-it-is-refused) performs against the mapping instead — so all three are steps of a derivation this side does not perform ([renames.md](../renames.md#renames)) |
@@ -94,7 +94,7 @@ reason inline instead.
 | [The `grouping` URL bind — one `UrlMapping` arm on each routed page](../../../packages/panels/src/Resources/Pages/ListRecords.php) | [`#[Url(as: 'grouping')]` on `ListRecords`](../../../vendor/filament/filament/src/Resources/Pages/ListRecords.php) and on [`ManageRelatedRecords`](../../../vendor/filament/filament/src/Resources/Pages/ManageRelatedRecords.php) | done | — | Both routed pages map it, unprefixed and between `filters` and `tab` — Filament's own declaration order ([manage-related-records.md](../panels/manage-related-records.md)). The nested `RelationManager` binds nothing, here or upstream. [has-table.md](has-table.md#the-url-binding-is-a-per-prop-liveprop-modifier-opted-into-by-the-page) |
 | [Grouped selection — `getGroupedSelectableTableRecordKeys()` and the group checkbox](../../../packages/tables/src/Concerns/HasBulkActions.php) | [`Concerns\HasBulkActions`](../../../vendor/filament/tables/src/Concerns/HasBulkActions.php) | done | — | [semantics](#the-whole-universe-arm-costs-one-query-per-group-on-the-page) · [diverges](#both-selection-lanes-key-through-getstringkey-where-filaments-records-lane-reads-the-column-raw) · [has-table.md](has-table.md#the-selection-is-server-canonical-and-re-derived-on-every-read) |
 | [`selectGroupsOnly()` / `selectsGroupsOnly()`](../../../packages/tables/src/Table/Concerns/HasBulkActions.php) | [`Table\Concerns\HasBulkActions`](../../../vendor/filament/tables/src/Table/Concerns/HasBulkActions.php) | done | — | [table.md](table.md#the-selection-settings-ship-as-a-subset-and-the-rest-are-listed) |
-| [The toolbar selector — the trigger, its dropdown copy and the inline one](../../../packages/tables/templates/partials/Table/index.html.twig) + [`grouping.css`](../../../packages/tables/assets/src/styles/components/grouping.css) | [`index.blade.php`'s `fi-ta-grouping-settings`](../../../vendor/filament/tables/resources/views/index.blade.php), [`container.css`](../../../vendor/filament/tables/resources/css/container.css) | done | — | [diverges](#the-two-selector-copies-swap-in-css-where-vendor-swaps-with-a-conditional-utility-class) · [semantics](#the-direction-field-hides-on-the-raw-property-not-on-the-resolved-group) |
+| [The toolbar selector — the trigger, its dropdown copy and the inline one](../../../packages/tables/templates/partials/Table/index.html.twig) + [`grouping.css`](../../../packages/tables/assets/src/styles/components/grouping.css) | [`index.blade.php`'s `fi-ta-grouping-settings`](../../../vendor/filament/tables/resources/views/index.blade.php), [`container.css`](../../../vendor/filament/tables/resources/css/container.css) | done | — | [diverges](#the-selectors-two-copies-are-one-capture-and-they-swap-in-css-rather-than-with-a-utility-class) · [semantics](#the-direction-field-hides-on-the-raw-property-not-on-the-resolved-group) |
 | [The group header row — its id, its colspan, the heading, the description and the collapse button](../../../packages/tables/templates/partials/Table/index.html.twig) | [`index.blade.php`'s `fi-ta-group-header-row`](../../../vendor/filament/tables/resources/views/index.blade.php), [`row.css`](../../../vendor/filament/tables/resources/css/row.css) | done | — | [diverges](#the-collapse-button-is-a-real-button-with-a-handler-of-its-own) · [diverges](#the-key-segment-of-every-id-this-row-mints-is-percent-encoded) · [semantics](#the-header-rows-colspan-is-vendors-arithmetic-read-off-the-thead) |
 | [The collapse state and the group tick — `toggleGroup()`, `group()`, `toggleGroupRecords()` and the two repaint blocks](../../../packages/tables/assets/src/controllers/table_controller.ts) | [`table.js`'s `toggleCollapseGroup()` / `isGroupCollapsed()` / `resetCollapsedGroups()`](../../../vendor/filament/tables/resources/js/components/table.js) | done | — | [diverges](#the-server-paints-the-collapsed-state-where-vendors-alpine-flashes-it-open) · [diverges](#three-client-guards-are-load-bearing-and-no-gate-in-this-repo-runs-them) · [semantics](#collapse-is-keyed-by-title-and-so-is-the-group-break) |
 | [The stripe restart at each group](../../../packages/tables/templates/partials/Table/index.html.twig) | [`index.blade.php`'s stripe reset](../../../vendor/filament/tables/resources/views/index.blade.php) | done | — | read off the boundary map's `indexInGroup` rather than a flag reset after each header — [table.md](table.md#surface) |
@@ -465,15 +465,34 @@ cannot escape the predicates around it. Every scope this class adds is `andWhere
 for that reason, and every parameter is `sylament_group_<n>`, counter-suffixed,
 because `setParameter()` overwrites a same-named parameter in silence.
 
-### A `scopeQueryUsing()` closure's builder reaches the caller where Filament's is discarded
+### The closure query seams keep the builder's mutation and drop its return, where Filament coalesces it
 
-Filament's `scopeQuery()` calls `$this->evaluate($this->scopeQueryUsing, …)` and
-then returns `$query` — the closure's return value is dropped, so a closure that
-narrows by building a *new* builder is silently a no-op. Ours delegates to
-`scopeQueryByKey()` when there is no closure and honours the closure's own
-mutation when there is, and the same fix is applied to
-`orderQueryUsing()`/`scopeQueryByKeyUsing()`: the closure is handed the builder
-and mutates it in place, which is the port's `sortQuery` convention.
+All three closure seams — `orderQueryUsing()`, `scopeQueryUsing()` and
+`scopeQueryByKeyUsing()` — hand the closure the builder in `namedInjections`,
+ignore what it evaluates to and unconditionally `return $query`. What reaches the
+caller is whatever the closure mutated on the builder it was given. Filament
+coalesces the return value instead:
+[`Group::orderQuery()`](../../../vendor/filament/tables/src/Grouping/Group.php)
+is `return $this->evaluate(…) ?? $query;` at `:350-358`, and `scopeQuery()`
+(`:373-388`) and `scopeQueryByKey()` (`:395-407`) are the same shape. So a
+Filament closure that narrows by building and **returning** a fresh builder works
+upstream and silently stops narrowing here — the port is the side that discards,
+not vendor.
+
+That is deliberate, and it is the convention the rest of the port already uses: a
+`sortable(query:)` closure is evaluated and discarded exactly the same way in
+[`Columns\Concerns\InteractsWithTableQuery::applySort()`](../../../packages/tables/src/Columns/Concerns/InteractsWithTableQuery.php).
+Doctrine's `QueryBuilder` is mutable and every method on it returns `$this`, so
+the idiomatic closure has nothing of its own to return and the coalesce would buy
+one escape hatch at the cost of two ways to say the same thing. The migration
+note is the whole of the delta: mutate the builder you are handed; do not build a
+new one.
+
+Vendor is not consistent about it either. `scopeQuery()`'s **no-closure** arm
+(`:390-392`) calls `$this->scopeQueryByKey($query, …)` and returns `$query`, so a
+`scopeQueryByKeyUsing()` closure's return value is honoured when the method is
+called directly and dropped when it is reached through `scopeQuery()` — which is
+the only genuinely vendor-side drop in this family.
 
 ### Both selection lanes key through `getStringKey()` where Filament's records lane reads the column raw
 
@@ -555,22 +574,38 @@ selection one: an app that leaves `@sylament/tables` out of its
 under `collapsedGroupsByDefault()`, rows the server painted `sy-collapsed` that
 nothing can ever expand.
 
-### The two selector copies swap in CSS where vendor swaps with a conditional utility class
+### The selector's two copies are one capture, and they swap in CSS rather than with a utility class
 
 The fields are one capture emitted twice — a dropdown copy for the narrow
-viewport, an inline one for the wide — and the markup inside each is vendor's:
-a `<label>` holding a `<span>` and an [`InputWrapper`](../support/input-wrapper.md)
-around a native `<select>`, one option per registered group behind a blank `-`,
-and *Ascending* / *Descending* beside it. Which copy shows is where the two part.
-Vendor puts a conditional `sm:fi-hidden` on the dropdown and `hidden sm:flex` on
-the inline copy; here both live in
+viewport, an inline one for the wide — and the divergence has two halves: *which
+copy shows*, and *what is inside it*.
+
+**Which copy shows.** Vendor puts a conditional `sm:fi-hidden` on the dropdown
+and `hidden sm:flex` on the inline copy; here both live in
 [`grouping.css`](../../../packages/tables/assets/src/styles/components/grouping.css),
 keyed off the `sy-ta-grouping-settings-dropdown-on-desktop` modifier class the
 wrapper carries under `groupingSettingsInDropdownOnDesktop()` — a stylesheet rule
 rather than a page-wide utility only this one caller would ever want, which is
 [the toolkit's standing rule for exactly this](../../styling.md).
 
-The direction field's visibility is the other half and is a server attribute
-rather than an Alpine binding: `hidden` when the property names no group, where
-vendor writes `x-cloak x-show="group"`. The controller keeps it in step from
-there.
+**What is inside it.** Vendor writes the two copies as two *different* markups.
+[`index.blade.php:432-477`](../../../vendor/filament/tables/resources/views/index.blade.php)
+— the dropdown copy — is a `<label>` holding a `<span>` and an
+[`InputWrapper`](../support/input-wrapper.md) around a native `<select>`, one
+option per registered group behind a blank `-`, and *Ascending* / *Descending*
+beside it; that is the markup the port emits. `:479-520` — the inline copy —
+drops the span, passes the group label as the wrapper's own
+`:prefix="…group.label"`, and renders the direction label as
+`<span class="fi-sr-only">`. Ours is one capture, so on a wide viewport it shows
+two **visible** `.sy-ta-grouping-settings-field-label` spans where vendor shows a
+prefix inside the wrapper and a screen-reader-only direction label — `grouping.css`
+styles that class visibly and nothing hides it in the inline slot. Deliberate:
+one capture is one markup to keep right rather than two that drift, and both
+selects carry an `aria-label` of their own either way, so the delta is visual
+rather than one of naming. `InputWrapper` does carry a `prefix` prop, so closing
+it is a second capture whenever the visual parity is worth two markups.
+
+One more delta rides inside that same capture: the direction field's visibility
+is a server attribute rather than an Alpine binding — `hidden` when the property
+names no group, where vendor writes `x-cloak x-show="group"`. The controller
+keeps it in step from there.

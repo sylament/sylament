@@ -177,8 +177,9 @@ trait CanGroupRecords
      * on the *title*, string-cast, which is Filament's own test: two keys that
      * read the same are one heading.
      *
-     * This wave the page's final record is always the last of its group; the
-     * trailing grouped summary folds its own probe into the same walk.
+     * The page's final record has no next row to break against, so where the table
+     * summarizes, its answer is the trailing probe's — one look past the page
+     * break — and where it does not, it is simply true and nothing reads it.
      *
      * The key type is `getTableRecords()`'s and for its reason: PHP coerces a
      * numeric-string record key to an int.
@@ -199,7 +200,7 @@ trait CanGroupRecords
             $records = $records->getRecords();
         }
 
-        /** @var list<array{recordKey: string, key: ?string, title: string|Markup|null, description: string|Markup|null}> $rows */
+        /** @var list<array{record: object|array<string, mixed>, recordKey: string, key: ?string, title: string|Markup|null, description: string|Markup|null}> $rows */
         $rows = [];
 
         foreach ($records as $recordKey => $record) {
@@ -207,6 +208,7 @@ trait CanGroupRecords
             $title = $group->getTitle($record, $key);
 
             $rows[] = [
+                'record' => $record,
                 'recordKey' => (string) $recordKey,
                 'key' => $key,
                 'title' => $title,
@@ -228,12 +230,32 @@ trait CanGroupRecords
                 'title' => $row['title'],
                 'description' => $row['description'],
                 'isFirstOfGroup' => $isFirstOfGroup,
-                'isLastOfGroup' => $position + 1 === $count || (string) $rows[$position + 1]['title'] !== $title,
+                'isLastOfGroup' => $position + 1 === $count
+                    ? $this->closesTrailingTableRecordGroup($row['record'])
+                    : (string) $rows[$position + 1]['title'] !== $title,
                 'indexInGroup' => $indexInGroup,
             ];
         }
 
         return $boundaries;
+    }
+
+    /**
+     * Whether the page's final record closes its group. Nothing but the trailing
+     * summary row hangs on the answer, so an unsummarized table gets the cheap one
+     * and spends no statement asking; a summarized one is followed past the page
+     * break, where a group that continues would otherwise be summarized twice —
+     * once here over part of itself, once on the next page over the rest.
+     *
+     * @param object|array<string, mixed> $record
+     */
+    private function closesTrailingTableRecordGroup(object|array $record): bool
+    {
+        if (!$this->getTable()->hasSummary($this->getAllTableSummaryQuery())) {
+            return true;
+        }
+
+        return $this->shouldRenderTrailingGroupedTableSummary($record);
     }
 
     /**

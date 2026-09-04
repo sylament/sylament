@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use Doctrine\ORM\EntityManager;
+use Sylament\Tables\Columns\Summarizers\Sum;
 use Sylament\Tables\Columns\TextColumn;
 use Sylament\Tables\Grouping\Group;
 use Sylament\Tables\Table;
@@ -23,9 +24,9 @@ use Sylament\Tables\Tests\Fixtures\Doctrine\RecordingMiddleware;
  * Six songs over two artists and one orphan, so a page carries more than one
  * group and one record whose group key is blank.
  */
-function groupedSongsFixture(): EntityManager
+function groupedSongsFixture(?RecordingMiddleware $recorder = null): EntityManager
 {
-    $entityManager = EntityManagerFactory::create();
+    $entityManager = EntityManagerFactory::create($recorder);
 
     $radiohead = new Artist(1, 'Radiohead');
     $portishead = new Artist(2, 'Portishead');
@@ -410,4 +411,72 @@ it('fires no aggregate batch under groupsOnly(), where no cell renders', functio
     // because under `groupsOnly()` the cells they fill never render.
     expect(array_filter($groupsOnlyStatements, static fn (string $sql): bool => str_contains($sql, 'GROUP BY')))->toBe([])
         ->and(array_filter($plainStatements, static fn (string $sql): bool => str_contains($sql, 'GROUP BY')))->not->toBe([]);
+});
+
+/**
+ * The five-song set the boundary cases read, paged two at a time and grouped by
+ * artist — so page 1 ends in the middle of a group and the trailing question has
+ * something real to answer.
+ *
+ * @param (Closure(Table): Table)|null $configure
+ */
+function groupedBoundaryHost(EntityManager $entityManager, bool $summarized, ?Closure $configure = null): TableHost
+{
+    $host = groupedSongsHost($entityManager, function (Table $table) use ($summarized, $configure): Table {
+        $table = $table
+            ->columns([$summarized
+                ? TextColumn::make('plays')->summarize(Sum::make())
+                : TextColumn::make('plays')])
+            ->paginated([2]);
+
+        return $configure instanceof Closure ? $configure($table) : $table;
+    });
+
+    $host->tableGrouping = 'artist.name';
+
+    return $host;
+}
+
+/*
+ * Without a summary nothing hangs on the answer, so the page's last record simply
+ * closes its group and no statement is spent finding out whether it really does.
+ */
+it('closes the last group of an unsummarized page without asking the database', function (): void {
+    $recorder = new RecordingMiddleware();
+    $host = groupedBoundaryHost(groupedSongsFixture($recorder), summarized: false);
+
+    $host->getTableRecords();
+    $recorder->reset();
+
+    $boundaries = $host->getTableRecordGroupBoundaries();
+
+    expect($recorder->statements())->toBe([])
+        ->and($boundaries[array_key_last($boundaries)]['isLastOfGroup'])->toBeTrue();
+});
+
+/*
+ * With one, the trailing summary row hangs on it — so the group is followed past
+ * the page break, and the row is suppressed where it turns out to continue.
+ */
+it('follows the last group past the page break when the table has a summary', function (): void {
+    $recorder = new RecordingMiddleware();
+    $host = groupedBoundaryHost(groupedSongsFixture($recorder), summarized: true);
+
+    $host->getTableRecords();
+    $recorder->reset();
+
+    $boundaries = $host->getTableRecordGroupBoundaries();
+
+    expect($recorder->statements())->toHaveCount(1)
+        ->and($boundaries[array_key_last($boundaries)]['isLastOfGroup'])->toBeFalse();
+});
+
+it('still closes the last group where the next page starts a new one', function (): void {
+    // One record a page, so page one is the whole of the orphan's group and the
+    // record after it belongs to another.
+    $host = groupedBoundaryHost(groupedSongsFixture(), summarized: true, configure: fn (Table $table): Table => $table->paginated([1]));
+
+    $boundaries = $host->getTableRecordGroupBoundaries();
+
+    expect($boundaries[array_key_last($boundaries)]['isLastOfGroup'])->toBeTrue();
 });

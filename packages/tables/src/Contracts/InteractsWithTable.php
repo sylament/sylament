@@ -145,6 +145,16 @@ interface InteractsWithTable
     public function getSelectedTableRecordsQuery(bool $shouldFetchSelectedRecords = true): QueryBuilder;
 
     /**
+     * Every selectable record key inside one group, for a group checkbox's
+     * tri-state and its toggle. `$group` is the group's string key, nullable
+     * because a record whose group column is blank forms its own group. Read by
+     * the partial once per rendered group header.
+     *
+     * @return list<string>
+     */
+    public function getGroupedSelectableTableRecordKeys(?string $group): array;
+
+    /**
      * How many records the user could select in total, or null where the table
      * carries no total. Read by the partial as the banner's ceiling.
      */

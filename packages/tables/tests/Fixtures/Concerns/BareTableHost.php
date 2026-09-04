@@ -153,6 +153,14 @@ final class BareTableHost implements InteractsWithTable
         throw new LogicException('The bare table host selects no records.');
     }
 
+    /**
+     * @return list<string>
+     */
+    public function getGroupedSelectableTableRecordKeys(?string $group): array
+    {
+        return [];
+    }
+
     public function getAllSelectableTableRecordsCount(): ?int
     {
         return null;

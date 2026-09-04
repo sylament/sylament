@@ -75,11 +75,11 @@ instead.
 | [`getDefaultTableColumnState()` / `syncTableColumnState()` / `updateTableColumns()` / `setTableColumns()`](../../../packages/tables/src/Concerns/HasColumnManager.php) | [`Concerns\HasColumnManager`](../../../vendor/filament/tables/src/Concerns/HasColumnManager.php) | done | — | [has-table.md](has-table.md#the-column-state-is-re-derived-against-the-definition-on-every-read) · [semantics](#the-order-is-followed-only-while-columns-are-reorderable) |
 | [`isTableColumnToggledHidden()`](../../../packages/tables/src/Concerns/HasColumnManager.php) | [`Concerns\HasColumnManager::isTableColumnToggledHidden()`](../../../vendor/filament/tables/src/Concerns/HasColumnManager.php) | done | — | [semantics](#an-absent-name-reads-as-hidden) · [has-table.md](has-table.md#the-contract-is-twenty-six-methods-of-filaments-forty-six) |
 | [`getTableColumnManagerItems()` — the panel's rows](../../../packages/tables/src/Concerns/HasColumnManager.php) | [the `x-for` over `deferredColumns` in `content.blade.php`](../../../vendor/filament/tables/resources/views/components/column-manager/content.blade.php) | done | — | [diverges](#the-item-list-is-server-rendered-where-vendors-is-an-alpine-x-for) |
-| [`updatedToggledTableColumns()`](../../../vendor/filament/tables/src/Concerns/HasColumnManager.php) | [`Concerns\HasColumnManager`](../../../vendor/filament/tables/src/Concerns/HasColumnManager.php) | skipped | — | One deprecated delegate to `applyTableColumnManager()`, and the project has never ported a deprecated Filament surface |
+| `updatedToggledTableColumns()` and the four deprecated host members beside it — `getToggledTableColumnsSessionKey()`, `getTableColumnToggleFormColumns()`, `getTableColumnToggleFormWidth()`, `getTableColumnToggleFormMaxHeight()` | [`Concerns\HasColumnManager`](../../../vendor/filament/tables/src/Concerns/HasColumnManager.php) | skipped | — | The first is a deprecated delegate to `applyTableColumnManager()`; the next is `@deprecated Use \`getTableColumnManagerSessionKey()\` instead.` and fronts a key [`CanPersistTableState`](../../../packages/tables/src/Concerns/CanPersistTableState.php) mints here; the last three carry `@deprecated Override the \`table()\` method` and front settings that ship on the table object as `columnManagerColumns()` / `columnManagerWidth()` / `columnManagerMaxHeight()`. The project has never ported a deprecated Filament surface ([renames.md](../renames.md#renames)) |
 | [`ColumnManager` — the panel's chrome](../../../packages/tables/templates/components/ColumnManager/index.html.twig) | [`views/components/column-manager/index.blade.php`](../../../vendor/filament/tables/resources/views/components/column-manager/index.blade.php) | in progress | [`ColumnGroup`](#the-columngroup-half-is-the-whole-of-what-is-left) | [diverges](#the-modal-layout-renders-one-reset-wherever-the-setting-puts-it) |
 | [`ColumnManagerContent` — the item list](../../../packages/tables/templates/components/ColumnManagerContent/index.html.twig) | [`views/components/column-manager/content.blade.php`](../../../vendor/filament/tables/resources/views/components/column-manager/content.blade.php) | in progress | [`ColumnGroup`](#the-columngroup-half-is-the-whole-of-what-is-left) | [diverges](#the-item-list-is-server-rendered-where-vendors-is-an-alpine-x-for) · [semantics](#the-checkbox-renders-only-where-there-is-something-to-toggle) |
 | [The partial's two branches — the toolbar trigger, the dropdown panel and the modal](../../../packages/tables/templates/partials/Table/index.html.twig) | [`index.blade.php`'s `fi-ta-col-manager` slot](../../../vendor/filament/tables/resources/views/index.blade.php) | done | — | [table.md](table.md#the-toolbars-start-group-carries-its-own-class-and-renders-only-when-it-has-content) |
-| [`sylament--tables--column-manager` — the draft writer](../../../packages/tables/assets/src/controllers/column_manager_controller.ts) | [`components/column-manager.js`](../../../vendor/filament/tables/resources/js/components/column-manager.js) | done | — | [tables-bundle.md](tables-bundle.md#asset-registration) · [diverges](#a-hidden-column-keeps-its-place-on-a-drag-where-vendors-rebuild-drops-it) |
+| [`sylament--tables--column-manager` — the draft writer](../../../packages/tables/assets/src/controllers/column_manager_controller.ts) | [`components/column-manager.js`](../../../vendor/filament/tables/resources/js/components/column-manager.js) | done | — | [tables-bundle.md](tables-bundle.md#asset-registration) · [diverges](#a-hidden-columns-entry-survives-a-drag-where-vendors-rebuild-drops-it) |
 | [`column-manager.css`](../../../packages/tables/assets/src/styles/components/column-manager.css) | [`resources/css/column-manager.css`](../../../vendor/filament/tables/resources/css/column-manager.css) | done | — | [diverges](#the-item-list-block-sits-at-top-level-where-vendors-nests-inside-the-panel) |
 | Column groups — the group row, its tri-state checkbox, the nested drag list and `toggleGroup()` | [`ColumnGroup`](../../../vendor/filament/tables/src/Columns/ColumnGroup.php), [`content.blade.php`](../../../vendor/filament/tables/resources/views/components/column-manager/content.blade.php), [`column-manager.js`](../../../vendor/filament/tables/resources/js/components/column-manager.js) | todo | — | [detail](#the-columngroup-half-is-the-whole-of-what-is-left) |
 
@@ -131,11 +131,16 @@ Filament's manager is a list of two kinds of thing. A plain column is one row
 with one checkbox; a
 [`ColumnGroup`](../../../vendor/filament/tables/src/Columns/ColumnGroup.php) is a
 row with a **tri-state** checkbox over its children, a nested drag list of its
-own, and its own `toggleGroup()` / `reorderGroupColumns()` handlers — roughly
-half of `column-manager.js`'s 241 lines are that arm, and four more methods of
-the host trait (`mapTableColumnGroupToArray()`,
-`syncGroupFromDefaultTableColumnState()` and the group branches of
-`getColumn()` / `flattenTableColumnStateItems()`). `ColumnGroup` itself is not ported
+own, and its own `calculateGroupedColumns()` / `getColumn(name, groupName)` /
+`toggleGroup()` / `reorderGroupColumns()` handlers — roughly
+half of `column-manager.js`'s 241 lines are that arm, and seven members of
+vendor's host trait: two that exist only for it
+(`mapTableColumnGroupToArray()`, `syncGroupFromDefaultTableColumnState()`) and
+the group branches of five more — `getTableColumnsToggleStateByName()`,
+`updateTableColumns()` and `flattenTableColumnStateItems()`, all three of which
+ship here under those names, plus `syncItemFromDefaultTableColumnState()` and
+`syncItemFromTableColumnState()`, the pair this port collapsed into
+`syncTableColumnStateItems()`. `ColumnGroup` itself is not ported
 (it is [`column.md`](column.md#surface)'s grouping-and-layout row), so there is
 nothing here for the group arm to list, and the three rows it would touch — the
 two components and the enum-free item list — stay **in progress** rather than
@@ -224,11 +229,16 @@ Filament has the same derived test this port uses —
 `hasReorderedTableColumns()` flattens the stored and declared states to
 `type:name` lists, narrows the declared one to the columns both know, and asks
 whether they differ. What it does with the answer is where the two part company.
-Vendor **latches** it: `persistHasReorderedTableColumns()` writes
+Vendor **latches** it per call: `persistHasReorderedTableColumns()` writes
 `$wasReordered || $this->hasReorderedTableColumns()` into a **second** session
 entry (`tables.<md5>_has_reordered_columns`), and every later
 `applyTableColumnManager()` picks its sync direction by reading that entry back
-rather than by re-asking.
+rather than by re-asking. The latch's other half is the **client's**: it never
+reads the stored value back into the write, so what keeps the entry `true` over
+an order the test would call unreordered is `$wasReordered` — the Alpine
+component's own `hasReordered`, set on any drag (`column-manager.js:152`/`:184`)
+and cleared only after a successful apply (`:225`). An apply that carries `false`
+over a restored order therefore writes `false || false` and lowers it again.
 
 Here the same test is `isReorderedTableColumnState()` — parameterised over a
 state, so it can be asked of the draft as well as of the applied bag — and it is
@@ -238,11 +248,16 @@ key, the write that maintains it, and the `$wasReordered` parameter, which is a
 assert it without having reordered anything, so dropping it is a small hardening
 as well as a simplification.
 
-The behaviour difference is the latch. A user who drags a column and drags it
-back stays in reordered mode upstream, because the flag was already `true` and
-nothing lowers it; here the two orders match again, so the declared order wins
-again. That is the less surprising answer and arguably the better one, but it is
-a difference and is recorded as one — and it is the reason the port needs no
+The behaviour difference is the latch. A user who drags a column, drags it back
+and applies stays in reordered mode upstream — the client still claims a drag,
+so the entry is written `true` over an order that is the declared one again, and
+it stays that way until some later apply carries `false`. Here the same apply
+re-derives the answer from the state, which now matches the default, so it reads
+as unreordered at once. Both render the declared order that day; what the stale
+claim costs upstream is the *next* definition change, because reordered mode
+appends a newly declared column at the end of the stored order where the
+unreordered path re-derives it into its declared position. It is a difference
+and is recorded as one — and it is the reason the port needs no
 `resetTableColumnManager()` arm to clear a flag.
 
 ### The session is written at the end of every mutation, rather than once per request
@@ -268,10 +283,18 @@ halves of that are recorded on
 
 ### The item list is server-rendered, where vendor's is an Alpine `x-for`
 
-`content.blade.php` iterates `deferredColumns` — the client array — with
-`x-for`, so every row, its label and its disabled state are produced in the
-browser. Here `getTableColumnManagerItems()` produces the rows on the host and
-the `ColumnManagerContent` component iterates a plain Twig array.
+`content.blade.php` iterates `columns` with `x-for` — the client array
+`$wire.entangle('tableColumns')` seeds from the *applied* bag — while each row's
+`checked` and `disabled` bindings read the draft, through
+`getColumn(column.name, null)` off `deferredColumns`. So every row, its label and
+its disabled state are produced in the browser, and the row set and its order
+only change once Apply has written the draft back. Here
+`getTableColumnManagerItems()` produces the rows on the host, from
+`tableDeferredColumns` rather than the applied bag, and the
+`ColumnManagerContent` component iterates a plain Twig array. The two therefore
+render *different* bags, which is the load-bearing half of this divergence: a
+dragged row moves in our list on the next render and in vendor's only after
+Apply.
 
 That is the same trade the rest of the package makes (the selection banner, the
 editable cells): the server is canonical, the controller repaints. Concretely,
@@ -289,18 +312,23 @@ The list is published through the contract rather than reached off the trait, as
 the partial reads it off `getLiveComponent`, which is typed
 `InteractsWithTable`.
 
-### A hidden column keeps its place on a drag, where vendor's rebuild drops it
+### A hidden column's entry survives a drag, where vendor's rebuild drops it
 
 Vendor's `reorderTopLevel()` builds a fresh array from the ids the drag control
 reported and assigns it over `deferredColumns`. Anything the list did not
 render — a column the developer `hidden()`, so it never had a row to drag — is
-absent from those ids and therefore **falls out of the state entirely**. The next
-sync re-adds it from the definition, at the end, so a hidden column silently
-migrates to the back of the order every time anything is dragged.
+absent from those ids and therefore **falls out of the state entirely**, taking
+its stored toggle with it; the next sync re-adds it from the *definition*, so
+whatever the user had chosen for it is silently reset.
 
 `reorder()` here appends the unreported entries after the reported ones instead
-of dropping them, so an entry with no row keeps its relative place. It is a fix
-rather than a translation, and it is recorded here rather than in the
+of dropping them, so the entry survives the drag with its stored `isToggled` and
+`isToggledHiddenByDefault` intact. The **order** is not the difference: both ends
+leave such an entry at the back, ours because `reorder()` appends it there and
+vendor's because
+[`getNewDefaultColumnStateItems()`](../../../packages/tables/src/Concerns/HasColumnManager.php)'s
+counterpart re-appends the missing default at the tail. It is a fix rather than
+a translation, and it is recorded here rather than in the
 [bundle's controller notes](tables-bundle.md#asset-registration) because it
 changes what the *state* means rather than how the controller is wired.
 
@@ -386,10 +414,16 @@ declared order immediately, without clearing the stored one — the order is sti
 in the session, and turning the setting back on brings it back.
 
 `updateTableColumns()` reads `getDefaultTableColumnState()` **before** it
-re-columns the table, and that ordering is load-bearing: the default state is
-memoised on first read, so reading it after the table has been re-columned in the
-stored order would memoise the *stored* order as the declared one and leave Reset
-with nothing to restore.
+re-columns the table. The ordering is what keeps the method correct on its own —
+the default state is memoised on first read, so reading it after the table has
+been re-columned in the stored order would memoise the *stored* order as the
+declared one and leave Reset with nothing to restore — but it is defensive
+rather than load-bearing today: the sole caller is `syncTableColumnState()`,
+whose preceding statement runs `syncTableColumnStateItems()`, and *that* method's
+first line reads the default. The memo is therefore always warm by the time the
+re-columning happens, and deleting the priming read changes no behaviour and
+fails no test. It is kept so that a second caller — a direct
+`updateTableColumns()` on a cold memo — cannot silently invert Reset.
 
 ### `hasToggleableColumns()` walks every column's closure at mount
 

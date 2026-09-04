@@ -165,17 +165,21 @@ it, so each constant lands in the same change as the component or feature that
 renders its icon — the same growth order
 [`SupportIconAlias`](../support/support-icon-alias.md#pagination-rtl-aliases)
 follows, and the four that arrived with the sort headers and the search toolbar,
-the three that arrived with reordering and the two that arrived with
-`IconColumn`, are that order in action. Ten of the twelve are read by
+the three that arrived with reordering, the two that arrived with
+`IconColumn` and the one that arrived with the column manager, are that order in
+action. Ten of the thirteen are read by
 [the table partial](../../../packages/tables/templates/partials/Table/index.html.twig)
 — `ACTIONS_FILTER` and `FILTERS_REMOVE_ALL_BUTTON` by the filters chrome, in its
 toolbar and its indicators row, rather than by the table's own rows, and the two
 reorder-trigger ones through the action the toolbar renders rather than from the
-markup directly. The other two are the first read from **PHP** rather than from a
+markup directly. The other three are read from **PHP** rather than from a
 template: [`IconColumn`](icon-column.md)'s `getTrueIcon()` / `getFalseIcon()`
 resolve them through the icon manager before the partial ever sees an icon,
-because the boolean fallback has to survive a `trueIcon()` the caller set. Either
-way all twelve are overridable end to end. Each new one needs a glyph in
+because the boolean fallback has to survive a `trueIcon()` the caller set, and
+`ACTIONS_COLUMN_MANAGER` resolves inside
+[`getColumnManagerTriggerAction()`](column-manager.md) for the same reason — the
+trigger is an `Action` object, so its icon is chosen before any template runs.
+Either way all thirteen are overridable end to end. Each new one needs a glyph in
 [the fixture icon set](../../../packages/tables/tests/Fixtures/assets/icons/heroicons)
 — `arrows-up-down`, `check` and `bars-2` for the reorder trio, `check-circle` and
 `x-circle` for the boolean pair — because ux-icons resolves a missing local icon
@@ -240,7 +244,7 @@ an action's promise *after* `render:finished`
 every file builds per-file and unbundled, and the only third-party import in the
 tree — `@symfony/ux-live-component`, reached by
 [`utils/live_host.ts`](../../../packages/tables/assets/src/utils/live_host.ts),
-which `table` and `editable-cell` both import —
+which `table`, `editable-cell` and `column-manager` all import —
 stays a bare specifier the consuming app's importmap resolves, exactly as schemas'
 does. That helper is a **deliberate ten-line copy** of
 [schemas'](../../../packages/schemas/assets/src/utils/live_host.ts), the same

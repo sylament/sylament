@@ -2333,12 +2333,18 @@ choice, and it would have to be reversed the same day that one was.
 Two class names vendor's search row carries are deliberately absent. The
 per-column hook `fi-ta-individual-search-cell-<kebab>` — a second class beside
 `fi-ta-individual-search-cell`, carrying the column's camel-then-kebab name — is
-not emitted: nothing in vendor's own stylesheet selects it, the package emits no
-per-*record*-column analogue for a body cell to match it, and a name derived by
-two string transforms is exactly the kind of hook that is cheap to add on demand
-and expensive to keep faithful (a column named `artist.name` kebabs to something
-a user would have to read the source to predict). Applications that want to reach
-one cell have the cell's `id`, which is stable and documented.
+not emitted: nothing in either stylesheet selects it — vendor's `cell.css` styles
+the bare `.fi-ta-individual-search-cell` and stops there — and the per-column
+handle a caller actually needs is already on the cell as its `id`,
+`<hostId>.table.column-search.<column>`, which is stable, addressable from CSS
+and JS alike, and unambiguous where a kebabbed class is not.
+
+The cost of adding it would be nil, and that is worth saying plainly rather than
+implying otherwise: the port already ships the per-column body and header hooks
+`sy-ta-cell-<kebab>` / `sy-ta-header-cell-<kebab>`, both derived by
+[`Column::getKebabCasedName()`](column.md#the-hook-class-kebabs-each-dotted-segment-on-its-own),
+so the transform is one call away and its dotted-name fidelity is already paid
+for. The reason is that the hook has no reader, not that it would be expensive.
 
 The row itself carries `sy-ta-column-search-row` **alone**, where vendor's
 carries `fi-ta-row` beside it. That is not thrift: `sy-ta-row` is the class every

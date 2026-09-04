@@ -38,7 +38,7 @@ and, on the query lane, every single time, the count of everything behind that
 page, the flush that empties the cache, and the per-host id every row and cell is
 stamped with.
 
-Around that core it composes eight host concerns, three of them landed by the
+Around that core it composes ten host concerns, three of them landed by the
 table upgrades epic:
 [`CanPaginateRecords`](../../../packages/tables/src/Concerns/CanPaginateRecords.php)
 (the page and per-page state plus the `gotoTablePage()` live action),
@@ -57,11 +57,18 @@ live action), from M4 · 1, and the three M4 · 3 added:
 [`CanReorderRecords`](../../../packages/tables/src/Concerns/CanReorderRecords.php)
 (the reorder mode flag, its toggle and the `reorderTable()` write) and
 [`CanDeferLoading`](../../../packages/tables/src/Concerns/CanDeferLoading.php)
-(the deferred window's flag and the `loadTable()` action that closes it). Each is
+(the deferred window's flag and the `loadTable()` action that closes it), and the
+two the column epics added:
+[`HasColumns`](../../../packages/tables/src/Concerns/HasColumns.php) (an editable
+cell's write-back, a column action's call and the request-scoped refusal bag both
+render through), from M4 · 4, and
+[`HasColumnManager`](../../../packages/tables/src/Concerns/HasColumnManager.php)
+(the applied and draft column bags, their mount and hydrate hooks, and the apply
+and reset live actions), from M4 · 5. Each is
 a per-file row below rather than a folded one, per
 [one row per file](../README.md#one-row-per-file-one-file-per-thing). What
-Filament's nineteen-trait host does beyond them — grouping, summaries and the
-column manager — is unported and listed below.
+Filament's nineteen-trait host does beyond them — grouping and summaries — is
+unported and listed below.
 
 The trait presumes no host property beyond the fifteen `#[LiveProp]`s it and its
 concerns declare: `?string $tableHostId` (the persisted half of
@@ -1865,8 +1872,9 @@ the search and the column searches (`persistSearchInSession()` /
 `persistColumnSearchesInSession()`, opt-in), the filters
 (`persistsFiltersInSession()`, opt-in), the
 [column manager's state](column-manager.md#the-session-is-written-at-the-end-of-every-mutation-rather-than-once-per-request)
-(`persistColumnsInSession()`, opt-**out** — the only one of the five that
-defaults on, and the only one whose read is ungated), and the per-page option —
+(`persistColumnsInSession()`, opt-**out** — the only *flag* of the five that
+defaults on, and the only flag that gates its write without gating its read),
+and the per-page option —
 **unconditionally**, with no setter to turn it off. M4 · 3 shipped all of it but
 the column searches and the column state, which arrived together in M4 · 5 with
 [the bag they persist](#a-full-seed-replaces-filaments-reserved-key-list-and-a-blank-is-kept)

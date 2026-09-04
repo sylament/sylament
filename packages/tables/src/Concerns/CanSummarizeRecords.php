@@ -143,13 +143,23 @@ trait CanSummarizeRecords
      * it is deterministic and counter-suffixed, because a DQL result variable cannot
      * start with a digit and a random one cannot be asserted.
      *
+     * The ordinal counts the **declared** summarizers of every visible column rather
+     * than the ones this query batches, so one summarizer holds one alias for the whole
+     * render. A page renders several batches — the page one, the all-table one and one
+     * per group — and `hidden(fn ($query) => …)` is a supported, query-dependent
+     * predicate, so an ordinal counted over the visible set would re-mint a later
+     * batch's aliases onto the names an earlier batch's row is still about to read,
+     * and one summarizer would publish another's figure.
+     *
      * Three summarizers never reach the statement: one that scopes the query itself,
      * because the batch's figure is not the scoped one; one that emits no statement at
      * all, a range or a list; and every summarizer of an aggregate column, whose value
-     * lives in a side store — that one is refused where it is read, not here. The
-     * column's expression is resolved only once one of its summarizers has passed all
-     * three, so a path the qualifier refuses is refused for the summarizers that would
-     * have aggregated it and for nobody else.
+     * lives in a side store — that one is refused where it is read, not here. Only the
+     * first two consume an ordinal, both being properties of the summarizer rather than
+     * of the query. The column's expression is resolved only once one of its
+     * summarizers has passed all three *and* is visible here, so a path the qualifier
+     * refuses is refused for the summarizers that would have aggregated it and for
+     * nobody else.
      *
      * @return array<string, mixed> alias ⇒ raw driver value, empty when nothing batches
      */
@@ -163,25 +173,30 @@ trait CanSummarizeRecords
         $ordinal = 0;
 
         foreach ($this->getTable()->getVisibleColumns() as $column) {
-            $summarizers = $column->getSummarizers($query);
+            $visibleSummarizers = $column->getSummarizers($query);
 
-            if ($summarizers === [] || $column->getCellAggregateDeclaration() instanceof AggregateDeclaration) {
+            if ($column->getCellAggregateDeclaration() instanceof AggregateDeclaration) {
                 continue;
             }
 
             $attribute = null;
 
-            foreach ($summarizers as $summarizer) {
+            foreach ($column->getSummarizers() as $key => $summarizer) {
                 if (!$summarizer instanceof HasSelectAlias || $summarizer->hasQueryModification()) {
                     continue;
                 }
 
-                $attribute ??= SummaryQuery::qualifyAttribute($query, $column->getName());
-                $statements = $summarizer->selectAlias('sy_summary_' . $ordinal)->getSelectStatements($attribute);
+                $alias = 'sy_summary_' . $ordinal;
                 $ordinal++;
 
-                foreach ($statements as $alias => $statement) {
-                    $selects[] = "{$statement} AS {$alias}";
+                if (!array_key_exists($key, $visibleSummarizers)) {
+                    continue;
+                }
+
+                $attribute ??= SummaryQuery::qualifyAttribute($query, $column->getName());
+
+                foreach ($summarizer->selectAlias($alias)->getSelectStatements($attribute) as $statementAlias => $statement) {
+                    $selects[] = "{$statement} AS {$statementAlias}";
                 }
             }
         }

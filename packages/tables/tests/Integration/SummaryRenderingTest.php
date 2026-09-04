@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Sylament\Tables\Tests\Integration;
 
 use Closure;
+use Doctrine\ORM\QueryBuilder;
 use Sylament\Actions\Action;
 use Sylament\Actions\BulkAction;
 use Sylament\Tables\Columns\Column;
@@ -358,6 +359,29 @@ it('closes every group with a summary row of its own', function (): void {
         ->and($rows->eq(1)->filter('td')->text())->toContain('70')
         ->and($rows->eq(2)->filter('td')->text())->toContain('50')
         ->and($rows->eq(3)->filter('td')->text())->toContain('150');
+});
+
+/*
+ * One render runs several batches — the page one, the all-table one and one per
+ * group — and a summarizer's alias has to survive all of them: the band's rows are
+ * rendered after the loop that fires the group batches, so an alias re-minted by
+ * the last of those is the one the all-table row reads back.
+ */
+it('keeps one alias per summarizer across every batch of one render', function (): void {
+    $rows = summarizedTableCrawler([
+        TextColumn::make('mood'),
+        // Hidden on every scoped batch and visible on the unscoped one, which is
+        // exactly what shifts an ordinal counted over the visible set alone.
+        TextColumn::make('plays')->summarize(Sum::make()->hidden(fn (QueryBuilder $query): bool => count($query->getParameters()) > 0)),
+        TextColumn::make('position')->summarize(Count::make()),
+    ], fn (Table $table): Table => $table->groups(['mood']), grouping: 'mood')->filter('tr.sy-ta-summary-row');
+
+    expect($rows->each(fn (Crawler $row): string => $row->text()))->toBe([
+        'calm summary Count2',
+        'bright summary Count2',
+        'dark summary Count1',
+        'Summary Sum150 Count5',
+    ]);
 });
 
 it('keys each group summary row by the group it closes', function (): void {

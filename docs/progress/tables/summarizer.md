@@ -83,7 +83,7 @@ instead.
 | [`Table::summaries()` / `hasPageSummary()` / `hasAllTableSummary()` / `hasSummary()`](../../../packages/tables/src/Table/Concerns/CanSummarizeRecords.php) | [`Table\Concerns\CanSummarizeRecords`](../../../vendor/filament/tables/src/Table/Concerns/CanSummarizeRecords.php) | done | — | [semantics](#hassummary-walks-every-column-while-the-batch-walks-the-visible-ones) |
 | [`getAllTableSummaryQuery()` / `getPageTableSummaryQuery()`](../../../packages/tables/src/Concerns/CanSummarizeRecords.php) | [`Concerns\CanSummarizeRecords`](../../../vendor/filament/tables/src/Concerns/CanSummarizeRecords.php) | done | — | [semantics](#a-page-summary-narrows-by-keys-never-by-a-limit) · [has-table.md](has-table.md#the-contract-is-thirty-five-methods-of-filaments-forty-six) |
 | [`getGroupedTableSummaryQuery()`](../../../packages/tables/src/Concerns/CanSummarizeRecords.php) | — (Sylament-only; Filament batches one `GROUP BY` instead) | done | — | [diverges](#the-per-group-figure-is-one-scoped-query-per-group-not-one-group-by) · [renames.md](../renames.md#names-with-no-filament-source) |
-| [`getTableSummarySelectedState()` — the one batched SELECT](../../../packages/tables/src/Concerns/CanSummarizeRecords.php) | [`Concerns\CanSummarizeRecords::getTableSummarySelectedState()`](../../../vendor/filament/tables/src/Concerns/CanSummarizeRecords.php) | done | — | [semantics](#the-alias-is-pushed-before-the-statements-are-read-and-the-ordinal-advances-per-summarizer) · [diverges](#the-batch-keeps-a-to-one-relation-column-and-refuses-a-to-many-one) |
+| [`getTableSummarySelectedState()` — the one batched SELECT](../../../packages/tables/src/Concerns/CanSummarizeRecords.php) | [`Concerns\CanSummarizeRecords::getTableSummarySelectedState()`](../../../vendor/filament/tables/src/Concerns/CanSummarizeRecords.php) | done | — | [semantics](#the-alias-is-pushed-before-the-statements-are-read-and-the-ordinal-is-one-per-declared-summarizer) · [diverges](#the-batch-keeps-a-to-one-relation-column-and-refuses-a-to-many-one) |
 | `getTableSummarySelectedState()`'s `$modifyQueryUsing` parameter | [`Concerns\CanSummarizeRecords`](../../../vendor/filament/tables/src/Concerns/CanSummarizeRecords.php) | skipped | — | [diverges](#the-per-group-figure-is-one-scoped-query-per-group-not-one-group-by) — its only caller upstream is the grouped `GROUP BY` batch the per-group query replaces |
 | [`shouldRenderTrailingGroupedTableSummary()`](../../../packages/tables/src/Concerns/CanSummarizeRecords.php) | [`Concerns\CanSummarizeRecords`](../../../vendor/filament/tables/src/Concerns/CanSummarizeRecords.php) | done | — | [semantics](#the-trailing-group-is-followed-past-the-page-break-with-a-record-not-a-scalar) · [grouping.md](grouping.md#the-group-boundaries-are-one-php-map-rather-than-loop-carried-template-state) |
 | [`Query\SummaryQuery::readRow()` / `readDistinct()` / `qualifyAttribute()`](../../../packages/tables/src/Query/SummaryQuery.php) | [the `->select()` / `->get()` calls inside](../../../vendor/filament/tables/src/Columns/Summarizers/Summarizer.php) each summarizer | done | — | [semantics](#every-summary-read-is-one-clone-with-the-order-reset-and-the-paging-cleared) · [diverges](#a-to-many-join-on-the-summarized-query-is-refused-where-filament-inflates-in-silence) · [renames.md](../renames.md#namespaces-with-no-filament-source) |
@@ -163,7 +163,7 @@ summarizer that [scopes the query itself](#one-query-setter-carries-two-slots-to
 is excluded for a different reason: the batch's figure is over the unscoped set,
 so it would be the wrong number.
 
-### The alias is pushed before the statements are read, and the ordinal advances per summarizer
+### The alias is pushed before the statements are read, and the ordinal is one per declared summarizer
 
 `getTableSummarySelectedState()` calls
 `$summarizer->selectAlias('sy_summary_' . $ordinal)` **before**
@@ -178,6 +178,24 @@ The counter advances once per summarizer **pushed**, not once per statement
 emitted — because a summarizer can pass the gate and emit nothing (`Count` under
 `icons()` does), and an ordinal that advanced per statement would hand the next
 summarizer the same alias and let one read the other's figure.
+
+What it counts is the **declared** summarizers of every visible column, not the
+ones this particular query batches — the two gates that skip an ordinal
+(`HasSelectAlias`, `hasQueryModification()`) are properties of the summarizer,
+and the one that does not (`isVisible()`) is a property of the query. That
+distinction is the whole of it, because one render fires several batches: the
+partial computes the page and all-table states in its preamble, the record loop
+then fires one batch per group on the page, and only afterwards does the band
+draw the page and all-table rows from the states it computed first. A
+`hidden(fn ($query) => …)` summarizer — a supported, documented predicate — is
+visible in one of those batches and not in another, so an ordinal counted over
+the visible set alone would re-mint a later batch's aliases onto the names an
+earlier batch's row is about to read, and a labelled cell would publish its
+neighbour's figure. Filament cannot hit this because its alias is
+`$this->selectAlias ??= Str::random()`, minted once per instance; the port's
+answer is the same identity by construction rather than by chance. The
+[all-table row's figures](../../../packages/tables/tests/Integration/SummaryRenderingTest.php)
+under exactly that configuration are what pin it.
 
 ### `getSummarizers()` re-points every summarizer, and that mutation is the mechanism
 

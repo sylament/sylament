@@ -66,7 +66,7 @@ check, two files away from `BelongsToTable`'s `getState()` / `getFormState()`,
 which
 [carry one and throw when it fails](#the-state-readers-are-guarded-because-the-contract-does-not-declare-them).
 The asymmetry is not an oversight and not a style drift: `getTableFiltersForm()`
-is [on the contract](has-table.md#the-contract-is-twenty-six-methods-of-filaments-forty-six)
+is [on the contract](has-table.md#the-contract-is-thirty-five-methods-of-filaments-forty-six)
 and the two state readers are not, so `getLiveComponent()` — typed
 `InteractsWithTable` — answers the first call at level max and cannot answer the
 other two. A guard here would be unreachable code guarding a declared method;

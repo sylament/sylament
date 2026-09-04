@@ -120,6 +120,24 @@ final class BareTableHost implements InteractsWithTable
         return null;
     }
 
+    public function getAllTableSummaryQuery(): ?QueryBuilder
+    {
+        return null;
+    }
+
+    public function getPageTableSummaryQuery(): ?QueryBuilder
+    {
+        return null;
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    public function getTableSummarySelectedState(?QueryBuilder $query): array
+    {
+        return [];
+    }
+
     public function getTableSearchIndicator(): ?Indicator
     {
         return null;

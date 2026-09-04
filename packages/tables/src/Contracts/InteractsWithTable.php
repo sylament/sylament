@@ -113,6 +113,27 @@ interface InteractsWithTable
     public function getTableSearchIndicator(): ?Indicator;
 
     /**
+     * The dataset the all-table summary row reads — filters, the search and the
+     * per-column searches applied, unsorted and unpaged. Null off the query lane.
+     */
+    public function getAllTableSummaryQuery(): ?QueryBuilder;
+
+    /**
+     * The same dataset narrowed to the page's own record keys, or null where there
+     * is no page to narrow to. Read by the summary band for its page row.
+     */
+    public function getPageTableSummaryQuery(): ?QueryBuilder;
+
+    /**
+     * One batched read of every batchable summarizer over the query given, keyed by
+     * the alias each summarizer looks its own figure up under. Read by the summary
+     * band once per row it renders.
+     *
+     * @return array<string, mixed>
+     */
+    public function getTableSummarySelectedState(?QueryBuilder $query): array;
+
+    /**
      * The one schema holding every visible filter's fields, one `Group` per
      * filter. Read by the filters panel; a host that is not a schema host
      * throws rather than answering.

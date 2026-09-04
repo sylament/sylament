@@ -90,7 +90,7 @@ final class BareTableHost implements InteractsWithTable
     }
 
     /**
-     * @return array<string, array{key: ?string, title: string|Markup|null, description: string|Markup|null, isFirstOfGroup: bool, isLastOfGroup: bool, indexInGroup: int}>
+     * @return array<array-key, array{key: ?string, title: string|Markup|null, description: string|Markup|null, isFirstOfGroup: bool, isLastOfGroup: bool, indexInGroup: int}>
      */
     public function getTableRecordGroupBoundaries(): array
     {

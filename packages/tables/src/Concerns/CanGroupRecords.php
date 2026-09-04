@@ -176,7 +176,10 @@ trait CanGroupRecords
      * This wave the page's final record is always the last of its group; the
      * trailing grouped summary folds its own probe into the same walk.
      *
-     * @return array<string, array{key: ?string, title: string|Markup|null, description: string|Markup|null, isFirstOfGroup: bool, isLastOfGroup: bool, indexInGroup: int}>
+     * The key type is `getTableRecords()`'s and for its reason: PHP coerces a
+     * numeric-string record key to an int.
+     *
+     * @return array<array-key, array{key: ?string, title: string|Markup|null, description: string|Markup|null, isFirstOfGroup: bool, isLastOfGroup: bool, indexInGroup: int}>
      */
     public function getTableRecordGroupBoundaries(): array
     {

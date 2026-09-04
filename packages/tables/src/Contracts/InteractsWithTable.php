@@ -77,9 +77,12 @@ interface InteractsWithTable
     /**
      * Where each rendered record sits in its group, keyed by record key and
      * empty when the table is not grouped. Read by the partial once per row, in
-     * place of tracking the previous record across its loop.
+     * place of tracking the previous record across its loop. The key type is
+     * `getTableRecords()`'s and for its reason: PHP coerces a numeric-string
+     * record key to an int, so a consumer must not assume `array_keys()` hands
+     * back strings.
      *
-     * @return array<string, array{key: ?string, title: string|Markup|null, description: string|Markup|null, isFirstOfGroup: bool, isLastOfGroup: bool, indexInGroup: int}>
+     * @return array<array-key, array{key: ?string, title: string|Markup|null, description: string|Markup|null, isFirstOfGroup: bool, isLastOfGroup: bool, indexInGroup: int}>
      */
     public function getTableRecordGroupBoundaries(): array;
 

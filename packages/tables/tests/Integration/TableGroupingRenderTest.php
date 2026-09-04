@@ -95,9 +95,12 @@ it('renders no grouping chrome, and no toolbar at all, for a table declaring no 
 it('opens the toolbar for a table whose only member is the grouping selector', function (): void {
     $crawler = new Crawler(groupedTableHtml());
 
+    // The toolbar and its start group widen for the selector; the header above
+    // them does not, so a grouping-only table opens no header at all.
     expect($crawler->filter('.sy-ta-header-toolbar')->count())->toBe(1)
         ->and($crawler->filter('.sy-ta-header-toolbar-actions')->count())->toBe(1)
-        ->and($crawler->filter('.sy-ta-header-toolbar-actions > .sy-ta-grouping-settings')->count())->toBe(1);
+        ->and($crawler->filter('.sy-ta-header-toolbar-actions > .sy-ta-grouping-settings')->count())->toBe(1)
+        ->and($crawler->filter('.sy-ta-header')->count())->toBe(0);
 });
 
 it('offers one option per registered group beside a blank one', function (): void {

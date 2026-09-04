@@ -162,6 +162,38 @@ now, so the eventual port does not have to rename anything already shipped:
 `sy-ta-col-manager-group`, `sy-ta-col-manager-group-header`,
 `sy-ta-col-manager-group-label` and `sy-ta-col-manager-group-items`.
 
+## Known limitation
+
+### `columnManagerColumns()` above one spills a column off the panel
+
+**Found by the browser pass, reproducible, and not fixed.** With
+`columnManagerColumns(2)` the item list lays out in **three** column positions,
+and the third sits outside the container's own width — off-screen at a normal
+viewport, so the control in it cannot be seen or reached. Measured on the demo's
+showcase card at both **five** and **six** items, at panel widths of 42, 48, 56
+and 64rem, on clean page loads with no drag artefacts.
+
+What it is **not**: `column-manager.css` is byte-identical to
+[vendor's](../../../vendor/filament/tables/resources/css/column-manager.css) for
+both the `-items` and `-item` rules; the container is built by the identical
+call, `->grid($columns, GridDirection::Column)`, over a
+[`grid()`](../support/README.md) whose column arm is byte-identical to
+Filament's; support's grid emits the expected `column-count: 2`; and the extra
+`.sy-ta-col-manager-content` wrapper this port interposes was tested by
+reparenting the list out of it and is **not** the cause. No `max-height`
+constrains the list anywhere in its ancestor chain. Setting
+`column-fill: auto` collapses it to a single column, so the spill comes from
+CSS multi-column **balancing** over `break-inside: avoid` items rather than from
+anything this port chose.
+
+So it is inherited rather than mis-ported, and a Filament table configured the
+same way should show it too — but it is a real constraint on a knob we ship, and
+the default (`1`) is unaffected: `/admin/articles` lists six items in one column
+correctly. **Anyone reaching for more than one column should verify the panel in
+a browser first.** The fix is a layout change — a CSS grid rather than CSS
+multi-column, which would diverge from vendor deliberately — and belongs in its
+own change, not in the epic that found it.
+
 ## Divergences
 
 Permanent departures from Filament, each with the reason.

@@ -20,3 +20,6 @@ packages/*/assets/src/styles/*.generated.css
 /phpstan.neon
 /docs/superpowers
 /.superpowers
+
+# Browser passes
+/.playwright-mcp

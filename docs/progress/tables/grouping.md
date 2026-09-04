@@ -95,7 +95,7 @@ reason inline instead.
 | [Grouped selection — `getGroupedSelectableTableRecordKeys()` and the group checkbox](../../../packages/tables/src/Concerns/HasBulkActions.php) | [`Concerns\HasBulkActions`](../../../vendor/filament/tables/src/Concerns/HasBulkActions.php) | done | — | [semantics](#the-whole-universe-arm-costs-one-query-per-group-on-the-page) · [diverges](#both-selection-lanes-key-through-getstringkey-where-filaments-records-lane-reads-the-column-raw) · [has-table.md](has-table.md#the-selection-is-server-canonical-and-re-derived-on-every-read) |
 | [`selectGroupsOnly()` / `selectsGroupsOnly()`](../../../packages/tables/src/Table/Concerns/HasBulkActions.php) | [`Table\Concerns\HasBulkActions`](../../../vendor/filament/tables/src/Table/Concerns/HasBulkActions.php) | done | — | [table.md](table.md#the-selection-settings-ship-as-a-subset-and-the-rest-are-listed) |
 | [The toolbar selector — the trigger, its dropdown copy and the inline one](../../../packages/tables/templates/partials/Table/index.html.twig) + [`grouping.css`](../../../packages/tables/assets/src/styles/components/grouping.css) | [`index.blade.php`'s `fi-ta-grouping-settings`](../../../vendor/filament/tables/resources/views/index.blade.php), [`container.css`](../../../vendor/filament/tables/resources/css/container.css) | done | — | [diverges](#the-selectors-two-copies-are-one-capture-and-they-swap-in-css-rather-than-with-a-utility-class) · [semantics](#the-direction-field-hides-on-the-raw-property-not-on-the-resolved-group) |
-| [The group header row — its id, its colspan, the heading, the description and the collapse button](../../../packages/tables/templates/partials/Table/index.html.twig) | [`index.blade.php`'s `fi-ta-group-header-row`](../../../vendor/filament/tables/resources/views/index.blade.php), [`row.css`](../../../vendor/filament/tables/resources/css/row.css) | done | — | [diverges](#the-collapse-button-is-a-real-button-with-a-handler-of-its-own) · [diverges](#the-key-segment-of-every-id-this-row-mints-is-percent-encoded) · [semantics](#the-header-rows-colspan-is-vendors-arithmetic-read-off-the-thead) |
+| [The group header row — its id, its colspan, the heading, the description and the collapse button](../../../packages/tables/templates/partials/Table/index.html.twig) | [`index.blade.php`'s `fi-ta-group-header-row`](../../../vendor/filament/tables/resources/views/index.blade.php), [`row.css`](../../../vendor/filament/tables/resources/css/row.css) | done | — | [diverges](#the-collapse-button-is-a-real-button-with-a-handler-of-its-own) · [diverges](#the-key-segment-of-every-id-this-row-mints-is-percent-encoded) · [semantics](#the-header-rows-colspan-is-read-off-the-thead-and-corrects-vendors-trailing-one-off) |
 | [The collapse state and the group tick — `toggleGroup()`, `group()`, `toggleGroupRecords()` and the two repaint blocks](../../../packages/tables/assets/src/controllers/table_controller.ts) | [`table.js`'s `toggleCollapseGroup()` / `isGroupCollapsed()` / `resetCollapsedGroups()`](../../../vendor/filament/tables/resources/js/components/table.js) | done | — | [diverges](#the-server-paints-the-collapsed-state-where-vendors-alpine-flashes-it-open) · [diverges](#three-client-guards-are-load-bearing-and-no-gate-in-this-repo-runs-them) · [semantics](#collapse-is-keyed-by-title-and-so-is-the-group-break) |
 | [The stripe restart at each group](../../../packages/tables/templates/partials/Table/index.html.twig) | [`index.blade.php`'s stripe reset](../../../vendor/filament/tables/resources/views/index.blade.php) | done | — | read off the boundary map's `indexInGroup` rather than a flag reset after each header — [table.md](table.md#surface) |
 | `groupsOnly()` rendered from a distinct-key query | [`index.blade.php`'s groups-only branch](../../../vendor/filament/tables/resources/views/index.blade.php) | todo | — | [detail](#groupsonly-still-hydrates-the-page-it-does-not-render) |
@@ -310,17 +310,30 @@ force is not one it offers, and the direction field stays hidden. Reading the
 resolved group there would show a direction select whose change is inert, because
 the group select would still send `""`.
 
-### The header row's colspan is vendor's arithmetic read off the thead
+### The header row's colspan is read off the thead, and corrects vendor's trailing one-off
 
 `columnsCount` is computed once before `<table>` — one per visible column, one
 for the record actions wherever they sit, one for the checkbox in whichever
-position it takes — and the header row subtracts only the cells it lays out
-itself: the group selection cell, and the empty placeholder in the single
-two-leading-cells case (`actionsBeforeCells` *and* `checkboxLeading`). That is
-`index.blade.php`'s own arithmetic rather than a rewrite, and it is right for
-every combination of the two action positions and the two checkbox positions,
-selection off included. The reorder header cell is deliberately not counted: a
-drag nulls the grouping, so the two can never coexist.
+position it takes — and the header row subtracts the cells it lays out itself:
+the group selection cell, and the empty placeholder each of the two two-cell
+cases needs beside it. There are two, one per side — `actionsBeforeCells` with
+`checkboxLeading`, and `actionsAfterCells` with `checkboxTrailing` — and vendor
+subtracts only the leading one
+([`index.blade.php`](../../../vendor/filament/tables/resources/views/index.blade.php)
+at `:2045-2058`). Its trailing arm therefore emits a row of the right *width*
+whose checkbox cell lands in the last slot, under the actions header, one column
+right of every record checkbox above it. That is the same one-column-off vendor
+has in the summary rows' placeholder order, corrected the same way and for the
+same reason — [the summary side](summarizer.md#the-placeholder-cells-follow-the-record-rows-order-not-vendors)
+names `AfterCells` + `AfterCells` as its case too, so a table fixing one and
+inheriting the other would misalign its group checkbox under exactly the
+configuration whose summary placeholders it had just aligned.
+
+The ten combinations of the two action positions and the two checkbox positions,
+selection off included, assert both halves: the row's total width against the
+`thead`, and the *column index* the group checkbox lands in against the index of
+the selection header. The reorder header cell is deliberately not counted: a drag
+nulls the grouping, so the two can never coexist.
 
 ### The PHP gates of `groupsOnly()` are unconditional where the template's are not
 

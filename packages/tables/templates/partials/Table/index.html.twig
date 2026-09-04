@@ -144,9 +144,8 @@
 {% endif %}
 
 {# One capture, emitted twice: a dropdown copy for the narrow viewport and an
-   inline one for the wide, which is the split vendor draws with three cosmetic
-   differences the port drops. The changed select is the controller's authority,
-   so the two copies never disagree for longer than one tick. #}
+   inline one for the wide. The changed select is the controller's authority, so
+   the two copies never disagree for longer than one tick. #}
 {% set groupingFields = null %}
 {% if groupingVisible %}
     {% set groupingFields %}
@@ -692,14 +691,15 @@
                                     {% if actionsBeforeCells and checkboxLeading %}<td class="sy-ta-cell"></td>{% endif %}
                                     {% if checkboxLeading %}{{ groupSelectionCell }}{% endif %}
 
-                                    {# Vendor's own arithmetic: the row spans every cell the thead
-                                       emits but the ones it lays out itself — the checkbox cell,
-                                       and the placeholder its one two-leading-cells case needs. #}
+                                    {# The row spans every cell the thead emits but the ones it lays
+                                       out itself — the checkbox cell, and the placeholder each of
+                                       the two two-cell cases needs beside it. #}
                                     <td {{ attrs({
                                         class: 'sy-ta-group-header-cell',
                                         colspan: columnsCount
                                             - (isSelectionEnabled ? 1 : 0)
-                                            - (isSelectionEnabled and checkboxLeading and hasRecordActions and actionsBeforeCells ? 1 : 0),
+                                            - (isSelectionEnabled and checkboxLeading and hasRecordActions and actionsBeforeCells ? 1 : 0)
+                                            - (isSelectionEnabled and checkboxTrailing and hasRecordActions and actionsAfterCells ? 1 : 0),
                                     }) }}>
                                         <div {{ attrs({
                                             class: classes('sy-ta-group-header', {
@@ -732,7 +732,7 @@
                                         </div>
                                     </td>
 
-                                    {% if checkboxTrailing %}{{ groupSelectionCell }}{% endif %}
+                                    {% if checkboxTrailing %}{{ groupSelectionCell }}{% if actionsAfterCells %}<td class="sy-ta-cell"></td>{% endif %}{% endif %}
                                 </tr>
                             {% endif %}
 

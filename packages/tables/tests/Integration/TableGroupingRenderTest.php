@@ -236,6 +236,26 @@ it('spans the group header row across every cell the head emits', function (
     $colspan = (int) $header->filter('td.sy-ta-group-header-cell')->attr('colspan');
 
     expect($colspan + $header->filter('td')->count() - 1)->toBe($crawler->filter('thead > tr > th')->count());
+
+    if (!$checkboxPosition instanceof RecordCheckboxPosition) {
+        return;
+    }
+
+    // Width is not placement: the group checkbox has to land in the column the
+    // selection header names, which the colspan is what decides.
+    $column = 0;
+
+    foreach ($header->filter('td')->each(fn (Crawler $cell): array => [(string) $cell->attr('class'), (int) ($cell->attr('colspan') ?? 1)]) as [$class, $span]) {
+        if (str_contains($class, 'sy-ta-group-selection-cell')) {
+            break;
+        }
+
+        $column += $span;
+    }
+
+    $headerCells = $crawler->filter('thead > tr > th')->each(fn (Crawler $cell): string => (string) $cell->attr('class'));
+
+    expect($column)->toBe(array_search('sy-ta-selection-cell', $headerCells, true));
 })->with([
     'no actions, no selection' => [null, null],
     'no actions, leading checkbox' => [null, RecordCheckboxPosition::BeforeCells],

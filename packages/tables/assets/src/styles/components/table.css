@@ -277,6 +277,17 @@
             @apply min-w-48 px-3 py-2;
         }
 
+        /* The band's two label cells carry their own padding, because a value
+           cell takes its own from the summarizer element inside it and a label
+           cell has no such child. */
+        &.sy-ta-summary-row-heading-cell {
+            @apply px-3 py-4 text-sm font-medium text-gray-950 sm:first:ps-6 sm:last:pe-6 dark:text-white;
+        }
+
+        &.sy-ta-summary-header-cell {
+            @apply px-3 py-2 text-sm font-medium whitespace-nowrap text-gray-950 sm:first:ps-6 dark:text-white;
+        }
+
         &:has(.sy-ta-actions) {
             @apply px-3 py-4 whitespace-nowrap first-of-type:ps-4 last-of-type:pe-4 sm:first-of-type:ps-6 sm:last-of-type:pe-6;
         }

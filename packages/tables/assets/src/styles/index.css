@@ -11,6 +11,7 @@
 @import './components/search-field.css' layer(components);
 @import './components/select-column.css' layer(components);
 @import './components/selection.css' layer(components);
+@import './components/summary.css' layer(components);
 @import './components/table.css' layer(components);
 @import './components/text-column.css' layer(components);
 @import './components/text-input-column.css' layer(components);

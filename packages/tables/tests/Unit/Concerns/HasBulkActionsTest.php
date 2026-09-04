@@ -343,7 +343,7 @@ it('memoises a grouped enumeration per group for the request', function (): void
         ->and($host->getGroupedSelectableTableRecordKeys('Radiohead'))->toBe(['1', '2']);
 });
 
-it('forgets a grouped enumeration when the records are flushed', function (): void {
+it('forgets a grouped enumeration wherever the selection memo is dropped', function (string $method): void {
     $recorder = new RecordingMiddleware();
     $entityManager = EntityManagerFactory::create($recorder);
     $radiohead = new Artist(1, 'Radiohead');
@@ -355,9 +355,15 @@ it('forgets a grouped enumeration when the records are flushed', function (): vo
 
     $host->getGroupedSelectableTableRecordKeys('Radiohead');
 
-    $recorder->reset();
-    $host->flushCachedTableRecords();
+    $host->{$method}();
+
+    // The clearer runs queries of its own, so the count is taken after it and
+    // the assertion is that the *next* read adds to it rather than answering
+    // from a memo the clearer should have dropped.
+    $afterClearing = count($recorder->statements());
+
     $host->getGroupedSelectableTableRecordKeys('Radiohead');
 
-    expect($recorder->statements())->toHaveCount(1);
-});
+    expect(count($recorder->statements()))->toBeGreaterThan($afterClearing)
+        ->and($host->getGroupedSelectableTableRecordKeys('Radiohead'))->toBe(['1']);
+})->with(['flushCachedTableRecords', 'deselectAllTableRecords', 'selectAllTableRecords']);

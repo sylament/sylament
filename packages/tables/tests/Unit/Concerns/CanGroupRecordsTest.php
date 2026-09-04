@@ -10,6 +10,7 @@ use Sylament\Tables\Tests\Fixtures\Concerns\TableHost;
 use Sylament\Tables\Tests\Fixtures\Doctrine\Entity\Artist;
 use Sylament\Tables\Tests\Fixtures\Doctrine\Entity\Song;
 use Sylament\Tables\Tests\Fixtures\Doctrine\EntityManagerFactory;
+use Sylament\Tables\Tests\Fixtures\Doctrine\RecordingMiddleware;
 
 /*
  * The host half of grouping: which group the property resolves to, what the
@@ -340,13 +341,62 @@ it('applies the grouping order alone under groupsOnly(), skipping the sorts', fu
 });
 
 it('eager loads no column under groupsOnly(), since no cell renders', function (): void {
-    $host = groupedSongsHost(
-        groupedSongsFixture(),
-        fn (Table $table): Table => $table->groupsOnly()->columns([TextColumn::make('artist.name')]),
-    );
-    $host->tableGrouping = 'plays';
+    $recorder = new RecordingMiddleware();
+    $entityManager = EntityManagerFactory::create($recorder);
+    $radiohead = new Artist(1, 'Radiohead');
 
-    $host->getTableRecords();
+    EntityManagerFactory::seed($entityManager, $radiohead, new Song(1, 'Airbag', 100, $radiohead));
 
-    expect($host->getFilteredSortedTableQuery()?->getDQL())->not->toContain('LEFT JOIN');
+    // The grouping itself crosses nothing, so a join in the executed SQL can
+    // only have come from the per-column eager load — and the read has to be of
+    // the statement the page ran, since `getFilteredSortedTableQuery()` composes
+    // a fresh builder that the eager-load loop never touched.
+    $configure = fn (Table $table): Table => $table->columns([TextColumn::make('artist.name')]);
+
+    $groupsOnly = groupedSongsHost($entityManager, fn (Table $table): Table => $configure($table)->groupsOnly());
+    $groupsOnly->tableGrouping = 'plays';
+
+    $recorder->reset();
+    $groupsOnly->getTableRecords();
+    $groupsOnlyStatements = $recorder->statements();
+
+    $plain = groupedSongsHost($entityManager, $configure);
+    $plain->tableGrouping = 'plays';
+
+    $recorder->reset();
+    $plain->getTableRecords();
+    $plainStatements = $recorder->statements();
+
+    expect(array_filter($groupsOnlyStatements, static fn (string $sql): bool => str_contains($sql, 'LEFT JOIN')))->toBe([])
+        ->and(array_filter($plainStatements, static fn (string $sql): bool => str_contains($sql, 'LEFT JOIN')))->not->toBe([]);
+});
+
+it('fires no aggregate batch under groupsOnly(), where no cell renders', function (): void {
+    $recorder = new RecordingMiddleware();
+    $entityManager = EntityManagerFactory::create($recorder);
+
+    EntityManagerFactory::seed($entityManager, new Song(1, 'Airbag', 100), new Song(2, 'Exit Music', 200));
+
+    $configure = fn (Table $table): Table => $table->columns([
+        TextColumn::make('title'),
+        TextColumn::make('genres_count')->counts('genres'),
+    ]);
+
+    $groupsOnly = groupedSongsHost($entityManager, fn (Table $table): Table => $configure($table)->groupsOnly());
+    $groupsOnly->tableGrouping = 'plays';
+
+    $recorder->reset();
+    $groupsOnly->getTableRecords();
+    $groupsOnlyStatements = $recorder->statements();
+
+    $plain = groupedSongsHost($entityManager, $configure);
+
+    $recorder->reset();
+    $plain->getTableRecords();
+    $plainStatements = $recorder->statements();
+
+    // Filament fires its aggregate selects here regardless; the port does not,
+    // because under `groupsOnly()` the cells they fill never render.
+    expect(array_filter($groupsOnlyStatements, static fn (string $sql): bool => str_contains($sql, 'GROUP BY')))->toBe([])
+        ->and(array_filter($plainStatements, static fn (string $sql): bool => str_contains($sql, 'GROUP BY')))->not->toBe([]);
 });

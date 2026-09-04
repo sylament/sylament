@@ -20,6 +20,7 @@ use Sylament\Tables\Table;
 use Sylament\Tables\Tests\Fixtures\Concerns\TableHost;
 use Sylament\Tables\Tests\Fixtures\Doctrine\Entity\Song;
 use Sylament\Tables\Tests\Fixtures\Doctrine\EntityManagerFactory;
+use Sylament\Tables\Tests\Fixtures\Doctrine\RecordingMiddleware;
 use Sylament\Tables\Tests\Fixtures\Twig\Components\SummarySongsTable;
 use Symfony\Component\DomCrawler\Crawler;
 
@@ -44,9 +45,9 @@ use function Sylament\Tables\Tests\renderToHtml;
  *
  * @param list<Column> $columns
  */
-function summarizedTableHost(array $columns, ?Closure $configure = null, ?string $grouping = null): TableHost
+function summarizedTableHost(array $columns, ?Closure $configure = null, ?string $grouping = null, ?RecordingMiddleware $recorder = null): TableHost
 {
-    $entityManager = EntityManagerFactory::create();
+    $entityManager = EntityManagerFactory::create($recorder);
 
     EntityManagerFactory::seed(
         $entityManager,
@@ -176,21 +177,28 @@ it('keeps every summary row inside the body and out of the foot', function (): v
         ->and($crawler->filter('tbody tr.sy-ta-summary-header-row')->count())->toBe(1);
 });
 
-it('renders no summary row of either kind while reordering', function (): void {
+it('renders no summary row, and asks for no figure, while reordering', function (): void {
+    $recorder = new RecordingMiddleware();
     $host = summarizedTableHost([
         TextColumn::make('title'),
         TextColumn::make('plays')->summarize(Sum::make()),
-    ], fn (Table $table): Table => $table->reorderable('position'), grouping: 'mood');
+    ], fn (Table $table): Table => $table->reorderable('position'), grouping: 'mood', recorder: $recorder);
 
     $summarized = new Crawler(renderToHtml($host->getTable()));
+    $aggregates = array_filter($recorder->statements(), static fn (string $sql): bool => str_contains($sql, 'SUM('));
 
+    $recorder->reset();
     $host->isTableReordering = true;
 
     $reordering = new Crawler(renderToHtml($host->getTable()));
 
-    expect($summarized->filter('tr.sy-ta-summary-row')->count())->toBeGreaterThan(0)
+    // The figure is not merely hidden: nothing asks the database for it, since
+    // an aggregate whose row will not render is a statement for nothing.
+    expect($aggregates)->not->toBeEmpty()
+        ->and($summarized->filter('tr.sy-ta-summary-row')->count())->toBeGreaterThan(0)
         ->and($reordering->filter('tr.sy-ta-summary-row')->count())->toBe(0)
-        ->and($reordering->filter('tr.sy-ta-summary-header-row')->count())->toBe(0);
+        ->and($reordering->filter('tr.sy-ta-summary-header-row')->count())->toBe(0)
+        ->and(array_filter($recorder->statements(), static fn (string $sql): bool => str_contains($sql, 'SUM(')))->toBeEmpty();
 });
 
 it('spans the heading cell to the first summarized column', function (): void {

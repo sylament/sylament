@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Sylament\Actions\Tests\Unit\Concerns;
 
 use Sylament\Actions\Tests\Fixtures\Concerns\HasDataFixture;
+use TypeError;
 
 it('replaces data wholesale via data() and reads it back via getData()', function (): void {
     $fixture = new HasDataFixture()->data(['title' => 'Foo']);
@@ -39,6 +40,20 @@ it('resets data to an empty array without running the mutator', function (): voi
         ->resetData();
 
     expect($fixture->getData())->toBe([]);
+});
+
+it('refuses a mutator that returns a non-array', function (): void {
+    $fixture = new HasDataFixture()->mutateDataUsing(fn (): string => 'nope');
+
+    expect(fn (): HasDataFixture => $fixture->data(['title' => 'Foo']))
+        ->toThrow(TypeError::class, 'mutateDataUsing() must return an array');
+});
+
+it('refuses a mutator whose array is not keyed by field name', function (): void {
+    $fixture = new HasDataFixture()->mutateDataUsing(fn (array $data): array => array_values($data));
+
+    expect(fn (): HasDataFixture => $fixture->data(['title' => 'Foo']))
+        ->toThrow(TypeError::class, 'mutateDataUsing() must return an array');
 });
 
 it('falls back to an empty array from getRawData() when no live component is bound', function (): void {

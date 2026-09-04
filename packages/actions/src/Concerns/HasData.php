@@ -32,15 +32,23 @@ trait HasData
             $data = $this->evaluate($this->mutateDataUsing, [
                 'data' => $data,
             ]);
-        }
 
-        if (!is_array($data)) {
-            throw new TypeError(sprintf('%s::mutateDataUsing() must return an array.', static::class));
+            self::assertFieldKeyedData($data, 'mutateDataUsing');
         }
 
         $this->data = $data;
 
         return $this;
+    }
+
+    /**
+     * @phpstan-assert array<string, mixed> $data
+     */
+    protected static function assertFieldKeyedData(mixed $data, string $hook): void
+    {
+        if (!is_array($data) || !array_all(array_keys($data), static fn (int|string $field): bool => is_string($field))) {
+            throw new TypeError(sprintf('%s::%s() must return an array keyed by field name.', static::class, $hook));
+        }
     }
 
     public function resetData(): static

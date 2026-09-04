@@ -72,6 +72,14 @@ it('refuses a mutator that returns a non-array', function (): void {
         ->toThrow(TypeError::class, 'mutateRecordDataUsing() must return an array');
 });
 
+it('refuses a mutator whose array is not keyed by field name', function (): void {
+    $action = CanMutateRecordDataFixture::make('fill')
+        ->mutateRecordDataUsing(fn (array $data): array => array_values($data));
+
+    expect(fn (): array => $action->runMutateRecordData(['title' => 'Alpha']))
+        ->toThrow(TypeError::class, 'mutateRecordDataUsing() must return an array');
+});
+
 it('answers an object or an array record for the fill and refuses anything else', function (): void {
     $record = mutateRecordDataRecord();
 

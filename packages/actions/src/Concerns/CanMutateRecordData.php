@@ -7,7 +7,6 @@ namespace Sylament\Actions\Concerns;
 use Closure;
 use LogicException;
 use Sylament\Schemas\Schema;
-use TypeError;
 
 use function Sylament\Support\except;
 
@@ -44,13 +43,13 @@ trait CanMutateRecordData
      */
     protected function mutateRecordData(array $data): array
     {
-        if ($this->mutateRecordDataUsing !== null) {
-            $data = $this->evaluate($this->mutateRecordDataUsing, ['data' => $data]);
+        if ($this->mutateRecordDataUsing === null) {
+            return $data;
         }
 
-        if (! is_array($data)) {
-            throw new TypeError(sprintf('%s::mutateRecordDataUsing() must return an array.', static::class));
-        }
+        $data = $this->evaluate($this->mutateRecordDataUsing, ['data' => $data]);
+
+        self::assertFieldKeyedData($data, 'mutateRecordDataUsing');
 
         return $data;
     }

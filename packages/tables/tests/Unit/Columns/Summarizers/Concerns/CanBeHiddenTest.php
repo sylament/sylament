@@ -54,6 +54,9 @@ it('hides and shows on a host class', function (): void {
  * The documented predicate reads the database (`hidden(fn ($query) => ...)`), and one
  * summarizer is re-pointed at the page query, the all-table query and one query per
  * group in a single render — so the answer is cached per query, never per summarizer.
+ * Which window of a dataset is asked about counts as part of that identity: two
+ * builders can agree on their DQL and every parameter and still page differently, and
+ * a predicate that counts rows answers differently for each.
  */
 it('caches its answer per query rather than per summarizer', function (): void {
     [$first, $second] = summarizerVisibilityQueries();
@@ -73,6 +76,14 @@ it('caches its answer per query rather than per summarizer', function (): void {
     $summarizer->query($second)->isVisible();
 
     expect($evaluations)->toBe(2);
+
+    $summarizer->query((clone $first)->setMaxResults(1))->isVisible();
+
+    expect($evaluations)->toBe(3);
+
+    $summarizer->query((clone $first)->setMaxResults(1)->setFirstResult(2))->isVisible();
+
+    expect($evaluations)->toBe(4);
 });
 
 it('tells two queries apart by their bound parameters alone', function (): void {

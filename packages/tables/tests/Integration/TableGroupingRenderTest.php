@@ -112,7 +112,7 @@ it('offers one option per registered group beside a blank one', function (): voi
 
     expect($selects->count())->toBe(2)
         ->and($selects->first()->attr('data-action'))->toBe('change->sylament--tables--table#group')
-        ->and($selects->first()->attr('aria-label'))->toBe('Group')
+        ->and($selects->first()->attr('aria-label'))->toBe('Group by')
         ->and($selects->first()->filter('option')->each(fn (Crawler $option): ?string => $option->attr('value')))
         ->toBe(['', 'artist.name', 'album'])
         ->and($selects->first()->filter('option')->each(fn (Crawler $option): string => $option->text()))
@@ -175,6 +175,24 @@ it('renders the trigger in a dropdown and keeps the inline copy off the desktop 
 
     expect($onDesktop->attr('class'))->toContain('sy-ta-grouping-settings-dropdown-on-desktop')
         ->and($onDesktop->filter('.sy-ta-grouping-settings-fields')->count())->toBe(1);
+});
+
+it('shapes the dropdown copy with visible labels and the inline copy with a wrapper prefix', function (): void {
+    $settings = new Crawler(groupedTableHtml('album'))->filter('.sy-ta-grouping-settings');
+    $dropdown = $settings->filter('.sy-dropdown .sy-ta-grouping-settings-fields');
+    $inline = $settings->filter('.sy-ta-grouping-settings > .sy-ta-grouping-settings-fields');
+
+    // Vendor writes the two copies as two markups: labels above the selects in
+    // the dropdown, and in the toolbar the group label as the wrapper's prefix
+    // with the direction named for screen readers only.
+    expect($dropdown->filter('.sy-ta-grouping-settings-field-label')->each(fn (Crawler $label): string => $label->text()))
+        ->toBe(['Group by', 'Group direction'])
+        ->and($dropdown->filter('.sy-input-wrp-prefix')->count())->toBe(0)
+        ->and($inline->filter('.sy-ta-grouping-settings-field-label')->count())->toBe(0)
+        ->and($inline->filter('.sy-input-wrp-prefix .sy-input-wrp-label')->text())->toBe('Group by')
+        ->and($inline->filter('[data-sylament--tables--table-target="groupDirectionField"] > span')->attr('class'))->toBe('sy-sr-only')
+        ->and($inline->filter('[data-sylament--tables--table-target="groupDirectionField"] > span')->text())->toBe('Group direction')
+        ->and($inline->filter('[data-sylament--tables--table-target="groupDirection"]')->count())->toBe(1);
 });
 
 it('opens a group header row at each boundary and nowhere else', function (): void {

@@ -94,7 +94,7 @@ reason inline instead.
 | [The `grouping` URL bind — one `UrlMapping` arm on each routed page](../../../packages/panels/src/Resources/Pages/ListRecords.php) | [`#[Url(as: 'grouping')]` on `ListRecords`](../../../vendor/filament/filament/src/Resources/Pages/ListRecords.php) and on [`ManageRelatedRecords`](../../../vendor/filament/filament/src/Resources/Pages/ManageRelatedRecords.php) | done | — | Both routed pages map it, unprefixed and between `filters` and `tab` — Filament's own declaration order ([manage-related-records.md](../panels/manage-related-records.md)). The nested `RelationManager` binds nothing, here or upstream. [has-table.md](has-table.md#the-url-binding-is-a-per-prop-liveprop-modifier-opted-into-by-the-page) |
 | [Grouped selection — `getGroupedSelectableTableRecordKeys()` and the group checkbox](../../../packages/tables/src/Concerns/HasBulkActions.php) | [`Concerns\HasBulkActions`](../../../vendor/filament/tables/src/Concerns/HasBulkActions.php) | done | — | [semantics](#the-whole-universe-arm-costs-one-query-per-group-on-the-page) · [diverges](#both-selection-lanes-key-through-getstringkey-where-filaments-records-lane-reads-the-column-raw) · [has-table.md](has-table.md#the-selection-is-server-canonical-and-re-derived-on-every-read) |
 | [`selectGroupsOnly()` / `selectsGroupsOnly()`](../../../packages/tables/src/Table/Concerns/HasBulkActions.php) | [`Table\Concerns\HasBulkActions`](../../../vendor/filament/tables/src/Table/Concerns/HasBulkActions.php) | done | — | [table.md](table.md#the-selection-settings-ship-as-a-subset-and-the-rest-are-listed) |
-| [The toolbar selector — the trigger, its dropdown copy and the inline one](../../../packages/tables/templates/partials/Table/index.html.twig) + [`grouping.css`](../../../packages/tables/assets/src/styles/components/grouping.css) | [`index.blade.php`'s `fi-ta-grouping-settings`](../../../vendor/filament/tables/resources/views/index.blade.php), [`container.css`](../../../vendor/filament/tables/resources/css/container.css) | done | — | [diverges](#the-selectors-two-copies-are-one-capture-and-they-swap-in-css-rather-than-with-a-utility-class) · [semantics](#the-direction-field-hides-on-the-raw-property-not-on-the-resolved-group) |
+| [The toolbar selector — the trigger, its dropdown copy and the inline one](../../../packages/tables/templates/partials/Table/index.html.twig) + [`grouping.css`](../../../packages/tables/assets/src/styles/components/grouping.css) | [`index.blade.php`'s `fi-ta-grouping-settings`](../../../vendor/filament/tables/resources/views/index.blade.php), [`container.css`](../../../vendor/filament/tables/resources/css/container.css) | done | — | [diverges](#the-selectors-two-copies-swap-in-css-rather-than-with-a-utility-class) · [semantics](#the-direction-field-hides-on-the-raw-property-not-on-the-resolved-group) |
 | [The group header row — its id, its colspan, the heading, the description and the collapse button](../../../packages/tables/templates/partials/Table/index.html.twig) | [`index.blade.php`'s `fi-ta-group-header-row`](../../../vendor/filament/tables/resources/views/index.blade.php), [`row.css`](../../../vendor/filament/tables/resources/css/row.css) | done | — | [diverges](#the-collapse-button-is-a-real-button-with-a-handler-of-its-own) · [diverges](#the-key-segment-of-every-id-this-row-mints-is-percent-encoded) · [semantics](#the-header-rows-colspan-is-read-off-the-thead-and-corrects-vendors-trailing-one-off) |
 | [The collapse state and the group tick — `toggleGroup()`, `group()`, `toggleGroupRecords()` and the two repaint blocks](../../../packages/tables/assets/src/controllers/table_controller.ts) | [`table.js`'s `toggleCollapseGroup()` / `isGroupCollapsed()` / `resetCollapsedGroups()`](../../../vendor/filament/tables/resources/js/components/table.js) | done | — | [diverges](#the-server-paints-the-collapsed-state-where-vendors-alpine-flashes-it-open) · [diverges](#three-client-guards-are-load-bearing-and-no-gate-in-this-repo-runs-them) · [semantics](#collapse-is-keyed-by-title-and-so-is-the-group-break) |
 | [The stripe restart at each group](../../../packages/tables/templates/partials/Table/index.html.twig) | [`index.blade.php`'s stripe reset](../../../vendor/filament/tables/resources/views/index.blade.php) | done | — | read off the boundary map's `indexInGroup` rather than a flag reset after each header — [table.md](table.md#surface) |
@@ -590,38 +590,24 @@ selection one: an app that leaves `@sylament/tables` out of its
 under `collapsedGroupsByDefault()`, rows the server painted `sy-collapsed` that
 nothing can ever expand.
 
-### The selector's two copies are one capture, and they swap in CSS rather than with a utility class
+### The selector's two copies swap in CSS rather than with a utility class
 
-The fields are one capture emitted twice — a dropdown copy for the narrow
-viewport, an inline one for the wide — and the divergence has two halves: *which
-copy shows*, and *what is inside it*.
-
-**Which copy shows.** Vendor puts a conditional `sm:fi-hidden` on the dropdown
-and `hidden sm:flex` on the inline copy; here both live in
+The two selects are captured once and composed into two copies — a dropdown
+copy for the narrow viewport, an inline one for the wide — each with vendor's
+own markup for that copy: the dropdown labels each select above it, the inline
+copy passes *Group by* as the [`InputWrapper`](../support/input-wrapper.md)'s
+`prefix` and names the direction with a `sy-sr-only` span, exactly as
+[`index.blade.php:432-520`](../../../vendor/filament/tables/resources/views/index.blade.php)
+does. The divergence is only *which copy shows*: vendor puts a conditional
+`sm:fi-hidden` on the dropdown and `hidden sm:flex` on the inline copy; here
+both live in
 [`grouping.css`](../../../packages/tables/assets/src/styles/components/grouping.css),
 keyed off the `sy-ta-grouping-settings-dropdown-on-desktop` modifier class the
 wrapper carries under `groupingSettingsInDropdownOnDesktop()` — a stylesheet rule
 rather than a page-wide utility only this one caller would ever want, which is
 [the toolkit's standing rule for exactly this](../../styling.md).
 
-**What is inside it.** Vendor writes the two copies as two *different* markups.
-[`index.blade.php:432-477`](../../../vendor/filament/tables/resources/views/index.blade.php)
-— the dropdown copy — is a `<label>` holding a `<span>` and an
-[`InputWrapper`](../support/input-wrapper.md) around a native `<select>`, one
-option per registered group behind a blank `-`, and *Ascending* / *Descending*
-beside it; that is the markup the port emits. `:479-520` — the inline copy —
-drops the span, passes the group label as the wrapper's own
-`:prefix="…group.label"`, and renders the direction label as
-`<span class="fi-sr-only">`. Ours is one capture, so on a wide viewport it shows
-two **visible** `.sy-ta-grouping-settings-field-label` spans where vendor shows a
-prefix inside the wrapper and a screen-reader-only direction label — `grouping.css`
-styles that class visibly and nothing hides it in the inline slot. Deliberate:
-one capture is one markup to keep right rather than two that drift, and both
-selects carry an `aria-label` of their own either way, so the delta is visual
-rather than one of naming. `InputWrapper` does carry a `prefix` prop, so closing
-it is a second capture whenever the visual parity is worth two markups.
-
-One more delta rides inside that same capture: the direction field's visibility
+One more delta rides inside both copies: the direction field's visibility
 is a server attribute rather than an Alpine binding — `hidden` when the property
 names no group, where vendor writes `x-cloak x-show="group"`. The controller
 keeps it in step from there.

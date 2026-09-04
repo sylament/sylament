@@ -315,6 +315,25 @@ it('maps every record on the page to its group boundaries', function (): void {
         ->and($boundaries['2'])->toMatchArray(['key' => 'Radiohead', 'isFirstOfGroup' => false, 'isLastOfGroup' => true, 'indexInGroup' => 1]);
 });
 
+/*
+ * Collapse is keyed by title and so is the break, which is Filament's own test:
+ * two keys that read the same are one group. Every other fixture here maps keys
+ * to titles one to one, so this is the only case that tells the two apart.
+ */
+it('breaks on the title, so two keys reading the same are one group', function (): void {
+    $host = groupedSongsHost(groupedSongsFixture(), fn (Table $table): Table => $table->groups([
+        Group::make('artist.name')->getTitleFromRecordUsing(fn (): string => 'Everyone'),
+    ]));
+    $host->tableGrouping = 'artist.name';
+
+    $boundaries = $host->getTableRecordGroupBoundaries();
+
+    expect(array_column($boundaries, 'isFirstOfGroup'))->toBe([true, false, false, false, false])
+        ->and(array_column($boundaries, 'isLastOfGroup'))->toBe([false, false, false, false, true])
+        ->and(array_column($boundaries, 'indexInGroup'))->toBe([0, 1, 2, 3, 4])
+        ->and(array_column($boundaries, 'key'))->toBe([null, 'Portishead', 'Portishead', 'Radiohead', 'Radiohead']);
+});
+
 it('describes each group header through the description closure', function (): void {
     $host = groupedSongsHost(groupedSongsFixture(), fn (Table $table): Table => $table->groups([
         Group::make('plays')->getDescriptionFromRecordUsing(fn (?string $title): string => 'Played ' . $title . ' times'),

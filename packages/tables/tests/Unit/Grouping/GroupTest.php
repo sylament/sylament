@@ -359,12 +359,14 @@ it('counter-suffixes its parameter past the ones already bound', function (): vo
         ->and($query->getParameter('plays')?->getValue())->toBe(15);
 });
 
-it('scopes a null key to IS NULL rather than = NULL', function (): void {
-    $query = groupQueryBuilder();
+it('scopes a null key to IS NULL rather than = NULL, and with andWhere', function (): void {
+    // Primed, because `where()` writes the identical DQL on a bare builder: what
+    // the conjunction protects is the filters and search the caller already added.
+    $query = groupQueryBuilder()->andWhere('song.plays > 15');
 
     Group::make('mood')->scopeQueryByKey($query, null);
 
-    expect($query->getDQL())->toContain('WHERE song.mood IS NULL')
+    expect($query->getDQL())->toContain('WHERE song.plays > 15 AND song.mood IS NULL')
         ->and($query->getParameters())->toHaveCount(0);
 });
 
@@ -445,11 +447,13 @@ it('matches a date group on the day, not the instant', function (): void {
 
     EntityManagerFactory::seed($entityManager, $inside, $edge);
 
-    $query = groupQueryBuilder($entityManager);
+    // Primed for the same reason the null arm is: the range has to be `andWhere`,
+    // or a filtered table summarizes and selects the rows its filters excluded.
+    $query = groupQueryBuilder($entityManager)->andWhere('song.plays > 15');
 
     Group::make('releasedAt')->date()->scopeQueryByKey($query, '2026-09-02');
 
-    expect($query->getDQL())->toContain('song.releasedAt >= :sylament_group_0 AND song.releasedAt < :sylament_group_1')
+    expect($query->getDQL())->toContain('WHERE song.plays > 15 AND (song.releasedAt >= :sylament_group_0 AND song.releasedAt < :sylament_group_1)')
         ->and($query->getDQL())->not->toContain('DATE(')
         ->and(array_map(
             static fn (SongEntity $song): string => $song->getTitle(),

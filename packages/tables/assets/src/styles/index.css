@@ -3,6 +3,7 @@
 @import './components/column-manager.css' layer(components);
 @import './components/editable-cell.css' layer(components);
 @import './components/filters.css' layer(components);
+@import './components/grouping.css' layer(components);
 @import './components/header.css' layer(components);
 @import './components/header-toolbar.css' layer(components);
 @import './components/icon-column.css' layer(components);

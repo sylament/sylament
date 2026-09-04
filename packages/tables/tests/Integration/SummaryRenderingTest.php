@@ -138,6 +138,30 @@ it('renders the header row, the page row and the all-table row across pages', fu
         ->and($rows->last()->filter('td')->last()->text())->toContain('150');
 });
 
+it('renders no page row on an overflow page, where the page query has nothing to read', function (): void {
+    $host = summarizedTableHost([
+        TextColumn::make('title')->searchable(isIndividual: true),
+        TextColumn::make('plays')->summarize(Sum::make()),
+    ], fn (Table $table): Table => $table->paginated([2]));
+
+    // The page number is clamped against `PHP_INT_MAX / perPage` alone, so a
+    // page past the end holds no records while the paginator still reports
+    // pages; the table itself still renders, because a column is individually
+    // searchable. The page row is what the page query proves, not what the
+    // paginator claims — without that, the row would summarize a null query.
+    $host->tablePage = 99;
+
+    $crawler = new Crawler(renderToHtml($host->getTable()));
+    $rows = $crawler->filter('tr.sy-ta-summary-row');
+
+    expect($crawler->filter('table.sy-ta-table')->count())->toBe(1)
+        ->and($crawler->filter('tbody tr[id*=".table.records."]')->count())->toBe(0)
+        ->and($crawler->filter('tr.sy-ta-summary-header-row')->count())->toBe(0)
+        ->and($rows->count())->toBe(1)
+        ->and($rows->filter('th[scope="row"]')->text())->toBe('Summary')
+        ->and($rows->filter('td')->last()->text())->toContain('150');
+});
+
 it('renders no page row under summaries(pageCondition: false)', function (): void {
     $crawler = summarizedTableCrawler([
         TextColumn::make('title'),

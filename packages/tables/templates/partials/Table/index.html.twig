@@ -510,9 +510,14 @@
                    row will carry them, and the all-table ones when an all-table row will. #}
                 {% set allSummaryQuery = component.getLiveComponent.getAllTableSummaryQuery %}
                 {% set hasSummary = component.hasSummary(allSummaryQuery) %}
-                {% set hasPageSummary = hasSummary and not isReordering and component.hasPageSummary and paginator is not null and paginator.hasPages %}
                 {% set hasAllSummary = hasSummary and not isReordering and component.hasAllTableSummary %}
-                {% set pageSummaryQuery = hasPageSummary ? component.getLiveComponent.getPageTableSummaryQuery : null %}
+                {% set isPageSummaryWanted = hasSummary and not isReordering and component.hasPageSummary and paginator is not null and paginator.hasPages %}
+                {% set pageSummaryQuery = isPageSummaryWanted ? component.getLiveComponent.getPageTableSummaryQuery : null %}
+
+                {# A page past the last one holds no records, so the page query has nothing to
+                   narrow itself to while the paginator still reports pages — the row is what
+                   the query proves rather than what the paginator claims. #}
+                {% set hasPageSummary = pageSummaryQuery is not null %}
                 {% set pageSummarySelectedState = hasPageSummary ? component.getLiveComponent.getTableSummarySelectedState(pageSummaryQuery) : {} %}
                 {% set allSummarySelectedState = hasAllSummary ? component.getLiveComponent.getTableSummarySelectedState(allSummaryQuery) : {} %}
                 {% set summaryColumns = isGroupsOnly ? columns|filter(column => column.getName != group.getColumn) : columns %}

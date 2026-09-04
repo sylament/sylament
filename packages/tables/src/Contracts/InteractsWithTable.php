@@ -68,6 +68,14 @@ interface InteractsWithTable
     public function getTableGrouping(): ?Group;
 
     /**
+     * The group id the client has selected, before any of it is resolved — null
+     * where nothing is selected, and a name no registered group carries where
+     * the client wrote one. Read by the grouping selector, which shows the
+     * selection rather than the group in force, as vendor's does.
+     */
+    public function getTableGroupingColumn(): ?string;
+
+    /**
      * Whether the grouping order is ascending or descending, or null where the
      * grouping carries no direction of its own — which is not "ungrouped": the
      * query lane falls back to ascending. Read by the grouping selector.

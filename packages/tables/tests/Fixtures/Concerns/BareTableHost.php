@@ -84,6 +84,11 @@ final class BareTableHost implements InteractsWithTable
         return null;
     }
 
+    public function getTableGroupingColumn(): ?string
+    {
+        return null;
+    }
+
     public function getTableGroupingDirection(): ?string
     {
         return null;

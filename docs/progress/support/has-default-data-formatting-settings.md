@@ -11,12 +11,15 @@ It sits in support's **root** `Concerns/`, not under `Components/Concerns/`,
 because nothing that composes it is a nested component: Filament puts it on
 `Table` and `Schema`, and this port composes it on
 [`Tables\Table`](../tables/table.md) alone — `Schema` follows in M5, when
-`TextEntry` needs the same defaults. The path is also the one M4 · 6's summariser
-lane names, so whichever epic lands it owns it and the other's rebase stops on a
-byte-identical file.
+`TextEntry` needs the same defaults.
 
 Six of the eight settings gained their first reader with
-[`TextColumn`](../tables/text-column.md)'s date, money and numeric families. The
+[`TextColumn`](../tables/text-column.md)'s date, money and numeric families, and
+M4 · 6 added two more readers of the same two date formats off the same table:
+a [`date()` group's title](../tables/grouping.md#a-date-group-is-a-half-open-day-range-bound-with-the-fields-own-type)
+formats through `getDefaultDateDisplayFormat()`, and
+[`Range::minimalDateTimeDifference()`](../tables/summarizer.md) picks between that
+and `getDefaultDateTimeDisplayFormat()` by how far apart its two ends fall. The
 three `iso*` ones are carried unread: their moment.js tokens (`L`, `LLL`, `LT`)
 only ICU locale presets can answer, which is the i18n epic's, so
 [`text-column.md`](../tables/text-column.md) blocks the `isoDate()` family on it

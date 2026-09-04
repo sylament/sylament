@@ -12,6 +12,8 @@ use Sylament\Tables\Columns\TextColumn;
 use Sylament\Tables\Filters\BaseFilter;
 use Sylament\Tables\Filters\FilterIndicator;
 use Sylament\Tables\Filters\Indicator;
+use Sylament\Tables\Grouping\Concerns\BelongsToTable;
+use Sylament\Tables\Grouping\Group;
 use Sylament\Tables\Table;
 use Sylament\Tables\Tests\Fixtures\Concerns\SchemaStateHost;
 use Sylament\Tables\Tests\Fixtures\Concerns\TableHost;
@@ -90,6 +92,17 @@ it('builds filters and indicators through the container so their closures reach 
 
     expect(BaseFilter::make('status')->getInvoker())->toBe($invoker)
         ->and(Indicator::make('Published')->getInvoker())->toBe($invoker);
+});
+
+it('builds groups through the container, one instance per make', function (): void {
+    $invoker = $this::getContainer()->get(Invoker::class);
+
+    expect(Group::make('status')->getInvoker())->toBe($invoker)
+        ->and(Group::make('status'))->not->toBe(Group::make('status'));
+});
+
+it('keeps the group concerns out of the grouping service glob', function (): void {
+    expect($this::getContainer()->has(BelongsToTable::class))->toBeFalse();
 });
 
 it('keeps the filter indicator carrier out of the filters service glob', function (): void {

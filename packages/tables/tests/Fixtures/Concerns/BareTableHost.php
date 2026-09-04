@@ -131,6 +131,14 @@ final class BareTableHost implements InteractsWithTable
     }
 
     /**
+     * @param object|array<string, mixed> $record
+     */
+    public function getGroupedTableSummaryQuery(object|array $record): ?QueryBuilder
+    {
+        return null;
+    }
+
+    /**
      * @return array<string, mixed>
      */
     public function getTableSummarySelectedState(?QueryBuilder $query): array

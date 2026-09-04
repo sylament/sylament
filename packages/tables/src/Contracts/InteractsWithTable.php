@@ -125,6 +125,15 @@ interface InteractsWithTable
     public function getPageTableSummaryQuery(): ?QueryBuilder;
 
     /**
+     * The same dataset narrowed to the group one record belongs to, or null on a
+     * table that groups nothing. Read by the summary band once per group header the
+     * page carries.
+     *
+     * @param object|array<string, mixed> $record
+     */
+    public function getGroupedTableSummaryQuery(object|array $record): ?QueryBuilder;
+
+    /**
      * One batched read of every batchable summarizer over the query given, keyed by
      * the alias each summarizer looks its own figure up under. Read by the summary
      * band once per row it renders.

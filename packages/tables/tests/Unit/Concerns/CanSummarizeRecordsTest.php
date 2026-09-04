@@ -11,6 +11,7 @@ use Sylament\Tables\Columns\Summarizers\Range;
 use Sylament\Tables\Columns\Summarizers\Sum;
 use Sylament\Tables\Columns\Summarizers\Values;
 use Sylament\Tables\Columns\TextColumn;
+use Sylament\Tables\Grouping\Group;
 use Sylament\Tables\Table;
 use Sylament\Tables\Tests\Fixtures\Concerns\TableHost;
 use Sylament\Tables\Tests\Fixtures\Doctrine\Entity\Address;
@@ -345,4 +346,121 @@ it('hands back an independent builder on every read', function (): void {
     expect($first)->not->toBe($second)
         ->and($second?->getDQL())->not->toContain('song.plays > 30')
         ->and($host->getTableSummarySelectedState($second))->toBe(['sy_summary_0' => 210]);
+});
+
+/**
+ * The same six songs the ungrouped cases read, grouped by their artist and paged —
+ * three per artist, so one group sums to 60 and the other to 150 against the whole
+ * table's 210, and no page can be mistaken for a group or for the table.
+ *
+ * @param (Closure(Table): Table)|null $configure
+ */
+function groupedSummaryHost(EntityManager $entityManager, int|string|null $recordsPerPage = 2, int $page = 1, ?Closure $configure = null): TableHost
+{
+    $host = new TableHost(function (Table $table) use ($entityManager, $recordsPerPage, $configure): Table {
+        $table = $table
+            ->query($entityManager->createQueryBuilder()->select('song')->from(Song::class, 'song')->orderBy('song.id', 'ASC'))
+            ->columns([TextColumn::make('plays')->summarize(Sum::make())])
+            ->groups(['artist.name', 'title']);
+
+        $table = $recordsPerPage === null ? $table->paginated(false) : $table->paginated([$recordsPerPage]);
+
+        return $configure instanceof Closure ? $configure($table) : $table;
+    });
+
+    $host->tableGrouping = 'artist.name';
+    $host->tablePage = $page;
+
+    return $host;
+}
+
+it('summarizes each group on the page in one statement of its own', function (): void {
+    $recorder = new RecordingMiddleware();
+    $host = groupedSummaryHost(summaryStateSongs($recorder), recordsPerPage: null);
+
+    $records = $host->getTableRecords();
+    $recorder->reset();
+
+    $radiohead = $host->getTableSummarySelectedState($host->getGroupedTableSummaryQuery($records[1]));
+    $bjork = $host->getTableSummarySelectedState($host->getGroupedTableSummaryQuery($records[4]));
+
+    expect($radiohead)->toBe(['sy_summary_0' => 60])
+        ->and($bjork)->toBe(['sy_summary_0' => 150])
+        ->and($recorder->statements())->toHaveCount(2);
+});
+
+it('scopes a group holding a single record', function (): void {
+    $host = groupedSummaryHost(summaryStateSongs(), recordsPerPage: null);
+    $host->tableGrouping = 'title';
+
+    $records = $host->getTableRecords();
+
+    expect($host->getTableSummarySelectedState($host->getGroupedTableSummaryQuery($records[1])))->toBe(['sy_summary_0' => 10]);
+});
+
+it('honours the group scope closure on the grouped summary path', function (): void {
+    $host = groupedSummaryHost(summaryStateSongs(), recordsPerPage: null, configure: fn (Table $table): Table => $table->groups([
+        Group::make('artist.name')->scopeQueryUsing(fn (QueryBuilder $query): QueryBuilder => $query->andWhere('song.plays > 10')),
+    ]));
+
+    $records = $host->getTableRecords();
+
+    expect($host->getTableSummarySelectedState($host->getGroupedTableSummaryQuery($records[1])))->toBe(['sy_summary_0' => 200]);
+});
+
+it('answers no grouped summary query when nothing is grouped or nothing is queried', function (): void {
+    $ungrouped = groupedSummaryHost(summaryStateSongs(), recordsPerPage: null);
+    $ungrouped->tableGrouping = null;
+
+    $records = $ungrouped->getTableRecords();
+
+    $recordsLane = new TableHost(fn (Table $table): Table => $table
+        ->records(fn (): array => [['id' => '1', 'plays' => 10]])
+        ->columns([TextColumn::make('plays')->summarize(Sum::make())])
+        ->groups(['plays']));
+    $recordsLane->tableGrouping = 'plays';
+
+    expect($ungrouped->getGroupedTableSummaryQuery($records[1]))->toBeNull()
+        ->and($recordsLane->getGroupedTableSummaryQuery(['id' => '1', 'plays' => 10]))->toBeNull();
+});
+
+/*
+ * The scope lands on a builder of the group's own, so the all-table row that reads
+ * the next one is not quietly narrowed to whichever group asked first.
+ */
+it('scopes a fresh clone rather than the query the all-table row reads', function (): void {
+    $host = groupedSummaryHost(summaryStateSongs(), recordsPerPage: null);
+
+    $records = $host->getTableRecords();
+    $grouped = $host->getGroupedTableSummaryQuery($records[1]);
+
+    expect($grouped)->not->toBe($host->getAllTableSummaryQuery())
+        ->and($host->getTableSummarySelectedState($grouped))->toBe(['sy_summary_0' => 60])
+        ->and($host->getTableSummarySelectedState($host->getAllTableSummaryQuery()))->toBe(['sy_summary_0' => 210]);
+});
+
+/*
+ * A date group keys by the day, so its scope has to be the half-open range around
+ * that day rather than an equality against an instant — two songs released hours
+ * apart on one day summarize together.
+ */
+it('scopes a date group to the whole day its key names', function (): void {
+    $entityManager = EntityManagerFactory::create();
+
+    EntityManagerFactory::seed(
+        $entityManager,
+        new Song(id: 1, title: 'Airbag', plays: 10, releasedAt: new DateTimeImmutable('2026-09-02 09:00:00')),
+        new Song(id: 2, title: 'Let Down', plays: 20, releasedAt: new DateTimeImmutable('2026-09-02 21:30:00')),
+        new Song(id: 3, title: 'Jóga', plays: 30, releasedAt: new DateTimeImmutable('2026-09-03 08:00:00')),
+    );
+
+    $host = groupedSummaryHost($entityManager, recordsPerPage: null, configure: fn (Table $table): Table => $table->groups([
+        Group::make('releasedAt')->date(),
+    ]));
+    $host->tableGrouping = 'releasedAt';
+
+    $records = $host->getTableRecords();
+
+    expect($host->getTableSummarySelectedState($host->getGroupedTableSummaryQuery($records[1])))->toBe(['sy_summary_0' => 30])
+        ->and($host->getTableSummarySelectedState($host->getGroupedTableSummaryQuery($records[3])))->toBe(['sy_summary_0' => 30]);
 });

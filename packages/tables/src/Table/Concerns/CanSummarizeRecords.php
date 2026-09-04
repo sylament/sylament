@@ -6,6 +6,7 @@ namespace Sylament\Tables\Table\Concerns;
 
 use Closure;
 use Doctrine\ORM\QueryBuilder;
+use Sylament\Tables\Columns\Column;
 
 trait CanSummarizeRecords
 {
@@ -38,6 +39,6 @@ trait CanSummarizeRecords
      */
     public function hasSummary(QueryBuilder|Closure|null $query): bool
     {
-        return array_any($this->getColumns(), static fn ($column): bool => $column->hasSummary($query));
+        return array_any($this->getColumns(), static fn (Column $column): bool => $column->hasSummary($query));
     }
 }

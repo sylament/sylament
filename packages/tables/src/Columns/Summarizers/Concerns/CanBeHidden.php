@@ -60,7 +60,7 @@ trait CanBeHidden
     {
         $key = $this->visibilityCacheKey();
 
-        if (array_key_exists((string) $key, $this->visibilityCache)) {
+        if (array_key_exists($key, $this->visibilityCache)) {
             return $this->visibilityCache[$key];
         }
 

@@ -41,9 +41,20 @@ it('renders through the values partial', function (): void {
     expect(Values::make()->getTemplate())->toBe('@SylamentTables/partials/Summarizer/values.html.twig');
 });
 
+/*
+ * Sorted before the comparison, because `SELECT DISTINCT` promises no order and the
+ * read drops the query's own — the list a driver hands back is the set, not a
+ * sequence, which is a semantics note rather than a defect.
+ */
 it('reads the distinct values of the column as a flat list', function (): void {
-    expect(valuesRig(Values::make())->getState())->toBe(['calm', 'bright'])
-        ->and(valuesRig(Values::make(), 'plays')->getState())->toBe([10, 20, 300, 40]);
+    $moods = valuesRig(Values::make())->getState();
+    $plays = valuesRig(Values::make(), 'plays')->getState();
+
+    sort($moods);
+    sort($plays);
+
+    expect($moods)->toBe(['bright', 'calm'])
+        ->and($plays)->toBe([10, 20, 40, 300]);
 });
 
 it('reads an empty set as an empty list', function (): void {

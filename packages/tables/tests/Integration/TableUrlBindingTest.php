@@ -143,7 +143,11 @@ it('seeds a grouping into the only host that maps it', function (): void {
     [, $crawler] = browseTo('?grouping=plays');
 
     expect(publishedProps($crawler, '#bound-table')['tableGrouping'])->toBe('plays')
-        ->and(publishedProps($crawler, '#unbound-table')['tableGrouping'])->toBeNull();
+        ->and(publishedProps($crawler, '#unbound-table')['tableGrouping'])->toBeNull()
+        // The seeded value reaches the rendered rows, not just the published
+        // props: the bound host opens a group heading its unbound twin has not.
+        ->and(renderedRowsOf($crawler, 'UrlBoundSongsTable'))->toContain('Plays: 100')
+        ->and(renderedRowsOf($crawler, 'UnboundSongsTable'))->not->toContain('Plays: 100');
 });
 
 it('drops a seeded grouping naming a group the table does not offer', function (): void {

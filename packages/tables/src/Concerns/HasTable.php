@@ -26,6 +26,7 @@ trait HasTable
 {
     use CanAccessProperties;
     use CanDeferLoading;
+    use CanGroupRecords;
     use CanPaginateRecords;
     use CanPersistTableState;
     use CanReorderRecords;
@@ -72,7 +73,8 @@ trait HasTable
 
     /**
      * Where a host binds one of its table-state props to the query string —
-     * `page`, `sort`, `search`, `filters` or `tab`. Null everywhere by default,
+     * `page`, `sort`, `search`, `filters`, `grouping` or `tab`. Null everywhere
+     * by default,
      * so a card, a modal or a relation manager carries no URL state at all and
      * only a routed page opts in.
      *
@@ -141,7 +143,7 @@ trait HasTable
             return null;
         }
 
-        return $this->applySortingToTableQuery($query);
+        return $this->applySortingToTableQuery($this->applyGroupingToTableQuery($query));
     }
 
     /**
@@ -284,8 +286,12 @@ trait HasTable
             throw new LogicException(sprintf('Table [%s] must have [records()], [query()] or [relationship()].', static::class));
         }
 
-        foreach ($table->getVisibleColumns() as $column) {
-            $column->applyEagerLoading($query);
+        // Under `groupsOnly()` no cell renders at all, so the joins every visible
+        // column would fetch through are joins nothing reads.
+        if (!$table->isGroupsOnly()) {
+            foreach ($table->getVisibleColumns() as $column) {
+                $column->applyEagerLoading($query);
+            }
         }
 
         if (!$table->isPaginated() || ($this->isTableReordering() && !$table->isPaginatedWhileReordering())) {
@@ -374,7 +380,9 @@ trait HasTable
      * the page query stays a plain entity read. A no-op off the query lane,
      * where there is no entity manager to batch against, and asked before the
      * declared query is reached at all, since a records closure wins over one
-     * that must then stay unevaluated.
+     * that must then stay unevaluated. A no-op under `groupsOnly()` too, where
+     * the cells these values fill never render — a divergence, since Filament
+     * fires its own aggregate selects there regardless.
      *
      * @param list<string> $keys
      */
@@ -389,7 +397,7 @@ trait HasTable
         $entityManager = $table->getQueryEntityManager();
         $recordClass = $table->getRecordClass();
 
-        if ($entityManager === null || $recordClass === null || $keys === []) {
+        if ($entityManager === null || $recordClass === null || $keys === [] || $table->isGroupsOnly()) {
             return;
         }
 

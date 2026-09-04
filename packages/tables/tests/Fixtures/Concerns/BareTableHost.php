@@ -10,7 +10,9 @@ use Sylament\Schemas\Schema;
 use Sylament\Support\Pagination\Paginator;
 use Sylament\Tables\Contracts\InteractsWithTable;
 use Sylament\Tables\Filters\Indicator;
+use Sylament\Tables\Grouping\Group;
 use Sylament\Tables\Table;
+use Twig\Markup;
 
 /**
  * Proves the state-reader guard: a host may satisfy the contract without
@@ -75,6 +77,24 @@ final class BareTableHost implements InteractsWithTable
     public function getTableSortDirection(): ?string
     {
         return null;
+    }
+
+    public function getTableGrouping(): ?Group
+    {
+        return null;
+    }
+
+    public function getTableGroupingDirection(): ?string
+    {
+        return null;
+    }
+
+    /**
+     * @return array<string, array{key: ?string, title: string|Markup|null, description: string|Markup|null, isFirstOfGroup: bool, isLastOfGroup: bool, indexInGroup: int}>
+     */
+    public function getTableRecordGroupBoundaries(): array
+    {
+        return [];
     }
 
     public function getTablePaginator(): ?Paginator

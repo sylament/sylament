@@ -1,0 +1,352 @@
+<?php
+
+declare(strict_types=1);
+
+use Doctrine\ORM\EntityManager;
+use Sylament\Tables\Columns\TextColumn;
+use Sylament\Tables\Grouping\Group;
+use Sylament\Tables\Table;
+use Sylament\Tables\Tests\Fixtures\Concerns\TableHost;
+use Sylament\Tables\Tests\Fixtures\Doctrine\Entity\Artist;
+use Sylament\Tables\Tests\Fixtures\Doctrine\Entity\Song;
+use Sylament\Tables\Tests\Fixtures\Doctrine\EntityManagerFactory;
+
+/*
+ * The host half of grouping: which group the property resolves to, what the
+ * direction reads as, what the pipeline does with both, and the boundary map the
+ * partial renders group headers from. The definition half — which groups exist —
+ * stays in `Unit/Table/Concerns/CanGroupRecordsTest.php`.
+ */
+
+/**
+ * Six songs over two artists and one orphan, so a page carries more than one
+ * group and one record whose group key is blank.
+ */
+function groupedSongsFixture(): EntityManager
+{
+    $entityManager = EntityManagerFactory::create();
+
+    $radiohead = new Artist(1, 'Radiohead');
+    $portishead = new Artist(2, 'Portishead');
+
+    EntityManagerFactory::seed(
+        $entityManager,
+        $radiohead,
+        $portishead,
+        new Song(1, 'Airbag', 100, $radiohead),
+        new Song(2, 'Exit Music', 100, $radiohead),
+        new Song(3, 'Glory Box', 200, $portishead),
+        new Song(4, 'Roads', 200, $portishead),
+        new Song(5, 'Untitled', 300),
+    );
+
+    return $entityManager;
+}
+
+/**
+ * @param (Closure(Table): Table)|null $configure
+ */
+function groupedSongsHost(EntityManager $entityManager, ?Closure $configure = null): TableHost
+{
+    return new TableHost(function (Table $table) use ($entityManager, $configure): Table {
+        $table
+            ->query($entityManager->createQueryBuilder()->select('song')->from(Song::class, 'song'))
+            ->columns([TextColumn::make('title')->sortable(), TextColumn::make('plays')->sortable()])
+            ->groups(['plays', 'artist.name']);
+
+        return $configure instanceof Closure ? $configure($table) : $table;
+    });
+}
+
+it('resolves the grouping named by the prop', function (): void {
+    $host = groupedSongsHost(groupedSongsFixture());
+    $host->tableGrouping = 'plays';
+
+    expect($host->getTableGrouping())->toBe($host->getTable()->getGroup('plays'));
+});
+
+it('splits an id:direction prop and resolves the id half', function (): void {
+    $host = groupedSongsHost(groupedSongsFixture());
+    $host->tableGrouping = 'artist.name:desc';
+
+    expect($host->getTableGroupingColumn())->toBe('artist.name')
+        ->and($host->getTableGrouping())->toBe($host->getTable()->getGroup('artist.name'));
+});
+
+it('falls back for a prop naming no registered group', function (): void {
+    $bare = groupedSongsHost(groupedSongsFixture());
+    $bare->tableGrouping = 'nope';
+
+    $defaulted = groupedSongsHost(groupedSongsFixture(), fn (Table $table): Table => $table->defaultGroup('title'));
+    $defaulted->tableGrouping = 'nope';
+
+    expect($bare->getTableGrouping())->toBeNull()
+        ->and($defaulted->getTableGrouping()?->getId())->toBe('title');
+});
+
+it('answers the default group when the prop is blank', function (): void {
+    $host = groupedSongsHost(groupedSongsFixture(), fn (Table $table): Table => $table->defaultGroup('title'));
+
+    expect($host->getTableGrouping()?->getId())->toBe('title');
+});
+
+it('answers null rather than the default when the default is itself selectable', function (): void {
+    $host = groupedSongsHost(groupedSongsFixture(), fn (Table $table): Table => $table->defaultGroup('plays'));
+
+    expect($host->getTable()->isDefaultGroupSelectable())->toBeTrue()
+        ->and($host->getTableGrouping())->toBeNull();
+});
+
+it('answers null while reordering, whatever the prop says', function (): void {
+    $host = groupedSongsHost(groupedSongsFixture(), fn (Table $table): Table => $table->reorderable('position'));
+    $host->tableGrouping = 'plays';
+    $host->toggleTableReordering();
+
+    expect($host->isTableReordering())->toBeTrue()
+        ->and($host->getTableGrouping())->toBeNull();
+});
+
+it('reads no direction from a blank prop', function (): void {
+    $host = groupedSongsHost(groupedSongsFixture());
+
+    expect($host->getTableGroupingDirection())->toBeNull()
+        ->and($host->getTableGroupingColumn())->toBeNull();
+});
+
+it('defaults an undecorated prop to asc', function (): void {
+    $host = groupedSongsHost(groupedSongsFixture());
+    $host->tableGrouping = 'plays';
+
+    expect($host->getTableGroupingDirection())->toBe('asc');
+});
+
+it('reads asc and desc off the prop', function (string $direction): void {
+    $host = groupedSongsHost(groupedSongsFixture());
+    $host->tableGrouping = 'plays:' . $direction;
+
+    expect($host->getTableGroupingDirection())->toBe($direction);
+})->with(['asc', 'desc']);
+
+it('refuses a direction that is not one', function (): void {
+    $host = groupedSongsHost(groupedSongsFixture());
+    $host->tableGrouping = 'plays:sideways';
+
+    expect($host->getTableGroupingDirection())->toBeNull();
+});
+
+it('adds the grouping order before the sort', function (): void {
+    $host = groupedSongsHost(groupedSongsFixture());
+    $host->tableGrouping = 'plays:desc';
+    $host->sortTable('title');
+
+    expect($host->getFilteredSortedTableQuery()?->getDQL())
+        ->toContain('ORDER BY song.plays desc, song.title asc, song.id asc');
+});
+
+it('adds no ordering of its own when nothing is grouped', function (): void {
+    $host = groupedSongsHost(groupedSongsFixture());
+    $host->sortTable('title');
+
+    expect($host->getFilteredSortedTableQuery()?->getDQL())
+        ->toContain('ORDER BY song.title asc, song.id asc')
+        ->and($host->getFilteredSortedTableQuery()?->getDQL())->not->toContain('song.plays');
+});
+
+it('lets a reorder replace the grouping order', function (): void {
+    $host = groupedSongsHost(groupedSongsFixture(), fn (Table $table): Table => $table->reorderable('position'));
+    $host->tableGrouping = 'plays:desc';
+    $host->sortTable('title');
+    $host->toggleTableReordering();
+
+    expect($host->getFilteredSortedTableQuery()?->getDQL())->toContain('ORDER BY song.position asc')
+        ->and($host->getFilteredSortedTableQuery()?->getDQL())->not->toContain('song.plays')
+        ->and($host->getFilteredSortedTableQuery()?->getDQL())->not->toContain('song.title');
+});
+
+it('eager loads the grouped relation once', function (): void {
+    $host = groupedSongsHost(groupedSongsFixture());
+    $host->tableGrouping = 'artist.name';
+
+    $dql = $host->getFilteredSortedTableQuery()?->getDQL() ?? '';
+
+    expect($dql)->toContain('LEFT JOIN song.artist sy_artist', 'SELECT song, sy_artist')
+        ->and(mb_substr_count($dql, 'LEFT JOIN song.artist'))->toBe(1)
+        ->and($dql)->toContain('ORDER BY sy_artist.name asc');
+});
+
+it('groups a relation path and orders the rows by it', function (): void {
+    $ascending = groupedSongsHost(groupedSongsFixture());
+    $ascending->tableGrouping = 'artist.name';
+
+    $descending = groupedSongsHost(groupedSongsFixture());
+    $descending->tableGrouping = 'artist.name:desc';
+
+    // The orphan sorts with the nulls, which SQLite puts first ascending and
+    // last descending — so neither order is the identifier's own.
+    expect(array_keys($ascending->getTableRecords()->getRecords()))->toBe([5, 3, 4, 1, 2])
+        ->and(array_keys($descending->getTableRecords()->getRecords()))->toBe([1, 2, 3, 4, 5]);
+});
+
+it('resets the page and flushes the records when the grouping changes', function (): void {
+    $host = groupedSongsHost(groupedSongsFixture(), fn (Table $table): Table => $table->paginated([2]));
+    $host->gotoTablePage(3);
+
+    expect($host->getTablePage())->toBe(3);
+
+    $host->getTableRecords();
+    $host->groupTable('plays');
+
+    expect($host->tableGrouping)->toBe('plays')
+        ->and($host->getTablePage())->toBe(1)
+        ->and(array_keys($host->getTableRecords()->getRecords()))->toBe([1, 2]);
+});
+
+it('writes a descending grouping as an id:desc pair and a bare id otherwise', function (): void {
+    $host = groupedSongsHost(groupedSongsFixture());
+
+    $host->groupTable('plays', 'desc');
+
+    expect($host->tableGrouping)->toBe('plays:desc');
+
+    $host->groupTable('plays', 'asc');
+
+    expect($host->tableGrouping)->toBe('plays');
+});
+
+it('clears the grouping for a blank group', function (): void {
+    $host = groupedSongsHost(groupedSongsFixture());
+    $host->tableGrouping = 'plays';
+
+    $host->groupTable('');
+
+    expect($host->tableGrouping)->toBeNull()
+        ->and($host->getTablePage())->toBe(1);
+});
+
+it('refuses a grouping write naming a group the table does not offer', function (): void {
+    $host = groupedSongsHost(groupedSongsFixture());
+    $host->tableGrouping = 'plays';
+
+    $host->groupTable('title');
+
+    expect($host->tableGrouping)->toBe('plays');
+});
+
+it('refuses a grouping write whose direction is not one', function (): void {
+    $host = groupedSongsHost(groupedSongsFixture());
+
+    $host->groupTable('plays', 'sideways');
+
+    expect($host->tableGrouping)->toBeNull();
+});
+
+it('clears a seeded grouping the table does not offer at mount', function (): void {
+    $host = groupedSongsHost(groupedSongsFixture());
+    $host->tableGrouping = 'nope';
+
+    $host->mountTableGrouping();
+
+    expect($host->tableGrouping)->toBeNull();
+});
+
+it('clears a seeded grouping whose direction is not one at mount', function (): void {
+    $host = groupedSongsHost(groupedSongsFixture());
+    $host->tableGrouping = 'plays:sideways';
+
+    $host->mountTableGrouping();
+
+    expect($host->tableGrouping)->toBeNull();
+});
+
+it('seeds a selectable default group as a bare id at mount', function (): void {
+    $selectable = groupedSongsHost(groupedSongsFixture(), fn (Table $table): Table => $table->defaultGroup('plays'));
+    $unselectable = groupedSongsHost(groupedSongsFixture(), fn (Table $table): Table => $table->defaultGroup('title'));
+    $none = groupedSongsHost(groupedSongsFixture());
+
+    $selectable->mountTableGrouping();
+    $unselectable->mountTableGrouping();
+    $none->mountTableGrouping();
+
+    expect($selectable->tableGrouping)->toBe('plays')
+        ->and($unselectable->tableGrouping)->toBeNull()
+        ->and($none->tableGrouping)->toBeNull();
+});
+
+it('leaves a seeded grouping standing over a selectable default', function (): void {
+    $host = groupedSongsHost(groupedSongsFixture(), fn (Table $table): Table => $table->defaultGroup('plays'));
+    $host->tableGrouping = 'artist.name:desc';
+
+    $host->mountTableGrouping();
+
+    // Filament seeds the default unconditionally, which discards a bookmarked
+    // `?grouping=`; every neighbouring seed in that method guards on blank and
+    // this one does not.
+    expect($host->tableGrouping)->toBe('artist.name:desc');
+});
+
+it('maps every record on the page to its group boundaries', function (): void {
+    $host = groupedSongsHost(groupedSongsFixture());
+    $host->tableGrouping = 'artist.name';
+
+    $boundaries = $host->getTableRecordGroupBoundaries();
+
+    expect(array_keys($boundaries))->toBe([5, 3, 4, 1, 2])
+        ->and($boundaries['5'])->toMatchArray([
+            'key' => null,
+            'title' => null,
+            'description' => null,
+            'isFirstOfGroup' => true,
+            'isLastOfGroup' => true,
+            'indexInGroup' => 0,
+        ])
+        ->and($boundaries['3'])->toMatchArray(['key' => 'Portishead', 'title' => 'Portishead', 'isFirstOfGroup' => true, 'isLastOfGroup' => false, 'indexInGroup' => 0])
+        ->and($boundaries['4'])->toMatchArray(['key' => 'Portishead', 'isFirstOfGroup' => false, 'isLastOfGroup' => true, 'indexInGroup' => 1])
+        ->and($boundaries['1'])->toMatchArray(['key' => 'Radiohead', 'isFirstOfGroup' => true, 'isLastOfGroup' => false, 'indexInGroup' => 0])
+        ->and($boundaries['2'])->toMatchArray(['key' => 'Radiohead', 'isFirstOfGroup' => false, 'isLastOfGroup' => true, 'indexInGroup' => 1]);
+});
+
+it('describes each group header through the description closure', function (): void {
+    $host = groupedSongsHost(groupedSongsFixture(), fn (Table $table): Table => $table->groups([
+        Group::make('plays')->getDescriptionFromRecordUsing(fn (?string $title): string => 'Played ' . $title . ' times'),
+    ]));
+    $host->tableGrouping = 'plays';
+
+    expect($host->getTableRecordGroupBoundaries()['1'])
+        ->toMatchArray(['key' => '100', 'title' => '100', 'description' => 'Played 100 times']);
+});
+
+it('maps no boundaries at all when the table is not grouped', function (): void {
+    $host = groupedSongsHost(groupedSongsFixture());
+
+    expect($host->getTableRecordGroupBoundaries())->toBe([]);
+});
+
+it('resolves every record unpaginated under groupsOnly()', function (): void {
+    $host = groupedSongsHost(groupedSongsFixture(), fn (Table $table): Table => $table->paginated([2])->groupsOnly());
+    $host->tableGrouping = 'plays';
+
+    expect($host->getTablePaginator())->toBeNull()
+        ->and($host->getTableRecords())->toHaveCount(5);
+});
+
+it('applies the grouping order alone under groupsOnly(), skipping the sorts', function (): void {
+    $host = groupedSongsHost(groupedSongsFixture(), fn (Table $table): Table => $table->groupsOnly()->defaultSort('title'));
+    $host->tableGrouping = 'plays:desc';
+    $host->sortTable('title');
+
+    expect($host->getFilteredSortedTableQuery()?->getDQL())->toContain('ORDER BY song.plays desc')
+        ->and($host->getFilteredSortedTableQuery()?->getDQL())->not->toContain('song.title')
+        ->and($host->getFilteredSortedTableQuery()?->getDQL())->not->toContain('song.id');
+});
+
+it('eager loads no column under groupsOnly(), since no cell renders', function (): void {
+    $host = groupedSongsHost(
+        groupedSongsFixture(),
+        fn (Table $table): Table => $table->groupsOnly()->columns([TextColumn::make('artist.name')]),
+    );
+    $host->tableGrouping = 'plays';
+
+    $host->getTableRecords();
+
+    expect($host->getFilteredSortedTableQuery()?->getDQL())->not->toContain('LEFT JOIN');
+});

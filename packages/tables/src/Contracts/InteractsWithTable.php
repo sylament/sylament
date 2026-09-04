@@ -8,6 +8,7 @@ use Doctrine\ORM\QueryBuilder;
 use Sylament\Schemas\Schema;
 use Sylament\Support\Pagination\Paginator;
 use Sylament\Tables\Filters\Indicator;
+use Sylament\Tables\Grouping\Group;
 use Sylament\Tables\Table;
 use Twig\Markup;
 
@@ -58,6 +59,29 @@ interface InteractsWithTable
     public function getTableSortColumn(): ?string;
 
     public function getTableSortDirection(): ?string;
+
+    /**
+     * The group the table's records are grouped by, or null when it groups
+     * none. Read by the partial for the header rows, and by
+     * `Table::getGrouping()`.
+     */
+    public function getTableGrouping(): ?Group;
+
+    /**
+     * Whether the grouping order is ascending or descending, or null where the
+     * grouping carries no direction of its own — which is not "ungrouped": the
+     * query lane falls back to ascending. Read by the grouping selector.
+     */
+    public function getTableGroupingDirection(): ?string;
+
+    /**
+     * Where each rendered record sits in its group, keyed by record key and
+     * empty when the table is not grouped. Read by the partial once per row, in
+     * place of tracking the previous record across its loop.
+     *
+     * @return array<string, array{key: ?string, title: string|Markup|null, description: string|Markup|null, isFirstOfGroup: bool, isLastOfGroup: bool, indexInGroup: int}>
+     */
+    public function getTableRecordGroupBoundaries(): array;
 
     public function getTablePaginator(): ?Paginator;
 

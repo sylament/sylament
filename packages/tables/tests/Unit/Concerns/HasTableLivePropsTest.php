@@ -25,6 +25,7 @@ function modifyTableUrlProps(UrlMappedTableHost $host): array
         'sort' => $host->modifyTableSortProp(new LiveProp()),
         'search' => $host->modifyTableSearchProp(new LiveProp()),
         'filters' => $host->modifyTableFiltersProp(new LiveProp()),
+        'grouping' => $host->modifyTableGroupingProp(new LiveProp()),
         'columnSearches' => $host->modifyTableColumnSearchesProp(new LiveProp()),
     ];
 }
@@ -49,6 +50,7 @@ it('declares the table state as LiveProps with the intended writability, hooks a
     }
 })->with([
     'sort' => ['tableSort', false, null, null, false, 'tableSort', 'modifyTableSortProp'],
+    'grouping' => ['tableGrouping', false, null, 'dehydrateTableGrouping', false, 'tableGrouping', 'modifyTableGroupingProp'],
     'page' => ['tablePage', false, null, null, false, 'tablePage', 'modifyTablePageProp'],
     'per page' => ['tableRecordsPerPage', true, 'updatedTableRecordsPerPage', 'dehydrateTableRecordsPerPage', false, 'tableRecordsPerPage'],
     'search' => ['tableSearch', true, 'updatedTableSearch', 'dehydrateTableSearch', false, 'tableSearch', 'modifyTableSearchProp'],
@@ -78,6 +80,7 @@ it('runs each mount and hydrate hook at the priority it was assigned', function 
     'the persisted state read' => ['mountTablePersistedState', PostMount::class, 10],
     'the seeded sort heal' => ['healSeededTableSort', PostMount::class, 5],
     'the per-column seed' => ['mountTableColumnSearches', PostMount::class, 3],
+    'the grouping heal and seed' => ['mountTableGrouping', PostMount::class, 2],
     'the filters mount' => ['mountTableFilters', PostMount::class, 0],
     'the filters form re-cache' => ['afterTableFiltersFormHydrated', PostHydrate::class, 10],
     'the per-column compare' => ['afterTableColumnSearchesHydrated', PostHydrate::class, -5],
@@ -94,6 +97,7 @@ it('exposes the table state mutations as live actions with live args', function 
     }
 })->with([
     'sortTable' => ['sortTable', ['column', 'direction']],
+    'groupTable' => ['groupTable', ['group', 'direction']],
     'gotoTablePage' => ['gotoTablePage', ['page']],
     'applyTableFilters' => ['applyTableFilters', []],
     'removeTableFilter' => ['removeTableFilter', ['filterName', 'field']],
@@ -119,6 +123,7 @@ it('binds a LiveProp to the URL under the name the host maps for it', function (
         'sort' => new UrlMapping(as: 'sort'),
         'search' => new UrlMapping(as: 'search'),
         'filters' => new UrlMapping(as: 'filters'),
+        'grouping' => new UrlMapping(as: 'grouping'),
         'columnSearches' => new UrlMapping(as: 'columnSearches'),
     ];
 
@@ -138,6 +143,7 @@ it('maps one prop without touching its siblings', function (): void {
         ->and($liveProps['page']->url())->toBeFalse()
         ->and($liveProps['search']->url())->toBeFalse()
         ->and($liveProps['filters']->url())->toBeFalse()
+        ->and($liveProps['grouping']->url())->toBeFalse()
         ->and($liveProps['columnSearches']->url())->toBeFalse();
 });
 
@@ -148,6 +154,7 @@ it('builds no table while modifying a prop, so nothing resolves before the compo
             'sort' => new UrlMapping(as: 'sort'),
             'search' => new UrlMapping(as: 'search'),
             'filters' => new UrlMapping(as: 'filters'),
+            'grouping' => new UrlMapping(as: 'grouping'),
             'columnSearches' => new UrlMapping(as: 'columnSearches'),
         ],
         refusesTable: true,

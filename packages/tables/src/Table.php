@@ -14,6 +14,7 @@ use Sylament\Tables\Contracts\InteractsWithTable;
 use Sylament\Tables\Table\Concerns\BelongsToLiveComponent;
 use Sylament\Tables\Table\Concerns\CanBeStriped;
 use Sylament\Tables\Table\Concerns\CanDeferLoading;
+use Sylament\Tables\Table\Concerns\CanGroupRecords;
 use Sylament\Tables\Table\Concerns\CanPaginateRecords;
 use Sylament\Tables\Table\Concerns\CanPollRecords;
 use Sylament\Tables\Table\Concerns\CanReorderRecords;
@@ -46,6 +47,7 @@ class Table extends ViewComponent
     use CanAccessProperties;
     use CanBeStriped;
     use CanDeferLoading;
+    use CanGroupRecords;
     use CanPaginateRecords;
     use CanPollRecords;
     use CanReorderRecords;

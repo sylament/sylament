@@ -33,6 +33,10 @@ trait CanGroupRecords
      * through the same-named getter — Symfony's property accessor prefers an
      * accessor over the property, and a `Group` carries no property type to
      * hydrate back into, so without this the first grouped render throws.
+     *
+     * Blank is published as nothing at all: a routed page reached with a bare
+     * `?grouping=` seeds `''`, which the mount leaves standing, and publishing
+     * that would write `grouping=` back onto every rebuilt URL.
      */
     public function dehydrateTableGrouping(mixed $value): ?string
     {

@@ -285,6 +285,17 @@ it('leaves a seeded grouping standing over a selectable default', function (): v
     expect($host->tableGrouping)->toBe('artist.name:desc');
 });
 
+it('publishes a blank grouping as no grouping at all', function (): void {
+    $host = groupedSongsHost(groupedSongsFixture());
+    $host->tableGrouping = '';
+
+    expect($host->dehydrateTableGrouping(null))->toBeNull();
+
+    $host->tableGrouping = 'artist.name:desc';
+
+    expect($host->dehydrateTableGrouping(null))->toBe('artist.name:desc');
+});
+
 it('maps every record on the page to its group boundaries', function (): void {
     $host = groupedSongsHost(groupedSongsFixture());
     $host->tableGrouping = 'artist.name';

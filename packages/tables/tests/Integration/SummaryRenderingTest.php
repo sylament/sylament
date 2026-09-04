@@ -14,6 +14,7 @@ use Sylament\Tables\Columns\Summarizers\Range;
 use Sylament\Tables\Columns\Summarizers\Sum;
 use Sylament\Tables\Columns\Summarizers\Values;
 use Sylament\Tables\Columns\TextColumn;
+use Sylament\Tables\Contracts\InteractsWithTable;
 use Sylament\Tables\Enums\RecordActionsPosition;
 use Sylament\Tables\Enums\RecordCheckboxPosition;
 use Sylament\Tables\Table;
@@ -80,16 +81,14 @@ function summarizedTableCrawler(array $columns, ?Closure $configure = null, ?str
 }
 
 /**
- * One summary row rendered on its own, which is the only way to reach the two
- * props the table layout never sets — `extraHeadingColumn` and
- * `placeholderColumns` are the content layout's (M4 · 7).
+ * One summary row of a host's own columns, rendered on its own — the only way
+ * to reach `extraHeadingColumn`, which the table layout never sets because it
+ * belongs to the content one (M4 · 7).
  *
- * @param list<Column> $columns
  * @param array<string, mixed> $props
  */
-function summaryRowCrawler(array $columns, array $props = []): Crawler
+function summaryRowCrawler(InteractsWithTable $host, array $props = []): Crawler
 {
-    $host = summarizedTableHost($columns);
     $twig = test()->getContainer()->get('twig');
 
     return new Crawler($twig->createTemplate(
@@ -235,11 +234,11 @@ it('spans every column when only the first one is summarized', function (): void
 });
 
 it('emits a cell per column and no colspan in the extra-heading mode', function (): void {
-    $row = summaryRowCrawler([
+    $row = summaryRowCrawler(summarizedTableHost([
         TextColumn::make('title'),
         TextColumn::make('mood'),
         TextColumn::make('plays')->summarize(Sum::make()),
-    ], ['extraHeadingColumn' => true])->filter('tr.sy-ta-summary-row');
+    ]), ['extraHeadingColumn' => true])->filter('tr.sy-ta-summary-row');
 
     expect($row->filter('th[scope="row"]')->count())->toBe(1)
         ->and($row->filter('th[scope="row"]')->attr('colspan'))->toBeNull()
@@ -568,4 +567,16 @@ it('reads the shipped fixture page row from the page alone', function (): void {
         ->toBe(['Sum30', 'Average15', 'Rows2'])
         ->and($row->filter('div.sy-ta-values-summary ul > li')->each(fn (Crawler $item): string => $item->text()))
         ->toBe(['calm']);
+});
+
+it('renders the shipped fixture range once a heading cell of its own frees its column', function (): void {
+    // The same fixture with a dedicated heading cell: every column now carries
+    // its own cell, so the range the table layout absorbs renders its two ends.
+    $row = summaryRowCrawler($this::getContainer()->get(SummarySongsTable::class), ['extraHeadingColumn' => true])
+        ->filter('tr.sy-ta-summary-row');
+
+    expect($row->filter('th, td')->count())->toBe(5)
+        ->and($row->filter('div.sy-ta-range-summary span')->text())->toBe('A - J')
+        ->and($row->filter('div.sy-ta-text-summary')->each(fn (Crawler $summary): string => $summary->text()))
+        ->toBe(['Sum150', 'Average30', 'Rows5']);
 });

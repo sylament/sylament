@@ -474,25 +474,59 @@ component glob leaves `Contracts/` unregistered.
 `Summarizers\Concerns\CanFormatState` ports vendor's whole member set —
 `formatStateUsing`, `limit`, `money`, `numeric`, `placeholder`, `markdown`,
 `prefix`, `suffix`, `html`, `formatState`, and the getters — by **copying** the
-[column trait's](text-column.md) bodies, which is Filament's own shape: it files
-four copies of this trait (tables, infolists, summarizers, exports) and none of
-them in support. So `money()` and `numeric()` format through `NumberFormatter`
-here exactly as a column's do, `html()` sanitizes through the app's own
-`HtmlSanitizerInterface` arriving by `#[Required]` setter, and `markdown()`
+[column trait's](text-column.md) bodies wherever the two share a member, which is
+Filament's own shape: it files four copies of this trait (tables, infolists,
+summarizers, exports) and none of them in support. So `money()` and `numeric()`
+format through `NumberFormatter` here exactly as a column's do, `html()` sanitizes
+through the app's own `HtmlSanitizerInterface` arriving by `#[Required]` setter,
+and `markdown()`
 [throws for `league/commonmark` rather than falling through](text-column.md#markdown-throws-for-the-package-it-suggests-rather-than-falling-through).
 
-Two things differ from vendor inside the copy. `limit()` is the column's
+**What the copy actually shares**, since the debt below is only worth stating
+precisely: `money()`, `numeric()`, `html()`, `markdown()`, the CommonMark pair,
+`prefix()`/`suffix()`, `limit()` and the private helpers `sanitizeState()`,
+`affixState()`, `escape()`, `formatterResult()` and `resolveNumberLocale()` are
+the column trait's bodies with two edits — the closure receiver retyped
+(`TextColumn $column` → `Summarizer $summarizer`, every call site inside `money()`
+and `numeric()` renamed with it), and four `LogicException` messages resubjected
+from the column and `$this->getName()` to the summarizer and `static::class`
+(`formatState()`'s stringable throw, `formatterResult()`, `sanitizeState()`'s
+commonmark throw and `getHtmlSanitizer()`'s). The two files are 393 lines against
+599, and the shared bodies differ in `!` spacing throughout, so a mechanical
+`diff` of the pair is noisier than the substance is.
+
+**Where the two deliberately part**, and where a copy-back in either direction
+would be a defect:
+
+- `formatState()` is structurally different. The column `json_encode`s an array
+  state and returns `null` for a null one; the summarizer returns an array
+  **whole** — vendor's affix and placeholder tail would fatal on a `Range`'s
+  pair, and the pass-through is what makes
+  [the per-entry / whole-pair split](#the-list-summary-formats-per-entry-where-the-range-formats-its-pair-whole)
+  work — throws only for a non-null non-stringable, and ends on a placeholder
+  tail (`mb_trim((string) $affixed) === '' ? placeholder : affixed`) the column
+  trait has not got.
+- `placeholder()` is declared inside this trait and nowhere on the column side.
+  A column's is support's
+  [`Components\Concerns\HasPlaceholder`](../support/README.md#features),
+  composed on the `Column` base and read by the cell; a summarizer's is a
+  `string|Closure|null` prop of the formatter itself, because `formatState()` is
+  the only thing that reads it.
+- The date family (`date()` / `dateTime()` / `time()` / `since()` and their four
+  tooltip siblings, `timezone()`, `resolveTimeZone()`, `toDateTimeImmutable()`)
+  and the word family (`words()`, `getWordLimit()` / `getWordLimitEnd()`) are
+  absent, as they are on vendor's summarizer trait — and with no `words()` the
+  word half of `truncateState()` is dropped from the copy rather than left
+  unfed.
+
+One thing differs from vendor inside the copy: `limit()` is the column's
 **property pair** (`getCharacterLimit()` / `getCharacterLimitEnd()`) rather than
-vendor's formatter install, which comes with the bodies; there is no `words()` on
-a summarizer, so the word half of `truncateState()` has nothing to feed it. And
-`formatState()` hands an array back whole after `formatStateUsing()`, where
-vendor's affix and placeholder tail would fatal on a `Range`'s pair — which is
-what makes [the per-entry / whole-pair split](#the-list-summary-formats-per-entry-where-the-range-formats-its-pair-whole)
-work.
+vendor's formatter install, which comes with the bodies.
 
 The debt this creates is Sylament's own rather than Filament's: the toolkit now
-ships **two** copies of these mechanics, character-identical apart from the error
-message's subject, so a fix to one is owed to the other. It is recorded on the
+ships **two** copies of these mechanics — the same bodies under two receivers —
+so a fix to one of the shared members is owed to the other, while the three
+partings above are meant to stay apart. It is recorded on the
 [`CanFormatState` hoist row](../support/README.md#features) and stays **todo**
 until an epic wants a third reader.
 

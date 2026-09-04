@@ -212,6 +212,29 @@ it('hands each batched summarizer the alias its own figure comes back under', fu
         ->and($average->getSelectedState())->toBe(35.0);
 });
 
+/*
+ * The ordinal advances once per summarizer the batch pushed an alias onto, never once
+ * per select emitted: an icon count takes an alias and contributes no statement, so
+ * counting the statements instead would push that same alias onto the next summarizer
+ * and hand the icon count its neighbour's figure — as a figure of its own, in place of
+ * the refusal it owes.
+ */
+it('advances the batch alias per summarizer pushed rather than per select emitted', function (): void {
+    $icons = Count::make()->icons();
+    $sum = Sum::make();
+    $host = summaryStateHost(summaryStateSongs(), [TextColumn::make('plays')->summarize([$icons, $sum])], recordsPerPage: 'all');
+
+    $state = $host->getTableSummarySelectedState($host->getAllTableSummaryQuery());
+
+    $icons->selectedState($state);
+    $sum->selectedState($state);
+
+    expect($state)->toBe(['sy_summary_1' => 210])
+        ->and($sum->getSelectedState())->toBe(210)
+        ->and($icons->hasSelectedState())->toBeFalse()
+        ->and(fn (): mixed => $icons->getState())->toThrow(LogicException::class, 'IconColumn');
+});
+
 it('leaves a scoped summarizer out of the batch so it runs its own query', function (): void {
     $scoped = Count::make()->query(fn (QueryBuilder $query): QueryBuilder => $query->andWhere('song.plays > 30'));
     $host = summaryStateHost(summaryStateSongs(), [

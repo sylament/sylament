@@ -7,12 +7,15 @@ namespace Sylament\Tables\Tests\Integration;
 use Closure;
 use Sylament\Actions\Action;
 use Sylament\Actions\BulkAction;
+use Sylament\Tables\Columns\Summarizers\Sum;
 use Sylament\Tables\Columns\TextColumn;
 use Sylament\Tables\Enums\RecordActionsPosition;
 use Sylament\Tables\Enums\RecordCheckboxPosition;
 use Sylament\Tables\Grouping\Group;
 use Sylament\Tables\Table;
 use Sylament\Tables\Tests\Fixtures\Concerns\TableHost;
+use Sylament\Tables\Tests\Fixtures\Doctrine\Entity\Song as SongEntity;
+use Sylament\Tables\Tests\Fixtures\Doctrine\EntityManagerFactory;
 use Sylament\Tables\Tests\Fixtures\Records\Artist;
 use Sylament\Tables\Tests\Fixtures\Records\Song;
 use Symfony\Component\DomCrawler\Crawler;
@@ -379,9 +382,9 @@ it('opens no group header row and no selection chrome under groupsOnly()', funct
         ->bulkActions([BulkAction::make('archive')])
         ->groupsOnly()));
 
-    // The rows the heading moves onto are the summary band's, which lands with
-    // the summaries half of this epic; what is pinned here is that the two
-    // gates hold — no header row of ours, and no checkbox of any kind.
+    // The heading has moved onto the summary band's rows, which this table has
+    // none of — nothing summarizes; what is pinned here is that the two gates
+    // hold — no header row of ours, and no checkbox of any kind.
     expect($crawler->filter('tr.sy-ta-group-header-row')->count())->toBe(0)
         ->and($crawler->filter('input.sy-ta-group-checkbox')->count())->toBe(0)
         ->and($crawler->filter('input.sy-ta-record-checkbox')->count())->toBe(0)
@@ -457,4 +460,90 @@ it('hides the direction field while a non-selectable default group is in force',
     expect($crawler->filter('tr.sy-ta-group-header-row')->count())->toBe(6)
         ->and($fields->filter('[data-sylament--tables--table-target="groupColumn"] option[selected]')->attr('value'))->toBe('')
         ->and($fields->filter('[data-sylament--tables--table-target="groupDirectionField"]')->attr('hidden'))->not->toBeNull();
+});
+
+/**
+ * A grouped, summarized table on the query lane — three moods over five songs,
+ * with the plays summed — because a summary reads its figure from a query and
+ * the records lane above has none.
+ */
+function groupedSummaryTableHtml(?Closure $configure = null, bool $isSummarized = true): string
+{
+    $entityManager = EntityManagerFactory::create();
+
+    EntityManagerFactory::seed(
+        $entityManager,
+        new SongEntity(id: 1, title: 'Airbag', plays: 10, mood: 'calm'),
+        new SongEntity(id: 2, title: 'Airport', plays: 20, mood: 'calm'),
+        new SongEntity(id: 3, title: 'Jóga', plays: 30, mood: 'bright'),
+        new SongEntity(id: 4, title: 'Hyperballad', plays: 40, mood: 'bright'),
+        new SongEntity(id: 5, title: 'Bachelorette', plays: 50, mood: 'dark'),
+    );
+
+    $plays = TextColumn::make('plays');
+
+    $host = new TableHost(fn (Table $table): Table => ($configure ?? static fn (Table $table): Table => $table)(
+        $table
+            ->query($entityManager->createQueryBuilder()->select('song')->from(SongEntity::class, 'song')->orderBy('song.id', 'ASC'))
+            ->columns([TextColumn::make('mood'), $isSummarized ? $plays->summarize(Sum::make()) : $plays])
+            ->groups(['mood'])
+            ->groupsOnly(),
+    ));
+
+    $host->tableGrouping = 'mood';
+
+    return renderToHtml($host->getTable());
+}
+
+it('renders one summary row per group and no record rows under groupsOnly()', function (): void {
+    $crawler = new Crawler(groupedSummaryTableHtml());
+
+    $rows = $crawler->filter('tr.sy-ta-summary-row');
+
+    expect($crawler->filter('tbody tr[id*=".table.records."]')->count())->toBe(0)
+        ->and($crawler->filter('tr.sy-ta-group-header-row')->count())->toBe(0)
+        ->and($rows->count())->toBe(4)
+        ->and($rows->each(fn (Crawler $row): string => $row->filter('th[scope="row"]')->text()))
+        // The bare title, not `<title> summary`: under groupsOnly() the group
+        // heading has moved onto this row.
+        ->toBe(['calm', 'bright', 'dark', 'Summary']);
+});
+
+it('drops the grouped column from the summary columns under groupsOnly()', function (): void {
+    $row = new Crawler(groupedSummaryTableHtml())->filter('tr.sy-ta-summary-row')->first();
+
+    expect($row->filter('th, td')->count())->toBe(2)
+        ->and($row->filter('th[scope="row"]')->text())->toBe('calm')
+        ->and($row->filter('td')->text())->toContain('30');
+});
+
+it('renders an empty body when groupsOnly() has nothing to summarize', function (): void {
+    // Parity: the per-group rows are gated on a summary exactly as vendor's are,
+    // so a groups-only table with no summarizer renders a table and no rows.
+    $crawler = new Crawler(groupedSummaryTableHtml(isSummarized: false));
+
+    expect($crawler->filter('table.sy-ta-table')->count())->toBe(1)
+        ->and($crawler->filter('tbody tr')->count())->toBe(0);
+});
+
+it('paginates nothing under groupsOnly()', function (): void {
+    $groupsOnly = new Crawler(groupedSummaryTableHtml(fn (Table $table): Table => $table->paginated([2])));
+
+    // The twin is the same table with the mode off: `isPaginated()` is what drops
+    // the footer, so the pages are still there for a grouped table that keeps its
+    // record rows.
+    $paginated = new Crawler(groupedSummaryTableHtml(fn (Table $table): Table => $table->paginated([2])->groupsOnly(false)));
+
+    expect($groupsOnly->filter('nav.sy-pagination')->count())->toBe(0)
+        ->and($paginated->filter('nav.sy-pagination')->count())->toBe(1);
+});
+
+it('is inert under groupsOnly() while no grouping is resolved', function (): void {
+    $crawler = new Crawler(groupedTableHtml(grouping: null, configure: fn (Table $table): Table => $table
+        ->bulkActions([BulkAction::make('archive')])
+        ->groupsOnly()));
+
+    expect($crawler->filter('tbody tr[id*=".table.records."]')->count())->toBe(6)
+        ->and($crawler->filter('tr.sy-ta-group-header-row')->count())->toBe(0)
+        ->and($crawler->filter('input.sy-ta-record-checkbox')->count())->toBe(6);
 });

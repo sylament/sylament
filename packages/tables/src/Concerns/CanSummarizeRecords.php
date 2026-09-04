@@ -7,10 +7,10 @@ namespace Sylament\Tables\Concerns;
 use Doctrine\ORM\QueryBuilder;
 use Doctrine\ORM\Tools\Pagination\Paginator as DoctrinePaginator;
 use Sylament\Support\Pagination\Paginator;
-use Sylament\Tables\Query\JoinCardinality;
 use Sylament\Tables\Columns\Summarizers\Contracts\HasSelectAlias;
 use Sylament\Tables\Grouping\Group;
 use Sylament\Tables\Query\AggregateDeclaration;
+use Sylament\Tables\Query\JoinCardinality;
 use Sylament\Tables\Query\SummaryQuery;
 
 trait CanSummarizeRecords

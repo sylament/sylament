@@ -443,12 +443,13 @@ it('closes the last group of an unsummarized page without asking the database', 
     $host = groupedBoundaryHost(groupedSongsFixture($recorder), summarized: false);
 
     $host->getTableRecords();
+
     $recorder->reset();
 
     $boundaries = $host->getTableRecordGroupBoundaries();
 
     expect($recorder->statements())->toBe([])
-        ->and($boundaries[array_key_last($boundaries)]['isLastOfGroup'])->toBeTrue();
+        ->and(array_last($boundaries)['isLastOfGroup'])->toBeTrue();
 });
 
 /*
@@ -460,12 +461,13 @@ it('follows the last group past the page break when the table has a summary', fu
     $host = groupedBoundaryHost(groupedSongsFixture($recorder), summarized: true);
 
     $host->getTableRecords();
+
     $recorder->reset();
 
     $boundaries = $host->getTableRecordGroupBoundaries();
 
     expect($recorder->statements())->toHaveCount(1)
-        ->and($boundaries[array_key_last($boundaries)]['isLastOfGroup'])->toBeFalse();
+        ->and(array_last($boundaries)['isLastOfGroup'])->toBeFalse();
 });
 
 it('still closes the last group where the next page starts a new one', function (): void {
@@ -475,5 +477,5 @@ it('still closes the last group where the next page starts a new one', function 
 
     $boundaries = $host->getTableRecordGroupBoundaries();
 
-    expect($boundaries[array_key_last($boundaries)]['isLastOfGroup'])->toBeTrue();
+    expect(array_last($boundaries)['isLastOfGroup'])->toBeTrue();
 });

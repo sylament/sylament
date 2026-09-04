@@ -59,9 +59,10 @@ trait CanBeHidden
     public function isHidden(): bool
     {
         $key = $this->visibilityCacheKey();
+        $cached = $this->visibilityCache[$key] ?? null;
 
-        if (array_key_exists($key, $this->visibilityCache)) {
-            return $this->visibilityCache[$key];
+        if ($cached !== null) {
+            return $cached;
         }
 
         if ($this->evaluate($this->isHidden)) {

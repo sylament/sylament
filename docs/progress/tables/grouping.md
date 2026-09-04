@@ -71,7 +71,7 @@ reason inline instead.
 | [`getDescriptionFromRecordUsing()` / `getDescription()`](../../../packages/tables/src/Grouping/Group.php) | [`Grouping\Group::getDescription()`](../../../vendor/filament/tables/src/Grouping/Group.php) | done | — | — |
 | `getDescriptionUsing()` | [`Grouping\Group`](../../../vendor/filament/tables/src/Grouping/Group.php) | skipped | — | `@deprecated Use the getDescriptionFromRecordUsing() method instead.`, and the project has never ported a deprecated Filament surface; the spelling its own notice names ships ([renames.md](../renames.md#renames)) |
 | [`orderQuery()` / `orderQueryUsing()`](../../../packages/tables/src/Grouping/Group.php) | [`Grouping\Group`](../../../vendor/filament/tables/src/Grouping/Group.php) | done | — | [semantics](#the-group-order-is-appended-first-so-every-later-sort-breaks-ties-inside-a-group) · [table.md](table.md#a-relation-sort-joins-where-filaments-orders-by-a-correlated-subquery) |
-| [`scopeQuery()` / `scopeQueryUsing()` / `scopeQueryByKey()` / `scopeQueryByKeyUsing()`](../../../packages/tables/src/Grouping/Group.php) | [`Grouping\Group`](../../../vendor/filament/tables/src/Grouping/Group.php) | done | — | [diverges](#the-blank-key-scopes-with-one-is-null-where-filaments-or-pair-drops-the-querys-other-predicates) · [diverges](#the-closure-query-seams-keep-the-builders-mutation-and-drop-its-return-where-filament-coalesces-it) · [semantics](#a-date-group-is-a-half-open-day-range-bound-with-the-fields-own-type) |
+| [`scopeQuery()` / `scopeQueryUsing()` / `scopeQueryByKey()` / `scopeQueryByKeyUsing()`](../../../packages/tables/src/Grouping/Group.php) | [`Grouping\Group`](../../../vendor/filament/tables/src/Grouping/Group.php) | done | — | [diverges](#the-blank-key-scopes-with-one-is-null-where-filaments-or-pair-drops-the-querys-other-predicates) · [diverges](#a-scopequerybykeyusing-return-is-honoured-on-both-paths-where-filament-drops-it-through-scopequery) · [semantics](#a-date-group-is-a-half-open-day-range-bound-with-the-fields-own-type) |
 | [`applyEagerLoading()`](../../../packages/tables/src/Grouping/Group.php) | [`Grouping\Group::applyEagerLoading()`](../../../vendor/filament/tables/src/Grouping/Group.php) | done | — | one call to [`RelationJoiner::fetchJoinPath()`](../../../packages/tables/src/Query/RelationJoiner.php), the body [hoisted off the column trait](column.md#relationship-traversal-ships-as-a-value-walk-a-side-store-and-one-kept-member) so the two share an implementation rather than a copy |
 | `groupQuery()` / `groupQueryUsing()` | [`Grouping\Group::groupQuery()`](../../../vendor/filament/tables/src/Grouping/Group.php) | skipped | — | [diverges](#groupquery-is-superseded-by-the-per-group-scoped-query) |
 | `getRelationship()` / `getRelationshipName()` / `getRelationshipAttribute()` | [`Grouping\Group`](../../../vendor/filament/tables/src/Grouping/Group.php) | skipped | — | The lexical split of a dotted column into *relationship* and *attribute*, which [`RelationPathResolver`](table.md#a-dotted-name-is-resolved-against-the-mapping-before-it-is-refused) performs against the mapping instead — so all three are steps of a derivation this side does not perform ([renames.md](../renames.md#renames)) |
@@ -476,34 +476,25 @@ cannot escape the predicates around it. Every scope this class adds is `andWhere
 for that reason, and every parameter is `sylament_group_<n>`, counter-suffixed,
 because `setParameter()` overwrites a same-named parameter in silence.
 
-### The closure query seams keep the builder's mutation and drop its return, where Filament coalesces it
+### A `scopeQueryByKeyUsing()` return is honoured on both paths, where Filament drops it through `scopeQuery()`
 
 All three closure seams — `orderQueryUsing()`, `scopeQueryUsing()` and
-`scopeQueryByKeyUsing()` — hand the closure the builder in `namedInjections`,
-ignore what it evaluates to and unconditionally `return $query`. What reaches the
-caller is whatever the closure mutated on the builder it was given. Filament
-coalesces the return value instead:
-[`Group::orderQuery()`](../../../vendor/filament/tables/src/Grouping/Group.php)
-is `return $this->evaluate(…) ?? $query;` at `:350-358`, and `scopeQuery()`
-(`:373-388`) and `scopeQueryByKey()` (`:395-407`) are the same shape. So a
-Filament closure that narrows by building and **returning** a fresh builder works
-upstream and silently stops narrowing here — the port is the side that discards,
-not vendor.
+`scopeQueryByKeyUsing()` — hand the closure the builder in `namedInjections` and
+then **coalesce**: the builder the closure returned wins, and the one it was
+handed stands where it returned nothing, which is what a closure that mutates in
+place does. That is Filament's `return $this->evaluate(…) ?? $query;`
+([`Group::orderQuery()`](../../../vendor/filament/tables/src/Grouping/Group.php)
+at `:350-358`, `scopeQuery()` at `:373-388`, `scopeQueryByKey()` at `:395-407`),
+typed rather than loose: the coalesce is `instanceof QueryBuilder`, so a closure
+answering something that is not a builder is treated as one that answered
+nothing.
 
-That is deliberate, and it is the convention the rest of the port already uses: a
-`sortable(query:)` closure is evaluated and discarded exactly the same way in
-[`Columns\Concerns\InteractsWithTableQuery::applySort()`](../../../packages/tables/src/Columns/Concerns/InteractsWithTableQuery.php).
-Doctrine's `QueryBuilder` is mutable and every method on it returns `$this`, so
-the idiomatic closure has nothing of its own to return and the coalesce would buy
-one escape hatch at the cost of two ways to say the same thing. The migration
-note is the whole of the delta: mutate the builder you are handed; do not build a
-new one.
-
-Vendor is not consistent about it either. `scopeQuery()`'s **no-closure** arm
-(`:390-392`) calls `$this->scopeQueryByKey($query, …)` and returns `$query`, so a
-`scopeQueryByKeyUsing()` closure's return value is honoured when the method is
-called directly and dropped when it is reached through `scopeQuery()` — which is
-the only genuinely vendor-side drop in this family.
+Vendor is not consistent about it, and the port is. `scopeQuery()`'s **no-closure**
+arm upstream (`:390-392`) calls `$this->scopeQueryByKey($query, …)` and then
+returns `$query`, so a `scopeQueryByKeyUsing()` closure's returned builder is
+honoured when the method is called directly and dropped when it is reached
+through `scopeQuery()` — the per-group summary path. The port returns what
+`scopeQueryByKey()` answered, so one closure behaves the same way on both paths.
 
 ### Both selection lanes key through `getStringKey()` where Filament's records lane reads the column raw
 

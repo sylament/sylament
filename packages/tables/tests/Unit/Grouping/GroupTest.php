@@ -305,6 +305,15 @@ it('takes an orderQueryUsing closure with column, direction and query injections
         ->and($query->getDQL())->toContain('ORDER BY song.title desc, song.plays asc');
 });
 
+it('takes the builder an orderQueryUsing closure returns', function (): void {
+    $query = groupQueryBuilder();
+    $ordered = groupQueryBuilder()->addOrderBy('song.title', 'desc');
+
+    $group = Group::make('plays')->orderQueryUsing(fn (): QueryBuilder => $ordered);
+
+    expect($group->orderQuery($query, 'asc'))->toBe($ordered);
+});
+
 it('hands back the builder when an orderQueryUsing closure returns null', function (): void {
     $query = groupQueryBuilder();
 
@@ -402,6 +411,16 @@ it('includes records with no related row when the key is null', function (): voi
     ))->toBe(['Solo']);
 });
 
+it('takes the builder a scopeQueryByKeyUsing closure returns', function (): void {
+    $query = groupQueryBuilder();
+    $narrowed = groupQueryBuilder()->andWhere('song.title = :taken')->setParameter('taken', 'Airbag');
+
+    $group = Group::make('title')->scopeQueryByKeyUsing(fn (): QueryBuilder => $narrowed);
+
+    expect($group->scopeQueryByKey($query, 'Airbag'))->toBe($narrowed)
+        ->and($query->getDQL())->not->toContain('WHERE');
+});
+
 it('takes a scopeQueryByKeyUsing closure with column, key and query injections', function (): void {
     $query = groupQueryBuilder();
 
@@ -483,6 +502,16 @@ it('delegates scopeQuery to scopeQueryByKey through the record string key', func
     expect($returned)->toBe($query)
         ->and($query->getDQL())->toContain('song.title = :sylament_group_0')
         ->and($query->getParameter('sylament_group_0')?->getValue())->toBe('Airbag');
+});
+
+it('takes the builder a scopeQueryUsing closure returns', function (): void {
+    $query = groupQueryBuilder();
+    $narrowed = groupQueryBuilder()->andWhere('song.title = :taken')->setParameter('taken', 'Airbag');
+
+    $group = Group::make('title')->scopeQueryUsing(fn (): QueryBuilder => $narrowed);
+
+    expect($group->scopeQuery($query, new Song('Airbag', 'OK Computer')))->toBe($narrowed)
+        ->and($query->getDQL())->not->toContain('WHERE');
 });
 
 it('takes a scopeQueryUsing closure over the delegation', function (): void {

@@ -320,13 +320,11 @@ class Group extends Component
     public function orderQuery(QueryBuilder $query, string $direction): QueryBuilder
     {
         if ($this->orderQueryUsing instanceof Closure) {
-            $this->evaluate($this->orderQueryUsing, [
+            return $this->toScopedQuery($this->evaluate($this->orderQueryUsing, [
                 'column' => $this->getColumn(),
                 'direction' => $direction,
                 'query' => $query,
-            ]);
-
-            return $query;
+            ]), $query);
         }
 
         return $query->addOrderBy(ColumnPathResolver::resolveOrderable($query, $this->getColumn()), $direction);
@@ -338,12 +336,10 @@ class Group extends Component
     public function scopeQuery(QueryBuilder $query, object|array $record): QueryBuilder
     {
         if ($this->scopeQueryUsing instanceof Closure) {
-            $this->evaluateForRecord($this->scopeQueryUsing, $record, [
+            return $this->toScopedQuery($this->evaluateForRecord($this->scopeQueryUsing, $record, [
                 'column' => $this->getColumn(),
                 'query' => $query,
-            ]);
-
-            return $query;
+            ]), $query);
         }
 
         return $this->scopeQueryByKey($query, $this->getStringKey($record));
@@ -362,13 +358,11 @@ class Group extends Component
         $column = $this->getColumn();
 
         if ($this->scopeQueryByKeyUsing instanceof Closure) {
-            $this->evaluate($this->scopeQueryByKeyUsing, [
+            return $this->toScopedQuery($this->evaluate($this->scopeQueryByKeyUsing, [
                 'column' => $column,
                 'key' => $key,
                 'query' => $query,
-            ]);
-
-            return $query;
+            ]), $query);
         }
 
         $path = ColumnPathResolver::resolveOrderable($query, $column);
@@ -555,6 +549,16 @@ class Group extends Component
         }
 
         return (string) $value;
+    }
+
+    /**
+     * What a query closure narrowed to: the builder it returned, else the one it
+     * was handed — Filament's `?? $query`, typed, since a closure that mutates
+     * the builder in place returns nothing at all.
+     */
+    private function toScopedQuery(mixed $returned, QueryBuilder $query): QueryBuilder
+    {
+        return $returned instanceof QueryBuilder ? $returned : $query;
     }
 
     private function toRenderable(mixed $value): string|Markup|null

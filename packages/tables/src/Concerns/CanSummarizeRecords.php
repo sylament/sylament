@@ -189,7 +189,7 @@ trait CanSummarizeRecords
                 $alias = 'sy_summary_' . $ordinal;
                 $ordinal++;
 
-                if (!array_key_exists($key, $visibleSummarizers)) {
+                if (!array_key_exists((string) $key, $visibleSummarizers)) {
                     continue;
                 }
 

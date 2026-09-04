@@ -62,6 +62,16 @@ it('refuses a group with no id', function (): void {
     expect(fn (): Group => Group::make())->toThrow(LogicException::class, 'must have a unique id');
 });
 
+/*
+ * The grouping property writes `<id>:<direction>` as one token and splits it on the
+ * first colon, so an id carrying one would resolve to whatever sits before it — a
+ * group the table does not know, which reads back as no grouping at all.
+ */
+it('refuses a group whose id carries a colon', function (): void {
+    expect(fn (): Group => Group::make('artist:name'))->toThrow(LogicException::class, 'must not contain a colon')
+        ->and(fn (): Group => Group::make('status')->id('a:b'))->toThrow(LogicException::class, 'must not contain a colon');
+});
+
 it('derives a label from the id, kebabbed and spaced and title-cased', function (string $id, string $label): void {
     expect(Group::make($id)->getLabel())->toBe($label);
 })->with([

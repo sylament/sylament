@@ -108,8 +108,18 @@ class Group extends Component
         return $this;
     }
 
+    /**
+     * A colon is refused rather than accepted and lost: the grouping property
+     * carries `<id>:<direction>` as one token and reads the id back off the first
+     * colon, so an id holding one would resolve to the fragment before it — a group
+     * the table does not offer, which degrades to no grouping in silence.
+     */
     public function id(string $id): static
     {
+        if (str_contains($id, ':')) {
+            throw new LogicException(sprintf('Group of class [%s] has the id [%s], which must not contain a colon: the grouping state writes the id and its direction as one colon-separated token.', static::class, $id));
+        }
+
         $this->id = $id;
 
         return $this;

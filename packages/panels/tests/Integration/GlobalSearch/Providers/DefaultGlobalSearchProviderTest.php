@@ -137,7 +137,7 @@ it('reads its resources off the panel the request carries', function (): void {
 
     $stack->getCurrentRequest()?->attributes->set('_sylament_panel', 'probe');
 
-    // The probe panel registers one resource, and it has no record title
-    // attribute — so nothing on that panel is searchable at all.
+    // The probe panel's two resources name no record title attribute between
+    // them — so nothing on that panel is searchable at all.
     expect(defaultGlobalSearchProvider()->getResults('alpha')->getCategories())->toBe([]);
 });

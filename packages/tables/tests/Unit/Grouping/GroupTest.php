@@ -197,6 +197,7 @@ it('memoises a title per key and re-resolves under a title closure', function ()
 
     $cached->getTitle($song, 'OK Computer');
     $cached->getTitle($song, 'OK Computer');
+
     $closured->getTitle($song);
     $closured->getTitle($song);
 
@@ -391,6 +392,7 @@ it('matches a date group on the day, not the instant', function (): void {
     $entityManager = EntityManagerFactory::create();
     $inside = new SongEntity(1, 'Airbag', 100);
     $inside->setReleasedAt(new DateTimeImmutable('2026-09-02 14:03:11'));
+
     $edge = new SongEntity(2, 'Solo', 200);
     $edge->setReleasedAt(new DateTimeImmutable('2026-09-03 00:00:00'));
 
@@ -412,6 +414,7 @@ it('binds the range of a date column with the column own DBAL type', function ()
     $entityManager = EntityManagerFactory::create();
     $onTheDay = new SongEntity(1, 'Airbag', 100);
     $onTheDay->setChartedOn(new DateTimeImmutable('2026-09-02'));
+
     $theDayAfter = new SongEntity(2, 'Solo', 200);
     $theDayAfter->setChartedOn(new DateTimeImmutable('2026-09-03'));
 

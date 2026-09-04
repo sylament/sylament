@@ -74,12 +74,13 @@ it("maps every browsing prop of a routed list onto Filament's query-string names
 
     $crawler = $client->request('GET', '/admin/articles');
 
-    // Five, and the count is the assertion: a browsing prop the page does not
+    // Six, and the count is the assertion: a browsing prop the page does not
     // map is absent rather than defaulted, which is what keeps the per-column
     // search bag off the URL of every routed list.
     expect(urlStateQueryMapping($crawler, '.sy-pa-resource-list-records-page'))->toBe([
         'activeTab' => ['name' => 'tab'],
         'tableFilters' => ['name' => 'filters'],
+        'tableGrouping' => ['name' => 'grouping'],
         'tablePage' => ['name' => 'page'],
         'tableSearch' => ['name' => 'search'],
         'tableSort' => ['name' => 'sort'],
@@ -159,11 +160,12 @@ it('prefixes the page parameter of a manage page with its own identifier', funct
     $crawler = $client->request('GET', sprintf('/mrr/projects/%s/tasks', $project->getId()));
 
     // The identifier prefixes the page parameter and nothing else: the other
-    // four names are frozen at the mapping, exactly as Filament freezes them at
+    // five names are frozen at the mapping, exactly as Filament freezes them at
     // the attribute.
     expect(urlStateQueryMapping($crawler, '.sy-pa-resource-manage-related-records-page'))->toBe([
         'activeTab' => ['name' => 'tab'],
         'tableFilters' => ['name' => 'filters'],
+        'tableGrouping' => ['name' => 'grouping'],
         'tablePage' => ['name' => 'manageMrrProjectTasksPage'],
         'tableSearch' => ['name' => 'search'],
         'tableSort' => ['name' => 'sort'],
@@ -196,4 +198,39 @@ it('binds the relation of an edit page and leaves its managers unbound', functio
         // any state of theirs would rewrite that URL from the child.
         ->and($crawler->filter('.sy-pa-relation-manager')->count())->toBeGreaterThan(0)
         ->and($crawler->filter('.sy-pa-relation-manager[data-live-query-mapping-value]')->count())->toBe(0);
+});
+
+it('seeds the grouping of a routed list from the query string', function (): void {
+    $client = test()->getContainer()->get('test.client');
+    $client->disableReboot();
+
+    $entityManager = test()->getContainer()->get(EntityManagerInterface::class);
+
+    EntityManagerFactory::seed(
+        $entityManager,
+        new Article()->setTitle('Published one')->setSlug('published-one')->setStatus('published'),
+        new Article()->setTitle('Draft one')->setSlug('draft-one')->setStatus('draft'),
+        new Article()->setTitle('Published two')->setSlug('published-two')->setStatus('published'),
+    );
+
+    $crawler = $client->request('GET', '/probe/grouping-articles?grouping=status:desc');
+
+    // The grouping orders the rows before any sort does, so a descending group
+    // by status is what puts the published pair ahead of the draft.
+    expect($client->getResponse()->getStatusCode())->toBe(200)
+        ->and(urlStateRowTitles($crawler))->toBe(['Published one', 'Published two', 'Draft one']);
+});
+
+it('drops a grouping the routed list does not offer', function (): void {
+    $client = test()->getContainer()->get('test.client');
+    $client->disableReboot();
+
+    $entityManager = test()->getContainer()->get(EntityManagerInterface::class);
+
+    EntityManagerFactory::seed($entityManager, new Article()->setTitle('Only')->setSlug('only'));
+
+    $crawler = $client->request('GET', '/probe/grouping-articles?grouping=nonsense');
+
+    expect($client->getResponse()->getStatusCode())->toBe(200)
+        ->and(urlStateRowTitles($crawler))->toBe(['Only']);
 });

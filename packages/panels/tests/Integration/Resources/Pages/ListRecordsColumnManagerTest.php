@@ -155,12 +155,12 @@ it('leaves the per-column terms off the query string a routed list binds', funct
 
     $crawler = $client->request('GET', '/admin/articles?columnSearches[title]=Article 07');
 
-    // Five keys, exactly as before the bag existed: the page maps no
-    // `columnSearches`, so the modifier hands the prop back unbound and a deep
-    // link naming it seeds nothing at all.
+    // Every key but this one: the page maps no `columnSearches`, so the modifier
+    // hands the prop back unbound and a deep link naming it seeds nothing at all.
     expect(columnManagerQueryMapping($crawler, '.sy-pa-resource-list-records-page'))->toBe([
         'activeTab' => ['name' => 'tab'],
         'tableFilters' => ['name' => 'filters'],
+        'tableGrouping' => ['name' => 'grouping'],
         'tablePage' => ['name' => 'page'],
         'tableSearch' => ['name' => 'search'],
         'tableSort' => ['name' => 'sort'],

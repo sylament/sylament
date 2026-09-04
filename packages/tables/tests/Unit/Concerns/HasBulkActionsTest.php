@@ -354,6 +354,7 @@ it('forgets a grouped enumeration when the records are flushed', function (): vo
     $host->tableGrouping = 'artist.name';
 
     $host->getGroupedSelectableTableRecordKeys('Radiohead');
+
     $recorder->reset();
     $host->flushCachedTableRecords();
     $host->getGroupedSelectableTableRecordKeys('Radiohead');

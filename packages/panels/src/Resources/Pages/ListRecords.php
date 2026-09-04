@@ -56,6 +56,7 @@ abstract class ListRecords extends Page implements InteractsWithTable
             'sort' => new UrlMapping(as: 'sort'),
             'search' => new UrlMapping(as: 'search'),
             'filters' => new UrlMapping(as: 'filters'),
+            'grouping' => new UrlMapping(as: 'grouping'),
             'tab' => new UrlMapping(as: 'tab'),
             default => null,
         };

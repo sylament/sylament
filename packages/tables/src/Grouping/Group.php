@@ -255,7 +255,7 @@ class Group extends Component
             return $key instanceof DateTimeInterface ? $key->format('Y-m-d') : null;
         }
 
-        return self::toStringKey($key);
+        return $this->toStringKey($key);
     }
 
     /**
@@ -292,7 +292,7 @@ class Group extends Component
             return null;
         }
 
-        return self::toRenderable($this->evaluateForRecord(
+        return $this->toRenderable($this->evaluateForRecord(
             $this->getDescriptionFromRecordUsing,
             $record,
             ['title' => $title],
@@ -366,7 +366,7 @@ class Group extends Component
         }
 
         if (!$this->isDate()) {
-            $parameter = self::mintParameter($query);
+            $parameter = $this->mintParameter($query);
 
             return $query
                 ->andWhere("{$path} = :{$parameter}")
@@ -380,8 +380,8 @@ class Group extends Component
         }
 
         $type = $this->resolveFieldType($query, $column);
-        $fromParameter = self::mintParameter($query);
-        $toParameter = self::mintParameter($query, offset: 1);
+        $fromParameter = $this->mintParameter($query);
+        $toParameter = $this->mintParameter($query, offset: 1);
 
         return $query
             ->andWhere("{$path} >= :{$fromParameter} AND {$path} < :{$toParameter}")
@@ -421,7 +421,7 @@ class Group extends Component
                 : null;
         }
 
-        return self::toStringKey($title);
+        return $this->toStringKey($title);
     }
 
     protected function resolveDefaultClosureDependencyForEvaluationByName(string $parameterName): ?ClosureParameter
@@ -507,7 +507,7 @@ class Group extends Component
      * it. The offset is for the second name of a pair, neither of which is bound
      * yet when both are minted.
      */
-    private static function mintParameter(QueryBuilder $query, int $offset = 0): string
+    private function mintParameter(QueryBuilder $query, int $offset = 0): string
     {
         return 'sylament_group_' . (count($query->getParameters()) + $offset);
     }
@@ -521,7 +521,7 @@ class Group extends Component
      * than a value, so a to-many column names no group instead of naming a
      * different one per row.
      */
-    private static function toStringKey(mixed $value): ?string
+    private function toStringKey(mixed $value): ?string
     {
         if ($value instanceof Collection) {
             return null;
@@ -538,8 +538,8 @@ class Group extends Component
         return (string) $value;
     }
 
-    private static function toRenderable(mixed $value): string|Markup|null
+    private function toRenderable(mixed $value): string|Markup|null
     {
-        return $value instanceof Markup ? $value : self::toStringKey($value);
+        return $value instanceof Markup ? $value : $this->toStringKey($value);
     }
 }

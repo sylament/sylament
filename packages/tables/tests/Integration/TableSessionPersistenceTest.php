@@ -408,3 +408,11 @@ it('writes the per-column terms back on the round trip that changes them', funct
     expect($client->getResponse()->getStatusCode())->toBe(200)
         ->and(currentTableSession($client)[sessionKeyFor(ColumnSearchUrlTable::class, 'column_search')])->toBe(['title' => 'Air']);
 });
+
+it('remembers no grouping at all, as Filament persists none', function (): void {
+    [$client] = browseTo('?grouping=plays');
+
+    expect(publishedProps($client->getCrawler(), '#bound-table')['tableGrouping'])->toBe('plays')
+        ->and(array_keys(currentTableSession($client)))
+        ->not->toContain(sessionKeyFor(UrlBoundSongsTable::class, 'grouping'));
+});

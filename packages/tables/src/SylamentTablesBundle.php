@@ -19,7 +19,7 @@ class SylamentTablesBundle extends SylamentBundle
         $services = $configurator->services();
 
         $services
-            ->load(__NAMESPACE__ . '\\Columns\\', __DIR__ . '/Columns/*.php')
+            ->load(__NAMESPACE__ . '\\Columns\\', __DIR__ . '/Columns/{*,Summarizers/*}.php')
             ->autowire()
             ->autoconfigure();
 

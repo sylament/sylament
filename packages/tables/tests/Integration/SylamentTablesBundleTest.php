@@ -8,6 +8,12 @@ use Sylament\Forms\Components\Checkbox;
 use Sylament\Schemas\Schema;
 use Sylament\Schemas\State\PropertyAccessor;
 use Sylament\Support\Evaluation\Invoker;
+use Sylament\Tables\Columns\Summarizers\Average;
+use Sylament\Tables\Columns\Summarizers\Count;
+use Sylament\Tables\Columns\Summarizers\Range;
+use Sylament\Tables\Columns\Summarizers\Sum;
+use Sylament\Tables\Columns\Summarizers\Summarizer;
+use Sylament\Tables\Columns\Summarizers\Values;
 use Sylament\Tables\Columns\TextColumn;
 use Sylament\Tables\Filters\BaseFilter;
 use Sylament\Tables\Filters\FilterIndicator;
@@ -20,6 +26,7 @@ use Sylament\Tables\Tests\Fixtures\Concerns\TableHost;
 use Sylament\Tables\Tests\Fixtures\Records\SongRepository;
 use Sylament\Tables\Twig\Extension\TableExtension;
 use Symfony\Component\AssetMapper\AssetMapperInterface;
+use Symfony\Component\HtmlSanitizer\HtmlSanitizerInterface;
 use Twig\Loader\FilesystemLoader;
 
 use function Sylament\Tables\Tests\renderToHtml;
@@ -86,6 +93,32 @@ it('renders a forms field inside the tables kernel', function (): void {
         ->toContain('sy-fo-checkbox')
         ->toContain('Featured');
 });
+
+/*
+ * The summarizers sit one directory below the columns glob, so the brace form is what
+ * registers them at all — and being container-built is what fires the `#[Required]`
+ * sanitizer setter that `html()` and `markdown()` refuse to run without.
+ */
+it('builds every summarizer through the container so its setters are injected', function (string $summarizer): void {
+    $invoker = $this::getContainer()->get(Invoker::class);
+    $sanitizer = $this::getContainer()->get(HtmlSanitizerInterface::class);
+
+    $instance = $summarizer::make();
+    $instance->column(TextColumn::make('plays')->table(Table::make(new TableHost())));
+
+    expect($instance)->toBeInstanceOf($summarizer)
+        ->and($instance->getInvoker())->toBe($invoker)
+        ->and((string) $instance->html()->formatState('<b>bold</b><script>alert(1)</script>'))->toBe('<b>bold</b>');
+
+    expect($sanitizer)->toBeInstanceOf(HtmlSanitizerInterface::class);
+})->with([
+    Summarizer::class,
+    Average::class,
+    Count::class,
+    Range::class,
+    Sum::class,
+    Values::class,
+]);
 
 it('builds filters and indicators through the container so their closures reach it', function (): void {
     $invoker = $this::getContainer()->get(Invoker::class);

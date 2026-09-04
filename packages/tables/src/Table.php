@@ -20,6 +20,7 @@ use Sylament\Tables\Table\Concerns\CanPollRecords;
 use Sylament\Tables\Table\Concerns\CanReorderRecords;
 use Sylament\Tables\Table\Concerns\CanSearchRecords;
 use Sylament\Tables\Table\Concerns\CanSortRecords;
+use Sylament\Tables\Table\Concerns\CanSummarizeRecords;
 use Sylament\Tables\Table\Concerns\HasActions;
 use Sylament\Tables\Table\Concerns\HasAggregateValues;
 use Sylament\Tables\Table\Concerns\HasBulkActions;
@@ -53,6 +54,7 @@ class Table extends ViewComponent
     use CanReorderRecords;
     use CanSearchRecords;
     use CanSortRecords;
+    use CanSummarizeRecords;
     use HasActions;
     use HasAggregateValues;
     use HasBulkActions;

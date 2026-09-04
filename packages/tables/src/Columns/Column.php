@@ -25,6 +25,7 @@ use Sylament\Tables\Columns\Concerns\CanBeHiddenResponsively;
 use Sylament\Tables\Columns\Concerns\CanBeInline;
 use Sylament\Tables\Columns\Concerns\CanBeSearchable;
 use Sylament\Tables\Columns\Concerns\CanBeSortable;
+use Sylament\Tables\Columns\Concerns\CanBeSummarized;
 use Sylament\Tables\Columns\Concerns\CanBeToggled;
 use Sylament\Tables\Columns\Concerns\CanCallAction;
 use Sylament\Tables\Columns\Concerns\CanOpenUrl;
@@ -52,6 +53,7 @@ class Column extends ViewComponent
     use CanBeInline;
     use CanBeSearchable;
     use CanBeSortable;
+    use CanBeSummarized;
     use CanBeToggled;
     use CanCallAction;
     use CanGrow;

@@ -69,6 +69,19 @@ function urlStateQueryMapping(Crawler $crawler, string $selector): array
     return $mapping;
 }
 
+/**
+ * The props the page publishes to the client, which is where a healed value has
+ * to show up: the rows alone read the same whether or not the heal ran.
+ *
+ * @return array<string, mixed>
+ */
+function urlStatePublishedProps(Crawler $crawler, string $selector): array
+{
+    $value = $crawler->filter($selector)->attr('data-live-props-value');
+
+    return json_decode($value ?? '', associative: true, flags: JSON_THROW_ON_ERROR);
+}
+
 it("maps every browsing prop of a routed list onto Filament's query-string names", function (): void {
     [$client] = urlStateArticlesClient();
 
@@ -230,7 +243,10 @@ it('drops a grouping the routed list does not offer', function (): void {
     EntityManagerFactory::seed($entityManager, new Article()->setTitle('Only')->setSlug('only'));
 
     $crawler = $client->request('GET', '/probe/grouping-articles?grouping=nonsense');
+    $props = urlStatePublishedProps($crawler, '.sy-pa-resource-list-records-page');
 
     expect($client->getResponse()->getStatusCode())->toBe(200)
+        ->and($props)->toHaveKey('tableGrouping')
+        ->and($props['tableGrouping'])->toBeNull()
         ->and(urlStateRowTitles($crawler))->toBe(['Only']);
 });

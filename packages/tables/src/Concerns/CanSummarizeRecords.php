@@ -203,11 +203,11 @@ trait CanSummarizeRecords
      */
     private function readTableRecordAtOffset(QueryBuilder $query, int $offset): object|array|null
     {
-        $probe = $query->setFirstResult($offset)->setMaxResults(1);
+        $probe = (clone $query)->setFirstResult($offset)->setMaxResults(1);
 
         if (JoinCardinality::joinsCollection($probe)) {
             /** @var list<object|array<string, mixed>> $records */
-            $records = iterator_to_array(new DoctrinePaginator($probe->getQuery(), true)->getIterator(), preserve_keys: false);
+            $records = iterator_to_array(new DoctrinePaginator($probe->getQuery(), fetchJoinCollection: true)->getIterator(), preserve_keys: false);
 
             return $records[0] ?? null;
         }

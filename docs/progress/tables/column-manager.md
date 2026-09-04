@@ -71,7 +71,7 @@ instead.
 | The eight deprecated aliases — `toggleColumnsTriggerAction()`, `getToggleColumnsTriggerAction()`, `columnToggleFormColumns()`, `getColumnToggleFormColumns()`, `columnToggleFormMaxHeight()`, `getColumnToggleFormMaxHeight()`, `columnToggleFormWidth()`, `getColumnToggleFormWidth()` | [`Table\Concerns\HasColumnManager`](../../../vendor/filament/tables/src/Table/Concerns/HasColumnManager.php) | skipped | — | Each carries `@deprecated Use \`columnManager*()\` instead.` and is a one-line delegate to the name that ships; the project has never ported a deprecated Filament surface ([renames.md](../renames.md#renames)) |
 | [`$tableColumns` / `$tableDeferredColumns` — the applied bag and the client-writable draft](../../../packages/tables/src/Concerns/HasColumnManager.php) | [`Concerns\HasColumnManager::$tableColumns`](../../../vendor/filament/tables/src/Concerns/HasColumnManager.php) | done | — | [has-table.md](has-table.md#the-column-state-is-re-derived-against-the-definition-on-every-read) · [diverges](#the-stored-item-carries-four-keys-where-filaments-carries-seven) |
 | [`mountTableColumnManager()` / `afterTableColumnManagerHydrated()` — the two lifecycle hooks](../../../packages/tables/src/Concerns/HasColumnManager.php) | [`Concerns\HasColumnManager::initTableColumnManager()`](../../../vendor/filament/tables/src/Concerns/HasColumnManager.php) | done | — | [has-table.md](has-table.md#the-column-state-is-re-derived-against-the-definition-on-every-read) |
-| [`applyTableColumnManager(?array $state = null)` / `resetTableColumnManager()` — the two live actions](../../../packages/tables/src/Concerns/HasColumnManager.php) | [`Concerns\HasColumnManager`](../../../vendor/filament/tables/src/Concerns/HasColumnManager.php) | done | — | [diverges](#reorderedness-is-derived-rather-than-remembered-so-the-second-session-key-is-gone) |
+| [`applyTableColumnManager(?array $state = null)` / `resetTableColumnManager()` — the two live actions](../../../packages/tables/src/Concerns/HasColumnManager.php) | [`Concerns\HasColumnManager`](../../../vendor/filament/tables/src/Concerns/HasColumnManager.php) | done | — | [diverges](#reorderedness-is-asked-not-remembered-so-the-second-session-key-is-gone) |
 | [`getDefaultTableColumnState()` / `syncTableColumnState()` / `updateTableColumns()` / `setTableColumns()`](../../../packages/tables/src/Concerns/HasColumnManager.php) | [`Concerns\HasColumnManager`](../../../vendor/filament/tables/src/Concerns/HasColumnManager.php) | done | — | [has-table.md](has-table.md#the-column-state-is-re-derived-against-the-definition-on-every-read) · [semantics](#the-order-is-followed-only-while-columns-are-reorderable) |
 | [`isTableColumnToggledHidden()`](../../../packages/tables/src/Concerns/HasColumnManager.php) | [`Concerns\HasColumnManager::isTableColumnToggledHidden()`](../../../vendor/filament/tables/src/Concerns/HasColumnManager.php) | done | — | [semantics](#an-absent-name-reads-as-hidden) · [has-table.md](has-table.md#the-contract-is-twenty-six-methods-of-filaments-forty-six) |
 | [`getTableColumnManagerItems()` — the panel's rows](../../../packages/tables/src/Concerns/HasColumnManager.php) | [the `x-for` over `deferredColumns` in `content.blade.php`](../../../vendor/filament/tables/resources/views/components/column-manager/content.blade.php) | done | — | [diverges](#the-item-list-is-server-rendered-where-vendors-is-an-alpine-x-for) |
@@ -131,8 +131,11 @@ Filament's manager is a list of two kinds of thing. A plain column is one row
 with one checkbox; a
 [`ColumnGroup`](../../../vendor/filament/tables/src/Columns/ColumnGroup.php) is a
 row with a **tri-state** checkbox over its children, a nested drag list of its
-own, and its own `toggleGroup()` / `reorderGroupColumns()` handlers — 120 of
-`column-manager.js`'s 240 lines are that arm. `ColumnGroup` itself is not ported
+own, and its own `toggleGroup()` / `reorderGroupColumns()` handlers — roughly
+half of `column-manager.js`'s 241 lines are that arm, and four more methods of
+the host trait (`mapTableColumnGroupToArray()`,
+`syncGroupFromDefaultTableColumnState()` and the group branches of
+`getColumn()` / `flattenTableColumnStateItems()`). `ColumnGroup` itself is not ported
 (it is [`column.md`](column.md#surface)'s grouping-and-layout row), so there is
 nothing here for the group arm to list, and the three rows it would touch — the
 two components and the enum-free item list — stay **in progress** rather than
@@ -215,28 +218,32 @@ one**: `null` means *this column was not toggleable when this state was written*
 which is what lets a column that has since become toggleable be re-seeded from
 its declared default rather than left at a stale choice.
 
-### Reorderedness is derived rather than remembered, so the second session key is gone
+### Reorderedness is asked, not remembered, so the second session key is gone
 
-Filament remembers whether the user ever reordered, in a **second** session entry
-(`tables.<md5>_has_reordered_columns`), written by `persistHasReorderedTableColumns()`
-and read on every `applyTableColumnManager()`; the client tells it so, through a
-second `$wasReordered` parameter on that same live action.
+Filament has the same derived test this port uses —
+`hasReorderedTableColumns()` flattens the stored and declared states to
+`type:name` lists, narrows the declared one to the columns both know, and asks
+whether they differ. What it does with the answer is where the two part company.
+Vendor **latches** it: `persistHasReorderedTableColumns()` writes
+`$wasReordered || $this->hasReorderedTableColumns()` into a **second** session
+entry (`tables.<md5>_has_reordered_columns`), and every later
+`applyTableColumnManager()` picks its sync direction by reading that entry back
+rather than by re-asking.
 
-Here the question is answered by comparing the two orders.
-`isReorderedTableColumnState()` flattens the stored state and the declared state
-to `type:name` lists, filters the declared one down to the columns both know, and
-asks whether they differ — Filament's own `hasReorderedColumns()` test, moved
-from *remembering the event* to *observing the result*, and parameterised over a
-state so it can be asked of the draft as well as the applied bag.
+Here the same test is `isReorderedTableColumnState()` — parameterised over a
+state, so it can be asked of the draft as well as of the applied bag — and it is
+asked afresh at each sync. That removes three things at once: the second session
+key, the write that maintains it, and the `$wasReordered` parameter, which is a
+**client's claim about what the client did** rather than a value. A draft could
+assert it without having reordered anything, so dropping it is a small hardening
+as well as a simplification.
 
-That removes three things at once: the second session key, the second write, and
-a boolean the **client** supplied about what the client had done. `$wasReordered`
-is a claim, not a value — a draft could assert it without having reordered
-anything — so dropping it is a small hardening as well as a simplification. The
-cost is that a user who drags a column and drags it back is no longer "in
-reordered mode": the two orders match again, so the definition's order wins
-again. That is arguably the better answer and is certainly the less surprising
-one, but it is a behaviour difference and is recorded as one.
+The behaviour difference is the latch. A user who drags a column and drags it
+back stays in reordered mode upstream, because the flag was already `true` and
+nothing lowers it; here the two orders match again, so the declared order wins
+again. That is the less surprising answer and arguably the better one, but it is
+a difference and is recorded as one — and it is the reason the port needs no
+`resetTableColumnManager()` arm to clear a flag.
 
 ### The session is written at the end of every mutation, rather than once per request
 

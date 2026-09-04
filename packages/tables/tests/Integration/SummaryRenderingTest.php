@@ -437,14 +437,31 @@ it('renders a sum as a labelled text summary', function (): void {
         ->and($summary->filter('span')->last()->text())->toBe('150');
 });
 
-it('hides a summarizer label behind the screen-reader class', function (): void {
-    $label = summarizedTableCrawler([
+it('hides a summarizer label behind the screen-reader class in all three markups', function (): void {
+    $text = summarizedTableCrawler([
         TextColumn::make('title'),
         TextColumn::make('plays')->summarize(Sum::make()->hiddenLabel()),
     ])->filter('span.sy-ta-text-summary-label');
 
-    expect($label->text())->toBe('Sum')
-        ->and($label->attr('class'))->toBe('sy-ta-text-summary-label sy-sr-only');
+    $range = summarizedTableCrawler([
+        TextColumn::make('mood'),
+        TextColumn::make('plays')->summarize(Range::make()->label('Plays between')->hiddenLabel()),
+    ])->filter('span.sy-ta-range-summary-label');
+
+    $values = summarizedTableCrawler([
+        TextColumn::make('title'),
+        TextColumn::make('mood')->summarize(Values::make()->label('Moods')->hiddenLabel()),
+    ])->filter('span.sy-ta-values-summary-label');
+
+    // Vendor honours `hiddenLabel()` in the text markup alone, and the port
+    // honours it in every one, so the range and the values arms are asserted
+    // here rather than taken from the text one.
+    expect($text->text())->toBe('Sum')
+        ->and($text->attr('class'))->toBe('sy-ta-text-summary-label sy-sr-only')
+        ->and($range->text())->toBe('Plays between')
+        ->and($range->attr('class'))->toBe('sy-ta-range-summary-label sy-sr-only')
+        ->and($values->text())->toBe('Moods')
+        ->and($values->attr('class'))->toBe('sy-ta-values-summary-label sy-sr-only');
 });
 
 it('renders an average and a count under their default labels', function (): void {

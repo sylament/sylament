@@ -637,6 +637,7 @@
                             {% if boundary is not null and boundary.isFirstOfGroup and not isGroupsOnly %}
                                 {% set groupKey = boundary.key %}
                                 {% set groupTitle = boundary.title ~ '' %}
+                                {% set groupTitleText = (boundary.title is markup ? boundary.title|striptags : boundary.title) ~ '' %}
                                 {% set groupRowId = hostId ~ '.table.groups.' ~ (groupKey ?? '') %}
 
                                 {% set groupSelectionCell %}{% if isSelectionEnabled %}
@@ -650,7 +651,7 @@
                                             id: groupRowId ~ '.checkbox',
                                             checked: groupKeys is not empty and groupSelectedCount == groupKeys|length,
                                             'data-sy-group-keys': groupKeys|json_encode,
-                                            'aria-label': 'Select/deselect every record in group ' ~ groupTitle ~ ' for bulk actions.',
+                                            'aria-label': 'Select/deselect every record in group ' ~ groupTitleText ~ ' for bulk actions.',
                                         }, stimulus_target('sylament--tables--table', 'groupCheckbox'), stimulus_action('sylament--tables--table', 'toggleGroupRecords', 'change')) }}>
                                     </td>
                                 {% endif %}{% endset %}
@@ -695,7 +696,7 @@
                                                     :iconAlias="constant('Sylament\\Tables\\Twig\\TablesIconAlias::GROUPING_COLLAPSE_BUTTON')"
                                                     size="sm"
                                                     color="gray"
-                                                    :label="groupLabelPrefix is not empty ? groupLabelPrefix ~ ': ' ~ groupTitle : groupTitle"
+                                                    :label="groupLabelPrefix is not empty ? groupLabelPrefix ~ ': ' ~ groupTitleText : groupTitleText"
                                                     :aria-expanded="groupsCollapsed ? 'false' : 'true'"
                                                     {{ ...stimulus_action('sylament--tables--table', 'toggleGroup', 'click') }}
                                                 />

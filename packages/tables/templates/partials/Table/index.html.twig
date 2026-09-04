@@ -851,7 +851,7 @@
                                 </tr>
                             {% endif %}
 
-                            {% if hasSummary and boundary is not null and boundary.isLastOfGroup %}
+                            {% if hasSummary and boundary is not null and boundary.isLastOfGroup and (isGroupsOnly or (boundary.title ~ '') != '') %}
                                 {% set groupSummaryQuery = component.getLiveComponent.getGroupedTableSummaryQuery(record) %}
 
                                 <twig:SylamentTables:SummaryRow

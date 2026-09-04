@@ -90,7 +90,7 @@ instead.
 | [`Summary` — the band's header row and the two rows under it](../../../packages/tables/templates/components/Summary/index.html.twig) | [`views/components/summary/index.blade.php`](../../../vendor/filament/tables/resources/views/components/summary/index.blade.php) | done | — | [diverges](#the-band-is-handed-the-real-all-table-query-even-when-the-all-table-row-is-off) · [semantics](#the-placeholder-cells-follow-the-record-rows-order-not-vendors) |
 | [`SummaryRow` — one row: a band row or a group boundary's](../../../packages/tables/templates/components/SummaryRow/index.html.twig) | [`views/components/summary/row.blade.php`](../../../vendor/filament/tables/resources/views/components/summary/row.blade.php) | done | — | [diverges](#every-summary-cell-carries-its-columns-responsive-pair-where-vendors-carries-none) · [semantics](#the-heading-cell-spans-to-the-first-summarized-column-and-drops-a-summarizer-on-the-first-one) |
 | [The three summarizer bodies — `index`, `range`, `values`](../../../packages/tables/templates/partials/Summarizer) + [`summary.css`](../../../packages/tables/assets/src/styles/components/summary.css) | [`Summarizer::toEmbeddedHtml()`](../../../vendor/filament/tables/src/Columns/Summarizers/Summarizer.php) and its two overrides, [`columns/summaries/`](../../../vendor/filament/tables/resources/css/columns) | done | — | [diverges](#hiddenlabel-is-honoured-in-all-three-markups-where-vendor-honours-it-in-one) |
-| [The band's placement — inside `<tbody>`, after the record loop, gated on the summary and on the mode](../../../packages/tables/templates/partials/Table/index.html.twig) | [`index.blade.php`'s `<x-filament-tables::summary>`](../../../vendor/filament/tables/resources/views/index.blade.php) | done | — | [semantics](#the-page-row-is-what-the-query-proves-not-what-the-paginator-claims) · [diverges](#every-row-of-the-band-carries-a-host-scoped-id) |
+| [The band's placement — inside `<tbody>`, after the record loop, gated on the summary and on the mode](../../../packages/tables/templates/partials/Table/index.html.twig) | [`index.blade.php`'s `<x-filament-tables::summary>`](../../../vendor/filament/tables/resources/views/index.blade.php) | done | — | [semantics](#the-page-row-is-what-the-query-proves-not-what-the-paginator-claims) · [semantics](#a-group-with-no-heading-closes-with-no-summary-row-except-under-groupsonly) · [diverges](#every-row-of-the-band-carries-a-host-scoped-id) |
 | `Count::icons()`'s per-icon counts, its template and its colour policy | [`Count::summarize()`](../../../vendor/filament/tables/src/Columns/Summarizers/Count.php)'s icon arm | todo | — | [detail](#counticons-ships-as-api-and-refuses-to-summarize) |
 | A summary over a `records()` table | [`Summarizer::getState()`](../../../vendor/filament/tables/src/Columns/Summarizers/Summarizer.php) (which fatals there) | todo | — | [diverges](#the-records-lane-is-refused-loudly-where-filaments-fatals-deep-in-summarize) |
 | The batched `GROUP BY` for per-group figures | [`index.blade.php`'s grouped summary batch](../../../vendor/filament/tables/resources/views/index.blade.php) | todo | — | [diverges](#the-per-group-figure-is-one-scoped-query-per-group-not-one-group-by) |
@@ -353,6 +353,23 @@ one, because `PaginationMode::Cursor` throws in this port, and the `'all'`
 per-page one, because a query-lane `'all'` paginator carries a total, so
 `hasMorePages()` answers false two guards earlier. Both are kept because the
 signature they guard is real.
+
+### A group with no heading closes with no summary row, except under `groupsOnly()`
+
+Vendor gates every per-group summary row — the in-loop one and the trailing one,
+in both of its layouts — on `filled($previousRecordGroupTitle)`, so the blank
+group gets a header row and no figure under it. The port gates the same way, and
+for the same reason: the heading a per-group row carries is
+`<title> summary`, which for the blank group would read as a bare `" summary"`
+naming nothing.
+
+The one arm that is the port's own is `groupsOnly()`. There the per-group row
+**is** the group — it carries the title in place of a header row that is not
+rendered at all — so it is emitted whether or not the title is filled, and the
+blank group keeps its row. Gating it there would take a whole group off the page
+rather than take a heading off a figure. Vendor's groups-only branch is a
+different rendering (a distinct-key group query, [still a row here](#surface)),
+so this is a new arm rather than a delta against one of theirs.
 
 ### The placeholder cells follow the record row's order, not vendor's
 

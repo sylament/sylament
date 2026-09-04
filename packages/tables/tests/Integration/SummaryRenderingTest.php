@@ -403,6 +403,64 @@ it('keys each group summary row by the group it closes', function (): void {
         ]);
 });
 
+/**
+ * A summarized table over the two edges of a group key: two records with no mood
+ * at all, and two whose mood carries a space.
+ *
+ * @param (Closure(Table): Table)|null $configure
+ */
+function moodEdgeSummaryCrawler(?Closure $configure = null): Crawler
+{
+    $entityManager = EntityManagerFactory::create();
+
+    EntityManagerFactory::seed(
+        $entityManager,
+        new Song(id: 1, title: 'Airbag', plays: 10, mood: 'slow burn', position: 1),
+        new Song(id: 2, title: 'Airport', plays: 20, mood: 'slow burn', position: 2),
+        new Song(id: 3, title: 'Jóga', plays: 30, position: 3),
+        new Song(id: 4, title: 'Hyperballad', plays: 40, position: 4),
+    );
+
+    $host = new TableHost(fn (Table $table): Table => ($configure ?? static fn (Table $table): Table => $table)(
+        $table
+            ->query($entityManager->createQueryBuilder()->select('song')->from(Song::class, 'song')->orderBy('song.id', 'ASC'))
+            ->columns([TextColumn::make('mood'), TextColumn::make('plays')->summarize(Sum::make())])
+            ->groups(['mood']),
+    ));
+
+    $host->tableGrouping = 'mood';
+
+    return new Crawler(renderToHtml($host->getTable()));
+}
+
+it('closes a group with no heading with no summary row at all', function (): void {
+    $crawler = moodEdgeSummaryCrawler();
+
+    // The blank group keeps its header row and its records; what it does not get
+    // is a figure published under a bare " summary", which is vendor's own gate.
+    expect($crawler->filter('tr.sy-ta-group-header-row')->count())->toBe(2)
+        ->and($crawler->filter('tr.sy-ta-summary-row')->each(fn (Crawler $row): string => $row->filter('th[scope="row"]')->text()))
+        ->toBe(['slow burn summary', 'Summary']);
+});
+
+it('keeps the blank group row under groupsOnly(), where the row is the group', function (): void {
+    $crawler = moodEdgeSummaryCrawler(fn (Table $table): Table => $table->groupsOnly());
+
+    // Under groupsOnly() the summary row carries the heading rather than sitting
+    // under one, so gating it on a filled title would take the group off the page.
+    expect($crawler->filter('tr.sy-ta-summary-row')->each(fn (Crawler $row): string => $row->filter('th[scope="row"]')->text()))
+        ->toBe(['slow burn', '', 'Summary']);
+});
+
+it('percent-encodes a group key carrying whitespace in the summary row id', function (): void {
+    $ids = moodEdgeSummaryCrawler()->filter('tr.sy-ta-summary-row[id]')->each(fn (Crawler $row): ?string => $row->attr('id'));
+
+    expect($ids)->toHaveCount(2)
+        ->and($ids[0])->toEndWith('.table.group-summary.slow%20burn')
+        ->and($ids[1])->toEndWith('.table.summary.all')
+        ->and(array_filter($ids, fn (?string $id): bool => str_contains((string) $id, ' ')))->toBe([]);
+});
+
 it('opens a group with its header row and never with a summary row', function (): void {
     $rows = summarizedTableCrawler([
         TextColumn::make('mood'),

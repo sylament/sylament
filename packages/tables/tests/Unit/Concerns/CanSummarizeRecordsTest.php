@@ -374,7 +374,7 @@ function groupedSummaryHost(EntityManager $entityManager, int|string|null $recor
     return $host;
 }
 
-it('summarizes each group on the page in one statement of its own', function (): void {
+it('summarizes each group in one statement of its own', function (): void {
     $recorder = new RecordingMiddleware();
     $host = groupedSummaryHost(summaryStateSongs($recorder), recordsPerPage: null);
 

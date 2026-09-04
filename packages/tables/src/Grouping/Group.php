@@ -247,9 +247,11 @@ class Group extends Component
      * The printable identity of the group a record belongs to, or null where the
      * value cannot name one. A backed enum answers its backing value; under
      * `date()` a date answers its day and everything else answers null, since a
-     * `date()` group is declared over a mapped date field; and anything neither
-     * scalar nor `Stringable` — a collection, an array, a pure enum — answers
-     * null rather than failing, which is what lets one reader key both lanes.
+     * `date()` group is declared over a mapped date field; a datetime outside
+     * `date()` answers the instant as `Y-m-d H:i:s`, so such a column groups per
+     * timestamp; and anything neither scalar nor `Stringable` — a collection, an
+     * array, a pure enum — answers null rather than failing, which is what lets
+     * one reader key both lanes.
      *
      * @param object|array<string, mixed> $record
      */
@@ -526,15 +528,22 @@ class Group extends Component
      * The printable form of a value, or null where it cannot name a group —
      * blank, or neither scalar nor `Stringable`. The guard
      * `HasTable::toRecordKey()` applies to a record key, copied because that one
-     * is private to the host trait, and widened by one arm: a Doctrine
+     * is private to the host trait, and widened by two arms. A Doctrine
      * collection is `Stringable`, but what it prints is an identity hash rather
      * than a value, so a to-many column names no group instead of naming a
-     * different one per row.
+     * different one per row. A `DateTimeInterface` is neither scalar nor
+     * `Stringable` where Eloquent's Carbon prints itself, so it is formatted as
+     * the same `Y-m-d H:i:s` string vendor keys by — which is also the literal
+     * the equality scope binds.
      */
     private function toStringKey(mixed $value): ?string
     {
         if ($value instanceof Collection) {
             return null;
+        }
+
+        if ($value instanceof DateTimeInterface) {
+            $value = $value->format('Y-m-d H:i:s');
         }
 
         if ($value instanceof Stringable) {

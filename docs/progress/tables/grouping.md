@@ -166,6 +166,17 @@ collection arm a to-many column would put every single row in a group of its own
 silently and plausibly. It is refused ahead of the `Stringable` test for that
 reason, and a to-many column names no group at all instead.
 
+The second arm is the mirror image, and it exists because the language differs
+rather than the design. Filament's `strval($key)` works on a datetime because an
+Eloquent date attribute is a `Carbon`, which is `Stringable`; a Doctrine
+`DateTimeImmutable` is neither scalar nor `Stringable`, so the bare guard would
+answer `null` for every row of a datetime column declared **without** `date()`
+and collapse the whole page into one blank-headed group. The arm formats it as
+`Y-m-d H:i:s` — the same string Carbon prints, so the key, the heading and the
+literal [the equality scope binds](#a-date-group-is-a-half-open-day-range-bound-with-the-fields-own-type)
+all agree with upstream, and such a column groups per instant as it does there.
+`date()` is still what collapses those instants to a day.
+
 Under `date()` the strictness runs the other way: anything that is not a
 `DateTimeInterface` answers `null`, where Filament runs `Carbon::parse()` over
 whatever it finds. A `date()` group is declared over a mapped date or datetime

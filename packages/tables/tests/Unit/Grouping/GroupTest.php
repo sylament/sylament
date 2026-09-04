@@ -154,6 +154,24 @@ it('keys nothing for a value that is not a date under date()', function (): void
     expect(Group::make('album')->date()->getStringKey(new Song('Airbag', 'OK Computer')))->toBeNull();
 });
 
+it('keys and titles a datetime column by its string form outside date()', function (): void {
+    $song = new SongEntity(1, 'Airbag', 100);
+    $song->setReleasedAt(new DateTimeImmutable('2026-09-02 14:03:11'));
+
+    $later = new SongEntity(2, 'Exit Music', 200);
+    $later->setReleasedAt(new DateTimeImmutable('2026-09-02 19:41:00'));
+
+    $group = Group::make('releasedAt');
+
+    // Two instants on one day are two groups without `date()`, as upstream:
+    // Eloquent's Carbon prints itself and a `DateTimeImmutable` does not, so
+    // without the format arm both records would read as one blank group.
+    expect($group->getStringKey($song))->toBe('2026-09-02 14:03:11')
+        ->and($group->getStringKey($later))->toBe('2026-09-02 19:41:00')
+        ->and($group->getTitle($song))->toBe('2026-09-02 14:03:11')
+        ->and($group->getTitle($later))->toBe('2026-09-02 19:41:00');
+});
+
 it('keys an object record the same way it keys an array', function (): void {
     $group = Group::make('status');
 

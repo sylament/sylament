@@ -507,11 +507,14 @@
 
                 {# The summary band reads the records it aggregates, so every set here sits
                    inside the loaded branch — the page figures are only asked for when a page
-                   row will carry them, and the all-table ones when an all-table row will. #}
+                   row will carry them, and the all-table ones when an all-table row will. A
+                   drag reorders rows rather than changing them, so it publishes no band at
+                   all: `hasSummary` is where that gate lives, and every summary read and
+                   every summary row below inherits it from there. #}
                 {% set allSummaryQuery = component.getLiveComponent.getAllTableSummaryQuery %}
-                {% set hasSummary = component.hasSummary(allSummaryQuery) %}
-                {% set hasAllSummary = hasSummary and not isReordering and component.hasAllTableSummary %}
-                {% set isPageSummaryWanted = hasSummary and not isReordering and component.hasPageSummary and paginator is not null and paginator.hasPages %}
+                {% set hasSummary = not isReordering and component.hasSummary(allSummaryQuery) %}
+                {% set hasAllSummary = hasSummary and component.hasAllTableSummary %}
+                {% set isPageSummaryWanted = hasSummary and component.hasPageSummary and paginator is not null and paginator.hasPages %}
                 {% set pageSummaryQuery = isPageSummaryWanted ? component.getLiveComponent.getPageTableSummaryQuery : null %}
 
                 {# A page past the last one holds no records, so the page query has nothing to
@@ -848,7 +851,7 @@
                                 </tr>
                             {% endif %}
 
-                            {% if hasSummary and not isReordering and boundary is not null and boundary.isLastOfGroup %}
+                            {% if hasSummary and boundary is not null and boundary.isLastOfGroup %}
                                 {% set groupSummaryQuery = component.getLiveComponent.getGroupedTableSummaryQuery(record) %}
 
                                 <twig:SylamentTables:SummaryRow
@@ -863,7 +866,7 @@
                             {% endif %}
                         {% endfor %}
 
-                        {% if hasSummary and not isReordering %}
+                        {% if hasSummary %}
                             <twig:SylamentTables:Summary
                                 :id="hostId ~ '.table.summary'"
                                 :columns="summaryColumns"

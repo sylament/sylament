@@ -61,7 +61,7 @@ a [Details](#details) write-up, a **diverges** link to
 | --- | --- | --- | --- | --- |
 | [`Columns\`, `Filters\` and `Colors\Components\` globs + `Table` component services](../../../packages/tables/src/SylamentTablesBundle.php) | — (Sylament-only; Filament's provider binds no services) | done | — | [diverges](#the-bundle-registers-container-services-which-filaments-provider-has-no-counterpart-for) |
 | [TableExtension → `twig.extension`](../../../packages/tables/src/SylamentTablesBundle.php) (`renderTable()`) | — (Sylament-only; mirrors schemas' [`renderSchema()`](../../../packages/schemas/src/Twig/Extension/SchemaExtension.php)) | done | — | [diverges](#the-bundle-registers-a-rendertable-twig-extension-which-filament-has-no-counterpart-for) |
-| [`TablesIconAlias` — `ACTIONS_COLUMN_MANAGER`, `ACTIONS_DISABLE_REORDERING`, `ACTIONS_ENABLE_REORDERING`, `ACTIONS_FILTER`, `COLUMNS_ICON_COLUMN_FALSE`, `COLUMNS_ICON_COLUMN_TRUE`, `EMPTY_STATE`, `FILTERS_REMOVE_ALL_BUTTON`, the three `HEADER_CELL_SORT_*`, `REORDER_HANDLE`, `SEARCH_FIELD`](../../../packages/tables/src/Twig/TablesIconAlias.php) | [`TablesIconAlias`](../../../vendor/filament/tables/src/View/TablesIconAlias.php) | in progress | — | [detail](#the-alias-set-is-thirteen-constants-of-filaments-23) · [diverges](#the-empty-state-alias-value-drops-filaments-package-prefix) |
+| [`TablesIconAlias` — `ACTIONS_COLUMN_MANAGER`, `ACTIONS_DISABLE_REORDERING`, `ACTIONS_ENABLE_REORDERING`, `ACTIONS_FILTER`, `ACTIONS_GROUP`, `COLUMNS_ICON_COLUMN_FALSE`, `COLUMNS_ICON_COLUMN_TRUE`, `EMPTY_STATE`, `FILTERS_REMOVE_ALL_BUTTON`, `GROUPING_COLLAPSE_BUTTON`, the three `HEADER_CELL_SORT_*`, `REORDER_HANDLE`, `SEARCH_FIELD`](../../../packages/tables/src/Twig/TablesIconAlias.php) | [`TablesIconAlias`](../../../vendor/filament/tables/src/View/TablesIconAlias.php) | in progress | — | [detail](#the-alias-set-is-fifteen-constants-of-filaments-23) · [diverges](#the-empty-state-alias-value-drops-filaments-package-prefix) |
 | [`ext-mbstring` on the package manifest](../../../packages/tables/composer.json) | — (Sylament-only; Filament's manifest declares no extensions) | done | — | [diverges](#the-manifest-declares-ext-mbstring) |
 | [`sylament/forms` on the package manifest](../../../packages/tables/composer.json) | [`filament/forms` on Filament's](../../../vendor/filament/tables/composer.json) | done | — | [diverges](#the-manifest-declares-sylamentforms) |
 | [`ext-intl`, `symfony/html-sanitizer` and `symfony/validator` on the package manifest](../../../packages/tables/composer.json) | [`ext-intl` on `filament/support`'s](../../../vendor/filament/support/composer.json); the two Symfony packages have no Filament counterpart | done | — | [diverges](#the-manifest-grew-three-requires-and-one-suggest-for-the-column-catalog) |
@@ -127,10 +127,10 @@ because they have no code.
 Specifics for rows that are not finished — what is already in, what is left, and
 what the next step is. Delete a subsection when its row flips to **done**.
 
-### The alias set is thirteen constants of Filament's 23
+### The alias set is fifteen constants of Filament's 23
 
 Filament's `TablesIconAlias` declares 23 alias constants up front — every
-overridable icon slot in the whole table builder. Sylament ships **thirteen** —
+overridable icon slot in the whole table builder. Sylament ships **fifteen** —
 `ACTIONS_FILTER` (the toolbar funnel), `EMPTY_STATE`,
 `FILTERS_REMOVE_ALL_BUTTON` (the indicators row's clear-all button), the three
 `HEADER_CELL_SORT_*` (unsorted, ascending, descending — the sortable header's
@@ -143,15 +143,21 @@ handle — and the two the column catalog added, `COLUMNS_ICON_COLUMN_TRUE` and
 `COLUMNS_ICON_COLUMN_FALSE`, the boolean glyph pair
 [`IconColumn::boolean()`](icon-column.md) falls back to, and the column
 manager's `ACTIONS_COLUMN_MANAGER`, the toolbar trigger's glyph, resolved inside
-[`getColumnManagerTriggerAction()`](../../../packages/tables/src/Table/Concerns/HasColumnManager.php).
-All thirteen have their consuming surface ported. Nine of the remaining 10 belong
-to features that are not built yet: the filters query builder (the six
-`FILTERS_QUERY_BUILDER_CONSTRAINTS_*`), grouping (`ACTIONS_GROUP`,
-`GROUPING_COLLAPSE_BUTTON`) and the layout columns' `COLUMNS_COLLAPSE_BUTTON`
+[`getColumnManagerTriggerAction()`](../../../packages/tables/src/Table/Concerns/HasColumnManager.php),
+and the two [record grouping](grouping.md) added, `ACTIONS_GROUP` — the toolbar
+selector's trigger, resolved inside `getGroupRecordsTriggerAction()` and
+defaulting to `heroicons:rectangle-stack-20-solid`, the toolbar's 20-solid
+convention rather than `Heroicon::RectangleStack`, exactly as `ACTIONS_FILTER`
+already diverges — and `GROUPING_COLLAPSE_BUTTON`, the group header's chevron,
+defaulting to `heroicons:chevron-up-20-solid`.
+All fifteen have their consuming surface ported. Seven of the remaining eight
+belong to features that are not built yet: the filters query builder (the six
+`FILTERS_QUERY_BUILDER_CONSTRAINTS_*`) and the layout columns'
+`COLUMNS_COLLAPSE_BUTTON`
 (M4 · 7 — it collapses a `Columns\Layout\Stack`, which this package does not
 render yet).
 
-The tenth, `ACTIONS_OPEN_BULK_ACTIONS`, is the one exception, and it is worth
+The eighth, `ACTIONS_OPEN_BULK_ACTIONS`, is the one exception, and it is worth
 naming because its feature **is** built: bulk actions landed with M4 · 1 and the
 alias still did not, because nothing reads it here.
 [`BulkActionGroup`](../actions/action-group.md) sets its trigger icon as a plain
@@ -166,8 +172,9 @@ renders its icon — the same growth order
 [`SupportIconAlias`](../support/support-icon-alias.md#pagination-rtl-aliases)
 follows, and the four that arrived with the sort headers and the search toolbar,
 the three that arrived with reordering, the two that arrived with
-`IconColumn` and the one that arrived with the column manager, are that order in
-action. Ten of the thirteen are read by
+`IconColumn`, the one that arrived with the column manager and the two that
+arrived with grouping are that order in
+action. Eleven of the fifteen are read by
 [the table partial](../../../packages/tables/templates/partials/Table/index.html.twig)
 — `ACTIONS_FILTER` and `FILTERS_REMOVE_ALL_BUTTON` by the filters chrome, in its
 toolbar and its indicators row, rather than by the table's own rows, and the two
@@ -178,11 +185,14 @@ resolve them through the icon manager before the partial ever sees an icon,
 because the boolean fallback has to survive a `trueIcon()` the caller set, and
 `ACTIONS_COLUMN_MANAGER` resolves inside
 [`getColumnManagerTriggerAction()`](column-manager.md) for the same reason — the
-trigger is an `Action` object, so its icon is chosen before any template runs.
-Either way all thirteen are overridable end to end. Each new one needs a glyph in
+trigger is an `Action` object, so its icon is chosen before any template runs,
+and `ACTIONS_GROUP` joins those three for exactly that reason while its sibling
+`GROUPING_COLLAPSE_BUTTON` is the group header's own markup.
+Either way all fifteen are overridable end to end. Each new one needs a glyph in
 [the fixture icon set](../../../packages/tables/tests/Fixtures/assets/icons/heroicons)
 — `arrows-up-down`, `check` and `bars-2` for the reorder trio, `check-circle` and
-`x-circle` for the boolean pair — because ux-icons resolves a missing local icon
+`x-circle` for the boolean pair, `rectangle-stack-20-solid` for the grouping
+trigger — because ux-icons resolves a missing local icon
 by throwing rather than by rendering nothing: a hard error in a render test, not
 a blank button. The demo's set needs the same additions when it renders them.
 
@@ -212,7 +222,7 @@ rather than the one it started with. Its core is still the port of Filament's
 `filamentTable` Alpine data
 ([`resources/js/components/table.js`](../../../vendor/filament/tables/resources/js/components/table.js)),
 minus everything that is not selection: the filters-dropdown positioning (support's
-`Dropdown` owns that here), the group-collapse arm (M4 · 6), the two props no
+`Dropdown` owns that here), the two props no
 caller sets (`maxSelectableRecords` and the entangled
 `currentSelectionLivewireProperty`), the `mountAction` wrapper that pushed the
 three models just before mounting — every tick already pushes them, so there is
@@ -303,9 +313,29 @@ request and survives a morph the user did not ask for, and a successful apply is
 what replaces it. Both apply and reset stay plain live actions — the dirty draft
 rides every request, so nothing in the footer needs a hand from this controller.
 
-**Next step:** grouping's collapse arm follows with M4 · 6. Filament's four
+M4 · 6 filled the one arm that sentence had left out. The controller now carries
+a **grouping** half beside its selection one, ported from the same
+`filamentTable` data: `group()` composes the two selects into the one scalar
+`groupTable()` validates and re-syncs the dropdown copy with the inline one,
+`toggleGroup()` is `toggleCollapseGroup()` over a `Set` of *titles* whose
+membership is XORed with the table's default, and `toggleGroupRecords()` is
+`toggleSelectRecords()` over the key list the server wrote onto the checkbox — so
+a collapse never reaches the server at all and a whole-group tick costs zero
+requests. The repaint block gained the two passes that go with them
+([grouping.md](grouping.md#collapse-is-keyed-by-title-and-so-is-the-group-break)).
+
+That makes the missing-`controllers.json` cost five things rather than four, and
+the new one is closest to the editable cell's in severity: a grouping selector
+whose `change` never fires, so picking a group does nothing at all — and, on a
+table with `collapsedGroupsByDefault()`, rows the **server** painted
+`sy-collapsed` that nothing can ever expand, because the only thing that would
+have removed the class is the repaint
+([grouping.md](grouping.md#the-server-paints-the-collapsed-state-where-vendors-alpine-flashes-it-open)).
+
+**Next step:** none. Filament's four
 interactive-column `AlpineComponent`s have no successors left to port —
-`editable-cell` is all four.
+`editable-cell` is all four — and `table.js`'s remaining arms are the ones this
+port answers elsewhere.
 
 ### `Make*` commands + stub publishing
 

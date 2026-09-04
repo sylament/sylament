@@ -118,8 +118,8 @@ sections do.
 | [`clearCachedState()`](../../../packages/tables/src/Columns/Concerns/HasCellState.php) | [`Support\Concerns\HasCellState`](../../../vendor/filament/support/src/Concerns/HasCellState.php) | done | — | [diverges](#the-state-cache-keys-off-the-bound-record-key) |
 | [`recordKey()` / `getRecordKey()`](../../../packages/tables/src/Columns/Concerns/HasRecord.php) | [`Concerns\HasRecord`](../../../vendor/filament/tables/src/Columns/Concerns/HasRecord.php) | done | — | [diverges](#the-record-key-setter-admits-an-int) |
 | [`rowLoop()` / `getRowLoop()` — the `$rowLoop` injection](../../../packages/tables/src/Columns/Concerns/HasRowLoopObject.php) | [`Concerns\HasRowLoopObject`](../../../vendor/filament/tables/src/Columns/Concerns/HasRowLoopObject.php) | done | — | [semantics](#the-row-loop-is-a-blade-shaped-object-built-from-twigs-array) |
-| Relationship traversal — `hasRelationship()`, `getRelationshipResults()`, `inverseRelationship()`, the seven name caches, `applyRelationshipAggregates()`, `applyEagerLoading()` | [`Support\Concerns\HasCellState`](../../../vendor/filament/support/src/Concerns/HasCellState.php), [`InteractsWithTableQuery`](../../../vendor/filament/tables/src/Columns/Concerns/InteractsWithTableQuery.php) | in progress | — | [detail](#relationship-traversal-ships-as-a-value-walk-a-side-store-and-one-kept-member) |
-| [`applyEagerLoading()` — fetch-join the to-one chains a visible name reads through](../../../packages/tables/src/Columns/Concerns/InteractsWithTableQuery.php) | [`InteractsWithTableQuery::applyEagerLoading()`](../../../vendor/filament/tables/src/Columns/Concerns/InteractsWithTableQuery.php) | done | — | [diverges](#a-to-many-relation-stays-lazy-where-filament-eager-loads-every-cardinality) · [has-table.md](has-table.md#eager-loading-runs-over-the-visible-columns-on-the-page-clone-alone) |
+| Relationship traversal — `hasRelationship()`, `getRelationshipResults()`, `inverseRelationship()`, the seven name caches, `applyRelationshipAggregates()`, `applyEagerLoading()` | [`Support\Concerns\HasCellState`](../../../vendor/filament/support/src/Concerns/HasCellState.php), [`InteractsWithTableQuery`](../../../vendor/filament/tables/src/Columns/Concerns/InteractsWithTableQuery.php) | in progress | — | [detail](#relationship-traversal-ships-as-a-value-walk-a-side-store-and-one-kept-member) — `inverseRelationship()` is settled as **not ported** there since M4 · 6 gave it its only consumer and refused the case it exists for; what holds the row is `hasNestedMorphToRelationship()` |
+| [`applyEagerLoading()` — fetch-join the to-one chains a visible name reads through](../../../packages/tables/src/Columns/Concerns/InteractsWithTableQuery.php) | [`InteractsWithTableQuery::applyEagerLoading()`](../../../vendor/filament/tables/src/Columns/Concerns/InteractsWithTableQuery.php) | done | — | three lines since M4 · 6: the body is [`Query\RelationJoiner::fetchJoinPath()`](../../../packages/tables/src/Query/RelationJoiner.php), which a [`Group`](grouping.md) fetch-joins its own column through, so the two share an implementation rather than a copy. [diverges](#a-to-many-relation-stays-lazy-where-filament-eager-loads-every-cardinality) · [has-table.md](has-table.md#eager-loading-runs-over-the-visible-columns-on-the-page-clone-alone) |
 | [The aggregate declarations — `avg()`, `counts()`, `exists()`, `max()`, `min()`, `sum()` and their getters](../../../packages/tables/src/Columns/Concerns/CanAggregateRelatedRecords.php) | [`Support\Concerns\CanAggregateRelatedModels`](../../../vendor/filament/support/src/Concerns/CanAggregateRelatedModels.php) | done | — | [rename](../renames.md#renames) · [diverges](#an-aggregate-column-names-itself-freely-where-filaments-must-match-laravels-alias) · [diverges](#the-illuminate-expression-arm-is-dropped-from-the-aggregated-column) · [diverges](#an-aggregate-declaration-that-claims-no-cell-computes-nothing) |
 | [`getCellAggregateDeclaration()` — which declaration this cell reads](../../../packages/tables/src/Columns/Concerns/CanAggregateRelatedRecords.php) | — (Sylament-only; Filament reads the value off the model as an attribute) | done | — | [diverges](#an-aggregate-column-names-itself-freely-where-filaments-must-match-laravels-alias) · [table.md](table.md#an-aggregate-is-a-batched-side-query-and-a-hidden-subselect-never-a-select-on-the-page-query) |
 | Visibility — [`hidden()` / `visible()` / `hiddenOn()` / `visibleOn()` / `isHidden()` / `isVisible()`](../../../packages/tables/src/Columns/Concerns/CanBeHidden.php) and [`toggleable()` / `toggledHiddenByDefault()` / `isToggleable()` / `isToggledHidden()`](../../../packages/tables/src/Columns/Concerns/CanBeToggled.php) | [`CanBeHidden`](../../../vendor/filament/tables/src/Columns/Concerns/CanBeHidden.php), [`CanBeToggled`](../../../vendor/filament/tables/src/Columns/Concerns/CanBeToggled.php) | done | — | [diverges](#istoggleables-blank-label-group-arm-is-dropped-with-columngroup) |
@@ -143,7 +143,8 @@ sections do.
 | [`extraAttributes()` / `extraCellAttributes()` / `extraHeaderAttributes()` and their getters](../../../packages/tables/src/Columns/Concerns/HasExtraCellAttributes.php) | [`Support\Concerns\HasExtraAttributes`](../../../vendor/filament/support/src/Concerns/HasExtraAttributes.php), [`HasExtraCellAttributes`](../../../vendor/filament/tables/src/Columns/Concerns/HasExtraCellAttributes.php), [`HasExtraHeaderAttributes`](../../../vendor/filament/tables/src/Columns/Concerns/HasExtraHeaderAttributes.php) | done | — | [diverges](#the-cache-guards-behind-filaments-memoised-cell-bag-are-not-ported) · [image-column.md](image-column.md#extra-img-attribute-registrations-merge-defaults-first) |
 | [`getCellClassName()` / `getHeaderCellClassName()` — the per-column hook classes](../../../packages/tables/src/Columns/Column.php) | [`index.blade.php`'s `str($columnName)->camel()->kebab()`](../../../vendor/filament/tables/resources/views/index.blade.php) | done | — | [semantics](#the-hook-class-kebabs-each-dotted-segment-on-its-own) |
 | Cell rendering — `getCellAttributeHtml()`, `getCachedCellAttributeHtml()` and the five `hasDynamic*()` cache guards | [`Column.php`](../../../vendor/filament/tables/src/Columns/Column.php) | skipped | — | [diverges](#the-cache-guards-behind-filaments-memoised-cell-bag-are-not-ported) |
-| Grouping and layout — `ColumnGroup`, `Columns\Layout\`, `renderInLayout()`, `BelongsToGroup`, `BelongsToLayout`, `CanSpanColumns`, `HasSpace`, `summarize()` | [`ColumnGroup`](../../../vendor/filament/tables/src/Columns/ColumnGroup.php), [`Columns/Layout`](../../../vendor/filament/tables/src/Columns/Layout), [`CanBeSummarized`](../../../vendor/filament/tables/src/Columns/Concerns/CanBeSummarized.php) | todo | — | — |
+| Column grouping and layout — `ColumnGroup`, `Columns\Layout\`, `renderInLayout()`, `BelongsToGroup`, `BelongsToLayout`, `CanSpanColumns`, `HasSpace` | [`ColumnGroup`](../../../vendor/filament/tables/src/Columns/ColumnGroup.php), [`Columns/Layout`](../../../vendor/filament/tables/src/Columns/Layout) | todo | — | — |
+| [`summarize()` / `getSummarizer()` / `getSummarizers()` / `hasSummary()`](../../../packages/tables/src/Columns/Concerns/CanBeSummarized.php) | [`Columns\Concerns\CanBeSummarized`](../../../vendor/filament/tables/src/Columns/Concerns/CanBeSummarized.php) | done | — | [summarizer.md](summarizer.md) — the trait ships whole, and a column reading a relationship aggregate [refuses to be summarized](summarizer.md#summarizing-an-aggregate-column-is-refused-where-filament-produces-a-wrong-number) |
 | [`ColorColumn`](../../../packages/tables/src/Columns/ColorColumn.php), [`IconColumn`](../../../packages/tables/src/Columns/IconColumn.php), [`ImageColumn`](../../../packages/tables/src/Columns/ImageColumn.php), [`ViewColumn`](../../../packages/tables/src/Columns/ViewColumn.php) | [`src/Columns`](../../../vendor/filament/tables/src/Columns) | done | — | [color-column.md](color-column.md) · [icon-column.md](icon-column.md) · [image-column.md](image-column.md) · [view-column.md](view-column.md) |
 | `BadgeColumn`, `BooleanColumn`, `TagsColumn` — the deprecated one-line subclasses | [`src/Columns`](../../../vendor/filament/tables/src/Columns) | skipped | — | The spellings their own deprecation notices name all ship; the project has never ported a deprecated Filament surface ([renames.md](../renames.md)) |
 | [`CheckboxColumn`](../../../packages/tables/src/Columns/CheckboxColumn.php), [`SelectColumn`](../../../packages/tables/src/Columns/SelectColumn.php), [`TextInputColumn`](../../../packages/tables/src/Columns/TextInputColumn.php), [`ToggleColumn`](../../../packages/tables/src/Columns/ToggleColumn.php) — the four editable columns | [`src/Columns`](../../../vendor/filament/tables/src/Columns) | done | — | [checkbox-column.md](checkbox-column.md) · [select-column.md](select-column.md) · [text-input-column.md](text-input-column.md) · [toggle-column.md](toggle-column.md) · [has-columns.md](has-columns.md) |
@@ -332,15 +333,25 @@ bar the [`Expression` arm](#the-illuminate-expression-arm-is-dropped-from-the-ag
 a fetch join on the page query rather than a second `with()` query, and
 [to-one only](#a-to-many-relation-stays-lazy-where-filament-eager-loads-every-cardinality).
 
-Two members are genuinely still out, which is what holds the row at
-**in progress**. `inverseRelationship()` names the reverse accessor a summarizer
-walks back through, and the summarizer is its only consumer in either codebase
-(`Columns\Summarizers\Summarizer`, a **todo** row upstairs) — it lands with that
-tier or not at all. `hasNestedMorphToRelationship()` is morph machinery, and
-morphs are [out of the relation layer](../roadmap.md#pulled-forward) on both the
-schemas and the tables side, refused rather than guessed. Neither blocks
-anything: a column with no summarizer and no polymorphic association reads,
-sorts, searches, counts and fetch-joins today.
+One member is genuinely still out, which is what holds the row at
+**in progress**: `hasNestedMorphToRelationship()` is morph machinery, and morphs
+are [out of the relation layer](../roadmap.md#pulled-forward) on both the schemas
+and the tables side, refused rather than guessed. It blocks nothing — a column
+with no polymorphic association reads, sorts, searches, counts and fetch-joins
+today.
+
+The other, `inverseRelationship()`, said *"it lands with that tier or not at
+all"* until the tier landed, and the answer is **not at all**. It names the
+reverse accessor a summarizer walks back through, and the
+[summarizer tier](summarizer.md) is its only consumer in either codebase:
+Filament re-roots a summary query on the related record through that accessor,
+purely so a to-many relation's rows are weighted once. The port
+[refuses the to-many case outright](summarizer.md#the-batch-keeps-a-to-one-relation-column-and-refuses-a-to-many-one)
+and batches the to-one one off the alias the eager load already joined, so there
+is no query left to re-root and nothing for the setter to name — and Filament's
+own default for it is an English-inflection guess reached through a magic
+dynamic call, which is the shape the port [does not carry](../renames.md#renames)
+one tier up either.
 
 ## Semantics
 
@@ -886,9 +897,10 @@ write *sort people by name* — sorts by last name.
 
 The reversal is the vendor's behaviour verified in its own source rather than an
 inference from ours, and nothing around it reads as intent: no comment, no
-compensating reversal at the call site, and the sibling `Filters` and
+compensating reversal at the call site, and Filament's own sibling `Filters` and
 `Summarizers` copies of `InteractsWithTableQuery` have no such loop to compare
-against. A user's list is written in the order they want it applied, so we apply
+against (nor does [the port's summarizer copy](summarizer.md), which sorts
+nothing). A user's list is written in the order they want it applied, so we apply
 it as written. The cost is the one that matters and it is small and visible: a
 migrating table with a multi-column `sortable()` gets its tie-break priority the
 other way round on the first click.

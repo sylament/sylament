@@ -22,6 +22,11 @@
     & .sy-ta-col-manager-item {
         @apply flex break-inside-avoid items-center gap-3 pt-6;
 
+        @supports (overflow-clip-margin: 1px) {
+            overflow: clip;
+            overflow-clip-margin: 10px;
+        }
+
         & .sy-ta-col-manager-label {
             @apply flex w-full flex-1 items-center gap-x-3 text-sm font-medium text-gray-950 dark:text-white;
 

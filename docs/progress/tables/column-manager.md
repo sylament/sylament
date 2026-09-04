@@ -62,7 +62,7 @@ instead.
 | [`persistColumnsInSession()` / `persistsColumnsInSession()`](../../../packages/tables/src/Table/Concerns/HasColumnManager.php) | [`Table\Concerns\HasColumnManager`](../../../vendor/filament/tables/src/Table/Concerns/HasColumnManager.php) | done | — | [has-table.md](has-table.md#the-session-key-is-the-host-class-so-two-instances-of-one-page-share-it) · [diverges](#the-session-is-written-at-the-end-of-every-mutation-rather-than-once-per-request) |
 | [`columnManagerLayout()` / `getColumnManagerLayout()` / `hasColumnManagerDropdown()` / `hasColumnManagerModal()`](../../../packages/tables/src/Table/Concerns/HasColumnManager.php) + [`ColumnManagerLayout`](../../../packages/tables/src/Enums/ColumnManagerLayout.php) | [`Table\Concerns\HasColumnManager`](../../../vendor/filament/tables/src/Table/Concerns/HasColumnManager.php), [`Enums/ColumnManagerLayout`](../../../vendor/filament/tables/src/Enums/ColumnManagerLayout.php) | done | — | [diverges](#the-modal-layout-renders-one-reset-wherever-the-setting-puts-it) |
 | [`columnManagerResetActionPosition()` / `getColumnManagerResetActionPosition()`](../../../packages/tables/src/Table/Concerns/HasColumnManager.php) + [`ColumnManagerResetActionPosition`](../../../packages/tables/src/Enums/ColumnManagerResetActionPosition.php) | [`Table\Concerns\HasColumnManager`](../../../vendor/filament/tables/src/Table/Concerns/HasColumnManager.php), [`Enums/ColumnManagerResetActionPosition`](../../../vendor/filament/tables/src/Enums/ColumnManagerResetActionPosition.php) | done | — | [diverges](#the-modal-layout-renders-one-reset-wherever-the-setting-puts-it) |
-| [`columnManagerColumns()` / `getColumnManagerColumns()` / `columnManagerMaxHeight()` / `getColumnManagerMaxHeight()`](../../../packages/tables/src/Table/Concerns/HasColumnManager.php) | [`Table\Concerns\HasColumnManager`](../../../vendor/filament/tables/src/Table/Concerns/HasColumnManager.php) | done | — | [semantics](#a-bare-integer-column-count-is-supports-shorthand-and-the-table-tier-hands-it-through-untouched) |
+| [`columnManagerColumns()` / `getColumnManagerColumns()` / `columnManagerMaxHeight()` / `getColumnManagerMaxHeight()`](../../../packages/tables/src/Table/Concerns/HasColumnManager.php) | [`Table\Concerns\HasColumnManager`](../../../vendor/filament/tables/src/Table/Concerns/HasColumnManager.php) | done | — | [diverges](#the-item-clips-its-overflow-where-vendors-overhanging-handle-can-spill-a-column) · [semantics](#a-bare-integer-column-count-is-supports-shorthand-and-the-table-tier-hands-it-through-untouched) |
 | [`columnManagerWidth()` / `getColumnManagerWidth()`](../../../packages/tables/src/Table/Concerns/HasColumnManager.php) | [`Table\Concerns\HasColumnManager`](../../../vendor/filament/tables/src/Table/Concerns/HasColumnManager.php) | in progress | the `Width` enum ([table.md](table.md#the-filters-form-columns-follow-the-layout-the-width-does-not)) | [diverges](#the-width-is-a-css-length-and-the-columns-to-width-match-is-not-ported) |
 | [`columnManagerTriggerAction()` / `getColumnManagerTriggerAction()`](../../../packages/tables/src/Table/Concerns/HasColumnManager.php) | [`Table\Concerns\HasColumnManager`](../../../vendor/filament/tables/src/Table/Concerns/HasColumnManager.php) | done | — | [diverges](#the-trigger-drops-vendors-modal-footer-machinery-because-the-chrome-is-the-partials) · [table.md](table.md#the-trigger-opens-its-chrome-from-the-client-and-the-count-stays-a-template-chip) |
 | [`columnManagerApplyAction()` / `getColumnManagerApplyAction()`](../../../packages/tables/src/Table/Concerns/HasColumnManager.php) | [`Table\Concerns\HasColumnManager`](../../../vendor/filament/tables/src/Table/Concerns/HasColumnManager.php) | done | — | [diverges](#the-trigger-drops-vendors-modal-footer-machinery-because-the-chrome-is-the-partials) |
@@ -161,38 +161,6 @@ Four class names are reserved for the group arm and are deliberately not emitted
 now, so the eventual port does not have to rename anything already shipped:
 `sy-ta-col-manager-group`, `sy-ta-col-manager-group-header`,
 `sy-ta-col-manager-group-label` and `sy-ta-col-manager-group-items`.
-
-## Known limitation
-
-### `columnManagerColumns()` above one spills a column off the panel
-
-**Found by the browser pass, reproducible, and not fixed.** With
-`columnManagerColumns(2)` the item list lays out in **three** column positions,
-and the third sits outside the container's own width — off-screen at a normal
-viewport, so the control in it cannot be seen or reached. Measured on the demo's
-showcase card at both **five** and **six** items, at panel widths of 42, 48, 56
-and 64rem, on clean page loads with no drag artefacts.
-
-What it is **not**: `column-manager.css` is byte-identical to
-[vendor's](../../../vendor/filament/tables/resources/css/column-manager.css) for
-both the `-items` and `-item` rules; the container is built by the identical
-call, `->grid($columns, GridDirection::Column)`, over a
-[`grid()`](../support/README.md) whose column arm is byte-identical to
-Filament's; support's grid emits the expected `column-count: 2`; and the extra
-`.sy-ta-col-manager-content` wrapper this port interposes was tested by
-reparenting the list out of it and is **not** the cause. No `max-height`
-constrains the list anywhere in its ancestor chain. Setting
-`column-fill: auto` collapses it to a single column, so the spill comes from
-CSS multi-column **balancing** over `break-inside: avoid` items rather than from
-anything this port chose.
-
-So it is inherited rather than mis-ported, and a Filament table configured the
-same way should show it too — but it is a real constraint on a knob we ship, and
-the default (`1`) is unaffected: `/admin/articles` lists six items in one column
-correctly. **Anyone reaching for more than one column should verify the panel in
-a browser first.** The fix is a layout change — a CSS grid rather than CSS
-multi-column, which would diverge from vendor deliberately — and belongs in its
-own change, not in the epic that found it.
 
 ## Divergences
 
@@ -406,9 +374,47 @@ The reason is the [modal layout](#the-modal-layout-renders-one-reset-wherever-th
 it renders `ColumnManagerContent` **without** the `.sy-ta-col-manager` wrapper,
 so a nested rule would leave every item in the modal unstyled — no
 `break-inside-avoid`, no `-mt-6`, no gap. The rest of the sheet is vendor's,
-prefix-renamed, plus one Sylament-only block, `.sy-ta-col-manager-dropdown`,
-which carries the `20rem` default width because support's `Dropdown` has no
-width of its own to default.
+prefix-renamed, plus two Sylament-only additions: the `.sy-ta-col-manager-dropdown`
+block, which carries the `20rem` default width because support's `Dropdown` has
+no width of its own to default, and the item's guarded `overflow: clip`,
+[recorded below](#the-item-clips-its-overflow-where-vendors-overhanging-handle-can-spill-a-column).
+
+### The item clips its overflow, where vendor's overhanging handle can spill a column
+
+With `columnManagerColumns(2)` and five items, vendor's stylesheet lays the list
+out in **three** column positions and puts the third outside the panel — off the
+screen at a normal viewport, its control unreachable. M4 · 5's browser pass found
+it on the demo's showcase card, established it as inherited rather than
+mis-ported — the `-items` and `-item` rules, the
+`->grid($columns, GridDirection::Column)` call and the emitted `column-count: 2`
+are all vendor's — and recorded it; the validation pass of 2026-09-04 found the
+mechanism, and the fix is one rule.
+
+The items element is a CSS multi-column box balancing `break-inside: avoid`
+items 44px tall — the `pt-6` rhythm over a 20px line. The reorder handle in each
+is support's `IconButton`, which carries Filament's own negative margins
+(`-m-1.5` at its small size), so a 32px button sits in a 20px content box and
+overhangs the item by 6px above, below and to the right. Chromium's balancer
+counts that overhang against `break-inside: avoid`, and with it three items no
+longer fit the column height it settles on: two go in each column and the fifth
+opens an overflow column past the panel. A synthetic five-item list without the
+overhang balances 3 + 2 in the same browser, one whose child carries negative
+vertical margins reproduces the spill exactly, and `column-fill: auto` does not
+fix it but collapses the list to one column — which is what the epic's
+"collapses it" observation was seeing.
+
+So `.sy-ta-col-manager-item` sets `overflow: clip` with
+`overflow-clip-margin: 10px`. The clip takes the overhang out of the item's
+overflow and the balancer fits three per column again at the same 44px row; the
+clip margin keeps the handle's 6px overhang and its 2px focus ring painted, so
+nothing visible changes — zeroing the handle's margin instead would grow every
+row to 56px. The rule sits behind `@supports (overflow-clip-margin: 1px)`: an
+engine with `overflow: clip` but without the margin property would clip the
+handle's hover face and ring at the row edge, so it keeps vendor's layout
+instead. Verified on the demo's showcase card in headless Chrome — two columns,
+nothing outside, in the dropdown and the modal alike, with the one-column
+default untouched. Nothing in the PHP suites can pin a layout, so the browser
+pass is the proof.
 
 ## Semantics
 

@@ -17,6 +17,7 @@ use Sylament\Tables\Table;
 use Sylament\Tables\Tests\Fixtures\Doctrine\Entity\Artist;
 use Sylament\Tables\Tests\Fixtures\Doctrine\Entity\Song;
 use Sylament\Tables\Tests\Fixtures\Doctrine\EntityManagerFactory;
+use Sylament\Tables\Tests\Fixtures\Doctrine\RecordingMiddleware;
 use Symfony\UX\LiveComponent\Attribute\AsLiveComponent;
 use Symfony\UX\LiveComponent\Attribute\LiveProp;
 use Symfony\UX\LiveComponent\DefaultActionTrait;
@@ -27,7 +28,9 @@ use Symfony\UX\LiveComponent\DefaultActionTrait;
  * a page so each group of three outlives the page it opens on — which is what
  * makes a group checkbox's keys provably the whole filtered set. The
  * selectability flag is a `LiveProp` so a test can rebuild the same table with
- * the callback set across a round trip.
+ * the callback set across a round trip, and the page-only flag another so the
+ * narrower selection arm can be reached the same way. Every statement the
+ * connection runs is recorded, so a test can price a read in queries.
  */
 #[AsLiveComponent(name: 'GroupedSongsTable', template: '@TablesFixtures/components/GroupedSongsTable.html.twig')]
 final class GroupedSongsTable implements InteractsWithActions, InteractsWithSchemas, InteractsWithTable
@@ -40,7 +43,20 @@ final class GroupedSongsTable implements InteractsWithActions, InteractsWithSche
     #[LiveProp]
     public bool $checksSelectable = false;
 
+    #[LiveProp]
+    public bool $selectsCurrentPageOnly = false;
+
     private ?EntityManager $entityManager = null;
+
+    private ?RecordingMiddleware $recorder = null;
+
+    /**
+     * How many statements the connection has run since the component was built.
+     */
+    public function recordedStatementCount(): int
+    {
+        return count($this->recorder?->statements() ?? []);
+    }
 
     /**
      * @return array<string>
@@ -63,6 +79,10 @@ final class GroupedSongsTable implements InteractsWithActions, InteractsWithSche
             $table->checkIfRecordIsSelectableUsing(fn (Song $record): bool => $record->getId() !== 2);
         }
 
+        if ($this->selectsCurrentPageOnly) {
+            $table->selectCurrentPageOnly();
+        }
+
         return $table;
     }
 
@@ -72,7 +92,9 @@ final class GroupedSongsTable implements InteractsWithActions, InteractsWithSche
             return $this->entityManager;
         }
 
-        $entityManager = EntityManagerFactory::create();
+        $this->recorder = new RecordingMiddleware();
+
+        $entityManager = EntityManagerFactory::create($this->recorder);
         $radiohead = new Artist(1, 'Radiohead');
         $zeroSeven = new Artist(2, 'Zero 7');
 

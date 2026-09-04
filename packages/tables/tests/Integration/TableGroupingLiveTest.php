@@ -17,11 +17,12 @@ uses(InteractsWithLiveComponents::class);
  * record checkboxes already use, and re-filtered through the selectability
  * callback like any other client-written selection.
  *
- * The enumeration itself — the page-only arm, an unknown group, an ungrouped
- * table and the per-request memo — is pinned method-side in
- * `tests/Unit/Concerns/HasBulkActionsTest.php`; what only a render can show is
- * that a group spanning three pages still hands the client every key on the
- * first, and that is what is asserted here.
+ * The enumeration's own semantics — the page-only arm, an unknown group, an
+ * ungrouped table and the per-request memo — are pinned method-side in
+ * `tests/Unit/Concerns/HasBulkActionsTest.php` over the same SQLite rig; each
+ * is re-asserted here at the wire, where the keys reach the client as
+ * `data-sy-group-keys` and where the host is the hydrated one a request
+ * actually holds.
  */
 
 it('resets the page when a grouping is written', function (): void {
@@ -107,4 +108,50 @@ it('re-applies the selectability callback to a group the client wrote', function
         static fn (object $record): int => $record instanceof Song ? $record->getId() : 0,
         $host->getSelectedTableRecords(),
     ))->toBe([1, 3]);
+});
+
+it('enumerates only the rendered page for a group where selection is page-only', function (): void {
+    $component = $this->createLiveComponent('GroupedSongsTable', ['selectsCurrentPageOnly' => true])
+        ->call('groupTable', ['group' => 'artist.name', 'direction' => 'asc']);
+
+    expect((string) $component->render())->toContain('data-sy-group-keys="[&quot;1&quot;,&quot;2&quot;]"')
+        ->and($component->component()->getGroupedSelectableTableRecordKeys('Radiohead'))->toBe(['1', '2']);
+});
+
+it('enumerates nothing for a group key the table does not hold', function (): void {
+    $component = $this->createLiveComponent('GroupedSongsTable')
+        ->call('groupTable', ['group' => 'artist.name', 'direction' => 'asc']);
+
+    expect($component->component()->getGroupedSelectableTableRecordKeys('Nobody'))->toBe([]);
+});
+
+it('enumerates nothing at all while no grouping is in force', function (): void {
+    $host = $this->createLiveComponent('GroupedSongsTable')->component();
+
+    expect($host->tableGrouping)->toBeNull()
+        ->and($host->getGroupedSelectableTableRecordKeys('Radiohead'))->toBe([]);
+});
+
+it('memoises a group enumeration for the length of one request', function (): void {
+    // `component()` hands back a freshly hydrated host, which is the per-request
+    // instance the memo is scoped to.
+    $host = $this->createLiveComponent('GroupedSongsTable')
+        ->call('groupTable', ['group' => 'artist.name', 'direction' => 'asc'])
+        ->component();
+
+    $beforeFirstRead = $host->recordedStatementCount();
+
+    expect($host->getGroupedSelectableTableRecordKeys('Radiohead'))->toBe(['1', '2', '3']);
+
+    $afterFirstRead = $host->recordedStatementCount();
+
+    $host->getGroupedSelectableTableRecordKeys('Radiohead');
+
+    expect($afterFirstRead)->toBeGreaterThan($beforeFirstRead)
+        ->and($host->recordedStatementCount())->toBe($afterFirstRead);
+
+    // A second group is a second memo entry, so the counter moves again.
+    $host->getGroupedSelectableTableRecordKeys('Zero 7');
+
+    expect($host->recordedStatementCount())->toBeGreaterThan($afterFirstRead);
 });

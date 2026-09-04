@@ -114,3 +114,23 @@ it('normalises a driver string to an int or a float', function (): void {
         ->and($summarizer->selectedState(['sy_summary_0' => '82.5000000000000000'])->getSelectedState())->toBe(82.5)
         ->and($summarizer->selectedState(['sy_summary_0' => null])->getSelectedState())->toBeNull();
 });
+
+/*
+ * D27: the row carrying the alias at all is what says a figure was read, because SQL
+ * aggregates an empty set — an empty page, a fully filtered table — to null, and that
+ * null is an answer. Asking whether the value is filled instead would send every such
+ * figure back to the database for the same null, and on the records lane into the
+ * refusal getState() makes for a table no query produced.
+ */
+it('answers a batched null without querying', function (): void {
+    $recorder = new RecordingMiddleware();
+    $summarizer = sumRig(Sum::make(), [10, 20], $recorder)
+        ->selectAlias('sy_summary_0')
+        ->selectedState(['sy_summary_0' => null]);
+
+    $recorder->reset();
+
+    expect($summarizer->hasSelectedState())->toBeTrue()
+        ->and($summarizer->getState())->toBeNull()
+        ->and($recorder->statements())->toBe([]);
+});

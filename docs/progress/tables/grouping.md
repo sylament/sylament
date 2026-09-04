@@ -221,7 +221,8 @@ time — strictly better than a truncating sort, and free.
 `getGroups()` memoises behind `private bool $hasCachedGroups` rather than behind
 the array itself, since a table declaring no groups memoises `[]` legitimately
 and `?:` would rebuild it on every read. It is the shape
-`HasRecords::$hasCachedRecordClass` already uses one tier up.
+`Table\Concerns\HasRecords::$hasCachedRecordClass` already uses on the same
+tier — both are `Table` concerns.
 
 ### A selectable default is seeded into the property and a non-selectable one is resolved on every read
 

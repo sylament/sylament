@@ -95,8 +95,8 @@ trait CanSummarizeRecords
      * A record rather than a scalar key, because the key may be a
      * `getKeyFromRecordUsing()` closure's answer and the closure needs the record.
      *
-     * Off the contract on purpose: the boundary map and the summary band are the
-     * only callers, and both reach it through the host they already hold.
+     * Off the contract on purpose: the boundary map's own gate is the only caller,
+     * and it reaches this through the host it already holds.
      *
      * @param object|array<string, mixed>|null $lastRecord
      */

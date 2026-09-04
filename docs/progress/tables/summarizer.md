@@ -348,11 +348,15 @@ Its exactness inherits the sort's: with the identifier tiebreaker on, "the recor
 at offset N" is deterministic and agrees with the page it looks past. Under
 `defaultKeySort(false)` there is no total order and the probe can disagree —
 inherited from the sort lane, and still strictly better than Filament, which has
-no tiebreaker at all. Two arms are unreachable rather than untested: the cursor
-one, because `PaginationMode::Cursor` throws in this port, and the `'all'`
-per-page one, because a query-lane `'all'` paginator carries a total, so
-`hasMorePages()` answers false two guards earlier. Both are kept because the
-signature they guard is real.
+no tiebreaker at all. One arm is unreachable rather than untested: the `'all'`
+per-page conjunct, because a query-lane `'all'` paginator carries a total, so
+`hasMorePages()` answers false two guards earlier. It is kept because the
+signature it guards is real. Vendor's fifth arm, the `CursorPaginator` branch at
+[`CanSummarizeRecords:46-55`](../../../vendor/filament/tables/src/Concerns/CanSummarizeRecords.php),
+has no counterpart here at all: `PaginationMode::Cursor` throws in
+[`paginateTableQuery()`](../../../packages/tables/src/Concerns/CanPaginateRecords.php), so
+the mode the arm exists for cannot reach this method — the epic's design settled
+it as skipped on the pagination row's own grounds.
 
 ### A group with no heading closes with no summary row, except under `groupsOnly()`
 

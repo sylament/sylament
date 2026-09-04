@@ -158,3 +158,37 @@ it('emits no select statement, so it never batches', function (): void {
     expect(Range::make()->getSelectStatements('song.plays'))->toBe([])
         ->and(Range::make()->hasSelectedState())->toBeFalse();
 });
+
+/*
+ * The preset over a real date column, where the ends are whatever the driver hands
+ * back for `MIN`/`MAX` rather than strings a test wrote: DQL types both as strings
+ * and converts neither, so the parse is the port's own and the two table default
+ * formats decide which of the pair is shown.
+ */
+it('collapses a date column range to the day or the instant', function (): void {
+    $rig = function (DateTimeImmutable ...$releases): Range {
+        $entityManager = EntityManagerFactory::create();
+        $songs = [];
+
+        foreach ($releases as $index => $releasedAt) {
+            $songs[] = new Song(id: $index + 1, title: 'Track ' . ($index + 1), plays: 10, releasedAt: $releasedAt);
+        }
+
+        EntityManagerFactory::seed($entityManager, ...$songs);
+
+        $host = new TableHost(fn (Table $table): Table => $table->query(
+            $entityManager->createQueryBuilder()->select('song')->from(Song::class, 'song'),
+        ));
+
+        return Range::make()
+            ->minimalDateTimeDifference()
+            ->column(TextColumn::make('releasedAt')->table($host->getTable()))
+            ->query($host->getFilteredTableQuery());
+    };
+
+    $acrossDays = $rig(new DateTimeImmutable('2026-09-02 10:00:00'), new DateTimeImmutable('2026-09-03 11:30:00'));
+    $withinADay = $rig(new DateTimeImmutable('2026-09-02 10:00:00'), new DateTimeImmutable('2026-09-02 11:30:00'));
+
+    expect($acrossDays->formatState($acrossDays->getState()))->toBe(['Sep 2, 2026', 'Sep 3, 2026'])
+        ->and($withinADay->formatState($withinADay->getState()))->toBe(['Sep 2, 2026 10:00:00', 'Sep 2, 2026 11:30:00']);
+});

@@ -156,3 +156,17 @@ it('exposes the formatted state to its template once', function (): void {
 
     expect($summarizer->getExtraTemplateData())->toBe(['state' => '~42']);
 });
+
+/*
+ * A pair is the one array a closure still meets whole, because the two ends are
+ * produced together — a range's presets take the pair and answer with one, and the
+ * template renders whichever ends came back rather than formatting them again.
+ */
+it('exposes a pair to its template whole, where a list goes entry by entry', function (): void {
+    $summarizer = summarizerOnSongs(
+        Summarizer::make()->using(fn (): array => [10, 300])->formatStateUsing(fn (array $state): array => [$state[0] . 'ish', $state[1] . 'ish']),
+        summarizerSongs(),
+    );
+
+    expect($summarizer->getExtraTemplateData())->toBe(['state' => ['10ish', '300ish']]);
+});

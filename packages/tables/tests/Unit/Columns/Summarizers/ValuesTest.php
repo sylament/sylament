@@ -77,3 +77,23 @@ it('emits no select statement, so it never batches', function (): void {
     expect(Values::make()->getSelectStatements('song.mood'))->toBe([])
         ->and(Values::make()->hasSelectedState())->toBeFalse();
 });
+
+/*
+ * A list reaches the template unformatted and each entry is formatted on its own,
+ * which is the only shape a scalar-typed `formatStateUsing()` survives: handing it
+ * the whole list is a type error before an entry is ever read, and the closure a
+ * list summary wants is exactly one that labels a value.
+ */
+it('hands the template the raw list and formats each entry on its own', function (): void {
+    $summarizer = valuesRig(Values::make()->formatStateUsing(fn (string $state): string => mb_strtoupper($state)));
+
+    $state = $summarizer->getExtraTemplateData()['state'];
+
+    expect($state)->toBeArray();
+
+    assert(is_array($state));
+    sort($state);
+
+    expect($state)->toBe(['bright', 'calm'])
+        ->and(array_map($summarizer->formatState(...), $state))->toBe(['BRIGHT', 'CALM']);
+});

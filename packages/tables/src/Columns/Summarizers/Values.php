@@ -27,6 +27,21 @@ class Values extends Summarizer
         return SummaryQuery::readDistinct($query, $attribute);
     }
 
+    /**
+     * The list reaches the template raw, because the template formats each entry on
+     * its own — which is what keeps a `formatStateUsing()` closure looking at one
+     * value rather than at the whole list, the shape every other summarizer's
+     * closure sees and the only one a scalar-typed closure survives.
+     *
+     * @return array<array-key, mixed>
+     */
+    public function getExtraTemplateData(): array
+    {
+        return [
+            'state' => $this->getState(),
+        ];
+    }
+
     public function bulleted(bool|Closure $condition = true): static
     {
         $this->isBulleted = $condition;

@@ -248,9 +248,11 @@ trait CanFormatState
     }
 
     /**
-     * An array state — a range's pair, a list summary's values — is handed back
-     * whole, because the template that renders one reads its entries itself and
-     * formats each on its own.
+     * A range's pair is handed back whole: the two ends are produced together by the
+     * presets that format them, and the template renders each of them itself. A list
+     * summary never arrives here as a list at all — its own template data is the raw
+     * values and it formats each entry through this method one at a time, so a
+     * closure set on one sees a value rather than the collection.
      */
     public function formatState(mixed $state): mixed
     {

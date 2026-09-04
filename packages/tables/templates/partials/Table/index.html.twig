@@ -505,6 +505,26 @@
                 {% set columnsCount = columns|length + (hasRecordActions ? 1 : 0) + (checkboxLeading or checkboxTrailing ? 1 : 0) %}
                 {% set groupBoundaries = group is not null ? component.getLiveComponent.getTableRecordGroupBoundaries : {} %}
 
+                {# The summary band reads the records it aggregates, so every set here sits
+                   inside the loaded branch — the page figures are only asked for when a page
+                   row will carry them, and the all-table ones when an all-table row will. #}
+                {% set allSummaryQuery = component.getLiveComponent.getAllTableSummaryQuery %}
+                {% set hasSummary = component.hasSummary(allSummaryQuery) %}
+                {% set hasPageSummary = hasSummary and component.hasPageSummary and paginator is not null and paginator.hasPages %}
+                {% set hasAllSummary = hasSummary and component.hasAllTableSummary %}
+                {% set pageSummaryQuery = hasPageSummary ? component.getLiveComponent.getPageTableSummaryQuery : null %}
+                {% set pageSummarySelectedState = hasPageSummary ? component.getLiveComponent.getTableSummarySelectedState(pageSummaryQuery) : {} %}
+                {% set allSummarySelectedState = hasAllSummary ? component.getLiveComponent.getTableSummarySelectedState(allSummaryQuery) : {} %}
+                {% set summaryColumns = isGroupsOnly ? columns|filter(column => column.getName != group.getColumn) : columns %}
+                {% set summaryPlaceholderCells = {
+                    actionsBeforeCells: actionsBeforeCells,
+                    actionsBeforeColumns: actionsBeforeColumns,
+                    actionsAfterColumns: actionsAfterColumns,
+                    actionsAfterCells: actionsAfterCells,
+                    checkboxLeading: checkboxLeading,
+                    checkboxTrailing: checkboxTrailing,
+                } %}
+
                 <table {{ attrs({class: classes('sy-ta-table', {'sy-ta-table-reordering': isReordering})}) }}>
                     <thead>
                         <tr>
@@ -732,95 +752,127 @@
                                 </td>
                             {% endif %}{% endset %}
 
-                            <tr {{ attrs({
-                                class: classes('sy-ta-row', {
-                                    'sy-clickable': recordUrl is not null or recordAction is not null,
-                                    'sy-striped': isStriped and (boundary is not null ? boundary.indexInGroup is odd : loop.index0 is odd),
-                                    'sy-selected': recordIsSelectable and component.getLiveComponent.isTableRecordSelected(recordKey),
-                                    'sy-collapsed': groupsCollapsed,
-                                }, component.getRecordClasses(record)),
-                                id: hostId ~ '.table.records.' ~ recordKey,
-                                'data-sortable-item': isReordering ? recordKey : null,
-                                'data-sy-group': boundary is not null ? boundary.title ~ '' : null,
-                            }) }}>
-                                {% if isReordering %}
-                                    <td class="sy-ta-cell sy-ta-reorder-handle-cell">
-                                        <twig:SylamentSupport:IconButton
-                                            class="sy-ta-reorder-handle"
-                                            icon="heroicons:bars-2"
-                                            :iconAlias="constant('Sylament\\Tables\\Twig\\TablesIconAlias::REORDER_HANDLE')"
-                                            color="gray"
-                                            :label="'Reorder item ' ~ recordKey"
-                                            :data-sortable-handle="true"
-                                        />
-                                    </td>
-                                {% endif %}
-                                {% if actionsBeforeCells %}{{ actionsCell }}{% endif %}
-                                {% if checkboxLeading %}{{ selectionCell }}{% endif %}
-                                {% if actionsBeforeColumns %}{{ actionsCell }}{% endif %}
-                                {% for column in columns %}
-                                    {% do column.record(record) %}
-                                    {% do column.recordKey(recordKey) %}
-                                    {% do column.rowLoop(loop.parent.loop) %}
-
-                                    {% set columnName = column.getName %}
-                                    {% set columnAction = column.getAction %}
-                                    {% set columnActionKind = column.getActionKind %}
-                                    {% set columnUrl = column.getUrl %}
-                                    {% set columnHasStateBasedUrls = column.hasStateBasedUrls %}
-                                    {% set isColumnClickDisabled = column.isClickDisabled or isReordering %}
-                                    {% set columnHiddenFrom = column.getHiddenFrom %}
-                                    {% set columnVisibleFrom = column.getVisibleFrom %}
-
-                                    {# The column arms interleave with the record ones rather than sitting
-                                       above them: a column action suppresses the record url, a column url
-                                       does not suppress the record action, and a state-based url draws its
-                                       links inside the cell instead. #}
-                                    {% set cellWrapperTag = (columnUrl or (recordUrl is not null and columnAction is null)) and not columnHasStateBasedUrls and not isColumnClickDisabled
-                                        ? 'a'
-                                        : ((columnAction or recordAction is not null) and not columnHasStateBasedUrls and not isColumnClickDisabled
-                                            ? 'button'
-                                            : 'div') %}
-
-                                    {% if cellWrapperTag == 'a' %}
-                                        {% set cellWrapperAttributes = {
-                                            ...(columnUrl is null and recordUrl is not null ? recordLinkAttributes : {}),
-                                            href: columnUrl ?: recordUrl,
-                                            ...((columnUrl ? column.shouldOpenUrlInNewTab : openRecordUrlInNewTab) ? {target: '_blank'} : {}),
-                                        } %}
-                                    {% elseif cellWrapperTag == 'button' %}
-                                        {% set cellWrapperAttributes = {
-                                            type: 'button',
-                                            'data-loading': 'addAttribute(disabled)',
-                                            ...stimulus_action('live', 'action', parameters: columnActionKind == 'action'
-                                                ? {action: 'mountAction', name: columnAction.getName, context: {recordKey: recordKey ~ '', table: true}}
-                                                : (columnActionKind == 'closure'
-                                                    ? {action: 'callTableColumnAction', name: columnName, recordKey: recordKey ~ ''}
-                                                    : (component.getAction(recordAction)
-                                                        ? {action: 'mountAction', name: recordAction, context: {recordKey: recordKey ~ '', table: true}}
-                                                        : {action: recordAction, recordKey: recordKey ~ ''}))),
-                                        } %}
-                                    {% else %}
-                                        {% set cellWrapperAttributes = {} %}
+                            {% if not isGroupsOnly %}
+                                <tr {{ attrs({
+                                    class: classes('sy-ta-row', {
+                                        'sy-clickable': recordUrl is not null or recordAction is not null,
+                                        'sy-striped': isStriped and (boundary is not null ? boundary.indexInGroup is odd : loop.index0 is odd),
+                                        'sy-selected': recordIsSelectable and component.getLiveComponent.isTableRecordSelected(recordKey),
+                                        'sy-collapsed': groupsCollapsed,
+                                    }, component.getRecordClasses(record)),
+                                    id: hostId ~ '.table.records.' ~ recordKey,
+                                    'data-sortable-item': isReordering ? recordKey : null,
+                                    'data-sy-group': boundary is not null ? boundary.title ~ '' : null,
+                                }) }}>
+                                    {% if isReordering %}
+                                        <td class="sy-ta-cell sy-ta-reorder-handle-cell">
+                                            <twig:SylamentSupport:IconButton
+                                                class="sy-ta-reorder-handle"
+                                                icon="heroicons:bars-2"
+                                                :iconAlias="constant('Sylament\\Tables\\Twig\\TablesIconAlias::REORDER_HANDLE')"
+                                                color="gray"
+                                                :label="'Reorder item ' ~ recordKey"
+                                                :data-sortable-handle="true"
+                                            />
+                                        </td>
                                     {% endif %}
+                                    {% if actionsBeforeCells %}{{ actionsCell }}{% endif %}
+                                    {% if checkboxLeading %}{{ selectionCell }}{% endif %}
+                                    {% if actionsBeforeColumns %}{{ actionsCell }}{% endif %}
+                                    {% for column in columns %}
+                                        {% do column.record(record) %}
+                                        {% do column.recordKey(recordKey) %}
+                                        {% do column.rowLoop(loop.parent.loop) %}
 
-                                    <td {{ attrs({
-                                        class: classes('sy-ta-cell', column.getCellClassName, column.getAlignmentClass, column.getVerticalAlignmentClass, [
-                                            columnHiddenFrom ? columnHiddenFrom ~ ':sy-ta-hidden' : null,
-                                            columnVisibleFrom ? columnVisibleFrom ~ ':sy-ta-visible' : null,
-                                        ]),
-                                        id: hostId ~ '.table.record.' ~ recordKey ~ '.column.' ~ columnName,
-                                    }, column.getExtraCellAttributes) }}>
-                                        <{{ cellWrapperTag }} {{ attrs({
-                                            class: classes('sy-ta-col', {'sy-ta-col-has-column-url': cellWrapperTag == 'a' and columnUrl}),
-                                        }, cellWrapperAttributes) }}>{{ renderComponent(column) }}</{{ cellWrapperTag }}>
-                                    </td>
-                                {% endfor %}
-                                {% if actionsAfterColumns %}{{ actionsCell }}{% endif %}
-                                {% if checkboxTrailing %}{{ selectionCell }}{% endif %}
-                                {% if actionsAfterCells %}{{ actionsCell }}{% endif %}
-                            </tr>
+                                        {% set columnName = column.getName %}
+                                        {% set columnAction = column.getAction %}
+                                        {% set columnActionKind = column.getActionKind %}
+                                        {% set columnUrl = column.getUrl %}
+                                        {% set columnHasStateBasedUrls = column.hasStateBasedUrls %}
+                                        {% set isColumnClickDisabled = column.isClickDisabled or isReordering %}
+                                        {% set columnHiddenFrom = column.getHiddenFrom %}
+                                        {% set columnVisibleFrom = column.getVisibleFrom %}
+
+                                        {# The column arms interleave with the record ones rather than sitting
+                                           above them: a column action suppresses the record url, a column url
+                                           does not suppress the record action, and a state-based url draws its
+                                           links inside the cell instead. #}
+                                        {% set cellWrapperTag = (columnUrl or (recordUrl is not null and columnAction is null)) and not columnHasStateBasedUrls and not isColumnClickDisabled
+                                            ? 'a'
+                                            : ((columnAction or recordAction is not null) and not columnHasStateBasedUrls and not isColumnClickDisabled
+                                                ? 'button'
+                                                : 'div') %}
+
+                                        {% if cellWrapperTag == 'a' %}
+                                            {% set cellWrapperAttributes = {
+                                                ...(columnUrl is null and recordUrl is not null ? recordLinkAttributes : {}),
+                                                href: columnUrl ?: recordUrl,
+                                                ...((columnUrl ? column.shouldOpenUrlInNewTab : openRecordUrlInNewTab) ? {target: '_blank'} : {}),
+                                            } %}
+                                        {% elseif cellWrapperTag == 'button' %}
+                                            {% set cellWrapperAttributes = {
+                                                type: 'button',
+                                                'data-loading': 'addAttribute(disabled)',
+                                                ...stimulus_action('live', 'action', parameters: columnActionKind == 'action'
+                                                    ? {action: 'mountAction', name: columnAction.getName, context: {recordKey: recordKey ~ '', table: true}}
+                                                    : (columnActionKind == 'closure'
+                                                        ? {action: 'callTableColumnAction', name: columnName, recordKey: recordKey ~ ''}
+                                                        : (component.getAction(recordAction)
+                                                            ? {action: 'mountAction', name: recordAction, context: {recordKey: recordKey ~ '', table: true}}
+                                                            : {action: recordAction, recordKey: recordKey ~ ''}))),
+                                            } %}
+                                        {% else %}
+                                            {% set cellWrapperAttributes = {} %}
+                                        {% endif %}
+
+                                        <td {{ attrs({
+                                            class: classes('sy-ta-cell', column.getCellClassName, column.getAlignmentClass, column.getVerticalAlignmentClass, [
+                                                columnHiddenFrom ? columnHiddenFrom ~ ':sy-ta-hidden' : null,
+                                                columnVisibleFrom ? columnVisibleFrom ~ ':sy-ta-visible' : null,
+                                            ]),
+                                            id: hostId ~ '.table.record.' ~ recordKey ~ '.column.' ~ columnName,
+                                        }, column.getExtraCellAttributes) }}>
+                                            <{{ cellWrapperTag }} {{ attrs({
+                                                class: classes('sy-ta-col', {'sy-ta-col-has-column-url': cellWrapperTag == 'a' and columnUrl}),
+                                            }, cellWrapperAttributes) }}>{{ renderComponent(column) }}</{{ cellWrapperTag }}>
+                                        </td>
+                                    {% endfor %}
+                                    {% if actionsAfterColumns %}{{ actionsCell }}{% endif %}
+                                    {% if checkboxTrailing %}{{ selectionCell }}{% endif %}
+                                    {% if actionsAfterCells %}{{ actionsCell }}{% endif %}
+                                </tr>
+                            {% endif %}
+
+                            {% if hasSummary and not isReordering and boundary is not null and boundary.isLastOfGroup %}
+                                {% set groupSummaryQuery = component.getLiveComponent.getGroupedTableSummaryQuery(record) %}
+
+                                <twig:SylamentTables:SummaryRow
+                                    :id="hostId ~ '.table.group-summary.' ~ ((boundary.key ?? '')|url_encode)"
+                                    :columns="summaryColumns"
+                                    :heading="isGroupsOnly ? boundary.title : boundary.title ~ ' summary'"
+                                    :query="groupSummaryQuery"
+                                    :selectedState="component.getLiveComponent.getTableSummarySelectedState(groupSummaryQuery)"
+                                    :groupsOnly="isGroupsOnly"
+                                    {{ ...summaryPlaceholderCells }}
+                                />
+                            {% endif %}
                         {% endfor %}
+
+                        {% if hasSummary and not isReordering %}
+                            <twig:SylamentTables:Summary
+                                :id="hostId ~ '.table.summary'"
+                                :columns="summaryColumns"
+                                :pluralRecordLabel="component.getPluralRecordLabel"
+                                :pageQuery="pageSummaryQuery"
+                                :allQuery="allSummaryQuery"
+                                :pageSelectedState="pageSummarySelectedState"
+                                :allSelectedState="allSummarySelectedState"
+                                :hasPageSummary="hasPageSummary"
+                                :hasAllSummary="hasAllSummary"
+                                :groupsOnly="isGroupsOnly"
+                                {{ ...summaryPlaceholderCells }}
+                            />
+                        {% endif %}
                     </tbody>
                 </table>
             {% endif %}

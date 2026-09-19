@@ -1881,18 +1881,24 @@ class whose identifier is composite has no such column, so
 `getSingleIdentifierFieldName()` throws `MappingException` and both sites catch
 it and re-throw a `LogicException` naming the limitation and the class.
 
-That is louder than the rest of the lane treats the same shape, and deliberately
-so. Record keying
-[refuses composite identifiers](has-table.md#object-records-are-keyed-by-a-readable-id-rather-than-an-eloquent-key)
-at the same point, and the identifier tiebreaker
-[no-ops rather than throwing](has-table.md#sorting-composes-the-users-order-the-default-and-the-identifier-tiebreaker)
-— a missing tiebreak degrades a page boundary, which is survivable, where a
-search that silently matched nothing or an aggregate that silently filled every
-cell with the same value is a wrong answer presented as a right one. A
-composite-identifier table can still render, sort by plain and to-one relation
-paths, and page; what it cannot do is type into the search box against a relation
-column, or declare an aggregate. Composite identifiers are out of the relation
-layer on the schemas side too, which is where the stance was set.
+Both throws are a **limit, not a stance**, and since M7 · 1 they are the last of
+it on this lane. Record keying now
+[encodes every identifier field into one string](has-table.md#object-records-are-keyed-by-a-readable-id-rather-than-an-eloquent-key)
+and the identifier tiebreaker
+[orders by all of them](has-table.md#sorting-composes-the-users-order-the-default-and-the-identifier-tiebreaker),
+so a composite-identifier table renders, keys, resolves a row action, edits a
+cell, selects in both strategies, reorders, bulk-deletes and pages. What it
+still cannot do is type into the search box against a relation column or declare
+an aggregate: both correlate by a single column, and neither has been rewritten
+onto [the identifier predicate builder](../schemas/record-key.md) — which ships
+the `correlate()` and `groupBy()` they need, unconsumed, waiting for them. That
+is [M7 · 2](../roadmap.md#m7--composite-identifiers), and it **replaces** these
+two `LogicException`s rather than keeping them. Paging a query that fetch-joins
+a collection is refused for the same epic by a guard of the same shape, since
+Doctrine's own `Paginator` calls `getSingleIdentifierFieldName()` on that path —
+see [summarizer.md](summarizer.md#a-page-summary-narrows-by-keys-never-by-a-limit).
+Composite identifiers are still out of the relation layer on the schemas side,
+which is [M7 · 4](../roadmap.md#m7--composite-identifiers)'s.
 
 ### The copy is English and hardcoded, because no i18n layer ships
 

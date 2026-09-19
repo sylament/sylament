@@ -245,11 +245,51 @@ table, and on a page holding no records, whose empty key list would bind an
 `IN ()` most platforms refuse. The page must be resolved before the query can be
 built, which is Filament's dependency too.
 
-A composite identifier is the one arm the design named that is not implemented,
-and deliberately: the port refuses composite keys **earlier and louder** — keying
-the page's own records throws from `HasTable` — so `getTablePaginator()` never
-returns for such a table and a null arm here would be unreachable code. The
-all-table row still reads its figure there.
+A composite identifier narrows the same way, through
+[`IdentifierConstraint::in()`](../schemas/record-key.md#the-operations-and-their-dql)
+under `sylament_summary_keys`: one balanced OR of per-field ANDs where a
+single-identifier table emits `root.<id> IN (…)`. M7 · 1 moved this one site a
+whole epic early on purpose — before it, the call here was an **unguarded**
+`getSingleIdentifierFieldName()`, reachable only because `HasTable` refused to
+key the page first, and the moment keying stopped refusing a summarized
+composite table would have thrown a raw Doctrine `MappingException` out of a
+getter mid-render. The all-table row still reads its figure there.
+
+The bind changed shape with that move even for a **single-identifier** table:
+the DQL text is unmoved, but the keys are converted to the identifier's own PHP
+type and bound under an `ArrayParameterType`, so anyone reading the parameter
+back sees `[3, 4]` where it used to be `['3', '4']`.
+
+What is refused instead, and loudly, is a **fetch-join** paginator over a
+composite root: `readTableRecordAtOffset()` and
+[`CanPaginateRecords::paginateTableQuery()`](has-table.md#the-page-state-has-its-query-lane-and-no-session-or-url-half)
+both throw a `LogicException` naming the class and the limit when the root's
+identifier is composite and
+[`JoinCardinality`](table.md#a-dotted-name-is-resolved-against-the-mapping-before-it-is-refused)
+says the query joins a collection — because Doctrine pages that shape through a
+**single identifier column**, and leaks the fact two different ways. A
+scalar-pair root reaches `RootTypeWalker`'s `getSingleIdentifierFieldName()` and
+surfaces a raw `MappingException` mid-render; a derived identity fails earlier
+still, inside `LimitSubqueryOutputWalker`, which re-emits the identifier
+tiebreak's `ORDER BY root.<association>` as a column its own derived table does
+not carry, so the render ends in a driver error instead. That is the same guard
+`AggregateQuery` and `RelationConstraint` already carry, and
+[M7 · 2](../roadmap.md#m7--composite-identifiers) replaces it with the hand-run
+second step over `LimitSubqueryOutputWalker`. One caveat worth knowing: with
+`recordsPerPage: 'all'` the page summary narrows by **every** key on the table,
+and DQL parse time is superlinear in key count — see
+[the chunk rule](../schemas/record-key.md#the-chunk-rule).
+
+Two things about where that guard actually fires. The refusal is written once, in
+`CanPaginateRecords`' private `resolveTableFetchJoinCollection()`, and the
+look-ahead reads its answer rather than repeating it — so the look-ahead's own
+call is **shadowed** on every production path: a page is built before its
+successor is probed, over the same query, and the page's joins are always a
+superset of the probe's, so the page refuses first. Reaching the look-ahead's
+throw takes joining the base builder *after* the page was cached, which is how
+the case pins it. And an **unpaged** table is not refused at all: `paginated(false)`
+and a `recordsPerPage` of `'all'` both return before any paginator is built,
+which is exactly the second of the two ways out the message names.
 
 ### The page row is what the query proves, not what the paginator claims
 

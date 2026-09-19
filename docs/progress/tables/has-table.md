@@ -245,9 +245,21 @@ seams instead, where `getFilteredTableQuery()` and
 `getFilteredSortedTableQuery()` must both answer null — the assertion that keeps
 the [lane gate](#the-filtered-query-seam-is-gated-on-the-lane-not-on-the-presence-of-a-builder)
 from drifting back to "is there a builder to be had". The metadata keying has
-four cases of its own, none of them reachable by that convention: a `Book`, whose
+eight cases of its own, none of them reachable by that convention: a `Book`, whose
 identifier is `code` and which has
-no `id` anywhere, keying by `sy-001`; a `CompositePair` query refusing loudly; and
+no `id` anywhere, keying by `sy-001`; a `Shortcut`, whose identifier is two
+strings, keying three rows that between them carry a dot, a slash, a space, the
+separator itself and non-ASCII — `plain~about` beside
+`www=2Eexample=2Ecom~=2Fblog=2F2026=2Fall=20the=20way=20down` and
+`example=2Ecom~=2Fclanky=2F=C5=BDofia=7EN=C3=A1vratov=C3=A1`; a `Residency`,
+whose identifier is a `Venue` association plus a season, keying
+`main-hall~2026-spring` — the association component flattened to the target's
+own key through the target's own DBAL type; the two composite refusals, a
+`Shortcut` whose second component is still blank and a `Residency` whose
+association half was never set; an anonymous subclass of `Shortcut` keying
+`example=2Ecom~double` by the **table's** record class rather than its own —
+the one pin on the class `RecordKey::of()` takes as its third argument, since an
+anonymous class has no mapping to read; and
 the two identifier refusals, one blank and one never initialised. The fallback is
 pinned from the other side, an anonymous object carrying a public `$id` handed to
 `getTableRecordKey()` on a query-lane table and coming back `'7'` — the case that
@@ -279,10 +291,18 @@ query, which is
 [the limit this lane does not apply](#record-resolution-applies-no-limit-1-where-filaments-find-does).
 The scope flag is read through a `modifyQueryUsing()` closure recording its
 `isResolvingRecord` argument across a render and then a lookup, asserting exactly
-`[false, true]`. Three narrower answers sit beside them: an unknown key coming
-back null, a bare table naming both lanes, and a `CompositePair` query refusing
-loudly on *resolution*, which is a different method from the keying refusal above
-and is reached without it.
+`[false, true]`. Five narrower answers sit beside them: an unknown key coming
+back null; a bare table naming both lanes; a `Shortcut` and a `Residency` each
+resolving by their own key through the per-field narrowing, which is a different
+method from the keying above and is reached without it; five keys that are
+malformed for the class (`a~b~c` and `plain` failing the arity, `=2` failing it
+through an escape, `plain~=61` escaping a safe byte, `plain~=2f` spelling its hex
+lowercase) answering null with **no statement run at all**, next to a canonical
+`nope~nope` that costs exactly one and finds nothing — which is what separates
+"refused before the bind" from "queried and missed"; and the single-identifier
+lane held to the same rule, where `abc`, `05`, ` 5`, `5abc`, a `7` trailed by a
+newline and `1~2~3` all answer null before any bind, `05` and ` 5` being the two
+that resolved before M7 · 1 because the database coerced the bound string.
 
 `getAllTableRecordsCount()` has one case carrying all four arms. Seven seeded
 songs are counted through the query with nothing rendered; the same table with
@@ -402,8 +422,18 @@ right; the closure arms of both setters, one naming a column and one switching
 the tiebreaker off; both tiebreaker suppressions, the qualified key and the
 joined `artist.id` one; `defaultKeySort(false)` leaving no key ordering at all;
 and a `query()`-authored `orderBy` staying in front of everything the table adds.
-One more pins the composite-identifier guard: a `CompositePair` query composes no
-`ORDER BY` at all rather than throwing on a single-identifier read.
+Three more pin the composite tiebreak. A sorted `Shortcut` query appends
+`ORDER BY shortcut.label asc, shortcut.host asc, shortcut.path asc` — every
+identifier field the user's order did not already name, in mapping order, at the
+sort's own direction. A query that already orders `shortcut.path DESC` gets only
+`shortcut.host asc` appended, with `shortcut.path` named exactly once, which the
+case asserts by counting occurrences. And a `Residency` query appends
+`ORDER BY residency.venue asc, residency.season asc` — the **plain association
+path** rather than `IDENTITY(residency.venue)`, which is what keeps the dedupe
+working by string equality against the spelling
+`ColumnPathResolver::resolveOrderable()` emits — then executes, so Doctrine
+emitting the foreign-key column is proven rather than asserted. Before M7 · 1 a
+composite root composed no `ORDER BY` at all.
 
 The **query half** of search has a file of its own for the same reason,
 [`CanSearchRecordsTest`](../../../packages/tables/tests/Unit/Concerns/CanSearchRecordsTest.php),
@@ -678,10 +708,15 @@ ordering whose path **is** the qualified key. Filament's second suppression —
 any ordering whose path merely *ends* in the same field name — shipped with · 12
 and was [removed by · 20](#the-identifier-tiebreaker-is-suppressed-only-by-the-qualified-key),
 because the relation arm made `artist.id` an ordering the table can now produce
-by itself. It also no-ops rather than throwing when
-the table's records carry a composite identifier, or when the builder names no
-root entity to read metadata from — a query that cannot be keyed by one column
-cannot be tiebroken by one either.
+by itself. A **composite** identifier is tiebroken by all of its fields rather than by one.
+[`IdentifierConstraint::orderBy()`](../schemas/record-key.md#the-operations-and-their-dql)
+appends each identifier field the existing order does not already name, in
+mapping order, at the same direction — so a two-field key adds two parts, a
+derived identity orders by the association path itself (`residency.venue`, which
+is the one join column it has), and a single-field key adds exactly the one part
+this section describes. It still no-ops when the builder names no root entity to
+read metadata from, which is now the only case where there is no key to tiebreak
+by.
 
 Both halves of that qualified key are read off the builder **actually in hand** —
 its root entity, its root alias, and the `EntityManager` the metadata comes from,
@@ -1069,10 +1104,17 @@ selection resolves off the current page collection — `array_intersect_key()` f
 the keys, `array_diff_key()` for the deselections, Filament's `only`/`except`
 spelled in PHP — so a key selected on page 1 does not resolve from page 2, the
 same asymmetry [`getTableRecord()`](#gettablerecord-reads-fresh-when-the-render-cache-is-cold)
-already has. On the **query lane** it is a fresh query: `IN (:keys)`, or
-`NOT IN (:deselected)` while tracking, over the qualified single identifier —
-built the way `resolveQueryTableRecord()` builds its single-key constraint, and
-throwing the same `LogicException` on a composite identifier. An empty bag means
+already has. On the **query lane** it is a fresh query, narrowed by
+[`IdentifierConstraint::in()`](../schemas/record-key.md#the-operations-and-their-dql)
+or, while tracking, `notIn()`, both built the way `resolveQueryTableRecord()`
+builds its single-key constraint. A single-identifier class emits exactly the
+`IN (:keys)` / `NOT IN (:deselected)` over the qualified identifier this lane
+always emitted — now with the list **typed** by the identifier's own DBAL type —
+and a composite one emits the balanced OR of per-field ANDs that DQL's missing
+row-value `IN` forces. A key that is malformed for the class is **dropped**
+rather than refused, so one stale entry in a selection bag cannot fail a bulk
+action over the rest of it, and the keys are de-duplicated on the way. An empty
+bag means
 opposite things on the two arms, and the port has to say so, because Doctrine
 says neither: DBAL expands an empty list parameter to `NULL`, so **both**
 `IN (NULL)` and `NOT IN (NULL)` match nothing. On the `IN` arm that is the right
@@ -2304,12 +2346,27 @@ class while `getMetadataFor()` **throws** `MappingException` for one, so an
 anonymous DTO — the plainest transient object there is — would pass the transient
 check and then explode on the metadata read. Reading the declared class also
 means an anonymous *subclass* of an entity (a test double) keys by its parent's
-mapping instead of blowing up. And the arm adds three refusals of its own, all
-`LogicException`: a **composite** identifier, which a single string key cannot
-address; an identifier the entity carries **none** of, which is what
-`getIdentifierValues()` answers for an entity that was never persisted or
-assigned one; and one that is set but empty or unprintable. None is recoverable —
-the table would otherwise index rows under a key no action can resolve.
+mapping instead of blowing up — pinned by `HasTableTest`'s *keys an unmapped
+subclass of the record class by the table record class*, because the class now
+travels as `RecordKey::of()`'s third argument and no other case notices it
+missing. A **composite** identifier is no longer refused:
+the read goes through [`RecordKey::of()`](../schemas/record-key.md), which
+encodes every identifier field in mapping order into one string — `1~2` for a
+scalar pair, `main-hall~2026-spring` for a derived identity, whose association
+component is flattened to its target's own key — so a table over such an entity
+keys its rows exactly as a single-`id` one does. A class with **one** identifier
+field still encodes to the flattened value verbatim, unescaped and unsplit, so
+`Book`'s `sy-001` above is untouched; the
+[grammar and its alphabet](../schemas/record-key.md#the-grammar) apply to a
+composite key only.
+
+The arm keeps two refusals of its own, both `LogicException`: an identifier the
+entity carries **none** of — or carries only *part* of, which is the composite
+shape of the same fault and needs saying, because `getIdentifierValues()`
+silently drops a null component rather than answering it, so counting is the
+only honest test — and one that is set but empty or unprintable. Neither is
+recoverable: the table would otherwise index rows under a key no action can
+resolve.
 
 The action side has the same-shaped twin,
 [`InteractsWithRecord::resolveRecordKey()`](../actions/action.md#record-key-resolution-is-hoisted-to-hasactions)
@@ -2373,12 +2430,25 @@ before the cache is read at all, and what it runs is
 `Table::getQuery(isResolvingRecord: true)` — the base query with its
 [scopes](table.md#every-read-clones-a-memoised-base-query) applied under that
 flag, so a scope can tell a row lookup from a render — narrowed by
-`{rootAlias}.{identifierField} = :sylament_record_key`, the identifier field read
-off the mapping metadata rather than assumed to be `id`, the key **bound** as a
-parameter. A composite identifier refuses with the message
-[keying uses](#object-records-are-keyed-by-a-readable-id-rather-than-an-eloquent-key),
-a bare table names both lanes, and anything that hydrates to a non-object (a
-scalar or partial select) answers null.
+[`IdentifierConstraint::equals()`](../schemas/record-key.md#the-operations-and-their-dql)
+under `sylament_record_key`, which emits
+`{rootAlias}.{identifierField} = :sylament_record_key` for a single identifier,
+exactly as this lane always did, and one `= :sylament_record_key_<j>` per field
+for a composite one. Every field name is read off the mapping metadata rather
+than assumed to be `id`, and every value is **bound** — now typed by its field's
+own DBAL type, which is the half of the guard that was missing: an untyped
+`'abc'` against an integer column is a `500` on PostgreSQL, because a DBAL
+`DriverException` is not an `HttpExceptionInterface` and
+`PageController::convertTwigError()` does not convert it. The other half is that
+a key which is **malformed for the class** — the wrong arity, a non-canonical
+escape, a component its field's type cannot hold — answers null *without running
+a query at all*, which is what a row action, an editable cell, a reorder and a
+by-key delete now get from this method. The panel's own `{record}` binding does
+**not** come through here: `Resource::resolveRecordRouteBinding()` binds the raw
+segment untyped, so `/admin/articles/abc/edit` stays a 500 until
+[M7 · 3](../roadmap.md#m7--composite-identifiers) converts it. A bare
+table names both lanes, and anything that hydrates to a non-object (a scalar or
+partial select) answers null.
 
 Three things it deliberately does **not** apply, all Filament-faithful. No
 **search**: a term typed into the search box must not make a row's own action

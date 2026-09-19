@@ -46,6 +46,6 @@ final readonly class KeySelection
                 : Type::getType($this->fields->types[$index])->convertToPHPValue($value, $platform);
         }
 
-        return RecordKey::fromValues($this->entityManager, $this->fields->class, $values);
+        return $this->fields->toKey($values);
     }
 }

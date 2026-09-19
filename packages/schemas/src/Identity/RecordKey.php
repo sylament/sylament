@@ -57,17 +57,7 @@ final class RecordKey
      */
     public static function fromValues(EntityManagerInterface $entityManager, string $class, array $values): string
     {
-        $fields = IdentifierFields::of($entityManager, $class);
-
-        if (count($values) !== count($fields->names)) {
-            throw new LogicException(sprintf('A key of [%s] takes %d identifier values, %d given.', $class, count($fields->names), count($values)));
-        }
-
-        return $fields->join(array_map(
-            static fn (mixed $value): string => IdentifierFields::printable($value)
-                ?? throw new LogicException(sprintf('The identifier of [%s] is not a printable value.', $class)),
-            $values,
-        ));
+        return IdentifierFields::of($entityManager, $class)->toKey($values);
     }
 
     /**

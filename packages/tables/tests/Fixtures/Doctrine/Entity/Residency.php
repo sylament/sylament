@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Sylament\Tables\Tests\Fixtures\Doctrine\Entity;
 
+use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 
 /**
@@ -14,6 +16,12 @@ use Doctrine\ORM\Mapping as ORM;
 #[ORM\Entity]
 class Residency
 {
+    /**
+     * @var Collection<int, ResidencyShow>
+     */
+    #[ORM\OneToMany(targetEntity: ResidencyShow::class, mappedBy: 'residency')]
+    private Collection $shows;
+
     #[ORM\Id]
     #[ORM\ManyToOne]
     #[ORM\JoinColumn(referencedColumnName: 'handle')]
@@ -31,6 +39,11 @@ class Residency
 
     #[ORM\Column]
     private bool $active = false;
+
+    public function __construct()
+    {
+        $this->shows = new ArrayCollection();
+    }
 
     public function getVenue(): ?Venue
     {
@@ -80,5 +93,13 @@ class Residency
     public function setActive(bool $active): void
     {
         $this->active = $active;
+    }
+
+    /**
+     * @return Collection<int, ResidencyShow>
+     */
+    public function getShows(): Collection
+    {
+        return $this->shows;
     }
 }

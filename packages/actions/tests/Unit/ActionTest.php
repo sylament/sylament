@@ -25,6 +25,7 @@ use Sylament\Schemas\State\AssociationReader;
 use Sylament\Schemas\State\Casts\BooleanStateCast;
 use Sylament\Schemas\State\Get;
 use Sylament\Schemas\State\Set;
+use Sylament\Support\ArrayRecord;
 use Sylament\Support\Exceptions\Cancel;
 use Sylament\Support\Exceptions\Halt;
 use Sylament\Tables\Table;
@@ -203,6 +204,18 @@ it('emits no recordKey for a record whose key cannot be resolved', function (): 
     $action = Action::make('edit')->record(new class {});
 
     expect($action->getContext())->toBe([]);
+});
+
+it('keeps the array-record and id readings on an action with no table', function (): void {
+    $keyed = Action::make('edit')->record([ArrayRecord::getKeyName() => 'a=2Eb~c']);
+
+    $identified = Action::make('edit')->record(new class {
+        public string $id = 'a=2Eb~c';
+    });
+
+    expect($keyed->getTable())->toBeNull()
+        ->and($keyed->getContext())->toBe(['recordKey' => 'a=2Eb~c'])
+        ->and($identified->getContext())->toBe(['recordKey' => 'a=2Eb~c']);
 });
 
 it('keeps only recordKey on a nested frame', function (): void {

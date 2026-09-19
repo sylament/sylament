@@ -563,7 +563,7 @@ class Action extends ViewComponent
     {
         $context = [];
 
-        if (filled($recordKey = $this->resolveRecordKey($this->getRecord(withDefault: false)))) {
+        if (filled($recordKey = $this->resolveContextRecordKey())) {
             $context['recordKey'] = $recordKey;
         }
 
@@ -584,6 +584,25 @@ class Action extends ViewComponent
         }
 
         return $context;
+    }
+
+    /**
+     * A table-bound action carries the key the table itself minted for the
+     * record — a composite identifier included — so the mount resolves through
+     * `getTableRecord()` against the same string the row rendered. Every other
+     * action keeps the literal `id` reading.
+     */
+    private function resolveContextRecordKey(): ?string
+    {
+        $record = $this->getRecord(withDefault: false);
+        $table = $this->getTable();
+        $recordClass = $table?->getRecordClass();
+
+        if ($table instanceof Table && $recordClass !== null && $record instanceof $recordClass) {
+            return $table->getRecordKey($record);
+        }
+
+        return $this->resolveRecordKey($record);
     }
 
     public function getClone(): static

@@ -8,8 +8,13 @@ use Sylament\Tables\Enums\PaginationMode;
 use Sylament\Tables\Table;
 use Sylament\Tables\Tests\Fixtures\Concerns\TableHost;
 use Sylament\Tables\Tests\Fixtures\Doctrine\Entity\Artist;
+use Sylament\Tables\Tests\Fixtures\Doctrine\Entity\Genre;
+use Sylament\Tables\Tests\Fixtures\Doctrine\Entity\Gig;
+use Sylament\Tables\Tests\Fixtures\Doctrine\Entity\Residency;
 use Sylament\Tables\Tests\Fixtures\Doctrine\Entity\Song;
+use Sylament\Tables\Tests\Fixtures\Doctrine\Entity\Venue;
 use Sylament\Tables\Tests\Fixtures\Doctrine\EntityManagerFactory;
+use Sylament\Tables\Tests\Fixtures\Doctrine\Handle;
 
 /*
  * Covers the query half of host-side pagination — the slice `paginateTableQuery()`
@@ -46,6 +51,45 @@ function pagedArtists(): EntityManager
     EntityManagerFactory::seed($entityManager, ...$artists, ...$songs);
 
     return $entityManager;
+}
+
+/**
+ * Two venues with a gig each and four residencies across them — a derived-identity
+ * root whose association half reaches a to-many one hop out, which is the only
+ * shape Doctrine's fetch-join paginator cannot key.
+ */
+function pagedResidencies(): EntityManager
+{
+    $entityManager = EntityManagerFactory::create();
+
+    $apollo = new Venue(new Handle('apollo'), 'Apollo');
+    $forum = new Venue(new Handle('forum'), 'Forum');
+
+    EntityManagerFactory::seed(
+        $entityManager,
+        $apollo,
+        $forum,
+        new Gig(1, 'Opening night', 400, $apollo),
+        new Gig(2, 'Closing night', 500, $apollo),
+        new Gig(3, 'One night only', 600, $forum),
+        pagedResidency($apollo, '2026-spring', 'Apollo spring', 10),
+        pagedResidency($apollo, '2026-autumn', 'Apollo autumn', 20),
+        pagedResidency($forum, '2026-spring', 'Forum spring', 30),
+        pagedResidency($forum, '2026-autumn', 'Forum autumn', 40),
+    );
+
+    return $entityManager;
+}
+
+function pagedResidency(Venue $venue, string $season, string $label, int $position): Residency
+{
+    $residency = new Residency();
+    $residency->setVenue($venue);
+    $residency->setSeason($season);
+    $residency->setLabel($label);
+    $residency->setPosition($position);
+
+    return $residency;
 }
 
 it('paginates the query lane with a true total and sliced records', function (): void {
@@ -217,4 +261,78 @@ it('returns a plain keyed array when pagination is off', function (): void {
     expect($records)->toBeArray()
         ->and(array_keys($records))->toBe([1, 2, 3])
         ->and($host->getTablePaginator())->toBeNull();
+});
+
+/*
+ * Doctrine's collection-aware paginator resolves a root's rows through one
+ * identifier column, so a composite root reaches a mapping error from inside a
+ * walker mid-render. The refusal is thrown before the paginator is built, naming
+ * the class and both ways out.
+ */
+it('refuses to page a composite table whose query joins a to-many association', function (): void {
+    $entityManager = pagedResidencies();
+    $host = new TableHost(fn (Table $table): Table => $table
+        ->query($entityManager->createQueryBuilder()
+            ->select('residency', 'sy_gigs')
+            ->from(Residency::class, 'residency')
+            ->leftJoin('residency.venue', 'sy_gig_venue')
+            ->leftJoin('sy_gig_venue.gigs', 'sy_gigs')
+            ->orderBy('residency.position', 'ASC'))
+        ->paginated([2]));
+
+    $host->getTableRecords();
+})->throws(LogicException::class, 'composite identifier and the table query joins a to-many association');
+
+it('pages a composite table whose query joins no collection', function (): void {
+    $entityManager = pagedResidencies();
+    $host = new TableHost(fn (Table $table): Table => $table
+        ->query($entityManager->createQueryBuilder()->select('residency')->from(Residency::class, 'residency')->orderBy('residency.position', 'ASC'))
+        ->paginated([2]));
+
+    $paginator = $host->getTableRecords();
+
+    expect($paginator)->toBeInstanceOf(Paginator::class)
+        ->and(array_keys($paginator->getRecords()))->toBe(['apollo~2026-spring', 'apollo~2026-autumn'])
+        ->and($paginator->getTotalRecordCount())->toBe(4)
+        ->and($paginator->getLastPage())->toBe(2);
+});
+
+/*
+ * The refusal is the composite arm only: a single-identifier root fetch-joining a
+ * to-many is what Doctrine's paginator was written for, and it still pages records
+ * rather than joined rows.
+ */
+it('leaves a single-identifier table fetch-joining a to-many free to page', function (): void {
+    $entityManager = EntityManagerFactory::create();
+
+    $radiohead = new Artist(1, 'Radiohead');
+    $rock = new Genre(1, 'Rock');
+    $tripHop = new Genre(2, 'Trip hop');
+    $airbag = new Song(id: 1, title: 'Airbag', plays: 10, artist: $radiohead);
+
+    $airbag->getGenres()->add($rock);
+    $airbag->getGenres()->add($tripHop);
+
+    EntityManagerFactory::seed(
+        $entityManager,
+        $radiohead,
+        $rock,
+        $tripHop,
+        $airbag,
+        new Song(id: 2, title: 'Let Down', plays: 20, artist: $radiohead),
+        new Song(id: 3, title: 'No Surprises', plays: 30, artist: $radiohead),
+    );
+
+    $host = new TableHost(fn (Table $table): Table => $table
+        ->query($entityManager->createQueryBuilder()
+            ->select('song', 'sy_genres')
+            ->from(Song::class, 'song')
+            ->leftJoin('song.genres', 'sy_genres')
+            ->orderBy('song.id', 'ASC'))
+        ->paginated([2]));
+
+    $paginator = $host->getTableRecords();
+
+    expect(array_keys($paginator->getRecords()))->toBe([1, 2])
+        ->and($paginator->getTotalRecordCount())->toBe(3);
 });

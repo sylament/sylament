@@ -686,3 +686,30 @@ it('reads past a fetch-joined to-many through the paginator', function (): void 
 
     expect($host->shouldRenderTrailingGroupedTableSummary($host->getTableRecords()->getRecords()[2]))->toBeTrue();
 });
+
+/*
+ * The look-ahead builds a second fetch-join paginator, over a window of one, and it
+ * carries the page's guard because it is the page's method. In one render the page
+ * refuses first — the look-ahead reads the sorted query the page was read from, so
+ * its joins are never more than the page's — which is why reaching this site at all
+ * means joining the builder after the page was already read and cached.
+ */
+it('refuses the trailing-group look-ahead over a composite table that joins a to-many', function (): void {
+    $entityManager = summaryStateResidencies();
+    $query = $entityManager->createQueryBuilder()->select('residency')->from(Residency::class, 'residency')->orderBy('residency.position', 'ASC');
+
+    $host = new TableHost(fn (Table $table): Table => $table
+        ->query($query)
+        ->columns([TextColumn::make('position')->summarize(Sum::make())])
+        ->groups(['season'])
+        ->paginated([1]));
+    $host->tableGrouping = 'season';
+
+    $lastRecord = $host->getTableRecords()->getRecords()['apollo~2026-spring'];
+
+    $query->addSelect('sy_gigs')->leftJoin('residency.venue', 'sy_gig_venue')->leftJoin('sy_gig_venue.gigs', 'sy_gigs');
+
+    expect($host->getTablePaginator()?->hasMorePages())->toBeTrue()
+        ->and(fn (): bool => $host->shouldRenderTrailingGroupedTableSummary($lastRecord))
+        ->toThrow(LogicException::class, 'composite identifier and the table query joins a to-many association');
+});

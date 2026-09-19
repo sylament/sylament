@@ -130,7 +130,7 @@ trait CanPaginateRecords
         }
 
         $recordsPerPage = (int) $recordsPerPage;
-        $fetchJoinCollection = JoinCardinality::joinsCollection($query);
+        $fetchJoinCollection = $this->resolveTableFetchJoinCollection($query);
 
         $query->setFirstResult(($page - 1) * $recordsPerPage);
         $query->setMaxResults($mode === PaginationMode::Simple ? $recordsPerPage + 1 : $recordsPerPage);
@@ -151,5 +151,37 @@ trait CanPaginateRecords
         }
 
         return new Paginator($this->keyTableRecords($records), $doctrinePaginator->count(), $page, $recordsPerPage);
+    }
+
+    /**
+     * Whether the page is read through Doctrine's collection-aware paginator, and
+     * the refusal standing in front of it: those walkers resolve a root's rows
+     * through one identifier column, so a composite root would otherwise reach a
+     * mapping error from inside a walker mid-render rather than a refusal naming
+     * what the table cannot do.
+     *
+     * `CanSummarizeRecords::readTableRecordAtOffset()` builds the second such
+     * paginator and reads its answer from here, so the refusal is written once.
+     *
+     * @throws LogicException when the record class carries a composite identifier
+     *                        and the query joins a to-many association
+     */
+    private function resolveTableFetchJoinCollection(QueryBuilder $query): bool
+    {
+        if (!JoinCardinality::joinsCollection($query)) {
+            return false;
+        }
+
+        $recordClass = $this->getTable()->getRecordClass();
+
+        if ($recordClass === null) {
+            return true;
+        }
+
+        if ($query->getEntityManager()->getClassMetadata($recordClass)->isIdentifierComposite) {
+            throw new LogicException(sprintf('Cannot page table [%s]: the record class [%s] has a composite identifier and the table query joins a to-many association, which Doctrine pages through a single identifier column. Drop the join, or turn pagination off.', static::class, $recordClass));
+        }
+
+        return true;
     }
 }

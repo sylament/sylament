@@ -11,7 +11,6 @@ use Sylament\Support\Pagination\Paginator;
 use Sylament\Tables\Columns\Summarizers\Contracts\HasSelectAlias;
 use Sylament\Tables\Grouping\Group;
 use Sylament\Tables\Query\AggregateDeclaration;
-use Sylament\Tables\Query\JoinCardinality;
 use Sylament\Tables\Query\SummaryQuery;
 
 trait CanSummarizeRecords
@@ -225,7 +224,7 @@ trait CanSummarizeRecords
     {
         $probe = (clone $query)->setFirstResult($offset)->setMaxResults(1);
 
-        if (JoinCardinality::joinsCollection($probe)) {
+        if ($this->resolveTableFetchJoinCollection($probe)) {
             /** @var list<object|array<string, mixed>> $records */
             $records = iterator_to_array(new DoctrinePaginator($probe->getQuery(), fetchJoinCollection: true)->getIterator(), preserve_keys: false);
 

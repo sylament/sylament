@@ -8,6 +8,7 @@ use Doctrine\ORM\EntityManagerInterface;
 use LogicException;
 use RuntimeException;
 use Sylament\Tables\Tests\Fixtures\Doctrine\Entity\Artist;
+use Sylament\Tables\Tests\Fixtures\Doctrine\Entity\Shortcut;
 use Sylament\Tables\Tests\Fixtures\Doctrine\Entity\Song;
 use Sylament\Tables\Tests\Fixtures\Doctrine\EntityManagerFactory;
 use Sylament\Tables\Tests\Fixtures\Doctrine\RecordingConnection;
@@ -384,4 +385,99 @@ it('propagates a by-key delete refusal instead of answering with the danger toas
 
     expect(fn (): object => $component->call('callMountedAction'))
         ->toThrow(LogicException::class, 'deletes selected records by key, which needs a [query()] table');
+});
+
+/**
+ * @return array{KernelBrowser, EntityManagerInterface, RecordingMiddleware}
+ */
+function seededBulkShortcutsClient(Shortcut ...$shortcuts): array
+{
+    $client = test()->getContainer()->get('test.client');
+    $client->disableReboot();
+
+    $entityManager = test()->getContainer()->get(EntityManagerInterface::class);
+    $recorder = test()->getContainer()->get(RecordingMiddleware::class);
+
+    EntityManagerFactory::seed($entityManager, ...$shortcuts);
+
+    $recorder->reset();
+
+    return [$client, $entityManager, $recorder];
+}
+
+function bulkShortcut(string $host, string $path, string $label, int $position): Shortcut
+{
+    $shortcut = new Shortcut();
+    $shortcut->setHost($host);
+    $shortcut->setPath($path);
+    $shortcut->setLabel($label);
+    $shortcut->setPosition($position);
+    $shortcut->setActive(true);
+
+    return $shortcut;
+}
+
+it('deletes a small composite selection in one statement and opens no transaction', function (): void {
+    [$client, $entityManager, $recorder] = seededBulkShortcutsClient(
+        bulkShortcut('sylament.test', '/docs/a b', 'Docs', 1),
+        bulkShortcut('example.org', 'home', 'Home', 2),
+        bulkShortcut('example.org', 'about', 'About', 3),
+    );
+
+    $this->createLiveComponent('CompositeShortcutsTable', client: $client)
+        ->set('selectedTableRecords', ['sylament=2Etest~=2Fdocs=2Fa=20b', 'example=2Eorg~about'])
+        ->call('mountAction', ['name' => 'delete', 'arguments' => [], 'context' => ['table' => true, 'bulk' => true]])
+        ->call('callMountedAction');
+
+    $statements = $recorder->statements();
+    $deletes = array_values(array_filter($statements, static fn (string $sql): bool => str_starts_with($sql, 'DELETE')));
+
+    $entityManager->clear();
+
+    expect($deletes)->toHaveCount(1)
+        ->and($statements)->not->toContain(RecordingConnection::BEGIN)
+        ->and($entityManager->getRepository(Shortcut::class)->findAll())->toHaveCount(1);
+});
+
+/*
+ * The chunk boundary, paid for at its real price. `IdentifierConstraint::chunk()`
+ * splits a two-field key list at `min(500, intdiv(2000, 2))` = 500, so 501 rows
+ * is the cheapest selection that is more than one statement, and 501 rows cost
+ * 5 ms to seed through the ORM (measured). The client sends no key list at all:
+ * the tracking strategy with an empty deselection *is* select-all, so the 501
+ * keys are plucked server-side, which is also the shape a real select-all takes.
+ * Nothing here reaches for a seam the production code would not otherwise have.
+ */
+it('runs a chunked composite delete as one transaction and sums the affected rows', function (): void {
+    $shortcuts = [];
+
+    for ($index = 1; $index <= 501; $index++) {
+        $shortcuts[] = bulkShortcut('bulk.test', '/p/' . $index, 'Bulk ' . $index, $index);
+    }
+
+    [$client, $entityManager, $recorder] = seededBulkShortcutsClient(...$shortcuts);
+
+    $html = (string) $this->createLiveComponent('CompositeShortcutsTable', client: $client)
+        ->set('isTrackingDeselectedTableRecords', true)
+        ->call('mountAction', ['name' => 'delete', 'arguments' => [], 'context' => ['table' => true, 'bulk' => true]])
+        ->call('callMountedAction')
+        ->render();
+
+    $statements = $recorder->statements();
+    $deletes = array_values(array_filter($statements, static fn (string $sql): bool => str_starts_with($sql, 'DELETE')));
+
+    $entityManager->clear();
+
+    // One BEGIN…COMMIT around both statements is the whole point: the ORM opens
+    // none of its own here, because a DQL delete never flushes, so every marker
+    // in the list is the action's.
+    expect($deletes)->toHaveCount(2)
+        ->and(array_count_values($statements)[RecordingConnection::BEGIN] ?? 0)->toBe(1)
+        ->and(array_count_values($statements)[RecordingConnection::COMMIT] ?? 0)->toBe(1)
+        ->and($statements)->not->toContain(RecordingConnection::ROLLBACK)
+        ->and(firstStatementIndex($statements, RecordingConnection::BEGIN))->toBeLessThan(firstStatementIndex($statements, 'DELETE'))
+        ->and($entityManager->getRepository(Shortcut::class)->findAll())->toBe([])
+        ->and($html)->toContain('Deleted')
+        ->and($html)->toContain('sy-status-success')
+        ->and($html)->not->toContain('Failed to delete');
 });

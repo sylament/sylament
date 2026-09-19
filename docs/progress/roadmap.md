@@ -180,7 +180,10 @@ adversary, and closed with a seven-lens whole-branch review whose skeptics
 confirmed nine findings — one of them a Critical the gates had passed: a
 summary batch minting aliases per query, so a hidden summarizer could hand
 another summarizer's figure to a row. The cursor moves to
-[M4 · 7](#m4--tables-widening).
+[M4 · 7](#m4--tables-widening). [M7](#m7--composite-identifiers) — composite
+identifiers, six epics — was planned on 2026-09-19 out of a sponsor's
+requirement; M7 · 1 is unblocked, and whether it runs ahead of, beside or after
+M4 · 7 is Martin's call.
 
 ## Pulled forward
 
@@ -226,7 +229,8 @@ story stays honest.
 | M4 | [Tables widening](#m4--tables-widening) | The table at Filament depth: bulk and header actions, row behaviour and query-string state, the column catalog, column manager, per-column search, grouping and summaries, relation-scoped tables. | todo |
 | M5 | [View page + infolists](#m5--view-page--infolists) | `sylament/infolists` from placeholder to entries, and `ViewRecord` as the third resource page. | todo |
 | M6 | [Panel depth](#m6--panel-depth) | Relation managers, custom pages, nested resources and sub-navigation, global search, widgets and the dashboard, shell completeness. | todo |
-| — | [Beyond](#beyond) | Unordered candidates; the milestone after M6 is promoted from here. | — |
+| M7 | [Composite identifiers](#m7--composite-identifiers) | Entities with a composite Doctrine identifier — scalar fields, a derived identity, or both — work wherever a single-identifier entity does: table rows, resource records, relation targets and relation owners. | todo |
+| — | [Beyond](#beyond) | Unordered candidates; the milestone after M7 is promoted from here. | — |
 
 ## M1 — Entity CRUD slice
 
@@ -500,10 +504,212 @@ notifications table — a design of its own); clusters; tenancy; testing helpers
 **Done when:** the demo script runs end to end at `/admin`; every panels row
 the milestone touched is settled.
 
+## M7 — Composite identifiers
+
+The demo script: _an entity keyed by two columns, and one keyed by an
+association plus a column, behave wherever a single-`id` entity does — listed
+in a table with row actions, editable cells, selection and a bulk delete; a
+resource under `/admin` whose `{record}` URLs survive a reload and turn up in
+global search; picked in a relationship `Select`, attached and detached in a
+relation manager, nested under a parent and owning a collection of their own;
+and a create form that answers a taken key with a validation message rather
+than a 500._
+
+Planned 2026-09-19 out of a **sponsor's requirement** rather than promoted from
+[Beyond](#beyond): Martin's company would back the project, and the one gap
+they named against the tool they run today is entities with composite keys. It
+is a Sylament-only capability — Eloquent's `Model::getKeyName()` is one string
+and Filament ships no composite-key surface — so there is no Filament API to
+mirror and none to break: every public signature that speaks a record key
+(`getTableRecordKey(): string`, the `{record}` route parameter, an option
+value) keeps its shape, and the work happens behind it.
+
+It also **overturns a recorded decision**. "A composite identifier is refused,
+not encoded" was set in
+[association-reader.md](schemas/association-reader.md#a-composite-identifier-is-refused-not-encoded)
+and mirrored in
+[has-table.md](tables/has-table.md#object-records-are-keyed-by-a-readable-id-rather-than-an-eloquent-key),
+[table.md](tables/table.md#a-composite-identifier-root-refuses-relation-search-and-aggregates)
+and [panels](panels/README.md#a-record-is-resolved-through-the-resources-own-query).
+The reasoning there — an encoding is "a serialisation format nobody asked for"
+— held until somebody asked. Those sections describe the code as it stands and
+stay as they are until the code moves: each epic rewrites the refusal sections
+it overturns in the commit that overturns them, and turns the tests pinning the
+refusal into tests pinning the support rather than deleting them.
+
+**Scope — ruled by Martin, 2026-09-19.** Both identifier flavours: several
+scalar `#[Id]` fields, and a **derived identity** (`#[Id]` on a to-one
+association, alone or mixed with scalar fields). Composite records in every
+role — table rows, resource records, relation **targets** and relation
+**owners**. The stop line is parity by capability: _every feature that works
+for a single-identifier entity, and is possible for a composite one, works for
+a composite one_; what Doctrine itself makes impossible is recorded as a
+divergence, never left as a silent gap. Delivered as six epics, simplest first.
+
+**How the milestone is run.** Each epic is planned and implemented on its own —
+its own spec, its own plan, its own session — never all six at once: the later
+plans depend on what epic 1 actually lands, not on what this section predicts.
+Epic 1 goes first and alone. Once it has landed, 2, 3 and 4 touch disjoint
+files in `src/` and can run as parallel lanes (each plan verifies the claim for
+its tests and fixtures); 5 follows 4, because both edit `AssociationReader`; 6
+follows 3. A planning session starts from four things: this section; the **key
+contract** file epic 1 lands under [schemas](schemas/README.md) and links from
+here in that commit — until it exists, this section is the brief; the refusal
+sections linked above; and [principles.md](../principles.md). The site ledger
+below says which epic owns which call site. A site found later that the ledger
+lacks is added to it, under the epic that takes it, in the commit that finds it.
+
+**Carried decisions** — proposed 2026-09-19 with the split; epic 1's spec
+confirms each with Martin or records the overturn here, the
+[M3](#m3--forms-widening) way.
+
+(1) **One string.** A record key stays a single string everywhere it travels,
+composite or not. The sweep behind this section found that the client never
+parses one — no Stimulus controller interpolates a key into a selector, key
+lists cross as JSON (`data-sy-group-keys`), and the selection `LiveProp`s hold
+strings — so no JavaScript changes as long as that holds. A
+**single-identifier key encodes to itself**: existing URLs, option values and
+tests do not move.
+
+(2) **The foundation lives in `schemas`.** Every Doctrine-facing package
+already requires it, and `support` has no Doctrine. Two pieces, under working
+names epic 1 replaces with class names: a **key codec** — a record or an
+identifier tuple to a string and back, in the mapping's identifier-field order
+— and an **identifier predicate builder** that replaces every single-column
+comparison with its per-field form: equality, `IN`/`NOT IN` as an OR of ANDs
+(DQL has no row-value `IN`), subquery correlation, key selection with its
+row-to-key decode, group-by, order-by, and owner scoping.
+
+(3) **Both flavours from epic 1, absorbed in the foundation.** Flattening a
+derived identity is Doctrine's own `Utility\IdentifierFlattener` — public,
+final, recursive, enum-aware — adopted rather than rebuilt
+([principles §2](../principles.md)). No consumer ever branches on the flavour.
+
+(4) **The key is client input.** Decoding is strict — exactly the mapped
+fields, nothing extra. A decoded value is only ever **bound as a parameter**,
+typed by the field's own DBAL type (an association field by its target's
+identifier type), and a field name reaches DQL from `ClassMetadata` alone,
+never from the key. Today's by-key binds are untyped
+(`HasTable::resolveQueryTableRecord()`, `Resource::resolveRecordRouteBinding()`),
+which the builder closes for single identifiers on the way.
+
+(5) **The builder has one writer at a time.** Its interface is designed once,
+in epic 1's spec, against every consumer in the ledger. Epic 1 implements the
+whole record side — equality, `IN`/`NOT IN`, correlation, key selection,
+group-by, order-by — although it consumes only part of it itself, because 2, 3
+and 4 then run in parallel and none of them may need to touch it. Epic 5 adds
+owner scoping. A later epic that finds the interface short records the addition
+in the contract file; it does not reshape what landed.
+
+**Open — owned by epic 1's spec.** The key's string format, which has to
+survive five contexts at once: one URL path segment (no `/`); a **dotted state
+path**, because `Repeater` keys a relationship item `record-<key>`; an HTML
+attribute and a DOM id; `LiveProp` JSON; an `<option value>`. Readable (a
+delimiter with escaping) against opaque (base64url of the tuple) is the choice.
+Also open there: the class names and namespace; what becomes of
+`AssociationReader::getIdentifierFieldName()`, every caller of which moves to
+the builder; and the chunk size for a by-key batch that would exceed a
+platform's bind-parameter limit.
+
+**What Doctrine gives and what it refuses** — verified against the installed
+ORM (3.6.8); re-verify on a major bump.
+
+- An identifier is an **ordered map** of field to value. `find()` and
+  `getReference()` take that map; a scalar against a composite class throws, as
+  do a missing field and an unrecognised one.
+- **No id generator** on a composite identifier — mapping validation throws —
+  so the key is assigned before `persist()`, which makes it user input on a
+  create form. The identity map is keyed by it, so it is immutable once managed.
+- A derived identity reads back as the related **entity**:
+  `getIdentifierValues()` answers the object under the association's name. An
+  entity with a composite key cannot itself be part of another entity's key, so
+  an identifier association always has exactly **one join column** — which is
+  why `r.order = :id`, `IDENTITY(r.order)`, and ordering and grouping by it all
+  work on the record's own query.
+- Every single-identifier accessor throws: `getSingleIdentifierFieldName()`,
+  `getSingleIdentifierColumnName()`, `getSingleIdPropertyAccessor()`,
+  `UnitOfWork::getSingleIdentifierValue()`.
+- **Binding a composite-key entity as a query parameter throws**, and so does a
+  single-valued association path to a composite-key target (`x.item = …`).
+  `IDENTITY(x.item, 'field')` reaches one component of such a foreign key, but
+  resolves **field mappings only** — a component that is itself an association,
+  which is a derived-identity target, needs a join to the target instead.
+- DQL has no row-value `IN`, and the entity persister refuses `IN` over a
+  multi-column association (`CantUseInOperatorOnCompositeKeys`).
+- `Tools\Pagination\Paginator`: the output walkers (`CountOutputWalker`,
+  `LimitSubqueryOutputWalker`) are documented as working with composite keys;
+  the **fetch-join path is not** — `WhereInWalker` and `RootTypeWalker` call
+  `getSingleIdentifierFieldName()`.
+
+| # | Epic | Packages | Delivers | Status |
+| --- | --- | --- | --- | --- |
+| 1 | Key foundation and table rows | [schemas](schemas/README.md), [tables](tables/README.md), [actions](actions/README.md), **demo** | The key codec and the record side of the identifier predicate builder in `schemas`, for both identifier flavours, and the **key contract** trail file that every later epic plans from; then the first consumer — a `query()` table over a composite entity: row keys, record resolution (row actions, `recordUrl()`/`recordAction()`, editable cells), selection in both strategies including the no-fetch key pluck, `DeleteBulkAction`, reorder, and the identifier sort tiebreak that no-ops today. The smallest slice that proves all three foundation moves in a browser — encode, decode to one record, the batched `IN`. `AssociationReader`'s refusals stay in place; they are epic 4's and 5's. Demo: the milestone's composite entities — one scalar pair, one derived identity; the spec picks them, an article translation keyed by article and locale being the obvious second — land here with their migration and seed rows, so later epics add cards and pages rather than schema; a Tables showcase card over both. | todo |
+| 2 | Table query depth | [tables](tables/README.md), **demo** | Everything on a composite-root table that correlates or batches by identifier: relationship aggregates (`AggregateQuery::fetch()` selecting and grouping by every key field and answering under the re-encoded row key) and sorting by one (`addHiddenSortSelect()`), the page summary's by-key narrowing in `CanSummarizeRecords`, relation search (`RelationConstraint::existsLike()`'s correlation), and paging a query that joins a collection — Doctrine's fetch-join path throws on a composite root, so the table runs that second step itself over `LimitSubqueryOutputWalker` and the builder's `IN`. Tables-only in `src/`, so it runs beside 3 and 4. Demo: the epic 1 card gains an aggregate column, a summary and a relation search. | todo |
+| 3 | Panels | [panels](panels/README.md), **demo** | A composite-key resource end to end: `Resource::getRecordRouteKey()` mints and `resolveRecordRouteBinding()` resolves the encoded `{record}` — a custom `$recordRouteKeyName` stays exactly what it is — so the list, edit and delete pages, the modal `ViewAction`, custom record pages, `getUrl()`/`getResourceUrl()`, breadcrumbs and global-search hits all follow; the key carried through the record `LiveProp`, the nested-resource parent chain and a relation manager's owner record. A composite **parent** or **owner** stays refused until epic 5, which owns the scoped query underneath. Panels-only in `src/`, so it runs beside 2 and 4. Demo: a resource over a composite entity under `/admin`. | todo |
+| 4 | Composite records as relation targets | [schemas](schemas/README.md), [forms](forms/README.md), [actions](actions/README.md), [tables](tables/README.md), **demo** | The target half of `AssociationReader` — `getRecordKey()`/`findRecordKey()` encoding, `getReference()` decoding, `getIdentifierFieldName()` settled as the contract says — and every consumer of it: relationship options, search, labels and the selected-record lookup on `Select` and `CheckboxList`, the relationship writes in `HasRelationship`, `Select::relationship(ignoreRecord:)`, `unique(ignoreRecord:)` through `UniqueValueValidator`, relationship `Repeater` items (the `record-<key>` item key is where the dotted-path constraint bites), `AttachAction`/`AssociateAction` (candidates, options, the by-key fetch), `DetachBulkAction`/`DissociateBulkAction`, and the many-to-many arm of `createRelationshipQuery()`/`createRelationshipCandidateQuery()`, whose `IN (subselect)` on the target's identifier becomes a correlated `EXISTS`. With it a relation-scoped table and a relation manager list composite records under a single-identifier owner — the join-entity-with-payload case, and the commonest composite shape in a real schema. Demo: the derived-identity entity as a relation manager on the article edit page, and as the target of a relationship `Select`. | todo |
+| 5 | Composite records as relation owners | [schemas](schemas/README.md), [tables](tables/README.md), [panels](panels/README.md), [actions](actions/README.md), **demo** | The owner half of `AssociationReader`: `createRelationshipQuery()`, `createRelationshipCandidateQuery()`, `getRelatedKeysSubselect()` and `getRelationshipOwner()` bind the owner **entity** and compare it to a mapped-by path, and Doctrine refuses both for a composite owner. Owner scoping moves to the builder — `IDENTITY(path, 'field')` per key field where the field is scalar, a join to the owner where it is an association, and the owner's tuple in the many-to-many subselect. Unlocks `Table::relationship()` from a composite owner, relation managers on its edit page, a nested resource under a composite parent (`BelongsToParent`'s scoped binding), the attach and associate candidates, and a many-to-many with a composite side at both ends. Follows 4. Demo: the derived-identity entity owning a collection of its own, managed from its edit page. | todo |
+| 6 | Create-path rules | [forms](forms/README.md), [actions](actions/README.md), [panels](panels/README.md), **demo** | What an assigned key changes about writing a record. A taken key on create is a validation error rather than a unique-violation 500 — new surface, since with generated ids it cannot happen. A changed key on edit is refused rather than handed to Doctrine, whose identity map is keyed by the old one. `ReplicateAction` asks for the new key: `RecordReplicator` skips identifier fields, which leaves an assigned-key replica with no identity, the failure actions' `Membership` fixture pins today. Follows 3. Demo: the composite resource's create form and a replicate action on its list. | todo |
+
+**Site ledger** — every place the sweep found a single-identifier assumption,
+and the epic that takes it.
+
+| Site | Holds today | Epic |
+| --- | --- | --- |
+| `tables` `Concerns\HasTable` — `resolveQueryRecordKey()`, `resolveQueryTableRecord()` | refuse; the first identifier value as the key, `= :sylament_record_key` | 1 |
+| `tables` `Concerns\HasBulkActions` — `resolveTableRecordKeyExpression()` and its users: `getSelectedTableRecordsQuery()` (`IN`/`NOT IN`), the selectable-keys narrowing, `pluckTableRecordKeys()` | refuses; one `alias.field` expression, one selected column | 1 |
+| `tables` `Concerns\CanReorderRecords` | `IN (:sylament_reordered_record_keys)` on that expression | 1 |
+| `tables` `Concerns\CanSortRecords` — the identifier tiebreak | no-ops on a composite identifier | 1 |
+| `actions` `DeleteBulkAction` — the no-fetch arm | `getSingleIdentifierFieldName()` unguarded, then a DQL `DELETE … IN (:sylament_selected_record_keys)` | 1 |
+| `tables` `Query\AggregateQuery` — `fetch()`, `addHiddenSortSelect()` | catch `MappingException` and rethrow; `SELECT id … GROUP BY id`, by-key `IN`, single-column correlation | 2 |
+| `tables` `Concerns\CanSummarizeRecords` — `getPageTableSummaryQuery()` | `getSingleIdentifierFieldName()` unguarded (the page refuses first) + `IN (:sylament_summary_keys)` | 2 |
+| `tables` `Query\RelationConstraint::existsLike()` | catch and rethrow; single-column correlation | 2 |
+| `tables` `Concerns\CanPaginateRecords` | Doctrine's `Paginator`, `fetchJoinCollection` decided by `Query\JoinCardinality` — the fetch-join path throws on a composite root | 2 |
+| `panels` `Resources\Resource` — `resolveRecordRouteBinding()`, `getRecordRouteKey()`, `getSingleIdentifierMetadata()` | refuses unless `$recordRouteKeyName` names a field | 3 |
+| `panels` the record, parent-chain and owner-record `LiveProp`s — `InteractsWithRecord`, `InteractsWithParentRecord`, `RelationManager` | carry the key as a string; expected to need nothing — verify against the chosen format | 3 |
+| `schemas` `State\AssociationReader` — `findRecordKey()`, `getRecordKey()`, `getReference()`, `getIdentifierFieldName()` | refuse; `getReference()` takes one scalar | 4 |
+| `schemas` `AssociationReader` — the many-to-many arm of `createRelationshipQuery()`/`createRelationshipCandidateQuery()` | `record.<id> IN`/`NOT IN (subselect)` on the target's single identifier | 4 |
+| `forms` `Components\Select` — the selected-record lookup, `getOptionLabelsFromRelationship()`, the `ignoreRecord` exclusion, `getRelationshipIdentifierFieldName()` | `= :sylament_selected`, `IN (:sylament_values)`, `<> :sylament_ignored_record` | 4 |
+| `forms` `Components\CheckboxList`, `Components\Concerns\HasRelationship` | option and state keys from `getRecordKey()`; writes through `getReference()` | 4 |
+| `forms` `Components\Repeater` — relationship items | `record-<key>` item keys inside dotted state paths; existing-record matching by key | 4 |
+| `forms` `unique(ignoreRecord:)` — `Concerns\CanBeValidated` into `Validation\UniqueValueValidator` | `record.<id> <> :ignored` | 4 |
+| `actions` `AttachAction`, `AssociateAction` | `getIdentifierFieldName()`, option keys, `IN (:sylament_selected_record_keys)` | 4 |
+| `actions` `DetachBulkAction`, `DissociateBulkAction` | `getReference()` by key; by-key `IN` | 4 |
+| `schemas` `AssociationReader` — the owner half: `getRelationshipOwner()`, the one-to-many `mappedBy = :owner` and the candidate `<> :owner`, `getRelatedKeysSubselect()` | binds the owner **entity**; a composite owner is refused through `getRecordKey()` | 5 |
+| the owner half's consumers — `tables` `Table\Concerns\HasQuery` (the `relationship()` lane), `panels` `Resource\Concerns\BelongsToParent::getParentScopedRecordQuery()`, `actions` attach and associate candidates | inherit the refusal | 5 |
+| `actions` `Replication\RecordReplicator`, `ReplicateAction` | identifier fields skipped, so an assigned-key replica has no identity | 6 |
+
+**The tests that pin the refusal today**, which flip with their sites: schemas'
+`AssociationReaderTest`; forms' `UniqueValueValidatorTest`; tables'
+`HasTableTest`, `CanSortRecordsTest`, `CanSummarizeRecordsTest`,
+`AggregateQueryTest` and `RelationConstraintTest`. The fixtures exist already
+in both flavours — `CompositePair` (two scalar fields) in schemas', forms' and
+tables' `tests/Fixtures/Doctrine/Entity/`, and `Membership` (an association
+plus a scalar) in actions' — and panels has neither a fixture nor a test yet.
+
+**Out of scope:** what Doctrine makes impossible — re-keying a managed record
+(epic 6 turns it into a refusal), a composite-key entity inside another
+entity's identifier (mapping validation refuses it), and an association path to
+a composite target inside DQL a user wrote themselves (theirs to join);
+**constructor-required records** — `PropertyAccessor::constructRecord()`
+refuses a class whose constructor requires arguments, for every entity alike,
+so it sits outside the parity rule, though a composite-key entity usually takes
+its key exactly there, which makes it the likeliest follow-up (recorded under
+[Beyond](#beyond)); the `records()` lane, which keys by array key or a readable
+`id` and is untouched; infolists and widgets, still placeholders — M5's
+`ViewRecord` page inherits panels' binding when it lands.
+
+**Done when:** every ledger row is flipped, and
+`grep -rn "composite identifier" packages/*/src` finds only refusals a
+divergence section records as Doctrine-imposed; both identifier flavours are
+exercised by a test in every package that keys a record — schemas, forms,
+tables, actions, panels; the four refusal sections are rewritten; the demo
+script runs end to end; `composer test` and the demo suite are green.
+
 ## Beyond
 
-Unordered and uncommitted; M3–M6 are planned, so the milestone after M6 is
-promoted from here.
+Unordered and uncommitted; M3–M7 are planned — M7 out of a sponsor's
+requirement rather than from this list — so the milestone after M7 is promoted
+from here.
 
 - Breadth parity per package — working down the [progress tables](README.md).
   M3–M6 take forms, tables, infolists, widgets and panels; support, schemas,
@@ -536,3 +742,8 @@ promoted from here.
   item; the [M3 carried decision](#m3--forms-widening) says whether it starts
   earlier).
 - Tenancy and multi-panel completeness.
+- Constructor-argument record construction — `PropertyAccessor::constructRecord()`
+  refuses a class whose constructor requires arguments, and says so. It holds
+  for every entity alike, but a composite-key entity usually takes its key
+  exactly there, so it is the likeliest follow-up to
+  [M7](#m7--composite-identifiers).

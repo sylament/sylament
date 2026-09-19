@@ -476,6 +476,7 @@ it('runs a chunked composite delete as one transaction and sums the affected row
         ->and(array_count_values($statements)[RecordingConnection::COMMIT] ?? 0)->toBe(1)
         ->and($statements)->not->toContain(RecordingConnection::ROLLBACK)
         ->and(firstStatementIndex($statements, RecordingConnection::BEGIN))->toBeLessThan(firstStatementIndex($statements, 'DELETE'))
+        ->and(array_key_last(array_filter($statements, static fn (string $sql): bool => $sql === RecordingConnection::COMMIT)))->toBeGreaterThan(array_key_last(array_filter($statements, static fn (string $sql): bool => str_starts_with($sql, 'DELETE'))))
         ->and($entityManager->getRepository(Shortcut::class)->findAll())->toBe([])
         ->and($html)->toContain('Deleted')
         ->and($html)->toContain('sy-status-success')

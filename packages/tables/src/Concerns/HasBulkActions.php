@@ -489,29 +489,4 @@ trait HasBulkActions
 
         return [$rootAlias, $recordClass];
     }
-
-    /**
-     * The qualified identifier of the table's records — `alias.field`.
-     */
-    private function resolveTableRecordKeyExpression(QueryBuilder $query): string
-    {
-        $table = $this->getTable();
-        $entityManager = $table->getQueryEntityManager();
-        $recordClass = $table->getRecordClass();
-
-        if ($entityManager === null || $recordClass === null) {
-            throw new LogicException(sprintf('Table [%s] must have [query()] to resolve records by key.', static::class));
-        }
-
-        $metadata = $entityManager->getClassMetadata($recordClass);
-
-        if ($metadata->isIdentifierComposite) {
-            throw new LogicException(sprintf('Records of [%s] carry a composite identifier, which a table cannot key; use single-identifier entities or the records() lane.', $recordClass));
-        }
-
-        $rootAlias = $query->getRootAliases()[0]
-            ?? throw new LogicException(sprintf('The query of table [%s] names no root alias to resolve records against.', static::class));
-
-        return sprintf('%s.%s', $rootAlias, $metadata->getSingleIdentifierFieldName());
-    }
 }

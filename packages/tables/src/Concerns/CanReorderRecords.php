@@ -6,6 +6,7 @@ namespace Sylament\Tables\Concerns;
 
 use Doctrine\ORM\QueryBuilder;
 use LogicException;
+use Sylament\Schemas\Identity\IdentifierConstraint;
 use Symfony\UX\LiveComponent\Attribute\LiveAction;
 use Symfony\UX\LiveComponent\Attribute\LiveArg;
 use Symfony\UX\LiveComponent\Attribute\LiveProp;
@@ -105,10 +106,11 @@ trait CanReorderRecords
             return [];
         }
 
+        [$rootAlias, $recordClass] = $this->resolveTableRecordKeyTarget($query);
+
         /** @var list<object> $records */
         $records = $query
-            ->andWhere(sprintf('%s IN (:sylament_reordered_record_keys)', $this->resolveTableRecordKeyExpression($query)))
-            ->setParameter('sylament_reordered_record_keys', $order)
+            ->andWhere(IdentifierConstraint::in($query, $rootAlias, $recordClass, $order, 'sylament_reordered_record_keys'))
             ->getQuery()
             ->getResult();
 

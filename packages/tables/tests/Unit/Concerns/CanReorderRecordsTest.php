@@ -7,8 +7,12 @@ use Doctrine\ORM\QueryBuilder;
 use Sylament\Tables\Columns\TextColumn;
 use Sylament\Tables\Table;
 use Sylament\Tables\Tests\Fixtures\Concerns\TableHost;
+use Sylament\Tables\Tests\Fixtures\Doctrine\Entity\Residency;
+use Sylament\Tables\Tests\Fixtures\Doctrine\Entity\Shortcut;
 use Sylament\Tables\Tests\Fixtures\Doctrine\Entity\Song;
+use Sylament\Tables\Tests\Fixtures\Doctrine\Entity\Venue;
 use Sylament\Tables\Tests\Fixtures\Doctrine\EntityManagerFactory;
+use Sylament\Tables\Tests\Fixtures\Doctrine\Handle;
 
 /**
  * Three positioned songs on the query lane, reorderable by `position` unless the
@@ -172,4 +176,127 @@ it('toggles the reordering flag, gated by the definition', function (): void {
     $reorderable->toggleTableReordering();
 
     expect($reorderable->isTableReordering())->toBeFalse();
+});
+
+/*
+ * The same drag, keyed compositely: the payload is still the strings the rows were
+ * stamped with, and every one is re-resolved through the table's own query before a
+ * position is written.
+ */
+
+function reorderResidency(Venue $venue, string $season, string $label, int $position): Residency
+{
+    $residency = new Residency();
+    $residency->setVenue($venue);
+    $residency->setSeason($season);
+    $residency->setLabel($label);
+    $residency->setPosition($position);
+
+    return $residency;
+}
+
+/**
+ * @return array{TableHost, EntityManager}
+ */
+function residencyReorderRig(): array
+{
+    $entityManager = EntityManagerFactory::create();
+    $venue = new Venue(new Handle('main-hall'), 'Main Hall');
+
+    EntityManagerFactory::seed(
+        $entityManager,
+        $venue,
+        reorderResidency($venue, '2026-spring', 'Spring', 1),
+        reorderResidency($venue, 'autumn/2026', 'Autumn', 2),
+    );
+
+    $host = new TableHost(fn (Table $table): Table => $table
+        ->query($entityManager->createQueryBuilder()->select('residency')->from(Residency::class, 'residency'))
+        ->reorderable('position'));
+
+    return [$host, $entityManager];
+}
+
+function reorderShortcut(string $host, string $path, string $label, int $position): Shortcut
+{
+    $shortcut = new Shortcut();
+    $shortcut->setHost($host);
+    $shortcut->setPath($path);
+    $shortcut->setLabel($label);
+    $shortcut->setPosition($position);
+
+    return $shortcut;
+}
+
+/**
+ * @return array{TableHost, EntityManager}
+ */
+function shortcutReorderRig(): array
+{
+    $entityManager = EntityManagerFactory::create();
+
+    EntityManagerFactory::seed(
+        $entityManager,
+        reorderShortcut('www.example.com', '/blog/hello world', 'Blog', 1),
+        reorderShortcut('www.example.com', '/about', 'About', 2),
+        reorderShortcut('shop.example.com', '/sale~2026', 'Sale', 3),
+    );
+
+    $host = new TableHost(fn (Table $table): Table => $table
+        ->query($entityManager->createQueryBuilder()->select('shortcut')->from(Shortcut::class, 'shortcut'))
+        ->reorderable('position'));
+
+    return [$host, $entityManager];
+}
+
+/**
+ * @return array<string, int>
+ */
+function storedResidencyPositions(EntityManager $entityManager): array
+{
+    $entityManager->clear();
+
+    $positions = [];
+
+    foreach ($entityManager->getRepository(Residency::class)->findBy([], ['season' => 'ASC']) as $residency) {
+        $positions[$residency->getSeason()] = $residency->getPosition();
+    }
+
+    return $positions;
+}
+
+/**
+ * @return array<string, int>
+ */
+function storedShortcutPositions(EntityManager $entityManager): array
+{
+    $entityManager->clear();
+
+    $positions = [];
+
+    foreach ($entityManager->getRepository(Shortcut::class)->findBy([], ['path' => 'ASC']) as $shortcut) {
+        $positions[$shortcut->getPath()] = $shortcut->getPosition();
+    }
+
+    return $positions;
+}
+
+it('numbers a derived-identity order 1..N', function (): void {
+    [$host, $entityManager] = residencyReorderRig();
+
+    $host->reorderTable(['main-hall~autumn=2F2026', 'main-hall~2026-spring']);
+
+    expect(storedResidencyPositions($entityManager))->toBe(['2026-spring' => 2, 'autumn/2026' => 1]);
+});
+
+it('leaves a gap where a malformed key sat in a two-string order', function (): void {
+    [$host, $entityManager] = shortcutReorderRig();
+
+    $host->reorderTable(['shop=2Eexample=2Ecom~=2Fsale=7E2026', 'garbage', 'www=2Eexample=2Ecom~=2Fabout']);
+
+    expect(storedShortcutPositions($entityManager))->toBe([
+        '/about' => 3,
+        '/blog/hello world' => 1,
+        '/sale~2026' => 1,
+    ]);
 });

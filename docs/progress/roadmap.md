@@ -536,6 +536,11 @@ The reasoning there — an encoding is "a serialisation format nobody asked for"
 stay as they are until the code moves: each epic rewrites the refusal sections
 it overturns in the commit that overturns them, and turns the tests pinning the
 refusal into tests pinning the support rather than deleting them.
+M7 · 1 is the one exception recorded in advance: it edits two sentences of
+`association-reader.md`'s section — the consistency claim and the "out of scope"
+clause, both of which go false the moment tables stops refusing — and leaves the
+heading and the rest for M7 · 4. A cross-lane touch of that size is named in the
+epic's close-out rather than smuggled.
 
 **Scope — ruled by Martin, 2026-09-19.** Both identifier flavours: several
 scalar `#[Id]` fields, and a **derived identity** (`#[Id]` on a to-one
@@ -553,15 +558,18 @@ Epic 1 goes first and alone. Once it has landed, 2, 3 and 4 touch disjoint
 files in `src/` and can run as parallel lanes (each plan verifies the claim for
 its tests and fixtures); 5 follows 4, because both edit `AssociationReader`; 6
 follows 3. A planning session starts from four things: this section; the **key
-contract** file epic 1 lands under [schemas](schemas/README.md) and links from
-here in that commit — until it exists, this section is the brief; the refusal
+contract** file, [`schemas/record-key.md`](schemas/record-key.md), which M7 · 1
+landed: the grammar, the six contexts a key survives, the frozen API of the
+codec and the predicate builder with a worked DQL example per operation for both
+identifier flavours, the invariants and the chunk rule; the refusal
 sections linked above; and [principles.md](../principles.md). The site ledger
 below says which epic owns which call site. A site found later that the ledger
 lacks is added to it, under the epic that takes it, in the commit that finds it.
 
-**Carried decisions** — proposed 2026-09-19 with the split; epic 1's spec
-confirms each with Martin or records the overturn here, the
-[M3](#m3--forms-widening) way.
+**Carried decisions** — proposed 2026-09-19 with the split and **confirmed by
+Martin the same day**, two of them amended in the confirming. The
+[M3](#m3--forms-widening) way: each is recorded here as it was settled, not as
+it was proposed.
 
 (1) **One string.** A record key stays a single string everywhere it travels,
 composite or not. The sweep behind this section found that the client never
@@ -570,6 +578,13 @@ lists cross as JSON (`data-sy-group-keys`), and the selection `LiveProp`s hold
 strings — so no JavaScript changes as long as that holds. A
 **single-identifier key encodes to itself**: existing URLs, option values and
 tests do not move.
+**Confirmed.** The sweep behind it was re-run against every key-touching site
+and one sentence of it was wrong as written — forms' `utils/select.ts` *does*
+interpolate an option value into a selector — but it is `CSS.escape`d, so the
+conclusion holds. There is a **sixth** context the original five missed, and
+it is the tightest: the live `data-model` directive the state path is embedded
+in reserves `( ) , |` and space and rewrites `[ ]` into `.`. No JavaScript
+changed.
 
 (2) **The foundation lives in `schemas`.** Every Doctrine-facing package
 already requires it, and `support` has no Doctrine. Two pieces, under working
@@ -579,19 +594,47 @@ identifier tuple to a string and back, in the mapping's identifier-field order
 comparison with its per-field form: equality, `IN`/`NOT IN` as an OR of ANDs
 (DQL has no row-value `IN`), subquery correlation, key selection with its
 row-to-key decode, group-by, order-by, and owner scoping.
+**Confirmed.** It landed as `Sylament\Schemas\Identity\` — `RecordKey`,
+`IdentifierConstraint`, `KeySelection` and the `@internal` `IdentifierFields`
+— static, with the entity manager per call, in `SearchConstraint`'s shape.
 
 (3) **Both flavours from epic 1, absorbed in the foundation.** Flattening a
 derived identity is Doctrine's own `Utility\IdentifierFlattener` — public,
 final, recursive, enum-aware — adopted rather than rebuilt
 ([principles §2](../principles.md)). No consumer ever branches on the flavour.
+**Overturned, on executed evidence** — which is the bar
+[principles §2](../principles.md) sets for not adopting what the ecosystem
+ships: two named, checkable gaps rather than a preference. Fed an incomplete
+identifier the flattener answers `''` plus a PHP warning rather than refusing;
+and for a **chained** derived identity — an identifier association whose
+target's own identifier is an association — its recursion is handed
+`UnitOfWork::getEntityIdentifier()`'s already-flattened array, reads it by join
+column name and answers a blank **once the target is managed**, which a row
+read from the database always is. The codec recurses itself, which also
+subsumes the completeness count (`getIdentifierValues()` *drops* a null
+component rather than returning it, so completeness is **counted** against
+`count($metadata->identifier)` at every level) and needs no unit of work. What
+survives of the decision is its second half: no **consumer** ever branches on
+the flavour. Written up in
+[record-key.md](schemas/record-key.md#doctrines-identifierflattener-is-not-adopted-because-it-misreads-a-chained-derived-identity).
 
 (4) **The key is client input.** Decoding is strict — exactly the mapped
 fields, nothing extra. A decoded value is only ever **bound as a parameter**,
 typed by the field's own DBAL type (an association field by its target's
 identifier type), and a field name reaches DQL from `ClassMetadata` alone,
 never from the key. Today's by-key binds are untyped
-(`HasTable::resolveQueryTableRecord()`, `Resource::resolveRecordRouteBinding()`),
-which the builder closes for single identifiers on the way.
+(`HasTable::resolveQueryTableRecord()`, `Resource::resolveRecordRouteBinding()`);
+M7 · 1 routed the first through the builder, typed by the field's own DBAL
+type; the second is untouched and is M7 · 3's.
+**Confirmed, mechanism amended.** Typed binds alone do not close the hole: on
+PostgreSQL 18 a `'5abc'` bound `PARAM_INT` raises `22P02` under native
+prepares and, under emulated prepares, **matches record 5**. What closes it is
+a strict decode before anything is bound — the grammar, a shape check for the
+two types whose conversion refuses nothing (`bigint`, `guid`), and a compare
+that every component must **print back to itself** once its field's type has
+converted it. The typed bind stays as the second half, and now goes through
+that type as a round trip, so a custom value-object identifier type is handed
+a PHP value rather than a raw string.
 
 (5) **The builder has one writer at a time.** Its interface is designed once,
 in epic 1's spec, against every consumer in the ledger. Epic 1 implements the
@@ -600,30 +643,52 @@ group-by, order-by — although it consumes only part of it itself, because 2, 3
 and 4 then run in parallel and none of them may need to touch it. Epic 5 adds
 owner scoping. A later epic that finds the interface short records the addition
 in the contract file; it does not reshape what landed.
+**Confirmed.** [`record-key.md`](schemas/record-key.md#the-api) is that
+interface. M7 · 1 shipped `correlate()`, `groupBy()`, `notEquals()` and the
+tuple entry point without consuming any of them, precisely so 2, 3 and 4 need
+no writer on it.
 
-**Open — owned by epic 1's spec.** The key's string format, which has to
-survive five contexts at once: one URL path segment (no `/`); a **dotted state
-path**, because `Repeater` keys a relationship item `record-<key>`; an HTML
-attribute and a DOM id; `LiveProp` JSON; an `<option value>`. Readable (a
-delimiter with escaping) against opaque (base64url of the tuple) is the choice.
-Also open there: the class names and namespace; what becomes of
-`AssociationReader::getIdentifierFieldName()`, every caller of which moves to
-the builder; and the chunk size for a by-key batch that would exceed a
-platform's bind-parameter limit.
+**Closed by M7 · 1's spec**, 2026-09-19, and written up in
+[`record-key.md`](schemas/record-key.md). The **format** is readable rather than
+opaque: components joined by `~`, every byte outside `[A-Za-z0-9_-]` written
+`=XX` in uppercase hex, and a single-identifier key encoding to itself verbatim.
+Readability won because base64url would emit all-digit keys, which Twig's `==`
+and `in` alias (they compile to PHP's native comparison), so a `<option
+selected>` could land on the wrong row with no error. The **class names and
+namespace** are `Sylament\Schemas\Identity\{RecordKey, IdentifierConstraint,
+KeySelection, IdentifierFields}`. The **chunk size** is
+`min(500, intdiv(2000, F))` keys per statement for `F ≥ 2` identifier fields and
+2 000 for one — under SQL Server's 2 100-parameter ceiling, and sized against
+Doctrine's own superlinear DQL parse time rather than any platform's bind limit.
+`AssociationReader::getIdentifierFieldName()` **stays where it is and is deleted
+by M7 · 4** with its last caller; M7 · 1 designed the builder against those call
+sites without moving any of them.
 
 **What Doctrine gives and what it refuses** — verified against the installed
 ORM (3.6.8); re-verify on a major bump.
 
-- An identifier is an **ordered map** of field to value. `find()` and
-  `getReference()` take that map; a scalar against a composite class throws, as
-  do a missing field and an unrecognised one.
+- An identifier is an **ordered map** of field to value — of the fields a record
+  actually carries: `getIdentifierValues()` silently **drops** a null component
+  rather than answering it, so an incomplete identifier is short, not sparse.
+  `find()` takes that map, tolerates reordering and string-typed values, and
+  throws on a scalar, a missing field and an unrecognised one alike.
+  `getReference()` takes it only for a **scalar** composite; on a derived
+  identity it is state-dependent — fine while the record is managed, a
+  `TypeError` against a cold identity map — which
+  [the contract records](schemas/record-key.md#getreference-on-a-derived-identity-is-state-dependent-so-the-codec-never-mints-one)
+  so no later epic plans around a passing test.
 - **No id generator** on a composite identifier — mapping validation throws —
   so the key is assigned before `persist()`, which makes it user input on a
   create form. The identity map is keyed by it, so it is immutable once managed.
 - A derived identity reads back as the related **entity**:
   `getIdentifierValues()` answers the object under the association's name. An
-  entity with a composite key cannot itself be part of another entity's key, so
-  an identifier association always has exactly **one join column** — which is
+  identifier association always resolves to exactly **one join column** — not
+  because mapping validation refuses every composite target (it refuses only a
+  *declared* association carrying two or more join columns; an auto-derived one
+  builds, then dies in `SchemaTool` and in `getSingleIdentifierFieldName()`),
+  but because nothing past the mapping can use one, and the codec throws rather
+  than truncate
+  ([the contract](schemas/record-key.md#an-identifier-association-always-resolves-to-exactly-one-join-column)) — which is
   why `r.order = :id`, `IDENTITY(r.order)`, and ordering and grouping by it all
   work on the record's own query.
 - Every single-identifier accessor throws: `getSingleIdentifierFieldName()`,
@@ -661,10 +726,10 @@ and the epic that takes it.
 | `tables` `Concerns\CanSortRecords` — the identifier tiebreak | no-ops on a composite identifier | 1 |
 | `actions` `DeleteBulkAction` — the no-fetch arm | `getSingleIdentifierFieldName()` unguarded, then a DQL `DELETE … IN (:sylament_selected_record_keys)` | 1 |
 | `tables` `Query\AggregateQuery` — `fetch()`, `addHiddenSortSelect()` | catch `MappingException` and rethrow; `SELECT id … GROUP BY id`, by-key `IN`, single-column correlation | 2 |
-| `tables` `Concerns\CanSummarizeRecords` — `getPageTableSummaryQuery()` | `getSingleIdentifierFieldName()` unguarded (the page refuses first) + `IN (:sylament_summary_keys)` | 2 |
+| `tables` `Concerns\CanSummarizeRecords` — `getPageTableSummaryQuery()` | `getSingleIdentifierFieldName()` unguarded — safe only while the page refuses first, which epic 1 removes | 1 |
 | `tables` `Query\RelationConstraint::existsLike()` | catch and rethrow; single-column correlation | 2 |
-| `tables` `Concerns\CanPaginateRecords` | Doctrine's `Paginator`, `fetchJoinCollection` decided by `Query\JoinCardinality` — the fetch-join path throws on a composite root | 2 |
-| `panels` `Resources\Resource` — `resolveRecordRouteBinding()`, `getRecordRouteKey()`, `getSingleIdentifierMetadata()` | refuses unless `$recordRouteKeyName` names a field | 3 |
+| `tables` `Concerns\CanPaginateRecords` | Doctrine's `Paginator`, `fetchJoinCollection` decided by `Query\JoinCardinality` — the fetch-join path throws on a composite root, **and ran before keying even before epic 1**; epic 1 guards both sites with a named `LogicException`, epic 2 replaces it | 2 |
+| `panels` `Resources\Resource` — `resolveRecordRouteBinding()`, `getRecordRouteKey()`, `getSingleIdentifierMetadata()` | refuses unless `$recordRouteKeyName` names a field — and the surviving single-identifier bind is **untyped**, so a non-integer `{record}` is a 500 on PostgreSQL rather than a 404 (M7 · 1 left it deliberately; it is the only untyped by-key bind the epic did not convert) | 3 |
 | `panels` the record, parent-chain and owner-record `LiveProp`s — `InteractsWithRecord`, `InteractsWithParentRecord`, `RelationManager` | carry the key as a string; expected to need nothing — verify against the chosen format | 3 |
 | `schemas` `State\AssociationReader` — `findRecordKey()`, `getRecordKey()`, `getReference()`, `getIdentifierFieldName()` | refuse; `getReference()` takes one scalar | 4 |
 | `schemas` `AssociationReader` — the many-to-many arm of `createRelationshipQuery()`/`createRelationshipCandidateQuery()` | `record.<id> IN`/`NOT IN (subselect)` on the target's single identifier | 4 |
@@ -677,8 +742,21 @@ and the epic that takes it.
 | `schemas` `AssociationReader` — the owner half: `getRelationshipOwner()`, the one-to-many `mappedBy = :owner` and the candidate `<> :owner`, `getRelatedKeysSubselect()` | binds the owner **entity**; a composite owner is refused through `getRecordKey()` | 5 |
 | the owner half's consumers — `tables` `Table\Concerns\HasQuery` (the `relationship()` lane), `panels` `Resource\Concerns\BelongsToParent::getParentScopedRecordQuery()`, `actions` attach and associate candidates | inherit the refusal | 5 |
 | `actions` `Replication\RecordReplicator`, `ReplicateAction` | identifier fields skipped, so an assigned-key replica has no identity | 6 |
+| `tables` `Concerns\CanSummarizeRecords::readTableRecordAtOffset()` | a second fetch-join paginator site the epic-2 row did not name | 2 |
+| `actions` `Action::getContext()` / `Concerns\InteractsWithRecord::resolveRecordKey()` | a literal `id` property, so a composite row action mounts with **no record, silently** | **1** |
+| `schemas` `Components\LiveComponent::getChildId()` | `preg_replace('/[^A-Za-z0-9_-]/', '-', …)` — lossy over `~` and `=`, so two keys collapse onto one morph id; latent until a repeater item key carries a record key | **1** |
+| `tables` `HasTable::getAllTableRecordsCount()` | Doctrine `Paginator::count()`, composite-safe — recorded so a sweep does not "fix" it | none |
+| `tables` `Concerns\CanReorderRecords` → `HasBulkActions::resolveTableRecordKeyTarget()`; `Concerns\CanSummarizeRecords` → `CanPaginateRecords::resolveTableFetchJoinCollection()` | two cross-trait **private** calls, legal only because `HasTable` composes all four traits into one host — a lane editing one trait can break the other with no signal from either file | **2–4** (recorded, not owned) |
+| `forms` `Validation\ExistingValueValidator` (`:46-48`, `COUNT(DISTINCT record.<field>)` / `record.<field> IN`); `Components\Select::createOptionUsing()` (`:707`) and the Doctrine default `relationship()` installs (`:430`), which returns **one** key string; `Components\Repeater`'s item construction over `RECORD_ITEM_KEY_PREFIX` (`:69`) | the read sites are already listed under 4; these are the **write**/probe sites the epic-4 rows do not cover | **4 / 6** |
+| `panels` `sy-pa-resource-record-<key>` (`EditRecord.php:151`, `ManageRelatedRecords.php:180`) — a raw key in a class token, which a space splits in two; and a page path putting a `RouteCompiler::SEPARATORS` character (`vendor/symfony/routing/RouteCompiler.php:27` — the set contains **both** `~` and `=`) immediately after `{record}`, which compiles the placeholder to a regexp excluding that character and 404s a key containing it | **3** |
+| **demo** — the `--fresh` truncate list, `byName()`/`lookUp()`'s closed template, `'Seeded 4 records'`, `assertCount(22, …)` | the ledger had no demo rows, although the demo is in every epic's Delivers column | **1** |
+| **demo** `RowBehaviourCard`'s `['record' => $record->getId()]`; `ArticleResource::getGloballySearchableAttributes()` | a single-identifier key minted by hand, and a search hit's URL | 3 |
+| `AssociationReader::getIdentifierFieldName()` | **deleted with its last caller** | 4 |
 
-**The tests that pin the refusal today**, which flip with their sites: schemas'
+**The tests that pin the refusal today**, which flip with their sites — and the
+count is smaller than it reads: **three of M7 · 1's five ledger rows had no
+pinning test at all**, so that epic wrote tests where it expected to flip them.
+The ones that exist: schemas'
 `AssociationReaderTest`; forms' `UniqueValueValidatorTest`; tables'
 `HasTableTest`, `CanSortRecordsTest`, `CanSummarizeRecordsTest`,
 `AggregateQueryTest` and `RelationConstraintTest`. The fixtures exist already
@@ -688,7 +766,8 @@ plus a scalar) in actions' — and panels has neither a fixture nor a test yet.
 
 **Out of scope:** what Doctrine makes impossible — re-keying a managed record
 (epic 6 turns it into a refusal), a composite-key entity inside another
-entity's identifier (mapping validation refuses it), and an association path to
+entity's identifier (mapping validation refuses the declared form, `SchemaTool`
+the auto-derived one, and the codec whatever is left), and an association path to
 a composite target inside DQL a user wrote themselves (theirs to join);
 **constructor-required records** — `PropertyAccessor::constructRecord()`
 refuses a class whose constructor requires arguments, for every entity alike,

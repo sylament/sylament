@@ -754,8 +754,9 @@ and the epic that takes it.
 | `AssociationReader::getIdentifierFieldName()` | **deleted with its last caller** | 4 |
 
 **The tests that pin the refusal today**, which flip with their sites — and the
-count is smaller than it reads: **three of M7 · 1's five original ledger rows had no
-pinning test at all**, so that epic wrote tests where it expected to flip them.
+count is smaller than it reads: **three of M7 · 1's five original ledger rows
+had no pinning test at all**, so that epic wrote tests where it expected to flip
+them.
 The ones that exist: schemas'
 `AssociationReaderTest`; forms' `UniqueValueValidatorTest`; tables'
 `HasTableTest`, `CanSortRecordsTest`, `CanSummarizeRecordsTest`,

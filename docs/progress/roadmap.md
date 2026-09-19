@@ -179,11 +179,28 @@ lanes over four waves plus a demo lane, each lane reviewed by a mutation-minded
 adversary, and closed with a seven-lens whole-branch review whose skeptics
 confirmed nine findings — one of them a Critical the gates had passed: a
 summary batch minting aliases per query, so a hidden summarizer could hand
-another summarizer's figure to a row. The cursor moves to
-[M4 · 7](#m4--tables-widening). [M7](#m7--composite-identifiers) — composite
-identifiers, six epics — was planned on 2026-09-19 out of a sponsor's
-requirement; M7 · 1 is unblocked, and whether it runs ahead of, beside or after
-M4 · 7 is Martin's call.
+another summarizer's figure to a row. **M7 · 1** then closed on 2026-09-19 — the
+key foundation and table rows, the first epic of
+[M7](#m7--composite-identifiers), the composite-identifier milestone planned the
+same day out of a sponsor's requirement. It landed `Sylament\Schemas\Identity\`
+— a record-key codec whose format is readable rather than opaque, and the record
+side of an identifier predicate builder — and then its first consumer: a
+`query()` table over an entity keyed by two scalar fields or by an association
+plus a scalar now keys its rows, resolves a row action, edits a cell, selects in
+both strategies, reorders and bulk-deletes exactly as a single-`id` one does.
+What it is worth remembering for is that the hard part was not Doctrine but the
+**six contexts one key crosses** — a URL segment, a dotted state path, a live
+`data-model` directive, two silent sanitisers, a DOM id and a Twig `==` that
+aliases numeric strings — four of which fail without an error, and which
+together decided the format. It ran as eight subagent-driven tasks over two
+lanes, each behind a mutation-minded review, and closed with a six-lens
+whole-branch review whose skeptics upheld all fifteen of its findings — among
+them a reorder fetch running unchunked over the whole table, a NUL byte that
+gave a PostgreSQL record a second spelling, and the first DBAL-4-only return
+type in shipped source. The contract every later epic plans from is
+[`schemas/record-key.md`](schemas/record-key.md). The cursor moves to [M7 ·
+2](#m7--composite-identifiers); whether [M4 · 7](#m4--tables-widening) runs
+ahead of, beside or after the rest of M7 is Martin's call.
 
 ## Pulled forward
 
@@ -711,7 +728,7 @@ ORM (3.6.8); re-verify on a major bump.
 
 | # | Epic | Packages | Delivers | Status |
 | --- | --- | --- | --- | --- |
-| 1 | Key foundation and table rows | [schemas](schemas/README.md), [tables](tables/README.md), [actions](actions/README.md), **demo** | The key codec and the record side of the identifier predicate builder in `schemas`, for both identifier flavours, and the **key contract** trail file that every later epic plans from; then the first consumer — a `query()` table over a composite entity: row keys, record resolution (row actions, `recordUrl()`/`recordAction()`, editable cells), selection in both strategies including the no-fetch key pluck, `DeleteBulkAction`, reorder, and the identifier sort tiebreak that no-ops today. The smallest slice that proves all three foundation moves in a browser — encode, decode to one record, the batched `IN`. `AssociationReader`'s refusals stay in place; they are epic 4's and 5's. Demo: the milestone's composite entities — one scalar pair, one derived identity; the spec picks them, an article translation keyed by article and locale being the obvious second — land here with their migration and seed rows, so later epics add cards and pages rather than schema; a Tables showcase card over both. | todo |
+| 1 | Key foundation and table rows | [schemas](schemas/README.md), [tables](tables/README.md), [actions](actions/README.md), **demo** | The key codec and the record side of the identifier predicate builder in `schemas`, for both identifier flavours, and the **key contract** trail file that every later epic plans from; then the first consumer — a `query()` table over a composite entity: row keys, record resolution (row actions, `recordUrl()`/`recordAction()`, editable cells), selection in both strategies including the no-fetch key pluck, `DeleteBulkAction`, reorder, and the identifier sort tiebreak that no-ops today. The smallest slice that proves all three foundation moves in a browser — encode, decode to one record, the batched `IN`. `AssociationReader`'s refusals stay in place; they are epic 4's and 5's. Demo: the milestone's composite entities — one scalar pair, one derived identity; the spec picks them, an article translation keyed by article and locale being the obvious second — land here with their migration and seed rows, so later epics add cards and pages rather than schema; a Tables showcase card over both. | done |
 | 2 | Table query depth | [tables](tables/README.md), **demo** | Everything on a composite-root table that correlates or batches by identifier: relationship aggregates (`AggregateQuery::fetch()` selecting and grouping by every key field and answering under the re-encoded row key) and sorting by one (`addHiddenSortSelect()`), relation search (`RelationConstraint::existsLike()`'s correlation), a page summary under `recordsPerPage: 'all'`, where M7 · 1's by-key narrowing in `CanSummarizeRecords` binds every key on the table and this epic may special-case it, and paging a query that joins a collection — Doctrine's fetch-join path throws on a composite root, so epic 1's named `LogicException` guards both paginator sites (`CanPaginateRecords::paginateTableQuery()` and `CanSummarizeRecords::readTableRecordAtOffset()`) and this epic replaces it with that second step run over `LimitSubqueryOutputWalker` and the builder's `IN`. Tables-only in `src/`, so it runs beside 3 and 4. Demo: the epic 1 card gains an aggregate column, a summary and a relation search. | todo |
 | 3 | Panels | [panels](panels/README.md), **demo** | A composite-key resource end to end: `Resource::getRecordRouteKey()` mints and `resolveRecordRouteBinding()` resolves the encoded `{record}` — a custom `$recordRouteKeyName` stays exactly what it is — so the list, edit and delete pages, the modal `ViewAction`, custom record pages, `getUrl()`/`getResourceUrl()`, breadcrumbs and global-search hits all follow; the key carried through the record `LiveProp`, the nested-resource parent chain and a relation manager's owner record. A composite **parent** or **owner** stays refused until epic 5, which owns the scoped query underneath. Panels-only in `src/`, so it runs beside 2 and 4. Demo: a resource over a composite entity under `/admin`. | todo |
 | 4 | Composite records as relation targets | [schemas](schemas/README.md), [forms](forms/README.md), [actions](actions/README.md), [tables](tables/README.md), **demo** | The target half of `AssociationReader` — `getRecordKey()`/`findRecordKey()` encoding, `getReference()` decoding, `getIdentifierFieldName()` settled as the contract says — and every consumer of it: relationship options, search, labels and the selected-record lookup on `Select` and `CheckboxList`, the relationship writes in `HasRelationship`, `Select::relationship(ignoreRecord:)`, `unique(ignoreRecord:)` through `UniqueValueValidator`, relationship `Repeater` items (the `record-<key>` item key is where the dotted-path constraint bites), `AttachAction`/`AssociateAction` (candidates, options, the by-key fetch), `DetachBulkAction`/`DissociateBulkAction`, and the many-to-many arm of `createRelationshipQuery()`/`createRelationshipCandidateQuery()`, whose `IN (subselect)` on the target's identifier becomes a correlated `EXISTS`. With it a relation-scoped table and a relation manager list composite records under a single-identifier owner — the join-entity-with-payload case, and the commonest composite shape in a real schema. Demo: the derived-identity entity as a relation manager on the article edit page, and as the target of a relationship `Select`. | todo |

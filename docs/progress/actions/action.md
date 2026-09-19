@@ -1500,8 +1500,9 @@ not-yet-persisted entity — makes `RecordKey::of()` refuse, where
 `resolveRecordKey()` would simply have omitted `recordKey`. That is deliberate,
 and it is the same record the table could never have resolved on the way back;
 `getRecord(withDefault: false)` is what keeps a header `CreateAction` out of
-that path, and a row is always keyable, so a row action never sees it.
-No shipped path reaches that throw.
+that path, and a row is always keyable, so a row action never sees it — no
+shipped path reaches that throw.
+
 The record it resolves the key from is read with
 [`withDefault: false`](#the-record-chain-reaches-the-schema-the-component-and-the-host),
 so a record the *host* supplied as a default never becomes a `recordKey` on the

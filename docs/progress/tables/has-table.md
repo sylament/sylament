@@ -245,8 +245,8 @@ seams instead, where `getFilteredTableQuery()` and
 `getFilteredSortedTableQuery()` must both answer null — the assertion that keeps
 the [lane gate](#the-filtered-query-seam-is-gated-on-the-lane-not-on-the-presence-of-a-builder)
 from drifting back to "is there a builder to be had". The metadata keying has
-eight cases of its own, none of them reachable by that convention: a `Book`, whose
-identifier is `code` and which has
+eight cases of its own, none of them reachable by that convention: a `Book`,
+whose identifier is `code` and which has
 no `id` anywhere, keying by `sy-001`; a `Shortcut`, whose identifier is two
 strings, keying three rows that between them carry a dot, a slash, a space, the
 separator itself and non-ASCII — `plain~about` beside
@@ -708,7 +708,8 @@ ordering whose path **is** the qualified key. Filament's second suppression —
 any ordering whose path merely *ends* in the same field name — shipped with · 12
 and was [removed by · 20](#the-identifier-tiebreaker-is-suppressed-only-by-the-qualified-key),
 because the relation arm made `artist.id` an ordering the table can now produce
-by itself. A **composite** identifier is tiebroken by all of its fields rather than by one.
+by itself. A **composite** identifier is tiebroken by all of its fields rather
+than by one.
 [`IdentifierConstraint::orderBy()`](../schemas/record-key.md#the-operations-and-their-dql)
 appends each identifier field the existing order does not already name, in
 mapping order, at the same direction — so a two-field key adds two parts, a
@@ -1114,9 +1115,8 @@ and a composite one emits the balanced OR of per-field ANDs that DQL's missing
 row-value `IN` forces. A key that is malformed for the class is **dropped**
 rather than refused, so one stale entry in a selection bag cannot fail a bulk
 action over the rest of it, and the keys are de-duplicated on the way. An empty
-bag means
-opposite things on the two arms, and the port has to say so, because Doctrine
-says neither: DBAL expands an empty list parameter to `NULL`, so **both**
+bag means opposite things on the two arms, and the port has to say so, because
+Doctrine says neither: DBAL expands an empty list parameter to `NULL`, so **both**
 `IN (NULL)` and `NOT IN (NULL)` match nothing. On the `IN` arm that is the right
 answer — an empty selection selects no rows — and `getSelectedTableRecords()`
 never reaches the query anyway, since it opens with the empty-and-not-tracking

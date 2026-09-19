@@ -1,0 +1,136 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Sylament\Schemas\Identity;
+
+use Doctrine\ORM\EntityManagerInterface;
+use LogicException;
+
+final class RecordKey
+{
+    public const string SEPARATOR = '~';
+
+    /**
+     * @param class-string|null $class the mapped class to key the record by, when the caller declares one — a subclass the mapping does not know keys by it
+     *
+     * @throws LogicException when the identifier is incomplete, or a component is not printable
+     */
+    public static function of(EntityManagerInterface $entityManager, object $record, ?string $class = null): string
+    {
+        $class ??= $record::class;
+        $values = self::flatten($entityManager, $record, $class)
+            ?? throw new LogicException(sprintf('Object records must expose a readable non-blank identifier; [%s] has none set.', $record::class));
+
+        return self::fromValues($entityManager, $class, $values);
+    }
+
+    /**
+     * Null when the record carries no complete identifier yet — a component
+     * that is null or still blank — which says nothing about whether it is
+     * persisted: an assigned key is complete before the first flush.
+     *
+     * @param class-string|null $class the mapped class to key the record by, when the caller declares one
+     *
+     * @throws LogicException when a component is set but not printable
+     */
+    public static function find(EntityManagerInterface $entityManager, object $record, ?string $class = null): ?string
+    {
+        $class ??= $record::class;
+        $values = self::flatten($entityManager, $record, $class);
+
+        if ($values === null || array_any($values, static fn (mixed $value): bool => is_string($value) && mb_trim($value) === '')) {
+            return null;
+        }
+
+        return self::fromValues($entityManager, $class, $values);
+    }
+
+    /**
+     * Raw identifier values — a scalar result row's key columns — to the key
+     * a record of that class mints.
+     *
+     * @param class-string $class
+     * @param list<mixed>  $values in the mapping's identifier order
+     *
+     * @throws LogicException when the values do not match the identifier, or one is not printable
+     */
+    public static function fromValues(EntityManagerInterface $entityManager, string $class, array $values): string
+    {
+        $fields = IdentifierFields::of($entityManager, $class);
+
+        if (count($values) !== count($fields->names)) {
+            throw new LogicException(sprintf('A key of [%s] takes %d identifier values, %d given.', $class, count($fields->names), count($values)));
+        }
+
+        return $fields->join(array_map(
+            static fn (mixed $value): string => IdentifierFields::printable($value)
+                ?? throw new LogicException(sprintf('The identifier of [%s] is not a printable value.', $class)),
+            $values,
+        ));
+    }
+
+    /**
+     * The identifier a key names, as `EntityManager::find()` takes it — each
+     * field's value already the PHP value its DBAL type holds, an association
+     * by its target's.
+     *
+     * @param class-string $class
+     *
+     * @return array<string, mixed>|null in the mapping's identifier order, null when the key is malformed for this class
+     */
+    public static function toIdentifier(EntityManagerInterface $entityManager, string $class, string $key): ?array
+    {
+        $fields = IdentifierFields::of($entityManager, $class);
+        $values = $fields->toPhpValues($entityManager, $key);
+
+        return $values === null ? null : array_combine($fields->names, $values);
+    }
+
+    /**
+     * The record's identifier values in the mapping's order, an association
+     * reduced to its target's, or null when one is missing at any level:
+     * Doctrine drops a null component rather than answering it.
+     *
+     * @param class-string $class
+     *
+     * @return list<mixed>|null
+     */
+    private static function flatten(EntityManagerInterface $entityManager, object $record, string $class): ?array
+    {
+        $metadata = $entityManager->getClassMetadata($class);
+        $values = $metadata->getIdentifierValues($record);
+
+        if (count($values) !== count($metadata->identifier)) {
+            return null;
+        }
+
+        $flattened = [];
+
+        foreach ($metadata->identifier as $field) {
+            $value = $values[$field] ?? null;
+
+            if ($metadata->hasAssociation($field)) {
+                if (!is_object($value)) {
+                    return null;
+                }
+
+                $target = self::flatten($entityManager, $value, $metadata->getAssociationTargetClass($field));
+
+                if ($target === null) {
+                    return null;
+                }
+
+                if (count($target) !== 1) {
+                    throw new LogicException(sprintf('The identifier association [%s::$%s] targets a composite identifier, which cannot be a foreign identifier.', $metadata->getName(), $field));
+                }
+
+                $value = $target[0];
+            }
+
+            $flattened[] = $value;
+        }
+
+        return $flattened;
+    }
+}

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Sylament\Schemas\Tests\Fixtures\Doctrine;
 
 use Doctrine\DBAL\DriverManager;
+use Doctrine\DBAL\Types\Type;
 use Doctrine\ORM\EntityManager;
 use Doctrine\ORM\ORMSetup;
 use Doctrine\ORM\Tools\SchemaTool;
@@ -16,6 +17,10 @@ final class EntityManagerFactory
      */
     public static function create(): EntityManager
     {
+        if (!Type::hasType(SkuType::NAME)) {
+            Type::addType(SkuType::NAME, SkuType::class);
+        }
+
         $config = ORMSetup::createAttributeMetadataConfig(paths: [__DIR__ . '/Entity'], isDevMode: true);
         $config->enableNativeLazyObjects(true);
 

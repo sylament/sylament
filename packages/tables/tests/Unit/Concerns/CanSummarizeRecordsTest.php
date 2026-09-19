@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 use Doctrine\DBAL\ArrayParameterType;
 use Doctrine\ORM\EntityManager;
+use Doctrine\ORM\Query;
 use Doctrine\ORM\QueryBuilder;
+use Doctrine\ORM\Tools\Pagination\CountOutputWalker;
 use Sylament\Tables\Columns\Column;
 use Sylament\Tables\Columns\Summarizers\Average;
 use Sylament\Tables\Columns\Summarizers\Count;
@@ -785,3 +787,28 @@ it('looks past a keyed page whose query joins a to-many', function (int $page, b
     'a page ending mid-group' => [1, false],
     'a page ending its group' => [2, true],
 ]);
+
+/*
+ * The look-ahead reaches the keyed read the page reaches, so the refusal reaches
+ * it too — and no page read stands in front of this one, the join and the hint
+ * both arriving after the page was read and cached. The join is what makes the
+ * refusal real: without it the look-ahead is a plain window on a keyed root,
+ * which Doctrine serves and the guard deliberately leaves alone.
+ */
+it('refuses the trailing-group look-ahead where a joined query sets its own output walker', function (): void {
+    $entityManager = summaryStateResidencies();
+    $query = $entityManager->createQueryBuilder()->select('residency')->from(Residency::class, 'residency')->orderBy('residency.season', 'ASC');
+
+    $host = groupedResidencySummaryHost($entityManager, configure: fn (Table $table): Table => $table->query($query));
+    $lastRecord = array_first($host->getTableRecords()->getRecords());
+
+    $query
+        ->addSelect('sy_gig_venue', 'sy_gigs')
+        ->leftJoin('residency.venue', 'sy_gig_venue')
+        ->leftJoin('sy_gig_venue.gigs', 'sy_gigs')
+        ->setHint(Query::HINT_CUSTOM_OUTPUT_WALKER, CountOutputWalker::class);
+
+    expect($host->getTablePaginator()?->hasMorePages())->toBeTrue()
+        ->and(fn (): bool => $host->shouldRenderTrailingGroupedTableSummary($lastRecord))
+        ->toThrow(LogicException::class, 'sets its own output walker [Doctrine\ORM\Tools\Pagination\CountOutputWalker]');
+});

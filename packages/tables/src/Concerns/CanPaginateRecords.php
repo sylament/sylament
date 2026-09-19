@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Sylament\Tables\Concerns;
 
+use Doctrine\ORM\Query;
 use Doctrine\ORM\QueryBuilder;
 use Doctrine\ORM\Tools\Pagination\Paginator as DoctrinePaginator;
 use LogicException;
@@ -148,6 +149,8 @@ trait CanPaginateRecords
             );
         }
 
+        $this->assertTableQueryCarriesNoOutputWalker($query, $this->getCompositeTableRecordClass($query));
+
         return new Paginator($this->keyTableRecords($records), new DoctrinePaginator($query->getQuery(), JoinCardinality::joinsCollection($query))->count(), $page, $recordsPerPage);
     }
 
@@ -168,6 +171,8 @@ trait CanPaginateRecords
         $joinsCollection = JoinCardinality::joinsCollection($query);
 
         if ($keyedRecordClass !== null && $joinsCollection) {
+            $this->assertTableQueryCarriesNoOutputWalker($query, $keyedRecordClass);
+
             return FetchJoinPageQuery::read($query, $keyedRecordClass, $firstResult, $maxResults);
         }
 
@@ -199,5 +204,55 @@ trait CanPaginateRecords
         $metadata = $query->getEntityManager()->getClassMetadata($recordClass);
 
         return $metadata->isIdentifierComposite || $metadata->containsForeignIdentifier ? $recordClass : null;
+    }
+
+    /**
+     * The record class when Doctrine's `CountWalker` cannot total its rows — two
+     * or more identifier fields — and null on every other table, a single
+     * derived identity included: one association identifier is a path that
+     * walker does resolve.
+     *
+     * A composite root is one of the keyed ones, which is why this reads through
+     * `getKeyedTableRecordClass()` rather than beside it.
+     *
+     * @return class-string|null
+     */
+    private function getCompositeTableRecordClass(QueryBuilder $query): ?string
+    {
+        $recordClass = $this->getKeyedTableRecordClass($query);
+
+        if ($recordClass === null) {
+            return null;
+        }
+
+        return $query->getEntityManager()->getClassMetadata($recordClass)->isIdentifierComposite ? $recordClass : null;
+    }
+
+    /**
+     * Refuses a read Doctrine cannot serve once the query carries an output
+     * walker of its own. `$recordClass` is the class the calling site has
+     * already found too widely keyed for what it is about to do, and null where
+     * that site has nothing to refuse.
+     *
+     * Read off the built query rather than the builder, because
+     * `Configuration::setDefaultQueryHints()` reaches only the former.
+     *
+     * @param class-string|null $recordClass
+     *
+     * @throws LogicException when the query sets its own output walker
+     */
+    private function assertTableQueryCarriesNoOutputWalker(QueryBuilder $query, ?string $recordClass): void
+    {
+        if ($recordClass === null) {
+            return;
+        }
+
+        $walker = $query->getQuery()->getHint(Query::HINT_CUSTOM_OUTPUT_WALKER);
+
+        if ($walker === false) {
+            return;
+        }
+
+        throw new LogicException(sprintf('Cannot read table [%s]: the record class [%s] is keyed by more than one field or by an association, and the table query sets its own output walker [%s]. Doctrine pages and counts that shape through a single identifier column, and the identifier read needs its own walker. Drop the hint.', static::class, $recordClass, is_string($walker) ? $walker : get_debug_type($walker)));
     }
 }

@@ -3,6 +3,8 @@
 declare(strict_types=1);
 
 use Doctrine\ORM\EntityManager;
+use Doctrine\ORM\Query;
+use Doctrine\ORM\Tools\Pagination\CountOutputWalker;
 use Sylament\Support\Pagination\Paginator;
 use Sylament\Tables\Enums\PaginationMode;
 use Sylament\Tables\Table;
@@ -18,6 +20,7 @@ use Sylament\Tables\Tests\Fixtures\Doctrine\Entity\Song;
 use Sylament\Tables\Tests\Fixtures\Doctrine\Entity\Venue;
 use Sylament\Tables\Tests\Fixtures\Doctrine\EntityManagerFactory;
 use Sylament\Tables\Tests\Fixtures\Doctrine\Handle;
+use Sylament\Tables\Tests\Fixtures\Doctrine\PassthroughOutputWalker;
 use Sylament\Tables\Tests\Fixtures\Doctrine\RecordingMiddleware;
 
 /*
@@ -428,6 +431,129 @@ it('narrows a single-identifier fetch-joined page through Doctrine, and a keyed 
         ->and($keyedStatements[1])->toContain('.venue_id = ? AND')
         ->and($keyedStatements[1])->not->toContain('IN (?)');
 });
+
+/*
+ * Doctrine falls back to tree walkers as soon as the query carries an output
+ * walker of its own, and the refusal stands only where that fallback cannot
+ * serve the root. This is the first of the two places it cannot: the page of a
+ * keyed root that joins a collection, whose identifier step needs Doctrine's own
+ * limit walker and would drop the user's from one of its two statements. The
+ * whole identifier here is one association, so the total refuses nothing and
+ * only the window can be what throws.
+ */
+it('refuses a keyed fetch-joined page whose query sets its own output walker', function (): void {
+    $entityManager = sealedLockers();
+    $query = $entityManager->createQueryBuilder()
+        ->select('seal', 'sy_locker', 'sy_items')
+        ->from(LockerSeal::class, 'seal')
+        ->leftJoin('seal.locker', 'sy_locker')
+        ->leftJoin('sy_locker.items', 'sy_items')
+        ->orderBy('seal.position', 'ASC');
+
+    $query->setHint(Query::HINT_CUSTOM_OUTPUT_WALKER, CountOutputWalker::class);
+
+    $host = new TableHost(fn (Table $table): Table => $table->query($query)->paginated([1]));
+
+    $host->getTableRecords();
+})->throws(LogicException::class, 'sets its own output walker [Doctrine\ORM\Tools\Pagination\CountOutputWalker]');
+
+/*
+ * The second: the total of a composite root, where `CountWalker` resolves the
+ * root through `getSingleIdentifierFieldName()` and two identifier fields answer
+ * with a raw mapping error mid-render. The page in front of it is read and
+ * handed back first — this query joins nothing, so its window is the plain one
+ * the walker rides through — which is why the total needs a call site of its own
+ * rather than one at the top of the read.
+ */
+it('refuses the total of a composite table whose query sets its own output walker', function (): void {
+    $entityManager = pagedResidencies();
+    $query = $entityManager->createQueryBuilder()
+        ->select('residency')
+        ->from(Residency::class, 'residency')
+        ->orderBy('residency.position', 'ASC');
+
+    $query->setHint(Query::HINT_CUSTOM_OUTPUT_WALKER, CountOutputWalker::class);
+
+    $host = new TableHost(fn (Table $table): Table => $table->query($query)->paginated([2]));
+
+    $host->getTableRecords();
+})->throws(LogicException::class, 'sets its own output walker [Doctrine\ORM\Tools\Pagination\CountOutputWalker]');
+
+/*
+ * The count is the second Doctrine paginator a table builds over that same
+ * total, and it is reachable without reading a page at all. The hint arrives
+ * through the entity manager's configuration here, which reaches only the built
+ * query — so a guard reading the builder would let this one through.
+ */
+it('refuses to count a composite table whose configuration sets a default output walker', function (): void {
+    $entityManager = pagedResidencies();
+
+    $entityManager->getConfiguration()->setDefaultQueryHints([Query::HINT_CUSTOM_OUTPUT_WALKER => CountOutputWalker::class]);
+
+    $host = new TableHost(fn (Table $table): Table => $table
+        ->query($entityManager->createQueryBuilder()->select('residency')->from(Residency::class, 'residency'))
+        ->paginated(false));
+
+    $host->getAllTableRecordsCount();
+})->throws(LogicException::class, 'sets its own output walker [Doctrine\ORM\Tools\Pagination\CountOutputWalker]');
+
+/*
+ * And the shapes the refusal must leave alone, all of which Doctrine serves
+ * today. A single derived identity is keyed without being composite:
+ * `CountWalker` resolves an association identifier as a path, and a page joining
+ * no collection is a plain windowed read the user walker rides through
+ * untouched. Both routes to a hint are here because only one of them reaches the
+ * builder, and the walker is one that answers rows rather than the counting one
+ * the refusals above carry, because these cases read a page.
+ */
+it('pages and counts a single derived identity joining no collection under a custom output walker', function (string $route): void {
+    $entityManager = sealedLockers();
+    $query = $entityManager->createQueryBuilder()
+        ->select('seal')
+        ->from(LockerSeal::class, 'seal')
+        ->orderBy('seal.position', 'ASC');
+
+    if ($route === 'configuration') {
+        $entityManager->getConfiguration()->setDefaultQueryHints([Query::HINT_CUSTOM_OUTPUT_WALKER => PassthroughOutputWalker::class]);
+    } else {
+        $query->setHint(Query::HINT_CUSTOM_OUTPUT_WALKER, PassthroughOutputWalker::class);
+    }
+
+    $host = new TableHost(fn (Table $table): Table => $table->query($query)->paginated([1]));
+    $countHost = new TableHost(fn (Table $table): Table => $table->query(clone $query)->paginated(false));
+
+    $paginator = $host->getTableRecords();
+
+    expect(array_keys($paginator->getRecords()))->toBe(['AB-1'])
+        ->and($paginator->getTotalRecordCount())->toBe(2)
+        ->and($countHost->getAllTableRecordsCount())->toBe(2);
+})->with(['the hint on the builder' => ['builder'], 'a default hint on the configuration' => ['configuration']]);
+
+/*
+ * Simple mode reads no total at all, so the only paginator in the way is the
+ * window — and the window of a root that joins no collection is the plain one,
+ * whatever the root is keyed by. Both flavours, because the refusal that used to
+ * stand here answered to the key alone.
+ */
+it('pages a keyed table joining no collection in simple mode under a custom output walker', function (string $flavour): void {
+    $entityManager = $flavour === 'composite' ? pagedResidencies() : sealedLockers();
+    $query = $flavour === 'composite'
+        ? $entityManager->createQueryBuilder()->select('residency')->from(Residency::class, 'residency')->orderBy('residency.position', 'ASC')
+        : $entityManager->createQueryBuilder()->select('seal')->from(LockerSeal::class, 'seal')->orderBy('seal.position', 'ASC');
+
+    $query->setHint(Query::HINT_CUSTOM_OUTPUT_WALKER, PassthroughOutputWalker::class);
+
+    $host = new TableHost(fn (Table $table): Table => $table
+        ->query($query)
+        ->paginated([1])
+        ->paginationMode(PaginationMode::Simple));
+
+    $paginator = $host->getTableRecords();
+
+    expect(array_keys($paginator->getRecords()))->toBe($flavour === 'composite' ? ['apollo~2026-spring'] : ['AB-1'])
+        ->and($paginator->getTotalRecordCount())->toBeNull()
+        ->and($paginator->hasMorePages())->toBeTrue();
+})->with(['a single derived identity' => ['derived'], 'a composite root' => ['composite']]);
 
 /*
  * A table that never pages never meets either read: an unpaginated one returns

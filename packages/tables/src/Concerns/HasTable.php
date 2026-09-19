@@ -249,6 +249,8 @@ trait HasTable
             $query = $this->getFilteredTableQuery();
 
             if ($query instanceof QueryBuilder) {
+                $this->assertTableQueryCarriesNoOutputWalker($query, $this->getCompositeTableRecordClass($query));
+
                 return new DoctrinePaginator($query->getQuery(), JoinCardinality::joinsCollection($query))->count();
             }
         }

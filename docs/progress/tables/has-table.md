@@ -2389,12 +2389,18 @@ host: a mounted action carries a *key* back, and
 [`resolveTableAction()`](../actions/has-actions.md#the-table-branch-reaches-tables-through-a-guarded-soft-reference)
 turns it into a record with `getTableRecord()`, this trait's own map. What the
 twin still answers for itself is the outbound half — `Action::getContext()`'s
-`recordKey` for a row-scoped action — so on a query-lane table over an entity
-whose identifier is *not* `id`, the rows carry mapping keys while a record action
-on one of them carries none and mounts without its record. That is the one place
-the two reads disagree today; closing it means giving the actions layer the
-table's key rather than teaching it Doctrine, and nothing needs it until a
-non-`id` entity meets a record action.
+`recordKey` for a row-scoped action — and that half is **no longer the twin's
+alone**. The "until" clause this paragraph used to end on arrived with
+[M7 · 1](../roadmap.md#m7--composite-identifiers), whose own deliverable is a
+row action on a composite entity, and the disagreement was closed the way this
+section proposed: when the action has a table and the record is an instance of
+the table's
+[record class](table.md#the-record-class-is-read-off-the-base-querys-root-entity),
+`getContext()` asks the **table** for the key and falls back to
+`resolveRecordKey()`'s literal `id` only otherwise. The actions layer was handed
+the table's key rather than taught Doctrine —
+[action.md](../actions/action.md#getcontext-drops-the-record-model-gate) carries
+the other half of this note.
 
 ### `getTableRecord()` reads fresh when the render cache is cold
 

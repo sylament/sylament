@@ -277,7 +277,7 @@ real rather than by injection.
 | [`setUp()` chrome — label, modal heading (`"Delete selected {title-case plural record label}"`), submit label, success title, `defaultColor('danger')`, the trash icon, `requiresConfirmation()`, `deselectRecordsAfterCompletion()`](../../../packages/actions/src/DeleteBulkAction.php) | [`DeleteBulkAction.php`](../../../vendor/filament/actions/src/DeleteBulkAction.php) | done | — | [semantics](#the-headings-interpolate-and-fall-back-to-the-bare-verb) · [diverges](#the-strings-are-literals-not-translation-keys) |
 | [`failureNotificationTitle()` — the counting closure](../../../packages/actions/src/DeleteBulkAction.php) | [`DeleteBulkAction.php`](../../../vendor/filament/actions/src/DeleteBulkAction.php) | done | — | Filament's two `trans_choice` branches become two `sprintf`s over the same `successCount` / `totalCount` injections — [bulk-action.md](bulk-action.md#the-failure-notification-carries-four-injections-of-filaments-nine) |
 | [The `action()` body — remove each, one `flush()`](../../../packages/actions/src/DeleteBulkAction.php) | [`DeleteBulkAction.php`](../../../vendor/filament/actions/src/DeleteBulkAction.php) | done | — | [diverges](#the-bulk-delete-is-atomic-where-filaments-is-per-record) |
-| [`deleteSelectedRecordsByKey()` — the `fetchSelectedRecords(false)` arm](../../../packages/actions/src/DeleteBulkAction.php) | [`DeleteBulkAction.php`](../../../vendor/filament/actions/src/DeleteBulkAction.php) (`getSelectedRecordsQuery()->delete()`) | done | — | [diverges](#the-by-key-arm-is-a-dql-delete-over-the-plucked-keys) |
+| [`deleteSelectedRecordsByKey()` — the `fetchSelectedRecords(false)` arm](../../../packages/actions/src/DeleteBulkAction.php) | [`DeleteBulkAction.php`](../../../vendor/filament/actions/src/DeleteBulkAction.php) (`getSelectedRecordsQuery()->delete()`) | done | — | [diverges](#the-by-key-arm-is-a-dql-delete-over-the-plucked-keys) · the key list is chunked by [the chunk rule](../schemas/record-key.md#the-chunk-rule) |
 | [`CanCustomizeProcess`](../../../packages/actions/src/Concerns/CanCustomizeProcess.php) (`using()` / `process()`) | [`Concerns/CanCustomizeProcess.php`](../../../vendor/filament/actions/src/Concerns/CanCustomizeProcess.php) | done | — | — |
 | Reporting the swallowed exception | [`DeleteBulkAction.php`](../../../vendor/filament/actions/src/DeleteBulkAction.php) (`report($exception)`) | todo | a logger on `Action` | [detail](#the-swallowed-exception-has-nowhere-to-go-yet) |
 | `missingBulkAuthorizationFailureNotificationMessage()` / `missingBulkProcessingFailureNotificationMessage()` | [`DeleteBulkAction.php`](../../../vendor/filament/actions/src/DeleteBulkAction.php) | blocked | the [keyed failure buckets](bulk-action.md#the-failure-reports-count-they-do-not-carry-keyed-messages) | — |
@@ -334,10 +334,38 @@ and the table's selection query carries whatever the filters and the eager
 loading put on it, so the port splits it in two: the host has **already** plucked
 the selection to keys with the filters and the
 [selectability constraint](../tables/has-table.md#the-selection-is-server-canonical-and-re-derived-on-every-read)
-applied, and `deleteSelectedRecordsByKey()` issues one
-`DELETE <record class> WHERE <identifier> IN (:keys)` over exactly those. The
-affected-row count feeds `reportBulkProcessingSuccessfulRecordsCount()`, so the
-status is the comparison against the total the reader minted.
+applied, and `deleteSelectedRecordsByKey()` issues
+`DELETE <record class> WHERE <predicate>` over exactly those, the predicate
+built by
+[`IdentifierConstraint::in()`](../schemas/record-key.md#the-operations-and-their-dql)
+under `sylament_selected_record_keys` — `<identifier> IN (:keys)` for a
+single-identifier class, byte for byte what this arm always emitted, and a
+balanced OR of per-field ANDs for a composite one, which is the only shape DQL
+offers since it has no row-value `IN`. The affected-row count feeds
+`reportBulkProcessingSuccessfulRecordsCount()`, so the status is the comparison
+against the total the reader minted. The method's own signature moved with the
+split — `deleteSelectedRecordsByKey(EntityManagerInterface $entityManager,
+string $recordClass, array $chunks)` where it took a bare key list and resolved
+the table itself — which is a breaking change for a subclass that overrode it;
+nothing in either repo does.
+
+**One statement is the normal case, not the guarantee.** The key list is split
+by [`IdentifierConstraint::chunk()`](../schemas/record-key.md#the-chunk-rule)
+first — 2 000 keys per statement for one identifier field, 500 for two or more —
+and any selection that fits a chunk, which is every selection a page can
+realistically produce, is still exactly one `DELETE`. When it does not fit, the
+chunks run inside one DBAL `transactional()`, so that "the whole batch failed"
+stays true of the toast the arm reports. A single chunk opens none: one
+statement is atomic on its own, and `callMountedAction()`'s transaction is
+**opt-in** — `hasDatabaseTransactions` defaults to `false` and no shipped action
+sets it — so there is nothing wrapping it either. `DeleteBulkActionTest` pins
+that by finding no `BEGIN` on the unchunked case.
+
+Under `fetchSelectedRecords(false)` a composite table's `$records` are
+**encoded keys**, so a `using()` closure replacing this arm receives strings in
+the [key grammar](../schemas/record-key.md#the-grammar) rather than anything it
+can `remove()` — the same as a single-identifier table, where they have always
+been the id as a string.
 
 Two semantics to know, both shared with Filament's own mass delete: a DQL delete
 **bypasses ORM cascades and lifecycle callbacks** (Filament's skips model events
@@ -357,12 +385,19 @@ is not caught leaves `callMountedAction()`'s own `catch (Throwable)` to roll the
 transaction back and rethrow, so a foreign key the delete violates would surface
 as a 500 with no toast at all — the exact opposite of the arm three lines below
 it, and of the contract the whole bulk-notification family exists for. One
-statement means the whole batch failed either way, so the complete-failure report
-is the right shape for both.
+**transaction** means the whole batch failed either way — one chunk is one
+statement, several chunks are one `transactional()` — so the complete-failure
+report is the right shape for both.
 
-The catch is total by design: a `LogicException` from the arm's own guards (a
-`records()`-lane table, a missing entity manager, a DQL delete that answers with
-something other than a row count) reports a complete failure rather than fataling,
-matching how the hydrating arm treats its non-object record guard. Both swallows
-still lose the exception's detail, which is the
+The catch is **not** total, and M7 · 1 is what narrowed it. Everything a
+developer can get wrong is resolved before the `try`: the table, its entity
+manager, its record class and the chunked shape of the keys, so a by-key delete
+on a `records()`-lane table propagates its `LogicException` instead of answering
+with the danger toast — [`DissociateBulkAction`](dissociate-action.md) places its
+four mapping refusals the same way, and `DeleteBulkActionTest` pins the
+placement. What the catch still covers is the statements themselves, plus the one
+guard that can only fire once they have run: a DQL delete that answers with
+something other than a row count. The hydrating arm keeps its non-object record
+guard inside its own catch, since that arm has no resolution step to hoist. Both
+swallows still lose the exception's detail, which is the
 [open todo](#the-swallowed-exception-has-nowhere-to-go-yet) a logger closes.

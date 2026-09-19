@@ -220,7 +220,13 @@ port's is the bare assignment.
 ### Chunking is not ported
 
 `chunkSelectedRecords()` / `getSelectedRecordsChunkSize()` are dropped, so
-`CanFetchSelectedRecords` ships as the fetch flag alone. Two reasons. **No
+`CanFetchSelectedRecords` ships as the fetch flag alone — the **fetching** arm,
+that is. Since [M7 · 1](../roadmap.md#m7--composite-identifiers) the by-key arm
+chunks its own key list, by
+[the chunk rule](../schemas/record-key.md#the-chunk-rule) rather than by a
+user-set size, because DQL parse time is superlinear in bound-key count. The
+two are unrelated mechanisms wearing one word, and only the fetching one is
+unported. Two reasons for that. **No
 shipped Filament action calls `chunkSelectedRecords()`** — the grep over
 `vendor/filament/actions/src` returns only the definitions — so the port would
 be API surface with no consumer on either side. And the shape it produces is

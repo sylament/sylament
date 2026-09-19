@@ -1475,10 +1475,33 @@ One entry diverges. The **model gate** around `recordKey` is dropped:
 Filament only emits a key when the record has no table, is not an Eloquent
 `Model`, the table declares no model, or the record's class matches it — a
 guard against a table whose rows are a different model than the action's own
-record. Sylament's tables carry no model class at all (records are plain
-objects or arrays), so there is nothing to compare and the key is emitted
-whenever [`resolveRecordKey()`](#record-key-resolution-is-hoisted-to-hasactions)
-yields one. Restore the gate if `Table` ever grows a declared record class.
+record. Sylament has no model class to compare, so the key is emitted whenever
+*something* yields one — but **which** something now depends on the table.
+
+M7 · 1 gave that branch a table arm. When the action has a table and the record
+is an instance of the table's
+[record class](../tables/table.md#the-record-class-is-read-off-the-base-querys-root-entity),
+`getContext()` asks the table — `Table::getRecordKey()`, the host's own read,
+which goes through
+[`RecordKey::of()`](../schemas/record-key.md) on the query lane — and only
+otherwise falls back to
+[`resolveRecordKey()`](#record-key-resolution-is-hoisted-to-hasactions)'s literal
+`id`. That is not a gate restored but the gap
+[has-table.md named and left open](../tables/has-table.md#object-records-are-keyed-by-a-readable-id-rather-than-an-eloquent-key)
+being closed the way it proposed: the actions layer is handed the table's key
+rather than taught Doctrine, so a row action on a `Book`, a `Shortcut` or a
+`Residency` mounts **with** its record instead of silently without one. An
+action with no table, or over a record that is not the table's entity — a
+`SELECT NEW` projection, a DTO — reads `id` exactly as before.
+
+It also means the read can now **throw** where it used to stay quiet: a record
+of the table's own class whose identifier is incomplete — an explicitly-set,
+not-yet-persisted entity — makes `RecordKey::of()` refuse, where
+`resolveRecordKey()` would simply have omitted `recordKey`. That is deliberate,
+and it is the same record the table could never have resolved on the way back;
+`getRecord(withDefault: false)` is what keeps a header `CreateAction` out of
+that path, and a row is always keyable, so a row action never sees it.
+No shipped path reaches that throw.
 The record it resolves the key from is read with
 [`withDefault: false`](#the-record-chain-reaches-the-schema-the-component-and-the-host),
 so a record the *host* supplied as a default never becomes a `recordKey` on the
@@ -1814,7 +1837,13 @@ null. That makes it **lenient where the host's twin is strict**: the same
 unreadable record throws from
 [`HasTable::getTableRecordKey()`](../tables/has-table.md), because a table
 building its row index cannot proceed without a key, while an action emitting
-a mount context can simply omit one. The array arm keeps Filament's
+a mount context can simply omit one. It is also, since M7 · 1, the **fallback**
+rather than the whole outbound answer — a table-bound action over one of the
+table's own records is handed the table's key first
+([above](#getcontext-drops-the-record-model-gate)), and this literal `id` read
+is what answers for everything else. Keep the two in step if the read ever
+changes: they are two implementations of one convention, not one method and its
+wrapper. The array arm keeps Filament's
 `LogicException` for a *missing*
 [`ArrayRecord`](../../../packages/support/src/ArrayRecord.php) key entry — an
 array is unambiguously a record, so the absent entry is a caller mistake rather

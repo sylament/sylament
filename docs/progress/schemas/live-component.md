@@ -139,14 +139,31 @@ throw covers a keyless embed *under* a live host too, not only a hostless one �
 [Filament's own `blank($key)` guard](../../../vendor/filament/schemas/src/Components/Concerns/HasKey.php),
 so `sy-live-{host id}-` can never be handed out as an id.
 
-The sanitiser is lossy, and deliberately so: it maps *every* character outside
-`[A-Za-z0-9_-]` to `-`, so two keys differing only in a separator (`a.b` and
+The sanitiser is lossy, and deliberately so: it maps every character outside
+`[A-Za-z0-9_~=-]` to `-`, so two keys differing only in a separator (`a.b` and
 `a-b`) collapse onto one id. Keys are author-written and scoped to one host, so
 the collision needs two embeds keyed on purpose to differ only there — but the
 group arm keys an embed `"{class}-{group key}"` off a backslash-heavy
 class-string, which is exactly the shape where separators carry the meaning.
-Reach for a hash-style disambiguator if that ever bites; do not widen the
-character class, since the id lands raw in an HTML attribute.
+Reach for a hash-style disambiguator if that ever bites.
+
+`~` and `=` are in that class **on purpose**, and M7 · 1 put them there:
+they are the two characters a composite
+[record key](record-key.md#the-grammar) is built from, so without them
+`5~en` and `5-en` would mint one morph identity. It is latent while the only
+embed in the toolkit keys by class-string, and it goes live the moment an embed
+sits inside a relationship repeater item, whose key *is* a record key
+([M7 · 4](../roadmap.md#m7--composite-identifiers)). A collision test pins it.
+Do not widen the class further: the id lands raw in an HTML attribute, and the
+record-key grammar is exactly what this class now admits.
+
+The cost of admitting them is a **selector** one, and it is the consuming app's
+rather than the toolkit's: `~` and `=` are legal in an HTML5 id but are not bare
+`ident` characters in CSS, so an app hand-writing `#sy-live-5~en` — in a
+stylesheet or in `querySelector()` — must run the id through `CSS.escape()`
+first. Nothing in the toolkit does: the one consumer is this component's own
+partial, which interpolates the id into the `id` attribute and never selects on
+it.
 
 ### The host id is minted by the host, because UX has no stable component id
 

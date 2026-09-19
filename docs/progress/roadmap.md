@@ -748,13 +748,13 @@ and the epic that takes it.
 | `tables` `HasTable::getAllTableRecordsCount()` | Doctrine `Paginator::count()`, composite-safe — recorded so a sweep does not "fix" it | none |
 | `tables` `Concerns\CanReorderRecords` → `HasBulkActions::resolveTableRecordKeyTarget()`; `Concerns\CanSummarizeRecords` → `CanPaginateRecords::resolveTableFetchJoinCollection()` | two cross-trait **private** calls, legal only because `HasTable` composes all four traits into one host — a lane editing one trait can break the other with no signal from either file | **2–4** (recorded, not owned) |
 | `forms` `Validation\ExistingValueValidator` (`:46-48`, `COUNT(DISTINCT record.<field>)` / `record.<field> IN`); `Components\Select::createOptionUsing()` (`:707`) and the Doctrine default `relationship()` installs (`:430`), which returns **one** key string; `Components\Repeater`'s item construction over `RECORD_ITEM_KEY_PREFIX` (`:69`) | the read sites are already listed under 4; these are the **write**/probe sites the epic-4 rows do not cover | **4 / 6** |
-| `panels` `sy-pa-resource-record-<key>` (`EditRecord.php:151`, `ManageRelatedRecords.php:180`) — a raw key in a class token, which a space splits in two; and a page path putting a `RouteCompiler::SEPARATORS` character (`vendor/symfony/routing/RouteCompiler.php:27` — the set contains **both** `~` and `=`) immediately after `{record}`, which compiles the placeholder to a regexp excluding that character and 404s a key containing it | **3** |
+| `panels` `sy-pa-resource-record-<key>` (`EditRecord.php:151`, `ManageRelatedRecords.php:180`); and a page path putting a `RouteCompiler::SEPARATORS` character (`vendor/symfony/routing/RouteCompiler.php:27` — the set contains **both** `~` and `=`) immediately after `{record}` | a raw key in a class token, which a space splits in two; and a placeholder compiled to a regexp excluding that separator, which 404s a key containing it | **3** |
 | **demo** — the `--fresh` truncate list, `byName()`/`lookUp()`'s closed template, `'Seeded 4 records'`, `assertCount(22, …)` | the ledger had no demo rows, although the demo is in every epic's Delivers column | **1** |
 | **demo** `RowBehaviourCard`'s `['record' => $record->getId()]`; `ArticleResource::getGloballySearchableAttributes()` | a single-identifier key minted by hand, and a search hit's URL | 3 |
 | `AssociationReader::getIdentifierFieldName()` | **deleted with its last caller** | 4 |
 
 **The tests that pin the refusal today**, which flip with their sites — and the
-count is smaller than it reads: **three of M7 · 1's five ledger rows had no
+count is smaller than it reads: **three of M7 · 1's five original ledger rows had no
 pinning test at all**, so that epic wrote tests where it expected to flip them.
 The ones that exist: schemas'
 `AssociationReaderTest`; forms' `UniqueValueValidatorTest`; tables'

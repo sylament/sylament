@@ -241,9 +241,10 @@ aggregate returns exactly one row over any set, the empty one included.
 keys the paginator already resolved — the shape the
 [aggregate batch](table.md#an-aggregate-is-a-batched-side-query-and-a-hidden-subselect-never-a-select-on-the-page-query)
 uses. It answers `null` in three shapes: off the query lane, on an unpaginated
-table, and on a page holding no records, whose empty key list would bind an
-`IN ()` most platforms refuse. The page must be resolved before the query can be
-built, which is Filament's dependency too.
+table, and on a page holding no records, whose empty key list would narrow to
+`1 = 0` and publish a figure over nothing in place of no figure at all. The page
+must be resolved before the query can be built, which is Filament's dependency
+too.
 
 A composite identifier narrows the same way, through
 [`IdentifierConstraint::in()`](../schemas/record-key.md#the-operations-and-their-dql)

@@ -295,9 +295,10 @@ The scope flag is read through a `modifyQueryUsing()` closure recording its
 back null; a bare table naming both lanes; a `Shortcut` and a `Residency` each
 resolving by their own key through the per-field narrowing, which is a different
 method from the keying above and is reached without it; five keys that are
-malformed for the class (`a~b~c` and `plain` failing the arity, `=2` failing it
-through an escape, `plain~=61` escaping a safe byte, `plain~=2f` spelling its hex
-lowercase) answering null with **no statement run at all**, next to a canonical
+malformed for the class (`a~b~c`, `plain` and `=2` failing the arity — `=2` is
+one component, so it never reaches the escape check — `plain~=61` escaping a
+safe byte, `plain~=2f` spelling its hex lowercase) answering null with **no
+statement run at all**, next to a canonical
 `nope~nope` that costs exactly one and finds nothing — which is what separates
 "refused before the bind" from "queried and missed"; and the single-identifier
 lane held to the same rule, where `abc`, `05`, ` 5`, `5abc`, a `7` trailed by a
@@ -2448,9 +2449,14 @@ own DBAL type, which is the half of the guard that was missing: an untyped
 `PageController::convertTwigError()` does not convert it. The other half is that
 a key which is **malformed for the class** — the wrong arity, a non-canonical
 escape, a component its field's type cannot hold — answers null *without running
-a query at all*, which is what a row action, an editable cell, a reorder and a
-by-key delete now get from this method. The panel's own `{record}` binding does
-**not** come through here: `Resource::resolveRecordRouteBinding()` binds the raw
+a query at all*, which is what a row action and an editable cell now get from
+this method — the only two call sites it has. Selection, the reorder write and
+the by-key delete never call it: they narrow through
+[`IdentifierConstraint::in()`](../schemas/record-key.md#parameter-naming-and-what-an-empty-or-malformed-key-means)
+instead, where a malformed key is **dropped** from the list and a statement
+still runs — as `1 = 0` once nothing well-formed is left. The panel's own
+`{record}` binding does **not** come through here:
+`Resource::resolveRecordRouteBinding()` binds the raw
 segment untyped, so `/admin/articles/abc/edit` stays a 500 until
 [M7 · 3](../roadmap.md#m7--composite-identifiers) converts it. A bare
 table names both lanes, and anything that hydrates to a non-object (a scalar or

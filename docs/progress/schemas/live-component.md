@@ -128,7 +128,7 @@ walk would treat it as the same component. So the partial passes an explicit
 `id`, which both the attributes creator and
 [`InterceptChildComponentRenderSubscriber:53-57`](../../../vendor/symfony/ux-live-component/src/EventListener/InterceptChildComponentRenderSubscriber.php)
 prefer over the deterministic one, derived from `getLiveComponentKey()` with
-everything outside `[A-Za-z0-9_-]` replaced by `-` and prefixed `sy-live-`.
+everything outside `[A-Za-z0-9_~=-]` replaced by `-` and prefixed `sy-live-`.
 
 The public API stays `key()` — Filament's vocabulary — but a keyless embed is a
 **`LogicException`**, not a silent fallback: Filament's keyless branch keys by

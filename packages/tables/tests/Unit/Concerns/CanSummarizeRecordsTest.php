@@ -161,9 +161,9 @@ it('names the record class own identifier in the page narrowing', function (): v
  * a page figure and a table figure unmistakable. The venue half of each key is a
  * `Handle`, so the association component rides its target's own DBAL type.
  */
-function summaryStateResidencies(): EntityManager
+function summaryStateResidencies(?RecordingMiddleware $recorder = null): EntityManager
 {
-    $entityManager = EntityManagerFactory::create();
+    $entityManager = EntityManagerFactory::create($recorder);
 
     $apollo = new Venue(new Handle('apollo'), 'Apollo');
     $forum = new Venue(new Handle('forum'), 'Forum');
@@ -686,6 +686,82 @@ it('reads past a fetch-joined to-many through the paginator', function (): void 
 
     expect($host->shouldRenderTrailingGroupedTableSummary($host->getTableRecords()->getRecords()[2]))->toBeTrue();
 });
+
+/**
+ * The four residencies grouped by season and ordered by it, one to a page — so
+ * page 1 ends in the middle of a group and page 2 ends one, and the look-ahead
+ * has to read a record either way. The tiebreak orders the two of a season by
+ * venue, so which record follows which is fixed.
+ *
+ * @param (Closure(Table): Table)|null $configure
+ */
+function groupedResidencySummaryHost(EntityManager $entityManager, int $page = 1, ?Closure $configure = null): TableHost
+{
+    $host = new TableHost(function (Table $table) use ($entityManager, $configure): Table {
+        $table = $table
+            ->query($entityManager->createQueryBuilder()->select('residency')->from(Residency::class, 'residency')->orderBy('residency.season', 'ASC'))
+            ->columns([TextColumn::make('position')->summarize(Sum::make())])
+            ->groups(['season'])
+            ->paginated([1]);
+
+        return $configure instanceof Closure ? $configure($table) : $table;
+    });
+
+    $host->tableGrouping = 'season';
+    $host->tablePage = $page;
+
+    return $host;
+}
+
+/*
+ * The per-group figure is one scoped statement per group, and the scope narrows by
+ * the grouped column — so nothing in it touches the identifier, whatever the root
+ * is keyed by. Pinned on the keyed flavour because nothing pinned it there.
+ */
+it('summarizes each group of a keyed table in one statement of its own', function (): void {
+    $recorder = new RecordingMiddleware();
+    $host = groupedResidencySummaryHost(summaryStateResidencies($recorder));
+
+    $records = $host->getTableRecords()->getRecords();
+
+    $recorder->reset();
+
+    expect($host->getTableSummarySelectedState($host->getGroupedTableSummaryQuery($records['apollo~2026-autumn'])))->toBe(['sy_summary_0' => 60])
+        ->and($recorder->statements())->toHaveCount(1)
+        ->and($recorder->statements()[0])->toContain('WHERE r0_.season = ?');
+});
+
+/*
+ * Neither summarizer batches, so each runs a statement of its own over the page
+ * query — the narrowed one on a keyed root, which is the pairing that had no pin.
+ */
+it('reads a range and a list off a keyed page', function (): void {
+    $host = new TableHost(fn (Table $table): Table => $table
+        ->query(summaryStateResidencies()->createQueryBuilder()->select('residency')->from(Residency::class, 'residency')->orderBy('residency.position', 'ASC'))
+        ->columns([TextColumn::make('position')->summarize([Range::make(), Values::make()])])
+        ->paginated([2]));
+
+    $column = TextColumn::make('position')->table($host->getTable());
+    $range = Range::make()->column($column)->query($host->getPageTableSummaryQuery());
+    $values = Values::make()->column($column)->query($host->getPageTableSummaryQuery());
+
+    expect($range->getState())->toBe([10, 20])
+        ->and($values->getState())->toBe([10, 20]);
+});
+
+/*
+ * The look-ahead over a keyed root that joins nothing: a window of one at the next
+ * page's offset, ordered deterministically by M7 · 1's identifier tiebreak.
+ */
+it('looks past a keyed page to the group the next one starts', function (int $page, bool $rendered): void {
+    $host = groupedResidencySummaryHost(summaryStateResidencies(), page: $page);
+    $records = $host->getTableRecords()->getRecords();
+
+    expect($host->shouldRenderTrailingGroupedTableSummary(array_first($records)))->toBe($rendered);
+})->with([
+    'a page ending mid-group' => [1, false],
+    'a page ending its group' => [2, true],
+]);
 
 /*
  * The look-ahead builds a second fetch-join paginator, over a window of one, and it

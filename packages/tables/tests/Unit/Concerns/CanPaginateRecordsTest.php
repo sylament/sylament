@@ -636,3 +636,28 @@ it('leaves a single-identifier table fetch-joining a to-many free to page', func
     expect(array_keys($paginator->getRecords()))->toBe([1, 2])
         ->and($paginator->getTotalRecordCount())->toBe(3);
 });
+
+/*
+ * A hint is what tells the two routes apart at one identifier field, where both
+ * narrow with the same `IN (?)`: only the keyed read asks after an output
+ * walker, so a page that still comes back under one is a page Doctrine's own
+ * paginator read.
+ */
+it('pages and counts a single-identifier fetch join under a custom output walker', function (): void {
+    $entityManager = pagedArtists();
+    $query = $entityManager->createQueryBuilder()
+        ->select('artist', 'sy_songs')
+        ->from(Artist::class, 'artist')
+        ->leftJoin('artist.songs', 'sy_songs')
+        ->orderBy('artist.name', 'ASC');
+
+    $query->setHint(Query::HINT_CUSTOM_OUTPUT_WALKER, PassthroughOutputWalker::class);
+
+    $host = new TableHost(fn (Table $table): Table => $table->query($query)->paginated([2]));
+
+    $paginator = $host->getTableRecords();
+
+    expect(array_keys($paginator->getRecords()))->toBe([1, 2])
+        ->and($paginator->getTotalRecordCount())->toBe(3)
+        ->and($paginator->getRecords()[1]->getSongs())->toHaveCount(3);
+});

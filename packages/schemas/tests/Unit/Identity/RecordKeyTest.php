@@ -80,11 +80,6 @@ it('keys a record whose identifier is a strict value object, alone and behind an
         ->and(RecordKey::of($entityManager, $ticket))->toBe(IdentityRig::TICKET_ID . '~7');
 });
 
-/*
- * Doctrine's own IdentifierFlattener reads a managed target's identifier by join-column
- * name and answers a blank for it, so a chained identity keyed through it breaks exactly
- * when the target is managed — which a row read from the database always is.
- */
 it('keys a chained derived identity while its target is managed, and after a cold read', function (): void {
     $entityManager = IdentityRig::create();
 

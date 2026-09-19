@@ -138,11 +138,8 @@ class DeleteBulkAction extends BulkAction
     }
 
     /**
-     * One DQL `DELETE` per chunk, bypassing ORM cascades and lifecycle
-     * callbacks. Two or more chunks run inside a single transaction, so a
-     * mid-batch failure still means the whole batch failed; a single chunk opens
-     * none, so a selection that fits one statement costs exactly what it did
-     * before the split.
+     * One DQL `DELETE` per chunk, and one transaction from the second chunk on,
+     * so a mid-batch failure means the whole batch failed.
      *
      * @param class-string       $recordClass
      * @param list<list<string>> $chunks

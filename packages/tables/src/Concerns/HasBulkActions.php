@@ -109,8 +109,10 @@ trait HasBulkActions
     }
 
     /**
-     * The table's query narrowed to the selection — `IN` the selected keys, or
-     * `NOT IN` the deselected ones while tracking. The filters are re-applied
+     * The table's query narrowed to the selection through
+     * {@see IdentifierConstraint} — the selected keys, or everything but the
+     * deselected ones while tracking, in whatever shape the record class's
+     * identifier takes. The filters are re-applied
      * only when the table deselects on filtering, which is what makes the
      * surviving selection provably inside them; without that coupling the
      * selection deliberately outlives the filters and must not be constrained.

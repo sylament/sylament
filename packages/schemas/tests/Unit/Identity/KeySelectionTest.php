@@ -24,12 +24,6 @@ it('selects an identifier association through IDENTITY() and a scalar field by i
         ->toBe(['IDENTITY(record.post) AS sy_owner_0', 'record.locale AS sy_owner_1']);
 });
 
-/*
- * No hydrator converts every key column: the scalar one converts none, the array one
- * converts a field path but not IDENTITY(), which it types as a string. So a row is keyed
- * by converting each raw value through its field's own type, and both shapes must agree
- * with the record.
- */
 it('mints from a result row the key the record mints, whichever way the row was hydrated', function (string $class, string $hydration): void {
     $entityManager = IdentityRig::create();
     $query = $entityManager->createQueryBuilder()->from($class, 'record');

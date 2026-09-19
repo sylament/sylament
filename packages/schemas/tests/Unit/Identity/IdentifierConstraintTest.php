@@ -125,11 +125,6 @@ it('narrows by every other flavour too', function (string $class, string $key, s
     'an association onto a converting identifier' => [ListingNote::class, 'AB-123~n1', 'record.listing = :key_0 AND record.code = :key_1'],
 ]);
 
-/*
- * A DBAL type's convertToDatabaseValue() is contracted for the PHP value, and a strict
- * one refuses the bare string a key carries — so the component goes through
- * convertToPHPValue() first, and what is bound is what the column holds.
- */
 it('binds a strict value-object identifier as the value its column holds', function (): void {
     $query = identityQuery(IdentityRig::create(), Listing::class);
 

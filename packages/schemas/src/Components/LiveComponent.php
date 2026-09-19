@@ -90,6 +90,6 @@ class LiveComponent extends Component
             throw new LogicException('A ' . static::class . ' embed needs a key() — an unkeyed child cannot keep a stable identity across renders.');
         }
 
-        return 'sy-live-' . preg_replace('/[^A-Za-z0-9_-]/', '-', $key);
+        return 'sy-live-' . preg_replace('/[^A-Za-z0-9_~=-]/', '-', $key);
     }
 }

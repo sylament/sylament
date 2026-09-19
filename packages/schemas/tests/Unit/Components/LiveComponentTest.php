@@ -79,3 +79,12 @@ it('throws for a keyless embed even under a live host', function (): void {
     expect(fn (): string => $embed->getChildId())
         ->toThrow(LogicException::class, 'key()');
 });
+
+it('keeps a composite record key apart from the hyphenated id it would otherwise collapse into', function (): void {
+    $composite = LiveComponent::make('ChildComponent')->key('record-5~en=2FGB');
+    $hyphenated = LiveComponent::make('ChildComponent')->key('record-5-en-2FGB');
+    Schema::make()->components([$composite, $hyphenated])->getComponents();
+
+    expect($composite->getChildId())->toBe('sy-live-record-5~en=2FGB')
+        ->and($composite->getChildId())->not->toBe($hyphenated->getChildId());
+});

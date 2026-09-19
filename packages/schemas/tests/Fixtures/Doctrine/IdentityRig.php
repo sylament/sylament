@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Sylament\Schemas\Tests\Fixtures\Doctrine;
 
 use Doctrine\ORM\EntityManager;
+use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\Beacon;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\Listing;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\ListingNote;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\Placement;
@@ -25,6 +26,12 @@ final class IdentityRig
     public const string HOSTILE_KEY = 'www=2Eexample=2Ecom~=2Fblog=2F2026=2Fbundles=20all=20the=20way=20down';
 
     public const string TICKET_ID = 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11';
+
+    /**
+     * What a CHAR(36) guid column legitimately holds on a platform with no guid
+     * type of its own.
+     */
+    public const string BEACON_ID = 'legacy-42';
 
     public static function create(): EntityManager
     {
@@ -88,6 +95,11 @@ final class IdentityRig
         $ticket->setSerial(7);
         $ticket->setSubject('ticketed');
         $entities[] = $ticket;
+
+        $beacon = new Beacon();
+        $beacon->setId(self::BEACON_ID);
+        $beacon->setLabel('beaconed');
+        $entities[] = $beacon;
 
         EntityManagerFactory::seed($entityManager, ...$entities);
 

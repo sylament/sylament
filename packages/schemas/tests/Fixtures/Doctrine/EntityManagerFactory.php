@@ -33,6 +33,31 @@ final class EntityManagerFactory
     }
 
     /**
+     * The same fixture mapping over a PostgreSQL connection that never opens:
+     * a connection told its server version names its platform from that
+     * parameter alone, which is all a platform-gated shape check reads. Nothing
+     * here may run a statement.
+     */
+    public static function createForPostgres(): EntityManager
+    {
+        if (!Type::hasType(SkuType::NAME)) {
+            Type::addType(SkuType::NAME, SkuType::class);
+        }
+
+        $config = ORMSetup::createAttributeMetadataConfig(paths: [__DIR__ . '/Entity'], isDevMode: true);
+        $config->enableNativeLazyObjects(true);
+
+        $connection = DriverManager::getConnection([
+            'driver' => 'pdo_pgsql',
+            'host' => '127.0.0.1',
+            'dbname' => 'sylament_fixture',
+            'serverVersion' => '16.0',
+        ], $config);
+
+        return new EntityManager($connection, $config);
+    }
+
+    /**
      * Clears the identity map after flushing, so a subsequent read goes to the
      * database rather than answering from memory.
      */

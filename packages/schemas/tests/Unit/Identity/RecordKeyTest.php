@@ -5,6 +5,7 @@ declare(strict_types=1);
 use Sylament\Schemas\Identity\IdentifierConstraint;
 use Sylament\Schemas\Identity\RecordKey;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\Author;
+use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\Beacon;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\Listing;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\ListingNote;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\Placement;
@@ -36,6 +37,33 @@ it('keys a record of every identifier flavour', function (): void {
         ->and(RecordKey::of($entityManager, $seal))->toBe('1')
         ->and(RecordKey::of($entityManager, $placement))->toBe('footer~2')
         ->and(RecordKey::of($entityManager, $post))->toBe('1');
+});
+
+/*
+ * A guid column on a platform with no guid type of its own is a CHAR(36) holding
+ * whatever the application put there, so a row whose id is not a UUID is a row the
+ * key seam must carry: the mint, the decode and the predicate all have to answer
+ * for it, or a legacy table's own rows resolve to nothing.
+ */
+it('resolves a guid identifier the platform stores as plain text', function (): void {
+    $entityManager = IdentityRig::create();
+    $beacon = $entityManager->find(Beacon::class, IdentityRig::BEACON_ID);
+
+    assert($beacon instanceof Beacon);
+
+    $key = RecordKey::of($entityManager, $beacon);
+    $query = $entityManager->createQueryBuilder()->select('record')->from(Beacon::class, 'record');
+
+    /** @var list<Beacon> $found */
+    $found = $query
+        ->where((string) IdentifierConstraint::equals($query, 'record', Beacon::class, $key, 'sylament_record_key'))
+        ->getQuery()
+        ->getResult();
+
+    expect($key)->toBe(IdentityRig::BEACON_ID)
+        ->and(RecordKey::toIdentifier($entityManager, Beacon::class, $key))->toBe(['id' => IdentityRig::BEACON_ID])
+        ->and($found)->toHaveCount(1)
+        ->and($found[0]->getLabel())->toBe('beaconed');
 });
 
 it('keys a record whose identifier is a strict value object, alone and behind an association', function (): void {

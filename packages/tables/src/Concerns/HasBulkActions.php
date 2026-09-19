@@ -7,6 +7,7 @@ namespace Sylament\Tables\Concerns;
 use Doctrine\ORM\QueryBuilder;
 use LogicException;
 use Stringable;
+use Sylament\Schemas\Identity\IdentifierConstraint;
 use Sylament\Support\Pagination\Paginator;
 use Sylament\Tables\Grouping\Group;
 use Symfony\UX\LiveComponent\Attribute\LiveAction;
@@ -124,23 +125,30 @@ trait HasBulkActions
             throw new LogicException(sprintf('Table [%s] resolves selected records from a query it does not have; a records() table resolves them from its page.', static::class));
         }
 
-        $identifier = $this->resolveTableRecordKeyExpression($query);
+        [$rootAlias, $recordClass] = $this->resolveTableRecordKeyTarget($query);
 
         if ($this->tracksDeselectedTableRecords()) {
-            $deselectedKeys = $this->normalizedSelectedTableRecordKeys($this->deselectedTableRecords);
+            $exclusion = IdentifierConstraint::notIn(
+                $query,
+                $rootAlias,
+                $recordClass,
+                $this->normalizedSelectedTableRecordKeys($this->deselectedTableRecords),
+                'sylament_selected_record_keys',
+            );
 
-            // An empty exclusion set means every row, so the constraint is
-            // omitted rather than emitted: Doctrine expands an empty list
-            // parameter to NULL, and `NOT IN (NULL)` matches nothing.
-            if ($deselectedKeys !== []) {
-                $query
-                    ->andWhere(sprintf('%s NOT IN (:sylament_selected_record_keys)', $identifier))
-                    ->setParameter('sylament_selected_record_keys', $deselectedKeys);
+            // Nothing left to exclude means every row, so no predicate is emitted:
+            // one built from no key at all would exclude everything instead.
+            if ($exclusion !== null) {
+                $query->andWhere($exclusion);
             }
         } else {
-            $query
-                ->andWhere(sprintf('%s IN (:sylament_selected_record_keys)', $identifier))
-                ->setParameter('sylament_selected_record_keys', $this->normalizedSelectedTableRecordKeys($this->selectedTableRecordKeys));
+            $query->andWhere(IdentifierConstraint::in(
+                $query,
+                $rootAlias,
+                $recordClass,
+                $this->normalizedSelectedTableRecordKeys($this->selectedTableRecordKeys),
+                'sylament_selected_record_keys',
+            ));
         }
 
         if ($shouldFetchSelectedRecords) {
@@ -154,7 +162,7 @@ trait HasBulkActions
         }
 
         if (!$shouldFetchSelectedRecords) {
-            $this->constrainQueryToSelectableTableRecords($query, $identifier);
+            $this->constrainQueryToSelectableTableRecords($query);
         }
 
         return $query;
@@ -394,13 +402,15 @@ trait HasBulkActions
      * the selectability callback has to reach the query itself — otherwise a
      * DQL bulk write would touch rows the table refuses to let the user select.
      */
-    private function constrainQueryToSelectableTableRecords(QueryBuilder $query, string $identifier): void
+    private function constrainQueryToSelectableTableRecords(QueryBuilder $query): void
     {
         $table = $this->getTable();
 
         if (!$table->checksIfRecordIsSelectable()) {
             return;
         }
+
+        [$rootAlias, $recordClass] = $this->resolveTableRecordKeyTarget($query);
 
         $selectableKeys = [];
 
@@ -415,9 +425,7 @@ trait HasBulkActions
             $selectableKeys[] = $this->getTableRecordKey($record);
         }
 
-        $query
-            ->andWhere(sprintf('%s IN (:sylament_selectable_record_keys)', $identifier))
-            ->setParameter('sylament_selectable_record_keys', $selectableKeys);
+        $query->andWhere(IdentifierConstraint::in($query, $rootAlias, $recordClass, $selectableKeys, 'sylament_selectable_record_keys'));
     }
 
     /**
@@ -472,6 +480,23 @@ trait HasBulkActions
     {
         return $this->getFilteredTableQuery()
             ?? throw new LogicException(sprintf('Table [%s] resolves selected records from a query it does not have; a records() table resolves them from its page.', static::class));
+    }
+
+    /**
+     * The root alias and record class every key predicate on this table is built
+     * against.
+     *
+     * @return array{string, class-string}
+     */
+    private function resolveTableRecordKeyTarget(QueryBuilder $query): array
+    {
+        $recordClass = $this->getTable()->getRecordClass()
+            ?? throw new LogicException(sprintf('Table [%s] must have [query()] to resolve records by key.', static::class));
+
+        $rootAlias = $query->getRootAliases()[0]
+            ?? throw new LogicException(sprintf('The query of table [%s] names no root alias to resolve records against.', static::class));
+
+        return [$rootAlias, $recordClass];
     }
 
     /**

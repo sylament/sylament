@@ -3,13 +3,19 @@
 declare(strict_types=1);
 
 use Doctrine\ORM\EntityManager;
+use Doctrine\ORM\Query\Parameter;
 use Sylament\Tables\Columns\TextColumn;
 use Sylament\Tables\Enums\PaginationMode;
 use Sylament\Tables\Table;
 use Sylament\Tables\Tests\Fixtures\Concerns\TableHost;
 use Sylament\Tables\Tests\Fixtures\Doctrine\Entity\Artist;
+use Sylament\Tables\Tests\Fixtures\Doctrine\Entity\CompositePair;
+use Sylament\Tables\Tests\Fixtures\Doctrine\Entity\Residency;
+use Sylament\Tables\Tests\Fixtures\Doctrine\Entity\Shortcut;
 use Sylament\Tables\Tests\Fixtures\Doctrine\Entity\Song;
+use Sylament\Tables\Tests\Fixtures\Doctrine\Entity\Venue;
 use Sylament\Tables\Tests\Fixtures\Doctrine\EntityManagerFactory;
+use Sylament\Tables\Tests\Fixtures\Doctrine\Handle;
 use Sylament\Tables\Tests\Fixtures\Doctrine\RecordingMiddleware;
 
 /*
@@ -367,3 +373,259 @@ it('forgets a grouped enumeration wherever the selection memo is dropped', funct
     expect(count($recorder->statements()))->toBeGreaterThan($afterClearing)
         ->and($host->getGroupedSelectableTableRecordKeys('Radiohead'))->toBe(['1']);
 })->with(['flushCachedTableRecords', 'deselectAllTableRecords', 'selectAllTableRecords']);
+
+/*
+ * The composite half of the same seam. Three flavours, one rig each: a two-integer
+ * key (CompositePair), a two-string key whose components carry `.`, `/`, a space and
+ * a `~` (Shortcut), and a derived identity whose first component is an association
+ * onto a Handle-keyed Venue (Residency). Every key below is the string the codec
+ * mints, which is what the client would have sent back.
+ */
+
+function selectablePairs(): EntityManager
+{
+    $entityManager = EntityManagerFactory::create();
+
+    EntityManagerFactory::seed(
+        $entityManager,
+        new CompositePair(1, 2, 'one-two'),
+        new CompositePair(1, 3, 'one-three'),
+        new CompositePair(2, 1, 'two-one'),
+    );
+
+    return $entityManager;
+}
+
+function selectionShortcut(string $host, string $path, string $label, int $position): Shortcut
+{
+    $shortcut = new Shortcut();
+    $shortcut->setHost($host);
+    $shortcut->setPath($path);
+    $shortcut->setLabel($label);
+    $shortcut->setPosition($position);
+
+    return $shortcut;
+}
+
+function selectableShortcuts(): EntityManager
+{
+    $entityManager = EntityManagerFactory::create();
+
+    EntityManagerFactory::seed(
+        $entityManager,
+        selectionShortcut('www.example.com', '/blog/hello world', 'Blog', 1),
+        selectionShortcut('www.example.com', '/about', 'About', 2),
+        selectionShortcut('shop.example.com', '/sale~2026', 'Sale', 3),
+    );
+
+    return $entityManager;
+}
+
+function selectionResidency(Venue $venue, string $season, string $label, int $position): Residency
+{
+    $residency = new Residency();
+    $residency->setVenue($venue);
+    $residency->setSeason($season);
+    $residency->setLabel($label);
+    $residency->setPosition($position);
+
+    return $residency;
+}
+
+function selectableResidencies(): EntityManager
+{
+    $entityManager = EntityManagerFactory::create();
+    $venue = new Venue(new Handle('main-hall'), 'Main Hall');
+
+    EntityManagerFactory::seed(
+        $entityManager,
+        $venue,
+        selectionResidency($venue, '2026-spring', 'Spring', 1),
+        selectionResidency($venue, 'autumn/2026', 'Autumn', 2),
+    );
+
+    return $entityManager;
+}
+
+/**
+ * @param (Closure(Table): Table)|null $configure
+ */
+function pairSelectionHost(EntityManager $entityManager, ?Closure $configure = null): TableHost
+{
+    return new TableHost(function (Table $table) use ($entityManager, $configure): Table {
+        $table
+            ->query($entityManager->createQueryBuilder()
+                ->select('compositePair')
+                ->from(CompositePair::class, 'compositePair')
+                ->orderBy('compositePair.a')
+                ->addOrderBy('compositePair.b'))
+            ->columns([TextColumn::make('label')]);
+
+        return $configure instanceof Closure ? $configure($table) : $table;
+    });
+}
+
+/**
+ * @param (Closure(Table): Table)|null $configure
+ */
+function shortcutSelectionHost(EntityManager $entityManager, ?Closure $configure = null): TableHost
+{
+    return new TableHost(function (Table $table) use ($entityManager, $configure): Table {
+        $table
+            ->query($entityManager->createQueryBuilder()
+                ->select('shortcut')
+                ->from(Shortcut::class, 'shortcut')
+                ->orderBy('shortcut.position'))
+            ->columns([TextColumn::make('label')]);
+
+        return $configure instanceof Closure ? $configure($table) : $table;
+    });
+}
+
+/**
+ * @param (Closure(Table): Table)|null $configure
+ */
+function residencySelectionHost(EntityManager $entityManager, ?Closure $configure = null): TableHost
+{
+    return new TableHost(function (Table $table) use ($entityManager, $configure): Table {
+        $table
+            ->query($entityManager->createQueryBuilder()
+                ->select('residency')
+                ->from(Residency::class, 'residency')
+                ->orderBy('residency.position'))
+            ->columns([TextColumn::make('label')]);
+
+        return $configure instanceof Closure ? $configure($table) : $table;
+    });
+}
+
+it('constrains a composite query to the selected keys', function (): void {
+    $pairs = pairSelectionHost(selectablePairs());
+    $residencies = residencySelectionHost(selectableResidencies());
+
+    $pairs->selectedTableRecordKeys = ['1~2', '2~1'];
+    $residencies->selectedTableRecordKeys = ['main-hall~autumn=2F2026'];
+
+    expect(array_map(
+        static fn (CompositePair $pair): string => $pair->getLabel(),
+        $pairs->getSelectedTableRecords(),
+    ))->toBe(['one-two', 'two-one'])
+        ->and($pairs->getSelectedTableRecordsQuery()->getDQL())
+        ->toContain('(compositePair.a = :sylament_selected_record_keys_0_0 AND compositePair.b = :sylament_selected_record_keys_0_1) OR (compositePair.a = :sylament_selected_record_keys_1_0 AND compositePair.b = :sylament_selected_record_keys_1_1)')
+        ->and(array_map(
+            static fn (Residency $residency): string => $residency->getLabel(),
+            $residencies->getSelectedTableRecords(),
+        ))->toBe(['Autumn'])
+        ->and($residencies->getSelectedTableRecordsQuery()->getDQL())
+        ->toContain('residency.venue = :sylament_selected_record_keys_0_0 AND residency.season = :sylament_selected_record_keys_0_1');
+});
+
+it('constrains a composite query away from the deselected keys while tracking', function (): void {
+    $pairs = pairSelectionHost(selectablePairs());
+    $residencies = residencySelectionHost(selectableResidencies());
+
+    foreach ([$pairs, $residencies] as $tracking) {
+        $tracking->isTrackingDeselectedTableRecords = true;
+    }
+
+    $pairs->deselectedTableRecords = ['1~3'];
+    $residencies->deselectedTableRecords = ['main-hall~2026-spring'];
+
+    expect(array_map(
+        static fn (CompositePair $pair): string => $pair->getLabel(),
+        $pairs->getSelectedTableRecords(),
+    ))->toBe(['one-two', 'two-one'])
+        ->and($pairs->getSelectedTableRecordsQuery()->getDQL())
+        ->toContain('NOT ((compositePair.a = :sylament_selected_record_keys_0_0 AND compositePair.b = :sylament_selected_record_keys_0_1))')
+        ->and(array_map(
+            static fn (Residency $residency): string => $residency->getLabel(),
+            $residencies->getSelectedTableRecords(),
+        ))->toBe(['Autumn'])
+        ->and($residencies->getSelectedTableRecordsQuery()->getDQL())
+        ->toContain('NOT ((residency.venue = :sylament_selected_record_keys_0_0 AND residency.season = :sylament_selected_record_keys_0_1))');
+});
+
+/*
+ * The composite twin of the empty-deselection case above: with nothing to exclude the
+ * predicate is omitted entirely, because an OR-of-ANDs built from no key at all would
+ * have to be `NOT (FALSE)` — and the shape it replaces, `NOT IN ()`, expanded to NULL
+ * and matched nothing.
+ */
+it('selects every row of a composite table while tracking an empty deselection bag', function (): void {
+    $host = pairSelectionHost(selectablePairs());
+
+    $host->isTrackingDeselectedTableRecords = true;
+    $host->deselectedTableRecords = [];
+
+    expect($host->hasSelectedTableRecords())->toBeTrue()
+        ->and($host->getSelectedTableRecords())->toHaveCount(3)
+        ->and($host->getSelectedTableRecordsQuery()->getDQL())->not->toContain('sylament_selected_record_keys');
+});
+
+/*
+ * A key is client input and the decode is total: a wrong arity, an uppercase-hex
+ * violation and a non-canonical integer all name no record rather than raising. A
+ * selection left with none becomes `1 = 0`; a deselection left with none is nothing to
+ * exclude, which is every row.
+ */
+it('drops a malformed key from a composite selection rather than refusing it', function (): void {
+    $selecting = pairSelectionHost(selectablePairs());
+    $empty = pairSelectionHost(selectablePairs());
+    $tracking = pairSelectionHost(selectablePairs());
+
+    $selecting->selectedTableRecordKeys = ['1~2', 'garbage', '1~2~3', '01~2'];
+    $empty->selectedTableRecordKeys = ['garbage'];
+    $tracking->isTrackingDeselectedTableRecords = true;
+    $tracking->deselectedTableRecords = ['garbage'];
+
+    expect(array_map(
+        static fn (CompositePair $pair): string => $pair->getLabel(),
+        $selecting->getSelectedTableRecords(),
+    ))->toBe(['one-two'])
+        ->and($empty->getSelectedTableRecords())->toBe([])
+        ->and($empty->getSelectedTableRecordsQuery()->getDQL())->toContain('1 = 0')
+        ->and($tracking->getSelectedTableRecords())->toHaveCount(3)
+        ->and($tracking->getSelectedTableRecordsQuery()->getDQL())->not->toContain('sylament_selected_record_keys');
+});
+
+/*
+ * Two key predicates on one builder — the selection and the selectability narrowing —
+ * which is the collision `setParameter()` would have made in silence. Each application
+ * mints its names off its own caller-supplied base, so the assertion is on the parameter
+ * names rather than on the rows alone.
+ */
+it('narrows a composite non-fetching query to the selectable records without colliding', function (): void {
+    $host = pairSelectionHost(
+        selectablePairs(),
+        static fn (Table $table): Table => $table->checkIfRecordIsSelectableUsing(
+            static fn (CompositePair $record): bool => $record->getB() !== 3,
+        ),
+    );
+
+    $host->selectedTableRecordKeys = ['1~2', '1~3', '2~1'];
+
+    $query = $host->getSelectedTableRecordsQuery(shouldFetchSelectedRecords: false);
+
+    expect($query->getDQL())
+        ->toContain('(compositePair.a = :sylament_selectable_record_keys_0_0 AND compositePair.b = :sylament_selectable_record_keys_0_1)')
+        ->and(array_values(array_map(
+            static fn (Parameter $parameter): string => $parameter->getName(),
+            $query->getParameters()->toArray(),
+        )))->toBe([
+            'sylament_selected_record_keys_0_0',
+            'sylament_selected_record_keys_0_1',
+            'sylament_selected_record_keys_1_0',
+            'sylament_selected_record_keys_1_1',
+            'sylament_selected_record_keys_2_0',
+            'sylament_selected_record_keys_2_1',
+            'sylament_selectable_record_keys_0_0',
+            'sylament_selectable_record_keys_0_1',
+            'sylament_selectable_record_keys_1_0',
+            'sylament_selectable_record_keys_1_1',
+        ])
+        ->and(array_map(
+            static fn (CompositePair $pair): string => $pair->getLabel(),
+            $query->getQuery()->getResult(),
+        ))->toBe(['one-two', 'two-one'])
+        ->and($host->getSelectedTableRecordsQuery()->getDQL())->not->toContain('sylament_selectable_record_keys');
+});

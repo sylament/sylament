@@ -50,7 +50,7 @@ final class IdentifierConstraint
         }
 
         if (!$fields->isComposite()) {
-            $query->setParameter($parameter, $values[0], self::bindingType($fields, 0));
+            $query->setParameter($parameter, $values[0], Type::getType($fields->types[0])->getBindingType());
 
             return sprintf('%s.%s <> :%s', $alias, $fields->names[0], $parameter);
         }
@@ -199,7 +199,7 @@ final class IdentifierConstraint
         }
 
         if (!$fields->isComposite()) {
-            $query->setParameter($parameter, array_column($tuples, 0), match (self::bindingType($fields, 0)) {
+            $query->setParameter($parameter, array_column($tuples, 0), match (Type::getType($fields->types[0])->getBindingType()) {
                 ParameterType::INTEGER => ArrayParameterType::INTEGER,
                 ParameterType::ASCII => ArrayParameterType::ASCII,
                 ParameterType::BINARY => ArrayParameterType::BINARY,
@@ -246,7 +246,7 @@ final class IdentifierConstraint
         foreach ($fields->names as $index => $field) {
             $name = $fields->isComposite() ? "{$parameter}_{$index}" : $parameter;
 
-            $query->setParameter($name, $values[$index], self::bindingType($fields, $index));
+            $query->setParameter($name, $values[$index], Type::getType($fields->types[$index])->getBindingType());
 
             $comparisons[] = sprintf('%s.%s = :%s', $alias, $field, $name);
         }
@@ -266,10 +266,5 @@ final class IdentifierConstraint
         if (preg_match('/_[0-9]+$/D', $parameter) === 1) {
             throw new LogicException(sprintf('The parameter base [%s] ends in an index of its own; name it without one, since a composite identifier appends "_<key>_<field>" to it.', $parameter));
         }
-    }
-
-    private static function bindingType(IdentifierFields $fields, int $index): ParameterType
-    {
-        return Type::getType($fields->types[$index])->getBindingType();
     }
 }

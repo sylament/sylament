@@ -6,6 +6,7 @@ namespace Sylament\Tables\Concerns;
 
 use Doctrine\ORM\QueryBuilder;
 use Doctrine\ORM\Tools\Pagination\Paginator as DoctrinePaginator;
+use Sylament\Schemas\Identity\IdentifierConstraint;
 use Sylament\Support\Pagination\Paginator;
 use Sylament\Tables\Columns\Summarizers\Contracts\HasSelectAlias;
 use Sylament\Tables\Grouping\Group;
@@ -28,9 +29,11 @@ trait CanSummarizeRecords
     /**
      * The same dataset narrowed to the keys of the page on screen — never by a limit,
      * which would bound the aggregate's own result row and read as the all-table
-     * figure. Null where there is no page to narrow to: off the query lane, on an
-     * unpaginated table, and on an empty page, whose empty key list would bind an
-     * `IN ()` most platforms refuse.
+     * figure. One identifier field narrows as today's `IN`, two or more as a
+     * disjunction of per-field equalities, every component bound through its own
+     * DBAL type. Null where there is no page to narrow to: off the query lane, on an
+     * unpaginated table, and on an empty page, whose empty key list would narrow to
+     * `1 = 0` and publish a figure over nothing in place of no figure at all.
      */
     public function getPageTableSummaryQuery(): ?QueryBuilder
     {
@@ -42,18 +45,20 @@ trait CanSummarizeRecords
         }
 
         $keys = array_keys($paginator->getRecords());
-        $table = $this->getTable();
-        $recordClass = $table->getRecordClass();
-        $entityManager = $table->getQueryEntityManager();
+        $recordClass = $this->getTable()->getRecordClass();
         $rootAlias = $query->getRootAliases()[0] ?? null;
 
-        if ($keys === [] || $recordClass === null || $entityManager === null || $rootAlias === null) {
+        if ($keys === [] || $recordClass === null || $rootAlias === null) {
             return null;
         }
 
-        return $query
-            ->andWhere(sprintf('%s.%s IN (:sylament_summary_keys)', $rootAlias, $entityManager->getClassMetadata($recordClass)->getSingleIdentifierFieldName()))
-            ->setParameter('sylament_summary_keys', array_map(strval(...), $keys));
+        return $query->andWhere(IdentifierConstraint::in(
+            $query,
+            $rootAlias,
+            $recordClass,
+            array_map(strval(...), $keys),
+            'sylament_summary_keys',
+        ));
     }
 
     /**

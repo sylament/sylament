@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use Doctrine\DBAL\ArrayParameterType;
 use Doctrine\ORM\EntityManager;
 use Doctrine\ORM\QueryBuilder;
 use Sylament\Tables\Columns\Column;
@@ -19,8 +20,11 @@ use Sylament\Tables\Tests\Fixtures\Doctrine\Entity\Artist;
 use Sylament\Tables\Tests\Fixtures\Doctrine\Entity\Book;
 use Sylament\Tables\Tests\Fixtures\Doctrine\Entity\CompositePair;
 use Sylament\Tables\Tests\Fixtures\Doctrine\Entity\Genre;
+use Sylament\Tables\Tests\Fixtures\Doctrine\Entity\Residency;
 use Sylament\Tables\Tests\Fixtures\Doctrine\Entity\Song;
+use Sylament\Tables\Tests\Fixtures\Doctrine\Entity\Venue;
 use Sylament\Tables\Tests\Fixtures\Doctrine\EntityManagerFactory;
+use Sylament\Tables\Tests\Fixtures\Doctrine\Handle;
 use Sylament\Tables\Tests\Fixtures\Doctrine\RecordingMiddleware;
 
 /**
@@ -106,8 +110,9 @@ it('narrows the page summary to the keys of the page being shown', function (): 
     $host = summaryStateHost(summaryStateSongs(), [TextColumn::make('plays')->summarize(Sum::make())], page: 2);
     $query = $host->getPageTableSummaryQuery();
 
-    expect($query?->getDQL())->toContain('IN (:sylament_summary_keys)')
-        ->and($query?->getParameter('sylament_summary_keys')?->getValue())->toBe(['3', '4'])
+    expect($query?->getDQL())->toContain('song.id IN (:sylament_summary_keys)')
+        ->and($query?->getParameter('sylament_summary_keys')?->getValue())->toBe([3, 4])
+        ->and($query?->getParameter('sylament_summary_keys')?->getType())->toBe(ArrayParameterType::INTEGER)
         ->and($host->getTableSummarySelectedState($query))->toBe(['sy_summary_0' => 70]);
 });
 
@@ -146,27 +151,90 @@ it('names the record class own identifier in the page narrowing', function (): v
         ->paginated([2]));
 
     expect($host->getPageTableSummaryQuery()?->getDQL())->toContain('book.code IN (:sylament_summary_keys)')
+        ->and($host->getPageTableSummaryQuery()?->getParameter('sylament_summary_keys')?->getType())->toBe(ArrayParameterType::STRING)
         ->and($host->getTableSummarySelectedState($host->getPageTableSummaryQuery()))->toBe(['sy_summary_0' => 2]);
 });
 
-/*
- * A composite identifier is refused a page earlier and louder than a summary: keying
- * the page's own records is what throws, so the page summary needs no arm of its own
- * — while the all-table row, which keys nothing, still reads its figure.
+/**
+ * Four residencies over two venues, positions 10/20/30/40 — so a page of the first
+ * two sums to 30 where the whole table sums to 100, exactly as the songs above keep
+ * a page figure and a table figure unmistakable. The venue half of each key is a
+ * `Handle`, so the association component rides its target's own DBAL type.
  */
-it('leaves the composite identifier refusal to the page it cannot key', function (): void {
+function summaryStateResidencies(): EntityManager
+{
     $entityManager = EntityManagerFactory::create();
 
-    EntityManagerFactory::seed($entityManager, new CompositePair(1, 1, 'first'), new CompositePair(1, 2, 'second'));
+    $apollo = new Venue(new Handle('apollo'), 'Apollo');
+    $forum = new Venue(new Handle('forum'), 'Forum');
+
+    EntityManagerFactory::seed(
+        $entityManager,
+        $apollo,
+        $forum,
+        summaryStateResidency($apollo, '2026-spring', 'Apollo spring', 10),
+        summaryStateResidency($apollo, '2026-autumn', 'Apollo autumn', 20),
+        summaryStateResidency($forum, '2026-spring', 'Forum spring', 30),
+        summaryStateResidency($forum, '2026-autumn', 'Forum autumn', 40),
+    );
+
+    return $entityManager;
+}
+
+function summaryStateResidency(Venue $venue, string $season, string $label, int $position): Residency
+{
+    $residency = new Residency();
+    $residency->setVenue($venue);
+    $residency->setSeason($season);
+    $residency->setLabel($label);
+    $residency->setPosition($position);
+
+    return $residency;
+}
+
+/*
+ * A composite key is a tuple rather than a column, so the page narrowing is one
+ * OR-of-ANDs term per record with a bound parameter per identifier field — and the
+ * all-table row, which keys nothing, keeps reading the figure it always did.
+ */
+it('narrows the page summary of a composite table by every identifier field', function (): void {
+    $entityManager = EntityManagerFactory::create();
+
+    EntityManagerFactory::seed($entityManager, new CompositePair(1, 1, 'first'), new CompositePair(1, 2, 'second'), new CompositePair(2, 1, 'third'));
 
     $host = new TableHost(fn (Table $table): Table => $table
-        ->query($entityManager->createQueryBuilder()->select('pair')->from(CompositePair::class, 'pair')->orderBy('pair.a', 'ASC'))
-        ->columns([TextColumn::make('label')->summarize(Count::make())])
-        ->paginated([1]));
+        ->query($entityManager->createQueryBuilder()->select('pair')->from(CompositePair::class, 'pair')->orderBy('pair.a', 'ASC')->addOrderBy('pair.b', 'ASC'))
+        ->columns([TextColumn::make('b')->summarize([Sum::make(), Count::make()])])
+        ->paginated([2]));
 
-    expect($host->getTableSummarySelectedState($host->getAllTableSummaryQuery()))->toBe(['sy_summary_0' => 2])
-        ->and(fn (): ?QueryBuilder => $host->getPageTableSummaryQuery())
-        ->toThrow(LogicException::class, 'composite identifier');
+    $query = $host->getPageTableSummaryQuery();
+
+    expect($query?->getDQL())->toContain('((pair.a = :sylament_summary_keys_0_0 AND pair.b = :sylament_summary_keys_0_1) OR (pair.a = :sylament_summary_keys_1_0 AND pair.b = :sylament_summary_keys_1_1))')
+        ->and($query?->getParameter('sylament_summary_keys_1_1')?->getValue())->toBe(2)
+        ->and($host->getTableSummarySelectedState($query))->toBe(['sy_summary_0' => 3, 'sy_summary_1' => 2])
+        ->and($host->getTableSummarySelectedState($host->getAllTableSummaryQuery()))->toBe(['sy_summary_0' => 4, 'sy_summary_1' => 3]);
+});
+
+/*
+ * The derived-identity flavour: one half of the key is an association, whose
+ * component binds through the target's own identifier type — a `Handle` here, so
+ * `apollo` reaches the statement as the string the column stores.
+ */
+it('narrows the page summary of a derived-identity table through its association field', function (): void {
+    $entityManager = summaryStateResidencies();
+
+    $host = new TableHost(fn (Table $table): Table => $table
+        ->query($entityManager->createQueryBuilder()->select('residency')->from(Residency::class, 'residency')->orderBy('residency.position', 'ASC'))
+        ->columns([TextColumn::make('position')->summarize([Sum::make(), Count::make(), Average::make()])])
+        ->paginated([2]));
+
+    $query = $host->getPageTableSummaryQuery();
+
+    expect($query?->getDQL())->toContain('((residency.venue = :sylament_summary_keys_0_0 AND residency.season = :sylament_summary_keys_0_1) OR (residency.venue = :sylament_summary_keys_1_0 AND residency.season = :sylament_summary_keys_1_1))')
+        ->and($query?->getParameter('sylament_summary_keys_0_0')?->getValue())->toBe('apollo')
+        ->and($query?->getParameter('sylament_summary_keys_0_1')?->getValue())->toBe('2026-spring')
+        ->and($host->getTableSummarySelectedState($query))->toBe(['sy_summary_0' => 30, 'sy_summary_1' => 2, 'sy_summary_2' => 15.0])
+        ->and($host->getTableSummarySelectedState($host->getAllTableSummaryQuery()))->toBe(['sy_summary_0' => 100, 'sy_summary_1' => 4, 'sy_summary_2' => 25.0]);
 });
 
 it('answers no summary query at all on the records lane', function (): void {

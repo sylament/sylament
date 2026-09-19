@@ -292,7 +292,7 @@ query, which is
 The scope flag is read through a `modifyQueryUsing()` closure recording its
 `isResolvingRecord` argument across a render and then a lookup, asserting exactly
 `[false, true]`. Five narrower answers sit beside them: an unknown key coming
-back null; a bare table naming both lanes; a `Shortcut` and a `Residency` each
+back null; a bare table naming its three lanes; a `Shortcut` and a `Residency` each
 resolving by their own key through the per-field narrowing, which is a different
 method from the keying above and is reached without it; five keys that are
 malformed for the class (`a~b~c`, `plain` and `=2` failing the arity — `=2` is
@@ -302,8 +302,10 @@ statement run at all**, next to a canonical
 `nope~nope` that costs exactly one and finds nothing — which is what separates
 "refused before the bind" from "queried and missed"; and the single-identifier
 lane held to the same rule, where `abc`, `05`, ` 5`, `5abc`, a `7` trailed by a
-newline and `1~2~3` all answer null before any bind, `05` and ` 5` being the two
-that resolved before M7 · 1 because the database coerced the bound string.
+newline and `1~2~3` all answer null before any bind. Three of them coerced to an
+integer on the way into the old untyped bind: `05` and ` 5` resolved song 5
+before M7 · 1, and the newline-trailed `7` coerced just as readily — it missed
+only because the rig seeds no song 7.
 
 `getAllTableRecordsCount()` has one case carrying all four arms. Seven seeded
 songs are counted through the query with nothing rendered; the same table with
@@ -2449,9 +2451,9 @@ own DBAL type, which is the half of the guard that was missing: an untyped
 `PageController::convertTwigError()` does not convert it. The other half is that
 a key which is **malformed for the class** — the wrong arity, a non-canonical
 escape, a component its field's type cannot hold — answers null *without running
-a query at all*, which is what a row action and an editable cell now get from
-this method — the only two call sites it has. Selection, the reorder write and
-the by-key delete never call it: they narrow through
+a query at all*, which is what a row action, a column's own `action()` and an
+editable cell now get from this method — its three call sites. Selection, the
+reorder write and the by-key delete never call it: they narrow through
 [`IdentifierConstraint::in()`](../schemas/record-key.md#parameter-naming-and-what-an-empty-or-malformed-key-means)
 instead, where a malformed key is **dropped** from the list and a statement
 still runs — as `1 = 0` once nothing well-formed is left. The panel's own
@@ -2459,8 +2461,8 @@ still runs — as `1 = 0` once nothing well-formed is left. The panel's own
 `Resource::resolveRecordRouteBinding()` binds the raw
 segment untyped, so `/admin/articles/abc/edit` stays a 500 until
 [M7 · 3](../roadmap.md#m7--composite-identifiers) converts it. A bare
-table names both lanes, and anything that hydrates to a non-object (a scalar or
-partial select) answers null.
+table names its three lanes, and anything that hydrates to a non-object (a
+scalar or partial select) answers null.
 
 Three things it deliberately does **not** apply, all Filament-faithful. No
 **search**: a term typed into the search box must not make a row's own action

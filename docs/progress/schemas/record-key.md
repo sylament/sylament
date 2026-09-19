@@ -104,12 +104,47 @@ in full.
 
 Together they give **exactly one string per record for every identifier type
 whose PHP value prints back to its own component**, which is the promise a
-consumer may build on. Two residuals are recorded rather than closed, both
-single-type quirks and both avoidable by choosing another type: `decimal`, whose
-`convertToPHPValue()` hands the string back untouched, so `10.5` and `10.50`
-still name one record; and `guid`, which cannot canonicalise case, so under a
-case-insensitive collation `A3F1…` and `a3f1…` still do. Neither is new, and
-neither is reachable through `uuid`, `integer`, `string` or a value-object type.
+consumer may build on. It is one-directional: a record always mints exactly one
+key, while the guarantee that no *other* string resolves that record belongs to
+the database and holds on a binary or case-sensitive collation — PostgreSQL's
+default and SQLite's `BINARY`. Three residuals are recorded rather than closed.
+
+`decimal` is **narrowed, not closed** by its shape check: `10.5` and `10.50`
+still name one record, because nothing here can canonicalise scale; `-0` and
+`-0.0` are spellings of zero the same way; a PostgreSQL `numeric` holding `NaN`
+or `Infinity` mints a key the decode then refuses, so such a row is unreachable
+by key — a `null`, never a throw; and an absurdly long decimal still raises
+`22003` on PostgreSQL, the decimal sibling of the integer-width residual below.
+
+`guid` is shape-checked **only where the platform declares a guid type of its
+own** — PostgreSQL's `UUID`, SQL Server's `UNIQUEIDENTIFIER`, which
+`IdentifierFields` recognises by comparing `getGuidTypeDeclarationSQL()` against
+a fixed 36-character string declaration, since DBAL 4 ships no
+`hasNativeGuidType()`. Everywhere else — SQLite, MySQL, MariaDB, Oracle — the
+column is a plain `CHAR(36)` holding whatever the application put in it, and
+refusing a non-UUID spelling there would refuse a key the record side itself
+minted: a legacy table keyed on un-hyphenated text goes on resolving, which is
+the point of gating rather than dropping the check.
+
+The third belongs to the **collation**, not to any type. A key is compared with
+`=`, so a platform whose collation ignores case or accents resolves a record
+from any spelling that collation equates — MySQL and MariaDB's default
+`utf8mb4_0900_ai_ci`, SQL Server's default CI collation. It reaches every
+text-compared component alike: `string`, `ascii_string`, `text`, `guid`,
+`decimal`, and a string-backed value object or enum that preserves the case it
+was given. `uuid`, `integer` and a value object that normalises in its
+constructor are immune, because the print-back rule leaves them one accepted
+spelling. It is self-aliasing only — the identifier's unique index sits under
+that same collation, so the record a loose spelling reaches is the one the
+sender was already addressing and no scope is escaped — and an application that
+wants strictness declares the identifier column `BINARY`/`utf8mb4_bin` or
+normalises in the entity.
+
+A **NUL byte** is not a residual, because `printable()` refuses one at both
+ends: no record mints a key carrying it, and no key carrying one decodes. A text
+parameter reaches PostgreSQL as a C string, so `abc=00zzz~p` would otherwise be
+compared as `abc` and hand that record a second canonical-looking spelling. No
+minted key is lost, since no supported platform stores a NUL in a text column.
 
 Worked, all **verified by executing** the reference implementation against a
 SQLite rig:
@@ -271,9 +306,11 @@ spliced subselect — so the builder never decides where the predicate goes.
 
 **The decode is one pipeline, and every operation shares it.** A key is split
 into components (a single-field identifier is one component, verbatim); each
-component is **shape-checked** if and only if its field is `bigint` or `guid` —
-the two types whose own conversion hands a malformed string straight back, so
-nothing downstream would refuse it before the database does; each is then run
+component is **shape-checked** if and only if its field is `bigint`, `decimal`
+or `guid` — the three types whose own conversion hands a malformed string
+straight back, so nothing downstream would refuse it before the database does,
+the `guid` arm running only where the platform declares a guid type of its own;
+each is then run
 through its field's `Type::convertToPHPValue()`, and a `ConversionException` out
 of that means *the key names no record*, not an error; and finally the converted
 PHP value must **print back to the component it came from** under the one
@@ -343,7 +380,7 @@ projection is the one place that uses `IDENTITY()`. The plain path is also what
 emits, which is what keeps the sort tiebreak's string dedupe honest.
 
 **The single-identifier emission is today's, byte for byte.** `alias.id = :base`
-and `alias.id IN (:base)` are unchanged — only now typed — and the ten DQL-text
+and `alias.id IN (:base)` are unchanged — only now typed — and the DQL-text
 assertions in `HasBulkActionsTest` and `CanSortRecordsTest` did not move when
 M7 · 1 landed. That is the property that makes this a foundation rather than a
 rewrite.
@@ -389,7 +426,9 @@ Six, and a consumer may rely on all of them.
 4. A decoded value is **only ever a bound parameter**; a field name **only ever**
    comes from `ClassMetadata`.
 5. A single-identifier class emits **today's DQL text**.
-6. **No statement a consumer executes exceeds one chunk.**
+6. **The two write-side consumers chunk** — the by-key delete and the reorder's
+   re-resolution. Every **read** that narrows by a key list is one statement over
+   the whole list, and carries the parse curve below as a recorded limit.
 
 ### The chunk rule
 
@@ -414,10 +453,28 @@ PostgreSQL 18 takes either shape up to its 65 535 bound-parameter ceiling:
 time is superlinear in key count (500 ≈ 55 ms, 1 000 ≈ 160 ms, 5 000 ≈ 3.4 s on a
 first parse), which is what the 500-key composite chunk is sized against.
 
-A site that **executes** its statement chunks — the by-key delete is M7 · 1's
-one. A site that **returns a `QueryBuilder`** for someone else to run cannot, and
-carries that curve as a recorded limit: with `recordsPerPage: 'all'` a page
-summary narrows by every key on the table.
+**Two sites chunk, and both are writes.** The by-key delete issues one DQL
+`DELETE` per chunk, several chunks inside one transaction; the reorder's
+re-resolution issues one `SELECT` per chunk, each narrowing a **copy** of the
+table's query — a copy because a second predicate ANDed onto the first would
+answer nothing, and each chunk keeps the one parameter base, since a base
+carrying a chunk index of its own is what `assertParameterBase()` refuses.
+Reordering is unpaginated by default, so its order list is the whole table,
+which is what made it the second site to earn this.
+
+**Every other site that narrows by a key list runs one statement over the whole
+list**, whether this package executes that statement or hands the builder out —
+the axis is write versus read, never executing versus returning, because
+`getSelectedTableRecordsQuery()` is both. Those sites, as recorded limits riding
+the parse curve above: that method's two arms — `in()` over the selected bag and
+`notIn()` over the deselected one, which cannot be chunked at all, since a
+`NOT IN` per chunk would union near-complete result sets — the selectable-key
+narrowing in `constrainQueryToSelectableTableRecords()`, the hydrating selection
+read, the key pluck, and the page summary, which under `recordsPerPage: 'all'`
+narrows by every key on the table. Two of them can land on **one** builder:
+under `fetchSelectedRecords(false)` with `checkIfRecordIsSelectableUsing()` the
+selected-key predicate and the selectable-key predicate decorate the same query,
+so the executed statement binds both lists at once.
 
 Four alternatives were considered and rejected: factoring a batch's leading field
 (`a = ? AND b IN (…)`), chunking the **hydrating** selection arm (it would
@@ -601,14 +658,21 @@ And a `DriverException` is not an `HttpExceptionInterface`, so
 `PageController::convertTwigError()` does not convert it — the render ends in a
 **500**.
 
-That 500 is still live in one place, and naming it here is the point.
+That 500 is still live wherever a client-supplied key is bound outside the table
+lane, and naming those here is the point.
 `Resource::resolveRecordRouteBinding()` binds the raw `{record}` segment untyped
 and never reaches this decode, so `/admin/articles/abc/edit` remains a 500 on
-PostgreSQL and `/admin/articles/05/edit` still resolves article 5. Converting the
-panel's route binding is **[M7 · 3](../roadmap.md#m7--composite-identifiers)'s**,
-recorded in that milestone's site ledger; M7 · 1 closes the hole on the **table**
-lane only — row resolution, editable cells, selection, reorder and the by-key
-delete.
+PostgreSQL and `/admin/articles/05/edit` still resolves article 5; converting the
+panel's route binding is **[M7 · 3](../roadmap.md#m7--composite-identifiers)'s**.
+The relation layer binds untyped too, and is
+**[M7 · 4](../roadmap.md#m7--composite-identifiers)'s**: a relationship
+`Select`'s selected-record and option-label lookups and `AttachAction`,
+`AssociateAction` and `DissociateBulkAction`'s key `IN` all take client state and
+carry the same 500, while `Select::relationship(ignoreRecord:)` and
+`unique(ignoreRecord:)` bind a server-derived identifier, so they convert for
+composite correctness rather than for the hole. Both sets are recorded in that
+milestone's site ledger; M7 · 1 closes the hole on the **table** lane only — row
+resolution, editable cells, selection, reorder and the by-key delete.
 
 So `equals()` on a malformed key returns `null` and binds nothing, and the
 caller's contract is to answer "no such record" **without querying**. This is

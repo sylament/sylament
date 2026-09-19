@@ -144,6 +144,17 @@ same [guarded soft reference](has-actions.md#the-table-branch-reaches-tables-thr
 component at all does not reach either message: `getLiveComponent()` throws its
 own `RuntimeException` first, exactly as Filament's does.
 
+Under `fetchSelectedRecords(false)` the `$records` a body receives are **record
+keys**, not raw column values, and since
+[M7 · 1](../roadmap.md#m7--composite-identifiers) that distinction bites on a
+single identifier too: the key pluck mints each row's key through
+[`RecordKey`](../schemas/record-key.md), so an identifier whose column form is
+not its printed form — a `uuid` stored `BINARY(16)` on MySQL or SQLite — hands
+back the printed string rather than the bytes the old pluck returned. A body
+that writes by key therefore **decodes through `IdentifierConstraint`** and
+never binds one raw; `DeleteBulkAction` does, and the relation layer's by-key
+arms are converted in M7 · 4.
+
 ### The post-call deselect reaches its host through the nullable accessor
 
 `call()`'s `finally` is Filament's, minus the second branch — the port's

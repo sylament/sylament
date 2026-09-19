@@ -1,0 +1,84 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Sylament\Tables\Tests\Fixtures\Doctrine\Entity;
+
+use Doctrine\ORM\Mapping as ORM;
+
+/**
+ * A record whose identifier is half association — a derived identity onto the
+ * object-keyed {@see Venue} — so a row key must follow the association down to
+ * its target's own identifier before it has anything printable.
+ */
+#[ORM\Entity]
+class Residency
+{
+    #[ORM\Id]
+    #[ORM\ManyToOne]
+    #[ORM\JoinColumn(referencedColumnName: 'handle')]
+    private ?Venue $venue = null;
+
+    #[ORM\Id]
+    #[ORM\Column(length: 40)]
+    private string $season = '';
+
+    #[ORM\Column(length: 255)]
+    private string $label = '';
+
+    #[ORM\Column]
+    private int $position = 0;
+
+    #[ORM\Column]
+    private bool $active = false;
+
+    public function getVenue(): ?Venue
+    {
+        return $this->venue;
+    }
+
+    public function setVenue(?Venue $venue): void
+    {
+        $this->venue = $venue;
+    }
+
+    public function getSeason(): string
+    {
+        return $this->season;
+    }
+
+    public function setSeason(string $season): void
+    {
+        $this->season = $season;
+    }
+
+    public function getLabel(): string
+    {
+        return $this->label;
+    }
+
+    public function setLabel(string $label): void
+    {
+        $this->label = $label;
+    }
+
+    public function getPosition(): int
+    {
+        return $this->position;
+    }
+
+    public function setPosition(int $position): void
+    {
+        $this->position = $position;
+    }
+
+    public function isActive(): bool
+    {
+        return $this->active;
+    }
+
+    public function setActive(bool $active): void
+    {
+        $this->active = $active;
+    }
+}

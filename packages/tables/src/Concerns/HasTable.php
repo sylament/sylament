@@ -10,6 +10,7 @@ use Doctrine\ORM\Tools\Pagination\Paginator as DoctrinePaginator;
 use LogicException;
 use Stringable;
 use Sylament\Schemas\Components\Concerns\CanAccessProperties;
+use Sylament\Schemas\Identity\RecordKey;
 use Sylament\Support\ArrayRecord;
 use Sylament\Support\Pagination\Paginator;
 use Sylament\Tables\Query\AggregateDeclaration;
@@ -482,19 +483,6 @@ trait HasTable
             return null;
         }
 
-        $metadata = $entityManager->getClassMetadata($recordClass);
-
-        if ($metadata->isIdentifierComposite) {
-            throw new LogicException(sprintf('Records of [%s] carry a composite identifier, which a table cannot key; use single-identifier entities or the records() lane.', $record::class));
-        }
-
-        $identifierValues = $metadata->getIdentifierValues($record);
-
-        if ($identifierValues === []) {
-            throw new LogicException(sprintf('Object records must expose a readable non-blank identifier; [%s] has none set.', $record::class));
-        }
-
-        return self::toRecordKey(array_first($identifierValues))
-            ?? throw new LogicException(sprintf('The identifier of [%s] is not a printable value.', $record::class));
+        return RecordKey::of($entityManager, $record, $recordClass);
     }
 }

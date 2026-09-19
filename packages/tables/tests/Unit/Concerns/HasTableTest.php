@@ -16,8 +16,12 @@ use Sylament\Tables\Tests\Fixtures\Doctrine\Entity\Book;
 use Sylament\Tables\Tests\Fixtures\Doctrine\Entity\CompositePair;
 use Sylament\Tables\Tests\Fixtures\Doctrine\Entity\Genre;
 use Sylament\Tables\Tests\Fixtures\Doctrine\Entity\Label;
+use Sylament\Tables\Tests\Fixtures\Doctrine\Entity\Residency;
+use Sylament\Tables\Tests\Fixtures\Doctrine\Entity\Shortcut;
 use Sylament\Tables\Tests\Fixtures\Doctrine\Entity\Song as DoctrineSong;
+use Sylament\Tables\Tests\Fixtures\Doctrine\Entity\Venue;
 use Sylament\Tables\Tests\Fixtures\Doctrine\EntityManagerFactory;
+use Sylament\Tables\Tests\Fixtures\Doctrine\Handle;
 use Sylament\Tables\Tests\Fixtures\Doctrine\RecordingMiddleware;
 use Sylament\Tables\Tests\Fixtures\Records\Artist;
 use Sylament\Tables\Tests\Fixtures\Records\Song;
@@ -38,6 +42,81 @@ function sevenSongs(): EntityManager
     );
 
     return $entityManager;
+}
+
+function makeShortcut(string $host, string $path, string $label, int $position): Shortcut
+{
+    $shortcut = new Shortcut();
+    $shortcut->setHost($host);
+    $shortcut->setPath($path);
+    $shortcut->setLabel($label);
+    $shortcut->setPosition($position);
+    $shortcut->setActive(true);
+
+    return $shortcut;
+}
+
+function makeResidency(Venue $venue, string $season, string $label, int $position): Residency
+{
+    $residency = new Residency();
+    $residency->setVenue($venue);
+    $residency->setSeason($season);
+    $residency->setLabel($label);
+    $residency->setPosition($position);
+    $residency->setActive(true);
+
+    return $residency;
+}
+
+/**
+ * Three shortcuts whose key components carry the characters a key has to
+ * survive — a dot, a slash, a space, the separator itself and non-ASCII —
+ * beside a plain pair that needs no escape at all.
+ */
+function seededShortcuts(?RecordingMiddleware $recorder = null): EntityManager
+{
+    $entityManager = EntityManagerFactory::create($recorder);
+
+    EntityManagerFactory::seed(
+        $entityManager,
+        makeShortcut('www.example.com', '/blog/2026/all the way down', 'Slash and space', 1),
+        makeShortcut('example.com', '/clanky/Žofia~Návratová', 'Unicode and tilde', 2),
+        makeShortcut('plain', 'about', 'Plain', 3),
+    );
+
+    return $entityManager;
+}
+
+/**
+ * Two residencies of one venue, whose identifier is that venue plus a season —
+ * and the venue is itself keyed by a Handle object rather than a scalar, so the
+ * key has to walk the association down to the target's own identifier.
+ */
+function seededResidencies(): EntityManager
+{
+    $entityManager = EntityManagerFactory::create();
+    $venue = new Venue(new Handle('main-hall'), 'Main Hall');
+
+    EntityManagerFactory::seed(
+        $entityManager,
+        $venue,
+        makeResidency($venue, '2026-spring', 'Spring', 1),
+        makeResidency($venue, 'autumn/2026', 'Autumn', 2),
+    );
+
+    return $entityManager;
+}
+
+function shortcutTable(EntityManager $entityManager): TableHost
+{
+    return new TableHost(fn (Table $table): Table => $table
+        ->query($entityManager->createQueryBuilder()->select('shortcut')->from(Shortcut::class, 'shortcut')->orderBy('shortcut.position', 'ASC')));
+}
+
+function residencyTable(EntityManager $entityManager): TableHost
+{
+    return new TableHost(fn (Table $table): Table => $table
+        ->query($entityManager->createQueryBuilder()->select('residency')->from(Residency::class, 'residency')->orderBy('residency.position', 'ASC')));
 }
 
 it('builds the table through the host table() method exactly once', function (): void {
@@ -261,14 +340,50 @@ it('keys entities by their real identifier field through the metadata', function
     expect(array_keys($host->getTableRecords()->getRecords()))->toBe(['sy-001', 'sy-002']);
 });
 
-it('refuses a composite identifier loudly', function (): void {
-    $entityManager = EntityManagerFactory::create();
-    EntityManagerFactory::seed($entityManager, new CompositePair(1, 2, 'Pair'));
-    $host = new TableHost(fn (Table $table): Table => $table
-        ->query($entityManager->createQueryBuilder()->select('pair')->from(CompositePair::class, 'pair')));
+it('keys a composite identifier, escaping every byte a component may not carry', function (): void {
+    $host = shortcutTable(seededShortcuts());
 
-    $host->getTableRecords();
-})->throws(LogicException::class, 'composite');
+    expect(array_keys($host->getTableRecords()->getRecords()))->toBe([
+        'www=2Eexample=2Ecom~=2Fblog=2F2026=2Fall=20the=20way=20down',
+        'example=2Ecom~=2Fclanky=2F=C5=BDofia=7EN=C3=A1vratov=C3=A1',
+        'plain~about',
+    ])
+        ->and($host->getAllTableRecordsCount())->toBe(3);
+});
+
+it('keys a derived identity through the association target own identifier', function (): void {
+    $host = residencyTable(seededResidencies());
+
+    expect(array_keys($host->getTableRecords()->getRecords()))->toBe(['main-hall~2026-spring', 'main-hall~autumn=2F2026']);
+});
+
+it('refuses a composite record carrying a blank identifier component', function (): void {
+    $host = shortcutTable(seededShortcuts());
+    $partial = new Shortcut();
+    $partial->setHost('example.com');
+
+    expect(fn (): string => $host->getTableRecordKey($partial))
+        ->toThrow(LogicException::class, 'is not a printable value')
+        ->and(fn (): string => $host->getTableRecordKey(new Shortcut()))
+        ->toThrow(LogicException::class, 'is not a printable value');
+});
+
+it('refuses a derived identity whose association half was never set', function (): void {
+    $host = residencyTable(seededResidencies());
+    $unowned = new Residency();
+    $unowned->setSeason('2026-spring');
+
+    $host->getTableRecordKey($unowned);
+})->throws(LogicException::class, 'has none set');
+
+it('keys an unmapped subclass of the record class by the table record class', function (): void {
+    $host = shortcutTable(seededShortcuts());
+    $double = new class extends Shortcut {};
+    $double->setHost('example.com');
+    $double->setPath('double');
+
+    expect($host->getTableRecordKey($double))->toBe('example=2Ecom~double');
+});
 
 it('refuses an entity whose identifier is blank', function (): void {
     $entityManager = EntityManagerFactory::create();

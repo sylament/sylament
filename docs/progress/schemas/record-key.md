@@ -115,6 +115,17 @@ still name one record, because nothing here can canonicalise scale; `-0` and
 or `Infinity` mints a key the decode then refuses, so such a row is unreachable
 by key — a `null`, never a throw; and an absurdly long decimal still raises
 `22003` on PostgreSQL, the decimal sibling of the integer-width residual below.
+One more belongs to the platform rather than the type: the decimal shape check
+is platform-independent while `RecordKey::of()` mints unchecked, so a platform
+that hands the value back in a form the pattern refuses makes a row's own key
+name no record. Executed on SQLite: a `NUMERIC(30,2)` identifier
+`123456789012345678901.50` reads back as `1.2345678901235E+20` under column
+affinity, which the pattern refuses. It takes an identifier beyond about fifteen
+significant digits on a platform with float affinity to reach; a platform
+handing back `.5` for a value below one would be the same shape, and that one is
+not executed. Same class as the `guid` residual one type over, and unlike that
+one it is not gated, because the decimal form the check accepts is the one every
+supported platform prints.
 
 `guid` is shape-checked **only where the platform declares a guid type of its
 own** — PostgreSQL's `UUID`, SQL Server's `UNIQUEIDENTIFIER`, which
@@ -128,13 +139,15 @@ the point of gating rather than dropping the check.
 
 The third belongs to the **collation**, not to any type. A key is compared with
 `=`, so a platform whose collation ignores case or accents resolves a record
-from any spelling that collation equates — MySQL and MariaDB's default
-`utf8mb4_0900_ai_ci`, SQL Server's default CI collation. It reaches every
-text-compared component alike: `string`, `ascii_string`, `text`, `guid`,
-`decimal`, and a string-backed value object or enum that preserves the case it
-was given. `uuid`, `integer` and a value object that normalises in its
-constructor are immune, because the print-back rule leaves them one accepted
-spelling. It is self-aliasing only — the identifier's unique index sits under
+from any spelling that collation equates — MySQL 8's default
+`utf8mb4_0900_ai_ci`, MariaDB's own default, which is a different collation and
+also case-insensitive, and SQL Server's default CI collation. It reaches every
+text-compared component alike: `string`, `ascii_string`, `text`, `guid`, and a
+string-backed value object or enum that preserves the case it was given. A
+`decimal` is not among them — the column compares numerically, and its own
+residual is the scale aliasing above. `uuid`, `integer` and a value object that
+normalises in its constructor are immune, because the print-back rule leaves
+them one accepted spelling. It is self-aliasing only — the identifier's unique index sits under
 that same collation, so the record a loose spelling reaches is the one the
 sender was already addressing and no scope is escaped — and an application that
 wants strictness declares the identifier column `BINARY`/`utf8mb4_bin` or
@@ -143,8 +156,14 @@ normalises in the entity.
 A **NUL byte** is not a residual, because `printable()` refuses one at both
 ends: no record mints a key carrying it, and no key carrying one decodes. A text
 parameter reaches PostgreSQL as a C string, so `abc=00zzz~p` would otherwise be
-compared as `abc` and hand that record a second canonical-looking spelling. No
-minted key is lost, since no supported platform stores a NUL in a text column.
+compared as `abc` and hand that record a second canonical-looking spelling.
+Platforms disagree about whether such a row can exist at all: PostgreSQL cannot
+store a NUL in a text column, while SQLite stores `abc\0xyz` whole and hands all
+seven bytes back (executed). Refusing it at the one print rule is deliberate
+anyway — a key must mean the same record on every platform, and the key's own
+alphabet never carries a NUL. The accepted cost is the other direction: a record
+whose identifier holds one now refuses to mint a key at all, with the
+`is not a printable value` `LogicException`, where before it rendered.
 
 Worked, all **verified by executing** the reference implementation against a
 SQLite rig:
@@ -333,8 +352,9 @@ encode and decode cannot drift: a `BackedEnum` becomes its backing value, a
 `Stringable` its `__toString()`, a `bool` `'1'` or `'0'` (a plain cast prints
 `false` as the empty string, which would mint an illegal empty component), any
 other scalar its `(string)` cast — and a result that is non-scalar, not valid
-UTF-8, or blank is **not printable**: `of()` and `fromValues()` refuse it with
-today's `is not a printable value` message, and the decode answers `null`.
+UTF-8, blank, or carrying a **NUL byte** is **not printable**: `of()` and
+`fromValues()` refuse it with today's `is not a printable value` message, and
+the decode answers `null`.
 
 For an association identifier field the type is the **target's** identifier
 field type, followed through a target whose own single identifier is itself an
@@ -397,10 +417,10 @@ takes one result row — a **scalar** one or an **array** one, both are safe —
 reads exactly the aliases it projected, throwing a `LogicException` naming the
 class and the missing column if the row came from a different selection, and
 converts **every** value the row did not already hand back as an object through
-that field's own DBAL type before handing the lot to `RecordKey::fromValues()`.
-Converting all of them rather than only the association ones is the whole point:
-no hydrator converts every key column, and the two disagree about which ones they
-do convert. That is the *same* function the record side uses, by construction
+that field's own DBAL type before handing the lot to its held
+`IdentifierFields::toKey()`. Converting all of them rather than only the
+association ones is the whole point: no hydrator converts every key column, and
+the two disagree about which ones they do convert. That is the *same* function the record side uses, by construction
 rather than by agreement; see
 [the semantics note](#the-row-side-and-the-record-side-mint-one-string-and-only-the-codec-may).
 
@@ -527,11 +547,20 @@ clauses, in the order the decode runs them:
 1. **Not canonical** per [the grammar](#the-grammar) — the wrong arity, an empty
    component, a lowercase or short escape, an escape of a `safe` byte, invalid
    UTF-8 after unescaping.
-2. **The wrong shape for a type whose conversion refuses nothing** — exactly two
-   of them. A `bigint` component must match `^(?:0|-?[1-9][0-9]*)$` and a `guid`
-   component must be UUID-shaped, because both types hand a malformed string
+2. **The wrong shape for a type whose conversion refuses nothing** — exactly
+   three of them. A `bigint` component must match `^(?:0|-?[1-9][0-9]*)$`, a
+   `decimal` component `^-?(?:0|[1-9][0-9]*)(?:\.[0-9]+)?$`, and a `guid`
+   component must be UUID-shaped, because all three types hand a malformed string
    straight back and nothing downstream would refuse it before the database does.
-   Both patterns carry PHP's **`D` modifier**, so `$` means end of *subject*:
+   The `guid` arm runs **only where the platform declares a guid type of its
+   own**, which `IdentifierFields::hasNativeGuidType()` decides by comparing
+   `getGuidTypeDeclarationSQL([])` against the platform's own fixed
+   36-character string declaration: where they differ the column is a `UUID` or
+   `UNIQUEIDENTIFIER` and a non-UUID spelling is a syntax error, where they match
+   it is a plain `CHAR(36)` holding whatever the record side put there, and
+   refusing that spelling would refuse a key the record side minted. The
+   `bigint` and `decimal` arms are platform-independent. All three patterns carry
+   PHP's **`D` modifier**, so `$` means end of *subject*:
    without it PCRE also matches before a trailing newline and `7\n` would name
    record 7 — the same trap
    [the upload seam](interacts-with-schemas.md#uploadschemacomponentfile-carries-the-bytes-beside-the-seam)
@@ -624,7 +653,8 @@ exists for.
 the same row, or a store filled under row keys is read by cells asking for record
 keys and every cell quietly renders its default. They are the same function by
 construction: `keyOf()` normalises its raw values and hands them to
-`RecordKey::fromValues()`, which is exactly what `of()` calls after flattening.
+`IdentifierFields::toKey()`, which is the one print step `RecordKey::fromValues()`
+calls too — so `of()` reaches it after flattening, and neither side owns a copy.
 
 The normalisation is where a hand-rolled copy would go wrong, and the rule is
 **one rule, not a table of special cases**: every value the row did not already
@@ -791,10 +821,10 @@ blank identifier gets — can only ever fire on a record that was never
 persistable, and the codec is not the thing standing in the way. The rule it
 applies is today's, in one place: `BackedEnum` → backing value, `Stringable` →
 `__toString()`, `bool` → `'1'`/`'0'`, any other scalar → `(string)` — and a
-result that is non-scalar, not valid UTF-8, or blank refuses. The `bool` arm is
-the one addition to the rule as it stood: a plain cast prints `false` as the
-empty string, which would mint an illegal empty component that the key's own
-decode then refuses.
+result that is non-scalar, not valid UTF-8, blank, or carrying a NUL byte
+refuses. The `bool` arm is the one addition to the rule as it stood: a plain
+cast prints `false` as the empty string, which would mint an illegal empty
+component that the key's own decode then refuses.
 
 ### A single string identifier containing `.` or `/` is broken today and stays broken
 

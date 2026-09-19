@@ -630,9 +630,12 @@ type; the second is untouched and is M7 · 3's.
 PostgreSQL 18 a `'5abc'` bound `PARAM_INT` raises `22P02` under native
 prepares and, under emulated prepares, **matches record 5**. What closes it is
 a strict decode before anything is bound — the grammar, a shape check for the
-two types whose conversion refuses nothing (`bigint`, `guid`), and a compare
-that every component must **print back to itself** once its field's type has
-converted it. The typed bind stays as the second half, and now goes through
+three types whose conversion refuses nothing (`bigint`, `decimal`, `guid`, the
+last only where the platform declares a guid type of its own rather than a plain
+`CHAR(36)`, which `IdentifierFields` decides by comparing
+`getGuidTypeDeclarationSQL()` against that fixed-length string declaration), and
+a compare that every component must **print back to itself** once its field's
+type has converted it. The typed bind stays as the second half, and now goes through
 that type as a round trip, so a custom value-object identifier type is handed
 a PHP value rather than a raw string.
 
@@ -741,7 +744,7 @@ files that epic wrote are what state the behaviour now.
 | `forms` `unique(ignoreRecord:)` — `Concerns\CanBeValidated` into `Validation\UniqueValueValidator` | `record.<id> <> :ignored` | 4 |
 | `actions` `AttachAction`, `AssociateAction` | `getIdentifierFieldName()`, option keys, `IN (:sylament_selected_record_keys)` | 4 |
 | `actions` `DetachBulkAction`, `DissociateBulkAction` | `getReference()` by key; by-key `IN` | 4 |
-| `actions` the three by-key `IN` binds — `DissociateBulkAction:126`, `AttachAction:344`, `AssociateAction:339` (`DetachBulkAction` binds no parameter) | `setParameter('sylament_selected_record_keys', $keys)` **untyped**, and since M7 · 1 the keys handed to them are `RecordKey` strings rather than raw column values — so a select-all over a target whose column form is not its printed form (a `uuid` stored `BINARY(16)`) matches nothing | 4 |
+| `actions` the three by-key `IN` binds — `DissociateBulkAction:126`, `AttachAction:344`, `AssociateAction:339` (`DetachBulkAction` binds no parameter) | `setParameter('sylament_selected_record_keys', $keys)` **untyped** on all three, which epic 4 converts. `DissociateBulkAction`'s arm also changed hands: since M7 · 1 its keys are the table selection's `RecordKey` strings rather than raw column values, so a select-all over a target whose column form is not its printed form (a `uuid` stored `BINARY(16)`) matches nothing. `AttachAction`/`AssociateAction` are untouched by M7 · 1 — their keys are the record `Select`'s state, minted by `AssociationReader::getRecordKey()`, which epic 4 owns | 4 |
 | `schemas` `AssociationReader` — the owner half: `getRelationshipOwner()`, the one-to-many `mappedBy = :owner` and the candidate `<> :owner`, `getRelatedKeysSubselect()` | binds the owner **entity**; a composite owner is refused through `getRecordKey()` | 5 |
 | the owner half's consumers — `tables` `Table\Concerns\HasQuery` (the `relationship()` lane), `panels` `Resource\Concerns\BelongsToParent::getParentScopedRecordQuery()`, `actions` attach and associate candidates | inherit the refusal | 5 |
 | `actions` `Replication\RecordReplicator`, `ReplicateAction` | identifier fields skipped, so an assigned-key replica has no identity | 6 |

@@ -2170,8 +2170,13 @@ optimistic-lock `@Version` column would not increment — three things a Doctrin
 application is entitled to assume happen when a mapped field changes. One flush
 still sends one transaction, so the atomicity Filament's explicit
 `DB::transaction()` buys is not lost; what changes is that N rows cost N `UPDATE`
-statements rather than one. Reordering is a per-page drag, so N is the page size,
-and the trade is worth it.
+statements rather than one. N is not the page size: reordering is **unpaginated
+by default** (`CanPaginateRecords::$isPaginatedWhileReordering` is `false`, and
+`HasTable::resolveTableRecords()` skips the paginator while the table is
+reordering), so the submitted order is the whole filtered table unless
+`paginatedWhileReordering()` is on. The trade is still worth it, and the read
+that resolves those keys back to entities is chunked for the same reason — see
+[the chunk rule](../schemas/record-key.md#the-chunk-rule).
 
 Two smaller members go with it. Vendor strips the reorder column to its last dotted
 segment (`str($column)->afterLast('.')`) because the pivot arm below needs a bare

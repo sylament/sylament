@@ -15,6 +15,8 @@ use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\PostSeal;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\PostSealNote;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\PostTranslation;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\Redirect;
+use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\Shortlink;
+use Sylament\Schemas\Tests\Fixtures\Doctrine\EntityManagerFactory;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\IdentityRig;
 
 /**
@@ -58,6 +60,31 @@ it('emits a single identifier exactly as the hand-written constraints did, now t
         ->and(IdentifierConstraint::notEquals($notEquals, 'post', Post::class, '1', 'sylament_ignored_record'))->toBe('post.id <> :sylament_ignored_record')
         ->and($notEquals->andWhere('post.id <> :sylament_ignored_record')->getQuery()->getResult())->toHaveCount(0)
         ->and($equals->andWhere('post.id = :sylament_record_key')->getQuery()->getResult())->toHaveCount(1);
+});
+
+it('binds a single string identifier as a list of strings, not of integers', function (): void {
+    $entityManager = IdentityRig::create();
+    $shortlinks = [];
+
+    foreach (['go', 'stay'] as $code) {
+        $shortlink = new Shortlink();
+        $shortlink->setCode($code);
+        $shortlink->setTarget("/{$code}");
+        $shortlinks[] = $shortlink;
+    }
+
+    EntityManagerFactory::seed($entityManager, ...$shortlinks);
+
+    $query = identityQuery($entityManager, Shortlink::class, 'link');
+
+    $constraint = IdentifierConstraint::in($query, 'link', Shortlink::class, ['go'], 'sylament_selected_record_keys');
+
+    /** @var list<Shortlink> $found */
+    $found = $query->andWhere($constraint)->getQuery()->getResult();
+
+    expect($constraint)->toBe('link.code IN (:sylament_selected_record_keys)')
+        ->and($query->getParameter('sylament_selected_record_keys')?->getType())->toBe(ArrayParameterType::STRING)
+        ->and(array_map(static fn (Shortlink $shortlink): string => $shortlink->getCode(), $found))->toBe(['go']);
 });
 
 it('refuses a parameter base that already ends in an index, which a composite key would collide with', function (): void {

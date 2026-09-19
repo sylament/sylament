@@ -22,6 +22,10 @@ final class EntityManagerFactory
             Type::addType(HandleType::NAME, HandleType::class);
         }
 
+        if (!Type::hasType(LockerCodeType::NAME)) {
+            Type::addType(LockerCodeType::NAME, LockerCodeType::class);
+        }
+
         $config = ORMSetup::createAttributeMetadataConfig(paths: [__DIR__ . '/Entity'], isDevMode: true);
         $config->enableNativeLazyObjects(true);
 

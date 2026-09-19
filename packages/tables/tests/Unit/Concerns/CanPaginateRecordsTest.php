@@ -355,6 +355,37 @@ it('pages a single-derived-identity table whose query joins a to-many associatio
 });
 
 /*
+ * Simple mode probes one record past the page instead of counting, and the probe
+ * is a record rather than a joined row here too.
+ */
+it('probes one extra record past a keyed fetch-joined page', function (): void {
+    $entityManager = pagedResidencies();
+    $configure = fn (Table $table): Table => $table
+        ->query($entityManager->createQueryBuilder()
+            ->select('residency', 'sy_gig_venue', 'sy_gigs')
+            ->from(Residency::class, 'residency')
+            ->leftJoin('residency.venue', 'sy_gig_venue')
+            ->leftJoin('sy_gig_venue.gigs', 'sy_gigs')
+            ->orderBy('residency.position', 'ASC'))
+        ->paginated([3])
+        ->paginationMode(PaginationMode::Simple);
+
+    $host = new TableHost($configure);
+    $lastPageHost = new TableHost($configure);
+
+    $lastPageHost->gotoTablePage(2);
+
+    $firstPage = $host->getTableRecords();
+    $lastPage = $lastPageHost->getTableRecords();
+
+    expect(array_keys($firstPage->getRecords()))->toBe(['apollo~2026-spring', 'apollo~2026-autumn', 'forum~2026-spring'])
+        ->and($firstPage->getTotalRecordCount())->toBeNull()
+        ->and($firstPage->hasMorePages())->toBeTrue()
+        ->and(array_keys($lastPage->getRecords()))->toBe(['forum~2026-autumn'])
+        ->and($lastPage->hasMorePages())->toBeFalse();
+});
+
+/*
  * The keyed read is the keyed root's alone: a single-identifier fetch-joined page
  * keeps narrowing through Doctrine's own `WhereInWalker`, one `IN` over one
  * column, where a keyed one narrows by the per-field disjunction the codec binds.

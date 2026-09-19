@@ -7,6 +7,7 @@ namespace Sylament\Actions;
 use Doctrine\ORM\EntityManagerInterface;
 use LogicException;
 use Sylament\Actions\Concerns\CanCustomizeProcess;
+use Sylament\Schemas\Identity\IdentifierConstraint;
 use Throwable;
 
 class DeleteBulkAction extends BulkAction
@@ -43,78 +44,136 @@ class DeleteBulkAction extends BulkAction
         $this->requiresConfirmation();
 
         $this->action(function (): void {
-            $this->process(function (DeleteBulkAction $action, array $records): void {
-                if (!$action->shouldFetchSelectedRecords()) {
-                    try {
-                        $action->reportBulkProcessingSuccessfulRecordsCount($action->deleteSelectedRecordsByKey($records));
-                    } catch (Throwable) {
-                        // The same swallow as the fetching arm below, for the same
-                        // reason: one statement means the whole batch failed, and the
-                        // danger toast is what says so instead of a 500.
-                        $action->reportCompleteBulkProcessingFailure();
-                    }
-
-                    return;
-                }
-
-                $registry = $action->managerRegistry
-                    ?? throw new LogicException('DeleteBulkAction needs the container-built instance — register it as a service so the manager registry is injected.');
-
-                $manager = null;
-
-                try {
-                    foreach ($records as $record) {
-                        if (!is_object($record)) {
-                            throw new LogicException(sprintf('DeleteBulkAction can only delete entities, got %s.', get_debug_type($record)));
-                        }
-
-                        $manager ??= $registry->getManagerForClass($record::class)
-                            ?? throw new LogicException(sprintf('No Doctrine manager handles %s.', $record::class));
-
-                        $manager->remove($record);
-                    }
-
-                    $manager?->flush();
-                } catch (Throwable) {
-                    // A bulk delete answers with the counting failure notification, not
-                    // with a 500: the flush is atomic, so a throw means the whole batch
-                    // failed and the danger toast is what says so.
-                    $action->reportCompleteBulkProcessingFailure();
-                }
-            });
+            $this->process($this->deleteRecords(...));
         });
 
         $this->deselectRecordsAfterCompletion();
     }
 
     /**
-     * One DQL `DELETE` over the already-plucked keys, bypassing ORM cascades
-     * and lifecycle callbacks.
+     * The fetching arm removes each record through its own manager and flushes
+     * once; the by-key arm is one DQL `DELETE` per chunk of the plucked keys.
+     * Everything a developer can get wrong — the table, its entity manager, its
+     * record class, the shape of the keys — is resolved before either arm's
+     * `try`, so it propagates instead of becoming the danger toast;
+     * {@see DissociateBulkAction} places its mapping refusals the same way.
      *
-     * @param array<mixed> $keys
+     * @param array<mixed> $records
      */
-    protected function deleteSelectedRecordsByKey(array $keys): int
+    private function deleteRecords(self $action, array $records): void
     {
-        if ($keys === []) {
-            return 0;
+        if ($action->shouldFetchSelectedRecords()) {
+            $action->deleteFetchedRecords($action, $records);
+
+            return;
         }
 
-        $table = $this->getTable()
-            ?? throw new LogicException(sprintf('The action [%s] deletes selected records by key, which only a table can supply.', $this->getName()));
+        if ($records === []) {
+            $action->reportBulkProcessingSuccessfulRecordsCount(0);
+
+            return;
+        }
+
+        $table = $action->getTable()
+            ?? throw new LogicException(sprintf('The action [%s] deletes selected records by key, which only a table can supply.', $action->getName()));
 
         $entityManager = $table->getQueryEntityManager();
         $recordClass = $table->getRecordClass();
 
         if (!$entityManager instanceof EntityManagerInterface || $recordClass === null) {
-            throw new LogicException(sprintf('The action [%s] deletes selected records by key, which needs a [query()] table.', $this->getName()));
+            throw new LogicException(sprintf('The action [%s] deletes selected records by key, which needs a [query()] table.', $action->getName()));
         }
 
-        $identifier = $entityManager->getClassMetadata($recordClass)->getSingleIdentifierFieldName();
+        $keys = [];
 
-        $affectedRows = $entityManager->createQueryBuilder()
-            ->delete($recordClass, 'sylament_deleted_record')
-            ->where(sprintf('sylament_deleted_record.%s IN (:sylament_selected_record_keys)', $identifier))
-            ->setParameter('sylament_selected_record_keys', $keys)
+        foreach ($records as $record) {
+            if (!is_string($record)) {
+                throw new LogicException(sprintf('DeleteBulkAction deletes by key from record keys, got %s.', get_debug_type($record)));
+            }
+
+            $keys[] = $record;
+        }
+
+        $chunks = IdentifierConstraint::chunk($entityManager, $recordClass, $keys);
+
+        try {
+            $action->reportBulkProcessingSuccessfulRecordsCount($action->deleteSelectedRecordsByKey($entityManager, $recordClass, $chunks));
+        } catch (Throwable) {
+            // The fetching arm's swallow, for the fetching arm's reason: the
+            // chunks are one transaction, so a throw means the whole batch failed
+            // and the danger toast is what says so instead of a 500.
+            $action->reportCompleteBulkProcessingFailure();
+        }
+    }
+
+    /**
+     * @param array<mixed> $records
+     */
+    private function deleteFetchedRecords(self $action, array $records): void
+    {
+        $registry = $action->managerRegistry
+            ?? throw new LogicException('DeleteBulkAction needs the container-built instance — register it as a service so the manager registry is injected.');
+
+        $manager = null;
+
+        try {
+            foreach ($records as $record) {
+                if (!is_object($record)) {
+                    throw new LogicException(sprintf('DeleteBulkAction can only delete entities, got %s.', get_debug_type($record)));
+                }
+
+                $manager ??= $registry->getManagerForClass($record::class)
+                    ?? throw new LogicException(sprintf('No Doctrine manager handles %s.', $record::class));
+
+                $manager->remove($record);
+            }
+
+            $manager?->flush();
+        } catch (Throwable) {
+            // A bulk delete answers with the counting failure notification, not
+            // with a 500: the flush is atomic, so a throw means the whole batch
+            // failed and the danger toast is what says so.
+            $action->reportCompleteBulkProcessingFailure();
+        }
+    }
+
+    /**
+     * One DQL `DELETE` per chunk, bypassing ORM cascades and lifecycle
+     * callbacks. Two or more chunks run inside a single transaction, so a
+     * mid-batch failure still means the whole batch failed; a single chunk opens
+     * none, so a selection that fits one statement costs exactly what it did
+     * before the split.
+     *
+     * @param class-string       $recordClass
+     * @param list<list<string>> $chunks
+     */
+    protected function deleteSelectedRecordsByKey(EntityManagerInterface $entityManager, string $recordClass, array $chunks): int
+    {
+        $delete = function () use ($entityManager, $recordClass, $chunks): int {
+            $affectedRows = 0;
+
+            foreach ($chunks as $chunk) {
+                $affectedRows += $this->deleteRecordKeyChunk($entityManager, $recordClass, $chunk);
+            }
+
+            return $affectedRows;
+        };
+
+        return count($chunks) > 1
+            ? $entityManager->getConnection()->transactional($delete)
+            : $delete();
+    }
+
+    /**
+     * @param class-string $recordClass
+     * @param list<string> $keys
+     */
+    private function deleteRecordKeyChunk(EntityManagerInterface $entityManager, string $recordClass, array $keys): int
+    {
+        $query = $entityManager->createQueryBuilder()->delete($recordClass, 'sylament_deleted_record');
+
+        $affectedRows = $query
+            ->where(IdentifierConstraint::in($query, 'sylament_deleted_record', $recordClass, $keys, 'sylament_selected_record_keys'))
             ->getQuery()
             ->execute();
 

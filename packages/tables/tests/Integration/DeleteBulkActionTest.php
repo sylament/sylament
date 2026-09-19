@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Sylament\Tables\Tests\Integration;
 
 use Doctrine\ORM\EntityManagerInterface;
+use LogicException;
 use RuntimeException;
 use Sylament\Tables\Tests\Fixtures\Doctrine\Entity\Artist;
 use Sylament\Tables\Tests\Fixtures\Doctrine\Entity\Song;
@@ -362,4 +363,25 @@ it('leaves the unselectable record behind on the by-key delete too', function ()
         ->call('callMountedAction');
 
     expect(survivingSongIds($entityManager))->toBe([1, 3, 4]);
+});
+
+/*
+ * A developer error — a by-key delete on a lane that has no query — must
+ * propagate rather than become the danger toast. `deleteSelectedRecordsByKey()`
+ * used to resolve the table, its entity manager and its record class *inside*
+ * the action's own `catch (Throwable)`, which made it indistinguishable from a
+ * failed statement: both produced the toast, and no test could tell them apart.
+ * `DissociateBulkAction` places its mapping refusals before the try the same
+ * way.
+ */
+it('propagates a by-key delete refusal instead of answering with the danger toast', function (): void {
+    $client = test()->getContainer()->get('test.client');
+    $client->disableReboot();
+
+    $component = $this->createLiveComponent('RecordsLaneDeleteTable', client: $client)
+        ->set('selectedTableRecords', ['1'])
+        ->call('mountAction', ['name' => 'delete', 'arguments' => [], 'context' => ['table' => true, 'bulk' => true]]);
+
+    expect(fn (): object => $component->call('callMountedAction'))
+        ->toThrow(LogicException::class, 'deletes selected records by key, which needs a [query()] table');
 });

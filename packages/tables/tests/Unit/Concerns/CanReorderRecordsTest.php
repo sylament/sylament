@@ -13,6 +13,7 @@ use Sylament\Tables\Tests\Fixtures\Doctrine\Entity\Song;
 use Sylament\Tables\Tests\Fixtures\Doctrine\Entity\Venue;
 use Sylament\Tables\Tests\Fixtures\Doctrine\EntityManagerFactory;
 use Sylament\Tables\Tests\Fixtures\Doctrine\Handle;
+use Sylament\Tables\Tests\Fixtures\Doctrine\RecordingMiddleware;
 
 /**
  * Three positioned songs on the query lane, reorderable by `position` unless the
@@ -196,17 +197,18 @@ function reorderResidency(Venue $venue, string $season, string $label, int $posi
 }
 
 /**
- * The scope closure is handed the very builder `getQuery()` answers with, and
- * that builder is the one the reorder narrows in place — so capturing it there
- * is how a test reads the key predicate back after the action has run.
+ * The scope closure is handed the very builder `getQuery()` answers with, which
+ * the reorder then narrows a **copy** of, once per chunk — so capturing it there
+ * is how a test reads back that the builder it was handed came through untouched.
  *
  * @param (Closure(QueryBuilder): void)|null $captureQuery
  *
- * @return array{TableHost, EntityManager}
+ * @return array{TableHost, EntityManager, RecordingMiddleware}
  */
 function residencyReorderRig(?Closure $captureQuery = null): array
 {
-    $entityManager = EntityManagerFactory::create();
+    $recorder = new RecordingMiddleware();
+    $entityManager = EntityManagerFactory::create($recorder);
     $venue = new Venue(new Handle('main-hall'), 'Main Hall');
 
     EntityManagerFactory::seed(
@@ -232,7 +234,24 @@ function residencyReorderRig(?Closure $captureQuery = null): array
         return $table;
     });
 
-    return [$host, $entityManager];
+    $recorder->reset();
+
+    return [$host, $entityManager, $recorder];
+}
+
+/**
+ * Every statement the recorder holds that narrows by a key list — a SELECT
+ * carrying bound parameters. The reorder's own reads are the only ones on these
+ * rigs: the table query is unfiltered and the write is an UPDATE.
+ *
+ * @return list<string>
+ */
+function narrowingReorderSelects(RecordingMiddleware $recorder): array
+{
+    return array_values(array_filter(
+        $recorder->statements(),
+        static fn (string $sql): bool => str_starts_with($sql, 'SELECT') && str_contains($sql, '?'),
+    ));
 }
 
 function reorderShortcut(string $host, string $path, string $label, int $position): Shortcut
@@ -299,20 +318,79 @@ function storedShortcutPositions(EntityManager $entityManager): array
     return $positions;
 }
 
-it('numbers a derived-identity order 1..N', function (): void {
+it('numbers a derived-identity order 1..N, off a copy of the query it was handed', function (): void {
     $reorderQuery = null;
 
-    [$host, $entityManager] = residencyReorderRig(function (QueryBuilder $query) use (&$reorderQuery): void {
+    [$host, $entityManager, $recorder] = residencyReorderRig(function (QueryBuilder $query) use (&$reorderQuery): void {
         $reorderQuery = $query;
     });
 
     $host->reorderTable(['main-hall~autumn=2F2026', 'main-hall~2026-spring']);
 
+    $narrowed = narrowingReorderSelects($recorder);
+
     expect(storedResidencyPositions($entityManager))->toBe(['2026-spring' => 2, 'autumn/2026' => 1])
+        ->and($narrowed)->toHaveCount(1)
+        ->and($narrowed[0])->toMatch('/venue_id = \? AND \w+\.season = \?\) OR \(/')
+        ->and(mb_substr_count($narrowed[0], '?'))->toBe(4)
         ->and($reorderQuery)->toBeInstanceOf(QueryBuilder::class)
-        ->and($reorderQuery?->getDQL())
-        ->toContain('residency.venue = :sylament_reordered_record_keys_0_0 AND residency.season = :sylament_reordered_record_keys_0_1')
-        ->toContain('residency.venue = :sylament_reordered_record_keys_1_0 AND residency.season = :sylament_reordered_record_keys_1_1');
+        ->and($reorderQuery?->getDQL())->not->toContain('sylament_reordered_record_keys');
+});
+
+/*
+ * Reordering is unpaginated by default, so one drag submits the whole table and the
+ * re-resolution is the widest read a composite table takes: 501 two-field rows is the
+ * cheapest order that is more than one statement, since `IdentifierConstraint::chunk()`
+ * splits a two-field list at min(500, intdiv(2000, 2)) = 500. Two things fail silently
+ * without the copy: chunk two ANDed onto chunk one answers nothing, and a per-chunk
+ * parameter base would end in an index, which `assertParameterBase()` refuses outright.
+ * The key the trap leaves behind is `/p/1` — the order runs 501 down to 1, so that one
+ * row is chunk two on its own, and it is the position asserted below.
+ *
+ * @return array{TableHost, EntityManager, RecordingMiddleware}
+ */
+function chunkedShortcutReorderRig(int $count): array
+{
+    $recorder = new RecordingMiddleware();
+    $entityManager = EntityManagerFactory::create($recorder);
+    $shortcuts = [];
+
+    for ($index = 1; $index <= $count; $index++) {
+        $shortcuts[] = reorderShortcut('bulk.test', '/p/' . $index, 'Bulk ' . $index, $index);
+    }
+
+    EntityManagerFactory::seed($entityManager, ...$shortcuts);
+
+    $host = new TableHost(fn (Table $table): Table => $table
+        ->query($entityManager->createQueryBuilder()->select('shortcut')->from(Shortcut::class, 'shortcut'))
+        ->reorderable('position'));
+
+    $recorder->reset();
+
+    return [$host, $entityManager, $recorder];
+}
+
+it('resolves a reordered order wider than one chunk in one statement per chunk', function (): void {
+    [$host, $entityManager, $recorder] = chunkedShortcutReorderRig(501);
+
+    $order = [];
+
+    for ($index = 501; $index >= 1; $index--) {
+        $order[] = 'bulk=2Etest~=2Fp=2F' . $index;
+    }
+
+    $host->reorderTable($order);
+
+    $narrowed = narrowingReorderSelects($recorder);
+    $placeholders = array_map(static fn (string $sql): int => mb_substr_count($sql, '?'), $narrowed);
+    $positions = storedShortcutPositions($entityManager);
+
+    expect($narrowed)->toHaveCount(2)
+        ->and(max($placeholders))->toBeLessThanOrEqual(1000)
+        ->and(array_sum($placeholders))->toBe(1002)
+        ->and($positions)->toHaveCount(501)
+        ->and($positions['/p/501'])->toBe(1)
+        ->and($positions['/p/1'])->toBe(501);
 });
 
 it('leaves a gap where a malformed key sat in a two-string order', function (): void {

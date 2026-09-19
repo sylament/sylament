@@ -196,9 +196,15 @@ function reorderResidency(Venue $venue, string $season, string $label, int $posi
 }
 
 /**
+ * The scope closure is handed the very builder `getQuery()` answers with, and
+ * that builder is the one the reorder narrows in place — so capturing it there
+ * is how a test reads the key predicate back after the action has run.
+ *
+ * @param (Closure(QueryBuilder): void)|null $captureQuery
+ *
  * @return array{TableHost, EntityManager}
  */
-function residencyReorderRig(): array
+function residencyReorderRig(?Closure $captureQuery = null): array
 {
     $entityManager = EntityManagerFactory::create();
     $venue = new Venue(new Handle('main-hall'), 'Main Hall');
@@ -210,9 +216,21 @@ function residencyReorderRig(): array
         reorderResidency($venue, 'autumn/2026', 'Autumn', 2),
     );
 
-    $host = new TableHost(fn (Table $table): Table => $table
-        ->query($entityManager->createQueryBuilder()->select('residency')->from(Residency::class, 'residency'))
-        ->reorderable('position'));
+    $host = new TableHost(function (Table $table) use ($entityManager, $captureQuery): Table {
+        $table
+            ->query($entityManager->createQueryBuilder()->select('residency')->from(Residency::class, 'residency'))
+            ->reorderable('position');
+
+        if ($captureQuery instanceof Closure) {
+            $table->modifyQueryUsing(static function (QueryBuilder $query) use ($captureQuery): QueryBuilder {
+                $captureQuery($query);
+
+                return $query;
+            });
+        }
+
+        return $table;
+    });
 
     return [$host, $entityManager];
 }
@@ -282,11 +300,19 @@ function storedShortcutPositions(EntityManager $entityManager): array
 }
 
 it('numbers a derived-identity order 1..N', function (): void {
-    [$host, $entityManager] = residencyReorderRig();
+    $reorderQuery = null;
+
+    [$host, $entityManager] = residencyReorderRig(function (QueryBuilder $query) use (&$reorderQuery): void {
+        $reorderQuery = $query;
+    });
 
     $host->reorderTable(['main-hall~autumn=2F2026', 'main-hall~2026-spring']);
 
-    expect(storedResidencyPositions($entityManager))->toBe(['2026-spring' => 2, 'autumn/2026' => 1]);
+    expect(storedResidencyPositions($entityManager))->toBe(['2026-spring' => 2, 'autumn/2026' => 1])
+        ->and($reorderQuery)->toBeInstanceOf(QueryBuilder::class)
+        ->and($reorderQuery?->getDQL())
+        ->toContain('residency.venue = :sylament_reordered_record_keys_0_0 AND residency.season = :sylament_reordered_record_keys_0_1')
+        ->toContain('residency.venue = :sylament_reordered_record_keys_1_0 AND residency.season = :sylament_reordered_record_keys_1_1');
 });
 
 it('leaves a gap where a malformed key sat in a two-string order', function (): void {

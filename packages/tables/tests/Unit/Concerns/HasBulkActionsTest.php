@@ -408,9 +408,9 @@ function selectionShortcut(string $host, string $path, string $label, int $posit
     return $shortcut;
 }
 
-function selectableShortcuts(): EntityManager
+function selectableShortcuts(?RecordingMiddleware $recorder = null): EntityManager
 {
-    $entityManager = EntityManagerFactory::create();
+    $entityManager = EntityManagerFactory::create($recorder);
 
     EntityManagerFactory::seed(
         $entityManager,
@@ -638,18 +638,29 @@ it('narrows a composite non-fetching query to the selectable records without col
  * *after* encoding, since a join could otherwise repeat a row.
  */
 it('plucks encoded keys instead of hydrating a composite table', function (): void {
-    $shortcuts = shortcutSelectionHost(selectableShortcuts());
+    $recorder = new RecordingMiddleware();
+    $shortcuts = shortcutSelectionHost(selectableShortcuts($recorder));
     $residencies = residencySelectionHost(selectableResidencies());
 
     foreach ([$shortcuts, $residencies] as $tracking) {
         $tracking->isTrackingDeselectedTableRecords = true;
     }
 
+    $recorder->reset();
+
     expect($shortcuts->getSelectedTableRecords(shouldFetchSelectedRecords: false))->toBe([
         'www=2Eexample=2Ecom~=2Fblog=2Fhello=20world',
         'www=2Eexample=2Ecom~=2Fabout',
         'shop=2Eexample=2Ecom~=2Fsale=7E2026',
     ])
+        // The keys come off the identifier columns alone: one statement, aliased
+        // per identifier field, carrying no other column of the record — a
+        // hydrating read answers the same strings and costs the whole row.
+        ->and($recorder->statements())->toHaveCount(1)
+        ->and($recorder->statements()[0])
+        ->toContain('.host AS')
+        ->toContain('.path AS')
+        ->not->toContain('label')
         ->and($shortcuts->getAllSelectableTableRecordKeys())->toBe([
             'www=2Eexample=2Ecom~=2Fblog=2Fhello=20world',
             'www=2Eexample=2Ecom~=2Fabout',

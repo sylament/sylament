@@ -6,7 +6,6 @@ namespace Sylament\Tables\Concerns;
 
 use Doctrine\ORM\QueryBuilder;
 use LogicException;
-use Stringable;
 use Sylament\Schemas\Identity\IdentifierConstraint;
 use Sylament\Support\Pagination\Paginator;
 use Sylament\Tables\Grouping\Group;
@@ -433,26 +432,18 @@ trait HasBulkActions
      */
     private function pluckTableRecordKeys(QueryBuilder $query): array
     {
-        /** @var list<mixed> $keys */
-        $keys = (clone $query)
-            ->select($this->resolveTableRecordKeyExpression($query))
+        [$rootAlias, $recordClass] = $this->resolveTableRecordKeyTarget($query);
+
+        $keyQuery = clone $query;
+        $selection = IdentifierConstraint::select($keyQuery, $rootAlias, $recordClass);
+
+        /** @var list<array<string, mixed>> $rows */
+        $rows = $keyQuery
+            ->select(...$selection->expressions)
             ->getQuery()
-            ->getSingleColumnResult();
+            ->getScalarResult();
 
-        return array_values(array_unique(array_map(
-            static function (mixed $key): string {
-                if ($key instanceof Stringable) {
-                    $key = (string) $key;
-                }
-
-                if (!is_scalar($key)) {
-                    throw new LogicException(sprintf('A selected record key came back as [%s], which cannot identify a row.', get_debug_type($key)));
-                }
-
-                return (string) $key;
-            },
-            $keys,
-        )));
+        return array_values(array_unique(array_map($selection->keyOf(...), $rows)));
     }
 
     /**

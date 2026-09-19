@@ -10,6 +10,7 @@ use Sylament\Tables\Table;
 use Sylament\Tables\Tests\Fixtures\Concerns\TableHost;
 use Sylament\Tables\Tests\Fixtures\Doctrine\Entity\Artist;
 use Sylament\Tables\Tests\Fixtures\Doctrine\Entity\CompositePair;
+use Sylament\Tables\Tests\Fixtures\Doctrine\Entity\Gig;
 use Sylament\Tables\Tests\Fixtures\Doctrine\Entity\Residency;
 use Sylament\Tables\Tests\Fixtures\Doctrine\Entity\Shortcut;
 use Sylament\Tables\Tests\Fixtures\Doctrine\Entity\Song;
@@ -628,4 +629,101 @@ it('narrows a composite non-fetching query to the selectable records without col
             $query->getQuery()->getResult(),
         ))->toBe(['one-two', 'two-one'])
         ->and($host->getSelectedTableRecordsQuery()->getDQL())->not->toContain('sylament_selectable_record_keys');
+});
+
+/*
+ * Under `fetchSelectedRecords(false)` the answer is keys rather than records, and for a
+ * composite table those keys cannot come off one column: the pluck selects every
+ * identifier field under a deterministic alias, encodes each row, and de-duplicates
+ * *after* encoding, since a join could otherwise repeat a row.
+ */
+it('plucks encoded keys instead of hydrating a composite table', function (): void {
+    $shortcuts = shortcutSelectionHost(selectableShortcuts());
+    $residencies = residencySelectionHost(selectableResidencies());
+
+    foreach ([$shortcuts, $residencies] as $tracking) {
+        $tracking->isTrackingDeselectedTableRecords = true;
+    }
+
+    expect($shortcuts->getSelectedTableRecords(shouldFetchSelectedRecords: false))->toBe([
+        'www=2Eexample=2Ecom~=2Fblog=2Fhello=20world',
+        'www=2Eexample=2Ecom~=2Fabout',
+        'shop=2Eexample=2Ecom~=2Fsale=7E2026',
+    ])
+        ->and($shortcuts->getAllSelectableTableRecordKeys())->toBe([
+            'www=2Eexample=2Ecom~=2Fblog=2Fhello=20world',
+            'www=2Eexample=2Ecom~=2Fabout',
+            'shop=2Eexample=2Ecom~=2Fsale=7E2026',
+        ])
+        ->and($residencies->getSelectedTableRecords(shouldFetchSelectedRecords: false))->toBe([
+            'main-hall~2026-spring',
+            'main-hall~autumn=2F2026',
+        ]);
+});
+
+/*
+ * The same pluck behind both narrowings at once: a key the decode refuses never reaches
+ * the query, a well-formed key naming no row answers nothing, and a row the table
+ * refuses to let the user select is cut by the selectable predicate rather than by PHP.
+ */
+it('plucks only the well-formed selectable keys of a composite table', function (): void {
+    $host = shortcutSelectionHost(
+        selectableShortcuts(),
+        static fn (Table $table): Table => $table->checkIfRecordIsSelectableUsing(
+            static fn (Shortcut $record): bool => $record->getHost() === 'www.example.com',
+        ),
+    );
+
+    $host->selectedTableRecordKeys = [
+        'www=2Eexample=2Ecom~=2Fblog=2Fhello=20world',
+        'shop=2Eexample=2Ecom~=2Fsale=7E2026',
+        'www=2Eexample=2Ecom~=2Fnope',
+        'garbage',
+    ];
+
+    expect($host->getSelectedTableRecords(shouldFetchSelectedRecords: false))
+        ->toBe(['www=2Eexample=2Ecom~=2Fblog=2Fhello=20world']);
+});
+
+function joinedResidencies(): EntityManager
+{
+    $entityManager = EntityManagerFactory::create();
+    $venue = new Venue(new Handle('main-hall'), 'Main Hall');
+
+    EntityManagerFactory::seed(
+        $entityManager,
+        $venue,
+        new Gig(1, 'Opening', 100, $venue),
+        new Gig(2, 'Closing', 200, $venue),
+        selectionResidency($venue, '2026-spring', 'Spring', 1),
+    );
+
+    return $entityManager;
+}
+
+function joinedResidencySelectionHost(EntityManager $entityManager): TableHost
+{
+    return new TableHost(fn (Table $table): Table => $table
+        ->query($entityManager->createQueryBuilder()
+            ->select('residency')
+            ->from(Residency::class, 'residency')
+            ->leftJoin('residency.venue', 'sy_venue')
+            ->leftJoin('sy_venue.gigs', 'sy_gigs')
+            ->orderBy('residency.position'))
+        ->columns([TextColumn::make('label')]));
+}
+
+/*
+ * The de-duplication is the pluck's own and has to happen *after* encoding: a join onto a
+ * to-many repeats the root row once per joined row, so the same identifier comes back
+ * twice and an un-deduplicated list would hand DeleteBulkAction a doubled key — a wrong
+ * success count and an inflated chunk count. The venue below carries two gigs and one
+ * residency, so the key query returns two rows for one record.
+ */
+it('plucks one key per composite row even when the query joins a to-many', function (): void {
+    $host = joinedResidencySelectionHost(joinedResidencies());
+
+    $host->isTrackingDeselectedTableRecords = true;
+
+    expect($host->getSelectedTableRecords(shouldFetchSelectedRecords: false))->toBe(['main-hall~2026-spring']);
 });

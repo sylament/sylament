@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Sylament\Tables\Tests\Fixtures\Doctrine\Entity;
 
+use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 
 /**
@@ -14,6 +16,12 @@ use Doctrine\ORM\Mapping as ORM;
 #[ORM\Entity]
 class Shortcut
 {
+    /**
+     * @var Collection<int, ShortcutHit>
+     */
+    #[ORM\OneToMany(targetEntity: ShortcutHit::class, mappedBy: 'shortcut')]
+    private Collection $hits;
+
     #[ORM\Id]
     #[ORM\Column(length: 100)]
     private string $host = '';
@@ -30,6 +38,11 @@ class Shortcut
 
     #[ORM\Column]
     private bool $active = false;
+
+    public function __construct()
+    {
+        $this->hits = new ArrayCollection();
+    }
 
     public function getHost(): string
     {
@@ -79,5 +92,13 @@ class Shortcut
     public function setActive(bool $active): void
     {
         $this->active = $active;
+    }
+
+    /**
+     * @return Collection<int, ShortcutHit>
+     */
+    public function getHits(): Collection
+    {
+        return $this->hits;
     }
 }

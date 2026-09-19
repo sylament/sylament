@@ -283,6 +283,35 @@ it('refuses to page a composite table whose query joins a to-many association', 
     $host->getTableRecords();
 })->throws(LogicException::class, 'composite identifier and the table query joins a to-many association');
 
+/*
+ * The two ways out the refusal names, exercised rather than advertised: an
+ * unpaginated table never reaches `paginateTableQuery()` at all, and
+ * `recordsPerPage: 'all'` returns from it before a Doctrine paginator is built.
+ * An error message naming an escape hatch no test walks through is what rots.
+ */
+it('renders a composite table joining a to-many when it is not paged', function (string $option): void {
+    $entityManager = pagedResidencies();
+    $host = new TableHost(function (Table $table) use ($entityManager, $option): Table {
+        $table->query($entityManager->createQueryBuilder()
+            ->select('residency', 'sy_gig_venue', 'sy_gigs')
+            ->from(Residency::class, 'residency')
+            ->leftJoin('residency.venue', 'sy_gig_venue')
+            ->leftJoin('sy_gig_venue.gigs', 'sy_gigs')
+            ->orderBy('residency.position', 'ASC'));
+
+        return $option === 'all' ? $table->paginated([2, 'all']) : $table->paginated(false);
+    });
+
+    if ($option === 'all') {
+        $host->tableRecordsPerPage = 'all';
+    }
+
+    $records = $host->getTableRecords();
+
+    expect(array_keys($records instanceof Paginator ? $records->getRecords() : $records))
+        ->toBe(['apollo~2026-spring', 'apollo~2026-autumn', 'forum~2026-spring', 'forum~2026-autumn']);
+})->with(['paginated(false)' => ['none'], "recordsPerPage 'all'" => ['all']]);
+
 it('pages a composite table whose query joins no collection', function (): void {
     $entityManager = pagedResidencies();
     $host = new TableHost(fn (Table $table): Table => $table

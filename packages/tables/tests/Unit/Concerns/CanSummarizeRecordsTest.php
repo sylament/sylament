@@ -118,22 +118,34 @@ it('narrows the page summary to the keys of the page being shown', function (): 
         ->and($host->getTableSummarySelectedState($query))->toBe(['sy_summary_0' => 70]);
 });
 
-it('summarizes the whole table on a page holding all of it', function (): void {
-    $host = summaryStateHost(summaryStateSongs(), [TextColumn::make('plays')->summarize(Sum::make())], recordsPerPage: 'all');
+/*
+ * One page holding everything makes the page query and the all-table query the
+ * same set, so the narrowing reproduces what it started from at one bound
+ * parameter per key per identifier field — and the figure it publishes is
+ * identical either way. Both shapes of a single page are here: `'all'`, and a
+ * page size the table never fills.
+ */
+it('leaves the page summary un-narrowed where one page holds the whole filtered set', function (int|string $recordsPerPage): void {
+    $host = summaryStateHost(summaryStateSongs(), [TextColumn::make('plays')->summarize(Sum::make())], recordsPerPage: $recordsPerPage);
+    $query = $host->getPageTableSummaryQuery();
 
-    expect($host->getTableSummarySelectedState($host->getPageTableSummaryQuery()))->toBe(['sy_summary_0' => 210]);
-});
+    expect($host->getTableSummarySelectedState($query))->toBe(['sy_summary_0' => 210])
+        ->and($query?->getDQL())->not->toContain('sylament_summary_keys')
+        ->and($query?->getParameters()->toArray())->toBe([]);
+})->with(["recordsPerPage 'all'" => ['all'], 'a page size the table never fills' => [10]]);
 
 /*
  * An empty page would bind an empty key list, and `IN ()` is a syntax error on most
- * platforms — the same guard the aggregate batch already carries.
+ * platforms — the same guard the aggregate batch already carries. It is also the
+ * ordering trap of the un-narrowed answer above: an empty table reports one page
+ * too, so a guard placed over this one would publish a whole-table figure here.
  */
-it('answers no page summary query for an empty page', function (): void {
-    $host = summaryStateHost(EntityManagerFactory::create(), [TextColumn::make('plays')->summarize(Sum::make())]);
+it('answers no page summary query for an empty page', function (int|string $recordsPerPage): void {
+    $host = summaryStateHost(EntityManagerFactory::create(), [TextColumn::make('plays')->summarize(Sum::make())], recordsPerPage: $recordsPerPage);
 
     expect($host->getPageTableSummaryQuery())->toBeNull()
         ->and($host->getTableSummarySelectedState(null))->toBe([]);
-});
+})->with(['paginated([2])' => [2], "recordsPerPage 'all'" => ['all']]);
 
 it('answers no page summary query for an unpaginated table', function (): void {
     $host = summaryStateHost(summaryStateSongs(), [TextColumn::make('plays')->summarize(Sum::make())], recordsPerPage: null);
@@ -237,6 +249,26 @@ it('narrows the page summary of a derived-identity table through its association
         ->and($query?->getParameter('sylament_summary_keys_0_1')?->getValue())->toBe('2026-spring')
         ->and($host->getTableSummarySelectedState($query))->toBe(['sy_summary_0' => 30, 'sy_summary_1' => 2, 'sy_summary_2' => 15.0])
         ->and($host->getTableSummarySelectedState($host->getAllTableSummaryQuery()))->toBe(['sy_summary_0' => 100, 'sy_summary_1' => 4, 'sy_summary_2' => 25.0]);
+});
+
+/*
+ * The un-narrowed answer for the keyed width, where the predicate it drops is the
+ * expensive one: a term per record and a bound parameter per identifier field,
+ * against a DQL parse superlinear in the key count.
+ */
+it('leaves a keyed page summary un-narrowed where one page holds the whole filtered set', function (): void {
+    $host = new TableHost(fn (Table $table): Table => $table
+        ->query(summaryStateResidencies()->createQueryBuilder()->select('residency')->from(Residency::class, 'residency')->orderBy('residency.position', 'ASC'))
+        ->columns([TextColumn::make('position')->summarize(Sum::make())])
+        ->paginated(['all']));
+
+    $host->tableRecordsPerPage = 'all';
+
+    $query = $host->getPageTableSummaryQuery();
+
+    expect($host->getTableSummarySelectedState($query))->toBe(['sy_summary_0' => 100])
+        ->and($query?->getDQL())->not->toContain('sylament_summary_keys')
+        ->and($query?->getParameters()->toArray())->toBe([]);
 });
 
 it('answers no summary query at all on the records lane', function (): void {

@@ -20,8 +20,11 @@ use Sylament\Tables\Enums\RecordActionsPosition;
 use Sylament\Tables\Enums\RecordCheckboxPosition;
 use Sylament\Tables\Table;
 use Sylament\Tables\Tests\Fixtures\Concerns\TableHost;
+use Sylament\Tables\Tests\Fixtures\Doctrine\Entity\Residency;
 use Sylament\Tables\Tests\Fixtures\Doctrine\Entity\Song;
+use Sylament\Tables\Tests\Fixtures\Doctrine\Entity\Venue;
 use Sylament\Tables\Tests\Fixtures\Doctrine\EntityManagerFactory;
+use Sylament\Tables\Tests\Fixtures\Doctrine\Handle;
 use Sylament\Tables\Tests\Fixtures\Doctrine\RecordingMiddleware;
 use Sylament\Tables\Tests\Fixtures\Twig\Components\SummarySongsTable;
 use Symfony\Component\DomCrawler\Crawler;
@@ -82,6 +85,46 @@ function summarizedTableCrawler(array $columns, ?Closure $configure = null, ?str
 }
 
 /**
+ * Four residencies over two venues, positions 10/20/30/40 and two to a page — a
+ * root whose key is an association plus a scalar, so the page row's narrowing is
+ * the codec's disjunction rather than an `IN`, and the page figure (30) can be
+ * told from the table's (100) on sight.
+ */
+function keyedSummarizedTableHost(?RecordingMiddleware $recorder = null): TableHost
+{
+    $entityManager = EntityManagerFactory::create($recorder);
+
+    $apollo = new Venue(new Handle('apollo'), 'Apollo');
+    $forum = new Venue(new Handle('forum'), 'Forum');
+
+    EntityManagerFactory::seed(
+        $entityManager,
+        $apollo,
+        $forum,
+        keyedSummarizedResidency($apollo, '2026-spring', 10),
+        keyedSummarizedResidency($apollo, '2026-autumn', 20),
+        keyedSummarizedResidency($forum, '2026-spring', 30),
+        keyedSummarizedResidency($forum, '2026-autumn', 40),
+    );
+
+    return new TableHost(fn (Table $table): Table => $table
+        ->query($entityManager->createQueryBuilder()->select('residency')->from(Residency::class, 'residency')->orderBy('residency.position', 'ASC'))
+        ->columns([TextColumn::make('label'), TextColumn::make('position')->summarize(Sum::make())])
+        ->paginated([2]));
+}
+
+function keyedSummarizedResidency(Venue $venue, string $season, int $position): Residency
+{
+    $residency = new Residency();
+    $residency->setVenue($venue);
+    $residency->setSeason($season);
+    $residency->setLabel("{$venue->getName()} {$season}");
+    $residency->setPosition($position);
+
+    return $residency;
+}
+
+/**
  * One summary row of a host's own columns, rendered on its own — the only way
  * to reach `extraHeadingColumn`, which the table layout never sets because it
  * belongs to the content one (M4 · 7).
@@ -137,6 +180,58 @@ it('renders the header row, the page row and the all-table row across pages', fu
         ->toBe(['sy-ta-row sy-ta-summary-row', 'sy-ta-row sy-ta-summary-row'])
         ->and($rows->first()->filter('td')->last()->text())->toContain('30')
         ->and($rows->last()->filter('td')->last()->text())->toContain('150');
+});
+
+/*
+ * `hasPages()` is false whenever one page holds everything, and the partial asks
+ * for the page query only when it is true — so `'all'` renders the all-table row
+ * alone and issues the one un-narrowed statement behind it. Which is why the page
+ * query's own un-narrowed answer is reachable from a direct caller only, and why
+ * this row is about a public method rather than about a render.
+ */
+it('renders no page row under recordsPerPage all, over one un-narrowed statement', function (): void {
+    $recorder = new RecordingMiddleware();
+    $host = summarizedTableHost([
+        TextColumn::make('title'),
+        TextColumn::make('plays')->summarize(Sum::make()),
+    ], fn (Table $table): Table => $table->paginated([2, 'all']), recorder: $recorder);
+
+    $host->tableRecordsPerPage = 'all';
+
+    $recorder->reset();
+
+    $rows = new Crawler(renderToHtml($host->getTable()))->filter('tr.sy-ta-summary-row');
+    $sums = array_values(array_filter($recorder->statements(), static fn (string $sql): bool => str_contains($sql, 'SUM(')));
+
+    expect($rows->count())->toBe(1)
+        ->and($rows->filter('th[scope="row"]')->text())->toBe('Summary')
+        ->and($sums)->toHaveCount(1)
+        ->and($sums[0])->not->toContain('WHERE');
+});
+
+/*
+ * The band over a keyed root, which no render pinned: the page row narrows by the
+ * per-field disjunction the codec binds and the all-table row narrows by nothing,
+ * so the two figures differ on screen exactly as they do on a single-column key.
+ */
+it('renders the page row and the all-table row of a keyed table', function (): void {
+    $recorder = new RecordingMiddleware();
+    $host = keyedSummarizedTableHost($recorder);
+
+    $recorder->reset();
+
+    $crawler = new Crawler(renderToHtml($host->getTable()));
+    $rows = $crawler->filter('tr.sy-ta-summary-row');
+    $sums = array_values(array_filter($recorder->statements(), static fn (string $sql): bool => str_contains($sql, 'SUM(')));
+
+    expect($crawler->filter('tr.sy-ta-summary-header-row')->count())->toBe(1)
+        ->and($rows->each(fn (Crawler $row): string => $row->filter('th[scope="row"]')->text()))
+        ->toBe(['This page', 'All residencies'])
+        ->and($rows->first()->filter('td')->last()->text())->toContain('30')
+        ->and($rows->last()->filter('td')->last()->text())->toContain('100')
+        ->and($sums)->toHaveCount(2)
+        ->and($sums[0])->toContain('venue_id = ? AND')
+        ->and($sums[1])->not->toContain('WHERE');
 });
 
 it('renders no page row on an overflow page, where the page query has nothing to read', function (): void {

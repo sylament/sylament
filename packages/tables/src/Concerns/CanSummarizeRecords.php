@@ -32,6 +32,10 @@ trait CanSummarizeRecords
      * DBAL type. Null where there is no page to narrow to: off the query lane, on an
      * unpaginated table, and on an empty page, whose empty key list would narrow to
      * `1 = 0` and publish a figure over nothing in place of no figure at all.
+     *
+     * Un-narrowed where the paginator reports one page, the page being the whole
+     * filtered set there. Nothing rendered reaches that answer: the partial asks
+     * for this query only when `hasPages()` is true.
      */
     public function getPageTableSummaryQuery(): ?QueryBuilder
     {
@@ -48,6 +52,12 @@ trait CanSummarizeRecords
 
         if ($keys === [] || $recordClass === null || $rootAlias === null) {
             return null;
+        }
+
+        // Below the empty-page guard, never above it: an empty table reports one page
+        // too, and it owes null rather than a figure over everything.
+        if (!$paginator->hasPages()) {
+            return $query;
         }
 
         return $query->andWhere(IdentifierConstraint::in(

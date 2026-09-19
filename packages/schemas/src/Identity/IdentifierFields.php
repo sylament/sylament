@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Sylament\Schemas\Identity;
 
 use BackedEnum;
+use Doctrine\DBAL\Platforms\AbstractPlatform;
 use Doctrine\DBAL\Types\ConversionException;
 use Doctrine\DBAL\Types\Type;
 use Doctrine\DBAL\Types\Types;
@@ -60,7 +61,9 @@ final readonly class IdentifierFields
 
     /**
      * The one string form an identifier value has on either side of a key, or
-     * null when it has none.
+     * null when it has none. A NUL byte has none: a text parameter reaches
+     * PostgreSQL as a C string, so a component carrying one would be compared
+     * by its prefix and give a record a second spelling.
      */
     public static function printable(mixed $value): ?string
     {
@@ -82,12 +85,33 @@ final readonly class IdentifierFields
 
         $printed = (string) $value;
 
-        return mb_check_encoding($printed, 'UTF-8') && mb_trim($printed) !== '' ? $printed : null;
+        return mb_check_encoding($printed, 'UTF-8') && !str_contains($printed, "\0") && mb_trim($printed) !== '' ? $printed : null;
     }
 
     public function isComposite(): bool
     {
         return count($this->names) > 1;
+    }
+
+    /**
+     * The key a record holding these identifier values mints — the one print
+     * step both the record side and the row side go through.
+     *
+     * @param list<mixed> $values in the mapping's identifier order
+     *
+     * @throws LogicException when the values do not match the identifier, or one is not printable
+     */
+    public function toKey(array $values): string
+    {
+        if (count($values) !== count($this->names)) {
+            throw new LogicException(sprintf('A key of [%s] takes %d identifier values, %d given.', $this->class, count($this->names), count($values)));
+        }
+
+        return $this->join(array_map(
+            fn (mixed $value): string => self::printable($value)
+                ?? throw new LogicException(sprintf('The identifier of [%s] is not a printable value.', $this->class)),
+            $values,
+        ));
     }
 
     /**
@@ -112,13 +136,13 @@ final readonly class IdentifierFields
      */
     public function toPhpValues(EntityManagerInterface $entityManager, string $key): ?array
     {
-        $components = $this->split($key);
+        $platform = $entityManager->getConnection()->getDatabasePlatform();
+        $components = $this->split($key, $platform);
 
         if ($components === null) {
             return null;
         }
 
-        $platform = $entityManager->getConnection()->getDatabasePlatform();
         $values = [];
 
         foreach ($components as $index => $component) {
@@ -164,7 +188,7 @@ final readonly class IdentifierFields
     /**
      * @return list<string>|null
      */
-    public function split(string $key): ?array
+    public function split(string $key, AbstractPlatform $platform): ?array
     {
         if (mb_trim($key) === '') {
             return null;
@@ -177,7 +201,7 @@ final readonly class IdentifierFields
         }
 
         foreach ($components as $index => $component) {
-            if (!$this->hasShapeOf($component, $this->types[$index])) {
+            if (!$this->hasShapeOf($component, $this->types[$index], $platform)) {
                 return null;
             }
         }
@@ -222,15 +246,29 @@ final readonly class IdentifierFields
     }
 
     /**
-     * The two types whose own conversion hands a malformed string back
+     * The three types whose own conversion hands a malformed string back
      * untouched, so nothing downstream would refuse it before the database does.
      */
-    private function hasShapeOf(string $component, string $type): bool
+    private function hasShapeOf(string $component, string $type, AbstractPlatform $platform): bool
     {
         return match ($type) {
             Types::BIGINT => preg_match('/^(?:0|-?[1-9][0-9]*)$/D', $component) === 1,
-            Types::GUID => preg_match('/^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/D', $component) === 1,
+            Types::DECIMAL => preg_match('/^-?(?:0|[1-9][0-9]*)(?:\.[0-9]+)?$/D', $component) === 1,
+            Types::GUID => !$this->hasNativeGuidType($platform)
+                || preg_match('/^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/D', $component) === 1,
             default => true,
         };
+    }
+
+    /**
+     * Whether the platform declares a guid type of its own rather than falling
+     * back to a fixed 36-character string. Only there is a component that is not
+     * a UUID a syntax error; on a CHAR(36) the column holds whatever a record
+     * put in it, and refusing that spelling would refuse a key the record side
+     * minted.
+     */
+    private function hasNativeGuidType(AbstractPlatform $platform): bool
+    {
+        return $platform->getGuidTypeDeclarationSQL([]) !== $platform->getStringTypeDeclarationSQL(['fixed' => true, 'length' => 36]);
     }
 }

@@ -12,6 +12,7 @@ use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\PostSealNote;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\PostTranslation;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\Redirect;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\Shortlink;
+use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\Tariff;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\Ticket;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\Zone;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\EntityManagerFactory;
@@ -57,20 +58,22 @@ it('prints an identifier value one way, whichever side of a key it arrives from'
     'false, which a plain cast would print blank' => [false, '0'],
     'a blank string' => ['  ', null],
     'bytes that are not UTF-8' => ["\xC5", null],
+    'a NUL byte, which a text parameter would truncate at' => ["abc\0xyz", null],
     'null' => [null, null],
     'an array' => [['en'], null],
     'an object with no string form' => [new stdClass(), null],
 ]);
 
 it('joins a composite key over an alphabet that needs no encoding anywhere it travels', function (string ...$components): void {
-    $fields = IdentifierFields::of(EntityManagerFactory::create(), Redirect::class);
+    $entityManager = EntityManagerFactory::create();
+    $fields = IdentifierFields::of($entityManager, Redirect::class);
 
     $key = $fields->join(array_values($components));
 
     expect($key)->toMatch('/^[A-Za-z0-9_=~-]+$/')
         ->and(mb_substr_count($key, '~'))->toBe(1)
         ->and(is_numeric($key))->toBeFalse()
-        ->and($fields->split($key))->toBe(array_values($components));
+        ->and($fields->split($key, $entityManager->getConnection()->getDatabasePlatform()))->toBe(array_values($components));
 })->with([
     'plain' => ['plain', 'about'],
     'dot and slash' => ['www.example.com', '/blog/2026'],
@@ -91,7 +94,9 @@ it('spells the hostile components out', function (): void {
 });
 
 it('refuses every spelling the encoder never emits', function (string $key): void {
-    expect(IdentifierFields::of(EntityManagerFactory::create(), Redirect::class)->split($key))->toBeNull();
+    $entityManager = EntityManagerFactory::create();
+
+    expect(IdentifierFields::of($entityManager, Redirect::class)->split($key, $entityManager->getConnection()->getDatabasePlatform()))->toBeNull();
 })->with([
     'one component' => ['plain'],
     'three components' => ['a~b~c'],
@@ -129,6 +134,14 @@ it('answers the PHP values a key names, and nothing for a spelling the record si
     'an exponent' => [Author::class, '1e3', null],
     'negative zero' => [Author::class, '-0', null],
     'an integer the cast would saturate' => [Author::class, '99999999999999999999', null],
+    'a decimal identifier' => [Tariff::class, '10.50', ['10.50']],
+    'a decimal of letters' => [Tariff::class, 'abc', null],
+    'a decimal with a leading space' => [Tariff::class, ' 10.50', null],
+    'a decimal with a trailing newline' => [Tariff::class, "10.50\n", null],
+    'a decimal with leading zeros' => [Tariff::class, '0010.50', null],
+    'a decimal with a plus sign' => [Tariff::class, '+10.50', null],
+    'a raw NUL' => [Shortlink::class, "abc\0xyz", null],
+    'an escaped NUL' => [Redirect::class, 'a~b=00', null],
     'an association typed by its target' => [PostSeal::class, 'abc', null],
     'a derived identity' => [PostTranslation::class, '1~en', [1, 'en']],
     'an escaped trailing newline' => [PostTranslation::class, '1=0A~en', null],
@@ -139,10 +152,28 @@ it('answers the PHP values a key names, and nothing for a spelling the record si
     'a spelling the strict type would print back differently' => [Listing::class, 'ab-123', null],
     'a guid and a bigint' => [Ticket::class, IdentityRig::TICKET_ID . '~7', [IdentityRig::TICKET_ID, 7]],
     'a bigint beyond a PHP integer stays a string' => [Ticket::class, IdentityRig::TICKET_ID . '~99999999999999999999', [IdentityRig::TICKET_ID, '99999999999999999999']],
-    'a malformed guid' => [Ticket::class, 'not-a-guid~7', null],
-    'a guid with a trailing newline' => [Ticket::class, IdentityRig::TICKET_ID . '=0A~7', null],
     'a malformed bigint' => [Ticket::class, IdentityRig::TICKET_ID . '~abc', null],
     'a bigint beyond a PHP integer with a trailing newline' => [Ticket::class, IdentityRig::TICKET_ID . '~99999999999999999999=0A', null],
+    'a bigint beyond a PHP integer with a leading zero' => [Ticket::class, IdentityRig::TICKET_ID . '~099999999999999999999', null],
+]);
+
+/*
+ * A guid is only a UUID where the platform says so. PostgreSQL and SQL Server
+ * declare a type of their own, and a component that is not 8-4-4-4-12 hex reaches
+ * one as the syntax error the shape check exists to keep out of a bind; everywhere
+ * else the declaration is a plain CHAR(36), the column holds whatever a record put
+ * in it, and refusing that spelling would refuse a key the record side minted. The
+ * PostgreSQL platform answers without a server, so this costs no connection.
+ */
+it('shapes a guid component only where the platform declares a guid type of its own', function (string $key, array $storedAsText): void {
+    $postgres = EntityManagerFactory::createForPostgres();
+    $sqlite = EntityManagerFactory::create();
+
+    expect(IdentifierFields::of($postgres, Ticket::class)->toPhpValues($postgres, $key))->toBeNull()
+        ->and(IdentifierFields::of($sqlite, Ticket::class)->toPhpValues($sqlite, $key))->toEqual($storedAsText);
+})->with([
+    'a malformed guid' => ['not-a-guid~7', ['not-a-guid', 7]],
+    'a guid with a trailing newline' => [IdentityRig::TICKET_ID . '=0A~7', [IdentityRig::TICKET_ID . "\n", 7]],
 ]);
 
 it('answers the values the database holds, for binding', function (): void {
@@ -154,11 +185,13 @@ it('answers the values the database holds, for binding', function (): void {
 });
 
 it('leaves a single string identifier verbatim, separator and all', function (): void {
-    $fields = IdentifierFields::of(EntityManagerFactory::create(), Shortlink::class);
+    $entityManager = EntityManagerFactory::create();
+    $fields = IdentifierFields::of($entityManager, Shortlink::class);
+    $platform = $entityManager->getConnection()->getDatabasePlatform();
 
     expect($fields->isComposite())->toBeFalse()
         ->and($fields->join(['a~b=zz/.']))->toBe('a~b=zz/.')
-        ->and($fields->split('a~b=zz/.'))->toBe(['a~b=zz/.'])
-        ->and($fields->split(''))->toBeNull()
-        ->and($fields->split('  '))->toBeNull();
+        ->and($fields->split('a~b=zz/.', $platform))->toBe(['a~b=zz/.'])
+        ->and($fields->split('', $platform))->toBeNull()
+        ->and($fields->split('  ', $platform))->toBeNull();
 });

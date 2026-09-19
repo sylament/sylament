@@ -13,7 +13,6 @@ use Sylament\Tables\Table;
 use Sylament\Tables\Tests\Fixtures\Concerns\TableHost;
 use Sylament\Tables\Tests\Fixtures\Doctrine\Entity\Artist as DoctrineArtist;
 use Sylament\Tables\Tests\Fixtures\Doctrine\Entity\Book;
-use Sylament\Tables\Tests\Fixtures\Doctrine\Entity\CompositePair;
 use Sylament\Tables\Tests\Fixtures\Doctrine\Entity\Genre;
 use Sylament\Tables\Tests\Fixtures\Doctrine\Entity\Label;
 use Sylament\Tables\Tests\Fixtures\Doctrine\Entity\Residency;
@@ -573,14 +572,52 @@ it('returns null for an unknown key and throws for a bare table', function (): v
         ->toThrow(LogicException::class, 'must have [records()], [query()] or [relationship()]');
 });
 
-it('refuses to resolve a record carrying a composite identifier', function (): void {
-    $entityManager = EntityManagerFactory::create();
-    EntityManagerFactory::seed($entityManager, new CompositePair(1, 2, 'Pair'));
-    $host = new TableHost(fn (Table $table): Table => $table
-        ->query($entityManager->createQueryBuilder()->select('pair')->from(CompositePair::class, 'pair')));
+it('resolves a composite-identifier record by its key on both flavours', function (): void {
+    $shortcut = shortcutTable(seededShortcuts())->getTableRecord('www=2Eexample=2Ecom~=2Fblog=2F2026=2Fall=20the=20way=20down');
+    $residency = residencyTable(seededResidencies())->getTableRecord('main-hall~autumn=2F2026');
 
-    $host->getTableRecord('1');
-})->throws(LogicException::class, 'composite');
+    expect($shortcut)->toBeInstanceOf(Shortcut::class)
+        ->and($shortcut->getLabel())->toBe('Slash and space')
+        ->and($residency)->toBeInstanceOf(Residency::class)
+        ->and($residency->getLabel())->toBe('Autumn');
+});
+
+it('answers null for a malformed composite key without running a statement', function (): void {
+    $recorder = new RecordingMiddleware();
+    $host = shortcutTable(seededShortcuts($recorder));
+
+    $recorder->reset();
+
+    expect($host->getTableRecord('a~b~c'))->toBeNull()
+        ->and($host->getTableRecord('plain'))->toBeNull()
+        ->and($host->getTableRecord('=2'))->toBeNull()
+        ->and($host->getTableRecord('plain~=61'))->toBeNull()
+        ->and($host->getTableRecord('plain~=2f'))->toBeNull()
+        ->and($recorder->statements())->toBe([])
+        ->and($host->getTableRecord('nope~nope'))->toBeNull()
+        ->and($recorder->statements())->toHaveCount(1);
+});
+
+it('answers null for a non-canonical single-identifier key without running a statement', function (): void {
+    $recorder = new RecordingMiddleware();
+    $entityManager = EntityManagerFactory::create($recorder);
+
+    EntityManagerFactory::seed($entityManager, new DoctrineSong(5, 'Alpha', 10));
+
+    $host = new TableHost(fn (Table $table): Table => $table
+        ->query($entityManager->createQueryBuilder()->select('song')->from(DoctrineSong::class, 'song')));
+
+    $recorder->reset();
+
+    expect($host->getTableRecord('abc'))->toBeNull()
+        ->and($host->getTableRecord('05'))->toBeNull()
+        ->and($host->getTableRecord(' 5'))->toBeNull()
+        ->and($host->getTableRecord('5abc'))->toBeNull()
+        ->and($host->getTableRecord("7\n"))->toBeNull()
+        ->and($host->getTableRecord('1~2~3'))->toBeNull()
+        ->and($recorder->statements())->toBe([])
+        ->and($host->getTableRecord('5'))->toBeInstanceOf(DoctrineSong::class);
+});
 
 it('answers the total count on every lane that can', function (): void {
     $entityManager = sevenSongs();

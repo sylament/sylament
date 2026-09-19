@@ -10,6 +10,7 @@ use Doctrine\ORM\Tools\Pagination\Paginator as DoctrinePaginator;
 use LogicException;
 use Stringable;
 use Sylament\Schemas\Components\Concerns\CanAccessProperties;
+use Sylament\Schemas\Identity\IdentifierConstraint;
 use Sylament\Schemas\Identity\RecordKey;
 use Sylament\Support\ArrayRecord;
 use Sylament\Support\Pagination\Paginator;
@@ -450,20 +451,17 @@ trait HasTable
             throw new LogicException(sprintf('Table [%s] must have [records()], [query()] or [relationship()].', static::class));
         }
 
-        $metadata = $entityManager->getClassMetadata($recordClass);
-
-        if ($metadata->isIdentifierComposite) {
-            throw new LogicException(sprintf('Records of [%s] carry a composite identifier, which a table cannot key; use single-identifier entities or the records() lane.', $recordClass));
-        }
-
         $rootAlias = $query->getRootAliases()[0]
             ?? throw new LogicException(sprintf('The query of table [%s] names no root alias to resolve a record against.', static::class));
 
-        $record = $this->applyFiltersToTableQuery($query, isResolvingRecord: true)
-            ->andWhere(sprintf('%s.%s = :sylament_record_key', $rootAlias, $metadata->getSingleIdentifierFieldName()))
-            ->setParameter('sylament_record_key', $key)
-            ->getQuery()
-            ->getOneOrNullResult();
+        $query = $this->applyFiltersToTableQuery($query, isResolvingRecord: true);
+        $predicate = IdentifierConstraint::equals($query, $rootAlias, $recordClass, $key, 'sylament_record_key');
+
+        if ($predicate === null) {
+            return null;
+        }
+
+        $record = $query->andWhere($predicate)->getQuery()->getOneOrNullResult();
 
         return is_object($record) ? $record : null;
     }

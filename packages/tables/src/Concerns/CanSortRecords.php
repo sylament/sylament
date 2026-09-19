@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Sylament\Tables\Concerns;
 
-use Doctrine\ORM\Query\Expr\OrderBy;
 use Doctrine\ORM\QueryBuilder;
+use Sylament\Schemas\Identity\IdentifierConstraint;
 use Sylament\Tables\Columns\Column;
 use Sylament\Tables\Query\ColumnPathResolver;
 use Symfony\UX\LiveComponent\Attribute\LiveAction;
@@ -187,28 +187,8 @@ trait CanSortRecords
             return $query;
         }
 
-        $metadata = $query->getEntityManager()->getClassMetadata($recordClass);
+        IdentifierConstraint::orderBy($query, $rootAlias, $recordClass, $direction);
 
-        if ($metadata->isIdentifierComposite) {
-            return $query;
-        }
-
-        $identifierField = $metadata->getSingleIdentifierFieldName();
-        $qualifiedKey = "{$rootAlias}.{$identifierField}";
-
-        /** @var list<OrderBy> $orderings */
-        $orderings = $query->getDQLPart('orderBy');
-
-        foreach ($orderings as $ordering) {
-            foreach ($ordering->getParts() as $part) {
-                $sortedPath = explode(' ', $part, 2)[0];
-
-                if ($sortedPath === $qualifiedKey) {
-                    return $query;
-                }
-            }
-        }
-
-        return $query->addOrderBy($qualifiedKey, $direction);
+        return $query;
     }
 }

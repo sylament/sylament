@@ -9,9 +9,12 @@ use Sylament\Tables\Table;
 use Sylament\Tables\Tests\Fixtures\Concerns\TableHost;
 use Sylament\Tables\Tests\Fixtures\Doctrine\Entity\Artist;
 use Sylament\Tables\Tests\Fixtures\Doctrine\Entity\Book;
-use Sylament\Tables\Tests\Fixtures\Doctrine\Entity\CompositePair;
+use Sylament\Tables\Tests\Fixtures\Doctrine\Entity\Residency;
+use Sylament\Tables\Tests\Fixtures\Doctrine\Entity\Shortcut;
 use Sylament\Tables\Tests\Fixtures\Doctrine\Entity\Song;
+use Sylament\Tables\Tests\Fixtures\Doctrine\Entity\Venue;
 use Sylament\Tables\Tests\Fixtures\Doctrine\EntityManagerFactory;
+use Sylament\Tables\Tests\Fixtures\Doctrine\Handle;
 
 /*
  * Covers the query half of host-side sorting — the `ORDER BY` the lane composes.
@@ -50,6 +53,36 @@ function seededSongsByArtist(): EntityManager
         new Song(1, 'Aria', 10, $zeta),
         new Song(2, 'Bolero', 20, $alpha),
         new Song(3, 'Cantata', 30),
+    );
+
+    return $entityManager;
+}
+
+/**
+ * Two residencies of one venue and one of another, so a tiebreak over the
+ * identifier association has something to separate before it reaches the season.
+ */
+function seededResidenciesByVenue(): EntityManager
+{
+    $entityManager = EntityManagerFactory::create();
+    $arena = new Venue(new Handle('arena'), 'The Arena');
+    $shed = new Venue(new Handle('shed'), 'The Shed');
+    $residency = static function (Venue $venue, string $season, string $label): Residency {
+        $record = new Residency();
+        $record->setVenue($venue);
+        $record->setSeason($season);
+        $record->setLabel($label);
+
+        return $record;
+    };
+
+    EntityManagerFactory::seed(
+        $entityManager,
+        $arena,
+        $shed,
+        $residency($shed, 'summer', 'Shed summer'),
+        $residency($arena, 'winter', 'Arena winter'),
+        $residency($arena, 'summer', 'Arena summer'),
     );
 
     return $entityManager;
@@ -253,15 +286,42 @@ it('suppresses the tiebreaker when the key is already ordered', function (): voi
         ->and(sortedSongTitles($keyed))->toBe(['Bravo', 'Alpha', 'Charlie']);
 });
 
-it('adds no tiebreaker for a composite identifier', function (): void {
+it('tiebreaks a composite identifier by every identifier field in mapping order', function (): void {
     $entityManager = EntityManagerFactory::create();
     $host = new TableHost(fn (Table $table): Table => $table
-        ->query($entityManager->createQueryBuilder()->select('pair')->from(CompositePair::class, 'pair')));
+        ->query($entityManager->createQueryBuilder()->select('shortcut')->from(Shortcut::class, 'shortcut'))
+        ->columns([TextColumn::make('label')->sortable()]));
+
+    $host->sortTable('label');
+
+    expect($host->getFilteredSortedTableQuery()?->getDQL())
+        ->toContain('ORDER BY shortcut.label asc, shortcut.host asc, shortcut.path asc');
+});
+
+it('appends only the identifier fields the query does not already order by', function (): void {
+    $entityManager = EntityManagerFactory::create();
+    $host = new TableHost(fn (Table $table): Table => $table
+        ->query($entityManager->createQueryBuilder()
+            ->select('shortcut')
+            ->from(Shortcut::class, 'shortcut')
+            ->addOrderBy('shortcut.path', 'DESC')));
 
     $dql = $host->getFilteredSortedTableQuery()?->getDQL() ?? '';
 
-    expect($dql)->toContain('FROM ' . CompositePair::class . ' pair')
-        ->and($dql)->not->toContain('ORDER BY');
+    expect($dql)->toContain('ORDER BY shortcut.path DESC, shortcut.host asc')
+        ->and(mb_substr_count($dql, 'shortcut.path'))->toBe(1);
+});
+
+it('tiebreaks a derived identity by the association path, which orders by its join column', function (): void {
+    $host = new TableHost(fn (Table $table): Table => $table
+        ->query(seededResidenciesByVenue()->createQueryBuilder()->select('residency')->from(Residency::class, 'residency'))
+        ->paginated(false));
+
+    $query = $host->getFilteredSortedTableQuery();
+
+    expect($query?->getDQL())->toContain('ORDER BY residency.venue asc, residency.season asc')
+        ->and(array_map(static fn (Residency $record): string => $record->getLabel(), $query?->getQuery()->getResult() ?? []))
+        ->toBe(['Arena summer', 'Arena winter', 'Shed summer']);
 });
 
 it('omits the tiebreaker when defaultKeySort is off', function (): void {

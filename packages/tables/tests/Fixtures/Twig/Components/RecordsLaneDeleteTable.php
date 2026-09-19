@@ -38,4 +38,14 @@ class RecordsLaneDeleteTable implements InteractsWithActions, InteractsWithTable
             ->columns([TextColumn::make('label')])
             ->toolbarActions([DeleteBulkAction::make()->fetchSelectedRecords(false)]);
     }
+
+    /**
+     * The same action as a **host** action rather than a table one, so mounting
+     * it without the table flag resolves it through here and leaves it with no
+     * table at all — the delete's other placement refusal.
+     */
+    public function untabledDeleteAction(): DeleteBulkAction
+    {
+        return DeleteBulkAction::make('untabledDelete')->fetchSelectedRecords(false);
+    }
 }

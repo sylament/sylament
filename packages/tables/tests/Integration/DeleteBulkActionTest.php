@@ -387,6 +387,24 @@ it('propagates a by-key delete refusal instead of answering with the danger toas
         ->toThrow(LogicException::class, 'deletes selected records by key, which needs a [query()] table');
 });
 
+/*
+ * The sibling refusal, one line above it: the same action mounted outside the table
+ * context resolves through the host's own action method, so nothing hands it a table
+ * even though the host is a table host and answers the selection. It is the arm that
+ * says the table lookup itself sits outside the `catch (Throwable)`.
+ */
+it('propagates a by-key delete mounted outside the table context', function (): void {
+    $client = test()->getContainer()->get('test.client');
+    $client->disableReboot();
+
+    $component = $this->createLiveComponent('RecordsLaneDeleteTable', client: $client)
+        ->set('selectedTableRecords', ['1'])
+        ->call('mountAction', ['name' => 'untabledDelete', 'arguments' => [], 'context' => ['bulk' => true]]);
+
+    expect(fn (): object => $component->call('callMountedAction'))
+        ->toThrow(LogicException::class, 'deletes selected records by key, which only a table can supply');
+});
+
 /**
  * @return array{KernelBrowser, EntityManagerInterface, RecordingMiddleware}
  */
@@ -481,4 +499,50 @@ it('runs a chunked composite delete as one transaction and sums the affected row
         ->and($html)->toContain('Deleted')
         ->and($html)->toContain('sy-status-success')
         ->and($html)->not->toContain('Failed to delete');
+});
+
+/*
+ * The rollback the transaction exists for, which the committing case above cannot
+ * show. The lever is a SQLite trigger the test creates after seeding — `Shortcut`
+ * carries no foreign key another row could violate, and the recorder is a
+ * pass-through — so no fixture moves. The failing row has to be in chunk **two**, and
+ * the select-all pluck emits no ORDER BY: the keys come back in composite-PK order,
+ * lexicographic on (host, path), where `/p/99` is the greatest of `/p/1`…`/p/501` and
+ * so the single row chunk two carries. The DELETE count is asserted first because it
+ * is the only thing that separates "chunk two failed and chunk one was rolled back"
+ * from "chunk one failed and nothing was ever deleted" — the recorder records a
+ * statement before it runs, so a failing chunk still counts.
+ */
+it('rolls a chunked composite delete back when a later chunk fails', function (): void {
+    $shortcuts = [];
+
+    for ($index = 1; $index <= 501; $index++) {
+        $shortcuts[] = bulkShortcut('bulk.test', '/p/' . $index, 'Bulk ' . $index, $index);
+    }
+
+    [$client, $entityManager, $recorder] = seededBulkShortcutsClient(...$shortcuts);
+
+    $entityManager->getConnection()->executeStatement(
+        "CREATE TRIGGER sylament_refuse_chunk_two BEFORE DELETE ON Shortcut FOR EACH ROW WHEN OLD.position = 99 BEGIN SELECT RAISE(ABORT, 'refused'); END",
+    );
+
+    $recorder->reset();
+
+    $html = (string) $this->createLiveComponent('CompositeShortcutsTable', client: $client)
+        ->set('isTrackingDeselectedTableRecords', true)
+        ->call('mountAction', ['name' => 'delete', 'arguments' => [], 'context' => ['table' => true, 'bulk' => true]])
+        ->call('callMountedAction')
+        ->render();
+
+    $statements = $recorder->statements();
+    $deletes = array_values(array_filter($statements, static fn (string $sql): bool => str_starts_with($sql, 'DELETE')));
+
+    $entityManager->clear();
+
+    expect($deletes)->toHaveCount(2)
+        ->and($statements)->toContain(RecordingConnection::ROLLBACK)
+        ->and($statements)->not->toContain(RecordingConnection::COMMIT)
+        ->and($entityManager->getRepository(Shortcut::class)->findAll())->toHaveCount(501)
+        ->and($html)->toContain('Failed to delete 501 records')
+        ->and($html)->toContain('sy-status-danger');
 });

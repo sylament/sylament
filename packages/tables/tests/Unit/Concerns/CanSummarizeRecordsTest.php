@@ -764,28 +764,24 @@ it('looks past a keyed page to the group the next one starts', function (int $pa
 ]);
 
 /*
- * The look-ahead builds a second fetch-join paginator, over a window of one, and it
- * carries the page's guard because it is the page's method. In one render the page
- * refuses first — the look-ahead reads the sorted query the page was read from, so
- * its joins are never more than the page's — which is why reaching this site at all
- * means joining the builder after the page was already read and cached.
+ * The look-ahead reads its window the way the page reads its own, so a keyed root
+ * whose query joins a collection is read in two steps here too — over a window of
+ * one. In one render the page is read first, from a query whose joins are never
+ * fewer than this one's, which is why reaching this site at all means joining the
+ * builder after the page was already read and cached.
  */
-it('refuses the trailing-group look-ahead over a composite table that joins a to-many', function (): void {
+it('looks past a keyed page whose query joins a to-many', function (int $page, bool $rendered): void {
     $entityManager = summaryStateResidencies();
-    $query = $entityManager->createQueryBuilder()->select('residency')->from(Residency::class, 'residency')->orderBy('residency.position', 'ASC');
+    $query = $entityManager->createQueryBuilder()->select('residency')->from(Residency::class, 'residency')->orderBy('residency.season', 'ASC');
 
-    $host = new TableHost(fn (Table $table): Table => $table
-        ->query($query)
-        ->columns([TextColumn::make('position')->summarize(Sum::make())])
-        ->groups(['season'])
-        ->paginated([1]));
-    $host->tableGrouping = 'season';
+    $host = groupedResidencySummaryHost($entityManager, page: $page, configure: fn (Table $table): Table => $table->query($query));
+    $records = $host->getTableRecords()->getRecords();
 
-    $lastRecord = $host->getTableRecords()->getRecords()['apollo~2026-spring'];
-
-    $query->addSelect('sy_gigs')->leftJoin('residency.venue', 'sy_gig_venue')->leftJoin('sy_gig_venue.gigs', 'sy_gigs');
+    $query->addSelect('sy_gig_venue', 'sy_gigs')->leftJoin('residency.venue', 'sy_gig_venue')->leftJoin('sy_gig_venue.gigs', 'sy_gigs');
 
     expect($host->getTablePaginator()?->hasMorePages())->toBeTrue()
-        ->and(fn (): bool => $host->shouldRenderTrailingGroupedTableSummary($lastRecord))
-        ->toThrow(LogicException::class, 'composite identifier and the table query joins a to-many association');
-});
+        ->and($host->shouldRenderTrailingGroupedTableSummary(array_first($records)))->toBe($rendered);
+})->with([
+    'a page ending mid-group' => [1, false],
+    'a page ending its group' => [2, true],
+]);

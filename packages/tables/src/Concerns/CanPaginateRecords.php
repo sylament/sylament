@@ -9,6 +9,7 @@ use Doctrine\ORM\Tools\Pagination\Paginator as DoctrinePaginator;
 use LogicException;
 use Sylament\Support\Pagination\Paginator;
 use Sylament\Tables\Enums\PaginationMode;
+use Sylament\Tables\Query\FetchJoinPageQuery;
 use Sylament\Tables\Query\JoinCardinality;
 use Symfony\UX\LiveComponent\Attribute\LiveAction;
 use Symfony\UX\LiveComponent\Attribute\LiveArg;
@@ -130,15 +131,12 @@ trait CanPaginateRecords
         }
 
         $recordsPerPage = (int) $recordsPerPage;
-        $fetchJoinCollection = $this->resolveTableFetchJoinCollection($query);
 
-        $query->setFirstResult(($page - 1) * $recordsPerPage);
-        $query->setMaxResults($mode === PaginationMode::Simple ? $recordsPerPage + 1 : $recordsPerPage);
-
-        $doctrinePaginator = new DoctrinePaginator($query->getQuery(), $fetchJoinCollection);
-
-        /** @var list<object|array<string, mixed>> $records */
-        $records = iterator_to_array($doctrinePaginator->getIterator(), preserve_keys: false);
+        $records = $this->readTableRecordWindow(
+            $query,
+            ($page - 1) * $recordsPerPage,
+            $mode === PaginationMode::Simple ? $recordsPerPage + 1 : $recordsPerPage,
+        );
 
         if ($mode === PaginationMode::Simple) {
             return new Paginator(
@@ -150,38 +148,56 @@ trait CanPaginateRecords
             );
         }
 
-        return new Paginator($this->keyTableRecords($records), $doctrinePaginator->count(), $page, $recordsPerPage);
+        return new Paginator($this->keyTableRecords($records), new DoctrinePaginator($query->getQuery(), JoinCardinality::joinsCollection($query))->count(), $page, $recordsPerPage);
     }
 
     /**
-     * Whether the page is read through Doctrine's collection-aware paginator, and
-     * the refusal standing in front of it: those walkers resolve a root's rows
-     * through one identifier column, so a composite root would otherwise reach a
-     * mapping error from inside a walker mid-render rather than a refusal naming
-     * what the table cannot do.
+     * One window of the query's records, and the one place that decides how it
+     * is read: a keyed root whose query joins a collection pages through the
+     * two-step read, everything else through Doctrine's own paginator exactly
+     * as before.
      *
-     * `CanSummarizeRecords::readTableRecordAtOffset()` builds the second such
-     * paginator and reads its answer from here, so the refusal is written once.
+     * `CanSummarizeRecords::readTableRecordAtOffset()` reads its window of one
+     * from here, so the decision is written once.
      *
-     * @throws LogicException when the record class carries a composite identifier
-     *                        and the query joins a to-many association
+     * @return list<object|array<string, mixed>>
      */
-    private function resolveTableFetchJoinCollection(QueryBuilder $query): bool
+    private function readTableRecordWindow(QueryBuilder $query, int $firstResult, int $maxResults): array
     {
-        if (!JoinCardinality::joinsCollection($query)) {
-            return false;
+        $keyedRecordClass = $this->getKeyedTableRecordClass($query);
+        $joinsCollection = JoinCardinality::joinsCollection($query);
+
+        if ($keyedRecordClass !== null && $joinsCollection) {
+            return FetchJoinPageQuery::read($query, $keyedRecordClass, $firstResult, $maxResults);
         }
 
+        $query->setFirstResult($firstResult);
+        $query->setMaxResults($maxResults);
+
+        /** @var list<object|array<string, mixed>> $records */
+        $records = iterator_to_array(new DoctrinePaginator($query->getQuery(), $joinsCollection)->getIterator(), preserve_keys: false);
+
+        return $records;
+    }
+
+    /**
+     * The record class when Doctrine's pagination walkers cannot resolve its
+     * rows through one identifier column — two or more identifier fields, or a
+     * single one that is an association — and null on every other table, which
+     * keeps reading its pages the way it always has.
+     *
+     * @return class-string|null
+     */
+    private function getKeyedTableRecordClass(QueryBuilder $query): ?string
+    {
         $recordClass = $this->getTable()->getRecordClass();
 
         if ($recordClass === null) {
-            return true;
+            return null;
         }
 
-        if ($query->getEntityManager()->getClassMetadata($recordClass)->isIdentifierComposite) {
-            throw new LogicException(sprintf('Cannot page table [%s]: the record class [%s] has a composite identifier and the table query joins a to-many association, which Doctrine pages through a single identifier column. Drop the join, or turn pagination off.', static::class, $recordClass));
-        }
+        $metadata = $query->getEntityManager()->getClassMetadata($recordClass);
 
-        return true;
+        return $metadata->isIdentifierComposite || $metadata->containsForeignIdentifier ? $recordClass : null;
     }
 }

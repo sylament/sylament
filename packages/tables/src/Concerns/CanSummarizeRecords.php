@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Sylament\Tables\Concerns;
 
 use Doctrine\ORM\QueryBuilder;
-use Doctrine\ORM\Tools\Pagination\Paginator as DoctrinePaginator;
 use Sylament\Schemas\Identity\IdentifierConstraint;
 use Sylament\Support\Pagination\Paginator;
 use Sylament\Tables\Columns\Summarizers\Contracts\HasSelectAlias;
@@ -213,27 +212,14 @@ trait CanSummarizeRecords
      * query ends before it — the paginator counted its rows before this read runs,
      * so a page that claims a successor can still be followed by nothing.
      *
-     * A window of one is a window over *rows*, and a to-many fetch join makes rows
-     * and records different things, so that shape is read through Doctrine's own
-     * paginator instead — the guard `paginateTableQuery()` applies to a whole page,
-     * over a page of one.
+     * The window is taken the same way a whole page is — `paginateTableQuery()`'s
+     * own read, over a page of one — on a clone, because that read windows the
+     * builder it is handed.
      *
      * @return object|array<string, mixed>|null
      */
     private function readTableRecordAtOffset(QueryBuilder $query, int $offset): object|array|null
     {
-        $probe = (clone $query)->setFirstResult($offset)->setMaxResults(1);
-
-        if ($this->resolveTableFetchJoinCollection($probe)) {
-            /** @var list<object|array<string, mixed>> $records */
-            $records = iterator_to_array(new DoctrinePaginator($probe->getQuery(), fetchJoinCollection: true)->getIterator(), preserve_keys: false);
-
-            return $records[0] ?? null;
-        }
-
-        /** @var list<object|array<string, mixed>> $records */
-        $records = $probe->getQuery()->getResult();
-
-        return $records[0] ?? null;
+        return $this->readTableRecordWindow(clone $query, $offset, 1)[0] ?? null;
     }
 }

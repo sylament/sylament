@@ -470,9 +470,18 @@ is the only one that compiles.
 and its message shape. A relation-backed field speaks a **single string** to the
 client — an option value, a selected key — and any encoding of two columns into
 one string (a delimiter, JSON, a hash) has to be decoded on the way back, which
-turns a mapping question into a serialisation format nobody asked for. Refusing
-is consistent across the two packages that key records, and it is
-[out of scope for this epic](../roadmap.md) by decision rather than by omission.
+turns a mapping question into a serialisation format nobody asked for. That
+reasoning held until somebody asked: the format exists now, it is
+[specified and pinned](record-key.md#the-grammar), and the refusal here is no
+longer a stance but the **last package that has not been converted yet** —
+tables keys, resolves, selects and deletes a composite record through
+[`RecordKey`](record-key.md) since
+[M7 · 1](../roadmap.md#m7--composite-identifiers). Converting the reader's own
+three members is [M7 · 4](../roadmap.md#m7--composite-identifiers), and it will
+rewrite this section rather than leave it. Note while reading it that
+`getReference()` is the one member that cannot simply take a decoded map: on a
+derived identity it is
+[state-dependent](record-key.md#getreference-on-a-derived-identity-is-state-dependent-so-the-codec-never-mints-one).
 
 ### Only the shapes Doctrine states in one mapping are read
 

@@ -27,9 +27,7 @@ final class FetchJoinPageQuery
      * Two statements: the page's identifiers through Doctrine's own
      * `LimitSubqueryOutputWalker`, then the records off the same builder,
      * unwindowed and narrowed to those keys, so every collection hydrates
-     * whole and the order is the page query's own. The record deleted between
-     * the two shortens the page, exactly as it does under Doctrine's
-     * paginator.
+     * whole and the order is the page query's own.
      *
      * Both steps run on clones: the builder handed in is never windowed,
      * narrowed or reordered.
@@ -117,13 +115,10 @@ final class FetchJoinPageQuery
     }
 
     /**
-     * Swaps every `ORDER BY <root>.<to-one association>` item for a hidden
-     * `IDENTITY()` result variable ordered by its alias. Runs on the identifier
-     * step's clone alone, so the record step keeps the builder's own order.
-     *
-     * Unconditional rather than per platform: the rewritten item is a result
-     * variable, which every platform's branch of the walker orders by, and the
-     * window it answers is the same one.
+     * Swaps every `ORDER BY <root>.<association over one join column>` item for
+     * a hidden `IDENTITY()` result variable ordered by its alias, on every
+     * platform. Runs on the identifier step's clone alone, so the record step
+     * keeps the builder's own order.
      *
      * @param class-string $recordClass
      */

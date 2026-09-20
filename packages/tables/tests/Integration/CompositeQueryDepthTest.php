@@ -213,8 +213,10 @@ it('reads the second page of the same query rather than the first over again', f
 });
 
 /*
- * The hop here *is* half the identifier, so the subselect projects and
- * correlates on a column it has to wrap in `IDENTITY()`.
+ * The hop here *is* half the identifier, so the subselect joins the very
+ * association it correlates back on — bare paths, one per identifier field,
+ * beside a projection this root wraps in `IDENTITY()` for every search it
+ * carries, that field being the first of its identifier.
  */
 it('narrows the joined page by a search across the to-one hop that is an identifier field', function (): void {
     [$component] = joinedResidenciesRig();
@@ -276,8 +278,9 @@ it('mounts a row action on a fetch-joined keyed row and writes through it', func
 
 /*
  * Select-all plucks its keys off the joined query, whose rows a to-many join
- * multiplies — five rows for the three searched residencies — so the single
- * `DELETE` carrying exactly two key pairs is what says the pluck deduplicated.
+ * multiplies — six for the three searched residencies, five once the
+ * deselected one is taken out — so the single `DELETE` carrying exactly two
+ * key pairs is what says the pluck deduplicated.
  */
 it('deletes the selected rows of a searched joined page without fetching them', function (): void {
     [$component, $entityManager] = joinedResidenciesRig();

@@ -34,8 +34,7 @@ trait CanSummarizeRecords
      * `1 = 0` and publish a figure over nothing in place of no figure at all.
      *
      * Un-narrowed where the paginator reports one page, the page being the whole
-     * filtered set there. Nothing rendered reaches that answer: the partial asks
-     * for this query only when `hasPages()` is true.
+     * filtered set there.
      */
     public function getPageTableSummaryQuery(): ?QueryBuilder
     {

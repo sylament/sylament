@@ -32,11 +32,8 @@ final class AggregateQuery
      * `where()` replaces where Eloquent's adds: a scope written with the
      * Filament reflex would otherwise drop the narrowing this batch depends on.
      *
-     * The keys are chunked and the scope runs once, on the pristine builder:
-     * each chunk narrows a **copy** of it, because a second predicate ANDed
-     * onto the first answers nothing, and every chunk keeps the one parameter
-     * base: a base carrying a chunk index of its own is what
-     * {@see IdentifierConstraint::assertParameterBase()} refuses.
+     * The keys are chunked. The scope runs once, on the pristine builder, and
+     * each chunk narrows a copy of that builder under the one parameter base.
      *
      * @param class-string $recordClass
      * @param list<string> $keys

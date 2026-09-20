@@ -47,8 +47,10 @@ final class RecordKey
     }
 
     /**
-     * Raw identifier values — a scalar result row's key columns — to the key
-     * a record of that class mints.
+     * Identifier values as a record holds them — already in their PHP form —
+     * to the key a record of that class mints. Never a projected row's raw
+     * columns: those go through {@see KeySelection::keyOf()}, which converts
+     * each through its field's DBAL type first.
      *
      * @param class-string $class
      * @param list<mixed>  $values in the mapping's identifier order

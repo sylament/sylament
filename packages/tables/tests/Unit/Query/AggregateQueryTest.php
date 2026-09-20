@@ -424,3 +424,29 @@ it('carries a scope parameter into every chunk of a composite batch', function (
     expect($values)->toBe(['bulk=2Etest~=2Fp=2F1' => 1, 'bulk=2Etest~=2Fp=2F501' => 1])
         ->and($recorder->statements())->toHaveCount(2);
 });
+
+it('correlates a hidden sort select on every identifier field', function (): void {
+    $entityManager = aggregateShortcuts();
+    $query = $entityManager->createQueryBuilder()->select('shortcut')->from(Shortcut::class, 'shortcut');
+
+    $alias = AggregateQuery::addHiddenSortSelect($query, Shortcut::class, aggregateDeclaration('COUNT', 'hits'));
+
+    expect($alias)->toBe('sy_agg1')
+        ->and($query->getDQL())->toContain('sy_ag1.host = shortcut.host AND sy_ag1.path = shortcut.path')
+        ->and($query->getDQL())->toContain('AS HIDDEN sy_agg1');
+});
+
+it('correlates a hidden sort select on a derived identity', function (): void {
+    $entityManager = aggregateResidencies();
+    $query = $entityManager->createQueryBuilder()->select('residency')->from(Residency::class, 'residency');
+
+    $alias = AggregateQuery::addHiddenSortSelect($query, Residency::class, aggregateDeclaration('COUNT', 'shows'));
+
+    $ordered = array_map(
+        static fn (Residency $residency): string => $residency->getSeason(),
+        $query->addOrderBy($alias, 'DESC')->addOrderBy('residency.season', 'ASC')->getQuery()->getResult(),
+    );
+
+    expect($query->getDQL())->toContain('sy_ag1.venue = residency.venue AND sy_ag1.season = residency.season')
+        ->and($ordered)->toBe(['autumn/2026', 'winter', 'empty']);
+});

@@ -8,7 +8,6 @@ use Closure;
 use Doctrine\DBAL\ArrayParameterType;
 use Doctrine\DBAL\ParameterType;
 use Doctrine\ORM\EntityManagerInterface;
-use Doctrine\ORM\Mapping\MappingException;
 use Doctrine\ORM\QueryBuilder;
 use LogicException;
 use Sylament\Schemas\Identity\IdentifierConstraint;
@@ -97,10 +96,10 @@ final class AggregateQuery
      * joins along the declared path, the scope closure arriving already bound
      * and handed the builder with the alias of the path's last hop, and the
      * correlation added after it has run so a `where()` cannot replace it —
-     * correlated to the outer row by identifier rather than to a key list. What
-     * an empty related set reads as is the aggregate's own answer here: a count
-     * over no rows is 0, every other function is null, so the two lanes agree
-     * with the defaults the cells fill in.
+     * correlated to the outer row on every identifier field rather than to a
+     * key list. What an empty related set reads as is the aggregate's own
+     * answer here: a count over no rows is 0, every other function is null, so
+     * the two lanes agree with the defaults the cells fill in.
      *
      * Whatever the scope bound onto the sub-builder is transferred to the outer
      * query, which is the one executed — the subselect travels as DQL text and
@@ -110,18 +109,12 @@ final class AggregateQuery
      *
      * @return string the hidden alias the caller orders by
      *
-     * @throws LogicException when the record class carries a composite
-     *                        identifier, which no single column correlates
+     * @throws LogicException when the table query names no root alias to
+     *                        correlate the subselect against
      */
     public static function addHiddenSortSelect(QueryBuilder $query, string $recordClass, AggregateDeclaration $declaration): string
     {
         $entityManager = $query->getEntityManager();
-
-        try {
-            $identifier = $entityManager->getClassMetadata($recordClass)->getSingleIdentifierFieldName();
-        } catch (MappingException) {
-            throw new LogicException(sprintf('Cannot sort by an aggregate over [%s]: the record class [%s] has a composite identifier.', $declaration->relationshipPath, $recordClass));
-        }
 
         $rootAlias = $query->getRootAliases()[0]
             ?? throw new LogicException(sprintf('Cannot sort by an aggregate over [%s]: the table query has no root alias to correlate it against.', $declaration->relationshipPath));
@@ -150,7 +143,7 @@ final class AggregateQuery
             ($declaration->scope)($subQuery, $joinAlias);
         }
 
-        $subQuery->andWhere("{$subAlias}.{$identifier} = {$rootAlias}.{$identifier}");
+        $subQuery->andWhere(IdentifierConstraint::correlate($subQuery, $subAlias, $recordClass, $rootAlias));
 
         foreach ($subQuery->getParameters() as $parameter) {
             $type = $parameter->getType();

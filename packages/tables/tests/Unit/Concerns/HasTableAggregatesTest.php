@@ -11,6 +11,13 @@ use Sylament\Tables\Table;
 use Sylament\Tables\Tests\Fixtures\Concerns\TableHost;
 use Sylament\Tables\Tests\Fixtures\Doctrine\Entity\Artist;
 use Sylament\Tables\Tests\Fixtures\Doctrine\Entity\Gig;
+use Sylament\Tables\Tests\Fixtures\Doctrine\Entity\Locker;
+use Sylament\Tables\Tests\Fixtures\Doctrine\Entity\LockerItem;
+use Sylament\Tables\Tests\Fixtures\Doctrine\Entity\LockerSeal;
+use Sylament\Tables\Tests\Fixtures\Doctrine\Entity\Residency;
+use Sylament\Tables\Tests\Fixtures\Doctrine\Entity\ResidencyShow;
+use Sylament\Tables\Tests\Fixtures\Doctrine\Entity\Shortcut;
+use Sylament\Tables\Tests\Fixtures\Doctrine\Entity\ShortcutHit;
 use Sylament\Tables\Tests\Fixtures\Doctrine\Entity\Song;
 use Sylament\Tables\Tests\Fixtures\Doctrine\Entity\Venue;
 use Sylament\Tables\Tests\Fixtures\Doctrine\EntityManagerFactory;
@@ -381,4 +388,230 @@ it('runs no aggregate query for a toggled-hidden column', function (): void {
         ->and($statements[0])->toContain('LIMIT')
         ->and($statements[1])->toContain('COUNT(')
         ->and(array_filter($statements, static fn (string $statement): bool => str_contains($statement, 'GROUP BY')))->toBe([]);
+});
+
+function aggregatedShortcut(string $host, string $path, string $label): Shortcut
+{
+    $shortcut = new Shortcut();
+    $shortcut->setHost($host);
+    $shortcut->setPath($path);
+    $shortcut->setLabel($label);
+
+    return $shortcut;
+}
+
+/**
+ * Four scalar-pair records whose hit counts run against their key order — A 0,
+ * B 3, C 1, D 2 — so a key-ordered page and a count-ordered one can never be
+ * mistaken for each other. The first key carries the characters an unescaped
+ * one would lose.
+ */
+function aggregatedShortcuts(): EntityManager
+{
+    $entityManager = EntityManagerFactory::create();
+
+    $a = aggregatedShortcut('a.test', '/x y', 'A');
+    $b = aggregatedShortcut('b.test', '/2', 'B');
+    $c = aggregatedShortcut('c.test', '/3', 'C');
+    $d = aggregatedShortcut('d.test', '/4', 'D');
+
+    EntityManagerFactory::seed(
+        $entityManager,
+        $a,
+        $b,
+        $c,
+        $d,
+        new ShortcutHit(1, 'curl', 1, $b),
+        new ShortcutHit(2, 'curl', 2, $b),
+        new ShortcutHit(3, 'curl', 3, $b),
+        new ShortcutHit(4, 'curl', 4, $c),
+        new ShortcutHit(5, 'curl', 5, $d),
+        new ShortcutHit(6, 'curl', 6, $d),
+    );
+
+    return $entityManager;
+}
+
+function aggregatedResidency(Venue $venue, string $season, string $label): Residency
+{
+    $residency = new Residency();
+    $residency->setVenue($venue);
+    $residency->setSeason($season);
+    $residency->setLabel($label);
+
+    return $residency;
+}
+
+/**
+ * Three derived-identity records — autumn 2 shows, empty none, winter 1 — so
+ * the count order and the season order disagree.
+ */
+function aggregatedResidencies(): EntityManager
+{
+    $entityManager = EntityManagerFactory::create();
+    $arena = new Venue(new Handle('arena'), 'The Arena');
+    $shed = new Venue(new Handle('shed'), 'The Shed');
+    $autumn = aggregatedResidency($arena, 'autumn/2026', 'Autumn');
+    $empty = aggregatedResidency($arena, 'empty', 'Empty');
+    $winter = aggregatedResidency($shed, 'winter', 'Winter');
+
+    EntityManagerFactory::seed(
+        $entityManager,
+        $arena,
+        $shed,
+        $autumn,
+        $empty,
+        $winter,
+        new ResidencyShow(1, 'Night one', 120, $autumn),
+        new ResidencyShow(2, 'Night two', 180, $autumn),
+        new ResidencyShow(3, 'Matinee', 60, $winter),
+    );
+
+    return $entityManager;
+}
+
+/**
+ * Two seals over a type that stores `ab-1` and reads back `AB-1`: the store is
+ * keyed by the record's own spelling, so a batch keyed off the raw column
+ * leaves every cell on its default.
+ */
+function aggregatedLockers(): EntityManager
+{
+    $entityManager = EntityManagerFactory::create();
+    $front = new Locker('AB-1', 'Front');
+    $back = new Locker('CD-2', 'Back');
+
+    EntityManagerFactory::seed(
+        $entityManager,
+        $front,
+        $back,
+        new LockerItem(1, 'Boots', 4, $front),
+        new LockerItem(2, 'Rope', 9, $front),
+        new LockerItem(3, 'Helmet', 2, $back),
+        new LockerSeal($front, 'Sealed', 1),
+        new LockerSeal($back, 'Open', 2),
+    );
+
+    return $entityManager;
+}
+
+/**
+ * @param array<Column> $columns
+ */
+function compositeAggregateHost(EntityManager $entityManager, string $recordClass, string $alias, string $orderBy, array $columns): TableHost
+{
+    return new TableHost(fn (Table $table): Table => $table
+        ->query($entityManager->createQueryBuilder()->select($alias)->from($recordClass, $alias)->orderBy("{$alias}.{$orderBy}", 'ASC'))
+        ->columns($columns)
+        ->paginated(false));
+}
+
+/**
+ * @param array<Column> $columns
+ */
+function sortedCompositeAggregateHost(EntityManager $entityManager, string $recordClass, string $alias, array $columns, string $sort, int $page = 1): TableHost
+{
+    $host = new TableHost(fn (Table $table): Table => $table
+        ->query($entityManager->createQueryBuilder()->select($alias)->from($recordClass, $alias))
+        ->columns($columns)
+        ->paginated([2]));
+
+    $host->tableSort = $sort;
+    $host->tablePage = $page;
+
+    return $host;
+}
+
+it('fills the store for a composite-identifier page and the cell reads it', function (): void {
+    $host = compositeAggregateHost(aggregatedShortcuts(), Shortcut::class, 'shortcut', 'host', [
+        TextColumn::make('hits_count')->counts('hits'),
+    ]);
+
+    expect(aggregateCellStates($host, 'hits_count'))->toBe([0, 3, 1, 2]);
+});
+
+it('reads exists as a real bool for a composite key with no related rows', function (): void {
+    $host = compositeAggregateHost(aggregatedShortcuts(), Shortcut::class, 'shortcut', 'host', [
+        TextColumn::make('hits_exists')->exists('hits'),
+    ]);
+
+    expect(aggregateCellStates($host, 'hits_exists'))->toBe([false, true, true, true]);
+});
+
+it('fills the store for a derived-identity page', function (): void {
+    $host = compositeAggregateHost(aggregatedResidencies(), Residency::class, 'residency', 'season', [
+        TextColumn::make('shows_count')->counts('shows'),
+        TextColumn::make('shows_sum_seats')->sum('shows', 'seats'),
+    ]);
+
+    expect(aggregateCellStates($host, 'shows_count'))->toBe([2, 0, 1])
+        ->and(aggregateCellStates($host, 'shows_sum_seats'))->toBe([300, null, 60]);
+});
+
+it('keys the store of a single derived identity by the identifier the cell asks for', function (): void {
+    $host = compositeAggregateHost(aggregatedLockers(), LockerSeal::class, 'seal', 'position', [
+        TextColumn::make('items_count')->counts('locker.items'),
+    ]);
+
+    expect(aggregateCellStates($host, 'items_count'))->toBe([2, 1]);
+});
+
+it('runs one aggregate statement per composite page and leaves the page query alone', function (): void {
+    $recorder = new RecordingMiddleware();
+    $entityManager = EntityManagerFactory::create($recorder);
+    $shortcut = aggregatedShortcut('one.test', '/a b', 'One');
+
+    EntityManagerFactory::seed($entityManager, $shortcut, new ShortcutHit(1, 'curl', 1, $shortcut));
+
+    $host = compositeAggregateHost($entityManager, Shortcut::class, 'shortcut', 'host', [
+        TextColumn::make('hits_count')->counts('hits'),
+    ]);
+
+    $recorder->reset();
+
+    $states = aggregateCellStates($host, 'hits_count');
+    $statements = $recorder->statements();
+
+    expect($states)->toBe([1])
+        ->and($statements)->toHaveCount(2)
+        ->and($statements[0])->not->toContain('GROUP BY')
+        ->and($statements[1])->toContain('GROUP BY s0_.host, s0_.path');
+});
+
+it('sorts a composite-identifier table by an aggregate across a page boundary', function (): void {
+    $entityManager = aggregatedShortcuts();
+    $columns = static fn (): array => [
+        TextColumn::make('label'),
+        TextColumn::make('hits_count')->counts('hits')->sortable(),
+    ];
+
+    $firstPage = sortedCompositeAggregateHost($entityManager, Shortcut::class, 'shortcut', $columns(), 'hits_count:desc');
+    $secondPage = sortedCompositeAggregateHost($entityManager, Shortcut::class, 'shortcut', $columns(), 'hits_count:desc', page: 2);
+    $dql = $firstPage->getFilteredSortedTableQuery()?->getDQL();
+
+    expect(aggregateCellStates($firstPage, 'label'))->toBe(['B', 'D'])
+        ->and(aggregateCellStates($firstPage, 'hits_count'))->toBe([3, 2])
+        ->and(aggregateCellStates($secondPage, 'label'))->toBe(['C', 'A'])
+        ->and(aggregateCellStates($secondPage, 'hits_count'))->toBe([1, 0])
+        ->and($firstPage->getAllTableRecordsCount())->toBe(4)
+        ->and($dql)->toContain('sy_ag1.host = shortcut.host AND sy_ag1.path = shortcut.path')
+        ->and($dql)->toContain('ORDER BY sy_agg1 desc, shortcut.host desc, shortcut.path desc');
+});
+
+it('sorts a derived-identity table by an aggregate', function (): void {
+    $entityManager = aggregatedResidencies();
+    $columns = static fn (): array => [
+        TextColumn::make('label'),
+        TextColumn::make('shows_count')->counts('shows')->sortable(),
+    ];
+
+    $firstPage = sortedCompositeAggregateHost($entityManager, Residency::class, 'residency', $columns(), 'shows_count:desc');
+    $secondPage = sortedCompositeAggregateHost($entityManager, Residency::class, 'residency', $columns(), 'shows_count:desc', page: 2);
+    $dql = $firstPage->getFilteredSortedTableQuery()?->getDQL();
+
+    expect(aggregateCellStates($firstPage, 'label'))->toBe(['Autumn', 'Winter'])
+        ->and(aggregateCellStates($firstPage, 'shows_count'))->toBe([2, 1])
+        ->and(aggregateCellStates($secondPage, 'label'))->toBe(['Empty'])
+        ->and(aggregateCellStates($secondPage, 'shows_count'))->toBe([0])
+        ->and($dql)->toContain('sy_ag1.venue = residency.venue AND sy_ag1.season = residency.season');
 });

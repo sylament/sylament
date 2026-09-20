@@ -142,7 +142,7 @@ final class FetchJoinPageQuery
                 $expression = $pieces[0];
                 $field = str_starts_with($expression, "{$rootAlias}.") ? mb_substr($expression, mb_strlen($rootAlias) + 1) : '';
 
-                if ($metadata->isSingleValuedAssociation($field) && $metadata->isAssociationWithSingleJoinColumn($field)) {
+                if ($metadata->isAssociationWithSingleJoinColumn($field)) {
                     $alias = self::ORDER_ALIAS . count($selects);
                     $selects[] = sprintf('IDENTITY(%s) AS HIDDEN %s', $expression, $alias);
                     $expression = $alias;

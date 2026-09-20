@@ -268,8 +268,9 @@ lane is mapped for all of them. Four of them carry this suite:
 is `code` rather than `id`, and `CompositePair` has two. The last two existed for
 what came later — a record key or a sort that assumes an `id` column passes
 against `Song` and fails against them — and it has since arrived, beside the
-composite families M7 · 1 and M7 · 2 added for it. The eight cases are clone-per-read (two
-reads, neither the stored builder, same DQL), a caller mutation not leaking into
+composite families M7 · 1 and M7 · 2 added for it. The eight cases are
+clone-per-read (two reads, neither the stored builder, same DQL), a caller
+mutation not leaking into
 the next read, a closure declaration evaluated once and re-evaluated after a
 fresh `query()`, two scopes applied in registration order with the `void` one
 still counted, the `isResolvingRecord` flag reaching a scope as `[false, true]`,
@@ -1205,8 +1206,9 @@ identifiers and the trap is not composite-specific: it bites **any** table that
 fetch-joins a collection under the head segment of a searchable dotted path,
 single-identifier roots included, because Doctrine's paginator ANDs its
 identifier `IN` onto the `WHERE` the `LIKE` is already in and hydrates each
-collection from the rows that survived both. Only a *keyed* root was ever
-refused the fetch join outright. It is written down now because M7 · 2 ships
+collection from the rows that survived both. Only a *composite* root was ever
+refused the fetch join outright, by the M7 · 1 guard this epic deleted; a
+single derived identity never was. It is written down now because M7 · 2 ships
 the first table in the toolkit that comes within one alias of doing both.
 
 ### The record class is read off the base query's root entity
@@ -1958,7 +1960,13 @@ key a numeric record key becomes, handing every cell its neighbour's figure. A
 single-identifier page under two thousand keys is one chunk, so the page that
 was one statement before still is, over the same SQL it always was — only the
 result alias moved, `sy_key` to `sy_key_0`, which costs one query-cache miss
-and nothing else.
+and nothing else. The **input** narrowed at the same time: `fetch()` took
+`list<int|string>` before M7 · 2 and takes record keys as strings only now, an
+`int` being a `TypeError` raised three frames down in the identity seam
+(`IdentifierFields::toDatabaseValues()`) rather than a key that happens to
+work. The one in-repo caller, `HasTable::fillTableAggregateValues()`, has
+always mapped its keys to strings; a direct caller handing `array_keys()` of a
+map keyed by a numeric id straight in is the one that moves.
 
 **Sorting** cannot use the store, since the database has to do the ordering, so
 it takes a third shape: the same aggregate as a correlated subselect added to the

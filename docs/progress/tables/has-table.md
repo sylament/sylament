@@ -486,8 +486,8 @@ its own identifier — which takes
 instead and asserts the same shape on **both** of its pages: the sliced keys,
 the true total, the last page and a whole collection on a record of each,
 because the point of that read is that a keyed page does not differ. Because a
-query-lane table is
-paginated by default, the sorting and search suites reach their records through
+query-lane table is paginated by default, the sorting and search suites reach
+their records through
 `getRecords()` on the carrier rather than treating the return value as an array.
 
 The `#[LiveProp]` and `#[LiveAction]` attributes carry no runtime behaviour a
@@ -1714,6 +1714,18 @@ that as `1 = 0`, and the page comes back empty with no error anywhere. A row of
 any other width is a `LogicException` naming the class — a tripwire on
 Doctrine's row shape, not a recoverable case.
 
+That tripwire guards **width**, and width only. Every key here is minted
+server-side and then strictly decoded again by `in()`, so an identifier type
+outside
+[the decode contract](../schemas/record-key.md#parameter-naming-and-what-an-empty-or-malformed-key-means)
+— one whose printed PHP form is a spelling its own `convertToPHPValue()`
+refuses — has every key of the page dropped, and the page comes back empty the
+same silent way, beside a correct total. That is the by-key seam's systemic
+property rather than this read's: selection, row actions and the aggregate
+batch mint and re-decode the same way, so a loud guard belongs where the decode
+contract lives, in schemas' `Identity\` seam, and not in one of its consumers.
+It is written down here because the page is where it shows least.
+
 **An order item that is exactly `<root>.<field>`, where the field is an
 owning-side to-one association with one join column, is swapped — in the
 identifier statement only — for a hidden `IDENTITY()` result variable.**
@@ -1733,14 +1745,31 @@ own identifier is another association; the result variable needs neither the
 join nor the recursion. It is applied unconditionally rather than per platform,
 because the rewritten item is a plain result variable that the `ROW_NUMBER`
 branch orders by just as happily, and it never reaches the record statement,
-whose order stays the builder's. Anything else in the order list is left as
-written — an inverse-side to-one, a to-one whose target is itself keyed by two
-columns (`isAssociationWithSingleJoinColumn()` is false for both), and any item
-reached off a joined alias — and fails in the walker exactly as it does today.
-That is a narrowing of the fix rather than a regression, and it is drawn where
-it is because `IDENTITY()` emits the **first** join column: rewriting a
-two-join-column association would not error, it would silently order by half a
-key.
+whose order stays the builder's. `isAssociationWithSingleJoinColumn()` is the
+one condition the swap tests, and it is enough on its own: only an owning-side
+to-one mapping carries `joinColumns` at all, so the test already implies the
+to-one.
+
+Anything else in the order list is left as written, and the four shapes are not
+left alone for the same reason. Two of them — an inverse-side to-one, and a
+to-one whose target is itself keyed by two columns — Doctrine's own `SqlWalker`
+refuses as an `ORDER BY` path expression in **every** statement it walks, paged
+or not (`associationPathInverseSideNotSupported` and
+`associationPathCompositeKeyNotSupported`). So no rewrite of them could ever
+ship a half-key-ordered page: the record statement keeps the caller's own order
+and would throw one statement later even if the identifier step had been
+rewritten. What the condition buys is that the refusal arrives in front of the
+**first** statement, and the case that shows it is an **empty** window — there a
+rewrite would answer `[]` and a full page would still throw, so the empty one is
+what `FetchJoinPageQueryTest` pins. The other two are genuinely the walker's
+own: an item reached off a **joined** alias, which fails in the driver exactly
+as it does today, and a comma list inside a single `orderBy()` part
+(`->orderBy('r.position DESC, r.venue', 'DESC')` is one part, of which only the
+head is read), which tables' own sort API cannot produce — it adds one item per
+`addOrderBy()` — but a hand-written query builder can. Two details of the swap
+carry no test at all and are recorded rather than pinned: `setCacheable(false)`
+on the identifier step, which mirrors Doctrine's own paginator, and the
+`<root>.` prefix test that keeps a joined alias's item out.
 
 **The two statements are a race, inherited rather than introduced.** A record
 deleted between them shortens the page — exactly as it does under Doctrine's
@@ -3089,8 +3118,7 @@ a predicate of its own. A **keyed** root — two or more identifier fields, or
 one that is an association — whose query *also joins a collection* is read in
 two steps, and the first of them needs Doctrine's own limit walker: the user's
 would be silently dropped from exactly one of the two statements. Turning
-output walkers off is not an escape either, and the roadmap's Doctrine
-inventory is one walker short on this point: `LimitSubqueryWalker` calls that
+output walkers off is not an escape either: `LimitSubqueryWalker` calls that
 same method and then refuses a foreign-key identifier **separately**, with a
 `RuntimeException` telling the caller to turn the output walkers back on. The
 other read is a **composite** root's total, which is `CountWalker`, and which
@@ -3123,11 +3151,15 @@ derived identity** — one association as the whole key — totals through
 is untouched wherever it is counted. Simple mode's page asks for no total at
 all. What that leaves is one shape the refusal does reach with no join in the
 query: a **composite** root's total — `paginateTableQuery()`'s in default
-mode, which hands the page back and then stops, and
+mode, where the window is read first and the refusal then throws in front of
+the total, so no page reaches the caller, and
 `getAllTableRecordsCount()`'s, which asks the same question whether the table
-pages or not. And `recordsPerPage: 'all'` is not refused, because it builds no
-Doctrine paginator: it resolves the query outright and counts what came back,
-so there is nothing for a user's walker to collide with. An earlier, wider
+pages or not. And the `recordsPerPage: 'all'` **page** is not refused, because
+it builds no Doctrine paginator: it resolves the query outright and counts what
+came back into support's own carrier, so there is nothing for a user's walker
+to collide with. A **cold** `getAllTableRecordsCount()` over that same
+composite root still is — it is the count that refuses, not the page, and under
+`'all'` a warm one answers from the carrier the page already filled. An earlier, wider
 draft of this guard fired for every keyed root and took three of those shapes
 down with it, which is why it is drawn exactly at the collision and nowhere
 wider.

@@ -295,8 +295,15 @@ superset of the probe's, so two copies of the test would be free to disagree
 about the same builder. The window of one is taken on a **clone**, because that
 read windows the builder it is handed.
 
+"Byte for byte" is the page's claim, not this probe's: over a query that joins
+**no** collection the look-ahead was a plain `getResult()` before M7 · 2 and is
+now Doctrine's paginator with `fetchJoinCollection` false — the same single
+statement with the same binds, executed both ways on a single-identifier root,
+but a paginator where there was none.
+
 An **unpaged** table never reaches any of it: `paginated(false)` and a
-`recordsPerPage` of `'all'` both return before a paginator is built.
+`recordsPerPage` of `'all'` both return before a Doctrine paginator is built —
+`'all'` does build support's own carrier over the rows it read.
 
 One caveat that reads worse than it is: the page query narrows by every key the
 page holds, and under `recordsPerPage: 'all'` that would be every key on the

@@ -30,7 +30,9 @@ tables' [`HasTable`](../tables/has-table.md#object-records-are-keyed-by-a-readab
 `CanSummarizeRecords`, and actions'
 [`DeleteBulkAction`](../actions/delete-action.md#the-by-key-arm-is-a-dql-delete-over-the-plucked-keys)
 and [`Action::getContext()`](../actions/action.md#getcontext-drops-the-record-model-gate).
-M7 · 2–5 add consumers; none of them reshapes what is below.
+M7 · 2 added tables' `Query\AggregateQuery`, `Query\RelationConstraint` and
+`Query\FetchJoinPageQuery`, and found nothing here short. M7 · 3–5 add
+consumers; none of them reshapes what is below.
 
 **Status:** done — see the [status vocabulary](../README.md#statuses).
 
@@ -49,9 +51,9 @@ and/or **diverges** → the permanent note in [Divergences](#divergences).
 | [`RecordKey::toIdentifier()`](../../../packages/schemas/src/Identity/RecordKey.php) — a client string to the field ⇒ PHP value map `EntityManager::find()` takes, `null` when malformed | done | — | [contract](#the-grammar) · [semantics](#a-malformed-key-never-reaches-the-database) |
 | [`IdentifierConstraint::equals()`](../../../packages/schemas/src/Identity/IdentifierConstraint.php) / `notEquals()` | done | — | [contract](#the-operations-and-their-dql) |
 | [`IdentifierConstraint::in()`](../../../packages/schemas/src/Identity/IdentifierConstraint.php) / `notIn()` | done | — | [contract](#the-operations-and-their-dql) · [semantics](#the-batch-is-a-balanced-or-tree-because-sqlite-counts-expression-depth-not-terms) |
-| [`IdentifierConstraint::correlate()`](../../../packages/schemas/src/Identity/IdentifierConstraint.php) — `alias.f = outer.f AND …` as **text**, because `RelationConstraint` splices a subselect string — ships unconsumed, for M7 · 2 | done | — | [contract](#the-operations-and-their-dql) |
+| [`IdentifierConstraint::correlate()`](../../../packages/schemas/src/Identity/IdentifierConstraint.php) — `alias.f = outer.f AND …` as **text**, because `RelationConstraint` splices a subselect string | done | — | [contract](#the-operations-and-their-dql) |
 | [`IdentifierConstraint::select()`](../../../packages/schemas/src/Identity/IdentifierConstraint.php) + [`KeySelection::keyOf()`](../../../packages/schemas/src/Identity/KeySelection.php) | done | — | [contract](#the-operations-and-their-dql) · [semantics](#the-row-side-and-the-record-side-mint-one-string-and-only-the-codec-may) |
-| [`IdentifierConstraint::groupBy()`](../../../packages/schemas/src/Identity/IdentifierConstraint.php) — the bare path per field, never `IDENTITY()` — ships unconsumed, for M7 · 2 | done | — | [diverges](#bare-identitypath-on-a-multi-column-association-answers-only-the-first-column) |
+| [`IdentifierConstraint::groupBy()`](../../../packages/schemas/src/Identity/IdentifierConstraint.php) — the bare path per field, never `IDENTITY()` | done | — | [diverges](#bare-identitypath-on-a-multi-column-association-answers-only-the-first-column) |
 | [`IdentifierConstraint::orderBy()`](../../../packages/schemas/src/Identity/IdentifierConstraint.php) — the identifier tiebreak, per field, deduped against the existing order | done | — | [contract](#the-operations-and-their-dql) |
 | [`IdentifierConstraint::chunk()`](../../../packages/schemas/src/Identity/IdentifierConstraint.php) | done | — | [contract](#the-chunk-rule) |
 | Owner scoping — `scopeToOwner()` / the owner tuple | blocked | [M7 · 5](../roadmap.md#m7--composite-identifiers) | [contract](#owner-scoping-is-reserved-not-missing) |
@@ -60,7 +62,7 @@ and/or **diverges** → the permanent note in [Divergences](#divergences).
 ## Contract
 
 What a consumer writes, and what it gets back. This section is the interface:
-M7 · 2–5 build against it unchanged, and an epic that finds it short records the
+M7 · 3–5 build against it unchanged, and an epic that finds it short records the
 addition **here** rather than reshaping what landed.
 
 ### The grammar
@@ -431,11 +433,17 @@ Six, and a consumer may rely on all of them.
 1. A key is **one string**. A composite key matches `^[A-Za-z0-9_=~-]+$`,
    contains `~`, and is never numeric.
 2. `RecordKey::of()` is **injective and stable across requests**, and
-   `fromValues()` over a row selected with `select()` equals `of()` of that
-   record. The second half is not decoration: `AggregateQuery::readValues()`
-   already fills a store under row keys that cells look up by record key, and a
-   disagreement there fills the store under keys no cell ever asks for — a cell
-   reading its default, with no error anywhere.
+   `KeySelection::keyOf()` over a row selected with `select()` equals `of()` of
+   that record. `fromValues()` does **not** carry that guarantee over a
+   projected row — it prints what it is handed without converting, so it agrees
+   only where a value's database form is already its printed one. The second
+   half is not decoration: `AggregateQuery::readValues()` fills a store under
+   row keys that cells look up by record key, and a disagreement there fills
+   the store under keys no cell ever asks for — a cell reading its default,
+   with no error anywhere. Its sibling in
+   [the page read](../tables/has-table.md#a-keyed-root-that-joins-a-collection-pages-in-two-statements-because-doctrines-walkers-key-by-one-column)
+   fails the same way and worse: the key goes into a predicate, so the page
+   itself comes back empty.
 3. **Client input never throws.** `toIdentifier()`, `equals()`, `notEquals()`,
    `in()` and `notIn()` are total over arbitrary strings — and a map
    `toIdentifier()` answers is always one `EntityManager::find()` can take,
@@ -446,9 +454,10 @@ Six, and a consumer may rely on all of them.
 4. A decoded value is **only ever a bound parameter**; a field name **only ever**
    comes from `ClassMetadata`.
 5. A single-identifier class emits **today's DQL text**.
-6. **The two write-side consumers chunk** — the by-key delete and the reorder's
-   re-resolution. Every **read** that narrows by a key list is one statement over
-   the whole list, and carries the parse curve below as a recorded limit.
+6. **Three consumers chunk** — the by-key delete, the reorder's re-resolution
+   and, since M7 · 2, tables' aggregate batch. Every **other** read that
+   narrows by a key list is one statement over the whole list, and carries the
+   parse curve below as a recorded limit.
 
 ### The chunk rule
 
@@ -473,14 +482,26 @@ PostgreSQL 18 takes either shape up to its 65 535 bound-parameter ceiling:
 time is superlinear in key count (500 ≈ 55 ms, 1 000 ≈ 160 ms, 5 000 ≈ 3.4 s on a
 first parse), which is what the 500-key composite chunk is sized against.
 
-**Two sites chunk, and both are writes.** The by-key delete issues one DQL
-`DELETE` per chunk, several chunks inside one transaction; the reorder's
+**Three sites chunk, and two of them are writes.** The by-key delete issues
+one DQL `DELETE` per chunk, several chunks inside one transaction; the reorder's
 re-resolution issues one `SELECT` per chunk, each narrowing a **copy** of the
 table's query — a copy because a second predicate ANDed onto the first would
 answer nothing, and each chunk keeps the one parameter base, since a base
 carrying a chunk index of its own is what `assertParameterBase()` refuses.
 Reordering is unpaginated by default, so its order list is the whole table,
 which is what made it the second site to earn this.
+
+The third is a read, and its chunks combine as cheaply as the reorder's:
+tables' aggregate batch runs the scope closure once on the pristine builder,
+narrows a **copy** per chunk under that same single base, and unions the
+per-chunk maps with `+` — the chunks are disjoint by construction, since a key
+appears in one of them, and each chunk's result is keyed by record key, so
+nothing has to be reconciled. That is the same property the reorder's
+re-resolution relies on, which is why a chunked read may hydrate: what a chunk
+boundary destroys is not hydration but **order**. A read whose caller consumes
+the statement's order cannot be chunked — the hydrating selection arm rejected
+below, and the record step of the keyed fetch-join page — and a `NOT IN`
+cannot be chunked at all.
 
 **Every other site that narrows by a key list runs one statement over the whole
 list**, whether this package executes that statement or hands the builder out —
@@ -490,8 +511,14 @@ the parse curve above: that method's two arms — `in()` over the selected bag a
 `notIn()` over the deselected one, which cannot be chunked at all, since a
 `NOT IN` per chunk would union near-complete result sets — the selectable-key
 narrowing in `constrainQueryToSelectableTableRecords()`, the hydrating selection
-read, the key pluck, and the page summary, which under `recordsPerPage: 'all'`
-narrows by every key on the table. Two of them can land on **one** builder:
+read, the key pluck, and the record step of
+[the keyed fetch-join page](../tables/has-table.md#a-keyed-root-that-joins-a-collection-pages-in-two-statements-because-doctrines-walkers-key-by-one-column),
+whose key count is bounded by the largest numeric page option and which could
+not be chunked anyway without reordering an ordered, hydrating read. The page
+summary used to ride this list too, under `recordsPerPage: 'all'`; since M7 · 2
+it drops its predicate whenever one page holds the whole filtered set, which
+was the only shape that made its key list unbounded. Two of them can land on
+**one** builder:
 under `fetchSelectedRecords(false)` with `checkIfRecordIsSelectableUsing()` the
 selected-key predicate and the selectable-key predicate decorate the same query,
 so the executed statement binds both lists at once.
@@ -513,9 +540,13 @@ collide with itself; and the selection lane puts **two** predicates on one
 builder in one request (`getSelectedTableRecordsQuery()` and the selectable
 narrowing), where `setParameter()` overwrites in silence. The bases in use today
 are `sylament_record_key`, `sylament_selected_record_keys`,
-`sylament_selectable_record_keys`, `sylament_reordered_record_keys` and
-`sylament_summary_keys` — all of them the names the single-identifier code
-already used, so the DQL text is stable for the query cache.
+`sylament_selectable_record_keys`, `sylament_reordered_record_keys`,
+`sylament_summary_keys`, `sylament_agg_keys` and
+`sylament_page_record_keys` — every one of the first six the name the
+single-identifier code already used, so the predicate text is stable for the
+query cache, and the seventh minted by M7 · 2 for a statement that had none.
+(One *result* alias did move with M7 · 2: the aggregate batch projects
+`sy_key_0` where it projected `sy_key`. One query-cache miss, no behaviour.)
 
 Three rules come with a caller-supplied base, and the first is enforced. **A base
 never ends in `_<digits>`**: base `k` with key 1, field 0 and base `k_1` with

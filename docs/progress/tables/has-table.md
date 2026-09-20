@@ -1751,8 +1751,9 @@ One older line becomes load-bearing on this lane without changing:
 `HasBulkActions::pluckTableRecordKeys()` selects the identifier off the
 table's own query, fetch join and all, so the join multiplies its rows the way
 it multiplies the page's. The `array_unique()` around its key map is what
-turns five rows back into two keys, and a select-all over a keyed fetch-joined
-table is the first shape that ever needed it.
+turns five rows back into two keys — a need as old as the fetch join, since a
+single-identifier root multiplies its rows the same way — and the keyed
+fetch-joined select-all is the round trip that exercises it.
 
 One thing the shape makes unreachable in practice: a summary and a fetch join
 cannot share a table, because
@@ -3114,16 +3115,22 @@ surface as a mapping error nobody could place.
 What the refusal leaves alone is longer than what it refuses, and deliberately
 so. A **single-scalar-identifier** table is untouched — both predicates answer
 null for it, so the guard returns before it can fire and the DQL is what it
-always was. A keyed root that joins **no** collection pages through a plain
-windowed query, which honours the user's walker, in default and simple mode
-alike. A **single derived identity** — one association as the whole key —
-totals through `CountWalker`, which does resolve an association identifier as
-a path. Simple mode reads no total at all. And `recordsPerPage: 'all'` is not
-refused, because it builds no Doctrine paginator: it resolves the query
-outright and counts what came back, so there is nothing for a user's walker to
-collide with. An earlier, wider draft of this guard fired for every keyed root
-and took three of those shapes down with it, which is why it is drawn exactly
-at the collision and nowhere wider.
+always was. A keyed root that joins **no** collection reads its page through a
+plain windowed query, which honours the user's walker, in default and simple
+mode alike; only a **total** behind that window can still refuse. A **single
+derived identity** — one association as the whole key — totals through
+`CountWalker`, which does resolve an association identifier as a path, so it
+is untouched wherever it is counted. Simple mode's page asks for no total at
+all. What that leaves is one shape the refusal does reach with no join in the
+query: a **composite** root's total — `paginateTableQuery()`'s in default
+mode, which hands the page back and then stops, and
+`getAllTableRecordsCount()`'s, which asks the same question whether the table
+pages or not. And `recordsPerPage: 'all'` is not refused, because it builds no
+Doctrine paginator: it resolves the query outright and counts what came back,
+so there is nothing for a user's walker to collide with. An earlier, wider
+draft of this guard fired for every keyed root and took three of those shapes
+down with it, which is why it is drawn exactly at the collision and nowhere
+wider.
 
 ### A single-scalar-identifier fetch-joined page ordered by a to-one association is Doctrine's limit, and stays one
 

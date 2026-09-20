@@ -1631,9 +1631,9 @@ form for every other one.
 Three shapes are worth knowing, because none of them is the one a reader
 guesses. The batch **projects** `IDENTITY(root.venue) AS sy_key_0,
 root.season AS sy_key_1` — an identifier association through `IDENTITY()`, a
-field bare — and **groups** by the bare paths of both, `IDENTITY()` being legal
-in a `SELECT` list and nowhere else. The batch **re-keys** each returned row
-through the selection that projected it rather than by joining the raw values:
+field bare — and **groups** by the bare paths of both, `IDENTITY()` being
+illegal in `GROUP BY`. The batch **re-keys** each returned row through the
+selection that projected it rather than by joining the raw values:
 `IDENTITY()` hands back the **raw** driver value under either hydrator while a
 field path hands back the converted object, and only the selection reconciles
 the two, so a type whose stored spelling differs from its printed one keys

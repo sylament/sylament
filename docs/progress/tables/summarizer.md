@@ -267,8 +267,10 @@ back sees `[3, 4]` where it used to be `['3', '4']`. M7 · 2 put the
 on that same footing under its own base, `sylament_agg_keys` — the base name
 kept rather than renamed, so a single-identifier batch's predicate text does
 not move (its *result* alias did, `sy_key` to `sy_key_0`, which is one
-query-cache miss and no behaviour) — and chunked it besides, which is the one
-**read** in the toolkit that chunks.
+query-cache miss and no behaviour) — and chunked it besides, which makes it
+the third site in the toolkit that chunks and the only one that is not part of
+a **write**; the by-key delete and the reorder's re-resolution are the other
+two.
 
 A **fetch-join** paginator over such a root was refused outright until M7 · 2,
 and loudly, because Doctrine pages that shape through a **single identifier

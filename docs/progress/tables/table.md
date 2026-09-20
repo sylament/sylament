@@ -206,8 +206,9 @@ holding: its surface belongs to the **column** ([column.md](column.md)), and the
 diff, the way `ColumnPathResolver` and `SearchConstraint` already are. What lands
 here is what the lane decided — the [resolution order](#a-dotted-name-is-resolved-against-the-mapping-before-it-is-refused),
 the [search shape](#a-relation-search-is-a-correlated-exists-at-every-cardinality),
-the [sort shape](#a-relation-sort-joins-where-filaments-orders-by-a-correlated-subquery)
-and the [aggregate delivery](#an-aggregate-is-a-batched-side-query-and-a-hidden-subselect-never-a-select-on-the-page-query)
+the [sort shape](#a-relation-sort-joins-where-filaments-orders-by-a-correlated-subquery),
+the [aggregate delivery](#an-aggregate-is-a-batched-side-query-and-a-hidden-subselect-never-a-select-on-the-page-query)
+and [what a composite identifier changes about two of them](#a-composite-identifier-root-correlates-and-groups-by-every-key-field)
 — in the sections below.
 
 The PHP surface is covered by
@@ -260,11 +261,14 @@ against a real in-memory SQLite `EntityManager` rather than a mock — an assert
 about clone isolation or a DQL string is only worth making against a builder
 Doctrine itself would accept.
 [`EntityManagerFactory`](../../../packages/tables/tests/Fixtures/Doctrine/EntityManagerFactory.php)
-builds one per case, schema included, over four fixture entities:
+builds one per case, schema included, over **every** entity in that directory —
+the package's Doctrine suites share one factory, so a fixture added for one
+lane is mapped for all of them. Four of them carry this suite:
 `Song` and `Artist` carry the `ManyToOne` / `OneToMany` pair, `Book`'s identifier
-is `code` rather than `id`, and `CompositePair` has two. The last two exist for
-what comes later — a record key or a sort that assumes an `id` column passes
-against `Song` and fails against them. The eight cases are clone-per-read (two
+is `code` rather than `id`, and `CompositePair` has two. The last two existed for
+what came later — a record key or a sort that assumes an `id` column passes
+against `Song` and fails against them — and it has since arrived, beside the
+composite families M7 · 1 and M7 · 2 added for it. The eight cases are clone-per-read (two
 reads, neither the stored builder, same DQL), a caller mutation not leaking into
 the next read, a closure declaration evaluated once and re-evaluated after a
 fresh `query()`, two scopes applied in registration order with the `void` one
@@ -1148,17 +1152,62 @@ of its details look like choices and are constraints. The subselect is re-rooted
 on the **root entity** rather than started at the association, because DQL's
 `FROM` cannot name an association path (the installed parser answers "NOT YET
 IMPLEMENTED"). The correlation is **identifier equality** rather than entity
-equality, which sidesteps comparing objects across the two scopes. And the
+equality, which sidesteps comparing objects across the two scopes — and since
+M7 · 2 it is equality on **every** identifier field, written by
+[`IdentifierConstraint::correlate()`](../schemas/record-key.md#the-operations-and-their-dql),
+so a root keyed by a host and a path correlates
+`sy_x0.host = s.host AND sy_x0.path = s.path` where a single-`id` one keeps
+`sy_x0.id = s.id` exactly as above. And the
 `LIKE` parameter is registered on the **outer** builder, because one DQL query
 has one parameter space no matter how deeply a subselect nests — which is also
 why the subselect's own aliases are seeded from the outer parameter count, so two
-searchable relation columns in one word's `OR` group cannot collide.
+searchable relation columns in one word's `OR` group cannot collide. The seeding
+survives the wider correlation for a reason worth naming: `correlate()` binds
+**nothing**, so the parameter count a second term reads is still the count the
+`LIKE`s put there.
+
+What the subselect *projects* stayed one column at every identifier width: the
+**first** identifier field, wrapped in `IDENTITY()` when that field is an
+association. `EXISTS` never reads a projection, and DQL leaves no alternative —
+a subselect takes no comma list, and an aliased expression inside one is a parse
+error reached through a path, a function or an identification variable alike —
+so the width lives in the correlation and nowhere else. The `IDENTITY()` arm is
+not cosmetic: it is what stopped a root whose whole identifier is one
+association from emitting `SELECT sy_x0.song` and dying in the parser, which it
+did with no Sylament refusal in front of it.
+
+One routing caveat rides with all of this and bites hardest on a fetch-joined
+table:
+[a searchable dotted path may not share its head segment with a join alias](#a-searchable-dotted-path-and-a-fetch-join-alias-may-not-share-a-head-segment).
 
 Everything the search assembly does around it is unchanged: one `Orx` per word,
 this predicate joining it like any other, no joins and no state left behind — so
 it is idempotent across the per-word loop by construction, and the count clone,
 which applies search but not sort, gets identical predicates and counts
 correctly.
+
+### A searchable dotted path and a fetch-join alias may not share a head segment
+
+A dotted column name reaches the correlated `EXISTS` above only when
+[the mapping resolves it](#a-dotted-name-is-resolved-against-the-mapping-before-it-is-refused),
+and it does not when the path's **head names an alias the builder already
+declares** — there the caller's own resolution wins, deliberately, so
+`SearchConstraint::forColumn()` falls through and the term becomes a plain
+`LIKE` on that alias. On a query that fetch-joins the collection under that
+same name, the `LIKE` lands on the **joined rows**, and Doctrine hydrates each
+record's collection out of exactly the rows that survived it: the search then
+filters the badge list *inside* every matching row instead of choosing which
+rows match, with no error anywhere and an aggregate cell beside it still
+counting the whole set. Alias the join anything the searchable path does not
+begin with — `leftJoin('translation.blocks', 'block')` beside a searchable
+`blocks.heading` — and both arms behave. The routing is older than composite
+identifiers and the trap is not composite-specific: it bites **any** table that
+fetch-joins a collection under the head segment of a searchable dotted path,
+single-identifier roots included, because Doctrine's paginator ANDs its
+identifier `IN` onto the `WHERE` the `LIKE` is already in and hydrates each
+collection from the rows that survived both. Only a *keyed* root was ever
+refused the fetch join outright. It is written down now because M7 · 2 ships
+the first table in the toolkit that comes within one alias of doing both.
 
 ### The record class is read off the base query's root entity
 
@@ -1558,6 +1607,49 @@ without it the map would be indistinguishable from a hardcoded `'asc'`.
 Filament has no counterpart: an Eloquent relation carries no readable default
 order, so this is an addition rather than a divergence.
 
+### A composite-identifier root correlates and groups by every key field
+
+Relation search and the aggregate batch both reach the outer row through its
+identifier, and until M7 · 2 both did it with a single column —
+`WHERE sub.id = root.id` for the search `EXISTS`, `WHERE root.id IN (:keys)`
+and `GROUP BY root.id` for the aggregate batch. A record class keyed by two
+scalar fields, or by an association plus a scalar, has no such column:
+`getSingleIdentifierFieldName()` raised a `MappingException` at both sites and
+each re-threw a `LogicException` naming the limit. A record class keyed by an
+association **alone** is not composite at all — the flag counts identifier
+fields and a derived identity contributes one — so neither site ever refused
+it. Each emitted the association as a bare path in a `SELECT` list instead,
+`SELECT sy_x0.<assoc>` for the search and `SELECT sy_r.<assoc> AS sy_key` for
+the batch, which Doctrine's parser rejects as *"Invalid PathExpression. Must be
+a StateFieldPathExpression."* with no Sylament message in front of it. None of
+the three does any of that now: every one of those clauses
+is written per identifier field by
+[the predicate builder](../schemas/record-key.md#the-operations-and-their-dql),
+which emits today's text byte for byte for a single-`id` root and the per-field
+form for every other one.
+
+Three shapes are worth knowing, because none of them is the one a reader
+guesses. The batch **projects** `IDENTITY(root.venue) AS sy_key_0,
+root.season AS sy_key_1` — an identifier association through `IDENTITY()`, a
+field bare — and **groups** by the bare paths of both, `IDENTITY()` being legal
+in a `SELECT` list and nowhere else. The batch **re-keys** each returned row
+through the selection that projected it rather than by joining the raw values:
+`IDENTITY()` hands back the **raw** driver value under either hydrator while a
+field path hands back the converted object, and only the selection reconciles
+the two, so a type whose stored spelling differs from its printed one keys
+correctly instead of filling the side store under strings no cell ever asks
+for. And the search subselect **projects one column whatever the width** — the
+first identifier field — because `EXISTS` never reads a projection and DQL
+admits neither a comma list nor an alias there; the width lives in the
+correlation.
+
+Paging is the third mechanism that correlates by identifier, and it is not
+here: a query joining a collection cannot be windowed by rows at all, so a
+keyed root takes
+[a two-step read of its own](has-table.md#a-keyed-root-that-joins-a-collection-pages-in-two-statements-because-doctrines-walkers-key-by-one-column).
+Composite identifiers are still out of the relation layer on the schemas side,
+which is [M7 · 4](../roadmap.md#m7--composite-identifiers)'s.
+
 ## Divergences
 
 Deliberate deviations from Filament — permanent, and the reason they hold. Say
@@ -1830,8 +1922,9 @@ per row), which breaks record keying, cell state, the row loop and
 
 So the value takes a second path. After the page's records are resolved and
 keyed, the host runs one batched query per aggregate column —
-`SELECT {root}.{id} AS sy_key, {FN}({t}.{col}) AS sy_value … WHERE {root}.{id} IN
-(:keys) GROUP BY {root}.{id}` — and drops the result into the table's
+`SELECT {root}.{id} AS sy_key_0, {FN}({t}.{col}) AS sy_value … WHERE {root}.{id}
+IN (:sylament_agg_keys) GROUP BY {root}.{id}` — and drops the result into the
+table's
 [side store](../../../packages/tables/src/Table/Concerns/HasAggregateValues.php),
 where the cell reads it ahead of walking the record. The page query stays a plain
 entity read, the count query is untouched, and the cost is +1 query per aggregate
@@ -1847,7 +1940,25 @@ narrowing is applied **after** the scope closure has run, because Doctrine's
 Filament reflex would otherwise silently drop the `IN (:keys)` and aggregate the
 whole table into one arbitrary key's cell. (A scope calling `groupBy()` still
 replaces the grouping — the same hazard, one layer along, and unfixed rather than
-unnoticed.)
+unnoticed. A scope calling `select()` replaces the key projection, and that one
+already refused loudly; M7 · 2 only changes whose refusal it is. The batch
+re-keys each row through the selection that projected it, so a missing key
+column throws *"A result row of […] lacks the key column [sy_key_0]"* where the
+batch's own key guard used to answer *"its identifier read back as null, which
+is neither scalar nor stringable"*.)
+
+A third contract arrived with composite keys: the batch is **chunked**. The
+scope closure runs once on the pristine builder, and each chunk of
+[`IdentifierConstraint::chunk()`](../schemas/record-key.md#the-chunk-rule)
+narrows a **clone** of it under the one parameter base — a copy because a
+second predicate ANDed onto the first answers nothing, and one base because a
+base carrying a chunk index of its own is refused. The per-chunk maps merge
+with `+` rather than `array_merge()`, which would renumber the integer array
+key a numeric record key becomes, handing every cell its neighbour's figure. A
+single-identifier page under two thousand keys is one chunk, so the page that
+was one statement before still is, over the same SQL it always was — only the
+result alias moved, `sy_key` to `sy_key_0`, which costs one query-cache miss
+and nothing else.
 
 **Sorting** cannot use the store, since the database has to do the ordering, so
 it takes a third shape: the same aggregate as a correlated subselect added to the
@@ -1871,34 +1982,6 @@ displays: the zero/non-zero boundary is identical, so the two partitions land th
 same way round, and only the order *within* the true group differs — by count,
 not by tiebreak. With no `castToBool` in the ordering there is nothing to
 collapse them.
-
-### A composite-identifier root refuses relation search and aggregates
-
-Both of the mechanisms above correlate a subquery to the outer row by a **single**
-identifier column — `WHERE sub.id = root.id` for the search `EXISTS`, `WHERE
-root.id IN (:keys)` and `GROUP BY root.id` for the aggregate batch. A record
-class whose identifier is composite has no such column, so
-`getSingleIdentifierFieldName()` throws `MappingException` and both sites catch
-it and re-throw a `LogicException` naming the limitation and the class.
-
-Both throws are a **limit, not a stance**, and since M7 · 1 they are the last of
-it on this lane. Record keying now
-[encodes every identifier field into one string](has-table.md#object-records-are-keyed-by-a-readable-id-rather-than-an-eloquent-key)
-and the identifier tiebreaker
-[orders by all of them](has-table.md#sorting-composes-the-users-order-the-default-and-the-identifier-tiebreaker),
-so a composite-identifier table renders, keys, resolves a row action, edits a
-cell, selects in both strategies, reorders, bulk-deletes and pages. What it
-still cannot do is type into the search box against a relation column or declare
-an aggregate: both correlate by a single column, and neither has been rewritten
-onto [the identifier predicate builder](../schemas/record-key.md) — which ships
-the `correlate()` and `groupBy()` they need, unconsumed, waiting for them. That
-is [M7 · 2](../roadmap.md#m7--composite-identifiers), and it **replaces** these
-two `LogicException`s rather than keeping them. Paging a query that fetch-joins
-a collection is refused for the same epic by a guard of the same shape, since
-Doctrine's own `Paginator` calls `getSingleIdentifierFieldName()` on that path —
-see [summarizer.md](summarizer.md#a-page-summary-narrows-by-keys-never-by-a-limit).
-Composite identifiers are still out of the relation layer on the schemas side,
-which is [M7 · 4](../roadmap.md#m7--composite-identifiers)'s.
 
 ### The copy is English and hardcoded, because no i18n layer ships
 

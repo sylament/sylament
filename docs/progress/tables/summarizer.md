@@ -254,43 +254,61 @@ whole epic early on purpose — before it, the call here was an **unguarded**
 `getSingleIdentifierFieldName()`, reachable only because `HasTable` refused to
 key the page first, and the moment keying stopped refusing a summarized
 composite table would have thrown a raw Doctrine `MappingException` out of a
-getter mid-render. The all-table row still reads its figure there.
+getter mid-render. The all-table row still reads its figure there — off
+`getAllTableSummaryQuery()`, which is `getFilteredTableQuery()` and nothing
+else, so *All &lt;records&gt;* means the whole **filtered and searched** set and
+not the whole table. A search narrowing five rows to three moves both figures.
 
 The bind changed shape with that move even for a **single-identifier** table:
 the DQL text is unmoved, but the keys are converted to the identifier's own PHP
 type and bound under an `ArrayParameterType`, so anyone reading the parameter
-back sees `[3, 4]` where it used to be `['3', '4']`.
+back sees `[3, 4]` where it used to be `['3', '4']`. M7 · 2 put the
+[aggregate batch](table.md#an-aggregate-is-a-batched-side-query-and-a-hidden-subselect-never-a-select-on-the-page-query)
+on that same footing under its own base, `sylament_agg_keys` — the base name
+kept rather than renamed, so a single-identifier batch's predicate text does
+not move (its *result* alias did, `sy_key` to `sy_key_0`, which is one
+query-cache miss and no behaviour) — and chunked it besides, which is the one
+**read** in the toolkit that chunks.
 
-What is refused instead, and loudly, is a **fetch-join** paginator over a
-composite root: `readTableRecordAtOffset()` and
-[`CanPaginateRecords::paginateTableQuery()`](has-table.md#the-page-state-has-its-query-lane-and-no-session-or-url-half)
-both throw a `LogicException` naming the class and the limit when the root's
-identifier is composite and
-[`JoinCardinality`](table.md#a-dotted-name-is-resolved-against-the-mapping-before-it-is-refused)
-says the query joins a collection — because Doctrine pages that shape through a
-**single identifier column**, and leaks the fact two different ways. A
-scalar-pair root reaches `RootTypeWalker`'s `getSingleIdentifierFieldName()` and
-surfaces a raw `MappingException` mid-render; a derived identity fails earlier
-still, inside `LimitSubqueryOutputWalker`, which re-emits the identifier
-tiebreak's `ORDER BY root.<association>` as a column its own derived table does
-not carry, so the render ends in a driver error instead. That is the same guard
-`AggregateQuery` and `RelationConstraint` already carry, and
-[M7 · 2](../roadmap.md#m7--composite-identifiers) replaces it with the hand-run
-second step over `LimitSubqueryOutputWalker`. One caveat worth knowing: with
-`recordsPerPage: 'all'` the page summary narrows by **every** key on the table,
-and DQL parse time is superlinear in key count — see
-[the chunk rule](../schemas/record-key.md#the-chunk-rule).
-
-Two things about where that guard actually fires. The refusal is written once, in
-`CanPaginateRecords`' private `resolveTableFetchJoinCollection()`, and the
-look-ahead reads its answer rather than repeating it — so the look-ahead's own
-call is **shadowed** on every production path: a page is built before its
+A **fetch-join** paginator over such a root was refused outright until M7 · 2,
+and loudly, because Doctrine pages that shape through a **single identifier
+column** and leaks the fact two different ways: a scalar-pair root reached
+`RootTypeWalker`'s `getSingleIdentifierFieldName()` and surfaced a raw
+`MappingException` mid-render, while a derived identity failed earlier still,
+inside `LimitSubqueryOutputWalker`, which re-emitted the identifier tiebreak's
+`ORDER BY root.<association>` as a column its own derived table does not carry
+and ended the render in a driver error instead — on every platform outside that
+walker's `ROW_NUMBER` branch, which is SQLite here and MySQL and MariaDB in
+production. (The scalar-pair half is platform-independent; only the derived
+identity's carries that qualifier.) Neither happens now. This
+look-ahead and
+[`paginateTableQuery()`](has-table.md#the-page-state-has-its-query-lane-and-no-session-or-url-half)
+read their window through **one** private method on `CanPaginateRecords`, and
+that method routes a keyed root whose query joins a collection into
+[a two-step read tables runs itself](has-table.md#a-keyed-root-that-joins-a-collection-pages-in-two-statements-because-doctrines-walkers-key-by-one-column)
+while every other table keeps Doctrine's paginator byte for byte. Writing the
+decision once is what the look-ahead earns: a page is built before its
 successor is probed, over the same query, and the page's joins are always a
-superset of the probe's, so the page refuses first. Reaching the look-ahead's
-throw takes joining the base builder *after* the page was cached, which is how
-the case pins it. And an **unpaged** table is not refused at all: `paginated(false)`
-and a `recordsPerPage` of `'all'` both return before any paginator is built,
-which is exactly the second of the two ways out the message names.
+superset of the probe's, so two copies of the test would be free to disagree
+about the same builder. The window of one is taken on a **clone**, because that
+read windows the builder it is handed.
+
+An **unpaged** table never reaches any of it: `paginated(false)` and a
+`recordsPerPage` of `'all'` both return before a paginator is built.
+
+One caveat that reads worse than it is: the page query narrows by every key the
+page holds, and under `recordsPerPage: 'all'` that would be every key on the
+table, against a DQL parse time superlinear in key count — see
+[the chunk rule](../schemas/record-key.md#the-chunk-rule). Nothing reaches it.
+`hasPages()` is false whenever one page holds the whole filtered set — under
+`'all'`, and on any single-page table — the partial asks for the page query
+only when it is true, and since M7 · 2 the method itself answers the
+**un-narrowed** filtered query in exactly that shape. One page means the page
+*is* the filtered set, so the predicate only ever reproduced what it started
+from, at a cost of one bound parameter per key per identifier field. The guard
+sits **below** the empty-page guard and not above it, and the ordering is the
+whole of it: an empty table reports one page too, and it owes `null` rather
+than a figure over everything.
 
 ### The page row is what the query proves, not what the paginator claims
 
@@ -379,11 +397,15 @@ and on an unsummarized table it is never called at all.
 The look-ahead hydrates the **record** at `page × perPage` and compares
 `getStringKey()` on both sides. A scalar key probe was considered and not built:
 the key may be a `getKeyFromRecordUsing()` closure's answer, and that closure
-needs a record. The read goes through Doctrine's own `Paginator` when the query
-[joins a collection](table.md#a-relation-sort-joins-where-filaments-orders-by-a-correlated-subquery)
-— a window of one is a window over *rows*, and a to-many fetch join makes rows and
-records different things — which is the guard `paginateTableQuery()` applies to a
-whole page, over a page of one.
+needs a record. A window of one is a window over *rows*, and a to-many fetch
+join makes rows and records different things, so the window is taken the way a
+whole page is: through the one private method on `CanPaginateRecords` that
+`paginateTableQuery()` reads its own page with, on a **clone**, because that
+read windows the builder it is handed. Which of the two routes it takes —
+Doctrine's own paginator, or
+[the two-step read tables runs itself](has-table.md#a-keyed-root-that-joins-a-collection-pages-in-two-statements-because-doctrines-walkers-key-by-one-column)
+— is that method's decision and not this one's, which is the point of writing
+it once.
 
 Its exactness inherits the sort's: with the identifier tiebreaker on, "the record
 at offset N" is deterministic and agrees with the page it looks past. Under

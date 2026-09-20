@@ -151,10 +151,10 @@ instead.
 | [`getTableHostId()` + the `$tableHostId` `LiveProp`](../../../packages/tables/src/Concerns/HasTable.php) | [`Livewire\Component::getId()`](../../../vendor/filament/tables/resources/views/index.blade.php) | done | — | [diverges](#the-host-id-is-a-random-liveprop-rather-than-a-framework-component-id) |
 | [`getTableRecordKey(object\|array $record): string`](../../../packages/tables/src/Concerns/HasTable.php) | [`Concerns\HasRecords::getTableRecordKey()`](../../../vendor/filament/tables/src/Concerns/HasRecords.php) | done | — | [diverges](#object-records-are-keyed-by-a-readable-id-rather-than-an-eloquent-key) |
 | [`getTableRecord(?string $key)` with its `resolveQueryTableRecord()` query arm](../../../packages/tables/src/Concerns/HasTable.php) | [`Concerns\HasRecords::getTableRecord()`](../../../vendor/filament/tables/src/Concerns/HasRecords.php) | done | — | [diverges](#gettablerecord-reads-fresh-when-the-render-cache-is-cold) · [diverges](#record-resolution-applies-no-limit-1-where-filaments-find-does) |
-| [`getAllTableRecordsCount(): int`](../../../packages/tables/src/Concerns/HasTable.php) | [`Concerns\HasRecords::getAllTableRecordsCount()`](../../../vendor/filament/tables/src/Concerns/HasRecords.php) | done | — | [diverges](#the-all-records-count-answers-four-ways-where-filaments-answers-two) |
+| [`getAllTableRecordsCount(): int`](../../../packages/tables/src/Concerns/HasTable.php) | [`Concerns\HasRecords::getAllTableRecordsCount()`](../../../vendor/filament/tables/src/Concerns/HasRecords.php) | done | — | [diverges](#the-all-records-count-answers-four-ways-where-filaments-answers-two) · [diverges](#an-output-walker-of-the-querys-own-is-refused-by-name-only-where-doctrines-fallback-cannot-serve-a-keyed-root) |
 | [The query lane — `getFilteredTableQuery()`, `filterTableQuery()`, `applyFiltersToTableQuery()`, `getFilteredSortedTableQuery()`](../../../packages/tables/src/Concerns/HasTable.php) | [`Concerns\HasRecords`](../../../vendor/filament/tables/src/Concerns/HasRecords.php) | done | — | [semantics](#filtertablequery-applies-the-filters-then-the-search) · [diverges](#the-filtered-query-seam-is-gated-on-the-lane-not-on-the-presence-of-a-builder) |
 | `getTableQueryForExport()` | [`Concerns\HasRecords::getTableQueryForExport()`](../../../vendor/filament/tables/src/Concerns/HasRecords.php) | blocked | the export surface | It bypasses the seams above, re-reading `getTable()->getQuery()` and re-applying filters, search and sorting itself, to assemble a query for Filament's export action — a surface with no counterpart here and on no milestone, the same one [`ExportColumn`](column.md#hascellstate-is-relocated-into-the-column-tier) waits on. It lands with that action or not at all |
-| [`CanPaginateRecords` — `$tablePage`, `$tableRecordsPerPage`, `gotoTablePage()`, `getTablePage()`, `getTableRecordsPerPage()`, `dehydrateTableRecordsPerPage()`, `updatedTableRecordsPerPage()`, `paginateTableQuery()`](../../../packages/tables/src/Concerns/CanPaginateRecords.php) | [`Concerns\CanPaginateRecords`](../../../vendor/filament/tables/src/Concerns/CanPaginateRecords.php) | in progress | — | [detail](#the-page-state-has-its-query-lane-and-no-session-or-url-half) · [diverges](#gototablepage-replaces-livewires-paginator-trio) · [diverges](#per-page-is-validated-in-the-getter-on-every-read) · [diverges](#the-writable-props-dehydrate-in-their-elements-wire-vocabulary) · [diverges](#the-recordsperpage-injection-is-nullable) · [diverges](#the-session-key-is-the-host-class-so-two-instances-of-one-page-share-it) |
+| [`CanPaginateRecords` — `$tablePage`, `$tableRecordsPerPage`, `gotoTablePage()`, `getTablePage()`, `getTableRecordsPerPage()`, `dehydrateTableRecordsPerPage()`, `updatedTableRecordsPerPage()`, `paginateTableQuery()`](../../../packages/tables/src/Concerns/CanPaginateRecords.php) | [`Concerns\CanPaginateRecords`](../../../vendor/filament/tables/src/Concerns/CanPaginateRecords.php) | in progress | — | [detail](#the-page-state-has-its-query-lane-and-no-session-or-url-half) · [diverges](#gototablepage-replaces-livewires-paginator-trio) · [diverges](#per-page-is-validated-in-the-getter-on-every-read) · [diverges](#the-writable-props-dehydrate-in-their-elements-wire-vocabulary) · [diverges](#the-recordsperpage-injection-is-nullable) · [diverges](#the-session-key-is-the-host-class-so-two-instances-of-one-page-share-it) · [semantics](#a-keyed-root-that-joins-a-collection-pages-in-two-statements-because-doctrines-walkers-key-by-one-column) · [diverges](#an-output-walker-of-the-querys-own-is-refused-by-name-only-where-doctrines-fallback-cannot-serve-a-keyed-root) · [diverges](#a-single-scalar-identifier-fetch-joined-page-ordered-by-a-to-one-association-is-doctrines-limit-and-stays-one) |
 | [`CanSortRecords` — `$tableSort`, `sortTable()`, `healSeededTableSort()`, `getTableSortColumn()`, `getTableSortDirection()`, `applySortingToTableQuery()`](../../../packages/tables/src/Concerns/CanSortRecords.php) | [`Concerns\CanSortRecords`](../../../vendor/filament/tables/src/Concerns/CanSortRecords.php) | in progress | — | [detail](#sorting-composes-the-users-order-the-default-and-the-identifier-tiebreaker) · [diverges](#sorttable-ignores-a-column-the-table-did-not-declare-sortable) · [diverges](#a-default-sort-closures-replacement-builder-reaches-the-caller-where-filaments-is-discarded) · [diverges](#the-identifier-tiebreaker-is-suppressed-only-by-the-qualified-key) · [semantics](#a-column-name-containing-a-colon-cannot-be-cycled) · [diverges](#a-seeded-sort-is-healed-at-mount-where-filaments-is-trusted-to-the-query) · [diverges](#the-session-key-is-the-host-class-so-two-instances-of-one-page-share-it) |
 | [`CanSearchRecords` — `$tableSearch`, `updatedTableSearch()`, `getTableSearch()`, `dehydrateTableSearch()`, `applySearchToTableQuery()`, `applyGlobalSearchToTableQuery()`, `extractTableSearchWords()`](../../../packages/tables/src/Concerns/CanSearchRecords.php), the last delegating to [`Query\SearchTermSplitter`](../../../packages/tables/src/Query/SearchTermSplitter.php) | [`Concerns\CanSearchRecords`](../../../vendor/filament/tables/src/Concerns/CanSearchRecords.php) | in progress | — | [detail](#search-is-the-global-term-and-one-term-per-column) · [diverges](#the-writable-props-dehydrate-in-their-elements-wire-vocabulary) · [diverges](#the-session-key-is-the-host-class-so-two-instances-of-one-page-share-it) · [table.md](table.md#the-two-hidden-column-arms-landed-with-column-visibility-an-epic-after-their-loops) |
 | [Table state in the URL — the `getTableUrlMapping()` opt-in hook, the six `modifyTable*Prop()` `LiveProp` modifiers, `getTableQueryStringIdentifier()` and `getIdentifiedTableQueryStringPropertyNameFor()`](../../../packages/tables/src/Concerns/HasTable.php) | [`getIdentifiedTableQueryStringPropertyNameFor()`](../../../vendor/filament/tables/src/Concerns/InteractsWithTable.php), the six-attribute `#[Url]` block on [`ListRecords`](../../../vendor/filament/filament/src/Resources/Pages/ListRecords.php) and Livewire's own [`queryStringHandlesPagination()`](../../../vendor/livewire/livewire/src/Features/SupportPagination/HandlesPagination.php) for `page` | done | — | [diverges](#the-url-binding-is-a-per-prop-liveprop-modifier-opted-into-by-the-page) · [diverges](#the-query-string-identifier-is-live-on-the-table-and-dead-in-the-modifiers) |
@@ -478,7 +478,15 @@ throwing; and `paginated(false)` handing back a plain array with
 for: three artists with three songs each, `leftJoin('artist.songs', 'songs')`
 with `addSelect()`, page size 2 — a raw `LIMIT 2` would answer two *rows* of one
 artist, so the case asserts two `Artist` records, a total of `3`, and a
-collection of three songs on the first of them. Because a query-lane table is
+collection of three songs on the first of them. A keyed twin sits beside it
+since M7 · 2 — a root whose identifier is an association plus a scalar,
+fetch-joining a collection two hops out, the gigs of the venue that is half
+its own identifier — which takes
+[the two-step read](#a-keyed-root-that-joins-a-collection-pages-in-two-statements-because-doctrines-walkers-key-by-one-column)
+instead and asserts the same shape on **both** of its pages: the sliced keys,
+the true total, the last page and a whole collection on a record of each,
+because the point of that read is that a keyed page does not differ. Because a
+query-lane table is
 paginated by default, the sorting and search suites reach their records through
 `getRecords()` on the carrier rather than treating the return value as an array.
 
@@ -648,6 +656,26 @@ classify — an arbitrary-class join, a join off an alias this builder never
 declared, a join on a property that is no association — counts as collection
 fetching, because there the two directions still cost differently, an extra
 subquery against silently truncated collections.
+
+A **third** strategy sits beside those two, and the join heuristic is only half
+of what picks it. Two shapes of identifier defeat Doctrine's paginator on that
+path, for two different reasons. A record class keyed by **two or more fields**
+has no single identifier column at all, and `getSingleIdentifierFieldName()`
+answers with a `MappingException` from inside a getter mid-render. A class
+keyed by a **single association** does have one, and Doctrine's walkers do
+serve it — right up to the identifier tiebreak's `ORDER BY <root>.<association>`,
+which the limit walker cannot re-emit on any platform outside its `ROW_NUMBER`
+branch. Since M7 · 2 either root, on a query that joins a collection, is paged
+by
+[a two-step read tables runs itself](#a-keyed-root-that-joins-a-collection-pages-in-two-statements-because-doctrines-walkers-key-by-one-column);
+every other table, single-**scalar**-`id` roots included, still goes through
+the Tools paginator exactly as before. The routing predicate reads metadata
+alone and never the platform, so both shapes take the two-step read on
+PostgreSQL too, where the second would have worked either way. One private
+method makes that choice — `readTableRecordWindow()`, which
+[the trailing-group look-ahead](summarizer.md#the-trailing-group-is-followed-past-the-page-break-with-a-record-not-a-scalar)
+calls for its window of one, so the page and the probe cannot disagree about
+the same query.
 
 The three [modes](table.md#the-pagination-mode-ships-two-cases-and-two-setters-wait-on-their-features)
 differ in what they pay for the total, and the mode is read here, where it is
@@ -1642,6 +1670,97 @@ The disambiguator is the **argument**, not the name: the editable write takes a
 column name *and a record key*, and every manager member takes a state array or
 nothing. A reader arriving at either family from the other should start there.
 
+### A keyed root that joins a collection pages in two statements, because Doctrine's walkers key by one column
+
+`Query\FetchJoinPageQuery::read()` is the window of a query that joins a
+collection under a root Doctrine's paginator cannot page: two or more
+identifier fields, which its `getSingleIdentifierFieldName()` sites refuse
+outright, or a single one that is an association, which it pages until the
+identifier tiebreak's order item. It answers in
+**two** statements, which is the shape Doctrine's own `Paginator` uses and for
+the same reason — a to-many join multiplies rows, so a `LIMIT` over them slices
+a record in half. A keyed root whose query joins **no** collection is not
+routed here at all: it keeps Doctrine's paginator, exactly as a single-scalar
+one does.
+
+The first statement reads the page's **identifiers** through Doctrine's own
+`LimitSubqueryOutputWalker`, set as a hint on a clone of the builder: that
+walker projects every identifier column, where the tree walkers behind it
+project the one `getSingleIdentifierFieldName()` answers. The second reads the
+**records** off a second clone, window cleared and
+[`IdentifierConstraint::in()`](../schemas/record-key.md#the-operations-and-their-dql)
+narrowing it to those keys, hydrated normally — so every collection comes back
+whole and the order is the builder's own, never the first statement's. What
+comes back is a **list**: the records are `array_values()`d on the way out,
+because a query with `INDEX BY` on its root hydrates a string-keyed array and
+the callers here read `[0]`. An empty
+first page answers `[]` without running the second. Both steps are clones: the
+builder handed in is never windowed, narrowed or reordered, so a caller may
+read a second window off it. The **total** is unchanged, a `Paginator::count()`
+through `CountOutputWalker`, which is composite-safe.
+
+Three things a reader would otherwise have to re-derive.
+
+**The walker's rows are remapped positionally and minted through
+`KeySelection::keyOf()`.** The walker names its own result columns — an
+identifier association under its bare property name carrying the **raw** driver
+value, a scalar field under `<alias>_<field>` and converted — in identifier
+order and exactly as wide as the identifier, so the row is written onto the
+aliases this class asked `select()` for, in order, and handed to the selection
+that authored them. `RecordKey::fromValues()` is the wrong call here and fails
+**silently**: it prints without converting, so against a type whose stored form
+differs from its printed one it mints a key the decode refuses, `in()` renders
+that as `1 = 0`, and the page comes back empty with no error anywhere. A row of
+any other width is a `LogicException` naming the class — a tripwire on
+Doctrine's row shape, not a recoverable case.
+
+**An order item that is exactly `<root>.<field>`, where the field is an
+owning-side to-one association with one join column, is swapped — in the
+identifier statement only — for a hidden `IDENTITY()` result variable.**
+`LimitSubqueryOutputWalker` rewrites an order item's SQL from the **field**
+mappings alone (`generateSqlAliasReplacements()`), so an association path is
+re-emitted as `<table alias>.<fk>` against a derived table carrying only the
+aliased identifier columns — a driver error, and one
+[the identifier tiebreak](#sorting-composes-the-users-order-the-default-and-the-identifier-tiebreaker)
+walks into on every derived-identity page **outside that walker's `ROW_NUMBER`
+branch**, since it orders by the association itself. So the item becomes
+`addSelect('IDENTITY(root.assoc) AS
+HIDDEN sy_order_<n>')` with `ORDER BY sy_order_<n>` — a result variable, which
+is the route the walker does support and the one the hidden aggregate sort
+already travels. Joining the target and ordering by its identifier field would
+work for a plain derived identity and not for a **chained** one, whose target's
+own identifier is another association; the result variable needs neither the
+join nor the recursion. It is applied unconditionally rather than per platform,
+because the rewritten item is a plain result variable that the `ROW_NUMBER`
+branch orders by just as happily, and it never reaches the record statement,
+whose order stays the builder's. Anything else in the order list is left as
+written — an inverse-side to-one, a to-one whose target is itself keyed by two
+columns (`isAssociationWithSingleJoinColumn()` is false for both), and any item
+reached off a joined alias — and fails in the walker exactly as it does today.
+That is a narrowing of the fix rather than a regression, and it is drawn where
+it is because `IDENTITY()` emits the **first** join column: rewriting a
+two-join-column association would not error, it would silently order by half a
+key.
+
+**The two statements are a race, inherited rather than introduced.** A record
+deleted between them shortens the page — exactly as it does under Doctrine's
+paginator, which reads its identifiers and its rows in two statements for the
+same reason.
+
+One older line becomes load-bearing on this lane without changing:
+`HasBulkActions::pluckTableRecordKeys()` selects the identifier off the
+table's own query, fetch join and all, so the join multiplies its rows the way
+it multiplies the page's. The `array_unique()` around its key map is what
+turns five rows back into two keys, and a select-all over a keyed fetch-joined
+table is the first shape that ever needed it.
+
+One thing the shape makes unreachable in practice: a summary and a fetch join
+cannot share a table, because
+[summarizing a to-many join is refused](summarizer.md#a-to-many-join-on-the-summarized-query-is-refused-where-filament-inflates-in-silence)
+rather than silently inflated. So the look-ahead's keyed arm is reached only
+under a `Summarizer::using()` summarizer, which is the escape that refusal
+names.
+
 ## Divergences
 
 Deliberate deviations from Filament — permanent, and the reason they hold. Say
@@ -2548,6 +2667,18 @@ heuristic in one place is worth more than a call site that answers a question
 nobody asks, and if the flag ever reaches the count path it will already be
 right.
 
+Since M7 · 2 the same call is fronted by one guard: a **composite** root — two
+or more identifier fields — whose query carries its own output walker is
+[refused by name](#an-output-walker-of-the-querys-own-is-refused-by-name-only-where-doctrines-fallback-cannot-serve-a-keyed-root)
+here, as it is in front of the paginator's own total, because
+`Paginator::count()` falls back to `CountWalker` there and that walker resolves
+the root through one identifier column. A **single derived identity** is not
+refused here: one association identifier is a path `CountWalker` does resolve,
+and it counts such a table today. Nothing else on this arm moved either — a
+keyed root with no such hint counts through `CountOutputWalker` exactly as it
+always did, which is the composite-safe path the site ledger records as a
+deliberate no-change.
+
 Both filters and search are applied and pagination is not, which is exactly what
 "all records" means here: the number a footer's *of N* renders under a filtered
 page.
@@ -2946,6 +3077,76 @@ The handler is the same choreography the global term's `onUpdated` runs —
 deselect if the table says so, page back to `1`, flush the record cache, write
 the session — so a per-column keystroke and a global one are indistinguishable
 downstream.
+
+### An output walker of the query's own is refused by name only where Doctrine's fallback cannot serve a keyed root
+
+Doctrine falls back to tree walkers the moment a query sets
+`HINT_CUSTOM_OUTPUT_WALKER` itself — `LimitSubqueryWalker` for a page,
+`CountWalker` for a total — and both resolve the root through
+`getSingleIdentifierFieldName()`. Two reads cannot survive that, and each has
+a predicate of its own. A **keyed** root — two or more identifier fields, or
+one that is an association — whose query *also joins a collection* is read in
+two steps, and the first of them needs Doctrine's own limit walker: the user's
+would be silently dropped from exactly one of the two statements. Turning
+output walkers off is not an escape either, and the roadmap's Doctrine
+inventory is one walker short on this point: `LimitSubqueryWalker` calls that
+same method and then refuses a foreign-key identifier **separately**, with a
+`RuntimeException` telling the caller to turn the output walkers back on. The
+other read is a **composite** root's total, which is `CountWalker`, and which
+answers `getSingleIdentifierFieldName()` with a raw `MappingException` from
+inside a getter mid-render.
+
+So those two shapes are refused, with a `LogicException` naming the table, the
+record class and the walker, at the three places that meet them: inside the
+private window read both paginator sites share, in the branch that takes the
+two-step route; in front of the total `paginateTableQuery()` reads for itself;
+and in
+[`getAllTableRecordsCount()`](#the-all-records-count-answers-four-ways-where-filaments-answers-two).
+The first site asks whether the root is keyed, the other two whether it is
+composite, and that difference is the whole of the design — the guard takes the
+record class its caller resolved rather than resolving one for itself, because
+only the caller knows which question it is asking. The hint is read off the
+**built** `Query` rather than off the builder, because
+`Configuration::setDefaultQueryHints()` reaches only the former — an
+application-wide default walker is precisely the shape that would otherwise
+surface as a mapping error nobody could place.
+
+What the refusal leaves alone is longer than what it refuses, and deliberately
+so. A **single-scalar-identifier** table is untouched — both predicates answer
+null for it, so the guard returns before it can fire and the DQL is what it
+always was. A keyed root that joins **no** collection pages through a plain
+windowed query, which honours the user's walker, in default and simple mode
+alike. A **single derived identity** — one association as the whole key —
+totals through `CountWalker`, which does resolve an association identifier as
+a path. Simple mode reads no total at all. And `recordsPerPage: 'all'` is not
+refused, because it builds no Doctrine paginator: it resolves the query
+outright and counts what came back, so there is nothing for a user's walker to
+collide with. An earlier, wider draft of this guard fired for every keyed root
+and took three of those shapes down with it, which is why it is drawn exactly
+at the collision and nowhere wider.
+
+### A single-scalar-identifier fetch-joined page ordered by a to-one association is Doctrine's limit, and stays one
+
+The order rewrite the
+[two-step read](#a-keyed-root-that-joins-a-collection-pages-in-two-statements-because-doctrines-walkers-key-by-one-column)
+applies is not applied to the lane that read does not own. A table whose root
+has one **scalar** identifier, whose query fetch-joins a collection and whose
+order names a to-one association path, meets the same
+`LimitSubqueryOutputWalker` rewrite and the same driver error, on every
+platform outside that walker's `ROW_NUMBER` branch — SQLite here, MySQL and
+MariaDB in production, since no installed DBAL platform defines
+`supportsRowNumberFunction()`. Ordinary API reaches it — a column named after
+a **bare** to-one association and made `sortable()`, a `defaultSort('artist')`
+or a group on that name, all of which resolve to `<root>.<assoc>`, because
+only a *dotted* path ending in an association is refused and a dotless name
+never reaches the mapping walk at all. What does not reach it is the
+identifier tiebreak, which on a single-scalar root orders by a field. It is
+Doctrine's,
+it predates this milestone, and M7 · 2 did not fix it: routing
+single-identifier pages through the keyed read would close it and was rejected,
+because a proven lane that nothing asked us to move is worth more than the
+closure. A table meeting all three conditions joins the target and orders by
+its identifier field instead, or drops the fetch join.
 
 _See also: the global [rename table](../renames.md) — the interface⇄trait label
 swap (`InteractsWithTable` trait → `HasTable` trait, `HasTable` interface →

@@ -583,18 +583,59 @@ it('renders a composite table joining a to-many when it is not paged', function 
         ->toBe(['apollo~2026-spring', 'apollo~2026-autumn', 'forum~2026-spring', 'forum~2026-autumn']);
 })->with(['paginated(false)' => ['none'], "recordsPerPage 'all'" => ['all']]);
 
-it('pages a composite table whose query joins no collection', function (): void {
+/*
+ * And `'all'` builds no Doctrine paginator at all — the whole query read once
+ * and its rows counted in PHP — so there is nothing there for a user's own
+ * output walker to collide with, and nothing for the refusal to stand in front
+ * of. A cold `getAllTableRecordsCount()` over the same root still refuses; a
+ * rendered page never asks it.
+ */
+it('shows everything under the all option with a custom output walker on the query', function (): void {
     $entityManager = pagedResidencies();
+    $query = $entityManager->createQueryBuilder()
+        ->select('residency', 'sy_gig_venue', 'sy_gigs')
+        ->from(Residency::class, 'residency')
+        ->leftJoin('residency.venue', 'sy_gig_venue')
+        ->leftJoin('sy_gig_venue.gigs', 'sy_gigs')
+        ->orderBy('residency.position', 'ASC');
+
+    $query->setHint(Query::HINT_CUSTOM_OUTPUT_WALKER, PassthroughOutputWalker::class);
+
+    $host = new TableHost(fn (Table $table): Table => $table->query($query)->paginated([2, 'all']));
+
+    $host->tableRecordsPerPage = 'all';
+
+    $paginator = $host->getTableRecords();
+
+    expect(array_keys($paginator->getRecords()))->toBe(['apollo~2026-spring', 'apollo~2026-autumn', 'forum~2026-spring', 'forum~2026-autumn'])
+        ->and($paginator->getRecordsPerPage())->toBe('all')
+        ->and($paginator->getTotalRecordCount())->toBe(4);
+});
+
+/*
+ * The other half of the dispatch: keyed, but joining nothing, so the two-step
+ * read is not what reads it. The statements say which route ran — the plain
+ * window and its total, and neither of them Doctrine's limit subquery, which is
+ * the identifier step's own signature.
+ */
+it('pages a composite table whose query joins no collection', function (): void {
+    $recorder = new RecordingMiddleware();
+    $entityManager = pagedResidencies($recorder);
     $host = new TableHost(fn (Table $table): Table => $table
         ->query($entityManager->createQueryBuilder()->select('residency')->from(Residency::class, 'residency')->orderBy('residency.position', 'ASC'))
         ->paginated([2]));
+
+    $recorder->reset();
 
     $paginator = $host->getTableRecords();
 
     expect($paginator)->toBeInstanceOf(Paginator::class)
         ->and(array_keys($paginator->getRecords()))->toBe(['apollo~2026-spring', 'apollo~2026-autumn'])
         ->and($paginator->getTotalRecordCount())->toBe(4)
-        ->and($paginator->getLastPage())->toBe(2);
+        ->and($paginator->getLastPage())->toBe(2)
+        ->and($recorder->statements())->toHaveCount(2)
+        ->and($recorder->statements()[0])->not->toContain('dctrn_result')
+        ->and($recorder->statements()[0])->toContain('LIMIT 2');
 });
 
 /*

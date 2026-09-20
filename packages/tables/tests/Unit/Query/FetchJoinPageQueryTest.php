@@ -5,14 +5,18 @@ declare(strict_types=1);
 use Doctrine\DBAL\Exception\DriverException;
 use Doctrine\ORM\EntityManager;
 use Doctrine\ORM\Query;
+use Doctrine\ORM\Query\QueryException;
 use Doctrine\ORM\QueryBuilder;
 use Doctrine\ORM\Tools\Pagination\LimitSubqueryOutputWalker;
 use Sylament\Schemas\Identity\IdentifierConstraint;
 use Sylament\Schemas\Identity\RecordKey;
 use Sylament\Tables\Query\FetchJoinPageQuery;
+use Sylament\Tables\Tests\Fixtures\Doctrine\Entity\Artist;
 use Sylament\Tables\Tests\Fixtures\Doctrine\Entity\Gig;
 use Sylament\Tables\Tests\Fixtures\Doctrine\Entity\Locker;
 use Sylament\Tables\Tests\Fixtures\Doctrine\Entity\LockerItem;
+use Sylament\Tables\Tests\Fixtures\Doctrine\Entity\LockerLease;
+use Sylament\Tables\Tests\Fixtures\Doctrine\Entity\LockerLeaseNote;
 use Sylament\Tables\Tests\Fixtures\Doctrine\Entity\LockerSeal;
 use Sylament\Tables\Tests\Fixtures\Doctrine\Entity\Residency;
 use Sylament\Tables\Tests\Fixtures\Doctrine\Entity\ResidencyShow;
@@ -33,11 +37,13 @@ use Sylament\Tables\Tests\Fixtures\Doctrine\RecordingMiddleware;
  */
 
 /**
- * Three flavours of keyed root, each with a collection to fetch-join, over one
+ * Four flavours of keyed root, each with a collection to fetch-join, over one
  * rig: a scalar pair with its own to-many and a key needing every escape the
  * codec has, a derived identity with both an own to-many and a chained one
- * through its identifier association, and a single derived identity whose
- * target is keyed by a type that stores one spelling and reads back another.
+ * through its identifier association, a single derived identity whose target is
+ * keyed by a type that stores one spelling and reads back another, and a join
+ * entity keyed by two associations at once — the only shape whose tiebreak
+ * rewrites two order items on the same page.
  */
 function fetchJoinPageRig(?RecordingMiddleware $recorder = null): EntityManager
 {
@@ -54,6 +60,13 @@ function fetchJoinPageRig(?RecordingMiddleware $recorder = null): EntityManager
 
     $first = new Locker('AB-1', 'First');
     $second = new Locker('CD-2', 'Second');
+
+    $alpha = new Artist(1, 'Alpha');
+    $bravo = new Artist(2, 'Bravo');
+
+    $firstAlpha = fetchJoinPageLease($first, $alpha, 10);
+    $firstBravo = fetchJoinPageLease($first, $bravo, 20);
+    $secondBravo = fetchJoinPageLease($second, $bravo, 40);
 
     EntityManagerFactory::seed(
         $entityManager,
@@ -82,6 +95,18 @@ function fetchJoinPageRig(?RecordingMiddleware $recorder = null): EntityManager
         new LockerItem(3, 'Hat', 1, $second),
         new LockerSeal($first, 'First seal', 1),
         new LockerSeal($second, 'Second seal', 2),
+        $alpha,
+        $bravo,
+        $firstAlpha,
+        $firstBravo,
+        fetchJoinPageLease($second, $alpha, 30),
+        $secondBravo,
+        new LockerLeaseNote(1, 'Key handover', 1, $firstAlpha),
+        new LockerLeaseNote(2, 'Damp patch', 2, $firstAlpha),
+        new LockerLeaseNote(3, 'Lock replaced', 1, $firstBravo),
+        new LockerLeaseNote(4, 'Renewal due', 1, $secondBravo),
+        new LockerLeaseNote(5, 'Deposit held', 2, $secondBravo),
+        new LockerLeaseNote(6, 'Spare key cut', 3, $secondBravo),
     );
 
     return $entityManager;
@@ -107,6 +132,17 @@ function fetchJoinPageShortcut(string $host, string $path, int $position): Short
     $shortcut->setPosition($position);
 
     return $shortcut;
+}
+
+function fetchJoinPageLease(Locker $locker, Artist $artist, int $position): LockerLease
+{
+    $lease = new LockerLease();
+    $lease->setLocker($locker);
+    $lease->setArtist($artist);
+    $lease->setLabel("{$artist->getName()} at {$locker->getCode()}");
+    $lease->setPosition($position);
+
+    return $lease;
 }
 
 function fetchJoinPageShortcutQuery(EntityManager $entityManager): QueryBuilder
@@ -145,6 +181,27 @@ function fetchJoinPageSealQuery(EntityManager $entityManager): QueryBuilder
         ->orderBy('seal.position', 'ASC');
 
     IdentifierConstraint::orderBy($query, 'seal', LockerSeal::class, 'asc');
+
+    return $query;
+}
+
+function fetchJoinPageGigQuery(EntityManager $entityManager): QueryBuilder
+{
+    return $entityManager->createQueryBuilder()
+        ->select('gig')
+        ->from(Gig::class, 'gig')
+        ->orderBy('gig.id', 'ASC');
+}
+
+function fetchJoinPageLeaseQuery(EntityManager $entityManager): QueryBuilder
+{
+    $query = $entityManager->createQueryBuilder()
+        ->select('lease', 'sy_notes')
+        ->from(LockerLease::class, 'lease')
+        ->leftJoin('lease.notes', 'sy_notes')
+        ->orderBy('lease.position', 'ASC');
+
+    IdentifierConstraint::orderBy($query, 'lease', LockerLease::class, 'asc');
 
     return $query;
 }
@@ -223,6 +280,27 @@ it('pages a single derived identity through the converting type of its target', 
     expect(fetchJoinPageKeys($entityManager, $records))->toBe(['AB-1', 'CD-2'])
         ->and($records[0]->getLocker()->getItems())->toHaveCount(2)
         ->and($records[1]->getLocker()->getItems())->toHaveCount(1);
+});
+
+/*
+ * Both halves of the identifier are associations, so the tiebreak hands the
+ * rewrite two order items on one page and each needs a result variable of its
+ * own — a single alias for both is a semantical error rather than a wrong page.
+ * One half also converts, so the two keys a window answers are only equal to the
+ * records' own where the row read converted them back.
+ */
+it('pages a join entity keyed by two associations, rewriting both order items', function (): void {
+    $entityManager = fetchJoinPageRig();
+
+    $firstPage = FetchJoinPageQuery::read(fetchJoinPageLeaseQuery($entityManager), LockerLease::class, 0, 2);
+    $secondPage = FetchJoinPageQuery::read(fetchJoinPageLeaseQuery($entityManager), LockerLease::class, 2, 2);
+
+    expect(fetchJoinPageKeys($entityManager, $firstPage))->toBe(['AB-1~1', 'AB-1~2'])
+        ->and(fetchJoinPageKeys($entityManager, $secondPage))->toBe(['CD-2~1', 'CD-2~2'])
+        ->and($firstPage[0]->getNotes())->toHaveCount(2)
+        ->and($firstPage[1]->getNotes())->toHaveCount(1)
+        ->and($secondPage[0]->getNotes())->toHaveCount(0)
+        ->and($secondPage[1]->getNotes())->toHaveCount(3);
 });
 
 /*
@@ -312,6 +390,12 @@ it('answers an empty table without a second statement', function (): void {
         ->and($recorder->statements())->toHaveCount(1);
 });
 
+/*
+ * And what each of the two is: the first the limit walker's own derived table,
+ * the second the whole builder narrowed to the keys it answered — unwindowed,
+ * and ordered by the columns the caller wrote rather than by the result
+ * variable the identifier step ordered itself by.
+ */
 it('costs two statements for a page it answers', function (): void {
     $recorder = new RecordingMiddleware();
     $entityManager = fetchJoinPageRig($recorder);
@@ -324,7 +408,9 @@ it('costs two statements for a page it answers', function (): void {
     expect($records)->toHaveCount(2)
         ->and($recorder->statements())->toHaveCount(2)
         ->and($recorder->statements()[0])->toContain('dctrn_result')
-        ->and($recorder->statements()[1])->not->toContain('LIMIT');
+        ->and($recorder->statements()[1])->not->toContain('LIMIT')
+        ->and($recorder->statements()[1])->toEndWith('ORDER BY r0_.position ASC, r0_.venue_id ASC, r0_.season ASC')
+        ->and($recorder->statements()[1])->not->toContain('sclr_');
 });
 
 /*
@@ -390,11 +476,34 @@ it('leaves the builder it was handed untouched', function (): void {
  * root against a one-field identifier, which is what such a drift would look
  * like from inside the remap.
  */
-it('refuses a walker row whose width is not the identifier own', function (): void {
+it('refuses a walker row whose width is not the identifier own', function (string $width): void {
     $entityManager = fetchJoinPageRig();
 
-    FetchJoinPageQuery::read(fetchJoinPageShortcutQuery($entityManager), Song::class, 0, 2);
-})->throws(LogicException::class, 'answered a row of 2 value(s) where the 1 of its identifier were selected');
+    [$query, $recordClass, $message] = $width === 'wider'
+        ? [fetchJoinPageShortcutQuery($entityManager), Song::class, 'answered a row of 2 value(s) where the 1 of its identifier were selected']
+        : [fetchJoinPageGigQuery($entityManager), Shortcut::class, 'answered a row of 1 value(s) where the 2 of its identifier were selected'];
+
+    expect(fn (): array => FetchJoinPageQuery::read($query, $recordClass, 0, 2))->toThrow(LogicException::class, $message);
+})->with(['wider than the identifier' => ['wider'], 'narrower than the identifier' => ['narrower']]);
+
+/*
+ * The rewrite leaves an order item over a to-one whose target is keyed by more
+ * than one column exactly where it found it, and Doctrine refuses that path
+ * expression in any statement it walks. The window here holds no rows, which is
+ * the one case the two readings come apart in: the refusal has to stand in
+ * front of the identifier statement rather than fall out of the records the
+ * page happens to carry.
+ */
+it('refuses an order item over a two-join-column association on an empty window too', function (): void {
+    $entityManager = fetchJoinPageRig();
+
+    $query = $entityManager->createQueryBuilder()
+        ->select('sy_show')
+        ->from(ResidencyShow::class, 'sy_show')
+        ->orderBy('sy_show.residency', 'ASC');
+
+    FetchJoinPageQuery::read($query, ResidencyShow::class, 99, 2);
+})->throws(QueryException::class, 'composite primary key');
 
 it('refuses a query naming no root alias', function (): void {
     $entityManager = fetchJoinPageRig();

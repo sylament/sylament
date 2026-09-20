@@ -14,6 +14,8 @@ use Sylament\Tables\Tests\Fixtures\Doctrine\Entity\Genre;
 use Sylament\Tables\Tests\Fixtures\Doctrine\Entity\Gig;
 use Sylament\Tables\Tests\Fixtures\Doctrine\Entity\Locker;
 use Sylament\Tables\Tests\Fixtures\Doctrine\Entity\LockerItem;
+use Sylament\Tables\Tests\Fixtures\Doctrine\Entity\LockerLease;
+use Sylament\Tables\Tests\Fixtures\Doctrine\Entity\LockerLeaseNote;
 use Sylament\Tables\Tests\Fixtures\Doctrine\Entity\LockerSeal;
 use Sylament\Tables\Tests\Fixtures\Doctrine\Entity\Residency;
 use Sylament\Tables\Tests\Fixtures\Doctrine\Entity\ResidencyShow;
@@ -66,6 +68,16 @@ function compositeResidency(Venue $venue, string $season, string $label): Reside
     return $residency;
 }
 
+function compositeLease(Locker $locker, Artist $artist, string $label): LockerLease
+{
+    $lease = new LockerLease();
+    $lease->setLocker($locker);
+    $lease->setArtist($artist);
+    $lease->setLabel($label);
+
+    return $lease;
+}
+
 /**
  * One record of each composite flavour carrying a collection of its own and, in
  * every flavour, a sibling sharing its first identifier field and carrying
@@ -82,6 +94,9 @@ function seededCompositeRelations(): EntityManager
     $residency = compositeResidency($northHall, 'summer-2026', 'Summer');
     $locker = new Locker('AB-1', 'Front row');
     $emptyLocker = new Locker('ZZ-9', 'Back row');
+    $alpha = new Artist(1, 'Alpha', address: new Address('Main St'));
+    $bravo = new Artist(2, 'Bravo', address: new Address('Back Rd'));
+    $lease = compositeLease($locker, $alpha, 'Alpha at AB-1');
 
     EntityManagerFactory::seed(
         $entityManager,
@@ -95,12 +110,17 @@ function seededCompositeRelations(): EntityManager
         compositeResidency($southHall, 'winter-2026', 'Winter'),
         $locker,
         $emptyLocker,
+        $alpha,
+        $bravo,
+        $lease,
+        compositeLease($locker, $bravo, 'Bravo at AB-1'),
         new ShortcutHit(1, 'curl/8', 5, $shortcut),
         new ResidencyShow(1, 'Opening night', 200, $residency),
         new Gig(1, 'Winter gala', 300, $northHall),
         new LockerItem(1, 'Helmet', 2, $locker),
         new LockerSeal($locker, 'Sealed', 1),
         new LockerSeal($emptyLocker, 'Unsealed', 2),
+        new LockerLeaseNote(1, 'Key handover', 1, $lease),
     );
 
     return $entityManager;
@@ -264,6 +284,28 @@ it('matches a single-derived-identity root by a collection two hops out', functi
     expect($dql)->toContain('JOIN sy_x0.locker sy_x0_0 JOIN sy_x0_0.items sy_x0_1')
         ->and($matches)->toHaveCount(1)
         ->and(RecordKey::of($entityManager, $matches[0]))->toBe('AB-1');
+});
+
+/*
+ * Both identifier fields are associations here, so the projection wraps the
+ * first in `IDENTITY()` and the correlation names them both — and the sibling
+ * lease sharing the locker half carries no note, which is what a correlation
+ * one field short would match anyway.
+ */
+it('matches a root keyed by two associations through a collection of its own', function (): void {
+    $entityManager = seededCompositeRelations();
+    $query = $entityManager->createQueryBuilder()->select('lease')->from(LockerLease::class, 'lease');
+    $path = new ResolvedRelationPath([new Hop('notes', LockerLeaseNote::class, true)], 'heading');
+
+    $dql = RelationConstraint::existsLike($query, $path, 'handover', forceCaseInsensitive: false);
+
+    $query->andWhere($dql);
+
+    $matches = $query->getQuery()->getResult();
+
+    expect($dql)->toBe('EXISTS (SELECT IDENTITY(sy_x0.locker) FROM ' . LockerLease::class . ' sy_x0 JOIN sy_x0.notes sy_x0_0 WHERE sy_x0.locker = lease.locker AND sy_x0.artist = lease.artist AND sy_x0_0.heading LIKE :sylament_search_0)')
+        ->and($matches)->toHaveCount(1)
+        ->and(RecordKey::of($entityManager, $matches[0]))->toBe('AB-1~1');
 });
 
 it('keeps subselect aliases distinct when a by-key predicate binds between two calls', function (): void {

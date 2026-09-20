@@ -11,6 +11,8 @@ use Sylament\Tables\Tests\Fixtures\Doctrine\Entity\Artist;
 use Sylament\Tables\Tests\Fixtures\Doctrine\Entity\Gig;
 use Sylament\Tables\Tests\Fixtures\Doctrine\Entity\Locker;
 use Sylament\Tables\Tests\Fixtures\Doctrine\Entity\LockerItem;
+use Sylament\Tables\Tests\Fixtures\Doctrine\Entity\LockerLease;
+use Sylament\Tables\Tests\Fixtures\Doctrine\Entity\LockerLeaseNote;
 use Sylament\Tables\Tests\Fixtures\Doctrine\Entity\LockerSeal;
 use Sylament\Tables\Tests\Fixtures\Doctrine\Entity\Residency;
 use Sylament\Tables\Tests\Fixtures\Doctrine\Entity\ResidencyShow;
@@ -160,6 +162,84 @@ function aggregateLockers(): EntityManager
     );
 
     return $entityManager;
+}
+
+function aggregateLease(Locker $locker, Artist $artist, int $position): LockerLease
+{
+    $lease = new LockerLease();
+    $lease->setLocker($locker);
+    $lease->setArtist($artist);
+    $lease->setLabel("{$artist->getName()} at {$locker->getCode()}");
+    $lease->setPosition($position);
+
+    return $lease;
+}
+
+/**
+ * A join entity keyed by two associations at once, one of them over the
+ * converting locker type — so the batch has to project, group and re-key two
+ * association fields, and the key it answers under has to be the record's own.
+ */
+function aggregateLeases(): EntityManager
+{
+    $entityManager = EntityManagerFactory::create();
+    $front = new Locker('AB-1', 'Front');
+    $back = new Locker('CD-2', 'Back');
+    $alpha = new Artist(1, 'Alpha');
+    $bravo = new Artist(2, 'Bravo');
+
+    $frontAlpha = aggregateLease($front, $alpha, 1);
+    $frontBravo = aggregateLease($front, $bravo, 2);
+
+    EntityManagerFactory::seed(
+        $entityManager,
+        $front,
+        $back,
+        $alpha,
+        $bravo,
+        $frontAlpha,
+        $frontBravo,
+        aggregateLease($back, $alpha, 3),
+        new LockerLeaseNote(1, 'Key handover', 1, $frontAlpha),
+        new LockerLeaseNote(2, 'Damp patch', 2, $frontAlpha),
+        new LockerLeaseNote(3, 'Lock replaced', 1, $frontBravo),
+    );
+
+    return $entityManager;
+}
+
+/**
+ * `$count` artists under one identifier field, songs only on the first and the
+ * last, so the answered keys sit on either side of the chunk boundary a batch
+ * would split at if it counted keys rather than parameters.
+ *
+ * @return array{EntityManager, RecordingMiddleware, list<string>}
+ */
+function aggregateChunkedArtists(int $count): array
+{
+    $recorder = new RecordingMiddleware();
+    $entityManager = EntityManagerFactory::create($recorder);
+    $artists = [];
+    $keys = [];
+
+    for ($id = 1; $id <= $count; $id++) {
+        $artists[] = new Artist($id, "Artist {$id}");
+        $keys[] = (string) $id;
+    }
+
+    EntityManagerFactory::seed(
+        $entityManager,
+        ...$artists,
+        ...[
+            new Song(1, 'First', 1, $artists[0]),
+            new Song(2, 'Second', 9, $artists[0]),
+            new Song(3, 'Last', 2, $artists[$count - 1]),
+        ],
+    );
+
+    $recorder->reset();
+
+    return [$entityManager, $recorder, $keys];
 }
 
 /**
@@ -374,6 +454,26 @@ it('keys a single derived identity by the converted identifier, not the raw colu
         ->and(array_keys($values))->toBe($recordSideKeys);
 });
 
+it('keys a batch over a root whose whole identifier is two associations', function (): void {
+    $entityManager = aggregateLeases();
+
+    $values = AggregateQuery::fetch(
+        $entityManager,
+        LockerLease::class,
+        aggregateDeclaration('COUNT', 'notes'),
+        ['AB-1~1', 'AB-1~2', 'CD-2~1'],
+    );
+
+    $recordSideKeys = array_map(
+        static fn (LockerLease $lease): string => RecordKey::of($entityManager, $lease, LockerLease::class),
+        $entityManager->getRepository(LockerLease::class)->findBy([], ['position' => 'ASC']),
+    );
+
+    expect($values)->toBe(['AB-1~1' => 2, 'AB-1~2' => 1])
+        ->and($recordSideKeys)->toBe(['AB-1~1', 'AB-1~2', 'CD-2~1'])
+        ->and(array_diff(array_keys($values), $recordSideKeys))->toBe([]);
+});
+
 it('keeps the key narrowing over a composite root when a scope replaces the where clause', function (): void {
     $scope = static fn (QueryBuilder $query, string $alias): QueryBuilder => $query->where("{$alias}.visits > 3");
 
@@ -401,6 +501,21 @@ it('reads a single-identifier batch in one statement, narrowed as it always was'
         ]);
 });
 
+/*
+ * The chunk is a budget of parameters, not of keys: one identifier field binds
+ * one placeholder each, so five hundred and one of them still fit in the one
+ * statement a single-identifier batch has always cost.
+ */
+it('reads a single-identifier batch past five hundred keys in one statement', function (): void {
+    [$entityManager, $recorder, $keys] = aggregateChunkedArtists(501);
+
+    $values = AggregateQuery::fetch($entityManager, Artist::class, aggregateDeclaration('COUNT', 'songs'), $keys);
+
+    expect($values)->toBe([1 => 2, 501 => 1])
+        ->and($recorder->statements())->toHaveCount(1)
+        ->and(mb_substr_count($recorder->statements()[0], '?'))->toBe(501);
+});
+
 it('reads a composite batch wider than one chunk in one statement per chunk', function (): void {
     [$entityManager, $recorder, $keys] = aggregateChunkedShortcuts(501);
 
@@ -415,14 +530,20 @@ it('reads a composite batch wider than one chunk in one statement per chunk', fu
 
 it('carries a scope parameter into every chunk of a composite batch', function (): void {
     [$entityManager, $recorder, $keys] = aggregateChunkedShortcuts(501);
-    $scope = static fn (QueryBuilder $query, string $alias): QueryBuilder => $query
-        ->andWhere("{$alias}.visits > :sylament_test_visits")
-        ->setParameter('sylament_test_visits', 5);
+    $calls = 0;
+    $scope = static function (QueryBuilder $query, string $alias) use (&$calls): QueryBuilder {
+        $calls++;
+
+        return $query
+            ->andWhere("{$alias}.visits > :sylament_test_visits")
+            ->setParameter('sylament_test_visits', 5);
+    };
 
     $values = AggregateQuery::fetch($entityManager, Shortcut::class, aggregateDeclaration('COUNT', 'hits', scope: $scope), $keys);
 
     expect($values)->toBe(['bulk=2Etest~=2Fp=2F1' => 1, 'bulk=2Etest~=2Fp=2F501' => 1])
-        ->and($recorder->statements())->toHaveCount(2);
+        ->and($recorder->statements())->toHaveCount(2)
+        ->and($calls)->toBe(1);
 });
 
 it('correlates a hidden sort select on every identifier field', function (): void {

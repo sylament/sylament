@@ -10,8 +10,14 @@ use Sylament\Tables\Tests\Fixtures\Concerns\TableHost;
 use Sylament\Tables\Tests\Fixtures\Doctrine\Entity\Address;
 use Sylament\Tables\Tests\Fixtures\Doctrine\Entity\Artist;
 use Sylament\Tables\Tests\Fixtures\Doctrine\Entity\Genre;
+use Sylament\Tables\Tests\Fixtures\Doctrine\Entity\Residency;
+use Sylament\Tables\Tests\Fixtures\Doctrine\Entity\ResidencyShow;
+use Sylament\Tables\Tests\Fixtures\Doctrine\Entity\Shortcut;
+use Sylament\Tables\Tests\Fixtures\Doctrine\Entity\ShortcutHit;
 use Sylament\Tables\Tests\Fixtures\Doctrine\Entity\Song;
+use Sylament\Tables\Tests\Fixtures\Doctrine\Entity\Venue;
 use Sylament\Tables\Tests\Fixtures\Doctrine\EntityManagerFactory;
+use Sylament\Tables\Tests\Fixtures\Doctrine\Handle;
 
 /*
  * Covers the query half of host-side search — the WHERE the lane composes. The
@@ -61,6 +67,58 @@ function searchableLibrary(): EntityManager
         $alpha,
         new Song(2, 'Origin of Symmetry', 20, $muse),
         new Song(3, 'Noise', 30),
+    );
+
+    return $entityManager;
+}
+
+function searchableShortcut(string $host, string $path, string $label): Shortcut
+{
+    $shortcut = new Shortcut();
+    $shortcut->setHost($host);
+    $shortcut->setPath($path);
+    $shortcut->setLabel($label);
+
+    return $shortcut;
+}
+
+function searchableResidency(Venue $venue, string $season, string $label): Residency
+{
+    $residency = new Residency();
+    $residency->setVenue($venue);
+    $residency->setSeason($season);
+    $residency->setLabel($label);
+
+    return $residency;
+}
+
+/**
+ * One record of each composite flavour carrying a collection and, in each
+ * flavour, a sibling sharing its first identifier field and carrying none — so
+ * a correlation reading one field of a composite identifier answers a key it
+ * must not. The keys carry the characters a key has to escape.
+ */
+function searchableComposites(): EntityManager
+{
+    $entityManager = EntityManagerFactory::create();
+
+    $shortcut = searchableShortcut('sylament.test', '/docs/a b', 'Docs');
+    $northHall = new Venue(new Handle('north.hall'), 'North Hall');
+    $southHall = new Venue(new Handle('south.hall'), 'South Hall');
+    $residency = searchableResidency($northHall, 'summer-2026', 'Summer');
+
+    EntityManagerFactory::seed(
+        $entityManager,
+        $shortcut,
+        searchableShortcut('sylament.test', '/blog', 'Blog'),
+        searchableShortcut('plain', 'about', 'About'),
+        $northHall,
+        $southHall,
+        $residency,
+        searchableResidency($northHall, 'winter-2027', 'Winter at north'),
+        searchableResidency($southHall, 'winter-2026', 'Winter'),
+        new ShortcutHit(1, 'curl/8', 5, $shortcut),
+        new ResidencyShow(1, 'Opening night', 200, $residency),
     );
 
     return $entityManager;
@@ -332,6 +390,43 @@ it('composes multi-word search as AND of per-word ORs across relation and plain 
         );
 });
 
+it('searches a to-many relation on a scalar-pair root and keys the hits by every field', function (): void {
+    $entityManager = searchableComposites();
+    $host = new TableHost(fn (Table $table): Table => $table
+        ->query($entityManager->createQueryBuilder()->select('shortcut')->from(Shortcut::class, 'shortcut'))
+        ->columns([TextColumn::make('label')->searchable(), TextColumn::make('hits.agent')->searchable()]));
+
+    $host->tableSearch = 'curl';
+
+    $query = $host->getFilteredTableQuery();
+
+    expect(array_keys($host->getTableRecords()->getRecords()))->toBe(['sylament=2Etest~=2Fdocs=2Fa=20b'])
+        ->and($query?->getDQL())->toContain(
+            'EXISTS (SELECT sy_x1.host FROM ' . Shortcut::class . ' sy_x1 JOIN sy_x1.hits sy_x1_0 WHERE sy_x1.host = shortcut.host AND sy_x1.path = shortcut.path AND sy_x1_0.agent LIKE :sylament_search_1)',
+        )
+        ->and($query?->getDQLPart('join'))->toBe([]);
+});
+
+it('mints one EXISTS per word on a derived-identity root', function (): void {
+    $entityManager = searchableComposites();
+    $host = new TableHost(fn (Table $table): Table => $table
+        ->query($entityManager->createQueryBuilder()->select('residency')->from(Residency::class, 'residency'))
+        ->columns([TextColumn::make('shows.title')->searchable()]));
+
+    $host->tableSearch = 'opening night';
+
+    $dql = $host->getFilteredTableQuery()?->getDQL() ?? '';
+
+    expect(mb_substr_count($dql, 'EXISTS'))->toBe(2)
+        ->and($dql)->toContain(
+            'SELECT IDENTITY(sy_x0.venue)',
+            'sy_x0_0.title LIKE :sylament_search_0',
+            'SELECT IDENTITY(sy_x1.venue)',
+            'sy_x1_0.title LIKE :sylament_search_1',
+        )
+        ->and(array_keys($host->getTableRecords()->getRecords()))->toBe(['north=2Ehall~summer-2026']);
+});
+
 it('keeps the count in step with a relation search', function (): void {
     $entityManager = searchableLibrary();
     $configure = fn (Table $table): Table => $table
@@ -440,6 +535,20 @@ it('constrains only visible, individually searchable columns, one group per word
     expect(mb_substr_count($dql, 'LIKE'))->toBe(2)
         ->and($dql)->not->toContain('plays')
         ->and($dql)->not->toContain('secret');
+});
+
+it('searches a relation column individually on a derived-identity root', function (): void {
+    $entityManager = searchableComposites();
+    $host = new TableHost(fn (Table $table): Table => $table
+        ->query($entityManager->createQueryBuilder()->select('residency')->from(Residency::class, 'residency'))
+        ->columns([TextColumn::make('shows.title')->searchable(isIndividual: true)]));
+
+    $host->tableColumnSearches = ['shows' => ['title' => 'opening']];
+
+    expect(array_keys($host->getTableRecords()->getRecords()))->toBe(['north=2Ehall~summer-2026'])
+        ->and($host->getFilteredTableQuery()?->getDQL())->toContain(
+            'EXISTS (SELECT IDENTITY(sy_x0.venue) FROM ' . Residency::class . ' sy_x0 JOIN sy_x0.shows sy_x0_0 WHERE sy_x0.venue = residency.venue AND sy_x0.season = residency.season AND sy_x0_0.title LIKE :sylament_search_0)',
+        );
 });
 
 it('honours the column term-splitting override over the table default', function (): void {

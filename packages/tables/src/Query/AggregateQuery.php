@@ -11,14 +11,17 @@ use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\Mapping\MappingException;
 use Doctrine\ORM\QueryBuilder;
 use LogicException;
-use Stringable;
+use Sylament\Schemas\Identity\IdentifierConstraint;
+use Sylament\Schemas\Identity\KeySelection;
 
 final class AggregateQuery
 {
     /**
      * One batched read of a declared aggregate for a whole page: a grouped
      * scalar select over the record class, joined along the declared path and
-     * narrowed to the page's keys, never touching the page query itself.
+     * narrowed to the page's keys, never touching the page query itself. The
+     * key projection, the grouping and the narrowing each run per identifier
+     * field, so a key of any width addresses the row it names.
      *
      * The joins are inner, so a key whose related set is empty produces no
      * group and is absent from the result rather than zero — what a missing
@@ -30,22 +33,22 @@ final class AggregateQuery
      * `where()` replaces where Eloquent's adds: a scope written with the
      * Filament reflex would otherwise drop the narrowing this batch depends on.
      *
-     * @param class-string     $recordClass
-     * @param list<int|string> $keys
+     * The keys are chunked and the scope runs once, on the pristine builder:
+     * each chunk narrows a **copy** of it, because a second predicate ANDed
+     * onto the first answers nothing, and every chunk keeps the one parameter
+     * base: a base carrying a chunk index of its own is what
+     * {@see IdentifierConstraint::assertParameterBase()} refuses.
+     *
+     * @param class-string $recordClass
+     * @param list<string> $keys
      *
      * @return array<string, int|float|string|null> record key ⇒ raw value
      *
-     * @throws LogicException when the record class carries a composite
-     *                        identifier, which no single key column addresses
+     * @throws LogicException when the batch reads back a row the select it
+     *                        authored cannot produce
      */
     public static function fetch(EntityManagerInterface $entityManager, string $recordClass, AggregateDeclaration $declaration, array $keys): array
     {
-        try {
-            $identifier = $entityManager->getClassMetadata($recordClass)->getSingleIdentifierFieldName();
-        } catch (MappingException) {
-            throw new LogicException(sprintf('Cannot aggregate [%s]: the record class [%s] has a composite identifier.', $declaration->relationshipPath, $recordClass));
-        }
-
         $query = $entityManager->createQueryBuilder()->from($recordClass, 'sy_r');
         $alias = 'sy_r';
 
@@ -58,20 +61,30 @@ final class AggregateQuery
         }
 
         $expression = $declaration->column === null ? $alias : "{$alias}.{$declaration->column}";
+        $selection = IdentifierConstraint::select($query, 'sy_r', $recordClass);
 
         $query
-            ->select("sy_r.{$identifier} AS sy_key", "{$declaration->function}({$expression}) AS sy_value")
-            ->groupBy("sy_r.{$identifier}");
+            ->select(...$selection->expressions)
+            ->addSelect("{$declaration->function}({$expression}) AS sy_value")
+            ->groupBy(...IdentifierConstraint::groupBy($query, 'sy_r', $recordClass));
 
         if ($declaration->scope instanceof Closure) {
             ($declaration->scope)($query, $alias);
         }
 
-        $query
-            ->andWhere("sy_r.{$identifier} IN (:sylament_agg_keys)")
-            ->setParameter('sylament_agg_keys', $keys);
+        $values = [];
 
-        return self::readValues($query, $recordClass);
+        foreach (IdentifierConstraint::chunk($entityManager, $recordClass, $keys) as $chunk) {
+            $chunkQuery = clone $query;
+
+            $chunkQuery->andWhere(IdentifierConstraint::in($chunkQuery, 'sy_r', $recordClass, $chunk, 'sylament_agg_keys'));
+
+            // The chunks are disjoint, and `array_merge()` would renumber the
+            // integer array key a numeric record key becomes.
+            $values += self::readValues($chunkQuery, $recordClass, $selection);
+        }
+
+        return $values;
     }
 
     /**
@@ -155,11 +168,10 @@ final class AggregateQuery
     }
 
     /**
-     * The batch read back as record key ⇒ value, with an identifier that
-     * hydrated as an object — a Uuid, a Ulid, any string-backed value object —
-     * unwrapped to the string the page keyed its records by, the same way
-     * `getTableRecordKey()` unwraps it on the page side. The two must agree, or
-     * the store is filled under keys no cell ever asks for.
+     * The batch read back as record key ⇒ value, each row re-keyed through the
+     * selection that projected it, so the key matches the one the page minted
+     * from the record. The two must agree, or the store is filled under keys no
+     * cell ever asks for.
      *
      * Nothing here recovers from a row it cannot read: every shape below is one
      * the select this class authored cannot produce, so meeting one means the
@@ -170,9 +182,9 @@ final class AggregateQuery
      *
      * @return array<string, int|float|string|null>
      *
-     * @throws LogicException when a row is not the scalar pair that was selected
+     * @throws LogicException when a row is not the scalar shape that was selected
      */
-    private static function readValues(QueryBuilder $query, string $recordClass): array
+    private static function readValues(QueryBuilder $query, string $recordClass, KeySelection $selection): array
     {
         $values = [];
 
@@ -181,22 +193,13 @@ final class AggregateQuery
                 throw new LogicException(sprintf('The aggregate batch over [%s] returned a %s where the selected key and value were expected.', $recordClass, get_debug_type($row)));
             }
 
-            $key = $row['sy_key'] ?? null;
             $value = $row['sy_value'] ?? null;
-
-            if ($key instanceof Stringable) {
-                $key = (string) $key;
-            }
-
-            if (!is_scalar($key)) {
-                throw new LogicException(sprintf('Cannot key the aggregate batch over [%s]: its identifier read back as %s, which is neither scalar nor stringable.', $recordClass, get_debug_type($key)));
-            }
 
             if ($value !== null && !is_int($value) && !is_float($value) && !is_string($value)) {
                 throw new LogicException(sprintf('The aggregate batch over [%s] returned a %s value, which no cell can carry.', $recordClass, get_debug_type($value)));
             }
 
-            $values[(string) $key] = $value;
+            $values[$selection->keyOf($row)] = $value;
         }
 
         return $values;

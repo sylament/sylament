@@ -162,6 +162,20 @@ function depthShowTitles(Crawler $crawler): array
     );
 }
 
+/**
+ * Every row's aggregate count cell, in row order, read by the column's own
+ * cell id — a selection column and an actions column flank the columns, so no
+ * position from either end names it.
+ *
+ * @return list<string>
+ */
+function depthCounts(Crawler $crawler): array
+{
+    return $crawler->filter('tbody tr[id*=".table.records."]')->each(
+        static fn (Crawler $row): string => mb_trim($row->filter('td[id$=".column.shows_count"]')->text()),
+    );
+}
+
 function depthOverview(Crawler $crawler): string
 {
     return mb_trim($crawler->filter('.sy-pagination-overview')->first()->text());
@@ -180,6 +194,7 @@ it('pages a searched, count-sorted fetch join over a derived-identity root', fun
             ['Opening night', 'Closing night', 'Matinee'],
             ['Winter night', 'Rehearsal'],
         ])
+        ->and(depthCounts($crawler))->toBe(['3', '2'])
         ->and(depthOverview($crawler))->toBe('Showing 1 to 2 of 3 results');
 });
 

@@ -472,9 +472,10 @@ it('leaves the builder it was handed untouched', function (): void {
  * Doctrine names the walker's key columns itself, so the remap is positional and
  * only the width says the two still agree. A row of another width means the
  * walker no longer answers the shape this read remaps, which is a drift to fail
- * on rather than a page to key by guesswork. Reached here by keying a two-column
- * root against a one-field identifier, which is what such a drift would look
- * like from inside the remap.
+ * on rather than a page to key by guesswork. Reached here from both sides — a
+ * two-column root keyed against a one-field identifier, and a one-column root
+ * against a two-field one — which is what such a drift would look like from
+ * inside the remap.
  */
 it('refuses a walker row whose width is not the identifier own', function (string $width): void {
     $entityManager = fetchJoinPageRig();

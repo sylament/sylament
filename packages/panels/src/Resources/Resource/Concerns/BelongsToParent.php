@@ -115,6 +115,8 @@ trait BelongsToParent
      */
     public function attachRecordToParent(object $record, object $parentRecord): void
     {
+        $this->assertParentRecordIsScopeable();
+
         $this->getAssociationReader()->attach(new Relationship($parentRecord, $this->getParentRelationshipName()), $record);
     }
 
@@ -124,7 +126,25 @@ trait BelongsToParent
      */
     public function getParentScopedRecordQuery(object $parentRecord): QueryBuilder
     {
+        $this->assertParentRecordIsScopeable();
+
         return $this->getAssociationReader()->createRelationshipQuery(new Relationship($parentRecord, $this->getParentRelationshipName()));
+    }
+
+    /**
+     * @throws LogicException where the parent record class is keyed by anything
+     *                        but one scalar identifier field
+     */
+    private function assertParentRecordIsScopeable(): void
+    {
+        $parentRecordClass = $this->getParentRecordClass();
+        $metadata = $this->getEntityManager()->getClassMetadata($parentRecordClass);
+
+        if (! $metadata->isIdentifierComposite && ! $metadata->hasAssociation($metadata->getSingleIdentifierFieldName())) {
+            return;
+        }
+
+        throw new LogicException(sprintf('Resource [%s] nests under [%s], whose records of [%s] are not keyed by a single scalar identifier; scoping a nested resource to such a parent record is not built yet.', static::class, $this->getParentResourceInstance()::class, $parentRecordClass));
     }
 
     /**

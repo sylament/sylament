@@ -402,6 +402,46 @@ it('emits the single-identifier SQL text of all three converted sites', function
         ->and($ignoredStatements[0])->toContain('WHERE t0_.id <> ?');
 });
 
+/*
+ * The to-one arm: one key in, one reference written onto the record. Every
+ * other case reads a to-one selection; this is the one that saves one. The
+ * clear() before the wire does not leave the map cold for the write — getData()
+ * enumerates the options to validate the submitted key, hydrating the very row
+ * the reference then resolves to.
+ */
+it('writes a single composite selection back onto its record', function (string $name, string $titleAttribute, string $key, Closure $label, string $expected): void {
+    $entityManager = $this::getContainer()->get(EntityManagerInterface::class);
+    [$post] = compositeSelectSeed($entityManager);
+    compositeSelectSealPost($entityManager, $post);
+    $entityManager->clear();
+
+    $other = $entityManager->find(Post::class, 2);
+
+    [$schema, $host] = compositeSelectWire(Select::make($name)->relationship(titleAttribute: $titleAttribute), $other);
+    $schema->fill($other);
+
+    expect($host->data[$name])->toBeNull();
+
+    $host->data[$name] = $key;
+
+    expect($schema->getData())->toBe($other);
+
+    $entityManager->flush();
+    $entityManager->clear();
+
+    $reloaded = $entityManager->find(Post::class, 2);
+
+    [$reloadedSchema, $reloadedHost] = compositeSelectWire(Select::make($name)->relationship(titleAttribute: $titleAttribute), $reloaded);
+    $reloadedSchema->fill($reloaded);
+
+    expect($reloadedHost->data[$name])->toBe($key)
+        ->and($reloaded instanceof Post ? $label($reloaded) : null)->toBe($expected);
+})->with([
+    'a scalar pair' => ['pair', 'label', '3~4', static fn (Post $post): ?string => $post->getPair()?->getLabel(), 'three-four'],
+    'a derived identity' => ['translation', 'title', '1~zh=20Hans', static fn (Post $post): ?string => $post->getTranslation()?->getTitle(), 'Chinese'],
+    'a single derived identity' => ['seal', 'note', '1', static fn (Post $post): ?string => $post->getSeal()?->getNote(), 'sealed'],
+]);
+
 it('writes a multiple selection of composite keys and reads the same rows back', function (): void {
     $entityManager = $this::getContainer()->get(EntityManagerInterface::class);
     [$post] = compositeSelectSeed($entityManager);

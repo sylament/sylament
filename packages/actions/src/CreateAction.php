@@ -154,7 +154,8 @@ class CreateAction extends Action
      * The default persistence step `using()` replaces: map the validated —
      * and, where `mutateDataUsing()` asked, mutated — state onto a new record
      * of the action's class, then flush it. A relationship in force joins the
-     * record to its owner in the same flush.
+     * record to its owner before the record is persisted, because an identifier
+     * field the association fills reads unset until the join is made.
      *
      * @param array<string, mixed> $data
      * @param class-string $recordClass
@@ -163,15 +164,14 @@ class CreateAction extends Action
     {
         $record = $schema->record($recordClass)->getData($data);
 
-        $manager = $this->getEntityManagerForRecord($record);
-        $manager->persist($record);
-
         $relationship = $this->getRelationship();
 
         if ($relationship instanceof Relationship) {
             $this->getAssociationReader()->attach($relationship, $record);
         }
 
+        $manager = $this->getEntityManagerForRecord($record);
+        $manager->persist($record);
         $manager->flush();
 
         return $record;

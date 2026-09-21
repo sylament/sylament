@@ -90,11 +90,18 @@ Faithful ports whose behaviour is easy to misread. Permanent.
 
 ### The submitted key is re-resolved through the candidate query
 
-The modal posts an identifier, and an identifier is client input. The submit
+The modal posts a record key, and a record key is client input. The submit
 never calls `find()` on it: it runs the **same** candidate query the select
 offered options from, narrowed by
-`IN (:sylament_selected_record_keys)`, and refuses when fewer records come back
-than keys went in. So a key outside `recordSelectOptionsQuery()`'s scope, or one
+[`IdentifierConstraint::in()`](../schemas/record-key.md#the-operations-and-their-dql)
+under the base `sylament_selected_record_keys`, and refuses when fewer records
+come back than keys went in. A key the codec cannot decode is **dropped** by that
+predicate rather than bound, so it resolves nothing and falls into the same count
+check — which is why the refusal names three causes rather than two: the key is
+malformed, outside `recordSelectOptionsQuery()`'s scope, or already attached. The
+check still means what it says at any identifier width, because distinct records
+map to distinct keys by
+[the codec's injectivity](../schemas/record-key.md#invariants). So a key outside `recordSelectOptionsQuery()`'s scope, or one
 naming a record the owner already has, is simply absent from the result and the
 attach throws rather than writing. Filament resolves the same way — its
 `whereIn(...)->get()` on the relationship query is the same idea — and the port
@@ -119,8 +126,12 @@ that reaches the action body with the schema bypassed.
 When the record title is a plain mapped attribute — a title attribute is set, the
 action declares no `recordTitle()` closure, and either the action set the
 attribute itself or the table declares no `recordTitle()` closure either — the
-option list is read as one projection (`SELECT record.<id>, record.<title>`)
-rather than by hydrating every candidate. Otherwise the candidates are hydrated
+option list is read as one projection —
+[`IdentifierConstraint::select()`](../schemas/record-key.md#the-operations-and-their-dql)'s
+expressions plus `record.<title> AS sy_title`, so
+`record.id AS sy_key_0, record.<title> AS sy_title` for a single-`id` target and
+one aliased expression per identifier field for any other — rather than by
+hydrating every candidate. Otherwise the candidates are hydrated
 and titled one by one through `getRecordTitle($record)`, which is what lets a
 table's `recordTitle()` closure decide the option labels. This is Filament's
 `pluck()`-versus-`mapWithKeys()` branch, condition for condition. What is *not*
@@ -134,6 +145,17 @@ the action's own attribute exactly as the projection reads it, so the table's
 closure is never consulted either way. What the two arms do not share is the
 hydration, so that case clears the identity map and asserts the candidate was
 never loaded into it.
+
+Each row is keyed by `KeySelection::keyOf($row)`, never by reading a projected
+column back, and that closed a defect the single-identifier code carried: the
+array hydrator converts a **field path**, so a target whose identifier is a value
+object hydrated `record.<id> AS sy_key` into an *object* and
+`$options[$row['sy_key']]` was a `TypeError` in the attach modal. `keyOf()` runs
+every value the hydrator did not already build into an object through that
+field's own DBAL type before printing it, so the projected key is the key the
+record itself mints. The result alias moved from `sy_key` to `sy_key_0` with it
+— one query-cache miss, no behaviour
+([record-key.md](../schemas/record-key.md#the-row-side-and-the-record-side-mint-one-string-and-only-the-codec-may)).
 
 ### `recordSelectOptionsQuery()` is evaluated with `query` and `search`
 

@@ -152,8 +152,14 @@ single identifier too: the key pluck mints each row's key through
 not its printed form — a `uuid` stored `BINARY(16)` on MySQL or SQLite — hands
 back the printed string rather than the bytes the old pluck returned. A body
 that writes by key therefore **decodes through `IdentifierConstraint`** and
-never binds one raw; `DeleteBulkAction` does, and the relation layer's by-key
-arms are converted in M7 · 4.
+never binds one raw, and every shipped one does: `DeleteBulkAction` since
+M7 · 1, and `DetachBulkAction` and `DissociateBulkAction` since
+[M7 · 4](../roadmap.md#m7--composite-identifiers) — the detach through the
+reader's by-key reference, the dissociate through a chunked `in()` on its
+`UPDATE` builder. Where a body takes the selection's **shape** for granted the
+refusal now sits outside its `try`, so a host feeding neither entities nor keys
+is a developer error rather than a danger toast; both relationship arms moved
+theirs with the conversion.
 
 ### The post-call deselect reaches its host through the nullable accessor
 
@@ -232,8 +238,8 @@ port's is the bare assignment.
 
 `chunkSelectedRecords()` / `getSelectedRecordsChunkSize()` are dropped, so
 `CanFetchSelectedRecords` ships as the fetch flag alone — the **fetching** arm,
-that is. Since [M7 · 1](../roadmap.md#m7--composite-identifiers) the by-key arm
-chunks its own key list, by
+that is. Since [M7 · 1](../roadmap.md#m7--composite-identifiers) a by-key arm
+chunks its own key list — the delete then, the dissociate since M7 · 4 — by
 [the chunk rule](../schemas/record-key.md#the-chunk-rule) rather than by a
 user-set size, because DQL parse time is superlinear in bound-key count. The
 two are unrelated mechanisms wearing one word, and only the fetching one is

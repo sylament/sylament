@@ -84,8 +84,10 @@ Faithful ports whose obvious reading is wrong.
 `findRecordsToAssociate()` never calls `find()`. It re-runs
 `getRecordSelectOptionsQuery()` — the candidate query plus whatever
 `recordSelectOptionsQuery()` narrowed it to — with
-`IN (:sylament_selected_record_keys)`, so a key outside that scope is simply
-absent from the result and the count mismatch throws. That is what closes the
+[`IdentifierConstraint::in()`](../schemas/record-key.md#the-operations-and-their-dql)
+under the base `sylament_selected_record_keys`, so a key outside that scope — or
+one the codec cannot decode, which that predicate drops rather than binds — is
+simply absent from the result and the count mismatch throws. That is what closes the
 hole a hand-posted `recordId` would otherwise open, and it is Filament's own
 shape (`$relationshipQuery->find($data['recordId'])`, which answers null for a
 row the relationship query excludes) with a refusal instead of a silent skip.
@@ -107,8 +109,13 @@ consumer, and `AttachAction` carries the same one.
 
 When the table names a `recordTitleAttribute()`, the action has no custom title
 closure, and either the action set the attribute itself or the table has no
-custom title, the options are read as one `SELECT record.<id>, record.<title>`
-projection rather than hydrated. Otherwise every candidate is hydrated and titled
+custom title, the options are read as one projection —
+[`IdentifierConstraint::select()`](../schemas/record-key.md#the-operations-and-their-dql)'s
+expressions plus `record.<title> AS sy_title`, one aliased expression per
+identifier field — rather than hydrated, each row keyed through
+`KeySelection::keyOf($row)` rather than by reading a column back, which is what
+makes a value-object identifier key the same string the record itself mints
+([attach-action.md](attach-action.md#the-title-fast-path-projects-the-attribute)). Otherwise every candidate is hydrated and titled
 through `getRecordTitle()`. The title ordering (`orderBy record.<title>` when the
 builder carries no order of its own) sits **before** that branch, because
 Filament orders both paths. A `recordSelectOptionsQuery()` that orders the

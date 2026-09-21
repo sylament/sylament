@@ -11,7 +11,7 @@ is audited [at the bottom of this file](#dissociatebulkaction), the way
 
 Both read the relationship off the **table**, and both refuse — as developer
 errors, not toasts — where the mapping does not permit a dissociation at all; see
-[the three refusals](#dissociating-is-refused-where-the-mapping-forbids-it).
+[the four refusals](#dissociating-is-refused-where-the-mapping-forbids-it).
 
 **Status:** done — see the [status vocabulary](../README.md#statuses).
 
@@ -76,18 +76,25 @@ family is therefore not ported.
 ### Dissociating is refused where the mapping forbids it
 
 A one-to-many is only dissociable when the mapping actually permits an ownerless
-target. The reader checks three things, in this order, and only the first
+target. The reader checks **four** things, in this order, and only the first
 reachable one on any given mapping can fire:
 
 1. the owner's association declares **`orphanRemoval`** — a record removed from
    such a collection is *deleted*, so dissociating is not something the mapping
    permits at all and `DeleteAction` is the intended action;
-2. the target's join column is **`nullable: false`** — the column cannot hold the
+2. the target's mapped-by field is part of the target's own **identifier** —
+   nulling it would erase half the record's identity, so there is nothing to
+   dissociate *to* and `DeleteAction` is again the intended action. This one
+   refused before it had a name: an `#[Id]` to-one's join column is
+   `nullable: false` in `ClassMetadata`, so such a mapping tripped (3) and was
+   told to make the column nullable, which for an identifier column is
+   impossible. The refusal did not move; the advice did;
+3. the target's join column is **`nullable: false`** — the column cannot hold the
    null a dissociation would write;
-3. the target's setter or property **does not accept null** — a non-nullable PHP
+4. the target's setter or property **does not accept null** — a non-nullable PHP
    type, which would `TypeError` on the write.
 
-All three are mapping facts rather than runtime failures, so all three throw a
+All four are mapping facts rather than runtime failures, so all four throw a
 `LogicException` naming the fix and propagate: they are a developer
 misconfiguration, and swallowing them into a danger toast would hide a mapping
 bug behind a user-facing message. The demo's `Article::$sections` trips (1) —
@@ -158,17 +165,31 @@ way through leaves the unit of work unusable rather than partially applied.
 ### The by-key arm is a DQL update over the plucked keys
 
 Under `fetchSelectedRecords(false)` the selection is never hydrated: one
-`UPDATE <target> sylament_dissociated_record SET …<mappedBy> = NULL WHERE …<id>
-IN (:sylament_selected_record_keys)` runs and its affected-row count is reported
-as the successful count, exactly as
+`UPDATE <target> sylament_dissociated_record SET …<mappedBy> = NULL` narrowed by
+[`IdentifierConstraint::in()`](../schemas/record-key.md#the-operations-and-their-dql)
+runs per chunk, and the affected-row counts are summed and reported as the
+successful count, exactly as
 [`deleteSelectedRecordsByKey()`](delete-action.md#the-by-key-arm-is-a-dql-delete-over-the-plucked-keys)
-does for the delete. It carries that arm's caveat too: a DQL `UPDATE` bypasses
-the `UnitOfWork`, so an entity already in the identity map keeps its stale owner
-until it is reloaded or the manager is cleared.
+does for the delete — the fourth and last site to take
+[the chunk rule](../schemas/record-key.md#the-chunk-rule), with one
+`Connection::transactional()` around the chunks from the second on, so a
+mid-batch failure means the whole batch failed. It carries that arm's caveat
+too: a DQL `UPDATE` bypasses the `UnitOfWork`, so an entity already in the
+identity map keeps its stale owner until it is reloaded or the manager is
+cleared.
 
-Four refusals run before either arm picks up, all of them `LogicException`s
+The conversion closed a **silent data defect** rather than only widening the
+arm. Since [M7 · 1](../roadmap.md#m7--composite-identifiers) this action is
+handed the table selection's `RecordKey` strings, and it bound them raw against
+one identifier column — so a target whose column form is not its printed form (a
+`uuid` stored `BINARY(16)`, a value-object identifier) matched **zero rows and
+reported success**: a select-all that changed nothing and said `Dissociated 0`.
+Nothing in the suite could see it, because the count it reports is the count the
+statement returns. The typed decode is what makes the rows move.
+
+Five refusals run before either arm picks up, all of them `LogicException`s
 raised outside the two `try` blocks so none is swallowed into the danger toast.
-[The three dissociate refusals](#dissociating-is-refused-where-the-mapping-forbids-it)
+[The four dissociate refusals](#dissociating-is-refused-where-the-mapping-forbids-it)
 are the first, so an orphan-removal mapping throws before any statement is issued
 rather than nulling a column the mapping treats as ownership; the fourth is that
 the relationship must be a **one-to-many**, and the refusal says to use
@@ -181,4 +202,8 @@ would quietly do a many-to-many removal there: the class is the one-to-many acti
 on both arms, and a batch that succeeds or refuses depending on
 `fetchSelectedRecords()` is worse than one refusal naming the right action.
 `$mappedBy` keeps its own `?? throw` behind that branch as a one-to-many sanity
-check, matching the reader's own.
+check, matching the reader's own. A sixth guards the by-key arm alone: every
+selection entry must be a string record key (`DissociateBulkAction dissociates by
+key from record keys, got %s.`), walked before the `try` beside the chunking, so
+a host feeding something else is the developer error it is rather than a danger
+toast.

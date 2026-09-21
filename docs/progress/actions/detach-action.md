@@ -161,8 +161,17 @@ means re-implementing Doctrine's `QuoteStrategy` against the same mapping the OR
 already owns, and getting it subtly wrong is a data bug rather than a failure.
 
 So the arm builds a **reference** per selected key
-([`AssociationReader::getReference()`](../schemas/association-reader.md)) and runs
-the same `detach()` the fetching arm does. What it buys is what the flag promises:
+([`AssociationReader::getReference()`](../schemas/association-reader.md#getreference-decodes-first-and-then-picks-its-route)) and runs
+the same `detach()` the fetching arm does. Since
+[M7 · 4](../roadmap.md#m7--composite-identifiers) that call decodes the key
+against the target's own mapping first and then takes one of two routes: a
+no-load reference for a scalar identifier of any width, and a `find()` where an
+identifier field is itself an association, because `getReference()` is a
+`TypeError` for those against a **cold** identity map. A bulk detach is exactly
+where the map is cold, so the route is not a refinement — without it a
+derived-identity selection 500s on the first request after a page load. The arm
+is reached only where a host asks for it: `fetchSelectedRecords()` defaults to
+**true**, so the shipped default hydrates and this key route is opt-in. What it buys is what the flag promises:
 the selected rows are never `SELECT`ed — the end-to-end test asserts the contrast,
 the fetching arm running a hydrating selection over the keys and this one running
 none. The owning collection still loads once, which is the price of writing
@@ -173,6 +182,32 @@ The reported count is the number of records the loop detached, not an affected-r
 count — there is no statement to read one off. A key naming a row that was already
 detached therefore still counts, where Filament's `DELETE` would not have counted
 it.
+
+One refusal moved with it, and the move is about where a **developer** error
+surfaces. A selection entry that is neither an entity nor a key is a host feeding
+the action something it never promised — `DetachBulkAction can only detach
+entities or their keys, got %s.` — and it used to be raised inside the `try`,
+where the arm's own catch turned it into the danger toast a stale key produces.
+It is now a pre-walk **outside** the `try`, which also casts each key to
+`string`, so a developer error propagates as one and only client state toasts.
+That is the rule
+[`DeleteBulkAction`](delete-action.md#the-by-key-arm-is-a-dql-delete-over-the-plucked-keys)
+states and the dissociate twin follows. A *malformed* key never arrives from a
+table at all — the selection query narrowed it through the codec before it was
+ever plucked — so what stays inside the `try` is the **stale** key, a row
+detached or deleted between the render and the submit. What that produces
+depends on the route the reference took, and the two disagree. On
+[the loading route](../schemas/association-reader.md#getreference-decodes-first-and-then-picks-its-route) `find()`
+answers null and the reader's own `LogicException` becomes the failure toast; on
+a one-to-many the reference route reaches the same place by another door, since
+nulling the mapped-by initialises the proxy and Doctrine raises
+`EntityNotFoundException`. But on a **many-to-many over a scalar identifier** —
+the commonest shape there is — the phantom is never initialised: `detach()`'s
+`!==` filter removes nothing, the record is counted, and the arm reports
+success for a row that does not exist
+([above](../schemas/association-reader.md#getreference-throws-where-doctrine-returns-null)).
+Either way it is not a 500. Neither refusal is reachable from a shipped host, so
+both are pinned through a fixture host that overrides `getSelectedTableRecords()`.
 
 ### The bulk detach is atomic where Filament's fetching arm is per-record
 

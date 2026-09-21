@@ -1725,6 +1725,7 @@ class Repeater extends Field implements CanConcealComponents, HasExtraItemAction
 
         $desiredRecords = [];
         $desiredItemKeys = [];
+        $newRecords = [];
 
         foreach (is_array($state) ? $state : [] as $itemKey => $itemData) {
             /** @var array<string, mixed> $itemData */
@@ -1747,11 +1748,15 @@ class Repeater extends Field implements CanConcealComponents, HasExtraItemAction
 
             $itemData = $mutated;
 
-            $child ??= $accessor->constructRecord(
-                $target->targetClass,
-                sprintf('an added item of the [%s] repeater onto a new record', (string) $this->getName()),
-                'drop relationship() and add the records by hand after getData().',
-            );
+            if ($child === null) {
+                $child = $accessor->constructRecord(
+                    $target->targetClass,
+                    sprintf('an added item of the [%s] repeater onto a new record', (string) $this->getName()),
+                    'drop relationship() and add the records by hand after getData().',
+                );
+
+                $newRecords[] = $child;
+            }
 
             $saveHooks = $routesSaveHooks
                 ? array_filter(
@@ -1788,7 +1793,29 @@ class Repeater extends Field implements CanConcealComponents, HasExtraItemAction
 
         $accessor->setAssociationOnRecord($record, $name, $desiredRecords);
 
+        $this->assertNewItemsCarryAnIdentifier($newRecords);
+
         $this->itemKeysByCollectionKey = $this->readItemKeysByCollectionKey($record, $name, $desiredRecords, $desiredItemKeys);
+    }
+
+    /**
+     * @param list<object> $records the items this save constructed
+     *
+     * @throws LogicException when a new item is missing an identifier field its schema had to supply
+     */
+    private function assertNewItemsCarryAnIdentifier(array $records): void
+    {
+        $reader = $this->getAssociationReader();
+
+        foreach ($records as $child) {
+            if ($reader->hasIncompleteAssignedIdentifier($child)) {
+                throw new LogicException(sprintf(
+                    "The [%s] repeater is saving an item of [%s] whose identifier is incomplete, so no record key can be minted for it. Put every identifier field in the repeater's components() — enabled and dehydrated for a new item — or build the child in mutateRelationshipDataBeforeCreateUsing().",
+                    (string) $this->getName(),
+                    $child::class,
+                ));
+            }
+        }
     }
 
     /**

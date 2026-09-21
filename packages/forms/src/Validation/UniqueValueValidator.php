@@ -6,6 +6,7 @@ namespace Sylament\Forms\Validation;
 
 use LogicException;
 use Sylament\Forms\Validation\Concerns\ProbesRecords;
+use Sylament\Schemas\Identity\IdentifierConstraint;
 use Sylament\Schemas\State\AssociationReader;
 use Symfony\Component\Validator\Constraint;
 use Symfony\Component\Validator\ConstraintValidator;
@@ -43,10 +44,11 @@ final class UniqueValueValidator extends ConstraintValidator
         $query->andWhere("record.{$constraint->property} = :{$valueParameter}")->setParameter($valueParameter, $value);
 
         if ($constraint->ignoredIdentifier !== null) {
-            $identifier = $reader->getIdentifierFieldName($constraint->entityClass);
-            $identifierParameter = $this->nextParameter($query);
+            $exclusion = IdentifierConstraint::notEquals($query, 'record', $constraint->entityClass, (string) $constraint->ignoredIdentifier, 'sylament_ignored_record');
 
-            $query->andWhere("record.{$identifier} <> :{$identifierParameter}")->setParameter($identifierParameter, $constraint->ignoredIdentifier);
+            if ($exclusion !== null) {
+                $query->andWhere($exclusion);
+            }
         }
 
         $this->applyModifier($query, $constraint->modifyQueryUsing);

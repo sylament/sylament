@@ -41,6 +41,29 @@ function uniqueViolations(EntityManager $entityManager, mixed $value, UniqueValu
     return uniqueValidator(new AssociationReader($entityManager))->validate($value, $constraint);
 }
 
+/**
+ * The DQL the probe carries once the value comparison and the exclusion are both
+ * on it — `modifyQueryUsing` is the last thing the validator applies, so it is
+ * the one seat from which the whole predicate is readable.
+ *
+ * @param class-string $entityClass
+ */
+function compositeUniqueProbeDql(EntityManager $entityManager, string $entityClass, string $property, mixed $value, string|int|null $ignoredIdentifier): string
+{
+    $dql = '';
+
+    uniqueViolations($entityManager, $value, new UniqueValue(
+        $entityClass,
+        $property,
+        ignoredIdentifier: $ignoredIdentifier,
+        modifyQueryUsing: function (QueryBuilder $query) use (&$dql): void {
+            $dql = $query->getDQL();
+        },
+    ));
+
+    return $dql;
+}
+
 it('accepts a value no record holds', function (): void {
     $entityManager = EntityManagerFactory::create();
     EntityManagerFactory::seed($entityManager, new Handle('ada'));
@@ -104,9 +127,36 @@ it('refuses a property the entity does not map', function (): void {
         ->toThrow(LogicException::class, 'not a mapped field');
 });
 
-it('refuses an entity with a composite identifier once an identifier is ignored', function (): void {
+it('excludes a composite record from its own probe, and only that one', function (): void {
     $entityManager = EntityManagerFactory::create();
+    EntityManagerFactory::seed($entityManager, new CompositePair(1, 2, 'pair'), new CompositePair(3, 4, 'other'));
 
-    expect(fn (): ConstraintViolationListInterface => uniqueViolations($entityManager, 'pair', new UniqueValue(CompositePair::class, 'label', ignoredIdentifier: '1')))
-        ->toThrow(LogicException::class, 'composite identifier');
+    expect(uniqueViolations($entityManager, 'pair', new UniqueValue(CompositePair::class, 'label', ignoredIdentifier: '1~2')))->toHaveCount(0)
+        ->and(uniqueViolations($entityManager, 'pair', new UniqueValue(CompositePair::class, 'label', ignoredIdentifier: '3~4')))->toHaveCount(1);
+});
+
+it('excludes nothing when the ignored identifier does not decode', function (): void {
+    $entityManager = EntityManagerFactory::create();
+    EntityManagerFactory::seed($entityManager, new CompositePair(1, 2, 'pair'));
+
+    expect(uniqueViolations($entityManager, 'pair', new UniqueValue(CompositePair::class, 'label', ignoredIdentifier: 'not-a-key')))->toHaveCount(1)
+        ->and(uniqueViolations($entityManager, 'pair', new UniqueValue(CompositePair::class, 'label', ignoredIdentifier: '1')))->toHaveCount(1)
+        ->and(compositeUniqueProbeDql($entityManager, CompositePair::class, 'label', 'pair', 'not-a-key'))
+        ->toBe('SELECT record FROM ' . CompositePair::class . ' record WHERE record.label = :sylament_probe_0');
+});
+
+it('names the probed value and every excluded identifier column apart', function (): void {
+    $entityManager = EntityManagerFactory::create();
+    EntityManagerFactory::seed($entityManager, new CompositePair(1, 2, 'pair'));
+
+    expect(compositeUniqueProbeDql($entityManager, CompositePair::class, 'label', 'pair', '1~2'))
+        ->toBe('SELECT record FROM ' . CompositePair::class . ' record WHERE record.label = :sylament_probe_0 AND (NOT (record.a = :sylament_ignored_record_0 AND record.b = :sylament_ignored_record_1))');
+});
+
+it('keeps the single-identifier probe text, the exclusion aside', function (): void {
+    $entityManager = EntityManagerFactory::create();
+    EntityManagerFactory::seed($entityManager, new Handle('ada'));
+
+    expect(compositeUniqueProbeDql($entityManager, Handle::class, 'name', 'ada', 1))
+        ->toBe('SELECT record FROM ' . Handle::class . ' record WHERE record.name = :sylament_probe_0 AND record.id <> :sylament_ignored_record');
 });

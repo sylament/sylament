@@ -879,7 +879,7 @@ trait CanBeValidated
      * A record that has never been flushed carries no identifier, and there is
      * nothing to exclude — which is the create page's normal state.
      */
-    private function resolveIgnoredIdentifier(?object $ignorable, ?bool $ignoreRecord): string|int|null
+    private function resolveIgnoredIdentifier(?object $ignorable, ?bool $ignoreRecord): ?string
     {
         $record = $this->evaluate($ignorable);
 

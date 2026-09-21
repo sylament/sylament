@@ -53,7 +53,12 @@ class DetachBulkAction extends BulkAction
     /**
      * Both arms end in one flush, so the batch detaches whole or not at all: the
      * hydrated records, or — under `fetchSelectedRecords(false)` — references
-     * built from the selected keys, which never SELECT the rows themselves.
+     * built from the selected keys, which never SELECT the rows themselves. The
+     * shape of the selection is resolved before the `try`, so a host feeding
+     * neither entities nor keys propagates as the developer error it is;
+     * a key that is malformed or names no record is client state and stays
+     * inside it, as the danger toast — {@see DeleteBulkAction} places its own
+     * refusals the same way.
      *
      * @param array<mixed> $records
      */
@@ -64,19 +69,27 @@ class DetachBulkAction extends BulkAction
         $reader = $this->getAssociationReader();
         $targetClass = $reader->describeRelationship($relationship)->targetClass;
 
+        $selection = [];
+
+        foreach ($records as $record) {
+            if (is_object($record)) {
+                $selection[] = $record;
+
+                continue;
+            }
+
+            if (! is_int($record) && ! is_string($record)) {
+                throw new LogicException(sprintf('DetachBulkAction can only detach entities or their keys, got %s.', get_debug_type($record)));
+            }
+
+            $selection[] = (string) $record;
+        }
+
         try {
             $count = 0;
 
-            foreach ($records as $record) {
-                if (! is_object($record)) {
-                    if (! is_int($record) && ! is_string($record)) {
-                        throw new LogicException(sprintf('DetachBulkAction can only detach entities or their keys, got %s.', get_debug_type($record)));
-                    }
-
-                    $record = $reader->getReference($targetClass, $record);
-                }
-
-                $reader->detach($relationship, $record);
+            foreach ($selection as $record) {
+                $reader->detach($relationship, is_string($record) ? $reader->getReference($targetClass, $record) : $record);
                 $count++;
             }
 

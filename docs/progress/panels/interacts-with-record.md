@@ -128,17 +128,31 @@ dehydration time, and the next request re-resolves the key it was handed —
 through the parent scope again — rather than trusting anything the previous
 render decided.
 
-The third shape is the one that changed behaviour for URLs that work today, and
-it is worth spelling out rather than discovering. A single-identifier key
-encodes to itself, so `/admin/articles/7/edit` is untouched — but `05`, a
-percent-encoded leading space, a trailing newline and `+5` all resolve article
-5 today on SQLite **and** on PostgreSQL, and `5.0` resolves it on SQLite while
-PostgreSQL answers that one `22P02`, a 500, exactly as it answers `abc`. All
-five are a 404 afterwards, on both, with no redirect to the canonical spelling.
-`abc` and `5abc` stop reaching the database at all, which is how
-`/admin/articles/abc/edit` stopped being a 500 on PostgreSQL. The refusal
-happens **before** anything is bound, so the third shape is the only one of the
-three that answers without a statement having run.
+The third shape is the one that changed behaviour for URLs that used to work,
+and it is worth spelling out rather than discovering. A single-identifier key
+encodes to itself, so `/admin/articles/7/edit` is untouched — but a run of
+looser spellings resolved article 5 before and is a 404 now, on both platforms
+and with no redirect to the canonical one: `05`, a percent-encoded leading
+space, a trailing newline and `+5` resolved it on SQLite **and** on PostgreSQL,
+and `5.0` on SQLite only, PostgreSQL having answered that one `22P02`, a 500,
+exactly as it answered `abc`. Those are examples rather than the whole set — a
+trailing space, `5e0` and a NUL-terminated spelling resolved it on SQLite too.
+`abc` and `5abc` now reach no database at all, which is how
+`/admin/articles/abc/edit` stopped being a 500 on PostgreSQL.
+
+The refusal happens **before** anything is bound: on the default arm — a
+resource naming no `$recordRouteKeyName` — a key no record of the class could
+mint is answered with no statement of its own. That is a claim about the
+record's own binding and nothing else. A blank key never reaches the binding at
+all, being refused a frame earlier; and under a parent the chain above has
+already been resolved by a statement of its own, the scope being evaluated as
+the argument. Two well-formed-looking keys are still a 500 rather than a 404: a
+canonical integer too wide for its column decodes, prints back to itself, binds
+and raises the platform's own range error
+([the residual](../schemas/record-key.md#an-integer-beyond-the-columns-width-still-raises-the-platforms-range-error)),
+and a hand-written identifier DBAL type that refuses a malformed string with
+anything but a `ConversionException` has that exception propagate, the frozen
+seam catching the one kind ([the policy](../schemas/record-key.md#the-api)).
 
 ## Divergences
 

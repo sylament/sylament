@@ -2167,7 +2167,6 @@ nonsense and the other a record that is really gone. The key is then handed to
 miss — and, since that binding decodes before it binds, a key that is
 well-formed JSON but malformed for the record class takes the same 404 with no
 statement run, where it used to reach the database as a raw parameter.
-
 Going through that method rather than `EntityManager::find()` is the whole point:
 it is [the resource's scoped query](#a-record-is-resolved-through-the-resources-own-query),
 so a row outside the resource's scope 404s instead of being mounted into a modal
@@ -2179,15 +2178,21 @@ only agree where the mint knows the resource's rule. A **table**-bound action
 carries the key the table itself minted, so a row action on a composite list
 resolves against the same string the row rendered. Every other action reads the
 literal `id` property — and, since M7 · 3, reads it
-[only where `id` is the record's whole identity](../actions/action.md#getcontext-drops-the-record-model-gate).
+[only where one scalar field is the record's whole identity](../actions/action.md#getcontext-drops-the-record-model-gate).
 Without that guard, an ordinary `EditAction::make()->record($this->getRecord())`
 in a page header on a record keyed by `id` **and** a locale minted the partial
 key `"5"`, which the strict decode then refuses — a 404 on click, from a trigger
-whose record the page was already holding. The guard mints nothing there
-instead, and the declared record stands, which is what a composite record with
-no `id` field has always done. A resource declaring `$recordRouteKeyName` keeps
-its own pre-existing mismatch: `['id']` **is** that record's identifier, so the
-literal reading still fires and still names a key the resource does not use.
+whose record the page was already holding. The guard mints nothing for a
+composite or an association identifier instead, and the declared record stands,
+which is what a composite record with no `id` field has always done. A record
+keyed by **one** scalar field mints exactly what it always did, whatever that
+field is called. What the gate cannot see is a readable `id` that is not the
+identifier: a resource declaring `$recordRouteKeyName` keeps its own
+pre-existing mismatch — one scalar field *is* that record's identifier, so the
+literal reading still fires and still names a key the resource does not use —
+and so does a record carrying a legacy serial `id` beside the natural key it is
+really identified by. Both are a 404 on click, and both are closed only by the
+host hook that would let a page mint its own key, which no epic owns.
 
 ### A page lifecycle hook is a method name, not a registration
 
@@ -3067,14 +3072,25 @@ keys against is the **declared** `getRecordClass()`, never the builder's root
 entity: a modifier may replace the builder wholesale, and the resource still
 speaks for the class it says it does. And the decode runs **before** anything is
 bound, so a key that class could never mint — the wrong arity, a lower-case
-escape, a component its field's type cannot hold — is a 404 that issues no
-statement rather than a database error.
+escape, a component its field's DBAL type refuses or would print back
+differently — is a 404 that issues no statement rather than a database error.
+The **column's** width is no part of that question: a canonical integer that PHP
+holds and the column cannot still decodes, prints back to itself, binds, and
+raises the platform's own range error — a `22003` 500 on PostgreSQL, for a
+single `id` and for a composite key alike
+([the residual](../schemas/record-key.md#an-integer-beyond-the-columns-width-still-raises-the-platforms-range-error)).
 `getRecordRouteKey()` is the generation side
 of the same pair, replacing what Laravel got free from `UrlRoutable`; both sides
 read `$recordRouteKeyName`, so they cannot disagree. It reads `getRecordClass()`
 first, for the "speaks for" guard, so a resource declaring `$recordRouteKeyName`
 without `$recordClass` throws the record-class `LogicException` rather than a key
-one — fail-fast ordering, and deliberate: the missing declaration is the fix.
+one — fail-fast ordering, and deliberate: the missing declaration is the fix. On
+the default arm a record that cannot be keyed is refused by the **codec**, in
+its own words: `Object records must expose a readable non-blank identifier; [X]
+has none set.` for an identifier nothing has filled, and `The identifier of [X]
+is not a printable value.` for a component that is blank. The custom
+`$recordRouteKeyName` arm keeps `The route key of [X] is not a printable
+value.` byte-identical, so the two arms no longer refuse in the same words.
 
 Filament's second parameter shipped with the cluster it belongs to.
 `resolveRecordRouteBinding(int|string $key, ?Closure $modifyQuery = null)` takes a

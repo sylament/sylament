@@ -13,9 +13,10 @@ use Doctrine\ORM\Tools\SchemaTool;
 final class EntityManagerFactory
 {
     /**
-     * An in-memory SQLite entity manager with the fixture schema already built.
+     * An in-memory SQLite entity manager with the fixture schema already built,
+     * counting every statement it runs when given a recorder.
      */
-    public static function create(): EntityManager
+    public static function create(?RecordingMiddleware $recorder = null): EntityManager
     {
         if (!Type::hasType(SkuType::NAME)) {
             Type::addType(SkuType::NAME, SkuType::class);
@@ -23,6 +24,10 @@ final class EntityManagerFactory
 
         $config = ORMSetup::createAttributeMetadataConfig(paths: [__DIR__ . '/Entity'], isDevMode: true);
         $config->enableNativeLazyObjects(true);
+
+        if ($recorder instanceof RecordingMiddleware) {
+            $config->setMiddlewares([$recorder]);
+        }
 
         $connection = DriverManager::getConnection(['driver' => 'pdo_sqlite', 'memory' => true], $config);
         $entityManager = new EntityManager($connection, $config);

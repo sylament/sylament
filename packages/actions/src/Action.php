@@ -592,9 +592,9 @@ class Action extends ViewComponent
      * A table-bound action carries the key the table itself minted for the
      * record — a composite identifier included — so the mount resolves through
      * `getTableRecord()` against the same string the row rendered. Every other
-     * action keeps the literal `id` reading, and only for a record that reading
-     * names whole: a host resolves the key by the record's own identity, which
-     * one field out of several never spells.
+     * action keeps the literal `id` reading, and only where one scalar field is
+     * the record's whole identity: a host resolves the key by the record's own
+     * identity, which one field out of several never spells.
      */
     private function resolveContextRecordKey(): ?string
     {
@@ -606,7 +606,7 @@ class Action extends ViewComponent
             return $table->getRecordKey($record);
         }
 
-        if (is_object($record) && ! $this->isRecordKeyedByIdAlone($record)) {
+        if (is_object($record) && ! $this->isRecordKeyedByOneScalarField($record)) {
             return null;
         }
 
@@ -614,12 +614,14 @@ class Action extends ViewComponent
     }
 
     /**
-     * Whether the literal `id` property is the record's whole identity — true
-     * wherever no mapping answers: an anonymous class, which Doctrine refuses
-     * to describe at all, a class no manager maps, and a record reached without
-     * a registry. The literal reading is then the only identity there is.
+     * Whether one scalar field is the record's whole identity, whatever that
+     * field is called — the shape a single property read can name. True
+     * wherever no mapping answers, too: an anonymous class, which Doctrine
+     * refuses to describe at all, a class no manager maps, and a record reached
+     * without a registry. The literal reading is then the only identity there
+     * is.
      */
-    private function isRecordKeyedByIdAlone(object $record): bool
+    private function isRecordKeyedByOneScalarField(object $record): bool
     {
         if (new ReflectionClass($record)->isAnonymous()) {
             return true;
@@ -631,7 +633,10 @@ class Action extends ViewComponent
             return true;
         }
 
-        return $manager->getClassMetadata($record::class)->getIdentifier() === ['id'];
+        $metadata = $manager->getClassMetadata($record::class);
+        $identifier = $metadata->getIdentifier();
+
+        return count($identifier) === 1 && ! $metadata->hasAssociation($identifier[0]);
     }
 
     public function getClone(): static

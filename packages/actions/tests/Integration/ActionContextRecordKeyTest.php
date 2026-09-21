@@ -8,10 +8,13 @@ use Sylament\Actions\Action;
 use Sylament\Actions\Tests\Fixtures\Doctrine\Entity\AssignedNote;
 use Sylament\Actions\Tests\Fixtures\Doctrine\Entity\Caption;
 use Sylament\Actions\Tests\Fixtures\Doctrine\Entity\Cover;
+use Sylament\Actions\Tests\Fixtures\Doctrine\Entity\Manifest;
+use Sylament\Actions\Tests\Fixtures\Doctrine\Entity\Parcel;
 use Sylament\Actions\Tests\Fixtures\Doctrine\Entity\Redirect;
 use Sylament\Actions\Tests\Fixtures\Doctrine\Entity\Roster;
 use Sylament\Actions\Tests\Fixtures\Doctrine\Entity\Seat;
 use Sylament\Actions\Tests\Fixtures\Doctrine\Entity\Ticket;
+use Sylament\Actions\Tests\Fixtures\UnmappedRecord;
 
 /*
  * Integration rather than Unit because the question is what the injected
@@ -48,7 +51,14 @@ it('mints the literal id for a record that id alone identifies', function (): vo
     expect(contextOfRecord($note))->toBe(['recordKey' => '7']);
 });
 
-it('mints nothing for a single identifier that is not called id', function (): void {
+it('mints the literal id for a single scalar identifier under another name', function (): void {
+    $parcel = new Parcel();
+    $parcel->setSku('SKU-1');
+
+    expect(contextOfRecord($parcel))->toBe(['recordKey' => 'SKU-1']);
+});
+
+it('mints nothing for a record carrying no readable id', function (): void {
     $ticket = new Ticket();
     $ticket->setCode('T-1');
 
@@ -82,12 +92,24 @@ it('mints nothing for a derived identity, single or composite', function (): voi
         ->and(contextOfRecord($seat))->toBe([]);
 });
 
-it('mints the literal id for an object no Doctrine manager maps', function (): void {
+it('mints nothing for a derived identity beside a plain id column', function (): void {
+    $manifest = new Manifest();
+    $manifest->setRoster(new Roster());
+    $manifest->setId(42);
+
+    expect(contextOfRecord($manifest))->toBe([]);
+});
+
+it('mints the literal id for an anonymous record class', function (): void {
     $record = new class {
         public int $id = 9;
     };
 
     expect(contextOfRecord($record))->toBe(['recordKey' => '9']);
+});
+
+it('mints the literal id for a named class no Doctrine manager maps', function (): void {
+    expect(contextOfRecord(new UnmappedRecord()))->toBe(['recordKey' => '9']);
 });
 
 it('mints the key entry of an array record', function (): void {

@@ -13,6 +13,7 @@ use Sylament\Tables\Tests\Fixtures\Doctrine\Entity\LockerLease;
 use Sylament\Tables\Tests\Fixtures\Doctrine\Entity\LockerSeal;
 use Sylament\Tables\Tests\Fixtures\Doctrine\Entity\Residency;
 use Sylament\Tables\Tests\Fixtures\Doctrine\Entity\Shortcut;
+use Sylament\Tables\Tests\Fixtures\Doctrine\Entity\Song;
 use Sylament\Tables\Tests\Fixtures\Doctrine\Entity\Venue;
 use Sylament\Tables\Tests\Fixtures\Doctrine\Handle;
 use Sylament\Tables\Tests\Fixtures\Doctrine\RecordingMiddleware;
@@ -148,20 +149,23 @@ function compositeBulkOwnedKeys(KernelBrowser $client, EntityManagerInterface $e
 /**
  * The confirmed bulk action's *second* request alone: the recorder is reset
  * between the mount and the call, so the statement list starts where the action
- * body does.
+ * body does. `$coldEntityManager` empties the identity map in that same gap —
+ * what a by-key case needs, since a record the seed left managed is handed back
+ * by a reference that never had to build one.
  *
  * @param array<string, mixed> $props
  * @param list<string> $selection
  *
  * @return list<string>
  */
-function compositeBulkStatements(KernelBrowser $client, RecordingMiddleware $recorder, string $host, string $action, array $props, array $selection): array
+function compositeBulkStatements(KernelBrowser $client, RecordingMiddleware $recorder, string $host, string $action, array $props, array $selection, ?EntityManagerInterface $coldEntityManager = null): array
 {
     /** @var class-string<ArtistCuratedShortcutsBulkTable|ArtistKeptLockersBulkTable|ArtistShortcutsBulkTable> $host */
     $component = test()->createLiveComponent($host, $props, client: $client)
         ->set('selectedTableRecords', $selection)
         ->call('mountAction', ['name' => $action, 'arguments' => [], 'context' => ['table' => true, 'bulk' => true]]);
 
+    $coldEntityManager?->clear();
     $recorder->reset();
     $component->call('callMountedAction');
 
@@ -227,7 +231,7 @@ function compositeBulkWrites(array $statements, string $verb): array
 it('detaches a scalar-pair selection by key without ever selecting the rows', function (): void {
     [$client, $entityManager, $recorder] = compositeBulkSeed();
 
-    $statements = compositeBulkStatements($client, $recorder, ArtistShortcutsBulkTable::class, 'detach', ['fetchesRecords' => false], ['plain~about']);
+    $statements = compositeBulkStatements($client, $recorder, ArtistShortcutsBulkTable::class, 'detach', ['fetchesRecords' => false], ['plain~about'], coldEntityManager: $entityManager);
 
     expect(compositeBulkOwnedKeys($client, $entityManager, ArtistShortcutsBulkTable::class))->toBe(['www=2Eexample=2Ecom~=2Fblog=2F2026=2Fa=20b'])
         ->and(compositeBulkHydratingSelections($statements))->toBe([]);
@@ -263,7 +267,7 @@ it('detaches a composite selection from the inverse side of the many-to-many', f
     [$client, $entityManager, $recorder] = compositeBulkSeed();
     $props = ['association' => 'billedShortcuts', 'fetchesRecords' => false];
 
-    compositeBulkStatements($client, $recorder, ArtistShortcutsBulkTable::class, 'detach', $props, ['www=2Eexample=2Ecom~=2Fblog=2F2026=2Fa=20b']);
+    compositeBulkStatements($client, $recorder, ArtistShortcutsBulkTable::class, 'detach', $props, ['www=2Eexample=2Ecom~=2Fblog=2F2026=2Fa=20b'], coldEntityManager: $entityManager);
 
     expect(compositeBulkOwnedKeys($client, $entityManager, ArtistShortcutsBulkTable::class, $props))->toBe([]);
 });
@@ -282,6 +286,30 @@ it('propagates the same entry from the dissociate before the keys are chunked', 
         ->toThrow(LogicException::class, 'DissociateBulkAction dissociates by key from record keys, got array.');
 });
 
+it('detaches an integer selection entry, which the walk before the try casts to a key', function (): void {
+    [$client, $entityManager] = compositeBulkSeed();
+    $props = ['association' => 'songs', 'selectionOverride' => 'int'];
+
+    $ada = $entityManager->find(Artist::class, 1) ?? throw new LogicException('The rig lost its artist.');
+    $song = new Song(7, 'Anthem');
+
+    $entityManager->persist($song);
+    $ada->addSong($song);
+    $entityManager->flush();
+
+    compositeBulkCallOnOverridingHost($client, 'detach', $props);
+
+    expect(compositeBulkNotificationTitles())->toBe(['Detached'])
+        ->and(compositeBulkOwnedKeys($client, $entityManager, ArtistCuratedShortcutsBulkTable::class, ['association' => 'songs']))->toBe([]);
+});
+
+it('propagates the same entry from the dissociate, which takes its keys as strings', function (): void {
+    [$client] = compositeBulkSeed();
+
+    expect(fn (): ArtistCuratedShortcutsBulkTable => compositeBulkCallOnOverridingHost($client, 'dissociate', ['selectionOverride' => 'int']))
+        ->toThrow(LogicException::class, 'DissociateBulkAction dissociates by key from record keys, got int.');
+});
+
 it('reports a failure toast for a well-formed key naming no record', function (): void {
     [$client, $entityManager] = compositeBulkSeed();
 
@@ -291,14 +319,34 @@ it('reports a failure toast for a well-formed key naming no record', function ()
         ->and(compositeBulkOwnedKeys($client, $entityManager, ArtistCuratedShortcutsBulkTable::class))->toBe(['plain~about']);
 });
 
-it('dissociates a converting single identifier by key, changing rows rather than reporting a silent zero', function (): void {
+it('reports the same toast for a key no record of the target could mint', function (): void {
+    [$client, $entityManager] = compositeBulkSeed();
+
+    compositeBulkCallOnOverridingHost($client, 'detach', ['selectionOverride' => 'malformed']);
+
+    expect(compositeBulkNotificationTitles())->toBe(['Failed to detach 1 records'])
+        ->and(compositeBulkOwnedKeys($client, $entityManager, ArtistCuratedShortcutsBulkTable::class))->toBe(['plain~about']);
+});
+
+it('reports the same toast for a stale key on a target the reference has to load', function (): void {
+    [$client, $entityManager] = compositeBulkSeed();
+    $props = ['association' => 'residencies', 'selectionOverride' => 'staleFind'];
+
+    compositeBulkCallOnOverridingHost($client, 'detach', $props);
+
+    expect(compositeBulkNotificationTitles())->toBe(['Failed to detach 1 records'])
+        ->and(compositeBulkOwnedKeys($client, $entityManager, ArtistCuratedShortcutsBulkTable::class, ['association' => 'residencies']))->toBe(['north-hall~summer']);
+});
+
+it('dissociates a converting single identifier by key, where the raw bind used to match no row', function (): void {
     [$client, $entityManager, $recorder] = compositeBulkSeed();
 
     $statements = compositeBulkStatements($client, $recorder, ArtistKeptLockersBulkTable::class, 'dissociate', [], ['NORTH-HALL', 'SOUTH-HALL']);
 
     // The column holds `north-hall`/`south-hall` and the record mints
     // `NORTH-HALL`/`SOUTH-HALL`; the raw bind this arm used to carry matched no
-    // row at all and still reported success.
+    // row at all, and the action answered the danger toast
+    // `Failed to dissociate 2 records`.
     expect(compositeBulkWrites($statements, 'UPDATE'))->toHaveCount(1)
         ->and(compositeBulkOwnedKeys($client, $entityManager, ArtistKeptLockersBulkTable::class))->toBe([])
         ->and($entityManager->find(Locker::class, 'NORTH-HALL')?->getKeeper())->toBeNull()

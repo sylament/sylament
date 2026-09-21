@@ -23,12 +23,16 @@ use Symfony\UX\LiveComponent\DefaultActionTrait;
  * One artist's one-to-many onto a scalar-pair target, carrying both bulk
  * actions: the mapped-by column is no part of the target's identifier, so the
  * dissociate is legal here, and nothing refuses a one-to-many under the detach.
+ * The association is a prop so the same overridden selection can be fed to a
+ * relation whose target loads rather than references, and to one keyed by an
+ * int.
  *
  * It is also the only host in this family that answers the selection itself.
  * The table's own read narrows through {@see \Sylament\Schemas\Identity\IdentifierConstraint},
  * so a selection entry that is neither a record nor a key cannot come out of it
  * and neither bulk action's shape refusal is reachable from a real host; nor can
- * a well-formed key naming no record, which is what the failure toast is for.
+ * a malformed key or a well-formed one naming no record, which is what the
+ * failure toast is for.
  */
 #[AsLiveComponent(name: 'ArtistCuratedShortcutsBulkTable', template: '@TablesFixtures/components/ArtistCuratedShortcutsBulkTable.html.twig')]
 class ArtistCuratedShortcutsBulkTable implements InteractsWithActions, InteractsWithTable
@@ -43,12 +47,17 @@ class ArtistCuratedShortcutsBulkTable implements InteractsWithActions, Interacts
     public int $artistId = 1;
 
     #[LiveProp]
+    public string $association = 'curatedShortcuts';
+
+    #[LiveProp]
     public bool $fetchesRecords = false;
 
     /**
      * What the host answers instead of the table's own read: `'rows'` an array
-     * where a record or a key belongs, `'stale'` a well-formed key naming no
-     * record, and anything else the table.
+     * where a record or a key belongs, `'int'` an integer where a key belongs,
+     * `'malformed'` a string no record of the target could mint, `'stale'` a
+     * well-formed key naming no record of a target that references, `'staleFind'`
+     * the same for one that loads, and anything else the table.
      */
     #[LiveProp]
     public string $selectionOverride = '';
@@ -63,7 +72,7 @@ class ArtistCuratedShortcutsBulkTable implements InteractsWithActions, Interacts
             ->relationship(function (): ?Relationship {
                 $artist = $this->entityManager->find(Artist::class, $this->artistId);
 
-                return $artist instanceof Artist ? new Relationship($artist, 'curatedShortcuts') : null;
+                return $artist instanceof Artist ? new Relationship($artist, $this->association) : null;
             })
             ->recordTitleAttribute('label')
             ->columns([TextColumn::make('label')])
@@ -75,13 +84,16 @@ class ArtistCuratedShortcutsBulkTable implements InteractsWithActions, Interacts
     }
 
     /**
-     * @return list<object|array<string, mixed>>|list<string>
+     * @return list<object|array<string, mixed>>|list<string>|list<int>
      */
     public function getSelectedTableRecords(bool $shouldFetchSelectedRecords = true): array
     {
         return match ($this->selectionOverride) {
             'rows' => [['label' => 'not a record']],
+            'int' => [7],
+            'malformed' => ['plain~'],
             'stale' => ['spare~missing'],
+            'staleFind' => ['north-hall~autumn'],
             default => $this->selectedTableRecordsThroughTable($shouldFetchSelectedRecords),
         };
     }

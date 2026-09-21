@@ -8,6 +8,7 @@ use Doctrine\ORM\EntityManager;
 use Doctrine\ORM\QueryBuilder;
 use LogicException;
 use Sylament\Forms\Tests\Fixtures\Doctrine\Entity\Handle;
+use Sylament\Forms\Tests\Fixtures\Doctrine\Entity\PostTranslation;
 use Sylament\Forms\Tests\Fixtures\Doctrine\EntityManagerFactory;
 use Sylament\Forms\Validation\ExistingValue;
 use Sylament\Forms\Validation\ExistingValueValidator;
@@ -102,4 +103,11 @@ it('refuses a property the entity does not map', function (): void {
 
     expect(fn (): ConstraintViolationListInterface => existingViolations($entityManager, 'ada', new ExistingValue(Handle::class, 'nope')))
         ->toThrow(LogicException::class, 'not a mapped field');
+});
+
+it('refuses an identifier association as the unmapped field it is, rather than probing by key', function (): void {
+    $entityManager = EntityManagerFactory::create();
+
+    expect(fn (): ConstraintViolationListInterface => existingViolations($entityManager, 1, new ExistingValue(PostTranslation::class, 'post')))
+        ->toThrow(LogicException::class, 'exists() probes [' . PostTranslation::class . '] by [post], which is not a mapped field of that entity. Name a field it maps: [locale], [title], [position].');
 });

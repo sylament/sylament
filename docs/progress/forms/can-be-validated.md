@@ -708,6 +708,19 @@ foreign-class record by name. Widening the key made that strictly safer rather
 than worse: a record whose key is a different **width** now decodes to `null` and
 excludes nothing at all, where before it was a raw bind.
 
+`exists()` probes a **column**, never a key, and that classification is why
+[M7 · 4](../roadmap.md#m7--composite-identifiers) left `ExistingValueValidator`,
+`ProbesRecords` and `UniqueValue`'s own probe builder byte-identical on purpose.
+`createProbeQuery()` admits `getFieldNames()` only, so an identifier
+**association** is refused by name as the unmapped field it is — never probed by
+key — and a scalar identifier half is an ordinary column whose `=` and `IN`
+compare exactly as they did at the base, at every identifier width. The case
+`refuses an identifier association as the unmapped field it is, rather than
+probing by key` in
+[`ExistingValueValidatorTest`](../../../packages/forms/tests/Unit/Validation/ExistingValueValidatorTest.php)
+is what pins it, so a later sweep over the by-key sites does not turn this one
+into a key probe. Only `unique(ignoreRecord:)` moved, and only its exclusion.
+
 `ExistingValue` is the one place a `COUNT` reads better than a limited fetch: an
 array value (a multiple select) is checked as Laravel's `exists` checks it, one
 `IN` probe over the distinct values, violating unless the matched count equals the

@@ -209,6 +209,30 @@ it('refuses a new item whose identifier field the components do not carry, befor
     expect($entityManager->getRepository(PostTranslation::class)->count([]))->toBe(3);
 });
 
+it('leaves the item-key map where a refused save found it', function (): void {
+    $entityManager = $this::getContainer()->get(EntityManagerInterface::class);
+    $post = compositeRepeaterSeedPost($entityManager);
+
+    [$repeater, $schema, $host] = compositeRepeaterOverTranslations($post, withLocale: false);
+    $schema->fill($post);
+
+    // State order and collection order are pulled apart first, so a map read
+    // off the collection is a different array from the keys the state carries.
+    $repeater->getAction($repeater->getMoveUpActionName())?->__invoke(['item' => 'record-1~a=2Eb'])->call();
+
+    $added = compositeRepeaterAddItem($repeater, $host);
+
+    $host->data['translations'][$added]['title'] = 'Untitled';
+
+    $itemKeys = $repeater->getItemKeys();
+
+    expect($itemKeys)->toBe(['record-1~en', 'record-1~a=2Eb', 'record-1~zh=20Hans', $added]);
+
+    expect(fn (): object => $schema->getData())
+        ->toThrow(LogicException::class, 'whose identifier is incomplete, so no record key can be minted for it')
+        ->and($repeater->getItemKeys())->toBe($itemKeys);
+});
+
 it('leaves a blank identifier field the components do carry to the record validation', function (): void {
     $entityManager = $this::getContainer()->get(EntityManagerInterface::class);
     $post = compositeRepeaterSeedPost($entityManager);

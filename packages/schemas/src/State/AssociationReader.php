@@ -333,23 +333,6 @@ class AssociationReader
     }
 
     /**
-     * The field name a single-identifier entity's identifier is mapped under —
-     * for a caller that needs the property name rather than its value.
-     *
-     * @param class-string $class
-     */
-    public function getIdentifierFieldName(string $class): string
-    {
-        $metadata = $this->requireEntityManager()->getClassMetadata($class);
-
-        if ($metadata->isIdentifierComposite) {
-            throw new LogicException(sprintf('Records of [%s] carry a composite identifier, which a relation-backed field cannot key; use single-identifier entities.', $class));
-        }
-
-        return $metadata->getSingleIdentifierFieldName();
-    }
-
-    /**
      * @param class-string $targetClass
      */
     public function createOptionQuery(string $targetClass, string $alias = 'record'): QueryBuilder

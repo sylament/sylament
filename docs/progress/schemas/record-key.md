@@ -127,10 +127,13 @@ whose PHP value prints back to its own component**, which is the promise a
 consumer may build on. It is one-directional: a record mints exactly one key
 once it holds the values its own type reads back — a record built in memory and
 never reloaded can, under a converting type, mint a spelling the decode then
-refuses — while the guarantee that no *other* string resolves that record
-belongs to the database and holds on a binary or case-sensitive collation —
-PostgreSQL's default and SQLite's `BINARY`. Three residuals are recorded rather
-than closed.
+refuses, and a type that reads **only** the database form does the same to a
+record freshly loaded from the database — while the guarantee that no *other*
+string resolves that record belongs to the database and holds on a binary or
+case-sensitive collation — PostgreSQL's default and SQLite's `BINARY`. Four
+residuals are recorded rather than closed; the fourth is
+[a type that cannot read its own printed form](#a-type-that-cannot-read-its-own-printed-form-mints-keys-that-never-decode),
+and it is the one that took something away.
 
 `decimal` is **narrowed, not closed** by its shape check: `10.5` and `10.50`
 still name one record, because nothing here can canonicalise scale; `-0` and
@@ -977,6 +980,40 @@ single `id`. Checking it would mean reading the column's declared width and
 reproducing each platform's limits, which is a per-platform table that would
 drift; it was considered and rejected. The residual is recorded rather than
 hidden.
+
+### A type that cannot read its own printed form mints keys that never decode
+
+The print-back rule asks a component to survive its field's own
+`convertToPHPValue()`. A type whose reader accepts **only the database form**
+fails that by construction: the `uuid_binary` shape, where the column holds
+sixteen raw bytes and the reader is handed those bytes, is the live instance —
+`ramsey/uuid-doctrine`'s, not `symfony/uid`'s, whose types round-trip their
+printed form and are unaffected. `RecordKey::of()` mints the PHP value's
+printed form, `IdentifierFields::toPhpValues()` hands that string back to the
+reader, the reader raises a `ConversionException`, and the decode answers `null`.
+So **every** key such a class mints is refused: a keyed read narrows to nothing
+and a reference is refused by name, on a record that exists and whose key nothing
+forged.
+
+What that costs, and since when, is two different answers. The by-key
+**predicates** — `equals()`, `in()`, `notEquals()` — cost nothing, because the
+base never matched such a column either: an untyped string bind against a binary
+column resolves no row. `getReference()` is the regression, and it is M7 · 4's:
+at the base the printed key went straight to Doctrine and the foreign-key write
+landed wherever the id property admits a string, so a relation-backed `Select` or
+`CheckboxList` saved and a by-key `DetachBulkAction` detached; since the strict
+decode, the save throws and the detach toasts. It is bounded — with the id
+property typed as the value object alone the base already failed with a
+`TypeError`, so only an id property admitting a string ever worked — and no
+fixture in this repo has the shape, which is why no suite sees it.
+
+The remedy is the codec's, and it is a **fallback on `ConversionException`**:
+accept a component that `convertToDatabaseValue()` takes and that prints back
+through the reader afterwards, which would also make the by-key predicates match
+such a column for the first time. It is not a reader-level patch — the reader
+cannot tell this key from `05` without re-implementing the field pipeline — and
+it carries a type matrix of its own, so it is
+[the roadmap's](../roadmap.md#m7--composite-identifiers) rather than this epic's.
 
 ### Identifier order is declaration order, so reordering two `#[Id]` properties invalidates every minted key
 

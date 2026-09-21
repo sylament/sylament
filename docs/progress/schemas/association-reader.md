@@ -235,7 +235,8 @@ fragment of the submitted text — but the two shapes of by-key read differ, and
 the difference is a statement. A by-key **lookup** executes **none**:
 `getReference()` refuses on the decode above, and `Select`'s selected-record
 lookup asks `IdentifierConstraint::equals()`, which answers `null` for a key that
-decodes to nothing, so no query is built at all. A by-key **batch** read is one
+decodes to nothing — `createScopedOptionQuery()` has built a `QueryBuilder` by
+then, so what is never built or run is the statement. A by-key **batch** read is one
 statement narrowed to `1 = 0`: `Select`'s label list hands its scalar entries to
 `IdentifierConstraint::in()`, and a list whose every scalar entry is malformed
 leaves nothing to compare, so the query runs and returns no rows (a list with no
@@ -260,6 +261,18 @@ a one-field class each name no record at zero statements, where an untyped bind
 would have aliased a row on PostgreSQL under emulated prepares or raised `22P02`
 under native ones —
 [the hole the codec exists to close](record-key.md#a-malformed-key-never-reaches-the-database).
+
+One **single-identifier** shape pays for that strictness, and it is a delta beyond
+the ones this epic set out to make. Where a DBAL type's `convertToPHPValue()`
+reads only the database form —
+[a type that cannot read its own printed form](record-key.md#a-type-that-cannot-read-its-own-printed-form-mints-keys-that-never-decode) —
+the decode refuses the very key `getRecordKey()` minted, while the base handed
+that printed key straight to Doctrine and the foreign-key write landed wherever
+the id property admits a string. So a relation-backed `Select` or `CheckboxList`
+now throws on save and a by-key `DetachBulkAction` answers the danger toast where
+the base wrote. The by-key **predicates** are no worse than the base, which never
+matched such a column either; the remedy is the codec's, and the roadmap's ledger
+carries it.
 
 **Then `find()` where any identifier field is an association, and
 `getReference()` everywhere else.** The predicate is
@@ -359,7 +372,7 @@ shows it, so a record relying on one is refused here. The three short-circuits
 cover everything the class itself declares; covering the global case would need an
 opt-out nothing has asked for.
 
-Two callers, both refusing **before anything is written**: `Select`'s
+Two callers, both refusing **before anything is flushed**: `Select`'s
 `createOptionUsing` default, which refuses before `persist()`, and `Repeater`'s
 relationship save, which refuses after the collection write and before the item-key
 map is re-read. Both name the field list that would fix it. Neither is validation —

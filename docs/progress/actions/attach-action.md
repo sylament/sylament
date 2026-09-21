@@ -97,16 +97,15 @@ offered options from, narrowed by
 under the base `sylament_selected_record_keys`, and refuses when fewer records
 come back than keys went in. A key the codec cannot decode is **dropped** by that
 predicate rather than bound, so it resolves nothing and falls into the same count
-check — which is why the refusal names three causes rather than two: the key is
-malformed, outside `recordSelectOptionsQuery()`'s scope, or already attached. The
-check still means what it says at any identifier width, because distinct records
-map to distinct keys by
-[the codec's injectivity](../schemas/record-key.md#invariants). So a key outside `recordSelectOptionsQuery()`'s scope, or one
-naming a record the owner already has, is simply absent from the result and the
-attach throws rather than writing. Filament resolves the same way — its
-`whereIn(...)->get()` on the relationship query is the same idea — and the port
-makes the count check explicit because a silently-dropped key would otherwise
-report success for a write that never happened.
+check — which is why the refusal names three causes rather than two. A key that
+is malformed, one outside `recordSelectOptionsQuery()`'s scope and one naming a
+record the owner already has are all simply absent from the result, so the count
+differs and the attach throws rather than writing. The check still means what it
+says at any identifier width, because distinct records map to distinct keys by
+[the codec's injectivity](../schemas/record-key.md#invariants). Filament resolves
+the same way — its `whereIn(...)->get()` on the relationship query is the same
+idea — and the port makes the count check explicit because a silently-dropped
+key would otherwise report success for a write that never happened.
 
 A submission carrying **no** key at all is refused before that check rather than
 by it, since zero resolved records equals zero submitted keys and the count check

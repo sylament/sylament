@@ -335,9 +335,12 @@ needs the identifier's field names or its arity reads
 whenever it holds the class — the foundation exposes neither, so that nothing
 grows a second, drifting copy of the mapping. `IdentifierFields` carries them
 `@internal` for the two public classes; M7 · 4
-deleted `AssociationReader::getIdentifierFieldName()` with its last caller and
-replaced every one of its seven call sites with an `IdentifierConstraint`
-operation rather than with a member here.
+deleted `AssociationReader::getIdentifierFieldName()` with its last caller. Its
+seven **external** call sites became `IdentifierConstraint` operations rather
+than a member here, while of the four uses inside the reader itself the
+owner-field read became `getOwnerIdentifierField()`, a private
+`$metadata->identifier[0]` — the one replacement that is no operation of this
+foundation at all.
 
 Read the shapes off those signatures in one line each. Every **predicate** method
 binds its values on the `QueryBuilder` it is handed and returns DQL **text** for

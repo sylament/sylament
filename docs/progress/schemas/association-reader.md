@@ -210,7 +210,8 @@ anything up. The reader holds **no** identifier narrowing of its own: the
 `Stringable`/`is_scalar` coercion it used to carry was the fourth hand-written
 copy of one rule, and
 [the codec owns that rule now](record-key.md#the-row-side-and-the-record-side-mint-one-string-and-only-the-codec-may).
-Nothing here branches on the identifier's width or flavour, which is what makes
+Minting a key and finding one branch on nothing — neither `getRecordKey()` nor
+`findRecordKey()` asks the identifier's width or flavour — which is what makes
 "a composite record is a relation target wherever a single-`id` record is" a
 property of the code rather than a claim about it.
 
@@ -229,12 +230,19 @@ codec's stated contract rather than a decision taken here:
   than an error.
 
 Two things the delegation did **not** move, and both are worth stating because a
-reader assumes the opposite. Refusing a key is still free: a malformed key
-executes **no statement**, and both option-list lookups answer "no such record"
-from PHP. And the single-identifier DQL every consumer emits is today's text,
-byte for byte — `IdentifierConstraint` emits `alias.id = :base` and
-`alias.id IN (:base)` unchanged for a one-field class, so nothing that pinned
-those strings moved.
+reader assumes the opposite. Refusing a key is still cheap, and it never binds a
+fragment of the submitted text — but the two shapes of by-key read differ, and
+the difference is a statement. A by-key **lookup** executes **none**:
+`getReference()` refuses on the decode above, and `Select`'s selected-record
+lookup asks `IdentifierConstraint::equals()`, which answers `null` for a key that
+decodes to nothing, so no query is built at all. A by-key **batch** read is one
+statement narrowed to `1 = 0`: `Select`'s label list hands its scalar entries to
+`IdentifierConstraint::in()`, and a list whose every scalar entry is malformed
+leaves nothing to compare, so the query runs and returns no rows (a list with no
+scalar entry at all issues none). And the single-identifier DQL every consumer
+emits is today's text, byte for byte — `IdentifierConstraint` emits
+`alias.id = :base` and `alias.id IN (:base)` unchanged for a one-field class, so
+nothing that pinned those strings moved.
 
 ### `getReference()` decodes first, and then picks its route
 
@@ -736,8 +744,9 @@ primary-key half. The join-entity-with-payload shape — `Article 1—* ArticleT
 
 One predicate answers it —
 `! $target->isManyToMany && in_array($target->mappedBy, $targetMetadata->identifier, true)`
-— at four points, and the first two share one message through one private builder,
-because it is one rule:
+— at four points under two messages: three of them share the associate refusal
+through one private builder, and the detach point carries its own advice, because
+it is one rule:
 
 1. `assertRelationshipAcceptsAssociate()`, called inside the one-to-many arm of
    `createRelationshipCandidateQuery()`, so an `AssociateAction` refuses at the
@@ -786,10 +795,11 @@ carries the row.
 
 Recorded rather than closed: `DetachBulkAction` refuses no one-to-many the way
 its twin does, so a bulk detach over a mapping the reader refuses fails on its
-**first** record — `detach()` runs `assertRelationshipAcceptsDetach()` as its
-first statement — and it fails **inside** the arm's `try`, which turns a developer
-error into the danger toast a stale key produces. The twin raises the same refusal
-up front, outside both `try` blocks, where it propagates.
+**first** record — `detach()` runs `assertRelationshipAcceptsDetach()` as the
+first statement of its one-to-many arm — and it fails **inside** the arm's `try`,
+which turns a developer error into the danger toast a stale key produces. The
+twin raises the same refusal up front, outside both `try` blocks, where it
+propagates.
 
 ### `getReference()` throws where Doctrine returns null
 

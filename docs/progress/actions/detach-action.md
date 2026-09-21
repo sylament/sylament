@@ -201,13 +201,17 @@ depends on the route the reference took, and the two disagree. On
 answers null and the reader's own `LogicException` becomes the failure toast; on
 a one-to-many the reference route reaches the same place by another door, since
 nulling the mapped-by initialises the proxy and Doctrine raises
-`EntityNotFoundException`. But on a **many-to-many over a scalar identifier** —
-the commonest shape there is — the phantom is never initialised: `detach()`'s
-`!==` filter removes nothing, the record is counted, and the arm reports
-success for a row that does not exist
-([above](../schemas/association-reader.md#getreference-throws-where-doctrine-returns-null)).
-Either way it is not a 500. Neither refusal is reachable from a shipped host, so
-both are pinned through a fixture host that overrides `getSelectedTableRecords()`.
+`EntityNotFoundException`. But on an **owning-side many-to-many over a scalar
+identifier** — the commonest shape there is — the phantom is never initialised,
+because `detach()` filters the **owner's** collection by identity and never
+reads the phantom at all: the `!==` filter removes nothing, the record is
+counted, and the arm reports success for a row that does not exist
+([the reader's `getReference()` contract](../schemas/association-reader.md#getreference-throws-where-doctrine-returns-null)).
+An **inverse-side** many-to-many does not get that far — there `detach()` reads
+the related record's mapped-by collection off the phantom, which initialises it,
+so it lands on `EntityNotFoundException` with the one-to-many. Either way it is
+not a 500. Neither refusal is reachable from a shipped host, so both are pinned
+through a fixture host that overrides `getSelectedTableRecords()`.
 
 ### The bulk detach is atomic where Filament's fetching arm is per-record
 

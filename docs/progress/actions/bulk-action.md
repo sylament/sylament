@@ -158,8 +158,11 @@ M7 · 1, and `DetachBulkAction` and `DissociateBulkAction` since
 reader's by-key reference, the dissociate through a chunked `in()` on its
 `UPDATE` builder. Where a body takes the selection's **shape** for granted the
 refusal now sits outside its `try`, so a host feeding neither entities nor keys
-is a developer error rather than a danger toast; both relationship arms moved
-theirs with the conversion.
+is a developer error rather than a danger toast — though only in part.
+`DetachBulkAction` has one pre-walk outside its `try`, covering both shapes it
+accepts; `DissociateBulkAction` moved only its **by-key** walk, and its fetching
+arm still raises *can only dissociate entities* inside the `try`, where it
+becomes the danger toast.
 
 ### The post-call deselect reaches its host through the nullable accessor
 

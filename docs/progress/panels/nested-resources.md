@@ -660,7 +660,7 @@ unlinked, which additionally makes a non-adjacent repeat impossible.
 A nested resource scopes every read to its parent through
 [the reader's relationship query](#the-parent-scope-is-the-readers-relationship-query-not-a-predicate-we-write),
 and that query binds the parent **record** as a query parameter — which
-Doctrine refuses for a record keyed by anything but one scalar field. So
+Doctrine refuses for a record carrying a **composite** identifier. So
 `BelongsToParent` asks first, in panel vocabulary rather than the relation
 layer's:
 
@@ -671,11 +671,18 @@ layer's:
 The predicate is *keyable by the relation layer*, not `isIdentifierComposite`:
 `! $metadata->isIdentifierComposite && ! $metadata->hasAssociation($metadata->getSingleIdentifierFieldName())`
 is what passes, so a **single derived identity** — one `#[Id]` association and
-nothing else, which Doctrine calls non-composite — is refused too. Deleting the
-guard would not remove the refusal, only move it: one layer down it arrives in
-forms vocabulary, as *a relation-backed field cannot key* the record, and for
-that single derived identity nothing refuses at all and the failure surfaces as
-an unrelated *is not a printable value*.
+nothing else, which Doctrine calls non-composite — is refused too. Since
+[M7 · 4](../roadmap.md#m7--composite-identifiers) this predicate is **wider than
+the reader's**, and the two disagree about exactly that flavour. Deleting the
+guard would move a **composite** parent's refusal one layer down onto
+`AssociationReader::getRelationshipOwner()`, which raises its own named message —
+*Records of [%s] carry a composite identifier, which cannot own a relationship
+query yet: Doctrine refuses to bind such a record as a query parameter. Scope the
+query from a single-identifier owner.* — while a **single derived identity**
+parent would not be refused at all: it binds as an entity parameter and scopes
+correctly on both arms of both queries from M7 · 4 on. Both panels guards are
+[M7 · 5](../roadmap.md#m7--composite-identifiers)'s to delete, together with the
+reader's own owner guard.
 
 Two throw sites, one predicate, one message.
 `getParentScopedRecordQuery()` covers every read — a nested record page, a

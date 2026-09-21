@@ -317,11 +317,11 @@ class AssociationReader
 
     /**
      * Whether the record is missing an identifier component the application has
-     * to assign — asked only of a composite identifier or one carrying an
-     * association. A plain single scalar
-     * identifier is never refused here: the relation layer has always keyed the
-     * class, and an application may fill such a field from anywhere, including a
-     * listener no class-level mapping shows.
+     * to assign — asked only of an identifier of more than one field, or one
+     * carrying an association. A plain single scalar identifier is never refused
+     * here: the relation layer has always keyed the class, and an application may
+     * fill such a field from anywhere, including a listener no class-level mapping
+     * shows.
      */
     public function hasIncompleteAssignedIdentifier(object $entity): bool
     {

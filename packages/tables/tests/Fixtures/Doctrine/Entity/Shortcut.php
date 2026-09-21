@@ -22,6 +22,27 @@ class Shortcut
     #[ORM\OneToMany(targetEntity: ShortcutHit::class, mappedBy: 'shortcut')]
     private Collection $hits;
 
+    /**
+     * The owning side of a many-to-many whose target is the single-identifier
+     * record: the composite record holds the join table, so the other class
+     * reaches this one through a mapping that names a `mappedBy`.
+     *
+     * @var Collection<int, Artist>
+     */
+    #[ORM\ManyToMany(targetEntity: Artist::class, inversedBy: 'billedShortcuts')]
+    #[ORM\JoinTable(name: 'shortcut_artist')]
+    #[ORM\JoinColumn(name: 'shortcut_host', referencedColumnName: 'host')]
+    #[ORM\JoinColumn(name: 'shortcut_path', referencedColumnName: 'path')]
+    #[ORM\InverseJoinColumn(name: 'artist_id', referencedColumnName: 'id')]
+    private Collection $troupes;
+
+    /**
+     * An ordinary nullable to-one that is no part of the identifier, so this
+     * record can be pointed at another owner without its key moving.
+     */
+    #[ORM\ManyToOne(targetEntity: Artist::class, inversedBy: 'curatedShortcuts')]
+    private ?Artist $curator = null;
+
     #[ORM\Id]
     #[ORM\Column(length: 100)]
     private string $host = '';
@@ -42,6 +63,7 @@ class Shortcut
     public function __construct()
     {
         $this->hits = new ArrayCollection();
+        $this->troupes = new ArrayCollection();
     }
 
     public function getHost(): string
@@ -100,5 +122,35 @@ class Shortcut
     public function getHits(): Collection
     {
         return $this->hits;
+    }
+
+    public function getCurator(): ?Artist
+    {
+        return $this->curator;
+    }
+
+    public function setCurator(?Artist $curator): void
+    {
+        $this->curator = $curator;
+    }
+
+    /**
+     * @return Collection<int, Artist>
+     */
+    public function getTroupes(): Collection
+    {
+        return $this->troupes;
+    }
+
+    public function addTroupe(Artist $troupe): void
+    {
+        if (!$this->troupes->contains($troupe)) {
+            $this->troupes->add($troupe);
+        }
+    }
+
+    public function removeTroupe(Artist $troupe): void
+    {
+        $this->troupes->removeElement($troupe);
     }
 }

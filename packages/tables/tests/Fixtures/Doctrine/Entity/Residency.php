@@ -22,6 +22,20 @@ class Residency
     #[ORM\OneToMany(targetEntity: ResidencyShow::class, mappedBy: 'residency')]
     private Collection $shows;
 
+    /**
+     * The owning side of a many-to-many the single-identifier class reads back
+     * through a `mappedBy`, so the derived-identity flavour is reachable from
+     * both arms.
+     *
+     * @var Collection<int, Artist>
+     */
+    #[ORM\ManyToMany(targetEntity: Artist::class, inversedBy: 'bookedResidencies')]
+    #[ORM\JoinTable(name: 'residency_artist')]
+    #[ORM\JoinColumn(name: 'residency_venue_id', referencedColumnName: 'venue_id')]
+    #[ORM\JoinColumn(name: 'residency_season', referencedColumnName: 'season')]
+    #[ORM\InverseJoinColumn(name: 'artist_id', referencedColumnName: 'id')]
+    private Collection $bookers;
+
     #[ORM\Id]
     #[ORM\ManyToOne]
     #[ORM\JoinColumn(referencedColumnName: 'handle')]
@@ -43,6 +57,7 @@ class Residency
     public function __construct()
     {
         $this->shows = new ArrayCollection();
+        $this->bookers = new ArrayCollection();
     }
 
     public function getVenue(): ?Venue
@@ -101,5 +116,25 @@ class Residency
     public function getShows(): Collection
     {
         return $this->shows;
+    }
+
+    /**
+     * @return Collection<int, Artist>
+     */
+    public function getBookers(): Collection
+    {
+        return $this->bookers;
+    }
+
+    public function addBooker(Artist $booker): void
+    {
+        if (!$this->bookers->contains($booker)) {
+            $this->bookers->add($booker);
+        }
+    }
+
+    public function removeBooker(Artist $booker): void
+    {
+        $this->bookers->removeElement($booker);
     }
 }

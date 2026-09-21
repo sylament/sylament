@@ -23,6 +23,23 @@ class Locker
     #[ORM\OneToMany(targetEntity: LockerItem::class, mappedBy: 'locker')]
     private Collection $items;
 
+    /**
+     * The inverse of a to-one that is half {@see LockerLease}'s identifier, so a
+     * relationship exists whose records cannot be pointed at another owner
+     * without their primary key moving.
+     *
+     * @var Collection<int, LockerLease>
+     */
+    #[ORM\OneToMany(targetEntity: LockerLease::class, mappedBy: 'locker')]
+    private Collection $leases;
+
+    /**
+     * An ordinary nullable to-one, so this record can be associated and
+     * dissociated while its own identifier stays put.
+     */
+    #[ORM\ManyToOne(targetEntity: Artist::class, inversedBy: 'keptLockers')]
+    private ?Artist $keeper = null;
+
     public function __construct(
         #[ORM\Id]
         #[ORM\Column(type: LockerCodeType::NAME)]
@@ -31,6 +48,7 @@ class Locker
         private string $label
     ) {
         $this->items = new ArrayCollection();
+        $this->leases = new ArrayCollection();
     }
 
     public function getCode(): string
@@ -49,5 +67,35 @@ class Locker
     public function getItems(): Collection
     {
         return $this->items;
+    }
+
+    /**
+     * @return Collection<int, LockerLease>
+     */
+    public function getLeases(): Collection
+    {
+        return $this->leases;
+    }
+
+    public function addLease(LockerLease $lease): void
+    {
+        if (!$this->leases->contains($lease)) {
+            $this->leases->add($lease);
+        }
+    }
+
+    public function removeLease(LockerLease $lease): void
+    {
+        $this->leases->removeElement($lease);
+    }
+
+    public function getKeeper(): ?Artist
+    {
+        return $this->keeper;
+    }
+
+    public function setKeeper(?Artist $keeper): void
+    {
+        $this->keeper = $keeper;
     }
 }

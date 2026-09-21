@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace Sylament\Panels\Resources\Concerns;
 
+use Doctrine\ORM\EntityManagerInterface;
 use LogicException;
+use ReflectionClass;
 use Sylament\Actions\Action;
 use Sylament\Actions\ActionGroup;
 use Sylament\Actions\CreateAction;
@@ -16,6 +18,7 @@ use Sylament\Panels\Resources\ResourceRegistry;
 use Sylament\Schemas\Schema;
 use Sylament\Schemas\State\Relationship;
 use Sylament\Tables\Table;
+use Symfony\Contracts\Service\Attribute\Required;
 
 use function Sylament\Support\filled;
 use function Symfony\Component\String\u;
@@ -43,6 +46,14 @@ trait InteractsWithRelationshipTable
      * @var class-string<Resource>|null
      */
     protected static ?string $relatedResource = null;
+
+    private ?EntityManagerInterface $relationshipTableEntityManager = null;
+
+    #[Required]
+    public function setRelationshipTableEntityManager(EntityManagerInterface $entityManager): void
+    {
+        $this->relationshipTableEntityManager = $entityManager;
+    }
 
     /**
      * @return class-string<Resource>|null
@@ -84,7 +95,11 @@ trait InteractsWithRelationshipTable
 
     public function getRelationship(): Relationship
     {
-        return new Relationship($this->getOwnerRecord(), static::getRelationshipName());
+        $ownerRecord = $this->getOwnerRecord();
+
+        $this->assertOwnerRecordIsScopeable($ownerRecord);
+
+        return new Relationship($ownerRecord, static::getRelationshipName());
     }
 
     abstract public function getOwnerRecord(): object;
@@ -261,6 +276,33 @@ trait InteractsWithRelationshipTable
     }
 
     abstract protected function getResourceRegistry(): ResourceRegistry;
+
+    /**
+     * @throws LogicException where the owner record's class is keyed by anything
+     *                        but one scalar identifier field
+     */
+    private function assertOwnerRecordIsScopeable(object $ownerRecord): void
+    {
+        $entityManager = $this->relationshipTableEntityManager;
+        $ownerClass = $ownerRecord::class;
+
+        // A host built outside the container and an owner Doctrine describes
+        // nothing for are the relation layer's own refusals to make, in its own
+        // words — this one only sorts the owners it *can* describe.
+        if (! $entityManager instanceof EntityManagerInterface
+            || $entityManager->getMetadataFactory()->isTransient($ownerClass)
+            || new ReflectionClass($ownerRecord)->isAnonymous()) {
+            return;
+        }
+
+        $metadata = $entityManager->getClassMetadata($ownerClass);
+
+        if (! $metadata->isIdentifierComposite && ! $metadata->hasAssociation($metadata->getSingleIdentifierFieldName())) {
+            return;
+        }
+
+        throw new LogicException(sprintf('The relationship table [%s] lists an association of [%s], whose records are not keyed by a single scalar identifier; scoping a relationship table to such an owner record is not built yet.', static::class, $ownerClass));
+    }
 
     /**
      * The owner as the related resource's own parent parameter, where that

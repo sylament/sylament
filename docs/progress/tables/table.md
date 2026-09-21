@@ -1649,8 +1649,21 @@ Paging is the third mechanism that correlates by identifier, and it is not
 here: a query joining a collection cannot be windowed by rows at all, so a
 keyed root takes
 [a two-step read of its own](has-table.md#a-keyed-root-that-joins-a-collection-pages-in-two-statements-because-doctrines-walkers-key-by-one-column).
-Composite identifiers are still out of the relation layer on the schemas side,
-which is [M7 · 4](../roadmap.md#m7--composite-identifiers)'s.
+The relation layer caught up on the schemas side with
+[M7 · 4](../roadmap.md#m7--composite-identifiers), so
+`relationship()` now lists a composite **target** as readily as a composite
+root: its many-to-many arm is a correlated `EXISTS` built on the same predicate
+builder, per identifier field
+([association-reader.md](../schemas/association-reader.md#the-relationship-query-is-rooted-at-the-target-and-needs-no-inverse-mapping)).
+A composite **owner** of either arm stays refused by name until
+[M7 · 5](../roadmap.md#m7--composite-identifiers), since Doctrine will not bind
+such a record as a query parameter. One asymmetry rides along and is deliberate:
+`getAllSelectableTableRecordKeys()` plucks off the **filtered** query, which
+carries no ordering at all, so a select-all over a relation-scoped table
+enumerates keys in whatever order the database returns them while the rows render
+in the mapping's `#[OrderBy]` order. The selection is a set and is read as one;
+no assertion on it may depend on the rendered order, or on the order one platform
+happens to give.
 
 ## Divergences
 

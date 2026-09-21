@@ -12,6 +12,8 @@ use Sylament\Panels\Tests\Fixtures\Resources\ColophonLineResource;
 use Sylament\Panels\Tests\Fixtures\Resources\ColophonResource;
 use Sylament\Panels\Tests\Fixtures\Resources\EditionResource;
 use Sylament\Panels\Tests\Fixtures\Resources\FlatStampResource;
+use Sylament\Panels\Tests\Fixtures\Resources\GalleryImprintResource;
+use Sylament\Panels\Tests\Fixtures\Resources\GalleryResource;
 use Sylament\Panels\Tests\Fixtures\Resources\ImprintResource;
 use Sylament\Panels\Tests\Fixtures\Resources\SeparatorProbeResource;
 use Sylament\Panels\Tests\Fixtures\Resources\StampMarkResource;
@@ -42,6 +44,8 @@ final class KeyPanelProvider extends PanelProvider
                 ColophonLineResource::class,
                 EditionResource::class,
                 SeparatorProbeResource::class,
+                GalleryResource::class,
+                GalleryImprintResource::class,
             ]);
     }
 }

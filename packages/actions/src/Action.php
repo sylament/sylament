@@ -7,6 +7,8 @@ namespace Sylament\Actions;
 use BackedEnum;
 use Closure;
 use Doctrine\ORM\QueryBuilder;
+use Doctrine\Persistence\ObjectManager;
+use ReflectionClass;
 use Sylament\Actions\Concerns\BelongsToGroup;
 use Sylament\Actions\Concerns\BelongsToLiveComponent;
 use Sylament\Actions\Concerns\BelongsToSchemaComponent;
@@ -590,7 +592,9 @@ class Action extends ViewComponent
      * A table-bound action carries the key the table itself minted for the
      * record — a composite identifier included — so the mount resolves through
      * `getTableRecord()` against the same string the row rendered. Every other
-     * action keeps the literal `id` reading.
+     * action keeps the literal `id` reading, and only for a record that reading
+     * names whole: a host resolves the key by the record's own identity, which
+     * one field out of several never spells.
      */
     private function resolveContextRecordKey(): ?string
     {
@@ -602,7 +606,32 @@ class Action extends ViewComponent
             return $table->getRecordKey($record);
         }
 
+        if (is_object($record) && ! $this->isRecordKeyedByIdAlone($record)) {
+            return null;
+        }
+
         return $this->resolveRecordKey($record);
+    }
+
+    /**
+     * Whether the literal `id` property is the record's whole identity — true
+     * wherever no mapping answers: an anonymous class, which Doctrine refuses
+     * to describe at all, a class no manager maps, and a record reached without
+     * a registry. The literal reading is then the only identity there is.
+     */
+    private function isRecordKeyedByIdAlone(object $record): bool
+    {
+        if (new ReflectionClass($record)->isAnonymous()) {
+            return true;
+        }
+
+        $manager = $this->managerRegistry?->getManagerForClass($record::class);
+
+        if (! $manager instanceof ObjectManager) {
+            return true;
+        }
+
+        return $manager->getClassMetadata($record::class)->getIdentifier() === ['id'];
     }
 
     public function getClone(): static

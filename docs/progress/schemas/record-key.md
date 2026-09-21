@@ -31,8 +31,10 @@ tables' [`HasTable`](../tables/has-table.md#object-records-are-keyed-by-a-readab
 [`DeleteBulkAction`](../actions/delete-action.md#the-by-key-arm-is-a-dql-delete-over-the-plucked-keys)
 and [`Action::getContext()`](../actions/action.md#getcontext-drops-the-record-model-gate).
 M7 · 2 added tables' `Query\AggregateQuery`, `Query\RelationConstraint` and
-`Query\FetchJoinPageQuery`, and found nothing here short. M7 · 3–5 add
-consumers; none of them reshapes what is below.
+`Query\FetchJoinPageQuery`, and found nothing here short. M7 · 3 added panels'
+[`Resources\Resource`](../panels/README.md#a-record-is-resolved-through-the-resources-own-query)
+— the `{record}` route key both ways — and found nothing here short either.
+M7 · 4–5 add consumers; none of them reshapes what is below.
 
 **Status:** done — see the [status vocabulary](../README.md#statuses).
 
@@ -62,7 +64,7 @@ and/or **diverges** → the permanent note in [Divergences](#divergences).
 ## Contract
 
 What a consumer writes, and what it gets back. This section is the interface:
-M7 · 3–5 build against it unchanged, and an epic that finds it short records the
+M7 · 4–5 build against it unchanged, and an epic that finds it short records the
 addition **here** rather than reshaping what landed.
 
 ### The grammar
@@ -191,7 +193,7 @@ picking a delimiter and hoping, as every comparable ecosystem does.
 
 | Context | Mechanism | Forbidden | Evidence |
 | --- | --- | --- | --- |
-| One URL path segment | `RouteCompiler` compiles `{record}` to `[^/]+`; `UrlGenerator` maps `'%252F' => '%2F'` out of `rawurlencode`, and the matcher `rawurldecode`s the whole path **before** matching | `/`, and the literal sequence `%2F` — which round-trips into a slash and 404s with no error | [`RouteCompiler.php:165-171`](../../../vendor/symfony/routing/RouteCompiler.php), [`Generator/UrlGenerator.php:55-74`](../../../vendor/symfony/routing/Generator/UrlGenerator.php) and `:201`, [`Matcher/UrlMatcher.php:73`](../../../vendor/symfony/routing/Matcher/UrlMatcher.php) |
+| One URL path segment | `RouteCompiler` compiles `{record}` to `[^/]+`; `UrlGenerator` maps `'%252F' => '%2F'` out of `rawurlencode`, and the matcher `rawurldecode`s the whole path **before** matching | `/`, and the literal sequence `%2F` — which round-trips into a slash and 404s with no error; and, wherever the route's static text after the placeholder opens on a `RouteCompiler::SEPARATORS` character, that character too, since the compiler's default pattern excludes it — `-`, `_`, `~` and `=` are all in that set, which is why [panels narrows the placeholder](../panels/custom-pages.md#the-loader-narrows-a-record-placeholder-a-separator-follows-because-the-compilers-default-excludes-it) | [`RouteCompiler.php:165-171`](../../../vendor/symfony/routing/RouteCompiler.php), [`Generator/UrlGenerator.php:55-74`](../../../vendor/symfony/routing/Generator/UrlGenerator.php) and `:201`, [`Matcher/UrlMatcher.php:73`](../../../vendor/symfony/routing/Matcher/UrlMatcher.php) |
 | A dotted state path — `Repeater` keys a relationship item `record-<key>` | `PropertyAccessor` splits every path on `.`, at eight sites | `.`, which does not error — it **re-addresses the state tree one level deeper** | [`PropertyAccessor.php`](../../../packages/schemas/src/State/PropertyAccessor.php) `:30`, `:55`, `:86`, `:120`, `:263`, `:284`, `:303`, `:317` |
 | The live `data-model` directive the state path is embedded in | UX's directive parser is a character state machine reserving `(`, `)`, `,`, `\|` and space; `normalizeModelName` rewrites `[` and `]` into `.` | `( ) , \| [ ]` and space | [`HasStateBindingModifiers.php:54-72`](../../../packages/schemas/src/Components/Concerns/HasStateBindingModifiers.php); `vendor/symfony/ux-live-component/assets/dist/live_controller.js:204-240`, `:264-266` |
 | The state-path sanitiser, in **both** `HasState` traits | a `preg_replace` that **strips** rather than refuses, so two records could share one path | `< > " '` `` ` `` and C0/DEL | [`Concerns/HasState.php:33-41`](../../../packages/schemas/src/Concerns/HasState.php), [`Components/Concerns/HasState.php:67-75`](../../../packages/schemas/src/Components/Concerns/HasState.php) |
@@ -630,8 +632,8 @@ written against a passing test:
 - **The codec owns the `mixed` → string narrowing for an entity's identifier.**
   Four hand-written copies of it existed — `HasTable`'s query arm,
   `pluckTableRecordKeys()`'s inline closure, `AssociationReader::findRecordKey()`
-  and `Resource::getRecordRouteKey()`. M7 · 1 replaced the first two; M7 · 3
-  replaces `Resource`'s and M7 · 4 the reader's. `HasTable::toRecordKey()` itself
+  and `Resource::getRecordRouteKey()`. M7 · 1 replaced the first two and M7 · 3
+  the third; M7 · 4 replaces the reader's. `HasTable::toRecordKey()` itself
   stays, for the lanes that have no mapping to ask — array records and the `id`
   convention — and it is a deliberately **narrower** copy of the same rule:
   `printable()` additionally unwraps a `BackedEnum`, normalises a `bool` to
@@ -721,10 +723,12 @@ And a `DriverException` is not an `HttpExceptionInterface`, so
 
 That 500 is still live wherever a client-supplied key is bound outside the table
 lane, and naming those here is the point.
-`Resource::resolveRecordRouteBinding()` binds the raw `{record}` segment untyped
-and never reaches this decode, so `/admin/articles/abc/edit` remains a 500 on
-PostgreSQL and `/admin/articles/05/edit` still resolves article 5; converting the
-panel's route binding is **[M7 · 3](../roadmap.md#m7--composite-identifiers)'s**.
+`Resource::resolveRecordRouteBinding()` was one:
+**[M7 · 3](../roadmap.md#m7--composite-identifiers)** routed its default arm
+through this decode, so `/admin/articles/abc/edit` is a 404 that runs no
+statement and `/admin/articles/05/edit` no longer resolves article 5 — while its
+`$recordRouteKeyName` arm binds one named column raw and
+[keeps the 500](../panels/README.md#a-custom-recordroutekeyname-names-one-column-and-the-codec-never-sees-it).
 The relation layer binds untyped too, and is
 **[M7 · 4](../roadmap.md#m7--composite-identifiers)'s**: a relationship
 `Select`'s selected-record and option-label lookups and `AttachAction`,

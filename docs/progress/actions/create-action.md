@@ -88,8 +88,10 @@ field the association fills reads **unset** until the join is made, and
 Doctrine's `AssignedGenerator` throws `EntityMissingAssignedId` the moment
 `persist()` reads one — so a record whose identifier association *is* the
 relationship cannot be persisted before it is attached.
-`CreateRecord::handleRecordCreation()` has always ordered it that way and says
-why; this arm now matches it. `persist()` stays explicit
+`CreateRecord::handleRecordCreation()` has always ordered it that way, though
+for a different reason — its docblock names an association the mapping refuses
+to leave empty, which would fail the write rather than the form — and this arm
+now matches the order for both. `persist()` stays explicit
 because the membership write is not a cascade: the owner's association may
 declare none, and an unpersisted record that a collection merely holds is not
 inserted by a mapping that does not cascade. The attach runs on the object

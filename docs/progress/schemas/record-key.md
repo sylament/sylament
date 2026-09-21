@@ -33,7 +33,12 @@ and [`Action::getContext()`](../actions/action.md#getcontext-drops-the-record-mo
 M7 · 2 added tables' `Query\AggregateQuery`, `Query\RelationConstraint` and
 `Query\FetchJoinPageQuery`, and found nothing here short. M7 · 3 added panels'
 [`Resources\Resource`](../panels/README.md#a-record-is-resolved-through-the-resources-own-query)
-— the `{record}` route key both ways — and found nothing here short either.
+— the `{record}` route key both ways — consuming `of()` and `equals()` as they
+landed and needing nothing more for the **default** arm. It did find one
+addition, and left it to a later epic: closing the custom `$recordRouteKeyName`
+arm needs a typed bind with a print-back compare against a *named column*,
+which is not an operation this file exposes
+([why it is still open](../panels/README.md#a-custom-recordroutekeyname-names-one-column-and-the-codec-never-sees-it)).
 M7 · 4–5 add consumers; none of them reshapes what is below.
 
 **Status:** done — see the [status vocabulary](../README.md#statuses).
@@ -108,10 +113,13 @@ in full.
 
 Together they give **exactly one string per record for every identifier type
 whose PHP value prints back to its own component**, which is the promise a
-consumer may build on. It is one-directional: a record always mints exactly one
-key, while the guarantee that no *other* string resolves that record belongs to
-the database and holds on a binary or case-sensitive collation — PostgreSQL's
-default and SQLite's `BINARY`. Three residuals are recorded rather than closed.
+consumer may build on. It is one-directional: a record mints exactly one key
+once it holds the values its own type reads back — a record built in memory and
+never reloaded can, under a converting type, mint a spelling the decode then
+refuses — while the guarantee that no *other* string resolves that record
+belongs to the database and holds on a binary or case-sensitive collation —
+PostgreSQL's default and SQLite's `BINARY`. Three residuals are recorded rather
+than closed.
 
 `decimal` is **narrowed, not closed** by its shape check: `10.5` and `10.50`
 still name one record, because nothing here can canonicalise scale; `-0` and

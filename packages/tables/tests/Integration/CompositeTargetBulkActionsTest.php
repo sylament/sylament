@@ -296,6 +296,7 @@ it('detaches an integer selection entry, which the walk before the try casts to 
     $entityManager->persist($song);
     $ada->addSong($song);
     $entityManager->flush();
+    $entityManager->clear();
 
     compositeBulkCallOnOverridingHost($client, 'detach', $props);
 

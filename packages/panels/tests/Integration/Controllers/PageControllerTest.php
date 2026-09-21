@@ -67,6 +67,27 @@ it('passes route parameters to the page component as props', function (): void {
         ->and($crawler->filter('[data-probe-record="41"]')->count())->toBe(1);
 });
 
+/**
+ * The key alphabet survives the controller's own read: nothing between the
+ * matcher and `mount()` decodes, casts or splits it, which is why a composite
+ * key needs no record fixture to be pinned end to end.
+ */
+it('hands a page a composite key exactly as the path spells it', function (): void {
+    $client = $this::getContainer()->get('test.client');
+    $crawler = $client->request('GET', '/probe/articles/1~2/probe');
+
+    expect($client->getResponse()->getStatusCode())->toBe(200)
+        ->and($crawler->filter('[data-probe-record="1~2"]')->count())->toBe(1);
+});
+
+it('hands a nested page a composite parent key beside a composite record key', function (): void {
+    $client = $this::getContainer()->get('test.client');
+    $crawler = $client->request('GET', '/nest/chapters/1~2/verses/a=3Db~c=7Cd/parent-probe');
+
+    expect($client->getResponse()->getStatusCode())->toBe(200)
+        ->and($crawler->filter('[data-probe-record="a=3Db~c=7Cd"][data-probe-parents="chapter=1~2"]')->count())->toBe(1);
+});
+
 it('leaves a resource index page without a record prop', function (): void {
     $client = $this::getContainer()->get('test.client');
     $crawler = $client->request('GET', '/probe/articles');

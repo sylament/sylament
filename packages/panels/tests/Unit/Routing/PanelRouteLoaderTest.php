@@ -23,7 +23,9 @@ use Sylament\Panels\Tests\Fixtures\Resources\ChapterResource;
 use Sylament\Panels\Tests\Fixtures\Resources\LineResource;
 use Sylament\Panels\Tests\Fixtures\Resources\Pages\EditVerse;
 use Sylament\Panels\Tests\Fixtures\Resources\Pages\RecordProbePage;
+use Sylament\Panels\Tests\Fixtures\Resources\Pages\SeparatorProbePage;
 use Sylament\Panels\Tests\Fixtures\Resources\ProbeResource;
+use Sylament\Panels\Tests\Fixtures\Resources\SeparatorProbeResource;
 use Sylament\Panels\Tests\Fixtures\Resources\VerseResource;
 use Sylament\Schemas\State\AssociationReader;
 use Sylament\Schemas\State\PropertyAccessor;
@@ -32,6 +34,7 @@ use Symfony\Component\DependencyInjection\ServiceLocator;
 use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Component\PropertyAccess\PropertyAccess;
 use Symfony\Component\Routing\Generator\UrlGenerator;
+use Symfony\Component\Routing\Matcher\UrlMatcher;
 use Symfony\Component\Routing\RequestContext;
 use Symfony\Component\Routing\RouteCollection;
 
@@ -147,6 +150,90 @@ final class DuplicateParameterResource extends Resource
 }
 
 /**
+ * Registers the bare record path `SeparatorProbeResource` leaves out, because a
+ * bare one registered beside its siblings would match `/5-preview` whole.
+ */
+final class CompositeRouteBareRecordResource extends Resource
+{
+    protected static ?string $recordClass = Article::class;
+
+    protected static ?string $slug = 'bares';
+
+    public function getPages(): array
+    {
+        return ['view' => new PageRegistration(SeparatorProbePage::class, '/{record}')];
+    }
+}
+
+/**
+ * Takes the placeholders of the three path shapes whose record placeholder
+ * shares its own path segment with a second one.
+ */
+final class CompositeRoutePlaceholderSegmentPage extends Page
+{
+    public ?string $record = null;
+
+    public ?string $x = null;
+
+    public ?string $locale = null;
+
+    public ?string $format = null;
+}
+
+final class CompositeRoutePlaceholderSegmentResource extends Resource
+{
+    protected static ?string $recordClass = Article::class;
+
+    protected static ?string $slug = 'segments';
+
+    public function getPages(): array
+    {
+        return [
+            'adjacent' => new PageRegistration(CompositeRoutePlaceholderSegmentPage::class, '/{record}{x}-y'),
+            'locale' => new PageRegistration(CompositeRoutePlaceholderSegmentPage::class, '/{record}-{locale}'),
+            'format' => new PageRegistration(CompositeRoutePlaceholderSegmentPage::class, '/{record}.{format}'),
+        ];
+    }
+}
+
+/**
+ * Two record paths whose static text overlaps, the shorter registered first,
+ * so a URL spelling the longer one meets the shorter one's route on the way.
+ */
+final class CompositeRouteOverlapResource extends Resource
+{
+    protected static ?string $recordClass = Article::class;
+
+    protected static ?string $slug = 'overlaps';
+
+    public function getPages(): array
+    {
+        return [
+            'short' => new PageRegistration(SeparatorProbePage::class, '/{record}-x'),
+            'long' => new PageRegistration(SeparatorProbePage::class, '/{record}-y-x'),
+        ];
+    }
+}
+
+/**
+ * A nested resource carrying a separator path of its own, where the parent key
+ * travels beside the record on one path.
+ */
+final class CompositeRouteNestedSeparatorResource extends Resource
+{
+    protected static ?string $recordClass = Verse::class;
+
+    protected static ?string $parentResource = ChapterResource::class;
+
+    protected static ?string $slug = 'dashed-verses';
+
+    public function getPages(): array
+    {
+        return ['dash' => new PageRegistration(SeparatorProbePage::class, '/{record}-preview')];
+    }
+}
+
+/**
  * @param array<class-string<Resource>, Resource> $resources
  */
 function loaderFor(PanelProvider $provider, array $resources = []): PanelRouteLoader
@@ -200,6 +287,43 @@ function nestedResourceLoader(): PanelRouteLoader
         VerseResource::class => new VerseResource(),
         LineResource::class => new LineResource(),
     ]);
+}
+
+function compositeRouteSeparatorRoutes(): RouteCollection
+{
+    $provider = new class extends PanelProvider {
+        public function panel(Panel $panel): Panel
+        {
+            return $panel->id('sep')->path('sep')->resources([
+                SeparatorProbeResource::class,
+                CompositeRouteBareRecordResource::class,
+                CompositeRoutePlaceholderSegmentResource::class,
+                CompositeRouteOverlapResource::class,
+            ]);
+        }
+    };
+
+    return loaderFor($provider, [
+        SeparatorProbeResource::class => new SeparatorProbeResource(),
+        CompositeRouteBareRecordResource::class => new CompositeRouteBareRecordResource(),
+        CompositeRoutePlaceholderSegmentResource::class => new CompositeRoutePlaceholderSegmentResource(),
+        CompositeRouteOverlapResource::class => new CompositeRouteOverlapResource(),
+    ])();
+}
+
+function compositeRouteNestedRoutes(): RouteCollection
+{
+    $provider = new class extends PanelProvider {
+        public function panel(Panel $panel): Panel
+        {
+            return $panel->id('nest')->path('nest')->resources([ChapterResource::class, CompositeRouteNestedSeparatorResource::class]);
+        }
+    };
+
+    return wiredLoaderFor($provider, [
+        ChapterResource::class => new ChapterResource(),
+        CompositeRouteNestedSeparatorResource::class => new CompositeRouteNestedSeparatorResource(),
+    ])();
 }
 
 function probeResourceLoader(): PanelRouteLoader
@@ -446,6 +570,93 @@ it('admits a placeholder a public property of the page answers', function (): vo
 
     expect(loaderFor($provider)()->get('sylament.admin.pages.property-placeholder-page')?->getPath())
         ->toBe('/admin/{thing}');
+});
+
+it('narrows a record placeholder a separator follows, and no other one', function (): void {
+    $routes = compositeRouteSeparatorRoutes();
+
+    expect($routes->get('sylament.sep.resources.separator-probes.dash')?->getRequirements())->toBe(['record' => '[^/]+'])
+        ->and($routes->get('sylament.sep.resources.separator-probes.tilde')?->getRequirements())->toBe(['record' => '[^/]+'])
+        ->and($routes->get('sylament.sep.resources.separator-probes.underscore')?->getRequirements())->toBe(['record' => '[^/]+'])
+        ->and($routes->get('sylament.sep.resources.separator-probes.equals')?->getRequirements())->toBe(['record' => '[^/]+'])
+        ->and($routes->get('sylament.sep.resources.separator-probes.dot')?->getRequirements())->toBe(['record' => '[^/]+'])
+        ->and($routes->get('sylament.sep.resources.separator-probes.probe')?->getRequirements())->toBe([])
+        ->and($routes->get('sylament.sep.resources.separator-probes.index')?->getRequirements())->toBe([])
+        ->and($routes->get('sylament.sep.resources.bares.view')?->getRequirements())->toBe([]);
+});
+
+it('leaves a path no separator follows compiling to the regex it compiled to before', function (): void {
+    $provider = new class extends PanelProvider {
+        public function panel(Panel $panel): Panel
+        {
+            return $panel->id('probe')->path('probe')->resources([SlashlessPathResource::class]);
+        }
+    };
+
+    $routes = compositeRouteSeparatorRoutes();
+    $slashless = loaderFor($provider, [SlashlessPathResource::class => new SlashlessPathResource()])();
+
+    expect($slashless->get('sylament.probe.resources.notes.edit')?->compile()->getRegex())
+        ->toBe('{^/probe/notes/(?P<record>[^/]++)/edit$}sD')
+        ->and($routes->get('sylament.sep.resources.bares.view')?->compile()->getRegex())
+        ->toBe('{^/sep/bares/(?P<record>[^/]++)$}sD')
+        ->and($routes->get('sylament.sep.resources.separator-probes.probe')?->compile()->getRegex())
+        ->toBe('{^/sep/separator\-probes/(?P<record>[^/]++)/probe$}sD');
+});
+
+it('generates and matches back a key carrying the separator its path ends on', function (): void {
+    $routes = compositeRouteSeparatorRoutes();
+    $context = new RequestContext();
+    $generator = new UrlGenerator($routes, $context);
+    $matcher = new UrlMatcher($routes, $context);
+
+    // A possessive `[^/]++` generates every one of these and then matches none of
+    // them, so the requirement string is pinned beside the round trip it buys.
+    expect($routes->get('sylament.sep.resources.separator-probes.dash')?->getRequirement('record'))->toBe('[^/]+')
+        ->and($routes->get('sylament.sep.resources.separator-probes.dash')?->compile()->getRegex())
+        ->toBe('{^/sep/separator\-probes/(?P<record>[^/]+)\-preview$}sD');
+
+    foreach (['main-hall~autumn=2F2026', '1~en-GB', '0f1e2d3c-4b5a-6978-8796-a5b4c3d2e1f0'] as $key) {
+        $url = $generator->generate('sylament.sep.resources.separator-probes.dash', ['record' => $key]);
+
+        expect($url)->toBe('/sep/separator-probes/' . $key . '-preview')
+            ->and($matcher->match($url)['record'])->toBe($key);
+    }
+});
+
+it('leaves a record placeholder sharing its segment with a second one to the compiler', function (): void {
+    $routes = compositeRouteSeparatorRoutes();
+
+    // The three regexes below are the compiler's own, and a requirement of any
+    // shape would move where such a segment splits between its two placeholders.
+    expect($routes->get('sylament.sep.resources.segments.adjacent')?->getRequirements())->toBe([])
+        ->and($routes->get('sylament.sep.resources.segments.adjacent')?->compile()->getRegex())
+        ->toBe('{^/sep/segments/(?P<record>[^/\-]+)(?P<x>[^/\-]++)\-y$}sD')
+        ->and($routes->get('sylament.sep.resources.segments.locale')?->getRequirements())->toBe([])
+        ->and($routes->get('sylament.sep.resources.segments.locale')?->compile()->getRegex())
+        ->toBe('{^/sep/segments/(?P<record>[^/\-]++)\-(?P<locale>[^/]++)$}sD')
+        ->and($routes->get('sylament.sep.resources.segments.format')?->getRequirements())->toBe([])
+        ->and($routes->get('sylament.sep.resources.segments.format')?->compile()->getRegex())
+        ->toBe('{^/sep/segments/(?P<record>[^/\.]++)\.(?P<format>[^/]++)$}sD');
+});
+
+// A greedy record pattern reads up to the *last* spelling of the static text
+// behind it, so a URL that spells out the longer of two overlapping paths is
+// claimed by whichever of them is registered first.
+it('characterizes: an earlier overlapping path claims a url the later one spells out', function (): void {
+    $matcher = new UrlMatcher(compositeRouteSeparatorRoutes(), new RequestContext());
+    $match = $matcher->match('/sep/overlaps/5-y-x');
+
+    expect($match['_route'])->toBe('sylament.sep.resources.overlaps.short')
+        ->and($match['record'])->toBe('5-y');
+});
+
+it('narrows the record placeholder of a nested path and leaves the parent key alone', function (): void {
+    $route = compositeRouteNestedRoutes()->get('sylament.nest.resources.chapters.verses.dash');
+
+    expect($route?->getPath())->toBe('/nest/chapters/{chapter}/dashed-verses/{record}-preview')
+        ->and($route->getRequirements())->toBe(['record' => '[^/]+'])
+        ->and($route->compile()->getRegex())->toBe('{^/nest/chapters/(?P<chapter>[^/]++)/dashed\-verses/(?P<record>[^/]+)\-preview$}sD');
 });
 
 it('never asks a nested page to mount the parent keys the loader folds itself', function (): void {

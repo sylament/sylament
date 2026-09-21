@@ -18,6 +18,7 @@ use Symfony\Bundle\FrameworkBundle\Routing\RouteLoaderInterface;
 use Symfony\Component\Config\Resource\FileResource;
 use Symfony\Component\Routing\Route;
 use Symfony\Component\Routing\RouteCollection;
+use Symfony\Component\Routing\RouteCompiler;
 
 final readonly class PanelRouteLoader implements RouteLoaderInterface
 {
@@ -137,7 +138,39 @@ final readonly class PanelRouteLoader implements RouteLoaderInterface
             '_sylament_panel' => $panel->getId(),
             '_sylament_page' => $pageClass,
             ...$extraDefaults,
-        ], methods: ['GET']));
+        ], requirements: $this->getRecordPlaceholderRequirements($path), methods: ['GET']));
+    }
+
+    /**
+     * The requirement a mounted path declares for its record placeholder: one
+     * whose own path segment carries on in static text opening on a compiler
+     * separator takes `[^/]+`, since the compiler's default pattern excludes
+     * that separator and a key may spell it. A segment carrying a second
+     * placeholder behind `{record}` keeps the compiler's default, which splits
+     * the segment between the two. The pattern has to stay greedy: a possessive
+     * one never gives the trailing static text back, so it generates a URL that
+     * then matches nothing.
+     *
+     * @return array<string, string>
+     */
+    private function getRecordPlaceholderRequirements(string $path): array
+    {
+        $placeholder = '{record}';
+        $position = mb_strpos($path, $placeholder);
+
+        if ($position === false) {
+            return [];
+        }
+
+        $following = mb_substr($path, $position + mb_strlen($placeholder));
+
+        if (preg_match('#^([^/{])[^/{]*(?:/|$)#', $following, $matches) !== 1) {
+            return [];
+        }
+
+        return str_contains(RouteCompiler::SEPARATORS, $matches[1])
+            ? ['record' => '[^/]+']
+            : [];
     }
 
     /**

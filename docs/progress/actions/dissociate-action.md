@@ -178,14 +178,16 @@ too: a DQL `UPDATE` bypasses the `UnitOfWork`, so an entity already in the
 identity map keeps its stale owner until it is reloaded or the manager is
 cleared.
 
-The conversion closed a **silent data defect** rather than only widening the
-arm. Since [M7 · 1](../roadmap.md#m7--composite-identifiers) this action is
-handed the table selection's `RecordKey` strings, and it bound them raw against
-one identifier column — so a target whose column form is not its printed form (a
-`uuid` stored `BINARY(16)`, a value-object identifier) matched **zero rows and
-reported success**: a select-all that changed nothing and said `Dissociated 0`.
-Nothing in the suite could see it, because the count it reports is the count the
-statement returns. The typed decode is what makes the rows move.
+The conversion closed a **data defect** rather than only widening the arm. Since
+[M7 · 1](../roadmap.md#m7--composite-identifiers) this action is handed the
+table selection's `RecordKey` strings, and it bound them raw against one
+identifier column — so a target whose column form is not its printed form (a
+`uuid` stored `BINARY(16)`, a value-object identifier) matched **zero rows**: a
+select-all of records that exist left every one of them owned and answered the
+danger toast `Failed to dissociate N records`, with nothing naming why. No
+fixture carried a target whose column form differs from its printed form until
+this epic's converting one, which is why nothing in the suite saw it. The typed
+decode is what makes the rows move.
 
 Five refusals run before either arm picks up, all of them `LogicException`s
 raised outside the two `try` blocks so none is swallowed into the danger toast.

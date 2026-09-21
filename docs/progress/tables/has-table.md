@@ -2612,9 +2612,10 @@ reorder write and the by-key delete never call it: they narrow through
 instead, where a malformed key is **dropped** from the list and a statement
 still runs — as `1 = 0` once nothing well-formed is left. The panel's own
 `{record}` binding does **not** come through here:
-`Resource::resolveRecordRouteBinding()` binds the raw
-segment untyped, so `/admin/articles/abc/edit` stays a 500 until
-[M7 · 3](../roadmap.md#m7--composite-identifiers) converts it. A bare
+[`Resource::resolveRecordRouteBinding()`](../panels/README.md#a-record-is-resolved-through-the-resources-own-query)
+narrows through `IdentifierConstraint::equals()` and reaches the same strict
+decode by its own route, so `/admin/articles/abc/edit` is a 404 that runs no
+statement rather than a 500. A bare
 table names its three lanes, and anything that hydrates to a non-object (a
 scalar or partial select) answers null.
 

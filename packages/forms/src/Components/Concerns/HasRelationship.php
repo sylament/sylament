@@ -9,6 +9,7 @@ use Doctrine\ORM\QueryBuilder;
 use LogicException;
 use Stringable;
 use Sylament\Schemas\State\AssociationTarget;
+use Sylament\Schemas\State\Relationship;
 use Twig\Markup;
 
 use function Sylament\Support\blank;
@@ -340,6 +341,8 @@ trait HasRelationship
             return;
         }
 
+        $reader->assertRelationshipAcceptsAssociate(new Relationship($record, $name));
+
         $desired = [];
 
         foreach (wrap($state) as $item) {
@@ -360,14 +363,14 @@ trait HasRelationship
      *                        be, which validation against the option map should
      *                        already have refused
      */
-    private function toRelationshipIdentifier(mixed $state): int|string|null
+    private function toRelationshipIdentifier(mixed $state): ?string
     {
         if (blank($state)) {
             return null;
         }
 
         if (is_int($state) || is_string($state)) {
-            return $state;
+            return (string) $state;
         }
 
         throw new LogicException(sprintf(

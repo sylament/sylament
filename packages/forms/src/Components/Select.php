@@ -29,6 +29,7 @@ use Sylament\Forms\Components\Concerns\HasRelationship;
 use Sylament\Forms\Components\Contracts\HasNestedRecursiveValidationConstraints;
 use Sylament\Forms\Twig\FormsIconAlias;
 use Sylament\Schemas\Components\Component;
+use Sylament\Schemas\Identity\IdentifierConstraint;
 use Sylament\Schemas\Query\SearchConstraint;
 use Sylament\Schemas\Schema;
 use Sylament\Schemas\State\Casts\BooleanStateCast;
@@ -416,11 +417,15 @@ class Select extends Field implements Contracts\CanDisableOptions, Contracts\Has
                 return null;
             }
 
-            $record = $component->createScopedOptionQuery()
-                ->andWhere("record.{$component->getRelationshipIdentifierFieldName()} = :sylament_selected")
-                ->setParameter('sylament_selected', $state)
-                ->getQuery()
-                ->getOneOrNullResult();
+            $query = $component->createScopedOptionQuery();
+
+            $selected = IdentifierConstraint::equals($query, 'record', $component->getRelationshipTarget()->targetClass, (string) $state, 'sylament_selected');
+
+            if ($selected === null) {
+                return null;
+            }
+
+            $record = $query->andWhere($selected)->getQuery()->getOneOrNullResult();
 
             return is_object($record) ? $record : null;
         });
@@ -430,6 +435,14 @@ class Select extends Field implements Contracts\CanDisableOptions, Contracts\Has
         $this->createOptionUsing(static function (Select $component, Schema $schema): string {
             $reader = $component->getAssociationReader();
             $record = $schema->getData();
+
+            if ($reader->hasIncompleteAssignedIdentifier($record)) {
+                throw new LogicException(sprintf(
+                    'The [%s] select created a [%s] whose identifier is incomplete, so no option could name it. Put every identifier field in createOptionForm().',
+                    (string) $component->getName(),
+                    $record::class,
+                ));
+            }
 
             $reader->persist($record);
             $reader->flush();
@@ -563,15 +576,21 @@ class Select extends Field implements Contracts\CanDisableOptions, Contracts\Has
      */
     public function getOptionLabelsFromRelationship(array $values): array
     {
-        if ($values === []) {
+        $keys = [];
+
+        foreach ($values as $value) {
+            if (is_int($value) || is_string($value)) {
+                $keys[] = (string) $value;
+            }
+        }
+
+        if ($keys === []) {
             return [];
         }
 
         $query = $this->createScopedOptionQuery();
 
-        $query
-            ->andWhere("record.{$this->getRelationshipIdentifierFieldName()} IN (:sylament_values)")
-            ->setParameter('sylament_values', array_values($values));
+        $query->andWhere(IdentifierConstraint::in($query, 'record', $this->getRelationshipTarget()->targetClass, $keys, 'sylament_values'));
 
         /** @var list<object> $records */
         $records = $query->getQuery()->getResult();
@@ -1409,11 +1428,6 @@ class Select extends Field implements Contracts\CanDisableOptions, Contracts\Has
         return array_values($query->getEntityManager()->getClassMetadata($this->getRelationshipTarget()->targetClass)->getFieldNames());
     }
 
-    private function getRelationshipIdentifierFieldName(): string
-    {
-        return $this->getAssociationReader()->getIdentifierFieldName($this->getRelationshipTarget()->targetClass);
-    }
-
     /**
      * The option query with the bound record excluded, for the self-referential
      * association `relationship(ignoreRecord: true)` is meant for. Only the two
@@ -1454,15 +1468,15 @@ class Select extends Field implements Contracts\CanDisableOptions, Contracts\Has
             ));
         }
 
-        $identifier = $this->getAssociationReader()->findRecordKey($record);
+        $key = $this->getAssociationReader()->findRecordKey($record);
 
-        if ($identifier === null) {
+        if ($key === null) {
             return $query;
         }
 
-        return $query
-            ->andWhere("record.{$this->getRelationshipIdentifierFieldName()} <> :sylament_ignored_record")
-            ->setParameter('sylament_ignored_record', $identifier);
+        $exclusion = IdentifierConstraint::notEquals($query, 'record', $targetClass, $key, 'sylament_ignored_record');
+
+        return ($exclusion === null) ? $query : $query->andWhere($exclusion);
     }
 
     /**

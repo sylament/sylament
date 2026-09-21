@@ -85,11 +85,14 @@ function wireField(Field $field): Field
  * Where a fixture storage keeps its bytes. The Kernel configures both `local` storages under its
  * cache directory, and `getProjectDir()` resolves that to `packages/forms` — so this is the same
  * path without booting a kernel, which is what lets a test read what flysystem wrote and what the
- * `afterEach` above takes back. Nothing rolls a test's disk writes back on its own.
+ * `afterEach` above takes back. Nothing rolls a test's disk writes back on its own. The
+ * environment is read in `KernelTestCase`'s own order, `$_ENV` before `$_SERVER`, because a
+ * private environment set through phpunit.xml's `<env force>` lands in `$_ENV` alone and the
+ * kernel would then compile under a cache directory this function did not name.
  */
 function uploadStorageDir(string $storage = ''): string
 {
-    return mb_rtrim(dirname(__DIR__) . '/var/cache/test/storage/' . $storage, '/');
+    return mb_rtrim(dirname(__DIR__) . '/var/cache/' . ($_ENV['APP_ENV'] ?? $_SERVER['APP_ENV'] ?? 'test') . '/storage/' . $storage, '/');
 }
 
 function removeDirectory(string $directory): void

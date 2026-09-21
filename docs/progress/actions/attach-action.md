@@ -107,6 +107,13 @@ the same way — its `whereIn(...)->get()` on the relationship query is the same
 idea — and the port makes the count check explicit because a silently-dropped
 key would otherwise report success for a write that never happened.
 
+The message moved for **every** relation, a single-identifier one included:
+`The action [%s] was asked to attach a record its select never offered` is
+unchanged to the character, and what follows it is new — `— the key is
+malformed, outside recordSelectOptionsQuery()'s scope, or already attached.`
+Anything asserting the leading sentence still passes; anything asserting the
+message whole does not.
+
 A submission carrying **no** key at all is refused before that check rather than
 by it, since zero resolved records equals zero submitted keys and the count check
 would pass. Filament has no equivalent guard because it does not need one: its
@@ -210,8 +217,10 @@ the inverse relation and, when parent and related sit on the same table, the
 `getRelationCountHash()` alias to disambiguate the self-join. Doctrine needs
 neither: [`AssociationReader::createRelationshipCandidateQuery()`](../schemas/association-reader.md)
 roots the query at the target entity and negates a subselect built from the
-**owner's own** association — `record.id NOT IN (SELECT … WHERE owner.id = :owner)`
-— so nothing is joined into the outer query and no inverse mapping has to exist.
+**owner's own** association —
+`NOT EXISTS (SELECT 1 FROM <Owner> sy_owner JOIN sy_owner.<relation> sy_related WHERE sy_owner.<id> = :sylament_relationship_owner AND <the correlation>)`,
+where the correlation compares `sy_related` to the outer alias field by field —
+so nothing is joined into the outer query and no inverse mapping has to exist.
 `inverseRelationship()` / `getInverseRelationship()` are
 [not ported](../renames.md#renames) for the same reason.
 

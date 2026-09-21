@@ -105,6 +105,13 @@ toast, reporting a write that never happened. The select is `required()`, so the
 mounted path never reaches it — the guard exists for a `using()` or direct-call
 consumer, and `AttachAction` carries the same one.
 
+The count mismatch's message moved for **every** relation, a single-identifier
+one included: `The action [%s] was asked to associate a record its select never
+offered` is unchanged to the character, and what follows it is new — `— the key
+is malformed, outside recordSelectOptionsQuery()'s scope, or already
+associated.` Anything asserting the leading sentence still passes; anything
+asserting the message whole does not.
+
 ### The title fast path projects the attribute
 
 When the table names a `recordTitleAttribute()`, the action has no custom title

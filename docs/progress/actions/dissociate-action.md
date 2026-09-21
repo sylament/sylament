@@ -191,9 +191,9 @@ Five refusals run before either arm picks up, all of them `LogicException`s
 raised outside the two `try` blocks so none is swallowed into the danger toast.
 [The four dissociate refusals](#dissociating-is-refused-where-the-mapping-forbids-it)
 are the first, so an orphan-removal mapping throws before any statement is issued
-rather than nulling a column the mapping treats as ownership; the fourth is that
+rather than nulling a column the mapping treats as ownership; the fifth is that
 the relationship must be a **one-to-many**, and the refusal says to use
-`DetachBulkAction` instead. That fourth one reads `AssociationTarget::$isManyToMany`
+`DetachBulkAction` instead. That fifth one reads `AssociationTarget::$isManyToMany`
 rather than testing `$mappedBy` for null — Doctrine sets `mappedBy` on *every*
 inverse side, many-to-many included, so a null test would let an inverse-side
 many-to-many straight through to a DQL `UPDATE` of a collection-valued field and

@@ -39,7 +39,12 @@ addition, and left it to a later epic: closing the custom `$recordRouteKeyName`
 arm needs a typed bind with a print-back compare against a *named column*,
 which is not an operation this file exposes
 ([why it is still open](../panels/README.md#a-custom-recordroutekeyname-names-one-column-and-the-codec-never-sees-it)).
-M7 · 4–5 add consumers; none of them reshapes what is below.
+M7 · 4 added the relation layer's — `AssociationReader`, forms' `Select`,
+`HasRelationship`, `Repeater` and `UniqueValueValidator`, and actions' four
+relationship actions — consuming `of()`, `find()`, `toIdentifier()`,
+`equals()`, `notEquals()`, `in()`, `correlate()`, `select()` + `keyOf()` and
+`chunk()` as they landed, and finding nothing here short. M7 · 5 adds the
+owner half.
 
 **Status:** done — see the [status vocabulary](../README.md#statuses).
 
@@ -58,7 +63,7 @@ and/or **diverges** → the permanent note in [Divergences](#divergences).
 | [`RecordKey::toIdentifier()`](../../../packages/schemas/src/Identity/RecordKey.php) — a client string to the field ⇒ PHP value map `EntityManager::find()` takes, `null` when malformed | done | — | [contract](#the-grammar) · [semantics](#a-malformed-key-never-reaches-the-database) |
 | [`IdentifierConstraint::equals()`](../../../packages/schemas/src/Identity/IdentifierConstraint.php) / `notEquals()` | done | — | [contract](#the-operations-and-their-dql) |
 | [`IdentifierConstraint::in()`](../../../packages/schemas/src/Identity/IdentifierConstraint.php) / `notIn()` | done | — | [contract](#the-operations-and-their-dql) · [semantics](#the-batch-is-a-balanced-or-tree-because-sqlite-counts-expression-depth-not-terms) |
-| [`IdentifierConstraint::correlate()`](../../../packages/schemas/src/Identity/IdentifierConstraint.php) — `alias.f = outer.f AND …` as **text**, because `RelationConstraint` splices a subselect string | done | — | [contract](#the-operations-and-their-dql) |
+| [`IdentifierConstraint::correlate()`](../../../packages/schemas/src/Identity/IdentifierConstraint.php) — `alias.f = outer.f AND …` as **text**, because `RelationConstraint` splices a subselect string | done | — | [contract](#the-operations-and-their-dql) · [diverges](#comparing-two-identification-variables-compares-the-first-identifier-column-only) |
 | [`IdentifierConstraint::select()`](../../../packages/schemas/src/Identity/IdentifierConstraint.php) + [`KeySelection::keyOf()`](../../../packages/schemas/src/Identity/KeySelection.php) | done | — | [contract](#the-operations-and-their-dql) · [semantics](#the-row-side-and-the-record-side-mint-one-string-and-only-the-codec-may) |
 | [`IdentifierConstraint::groupBy()`](../../../packages/schemas/src/Identity/IdentifierConstraint.php) — the bare path per field, never `IDENTITY()` | done | — | [diverges](#bare-identitypath-on-a-multi-column-association-answers-only-the-first-column) |
 | [`IdentifierConstraint::orderBy()`](../../../packages/schemas/src/Identity/IdentifierConstraint.php) — the identifier tiebreak, per field, deduped against the existing order | done | — | [contract](#the-operations-and-their-dql) |
@@ -100,6 +105,12 @@ string as a PHP array key and cannot alias another key under Twig's loose `==` o
 `in`, which compile to PHP's native comparison and make `"0123" == "123"` true.
 A base64url format could not promise this, and a `<option selected>` or a checked
 checkbox is decided by exactly that comparison.
+**"Composite" here means two or more identifier fields, not "anything that is
+not a plain `id`"**: a single derived identity is **one** field, so it takes
+the verbatim arm above and inherits its target's spelling — a `PostSeal` keyed
+on an `int`-keyed `Post` mints `1`, and PHP coerces that to the **int** array
+key `1` exactly as it does for a single-`id` target. It is the one flavour this
+promise does not cover, and a test written against `['1']` is what finds out.
 
 **Canonical form is what encode emits, and decode accepts nothing else.** The
 arity must equal the field count; no component may be empty; every `=` must be
@@ -323,9 +334,10 @@ needs the identifier's field names or its arity reads
 `ClassMetadata::$identifier` and `isIdentifierComposite`, which it already holds
 whenever it holds the class — the foundation exposes neither, so that nothing
 grows a second, drifting copy of the mapping. `IdentifierFields` carries them
-`@internal` for the two public classes; M7 · 4, which deletes
-`AssociationReader::getIdentifierFieldName()` with its last caller, replaces it
-with the metadata read rather than with a member here.
+`@internal` for the two public classes; M7 · 4
+deleted `AssociationReader::getIdentifierFieldName()` with its last caller and
+replaced every one of its seven call sites with an `IdentifierConstraint`
+operation rather than with a member here.
 
 Read the shapes off those signatures in one line each. Every **predicate** method
 binds its values on the `QueryBuilder` it is handed and returns DQL **text** for
@@ -463,9 +475,15 @@ Six, and a consumer may rely on all of them.
    identifier, and a key that decodes never explodes inside `find()`.
 4. A decoded value is **only ever a bound parameter**; a field name **only ever**
    comes from `ClassMetadata`.
-5. A single-identifier class emits **today's DQL text**.
-6. **Three consumers chunk** — the by-key delete, the reorder's re-resolution
-   and, since M7 · 2, tables' aggregate batch. Every **other** read that
+5. A single-identifier class emits **today's DQL text** — which binds what
+   `IdentifierConstraint` emits, not what a consumer composes around it. The
+   relationship query's many-to-many arm moved from an `IN` subselect to a
+   correlated `EXISTS` in
+   [M7 · 4](../roadmap.md#m7--composite-identifiers) for every width alike, and
+   the rows it returns are the rows the `IN` returned.
+6. **Four consumers chunk** — the by-key delete, the reorder's re-resolution,
+   tables' aggregate batch since M7 · 2 and the by-key dissociate since
+   M7 · 4. Every **other** read that
    narrows by a key list is one statement over the whole list, and carries the
    parse curve below as a recorded limit.
 
@@ -492,8 +510,12 @@ PostgreSQL 18 takes either shape up to its 65 535 bound-parameter ceiling:
 time is superlinear in key count (500 ≈ 55 ms, 1 000 ≈ 160 ms, 5 000 ≈ 3.4 s on a
 first parse), which is what the 500-key composite chunk is sized against.
 
-**Three sites chunk, and two of them are writes.** The by-key delete issues
-one DQL `DELETE` per chunk, several chunks inside one transaction; the reorder's
+**Four sites chunk, and three of them are writes.** The by-key delete issues
+one DQL `DELETE` per chunk, several chunks inside one transaction, and the
+by-key **dissociate** issues one DQL `UPDATE` per chunk under the same rule,
+wrapped in one `Connection::transactional()` from the second chunk on
+([dissociate-action.md](../actions/dissociate-action.md#the-by-key-arm-is-a-dql-update-over-the-plucked-keys));
+the reorder's
 re-resolution issues one `SELECT` per chunk, each narrowing a **copy** of the
 table's query — a copy because a second predicate ANDed onto the first would
 answer nothing, and each chunk keeps the one parameter base, since a base
@@ -501,8 +523,8 @@ carrying a chunk index of its own is what `assertParameterBase()` refuses.
 Reordering is unpaginated by default, so its order list is the whole table,
 which is what made it the second site to earn this.
 
-The third is a read, and its chunks combine as cheaply as the reorder's:
-tables' aggregate batch runs the scope closure once on the pristine builder,
+The one read among the four is tables' aggregate batch, and its chunks combine
+as cheaply as the reorder's: it runs the scope closure once on the pristine builder,
 narrows a **copy** per chunk under that same single base, and unions the
 per-chunk maps with `+` — the chunks are disjoint by construction, since a key
 appears in one of them, and each chunk's result is keyed by record key, so
@@ -532,6 +554,13 @@ was the only shape that made its key list unbounded. Two of them can land on
 under `fetchSelectedRecords(false)` with `checkIfRecordIsSelectableUsing()` the
 selected-key predicate and the selectable-key predicate decorate the same query,
 so the executed statement binds both lists at once.
+M7 · 4 added three more, all in the relation layer and all bounded by what a
+modal can post or a client already holds: `AttachAction` and
+`AssociateAction`'s by-key fetch — one `in()` over the submitted selection,
+measured at 50 keys ≈ 8 ms, 500 ≈ 72 ms and 1 500 ≈ 550 ms, against a realistic
+bound of a `multiple()` select's picks — and
+`Select::getOptionLabelsFromRelationship()`'s label read, one `in()` over the
+values the client is already rendering.
 
 Four alternatives were considered and rejected: factoring a batch's leading field
 (`a = ? AND b IN (…)`), chunking the **hydrating** selection arm (it would
@@ -555,6 +584,14 @@ are `sylament_record_key`, `sylament_selected_record_keys`,
 `sylament_page_record_keys` — every one of the first six the name the
 single-identifier code already used, so the predicate text is stable for the
 query cache, and the seventh minted by M7 · 2 for a statement that had none.
+M7 · 4 added three from the relation layer: `sylament_selected` (a relationship
+`Select`'s selected-record lookup), `sylament_values` (its label read) and
+`sylament_ignored_record`, which that field's `ignoreRecord` exclusion already
+used and which `unique(ignoreRecord:)` **moved onto** — its own base was the
+counted `sylament_probe_<n>`, and a base ending in `_<digits>` is refused for
+**every** class, a single identifier included, so converting that site without
+changing its base would have reddened every `unique(ignoreRecord:)` test in
+forms.
 (One *result* alias did move with M7 · 2: the aggregate batch projects
 `sy_key_0` where it projected `sy_key`. One query-cache miss, no behaviour.)
 
@@ -631,17 +668,19 @@ inner for the related query, and **left plus `IS NULL`** for the candidate query
 Two more facts M7 · 4 and M7 · 6 will need, recorded now so no later plan is
 written against a passing test:
 
-- **A reference by key is `getReference()` only for a class with no foreign
-  identifier.** On a **derived identity** `getReference()` is *state-dependent*:
+- **A reference by key is `getReference()` only for a class no identifier field
+  of which is an association.** Where one is — a derived identity, a join entity
+  or a single derived identity — `getReference()` is *state-dependent*:
   it succeeds while the record is already managed and **fatals on a cold identity
   map**, because `ProxyFactory` assigns the scalar component straight to the
   typed association property. Both outcomes were reproduced in one process.
-  `find()` works in every state. The codec consumes no reference by key at all.
+  `find()` works in every state. The codec consumes no reference by key at all;
+  [the reader routes between the two](association-reader.md#getreference-decodes-first-and-then-picks-its-route).
 - **The codec owns the `mixed` → string narrowing for an entity's identifier.**
   Four hand-written copies of it existed — `HasTable`'s query arm,
   `pluckTableRecordKeys()`'s inline closure, `AssociationReader::findRecordKey()`
-  and `Resource::getRecordRouteKey()`. M7 · 1 replaced the first two and M7 · 3
-  the third; M7 · 4 replaces the reader's. `HasTable::toRecordKey()` itself
+  and `Resource::getRecordRouteKey()`. M7 · 1 replaced the first two, M7 · 3
+  the third and M7 · 4 the reader's. `HasTable::toRecordKey()` itself
   stays, for the lanes that have no mapping to ask — array records and the `id`
   convention — and it is a deliberately **narrower** copy of the same rule:
   `printable()` additionally unwraps a `BackedEnum`, normalises a `bool` to
@@ -737,15 +776,16 @@ through this decode, so `/admin/articles/abc/edit` is a 404 that runs no
 statement and `/admin/articles/05/edit` no longer resolves article 5 — while its
 `$recordRouteKeyName` arm binds one named column raw and
 [keeps the 500](../panels/README.md#a-custom-recordroutekeyname-names-one-column-and-the-codec-never-sees-it).
-The relation layer binds untyped too, and is
-**[M7 · 4](../roadmap.md#m7--composite-identifiers)'s**: a relationship
+The relation layer bound untyped too, and
+**[M7 · 4](../roadmap.md#m7--composite-identifiers) closed it**: a relationship
 `Select`'s selected-record and option-label lookups and `AttachAction`,
-`AssociateAction` and `DissociateBulkAction`'s key `IN` all take client state and
-carry the same 500, while `Select::relationship(ignoreRecord:)` and
-`unique(ignoreRecord:)` bind a server-derived identifier, so they convert for
-composite correctness rather than for the hole. Both sets are recorded in that
-milestone's site ledger; M7 · 1 closes the hole on the **table** lane only — row
-resolution, editable cells, selection, reorder and the by-key delete.
+`AssociateAction` and `DissociateBulkAction`'s key `IN` all take client state, and
+all of them decode before they bind, while `Select::relationship(ignoreRecord:)` and
+`unique(ignoreRecord:)` bind a server-derived identifier, so those two converted for
+composite correctness rather than for the hole. With the **table** lane closed by
+M7 · 1 — row resolution, editable cells, selection, reorder and the by-key
+delete — and panels' default route arm by M7 · 3, the one client-supplied key
+still bound raw is `Resource`'s `$recordRouteKeyName` arm, deliberately.
 
 So `equals()` on a malformed key returns `null` and binds nothing, and the
 caller's contract is to answer "no such record" **without querying**. This is
@@ -820,15 +860,23 @@ ever branches on the identifier flavour.**
 ### `getReference()` on a derived identity is state-dependent, so the codec never mints one
 
 `EntityManager::getReference()` works on a scalar composite identifier — a
-reordered map included — but on a **derived identity** it succeeds only while the
+reordered map included — but wherever **any** identifier field is an association
+it succeeds only while the
 record is already managed and throws a `TypeError` against a cold identity map,
 because `ProxyFactory` assigns the scalar identifier component directly to the
-typed association property. Both outcomes were reproduced in a single process, by
+typed association property. That is **three of the five flavours**: a derived
+identity, a join entity, and a **single derived identity**, which reports
+`isIdentifierComposite === false` and which a width test therefore misses.
+Both outcomes were reproduced in a single process, by
 `clear()`ing between them. That is precisely the defect a green suite hides: a
 test that seeds and then references passes, and production fails on the first
 cold request. `RecordKey` therefore offers no reference-by-key at all, and
-[M7 · 4](../roadmap.md#m7--composite-identifiers), which needs one for the
-reader's `getReference()`, must use `find()` — which works in every state.
+[M7 · 4](../roadmap.md#m7--composite-identifiers), which needed one for the
+reader's `getReference()`, routes those three flavours through `find()` — which
+works in every state, at one statement — on the predicate
+`array_any($metadata->identifier, $metadata->hasAssociation(...))`, never on
+`isIdentifierComposite`. The scalar route keeps the reference's zero
+statements.
 
 ### Bare `IDENTITY(path)` on a multi-column association answers only the first column
 
@@ -842,6 +890,33 @@ weakest, by the codec's own throw rather than by a silent truncation. `groupBy()
 still emits the **bare path** rather than `IDENTITY()`, both because `IDENTITY()`
 is illegal in a `GROUP BY` and so that no consumer learns the wrong habit from
 this file.
+
+### Comparing two identification variables compares the first identifier column only
+
+`WHERE inner = outer` between two aliases of the same entity is legal DQL and
+compiles to a comparison of their **first** identifier columns alone — no
+exception, no warning, and rows that are not the same record come back. Executed
+against a scalar pair inside a correlated subselect it returned two rows where
+one was right. Doctrine's parser resolves an identification variable in a
+comparison to a single-column expression
+(`vendor/doctrine/orm/src/Query/Parser.php:736`), and what it emits is valid
+SQL, so nothing downstream can catch it.
+
+`MEMBER OF` fails the same way from the other end:
+`outer MEMBER OF alias.<collection>` compares every inverse join column of the
+association against the target's **first** identifier column, and returns
+nothing at all.
+
+So `correlate()` exists, and it is the only correlation the toolkit writes. It
+emits one `AND`ed equality per identifier field — `i.id = o.id` for a
+single-`id` class, so today's text is unmoved — and every consumer that needs
+two aliases of one class compared uses it: tables' relation search
+([table.md](../tables/table.md#a-composite-identifier-root-correlates-and-groups-by-every-key-field))
+and, since [M7 · 4](../roadmap.md#m7--composite-identifiers), the relationship
+query's many-to-many arm
+([association-reader.md](association-reader.md#the-relationship-query-is-rooted-at-the-target-and-needs-no-inverse-mapping)),
+whose `MEMBER OF` alternative this closes for good rather than parking as an
+optimisation.
 
 ### Doctrine's own identity hash is an unescaped `implode(' ', …)`
 

@@ -186,6 +186,18 @@ Two things made that possible, and both are recorded rather than assumed:
   association fails with the trait's existing refusal ("holds a single …") and
   the to-many arm is the only one it can take.
 
+Composite children ride that inheritance whole, and the field needed no edit for
+them either: the option keys, the state read and the desired-list write are all
+the trait's, so a `CheckboxList` over a target keyed by two fields renders one
+checkbox per record key, round-trips the checked list, and writes through the
+same per-key reference the `multiple()` select does
+([M7 · 4](../roadmap.md#m7--composite-identifiers)). The one thing worth knowing
+is the value spelling: a key of two or more fields always carries `~`, so it
+stays a string through `in_array()`, through Twig's `==` and as a PHP array key
+— [the grammar](../schemas/record-key.md#the-grammar) is what makes that a
+guarantee — while a **single derived identity** is one field and coerces to an
+`int` array key exactly as a single-`id` target does.
+
 `getOptionsFromRelationship()` is the one method this field overrides, and only
 for [the record-shaped closures](#the-two-record-shaped-closures-build-labels-and-descriptions-off-one-query);
 with neither declared it delegates straight back to the trait's title-attribute

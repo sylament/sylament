@@ -242,6 +242,11 @@ hooks, so no message lost a word to the sharing:
   ones to `int` array keys — the same vocabulary
   [`getEnabledOptionValues()`](#the-choice-choices-cover-both-forms-the-raw-state-can-take)
   already reconciles, which is why the `Choice` guard needed no relationship arm.
+  A key of two or more identifier fields always carries `~`, so it is never
+  numeric and never coerced —
+  [the codec's grammar](../schemas/record-key.md#the-grammar) is what makes that a
+  guarantee rather than a hope; a **single derived identity** is one field and
+  coerces exactly as a single `id` does.
 - **`loadStateFromRelationshipsUsing()`** — the association value's record key
   (null when unset), or the list of keys for a to-many. This is the
   [hook pair](../schemas/belongs-to-record.md) `fill()` consults instead of the
@@ -249,8 +254,16 @@ hooks, so no message lost a word to the sharing:
   object-valued leaf is skipped by `readStateFromRecord()`, and a collection is
   refused by `setOnRecord()`.
 - **`saveRelationshipsUsing()`** — the reverse, through
-  [`AssociationReader::getReference()`](../schemas/association-reader.md), so
-  `getData()` writes managed references without loading the target rows.
+  [`AssociationReader::getReference()`](../schemas/association-reader.md#getreference-decodes-first-and-then-picks-its-route), so
+  `getData()` writes managed references without loading the target rows — except
+  where an identifier field is itself an association, which cannot be referenced
+  without a load and costs one `SELECT` per key. The to-one arm is pinned across
+  three flavours by *writes a single composite selection back onto its record*,
+  and that case also records what the cost is **not**: by the time a to-one write
+  resolves its reference, `getData()`'s validation pass has already enumerated the
+  options and hydrated the chosen row, so a forms-level write never takes the
+  reader's cold route. The cold route is the reader's own, and schemas'
+  `AssociationReaderCompositeKeyTest` is where it is pinned.
 
 Every one of them resolves the record class and the reader **at evaluation
 time**, never at `relationship()` time — the same lazy shape
@@ -718,12 +731,17 @@ option-action defaults:
   `getSelectedRecord()` first, `null` when it answers none, else the record's
   label — the record-label callback when declared, the title attribute through
   the accessor otherwise, the same two branches Filament's install has.
-- **`getSelectedRecordUsing` ⇒ the scoped query on the identifier**, `null` on a
-  miss ([above](#the-option-actions-are-suffix-actions-with-doctrine-defaults)).
+- **`getSelectedRecordUsing` ⇒ the scoped query narrowed by the record key**,
+  `null` on a miss ([above](#the-option-actions-are-suffix-actions-with-doctrine-defaults)).
 - **`getOptionLabelsUsing` ⇒ `getOptionLabelsFromRelationship(array $values)`.**
-  The scoped query with `IN (:sylament_values)` on the identifier, mapped the
-  same two ways; `[]` in ⇒ `[]` out, since `IN ()` is not DQL. No ordering, as
-  Filament's has none.
+  The scoped query narrowed by
+  [`IdentifierConstraint::in()`](../schemas/record-key.md#the-operations-and-their-dql)
+  under the base `sylament_values`, mapped the
+  same two ways. The raw client list is filtered to its `int` and `string`
+  entries first — it is client state, so a nested array or an object is dropped
+  rather than failing the batch — and an empty result returns `[]` **before** the
+  query is built, so a list with nothing scalar in it issues no statement at all.
+  No ordering, as Filament's has none.
 
 `getOptionsFromRelationship()` is overridden on `Select` too, composing gates →
 query → limit → ordering → execute → map so the limit and the ordering are on
@@ -823,10 +841,14 @@ resolver is declared, so a **non-relationship** select with an
 `editOptionForm()` binds a record to its modal by declaring the resolver. The
 default `relationship()` installs is a **query**, not a reference: the
 [scoped option query](#the-relationship-search-arm-runs-a-like-per-column-over-the-scoped-option-query)
-with `andWhere("record.{$idField} = :sylament_selected")` on the identifier
-[`AssociationReader::getIdentifierFieldName()`](../schemas/association-reader.md)
-names, executed with `getOneOrNullResult()`. That replaces the
-[`getReference()`](../schemas/association-reader.md) proxy the relation layer
+narrowed by
+[`IdentifierConstraint::equals()`](../schemas/record-key.md#the-operations-and-their-dql)
+under the base `sylament_selected` — one predicate per identifier field, and
+today's `record.id = :sylament_selected` for a single-`id` target — executed with
+`getOneOrNullResult()`. A state the codec cannot decode answers `null` **without
+querying**, since the predicate is `null` and nothing is bound, which is what
+keeps a forged option value a validation error rather than a 500. That replaces the
+[`getReference()`](../schemas/association-reader.md#getreference-decodes-first-and-then-picks-its-route) proxy the relation layer
 shipped, and both consequences the trail recorded against the proxy go with it:
 a key whose row was deleted concurrently — or tampered with on the wire — now
 answers `null` where the proxy raised `EntityNotFoundException` late, so the
@@ -980,6 +1002,51 @@ Note the default: `relationship(ignoreRecord:)` is `false` while
 and the contrast is deliberate — a uniqueness probe on an edit page almost
 always wants to skip the row being edited, while an option map almost never
 needs to.
+
+The exclusion is `andWhere`d **only when the predicate is non-null**, which is
+the contract's binding rule (asking for the text is what binds the parameters,
+so dropping the text leaves parameters bound to nothing). That `null` arm is
+unreachable from this call site and is kept anyway: the key it passes was just
+minted by `findRecordKey()` for a record the method has already proved is an
+instance of the association's target, so it always decodes. No test can pin it,
+and it is correct for the seam rather than for the caller — do not "simplify" it
+into an unconditional `andWhere`.
+
+`HasRelationship::toRelationshipIdentifier()`'s narrowing to `?string`, with its
+`(string)` cast, is the same shape one step further out: the cast is an
+**equivalent** mutation, because its sole consumer
+`AssociationReader::getReference()` itself opens with `(string) $id`, so no test
+can observe it. It is kept as a type-level statement — the relation layer speaks
+record keys, not `int|string` — and the sentence exists so that a sweep does not
+restore the wider union and a later reviewer does not re-report the unkillable
+cast as a gap.
+
+### A created option whose identifier is incomplete is refused before it is written
+
+The Doctrine `createOptionUsing` default mints the new record's key *after* it
+persists and flushes, because a generated identifier does not exist until the
+insert. Where the identifier is **assigned** — which is every composite key,
+since Doctrine refuses an id generator on one — that order commits a row first
+and then fails minting its key, leaving a record no option can ever name and a
+create modal that has already written it. So the default asks
+[`AssociationReader::hasIncompleteAssignedIdentifier()`](../schemas/association-reader.md#an-incomplete-assigned-identifier-is-the-question-the-create-paths-ask)
+**before** `persist()`, and refuses by name:
+
+> `The [%s] select created a [%s] whose identifier is incomplete, so no option could name it. Put every identifier field in createOptionForm().`
+
+It is a developer error rather than validation — the fix is a missing field in
+`createOptionForm()`, not something an end user can supply — so nothing is
+written and nothing is restored. Three shapes pass. A **pending generated**
+identifier does, the record's own or one behind an identifier association: that
+is Doctrine's to fill at the flush two lines later. So does an identifier a
+`#[PrePersist]` callback of the class or a mapped entity listener assigns, for
+the same reason one line earlier. And so does a **plain single scalar**
+identifier, always: the member answers `false` for one before it reads anything,
+because the relation layer has always keyed such a class and a create option over
+one worked at HEAD. Validating a key that is *taken*, as opposed
+to one that is incomplete, is
+[M7 · 6](../roadmap.md#m7--composite-identifiers)'s — and so is an assigned
+single scalar key left blank.
 
 ## Divergences
 
@@ -1136,8 +1203,10 @@ the entity's own `addX()`/`removeX()` per element, so the collection instance
 survives, the owning side is maintained by the adder the maker generated, and
 Doctrine emits only the join rows that actually changed
 ([characterized in `DoctrineCollectionWriteTest`](../../../packages/schemas/tests/Integration/State/DoctrineCollectionWriteTest.php)).
-Kept elements diff as kept because `getReference()` answers from the identity
-map with the very instances the loaded collection holds. Two things follow from
+Kept elements diff as kept because a reference by key answers from the identity
+map with the very instances the loaded collection holds — on **both** of
+[`getReference()`'s routes](../schemas/association-reader.md#getreference-decodes-first-and-then-picks-its-route),
+the no-load reference and the `find()` an identifier association forces. Two things follow from
 the mechanism rather than from a choice of ours: removing an element from a
 `ManyToMany` deletes the join row only — the target entity survives, since
 nothing declares `orphanRemoval` there — while a `OneToMany` that does declare it
@@ -1171,7 +1240,10 @@ Filament's exclusion clause is `where($record->getQualifiedKeyName(), '!=', $rec
 another table it produces `article_contributors.id != 7` inside a select over
 `authors`, which the database rejects. Loudly wrong.
 
-Our clause is `record.<identifier> <> :sylament_ignored_record` over the option
+Our clause is
+[`IdentifierConstraint::notEquals()`](../schemas/record-key.md#the-operations-and-their-dql)
+under the base `sylament_ignored_record` — `record.<identifier> <> :sylament_ignored_record`
+for a single-`id` target, a negated per-field group for any other width — over the option
 query's own alias, so the same mistake produces perfectly valid DQL that silently
 excludes an unrelated row of the *target* table. The Doctrine shape is more
 dangerous than the original, so it carries a guard the original does not need: a
@@ -1181,9 +1253,12 @@ self-referential association, and a repeater item schema stamped with the child
 record is exactly the shape that would otherwise hit it.
 
 The quiet arms stay quiet: `null`, an array and a class-string record exclude
-nothing — a create page has no row to exclude — and neither does an unflushed
-entity, whose identifier
-[`findRecordKey()`](../schemas/association-reader.md) answers `null` for.
+nothing — a create page has no row to exclude — and neither does an entity whose
+identifier is not complete yet, which
+[`findRecordKey()`](../schemas/association-reader.md#findrecordkey-answers-null-where-getrecordkey-throws)
+answers `null` for — a generated id still pending, and, since M7 · 4, an
+**assigned** string component still sitting blank, which is a create form's
+normal state for a composite key.
 
 ### The non-relationship schema record is read off the field, not off a `getActionSchemaModel()`
 

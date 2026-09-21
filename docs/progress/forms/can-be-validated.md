@@ -631,9 +631,14 @@ Filament's `unique()`/`exists()` take an Eloquent table and column and lean on
 Laravel's query builder. The port takes an **entity class** and a **mapped
 property** and runs one DQL probe through schemas'
 [`AssociationReader`](../schemas/association-reader.md), which already ships
-`createOptionQuery()`, `getIdentifierFieldName()` and `hasEntityManager()`. No new
-dependency: forms declares `doctrine/orm ^3.6`, which guarantees every
-`Doctrine\ORM\*` symbol transitively.
+`createOptionQuery()`, `findRecordKey()` and `hasEntityManager()` — and which,
+since [M7 · 4](../roadmap.md#m7--composite-identifiers), narrows the probe
+through schemas' own
+[`IdentifierConstraint`](../schemas/record-key.md#the-operations-and-their-dql)
+rather than through a field name. No new
+dependency either way: forms declares `doctrine/orm ^3.6`, which guarantees every
+`Doctrine\ORM\*` symbol transitively, and `sylament/schemas`, which it has
+always required.
 
 Three parameter renames come with it, all recorded in
 [renames.md](../renames.md): `table` → `entity` (a class-string, not a table),
@@ -678,8 +683,30 @@ argument validates nothing.
 
 The identifier to ignore comes from
 [`AssociationReader::findRecordKey()`](../schemas/association-reader.md#findrecordkey-answers-null-where-getrecordkey-throws),
-the sibling of `getRecordKey()` that answers null for an unflushed entity instead
-of throwing — which is the create page's normal state, not an edge.
+the sibling of `getRecordKey()` that answers null for an entity whose identifier
+is not complete yet instead of throwing — which is the create page's normal
+state, not an edge, and which since M7 · 4 covers an **assigned** key still
+sitting blank as well as a generated one still pending. It is a record **key** of
+any width, so `UniqueValue::$ignoredIdentifier` carries one string and the
+exclusion is
+[`IdentifierConstraint::notEquals()`](../schemas/record-key.md#the-operations-and-their-dql)
+under the base `sylament_ignored_record`, `andWhere`d only when the predicate is
+non-null — a **malformed** key excludes nothing, which for that input is the safe
+direction: a false *taken*, never a false *unique*. That base is a literal where
+the value arm still counts `sylament_probe_<n>`, because a parameter base ending
+in `_<digits>` is refused for **every** class, a single identifier included. For
+a single-identifier entity the rows the probe returns are identical to HEAD's and
+only the bound parameter's **name** moved, `:sylament_probe_1` →
+`:sylament_ignored_record` — which is observable to a `modifyQueryUsing` closure
+that reads or rebinds parameters by name.
+
+The exclusion is by **key**, not by class, so `unique(entity: Other::class)` on
+a page bound to a record of a *different* class excludes whatever row of the
+probed class happens to carry that key — a false *unique*, pre-existing and
+Filament's parity behaviour, where `Select::applyIgnoredRecord()` refuses a
+foreign-class record by name. Widening the key made that strictly safer rather
+than worse: a record whose key is a different **width** now decodes to `null` and
+excludes nothing at all, where before it was a raw bind.
 
 `ExistingValue` is the one place a `COUNT` reads better than a limited fetch: an
 array value (a multiple select) is checked as Laravel's `exists` checks it, one

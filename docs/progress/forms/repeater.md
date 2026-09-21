@@ -269,7 +269,11 @@ between them alone. `fill()` no longer reads the property (an object collection
 would be skipped as an object leaf anyway) — the
 [component-tier load hook](../schemas/belongs-to-record.md#the-relationship-hooks-are-consulted-by-the-two-mapping-edges-not-by-a-schema-level-walk) reads the collection
 and returns one item per child, keyed `record-<recordKey>` (Filament's shape,
-over [`AssociationReader::getRecordKey()`](../schemas/association-reader.md)),
+over [`AssociationReader::getRecordKey()`](../schemas/association-reader.md#the-record-key-is-tables-semantics-moved-onto-the-mapping),
+so an item of a child keyed by two fields is `record-1~zh=20Hans` —
+[the key's alphabet](../schemas/record-key.md#where-a-key-travels-and-what-each-context-forbids)
+is what lets that survive the dotted state path, both `HasState` sanitisers and
+the live `data-model` reserved set),
 each item filled by reading the item schema's own declared leaf paths off that
 child through the record accessor. So the keys stop being per-request uuids and
 start being *identity*, and three places follow from it: `hydrateItems()`
@@ -280,8 +284,10 @@ which is precisely how the save tells a new child from a loaded one.
 
 `getData()` hands the whole keyed map to the save hook, which builds the
 **desired list** in state order: a `record-` key resolves to the very instance
-the collection holds (never a fresh `getReference()` — strict identity is what
-makes an update an update), an un-prefixed key constructs the association's
+the collection holds (never a fresh reference by key — strict identity is what
+makes an update an update, and it would hold on
+[either of `getReference()`'s routes](../schemas/association-reader.md#getreference-decodes-first-and-then-picks-its-route)
+anyway, since each answers the identity map's own instance), an un-prefixed key constructs the association's
 target class through
 [`PropertyAccessor::constructRecord()`](../schemas/property-accessor.md#the-mappers-construct-or-refuse-is-one-method-three-callers-borrow)
 — the mapper's shared construct-or-refuse, so an item class needing constructor
@@ -667,6 +673,65 @@ mode exclusion, each pair refusing in either declaration order for the reason
 that pair fails: the simple pluck would reduce a related record to one scalar,
 and a freshly constructed value object would throw away the identity the
 relationship exists to preserve.
+
+### A new item whose identifier is incomplete is refused before the save returns
+
+Filament has no counterpart: an Eloquent child is keyed by an auto-incrementing
+`id`, so a repeater item cannot be missing a key half. A Doctrine child can, and
+the failure it produces is worse than an exception. The repeater assigns the
+owner onto each new child and hands the desired list to the accessor; the
+caller's flush then **commits** the row, because an identifier component the item
+schema never collected sits at its property default — `''` for a typed
+`string` — which Doctrine writes without complaint. The row exists, no key names
+it, and the next fill of that repeater throws `is not a printable value` reading
+it back. One forgotten field in `components()` is enough.
+
+So the save asks
+[`AssociationReader::hasIncompleteAssignedIdentifier()`](../schemas/association-reader.md#an-incomplete-assigned-identifier-is-the-question-the-create-paths-ask)
+of every child it **constructed** this pass, and refuses by name:
+
+> `The [%s] repeater is saving an item of [%s] whose identifier is incomplete, so no record key can be minted for it. Put every identifier field in the repeater's components() — enabled and dehydrated for a new item — or build the child in mutateRelationshipDataBeforeCreateUsing().`
+
+Three things about the rule, each of which the message alone gets wrong.
+
+**It is by *assignment*, and only where this epic made the class keyable.** A
+class whose identifier Doctrine generates is never incomplete — the id is the
+ORM's to fill at the insert — so the refusal cannot fire for the ordinary
+`id`-keyed child, whatever shape it is. Neither can it fire for a **plain
+single scalar** identifier the application assigns: the member answers `false`
+for one at the entry, before it reads a field, because such a class has always
+been keyable here and an application may fill that field from a listener no
+mapping shows. What is left is the identifier this epic made keyable — a
+composite key (Doctrine refuses an id generator on one) or one carrying an
+association — minus whatever a `#[PrePersist]` callback of the class or a mapped
+entity listener fills at the flush.
+
+**A pending owner is not incomplete.** A derived-identity child under an owner
+that has not been flushed yet — a repeater on a **create** form — carries an
+identifier association whose target's generated id is still pending, and
+Doctrine writes both in one flush, deferring the child's identifier to the
+parent's insert. Reading that as "incomplete" would refuse a working create page
+with advice that is false, which is exactly what the first spelling of this rule
+did.
+
+**It fires for a field that never reaches the item's state**, which is not the
+same as a field absent from `components()`. A declared component left blank dies
+earlier and better, as the field's own `NotBlank`, with zero statements and an
+error beside the input. But a key half declared and then `hidden()` or
+`disabled()` is refused here too, because `disabled()` also marks the field
+unsaved and an unsaved field contributes nothing to the new child — which is why
+the message says *enabled and dehydrated for a new item* rather than merely
+*in `components()`*. `->disabled()->dehydrated()` saves, and an **existing** item
+with a disabled key half saves either way, since nothing is being constructed.
+What is left is a developer error rather than
+something an end user can answer — so it throws, and it restores nothing: the
+collection write has already run in memory, the item-key map is deliberately
+**not** re-read, nothing has been flushed, and the request ends. The refusal is
+therefore not a transaction guard: a caller that catches the `LogicException`
+and then flushes anyway still commits the half-keyed row it was warned about.
+Validating a
+key that is *taken*, or a key half edited on an existing item, is
+[M7 · 6](../roadmap.md#m7--composite-identifiers)'s.
 
 ### A mutate callback can rewrite what a nested hook consumes
 

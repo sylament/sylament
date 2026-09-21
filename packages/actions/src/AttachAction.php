@@ -9,6 +9,7 @@ use Doctrine\ORM\QueryBuilder;
 use LogicException;
 use Sylament\Actions\Concerns\CanCustomizeProcess;
 use Sylament\Forms\Components\Select;
+use Sylament\Schemas\Identity\IdentifierConstraint;
 use Sylament\Schemas\Query\SearchConstraint;
 use Sylament\Schemas\Schema;
 use Sylament\Schemas\State\Relationship;
@@ -223,7 +224,6 @@ class AttachAction extends Action
     {
         $reader = $this->getAssociationReader();
         $targetClass = $reader->describeRelationship($this->getRelationshipOrFail())->targetClass;
-        $identifier = $reader->getIdentifierFieldName($targetClass);
         $titleAttribute = $this->getRecordTitleAttribute();
         $query = $this->getRecordSelectOptionsQuery($search);
 
@@ -257,12 +257,15 @@ class AttachAction extends Action
             && ! $this->hasCustomRecordTitle()
             && ($this->hasCustomRecordTitleAttribute() || ! ($this->getTable()?->hasCustomRecordTitle() ?? false))
         ) {
-            /** @var list<array{sy_key: int|string, sy_title: mixed}> $rows */
-            $rows = $query->select("record.{$identifier} AS sy_key, record.{$titleAttribute} AS sy_title")->getQuery()->getArrayResult();
+            $selection = IdentifierConstraint::select($query, 'record', $targetClass);
+
+            /** @var list<array<string, mixed>> $rows */
+            $rows = $query->select(implode(', ', [...$selection->expressions, "record.{$titleAttribute} AS sy_title"]))->getQuery()->getArrayResult();
             $options = [];
 
             foreach ($rows as $row) {
-                $options[$row['sy_key']] = is_scalar($row['sy_title']) ? (string) $row['sy_title'] : '';
+                $title = $row['sy_title'] ?? null;
+                $options[$selection->keyOf($row)] = is_scalar($title) ? (string) $title : '';
             }
 
             return $options;
@@ -318,7 +321,7 @@ class AttachAction extends Action
         $records = $this->findCandidatesByKey($keys);
 
         if (count($records) !== count($keys)) {
-            throw new LogicException(sprintf('The action [%s] was asked to attach a record its select never offered — the key is outside recordSelectOptionsQuery()\'s scope or already attached.', $this->getName()));
+            throw new LogicException(sprintf('The action [%s] was asked to attach a record its select never offered — the key is malformed, outside recordSelectOptionsQuery()\'s scope, or already attached.', $this->getName()));
         }
 
         return $records;
@@ -335,13 +338,12 @@ class AttachAction extends Action
             return [];
         }
 
-        $reader = $this->getAssociationReader();
-        $identifier = $reader->getIdentifierFieldName($reader->describeRelationship($this->getRelationshipOrFail())->targetClass);
+        $targetClass = $this->getAssociationReader()->describeRelationship($this->getRelationshipOrFail())->targetClass;
+        $query = $this->getRecordSelectOptionsQuery();
 
         /** @var list<mixed> $records */
-        $records = $this->getRecordSelectOptionsQuery()
-            ->andWhere("record.{$identifier} IN (:sylament_selected_record_keys)")
-            ->setParameter('sylament_selected_record_keys', $keys)
+        $records = $query
+            ->andWhere(IdentifierConstraint::in($query, 'record', $targetClass, array_map(strval(...), $keys), 'sylament_selected_record_keys'))
             ->getQuery()
             ->getResult();
 

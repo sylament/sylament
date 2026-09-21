@@ -216,6 +216,22 @@ final class CompositeRouteOverlapResource extends Resource
 }
 
 /**
+ * A record path whose static text opens on an ordinary letter rather than on a
+ * route separator — the shape the compiler's own pattern already admits whole.
+ */
+final class CompositeRouteLetterSuffixResource extends Resource
+{
+    protected static ?string $recordClass = Article::class;
+
+    protected static ?string $slug = 'suffixes';
+
+    public function getPages(): array
+    {
+        return ['letter' => new PageRegistration(SeparatorProbePage::class, '/{record}abc')];
+    }
+}
+
+/**
  * A nested resource carrying a separator path of its own, where the parent key
  * travels beside the record on one path.
  */
@@ -638,6 +654,25 @@ it('leaves a record placeholder sharing its segment with a second one to the com
         ->and($routes->get('sylament.sep.resources.segments.format')?->getRequirements())->toBe([])
         ->and($routes->get('sylament.sep.resources.segments.format')?->compile()->getRegex())
         ->toBe('{^/sep/segments/(?P<record>[^/\.]++)\.(?P<format>[^/]++)$}sD');
+});
+
+it('leaves a record placeholder that ordinary static text follows to the compiler', function (): void {
+    $provider = new class extends PanelProvider {
+        public function panel(Panel $panel): Panel
+        {
+            return $panel->id('letters')->path('letters')->resources([CompositeRouteLetterSuffixResource::class]);
+        }
+    };
+
+    $route = loaderFor($provider, [CompositeRouteLetterSuffixResource::class => new CompositeRouteLetterSuffixResource()])()
+        ->get('sylament.letters.resources.suffixes.letter');
+
+    // The compiler excludes only the separator it finds behind a placeholder,
+    // so text opening on a letter leaves its default pattern admitting every
+    // character a key can spell here — and the requirement, which compiles to
+    // that same regex, is the one thing such a path would show it by.
+    expect($route?->getRequirements())->toBe([])
+        ->and($route->compile()->getRegex())->toBe('{^/letters/suffixes/(?P<record>[^/]+)abc$}sD');
 });
 
 // A greedy record pattern reads up to the *last* spelling of the static text

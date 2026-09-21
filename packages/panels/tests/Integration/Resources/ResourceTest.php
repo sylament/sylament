@@ -264,8 +264,8 @@ it('mints and resolves an identifier one of whose fields is named id', function 
     $resource = compositeSeamResource(EditionResource::class);
     $edition = compositeSeamRecord($entityManager, Edition::class, ['title' => 'Fifth']);
 
-    // `5` is the partial key a non-table action mints off the `id` property
-    // alone, and it names no record.
+    // `5` is the partial key a literal `id` reading would spell, and it names
+    // no record.
     expect($resource->getRecordRouteKey($edition))->toBe('5~en-GB')
         ->and($resource->resolveRecordRouteBinding('5~en-GB'))->toBe($edition)
         ->and($resource->resolveRecordRouteBinding('5'))->toBeNull();
@@ -332,6 +332,27 @@ it('runs no statement for a key that names no record', function (): void {
     $recorder->reset();
 
     expect($resource->resolveRecordRouteBinding('plain~about'))->toBeInstanceOf(Imprint::class)
+        ->and($recorder->statements())->toHaveCount(1);
+
+    // The single-identifier arm is the one M1 moved, and it is the one SQLite
+    // would answer null for either way: `05` aliases the record under a raw
+    // bind and `abc` matches nothing at all, so the pin is that neither
+    // reaches the database.
+    $catalogues = compositeSeamResource(CatalogueResource::class);
+
+    $recorder->reset();
+
+    expect($catalogues->resolveRecordRouteBinding('05'))->toBeNull()
+        ->and($recorder->statements())->toBe([]);
+
+    $recorder->reset();
+
+    expect($catalogues->resolveRecordRouteBinding('abc'))->toBeNull()
+        ->and($recorder->statements())->toBe([]);
+
+    $recorder->reset();
+
+    expect($catalogues->resolveRecordRouteBinding('1'))->toBeInstanceOf(Catalogue::class)
         ->and($recorder->statements())->toHaveCount(1);
 });
 

@@ -276,12 +276,14 @@ class AssociationReader
     /**
      * A managed reference to an entity by the key {@see getRecordKey()} mints —
      * a key of any width, decoded against the class's own mapping before
-     * anything is looked up, so a key that names no record of that class is
-     * refused without a statement.
+     * anything is looked up, so a key no record of that class could mint is
+     * refused without a statement. A well-formed key is looked up only where the
+     * reference has to load; on a scalar identifier it becomes a lazy reference,
+     * which names no record only once something initialises it.
      *
      * @param class-string $class
      *
-     * @throws LogicException when the key is malformed for the class, or names no record
+     * @throws LogicException when the key is malformed for the class, or — where the reference loads — names no record
      */
     public function getReference(string $class, int|string $id): object
     {
@@ -315,8 +317,8 @@ class AssociationReader
 
     /**
      * Whether the record is missing an identifier component the application has
-     * to assign — asked only of the identifiers this epic made keyable, a
-     * composite one or one carrying an association. A plain single scalar
+     * to assign — asked only of a composite identifier or one carrying an
+     * association. A plain single scalar
      * identifier is never refused here: the relation layer has always keyed the
      * class, and an application may fill such a field from anywhere, including a
      * listener no class-level mapping shows.
@@ -412,8 +414,7 @@ class AssociationReader
 
     /**
      * {@see hasIncompleteAssignedIdentifier()} without its entry bound, so that
-     * behind an identifier association a single assigned scalar still counts —
-     * which is why the recursion calls this member rather than the public one. A
+     * behind an identifier association a single assigned scalar still counts. A
      * generated identifier that is still pending is Doctrine's to fill at flush,
      * and so is one the class assigns from a prePersist callback or a mapped
      * entity listener; none of the three is missing.

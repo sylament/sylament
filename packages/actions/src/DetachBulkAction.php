@@ -55,10 +55,12 @@ class DetachBulkAction extends BulkAction
      * hydrated records, or — under `fetchSelectedRecords(false)` — references
      * built from the selected keys, which never SELECT the rows themselves. The
      * shape of the selection is resolved before the `try`, so a host feeding
-     * neither entities nor keys propagates as the developer error it is;
-     * a key that is malformed or names no record is client state and stays
-     * inside it, as the danger toast — {@see DeleteBulkAction} places its own
-     * refusals the same way.
+     * neither entities nor keys propagates as the developer error it is. A
+     * malformed key, and a key naming no record wherever the reference is
+     * loaded or initialised, is client state and stays inside the `try`, as the
+     * danger toast; on an owning-side many-to-many over a scalar identifier
+     * nothing initialises the reference, so a stale key detaches nothing and is
+     * counted as a success.
      *
      * @param array<mixed> $records
      */

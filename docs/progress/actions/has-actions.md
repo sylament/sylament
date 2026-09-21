@@ -717,6 +717,10 @@ toolkit. [`Action::getContext()`](action.md) stamps `recordKey` from
 container — so a `Select` option action inside a record-bound form emits its
 form's record key, on a host that has no `resolveRecordUsing()` and no reason to
 grow one. Without the guard the very first mount would be a `LogicException`.
+It emits that key only where the form's record is keyed by `id` alone
+([the mint's own gate](action.md#getcontext-drops-the-record-model-gate)); a
+record of any other identifier shape emits nothing and never reaches the guard
+at all, which narrows what the guard has to catch rather than changing it.
 Filament has no equivalent guard because its generic branch never resolves a
 record in the first place.
 

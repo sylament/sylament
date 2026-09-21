@@ -82,8 +82,14 @@ then the host's
 An action inside a relation-scoped table therefore needs no configuration at
 all, and one that names its own owner overrides the table it sits in.
 
-The arm itself sits **between** `persist()` and `flush()` in `createRecord()`,
-and each of those three lines is load-bearing. `persist()` stays explicit
+The arm itself runs **before** `persist()` in `createRecord()`, and each of
+those three lines is load-bearing. The attach comes first because an identifier
+field the association fills reads **unset** until the join is made, and
+Doctrine's `AssignedGenerator` throws `EntityMissingAssignedId` the moment
+`persist()` reads one — so a record whose identifier association *is* the
+relationship cannot be persisted before it is attached.
+`CreateRecord::handleRecordCreation()` has always ordered it that way and says
+why; this arm now matches it. `persist()` stays explicit
 because the membership write is not a cascade: the owner's association may
 declare none, and an unpersisted record that a collection merely holds is not
 inserted by a mapping that does not cascade. The attach runs on the object

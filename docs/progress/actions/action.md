@@ -1492,7 +1492,20 @@ being closed the way it proposed: the actions layer is handed the table's key
 rather than taught Doctrine, so a row action on a `Book`, a `Shortcut` or a
 `Residency` mounts **with** its record instead of silently without one. An
 action with no table, or over a record that is not the table's entity — a
-`SELECT NEW` projection, a DTO — reads `id` exactly as before.
+`SELECT NEW` projection, a DTO — reads `id`, and only where `id` is that
+record's **whole** identity. A private `isRecordKeyedByIdAlone()` compares
+`ClassMetadata::getIdentifier()` against `['id']`, and when they disagree
+`getContext()` mints no `recordKey` at all, so the action's declared record
+stands — which is exactly what a composite record with no `id` property has
+always done. The gate only ever *removes* a wrongly minted key: the partial
+`"5"` of an `id`-plus-`locale` identifier, which a host that decodes strictly
+then refuses as a 404 on click, and the stray non-identifier `id` of a composite
+entity, which was a 500. It lives on `Action` rather than in the trait because
+`ActionGroup` composes `InteractsWithRecord` **without** the manager registry
+the question needs, and it keeps the literal reading wherever no mapping
+answers — an anonymous class, which Doctrine refuses to describe at all; a class
+no manager maps; and an action built outside the container, which holds no
+registry. In each of those, the literal reading is the only identity there is.
 
 It also means the read can now **throw** where it used to stay quiet: a record
 of the table's own class whose identifier is incomplete — an explicitly-set,
@@ -1842,7 +1855,12 @@ a mount context can simply omit one. It is also, since M7 · 1, the **fallback**
 rather than the whole outbound answer — a table-bound action over one of the
 table's own records is handed the table's key first
 ([above](#getcontext-drops-the-record-model-gate)), and this literal `id` read
-is what answers for everything else. Keep the two in step if the read ever
+is what answers for everything else — and, since the literal reading is now
+gated on `id` being the record's whole identity
+([above](#getcontext-drops-the-record-model-gate)), for a narrower "everything
+else" than before. The gate is the **caller's**: `resolveRecordKey()` itself is
+byte-identical, because `ActionGroup` composes this trait without the manager
+registry the question needs. Keep the two in step if the read ever
 changes: they are two implementations of one convention, not one method and its
 wrapper. The array arm keeps Filament's
 `LogicException` for a *missing*

@@ -19,6 +19,7 @@ use Sylament\Tables\Tests\Fixtures\Doctrine\Entity\Venue;
 use Sylament\Tables\Tests\Fixtures\Doctrine\Handle;
 use Sylament\Tables\Tests\Fixtures\Doctrine\RecordingMiddleware;
 use Sylament\Tables\Tests\Fixtures\Twig\Components\ArtistAssociateLeasesTable;
+use Sylament\Tables\Tests\Fixtures\Twig\Components\ArtistAssociateLockersTable;
 use Sylament\Tables\Tests\Fixtures\Twig\Components\ArtistAssociateShortcutsTable;
 use Sylament\Tables\Tests\Fixtures\Twig\Components\ArtistResidenciesAttachTable;
 use Sylament\Tables\Tests\Fixtures\Twig\Components\ArtistSealsAttachTable;
@@ -51,7 +52,8 @@ beforeEach(function (): void {
 
 /**
  * Two artists and one record of every identifier flavour, with Ada already
- * holding the first of each so every candidate query has something to exclude.
+ * holding the first of each — the first locker through its ordinary nullable
+ * keeper column — so every candidate query has something to exclude.
  * Seeded through the container's own manager, identity map left intact, the way
  * {@see seededGenresClient()} seeds.
  *
@@ -105,6 +107,7 @@ function compositeAttachSeededClient(): array
     $artists[0]->addVenue($venues[0]);
     $shortcuts[0]->addTroupe($artists[0]);
     $shortcuts[0]->setCurator($artists[1]);
+    $lockers[0]->setKeeper($artists[0]);
 
     $entityManager->flush();
     $recorder->reset();
@@ -179,6 +182,30 @@ function compositeAttachOutcome(KernelBrowser $client, mixed $recordId, array $p
     }
 
     return 'attached';
+}
+
+/**
+ * The same bypass for the associate side, whose refusal carries a clause of its
+ * own.
+ *
+ * @param class-string $hostClass
+ */
+function compositeAttachAssociateOutcome(KernelBrowser $client, string $hostClass, mixed $recordId): string
+{
+    $host = compositeAttachHost($client, $hostClass);
+    $host->mountAction('associate', [], ['table' => true]);
+
+    $schema = $host->getMountedActionSchema();
+    $action = $host->getMountedAction() ?? throw new LogicException('Nothing mounted.');
+    $action->data(['recordId' => $recordId]);
+
+    try {
+        $action->call(['schema' => $schema, 'form' => $schema]);
+    } catch (LogicException $logicException) {
+        return $logicException->getMessage();
+    }
+
+    return 'associated';
 }
 
 it('offers a scalar-pair target keyed by the record key, escaping included', function (): void {
@@ -325,4 +352,23 @@ it('still associates a composite child whose mapped-by is an ordinary column', f
     $host->callMountedAction();
 
     expect(compositeAttachRelatedKeys($client, $entityManager, ArtistAssociateShortcutsTable::class))->toBe(['plain~about']);
+});
+
+it('offers a converting single identifier by the key a record mints, not the one the column holds', function (): void {
+    [$client] = compositeAttachSeededClient();
+
+    // The column holds `l1`/`l2`; a projected row keyed without converting each
+    // value through its field's own type would offer `l2`, which nothing the
+    // submission is resolved against can then match.
+    expect(compositeAttachMountedSelect($client, ArtistAssociateLockersTable::class, 'associate')->getSearchResults(''))
+        ->toBe(['L2' => 'Locker two']);
+});
+
+it('refuses a malformed or unoffered key from the associate by its own widened message', function (): void {
+    [$client] = compositeAttachSeededClient();
+
+    expect(compositeAttachAssociateOutcome($client, ArtistAssociateLockersTable::class, 'l2'))
+        ->toContain("the key is malformed, outside recordSelectOptionsQuery()'s scope, or already associated")
+        ->and(compositeAttachAssociateOutcome($client, ArtistAssociateLockersTable::class, 'L1'))
+        ->toContain('its select never offered');
 });

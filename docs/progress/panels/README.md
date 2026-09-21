@@ -584,8 +584,14 @@ What is ported, by cluster:
   **different** builder, which is how a parent scope replaces the query rather
   than adding a predicate to it — and
   `getRecordRouteKey()` is the generation side of the same key —
-  `$recordRouteKeyName` when set, else the single identifier value off
-  `ClassMetadata`. A composite identifier throws on both sides.
+  `$recordRouteKeyName` when set, else the key
+  [`RecordKey::of()`](../schemas/record-key.md#the-api) mints for an identifier
+  of **any** width. The resolution side splits the same way: with no
+  `$recordRouteKeyName` it decodes the segment strictly and narrows through
+  `IdentifierConstraint::equals()`, so a key no record of the class could mint
+  answers no record **without running a statement**; with one, it binds that
+  one field,
+  [untyped and uncodec'd](#a-custom-recordroutekeyname-names-one-column-and-the-codec-never-sees-it).
 - **URLs.** `getUrl()` / `getIndexUrl()` over
   `UrlGeneratorInterface::generate()`, with Filament's `blank($name)` → index
   fallback and its verbatim "does not have an [index] page" message.
@@ -2157,12 +2163,31 @@ empty stack, so a malformed key is a **silent non-mount** — the modal simply d
 not open — where the `NotFoundHttpException` below propagates all the way out as
 a 404. The two failures are deliberately asymmetric, one being a client sending
 nonsense and the other a record that is really gone. The key is then handed to
-`Resource::resolveRecordRouteBinding()`, with a `NotFoundHttpException` for a miss.
+`Resource::resolveRecordRouteBinding()`, with a `NotFoundHttpException` for a
+miss — and, since that binding decodes before it binds, a key that is
+well-formed JSON but malformed for the record class takes the same 404 with no
+statement run, where it used to reach the database as a raw parameter.
+
 Going through that method rather than `EntityManager::find()` is the whole point:
 it is [the resource's scoped query](#a-record-is-resolved-through-the-resources-own-query),
 so a row outside the resource's scope 404s instead of being mounted into a modal
 by primary key. A row action on a scoped list is exactly where that would leak,
 and it would leak silently.
+
+What arrives in that context is the minting side's business, and the two sides
+only agree where the mint knows the resource's rule. A **table**-bound action
+carries the key the table itself minted, so a row action on a composite list
+resolves against the same string the row rendered. Every other action reads the
+literal `id` property — and, since M7 · 3, reads it
+[only where `id` is the record's whole identity](../actions/action.md#getcontext-drops-the-record-model-gate).
+Without that guard, an ordinary `EditAction::make()->record($this->getRecord())`
+in a page header on a record keyed by `id` **and** a locale minted the partial
+key `"5"`, which the strict decode then refuses — a 404 on click, from a trigger
+whose record the page was already holding. The guard mints nothing there
+instead, and the declared record stands, which is what a composite record with
+no `id` field has always done. A resource declaring `$recordRouteKeyName` keeps
+its own pre-existing mismatch: `['id']` **is** that record's identifier, so the
+literal reading still fires and still names a key the resource does not use.
 
 ### A page lifecycle hook is a method name, not a registration
 
@@ -3034,8 +3059,17 @@ outside that scope, not the row. Going through `find()` would bypass the scope
 entirely and leak by primary key, and the leak would be invisible — the list page
 would look correctly filtered while the edit URL served anything. The root alias
 is read off the builder (`getRootAliases()[0]`) so an overridden query that names
-its own alias still works, and a composite identifier throws rather than guessing
-which column the URL segment means. `getRecordRouteKey()` is the generation side
+its own alias still works, and the predicate is
+[`IdentifierConstraint::equals()`](../schemas/record-key.md#the-operations-and-their-dql)
+rather than one hand-written `alias.field = :sylament_record_key`, so an
+identifier of any width narrows the same query in the same place. The class it
+keys against is the **declared** `getRecordClass()`, never the builder's root
+entity: a modifier may replace the builder wholesale, and the resource still
+speaks for the class it says it does. And the decode runs **before** anything is
+bound, so a key that class could never mint — the wrong arity, a lower-case
+escape, a component its field's type cannot hold — is a 404 that issues no
+statement rather than a database error.
+`getRecordRouteKey()` is the generation side
 of the same pair, replacing what Laravel got free from `UrlRoutable`; both sides
 read `$recordRouteKeyName`, so they cannot disagree. It reads `getRecordClass()`
 first, for the "speaks for" guard, so a resource declaring `$recordRouteKeyName`
@@ -3054,6 +3088,38 @@ returns**, so a scope may replace the builder wholesale (the reader's
 relationship query does), and a closure returning anything but a `QueryBuilder`
 or null throws rather than being ignored — a `Closure` carries no return type,
 so this is the only place the wrong shape is detectable.
+
+### A custom `$recordRouteKeyName` names one column, and the codec never sees it
+
+`$recordRouteKeyName` is Filament's own static and it keeps Filament's own
+meaning: the URL segment is **one property** of the record, read through
+schemas' `PropertyAccessor` on the way out and bound as one untyped parameter
+on the way back. The key codec is consulted on neither side, and three
+consequences follow that the default arm no longer has.
+
+The bind is **untyped**, so a non-numeric segment against a numeric column is a
+`DriverException` — a 500, because `PageController` converts only an
+`HttpExceptionInterface` — where the default arm answers a 404 without
+querying. The named column need not be **unique** — one field out of a
+several-field identifier never is — so `getOneOrNullResult()` raises
+`NonUniqueResultException`, a 500 for the same reason; the default arm cannot
+reach that exception at any identifier width. And the value reaches the
+`sy-pa-resource-record-<key>` class token raw, so a property holding whitespace
+[splits that token in two](custom-pages.md#getpageclasses-is-the-only-source-of-a-per-page-root-class),
+which the grammar makes impossible for a **composite** key.
+
+None of the three is new and none is composite-only — a dotted or unmapped name
+is a fourth, a `QueryException` 500, and a name that is an **association** a
+fifth, which binds and resolves and then mints nothing, the property read
+answering an entity that *"is not a printable value."* — and they are recorded
+here because the
+default arm stopped sharing them, which is what makes them addressable. The
+arm is left byte-identical on purpose: a user who declares the static has told
+us which column they mean, and the closing version of it — convert the value
+through the field's own DBAL type and compare it back to what the client sent —
+needs an addition to the frozen key contract, which is a later epic's to make.
+Typing the bind alone was executed and is worse than the gap: it trades the 500
+for `5abc` silently resolving record 5.
 
 ### `getRecordTitle()` returns a plain string
 
@@ -3454,7 +3520,11 @@ throw on a value it cannot dehydrate. `dehydrateRecord()` returns `$this->record
 the raw key, and the prop is a scalar on the wire again. This is the
 [CLAUDE.md dehydration trap](../../../CLAUDE.md) in its second shipped form,
 mirroring tables' [`dehydrateTableSearch`](../tables/has-table.md#the-writable-props-dehydrate-in-their-elements-wire-vocabulary);
-the fix is always the bridge, never renaming the Filament getter.
+the fix is always the bridge, never renaming the Filament getter. A composite
+key is one string too — the `?string` type, the checksum and the bridge carry
+`1~A=2FB=20C` exactly as they carry `7` — so the widening of the key format
+asked nothing of this prop, nor of the parent chain's
+`array<string, string>`, nor of a relation manager's `ownerRecord`.
 
 We could have sidestepped both by typing the prop to the entity and letting
 `DoctrineEntityHydrationExtension` carry the identifier (the demo's `ArticleForm`
@@ -3467,8 +3537,11 @@ which is also stricter than a `find()`: a record the query scopes out 404s
 instead of loading.
 
 `packages/panels/tests/Integration/Resources/Pages/EditRecordTest.php` reads the
-rendered `data-live-props-value` and asserts `record` is the key string. Removing
-the bridge fails five cases across both record-page suites.
+rendered `data-live-props-value` and asserts `record` is the key string, and
+`CompositeRecordPagesTest` asserts the same of a two-component one. Removing the
+bridge does not fail those two alone: the prop then dehydrates as the resolved
+**entity**, which the hydrator refuses, so every case that renders a record page
+goes red with it.
 
 ### Staying on the page after a save is a `null` redirect, not a caught authorization exception
 

@@ -654,3 +654,53 @@ crumb above it already links.
 
 The test is on the whole trail, not on adjacency: any URL already spent is
 unlinked, which additionally makes a non-adjacent repeat impossible.
+
+### A parent record the relation layer cannot key is refused by name, from panels
+
+A nested resource scopes every read to its parent through
+[the reader's relationship query](#the-parent-scope-is-the-readers-relationship-query-not-a-predicate-we-write),
+and that query binds the parent **record** as a query parameter — which
+Doctrine refuses for a record keyed by anything but one scalar field. So
+`BelongsToParent` asks first, in panel vocabulary rather than the relation
+layer's:
+
+> Resource [%s] nests under [%s], whose records of [%s] are not keyed by a
+> single scalar identifier; scoping a nested resource to such a parent record is
+> not built yet.
+
+The predicate is *keyable by the relation layer*, not `isIdentifierComposite`:
+`! $metadata->isIdentifierComposite && ! $metadata->hasAssociation($metadata->getSingleIdentifierFieldName())`
+is what passes, so a **single derived identity** — one `#[Id]` association and
+nothing else, which Doctrine calls non-composite — is refused too. Deleting the
+guard would not remove the refusal, only move it: one layer down it arrives in
+forms vocabulary, as *a relation-backed field cannot key* the record, and for
+that single derived identity nothing refuses at all and the failure surfaces as
+an unrelated *is not a printable value*.
+
+Two throw sites, one predicate, one message.
+`getParentScopedRecordQuery()` covers every read — a nested record page, a
+nested listing, a mounted action's scope — and `attachRecordToParent()` covers
+the routed nested **create** page's write, the join it makes on submit. The
+second is not redundant: a create page calls `getParentScopedRecordQuery()`
+nowhere, so with the read site alone that page rendered, persisted a row and
+redirected to an edit page that then 500s. It still renders — the refusal is at
+submit, before anything is written — and that is deliberate rather than
+unfinished. On a rendered page the refusal is a **500**, a `LogicException`
+inside Twig's render error, because a request that got this far named a resource
+the panel really does register; out of the create live action it arrives
+unwrapped, the throw being in the action body rather than in a render.
+
+One further path reaches the relation layer unguarded, and is recorded rather
+than closed. A modal `CreateAction` mounted on a page that renders without
+resolving a record of its own — a nested create page, a nested custom page with
+no `{record}` — takes its relationship from
+`Resources\Pages\Page::getDefaultActionRelationship()`, which builds a
+`Relationship` from the parent record directly and so reaches
+`AssociationReader::attach()` past both throw sites. The row it writes is valid
+and nothing about it breaks; refusing there would need a new public entry point
+on `Resource`, which is not worth adding for a guard M7 · 5 deletes whole.
+
+The guard is **interim**. What would make the scope possible is the owner half
+of `AssociationReader`, and
+[M7 · 5](../roadmap.md#m7--composite-identifiers) deletes both call sites and
+the predicate together when it lands.

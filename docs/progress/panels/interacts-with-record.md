@@ -117,8 +117,8 @@ parent chain itself as its first line.
 
 `getRecord()` resolves the key through the resource's
 `resolveRecordRouteBinding($key, $this->getParentRecordScope())` and memoizes on
-`$resolvedRecord` for the request — a blank key and a key matching nothing both
-throw `NotFoundHttpException`, which
+`$resolvedRecord` for the request — a blank key, a key matching nothing and a
+key **malformed for the record class** all throw `NotFoundHttpException`, which
 [`PageController` unwraps out of Twig's render error](README.md#a-mount-time-http-exception-is-unwrapped-from-twigs-render-error)
 into a real 404. The scope is null for a page whose resource nests under nothing,
 so a plain resource page resolves exactly as it did before this epic.
@@ -127,6 +127,18 @@ Laziness is what makes the prop safe on the wire: nothing is resolved at
 dehydration time, and the next request re-resolves the key it was handed —
 through the parent scope again — rather than trusting anything the previous
 render decided.
+
+The third shape is the one that changed behaviour for URLs that work today, and
+it is worth spelling out rather than discovering. A single-identifier key
+encodes to itself, so `/admin/articles/7/edit` is untouched — but `05`, a
+percent-encoded leading space, a trailing newline and `+5` all resolve article
+5 today on SQLite **and** on PostgreSQL, and `5.0` resolves it on SQLite while
+PostgreSQL answers that one `22P02`, a 500, exactly as it answers `abc`. All
+five are a 404 afterwards, on both, with no redirect to the canonical spelling.
+`abc` and `5abc` stop reaching the database at all, which is how
+`/admin/articles/abc/edit` stopped being a 500 on PostgreSQL. The refusal
+happens **before** anything is bound, so the third shape is the only one of the
+three that answers without a statement having run.
 
 ## Divergences
 

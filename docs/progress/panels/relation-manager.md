@@ -118,6 +118,14 @@ hydrates the manager alone, stamps nothing, and still resolves the default panel
 So the exposure is narrowed, not closed, and it closes when the manager carries
 its own prop.
 
+The failure mode is total rather than partial, which is worth stating so nobody
+looks for a subtler symptom. A manager that declares `$relatedResource` on a
+**non-default** panel throws `RouteNotFoundException` at mount, at render and on
+every live call, because `getDefaultActionUrl()` mints a URL whose route name
+exists only under the panel the manager is not resolving. A browser on a second
+panel meets it exactly as a test does, and a manager that declares no
+`$relatedResource` never mints one and is unaffected.
+
 ## Semantics
 
 ### The title fallback humanizes the relationship name without pluralizing it
@@ -194,7 +202,12 @@ useless class-string `object`. So the prop is the owner's **route key**
 (`?string`) plus a `?string $pageClass`, and `getOwnerRecord()` resolves it
 through `pageClass::getResource()` → the resource registry →
 `resolveRecordRouteBinding()`, memoised for the request, `NotFoundHttpException`
-on a miss. `is_subclass_of($pageClass, Resources\Pages\Page::class)` gates the
+on a miss. The key is the resource's own route key at any identifier width, so
+the prop, its checksum and the bridge carry `1~A=2FB=20C` exactly as they carry
+`7`; what a composite owner still meets is
+[the relationship scope's own refusal](#an-owner-record-the-relation-layer-cannot-key-is-refused-by-name-from-panels),
+which is a fact about the query underneath rather than about the wire.
+`is_subclass_of($pageClass, Resources\Pages\Page::class)` gates the
 client-supplied class-string against the **resource**-page base, so the shell
 `Pages\Page` (and `Dashboard` with it) cannot get past it.
 
@@ -215,7 +228,10 @@ It is safe as it stands because the key is a checksummed `LiveProp` the host pag
 stamped from its own already-scoped record, so a tampered value fails the
 checksum before any query runs. It stops being safe the day a manager is mounted
 with a key from anywhere else — a `#[LiveArg]`, a URL — which is the thing to
-check before widening how a manager is mounted.
+check before widening how a manager is mounted. It is also Filament's own shape
+rather than an omission of ours: `#[Locked] Model $ownerRecord` carries no scope
+either, and closing it here would mean a second wire prop holding the parent
+chain.
 
 ### A manager naming no relationship throws rather than reaching for a related resource
 
@@ -371,3 +387,33 @@ keyed by `getComponentName()`. It is
 minus the `PageController` locator — a manager has no route and no controller.
 The authoring-surface cost (one attribute line Filament does not ask for) is
 the deliberate trade recorded there.
+
+### An owner record the relation layer cannot key is refused by name, from panels
+
+`getRelationship()` is the one chokepoint both hosts pass through — a
+[`RelationManager`](#the-manager-stands-beside-the-resource-page-base-rather-than-under-it)
+and [`ManageRelatedRecords`](manage-related-records.md) each reach the
+association through it — so the owner is judged there, once:
+
+> The relationship table [%s] lists an association of [%s], whose records are
+> not keyed by a single scalar identifier; scoping a relationship table to such
+> an owner record is not built yet.
+
+It is the same predicate the nested tier uses, for the same reason and with the
+same reach into a single derived identity
+([why it is not `isIdentifierComposite`](nested-resources.md#a-parent-record-the-relation-layer-cannot-key-is-refused-by-name-from-panels)),
+and the same interim life:
+[M7 · 5](../roadmap.md#m7--composite-identifiers) deletes it together with the
+owner scoping that makes it unnecessary. A composite **target** needs nothing
+from it — the reader's one-to-many arm never reads the target's identity, so a
+manager lists records keyed by two scalars, or by an association plus a scalar,
+under a single-identifier owner today.
+
+The guard **yields** rather than refusing in three cases, each of them the
+relation layer's own refusal to make in its own words: a host built outside the
+container, where the `#[Required]` `setRelationshipTableEntityManager()` setter
+never ran and there is no mapping to read; an owner class Doctrine calls
+transient; and an anonymous owner class, which Doctrine refuses to describe at
+all. `AssociationReader::describe()` draws the same three lines, and throwing
+here instead would refuse hosts that work today. That setter is the only public
+surface this guard adds, and it goes with it.

@@ -204,6 +204,21 @@ pinned still matches byte for byte, which is what makes the partial deletion a
 refactor rather than a rewrite. A hand-written page returning
 `['sy-pa-settings-page']` gets the same scoping hook with no template of its own.
 
+The record key goes into that token **raw**, and for a **composite** key that
+is safe by construction rather than by luck: the
+[key grammar](../schemas/record-key.md#the-grammar) admits `[A-Za-z0-9_-]`, `~`
+and `=` and no whitespace at all, so a composite key cannot split one class
+token into two. That is the whole of what the grammar closes. A key of **one**
+identifier field is the flattened value verbatim — no escaping, no alphabet
+check — so a single `string` identifier holding whitespace still splits the
+token; and so does a resource declaring `$recordRouteKeyName`, which stamps an
+arbitrary property
+[without passing it through the codec at all](README.md#a-custom-recordroutekeyname-names-one-column-and-the-codec-never-sees-it).
+Only `EditRecord` and `ManageRelatedRecords` emit the token at all — a custom
+record page inherits `Pages\Page`'s empty `getPageClasses()` and has none — and
+nothing in the toolkit's CSS, JavaScript or Twig selects it, so `~` and `=`
+inside it cost nothing either.
+
 ### A page with no body attributes still renders a stray space
 
 `getExtraBodyAttributes()` is read off the **un-mounted** page by
@@ -402,6 +417,72 @@ checked for a parameter literally named `record<\d+>` and refused. Nothing in th
 toolkit or the demo writes one — a page path is a slug and a bare `{record}` —
 so the shape is recorded rather than worked around; normalising the capture is a
 one-line change if a consumer ever wants inline requirements.
+
+### The loader narrows a record placeholder a separator follows, because the compiler's default excludes it
+
+`RouteCompiler` compiles a placeholder to a pattern that excludes the **next
+static separator** as well as `/`: `/{record}/edit` gives `[^/]++`, but
+`/{record}-preview` gives `[^/\-]++` and `/{record}~preview` gives `[^/~]++`.
+Four characters of the [key grammar](../schemas/record-key.md#the-grammar) are
+in `RouteCompiler::SEPARATORS` — `-`, `_`, `~` and `=` — and the first two are
+*safe* bytes the codec never escapes, so the trap predates composite keys
+entirely: a UUID or slug `$recordRouteKeyName` already breaks against
+`/{record}-preview`. And it fails at **generation**, not at match —
+`UrlGenerator::generate()` raises `InvalidParameterException`, so the **listing**
+that mints the row URL 500s and the record page is never reached, or, under
+`framework.router.strict_requirements: null`, the link generates and the click
+404s. "It 404s" sends a debugger to the wrong page.
+
+So [`PanelRouteLoader`](README.md#routing) stamps
+`requirements: ['record' => '[^/]+']` on a mounted path whose `{record}` is
+followed, up to the next `/` or the end of the path, by non-empty **pure
+static** text — text carrying no `{` — that opens on a separator other than
+`/`. A declared requirement replaces the compiler's default wholesale,
+separator exclusion included, which is the whole fix. Three properties of it
+are load-bearing. It is **conditional**, so
+every path in this toolkit and in the demo — all `/{record}/…` or a bare
+`/{record}` — compiles to the byte-identical pattern it compiled to before. It
+must stay **greedy**: the possessive `[^/]++` never gives the trailing static
+text back, so it generates a URL that then matches nothing, which is exactly the
+"tidy the regex to match the compiler's default" change a later reader makes.
+And only `{record}` is stamped — a parent placeholder is always followed by `/`,
+since the loader writes that slash itself, and any other placeholder on a page
+path is the developer's own, where narrowing it would change how *their* value
+splits.
+
+The rule is *any* non-slash separator, so `/{record}.pdf` is narrowed too. No
+**composite** key contains a dot and `.` is escaped into the pattern either
+way, so all the stamp buys there is that a single identifier holding one stops
+being refused.
+
+**Pure static** is what keeps the stamp from taking a URL apart differently. A
+greedy `[^/]+` runs to the **last** occurrence of the separator, so on a
+segment carrying a second placeholder it re-splits a URL that works today:
+`/{record}-{locale}` reads `/5-en-GB` as `5` and `en-GB`, and a stamped pattern
+would read it `5-en` and `GB`. Such a segment is therefore left to the
+compiler, byte-identical to what it compiled to before, and two residuals
+follow. On a placeholder-bearing segment a key containing that separator still
+cannot be generated — declare the page `/{record}/…` instead. And where the
+stamp does apply, an earlier-registered `/{record}-x` claims `/5-y-x` with
+`record = "5-y"`, where a later `/{record}-y-x` used to match it with
+`record = "5"`: order-dependent, and visible only to an app that registered
+both shapes.
+
+`PageRegistration` grows no `requirements()` member to go with it. The narrowing
+is computed from the path the page already declares, and a second place to
+narrow a route from is a second place for the two to disagree; a consumer's own
+placeholder is theirs to name in the path. Recorded as a decision rather than an
+omission.
+
+Three shapes it does not touch. A bare `/{record}` registered **before**
+`/{record}-preview` matches `/5-preview` with `record = "5-preview"` — route
+order decides it, the loader registers a resource's pages in `getPages()` order,
+and that is Symfony's matching, not ours. And a Symfony inline requirement such
+as `/{record<\d+>}` can never match a composite key, which is
+[never numeric](../schemas/record-key.md#the-grammar) — though the guard above
+refuses that path first, for its own reason. A `{record}` written with any of
+Symfony's inline syntaxes — `{record<\d+>}`, `{record?}`, `{!record}` — is read
+raw by the requirement test and is never stamped either.
 
 ### The configuration object is not ported
 

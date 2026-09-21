@@ -251,11 +251,11 @@ abstract class Resource
     }
 
     /**
-     * The record one route key names, or null. A key no record of this class
-     * could mint names none, and is answered without a statement. The modifier
-     * receives the record query and returns the one to key against — a
-     * different builder, such as a parent-scoped one, is what narrows a nested
-     * resource's binding.
+     * The record one route key names, or null. With no `$recordRouteKeyName`, a
+     * key no record of this class could mint names none, and is answered
+     * without a statement. The modifier receives the record query and returns
+     * the one to key against — a different builder, such as a parent-scoped
+     * one, is what narrows a nested resource's binding.
      */
     public function resolveRecordRouteBinding(int|string $key, ?Closure $modifyQuery = null): ?object
     {

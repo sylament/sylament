@@ -174,12 +174,19 @@ it('reports whether a record is missing an identifier component the application 
 
             return $translation;
         })(),
+        'a scalar pair with a blank half' => (static function (): Redirect {
+            $redirect = new Redirect();
+            $redirect->setHost('example.com');
+
+            return $redirect;
+        })(),
         'no identifier association at all' => (static function (): PostTranslation {
             $translation = new PostTranslation();
             $translation->setLocale('de');
 
             return $translation;
         })(),
+        'a single derived identity with no association' => new PostSeal(),
         'a composite half a prePersist callback of the class assigns' => (static function (): Stamped {
             $stamped = new Stamped();
             $stamped->setScope('releases');
@@ -216,7 +223,9 @@ it('reports whether a record is missing an identifier component the application 
     'a generated identifier of its own' => ['a generated identifier of its own', false],
     'a derived identity under an owner whose generated id is pending' => ['a derived identity under an owner whose generated id is pending', false],
     'a blank assigned component' => ['a blank assigned component', true],
+    'a scalar pair with a blank half' => ['a scalar pair with a blank half', true],
     'no identifier association at all' => ['no identifier association at all', true],
+    'a single derived identity with no association' => ['a single derived identity with no association', true],
     'an identifier association onto an incomplete assigned record' => ['an identifier association onto an incomplete assigned record', true],
     'an identifier association onto a complete assigned record' => ['an identifier association onto a complete assigned record', false],
     'a composite half a prePersist callback of the class assigns' => ['a composite half a prePersist callback of the class assigns', false],

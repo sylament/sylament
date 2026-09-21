@@ -5,12 +5,14 @@ declare(strict_types=1);
 namespace Sylament\Schemas\State;
 
 use Doctrine\ORM\EntityManagerInterface;
+use Doctrine\ORM\Events;
 use Doctrine\ORM\Mapping\InverseSideMapping;
 use Doctrine\ORM\Mapping\OwningSideMapping;
 use Doctrine\ORM\QueryBuilder;
 use LogicException;
 use ReflectionClass;
-use Stringable;
+use Sylament\Schemas\Identity\IdentifierConstraint;
+use Sylament\Schemas\Identity\RecordKey;
 use Symfony\Component\PropertyAccess\PropertyAccess;
 
 use function Sylament\Support\blank;
@@ -108,9 +110,9 @@ class AssociationReader
     /**
      * The owner's related records — the target entity as the single root under
      * $alias, narrowed to the owner: a one-to-many through the target's mapped-by
-     * field, a many-to-many through a subselect over the owner's own association,
-     * which needs no inverse mapping and adds no join to the outer query.
-     * Unordered: the mapping's order is the caller's default sort, not the
+     * field, a many-to-many through a correlated subselect over the owner's own
+     * association, which needs no inverse mapping and adds no join to the outer
+     * query. Unordered: the mapping's order is the caller's default sort, not the
      * query's.
      */
     public function createRelationshipQuery(Relationship $relationship, string $alias = 'record'): QueryBuilder
@@ -119,7 +121,7 @@ class AssociationReader
         $query = $this->createOptionQuery($target->targetClass, $alias);
 
         $query->andWhere($target->isManyToMany
-            ? sprintf('%s.%s IN (%s)', $alias, $this->getIdentifierFieldName($target->targetClass), $this->getRelatedKeysSubselect($relationship, $target))
+            ? $this->getRelatedRecordsExists($query, $relationship, $target, $alias)
             : sprintf('%s.%s = :sylament_relationship_owner', $alias, $this->getMappedBy($relationship, $target)));
 
         return $query->setParameter('sylament_relationship_owner', $this->getRelationshipOwner($relationship));
@@ -136,8 +138,10 @@ class AssociationReader
         $query = $this->createOptionQuery($target->targetClass, $alias);
 
         if ($target->isManyToMany) {
-            $query->andWhere(sprintf('%s.%s NOT IN (%s)', $alias, $this->getIdentifierFieldName($target->targetClass), $this->getRelatedKeysSubselect($relationship, $target)));
+            $query->andWhere(sprintf('NOT %s', $this->getRelatedRecordsExists($query, $relationship, $target, $alias)));
         } else {
+            $this->assertRelationshipAcceptsAssociate($relationship);
+
             $mappedBy = $this->getMappedBy($relationship, $target);
 
             $query->andWhere($query->expr()->orX(
@@ -154,13 +158,15 @@ class AssociationReader
      * collection Doctrine persists — the owner's, or the target's when the owner
      * holds the inverse side, since an inverse-side write is silently ignored at
      * flush — through the record's own adder; a one-to-many points the target's
-     * mapped-by field at the owner. The caller flushes.
+     * mapped-by field at the owner, unless that write would move the record's
+     * primary key. The caller flushes.
      */
     public function attach(Relationship $relationship, object $related): void
     {
         $target = $this->describeRelationship($relationship);
 
         if (! $target->isManyToMany) {
+            $this->assertAttachKeepsIdentifier($relationship, $target, $related);
             $this->getPropertyAccessor()->setAssociationOnRecord($related, $this->getMappedBy($relationship, $target), $relationship->owner);
 
             return;
@@ -206,10 +212,34 @@ class AssociationReader
     }
 
     /**
+     * Whether an existing record may be associated into a one-to-many at all:
+     * refused when the target's mapped-by field is part of its identifier, where
+     * pointing it at this owner would move its primary key rather than move the
+     * record. A many-to-many always may.
+     *
+     * @throws LogicException when associating would re-key the target
+     */
+    public function assertRelationshipAcceptsAssociate(Relationship $relationship): void
+    {
+        $target = $this->describeRelationship($relationship);
+
+        if ($target->isManyToMany) {
+            return;
+        }
+
+        $mappedBy = $this->getMappedBy($relationship, $target);
+
+        if ($this->isIdentifierField($target->targetClass, $mappedBy)) {
+            throw $this->refuseRekeyingAssociate($relationship, $target->targetClass, $mappedBy);
+        }
+    }
+
+    /**
      * Whether a one-to-many's records may be dissociated at all: refused when the
      * mapping deletes an orphan (the owner owns these records — DeleteAction is
-     * the action), when the target's join column is NOT NULL, or when its setter
-     * or property does not accept null. A many-to-many always may.
+     * the action), when the target's mapped-by field is part of its identifier,
+     * when its join column is NOT NULL, or when its setter or property does not
+     * accept null. A many-to-many always may.
      *
      * @throws LogicException when the mapping forbids a dissociation
      */
@@ -228,6 +258,10 @@ class AssociationReader
             throw new LogicException(sprintf('[%s::$%s] declares orphanRemoval, so a record removed from it is deleted rather than dissociated — dissociating is not something the mapping permits; use DeleteAction.', $ownerClass, $relationship->name));
         }
 
+        if ($this->isIdentifierField($target->targetClass, $mappedBy)) {
+            throw new LogicException(sprintf('[%s::$%s] is part of the identifier of [%s], so a [%s] cannot be dissociated from its [%s] — nulling it would erase half the record\'s identity; use DeleteAction.', $target->targetClass, $mappedBy, $target->targetClass, $target->targetClass, $ownerClass));
+        }
+
         $owningSide = $this->describe($target->targetClass, $mappedBy);
 
         if ($owningSide instanceof AssociationTarget && ! $owningSide->isNullable) {
@@ -240,13 +274,18 @@ class AssociationReader
     }
 
     /**
-     * A managed reference to an entity, without loading it.
+     * A managed reference to an entity by the key {@see getRecordKey()} mints —
+     * a key of any width, decoded against the class's own mapping before
+     * anything is looked up, so a key that names no record of that class is
+     * refused without a statement.
      *
      * @param class-string $class
+     *
+     * @throws LogicException when the key is malformed for the class, or names no record
      */
     public function getReference(string $class, int|string $id): object
     {
-        return $this->requireEntityManager()->getReference($class, $id) ?? throw new LogicException(sprintf(
+        return $this->findReference($class, (string) $id) ?? throw new LogicException(sprintf(
             'No [%s] carries the identifier [%s], so it cannot be referenced.',
             $class,
             $id,
@@ -256,44 +295,41 @@ class AssociationReader
     /**
      * The string key an option list and the client speak an entity by, read off
      * the Doctrine mapping rather than a property convention.
+     *
+     * @throws LogicException when the identifier is incomplete, or a component is not printable
      */
     public function getRecordKey(object $entity): string
     {
-        return $this->findRecordKey($entity) ?? throw new LogicException(sprintf('Object records must expose a readable non-blank identifier; [%s] has none set.', $entity::class));
+        return RecordKey::of($this->requireEntityManager(), $entity);
     }
 
     /**
      * The same key {@see getRecordKey()} answers, or null when the entity carries
-     * no identifier yet — an unflushed record, which a caller that only wants to
-     * exclude an existing row has nothing to exclude for.
+     * no complete identifier yet — an unflushed record, which a caller that only
+     * wants to exclude an existing row has nothing to exclude for.
      */
     public function findRecordKey(object $entity): ?string
     {
+        return RecordKey::find($this->requireEntityManager(), $entity);
+    }
+
+    /**
+     * Whether the record is missing an identifier component the application has
+     * to assign — asked only of the identifiers this epic made keyable, a
+     * composite one or one carrying an association. A plain single scalar
+     * identifier is never refused here: the relation layer has always keyed the
+     * class, and an application may fill such a field from anywhere, including a
+     * listener no class-level mapping shows.
+     */
+    public function hasIncompleteAssignedIdentifier(object $entity): bool
+    {
         $metadata = $this->requireEntityManager()->getClassMetadata($entity::class);
 
-        if ($metadata->isIdentifierComposite) {
-            throw new LogicException(sprintf('Records of [%s] carry a composite identifier, which a relation-backed field cannot key; use single-identifier entities.', $entity::class));
+        if (count($metadata->identifier) === 1 && ! $metadata->hasAssociation($metadata->identifier[0])) {
+            return false;
         }
 
-        $identifierValues = $metadata->getIdentifierValues($entity);
-
-        if ($identifierValues === []) {
-            return null;
-        }
-
-        $key = array_first($identifierValues);
-
-        if ($key instanceof Stringable) {
-            $key = (string) $key;
-        }
-
-        $key = is_scalar($key) ? (string) $key : null;
-
-        if (blank($key)) {
-            throw new LogicException(sprintf('The identifier of [%s] is not a printable value.', $entity::class));
-        }
-
-        return $key;
+        return $this->isMissingAssignedIdentifierComponent($entity);
     }
 
     /**
@@ -365,17 +401,141 @@ class AssociationReader
         return $list;
     }
 
-    private function getRelatedKeysSubselect(Relationship $relationship, AssociationTarget $target): string
+    /**
+     * The record a key names, or null when the key is malformed for the class —
+     * decoded first, so nothing is looked up — or when it names no row on the
+     * loading route. A reference is built from the identifier values alone,
+     * which an identifier field that is an association cannot be handed, so
+     * those classes load; a scalar identifier keeps the reference's zero
+     * statements.
+     *
+     * @param class-string $class
+     */
+    private function findReference(string $class, string $key): ?object
+    {
+        $entityManager = $this->requireEntityManager();
+        $identifier = RecordKey::toIdentifier($entityManager, $class, $key);
+
+        if ($identifier === null) {
+            return null;
+        }
+
+        $metadata = $entityManager->getClassMetadata($class);
+
+        return array_any($metadata->identifier, $metadata->hasAssociation(...))
+            ? $entityManager->find($class, $identifier)
+            : $entityManager->getReference($class, $identifier);
+    }
+
+    /**
+     * {@see hasIncompleteAssignedIdentifier()} without its entry bound, so that
+     * behind an identifier association a single assigned scalar still counts —
+     * which is why the recursion calls this member rather than the public one. A
+     * generated identifier that is still pending is Doctrine's to fill at flush,
+     * and so is one the class assigns from a prePersist callback or a mapped
+     * entity listener; none of the three is missing.
+     */
+    private function isMissingAssignedIdentifierComponent(object $entity): bool
+    {
+        $metadata = $this->requireEntityManager()->getClassMetadata($entity::class);
+
+        if ($metadata->usesIdGenerator() || $metadata->hasLifecycleCallbacks(Events::prePersist) || isset($metadata->entityListeners[Events::prePersist])) {
+            return false;
+        }
+
+        foreach ($metadata->identifier as $field) {
+            $value = $metadata->getFieldValue($entity, $field);
+
+            if ($metadata->hasAssociation($field)) {
+                if (! is_object($value) || $this->isMissingAssignedIdentifierComponent($value)) {
+                    return true;
+                }
+
+                continue;
+            }
+
+            if (blank($value)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * The owner's own association, correlated back to the outer target row: a
+     * subselect over the owner rather than a join, so the outer query keeps its
+     * single root, and an identifier-wide correlation rather than a key list,
+     * since comparing two identification variables compares their first
+     * identifier column alone.
+     */
+    private function getRelatedRecordsExists(QueryBuilder $query, Relationship $relationship, AssociationTarget $target, string $alias): string
     {
         $ownerClass = $this->getEntityClass($relationship->owner);
 
         return sprintf(
-            'SELECT sy_related.%s FROM %s sy_owner JOIN sy_owner.%s sy_related WHERE sy_owner.%s = :sylament_relationship_owner',
-            $this->getIdentifierFieldName($target->targetClass),
+            'EXISTS (SELECT 1 FROM %s sy_owner JOIN sy_owner.%s sy_related WHERE sy_owner.%s = :sylament_relationship_owner AND %s)',
             $ownerClass,
             $relationship->name,
-            $this->getIdentifierFieldName($ownerClass),
+            $this->getOwnerIdentifierField($ownerClass),
+            IdentifierConstraint::correlate($query, 'sy_related', $target->targetClass, $alias),
         );
+    }
+
+    /**
+     * @param class-string $ownerClass
+     */
+    private function getOwnerIdentifierField(string $ownerClass): string
+    {
+        return $this->requireEntityManager()->getClassMetadata($ownerClass)->identifier[0];
+    }
+
+    /**
+     * @param class-string $class
+     */
+    private function isIdentifierField(string $class, string $field): bool
+    {
+        return in_array($field, $this->requireEntityManager()->getClassMetadata($class)->identifier, true);
+    }
+
+    /**
+     * Refuse the one write the relation layer never makes: an existing record
+     * whose mapped-by field is part of its identifier, already pointing at
+     * another owner. A record the entity manager does not manage yet has no
+     * primary key to move — it is written under this owner, which is what a
+     * create form building its child does — and so is one pointing at nobody or
+     * at this owner.
+     *
+     * @throws LogicException when the write would move the target's primary key
+     */
+    private function assertAttachKeepsIdentifier(Relationship $relationship, AssociationTarget $target, object $related): void
+    {
+        $mappedBy = $this->getMappedBy($relationship, $target);
+
+        if (! $this->isIdentifierField($target->targetClass, $mappedBy) || ! $this->requireEntityManager()->contains($related)) {
+            return;
+        }
+
+        $current = $this->requireEntityManager()->getClassMetadata($target->targetClass)->getFieldValue($related, $mappedBy);
+
+        if (is_object($current) && $current !== $relationship->owner) {
+            throw $this->refuseRekeyingAssociate($relationship, $target->targetClass, $mappedBy);
+        }
+    }
+
+    /**
+     * @param class-string $targetClass
+     */
+    private function refuseRekeyingAssociate(Relationship $relationship, string $targetClass, string $mappedBy): LogicException
+    {
+        return new LogicException(sprintf(
+            '[%s::$%s] is part of the identifier of [%s], so an existing record cannot be associated into [%s::$%s] — pointing it at another owner would move its primary key. Create the record under this owner instead, or move the association out of the identifier.',
+            $targetClass,
+            $mappedBy,
+            $targetClass,
+            $this->getEntityClass($relationship->owner),
+            $relationship->name,
+        ));
     }
 
     /**
@@ -388,11 +548,17 @@ class AssociationReader
 
     /**
      * The owner itself as the bound parameter — Doctrine binds a managed entity
-     * by its identifier, typed as the column is — after refusing an owner that
-     * has none yet.
+     * by its identifier, typed as the column is — after refusing an owner
+     * Doctrine cannot bind, and one that has no identifier yet.
      */
     private function getRelationshipOwner(Relationship $relationship): object
     {
+        $ownerClass = $this->getEntityClass($relationship->owner);
+
+        if ($this->requireEntityManager()->getClassMetadata($ownerClass)->isIdentifierComposite) {
+            throw new LogicException(sprintf('Records of [%s] carry a composite identifier, which cannot own a relationship query yet: Doctrine refuses to bind such a record as a query parameter. Scope the query from a single-identifier owner.', $ownerClass));
+        }
+
         $this->getRecordKey($relationship->owner);
 
         return $relationship->owner;

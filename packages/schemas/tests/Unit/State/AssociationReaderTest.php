@@ -157,11 +157,10 @@ it('refuses a record with no identifier set', function (): void {
         ->toThrow(LogicException::class, 'has none set');
 });
 
-it('refuses a composite identifier', function (): void {
+it('mints a key of every identifier component', function (): void {
     $reader = new AssociationReader(EntityManagerFactory::create());
 
-    expect(fn (): string => $reader->getRecordKey(new CompositePair(1, 2, 'pair')))
-        ->toThrow(LogicException::class, 'composite identifier');
+    expect($reader->getRecordKey(new CompositePair(1, 2, 'pair')))->toBe('1~2');
 });
 
 it('finds a record key', function (): void {
@@ -183,11 +182,10 @@ it('finds no record key for a record with no identifier set', function (): void 
     expect($reader->findRecordKey(new Author()))->toBeNull();
 });
 
-it('refuses a composite identifier when finding a record key', function (): void {
+it('finds the same key of every identifier component', function (): void {
     $reader = new AssociationReader(EntityManagerFactory::create());
 
-    expect(fn (): ?string => $reader->findRecordKey(new CompositePair(1, 2, 'pair')))
-        ->toThrow(LogicException::class, 'composite identifier');
+    expect($reader->findRecordKey(new CompositePair(1, 2, 'pair')))->toBe('1~2');
 });
 
 it('references an entity by identifier', function (): void {
@@ -328,7 +326,7 @@ it('builds the relationship query rooted at the target', function (): void {
 
     expect($tags->getRootEntities())->toBe([Tag::class])
         ->and($tags->getRootAliases())->toBe(['record'])
-        ->and($tags->getDQL())->toBe('SELECT record FROM ' . Tag::class . ' record WHERE record.id IN (SELECT sy_related.id FROM ' . Post::class . ' sy_owner JOIN sy_owner.tags sy_related WHERE sy_owner.id = :sylament_relationship_owner)')
+        ->and($tags->getDQL())->toBe('SELECT record FROM ' . Tag::class . ' record WHERE EXISTS (SELECT 1 FROM ' . Post::class . ' sy_owner JOIN sy_owner.tags sy_related WHERE sy_owner.id = :sylament_relationship_owner AND sy_related.id = record.id)')
         ->and($tags->getParameter('sylament_relationship_owner')?->getValue())->toBe($post)
         ->and($sections->getDQL())->toBe('SELECT section FROM ' . PostSection::class . ' section WHERE section.post = :sylament_relationship_owner')
         ->and($sections->getDQLPart('orderBy'))->toBe([])
@@ -339,7 +337,7 @@ it('builds the candidate query as the relationship query negated', function (): 
     $reader = reader();
     $post = seededRelationshipPost();
 
-    expect($reader->createRelationshipCandidateQuery(new Relationship($post, 'tags'))->getDQL())->toContain('record.id NOT IN (SELECT sy_related.id')
+    expect($reader->createRelationshipCandidateQuery(new Relationship($post, 'tags'))->getDQL())->toContain('WHERE NOT EXISTS (SELECT 1 FROM ' . Post::class . ' sy_owner JOIN sy_owner.tags sy_related WHERE sy_owner.id = :sylament_relationship_owner AND sy_related.id = record.id)')
         ->and($reader->createRelationshipCandidateQuery(new Relationship($post, 'sections'))->getDQL())->toEndWith('WHERE record.post IS NULL OR record.post <> :sylament_relationship_owner');
 
     $composed = $reader->createRelationshipCandidateQuery(new Relationship($post, 'sections'));
@@ -358,11 +356,11 @@ it('renders the relationship shapes as SQL the driver runs', function (): void {
 
     expect($reader->createRelationshipQuery(new Relationship($post, 'tags'))->getQuery()->getSQL())
         ->toContain('INNER JOIN post_tag')
-        ->toContain('WHERE t0_.id IN (SELECT')
+        ->toContain('WHERE EXISTS (SELECT 1 AS sclr_2 FROM Post p1_ INNER JOIN post_tag p3_ ON p1_.id = p3_.post_id INNER JOIN Tag t2_ ON t2_.id = p3_.tag_id WHERE p1_.id = ? AND t2_.id = t0_.id)')
         ->and($reader->createRelationshipQuery(new Relationship($post, 'sections'))->getQuery()->getSQL())
         ->toEndWith('WHERE p0_.post_id = ?')
         ->and($reader->createRelationshipCandidateQuery(new Relationship($post, 'tags'))->getQuery()->getSQL())
-        ->toContain('WHERE t0_.id NOT IN (SELECT')
+        ->toContain('WHERE NOT EXISTS (SELECT 1 AS sclr_2 FROM Post p1_ INNER JOIN post_tag p3_ ON p1_.id = p3_.post_id INNER JOIN Tag t2_ ON t2_.id = p3_.tag_id WHERE p1_.id = ? AND t2_.id = t0_.id)')
         ->and($reader->createRelationshipCandidateQuery(new Relationship($post, 'sections'))->getQuery()->getSQL())
         ->toEndWith('WHERE p0_.post_id IS NULL OR p0_.post_id <> ?');
 });

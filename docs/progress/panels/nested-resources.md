@@ -322,12 +322,28 @@ guarded relation managers on the same predicate.
 Both are deleted, and nothing stands in their place: the reader now scopes an
 owner of any width
 [through the owner's own collection](../schemas/association-reader.md#an-owner-of-any-width-is-scoped-through-its-own-collection-rather-than-through-a-mapped-by-path),
-so the whole nested tier works under a scalar-pair, a derived-identity and a
-join-entity parent — the record page, the nested listing, a mounted action's
-scope, the routed create page's write, the three ancestor route-key mints
-(`Resource::getUrl()`, `guessAncestorParameters()` and
+and panels adds nothing width-specific on top of it — no predicate of its own
+beyond the reader's scope and the codec's `RecordKey` / `IdentifierConstraint`.
+So the whole nested tier works under a parent of any width: the record page, the
+nested listing, a mounted action's scope, the routed create page's write, the
+three ancestor route-key mints (`Resource::getUrl()`,
+`guessAncestorParameters()` and
 [`Page::getResourceBreadcrumbs()`](#a-crumb-whose-url-the-trail-already-spends-renders-unlinked)),
 and a chain three deep with the composite level in the **middle**.
+
+Which flavours are pinned **here** is worth stating, because the tiers divide the
+matrix. Panels' own fixtures carry a parent or owner keyed by two scalars
+(`Imprint`, which owns both a one-to-many and a many-to-many, and `Edition`), by
+an association plus a scalar (`Stamp`), and a single derived identity
+(`Colophon`). The **join-entity** flavour — a parent whose whole identifier is
+two associations — is pinned one tier down, at the reader: schemas'
+[`AssociationReaderCompositeQueryTest`](../../../packages/schemas/tests/Unit/State/AssociationReaderCompositeQueryTest.php)
+runs its `join entity, one-to-many` and `join entity, many-to-many` datasets over
+both arms of both queries, and
+[`AssociationReaderOwnerScopeTest`](../../../packages/schemas/tests/Unit/State/AssociationReaderOwnerScopeTest.php)'s
+`join entity, many-to-many` dataset pins the outer builder for it. Tables' own
+join-entity fixture (`LockerLease`) is exercised as a relation **target** rather
+than as an owner.
 
 Three things the removal settled rather than merely dropped. The guards'
 predicate was **wider** than the reader's — it also refused a *single derived

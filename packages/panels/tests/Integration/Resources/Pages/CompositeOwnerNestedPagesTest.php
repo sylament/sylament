@@ -321,7 +321,7 @@ it('attaches what a create modal on a nested page writes to the parent it was op
 });
 
 it('trails a child through the composite parent above it', function (): void {
-    [$client, $entityManager] = compositeOwnerNestedClient();
+    [$client] = compositeOwnerNestedClient();
 
     $host = $this->createLiveComponent(EditImprintBinding::class, [
         'record' => '1',
@@ -331,8 +331,7 @@ it('trails a child through the composite parent above it', function (): void {
 
     compositeOwnerNestedPushPanelRequest();
 
-    expect($entityManager)->toBeInstanceOf(EntityManagerInterface::class)
-        ->and($host->getBreadcrumbs())->toBe([
+    expect($host->getBreadcrumbs())->toBe([
             'http://localhost/key/binderies' => 'Binderies',
             'http://localhost/key/binderies/a=7Eb~c=3Dd=20=C5=BE/edit' => 'Exotic',
             'http://localhost/key/binderies/a=7Eb~c=3Dd=20=C5=BE/bindings' => 'Bindings',

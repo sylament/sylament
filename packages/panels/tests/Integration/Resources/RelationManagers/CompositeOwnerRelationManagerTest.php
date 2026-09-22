@@ -12,6 +12,7 @@ use Sylament\Panels\Tests\Fixtures\Doctrine\Entity\Motif;
 use Sylament\Panels\Tests\Fixtures\Doctrine\Entity\Stamp;
 use Sylament\Panels\Tests\Fixtures\Doctrine\Entity\StampMark;
 use Sylament\Panels\Tests\Fixtures\Doctrine\EntityManagerFactory;
+use Sylament\Panels\Tests\Fixtures\Doctrine\RecordingMiddleware;
 use Sylament\Panels\Tests\Fixtures\Resources\Pages\EditBindery;
 use Sylament\Panels\Tests\Fixtures\Resources\Pages\EditStamp;
 use Sylament\Panels\Tests\Fixtures\Resources\Pages\ManageBinderyBindings;
@@ -130,6 +131,20 @@ function compositeOwnerManagerMotifsOf(EntityManagerInterface $entityManager, st
     return array_map(static fn (Motif $motif): string => $motif->getName(), $imprint?->getMotifs()->toArray() ?? []);
 }
 
+/**
+ * The container-wide statement recorder, emptied, so what a case reads off it
+ * afterwards is what ran since.
+ */
+function compositeOwnerManagerRecorder(): RecordingMiddleware
+{
+    $recorder = test()->getContainer()->get(RecordingMiddleware::class);
+    assert($recorder instanceof RecordingMiddleware);
+
+    $recorder->reset();
+
+    return $recorder;
+}
+
 function compositeOwnerManagerRecordSelect(RelationManager $manager): Select
 {
     $select = $manager->getMountedActionSchema()?->getComponent('recordId');
@@ -204,7 +219,7 @@ it('edits a row of the scalar-pair owner through the table action', function ():
     expect(compositeOwnerManagerBindingsOf($entityManager, 'Exotic'))->toBe(['Renamed']);
 });
 
-it('dissociates one row of the scalar-pair owner and deletes another', function (): void {
+it('dissociates one row of the scalar-pair owner, leaving the record behind', function (): void {
     [$client, $entityManager] = compositeOwnerManagerClient();
 
     $this->createLiveComponent(
@@ -217,6 +232,10 @@ it('dissociates one row of the scalar-pair owner and deletes another', function 
 
     expect(compositeOwnerManagerBindingsOf($entityManager, 'Exotic'))->toBe([])
         ->and($entityManager->getRepository(Binding::class)->findOneBy(['title' => 'Quarter']))->not->toBeNull();
+});
+
+it('deletes one row of the other scalar-pair owner outright', function (): void {
+    [$client, $entityManager] = compositeOwnerManagerClient();
 
     $this->createLiveComponent(
         ImprintBindingsRelationManager::class,
@@ -228,7 +247,10 @@ it('dissociates one row of the scalar-pair owner and deletes another', function 
 
     $entityManager->clear();
 
-    expect($entityManager->getRepository(Binding::class)->findOneBy(['title' => 'Rival']))->toBeNull();
+    expect($entityManager->getRepository(Binding::class)->findOneBy(['title' => 'Rival']))->toBeNull()
+        // The first owner's row is untouched: the delete reached the one the
+        // mounted action named rather than the collection it was mounted from.
+        ->and($entityManager->getRepository(Binding::class)->findOneBy(['title' => 'Quarter']))->not->toBeNull();
 });
 
 it('dissociates a whole selection of the scalar-pair owner and clears it', function (): void {
@@ -310,12 +332,27 @@ it('detaches a selection of motifs the bulk action never hydrates', function ():
         'fetchesSelectedRecords' => false,
     ], client: $client)
         ->set('selectedTableRecords', ['1'])
-        ->call('mountAction', ['name' => 'detach', 'arguments' => [], 'context' => ['table' => true, 'bulk' => true]])
-        ->call('callMountedAction');
+        ->call('mountAction', ['name' => 'detach', 'arguments' => [], 'context' => ['table' => true, 'bulk' => true]]);
+
+    $recorder = compositeOwnerManagerRecorder();
+
+    $component->call('callMountedAction');
+
+    $selection = array_values(array_filter(
+        $recorder->statements(),
+        static fn (string $sql): bool => str_starts_with($sql, 'SELECT') && str_contains($sql, 'm0_.id IN ('),
+    ));
 
     // The by-key arm turns each selected key back into a reference and removes
-    // the join row for an owner it never loaded either.
+    // the join row for an owner it never loaded either. What says so is the one
+    // read the selection makes: the identifier column alone, projected, where
+    // the fetching arm reads `name` beside it and hydrates the record. (The
+    // collection load `removeElement()` forces is a separate read and carries
+    // no `IN`.)
     expect($component->component()->mountedActions)->toBe([])
+        ->and($selection)->toHaveCount(1)
+        ->and($selection[0])->toContain('SELECT m0_.id AS id_0 FROM Motif m0_')
+        ->and($selection[0])->not->toContain('m0_.name')
         ->and(compositeOwnerManagerMotifsOf($entityManager, 'a~b', 'c=d ž'))->toBe([])
         ->and(compositeOwnerManagerMotifsOf($entityManager, 'plain', 'about'))->toBe(['Fleuron']);
 });

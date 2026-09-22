@@ -33,9 +33,9 @@ uses(InteractsWithLiveComponents::class);
  */
 
 /**
- * The two refused parents and the one that passes, in one database: a stamp
- * under a catalogue (the derived identity), a colophon of the same catalogue
- * (the single derived identity) and a line under each.
+ * The two parent flavours a single-scalar identifier cannot express, in one
+ * database: a stamp under a catalogue (the derived identity), a colophon of
+ * the same catalogue (the single derived identity) and a child under each.
  *
  * @return array{KernelBrowser, EntityManagerInterface}
  */
@@ -63,6 +63,27 @@ function compositeGuardParentClient(): array
 }
 
 /**
+ * A second catalogue carrying a stamp and a colophon of its own, each with one
+ * child — the rows a scope that reads only half the parent's identifier, or
+ * none of it, would let through.
+ */
+function compositeGuardRivalParents(EntityManagerInterface $entityManager): void
+{
+    $catalogue = new Catalogue()->setTitle('Second');
+    $stamp = new Stamp()->setCatalogue($catalogue)->setCode('A/B C')->setCaption('Beta');
+    $colophon = new Colophon()->setCatalogue($catalogue)->setNote('Other note');
+
+    EntityManagerFactory::seed(
+        $entityManager,
+        $catalogue,
+        $stamp,
+        new StampMark()->setStamp($stamp)->setLabel('Rival mark'),
+        $colophon,
+        new ColophonLine()->setColophon($colophon)->setText('Rival line'),
+    );
+}
+
+/**
  * @param class-string<Resource> $class
  */
 function compositeGuardResource(string $class): Resource
@@ -74,123 +95,148 @@ function compositeGuardResource(string $class): Resource
     return $registry->get($class);
 }
 
-function compositeGuardRootMessage(Throwable $throwable): string
+/**
+ * The scoped children of one parent record, read back as the one field each
+ * child carries.
+ *
+ * @param class-string<Resource> $class
+ *
+ * @return list<string>
+ */
+function compositeGuardScopedTexts(string $class, object $parentRecord, string $getter): array
 {
-    while (($previous = $throwable->getPrevious()) instanceof Throwable) {
-        $throwable = $previous;
-    }
+    $records = compositeGuardResource($class)->getParentScopedRecordQuery($parentRecord)->getQuery()->getResult();
 
-    return $throwable->getMessage();
+    expect($records)->toBeArray();
+
+    return array_map(static fn (object $record): string => (string) $record->{$getter}(), $records);
 }
 
-it('refuses to scope a nested resource to a derived-identity parent record', function (): void {
+/**
+ * The stamp foreign key a mark's row really holds, read as columns rather than
+ * through the mapping — the code column stores what the record upper-cases.
+ *
+ * @return array<string, mixed>
+ */
+function compositeGuardStoredStampColumns(EntityManagerInterface $entityManager, string $label): array
+{
+    $row = $entityManager->getConnection()->fetchAssociative(
+        'SELECT stamp_catalogue_id, stamp_code FROM StampMark WHERE label = ?',
+        [$label],
+    );
+
+    expect($row)->toBeArray();
+
+    return is_array($row) ? $row : [];
+}
+
+it('scopes a nested resource to a derived-identity parent record', function (): void {
     [, $entityManager] = compositeGuardParentClient();
+    compositeGuardRivalParents($entityManager);
 
-    $stamp = $entityManager->getRepository(Stamp::class)->findOneBy(['caption' => 'Alpha']);
+    $alpha = $entityManager->getRepository(Stamp::class)->findOneBy(['caption' => 'Alpha']);
+    $beta = $entityManager->getRepository(Stamp::class)->findOneBy(['caption' => 'Beta']);
 
-    expect($stamp)->toBeInstanceOf(Stamp::class);
+    expect($alpha)->toBeInstanceOf(Stamp::class)
+        ->and($beta)->toBeInstanceOf(Stamp::class);
 
-    expect(fn (): mixed => compositeGuardResource(StampMarkResource::class)->getParentScopedRecordQuery($stamp))
-        ->toThrow(
-            LogicException::class,
-            'Resource [Sylament\Panels\Tests\Fixtures\Resources\StampMarkResource] nests under [Sylament\Panels\Tests\Fixtures\Resources\StampResource], whose records of [Sylament\Panels\Tests\Fixtures\Doctrine\Entity\Stamp] are not keyed by a single scalar identifier; scoping a nested resource to such a parent record is not built yet.',
-        );
+    $query = compositeGuardResource(StampMarkResource::class)->getParentScopedRecordQuery($alpha);
+
+    // The two stamps differ in nothing but their catalogue, so a scope binding
+    // the code alone would answer both rows for either parent. The outer
+    // builder keeps its one root: the owner is reached inside a correlated
+    // subselect rather than through a join a later sort could collide with.
+    expect($query->getDQL())->toBe('SELECT record FROM Sylament\Panels\Tests\Fixtures\Doctrine\Entity\StampMark record WHERE EXISTS (SELECT 1 FROM Sylament\Panels\Tests\Fixtures\Doctrine\Entity\Stamp sy_owner JOIN sy_owner.marks sy_related WHERE sy_owner.catalogue = :sylament_relationship_owner_0 AND sy_owner.code = :sylament_relationship_owner_1 AND sy_related.id = record.id)')
+        ->and($query->getAllAliases())->toBe(['record'])
+        ->and(compositeGuardScopedTexts(StampMarkResource::class, $alpha, 'getLabel'))->toBe(['Mark'])
+        ->and(compositeGuardScopedTexts(StampMarkResource::class, $beta, 'getLabel'))->toBe(['Rival mark']);
 });
 
-it('refuses to scope a nested resource to a single-derived-identity parent record', function (): void {
+it('scopes a nested resource to a single-derived-identity parent record', function (): void {
     // `Colophon` is keyed by one association and nothing else, which Doctrine
-    // reports as *not* composite — so this is the arm a guard written on
-    // `isIdentifierComposite` alone lets through to the relation layer.
+    // reports as *not* composite — so this is the arm that keeps the plain
+    // foreign-key comparison, and its parameter keeps the unsuffixed name.
     [, $entityManager] = compositeGuardParentClient();
+    compositeGuardRivalParents($entityManager);
 
     $colophon = $entityManager->getRepository(Colophon::class)->findOneBy(['note' => 'Note']);
+    $rival = $entityManager->getRepository(Colophon::class)->findOneBy(['note' => 'Other note']);
 
     expect($colophon)->toBeInstanceOf(Colophon::class)
+        ->and($rival)->toBeInstanceOf(Colophon::class)
         ->and($entityManager->getClassMetadata(Colophon::class)->isIdentifierComposite)->toBeFalse();
 
-    expect(fn (): mixed => compositeGuardResource(ColophonLineResource::class)->getParentScopedRecordQuery($colophon))
-        ->toThrow(
-            LogicException::class,
-            'Resource [Sylament\Panels\Tests\Fixtures\Resources\ColophonLineResource] nests under [Sylament\Panels\Tests\Fixtures\Resources\ColophonResource], whose records of [Sylament\Panels\Tests\Fixtures\Doctrine\Entity\Colophon] are not keyed by a single scalar identifier; scoping a nested resource to such a parent record is not built yet.',
-        );
+    $query = compositeGuardResource(ColophonLineResource::class)->getParentScopedRecordQuery($colophon);
+
+    expect($query->getDQL())->toBe('SELECT record FROM Sylament\Panels\Tests\Fixtures\Doctrine\Entity\ColophonLine record WHERE record.colophon = :sylament_relationship_owner')
+        ->and(compositeGuardScopedTexts(ColophonLineResource::class, $colophon, 'getText'))->toBe(['Line'])
+        ->and(compositeGuardScopedTexts(ColophonLineResource::class, $rival, 'getText'))->toBe(['Rival line']);
 });
 
-it('answers a nested page under a derived-identity parent with a 500 carrying the panels refusal', function (): void {
+it('serves a nested page under a derived-identity parent with the child filled in', function (): void {
     [$client] = compositeGuardParentClient();
 
-    // The refusal is a `LogicException` out of a page render, which
-    // `PageController` rethrows only for an `HttpExceptionInterface` — so what
-    // the user sees is a 500, not a 404.
-    $client->catchExceptions(true);
-    $client->request('GET', '/key/catalogues/1/stamps/1~A=2FB=20C/stamp-marks/1/edit');
+    $crawler = $client->request('GET', '/key/catalogues/1/stamps/1~A=2FB=20C/stamp-marks/1/edit');
 
-    expect($client->getResponse()->getStatusCode())->toBe(500);
-
-    $client->catchExceptions(false);
-
-    try {
-        $client->request('GET', '/key/catalogues/1/stamps/1~A=2FB=20C/stamp-marks/1/edit');
-
-        $message = null;
-    } catch (Throwable $throwable) {
-        $message = compositeGuardRootMessage($throwable);
-    }
-
-    expect($message)->toBe('Resource [Sylament\Panels\Tests\Fixtures\Resources\StampMarkResource] nests under [Sylament\Panels\Tests\Fixtures\Resources\StampResource], whose records of [Sylament\Panels\Tests\Fixtures\Doctrine\Entity\Stamp] are not keyed by a single scalar identifier; scoping a nested resource to such a parent record is not built yet.');
+    expect($client->getResponse()->getStatusCode())->toBe(200)
+        ->and($crawler->filter('input[data-model$="data.label"]')->attr('value'))->toBe('Mark');
 });
 
-it('answers a nested page under a single-derived-identity parent with the same refusal', function (): void {
+it('serves a nested page under a single-derived-identity parent the same way', function (): void {
     [$client] = compositeGuardParentClient();
 
-    $client->catchExceptions(false);
+    $crawler = $client->request('GET', '/key/colophons/1/colophon-lines/1/edit');
 
-    try {
-        $client->request('GET', '/key/colophons/1/colophon-lines/1/edit');
-
-        $message = null;
-    } catch (Throwable $throwable) {
-        $message = compositeGuardRootMessage($throwable);
-    }
-
-    expect($message)->toBe('Resource [Sylament\Panels\Tests\Fixtures\Resources\ColophonLineResource] nests under [Sylament\Panels\Tests\Fixtures\Resources\ColophonResource], whose records of [Sylament\Panels\Tests\Fixtures\Doctrine\Entity\Colophon] are not keyed by a single scalar identifier; scoping a nested resource to such a parent record is not built yet.');
+    expect($client->getResponse()->getStatusCode())->toBe(200)
+        ->and($crawler->filter('input[data-model$="data.text"]')->attr('value'))->toBe('Line');
 });
 
-it('refuses to attach a record to a derived-identity parent record', function (): void {
+it('attaches a record to a derived-identity parent record', function (): void {
     [, $entityManager] = compositeGuardParentClient();
 
     $stamp = $entityManager->getRepository(Stamp::class)->findOneBy(['caption' => 'Alpha']);
 
     expect($stamp)->toBeInstanceOf(Stamp::class);
 
-    expect(function () use ($stamp): void {
-        compositeGuardResource(StampMarkResource::class)->attachRecordToParent(new StampMark(), $stamp);
-    })
-        ->toThrow(
-            LogicException::class,
-            'Resource [Sylament\Panels\Tests\Fixtures\Resources\StampMarkResource] nests under [Sylament\Panels\Tests\Fixtures\Resources\StampResource], whose records of [Sylament\Panels\Tests\Fixtures\Doctrine\Entity\Stamp] are not keyed by a single scalar identifier; scoping a nested resource to such a parent record is not built yet.',
-        );
+    $mark = new StampMark()->setLabel('Attached');
+
+    compositeGuardResource(StampMarkResource::class)->attachRecordToParent($mark, $stamp);
+
+    $entityManager->persist($mark);
+    $entityManager->flush();
+    $entityManager->clear();
+
+    // Both halves of the parent's identifier reach the row, and the code half
+    // travels as the column stores it rather than as the record reads it.
+    expect(compositeGuardStoredStampColumns($entityManager, 'Attached'))
+        ->toBe(['stamp_catalogue_id' => 1, 'stamp_code' => 'a/b c']);
 });
 
-it('refuses to attach a record to a single-derived-identity parent record', function (): void {
+it('attaches a record to a single-derived-identity parent record', function (): void {
     [, $entityManager] = compositeGuardParentClient();
 
     $colophon = $entityManager->getRepository(Colophon::class)->findOneBy(['note' => 'Note']);
 
     expect($colophon)->toBeInstanceOf(Colophon::class);
 
-    expect(function () use ($colophon): void {
-        compositeGuardResource(ColophonLineResource::class)->attachRecordToParent(new ColophonLine(), $colophon);
-    })
-        ->toThrow(
-            LogicException::class,
-            'Resource [Sylament\Panels\Tests\Fixtures\Resources\ColophonLineResource] nests under [Sylament\Panels\Tests\Fixtures\Resources\ColophonResource], whose records of [Sylament\Panels\Tests\Fixtures\Doctrine\Entity\Colophon] are not keyed by a single scalar identifier; scoping a nested resource to such a parent record is not built yet.',
-        );
+    $line = new ColophonLine()->setText('Attached');
+
+    compositeGuardResource(ColophonLineResource::class)->attachRecordToParent($line, $colophon);
+
+    $entityManager->persist($line);
+    $entityManager->flush();
+    $entityManager->clear();
+
+    $stored = $entityManager->getRepository(ColophonLine::class)->findOneBy(['text' => 'Attached']);
+
+    expect($stored)->toBeInstanceOf(ColophonLine::class)
+        ->and($stored?->getColophon()?->getCatalogue()?->getId())->toBe(1);
 });
 
-it('characterizes: a create page under a parent it cannot scope to still renders', function (string $url): void {
+it('characterizes: a create page under a parent of either flavour the guards refused renders without scoping a query through it', function (string $url): void {
     // A create page resolves the parent record but scopes no query through it,
-    // so the two scope-time guards leave it whole and the refusal is the
-    // write's to carry.
+    // so this one rendered while the write it submits was still refused — it
+    // passes unchanged either way, and is kept as the boundary between the two.
     [$client] = compositeGuardParentClient();
 
     $client->request('GET', $url);
@@ -201,8 +247,9 @@ it('characterizes: a create page under a parent it cannot scope to still renders
     'a single-derived-identity parent' => ['/key/colophons/1/colophon-lines/create'],
 ]);
 
-it('refuses the write that create page submits and leaves the table as it found it', function (string $pageClass, array $parentRecords, array $data, string $recordClass, string $message): void {
+it('writes the row that create page submits under the parent it was opened from', function (string $pageClass, array $parentRecords, array $data, string $recordClass): void {
     [$client, $entityManager] = compositeGuardParentClient();
+    compositeGuardRivalParents($entityManager);
 
     $before = $entityManager->getRepository($recordClass)->count();
 
@@ -212,32 +259,46 @@ it('refuses the write that create page submits and leaves the table as it found 
     ], client: $client);
 
     $component->set('data', $data);
-
-    // `TestLiveComponent` forces `catchExceptions(false)`, so the refusal
-    // escapes `call()` as itself rather than reaching BrowserKit as a 500.
-    expect(function () use ($component): void {
-        $component->call('create');
-    })->toThrow(LogicException::class, $message);
+    $component->call('create');
 
     $entityManager->clear();
 
-    expect($entityManager->getRepository($recordClass)->count())->toBe($before);
+    expect($entityManager->getRepository($recordClass)->count())->toBe($before + 1);
 })->with([
     'a derived-identity parent' => [
         CreateStampMark::class,
         ['catalogue' => '1', 'stamp' => '1~A=2FB=20C'],
         ['label' => 'Written'],
         StampMark::class,
-        'Resource [Sylament\Panels\Tests\Fixtures\Resources\StampMarkResource] nests under [Sylament\Panels\Tests\Fixtures\Resources\StampResource], whose records of [Sylament\Panels\Tests\Fixtures\Doctrine\Entity\Stamp] are not keyed by a single scalar identifier; scoping a nested resource to such a parent record is not built yet.',
     ],
     'a single-derived-identity parent' => [
         CreateColophonLine::class,
         ['colophon' => '1'],
         ['text' => 'Written'],
         ColophonLine::class,
-        'Resource [Sylament\Panels\Tests\Fixtures\Resources\ColophonLineResource] nests under [Sylament\Panels\Tests\Fixtures\Resources\ColophonResource], whose records of [Sylament\Panels\Tests\Fixtures\Doctrine\Entity\Colophon] are not keyed by a single scalar identifier; scoping a nested resource to such a parent record is not built yet.',
     ],
 ]);
+
+it('stores both halves of a composite parent key on the row the create page writes', function (): void {
+    [$client, $entityManager] = compositeGuardParentClient();
+    compositeGuardRivalParents($entityManager);
+
+    $component = $this->createLiveComponent(CreateStampMark::class, [
+        'parentRecords' => ['catalogue' => '2', 'stamp' => '2~A=2FB=20C'],
+        'panelId' => 'key',
+    ], client: $client);
+
+    $component->set('data', ['label' => 'Under the rival']);
+    $component->call('create');
+
+    $entityManager->clear();
+
+    // The two catalogues hold a stamp of the same code, so a row written with
+    // the code alone is indistinguishable from one written under the other
+    // parent — the stored pair is what tells them apart.
+    expect(compositeGuardStoredStampColumns($entityManager, 'Under the rival'))
+        ->toBe(['stamp_catalogue_id' => 2, 'stamp_code' => 'a/b c']);
+});
 
 it('scopes a nested resource to a single-identifier parent record', function (): void {
     [, $entityManager] = compositeGuardParentClient();

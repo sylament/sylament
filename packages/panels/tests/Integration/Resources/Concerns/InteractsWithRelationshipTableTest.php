@@ -18,6 +18,7 @@ use Sylament\Panels\Tests\Fixtures\Resources\RelationManagers\ColophonLinesRelat
 use Sylament\Panels\Tests\Fixtures\Resources\RelationManagers\StampMarksRelationManager;
 use Sylament\Panels\Tests\Fixtures\Resources\RelationManagers\StampsRelationManager;
 use Sylament\Panels\Tests\Fixtures\Resources\RelationManagers\UnmappedOwnerRelationManager;
+use Sylament\Schemas\State\AssociationReader;
 use Sylament\Schemas\State\Relationship;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\UX\LiveComponent\Test\InteractsWithLiveComponents;
@@ -37,7 +38,8 @@ uses(InteractsWithLiveComponents::class);
 
 /**
  * One catalogue owning one stamp and one colophon, each owning one row of its
- * own — the three owner flavours the guard sorts, in one database.
+ * own — the three owner flavours the relationship table serves, in one
+ * database.
  *
  * @return array{KernelBrowser, EntityManagerInterface}
  */
@@ -65,9 +67,29 @@ function compositeGuardOwnerClient(): array
 }
 
 /**
+ * A second catalogue with a stamp of the very same code and a colophon of its
+ * own, each owning one row — the rows a scope reading half an owner's
+ * identifier, or none of it, would list beside the first owner's.
+ */
+function compositeGuardOwnerRivals(EntityManagerInterface $entityManager): void
+{
+    $catalogue = new Catalogue()->setTitle('Second');
+    $stamp = new Stamp()->setCatalogue($catalogue)->setCode('A/B C')->setCaption('Beta');
+    $colophon = new Colophon()->setCatalogue($catalogue)->setNote('Other note');
+
+    EntityManagerFactory::seed(
+        $entityManager,
+        $catalogue,
+        $stamp,
+        new StampMark()->setStamp($stamp)->setLabel('Rival mark'),
+        $colophon,
+        new ColophonLine()->setColophon($colophon)->setText('Rival line'),
+    );
+}
+
+/**
  * The container-built manager with its wire props in place — the shape a mount
- * leaves behind, reached without a render, since a manager whose owner the
- * guard refuses cannot be rendered at all.
+ * leaves behind, reached without a render.
  *
  * @param class-string<RelationManager> $class
  * @param class-string<Page>            $pageClass
@@ -84,84 +106,98 @@ function compositeGuardManager(string $class, string $ownerKey, string $pageClas
     return $manager;
 }
 
-function compositeGuardOwnerRootMessage(Throwable $throwable): string
+/**
+ * The records one relationship lists, read back as the one field each carries.
+ *
+ * @return list<string>
+ */
+function compositeGuardOwnedTexts(Relationship $relationship, string $getter): array
 {
-    while (($previous = $throwable->getPrevious()) instanceof Throwable) {
-        $throwable = $previous;
-    }
+    $reader = test()->getContainer()->get(AssociationReader::class);
 
-    return $throwable->getMessage();
+    expect($reader)->toBeInstanceOf(AssociationReader::class);
+
+    $records = $reader->createRelationshipQuery($relationship)->getQuery()->getResult();
+
+    expect($records)->toBeArray();
+
+    return array_map(static fn (object $record): string => (string) $record->{$getter}(), $records);
 }
 
-it('refuses to list an association of a derived-identity owner record', function (): void {
-    compositeGuardOwnerClient();
+function compositeGuardOwnerDql(Relationship $relationship): string
+{
+    $reader = test()->getContainer()->get(AssociationReader::class);
 
-    $manager = compositeGuardManager(StampMarksRelationManager::class, '1~A=2FB=20C', EditStamp::class);
+    expect($reader)->toBeInstanceOf(AssociationReader::class);
 
-    expect(fn (): mixed => $manager->getRelationship())
-        ->toThrow(
-            LogicException::class,
-            'The relationship table [Sylament\Panels\Tests\Fixtures\Resources\RelationManagers\StampMarksRelationManager] lists an association of [Sylament\Panels\Tests\Fixtures\Doctrine\Entity\Stamp], whose records are not keyed by a single scalar identifier; scoping a relationship table to such an owner record is not built yet.',
-        );
-});
+    return $reader->createRelationshipQuery($relationship)->getDQL();
+}
 
-it('refuses to list an association of a single-derived-identity owner record', function (): void {
-    // `Colophon` is keyed by one association and nothing else, which Doctrine
-    // reports as *not* composite — the arm a guard written on
-    // `isIdentifierComposite` alone lets through to the relation layer.
+it('lists an association of a derived-identity owner record', function (): void {
     [, $entityManager] = compositeGuardOwnerClient();
+    compositeGuardOwnerRivals($entityManager);
 
-    $manager = compositeGuardManager(ColophonLinesRelationManager::class, '1', EditColophon::class);
+    $relationship = compositeGuardManager(StampMarksRelationManager::class, '1~A=2FB=20C', EditStamp::class)->getRelationship();
+    $rival = compositeGuardManager(StampMarksRelationManager::class, '2~A=2FB=20C', EditStamp::class)->getRelationship();
 
-    expect($entityManager->getClassMetadata(Colophon::class)->isIdentifierComposite)->toBeFalse();
-
-    expect(fn (): mixed => $manager->getRelationship())
-        ->toThrow(
-            LogicException::class,
-            'The relationship table [Sylament\Panels\Tests\Fixtures\Resources\RelationManagers\ColophonLinesRelationManager] lists an association of [Sylament\Panels\Tests\Fixtures\Doctrine\Entity\Colophon], whose records are not keyed by a single scalar identifier; scoping a relationship table to such an owner record is not built yet.',
-        );
+    // Both stamps carry the same code, so only the catalogue half tells the two
+    // collections apart — and the owner is reached through its own collection
+    // rather than through a join on the listed table.
+    expect($relationship)->toBeInstanceOf(Relationship::class)
+        ->and($relationship->owner)->toBeInstanceOf(Stamp::class)
+        ->and(compositeGuardOwnerDql($relationship))->toBe('SELECT record FROM Sylament\Panels\Tests\Fixtures\Doctrine\Entity\StampMark record WHERE EXISTS (SELECT 1 FROM Sylament\Panels\Tests\Fixtures\Doctrine\Entity\Stamp sy_owner JOIN sy_owner.marks sy_related WHERE sy_owner.catalogue = :sylament_relationship_owner_0 AND sy_owner.code = :sylament_relationship_owner_1 AND sy_related.id = record.id)')
+        ->and(compositeGuardOwnedTexts($relationship, 'getLabel'))->toBe(['Mark'])
+        ->and(compositeGuardOwnedTexts($rival, 'getLabel'))->toBe(['Rival mark']);
 });
 
-it('carries the refusal out of a mounted manager rather than past it', function (): void {
-    [$client] = compositeGuardOwnerClient();
+it('lists an association of a single-derived-identity owner record', function (): void {
+    // `Colophon` is keyed by one association and nothing else, which Doctrine
+    // reports as *not* composite — the arm that keeps the plain foreign-key
+    // comparison and the unsuffixed parameter name.
+    [, $entityManager] = compositeGuardOwnerClient();
+    compositeGuardOwnerRivals($entityManager);
 
-    try {
-        $this->createLiveComponent(
-            StampMarksRelationManager::class,
-            ['ownerRecord' => '1~A=2FB=20C', 'pageClass' => EditStamp::class],
-            client: $client,
-        )->render();
+    $relationship = compositeGuardManager(ColophonLinesRelationManager::class, '1', EditColophon::class)->getRelationship();
+    $rival = compositeGuardManager(ColophonLinesRelationManager::class, '2', EditColophon::class)->getRelationship();
 
-        $message = null;
-    } catch (Throwable $throwable) {
-        $message = compositeGuardOwnerRootMessage($throwable);
-    }
-
-    expect($message)->toBe('The relationship table [Sylament\Panels\Tests\Fixtures\Resources\RelationManagers\StampMarksRelationManager] lists an association of [Sylament\Panels\Tests\Fixtures\Doctrine\Entity\Stamp], whose records are not keyed by a single scalar identifier; scoping a relationship table to such an owner record is not built yet.');
+    expect($entityManager->getClassMetadata(Colophon::class)->isIdentifierComposite)->toBeFalse()
+        ->and($relationship->owner)->toBeInstanceOf(Colophon::class)
+        ->and(compositeGuardOwnerDql($relationship))->toBe('SELECT record FROM Sylament\Panels\Tests\Fixtures\Doctrine\Entity\ColophonLine record WHERE record.colophon = :sylament_relationship_owner')
+        ->and(compositeGuardOwnedTexts($relationship, 'getText'))->toBe(['Line'])
+        ->and(compositeGuardOwnedTexts($rival, 'getText'))->toBe(['Rival line']);
 });
 
-it('carries the refusal out of the routed host of the tier as well', function (): void {
-    [$client] = compositeGuardOwnerClient();
+it('renders a mounted manager over a derived-identity owner', function (): void {
+    [$client, $entityManager] = compositeGuardOwnerClient();
+    compositeGuardOwnerRivals($entityManager);
 
-    $client->catchExceptions(true);
-    $client->request('GET', '/key/catalogues/1/stamps/1~A=2FB=20C/marks');
+    $html = (string) $this->createLiveComponent(
+        StampMarksRelationManager::class,
+        ['ownerRecord' => '1~A=2FB=20C', 'pageClass' => EditStamp::class],
+        client: $client,
+    )->render();
 
-    expect($client->getResponse()->getStatusCode())->toBe(500);
-
-    $client->catchExceptions(false);
-
-    try {
-        $client->request('GET', '/key/catalogues/1/stamps/1~A=2FB=20C/marks');
-
-        $message = null;
-    } catch (Throwable $throwable) {
-        $message = compositeGuardOwnerRootMessage($throwable);
-    }
-
-    expect($message)->toBe('The relationship table [Sylament\Panels\Tests\Fixtures\Resources\Pages\ManageStampMarks] lists an association of [Sylament\Panels\Tests\Fixtures\Doctrine\Entity\Stamp], whose records are not keyed by a single scalar identifier; scoping a relationship table to such an owner record is not built yet.');
+    expect($html)->toContain('Mark')
+        ->and($html)->not->toContain('Rival mark');
 });
 
-it('leaves an owner Doctrine describes nothing for to the relation layer', function (object $owner): void {
+it('lists a derived-identity owner association through the routed host of the tier', function (): void {
+    [$client, $entityManager] = compositeGuardOwnerClient();
+    compositeGuardOwnerRivals($entityManager);
+
+    $crawler = $client->request('GET', '/key/catalogues/1/stamps/1~A=2FB=20C/marks');
+    $rows = $crawler->filter('tbody .sy-ta-row');
+
+    expect($client->getResponse()->getStatusCode())->toBe(200)
+        ->and($rows->count())->toBe(1)
+        ->and($rows->text())->toContain('Mark');
+});
+
+it('characterizes: an owner Doctrine describes nothing for reaches the relation layer unchanged', function (object $owner): void {
+    // Written as the escape hatch a guard needed and kept as a characterization
+    // of `getRelationship()` being owner-agnostic: it passed while the guard
+    // stood and passes without it, because the refusals for such an owner are
+    // the relation layer's own.
     $manager = test()->getContainer()->get(UnmappedOwnerRelationManager::class);
 
     expect($manager)->toBeInstanceOf(UnmappedOwnerRelationManager::class);
@@ -192,8 +228,8 @@ it('renders the embedded manager of a single-identifier owner through its page',
 });
 
 it('lists the same association through the routed host of the tier', function (): void {
-    // `ManageRelatedRecords` is the trait's second host, so the one guard has to
-    // leave it alone too — and this is the page that reads a composite-target
+    // `ManageRelatedRecords` is the trait's second host, so the one seam has to
+    // serve it too — and this is the page that reads a composite-target
     // association through it.
     [$client] = compositeGuardOwnerClient();
 

@@ -10,6 +10,7 @@ use Sylament\Panels\CurrentPanel;
 use Sylament\Panels\Panel;
 use Sylament\Panels\PanelProvider;
 use Sylament\Panels\PanelRegistry;
+use Sylament\Panels\Resources\Pages\ManageRelatedRecords;
 use Sylament\Panels\Resources\Pages\PageRegistration;
 use Sylament\Panels\Resources\RelationManagers\RelationManager;
 use Sylament\Panels\Resources\Resource;
@@ -316,4 +317,13 @@ it('answers no url for a page the related resource does not register', function 
     // view arm has no page to point at.
     expect(mrrUnitProbe($entityManager, NestedRelatedProbe::class, $project)->getDefaultActionUrl(ViewAction::make()->record($task)))
         ->toBeNull();
+});
+
+it('exposes no entity-manager setter', function (): void {
+    // The `#[Required] setRelationshipTableEntityManager()` setter existed only
+    // to feed the interim owner guard, and went with it — a public method on a
+    // trait two live-component hosts compose, so its return would be a
+    // consumer-visible change rather than an internal one.
+    expect(method_exists(RelationManager::class, 'setRelationshipTableEntityManager'))->toBeFalse()
+        ->and(method_exists(ManageRelatedRecords::class, 'setRelationshipTableEntityManager'))->toBeFalse();
 });

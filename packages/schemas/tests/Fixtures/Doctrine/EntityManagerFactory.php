@@ -18,9 +18,7 @@ final class EntityManagerFactory
      */
     public static function create(?RecordingMiddleware $recorder = null): EntityManager
     {
-        if (!Type::hasType(SkuType::NAME)) {
-            Type::addType(SkuType::NAME, SkuType::class);
-        }
+        self::registerTypes();
 
         $config = ORMSetup::createAttributeMetadataConfig(paths: [__DIR__ . '/Entity'], isDevMode: true);
         $config->enableNativeLazyObjects(true);
@@ -45,9 +43,7 @@ final class EntityManagerFactory
      */
     public static function createForPostgres(): EntityManager
     {
-        if (!Type::hasType(SkuType::NAME)) {
-            Type::addType(SkuType::NAME, SkuType::class);
-        }
+        self::registerTypes();
 
         $config = ORMSetup::createAttributeMetadataConfig(paths: [__DIR__ . '/Entity'], isDevMode: true);
         $config->enableNativeLazyObjects(true);
@@ -74,5 +70,20 @@ final class EntityManagerFactory
 
         $entityManager->flush();
         $entityManager->clear();
+    }
+
+    /**
+     * The two custom types the fixture mapping names, registered once per
+     * process: Doctrine's registry is global, so a second call would throw.
+     */
+    private static function registerTypes(): void
+    {
+        if (!Type::hasType(SkuType::NAME)) {
+            Type::addType(SkuType::NAME, SkuType::class);
+        }
+
+        if (!Type::hasType(CipherType::NAME)) {
+            Type::addType(CipherType::NAME, CipherType::class);
+        }
     }
 }

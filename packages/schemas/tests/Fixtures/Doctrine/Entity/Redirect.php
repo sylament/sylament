@@ -45,10 +45,50 @@ class Redirect
     #[ORM\OneToMany(targetEntity: Marker::class, mappedBy: 'redirect')]
     private Collection $markers;
 
+    /**
+     * The inverse side of a many-to-many a single-identifier class owns, so a
+     * scalar pair reaches one from the side that holds no join table of its own.
+     *
+     * @var Collection<int, Tag>
+     */
+    #[ORM\ManyToMany(targetEntity: Tag::class, mappedBy: 'redirects')]
+    private Collection $labels;
+
+    /**
+     * @var Collection<int, MixedFirstMarker>
+     */
+    #[ORM\OneToMany(targetEntity: MixedFirstMarker::class, mappedBy: 'redirect')]
+    private Collection $firstMixedMarkers;
+
+    /**
+     * @var Collection<int, MixedLastMarker>
+     */
+    #[ORM\OneToMany(targetEntity: MixedLastMarker::class, mappedBy: 'redirect')]
+    private Collection $lastMixedMarkers;
+
+    /**
+     * A composite class owning a collection of its own class, so the subselect
+     * names the same entity twice.
+     */
+    #[ORM\ManyToOne(targetEntity: self::class, inversedBy: 'children')]
+    #[ORM\JoinColumn(name: 'parent_host', referencedColumnName: 'host')]
+    #[ORM\JoinColumn(name: 'parent_path', referencedColumnName: 'path')]
+    private ?Redirect $parent = null;
+
+    /**
+     * @var Collection<int, Redirect>
+     */
+    #[ORM\OneToMany(targetEntity: self::class, mappedBy: 'parent')]
+    private Collection $children;
+
     public function __construct()
     {
         $this->posts = new ArrayCollection();
         $this->markers = new ArrayCollection();
+        $this->labels = new ArrayCollection();
+        $this->firstMixedMarkers = new ArrayCollection();
+        $this->lastMixedMarkers = new ArrayCollection();
+        $this->children = new ArrayCollection();
     }
 
     public function getHost(): string
@@ -107,5 +147,47 @@ class Redirect
     public function getMarkers(): Collection
     {
         return $this->markers;
+    }
+
+    /**
+     * @return Collection<int, Tag>
+     */
+    public function getLabels(): Collection
+    {
+        return $this->labels;
+    }
+
+    /**
+     * @return Collection<int, MixedFirstMarker>
+     */
+    public function getFirstMixedMarkers(): Collection
+    {
+        return $this->firstMixedMarkers;
+    }
+
+    /**
+     * @return Collection<int, MixedLastMarker>
+     */
+    public function getLastMixedMarkers(): Collection
+    {
+        return $this->lastMixedMarkers;
+    }
+
+    public function getParent(): ?self
+    {
+        return $this->parent;
+    }
+
+    public function setParent(?self $parent): void
+    {
+        $this->parent = $parent;
+    }
+
+    /**
+     * @return Collection<int, Redirect>
+     */
+    public function getChildren(): Collection
+    {
+        return $this->children;
     }
 }

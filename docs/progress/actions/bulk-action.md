@@ -162,7 +162,10 @@ is a developer error rather than a danger toast — though only in part.
 `DetachBulkAction` has one pre-walk outside its `try`, covering both shapes it
 accepts; `DissociateBulkAction` moved only its **by-key** walk, and its fetching
 arm still raises *can only dissociate entities* inside the `try`, where it
-becomes the danger toast.
+becomes the danger toast. That by-key arm gained a second pre-flight with
+[M7 · 5](../roadmap.md#m7--composite-identifiers), for the one statement DQL
+cannot write at all — nulling a to-one that spans several join columns
+([the refusal, and the DBAL route that would close it](dissociate-action.md#the-by-key-arm-is-a-dql-update-over-the-plucked-keys)).
 
 ### The post-call deselect reaches its host through the nullable accessor
 

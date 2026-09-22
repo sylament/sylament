@@ -204,8 +204,37 @@ would quietly do a many-to-many removal there: the class is the one-to-many acti
 on both arms, and a batch that succeeds or refuses depending on
 `fetchSelectedRecords()` is worse than one refusal naming the right action.
 `$mappedBy` keeps its own `?? throw` behind that branch as a one-to-many sanity
-check, matching the reader's own. A sixth guards the by-key arm alone: every
-selection entry must be a string record key (`DissociateBulkAction dissociates by
-key from record keys, got %s.`), walked before the `try` beside the chunking, so
-a host feeding something else is the developer error it is rather than a danger
-toast.
+check, matching the reader's own. **Two more guard the by-key arm alone**, both
+raised before its `try`. Every selection entry must be a string record key
+(`DissociateBulkAction dissociates by key from record keys, got %s.`), walked
+beside the chunking, so a host feeding something else is the developer error it
+is rather than a danger toast. And the target's mapped-by association must span
+exactly one join column:
+
+> `[%s::$%s] spans %d join columns, and DQL cannot null a to-one that spans more than one, so the action [%s] cannot dissociate by key here — drop fetchSelectedRecords(false) so the records are loaded and dissociated through the mapping.`
+
+The second is [M7 · 5](../roadmap.md#m7--composite-identifiers)'s, and it is
+Doctrine's refusal rather than a limit of this port: a DQL
+`UPDATE <Target> t SET t.<mappedBy> = NULL` over a to-one spanning several join
+columns is a `QueryException` raised in the SQL walker, and **no** DQL form of
+that statement exists. Before the guard the throw landed *inside* the arm's `try`
+and reached the user as a danger toast over records that had all stayed owned.
+The predicate is the **mapping's** shape — the mapped-by association is a to-one
+owning side declaring more than one join column — and never the owner's
+identifier width, which is the rule every refusal in the milestone follows: only
+a composite owner can produce such a foreign key — and it does so for every
+mapping `SchemaValidator` accepts, a to-one declaring fewer join columns than the
+owner has identifier columns being refused by the validator and by PostgreSQL's
+DDL, which the reader does not re-validate — but it is the foreign key that
+DQL cannot null. The way out is the one the message names, and it works: the
+fetching arm dissociates such a mapping at any width. The remedy **not** taken is
+recorded so it is not rediscovered — one DBAL `UPDATE` per chunk over the
+mapping's own join columns, which is one statement where fetch-then-detach is 501
+for 500 keys, and which was executed for five target flavours on both platforms.
+It is not taken because it needs either the codec's `@internal` field descriptor
+reached from `actions` or a second public SQL-side operation in `schemas`, and
+because it is unexecuted for a JOINED or single-table target, for quoted
+identifiers and for schema-qualified tables. The step that takes it is
+[M7 · 5b](../roadmap.md#m7--composite-identifiers), ruled in on 2026-09-22:
+those three shapes prototyped first, then the DBAL arm, and then this refusal
+lifted together with the test that pins it.

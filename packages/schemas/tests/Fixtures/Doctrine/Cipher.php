@@ -8,8 +8,9 @@ use Stringable;
 
 /**
  * A value-object identifier whose database form carries a prefix the printed
- * form does not — the shape a binary-backed uuid has, where reading the value
- * back from what a key prints is not something the type can do.
+ * form does not, and whose type accepts nothing but this object on the way in —
+ * so, unlike a binary-backed uuid, the printed form cannot be read back even
+ * through the type's writer.
  */
 final readonly class Cipher implements Stringable
 {

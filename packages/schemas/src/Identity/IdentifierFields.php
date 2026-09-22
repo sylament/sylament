@@ -146,11 +146,12 @@ final readonly class IdentifierFields
         $values = [];
 
         foreach ($components as $index => $component) {
+            $type = Type::getType($this->types[$index]);
+
             try {
-                $value = Type::getType($this->types[$index])->convertToPHPValue($component, $platform);
+                $value = $type->convertToPHPValue($component, $platform);
             } catch (ConversionException) {
-                // A key is client input: a component its field's type refuses names no record, as an unknown key does.
-                return null;
+                $value = $this->readThroughDatabaseForm($type, $component, $platform);
             }
 
             if (self::printable($value) !== $component) {
@@ -161,6 +162,23 @@ final readonly class IdentifierFields
         }
 
         return $values;
+    }
+
+    /**
+     * A component the field's type refuses to read, offered to its writer
+     * first: a type whose column holds a form its printed one is not — a
+     * binary-backed uuid — takes that printed spelling on the way in and reads
+     * the database form it makes back. Null when either step refuses, which the
+     * print-back rule then answers as a key naming no record.
+     */
+    private function readThroughDatabaseForm(Type $type, string $component, AbstractPlatform $platform): mixed
+    {
+        try {
+            return $type->convertToPHPValue($type->convertToDatabaseValue($component, $platform), $platform);
+        } catch (ConversionException) {
+            // A key is client input: a component its field's type refuses both ways names no record, as an unknown key does.
+            return null;
+        }
     }
 
     /**

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Sylament\Schemas\Tests\Unit\State;
 
+use Doctrine\DBAL\ParameterType;
 use Doctrine\ORM\EntityManagerInterface;
 use LogicException;
 use Sylament\Schemas\Identity\IdentifierConstraint;
@@ -13,6 +14,7 @@ use Sylament\Schemas\State\Relationship;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\CompositeOwnerRig;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\Chain;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\Marker;
+use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\Pallet;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\Redirect;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\SigilChild;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\Slip;
@@ -82,7 +84,29 @@ it('scopes from a single-table subclass owner whose collections the root declare
         ->and(ownerScopeKeys($entityManager, $reader->createRelationshipCandidateQuery(new Relationship($owner, $relationship))->getQuery()->getResult()))->toBe($candidates);
 })->with([
     'many-to-many' => ['topics', Tag::class, ['1', '2'], []],
-    'one-to-many' => ['slips', Slip::class, ['11'], ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '12', '13']],
+    'one-to-many' => ['slips', Slip::class, ['11'], ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '12', '13', '14', '15', '16', '17', '18', '19', '20', '21', '22', '23', '24']],
+]);
+
+it('scopes a composite owner one half of which its type reads back only through its writer, on both arms and both queries', function (string $relationship, string $targetClass, array $mine, array $mineCandidates, array $sharesBatch, array $sharesLane): void {
+    $entityManager = CompositeOwnerRig::create();
+    $reader = new AssociationReader($entityManager);
+    $owner = CompositeOwnerRig::findPallet($entityManager, 'b1b2c3d4-0000-4000-8000-000000000001', 'north');
+
+    $related = $reader->createRelationshipQuery(new Relationship($owner, $relationship));
+    $candidates = $reader->createRelationshipCandidateQuery(new Relationship($owner, $relationship));
+
+    expect($related->getDQL())->toBe('SELECT record FROM ' . $targetClass . ' record WHERE EXISTS (SELECT 1 FROM ' . Pallet::class . ' sy_owner JOIN sy_owner.' . $relationship . ' sy_related WHERE sy_owner.batch = :sylament_relationship_owner_0 AND sy_owner.lane = :sylament_relationship_owner_1 AND sy_related.id = record.id)')
+        ->and(bin2hex((string) $related->getParameter('sylament_relationship_owner_0')?->getValue()))->toBe('b1b2c3d4000040008000000000000001')
+        ->and($related->getParameter('sylament_relationship_owner_0')?->getType())->toBe(ParameterType::BINARY)
+        ->and($related->getParameter('sylament_relationship_owner_1')?->getValue())->toBe('north')
+        ->and($related->getParameter('sylament_relationship_owner_1')?->getType())->toBe(ParameterType::STRING)
+        ->and(ownerScopeKeys($entityManager, $related->getQuery()->getResult()))->toBe($mine)
+        ->and(ownerScopeKeys($entityManager, $candidates->getQuery()->getResult()))->toBe($mineCandidates)
+        ->and(ownerScopeKeys($entityManager, $reader->createRelationshipQuery(new Relationship(CompositeOwnerRig::findPallet($entityManager, 'b1b2c3d4-0000-4000-8000-000000000001', 'south'), $relationship))->getQuery()->getResult()))->toBe($sharesBatch)
+        ->and(ownerScopeKeys($entityManager, $reader->createRelationshipQuery(new Relationship(CompositeOwnerRig::findPallet($entityManager, 'b1b2c3d4-0000-4000-8000-000000000002', 'north'), $relationship))->getQuery()->getResult()))->toBe($sharesLane);
+})->with([
+    'many-to-many' => ['topics', Tag::class, ['1'], ['2'], ['2'], ['1', '2']],
+    'one-to-many' => ['slips', Slip::class, ['16'], ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12', '13', '14', '15', '17', '18', '19', '20', '21', '22', '23', '24'], ['17'], ['18']],
 ]);
 
 it('scopes a many-to-many from a chained derived identity', function (int $postId, int $link, array $related, array $candidates): void {

@@ -13,6 +13,7 @@ use Doctrine\ORM\QueryBuilder;
 use LogicException;
 use ReflectionClass;
 use Sylament\Schemas\Identity\IdentifierConstraint;
+use Sylament\Schemas\Identity\IdentifierFields;
 use Sylament\Schemas\Identity\RecordKey;
 use Symfony\Component\PropertyAccess\PropertyAccess;
 
@@ -572,10 +573,10 @@ class AssociationReader
 
     /**
      * The single-identifier owner's parameter, after refusing an owner that has
-     * no identifier yet: a scalar identifier is bound as its own value under its
-     * field's DBAL type, because Doctrine binds an entity by casting its
-     * identifier and never converts it; an identifier that is an association
-     * stays the entity. An owner keyed by several fields bound itself while its
+     * no identifier yet: its identifier value — one that is an association
+     * reduced to its target's, at any depth — bound under that terminal field's
+     * DBAL type, because Doctrine binds an entity by casting its identifier and
+     * never converts it. An owner keyed by several fields bound itself while its
      * scope was composed.
      */
     private function bindRelationshipOwner(QueryBuilder $query, Relationship $relationship): QueryBuilder
@@ -584,16 +585,15 @@ class AssociationReader
             return $query;
         }
 
+        $entityManager = $this->requireEntityManager();
+        $ownerClass = $this->getEntityClass($relationship->owner);
+
         $this->getRecordKey($relationship->owner);
 
-        $metadata = $this->requireEntityManager()->getClassMetadata($this->getEntityClass($relationship->owner));
-        $field = $metadata->identifier[0];
+        $values = RecordKey::values($entityManager, $relationship->owner, $ownerClass)
+            ?? throw new LogicException(sprintf('Object records must expose a readable non-blank identifier; [%s] has none set.', $relationship->owner::class));
 
-        if ($metadata->hasAssociation($field)) {
-            return $query->setParameter('sylament_relationship_owner', $relationship->owner);
-        }
-
-        return $query->setParameter('sylament_relationship_owner', $metadata->getFieldValue($relationship->owner, $field), $metadata->getTypeOfField($field));
+        return $query->setParameter('sylament_relationship_owner', $values[0], IdentifierFields::of($entityManager, $ownerClass)->types[0]);
     }
 
     /**

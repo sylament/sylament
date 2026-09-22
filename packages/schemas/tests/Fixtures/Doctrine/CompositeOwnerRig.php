@@ -7,12 +7,16 @@ namespace Sylament\Schemas\Tests\Fixtures\Doctrine;
 use Doctrine\ORM\EntityManager;
 use LogicException;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\Chain;
+use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\Crate;
+use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\CrateSeal;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\Enrolment;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\Listing;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\ListingNote;
+use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\ListingSeal;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\Marker;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\MixedFirstMarker;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\MixedLastMarker;
+use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\Pallet;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\Placard;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\Post;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\PostSeal;
@@ -21,9 +25,12 @@ use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\Redirect;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\Sigil;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\SigilChild;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\Slip;
+use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\Strongbox;
+use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\StrongboxSeal;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\Tag;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\Vault;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\Zone;
+use Symfony\Component\Uid\Uuid;
 
 /**
  * {@see CompositeTargetRig} read from the other end: every composite flavour
@@ -90,6 +97,32 @@ final class CompositeOwnerRig
 
     public const string CHAIN_SHARES_LINK = '2~1';
 
+    public const string CRATE_MINE = 'a1b2c3d4-0000-4000-8000-000000000001';
+
+    public const string CRATE_APART = 'a1b2c3d4-0000-4000-8000-000000000002';
+
+    public const string PALLET_MINE = 'b1b2c3d4-0000-4000-8000-000000000001~north';
+
+    public const string PALLET_SHARES_BATCH = 'b1b2c3d4-0000-4000-8000-000000000001~south';
+
+    public const string PALLET_SHARES_LANE = 'b1b2c3d4-0000-4000-8000-000000000002~north';
+
+    public const string LISTING_SEAL_MINE = 'AB-123';
+
+    public const string LISTING_SEAL_APART = 'CD-456';
+
+    public const string CRATE_SEAL_MINE = 'a1b2c3d4-0000-4000-8000-000000000001';
+
+    public const string CRATE_SEAL_APART = 'a1b2c3d4-0000-4000-8000-000000000002';
+
+    public const string STRONGBOX_MINE = 'omega';
+
+    public const string STRONGBOX_APART = 'sigma';
+
+    public const string STRONGBOX_SEAL_MINE = 'omega';
+
+    public const string STRONGBOX_SEAL_APART = 'sigma';
+
     public static function create(?RecordingMiddleware $recorder = null): EntityManager
     {
         $entityManager = CompositeTargetRig::create($recorder);
@@ -105,6 +138,9 @@ final class CompositeOwnerRig
         self::seedPlacards($entityManager, $tags);
         self::seedSigils($entityManager, $tags);
         self::seedChains($entityManager, $tags);
+        self::seedCrates($entityManager, $tags);
+        self::seedPallets($entityManager, $tags);
+        self::seedSeals($entityManager, $tags);
 
         $entityManager->flush();
 
@@ -168,6 +204,41 @@ final class CompositeOwnerRig
         $sigil = $entityManager->find(Sigil::class, ['realm' => $realm, 'mark' => $mark]);
 
         return $sigil instanceof SigilChild ? $sigil : throw new LogicException(sprintf('The rig seeds no sigil [%s~%s].', $realm, $mark));
+    }
+
+    public static function findCrate(EntityManager $entityManager, string $id): Crate
+    {
+        $crate = $entityManager->find(Crate::class, Uuid::fromString($id));
+
+        return $crate instanceof Crate ? $crate : throw new LogicException(sprintf('The rig seeds no crate [%s].', $id));
+    }
+
+    public static function findPallet(EntityManager $entityManager, string $batch, string $lane): Pallet
+    {
+        $pallet = $entityManager->find(Pallet::class, ['batch' => Uuid::fromString($batch), 'lane' => $lane]);
+
+        return $pallet instanceof Pallet ? $pallet : throw new LogicException(sprintf('The rig seeds no pallet [%s~%s].', $batch, $lane));
+    }
+
+    public static function findListingSeal(EntityManager $entityManager, string $sku): ListingSeal
+    {
+        $seal = $entityManager->find(ListingSeal::class, ['listing' => new Sku($sku)]);
+
+        return $seal instanceof ListingSeal ? $seal : throw new LogicException(sprintf('The rig seeds no listing seal [%s].', $sku));
+    }
+
+    public static function findCrateSeal(EntityManager $entityManager, string $id): CrateSeal
+    {
+        $seal = $entityManager->find(CrateSeal::class, ['crate' => Uuid::fromString($id)]);
+
+        return $seal instanceof CrateSeal ? $seal : throw new LogicException(sprintf('The rig seeds no crate seal [%s].', $id));
+    }
+
+    public static function findStrongboxSeal(EntityManager $entityManager, string $cipher): StrongboxSeal
+    {
+        $seal = $entityManager->find(StrongboxSeal::class, ['strongbox' => new Cipher($cipher)]);
+
+        return $seal instanceof StrongboxSeal ? $seal : throw new LogicException(sprintf('The rig seeds no strongbox seal [%s].', $cipher));
     }
 
     /**
@@ -376,6 +447,124 @@ final class CompositeOwnerRig
     }
 
     /**
+     * @param array<int, Tag> $tags
+     */
+    private static function seedCrates(EntityManager $entityManager, array $tags): void
+    {
+        $mine = self::crate($entityManager, self::CRATE_MINE, 'mine', $tags[1]);
+        $apart = self::crate($entityManager, self::CRATE_APART, 'apart', $tags[2]);
+
+        self::slip($entityManager, 'crate mine', crate: $mine);
+        self::slip($entityManager, 'crate apart', crate: $apart);
+    }
+
+    /**
+     * @param array<int, Tag> $tags
+     */
+    private static function seedPallets(EntityManager $entityManager, array $tags): void
+    {
+        $mine = self::pallet($entityManager, 'b1b2c3d4-0000-4000-8000-000000000001', 'north', [$tags[1]]);
+        $sharesBatch = self::pallet($entityManager, 'b1b2c3d4-0000-4000-8000-000000000001', 'south', [$tags[2]]);
+        $sharesLane = self::pallet($entityManager, 'b1b2c3d4-0000-4000-8000-000000000002', 'north', [$tags[1], $tags[2]]);
+
+        self::slip($entityManager, 'pallet mine', pallet: $mine);
+        self::slip($entityManager, 'pallet shares batch', pallet: $sharesBatch);
+        self::slip($entityManager, 'pallet shares lane', pallet: $sharesLane);
+    }
+
+    /**
+     * One seal per listing, per crate and per strongbox, each owning disjoint
+     * records on both arms, so a scope that matches nothing or everything is
+     * told apart from the right one.
+     *
+     * @param array<int, Tag> $tags
+     */
+    private static function seedSeals(EntityManager $entityManager, array $tags): void
+    {
+        $listingSeals = [];
+
+        foreach ([self::LISTING_SEAL_MINE => $tags[1], self::LISTING_SEAL_APART => $tags[2]] as $sku => $topic) {
+            $seal = new ListingSeal();
+            $seal->setListing(self::findListing($entityManager, $sku));
+            $seal->setLabel($sku);
+            $seal->addTopic($topic);
+
+            $entityManager->persist($seal);
+            $listingSeals[$sku] = $seal;
+        }
+
+        self::slip($entityManager, 'listing seal mine', listingSeal: $listingSeals[self::LISTING_SEAL_MINE]);
+        self::slip($entityManager, 'listing seal apart', listingSeal: $listingSeals[self::LISTING_SEAL_APART]);
+
+        $crateSeals = [];
+
+        foreach ([self::CRATE_SEAL_MINE => $tags[1], self::CRATE_SEAL_APART => $tags[2]] as $id => $topic) {
+            $seal = new CrateSeal();
+            $seal->setCrate(self::findCrate($entityManager, $id));
+            $seal->setLabel($id);
+            $seal->addTopic($topic);
+
+            $entityManager->persist($seal);
+            $crateSeals[$id] = $seal;
+        }
+
+        self::slip($entityManager, 'crate seal mine', crateSeal: $crateSeals[self::CRATE_SEAL_MINE]);
+        self::slip($entityManager, 'crate seal apart', crateSeal: $crateSeals[self::CRATE_SEAL_APART]);
+
+        $strongboxSeals = [];
+
+        foreach ([self::STRONGBOX_MINE => $tags[1], self::STRONGBOX_APART => $tags[2]] as $cipher => $topic) {
+            $strongbox = new Strongbox();
+            $strongbox->setCipher(new Cipher($cipher));
+            $strongbox->setLabel($cipher);
+
+            $entityManager->persist($strongbox);
+
+            $seal = new StrongboxSeal();
+            $seal->setStrongbox($strongbox);
+            $seal->setLabel($cipher);
+            $seal->addTopic($topic);
+
+            $entityManager->persist($seal);
+            $strongboxSeals[$cipher] = $seal;
+        }
+
+        self::slip($entityManager, 'strongbox seal mine', strongboxSeal: $strongboxSeals[self::STRONGBOX_SEAL_MINE]);
+        self::slip($entityManager, 'strongbox seal apart', strongboxSeal: $strongboxSeals[self::STRONGBOX_SEAL_APART]);
+    }
+
+    private static function crate(EntityManager $entityManager, string $id, string $label, Tag $topic): Crate
+    {
+        $crate = new Crate();
+        $crate->setId(Uuid::fromString($id));
+        $crate->setLabel($label);
+        $crate->addTopic($topic);
+
+        $entityManager->persist($crate);
+
+        return $crate;
+    }
+
+    /**
+     * @param list<Tag> $topics
+     */
+    private static function pallet(EntityManager $entityManager, string $batch, string $lane, array $topics): Pallet
+    {
+        $pallet = new Pallet();
+        $pallet->setBatch(Uuid::fromString($batch));
+        $pallet->setLane($lane);
+        $pallet->setLabel($batch . '/' . $lane);
+
+        foreach ($topics as $topic) {
+            $pallet->addTopic($topic);
+        }
+
+        $entityManager->persist($pallet);
+
+        return $pallet;
+    }
+
+    /**
      * @param list<Tag> $topics
      */
     private static function note(EntityManager $entityManager, Listing $listing, string $code, array $topics): ListingNote
@@ -464,7 +653,7 @@ final class CompositeOwnerRig
         return $marker;
     }
 
-    private static function slip(EntityManager $entityManager, string $label, ?Listing $listing = null, ?ListingNote $note = null, ?Vault $vault = null, ?Placard $placard = null, ?Sigil $sigil = null): Slip
+    private static function slip(EntityManager $entityManager, string $label, ?Listing $listing = null, ?ListingNote $note = null, ?Vault $vault = null, ?Placard $placard = null, ?Sigil $sigil = null, ?Crate $crate = null, ?Pallet $pallet = null, ?ListingSeal $listingSeal = null, ?CrateSeal $crateSeal = null, ?StrongboxSeal $strongboxSeal = null): Slip
     {
         $slip = new Slip();
         $slip->setLabel($label);
@@ -473,6 +662,11 @@ final class CompositeOwnerRig
         $slip->setVault($vault);
         $slip->setPlacard($placard);
         $slip->setSigil($sigil);
+        $slip->setCrate($crate);
+        $slip->setPallet($pallet);
+        $slip->setListingSeal($listingSeal);
+        $slip->setCrateSeal($crateSeal);
+        $slip->setStrongboxSeal($strongboxSeal);
 
         $entityManager->persist($slip);
 

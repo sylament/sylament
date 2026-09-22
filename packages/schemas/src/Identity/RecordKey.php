@@ -80,6 +80,23 @@ final class RecordKey
     }
 
     /**
+     * The record's identifier values as the mapping orders them, each already
+     * the PHP value its own field's DBAL type holds and an identifier
+     * association reduced to its target's — the values {@see of()} prints,
+     * before they are printed. Null when a component is missing at any level.
+     *
+     * @internal read by the relation layer's owner bind, and not part of the key contract
+     *
+     * @param class-string|null $class the mapped class to read the record by, when the caller declares one
+     *
+     * @return list<mixed>|null
+     */
+    public static function values(EntityManagerInterface $entityManager, object $record, ?string $class = null): ?array
+    {
+        return self::flatten($entityManager, $record, $class ?? $record::class);
+    }
+
+    /**
      * The record's identifier values in the mapping's order, an association
      * reduced to its target's, or null when one is missing at any level:
      * Doctrine drops a null component rather than answering it.

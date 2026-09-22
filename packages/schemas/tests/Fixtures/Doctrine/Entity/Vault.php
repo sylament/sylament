@@ -11,10 +11,11 @@ use Sylament\Schemas\Tests\Fixtures\Doctrine\Cipher;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\CipherType;
 
 /**
- * A scalar pair one half of which is typed by a DBAL type that cannot read its
- * own printed form, so the key this record mints never decodes against its own
- * mapping — the one owner flavour the reader refuses by name rather than
- * scoping.
+ * A scalar pair one half of which is typed by a doubly-strict DBAL type, which
+ * refuses its own printed form on read and on write, so the key this record
+ * mints never decodes against its own mapping — the one owner flavour the
+ * reader refuses by name rather than scoping. {@see Pallet}'s raw-bytes half
+ * refuses it on read only, and scopes.
  */
 #[ORM\Entity]
 class Vault

@@ -9,9 +9,11 @@ use Doctrine\ORM\Mapping as ORM;
 /**
  * The one-to-many arm of every owner flavour this package keys but
  * {@see Marker} does not carry: a converting single identifier, a composite one
- * with a converting half, a type that cannot read its printed form, a backed
- * enum, and a single-table subclass. None of these to-ones is part of this
- * record's identity.
+ * with a converting half, a doubly-strict type that refuses its printed form on
+ * read and on write, a backed enum, a single-table subclass, a single and a
+ * composite identifier stored as raw bytes, and three single derived
+ * identities — onto a converting, a raw-bytes and a doubly-strict target. None
+ * of these to-ones is part of this record's identity.
  */
 #[ORM\Entity]
 class Slip
@@ -46,6 +48,27 @@ class Slip
     #[ORM\JoinColumn(name: 'sigil_realm', referencedColumnName: 'realm')]
     #[ORM\JoinColumn(name: 'sigil_mark', referencedColumnName: 'mark')]
     private ?Sigil $sigil = null;
+
+    #[ORM\ManyToOne(targetEntity: Crate::class, inversedBy: 'slips')]
+    #[ORM\JoinColumn(name: 'crate_id', referencedColumnName: 'id')]
+    private ?Crate $crate = null;
+
+    #[ORM\ManyToOne(targetEntity: Pallet::class, inversedBy: 'slips')]
+    #[ORM\JoinColumn(name: 'pallet_batch', referencedColumnName: 'batch')]
+    #[ORM\JoinColumn(name: 'pallet_lane', referencedColumnName: 'lane')]
+    private ?Pallet $pallet = null;
+
+    #[ORM\ManyToOne(targetEntity: ListingSeal::class, inversedBy: 'slips')]
+    #[ORM\JoinColumn(name: 'listing_seal_sku', referencedColumnName: 'listing_sku')]
+    private ?ListingSeal $listingSeal = null;
+
+    #[ORM\ManyToOne(targetEntity: CrateSeal::class, inversedBy: 'slips')]
+    #[ORM\JoinColumn(name: 'crate_seal_id', referencedColumnName: 'crate_id')]
+    private ?CrateSeal $crateSeal = null;
+
+    #[ORM\ManyToOne(targetEntity: StrongboxSeal::class, inversedBy: 'slips')]
+    #[ORM\JoinColumn(name: 'strongbox_seal_cipher', referencedColumnName: 'strongbox_cipher')]
+    private ?StrongboxSeal $strongboxSeal = null;
 
     public function getId(): ?int
     {
@@ -110,5 +133,55 @@ class Slip
     public function setSigil(?Sigil $sigil): void
     {
         $this->sigil = $sigil;
+    }
+
+    public function getCrate(): ?Crate
+    {
+        return $this->crate;
+    }
+
+    public function setCrate(?Crate $crate): void
+    {
+        $this->crate = $crate;
+    }
+
+    public function getPallet(): ?Pallet
+    {
+        return $this->pallet;
+    }
+
+    public function setPallet(?Pallet $pallet): void
+    {
+        $this->pallet = $pallet;
+    }
+
+    public function getListingSeal(): ?ListingSeal
+    {
+        return $this->listingSeal;
+    }
+
+    public function setListingSeal(?ListingSeal $listingSeal): void
+    {
+        $this->listingSeal = $listingSeal;
+    }
+
+    public function getCrateSeal(): ?CrateSeal
+    {
+        return $this->crateSeal;
+    }
+
+    public function setCrateSeal(?CrateSeal $crateSeal): void
+    {
+        $this->crateSeal = $crateSeal;
+    }
+
+    public function getStrongboxSeal(): ?StrongboxSeal
+    {
+        return $this->strongboxSeal;
+    }
+
+    public function setStrongboxSeal(?StrongboxSeal $strongboxSeal): void
+    {
+        $this->strongboxSeal = $strongboxSeal;
     }
 }

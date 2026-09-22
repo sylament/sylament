@@ -10,9 +10,11 @@ use Doctrine\DBAL\Types\Exception\ValueNotConvertible;
 use Doctrine\DBAL\Types\StringType;
 
 /**
- * A type that cannot read its own printed form: it stores `c:<value>` and
- * refuses anything without that prefix on the way back, so a key minted from a
- * record of this type never decodes against its own mapping.
+ * A doubly-strict type: it stores `c:<value>` and refuses anything without that
+ * prefix on the way back, and its writer takes a {@see Cipher} and nothing else,
+ * so it refuses its own printed form on read and on write alike. A key minted
+ * from a record of this type never decodes against its own mapping, even
+ * through the codec's writer fallback that decodes {@see BinaryUuidType}.
  */
 final class CipherType extends StringType
 {

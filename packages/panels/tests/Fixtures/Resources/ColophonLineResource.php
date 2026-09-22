@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Sylament\Panels\Tests\Fixtures\Resources;
 
+use Sylament\Actions\DeleteAction;
+use Sylament\Actions\EditAction;
 use Sylament\Forms\Components\TextInput;
 use Sylament\Panels\Resources\Resource;
 use Sylament\Panels\Tests\Fixtures\Doctrine\Entity\ColophonLine;
@@ -14,9 +16,10 @@ use Sylament\Tables\Columns\TextColumn;
 use Sylament\Tables\Table;
 
 /**
- * The second refused shape: a resource nested under a parent whose identifier
- * is one association and nothing else, which Doctrine reports as not
- * composite — so the guard's predicate cannot be a composite test.
+ * The second shape: a resource nested under a parent whose identifier is one
+ * association and nothing else, which Doctrine reports as not composite. It
+ * registers no index, so its delete redirect is the one that falls back to a
+ * page of the parent.
  */
 final class ColophonLineResource extends Resource
 {
@@ -37,7 +40,9 @@ final class ColophonLineResource extends Resource
 
     public function table(Table $table): Table
     {
-        return $table->columns([TextColumn::make('text')]);
+        return $table
+            ->columns([TextColumn::make('text')])
+            ->recordActions([EditAction::make(), DeleteAction::make()]);
     }
 
     public function getPages(): array

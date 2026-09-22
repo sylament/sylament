@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Sylament\Panels\Tests\Fixtures\Resources\Pages;
 
+use Sylament\Actions\CreateAction;
+use Sylament\Actions\DeleteAction;
 use Sylament\Panels\Resources\Pages\ManageRelatedRecords;
 use Sylament\Panels\Tests\Fixtures\Resources\StampResource;
 use Sylament\Tables\Columns\TextColumn;
@@ -12,7 +14,7 @@ use Symfony\UX\LiveComponent\Attribute\AsLiveComponent;
 
 /**
  * The routed host of the relationship tier over a composite owner: the page
- * resolves its stamp, and the refusal is its table's to carry.
+ * resolves its stamp, and its table lists and writes that stamp's marks.
  */
 #[AsLiveComponent]
 final class ManageStampMarks extends ManageRelatedRecords
@@ -23,6 +25,10 @@ final class ManageStampMarks extends ManageRelatedRecords
 
     public function table(Table $table): Table
     {
-        return $table->columns([TextColumn::make('label')]);
+        return $table
+            ->recordTitleAttribute('label')
+            ->columns([TextColumn::make('label')])
+            ->headerActions([CreateAction::make()])
+            ->recordActions([DeleteAction::make()]);
     }
 }

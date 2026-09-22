@@ -8,9 +8,9 @@ use Doctrine\ORM\Mapping as ORM;
 
 /**
  * A single-identifier record whose owner is composite: the shape a nested
- * resource and a relation manager refuse until owner scoping is built. The two
- * join columns are named per identifier column because a to-one onto a
- * composite target otherwise has a single `id` guessed for it.
+ * resource and a relation manager both scope to. The two join columns are
+ * named per identifier column because a to-one onto a composite target
+ * otherwise has a single `id` guessed for it.
  */
 #[ORM\Entity]
 class StampMark

@@ -8,9 +8,8 @@ use Doctrine\ORM\Mapping as ORM;
 
 /**
  * A single-identifier record whose owner is a single derived identity: the
- * second shape the interim guards refuse, and the one Doctrine reports as
- * non-composite. Its join column names the owner's own identifier column,
- * which is an association's.
+ * second owner shape, and the one Doctrine reports as non-composite. Its join
+ * column names the owner's own identifier column, which is an association's.
  */
 #[ORM\Entity]
 class ColophonLine

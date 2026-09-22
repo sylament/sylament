@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Sylament\Panels\Tests\Fixtures\Resources\RelationManagers;
 
+use Sylament\Actions\CreateAction;
+use Sylament\Actions\DeleteAction;
 use Sylament\Forms\Components\TextInput;
 use Sylament\Panels\Resources\RelationManagers\RelationManager;
 use Sylament\Schemas\Schema;
@@ -12,8 +14,8 @@ use Sylament\Tables\Table;
 use Symfony\UX\LiveComponent\Attribute\AsLiveComponent;
 
 /**
- * The same refusal one flavour over: an owner whose identifier is one
- * association and nothing else. Registered on no page.
+ * The same arm one flavour over: an owner whose identifier is one association
+ * and nothing else. Registered on no page.
  */
 #[AsLiveComponent]
 final class ColophonLinesRelationManager extends RelationManager
@@ -29,6 +31,10 @@ final class ColophonLinesRelationManager extends RelationManager
 
     public function table(Table $table): Table
     {
-        return $table->columns([TextColumn::make('text')]);
+        return $table
+            ->recordTitleAttribute('text')
+            ->columns([TextColumn::make('text')])
+            ->headerActions([CreateAction::make()])
+            ->recordActions([DeleteAction::make()]);
     }
 }

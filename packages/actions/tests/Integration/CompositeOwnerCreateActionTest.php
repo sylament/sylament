@@ -28,7 +28,7 @@ uses(InteractsWithLiveComponents::class);
  * the in-memory association.
  */
 
-function seededCompositeOwnerRedirect(string $host = 'example.com', string $path = '/old'): Redirect
+function compositeOwnerCreateSeededRedirect(string $host = 'example.com', string $path = '/old'): Redirect
 {
     $redirect = new Redirect();
     $redirect->setHost($host);
@@ -46,7 +46,7 @@ function seededCompositeOwnerRedirect(string $host = 'example.com', string $path
 /**
  * @param array<string, mixed> $props
  */
-function mountedCompositeOwnerHopCreateAction(array $props = []): TestLiveComponent
+function compositeOwnerCreateMountedHopAction(array $props = []): TestLiveComponent
 {
     /** @var KernelBrowser $client */
     $client = test()->getContainer()->get('test.client');
@@ -57,9 +57,9 @@ function mountedCompositeOwnerHopCreateAction(array $props = []): TestLiveCompon
 }
 
 it('attaches a created record to an owner keyed by several fields', function (): void {
-    seededCompositeOwnerRedirect();
+    compositeOwnerCreateSeededRedirect();
 
-    mountedCompositeOwnerHopCreateAction()
+    compositeOwnerCreateMountedHopAction()
         ->set('mountedActionsData.0.id', '1')
         ->set('mountedActionsData.0.label', 'First hop')
         ->call('callMountedAction');
@@ -76,9 +76,9 @@ it('attaches a created record to an owner keyed by several fields', function ():
 });
 
 it('writes both foreign-key columns of the owner, not just the first', function (): void {
-    seededCompositeOwnerRedirect();
+    compositeOwnerCreateSeededRedirect();
 
-    mountedCompositeOwnerHopCreateAction()
+    compositeOwnerCreateMountedHopAction()
         ->set('mountedActionsData.0.id', '2')
         ->set('mountedActionsData.0.label', 'Second hop')
         ->call('callMountedAction');
@@ -90,9 +90,9 @@ it('writes both foreign-key columns of the owner, not just the first', function 
 });
 
 it('leaves the foreign key null when the host names no owner', function (): void {
-    seededCompositeOwnerRedirect();
+    compositeOwnerCreateSeededRedirect();
 
-    mountedCompositeOwnerHopCreateAction(['redirectPath' => '/missing'])
+    compositeOwnerCreateMountedHopAction(['redirectPath' => '/missing'])
         ->set('mountedActionsData.0.id', '3')
         ->set('mountedActionsData.0.label', 'Orphan hop')
         ->call('callMountedAction');

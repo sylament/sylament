@@ -151,6 +151,31 @@ it('leaves a name free that stands in the dql only inside a longer identifier', 
     expect(RelationJoiner::ensureJoined($query, 'record', [new Hop('owner', Circuit::class, false)]))->toBe('sy_owner');
 });
 
+it('leaves a name free that stands in the dql only at the tail of a longer identifier', function (): void {
+    $query = EntityManagerFactory::create()->createQueryBuilder()
+        ->select('record')->from(Circuit::class, 'record')
+        ->leftJoin('record.related', 'far_sy_owner');
+
+    expect(RelationJoiner::ensureJoined($query, 'record', [new Hop('owner', Circuit::class, false)]))->toBe('sy_owner')
+        ->and($query->getDQL())->toContain('LEFT JOIN record.related far_sy_owner LEFT JOIN record.owner sy_owner');
+});
+
+/*
+ * DQL resolves its identification variables case-sensitively — `SY_OWNER`
+ * declared beside `sy_owner` parses and compiles rather than raising
+ * `'sy_owner' is already defined` (executed, ORM 3.6.8) — so the scan is
+ * case-sensitive too, and the upper-case name blocks nothing.
+ */
+it('leaves a name free that the dql carries only in another case', function (): void {
+    $query = EntityManagerFactory::create()->createQueryBuilder()
+        ->select('record')->from(Circuit::class, 'record')
+        ->leftJoin('record.related', 'SY_OWNER');
+
+    expect(RelationJoiner::ensureJoined($query, 'record', [new Hop('owner', Circuit::class, false)]))->toBe('sy_owner')
+        ->and($query->getDQL())->toContain('LEFT JOIN record.related SY_OWNER LEFT JOIN record.owner sy_owner')
+        ->and($query->getQuery()->getSQL())->toContain('LEFT JOIN Circuit c1_ ON c0_.related_region = c1_.region');
+});
+
 it('sorts a relation-scoped query through a hop named after the subselect owner alias', function (): void {
     $query = relationJoinerScopedCircuitsQuery();
 

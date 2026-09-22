@@ -4,12 +4,16 @@ declare(strict_types=1);
 
 namespace Sylament\Panels\Tests\Fixtures\Doctrine\Entity;
 
+use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 
 /**
  * A composite identifier one of whose fields is literally named `id` — the
  * translation-table shape an action mints a partial key for when it reads a
- * record's `id` property and calls it the whole one.
+ * record's `id` property and calls it the whole one. Its {@see Variant}
+ * collection makes it a relation owner as well, which is the flavour where a
+ * parent segment spelled `5` is a plausible URL for half a key.
  */
 #[ORM\Entity]
 class Edition
@@ -24,6 +28,18 @@ class Edition
 
     #[ORM\Column(length: 255)]
     private string $title = '';
+
+    /**
+     * @var Collection<int, Variant>
+     */
+    #[ORM\OneToMany(targetEntity: Variant::class, mappedBy: 'edition')]
+    #[ORM\OrderBy(['name' => 'ASC'])]
+    private Collection $variants;
+
+    public function __construct()
+    {
+        $this->variants = new ArrayCollection();
+    }
 
     public function getId(): int
     {
@@ -57,6 +73,32 @@ class Edition
     public function setTitle(string $title): static
     {
         $this->title = $title;
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, Variant>
+     */
+    public function getVariants(): Collection
+    {
+        return $this->variants;
+    }
+
+    public function addVariant(Variant $variant): static
+    {
+        if (! $this->variants->contains($variant)) {
+            $this->variants->add($variant);
+        }
+
+        $variant->setEdition($this);
+
+        return $this;
+    }
+
+    public function removeVariant(Variant $variant): static
+    {
+        $this->variants->removeElement($variant);
 
         return $this;
     }

@@ -7,13 +7,17 @@ namespace Sylament\Panels\Tests\Fixtures;
 use Sylament\Panels\Pages\Dashboard;
 use Sylament\Panels\Panel;
 use Sylament\Panels\PanelProvider;
+use Sylament\Panels\Tests\Fixtures\Resources\BinderyResource;
 use Sylament\Panels\Tests\Fixtures\Resources\CatalogueResource;
 use Sylament\Panels\Tests\Fixtures\Resources\ColophonLineResource;
 use Sylament\Panels\Tests\Fixtures\Resources\ColophonResource;
 use Sylament\Panels\Tests\Fixtures\Resources\EditionResource;
+use Sylament\Panels\Tests\Fixtures\Resources\EditionVariantResource;
 use Sylament\Panels\Tests\Fixtures\Resources\FlatStampResource;
 use Sylament\Panels\Tests\Fixtures\Resources\GalleryImprintResource;
 use Sylament\Panels\Tests\Fixtures\Resources\GalleryResource;
+use Sylament\Panels\Tests\Fixtures\Resources\ImprintBindingResource;
+use Sylament\Panels\Tests\Fixtures\Resources\ImprintMotifResource;
 use Sylament\Panels\Tests\Fixtures\Resources\ImprintResource;
 use Sylament\Panels\Tests\Fixtures\Resources\SeparatorProbeResource;
 use Sylament\Panels\Tests\Fixtures\Resources\StampMarkResource;
@@ -46,6 +50,10 @@ final class KeyPanelProvider extends PanelProvider
                 SeparatorProbeResource::class,
                 GalleryResource::class,
                 GalleryImprintResource::class,
+                BinderyResource::class,
+                ImprintBindingResource::class,
+                ImprintMotifResource::class,
+                EditionVariantResource::class,
             ]);
     }
 }

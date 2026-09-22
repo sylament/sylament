@@ -380,6 +380,56 @@ it('deletes every join row of the record on an empty submission, and no other', 
         ]);
 });
 
+/*
+ * The create page, which the same form() backs: the record is persisted only
+ * after the field has been filled, so the arm reaches the owning side of a
+ * record that has no identifier yet and whose own collection is empty — the
+ * two things every case above starts with the opposite of. A regression that
+ * wrote join rows only for a record already holding one would leave every
+ * other case here green and this one with an empty join table.
+ */
+it('writes the join rows of a record persisted only after the field was filled', function (): void {
+    $entityManager = $this::getContainer()->get(EntityManagerInterface::class);
+
+    inverseSideSeedPosts($entityManager);
+
+    $entityManager->flush();
+    $entityManager->clear();
+
+    $tag = new Tag();
+    $tag->setName('fresh');
+
+    $select = Select::make('posts')->multiple()->preload()->relationship(titleAttribute: 'title');
+    [$schema, $host] = inverseSideWire($select, $tag);
+
+    $schema->fill($tag);
+    $select->getOptions();
+
+    expect($host->data['posts'])->toBe([]);
+
+    $recorder = inverseSideRecorder();
+    $recorder->reset();
+
+    $host->data['posts'] = ['1', '3'];
+
+    expect($schema->getData())->toBe($tag);
+
+    $entityManager->persist($tag);
+    $entityManager->flush();
+
+    expect(inverseSideWrites($recorder->statements()))->toBe([
+        'BEGIN',
+        'INSERT INTO Tag (name, parent_id) VALUES (?, ?)',
+        'INSERT INTO post_tag (post_id, tag_id) VALUES (?, ?)',
+        'INSERT INTO post_tag (post_id, tag_id) VALUES (?, ?)',
+        'COMMIT',
+    ])
+        ->and(inverseSideTagRows($entityManager))->toBe([
+            ['post_id' => 1, 'tag_id' => 1],
+            ['post_id' => 3, 'tag_id' => 1],
+        ]);
+});
+
 it('writes the join rows of a record keyed by two columns holding the inverse side', function (): void {
     $entityManager = $this::getContainer()->get(EntityManagerInterface::class);
     $pair = inverseSideSeedPairs($entityManager);

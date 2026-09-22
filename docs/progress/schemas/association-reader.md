@@ -550,9 +550,18 @@ because it constrains every correlation in the toolkit rather than this one.
 is a shape that cannot be used at all.
 
 `SELECT 1` is legal DQL in a subselect — it parses to `SELECT 1 AS sclr_N` — so
-the projection needs no per-flavour branch, and the builder still carries exactly
-**one** parameter, which is what keeps every consumer that mints an alias off
-`count($query->getParameters())` where it was. The single-identifier rows are the
+the projection needs no per-flavour branch, and the conversion itself adds no
+parameter: under a **single-identifier owner** the builder still carries exactly
+**one**, which is what kept every consumer that mints an alias off
+`count($query->getParameters())` where it was. An owner keyed by several fields
+binds one parameter **per identifier field** (`sylament_relationship_owner_0`,
+`_1`, …), so those counted stems sit above the owner's width and shift by it — a
+relation-scoped table's per-column search mints `sy_x3` / `:sylament_search_3`
+under a scalar-pair owner where a single-`id` owner mints `sy_x2`, which tables'
+`CompositeOwnerRelationshipTableTest` pins as a literal. It is the **owner's**
+width that moves them and not the key's in general: the target's width binds
+nothing at all, since `IdentifierConstraint::correlate()` emits equalities
+between two aliases. The single-identifier rows are the
 rows the old `record.<id> IN (SELECT sy_related.<id> …)` returned, and the
 conversion is plan-neutral for the related query and an improvement for the
 candidate one on PostgreSQL, where `NOT EXISTS` plans as a Hash Anti Join against
@@ -602,8 +611,9 @@ sort, not the query's, so a clicked sort can replace it.
 ### An owner of any width is scoped through its own collection rather than through a mapped-by path
 
 An owner keyed by several fields takes the shape the many-to-many arm has taken
-for **every** owner since M4 · 8 — a correlated `EXISTS` over the owner's own
-association — on both arms of both queries:
+for **every** owner since M7 · 4, when its `IN (SELECT …)` subselect — the form
+M4 · 8 introduced `Table::relationship()` with — became a correlated `EXISTS`
+over the owner's own association. It is now on both arms of both queries:
 
 ```
 SELECT record FROM <Target> record WHERE EXISTS (
@@ -688,8 +698,8 @@ answered everything. No test could see it, because the DQL is identical either
 way and no fixture carried such an owner. `symfony/uid`'s `UuidType` on MySQL,
 MariaDB or SQLite (`BINARY(16)`) is that shape, which is every relation manager of
 a Uuid-keyed owner there — **executed** against a bridge-shaped copy of that
-type, where the entity bind answered nothing on either arm and both queries and
-the typed bind answers the right rows; PostgreSQL's native `uuid` is unaffected.
+type: the entity bind answered nothing on either arm of either query, and the
+typed bind answers the right rows. PostgreSQL's native `uuid` is unaffected.
 
 One residue is recorded rather than closed: a single **derived** identity owner
 whose *target's* identifier type converts keeps the entity bind and keeps the
@@ -845,12 +855,14 @@ consequences follow that no amount of indexing removes.
 
 The first is cost, and it was measured rather than guessed. On an ordinary owner
 — of the order of ten children — the related query costs ≈0.05–0.09 ms against
-≈0.02–0.03 ms for a bare `IDENTITY()` comparison, which is noise. On a
+≈0.02–0.03 ms for a bare `IDENTITY()` comparison, which is noise; PostgreSQL 18.4
+plans **that** read as
+`Nested Loop → HashAggregate → Index Scan on <target>_pkey`, so the foreign-key
+index finds each child and the primary key then re-fetches it. On a
 **pathological** one — 50 000 children of a single owner, out of 200 000 — a page
 of 25 costs 19.8 ms against 4.0 ms, an unbounded read 21 ms against 2.9 ms, and
-the paginator's `COUNT` 17 ms; PostgreSQL 18.4 plans the related query as
-`Nested Loop → HashAggregate → Index Scan on <target>_pkey`, so the foreign-key
-index finds each child and the primary key then re-fetches it. That is an admin
+the paginator's `COUNT` 17 ms, the unbounded read planning as a
+`Parallel Hash Semi Join` over a sequential scan instead. That is an admin
 panel's page, not a hot path, and it is accepted on those terms.
 
 The faster shape is recorded so a later epic can take it against a real profile
@@ -881,7 +893,7 @@ refuses it. Neither is reachable from anything the toolkit ships.
 
 Two platforms were never executed. PostgreSQL 18.4 and SQLite were; MySQL and
 MariaDB are historically weak on correlated `EXISTS`, and while the many-to-many
-arm has had this shape for every owner since M4 · 8 — so the toolkit already
+arm has had this shape for every owner since M7 · 4 — so the toolkit already
 depends on the platform's semi-join handling — the one-to-many arm under a
 composite owner joins that dependency.
 

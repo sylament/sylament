@@ -43,8 +43,11 @@ M7 · 4 added the relation layer's — `AssociationReader`, forms' `Select`,
 `HasRelationship`, `Repeater` and `UniqueValueValidator`, and actions' four
 relationship actions — consuming `of()`, `find()`, `toIdentifier()`,
 `equals()`, `notEquals()`, `in()`, `correlate()`, `select()` + `keyOf()` and
-`chunk()` as they landed, and finding nothing here short. M7 · 5 adds the
-owner half.
+`chunk()` as they landed, and finding nothing here short. M7 · 5 added the owner
+half — both relationship queries scoping to an owner of any width — and is the
+first epic to find this interface **long** rather than short: the owner scope is
+one `equals()` on a subselect's alias, and the operation reserved for it was
+never built ([why](#owner-scoping-was-reserved-and-turned-out-not-to-be-needed)).
 
 **Status:** done — see the [status vocabulary](../README.md#statuses).
 
@@ -68,7 +71,7 @@ and/or **diverges** → the permanent note in [Divergences](#divergences).
 | [`IdentifierConstraint::groupBy()`](../../../packages/schemas/src/Identity/IdentifierConstraint.php) — the bare path per field, never `IDENTITY()` | done | — | [diverges](#bare-identitypath-on-a-multi-column-association-answers-only-the-first-column) |
 | [`IdentifierConstraint::orderBy()`](../../../packages/schemas/src/Identity/IdentifierConstraint.php) — the identifier tiebreak, per field, deduped against the existing order | done | — | [contract](#the-operations-and-their-dql) |
 | [`IdentifierConstraint::chunk()`](../../../packages/schemas/src/Identity/IdentifierConstraint.php) | done | — | [contract](#the-chunk-rule) |
-| Owner scoping — `scopeToOwner()` / the owner tuple | blocked | [M7 · 5](../roadmap.md#m7--composite-identifiers) | [contract](#owner-scoping-is-reserved-not-missing) |
+| Owner scoping — `scopeToOwner()` / the owner tuple | skipped | — | [contract](#owner-scoping-was-reserved-and-turned-out-not-to-be-needed) |
 | [`IdentifierFields`](../../../packages/schemas/src/Identity/IdentifierFields.php) — the per-class descriptor both public classes share (`@internal`) | done | — | [diverges](#identifier-order-is-declaration-order-so-reordering-two-id-properties-invalidates-every-minted-key) |
 
 ## Contract
@@ -597,7 +600,15 @@ used and which `unique(ignoreRecord:)` **moved onto** — its own base was the
 counted `sylament_probe_<n>`, and a base ending in `_<digits>` is refused for
 **every** class, a single identifier included, so converting that site without
 changing its base would have reddened every `unique(ignoreRecord:)` test in
-forms.
+forms. M7 · 5 added the eleventh, and it is the only one that was a base before
+it was this file's: `sylament_relationship_owner`, which both relationship
+queries have bound the owner under since the relation layer shipped, is now
+`equals()`'s base where the owner is keyed by several fields — minting `_0`,
+`_1`, … — and still one plain `setParameter()` of that exact name where it is
+not. The two spellings never meet, the route being decided once per builder, and
+the name did not move for the same reason the first six did not: a
+single-identifier query's text stays stable for the query cache
+([the owner route](association-reader.md#an-owner-of-any-width-is-scoped-through-its-own-collection-rather-than-through-a-mapped-by-path)).
 (One *result* alias did move with M7 · 2: the aggregate batch projects
 `sy_key_0` where it projected `sy_key`. One query-cache miss, no behaviour.)
 
@@ -611,8 +622,8 @@ bound on**: binding is a side effect of asking for the text, so dropping the tex
 leaves parameters bound to nothing and Doctrine counts them (`the query defines 0
 parameters and you bound 2`). And **a base is applied once per builder**: a
 second application with fewer keys leaves the first application's parameters
-bound and over-counts the same way. None of the five bases above is applied twice
-on one builder.
+bound and over-counts the same way. None of the bases above is applied twice on
+one builder.
 
 Empty and malformed, stated once:
 
@@ -662,14 +673,33 @@ clauses, in the order the decode runs them:
    integer-family regex beyond `bigint`'s: the print-back compare does that job
    for `smallint` and `integer`, and does it without a per-type table to drift.
 
-### Owner scoping is reserved, not missing
+### Owner scoping was reserved, and turned out not to be needed
 
-`scopeToOwner()` and the owner tuple belong to
-[M7 · 5](../roadmap.md#m7--composite-identifiers) and are named here so their
-absence reads as a decision. They are the one operation that will **mutate** the
-builder rather than only bind on it: a derived-identity owner needs a join —
-inner for the related query, and **left plus `IS NULL`** for the candidate query
-— which is why they were left out of the shape above rather than stubbed into it.
+`scopeToOwner()` and the owner tuple were named here so their absence read as a
+decision, and [M7 · 5](../roadmap.md#m7--composite-identifiers) closed the row by
+**not** building them. The prediction this section carried was wrong in both
+halves. They were to be the one operation that **mutates** the builder rather
+than only binding on it, and a derived-identity owner was to need a join — inner
+for the related query, **left plus `IS NULL`** for the candidate one. Neither
+holds: the owner scope the relation layer ships is one `equals()` call against
+the alias of a correlated subselect over the owner's **own** collection, so
+nothing is mutated, no join reaches the outer builder, and the candidate arm is
+that same text under `NOT EXISTS` — which keeps a partially-`NULL` foreign key
+where a negated equality drops it
+([the shape, and the two measured against it](association-reader.md#an-owner-of-any-width-is-scoped-through-its-own-collection-rather-than-through-a-mapped-by-path)).
+
+The join was not merely unnecessary but **wrong**, executed: it returns the wrong
+rows on every many-to-many candidate cell, because narrowing the target by
+joining the owner inverts what the negation is taken over. The other candidate,
+`IDENTITY(path, 'field')` per key field, cannot reach an association-valued key
+half at all. So the epic that would have spent this operation is the one that
+recorded the interface **long** — the symmetric duty to
+[the rule above](#contract), which asks an epic that finds it short to record the
+addition here.
+
+The row is **skipped** rather than done, on the status vocabulary's own terms: a
+deliberate non-goal the toolkit works without. Nothing that has no code is ever
+`done`, and `scopeToOwner()` has none.
 
 Two more facts M7 · 4 and M7 · 6 will need, recorded now so no later plan is
 written against a passing test:

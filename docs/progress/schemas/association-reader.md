@@ -268,17 +268,23 @@ would have aliased a row on PostgreSQL under emulated prepares or raised `22P02`
 under native ones —
 [the hole the codec exists to close](record-key.md#a-malformed-key-never-reaches-the-database).
 
-One **single-identifier** shape pays for that strictness, and it is a delta beyond
-the ones this epic set out to make. Where a DBAL type's `convertToPHPValue()`
-reads only the database form —
-[a type that cannot read its own printed form](record-key.md#a-type-that-cannot-read-its-own-printed-form-mints-keys-that-never-decode) —
-the decode refuses the very key `getRecordKey()` minted, while the base handed
-that printed key straight to Doctrine and the foreign-key write landed wherever
-the id property admits a string. So a relation-backed `Select` or `CheckboxList`
-now throws on save and a by-key `DetachBulkAction` answers the danger toast where
-the base wrote. The by-key **predicates** are no worse than the base, which never
-matched such a column either; the remedy is the codec's, and the roadmap's ledger
-carries it.
+One **single-identifier** shape paid for that strictness from M7 · 4 until
+[M7 · 5b](../roadmap.md#m7--composite-identifiers). Where a DBAL type's
+`convertToPHPValue()` reads only the database form, the decode refused the very
+key `getRecordKey()` minted, while the base had handed that printed key straight
+to Doctrine and the foreign-key write landed wherever the id property admits a
+string — so a relation-backed `Select` or `CheckboxList` threw on save and a
+by-key `DetachBulkAction` answered the danger toast where the base wrote. The
+remedy was the codec's, and 5b landed it: a component the reader refuses is read
+back [through the type's own writer](record-key.md#a-type-that-refuses-its-printed-form-on-read-only-decodes-it-through-its-own-writer),
+so such a key decodes and the reference is taken again — built at zero
+statements where every identifier field is scalar, loaded at one behind a single
+derived identity. What stays refused is the type that refuses its printed form
+on **write** too —
+[the doubly-strict shape](record-key.md#a-type-that-cannot-read-its-own-printed-form-mints-keys-that-never-decode) —
+by construction rather than by omission, at zero statements
+([`AssociationReaderCompositeKeyTest`](../../../packages/schemas/tests/Unit/State/AssociationReaderCompositeKeyTest.php)
+pins both).
 
 **Then `find()` where any identifier field is an association, and
 `getReference()` everywhere else.** The predicate is
@@ -650,8 +656,14 @@ gained nothing at all. A `null` out of `equals()` **throws**:
 
 Dropping the scope instead would list every record that has *any* owner, which is
 the one failure this seam must not have; and the shape that reaches it is the
-same one the codec records for a DBAL type that cannot read back what it prints,
-so the message names the cause rather than the width. The same refusal fires for
+one the codec records for a DBAL type that can neither read back nor take back
+what it prints, so the message names the cause rather than the width. Since
+[M7 · 5b](../roadmap.md#m7--composite-identifiers) a type that refuses its
+printed form on read only is not that shape: its key decodes
+[through the type's writer](record-key.md#a-type-that-refuses-its-printed-form-on-read-only-decodes-it-through-its-own-writer),
+and an owner with such a half — `Pallet` — scopes both queries on both arms,
+while `Vault`, whose half refuses it both ways, still throws before anything is
+executed. The same refusal fires for
 an owner whose PHP value is spelled other than its DBAL type prints it — a
 `bigint` held as `'007'`, a decimal as `'.5'` — which no loaded record carries.
 
@@ -675,12 +687,24 @@ will not bind such a record as a query parameter, and nothing binds one now.
 The three single-identifier DQL texts did not move, and neither did any driver
 statement's text or parameter value for a built-in type without SQL-side
 conversion; the binding type now follows the field's DBAL type — `bigint` binds
-as a string, as Doctrine's own `BigIntType` does. One thing did: where the
-owner's single identifier field is a plain **field** mapping, the parameter is
-`$metadata->getFieldValue($owner, $field)` under `$metadata->getTypeOfField($field)`
-rather than the owner entity. Where that one field is an **association** — a
-single derived identity — the entity bind stays, the type being the target's
-business rather than this seam's.
+as a string, as Doctrine's own `BigIntType` does. One thing did: the parameter is
+the owner's identifier **value** under that value's DBAL type, rather than the
+owner entity. M7 · 5 took that for a plain **field** mapping, and
+[M7 · 5b](../roadmap.md#m7--composite-identifiers) for a single **derived**
+identity too, in one arm for both: the value is
+`RecordKey::values($entityManager, $owner, $ownerClass)[0]` — the codec's own
+walk, `@internal`, which reduces an identifier association to its target's value
+at any depth — and the type is `IdentifierFields::types[0]`, the **terminal**
+field's, resolved through the association exactly as the decode resolves it. So
+an owner keyed on a `Post` binds the integer `1` under `integer` where it bound
+the entity, one keyed on a `Listing` that listing's `Sku` under `sku`, and one
+keyed on a raw-bytes `Crate` its `Uuid` under `binary_uuid`. `getRecordKey()`
+still runs first, as the gate it was: it carries M7 · 1's refusals, so an owner
+with no identifier yet, or one whose target's identifier is blank or
+unprintable, is refused before anything is bound — and the `?? throw` behind it
+is there for the type system alone. The bind is also what makes this class the
+first reader of the `@internal` `IdentifierFields` outside `Identity\`, in the
+same package.
 
 No enum unwrap stands in front of that bind, and none is needed — an identifier
 mapped with `enumType`, declared or inferred, is read through
@@ -701,11 +725,25 @@ a Uuid-keyed owner there — **executed** against a bridge-shaped copy of that
 type: the entity bind answered nothing on either arm of either query, and the
 typed bind answers the right rows. PostgreSQL's native `uuid` is unaffected.
 
-One residue is recorded rather than closed: a single **derived** identity owner
-whose *target's* identifier type converts keeps the entity bind and keeps the
-defect, because converting there means reaching into another class's identifier —
-which is the codec's business and travels with the same open question the
-[codec records](record-key.md#a-type-that-cannot-read-its-own-printed-form-mints-keys-that-never-decode).
+The derived arm was the same defect one hop deeper, and M7 · 5 recorded it as a
+residue because converting there means reaching into another class's
+identifier. That is exactly what the codec already does for every identifier
+association, so M7 · 5b's bind asks the codec rather than doing it itself.
+Executed on SQLite and PostgreSQL 18.4 before the change: onto a converting
+target the entity bind scoped by the printed form, wrong rows in silence, and
+onto a raw-bytes target it related nothing and offered every record as a
+candidate. One owner failed loudly instead: an **unflushed** derived owner whose
+target's identifier is assigned was handed to PDO as an entity, a PHP `Error`
+(*could not be converted to string*); it binds its target's value now and
+answers nothing related. The route not taken is the **key**: scoping a derived
+owner through the key it mints would refuse one onto a doubly-strict target,
+whose key never decodes, although a single owner of that same type already
+scopes by value — a refusal the step would have invented rather than inherited.
+Pinned over `ListingSeal`, `CrateSeal` and `StrongboxSeal`, one onto each shape,
+on both arms of both queries, in
+[`AssociationReaderOwnerBindTest`](../../../packages/schemas/tests/Unit/State/AssociationReaderOwnerBindTest.php),
+where the case that bound `PostSeal` as the record itself became one binding
+its target's `1` under `integer`.
 
 ### A write lands on the side Doctrine persists
 
@@ -736,6 +774,30 @@ wrong-side write land on the owning collection anyway, so the branch selector
 above passes every assertion no matter which arm it picks. The fixture pair drops
 those callbacks for exactly that reason: the inverse collection stays untouched
 after a write, and the case reads it as the evidence of which side was written.
+
+The redirect writes the related record's collection and never the owner's, so
+after `attach()` or `detach()` on an inverse side the owner's own in-memory
+collection is stale until it is reloaded. `AttachAction`, `DetachAction` and
+their siblings redirect and re-read, so nothing shows it; forms' inverse-side
+save, which re-renders in the same request, reconciles through these two and
+then writes the owner's collection itself
+([select.md](../forms/select.md#an-inverse-side-many-to-many-is-saved-through-the-owning-side-and-still-written-on-its-own)).
+It is left that way on purpose: the one caller that re-renders mends it itself,
+and every other reads the owner afresh.
+
+Where the owning collection declares `orphanRemoval`, that same redirect is a
+deletion, and the reader does not refuse it. `detach()` takes the owner **out**
+of the target's collection, and Doctrine treats such a collection's members as
+privately owned, so the one taken out is deleted rather than unlinked — the
+record the caller was writing, with every join row it had.
+`assertRelationshipAcceptsDetach()` returns for a many-to-many before it reads
+the flag at all, and the flag it would read is the one on the side the caller
+named, which is not the side that deletes; its first refusal is the analogous
+**one-to-many**, refused by name. So the refusal sits where
+[M7 · 5b](../roadmap.md#m7--composite-identifiers) opened a route into it: forms'
+[inverse-side save](../forms/select.md#an-inverse-side-many-to-many-is-saved-through-the-owning-side-and-still-written-on-its-own)
+computes its removals first and throws when the owning side deletes orphans.
+Neither verb moved for it.
 
 None of this half reads the owner's identity, and that is a property of the code
 rather than a claim about it: `attach()`, `detach()`, `describeRelationship()`
@@ -770,7 +832,7 @@ by (3), advising the developer to make the column nullable, which for an
 identifier column is impossible. The refusal did not move; the advice did.
 A many-to-many always passes all four: nothing is deleted and no column goes
 null, only a join row disappears. The method is public and separate from
-`detach()` because a bulk arm that dissociates **by key** — a DQL `UPDATE` rather
+`detach()` because a bulk arm that dissociates **by key** — one SQL `UPDATE` rather
 than a per-record write — has to run the same refusals before its statement, with
 no record in hand to run them against.
 

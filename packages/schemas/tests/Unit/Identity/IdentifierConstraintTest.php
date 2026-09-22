@@ -7,8 +7,11 @@ use Doctrine\DBAL\ParameterType;
 use Doctrine\ORM\EntityManager;
 use Doctrine\ORM\QueryBuilder;
 use Sylament\Schemas\Identity\IdentifierConstraint;
+use Sylament\Schemas\Tests\Fixtures\Doctrine\CompositeOwnerRig;
+use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\Crate;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\Listing;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\ListingNote;
+use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\Pallet;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\Placement;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\Post;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\PostSeal;
@@ -261,4 +264,85 @@ it('chunks a key list to what one statement carries', function (): void {
         ->and(array_map(count(...), IdentifierConstraint::chunk($entityManager, PostTranslation::class, array_map(static fn (int $index): string => "{$index}~en", range(1, 1201)))))->toBe([500, 500, 201])
         ->and(IdentifierConstraint::chunk($entityManager, PostTranslation::class, ['1~en', '1~en', '2~en']))->toBe([['1~en', '2~en']])
         ->and(array_map(count(...), IdentifierConstraint::chunk($entityManager, Post::class, array_map(strval(...), range(1, 4001)))))->toBe([2000, 2000, 1]);
+});
+
+it('binds a raw-bytes uuid as the sixteen bytes its column holds, alone and as a batch', function (): void {
+    $entityManager = CompositeOwnerRig::create();
+
+    $equals = identityQuery($entityManager, Crate::class);
+    $notEquals = identityQuery($entityManager, Crate::class);
+    $in = identityQuery($entityManager, Crate::class);
+    $notIn = identityQuery($entityManager, Crate::class);
+
+    $labels = static function (QueryBuilder $query): array {
+        /** @var list<Crate> $crates */
+        $crates = $query->getQuery()->getResult();
+        $labels = array_map(static fn (Crate $crate): string => $crate->getLabel(), $crates);
+
+        sort($labels);
+
+        return $labels;
+    };
+
+    $equalsConstraint = IdentifierConstraint::equals($equals, 'record', Crate::class, 'a1b2c3d4-0000-4000-8000-000000000001', 'key');
+    $notEqualsConstraint = IdentifierConstraint::notEquals($notEquals, 'record', Crate::class, 'a1b2c3d4-0000-4000-8000-000000000001', 'key');
+    $inConstraint = IdentifierConstraint::in($in, 'record', Crate::class, ['a1b2c3d4-0000-4000-8000-000000000001', 'a1b2c3d4-0000-4000-8000-000000000002', 'a1b2c3d4-0000-4000-8000-000000000003', 'A1B2C3D4-0000-4000-8000-000000000001'], 'keys');
+    $notInConstraint = IdentifierConstraint::notIn($notIn, 'record', Crate::class, ['a1b2c3d4-0000-4000-8000-000000000001'], 'keys');
+
+    /** @var list<string> $inValues */
+    $inValues = $in->getParameter('keys')?->getValue() ?? [];
+
+    expect($equalsConstraint)->toBe('record.id = :key')
+        ->and(bin2hex((string) $equals->getParameter('key')?->getValue()))->toBe('a1b2c3d4000040008000000000000001')
+        ->and($equals->getParameter('key')?->getType())->toBe(ParameterType::BINARY)
+        ->and($labels($equals->andWhere((string) $equalsConstraint)))->toBe(['mine'])
+        ->and($notEqualsConstraint)->toBe('record.id <> :key')
+        ->and($notEquals->getParameter('key')?->getType())->toBe(ParameterType::BINARY)
+        ->and($labels($notEquals->andWhere((string) $notEqualsConstraint)))->toBe(['apart'])
+        ->and($inConstraint)->toBe('record.id IN (:keys)')
+        ->and(array_map(bin2hex(...), $inValues))->toBe(['a1b2c3d4000040008000000000000001', 'a1b2c3d4000040008000000000000002', 'a1b2c3d4000040008000000000000003'])
+        ->and($in->getParameter('keys')?->getType())->toBe(ArrayParameterType::BINARY)
+        ->and($labels($in->andWhere($inConstraint)))->toBe(['apart', 'mine'])
+        ->and($notInConstraint)->toBe('record.id NOT IN (:keys)')
+        ->and($notIn->getParameter('keys')?->getType())->toBe(ArrayParameterType::BINARY)
+        ->and($labels($notIn->andWhere((string) $notInConstraint)))->toBe(['apart']);
+});
+
+it('binds a raw-bytes half and a string half each under its own type', function (): void {
+    $entityManager = CompositeOwnerRig::create();
+
+    $equals = identityQuery($entityManager, Pallet::class);
+    $notEquals = identityQuery($entityManager, Pallet::class);
+    $in = identityQuery($entityManager, Pallet::class);
+    $notIn = identityQuery($entityManager, Pallet::class);
+
+    $lanes = static function (QueryBuilder $query): array {
+        /** @var list<Pallet> $pallets */
+        $pallets = $query->getQuery()->getResult();
+        $lanes = array_map(static fn (Pallet $pallet): string => $pallet->getBatch() . '/' . $pallet->getLane(), $pallets);
+
+        sort($lanes);
+
+        return $lanes;
+    };
+
+    $equalsConstraint = IdentifierConstraint::equals($equals, 'record', Pallet::class, 'b1b2c3d4-0000-4000-8000-000000000001~north', 'key');
+    $notEqualsConstraint = IdentifierConstraint::notEquals($notEquals, 'record', Pallet::class, 'b1b2c3d4-0000-4000-8000-000000000001~north', 'key');
+    $inConstraint = IdentifierConstraint::in($in, 'record', Pallet::class, ['b1b2c3d4-0000-4000-8000-000000000001~north', 'b1b2c3d4-0000-4000-8000-000000000002~north', 'b1b2c3d4-0000-4000-8000-000000000003~north'], 'keys');
+    $notInConstraint = IdentifierConstraint::notIn($notIn, 'record', Pallet::class, ['b1b2c3d4-0000-4000-8000-000000000001~north', 'b1b2c3d4-0000-4000-8000-000000000001~south'], 'keys');
+
+    expect($equalsConstraint)->toBe('record.batch = :key_0 AND record.lane = :key_1')
+        ->and(bin2hex((string) $equals->getParameter('key_0')?->getValue()))->toBe('b1b2c3d4000040008000000000000001')
+        ->and($equals->getParameter('key_0')?->getType())->toBe(ParameterType::BINARY)
+        ->and($equals->getParameter('key_1')?->getValue())->toBe('north')
+        ->and($equals->getParameter('key_1')?->getType())->toBe(ParameterType::STRING)
+        ->and($lanes($equals->andWhere((string) $equalsConstraint)))->toBe(['b1b2c3d4-0000-4000-8000-000000000001/north'])
+        ->and($notEqualsConstraint)->toBe('NOT (record.batch = :key_0 AND record.lane = :key_1)')
+        ->and($lanes($notEquals->andWhere((string) $notEqualsConstraint)))->toBe(['b1b2c3d4-0000-4000-8000-000000000001/south', 'b1b2c3d4-0000-4000-8000-000000000002/north'])
+        ->and($inConstraint)->toBe('((record.batch = :keys_0_0 AND record.lane = :keys_0_1) OR ((record.batch = :keys_1_0 AND record.lane = :keys_1_1) OR (record.batch = :keys_2_0 AND record.lane = :keys_2_1)))')
+        ->and($in->getParameter('keys_1_0')?->getType())->toBe(ParameterType::BINARY)
+        ->and($in->getParameter('keys_1_1')?->getType())->toBe(ParameterType::STRING)
+        ->and($lanes($in->andWhere($inConstraint)))->toBe(['b1b2c3d4-0000-4000-8000-000000000001/north', 'b1b2c3d4-0000-4000-8000-000000000002/north'])
+        ->and($notInConstraint)->toBe('NOT (((record.batch = :keys_0_0 AND record.lane = :keys_0_1) OR (record.batch = :keys_1_0 AND record.lane = :keys_1_1)))')
+        ->and($lanes($notIn->andWhere((string) $notInConstraint)))->toBe(['b1b2c3d4-0000-4000-8000-000000000002/north']);
 });

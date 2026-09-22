@@ -4,20 +4,28 @@ declare(strict_types=1);
 
 use Sylament\Schemas\Identity\IdentifierFields;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\Author;
+use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\Crate;
+use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\CrateSeal;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\Listing;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\ListingNote;
+use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\Pallet;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\Placement;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\PostSeal;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\PostSealNote;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\PostTranslation;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\Redirect;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\Shortlink;
+use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\Strongbox;
+use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\StrongboxSeal;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\Tariff;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\Ticket;
+use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\Vault;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\Zone;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\EntityManagerFactory;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\IdentityRig;
+use Sylament\Schemas\Tests\Fixtures\Doctrine\RecordingMiddleware;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\Sku;
+use Symfony\Component\Uid\Uuid;
 
 it('reads the identifier fields in declaration order, typing an association by its target', function (): void {
     $entityManager = EntityManagerFactory::create();
@@ -175,6 +183,58 @@ it('shapes a guid component only where the platform declares a guid type of its 
     'a malformed guid' => ['not-a-guid~7', ['not-a-guid', 7]],
     'a guid with a trailing newline' => [IdentityRig::TICKET_ID . '=0A~7', [IdentityRig::TICKET_ID . "\n", 7]],
 ]);
+
+it("reads a component its type cannot read back through the type's writer, alone, beside a string half and behind an association", function (string $class, string $key, array $expected): void {
+    $entityManager = EntityManagerFactory::create();
+
+    expect(IdentifierFields::of($entityManager, $class)->toPhpValues($entityManager, $key))->toEqual($expected);
+})->with([
+    'a raw-bytes uuid' => [Crate::class, 'a1b2c3d4-0000-4000-8000-000000000001', [Uuid::fromString('a1b2c3d4-0000-4000-8000-000000000001')]],
+    'a raw-bytes half and a string half' => [Pallet::class, 'b1b2c3d4-0000-4000-8000-000000000001~north', [Uuid::fromString('b1b2c3d4-0000-4000-8000-000000000001'), 'north']],
+    'a single derived identity onto a raw-bytes uuid' => [CrateSeal::class, 'a1b2c3d4-0000-4000-8000-000000000001', [Uuid::fromString('a1b2c3d4-0000-4000-8000-000000000001')]],
+]);
+
+it('refuses every spelling of a raw-bytes uuid but the one its value prints, without a statement', function (string $key): void {
+    $recorder = new RecordingMiddleware();
+    $entityManager = EntityManagerFactory::create($recorder);
+
+    $recorder->reset();
+
+    expect(IdentifierFields::of($entityManager, Crate::class)->toPhpValues($entityManager, $key))->toBeNull()
+        ->and($recorder->statements())->toBe([]);
+})->with([
+    'uppercase' => ['A1B2C3D4-0000-4000-8000-000000000001'],
+    'thirty-two hex digits without dashes' => ['a1b2c3d4000040008000000000000001'],
+    'braces' => ['{a1b2c3d4-0000-4000-8000-000000000001}'],
+    'a urn' => ['urn:uuid:a1b2c3d4-0000-4000-8000-000000000001'],
+    'base58' => ['Ly6eTBDhaDq87ws8eCwr5v'],
+    'base32' => ['51PB1X80008008000000000001'],
+    'garbage' => ['not-a-uuid'],
+    'the sixteen raw bytes themselves' => ["\xA1\xB2\xC3\xD4\x00\x00\x40\x00\x80\x00\x00\x00\x00\x00\x00\x01"],
+]);
+
+it('keeps a doubly-strict key refused, since its writer refuses the printed form too', function (string $class, string $key): void {
+    $entityManager = EntityManagerFactory::create();
+
+    expect(IdentifierFields::of($entityManager, $class)->toPhpValues($entityManager, $key))->toBeNull();
+})->with([
+    'a single identifier' => [Strongbox::class, 'omega'],
+    'a half of a scalar pair' => [Vault::class, 'zeta~north'],
+    'a single derived identity onto one' => [StrongboxSeal::class, 'omega'],
+]);
+
+it('answers the sixteen bytes a raw-bytes uuid column holds, for binding', function (): void {
+    $entityManager = EntityManagerFactory::create();
+
+    $single = IdentifierFields::of($entityManager, Crate::class)->toDatabaseValues($entityManager, 'a1b2c3d4-0000-4000-8000-000000000001');
+    $pair = IdentifierFields::of($entityManager, Pallet::class)->toDatabaseValues($entityManager, 'b1b2c3d4-0000-4000-8000-000000000001~north');
+
+    expect($single)->toBeArray()->toHaveCount(1)
+        ->and(bin2hex((string) ($single[0] ?? '')))->toBe('a1b2c3d4000040008000000000000001')
+        ->and($pair)->toBeArray()->toHaveCount(2)
+        ->and(bin2hex((string) ($pair[0] ?? '')))->toBe('b1b2c3d4000040008000000000000001')
+        ->and($pair[1] ?? null)->toBe('north');
+});
 
 it('answers the values the database holds, for binding', function (): void {
     $entityManager = EntityManagerFactory::create();

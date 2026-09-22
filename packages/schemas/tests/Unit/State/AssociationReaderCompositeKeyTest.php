@@ -7,19 +7,26 @@ namespace Sylament\Schemas\Tests\Unit\State;
 use LogicException;
 use Sylament\Schemas\State\AssociationReader;
 use Sylament\Schemas\State\Relationship;
+use Sylament\Schemas\Tests\Fixtures\Doctrine\CompositeOwnerRig;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\CompositeTargetRig;
+use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\Crate;
+use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\CrateSeal;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\Enrolment;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\Flagged;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\Listened;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\Listing;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\ListingNote;
+use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\Pallet;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\Post;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\PostSeal;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\PostTranslation;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\Redirect;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\Shortlink;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\Stamped;
+use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\Strongbox;
+use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\StrongboxSeal;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\Tag;
+use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\Vault;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\EntityManagerFactory;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\RecordingMiddleware;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\Sku;
@@ -133,6 +140,45 @@ it('refuses a key no record of the class could mint, without executing a stateme
     'a blank component' => [PostTranslation::class, '1~'],
     'a lowercase escape carrying a hex letter' => [PostTranslation::class, '1~zh=2dhans'],
     'a scalar key for a join entity' => [Enrolment::class, '1'],
+]);
+
+it('resolves a raw-bytes key against a cold identity map, as a reference where every identifier field is scalar and as a load behind an association', function (string $class, string $key, int $statements): void {
+    $recorder = new RecordingMiddleware();
+    $entityManager = CompositeOwnerRig::create($recorder);
+    $reader = new AssociationReader($entityManager);
+
+    $entityManager->clear();
+    $recorder->reset();
+
+    $record = $reader->getReference($class, $key);
+
+    expect($record)->toBeInstanceOf($class)
+        ->and($recorder->statements())->toHaveCount($statements)
+        ->and($reader->getRecordKey($record))->toBe($key);
+})->with([
+    'a raw-bytes uuid' => [Crate::class, 'a1b2c3d4-0000-4000-8000-000000000001', 0],
+    'a raw-bytes half and a string half' => [Pallet::class, 'b1b2c3d4-0000-4000-8000-000000000001~north', 0],
+    'a single derived identity onto a raw-bytes uuid' => [CrateSeal::class, 'a1b2c3d4-0000-4000-8000-000000000001', 1],
+]);
+
+it('refuses a raw-bytes key in any spelling but the printed one, and every doubly-strict key, without executing a statement', function (string $class, string $key): void {
+    $recorder = new RecordingMiddleware();
+    $entityManager = CompositeOwnerRig::create($recorder);
+    $reader = new AssociationReader($entityManager);
+
+    $entityManager->clear();
+    $recorder->reset();
+
+    expect(fn (): object => $reader->getReference($class, $key))
+        ->toThrow(LogicException::class, 'so it cannot be referenced')
+        ->and($recorder->statements())->toBe([]);
+})->with([
+    'an uppercase raw-bytes uuid' => [Crate::class, 'A1B2C3D4-0000-4000-8000-000000000001'],
+    'an uppercase raw-bytes half' => [Pallet::class, 'B1B2C3D4-0000-4000-8000-000000000001~north'],
+    'an uppercase raw-bytes uuid behind an association' => [CrateSeal::class, 'A1B2C3D4-0000-4000-8000-000000000001'],
+    'a doubly-strict single identifier' => [Strongbox::class, 'omega'],
+    'a doubly-strict half of a scalar pair' => [Vault::class, 'zeta~north'],
+    'a single derived identity onto a doubly-strict identifier' => [StrongboxSeal::class, 'omega'],
 ]);
 
 it('hands back the very instance a relationship query loaded, whichever read came first', function (): void {

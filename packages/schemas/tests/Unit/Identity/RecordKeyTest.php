@@ -4,10 +4,13 @@ declare(strict_types=1);
 
 use Sylament\Schemas\Identity\IdentifierConstraint;
 use Sylament\Schemas\Identity\RecordKey;
+use Sylament\Schemas\Tests\Fixtures\Doctrine\Cipher;
+use Sylament\Schemas\Tests\Fixtures\Doctrine\CompositeOwnerRig;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\Author;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\Beacon;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\Listing;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\ListingNote;
+use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\ListingSeal;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\Placement;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\Post;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\PostSeal;
@@ -20,6 +23,7 @@ use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\Zone;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\EntityManagerFactory;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\IdentityRig;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\Sku;
+use Symfony\Component\Uid\Uuid;
 
 it('keys a record of every identifier flavour', function (): void {
     $entityManager = IdentityRig::create();
@@ -239,3 +243,51 @@ it('answers null rather than throwing for a key the class never mints', function
     'an injection attempt' => [Post::class, '1 OR 1=1'],
     'blank' => [Post::class, ''],
 ]);
+
+it("reads the values a key prints, before they are printed, an identifier association reduced to its target's", function (string $flavour, array $values, string $key): void {
+    $entityManager = CompositeOwnerRig::create();
+
+    $record = match ($flavour) {
+        'raw-bytes uuid' => CompositeOwnerRig::findCrate($entityManager, 'a1b2c3d4-0000-4000-8000-000000000001'),
+        'raw-bytes half and string half' => CompositeOwnerRig::findPallet($entityManager, 'b1b2c3d4-0000-4000-8000-000000000001', 'north'),
+        'derived identity' => CompositeOwnerRig::findTranslation($entityManager, 1, 'en'),
+        'single derived identity onto a converting identifier' => CompositeOwnerRig::findListingSeal($entityManager, 'AB-123'),
+        'single derived identity onto a raw-bytes uuid' => CompositeOwnerRig::findCrateSeal($entityManager, 'a1b2c3d4-0000-4000-8000-000000000001'),
+        default => CompositeOwnerRig::findStrongboxSeal($entityManager, 'omega'),
+    };
+
+    expect(RecordKey::values($entityManager, $record))->toEqual($values)
+        ->and(RecordKey::of($entityManager, $record))->toBe($key);
+})->with([
+    'a raw-bytes uuid' => ['raw-bytes uuid', [Uuid::fromString('a1b2c3d4-0000-4000-8000-000000000001')], 'a1b2c3d4-0000-4000-8000-000000000001'],
+    'a raw-bytes half and a string half' => ['raw-bytes half and string half', [Uuid::fromString('b1b2c3d4-0000-4000-8000-000000000001'), 'north'], 'b1b2c3d4-0000-4000-8000-000000000001~north'],
+    'a derived identity' => ['derived identity', [1, 'en'], '1~en'],
+    'a single derived identity onto a converting identifier' => ['single derived identity onto a converting identifier', [new Sku('AB-123')], 'AB-123'],
+    'a single derived identity onto a raw-bytes uuid' => ['single derived identity onto a raw-bytes uuid', [Uuid::fromString('a1b2c3d4-0000-4000-8000-000000000001')], 'a1b2c3d4-0000-4000-8000-000000000001'],
+    'a single derived identity onto a doubly-strict identifier' => ['single derived identity onto a doubly-strict identifier', [new Cipher('omega')], 'omega'],
+]);
+
+it('reads no values while a component is missing at any level', function (): void {
+    $entityManager = EntityManagerFactory::create();
+
+    $unattributed = new PostTranslation();
+    $unattributed->setLocale('sk');
+
+    $unsealed = new ListingSeal();
+
+    $unkeyedTarget = new ListingSeal();
+    $unkeyedTarget->setListing(new Listing());
+
+    expect(RecordKey::values($entityManager, $unattributed))->toBeNull()
+        ->and(RecordKey::values($entityManager, $unsealed))->toBeNull()
+        ->and(RecordKey::values($entityManager, $unkeyedTarget))->toBeNull()
+        ->and(RecordKey::values($entityManager, new Author()))->toBeNull();
+});
+
+it('reads the values of a subclass the mapping does not know by the class the caller declares', function (): void {
+    $redirect = new class extends Redirect {};
+    $redirect->setHost('example.com');
+    $redirect->setPath('/about');
+
+    expect(RecordKey::values(EntityManagerFactory::create(), $redirect, Redirect::class))->toBe(['example.com', '/about']);
+});

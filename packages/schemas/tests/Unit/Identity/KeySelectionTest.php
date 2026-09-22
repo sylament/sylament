@@ -4,8 +4,12 @@ declare(strict_types=1);
 
 use Sylament\Schemas\Identity\IdentifierConstraint;
 use Sylament\Schemas\Identity\RecordKey;
+use Sylament\Schemas\Tests\Fixtures\Doctrine\CompositeOwnerRig;
+use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\Crate;
+use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\CrateSeal;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\Listing;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\ListingNote;
+use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\Pallet;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\Placement;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\Post;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\PostSeal;
@@ -53,6 +57,24 @@ it('mints from a result row the key the record mints, whichever way the row was 
     'a converting scalar identifier' => [Listing::class],
     'an association onto a converting identifier' => [ListingNote::class],
     'a guid and a bigint' => [Ticket::class],
+])->with(['scalar', 'array']);
+
+it('mints from a projected raw-bytes row the key its record mints', function (string $class, array $expected, string $hydration): void {
+    $query = CompositeOwnerRig::create()->createQueryBuilder()->from($class, 'record');
+    $selection = IdentifierConstraint::select($query, 'record', $class);
+    $query->select(...$selection->expressions);
+
+    /** @var list<array<string, mixed>> $rows */
+    $rows = $hydration === 'scalar' ? $query->getQuery()->getScalarResult() : $query->getQuery()->getArrayResult();
+    $keys = array_map($selection->keyOf(...), $rows);
+
+    sort($keys);
+
+    expect($keys)->toBe($expected);
+})->with([
+    'a raw-bytes uuid' => [Crate::class, ['a1b2c3d4-0000-4000-8000-000000000001', 'a1b2c3d4-0000-4000-8000-000000000002']],
+    'a raw-bytes half and a string half' => [Pallet::class, ['b1b2c3d4-0000-4000-8000-000000000001~north', 'b1b2c3d4-0000-4000-8000-000000000001~south', 'b1b2c3d4-0000-4000-8000-000000000002~north']],
+    'a single derived identity onto a raw-bytes uuid, projected through IDENTITY()' => [CrateSeal::class, ['a1b2c3d4-0000-4000-8000-000000000001', 'a1b2c3d4-0000-4000-8000-000000000002']],
 ])->with(['scalar', 'array']);
 
 it('keys a row that carries other columns beside the key', function (): void {

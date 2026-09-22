@@ -7,6 +7,7 @@ namespace Sylament\Schemas\State;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\Events;
 use Doctrine\ORM\Mapping\InverseSideMapping;
+use Doctrine\ORM\Mapping\JoinColumnMapping;
 use Doctrine\ORM\Mapping\OwningSideMapping;
 use Doctrine\ORM\QueryBuilder;
 use LogicException;
@@ -57,7 +58,7 @@ class AssociationReader
         $isNullable = true;
 
         if ($mapping->isToOneOwningSide()) {
-            $isNullable = $mapping->joinColumns[0]->nullable ?? true;
+            $isNullable = array_all($mapping->joinColumns, static fn (JoinColumnMapping $joinColumn): bool => $joinColumn->nullable ?? true);
         }
 
         return new AssociationTarget(
@@ -112,19 +113,20 @@ class AssociationReader
      * $alias, narrowed to the owner: a one-to-many through the target's mapped-by
      * field, a many-to-many through a correlated subselect over the owner's own
      * association, which needs no inverse mapping and adds no join to the outer
-     * query. Unordered: the mapping's order is the caller's default sort, not the
-     * query's.
+     * query — and so does either arm of an owner keyed by several fields, whose
+     * mapped-by path DQL cannot compare. Unordered: the mapping's order is the
+     * caller's default sort, not the query's.
      */
     public function createRelationshipQuery(Relationship $relationship, string $alias = 'record'): QueryBuilder
     {
         $target = $this->describeRelationship($relationship);
         $query = $this->createOptionQuery($target->targetClass, $alias);
 
-        $query->andWhere($target->isManyToMany
+        $query->andWhere($this->isScopedThroughOwner($relationship, $target)
             ? $this->getRelatedRecordsExists($query, $relationship, $target, $alias)
             : sprintf('%s.%s = :sylament_relationship_owner', $alias, $this->getMappedBy($relationship, $target)));
 
-        return $query->setParameter('sylament_relationship_owner', $this->getRelationshipOwner($relationship));
+        return $this->bindRelationshipOwner($query, $relationship);
     }
 
     /**
@@ -137,11 +139,13 @@ class AssociationReader
         $target = $this->describeRelationship($relationship);
         $query = $this->createOptionQuery($target->targetClass, $alias);
 
-        if ($target->isManyToMany) {
+        if (! $target->isManyToMany) {
+            $this->assertRelationshipAcceptsAssociate($relationship);
+        }
+
+        if ($this->isScopedThroughOwner($relationship, $target)) {
             $query->andWhere(sprintf('NOT %s', $this->getRelatedRecordsExists($query, $relationship, $target, $alias)));
         } else {
-            $this->assertRelationshipAcceptsAssociate($relationship);
-
             $mappedBy = $this->getMappedBy($relationship, $target);
 
             $query->andWhere($query->expr()->orX(
@@ -150,7 +154,7 @@ class AssociationReader
             ));
         }
 
-        return $query->setParameter('sylament_relationship_owner', $this->getRelationshipOwner($relationship));
+        return $this->bindRelationshipOwner($query, $relationship);
     }
 
     /**
@@ -458,12 +462,48 @@ class AssociationReader
         $ownerClass = $this->getEntityClass($relationship->owner);
 
         return sprintf(
-            'EXISTS (SELECT 1 FROM %s sy_owner JOIN sy_owner.%s sy_related WHERE sy_owner.%s = :sylament_relationship_owner AND %s)',
+            'EXISTS (SELECT 1 FROM %s sy_owner JOIN sy_owner.%s sy_related WHERE %s AND %s)',
             $ownerClass,
             $relationship->name,
-            $this->getOwnerIdentifierField($ownerClass),
+            $this->getOwnerScope($query, $relationship, $ownerClass),
             IdentifierConstraint::correlate($query, 'sy_related', $target->targetClass, $alias),
         );
+    }
+
+    /**
+     * Whether the narrowing is the correlated subselect rather than the target's
+     * own mapped-by field: always for a many-to-many, and for a one-to-many whose
+     * owner is keyed by several fields.
+     */
+    private function isScopedThroughOwner(Relationship $relationship, AssociationTarget $target): bool
+    {
+        return $target->isManyToMany || $this->hasCompositeOwner($relationship);
+    }
+
+    private function hasCompositeOwner(Relationship $relationship): bool
+    {
+        return $this->requireEntityManager()->getClassMetadata($this->getEntityClass($relationship->owner))->isIdentifierComposite;
+    }
+
+    /**
+     * The subselect's owner narrowed to this one. An owner keyed by several
+     * fields binds itself here, one typed parameter per field, through the key it
+     * mints; a single-identifier owner is bound by {@see bindRelationshipOwner()}.
+     *
+     * @param class-string $ownerClass
+     *
+     * @throws LogicException when the owner's own key does not decode, since a dropped scope would list every owner's records
+     */
+    private function getOwnerScope(QueryBuilder $query, Relationship $relationship, string $ownerClass): string
+    {
+        if (! $this->hasCompositeOwner($relationship)) {
+            return sprintf('sy_owner.%s = :sylament_relationship_owner', $this->getOwnerIdentifierField($ownerClass));
+        }
+
+        $key = $this->getRecordKey($relationship->owner);
+
+        return IdentifierConstraint::equals($query, 'sy_owner', $ownerClass, $key, 'sylament_relationship_owner')
+            ?? throw new LogicException(sprintf('The owner [%s] mints the key [%s], which does not decode against its own mapping, so the relationship [%s] cannot be scoped to it — an identifier type that cannot read its own printed form.', $ownerClass, $key, $relationship->name));
     }
 
     /**
@@ -531,21 +571,29 @@ class AssociationReader
     }
 
     /**
-     * The owner itself as the bound parameter — Doctrine binds a managed entity
-     * by its identifier, typed as the column is — after refusing an owner
-     * Doctrine cannot bind, and one that has no identifier yet.
+     * The single-identifier owner's parameter, after refusing an owner that has
+     * no identifier yet: a scalar identifier is bound as its own value under its
+     * field's DBAL type, because Doctrine binds an entity by casting its
+     * identifier and never converts it; an identifier that is an association
+     * stays the entity. An owner keyed by several fields bound itself while its
+     * scope was composed.
      */
-    private function getRelationshipOwner(Relationship $relationship): object
+    private function bindRelationshipOwner(QueryBuilder $query, Relationship $relationship): QueryBuilder
     {
-        $ownerClass = $this->getEntityClass($relationship->owner);
-
-        if ($this->requireEntityManager()->getClassMetadata($ownerClass)->isIdentifierComposite) {
-            throw new LogicException(sprintf('Records of [%s] carry a composite identifier, which cannot own a relationship query yet: Doctrine refuses to bind such a record as a query parameter. Scope the query from a single-identifier owner.', $ownerClass));
+        if ($this->hasCompositeOwner($relationship)) {
+            return $query;
         }
 
         $this->getRecordKey($relationship->owner);
 
-        return $relationship->owner;
+        $metadata = $this->requireEntityManager()->getClassMetadata($this->getEntityClass($relationship->owner));
+        $field = $metadata->identifier[0];
+
+        if ($metadata->hasAssociation($field)) {
+            return $query->setParameter('sylament_relationship_owner', $relationship->owner);
+        }
+
+        return $query->setParameter('sylament_relationship_owner', $metadata->getFieldValue($relationship->owner, $field), $metadata->getTypeOfField($field));
     }
 
     /**

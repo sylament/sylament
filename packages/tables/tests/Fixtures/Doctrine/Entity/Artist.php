@@ -47,7 +47,7 @@ class Artist
      *
      * @var Collection<int, Shortcut>
      */
-    #[ORM\ManyToMany(targetEntity: Shortcut::class)]
+    #[ORM\ManyToMany(targetEntity: Shortcut::class, inversedBy: 'billedBy')]
     #[ORM\JoinTable(name: 'artist_shortcut')]
     #[ORM\JoinColumn(name: 'artist_id', referencedColumnName: 'id')]
     #[ORM\InverseJoinColumn(name: 'shortcut_host', referencedColumnName: 'host')]
@@ -64,6 +64,21 @@ class Artist
      */
     #[ORM\ManyToMany(targetEntity: Shortcut::class, mappedBy: 'troupes')]
     private Collection $billedShortcuts;
+
+    /**
+     * A many-to-many onto a scalar-pair target whose own to-one properties are
+     * named `owner` and `related` — the two names the relationship subselect
+     * already holds — so the alias a dotted sort or summary mints over this
+     * relation collides with no user code at all.
+     *
+     * @var Collection<int, Circuit>
+     */
+    #[ORM\ManyToMany(targetEntity: Circuit::class)]
+    #[ORM\JoinTable(name: 'artist_circuit')]
+    #[ORM\JoinColumn(name: 'artist_id', referencedColumnName: 'id')]
+    #[ORM\InverseJoinColumn(name: 'circuit_region', referencedColumnName: 'region')]
+    #[ORM\InverseJoinColumn(name: 'circuit_slot', referencedColumnName: 'slot')]
+    private Collection $circuits;
 
     /**
      * A many-to-many onto a derived identity, owned here.
@@ -145,6 +160,7 @@ class Artist
         $this->collaborations = new ArrayCollection();
         $this->shortcuts = new ArrayCollection();
         $this->billedShortcuts = new ArrayCollection();
+        $this->circuits = new ArrayCollection();
         $this->residencies = new ArrayCollection();
         $this->bookedResidencies = new ArrayCollection();
         $this->seals = new ArrayCollection();
@@ -270,6 +286,30 @@ class Artist
     public function removeBilledShortcut(Shortcut $billedShortcut): static
     {
         $this->billedShortcuts->removeElement($billedShortcut);
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, Circuit>
+     */
+    public function getCircuits(): Collection
+    {
+        return $this->circuits;
+    }
+
+    public function addCircuit(Circuit $circuit): static
+    {
+        if (!$this->circuits->contains($circuit)) {
+            $this->circuits->add($circuit);
+        }
+
+        return $this;
+    }
+
+    public function removeCircuit(Circuit $circuit): static
+    {
+        $this->circuits->removeElement($circuit);
 
         return $this;
     }

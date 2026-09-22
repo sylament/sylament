@@ -23,6 +23,16 @@ class Residency
     private Collection $shows;
 
     /**
+     * The same arm as {@see $shows} with a child that can be re-pointed, so the
+     * derived-identity flavour reaches a collection an associate and a
+     * dissociate can write.
+     *
+     * @var Collection<int, ResidencyRider>
+     */
+    #[ORM\OneToMany(targetEntity: ResidencyRider::class, mappedBy: 'residency')]
+    private Collection $riders;
+
+    /**
      * The owning side of a many-to-many the single-identifier class reads back
      * through a `mappedBy`, so the derived-identity flavour is reachable from
      * both arms.
@@ -57,6 +67,7 @@ class Residency
     public function __construct()
     {
         $this->shows = new ArrayCollection();
+        $this->riders = new ArrayCollection();
         $this->bookers = new ArrayCollection();
     }
 
@@ -116,6 +127,32 @@ class Residency
     public function getShows(): Collection
     {
         return $this->shows;
+    }
+
+    /**
+     * @return Collection<int, ResidencyRider>
+     */
+    public function getRiders(): Collection
+    {
+        return $this->riders;
+    }
+
+    public function addRider(ResidencyRider $rider): void
+    {
+        if (!$this->riders->contains($rider)) {
+            $this->riders->add($rider);
+        }
+
+        $rider->setResidency($this);
+    }
+
+    public function removeRider(ResidencyRider $rider): void
+    {
+        $this->riders->removeElement($rider);
+
+        if ($rider->getResidency() === $this) {
+            $rider->setResidency(null);
+        }
     }
 
     /**

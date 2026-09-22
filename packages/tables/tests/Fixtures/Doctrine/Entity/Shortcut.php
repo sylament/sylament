@@ -23,6 +23,28 @@ class Shortcut
     private Collection $hits;
 
     /**
+     * The same arm as {@see $hits} with a child that can be re-pointed, and the
+     * one composite-owner collection in this repo whose mapping declares its own
+     * order — so a relation-scoped table rooted here has a default sort to read.
+     *
+     * @var Collection<int, ShortcutNote>
+     */
+    #[ORM\OneToMany(targetEntity: ShortcutNote::class, mappedBy: 'shortcut')]
+    #[ORM\OrderBy(['heading' => 'ASC'])]
+    private Collection $notes;
+
+    /**
+     * The inverse side of a many-to-many a record of several fields owns from
+     * the far end: {@see Artist::$shortcuts} holds the join table, so listing
+     * this collection scopes through the owner's own association rather than
+     * through a mapped-by field of the target.
+     *
+     * @var Collection<int, Artist>
+     */
+    #[ORM\ManyToMany(targetEntity: Artist::class, mappedBy: 'shortcuts')]
+    private Collection $billedBy;
+
+    /**
      * The owning side of a many-to-many whose target is the single-identifier
      * record: the composite record holds the join table, so the other class
      * reaches this one through a mapping that names a `mappedBy`.
@@ -63,6 +85,8 @@ class Shortcut
     public function __construct()
     {
         $this->hits = new ArrayCollection();
+        $this->notes = new ArrayCollection();
+        $this->billedBy = new ArrayCollection();
         $this->troupes = new ArrayCollection();
     }
 
@@ -122,6 +146,40 @@ class Shortcut
     public function getHits(): Collection
     {
         return $this->hits;
+    }
+
+    /**
+     * @return Collection<int, ShortcutNote>
+     */
+    public function getNotes(): Collection
+    {
+        return $this->notes;
+    }
+
+    public function addNote(ShortcutNote $note): void
+    {
+        if (!$this->notes->contains($note)) {
+            $this->notes->add($note);
+        }
+
+        $note->setShortcut($this);
+    }
+
+    public function removeNote(ShortcutNote $note): void
+    {
+        $this->notes->removeElement($note);
+
+        if ($note->getShortcut() === $this) {
+            $note->setShortcut(null);
+        }
+    }
+
+    /**
+     * @return Collection<int, Artist>
+     */
+    public function getBilledBy(): Collection
+    {
+        return $this->billedBy;
     }
 
     public function getCurator(): ?Artist

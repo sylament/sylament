@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Sylament\Forms\Tests\Fixtures\Doctrine\Entity;
 
+use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 
 /**
@@ -27,6 +29,21 @@ class PostTranslation
 
     #[ORM\Column(nullable: true)]
     private ?int $position = null;
+
+    /**
+     * The one collection this record owns, so a relation-backed field and a
+     * repeater can write through a record whose identifier is two columns wide.
+     *
+     * @var Collection<int, TranslationMark>
+     */
+    #[ORM\OneToMany(targetEntity: TranslationMark::class, mappedBy: 'translation', cascade: ['persist'], orphanRemoval: true)]
+    #[ORM\OrderBy(['position' => 'ASC'])]
+    private Collection $marks;
+
+    public function __construct()
+    {
+        $this->marks = new ArrayCollection();
+    }
 
     public function getPost(): ?Post
     {
@@ -66,5 +83,26 @@ class PostTranslation
     public function setPosition(?int $position): void
     {
         $this->position = $position;
+    }
+
+    /**
+     * @return Collection<int, TranslationMark>
+     */
+    public function getMarks(): Collection
+    {
+        return $this->marks;
+    }
+
+    public function addMark(TranslationMark $mark): void
+    {
+        if (! $this->marks->contains($mark)) {
+            $this->marks->add($mark);
+            $mark->setTranslation($this);
+        }
+    }
+
+    public function removeMark(TranslationMark $mark): void
+    {
+        $this->marks->removeElement($mark);
     }
 }

@@ -7,7 +7,13 @@ use Doctrine\DBAL\ParameterType;
 use Doctrine\DBAL\Query\QueryBuilder;
 use Doctrine\ORM\EntityManager;
 use Sylament\Schemas\Identity\IdentifierConstraint;
+use Sylament\Schemas\Tests\Fixtures\Doctrine\CompositeOwnerRig;
+use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\Consignment;
+use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\Crate;
+use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\Ledger;
+use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\LedgerDraft;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\Listing;
+use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\Pallet;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\Post;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\PostSeal;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\PostTranslation;
@@ -173,4 +179,84 @@ it('balances many composite keys, so SQLite takes more than a flat disjunction c
     expect(IdentifierConstraint::inColumns($entityManager, $three, PostTranslation::class, ['1~en', '1~pt-BR', '1~en=2FGB'], 'keys'))
         ->toBe('((post_id = :keys_0_0 AND locale = :keys_0_1) OR ((post_id = :keys_1_0 AND locale = :keys_1_1) OR (post_id = :keys_2_0 AND locale = :keys_2_1)))')
         ->and(sqlTwinRows($many, 'title', 'PostTranslation', IdentifierConstraint::inColumns($entityManager, $many, PostTranslation::class, $keys, 'keys')))->toBe(['pt-BR']);
+});
+
+it('names a joined subclass by the column its root declares, which its own table keys by too', function (): void {
+    $entityManager = EntityManagerFactory::create();
+
+    $plain = new Ledger();
+    $plain->setLabel('plain');
+
+    $first = new LedgerDraft();
+    $first->setLabel('first');
+    $first->setRevision('r1');
+
+    $second = new LedgerDraft();
+    $second->setLabel('second');
+    $second->setRevision('r2');
+
+    EntityManagerFactory::seed($entityManager, $plain, $first, $second);
+
+    $draft = sqlTwinQuery($entityManager);
+    $root = sqlTwinQuery($entityManager);
+
+    $predicate = IdentifierConstraint::inColumns($entityManager, $draft, LedgerDraft::class, ['1', '3', 'x'], 'keys');
+
+    expect($predicate)->toBe('ledger_id IN (:keys)')
+        ->and($draft->getParameters())->toBe(['keys' => [1, 3]])
+        ->and($draft->getParameterTypes())->toBe(['keys' => ArrayParameterType::INTEGER])
+        ->and(sqlTwinRows($draft, 'revision', 'LedgerDraft', $predicate))->toBe(['r2'])
+        ->and(sqlTwinRows($root, 'label', 'Ledger', IdentifierConstraint::inColumns($entityManager, $root, LedgerDraft::class, ['1', '3'], 'keys')))->toBe(['plain', 'second']);
+});
+
+it('quotes every identifier column the mapping quotes', function (): void {
+    $entityManager = EntityManagerFactory::create();
+    $consignments = [];
+
+    foreach ([['north', 'acme', 'mine'], ['north', 'zenith', 'shares where'], ['south', 'acme', 'shares having']] as [$origin, $holder, $label]) {
+        $consignment = new Consignment();
+        $consignment->setOrigin($origin);
+        $consignment->setHolder($holder);
+        $consignment->setLabel($label);
+        $consignments[] = $consignment;
+    }
+
+    EntityManagerFactory::seed($entityManager, ...$consignments);
+
+    $query = sqlTwinQuery($entityManager);
+
+    $predicate = IdentifierConstraint::inColumns($entityManager, $query, Consignment::class, ['north~acme', 'south~zenith'], 'keys');
+
+    expect($predicate)->toBe('(("where" = :keys_0_0 AND "having" = :keys_0_1) OR ("where" = :keys_1_0 AND "having" = :keys_1_1))')
+        ->and($query->getParameters())->toBe(['keys_0_0' => 'north', 'keys_0_1' => 'acme', 'keys_1_0' => 'south', 'keys_1_1' => 'zenith'])
+        ->and(sqlTwinRows($query, 'label', '"order"', $predicate))->toBe(['mine']);
+});
+
+it('binds a raw-bytes uuid as the sixteen bytes its column holds, dropping a spelling that does not print back', function (): void {
+    $entityManager = CompositeOwnerRig::create();
+    $query = sqlTwinQuery($entityManager);
+    $asText = sqlTwinQuery($entityManager);
+
+    $predicate = IdentifierConstraint::inColumns($entityManager, $query, Crate::class, ['a1b2c3d4-0000-4000-8000-000000000001', 'a1b2c3d4-0000-4000-8000-000000000002', 'a1b2c3d4-0000-4000-8000-000000000003', 'A1B2C3D4-0000-4000-8000-000000000001', 'not-a-uuid'], 'keys');
+
+    // The same bytes bound as text: SQLite never finds a BLOB equal to TEXT.
+    $asText->setParameter('keys', $query->getParameter('keys'), ArrayParameterType::STRING);
+
+    expect($predicate)->toBe('id IN (:keys)')
+        ->and($query->getParameters())->toBe(['keys' => [hex2bin('a1b2c3d4000040008000000000000001'), hex2bin('a1b2c3d4000040008000000000000002'), hex2bin('a1b2c3d4000040008000000000000003')]])
+        ->and($query->getParameterTypes())->toBe(['keys' => ArrayParameterType::BINARY])
+        ->and(sqlTwinRows($query, 'label', 'Crate', $predicate))->toBe(['apart', 'mine'])
+        ->and(sqlTwinRows($asText, 'label', 'Crate', $predicate))->toBe([]);
+});
+
+it('binds a raw-bytes half and a string half each under its own type', function (): void {
+    $entityManager = CompositeOwnerRig::create();
+    $query = sqlTwinQuery($entityManager);
+
+    $predicate = IdentifierConstraint::inColumns($entityManager, $query, Pallet::class, ['b1b2c3d4-0000-4000-8000-000000000001~north', 'b1b2c3d4-0000-4000-8000-000000000002~north', 'B1B2C3D4-0000-4000-8000-000000000001~south'], 'keys');
+
+    expect($predicate)->toBe('((batch = :keys_0_0 AND lane = :keys_0_1) OR (batch = :keys_1_0 AND lane = :keys_1_1))')
+        ->and($query->getParameters())->toBe(['keys_0_0' => hex2bin('b1b2c3d4000040008000000000000001'), 'keys_0_1' => 'north', 'keys_1_0' => hex2bin('b1b2c3d4000040008000000000000002'), 'keys_1_1' => 'north'])
+        ->and($query->getParameterTypes())->toBe(['keys_0_0' => ParameterType::BINARY, 'keys_0_1' => ParameterType::STRING, 'keys_1_0' => ParameterType::BINARY, 'keys_1_1' => ParameterType::STRING])
+        ->and(sqlTwinRows($query, 'label', 'Pallet', $predicate))->toBe(['b1b2c3d4-0000-4000-8000-000000000001/north', 'b1b2c3d4-0000-4000-8000-000000000002/north']);
 });

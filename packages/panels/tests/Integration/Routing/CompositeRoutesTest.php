@@ -80,6 +80,40 @@ it('round-trips a key through every path shape a separator closes', function ():
     }
 });
 
+it('leaves every parent placeholder at the compiler default, because a slug always follows it', function (): void {
+    $router = $this::getContainer()->get(RouterInterface::class);
+    $parented = [];
+
+    foreach ($router->getRouteCollection() as $name => $route) {
+        if (! str_starts_with($name, 'sylament.') || preg_match('/\{(?!record\})[^}]+\}/', $route->getPath()) !== 1) {
+            continue;
+        }
+
+        $parented[$name] = $route->getRequirements();
+    }
+
+    // The loader composes a parent placeholder as `/{param}` and then appends
+    // `/` plus the child slug, so the character after it is always a slash and
+    // the compiler's own `[^/]++` covers every character the key grammar uses.
+    // M7 · 3's greedy requirement is stamped on `{record}` alone, and this is
+    // what keeps that asymmetry harmless.
+    expect($parented)->not->toBeEmpty();
+
+    foreach ($parented as $name => $requirements) {
+        expect($requirements)->toBe([], $name)
+            ->and($router->getRouteCollection()->get($name)?->getPath())->toContain('}/');
+    }
+
+    $url = $router->generate('sylament.key.resources.binderies.bindings.edit', [
+        'imprint' => 'a=7Eb~c=3Dd=20=C5=BE',
+        'record' => '1',
+    ]);
+
+    expect($url)->toBe('/key/binderies/a=7Eb~c=3Dd=20=C5=BE/imprint-bindings/1/edit')
+        ->and($url)->not->toContain('%')
+        ->and($router->match($url))->toMatchArray(['imprint' => 'a=7Eb~c=3Dd=20=C5=BE', 'record' => '1']);
+});
+
 it('narrows the mounted paths a separator follows and no others', function (): void {
     $router = $this::getContainer()->get(RouterInterface::class);
     $narrowed = [];

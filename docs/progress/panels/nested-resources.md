@@ -304,6 +304,47 @@ pages need ancestor parameters a search result carries nothing to fill. No
 `continue`s past a blank URL and skips a resource that yields no results — so a
 searchable nested resource renders no dead rows rather than rows that go nowhere.
 
+### A parent of any width scopes, and the two interim guards that stood in for it are gone
+
+A nested resource scopes every read to its parent through
+[the reader's relationship query](#the-parent-scope-is-the-readers-relationship-query-not-a-predicate-we-write),
+and until [M7 · 5](../roadmap.md#m7--composite-identifiers) that query could not
+bind a parent record carrying more than one identifier field. `BelongsToParent`
+asked first, in panel vocabulary — *"whose records of [%s] are not keyed by a
+single scalar identifier; scoping a nested resource to such a parent record is
+not built yet"* — at two throw sites under one predicate:
+`getParentScopedRecordQuery()`, covering every read, and `attachRecordToParent()`,
+covering the routed nested **create** page's write, which reaches the first
+nowhere and would otherwise have persisted a row and redirected into a 500.
+[The twin one tier over](relation-manager.md#the-relationship-chokepoint-judges-nothing-about-the-owner-and-the-setter-it-needed-is-gone)
+guarded relation managers on the same predicate.
+
+Both are deleted, and nothing stands in their place: the reader now scopes an
+owner of any width
+[through the owner's own collection](../schemas/association-reader.md#an-owner-of-any-width-is-scoped-through-its-own-collection-rather-than-through-a-mapped-by-path),
+so the whole nested tier works under a scalar-pair, a derived-identity and a
+join-entity parent — the record page, the nested listing, a mounted action's
+scope, the routed create page's write, the three ancestor route-key mints
+(`Resource::getUrl()`, `guessAncestorParameters()` and
+[`Page::getResourceBreadcrumbs()`](#a-crumb-whose-url-the-trail-already-spends-renders-unlinked)),
+and a chain three deep with the composite level in the **middle**.
+
+Three things the removal settled rather than merely dropped. The guards'
+predicate was **wider** than the reader's — it also refused a *single derived
+identity*, which the reader never refused — so panels and the relation layer had
+disagreed about one flavour and now do not. The one path that reached the
+relation layer **past** both throw sites, a modal `CreateAction` taking its
+relationship from `Page::getDefaultActionRelationship()` on a page that resolves
+no record of its own, was recorded as unguarded rather than closed, on the
+grounds that refusing there would need a new public entry point on `Resource` for
+a guard M7 · 5 would delete whole — and it simply works now, which is what that
+bet was. And one unstated invariant is what keeps a parent placeholder safe and
+is pinned rather than left to be rediscovered:
+[`PanelRouteLoader`](#the-recursion-lives-in-the-loader-and-the-child-must-be-registered-on-the-panel)
+always appends `/` after a parent placeholder, so M7 · 3's greedy `[^/]+` — which
+is stamped on `{record}` alone — is not needed on one, and the compiler's default
+pattern is enough.
+
 ## Divergences
 
 ### The registration is a pure value object that names nothing it was not told
@@ -655,59 +696,3 @@ crumb above it already links.
 The test is on the whole trail, not on adjacency: any URL already spent is
 unlinked, which additionally makes a non-adjacent repeat impossible.
 
-### A parent record the relation layer cannot key is refused by name, from panels
-
-A nested resource scopes every read to its parent through
-[the reader's relationship query](#the-parent-scope-is-the-readers-relationship-query-not-a-predicate-we-write),
-and that query binds the parent **record** as a query parameter — which
-Doctrine refuses for a record carrying a **composite** identifier. So
-`BelongsToParent` asks first, in panel vocabulary rather than the relation
-layer's:
-
-> Resource [%s] nests under [%s], whose records of [%s] are not keyed by a
-> single scalar identifier; scoping a nested resource to such a parent record is
-> not built yet.
-
-The predicate is *keyable by the relation layer*, not `isIdentifierComposite`:
-`! $metadata->isIdentifierComposite && ! $metadata->hasAssociation($metadata->getSingleIdentifierFieldName())`
-is what passes, so a **single derived identity** — one `#[Id]` association and
-nothing else, which Doctrine calls non-composite — is refused too. Since
-[M7 · 4](../roadmap.md#m7--composite-identifiers) this predicate is **wider than
-the reader's**, and the two disagree about exactly that flavour. Deleting the
-guard would move a **composite** parent's refusal one layer down onto
-`AssociationReader::getRelationshipOwner()`, which raises its own named message —
-*Records of [%s] carry a composite identifier, which cannot own a relationship
-query yet: Doctrine refuses to bind such a record as a query parameter. Scope the
-query from a single-identifier owner.* — while a **single derived identity**
-parent would not be refused at all: it binds as an entity parameter and scopes
-correctly on both arms of both queries from M7 · 4 on. Both panels guards are
-[M7 · 5](../roadmap.md#m7--composite-identifiers)'s to delete, together with the
-reader's own owner guard.
-
-Two throw sites, one predicate, one message.
-`getParentScopedRecordQuery()` covers every read — a nested record page, a
-nested listing, a mounted action's scope — and `attachRecordToParent()` covers
-the routed nested **create** page's write, the join it makes on submit. The
-second is not redundant: a create page calls `getParentScopedRecordQuery()`
-nowhere, so with the read site alone that page rendered, persisted a row and
-redirected to an edit page that then 500s. It still renders — the refusal is at
-submit, before anything is written — and that is deliberate rather than
-unfinished. On a rendered page the refusal is a **500**, a `LogicException`
-inside Twig's render error, because a request that got this far named a resource
-the panel really does register; out of the create live action it arrives
-unwrapped, the throw being in the action body rather than in a render.
-
-One further path reaches the relation layer unguarded, and is recorded rather
-than closed. A modal `CreateAction` mounted on a page that renders without
-resolving a record of its own — a nested create page, a nested custom page with
-no `{record}` — takes its relationship from
-`Resources\Pages\Page::getDefaultActionRelationship()`, which builds a
-`Relationship` from the parent record directly and so reaches
-`AssociationReader::attach()` past both throw sites. The row it writes is valid
-and nothing about it breaks; refusing there would need a new public entry point
-on `Resource`, which is not worth adding for a guard M7 · 5 deletes whole.
-
-The guard is **interim**. What would make the scope possible is the owner half
-of `AssociationReader`, and
-[M7 · 5](../roadmap.md#m7--composite-identifiers) deletes both call sites and
-the predicate together when it lands.

@@ -180,6 +180,32 @@ wires it themselves with `emitUp()` + a `#[LiveListener]` on the manager — nev
 a bare `emit()`, which is a page-wide broadcast costing one HTTP request per
 receiving listener.
 
+### The relationship chokepoint judges nothing about the owner, and the setter it needed is gone
+
+`getRelationship()` is the one point both hosts pass through — a
+[`RelationManager`](#the-manager-stands-beside-the-resource-page-base-rather-than-under-it)
+and [`ManageRelatedRecords`](manage-related-records.md) each reach the
+association through it — and it decides nothing about the owner record. That is
+worth stating because it briefly did. Between
+[M7 · 3](../roadmap.md#m7--composite-identifiers) and
+[M7 · 5](../roadmap.md#m7--composite-identifiers) a private guard here refused an
+owner *"not keyed by a single scalar identifier"*, in panel vocabulary, because
+the relationship query underneath could not bind one; it was written to be
+deleted whole and was, together with
+[the twin one level up](nested-resources.md#a-parent-of-any-width-scopes-and-the-two-interim-guards-that-stood-in-for-it-are-gone).
+A manager now hangs off an owner of any identifier width, the scope reaching it
+[through the owner's own collection](../schemas/association-reader.md#an-owner-of-any-width-is-scoped-through-its-own-collection-rather-than-through-a-mapped-by-path).
+
+Two things went with the guard rather than surviving it. Its predicate was
+deliberately **wider** than the reader's — it refused a single derived identity,
+which the reader never did — so panels and the relation layer no longer disagree
+about a flavour, and there is one answer to "may this owner be scoped" rather
+than two. And `setRelationshipTableEntityManager()`, a public `#[Required]`
+setter added only so the guard had metadata to read, is **removed**: it was the
+one piece of consumer-visible surface the guard brought, a host built outside the
+container was one of the three cases the guard yielded on rather than refusing
+for, and nothing in the trait reads an `EntityManager` any more.
+
 ## Divergences
 
 ### The manager stands beside the resource page base rather than under it
@@ -204,9 +230,10 @@ through `pageClass::getResource()` → the resource registry →
 `resolveRecordRouteBinding()`, memoised for the request, `NotFoundHttpException`
 on a miss. The key is the resource's own route key at any identifier width, so
 the prop, its checksum and the bridge carry `1~A=2FB=20C` exactly as they carry
-`7`; what a composite owner still meets is
-[the relationship scope's own refusal](#an-owner-record-the-relation-layer-cannot-key-is-refused-by-name-from-panels),
-which is a fact about the query underneath rather than about the wire.
+`7`; and since [M7 · 5](../roadmap.md#m7--composite-identifiers) the query
+underneath carries such an owner too, so neither half of the round trip narrows
+what a manager may hang off
+([how the scope reaches an owner of any width](../schemas/association-reader.md#an-owner-of-any-width-is-scoped-through-its-own-collection-rather-than-through-a-mapped-by-path)).
 `is_subclass_of($pageClass, Resources\Pages\Page::class)` gates the
 client-supplied class-string against the **resource**-page base, so the shell
 `Pages\Page` (and `Dashboard` with it) cannot get past it.
@@ -388,32 +415,3 @@ minus the `PageController` locator — a manager has no route and no controller.
 The authoring-surface cost (one attribute line Filament does not ask for) is
 the deliberate trade recorded there.
 
-### An owner record the relation layer cannot key is refused by name, from panels
-
-`getRelationship()` is the one chokepoint both hosts pass through — a
-[`RelationManager`](#the-manager-stands-beside-the-resource-page-base-rather-than-under-it)
-and [`ManageRelatedRecords`](manage-related-records.md) each reach the
-association through it — so the owner is judged there, once:
-
-> The relationship table [%s] lists an association of [%s], whose records are
-> not keyed by a single scalar identifier; scoping a relationship table to such
-> an owner record is not built yet.
-
-It is the same predicate the nested tier uses, for the same reason and with the
-same reach into a single derived identity
-([why it is not `isIdentifierComposite`](nested-resources.md#a-parent-record-the-relation-layer-cannot-key-is-refused-by-name-from-panels)),
-and the same interim life:
-[M7 · 5](../roadmap.md#m7--composite-identifiers) deletes it together with the
-owner scoping that makes it unnecessary. A composite **target** needs nothing
-from it — the reader's one-to-many arm never reads the target's identity, so a
-manager lists records keyed by two scalars, or by an association plus a scalar,
-under a single-identifier owner today.
-
-The guard **yields** rather than refusing in three cases, each of them the
-relation layer's own refusal to make in its own words: a host built outside the
-container, where the `#[Required]` `setRelationshipTableEntityManager()` setter
-never ran and there is no mapping to read; an owner class Doctrine calls
-transient; and an anonymous owner class, which Doctrine refuses to describe at
-all. `AssociationReader::describe()` draws the same three lines, and throwing
-here instead would refuse hosts that work today. That setter is the only public
-surface this guard adds, and it goes with it.

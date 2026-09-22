@@ -59,8 +59,9 @@ class DissociateBulkAction extends BulkAction
      * bypassing the UnitOfWork the way DeleteBulkAction's delete does —
      * already-managed entities keep their stale owner until reloaded. Every
      * mapping refusal runs before either arm — the four detach refusals and the
-     * many-to-many one — as does the shape of the keys, so all six propagate as
-     * developer errors rather than a toast.
+     * many-to-many one — as do the by-key arm's own two, a mapped-by field
+     * spanning several join columns and the shape of the keys, so all seven
+     * propagate as developer errors rather than a toast.
      *
      * @param array<mixed> $records
      */
@@ -81,6 +82,13 @@ class DissociateBulkAction extends BulkAction
             ?? throw new LogicException(sprintf('The one-to-many [%s] names no mapped-by field, which Doctrine requires of every one-to-many.', $relationship->name));
 
         if (! $action->shouldFetchSelectedRecords()) {
+            $entityManager = $this->getEntityManagerForRecord($target->targetClass);
+            $mapping = $entityManager->getClassMetadata($target->targetClass)->getAssociationMapping($mappedBy);
+
+            if ($mapping->isToOneOwningSide() && count($mapping->joinColumns) > 1) {
+                throw new LogicException(sprintf('[%s::$%s] spans %d join columns, and DQL cannot null a to-one that spans more than one, so the action [%s] cannot dissociate by key here — drop fetchSelectedRecords(false) so the records are loaded and dissociated through the mapping.', $target->targetClass, $mappedBy, count($mapping->joinColumns), $this->getName()));
+            }
+
             $keys = [];
 
             foreach ($records as $record) {
@@ -91,7 +99,6 @@ class DissociateBulkAction extends BulkAction
                 $keys[] = $record;
             }
 
-            $entityManager = $this->getEntityManagerForRecord($target->targetClass);
             $chunks = IdentifierConstraint::chunk($entityManager, $target->targetClass, $keys);
 
             try {

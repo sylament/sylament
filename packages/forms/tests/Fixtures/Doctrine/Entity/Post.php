@@ -41,7 +41,7 @@ class Post
     /**
      * @var Collection<int, Tag>
      */
-    #[ORM\ManyToMany(targetEntity: Tag::class)]
+    #[ORM\ManyToMany(targetEntity: Tag::class, inversedBy: 'posts')]
     private Collection $tags;
 
     /**
@@ -86,7 +86,7 @@ class Post
      *
      * @var Collection<int, CompositePair>
      */
-    #[ORM\ManyToMany(targetEntity: CompositePair::class)]
+    #[ORM\ManyToMany(targetEntity: CompositePair::class, inversedBy: 'posts')]
     #[ORM\JoinTable(name: 'post_composite_pair')]
     #[ORM\JoinColumn(name: 'post_id', referencedColumnName: 'id')]
     #[ORM\InverseJoinColumn(name: 'composite_pair_a', referencedColumnName: 'a')]

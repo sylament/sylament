@@ -11,9 +11,12 @@ use Sylament\Schemas\Identity\RecordKey;
 use Sylament\Schemas\State\AssociationReader;
 use Sylament\Schemas\State\Relationship;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\CompositeOwnerRig;
+use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\Chain;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\Marker;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\Redirect;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\SigilChild;
+use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\Slip;
+use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\Tag;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\Vault;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\RecordingMiddleware;
 
@@ -67,19 +70,19 @@ it('scopes a composite owner to a collection of records of its own class', funct
         ->toBe([CompositeOwnerRig::REDIRECT_MINE, CompositeOwnerRig::REDIRECT_APART]);
 });
 
-it('scopes from a single-table subclass owner whose collections the root declares', function (string $relationship, array $related, array $candidates): void {
+it('scopes from a single-table subclass owner whose collections the root declares', function (string $relationship, string $targetClass, array $related, array $candidates): void {
     $entityManager = CompositeOwnerRig::create();
     $reader = new AssociationReader($entityManager);
     $owner = CompositeOwnerRig::findSigil($entityManager, 'north', 'alpha');
 
     $query = $reader->createRelationshipQuery(new Relationship($owner, $relationship));
 
-    expect($query->getDQL())->toContain('FROM ' . SigilChild::class . ' sy_owner JOIN sy_owner.' . $relationship . ' sy_related WHERE sy_owner.realm = :sylament_relationship_owner_0 AND sy_owner.mark = :sylament_relationship_owner_1')
+    expect($query->getDQL())->toBe('SELECT record FROM ' . $targetClass . ' record WHERE EXISTS (SELECT 1 FROM ' . SigilChild::class . ' sy_owner JOIN sy_owner.' . $relationship . ' sy_related WHERE sy_owner.realm = :sylament_relationship_owner_0 AND sy_owner.mark = :sylament_relationship_owner_1 AND sy_related.id = record.id)')
         ->and(ownerScopeKeys($entityManager, $query->getQuery()->getResult()))->toBe($related)
         ->and(ownerScopeKeys($entityManager, $reader->createRelationshipCandidateQuery(new Relationship($owner, $relationship))->getQuery()->getResult()))->toBe($candidates);
 })->with([
-    'many-to-many' => ['topics', ['1', '2'], []],
-    'one-to-many' => ['slips', ['11'], ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '12', '13']],
+    'many-to-many' => ['topics', Tag::class, ['1', '2'], []],
+    'one-to-many' => ['slips', Slip::class, ['11'], ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '12', '13']],
 ]);
 
 it('scopes a many-to-many from a chained derived identity', function (int $postId, int $link, array $related, array $candidates): void {
@@ -88,7 +91,7 @@ it('scopes a many-to-many from a chained derived identity', function (int $postI
     $owner = CompositeOwnerRig::findChain($entityManager, $postId, $link);
 
     expect($reader->createRelationshipQuery(new Relationship($owner, 'topics'))->getDQL())
-        ->toContain('sy_owner.seal = :sylament_relationship_owner_0 AND sy_owner.link = :sylament_relationship_owner_1')
+        ->toBe('SELECT record FROM ' . Tag::class . ' record WHERE EXISTS (SELECT 1 FROM ' . Chain::class . ' sy_owner JOIN sy_owner.topics sy_related WHERE sy_owner.seal = :sylament_relationship_owner_0 AND sy_owner.link = :sylament_relationship_owner_1 AND sy_related.id = record.id)')
         ->and(ownerScopeKeys($entityManager, $reader->createRelationshipQuery(new Relationship($owner, 'topics'))->getQuery()->getResult()))->toBe($related)
         ->and(ownerScopeKeys($entityManager, $reader->createRelationshipCandidateQuery(new Relationship($owner, 'topics'))->getQuery()->getResult()))->toBe($candidates);
 })->with([

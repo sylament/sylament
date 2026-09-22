@@ -9,9 +9,10 @@ use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 
 /**
- * One identifier field, and it is a backed enum — the single-owner bind that
- * has to unwrap its value before it names the field's own DBAL type, since a
- * typed parameter skips Doctrine's own enum handling.
+ * One identifier field, and it is a backed enum: the single-owner bind names
+ * the field's own DBAL type and carries no unwrap of its own, because Doctrine
+ * reads an enum-mapped identifier through `ReflectionEnumProperty`, which
+ * already answers the backing value.
  */
 #[ORM\Entity]
 class Placard

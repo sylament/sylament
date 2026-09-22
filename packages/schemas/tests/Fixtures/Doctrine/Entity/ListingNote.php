@@ -27,9 +27,9 @@ class ListingNote
     private string $body = '';
 
     /**
-     * The collections that make a composite identifier one half of which
-     * converts a relationship owner, so each half is bound under its own DBAL
-     * type rather than as it prints.
+     * The collections that make a record keyed by two fields — one of them
+     * converting — a relationship owner, so each half is bound under its own
+     * DBAL type rather than as it prints.
      *
      * @var Collection<int, Tag>
      */

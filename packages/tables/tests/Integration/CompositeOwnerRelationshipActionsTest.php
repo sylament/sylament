@@ -287,7 +287,7 @@ function compositeOwnerActionsNotificationTitles(): array
     );
 }
 
-it('refuses the by-key dissociate when the mapped-by spans the owner whole identifier', function (): void {
+it('refuses the by-key dissociate when the mapped-by spans the whole identifier of the owner', function (): void {
     [$client, , $recorder] = compositeOwnerActionsSeed();
 
     expect(compositeOwnerActionsBulkThrow($client, $recorder, ['fetchesRecords' => false], ['1'])->getMessage())
@@ -451,7 +451,7 @@ it('detaches a composite target by key from a composite owner', function (): voi
     expect(compositeOwnerActionsRelatedKeys($client, $entityManager, CompositeOwnerRelationshipActionsManyToManyTable::class, $props))->toBe([]);
 });
 
-it('offers the records nobody owns and another owner records, never this owner own', function (): void {
+it('offers the records nobody owns and the records of another owner, never the records of this owner', function (): void {
     [$client] = compositeOwnerActionsSeed();
 
     // `Beta` carries a NULL foreign-key pair and `Gamma` belongs to the other

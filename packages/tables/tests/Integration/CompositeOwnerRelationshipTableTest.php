@@ -42,18 +42,23 @@ uses(InteractsWithLiveComponents::class);
  * whole table feature list, because the narrowing is a `WHERE` string and every
  * reader downstream is supposed to be blind to it.
  *
- * Two things make "lists this owner's records" able to fail. Every owner in the
- * seed has a sibling sharing the FIRST half of its key and holding records of
- * its own, so a scope that compares one field lists them too; and every target
- * class holds a record belonging to nobody, so a scope dropped altogether lists
- * that one.
+ * Two things make "lists this owner's records" able to fail, and the seed
+ * carries both wherever the arm allows one. A near-miss owner holding records
+ * of its own shares one half of the key — the FIRST half on `notes`, `riders`,
+ * `children` and `shortcuts`, the SECOND half on `troupes` (Marquee, which
+ * shares Zenith's path rather than its host), and none at all on `billedBy`,
+ * whose only other owner shares neither — so a scope that compares one field
+ * lists the sibling's records too; and `ShortcutNote` and `Circuit` each hold a
+ * record belonging to nobody (the note `Delta`, the circuit `Loose`), so a
+ * scope dropped altogether lists that one.
  *
  * Keys are written as literals, never minted through the codec in an
  * expectation. The three `Circuit` children sort by name against both their
  * identifier order and their seed order, so the mapping's
  * `#[ORM\OrderBy(['name' => 'DESC'])]` is visible in every unsorted list, and
- * two of them carry the same stop count, so a sort by that count can only
- * settle on the identifier tiebreak.
+ * two of them carry the same stop count, so a sort by that count falls through
+ * to the mapping order, which settles the tie, with the composite root's own
+ * identifier order appended behind it.
  */
 
 /**
@@ -334,6 +339,7 @@ it('scopes every arm by one correlated subselect bound per identifier field of t
         static fn (object $parameter): array => [$parameter->getName(), $parameter->getValue()],
         iterator_to_array($host->getTable()->getRelationshipQuery()?->getParameters() ?? []),
     );
+    $aliases = static fn (TableHost $host): array => $host->getTable()->getRelationshipQuery()?->getAllAliases() ?? [];
 
     expect($dql(compositeOwnerTableHost($entityManager, $zenith, 'notes')))
         ->toContain('WHERE EXISTS (SELECT 1 FROM ' . Shortcut::class . ' sy_owner JOIN sy_owner.notes sy_related WHERE sy_owner.host = :sylament_relationship_owner_0 AND sy_owner.path = :sylament_relationship_owner_1 AND sy_related.id = record.id)')
@@ -353,21 +359,33 @@ it('scopes every arm by one correlated subselect bound per identifier field of t
         ->toBe([['sylament_relationship_owner_0', 'north'], ['sylament_relationship_owner_1', 'one']])
         ->and($parameters(compositeOwnerTableHost($entityManager, compositeOwnerTableResidency($entityManager, 'north.hall', 'summer-2026'), 'riders')))
         ->toBe([['sylament_relationship_owner_0', 'north.hall'], ['sylament_relationship_owner_1', 'summer-2026']])
-        // The outer builder carries one root and no join of its own.
-        ->and(compositeOwnerTableHost($entityManager, $root, 'children')->getTable()->getRelationshipQuery()?->getAllAliases())->toBe(['record']);
+        // The outer builder carries one root and no join of its own — on every
+        // arm, not only on the one the subselect correlates by two columns. A
+        // `toContain()` over the DQL text would pass against a joined builder.
+        ->and(array_map($aliases, [
+            compositeOwnerTableHost($entityManager, $zenith, 'notes'),
+            compositeOwnerTableHost($entityManager, $zenith, 'troupes'),
+            compositeOwnerTableHost($entityManager, compositeOwnerTableShortcut($entityManager, 'plain', 'contact'), 'billedBy'),
+            compositeOwnerTableHost($entityManager, compositeOwnerTableResidency($entityManager, 'north.hall', 'summer-2026'), 'riders'),
+            compositeOwnerTableHost($entityManager, $root, 'children'),
+            compositeOwnerTableHost($entityManager, $root, 'shortcuts'),
+        ]))->toBe([['record'], ['record'], ['record'], ['record'], ['record'], ['record']]);
 });
 
-it('takes the mapping order as its default sort and settles a tie on the identifier', function (): void {
+it('takes the mapping order as its default sort and appends the identifier order behind it', function (): void {
     $entityManager = compositeOwnerTableRig();
     $root = compositeOwnerTableCircuit($entityManager, 'north', 'one');
 
     $sorted = compositeOwnerTableHost($entityManager, $root, 'children', compositeOwnerTableCircuitColumns(...));
     $sorted->tableSort = 'stops_count:desc';
 
-    // Bravo and Charlie both carry one stop, so only the identifier tiebreak can
-    // order them — and it orders them against the name the mapping sorts by.
+    // Bravo and Charlie both carry one stop, so the mapping's own `name DESC` is
+    // what settles them; the composite root's identifier order rides behind it,
+    // which is what the ordering text pins and the three rows cannot.
     expect(compositeOwnerTableKeys(compositeOwnerTableHost($entityManager, $root, 'children', compositeOwnerTableCircuitColumns(...))))->toBe(['north~four', 'south~two', 'north~two'])
-        ->and(compositeOwnerTableKeys($sorted))->toBe(['north~two', 'north~four', 'south~two']);
+        ->and(compositeOwnerTableKeys($sorted))->toBe(['north~two', 'north~four', 'south~two'])
+        ->and((string) $sorted->getFilteredSortedTableQuery()?->getDQL())
+        ->toContain('ORDER BY sy_agg1 desc, record.name desc, record.region desc, record.slot desc');
 });
 
 it('counts a relation of the related records and sorts the scoped page by that count', function (): void {

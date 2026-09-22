@@ -240,9 +240,11 @@ the DBAL arm writes **three**. The third key is nulled by both, the arm scoping
 by key and never by owner. That combination is recorded rather than refused,
 [in the ledger](../roadmap.md#m7--composite-identifiers), and pinned as what it
 is: `DepotQueryBesideRelationshipTable` declares both, and the last case of
-`DepotDissociateByKeyTest` asserts the three-row write. Guarding the arm on
-`isRelationshipBaseQuery()` would refuse a declaration the table supports, so
-the test records the exposure rather than closing it.
+`DepotDissociateByKeyTest` selects a dial of the depot beside the plain gauge
+and asserts one statement nulling both — the gauge the relationship excludes
+written by a predicate that carries no discriminator to stop it. Guarding the
+arm on `isRelationshipBaseQuery()` would refuse a declaration the table
+supports, so the test records the exposure rather than closing it.
 
 M7 · 4's move to the typed decode closed a **data defect** rather than only
 widening the arm. Since

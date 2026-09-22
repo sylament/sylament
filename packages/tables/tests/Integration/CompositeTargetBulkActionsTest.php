@@ -175,13 +175,19 @@ function compositeBulkStatements(KernelBrowser $client, RecordingMiddleware $rec
 /**
  * The bulk action run in-process on the host that answers its own selection —
  * the route the shape refusals and the stale key need, since nothing the
- * table's own read can produce reaches them.
+ * table's own read can produce reaches them, and the only route to the toast
+ * at all: a flash filed during a request the client drives lands in the
+ * client's session, while `compositeBulkNotificationTitles()` reads the one
+ * this file's own request carries. `$selection` feeds the table's own read,
+ * for the case that wants the real pluck and the toast together.
  *
  * @param array<string, mixed> $props
+ * @param list<string> $selection
  */
-function compositeBulkCallOnOverridingHost(KernelBrowser $client, string $action, array $props): ArtistCuratedShortcutsBulkTable
+function compositeBulkCallOnOverridingHost(KernelBrowser $client, string $action, array $props, array $selection = []): ArtistCuratedShortcutsBulkTable
 {
     $host = test()->createLiveComponent(ArtistCuratedShortcutsBulkTable::class, $props, client: $client)->component();
+    $host->selectedTableRecordKeys = $selection;
     $host->mountAction($action, [], ['table' => true, 'bulk' => true]);
     $host->callMountedAction();
 
@@ -392,17 +398,26 @@ it('dissociates a selection past the chunk size in one transaction of two update
 
     $entityManager->flush();
 
-    $statements = compositeBulkStatements($client, $recorder, ArtistCuratedShortcutsBulkTable::class, 'dissociate', [], $keys);
+    $recorder->reset();
+
+    compositeBulkCallOnOverridingHost($client, 'dissociate', [], $keys);
+
     $written = array_values(array_filter(
-        $statements,
+        $recorder->statements(),
         static fn (string $sql): bool => in_array($sql, ['BEGIN', 'COMMIT'], true) || str_starts_with($sql, 'UPDATE'),
     ));
 
+    // The success toast is the reported count, the way `DeleteBulkActionTest`'s
+    // twin case reads its own: `getSelectedRecords()` minted 501 as the total,
+    // so a count that answered the last chunk's single row alone would leave
+    // the action a partial failure — `Dissociated 1 of 501` over a write that
+    // nulled every row.
     expect($written)->toHaveCount(4)
         ->and($written[0])->toBe('BEGIN')
         ->and($written[1])->toStartWith('UPDATE')
         ->and($written[2])->toStartWith('UPDATE')
         ->and($written[3])->toBe('COMMIT')
+        ->and(compositeBulkNotificationTitles())->toBe(['Dissociated'])
         ->and(compositeBulkOwnedKeys($client, $entityManager, ArtistCuratedShortcutsBulkTable::class))->toBe([]);
 });
 

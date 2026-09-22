@@ -353,7 +353,83 @@ trait HasRelationship
             }
         }
 
+        if ($target->isManyToMany && ! $target->isOwningSide) {
+            $this->writeDesiredToOwningSide($target, $record, $name, $desired);
+        }
+
         $accessor->setAssociationOnRecord($record, $name, $desired);
+    }
+
+    /**
+     * Write the desired list onto the association's owning side, the only side
+     * Doctrine persists: an inverse-side collection is ignored at flush, so
+     * writing it alone reports success and writes no join row. Every
+     * member no longer desired is detached and every new one attached, both
+     * through the reader, which flips to the target's own collection — so the
+     * kept members' join rows are never touched.
+     *
+     * @param list<object> $desired
+     *
+     * @throws LogicException when removing a member would delete the record being saved
+     */
+    private function writeDesiredToOwningSide(AssociationTarget $target, object $record, string $name, array $desired): void
+    {
+        $reader = $this->getAssociationReader();
+        $relationship = new Relationship($record, $name);
+        $members = $this->getPropertyAccessor()->getFromRecord($record, $name);
+
+        $current = [];
+
+        foreach (is_iterable($members) ? $members : [] as $member) {
+            if (is_object($member)) {
+                $current[] = $member;
+            }
+        }
+
+        $removed = array_values(array_filter($current, static fn (object $member): bool => ! in_array($member, $desired, true)));
+
+        if ($removed !== []) {
+            $this->assertOwningSideKeepsTheRecord($target);
+        }
+
+        foreach ($removed as $member) {
+            $reader->detach($relationship, $member);
+        }
+
+        foreach ($desired as $member) {
+            if (! in_array($member, $current, true)) {
+                $reader->attach($relationship, $member);
+            }
+        }
+    }
+
+    /**
+     * Refuse the one write that would delete the record it is saving: the
+     * owning collection declares orphanRemoval, so Doctrine holds its members
+     * privately owned and deletes the one taken out of it — and from the
+     * inverse side that one is this record. The reader refuses the same shape
+     * on a one-to-many by name; a many-to-many can only reach it from here.
+     *
+     * @throws LogicException when the owning side deletes what it drops
+     */
+    private function assertOwningSideKeepsTheRecord(AssociationTarget $target): void
+    {
+        $mappedBy = $target->mappedBy;
+
+        if ($mappedBy === null) {
+            return;
+        }
+
+        $owningSide = $this->getAssociationReader()->describe($target->targetClass, $mappedBy);
+
+        if ($owningSide instanceof AssociationTarget && $owningSide->isOrphanRemoval) {
+            throw new LogicException(sprintf(
+                '[%s::$%s] declares orphanRemoval, so a member dropped from it is deleted rather than unlinked — deselecting one in the [%s] field would delete the record this form is saving rather than its join row. Put the field on the owning side of the association, or drop orphanRemoval.',
+                $target->targetClass,
+                $mappedBy,
+                (string) $this->getName(),
+            ));
+        }
     }
 
     /**

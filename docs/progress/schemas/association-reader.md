@@ -33,8 +33,10 @@ decodes one through [`RecordKey`](record-key.md) and narrows every query through
 association plus a scalar, by two associations or by an association alone is a
 relation **target** wherever a single-`id` entity is — and
 [the reader owns no copy of the codec's rules](#a-key-of-any-width-is-the-codecs-and-the-reader-keeps-only-the-route).
-The **owner** of a relationship query is the one axis still narrower than that,
-and it is [refused by name](#a-composite-owner-is-refused-by-name-on-the-query-path-only).
+Since [M7 · 5](../roadmap.md#m7--composite-identifiers) it is a relation
+**owner** there too: both relationship queries narrow to an owner of any width
+[through the owner's own collection](#an-owner-of-any-width-is-scoped-through-its-own-collection-rather-than-through-a-mapped-by-path),
+adding no join to the outer builder and no operation to the codec.
 
 **Status:** done — see the [status vocabulary](../README.md#statuses).
 
@@ -57,11 +59,14 @@ wraps rather than a Filament port target:
 ## Surface
 
 Every point of the reader and its value object. _Blocked by_ names what has to
-land first. _Detail_ carries a **semantics** link (a permanent note in
-[Semantics](#semantics)), a **diverges** link (the permanent note in
-[Divergences](#divergences)) and/or a **detail** link (the write-up of an
-unfinished row), or `—`. Every row is Sylament-only, so no row has
-a _Ports_ link.
+land first, and answers `—` for every row since
+[M7 · 5](../roadmap.md#m7--composite-identifiers) closed the last one that
+waited. _Detail_ carries a **semantics** link (a permanent note in
+[Semantics](#semantics)) and/or a **diverges** link (the permanent note in
+[Divergences](#divergences)), or `—`; there is no **detail** link and no
+`## Details` section any more, both having gone with that row, which is what
+the trail's own rule asks of a section whose row flips. Every row is
+Sylament-only, so no row has a _Ports_ link.
 
 | Feature | Status | Blocked by | Detail |
 | --- | --- | --- | --- |
@@ -90,13 +95,14 @@ a _Ports_ link.
 | [Service wiring](../../../packages/schemas/src/SylamentSchemasBundle.php) — `sylament_schemas.association_reader` plus a class alias, with an ignore-on-invalid `EntityManagerInterface` argument | done | — | [semantics](#the-entity-manager-is-optional-and-the-two-halves-answer-differently) |
 | [`CanAccessAssociations`](../../../packages/schemas/src/Components/Concerns/CanAccessAssociations.php) — the `#[Required]` setter every consumer tier reaches the reader through | done | — | [semantics](#the-accessor-trait-is-shared-with-the-table-and-action-tiers) |
 | Composite records as relation **targets** — keyed, referenced, listed, offered and written at any identifier width | done | — | [semantics](#a-key-of-any-width-is-the-codecs-and-the-reader-keeps-only-the-route) |
-| Composite records as relationship-query **owners** | blocked | [M7 · 5](../roadmap.md#m7--composite-identifiers) | [detail](#a-composite-owner-is-refused-by-name-on-the-query-path-only) |
+| Composite records as relationship-query **owners** — both queries, both arms, both sides | done | — | [semantics](#an-owner-of-any-width-is-scoped-through-its-own-collection-rather-than-through-a-mapped-by-path) · [diverges](#the-owner-scope-joins-through-the-owners-table-and-pays-a-self-join-postgresql-does-not-remove) |
 | Through-relations, morphs, pivot data | skipped | — | [diverges](#only-the-shapes-doctrine-states-in-one-mapping-are-read) |
 
-One row is **blocked** and every other is **done** or **skipped**; the file keeps
-its `done` status on the same terms
-[`record-key.md`](record-key.md#owner-scoping-is-reserved-not-missing) does, whose
-owner-scoping row waits on the same epic.
+Every row is **done** or **skipped**. The last **blocked** one closed with
+[M7 · 5](../roadmap.md#m7--composite-identifiers), which is also when
+[`record-key.md`](record-key.md#owner-scoping-was-reserved-and-turned-out-not-to-be-needed)'s
+reserved owner-scoping row went — not by being built, but because the owner
+scope turned out to need no operation of the codec's at all.
 
 The unit suite
 ([`AssociationReaderTest`](../../../packages/schemas/tests/Unit/State/AssociationReaderTest.php),
@@ -522,7 +528,12 @@ answer the wrong class. The narrowing is then per shape:
   — a subselect over the **owner's own** association, which is why no inverse
   mapping is needed and why the outer query gains no join;
 - a one-to-many is `record.<mappedBy> = :sylament_relationship_owner`, straight
-  onto the target's own to-one field.
+  onto the target's own to-one field;
+- **either** arm, where the owner is keyed by more than one field, is the
+  many-to-many shape above with the owner's own key spread across it — the
+  one-to-many included, because DQL cannot compare a mapped-by path to such a
+  record at all
+  ([the whole of that route](#an-owner-of-any-width-is-scoped-through-its-own-collection-rather-than-through-a-mapped-by-path)).
 
 The correlation is
 [`IdentifierConstraint::correlate()`](record-key.md#the-operations-and-their-dql)
@@ -547,11 +558,15 @@ conversion is plan-neutral for the related query and an improvement for the
 candidate one on PostgreSQL, where `NOT EXISTS` plans as a Hash Anti Join against
 `NOT IN`'s hashed sub-plan filter.
 
-There is **no flavour branch**, and the cheap test would have been wrong: a
-**single derived identity** reports `isIdentifierComposite === false`, and it is
-the one flavour the old subselect did not even refuse — it emitted the
+There is **no flavour branch on the target**, and the cheap test would have been
+wrong: a **single derived identity** reports `isIdentifierComposite === false`,
+and it is the one flavour the old subselect did not even refuse — it emitted the
 association as a bare path in a `SELECT` list, which Doctrine rejects as
 *"Invalid PathExpression"* at execution with no message of ours in front of it.
+The **owner** is the one axis where that flag is read, and deliberately: it is
+the whole of the route test, and the same single derived identity is on the
+narrow side of it
+([why the flavour is the right question there and the wrong one here](#an-owner-of-any-width-is-scoped-through-its-own-collection-rather-than-through-a-mapped-by-path)).
 
 The candidate query is the negation. The many-to-many arm is the same string
 prefixed `NOT `; the one-to-many arm is where it stops being symmetrical, because
@@ -559,21 +574,128 @@ prefixed `NOT `; the one-to-many arm is where it stops being symmetrical, becaus
 `<>` is unknown against null — so the arm is
 `record.<mappedBy> IS NULL OR record.<mappedBy> <> :owner`, built as one `orX`
 composite so a caller's later `andWhere()` (a search clause, a by-key `IN`)
-brackets the pair instead of flattening the OR into the AND. That arm also runs
+brackets the pair instead of flattening the OR into the AND. Every one-to-many
+candidate query runs
 [`assertRelationshipAcceptsAssociate()`](#no-to-many-relation-verb-moves-a-primary-key)
 first, so a relationship whose every candidate would be a theft refuses at the
-first options read rather than offering them.
+first options read rather than offering them. The call sits **above** the route
+branch rather than inside the mapped-by arm, so the refusal keeps its place in
+the order for an owner of any width — although it cannot fire for a composite
+one: such an owner can never be half of a child's identifier, Doctrine's own
+mapping validation refusing the declaration before any of this runs.
 
 Three names are reserved inside these builders and a caller must not reuse them:
-the aliases `sy_owner` and `sy_related`, and the parameter
-`sylament_relationship_owner`. Doctrine refuses either alias as a caller's own
-(`'sy_related' is already defined`), so the reservation is enforced rather than
-merely stated. The owner is bound as the **object** — Doctrine
-binds a managed entity by its identifier, typed as the column is — after
-`getRecordKey()` refuses an owner that has none yet, which is the difference
-between a clear refusal and a query that silently matches nothing. Neither query
-orders anything: the mapping's `#[ORM\OrderBy]` is the *table's* default sort, not
-the query's, so a clicked sort can replace it.
+the aliases `sy_owner` and `sy_related`, and the parameter base
+`sylament_relationship_owner`, which for an owner of several fields mints
+`_0`, `_1`, … per field and is one plain parameter otherwise. Doctrine refuses
+either alias as a caller's own (`'sy_related' is already defined`), so that half
+of the reservation is enforced rather than merely stated; the base is not, and it
+is [recorded on the codec](record-key.md#parameter-naming-and-what-an-empty-or-malformed-key-means)
+beside the other ten. `getRecordKey()` refuses an owner that has no identifier
+yet on every route, which is the difference between a clear refusal and a query
+that silently matches nothing;
+[what is bound after it](#a-single-identifier-owner-binds-its-identifier-value-typed-by-the-fields-own-dbal-type)
+is the one thing about the owner that is not the same for every width. Neither
+query orders anything: the mapping's `#[ORM\OrderBy]` is the *table's* default
+sort, not the query's, so a clicked sort can replace it.
+
+### An owner of any width is scoped through its own collection rather than through a mapped-by path
+
+An owner keyed by several fields takes the shape the many-to-many arm has taken
+for **every** owner since M4 · 8 — a correlated `EXISTS` over the owner's own
+association — on both arms of both queries:
+
+```
+SELECT record FROM <Target> record WHERE EXISTS (
+  SELECT 1 FROM <Owner> sy_owner JOIN sy_owner.<relationship> sy_related
+  WHERE sy_owner.<f0> = :sylament_relationship_owner_0
+    AND sy_owner.<f1> = :sylament_relationship_owner_1
+    AND <IdentifierConstraint::correlate('sy_related', <Target>, 'record')>)
+```
+
+and the candidate query is that string under `NOT EXISTS`. `JOIN sy_owner.<rel>`
+walks a one-to-many's inverse collection exactly as it walks a many-to-many, from
+either side, so the outer builder keeps its single root, gains no join and no
+second alias, and answers `getAllAliases()` with the root alone — for every owner
+flavour, which is what lets every consumer downstream go on reading
+`getRootAliases()[0]` and minting its own aliases off the builder.
+
+**The route test is `isIdentifierComposite` on the owner, and only that**
+(`$target->isManyToMany || $this->hasCompositeOwner(…)`). A single identifier and
+a **single derived identity** owner therefore keep all three of the texts the
+paragraphs above this section describe, byte for byte — the one-to-many
+`record.<mappedBy> = :owner`, its `IS NULL OR <> :owner` negation, and the
+many-to-many subselect scoped by `sy_owner.<identifier[0]> = :owner`. Taking every owner through the subselect was executed and rejected: it
+moves four pinned assertions and puts `sy_owner`/`sy_related` on every
+one-to-many query in the toolkit, for rows that do not change.
+
+**The owner scope is one `equals()` on the subselect's alias, and that is the
+epic's whole new surface.** `IdentifierConstraint::equals($query, 'sy_owner',
+$ownerClass, $this->getRecordKey($owner), 'sylament_relationship_owner')` — the
+owner handed over as the **key** it mints rather than as values, so
+[the codec](record-key.md#owner-scoping-was-reserved-and-turned-out-not-to-be-needed)
+gained nothing at all. A `null` out of `equals()` **throws**:
+
+> `The owner [%s] mints the key [%s], which does not decode against its own mapping, so the relationship [%s] cannot be scoped to it — an identifier type that cannot read its own printed form.`
+
+Dropping the scope instead would list every record that has *any* owner, which is
+the one failure this seam must not have; and the shape that reaches it is the
+same one the codec records for a DBAL type that cannot read back what it prints,
+so the message names the cause rather than the width. The same refusal fires for
+an owner whose PHP value is spelled other than its DBAL type prints it — a
+`bigint` held as `'007'`, a decimal as `'.5'` — which no loaded record carries.
+
+**The negation is `NOT EXISTS`, and that is not cosmetic.** A candidate arm
+written as `NOT (<the equality text>)` drops a target whose composite foreign key
+is **partially** `NULL` — half-null rows are exactly what an unenforced schema
+leaves behind — where `NOT EXISTS` keeps them, together with the records that
+belong to nobody. The one-to-many's `IS NULL OR <>` pair exists for the same
+reason one route down.
+
+**Neither builder ends in a trailing `setParameter()` any more on this route.**
+The composite arm binds itself while its scope is composed, so the single
+`setParameter('sylament_relationship_owner', …)` both builders used to close with
+returns early for it — leaving it would be *"Too many parameters: the query
+defines 2 parameters and you bound 3"*. What the guard that used to stand here
+refused is gone with it: a composite owner was refused by name because Doctrine
+will not bind such a record as a query parameter, and nothing binds one now.
+
+### A single-identifier owner binds its identifier value, typed by the field's own DBAL type
+
+The three single-identifier DQL texts did not move, and neither did any driver
+statement's text or parameter value for a built-in type without SQL-side
+conversion; the binding type now follows the field's DBAL type — `bigint` binds
+as a string, as Doctrine's own `BigIntType` does. One thing did: where the
+owner's single identifier field is a plain **field** mapping, the parameter is
+`$metadata->getFieldValue($owner, $field)` under `$metadata->getTypeOfField($field)`
+rather than the owner entity. Where that one field is an **association** — a
+single derived identity — the entity bind stays, the type being the target's
+business rather than this seam's.
+
+No enum unwrap stands in front of that bind, and none is needed — an identifier
+mapped with `enumType`, declared or inferred, is read through
+`ReflectionEnumProperty`, which already answers the backing value (executed); the
+only property shape that would hand the bind an enum cannot be persisted or
+hydrated on ORM 3.6.8; the prototype carried such an unwrap for a day and removed
+it as dead code.
+
+It is a fix rather than a tidy-up, and the defect it closes is single-identifier.
+Doctrine binds a managed entity by *casting* its identifier and never consults the
+field's DBAL type (`Query::resolveParameterValue()`), so an owner whose type
+really converts — a database form that is not the printed form — was scoped
+**wrong in silence**: its related list answered nothing and its candidate list
+answered everything. No test could see it, because the DQL is identical either
+way and no fixture carried such an owner. `symfony/uid`'s `UuidType` on MySQL,
+MariaDB or SQLite (`BINARY(16)`) is that shape, which is every relation manager of
+a Uuid-keyed owner there — **executed** against a bridge-shaped copy of that
+type, where the entity bind answered nothing on either arm and both queries and
+the typed bind answers the right rows; PostgreSQL's native `uuid` is unaffected.
+
+One residue is recorded rather than closed: a single **derived** identity owner
+whose *target's* identifier type converts keeps the entity bind and keeps the
+defect, because converting there means reaching into another class's identifier —
+which is the codec's business and travels with the same open question the
+[codec records](record-key.md#a-type-that-cannot-read-its-own-printed-form-mints-keys-that-never-decode).
 
 ### A write lands on the side Doctrine persists
 
@@ -604,6 +726,14 @@ wrong-side write land on the owning collection anyway, so the branch selector
 above passes every assertion no matter which arm it picks. The fixture pair drops
 those callbacks for exactly that reason: the inverse collection stays untouched
 after a write, and the case reads it as the evidence of which side was written.
+
+None of this half reads the owner's identity, and that is a property of the code
+rather than a claim about it: `attach()`, `detach()`, `describeRelationship()`
+and both assertion members mint no key, bind no parameter and build no query, so
+they round-trip under every owner flavour, on both arms and from either side, and
+did so before the query half could. M7 · 5 pinned them rather than editing them —
+the tests are the record that a later sweep must not route these four through the
+reader's query to "make them composite-aware".
 
 `attach()` runs one guard on every one-to-many —
 [the re-keying refusal](#no-to-many-relation-verb-moves-a-primary-key) — and
@@ -656,10 +786,22 @@ is read on inverse sides only (an owning side has none, and Doctrine's
 only and null where the mapping is unidirectional. Between them they are how a
 write reaches the side Doctrine persists, how a one-to-many query finds the
 field to filter on, and what the re-keying guard tests against the target's
-identifier. `isNullable` is a to-one owning side's join column, and
-deliberately `true` for every other shape — a collection and an inverse side have
-no column of their own to be null, so the flag reads as "nothing here forbids a
-null" rather than as a claim about a column that does not exist. `orderBy` is the
+identifier. `isNullable` is a to-one owning side's join columns — **all** of
+them, `array_all(…nullable ?? true)`, so the flag is true only where every one of
+them admits a null — and deliberately `true` for every other shape, since a
+collection and an inverse side have no column of their own to be null and the
+flag reads as "nothing here forbids a null" rather than as a claim about a column
+that does not exist. Only a to-one onto a composite class has more than one such
+column, so reading them all is no single-identifier change; until
+[M7 · 5](../roadmap.md#m7--composite-identifiers) only `joinColumns[0]` was read,
+and a foreign key whose **second** column was `nullable: false` passed
+`assertRelationshipAcceptsDetach()` and then died at flush — a
+`NotNullConstraintViolationException` that reaches the user two different ways,
+neither of them the named refusal the mapping deserved:
+[`DissociateAction`](../actions/dissociate-action.md#dissociating-is-refused-where-the-mapping-forbids-it)
+wraps nothing, so it is a 500 with a **closed** `EntityManager`, while
+`DissociateBulkAction`'s fetching arm catches and answers a danger toast over
+that same closed manager. `orderBy` is the
 mapping's own collection order, exactly as declared: Doctrine's docblock types it
 `array<string, 'asc'|'desc'>` but hands `#[ORM\OrderBy(['position' => 'ASC'])]`
 back as `'ASC'`, so the field is typed `array<string, string>` and a consumer that
@@ -693,53 +835,68 @@ kernels, none of which registers Doctrine, and the setter has to autowire cleanl
 there. A container-compile failure in one of those suites is the signal that the
 nullability wiring broke.
 
-## Details
-
-### A composite owner is refused by name, on the query path only
-
-The two relationship **query** builders refuse an owner whose own identifier is
-composite, in `getRelationshipOwner()`, before any statement:
-
-> `Records of [%s] carry a composite identifier, which cannot own a relationship query yet: Doctrine refuses to bind such a record as a query parameter. Scope the query from a single-identifier owner.`
-
-The refusal is Doctrine's rather than ours, and it existed before the guard did —
-as a side effect of `getRecordKey($owner)` throwing. With the key delegated to the
-codec that side effect is gone, and what replaced it is not one failure but two,
-both at **run** time and both from a different layer: the one-to-many arm dies in
-the parser (`QueryException`, *"A single-valued association path expression to an
-entity with a composite primary key is not supported"*), and the many-to-many arm
-in parameter processing (`ORMInvalidArgumentException`, *"Binding an entity with a
-composite primary key…"*). The explicit guard puts one named message in front of
-both.
-
-Three things about its shape.
-
-The predicate is `ClassMetadata::$isIdentifierComposite` **alone**, which admits
-a **single derived identity** owner — `#[Id]` on one association, no scalar half
-— and that is deliberate: such an owner binds as an entity parameter and scopes
-correctly on both arms of both queries, across owners with disjoint sets. The
-narrower predicate panels uses for its own interim guards would refuse a shape
-that works, which costs extra code to produce a false "not built yet".
-
-The phrase *composite identifier* stays in the message on purpose, where the rest
-of the milestone avoids it. It is **true** under this predicate, and the
-milestone's `Done when` clause greps `packages/*/src` for exactly that phrase — so
-this block is the tripwire that proves
-[M7 · 5](../roadmap.md#m7--composite-identifiers) deleted it.
-
-The guard stays on the **query** path and is not hoisted into
-`describeRelationship()`. `attach()`, `detach()`, `describeRelationship()` and
-both assertion members work for a composite owner today and go on working; a
-composite owner can be written to and read from, it simply cannot be *bound* as a
-query parameter. Hoisting the guard would break four working members to tidy one.
-`getRecordKey($owner)` still runs after it, so an owner with no identifier at all
-keeps its own `has none set` refusal, and the owner's identifier field in the
-subselect is a private `$metadata->identifier[0]` read — safe **because** the
-guard exists, not because of where it runs: the field is read while the DQL is
-composed and `getRelationshipOwner()` is the last call of both builders, as it has
-always been.
-
 ## Divergences
+
+### The owner scope joins through the owner's table, and pays a self-join PostgreSQL does not remove
+
+The correlated `EXISTS` reaches the target **through** the owner's own table,
+where a mapped-by comparison reaches it through the foreign key alone, and two
+consequences follow that no amount of indexing removes.
+
+The first is cost, and it was measured rather than guessed. On an ordinary owner
+— of the order of ten children — the related query costs ≈0.05–0.09 ms against
+≈0.02–0.03 ms for a bare `IDENTITY()` comparison, which is noise. On a
+**pathological** one — 50 000 children of a single owner, out of 200 000 — a page
+of 25 costs 19.8 ms against 4.0 ms, an unbounded read 21 ms against 2.9 ms, and
+the paginator's `COUNT` 17 ms; PostgreSQL 18.4 plans the related query as
+`Nested Loop → HashAggregate → Index Scan on <target>_pkey`, so the foreign-key
+index finds each child and the primary key then re-fetches it. That is an admin
+panel's page, not a hot path, and it is accepted on those terms.
+
+The faster shape is recorded so a later epic can take it against a real profile
+rather than rediscover it, and so is what it cannot do. **A′** is
+`IDENTITY(record.<mappedBy>, '<f0>') = :p0 AND IDENTITY(…, '<f1>') = :p1` — no
+join, no subselect, no alias — and two things the roadmap's sketch of it did not
+say are what keep it out. Its candidate arm cannot be written the way today's
+one-to-many arm is:
+`record.<mappedBy> IS NULL OR …` is *"A single-valued association path expression
+to an entity with a composite primary key is not supported"*, so the null arm has
+to be spelled per field as well. And it cannot reach an **association**-valued
+key half at all — `IDENTITY(record.<mappedBy>, '<assocHalf>')` is
+*"Undefined reference field mapping"* — so it covers an all-scalar owner only,
+which would mean a second candidate form, a flavour branch the milestone's third
+carried decision forbids, and a new codec operation, for 0.03 ms on the owner
+anybody actually has. **B**, a join from the target to the owner, is not slower
+but **wrong**: it returns the wrong rows on every many-to-many candidate cell and
+flips the cardinality the paginator reads.
+
+The second consequence is a shape rather than a number, and it is **executed**
+rather than inferred: because the subselect names the owner's own table, a
+Doctrine SQL filter on the owner class narrows it, and an owner row that is
+missing behind an unenforced foreign key makes the `EXISTS` false — so such an
+owner lists nothing where a direct foreign-key comparison would have listed its
+children, and its candidate list offers its own attached records. The
+missing-owner row exists only where the foreign key is unenforced — PostgreSQL
+refuses it. Neither is reachable from anything the toolkit ships.
+
+Two platforms were never executed. PostgreSQL 18.4 and SQLite were; MySQL and
+MariaDB are historically weak on correlated `EXISTS`, and while the many-to-many
+arm has had this shape for every owner since M4 · 8 — so the toolkit already
+depends on the platform's semi-join handling — the one-to-many arm under a
+composite owner joins that dependency.
+
+### A child of a chained derived identity cannot be hydrated against a cold identity map
+
+An owner whose identifier association targets a class whose **own** identifier is
+an association — a derived identity chained one level deeper — scopes correctly
+here and its many-to-many arm works whole. Its one-to-many arm is unreachable for
+a reason outside this seam: Doctrine fatals hydrating any **child** of such an
+owner against a cold identity map, `UnitOfWork::getIdHashByIdentifier()` running
+`implode()` over an object, and it does so on a plain `find()` of the child, with
+no query of ours involved. So there is no refusal of ours — the failure is loud,
+immediate and Doctrine's own — and no fixture anywhere carries such a
+back-reference, because one poisons every cold hydration of the child class
+rather than only the case that declares it.
 
 ### No to-many relation verb moves a primary key
 

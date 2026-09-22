@@ -3072,8 +3072,12 @@ keys against is the **declared** `getRecordClass()`, never the builder's root
 entity: a modifier may replace the builder wholesale, and the resource still
 speaks for the class it says it does. And the decode runs **before** anything is
 bound, so a key that class could never mint — the wrong arity, a lower-case
-escape, a component its field's DBAL type refuses or would print back
-differently — is a 404 that issues no statement rather than a database error.
+escape, a component its field's DBAL type refuses and, since
+[M7 · 5b](../roadmap.md#m7--composite-identifiers), its
+`convertToDatabaseValue()` refuses too,
+[a type refusing it on read only](../schemas/record-key.md#a-type-that-refuses-its-printed-form-on-read-only-decodes-it-through-its-own-writer)
+being read back through its own writer, or one it would print back differently
+— is a 404 that issues no statement rather than a database error.
 The **column's** width is no part of that question: a canonical integer that PHP
 holds and the column cannot still decodes, prints back to itself, binds, and
 raises the platform's own range error — a `22003` 500 on PostgreSQL, for a

@@ -1048,6 +1048,35 @@ to one that is incomplete, is
 [M7 · 6](../roadmap.md#m7--composite-identifiers)'s — and so is an assigned
 single scalar key left blank.
 
+### The relation tier reads the owner's class and never its identity
+
+`relationship()` on this field and on
+[`CheckboxList`](checkbox-list.md#the-to-many-relationship-arm-serves-this-field-unchanged),
+and the relationship arms of
+[`Repeater`](repeater.md#a-relationship-repeater-keys-its-items-by-identity-and-diffs-the-collection)
+beside them, reach the owner record for exactly two things: the class its mapping
+is read off, and the collection or reference the value is written onto. None of
+them builds an owner-scoped query — the option list is
+[`createOptionQuery()`](../schemas/association-reader.md#the-option-query-is-a-starting-point-not-a-result)
+over the whole target class, and the loaded state is the association value read
+off the record — so the width of the owner's identifier is not a question this
+tier asks, and a record keyed by two scalars, by an association plus a scalar or
+by an association alone carried these fields before
+[M7 · 5](../roadmap.md#m7--composite-identifiers) built the owner half of the
+relationship queries, and carries them unchanged after.
+
+That is recorded rather than left implicit because the obvious "make it
+composite-aware" sweep is a regression here: routing a to-many field's load
+through
+[`createRelationshipQuery()`](../schemas/association-reader.md#an-owner-of-any-width-is-scoped-through-its-own-collection-rather-than-through-a-mapped-by-path)
+would buy a statement and a correlated subselect for a collection the owner is
+already holding. The one owner-facing member the tier does call is
+`assertRelationshipAcceptsAssociate()`, which reads the owner's **class** and
+the target's identifier — [the re-keying
+refusal](../schemas/association-reader.md#no-to-many-relation-verb-moves-a-primary-key),
+not a scope. M7 · 5 pinned the whole tier under a composite-owner record so the
+sweep has a failing test to meet rather than a silent one to pass.
+
 ## Divergences
 
 Deliberate deviations from Filament, and the reason each holds. Provisional ones

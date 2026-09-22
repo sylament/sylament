@@ -48,6 +48,16 @@ half — both relationship queries scoping to an owner of any width — and is t
 first epic to find this interface **long** rather than short: the owner scope is
 one `equals()` on a subselect's alias, and the operation reserved for it was
 never built ([why](#owner-scoping-was-reserved-and-turned-out-not-to-be-needed)).
+M7 · 5b is the first to find it **short** and build the addition, in one place:
+the by-key dissociate became one SQL `UPDATE` of one table, which no DQL
+operation can narrow, so `IdentifierConstraint` gained
+[`inColumns()`](#incolumns-is-in-in-sql-for-a-statement-that-names-one-table) —
+its first operation since M7 · 1, `in()` spelled over a DBAL builder's identifier
+columns. The same step taught the decode to read a component back
+[through its type's own writer](#a-type-that-refuses-its-printed-form-on-read-only-decodes-it-through-its-own-writer)
+and gave `RecordKey` one `@internal` read, `values()`, for the relation layer's
+owner bind — three files of this directory moved, one of them by that method
+alone, and `KeySelection` did not.
 
 **Status:** done — see the [status vocabulary](../README.md#statuses).
 
@@ -64,8 +74,10 @@ and/or **diverges** → the permanent note in [Divergences](#divergences).
 | [`RecordKey::find()`](../../../packages/schemas/src/Identity/RecordKey.php) — the non-throwing twin, `null` while the identifier is incomplete | done | — | [semantics](#find-answers-identity-not-persistence) |
 | [`RecordKey::fromValues()`](../../../packages/schemas/src/Identity/RecordKey.php) — identifier values already in their PHP form, in mapping order, to the key a record mints — never a projected row's raw columns, which go through [`KeySelection::keyOf()`](../../../packages/schemas/src/Identity/KeySelection.php) | done | — | [semantics](#the-row-side-and-the-record-side-mint-one-string-and-only-the-codec-may) |
 | [`RecordKey::toIdentifier()`](../../../packages/schemas/src/Identity/RecordKey.php) — a client string to the field ⇒ PHP value map `EntityManager::find()` takes, `null` when malformed | done | — | [contract](#the-grammar) · [semantics](#a-malformed-key-never-reaches-the-database) |
+| [`RecordKey::values()`](../../../packages/schemas/src/Identity/RecordKey.php) — a record's identifier values before they are printed, an association reduced to its target's (`@internal`: the relation layer's owner bind reads it, and it is no part of the key contract) | done | — | [contract](#the-api) |
 | [`IdentifierConstraint::equals()`](../../../packages/schemas/src/Identity/IdentifierConstraint.php) / `notEquals()` | done | — | [contract](#the-operations-and-their-dql) |
 | [`IdentifierConstraint::in()`](../../../packages/schemas/src/Identity/IdentifierConstraint.php) / `notIn()` | done | — | [contract](#the-operations-and-their-dql) · [semantics](#the-batch-is-a-balanced-or-tree-because-sqlite-counts-expression-depth-not-terms) |
+| [`IdentifierConstraint::inColumns()`](../../../packages/schemas/src/Identity/IdentifierConstraint.php) — `in()` in SQL, on the class's identifier **columns** over a DBAL `QueryBuilder`, for a statement that names one table | done | — | [contract](#incolumns-is-in-in-sql-for-a-statement-that-names-one-table) |
 | [`IdentifierConstraint::correlate()`](../../../packages/schemas/src/Identity/IdentifierConstraint.php) — `alias.f = outer.f AND …` as **text**, because `RelationConstraint` splices a subselect string | done | — | [contract](#the-operations-and-their-dql) · [diverges](#comparing-two-identification-variables-compares-the-first-identifier-column-only) |
 | [`IdentifierConstraint::select()`](../../../packages/schemas/src/Identity/IdentifierConstraint.php) + [`KeySelection::keyOf()`](../../../packages/schemas/src/Identity/KeySelection.php) | done | — | [contract](#the-operations-and-their-dql) · [semantics](#the-row-side-and-the-record-side-mint-one-string-and-only-the-codec-may) |
 | [`IdentifierConstraint::groupBy()`](../../../packages/schemas/src/Identity/IdentifierConstraint.php) — the bare path per field, never `IDENTITY()` | done | — | [diverges](#bare-identitypath-on-a-multi-column-association-answers-only-the-first-column) |
@@ -130,13 +142,17 @@ whose PHP value prints back to its own component**, which is the promise a
 consumer may build on. It is one-directional: a record mints exactly one key
 once it holds the values its own type reads back — a record built in memory and
 never reloaded can, under a converting type, mint a spelling the decode then
-refuses, and a type that reads **only** the database form does the same to a
-record freshly loaded from the database — while the guarantee that no *other*
+refuses, and a type that refuses its printed form on read **and** on write does
+the same to a record freshly loaded from the database — while the guarantee that no *other*
 string resolves that record belongs to the database and holds on a binary or
 case-sensitive collation — PostgreSQL's default and SQLite's `BINARY`. Four
 residuals are recorded rather than closed; the fourth is
 [a type that cannot read its own printed form](#a-type-that-cannot-read-its-own-printed-form-mints-keys-that-never-decode),
-and it is the one that took something away.
+and it is the one that took something away — narrowed by
+[M7 · 5b](../roadmap.md#m7--composite-identifiers) to the type that refuses
+that form on write too, since
+[the writer fallback](#a-type-that-refuses-its-printed-form-on-read-only-decodes-it-through-its-own-writer)
+gives back what the strict decode took from every other.
 
 `decimal` is **narrowed, not closed** by its shape check: `10.5` and `10.50`
 still name one record, because nothing here can canonicalise scale; `-0` and
@@ -244,7 +260,11 @@ exceeding it, and the six contexts above are the named, checkable gap that
 is filed by capability. Three public classes; `IdentifierFields` is `@internal`
 and is the per-class descriptor the other two share — field names in mapping
 order, whether each is a to-one association, and the resolved DBAL type name each
-binds as.
+binds as. `@internal` means *no part of the key contract*, not *no reader outside
+this directory*: since M7 · 5b the relation layer's owner bind reads the
+terminal field's type off it, which makes `State\AssociationReader` its first
+reader outside `Identity\` — same package, and
+[recorded with the bind](association-reader.md#a-single-identifier-owner-binds-its-identifier-value-typed-by-the-fields-own-dbal-type).
 
 ```php
 final class RecordKey
@@ -279,6 +299,15 @@ final class RecordKey
      * @return array<string, mixed>|null field ⇒ the PHP value its type holds, in mapping order — what EntityManager::find() takes; null when malformed
      */
     public static function toIdentifier(EntityManagerInterface $entityManager, string $class, string $key): ?array;
+
+    /**
+     * @internal read by the relation layer's owner bind, and not part of the key contract
+     *
+     * @param class-string|null $class the mapped class to read the record by, when the caller declares one
+     *
+     * @return list<mixed>|null each identifier value as its own field's type holds it, an association reduced to its target's; null while one is missing
+     */
+    public static function values(EntityManagerInterface $entityManager, object $record, ?string $class = null): ?array;
 }
 
 final class IdentifierConstraint
@@ -300,6 +329,14 @@ final class IdentifierConstraint
      * @param list<string> $keys
      */
     public static function notIn(QueryBuilder $query, string $alias, string $class, array $keys, string $parameter): ?string;
+
+    /**
+     * `in()` over raw SQL: the class's identifier columns, quoted where the mapping quotes them, bound on a DBAL builder
+     *
+     * @param class-string $class
+     * @param list<string> $keys
+     */
+    public static function inColumns(EntityManagerInterface $entityManager, \Doctrine\DBAL\Query\QueryBuilder $query, string $class, array $keys, string $parameter): string;
 
     /** `alias.f1 = outer.f1 AND …` — text, because RelationConstraint splices a subselect string */
     public static function correlate(QueryBuilder $query, string $alias, string $class, string $outerAlias): string;
@@ -350,8 +387,10 @@ foundation at all.
 
 Read the shapes off those signatures in one line each. Every **predicate** method
 binds its values on the `QueryBuilder` it is handed and returns DQL **text** for
-the caller to place — in a `WHERE`, an `andWhere`, a `DELETE`, an `UPDATE` or a
-spliced subselect — so the builder never decides where the predicate goes.
+the caller to place — in a `WHERE`, an `andWhere`, a `DELETE` or a spliced
+subselect — so the builder never decides where the predicate goes; `inColumns()`
+is the one that returns **SQL** text, for a DBAL statement, and binds on the DBAL
+builder it is handed.
 `select()`, `correlate()` and `groupBy()` bind nothing at all. `equals()`,
 `notEquals()` and `notIn()` answer `null` rather than throwing, and `null` means
 *there is no predicate to add*, never *something went wrong*.
@@ -363,8 +402,12 @@ or `guid` — the three types whose own conversion hands a malformed string
 straight back, so nothing downstream would refuse it before the database does,
 the `guid` arm running only where the platform declares a guid type of its own;
 each is then run
-through its field's `Type::convertToPHPValue()`, and a `ConversionException` out
-of that means *the key names no record*, not an error; and finally the converted
+through its field's `Type::convertToPHPValue()` — and where that raises a
+`ConversionException`, through
+[the type's own writer first](#a-type-that-refuses-its-printed-form-on-read-only-decodes-it-through-its-own-writer),
+`convertToPHPValue(convertToDatabaseValue($component))`, a
+`ConversionException` out of that pair meaning *the key names no record*, not
+an error; and finally the converted
 PHP value must **print back to the component it came from** under the one
 printable rule below. `toIdentifier()` answers the result of that pipeline — the
 **PHP values**, keyed by field name, which is exactly what
@@ -376,8 +419,9 @@ matching `ArrayParameterType`. The round trip is deliberate: a DBAL type's
 value-object identifier type may be strict about it where today's untyped string
 bind happened to work. Anything other than a `ConversionException` that a custom
 type throws — including a refusal of the value it has just produced — is that
-type breaking DBAL's contract, and propagates. **A field name reaches DQL from
-`ClassMetadata` only**, never from the key.
+type breaking DBAL's contract, and propagates — a writer that throws so for a
+forged component included, since the fallback now hands it one. **A field or
+column name reaches DQL or SQL from `ClassMetadata` only**, never from the key.
 
 **One printable rule, used on both sides.** `IdentifierFields::printable()` is
 what the record side prints a value with and what the decode compares against, so
@@ -424,7 +468,7 @@ Four things that table encodes.
 
 **`IDENTITY()` appears in a `SELECT` list and nowhere else.** The plain path
 `alias.field` is what goes into `WHERE`, correlation, `GROUP BY`, `ORDER BY` and
-a DQL `DELETE`/`UPDATE` — legal for an identifier association because such an
+a DQL `DELETE` — legal for an identifier association because such an
 association always has exactly one join column — while `IDENTITY()` is *illegal*
 in `GROUP BY` and emits a table-qualified column in a `DELETE`. Conversely a bare
 association path is a semantical error in a `SELECT` list, which is why the
@@ -436,7 +480,9 @@ emits, which is what keeps the sort tiebreak's string dedupe honest.
 and `alias.id IN (:base)` are unchanged — only now typed — and the DQL-text
 assertions in `HasBulkActionsTest` and `CanSortRecordsTest` did not move when
 M7 · 1 landed. That is the property that makes this a foundation rather than a
-rewrite.
+rewrite. The one single-identifier statement that has moved since is not DQL at
+all: the by-key dissociate's, which M7 · 5b rewrote in SQL over
+[`inColumns()`](#incolumns-is-in-in-sql-for-a-statement-that-names-one-table).
 
 **The DQL parses down to ordinary SQL.** `equals()` on a scalar pair executes as
 `… WHERE s0_.host = ? AND s0_.path = ?`, on a derived identity as
@@ -456,6 +502,70 @@ association ones is the whole point: no hydrator converts every key column, and
 the two disagree about which ones they do convert. That is the *same* function the record side uses, by construction
 rather than by agreement; see
 [the semantics note](#the-row-side-and-the-record-side-mint-one-string-and-only-the-codec-may).
+
+#### `inColumns()` is `in()` in SQL, for a statement that names one table
+
+[M7 · 5b](../roadmap.md#m7--composite-identifiers)'s, and the one operation
+here that emits **SQL**. Its caller is the by-key dissociate, whose statement is
+a DBAL `UPDATE` of one table: there is no identification variable to qualify a
+field with, and a to-one spanning several join columns has no DQL form to null
+it in at all
+([why the statement left DQL](../actions/dissociate-action.md#the-by-key-arm-is-a-dbal-update-over-the-plucked-keys)).
+So the operands are the class's identifier **columns** in identifier order, as
+`QuoteStrategy::getIdentifierColumnNames()` names them — quoted only where the
+mapping quotes them, so an ordinary mapping's statement carries bare
+`host = ?` — with no alias, and the parameters are bound on the DBAL builder it
+is handed. A DBAL builder carries no entity manager, so the manager is the
+leading argument, as it is for `chunk()`.
+
+Worked over the schemas fixtures its own test runs on — `Post` (`int $id`),
+`Redirect` (`host` plus `path`), `PostTranslation` (`#[Id]` `Post` plus
+`locale`) and `PostSeal` (a single derived identity onto `Post`) — each as the
+`WHERE` of a real statement:
+
+| Class | `inColumns($entityManager, $query, …, $keys, 'keys')` | Bound |
+| --- | --- | --- |
+| `Post`, keys `1`, `3`, `abc`, `3` | `id IN (:keys)` | `[1, 3]` as `ArrayParameterType::INTEGER` — `abc` dropped, the repeat bound once |
+| `Redirect`, two keys | `((host = :keys_0_0 AND path = :keys_0_1) OR (host = :keys_1_0 AND path = :keys_1_1))` | four `ParameterType::STRING` |
+| `PostTranslation`, two keys | `((post_id = :keys_0_0 AND locale = :keys_0_1) OR (post_id = :keys_1_0 AND locale = :keys_1_1))` — the **join column**, never the field | `INTEGER`, `STRING` per key |
+| `PostSeal`, keys `1`, `2` | `post_id IN (:keys)` | `[1, 2]` as `ArrayParameterType::INTEGER` |
+| any class, no key, or none well-formed | `1 = 0` | nothing |
+
+**One membership body, two vocabularies.** `in()` and `inColumns()` share one
+private body that takes the left-hand operands — `alias.field` for DQL, the
+column for SQL — and the binding step takes the same list, so the two cannot
+drift: every `in()` and `equals()` pin exercises the code `inColumns()` runs,
+the raw-bytes `BINARY` ones included, and every DQL operation above emits the
+text it emitted before. Everything else is `in()`'s: a single identifier is one
+`IN` under the array type its binding type maps to, a composite one the balanced
+OR of ANDs under `:<base>_<i>_<j>`, a malformed key dropped, a repeated one
+bound once, and a base ending in `_<digits>` refused by `assertParameterBase()`.
+
+**It names columns, never a table.** The table, the `SET` half and the quoting
+of both are the statement's author's —
+[the dissociate's](../actions/dissociate-action.md#the-by-key-arm-is-a-dbal-update-over-the-plucked-keys)
+reads them off the mapping through the same quote strategy, and that is where a
+JOINED leaf, a reserved word and a single-table leaf are pinned, through the
+real action. The column count agrees with the field count by an ORM guarantee
+rather than a check: an identifier association always resolves to
+[exactly one join column](#an-identifier-association-always-resolves-to-exactly-one-join-column).
+The rest of the vocabulary is pinned over fixtures the test brings along: a
+JOINED subclass is named by the identifier column its
+root declares — `ledger_id IN (:keys)` for `LedgerDraft`, whose field is
+`id` — which its own table keys by too; a composite identifier of reserved words comes
+out as `(("where" = :keys_0_0 AND "having" = :keys_0_1) OR …)`; and a raw-bytes
+`Crate` or `Pallet` half is bound as its sixteen bytes under
+`ArrayParameterType::BINARY` or `ParameterType::BINARY`, where the same bytes
+bound as text match no row on SQLite.
+
+**It applies no discriminator and no SQL filter.** A single-table subclass is
+named by the columns it shares with its root, so a key naming a row of the root
+class selects that row too — pinned as such — and no enabled Doctrine SQL filter
+reaches a DBAL statement. A caller narrows by keys a discriminated,
+filtered query already produced, which the one caller does
+([why that is enough there](../actions/dissociate-action.md#the-by-key-arm-is-a-dbal-update-over-the-plucked-keys)).
+Pinned by
+[`IdentifierConstraintColumnsTest`](../../../packages/schemas/tests/Unit/Identity/IdentifierConstraintColumnsTest.php).
 
 ### Invariants
 
@@ -489,10 +599,14 @@ Six, and a consumer may rely on all of them.
    relationship query's many-to-many arm moved from an `IN` subselect to a
    correlated `EXISTS` in
    [M7 · 4](../roadmap.md#m7--composite-identifiers) for every width alike, and
-   the rows it returns are the rows the `IN` returned.
+   the rows it returns are the rows the `IN` returned. The one statement that
+   left DQL — the by-key dissociate, a DBAL `UPDATE` over `inColumns()` since
+   M7 · 5b — keeps a plain entity's driver text, values and types byte for
+   byte; what moved for a single-table, a filtered and a JOINED target is
+   [enumerated where the statement lives](../actions/dissociate-action.md#the-by-key-arm-is-a-dbal-update-over-the-plucked-keys).
 6. **Four consumers chunk** — the by-key delete, the reorder's re-resolution,
    tables' aggregate batch since M7 · 2 and the by-key dissociate since
-   M7 · 4. Every **other** read that
+   M7 · 4, a DQL statement until M7 · 5b and a DBAL one since. Every **other** read that
    narrows by a key list is one statement over the whole list, and carries the
    parse curve below as a recorded limit.
 
@@ -521,9 +635,11 @@ first parse), which is what the 500-key composite chunk is sized against.
 
 **Four sites chunk, and three of them are writes.** The by-key delete issues
 one DQL `DELETE` per chunk, several chunks inside one transaction, and the
-by-key **dissociate** issues one DQL `UPDATE` per chunk under the same rule,
+by-key **dissociate** issues one DBAL `UPDATE` per chunk under the same rule,
 wrapped in one `Connection::transactional()` from the second chunk on
-([dissociate-action.md](../actions/dissociate-action.md#the-by-key-arm-is-a-dql-update-over-the-plucked-keys));
+([dissociate-action.md](../actions/dissociate-action.md#the-by-key-arm-is-a-dbal-update-over-the-plucked-keys))
+— SQL since M7 · 5b, so no DQL parse is paid there and its chunk sizes bound the
+statement's parameter count alone;
 the reorder's
 re-resolution issues one `SELECT` per chunk, each narrowing a **copy** of the
 table's query — a copy because a second predicate ANDed onto the first would
@@ -609,6 +725,10 @@ not. The two spellings never meet, the route being decided once per builder, and
 the name did not move for the same reason the first six did not: a
 single-identifier query's text stays stable for the query cache
 ([the owner route](association-reader.md#an-owner-of-any-width-is-scoped-through-its-own-collection-rather-than-through-a-mapped-by-path)).
+M7 · 5b added no base. `inColumns()` binds under its caller's, and its one
+caller keeps `sylament_selected_record_keys` — the base its DQL `in()` bound
+before — on a DBAL builder, where `assertParameterBase()` refuses a
+`_<digits>` ending exactly as it does on a DQL one.
 (One *result* alias did move with M7 · 2: the aggregate batch projects
 `sy_key_0` where it projected `sy_key`. One query-cache miss, no behaviour.)
 
@@ -1013,37 +1133,112 @@ hidden.
 
 ### A type that cannot read its own printed form mints keys that never decode
 
-The print-back rule asks a component to survive its field's own
-`convertToPHPValue()`. A type whose reader accepts **only the database form**
-fails that by construction: the `uuid_binary` shape, where the column holds
-sixteen raw bytes and the reader is handed those bytes, is the live instance —
-`ramsey/uuid-doctrine`'s, not `symfony/uid`'s, whose types round-trip their
-printed form and are unaffected. `RecordKey::of()` mints the PHP value's
-printed form, `IdentifierFields::toPhpValues()` hands that string back to the
-reader, the reader raises a `ConversionException`, and the decode answers `null`.
-So **every** key such a class mints is refused: a keyed read narrows to nothing
-and a reference is refused by name, on a record that exists and whose key nothing
-forged.
+Since [M7 · 5b](../roadmap.md#m7--composite-identifiers) this is the type that
+refuses its printed form on read **and** on write — the doubly-strict shape. A
+type that refuses it on read only
+[decodes through its own writer](#a-type-that-refuses-its-printed-form-on-read-only-decodes-it-through-its-own-writer),
+the section below; one whose writer throws for that same string has no route by
+which a string names its record. The fixtures' `CipherType` is one: it stores
+`c:<value>`, reads nothing without that prefix, and writes nothing but a
+`Cipher`. `RecordKey::of()` mints the PHP value's printed form,
+`IdentifierFields::toPhpValues()` hands that string to the reader, which raises a
+`ConversionException`, then to the writer, which raises another, and the decode
+answers `null`. So **every** key such a class mints is refused: a keyed read
+narrows to nothing and a reference is refused by name, on a record that exists
+and whose key nothing forged.
 
-What that costs, and since when, is two different answers. The by-key
-**predicates** — `equals()`, `in()`, `notEquals()` — cost nothing, because the
-base never matched such a column either: an untyped string bind against a binary
-column resolves no row. `getReference()` is the regression, and it is M7 · 4's:
-at the base the printed key went straight to Doctrine and the foreign-key write
-landed wherever the id property admits a string, so a relation-backed `Select` or
-`CheckboxList` saved and a by-key `DetachBulkAction` detached; since the strict
-decode, the save throws and the detach toasts. It is bounded — with the id
-property typed as the value object alone the base already failed with a
-`TypeError`, so only an id property admitting a string ever worked — and no
-fixture in this repo has the shape, which is why no suite sees it.
+What that costs depends on which side of a relation the record stands. As an
+**owner** it is loud: `getReference()` refuses by name at zero statements, and a
+composite owner with such a half throws by name at `getOwnerScope()` before
+anything runs, on both arms of both relationship queries
+([the message](association-reader.md#an-owner-of-any-width-is-scoped-through-its-own-collection-rather-than-through-a-mapped-by-path)).
+A **single** owner of the type, and a single derived identity onto one, are not
+refused at all — their bind reads the identifier value, never the key
+([the bind](association-reader.md#a-single-identifier-owner-binds-its-identifier-value-typed-by-the-fields-own-dbal-type)).
+As the **selected records** of a by-key bulk write it is silent: the plucked
+keys decode to nothing, so a by-key dissociate narrows to `1 = 0` and reports a
+zero count with every row left owned — executed on SQLite and PostgreSQL 18.4,
+the same before M7 · 5b as after — and the by-key delete narrows through the
+same `in()` to the same `1 = 0`. The owner side throws and the child side does
+not. Recorded rather than fixed, with
+[a ledger row](../roadmap.md#m7--composite-identifiers) of its own: the type
+breaks the round trip every key depends on, and nothing on this side of the
+codec can mend that. The decode and the reference are pinned over a single
+(`Strongbox`), a composite (`Vault`, one half of the type) and a single derived
+identity onto one (`StrongboxSeal`) in
+[`IdentifierFieldsTest`](../../../packages/schemas/tests/Unit/Identity/IdentifierFieldsTest.php)
+and
+[`AssociationReaderCompositeKeyTest`](../../../packages/schemas/tests/Unit/State/AssociationReaderCompositeKeyTest.php),
+`Vault`'s owner throw in
+[`AssociationReaderOwnerScopeTest`](../../../packages/schemas/tests/Unit/State/AssociationReaderOwnerScopeTest.php),
+and `StrongboxSeal` scoping by value in
+[`AssociationReaderOwnerBindTest`](../../../packages/schemas/tests/Unit/State/AssociationReaderOwnerBindTest.php).
+The child side is not pinned: it was executed as a probe.
 
-The remedy is the codec's, and it is a **fallback on `ConversionException`**:
-accept a component that `convertToDatabaseValue()` takes and that prints back
-through the reader afterwards, which would also make the by-key predicates match
-such a column for the first time. It is not a reader-level patch — the reader
-cannot tell this key from `05` without re-implementing the field pipeline — and
-it carries a type matrix of its own, so it is
-[the roadmap's](../roadmap.md#m7--composite-identifiers) rather than this epic's.
+### A type that refuses its printed form on read only decodes it through its own writer
+
+A DBAL type whose reader accepts **only the database form** while its writer
+takes the printed one — the `uuid_binary` shape, where the column holds sixteen
+raw bytes: `ramsey/uuid-doctrine`'s, not `symfony/uid`'s, whose types round-trip
+their printed form — minted keys the strict decode refused until
+[M7 · 5b](../roadmap.md#m7--composite-identifiers). `toPhpValues()` now answers
+the reader's `ConversionException` by running the component through the type's
+own writer and reading back the database form that makes —
+`convertToPHPValue(convertToDatabaseValue($component))` — and hands the result to
+the unchanged print-back rule. So such a record's key decodes, and everything
+downstream of the decode follows it: `equals()`, `notEquals()`, `in()` and
+`notIn()` bind the sixteen bytes under `ParameterType::BINARY` — the batch under
+`ArrayParameterType::BINARY` — and match rows for the first time, since an
+untyped string bind never matched such a column either; `getReference()` returns
+a reference where M7 · 4's strict decode refused one; and a composite owner with
+such a half scopes both relationship queries where it threw. Every consumer is
+on that one call — panels' `{record}` binding, tables' row resolution,
+selection, reorder, aggregates and paging, forms' relationship `Select` save and
+`unique(ignoreRecord:)`, and actions' by-key delete, detach, attach and
+associate.
+
+The print-back rule is what keeps it one key per record. The writer takes
+spellings the printed form is not — uppercase, thirty-two hex digits, braces, a
+`urn:uuid:` prefix, base58 and base32 all name one uuid to
+`Uuid::fromString()` — and each reads back to a value that prints lowercase and
+dashed, so each is refused at zero statements, as are garbage and the sixteen raw
+bytes themselves. Neither step catches more than `ConversionException`: a custom
+type whose writer throws anything else for a forged component breaks DBAL's
+contract, and that exception now surfaces where the strict decode answered
+`null` — a forged `{record}` against such a type is a 500 where it was a 404.
+Catching `Throwable` would turn a genuine bug inside a type into *this key names
+no record*, which is a catch-and-ignore; `ramsey/uuid-doctrine` wraps every
+failure into a `ConversionException` on both sides, so it loses nothing.
+
+The fallback touches the decode alone: `toDatabaseValues()`, the split, the
+three shape checks and `printable()` are as they were, and a type that reads its
+printed form never reaches it, so every existing dataset keeps its answer —
+`SkuType`'s `not-a-sku` included, its writer taking a `Sku` and nothing else.
+One shape widens further than the rest: where a type's **writer** takes any
+string at all — DBAL's four JSON types, `json`, `jsonb`, `json_object` and
+`jsonb_object`, whose writer is `json_encode()` — every well-formed component
+now decodes, each to the string it spells, so a **forged** key of such a field
+costs one statement that finds nothing where it used to cost none. Nothing is
+mis-keyed by that: the print-back rule holds there too, and one key still names
+one record. The fallback costs three or four conversions instead of one for a
+component the reader refuses, unmeasured, and only such a type pays. A reference to a class whose
+every identifier field is scalar is still built at zero statements; one behind an
+association — a single derived identity onto such a target — is loaded, at one.
+
+Pinned over [`BinaryUuidType`](../../../packages/schemas/tests/Fixtures/Doctrine/BinaryUuidType.php),
+a mimic of ramsey's `UuidBinaryType` over `symfony/uid` — ramsey deliberately
+not a dependency — and three owners of it, `Crate` (one such identifier),
+`Pallet` (such a half beside a string) and `CrateSeal` (a single derived
+identity onto `Crate`), in
+[`IdentifierFieldsTest`](../../../packages/schemas/tests/Unit/Identity/IdentifierFieldsTest.php),
+[`IdentifierConstraintTest`](../../../packages/schemas/tests/Unit/Identity/IdentifierConstraintTest.php),
+[`AssociationReaderCompositeKeyTest`](../../../packages/schemas/tests/Unit/State/AssociationReaderCompositeKeyTest.php)
+and
+[`AssociationReaderOwnerScopeTest`](../../../packages/schemas/tests/Unit/State/AssociationReaderOwnerScopeTest.php).
+It is the first fixture type in the repo to reach the per-field `BINARY` bind and
+its array twin, and it reads a **stream** where PostgreSQL's hydrator hands
+`bytea` back as one — a mimic without that arm passes every SQLite suite and
+breaks on PostgreSQL alone.
 
 ### Identifier order is declaration order, so reordering two `#[Id]` properties invalidates every minted key
 

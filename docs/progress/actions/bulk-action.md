@@ -156,7 +156,8 @@ never binds one raw, and every shipped one does: `DeleteBulkAction` since
 M7 · 1, and `DetachBulkAction` and `DissociateBulkAction` since
 [M7 · 4](../roadmap.md#m7--composite-identifiers) — the detach through the
 reader's by-key reference, the dissociate through a chunked `in()` on its
-`UPDATE` builder. Where a body takes the selection's **shape** for granted the
+`UPDATE` builder until M7 · 5b and a chunked `inColumns()` on a DBAL one since.
+Where a body takes the selection's **shape** for granted the
 refusal now sits outside its `try`, so a host feeding neither entities nor keys
 is a developer error rather than a danger toast — though only in part.
 `DetachBulkAction` has one pre-walk outside its `try`, covering both shapes it
@@ -164,8 +165,10 @@ accepts; `DissociateBulkAction` moved only its **by-key** walk, and its fetching
 arm still raises *can only dissociate entities* inside the `try`, where it
 becomes the danger toast. That by-key arm gained a second pre-flight with
 [M7 · 5](../roadmap.md#m7--composite-identifiers), for the one statement DQL
-cannot write at all — nulling a to-one that spans several join columns
-([the refusal, and the DBAL route that would close it](dissociate-action.md#the-by-key-arm-is-a-dql-update-over-the-plucked-keys)).
+cannot write at all — nulling a to-one that spans several join columns — and
+lost it again with [M7 · 5b](../roadmap.md#m7--composite-identifiers), which
+writes that statement in SQL
+([the refusal, and the DBAL route that closed it](dissociate-action.md#the-by-key-arm-is-a-dbal-update-over-the-plucked-keys)).
 
 ### The post-call deselect reaches its host through the nullable accessor
 
@@ -247,7 +250,9 @@ port's is the bare assignment.
 that is. Since [M7 · 1](../roadmap.md#m7--composite-identifiers) a by-key arm
 chunks its own key list — the delete then, the dissociate since M7 · 4 — by
 [the chunk rule](../schemas/record-key.md#the-chunk-rule) rather than by a
-user-set size, because DQL parse time is superlinear in bound-key count. The
+user-set size, because DQL parse time is superlinear in bound-key count and a
+platform caps the parameters one statement binds — the dissociate's statement
+has been SQL since M7 · 5b, so the cap alone is what its chunks answer. The
 two are unrelated mechanisms wearing one word, and only the fetching one is
 unported. Two reasons for that. **No
 shipped Filament action calls `chunkSelectedRecords()`** — the grep over

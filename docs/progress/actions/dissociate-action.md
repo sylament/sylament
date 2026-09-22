@@ -136,8 +136,13 @@ for the chrome, the inherited presets and the failure title's arithmetic, and en
 to end by
 [`AssociateDissociateActionsTest`](../../../packages/tables/tests/Integration/AssociateDissociateActionsTest.php)
 in the **tables** suite — the fetching arm's three `UPDATE`s under one flush, the
-by-key arm's single `UPDATE … IN (?, ?, ?)`, and the pre-flight refusal that runs
-before any statement does.
+by-key arm's single `UPDATE … IN (?, ?, ?)` and the refusals that run before any
+statement does — with the by-key arm's other shapes beside it:
+[`CompositeOwnerRelationshipActionsTest`](../../../packages/tables/tests/Integration/CompositeOwnerRelationshipActionsTest.php)
+for a composite owner's foreign key nulled whole in one statement, and
+[`DepotDissociateByKeyTest`](../../../packages/tables/tests/Integration/DepotDissociateByKeyTest.php)
+for a JOINED leaf's inherited foreign key, reserved words the mapping quotes, a
+single-table leaf, and a selected key the table query excludes.
 
 ### Surface
 
@@ -147,7 +152,7 @@ before any statement does.
 | [`setUp()` chrome — label, modal heading (`"Dissociate selected {title-case plural record label}"`), submit label, success title, `defaultColor('danger')`, both icons, `requiresConfirmation()`, `deselectRecordsAfterCompletion()`](../../../packages/actions/src/DissociateBulkAction.php) | [`DissociateBulkAction.php`](../../../vendor/filament/actions/src/DissociateBulkAction.php) | done | — | [diverges](#the-strings-are-literals-not-translation-keys) · [diverges](#the-icons-are-literal-names-not-resolved-aliases) |
 | [`failureNotificationTitle()` — the counting closure](../../../packages/actions/src/DissociateBulkAction.php) | — | done | — | [diverges](detach-action.md#the-counting-failure-title-is-an-addition-filament-has-neither-of) |
 | [The fetching arm — `detach()` per record, one `flush()`](../../../packages/actions/src/DissociateBulkAction.php) | [`DissociateBulkAction.php`](../../../vendor/filament/actions/src/DissociateBulkAction.php) (`$records->each(…)`) | done | — | [diverges](#the-fetching-arm-is-atomic-where-filaments-is-per-record) |
-| [`dissociateSelectedRecordsByKey()` — the `fetchSelectedRecords(false)` arm](../../../packages/actions/src/DissociateBulkAction.php) | [`DissociateBulkAction.php`](../../../vendor/filament/actions/src/DissociateBulkAction.php) (`getSelectedRecordsQuery()->update([…=> null])`) | done | — | [diverges](#the-by-key-arm-is-a-dql-update-over-the-plucked-keys) |
+| [`dissociateSelectedRecordsByKey()` — the `fetchSelectedRecords(false)` arm](../../../packages/actions/src/DissociateBulkAction.php) | [`DissociateBulkAction.php`](../../../vendor/filament/actions/src/DissociateBulkAction.php) (`getSelectedRecordsQuery()->update([…=> null])`) | done | — | [diverges](#the-by-key-arm-is-a-dbal-update-over-the-plucked-keys) |
 | [The mapping refusals as a pre-flight](../../../packages/actions/src/DissociateBulkAction.php) | — | done | — | [diverges](#dissociating-is-refused-where-the-mapping-forbids-it) |
 | [`CanCustomizeProcess`](../../../packages/actions/src/Concerns/CanCustomizeProcess.php) (`using()` / `process()`) | [`Concerns/CanCustomizeProcess.php`](../../../vendor/filament/actions/src/Concerns/CanCustomizeProcess.php) | done | — | — |
 | Reporting the swallowed exception | [`DissociateBulkAction.php`](../../../vendor/filament/actions/src/DissociateBulkAction.php) (`report($exception)`) | todo | a logger on `Action` | [delete-action.md](delete-action.md#the-swallowed-exception-has-nowhere-to-go-yet) |
@@ -162,23 +167,85 @@ becomes `reportCompleteBulkProcessingFailure()` — the shape
 for the same reason: a Doctrine `flush()` is one transaction, and a failure part
 way through leaves the unit of work unusable rather than partially applied.
 
-### The by-key arm is a DQL update over the plucked keys
+### The by-key arm is a DBAL update over the plucked keys
 
-Under `fetchSelectedRecords(false)` the selection is never hydrated: one
-`UPDATE <target> sylament_dissociated_record SET …<mappedBy> = NULL` narrowed by
-[`IdentifierConstraint::in()`](../schemas/record-key.md#the-operations-and-their-dql)
-runs per chunk, and the affected-row counts are summed and reported as the
-successful count, exactly as
+Under `fetchSelectedRecords(false)` the selection is never hydrated: one DBAL
+`UPDATE <table> SET <join column> = NULL[, …] WHERE …` narrowed by
+[`IdentifierConstraint::inColumns()`](../schemas/record-key.md#incolumns-is-in-in-sql-for-a-statement-that-names-one-table)
+runs per chunk, and the affected-row counts — each `executeStatement()`'s,
+cast to `int` — are summed and reported as the successful count, exactly as
 [`deleteSelectedRecordsByKey()`](delete-action.md#the-by-key-arm-is-a-dql-delete-over-the-plucked-keys)
 does for the delete — the fourth and last site to take
 [the chunk rule](../schemas/record-key.md#the-chunk-rule), with one
 `Connection::transactional()` around the chunks from the second on, so a
-mid-batch failure means the whole batch failed. It carries that arm's caveat
-too: a DQL `UPDATE` bypasses the `UnitOfWork`, so an entity already in the
-identity map keeps its stale owner until it is reloaded or the manager is
-cleared.
+mid-batch failure means the whole batch failed. It was a DQL `UPDATE` through
+`IdentifierConstraint::in()` until [M7 · 5b](../roadmap.md#m7--composite-identifiers);
+the delete stays DQL, since a `DELETE` names no association and so has nothing
+DQL cannot write.
 
-The conversion closed a **data defect** rather than only widening the arm. Since
+Every name in the statement is the **mapping's**, read through Doctrine's own
+`QuoteStrategy`. The table is `getTableName()` of the entity the mapped-by
+to-one was inherited from — `$mapping->inherited`, falling back to the target —
+which is the ORM's own rule for a JOINED hierarchy, so a leaf's inherited foreign key is
+written on the root's table, and a mapped superclass, which has no table, is
+never named. There is one `SET` per join column, each through
+`getJoinColumnName()`, so a foreign key onto a composite owner is nulled whole in
+one statement. The `WHERE` names the target's identifier columns, which is
+`inColumns()`'s job. A reserved word is quoted where the mapping quotes it and
+nowhere else, so an ordinary mapping's statement carries bare names. Executed,
+through the real action:
+
+| Target | The statement |
+| --- | --- |
+| a mapped-by onto a scalar-pair owner | `UPDATE ShortcutNote SET shortcut_host = NULL, shortcut_path = NULL WHERE id IN (?)` |
+| a mapped-by onto a derived-identity owner | `UPDATE ResidencyRider SET residency_venue_id = NULL, residency_season = NULL WHERE id IN (?)` |
+| a JOINED leaf whose root declares the mapped-by | `UPDATE Appliance SET depot_id = NULL WHERE appliance_id IN (?)` |
+| reserved words, quoted by the mapping | `UPDATE "order" SET "select" = NULL, "from" = NULL WHERE "group" IN (?)` |
+| a single-table leaf | `UPDATE Gauge SET depot_id = NULL WHERE id IN (?)` |
+
+A schema-qualified table goes through the same `getTableName()`, and was
+executed on SQLite and PostgreSQL 18.4 while the arm was prototyped; it is
+unpinned by choice — SQLite hosts one only behind an `ATTACH` that every test
+factory would have to carry — and not because it cannot be pinned.
+
+It carries the delete arm's caveat, more strongly: a DBAL `UPDATE` bypasses the
+ORM altogether, so an entity already in the identity map keeps its stale owner
+until it is reloaded or the manager is cleared. **And it applies no Doctrine SQL
+filter and no single-table discriminator**, both of which the DQL `UPDATE`
+carried: a statement over one table has no alias for a filter's constraint to
+qualify, and rebuilding the SQL walker's private logic in `actions` would be a
+second copy of Doctrine. What makes that safe is where the keys come from — the
+arm is handed keys **plucked** through the table's **base** query, which is DQL
+and so already discriminated and filtered, and a selected key naming a row that
+query excludes is written by nothing: `DepotDissociateByKeyTest` pins it for
+another owner's record and for a root-class row sharing the leaf's table.
+For a plain single-identifier target the driver statement, its values and their
+types are the DQL arm's byte for byte — executed on SQLite and PostgreSQL 18.4
+while the arm was prototyped; a single-table target lost its
+`kind IN (…)` predicate, a filtered target its filter's, and a JOINED target's
+five statements through a temporary table became one.
+
+That safety is the **base** query's, and the base query is the relationship's
+only while the table declares no `query()` of its own. Declare both and the
+query wins, which is
+[what makes it a query table](../tables/table.md#the-mappings-order-is-the-relation-scoped-tables-default-sort):
+the keys are plucked through *that* query and carry its scope, while the arm
+still reads the relationship for the mapping to null. Where such a query is
+rooted at a single-table hierarchy the discriminator that went is exactly what
+used to narrow the write — executed over a host declaring `query(Gauge)` beside
+`relationship()` on a depot's `dials`, with a dial of that depot, a plain
+`Gauge` of it and a dial of another depot selected: the DQL arm's
+`AND kind IN ('dial')` wrote **two** rows and left the plain gauge owned, and
+the DBAL arm writes **three**. The third key is nulled by both, the arm scoping
+by key and never by owner. That combination is recorded rather than refused,
+[in the ledger](../roadmap.md#m7--composite-identifiers), and pinned as what it
+is: `DepotQueryBesideRelationshipTable` declares both, and the last case of
+`DepotDissociateByKeyTest` asserts the three-row write. Guarding the arm on
+`isRelationshipBaseQuery()` would refuse a declaration the table supports, so
+the test records the exposure rather than closing it.
+
+M7 · 4's move to the typed decode closed a **data defect** rather than only
+widening the arm. Since
 [M7 · 1](../roadmap.md#m7--composite-identifiers) this action is handed the
 table selection's `RecordKey` strings, and it bound them raw against one
 identifier column — so a target whose column form is not its printed form (a
@@ -198,43 +265,42 @@ the relationship must be a **one-to-many**, and the refusal says to use
 `DetachBulkAction` instead. That fifth one reads `AssociationTarget::$isManyToMany`
 rather than testing `$mappedBy` for null — Doctrine sets `mappedBy` on *every*
 inverse side, many-to-many included, so a null test would let an inverse-side
-many-to-many straight through to a DQL `UPDATE` of a collection-valued field and
-report it as a failed batch. It gates the fetching arm too, even though `detach()`
+many-to-many straight through to the by-key arm, whose to-one guard would throw
+inside its `try` and report it as a failed batch. It gates the fetching arm too, even though `detach()`
 would quietly do a many-to-many removal there: the class is the one-to-many action
 on both arms, and a batch that succeeds or refuses depending on
 `fetchSelectedRecords()` is worse than one refusal naming the right action.
 `$mappedBy` keeps its own `?? throw` behind that branch as a one-to-many sanity
-check, matching the reader's own. **Two more guard the by-key arm alone**, both
-raised before its `try`. Every selection entry must be a string record key
+check, matching the reader's own. **One more guards the by-key arm alone**,
+raised before its `try`: every selection entry must be a string record key
 (`DissociateBulkAction dissociates by key from record keys, got %s.`), walked
 beside the chunking, so a host feeding something else is the developer error it
-is rather than a danger toast. And the target's mapped-by association must span
-exactly one join column:
+is rather than a danger toast. Six in all. A narrowing inside the statement
+builder — the mapped-by must be the owning to-one side, which Doctrine requires
+of every one-to-many's mapped-by — guards the type system rather than the
+caller, since no mapping that reaches it fails it, and is not a seventh.
+
+There was a second by-key refusal, and
+[M7 · 5b](../roadmap.md#m7--composite-identifiers) deleted it with the DQL
+statement — the one public message that step removed:
 
 > `[%s::$%s] spans %d join columns, and DQL cannot null a to-one that spans more than one, so the action [%s] cannot dissociate by key here — drop fetchSelectedRecords(false) so the records are loaded and dissociated through the mapping.`
 
-The second is [M7 · 5](../roadmap.md#m7--composite-identifiers)'s, and it is
+It was [M7 · 5](../roadmap.md#m7--composite-identifiers)'s, and it was
 Doctrine's refusal rather than a limit of this port: a DQL
 `UPDATE <Target> t SET t.<mappedBy> = NULL` over a to-one spanning several join
 columns is a `QueryException` raised in the SQL walker, and **no** DQL form of
-that statement exists. Before the guard the throw landed *inside* the arm's `try`
-and reached the user as a danger toast over records that had all stayed owned.
-The predicate is the **mapping's** shape — the mapped-by association is a to-one
-owning side declaring more than one join column — and never the owner's
-identifier width, which is the rule every refusal in the milestone follows: only
-a composite owner can produce such a foreign key — and it does so for every
-mapping `SchemaValidator` accepts, a to-one declaring fewer join columns than the
-owner has identifier columns being refused by the validator and by PostgreSQL's
-DDL, which the reader does not re-validate — but it is the foreign key that
-DQL cannot null. The way out is the one the message names, and it works: the
-fetching arm dissociates such a mapping at any width. The remedy **not** taken is
-recorded so it is not rediscovered — one DBAL `UPDATE` per chunk over the
-mapping's own join columns, which is one statement where fetch-then-detach is 501
-for 500 keys, and which was executed for five target flavours on both platforms.
-It is not taken because it needs either the codec's `@internal` field descriptor
-reached from `actions` or a second public SQL-side operation in `schemas`, and
-because it is unexecuted for a JOINED or single-table target, for quoted
-identifiers and for schema-qualified tables. The step that takes it is
-[M7 · 5b](../roadmap.md#m7--composite-identifiers), ruled in on 2026-09-22:
-those three shapes prototyped first, then the DBAL arm, and then this refusal
-lifted together with the test that pins it.
+that statement exists. Only a composite owner produces such a foreign key, so
+every one-to-many under one was refused on this arm, while the fetching arm
+dissociated it at any width. The remedy it recorded is the one taken. Of the
+two routes it named — the codec's `@internal` field descriptor reached from
+`actions`, or a second public SQL-side operation in `schemas` — M7 · 5b took the
+operation, so the key contract stays the one place a key is decoded and
+`actions` composes only the table and the `SET` half, from the mapping. The
+shapes the refusal named as unexecuted were prototyped before the arm was
+written, on SQLite and PostgreSQL 18.4, and each has its answer above: a JOINED
+target writes the declaring table, a single-table target its shared table with
+no discriminator, quoted identifiers go through the quote strategy, and a
+schema-qualified table through the same `getTableName()`. The chunk sizes are
+unchanged: they bound the statement's parameter count, and the DQL parse cost
+they were first sized against is no longer paid on this arm.

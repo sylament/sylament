@@ -28,7 +28,7 @@ use Symfony\UX\LiveComponent\DefaultActionTrait;
  * The one-to-many half of the same family: associate, dissociate and both arms
  * of the bulk dissociate over a collection whose mapped-by to-one spans the
  * owner's whole identifier — which is every one-to-many a record keyed by
- * several fields owns, and is why the by-key arm is refused there.
+ * several fields owns, and is why the by-key arm nulls several join columns.
  */
 #[AsLiveComponent(name: 'CompositeOwnerRelationshipActionsOneToManyTable', template: '@TablesFixtures/components/CompositeOwnerRelationshipActionsOneToManyTable.html.twig')]
 class CompositeOwnerRelationshipActionsOneToManyTable implements InteractsWithActions, InteractsWithSchemas, InteractsWithTable
@@ -41,7 +41,7 @@ class CompositeOwnerRelationshipActionsOneToManyTable implements InteractsWithAc
     /**
      * `'shortcut'` is the scalar pair, `'residency'` the derived identity and
      * `'circuit'` the self-referencing pair, whose `stops` arm is the NOT NULL
-     * join the detach assert refuses before the by-key refusal is reached.
+     * join the detach assert refuses before either dissociate arm is reached.
      */
     #[LiveProp]
     public string $owner = 'shortcut';

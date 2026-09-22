@@ -55,13 +55,13 @@ class DissociateBulkAction extends BulkAction
 
     /**
      * The fetching arm nulls each record's owner through the reader and flushes
-     * once; the by-key arm is one DQL UPDATE per chunk of the plucked keys,
-     * bypassing the UnitOfWork the way DeleteBulkAction's delete does —
-     * already-managed entities keep their stale owner until reloaded. Every
-     * mapping refusal runs before either arm — the four detach refusals and the
-     * many-to-many one — as do the by-key arm's own two, a mapped-by field
-     * spanning several join columns and the shape of the keys, so all seven
-     * propagate as developer errors rather than a toast.
+     * once; the by-key arm is one SQL UPDATE per chunk of the plucked keys over
+     * the mapping's own join columns, bypassing the UnitOfWork the way
+     * DeleteBulkAction's delete does — already-managed entities keep their stale
+     * owner until reloaded. Every mapping refusal runs before either arm — the
+     * four detach refusals and the many-to-many one — as does the by-key arm's
+     * own one, the shape of the keys, so all six propagate as developer errors
+     * rather than a toast.
      *
      * @param array<mixed> $records
      */
@@ -83,12 +83,6 @@ class DissociateBulkAction extends BulkAction
 
         if (! $action->shouldFetchSelectedRecords()) {
             $entityManager = $this->getEntityManagerForRecord($target->targetClass);
-            $mapping = $entityManager->getClassMetadata($target->targetClass)->getAssociationMapping($mappedBy);
-
-            if ($mapping->isToOneOwningSide() && count($mapping->joinColumns) > 1) {
-                throw new LogicException(sprintf('[%s::$%s] spans %d join columns, and DQL cannot null a to-one that spans more than one, so the action [%s] cannot dissociate by key here — drop fetchSelectedRecords(false) so the records are loaded and dissociated through the mapping.', $target->targetClass, $mappedBy, count($mapping->joinColumns), $this->getName()));
-            }
-
             $keys = [];
 
             foreach ($records as $record) {
@@ -132,7 +126,7 @@ class DissociateBulkAction extends BulkAction
     }
 
     /**
-     * One DQL `UPDATE` per chunk, and one transaction from the second chunk on,
+     * One SQL `UPDATE` per chunk, and one transaction from the second chunk on,
      * so a mid-batch failure means the whole batch failed —
      * {@see DeleteBulkAction::deleteSelectedRecordsByKey()}'s shape.
      *
@@ -160,19 +154,26 @@ class DissociateBulkAction extends BulkAction
      */
     private function dissociateRecordKeyChunk(EntityManagerInterface $entityManager, AssociationTarget $target, string $mappedBy, array $keys): int
     {
-        $query = $entityManager->createQueryBuilder()
-            ->update($target->targetClass, 'sylament_dissociated_record')
-            ->set(sprintf('sylament_dissociated_record.%s', $mappedBy), 'NULL');
+        $metadata = $entityManager->getClassMetadata($target->targetClass);
+        $mapping = $metadata->getAssociationMapping($mappedBy);
 
-        $affectedRows = $query
-            ->where(IdentifierConstraint::in($query, 'sylament_dissociated_record', $target->targetClass, $keys, 'sylament_selected_record_keys'))
-            ->getQuery()
-            ->execute();
-
-        if (! is_int($affectedRows)) {
-            throw new LogicException(sprintf('A DQL update of [%s] answered with %s instead of a row count.', $target->targetClass, get_debug_type($affectedRows)));
+        if (! $mapping->isToOneOwningSide()) {
+            throw new LogicException(sprintf('[%s::$%s] is not the owning to-one side Doctrine requires of a one-to-many\'s mapped-by, so there is no foreign key to null.', $target->targetClass, $mappedBy));
         }
 
-        return $affectedRows;
+        $platform = $entityManager->getConnection()->getDatabasePlatform();
+        $quoteStrategy = $entityManager->getConfiguration()->getQuoteStrategy();
+        $declaring = $mapping->inherited ?? $target->targetClass;
+
+        $query = $entityManager->getConnection()->createQueryBuilder()
+            ->update($quoteStrategy->getTableName($entityManager->getClassMetadata($declaring), $platform));
+
+        foreach ($mapping->joinColumns as $joinColumn) {
+            $query->set($quoteStrategy->getJoinColumnName($joinColumn, $metadata, $platform), 'NULL');
+        }
+
+        return (int) $query
+            ->where(IdentifierConstraint::inColumns($entityManager, $query, $target->targetClass, $keys, 'sylament_selected_record_keys'))
+            ->executeStatement();
     }
 }

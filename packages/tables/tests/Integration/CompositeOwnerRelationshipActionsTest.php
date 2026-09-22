@@ -7,7 +7,6 @@ namespace Sylament\Tables\Tests\Integration;
 use Doctrine\ORM\EntityManagerInterface;
 use LogicException;
 use Sylament\Forms\Components\Select;
-use Sylament\Notifications\Delivery\SessionNotifications;
 use Sylament\Tables\Tests\Fixtures\Doctrine\Entity\Artist;
 use Sylament\Tables\Tests\Fixtures\Doctrine\Entity\Circuit;
 use Sylament\Tables\Tests\Fixtures\Doctrine\Entity\CircuitStop;
@@ -40,12 +39,12 @@ uses(InteractsWithLiveComponents::class);
  * test kernel registers neither the tables nor the forms bundle.
  *
  * One arm does not fall out of the reader. `DissociateBulkAction`'s
- * `fetchSelectedRecords(false)` arm writes a DQL `UPDATE … SET <mappedBy> =
- * NULL`, and DQL cannot name a to-one that spans several join columns — which
- * under a composite owner is *every* one-to-many, since the mapped-by is a
- * foreign key onto the owner's whole identifier. That arm is refused by name,
- * before the `try`, so the developer sees the refusal instead of a danger toast
- * over records that all stayed owned.
+ * `fetchSelectedRecords(false)` arm writes one SQL `UPDATE` over the mapping's
+ * own join columns, narrowed by the target's identifier columns — so under a
+ * composite owner, where *every* one-to-many's mapped-by is a foreign key onto
+ * the owner's whole identifier and so spans several columns, it nulls all of
+ * them in one statement. A DQL `UPDATE` could name none of them, which is why
+ * this arm was refused here until it wrote SQL.
  *
  * Every expected key is a string literal: minting one through `RecordKey` would
  * make the expectation agree with whatever format the codec happens to print.
@@ -226,31 +225,6 @@ function compositeOwnerActionsBulkStatements(KernelBrowser $client, RecordingMid
 }
 
 /**
- * The same shape for an arm expected to refuse: the throw is returned rather
- * than swallowed, so a case can assert the message *and* what the database
- * still holds.
- *
- * @param array<string, mixed> $props
- * @param list<string> $selection
- */
-function compositeOwnerActionsBulkThrow(KernelBrowser $client, RecordingMiddleware $recorder, array $props, array $selection): LogicException
-{
-    $component = test()->createLiveComponent(CompositeOwnerRelationshipActionsOneToManyTable::class, $props, client: $client)
-        ->set('selectedTableRecords', $selection)
-        ->call('mountAction', ['name' => 'dissociate', 'arguments' => [], 'context' => ['table' => true, 'bulk' => true]]);
-
-    $recorder->reset();
-
-    try {
-        $component->call('callMountedAction');
-    } catch (LogicException $logicException) {
-        return $logicException;
-    }
-
-    throw new LogicException('The by-key dissociate was expected to refuse and did not.');
-}
-
-/**
  * The foreign-key columns one child row stores, read straight off the
  * connection — the only reading that a detached collection and a stale identity
  * map cannot both answer for.
@@ -276,41 +250,43 @@ function compositeOwnerActionsWrites(array $statements, string $verb): array
     return array_values(array_filter($statements, static fn (string $sql): bool => str_starts_with($sql, $verb)));
 }
 
-/**
- * @return list<string>
- */
-function compositeOwnerActionsNotificationTitles(): array
-{
-    return array_map(
-        static fn (array $notification): string => is_string($notification['title'] ?? null) ? $notification['title'] : '',
-        test()->getContainer()->get(SessionNotifications::class)->pull(),
-    );
-}
-
-it('refuses the by-key dissociate when the mapped-by spans the whole identifier of the owner', function (): void {
-    [$client, , $recorder] = compositeOwnerActionsSeed();
-
-    expect(compositeOwnerActionsBulkThrow($client, $recorder, ['fetchesRecords' => false], ['1'])->getMessage())
-        ->toBe('[' . ShortcutNote::class . '::$shortcut] spans 2 join columns, and DQL cannot null a to-one that spans more than one, so the action [dissociate] cannot dissociate by key here — drop fetchSelectedRecords(false) so the records are loaded and dissociated through the mapping.');
-});
-
-it('refuses the same arm under a derived-identity owner, naming that mapping instead', function (): void {
-    [$client, , $recorder] = compositeOwnerActionsSeed();
-
-    expect(compositeOwnerActionsBulkThrow($client, $recorder, ['owner' => 'residency', 'association' => 'riders', 'fetchesRecords' => false], ['1'])->getMessage())
-        ->toBe('[' . ResidencyRider::class . '::$residency] spans 2 join columns, and DQL cannot null a to-one that spans more than one, so the action [dissociate] cannot dissociate by key here — drop fetchSelectedRecords(false) so the records are loaded and dissociated through the mapping.');
-});
-
-it('refuses before any write and before any toast, leaving the stored pair intact', function (): void {
+it('dissociates by key under a scalar-pair owner, nulling both join columns in one statement', function (): void {
     [$client, $entityManager, $recorder] = compositeOwnerActionsSeed();
 
-    $refusal = compositeOwnerActionsBulkThrow($client, $recorder, ['fetchesRecords' => false], ['1']);
+    $statements = compositeOwnerActionsBulkStatements($client, $recorder, CompositeOwnerRelationshipActionsOneToManyTable::class, 'dissociate', ['fetchesRecords' => false], ['1']);
 
-    expect($refusal->getMessage())->toContain('cannot dissociate by key here')
-        ->and(compositeOwnerActionsWrites($recorder->statements(), 'UPDATE'))->toBe([])
-        ->and(compositeOwnerActionsNotificationTitles())->toBe([])
+    expect(compositeOwnerActionsWrites($statements, 'UPDATE'))->toBe(['UPDATE ShortcutNote SET shortcut_host = NULL, shortcut_path = NULL WHERE id IN (?)'])
         ->and(compositeOwnerActionsStoredColumns($entityManager, 'ShortcutNote', 1, ['shortcut_host', 'shortcut_path']))
-        ->toBe(['shortcut_host' => 'plain', 'shortcut_path' => 'about']);
+        ->toBe(['shortcut_host' => null, 'shortcut_path' => null])
+        ->and(compositeOwnerActionsRelatedKeys($client, $entityManager, CompositeOwnerRelationshipActionsOneToManyTable::class))->toBe([]);
+});
+
+it('dissociates by key under a derived-identity owner, nulling both of its join columns', function (): void {
+    [$client, $entityManager, $recorder] = compositeOwnerActionsSeed();
+    $props = ['owner' => 'residency', 'association' => 'riders', 'fetchesRecords' => false];
+
+    $statements = compositeOwnerActionsBulkStatements($client, $recorder, CompositeOwnerRelationshipActionsOneToManyTable::class, 'dissociate', $props, ['1']);
+
+    expect(compositeOwnerActionsWrites($statements, 'UPDATE'))->toBe(['UPDATE ResidencyRider SET residency_venue_id = NULL, residency_season = NULL WHERE id IN (?)'])
+        ->and(compositeOwnerActionsStoredColumns($entityManager, 'ResidencyRider', 1, ['residency_venue_id', 'residency_season']))
+        ->toBe(['residency_venue_id' => null, 'residency_season' => null])
+        ->and(compositeOwnerActionsRelatedKeys($client, $entityManager, CompositeOwnerRelationshipActionsOneToManyTable::class, $props))->toBe([]);
+});
+
+it("writes nothing but that one statement, leaving another owner's note and its stored pair in place", function (): void {
+    [$client, $entityManager, $recorder] = compositeOwnerActionsSeed();
+
+    // `Gamma` belongs to `spare~unattached`; selected beside `Alpha`, it is
+    // dropped by the owner-scoped pluck before the `UPDATE` binds a key.
+    $statements = compositeOwnerActionsBulkStatements($client, $recorder, CompositeOwnerRelationshipActionsOneToManyTable::class, 'dissociate', ['fetchesRecords' => false], ['1', '3']);
+
+    expect(compositeOwnerActionsWrites($statements, 'UPDATE'))->toBe(['UPDATE ShortcutNote SET shortcut_host = NULL, shortcut_path = NULL WHERE id IN (?)'])
+        ->and(compositeOwnerActionsWrites($statements, 'DELETE'))->toBe([])
+        ->and(compositeOwnerActionsWrites($statements, 'INSERT'))->toBe([])
+        ->and(compositeOwnerActionsStoredColumns($entityManager, 'ShortcutNote', 1, ['shortcut_host', 'shortcut_path']))
+        ->toBe(['shortcut_host' => null, 'shortcut_path' => null])
+        ->and(compositeOwnerActionsStoredColumns($entityManager, 'ShortcutNote', 3, ['shortcut_host', 'shortcut_path']))
+        ->toBe(['shortcut_host' => 'spare', 'shortcut_path' => 'unattached']);
 });
 
 it('dissociates the same collection through the fetching arm, nulling the stored pair', function (): void {

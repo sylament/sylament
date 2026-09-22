@@ -237,7 +237,7 @@ it('dissociates the whole selection through the fetching arm in one flush', func
         ->and($updates)->toHaveCount(3);
 });
 
-it('dissociates the whole selection in one DQL update when the records are not fetched', function (): void {
+it('dissociates the whole selection in one update when the records are not fetched', function (): void {
     [$client, $entityManager, $recorder] = seededArtistSongsClient();
 
     $component = test()->createLiveComponent(ArtistSongsActionsTable::class, ['artistId' => 1, 'fetchesRecords' => false], client: $client)

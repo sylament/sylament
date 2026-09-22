@@ -9,7 +9,7 @@ use Sylament\Actions\Enums\ActionStatus;
 
 /*
  * The chrome and the counting title, which need neither a table nor a database.
- * Both arms of the dissociate — the fetching one and the DQL `UPDATE` by key —
+ * Both arms of the dissociate — the fetching one and the DBAL `UPDATE` by key —
  * are pinned end to end by `AssociateDissociateActionsTest` in the **tables**
  * suite, where a real selection host and a real Doctrine connection exist.
  */

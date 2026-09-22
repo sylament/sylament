@@ -1655,9 +1655,20 @@ The relation layer caught up on the schemas side with
 root: its many-to-many arm is a correlated `EXISTS` built on the same predicate
 builder, per identifier field
 ([association-reader.md](../schemas/association-reader.md#the-relationship-query-is-rooted-at-the-target-and-needs-no-inverse-mapping)).
-A composite **owner** of either arm stays refused by name until
-[M7 · 5](../roadmap.md#m7--composite-identifiers), since Doctrine will not bind
-such a record as a query parameter. One asymmetry rides along and is deliberate:
+A composite **owner** of either arm caught up with
+[M7 · 5](../roadmap.md#m7--composite-identifiers), by the same mechanism rather
+than a second one: both arms narrow to such an owner through a correlated
+`EXISTS` over the owner's **own** collection, so a relation-scoped table rooted
+at a scalar-pair, derived-identity or join-entity owner lists, keys, selects,
+sorts, searches, aggregates, summarises, groups and pages exactly as one rooted
+at a single-`id` owner does, and the builder this lane is handed still carries
+one root, no join and no extra alias
+([the owner route](../schemas/association-reader.md#an-owner-of-any-width-is-scoped-through-its-own-collection-rather-than-through-a-mapped-by-path)).
+Two costs ride with it, and both are the reader's rather than this lane's: the
+subselect reaches the target **through** the owner's table, which
+[PostgreSQL does not flatten](../schemas/association-reader.md#the-owner-scope-joins-through-the-owners-table-and-pays-a-self-join-postgresql-does-not-remove),
+and a **chained** derived-identity owner's one-to-many is Doctrine's own refusal
+to hydrate the child at all. One asymmetry rides along and is deliberate:
 `getAllSelectableTableRecordKeys()` plucks off the **filtered** query, which
 carries no ordering at all, so a select-all over a relation-scoped table
 enumerates keys in whatever order the database returns them while the rows render
@@ -1911,9 +1922,25 @@ consequences worth knowing:
   inner-joins its author in `query()` and then sorts by `author.name` keeps its
   own narrowing, which is what it asked for by writing the join.
 - **Minted aliases are deterministic** — `sy_{property}`, nested as
-  `sy_{parent}_{property}`, numerically suffixed only on a real collision with
-  `getAllAliases()` — so the DQL a table produces is stable across renders and
-  reads in a log.
+  `sy_{parent}_{property}`, numerically suffixed only on a real collision — so
+  the DQL a table produces is stable across renders and reads in a log. A
+  collision is tested two ways, and the second is not the obvious one.
+  `getAllAliases()` cannot see an alias declared inside a subselect that reached
+  the builder as a `WHERE` **string**, while DQL resolves every identification
+  variable of a query in one flat namespace across its subselects — so a name
+  already standing in `getDQL()` as an identifier token of its own is taken too,
+  and `mintAlias()` scans for it. Without that scan a dotted sort or summary
+  whose first hop is a property named `owner` or `related` died with
+  *'sy_owner' is already defined*, against the two aliases the relation layer
+  reserves inside its own subselect. That was live at HEAD on the many-to-many
+  arm under **any** owner, and
+  [M7 · 5](../roadmap.md#m7--composite-identifiers) closed it — having otherwise
+  widened it to every one-to-many under a composite owner, where a mapped-by
+  field called `owner` is the commonest name there is. The scan reads the DQL
+  rather than a list of the relation layer's names on purpose: there is no
+  cross-package literal to keep in step, and it closes the `sy_x<n>` and
+  `sy_ag<n>` cousins with it. A false positive — the token is a field or a
+  parameter name rather than an alias — costs one `_2` suffix and nothing else.
 
 A **to-many** hop anywhere in the chain is refused with a `LogicException`
 naming both ways out (`sortable(query:)`, or an aggregate column). That is

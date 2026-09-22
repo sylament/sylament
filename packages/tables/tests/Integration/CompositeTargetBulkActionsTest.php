@@ -45,7 +45,8 @@ uses(InteractsWithLiveComponents::class);
  * Cases that need writable selection props run as real live requests with
  * reboot disabled; the ones whose host answers the selection itself run
  * in-process on one host object, where the toast is a session flash this file's
- * own request carries.
+ * own request carries. The 501-key dissociate needs both the real pluck and the
+ * toast, so it runs in-process too and writes its selection onto that object.
  */
 
 beforeEach(function (): void {

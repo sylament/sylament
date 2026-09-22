@@ -1719,8 +1719,11 @@ server-side and then strictly decoded again by `in()`, so an identifier type
 outside
 [the decode contract](../schemas/record-key.md#parameter-naming-and-what-an-empty-or-malformed-key-means)
 — one whose printed PHP form is a spelling its own `convertToPHPValue()`
-refuses — has every key of the page dropped, and the page comes back empty the
-same silent way, beside a correct total. That is the by-key seam's systemic
+refuses and, since [M7 · 5b](../roadmap.md#m7--composite-identifiers), its
+`convertToDatabaseValue()` refuses too,
+[a type refusing it on read only](../schemas/record-key.md#a-type-that-refuses-its-printed-form-on-read-only-decodes-it-through-its-own-writer)
+being read back through its own writer — has every key of the page dropped, and
+the page comes back empty the same silent way, beside a correct total. That is the by-key seam's systemic
 property rather than this read's: selection, row actions and the aggregate
 batch mint and re-decode the same way, so a loud guard belongs where the decode
 contract lives, in schemas' `Identity\` seam, and not in one of its consumers.

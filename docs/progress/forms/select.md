@@ -1074,7 +1074,11 @@ already holding. The one owner-facing member the tier does call is
 `assertRelationshipAcceptsAssociate()`, which reads the owner's **class** and
 the target's identifier — [the re-keying
 refusal](../schemas/association-reader.md#no-to-many-relation-verb-moves-a-primary-key),
-not a scope. M7 · 5 pinned the whole tier under a composite-owner record so the
+not a scope. Since M7 · 5b an inverse-side many-to-many save calls the reader's
+`detach()` and `attach()` as well —
+[the write half](../schemas/association-reader.md#a-write-lands-on-the-side-doctrine-persists),
+which mints no key and binds nothing, so the tier still never asks the owner's
+identity. M7 · 5 pinned the whole tier under a composite-owner record so the
 sweep has a failing test to meet rather than a silent one to pass.
 
 ## Divergences
@@ -1229,8 +1233,10 @@ The port therefore writes the whole desired list onto the property, through
 [`PropertyAccessor::setAssociationOnRecord()`](../schemas/property-accessor.md) —
 Symfony's accessor diffs it against the collection by strict identity and calls
 the entity's own `addX()`/`removeX()` per element, so the collection instance
-survives, the owning side is maintained by the adder the maker generated, and
-Doctrine emits only the join rows that actually changed
+survives, the owning side is maintained by the adder the maker generated — or,
+where the field stands on the **inverse** side of a many-to-many,
+[by a reconcile through the association reader](#an-inverse-side-many-to-many-is-saved-through-the-owning-side-and-still-written-on-its-own) —
+and Doctrine emits only the join rows that actually changed
 ([characterized in `DoctrineCollectionWriteTest`](../../../packages/schemas/tests/Integration/State/DoctrineCollectionWriteTest.php)).
 Kept elements diff as kept because a reference by key answers from the identity
 map with the very instances the loaded collection holds — on **both** of
@@ -1261,6 +1267,80 @@ here the save hook fires *from* the dehydrated bag
 ([`getData()`](../schemas/belongs-to-record.md)), so switching dehydration off
 would silence the hook instead of protecting it — the multiple relationship
 select stays dehydrated, deliberately.
+
+### An inverse-side many-to-many is saved through the owning side, and still written on its own
+
+Doctrine persists a many-to-many from its **owning** side alone; an inverse
+collection is ignored at flush. So a to-many `relationship()` field on the
+inverse side — a [`CheckboxList`](checkbox-list.md) over a tag's posts is the
+likely one — wrote the desired list onto a collection nothing persists, and
+unless the entity's adder happened to call its counterpart back (the shape
+`make:entity` generates), the save reported success and wrote **no join row at
+all**, whatever the width of the record's identifier. Filament never meets it:
+`BelongsToMany` writes the pivot from either end.
+
+Since [M7 · 5b](../roadmap.md#m7--composite-identifiers) the to-many arm asks
+the mapping which side persists. On the inverse side of a many-to-many it first
+reconciles the desired list onto the owning side through the
+[association reader](../schemas/association-reader.md#a-write-lands-on-the-side-doctrine-persists) —
+every current member no longer desired is `detach()`ed and every new one
+`attach()`ed, both of which already flip to the related record's own collection —
+and **then** writes the record's own collection exactly as before. Kept members
+are touched by neither, so dropping one member and adding another costs one
+join-row `DELETE` and one `INSERT`, for a single-identifier record and a
+composite one alike. The second write is not redundant: it is what the form
+re-fills from when it re-renders in the same request, and reconciling the owning
+side alone re-rendered the **old** selection; it costs no statement, the
+reconcile's own read having loaded that collection already. The owning side is
+untouched, statement for statement, and a one-to-many never reaches the
+reconcile — the guard names a many-to-many, since a one-to-many is always
+inverse and routing it through `detach()` would refuse an `orphanRemoval`
+mapping by name, which the composite-owner one-to-many saves of
+[`CompositeOwnerRelationshipTest`](../../../packages/forms/tests/Integration/Components/CompositeOwnerRelationshipTest.php)
+would meet at once.
+
+One save is refused rather than written, and it is the step's one added refusal.
+Reaching the owning side means `detach()`, which takes **this** record out of the
+target's collection; where that collection declares `orphanRemoval` Doctrine
+treats its members as privately owned and deletes the one taken out rather than
+unlinking it — here the record the form is saving, with every join row it had. So
+the arm computes its removals first and, only when there is one, reads the owning
+side's own mapping and throws:
+
+> `[%s::$%s] declares orphanRemoval, so a member dropped from it is deleted rather than unlinked — deselecting one in the [%s] field would delete the record this form is saving rather than its join row. Put the field on the owning side of the association, or drop orphanRemoval.`
+
+A save that only **adds** never reaches it, which is why the refusal is computed
+from the removals and not from the mapping alone. It costs one statement and
+writes nothing at all — not even a transaction — so the record and every join
+row it had survive; an owning side without the flag still deletes the dropped
+member's join row beside it. Nothing that worked stops working, since before
+M7 · 5b such a save wrote nothing either — the mapping is named now instead of
+being ignored in silence. The reader refuses the analogous **one-to-many** by
+name and cannot see this one
+([why](../schemas/association-reader.md#a-write-lands-on-the-side-doctrine-persists)),
+which is what puts the refusal here.
+
+Two costs come with it. The adder-and-remover contract now reaches the
+**related** records' collections, so a getter-only owning collection behind an
+inverse-side field throws Symfony's `NoSuchPropertyException` where the save used
+to write nothing in silence — the right direction, executed while the arm was
+designed, and unpinned, since every owning collection the fixtures carry has its
+adder. And each added member is read before it is written: `N + 1` reads for
+`N` added members in a real form, whose options are already loaded, and
+`2N + 1` cold. Adding to each related record's `PersistentCollection` directly
+would skip those reads, but it bypasses the entity's own adder, which is what
+this whole arm rests on, so it is not taken.
+
+Pinned by
+[`InverseSideRelationshipTest`](../../../packages/forms/tests/Integration/Components/InverseSideRelationshipTest.php),
+eight cases — a `Select` and a `CheckboxList` on the inverse side, the
+same-request re-fill, an empty submission, a record keyed by two columns holding
+the inverse side, the refusal with the record and its join rows read back
+through the connection, the add-only save that rides past it, and the owning
+side as a control — over fixtures whose inverse adders deliberately heal
+nothing, since a healing adder makes the base pass too, and whose
+`orphanRemoval` many-to-many is a pair of its own, the only one the forms tree
+carries.
 
 ### A record of another class than the association target is refused
 

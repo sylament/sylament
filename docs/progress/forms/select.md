@@ -1333,9 +1333,10 @@ this whole arm rests on, so it is not taken.
 
 Pinned by
 [`InverseSideRelationshipTest`](../../../packages/forms/tests/Integration/Components/InverseSideRelationshipTest.php),
-eight cases — a `Select` and a `CheckboxList` on the inverse side, the
-same-request re-fill, an empty submission, a record keyed by two columns holding
-the inverse side, the refusal with the record and its join rows read back
+nine cases — a `Select` and a `CheckboxList` on the inverse side, the
+same-request re-fill, an empty submission, a record persisted only after the
+field was filled (the create page's path, and the only case that writes a
+record's first join row), a record keyed by two columns holding the inverse side, the refusal with the record and its join rows read back
 through the connection, the add-only save that rides past it, and the owning
 side as a control — over fixtures whose inverse adders deliberately heal
 nothing, since a healing adder makes the base pass too, and whose

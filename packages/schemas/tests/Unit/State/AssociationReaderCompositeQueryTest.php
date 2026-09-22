@@ -4,12 +4,14 @@ declare(strict_types=1);
 
 namespace Sylament\Schemas\Tests\Unit\State;
 
+use Doctrine\ORM\Query\Parameter;
 use Doctrine\ORM\Query\QueryException;
 use Doctrine\ORM\QueryBuilder;
 use LogicException;
 use Sylament\Schemas\Identity\RecordKey;
 use Sylament\Schemas\State\AssociationReader;
 use Sylament\Schemas\State\Relationship;
+use Sylament\Schemas\Tests\Fixtures\Doctrine\CompositeOwnerRig;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\CompositeTargetRig;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\Enrolment;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\Marker;
@@ -18,7 +20,6 @@ use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\PostSeal;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\PostTranslation;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\Redirect;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\Tag;
-use Sylament\Schemas\Tests\Fixtures\Doctrine\RecordingMiddleware;
 
 it('correlates the many-to-many subselect against every identifier field of the target', function (string $relationship, string $targetClass, string $correlation): void {
     $entityManager = CompositeTargetRig::create();
@@ -94,37 +95,73 @@ it('offers every record of a composite class to an owner related to none of them
     'join entity' => ['enrolments', 3],
 ]);
 
-it('refuses a relationship query for an owner Doctrine cannot bind, on both arms and both queries, before anything is executed', function (string $owner, string $relationship, string $method): void {
-    $recorder = new RecordingMiddleware();
-    $entityManager = CompositeTargetRig::create($recorder);
+it('scopes a relationship query to an owner Doctrine cannot bind, on both arms and both queries', function (string $owner, string $relationship, string $targetClass, string $scope, array $related, array $candidates, string $method): void {
+    $entityManager = CompositeOwnerRig::create();
     $reader = new AssociationReader($entityManager);
 
     $record = match ($owner) {
-        'scalar pair' => CompositeTargetRig::findRedirect($entityManager, 'example.com', '/a'),
-        'derived identity' => CompositeTargetRig::findTranslation($entityManager, 1, 'en'),
-        default => CompositeTargetRig::findEnrolment($entityManager, 1, 1),
+        'scalar pair' => CompositeOwnerRig::findRedirect($entityManager, 'example.com', '/a'),
+        'derived identity' => CompositeOwnerRig::findTranslation($entityManager, 1, 'en'),
+        default => CompositeOwnerRig::findEnrolment($entityManager, 1, 1),
     };
 
-    $recorder->reset();
+    $exists = 'EXISTS (SELECT 1 FROM ' . $record::class . ' sy_owner JOIN sy_owner.' . $relationship . ' sy_related WHERE ' . $scope . ' AND sy_related.id = record.id)';
+    $isRelated = $method === 'createRelationshipQuery';
 
-    try {
-        $reader->{$method}(new Relationship($record, $relationship))->getQuery()->getResult();
-        $message = null;
-    } catch (LogicException $logicException) {
-        $message = $logicException->getMessage();
-    }
+    $query = $reader->{$method}(new Relationship($record, $relationship));
 
-    expect($message)->toContain($record::class)
-        ->toContain('carry a composite identifier, which cannot own a relationship query yet')
-        ->and($recorder->statements())->toBe([]);
+    expect($query->getDQL())->toBe('SELECT record FROM ' . $targetClass . ' record WHERE ' . ($isRelated ? '' : 'NOT ') . $exists)
+        ->and($query->getParameters()->map(static fn (Parameter $parameter): string => $parameter->getName())->toArray())
+        ->toBe(['sylament_relationship_owner_0', 'sylament_relationship_owner_1'])
+        ->and(array_map(static fn (object $record): string => RecordKey::of($entityManager, $record), $query->getQuery()->getResult()))
+        ->toBe($isRelated ? $related : $candidates);
 })->with([
-    'scalar pair, many-to-many' => ['scalar pair', 'posts'],
-    'scalar pair, one-to-many' => ['scalar pair', 'markers'],
-    'derived identity, many-to-many' => ['derived identity', 'posts'],
-    'derived identity, one-to-many' => ['derived identity', 'markers'],
-    'join entity, many-to-many' => ['join entity', 'topics'],
-    'join entity, one-to-many' => ['join entity', 'markers'],
+    'scalar pair, many-to-many' => ['scalar pair', 'posts', Post::class, 'sy_owner.host = :sylament_relationship_owner_0 AND sy_owner.path = :sylament_relationship_owner_1', ['1', '2'], ['3']],
+    'scalar pair, one-to-many' => ['scalar pair', 'markers', Marker::class, 'sy_owner.host = :sylament_relationship_owner_0 AND sy_owner.path = :sylament_relationship_owner_1', ['4'], ['1', '2', '3', '5', '6', '7', '8', '9', '10', '11', '12', '13']],
+    'derived identity, many-to-many' => ['derived identity', 'posts', Post::class, 'sy_owner.post = :sylament_relationship_owner_0 AND sy_owner.locale = :sylament_relationship_owner_1', ['1', '2'], ['3']],
+    'derived identity, one-to-many' => ['derived identity', 'markers', Marker::class, 'sy_owner.post = :sylament_relationship_owner_0 AND sy_owner.locale = :sylament_relationship_owner_1', ['7'], ['1', '2', '3', '4', '5', '6', '8', '9', '10', '11', '12', '13']],
+    'join entity, many-to-many' => ['join entity', 'topics', Tag::class, 'sy_owner.post = :sylament_relationship_owner_0 AND sy_owner.tag = :sylament_relationship_owner_1', ['1', '2'], []],
+    'join entity, one-to-many' => ['join entity', 'markers', Marker::class, 'sy_owner.post = :sylament_relationship_owner_0 AND sy_owner.tag = :sylament_relationship_owner_1', ['10'], ['1', '2', '3', '4', '5', '6', '7', '8', '9', '11', '12', '13']],
 ])->with(['createRelationshipQuery', 'createRelationshipCandidateQuery']);
+
+it('hands three owners sharing one identifier half each only its own records, on both arms', function (string $flavour, string $relationship, array $mine, array $sharesFirst, array $sharesSecond): void {
+    $entityManager = CompositeOwnerRig::create();
+    $reader = new AssociationReader($entityManager);
+
+    $owners = match ($flavour) {
+        'scalar pair' => [
+            CompositeOwnerRig::findRedirect($entityManager, 'example.com', '/a'),
+            CompositeOwnerRig::findRedirect($entityManager, 'example.com', '/b'),
+            CompositeOwnerRig::findRedirect($entityManager, 'other.com', '/a'),
+        ],
+        'derived identity' => [
+            CompositeOwnerRig::findTranslation($entityManager, 1, 'en'),
+            CompositeOwnerRig::findTranslation($entityManager, 1, 'de'),
+            CompositeOwnerRig::findTranslation($entityManager, 2, 'en'),
+        ],
+        default => [
+            CompositeOwnerRig::findEnrolment($entityManager, 1, 1),
+            CompositeOwnerRig::findEnrolment($entityManager, 1, 2),
+            CompositeOwnerRig::findEnrolment($entityManager, 2, 1),
+        ],
+    };
+
+    $keysOf = static fn (object $owner): array => array_map(
+        static fn (object $record): string => RecordKey::of($entityManager, $record),
+        $reader->createRelationshipQuery(new Relationship($owner, $relationship))->getQuery()->getResult(),
+    );
+
+    expect($keysOf($owners[0]))->toBe($mine)
+        ->and($keysOf($owners[1]))->toBe($sharesFirst)
+        ->and($keysOf($owners[2]))->toBe($sharesSecond);
+})->with([
+    'scalar pair, one-to-many' => ['scalar pair', 'markers', ['4'], ['5'], ['6']],
+    'scalar pair, many-to-many' => ['scalar pair', 'posts', ['1', '2'], ['1'], ['3']],
+    'derived identity, one-to-many' => ['derived identity', 'markers', ['7'], ['8'], ['9']],
+    'derived identity, many-to-many' => ['derived identity', 'posts', ['1', '2'], ['1'], ['3']],
+    'join entity, one-to-many' => ['join entity', 'markers', ['10'], ['11'], ['12']],
+    'join entity, many-to-many' => ['join entity', 'topics', ['1', '2'], ['1'], ['2']],
+]);
 
 it('scopes a relationship query from a single-derived-identity owner, whose identifier field is not named id', function (): void {
     $entityManager = CompositeTargetRig::create();
@@ -150,10 +187,21 @@ it('answers two single-derived-identity owners disjointly, on both arms', functi
     'one-to-many' => ['markers', ['1'], ['2']],
 ]);
 
-it('refuses a relationship query for an owner without an identifier after the composite guard has passed', function (): void {
+it('refuses a relationship query for an owner without an identifier, on either route', function (string $flavour, string $relationship): void {
     $entityManager = CompositeTargetRig::create();
     $reader = new AssociationReader($entityManager);
 
-    expect(fn (): QueryBuilder => $reader->createRelationshipQuery(new Relationship(new Post(), 'redirects')))
+    // A scalar pair cannot reach this refusal: both halves are non-nullable
+    // strings, so a half-filled one is refused as unprintable instead. The
+    // derived identity is the composite owner that can hold half an identifier.
+    $half = new PostTranslation();
+    $half->setLocale('en');
+
+    $owner = $flavour === 'single identifier' ? new Post() : $half;
+
+    expect(fn (): QueryBuilder => $reader->createRelationshipQuery(new Relationship($owner, $relationship)))
         ->toThrow(LogicException::class, 'has none set');
-});
+})->with([
+    'single identifier' => ['single identifier', 'redirects'],
+    'composite owner' => ['composite owner', 'markers'],
+]);

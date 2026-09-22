@@ -307,7 +307,8 @@ it('builds the relationship query rooted at the target', function (): void {
     expect($tags->getRootEntities())->toBe([Tag::class])
         ->and($tags->getRootAliases())->toBe(['record'])
         ->and($tags->getDQL())->toBe('SELECT record FROM ' . Tag::class . ' record WHERE EXISTS (SELECT 1 FROM ' . Post::class . ' sy_owner JOIN sy_owner.tags sy_related WHERE sy_owner.id = :sylament_relationship_owner AND sy_related.id = record.id)')
-        ->and($tags->getParameter('sylament_relationship_owner')?->getValue())->toBe($post)
+        ->and($tags->getParameter('sylament_relationship_owner')?->getValue())->toBe($post->getId())
+        ->and($tags->getParameter('sylament_relationship_owner')?->getType())->toBe('integer')
         ->and($sections->getDQL())->toBe('SELECT section FROM ' . PostSection::class . ' section WHERE section.post = :sylament_relationship_owner')
         ->and($sections->getDQLPart('orderBy'))->toBe([])
         ->and($categoryPosts->getDQL())->toContain('JOIN sy_owner.posts sy_related');

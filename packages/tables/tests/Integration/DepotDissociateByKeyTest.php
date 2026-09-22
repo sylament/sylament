@@ -32,8 +32,9 @@ uses(InteractsWithLiveComponents::class);
  * sides: a selected key the relationship query excludes is never written, and
  * the same key IS written when the table declares a `query()` of its own, which
  * wins over the relationship and plucks the whole root — the one shape where the
- * dropped discriminator reaches a row the DQL statement protected, recorded
- * rather than refused.
+ * write escapes both narrowings the relationship query carried, so a sibling of
+ * another class in that table and a row of another owner are written alike,
+ * recorded rather than refused.
  *
  * Every expected statement is the driver's own text, as a string literal.
  */
@@ -192,12 +193,13 @@ it('dissociates nothing a selected key names outside the table query', function 
     'a plain gauge of this depot, beside its dials' => ['dials', 'UPDATE Gauge SET depot_id = NULL WHERE id IN (?)', 'SELECT depot_id FROM Gauge WHERE id = ?', 3, 1],
 ]);
 
-it('writes a single-table sibling a declared query() plucks, the statement carrying no discriminator to stop it', function (): void {
+it('writes a single-table sibling and a dial of another depot a declared query() plucks, the statement carrying neither a discriminator nor an owner to stop it', function (): void {
     [$client, $entityManager, $recorder] = depotByKeySeed();
     $select = 'SELECT depot_id FROM Gauge WHERE id = ?';
 
-    expect(depotByKeyQuerySideUpdates($client, $recorder, ['1', '3']))->toBe(['UPDATE Gauge SET depot_id = NULL WHERE id IN (?, ?)'])
+    expect(depotByKeyQuerySideUpdates($client, $recorder, ['1', '3', '4']))->toBe(['UPDATE Gauge SET depot_id = NULL WHERE id IN (?, ?, ?)'])
         ->and(depotByKeyStoredDepot($entityManager, $select, 1))->toBe(['depot_id' => null])
         ->and(depotByKeyStoredDepot($entityManager, $select, 3))->toBe(['depot_id' => null])
+        ->and(depotByKeyStoredDepot($entityManager, $select, 4))->toBe(['depot_id' => null])
         ->and(depotByKeyStoredDepot($entityManager, $select, 2))->toBe(['depot_id' => 1]);
 });

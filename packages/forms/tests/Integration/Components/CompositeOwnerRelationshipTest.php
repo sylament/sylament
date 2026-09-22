@@ -76,6 +76,64 @@ function compositeOwnerSeed(EntityManagerInterface $entityManager): array
 }
 
 /**
+ * The same three marks over two composite owners hanging off DIFFERENT posts —
+ * `1~en` and `2~zh=20Hans` — so a move between them changes both foreign-key
+ * columns rather than only the locale, and an expectation reading both columns
+ * back discriminates. (Doctrine writes every join column of a changed to-one in
+ * one UPDATE, so what the second post buys is discriminance, not protection
+ * against a half-written key.) It is a seed of its own rather than a widening of
+ * {@see compositeOwnerSeed()} because the repeater case reads the untouched
+ * foreign mark's stored pair, which the second post would move.
+ *
+ * @return array{PostTranslation, PostTranslation}
+ */
+function compositeOwnerSeedAcrossPosts(EntityManagerInterface $entityManager): array
+{
+    $posts = [];
+
+    foreach (['one', 'two'] as $title) {
+        $post = new Post();
+        $post->setTitle($title);
+
+        $entityManager->persist($post);
+
+        $posts[] = $post;
+    }
+
+    $entityManager->flush();
+
+    $translations = [];
+    $position = 0;
+
+    foreach (['en' => 'English', 'zh Hans' => 'Chinese'] as $locale => $title) {
+        $translation = new PostTranslation();
+        $translation->setLocale($locale);
+        $translation->setTitle($title);
+        $translation->setPosition($position);
+
+        $posts[$position]->addTranslation($translation);
+
+        $translations[] = $translation;
+
+        $position++;
+    }
+
+    $entityManager->flush();
+
+    foreach ([[$translations[0], 'first', 0], [$translations[0], 'second', 1], [$translations[1], 'foreign', 0]] as [$owner, $body, $order]) {
+        $mark = new TranslationMark();
+        $mark->setBody($body);
+        $mark->setPosition($order);
+
+        $owner->addMark($mark);
+    }
+
+    $entityManager->flush();
+
+    return [$translations[0], $translations[1]];
+}
+
+/**
  * Three pairs, the last unparented, so a to-one selection saved from a composite
  * record has two candidates and one writer.
  */
@@ -131,14 +189,18 @@ function compositeOwnerRecorder(): RecordingMiddleware
 
 it("fills a to-many relation-backed field from a record keyed by two columns and writes both of a moved child's key columns", function (): void {
     $entityManager = $this::getContainer()->get(EntityManagerInterface::class);
-    [$english] = compositeOwnerSeed($entityManager);
+    [$english] = compositeOwnerSeedAcrossPosts($entityManager);
 
     $list = CheckboxList::make('marks')->relationship(titleAttribute: 'body');
     [$schema, $host] = compositeOwnerWire($list, $english);
     $schema->fill($english);
 
     expect($list->getOptions())->toBe([1 => 'first', 2 => 'second', 3 => 'foreign'])
-        ->and($host->data['marks'])->toBe(['1', '2']);
+        ->and($host->data['marks'])->toBe(['1', '2'])
+        // Mark 3 starts under the other post's Chinese translation, so both of
+        // its key columns have to move for it to land here.
+        ->and(compositeOwnerMarkRows($entityManager)[2])
+        ->toBe(['id' => 3, 'body' => 'foreign', 'position' => 0, 'translation_post_id' => 2, 'translation_locale' => 'zh Hans']);
 
     $host->data['marks'] = ['1', '3'];
 
@@ -251,10 +313,16 @@ it('scopes no query to the owner on any arm of a relation-backed field over a co
 
     $statements = [...$optionStatements, ...$recorder->statements()];
 
+    // The narrowing is asserted over the reads themselves rather than over an
+    // alias name: `sy_owner` is a DQL identification variable and never reaches
+    // the driver, so a filter for it could not fail whatever the field did. What
+    // can fail is that no read carries a `WHERE` at all — an owner-scoped arm
+    // would have to, through a correlated subselect or through the two
+    // foreign-key columns — and that no statement carries a subselect.
     expect($optionStatements)->toHaveCount(1)
         ->and($optionStatements[0])->toContain('FROM TranslationMark')
         ->and($optionStatements[0])->not->toContain('WHERE')
-        ->and(array_filter($statements, static fn (string $sql): bool => str_contains($sql, 'sy_owner')))->toBe([])
+        ->and(array_filter($statements, static fn (string $sql): bool => str_starts_with($sql, 'SELECT') && str_contains($sql, 'WHERE')))->toBe([])
         ->and(array_filter($statements, static fn (string $sql): bool => str_contains($sql, 'EXISTS')))->toBe([]);
 });
 

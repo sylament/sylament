@@ -106,7 +106,7 @@ abstract class CreateRecord extends Page
 
             $this->callHook('beforeCreate');
 
-            $this->record = $this->handleRecordCreation($schema->getData($data));
+            $this->record = $this->handleRecordCreation($this->mapRecordForCreation($schema, $data));
 
             $this->callHook('afterCreate');
         } catch (Halt) {
@@ -197,6 +197,38 @@ abstract class CreateRecord extends Page
     public function getBreadcrumb(): string
     {
         return static::$breadcrumb ?? 'Create';
+    }
+
+    /**
+     * The state mapped onto a new record. One created under a parent joins it
+     * before the mapping, so the record check that ends the mapping sees an
+     * identifier field the parent fills; the form is bound to that record for
+     * the mapping alone.
+     *
+     * @param array<string, mixed> $data
+     */
+    private function mapRecordForCreation(Schema $schema, array $data): object
+    {
+        $parentRecord = $this->getParentRecord();
+
+        if ($parentRecord === null) {
+            return $schema->getData($data);
+        }
+
+        $binding = $schema->getRecord() ?? $schema->getRecordClass();
+        $record = $schema->getRecordInstance();
+
+        if ($record === null) {
+            return $schema->getData($data);
+        }
+
+        $this->getResourceInstance()->attachRecordToParent($record, $parentRecord);
+
+        try {
+            return $schema->record($record)->getData($data);
+        } finally {
+            $schema->record($binding);
+        }
     }
 
     /**

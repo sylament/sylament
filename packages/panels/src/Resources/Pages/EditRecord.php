@@ -126,6 +126,8 @@ abstract class EditRecord extends Page
 
             $this->handleRecordUpdate($schema->getData($data));
 
+            $schema->loadStateFromRelationships();
+
             $this->callHook('afterSave');
         } catch (Halt) {
             return null;

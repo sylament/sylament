@@ -21,6 +21,8 @@ use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\Headband;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\Listing;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\Pennant;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\Placard;
+use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\Plinth;
+use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\PlinthCap;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\Post;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\PostSeal;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\PostTranslation;
@@ -36,6 +38,7 @@ use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\Spine;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\Ticket;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\Vault;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\Zone;
+use Sylament\Schemas\Tests\Fixtures\Doctrine\EntityManagerFactory;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\IdentifierGuardRig;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\RecordingMiddleware;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\Sku;
@@ -633,6 +636,31 @@ it('names the field the form lets the user type, never the one pointing back at 
     'two associations and no owner to skip, tag-first: the first field' => ['pennant', 'tag'],
     'a join entity as the root: the first field' => ['enrolment', 'post'],
 ]);
+
+it('names the association pointing back at the record the walk came from when that one association is the whole key', function (): void {
+    $entityManager = IdentifierGuardRig::create();
+    $stored = new Plinth();
+    $storedCap = new PlinthCap();
+
+    $stored->setCode('P-1');
+    $storedCap->setPlinth($stored);
+    $storedCap->setLabel('stored cap');
+
+    $stored->setCap($storedCap);
+
+    EntityManagerFactory::seed($entityManager, $stored);
+
+    $plinth = $entityManager->find(Plinth::class, 'P-1');
+    assert($plinth instanceof Plinth);
+
+    $cap = new PlinthCap();
+    $cap->setPlinth($plinth);
+    $cap->setLabel('new cap');
+
+    $plinth->setCap($cap);
+
+    expect(new AssociationReader($entityManager)->findTakenIdentifiers($plinth))->toBe(['cap.plinth' => 'This value is already used.']);
+});
 
 it('skips a record whose class the mapping does not know, an anonymous one included', function (object $record): void {
     $recorder = new RecordingMiddleware();

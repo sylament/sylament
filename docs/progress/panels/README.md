@@ -1266,7 +1266,12 @@ another — and the lookup runs on the form's pick,
 Pinned by
 [`CreateRecordTakenKeyTest`](../../../packages/panels/tests/Integration/Resources/Pages/CreateRecordTakenKeyTest.php) and
 [`CompositeRecordPagesTest`](../../../packages/panels/tests/Integration/Resources/Pages/CompositeRecordPagesTest.php), whose
-taken-key case flipped in place from pinning the unique violation.
+taken-key case flipped in place from pinning the unique violation. Unlike
+[`CreateAction`](../actions/create-action.md#the-created-record-joins-the-relationship-in-the-same-flush),
+a refused nested create does not take the record back out of a many-to-many
+parent's collection: it stays there for the rest of the request, which is
+harmless, since `create()` lets the `ValidationException` out and the page
+flushes nothing after it.
 
 **The template.** `$template` points at the shared
 [form variant](form-actions.md), `partials/Page/form.html.twig`, which fills the

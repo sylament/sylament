@@ -73,7 +73,7 @@ final class EntityManagerFactory
     }
 
     /**
-     * The three custom types the fixture mapping names, registered once per
+     * The four custom types the fixture mapping names, registered once per
      * process: Doctrine's registry is global, so a second call would throw.
      */
     private static function registerTypes(): void
@@ -88,6 +88,10 @@ final class EntityManagerFactory
 
         if (!Type::hasType(BinaryUuidType::NAME)) {
             Type::addType(BinaryUuidType::NAME, BinaryUuidType::class);
+        }
+
+        if (!Type::hasType(CaselessType::NAME)) {
+            Type::addType(CaselessType::NAME, CaselessType::class);
         }
     }
 }

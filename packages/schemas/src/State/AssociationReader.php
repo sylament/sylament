@@ -4,11 +4,15 @@ declare(strict_types=1);
 
 namespace Sylament\Schemas\State;
 
+use BackedEnum;
+use Doctrine\DBAL\Types\Type;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\Events;
+use Doctrine\ORM\Mapping\ClassMetadata;
 use Doctrine\ORM\Mapping\InverseSideMapping;
 use Doctrine\ORM\Mapping\JoinColumnMapping;
 use Doctrine\ORM\Mapping\OwningSideMapping;
+use Doctrine\ORM\PersistentCollection;
 use Doctrine\ORM\QueryBuilder;
 use LogicException;
 use ReflectionClass;
@@ -21,6 +25,10 @@ use function Sylament\Support\blank;
 
 class AssociationReader
 {
+    private const string TAKEN_IDENTIFIER = 'This value is already used.';
+
+    private const string CHANGED_IDENTIFIER = 'This value cannot be changed.';
+
     public function __construct(
         private readonly ?EntityManagerInterface $entityManager = null,
         private ?PropertyAccessor $propertyAccessor = null,
@@ -340,6 +348,72 @@ class AssociationReader
     }
 
     /**
+     * Put back the identifier of every managed record this one's loaded
+     * associations reach — itself first — whose key no longer prints the one the
+     * unit of work keyed it by, and answer each such field: a flush would
+     * otherwise move a primary key under a unit of work still keyed by the old
+     * one, so the old key is put back on the spot and nothing flushed later
+     * moves it. Runs no statement; a collection or reference nobody loaded holds
+     * nothing a write touched, so it stays unloaded.
+     *
+     * @internal the record check behind a schema's getData() and an editable cell's write
+     *
+     * @return array<string, string> the refusal, keyed by the field's property path from the record
+     */
+    public function revertIdentifierChanges(object $record): array
+    {
+        $refusals = [];
+
+        foreach ($this->walkLoadedRecords($record) as [$path, $current, $metadata]) {
+            $unitOfWork = $this->requireEntityManager()->getUnitOfWork();
+
+            if (! $unitOfWork->isInIdentityMap($current) || $unitOfWork->isScheduledForInsert($current) || $unitOfWork->isScheduledForDelete($current)) {
+                continue;
+            }
+
+            foreach ($this->revertIdentifierChange($current, $metadata) as $field) {
+                $refusals[$this->joinPropertyPath($path, $field)] = self::CHANGED_IDENTIFIER;
+            }
+        }
+
+        return $refusals;
+    }
+
+    /**
+     * Every new record this one's loaded cascade-persist associations reach —
+     * itself first, then what the flush would insert with it — whose assigned
+     * key a stored or managed record already holds, or a new record met earlier
+     * in the same walk claims: `find()` per new record once its key is
+     * complete, the identity map first and then one SELECT. The refusal lands
+     * on the field the form lets the user type — the first identifier field
+     * that is no association, else the first that does not point back at the
+     * record the walk arrived from, else the first.
+     *
+     * @internal the record check behind a schema's getData(), after the record's own constraints pass
+     *
+     * @return array<string, string> the refusal, keyed by that field's property path from the record
+     */
+    public function findTakenIdentifiers(object $record): array
+    {
+        $claimed = [];
+        $refusals = [];
+
+        foreach ($this->walkLoadedRecords($record, cascadePersistOnly: true) as [$path, $current, $metadata, $backReference]) {
+            $unitOfWork = $this->requireEntityManager()->getUnitOfWork();
+
+            if (! $metadata->isIdentifierNatural() || ($unitOfWork->isInIdentityMap($current) && ! $unitOfWork->isScheduledForInsert($current))) {
+                continue;
+            }
+
+            if ($this->isIdentifierTaken($current, $metadata, $claimed)) {
+                $refusals[$this->joinPropertyPath($path, $this->getTakenIdentifierField($metadata, $backReference))] = self::TAKEN_IDENTIFIER;
+            }
+        }
+
+        return $refusals;
+    }
+
+    /**
      * @param class-string $targetClass
      */
     public function createOptionQuery(string $targetClass, string $alias = 'record'): QueryBuilder
@@ -360,6 +434,210 @@ class AssociationReader
     public function flush(): void
     {
         $this->requireEntityManager()->flush();
+    }
+
+    /**
+     * The record and every entity its loaded associations reach — or, for the
+     * taken-key rule, only those a flush would cascade-persist — each once,
+     * with its property path from the record and, for a member of an inverse
+     * collection, the field that points back at the record it was reached
+     * through. An uninitialized proxy or collection is left unloaded.
+     *
+     * @return iterable<array{string, object, ClassMetadata<object>, string|null}>
+     */
+    private function walkLoadedRecords(object $record, bool $cascadePersistOnly = false): iterable
+    {
+        if (! $this->entityManager instanceof EntityManagerInterface) {
+            return;
+        }
+
+        $entityManager = $this->entityManager;
+        $metadataByClass = [];
+        $visited = [];
+        $queue = [['', $record, null]];
+
+        for ($index = 0; isset($queue[$index]); $index++) {
+            [$path, $current, $backReference] = $queue[$index];
+
+            if (isset($visited[spl_object_id($current)])) {
+                continue;
+            }
+
+            $visited[spl_object_id($current)] = true;
+
+            $metadata = $metadataByClass[$current::class] ??= $this->findEntityMetadata($entityManager, $current::class);
+
+            if (! $metadata instanceof ClassMetadata || $entityManager->isUninitializedObject($current)) {
+                continue;
+            }
+
+            yield [$path, $current, $metadata, $backReference];
+
+            foreach ($metadata->associationMappings as $name => $mapping) {
+                if ($cascadePersistOnly && ! $mapping->isCascadePersist()) {
+                    continue;
+                }
+
+                $related = $metadata->getFieldValue($current, $name);
+                $relatedPath = $this->joinPropertyPath($path, $name);
+                $relatedBackReference = $mapping instanceof InverseSideMapping ? $mapping->mappedBy : null;
+
+                if ($mapping->isToOne()) {
+                    if (is_object($related)) {
+                        $queue[] = [$relatedPath, $related, $relatedBackReference];
+                    }
+
+                    continue;
+                }
+
+                if (! is_iterable($related) || ($related instanceof PersistentCollection && ! $related->isInitialized())) {
+                    continue;
+                }
+
+                foreach ($related as $key => $member) {
+                    if (is_object($member) && (is_int($key) || is_string($key))) {
+                        $queue[] = [sprintf('%s[%s]', $relatedPath, $key), $member, $relatedBackReference];
+                    }
+                }
+            }
+        }
+    }
+
+    /**
+     * @param class-string $class
+     *
+     * @return ClassMetadata<object>|null
+     */
+    private function findEntityMetadata(EntityManagerInterface $entityManager, string $class): ?ClassMetadata
+    {
+        if (new ReflectionClass($class)->isAnonymous() || $entityManager->getMetadataFactory()->isTransient($class)) {
+            return null;
+        }
+
+        return $entityManager->getClassMetadata($class);
+    }
+
+    /**
+     * Whether a new record's assigned key is held already: by a new record
+     * this walk met first — compared as the columns would store it, and an
+     * association by the very object, the only identity a new target has — or
+     * by the record `find()` answers, the identity map first and then one
+     * SELECT. A key still missing a component, or holding a blank one, has
+     * nothing to look up.
+     *
+     * @param ClassMetadata<object> $metadata
+     * @param array<string, true>   $claimed
+     */
+    private function isIdentifierTaken(object $record, ClassMetadata $metadata, array &$claimed): bool
+    {
+        $entityManager = $this->requireEntityManager();
+        $platform = $entityManager->getConnection()->getDatabasePlatform();
+        $parts = [];
+
+        foreach ($metadata->identifier as $field) {
+            $value = $metadata->getFieldValue($record, $field);
+
+            if ($value === null || (is_string($value) && mb_trim($value) === '')) {
+                return false;
+            }
+
+            if ($metadata->hasAssociation($field)) {
+                $parts[] = is_object($value) ? 'o' . spl_object_id($value) : 'v' . serialize($value);
+
+                continue;
+            }
+
+            $type = $metadata->getTypeOfField($field);
+            $value = $value instanceof BackedEnum ? $value->value : $value;
+            $parts[] = 'v' . serialize($type === null ? $value : Type::getType($type)->convertToDatabaseValue($value, $platform));
+        }
+
+        $claim = $metadata->rootEntityName . "\0" . implode("\0", $parts);
+
+        if (isset($claimed[$claim])) {
+            return true;
+        }
+
+        $claimed[$claim] = true;
+
+        $values = RecordKey::values($entityManager, $record, $metadata->getName());
+
+        if ($values === null || array_any($values, static fn (mixed $value): bool => is_string($value) && mb_trim($value) === '')) {
+            return false;
+        }
+
+        $holder = $entityManager->find($metadata->rootEntityName, array_combine($metadata->identifier, $values));
+
+        return $holder !== null && $holder !== $record;
+    }
+
+    /**
+     * @param ClassMetadata<object> $metadata
+     */
+    private function getTakenIdentifierField(ClassMetadata $metadata, ?string $backReference): string
+    {
+        return array_find($metadata->identifier, static fn (string $field): bool => ! $metadata->hasAssociation($field))
+            ?? array_find($metadata->identifier, static fn (string $field): bool => $field !== $backReference)
+            ?? $metadata->identifier[0];
+    }
+
+    /**
+     * Put back each identifier field of a managed record that no longer prints
+     * the value the unit of work keyed it by — a scalar from that identifier,
+     * an association from the original data — and answer those fields.
+     *
+     * @param ClassMetadata<object> $metadata
+     *
+     * @return list<string>
+     */
+    private function revertIdentifierChange(object $record, ClassMetadata $metadata): array
+    {
+        $entityManager = $this->requireEntityManager();
+        $unitOfWork = $entityManager->getUnitOfWork();
+        $identifier = $unitOfWork->getEntityIdentifier($record);
+        $changed = [];
+
+        foreach ($metadata->identifier as $field) {
+            $stored = $identifier[$field] ?? null;
+            $current = $metadata->getFieldValue($record, $field);
+
+            if ($metadata->hasAssociation($field)) {
+                $current = is_object($current)
+                    ? (RecordKey::values($entityManager, $current, $metadata->getAssociationTargetClass($field))[0] ?? null)
+                    : null;
+            }
+
+            if ($stored === $current) {
+                continue;
+            }
+
+            $printed = IdentifierFields::printable($stored);
+
+            if ($printed !== null && $printed === IdentifierFields::printable($current)) {
+                continue;
+            }
+
+            $changed[] = $field;
+        }
+
+        if ($changed === []) {
+            return [];
+        }
+
+        $original = $unitOfWork->getOriginalEntityData($record);
+
+        foreach ($changed as $field) {
+            $metadata->setFieldValue($record, $field, $metadata->hasAssociation($field)
+                ? ($original[$field] ?? throw new LogicException(sprintf('[%s::$%s] is an identifier association the unit of work holds no original value for, so its change cannot be put back.', $metadata->getName(), $field)))
+                : $identifier[$field]);
+        }
+
+        return $changed;
+    }
+
+    private function joinPropertyPath(string $path, string $property): string
+    {
+        return $path === '' ? $property : $path . '.' . $property;
     }
 
     private function getPropertyAccessor(): PropertyAccessor

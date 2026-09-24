@@ -154,20 +154,41 @@ class CreateAction extends Action
      * The default persistence step `using()` replaces: map the validated —
      * and, where `mutateDataUsing()` asked, mutated — state onto a new record
      * of the action's class, then flush it. A relationship in force joins the
-     * record to its owner before the record is persisted, because an identifier
-     * field the association fills reads unset until the join is made.
+     * record to its owner before the state is mapped, so the record check that
+     * ends the mapping sees an identifier field the association fills, and
+     * again after it, so the relationship still wins over a field the form maps
+     * onto the same association; the schema is bound to that record for the
+     * mapping alone, and a many-to-many owner's collection gives the record back
+     * when the mapping refuses it, since nothing else takes it out again.
      *
      * @param array<string, mixed> $data
      * @param class-string $recordClass
      */
     private function createRecord(array $data, Schema $schema, string $recordClass): object
     {
-        $record = $schema->record($recordClass)->getData($data);
-
         $relationship = $this->getRelationship();
 
         if ($relationship instanceof Relationship) {
-            $this->getAssociationReader()->attach($relationship, $record);
+            $record = new $recordClass();
+
+            $reader = $this->getAssociationReader();
+            $reader->attach($relationship, $record);
+            $mapped = false;
+
+            try {
+                $schema->record($record)->getData($data);
+                $mapped = true;
+            } finally {
+                $schema->record($recordClass);
+
+                if (! $mapped && $reader->describeRelationship($relationship)->isManyToMany) {
+                    $reader->detach($relationship, $record);
+                }
+            }
+
+            $reader->attach($relationship, $record);
+        } else {
+            $record = $schema->record($recordClass)->getData($data);
         }
 
         $manager = $this->getEntityManagerForRecord($record);

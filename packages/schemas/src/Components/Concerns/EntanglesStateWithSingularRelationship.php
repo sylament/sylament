@@ -124,8 +124,10 @@ trait EntanglesStateWithSingularRelationship
 
     /**
      * Read the subtree off the related record: the paths a nested relationship
-     * hook loads come from that hook, everything else from the declared leaves.
-     * A load-hooked path leaves the leaf read exactly as
+     * hook loads come from that hook, everything else from the declared leaves,
+     * an object-valued leaf only where the reading component's own state casts
+     * flatten it ({@see Component::isObjectCarriedByStateCasts()}). A load-hooked
+     * path leaves the leaf read exactly as
      * {@see \Sylament\Schemas\Concerns\BelongsToRecord::readStateFromRecord()}
      * skips it at the root — a save-only hook keeps its ordinary read.
      *
@@ -155,7 +157,9 @@ trait EntanglesStateWithSingularRelationship
 
         $claimedStatePaths = array_keys($hooks);
 
-        foreach ($this->getRelatedStatePaths() as $statePath) {
+        foreach ($this->getRelatedStateComponents() as $statePath => $component) {
+            $statePath = (string) $statePath;
+
             if ($this->isClaimedByNestedHook($statePath, $claimedStatePaths)) {
                 continue;
             }
@@ -166,7 +170,7 @@ trait EntanglesStateWithSingularRelationship
                 continue;
             }
 
-            if (is_object($value)) {
+            if (is_object($value) && ! $component->isObjectCarriedByStateCasts($value)) {
                 continue;
             }
 
@@ -272,8 +276,20 @@ trait EntanglesStateWithSingularRelationship
      */
     private function getRelatedStatePaths(): array
     {
+        return array_map(strval(...), array_keys($this->getRelatedStateComponents()));
+    }
+
+    /**
+     * The components behind {@see getRelatedStatePaths()}, keyed by that path —
+     * the last declared keeping a path two share, as the record path map's own
+     * overwrite does — so a fill can ask the one reading a leaf about its casts.
+     *
+     * @return array<string, Component>
+     */
+    private function getRelatedStateComponents(): array
+    {
         $prefix = $this->getStatePath() . '.';
-        $statePaths = [];
+        $components = [];
 
         foreach ($this->getChildSchemas() as $childSchema) {
             foreach ($childSchema->getFlatComponents(withActions: false) as $component) {
@@ -284,12 +300,12 @@ trait EntanglesStateWithSingularRelationship
                 $statePath = $component->getStatePath();
 
                 if (($statePath !== null) && str_starts_with($statePath, $prefix)) {
-                    $statePaths[] = mb_substr($statePath, mb_strlen($prefix));
+                    $components[mb_substr($statePath, mb_strlen($prefix))] = $component;
                 }
             }
         }
 
-        return $statePaths;
+        return $components;
     }
 
     /**

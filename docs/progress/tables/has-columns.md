@@ -41,7 +41,7 @@ deleted once the row is **done**; **diverges** → the permanent note in
 | [`callTableColumnAction(string $name, string $recordKey)` — run a column's `action()` closure for one record](../../../packages/tables/src/Concerns/HasColumns.php) | [`HasColumns::callTableColumnAction()`](../../../vendor/filament/tables/src/Concerns/HasColumns.php) | done | — | [diverges](#a-live-action-answers-nothing-so-the-return-value-is-dropped) · [semantics](#a-hidden-column-is-unreachable-from-the-wire-on-both-actions) |
 | [`updateTableColumnState(string $column, string $record, mixed $input)` — the editable columns' write-back](../../../packages/tables/src/Concerns/HasColumns.php) | [`HasColumns::updateTableColumnState()`](../../../vendor/filament/tables/src/Concerns/HasColumns.php) | done | — | [diverges](#a-live-action-answers-nothing-so-the-return-value-is-dropped) · [semantics](#a-record-type-the-input-cannot-hold-seeds-a-type-constraint-and-the-write-refuses-the-rest) · [semantics](#a-json-null-input-arrives-as-null-without-a-declared-default) · [semantics](#the-action-binds-the-record-and-its-key-and-only-one-of-the-two-invalidations-is-observable) · [semantics](#a-hidden-column-is-unreachable-from-the-wire-on-both-actions) |
 | [`getTableColumnStateError()` + the request-scoped `$tableColumnStateErrors` bag](../../../packages/tables/src/Concerns/HasColumns.php) | — (Sylament-only, replacing Filament's client-held error) | done | — | [diverges](#the-refusal-is-request-scoped-and-server-rendered-where-filaments-lives-on-the-client) |
-| [`Columns\Concerns\CanUpdateState` — the column half of the write](../../../packages/tables/src/Columns/Concerns/CanUpdateState.php) | [`Columns\Concerns\CanUpdateState`](../../../vendor/filament/tables/src/Columns/Concerns/CanUpdateState.php) | done | — | [semantics](#the-write-goes-through-the-accessor-so-a-dotted-path-walks-the-to-one-chain) · [diverges](#an-array-record-throws-where-filament-writes-nothing) · [diverges](#the-pivot-column-arm-has-nothing-to-write-through) · [diverges](#the-write-is-not-authorization-checked) |
+| [`Columns\Concerns\CanUpdateState` — the column half of the write](../../../packages/tables/src/Columns/Concerns/CanUpdateState.php) | [`Columns\Concerns\CanUpdateState`](../../../vendor/filament/tables/src/Columns/Concerns/CanUpdateState.php) | done | — | [semantics](#the-write-goes-through-the-accessor-so-a-dotted-path-walks-the-to-one-chain) · [diverges](#an-array-record-throws-where-filament-writes-nothing) · [diverges](#the-pivot-column-arm-has-nothing-to-write-through) · [diverges](#the-write-is-not-authorization-checked) · [diverges](#a-changed-identifier-is-the-cells-own-error) |
 | [`Columns\Concerns\CanBeValidated` — the column half of the refusal](../../../packages/tables/src/Columns/Concerns/CanBeValidated.php) | [`Columns\Concerns\CanBeValidated`](../../../vendor/filament/tables/src/Columns/Concerns/CanBeValidated.php) | done | — | [diverges](#validation-speaks-symfony-constraints-and-rules-is-not-ported) · [semantics](#a-record-type-that-rejects-null-seeds-a-presence-constraint) · [semantics](#a-record-type-the-input-cannot-hold-seeds-a-type-constraint-and-the-write-refuses-the-rest) |
 | [`getClientState()` — the display state the cell root publishes](../../../packages/tables/src/Columns/Concerns/CanUpdateState.php) | — (Sylament-only, for [the repaint](#the-cell-repaints-from-the-root-because-a-touched-control-is-pinned-through-every-morph)) | done | — | [detail](#the-cell-repaints-from-the-root-because-a-touched-control-is-pinned-through-every-morph) |
 | `callTableColumnMethod()` — dispatch to an `#[ExposedLivewireMethod]` on a column | [`HasColumns::callTableColumnMethod()`](../../../vendor/filament/tables/src/Concerns/HasColumns.php) | blocked | the select-engine promotion ([forms-bundle.md](../forms/forms-bundle.md#the-select-controller-binds-a-port-of-filaments-select-utility-to-the-live-host)) | Its only Filament consumer is `SelectColumn`'s searchable arm, which ships native-only |
@@ -151,6 +151,36 @@ the next request starts clean — so a refusal is never replayed, and nothing ab
 it is client-writable. `getTableColumnStateError()` is on the contract because
 the partial reads it through the column's `getUpdateStateError()`, which asks the
 host by column name and record key.
+
+### A changed identifier is the cell's own error
+
+Filament writes a cell over a primary key like any other column, and Eloquent
+updates the key. Doctrine keys its identity map by the old one, so before
+[M7 · 6](../roadmap.md#m7--composite-identifiers) an editable cell over an
+identifier field re-keyed the row silently, or — the new key being taken — threw
+a unique violation out of `updateTableColumnState()`. Now
+`CanUpdateState::updateState()` runs the record check's changed-key pass itself,
+after the write and before its flush:
+`new AssociationReader($manager)->revertIdentifierChanges($record)`, through the
+record's own manager
+([the pass](../schemas/association-reader.md#a-changed-identifier-is-put-back-and-refused-and-costs-no-statement)).
+Its first refusal is thrown as a
+[`RecordWriteException`](../../../packages/tables/src/Exceptions/RecordWriteException.php)
+carrying the bare *"This value cannot be changed."*, which the host files and the
+cell paints exactly as it does
+[the type refusal](#a-record-type-the-input-cannot-hold-seeds-a-type-constraint-and-the-write-refuses-the-rest).
+The pass has already put the key back, so the row stays keyed as it was posted,
+the re-render keeps the error on its cell rather than losing it under a new key,
+and nothing is written.
+
+It is the changed-key pass alone: a cell writes a managed record, so there is no
+new record whose key could be taken. A cell writing the same key back in another
+type — an integer id arrives as the string a control posts — is no change. A
+`SelectColumn` over an **association** key half keeps the type refusal it already
+had, which answers first. Pinned by
+[`IdentifierCellsTest`](../../../packages/tables/tests/Integration/IdentifierCellsTest.php)
+over a live table and by
+[`CanUpdateStateTest`](../../../packages/tables/tests/Unit/Columns/Concerns/CanUpdateStateTest.php).
 
 ### An array record throws where Filament writes nothing
 
@@ -403,4 +433,5 @@ user code and still propagates, as does a misconfigured column's own
 seed reaches, and the throwing override — are pinned over the
 [`TypeRefusalSongsTable`](../../../packages/tables/tests/Fixtures/Twig/Components/TypeRefusalSongsTable.php)
 fixture, whose columns carry no constraints of their own so the derivation is the
-only thing under test.
+only thing under test. Since [M7 · 6](../roadmap.md#m7--composite-identifiers)
+the same route carries a second refusal, [a changed identifier](#a-changed-identifier-is-the-cells-own-error).

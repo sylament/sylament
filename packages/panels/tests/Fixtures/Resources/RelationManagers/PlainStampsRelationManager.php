@@ -7,6 +7,7 @@ namespace Sylament\Panels\Tests\Fixtures\Resources\RelationManagers;
 use Sylament\Actions\CreateAction;
 use Sylament\Actions\DeleteAction;
 use Sylament\Actions\EditAction;
+use Sylament\Actions\ReplicateAction;
 use Sylament\Forms\Components\TextInput;
 use Sylament\Panels\Resources\RelationManagers\RelationManager;
 use Sylament\Schemas\Schema;
@@ -37,6 +38,10 @@ final class PlainStampsRelationManager extends RelationManager
         return $table
             ->columns([TextColumn::make('code'), TextColumn::make('caption')])
             ->headerActions([CreateAction::make()])
-            ->recordActions([EditAction::make(), DeleteAction::make()]);
+            ->recordActions([
+                EditAction::make(),
+                DeleteAction::make(),
+                ReplicateAction::make()->schema(fn (Schema $schema): Schema => $this->form($schema)),
+            ]);
     }
 }

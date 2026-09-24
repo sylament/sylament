@@ -7,6 +7,7 @@ namespace Sylament\Panels\Tests\Fixtures\Resources;
 use Sylament\Actions\DeleteAction;
 use Sylament\Actions\DeleteBulkAction;
 use Sylament\Actions\EditAction;
+use Sylament\Actions\ReplicateAction;
 use Sylament\Actions\ViewAction;
 use Sylament\Forms\Components\TextInput;
 use Sylament\Panels\Navigation\NavigationItem;
@@ -54,6 +55,7 @@ final class ImprintResource extends Resource
                 ViewAction::make(),
                 EditAction::make(),
                 DeleteAction::make(),
+                ReplicateAction::make()->schema(fn (Schema $schema): Schema => $this->form($schema)),
             ])
             ->toolbarActions([DeleteBulkAction::make()]);
     }

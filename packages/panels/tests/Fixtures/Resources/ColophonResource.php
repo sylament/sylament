@@ -6,6 +6,7 @@ namespace Sylament\Panels\Tests\Fixtures\Resources;
 
 use Sylament\Actions\DeleteAction;
 use Sylament\Actions\EditAction;
+use Sylament\Actions\ReplicateAction;
 use Sylament\Forms\Components\TextInput;
 use Sylament\Panels\Resources\Resource;
 use Sylament\Panels\Tests\Fixtures\Doctrine\Entity\Colophon;
@@ -37,7 +38,7 @@ final class ColophonResource extends Resource
     {
         return $table
             ->columns([TextColumn::make('note')])
-            ->recordActions([EditAction::make(), DeleteAction::make()]);
+            ->recordActions([EditAction::make(), DeleteAction::make(), ReplicateAction::make()]);
     }
 
     /**

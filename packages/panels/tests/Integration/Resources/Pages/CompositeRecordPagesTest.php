@@ -2,7 +2,6 @@
 
 declare(strict_types=1);
 
-use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
 use Doctrine\ORM\EntityManagerInterface;
 use Sylament\Panels\Tests\Fixtures\Doctrine\Entity\Catalogue;
 use Sylament\Panels\Tests\Fixtures\Doctrine\Entity\Colophon;
@@ -100,6 +99,36 @@ function compositeRecordProps(string $html): array
     expect($props)->toBeArray();
 
     return $props;
+}
+
+/**
+ * Every field error on the page, keyed by the live model of the input its
+ * field wrapper holds — so a message is pinned to the field it renders under.
+ *
+ * @return array<string, list<string>>
+ */
+function compositeRecordFieldErrors(string $html): array
+{
+    $errors = [];
+
+    new Crawler($html)->filter('li.sy-fo-field-error-message')->each(function (Crawler $message) use (&$errors): void {
+        $wrapper = $message->ancestors()->filter('[data-field-wrapper]')->first();
+        $model = explode('|', $wrapper->filter('[data-model]')->first()->attr('data-model') ?? '');
+
+        $errors[end($model)][] = mb_trim($message->text());
+    });
+
+    return $errors;
+}
+
+/**
+ * The statements the recorder saw that write, which a refusal must leave empty.
+ *
+ * @return list<string>
+ */
+function compositeRecordWrites(RecordingMiddleware $recorder): array
+{
+    return array_values(array_filter($recorder->statements(), static fn (string $sql): bool => ! str_starts_with($sql, 'SELECT')));
 }
 
 it('keys every composite list row and its edit link by the escaped key', function (): void {
@@ -368,7 +397,7 @@ it('mints no record key for a header action on an identifier whose field is name
         ->and($host->getMountedAction()?->getRecord()?->getTitle())->toBe('Fifth');
 });
 
-it('characterizes: saving an edited key field re-keys the row and strands the page prop', function (): void {
+it('refuses an edited key field under the field, writes nothing and keeps the page on its key', function (): void {
     [$client, $entityManager] = compositeRecordClient();
 
     $component = $this->createLiveComponent(
@@ -377,30 +406,47 @@ it('characterizes: saving an edited key field re-keys the row and strands the pa
         client: $client,
     );
 
+    $recorder = compositeRecordRecorder();
+    $client->catchExceptions(true);
+
     $component->set('data.house', 'moved')->call('save');
 
-    // Doctrine moves the primary key of a composite record silently, and
-    // `save()` never re-reads it, so the prop still names a row that is gone.
-    expect($component->response()->getStatusCode())->toBe(200)
-        ->and(compositeRecordProps((string) $component->render())['record'])->toBe('plain~about');
+    $html = (string) $client->getResponse()->getContent();
 
+    expect($client->getResponse()->getStatusCode())->toBe(422)
+        ->and(compositeRecordFieldErrors($html))->toBe(['data.house' => ['This value cannot be changed.']])
+        ->and(compositeRecordProps($html)['record'])->toBe('plain~about')
+        ->and(compositeRecordWrites($recorder))->toBe([]);
+
+    // The refused key was put back in memory, so a later flush in the same
+    // request writes nothing either.
+    $entityManager->flush();
     $entityManager->clear();
 
-    expect($entityManager->find(Imprint::class, ['house' => 'moved', 'year' => 'about'])?->getLabel())->toBe('Plain')
-        ->and($entityManager->find(Imprint::class, ['house' => 'plain', 'year' => 'about']))->toBeNull()
-        ->and(fn (): mixed => $component->call('save'))
-        ->toThrow(NotFoundHttpException::class, 'No record matching [plain~about]');
+    expect(compositeRecordWrites($recorder))->toBe([])
+        ->and($entityManager->find(Imprint::class, ['house' => 'plain', 'year' => 'about'])?->getLabel())->toBe('Plain')
+        ->and($entityManager->find(Imprint::class, ['house' => 'moved', 'year' => 'about']))->toBeNull();
 });
 
-it('characterizes: creating a composite record on a taken key reaches the database and violates the constraint', function (): void {
-    [$client] = compositeRecordClient();
+it('refuses a composite record on a taken key under its first key field, writing nothing', function (): void {
+    [$client, $entityManager] = compositeRecordClient();
 
     compositeRecordPushPanelRequest();
 
     $component = $this->createLiveComponent(CreateImprint::class, ['panelId' => 'key'], client: $client);
+    $component->set('data', ['house' => 'plain', 'year' => 'about', 'label' => 'Duplicate']);
 
-    // Nothing validates the key's uniqueness before the insert, so the refusal
-    // is the platform's rather than the form's.
-    expect(fn (): mixed => $component->set('data', ['house' => 'plain', 'year' => 'about', 'label' => 'Duplicate'])->call('create'))
-        ->toThrow(UniqueConstraintViolationException::class);
+    $recorder = compositeRecordRecorder();
+    $client->catchExceptions(true);
+
+    $component->call('create');
+
+    $html = (string) $client->getResponse()->getContent();
+
+    expect($client->getResponse()->getStatusCode())->toBe(422)
+        ->and(compositeRecordFieldErrors($html))->toBe(['data.house' => ['This value is already used.']])
+        ->and(mb_substr_count($html, 'This value is already used.'))->toBe(1)
+        ->and(compositeRecordWrites($recorder))->toBe([])
+        ->and($entityManager->isOpen())->toBeTrue()
+        ->and($entityManager->getRepository(Imprint::class)->count([]))->toBe(3);
 });

@@ -128,6 +128,18 @@ trait BelongsToRecord
      */
     protected function getRecordPathMap(): array
     {
+        return $this->collectRecordPaths()[0];
+    }
+
+    /**
+     * {@see getRecordPathMap()}, beside the paths it dropped beneath a subtree
+     * owner — which a violation raised inside that owner's related record is
+     * still spoken in.
+     *
+     * @return array{array<string, Component>, array<string, Component>}
+     */
+    private function collectRecordPaths(): array
+    {
         $map = [];
         $owners = [];
         $hooked = [];
@@ -214,7 +226,7 @@ trait BelongsToRecord
             $this->refuseUnmappedRelationshipHook($component);
         }
 
-        return $map;
+        return [$map, $dropped];
     }
 
     /**
@@ -430,7 +442,7 @@ trait BelongsToRecord
      * Read this schema's declared leaf paths off a record, traversing its
      * object graph. Unreadable and uninitialized properties are skipped, as
      * are object-valued leaves other than one the component's state casts
-     * flatten to a non-object ({@see self::isObjectCarriedByStateCasts()}) —
+     * flatten to a non-object ({@see Component::isObjectCarriedByStateCasts()}) —
      * the null-fill pass supplies the skipped keys; a
      * null or scalar intermediate supplies null. A component declaring
      * {@see Component::loadStateFromRelationshipsUsing()} supplies its own
@@ -458,7 +470,7 @@ trait BelongsToRecord
                 continue;
             }
 
-            if (is_object($value) && ! $this->isObjectCarriedByStateCasts($component, $value)) {
+            if (is_object($value) && ! $component->isObjectCarriedByStateCasts($value)) {
                 continue;
             }
 
@@ -466,6 +478,40 @@ trait BelongsToRecord
         }
 
         return $state;
+    }
+
+    /**
+     * Read every relationship-backed component's state back off the bound
+     * record, as a fill reads those paths — for the host to call once its flush
+     * has run, so an item or a related record the save created is keyed by the
+     * identifier the flush gave it and the next save updates that record rather
+     * than building it again. A schema bound to no record reads nothing.
+     */
+    public function loadStateFromRelationships(): void
+    {
+        $record = $this->getRecord();
+
+        if (! is_object($record)) {
+            return;
+        }
+
+        foreach ($this->getRecordPathMap() as $component) {
+            if (! $component->hasLoadStateFromRelationships()) {
+                continue;
+            }
+
+            $component->rawState($component->loadStateFromRelationships($record));
+            $component->hydrateState(applyDefaults: false);
+
+            foreach ($component->getChildSchemas() as $childSchema) {
+                $childSchema->hydrateState(applyDefaults: false);
+                $childSchema->callAfterStateHydrated();
+                $childSchema->fillStateWithNull();
+            }
+
+            $component->callAfterStateHydrated();
+            $component->fillStateWithNull();
+        }
     }
 
     /**
@@ -482,36 +528,14 @@ trait BelongsToRecord
     }
 
     /**
-     * Whether this object leaf is one the component's own state casts flatten
-     * into a non-object. The state bag is a writable `array` LiveProp and the
-     * hydrator refuses an object anywhere inside one, so the exemption from the
-     * object-value skip is exactly as wide as the cast that earns it: the chain
-     * is run here to ask, and the hydration pass behind the read runs it again
-     * to convert. A component with no cast, or one whose casts leave the value
-     * an object, is skipped and null-filled as any other object leaf is.
-     */
-    private function isObjectCarriedByStateCasts(Component $component, object $value): bool
-    {
-        $stateCasts = $component->getStateCasts();
-
-        if ($stateCasts === []) {
-            return false;
-        }
-
-        foreach ($stateCasts as $stateCast) {
-            $value = $stateCast->set($value);
-        }
-
-        return ! is_object($value);
-    }
-
-    /**
      * The inverse of the mapping walk, handed to the host so a violation raised
      * against the mapped record can be spoken back in this schema's state paths.
      */
     public function getRecordViolationPathTranslator(): ViolationPathTranslator
     {
-        return new ViolationPathTranslator($this->getRecordPathMap(), $this->getStatePath());
+        [$map, $dropped] = $this->collectRecordPaths();
+
+        return new ViolationPathTranslator([...$dropped, ...$map], $this->getStatePath());
     }
 
     /**

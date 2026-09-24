@@ -155,6 +155,31 @@ trait HasState
         return $this->stateCasts !== [];
     }
 
+    /**
+     * Whether this component's own state casts flatten an object leaf read off
+     * a record into a non-object — the one object a fill may put in the state
+     * bag, which is a writable `array` LiveProp the hydrator refuses an object
+     * anywhere inside. The chain is run here to ask, and the hydration pass
+     * behind the read runs it again to convert. With no cast, or casts that
+     * leave the value an object, the leaf is skipped and null-filled.
+     *
+     * @internal the object-leaf gate of every fill walk — the root read, a singular relationship's related record and a relationship repeater's items
+     */
+    public function isObjectCarriedByStateCasts(object $value): bool
+    {
+        $stateCasts = $this->getStateCasts();
+
+        if ($stateCasts === []) {
+            return false;
+        }
+
+        foreach ($stateCasts as $stateCast) {
+            $value = $stateCast->set($value);
+        }
+
+        return ! is_object($value);
+    }
+
     public function state(mixed $state): static
     {
         foreach (array_reverse($this->getStateCasts()) as $stateCast) {

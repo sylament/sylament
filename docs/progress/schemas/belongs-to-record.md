@@ -1144,10 +1144,11 @@ for a generated id every added item was deleted and re-inserted on **every**
 save. With the reload the second save writes nothing and a generated id keeps
 its value.
 
-Three costs, all enumerated: a relation-backed component's `afterStateHydrated`
+Four costs, all enumerated: a relation-backed component's `afterStateHydrated`
 hooks run once more per save; a host that flushes itself, outside `EditRecord`,
 keeps the old behaviour until it adds the one call after its flush — the demo's
-`Articles:ArticleForm` does; and UI-only state inside a relationship is reset.
+`Articles:ArticleForm` does; UI-only state inside a relationship is reset; and a
+relationship repeater item saved on a blank key fails the save itself.
 The reload hands a relationship repeater's items and a singular relationship's
 group back as the record gives them, so a `dehydrated(false)` field there — state
 the save never wrote — reads what the record gives, `null` where the record holds
@@ -1155,12 +1156,21 @@ no such property, after every successful save, where before M7 · 6 it kept what
 the user typed. That third cost is Filament's own behaviour, since its reload
 runs inside the `getState()` its save makes, and it is accepted rather than
 worked around; the [roadmap's ledger](../roadmap.md#m7--composite-identifiers)
-records it. `EditAction`, `CreateAction` and the option modals unmount on success
-or refill for create-another, so none needs the reload. Pinned by
+records it. The fourth is the reload's mint. A relationship repeater item keyed
+by a single natural string key that no `prePersist` fills, under a key field the
+form does not `required()`, can be saved blank: a blank component is incomplete
+to both key rules, so the flush inserts the `''` row as it did before M7 · 6. The
+reload then keys the item through `RecordKey::of()`, which refuses the blank
+component with a `LogicException` after the commit — so the save's own response
+is the 500, where before it answered *Saved* and the next request's fill was the
+500, the row written either way. `required()` on the key field is the
+application's guard, and the ledger records it. `EditAction`, `CreateAction` and
+the option modals unmount on success or refill for create-another, so none needs
+the reload. Pinned by
 [`BelongsToRecordReloadTest`](../../../packages/schemas/tests/Unit/Concerns/BelongsToRecordReloadTest.php)
 and, through the page, by panels'
 [`EditRecordRelationshipsTest`](../../../packages/panels/tests/Integration/Resources/Pages/EditRecordRelationshipsTest.php),
-a repeater item's reset included.
+a repeater item's and a singular relationship's reset included.
 
 ### The `exists`-guarded members are not ported
 

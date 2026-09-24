@@ -64,7 +64,7 @@ what has to land first. _Detail_ links the write-up in [Details](#details)
 | [`CanCallParentAction`](../../../packages/actions/src/Concerns/CanCallParentAction.php) | [`Concerns/CanCallParentAction.php`](../../../vendor/filament/actions/src/Concerns/CanCallParentAction.php) | done | — | Filament-exact two-method port (`callParent()` + getter). The getter is `getParentActionCallLiveComponentClickHandler()` against Filament's `…Livewire…`, the systematic Livewire → UX LiveComponent naming translation from the [rename table](../renames.md), not a rename of its own. Read by all five trigger templates, ranked **above** `shouldClose()` in the click precedence |
 | [`HasParentActions`](../../../packages/actions/src/Concerns/HasParentActions.php) | [`Concerns/HasParentActions.php`](../../../vendor/filament/actions/src/Concerns/HasParentActions.php) | done | — | Complete, method-for-method and body-for-body. Three of its accessors (`shouldCancelParentActionsOnClose()`, `shouldCancelAllParentActionsOnClose()`, `getParentActionToCancelToOnClose()`) have no consumer here — and none in `vendor/filament` either, so they are kept as declared API rather than trimmed |
 | Trigger rendering ([`Action/Button.html.twig`](../../../packages/actions/templates/partials/Action/Button.html.twig) + the [`Link`](../../../packages/actions/templates/partials/Action/Link.html.twig) / [`Badge`](../../../packages/actions/templates/partials/Action/Badge.html.twig) / [`Grouped`](../../../packages/actions/templates/partials/Action/Grouped.html.twig) / [`IconButton`](../../../packages/actions/templates/partials/Action/IconButton.html.twig) siblings) | [`Action.php`](../../../vendor/filament/actions/src/Action.php) (`toButtonHtml`/`toLinkHtml`/`toBadgeHtml`/`toGroupedHtml`/`toIconButtonHtml`) | in progress | — | [detail](#tooltip-icon-position-and-extra-attribute-rendering-are-untested), [semantics](#an-uncolored-badge-or-link-action-renders-primary-not-gray), [diverges](#the-view-switch-renders-through-twig-templates-not-tohtml-fast-paths) |
-| Modal rendering ([`ActionModal/index.html.twig`](../../../packages/actions/templates/components/ActionModal/index.html.twig)) | [`action-modal.blade.php`](../../../vendor/filament/actions/resources/views/action-modal.blade.php) | in progress | — | [detail](#the-action-modal-template-only-renders-part-of-the-full-action-modal), [diverges](#the-action-modal-is-an-anonymous-twig-component-not-an-included-view), [diverges](#the-modal-footer-renders-real-action-instances) |
+| Modal rendering ([`ActionModal/index.html.twig`](../../../packages/actions/templates/components/ActionModal/index.html.twig)) | [`action-modal.blade.php`](../../../vendor/filament/actions/resources/views/action-modal.blade.php) | in progress | — | [detail](#the-action-modal-template-only-renders-part-of-the-full-action-modal), [diverges](#the-action-modal-is-an-anonymous-twig-component-not-an-included-view), [diverges](#the-modal-footer-renders-real-action-instances), [diverges](#the-action-modal-renders-the-record-errors-that-name-no-field) |
 | [`HasColor`](../../../packages/support/src/Components/Concerns/HasColor.php) (support) | [`Concerns/HasColor.php`](../../../vendor/filament/support/src/Concerns/HasColor.php) | done | — | — |
 | [`HasExtraAttributes`](../../../packages/support/src/Components/Concerns/HasExtraAttributes.php) (support) | [`Concerns/HasExtraAttributes.php`](../../../vendor/filament/support/src/Concerns/HasExtraAttributes.php) | done | — | — |
 | [`HasIcon`](../../../packages/support/src/Components/Concerns/HasIcon.php) (support) | [`Concerns/HasIcon.php`](../../../vendor/filament/support/src/Concerns/HasIcon.php) | done | — | — |
@@ -666,7 +666,9 @@ getters — Filament's whole binding list minus the deferred `alert` and the
 pass straight through, the `content` block renders `getModalContent()` then
 `getModalContentFooter()`, and the footer renders
 `getVisibleModalFooterActions()` as real `Action` instances with
-`getModalFooterActionsAlignment()` as their alignment.
+`getModalFooterActionsAlignment()` as their alignment. One thing it renders is
+not on Filament's list at all: the mounted schema's own record errors,
+[above the schema](#the-action-modal-renders-the-record-errors-that-name-no-field).
 
 The whole thing sits inside a **dismissal wrapper**: a `<div>` binding the
 support controller's `sylament--support--modal:dismissed` event to
@@ -1885,6 +1887,34 @@ than an absent identity — but an entry that is present and blank (or not
 stringable) returns null where Filament's `strval()` would have emitted `''` or
 fatalled. Covered by
 [`InteractsWithRecordTest`](../../../packages/actions/tests/Unit/Concerns/InteractsWithRecordTest.php).
+
+### The action modal renders the record errors that name no field
+
+Filament's modal renders its schema and nothing about the schema's errors beyond
+what each field renders under itself — Laravel rules are declared per field, so
+there is no record-level violation to show. Here a mounted schema's `getData()`
+validates the mapped record as well
+([record-sourced constraints](../schemas/can-be-validated.md#record-sourced-constraints-are-validated-on-the-mapped-object)),
+and a violation that names no field the modal declares — a class-level
+constraint, an application `UniqueEntity` whose `errorPath` the modal lacks, a
+`before()` hook that moved a key half — folds onto the mounted schema's own state
+path, which belongs to no input. Until
+[M7 · 6](../roadmap.md#m7--composite-identifiers) that was a 422 with the modal
+open and nothing on screen, in every application.
+
+So [`ActionModal/index.html.twig`](../../../packages/actions/templates/components/ActionModal/index.html.twig),
+inside its `schema is not null` branch and before `renderComponent(schema)`,
+reads `schema.getLiveComponent.getErrorsForSchemaStatePath(schema.getStatePath)`
+and, when that is not empty, renders `<ul class="sy-ac-modal-errors" data-record-errors>`
+with one `<li>` per message — the modal twin of panels'
+[record-level error outlet](../panels/README.md#createrecord). Its one rule lives
+in `assets/src/styles/components/action-modal.css`, imported from actions'
+`styles/index.css`, and is `@apply`-identical to `.sy-pa-form-errors`. It is not
+a `{% block %}`, so a caller cannot replace it by name the way a page replaces
+panels' `form_errors` block. Pinned by
+[`ActionModalRecordErrorsTest`](../../../packages/actions/tests/Integration/Components/ActionModalRecordErrorsTest.php)
+over a real 422 — the list inside `.sy-modal`, before the first field — and its
+absence while the schema's own path carries nothing.
 
 ### The action modal is an anonymous Twig component, not an included view
 

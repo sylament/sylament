@@ -38,7 +38,16 @@ re-point and the `replica` injection), the Integration
 [`ReplicateActionTest`](../../../packages/actions/tests/Integration/ReplicateActionTest.php)
 (both arms end to end against the fixture entity manager — the modal fill from
 the copy, the second row, the untouched original, and the `beforeReplicaSaved()`
-hook seeing an unsaved replica) and
+hook seeing an unsaved replica — and, since M7 · 6, the key a replica is asked
+for: a parent kept, an incomplete key refused by name at each of its two points
+— a single derived identity among them, where Doctrine's `EntityMissingAssignedId`
+spoke before — a blank-default single key refused on the first replicate, a key
+a `prePersist` callback or an event-manager listener fills saved, a single
+assigned `int` nothing sets left to Doctrine as before, and the one shape
+recorded as Doctrine's), the Integration
+[`ReplicateActionTakenKeyTest`](../../../packages/actions/tests/Integration/ReplicateActionTakenKeyTest.php)
+(a modal left on its original's key, a changed one, and a hook that derives the
+key) and
 [`RecordReplicatorTest`](../../../packages/actions/tests/Integration/Replication/RecordReplicatorTest.php)
 (the copy rules against real Doctrine metadata).
 
@@ -56,7 +65,7 @@ by_ names what has to land first. _Detail_ carries **diverges** → the note in
 | [`modalHeading()`](../../../packages/actions/src/ReplicateAction.php) (record title interpolated) | [`ReplicateAction.php`](../../../vendor/filament/actions/src/ReplicateAction.php) | done | — | [diverges](#the-strings-are-literals-not-translation-keys) |
 | [`icon('heroicons:square-2-stack-20-solid')` + `groupedIcon(...)`](../../../packages/actions/src/ReplicateAction.php) | [`ReplicateAction.php`](../../../vendor/filament/actions/src/ReplicateAction.php) `tableIcon()` + `groupedIcon()` | done | — | [diverges](#the-icon-is-a-literal-name-and-a-plain-icon-stands-in-for-tableicon) |
 | [`fillForm()` from the record, minus the excluded names](../../../packages/actions/src/ReplicateAction.php) | [`ReplicateAction.php`](../../../vendor/filament/actions/src/ReplicateAction.php) | done | — | [diverges](#the-fill-reads-the-schemas-declared-paths-not-an-attribute-bag) |
-| [The `action()` body — copy, map, hook, flush, `success()`](../../../packages/actions/src/ReplicateAction.php) | [`ReplicateAction.php`](../../../vendor/filament/actions/src/ReplicateAction.php) | done | — | [diverges](#doctrine-has-no-replicate-so-the-copy-is-read-off-classmetadata) · [semantics](#the-write-body-reads-the-mounted-schema-from-the-host-not-from-a-parameter) |
+| [The `action()` body — copy, map, hook, flush, `success()`](../../../packages/actions/src/ReplicateAction.php) | [`ReplicateAction.php`](../../../vendor/filament/actions/src/ReplicateAction.php) | done | — | [diverges](#doctrine-has-no-replicate-so-the-copy-is-read-off-classmetadata) · [diverges](#a-replica-keeps-its-parent-and-one-whose-key-is-still-incomplete-is-refused-by-name) · [diverges](#a-taken-key-answers-in-the-modal-and-any-other-unique-column-is-still-the-databases) · [semantics](#the-write-body-reads-the-mounted-schema-from-the-host-not-from-a-parameter) |
 | [`getSchema()` re-pointing the container at the record class](../../../packages/actions/src/ReplicateAction.php) | [`ReplicateAction.php`](../../../vendor/filament/actions/src/ReplicateAction.php) | done | — | [semantics](#the-modal-container-is-re-pointed-twice-at-the-class-then-at-the-replica) |
 | [`excludeAttributes()` / `getExcludedAttributes()`](../../../packages/actions/src/ReplicateAction.php) | [`ReplicateAction.php`](../../../vendor/filament/actions/src/ReplicateAction.php) | done | — | [diverges](#attributes-are-mapped-field-and-association-names) |
 | [`beforeReplicaSaved()` / `callBeforeReplicaSaved()`](../../../packages/actions/src/ReplicateAction.php) | [`ReplicateAction.php`](../../../vendor/filament/actions/src/ReplicateAction.php) | done | — | — |
@@ -64,7 +73,7 @@ by_ names what has to land first. _Detail_ carries **diverges** → the note in
 | [`mutateRecordDataUsing()`](../../../packages/actions/src/Concerns/CanMutateRecordData.php) | [`ReplicateAction.php`](../../../vendor/filament/actions/src/ReplicateAction.php) | done | — | [diverges](#mutaterecorddatausing-is-one-shared-trait-not-three-copies) · [semantics](#the-no-schema-arm-is-the-only-place-mutaterecorddatausing-writes-the-record-itself) |
 | [`CanCustomizeProcess`](../../../packages/actions/src/Concerns/CanCustomizeProcess.php) (`using()` / `process()`) | [`Concerns/CanCustomizeProcess.php`](../../../vendor/filament/actions/src/Concerns/CanCustomizeProcess.php) | done | — | — |
 | `afterReplicaSaved()` | [`ReplicateAction.php`](../../../vendor/filament/actions/src/ReplicateAction.php) | skipped | — | [diverges](#afterreplicasaved-is-not-ported) |
-| [`RecordReplicator::replicate()`](../../../packages/actions/src/Replication/RecordReplicator.php) | [`Model::replicate()`](../../../vendor/laravel/framework/src/Illuminate/Database/Eloquent/Model.php) | done | — | [diverges](#doctrine-has-no-replicate-so-the-copy-is-read-off-classmetadata) |
+| [`RecordReplicator::replicate()`](../../../packages/actions/src/Replication/RecordReplicator.php) | [`Model::replicate()`](../../../vendor/laravel/framework/src/Illuminate/Database/Eloquent/Model.php) | done | — | [diverges](#doctrine-has-no-replicate-so-the-copy-is-read-off-classmetadata) · [diverges](#a-replica-keeps-its-parent-and-one-whose-key-is-still-incomplete-is-refused-by-name) |
 | [`RecordReplicator::getFieldValues()` / `setFieldValues()`](../../../packages/actions/src/Replication/RecordReplicator.php) | [`Model::attributesToArray()`](../../../vendor/laravel/framework/src/Illuminate/Database/Eloquent/Model.php) + `fill()` | done | — | [diverges](#doctrine-has-no-replicate-so-the-copy-is-read-off-classmetadata) |
 
 ## Semantics
@@ -143,9 +152,8 @@ configure and the manager is only known per record. `newInstance()` starts the
 copy, which bypasses the constructor (a record class may require arguments), and
 then, per mapping entry:
 
-- an **identifier** is not copied — the replica is a new row, or fails loudly at
-  Doctrine's own missing-identifier check when the id is assigned rather than
-  generated;
+- an identifier **field** is not copied — a generated one is the database's to
+  fill, and an assigned one is [asked for](#a-replica-keeps-its-parent-and-one-whose-key-is-still-incomplete-is-refused-by-name);
 - the **version** field is not copied — optimistic locking counts this row's
   updates, not the original's;
 - a field whose `generated` is not `GENERATED_NEVER` is not copied — the database
@@ -171,9 +179,10 @@ then, per mapping entry:
   proxy stays a proxy and stays uninitialised; an inverse side is left alone,
   since the owning row is what carries the foreign key;
 - an association that is **part of the identifier** (`#[Id] #[ManyToOne]`, or a
-  shared-primary-key `#[Id] #[OneToOne]`) is not copied either, symmetric with
-  the identifier field rule above — carrying the original's key over would turn
-  the deliberate missing-identifier failure into a duplicate-key one;
+  shared-primary-key `#[Id] #[OneToOne]`) **is** copied, as the same reference,
+  so a replica keeps its parent — unless that one association is the whole
+  identifier, where copying it would hand the replica its original's key
+  ([why](#a-replica-keeps-its-parent-and-one-whose-key-is-still-incomplete-is-refused-by-name));
 - every **collection-valued** association is set to a fresh empty
   `ArrayCollection` — the constructor that would have initialised it never ran,
   and sharing the original's collection is the failure mode above;
@@ -208,13 +217,106 @@ modal, which `Schema::getData()` then writes onto the replica. Filament never
 meets this because `attributesToArray()` is flat; here, name an embeddable's
 owner (`address`) when the intent is to exclude what it holds.
 
-### A unique column is not auto-excluded, and a violation is a 500
+### A replica keeps its parent, and one whose key is still incomplete is refused by name
 
-Eloquent's `replicate()` drops `uniqueIds()`; the port drops nothing on
-uniqueness grounds, exactly as Filament's action does not. A duplicate that
-violates a unique index therefore reaches the database and comes back as an
-unhandled `UniqueConstraintViolationException`. That is deliberate: the tool for
-it is the form-level
+Eloquent's `replicate()` drops the primary key, and a Filament replica is a new
+auto-incremented row. A Doctrine key can be assigned, and it can
+be an association, so what the copy does with each half is a decision here —
+taken with [M7 · 6](../roadmap.md#m7--composite-identifiers):
+
+- a **field** half is never copied, and the modal asks for it. The fill
+  pre-fills it from the original — the modal is a create over a copy — so a key
+  left unchanged is a taken one, [answered in the modal](#a-taken-key-answers-in-the-modal-and-any-other-unique-column-is-still-the-databases);
+- an **association** half is copied, so a translation replicated from its
+  article's relation manager stays that article's and a `Membership` stays its
+  group's. The rule is
+  `count($metadata->identifier) > 1 || ! $metadata->hasAssociation($metadata->identifier[0])`:
+  every identifier association is copied **unless that one association is the
+  whole identifier** — a single derived identity — because there the copy would
+  carry its original's key with no field left to change it. An identifier made
+  of two associations keeps both.
+
+A replica whose key is still incomplete right before it is written is refused by
+name, at two points and with one message:
+
+> `The [%s] action built a replica of [%s] whose identifier is incomplete, so it cannot be saved as a new record. Put every identifier field the copy leaves unset in its schema() — enabled and dehydrated — or set it in beforeReplicaSaved().`
+
+The first point is before `persist()`, and it asks two questions. The first is
+epic 4's
+[predicate](../schemas/association-reader.md#an-incomplete-assigned-identifier-is-the-question-the-create-paths-ask):
+is a component the application must supply still missing — asked of every
+identifier but a plain single scalar, and of no class a `prePersist` callback or
+mapped entity listener exempts — so Doctrine's own `EntityMissingAssignedId`
+never speaks first. A **single derived identity**, whose one association the
+copy leaves off, is the case that changed: its bare replicate was that Doctrine
+exception and is now the named refusal, a 500 with nothing written either way.
+The second question makes no exception for a plain single scalar, and it is
+asked only of a class no `prePersist` hook could key — no lifecycle callback, no
+mapped entity listener, no listener on the event manager: does a key whose
+values are all set still mint none, because a component is blank? The reason is
+Doctrine's. A persisted entity whose identity hash is `''` — a single string key
+left blank — can be neither detached nor removed, so the second point could not
+take it back; asked here, a single string key whose default is `''`, left blank
+by every filler, is refused on the **first** replicate, where it wrote a row no
+key names and left the listing failing on every render. A class such a hook
+could key — and every class, once a `prePersist` listener sits on its manager's
+event manager — is left to the second point, so a blank key that listener fills
+still saves. A single assigned `int` nothing set holds no value at all, so it
+still reaches Doctrine's `EntityMissingAssignedId`, as before.
+
+The second point is after `persist()`, once every `prePersist` callback and
+listener has run, and it exempts nothing: a replica `RecordKey::find()` still
+cannot key is taken back out of the unit of work, then refused. It is what
+closes a class whose own `#[PrePersist]` exempted it from the first point and
+then left a half blank — that replica inserted `('', '')` — while a key a
+callback does fill from blank saves, because the second point reads it after
+the callback. Both points run inside the action's transaction, so nothing is
+written, and both read through the record's **own** manager — the first as
+`new AssociationReader($manager)` rather than the container's reader, which
+breaks for a class a non-default manager maps.
+
+One shape stays Doctrine's, and is recorded in the
+[roadmap's ledger](../roadmap.md#m7--composite-identifiers) rather than refused:
+a class that **does** carry a `prePersist` hook and still leaves a **single**
+string key blank passes the first point, and the second point's `detach()` then
+throws Doctrine's `ORMInvalidArgumentException` — a loud 500 with nothing
+written, the action's transaction rolled back, and the replica left scheduled
+for the rest of that request. A composite blank key detaches, its identity hash
+being `' '` rather than `''`. The Integration
+[`ReplicateActionTest`](../../../packages/actions/tests/Integration/ReplicateActionTest.php)
+pins the shape as a limit — the exception, no row written, the replica still
+scheduled — so the day Doctrine can take such a replica back, it fails.
+
+There is no default replicate schema: no panels host answers `ReplicateAction`
+with the resource form, and neither do Filament's pages. A modal's operation is
+the action's **name**, so a key field declared `disabledOn('edit')` is enabled
+under `replicate`, and reusing the resource form is
+`->schema(fn (Schema $schema): Schema => $this->form($schema))`.
+
+### A taken key answers in the modal, and any other unique column is still the database's
+
+A replicate modal left on its original's key is a create on a taken key, and the
+[record check](../schemas/can-be-validated.md#a-taken-assigned-key-is-a-field-error-not-a-unique-violation)
+answers it: *"This value is already used."* under the first identifier field the
+modal lets the user type, the first that is no association — nothing written.
+Before [M7 · 6](../roadmap.md#m7--composite-identifiers) it was Doctrine's
+`EntityIdentityCollisionException`, the original being managed in the same
+request. A changed key saves the replica.
+
+The check reads the key the modal **mapped**, and `beforeReplicaSaved()` runs
+after it. So a keyed modal pre-filled with the original's key beside a hook that
+derives the copy's key is refused as unchanged where it saved before. The remedy
+is Filament's own: derive the key in `fillForm()` or `mutateRecordDataUsing()`,
+the way the demo's `ArticleResource` pre-fills its slug with `-copy`, or leave the
+key out of the modal and let the hook set it. A taken key such a hook sets is not
+looked up at all and stays Doctrine's `EntityIdentityCollisionException` —
+recorded in the [roadmap's ledger](../roadmap.md#m7--composite-identifiers).
+
+Eloquent's `replicate()` also drops `uniqueIds()`; the port drops nothing on
+uniqueness grounds for a column that is no key, exactly as Filament's action does
+not. A duplicate violating such an index still reaches the database and comes
+back as an unhandled `UniqueConstraintViolationException`. That is deliberate:
+the tool for it is the form-level
 [`unique()`](../forms/can-be-validated.md#unique-and-exists-are-one-dql-probe-behind-a-container-service)
 constraint on the field the index covers, which fails the modal with a message
 instead. An action replicating a uniquely-indexed record without a form arm, and

@@ -41,7 +41,13 @@ three-hop relationship chain),
 (the relationship arm, in tables' suite because only that kernel boots a table
 and a forms field — the src-mirror rule is relaxed there for the same reason
 [`PrebuiltDeleteActionTest`](../../../packages/tables/tests/Integration/PrebuiltDeleteActionTest.php)
-relaxes it).
+relaxes it). M7 · 6's create-path rules are pinned beside them by
+[`CreateActionTakenKeyTest`](../../../packages/actions/tests/Integration/CreateActionTakenKeyTest.php) (a taken
+key under its field, the create-another run, the order against the record's own
+constraints, a generated id adding no statement) and
+[`CreateActionRelationshipKeyTest`](../../../packages/actions/tests/Integration/CreateActionRelationshipKeyTest.php)
+(the attach before the mapping, the restored binding, the many-to-many give-back,
+the relationship winning and the lookup on the form's pick).
 
 ## Surface
 
@@ -64,7 +70,7 @@ first. _Detail_ carries a **detail** link to another file's write-up, a
 | [`record(null)`](../../../packages/actions/src/CreateAction.php) (Filament-verbatim in `setUp()`; clears only a `configureUsing()`-bound record) | [`CreateAction.php`](../../../vendor/filament/actions/src/CreateAction.php) | done | — | [diverges](#the-modal-arm-persists-through-the-schemas-record-class) |
 | `forceRenderAfterCreateAnother()` / `shouldForceRenderAfterCreateAnother()` | [`CreateAction.php`](../../../vendor/filament/actions/src/CreateAction.php) | skipped | — | [diverges](#two-create-another-members-are-not-ported) |
 | `disableCreateAnother()` | [`CreateAction.php`](../../../vendor/filament/actions/src/CreateAction.php) | skipped | — | [diverges](#two-create-another-members-are-not-ported) |
-| [`relationship()` / `getRelationship()`](../../../packages/actions/src/CreateAction.php) | [`CreateAction.php`](../../../vendor/filament/actions/src/CreateAction.php) | done | — | [semantics](#the-created-record-joins-the-relationship-in-the-same-flush) |
+| [`relationship()` / `getRelationship()`](../../../packages/actions/src/CreateAction.php) | [`CreateAction.php`](../../../vendor/filament/actions/src/CreateAction.php) | done | — | [semantics](#the-created-record-joins-the-relationship-in-the-same-flush) · [semantics](#a-create-whose-form-picks-another-owner-still-lands-under-the-relationship-and-is-probed-on-the-pick) |
 | The `BelongsToMany` pivot-column split inside the relationship arm | [`CreateAction.php`](../../../vendor/filament/actions/src/CreateAction.php) | skipped | — | The whole pivot surface is skipped one layer down — a Doctrine association table carrying payload is an entity of its own, so there are no pivot columns to split out of the data ([`table.md`](../tables/table.md#surface)) |
 
 ## Semantics
@@ -82,16 +88,28 @@ then the host's
 An action inside a relation-scoped table therefore needs no configuration at
 all, and one that names its own owner overrides the table it sits in.
 
-The arm itself runs **before** `persist()` in `createRecord()`, and each of
-those three lines is load-bearing. The attach comes first because an identifier
-field the association fills reads **unset** until the join is made, and
-Doctrine's `AssignedGenerator` throws `EntityMissingAssignedId` the moment
-`persist()` reads one — so a record whose identifier association *is* the
+The arm runs **before the mapping** in `createRecord()`, and again after it —
+since [M7 · 6](../roadmap.md#m7--composite-identifiers); M7 · 3 had it before
+`persist()` alone. The attach before is what the record check needs: `getData()`
+ends by validating the record and
+[looking its assigned key up](../schemas/can-be-validated.md#a-taken-assigned-key-is-a-field-error-not-a-unique-violation),
+and an identifier field the association fills reads **unset** until the join is
+made. So the record is constructed first — `new $recordClass()`, what `getData()`
+does for a class-string record — attached, and only then mapped, with the schema
+bound to that record for the mapping alone and back to the class in a `finally`,
+so a refused create re-renders exactly as it did. An application's own record
+constraints see the owner's half too: a `UniqueEntity` over it went from blind —
+a 500 — to a 422. When the mapping refuses a **many-to-many** create, the record
+is detached from the owner's collection on the way out, since nothing else takes
+it out again; a one-to-many attach touches no owner collection. The attach
+**after** keeps the relationship winning over a form field that maps the same
+association. With no relationship in force the body is the one `getData()` line
+it always was. And the order still serves `persist()`: Doctrine's
+`AssignedGenerator` throws `EntityMissingAssignedId` the moment it reads an
+unset identifier field, so a record whose identifier association *is* the
 relationship cannot be persisted before it is attached.
-`CreateRecord::handleRecordCreation()` has always ordered it that way, though
-for a different reason — its docblock names an association the mapping refuses
-to leave empty, which would fail the write rather than the form — and this arm
-now matches the order for both. `persist()` stays explicit
+[`CreateRecord`](../panels/README.md#createrecord) joins a parent the same way
+under a nested page. `persist()` stays explicit
 because the membership write is not a cascade: the owner's association may
 declare none, and an unpersisted record that a collection merely holds is not
 inserted by a mapping that does not cascade. The attach runs on the object
@@ -108,6 +126,25 @@ Eloquent. Here they do not: the pivot surface is skipped whole (the row above),
 `through` relations have no Doctrine equivalent, and the reader already knows
 from the mapping which of the two shapes the write takes. So the port branches
 only on whether a relationship resolved at all.
+
+### A create whose form picks another owner still lands under the relationship, and is probed on the pick
+
+A relation-scoped create whose form maps the relationship's own association — a
+pantry's kettle created through a schema that also carries a
+`Select::relationship('pantry')` — and picks another owner is recorded rather
+than refused. The attach after the mapping makes the relationship win, so the
+record lands under the owner the relationship names, which is Filament's outcome
+too. But the record check ran while the form's pick still stood, so the taken-key
+lookup asked about the **picked** owner: a key free under the relationship's
+owner and taken under the pick is refused as *"This value is already used."*,
+and the converse — free under the pick, taken under the relationship's owner —
+passes the check and meets the database's constraint at the flush, which follows
+from the order and is unpinned. It is a misconfiguration, since the relationship
+already supplies the field, and refusing it by name would mean inspecting the
+form for an association the mapping names. Pinned by
+[`CreateActionRelationshipKeyTest`](../../../packages/actions/tests/Integration/CreateActionRelationshipKeyTest.php)
+and, on a nested create page, by panels'
+[`CreateRecordTakenKeyTest`](../../../packages/panels/tests/Integration/Resources/Pages/CreateRecordTakenKeyTest.php).
 
 ## Divergences
 

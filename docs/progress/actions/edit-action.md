@@ -25,7 +25,10 @@ chrome, the heading interpolation and the URL fallthrough), the Integration
 [`EditActionTest`](../../../packages/actions/tests/Integration/EditActionTest.php)
 (the modal arm end to end against the fixture entity manager — fill from the
 mount context's record, the `mutateRecordDataUsing()` rewrite, the write onto the
-same entity, and both record guards) and, for the rendered anchor, the
+same entity, and both record guards), the Integration
+[`EditActionChangedKeyTest`](../../../packages/actions/tests/Integration/EditActionChangedKeyTest.php) (a key
+half a `before()` hook moved, refused above the form and put back) and, for the
+rendered anchor, the
 Integration
 [`CanOpenUrlTest`](../../../packages/actions/tests/Integration/Concerns/CanOpenUrlTest.php)
 against the
@@ -69,7 +72,7 @@ port maps through the schema instead. The fill and the write are a pair:
   flushes through
   [`getEntityManagerForRecord()`](action.md#the-transaction-trio-resolves-a-doctrine-connection-instead-of-a-facade).
 
-Five things about that pair are deliberate.
+Six things about that pair are deliberate.
 
 **The record is bound before the fill runs, and by the host.** `fillForm()` fires
 inside `mountAction()`, so the record has to be on the action by then — which is
@@ -110,6 +113,21 @@ Filament's own page has no counterpart to compare against — its
 persist-and-flush pair is the port's, and
 [`Panels\Resources\Pages\EditRecord::handleRecordUpdate()`](../panels/README.md#editrecord)
 is where it also lives page-side.
+
+**A changed key is refused, not written** — since
+[M7 · 6](../roadmap.md#m7--composite-identifiers). `getData()` ends in the
+record check, whose first pass puts back every identifier field the write moved
+and answers *"This value cannot be changed."*
+([the rule](../schemas/can-be-validated.md#a-changed-key-is-refused-and-put-back-not-handed-to-doctrine)).
+A modal that declares the key field shows it under that field; one whose
+`before()` hook moved a key half the modal does not declare gets it on the
+mounted schema's own path, which the
+[modal's record-error list](action.md#the-action-modal-renders-the-record-errors-that-name-no-field)
+renders above the form. Either way the key is put back and nothing is written.
+The UI half is `disabledOn('edit')`, and it is bound to the operation's
+**name** — a modal's operation is the action's name — so an
+`EditAction::make('editRenamed')` leaves such a field enabled and the refusal is
+what holds there.
 
 **The default persistence step is a typed private method, not an inline
 closure**, for the reason

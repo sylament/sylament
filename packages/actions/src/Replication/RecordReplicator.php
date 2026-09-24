@@ -19,8 +19,10 @@ final readonly class RecordReplicator
     /**
      * A new, unmanaged instance carrying the record's mapped fields, its to-one
      * owning-side references and a deep clone of each embeddable — never an
-     * identifier, whether a field or an association, nor the version, a
-     * generated column, an inverse side or a collection, which start empty.
+     * identifier field, the version, a generated column, an inverse side or a
+     * collection, which start empty. An identifier association is copied, so a
+     * replica keeps its parent, unless that one association is the whole
+     * identifier: copying it would hand the replica its original's key.
      *
      * @param array<string> $excludedAttributes mapped field or association names left uncopied
      */
@@ -47,6 +49,8 @@ final readonly class RecordReplicator
             $accessor->setValue($replica, is_object($value) ? $this->cloneEmbeddable($value) : $value);
         }
 
+        $copiesIdentifierAssociations = count($metadata->identifier) > 1 || !$metadata->hasAssociation($metadata->identifier[0]);
+
         foreach ($metadata->associationMappings as $name => $mapping) {
             if (!$mapping->isToOne()) {
                 $metadata->setFieldValue($replica, $name, new ArrayCollection());
@@ -54,7 +58,7 @@ final readonly class RecordReplicator
                 continue;
             }
 
-            if ($mapping->isOwningSide() && !$metadata->isIdentifier($name) && !in_array($name, $excludedAttributes, true) && $this->isInitialized($metadata, $record, $name)) {
+            if ($mapping->isOwningSide() && ($copiesIdentifierAssociations || !$metadata->isIdentifier($name)) && !in_array($name, $excludedAttributes, true) && $this->isInitialized($metadata, $record, $name)) {
                 $metadata->setFieldValue($replica, $name, $metadata->getFieldValue($record, $name));
             }
         }

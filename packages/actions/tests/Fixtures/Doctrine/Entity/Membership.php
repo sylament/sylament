@@ -7,9 +7,9 @@ namespace Sylament\Actions\Tests\Fixtures\Doctrine\Entity;
 use Doctrine\ORM\Mapping as ORM;
 
 /**
- * An entity whose composite identifier is half association: the replica carries
- * neither half, so persisting it fails at Doctrine's own missing-identifier
- * check rather than at a duplicate key.
+ * An entity keyed by a note and a role: a replica keeps the note and starts the
+ * role blank, so the key it is saved under is whatever the replicate supplies
+ * for the role.
  */
 #[ORM\Entity]
 class Membership

@@ -5,10 +5,16 @@ declare(strict_types=1);
 namespace Sylament\Actions;
 
 use Closure;
+use Doctrine\ORM\EntityManagerInterface;
+use Doctrine\ORM\Events;
+use Doctrine\ORM\Mapping\ClassMetadata;
+use LogicException;
 use Sylament\Actions\Concerns\CanCustomizeProcess;
 use Sylament\Actions\Concerns\CanMutateRecordData;
 use Sylament\Actions\Replication\RecordReplicator;
+use Sylament\Schemas\Identity\RecordKey;
 use Sylament\Schemas\Schema;
+use Sylament\Schemas\State\AssociationReader;
 use Sylament\Support\Evaluation\ClosureParameter;
 
 use function Sylament\Support\except;
@@ -106,7 +112,12 @@ class ReplicateAction extends Action
     /**
      * The default persistence step `using()` replaces: copy the record through
      * Doctrine's metadata, map the modal's validated state onto the copy — or,
-     * with no modal, the mutated field bag — then flush it.
+     * with no modal, the mutated field bag — then flush it. A replica whose
+     * assigned key is incomplete is refused by name before anything is written:
+     * before `persist()` where no filler could complete it, and after it —
+     * once every prePersist callback and listener has run — where one was
+     * exempted and left a key half blank, the replica then taken back out of
+     * the unit of work.
      *
      * @param array<string, mixed> $data
      */
@@ -126,10 +137,45 @@ class ReplicateAction extends Action
 
         $this->callBeforeReplicaSaved();
 
+        $metadata = $manager->getClassMetadata($replica::class);
+
+        if (
+            new AssociationReader($manager)->hasIncompleteAssignedIdentifier($replica)
+            || ($metadata->isIdentifierNatural() && ! $this->mayAssignIdentifierOnPersist($manager, $metadata) && RecordKey::values($manager, $replica) !== null && RecordKey::find($manager, $replica) === null)
+        ) {
+            throw $this->refuseIncompleteReplica($replica);
+        }
+
         $manager->persist($replica);
+
+        if ($metadata->isIdentifierNatural() && RecordKey::find($manager, $replica) === null) {
+            $manager->detach($replica);
+
+            throw $this->refuseIncompleteReplica($replica);
+        }
+
         $manager->flush();
 
         return $replica;
+    }
+
+    /**
+     * @param ClassMetadata<object> $metadata
+     */
+    private function mayAssignIdentifierOnPersist(EntityManagerInterface $manager, ClassMetadata $metadata): bool
+    {
+        return $metadata->hasLifecycleCallbacks(Events::prePersist)
+            || isset($metadata->entityListeners[Events::prePersist])
+            || $manager->getEventManager()->hasListeners(Events::prePersist);
+    }
+
+    private function refuseIncompleteReplica(object $replica): LogicException
+    {
+        return new LogicException(sprintf(
+            'The [%s] action built a replica of [%s] whose identifier is incomplete, so it cannot be saved as a new record. Put every identifier field the copy leaves unset in its schema() — enabled and dehydrated — or set it in beforeReplicaSaved().',
+            $this->getName(),
+            $replica::class,
+        ));
     }
 
     protected function resolveDefaultClosureDependencyForEvaluationByName(string $parameterName): ?ClosureParameter

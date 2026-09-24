@@ -10,9 +10,12 @@ use LogicException;
 use Sylament\Actions\Replication\RecordReplicator;
 use Sylament\Actions\Tests\Fixtures\Doctrine\Entity\Address;
 use Sylament\Actions\Tests\Fixtures\Doctrine\Entity\AssignedNote;
+use Sylament\Actions\Tests\Fixtures\Doctrine\Entity\Cover;
 use Sylament\Actions\Tests\Fixtures\Doctrine\Entity\Membership;
 use Sylament\Actions\Tests\Fixtures\Doctrine\Entity\Note;
+use Sylament\Actions\Tests\Fixtures\Doctrine\Entity\Roster;
 use Sylament\Actions\Tests\Fixtures\Doctrine\Entity\Tagged;
+use Sylament\Actions\Tests\Fixtures\Doctrine\Entity\Trellis;
 
 /*
  * The replicator reads its rules off Doctrine metadata, so every case here runs
@@ -113,7 +116,7 @@ it('clones a nested embeddable rather than sharing it with the original', functi
     expect($entityManager->getRepository(Tagged::class)->find($tagged->getId())?->getAddress()->getGeo()->getCity())->toBe('Prague');
 });
 
-it('leaves an identifier association off the replica', function (): void {
+it('keeps an identifier association on the replica, so the replica keeps its parent', function (): void {
     $entityManager = $this::getContainer()->get(EntityManagerInterface::class);
 
     $note = new Note();
@@ -132,7 +135,57 @@ it('leaves an identifier association off the replica', function (): void {
 
     expect($replica->getLabel())->toBe('Editors')
         ->and($replica->getRole())->toBe('')
-        ->and($replica->getNote())->toBeNull();
+        ->and($replica->getNote())->toBe($note);
+
+    expect(replicator()->replicate($membership, ['note'])->getNote())->toBeNull();
+});
+
+it('keeps both associations of an identifier made of two', function (): void {
+    $entityManager = $this::getContainer()->get(EntityManagerInterface::class);
+
+    $note = new Note();
+    $note->setTitle('linked');
+
+    $roster = new Roster();
+    $roster->setTitle('owner');
+
+    $trellis = new Trellis();
+    $trellis->setNote($note);
+    $trellis->setRoster($roster);
+    $trellis->setLabel('east wall');
+
+    $entityManager->persist($note);
+    $entityManager->persist($roster);
+    $entityManager->persist($trellis);
+    $entityManager->flush();
+
+    $replica = replicator()->replicate($trellis);
+
+    expect($replica->getLabel())->toBe('east wall')
+        ->and($replica->getNote())->toBe($note)
+        ->and($replica->getRoster())->toBe($roster);
+
+    expect(replicator()->replicate($trellis, ['roster'])->getRoster())->toBeNull();
+});
+
+it('leaves the association off the replica when that one association is the whole identifier', function (): void {
+    $entityManager = $this::getContainer()->get(EntityManagerInterface::class);
+
+    $roster = new Roster();
+    $roster->setTitle('owner');
+
+    $cover = new Cover();
+    $cover->setRoster($roster);
+    $cover->setNote('front');
+
+    $entityManager->persist($roster);
+    $entityManager->persist($cover);
+    $entityManager->flush();
+
+    $replica = replicator()->replicate($cover);
+
+    expect($replica->getNote())->toBe('front')
+        ->and($replica->getRoster())->toBeNull();
 });
 
 it('reads and writes the copied field bag', function (): void {

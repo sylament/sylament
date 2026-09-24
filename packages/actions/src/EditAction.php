@@ -8,6 +8,7 @@ use LogicException;
 use Sylament\Actions\Concerns\CanCustomizeProcess;
 use Sylament\Actions\Concerns\CanMutateRecordData;
 use Sylament\Schemas\Schema;
+use Sylament\Schemas\State\AssociationReader;
 
 class EditAction extends Action
 {
@@ -52,15 +53,18 @@ class EditAction extends Action
     /**
      * The default persistence step `using()` replaces: map the validated —
      * and, where `mutateDataUsing()` asked, mutated — state onto the bound
-     * record, then flush it.
+     * record, then flush it. The record check that ends the mapping reads the
+     * manager the flush writes through.
      *
      * @param array<string, mixed> $data
      */
     private function updateRecord(array $data, Schema $schema, object $record): object
     {
+        $manager = $this->getEntityManagerForRecord($record);
+
+        $schema->setAssociationReader(new AssociationReader($manager));
         $schema->record($record)->getData($data);
 
-        $manager = $this->getEntityManagerForRecord($record);
         $manager->persist($record);
         $manager->flush();
 

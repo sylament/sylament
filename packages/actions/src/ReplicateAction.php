@@ -112,7 +112,8 @@ class ReplicateAction extends Action
     /**
      * The default persistence step `using()` replaces: copy the record through
      * Doctrine's metadata, map the modal's validated state onto the copy — or,
-     * with no modal, the mutated field bag — then flush it. A replica whose
+     * with no modal, the mutated field bag — then flush it. The modal's record
+     * check reads the manager the copy is written through. A replica whose
      * assigned key is incomplete is refused by name before anything is written:
      * before `persist()` where no filler could complete it, and after it —
      * once every prePersist callback and listener has run — where one was
@@ -130,6 +131,7 @@ class ReplicateAction extends Action
         $this->replica = $replica;
 
         if ($schema instanceof Schema) {
+            $schema->setAssociationReader(new AssociationReader($manager));
             $schema->record($replica)->getData($data);
         } elseif ($data === [] && $this->mutateRecordDataUsing instanceof Closure) {
             $replicator->setFieldValues($replica, $this->mutateRecordData(except($replicator->getFieldValues($record), $excluded)));

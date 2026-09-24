@@ -68,6 +68,8 @@ their detail sections do.
 | [`HasState`](../../../packages/schemas/src/Concerns/HasState.php) | [`Concerns/HasState.php`](../../../vendor/filament/schemas/src/Concerns/HasState.php) | in progress | — | [detail](#hasstate-still-lacks-constant-state-relationships-and-partial-rendering) · [diverges](#getstate-validates-without-a-prepareforvalidation-mutation-layer) |
 | [`fill(object\|array\|null $state = null)` — the object arm](../../../packages/schemas/src/Concerns/HasState.php) | — | done | — | [belongs-to-record.md](belongs-to-record.md#fillobject-reads-only-the-paths-the-schema-declares) |
 | [`readStateFromRecord()`](../../../packages/schemas/src/Concerns/BelongsToRecord.php) | — | done | — | [belongs-to-record.md](belongs-to-record.md#reads-are-lenient-writes-are-strict) |
+| [`loadStateFromRelationships()`](../../../packages/schemas/src/Concerns/BelongsToRecord.php) — the relationship-backed re-read a host runs after its flush | [`Concerns/BelongsToModel.php`](../../../vendor/filament/schemas/src/Concerns/BelongsToModel.php) | done | — | [belongs-to-record.md](belongs-to-record.md#loadstatefromrelationships-is-the-hosts-reload-after-its-flush-and-takes-no-parameter) |
+| [`CanAccessAssociations`](../../../packages/schemas/src/Components/Concerns/CanAccessAssociations.php) — `getAssociationReader()` / `setAssociationReader()`, composed since M7 · 6 so the host's record check reaches the reader through the schema it validates | — | done | — | [association-reader.md](association-reader.md#the-accessor-trait-is-shared-with-the-table-and-action-tiers) |
 | [`HasKey`](../../../packages/schemas/src/Concerns/HasKey.php) | [`Concerns/HasKey.php`](../../../vendor/filament/schemas/src/Concerns/HasKey.php) | in progress | — | [detail](#haskey-ports-the-schema-key-chain-minus-the-state-path-fallback) |
 | [`HasHeadings`](../../../packages/schemas/src/Concerns/HasHeadings.php) | [`Concerns/HasHeadings.php`](../../../vendor/filament/schemas/src/Concerns/HasHeadings.php) | done | — | — |
 | [`CanModifyActions`](../../../packages/schemas/src/Concerns/CanModifyActions.php) | [`Concerns/CanModifyActions.php`](../../../vendor/filament/schemas/src/Concerns/CanModifyActions.php) | done | — | [diverges](#modifyaction-and-modifyactiongroup-guard-a-callbacks-return-type-at-runtime) |
@@ -184,14 +186,17 @@ and the shared-state-path sibling handling. **Left**, all unported:
   ([`BelongsToRecord`](belongs-to-record.md)), so it is **blocked** on the
   infolists epic alone — plus the relationship state paths for its
   `getStatePathForRelationship()` arm.
-- **The relationship layer** (`saveRelationships()`/
-  `loadStateFromRelationships()`) — **skipped**. The
+- **The relationship layer** (`saveRelationships()`, and
+  `loadStateFromRelationships()` as a pass inside `getState()`) — **skipped**. The
   [Doctrine relation layer](../roadmap.md#pulled-forward) landed the capability
   without either walk: the per-component hook pair is
   [consulted by the two mapping edges](belongs-to-record.md#the-relationship-hooks-are-consulted-by-the-two-mapping-edges-not-by-a-schema-level-walk)
   — `fill()` and `getData()` already traverse the record path map — and
   Doctrine's UnitOfWork collapses the two-phase create these root-tier walks
-  exist to sequence, so a third pass would have nothing left to do.
+  exist to sequence, so a third pass would have nothing left to do. The load
+  half's post-save re-read came back with M7 · 6 as a member of its own,
+  `loadStateFromRelationships()` on [`BelongsToRecord`](belongs-to-record.md#loadstatefromrelationships-is-the-hosts-reload-after-its-flush-and-takes-no-parameter),
+  which the host calls after its flush rather than `getState()` calling it.
   [Recorded in renames.md](../renames.md#renames).
 - **Partial rendering** (`partiallyRender()`/`shouldPartiallyRender()`/
   `fillPartially()`/`hydrateStatePartially()`) — **blocked** on a UX

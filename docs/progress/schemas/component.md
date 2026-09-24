@@ -394,7 +394,9 @@ they all assume Eloquent models/relationships. The
 as an earlier note here predicted it would: it answers the relationship read
 with the [per-component hook pair](belongs-to-record.md#the-relationship-hooks-are-consulted-by-the-two-mapping-edges-not-by-a-schema-level-walk)
 consulted by the two mapping edges, so `loadStateFromRelationships` on the trait
-has nothing left to do, and constant state — a *display* value read across a
+has nothing left to do — its post-save re-read is what
+[`Schema::loadStateFromRelationships()`](belongs-to-record.md#loadstatefromrelationships-is-the-hosts-reload-after-its-flush-and-takes-no-parameter)
+runs from the root since M7 · 6, over the record path map — and constant state — a *display* value read across a
 relation, never dehydrated — has no consumer in the port yet. Revisit when one
 arrives (infolists is the likely first).
 

@@ -22,7 +22,11 @@ which ones does it not, may an existing record join this collection at all, and
 how do I put one in or take one out — asked through
 the same collaborator and answered from the same mapping. A tenth question rides
 beside them for the create paths: is this record still missing an identifier
-component the **application** has to supply. The seam is also what
+component the **application** has to supply. Since
+[M7 · 6](../roadmap.md#m7--composite-identifiers) two more ride beside it, and
+they are the record check's rather than a component's: which identifier did a
+managed record's write move, and which new record's assigned key is already
+held. The seam is also what
 keeps Doctrine optional at runtime: an application with no `EntityManager` gets a
 reader that reports [no association anywhere](#a-null-target-means-no-doctrine-answer-not-no-such-property)
 rather than a container that cannot compile.
@@ -77,6 +81,8 @@ Sylament-only, so no row has a _Ports_ link.
 | [`getRecordKey(object $entity)`](../../../packages/schemas/src/State/AssociationReader.php) — the string key an entity is spoken by, of any width | done | — | [semantics](#the-record-key-is-tables-semantics-moved-onto-the-mapping) |
 | [`findRecordKey(object $entity)`](../../../packages/schemas/src/State/AssociationReader.php) — the same key, or null for an entity whose identifier is not complete yet | done | — | [semantics](#findrecordkey-answers-null-where-getrecordkey-throws) |
 | [`hasIncompleteAssignedIdentifier(object $entity)`](../../../packages/schemas/src/State/AssociationReader.php) — whether a component the **application** must assign is missing | done | — | [semantics](#an-incomplete-assigned-identifier-is-the-question-the-create-paths-ask) |
+| [`revertIdentifierChanges(object $record)`](../../../packages/schemas/src/State/AssociationReader.php) — put back every identifier field a managed record the loaded associations reach no longer prints, and answer each one by its property path (`@internal`: the record check and an editable cell's write call it) | done | — | [semantics](#a-changed-identifier-is-put-back-and-refused-and-costs-no-statement) |
+| [`findTakenIdentifiers(object $record)`](../../../packages/schemas/src/State/AssociationReader.php) — every new record a flush would insert whose assigned key is held already, answered by the field the form lets the user type (`@internal`: the record check calls it) | done | — | [semantics](#a-taken-identifier-is-looked-up-once-per-new-record-after-the-records-own-constraints-pass) · [semantics](#what-the-taken-key-probe-cannot-see) |
 | [`createOptionQuery(string $targetClass, string $alias = 'record')`](../../../packages/schemas/src/State/AssociationReader.php) — the base query an option list narrows | done | — | [semantics](#the-option-query-is-a-starting-point-not-a-result) |
 | [`Relationship`](../../../packages/schemas/src/State/Relationship.php) — one owner record's association, by name | done | — | [semantics](#the-relationship-query-is-rooted-at-the-target-and-needs-no-inverse-mapping) |
 | [`describeRelationship(Relationship)`](../../../packages/schemas/src/State/AssociationReader.php) — the mapping at a relationship, refused rather than null | done | — | [semantics](#the-relationship-query-is-rooted-at-the-target-and-needs-no-inverse-mapping) |
@@ -179,6 +185,15 @@ requirement of the *runtime*. Without a manager the class splits in two:
 
 `hasEntityManager()` exists so a caller can branch **before** it commits to the
 relationship path, rather than catching the exception the operations throw.
+
+The two record-check passes [M7 · 6](../roadmap.md#m7--composite-identifiers)
+added take the `describe()` side rather than the operations': without a manager,
+`revertIdentifierChanges()` and `findTakenIdentifiers()` walk nothing and answer
+no refusal. They run inside every `getData()` a validator reaches, and a host with
+no Doctrine has no identity map for a key to move in or be held by — so a reader
+built with `new`, which is what a schema built outside the container holds,
+guards nothing. Both test files pin it, *guards nothing without an entity
+manager*.
 
 ### A null target means "no Doctrine answer", not "no such property"
 
@@ -361,8 +376,13 @@ entry, before anything else is read: the relation layer has always keyed such a
 class, an application may fill that field from anywhere — including a listener no
 class-level mapping shows — and a new refusal there would be the
 single-identifier regression this milestone forbids. So an assigned single scalar
-identifier left blank stays HEAD's behaviour, unrefused; that is
-[M7 · 6](../roadmap.md#m7--composite-identifiers)'s to close.
+identifier left blank stays HEAD's behaviour here, unrefused.
+[M7 · 6](../roadmap.md#m7--composite-identifiers) left this predicate as it
+was: its taken-key pass treats a blank component as incomplete and looks nothing
+up, so a blank single scalar key on a create path still reaches Doctrine as it
+did — which is what keeps two new children whose `#[PrePersist]` fills that key
+from blank saving — and only [`ReplicateAction`](../actions/replicate-action.md)
+refuses one by name, because it asks once every filler has run.
 
 Everything else — a composite identifier, or one carrying an association — goes to
 the private, recursive `isMissingAssignedIdentifierComponent()`. Three mapping
@@ -387,12 +407,142 @@ opt-out nothing has asked for.
 Two callers, both refusing **before anything is flushed**: `Select`'s
 `createOptionUsing` default, which refuses before `persist()`, and `Repeater`'s
 relationship save, which refuses after the collection write and before the item-key
-map is re-read. Both name the field list that would fix it. Neither is validation —
-a taken key, a changed key half and a duplicate inside one unit of work are
-[M7 · 6](../roadmap.md#m7--composite-identifiers)'s — and neither restores the
+map is re-read. Both name the field list that would fix it. Neither is validation:
+a taken key, a changed key half and two new records claiming one key are the
+record check's since [M7 · 6](../roadmap.md#m7--composite-identifiers)
+([changed](#a-changed-identifier-is-put-back-and-refused-and-costs-no-statement),
+[taken](#a-taken-identifier-is-looked-up-once-per-new-record-after-the-records-own-constraints-pass))
+— and neither of the two restores the
 in-memory graph on the way out: a refusal here is a developer error that ends the
 request, nothing has been flushed, and the two write paths that could have
 persisted something have not run.
+
+### A changed identifier is put back and refused, and costs no statement
+
+`revertIdentifierChanges(object $record): array` is the changed-key rule
+[M7 · 6](../roadmap.md#m7--composite-identifiers) added — `@internal`, and
+called from two places: schemas' record check, first of the
+[three validator calls](can-be-validated.md#record-sourced-constraints-are-validated-on-the-mapped-object)
+`getData()` ends in, and tables' editable-cell write, which runs it alone
+([the cell](../tables/has-columns.md)). It answers `array<string, string>`: the
+message *"This value cannot be changed."*, keyed by the refused field's property
+path from the record.
+
+It walks the record and every record its **loaded** associations reach, over
+every edge, breadth-first and each record once, carrying the property path from
+the record — `translations[1]` for a collection member, `plaque.serial` behind a
+to-one. It never loads: an uninitialized proxy and an uninitialized
+`PersistentCollection` are skipped, and `ClassMetadata::getFieldValue()` reads the
+raw property, so the walk initializes nothing. An anonymous class and a class
+the manager deems transient are skipped too — a schema bound to an
+anonymous-class object keeps mapping. A record not in the identity map, or one
+scheduled for insert or delete, is skipped: a new record has no stored key to
+move.
+
+The detector compares, per identifier field, the value
+`UnitOfWork::getEntityIdentifier()` keyed the record by with the one it holds
+now — `===` first, then `IdentifierFields::printable()` of both, an association
+reduced to its target's identifier value through `RecordKey::values()`. So the
+same key in another PHP type is **no** change: `'5'` over `5`, an equal `Uuid`,
+the same enum case set again. A converting type's other spelling of the same key
+**is** one — `ab-1` typed over a stored `AB-1` is refused — because accepting it
+would need a detector that runs every value through its type's writer, and only
+a hand-typed value reaches it, a key field being meant to sit
+`disabledOn('edit')`.
+
+A changed field is put back on the spot — a scalar from that identifier, an
+association from `getOriginalEntityData()`, and an association the unit of work
+holds no original value for throws a `LogicException` by name. The restore is
+load-bearing rather than tidy: without it a flush later in the same request
+writes the new key after all, and a table's re-render loses the cell's error or
+collapses two rows onto one DOM id. It runs no statement; the walk costs about
+3 µs a loaded managed record per save, measured while the epic was planned — an
+unchanged save of a record holding 5 000 loaded children went from 0.02 ms to
+16 ms. Its limit is the walk's: a key written into a related record **nobody
+loaded** is not seen, and is Doctrine's to drop — it writes the raw identifier,
+and a later load overwrites it.
+
+Pinned by
+[`AssociationReaderChangedIdentifierTest`](../../../packages/schemas/tests/Unit/State/AssociationReaderChangedIdentifierTest.php)
+— every shape the rigs seed untouched, the same key in another type, the skipped
+states, the paths through a collection, a to-one and a cycle, the unloaded proxy
+and collection, and the named `LogicException`.
+
+### A taken identifier is looked up once per new record, after the record's own constraints pass
+
+`findTakenIdentifiers(object $record): array` is the taken-key rule, `@internal`
+and of the same shape, answering *"This value is already used."* — `UniqueEntity`'s
+default text, from symfony/validator's own `validators` catalogue, so it is
+translated with no bridge installed. It walks the record and every record its
+loaded **cascade-persist** associations reach, which is exactly what a flush
+would insert beside it, and asks only of a **new** record whose class has a
+natural identifier — `isIdentifierNatural()`, so a generated id is never looked
+up — whether its key is held already, in two ways:
+
+- **by a sibling**: another new record met earlier in the same walk claims the
+  same key. A scalar half is compared in its database form
+  (`convertToDatabaseValue()`), an association half by the very object, which is
+  the only identity a new target has — so two new items on one key under an
+  owner that has no identifier yet are refused without a statement;
+- **by a holder**: `EntityManager::find($metadata->rootEntityName, $identifier)`
+  answers an object that is not the record — the identity map first, then one
+  primary-key `SELECT`. A replica's managed original counts and the record itself
+  does not, and the **root** entity name is what finds a sibling subclass's row in
+  a single-table or joined hierarchy.
+
+A component that is `null` or a blank string is incomplete, and nothing is
+claimed or looked up for it — `RecordKey::find()`'s own rule — which is what
+keeps two new children whose key a `#[PrePersist]` fills from `''` saving. And
+`RecordKey::values()` gates the lookup, so an association half that is a new
+record with no identifier yet is never bound.
+
+The message lands on the field the form lets the user type: the first identifier
+field that is no association; failing that, the first that is not the
+back-reference the walk arrived through — the inverse collection's `mappedBy`;
+failing that, the first. So an `ArticleTranslation(article, locale)` is refused
+under **Locale** on a create page and in a relation manager's modal alike, and a
+join entity created from its festival's repeater under the band rather than the
+festival.
+
+Where it runs is half of what it is. The record check calls it **only when** the
+changed-key pass and the record's own constraints raised nothing, because it
+binds form values into `find()`: a malformed `guid` on an entity that declares
+`#[Assert\Uuid]` then answers that constraint's *"This value is not a valid
+UUID."* rather than PostgreSQL's `22P02` — without one, the lookup meets
+PostgreSQL's own `22P02`, as the base's `INSERT` did — and an application
+`UniqueEntity` answers first, so the toolkit never adds a second message. The
+cost is one primary-key `SELECT` per new assigned-key record, none when the
+holder is managed, none for a generated id — and, for a save adding many new
+items, one each; batching them is [Beyond](../roadmap.md#beyond).
+
+Pinned by
+[`AssociationReaderTakenIdentifierTest`](../../../packages/schemas/tests/Unit/State/AssociationReaderTakenIdentifierTest.php):
+a stored, a managed and a persisted-unflushed holder, a free key after one
+`SELECT`, the sibling claim under a stored and a new owner, the cascade-only
+walk, the generated id, blank and `null` components, the unflushed association
+half, the record itself, both inheritance hierarchies through their root, and
+the placement over every shape.
+
+### What the taken-key probe cannot see
+
+Five limits, recorded rather than closed:
+
+- **A detached record, or one another entity manager keeps over the same
+  mapping, reads as new.** `UnitOfWork::getEntityState()` cannot tell a detached
+  record from a new one on a taken key without the database, so an unchanged
+  write of one answers *already used* — where the base failed that write at
+  `persist()` anyway. Pinned as behaviour: *reads a detached record, or one
+  another manager keeps, as a new one — so its own unchanged key answers taken*.
+- **A record whose class only another entity manager maps is skipped by both
+  passes.** The walk asks the reader's own manager's metadata factory, to which
+  that class is transient, so neither this probe nor the changed-key pass sees
+  it — no regression, since the base guarded nothing either. Unexecuted.
+- **A Doctrine SQL filter** that hides the holder hides it from `find()` too, so
+  such a create stays the unique-violation 500 it was. Unexecuted.
+- **Two requests creating one key at once** both pass the lookup and the second
+  meets the database's constraint: the probe is a read, not a lock. Unexecuted.
+- **MySQL and MariaDB** are unexecuted: the rules ran on SQLite in every package
+  suite and on PostgreSQL 18.4 in the demo.
 
 ### The record key is tables' semantics, moved onto the mapping
 
@@ -897,6 +1047,16 @@ now, composed by `BelongsToRecord` unchanged. It keeps the `Components/Concerns/
 namespace under the repo's placement rule: a trait a component uses at all lives
 there, whether or not something else uses it too.
 
+Since [M7 · 6](../roadmap.md#m7--composite-identifiers) the root
+[`Schema`](schema.md) composes it as well, beside `CanAccessProperties`, so the
+host's record check reaches the reader through the schema it validates —
+`$schema->getAssociationReader()` — and no host contract changed for it. A schema
+built with `new` holds the manager-less fallback and so guards nothing, the
+standing `#[Required]` trade; every host builds its schemas through the
+container, and
+[`HasSchemasIdentifierGuardTest`](../../../packages/schemas/tests/Integration/Concerns/HasSchemasIdentifierGuardTest.php)
+pins both faces.
+
 The blast radius is worth stating because it is wider than it looks.
 `BelongsToRecord` sits on the base `Component`, so **every** schemas component —
 and every component of every package built on schemas — consumes the reader
@@ -1026,16 +1186,18 @@ payload, `Repeater::relationship()` is the field that creates and deletes them
 and never re-points one.
 
 The heading says **to-many** for a reason, and it is the one thing to read off
-this section before relying on it. A **to-one** relation-backed write still moves
-a primary key and nothing here refuses it: `Select::make('post')->relationship()`
-on an *edit* form of a derived-identity record — and the same field inside an
-existing join-entity repeater item, which is the field this trail recommends for
-join entities — writes the picked reference onto the identifier half, and
-Doctrine emits M1's `UPDATE` verbatim, closing the `EntityManager` when the new
-key is taken. The guard cannot be the one above, because a **create** form has to
-keep writing that field; it is a key-**change** guard, which is
-[M7 · 6](../roadmap.md#m7--composite-identifiers)'s, and the roadmap's site ledger
-carries the row.
+this section before relying on it. A **to-one** relation-backed write is not
+refused here: `Select::make('post')->relationship()` on an *edit* form of a
+derived-identity record — and the same field inside an existing join-entity
+repeater item, which is the field this trail recommends for join entities —
+writes the picked reference onto the identifier half, and until
+[M7 · 6](../roadmap.md#m7--composite-identifiers) Doctrine emitted M1's `UPDATE`
+verbatim, closing the `EntityManager` when the new key was taken. The guard
+cannot be the one above, because a **create** form has to keep writing that
+field; it is a key-**change** guard, and M7 · 6 added it as
+[a pass of the record check's own](#a-changed-identifier-is-put-back-and-refused-and-costs-no-statement),
+which skips a record the unit of work has not keyed — what a create form writes —
+and puts a moved reference back under the field.
 
 Recorded rather than closed: `DetachBulkAction` refuses no one-to-many the way
 its twin does, so a bulk detach over a mapping the reader refuses fails on its

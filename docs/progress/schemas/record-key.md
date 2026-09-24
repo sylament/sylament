@@ -57,7 +57,15 @@ columns. The same step taught the decode to read a component back
 [through its type's own writer](#a-type-that-refuses-its-printed-form-on-read-only-decodes-it-through-its-own-writer)
 and gave `RecordKey` one `@internal` read, `values()`, for the relation layer's
 owner bind — three files of this directory moved, one of them by that method
-alone, and `KeySelection` did not.
+alone, and `KeySelection` did not. M7 · 6, the create-path rules, changed what
+`of()` and `find()` **answer** rather than what they accept: each component is
+minted [as its row would read it back](#a-key-is-minted-from-the-value-its-row-would-read-back),
+through one private method — the milestone's last `Identity/**` writer, so
+`RecordKey.php` moved by that method, its import and two call lines, and
+`IdentifierConstraint`, `IdentifierFields` and `KeySelection` did not move at all.
+Its other consumers took the interface as it stood: the record check's two
+passes read `values()` and `IdentifierFields::printable()`, and `ReplicateAction`
+asks `find()` whether a replica is keyable yet.
 
 **Status:** done — see the [status vocabulary](../README.md#statuses).
 
@@ -70,8 +78,8 @@ and/or **diverges** → the permanent note in [Divergences](#divergences).
 
 | Feature | Status | Blocked by | Detail |
 | --- | --- | --- | --- |
-| [`RecordKey::of()`](../../../packages/schemas/src/Identity/RecordKey.php) — a record to its key, throwing on an incomplete or unprintable identifier | done | — | [contract](#the-api) · [semantics](#find-answers-identity-not-persistence) |
-| [`RecordKey::find()`](../../../packages/schemas/src/Identity/RecordKey.php) — the non-throwing twin, `null` while the identifier is incomplete | done | — | [semantics](#find-answers-identity-not-persistence) |
+| [`RecordKey::of()`](../../../packages/schemas/src/Identity/RecordKey.php) — a record to its key, throwing on an incomplete or unprintable identifier, each component minted as its row would read it back | done | — | [contract](#the-api) · [semantics](#find-answers-identity-not-persistence) · [semantics](#a-key-is-minted-from-the-value-its-row-would-read-back) |
+| [`RecordKey::find()`](../../../packages/schemas/src/Identity/RecordKey.php) — the non-throwing twin, `null` while the identifier is incomplete, minted the same way | done | — | [semantics](#find-answers-identity-not-persistence) · [semantics](#a-key-is-minted-from-the-value-its-row-would-read-back) |
 | [`RecordKey::fromValues()`](../../../packages/schemas/src/Identity/RecordKey.php) — identifier values already in their PHP form, in mapping order, to the key a record mints — never a projected row's raw columns, which go through [`KeySelection::keyOf()`](../../../packages/schemas/src/Identity/KeySelection.php) | done | — | [semantics](#the-row-side-and-the-record-side-mint-one-string-and-only-the-codec-may) |
 | [`RecordKey::toIdentifier()`](../../../packages/schemas/src/Identity/RecordKey.php) — a client string to the field ⇒ PHP value map `EntityManager::find()` takes, `null` when malformed | done | — | [contract](#the-grammar) · [semantics](#a-malformed-key-never-reaches-the-database) |
 | [`RecordKey::values()`](../../../packages/schemas/src/Identity/RecordKey.php) — a record's identifier values before they are printed, an association reduced to its target's (`@internal`: the relation layer's owner bind reads it, and it is no part of the key contract) | done | — | [contract](#the-api) |
@@ -272,6 +280,8 @@ final class RecordKey
     public const string SEPARATOR = '~';
 
     /**
+     * Each component as its row would read it back — through its field's DBAL type to the database form and back.
+     *
      * @param class-string|null $class the mapped class to key by, when the caller declares one
      *
      * @throws LogicException when the identifier is incomplete, or a component is not printable
@@ -279,7 +289,7 @@ final class RecordKey
     public static function of(EntityManagerInterface $entityManager, object $record, ?string $class = null): string;
 
     /**
-     * Null while a component is missing or still blank.
+     * Null while a component is missing or still blank; otherwise minted as of() mints.
      *
      * @param class-string|null $class the mapped class to key by, when the caller declares one
      *
@@ -569,7 +579,7 @@ Pinned by
 
 ### Invariants
 
-Six, and a consumer may rely on all of them.
+Seven, and a consumer may rely on all of them.
 
 1. A key is **one string**. A composite key matches `^[A-Za-z0-9_=~-]+$`,
    contains `~`, and is never numeric.
@@ -609,6 +619,22 @@ Six, and a consumer may rely on all of them.
    M7 · 4, a DQL statement until M7 · 5b and a DBAL one since. Every **other** read that
    narrows by a key list is one statement over the whole list, and carries the
    parse curve below as a recorded limit.
+7. **A key is minted from the value the row would read back.** `of()` and
+   `find()` pass each component through its field's DBAL type to the database
+   form and back before printing it, so a record this request has just written
+   mints the key a later read of its row mints — the one the strict decode
+   answers for — while a loaded record, which already holds that value, mints
+   what it always did. A blank component is handed back unconverted, so `of()`
+   still refuses it as not printable and `find()` still answers `null`; and a
+   **non-numeric** string held in an integer-typed half of a new record — which
+   only an untyped or `int|string` property can hold — now raises its type's own
+   error, or mints `…0`, where it minted a key that never decoded. The round
+   trip is the type's, not the database's, so a database that rewrites what it
+   stores can still mint two spellings of one row — SQLite keeps a `decimal`
+   `10.50` as `10.5`, and the new record mints `…10.50` where the same row,
+   loaded, mints `…10.5` — a pre-existing, database-side gap the mint cannot
+   see. Since M7 · 6
+   ([why](#a-key-is-minted-from-the-value-its-row-would-read-back)).
 
 ### The chunk rule
 
@@ -959,6 +985,63 @@ any bind-parameter limit is in sight. Nesting makes the depth `log2(K)`, and
 1 501 keys execute. The tree is invisible to the planner on every platform
 measured and costs nothing; the reason it looks over-engineered is that the
 constraint it answers is not the one a reader assumes.
+
+### A key is minted from the value its row would read back
+
+`of()` and `find()` hand their flattened values to `fromValues()` through a
+private `asStored()`: per component,
+`Type::getType($name)->convertToPHPValue($type->convertToDatabaseValue($value, $platform), $platform)`,
+typed by `IdentifierFields::of()->types`. Two conversions per component per mint,
+none for a blank string component, which is handed back as it is, and no
+statement.
+
+Before [M7 · 6](../roadmap.md#m7--composite-identifiers) the mint printed the
+value the record held in memory, and for a record the request had just written
+that is not always the value its row holds. Under a type whose writer rewrites
+what was typed — the panels fixture's `Stamp` code type hands `new/1` back as
+`NEW/1` — a freshly created record was keyed `1~new=2F1`, a key
+[`toIdentifier()`](#a-malformed-key-never-reaches-the-database) refuses, since
+`new/1` does not print back to itself through that type. Two defects followed,
+and neither depends on the key's width — a **single** assigned identifier under
+such a type met both: `CreateRecord`'s redirect landed on a 404 for a record that
+existed under `1~NEW=2F1`, and a relationship `Select`'s created option was named
+by a key its option list did not hold, so nothing was selected and the parent's
+save refused *"The value you selected is not a valid choice."*. Both remedies at
+the call site were measured and lost: `refresh()` registers a **second** managed
+instance and leaves the key where it was, and `detach()` plus `find()` costs a
+`SELECT` and detaches the record the page just created.
+
+A loaded record's key does not move — it already holds `convertToPHPValue()` of
+its row, and the round trip is idempotent for a well-behaved type — which
+[`RecordKeyTest`](../../../packages/schemas/tests/Unit/Identity/RecordKeyTest.php) pins over every converting fixture type, a raw-bytes uuid,
+a cipher, a decimal and a boolean. A **new** record's key is normalised through
+its type: an integer half typed `'0007'` mints `…~7`, the key its row will answer
+to, through `of()` and `find()` alike. Three things did not move. `fromValues()`
+still prints what it is handed — it is fed values already in their PHP form —
+and `toIdentifier()` still decodes no spelling the type would rewrite
+(*mints nothing through the type from raw values, and decodes no spelling the
+type would rewrite*). And a blank component is still no key at all: `find()`
+reads it **before** its type converts it and answers `null` (*finds no key for a
+blank component before its type converts it*), and `asStored()` hands a string
+component that is blank — whitespace alone included — back unconverted, so
+`of()` refuses it with its documented *"… is not a printable value."*, exactly
+as before (*refuses a blank component through `of()` exactly as before the
+conversion*). That pass-through is load-bearing rather than tidy: a type's
+reader may assert what it reads — DBAL's `BigIntType` asserts a numeric value —
+and an unguarded round trip would turn `of()`'s refusal of a blank `bigint`
+half into an `AssertionError`, or a `TypeError` with assertions off.
+
+Two faces of a new record are not pinned. A **non-numeric** string in an
+integer-typed key half (which only an untyped or `int|string` property can hold)
+now raises that type's own error from `of()` and `find()` — `bigint`'s
+`AssertionError` under `zend.assertions=1`, a `TypeError` with assertions off,
+which is why no test pins the message — or, under `integer` or `smallint`, whose
+readers answer `0`, mints `…0`; before, it minted a key that never decoded. The
+`bigint` face was executed through the mint, on the one fixture property that
+can hold such a string; the `integer` and `smallint` face at the type level
+alone. And a value its type's **writer** refuses, on a new record, now throws
+that type's `ConversionException` from the mint where it was printed before. No
+fixture property can hold such a value, so no test reaches it.
 
 ## Divergences
 

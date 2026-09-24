@@ -242,9 +242,19 @@ its `$fillable`. There is no Doctrine equivalent, and reflecting an entity's
 properties would map columns no field asked for. The port iterates the **declared
 leaf paths** of the component's child schemas instead — the same discipline the
 [relationship repeater](../forms/repeater.md) uses per item — so a property no
-field declares is never read and never written. Unreadable and object-valued
-leaves are skipped on the way in, and a leaf the dehydrated state does not carry
-is skipped on the way out.
+field declares is never read and never written. An unreadable leaf is skipped on
+the way in, and so is an object-valued one unless the field's own state casts
+flatten it — the root fill's rule, asked of the same component
+([the predicate](belongs-to-record.md#reads-are-lenient-writes-are-strict)) — so
+a date or an enum fills from the related record, as does a `Uuid` under a cast
+that flattens it, and a fill hook receives the object at its path, while an
+association, and an object no cast flattens, still skip. A leaf the dehydrated
+state does not carry is skipped on the way out. Until [M7 · 6](../roadmap.md#m7--composite-identifiers) every
+object-valued leaf skipped here, so such a field filled empty and the next save —
+one that never touched it — wrote NULL over the stored value. Pinned by
+[`EntanglesStateWithSingularRelationshipObjectLeafTest`](../../../packages/schemas/tests/Integration/Components/Concerns/EntanglesStateWithSingularRelationshipObjectLeafTest.php)
+and, through a real `DateTimePicker` inside a `Group::relationship()`, by forms'
+[`RepeaterRelationshipObjectLeafTest`](../../../packages/forms/tests/Integration/Components/RepeaterRelationshipObjectLeafTest.php).
 
 *Leaf* is meant in the record walk's sense, so the collection filters exactly as
 [`getRecordPathMap()`](belongs-to-record.md#mapping-walks-the-record-graph-by-declared-leaf-paths)

@@ -30,7 +30,7 @@ nothing here diverges from one, so there is no Divergences section.
 
 | Feature | Status | Blocked by | Detail |
 | --- | --- | --- | --- |
-| [`__construct(array $recordPathMap, ?string $rootStatePath)`](../../../packages/schemas/src/State/ViolationPathTranslator.php) — built by [`Schema::getRecordViolationPathTranslator()`](../../../packages/schemas/src/Concerns/BelongsToRecord.php) | done | — | [semantics](#the-state-path-is-rebuilt-from-the-prefix-rather-than-read-off-the-component) |
+| [`__construct(array $recordPathMap, ?string $rootStatePath)`](../../../packages/schemas/src/State/ViolationPathTranslator.php) — built by [`Schema::getRecordViolationPathTranslator()`](../../../packages/schemas/src/Concerns/BelongsToRecord.php), over the record path map and the paths it drops beneath a subtree owner | done | — | [semantics](#the-state-path-is-rebuilt-from-the-prefix-rather-than-read-off-the-component) |
 | [`translate(string $violationPropertyPath): ?string`](../../../packages/schemas/src/State/ViolationPathTranslator.php) — deepest declared path wins | done | — | [semantics](#a-violation-beneath-a-declared-leaf-folds-onto-that-leaf) |
 | The `null` return — a violation no declared path owns | done | — | [semantics](#an-unowned-violation-returns-null-so-the-caller-folds-it-at-the-schema-root) |
 | The index arm — `sections[2].heading` → the item key the record's collection holds at key `2` | done | — | [semantics](#the-index-is-a-collection-key-not-a-position) |
@@ -76,7 +76,14 @@ The component is consulted for one thing only: whether it keys its items.
 component that
 [owns its record subtree](belongs-to-record.md#a-component-can-own-its-whole-record-subtree)
 declares no leaf beneath it, so it is the deepest thing that can speak for the
-path. The message then shows on the owner rather than vanishing. A keyed-item
+path. The message then shows on the owner rather than vanishing. How deep that
+owner is depends on what the translator is handed: since
+[M7 · 6](../roadmap.md#m7--composite-identifiers) the map it is built over
+carries the paths the record path map drops beneath a subtree owner as well
+([why](belongs-to-record.md#the-relationship-hooks-are-consulted-by-the-two-mapping-edges-not-by-a-schema-level-walk)),
+so a singular relationship's `plaque.title` lands under the `title` field
+declared inside it, and only a path nothing inside the owner declares — a
+class-level violation on the related record — folds onto the owner. A keyed-item
 component is the one owner that can go deeper, because its items declare paths
 of their own — see
 [the in-item fold](#a-violation-inside-an-item-folds-by-the-same-rule-as-one-at-the-root).

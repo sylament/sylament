@@ -60,14 +60,14 @@ Sylament-only.
 | [`getRecordInstance()`](../../../packages/schemas/src/Concerns/BelongsToRecord.php) | [`getModelInstance()`](../../../vendor/filament/schemas/src/Concerns/BelongsToModel.php) | done | — | [diverges](#getrecordinstance-constructs-with-new-not-the-container) |
 | [`hasOwnRecord()`](../../../packages/schemas/src/Concerns/BelongsToRecord.php) | — | done | — | [semantics](#the-nearest-record-frame-is-the-first-node-above-a-component-that-binds-one) |
 | [`getData(?array $state = null)`](../../../packages/schemas/src/Concerns/BelongsToRecord.php) | — | done | — | [diverges](#reads-are-lenient-writes-are-strict) · [diverges](#mapping-walks-the-record-graph-by-declared-leaf-paths) · [diverges](#a-missing-singular-intermediate-is-constructed-from-its-declared-type) · [semantics](#a-caller-that-has-already-validated-hands-the-state-in) · [semantics](#a-refused-submit-on-the-query-lane-shows-in-the-row-until-the-next-request) |
-| [`getData()`'s record-validation tail](../../../packages/schemas/src/Concerns/BelongsToRecord.php) + [`getRecordViolationPathTranslator()`](../../../packages/schemas/src/Concerns/BelongsToRecord.php) | — | done | — | [diverges](can-be-validated.md#record-sourced-constraints-are-validated-on-the-mapped-object) · [diverges](can-be-validated.md#a-refused-submit-leaves-the-record-mutated) · [detail](violation-path-translator.md) |
+| [`getData()`'s record-validation tail](../../../packages/schemas/src/Concerns/BelongsToRecord.php) + [`getRecordViolationPathTranslator()`](../../../packages/schemas/src/Concerns/BelongsToRecord.php) | — | done | — | [diverges](can-be-validated.md#record-sourced-constraints-are-validated-on-the-mapped-object) · [diverges](can-be-validated.md#a-refused-submit-leaves-the-record-mutated) · [diverges](can-be-validated.md#a-taken-assigned-key-is-a-field-error-not-a-unique-violation) · [diverges](can-be-validated.md#a-changed-key-is-refused-and-put-back-not-handed-to-doctrine) · [detail](violation-path-translator.md) |
 | [`getNullableBranches()` + the branch pass in `getData()`](../../../packages/schemas/src/Concerns/BelongsToRecord.php) | — | done | — | [diverges](#a-declared-branch-is-nulled-whole-before-its-leaves-are-written) · [diverges](#a-component-can-own-its-whole-record-subtree) · [semantics](#a-branch-the-bag-no-longer-carries-is-skipped-not-nulled) · [semantics](#a-branch-the-record-cannot-null-is-refused-loudly) · [semantics](#a-nullable-branch-with-no-state-path-is-refused-not-ignored) · [semantics](#branches-are-ordered-by-path-depth-because-tree-order-is-not-path-order) |
 | [`getNestedRelationshipHooks()`](../../../packages/schemas/src/Concerns/BelongsToRecord.php) | — | done | — | [semantics](#a-hook-a-subtree-owner-routes-is-delegated-rather-than-refused) |
 | [`fill(object …)` object arm](../../../packages/schemas/src/Concerns/HasState.php) + [`readStateFromRecord()`](../../../packages/schemas/src/Concerns/BelongsToRecord.php) | — | done | — | [diverges](#fillobject-reads-only-the-paths-the-schema-declares) · [diverges](#mapping-walks-the-record-graph-by-declared-leaf-paths) · [diverges](#fillobject-does-not-bind-the-record) |
 | [`getStateFromRecord()`](../../../packages/schemas/src/Concerns/BelongsToRecord.php) | — | done | — | the public reading of `readStateFromRecord()` — Eloquent's `attributesToArray()` has no port target, so this is a gap fill rather than a rename. [Declared paths only](#fillobject-reads-only-the-paths-the-schema-declares), so a column the schema does not carry is absent; the fill-side mutators read it instead of filling twice. |
 | [`$record` property](../../../packages/schemas/src/Concerns/BelongsToRecord.php) | [`public $model`](../../../vendor/filament/schemas/src/Concerns/BelongsToModel.php) | done | — | [diverges](#the-root-record-property-is-protected) |
 | `saveRelationships()` | [`saveRelationships()`](../../../vendor/filament/schemas/src/Concerns/BelongsToModel.php) | skipped | — | [diverges](#the-relationship-hooks-are-consulted-by-the-two-mapping-edges-not-by-a-schema-level-walk) |
-| `loadStateFromRelationships()` | [`loadStateFromRelationships()`](../../../vendor/filament/schemas/src/Concerns/BelongsToModel.php) | skipped | — | [diverges](#the-relationship-hooks-are-consulted-by-the-two-mapping-edges-not-by-a-schema-level-walk) |
+| [`loadStateFromRelationships()`](../../../packages/schemas/src/Concerns/BelongsToRecord.php) | [`loadStateFromRelationships()`](../../../vendor/filament/schemas/src/Concerns/BelongsToModel.php) | done | — | [diverges](#loadstatefromrelationships-is-the-hosts-reload-after-its-flush-and-takes-no-parameter) · [diverges](#the-relationship-hooks-are-consulted-by-the-two-mapping-edges-not-by-a-schema-level-walk) |
 | `fillPartially()` object arm | — | blocked | schemas partial-fill port | [detail](#fillpartiallys-object-arm-waits-on-partial-rendering) |
 
 ### Component tier — base `Component`
@@ -863,6 +863,35 @@ over an enum-typed property filled to `null` on every mount — the write side
 worked, the read side dropped it — which is why the widening ships with the enum
 seam rather than after it.
 
+**The relationship fills ask the same question.** Since
+[M7 · 6](../roadmap.md#m7--composite-identifiers) the predicate is the
+component's own —
+[`Component::isObjectCarriedByStateCasts(object $value)`](../../../packages/schemas/src/Components/Concerns/HasState.php),
+public, `@internal` and without a Filament counterpart, its body moved unchanged
+from this trait's private method — because two more walks ask it: a singular
+relationship's fill of its related record
+([`EntanglesStateWithSingularRelationship`](entangles-state-with-singular-relationship.md#the-subtree-is-read-and-written-per-declared-leaf-not-as-an-attribute-bag))
+and a relationship
+[`Repeater`](../forms/repeater.md#a-relationship-repeater-keys-its-items-by-identity-and-diffs-the-collection)'s
+fill of its items. Before, both skipped **every** object leaf, so a date, an enum
+or a `Uuid` inside a relationship repeater item or a `Group::relationship()`
+filled `null`, and the next save — one that never touched the field — wrote NULL
+over the stored value; M7 · 6's own probing found it. The component is the home
+because the answer is its casts, and because it is the one place all three
+askers reach: the root read runs in `Schema` scope, the other two in a
+component's. Each walk asks the field that reads the leaf — the last declared,
+where two share a path, as the record path map keeps it. The object enters the
+bag only where a hydration pass runs right behind the read and converts it —
+`fill()`, the array fill after `getStateFromRecord()`, and the host's
+[reload](#loadstatefromrelationships-is-the-hosts-reload-after-its-flush-and-takes-no-parameter),
+whose child-schema hydration is load-bearing for that reason — and a fill hook
+(`mutateFormDataBeforeFill()`, `mutateRecordDataUsing()`) now receives it at its
+path inside a relationship, as it always did at the root. An association, a
+collection and an object no cast flattens still skip. Pinned by
+[`EntanglesStateWithSingularRelationshipObjectLeafTest`](../../../packages/schemas/tests/Integration/Components/Concerns/EntanglesStateWithSingularRelationshipObjectLeafTest.php)
+and forms'
+[`RepeaterRelationshipObjectLeafTest`](../../../packages/forms/tests/Integration/Components/RepeaterRelationshipObjectLeafTest.php).
+
 One hole is inherited rather than introduced, and is worth naming because the
 gate does not cover it: an **array** leaf is not object-valued, so a
 `list<MyEnum>` property enters the bag whole and relies on the component's cast
@@ -980,8 +1009,11 @@ already subtree-safe.
 Filament runs relationships as a **third** pass. `Schema::saveRelationships()`
 and `Schema::loadStateFromRelationships()` walk the component tree calling the
 per-component callbacks, driven from `Schema::getState()` and again by the
-create pages once the model row exists. Sylament has no such walk on either tier
-and does not port one. The two mapping edges already walk the record path map —
+create pages once the model row exists. Sylament has no such walk for the
+**save** and does not port one; the load half came back with
+[M7 · 6](../roadmap.md#m7--composite-identifiers), as a re-read the host runs
+after its own flush rather than a pass inside `getState()`
+([below](#loadstatefromrelationships-is-the-hosts-reload-after-its-flush-and-takes-no-parameter)). The two mapping edges already walk the record path map —
 `fill()`
 through `readStateFromRecord()`, `getData()` through its leaf loop — so a path
 **the map carries** is routed to its component instead of to the property
@@ -1051,10 +1083,9 @@ discovers from its **template** child schema at that moment instead, and from th
 per-item schema at save. A handoff would also park mutable state on the owner
 between map builds, and the map is built per edge and again by the
 [violation translator](violation-path-translator.md). That translator is
-untouched by the delegation, deliberately: under an entangled owner a nested
-field's record-level violation still folds at the owner's path, because the map
-carries only the owner — identical to what an entangled scalar leaf already
-does, and left that way rather than taught to descend.
+untouched by the delegation, deliberately — and since
+[M7 · 6](../roadmap.md#m7--composite-identifiers) it reaches beneath an owner
+by another route, the last paragraph of this section.
 
 The correction that comes with it, because the shape it describes is easy to
 misread and this file said it wrong: Filament's own recursion is **not** limited
@@ -1064,6 +1095,72 @@ which is true of that method read alone — but `Schema::saveRelationships()`, t
 tree walk it sits inside, descends children-first over **every** item's schema
 before the item's own save runs, so the behaviour recurses for updated items too.
 Read the walk, not the method.
+
+**The translator is handed what the map drops beneath an owner.** Until
+[M7 · 6](../roadmap.md#m7--composite-identifiers), under an entangled owner a
+nested field's record-level violation folded at the owner's path, because the
+map carries only the owner — and a `Group` renders no error of its own path, so
+that was a 422 with nothing on screen. `getRecordPathMap()` is now a wrapper over
+a private `collectRecordPaths()`, which answers the map beside the paths it
+dropped beneath a subtree owner, computed by the one walk that always computed
+them, and `getRecordViolationPathTranslator()` builds the translator over both.
+So `plaque.title` lands as `data.plaque.title`, under its field, with no contract
+member added. A class-level violation on the related record names no path inside
+it and still folds at the owner, where it still renders nowhere — a residue the
+[roadmap's ledger](../roadmap.md#m7--composite-identifiers) records. Pinned by
+[`BelongsToRecordRelatedRecordTest`](../../../packages/schemas/tests/Integration/Concerns/BelongsToRecordRelatedRecordTest.php)
+and, rendered, by panels'
+[`EditRecordRelationshipsTest`](../../../packages/panels/tests/Integration/Resources/Pages/EditRecordRelationshipsTest.php).
+
+### `loadStateFromRelationships()` is the host's reload after its flush, and takes no parameter
+
+Filament re-reads relationship-backed state inside `Schema::getState()`: after
+`saveRelationships()` it calls `loadStateFromRelationships(shouldHydrate: true)`
+whenever the host hands `getState()` an `afterValidate` callback, which its
+`EditRecord::save()` does. Here there is no save walk to hang it on — the hooks
+run inside `getData()`, against an in-memory graph nothing has flushed yet — so
+the reload is the **host's** to call once its flush has run.
+[`EditRecord::save()`](../panels/README.md#editrecord) calls
+`$schema->loadStateFromRelationships()` after `handleRecordUpdate()` and before
+`afterSave`, since [M7 · 6](../roadmap.md#m7--composite-identifiers). The name
+is Filament's; the `$shouldHydrate` parameter is dropped, because the one caller
+that matters passes `true` — it always hydrates.
+
+For every component in the record path map that answers
+`hasLoadStateFromRelationships()`, it reads that state off the bound record
+through the component's own load hook, hydrates it without defaults, re-hydrates
+each child schema and calls its after-hydrated hooks, then the component's, and
+null-fills — `fill()`'s sequence, restricted to the relationship-backed paths.
+Every other path is left alone, a schema bound to no record reads nothing, and it
+runs no statement: it reads what the flush left in memory.
+
+It exists because a relationship [`Repeater`](../forms/repeater.md) keys an
+item the add action minted by a per-request uuid until something reads the
+collection back, and before M7 · 6 nothing did — so the next save constructed
+that item again. For an assigned key the second save was an
+`EntityIdentityCollisionException` 500, and under M7 · 6's taken-key rule it
+would have been a false *"This value is already used."* on the item just saved;
+for a generated id every added item was deleted and re-inserted on **every**
+save. With the reload the second save writes nothing and a generated id keeps
+its value.
+
+Three costs, all enumerated: a relation-backed component's `afterStateHydrated`
+hooks run once more per save; a host that flushes itself, outside `EditRecord`,
+keeps the old behaviour until it adds the one call after its flush — the demo's
+`Articles:ArticleForm` does; and UI-only state inside a relationship is reset.
+The reload hands a relationship repeater's items and a singular relationship's
+group back as the record gives them, so a `dehydrated(false)` field there — state
+the save never wrote — reads what the record gives, `null` where the record holds
+no such property, after every successful save, where before M7 · 6 it kept what
+the user typed. That third cost is Filament's own behaviour, since its reload
+runs inside the `getState()` its save makes, and it is accepted rather than
+worked around; the [roadmap's ledger](../roadmap.md#m7--composite-identifiers)
+records it. `EditAction`, `CreateAction` and the option modals unmount on success
+or refill for create-another, so none needs the reload. Pinned by
+[`BelongsToRecordReloadTest`](../../../packages/schemas/tests/Unit/Concerns/BelongsToRecordReloadTest.php)
+and, through the page, by panels'
+[`EditRecordRelationshipsTest`](../../../packages/panels/tests/Integration/Resources/Pages/EditRecordRelationshipsTest.php),
+a repeater item's reset included.
 
 ### The `exists`-guarded members are not ported
 

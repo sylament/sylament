@@ -66,7 +66,7 @@ _Blocked by_ names what has to land first. _Detail_ carries a **detail** link
 | Host `validateOnly()` per-path validation | [`InteractsWithSchemas::validateOnly()`](../../../vendor/filament/schemas/src/Concerns/InteractsWithSchemas.php) | skipped | — | [diverges](#sticky-re-validation-replaces-filaments-submit-only-model) |
 | Host `onValidationError()` hook | [`InteractsWithSchemas::onValidationError()`](../../../vendor/filament/schemas/src/Concerns/InteractsWithSchemas.php) | todo | — | [detail](#the-onvalidationerror-hook-is-not-ported) |
 | Host `getRules()` / `getValidationAttributes()` merges + `prepareForValidation()` | [`InteractsWithSchemas`](../../../vendor/filament/schemas/src/Concerns/InteractsWithSchemas.php) | skipped | — | [diverges](#the-livewire-whole-component-validate-plumbing-is-not-ported) |
-| Record-sourced constraints (an entity's own `#[Assert]` metadata) — the [`getData()`](belongs-to-record.md) tail | — | done | — | [diverges](#record-sourced-constraints-are-validated-on-the-mapped-object) · [diverges](#a-refused-submit-leaves-the-record-mutated) |
+| Record-sourced constraints (an entity's own `#[Assert]` metadata, and since M7 · 6 the two key rules) — the [`getData()`](belongs-to-record.md) tail | — | done | — | [diverges](#record-sourced-constraints-are-validated-on-the-mapped-object) · [diverges](#a-refused-submit-leaves-the-record-mutated) · [diverges](#a-taken-assigned-key-is-a-field-error-not-a-unique-violation) · [diverges](#a-changed-key-is-refused-and-put-back-not-handed-to-doctrine) |
 | [`HasSchemas::validateSchemaRecord()`](../../../packages/schemas/src/Concerns/HasSchemas.php) | — | done | — | [semantics](#a-host-holding-no-validator-skips-the-record-run-rather-than-refusing-to-map) · [semantics](#record-errors-are-sticky-but-the-silent-pass-cannot-reproduce-them) |
 | [`Schema::getRecordViolationPathTranslator()`](../../../packages/schemas/src/Concerns/BelongsToRecord.php) + the translator it builds | — | done | — | [detail](violation-path-translator.md) |
 
@@ -211,6 +211,24 @@ flush only when valid). Class-level constraints come free that way, which is the
 only route by which `UniqueEntity` can ever work: it needs the managed object,
 not a scalar path value.
 
+Since [M7 · 6](../roadmap.md#m7--composite-identifiers) the tail is three
+validator calls rather than one, in an order each of them depends on. First the
+[changed-key pass](#a-changed-key-is-refused-and-put-back-not-handed-to-doctrine),
+validated as a private `Callback` in the record's own context, because it puts a
+moved key back and has to run before anything can flush it or read it. Then the
+record's own constraints, unchanged, their violations added to the same list.
+Then — **only when neither raised anything** — the
+[taken-key pass](#a-taken-assigned-key-is-a-field-error-not-a-unique-violation),
+as a second `Callback`: it binds form values into a lookup, so it runs only on a
+record whose own constraints passed, and an application `UniqueEntity` answers
+before it. Both key messages are raised through `ExecutionContext::buildViolation()`,
+so they are translated through the `validators` domain and path-translated
+exactly as the record's own violations are; nothing throws a
+`ValidationException` by hand, which would render nothing. The host now files a
+message **once per path**, so a `ValidationException` never lists one twice under
+a field. `InteractsWithSchemas` did not change. The order and the three are pinned
+by [`HasSchemasIdentifierGuardTest`](../../../packages/schemas/tests/Integration/Concerns/HasSchemasIdentifierGuardTest.php).
+
 The alternative — pulling `getMetadataFor($class)` property constraints into the
 per-field [`buildValidationConstraints()`](../forms/can-be-validated.md#the-subclass-seam-is-a-protected-builder-not-the-public-getter)
 seam before validation — is **rejected**: typed constraints (a
@@ -260,11 +278,100 @@ discarding the request's entity manager, which is what a live component doing
 record carries the rejected value after the exception, and a re-read from the
 database still returns the old one.
 
+One field is the exception, since [M7 · 6](../roadmap.md#m7--composite-identifiers):
+the record's key. The changed-key pass puts a moved identifier back on the spot,
+so a record refused for moving its key is left holding the key it was loaded
+with — every other field the mapping wrote stays written, as above — and a flush
+that runs later in the request anyway has no key to write. That is what keeps a
+refused key out of the identity map's way: Doctrine keys a managed record by the
+old one, and a table re-render or a second write in the same request reads it.
+
 This is deliberate rather than a defect, and the alternative is worse: validating
 a copy would need a deep clone of an object graph the toolkit does not own, and
 validating before mapping would mean validating the un-updated record. The
 contract a consumer must hold up is therefore stated as a rule — **never flush on
 the failure path** — not as something the tail can enforce.
+
+### A taken assigned key is a field error, not a unique violation
+
+Filament has no counterpart: Laravel validates what the form declares, so an
+Eloquent model whose key the application assigns meets the database's unique
+violation unless the form declares `unique()` on that field. Here the record
+check answers it. A new record whose identifier is **assigned** — a composite
+key, which Doctrine gives no generator, or a single one the application sets —
+and already held, by a stored row, by a record the
+identity map holds, or by another new record the same save would insert, is
+refused with *"This value is already used."*: under the first identifier field
+that is no association, so the message sits on a field the user can change;
+nothing is written, and the entity manager stays open. Before
+[M7 · 6](../roadmap.md#m7--composite-identifiers) it was a
+`UniqueConstraintViolationException` that closed the manager, or Doctrine's
+`EntityIdentityCollisionException` with the new record still scheduled.
+
+It needs no declaration — no `UniqueEntity`, no `unique()` on a key field. The
+message is `UniqueEntity`'s own, so an application that declares one as well sees
+one message: its constraint is among the record's own, which run first, and the
+probe is skipped whenever any of them fails. The cost of that order is
+enumerated rather than hidden: a record failing another constraint as well
+learns its key is taken one submit later, exactly as the base showed that
+constraint's message alone.
+
+Every create seam reaches it, because every one ends in `getData()`:
+[`CreateRecord`](../panels/README.md#createrecord), plain and nested;
+`CreateAction` on a list, a relation manager, `ManageRelatedRecords` and a record
+page's header, and its create-another run; `Select`'s create-option default; a
+relationship `Repeater`'s new items, two new siblings on one key included; a
+singular relationship's constructed record and a dotted field constructing one;
+and a replicate modal left on its original's key. The two relation-scoped creates
+join the record to its owner **before** the mapping, so a key half the
+relationship fills is in place when the check runs
+([the order](../actions/create-action.md#the-created-record-joins-the-relationship-in-the-same-flush)).
+A generated identifier adds no statement; an assigned one adds one primary-key
+`SELECT`, and none when the holder is already managed. How the lookup walks and
+where the message lands:
+[association-reader.md](association-reader.md#a-taken-identifier-is-looked-up-once-per-new-record-after-the-records-own-constraints-pass);
+what it cannot see:
+[the recorded limits](association-reader.md#what-the-taken-key-probe-cannot-see).
+
+Permanent — reverses only if a key-uniqueness constraint that needs no
+declaration becomes Symfony's own.
+
+### A changed key is refused and put back, not handed to Doctrine
+
+Eloquent updates a primary key like any other column, and Filament passes an
+edited one through. Doctrine keys its identity map by the old key, and what it
+does with an edited one depends on the **id generator**, not on the key's width:
+under IDENTITY it ignores the edit and the page reports *Saved*; under every
+other generator it emits an `UPDATE` of the primary key, so the page's record
+prop goes stale and the next request 404s — or the new key is taken and the
+unique violation closes the entity manager. Since
+[M7 · 6](../roadmap.md#m7--composite-identifiers) the record check refuses it for
+every generator, IDENTITY included: *"This value cannot be changed."* under the
+field, the stored key put back, nothing written.
+
+The same `getData()` carries it everywhere a managed record is written:
+`EditRecord`, `EditAction` on every host, `Select`'s edit-option default and its
+to-one relationship arm, an existing repeater item, the existing record a
+singular relationship holds, a dotted field onto a loaded related record's key,
+and a hook that moved a key on a related record the form never maps — refused
+at the schema's own path, where the page's record-error list and an action
+modal's [outlet](../actions/action.md) render it. Tables' editable cells run the
+same pass themselves and answer it as the cell's own error
+([has-columns.md](../tables/has-columns.md)). The same key in another PHP type is
+no change; a converting type's other spelling of it is one
+([the detector](association-reader.md#a-changed-identifier-is-put-back-and-refused-and-costs-no-statement)).
+
+Both messages are private constants on the reader, with no error code, since
+nothing in the toolkit reads one. *"This value cannot be changed."* is new, and
+stays English unless the application's `translations/validators.*` maps it —
+Symfony ships no such message. `disabledOn('edit')` stays the UI and this is the server's guarantee,
+and it holds where the UI guard does not: a modal's operation is the action's
+**name**, so an `EditAction::make('editRenamed')` leaves a `disabledOn('edit')`
+key field enabled, and the refusal is what answers there. A key written into a
+related record **nobody loaded** is not seen — Doctrine drops that write itself —
+and is recorded in the roadmap's ledger.
+
+Permanent.
 
 ### The collection walk cannot skip directly-hidden child schemas
 

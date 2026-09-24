@@ -638,7 +638,13 @@ plain array is written.
 published on the contract: a violation naming an in-item path it does not carry
 is a path no field maps, and the translator
 [folds it at the item](../schemas/violation-path-translator.md#a-violation-inside-an-item-folds-by-the-same-rule-as-one-at-the-root)
-rather than inventing a state path.
+rather than inventing a state path. Since
+[M7 · 6](../roadmap.md#m7--composite-identifiers), whose item fill asks each
+item field whether its casts flatten an object leaf and so keys the fields by
+their path, a path two item leaves share is listed once, where it was listed
+twice before. Every consumer reads the list as a set — the save writes each path
+onto the child, and the translator `array_flip()`s it — so nothing depends on
+the multiplicity.
 
 ## Divergences
 

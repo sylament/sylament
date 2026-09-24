@@ -61,8 +61,10 @@ alone, and `KeySelection` did not. M7 · 6, the create-path rules, changed what
 `of()` and `find()` **answer** rather than what they accept: each component is
 minted [as its row would read it back](#a-key-is-minted-from-the-value-its-row-would-read-back),
 through one private method — the milestone's last `Identity/**` writer, so
-`RecordKey.php` moved by that method, its import and two call lines, and
-`IdentifierConstraint`, `IdentifierFields` and `KeySelection` did not move at all.
+`RecordKey.php` moved by that method, its import and two call lines — and by
+the docblocks corrected to match, with the one import their `@throws` names —
+and `IdentifierConstraint`, `IdentifierFields` and `KeySelection` did not move at
+all.
 Its other consumers took the interface as it stood: the record check's two
 passes read `values()` and `IdentifierFields::printable()`, and `ReplicateAction`
 asks `find()` whether a replica is keyable yet.

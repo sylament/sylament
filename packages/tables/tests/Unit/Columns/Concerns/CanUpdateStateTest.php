@@ -8,11 +8,17 @@ use Sylament\Tables\Columns\CheckboxColumn;
 use Sylament\Tables\Columns\SelectColumn;
 use Sylament\Tables\Columns\TextInputColumn;
 use Sylament\Tables\Columns\ToggleColumn;
+use Sylament\Tables\Exceptions\RecordWriteException;
 use Sylament\Tables\Table;
 use Sylament\Tables\Tests\Fixtures\Concerns\TableHost;
 use Sylament\Tables\Tests\Fixtures\Doctrine\Entity\Artist;
+use Sylament\Tables\Tests\Fixtures\Doctrine\Entity\Residency;
+use Sylament\Tables\Tests\Fixtures\Doctrine\Entity\Shortcut;
 use Sylament\Tables\Tests\Fixtures\Doctrine\Entity\Song;
+use Sylament\Tables\Tests\Fixtures\Doctrine\Entity\Venue;
 use Sylament\Tables\Tests\Fixtures\Doctrine\EntityManagerFactory;
+use Sylament\Tables\Tests\Fixtures\Doctrine\Handle;
+use Sylament\Tables\Tests\Fixtures\Doctrine\RecordingMiddleware;
 use Symfony\Component\Validator\Constraints\Length;
 use Symfony\Component\Validator\Validation;
 
@@ -297,4 +303,107 @@ it('reverses the casts for the client state, unwinding the outermost one last', 
         ->recordKey('2');
 
     expect($column->getClientState())->toBe('airbag');
+});
+
+/*
+ * An identifier field written from a cell: every flavour a cell reaches, over a
+ * manager of the rig's own rather than the container's, so the check has to
+ * read the record through the manager that owns it. The recorder is reset once
+ * the record is loaded, so a refusal that let anything through shows as SQL.
+ */
+
+/**
+ * @param class-string $class
+ *
+ * @return array{EntityManager, RecordingMiddleware, Table}
+ */
+function identifierWriteRig(string $class): array
+{
+    $recorder = new RecordingMiddleware();
+    $entityManager = EntityManagerFactory::create($recorder);
+    $records = [];
+
+    foreach ([['example.org', 'home'], ['example.org', 'about'], ['sylament.test', 'home']] as $position => [$host, $path]) {
+        $shortcut = new Shortcut();
+        $shortcut->setHost($host);
+        $shortcut->setPath($path);
+        $shortcut->setLabel(ucfirst($path));
+        $shortcut->setPosition($position);
+        $shortcut->setActive(true);
+        $records[] = $shortcut;
+    }
+
+    $north = new Venue(new Handle('north.hall'), 'North Hall');
+    $residency = new Residency();
+    $residency->setVenue($north);
+    $residency->setSeason('summer');
+    $residency->setLabel('Summer');
+    $residency->setPosition(1);
+    $residency->setActive(true);
+
+    $radiohead = new Artist(1, 'Radiohead');
+
+    EntityManagerFactory::seed($entityManager, ...[...$records, $north, $residency, $radiohead, new Song(1, 'Airbag', 100, $radiohead), new Song(2, 'Paranoid Android', 200, $radiohead)]);
+
+    $table = new TableHost(fn (Table $table): Table => $table
+        ->query($entityManager->createQueryBuilder()->select('record')->from($class, 'record')))->getTable();
+
+    return [$entityManager, $recorder, $table];
+}
+
+it('refuses a changed identifier field with the bare message, puts the key back and runs no statement', function (string $class, array $criteria, Closure $column, string $input, Closure $key, mixed $storedKey, string $sql, array $rows): void {
+    [$entityManager, $recorder, $table] = identifierWriteRig($class);
+    $record = $entityManager->getRepository($class)->findOneBy($criteria) ?? throw new LogicException('The seeded record went missing.');
+    $recorder->reset();
+    $refusal = null;
+
+    try {
+        $column()->table($table)->record($record)->updateState($input);
+    } catch (RecordWriteException $recordWriteException) {
+        $refusal = $recordWriteException;
+    }
+
+    expect($refusal)->toBeInstanceOf(RecordWriteException::class)
+        ->and($refusal?->getMessage())->toBe('This value cannot be changed.')
+        ->and($key($record))->toBe($storedKey)
+        ->and($recorder->statements())->toBe([])
+        ->and($entityManager->isOpen())->toBeTrue()
+        ->and($entityManager->getConnection()->fetchAllAssociative($sql))->toBe($rows);
+})->with([
+    'the typed half of a scalar pair' => [Shortcut::class, ['host' => 'example.org', 'path' => 'home'], fn (): TextInputColumn => TextInputColumn::make('path'), 'index', fn (Shortcut $record): string => $record->getPath(), 'home', 'SELECT host, path FROM Shortcut ORDER BY host, path', [['host' => 'example.org', 'path' => 'about'], ['host' => 'example.org', 'path' => 'home'], ['host' => 'sylament.test', 'path' => 'home']]],
+    'the typed half of a scalar pair, onto a taken key' => [Shortcut::class, ['host' => 'example.org', 'path' => 'home'], fn (): TextInputColumn => TextInputColumn::make('path'), 'about', fn (Shortcut $record): string => $record->getPath(), 'home', 'SELECT host, path FROM Shortcut ORDER BY host, path', [['host' => 'example.org', 'path' => 'about'], ['host' => 'example.org', 'path' => 'home'], ['host' => 'sylament.test', 'path' => 'home']]],
+    'the picked half of a scalar pair' => [Shortcut::class, ['host' => 'example.org', 'path' => 'home'], fn (): SelectColumn => SelectColumn::make('host')->options(['example.org' => 'example.org', 'moved.test' => 'moved.test']), 'moved.test', fn (Shortcut $record): string => $record->getHost(), 'example.org', 'SELECT host, path FROM Shortcut ORDER BY host, path', [['host' => 'example.org', 'path' => 'about'], ['host' => 'example.org', 'path' => 'home'], ['host' => 'sylament.test', 'path' => 'home']]],
+    'the scalar half of a derived identity' => [Residency::class, ['season' => 'summer'], fn (): TextInputColumn => TextInputColumn::make('season'), 'autumn', fn (Residency $record): string => $record->getSeason(), 'summer', 'SELECT venue_id, season FROM Residency', [['venue_id' => 'north.hall', 'season' => 'summer']]],
+    'a single assigned id' => [Song::class, ['id' => 1], fn (): TextInputColumn => TextInputColumn::make('id'), '9', fn (Song $record): int => $record->getId(), 1, 'SELECT id, title FROM Song ORDER BY id', [['id' => 1, 'title' => 'Airbag'], ['id' => 2, 'title' => 'Paranoid Android']]],
+    'a single assigned id, onto a taken one' => [Song::class, ['id' => 1], fn (): TextInputColumn => TextInputColumn::make('id'), '2', fn (Song $record): int => $record->getId(), 1, 'SELECT id, title FROM Song ORDER BY id', [['id' => 1, 'title' => 'Airbag'], ['id' => 2, 'title' => 'Paranoid Android']]],
+]);
+
+it('writes an integer id back as the string a cell posts without refusing it', function (): void {
+    [$entityManager, $recorder, $table] = identifierWriteRig(Song::class);
+    $song = $entityManager->find(Song::class, 1) ?? throw new LogicException('The seeded song went missing.');
+    $recorder->reset();
+
+    $returned = TextInputColumn::make('id')->table($table)->record($song)->updateState('1');
+
+    expect($returned)->toBe('1')
+        ->and($song->getId())->toBe(1)
+        ->and($recorder->statements())->toBe([]);
+});
+
+it('files a refused identifier write against the cell, echoing the posted input', function (): void {
+    [$entityManager] = identifierWriteRig(Shortcut::class);
+
+    $host = new TableHost(fn (Table $table): Table => $table
+        ->query($entityManager->createQueryBuilder()->select('shortcut')->from(Shortcut::class, 'shortcut'))
+        ->columns([TextInputColumn::make('path')]));
+
+    $column = $host->getTable()->getColumn('path');
+
+    assert($column instanceof TextInputColumn);
+    $column->setValidator(Validation::createValidator());
+
+    $host->updateTableColumnState('path', 'example=2Eorg~home', 'index');
+
+    expect($host->getTableColumnStateError('path', 'example=2Eorg~home'))->toBe(['message' => 'This value cannot be changed.', 'input' => 'index'])
+        ->and($entityManager->getConnection()->fetchAllAssociative('SELECT host, path FROM Shortcut ORDER BY host, path'))->toBe([['host' => 'example.org', 'path' => 'about'], ['host' => 'example.org', 'path' => 'home'], ['host' => 'sylament.test', 'path' => 'home']]);
 });

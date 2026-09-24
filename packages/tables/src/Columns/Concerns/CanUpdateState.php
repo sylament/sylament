@@ -10,6 +10,7 @@ use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\Persistence\ManagerRegistry;
 use LogicException;
 use Stringable;
+use Sylament\Schemas\State\AssociationReader;
 use Sylament\Schemas\State\Casts\Contracts\StateCast;
 use Sylament\Tables\Exceptions\RecordWriteException;
 use Symfony\Contracts\Service\Attribute\Required;
@@ -102,6 +103,11 @@ trait CanUpdateState
         $this->writeStateOntoRecord($record, $state);
 
         $manager = $this->getEntityManagerForRecord($record);
+
+        foreach (new AssociationReader($manager)->revertIdentifierChanges($record) as $message) {
+            throw new RecordWriteException($message);
+        }
+
         $manager->persist($record);
         $manager->flush();
 

@@ -19,6 +19,7 @@ use Sylament\Actions\Tests\Fixtures\Doctrine\Entity\Note;
 use Sylament\Actions\Tests\Fixtures\Doctrine\Entity\Planter;
 use Sylament\Actions\Tests\Fixtures\Doctrine\Entity\Redirect;
 use Sylament\Actions\Tests\Fixtures\Doctrine\Entity\Roster;
+use Sylament\Actions\Tests\Fixtures\Doctrine\Entity\Scion;
 use Sylament\Actions\Tests\Fixtures\Doctrine\Entity\Seedling;
 use Sylament\Actions\Tests\Fixtures\Doctrine\Entity\Ticket;
 use Sylament\Actions\Tests\Fixtures\Twig\Components\GreenhouseHost;
@@ -313,6 +314,25 @@ it('saves a replica whose blank single string key a prePersist listener on the e
     expect(gardenRows('SELECT code, title FROM Ticket ORDER BY code'))->toBe([
         ['code' => 'T-1', 'title' => 'Alpha'],
         ['code' => 'T-2', 'title' => 'Alpha'],
+    ]);
+});
+
+it('saves a replica whose blank single string key a mapped prePersist entity listener fills', function (): void {
+    $scion = new Scion();
+    $scion->setTag('apple-1');
+    $scion->setVariety('apple');
+
+    $entityManager = $this::getContainer()->get(EntityManagerInterface::class);
+    $entityManager->persist($scion);
+    $entityManager->flush();
+
+    $host = $this->createLiveComponent(GreenhouseHost::class, ['recordClass' => Scion::class])->component();
+    $host->mountAction('replicateBare', [], ['recordKey' => 'apple-1']);
+    $host->callMountedAction();
+
+    expect(gardenRows('SELECT tag, variety FROM Scion ORDER BY tag'))->toBe([
+        ['tag' => 'apple-1', 'variety' => 'apple'],
+        ['tag' => 'apple-graft', 'variety' => 'apple'],
     ]);
 });
 

@@ -150,7 +150,7 @@ it('issues no statement for an unchanged save and one UPDATE over both key colum
     ]);
 });
 
-it('inserts a new item with the owner already assigned, and keys it on the next fill', function (): void {
+it("looks a new item's key up once, then inserts it with the owner already assigned, and keys it on the next fill", function (): void {
     $entityManager = $this::getContainer()->get(EntityManagerInterface::class);
     $post = compositeRepeaterSeedPost($entityManager);
 
@@ -169,6 +169,7 @@ it('inserts a new item with the owner already assigned, and keys it on the next 
     $entityManager->flush();
 
     expect($recorder->statements())->toBe([
+        'SELECT t0.locale AS locale_1, t0.title AS title_2, t0.position AS position_3, t0.post_id AS post_id_4 FROM PostTranslation t0 WHERE t0.post_id = ? AND t0.locale = ?',
         'BEGIN',
         'INSERT INTO PostTranslation (locale, title, position, post_id) VALUES (?, ?, ?, ?)',
         'COMMIT',

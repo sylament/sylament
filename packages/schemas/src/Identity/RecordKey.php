@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Sylament\Schemas\Identity;
 
+use Doctrine\DBAL\Types\ConversionException;
 use Doctrine\DBAL\Types\Type;
 use Doctrine\ORM\EntityManagerInterface;
 use LogicException;
@@ -15,7 +16,8 @@ final class RecordKey
     /**
      * @param class-string|null $class the mapped class to key the record by, when the caller declares one — a subclass the mapping does not know keys by it
      *
-     * @throws LogicException when the identifier is incomplete, or a component is not printable
+     * @throws LogicException      when the identifier is incomplete, or a component is not printable
+     * @throws ConversionException when a component's type refuses to convert it
      */
     public static function of(EntityManagerInterface $entityManager, object $record, ?string $class = null): string
     {
@@ -33,7 +35,8 @@ final class RecordKey
      *
      * @param class-string|null $class the mapped class to key the record by, when the caller declares one
      *
-     * @throws LogicException when a component is set but not printable
+     * @throws LogicException      when a component is set but not printable
+     * @throws ConversionException when a component's type refuses to convert it
      */
     public static function find(EntityManagerInterface $entityManager, object $record, ?string $class = null): ?string
     {
@@ -83,8 +86,11 @@ final class RecordKey
     /**
      * The record's identifier values as the mapping orders them, each already
      * the PHP value its own field's DBAL type holds and an identifier
-     * association reduced to its target's — the values {@see of()} prints,
-     * before they are printed. Null when a component is missing at any level.
+     * association reduced to its target's — the values {@see of()} hands to
+     * {@see asStored()}, which converts each through its field's type before
+     * printing, so for a type that rewrites a value on its way to the database
+     * they differ from what {@see of()} prints. Null when a component is
+     * missing at any level.
      *
      * @internal read by the relation layer's owner bind, and not part of the key contract
      *

@@ -1195,7 +1195,7 @@ The lifecycle, ours against Filament's:
 | transaction | `beginDatabaseTransaction()` | — deferred |
 | validate | `callHook('beforeValidate')` → `$this->form->getState()` → `callHook('afterValidate')` | the same three steps, over `$this->getSchema('form')` |
 | mutate | `mutateFormDataBeforeCreate($data)` | same, an identity default a page overrides |
-| write | `callHook('beforeCreate')` → `handleRecordCreation($data)` → `saveRelationships()` → `callHook('afterCreate')` | `callHook('beforeCreate')` → `handleRecordCreation($schema->getData($data))` → `callHook('afterCreate')` — `persist()` + `flush()`, no relationship pass |
+| write | `callHook('beforeCreate')` → `handleRecordCreation($data)` → `saveRelationships()` → `callHook('afterCreate')` | `callHook('beforeCreate')` → `handleRecordCreation($this->mapRecordForCreation($schema, $data))` → `callHook('afterCreate')` — `persist()` + `flush()`, no relationship pass |
 | events | `RecordCreated`, `RecordSaved` | — no event layer |
 | remember | `rememberData()` | same, through [`HasUnsavedDataChangesAlert`](../../../packages/panels/src/Pages/Concerns/HasUnsavedDataChangesAlert.php) |
 | notify | `getCreatedNotification()?->send()` | same |
@@ -1230,7 +1230,13 @@ on the page the browser lands on.
 Filament's chain with the panel-level `getResourceCreatePageRedirect()` setting,
 the `view` arm and the two `can*()` guards all absent with their features. Both
 arms spread the page's `parentRecords`, so a nested create lands on the nested
-edit page rather than raising a missing-parameter exception.
+edit page rather than raising a missing-parameter exception. The key the `edit`
+arm mints is the one the new row reads back
+([record-key.md](../schemas/record-key.md#a-key-is-minted-from-the-value-its-row-would-read-back)):
+until [M7 · 6](../roadmap.md#m7--composite-identifiers) it printed the value
+the record held in memory, so a create whose key type rewrites the typed
+spelling — `new/1` read back as `NEW/1` — redirected to a URL the strict decode
+answered 404 for, the record existing under its canonical key.
 
 `handleRecordCreation()` gained the parent arm with M6 · 3: with a parent record
 in hand it calls
@@ -1242,6 +1248,25 @@ page reaches the same place from the other side: the resource-page base answers
 `getDefaultActionRelationship()` with the parent relationship for a
 `CreateAction`, which is the hook
 [`CreateAction`](../actions/create-action.md) already consulted.
+
+Since [M7 · 6](../roadmap.md#m7--composite-identifiers) the parent is joined
+**before** the mapping as well. `create()` maps through a private
+`mapRecordForCreation()`, which with no parent is exactly `getData($data)` and
+constructs nothing extra, and under a parent constructs the record through
+`getRecordInstance()`, attaches it through `attachRecordToParent()` and maps with
+the form bound to that record, restoring the binding in a `finally` so a refused
+create re-renders exactly as before. That is what lets the record check that ends
+the mapping see a key half the parent fills: a create on a taken key — nested or
+not, over any identifier width, a single assigned one included — is *"This value
+is already used."* under the first key field the form lets the user type rather
+than a unique-violation 500 ([the rule](../schemas/can-be-validated.md#a-taken-assigned-key-is-a-field-error-not-a-unique-violation)). `handleRecordCreation()`'s
+own attach is the *after*, so the parent still wins over a form that picks
+another — and the lookup runs on the form's pick,
+[recorded with its modal twin](../actions/create-action.md#a-create-whose-form-picks-another-owner-still-lands-under-the-relationship-and-is-probed-on-the-pick).
+Pinned by
+[`CreateRecordTakenKeyTest`](../../../packages/panels/tests/Integration/Resources/Pages/CreateRecordTakenKeyTest.php) and
+[`CompositeRecordPagesTest`](../../../packages/panels/tests/Integration/Resources/Pages/CompositeRecordPagesTest.php), whose
+taken-key case flipped in place from pinning the unique violation.
 
 **The template.** `$template` points at the shared
 [form variant](form-actions.md), `partials/Page/form.html.twig`, which fills the
@@ -1259,7 +1284,10 @@ which belongs to no input, so without
 `this.getErrorsForSchemaStatePath('data')` it renders nowhere and the submit
 appears to do nothing. The demo hand-rolled this block for the same reason; this
 is the shipped version of it, in one file instead of three, wrapped in a
-`form_errors` block a page can replace.
+`form_errors` block a page can replace. Since M7 · 6 one of the key rules lands
+there too — a key a hook moved on a related record the form never maps is
+refused at the schema's own path — and actions' modal carries the twin,
+[its own record-error list](../actions/action.md#the-action-modal-renders-the-record-errors-that-name-no-field).
 
 Deferred, all todo: page-level create-another (`$canCreateAnother`,
 `createAnother()`, `preserveFormDataWhenCreatingAnother()` — the
@@ -1356,7 +1384,7 @@ The lifecycle, ours against Filament's:
 | transaction | `beginDatabaseTransaction()` | — deferred |
 | validate | `callHook('beforeValidate')` → `$this->form->getState(afterValidate: …)` | same, and the callback is Filament's pair: `callHook('afterValidate')` then `callHook('beforeSave')` |
 | mutate | `mutateFormDataBeforeSave($data)` | same — **after** `beforeSave`, which fired inside the state read |
-| write | `handleRecordUpdate($record, $data)` → `callHook('afterSave')` | `handleRecordUpdate($schema->getData($data))` → `callHook('afterSave')` — `persist()` + `flush()` |
+| write | `handleRecordUpdate($record, $data)` → `callHook('afterSave')` | `handleRecordUpdate($schema->getData($data))` → `$schema->loadStateFromRelationships()` → `callHook('afterSave')` — `persist()` + `flush()`, then the relationship-backed re-read |
 | events | `RecordUpdated`, `RecordSaved` | — no event layer |
 | remember | `rememberData()` | same, through [`HasUnsavedDataChangesAlert`](../../../packages/panels/src/Pages/Concerns/HasUnsavedDataChangesAlert.php) |
 | notify | `getSavedNotification()?->send()` when `$shouldSendSavedNotification` | `getSavedNotification()?->send()` |
@@ -1374,6 +1402,27 @@ entity, so the unit of work holds a dirty entity that is never flushed. Nothing
 else in the request may flush, which is why `handleRecordUpdate()` is the only
 write and why the demo's `testInvalidEditSubmitLeavesTheRowUntouched` is the
 carried pin for it.
+
+The record's **key** is the one field that does not stay mutated. Since
+[M7 · 6](../roadmap.md#m7--composite-identifiers) the record check refuses an
+edited identifier field — *"This value cannot be changed."* under it, whatever
+generator fills it, IDENTITY included — and puts the stored value back, so even a
+flush later in the request has no key to write
+([the rule](../schemas/can-be-validated.md#a-changed-key-is-refused-and-put-back-not-handed-to-doctrine)). Before, a composite or assigned key re-keyed the
+row and stranded the page's record prop until the next request 404ed, a taken one
+closed the entity manager, and an IDENTITY one reported *Saved* while Doctrine
+dropped the edit. Pinned by
+[`EditRecordChangedKeyTest`](../../../packages/panels/tests/Integration/Resources/Pages/EditRecordChangedKeyTest.php) and by
+`CompositeRecordPagesTest`'s key-edit case, flipped in place from pinning the
+re-key.
+
+**The reload.** Once `handleRecordUpdate()` has flushed, `save()` calls
+`$schema->loadStateFromRelationships()` — Filament's post-save step,
+[ported as the host's](../schemas/belongs-to-record.md#loadstatefromrelationships-is-the-hosts-reload-after-its-flush-and-takes-no-parameter)
+— so a relationship repeater's added items are keyed by the identifiers the flush
+gave them and the next save updates what this one created, where it used to build
+them again. Pinned by
+[`EditRecordRelationshipsTest`](../../../packages/panels/tests/Integration/Resources/Pages/EditRecordRelationshipsTest.php).
 
 Staying on the page is expressed as
 [a `null` redirect rather than Filament's exception-as-predicate](#staying-on-the-page-after-a-save-is-a-null-redirect-not-a-caught-authorization-exception).

@@ -43,6 +43,14 @@
            for a bare confirmation modal. #}
         {{- action.getModalContent -}}
         {%- if schema is not null -%}
+            {%- set recordErrors = schema.getLiveComponent.getErrorsForSchemaStatePath(schema.getStatePath) -%}
+            {%- if recordErrors is not empty -%}
+                <ul class="sy-ac-modal-errors" data-record-errors>
+                    {%- for message in recordErrors -%}
+                        <li>{{ message }}</li>
+                    {%- endfor -%}
+                </ul>
+            {%- endif -%}
             {{- renderComponent(schema) -}}
         {%- endif -%}
         {{- action.getModalContentFooter -}}

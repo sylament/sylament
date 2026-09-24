@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Sylament\Schemas\Identity;
 
+use Doctrine\DBAL\Types\Type;
 use Doctrine\ORM\EntityManagerInterface;
 use LogicException;
 
@@ -22,7 +23,7 @@ final class RecordKey
         $values = self::flatten($entityManager, $record, $class)
             ?? throw new LogicException(sprintf('Object records must expose a readable non-blank identifier; [%s] has none set.', $record::class));
 
-        return self::fromValues($entityManager, $class, $values);
+        return self::fromValues($entityManager, $class, self::asStored($entityManager, $class, $values));
     }
 
     /**
@@ -43,7 +44,7 @@ final class RecordKey
             return null;
         }
 
-        return self::fromValues($entityManager, $class, $values);
+        return self::fromValues($entityManager, $class, self::asStored($entityManager, $class, $values));
     }
 
     /**
@@ -94,6 +95,37 @@ final class RecordKey
     public static function values(EntityManagerInterface $entityManager, object $record, ?string $class = null): ?array
     {
         return self::flatten($entityManager, $record, $class ?? $record::class);
+    }
+
+    /**
+     * Each value as a read of its own row would hand it back — through its
+     * field's DBAL type to the database form and back — so a record that has
+     * not been re-read since it was written mints the key that row mints. A
+     * blank component is handed back as it is, for printing to refuse.
+     *
+     * @param class-string $class
+     * @param list<mixed>  $values
+     *
+     * @return list<mixed>
+     */
+    private static function asStored(EntityManagerInterface $entityManager, string $class, array $values): array
+    {
+        $platform = $entityManager->getConnection()->getDatabasePlatform();
+        $types = IdentifierFields::of($entityManager, $class)->types;
+
+        return array_map(
+            static function (mixed $value, string $name) use ($platform): mixed {
+                if (is_string($value) && mb_trim($value) === '') {
+                    return $value;
+                }
+
+                $type = Type::getType($name);
+
+                return $type->convertToPHPValue($type->convertToDatabaseValue($value, $platform), $platform);
+            },
+            $values,
+            $types,
+        );
     }
 
     /**

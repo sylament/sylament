@@ -8,9 +8,13 @@ use Sylament\Schemas\Tests\Fixtures\Doctrine\Cipher;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\CompositeOwnerRig;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\Author;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\Beacon;
+use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\Crate;
+use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\CrateSeal;
+use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\Flagged;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\Listing;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\ListingNote;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\ListingSeal;
+use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\Pallet;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\Placement;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\Post;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\PostSeal;
@@ -18,7 +22,11 @@ use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\PostSealNote;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\PostTranslation;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\Redirect;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\Shortlink;
+use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\Strongbox;
+use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\StrongboxSeal;
+use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\Tariff;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\Ticket;
+use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\Vault;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\Zone;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\EntityManagerFactory;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\IdentityRig;
@@ -291,3 +299,163 @@ it('reads the values of a subclass the mapping does not know by the class the ca
 
     expect(RecordKey::values(EntityManagerFactory::create(), $redirect, Redirect::class))->toBe(['example.com', '/about']);
 });
+
+/*
+ * A key is minted from the value the row would read back: each component goes
+ * through its field's DBAL type to the database form and back before it is
+ * printed. A loaded record already holds what its row read back, so none of
+ * these may move.
+ */
+it('mints a loaded record the key it already held, whatever its identifier type converts', function (string $flavour, string $key): void {
+    $entityManager = IdentityRig::create();
+
+    $record = match ($flavour) {
+        'sku' => $entityManager->find(Listing::class, new Sku('AB-123')),
+        'sku behind an association' => $entityManager->find(ListingNote::class, ['listing' => new Sku('AB-123'), 'code' => 'n1']),
+        'guid beside a bigint' => $entityManager->find(Ticket::class, ['id' => 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11', 'serial' => 7]),
+        default => $entityManager->find(Beacon::class, 'legacy-42'),
+    };
+
+    assert($record !== null);
+
+    expect(RecordKey::of($entityManager, $record))->toBe($key)
+        ->and(RecordKey::find($entityManager, $record))->toBe($key);
+})->with([
+    'a sku' => ['sku', 'AB-123'],
+    'a sku behind an association' => ['sku behind an association', 'AB-123~n1'],
+    'a guid beside a bigint' => ['guid beside a bigint', 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11~7'],
+    'a guid the platform stores as plain text' => ['guid stored as plain text', 'legacy-42'],
+]);
+
+it('mints a loaded record the key it already held behind a raw-bytes uuid or a cipher', function (string $flavour, string $key): void {
+    $entityManager = CompositeOwnerRig::create();
+
+    $record = match ($flavour) {
+        'raw-bytes uuid' => $entityManager->find(Crate::class, Uuid::fromString('a1b2c3d4-0000-4000-8000-000000000001')),
+        'raw-bytes uuid beside a string' => $entityManager->find(Pallet::class, ['batch' => Uuid::fromString('b1b2c3d4-0000-4000-8000-000000000001'), 'lane' => 'north']),
+        'single derived identity onto a raw-bytes uuid' => $entityManager->find(CrateSeal::class, ['crate' => Uuid::fromString('a1b2c3d4-0000-4000-8000-000000000001')]),
+        'cipher' => $entityManager->find(Strongbox::class, new Cipher('omega')),
+        'cipher beside a string' => $entityManager->find(Vault::class, ['cipher' => new Cipher('zeta'), 'zone' => 'north']),
+        'single derived identity onto a cipher' => $entityManager->find(StrongboxSeal::class, ['strongbox' => new Cipher('omega')]),
+        'single derived identity onto a sku' => $entityManager->find(ListingSeal::class, ['listing' => new Sku('AB-123')]),
+        default => CompositeOwnerRig::findChain($entityManager, 1, 1),
+    };
+
+    assert($record !== null);
+
+    expect(RecordKey::of($entityManager, $record))->toBe($key)
+        ->and(RecordKey::find($entityManager, $record))->toBe($key);
+})->with([
+    'a raw-bytes uuid' => ['raw-bytes uuid', 'a1b2c3d4-0000-4000-8000-000000000001'],
+    'a raw-bytes uuid beside a string' => ['raw-bytes uuid beside a string', 'b1b2c3d4-0000-4000-8000-000000000001~north'],
+    'a single derived identity onto a raw-bytes uuid' => ['single derived identity onto a raw-bytes uuid', 'a1b2c3d4-0000-4000-8000-000000000001'],
+    'a cipher' => ['cipher', 'omega'],
+    'a cipher beside a string' => ['cipher beside a string', 'zeta~north'],
+    'a single derived identity onto a cipher' => ['single derived identity onto a cipher', 'omega'],
+    'a single derived identity onto a sku' => ['single derived identity onto a sku', 'AB-123'],
+    'a chained derived identity' => ['chained derived identity', '1~1'],
+]);
+
+it('mints a loaded record the key it already held under a decimal or a boolean identifier', function (): void {
+    $entityManager = EntityManagerFactory::create();
+
+    $tariff = new Tariff();
+    $tariff->setRate('12.25');
+    $tariff->setLabel('quarter');
+
+    $off = new Flagged();
+    $off->setFlag(false);
+    $off->setTitle('off');
+
+    $on = new Flagged();
+    $on->setFlag(true);
+    $on->setTitle('on');
+
+    EntityManagerFactory::seed($entityManager, $tariff, $off, $on);
+
+    $tariff = $entityManager->find(Tariff::class, '12.25');
+    $off = $entityManager->find(Flagged::class, false);
+    $on = $entityManager->find(Flagged::class, true);
+
+    assert($tariff instanceof Tariff && $off instanceof Flagged && $on instanceof Flagged);
+
+    expect(RecordKey::of($entityManager, $tariff))->toBe('12.25')
+        ->and(RecordKey::find($entityManager, $tariff))->toBe('12.25')
+        ->and(RecordKey::of($entityManager, $off))->toBe('0')
+        ->and(RecordKey::find($entityManager, $off))->toBe('0')
+        ->and(RecordKey::of($entityManager, $on))->toBe('1')
+        ->and(RecordKey::find($entityManager, $on))->toBe('1');
+});
+
+it('mints a new record the key its row will read back, through of() and find() alike', function (int|string $serial): void {
+    $ticket = new Ticket();
+    $ticket->setId('a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11');
+    $ticket->setSerial($serial);
+
+    $entityManager = EntityManagerFactory::create();
+
+    expect(RecordKey::of($entityManager, $ticket))->toBe('a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11~7')
+        ->and(RecordKey::find($entityManager, $ticket))->toBe('a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11~7');
+})->with([
+    'an integer' => [7],
+    'a numeric string' => ['7'],
+    'leading zeros' => ['0007'],
+    'a plus sign' => ['+7'],
+]);
+
+it('mints a record it has just flushed the key its row mints once loaded', function (): void {
+    $entityManager = EntityManagerFactory::create();
+
+    $ticket = new Ticket();
+    $ticket->setId('b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a12');
+    $ticket->setSerial('0012');
+    $ticket->setSubject('flushed');
+
+    $entityManager->persist($ticket);
+    $entityManager->flush();
+
+    $minted = RecordKey::of($entityManager, $ticket);
+
+    expect($minted)->toBe('b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a12~12')
+        ->and(RecordKey::find($entityManager, $ticket))->toBe('b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a12~12')
+        ->and(RecordKey::toIdentifier($entityManager, Ticket::class, $minted))->toBe(['id' => 'b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a12', 'serial' => 12]);
+
+    $entityManager->clear();
+
+    $loaded = $entityManager->find(Ticket::class, ['id' => 'b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a12', 'serial' => 12]);
+
+    assert($loaded instanceof Ticket);
+
+    expect($loaded->getSubject())->toBe('flushed')
+        ->and(RecordKey::of($entityManager, $loaded))->toBe('b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a12~12');
+});
+
+it('mints nothing through the type from raw values, and decodes no spelling the type would rewrite', function (): void {
+    $entityManager = EntityManagerFactory::create();
+
+    expect(RecordKey::fromValues($entityManager, Ticket::class, ['a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11', '0007']))
+        ->toBe('a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11~0007')
+        ->and(RecordKey::toIdentifier($entityManager, Ticket::class, 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11~0007'))->toBeNull()
+        ->and(RecordKey::toIdentifier($entityManager, Ticket::class, 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11~7'))
+        ->toBe(['id' => 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11', 'serial' => 7]);
+});
+
+it('finds no key for a blank component before its type converts it', function (): void {
+    $ticket = new Ticket();
+    $ticket->setId('a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11');
+    $ticket->setSerial('');
+
+    expect(RecordKey::find(EntityManagerFactory::create(), $ticket))->toBeNull();
+});
+
+it('refuses a blank component through of() exactly as before the conversion', function (string $serial): void {
+    $ticket = new Ticket();
+    $ticket->setId('a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11');
+    $ticket->setSerial($serial);
+
+    expect(fn (): string => RecordKey::of(EntityManagerFactory::create(), $ticket))
+        ->toThrow(LogicException::class, 'The identifier of [Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\Ticket] is not a printable value.');
+})->with([
+    'an empty string' => [''],
+    'a space' => [' '],
+]);

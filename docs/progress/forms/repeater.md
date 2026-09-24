@@ -207,9 +207,12 @@ and the field's path is read against the child class with the item segment
 already stripped — no element type needed, because the association's target
 declares one. A `TextInput::make('heading')` over a non-nullable child property
 derives required; one over a nullable property does not. A `DateTimePicker`
-inside such an item reads its object class from that same frame. Nothing above
-changes: a plain-array repeater has no class to frame, so it derives nothing as
-it always did.
+inside such an item reads its object class from that same frame — and, since
+[M7 · 6](../roadmap.md#m7--composite-identifiers), its stored value too, which
+the item fill used to skip
+([the item fill](#a-relationship-repeater-keys-its-items-by-identity-and-diffs-the-collection)).
+Nothing above changes: a plain-array repeater has no class to frame, so it
+derives nothing as it always did.
 
 ### Unmanaged item keys round-trip through the client
 
@@ -282,6 +285,18 @@ the identity), `dehydrateItems()` returns before it positionalises (position is
 not what the save reads), and an item the add action mints keeps its uuid key —
 which is precisely how the save tells a new child from a loaded one.
 
+An item leaf is read as the root fill reads one
+([the rule](../schemas/belongs-to-record.md#reads-are-lenient-writes-are-strict)):
+an object-valued leaf enters the item only where the item field's own state
+casts flatten it, so a `DateTimePicker` or an enum-backed field fills from the
+child, as does a `Uuid` under a cast that flattens it, and a fill hook receives
+the object at its item path, while an association, and an object no cast
+flattens, still skip. Until
+[M7 · 6](../roadmap.md#m7--composite-identifiers) the item fill skipped **every**
+object leaf: such a field filled empty, and the next save — one that never
+touched it — wrote NULL over the stored value. Pinned by
+[`RepeaterRelationshipObjectLeafTest`](../../../packages/forms/tests/Integration/Components/RepeaterRelationshipObjectLeafTest.php).
+
 `getData()` hands the whole keyed map to the save hook, which builds the
 **desired list** in state order: a `record-` key resolves to the very instance
 the collection holds (never a fresh reference by key — strict identity is what
@@ -319,6 +334,17 @@ desired list), before-save skips writing it but the child stays in the desired
 list, so declining a save is not a deletion. And the whole diff runs inside the
 single `getData()` call, with no flush of its own: the caller flushes, once,
 exactly as with every other mapped field.
+
+An added item keeps its uuid key until something reads the collection back, and
+the save does not. Since [M7 · 6](../roadmap.md#m7--composite-identifiers)
+`EditRecord` does: it calls
+[`Schema::loadStateFromRelationships()`](../schemas/belongs-to-record.md#loadstatefromrelationships-is-the-hosts-reload-after-its-flush-and-takes-no-parameter)
+after its flush — Filament's own post-save step — which runs this load hook again
+and keys every item `record-<key>` by the identifier the flush gave it, so the
+next save updates what this one created. Without it the next save constructed
+the item again: an `EntityIdentityCollisionException` for an assigned key, and a
+`DELETE` plus an `INSERT` of every added item, on every save, for a generated id.
+A host that flushes itself adds that one call after its flush.
 
 Reorderability is coupled to the order column, and the coupling is
 call-order-sensitive exactly as in Filament. `relationship()` ends with
@@ -730,8 +756,23 @@ collection write has already run in memory, the item-key map is deliberately
 therefore not a transaction guard: a caller that catches the `LogicException`
 and then flushes anyway still commits the half-keyed row it was warned about.
 Validating a
-key that is *taken*, or a key half edited on an existing item, is
-[M7 · 6](../roadmap.md#m7--composite-identifiers)'s.
+key that is *taken*, or a key half edited on an existing item, is the record
+check's since [M7 · 6](../roadmap.md#m7--composite-identifiers), which reaches
+every item through the owner's loaded collection. A new item on a key a stored
+row, an existing item or another new item claims is *"This value is already
+used."* under the new item's first identifier field that is no association — a
+join entity's under the one that does not point back at the owner
+([the rule](../schemas/can-be-validated.md#a-taken-assigned-key-is-a-field-error-not-a-unique-violation)) — and an existing item's key half edited is
+*"This value cannot be changed."*, put back, with nothing written
+([the rule](../schemas/can-be-validated.md#a-changed-key-is-refused-and-put-back-not-handed-to-doctrine)). Two new items claiming one key are compared in
+memory, so under an owner that has no identifier yet the second is refused
+without a statement. A new item on the key of an item the **same** save removes
+is refused too, and the message blames the key the user just removed: Doctrine
+inserts before it deletes, so that save could not succeed either way — recorded
+rather than closed. Pinned by
+[`RepeaterKeyWritesTest`](../../../packages/forms/tests/Integration/Components/RepeaterKeyWritesTest.php), beside
+[`RepeaterCompositeRelationshipTest`](../../../packages/forms/tests/Integration/Components/RepeaterCompositeRelationshipTest.php),
+whose insert case now reads the new item's key once before its `INSERT`.
 
 ### A mutate callback can rewrite what a nested hook consumes
 

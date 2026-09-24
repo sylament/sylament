@@ -815,6 +815,22 @@ then three Doctrine defaults:
 - **`updateOptionUsing`** — `Schema::getData()` maps the submitted state back onto
   the bound instance and the reader `flush()`es it.
 
+Both write defaults run `getData()`, so both end in the record check and, since
+[M7 · 6](../roadmap.md#m7--composite-identifiers), in its two key rules. A created
+option on a key a record already holds is *"This value is already used."* under
+the option form's own field, with nothing written
+([the rule](../schemas/can-be-validated.md#a-taken-assigned-key-is-a-field-error-not-a-unique-violation)); an edit-option save that changes the selected
+record's key is *"This value cannot be changed."*, the key put back and the
+select still naming the same record ([the rule](../schemas/can-be-validated.md#a-changed-key-is-refused-and-put-back-not-handed-to-doctrine)) — and the
+field's to-one relationship arm, writing a different reference onto an
+identifier association of an existing record, is refused the same way. The key
+`createOptionUsing` hands back is minted after the flush as the new row would
+read it back ([why](../schemas/record-key.md#a-key-is-minted-from-the-value-its-row-would-read-back)):
+before, a key type that rewrites what was typed — `new-1` read back as `NEW-1` —
+answered a key the option list did not hold, so the created option was not
+selected and the parent's save refused it. Pinned by
+[`SelectKeyWritesTest`](../../../packages/forms/tests/Integration/Components/SelectKeyWritesTest.php).
+
 All three are installed **unconditionally**, exactly as Filament does it, so a
 `createOptionUsing()` of your own has to be declared **after** `relationship()`
 to survive. That is a real ordering trap and it is pinned in both directions
@@ -1044,9 +1060,12 @@ the same reason one line earlier. And so does a **plain single scalar**
 identifier, always: the member answers `false` for one before it reads anything,
 because the relation layer has always keyed such a class and a create option over
 one worked at HEAD. Validating a key that is *taken*, as opposed
-to one that is incomplete, is
-[M7 · 6](../roadmap.md#m7--composite-identifiers)'s — and so is an assigned
-single scalar key left blank.
+to one that is incomplete, is the record check's since
+[M7 · 6](../roadmap.md#m7--composite-identifiers), which this default reaches
+through `getData()` ([above](#the-option-actions-are-suffix-actions-with-doctrine-defaults)).
+An assigned single scalar key left blank still passes both: the taken-key rule
+treats a blank component as incomplete and looks nothing up, so it reaches
+Doctrine as it did.
 
 ### The relation tier reads the owner's class and never its identity
 

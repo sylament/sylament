@@ -720,6 +720,12 @@ probing by key` in
 [`ExistingValueValidatorTest`](../../../packages/forms/tests/Unit/Validation/ExistingValueValidatorTest.php)
 is what pins it, so a later sweep over the by-key sites does not turn this one
 into a key probe. Only `unique(ignoreRecord:)` moved, and only its exclusion.
+[M7 · 6](../roadmap.md#m7--composite-identifiers) left it that way too: the key
+probe a taken assigned identifier needs is schemas' own, inside the record check
+`getData()` ends in ([the rule](../schemas/can-be-validated.md#a-taken-assigned-key-is-a-field-error-not-a-unique-violation)), so no key field needs a
+`unique()` and no validator here grew a key arm. A `unique()` declared on a key
+half anyway still probes that one column, under its own *"This value is already
+taken."*, and answers during field validation — before the record check runs.
 
 `ExistingValue` is the one place a `COUNT` reads better than a limited fetch: an
 array value (a multiple select) is checked as Laravel's `exists` checks it, one

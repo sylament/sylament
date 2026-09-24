@@ -8,6 +8,7 @@ use Closure;
 use Sylament\Actions\Action;
 use Sylament\Actions\ActionGroup;
 use Sylament\Schemas\Components\Component;
+use Sylament\Schemas\Components\Concerns\CanAccessAssociations;
 use Sylament\Schemas\Components\Concerns\CanAccessProperties;
 use Sylament\Schemas\Components\Concerns\HasColumns;
 use Sylament\Schemas\Components\Concerns\HasGap;
@@ -42,6 +43,7 @@ class Schema extends ViewComponent
     use BelongsToLiveComponent;
     use BelongsToParentComponent;
     use BelongsToRecord;
+    use CanAccessAssociations;
     use CanAccessProperties;
     use CanBeDisabled;
     use CanBeEmbeddedInParentComponent;

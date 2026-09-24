@@ -21,6 +21,8 @@ use Sylament\Schemas\Validation\PresenceGate;
 use Sylament\Support\Components\Attributes\ExposedLiveComponentMethod;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
 use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\Validator\Constraints\Callback;
+use Symfony\Component\Validator\Context\ExecutionContextInterface;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
 use Symfony\Contracts\Service\Attribute\Required;
 use Symfony\UX\LiveComponent\Attribute\LiveAction;
@@ -483,7 +485,14 @@ trait HasSchemas
 
         $schemaKey = $this->getSchemaValidationKey($schema);
 
-        $violations = $this->schemaStateValidator->validate($record);
+        $reader = $schema->getAssociationReader();
+
+        $violations = $this->schemaStateValidator->validate($record, $this->getIdentifierGuard($reader->revertIdentifierChanges($record)));
+        $violations->addAll($this->schemaStateValidator->validate($record));
+
+        if (count($violations) === 0) {
+            $violations = $this->schemaStateValidator->validate($record, $this->getIdentifierGuard($reader->findTakenIdentifiers($record)));
+        }
 
         if (count($violations) === 0) {
             return;
@@ -496,8 +505,11 @@ trait HasSchemas
 
         foreach ($violations as $violation) {
             $path = $translator->translate($violation->getPropertyPath()) ?? $rootPath;
+            $message = (string) $violation->getMessage();
 
-            $errors[$path][] = (string) $violation->getMessage();
+            if (!in_array($message, $errors[$path] ?? [], true)) {
+                $errors[$path][] = $message;
+            }
         }
 
         $this->schemaValidationErrors[$schemaKey] = [
@@ -510,6 +522,24 @@ trait HasSchemas
         }
 
         throw new ValidationException($errors);
+    }
+
+    /**
+     * A record-key rule's refusals as a constraint in the record's own
+     * validation context, so each message is translated and filed as the
+     * record's own violations are. The changed-key rule is read before those
+     * run, since it puts the old key back; the taken-key rule only once they
+     * pass, so it binds nothing the record's own constraints refuse.
+     *
+     * @param array<string, string> $refusals the message, keyed by the record property path it belongs to
+     */
+    private function getIdentifierGuard(array $refusals): Callback
+    {
+        return new Callback(static function (object $record, ExecutionContextInterface $context) use ($refusals): void {
+            foreach ($refusals as $path => $message) {
+                $context->buildViolation($message)->atPath($path)->addViolation();
+            }
+        });
     }
 
     /**

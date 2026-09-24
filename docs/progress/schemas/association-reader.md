@@ -525,22 +525,49 @@ the placement over every shape.
 
 ### What the taken-key probe cannot see
 
-Five limits, recorded rather than closed:
+Six limits, recorded rather than closed:
 
-- **A detached record, or one another entity manager keeps over the same
-  mapping, reads as new.** `UnitOfWork::getEntityState()` cannot tell a detached
-  record from a new one on a taken key without the database, so an unchanged
-  write of one answers *already used* — where the base failed that write at
-  `persist()` anyway. Pinned as behaviour: *reads a detached record, or one
-  another manager keeps, as a new one — so its own unchanged key answers taken*.
+- **A detached record reads as new.** A reader reads its own entity manager's
+  unit of work and database, and `UnitOfWork::getEntityState()` cannot tell a
+  detached record from a new one on a taken key without the database — so a
+  record that manager does not keep, a detached one or one another manager keeps
+  over the same mapping, reads as new, and an unchanged write of it answers
+  *already used*. Pinned as behaviour: *reads a detached record, or one another
+  manager keeps, as a new one — so its own unchanged key answers taken*. The
+  hosts keep the second-manager half out of reach. An action binds its schema's
+  reader to the manager it writes through — `getEntityManagerForRecord()`, the
+  table query's manager, else the registry's for the class — so on a table
+  whose `query()` runs on a second manager both rules read that manager's unit
+  of work and database, where the flush runs; panels' create and edit pages
+  write through the container's manager, the one the schema's reader already
+  holds; and a custom host that writes through another manager binds its
+  schema's reader the same way, through `Schema::setAssociationReader()`. The
+  detached record is what remains, and the base failed its write anyway:
+  `persist()` takes a detached record for a new one, so its flush met the stored
+  key. The hosts' half is pinned by actions'
+  [`TableQueryManagerKeyTest`](../../../packages/actions/tests/Integration/TableQueryManagerKeyTest.php):
+  on a table over a second manager, an unchanged edit saves, a changed key is
+  refused, and a create or a replica on a key only that manager's database holds
+  is *already used*.
 - **A record whose class only another entity manager maps is skipped by both
-  passes.** The walk asks the reader's own manager's metadata factory, to which
-  that class is transient, so neither this probe nor the changed-key pass sees
-  it — no regression, since the base guarded nothing either. Unexecuted.
+  passes** of a reader over a manager that does not map it: the walk asks the
+  reader's own manager's metadata factory, to which that class is transient, so
+  neither this probe nor the changed-key pass sees it — no regression, since the
+  base guarded nothing either. An action writing such a record binds its
+  schema's reader to the manager that maps it, so both passes run there; what is
+  left is a custom host that writes through that manager without binding its
+  schema's reader. Unexecuted.
 - **A Doctrine SQL filter** that hides the holder hides it from `find()` too, so
   such a create stays the unique-violation 500 it was. Unexecuted.
 - **Two requests creating one key at once** both pass the lookup and the second
   meets the database's constraint: the probe is a read, not a lock. Unexecuted.
+- **The lookup compares keys as the database does**, so a `guid` key spelled in
+  the other letter case is taken on PostgreSQL, whose `uuid` type compares
+  case-insensitively, and free on SQLite, which stores the guid as `CHAR(36)` —
+  where the insert then writes a second row differing from the first only in
+  case. No code path of ours differs: the probe binds the value and takes the
+  database's equality, which on PostgreSQL is the one its primary key enforces
+  anyway. Executed on both platforms while the epic was reviewed, and unpinned.
 - **MySQL and MariaDB** are unexecuted: the rules ran on SQLite in every package
   suite and on PostgreSQL 18.4 in the demo.
 

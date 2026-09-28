@@ -81,7 +81,7 @@ _Blocked by_ names what has to land first. _Detail_ links a permanent note in
 | [`CanBePreloaded`](../../../packages/forms/src/Components/Concerns/CanBePreloaded.php) — `preload()` / `isPreloaded()` | [`Concerns/CanBePreloaded.php`](../../../vendor/filament/forms/src/Components/Concerns/CanBePreloaded.php) | done | — | [semantics](#preload-enumerates-the-limited-map-up-front) |
 | `optionsLimit()` / `getOptionsLimit()` — 50 | [`Components/Select.php`](../../../vendor/filament/forms/src/Components/Select.php) | done | — | [semantics](#the-relationship-search-arm-runs-a-like-per-column-over-the-scoped-option-query) |
 | [`HasLoadingMessage`](../../../packages/forms/src/Components/Concerns/HasLoadingMessage.php) — `loadingMessage()` / `getLoadingMessage()` | [`Concerns/HasLoadingMessage.php`](../../../vendor/filament/forms/src/Components/Concerns/HasLoadingMessage.php) | done | — | [diverges](#loadingmessage-has-no-render-site) · [diverges](#the-two-new-strings-are-untranslated-literals) |
-| [`CanLimitItemsLength`](can-limit-items-length.md) — `maxItems()` as a `Count` and the control's cap, `maxItemsMessage()` / `getMaxItemsMessage()` | [`Concerns/CanLimitItemsLength.php`](../../../vendor/filament/forms/src/Components/Concerns/CanLimitItemsLength.php) · [`Components/Select.php`](../../../vendor/filament/forms/src/Components/Select.php) | done | — | [semantics](#a-multiple-select-validates-element-by-element) · [diverges](#the-two-new-strings-are-untranslated-literals) |
+| [`CanLimitItemsLength`](can-limit-items-length.md) — `maxItems()` as a `Count` and the control's cap, `maxItemsMessage()` / `getMaxItemsMessage()` | [`Concerns/CanLimitItemsLength.php`](../../../vendor/filament/forms/src/Components/Concerns/CanLimitItemsLength.php) · [`Components/Select.php`](../../../vendor/filament/forms/src/Components/Select.php) | done | — | [semantics](#a-multiple-select-validates-element-by-element) · [diverges](#the-two-new-strings-are-untranslated-literals) · [diverges](#a-composite-relationship-select-past-maxitems-answers-the-count-alone) |
 | [`CanAllowHtml`](can-allow-html.md) — `allowHtml()` | [`Concerns/CanAllowHtml.php`](../../../vendor/filament/forms/src/Components/Concerns/CanAllowHtml.php) | done | — | [detail](can-allow-html.md) · [semantics](#transformoptionsforjs-casts-a-markup-label-to-text) |
 | `transformOptionsForJsUsing()` / `transformOptionsForJs()` and the four exposed methods — `getSearchResultsForJs()`, `getOptionsForJs()`, `getOptionLabelsForJs()`, `getOptionLabel()` | [`Components/Select.php`](../../../vendor/filament/forms/src/Components/Select.php) | done | — | [semantics](#transformoptionsforjs-casts-a-markup-label-to-text) · [semantics](#the-search-round-trip-is-a-live-action-that-re-renders-the-host) |
 | `dynamicOptions()` / `hasDynamicOptions()` / `hasDynamicSearchResults()` / `hasInitialNoOptionsMessage()` | [`Components/Select.php`](../../../vendor/filament/forms/src/Components/Select.php) | done | — | [semantics](#the-search-round-trip-is-a-live-action-that-re-renders-the-host) |
@@ -1037,15 +1037,29 @@ record keys, not `int|string` — and the sentence exists so that a sweep does n
 restore the wider union and a later reviewer does not re-report the unkillable
 cast as a gap.
 
-### A composite label read runs one statement per batch, and a submission past `maxItems()` reads no label
+### A composite label read runs one statement per batch, and a composite submission past `maxItems()` reads no label
 
 Since M7 · 7, `getOptionLabelsFromRelationship()` reads one statement per batch
 of `IdentifierConstraint::batch()`, and merges the answers into a map keyed by
 record key. That is the whole list for a single identifier, and 500 keys a
-statement for a composite one. A `multiple()` select whose submission holds more
-values than `maxItems()` allows now answers with the `Count` violation alone.
-The label read behind the membership check is skipped: the submission is refused
-either way, and that read is what a forged list would make expensive.
+statement for a composite one. A `multiple()` relationship select whose target
+is keyed by more than one field, and whose submission holds more values than
+`maxItems()` allows, answers with the `Count` violation alone. The label read
+behind the membership check is skipped: the submission is refused either way,
+and that read is what a forged list would make expensive.
+
+The short-circuit is composite-only, and on purpose. A composite label read is
+the one a forged list makes expensive — a balanced OR of ANDs per batch, a
+statement per 500 keys. A single identifier's is one statement over one array
+parameter, as cheap for a long list as for a short one, so there is nothing to
+save by skipping it. Every other `multiple()` select — a single-identifier
+relationship, static `options()`, an enum — therefore keeps reporting both the
+`Count` and the membership `Choice` violation, byte-identical to what it
+answered before M7 · 7. `hasCompositeRelationshipTarget()` asks the target's
+class metadata (`isIdentifierComposite`) and issues no statement.
+[`SelectCompositeRelationshipTest`](../../../packages/forms/tests/Integration/Components/SelectCompositeRelationshipTest.php)
+pins both arms, and [`SelectMultipleTest`](../../../packages/forms/tests/Integration/Components/SelectMultipleTest.php)
+keeps the static-options `[Count, Choice]` pin.
 
 ### A created option whose identifier is incomplete is refused before it is written
 
@@ -1235,6 +1249,19 @@ title attribute that is not a mapped field — one read through an association o
 a getter — leaves the database's order alone rather than throwing, since the
 label read still works and the ordering was never part of the shipped contract
 (the relation layer ordered nothing).
+
+### A composite relationship select past `maxItems()` answers the count alone
+
+Laravel's validator, which Filament validates through, reports every failing
+rule, so an oversized submission carrying an unknown value answers both the
+`max` and the `in` message. A `multiple()` relationship select whose target is
+keyed by more than one field answers only the `Count` violation once the
+submission is longer than `maxItems()`: the membership check behind it is a
+batched label read that a forged list would make expensive, and the submission
+is refused either way ([why](#a-composite-label-read-runs-one-statement-per-batch-and-a-composite-submission-past-maxitems-reads-no-label)).
+Single-identifier relationship, static-options and enum selects report both, as
+Filament does. Reversible if the composite label read ever costs what the
+single-identifier one does.
 
 ### The two new strings are untranslated literals
 

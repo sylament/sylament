@@ -601,3 +601,35 @@ it('answers a multiple select past maxItems() with the count alone, reading no l
 
     expect($recorder->statements())->toBe([]);
 });
+
+it('answers a single-identifier multiple select past maxItems() with the count and the membership violation', function (): void {
+    $entityManager = $this::getContainer()->get(EntityManagerInterface::class);
+    [$post] = compositeSelectSeed($entityManager);
+
+    $tags = [];
+
+    foreach (['red', 'green'] as $name) {
+        $tag = new Tag();
+        $tag->setName($name);
+
+        $entityManager->persist($tag);
+        $tags[] = $tag;
+    }
+
+    $entityManager->flush();
+
+    $select = Select::make('tags')->relationship(titleAttribute: 'name')->multiple()->maxItems(2);
+    [$schema, $host] = compositeSelectWire($select, $post);
+    $schema->fill($post);
+    $host->data['tags'] = [(string) $tags[0]->getId(), (string) $tags[1]->getId(), '999'];
+
+    try {
+        $schema->getData();
+        test()->fail('Expected the selection to be refused.');
+    } catch (ValidationException $validationException) {
+        expect($validationException->getErrors())->toBe(['data.tags' => [
+            'This collection should contain 2 elements or less.',
+            'One or more of the given values is invalid.',
+        ]]);
+    }
+});

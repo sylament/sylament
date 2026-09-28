@@ -1141,7 +1141,9 @@ class Select extends Field implements Contracts\CanDisableOptions, Contracts\Has
      * Validation runs against the raw state. A multiple select whose raw state is
      * not an array is failed by a type constraint alone — `Choice(multiple: true)`
      * throws on anything else — and its item bounds apply to every array, the
-     * empty one included. Then, once the payload left anything there: a select
+     * empty one included; a relationship select whose target is keyed by more
+     * than one field stops there when the array is longer than `maxItems()`, so
+     * it answers the count alone. Then, once the payload left anything there: a select
      * whose option map is the whole truth is guarded by a `Choice` over its
      * enabled options, and one whose map is not — a searchable relationship
      * select, or a select labelling values through a closure with no `options()`
@@ -1174,7 +1176,7 @@ class Select extends Field implements Contracts\CanDisableOptions, Contracts\Has
                 );
             }
 
-            if ($maxItems !== null && is_array($rawState) && count($rawState) > max(0, $maxItems)) {
+            if ($maxItems !== null && is_array($rawState) && count($rawState) > max(0, $maxItems) && $this->hasCompositeRelationshipTarget()) {
                 return $constraints;
             }
         }
@@ -1209,6 +1211,17 @@ class Select extends Field implements Contracts\CanDisableOptions, Contracts\Has
         }
 
         return $constraints;
+    }
+
+    private function hasCompositeRelationshipTarget(): bool
+    {
+        if (! $this->hasRelationship()) {
+            return false;
+        }
+
+        $targetClass = $this->getRelationshipTarget()->targetClass;
+
+        return $this->getAssociationReader()->createOptionQuery($targetClass)->getEntityManager()->getClassMetadata($targetClass)->isIdentifierComposite;
     }
 
     /**

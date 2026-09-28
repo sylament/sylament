@@ -15,6 +15,9 @@ use Sylament\Schemas\Tests\Fixtures\Components\StateField;
 use Sylament\Schemas\Tests\Fixtures\Concerns\StateHostFixture;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\Binder;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\Callsign;
+use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\Redirect;
+use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\Shortlink;
+use Sylament\Schemas\Tests\Fixtures\Doctrine\EntityManagerFactory;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\IdentifierGuardRig;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\RecordingMiddleware;
 use Symfony\Component\Validator\Validation;
@@ -327,4 +330,36 @@ it('refuses at the schema path a key a hook moves on a related record the form n
     expect(identifierGuardErrors($schema))->toBe(['data' => ['This value cannot be changed.']])
         ->and($spine->getCode())->toBe(IdentifierGuardRig::SPINE)
         ->and($binder->getTitle())->toBe('Retitled');
+});
+
+it('refuses a new record whose composite key the schema never wrote, before any lookup', function (): void {
+    $recorder = new RecordingMiddleware();
+    $entityManager = EntityManagerFactory::create($recorder);
+
+    [$schema, $host] = identifierGuardSchema(new Redirect(), $entityManager, null, StateField::make('label'));
+    $host->data['label'] = 'Orphan';
+    $recorder->reset();
+
+    expect(identifierGuardErrors($schema))->toBe(['data' => ['This value should not be blank.']])
+        ->and($recorder->statements())->toBe([]);
+});
+
+it('files the blank-key refusal under the key field the schema maps', function (): void {
+    $entityManager = EntityManagerFactory::create();
+
+    [$schema, $host] = identifierGuardSchema(new Redirect(), $entityManager, null, StateField::make('host'), StateField::make('path'), StateField::make('label'));
+    $host->data['host'] = 'example.com';
+    $host->data['path'] = '   ';
+    $host->data['label'] = 'Spaced';
+
+    expect(identifierGuardErrors($schema))->toBe(['data.path' => ['This value should not be blank.']]);
+});
+
+it('leaves a blank single scalar key to the application, as before', function (): void {
+    $entityManager = IdentifierGuardRig::create();
+
+    [$schema, $host] = identifierGuardSchema(new Shortlink(), $entityManager, null, StateField::make('target'));
+    $host->data['target'] = 'https://example.com';
+
+    expect(identifierGuardErrors($schema))->toBe([]);
 });

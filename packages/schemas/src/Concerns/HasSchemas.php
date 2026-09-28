@@ -491,6 +491,10 @@ trait HasSchemas
         $violations->addAll($this->schemaStateValidator->validate($record));
 
         if (count($violations) === 0) {
+            $violations = $this->schemaStateValidator->validate($record, $this->getIdentifierGuard($reader->findBlankAssignedIdentifiers($record)));
+        }
+
+        if (count($violations) === 0) {
             $violations = $this->schemaStateValidator->validate($record, $this->getIdentifierGuard($reader->findTakenIdentifiers($record)));
         }
 
@@ -528,8 +532,9 @@ trait HasSchemas
      * A record-key rule's refusals as a constraint in the record's own
      * validation context, so each message is translated and filed as the
      * record's own violations are. The changed-key rule is read before those
-     * run, since it puts the old key back; the taken-key rule only once they
-     * pass, so it binds nothing the record's own constraints refuse.
+     * run, since it puts the old key back; the blank-key rule and then the
+     * taken-key rule only once they pass, so it binds nothing the record's own
+     * constraints refuse.
      *
      * @param array<string, string> $refusals the message, keyed by the record property path it belongs to
      */

@@ -299,3 +299,17 @@ it('checks the key against the pantry the form picked, not the one the relations
     expect(createRelationshipKeyRefusal($component))->toBe(['mountedActionsData.0.code' => ['This value is already used.']])
         ->and(createRelationshipKeyRows('SELECT pantry_id, code, label FROM Kettle'))->toBe([['pantry_id' => 2, 'code' => 'K3', 'label' => 'Stored']]);
 });
+
+it('refuses a seat whose code the create left blank under the code field, before any lookup or write', function (): void {
+    $roster = createRelationshipKeyRoster();
+
+    $component = createRelationshipKeyMountedSeat($roster)
+        ->set('mountedActionsData.0.code', '   ')
+        ->set('mountedActionsData.0.label', 'Nameless');
+
+    $recorder = createRelationshipKeyRecorder();
+
+    expect(createRelationshipKeyRefusal($component))->toBe(['mountedActionsData.0.code' => ['This value should not be blank.']])
+        ->and($recorder->statements())->toBe([])
+        ->and(createRelationshipKeyRows('SELECT roster_id, code, label FROM Seat'))->toBe([]);
+});

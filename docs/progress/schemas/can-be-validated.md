@@ -337,6 +337,28 @@ what it cannot see:
 Permanent — reverses only if a key-uniqueness constraint that needs no
 declaration becomes Symfony's own.
 
+### A blank assigned key is refused before anything is written
+
+Since M7 · 7 the record check refuses a **new** record whose assigned key still
+has a blank component, with *This value should not be blank.* A blank component
+is an empty or whitespace-only string, or an identifier association left unset.
+The refusal comes after the record's own constraints pass, before the taken-key
+probe runs, and before anything is written.
+
+It files under the first key field holding a blank string, else under the first
+association left unset. That is the key field itself when a component maps it,
+including one declared `dehydrated(false)` whose typed value never reached the
+record. When no component maps that field, as with a key left out of the form,
+it files under the schema's own state path.
+
+Before, such a record was inserted with its blank key. The redirect after the
+save could not mint its key, and every page listing the row failed with it.
+
+The rule asks `AssociationReader::hasIncompleteAssignedIdentifier()`, so it
+skips what that skips: an identifier filled by a generator, a `prePersist`
+callback or an entity listener, and a single scalar identifier, which stays the
+application's `required()` to guard.
+
 ### A changed key is refused and put back, not handed to Doctrine
 
 Eloquent updates a primary key like any other column, and Filament passes an

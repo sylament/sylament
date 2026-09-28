@@ -29,6 +29,8 @@ class AssociationReader
 
     private const string CHANGED_IDENTIFIER = 'This value cannot be changed.';
 
+    private const string BLANK_IDENTIFIER = 'This value should not be blank.';
+
     public function __construct(
         private readonly ?EntityManagerInterface $entityManager = null,
         private ?PropertyAccessor $propertyAccessor = null,
@@ -411,6 +413,43 @@ class AssociationReader
         }
 
         return $refusals;
+    }
+
+    /**
+     * A new record whose assigned key still has a blank component — a string
+     * that is empty or only whitespace, or an identifier association left
+     * unset — refused at the first such field: the first identifier field
+     * holding a blank string, else the first association left unset, else the
+     * taken-key rule's field. What {@see hasIncompleteAssignedIdentifier()}
+     * skips is skipped here too, a single scalar identifier among it.
+     *
+     * @internal the record check behind a schema's getData(), after the record's own constraints pass
+     *
+     * @return array<string, string> the refusal, keyed by that field's property path from the record
+     */
+    public function findBlankAssignedIdentifiers(object $record): array
+    {
+        if (! $this->entityManager instanceof EntityManagerInterface) {
+            return [];
+        }
+
+        $metadata = $this->findEntityMetadata($this->entityManager, $record::class);
+
+        if (! $metadata instanceof ClassMetadata || ! $metadata->isIdentifierNatural()) {
+            return [];
+        }
+
+        $unitOfWork = $this->entityManager->getUnitOfWork();
+
+        if (($unitOfWork->isInIdentityMap($record) && ! $unitOfWork->isScheduledForInsert($record)) || ! $this->hasIncompleteAssignedIdentifier($record)) {
+            return [];
+        }
+
+        $field = array_find($metadata->identifier, static fn (string $field): bool => ! $metadata->hasAssociation($field) && blank($metadata->getFieldValue($record, $field)))
+            ?? array_find($metadata->identifier, static fn (string $field): bool => $metadata->hasAssociation($field) && ! is_object($metadata->getFieldValue($record, $field)))
+            ?? $this->getTakenIdentifierField($metadata, null);
+
+        return [$field => self::BLANK_IDENTIFIER];
     }
 
     /**

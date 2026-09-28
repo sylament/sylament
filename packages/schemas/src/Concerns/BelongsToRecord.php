@@ -101,9 +101,11 @@ trait BelongsToRecord
         }
 
         if (is_string($this->record)) {
-            $recordClass = $this->record;
-
-            return new $recordClass();
+            return $this->getPropertyAccessor()->constructRecord(
+                $this->record,
+                'a new record onto the schema',
+                'hand the schema a record built with its arguments, through record().',
+            );
         }
 
         return null;

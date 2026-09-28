@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Sylament\Schemas\Tests\Unit\Components\Concerns;
 
+use LogicException;
 use Sylament\Schemas\Components\Section;
 use Sylament\Schemas\Schema;
 use Sylament\Schemas\State\Get;
@@ -12,6 +13,7 @@ use Sylament\Schemas\Tests\Fixtures\Components\StateField;
 use Sylament\Schemas\Tests\Fixtures\Components\StateGroup;
 use Sylament\Schemas\Tests\Fixtures\Concerns\RecordFixture;
 use Sylament\Schemas\Tests\Fixtures\Concerns\StateHostFixture;
+use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\CompositePair;
 use Sylament\Schemas\Tests\Fixtures\State\PageRecord;
 
 it('falls back to the container record and class', function (): void {
@@ -209,4 +211,12 @@ it('has no nearest record state path when the component carries no state path', 
 
     expect($section->getNearestRecordClass())->toBe(RecordFixture::class)
         ->and($section->getNearestRecordStatePath())->toBeNull();
+});
+
+it('refuses by name a component record class whose constructor requires arguments', function (): void {
+    $field = StateField::make('title')->record(CompositePair::class);
+    Schema::make(new StateHostFixture())->components([$field]);
+
+    expect(fn (): ?object => $field->getRecordInstance())
+        ->toThrow(LogicException::class, 'Cannot map a new record for ' . StateField::class . ': ' . CompositePair::class . ' requires constructor arguments');
 });

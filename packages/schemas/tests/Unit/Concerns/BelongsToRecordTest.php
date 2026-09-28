@@ -14,6 +14,7 @@ use Sylament\Schemas\Tests\Fixtures\Components\SubtreeOwner;
 use Sylament\Schemas\Tests\Fixtures\Concerns\RecordFixture;
 use Sylament\Schemas\Tests\Fixtures\Concerns\RecordPathMapSchemaFixture;
 use Sylament\Schemas\Tests\Fixtures\Concerns\StateHostFixture;
+use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\CompositePair;
 use Sylament\Schemas\Tests\Fixtures\State\Author;
 use Sylament\Schemas\Tests\Fixtures\State\InitializedPost;
 use Sylament\Schemas\Tests\Fixtures\State\ListRecord;
@@ -827,4 +828,11 @@ it('keeps refusing the earlier of two hooked components sharing a record path be
 
     expect(fn (): array => $schema->recordPathMap())
         ->toThrow(LogicException::class, 'Declare relationship() on that component');
+});
+
+it('refuses by name a record class whose constructor requires arguments', function (): void {
+    $schema = Schema::make(new StateHostFixture())->record(CompositePair::class);
+
+    expect(fn (): ?object => $schema->getRecordInstance())
+        ->toThrow(LogicException::class, 'Cannot map a new record onto the schema: ' . CompositePair::class . ' requires constructor arguments');
 });

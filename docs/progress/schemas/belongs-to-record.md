@@ -1391,14 +1391,22 @@ population.
 
 ### `getRecordInstance()` constructs with `new`, not the container
 
-Filament's `getModelInstance()` ends in `app($this->model)` — Laravel's
-container resolving an Eloquent model class. Sylament writes `new $class()`.
-Symfony's container cannot make an unbound class, and an entity is not a
-service; a constructor that requires arguments therefore fails fast with PHP's
-own missing-argument error rather than being autowired. This is the same
-boundary as
+Filament's `getModelInstance()` ends in `app($this->model)`, Laravel's
+container resolving an Eloquent model class. Symfony's container cannot make an
+unbound class, and an entity is not a service, so Sylament builds the class
+itself, through `PropertyAccessor::constructRecord()`.
+
+For a constructor with no required parameter that is `new`. Since M7 · 7, a
+constructor that requires arguments gets a `LogicException` naming the class
+and the way out: *Cannot map a new record onto the schema:
+App\Entity\Membership requires constructor arguments …*. PHP's own
+`ArgumentCountError` used to surface from this file. `CreateAction`'s
+relationship arm builds its record the same way.
+
+This is the same boundary as
 [`Component::newInstance()`](../support/component.md)'s fallback: the container
-builds what was registered, `new` covers the rest.
+builds what was registered, and a record is built without arguments or refused
+by name.
 
 ### The record type probe is `instanceof`, not a `Model` gate
 

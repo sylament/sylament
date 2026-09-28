@@ -175,7 +175,11 @@ class CreateAction extends Action
         $relationship = $this->getRelationship();
 
         if ($relationship instanceof Relationship) {
-            $record = new $recordClass();
+            $record = $this->getPropertyAccessor()->constructRecord(
+                $recordClass,
+                sprintf('a new record for the [%s] action', $this->getName()),
+                "build it in the action's using() closure.",
+            );
 
             $reader = $this->getAssociationReader();
             $reader->attach($relationship, $record);

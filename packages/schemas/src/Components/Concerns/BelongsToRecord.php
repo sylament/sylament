@@ -205,7 +205,11 @@ trait BelongsToRecord
         }
 
         if (is_string($record)) {
-            return new $record();
+            return $this->getPropertyAccessor()->constructRecord(
+                $record,
+                sprintf('a new record for %s', static::class),
+                'hand the component a record built with its arguments, through record().',
+            );
         }
 
         return null;

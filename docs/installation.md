@@ -387,3 +387,5 @@ public function schema(Schema $schema): Schema
 
 - [Configuration](configuration.md) — colours, icons, theming and template overrides
 - [Styling architecture](styling.md) — how the CSS is put together, and the rules it follows
+- [Composite keys](composite-keys.md) — entities keyed by several fields or by an association
+- [Upgrading](upgrading.md) — changes that need attention when you update

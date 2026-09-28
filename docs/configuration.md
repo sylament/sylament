@@ -416,3 +416,5 @@ even if the closure throws.
 
 - [Installation](installation.md) — getting the bundles registered in the first place
 - [Styling architecture](styling.md) — the rules the CSS follows, and why
+- [Composite keys](composite-keys.md) — entities keyed by several fields or by an association
+- [Upgrading](upgrading.md) — changes that need attention when you update

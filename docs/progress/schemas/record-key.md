@@ -49,8 +49,9 @@ first epic to find this interface **long** rather than short: the owner scope is
 one `equals()` on a subselect's alias, and the operation reserved for it was
 never built ([why](#owner-scoping-was-reserved-and-turned-out-not-to-be-needed)).
 M7 · 5b is the first to find it **short** and build the addition, in one place:
-the by-key dissociate became one SQL `UPDATE` of one table, which no DQL
-operation can narrow, so `IdentifierConstraint` gained
+the by-key dissociate became one SQL `UPDATE` of one table — since M7 · 7 only
+where its mapped-by spans several join columns — which no DQL operation can
+narrow, so `IdentifierConstraint` gained
 [`inColumns()`](#incolumns-is-in-in-sql-for-a-statement-that-names-one-table) —
 its first operation since M7 · 1, `in()` spelled over a DBAL builder's identifier
 columns. The same step taught the decode to read a component back
@@ -93,6 +94,7 @@ and/or **diverges** → the permanent note in [Divergences](#divergences).
 | [`IdentifierConstraint::groupBy()`](../../../packages/schemas/src/Identity/IdentifierConstraint.php) — the bare path per field, never `IDENTITY()` | done | — | [diverges](#bare-identitypath-on-a-multi-column-association-answers-only-the-first-column) |
 | [`IdentifierConstraint::orderBy()`](../../../packages/schemas/src/Identity/IdentifierConstraint.php) — the identifier tiebreak, per field, deduped against the existing order | done | — | [contract](#the-operations-and-their-dql) |
 | [`IdentifierConstraint::chunk()`](../../../packages/schemas/src/Identity/IdentifierConstraint.php) | done | — | [contract](#the-chunk-rule) |
+| [`IdentifierConstraint::batch()`](../../../packages/schemas/src/Identity/IdentifierConstraint.php) | done | — | [contract](#the-chunk-rule) |
 | Owner scoping — `scopeToOwner()` / the owner tuple | skipped | — | [contract](#owner-scoping-was-reserved-and-turned-out-not-to-be-needed) |
 | [`IdentifierFields`](../../../packages/schemas/src/Identity/IdentifierFields.php) — the per-class descriptor both public classes share (`@internal`) | done | — | [diverges](#identifier-order-is-declaration-order-so-reordering-two-id-properties-invalidates-every-minted-key) |
 
@@ -367,6 +369,14 @@ final class IdentifierConstraint
      * @return list<list<string>>
      */
     public static function chunk(EntityManagerInterface $entityManager, string $class, array $keys): array;
+
+    /**
+     * @param class-string $class
+     * @param list<string> $keys
+     *
+     * @return list<list<string>>
+     */
+    public static function batch(EntityManagerInterface $entityManager, string $class, array $keys): array;
 }
 
 final readonly class KeySelection
@@ -492,9 +502,11 @@ emits, which is what keeps the sort tiebreak's string dedupe honest.
 and `alias.id IN (:base)` are unchanged — only now typed — and the DQL-text
 assertions in `HasBulkActionsTest` and `CanSortRecordsTest` did not move when
 M7 · 1 landed. That is the property that makes this a foundation rather than a
-rewrite. The one single-identifier statement that has moved since is not DQL at
-all: the by-key dissociate's, which M7 · 5b rewrote in SQL over
-[`inColumns()`](#incolumns-is-in-in-sql-for-a-statement-that-names-one-table).
+rewrite. The one single-identifier statement that moved since, the by-key
+dissociate's, which M7 · 5b rewrote in SQL over
+[`inColumns()`](#incolumns-is-in-in-sql-for-a-statement-that-names-one-table),
+is DQL again since M7 · 7 wherever its foreign key is one column; only a
+mapped-by spanning several join columns still writes through `inColumns()`.
 
 **The DQL parses down to ordinary SQL.** `equals()` on a scalar pair executes as
 `… WHERE s0_.host = ? AND s0_.path = ?`, on a derived identity as
@@ -518,11 +530,12 @@ rather than by agreement; see
 #### `inColumns()` is `in()` in SQL, for a statement that names one table
 
 [M7 · 5b](../roadmap.md#m7--composite-identifiers)'s, and the one operation
-here that emits **SQL**. Its caller is the by-key dissociate, whose statement is
-a DBAL `UPDATE` of one table: there is no identification variable to qualify a
+here that emits **SQL**. Its caller is the by-key dissociate over a mapped-by
+spanning several join columns, whose statement there is a DBAL `UPDATE` of one
+table: there is no identification variable to qualify a
 field with, and a to-one spanning several join columns has no DQL form to null
 it in at all
-([why the statement left DQL](../actions/dissociate-action.md#the-by-key-arm-is-a-dbal-update-over-the-plucked-keys)).
+([why the statement left DQL](../actions/dissociate-action.md#the-by-key-arm-is-a-dql-update-and-a-dbal-one-where-the-foreign-key-spans-several-columns)).
 So the operands are the class's identifier **columns** in identifier order, as
 `QuoteStrategy::getIdentifierColumnNames()` names them — quoted only where the
 mapping quotes them, so an ordinary mapping's statement carries bare
@@ -555,7 +568,7 @@ bound once, and a base ending in `_<digits>` refused by `assertParameterBase()`.
 
 **It names columns, never a table.** The table, the `SET` half and the quoting
 of both are the statement's author's —
-[the dissociate's](../actions/dissociate-action.md#the-by-key-arm-is-a-dbal-update-over-the-plucked-keys)
+[the dissociate's](../actions/dissociate-action.md#the-by-key-arm-is-a-dql-update-and-a-dbal-one-where-the-foreign-key-spans-several-columns)
 reads them off the mapping through the same quote strategy, and that is where a
 JOINED leaf, a reserved word and a single-table leaf are pinned, through the
 real action. The column count agrees with the field count by an ORM guarantee
@@ -575,7 +588,7 @@ named by the columns it shares with its root, so a key naming a row of the root
 class selects that row too — pinned as such — and no enabled Doctrine SQL filter
 reaches a DBAL statement. A caller narrows by keys a discriminated,
 filtered query already produced, which the one caller does
-([why that is enough there](../actions/dissociate-action.md#the-by-key-arm-is-a-dbal-update-over-the-plucked-keys)).
+([why that is enough there](../actions/dissociate-action.md#the-by-key-arm-is-a-dql-update-and-a-dbal-one-where-the-foreign-key-spans-several-columns)).
 Pinned by
 [`IdentifierConstraintColumnsTest`](../../../packages/schemas/tests/Unit/Identity/IdentifierConstraintColumnsTest.php).
 
@@ -612,15 +625,18 @@ Seven, and a consumer may rely on all of them.
    correlated `EXISTS` in
    [M7 · 4](../roadmap.md#m7--composite-identifiers) for every width alike, and
    the rows it returns are the rows the `IN` returned. The one statement that
-   left DQL — the by-key dissociate, a DBAL `UPDATE` over `inColumns()` since
-   M7 · 5b — keeps a plain entity's driver text, values and types byte for
-   byte; what moved for a single-table, a filtered and a JOINED target is
-   [enumerated where the statement lives](../actions/dissociate-action.md#the-by-key-arm-is-a-dbal-update-over-the-plucked-keys).
+   left DQL — the by-key dissociate — is a DBAL `UPDATE` over `inColumns()`
+   only for a mapped-by spanning several join columns, which has no DQL form;
+   since M7 · 7 a one-column foreign key is nulled by the DQL `UPDATE` it was
+   before M7 · 5b, as
+   [enumerated where the statement lives](../actions/dissociate-action.md#the-by-key-arm-is-a-dql-update-and-a-dbal-one-where-the-foreign-key-spans-several-columns).
 6. **Four consumers chunk** — the by-key delete, the reorder's re-resolution,
    tables' aggregate batch since M7 · 2 and the by-key dissociate since
-   M7 · 4, a DQL statement until M7 · 5b and a DBAL one since. Every **other** read that
-   narrows by a key list is one statement over the whole list, and carries the
-   parse curve below as a recorded limit.
+   M7 · 4, a DQL statement, and since M7 · 5b a DBAL one where its mapped-by
+   spans several join columns. Since M7 · 7 a key list the client sizes is
+   batched wherever the identifier is composite; the two reads that still run
+   one statement over a whole list are
+   [recorded with the chunk rule](#the-chunk-rule).
 7. **A key is minted from the value the row would read back.** `of()` and
    `find()` pass each component through its field's DBAL type to the database
    form and back before printing it, so a record this request has just written
@@ -656,18 +672,17 @@ chain at ~997 terms with `Expression tree is too large` — its limit is express
 *depth*, not parameter count, and its compiled `MAX_VARIABLE_NUMBER` here is
 250 000 — which is why the disjunction is nested as a balanced binary tree; with
 that shape 1 501 two-field keys execute in ~490 ms and 16 000 have been run.
-PostgreSQL 18 takes either shape up to its 65 535 bound-parameter ceiling:
-32 767 two-field keys in ~110 ms. What remains is Doctrine's own cost — DQL parse
-time is superlinear in key count (500 ≈ 55 ms, 1 000 ≈ 160 ms, 5 000 ≈ 3.4 s on a
-first parse), which is what the 500-key composite chunk is sized against.
+PostgreSQL 18 takes either shape up to its 65 535 bound-parameter ceiling, but on a populated table a statement that large crosses `jit_optimize_above_cost`. One 10 000-key `notIn()` over 10 000 rows spent 337 s of backend time with the default `jit=on`, and 4.8 s with it off. On the PHP side both building and parsing were quadratic. The build was ours: one `setParameter()` per bound value, each a linear lookup in the builder's parameter collection. Since M7 · 7 a composite membership appends its parameters in one pass, and 5 000 keys build in about 15 ms where they took about 1.6 s. The parse is Doctrine's and stays quadratic: `SqlWalker::walkInputParameter()` asks `Query::getParameter()`, a linear filter, once per parameter. A first parse takes about 50 ms at 500 keys, 170 ms at 1 000, 3.4 s at 5 000 and 14 s at 10 000. The 500-key composite chunk is sized against that curve, and it keeps every statement two orders of magnitude under PostgreSQL's JIT thresholds.
 
 **Four sites chunk, and three of them are writes.** The by-key delete issues
 one DQL `DELETE` per chunk, several chunks inside one transaction, and the
-by-key **dissociate** issues one DBAL `UPDATE` per chunk under the same rule,
-wrapped in one `Connection::transactional()` from the second chunk on
-([dissociate-action.md](../actions/dissociate-action.md#the-by-key-arm-is-a-dbal-update-over-the-plucked-keys))
-— SQL since M7 · 5b, so no DQL parse is paid there and its chunk sizes bound the
-statement's parameter count alone;
+by-key **dissociate** nulls a one-column foreign key by one DQL `UPDATE` per
+chunk under the same rule, and a foreign key spanning several columns by one
+DBAL `UPDATE` per chunk, wrapped in one `Connection::transactional()` from the
+second chunk on
+([dissociate-action.md](../actions/dissociate-action.md#the-by-key-arm-is-a-dql-update-and-a-dbal-one-where-the-foreign-key-spans-several-columns))
+— the DBAL arm SQL since M7 · 5b, so no DQL parse is paid there and its chunk
+sizes bound the statement's parameter count alone;
 the reorder's
 re-resolution issues one `SELECT` per chunk, each narrowing a **copy** of the
 table's query — a copy because a second predicate ANDed onto the first would
@@ -684,41 +699,29 @@ appears in one of them, and each chunk's result is keyed by record key, so
 nothing has to be reconciled. That is the same property the reorder's
 re-resolution relies on, which is why a chunked read may hydrate: what a chunk
 boundary destroys is not hydration but **order**. A read whose caller consumes
-the statement's order cannot be chunked — the hydrating selection arm rejected
-below, and the record step of the keyed fetch-join page — and a `NOT IN`
-cannot be chunked at all.
+the statement's order cannot be chunked — the record step of the keyed
+fetch-join page — and a `NOT IN` cannot be chunked at all. The hydrating
+selection arm was rejected on the order ground until M7 · 7, and is batched now
+for a composite selection larger than one batch, keeping table order within a
+batch (below).
 
-**Every other site that narrows by a key list runs one statement over the whole
-list**, whether this package executes that statement or hands the builder out —
-the axis is write versus read, never executing versus returning, because
-`getSelectedTableRecordsQuery()` is both. Those sites, as recorded limits riding
-the parse curve above: that method's two arms — `in()` over the selected bag and
-`notIn()` over the deselected one, which cannot be chunked at all, since a
-`NOT IN` per chunk would union near-complete result sets — the selectable-key
-narrowing in `constrainQueryToSelectableTableRecords()`, the hydrating selection
-read, the key pluck, and the record step of
-[the keyed fetch-join page](../tables/has-table.md#a-keyed-root-that-joins-a-collection-pages-in-two-statements-because-doctrines-walkers-key-by-one-column),
-whose key count is bounded by the largest numeric page option and which could
-not be chunked anyway without reordering an ordered, hydrating read. The page
-summary used to ride this list too, under `recordsPerPage: 'all'`; since M7 · 2
-it drops its predicate whenever one page holds the whole filtered set, which
-was the only shape that made its key list unbounded. Two of them can land on
-**one** builder:
-under `fetchSelectedRecords(false)` with `checkIfRecordIsSelectableUsing()` the
-selected-key predicate and the selectable-key predicate decorate the same query,
-so the executed statement binds both lists at once.
-M7 · 4 added three more, all in the relation layer and all bounded by what a
-modal can post or a client already holds: `AttachAction` and
-`AssociateAction`'s by-key fetch — one `in()` over the submitted selection,
-measured at 50 keys ≈ 8 ms, 500 ≈ 72 ms and 1 500 ≈ 550 ms, against a realistic
-bound of a `multiple()` select's picks — and
-`Select::getOptionLabelsFromRelationship()`'s label read, one `in()` over the
-values the client is already rendering.
+**A key list the client sizes is batched wherever the identifier is composite.** That list is untrusted, and one statement over it cost time quadratic in a number the client chooses: a forged 10 000-key selection held a request for about 23 s. `IdentifierConstraint::batch()` answers the batches: the whole list for a single identifier, whose one array parameter scales, and `chunk()`'s batches for a composite one. The sites are:
 
-Four alternatives were considered and rejected: factoring a batch's leading field
-(`a = ? AND b IN (…)`), chunking the **hydrating** selection arm (it would
-reorder results), range-checking integers by column width, and a `CONCAT`-keyed
-`IN` (non-sargable, and it breaks typed binds).
+- The selection's reads in `HasBulkActions`, hydrating and plucking alike, one statement per batch. While tracking, a deselected bag larger than one batch is subtracted in PHP from a pluck of every key the table admits, since a `NOT IN` cannot be split across statements. A bag that fits one batch stays one `notIn()`.
+- Under `fetchSelectedRecords(false)` beside `checkIfRecordIsSelectableUsing()`, the records are hydrated once and keyed in PHP instead of bound back as a second key list.
+- `AttachAction` and `AssociateAction`'s by-key fetch.
+- `Select::getOptionLabelsFromRelationship()`.
+
+A composite selection's hydrated records come back in table order within a batch, and batch after batch across them.
+
+Two sites still run one statement over a whole list:
+
+- `getSelectedTableRecordsQuery()` returns a builder to its caller (a custom bulk action's `$selectedRecordsQuery`), so it cannot be split, and it binds every key.
+- The record step of [the keyed fetch-join page](../tables/has-table.md#a-keyed-root-that-joins-a-collection-pages-in-two-statements-because-doctrines-walkers-key-by-one-column) has a key count bounded by the largest numeric page option.
+
+A single identifier's lists are unchanged: one statement, one array parameter.
+
+Three alternatives were considered and rejected: factoring a batch's leading field (`a = ? AND b IN (…)`), range-checking integers by column width, and a `CONCAT`-keyed `IN` (non-sargable, and it breaks typed binds). A fourth, batching the hydrating selection read, was rejected until M7 · 7 because it reorders results. It is taken now for a composite selection larger than one batch, where the unbounded single statement was the worse cost.
 
 ### Parameter naming, and what an empty or malformed key means
 
@@ -730,7 +733,7 @@ minted off `count($query->getParameters())` — the trick
 does not move until each `setParameter()` lands, so an F×K application would
 collide with itself; and the selection lane puts **two** predicates on one
 builder in one request (`getSelectedTableRecordsQuery()` and the selectable
-narrowing), where `setParameter()` overwrites in silence. The bases in use today
+narrowing), where `setParameter()` would overwrite in silence. A composite membership appends its parameters in one pass instead, and refuses by name a base the builder already carries; a single-field predicate still binds through `setParameter()`. The bases in use today
 are `sylament_record_key`, `sylament_selected_record_keys`,
 `sylament_selectable_record_keys`, `sylament_reordered_record_keys`,
 `sylament_summary_keys`, `sylament_agg_keys` and
@@ -754,7 +757,8 @@ the name did not move for the same reason the first six did not: a
 single-identifier query's text stays stable for the query cache
 ([the owner route](association-reader.md#an-owner-of-any-width-is-scoped-through-its-own-collection-rather-than-through-a-mapped-by-path)).
 M7 · 5b added no base. `inColumns()` binds under its caller's, and its one
-caller keeps `sylament_selected_record_keys` — the base its DQL `in()` bound
+caller — the by-key dissociate over a mapped-by spanning several join
+columns — keeps `sylament_selected_record_keys` — the base its DQL `in()` bound
 before — on a DBAL builder, where `assertParameterBase()` refuses a
 `_<digits>` ending exactly as it does on a DQL one.
 (One *result* alias did move with M7 · 2: the aggregate batch projects
@@ -771,7 +775,8 @@ leaves parameters bound to nothing and Doctrine counts them (`the query defines 
 parameters and you bound 2`). And **a base is applied once per builder**: a
 second application with fewer keys leaves the first application's parameters
 bound and over-counts the same way. None of the bases above is applied twice on
-one builder.
+one builder, and since M7 · 7 a composite membership on a DQL builder refuses a
+base whose first name that builder already carries.
 
 Empty and malformed, stated once:
 
@@ -1174,16 +1179,24 @@ inherit.
 ### A non-`Stringable` object identifier cannot be persisted at all
 
 An identifier field whose PHP value is an object with no `__toString()` fatals
-inside `UnitOfWork::addToIdentityMap()`, before anything of ours runs. So the
-codec's "not a printable value" refusal — `LogicException`, the same message a
-blank identifier gets — can only ever fire on a record that was never
-persistable, and the codec is not the thing standing in the way. The rule it
+inside `UnitOfWork::addToIdentityMap()`, before anything of ours runs. So for
+such an object the codec's *not a printable value* refusal can only fire on a record that was never persistable. The same refusal fires for a blank string component, and that one the database accepts — see [the next section](#a-stored-row-with-a-blank-string-component-cannot-be-keyed). The rule it
 applies is today's, in one place: `BackedEnum` → backing value, `Stringable` →
 `__toString()`, `bool` → `'1'`/`'0'`, any other scalar → `(string)` — and a
 result that is non-scalar, not valid UTF-8, blank, or carrying a NUL byte
 refuses. The `bool` arm is the one addition to the rule as it stood: a plain
 cast prints `false` as the empty string, which would mint an illegal empty
 component that the key's own decode then refuses.
+
+### A stored row with a blank string component cannot be keyed
+
+A string component that is empty or only whitespace has no printed form: no component may be empty ([the grammar](#the-grammar)). PostgreSQL, MySQL and SQLite all store it in a `NOT NULL` key column anyway.
+
+Such a row loads, and minting its key throws, so a table or resource page that shows the row fails whole. A page that does not show it renders. A single string identifier `''` behaves the same way, before M7 and since.
+
+Since M7 · 7 the refusal names the row — *The identifier of [App\Entity\ProductVariant] is not a printable value. It holds code "SKU-1", suffix "".* — so an operator can find it. A create can no longer write such a row: a new record whose assigned key is still blank is refused before anything is written ([can-be-validated.md](can-be-validated.md#a-blank-assigned-key-is-refused-before-anything-is-written)).
+
+A reserved spelling for an empty component (a lone `=`, which is malformed today) would let such legacy rows list. It is recorded, not built.
 
 ### A single string identifier containing `.` or `/` is broken today and stays broken
 

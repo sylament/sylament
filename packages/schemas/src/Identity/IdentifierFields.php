@@ -108,10 +108,40 @@ final readonly class IdentifierFields
         }
 
         return $this->join(array_map(
-            fn (mixed $value): string => self::printable($value)
-                ?? throw new LogicException(sprintf('The identifier of [%s] is not a printable value.', $this->class)),
+            fn (mixed $value): string => self::printable($value) ?? throw $this->refuseUnprintable($values),
             $values,
         ));
+    }
+
+    /**
+     * @param list<mixed> $values
+     */
+    private function refuseUnprintable(array $values): LogicException
+    {
+        $held = [];
+
+        foreach ($this->names as $index => $name) {
+            $held[] = sprintf('%s %s', $name, $this->describe($values[$index] ?? null));
+        }
+
+        return new LogicException(sprintf('The identifier of [%s] is not a printable value. It holds %s.', $this->class, implode(', ', $held)));
+    }
+
+    private function describe(mixed $value): string
+    {
+        if ($value instanceof BackedEnum) {
+            $value = $value->value;
+        }
+
+        if ($value instanceof Stringable) {
+            $value = (string) $value;
+        }
+
+        if (is_string($value)) {
+            return json_encode(mb_strcut($value, 0, 64), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_INVALID_UTF8_SUBSTITUTE | JSON_THROW_ON_ERROR);
+        }
+
+        return is_scalar($value) || $value === null ? var_export($value, true) : get_debug_type($value);
     }
 
     /**

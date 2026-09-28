@@ -459,3 +459,12 @@ it('refuses a blank component through of() exactly as before the conversion', fu
     'an empty string' => [''],
     'a space' => [' '],
 ]);
+
+it('names every identifier value when a component cannot be printed', function (): void {
+    $redirect = new Redirect();
+    $redirect->setHost('example.com');
+    $redirect->setPath('');
+
+    expect(fn (): string => RecordKey::of(EntityManagerFactory::create(), $redirect))
+        ->toThrow(LogicException::class, 'The identifier of [' . Redirect::class . '] is not a printable value. It holds host "example.com", path "".');
+});

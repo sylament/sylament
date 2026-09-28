@@ -5,9 +5,11 @@ declare(strict_types=1);
 use Doctrine\DBAL\ArrayParameterType;
 use Doctrine\DBAL\ParameterType;
 use Doctrine\ORM\EntityManager;
+use Doctrine\ORM\Query\Parameter;
 use Doctrine\ORM\QueryBuilder;
 use Sylament\Schemas\Identity\IdentifierConstraint;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\CompositeOwnerRig;
+use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\CompositePair;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\Crate;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\Listing;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\ListingNote;
@@ -345,4 +347,61 @@ it('binds a raw-bytes half and a string half each under its own type', function 
         ->and($lanes($in->andWhere($inConstraint)))->toBe(['b1b2c3d4-0000-4000-8000-000000000001/north', 'b1b2c3d4-0000-4000-8000-000000000002/north'])
         ->and($notInConstraint)->toBe('NOT (((record.batch = :keys_0_0 AND record.lane = :keys_0_1) OR (record.batch = :keys_1_0 AND record.lane = :keys_1_1)))')
         ->and($lanes($notIn->andWhere((string) $notInConstraint)))->toBe(['b1b2c3d4-0000-4000-8000-000000000002/north']);
+});
+
+it('appends composite membership parameters after the ones the builder already carries', function (): void {
+    $entityManager = EntityManagerFactory::create();
+    EntityManagerFactory::seed(
+        $entityManager,
+        new CompositePair(1, 2, 'one-two'),
+        new CompositePair(3, 4, 'three-four'),
+        new CompositePair(5, 6, 'five-six'),
+    );
+
+    $query = $entityManager->createQueryBuilder()
+        ->select('pair')
+        ->from(CompositePair::class, 'pair')
+        ->andWhere('pair.a >= :floor')
+        ->setParameter('floor', 3);
+
+    $query->andWhere(IdentifierConstraint::in($query, 'pair', CompositePair::class, ['1~2', '3~4', '5~6'], 'keys'));
+
+    expect(array_values(array_map(
+        static fn (Parameter $parameter): string => $parameter->getName(),
+        $query->getParameters()->toArray(),
+    )))->toBe(['floor', 'keys_0_0', 'keys_0_1', 'keys_1_0', 'keys_1_1', 'keys_2_0', 'keys_2_1'])
+        ->and(array_map(
+            static fn (CompositePair $pair): string => $pair->getLabel(),
+            $query->getQuery()->getResult(),
+        ))->toBe(['three-four', 'five-six']);
+});
+
+it('refuses a parameter base already bound on the builder rather than binding its keys twice', function (): void {
+    $query = EntityManagerFactory::create()->createQueryBuilder()->select('pair')->from(CompositePair::class, 'pair');
+    $query->andWhere(IdentifierConstraint::in($query, 'pair', CompositePair::class, ['1~2'], 'keys'));
+
+    expect(fn (): string => IdentifierConstraint::in($query, 'pair', CompositePair::class, ['3~4'], 'keys'))
+        ->toThrow(LogicException::class, 'The parameter base [keys] is already bound on this query builder');
+});
+
+it('builds a composite membership over 5,000 keys in linear time', function (): void {
+    $query = EntityManagerFactory::create()->createQueryBuilder()->select('pair')->from(CompositePair::class, 'pair');
+    $keys = array_map(static fn (int $index): string => "{$index}~{$index}", range(1, 5000));
+
+    $started = hrtime(true);
+    IdentifierConstraint::in($query, 'pair', CompositePair::class, $keys, 'keys');
+    $elapsedMilliseconds = (hrtime(true) - $started) / 1e6;
+
+    expect($query->getParameters())->toHaveCount(10000)
+        ->and($elapsedMilliseconds)->toBeLessThan(500.0);
+});
+
+it('batches a composite key list by the chunk rule and a single one whole', function (): void {
+    $entityManager = EntityManagerFactory::create();
+    $composite = array_map(static fn (int $index): string => "{$index}~1", range(1, 1201));
+    $single = array_map(strval(...), range(1, 2500));
+
+    expect(array_map(count(...), IdentifierConstraint::batch($entityManager, CompositePair::class, $composite)))->toBe([500, 500, 201])
+        ->and(array_map(count(...), IdentifierConstraint::batch($entityManager, Post::class, $single)))->toBe([2500])
+        ->and(IdentifierConstraint::batch($entityManager, CompositePair::class, []))->toBe([]);
 });

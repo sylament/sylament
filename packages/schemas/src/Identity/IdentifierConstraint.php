@@ -10,6 +10,7 @@ use Doctrine\DBAL\Query\QueryBuilder as DbalQueryBuilder;
 use Doctrine\DBAL\Types\Type;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\Query\Expr\OrderBy;
+use Doctrine\ORM\Query\Parameter;
 use Doctrine\ORM\QueryBuilder;
 use LogicException;
 
@@ -196,6 +197,28 @@ final class IdentifierConstraint
     }
 
     /**
+     * A client-sized key list as the batches a membership over it runs in: the
+     * whole list at once for a single identifier, whose one array parameter
+     * grows by a placeholder a key, and {@see chunk()}'s batches for a composite
+     * one, whose parameters and DQL grow by a comparison a field a key.
+     *
+     * @param class-string $class
+     * @param list<string> $keys
+     *
+     * @return list<list<string>>
+     */
+    public static function batch(EntityManagerInterface $entityManager, string $class, array $keys): array
+    {
+        if ($keys === []) {
+            return [];
+        }
+
+        return IdentifierFields::of($entityManager, $class)->isComposite()
+            ? self::chunk($entityManager, $class, $keys)
+            : [$keys];
+    }
+
+    /**
      * @param class-string $class
      * @param list<string> $keys
      */
@@ -234,10 +257,14 @@ final class IdentifierConstraint
             return sprintf('%s IN (:%s)', $operands[0], $parameter);
         }
 
+        if ($query instanceof QueryBuilder && $query->getParameter("{$parameter}_0_0") instanceof Parameter) {
+            throw new LogicException(sprintf('The parameter base [%s] is already bound on this query builder, and a second membership over it would bind its keys twice; give each membership a base of its own.', $parameter));
+        }
+
         $terms = [];
 
         foreach ($tuples as $index => $values) {
-            $terms[] = sprintf('(%s)', self::bind($query, $operands, $fields, $values, "{$parameter}_{$index}"));
+            $terms[] = sprintf('(%s)', self::bind($query, $operands, $fields, $values, "{$parameter}_{$index}", append: true));
         }
 
         return self::disjunction($terms, 0, count($terms));
@@ -288,14 +315,19 @@ final class IdentifierConstraint
      * @param list<string> $operands in the mapping's identifier order
      * @param list<mixed>  $values
      */
-    private static function bind(QueryBuilder|DbalQueryBuilder $query, array $operands, IdentifierFields $fields, array $values, string $parameter): string
+    private static function bind(QueryBuilder|DbalQueryBuilder $query, array $operands, IdentifierFields $fields, array $values, string $parameter, bool $append = false): string
     {
         $comparisons = [];
 
         foreach ($operands as $index => $operand) {
             $name = $fields->isComposite() ? "{$parameter}_{$index}" : $parameter;
+            $type = Type::getType($fields->types[$index])->getBindingType();
 
-            $query->setParameter($name, $values[$index], Type::getType($fields->types[$index])->getBindingType());
+            if ($append && $query instanceof QueryBuilder) {
+                $query->getParameters()->add(new Parameter($name, $values[$index], $type));
+            } else {
+                $query->setParameter($name, $values[$index], $type);
+            }
 
             $comparisons[] = sprintf('%s = :%s', $operand, $name);
         }

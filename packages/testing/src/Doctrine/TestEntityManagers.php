@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Sylament\Testing\Doctrine;
 
+use Doctrine\DBAL\Driver\AbstractSQLiteDriver\Middleware\EnableForeignKeys;
 use Doctrine\DBAL\DriverManager;
 use Doctrine\DBAL\Types\Type;
 use Doctrine\ORM\Configuration;
@@ -35,7 +36,7 @@ final class TestEntityManagers
 
     /**
      * Always in-memory SQLite, whatever the environment names: for a test whose
-     * premise compares platforms.
+     * premise compares platforms. It enforces foreign keys, as MySQL and PostgreSQL do.
      *
      * @param list<string> $entityPaths
      * @param array<string, class-string<Type>> $types
@@ -43,7 +44,7 @@ final class TestEntityManagers
     public static function createSqlite(string $package, array $entityPaths, array $types = [], ?RecordingMiddleware $recorder = null): EntityManager
     {
         $config = self::configuration($entityPaths, $types);
-        $config->setMiddlewares($recorder instanceof RecordingMiddleware ? [$recorder] : []);
+        $config->setMiddlewares($recorder instanceof RecordingMiddleware ? [new EnableForeignKeys(), $recorder] : [new EnableForeignKeys()]);
 
         $entityManager = new EntityManager(DriverManager::getConnection(['driver' => 'pdo_sqlite', 'memory' => true], $config), $config);
         $build = static function () use ($entityManager): void {

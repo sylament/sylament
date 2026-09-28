@@ -22,8 +22,8 @@ class ResidencyShow
         #[ORM\Column]
         private int $seats,
         #[ORM\ManyToOne(targetEntity: Residency::class, inversedBy: 'shows')]
-        #[ORM\JoinColumn(name: 'residency_venue_id', referencedColumnName: 'venue_id')]
-        #[ORM\JoinColumn(name: 'residency_season', referencedColumnName: 'season')]
+        #[ORM\JoinColumn(name: 'residency_venue_id', referencedColumnName: 'venue_id', onDelete: 'CASCADE')]
+        #[ORM\JoinColumn(name: 'residency_season', referencedColumnName: 'season', onDelete: 'CASCADE')]
         private ?Residency $residency = null
     ) {
     }

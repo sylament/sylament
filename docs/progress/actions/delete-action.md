@@ -375,6 +375,18 @@ arm throws rather than guessing when the table is on the records lane or names n
 entity manager: deleting by key is a query-lane capability, and a `records()`
 table has no statement to issue.
 
+**On a database that enforces foreign keys, a row something still references stops
+the statement.** Every platform the suites run on enforces them, SQLite included,
+because the shared test builder turns its enforcement on. So the by-key arm takes
+along exactly what the database's own `ON DELETE CASCADE` removes, such as a
+many-to-many join row or a child whose join column declares it. Anything else that
+references a selected row makes the one `DELETE` fail whole. The single statement,
+or the chunks' transaction, leaves every row in place, and the danger toast reports
+the whole batch. `CompositeRelationshipTableTest` and `CompositeQueryDepthTest` pin
+both halves: a relation-scoped delete and a joined-page delete through cascading
+join columns, and a referenced row refused. The hydrating arm is unaffected:
+`remove()` deletes a record's many-to-many join rows itself.
+
 ### Both arms swallow and report the same failure
 
 The by-key statement is wrapped in the same

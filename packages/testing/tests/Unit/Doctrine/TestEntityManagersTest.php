@@ -2,11 +2,13 @@
 
 declare(strict_types=1);
 
+use Doctrine\DBAL\Exception\ForeignKeyConstraintViolationException;
 use Doctrine\DBAL\Platforms\SQLitePlatform;
 use Doctrine\DBAL\Types\Type;
 use Sylament\Testing\Doctrine\RecordingMiddleware;
 use Sylament\Testing\Doctrine\TestEntityManagers;
 use Sylament\Testing\Doctrine\TestPlatform;
+use Sylament\Testing\Tests\Fixtures\Doctrine\Entity\Book;
 use Sylament\Testing\Tests\Fixtures\Doctrine\Entity\Shelf;
 use Sylament\Testing\Tests\Fixtures\Doctrine\ShoutType;
 
@@ -69,4 +71,18 @@ it('builds SQLite through create() while the url is unset', function (): void {
     }
 
     expect($entityManager->getConnection()->getDatabasePlatform())->toBeInstanceOf(SQLitePlatform::class);
+});
+
+it('enforces foreign keys on SQLite without recording the pragma that turns them on', function (): void {
+    $recorder = new RecordingMiddleware();
+    $entityManager = TestEntityManagers::createSqlite('testing', testingEntityPaths(), recorder: $recorder);
+
+    $shelf = new Shelf('poetry');
+    $entityManager->persist($shelf);
+    $entityManager->persist(new Book('Odes', $shelf));
+    $entityManager->flush();
+
+    expect(fn (): int|string => $entityManager->getConnection()->executeStatement('DELETE FROM Shelf'))
+        ->toThrow(ForeignKeyConstraintViolationException::class)
+        ->and($recorder->statements())->each->not->toStartWith('PRAGMA');
 });

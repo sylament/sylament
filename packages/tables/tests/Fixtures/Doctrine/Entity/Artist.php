@@ -50,8 +50,8 @@ class Artist
     #[ORM\ManyToMany(targetEntity: Shortcut::class, inversedBy: 'billedBy')]
     #[ORM\JoinTable(name: 'artist_shortcut')]
     #[ORM\JoinColumn(name: 'artist_id', referencedColumnName: 'id')]
-    #[ORM\InverseJoinColumn(name: 'shortcut_host', referencedColumnName: 'host')]
-    #[ORM\InverseJoinColumn(name: 'shortcut_path', referencedColumnName: 'path')]
+    #[ORM\InverseJoinColumn(name: 'shortcut_host', referencedColumnName: 'host', onDelete: 'CASCADE')]
+    #[ORM\InverseJoinColumn(name: 'shortcut_path', referencedColumnName: 'path', onDelete: 'CASCADE')]
     #[ORM\OrderBy(['label' => 'ASC'])]
     private Collection $shortcuts;
 

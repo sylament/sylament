@@ -325,15 +325,25 @@ it('lists a derived-identity target and acts on one from a cold identity map', f
 });
 
 /*
- * The join rows of a deleted `Shortcut` outlive it — this rig's SQLite enforces
- * no foreign keys and the join table is the owner's — so the survivors are read
- * off the target repository rather than off the relation.
+ * The by-key arm issues one DQL `DELETE`, so a row it takes must be free to go:
+ * `artist_shortcut` cascades on the shortcut side, and the row deleted here has
+ * no hit and no troupe, only the join row that makes it part of the relation.
  */
 it('deletes exactly the selected related rows of the relation without fetching them', function (): void {
     [$client, $entityManager] = compositeRelationTableSeededClient();
 
+    $nadir = new Shortcut();
+    $nadir->setHost('plain');
+    $nadir->setPath('faq');
+    $nadir->setLabel('Nadir');
+
+    $entityManager->persist($nadir);
+    $entityManager->find(Artist::class, 1)?->addShortcut($nadir);
+    $entityManager->flush();
+    $entityManager->clear();
+
     $this->createLiveComponent('ArtistShortcutsTable', client: $client)
-        ->set('selectedTableRecords', ['plain~about', 'spare~unattached'])
+        ->set('selectedTableRecords', ['plain~faq', 'spare~unattached'])
         ->call('mountAction', ['name' => 'delete', 'arguments' => [], 'context' => ['table' => true, 'bulk' => true]])
         ->call('callMountedAction');
 
@@ -346,5 +356,26 @@ it('deletes exactly the selected related rows of the relation without fetching t
 
     // 'spare~unattached' is the other artist's row: selected in the bag, dropped
     // by the relation the selection query is scoped to.
-    expect($survivors)->toBe(['Almanac', 'Beacon', 'Marquee']);
+    expect($survivors)->toBe(['Almanac', 'Beacon', 'Marquee', 'Zenith']);
+});
+
+/*
+ * A selected row that something still references without a cascade: `Zenith` has
+ * two hits. The one `DELETE` fails whole, nothing is deleted, and the danger toast
+ * says so, on every platform the suite runs.
+ */
+it('deletes nothing and says so when a selected related row is still referenced', function (): void {
+    [$client, $entityManager] = compositeRelationTableSeededClient();
+
+    $component = $this->createLiveComponent('ArtistShortcutsTable', client: $client)
+        ->set('selectedTableRecords', ['plain~about'])
+        ->call('mountAction', ['name' => 'delete', 'arguments' => [], 'context' => ['table' => true, 'bulk' => true]])
+        ->call('callMountedAction');
+
+    $toast = (string) ($component->getDispatchedBrowserEvent($component->render(), 'sylament:notification')['payload']['html'] ?? '');
+
+    $entityManager->clear();
+
+    expect($entityManager->getRepository(Shortcut::class)->count([]))->toBe(4)
+        ->and($toast)->toContain('Failed to delete 1 records');
 });

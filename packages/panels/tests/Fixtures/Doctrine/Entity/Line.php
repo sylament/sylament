@@ -22,7 +22,7 @@ class Line
     private string $content = '';
 
     #[ORM\ManyToOne(targetEntity: Verse::class, inversedBy: 'lines')]
-    #[ORM\JoinColumn(nullable: false)]
+    #[ORM\JoinColumn(nullable: false, onDelete: 'CASCADE')]
     private ?Verse $verse = null;
 
     public function getId(): ?int

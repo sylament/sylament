@@ -6,6 +6,7 @@ namespace Sylament\Tables\Tests\Integration;
 
 use Doctrine\ORM\EntityManagerInterface;
 use Sylament\Tables\Tests\Fixtures\Doctrine\Entity\Residency;
+use Sylament\Tables\Tests\Fixtures\Doctrine\Entity\ResidencyRider;
 use Sylament\Tables\Tests\Fixtures\Doctrine\Entity\ResidencyShow;
 use Sylament\Tables\Tests\Fixtures\Doctrine\Entity\Shortcut;
 use Sylament\Tables\Tests\Fixtures\Doctrine\Entity\ShortcutHit;
@@ -308,6 +309,34 @@ it('deletes the selected rows of a searched joined page without fetching them', 
     expect($survivors)->toBe(['autumn-2026', 'spring-2027', 'winter-2027'])
         ->and($deletes)->toHaveCount(1)
         ->and(mb_substr_count($deletes[0], 'venue_id = ?'))->toBe(2);
+});
+
+/*
+ * The same searched page when a selected residency still has a rider, whose foreign
+ * key does not cascade: the one `DELETE` fails whole, nothing is deleted, and the
+ * danger toast says so, on every platform the suite runs.
+ */
+it('deletes nothing from a searched joined page when a selected row is still referenced', function (): void {
+    [$component, $entityManager] = joinedResidenciesRig();
+
+    $winter = $entityManager->getRepository(Residency::class)->findOneBy(['season' => 'winter-2026']);
+    assert($winter instanceof Residency);
+    EntityManagerFactory::seed($entityManager, new ResidencyRider(1, 'Lighting', 1, $winter));
+
+    $component
+        ->set('tableSearch', 'night')
+        ->call('sortTable', ['column' => 'shows_count', 'direction' => 'desc'])
+        ->set('isTrackingDeselectedTableRecords', true)
+        ->set('deselectedTableRecords', ['astra-hall~spring-2027'])
+        ->call('mountAction', ['name' => 'delete', 'arguments' => [], 'context' => ['table' => true, 'bulk' => true]])
+        ->call('callMountedAction');
+
+    $toast = (string) ($component->getDispatchedBrowserEvent($component->render(), 'sylament:notification')['payload']['html'] ?? '');
+
+    $entityManager->clear();
+
+    expect($entityManager->getRepository(Residency::class)->count([]))->toBe(5)
+        ->and($toast)->toContain('Failed to delete 2 records');
 });
 
 it('numbers a submitted order of the searched joined page 1..N', function (): void {

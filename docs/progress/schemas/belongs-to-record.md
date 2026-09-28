@@ -1401,7 +1401,9 @@ constructor that requires arguments gets a `LogicException` naming the class
 and the way out: *Cannot map a new record onto the schema:
 App\Entity\Membership requires constructor arguments …*. PHP's own
 `ArgumentCountError` used to surface from this file. `CreateAction`'s
-relationship arm builds its record the same way.
+relationship arm builds its record the same way. A class-string naming a class
+with a non-public constructor, or no class at all, surfaces as
+`ReflectionException`, where `new` threw PHP's `Error`.
 
 This is the same boundary as
 [`Component::newInstance()`](../support/component.md)'s fallback: the container

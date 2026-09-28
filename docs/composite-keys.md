@@ -8,7 +8,7 @@ Sylament works with Doctrine entities whose identifier has more than one field, 
 - An `#[ORM\Id]` association plus scalar fields, for example a translation keyed by its article and a locale.
 - A single `#[ORM\Id]` association (a shared primary key).
 
-Doctrine itself refuses date and time identifier fields, and an entity with a composite key inside another entity's identifier, so Sylament cannot offer them either.
+Doctrine cannot persist or find an entity whose identifier field holds a date or time, and refuses to map an entity with a composite key inside another entity's identifier, so Sylament cannot offer them either.
 
 ## What a record key looks like
 
@@ -32,7 +32,7 @@ Nothing in tables or relation managers is specific to composite keys. In forms:
 - A key value set outside the form, for example in `mutateFormDataBeforeCreate()`, is only written if a field maps it. Use a `Hidden` field for keys the user should not type.
 - A key field the form leaves out and nothing fills before the save — a `prePersist` listener may — fails the save with an error naming the class. It is a mistake in the form, not something the user can fix.
 - Leave a key field that a `prePersist` callback or listener fills out of the form. A key field the form shows is the user's to fill, and leaving it blank is refused under it, whatever a callback would do.
-- Give the resource a record title (`getRecordTitle()` or `recordTitle()`), since no single attribute names a record with a composite key.
+- Override `getRecordTitle()` on the resource, since no single `$recordTitleAttribute` names a record with a composite key.
 
 ## What users see on create and edit
 
@@ -40,11 +40,11 @@ Nothing in tables or relation managers is specific to composite keys. In forms:
 - **A key left blank:** *This value should not be blank.*, under that field.
 - **A changed key on edit:** *This value cannot be changed.*, and the stored key is put back.
 
-These are Symfony validator messages, translated through the `validators` domain. If two users create the same key at the same moment, the second one gets a database error.
+The first two messages are Symfony's own, translated through the `validators` domain; *This value cannot be changed.* is Sylament's and has no translation yet. If two users create the same key at the same moment, the second one gets a database error.
 
 ## Replicating records
 
-`ReplicateAction` never copies identifier fields. Give it a form with the key fields:
+`ReplicateAction` never copies a scalar identifier field; an identifier association is kept unless it is the whole key. Give it a form with the key fields:
 
 ```php
 ReplicateAction::make()->schema([
@@ -64,7 +64,7 @@ Override `getRecordRouteKey()` and `resolveRecordRouteBinding()` on the resource
 
 ## Custom bulk actions
 
-`$selectedRecords` reads a large composite selection in batches of 500 keys per statement, or the keys alone under `fetchSelectedRecords(false)`. `$selectedRecordsQuery` binds every selected key in one statement, so prefer the records or keys for large composite selections.
+`$selectedRecords` reads a large composite selection in batches of at most 500 keys per statement (500 for two to four identifier fields, fewer above that), or the keys alone under `fetchSelectedRecords(false)`. `$selectedRecordsQuery` binds every selected key in one statement, so prefer the records or keys for large composite selections.
 
 ## Entities with constructor arguments
 

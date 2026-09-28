@@ -1149,14 +1149,14 @@ class Select extends Field implements Contracts\CanDisableOptions, Contracts\Has
      * Validation runs against the raw state. A multiple select whose raw state is
      * not an array is failed by a type constraint alone — `Choice(multiple: true)`
      * throws on anything else — and its item bounds apply to every array, the
-     * empty one included; a relationship select whose target is keyed by more
-     * than one field stops there when the array is longer than `maxItems()`, so
-     * it answers the count alone. Then, once the payload left anything there: a select
-     * whose option map is the whole truth is guarded by a `Choice` over its
+     * empty one included; a relationship select whose target is keyed by more than
+     * one field stops there when the array is longer than `maxItems()`, so it
+     * answers the count alone. Then, once the payload left anything there: a
+     * select whose option map is the whole truth is guarded by a `Choice` over its
      * enabled options, and one whose map is not — a searchable relationship
-     * select, or a select labelling values through a closure with no `options()`
-     * — by probing the label of what was submitted, Filament's rule, where a
-     * failed probe is a `Choice` over nothing.
+     * select, or a select labelling values through a closure with no `options()` —
+     * by probing the label of what was submitted, Filament's rule, where a failed
+     * probe is a `Choice` over nothing.
      *
      * @return list<Constraint>
      */

@@ -114,7 +114,7 @@ asserting the message whole does not.
 
 Since M7 · 7 the fetch runs one statement per batch of
 `IdentifierConstraint::batch()`: the whole submission for a single identifier,
-and 500 keys a statement for a composite one. A forged `multiple()`
+and at most 500 keys a statement for a composite one. A forged `multiple()`
 submission therefore costs time linear in its length. The batches' records merge
 in PHP, each record once: two spellings of one key that the database compares
 equal — a decimal `1` and `1.0`, or a case variant under a case-insensitive

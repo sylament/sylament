@@ -804,10 +804,11 @@ calls it, installs the
 [four search and label arms](#the-relationship-search-arm-runs-a-like-per-column-over-the-scoped-option-query),
 then three Doctrine defaults:
 
-- **`createOptionUsing`** — `Schema::getData()` builds the target entity from the
-  modal schema's class-string record (`new $class()`, so the target needs a
-  no-argument constructor), the reader `persist()`s and `flush()`es it, and the
-  key it returns is `getRecordKey()`. The modal schema validates itself and
+- **`createOptionUsing`** — `Schema::getData()` builds the target entity from
+  the modal schema's class-string record (through
+  `PropertyAccessor::constructRecord()`, so a target whose constructor requires
+  arguments is refused by name), the reader `persist()`s and `flush()`es it, and
+  the key it returns is `getRecordKey()`. The modal schema validates itself and
   nothing else: its state path scopes the map, so the outer form is untouched.
 - **`fillEditOptionActionFormUsing`** — the selected record itself, as an object.
   `Schema::fill(object)` runs `readStateFromRecord()`, so the modal's fields
@@ -1041,8 +1042,8 @@ cast as a gap.
 
 Since M7 · 7, `getOptionLabelsFromRelationship()` reads one statement per batch
 of `IdentifierConstraint::batch()`, and merges the answers into a map keyed by
-record key. That is the whole list for a single identifier, and 500 keys a
-statement for a composite one. A `multiple()` relationship select whose target
+record key. That is the whole list for a single identifier, and at most 500 keys
+a statement for a composite one. A `multiple()` relationship select whose target
 is keyed by more than one field, and whose submission holds more values than
 `maxItems()` allows, answers with the `Count` violation alone. The label read
 behind the membership check is skipped: the submission is refused either way,
@@ -1050,13 +1051,13 @@ and that read is what a forged list would make expensive.
 
 The short-circuit is composite-only, and on purpose. A composite label read is
 the one a forged list makes expensive — a balanced OR of ANDs per batch, a
-statement per 500 keys. A single identifier's is one statement over one array
-parameter, as cheap for a long list as for a short one, so there is nothing to
-save by skipping it. Every other `multiple()` select — a single-identifier
-relationship, static `options()`, an enum — therefore keeps reporting both the
-`Count` and the membership `Choice` violation, byte-identical to what it
-answered before M7 · 7. `hasCompositeRelationshipTarget()` asks the target's
-class metadata (`isIdentifierComposite`) and issues no statement.
+statement per batch of at most 500 keys. A single identifier's is one statement
+over one array parameter, as cheap for a long list as for a short one, so there
+is nothing to save by skipping it. Every other `multiple()` select — a
+single-identifier relationship, static `options()`, an enum — therefore keeps
+reporting both the `Count` and the membership `Choice` violation, byte-identical
+to what it answered before M7 · 7. `hasCompositeRelationshipTarget()` asks the
+target's class metadata (`isIdentifierComposite`) and issues no statement.
 [`SelectCompositeRelationshipTest`](../../../packages/forms/tests/Integration/Components/SelectCompositeRelationshipTest.php)
 pins both arms, and the membership violation alone for a forged key with no
 limit and at the limit, and
@@ -1267,9 +1268,11 @@ Laravel's validator, which Filament validates through, reports every failing
 rule, so an oversized submission carrying an unknown value answers both the
 `max` and the `in` message. A `multiple()` relationship select whose target is
 keyed by more than one field answers only the `Count` violation once the
-submission is longer than `maxItems()`: the membership check behind it is a
-batched label read that a forged list would make expensive, and the submission
-is refused either way ([why](#a-composite-label-read-runs-one-statement-per-batch-and-a-composite-submission-past-maxitems-reads-no-label)).
+submission is longer than `maxItems()`. The membership check behind it is
+skipped: for a searchable select it is a batched label read that a forged list
+would make expensive, and for one with a full option map it is a `Choice` over
+every option, skipped with it. The submission is refused either way
+([why](#a-composite-label-read-runs-one-statement-per-batch-and-a-composite-submission-past-maxitems-reads-no-label)).
 Single-identifier relationship, static-options and enum selects report both, as
 Filament does. Reversible if the composite label read ever costs what the
 single-identifier one does.

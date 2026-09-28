@@ -198,9 +198,8 @@ final class IdentifierConstraint
 
     /**
      * A client-sized key list as the batches a membership over it runs in: the
-     * whole list at once for a single identifier, whose one array parameter
-     * grows by a placeholder a key, and {@see chunk()}'s batches for a composite
-     * one, whose parameters and DQL grow by a comparison a field a key.
+     * whole list at once for a single identifier, and {@see chunk()}'s batches
+     * for a composite one.
      *
      * @param class-string $class
      * @param list<string> $keys

@@ -1170,12 +1170,13 @@ record handlers per page too.
   place to reach. The fill takes no argument, so `Schema::fill(null)` hydrates
   with `applyDefaults: true` and every component's `default()` lands; there is no
   fill mutator here, because Filament has none on its create page either.
-- `form(Schema)` stamps `statePath('data')`, `record($resource->getRecordClass())`
-  — the **class-string** arm of `BelongsToRecord`, which defers `new $class()` to
-  `getRecordInstance()` at save time — and `operation(Operation::Create->value)`,
+- `form(Schema)` stamps `statePath('data')`,
+  `record($resource->getRecordClass())` — the **class-string** arm of
+  `BelongsToRecord`, which defers construction to `getRecordInstance()`'s
+  `constructRecord()` at save time — and `operation(Operation::Create->value)`,
   then hands the schema to `$resource->form()`. The schema is named `form`, so
-  `HasSchemas::getSchema('form')` resolves this very method and the template says
-  `renderSchema('form')`.
+  `HasSchemas::getSchema('form')` resolves this very method and the template
+  says `renderSchema('form')`.
 - `schemas()` returns `['form']`, replacing the trait's `['schema']` default: the
   de/hydration hooks walk exactly this list, and naming a schema that has no
   method throws on the first render.

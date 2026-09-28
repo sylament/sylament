@@ -630,10 +630,9 @@ class AssociationReader
     }
 
     /**
-     * `find()` past every enabled SQL filter — a primary key is unique whatever
-     * a filter shows — restoring each filter afterwards, even when the lookup
-     * throws. A holder the filters hid is loaded into the identity map for the
-     * rest of the request, and its load listeners run.
+     * `find()` past every enabled SQL filter, restoring each filter afterwards,
+     * even when the lookup throws. A holder the filters hid is loaded into the
+     * identity map for the rest of the request, and its load listeners run.
      *
      * @param class-string         $class
      * @param array<string, mixed> $identifier

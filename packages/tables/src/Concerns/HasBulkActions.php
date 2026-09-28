@@ -189,8 +189,7 @@ trait HasBulkActions
     }
 
     /**
-     * Whether the table keys its records by more than one identifier field, so
-     * that a key list binds a parameter a field a key rather than one array.
+     * Whether the table keys its records by more than one identifier field.
      */
     private function hasCompositeTableRecordKeys(): bool
     {
@@ -245,8 +244,7 @@ trait HasBulkActions
     /**
      * One query a batch of selected keys. While tracking, a deselected bag that
      * fits one batch stays one exclusion; a larger one is subtracted in PHP from
-     * every key the table admits, since an exclusion cannot be split across
-     * statements.
+     * every key the table admits.
      *
      * @return list<QueryBuilder>
      */

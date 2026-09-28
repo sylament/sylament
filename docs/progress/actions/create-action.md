@@ -94,8 +94,9 @@ since [M7 · 6](../roadmap.md#m7--composite-identifiers); M7 · 3 had it before
 ends by validating the record and
 [looking its assigned key up](../schemas/can-be-validated.md#a-taken-assigned-key-is-a-field-error-not-a-unique-violation),
 and an identifier field the association fills reads **unset** until the join is
-made. So the record is constructed first — `new $recordClass()`, what `getData()`
-does for a class-string record — attached, and only then mapped, with the schema
+made. So the record is constructed first — `PropertyAccessor::constructRecord()`,
+what `getData()` does for a class-string record, so a constructor that requires
+arguments is refused by name — attached, and only then mapped, with the schema
 bound to that record for the mapping alone and back to the class in a `finally`,
 so a refused create re-renders exactly as it did. An application's own record
 constraints see the owner's half too: a `UniqueEntity` over it went from blind —

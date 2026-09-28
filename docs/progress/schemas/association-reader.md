@@ -84,6 +84,7 @@ Sylament-only, so no row has a _Ports_ link.
 | [`hasBlankAssignedIdentifier(object $record)`](../../../packages/schemas/src/State/AssociationReader.php) — whether a record's assigned key, as `persist()` left it, still holds a null or blank component | done | — | [semantics](#a-blank-assigned-identifier-is-read-after-persist-where-a-record-is-created) |
 | [`revertIdentifierChanges(object $record)`](../../../packages/schemas/src/State/AssociationReader.php) — put back every identifier field a managed record the loaded associations reach no longer prints, and answer each one by its property path (`@internal`: the record check and an editable cell's write call it) | done | — | [semantics](#a-changed-identifier-is-put-back-and-refused-and-costs-no-statement) |
 | [`findTakenIdentifiers(object $record)`](../../../packages/schemas/src/State/AssociationReader.php) — every new record a flush would insert whose assigned key is held already, answered by the field the form lets the user type (`@internal`: the record check calls it) | done | — | [semantics](#a-taken-identifier-is-looked-up-once-per-new-record-after-the-records-own-constraints-pass) · [semantics](#what-the-taken-key-probe-cannot-see) |
+| [`findBlankAssignedIdentifiers(object $record)`](../../../packages/schemas/src/State/AssociationReader.php) — every field a new record's blank assigned key could be refused under, in the order a refusal picks from (`@internal`: the record check calls it and refuses under the first one the schema maps) | done | — | [semantics](#a-new-records-blank-key-fields-are-the-record-checks-candidates) |
 | [`createOptionQuery(string $targetClass, string $alias = 'record')`](../../../packages/schemas/src/State/AssociationReader.php) — the base query an option list narrows | done | — | [semantics](#the-option-query-is-a-starting-point-not-a-result) |
 | [`Relationship`](../../../packages/schemas/src/State/Relationship.php) — one owner record's association, by name | done | — | [semantics](#the-relationship-query-is-rooted-at-the-target-and-needs-no-inverse-mapping) |
 | [`describeRelationship(Relationship)`](../../../packages/schemas/src/State/AssociationReader.php) — the mapping at a relationship, refused rather than null | done | — | [semantics](#the-relationship-query-is-rooted-at-the-target-and-needs-no-inverse-mapping) |
@@ -404,7 +405,7 @@ the event manager can assign a composite half too, and no class-level mapping
 shows it, so a record relying on one is refused here. The three short-circuits
 cover everything the class itself declares; covering the global case would need an
 opt-out nothing has asked for. Since M7 · 7 the residual reaches `Select`'s
-`createOption` default and the `Repeater` only. The record check does not ask this
+`createOption` default and the `Repeater`. The record check does not ask this
 predicate: its blank-key pass reads
 [the record's blank key fields](#a-new-records-blank-key-fields-are-the-record-checks-candidates)
 and refuses only one the form maps, which is the user's to fill. The two create
@@ -654,8 +655,9 @@ Five limits, recorded rather than closed:
   case. No code path of ours differs: the probe binds the value and takes the
   database's equality, which on PostgreSQL is the one its primary key enforces
   anyway. Executed on both platforms while the epic was reviewed, and unpinned.
-- **MySQL and MariaDB** are unexecuted: the rules ran on SQLite in every package
-  suite and on PostgreSQL 18.4 in the demo.
+- **MariaDB** is unexecuted. MySQL 8 ran the rules in the 2026-09-24 validation
+  and in M7 · 7's review; the suites run them on SQLite and the demo on
+  PostgreSQL 18.
 
 **A Doctrine SQL filter no longer hides the holder** (M7 · 7). A primary key is
 unique whatever a filter shows, so the probe's `find()` runs with every enabled

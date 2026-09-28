@@ -30,8 +30,9 @@ use Symfony\Contracts\Translation\TranslatorInterface;
 /*
  * The record check a schema's getData() ends in, in the order it runs: the
  * changed-key pass puts a moved key back before anything else reads the
- * record, the record's own constraints speak next, and the taken-key probe runs
- * only when neither raised anything — so it binds no value the record's own
+ * record, the record's own constraints speak next, the blank-key pass then
+ * refuses a blank key field the schema maps, and the taken-key probe runs only
+ * when none of them raised anything — so it binds no value the record's own
  * constraints refuse. Each pass's refusals are violations of the record's own
  * validation, translated and filed like the rest.
  */

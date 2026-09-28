@@ -55,8 +55,9 @@ class DissociateBulkAction extends BulkAction
 
     /**
      * The fetching arm nulls each record's owner through the reader and flushes
-     * once; the by-key arm is one SQL UPDATE per chunk of the plucked keys over
-     * the mapping's own join columns, bypassing the UnitOfWork the way
+     * once; the by-key arm is one UPDATE per chunk of the plucked keys — DQL
+     * over a one-column foreign key, SQL over the mapping's own join columns
+     * where it spans several — bypassing the UnitOfWork the way
      * DeleteBulkAction's delete does — already-managed entities keep their stale
      * owner until reloaded. Every mapping refusal runs before either arm — the
      * four detach refusals and the many-to-many one — as does the by-key arm's
@@ -126,8 +127,9 @@ class DissociateBulkAction extends BulkAction
     }
 
     /**
-     * One SQL `UPDATE` per chunk, and one transaction from the second chunk on,
-     * so a mid-batch failure means the whole batch failed —
+     * One `UPDATE` per chunk — DQL, or SQL where the foreign key spans several
+     * columns — and one transaction from the second chunk on, so a mid-batch
+     * failure means the whole batch failed —
      * {@see DeleteBulkAction::deleteSelectedRecordsByKey()}'s shape.
      *
      * @param list<list<string>> $chunks
@@ -161,6 +163,10 @@ class DissociateBulkAction extends BulkAction
             throw new LogicException(sprintf('[%s::$%s] is not the owning to-one side Doctrine requires of a one-to-many\'s mapped-by, so there is no foreign key to null.', $target->targetClass, $mappedBy));
         }
 
+        if (count($mapping->joinColumns) === 1) {
+            return $this->dissociateRecordKeyChunkThroughDql($entityManager, $target, $mappedBy, $keys);
+        }
+
         $platform = $entityManager->getConnection()->getDatabasePlatform();
         $quoteStrategy = $entityManager->getConfiguration()->getQuoteStrategy();
         $declaring = $mapping->inherited ?? $target->targetClass;
@@ -175,5 +181,26 @@ class DissociateBulkAction extends BulkAction
         return (int) $query
             ->where(IdentifierConstraint::inColumns($entityManager, $query, $target->targetClass, $keys, 'sylament_selected_record_keys'))
             ->executeStatement();
+    }
+
+    /**
+     * @param list<string> $keys
+     */
+    private function dissociateRecordKeyChunkThroughDql(EntityManagerInterface $entityManager, AssociationTarget $target, string $mappedBy, array $keys): int
+    {
+        $query = $entityManager->createQueryBuilder()
+            ->update($target->targetClass, 'sylament_dissociated_record')
+            ->set(sprintf('sylament_dissociated_record.%s', $mappedBy), 'NULL');
+
+        $affectedRows = $query
+            ->where(IdentifierConstraint::in($query, 'sylament_dissociated_record', $target->targetClass, $keys, 'sylament_selected_record_keys'))
+            ->getQuery()
+            ->execute();
+
+        if (! is_int($affectedRows)) {
+            throw new LogicException(sprintf('A DQL update of [%s] answered with %s instead of a row count.', $target->targetClass, get_debug_type($affectedRows)));
+        }
+
+        return $affectedRows;
     }
 }

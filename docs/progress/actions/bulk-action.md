@@ -155,8 +155,9 @@ that writes by key therefore **decodes through `IdentifierConstraint`** and
 never binds one raw, and every shipped one does: `DeleteBulkAction` since
 M7 · 1, and `DetachBulkAction` and `DissociateBulkAction` since
 [M7 · 4](../roadmap.md#m7--composite-identifiers) — the detach through the
-reader's by-key reference, the dissociate through a chunked `in()` on its
-`UPDATE` builder until M7 · 5b and a chunked `inColumns()` on a DBAL one since.
+reader's by-key reference, the dissociate through a chunked `in()` on its DQL
+`UPDATE` builder, and — where the foreign key spans several columns, since
+M7 · 5b — a chunked `inColumns()` on a DBAL one.
 Where a body takes the selection's **shape** for granted the
 refusal now sits outside its `try`, so a host feeding neither entities nor keys
 is a developer error rather than a danger toast — though only in part.
@@ -168,7 +169,7 @@ becomes the danger toast. That by-key arm gained a second pre-flight with
 cannot write at all — nulling a to-one that spans several join columns — and
 lost it again with [M7 · 5b](../roadmap.md#m7--composite-identifiers), which
 writes that statement in SQL
-([the refusal, and the DBAL route that closed it](dissociate-action.md#the-by-key-arm-is-a-dbal-update-over-the-plucked-keys)).
+([the refusal, and the SQL route that closed it for a foreign key spanning several columns](dissociate-action.md#the-by-key-arm-is-a-dql-update-and-a-dbal-one-where-the-foreign-key-spans-several-columns)).
 
 ### The post-call deselect reaches its host through the nullable accessor
 

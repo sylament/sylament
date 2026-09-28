@@ -22,21 +22,19 @@ use Symfony\UX\LiveComponent\Test\InteractsWithLiveComponents;
 uses(InteractsWithLiveComponents::class);
 
 /*
- * The by-key dissociate writes one SQL `UPDATE` of the table that holds the
- * mapped-by's foreign key, so the three shapes where that table or its columns
- * are not the target class's own bare names are pinned here, through the real
- * action: a to-one a joined leaf inherits from its root, reserved words the
- * mapping quotes, and a single-table leaf — whose statement carries no
- * discriminator, because the keys it narrows by were plucked through the
- * table's own query, which does. The last two cases are that pluck, from both
- * sides: a selected key the relationship query excludes is never written, and
- * the same key IS written when the table declares a `query()` of its own, which
- * wins over the relationship and plucks the whole root — the one shape where the
- * write escapes both narrowings the relationship query carried, so a sibling of
- * another class in that table and a row of another owner are written alike,
- * recorded rather than refused.
+ * The by-key dissociate nulls the mapped-by's foreign key of the plucked keys,
+ * and the statement it writes depends on how many columns that key spans. One
+ * column is a DQL `UPDATE`, so Doctrine's walker adds what it adds to any DQL
+ * update: a single-table leaf's discriminator, and for a joined leaf the
+ * multi-table executor, which narrows by the leaf table. Several columns — only
+ * a composite owner has them — are one DBAL `UPDATE` through the quote
+ * strategy, pinned here by the reserved-word case. The pluck cases show both
+ * narrowings: a selected key the relationship query excludes is never written,
+ * and under a table that declares `query()` beside `relationship()` a dial of
+ * another depot is written while the single-table sibling is not.
  *
- * Every expected statement is the driver's own text, as a string literal.
+ * Every expected statement is the driver's own text, as a string literal, except
+ * the joined leaf's, whose temporary-table name is Doctrine's to mint.
  */
 
 beforeEach(function (): void {
@@ -152,11 +150,15 @@ function depotByKeyRelatedKeys(KernelBrowser $client, EntityManagerInterface $en
     return array_keys(test()->createLiveComponent(DepotDissociateByKeyTable::class, ['association' => $association], client: $client)->component()->getTable()->getRecords());
 }
 
-it('writes the joined root table, which holds the foreign key a leaf inherits', function (): void {
+it("writes a joined leaf through Doctrine's multi-table update, narrowed by the leaf table", function (): void {
     [$client, $entityManager, $recorder] = depotByKeySeed();
     $select = 'SELECT depot_id FROM Appliance WHERE appliance_id = ?';
 
-    expect(depotByKeyUpdates($client, $recorder, 'toasters', ['1']))->toBe(['UPDATE Appliance SET depot_id = NULL WHERE appliance_id IN (?)'])
+    $updates = depotByKeyUpdates($client, $recorder, 'toasters', ['1']);
+
+    expect($updates)->toHaveCount(1)
+        ->and($updates[0])->toStartWith('UPDATE Appliance SET depot_id = NULL WHERE')
+        ->and($updates[0])->toContain('IN (SELECT')
         ->and(depotByKeyStoredDepot($entityManager, $select, 1))->toBe(['depot_id' => null])
         ->and(depotByKeyStoredDepot($entityManager, $select, 2))->toBe(['depot_id' => 1])
         ->and(depotByKeyRelatedKeys($client, $entityManager, 'toasters'))->toBe([2]);
@@ -172,34 +174,41 @@ it('names a reserved-word table, its identifier and its join columns through the
         ->and(depotByKeyRelatedKeys($client, $entityManager, 'purchases'))->toBe([2]);
 });
 
-it('writes a single-table leaf with no discriminator predicate', function (): void {
+it('writes a single-table leaf with its discriminator predicate', function (): void {
     [$client, $entityManager, $recorder] = depotByKeySeed();
     $select = 'SELECT depot_id FROM Gauge WHERE id = ?';
 
-    expect(depotByKeyUpdates($client, $recorder, 'dials', ['1']))->toBe(['UPDATE Gauge SET depot_id = NULL WHERE id IN (?)'])
+    expect(depotByKeyUpdates($client, $recorder, 'dials', ['1']))->toBe(["UPDATE Gauge SET depot_id = NULL WHERE (id IN (?)) AND kind IN ('dial')"])
         ->and(depotByKeyStoredDepot($entityManager, $select, 1))->toBe(['depot_id' => null])
         ->and(depotByKeyStoredDepot($entityManager, $select, 2))->toBe(['depot_id' => 1])
         ->and(depotByKeyRelatedKeys($client, $entityManager, 'dials'))->toBe([2]);
 });
 
-it('dissociates nothing a selected key names outside the table query', function (string $association, string $update, string $select, int $excluded, int $depot): void {
+it('dissociates no toaster of another depot a selected key names', function (): void {
     [$client, $entityManager, $recorder] = depotByKeySeed();
+    $select = 'SELECT depot_id FROM Appliance WHERE appliance_id = ?';
 
-    expect(depotByKeyUpdates($client, $recorder, $association, ['1', (string) $excluded]))->toBe([$update])
+    expect(depotByKeyUpdates($client, $recorder, 'toasters', ['1', '3']))->toHaveCount(1)
         ->and(depotByKeyStoredDepot($entityManager, $select, 1))->toBe(['depot_id' => null])
-        ->and(depotByKeyStoredDepot($entityManager, $select, $excluded))->toBe(['depot_id' => $depot]);
-})->with([
-    "the second depot's toaster" => ['toasters', 'UPDATE Appliance SET depot_id = NULL WHERE appliance_id IN (?)', 'SELECT depot_id FROM Appliance WHERE appliance_id = ?', 3, 2],
-    'a plain gauge of this depot, beside its dials' => ['dials', 'UPDATE Gauge SET depot_id = NULL WHERE id IN (?)', 'SELECT depot_id FROM Gauge WHERE id = ?', 3, 1],
-]);
+        ->and(depotByKeyStoredDepot($entityManager, $select, 3))->toBe(['depot_id' => 2]);
+});
 
-it('writes a single-table sibling and a dial of another depot a declared query() plucks, the statement carrying neither a discriminator nor an owner to stop it', function (): void {
+it('dissociates no plain gauge beside the dials a selected key names', function (): void {
     [$client, $entityManager, $recorder] = depotByKeySeed();
     $select = 'SELECT depot_id FROM Gauge WHERE id = ?';
 
-    expect(depotByKeyQuerySideUpdates($client, $recorder, ['1', '3', '4']))->toBe(['UPDATE Gauge SET depot_id = NULL WHERE id IN (?, ?, ?)'])
+    expect(depotByKeyUpdates($client, $recorder, 'dials', ['1', '3']))->toBe(["UPDATE Gauge SET depot_id = NULL WHERE (id IN (?)) AND kind IN ('dial')"])
         ->and(depotByKeyStoredDepot($entityManager, $select, 1))->toBe(['depot_id' => null])
-        ->and(depotByKeyStoredDepot($entityManager, $select, 3))->toBe(['depot_id' => null])
+        ->and(depotByKeyStoredDepot($entityManager, $select, 3))->toBe(['depot_id' => 1]);
+});
+
+it('writes a dial of another depot a declared query() plucks and leaves the single-table sibling, the statement carrying the discriminator and no owner', function (): void {
+    [$client, $entityManager, $recorder] = depotByKeySeed();
+    $select = 'SELECT depot_id FROM Gauge WHERE id = ?';
+
+    expect(depotByKeyQuerySideUpdates($client, $recorder, ['1', '3', '4']))->toBe(["UPDATE Gauge SET depot_id = NULL WHERE (id IN (?, ?, ?)) AND kind IN ('dial')"])
+        ->and(depotByKeyStoredDepot($entityManager, $select, 1))->toBe(['depot_id' => null])
+        ->and(depotByKeyStoredDepot($entityManager, $select, 3))->toBe(['depot_id' => 1])
         ->and(depotByKeyStoredDepot($entityManager, $select, 4))->toBe(['depot_id' => null])
         ->and(depotByKeyStoredDepot($entityManager, $select, 2))->toBe(['depot_id' => 1]);
 });

@@ -168,7 +168,9 @@ was written with its blank key half. Pinned by
 [`CreateActionBlankKeyTest`](../../../packages/actions/tests/Integration/CreateActionBlankKeyTest.php),
 which also pins that a global `prePersist` listener filling the key lets the
 create save, and that a blank key field the modal maps on a class carrying a
-`prePersist` callback is the field error rather than this refusal.
+`prePersist` callback is the field error rather than this refusal; the
+many-to-many hand-back is pinned by tables'
+[`CreateActionRelationshipTest`](../../../packages/tables/tests/Integration/CreateActionRelationshipTest.php).
 
 ## Divergences
 

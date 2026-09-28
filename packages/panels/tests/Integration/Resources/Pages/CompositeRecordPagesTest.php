@@ -3,6 +3,8 @@
 declare(strict_types=1);
 
 use Doctrine\ORM\EntityManagerInterface;
+use Doctrine\ORM\Event\PrePersistEventArgs;
+use Doctrine\ORM\Events;
 use Sylament\Panels\Tests\Fixtures\Doctrine\Entity\Catalogue;
 use Sylament\Panels\Tests\Fixtures\Doctrine\Entity\Colophon;
 use Sylament\Panels\Tests\Fixtures\Doctrine\Entity\Edition;
@@ -281,6 +283,37 @@ it('refuses by name a composite create whose form leaves a key half out, writing
     expect(compositeRecordWrites($recorder))->toBe([])
         ->and($entityManager->isOpen())->toBeTrue()
         ->and($entityManager->getRepository(Imprint::class)->count([]))->toBe(3);
+});
+
+it('saves a composite create whose key half a global prePersist listener fills, since the page reads the key after persist()', function (): void {
+    [$client, $entityManager] = compositeRecordClient();
+
+    compositeRecordPushPanelRequest();
+
+    $listener = new class {
+        public function prePersist(PrePersistEventArgs $arguments): void
+        {
+            $imprint = $arguments->getObject();
+
+            if ($imprint instanceof Imprint && $imprint->getYear() === '') {
+                $imprint->setYear('2027');
+            }
+        }
+    };
+
+    $eventManager = $entityManager->getEventManager();
+    $eventManager->addEventListener([Events::prePersist], $listener);
+
+    try {
+        $this->createLiveComponent(CreateYearlessImprint::class, ['panelId' => 'key'], client: $client)
+            ->set('data', ['house' => 'new.host', 'label' => 'Listened'])
+            ->call('create');
+    } finally {
+        $eventManager->removeEventListener([Events::prePersist], $listener);
+    }
+
+    expect($entityManager->getConnection()->fetchAllAssociative("SELECT house, year, label FROM Imprint WHERE house = 'new.host'"))
+        ->toBe([['house' => 'new.host', 'year' => '2027', 'label' => 'Listened']]);
 });
 
 it('mounts a row view modal and a row delete on a composite list through the table arm', function (): void {

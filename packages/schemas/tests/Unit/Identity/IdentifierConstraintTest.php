@@ -403,5 +403,6 @@ it('batches a composite key list by the chunk rule and a single one whole', func
 
     expect(array_map(count(...), IdentifierConstraint::batch($entityManager, CompositePair::class, $composite)))->toBe([500, 500, 201])
         ->and(array_map(count(...), IdentifierConstraint::batch($entityManager, Post::class, $single)))->toBe([2500])
-        ->and(IdentifierConstraint::batch($entityManager, CompositePair::class, []))->toBe([]);
+        ->and(IdentifierConstraint::batch($entityManager, CompositePair::class, []))->toBe([])
+        ->and(IdentifierConstraint::batch($entityManager, Post::class, []))->toBe([]);
 });

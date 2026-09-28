@@ -137,7 +137,8 @@ collation — can land in different batches and resolve the same managed record
 twice. The count check then compares them against every submitted key, so a
 duplicated, doubly spelled or unknown key is refused as one statement refused it.
 Pinned by
-[`CompositeAttachAssociateActionsTest`](../../../packages/tables/tests/Integration/CompositeAttachAssociateActionsTest.php).
+[`CompositeAttachAssociateActionsTest`](../../../packages/tables/tests/Integration/CompositeAttachAssociateActionsTest.php),
+which also attaches and associates a 501-key submission whole.
 
 ### The title fast path projects the attribute
 

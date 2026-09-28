@@ -820,7 +820,27 @@ it('answers 10,000 forged composite keys with twenty bounded statements', functi
     expect($keys)->toBe([])
         ->and($recorder->statements())->toHaveCount(20)
         ->and(max(placeholderCounts($recorder->statements())))->toBe(1000)
-        ->and($elapsedSeconds)->toBeLessThan(10.0);
+        ->and($elapsedSeconds)->toBeLessThan(2.0);
+});
+
+it('drops a record the selectability callback forbids from a fetching composite read', function (): void {
+    $entityManager = EntityManagerFactory::create();
+    EntityManagerFactory::seed(
+        $entityManager,
+        new CompositePair(1, 2, 'one-two'),
+        new CompositePair(1, 3, 'one-three'),
+        new CompositePair(2, 1, 'two-one'),
+    );
+
+    $host = pairSelectionHost($entityManager, static fn (Table $table): Table => $table->checkIfRecordIsSelectableUsing(
+        static fn (CompositePair $record): bool => $record->getB() !== 3,
+    ));
+    $host->selectedTableRecordKeys = ['1~2', '1~3', '2~1'];
+
+    expect(array_map(
+        static fn (CompositePair $pair): string => $pair->getLabel(),
+        $host->getSelectedTableRecords(),
+    ))->toBe(['one-two', 'two-one']);
 });
 
 it('keys a tracked composite selection behind a selectability callback without binding the selectable keys back', function (): void {

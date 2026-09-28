@@ -1291,7 +1291,9 @@ many-to-many parent the refused record stays in the parent's collection, as with
 the mapping's own refusal above, and for the same reason it is harmless: nothing
 flushes after the exception. Before M7 · 7 the row was written with its blank key
 half and the redirect failed to mint its key. Pinned by
-[`CompositeRecordPagesTest`](../../../packages/panels/tests/Integration/Resources/Pages/CompositeRecordPagesTest.php).
+[`CompositeRecordPagesTest`](../../../packages/panels/tests/Integration/Resources/Pages/CompositeRecordPagesTest.php),
+which also pins that a global `prePersist` listener filling the key half lets the
+create save.
 
 **The template.** `$template` points at the shared
 [form variant](form-actions.md), `partials/Page/form.html.twig`, which fills the

@@ -18,6 +18,7 @@ use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\Callsign;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\Headband;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\Redirect;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\Shortlink;
+use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\Spine;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\Stamped;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\EntityManagerFactory;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\IdentifierGuardRig;
@@ -346,6 +347,32 @@ it('leaves a blank key no component maps to the create seam, running no lookup',
         ->and($recorder->statements())->toBe([]);
 });
 
+it('files the refusal under an identifier association the schema maps and leaves unset', function (): void {
+    $recorder = new RecordingMiddleware();
+    $entityManager = EntityManagerFactory::create($recorder);
+
+    [$schema, $host] = identifierGuardSchema(new Headband(), $entityManager, null, StateField::make('spine'));
+    $host->data['spine'] = null;
+    $recorder->reset();
+
+    expect(identifierGuardErrors($schema))->toBe(['data.spine' => ['This value should not be blank.']])
+        ->and($recorder->statements())->toBe([]);
+});
+
+it('files the refusal under an identifier association the schema maps onto a new record whose own key is blank', function (): void {
+    $recorder = new RecordingMiddleware();
+    $entityManager = EntityManagerFactory::create($recorder);
+
+    $headband = new Headband();
+    $headband->setSpine(new Spine());
+
+    [$schema] = identifierGuardSchema($headband, $entityManager, null, StateField::make('spine'));
+    $recorder->reset();
+
+    expect(identifierGuardErrors($schema))->toBe(['data.spine' => ['This value should not be blank.']])
+        ->and($recorder->statements())->toBe([]);
+});
+
 it('files the blank-key refusal under the key field the schema maps', function (): void {
     $entityManager = EntityManagerFactory::create();
 
@@ -365,6 +392,17 @@ it('files the refusal under the first blank key field a component maps, past one
     $host->data['label'] = 'Hostless';
 
     expect(identifierGuardErrors($schema))->toBe(['data.path' => ['This value should not be blank.']]);
+});
+
+it('files the refusal under the first of two blank key fields the schema maps', function (): void {
+    $entityManager = EntityManagerFactory::create();
+
+    [$schema, $host] = identifierGuardSchema(new Redirect(), $entityManager, null, StateField::make('host'), StateField::make('path'), StateField::make('label'));
+    $host->data['host'] = '   ';
+    $host->data['path'] = '   ';
+    $host->data['label'] = 'Keyless';
+
+    expect(identifierGuardErrors($schema))->toBe(['data.host' => ['This value should not be blank.']]);
 });
 
 it('files nothing under a filled key field the schema maps when the blank one is unmapped', function (): void {

@@ -4,11 +4,15 @@ declare(strict_types=1);
 
 namespace Sylament\Tables\Tests\Integration;
 
+use Doctrine\ORM\EntityManagerInterface;
 use LogicException;
 use Sylament\Schemas\Exceptions\ValidationException;
 use Sylament\Tables\Tests\Fixtures\Doctrine\Entity\Artist;
 use Sylament\Tables\Tests\Fixtures\Doctrine\Entity\Genre;
+use Sylament\Tables\Tests\Fixtures\Doctrine\Entity\Shortcut;
 use Sylament\Tables\Tests\Fixtures\Doctrine\Entity\Song;
+use Sylament\Tables\Tests\Fixtures\Doctrine\RecordingMiddleware;
+use Sylament\Tables\Tests\Fixtures\Twig\Components\ArtistShortcutsCreateTable;
 use Sylament\Tables\Tests\Fixtures\Twig\Components\CreateIntoRelationshipTable;
 use Symfony\UX\LiveComponent\Test\InteractsWithLiveComponents;
 
@@ -186,4 +190,47 @@ it('creates on a free id after one primary-key select', function (): void {
         'INSERT INTO song_genre (song_id, genre_id) VALUES (?, ?)',
         'COMMIT',
     ]);
+});
+
+it('gives a many-to-many owner back a record the create refuses for a key its modal never maps, and writes nothing', function (): void {
+    $client = $this::getContainer()->get('test.client');
+    $client->disableReboot();
+
+    $entityManager = $this::getContainer()->get(EntityManagerInterface::class);
+    $recorder = $this::getContainer()->get(RecordingMiddleware::class);
+
+    $artist = new Artist(1, 'Ada');
+    $existing = new Shortcut();
+    $existing->setHost('plain');
+    $existing->setPath('about');
+    $existing->setLabel('About');
+
+    $entityManager->persist($artist);
+    $entityManager->persist($existing);
+
+    $artist->addShortcut($existing);
+    $entityManager->flush();
+
+    $component = $this->createLiveComponent(ArtistShortcutsCreateTable::class, ['artistId' => 1], client: $client)
+        ->call('mountAction', ['name' => 'createLabelled', 'arguments' => [], 'context' => ['table' => true]])
+        ->set('mountedActionsData.0.label', 'Nameless');
+
+    $recorder->reset();
+
+    expect(fn (): mixed => $component->call('callMountedAction'))->toThrow(new LogicException(sprintf(
+        "The [%s] action built a [%s] whose identifier is still blank after persist(), so it was not saved. Give every identifier field a field in the action's schema() — a Hidden one for a value the user should not type — or fill it in a prePersist listener.",
+        'createLabelled',
+        Shortcut::class,
+    )));
+
+    $labels = $entityManager->find(Artist::class, 1)?->getShortcuts()->map(static fn (Shortcut $shortcut): string => $shortcut->getLabel())->toArray();
+
+    expect(array_filter($recorder->statements(), static fn (string $sql): bool => str_starts_with($sql, 'INSERT')))->toBe([])
+        ->and($labels)->toBe(['About']);
+
+    $entityManager->flush();
+
+    expect($entityManager->isOpen())->toBeTrue()
+        ->and($entityManager->getConnection()->fetchAllAssociative('SELECT host, path FROM Shortcut'))->toBe([['host' => 'plain', 'path' => 'about']])
+        ->and($entityManager->getConnection()->fetchAllAssociative('SELECT artist_id, shortcut_host, shortcut_path FROM artist_shortcut'))->toBe([['artist_id' => 1, 'shortcut_host' => 'plain', 'shortcut_path' => 'about']]);
 });

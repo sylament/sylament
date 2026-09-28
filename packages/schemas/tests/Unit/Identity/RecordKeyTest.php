@@ -465,6 +465,11 @@ it('names every identifier value when a component cannot be printed', function (
     $redirect->setHost('example.com');
     $redirect->setPath('');
 
+    $pallet = new Pallet();
+    $pallet->setBatch(Uuid::fromString('b1b2c3d4-0000-4000-8000-000000000001'));
+
     expect(fn (): string => RecordKey::of(EntityManagerFactory::create(), $redirect))
-        ->toThrow(LogicException::class, 'The identifier of [' . Redirect::class . '] is not a printable value. It holds host "example.com", path "".');
+        ->toThrow(LogicException::class, 'The identifier of [' . Redirect::class . '] is not a printable value. It holds host "example.com", path "".')
+        ->and(fn (): string => RecordKey::of(EntityManagerFactory::create(), $pallet))
+        ->toThrow(LogicException::class, 'The identifier of [' . Pallet::class . '] is not a printable value. It holds batch "b1b2c3d4-0000-4000-8000-000000000001", lane "".');
 });

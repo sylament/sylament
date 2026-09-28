@@ -633,6 +633,31 @@ it('answers a multiple select past maxItems() with the count alone, reading no l
     expect($recorder->statements())->toBe([]);
 });
 
+it('answers a forged key in a composite multiple select with the membership violation alone', function (?int $maxItems): void {
+    $entityManager = $this::getContainer()->get(EntityManagerInterface::class);
+    [$post] = compositeSelectSeed($entityManager);
+
+    $select = Select::make('linkedTranslations')->relationship(titleAttribute: 'title')->multiple();
+
+    if ($maxItems !== null) {
+        $select->maxItems($maxItems);
+    }
+
+    [$schema, $host] = compositeSelectWire($select, $post);
+    $schema->fill($post);
+    $host->data['linkedTranslations'] = ['1~en', '9~xx'];
+
+    try {
+        $schema->getData();
+        test()->fail('Expected the selection to be refused.');
+    } catch (ValidationException $validationException) {
+        expect($validationException->getErrors())->toBe(['data.linkedTranslations' => ['One or more of the given values is invalid.']]);
+    }
+})->with([
+    'with no maxItems()' => [null],
+    'with maxItems() at the submitted count' => [2],
+]);
+
 it('answers a single-identifier multiple select past maxItems() with the count and the membership violation', function (): void {
     $entityManager = $this::getContainer()->get(EntityManagerInterface::class);
     [$post] = compositeSelectSeed($entityManager);

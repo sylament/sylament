@@ -387,6 +387,19 @@ it('resolves a forged composite attach submission larger than one batch in batch
         ->and(max(array_map(static fn (string $sql): int => mb_substr_count($sql, '?'), $recorder->statements())))->toBeLessThanOrEqual(1001);
 });
 
+it('attaches and associates a composite submission larger than one batch whole', function (string $hostClass, string $actionName, string $heldSql): void {
+    [$client, $entityManager, $recorder] = compositeAttachFaresClient(501);
+
+    $outcome = compositeAttachFareOutcome($client, $hostClass, $actionName, array_map(static fn (int $index): string => "{$index}~z", range(1, 501)));
+
+    expect($outcome)->toBe($actionName)
+        ->and(max(array_map(static fn (string $sql): int => mb_substr_count($sql, '?'), $recorder->statements())))->toBeLessThanOrEqual(1001)
+        ->and($entityManager->getConnection()->fetchOne($heldSql))->toBe(501);
+})->with([
+    'attach' => [ArtistFaresAttachTable::class, 'attach', 'SELECT COUNT(*) FROM artist_fare WHERE artist_id = 1'],
+    'associate' => [ArtistAssociateFaresTable::class, 'associate', 'SELECT COUNT(*) FROM Fare WHERE curator_id = 1'],
+]);
+
 it('resolves a forged composite associate submission larger than one batch in batches, and refuses it', function (): void {
     [$client, , $recorder] = compositeAttachSeededClient();
     $forged = array_map(static fn (int $index): string => "nope~p{$index}", range(1, 1201));

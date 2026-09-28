@@ -1058,7 +1058,9 @@ relationship, static `options()`, an enum — therefore keeps reporting both the
 answered before M7 · 7. `hasCompositeRelationshipTarget()` asks the target's
 class metadata (`isIdentifierComposite`) and issues no statement.
 [`SelectCompositeRelationshipTest`](../../../packages/forms/tests/Integration/Components/SelectCompositeRelationshipTest.php)
-pins both arms, and [`SelectMultipleTest`](../../../packages/forms/tests/Integration/Components/SelectMultipleTest.php)
+pins both arms, and the membership violation alone for a forged key with no
+limit and at the limit, and
+[`SelectMultipleTest`](../../../packages/forms/tests/Integration/Components/SelectMultipleTest.php)
 keeps the static-options `[Count, Choice]` pin.
 
 ### A created option whose identifier is incomplete is refused before it is written

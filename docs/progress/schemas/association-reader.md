@@ -81,7 +81,7 @@ Sylament-only, so no row has a _Ports_ link.
 | [`getRecordKey(object $entity)`](../../../packages/schemas/src/State/AssociationReader.php) — the string key an entity is spoken by, of any width | done | — | [semantics](#the-record-key-is-tables-semantics-moved-onto-the-mapping) |
 | [`findRecordKey(object $entity)`](../../../packages/schemas/src/State/AssociationReader.php) — the same key, or null for an entity whose identifier is not complete yet | done | — | [semantics](#findrecordkey-answers-null-where-getrecordkey-throws) |
 | [`hasIncompleteAssignedIdentifier(object $entity)`](../../../packages/schemas/src/State/AssociationReader.php) — whether a component the **application** must assign is missing | done | — | [semantics](#an-incomplete-assigned-identifier-is-the-question-the-create-paths-ask) |
-| [`hasBlankAssignedIdentifier(object $record)`](../../../packages/schemas/src/State/AssociationReader.php) — whether a record's assigned key, as `persist()` left it, still holds a null or blank component | done | — | [semantics](#a-blank-assigned-identifier-is-read-after-persist-by-the-two-create-seams) |
+| [`hasBlankAssignedIdentifier(object $record)`](../../../packages/schemas/src/State/AssociationReader.php) — whether a record's assigned key, as `persist()` left it, still holds a null or blank component | done | — | [semantics](#a-blank-assigned-identifier-is-read-after-persist-where-a-record-is-created) |
 | [`revertIdentifierChanges(object $record)`](../../../packages/schemas/src/State/AssociationReader.php) — put back every identifier field a managed record the loaded associations reach no longer prints, and answer each one by its property path (`@internal`: the record check and an editable cell's write call it) | done | — | [semantics](#a-changed-identifier-is-put-back-and-refused-and-costs-no-statement) |
 | [`findTakenIdentifiers(object $record)`](../../../packages/schemas/src/State/AssociationReader.php) — every new record a flush would insert whose assigned key is held already, answered by the field the form lets the user type (`@internal`: the record check calls it) | done | — | [semantics](#a-taken-identifier-is-looked-up-once-per-new-record-after-the-records-own-constraints-pass) · [semantics](#what-the-taken-key-probe-cannot-see) |
 | [`createOptionQuery(string $targetClass, string $alias = 'record')`](../../../packages/schemas/src/State/AssociationReader.php) — the base query an option list narrows | done | — | [semantics](#the-option-query-is-a-starting-point-not-a-result) |
@@ -404,16 +404,29 @@ the event manager can assign a composite half too, and no class-level mapping
 shows it, so a record relying on one is refused here. The three short-circuits
 cover everything the class itself declares; covering the global case would need an
 opt-out nothing has asked for. Since M7 · 7 the residual reaches `Select`'s
-`createOption` default and the `Repeater` only. The record check asks this
-predicate too, but refuses only a key field the form maps, which is the user's to
-fill. The two create seams,
+`createOption` default and the `Repeater` only. The record check does not ask this
+predicate: its blank-key pass reads
+[the record's blank key fields](#a-new-records-blank-key-fields-are-the-record-checks-candidates)
+and refuses only one the form maps, which is the user's to fill. The two create
+seams,
 [`CreateAction`](../actions/create-action.md#a-key-the-modal-leaves-blank-is-refused-by-name-after-persist)
 and the resource create page, ask
-[`hasBlankAssignedIdentifier()`](#a-blank-assigned-identifier-is-read-after-persist-by-the-two-create-seams)
+[`hasBlankAssignedIdentifier()`](#a-blank-assigned-identifier-is-read-after-persist-where-a-record-is-created)
 after `persist()`, once the listener has run.
 
+The short-circuits cut the other way too. A class declaring a `prePersist`
+callback or entity listener that fills **no** key half is still exempted, so a
+blank half passes this predicate. `Select`'s `createOption` default therefore
+reads the key again after `persist()`, through `hasBlankAssignedIdentifier()`, and
+refuses such a record by the same message, detached before anything is flushed.
+The `Repeater` has no such moment — it never persists an item itself; the owner's
+cascade inserts it at the application's flush — so for such a class the blank
+half no component maps reaches the table, recorded in
+[repeater.md](../forms/repeater.md#a-new-item-whose-identifier-is-incomplete-is-refused-before-the-save-returns)
+and on [the roadmap's ledger](../roadmap.md#m7--composite-identifiers).
+
 Two callers, both refusing **before anything is flushed**: `Select`'s
-`createOptionUsing` default, which refuses before `persist()`, and `Repeater`'s
+`createOptionUsing` default, which asks before `persist()`, and `Repeater`'s
 relationship save, which refuses after the collection write and before the item-key
 map is re-read. Both name the field list that would fix it. Neither is validation:
 a taken key, a changed key half and two new records claiming one key are the
@@ -425,19 +438,21 @@ in-memory graph on the way out: a refusal here is a developer error that ends th
 request, nothing has been flushed, and the two write paths that could have
 persisted something have not run.
 
-### A blank assigned identifier is read after persist(), by the two create seams
+### A blank assigned identifier is read after persist(), where a record is created
 
 `hasBlankAssignedIdentifier(object $record): bool` asks whether a record's
 assigned key, as `persist()` left it, still holds a component that is null or a
-blank string, through an identifier association's own key too. Its two callers
-are the create seams that persist a record the form mapped:
-[`CreateAction::createRecord()`](../actions/create-action.md#a-key-the-modal-leaves-blank-is-refused-by-name-after-persist)
-and [`CreateRecord::handleRecordCreation()`](../panels/README.md#createrecord).
+blank string, through an identifier association's own key too. Its callers are
+the three places that persist a record a form mapped:
+[`CreateAction::createRecord()`](../actions/create-action.md#a-key-the-modal-leaves-blank-is-refused-by-name-after-persist),
+[`CreateRecord::handleRecordCreation()`](../panels/README.md#createrecord) and
+`Select`'s [`createOption` default](../forms/select.md#a-created-option-whose-identifier-is-incomplete-is-refused-before-it-is-written).
 Each asks it after `persist()` and before `flush()`, and refuses a `true` by name.
 They refuse a key field the form leaves out, which the record check
 [leaves to them](can-be-validated.md#a-blank-assigned-key-is-refused-before-anything-is-written).
-Each builds the reader on the manager its flush writes through, never the
-container's default.
+The two create seams build the reader on the manager their flush writes
+through, never the container's default; `Select` asks the reader it persists and
+flushes through.
 
 Where [`hasIncompleteAssignedIdentifier()`](#an-incomplete-assigned-identifier-is-the-question-the-create-paths-ask)
 reads the mapping to guess what will fill the key, this one reads the record after
@@ -448,17 +463,42 @@ Doctrine's `AssignedGenerator` refuses a missing assigned id by name inside
 `persist()`. What is left is a blank string, possibly inside an associated
 record's key.
 
-Three shapes answer `false`, as the in-mapping rule skips them: a generated
-identifier, a single scalar identifier (the application's `required()` to guard)
-and an identifier association onto a record whose generated identifier is still
-pending. The last is a derived-identity child of an owner created in the same
-flush. `RecordKey::find()` reads it as null too, but Doctrine defers the child's
-key to the owner's insert, so refusing it would refuse a working create. The
-residual is a blank string half beside such a pending owner, which the seam lets
-through.
+Three shapes answer `false`: a generated identifier, a single scalar identifier
+(the application's `required()` to guard) and an identifier association onto a
+record whose generated identifier is still pending. The last is a
+derived-identity child of an owner created in the same flush. `RecordKey::find()`
+reads it as null too, but Doctrine defers the child's key to the owner's insert,
+so refusing it would refuse a working create. That exemption holds only while no
+scalar identifier field is blank: a blank string half beside a pending owner
+answers `true`, since the flush would write it as `''`. Until M7 · 7's review the
+seams let that half through.
 
 Pinned by
 [`AssociationReaderBlankIdentifierTest`](../../../packages/schemas/tests/Unit/State/AssociationReaderBlankIdentifierTest.php).
+
+### A new record's blank key fields are the record check's candidates
+
+`findBlankAssignedIdentifiers(object $record)` answers every field a new
+record's blank assigned key could be refused under, keyed by property path, in
+the order the record check picks from: each identifier field holding a blank
+string — null, empty or whitespace-only — then each identifier association left
+unset, or onto a record whose own assigned key is blank. For the last, the
+target's blank key fields come before the association itself, so `spine.code`
+precedes `spine`. The record check refuses under the first candidate a component
+of the schema maps, and hands the rest to
+[the create seams](#a-blank-assigned-identifier-is-read-after-persist-where-a-record-is-created)
+([the rule](can-be-validated.md#a-blank-assigned-key-is-refused-before-anything-is-written)).
+
+It answers nothing for a record the unit of work already holds, for a generated
+identifier and for a single scalar one, and a target whose identifier is
+generated is never blank here. It reads the record's fields rather than
+[`hasIncompleteAssignedIdentifier()`](#an-incomplete-assigned-identifier-is-the-question-the-create-paths-ask),
+so a `prePersist` callback or entity listener the class declares changes
+nothing: a key field the form maps is the user's to fill. Until M7 · 7's review it
+asked that predicate first, whose short-circuits exempt such a class, and fell
+back to the taken-key rule's field when no candidate matched; the fallback went
+with the gate, since an empty list now means nothing is blank. Pinned by
+[`HasSchemasIdentifierGuardTest`](../../../packages/schemas/tests/Integration/Concerns/HasSchemasIdentifierGuardTest.php).
 
 ### A changed identifier is put back and refused, and costs no statement
 

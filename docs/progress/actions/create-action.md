@@ -149,7 +149,7 @@ and, on a nested create page, by panels'
 ### A key the modal leaves blank is refused by name after `persist()`
 
 Since M7 · 7 `createRecord()` asks
-[`AssociationReader::hasBlankAssignedIdentifier()`](../schemas/association-reader.md#a-blank-assigned-identifier-is-read-after-persist-by-the-two-create-seams)
+[`AssociationReader::hasBlankAssignedIdentifier()`](../schemas/association-reader.md#a-blank-assigned-identifier-is-read-after-persist-where-a-record-is-created)
 between `persist()` and `flush()`, in both arms, on a reader bound to the manager
 the flush writes through. A record whose assigned key still holds a blank string
 there has a key field the modal does not map, since the record check refuses a
@@ -167,7 +167,8 @@ so a later flush in the same request does not insert it. Before M7 · 7 the row
 was written with its blank key half. Pinned by
 [`CreateActionBlankKeyTest`](../../../packages/actions/tests/Integration/CreateActionBlankKeyTest.php),
 which also pins that a global `prePersist` listener filling the key lets the
-create save.
+create save, and that a blank key field the modal maps on a class carrying a
+`prePersist` callback is the field error rather than this refusal.
 
 ## Divergences
 

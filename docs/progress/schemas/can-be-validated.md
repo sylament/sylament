@@ -342,18 +342,21 @@ declaration becomes Symfony's own.
 Since M7 · 7 a **new** record whose assigned key still has a blank component is
 refused before anything is written. A blank component is an empty or
 whitespace-only string, or an identifier association left unset or pointing at
-a record whose own key is incomplete. Who refuses it depends on whether the form
-maps the blank field.
+a record whose own assigned key is blank. Who refuses it depends on whether the
+form maps the blank field.
 
 **A blank key field the form maps is a field error.** The record check refuses it
 inside `getData()` with *This value should not be blank.*, after the record's own
 constraints pass and before the taken-key probe runs. It files under the first
 blank key field a component maps: the key fields holding a blank string first,
-then the identifier associations. A key field declared `dehydrated(false)` counts
-as mapped, since a component still maps it, so its typed value never reaching the
-record is refused under it. A blank field the form leaves out is skipped on the
-way to one it maps, and when no component maps any of them `getData()` refuses
-nothing and hands the record on.
+then the identifier associations. An identifier association whose record's own
+key field is blank lists that field before itself — `spine.code`, then `spine` —
+so a form mapping the related record's key field gets the error under it, and one
+mapping only the association gets it under the association. A key field declared
+`dehydrated(false)` counts as mapped, since a component still maps it, so its
+typed value never reaching the record is refused under it. A blank field the
+form leaves out is skipped on the way to one it maps, and when no component maps
+any of them `getData()` refuses nothing and hands the record on.
 
 **A key field the form leaves out is the create seam's.** The user cannot fix
 it, so it is a developer error, refused by name with an exception that says how to
@@ -365,8 +368,13 @@ fix the form:
   `persist()`**, so every `prePersist` callback, entity listener and global
   event-manager listener has run, and **before `flush()`**. The record is taken
   back out of the unit of work.
-- `Select`'s `createOption` default refuses it **before `persist()`**, with the
-  listener residual [recorded on the reader](association-reader.md#an-incomplete-assigned-identifier-is-the-question-the-create-paths-ask).
+- `Select`'s `createOption` default refuses it **before `persist()`** and again
+  **after** it, before the flush, with the global-listener residual
+  [recorded on the reader](association-reader.md#an-incomplete-assigned-identifier-is-the-question-the-create-paths-ask).
+- The [`Repeater`](../forms/repeater.md#a-new-item-whose-identifier-is-incomplete-is-refused-before-the-save-returns)
+  refuses an item before any flush and never persists it itself, so a blank half
+  a class-level `prePersist` callback leaves unfilled reaches the table there —
+  recorded, not closed.
 - [`ReplicateAction`](../actions/replicate-action.md) refuses it after
   `beforeReplicaSaved()`.
 
@@ -389,9 +397,19 @@ Before M7 · 7, such a record was inserted with its blank key. The redirect afte
 the save could not mint its key, and every page listing the row failed with it.
 
 The rule skips a generated identifier and a single scalar one, which stays the
-application's `required()` to guard. The in-mapping half also skips a key a
-`prePersist` callback or a mapped entity listener of the class fills, as
-`AssociationReader::hasIncompleteAssignedIdentifier()` does.
+application's `required()` to guard.
+
+**A `prePersist` callback does not excuse a blank key field the form maps.** A
+key field the form maps is the user's to fill, whatever a callback or entity
+listener of the class might do at the flush, so a blank one is the field error
+above. A key a callback fills belongs out of the form, where the create seam reads
+it after `persist()`. Until M7 · 7's review the in-mapping half skipped every
+class declaring a `prePersist` callback or entity listener, as
+`AssociationReader::hasIncompleteAssignedIdentifier()` does — and that is the
+commonest entity shape there is, a `#[PrePersist]` that stamps a timestamp. A key
+field the user left blank on such a class then reached the create seam, which
+refused it as a developer error whose advice, *give every identifier field a
+field*, was false: the field was in the form.
 
 ### A changed key is refused and put back, not handed to Doctrine
 

@@ -31,6 +31,7 @@ Nothing in tables or relation managers is specific to composite keys. In forms:
 - Do not add `dehydrated(false)` to a key field. The create page would then save no key, and the save is refused with *This value should not be blank.*
 - A key value set outside the form, for example in `mutateFormDataBeforeCreate()`, is only written if a field maps it. Use a `Hidden` field for keys the user should not type.
 - A key field the form leaves out and nothing fills before the save — a `prePersist` listener may — fails the save with an error naming the class. It is a mistake in the form, not something the user can fix.
+- Leave a key field that a `prePersist` callback or listener fills out of the form. A key field the form shows is the user's to fill, and leaving it blank is refused under it, whatever a callback would do.
 - Give the resource a record title (`getRecordTitle()` or `recordTitle()`), since no single attribute names a record with a composite key.
 
 ## What users see on create and edit

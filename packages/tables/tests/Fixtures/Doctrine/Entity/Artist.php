@@ -144,6 +144,26 @@ class Artist
     #[ORM\OneToMany(targetEntity: Locker::class, mappedBy: 'keeper')]
     private Collection $keptLockers;
 
+    /**
+     * A many-to-many onto a target whose key has a decimal half, owned here.
+     *
+     * @var Collection<int, Fare>
+     */
+    #[ORM\ManyToMany(targetEntity: Fare::class)]
+    #[ORM\JoinTable(name: 'artist_fare')]
+    #[ORM\JoinColumn(name: 'artist_id', referencedColumnName: 'id')]
+    #[ORM\InverseJoinColumn(name: 'fare_rate', referencedColumnName: 'rate')]
+    #[ORM\InverseJoinColumn(name: 'fare_zone', referencedColumnName: 'zone')]
+    private Collection $fares;
+
+    /**
+     * The same target under an ordinary nullable one-to-many.
+     *
+     * @var Collection<int, Fare>
+     */
+    #[ORM\OneToMany(targetEntity: Fare::class, mappedBy: 'curator')]
+    private Collection $curatedFares;
+
     public function __construct(
         #[ORM\Id]
         #[ORM\Column]
@@ -167,6 +187,8 @@ class Artist
         $this->venues = new ArrayCollection();
         $this->curatedShortcuts = new ArrayCollection();
         $this->keptLockers = new ArrayCollection();
+        $this->fares = new ArrayCollection();
+        $this->curatedFares = new ArrayCollection();
     }
 
     public function getId(): int
@@ -454,6 +476,54 @@ class Artist
     public function removeKeptLocker(Locker $keptLocker): static
     {
         $this->keptLockers->removeElement($keptLocker);
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, Fare>
+     */
+    public function getFares(): Collection
+    {
+        return $this->fares;
+    }
+
+    public function addFare(Fare $fare): static
+    {
+        if (!$this->fares->contains($fare)) {
+            $this->fares->add($fare);
+        }
+
+        return $this;
+    }
+
+    public function removeFare(Fare $fare): static
+    {
+        $this->fares->removeElement($fare);
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, Fare>
+     */
+    public function getCuratedFares(): Collection
+    {
+        return $this->curatedFares;
+    }
+
+    public function addCuratedFare(Fare $curatedFare): static
+    {
+        if (!$this->curatedFares->contains($curatedFare)) {
+            $this->curatedFares->add($curatedFare);
+        }
+
+        return $this;
+    }
+
+    public function removeCuratedFare(Fare $curatedFare): static
+    {
+        $this->curatedFares->removeElement($curatedFare);
 
         return $this;
     }

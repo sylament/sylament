@@ -66,6 +66,12 @@ it('answers whether a record key still holds a blank component, read as persist(
 
             return $note;
         })(),
+        'a blank half beside an owner whose generated id is pending' => (static function (): PostTranslation {
+            $translation = new PostTranslation();
+            $translation->setPost(new Post());
+
+            return $translation;
+        })(),
         default => (static function (): PostTranslation {
             $translation = new PostTranslation();
             $translation->setPost(new Post());
@@ -86,4 +92,5 @@ it('answers whether a record key still holds a blank component, read as persist(
     'an identifier association onto a record whose key is set' => ['an identifier association onto a record whose key is set', false],
     'a blank half beside a complete identifier association' => ['a blank half beside a complete identifier association', true],
     'a derived identity under an owner whose generated id is pending' => ['a derived identity under an owner whose generated id is pending', false],
+    'a blank half beside an owner whose generated id is pending' => ['a blank half beside an owner whose generated id is pending', true],
 ]);

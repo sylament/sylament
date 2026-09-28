@@ -1070,18 +1070,25 @@ since Doctrine refuses an id generator on one — that order commits a row first
 and then fails minting its key, leaving a record no option can ever name and a
 create modal that has already written it. So the default asks
 [`AssociationReader::hasIncompleteAssignedIdentifier()`](../schemas/association-reader.md#an-incomplete-assigned-identifier-is-the-question-the-create-paths-ask)
-**before** `persist()`, and refuses by name:
+**before** `persist()`, and
+[`hasBlankAssignedIdentifier()`](../schemas/association-reader.md#a-blank-assigned-identifier-is-read-after-persist-where-a-record-is-created)
+again **after** it and before the flush, and refuses by name:
 
 > `The [%s] select created a [%s] whose identifier is incomplete, so no option could name it. Put every identifier field in createOptionForm().`
 
 It is a developer error rather than validation — the fix is a missing field in
 `createOptionForm()`, not something an end user can supply — so nothing is
-written and nothing is restored. Three shapes pass. A **pending generated**
+written and nothing is restored; a record refused after `persist()` is detached
+first. Three shapes pass. A **pending generated**
 identifier does, the record's own or one behind an identifier association: that
 is Doctrine's to fill at the flush two lines later. So does an identifier a
-`#[PrePersist]` callback of the class or a mapped entity listener assigns, for
-the same reason one line earlier. And so does a **plain single scalar**
-identifier, always: the member answers `false` for one before it reads anything,
+`#[PrePersist]` callback of the class or a mapped entity listener assigns — the
+check after `persist()` reads it filled. A callback or listener that fills **no**
+key half exempts the class from the first check, so the second one is what
+refuses a half it left blank; until M7 · 7's review that half was flushed, and
+minting the new option's key then failed on the row already written. And so does
+a **plain single scalar** identifier, always: the member answers `false` for one
+before it reads anything,
 because the relation layer has always keyed such a class and a create option over
 one worked at HEAD. Validating a key that is *taken*, as opposed
 to one that is incomplete, is the record check's since
@@ -1089,7 +1096,9 @@ to one that is incomplete, is the record check's since
 through `getData()` ([above](#the-option-actions-are-suffix-actions-with-doctrine-defaults)).
 An assigned single scalar key left blank still passes both: the taken-key rule
 treats a blank component as incomplete and looks nothing up, so it reaches
-Doctrine as it did.
+Doctrine as it did. Pinned by
+[`SelectCompositeRelationshipTest`](../../../packages/forms/tests/Integration/Components/SelectCompositeRelationshipTest.php),
+the after-`persist()` arm over a `Planter` whose callback fills neither key half.
 
 ### The relation tier reads the owner's class and never its identity
 

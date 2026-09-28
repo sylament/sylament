@@ -13,6 +13,7 @@ use Sylament\Actions\Tests\Fixtures\Doctrine\Entity\Roster;
 use Sylament\Actions\Tests\Fixtures\Doctrine\Entity\Seat;
 use Sylament\Actions\Tests\Fixtures\Twig\Components\LarderCreateHost;
 use Sylament\Actions\Tests\Fixtures\Twig\Components\RelationshipCreateHost;
+use Sylament\Schemas\Exceptions\ValidationException;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\UX\LiveComponent\Test\InteractsWithLiveComponents;
 use Symfony\UX\LiveComponent\Test\TestLiveComponent;
@@ -125,4 +126,22 @@ it('saves a seat whose code a global prePersist listener fills, since the create
     }
 
     expect(createBlankKeyRows('SELECT roster_id, code, label FROM Seat'))->toBe([['roster_id' => 1, 'code' => 'L1', 'label' => 'Listened']]);
+});
+
+it('refuses a blank key field the modal maps as a field error on a class carrying a prePersist callback, writing nothing', function (): void {
+    $component = createBlankKeyMounted(LarderCreateHost::class, [], 'createPlanter')
+        ->set('mountedActionsData.0.bed', 'north')
+        ->set('mountedActionsData.0.slot', '   ')
+        ->set('mountedActionsData.0.crop', 'basil');
+
+    try {
+        $component->call('callMountedAction');
+        test()->fail('Expected the create to be refused with a ValidationException.');
+    } catch (ValidationException $validationException) {
+        expect($validationException->getErrors())->toBe(['mountedActionsData.0.slot' => ['This value should not be blank.']]);
+    }
+
+    $this::getContainer()->get(EntityManagerInterface::class)->flush();
+
+    expect(createBlankKeyRows('SELECT bed, slot, crop, season FROM Planter'))->toBe([]);
 });

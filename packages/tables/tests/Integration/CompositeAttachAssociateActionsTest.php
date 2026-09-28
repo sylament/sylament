@@ -10,6 +10,7 @@ use Sylament\Actions\Contracts\InteractsWithActions;
 use Sylament\Forms\Components\Select;
 use Sylament\Tables\Contracts\InteractsWithTable;
 use Sylament\Tables\Tests\Fixtures\Doctrine\Entity\Artist;
+use Sylament\Tables\Tests\Fixtures\Doctrine\Entity\Fare;
 use Sylament\Tables\Tests\Fixtures\Doctrine\Entity\Locker;
 use Sylament\Tables\Tests\Fixtures\Doctrine\Entity\LockerLease;
 use Sylament\Tables\Tests\Fixtures\Doctrine\Entity\LockerSeal;
@@ -18,9 +19,11 @@ use Sylament\Tables\Tests\Fixtures\Doctrine\Entity\Shortcut;
 use Sylament\Tables\Tests\Fixtures\Doctrine\Entity\Venue;
 use Sylament\Tables\Tests\Fixtures\Doctrine\Handle;
 use Sylament\Tables\Tests\Fixtures\Doctrine\RecordingMiddleware;
+use Sylament\Tables\Tests\Fixtures\Twig\Components\ArtistAssociateFaresTable;
 use Sylament\Tables\Tests\Fixtures\Twig\Components\ArtistAssociateLeasesTable;
 use Sylament\Tables\Tests\Fixtures\Twig\Components\ArtistAssociateLockersTable;
 use Sylament\Tables\Tests\Fixtures\Twig\Components\ArtistAssociateShortcutsTable;
+use Sylament\Tables\Tests\Fixtures\Twig\Components\ArtistFaresAttachTable;
 use Sylament\Tables\Tests\Fixtures\Twig\Components\ArtistResidenciesAttachTable;
 use Sylament\Tables\Tests\Fixtures\Twig\Components\ArtistSealsAttachTable;
 use Sylament\Tables\Tests\Fixtures\Twig\Components\ArtistShortcutsAttachTable;
@@ -394,3 +397,66 @@ it('resolves a forged composite associate submission larger than one batch in ba
     expect($outcome)->toContain('its select never offered')
         ->and(max(array_map(static fn (string $sql): int => mb_substr_count($sql, '?'), $recorder->statements())))->toBeLessThanOrEqual(1001);
 });
+
+/**
+ * Ada and `$count` fares nobody holds yet, keyed `1~z` to `<count>~z`.
+ *
+ * @return array{KernelBrowser, EntityManagerInterface, RecordingMiddleware}
+ */
+function compositeAttachFaresClient(int $count): array
+{
+    $client = test()->getContainer()->get('test.client');
+    $client->disableReboot();
+
+    $entityManager = test()->getContainer()->get(EntityManagerInterface::class);
+    $recorder = test()->getContainer()->get(RecordingMiddleware::class);
+
+    $entityManager->persist(new Artist(1, 'Ada'));
+
+    foreach (range(1, $count) as $index) {
+        $entityManager->persist(new Fare((string) $index, 'z', "Fare {$index}"));
+    }
+
+    $entityManager->flush();
+    $recorder->reset();
+
+    return [$client, $entityManager, $recorder];
+}
+
+/**
+ * The attach or associate bypass of {@see compositeAttachOutcome()} over a fare
+ * host, answering the refusal or the action's name.
+ *
+ * @param class-string $hostClass
+ * @param list<string> $recordId
+ */
+function compositeAttachFareOutcome(KernelBrowser $client, string $hostClass, string $actionName, array $recordId): string
+{
+    $host = compositeAttachHost($client, $hostClass);
+    $host->mountAction($actionName, [], ['table' => true]);
+
+    $schema = $host->getMountedActionSchema();
+    $action = $host->getMountedAction() ?? throw new LogicException('Nothing mounted.');
+    $action->data(['recordId' => $recordId]);
+
+    try {
+        $action->call(['schema' => $schema, 'form' => $schema]);
+    } catch (LogicException $logicException) {
+        return $logicException->getMessage();
+    }
+
+    return $actionName;
+}
+
+it('refuses two spellings of one composite key that land in different batches, as one statement did', function (string $hostClass, string $actionName, string $heldSql): void {
+    [$client, $entityManager, $recorder] = compositeAttachFaresClient(500);
+
+    $outcome = compositeAttachFareOutcome($client, $hostClass, $actionName, [...array_map(static fn (int $index): string => "{$index}~z", range(1, 500)), '1=2E0~z']);
+
+    expect($outcome)->toContain('its select never offered')
+        ->and(array_slice(array_map(static fn (string $sql): int => mb_substr_count($sql, '?'), $recorder->statements()), -2))->toBe([1001, 3])
+        ->and($entityManager->getConnection()->fetchOne($heldSql))->toBe(0);
+})->with([
+    'attach' => [ArtistFaresAttachTable::class, 'attach', 'SELECT COUNT(*) FROM artist_fare'],
+    'associate' => [ArtistAssociateFaresTable::class, 'associate', 'SELECT COUNT(*) FROM Fare WHERE curator_id IS NOT NULL'],
+]);

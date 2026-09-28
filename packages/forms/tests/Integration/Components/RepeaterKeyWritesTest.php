@@ -12,6 +12,7 @@ use Sylament\Forms\Tests\Fixtures\Concerns\FieldRenderHost;
 use Sylament\Forms\Tests\Fixtures\Doctrine\Entity\Band;
 use Sylament\Forms\Tests\Fixtures\Doctrine\Entity\Booking;
 use Sylament\Forms\Tests\Fixtures\Doctrine\Entity\Festival;
+use Sylament\Forms\Tests\Fixtures\Doctrine\Entity\Greenhouse;
 use Sylament\Forms\Tests\Fixtures\Doctrine\Entity\Headliner;
 use Sylament\Forms\Tests\Fixtures\Doctrine\Entity\Post;
 use Sylament\Forms\Tests\Fixtures\Doctrine\Entity\PostTranslation;
@@ -427,6 +428,34 @@ it('saves two new items whose single string key their prePersist callback draws 
     ])
         ->and($entityManager->getConnection()->fetchOne('SELECT COUNT(DISTINCT code) FROM Coupon'))->toBe(2);
 })->with(['existing', 'new']);
+
+/*
+ * The residual the repeater carries: it checks a new item before any flush and
+ * never persists it itself — the owner's cascade does, at the application's
+ * flush — so a class whose prePersist callback exempts it from that check
+ * reaches the table with the half no component maps still blank.
+ */
+it('writes a new item whose unmapped key half stays blank past a prePersist callback that fills neither half', function (): void {
+    $entityManager = $this::getContainer()->get(EntityManagerInterface::class);
+    $greenhouse = new Greenhouse();
+
+    [$schema, $host] = repeaterKeyWritesWire($greenhouse, [
+        TextInput::make('name'),
+        Repeater::make('planters')->relationship()->components([TextInput::make('bed'), TextInput::make('crop')]),
+    ]);
+    $schema->fill($greenhouse);
+
+    $host->data['name'] = 'North';
+    $host->data['planters'] = ['new-a' => ['bed' => 'north', 'crop' => 'basil']];
+
+    expect(repeaterKeyWritesRefusal($schema))->toBeNull();
+
+    $entityManager->persist($greenhouse);
+    $entityManager->flush();
+
+    expect($entityManager->getConnection()->fetchAllAssociative('SELECT bed, slot, crop, season FROM Planter'))
+        ->toBe([['bed' => 'north', 'slot' => '', 'crop' => 'basil', 'season' => 'spring']]);
+});
 
 it('saves two new join-entity items naming two different bands', function (string $collection, string $table): void {
     $entityManager = $this::getContainer()->get(EntityManagerInterface::class);

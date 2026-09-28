@@ -724,7 +724,7 @@ of every child it **constructed** this pass, and refuses by name:
 
 > `The [%s] repeater is saving an item of [%s] whose identifier is incomplete, so no record key can be minted for it. Put every identifier field in the repeater's components() — enabled and dehydrated for a new item — or build the child in mutateRelationshipDataBeforeCreateUsing().`
 
-Three things about the rule, each of which the message alone gets wrong.
+Four things about the rule, each of which the message alone gets wrong.
 
 **It is by *assignment*, and only where this epic made the class keyable.** A
 class whose identifier Doctrine generates is never incomplete — the id is the
@@ -737,6 +737,20 @@ mapping shows. What is left is the identifier this epic made keyable — a
 composite key (Doctrine refuses an id generator on one) or one carrying an
 association — minus whatever a `#[PrePersist]` callback of the class or a mapped
 entity listener fills at the flush.
+
+**A class-level `prePersist` callback lets an unmapped blank half through**,
+recorded since M7 · 7's review. The mapping short-circuit exempts every class
+declaring a `prePersist` callback or entity listener, whether or not it fills a
+key half. `CreateAction`, the resource create page and `Select`'s `createOption`
+default read the key again after `persist()`, once the callback has run; the
+repeater has no such moment, since it never persists an item itself — the
+owner's cascade inserts it at the application's flush. So for such a class a key
+half no component maps reaches the table blank, as it did before M7 · 7. Closing
+it needs a check at the owner's flush, which the repeater does not run. Pinned as
+behaviour by
+[`RepeaterKeyWritesTest`](../../../packages/forms/tests/Integration/Components/RepeaterKeyWritesTest.php)'s
+*writes a new item whose unmapped key half stays blank past a prePersist callback
+that fills neither half*.
 
 **A pending owner is not incomplete.** A derived-identity child under an owner
 that has not been flushed yet — a repeater on a **create** form — carries an

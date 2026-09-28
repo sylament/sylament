@@ -229,7 +229,7 @@ trait HasBulkActions
         }
 
         if ($shouldFetchSelectedRecords) {
-            return $this->filterSelectableTableRecords($records);
+            return $this->filterSelectableTableRecords(array_values(array_combine(array_map(spl_object_id(...), $records), $records)));
         }
 
         if (!$readsRecords) {

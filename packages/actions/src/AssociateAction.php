@@ -324,6 +324,8 @@ class AssociateAction extends Action
     }
 
     /**
+     * The candidates the keys name, each once however many keys spell it.
+     *
      * @param list<int|string> $keys
      * @return list<object>
      */
@@ -349,7 +351,7 @@ class AssociateAction extends Action
             array_push($records, ...array_values(array_filter($found, is_object(...))));
         }
 
-        return $records;
+        return array_values(array_combine(array_map(spl_object_id(...), $records), $records));
     }
 
     /**

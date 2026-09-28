@@ -10,6 +10,7 @@ use Sylament\Tables\Table;
 use Sylament\Tables\Tests\Fixtures\Concerns\TableHost;
 use Sylament\Tables\Tests\Fixtures\Doctrine\Entity\Artist;
 use Sylament\Tables\Tests\Fixtures\Doctrine\Entity\CompositePair;
+use Sylament\Tables\Tests\Fixtures\Doctrine\Entity\Fare;
 use Sylament\Tables\Tests\Fixtures\Doctrine\Entity\Gig;
 use Sylament\Tables\Tests\Fixtures\Doctrine\Entity\Residency;
 use Sylament\Tables\Tests\Fixtures\Doctrine\Entity\Shortcut;
@@ -842,6 +843,25 @@ it('keys a tracked composite selection behind a selectability callback without b
 
     expect($host->getSelectedTableRecords(shouldFetchSelectedRecords: false))->toBe(['1~2'])
         ->and(placeholderCounts($recorder->statements()))->toBe([2]);
+});
+
+it('reads two spellings of one composite key that land in different batches as one record', function (): void {
+    $recorder = new RecordingMiddleware();
+    $entityManager = EntityManagerFactory::create($recorder);
+    EntityManagerFactory::seed($entityManager, ...array_map(static fn (int $index): Fare => new Fare((string) $index, 'z', "Fare {$index}"), range(1, 500)));
+
+    $host = new TableHost(static fn (Table $table): Table => $table
+        ->query($entityManager->createQueryBuilder()->select('fare')->from(Fare::class, 'fare')->orderBy('fare.rate'))
+        ->columns([TextColumn::make('label')]));
+    $host->selectedTableRecordKeys = [...array_map(static fn (int $index): string => "{$index}~z", range(1, 500)), '1=2E0~z'];
+
+    $recorder->reset();
+
+    $records = $host->getSelectedTableRecords();
+
+    expect($records)->toHaveCount(500)
+        ->and(count(array_unique(array_map(spl_object_id(...), $records))))->toBe(500)
+        ->and(placeholderCounts($recorder->statements()))->toBe([1000, 2]);
 });
 
 it('keeps a single-key selection past 2,000 keys in one statement, as before', function (): void {

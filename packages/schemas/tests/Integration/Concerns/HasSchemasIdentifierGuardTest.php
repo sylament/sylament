@@ -15,8 +15,10 @@ use Sylament\Schemas\Tests\Fixtures\Components\StateField;
 use Sylament\Schemas\Tests\Fixtures\Concerns\StateHostFixture;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\Binder;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\Callsign;
+use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\Headband;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\Redirect;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\Shortlink;
+use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\Stamped;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\EntityManagerFactory;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\IdentifierGuardRig;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\RecordingMiddleware;
@@ -373,6 +375,46 @@ it('files nothing under a filled key field the schema maps when the blank one is
     $host->data['label'] = 'Pathless';
 
     expect(identifierGuardErrors($schema))->toBe([]);
+});
+
+it('refuses a blank key field the schema maps on a class whose prePersist callback fills the other half', function (): void {
+    $recorder = new RecordingMiddleware();
+    $entityManager = EntityManagerFactory::create($recorder);
+
+    [$schema, $host] = identifierGuardSchema(new Stamped(), $entityManager, null, StateField::make('scope'), StateField::make('label'));
+    $host->data['scope'] = '   ';
+    $host->data['label'] = 'Spaced';
+    $recorder->reset();
+
+    expect(identifierGuardErrors($schema))->toBe(['data.scope' => ['This value should not be blank.']])
+        ->and($recorder->statements())->toBe([]);
+});
+
+it('leaves the half a prePersist callback fills to the create seam when the schema does not map it', function (): void {
+    $recorder = new RecordingMiddleware();
+    $entityManager = EntityManagerFactory::create($recorder);
+    $stamped = new Stamped();
+
+    [$schema, $host] = identifierGuardSchema($stamped, $entityManager, null, StateField::make('scope'), StateField::make('label'));
+    $host->data['scope'] = 'news';
+    $host->data['label'] = 'Stamped';
+    $recorder->reset();
+
+    expect($schema->getData())->toBe($stamped)
+        ->and($stamped->getStamp())->toBe('')
+        ->and($recorder->statements())->toBe([]);
+});
+
+it("files the refusal under the related record's own key field when the schema maps it through the identifier association", function (): void {
+    $recorder = new RecordingMiddleware();
+    $entityManager = EntityManagerFactory::create($recorder);
+
+    [$schema, $host] = identifierGuardSchema(new Headband(), $entityManager, null, StateField::make('spine.code'), StateField::make('spine.label'));
+    $host->data['spine'] = ['code' => '   ', 'label' => 'Spaced'];
+    $recorder->reset();
+
+    expect(identifierGuardErrors($schema))->toBe(['data.spine.code' => ['This value should not be blank.']])
+        ->and($recorder->statements())->toBe([]);
 });
 
 it('leaves a blank single scalar key to the application, as before', function (): void {

@@ -355,18 +355,19 @@ class AssociationReader
      * null or a blank string, an identifier association's own key included.
      * False for a generated identifier, for a single scalar one, and for an
      * identifier association onto a record whose generated identifier is still
-     * pending, which Doctrine fills at the flush.
+     * pending while no scalar identifier field is blank.
      */
     public function hasBlankAssignedIdentifier(object $record): bool
     {
         $entityManager = $this->requireEntityManager();
         $metadata = $entityManager->getClassMetadata($record::class);
 
-        if (! $metadata->isIdentifierNatural() || $this->isSingleScalarIdentifier($metadata)) {
+        if (! $metadata->isIdentifierNatural() || $this->isSingleScalarIdentifier($metadata) || RecordKey::find($entityManager, $record) !== null) {
             return false;
         }
 
-        return RecordKey::find($entityManager, $record) === null && ! $this->awaitsGeneratedIdentifier($record);
+        return array_any($metadata->identifier, static fn (string $field): bool => ! $metadata->hasAssociation($field) && blank($metadata->getFieldValue($record, $field)))
+            || ! $this->awaitsGeneratedIdentifier($record);
     }
 
     /**
@@ -439,10 +440,11 @@ class AssociationReader
      * Every field a new record's blank assigned key could be refused under, in
      * the order a refusal picks from: each identifier field holding a blank
      * string — null, empty or only whitespace — then each identifier
-     * association left unset or onto a record whose own key is incomplete;
-     * the taken-key rule's field alone when neither finds one. Empty unless
-     * {@see hasIncompleteAssignedIdentifier()} holds, so what that skips is
-     * skipped here too, a single scalar identifier among it.
+     * association left unset, or onto a record whose own assigned key is blank,
+     * that record's blank fields first. A prePersist callback or entity
+     * listener the class declares changes nothing here. Empty for a record the
+     * unit of work already holds, for a generated identifier and for a single
+     * scalar one.
      *
      * @internal the record check behind a schema's getData(), which refuses under the first candidate the schema maps
      *
@@ -456,30 +458,17 @@ class AssociationReader
 
         $metadata = $this->findEntityMetadata($this->entityManager, $record::class);
 
-        if (! $metadata instanceof ClassMetadata || ! $metadata->isIdentifierNatural()) {
+        if (! $metadata instanceof ClassMetadata || ! $metadata->isIdentifierNatural() || $this->isSingleScalarIdentifier($metadata)) {
             return [];
         }
 
         $unitOfWork = $this->entityManager->getUnitOfWork();
 
-        if (($unitOfWork->isInIdentityMap($record) && ! $unitOfWork->isScheduledForInsert($record)) || ! $this->hasIncompleteAssignedIdentifier($record)) {
+        if ($unitOfWork->isInIdentityMap($record) && ! $unitOfWork->isScheduledForInsert($record)) {
             return [];
         }
 
-        $candidates = [
-            ...array_filter($metadata->identifier, static fn (string $field): bool => ! $metadata->hasAssociation($field) && blank($metadata->getFieldValue($record, $field))),
-            ...array_filter($metadata->identifier, function (string $field) use ($metadata, $record): bool {
-                if (! $metadata->hasAssociation($field)) {
-                    return false;
-                }
-
-                $target = $metadata->getFieldValue($record, $field);
-
-                return ! is_object($target) || $this->isMissingAssignedIdentifierComponent($target);
-            }),
-        ];
-
-        return array_fill_keys($candidates === [] ? [$this->getTakenIdentifierField($metadata, null)] : $candidates, self::BLANK_IDENTIFIER);
+        return array_fill_keys($this->findBlankIdentifierPaths($record, $metadata, ''), self::BLANK_IDENTIFIER);
     }
 
     /**
@@ -827,6 +816,56 @@ class AssociationReader
         }
 
         return false;
+    }
+
+    /**
+     * The blank assigned identifier fields of a record, prefixed by `$path`:
+     * its blank scalar ones, then each identifier association left unset, or
+     * whose target's own assigned key is blank — the target's blank fields
+     * before the association itself. A target whose identifier is generated is
+     * never blank here.
+     *
+     * @param ClassMetadata<object> $metadata
+     *
+     * @return list<string>
+     */
+    private function findBlankIdentifierPaths(object $record, ClassMetadata $metadata, string $path): array
+    {
+        $scalars = [];
+        $associations = [];
+
+        foreach ($metadata->identifier as $field) {
+            $value = $metadata->getFieldValue($record, $field);
+            $fieldPath = $this->joinPropertyPath($path, $field);
+
+            if (! $metadata->hasAssociation($field)) {
+                if (blank($value)) {
+                    $scalars[] = $fieldPath;
+                }
+
+                continue;
+            }
+
+            if (! is_object($value)) {
+                $associations[] = $fieldPath;
+
+                continue;
+            }
+
+            $targetMetadata = $this->requireEntityManager()->getClassMetadata($value::class);
+
+            if ($targetMetadata->usesIdGenerator()) {
+                continue;
+            }
+
+            $targetPaths = $this->findBlankIdentifierPaths($value, $targetMetadata, $fieldPath);
+
+            if ($targetPaths !== []) {
+                $associations = [...$associations, ...$targetPaths, $fieldPath];
+            }
+        }
+
+        return [...$scalars, ...$associations];
     }
 
     /**

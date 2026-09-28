@@ -1275,7 +1275,7 @@ flushes nothing after it.
 
 Since M7 · 7 the default `handleRecordCreation()` also refuses by name a record
 whose assigned key is still blank after `persist()`. It asks
-[`AssociationReader::hasBlankAssignedIdentifier()`](../schemas/association-reader.md#a-blank-assigned-identifier-is-read-after-persist-by-the-two-create-seams)
+[`AssociationReader::hasBlankAssignedIdentifier()`](../schemas/association-reader.md#a-blank-assigned-identifier-is-read-after-persist-where-a-record-is-created)
 on the page's own entity manager, between `persist()` and `flush()`, so every
 `prePersist` listener has run. What it catches is a key field the form leaves
 out; a blank one the form maps is already a field error

@@ -114,10 +114,15 @@ asserting the message whole does not.
 
 Since M7 · 7 the fetch runs one statement per batch of
 `IdentifierConstraint::batch()`: the whole submission for a single identifier,
-and 500 keys a statement for a composite one. A forged `multiple()` submission
-therefore costs time linear in its length. The batches' records merge in PHP,
-and the count check still compares them against every submitted key, so a
-duplicated or unknown key is refused as before.
+and 500 keys a statement for a composite one. A forged `multiple()`
+submission therefore costs time linear in its length. The batches' records merge
+in PHP, each record once: two spellings of one key that the database compares
+equal — a decimal `1` and `1.0`, or a case variant under a case-insensitive
+collation — can land in different batches and resolve the same managed record
+twice. The count check then compares them against every submitted key, so a
+duplicated, doubly spelled or unknown key is refused as one statement refused it.
+Pinned by
+[`CompositeAttachAssociateActionsTest`](../../../packages/tables/tests/Integration/CompositeAttachAssociateActionsTest.php).
 
 ### The title fast path projects the attribute
 

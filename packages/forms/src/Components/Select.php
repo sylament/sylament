@@ -435,16 +435,24 @@ class Select extends Field implements Contracts\CanDisableOptions, Contracts\Has
         $this->createOptionUsing(static function (Select $component, Schema $schema): string {
             $reader = $component->getAssociationReader();
             $record = $schema->getData();
+            $refusal = static fn (): LogicException => new LogicException(sprintf(
+                'The [%s] select created a [%s] whose identifier is incomplete, so no option could name it. Put every identifier field in createOptionForm().',
+                (string) $component->getName(),
+                $record::class,
+            ));
 
             if ($reader->hasIncompleteAssignedIdentifier($record)) {
-                throw new LogicException(sprintf(
-                    'The [%s] select created a [%s] whose identifier is incomplete, so no option could name it. Put every identifier field in createOptionForm().',
-                    (string) $component->getName(),
-                    $record::class,
-                ));
+                throw $refusal();
             }
 
             $reader->persist($record);
+
+            if ($reader->hasBlankAssignedIdentifier($record)) {
+                $reader->createOptionQuery($record::class)->getEntityManager()->detach($record);
+
+                throw $refusal();
+            }
+
             $reader->flush();
 
             $component->forgetCachedRelationshipOptions();

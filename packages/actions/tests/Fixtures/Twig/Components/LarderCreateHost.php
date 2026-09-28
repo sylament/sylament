@@ -9,6 +9,7 @@ use Sylament\Actions\Concerns\HasActions;
 use Sylament\Actions\Contracts\InteractsWithActions;
 use Sylament\Actions\CreateAction;
 use Sylament\Actions\Tests\Fixtures\Doctrine\Entity\AssignedNote;
+use Sylament\Actions\Tests\Fixtures\Doctrine\Entity\Planter;
 use Sylament\Actions\Tests\Fixtures\Doctrine\Entity\Redirect;
 use Sylament\Actions\Tests\Fixtures\Doctrine\Entity\Spice;
 use Sylament\Schemas\Concerns\HasSchemas;
@@ -77,6 +78,21 @@ class LarderCreateHost implements InteractsWithActions, InteractsWithSchemas
             ->recordClass(Redirect::class)
             ->schema([
                 ActionSchemaField::make('target'),
+            ]);
+    }
+
+    /**
+     * A scalar pair whose modal maps both key fields, on a class whose prePersist
+     * callback fills a payload column only.
+     */
+    public function createPlanterAction(): Action
+    {
+        return CreateAction::make('createPlanter')
+            ->recordClass(Planter::class)
+            ->schema([
+                ActionSchemaField::make('bed'),
+                ActionSchemaField::make('slot'),
+                ActionSchemaField::make('crop'),
             ]);
     }
 }

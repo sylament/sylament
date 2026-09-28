@@ -712,7 +712,7 @@ batch (below).
 - `AttachAction` and `AssociateAction`'s by-key fetch.
 - `Select::getOptionLabelsFromRelationship()`.
 
-A composite selection's hydrated records come back in table order within a batch, and batch after batch across them.
+A composite selection's hydrated records come back in table order within a batch, and batch after batch across them. Where batches of records merge — the hydrating selection read and the attach and associate fetch — each record is kept once, by identity: two spellings of one key that the database compares equal, such as a decimal `1` and `1.0` or a case variant under a case-insensitive collation, can land in different batches, and one statement returned such a row once.
 
 Two sites still run one statement over a whole list:
 

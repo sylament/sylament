@@ -10,6 +10,8 @@ use LogicException;
 use Sylament\Forms\Components\Select;
 use Sylament\Forms\Tests\Fixtures\Concerns\FieldRenderHost;
 use Sylament\Forms\Tests\Fixtures\Doctrine\Entity\CompositePair;
+use Sylament\Forms\Tests\Fixtures\Doctrine\Entity\Greenhouse;
+use Sylament\Forms\Tests\Fixtures\Doctrine\Entity\Planter;
 use Sylament\Forms\Tests\Fixtures\Doctrine\Entity\Post;
 use Sylament\Forms\Tests\Fixtures\Doctrine\Entity\PostSeal;
 use Sylament\Forms\Tests\Fixtures\Doctrine\Entity\PostTranslation;
@@ -543,6 +545,35 @@ it('refuses a created option whose identifier is incomplete before it writes any
     $entityManager->flush();
 
     expect($entityManager->getRepository(PostSeal::class)->count([]))->toBe(0);
+});
+
+it('refuses a created option whose key half is still blank after its prePersist callback ran, writing nothing', function (): void {
+    $entityManager = $this::getContainer()->get(EntityManagerInterface::class);
+
+    $greenhouse = new Greenhouse();
+    $greenhouse->setName('North');
+
+    $entityManager->persist($greenhouse);
+    $entityManager->flush();
+
+    $select = Select::make('planters')->relationship(titleAttribute: 'crop')->multiple();
+    compositeSelectWire($select, $greenhouse);
+
+    $planter = new Planter();
+    $planter->setBed('north');
+    $planter->setCrop('basil');
+
+    $schema = Schema::make(new FieldRenderHost())->record($planter);
+    $createOptionUsing = $select->getCreateOptionUsing();
+
+    expect($createOptionUsing)->toBeInstanceOf(Closure::class)
+        ->and(static fn (): string => $createOptionUsing instanceof Closure ? $createOptionUsing($select, $schema) : '')
+        ->toThrow(LogicException::class, sprintf('The [planters] select created a [%s] whose identifier is incomplete, so no option could name it.', Planter::class));
+
+    $entityManager->flush();
+
+    expect($entityManager->getConnection()->fetchAllAssociative('SELECT bed, slot, crop, season FROM Planter'))->toBe([])
+        ->and($entityManager->isOpen())->toBeTrue();
 });
 
 it('creates an option that carries every identifier field and hands back its key', function (): void {

@@ -335,14 +335,21 @@ class AssociateAction extends Action
 
         $targetClass = $this->getAssociationReader()->describeRelationship($this->getRelationshipOrFail())->targetClass;
         $query = $this->getRecordSelectOptionsQuery();
+        $records = [];
 
-        /** @var list<mixed> $records */
-        $records = $query
-            ->andWhere(IdentifierConstraint::in($query, 'record', $targetClass, array_map(strval(...), $keys), 'sylament_selected_record_keys'))
-            ->getQuery()
-            ->getResult();
+        foreach (IdentifierConstraint::batch($query->getEntityManager(), $targetClass, array_map(strval(...), $keys)) as $index => $batch) {
+            $batchQuery = $index === 0 ? $query : $this->getRecordSelectOptionsQuery();
 
-        return array_values(array_filter($records, is_object(...)));
+            /** @var list<mixed> $found */
+            $found = $batchQuery
+                ->andWhere(IdentifierConstraint::in($batchQuery, 'record', $targetClass, $batch, 'sylament_selected_record_keys'))
+                ->getQuery()
+                ->getResult();
+
+            array_push($records, ...array_values(array_filter($found, is_object(...))));
+        }
+
+        return $records;
     }
 
     /**

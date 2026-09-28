@@ -372,3 +372,25 @@ it('refuses a malformed or unoffered key from the associate by its own widened m
         ->and(compositeAttachAssociateOutcome($client, ArtistAssociateLockersTable::class, 'L1'))
         ->toContain('its select never offered');
 });
+
+it('resolves a forged composite attach submission larger than one batch in batches, and refuses it', function (): void {
+    [$client, , $recorder] = compositeAttachSeededClient();
+    $forged = array_map(static fn (int $index): string => "nope~p{$index}", range(1, 1201));
+
+    $recorder->reset();
+    $outcome = compositeAttachOutcome($client, $forged, ['multiple' => true]);
+
+    expect($outcome)->toContain('its select never offered')
+        ->and(max(array_map(static fn (string $sql): int => mb_substr_count($sql, '?'), $recorder->statements())))->toBeLessThanOrEqual(1001);
+});
+
+it('resolves a forged composite associate submission larger than one batch in batches, and refuses it', function (): void {
+    [$client, , $recorder] = compositeAttachSeededClient();
+    $forged = array_map(static fn (int $index): string => "nope~p{$index}", range(1, 1201));
+
+    $recorder->reset();
+    $outcome = compositeAttachAssociateOutcome($client, ArtistAssociateShortcutsTable::class, $forged);
+
+    expect($outcome)->toContain('its select never offered')
+        ->and(max(array_map(static fn (string $sql): int => mb_substr_count($sql, '?'), $recorder->statements())))->toBeLessThanOrEqual(1001);
+});

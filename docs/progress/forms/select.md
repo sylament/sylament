@@ -1037,6 +1037,16 @@ record keys, not `int|string` — and the sentence exists so that a sweep does n
 restore the wider union and a later reviewer does not re-report the unkillable
 cast as a gap.
 
+### A composite label read runs one statement per batch, and a submission past `maxItems()` reads no label
+
+Since M7 · 7, `getOptionLabelsFromRelationship()` reads one statement per batch
+of `IdentifierConstraint::batch()`, and merges the answers into a map keyed by
+record key. That is the whole list for a single identifier, and 500 keys a
+statement for a composite one. A `multiple()` select whose submission holds more
+values than `maxItems()` allows now answers with the `Count` violation alone.
+The label read behind the membership check is skipped: the submission is refused
+either way, and that read is what a forged list would make expensive.
+
 ### A created option whose identifier is incomplete is refused before it is written
 
 The Doctrine `createOptionUsing` default mints the new record's key *after* it

@@ -15,6 +15,7 @@ use Sylament\Forms\Tests\Fixtures\Doctrine\Entity\PostSeal;
 use Sylament\Forms\Tests\Fixtures\Doctrine\Entity\PostTranslation;
 use Sylament\Forms\Tests\Fixtures\Doctrine\Entity\Tag;
 use Sylament\Forms\Tests\Fixtures\Doctrine\RecordingMiddleware;
+use Sylament\Schemas\Exceptions\ValidationException;
 use Sylament\Schemas\Schema;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
 
@@ -561,4 +562,42 @@ it('creates an option that carries every identifier field and hands back its key
     expect($createOptionUsing)->toBeInstanceOf(Closure::class)
         ->and($createOptionUsing instanceof Closure ? $createOptionUsing($select, $schema) : null)->toBe('2')
         ->and($entityManager->getRepository(PostSeal::class)->count([]))->toBe(1);
+});
+
+it('reads the labels of a composite selection larger than one batch in batches', function (): void {
+    $entityManager = $this::getContainer()->get(EntityManagerInterface::class);
+    [$post] = compositeSelectSeed($entityManager);
+
+    $select = Select::make('linkedTranslations')->relationship(titleAttribute: 'title')->multiple();
+    compositeSelectWire($select, $post);
+
+    $recorder = compositeSelectRecorder();
+    $recorder->reset();
+
+    $labels = $select->getOptionLabelsFromRelationship(['1~en', ...array_map(static fn (int $index): string => "9~l{$index}", range(1, 1200))]);
+
+    expect($labels)->toBe(['1~en' => 'English'])
+        ->and(array_map(static fn (string $sql): int => mb_substr_count($sql, '?'), $recorder->statements()))->toBe([1000, 1000, 402]);
+});
+
+it('answers a multiple select past maxItems() with the count alone, reading no label', function (): void {
+    $entityManager = $this::getContainer()->get(EntityManagerInterface::class);
+    [$post] = compositeSelectSeed($entityManager);
+
+    $select = Select::make('linkedTranslations')->relationship(titleAttribute: 'title')->multiple()->maxItems(2);
+    [$schema, $host] = compositeSelectWire($select, $post);
+    $schema->fill($post);
+    $host->data['linkedTranslations'] = ['1~en', '2~de', '9~xx'];
+
+    $recorder = compositeSelectRecorder();
+    $recorder->reset();
+
+    try {
+        $schema->getData();
+        test()->fail('Expected the selection to be refused.');
+    } catch (ValidationException $validationException) {
+        expect($validationException->getErrors())->toBe(['data.linkedTranslations' => ['This collection should contain 2 elements or less.']]);
+    }
+
+    expect($recorder->statements())->toBe([]);
 });

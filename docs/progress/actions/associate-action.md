@@ -112,6 +112,13 @@ is malformed, outside recordSelectOptionsQuery()'s scope, or already
 associated.` Anything asserting the leading sentence still passes; anything
 asserting the message whole does not.
 
+Since M7 · 7 the fetch runs one statement per batch of
+`IdentifierConstraint::batch()`: the whole submission for a single identifier,
+and 500 keys a statement for a composite one. A forged `multiple()` submission
+therefore costs time linear in its length. The batches' records merge in PHP,
+and the count check still compares them against every submitted key, so a
+duplicated or unknown key is refused as before.
+
 ### The title fast path projects the attribute
 
 When the table names a `recordTitleAttribute()`, the action has no custom title

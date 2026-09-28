@@ -200,12 +200,14 @@ it('bounds the item count with a Count constraint, including the empty selection
     $field->state(['a', 'b', 'c']);
     $full = $field->getValidationConstraints();
 
-    expect(array_map(fn (object $c): string => $c::class, $full))->toBe([Count::class, Choice::class])
+    expect(array_map(fn (object $c): string => $c::class, $full))->toBe([Count::class])
         ->and($validator->validate($field->getRawState(), $full))->toHaveCount(1);
 
     $field->state(['a', 'b']);
+    $within = $field->getValidationConstraints();
 
-    expect($validator->validate($field->getRawState(), $field->getValidationConstraints()))->toHaveCount(0)
+    expect(array_map(fn (object $c): string => $c::class, $within))->toBe([Count::class, Choice::class])
+        ->and($validator->validate($field->getRawState(), $within))->toHaveCount(0)
         ->and(wireMultiSelect(Select::make('tags')->multiple()->options(['a' => 'A']))->getValidationConstraints())->toBe([]);
 });
 

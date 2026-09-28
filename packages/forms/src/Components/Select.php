@@ -588,12 +588,18 @@ class Select extends Field implements Contracts\CanDisableOptions, Contracts\Has
             return [];
         }
 
+        $targetClass = $this->getRelationshipTarget()->targetClass;
         $query = $this->createScopedOptionQuery();
+        $records = [];
 
-        $query->andWhere(IdentifierConstraint::in($query, 'record', $this->getRelationshipTarget()->targetClass, $keys, 'sylament_values'));
+        foreach (IdentifierConstraint::batch($query->getEntityManager(), $targetClass, $keys) as $index => $batch) {
+            $batchQuery = $index === 0 ? $query : $this->createScopedOptionQuery();
+            $batchQuery->andWhere(IdentifierConstraint::in($batchQuery, 'record', $targetClass, $batch, 'sylament_values'));
 
-        /** @var list<object> $records */
-        $records = $query->getQuery()->getResult();
+            /** @var list<object> $found */
+            $found = $batchQuery->getQuery()->getResult();
+            array_push($records, ...$found);
+        }
 
         return $this->getOptionsFromRecords($records);
     }
@@ -1166,6 +1172,10 @@ class Select extends Field implements Contracts\CanDisableOptions, Contracts\Has
                     min: ($minItems === null) ? null : max(0, $minItems),
                     max: ($maxItems === null) ? null : max(0, $maxItems),
                 );
+            }
+
+            if ($maxItems !== null && is_array($rawState) && count($rawState) > max(0, $maxItems)) {
+                return $constraints;
             }
         }
 

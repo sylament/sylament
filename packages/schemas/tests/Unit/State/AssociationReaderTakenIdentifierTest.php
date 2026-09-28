@@ -39,6 +39,7 @@ use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\Ticket;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\Vault;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\Zone;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\EntityManagerFactory;
+use Sylament\Schemas\Tests\Fixtures\Doctrine\HiddenRedirectFilter;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\IdentifierGuardRig;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\RecordingMiddleware;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\Sku;
@@ -682,4 +683,51 @@ it('guards nothing without an entity manager', function (): void {
     $record->setCode(IdentifierGuardRig::SHORTLINK);
 
     expect(new AssociationReader()->findTakenIdentifiers($record))->toBe([]);
+});
+
+function hiddenRedirectManager(RecordingMiddleware $recorder): EntityManager
+{
+    $entityManager = EntityManagerFactory::create($recorder);
+    $hidden = new Redirect();
+    $hidden->setHost('example.com');
+    $hidden->setPath('/gone');
+    $hidden->setLabel('hidden');
+    EntityManagerFactory::seed($entityManager, $hidden);
+
+    $entityManager->getConfiguration()->addFilter('hidden_redirects', HiddenRedirectFilter::class);
+    $entityManager->getFilters()->enable('hidden_redirects');
+
+    return $entityManager;
+}
+
+function newRedirect(string $host, string $path): Redirect
+{
+    $redirect = new Redirect();
+    $redirect->setHost($host);
+    $redirect->setPath($path);
+    $redirect->setLabel('again');
+
+    return $redirect;
+}
+
+it('finds a taken key a SQL filter hides, restoring the filter after the one lookup', function (): void {
+    $recorder = new RecordingMiddleware();
+    $entityManager = hiddenRedirectManager($recorder);
+    $recorder->reset();
+
+    expect(new AssociationReader($entityManager)->findTakenIdentifiers(newRedirect('example.com', '/gone')))->toBe(['host' => 'This value is already used.'])
+        ->and($recorder->statements())->toHaveCount(1)
+        ->and($recorder->statements()[0])->not->toContain("label <> 'hidden'")
+        ->and($entityManager->getFilters()->isEnabled('hidden_redirects'))->toBeTrue()
+        ->and($entityManager->getRepository(Redirect::class)->findBy(['host' => 'example.com']))->toBe([]);
+});
+
+it('answers a free key under an enabled filter as free, in one lookup', function (): void {
+    $recorder = new RecordingMiddleware();
+    $entityManager = hiddenRedirectManager($recorder);
+    $recorder->reset();
+
+    expect(new AssociationReader($entityManager)->findTakenIdentifiers(newRedirect('example.com', '/free')))->toBe([])
+        ->and($recorder->statements())->toHaveCount(1)
+        ->and($entityManager->getFilters()->isEnabled('hidden_redirects'))->toBeTrue();
 });

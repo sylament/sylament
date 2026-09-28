@@ -525,7 +525,7 @@ the placement over every shape.
 
 ### What the taken-key probe cannot see
 
-Six limits, recorded rather than closed:
+Five limits, recorded rather than closed:
 
 - **A detached record reads as new.** A reader reads its own entity manager's
   unit of work and database, and `UnitOfWork::getEntityState()` cannot tell a
@@ -557,10 +557,13 @@ Six limits, recorded rather than closed:
   schema's reader to the manager that maps it, so both passes run there; what is
   left is a custom host that writes through that manager without binding its
   schema's reader. Unexecuted.
-- **A Doctrine SQL filter** that hides the holder hides it from `find()` too, so
-  such a create stays the unique-violation 500 it was. Unexecuted.
-- **Two requests creating one key at once** both pass the lookup and the second
-  meets the database's constraint: the probe is a read, not a lock. Unexecuted.
+- **Two requests creating one key at once** both pass the lookup, and the second
+  meets the database's constraint: the probe is a read, not a lock. Executed on
+  PostgreSQL 18 and MySQL 8, the second flush is a
+  `UniqueConstraintViolationException` that closes that request's entity
+  manager. Reads still work, and DoctrineBundle's reset replaces the closed
+  manager before the next request. This is recorded, not closed, as
+  `UniqueEntity` and Filament leave it too.
 - **The lookup compares keys as the database does**, so a `guid` key spelled in
   the other letter case is taken on PostgreSQL, whose `uuid` type compares
   case-insensitively, and free on SQLite, which stores the guid as `CHAR(36)` —
@@ -570,6 +573,25 @@ Six limits, recorded rather than closed:
   anyway. Executed on both platforms while the epic was reviewed, and unpinned.
 - **MySQL and MariaDB** are unexecuted: the rules ran on SQLite in every package
   suite and on PostgreSQL 18.4 in the demo.
+
+**A Doctrine SQL filter no longer hides the holder** (M7 · 7). A primary key is
+unique whatever a filter shows, so the probe's `find()` runs with every enabled
+filter suspended, and restores them in a `finally`.
+
+Before this, a soft-deleted or other-tenant row holding the key read as free,
+and the flush met the primary key: a `UniqueConstraintViolationException` and a
+closed entity manager. That was executed on PostgreSQL 18 and MySQL 8, for
+single and composite keys alike.
+
+The price is that a holder the filters hid is loaded into the identity map for
+the rest of that request, and its load listeners run. A create it refuses ends
+in a validation error before anything is flushed. With no filter enabled nothing
+changes, statement for statement.
+
+A lookup that loads nothing was also considered: an identity-map check, then a
+`SELECT 1` through `inColumns()`. It was rejected because it must decode the
+minted key again, so a type that cannot read its own printed form would read as
+free. It would also change the single-key statement.
 
 ### The record key is tables' semantics, moved onto the mapping
 

@@ -566,9 +566,40 @@ class AssociationReader
             return false;
         }
 
-        $holder = $entityManager->find($metadata->rootEntityName, array_combine($metadata->identifier, $values));
+        $holder = $this->findWithFiltersSuspended($entityManager, $metadata->rootEntityName, array_combine($metadata->identifier, $values));
 
         return $holder !== null && $holder !== $record;
+    }
+
+    /**
+     * `find()` past every enabled SQL filter — a primary key is unique whatever
+     * a filter shows — restoring each filter afterwards, even when the lookup
+     * throws. A holder the filters hid is loaded into the identity map for the
+     * rest of the request, and its load listeners run.
+     *
+     * @param class-string         $class
+     * @param array<string, mixed> $identifier
+     */
+    private function findWithFiltersSuspended(EntityManagerInterface $entityManager, string $class, array $identifier): ?object
+    {
+        if (! $entityManager->hasFilters()) {
+            return $entityManager->find($class, $identifier);
+        }
+
+        $filters = $entityManager->getFilters();
+        $suspended = array_keys($filters->getEnabledFilters());
+
+        foreach ($suspended as $name) {
+            $filters->suspend($name);
+        }
+
+        try {
+            return $entityManager->find($class, $identifier);
+        } finally {
+            foreach ($suspended as $name) {
+                $filters->restore($name);
+            }
+        }
     }
 
     /**

@@ -303,8 +303,9 @@ and already held, by a stored row, by a record the
 identity map holds, or by another new record the same save would insert, is
 refused with *"This value is already used."*: under the first identifier field
 that is no association, so the message sits on a field the user can change;
-nothing is written, and the entity manager stays open. Before
-[M7 · 6](../roadmap.md#m7--composite-identifiers) it was a
+nothing is written, and the entity manager stays open, short of a concurrent
+insert of the same key ([recorded](association-reader.md#what-the-taken-key-probe-cannot-see)).
+Before [M7 · 6](../roadmap.md#m7--composite-identifiers) it was a
 `UniqueConstraintViolationException` that closed the manager, or Doctrine's
 `EntityIdentityCollisionException` with the new record still scheduled.
 

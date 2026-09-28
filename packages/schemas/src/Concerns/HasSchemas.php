@@ -491,7 +491,7 @@ trait HasSchemas
         $violations->addAll($this->schemaStateValidator->validate($record));
 
         if (count($violations) === 0) {
-            $violations = $this->schemaStateValidator->validate($record, $this->getIdentifierGuard($reader->findBlankAssignedIdentifiers($record)));
+            $violations = $this->schemaStateValidator->validate($record, $this->getIdentifierGuard($this->getMappedBlankIdentifier($schema, $reader->findBlankAssignedIdentifiers($record))));
         }
 
         if (count($violations) === 0) {
@@ -534,7 +534,9 @@ trait HasSchemas
      * record's own violations are. The changed-key rule is read before those
      * run, since it puts the old key back; the blank-key rule and then the
      * taken-key rule only once they pass, so it binds nothing the record's own
-     * constraints refuse.
+     * constraints refuse. The blank-key rule refuses only under a key field a
+     * component of the schema maps, the first such candidate; a blank key field
+     * no component maps is left to the create that persists the record.
      *
      * @param array<string, string> $refusals the message, keyed by the record property path it belongs to
      */
@@ -545,6 +547,25 @@ trait HasSchemas
                 $context->buildViolation($message)->atPath($path)->addViolation();
             }
         });
+    }
+
+    /**
+     * The first blank-key candidate a component of the schema maps, or none.
+     *
+     * @param array<string, string> $candidates the refusal, keyed by each candidate field in the order the rule picks from
+     *
+     * @return array<string, string>
+     */
+    private function getMappedBlankIdentifier(Schema $schema, array $candidates): array
+    {
+        if ($candidates === []) {
+            return [];
+        }
+
+        $translator = $schema->getRecordViolationPathTranslator();
+        $field = array_find_key($candidates, static fn (string $message, string $field): bool => $translator->translate($field) !== null);
+
+        return $field === null ? [] : [$field => $candidates[$field]];
     }
 
     /**

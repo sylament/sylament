@@ -332,7 +332,7 @@ it('refuses at the schema path a key a hook moves on a related record the form n
         ->and($binder->getTitle())->toBe('Retitled');
 });
 
-it('refuses a new record whose composite key the schema never wrote, before any lookup', function (): void {
+it('leaves a blank key no component maps to the create seam, running no lookup', function (): void {
     $recorder = new RecordingMiddleware();
     $entityManager = EntityManagerFactory::create($recorder);
 
@@ -340,7 +340,7 @@ it('refuses a new record whose composite key the schema never wrote, before any 
     $host->data['label'] = 'Orphan';
     $recorder->reset();
 
-    expect(identifierGuardErrors($schema))->toBe(['data' => ['This value should not be blank.']])
+    expect(identifierGuardErrors($schema))->toBe([])
         ->and($recorder->statements())->toBe([]);
 });
 
@@ -353,6 +353,26 @@ it('files the blank-key refusal under the key field the schema maps', function (
     $host->data['label'] = 'Spaced';
 
     expect(identifierGuardErrors($schema))->toBe(['data.path' => ['This value should not be blank.']]);
+});
+
+it('files the refusal under the first blank key field a component maps, past one it does not', function (): void {
+    $entityManager = EntityManagerFactory::create();
+
+    [$schema, $host] = identifierGuardSchema(new Redirect(), $entityManager, null, StateField::make('path'), StateField::make('label'));
+    $host->data['path'] = '   ';
+    $host->data['label'] = 'Hostless';
+
+    expect(identifierGuardErrors($schema))->toBe(['data.path' => ['This value should not be blank.']]);
+});
+
+it('files nothing under a filled key field the schema maps when the blank one is unmapped', function (): void {
+    $entityManager = EntityManagerFactory::create();
+
+    [$schema, $host] = identifierGuardSchema(new Redirect(), $entityManager, null, StateField::make('host'), StateField::make('label'));
+    $host->data['host'] = 'example.com';
+    $host->data['label'] = 'Pathless';
+
+    expect(identifierGuardErrors($schema))->toBe([]);
 });
 
 it('leaves a blank single scalar key to the application, as before', function (): void {

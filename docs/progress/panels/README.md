@@ -1273,6 +1273,26 @@ parent's collection: it stays there for the rest of the request, which is
 harmless, since `create()` lets the `ValidationException` out and the page
 flushes nothing after it.
 
+Since M7 · 7 the default `handleRecordCreation()` also refuses by name a record
+whose assigned key is still blank after `persist()`. It asks
+[`AssociationReader::hasBlankAssignedIdentifier()`](../schemas/association-reader.md#a-blank-assigned-identifier-is-read-after-persist-by-the-two-create-seams)
+on the page's own entity manager, between `persist()` and `flush()`, so every
+`prePersist` listener has run. What it catches is a key field the form leaves
+out; a blank one the form maps is already a field error
+([the rule](../schemas/can-be-validated.md#a-blank-assigned-key-is-refused-before-anything-is-written)).
+It detaches the record from the manager and throws a `LogicException`: *The
+resource page [App\Admin\CreateEdition] built a [App\Entity\Edition] whose
+identifier is still blank after persist(), so it was not saved. Give every
+identifier field a form field — a Hidden one for a value the user should not type
+— or fill it in a prePersist listener, or in handleRecordCreation() before calling
+the parent.* Nothing is flushed. An override that sets the key before calling the
+parent passes, since the check reads the record the parent persists. Under a
+many-to-many parent the refused record stays in the parent's collection, as with
+the mapping's own refusal above, and for the same reason it is harmless: nothing
+flushes after the exception. Before M7 · 7 the row was written with its blank key
+half and the redirect failed to mint its key. Pinned by
+[`CompositeRecordPagesTest`](../../../packages/panels/tests/Integration/Resources/Pages/CompositeRecordPagesTest.php).
+
 **The template.** `$template` points at the shared
 [form variant](form-actions.md), `partials/Page/form.html.twig`, which fills the
 chrome's `content` block with a `<form class="sy-pa-form">` bound by

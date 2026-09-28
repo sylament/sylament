@@ -161,16 +161,22 @@ class CreateAction extends Action
      * onto the same association; the schema is bound to that record for the
      * mapping alone, and a many-to-many owner's collection gives the record back
      * when the mapping refuses it, since nothing else takes it out again. The
-     * record check reads the manager the flush writes through.
+     * record check reads the manager the flush writes through. A record whose
+     * assigned key is still blank once `persist()` has run every prePersist
+     * listener is refused by name before the flush, handed back by a
+     * many-to-many owner and taken back out of the unit of work.
      *
      * @param array<string, mixed> $data
      * @param class-string $recordClass
+     *
+     * @throws LogicException when the persisted record's assigned key is still blank
      */
     private function createRecord(array $data, Schema $schema, string $recordClass): object
     {
         $manager = $this->getEntityManagerForRecord($recordClass);
+        $recordReader = new AssociationReader($manager);
 
-        $schema->setAssociationReader(new AssociationReader($manager));
+        $schema->setAssociationReader($recordReader);
 
         $relationship = $this->getRelationship();
 
@@ -202,6 +208,21 @@ class CreateAction extends Action
         }
 
         $manager->persist($record);
+
+        if ($recordReader->hasBlankAssignedIdentifier($record)) {
+            if ($relationship instanceof Relationship && $this->getAssociationReader()->describeRelationship($relationship)->isManyToMany) {
+                $this->getAssociationReader()->detach($relationship, $record);
+            }
+
+            $manager->detach($record);
+
+            throw new LogicException(sprintf(
+                "The [%s] action built a [%s] whose identifier is still blank after persist(), so it was not saved. Give every identifier field a field in the action's schema() — a Hidden one for a value the user should not type — or fill it in a prePersist listener.",
+                $this->getName(),
+                $record::class,
+            ));
+        }
+
         $manager->flush();
 
         return $record;

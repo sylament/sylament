@@ -68,4 +68,16 @@ class RelationshipCreateHost implements InteractsWithActions, InteractsWithSchem
                 ActionSchemaField::make('label'),
             ]);
     }
+
+    /**
+     * A modal mapping no key field, so the seat's code is whatever the class
+     * or a listener leaves in it.
+     */
+    public function createLabelledSeatAction(): Action
+    {
+        return CreateAction::make('createLabelledSeat')
+            ->schema([
+                ActionSchemaField::make('label'),
+            ]);
+    }
 }

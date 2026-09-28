@@ -9,6 +9,7 @@ use Sylament\Actions\Concerns\HasActions;
 use Sylament\Actions\Contracts\InteractsWithActions;
 use Sylament\Actions\CreateAction;
 use Sylament\Actions\Tests\Fixtures\Doctrine\Entity\AssignedNote;
+use Sylament\Actions\Tests\Fixtures\Doctrine\Entity\Redirect;
 use Sylament\Actions\Tests\Fixtures\Doctrine\Entity\Spice;
 use Sylament\Schemas\Concerns\HasSchemas;
 use Sylament\Schemas\Contracts\InteractsWithSchemas;
@@ -17,7 +18,8 @@ use Symfony\UX\LiveComponent\DefaultActionTrait;
 
 /**
  * The plain create over an assigned key: no relationship, no table, the record
- * class named on each action — so the key the modal types is the whole key.
+ * class named on each action — so the key the modal types is the whole key, and
+ * a modal typing none of it leaves the whole key to the class.
  */
 #[AsLiveComponent(name: 'LarderCreateHost', template: '@ActionsFixtures/components/LarderCreateHost.html.twig')]
 class LarderCreateHost implements InteractsWithActions, InteractsWithSchemas
@@ -63,6 +65,18 @@ class LarderCreateHost implements InteractsWithActions, InteractsWithSchemas
             ->schema([
                 ActionSchemaField::make('name'),
                 ActionSchemaField::make('label'),
+            ]);
+    }
+
+    /**
+     * A scalar pair whose modal maps neither key field.
+     */
+    public function createRedirectAction(): Action
+    {
+        return CreateAction::make('createRedirect')
+            ->recordClass(Redirect::class)
+            ->schema([
+                ActionSchemaField::make('target'),
             ]);
     }
 }

@@ -339,25 +339,59 @@ declaration becomes Symfony's own.
 
 ### A blank assigned key is refused before anything is written
 
-Since M7 · 7 the record check refuses a **new** record whose assigned key still
-has a blank component, with *This value should not be blank.* A blank component
-is an empty or whitespace-only string, or an identifier association left unset.
-The refusal comes after the record's own constraints pass, before the taken-key
-probe runs, and before anything is written.
+Since M7 · 7 a **new** record whose assigned key still has a blank component is
+refused before anything is written. A blank component is an empty or
+whitespace-only string, or an identifier association left unset or pointing at
+a record whose own key is incomplete. Who refuses it depends on whether the form
+maps the blank field.
 
-It files under the first key field holding a blank string, else under the first
-association left unset. That is the key field itself when a component maps it,
-including one declared `dehydrated(false)` whose typed value never reached the
-record. When no component maps that field, as with a key left out of the form,
-it files under the schema's own state path.
+**A blank key field the form maps is a field error.** The record check refuses it
+inside `getData()` with *This value should not be blank.*, after the record's own
+constraints pass and before the taken-key probe runs. It files under the first
+blank key field a component maps: the key fields holding a blank string first,
+then the identifier associations. A key field declared `dehydrated(false)` counts
+as mapped, since a component still maps it, so its typed value never reaching the
+record is refused under it. A blank field the form leaves out is skipped on the
+way to one it maps, and when no component maps any of them `getData()` refuses
+nothing and hands the record on.
 
-Before, such a record was inserted with its blank key. The redirect after the
-save could not mint its key, and every page listing the row failed with it.
+**A key field the form leaves out is the create seam's.** The user cannot fix
+it, so it is a developer error, refused by name with an exception that says how to
+fix the form:
 
-The rule asks `AssociationReader::hasIncompleteAssignedIdentifier()`, so it
-skips what that skips: an identifier filled by a generator, a `prePersist`
-callback or an entity listener, and a single scalar identifier, which stays the
-application's `required()` to guard.
+- [`CreateAction`](../actions/create-action.md#a-key-the-modal-leaves-blank-is-refused-by-name-after-persist)
+  and the resource create page's default
+  [`handleRecordCreation()`](../panels/README.md#createrecord) refuse it **after
+  `persist()`**, so every `prePersist` callback, entity listener and global
+  event-manager listener has run, and **before `flush()`**. The record is taken
+  back out of the unit of work.
+- `Select`'s `createOption` default refuses it **before `persist()`**, with the
+  listener residual [recorded on the reader](association-reader.md#an-incomplete-assigned-identifier-is-the-question-the-create-paths-ask).
+- [`ReplicateAction`](../actions/replicate-action.md) refuses it after
+  `beforeReplicaSaved()`.
+
+M7 · 7's first form of this rule refused inside the mapping for every blank key
+field, filing an unmapped one under the schema's own state path. That pre-empted
+every place a developer fills a key the form does not show:
+`beforeReplicaSaved()`, an overridden `handleRecordCreation()` that sets a key
+half before calling the parent, and a global `prePersist` listener, which had no
+escape at all. It also made `Select`'s own by-name refusal unreachable, and turned
+a single derived identity with its association unset into *This value should not
+be blank.* where the create used to fail in Doctrine's `persist()` and the
+replicate refused by name.
+
+The seams read after `persist()` because that is the one moment nothing else can
+still fill the key. They look for a blank string only, through
+`AssociationReader::hasBlankAssignedIdentifier()`: a null component never reaches
+them, since Doctrine's `persist()` already refuses a missing assigned id by name.
+
+Before M7 · 7, such a record was inserted with its blank key. The redirect after
+the save could not mint its key, and every page listing the row failed with it.
+
+The rule skips a generated identifier and a single scalar one, which stays the
+application's `required()` to guard. The in-mapping half also skips a key a
+`prePersist` callback or a mapped entity listener of the class fills, as
+`AssociationReader::hasIncompleteAssignedIdentifier()` does.
 
 ### A changed key is refused and put back, not handed to Doctrine
 

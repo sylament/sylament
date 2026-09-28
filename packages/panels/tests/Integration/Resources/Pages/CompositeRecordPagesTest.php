@@ -10,6 +10,7 @@ use Sylament\Panels\Tests\Fixtures\Doctrine\Entity\Imprint;
 use Sylament\Panels\Tests\Fixtures\Doctrine\EntityManagerFactory;
 use Sylament\Panels\Tests\Fixtures\Doctrine\RecordingMiddleware;
 use Sylament\Panels\Tests\Fixtures\Resources\Pages\CreateImprint;
+use Sylament\Panels\Tests\Fixtures\Resources\Pages\CreateYearlessImprint;
 use Sylament\Panels\Tests\Fixtures\Resources\Pages\EditEdition;
 use Sylament\Panels\Tests\Fixtures\Resources\Pages\EditImprint;
 use Sylament\Panels\Tests\Fixtures\Resources\Pages\ListImprints;
@@ -257,6 +258,29 @@ it('redirects a created composite record to its escaped edit url', function (): 
         ->and((string) $component->response()->headers->get('Location'))
         ->toBe('http://localhost/key/imprints/new=2Ehost~20=2F26/edit')
         ->and($entityManager->find(Imprint::class, ['house' => 'new.host', 'year' => '20/26'])?->getLabel())->toBe('Made');
+});
+
+it('refuses by name a composite create whose form leaves a key half out, writing nothing', function (): void {
+    [$client, $entityManager] = compositeRecordClient();
+
+    compositeRecordPushPanelRequest();
+
+    $component = $this->createLiveComponent(CreateYearlessImprint::class, ['panelId' => 'key'], client: $client);
+    $component->set('data', ['house' => 'new.host', 'label' => 'Yearless']);
+
+    $recorder = compositeRecordRecorder();
+
+    expect(fn (): mixed => $component->call('create'))->toThrow(new LogicException(sprintf(
+        'The resource page [%s] built a [%s] whose identifier is still blank after persist(), so it was not saved. Give every identifier field a form field — a Hidden one for a value the user should not type — or fill it in a prePersist listener, or in handleRecordCreation() before calling the parent.',
+        CreateYearlessImprint::class,
+        Imprint::class,
+    )));
+
+    $entityManager->flush();
+
+    expect(compositeRecordWrites($recorder))->toBe([])
+        ->and($entityManager->isOpen())->toBeTrue()
+        ->and($entityManager->getRepository(Imprint::class)->count([]))->toBe(3);
 });
 
 it('mounts a row view modal and a row delete on a composite list through the table arm', function (): void {

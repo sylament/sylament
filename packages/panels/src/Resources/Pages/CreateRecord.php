@@ -11,6 +11,7 @@ use Sylament\Actions\ActionGroup;
 use Sylament\Notifications\Notification;
 use Sylament\Panels\Pages\Concerns\HasUnsavedDataChangesAlert;
 use Sylament\Schemas\Schema;
+use Sylament\Schemas\State\AssociationReader;
 use Sylament\Support\Enums\Operation;
 use Sylament\Support\Exceptions\Halt;
 use Symfony\Component\HttpFoundation\RedirectResponse;
@@ -234,7 +235,11 @@ abstract class CreateRecord extends Page
     /**
      * A record created under a parent joins it in the same flush — an
      * association the mapping refuses to leave empty would otherwise fail the
-     * write rather than the form.
+     * write rather than the form. A record whose assigned key is still blank
+     * once `persist()` has run every prePersist listener is refused by name
+     * before the flush and taken back out of the unit of work.
+     *
+     * @throws LogicException when the persisted record's assigned key is still blank
      */
     protected function handleRecordCreation(object $record): object
     {
@@ -248,6 +253,17 @@ abstract class CreateRecord extends Page
         }
 
         $entityManager->persist($record);
+
+        if (new AssociationReader($entityManager)->hasBlankAssignedIdentifier($record)) {
+            $entityManager->detach($record);
+
+            throw new LogicException(sprintf(
+                'The resource page [%s] built a [%s] whose identifier is still blank after persist(), so it was not saved. Give every identifier field a form field — a Hidden one for a value the user should not type — or fill it in a prePersist listener, or in handleRecordCreation() before calling the parent.',
+                static::class,
+                $record::class,
+            ));
+        }
+
         $entityManager->flush();
 
         return $record;

@@ -146,6 +146,29 @@ form for an association the mapping names. Pinned by
 and, on a nested create page, by panels'
 [`CreateRecordTakenKeyTest`](../../../packages/panels/tests/Integration/Resources/Pages/CreateRecordTakenKeyTest.php).
 
+### A key the modal leaves blank is refused by name after `persist()`
+
+Since M7 · 7 `createRecord()` asks
+[`AssociationReader::hasBlankAssignedIdentifier()`](../schemas/association-reader.md#a-blank-assigned-identifier-is-read-after-persist-by-the-two-create-seams)
+between `persist()` and `flush()`, in both arms, on a reader bound to the manager
+the flush writes through. A record whose assigned key still holds a blank string
+there has a key field the modal does not map, since the record check refuses a
+mapped one as a field error
+([the rule](../schemas/can-be-validated.md#a-blank-assigned-key-is-refused-before-anything-is-written)),
+and every `prePersist` callback and listener has had its chance to fill it. So it
+is a developer error, and the action throws a `LogicException`: *The [create]
+action built a [App\Entity\Seat] whose identifier is still blank after
+persist(), so it was not saved. Give every identifier field a field in the
+action's schema() — a Hidden one for a value the user should not type — or fill
+it in a prePersist listener.* Nothing is flushed. Before the throw, a
+many-to-many owner gives the record back through the reader's `detach()`, as the
+mapping's own refusal already does, and the record is detached from the manager,
+so a later flush in the same request does not insert it. Before M7 · 7 the row
+was written with its blank key half. Pinned by
+[`CreateActionBlankKeyTest`](../../../packages/actions/tests/Integration/CreateActionBlankKeyTest.php),
+which also pins that a global `prePersist` listener filling the key lets the
+create save.
+
 ## Divergences
 
 Deliberate deviations from Filament — permanent, and the reason they hold.

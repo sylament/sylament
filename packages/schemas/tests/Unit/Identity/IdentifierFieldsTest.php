@@ -23,8 +23,8 @@ use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\Vault;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\Zone;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\EntityManagerFactory;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\IdentityRig;
-use Sylament\Schemas\Tests\Fixtures\Doctrine\RecordingMiddleware;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\Sku;
+use Sylament\Testing\Doctrine\RecordingMiddleware;
 use Symfony\Component\Uid\Uuid;
 
 it('reads the identifier fields in declaration order, typing an association by its target', function (): void {

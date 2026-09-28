@@ -22,7 +22,7 @@ use Sylament\Tables\Tests\Fixtures\Doctrine\Entity\Song;
 use Sylament\Tables\Tests\Fixtures\Doctrine\Entity\Venue;
 use Sylament\Tables\Tests\Fixtures\Doctrine\EntityManagerFactory;
 use Sylament\Tables\Tests\Fixtures\Doctrine\Handle;
-use Sylament\Tables\Tests\Fixtures\Doctrine\RecordingMiddleware;
+use Sylament\Testing\Doctrine\RecordingMiddleware;
 
 /**
  * Radiohead with two songs, Adele with none, Björk with one — paged two at a

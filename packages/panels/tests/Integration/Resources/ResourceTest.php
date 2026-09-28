@@ -17,7 +17,6 @@ use Sylament\Panels\Tests\Fixtures\Doctrine\Entity\Edition;
 use Sylament\Panels\Tests\Fixtures\Doctrine\Entity\Imprint;
 use Sylament\Panels\Tests\Fixtures\Doctrine\Entity\Stamp;
 use Sylament\Panels\Tests\Fixtures\Doctrine\EntityManagerFactory;
-use Sylament\Panels\Tests\Fixtures\Doctrine\RecordingMiddleware;
 use Sylament\Panels\Tests\Fixtures\Resources\ArticleResource;
 use Sylament\Panels\Tests\Fixtures\Resources\CatalogueResource;
 use Sylament\Panels\Tests\Fixtures\Resources\ChapterResource;
@@ -29,6 +28,7 @@ use Sylament\Panels\Tests\Fixtures\Resources\StampResource;
 use Sylament\Panels\Tests\Fixtures\Resources\VerseResource;
 use Sylament\Schemas\State\AssociationReader;
 use Sylament\Schemas\State\PropertyAccessor;
+use Sylament\Testing\Doctrine\RecordingMiddleware;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 
 function panelsArticleResource(): ArticleResource

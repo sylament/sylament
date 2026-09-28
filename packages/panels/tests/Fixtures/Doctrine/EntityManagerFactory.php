@@ -4,37 +4,20 @@ declare(strict_types=1);
 
 namespace Sylament\Panels\Tests\Fixtures\Doctrine;
 
-use Doctrine\DBAL\DriverManager;
-use Doctrine\DBAL\Types\Type;
 use Doctrine\ORM\EntityManager;
-use Doctrine\ORM\ORMSetup;
-use Doctrine\ORM\Tools\SchemaTool;
+use Sylament\Testing\Doctrine\RecordingMiddleware;
+use Sylament\Testing\Doctrine\TestEntityManagers;
 
 final class EntityManagerFactory
 {
     /**
-     * An in-memory SQLite entity manager with the fixture schema already built,
-     * counting every statement it runs when given a recorder.
+     * The fixture schema on the test database, which is in-memory SQLite unless
+     * SYLAMENT_TEST_DATABASE_URL names a server, counting every statement it runs
+     * when given a recorder.
      */
     public static function create(?RecordingMiddleware $recorder = null): EntityManager
     {
-        if (! Type::hasType(StampCodeType::NAME)) {
-            Type::addType(StampCodeType::NAME, StampCodeType::class);
-        }
-
-        $config = ORMSetup::createAttributeMetadataConfig(paths: [__DIR__ . '/Entity'], isDevMode: true);
-        $config->enableNativeLazyObjects(true);
-
-        if ($recorder instanceof RecordingMiddleware) {
-            $config->setMiddlewares([$recorder]);
-        }
-
-        $connection = DriverManager::getConnection(['driver' => 'pdo_sqlite', 'memory' => true], $config);
-        $entityManager = new EntityManager($connection, $config);
-
-        new SchemaTool($entityManager)->createSchema($entityManager->getMetadataFactory()->getAllMetadata());
-
-        return $entityManager;
+        return TestEntityManagers::create('panels', [__DIR__ . '/Entity'], [StampCodeType::NAME => StampCodeType::class], $recorder);
     }
 
     /**

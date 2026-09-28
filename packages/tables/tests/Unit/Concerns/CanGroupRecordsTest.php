@@ -11,7 +11,7 @@ use Sylament\Tables\Tests\Fixtures\Concerns\TableHost;
 use Sylament\Tables\Tests\Fixtures\Doctrine\Entity\Artist;
 use Sylament\Tables\Tests\Fixtures\Doctrine\Entity\Song;
 use Sylament\Tables\Tests\Fixtures\Doctrine\EntityManagerFactory;
-use Sylament\Tables\Tests\Fixtures\Doctrine\RecordingMiddleware;
+use Sylament\Testing\Doctrine\RecordingMiddleware;
 
 /*
  * The host half of grouping: which group the property resolves to, what the

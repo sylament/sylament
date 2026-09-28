@@ -12,6 +12,7 @@ parameters:
         - packages/schemas/src
         - packages/support/src
         - packages/tables/src
+        - packages/testing/src
         - packages/widgets/src
 
     ignoreErrors:

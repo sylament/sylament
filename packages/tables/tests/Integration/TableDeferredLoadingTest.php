@@ -13,7 +13,7 @@ use Sylament\Tables\Table;
 use Sylament\Tables\Tests\Fixtures\Concerns\TableHost;
 use Sylament\Tables\Tests\Fixtures\Doctrine\Entity\Song;
 use Sylament\Tables\Tests\Fixtures\Doctrine\EntityManagerFactory;
-use Sylament\Tables\Tests\Fixtures\Doctrine\RecordingMiddleware;
+use Sylament\Testing\Doctrine\RecordingMiddleware;
 use Symfony\Component\DomCrawler\Crawler;
 
 use function Sylament\Tables\Tests\browseTo;

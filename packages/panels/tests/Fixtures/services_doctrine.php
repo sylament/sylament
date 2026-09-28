@@ -6,7 +6,7 @@ use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\Persistence\ManagerRegistry;
 use Sylament\Panels\Tests\Fixtures\Doctrine\EntityManagerFactory;
 use Sylament\Panels\Tests\Fixtures\Doctrine\FixtureManagerRegistry;
-use Sylament\Panels\Tests\Fixtures\Doctrine\RecordingMiddleware;
+use Sylament\Testing\Doctrine\RecordingMiddleware;
 use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
 
 use function Symfony\Component\DependencyInjection\Loader\Configurator\service;

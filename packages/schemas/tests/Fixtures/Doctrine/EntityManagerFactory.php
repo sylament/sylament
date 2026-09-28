@@ -8,31 +8,40 @@ use Doctrine\DBAL\DriverManager;
 use Doctrine\DBAL\Types\Type;
 use Doctrine\ORM\EntityManager;
 use Doctrine\ORM\ORMSetup;
-use Doctrine\ORM\Tools\SchemaTool;
+use Sylament\Testing\Doctrine\RecordingMiddleware;
+use Sylament\Testing\Doctrine\TestEntityManagers;
 
 final class EntityManagerFactory
 {
     /**
-     * An in-memory SQLite entity manager with the fixture schema already built,
-     * counting every statement it runs when given a recorder.
+     * The four custom types the fixture mapping names.
+     *
+     * @var array<string, class-string<Type>>
+     */
+    private const array TYPES = [
+        SkuType::NAME => SkuType::class,
+        CipherType::NAME => CipherType::class,
+        BinaryUuidType::NAME => BinaryUuidType::class,
+        CaselessType::NAME => CaselessType::class,
+    ];
+
+    /**
+     * The fixture schema on the test database, which is in-memory SQLite unless
+     * SYLAMENT_TEST_DATABASE_URL names a server, counting every statement it runs
+     * when given a recorder.
      */
     public static function create(?RecordingMiddleware $recorder = null): EntityManager
     {
-        self::registerTypes();
+        return TestEntityManagers::create('schemas', [__DIR__ . '/Entity'], self::TYPES, $recorder);
+    }
 
-        $config = ORMSetup::createAttributeMetadataConfig(paths: [__DIR__ . '/Entity'], isDevMode: true);
-        $config->enableNativeLazyObjects(true);
-
-        if ($recorder instanceof RecordingMiddleware) {
-            $config->setMiddlewares([$recorder]);
-        }
-
-        $connection = DriverManager::getConnection(['driver' => 'pdo_sqlite', 'memory' => true], $config);
-        $entityManager = new EntityManager($connection, $config);
-
-        new SchemaTool($entityManager)->createSchema($entityManager->getMetadataFactory()->getAllMetadata());
-
-        return $entityManager;
+    /**
+     * Always in-memory SQLite, whatever the environment names: the non-native side
+     * of a test that compares platforms.
+     */
+    public static function createForSqlite(?RecordingMiddleware $recorder = null): EntityManager
+    {
+        return TestEntityManagers::createSqlite('schemas', [__DIR__ . '/Entity'], self::TYPES, $recorder);
     }
 
     /**
@@ -73,25 +82,15 @@ final class EntityManagerFactory
     }
 
     /**
-     * The four custom types the fixture mapping names, registered once per
-     * process: Doctrine's registry is global, so a second call would throw.
+     * Registers the custom types once per process for createForPostgres(), which builds
+     * its manager itself: Doctrine's registry is global, so a second call would throw.
      */
     private static function registerTypes(): void
     {
-        if (!Type::hasType(SkuType::NAME)) {
-            Type::addType(SkuType::NAME, SkuType::class);
-        }
-
-        if (!Type::hasType(CipherType::NAME)) {
-            Type::addType(CipherType::NAME, CipherType::class);
-        }
-
-        if (!Type::hasType(BinaryUuidType::NAME)) {
-            Type::addType(BinaryUuidType::NAME, BinaryUuidType::class);
-        }
-
-        if (!Type::hasType(CaselessType::NAME)) {
-            Type::addType(CaselessType::NAME, CaselessType::class);
+        foreach (self::TYPES as $name => $class) {
+            if (!Type::hasType($name)) {
+                Type::addType($name, $class);
+            }
         }
     }
 }

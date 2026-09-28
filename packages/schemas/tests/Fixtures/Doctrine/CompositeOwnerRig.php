@@ -30,6 +30,7 @@ use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\StrongboxSeal;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\Tag;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\Vault;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\Zone;
+use Sylament\Testing\Doctrine\RecordingMiddleware;
 use Symfony\Component\Uid\Uuid;
 
 /**

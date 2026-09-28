@@ -16,8 +16,8 @@ use Sylament\Forms\Tests\Fixtures\Doctrine\Entity\CompositePair;
 use Sylament\Forms\Tests\Fixtures\Doctrine\Entity\Post;
 use Sylament\Forms\Tests\Fixtures\Doctrine\Entity\PostTranslation;
 use Sylament\Forms\Tests\Fixtures\Doctrine\Entity\TranslationMark;
-use Sylament\Forms\Tests\Fixtures\Doctrine\RecordingMiddleware;
 use Sylament\Schemas\Schema;
+use Sylament\Testing\Doctrine\RecordingMiddleware;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
 
 /*

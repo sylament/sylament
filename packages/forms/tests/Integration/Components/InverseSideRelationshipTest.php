@@ -14,8 +14,8 @@ use Sylament\Forms\Tests\Fixtures\Doctrine\Entity\Leaflet;
 use Sylament\Forms\Tests\Fixtures\Doctrine\Entity\Post;
 use Sylament\Forms\Tests\Fixtures\Doctrine\Entity\Sticker;
 use Sylament\Forms\Tests\Fixtures\Doctrine\Entity\Tag;
-use Sylament\Forms\Tests\Fixtures\Doctrine\RecordingMiddleware;
 use Sylament\Schemas\Schema;
+use Sylament\Testing\Doctrine\RecordingMiddleware;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
 
 /*

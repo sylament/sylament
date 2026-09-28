@@ -21,9 +21,9 @@ use Sylament\Tables\Tests\Fixtures\Doctrine\Entity\Song as DoctrineSong;
 use Sylament\Tables\Tests\Fixtures\Doctrine\Entity\Venue;
 use Sylament\Tables\Tests\Fixtures\Doctrine\EntityManagerFactory;
 use Sylament\Tables\Tests\Fixtures\Doctrine\Handle;
-use Sylament\Tables\Tests\Fixtures\Doctrine\RecordingMiddleware;
 use Sylament\Tables\Tests\Fixtures\Records\Artist;
 use Sylament\Tables\Tests\Fixtures\Records\Song;
+use Sylament\Testing\Doctrine\RecordingMiddleware;
 
 function sevenSongs(): EntityManager
 {

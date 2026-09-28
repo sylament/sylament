@@ -25,8 +25,8 @@ use Sylament\Tables\Tests\Fixtures\Doctrine\Entity\Song;
 use Sylament\Tables\Tests\Fixtures\Doctrine\Entity\Venue;
 use Sylament\Tables\Tests\Fixtures\Doctrine\EntityManagerFactory;
 use Sylament\Tables\Tests\Fixtures\Doctrine\Handle;
-use Sylament\Tables\Tests\Fixtures\Doctrine\RecordingMiddleware;
 use Sylament\Tables\Tests\Fixtures\Twig\Components\SummarySongsTable;
+use Sylament\Testing\Doctrine\RecordingMiddleware;
 use Symfony\Component\DomCrawler\Crawler;
 
 use function Sylament\Tables\Tests\renderToHtml;

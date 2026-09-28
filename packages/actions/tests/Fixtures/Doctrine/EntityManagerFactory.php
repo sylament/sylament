@@ -4,32 +4,20 @@ declare(strict_types=1);
 
 namespace Sylament\Actions\Tests\Fixtures\Doctrine;
 
-use Doctrine\DBAL\DriverManager;
 use Doctrine\ORM\EntityManager;
-use Doctrine\ORM\ORMSetup;
-use Doctrine\ORM\Tools\SchemaTool;
+use Sylament\Testing\Doctrine\RecordingMiddleware;
+use Sylament\Testing\Doctrine\TestEntityManagers;
 
 final class EntityManagerFactory
 {
     /**
-     * An in-memory SQLite entity manager with the fixture schema already built,
-     * counting every statement it runs when given a recorder.
+     * The fixture schema on the test database, which is in-memory SQLite unless
+     * SYLAMENT_TEST_DATABASE_URL names a server, counting every statement it runs
+     * when given a recorder.
      */
     public static function create(?RecordingMiddleware $recorder = null): EntityManager
     {
-        $config = ORMSetup::createAttributeMetadataConfig(paths: [__DIR__ . '/Entity'], isDevMode: true);
-        $config->enableNativeLazyObjects(true);
-
-        if ($recorder instanceof RecordingMiddleware) {
-            $config->setMiddlewares([$recorder]);
-        }
-
-        $connection = DriverManager::getConnection(['driver' => 'pdo_sqlite', 'memory' => true], $config);
-        $entityManager = new EntityManager($connection, $config);
-
-        new SchemaTool($entityManager)->createSchema($entityManager->getMetadataFactory()->getAllMetadata());
-
-        return $entityManager;
+        return TestEntityManagers::create('actions', [__DIR__ . '/Entity'], recorder: $recorder);
     }
 
     /**

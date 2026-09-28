@@ -35,6 +35,7 @@
         "phpstan/phpstan": "^2.2",
         "rector/rector": "^2.4",
         "symfony/asset-mapper": "^8.1",
+        "symfony/doctrine-bridge": "^8.1",
         "symfony/framework-bundle": "^8.0",
         "symfony/security-core": "^8.1",
         "symfony/test-pack": "^1.2",
@@ -64,6 +65,8 @@
             "Sylament\\Schemas\\Tests\\": "packages/schemas/tests/",
             "Sylament\\Support\\Tests\\": "packages/support/tests/",
             "Sylament\\Tables\\Tests\\": "packages/tables/tests/",
+            "Sylament\\Testing\\": "packages/testing/src/",
+            "Sylament\\Testing\\Tests\\": "packages/testing/tests/",
             "Sylament\\Widgets\\Tests\\": "packages/widgets/tests/"
         }
     },
@@ -83,6 +86,7 @@
         "format:lint": "php-cs-fixer --diff fix",
         "format:twig": "twig-cs-fixer fix",
         "test": [
+            "@putenv SYLAMENT_TEST_DATABASE_URL=",
             "@test:actions",
             "@test:forms",
             "@test:infolists",
@@ -91,6 +95,7 @@
             "@test:schemas",
             "@test:support",
             "@test:tables",
+            "@test:testing",
             "@test:widgets",
             "@test:rector",
             "@test:static",
@@ -104,6 +109,7 @@
         "test:schemas": "pest -c packages/schemas/phpunit.dist.xml --test-directory=packages/schemas/tests",
         "test:support": "pest -c packages/support/phpunit.dist.xml --test-directory=packages/support/tests",
         "test:tables": "pest -c packages/tables/phpunit.dist.xml --test-directory=packages/tables/tests",
+        "test:testing": "pest -c packages/testing/phpunit.dist.xml --test-directory=packages/testing/tests",
         "test:widgets": "pest -c packages/widgets/phpunit.dist.xml --test-directory=packages/widgets/tests",
         "test:static": "phpstan analyse",
         "test:lint": "php-cs-fixer --dry-run --diff fix",

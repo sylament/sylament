@@ -11,9 +11,9 @@ use Sylament\Tables\Tests\Fixtures\Doctrine\Entity\Artist;
 use Sylament\Tables\Tests\Fixtures\Doctrine\Entity\Genre;
 use Sylament\Tables\Tests\Fixtures\Doctrine\Entity\Shortcut;
 use Sylament\Tables\Tests\Fixtures\Doctrine\Entity\Song;
-use Sylament\Tables\Tests\Fixtures\Doctrine\RecordingMiddleware;
 use Sylament\Tables\Tests\Fixtures\Twig\Components\ArtistShortcutsCreateTable;
 use Sylament\Tables\Tests\Fixtures\Twig\Components\CreateIntoRelationshipTable;
+use Sylament\Testing\Doctrine\RecordingMiddleware;
 use Symfony\UX\LiveComponent\Test\InteractsWithLiveComponents;
 
 use function Sylament\Tables\Tests\seededGenresClient;

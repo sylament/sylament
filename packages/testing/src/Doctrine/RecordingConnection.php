@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Sylament\Tables\Tests\Fixtures\Doctrine;
+namespace Sylament\Testing\Doctrine;
 
 use Doctrine\DBAL\Driver\Connection as ConnectionInterface;
 use Doctrine\DBAL\Driver\Middleware\AbstractConnectionMiddleware;

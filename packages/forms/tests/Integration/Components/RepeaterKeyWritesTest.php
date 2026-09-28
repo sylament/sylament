@@ -17,9 +17,9 @@ use Sylament\Forms\Tests\Fixtures\Doctrine\Entity\Headliner;
 use Sylament\Forms\Tests\Fixtures\Doctrine\Entity\Post;
 use Sylament\Forms\Tests\Fixtures\Doctrine\Entity\PostTranslation;
 use Sylament\Forms\Tests\Fixtures\Doctrine\Entity\Raffle;
-use Sylament\Forms\Tests\Fixtures\Doctrine\RecordingMiddleware;
 use Sylament\Schemas\Exceptions\ValidationException;
 use Sylament\Schemas\Schema;
+use Sylament\Testing\Doctrine\RecordingMiddleware;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
 
 use function Sylament\Forms\Tests\renderToHtml;

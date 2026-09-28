@@ -21,7 +21,7 @@ use Sylament\Tables\Tests\Fixtures\Doctrine\Entity\Venue;
 use Sylament\Tables\Tests\Fixtures\Doctrine\EntityManagerFactory;
 use Sylament\Tables\Tests\Fixtures\Doctrine\Handle;
 use Sylament\Tables\Tests\Fixtures\Doctrine\PassthroughOutputWalker;
-use Sylament\Tables\Tests\Fixtures\Doctrine\RecordingMiddleware;
+use Sylament\Testing\Doctrine\RecordingMiddleware;
 
 /*
  * Covers the query half of host-side pagination — the slice `paginateTableQuery()`

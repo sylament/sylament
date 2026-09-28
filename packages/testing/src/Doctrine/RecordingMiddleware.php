@@ -2,15 +2,17 @@
 
 declare(strict_types=1);
 
-namespace Sylament\Forms\Tests\Fixtures\Doctrine;
+namespace Sylament\Testing\Doctrine;
 
+use Closure;
 use Doctrine\DBAL\Driver as DriverInterface;
 use Doctrine\DBAL\Driver\Middleware;
 
 /**
  * Records the SQL of every statement the connection runs, so a test can assert
- * what a read costs in queries. Pass it to {@see EntityManagerFactory::create()}
- * and {@see reset()} it after seeding, so only the statements under test count.
+ * what a read costs in queries. Pass it to a package's
+ * `EntityManagerFactory::create()` and {@see reset()} it after seeding, so only
+ * the statements under test count.
  */
 final class RecordingMiddleware implements Middleware
 {
@@ -19,6 +21,8 @@ final class RecordingMiddleware implements Middleware
      */
     private array $statements = [];
 
+    private bool $suspended = false;
+
     public function wrap(DriverInterface $driver): DriverInterface
     {
         return new RecordingDriver($driver, $this);
@@ -26,7 +30,9 @@ final class RecordingMiddleware implements Middleware
 
     public function record(string $sql): void
     {
-        $this->statements[] = $sql;
+        if (!$this->suspended) {
+            $this->statements[] = $sql;
+        }
     }
 
     /**
@@ -40,5 +46,20 @@ final class RecordingMiddleware implements Middleware
     public function reset(): void
     {
         $this->statements = [];
+    }
+
+    /**
+     * Runs the callback with recording suspended and returns what it returns:
+     * how a test database's schema build stays out of the statement list.
+     */
+    public function withoutRecording(Closure $callback): mixed
+    {
+        $this->suspended = true;
+
+        try {
+            return $callback();
+        } finally {
+            $this->suspended = false;
+        }
     }
 }

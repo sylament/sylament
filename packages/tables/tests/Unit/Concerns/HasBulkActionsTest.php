@@ -738,3 +738,127 @@ it('plucks one key per composite row even when the query joins a to-many', funct
 
     expect($host->getSelectedTableRecords(shouldFetchSelectedRecords: false))->toBe(['main-hall~2026-spring']);
 });
+
+/**
+ * @return list<CompositePair>
+ */
+function manyPairs(int $count): array
+{
+    return array_map(
+        static fn (int $index): CompositePair => new CompositePair(intdiv($index, 1000) + 1, $index % 1000, "pair-{$index}"),
+        range(0, $count - 1),
+    );
+}
+
+function pairKey(CompositePair $pair): string
+{
+    return $pair->getA() . '~' . $pair->getB();
+}
+
+/**
+ * @param list<string> $statements
+ *
+ * @return list<int>
+ */
+function placeholderCounts(array $statements): array
+{
+    return array_map(static fn (string $sql): int => mb_substr_count($sql, '?'), $statements);
+}
+
+it('reads a composite selection larger than one batch in batches, dropping duplicates, malformed and unknown keys', function (): void {
+    $recorder = new RecordingMiddleware();
+    $entityManager = EntityManagerFactory::create($recorder);
+    $pairs = manyPairs(1201);
+    EntityManagerFactory::seed($entityManager, ...$pairs);
+
+    $host = pairSelectionHost($entityManager);
+    $host->selectedTableRecordKeys = [
+        ...array_map(pairKey(...), $pairs),
+        ...array_map(pairKey(...), $pairs),
+        'garbage',
+        ...array_map(static fn (int $index): string => "9~{$index}", range(1, 200)),
+    ];
+    $recorder->reset();
+
+    expect($host->getSelectedTableRecords())->toHaveCount(1201)
+        ->and(placeholderCounts($recorder->statements()))->toBe([1000, 1000, 802]);
+});
+
+it('subtracts a composite deselection larger than one batch in PHP and reads the rest in batches', function (): void {
+    $recorder = new RecordingMiddleware();
+    $entityManager = EntityManagerFactory::create($recorder);
+    $pairs = manyPairs(1201);
+    EntityManagerFactory::seed($entityManager, ...$pairs);
+
+    $host = pairSelectionHost($entityManager);
+    $host->isTrackingDeselectedTableRecords = true;
+    $host->deselectedTableRecords = [
+        ...array_map(pairKey(...), array_slice($pairs, 0, 600)),
+        ...array_map(static fn (int $index): string => "9~{$index}", range(1, 400)),
+    ];
+    $recorder->reset();
+
+    expect($host->getSelectedTableRecords(shouldFetchSelectedRecords: false))->toBe(array_map(pairKey(...), array_slice($pairs, 600)))
+        ->and(placeholderCounts($recorder->statements()))->toBe([0, 1000, 202]);
+});
+
+it('answers 10,000 forged composite keys with twenty bounded statements', function (): void {
+    $recorder = new RecordingMiddleware();
+    $entityManager = EntityManagerFactory::create($recorder);
+    EntityManagerFactory::seed($entityManager, ...manyPairs(3));
+
+    $host = pairSelectionHost($entityManager);
+    $host->selectedTableRecordKeys = array_map(static fn (int $index): string => "7~{$index}", range(1, 10000));
+
+    $recorder->reset();
+
+    $started = hrtime(true);
+    $keys = $host->getSelectedTableRecords(shouldFetchSelectedRecords: false);
+    $elapsedSeconds = (hrtime(true) - $started) / 1e9;
+
+    expect($keys)->toBe([])
+        ->and($recorder->statements())->toHaveCount(20)
+        ->and(max(placeholderCounts($recorder->statements())))->toBe(1000)
+        ->and($elapsedSeconds)->toBeLessThan(10.0);
+});
+
+it('keys a tracked composite selection behind a selectability callback without binding the selectable keys back', function (): void {
+    $recorder = new RecordingMiddleware();
+    $entityManager = EntityManagerFactory::create($recorder);
+    EntityManagerFactory::seed(
+        $entityManager,
+        new CompositePair(1, 2, 'one-two'),
+        new CompositePair(1, 3, 'one-three'),
+        new CompositePair(2, 1, 'two-one'),
+    );
+
+    $host = pairSelectionHost($entityManager, static fn (Table $table): Table => $table->checkIfRecordIsSelectableUsing(
+        static fn (CompositePair $record): bool => $record->getB() !== 3,
+    ));
+    $host->isTrackingDeselectedTableRecords = true;
+    $host->deselectedTableRecords = ['2~1'];
+
+    $recorder->reset();
+
+    expect($host->getSelectedTableRecords(shouldFetchSelectedRecords: false))->toBe(['1~2'])
+        ->and(placeholderCounts($recorder->statements()))->toBe([2]);
+});
+
+it('keeps a single-key selection past 2,000 keys in one statement, as before', function (): void {
+    $recorder = new RecordingMiddleware();
+    $entityManager = EntityManagerFactory::create($recorder);
+    $artist = new Artist(1, 'Radiohead');
+    EntityManagerFactory::seed(
+        $entityManager,
+        $artist,
+        ...array_map(static fn (int $id): Song => new Song($id, "Song {$id}", $id, $artist), range(1, 2500)),
+    );
+
+    $host = selectionHost($entityManager);
+    $host->selectedTableRecordKeys = array_map(strval(...), range(1, 2500));
+
+    $recorder->reset();
+
+    expect($host->getSelectedTableRecords())->toHaveCount(2500)
+        ->and(placeholderCounts($recorder->statements()))->toBe([2500]);
+});

@@ -1214,6 +1214,16 @@ both universes, `resolveSelectedRecordsUsing()`, and the grouped key enumeration
 Each has a [row](#surface) or a
 [table-side row](table.md#the-selection-settings-ship-as-a-subset-and-the-rest-are-listed).
 
+### A composite selection larger than one batch is read in batches
+
+Since M7 · 7, `getSelectedTableRecords()` reads a selection over a record class keyed by several fields in batches of `IdentifierConstraint::batch()`, 500 keys a statement, instead of one statement over the whole bag. The bags are client input, and one statement over them cost time quadratic in their length. A forged 10 000-key `selectedTableRecords` held a request for about 23 s, where a single-identifier table answered in about 23 ms. On PostgreSQL the tracked arm's `NOT (… OR …)` crossed the JIT threshold and ran for minutes. Three shapes follow:
+
+- **The selected bag** is batched. Each batch runs the query `getSelectedTableRecordsQuery()` would, narrowed to its keys.
+- **A tracked deselection** that fits one batch stays one `notIn()` statement. A larger one is subtracted in PHP from a pluck of every key the table admits (one statement binding no key), and the rest is read in batches, since an exclusion cannot be split across statements.
+- **`fetchSelectedRecords(false)` beside `checkIfRecordIsSelectableUsing()`** hydrates each batch once and keys the selectable records in PHP. `getSelectedTableRecordsQuery(false)` binds them back as a second key list instead.
+
+The hydrated records come back in table order within a batch, and batch after batch across them; Filament's own chunked read is unsorted too. `getSelectedTableRecordsQuery()` is unchanged: it returns one builder, a custom bulk action's `$selectedRecordsQuery`, so it binds every selected key. A bulk action over a large composite selection reads `$selectedRecords` instead. A single-identifier selection is untouched: one statement, one array parameter.
+
 ### Filter mutations reset the page and flush the record cache
 
 Every filter mutation ends in the same two lines — `tablePage = 1` and

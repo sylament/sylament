@@ -85,7 +85,10 @@ class Kernel extends BaseKernel
                 ->autowire()
                 ->autoconfigure()
             ->load('Sylament\\Support\\Tests\\Fixtures\\', __DIR__ . '/*')
-                ->exclude([__DIR__ . '/Kernel.php']);
+                ->exclude([
+                    __DIR__ . '/Kernel.php',
+                    __DIR__ . '/Doctrine',
+                ]);
 
         // Nothing inside `support` injects the filesystem registry — forms' `FileUpload` is its
         // first consumer — so an unreferenced private definition is removed before a test can

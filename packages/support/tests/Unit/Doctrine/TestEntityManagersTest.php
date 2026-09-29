@@ -15,13 +15,13 @@ use Sylament\Support\Tests\Fixtures\Doctrine\ShoutType;
 /**
  * @return list<string>
  */
-function testingEntityPaths(): array
+function doctrineFixtureEntityPaths(): array
 {
     return [dirname(__DIR__, 2) . '/Fixtures/Doctrine/Entity'];
 }
 
 it('builds an in-memory SQLite manager carrying the package schema', function (): void {
-    $entityManager = TestEntityManagers::createSqlite('support', testingEntityPaths());
+    $entityManager = TestEntityManagers::createSqlite('support', doctrineFixtureEntityPaths());
     $entityManager->persist(new Shelf('poetry'));
     $entityManager->flush();
     $entityManager->clear();
@@ -32,8 +32,8 @@ it('builds an in-memory SQLite manager carrying the package schema', function ()
 });
 
 it('gives every manager a database of its own', function (): void {
-    $first = TestEntityManagers::createSqlite('support', testingEntityPaths());
-    $second = TestEntityManagers::createSqlite('support', testingEntityPaths());
+    $first = TestEntityManagers::createSqlite('support', doctrineFixtureEntityPaths());
+    $second = TestEntityManagers::createSqlite('support', doctrineFixtureEntityPaths());
 
     $first->persist(new Shelf('poetry'));
     $first->flush();
@@ -43,7 +43,7 @@ it('gives every manager a database of its own', function (): void {
 
 it('records the statements a test runs and never the schema build', function (): void {
     $recorder = new RecordingMiddleware();
-    $entityManager = TestEntityManagers::createSqlite('support', testingEntityPaths(), recorder: $recorder);
+    $entityManager = TestEntityManagers::createSqlite('support', doctrineFixtureEntityPaths(), recorder: $recorder);
 
     $afterBuild = $recorder->statements();
     $entityManager->getRepository(Shelf::class)->findAll();
@@ -54,8 +54,8 @@ it('records the statements a test runs and never the schema build', function ():
 });
 
 it('registers a custom type once, however many managers name it', function (): void {
-    TestEntityManagers::createSqlite('support', testingEntityPaths(), [ShoutType::NAME => ShoutType::class]);
-    TestEntityManagers::createSqlite('support', testingEntityPaths(), [ShoutType::NAME => ShoutType::class]);
+    TestEntityManagers::createSqlite('support', doctrineFixtureEntityPaths(), [ShoutType::NAME => ShoutType::class]);
+    TestEntityManagers::createSqlite('support', doctrineFixtureEntityPaths(), [ShoutType::NAME => ShoutType::class]);
 
     expect(Type::getType(ShoutType::NAME))->toBeInstanceOf(ShoutType::class);
 });
@@ -65,7 +65,7 @@ it('builds SQLite through create() while the url is unset', function (): void {
     putenv(TestPlatform::URL_VARIABLE);
 
     try {
-        $entityManager = TestEntityManagers::create('support', testingEntityPaths());
+        $entityManager = TestEntityManagers::create('support', doctrineFixtureEntityPaths());
     } finally {
         putenv($previous === false ? TestPlatform::URL_VARIABLE : TestPlatform::URL_VARIABLE . '=' . $previous);
     }
@@ -75,7 +75,7 @@ it('builds SQLite through create() while the url is unset', function (): void {
 
 it('enforces foreign keys on SQLite without recording the pragma that turns them on', function (): void {
     $recorder = new RecordingMiddleware();
-    $entityManager = TestEntityManagers::createSqlite('support', testingEntityPaths(), recorder: $recorder);
+    $entityManager = TestEntityManagers::createSqlite('support', doctrineFixtureEntityPaths(), recorder: $recorder);
 
     $shelf = new Shelf('poetry');
     $entityManager->persist($shelf);

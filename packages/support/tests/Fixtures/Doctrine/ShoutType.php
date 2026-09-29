@@ -8,5 +8,5 @@ use Doctrine\DBAL\Types\StringType;
 
 final class ShoutType extends StringType
 {
-    public const string NAME = 'testing_shout';
+    public const string NAME = 'support_shout';
 }

@@ -39,6 +39,115 @@ jobs:
 
       - run: composer test:lint
 
+  php-mysql:
+    runs-on: ubuntu-latest
+
+    env:
+      COMPOSER_PROCESS_TIMEOUT: 0
+
+    services:
+      mysql:
+        image: mysql:8.4
+        env:
+          MYSQL_ROOT_PASSWORD: sylament
+        ports:
+          - 33307:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -uroot -psylament"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=30
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.5'
+          extensions: pdo_mysql
+          coverage: none
+
+      - name: Resolve Composer cache directory
+        id: composer-cache
+        run: echo "dir=$(composer config cache-files-dir)" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/cache@v4
+        with:
+          path: ${{ steps.composer-cache.outputs.dir }}
+          key: composer-${{ hashFiles('composer.json', 'packages/*/composer.json') }}
+          restore-keys: composer-
+
+      - run: composer install --no-interaction --no-progress
+
+      - run: composer test:mysql
+
+  php-postgresql:
+    runs-on: ubuntu-latest
+
+    env:
+      COMPOSER_PROCESS_TIMEOUT: 0
+
+    services:
+      postgresql:
+        image: postgres:18-alpine
+        env:
+          POSTGRES_PASSWORD: sylament
+        ports:
+          - 55433:5432
+        options: >-
+          --health-cmd="pg_isready -U postgres"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=30
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.5'
+          extensions: pdo_pgsql
+          coverage: none
+
+      - name: Resolve Composer cache directory
+        id: composer-cache
+        run: echo "dir=$(composer config cache-files-dir)" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/cache@v4
+        with:
+          path: ${{ steps.composer-cache.outputs.dir }}
+          key: composer-${{ hashFiles('composer.json', 'packages/*/composer.json') }}
+          restore-keys: composer-
+
+      - run: composer install --no-interaction --no-progress
+
+      - run: composer test:postgresql
+
+  mutation:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.5'
+          coverage: pcov
+
+      - name: Resolve Composer cache directory
+        id: composer-cache
+        run: echo "dir=$(composer config cache-files-dir)" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/cache@v4
+        with:
+          path: ${{ steps.composer-cache.outputs.dir }}
+          key: composer-${{ hashFiles('composer.json', 'packages/*/composer.json') }}
+          restore-keys: composer-
+
+      - run: composer install --no-interaction --no-progress
+
+      - run: composer test:mutation
+
   assets:
     runs-on: ubuntu-latest
 
@@ -71,6 +180,9 @@ jobs:
 
     needs:
       - php
+      - php-mysql
+      - php-postgresql
+      - mutation
       - assets
 
     runs-on: ubuntu-latest

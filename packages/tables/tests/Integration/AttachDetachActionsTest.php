@@ -13,6 +13,7 @@ use Sylament\Tables\Tests\Fixtures\Doctrine\Entity\Genre;
 use Sylament\Tables\Tests\Fixtures\Doctrine\Entity\Song;
 use Sylament\Tables\Tests\Fixtures\Twig\Components\SongGenresActionsTable;
 use Sylament\Testing\Doctrine\RecordingMiddleware;
+use Sylament\Testing\Doctrine\TestPlatform;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\RequestStack;
@@ -141,7 +142,7 @@ it('attaches the picked genre, toasts and unmounts', function (): void {
     $host->getMountedActionSchema()?->fill(['recordId' => 4]);
     $host->callMountedAction();
 
-    expect(genreNamesOfSong($entityManager, 1))->toBe(['Rock', 'Pop', 'Jazz', 'Metal'])
+    expect(genreNamesOfSong($entityManager, 1))->toEqualCanonicalizing(['Rock', 'Pop', 'Jazz', 'Metal'])
         ->and($host->getMountedAction())->toBeNull()
         ->and(drainedNotificationTitles())->toBe(['Attached']);
 });
@@ -192,7 +193,7 @@ it('fails validation for a key the candidate query never offered, changing nothi
     $host->getMountedActionSchema()?->fill(['recordId' => 1]);
 
     expect(fn (): mixed => $host->callMountedAction())->toThrow(ValidationException::class)
-        ->and(genreNamesOfSong($entityManager, 1))->toBe(['Rock', 'Pop', 'Jazz']);
+        ->and(genreNamesOfSong($entityManager, 1))->toEqualCanonicalizing(['Rock', 'Pop', 'Jazz']);
 });
 
 it('refuses the same key in the action body when validation is bypassed', function (): void {
@@ -207,7 +208,7 @@ it('refuses the same key in the action body when validation is bypassed', functi
 
     expect(fn (): mixed => $action->call(['schema' => $schema, 'form' => $schema]))
         ->toThrow(LogicException::class, 'its select never offered')
-        ->and(genreNamesOfSong($entityManager, 1))->toBe(['Rock', 'Pop', 'Jazz']);
+        ->and(genreNamesOfSong($entityManager, 1))->toEqualCanonicalizing(['Rock', 'Pop', 'Jazz']);
 });
 
 it('refuses an empty submission in the action body rather than reporting success', function (): void {
@@ -222,7 +223,7 @@ it('refuses an empty submission in the action body rather than reporting success
 
     expect(fn (): mixed => $action->call(['schema' => $schema, 'form' => $schema]))
         ->toThrow(LogicException::class, 'submitted with no record to attach')
-        ->and(genreNamesOfSong($entityManager, 1))->toBe(['Rock', 'Pop', 'Jazz']);
+        ->and(genreNamesOfSong($entityManager, 1))->toEqualCanonicalizing(['Rock', 'Pop', 'Jazz']);
 });
 
 it('answers the candidates without a search when the select is preloaded', function (): void {
@@ -244,7 +245,7 @@ it('detaches one row, leaving the rest, and titles the modal by the record', fun
 
     $host->callMountedAction();
 
-    expect(genreNamesOfSong($entityManager, 1))->toBe(['Pop', 'Jazz'])
+    expect(genreNamesOfSong($entityManager, 1))->toEqualCanonicalizing(['Pop', 'Jazz'])
         ->and($host->getMountedAction())->toBeNull()
         ->and(drainedNotificationTitles())->toBe(['Detached']);
 });
@@ -406,7 +407,10 @@ it('folds the search to lower case only when forceSearchCaseInsensitive() says s
     mountedRecordSelect($folded)->getSearchResults('RoC');
     $withFlag = $recorder->statements();
 
-    expect(lowercasingSelections($withoutFlag))->toBe([])
+    expect(lowercasingSelections($withoutFlag))->toHaveCount(match (TestPlatform::current()) {
+        TestPlatform::PostgreSql => 1,
+        TestPlatform::Sqlite, TestPlatform::MySql => 0,
+    })
         ->and(lowercasingSelections($withFlag))->toHaveCount(1);
 });
 

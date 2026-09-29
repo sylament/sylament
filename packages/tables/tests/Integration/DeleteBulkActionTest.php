@@ -11,6 +11,7 @@ use Sylament\Tables\Tests\Fixtures\Doctrine\Entity\Artist;
 use Sylament\Tables\Tests\Fixtures\Doctrine\Entity\Shortcut;
 use Sylament\Tables\Tests\Fixtures\Doctrine\Entity\Song;
 use Sylament\Tables\Tests\Fixtures\Doctrine\EntityManagerFactory;
+use Sylament\Testing\Doctrine\FailingWrite;
 use Sylament\Testing\Doctrine\RecordingConnection;
 use Sylament\Testing\Doctrine\RecordingMiddleware;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
@@ -69,8 +70,7 @@ function seededBulkSongsClient(): array
 /**
  * The by-key delete's failing rig: `Song.artist_id` references `Artist` with no
  * cascade, so one seeded song is enough to make the DQL `DELETE` of its artist
- * violate a foreign key — once SQLite is asked to enforce them, which it does
- * not by default.
+ * violate a foreign key, which every platform the suites run on enforces.
  *
  * @return array{KernelBrowser, EntityManagerInterface}
  */
@@ -80,7 +80,6 @@ function seededBulkArtistsClient(): array
     $client->disableReboot();
 
     $entityManager = test()->getContainer()->get(EntityManagerInterface::class);
-    $entityManager->getConnection()->executeStatement('PRAGMA foreign_keys = ON');
 
     $radiohead = new Artist(1, 'Radiohead');
 
@@ -503,15 +502,15 @@ it('runs a chunked composite delete as one transaction and sums the affected row
 
 /*
  * The rollback the transaction exists for, which the committing case above cannot
- * show. The lever is a SQLite trigger the test creates after seeding — `Shortcut`
- * carries no foreign key another row could violate, and the recorder is a
- * pass-through — so no fixture moves. The failing row has to be in chunk **two**, and
- * the select-all pluck emits no ORDER BY: the keys come back in composite-PK order,
- * lexicographic on (host, path), where `/p/99` is the greatest of `/p/1`…`/p/501` and
- * so the single row chunk two carries. The DELETE count is asserted first because it
- * is the only thing that separates "chunk two failed and chunk one was rolled back"
- * from "chunk one failed and nothing was ever deleted" — the recorder records a
- * statement before it runs, so a failing chunk still counts.
+ * show. The lever is a FailingWrite trigger the test creates after seeding —
+ * `Shortcut` carries no foreign key another row could violate, and the recorder is a
+ * pass-through — so no fixture moves. The failing row has to be in chunk **two**.
+ * FailingWrite fails the 501st row deleted, so the row the first chunk leaves over
+ * (whichever it is) fails in chunk two, whatever order the pluck returns the keys in.
+ * The DELETE count is asserted first because it is the only thing that separates
+ * "chunk two failed and chunk one was rolled back" from "chunk one failed and nothing
+ * was ever deleted" — the recorder records a statement before it runs, so a failing
+ * chunk still counts.
  */
 it('rolls a chunked composite delete back when a later chunk fails', function (): void {
     $shortcuts = [];
@@ -522,9 +521,7 @@ it('rolls a chunked composite delete back when a later chunk fails', function ()
 
     [$client, $entityManager, $recorder] = seededBulkShortcutsClient(...$shortcuts);
 
-    $entityManager->getConnection()->executeStatement(
-        "CREATE TRIGGER sylament_refuse_chunk_two BEFORE DELETE ON Shortcut FOR EACH ROW WHEN OLD.position = 99 BEGIN SELECT RAISE(ABORT, 'refused'); END",
-    );
+    FailingWrite::afterDeletes($entityManager, Shortcut::class, 500);
 
     $recorder->reset();
 

@@ -1834,6 +1834,21 @@ consumer has called. A platform-conditional emission would also have to happen
 the platform for its case-insensitivity default — so a cast arm can be added
 there the day one is worth its dependency.
 
+The suites now run on PostgreSQL as well as SQLite and MySQL, so this limitation is
+pinned on every platform rather than described. A searchable integer column matches
+on SQLite and MySQL and is a driver error on PostgreSQL (`CanSearchRecordsTest`,
+`ColumnSearchLiveTest`, `AssociateDissociateActionsTest`, and forms'
+`SelectRelationshipTest`). `CanSearchRecordsTest` also pins the escape hatch below
+matching on all three.
+
+The way forward, when one is wanted, is a **type-aware** cast: `CONCAT(path, '')` on
+PostgreSQL only, and only for a path whose mapped field is not a string type. That
+answers the index objection above, because a string column keeps the indexable
+`LOWER(col)` and a non-string column has no text index for the cast to defeat.
+Resolving a path's field type needs the alias-to-entity walk across the builder's
+root and join parts, which `RelationConstraint`'s correlated subquery also has to
+answer. That walk is the real work.
+
 Two escape hatches exist meanwhile, both first-class API rather than workarounds:
 `searchable(query:)` on the column hands the closure the builder and takes back
 whatever expression it wants (a registered `CAST`, a `LOWER(CONCAT(…))`, a

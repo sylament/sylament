@@ -2,7 +2,9 @@
 
 declare(strict_types=1);
 
+use Doctrine\DBAL\Exception\DriverException;
 use Doctrine\ORM\EntityManager;
+use Doctrine\ORM\Query\Expr\Comparison;
 use Doctrine\ORM\QueryBuilder;
 use Sylament\Tables\Columns\TextColumn;
 use Sylament\Tables\Table;
@@ -18,6 +20,7 @@ use Sylament\Tables\Tests\Fixtures\Doctrine\Entity\Song;
 use Sylament\Tables\Tests\Fixtures\Doctrine\Entity\Venue;
 use Sylament\Tables\Tests\Fixtures\Doctrine\EntityManagerFactory;
 use Sylament\Tables\Tests\Fixtures\Doctrine\Handle;
+use Sylament\Testing\Doctrine\TestPlatform;
 
 /*
  * Covers the query half of host-side search — the WHERE the lane composes. The
@@ -135,10 +138,17 @@ it('matches a single word across searchable columns', function (): void {
     $titleMatch->tableSearch = 'love';
     $playsMatch->tableSearch = '30';
 
-    expect(array_keys($titleMatch->getTableRecords()->getRecords()))->toBe([1, 2])
-        ->and(array_keys($playsMatch->getTableRecords()->getRecords()))->toBe([3])
-        ->and($titleMatch->getFilteredTableQuery()?->getDQL())
-        ->toContain('WHERE song.title LIKE :sylament_search_0 OR song.plays LIKE :sylament_search_1');
+    match (TestPlatform::current()) {
+        TestPlatform::Sqlite, TestPlatform::MySql => expect(array_keys($titleMatch->getTableRecords()->getRecords()))->toBe([1, 2])
+            ->and(array_keys($playsMatch->getTableRecords()->getRecords()))->toBe([3]),
+        TestPlatform::PostgreSql => expect(fn (): mixed => $titleMatch->getTableRecords())->toThrow(DriverException::class, 'function lower(integer) does not exist')
+            ->and(fn (): mixed => $playsMatch->getTableRecords())->toThrow(DriverException::class, 'function lower(integer) does not exist'),
+    };
+
+    expect($titleMatch->getFilteredTableQuery()?->getDQL())->toContain(match (TestPlatform::current()) {
+        TestPlatform::PostgreSql => 'WHERE LOWER(song.title) LIKE :sylament_search_0 OR LOWER(song.plays) LIKE :sylament_search_1',
+        TestPlatform::Sqlite, TestPlatform::MySql => 'WHERE song.title LIKE :sylament_search_0 OR song.plays LIKE :sylament_search_1',
+    });
 });
 
 it('composes split words with AND between groups', function (): void {
@@ -152,10 +162,17 @@ it('composes split words with AND between groups', function (): void {
     $bothWords->tableSearch = 'silent love';
     $noOverlap->tableSearch = 'love noise';
 
-    expect(array_keys($bothWords->getTableRecords()->getRecords()))->toBe([2])
-        ->and($noOverlap->getTableRecords()->getRecords())->toBe([])
-        ->and($bothWords->getFilteredTableQuery()?->getDQL())
-        ->toContain('WHERE (song.title LIKE :sylament_search_0 OR song.plays LIKE :sylament_search_1) AND (song.title LIKE :sylament_search_2 OR song.plays LIKE :sylament_search_3)');
+    match (TestPlatform::current()) {
+        TestPlatform::Sqlite, TestPlatform::MySql => expect(array_keys($bothWords->getTableRecords()->getRecords()))->toBe([2])
+            ->and($noOverlap->getTableRecords()->getRecords())->toBe([]),
+        TestPlatform::PostgreSql => expect(fn (): mixed => $bothWords->getTableRecords())->toThrow(DriverException::class, 'function lower(integer) does not exist')
+            ->and(fn (): mixed => $noOverlap->getTableRecords())->toThrow(DriverException::class, 'function lower(integer) does not exist'),
+    };
+
+    expect($bothWords->getFilteredTableQuery()?->getDQL())->toContain(match (TestPlatform::current()) {
+        TestPlatform::PostgreSql => 'WHERE (LOWER(song.title) LIKE :sylament_search_0 OR LOWER(song.plays) LIKE :sylament_search_1) AND (LOWER(song.title) LIKE :sylament_search_2 OR LOWER(song.plays) LIKE :sylament_search_3)',
+        TestPlatform::Sqlite, TestPlatform::MySql => 'WHERE (song.title LIKE :sylament_search_0 OR song.plays LIKE :sylament_search_1) AND (song.title LIKE :sylament_search_2 OR song.plays LIKE :sylament_search_3)',
+    });
 });
 
 it('treats the term as one phrase when splitting is off', function (): void {
@@ -244,10 +261,15 @@ it('composes extra searchable columns and closure members', function (): void {
 
     expect(array_keys($viaColumn->getTableRecords()->getRecords()))->toBe([2])
         ->and(array_keys($viaClosure->getTableRecords()->getRecords()))->toBe([3])
-        ->and($viaColumn->getFilteredTableQuery()?->getDQL())->toContain('WHERE song.title LIKE :sylament_search_0')
+        ->and($viaColumn->getFilteredTableQuery()?->getDQL())->toContain(match (TestPlatform::current()) {
+            TestPlatform::PostgreSql => 'WHERE LOWER(song.title) LIKE :sylament_search_0',
+            TestPlatform::Sqlite, TestPlatform::MySql => 'WHERE song.title LIKE :sylament_search_0',
+        })
         ->and($viaColumn->getFilteredTableQuery()?->getDQL())->not->toContain('song.plays')
-        ->and($viaClosure->getFilteredTableQuery()?->getDQL())
-        ->toContain('WHERE song.title LIKE :sylament_search_0 OR song.plays > 25');
+        ->and($viaClosure->getFilteredTableQuery()?->getDQL())->toContain(match (TestPlatform::current()) {
+            TestPlatform::PostgreSql => 'WHERE LOWER(song.title) LIKE :sylament_search_0 OR song.plays > 25',
+            TestPlatform::Sqlite, TestPlatform::MySql => 'WHERE song.title LIKE :sylament_search_0 OR song.plays > 25',
+        });
 });
 
 it('skips an extra-column closure that constrained the query itself', function (): void {
@@ -260,8 +282,10 @@ it('skips an extra-column closure that constrained the query itself', function (
     $host->tableSearch = 'love';
 
     expect(array_keys($host->getTableRecords()->getRecords()))->toBe([2])
-        ->and($host->getFilteredTableQuery()?->getDQL())
-        ->toContain('WHERE song.plays > 15 AND song.title LIKE :sylament_search_0');
+        ->and($host->getFilteredTableQuery()?->getDQL())->toContain(match (TestPlatform::current()) {
+            TestPlatform::PostgreSql => 'WHERE song.plays > 15 AND LOWER(song.title) LIKE :sylament_search_0',
+            TestPlatform::Sqlite, TestPlatform::MySql => 'WHERE song.plays > 15 AND song.title LIKE :sylament_search_0',
+        });
 });
 
 it('applies no where at all when nothing is searchable', function (): void {
@@ -309,9 +333,14 @@ it('marks case arms in the DQL, not the results', function (): void {
     $sensitiveQuery = $sensitive->getFilteredTableQuery();
     $insensitiveQuery = $insensitive->getFilteredTableQuery();
 
-    expect($sensitiveQuery?->getDQL())->toContain('WHERE song.title LIKE :sylament_search_0')
-        ->and($sensitiveQuery?->getDQL())->not->toContain('LOWER(')
-        ->and($sensitiveQuery?->getParameter('sylament_search_0')?->getValue())->toBe('%Love%')
+    expect($sensitiveQuery?->getDQL())->toBe(match (TestPlatform::current()) {
+        TestPlatform::PostgreSql => 'SELECT song FROM ' . Song::class . ' song WHERE LOWER(song.title) LIKE :sylament_search_0',
+        TestPlatform::Sqlite, TestPlatform::MySql => 'SELECT song FROM ' . Song::class . ' song WHERE song.title LIKE :sylament_search_0',
+    })
+        ->and($sensitiveQuery?->getParameter('sylament_search_0')?->getValue())->toBe(match (TestPlatform::current()) {
+            TestPlatform::PostgreSql => '%love%',
+            TestPlatform::Sqlite, TestPlatform::MySql => '%Love%',
+        })
         ->and($insensitiveQuery?->getDQL())->toContain('WHERE LOWER(song.title) LIKE :sylament_search_0')
         ->and($insensitiveQuery?->getParameter('sylament_search_0')?->getValue())->toBe('%love%');
 });
@@ -345,10 +374,16 @@ it('searches a to-one relation column', function (): void {
     $query = $host->getFilteredTableQuery();
 
     expect(array_keys($host->getTableRecords()->getRecords()))->toBe([1])
-        ->and($query?->getDQL())->toContain(
-            'song.title LIKE :sylament_search_0',
-            'EXISTS (SELECT sy_x1.id FROM ' . Song::class . ' sy_x1 JOIN sy_x1.artist sy_x1_0 WHERE sy_x1.id = song.id AND sy_x1_0.name LIKE :sylament_search_1)',
-        )
+        ->and($query?->getDQL())->toContain(...match (TestPlatform::current()) {
+            TestPlatform::PostgreSql => [
+                'LOWER(song.title) LIKE :sylament_search_0',
+                'EXISTS (SELECT sy_x1.id FROM ' . Song::class . ' sy_x1 JOIN sy_x1.artist sy_x1_0 WHERE sy_x1.id = song.id AND LOWER(sy_x1_0.name) LIKE :sylament_search_1)',
+            ],
+            TestPlatform::Sqlite, TestPlatform::MySql => [
+                'song.title LIKE :sylament_search_0',
+                'EXISTS (SELECT sy_x1.id FROM ' . Song::class . ' sy_x1 JOIN sy_x1.artist sy_x1_0 WHERE sy_x1.id = song.id AND sy_x1_0.name LIKE :sylament_search_1)',
+            ],
+        })
         ->and($query?->getDQLPart('join'))->toBe([]);
 });
 
@@ -383,11 +418,18 @@ it('composes multi-word search as AND of per-word ORs across relation and plain 
 
     expect($acrossRows->getTableRecords()->getRecords())->toBe([])
         ->and(array_keys($sameRow->getTableRecords()->getRecords()))->toBe([2])
-        ->and($sameRow->getFilteredTableQuery()?->getDQL())->toContain(
-            'sy_x1_0.name LIKE :sylament_search_1',
-            'song.title LIKE :sylament_search_2',
-            'sy_x3_0.name LIKE :sylament_search_3',
-        );
+        ->and($sameRow->getFilteredTableQuery()?->getDQL())->toContain(...match (TestPlatform::current()) {
+            TestPlatform::PostgreSql => [
+                'LOWER(sy_x1_0.name) LIKE :sylament_search_1',
+                'LOWER(song.title) LIKE :sylament_search_2',
+                'LOWER(sy_x3_0.name) LIKE :sylament_search_3',
+            ],
+            TestPlatform::Sqlite, TestPlatform::MySql => [
+                'sy_x1_0.name LIKE :sylament_search_1',
+                'song.title LIKE :sylament_search_2',
+                'sy_x3_0.name LIKE :sylament_search_3',
+            ],
+        });
 });
 
 it('searches a to-many relation on a scalar-pair root and keys the hits by every field', function (): void {
@@ -401,9 +443,10 @@ it('searches a to-many relation on a scalar-pair root and keys the hits by every
     $query = $host->getFilteredTableQuery();
 
     expect(array_keys($host->getTableRecords()->getRecords()))->toBe(['sylament=2Etest~=2Fdocs=2Fa=20b'])
-        ->and($query?->getDQL())->toContain(
-            'EXISTS (SELECT sy_x1.host FROM ' . Shortcut::class . ' sy_x1 JOIN sy_x1.hits sy_x1_0 WHERE sy_x1.host = shortcut.host AND sy_x1.path = shortcut.path AND sy_x1_0.agent LIKE :sylament_search_1)',
-        )
+        ->and($query?->getDQL())->toContain(match (TestPlatform::current()) {
+            TestPlatform::PostgreSql => 'EXISTS (SELECT sy_x1.host FROM ' . Shortcut::class . ' sy_x1 JOIN sy_x1.hits sy_x1_0 WHERE sy_x1.host = shortcut.host AND sy_x1.path = shortcut.path AND LOWER(sy_x1_0.agent) LIKE :sylament_search_1)',
+            TestPlatform::Sqlite, TestPlatform::MySql => 'EXISTS (SELECT sy_x1.host FROM ' . Shortcut::class . ' sy_x1 JOIN sy_x1.hits sy_x1_0 WHERE sy_x1.host = shortcut.host AND sy_x1.path = shortcut.path AND sy_x1_0.agent LIKE :sylament_search_1)',
+        })
         ->and($query?->getDQLPart('join'))->toBe([]);
 });
 
@@ -418,12 +461,20 @@ it('mints one EXISTS per word on a derived-identity root', function (): void {
     $dql = $host->getFilteredTableQuery()?->getDQL() ?? '';
 
     expect(mb_substr_count($dql, 'EXISTS'))->toBe(2)
-        ->and($dql)->toContain(
-            'SELECT IDENTITY(sy_x0.venue)',
-            'sy_x0_0.title LIKE :sylament_search_0',
-            'SELECT IDENTITY(sy_x1.venue)',
-            'sy_x1_0.title LIKE :sylament_search_1',
-        )
+        ->and($dql)->toContain(...match (TestPlatform::current()) {
+            TestPlatform::PostgreSql => [
+                'SELECT IDENTITY(sy_x0.venue)',
+                'LOWER(sy_x0_0.title) LIKE :sylament_search_0',
+                'SELECT IDENTITY(sy_x1.venue)',
+                'LOWER(sy_x1_0.title) LIKE :sylament_search_1',
+            ],
+            TestPlatform::Sqlite, TestPlatform::MySql => [
+                'SELECT IDENTITY(sy_x0.venue)',
+                'sy_x0_0.title LIKE :sylament_search_0',
+                'SELECT IDENTITY(sy_x1.venue)',
+                'sy_x1_0.title LIKE :sylament_search_1',
+            ],
+        })
         ->and(array_keys($host->getTableRecords()->getRecords()))->toBe(['north=2Ehall~summer-2026']);
 });
 
@@ -458,7 +509,10 @@ it('searches an embeddable path as a plain field', function (): void {
     $query = $host->getFilteredTableQuery();
 
     expect(array_keys($host->getTableRecords()->getRecords()))->toBe([1])
-        ->and($query?->getDQL())->toContain('WHERE artist.address.street LIKE :sylament_search_0')
+        ->and($query?->getDQL())->toContain(match (TestPlatform::current()) {
+            TestPlatform::PostgreSql => 'WHERE LOWER(artist.address.street) LIKE :sylament_search_0',
+            TestPlatform::Sqlite, TestPlatform::MySql => 'WHERE artist.address.street LIKE :sylament_search_0',
+        })
         ->and($query?->getDQL())->not->toContain('EXISTS');
 });
 
@@ -474,8 +528,10 @@ it('table-level searchable([...]) reaches a relation path', function (): void {
     $query = $host->getFilteredTableQuery();
 
     expect(array_keys($host->getTableRecords()->getRecords()))->toBe([2])
-        ->and($query?->getDQL())
-        ->toContain('EXISTS (SELECT sy_x0.id FROM ' . Song::class . ' sy_x0 JOIN sy_x0.artist sy_x0_0 WHERE sy_x0.id = song.id AND sy_x0_0.name LIKE :sylament_search_0)')
+        ->and($query?->getDQL())->toContain(match (TestPlatform::current()) {
+            TestPlatform::PostgreSql => 'EXISTS (SELECT sy_x0.id FROM ' . Song::class . ' sy_x0 JOIN sy_x0.artist sy_x0_0 WHERE sy_x0.id = song.id AND LOWER(sy_x0_0.name) LIKE :sylament_search_0)',
+            TestPlatform::Sqlite, TestPlatform::MySql => 'EXISTS (SELECT sy_x0.id FROM ' . Song::class . ' sy_x0 JOIN sy_x0.artist sy_x0_0 WHERE sy_x0.id = song.id AND sy_x0_0.name LIKE :sylament_search_0)',
+        })
         ->and($query?->getDQLPart('join'))->toBe([]);
 });
 
@@ -546,9 +602,10 @@ it('searches a relation column individually on a derived-identity root', functio
     $host->tableColumnSearches = ['shows' => ['title' => 'opening']];
 
     expect(array_keys($host->getTableRecords()->getRecords()))->toBe(['north=2Ehall~summer-2026'])
-        ->and($host->getFilteredTableQuery()?->getDQL())->toContain(
-            'EXISTS (SELECT IDENTITY(sy_x0.venue) FROM ' . Residency::class . ' sy_x0 JOIN sy_x0.shows sy_x0_0 WHERE sy_x0.venue = residency.venue AND sy_x0.season = residency.season AND sy_x0_0.title LIKE :sylament_search_0)',
-        );
+        ->and($host->getFilteredTableQuery()?->getDQL())->toContain(match (TestPlatform::current()) {
+            TestPlatform::PostgreSql => 'EXISTS (SELECT IDENTITY(sy_x0.venue) FROM ' . Residency::class . ' sy_x0 JOIN sy_x0.shows sy_x0_0 WHERE sy_x0.venue = residency.venue AND sy_x0.season = residency.season AND LOWER(sy_x0_0.title) LIKE :sylament_search_0)',
+            TestPlatform::Sqlite, TestPlatform::MySql => 'EXISTS (SELECT IDENTITY(sy_x0.venue) FROM ' . Residency::class . ' sy_x0 JOIN sy_x0.shows sy_x0_0 WHERE sy_x0.venue = residency.venue AND sy_x0.season = residency.season AND sy_x0_0.title LIKE :sylament_search_0)',
+        });
 });
 
 it('honours the column term-splitting override over the table default', function (): void {
@@ -785,4 +842,23 @@ it('flushes the cached records when a per-column term changes', function (): voi
     $host->getTableRecords();
 
     expect($fetches)->toBe(2);
+});
+
+/*
+ * The searchable(query:) escape hatch table.md names for a non-string column:
+ * the closure spells the text cast DQL has no function for, so the same term
+ * matches on every platform, PostgreSQL included.
+ */
+it('searches a non-string column through a searchable(query:) closure on every platform', function (): void {
+    $entityManager = searchableSongs();
+    $host = new TableHost(fn (Table $table): Table => $table
+        ->query($entityManager->createQueryBuilder()->select('song')->from(Song::class, 'song'))
+        ->columns([
+            TextColumn::make('plays')->searchable(query: fn (QueryBuilder $query, string $search): Comparison => $query->expr()
+                ->like("LOWER(CONCAT(song.plays, ''))", $query->expr()->literal('%' . mb_strtolower($search) . '%'))),
+        ]));
+
+    $host->tableSearch = '30';
+
+    expect(array_keys($host->getTableRecords()->getRecords()))->toBe([3]);
 });

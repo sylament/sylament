@@ -217,7 +217,7 @@ it('matches a derived-identity root by a value on its own collection', function 
     $query = $entityManager->createQueryBuilder()->select('residency')->from(Residency::class, 'residency');
     $path = new ResolvedRelationPath([new Hop('shows', ResidencyShow::class, true)], 'title');
 
-    $query->andWhere(RelationConstraint::existsLike($query, $path, 'opening', forceCaseInsensitive: false));
+    $query->andWhere(RelationConstraint::existsLike($query, $path, 'Opening', forceCaseInsensitive: false));
 
     $matches = $query->getQuery()->getResult();
 
@@ -230,7 +230,7 @@ it('crosses a to-one hop that is itself an identifier association', function ():
     $query = $entityManager->createQueryBuilder()->select('residency')->from(Residency::class, 'residency')->orderBy('residency.season');
     $path = new ResolvedRelationPath([new Hop('venue', Venue::class, false)], 'name');
 
-    $dql = RelationConstraint::existsLike($query, $path, 'north', forceCaseInsensitive: false);
+    $dql = RelationConstraint::existsLike($query, $path, 'North', forceCaseInsensitive: false);
 
     $query->andWhere($dql);
 
@@ -262,7 +262,7 @@ it('matches a single-derived-identity root across its identifier association', f
     $query = $entityManager->createQueryBuilder()->select('seal')->from(LockerSeal::class, 'seal');
     $path = new ResolvedRelationPath([new Hop('locker', Locker::class, false)], 'label');
 
-    $query->andWhere(RelationConstraint::existsLike($query, $path, 'front', forceCaseInsensitive: false));
+    $query->andWhere(RelationConstraint::existsLike($query, $path, 'Front', forceCaseInsensitive: false));
 
     $matches = $query->getQuery()->getResult();
 
@@ -313,7 +313,7 @@ it('keeps subselect aliases distinct when a by-key predicate binds between two c
     $query = $entityManager->createQueryBuilder()->select('residency')->from(Residency::class, 'residency');
     $path = new ResolvedRelationPath([new Hop('shows', ResidencyShow::class, true)], 'title');
 
-    $first = RelationConstraint::existsLike($query, $path, 'opening', forceCaseInsensitive: false);
+    $first = RelationConstraint::existsLike($query, $path, 'Opening', forceCaseInsensitive: false);
 
     $query->andWhere(IdentifierConstraint::in($query, 'residency', Residency::class, ['north=2Ehall~summer-2026'], 'sylament_selected_record_keys'));
 

@@ -36,4 +36,7 @@ the same `searchable()` declaration matching consistently across backends
 without the caller naming one. Each call also mints its own parameter name off
 `count($query->getParameters())` (`sylament_search_<n>`), so repeat calls
 against one builder — a multi-word search, or a search crossing several
-searchable columns — never collide.
+searchable columns — never collide. Folding case is not casting: on PostgreSQL
+a field whose type is not a string is a driver error either way, which
+[table.md](../tables/table.md#the-default-search-comparison-assumes-a-string-typed-field)
+records, together with the escape hatch and the way forward.

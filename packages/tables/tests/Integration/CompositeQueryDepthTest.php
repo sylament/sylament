@@ -152,14 +152,21 @@ function depthRowKeys(Crawler $crawler): array
 }
 
 /**
- * Every row's bulleted show titles, in row order.
+ * Every row's bulleted show titles, the rows in row order and each row's titles
+ * sorted, because `Residency::$shows` declares no order for its members.
  *
  * @return list<list<string>>
  */
 function depthShowTitles(Crawler $crawler): array
 {
     return $crawler->filter('tbody tr[id*=".table.records."]')->each(
-        static fn (Crawler $row): array => $row->filter('.sy-bulleted li')->each(static fn (Crawler $item): string => mb_trim($item->text())),
+        static function (Crawler $row): array {
+            $titles = $row->filter('.sy-bulleted li')->each(static fn (Crawler $item): string => mb_trim($item->text()));
+
+            sort($titles);
+
+            return $titles;
+        },
     );
 }
 
@@ -192,8 +199,8 @@ it('pages a searched, count-sorted fetch join over a derived-identity root', fun
 
     expect(depthRowKeys($crawler))->toBe(['north=2Ehall~summer-2026', 'astra-hall~winter-2026'])
         ->and(depthShowTitles($crawler))->toBe([
-            ['Opening night', 'Closing night', 'Matinee'],
-            ['Winter night', 'Rehearsal'],
+            ['Closing night', 'Matinee', 'Opening night'],
+            ['Rehearsal', 'Winter night'],
         ])
         ->and(depthCounts($crawler))->toBe(['3', '2'])
         ->and(depthOverview($crawler))->toBe('Showing 1 to 2 of 3 results');
@@ -228,7 +235,7 @@ it('narrows the joined page by a search across the to-one hop that is an identif
         ->render());
 
     expect(depthRowKeys($crawler))->toBe(['astra-hall~winter-2026', 'astra-hall~spring-2027'])
-        ->and(depthShowTitles($crawler))->toBe([['Winter night', 'Rehearsal'], ['Spring night']])
+        ->and(depthShowTitles($crawler))->toBe([['Rehearsal', 'Winter night'], ['Spring night']])
         ->and(depthOverview($crawler))->toBe('Showing 1 to 2 of 2 results');
 });
 
@@ -255,8 +262,8 @@ it('reads a simple-mode page of the same joined query with a look-ahead and no t
 
     expect(depthRowKeys($crawler))->toBe(['north=2Ehall~summer-2026', 'astra-hall~winter-2026'])
         ->and(depthShowTitles($crawler))->toBe([
-            ['Opening night', 'Closing night', 'Matinee'],
-            ['Winter night', 'Rehearsal'],
+            ['Closing night', 'Matinee', 'Opening night'],
+            ['Rehearsal', 'Winter night'],
         ])
         ->and(depthOverview($crawler))->toBe('Showing 1 to 2 results')
         ->and($crawler->filter('.sy-pagination-item[rel="next"]'))->toHaveCount(1);

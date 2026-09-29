@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Sylament\Tables\Tests\Integration;
 
+use Doctrine\DBAL\Exception\DriverException;
 use Doctrine\ORM\EntityManagerInterface;
 use LogicException;
 use Sylament\Forms\Components\Select;
@@ -13,6 +14,7 @@ use Sylament\Tables\Tests\Fixtures\Doctrine\Entity\Artist;
 use Sylament\Tables\Tests\Fixtures\Doctrine\Entity\Song;
 use Sylament\Tables\Tests\Fixtures\Twig\Components\ArtistSongsActionsTable;
 use Sylament\Testing\Doctrine\RecordingMiddleware;
+use Sylament\Testing\Doctrine\TestPlatform;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\UX\LiveComponent\Test\InteractsWithLiveComponents;
 use Symfony\UX\LiveComponent\Test\TestLiveComponent;
@@ -391,9 +393,14 @@ it('searches the columns recordSelectSearchColumns() names rather than the title
     [$client] = seededArtistSongsClient();
     $select = associateRecordSelect(associateHost($client, ['searchColumns' => ['plays']]));
 
-    expect($select->getSearchColumns())->toBe(['plays'])
-        ->and($select->getSearchResults('300'))->toBe([30 => 'Exit Music'])
-        ->and($select->getSearchResults('Exit'))->toBe([]);
+    expect($select->getSearchColumns())->toBe(['plays']);
+
+    match (TestPlatform::current()) {
+        TestPlatform::Sqlite, TestPlatform::MySql => expect($select->getSearchResults('300'))->toBe([30 => 'Exit Music'])
+            ->and($select->getSearchResults('Exit'))->toBe([]),
+        TestPlatform::PostgreSql => expect(fn (): mixed => $select->getSearchResults('300'))->toThrow(DriverException::class, 'function lower(integer) does not exist')
+            ->and(fn (): mixed => $select->getSearchResults('Exit'))->toThrow(DriverException::class, 'function lower(integer) does not exist'),
+    };
 });
 
 it('refuses a search column the target class maps no field for', function (): void {
@@ -417,7 +424,10 @@ it('folds the search to lower case only when forceSearchCaseInsensitive() says s
     $folded->getSearchResults('ExIt');
     $withFlag = $recorder->statements();
 
-    expect(titleFoldingSelections($withoutFlag))->toBe([])
+    expect(titleFoldingSelections($withoutFlag))->toHaveCount(match (TestPlatform::current()) {
+        TestPlatform::PostgreSql => 1,
+        TestPlatform::Sqlite, TestPlatform::MySql => 0,
+    })
         ->and(titleFoldingSelections($withFlag))->toHaveCount(1);
 });
 

@@ -8,6 +8,7 @@ use Sylament\Tables\Query\SummaryQuery;
 use Sylament\Tables\Tests\Fixtures\Doctrine\Entity\Artist;
 use Sylament\Tables\Tests\Fixtures\Doctrine\Entity\Song;
 use Sylament\Tables\Tests\Fixtures\Doctrine\EntityManagerFactory;
+use Sylament\Testing\Doctrine\DriverValues;
 use Sylament\Testing\Doctrine\RecordingMiddleware;
 
 /**
@@ -48,7 +49,7 @@ it('reads one flat row of aliases over the query', function (): void {
         'COUNT(song.plays) AS sy_summary_1',
     ]);
 
-    expect($row)->toBe(['sy_summary_0' => 330, 'sy_summary_1' => 3]);
+    expect(DriverValues::numeric($row))->toBe(['sy_summary_0' => 330, 'sy_summary_1' => 3]);
 });
 
 /*
@@ -85,7 +86,7 @@ it('drops the ordering and the paging from the statement it runs', function (): 
 
     $row = SummaryQuery::readRow($query, ['SUM(song.plays) AS sy_sum']);
 
-    expect($row)->toBe(['sy_sum' => 330])
+    expect(DriverValues::numeric($row))->toBe(['sy_sum' => 330])
         ->and($recorder->statements())->toHaveCount(1)
         ->and($recorder->statements()[0])->not->toContain('ORDER BY')
         ->and($recorder->statements()[0])->not->toContain('LIMIT');
@@ -120,8 +121,11 @@ it('reads a distinct column as a flat list', function (): void {
     $entityManager->flush();
     $entityManager->clear();
 
-    expect(SummaryQuery::readDistinct(summarySongsQuery($entityManager), 'song.plays'))
-        ->toBe([10, 20, 300]);
+    $plays = SummaryQuery::readDistinct(summarySongsQuery($entityManager), 'song.plays');
+
+    sort($plays);
+
+    expect($plays)->toBe([10, 20, 300]);
 });
 
 it('reads a distinct column over an empty set as an empty list', function (): void {

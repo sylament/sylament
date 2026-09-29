@@ -15,6 +15,7 @@ use Sylament\Tables\Tests\Fixtures\Doctrine\Entity\Song;
 use Sylament\Tables\Tests\Fixtures\Doctrine\Entity\Venue;
 use Sylament\Tables\Tests\Fixtures\Doctrine\EntityManagerFactory;
 use Sylament\Tables\Tests\Fixtures\Doctrine\Handle;
+use Sylament\Testing\Doctrine\TestPlatform;
 
 /*
  * Covers the query half of host-side sorting — the `ORDER BY` the lane composes.
@@ -352,9 +353,15 @@ it('sorts by a to-one relation both directions keeping null-relation rows', func
         ->toContain('LEFT JOIN song.artist sy_artist', 'ORDER BY sy_artist.name asc, song.id asc')
         ->and($descending->getFilteredSortedTableQuery()?->getDQL())
         ->toContain('ORDER BY sy_artist.name desc, song.id desc')
-        ->and(array_keys($ascending->getTableRecords()->getRecords()))->toBe([3, 2, 1])
+        ->and(array_keys($ascending->getTableRecords()->getRecords()))->toBe(match (TestPlatform::current()) {
+            TestPlatform::PostgreSql => [2, 1, 3],
+            TestPlatform::Sqlite, TestPlatform::MySql => [3, 2, 1],
+        })
         ->and($ascending->getTableRecords()->getTotalRecordCount())->toBe(3)
-        ->and(array_keys($descending->getTableRecords()->getRecords()))->toBe([1, 2, 3]);
+        ->and(array_keys($descending->getTableRecords()->getRecords()))->toBe(match (TestPlatform::current()) {
+            TestPlatform::PostgreSql => [3, 1, 2],
+            TestPlatform::Sqlite, TestPlatform::MySql => [1, 2, 3],
+        });
 });
 
 it('applies the identifier tiebreak alongside a relation sort', function (): void {
@@ -419,7 +426,10 @@ it('no longer suppresses the tiebreak for a relation path ending in the identifi
 
     expect($query?->getDQL())->toContain('ORDER BY sy_artist.id asc, song.id asc')
         ->and($query?->getDQLPart('orderBy'))->toHaveCount(2)
-        ->and(array_keys($host->getTableRecords()->getRecords()))->toBe([3, 1, 2])
+        ->and(array_keys($host->getTableRecords()->getRecords()))->toBe(match (TestPlatform::current()) {
+            TestPlatform::PostgreSql => [1, 2, 3],
+            TestPlatform::Sqlite, TestPlatform::MySql => [3, 1, 2],
+        })
         ->and($joined->getFilteredSortedTableQuery()?->getDQL())->toContain('ORDER BY artist.id ASC, song.id asc');
 });
 
@@ -432,7 +442,10 @@ it('resolves a relation path in the default sort', function (): void {
 
     expect($host->getFilteredSortedTableQuery()?->getDQL())
         ->toContain('LEFT JOIN song.artist sy_artist', 'ORDER BY sy_artist.name desc, song.id desc')
-        ->and(array_keys($host->getTableRecords()->getRecords()))->toBe([1, 2, 3]);
+        ->and(array_keys($host->getTableRecords()->getRecords()))->toBe(match (TestPlatform::current()) {
+            TestPlatform::PostgreSql => [3, 1, 2],
+            TestPlatform::Sqlite, TestPlatform::MySql => [1, 2, 3],
+        });
 });
 
 it('keeps a user-authored order ahead of table sorts', function (): void {

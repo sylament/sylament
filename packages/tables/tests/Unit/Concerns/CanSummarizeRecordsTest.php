@@ -27,6 +27,7 @@ use Sylament\Tables\Tests\Fixtures\Doctrine\Entity\Song;
 use Sylament\Tables\Tests\Fixtures\Doctrine\Entity\Venue;
 use Sylament\Tables\Tests\Fixtures\Doctrine\EntityManagerFactory;
 use Sylament\Tables\Tests\Fixtures\Doctrine\Handle;
+use Sylament\Testing\Doctrine\DriverValues;
 use Sylament\Testing\Doctrine\RecordingMiddleware;
 
 /**
@@ -83,7 +84,7 @@ it('takes the all-table summary query from the filtered query, and reads it unso
 
     expect($query)->toBeInstanceOf(QueryBuilder::class)
         ->and($query?->getMaxResults())->toBeNull()
-        ->and($host->getTableSummarySelectedState($query))->toBe(['sy_summary_0' => 210])
+        ->and(DriverValues::numeric($host->getTableSummarySelectedState($query)))->toBe(['sy_summary_0' => 210])
         ->and($recorder->statements())->toHaveCount(1)
         ->and($recorder->statements()[0])->not->toContain('ORDER BY')
         ->and($recorder->statements()[0])->not->toContain('LIMIT');
@@ -93,7 +94,7 @@ it('summarizes only what the filters and the searches left', function (): void {
     $host = summaryStateHost(summaryStateSongs(), [TextColumn::make('title')->searchable(), TextColumn::make('plays')->summarize(Sum::make())]);
     $host->tableSearch = 'Airbag';
 
-    expect($host->getTableSummarySelectedState($host->getAllTableSummaryQuery()))->toBe(['sy_summary_0' => 10]);
+    expect(DriverValues::numeric($host->getTableSummarySelectedState($host->getAllTableSummaryQuery())))->toBe(['sy_summary_0' => 10]);
 });
 
 /*
@@ -104,8 +105,8 @@ it('summarizes only what the filters and the searches left', function (): void {
 it('summarizes the page over the page keys, to a different figure than the whole table', function (): void {
     $host = summaryStateHost(summaryStateSongs(), [TextColumn::make('plays')->summarize(Sum::make())]);
 
-    expect($host->getTableSummarySelectedState($host->getPageTableSummaryQuery()))->toBe(['sy_summary_0' => 30])
-        ->and($host->getTableSummarySelectedState($host->getAllTableSummaryQuery()))->toBe(['sy_summary_0' => 210]);
+    expect(DriverValues::numeric($host->getTableSummarySelectedState($host->getPageTableSummaryQuery())))->toBe(['sy_summary_0' => 30])
+        ->and(DriverValues::numeric($host->getTableSummarySelectedState($host->getAllTableSummaryQuery())))->toBe(['sy_summary_0' => 210]);
 });
 
 it('narrows the page summary to the keys of the page being shown', function (): void {
@@ -115,7 +116,7 @@ it('narrows the page summary to the keys of the page being shown', function (): 
     expect($query?->getDQL())->toContain('song.id IN (:sylament_summary_keys)')
         ->and($query?->getParameter('sylament_summary_keys')?->getValue())->toBe([3, 4])
         ->and($query?->getParameter('sylament_summary_keys')?->getType())->toBe(ArrayParameterType::INTEGER)
-        ->and($host->getTableSummarySelectedState($query))->toBe(['sy_summary_0' => 70]);
+        ->and(DriverValues::numeric($host->getTableSummarySelectedState($query)))->toBe(['sy_summary_0' => 70]);
 });
 
 /*
@@ -129,7 +130,7 @@ it('leaves the page summary un-narrowed where one page holds the whole filtered 
     $host = summaryStateHost(summaryStateSongs(), [TextColumn::make('plays')->summarize(Sum::make())], recordsPerPage: $recordsPerPage);
     $query = $host->getPageTableSummaryQuery();
 
-    expect($host->getTableSummarySelectedState($query))->toBe(['sy_summary_0' => 210])
+    expect(DriverValues::numeric($host->getTableSummarySelectedState($query)))->toBe(['sy_summary_0' => 210])
         ->and($query?->getDQL())->not->toContain('sylament_summary_keys')
         ->and($query?->getParameters()->toArray())->toBe([]);
 })->with(["recordsPerPage 'all'" => ['all'], 'a page size the table never fills' => [10]]);
@@ -166,7 +167,7 @@ it('names the record class own identifier in the page narrowing', function (): v
 
     expect($host->getPageTableSummaryQuery()?->getDQL())->toContain('book.code IN (:sylament_summary_keys)')
         ->and($host->getPageTableSummaryQuery()?->getParameter('sylament_summary_keys')?->getType())->toBe(ArrayParameterType::STRING)
-        ->and($host->getTableSummarySelectedState($host->getPageTableSummaryQuery()))->toBe(['sy_summary_0' => 2]);
+        ->and(DriverValues::numeric($host->getTableSummarySelectedState($host->getPageTableSummaryQuery())))->toBe(['sy_summary_0' => 2]);
 });
 
 /**
@@ -225,8 +226,8 @@ it('narrows the page summary of a composite table by every identifier field', fu
 
     expect($query?->getDQL())->toContain('((pair.a = :sylament_summary_keys_0_0 AND pair.b = :sylament_summary_keys_0_1) OR (pair.a = :sylament_summary_keys_1_0 AND pair.b = :sylament_summary_keys_1_1))')
         ->and($query?->getParameter('sylament_summary_keys_1_1')?->getValue())->toBe(2)
-        ->and($host->getTableSummarySelectedState($query))->toBe(['sy_summary_0' => 3, 'sy_summary_1' => 2])
-        ->and($host->getTableSummarySelectedState($host->getAllTableSummaryQuery()))->toBe(['sy_summary_0' => 4, 'sy_summary_1' => 3]);
+        ->and(DriverValues::numeric($host->getTableSummarySelectedState($query)))->toBe(['sy_summary_0' => 3, 'sy_summary_1' => 2])
+        ->and(DriverValues::numeric($host->getTableSummarySelectedState($host->getAllTableSummaryQuery())))->toBe(['sy_summary_0' => 4, 'sy_summary_1' => 3]);
 });
 
 /*
@@ -247,8 +248,8 @@ it('narrows the page summary of a derived-identity table through its association
     expect($query?->getDQL())->toContain('((residency.venue = :sylament_summary_keys_0_0 AND residency.season = :sylament_summary_keys_0_1) OR (residency.venue = :sylament_summary_keys_1_0 AND residency.season = :sylament_summary_keys_1_1))')
         ->and($query?->getParameter('sylament_summary_keys_0_0')?->getValue())->toBe('apollo')
         ->and($query?->getParameter('sylament_summary_keys_0_1')?->getValue())->toBe('2026-spring')
-        ->and($host->getTableSummarySelectedState($query))->toBe(['sy_summary_0' => 30, 'sy_summary_1' => 2, 'sy_summary_2' => 15.0])
-        ->and($host->getTableSummarySelectedState($host->getAllTableSummaryQuery()))->toBe(['sy_summary_0' => 100, 'sy_summary_1' => 4, 'sy_summary_2' => 25.0]);
+        ->and(DriverValues::numeric($host->getTableSummarySelectedState($query)))->toBe(['sy_summary_0' => 30, 'sy_summary_1' => 2, 'sy_summary_2' => 15.0])
+        ->and(DriverValues::numeric($host->getTableSummarySelectedState($host->getAllTableSummaryQuery())))->toBe(['sy_summary_0' => 100, 'sy_summary_1' => 4, 'sy_summary_2' => 25.0]);
 });
 
 /*
@@ -266,7 +267,7 @@ it('leaves a keyed page summary un-narrowed where one page holds the whole filte
 
     $query = $host->getPageTableSummaryQuery();
 
-    expect($host->getTableSummarySelectedState($query))->toBe(['sy_summary_0' => 100])
+    expect(DriverValues::numeric($host->getTableSummarySelectedState($query)))->toBe(['sy_summary_0' => 100])
         ->and($query?->getDQL())->not->toContain('sylament_summary_keys')
         ->and($query?->getParameters()->toArray())->toBe([]);
 });
@@ -296,7 +297,7 @@ it('reads every batchable summarizer of every column in one statement', function
 
     $state = $host->getTableSummarySelectedState($query);
 
-    expect($state)->toBe(['sy_summary_0' => 210, 'sy_summary_1' => 35.0, 'sy_summary_2' => 6])
+    expect(DriverValues::numeric($state))->toBe(['sy_summary_0' => 210, 'sy_summary_1' => 35.0, 'sy_summary_2' => 6])
         ->and($recorder->statements())->toHaveCount(1)
         ->and($recorder->statements()[0])->not->toContain('GROUP BY');
 });
@@ -332,7 +333,7 @@ it('advances the batch alias per summarizer pushed rather than per select emitte
     $icons->selectedState($state);
     $sum->selectedState($state);
 
-    expect($state)->toBe(['sy_summary_1' => 210])
+    expect(DriverValues::numeric($state))->toBe(['sy_summary_1' => 210])
         ->and($sum->getSelectedState())->toBe(210)
         ->and($icons->hasSelectedState())->toBeFalse()
         ->and(fn (): mixed => $icons->getState())->toThrow(LogicException::class, 'IconColumn');
@@ -346,7 +347,7 @@ it('leaves a scoped summarizer out of the batch so it runs its own query', funct
 
     $query = $host->getAllTableSummaryQuery();
 
-    expect($host->getTableSummarySelectedState($query))->toBe(['sy_summary_0' => 210])
+    expect(DriverValues::numeric($host->getTableSummarySelectedState($query)))->toBe(['sy_summary_0' => 210])
         ->and($scoped->query($query)->getState())->toBe(3);
 });
 
@@ -367,7 +368,7 @@ it('reads a to-one relation column off one join it reuses', function (): void {
     $query = $host->getAllTableSummaryQuery();
     $state = $host->getTableSummarySelectedState($query);
 
-    expect($state)->toBe(['sy_summary_0' => 6, 'sy_summary_1' => 6])
+    expect(DriverValues::numeric($state))->toBe(['sy_summary_0' => 6, 'sy_summary_1' => 6])
         ->and(mb_substr_count($query?->getDQL() ?? '', 'LEFT JOIN song.artist'))->toBe(1);
 });
 
@@ -376,7 +377,7 @@ it('reads an embeddable path off the root alias', function (): void {
         TextColumn::make('artist.address.street')->summarize(Count::make()),
     ], recordsPerPage: 'all');
 
-    expect($host->getTableSummarySelectedState($host->getAllTableSummaryQuery()))->toBe(['sy_summary_0' => 6]);
+    expect(DriverValues::numeric($host->getTableSummarySelectedState($host->getAllTableSummaryQuery())))->toBe(['sy_summary_0' => 6]);
 });
 
 it('resolves no expression for a column whose summarizers all sit out the batch', function (): void {
@@ -385,7 +386,7 @@ it('resolves no expression for a column whose summarizers all sit out the batch'
         TextColumn::make('plays')->summarize(Sum::make()),
     ], recordsPerPage: 'all');
 
-    expect($host->getTableSummarySelectedState($host->getAllTableSummaryQuery()))->toBe(['sy_summary_0' => 210]);
+    expect(DriverValues::numeric($host->getTableSummarySelectedState($host->getAllTableSummaryQuery())))->toBe(['sy_summary_0' => 210]);
 });
 
 it('refuses a column summarized through a to-many association', function (): void {
@@ -421,7 +422,7 @@ it('leaves an aggregate column out of the batch, where its refusal is read time'
         TextColumn::make('plays')->summarize(Sum::make()),
     ], recordsPerPage: 'all');
 
-    expect($host->getTableSummarySelectedState($host->getAllTableSummaryQuery()))->toBe(['sy_summary_0' => 210]);
+    expect(DriverValues::numeric($host->getTableSummarySelectedState($host->getAllTableSummaryQuery())))->toBe(['sy_summary_0' => 210]);
 });
 
 /*
@@ -434,7 +435,7 @@ it('batches the visible columns rather than every declared one', function (): vo
         TextColumn::make('id')->summarize(Count::make()),
     ], recordsPerPage: 'all');
 
-    expect($host->getTableSummarySelectedState($host->getAllTableSummaryQuery()))->toBe(['sy_summary_0' => 6]);
+    expect(DriverValues::numeric($host->getTableSummarySelectedState($host->getAllTableSummaryQuery())))->toBe(['sy_summary_0' => 6]);
 });
 
 it('hands back an independent builder on every read', function (): void {
@@ -447,7 +448,7 @@ it('hands back an independent builder on every read', function (): void {
 
     expect($first)->not->toBe($second)
         ->and($second?->getDQL())->not->toContain('song.plays > 30')
-        ->and($host->getTableSummarySelectedState($second))->toBe(['sy_summary_0' => 210]);
+        ->and(DriverValues::numeric($host->getTableSummarySelectedState($second)))->toBe(['sy_summary_0' => 210]);
 });
 
 /**
@@ -486,8 +487,8 @@ it('summarizes each group in one statement of its own', function (): void {
     $radiohead = $host->getTableSummarySelectedState($host->getGroupedTableSummaryQuery($records[1]));
     $bjork = $host->getTableSummarySelectedState($host->getGroupedTableSummaryQuery($records[4]));
 
-    expect($radiohead)->toBe(['sy_summary_0' => 60])
-        ->and($bjork)->toBe(['sy_summary_0' => 150])
+    expect(DriverValues::numeric($radiohead))->toBe(['sy_summary_0' => 60])
+        ->and(DriverValues::numeric($bjork))->toBe(['sy_summary_0' => 150])
         ->and($recorder->statements())->toHaveCount(2);
 });
 
@@ -497,7 +498,7 @@ it('scopes a group holding a single record', function (): void {
 
     $records = $host->getTableRecords();
 
-    expect($host->getTableSummarySelectedState($host->getGroupedTableSummaryQuery($records[1])))->toBe(['sy_summary_0' => 10]);
+    expect(DriverValues::numeric($host->getTableSummarySelectedState($host->getGroupedTableSummaryQuery($records[1]))))->toBe(['sy_summary_0' => 10]);
 });
 
 it('honours the group scope closure on the grouped summary path', function (): void {
@@ -507,7 +508,7 @@ it('honours the group scope closure on the grouped summary path', function (): v
 
     $records = $host->getTableRecords();
 
-    expect($host->getTableSummarySelectedState($host->getGroupedTableSummaryQuery($records[1])))->toBe(['sy_summary_0' => 200]);
+    expect(DriverValues::numeric($host->getTableSummarySelectedState($host->getGroupedTableSummaryQuery($records[1]))))->toBe(['sy_summary_0' => 200]);
 });
 
 it('answers no grouped summary query when nothing is grouped or nothing is queried', function (): void {
@@ -537,8 +538,8 @@ it('scopes a fresh clone rather than the query the all-table row reads', functio
     $grouped = $host->getGroupedTableSummaryQuery($records[1]);
 
     expect($grouped)->not->toBe($host->getAllTableSummaryQuery())
-        ->and($host->getTableSummarySelectedState($grouped))->toBe(['sy_summary_0' => 60])
-        ->and($host->getTableSummarySelectedState($host->getAllTableSummaryQuery()))->toBe(['sy_summary_0' => 210]);
+        ->and(DriverValues::numeric($host->getTableSummarySelectedState($grouped)))->toBe(['sy_summary_0' => 60])
+        ->and(DriverValues::numeric($host->getTableSummarySelectedState($host->getAllTableSummaryQuery())))->toBe(['sy_summary_0' => 210]);
 });
 
 /*
@@ -563,8 +564,8 @@ it('scopes a date group to the whole day its key names', function (): void {
 
     $records = $host->getTableRecords();
 
-    expect($host->getTableSummarySelectedState($host->getGroupedTableSummaryQuery($records[1])))->toBe(['sy_summary_0' => 30])
-        ->and($host->getTableSummarySelectedState($host->getGroupedTableSummaryQuery($records[3])))->toBe(['sy_summary_0' => 30]);
+    expect(DriverValues::numeric($host->getTableSummarySelectedState($host->getGroupedTableSummaryQuery($records[1]))))->toBe(['sy_summary_0' => 30])
+        ->and(DriverValues::numeric($host->getTableSummarySelectedState($host->getGroupedTableSummaryQuery($records[3]))))->toBe(['sy_summary_0' => 30]);
 });
 
 it('renders no trailing grouped summary for a record that is not there', function (): void {
@@ -760,7 +761,7 @@ it('summarizes each group of a keyed table in one statement of its own', functio
 
     $recorder->reset();
 
-    expect($host->getTableSummarySelectedState($host->getGroupedTableSummaryQuery($records['apollo~2026-autumn'])))->toBe(['sy_summary_0' => 60])
+    expect(DriverValues::numeric($host->getTableSummarySelectedState($host->getGroupedTableSummaryQuery($records['apollo~2026-autumn']))))->toBe(['sy_summary_0' => 60])
         ->and($recorder->statements())->toHaveCount(1)
         ->and($recorder->statements()[0])->toContain('WHERE r0_.season = ?');
 });
@@ -779,8 +780,12 @@ it('reads a range and a list off a keyed page', function (): void {
     $range = Range::make()->column($column)->query($host->getPageTableSummaryQuery());
     $values = Values::make()->column($column)->query($host->getPageTableSummaryQuery());
 
+    $listed = $values->getState();
+
+    sort($listed);
+
     expect($range->getState())->toBe([10, 20])
-        ->and($values->getState())->toBe([10, 20]);
+        ->and($listed)->toBe([10, 20]);
 });
 
 /*

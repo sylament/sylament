@@ -166,9 +166,10 @@ it("writes a joined leaf through Doctrine's multi-table update, narrowed by the 
 
 it('names a reserved-word table, its identifier and its join columns through the quote strategy', function (): void {
     [$client, $entityManager, $recorder] = depotByKeySeed();
-    $select = 'SELECT "select", "from" FROM "order" WHERE "group" = ?';
+    $quote = $entityManager->getConnection()->getDatabasePlatform()->quoteSingleIdentifier(...);
+    $select = sprintf('SELECT %s, %s FROM %s WHERE %s = ?', $quote('select'), $quote('from'), $quote('order'), $quote('group'));
 
-    expect(depotByKeyUpdates($client, $recorder, 'purchases', ['1']))->toBe(['UPDATE "order" SET "select" = NULL, "from" = NULL WHERE "group" IN (?)'])
+    expect(depotByKeyUpdates($client, $recorder, 'purchases', ['1']))->toBe([sprintf('UPDATE %s SET %s = NULL, %s = NULL WHERE %s IN (?)', $quote('order'), $quote('select'), $quote('from'), $quote('group'))])
         ->and(depotByKeyStoredDepot($entityManager, $select, 1))->toBe(['select' => null, 'from' => null])
         ->and(depotByKeyStoredDepot($entityManager, $select, 2))->toBe(['select' => 'north', 'from' => 'one'])
         ->and(depotByKeyRelatedKeys($client, $entityManager, 'purchases'))->toBe([2]);

@@ -25,6 +25,7 @@ use Sylament\Tables\Tests\Fixtures\Doctrine\Entity\ShortcutNote;
 use Sylament\Tables\Tests\Fixtures\Doctrine\Entity\Venue;
 use Sylament\Tables\Tests\Fixtures\Doctrine\EntityManagerFactory;
 use Sylament\Tables\Tests\Fixtures\Doctrine\Handle;
+use Sylament\Testing\Doctrine\TestPlatform;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Component\DomCrawler\Crawler;
 use Symfony\UX\LiveComponent\Test\InteractsWithLiveComponents;
@@ -432,7 +433,10 @@ it('narrows the scoped page by a relation search and by a per-column search, nes
         // which the owner's two parameters offset — `sy_x3` where a
         // single-identifier owner would mint `sy_x2`. Re-read this literal when a
         // parameter moves; never re-run it blind.
-        ->and($dql)->toContain('EXISTS (SELECT sy_x3.region FROM ' . Circuit::class . ' sy_x3 JOIN sy_x3.stops sy_x3_0 WHERE sy_x3.region = record.region AND sy_x3.slot = record.slot AND sy_x3_0.label LIKE :sylament_search_3)');
+        ->and($dql)->toContain(match (TestPlatform::current()) {
+            TestPlatform::PostgreSql => 'EXISTS (SELECT sy_x3.region FROM ' . Circuit::class . ' sy_x3 JOIN sy_x3.stops sy_x3_0 WHERE sy_x3.region = record.region AND sy_x3.slot = record.slot AND LOWER(sy_x3_0.label) LIKE :sylament_search_3)',
+            TestPlatform::Sqlite, TestPlatform::MySql => 'EXISTS (SELECT sy_x3.region FROM ' . Circuit::class . ' sy_x3 JOIN sy_x3.stops sy_x3_0 WHERE sy_x3.region = record.region AND sy_x3.slot = record.slot AND sy_x3_0.label LIKE :sylament_search_3)',
+        });
 });
 
 it('resolves a selection of the scoped relation in both strategies, on one builder with the owner', function (): void {
@@ -512,7 +516,7 @@ it('pages the scoped relation through its identifiers when the query joins a col
         // A page of one record still hydrates that record's whole collection,
         // which only the two-step read produces.
         ->and(compositeOwnerTableRenderedKeys($crawler))->toBe(['north~two'])
-        ->and($bullets)->toBe(['Ridge', 'Basin'])
+        ->and($bullets)->toEqualCanonicalizing(['Ridge', 'Basin'])
         ->and(mb_trim($crawler->filter('.sy-pagination-overview')->first()->text()))->toBe('Showing 3 to 3 of 3 results');
 });
 

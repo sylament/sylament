@@ -24,6 +24,7 @@ use Sylament\Tables\Tests\Fixtures\Doctrine\Handle;
 use Sylament\Tables\Tests\Fixtures\Records\Artist;
 use Sylament\Tables\Tests\Fixtures\Records\Song;
 use Sylament\Testing\Doctrine\RecordingMiddleware;
+use Sylament\Testing\Doctrine\TestPlatform;
 
 function sevenSongs(): EntityManager
 {
@@ -1142,7 +1143,10 @@ it('reuses the sort join when the sorted relation column is also displayed', fun
 
     $recorder->reset();
 
-    expect(everyCellState($host))->toBe([null, 'Adele', 'Radiohead'])
+    expect(everyCellState($host))->toBe(match (TestPlatform::current()) {
+        TestPlatform::PostgreSql => ['Adele', 'Radiohead', null],
+        TestPlatform::Sqlite, TestPlatform::MySql => [null, 'Adele', 'Radiohead'],
+    })
         ->and($recorder->statements())->toHaveCount(1)
         ->and(mb_substr_count($recorder->statements()[0], 'LEFT JOIN'))->toBe(1);
 });

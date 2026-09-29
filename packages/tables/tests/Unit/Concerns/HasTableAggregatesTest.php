@@ -22,6 +22,7 @@ use Sylament\Tables\Tests\Fixtures\Doctrine\Entity\Song;
 use Sylament\Tables\Tests\Fixtures\Doctrine\Entity\Venue;
 use Sylament\Tables\Tests\Fixtures\Doctrine\EntityManagerFactory;
 use Sylament\Tables\Tests\Fixtures\Doctrine\Handle;
+use Sylament\Testing\Doctrine\DriverValues;
 use Sylament\Testing\Doctrine\RecordingMiddleware;
 
 /**
@@ -149,7 +150,7 @@ it('exists reads as a real bool with false for absent keys', function (): void {
 it('avg reads null for a record with no related rows', function (): void {
     $host = artistTableHost(artistsWithSongs(), [TextColumn::make('songs_avg_plays')->avg('songs', 'plays')]);
 
-    expect(aggregateCellStates($host, 'songs_avg_plays'))->toBe([15.0, null]);
+    expect(array_map(DriverValues::number(...), aggregateCellStates($host, 'songs_avg_plays')))->toBe([15.0, null]);
 });
 
 it('adds no aggregate artifacts to the page or count queries', function (): void {
@@ -545,7 +546,7 @@ it('fills the store for a derived-identity page', function (): void {
     ]);
 
     expect(aggregateCellStates($host, 'shows_count'))->toBe([2, 0, 1])
-        ->and(aggregateCellStates($host, 'shows_sum_seats'))->toBe([300, null, 60]);
+        ->and(array_map(DriverValues::number(...), aggregateCellStates($host, 'shows_sum_seats')))->toBe([300, null, 60]);
 });
 
 it('keys the store of a single derived identity by the identifier the cell asks for', function (): void {

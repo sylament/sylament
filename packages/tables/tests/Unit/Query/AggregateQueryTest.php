@@ -22,6 +22,7 @@ use Sylament\Tables\Tests\Fixtures\Doctrine\Entity\Song;
 use Sylament\Tables\Tests\Fixtures\Doctrine\Entity\Venue;
 use Sylament\Tables\Tests\Fixtures\Doctrine\EntityManagerFactory;
 use Sylament\Tables\Tests\Fixtures\Doctrine\Handle;
+use Sylament\Testing\Doctrine\DriverValues;
 use Sylament\Testing\Doctrine\RecordingMiddleware;
 
 /**
@@ -286,6 +287,8 @@ it('counts a to-many relation grouped by record key', function (): void {
         ['1', '2', '3'],
     );
 
+    ksort($values);
+
     expect($values)->toBe([1 => 2, 3 => 1]);
 });
 
@@ -297,7 +300,9 @@ it('averages a related column', function (): void {
         ['1', '2', '3'],
     );
 
-    expect($values)->toBe([1 => 15.0, 3 => 300.0]);
+    ksort($values);
+
+    expect(DriverValues::numeric($values))->toBe([1 => 15.0, 3 => 300.0]);
 });
 
 it('applies the scope closure to the batch builder', function (): void {
@@ -334,6 +339,8 @@ it('walks a dotted relationship path', function (): void {
         ['1', '2', '3'],
     );
 
+    ksort($values);
+
     expect($values)->toBe([1 => 2, 2 => 2, 3 => 1]);
 });
 
@@ -358,6 +365,8 @@ it('keys a batch by a stringable identifier', function (): void {
         ['arena', 'shed'],
     );
 
+    ksort($values);
+
     expect($values)->toBe(['arena' => 2, 'shed' => 1]);
 });
 
@@ -376,6 +385,8 @@ it('keys a batch over a composite-identifier root by the escaped record key', fu
         $entityManager->getRepository(Shortcut::class)->findBy([], ['host' => 'ASC']),
     );
 
+    ksort($values);
+
     expect($values)->toBe(['plain~about' => 1, 'www=2Eexample=2Ecom~=2Fa=20b' => 2])
         ->and($recordSideKeys)->toBe(['nohits~x', 'plain~about', 'www=2Eexample=2Ecom~=2Fa=20b'])
         ->and(array_diff(array_keys($values), $recordSideKeys))->toBe([]);
@@ -389,7 +400,9 @@ it('sums a related column over a composite-identifier root', function (): void {
         ['www=2Eexample=2Ecom~=2Fa=20b', 'plain~about', 'nohits~x'],
     );
 
-    expect($values)->toBe(['plain~about' => 10, 'www=2Eexample=2Ecom~=2Fa=20b' => 7]);
+    ksort($values);
+
+    expect(DriverValues::numeric($values))->toBe(['plain~about' => 10, 'www=2Eexample=2Ecom~=2Fa=20b' => 7]);
 });
 
 it('drops a malformed key from a composite batch rather than throwing', function (): void {
@@ -418,6 +431,8 @@ it('keys a batch over a derived identity by its association component', function
         $entityManager->getRepository(Residency::class)->findBy([], ['season' => 'ASC']),
     );
 
+    ksort($values);
+
     expect($values)->toBe(['arena~autumn=2F2026' => 2, 'shed~winter' => 1])
         ->and($recordSideKeys)->toBe(['arena~autumn=2F2026', 'arena~empty', 'shed~winter'])
         ->and(array_diff(array_keys($values), $recordSideKeys))->toBe([]);
@@ -430,6 +445,8 @@ it('walks a dotted path off a derived identity', function (): void {
         aggregateDeclaration('MAX', 'venue.gigs', 'attendance'),
         ['arena~autumn=2F2026', 'shed~winter', 'arena~empty'],
     );
+
+    ksort($values);
 
     expect($values)->toBe(['arena~autumn=2F2026' => 900, 'arena~empty' => 900, 'shed~winter' => 50]);
 });
@@ -448,6 +465,8 @@ it('keys a single derived identity by the converted identifier, not the raw colu
         static fn (LockerSeal $seal): string => RecordKey::of($entityManager, $seal, LockerSeal::class),
         $entityManager->getRepository(LockerSeal::class)->findBy([], ['position' => 'ASC']),
     );
+
+    ksort($values);
 
     expect($values)->toBe(['AB-1' => 2, 'CD-2' => 1])
         ->and($recordSideKeys)->toBe(['AB-1', 'CD-2'])
@@ -468,6 +487,8 @@ it('keys a batch over a root whose whole identifier is two associations', functi
         static fn (LockerLease $lease): string => RecordKey::of($entityManager, $lease, LockerLease::class),
         $entityManager->getRepository(LockerLease::class)->findBy([], ['position' => 'ASC']),
     );
+
+    ksort($values);
 
     expect($values)->toBe(['AB-1~1' => 2, 'AB-1~2' => 1])
         ->and($recordSideKeys)->toBe(['AB-1~1', 'AB-1~2', 'CD-2~1'])
@@ -495,6 +516,8 @@ it('reads a single-identifier batch in one statement, narrowed as it always was'
 
     $values = AggregateQuery::fetch($entityManager, Artist::class, aggregateDeclaration('COUNT', 'songs'), ['1', '2', '3']);
 
+    ksort($values);
+
     expect($values)->toBe([1 => 2, 3 => 1])
         ->and($recorder->statements())->toBe([
             'SELECT a0_.id AS id_0, COUNT(s1_.id) AS sclr_1 FROM Artist a0_ INNER JOIN Song s1_ ON a0_.id = s1_.artist_id WHERE a0_.id IN (?, ?, ?) GROUP BY a0_.id',
@@ -511,6 +534,8 @@ it('reads a single-identifier batch past five hundred keys in one statement', fu
 
     $values = AggregateQuery::fetch($entityManager, Artist::class, aggregateDeclaration('COUNT', 'songs'), $keys);
 
+    ksort($values);
+
     expect($values)->toBe([1 => 2, 501 => 1])
         ->and($recorder->statements())->toHaveCount(1)
         ->and(mb_substr_count($recorder->statements()[0], '?'))->toBe(501);
@@ -522,6 +547,8 @@ it('reads a composite batch wider than one chunk in one statement per chunk', fu
     $values = AggregateQuery::fetch($entityManager, Shortcut::class, aggregateDeclaration('COUNT', 'hits'), $keys);
 
     $placeholders = array_map(static fn (string $sql): int => mb_substr_count($sql, '?'), $recorder->statements());
+
+    ksort($values);
 
     expect($values)->toBe(['bulk=2Etest~=2Fp=2F1' => 2, 'bulk=2Etest~=2Fp=2F501' => 2])
         ->and($recorder->statements())->toHaveCount(2)
@@ -540,6 +567,8 @@ it('carries a scope parameter into every chunk of a composite batch', function (
     };
 
     $values = AggregateQuery::fetch($entityManager, Shortcut::class, aggregateDeclaration('COUNT', 'hits', scope: $scope), $keys);
+
+    ksort($values);
 
     expect($values)->toBe(['bulk=2Etest~=2Fp=2F1' => 1, 'bulk=2Etest~=2Fp=2F501' => 1])
         ->and($recorder->statements())->toHaveCount(2)

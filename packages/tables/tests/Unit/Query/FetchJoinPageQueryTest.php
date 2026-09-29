@@ -27,6 +27,7 @@ use Sylament\Tables\Tests\Fixtures\Doctrine\Entity\Venue;
 use Sylament\Tables\Tests\Fixtures\Doctrine\EntityManagerFactory;
 use Sylament\Tables\Tests\Fixtures\Doctrine\Handle;
 use Sylament\Testing\Doctrine\RecordingMiddleware;
+use Sylament\Testing\Doctrine\TestPlatform;
 
 /*
  * The two-step window a keyed root pages through: the page's identifiers off
@@ -307,9 +308,10 @@ it('pages a join entity keyed by two associations, rewriting both order items', 
  * The regression pin for the whole read. `LimitSubqueryOutputWalker` rewrites an
  * order item from the field mappings alone, so off the `ROW_NUMBER` platforms it
  * re-emits our own identifier tiebreak's `ORDER BY residency.venue` as a column
- * its derived table does not carry. Both halves are asserted, because a rewrite
- * that quietly stops firing leaves a driver error on every SQLite, MySQL and
- * MariaDB page.
+ * its derived table does not carry. Both halves are asserted, because the
+ * walker's rewrite matters on SQLite, MySQL and MariaDB, where one that quietly
+ * stops firing leaves a driver error on every page, while PostgreSQL's
+ * `ROW_NUMBER` path never needed it.
  */
 it('survives the identifier tiebreak a platform without row numbers cannot walk', function (): void {
     $entityManager = fetchJoinPageRig();
@@ -319,9 +321,14 @@ it('survives the identifier tiebreak a platform without row numbers cannot walk'
         ->setFirstResult(0)
         ->setMaxResults(2);
 
-    expect(fn (): array => $unrewritten->getScalarResult())
-        ->toThrow(DriverException::class, 'no such column: r0_.venue_id')
-        ->and(fetchJoinPageKeys($entityManager, FetchJoinPageQuery::read(fetchJoinPageResidencyQuery($entityManager), Residency::class, 0, 2)))
+    $unrewrittenRead = static fn (): array => $unrewritten->getScalarResult();
+
+    match (TestPlatform::current()) {
+        TestPlatform::PostgreSql => expect($unrewrittenRead())->toBeArray(),
+        TestPlatform::Sqlite, TestPlatform::MySql => expect($unrewrittenRead)->toThrow(DriverException::class, 'venue_id'),
+    };
+
+    expect(fetchJoinPageKeys($entityManager, FetchJoinPageQuery::read(fetchJoinPageResidencyQuery($entityManager), Residency::class, 0, 2)))
         ->toBe(['apollo~2026-spring', 'apollo~2026-autumn']);
 });
 

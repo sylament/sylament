@@ -12,6 +12,7 @@ use Sylament\Tables\Tests\Fixtures\Doctrine\Entity\Artist;
 use Sylament\Tables\Tests\Fixtures\Doctrine\Entity\Song;
 use Sylament\Tables\Tests\Fixtures\Doctrine\EntityManagerFactory;
 use Sylament\Testing\Doctrine\RecordingMiddleware;
+use Sylament\Testing\Doctrine\TestPlatform;
 
 /*
  * The host half of grouping: which group the property resolves to, what the
@@ -183,10 +184,17 @@ it('groups a relation path and orders the rows by it', function (): void {
     $descending = groupedSongsHost(groupedSongsFixture());
     $descending->tableGrouping = 'artist.name:desc';
 
-    // The orphan sorts with the nulls, which SQLite puts first ascending and
-    // last descending — so neither order is the identifier's own.
-    expect(array_keys($ascending->getTableRecords()->getRecords()))->toBe([5, 3, 4, 1, 2])
-        ->and(array_keys($descending->getTableRecords()->getRecords()))->toBe([1, 2, 3, 4, 5]);
+    // The orphan sorts with the nulls, which SQLite and MySQL put first ascending
+    // and last descending and PostgreSQL the other way round — so on no platform
+    // are both orders the identifier's own.
+    expect(array_keys($ascending->getTableRecords()->getRecords()))->toBe(match (TestPlatform::current()) {
+        TestPlatform::PostgreSql => [3, 4, 1, 2, 5],
+        TestPlatform::Sqlite, TestPlatform::MySql => [5, 3, 4, 1, 2],
+    })
+        ->and(array_keys($descending->getTableRecords()->getRecords()))->toBe(match (TestPlatform::current()) {
+            TestPlatform::PostgreSql => [5, 1, 2, 3, 4],
+            TestPlatform::Sqlite, TestPlatform::MySql => [1, 2, 3, 4, 5],
+        });
 });
 
 it('resets the page and flushes the records when the grouping changes', function (): void {
@@ -300,7 +308,10 @@ it('maps every record on the page to its group boundaries', function (): void {
 
     $boundaries = $host->getTableRecordGroupBoundaries();
 
-    expect(array_keys($boundaries))->toBe([5, 3, 4, 1, 2])
+    expect(array_keys($boundaries))->toBe(match (TestPlatform::current()) {
+        TestPlatform::PostgreSql => [3, 4, 1, 2, 5],
+        TestPlatform::Sqlite, TestPlatform::MySql => [5, 3, 4, 1, 2],
+    })
         ->and($boundaries['5'])->toMatchArray([
             'key' => null,
             'title' => null,
@@ -331,7 +342,10 @@ it('breaks on the title, so two keys reading the same are one group', function (
     expect(array_column($boundaries, 'isFirstOfGroup'))->toBe([true, false, false, false, false])
         ->and(array_column($boundaries, 'isLastOfGroup'))->toBe([false, false, false, false, true])
         ->and(array_column($boundaries, 'indexInGroup'))->toBe([0, 1, 2, 3, 4])
-        ->and(array_column($boundaries, 'key'))->toBe([null, 'Portishead', 'Portishead', 'Radiohead', 'Radiohead']);
+        ->and(array_column($boundaries, 'key'))->toBe(match (TestPlatform::current()) {
+            TestPlatform::PostgreSql => ['Portishead', 'Portishead', 'Radiohead', 'Radiohead', null],
+            TestPlatform::Sqlite, TestPlatform::MySql => [null, 'Portishead', 'Portishead', 'Radiohead', 'Radiohead'],
+        });
 });
 
 it('describes each group header through the description closure', function (): void {
@@ -479,6 +493,14 @@ it('follows the last group past the page break when the table has a summary', fu
     $recorder = new RecordingMiddleware();
     $host = groupedBoundaryHost(groupedSongsFixture($recorder), summarized: true);
 
+    // Page one is the orphan and the first record of a two-record group on every
+    // platform: PostgreSQL sorts the orphan's null last ascending, so it reads the
+    // groups descending there.
+    $host->tableGrouping = match (TestPlatform::current()) {
+        TestPlatform::PostgreSql => 'artist.name:desc',
+        TestPlatform::Sqlite, TestPlatform::MySql => 'artist.name',
+    };
+
     $host->getTableRecords();
 
     $recorder->reset();
@@ -491,8 +513,13 @@ it('follows the last group past the page break when the table has a summary', fu
 
 it('still closes the last group where the next page starts a new one', function (): void {
     // One record a page, so page one is the whole of the orphan's group and the
-    // record after it belongs to another.
+    // record after it belongs to another. PostgreSQL sorts the orphan's null last
+    // ascending, so it reads the groups descending there.
     $host = groupedBoundaryHost(groupedSongsFixture(), summarized: true, configure: fn (Table $table): Table => $table->paginated([1]));
+    $host->tableGrouping = match (TestPlatform::current()) {
+        TestPlatform::PostgreSql => 'artist.name:desc',
+        TestPlatform::Sqlite, TestPlatform::MySql => 'artist.name',
+    };
 
     $boundaries = $host->getTableRecordGroupBoundaries();
 

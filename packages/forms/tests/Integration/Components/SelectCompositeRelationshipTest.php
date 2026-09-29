@@ -19,6 +19,7 @@ use Sylament\Forms\Tests\Fixtures\Doctrine\Entity\Tag;
 use Sylament\Schemas\Exceptions\ValidationException;
 use Sylament\Schemas\Schema;
 use Sylament\Testing\Doctrine\RecordingMiddleware;
+use Sylament\Testing\Doctrine\TestPlatform;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
 
 use function Sylament\Forms\Tests\renderToHtml;
@@ -255,8 +256,10 @@ it('resolves no record for a malformed selected key and issues no statement', fu
 /*
  * The escape grammar is `=[0-9A-F]{2}`, so lowercase is malformed only where the
  * escape carries a hex letter: `1~a=2eb` above is refused, while `1~zh=20hans`
- * is a well-formed key for the locale `zh hans` — it names no row, and asking
- * for it is a real query.
+ * is a well-formed key for the locale `zh hans` — asking for it is a real query.
+ * It names no row under a case-sensitive collation; MySQL's `utf8mb4_0900_ai_ci`
+ * equates it with the stored `zh Hans`, the key self-aliasing `record-key.md`
+ * records, so there it resolves that one row.
  */
 it('asks the database once for a well-formed key whose escape carries no hex letter', function (): void {
     $entityManager = $this::getContainer()->get(EntityManagerInterface::class);
@@ -269,8 +272,15 @@ it('asks the database once for a well-formed key whose escape carries no hex let
     $recorder = compositeSelectRecorder();
     $recorder->reset();
 
-    expect($select->getSelectedRecord())->toBeNull()
-        ->and($recorder->statements())->toHaveCount(1);
+    $selected = $select->getSelectedRecord();
+
+    match (TestPlatform::current()) {
+        TestPlatform::MySql => expect($selected)->not->toBeNull()
+            ->and($selected instanceof PostTranslation ? $selected->getLocale() : null)->toBe('zh Hans'),
+        TestPlatform::Sqlite, TestPlatform::PostgreSql => expect($selected)->toBeNull(),
+    };
+
+    expect($recorder->statements())->toHaveCount(1);
 });
 
 /*
@@ -286,9 +296,12 @@ it('drops a malformed or non-scalar entry from the label list and keeps the good
     $select = Select::make('linkedTranslations')->relationship(titleAttribute: 'title')->multiple();
     compositeSelectWire($select, $post);
 
+    $both = $select->getOptionLabelsFromRelationship(['1~en', '2~de']);
+    ksort($both);
+
     expect($select->getOptionLabelsFromRelationship(['1~en', '5abc']))->toBe(['1~en' => 'English'])
         ->and($select->getOptionLabelsFromRelationship(['1~en', ['a'], null, '5abc']))->toBe(['1~en' => 'English'])
-        ->and($select->getOptionLabelsFromRelationship(['1~en', '2~de']))->toBe([
+        ->and($both)->toBe([
             '1~en' => 'English',
             '2~de' => 'German',
         ]);

@@ -61,7 +61,10 @@ it('applies mutateDataUsing before mapping and redirects on success', function (
         ->response();
 
     expect(createdNote('ALPHA'))->toBeInstanceOf(Note::class)
-        ->and(createdNote('alpha'))->toBeNull()
+        ->and(array_map(
+            static fn (Note $note): string => $note->getTitle(),
+            $this::getContainer()->get(EntityManagerInterface::class)->getRepository(Note::class)->findAll(),
+        ))->toBe(['ALPHA'])
         ->and($response->isRedirection())->toBeTrue()
         ->and($response->headers->get('Location'))->toBe('/done');
 });

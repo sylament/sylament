@@ -92,7 +92,7 @@ function repeaterObjectLeafCrossings(): Repeater
  */
 function repeaterObjectLeafCrossingRows(EntityManagerInterface $entityManager): array
 {
-    return $entityManager->getConnection()->fetchAllAssociative('SELECT route, departsOn, deck FROM Crossing ORDER BY id');
+    return $entityManager->getConnection()->fetchAllAssociative('SELECT route, departsOn AS departs_on, deck FROM Crossing ORDER BY id');
 }
 
 it('fills a date picker and an enum select inside a relationship item from the stored child', function (): void {
@@ -138,8 +138,8 @@ it('saves the untouched date and enum of every relationship item back as they we
     $entityManager->flush();
 
     expect(repeaterObjectLeafCrossingRows($entityManager))->toBe([
-        ['route' => 'Dover Eastern Docks', 'departsOn' => '2026-05-01', 'deck' => 'upper'],
-        ['route' => 'Calais', 'departsOn' => '2026-05-02', 'deck' => 'lower'],
+        ['route' => 'Dover Eastern Docks', 'departs_on' => '2026-05-01', 'deck' => 'upper'],
+        ['route' => 'Calais', 'departs_on' => '2026-05-02', 'deck' => 'lower'],
     ]);
 });
 
@@ -161,9 +161,9 @@ it('reloads every item after a save, a new one included, with its date and enum 
         'record-2' => ['route' => 'Calais', 'departsOn' => '2026-05-02', 'deck' => 'lower'],
         'record-3' => ['route' => 'Dunkirk', 'departsOn' => '2026-05-03', 'deck' => 'upper'],
     ])->and(repeaterObjectLeafCrossingRows($entityManager))->toBe([
-        ['route' => 'Dover', 'departsOn' => '2026-05-01', 'deck' => 'upper'],
-        ['route' => 'Calais', 'departsOn' => '2026-05-02', 'deck' => 'lower'],
-        ['route' => 'Dunkirk', 'departsOn' => '2026-05-03', 'deck' => 'upper'],
+        ['route' => 'Dover', 'departs_on' => '2026-05-01', 'deck' => 'upper'],
+        ['route' => 'Calais', 'departs_on' => '2026-05-02', 'deck' => 'lower'],
+        ['route' => 'Dunkirk', 'departs_on' => '2026-05-03', 'deck' => 'upper'],
     ]);
 });
 
@@ -203,6 +203,6 @@ it('fills a date picker inside a singular relationship and saves it back untouch
     $schema->getData();
     $entityManager->flush();
 
-    expect($entityManager->getConnection()->fetchAllAssociative('SELECT pier, assignedOn FROM Berth'))
-        ->toBe([['pier' => 'West', 'assignedOn' => '2026-04-30']]);
+    expect($entityManager->getConnection()->fetchAllAssociative('SELECT pier, assignedOn AS assigned_on FROM Berth'))
+        ->toBe([['pier' => 'West', 'assigned_on' => '2026-04-30']]);
 });

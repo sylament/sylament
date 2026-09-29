@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Sylament\Forms\Tests\Integration\Components;
 
+use Doctrine\DBAL\Exception\DriverException;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\PersistentCollection;
 use Doctrine\ORM\QueryBuilder;
@@ -18,6 +19,7 @@ use Sylament\Forms\Tests\Fixtures\Doctrine\Entity\PostSection;
 use Sylament\Forms\Tests\Fixtures\Doctrine\Entity\Tag;
 use Sylament\Schemas\Exceptions\ValidationException;
 use Sylament\Schemas\Schema;
+use Sylament\Testing\Doctrine\TestPlatform;
 use Symfony\Component\Validator\Constraints\Choice;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
 
@@ -356,7 +358,7 @@ it('round-trips a reloaded post whose collection is still lazy', function (): vo
 
     $schema->fill($post);
 
-    expect($host->data['tags'])->toBe([(string) $aId, (string) $bId]);
+    expect($host->data['tags'])->toEqualCanonicalizing([(string) $aId, (string) $bId]);
 
     $host->data['tags'] = [(string) $aId, (string) $cId];
 
@@ -426,7 +428,10 @@ it('searches the title attribute with a LIKE and orders the results by it', func
     wireRecordSelect($select, $post);
 
     expect($select->getSearchResults('b'))->toBe([$bob->getId() => 'Bob'])
-        ->and($captured?->getDQL())->toContain('record.name LIKE :sylament_search_0')
+        ->and($captured?->getDQL())->toContain(match (TestPlatform::current()) {
+            TestPlatform::PostgreSql => 'LOWER(record.name) LIKE :sylament_search_0',
+            TestPlatform::Sqlite, TestPlatform::MySql => 'record.name LIKE :sylament_search_0',
+        })
         ->toContain('ORDER BY record.name ASC')
         ->and($captured?->getParameter('sylament_search_0')?->getValue())->toBe('%b%')
         ->and($captured?->getMaxResults())->toBe(50)
@@ -448,9 +453,17 @@ it('searches every declared column, ORed', function (): void {
     );
     wireRecordSelect($select, $post);
 
-    expect($select->getSearchResults((string) $bob->getId()))->toBe([$bob->getId() => 'Bob'])
-        ->and($captured?->getDQL())->toContain('WHERE record.name LIKE :sylament_search_0 OR record.id LIKE :sylament_search_1')
-        ->and($select->getSearchResults('Ada'))->toBe([$ada->getId() => 'Ada']);
+    match (TestPlatform::current()) {
+        TestPlatform::Sqlite, TestPlatform::MySql => expect($select->getSearchResults((string) $bob->getId()))->toBe([$bob->getId() => 'Bob'])
+            ->and($select->getSearchResults('Ada'))->toBe([$ada->getId() => 'Ada']),
+        TestPlatform::PostgreSql => expect(fn (): array => $select->getSearchResults((string) $bob->getId()))->toThrow(DriverException::class, 'function lower(integer) does not exist')
+            ->and(fn (): array => $select->getSearchResults('Ada'))->toThrow(DriverException::class, 'function lower(integer) does not exist'),
+    };
+
+    expect($captured?->getDQL())->toContain(match (TestPlatform::current()) {
+        TestPlatform::PostgreSql => 'WHERE LOWER(record.name) LIKE :sylament_search_0 OR LOWER(record.id) LIKE :sylament_search_1',
+        TestPlatform::Sqlite, TestPlatform::MySql => 'WHERE record.name LIKE :sylament_search_0 OR record.id LIKE :sylament_search_1',
+    });
 });
 
 it('answers no search results when the relationship names no column to search', function (): void {
@@ -550,7 +563,10 @@ it('lowers both sides of the LIKE only when told to, since SQLite is not Postgre
 
     [, $dql] = $shape(null);
 
-    expect($dql)->not->toContain('LOWER(');
+    match (TestPlatform::current()) {
+        TestPlatform::PostgreSql => expect($dql)->toContain('LOWER(record.name) LIKE :sylament_search_0'),
+        TestPlatform::Sqlite, TestPlatform::MySql => expect($dql)->not->toContain('LOWER('),
+    };
 });
 
 it('enumerates nothing when searchable, and the limited ordered map when preloaded', function (): void {
@@ -629,10 +645,16 @@ it('resolves the selected labels of a multiple selection through the rows, ignor
     wireRecordSelect($callback, $post);
     $callback->state([(string) $a->getId()]);
 
+    $withoutDefaults = $select->getOptionLabels(withDefaults: false);
+    ksort($withoutDefaults);
+
+    $withDefaults = $select->getOptionLabels();
+    ksort($withDefaults);
+
     // The rows the query admits are the labels; a value it does not admit is
     // absent rather than defaulted, as Filament's closure arm leaves it.
-    expect($select->getOptionLabels(withDefaults: false))->toBe([$a->getId() => 'a', $b->getId() => 'b'])
-        ->and($select->getOptionLabels())->toBe([$a->getId() => 'a', $b->getId() => 'b'])
+    expect($withoutDefaults)->toBe([$a->getId() => 'a', $b->getId() => 'b'])
+        ->and($withDefaults)->toBe([$a->getId() => 'a', $b->getId() => 'b'])
         ->and($callback->getOptionLabels())->toBe([$a->getId() => 'A']);
 });
 

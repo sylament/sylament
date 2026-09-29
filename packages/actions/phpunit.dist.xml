@@ -15,7 +15,7 @@
     </testsuites>
 
     <extensions>
-        <bootstrap class="Sylament\Testing\PHPUnit\DatabasePoolExtension"/>
+        <bootstrap class="Sylament\Support\Tests\PHPUnit\DatabasePoolExtension"/>
     </extensions>
 
     <source>

@@ -18,7 +18,7 @@ use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\Sigil;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\Slate;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\Spine;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\Ticket;
-use Sylament\Testing\Doctrine\RecordingMiddleware;
+use Sylament\Support\Tests\Doctrine\RecordingMiddleware;
 
 /**
  * {@see CompositeOwnerRig} with one stored record of each assigned-key shape

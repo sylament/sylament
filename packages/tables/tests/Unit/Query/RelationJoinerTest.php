@@ -5,6 +5,7 @@ declare(strict_types=1);
 use Doctrine\ORM\QueryBuilder;
 use Sylament\Schemas\State\AssociationReader;
 use Sylament\Schemas\State\Relationship;
+use Sylament\Support\Tests\Doctrine\SqlNormalizer;
 use Sylament\Tables\Query\ColumnPathResolver;
 use Sylament\Tables\Query\Hop;
 use Sylament\Tables\Query\RelationJoiner;
@@ -14,7 +15,6 @@ use Sylament\Tables\Tests\Fixtures\Doctrine\Entity\Circuit;
 use Sylament\Tables\Tests\Fixtures\Doctrine\Entity\Label;
 use Sylament\Tables\Tests\Fixtures\Doctrine\Entity\Song;
 use Sylament\Tables\Tests\Fixtures\Doctrine\EntityManagerFactory;
-use Sylament\Testing\Doctrine\SqlNormalizer;
 
 /**
  * A relation-scoped query rooted at {@see Circuit}, narrowed to the

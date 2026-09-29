@@ -22,7 +22,7 @@ use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\Spine;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\Stamped;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\EntityManagerFactory;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\IdentifierGuardRig;
-use Sylament\Testing\Doctrine\RecordingMiddleware;
+use Sylament\Support\Tests\Doctrine\RecordingMiddleware;
 use Symfony\Component\Validator\Validation;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
 use Symfony\Contracts\Translation\TranslatorInterface;

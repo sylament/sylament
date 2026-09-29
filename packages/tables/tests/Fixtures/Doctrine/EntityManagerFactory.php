@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace Sylament\Tables\Tests\Fixtures\Doctrine;
 
 use Doctrine\ORM\EntityManager;
-use Sylament\Testing\Doctrine\RecordingMiddleware;
-use Sylament\Testing\Doctrine\TestEntityManagers;
+use Sylament\Support\Tests\Doctrine\RecordingMiddleware;
+use Sylament\Support\Tests\Doctrine\TestEntityManagers;
 
 final class EntityManagerFactory
 {

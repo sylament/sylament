@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-use Sylament\Testing\Doctrine\DriverValues;
+use Sylament\Support\Tests\Doctrine\DriverValues;
 
 it('turns every numeric string into the int or float it spells and leaves the rest alone', function (): void {
     expect(DriverValues::numeric([

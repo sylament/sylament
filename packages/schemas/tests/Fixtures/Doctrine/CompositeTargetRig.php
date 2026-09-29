@@ -13,7 +13,7 @@ use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\PostSeal;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\PostTranslation;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\Redirect;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\Tag;
-use Sylament\Testing\Doctrine\RecordingMiddleware;
+use Sylament\Support\Tests\Doctrine\RecordingMiddleware;
 
 /**
  * The in-memory rig every composite-target case reads: three posts, two tags,

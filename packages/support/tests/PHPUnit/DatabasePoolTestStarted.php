@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace Sylament\Testing\PHPUnit;
+namespace Sylament\Support\Tests\PHPUnit;
 
 use PHPUnit\Event\Test\PreparationStarted;
 use PHPUnit\Event\Test\PreparationStartedSubscriber;
-use Sylament\Testing\Doctrine\DatabasePool;
+use Sylament\Support\Tests\Doctrine\DatabasePool;
 
 final class DatabasePoolTestStarted implements PreparationStartedSubscriber
 {

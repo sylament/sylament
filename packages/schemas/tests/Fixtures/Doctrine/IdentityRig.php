@@ -16,7 +16,7 @@ use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\PostTranslation;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\Redirect;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\Ticket;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\Zone;
-use Sylament\Testing\Doctrine\TestPlatform;
+use Sylament\Support\Tests\Doctrine\TestPlatform;
 
 /**
  * The in-memory rig with one record of every identifier flavour seeded: the

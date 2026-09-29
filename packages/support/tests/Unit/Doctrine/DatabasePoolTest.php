@@ -3,15 +3,15 @@
 declare(strict_types=1);
 
 use Doctrine\ORM\EntityManager;
-use Sylament\Testing\Doctrine\DatabasePool;
-use Sylament\Testing\Doctrine\RecordingMiddleware;
-use Sylament\Testing\Doctrine\TestEntityManagers;
-use Sylament\Testing\Doctrine\TestPlatform;
-use Sylament\Testing\Tests\Fixtures\Doctrine\Entity\Shelf;
+use Sylament\Support\Tests\Doctrine\DatabasePool;
+use Sylament\Support\Tests\Doctrine\RecordingMiddleware;
+use Sylament\Support\Tests\Doctrine\TestEntityManagers;
+use Sylament\Support\Tests\Doctrine\TestPlatform;
+use Sylament\Support\Tests\Fixtures\Doctrine\Entity\Shelf;
 
 function pooledShelves(?RecordingMiddleware $recorder = null): EntityManager
 {
-    return TestEntityManagers::create('testing', [dirname(__DIR__, 2) . '/Fixtures/Doctrine/Entity'], recorder: $recorder);
+    return TestEntityManagers::create('support', [dirname(__DIR__, 2) . '/Fixtures/Doctrine/Entity'], recorder: $recorder);
 }
 
 /**

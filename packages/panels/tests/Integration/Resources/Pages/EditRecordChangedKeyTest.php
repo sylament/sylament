@@ -16,7 +16,7 @@ use Sylament\Panels\Tests\Fixtures\Resources\Pages\EditEdition;
 use Sylament\Panels\Tests\Fixtures\Resources\Pages\EditFlatStamp;
 use Sylament\Panels\Tests\Fixtures\Resources\Pages\EditReprint;
 use Sylament\Panels\Tests\Fixtures\Resources\Pages\EditShelfmark;
-use Sylament\Testing\Doctrine\RecordingMiddleware;
+use Sylament\Support\Tests\Doctrine\RecordingMiddleware;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Component\DomCrawler\Crawler;
 use Symfony\UX\LiveComponent\Test\InteractsWithLiveComponents;

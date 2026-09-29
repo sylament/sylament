@@ -19,7 +19,7 @@ use Sylament\Forms\Tests\Fixtures\Doctrine\Entity\PostSection;
 use Sylament\Forms\Tests\Fixtures\Doctrine\Entity\Tag;
 use Sylament\Schemas\Exceptions\ValidationException;
 use Sylament\Schemas\Schema;
-use Sylament\Testing\Doctrine\TestPlatform;
+use Sylament\Support\Tests\Doctrine\TestPlatform;
 use Symfony\Component\Validator\Constraints\Choice;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
 

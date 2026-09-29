@@ -17,7 +17,7 @@ use Sylament\Panels\Tests\Fixtures\Resources\Pages\ListColophons;
 use Sylament\Panels\Tests\Fixtures\Resources\Pages\ListEditions;
 use Sylament\Panels\Tests\Fixtures\Resources\Pages\ManageCatalogueStamps;
 use Sylament\Panels\Tests\Fixtures\Resources\RelationManagers\PlainStampsRelationManager;
-use Sylament\Testing\Doctrine\RecordingMiddleware;
+use Sylament\Support\Tests\Doctrine\RecordingMiddleware;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Component\DomCrawler\Crawler;
 use Symfony\Component\HttpFoundation\Request;

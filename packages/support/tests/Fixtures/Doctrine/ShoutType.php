@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Sylament\Testing\Tests\Fixtures\Doctrine;
+namespace Sylament\Support\Tests\Fixtures\Doctrine;
 
 use Doctrine\DBAL\Types\StringType;
 

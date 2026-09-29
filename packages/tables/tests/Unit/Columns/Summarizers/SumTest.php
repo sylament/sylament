@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use Sylament\Support\Tests\Doctrine\RecordingMiddleware;
 use Sylament\Tables\Columns\Summarizers\Sum;
 use Sylament\Tables\Columns\Summarizers\Summarizer;
 use Sylament\Tables\Columns\TextColumn;
@@ -9,7 +10,6 @@ use Sylament\Tables\Table;
 use Sylament\Tables\Tests\Fixtures\Concerns\TableHost;
 use Sylament\Tables\Tests\Fixtures\Doctrine\Entity\Song;
 use Sylament\Tables\Tests\Fixtures\Doctrine\EntityManagerFactory;
-use Sylament\Testing\Doctrine\RecordingMiddleware;
 
 /**
  * The summarizer under test, pointed at a songs query carrying the plays given —

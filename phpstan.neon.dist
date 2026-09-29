@@ -11,8 +11,9 @@ parameters:
         - packages/panels/src
         - packages/schemas/src
         - packages/support/src
+        - packages/support/tests/Doctrine
+        - packages/support/tests/PHPUnit
         - packages/tables/src
-        - packages/testing/src
         - packages/widgets/src
 
     ignoreErrors:

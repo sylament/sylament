@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-use Sylament\Testing\Doctrine\SqlNormalizer;
+use Sylament\Support\Tests\Doctrine\SqlNormalizer;
 
 it("renumbers the walker's table aliases and the result aliases by first appearance", function (): void {
     expect(SqlNormalizer::normalize('SELECT s0_.code AS code_0, s0_.caption AS caption_1, s0_.catalogue_id AS catalogue_id_2 FROM Stamp s0_ WHERE s0_.catalogue_id = ? AND (s0_.catalogue_id = ? AND s0_.code = ?)'))

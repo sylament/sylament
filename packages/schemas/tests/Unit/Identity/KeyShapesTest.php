@@ -8,7 +8,7 @@ use Sylament\Schemas\State\AssociationReader;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\Triplet;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\EntityManagerFactory;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\KeyShapeRig;
-use Sylament\Testing\Doctrine\RecordingMiddleware;
+use Sylament\Support\Tests\Doctrine\RecordingMiddleware;
 
 dataset('key shapes', [
     'three scalar fields' => ['three scalar fields', 'eu~1~c', 'zz~9~zz'],

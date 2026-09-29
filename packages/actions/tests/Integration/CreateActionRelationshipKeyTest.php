@@ -13,7 +13,7 @@ use Sylament\Actions\Tests\Fixtures\Doctrine\Entity\Spice;
 use Sylament\Actions\Tests\Fixtures\Twig\Components\PantryShelfHost;
 use Sylament\Actions\Tests\Fixtures\Twig\Components\RelationshipCreateHost;
 use Sylament\Schemas\Exceptions\ValidationException;
-use Sylament\Testing\Doctrine\RecordingMiddleware;
+use Sylament\Support\Tests\Doctrine\RecordingMiddleware;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Component\DomCrawler\Crawler;
 use Symfony\UX\LiveComponent\Test\InteractsWithLiveComponents;

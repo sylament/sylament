@@ -5,15 +5,15 @@ declare(strict_types=1);
 use Doctrine\DBAL\Connection;
 use Doctrine\DBAL\Exception\DriverException;
 use Doctrine\ORM\EntityManager;
-use Sylament\Testing\Doctrine\DatabasePool;
-use Sylament\Testing\Doctrine\FailingWrite;
-use Sylament\Testing\Doctrine\TestEntityManagers;
-use Sylament\Testing\Doctrine\TestPlatform;
-use Sylament\Testing\Tests\Fixtures\Doctrine\Entity\Shelf;
+use Sylament\Support\Tests\Doctrine\DatabasePool;
+use Sylament\Support\Tests\Doctrine\FailingWrite;
+use Sylament\Support\Tests\Doctrine\TestEntityManagers;
+use Sylament\Support\Tests\Doctrine\TestPlatform;
+use Sylament\Support\Tests\Fixtures\Doctrine\Entity\Shelf;
 
 function shelvesLabelled(string ...$labels): EntityManager
 {
-    $entityManager = TestEntityManagers::create('testing', [dirname(__DIR__, 2) . '/Fixtures/Doctrine/Entity']);
+    $entityManager = TestEntityManagers::create('support', [dirname(__DIR__, 2) . '/Fixtures/Doctrine/Entity']);
 
     foreach ($labels as $label) {
         $entityManager->persist(new Shelf($label));

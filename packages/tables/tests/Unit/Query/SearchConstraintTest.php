@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
+use Sylament\Support\Tests\Doctrine\TestPlatform;
 use Sylament\Tables\Query\SearchConstraint;
 use Sylament\Tables\Tests\Fixtures\Doctrine\Entity\Song;
 use Sylament\Tables\Tests\Fixtures\Doctrine\EntityManagerFactory;
-use Sylament\Testing\Doctrine\TestPlatform;
 
 it('assembles a case-sensitive LIKE by default, and a lowered one on PostgreSQL', function (): void {
     $query = EntityManagerFactory::create()->createQueryBuilder()->select('song')->from(Song::class, 'song');

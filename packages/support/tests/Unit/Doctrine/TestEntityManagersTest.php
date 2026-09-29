@@ -5,12 +5,12 @@ declare(strict_types=1);
 use Doctrine\DBAL\Exception\ForeignKeyConstraintViolationException;
 use Doctrine\DBAL\Platforms\SQLitePlatform;
 use Doctrine\DBAL\Types\Type;
-use Sylament\Testing\Doctrine\RecordingMiddleware;
-use Sylament\Testing\Doctrine\TestEntityManagers;
-use Sylament\Testing\Doctrine\TestPlatform;
-use Sylament\Testing\Tests\Fixtures\Doctrine\Entity\Book;
-use Sylament\Testing\Tests\Fixtures\Doctrine\Entity\Shelf;
-use Sylament\Testing\Tests\Fixtures\Doctrine\ShoutType;
+use Sylament\Support\Tests\Doctrine\RecordingMiddleware;
+use Sylament\Support\Tests\Doctrine\TestEntityManagers;
+use Sylament\Support\Tests\Doctrine\TestPlatform;
+use Sylament\Support\Tests\Fixtures\Doctrine\Entity\Book;
+use Sylament\Support\Tests\Fixtures\Doctrine\Entity\Shelf;
+use Sylament\Support\Tests\Fixtures\Doctrine\ShoutType;
 
 /**
  * @return list<string>
@@ -21,7 +21,7 @@ function testingEntityPaths(): array
 }
 
 it('builds an in-memory SQLite manager carrying the package schema', function (): void {
-    $entityManager = TestEntityManagers::createSqlite('testing', testingEntityPaths());
+    $entityManager = TestEntityManagers::createSqlite('support', testingEntityPaths());
     $entityManager->persist(new Shelf('poetry'));
     $entityManager->flush();
     $entityManager->clear();
@@ -32,8 +32,8 @@ it('builds an in-memory SQLite manager carrying the package schema', function ()
 });
 
 it('gives every manager a database of its own', function (): void {
-    $first = TestEntityManagers::createSqlite('testing', testingEntityPaths());
-    $second = TestEntityManagers::createSqlite('testing', testingEntityPaths());
+    $first = TestEntityManagers::createSqlite('support', testingEntityPaths());
+    $second = TestEntityManagers::createSqlite('support', testingEntityPaths());
 
     $first->persist(new Shelf('poetry'));
     $first->flush();
@@ -43,7 +43,7 @@ it('gives every manager a database of its own', function (): void {
 
 it('records the statements a test runs and never the schema build', function (): void {
     $recorder = new RecordingMiddleware();
-    $entityManager = TestEntityManagers::createSqlite('testing', testingEntityPaths(), recorder: $recorder);
+    $entityManager = TestEntityManagers::createSqlite('support', testingEntityPaths(), recorder: $recorder);
 
     $afterBuild = $recorder->statements();
     $entityManager->getRepository(Shelf::class)->findAll();
@@ -54,8 +54,8 @@ it('records the statements a test runs and never the schema build', function ():
 });
 
 it('registers a custom type once, however many managers name it', function (): void {
-    TestEntityManagers::createSqlite('testing', testingEntityPaths(), [ShoutType::NAME => ShoutType::class]);
-    TestEntityManagers::createSqlite('testing', testingEntityPaths(), [ShoutType::NAME => ShoutType::class]);
+    TestEntityManagers::createSqlite('support', testingEntityPaths(), [ShoutType::NAME => ShoutType::class]);
+    TestEntityManagers::createSqlite('support', testingEntityPaths(), [ShoutType::NAME => ShoutType::class]);
 
     expect(Type::getType(ShoutType::NAME))->toBeInstanceOf(ShoutType::class);
 });
@@ -65,7 +65,7 @@ it('builds SQLite through create() while the url is unset', function (): void {
     putenv(TestPlatform::URL_VARIABLE);
 
     try {
-        $entityManager = TestEntityManagers::create('testing', testingEntityPaths());
+        $entityManager = TestEntityManagers::create('support', testingEntityPaths());
     } finally {
         putenv($previous === false ? TestPlatform::URL_VARIABLE : TestPlatform::URL_VARIABLE . '=' . $previous);
     }
@@ -75,7 +75,7 @@ it('builds SQLite through create() while the url is unset', function (): void {
 
 it('enforces foreign keys on SQLite without recording the pragma that turns them on', function (): void {
     $recorder = new RecordingMiddleware();
-    $entityManager = TestEntityManagers::createSqlite('testing', testingEntityPaths(), recorder: $recorder);
+    $entityManager = TestEntityManagers::createSqlite('support', testingEntityPaths(), recorder: $recorder);
 
     $shelf = new Shelf('poetry');
     $entityManager->persist($shelf);

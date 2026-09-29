@@ -10,6 +10,7 @@ use Sylament\Schemas\State\AssociationReader;
 use Sylament\Support\Components\ViewComponent;
 use Sylament\Support\Configuration\ComponentManager;
 use Sylament\Support\DependencyInjection\ComponentResolver;
+use Sylament\Support\Tests\Doctrine\RecordingMiddleware;
 use Sylament\Tables\Filters\BaseFilter;
 use Sylament\Tables\Table;
 use Sylament\Tables\Tests\Fixtures\Concerns\FilterStateHost;
@@ -17,7 +18,6 @@ use Sylament\Tables\Tests\Fixtures\Concerns\TableHost;
 use Sylament\Tables\Tests\Fixtures\Doctrine\Entity\Genre;
 use Sylament\Tables\Tests\Fixtures\Doctrine\Entity\Song;
 use Sylament\Tables\Tests\Fixtures\Doctrine\EntityManagerFactory;
-use Sylament\Testing\Doctrine\RecordingMiddleware;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Component\DomCrawler\Crawler;
 

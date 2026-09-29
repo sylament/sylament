@@ -15,7 +15,7 @@ use Sylament\Panels\Tests\Fixtures\Resources\Pages\CreateYearlessImprint;
 use Sylament\Panels\Tests\Fixtures\Resources\Pages\EditEdition;
 use Sylament\Panels\Tests\Fixtures\Resources\Pages\EditImprint;
 use Sylament\Panels\Tests\Fixtures\Resources\Pages\ListImprints;
-use Sylament\Testing\Doctrine\RecordingMiddleware;
+use Sylament\Support\Tests\Doctrine\RecordingMiddleware;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Component\DomCrawler\Crawler;
 use Symfony\Component\HttpFoundation\RedirectResponse;

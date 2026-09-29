@@ -5,6 +5,8 @@ declare(strict_types=1);
 use Doctrine\ORM\EntityManager;
 use Doctrine\ORM\QueryBuilder;
 use Sylament\Support\Pagination\Paginator;
+use Sylament\Support\Tests\Doctrine\DriverValues;
+use Sylament\Support\Tests\Doctrine\RecordingMiddleware;
 use Sylament\Tables\Columns\Column;
 use Sylament\Tables\Columns\TextColumn;
 use Sylament\Tables\Table;
@@ -22,8 +24,6 @@ use Sylament\Tables\Tests\Fixtures\Doctrine\Entity\Song;
 use Sylament\Tables\Tests\Fixtures\Doctrine\Entity\Venue;
 use Sylament\Tables\Tests\Fixtures\Doctrine\EntityManagerFactory;
 use Sylament\Tables\Tests\Fixtures\Doctrine\Handle;
-use Sylament\Testing\Doctrine\DriverValues;
-use Sylament\Testing\Doctrine\RecordingMiddleware;
 
 /**
  * Radiohead with two songs, Adele with none, Björk with one — paged two at a

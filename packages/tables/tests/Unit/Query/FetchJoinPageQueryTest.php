@@ -10,6 +10,8 @@ use Doctrine\ORM\QueryBuilder;
 use Doctrine\ORM\Tools\Pagination\LimitSubqueryOutputWalker;
 use Sylament\Schemas\Identity\IdentifierConstraint;
 use Sylament\Schemas\Identity\RecordKey;
+use Sylament\Support\Tests\Doctrine\RecordingMiddleware;
+use Sylament\Support\Tests\Doctrine\TestPlatform;
 use Sylament\Tables\Query\FetchJoinPageQuery;
 use Sylament\Tables\Tests\Fixtures\Doctrine\Entity\Artist;
 use Sylament\Tables\Tests\Fixtures\Doctrine\Entity\Gig;
@@ -26,8 +28,6 @@ use Sylament\Tables\Tests\Fixtures\Doctrine\Entity\Song;
 use Sylament\Tables\Tests\Fixtures\Doctrine\Entity\Venue;
 use Sylament\Tables\Tests\Fixtures\Doctrine\EntityManagerFactory;
 use Sylament\Tables\Tests\Fixtures\Doctrine\Handle;
-use Sylament\Testing\Doctrine\RecordingMiddleware;
-use Sylament\Testing\Doctrine\TestPlatform;
 
 /*
  * The two-step window a keyed root pages through: the page's identifiers off

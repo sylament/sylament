@@ -13,7 +13,7 @@ use Sylament\Panels\Tests\Fixtures\Resources\Pages\CreateHintedStamp;
 use Sylament\Panels\Tests\Fixtures\Resources\Pages\CreatePickedStamp;
 use Sylament\Panels\Tests\Fixtures\Resources\Pages\CreateShelfmark;
 use Sylament\Panels\Tests\Fixtures\Resources\Pages\CreateStamp;
-use Sylament\Testing\Doctrine\RecordingMiddleware;
+use Sylament\Support\Tests\Doctrine\RecordingMiddleware;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Component\DomCrawler\Crawler;
 use Symfony\Component\HttpFoundation\Request;

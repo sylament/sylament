@@ -11,7 +11,7 @@ use Sylament\Actions\Tests\Fixtures\Doctrine\Entity\Ticket;
 use Sylament\Actions\Tests\Fixtures\Doctrine\EntityManagerFactory;
 use Sylament\Actions\Tests\Fixtures\Twig\Components\AnnexTicketsTable;
 use Sylament\Schemas\Exceptions\ValidationException;
-use Sylament\Testing\Doctrine\RecordingMiddleware;
+use Sylament\Support\Tests\Doctrine\RecordingMiddleware;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\UX\LiveComponent\Test\InteractsWithLiveComponents;

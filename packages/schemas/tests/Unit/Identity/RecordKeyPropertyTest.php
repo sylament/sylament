@@ -48,7 +48,7 @@ use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\Triplet;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\Truck;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\EntityManagerFactory;
 use Sylament\Schemas\Tests\Fixtures\Identity\KeyTuples;
-use Sylament\Testing\Doctrine\TestPlatform;
+use Sylament\Support\Tests\Doctrine\TestPlatform;
 
 /**
  * Every fixture class whose identifier the codec keys. The cipher classes are left

@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Sylament\Tables\Tests\Integration;
 
-use Sylament\Testing\Doctrine\TestPlatform;
+use Sylament\Support\Tests\Doctrine\TestPlatform;
 use Symfony\Component\DomCrawler\Crawler;
 use Symfony\UX\LiveComponent\Test\InteractsWithLiveComponents;
 use Symfony\UX\LiveComponent\Test\TestLiveComponent;

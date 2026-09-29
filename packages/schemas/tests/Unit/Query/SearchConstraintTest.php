@@ -5,7 +5,7 @@ declare(strict_types=1);
 use Sylament\Schemas\Query\SearchConstraint;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\Post;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\EntityManagerFactory;
-use Sylament\Testing\Doctrine\TestPlatform;
+use Sylament\Support\Tests\Doctrine\TestPlatform;
 
 it('assembles a case-sensitive LIKE by default, and a lowered one on PostgreSQL', function (): void {
     $query = EntityManagerFactory::create()->createQueryBuilder()->select('post')->from(Post::class, 'post');

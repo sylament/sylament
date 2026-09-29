@@ -17,7 +17,7 @@ use Sylament\Forms\Tests\Fixtures\Doctrine\Entity\Post;
 use Sylament\Forms\Tests\Fixtures\Doctrine\Entity\PostTranslation;
 use Sylament\Forms\Tests\Fixtures\Doctrine\Entity\TranslationMark;
 use Sylament\Schemas\Schema;
-use Sylament\Testing\Doctrine\RecordingMiddleware;
+use Sylament\Support\Tests\Doctrine\RecordingMiddleware;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
 
 /*

@@ -20,7 +20,7 @@ use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\SigilChild;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\Slip;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\Tag;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\Vault;
-use Sylament\Testing\Doctrine\RecordingMiddleware;
+use Sylament\Support\Tests\Doctrine\RecordingMiddleware;
 
 /**
  * @param list<object> $records

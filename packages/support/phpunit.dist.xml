@@ -14,6 +14,10 @@
         </testsuite>
     </testsuites>
 
+    <extensions>
+        <bootstrap class="Sylament\Support\Tests\PHPUnit\DatabasePoolExtension"/>
+    </extensions>
+
     <source>
         <include>
             <directory>src</directory>

@@ -19,7 +19,7 @@ use Sylament\Panels\Tests\Fixtures\Resources\Pages\ManageStampMarks;
 use Sylament\Panels\Tests\Fixtures\Resources\RelationManagers\ImprintBindingsRelationManager;
 use Sylament\Panels\Tests\Fixtures\Resources\RelationManagers\ImprintMotifsRelationManager;
 use Sylament\Panels\Tests\Fixtures\Resources\RelationManagers\StampMarksRelationManager;
-use Sylament\Testing\Doctrine\RecordingMiddleware;
+use Sylament\Support\Tests\Doctrine\RecordingMiddleware;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Component\DomCrawler\Crawler;
 use Symfony\UX\LiveComponent\Test\InteractsWithLiveComponents;

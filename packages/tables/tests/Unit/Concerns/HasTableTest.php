@@ -5,6 +5,8 @@ declare(strict_types=1);
 use Doctrine\ORM\EntityManager;
 use Doctrine\ORM\QueryBuilder;
 use Sylament\Support\Pagination\Paginator;
+use Sylament\Support\Tests\Doctrine\RecordingMiddleware;
+use Sylament\Support\Tests\Doctrine\TestPlatform;
 use Sylament\Tables\Columns\TextColumn;
 use Sylament\Tables\Contracts\InteractsWithTable;
 use Sylament\Tables\Enums\PaginationMode;
@@ -23,8 +25,6 @@ use Sylament\Tables\Tests\Fixtures\Doctrine\EntityManagerFactory;
 use Sylament\Tables\Tests\Fixtures\Doctrine\Handle;
 use Sylament\Tables\Tests\Fixtures\Records\Artist;
 use Sylament\Tables\Tests\Fixtures\Records\Song;
-use Sylament\Testing\Doctrine\RecordingMiddleware;
-use Sylament\Testing\Doctrine\TestPlatform;
 
 function sevenSongs(): EntityManager
 {

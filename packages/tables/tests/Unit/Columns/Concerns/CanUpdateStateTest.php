@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use Doctrine\ORM\EntityManager;
 use Sylament\Schemas\State\Casts\Contracts\StateCast;
+use Sylament\Support\Tests\Doctrine\RecordingMiddleware;
 use Sylament\Tables\Columns\CheckboxColumn;
 use Sylament\Tables\Columns\SelectColumn;
 use Sylament\Tables\Columns\TextInputColumn;
@@ -18,7 +19,6 @@ use Sylament\Tables\Tests\Fixtures\Doctrine\Entity\Song;
 use Sylament\Tables\Tests\Fixtures\Doctrine\Entity\Venue;
 use Sylament\Tables\Tests\Fixtures\Doctrine\EntityManagerFactory;
 use Sylament\Tables\Tests\Fixtures\Doctrine\Handle;
-use Sylament\Testing\Doctrine\RecordingMiddleware;
 use Symfony\Component\Validator\Constraints\Length;
 use Symfony\Component\Validator\Validation;
 

@@ -18,8 +18,8 @@ use Sylament\Forms\Tests\Fixtures\Doctrine\Entity\PostTranslation;
 use Sylament\Forms\Tests\Fixtures\Doctrine\Entity\Tag;
 use Sylament\Schemas\Exceptions\ValidationException;
 use Sylament\Schemas\Schema;
-use Sylament\Testing\Doctrine\RecordingMiddleware;
-use Sylament\Testing\Doctrine\TestPlatform;
+use Sylament\Support\Tests\Doctrine\RecordingMiddleware;
+use Sylament\Support\Tests\Doctrine\TestPlatform;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
 
 use function Sylament\Forms\Tests\renderToHtml;

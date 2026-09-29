@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Sylament\Tables\Tests\Integration;
 
 use Doctrine\ORM\EntityManagerInterface;
+use Sylament\Support\Tests\Doctrine\RecordingMiddleware;
 use Sylament\Tables\Tests\Fixtures\Doctrine\Entity\Bazaar;
 use Sylament\Tables\Tests\Fixtures\Doctrine\Entity\Depot;
 use Sylament\Tables\Tests\Fixtures\Doctrine\Entity\Dial;
@@ -13,7 +14,6 @@ use Sylament\Tables\Tests\Fixtures\Doctrine\Entity\Purchase;
 use Sylament\Tables\Tests\Fixtures\Doctrine\Entity\Toaster;
 use Sylament\Tables\Tests\Fixtures\Twig\Components\DepotDissociateByKeyTable;
 use Sylament\Tables\Tests\Fixtures\Twig\Components\DepotQueryBesideRelationshipTable;
-use Sylament\Testing\Doctrine\RecordingMiddleware;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\RequestStack;

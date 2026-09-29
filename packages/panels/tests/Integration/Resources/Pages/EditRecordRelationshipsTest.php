@@ -14,7 +14,7 @@ use Sylament\Panels\Tests\Fixtures\Resources\Pages\EditPortfolioSealPaths;
 use Sylament\Panels\Tests\Fixtures\Resources\Pages\EditPortfolioSerialFirst;
 use Sylament\Panels\Tests\Fixtures\Resources\Pages\EditPortfolioStamped;
 use Sylament\Schemas\Exceptions\ValidationException;
-use Sylament\Testing\Doctrine\RecordingMiddleware;
+use Sylament\Support\Tests\Doctrine\RecordingMiddleware;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Component\DomCrawler\Crawler;
 use Symfony\UX\LiveComponent\Test\InteractsWithLiveComponents;

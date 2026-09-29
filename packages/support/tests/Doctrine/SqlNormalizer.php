@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Sylament\Testing\Doctrine;
+namespace Sylament\Support\Tests\Doctrine;
 
 use RuntimeException;
 

@@ -10,7 +10,7 @@ use Sylament\Actions\Tests\Fixtures\Doctrine\Entity\Spice;
 use Sylament\Actions\Tests\Fixtures\Twig\Components\LarderCreateHost;
 use Sylament\Actions\Tests\Fixtures\Twig\Components\RecordWriteHost;
 use Sylament\Schemas\Exceptions\ValidationException;
-use Sylament\Testing\Doctrine\RecordingMiddleware;
+use Sylament\Support\Tests\Doctrine\RecordingMiddleware;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\RequestStack;

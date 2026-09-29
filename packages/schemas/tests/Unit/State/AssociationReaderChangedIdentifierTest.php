@@ -233,6 +233,10 @@ it('answers nothing for any untouched stored record of any shape the rigs seed',
         $census[$rig] = ['checked' => 0, 'refused' => []];
 
         foreach ($entityManager->getMetadataFactory()->getAllMetadata() as $metadata) {
+            if ($metadata->isMappedSuperclass) {
+                continue;
+            }
+
             $entityManager->clear();
 
             foreach ($entityManager->getRepository($metadata->getName())->findAll() as $record) {

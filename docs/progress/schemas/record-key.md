@@ -1050,6 +1050,32 @@ alone. And a value its type's **writer** refuses, on a new record, now throws
 that type's `ConversionException` from the mint where it was printed before. No
 fixture property can hold such a value, so no test reaches it.
 
+### The shapes the fixtures pin
+
+Every identifier shape the codec supports by construction has a fixture and runs
+through the whole battery ([`KeyShapesTest`](../../../packages/schemas/tests/Unit/Identity/KeyShapesTest.php),
+[`AssociationReaderKeyShapesTest`](../../../packages/schemas/tests/Unit/State/AssociationReaderKeyShapesTest.php)) on
+SQLite, MySQL and PostgreSQL. The battery covers the mint, the decode, `equals()`,
+`in()`, `correlate()`, the key selection with `keyOf()`, group-by, order-by, a
+reference — which costs no statement for a scalar-keyed shape and one load for a
+key with an association, [the reader's route](association-reader.md#getreference-decodes-first-and-then-picks-its-route) —
+the taken key on create and the changed key on edit.
+
+- **Three scalar fields.** Chunked at 500, the same as two.
+- **An association in the middle of the key.**
+- **An int-backed enum half.** It prints its backing value.
+- **An id declared on a mapped superclass.**
+- **A JOINED hierarchy under a composite root.**
+- **A single `#[Id] ManyToOne`.**
+- **A smallint beside an ascii_string.**
+- **Symfony's own `UuidType` and `UlidType`.** They are `BINARY(16)` on SQLite and
+  MySQL and a native `uuid` on PostgreSQL, and a key prints the value's canonical
+  string.
+
+A NUL byte never reaches PostgreSQL as part of a key. The decoder refuses one on every
+platform, and pdo_pgsql would truncate it silently in a bound string. The two tests
+about a NUL-byte identifier are therefore restricted to SQLite and MySQL.
+
 ## Divergences
 
 Limits that are permanent, and the reason each holds. There is no Filament
@@ -1277,8 +1303,8 @@ The child side is not pinned: it was executed as a probe.
 
 A DBAL type whose reader accepts **only the database form** while its writer
 takes the printed one — the `uuid_binary` shape, where the column holds sixteen
-raw bytes: `ramsey/uuid-doctrine`'s, not `symfony/uid`'s, whose types round-trip
-their printed form — minted keys the strict decode refused until
+raw bytes: `ramsey/uuid-doctrine`'s, not `symfony/uid`'s, whose types
+[round-trip their printed form](#the-shapes-the-fixtures-pin) — minted keys the strict decode refused until
 [M7 · 5b](../roadmap.md#m7--composite-identifiers). `toPhpValues()` now answers
 the reader's `ConversionException` by running the component through the type's
 own writer and reading back the database form that makes —

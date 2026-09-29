@@ -10,11 +10,14 @@ use Doctrine\ORM\EntityManager;
 use Doctrine\ORM\ORMSetup;
 use Sylament\Testing\Doctrine\RecordingMiddleware;
 use Sylament\Testing\Doctrine\TestEntityManagers;
+use Symfony\Bridge\Doctrine\Types\UlidType;
+use Symfony\Bridge\Doctrine\Types\UuidType;
 
 final class EntityManagerFactory
 {
     /**
-     * The four custom types the fixture mapping names.
+     * The custom types the fixture mapping names, Symfony's own uuid and ulid
+     * among them.
      *
      * @var array<string, class-string<Type>>
      */
@@ -23,6 +26,8 @@ final class EntityManagerFactory
         CipherType::NAME => CipherType::class,
         BinaryUuidType::NAME => BinaryUuidType::class,
         CaselessType::NAME => CaselessType::class,
+        UuidType::NAME => UuidType::class,
+        UlidType::NAME => UlidType::class,
     ];
 
     /**

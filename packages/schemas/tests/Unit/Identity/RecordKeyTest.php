@@ -31,6 +31,7 @@ use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\Zone;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\EntityManagerFactory;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\IdentityRig;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\Sku;
+use Sylament\Schemas\Tests\Fixtures\Identity\UntypedTranslation;
 use Sylament\Testing\Doctrine\TestPlatform;
 use Symfony\Component\Uid\Uuid;
 
@@ -166,6 +167,18 @@ it('finds no key while a component is missing or still blank', function (): void
 it('refuses to key a record whose identifier is missing', function (): void {
     expect(fn (): string => RecordKey::of(EntityManagerFactory::create(), new PostTranslation()))
         ->toThrow(LogicException::class, 'has none set');
+});
+
+it('has no key for a record whose identifier association holds something that is not a record', function (): void {
+    $entityManager = EntityManagerFactory::create();
+    $translation = new UntypedTranslation();
+    $translation->setPost(1);
+    $translation->setLocale('en');
+
+    expect(RecordKey::find($entityManager, $translation))->toBeNull()
+        ->and(RecordKey::values($entityManager, $translation))->toBeNull()
+        ->and(fn (): string => RecordKey::of($entityManager, $translation))
+        ->toThrow(LogicException::class, 'Object records must expose a readable non-blank identifier; [' . UntypedTranslation::class . '] has none set.');
 });
 
 it('refuses to key a record whose identifier is blank', function (): void {

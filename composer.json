@@ -110,6 +110,11 @@
         "test:support": "pest -c packages/support/phpunit.dist.xml --test-directory=packages/support/tests",
         "test:tables": "pest -c packages/tables/phpunit.dist.xml --test-directory=packages/tables/tests",
         "test:testing": "pest -c packages/testing/phpunit.dist.xml --test-directory=packages/testing/tests",
+        "test:mutation": [
+            "Composer\\Config::disableProcessTimeout",
+            "@putenv SYLAMENT_TEST_DATABASE_URL=",
+            "pest -c packages/schemas/phpunit.dist.xml --test-directory=packages/schemas/tests --mutate --path=packages/schemas/src/Identity --parallel --min=98.6"
+        ],
         "test:doctrine": [
             "@test:testing",
             "@test:actions",

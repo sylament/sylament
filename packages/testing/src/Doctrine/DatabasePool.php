@@ -234,7 +234,7 @@ final class DatabasePool
         $connection = DriverManager::getConnection([...$this->params, 'dbname' => $database]);
         $session = $this->platform === TestPlatform::PostgreSql
             ? ["SET lock_timeout = '10s'"]
-            : ['SET SESSION foreign_key_checks = 0', 'SET SESSION information_schema_stats_expiry = 0', 'SET SESSION lock_wait_timeout = 10'];
+            : ['SET SESSION foreign_key_checks = 0', 'SET SESSION information_schema_stats_expiry = 0', 'SET SESSION lock_wait_timeout = 10', 'SET SESSION innodb_lock_wait_timeout = 10'];
 
         foreach ($session as $statement) {
             $connection->executeStatement($statement);

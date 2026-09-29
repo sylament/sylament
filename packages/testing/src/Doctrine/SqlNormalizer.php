@@ -13,6 +13,10 @@ use RuntimeException;
  * - the SQL walker's table aliases (`s0_`) become `a0_`, `a1_`, …;
  * - the persister's (`t0`) become `p0`, `p1`, …;
  * - each result alias (`code_1`, `sclr_2`) keeps its stem and takes the next number.
+ *
+ * The result-alias pass matches every `AS <stem>_<n>`, whoever wrote it, and numbers
+ * all of them in one sequence across stems: an alias the toolkit names itself is
+ * renumbered too, so a lone `sy_summary_1` reads back as `sy_summary_0`.
  */
 final class SqlNormalizer
 {

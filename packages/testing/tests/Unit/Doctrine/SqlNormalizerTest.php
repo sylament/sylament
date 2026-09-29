@@ -37,3 +37,8 @@ it('leaves a statement with no minted name untouched', function (): void {
 
     expect(SqlNormalizer::normalize($sql))->toBe($sql);
 });
+
+it('renumbers an alias the toolkit names itself in the one sequence', function (): void {
+    expect(SqlNormalizer::normalize('SELECT SUM(s0_.hits) AS sy_summary_1 FROM SiteRedirect s0_'))
+        ->toBe('SELECT SUM(a0_.hits) AS sy_summary_0 FROM SiteRedirect a0_');
+});

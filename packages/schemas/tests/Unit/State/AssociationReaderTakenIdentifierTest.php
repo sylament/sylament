@@ -356,7 +356,7 @@ it('walks only the associations a flush would cascade a new record through', fun
     $translations = $post->getTranslations();
     $translation = new PostTranslation();
 
-    expect(array_map(static fn (PostTranslation $member): string => $member->getLocale(), $translations->toArray()))->toBe(['en', 'de']);
+    expect(array_map(static fn (PostTranslation $member): string => $member->getLocale(), $translations->toArray()))->toEqualCanonicalizing(['en', 'de']);
 
     $translation->setPost($post);
     $translation->setLocale('en');

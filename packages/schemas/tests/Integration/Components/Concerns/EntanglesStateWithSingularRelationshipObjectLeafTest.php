@@ -108,10 +108,12 @@ function objectLeafCastLogbook(): Group
  */
 function objectLeafLogbookRow(EntityManagerInterface $entityManager): array
 {
-    $row = $entityManager->getConnection()->fetchAssociative('SELECT captain, openedOn, zone, seal FROM Logbook');
+    $row = $entityManager->getConnection()->fetchAssociative('SELECT captain, openedOn AS opened_on, zone, seal FROM Logbook');
     assert(is_array($row));
 
-    return [...$row, 'seal' => is_string($row['seal']) ? bin2hex($row['seal']) : $row['seal']];
+    $seal = is_resource($row['seal']) ? stream_get_contents($row['seal']) : $row['seal'];
+
+    return [...$row, 'seal' => is_string($seal) ? bin2hex($seal) : $seal];
 }
 
 it('fills a date, an enum and a uuid off the related record where the field state casts flatten them', function (): void {
@@ -166,7 +168,7 @@ it('saves the untouched date, enum and uuid of the related record back as they w
 
     expect(objectLeafLogbookRow($entityManager))->toBe([
         'captain' => 'Starbuck',
-        'openedOn' => '2026-03-14',
+        'opened_on' => '2026-03-14',
         'zone' => 'footer',
         'seal' => '0190a6f27c1e7a3b9c4d5e6f7a8b9c0d',
     ]);

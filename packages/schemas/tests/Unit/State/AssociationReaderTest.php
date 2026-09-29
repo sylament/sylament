@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use Doctrine\ORM\EntityManager;
 use Doctrine\ORM\QueryBuilder;
+use PHPUnit\Framework\TestCase;
 use Sylament\Schemas\State\AssociationReader;
 use Sylament\Schemas\State\AssociationTarget;
 use Sylament\Schemas\State\PropertyAccessor;
@@ -20,14 +21,16 @@ use Sylament\Schemas\Tests\Fixtures\Doctrine\EntityManagerFactory;
 use Symfony\Component\PropertyAccess\PropertyAccess;
 
 /**
- * One manager shared by the relationship cases below, so a case that clears the
- * identity map clears the one the reader holds. The cases above build their own.
+ * One manager shared, within a test, by the relationship cases below, so a case
+ * that clears the identity map clears the one the reader holds. The cases above
+ * build their own.
  */
 function entityManager(): EntityManager
 {
-    static $entityManager = null;
+    /** @var WeakMap<TestCase, EntityManager> $entityManagers */
+    static $entityManagers = new WeakMap();
 
-    return $entityManager ??= EntityManagerFactory::create();
+    return $entityManagers[test()->target] ??= EntityManagerFactory::create();
 }
 
 function reader(): AssociationReader

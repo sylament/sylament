@@ -16,6 +16,7 @@ use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\PostTranslation;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\Redirect;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\Ticket;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\Zone;
+use Sylament\Testing\Doctrine\TestPlatform;
 
 /**
  * The in-memory rig with one record of every identifier flavour seeded: the
@@ -29,7 +30,8 @@ final class IdentityRig
 
     /**
      * What a CHAR(36) guid column legitimately holds on a platform with no guid
-     * type of its own.
+     * type of its own. PostgreSQL declares a guid type of its own, so the rig
+     * seeds no beacon there.
      */
     public const string BEACON_ID = 'legacy-42';
 
@@ -96,10 +98,12 @@ final class IdentityRig
         $ticket->setSubject('ticketed');
         $entities[] = $ticket;
 
-        $beacon = new Beacon();
-        $beacon->setId(self::BEACON_ID);
-        $beacon->setLabel('beaconed');
-        $entities[] = $beacon;
+        if (TestPlatform::current() !== TestPlatform::PostgreSql) {
+            $beacon = new Beacon();
+            $beacon->setId(self::BEACON_ID);
+            $beacon->setLabel('beaconed');
+            $entities[] = $beacon;
+        }
 
         EntityManagerFactory::seed($entityManager, ...$entities);
 

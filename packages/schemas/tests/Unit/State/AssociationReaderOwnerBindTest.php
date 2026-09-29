@@ -155,7 +155,7 @@ it("scopes an unflushed single derived identity whose target's identifier is ass
     expect($related->getQuery()->getResult())->toBe([])
         ->and($related->getParameter('sylament_relationship_owner')?->getValue())->toEqual(new Sku('ZZ-999'))
         ->and($related->getParameter('sylament_relationship_owner')?->getType())->toBe('sku')
-        ->and(ownerBindKeys($entityManager, $reader->createRelationshipCandidateQuery(new Relationship($seal, $relationship))->getQuery()->getResult()))->toBe($candidates);
+        ->and(ownerBindKeys($entityManager, $reader->createRelationshipCandidateQuery(new Relationship($seal, $relationship))->getQuery()->getResult()))->toEqualCanonicalizing($candidates);
 })->with([
     'many-to-many' => ['topics', ['1', '2']],
     'one-to-many' => ['slips', ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12', '13', '14', '15', '16', '17', '18', '19', '20', '21', '22', '23', '24']],

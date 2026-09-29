@@ -22,6 +22,7 @@ use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\Sigil;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\SigilChild;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\EntityManagerFactory;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\IdentityRig;
+use Sylament\Testing\Doctrine\TestPlatform;
 
 /*
  * `inColumns()` is `in()` spelled in SQL for a statement with no
@@ -224,30 +225,40 @@ it('quotes every identifier column the mapping quotes', function (): void {
     EntityManagerFactory::seed($entityManager, ...$consignments);
 
     $query = sqlTwinQuery($entityManager);
+    $quote = $entityManager->getConnection()->getDatabasePlatform()->quoteSingleIdentifier(...);
 
     $predicate = IdentifierConstraint::inColumns($entityManager, $query, Consignment::class, ['north~acme', 'south~zenith'], 'keys');
 
-    expect($predicate)->toBe('(("where" = :keys_0_0 AND "having" = :keys_0_1) OR ("where" = :keys_1_0 AND "having" = :keys_1_1))')
+    expect($predicate)->toBe('((' . $quote('where') . ' = :keys_0_0 AND ' . $quote('having') . ' = :keys_0_1) OR (' . $quote('where') . ' = :keys_1_0 AND ' . $quote('having') . ' = :keys_1_1))')
         ->and($query->getParameters())->toBe(['keys_0_0' => 'north', 'keys_0_1' => 'acme', 'keys_1_0' => 'south', 'keys_1_1' => 'zenith'])
-        ->and(sqlTwinRows($query, 'label', '"order"', $predicate))->toBe(['mine']);
+        ->and(sqlTwinRows($query, 'label', $quote('order'), $predicate))->toBe(['mine']);
 });
 
 it('binds a raw-bytes uuid as the sixteen bytes its column holds, dropping a spelling that does not print back', function (): void {
     $entityManager = CompositeOwnerRig::create();
     $query = sqlTwinQuery($entityManager);
-    $asText = sqlTwinQuery($entityManager);
 
     $predicate = IdentifierConstraint::inColumns($entityManager, $query, Crate::class, ['a1b2c3d4-0000-4000-8000-000000000001', 'a1b2c3d4-0000-4000-8000-000000000002', 'a1b2c3d4-0000-4000-8000-000000000003', 'A1B2C3D4-0000-4000-8000-000000000001', 'not-a-uuid'], 'keys');
-
-    // The same bytes bound as text: SQLite never finds a BLOB equal to TEXT.
-    $asText->setParameter('keys', $query->getParameter('keys'), ArrayParameterType::STRING);
 
     expect($predicate)->toBe('id IN (:keys)')
         ->and($query->getParameters())->toBe(['keys' => [hex2bin('a1b2c3d4000040008000000000000001'), hex2bin('a1b2c3d4000040008000000000000002'), hex2bin('a1b2c3d4000040008000000000000003')]])
         ->and($query->getParameterTypes())->toBe(['keys' => ArrayParameterType::BINARY])
-        ->and(sqlTwinRows($query, 'label', 'Crate', $predicate))->toBe(['apart', 'mine'])
-        ->and(sqlTwinRows($asText, 'label', 'Crate', $predicate))->toBe([]);
+        ->and(sqlTwinRows($query, 'label', 'Crate', $predicate))->toBe(['apart', 'mine']);
 });
+
+it('finds nothing for the same sixteen bytes bound as text, so the binary binding is what matches them', function (): void {
+    $entityManager = CompositeOwnerRig::create();
+    $query = sqlTwinQuery($entityManager);
+    $asText = sqlTwinQuery($entityManager);
+
+    $predicate = IdentifierConstraint::inColumns($entityManager, $query, Crate::class, ['a1b2c3d4-0000-4000-8000-000000000001', 'a1b2c3d4-0000-4000-8000-000000000002', 'a1b2c3d4-0000-4000-8000-000000000003'], 'keys');
+
+    // The same bytes bound as text: SQLite never finds a BLOB equal to TEXT.
+    $asText->setParameter('keys', $query->getParameter('keys'), ArrayParameterType::STRING);
+
+    expect(sqlTwinRows($query, 'label', 'Crate', $predicate))->toBe(['apart', 'mine'])
+        ->and(sqlTwinRows($asText, 'label', 'Crate', $predicate))->toBe([]);
+})->skip(TestPlatform::current() !== TestPlatform::Sqlite, "The control relies on SQLite's type affinity refusing bytes bound as text: MySQL matches them and PostgreSQL rejects them.");
 
 it('binds a raw-bytes half and a string half each under its own type', function (): void {
     $entityManager = CompositeOwnerRig::create();

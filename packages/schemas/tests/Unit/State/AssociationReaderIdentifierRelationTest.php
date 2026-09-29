@@ -39,7 +39,7 @@ it('still lists the records of a one-to-many it refuses to offer candidates for'
     $related = $reader->createRelationshipQuery(new Relationship($post, 'translations'))->getQuery()->getResult();
 
     expect(array_map(static fn (object $record): string => RecordKey::of($entityManager, $record), $related))
-        ->toBe([CompositeTargetRig::TRANSLATION_EN, CompositeTargetRig::TRANSLATION_DE]);
+        ->toEqualCanonicalizing([CompositeTargetRig::TRANSLATION_EN, CompositeTargetRig::TRANSLATION_DE]);
 });
 
 it('answers whether a relationship accepts an existing record at all', function (string $relationship, bool $accepted): void {

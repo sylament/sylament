@@ -31,6 +31,7 @@ use Sylament\Schemas\Tests\Fixtures\Doctrine\IdentifierGuardRig;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\IdentityRig;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\Sku;
 use Sylament\Testing\Doctrine\RecordingMiddleware;
+use Sylament\Testing\Doctrine\TestPlatform;
 use Symfony\Component\Uid\Uuid;
 
 /*
@@ -212,7 +213,7 @@ it('answers nothing for an untouched stored key that has no printable form', fun
     expect(new AssociationReader($entityManager)->revertIdentifierChanges($record))->toBe([])
         ->and($recorder->statements())->toBe([])
         ->and($record->getCode())->toBe("a\0b");
-});
+})->skip(TestPlatform::current() === TestPlatform::PostgreSql, 'pdo_pgsql truncates a NUL byte in a bound string, so PostgreSQL cannot store the identifier this test is about.');
 
 it('refuses a change between two spellings that both have no printable form, and puts the stored one back', function (): void {
     [$entityManager, $recorder, $record] = changedIdentifierUnprintableShortlink();
@@ -222,7 +223,7 @@ it('refuses a change between two spellings that both have no printable form, and
     expect(new AssociationReader($entityManager)->revertIdentifierChanges($record))->toBe(['code' => 'This value cannot be changed.'])
         ->and($recorder->statements())->toBe([])
         ->and($record->getCode())->toBe("a\0b");
-});
+})->skip(TestPlatform::current() === TestPlatform::PostgreSql, 'pdo_pgsql truncates a NUL byte in a bound string, so PostgreSQL cannot store the identifier this test is about.');
 
 it('answers nothing for any untouched stored record of any shape the rigs seed', function (): void {
     $census = [];
@@ -245,7 +246,10 @@ it('answers nothing for any untouched stored record of any shape the rigs seed',
     }
 
     expect($census)->toBe([
-        'IdentityRig' => ['checked' => 16, 'refused' => []],
+        'IdentityRig' => ['checked' => match (TestPlatform::current()) {
+            TestPlatform::PostgreSql => 15,
+            TestPlatform::Sqlite, TestPlatform::MySql => 16,
+        }, 'refused' => []],
         'IdentifierGuardRig' => ['checked' => 103, 'refused' => []],
     ]);
 });
@@ -314,14 +318,19 @@ it('reaches a changed member of a loaded collection by its index', function (): 
     $post = CompositeTargetRig::post($entityManager, 1);
     $translations = $post->getTranslations();
 
-    expect(array_map(static fn (PostTranslation $translation): string => $translation->getLocale(), $translations->toArray()))->toBe(['en', 'de']);
+    $locales = array_map(static fn (PostTranslation $translation): string => $translation->getLocale(), $translations->toArray());
+    $index = array_search('de', $locales, true);
 
-    $translations[1]?->setLocale('xx');
+    assert(is_int($index));
+
+    expect($locales)->toEqualCanonicalizing(['en', 'de']);
+
+    $translations[$index]?->setLocale('xx');
     $recorder->reset();
 
-    expect(new AssociationReader($entityManager)->revertIdentifierChanges($post))->toBe(['translations[1].locale' => 'This value cannot be changed.'])
+    expect(new AssociationReader($entityManager)->revertIdentifierChanges($post))->toBe([sprintf('translations[%d].locale', $index) => 'This value cannot be changed.'])
         ->and($recorder->statements())->toBe([])
-        ->and($translations[1]?->getLocale())->toBe('de');
+        ->and($translations[$index]?->getLocale())->toBe('de');
 });
 
 it('reaches a changed record behind a loaded to-one by its property path', function (): void {

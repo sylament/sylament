@@ -31,6 +31,7 @@ use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\Zone;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\EntityManagerFactory;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\IdentityRig;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\Sku;
+use Sylament\Testing\Doctrine\TestPlatform;
 use Symfony\Component\Uid\Uuid;
 
 it('keys a record of every identifier flavour', function (): void {
@@ -76,7 +77,7 @@ it('resolves a guid identifier the platform stores as plain text', function (): 
         ->and(RecordKey::toIdentifier($entityManager, Beacon::class, $key))->toBe(['id' => IdentityRig::BEACON_ID])
         ->and($found)->toHaveCount(1)
         ->and($found[0]->getLabel())->toBe('beaconed');
-});
+})->skip(TestPlatform::current() === TestPlatform::PostgreSql, 'PostgreSQL declares a native uuid type, so a guid column there cannot hold a non-UUID value.');
 
 it('keys a record whose identifier is a strict value object, alone and behind an association', function (): void {
     $entityManager = IdentityRig::create();
@@ -313,7 +314,7 @@ it('mints a loaded record the key it already held, whatever its identifier type 
         'sku' => $entityManager->find(Listing::class, new Sku('AB-123')),
         'sku behind an association' => $entityManager->find(ListingNote::class, ['listing' => new Sku('AB-123'), 'code' => 'n1']),
         'guid beside a bigint' => $entityManager->find(Ticket::class, ['id' => 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11', 'serial' => 7]),
-        default => $entityManager->find(Beacon::class, 'legacy-42'),
+        default => throw new LogicException(sprintf('No record is found for the [%s] flavour.', $flavour)),
     };
 
     assert($record !== null);
@@ -324,8 +325,17 @@ it('mints a loaded record the key it already held, whatever its identifier type 
     'a sku' => ['sku', 'AB-123'],
     'a sku behind an association' => ['sku behind an association', 'AB-123~n1'],
     'a guid beside a bigint' => ['guid beside a bigint', 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11~7'],
-    'a guid the platform stores as plain text' => ['guid stored as plain text', 'legacy-42'],
 ]);
+
+it('mints a loaded record stored as plain text in a guid column the key it already held', function (): void {
+    $entityManager = IdentityRig::create();
+    $record = $entityManager->find(Beacon::class, IdentityRig::BEACON_ID);
+
+    assert($record !== null);
+
+    expect(RecordKey::of($entityManager, $record))->toBe(IdentityRig::BEACON_ID)
+        ->and(RecordKey::find($entityManager, $record))->toBe(IdentityRig::BEACON_ID);
+})->skip(TestPlatform::current() === TestPlatform::PostgreSql, 'PostgreSQL declares a native uuid type, so a guid column there cannot hold a non-UUID value.');
 
 it('mints a loaded record the key it already held behind a raw-bytes uuid or a cipher', function (string $flavour, string $key): void {
     $entityManager = CompositeOwnerRig::create();

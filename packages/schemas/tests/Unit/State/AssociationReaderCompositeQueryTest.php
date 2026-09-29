@@ -70,8 +70,8 @@ it('lists the records a single-identifier owner is related to, and the complemen
 
     $key = static fn (object $record): string => RecordKey::of($entityManager, $record);
 
-    expect(array_map($key, $reader->createRelationshipQuery(new Relationship($post, $relationship))->getQuery()->getResult()))->toBe($related)
-        ->and(array_map($key, $reader->createRelationshipCandidateQuery(new Relationship($post, $relationship))->getQuery()->getResult()))->toBe($candidates);
+    expect(array_map($key, $reader->createRelationshipQuery(new Relationship($post, $relationship))->getQuery()->getResult()))->toEqualCanonicalizing($related)
+        ->and(array_map($key, $reader->createRelationshipCandidateQuery(new Relationship($post, $relationship))->getQuery()->getResult()))->toEqualCanonicalizing($candidates);
 })->with([
     'scalar pair, owning side' => ['redirects', [CompositeTargetRig::REDIRECT_ONE], [CompositeTargetRig::REDIRECT_TWO, CompositeTargetRig::REDIRECT_THREE]],
     'scalar pair, inverse side' => ['listedRedirects', [CompositeTargetRig::REDIRECT_TWO], [CompositeTargetRig::REDIRECT_ONE, CompositeTargetRig::REDIRECT_THREE]],
@@ -114,7 +114,7 @@ it('scopes a relationship query to an owner Doctrine cannot bind, on both arms a
         ->and($query->getParameters()->map(static fn (Parameter $parameter): string => $parameter->getName())->toArray())
         ->toBe(['sylament_relationship_owner_0', 'sylament_relationship_owner_1'])
         ->and(array_map(static fn (object $record): string => RecordKey::of($entityManager, $record), $query->getQuery()->getResult()))
-        ->toBe($isRelated ? $related : $candidates);
+        ->toEqualCanonicalizing($isRelated ? $related : $candidates);
 })->with([
     'scalar pair, many-to-many' => ['scalar pair', 'posts', Post::class, 'sy_owner.host = :sylament_relationship_owner_0 AND sy_owner.path = :sylament_relationship_owner_1', ['1', '2'], ['3']],
     'scalar pair, one-to-many' => ['scalar pair', 'markers', Marker::class, 'sy_owner.host = :sylament_relationship_owner_0 AND sy_owner.path = :sylament_relationship_owner_1', ['4'], ['1', '2', '3', '5', '6', '7', '8', '9', '10', '11', '12', '13']],

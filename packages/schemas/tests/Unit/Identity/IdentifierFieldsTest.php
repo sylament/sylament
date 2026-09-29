@@ -175,7 +175,7 @@ it('answers the PHP values a key names, and nothing for a spelling the record si
  */
 it('shapes a guid component only where the platform declares a guid type of its own', function (string $key, array $storedAsText): void {
     $postgres = EntityManagerFactory::createForPostgres();
-    $sqlite = EntityManagerFactory::create();
+    $sqlite = EntityManagerFactory::createForSqlite();
 
     expect(IdentifierFields::of($postgres, Ticket::class)->toPhpValues($postgres, $key))->toBeNull()
         ->and(IdentifierFields::of($sqlite, Ticket::class)->toPhpValues($sqlite, $key))->toEqual($storedAsText);

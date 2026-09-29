@@ -67,9 +67,9 @@ it('scopes a composite owner to a collection of records of its own class', funct
     $related = $reader->createRelationshipQuery(new Relationship($owner, 'children'));
 
     expect($related->getDQL())->toBe('SELECT record FROM ' . Redirect::class . ' record WHERE EXISTS (SELECT 1 FROM ' . Redirect::class . ' sy_owner JOIN sy_owner.children sy_related WHERE sy_owner.host = :sylament_relationship_owner_0 AND sy_owner.path = :sylament_relationship_owner_1 AND sy_related.host = record.host AND sy_related.path = record.path)')
-        ->and(ownerScopeKeys($entityManager, $related->getQuery()->getResult()))->toBe([CompositeOwnerRig::REDIRECT_SHARES_HOST, CompositeOwnerRig::REDIRECT_SHARES_PATH])
+        ->and(ownerScopeKeys($entityManager, $related->getQuery()->getResult()))->toEqualCanonicalizing([CompositeOwnerRig::REDIRECT_SHARES_HOST, CompositeOwnerRig::REDIRECT_SHARES_PATH])
         ->and(ownerScopeKeys($entityManager, $reader->createRelationshipCandidateQuery(new Relationship($owner, 'children'))->getQuery()->getResult()))
-        ->toBe([CompositeOwnerRig::REDIRECT_MINE, CompositeOwnerRig::REDIRECT_APART]);
+        ->toEqualCanonicalizing([CompositeOwnerRig::REDIRECT_MINE, CompositeOwnerRig::REDIRECT_APART]);
 });
 
 it('scopes from a single-table subclass owner whose collections the root declares', function (string $relationship, string $targetClass, array $related, array $candidates): void {
@@ -80,8 +80,8 @@ it('scopes from a single-table subclass owner whose collections the root declare
     $query = $reader->createRelationshipQuery(new Relationship($owner, $relationship));
 
     expect($query->getDQL())->toBe('SELECT record FROM ' . $targetClass . ' record WHERE EXISTS (SELECT 1 FROM ' . SigilChild::class . ' sy_owner JOIN sy_owner.' . $relationship . ' sy_related WHERE sy_owner.realm = :sylament_relationship_owner_0 AND sy_owner.mark = :sylament_relationship_owner_1 AND sy_related.id = record.id)')
-        ->and(ownerScopeKeys($entityManager, $query->getQuery()->getResult()))->toBe($related)
-        ->and(ownerScopeKeys($entityManager, $reader->createRelationshipCandidateQuery(new Relationship($owner, $relationship))->getQuery()->getResult()))->toBe($candidates);
+        ->and(ownerScopeKeys($entityManager, $query->getQuery()->getResult()))->toEqualCanonicalizing($related)
+        ->and(ownerScopeKeys($entityManager, $reader->createRelationshipCandidateQuery(new Relationship($owner, $relationship))->getQuery()->getResult()))->toEqualCanonicalizing($candidates);
 })->with([
     'many-to-many' => ['topics', Tag::class, ['1', '2'], []],
     'one-to-many' => ['slips', Slip::class, ['11'], ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '12', '13', '14', '15', '16', '17', '18', '19', '20', '21', '22', '23', '24']],

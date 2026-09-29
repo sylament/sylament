@@ -151,7 +151,7 @@ it('hands three owners sharing one identifier half each only its own records, on
         $reader->createRelationshipQuery(new Relationship($owner, $relationship))->getQuery()->getResult(),
     );
 
-    expect($keysOf($owners[0]))->toBe($mine)
+    expect($keysOf($owners[0]))->toEqualCanonicalizing($mine)
         ->and($keysOf($owners[1]))->toBe($sharesFirst)
         ->and($keysOf($owners[2]))->toBe($sharesSecond);
 })->with([

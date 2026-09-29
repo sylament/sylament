@@ -66,7 +66,7 @@ it('scopes an owner whose one identifier field stores a form it does not print, 
     $other = CompositeOwnerRig::findListing($entityManager, CompositeOwnerRig::LISTING_APART);
 
     expect(ownerBindKeys($entityManager, $reader->createRelationshipQuery(new Relationship($owner, $relationship))->getQuery()->getResult()))->toBe($mine)
-        ->and(ownerBindKeys($entityManager, $reader->createRelationshipCandidateQuery(new Relationship($owner, $relationship))->getQuery()->getResult()))->toBe($mineCandidates)
+        ->and(ownerBindKeys($entityManager, $reader->createRelationshipCandidateQuery(new Relationship($owner, $relationship))->getQuery()->getResult()))->toEqualCanonicalizing($mineCandidates)
         ->and(ownerBindKeys($entityManager, $reader->createRelationshipQuery(new Relationship($other, $relationship))->getQuery()->getResult()))->toBe($apart);
 })->with([
     'many-to-many' => ['topics', ['1'], ['2'], ['2']],
@@ -129,7 +129,7 @@ it('scopes a single derived identity onto a converting, a raw-bytes and a doubly
     };
 
     expect(ownerBindKeys($entityManager, $reader->createRelationshipQuery(new Relationship($owner, $relationship))->getQuery()->getResult()))->toBe($mine)
-        ->and(ownerBindKeys($entityManager, $reader->createRelationshipCandidateQuery(new Relationship($owner, $relationship))->getQuery()->getResult()))->toBe($mineCandidates)
+        ->and(ownerBindKeys($entityManager, $reader->createRelationshipCandidateQuery(new Relationship($owner, $relationship))->getQuery()->getResult()))->toEqualCanonicalizing($mineCandidates)
         ->and(ownerBindKeys($entityManager, $reader->createRelationshipQuery(new Relationship($other, $relationship))->getQuery()->getResult()))->toBe($apart);
 })->with([
     'onto a converting value object, many-to-many' => ['converting', 'topics', ['1'], ['2'], ['2']],

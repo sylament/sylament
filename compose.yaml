@@ -1,0 +1,24 @@
+services:
+  mysql:
+    image: mysql:8.4
+    environment:
+      MYSQL_ROOT_PASSWORD: sylament
+    ports:
+      - "127.0.0.1:33307:3306"
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-uroot", "-psylament"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+
+  postgresql:
+    image: postgres:18-alpine
+    environment:
+      POSTGRES_PASSWORD: sylament
+    ports:
+      - "127.0.0.1:55433:5432"
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 30

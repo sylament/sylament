@@ -25,7 +25,7 @@ class Venue
 
     public function __construct(
         #[ORM\Id]
-        #[ORM\Column(type: HandleType::NAME)]
+        #[ORM\Column(type: HandleType::NAME, length: 255)]
         private Handle $handle,
         #[ORM\Column]
         private string $name

@@ -17,7 +17,7 @@ use Sylament\Schemas\Tests\Fixtures\Doctrine\CipherType;
 class Strongbox
 {
     #[ORM\Id]
-    #[ORM\Column(type: CipherType::NAME)]
+    #[ORM\Column(type: CipherType::NAME, length: 255)]
     private ?Cipher $cipher = null;
 
     #[ORM\Column]

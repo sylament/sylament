@@ -11,11 +11,11 @@ use Doctrine\ORM\Configuration;
 use Doctrine\ORM\EntityManager;
 use Doctrine\ORM\ORMSetup;
 use Doctrine\ORM\Tools\SchemaTool;
-use LogicException;
 
 /**
  * Builds the entity manager a package's test fixtures run on: in-memory SQLite
- * carrying the package's schema, unless SYLAMENT_TEST_DATABASE_URL names a server.
+ * carrying the package's schema, unless SYLAMENT_TEST_DATABASE_URL names a server,
+ * where a DatabasePool hands out a database that starts as empty as SQLite's would.
  */
 final class TestEntityManagers
 {
@@ -25,10 +25,8 @@ final class TestEntityManagers
      */
     public static function create(string $package, array $entityPaths, array $types = [], ?RecordingMiddleware $recorder = null): EntityManager
     {
-        $platform = TestPlatform::current();
-
-        if ($platform !== TestPlatform::Sqlite) {
-            throw new LogicException(sprintf('%s names a %s server, and no database pool is wired to run on it.', TestPlatform::URL_VARIABLE, $platform->name));
+        if (TestPlatform::current() !== TestPlatform::Sqlite) {
+            return DatabasePool::instance()->entityManager($package, self::configuration($entityPaths, $types), $recorder);
         }
 
         return self::createSqlite($package, $entityPaths, $types, $recorder);

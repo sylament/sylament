@@ -17,7 +17,7 @@ use Sylament\Schemas\Tests\Fixtures\Doctrine\SkuType;
 class Listing
 {
     #[ORM\Id]
-    #[ORM\Column(type: SkuType::NAME)]
+    #[ORM\Column(type: SkuType::NAME, length: 255)]
     private ?Sku $sku = null;
 
     #[ORM\Column]

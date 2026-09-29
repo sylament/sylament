@@ -42,7 +42,7 @@ class Locker
 
     public function __construct(
         #[ORM\Id]
-        #[ORM\Column(type: LockerCodeType::NAME)]
+        #[ORM\Column(type: LockerCodeType::NAME, length: 255)]
         private string $code,
         #[ORM\Column]
         private string $label

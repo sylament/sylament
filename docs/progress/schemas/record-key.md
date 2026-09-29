@@ -1076,6 +1076,32 @@ A NUL byte never reaches PostgreSQL as part of a key. The decoder refuses one on
 platform, and pdo_pgsql would truncate it silently in a bound string. The two tests
 about a NUL-byte identifier are therefore restricted to SQLite and MySQL.
 
+### A property test carries the fuzz harness's claims
+
+`RecordKeyPropertyTest` runs a seeded, deterministic slice of the validation's fuzz
+harness on every platform the suites run on. It checks four properties:
+
+1. **Round trip.** A generated tuple's key decodes to the same printed values and
+   re-encodes to itself, and a record holding the raw values mints the key its row
+   binds.
+2. **Only canonical spellings decode.** Every one of 31 misspellings is refused, or
+   is itself the canonical key of another tuple, and `equals()` agrees with the
+   decode.
+3. **A single identifier keys verbatim.**
+4. **Totality.** No client string makes the decode or a constraint builder throw,
+   nor the lookup that follows a decode.
+
+The cipher classes are left out by name: their type refuses its own printed form.
+`SYLAMENT_PROPERTY_SEED` and `SYLAMENT_PROPERTY_ITERATIONS` widen a local run.
+
+On PostgreSQL, property 1 leaves out a tuple whose `guid` component is not a UUID,
+because a native `uuid` column cannot hold one and [the grammar](#the-grammar)
+shape-checks `guid` there; a pin in the same file shows `'not-a-uuid'` decoding on
+SQLite and MySQL and refused on PostgreSQL. On PostgreSQL, property 4 also skips the
+lookup for an integer wider than its column, which raises
+[the platform's range error](#an-integer-beyond-the-columns-width-still-raises-the-platforms-range-error)
+there and names no row on the other two, as a second pin shows.
+
 ## Divergences
 
 Limits that are permanent, and the reason each holds. There is no Filament

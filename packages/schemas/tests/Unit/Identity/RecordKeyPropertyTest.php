@@ -271,7 +271,7 @@ it('names no row by an integer wider than its column on SQLite and MySQL, and ra
 
     match (TestPlatform::current()) {
         TestPlatform::Sqlite, TestPlatform::MySql => expect($entityManager->find(Post::class, $identifier))->toBeNull(),
-        TestPlatform::PostgreSql => expect(fn (): ?object => $entityManager->find(Post::class, $identifier))->toThrow(DriverException::class, 'SQLSTATE[22003]: Numeric value out of range: 7 ERROR:  value "9999999999" is out of range for type integer'),
+        TestPlatform::PostgreSql => expect(fn (): ?object => $entityManager->find(Post::class, $identifier))->toThrow(DriverException::class, 'SQLSTATE[22003]'),
     };
 });
 

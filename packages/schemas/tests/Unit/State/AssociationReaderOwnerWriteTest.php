@@ -6,6 +6,7 @@ namespace Sylament\Schemas\Tests\Unit\State;
 
 use Doctrine\ORM\EntityManager;
 use LogicException;
+use Sylament\Schemas\Identity\RecordKey;
 use Sylament\Schemas\State\AssociationReader;
 use Sylament\Schemas\State\Relationship;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\CompositeOwnerRig;
@@ -106,6 +107,7 @@ it('writes and removes a join-table row carrying every owner column, from the ow
         default => $entityManager->find(Post::class, 3),
     };
     assert($related !== null);
+    $key = RecordKey::of($entityManager, $related);
 
     $count = static fn (): int => (int) $entityManager->getConnection()->fetchOne(sprintf('SELECT COUNT(*) FROM %s WHERE %s', $table, $where));
 
@@ -119,8 +121,11 @@ it('writes and removes a join-table row carrying every owner column, from the ow
 
     $owner = ownerWriteRecord($entityManager, $flavour);
     $reloaded = $reader->createRelationshipQuery(new Relationship($owner, $relationship))->getQuery()->getResult();
+    $attached = array_values(array_filter($reloaded, static fn (object $record): bool => RecordKey::of($entityManager, $record) === $key));
 
-    $reader->detach(new Relationship($owner, $relationship), $reloaded[count($reloaded) - 1]);
+    expect($attached)->toHaveCount(1);
+
+    $reader->detach(new Relationship($owner, $relationship), $attached[0]);
     $entityManager->flush();
     $entityManager->clear();
 

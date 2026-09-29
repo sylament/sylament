@@ -763,7 +763,7 @@ it('summarizes each group of a keyed table in one statement of its own', functio
 
     expect(DriverValues::numeric($host->getTableSummarySelectedState($host->getGroupedTableSummaryQuery($records['apollo~2026-autumn']))))->toBe(['sy_summary_0' => 60])
         ->and($recorder->statements())->toHaveCount(1)
-        ->and($recorder->statements()[0])->toContain('WHERE r0_.season = ?');
+        ->and($recorder->normalizedStatements()[0])->toContain('WHERE a0_.season = ?');
 });
 
 /*

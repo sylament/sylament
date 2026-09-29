@@ -18,6 +18,7 @@ use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\PostSection;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\Profile;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\Tag;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\EntityManagerFactory;
+use Sylament\Testing\Doctrine\SqlNormalizer;
 use Symfony\Component\PropertyAccess\PropertyAccess;
 
 /**
@@ -338,15 +339,15 @@ it('renders the relationship shapes as SQL the driver runs', function (): void {
     $reader = reader();
     $post = seededRelationshipPost();
 
-    expect($reader->createRelationshipQuery(new Relationship($post, 'tags'))->getQuery()->getSQL())
+    expect(SqlNormalizer::normalize($reader->createRelationshipQuery(new Relationship($post, 'tags'))->getQuery()->getSQL()))
         ->toContain('INNER JOIN post_tag')
-        ->toContain('WHERE EXISTS (SELECT 1 AS sclr_2 FROM Post p1_ INNER JOIN post_tag p3_ ON p1_.id = p3_.post_id INNER JOIN Tag t2_ ON t2_.id = p3_.tag_id WHERE p1_.id = ? AND t2_.id = t0_.id)')
-        ->and($reader->createRelationshipQuery(new Relationship($post, 'sections'))->getQuery()->getSQL())
-        ->toEndWith('WHERE p0_.post_id = ?')
-        ->and($reader->createRelationshipCandidateQuery(new Relationship($post, 'tags'))->getQuery()->getSQL())
-        ->toContain('WHERE NOT EXISTS (SELECT 1 AS sclr_2 FROM Post p1_ INNER JOIN post_tag p3_ ON p1_.id = p3_.post_id INNER JOIN Tag t2_ ON t2_.id = p3_.tag_id WHERE p1_.id = ? AND t2_.id = t0_.id)')
-        ->and($reader->createRelationshipCandidateQuery(new Relationship($post, 'sections'))->getQuery()->getSQL())
-        ->toEndWith('WHERE p0_.post_id IS NULL OR p0_.post_id <> ?');
+        ->toContain('WHERE EXISTS (SELECT 1 AS sclr_2 FROM Post a1_ INNER JOIN post_tag a2_ ON a1_.id = a2_.post_id INNER JOIN Tag a3_ ON a3_.id = a2_.tag_id WHERE a1_.id = ? AND a3_.id = a0_.id)')
+        ->and(SqlNormalizer::normalize($reader->createRelationshipQuery(new Relationship($post, 'sections'))->getQuery()->getSQL()))
+        ->toEndWith('WHERE a0_.post_id = ?')
+        ->and(SqlNormalizer::normalize($reader->createRelationshipCandidateQuery(new Relationship($post, 'tags'))->getQuery()->getSQL()))
+        ->toContain('WHERE NOT EXISTS (SELECT 1 AS sclr_2 FROM Post a1_ INNER JOIN post_tag a2_ ON a1_.id = a2_.post_id INNER JOIN Tag a3_ ON a3_.id = a2_.tag_id WHERE a1_.id = ? AND a3_.id = a0_.id)')
+        ->and(SqlNormalizer::normalize($reader->createRelationshipCandidateQuery(new Relationship($post, 'sections'))->getQuery()->getSQL()))
+        ->toEndWith('WHERE a0_.post_id IS NULL OR a0_.post_id <> ?');
 });
 
 it('runs the relationship query against the database', function (): void {

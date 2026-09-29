@@ -571,12 +571,12 @@ it('runs one aggregate statement per composite page and leaves the page query al
     $recorder->reset();
 
     $states = aggregateCellStates($host, 'hits_count');
-    $statements = $recorder->statements();
+    $statements = $recorder->normalizedStatements();
 
     expect($states)->toBe([1])
         ->and($statements)->toHaveCount(2)
         ->and($statements[0])->not->toContain('GROUP BY')
-        ->and($statements[1])->toContain('GROUP BY s0_.host, s0_.path');
+        ->and($statements[1])->toContain('GROUP BY a0_.host, a0_.path');
 });
 
 it('sorts a composite-identifier table by an aggregate across a page boundary', function (): void {

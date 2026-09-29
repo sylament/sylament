@@ -217,9 +217,8 @@ it("refuses a new item on the key an existing item keeps, under the new item's o
     // collection, as before; the item holding `en` is managed, so the refusal
     // adds none.
     expect(repeaterKeyWritesRefusal($schema))->toBe(['data.translations.new-a.locale' => ['This value is already used.']])
-        ->and($recorder->statements())->toBe([
-            'SELECT t0.id AS id_1, t0.heading AS heading_2, t0.body AS body_3, t0.position AS position_4, t0.post_id AS post_id_5, t0.author_id AS author_id_6 FROM PostSection t0 WHERE t0.post_id = ? ORDER BY t0.position ASC',
-        ])
+        ->and($recorder->normalizedStatements())->toHaveCount(1)
+        ->and($recorder->normalizedStatements()[0])->toContain('FROM PostSection p0 WHERE p0.post_id = ? ORDER BY p0.position ASC')
         ->and($entityManager->isOpen())->toBeTrue()
         ->and(repeaterKeyWritesTranslationRows($entityManager))->toBe([
             ['post_id' => 1, 'locale' => 'de', 'title' => 'German'],
@@ -242,10 +241,9 @@ it('refuses the second of two new items claiming one key, after one read for the
     $recorder = repeaterKeyWritesRecorder();
 
     expect(repeaterKeyWritesRefusal($schema))->toBe(['data.translations.new-b.locale' => ['This value is already used.']])
-        ->and($recorder->statements())->toBe([
-            'SELECT t0.id AS id_1, t0.heading AS heading_2, t0.body AS body_3, t0.position AS position_4, t0.post_id AS post_id_5, t0.author_id AS author_id_6 FROM PostSection t0 WHERE t0.post_id = ? ORDER BY t0.position ASC',
-            'SELECT t0.locale AS locale_1, t0.title AS title_2, t0.position AS position_3, t0.post_id AS post_id_4 FROM PostTranslation t0 WHERE t0.post_id = ? AND t0.locale = ?',
-        ])
+        ->and($recorder->normalizedStatements())->toHaveCount(2)
+        ->and($recorder->normalizedStatements()[0])->toContain('FROM PostSection p0 WHERE p0.post_id = ? ORDER BY p0.position ASC')
+        ->and($recorder->normalizedStatements()[1])->toContain('FROM PostTranslation p0 WHERE p0.post_id = ? AND p0.locale = ?')
         ->and($entityManager->isOpen())->toBeTrue()
         ->and(repeaterKeyWritesTranslationRows($entityManager))->toHaveCount(3);
 });

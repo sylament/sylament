@@ -30,3 +30,11 @@ it('resumes recording when the suspended callback throws', function (): void {
 
     expect($recorder->statements())->toBe(['SELECT 1']);
 });
+
+it("answers the recorded statements with Doctrine's minted names renumbered", function (): void {
+    $recorder = new RecordingMiddleware();
+    $recorder->record('SELECT s7_.id FROM Post s7_');
+
+    expect($recorder->normalizedStatements())->toBe(['SELECT a0_.id FROM Post a0_'])
+        ->and($recorder->statements())->toBe(['SELECT s7_.id FROM Post s7_']);
+});

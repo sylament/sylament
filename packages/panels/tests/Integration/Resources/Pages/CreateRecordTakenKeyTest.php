@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use Doctrine\ORM\EntityManagerInterface;
+use Pest\Expectation;
 use Sylament\Panels\Tests\Fixtures\Doctrine\Entity\Catalogue;
 use Sylament\Panels\Tests\Fixtures\Doctrine\Entity\Shelfmark;
 use Sylament\Panels\Tests\Fixtures\Doctrine\Entity\Stamp;
@@ -135,7 +136,8 @@ it('refuses a single assigned key a row already holds under its field, writing n
         ->and(mb_substr_count($html, 'This value is already used.'))->toBe(1)
         // A managed holder answers from the identity map; a stored one costs the
         // one primary-key read.
-        ->and($recorder->statements())->toBe($managed ? [] : ['SELECT t0.code AS code_1, t0.label AS label_2 FROM Shelfmark t0 WHERE t0.code = ?'])
+        ->and($recorder->normalizedStatements())->toHaveCount($managed ? 0 : 1)
+        ->each->toContain('FROM Shelfmark p0 WHERE p0.code = ?')
         ->and($entityManager->isOpen())->toBeTrue()
         ->and($entityManager->getRepository(Shelfmark::class)->count([]))->toBe(1);
 })->with([
@@ -184,7 +186,7 @@ it('refuses a nested key its parent completes under the code, whatever spelling 
     'the stored code read back' => ['EN-GB'],
 ]);
 
-it('reads the key once before an assigned-key insert and never before a generated one', function (string $page, string $panel, array $parameters, array $data, array $statements): void {
+it('reads the key once before an assigned-key insert and never before a generated one', function (string $page, string $panel, array $parameters, array $data, array $lookups, array $writes): void {
     [$client, $entityManager, $recorder] = createTakenKeyClient($panel);
 
     $component = $this->createLiveComponent($page, $parameters, client: $client);
@@ -196,22 +198,26 @@ it('reads the key once before an assigned-key insert and never before a generate
     $component->call('create');
 
     expect($component->response()->isRedirection())->toBeTrue()
-        ->and($recorder->statements())->toBe($statements);
+        ->and($recorder->normalizedStatements())->toHaveCount(count($lookups) + count($writes))
+        ->and(array_slice($recorder->normalizedStatements(), 0, count($lookups)))->each(static fn (Expectation $statement, int $index): Expectation => $statement->toContain($lookups[$index]))
+        ->and(array_slice($recorder->normalizedStatements(), count($lookups)))->toBe($writes);
 })->with([
-    'a generated identifier' => [CreateArticle::class, 'admin', [], ['title' => 'Generated', 'slug' => 'generated'], [
+    'a generated identifier' => [CreateArticle::class, 'admin', [], ['title' => 'Generated', 'slug' => 'generated'], [], [
         'BEGIN',
         'INSERT INTO Article (title, slug, status, author_id) VALUES (?, ?, ?, ?)',
         'COMMIT',
     ]],
     'a single assigned identifier' => [CreateShelfmark::class, 'write', ['panelId' => 'write'], ['code' => 'gamma', 'label' => 'G'], [
-        'SELECT t0.code AS code_1, t0.label AS label_2 FROM Shelfmark t0 WHERE t0.code = ?',
+        'FROM Shelfmark p0 WHERE p0.code = ?',
+    ], [
         'BEGIN',
         'INSERT INTO Shelfmark (code, label) VALUES (?, ?)',
         'COMMIT',
     ]],
     'an identifier its parent completes' => [CreateStamp::class, 'key', ['parentRecords' => ['catalogue' => '1'], 'panelId' => 'key'], ['code' => 'NEW/1', 'caption' => 'N'], [
-        'SELECT c0_.id AS id_0, c0_.title AS title_1 FROM Catalogue c0_ WHERE c0_.id = ?',
-        'SELECT t0.code AS code_1, t0.caption AS caption_2, t0.catalogue_id AS catalogue_id_3 FROM Stamp t0 WHERE t0.catalogue_id = ? AND t0.code = ?',
+        'FROM Catalogue a0_ WHERE a0_.id = ?',
+        'FROM Stamp p0 WHERE p0.catalogue_id = ? AND p0.code = ?',
+    ], [
         'BEGIN',
         'INSERT INTO Stamp (code, caption, catalogue_id) VALUES (?, ?, ?)',
         'COMMIT',

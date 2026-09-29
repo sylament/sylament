@@ -14,6 +14,7 @@ use Sylament\Tables\Tests\Fixtures\Doctrine\Entity\Circuit;
 use Sylament\Tables\Tests\Fixtures\Doctrine\Entity\Label;
 use Sylament\Tables\Tests\Fixtures\Doctrine\Entity\Song;
 use Sylament\Tables\Tests\Fixtures\Doctrine\EntityManagerFactory;
+use Sylament\Testing\Doctrine\SqlNormalizer;
 
 /**
  * A relation-scoped query rooted at {@see Circuit}, narrowed to the
@@ -173,7 +174,7 @@ it('leaves a name free that the dql carries only in another case', function (): 
 
     expect(RelationJoiner::ensureJoined($query, 'record', [new Hop('owner', Circuit::class, false)]))->toBe('sy_owner')
         ->and($query->getDQL())->toContain('LEFT JOIN record.related SY_OWNER LEFT JOIN record.owner sy_owner')
-        ->and($query->getQuery()->getSQL())->toContain('LEFT JOIN Circuit c1_ ON c0_.related_region = c1_.region');
+        ->and(SqlNormalizer::normalize($query->getQuery()->getSQL()))->toContain('LEFT JOIN Circuit a1_ ON a0_.related_region = a1_.region');
 });
 
 it('sorts a relation-scoped query through a hop named after the subselect owner alias', function (): void {

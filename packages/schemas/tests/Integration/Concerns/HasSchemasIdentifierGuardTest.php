@@ -141,7 +141,8 @@ it('answers a record failing its own constraint with that constraint alone and n
 
     expect(identifierGuardErrors($schema))->toBe(['data.code' => ['This value is already used.']])
         ->and($host->getErrorsForSchemaStatePath('data.code'))->toBe(['This value is already used.'])
-        ->and($recorder->statements())->toBe(['SELECT t0.code AS code_1, t0.label AS label_2 FROM Callsign t0 WHERE t0.code = ?']);
+        ->and($recorder->normalizedStatements())->toHaveCount(1)
+        ->and($recorder->normalizedStatements()[0])->toContain('FROM Callsign p0 WHERE p0.code = ?');
 });
 
 it('maps a new record on a free key after one primary-key SELECT', function (): void {
@@ -156,7 +157,8 @@ it('maps a new record on a free key after one primary-key SELECT', function (): 
     $recorder->reset();
 
     expect($schema->getData())->toBe($callsign)
-        ->and($recorder->statements())->toBe(['SELECT t0.code AS code_1, t0.label AS label_2 FROM Callsign t0 WHERE t0.code = ?']);
+        ->and($recorder->normalizedStatements())->toHaveCount(1)
+        ->and($recorder->normalizedStatements()[0])->toContain('FROM Callsign p0 WHERE p0.code = ?');
 });
 
 it('lists a message once per path however many constraints raise it there', function (): void {

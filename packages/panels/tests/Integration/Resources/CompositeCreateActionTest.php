@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use Doctrine\ORM\EntityManagerInterface;
+use Pest\Expectation;
 use Sylament\Panels\Tests\Fixtures\Doctrine\Entity\Catalogue;
 use Sylament\Panels\Tests\Fixtures\Doctrine\Entity\Colophon;
 use Sylament\Panels\Tests\Fixtures\Doctrine\Entity\Edition;
@@ -188,7 +189,7 @@ it('refuses the second create of create-another on the key the first one wrote',
         ->and($entityManager->find(Edition::class, ['id' => 6, 'locale' => 'en'])?->getTitle())->toBe('One');
 });
 
-it('reads a relation-scoped key once before its insert', function (string $host, array $statements): void {
+it('reads a relation-scoped key once before its insert', function (string $host, array $lookups, array $writes): void {
     [$client, $entityManager, $recorder] = compositeCreateActionClient();
 
     [$class, $parameters, $context] = compositeCreateActionHost($host);
@@ -202,36 +203,41 @@ it('reads a relation-scoped key once before its insert', function (string $host,
 
     $component->call('callMountedAction');
 
-    $recorded = $recorder->statements();
+    $recorded = $recorder->normalizedStatements();
     $commit = array_search('COMMIT', $recorded, true);
 
     // What follows the commit is the host re-rendering its table.
     expect($component->response()->getStatusCode())->toBe(200)
         ->and($commit)->toBeInt()
-        ->and(array_slice($recorded, 0, is_int($commit) ? $commit + 1 : 0))->toBe($statements);
+        ->and(array_slice($recorded, 0, is_int($commit) ? $commit + 1 : 0))->toHaveCount(count($lookups) + count($writes))
+        ->and(array_slice($recorded, 0, count($lookups)))->each(static fn (Expectation $statement, int $index): Expectation => $statement->toContain($lookups[$index]))
+        ->and(array_slice($recorded, count($lookups), count($writes)))->toBe($writes);
 
     $entityManager->clear();
 
     expect($entityManager->find(Stamp::class, ['catalogue' => 1, 'code' => 'AB-7'])?->getCaption())->toBe('Free');
 })->with([
     'a nested record page header, which resolves its own record first' => ['nested header', [
-        'SELECT c0_.id AS id_0, c0_.title AS title_1 FROM Catalogue c0_ WHERE c0_.id = ?',
-        'SELECT s0_.code AS code_0, s0_.caption AS caption_1, s0_.catalogue_id AS catalogue_id_2 FROM Stamp s0_ WHERE s0_.catalogue_id = ? AND (s0_.catalogue_id = ? AND s0_.code = ?)',
-        'SELECT t0.code AS code_1, t0.caption AS caption_2, t0.catalogue_id AS catalogue_id_3 FROM Stamp t0 WHERE t0.catalogue_id = ? AND t0.code = ?',
+        'FROM Catalogue a0_ WHERE a0_.id = ?',
+        'FROM Stamp a0_ WHERE a0_.catalogue_id = ? AND (a0_.catalogue_id = ? AND a0_.code = ?)',
+        'FROM Stamp p0 WHERE p0.catalogue_id = ? AND p0.code = ?',
+    ], [
         'BEGIN',
         'INSERT INTO Stamp (code, caption, catalogue_id) VALUES (?, ?, ?)',
         'COMMIT',
     ]],
     'a related-records page' => ['related-records page', [
-        'SELECT c0_.id AS id_0, c0_.title AS title_1 FROM Catalogue c0_ WHERE c0_.id = ?',
-        'SELECT t0.code AS code_1, t0.caption AS caption_2, t0.catalogue_id AS catalogue_id_3 FROM Stamp t0 WHERE t0.catalogue_id = ? AND t0.code = ?',
+        'FROM Catalogue a0_ WHERE a0_.id = ?',
+        'FROM Stamp p0 WHERE p0.catalogue_id = ? AND p0.code = ?',
+    ], [
         'BEGIN',
         'INSERT INTO Stamp (code, caption, catalogue_id) VALUES (?, ?, ?)',
         'COMMIT',
     ]],
     'a relation manager' => ['relation manager', [
-        'SELECT c0_.id AS id_0, c0_.title AS title_1 FROM Catalogue c0_ WHERE c0_.id = ?',
-        'SELECT t0.code AS code_1, t0.caption AS caption_2, t0.catalogue_id AS catalogue_id_3 FROM Stamp t0 WHERE t0.catalogue_id = ? AND t0.code = ?',
+        'FROM Catalogue a0_ WHERE a0_.id = ?',
+        'FROM Stamp p0 WHERE p0.catalogue_id = ? AND p0.code = ?',
+    ], [
         'BEGIN',
         'INSERT INTO Stamp (code, caption, catalogue_id) VALUES (?, ?, ?)',
         'COMMIT',

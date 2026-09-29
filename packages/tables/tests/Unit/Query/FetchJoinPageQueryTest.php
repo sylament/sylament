@@ -416,7 +416,7 @@ it('costs two statements for a page it answers', function (): void {
         ->and($recorder->statements())->toHaveCount(2)
         ->and($recorder->statements()[0])->toContain('dctrn_result')
         ->and($recorder->statements()[1])->not->toContain('LIMIT')
-        ->and($recorder->statements()[1])->toEndWith('ORDER BY r0_.position ASC, r0_.venue_id ASC, r0_.season ASC')
+        ->and($recorder->normalizedStatements()[1])->toEndWith('ORDER BY a0_.position ASC, a0_.venue_id ASC, a0_.season ASC')
         ->and($recorder->statements()[1])->not->toContain('sclr_');
 });
 

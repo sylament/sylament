@@ -394,28 +394,28 @@ it('emits the single-identifier SQL text of all three converted sites', function
 
     $recorder->reset();
     $selected->getSelectedRecord();
-    $selectedStatements = $recorder->statements();
+    $selectedStatements = $recorder->normalizedStatements();
 
     $labels = Select::make('author')->relationship(titleAttribute: 'name');
     compositeSelectWire($labels, $post);
 
     $recorder->reset();
     $labels->getOptionLabelsFromRelationship(['7']);
-    $labelStatements = $recorder->statements();
+    $labelStatements = $recorder->normalizedStatements();
 
     $ignored = Select::make('parent')->relationship(titleAttribute: 'name', ignoreRecord: true);
     compositeSelectWire($ignored, $tag);
 
     $recorder->reset();
     $ignored->getOptions();
-    $ignoredStatements = $recorder->statements();
+    $ignoredStatements = $recorder->normalizedStatements();
 
     expect($selectedStatements)->toHaveCount(1)
         ->and($selectedStatements[0])->toContain('WHERE a0_.id = ?')
         ->and($labelStatements)->toHaveCount(1)
         ->and($labelStatements[0])->toContain('WHERE a0_.id IN (?)')
         ->and($ignoredStatements)->toHaveCount(1)
-        ->and($ignoredStatements[0])->toContain('WHERE t0_.id <> ?');
+        ->and($ignoredStatements[0])->toContain('WHERE a0_.id <> ?');
 });
 
 /*

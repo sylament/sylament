@@ -339,8 +339,8 @@ it('detaches a selection of motifs the bulk action never hydrates', function ():
     $component->call('callMountedAction');
 
     $selection = array_values(array_filter(
-        $recorder->statements(),
-        static fn (string $sql): bool => str_starts_with($sql, 'SELECT') && str_contains($sql, 'm0_.id IN ('),
+        $recorder->normalizedStatements(),
+        static fn (string $sql): bool => str_starts_with($sql, 'SELECT') && str_contains($sql, 'a0_.id IN ('),
     ));
 
     // The by-key arm turns each selected key back into a reference and removes
@@ -351,8 +351,8 @@ it('detaches a selection of motifs the bulk action never hydrates', function ():
     // no `IN`.)
     expect($component->component()->mountedActions)->toBe([])
         ->and($selection)->toHaveCount(1)
-        ->and($selection[0])->toContain('SELECT m0_.id AS id_0 FROM Motif m0_')
-        ->and($selection[0])->not->toContain('m0_.name')
+        ->and($selection[0])->toContain('SELECT a0_.id AS id_0 FROM Motif a0_')
+        ->and($selection[0])->not->toContain('a0_.name')
         ->and(compositeOwnerManagerMotifsOf($entityManager, 'a~b', 'c=d ž'))->toBe([])
         ->and(compositeOwnerManagerMotifsOf($entityManager, 'plain', 'about'))->toBe(['Fleuron']);
 });

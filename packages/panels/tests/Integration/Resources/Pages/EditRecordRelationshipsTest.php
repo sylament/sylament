@@ -74,7 +74,7 @@ function portfolioSave(TestLiveComponent $component, KernelBrowser $client, Enti
     return [
         $client->getResponse()->getStatusCode(),
         (string) $client->getResponse()->getContent(),
-        array_values(array_filter($recorder->statements(), static fn (string $sql): bool => ! str_starts_with($sql, 'SELECT'))),
+        array_values(array_filter($recorder->normalizedStatements(), static fn (string $sql): bool => ! str_starts_with($sql, 'SELECT'))),
     ];
 }
 

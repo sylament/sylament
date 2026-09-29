@@ -97,8 +97,8 @@ it('hands back a reference for the key of every supported shape, loading the rec
     $reference = new AssociationReader($entityManager)->getReference($class, $key);
 
     $tablesRead = array_map(
-        static fn (string $statement): string => preg_match('/^SELECT .+ FROM (\w+) t0 WHERE /', $statement, $matches) === 1 ? $matches[1] : $statement,
-        $recorder->statements(),
+        static fn (string $statement): string => preg_match('/^SELECT .+ FROM (\w+) p0 WHERE /', $statement, $matches) === 1 ? $matches[1] : $statement,
+        $recorder->normalizedStatements(),
     );
 
     expect(RecordKey::of($entityManager, $reference))->toBe($key)

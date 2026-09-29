@@ -221,7 +221,7 @@ function compositeOwnerActionsBulkStatements(KernelBrowser $client, RecordingMid
     $recorder->reset();
     $component->call('callMountedAction');
 
-    return $recorder->statements();
+    return $recorder->normalizedStatements();
 }
 
 /**

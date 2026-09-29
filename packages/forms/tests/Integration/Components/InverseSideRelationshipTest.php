@@ -273,7 +273,7 @@ it('writes the join rows a to-many Select on the inverse side adds and drops, an
     // One read probes the submitted labels; the other two load the owning
     // collection of the dropped post and of the added one.
     expect(inverseSideKinds($recorder->statements()))->toBe(['SELECT' => 3, 'BEGIN' => 1, 'DELETE' => 1, 'INSERT' => 1, 'COMMIT' => 1])
-        ->and(inverseSideWrites($recorder->statements()))->toBe([
+        ->and(inverseSideWrites($recorder->normalizedStatements()))->toBe([
             'BEGIN',
             'DELETE FROM post_tag WHERE post_id = ? AND tag_id = ?',
             'INSERT INTO post_tag (post_id, tag_id) VALUES (?, ?)',
@@ -308,7 +308,7 @@ it('writes the same join rows through a CheckboxList, which rides the same arm',
     $entityManager->flush();
 
     expect(inverseSideKinds($recorder->statements()))->toBe(['SELECT' => 2, 'BEGIN' => 1, 'DELETE' => 1, 'INSERT' => 1, 'COMMIT' => 1])
-        ->and(inverseSideWrites($recorder->statements()))->toBe([
+        ->and(inverseSideWrites($recorder->normalizedStatements()))->toBe([
             'BEGIN',
             'DELETE FROM post_tag WHERE post_id = ? AND tag_id = ?',
             'INSERT INTO post_tag (post_id, tag_id) VALUES (?, ?)',
@@ -369,7 +369,7 @@ it('deletes every join row of the record on an empty submission, and no other', 
 
     $entityManager->flush();
 
-    expect(inverseSideWrites($recorder->statements()))->toBe([
+    expect(inverseSideWrites($recorder->normalizedStatements()))->toBe([
         'BEGIN',
         'DELETE FROM post_tag WHERE post_id = ? AND tag_id = ?',
         'DELETE FROM post_tag WHERE post_id = ? AND tag_id = ?',
@@ -417,7 +417,7 @@ it('writes the join rows of a record persisted only after the field was filled',
     $entityManager->persist($tag);
     $entityManager->flush();
 
-    expect(inverseSideWrites($recorder->statements()))->toBe([
+    expect(inverseSideWrites($recorder->normalizedStatements()))->toBe([
         'BEGIN',
         'INSERT INTO Tag (name, parent_id) VALUES (?, ?)',
         'INSERT INTO post_tag (post_id, tag_id) VALUES (?, ?)',
@@ -452,7 +452,7 @@ it('writes the join rows of a record keyed by two columns holding the inverse si
     $entityManager->flush();
 
     expect(inverseSideKinds($recorder->statements()))->toBe(['SELECT' => 3, 'BEGIN' => 1, 'DELETE' => 1, 'INSERT' => 1, 'COMMIT' => 1])
-        ->and(inverseSideWrites($recorder->statements()))->toBe([
+        ->and(inverseSideWrites($recorder->normalizedStatements()))->toBe([
             'BEGIN',
             'DELETE FROM post_composite_pair WHERE post_id = ? AND composite_pair_a = ? AND composite_pair_b = ?',
             'INSERT INTO post_composite_pair (post_id, composite_pair_a, composite_pair_b) VALUES (?, ?, ?)',
@@ -501,7 +501,7 @@ it('refuses by name a save that would drop a member of an owning collection decl
     $entityManager->flush();
 
     expect($refusal)->toBe('[' . Leaflet::class . '::$stickers] declares orphanRemoval, so a member dropped from it is deleted rather than unlinked — deselecting one in the [leaflets] field would delete the record this form is saving rather than its join row. Put the field on the owning side of the association, or drop orphanRemoval.')
-        ->and(inverseSideWrites($recorder->statements()))->toBe([])
+        ->and(inverseSideWrites($recorder->normalizedStatements()))->toBe([])
         ->and(inverseSideStickerIds($entityManager))->toBe([1, 2])
         ->and(inverseSideLeafletRows($entityManager))->toBe([
             ['leaflet_id' => 1, 'sticker_id' => 1],
@@ -529,7 +529,7 @@ it('writes the join row of a save that only adds to such a mapping, which drops 
 
     $entityManager->flush();
 
-    expect(inverseSideWrites($recorder->statements()))->toBe([
+    expect(inverseSideWrites($recorder->normalizedStatements()))->toBe([
         'BEGIN',
         'INSERT INTO leaflet_sticker (leaflet_id, sticker_id) VALUES (?, ?)',
         'COMMIT',
@@ -572,14 +572,15 @@ it('saves the owning side of the same association statement for statement as bef
 
     $entityManager->flush();
 
-    expect($recorder->statements())->toBe([
-        'SELECT t0_.id AS id_0, t0_.name AS name_1, t0_.parent_id AS parent_id_2 FROM Tag t0_ WHERE t0_.id IN (?)',
-        'SELECT t0.id AS id_1, t0.heading AS heading_2, t0.body AS body_3, t0.position AS position_4, t0.post_id AS post_id_5, t0.author_id AS author_id_6 FROM PostSection t0 WHERE t0.post_id = ? ORDER BY t0.position ASC',
-        'BEGIN',
-        'DELETE FROM post_tag WHERE post_id = ? AND tag_id = ?',
-        'INSERT INTO post_tag (post_id, tag_id) VALUES (?, ?)',
-        'COMMIT',
-    ])
+    expect($recorder->normalizedStatements())->toHaveCount(6)
+        ->and($recorder->normalizedStatements()[0])->toContain('FROM Tag a0_ WHERE a0_.id IN (?)')
+        ->and($recorder->normalizedStatements()[1])->toContain('FROM PostSection p0 WHERE p0.post_id = ? ORDER BY p0.position ASC')
+        ->and(array_slice($recorder->normalizedStatements(), 2))->toBe([
+            'BEGIN',
+            'DELETE FROM post_tag WHERE post_id = ? AND tag_id = ?',
+            'INSERT INTO post_tag (post_id, tag_id) VALUES (?, ?)',
+            'COMMIT',
+        ])
         ->and(inverseSideTagRows($entityManager))->toBe([
             ['post_id' => 1, 'tag_id' => 1],
             ['post_id' => 2, 'tag_id' => 2],

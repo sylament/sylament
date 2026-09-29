@@ -6,6 +6,7 @@ namespace Sylament\Forms\Tests\Integration\Components;
 
 use Closure;
 use Doctrine\ORM\EntityManagerInterface;
+use Pest\Expectation;
 use Sylament\Forms\Components\Select;
 use Sylament\Forms\Components\TextInput;
 use Sylament\Forms\Tests\Fixtures\Concerns\FieldRenderHost;
@@ -174,14 +175,14 @@ it('writes the same post back through its to-one arm without refusing', function
 
     $entityManager->flush();
 
-    expect(selectKeyWritesWrites($recorder->statements()))->toBe([
+    expect(selectKeyWritesWrites($recorder->normalizedStatements()))->toBe([
         'BEGIN',
         'UPDATE PostTranslation SET title = ? WHERE post_id = ? AND locale = ?',
         'COMMIT',
     ]);
 });
 
-it("refuses a created option on a key a record already holds, under the option form's own field, and writes nothing", function (string $holder, array $statements): void {
+it("refuses a created option on a key a record already holds, under the option form's own field, and writes nothing", function (string $holder, array $lookups): void {
     $entityManager = $this::getContainer()->get(EntityManagerInterface::class);
     selectKeyWritesSeed($entityManager);
 
@@ -207,11 +208,12 @@ it("refuses a created option on a key a record already holds, under the option f
     $recorder = selectKeyWritesRecorder();
 
     expect(selectKeyWritesRefusal(static fn (): mixed => $createOptionUsing($select, $optionSchema)))->toBe(['data.locale' => ['This value is already used.']])
-        ->and($recorder->statements())->toBe($statements)
+        ->and($recorder->normalizedStatements())->toHaveCount(count($lookups))
+        ->each(static fn (Expectation $statement, int $index): Expectation => $statement->toContain($lookups[$index]))
         ->and($entityManager->isOpen())->toBeTrue()
         ->and(selectKeyWritesTranslationRows($entityManager))->toHaveCount(2);
 })->with([
-    'stored' => ['stored', ['SELECT t0.locale AS locale_1, t0.title AS title_2, t0.position AS position_3, t0.post_id AS post_id_4 FROM PostTranslation t0 WHERE t0.post_id = ? AND t0.locale = ?']],
+    'stored' => ['stored', ['FROM PostTranslation p0 WHERE p0.post_id = ? AND p0.locale = ?']],
     'managed' => ['managed', []],
 ]);
 

@@ -147,12 +147,13 @@ it('joins the kettle to its pantry before the record check, so the application c
 
     $component->call('callMountedAction');
 
-    expect($recorder->statements())->toBe([
-        'SELECT t0.code AS code_1, t0.label AS label_2, t0.pantry_id AS pantry_id_3 FROM Kettle t0 WHERE t0.pantry_id = ? AND t0.code = ?',
-        'BEGIN',
-        'INSERT INTO Kettle (code, label, pantry_id) VALUES (?, ?, ?)',
-        'COMMIT',
-    ])
+    expect($recorder->normalizedStatements())->toHaveCount(4)
+        ->and($recorder->normalizedStatements()[0])->toContain('FROM Kettle p0 WHERE p0.pantry_id = ? AND p0.code = ?')
+        ->and(array_slice($recorder->normalizedStatements(), 1))->toBe([
+            'BEGIN',
+            'INSERT INTO Kettle (code, label, pantry_id) VALUES (?, ?, ?)',
+            'COMMIT',
+        ])
         ->and(createRelationshipKeyRows('SELECT pantry_id, code, label FROM Kettle'))->toBe([['pantry_id' => 1, 'code' => 'K1', 'label' => 'Copper']]);
 });
 
@@ -168,7 +169,8 @@ it('refuses a key a stored seat holds under the code field after one lookup', fu
     $recorder = createRelationshipKeyRecorder();
 
     expect(createRelationshipKeyRefusal($component))->toBe(['mountedActionsData.0.code' => ['This value is already used.']])
-        ->and($recorder->statements())->toBe(['SELECT t0.code AS code_1, t0.label AS label_2, t0.roster_id AS roster_id_3 FROM Seat t0 WHERE t0.roster_id = ? AND t0.code = ?'])
+        ->and($recorder->normalizedStatements())->toHaveCount(1)
+        ->and($recorder->normalizedStatements()[0])->toContain('FROM Seat p0 WHERE p0.roster_id = ? AND p0.code = ?')
         ->and($entityManager->isOpen())->toBeTrue()
         ->and(createRelationshipKeyRows('SELECT roster_id, code, label FROM Seat'))->toBe([['roster_id' => 1, 'code' => 'A1', 'label' => 'Stored']]);
 });

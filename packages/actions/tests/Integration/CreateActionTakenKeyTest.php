@@ -97,7 +97,8 @@ it('refuses a stored id under its field after one lookup, then creates a free on
     $recorder = createTakenKeyRecorder();
 
     expect(createTakenKeyRefusal($component))->toBe(['mountedActionsData.0.id' => ['This value is already used.']])
-        ->and($recorder->statements())->toBe(['SELECT t0.id AS id_1, t0.title AS title_2 FROM AssignedNote t0 WHERE t0.id = ?'])
+        ->and($recorder->normalizedStatements())->toHaveCount(1)
+        ->and($recorder->normalizedStatements()[0])->toContain('FROM AssignedNote p0 WHERE p0.id = ?')
         ->and($entityManager->isOpen())->toBeTrue()
         ->and($component->component()->mountedActions)->toHaveCount(1);
 
@@ -105,12 +106,13 @@ it('refuses a stored id under its field after one lookup, then creates a free on
 
     $component->set('mountedActionsData.0.id', '8')->call('callMountedAction');
 
-    expect($recorder->statements())->toBe([
-        'SELECT t0.id AS id_1, t0.title AS title_2 FROM AssignedNote t0 WHERE t0.id = ?',
-        'BEGIN',
-        'INSERT INTO AssignedNote (id, title) VALUES (?, ?)',
-        'COMMIT',
-    ])
+    expect($recorder->normalizedStatements())->toHaveCount(4)
+        ->and($recorder->normalizedStatements()[0])->toContain('FROM AssignedNote p0 WHERE p0.id = ?')
+        ->and(array_slice($recorder->normalizedStatements(), 1))->toBe([
+            'BEGIN',
+            'INSERT INTO AssignedNote (id, title) VALUES (?, ?)',
+            'COMMIT',
+        ])
         ->and(createTakenKeyRows('SELECT id, title FROM AssignedNote ORDER BY id'))->toBe([
             ['id' => 7, 'title' => 'Stored'],
             ['id' => 8, 'title' => 'Duplicate'],
@@ -180,7 +182,7 @@ it('adds no statement to a create whose identifier is generated', function (): v
 
     $component->call('callMountedAction');
 
-    expect($recorder->statements())->toBe([
+    expect($recorder->normalizedStatements())->toBe([
         'BEGIN',
         'INSERT INTO Note (title, body) VALUES (?, ?)',
         'COMMIT',

@@ -249,14 +249,14 @@ it('excludes the records the owner already holds through a correlated exists', f
     $recorder = compositeTargetManagerRecorder();
     compositeTargetManagerRecordSelect($manager)->getOptions();
 
-    $statements = $recorder->statements();
+    $statements = $recorder->normalizedStatements();
 
     // Both identifier columns are correlated, which is the whole point: an
     // `IN` over the first column alone would exclude a record sharing a house
     // with an attached one, and the owner is one bound parameter either way.
     expect($statements)->toHaveCount(1)
         ->and($statements[0])->toContain('NOT EXISTS')
-        ->and($statements[0])->toContain('i2_.house = i0_.house AND i2_.year = i0_.year');
+        ->and($statements[0])->toContain('a3_.house = a0_.house AND a3_.year = a0_.year');
 });
 
 it('serves a composite record nested under a many-to-many parent', function (): void {

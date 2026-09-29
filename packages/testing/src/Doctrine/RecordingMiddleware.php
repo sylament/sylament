@@ -43,6 +43,17 @@ final class RecordingMiddleware implements Middleware
         return $this->statements;
     }
 
+    /**
+     * The recorded statements with Doctrine's minted names renumbered, for a pin
+     * that has to survive an ORM release.
+     *
+     * @return list<string>
+     */
+    public function normalizedStatements(): array
+    {
+        return array_map(SqlNormalizer::normalize(...), $this->statements);
+    }
+
     public function reset(): void
     {
         $this->statements = [];

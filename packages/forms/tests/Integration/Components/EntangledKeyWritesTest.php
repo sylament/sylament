@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Sylament\Forms\Tests\Integration\Components;
 
 use Doctrine\ORM\EntityManagerInterface;
+use Pest\Expectation;
 use Sylament\Forms\Components\TextInput;
 use Sylament\Forms\Tests\Fixtures\Concerns\FieldRenderHost;
 use Sylament\Forms\Tests\Fixtures\Doctrine\Entity\Emblem;
@@ -125,7 +126,7 @@ function entangledKeyWritesRows(EntityManagerInterface $entityManager): array
     return $entityManager->getConnection()->fetchAllAssociative('SELECT post_id, locale, title FROM PostTranslation ORDER BY locale');
 }
 
-it('refuses a related record a singular relationship constructs on a taken key, under the field that carries the key', function (string $holder, string $typed, array $statements): void {
+it('refuses a related record a singular relationship constructs on a taken key, under the field that carries the key', function (string $holder, string $typed, array $lookups): void {
     $entityManager = $this::getContainer()->get(EntityManagerInterface::class);
 
     $emblem = new Emblem();
@@ -157,17 +158,18 @@ it('refuses a related record a singular relationship constructs on a taken key, 
     $recorder = entangledKeyWritesRecorder();
 
     expect(entangledKeyWritesRefusal($schema))->toBe(['data.emblem.code' => ['This value is already used.']])
-        ->and($recorder->statements())->toBe($statements)
+        ->and($recorder->normalizedStatements())->toHaveCount(count($lookups))
+        ->each(static fn (Expectation $statement, int $index): Expectation => $statement->toContain($lookups[$index]))
         ->and($entityManager->isOpen())->toBeTrue()
         ->and($entityManager->getConnection()->fetchAllAssociative('SELECT code, label FROM Emblem'))->toBe([
             ['code' => 'gold', 'label' => 'Gold'],
         ])
         ->and(mb_substr_count(renderToHtml($schema), '<li class="sy-fo-field-error-message">This value is already used.</li>'))->toBe(1);
 })->with([
-    'stored' => ['stored', 'GOLD', ['SELECT t0.code AS code_1, t0.label AS label_2 FROM Emblem t0 WHERE t0.code = ?']],
+    'stored' => ['stored', 'GOLD', ['FROM Emblem p0 WHERE p0.code = ?']],
     'managed' => ['managed', 'GOLD', []],
-    'stored, typed in another spelling' => ['stored', 'gold', ['SELECT t0.code AS code_1, t0.label AS label_2 FROM Emblem t0 WHERE t0.code = ?']],
-    'managed, typed in another spelling' => ['managed', 'gold', ['SELECT t0.code AS code_1, t0.label AS label_2 FROM Emblem t0 WHERE t0.code = ?']],
+    'stored, typed in another spelling' => ['stored', 'gold', ['FROM Emblem p0 WHERE p0.code = ?']],
+    'managed, typed in another spelling' => ['managed', 'gold', ['FROM Emblem p0 WHERE p0.code = ?']],
 ]);
 
 it("refuses an existing related record's key half edited through a singular relationship, and writes nothing on the next flush", function (): void {

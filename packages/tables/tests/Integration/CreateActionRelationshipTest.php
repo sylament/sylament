@@ -163,7 +163,7 @@ it('finds a taken id the entity manager does not hold with one primary-key selec
         $errors = $validationException->getErrors();
     }
 
-    $probes = array_filter($recorder->statements(), static fn (string $sql): bool => $sql === 'SELECT t0.id AS id_1, t0.name AS name_2 FROM Genre t0 WHERE t0.id = ?');
+    $probes = array_filter($recorder->normalizedStatements(), static fn (string $sql): bool => str_starts_with($sql, 'SELECT ') && str_contains($sql, 'FROM Genre p0 WHERE p0.id = ?'));
     $writes = array_filter($recorder->statements(), static fn (string $sql): bool => !str_starts_with($sql, 'SELECT'));
 
     expect($errors)->toBe(['mountedActionsData.0.id' => ['This value is already used.']])
@@ -183,13 +183,14 @@ it('creates on a free id after one primary-key select', function (): void {
     $recorder->reset();
     $component->call('callMountedAction');
 
-    expect(array_slice($recorder->statements(), 0, 5))->toBe([
-        'SELECT t0.id AS id_1, t0.name AS name_2 FROM Genre t0 WHERE t0.id = ?',
-        'BEGIN',
-        'INSERT INTO Genre (id, name) VALUES (?, ?)',
-        'INSERT INTO song_genre (song_id, genre_id) VALUES (?, ?)',
-        'COMMIT',
-    ]);
+    expect(array_slice($recorder->normalizedStatements(), 0, 5))->toHaveCount(5)
+        ->and($recorder->normalizedStatements()[0])->toContain('FROM Genre p0 WHERE p0.id = ?')
+        ->and(array_slice($recorder->normalizedStatements(), 1, 4))->toBe([
+            'BEGIN',
+            'INSERT INTO Genre (id, name) VALUES (?, ?)',
+            'INSERT INTO song_genre (song_id, genre_id) VALUES (?, ?)',
+            'COMMIT',
+        ]);
 });
 
 it('gives a many-to-many owner back a record the create refuses for a key its modal never maps, and writes nothing', function (): void {

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Sylament\Schemas\Tests\Unit\State;
 
 use Doctrine\ORM\EntityManager;
+use Pest\Expectation;
 use Sylament\Schemas\State\AssociationReader;
 use Sylament\Schemas\Tests\Fixtures\Concerns\RecordFixture;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\Cipher;
@@ -162,19 +163,19 @@ function takenIdentifierSheet(string $code): Sheet
 }
 
 dataset('taken identifier shapes', [
-    'a single assigned string' => ['single', 'code', 'SELECT t0.code AS code_1, t0.target AS target_2 FROM Shortlink t0 WHERE t0.code = ?'],
-    'a scalar pair' => ['pair', 'host', 'SELECT t0.host AS host_1, t0.path AS path_2, t0.label AS label_3, t0.parent_host AS parent_host_4, t0.parent_path AS parent_path_5 FROM Redirect t0 WHERE t0.host = ? AND t0.path = ?'],
-    'an association plus a scalar' => ['derived', 'locale', 'SELECT t0.locale AS locale_1, t0.title AS title_2, t0.post_id AS post_id_3 FROM PostTranslation t0 WHERE t0.post_id = ? AND t0.locale = ?'],
-    'a single derived identity' => ['single derived', 'post', 'SELECT t0.note AS note_1, t0.post_id AS post_id_2 FROM PostSeal t0 WHERE t0.post_id = ?'],
-    'a chained derived identity' => ['chained', 'link', 'SELECT t0.link AS link_1, t0.label AS label_2, t0.seal_post_id AS seal_post_id_3 FROM Chain t0 WHERE t0.seal_post_id = ? AND t0.link = ?'],
-    'a binary uuid' => ['binary uuid', 'id', 'SELECT t0.id AS id_1, t0.label AS label_2 FROM Crate t0 WHERE t0.id = ?'],
-    'a doubly-strict cipher' => ['cipher', 'cipher', 'SELECT t0.cipher AS cipher_1, t0.zone AS zone_2, t0.label AS label_3 FROM Vault t0 WHERE t0.cipher = ? AND t0.zone = ?'],
-    'a converting sku, typed in another spelling' => ['sku', 'sku', 'SELECT t0.sku AS sku_1, t0.title AS title_2 FROM Listing t0 WHERE t0.sku = ?'],
-    'a backed enum' => ['enum', 'zone', 'SELECT t0.zone AS zone_1, t0.label AS label_2 FROM Placard t0 WHERE t0.zone = ?'],
-    'a guid beside a bigint, the bigint typed as a string' => ['guid', 'id', 'SELECT t0.id AS id_1, t0.serial AS serial_2, t0.subject AS subject_3 FROM Ticket t0 WHERE t0.id = ? AND t0.serial = ?'],
+    'a single assigned string' => ['single', 'code', 'FROM Shortlink p0 WHERE p0.code = ?'],
+    'a scalar pair' => ['pair', 'host', 'FROM Redirect p0 WHERE p0.host = ? AND p0.path = ?'],
+    'an association plus a scalar' => ['derived', 'locale', 'FROM PostTranslation p0 WHERE p0.post_id = ? AND p0.locale = ?'],
+    'a single derived identity' => ['single derived', 'post', 'FROM PostSeal p0 WHERE p0.post_id = ?'],
+    'a chained derived identity' => ['chained', 'link', 'FROM Chain p0 WHERE p0.seal_post_id = ? AND p0.link = ?'],
+    'a binary uuid' => ['binary uuid', 'id', 'FROM Crate p0 WHERE p0.id = ?'],
+    'a doubly-strict cipher' => ['cipher', 'cipher', 'FROM Vault p0 WHERE p0.cipher = ? AND p0.zone = ?'],
+    'a converting sku, typed in another spelling' => ['sku', 'sku', 'FROM Listing p0 WHERE p0.sku = ?'],
+    'a backed enum' => ['enum', 'zone', 'FROM Placard p0 WHERE p0.zone = ?'],
+    'a guid beside a bigint, the bigint typed as a string' => ['guid', 'id', 'FROM Ticket p0 WHERE p0.id = ? AND p0.serial = ?'],
 ]);
 
-it('refuses a new record on a stored key with one primary-key SELECT', function (string $shape, string $field, string $select): void {
+it('refuses a new record on a stored key with one primary-key SELECT', function (string $shape, string $field, string $lookup): void {
     $recorder = new RecordingMiddleware();
     $entityManager = IdentifierGuardRig::create($recorder);
     $record = takenIdentifierRecord($entityManager, $shape);
@@ -182,7 +183,8 @@ it('refuses a new record on a stored key with one primary-key SELECT', function 
     $recorder->reset();
 
     expect(new AssociationReader($entityManager)->findTakenIdentifiers($record))->toBe([$field => 'This value is already used.'])
-        ->and($recorder->statements())->toBe([$select]);
+        ->and($recorder->normalizedStatements())->toHaveCount(1)
+        ->and($recorder->normalizedStatements()[0])->toContain($lookup);
 })->with('taken identifier shapes');
 
 it('refuses a new record on the key of a managed record with no statement', function (string $shape, string $field): void {
@@ -210,7 +212,7 @@ it('refuses a new record on the key of one persisted earlier and not yet flushed
         ->and($recorder->statements())->toBe([]);
 })->with('taken identifier shapes');
 
-it('answers nothing for a new record on a free key, after one primary-key SELECT', function (string $shape, string $field, string $select): void {
+it('answers nothing for a new record on a free key, after one primary-key SELECT', function (string $shape, string $field, string $lookup): void {
     $recorder = new RecordingMiddleware();
     $entityManager = IdentifierGuardRig::create($recorder);
     $record = takenIdentifierRecord($entityManager, $shape, free: true);
@@ -218,17 +220,18 @@ it('answers nothing for a new record on a free key, after one primary-key SELECT
     $recorder->reset();
 
     expect(new AssociationReader($entityManager)->findTakenIdentifiers($record))->toBe([])
-        ->and($recorder->statements())->toBe([$select]);
+        ->and($recorder->normalizedStatements())->toHaveCount(1)
+        ->and($recorder->normalizedStatements()[0])->toContain($lookup);
 })->with([
-    'a single assigned string' => ['single', 'code', 'SELECT t0.code AS code_1, t0.target AS target_2 FROM Shortlink t0 WHERE t0.code = ?'],
-    'a scalar pair' => ['pair', 'host', 'SELECT t0.host AS host_1, t0.path AS path_2, t0.label AS label_3, t0.parent_host AS parent_host_4, t0.parent_path AS parent_path_5 FROM Redirect t0 WHERE t0.host = ? AND t0.path = ?'],
-    'an association plus a scalar' => ['derived', 'locale', 'SELECT t0.locale AS locale_1, t0.title AS title_2, t0.post_id AS post_id_3 FROM PostTranslation t0 WHERE t0.post_id = ? AND t0.locale = ?'],
-    'a single derived identity' => ['single derived', 'post', 'SELECT t0.note AS note_1, t0.post_id AS post_id_2 FROM PostSeal t0 WHERE t0.post_id = ?'],
-    'a chained derived identity' => ['chained', 'link', 'SELECT t0.link AS link_1, t0.label AS label_2, t0.seal_post_id AS seal_post_id_3 FROM Chain t0 WHERE t0.seal_post_id = ? AND t0.link = ?'],
-    'a binary uuid' => ['binary uuid', 'id', 'SELECT t0.id AS id_1, t0.label AS label_2 FROM Crate t0 WHERE t0.id = ?'],
-    'a doubly-strict cipher' => ['cipher', 'cipher', 'SELECT t0.cipher AS cipher_1, t0.zone AS zone_2, t0.label AS label_3 FROM Vault t0 WHERE t0.cipher = ? AND t0.zone = ?'],
-    'a converting sku' => ['sku', 'sku', 'SELECT t0.sku AS sku_1, t0.title AS title_2 FROM Listing t0 WHERE t0.sku = ?'],
-    'a guid beside a bigint' => ['guid', 'id', 'SELECT t0.id AS id_1, t0.serial AS serial_2, t0.subject AS subject_3 FROM Ticket t0 WHERE t0.id = ? AND t0.serial = ?'],
+    'a single assigned string' => ['single', 'code', 'FROM Shortlink p0 WHERE p0.code = ?'],
+    'a scalar pair' => ['pair', 'host', 'FROM Redirect p0 WHERE p0.host = ? AND p0.path = ?'],
+    'an association plus a scalar' => ['derived', 'locale', 'FROM PostTranslation p0 WHERE p0.post_id = ? AND p0.locale = ?'],
+    'a single derived identity' => ['single derived', 'post', 'FROM PostSeal p0 WHERE p0.post_id = ?'],
+    'a chained derived identity' => ['chained', 'link', 'FROM Chain p0 WHERE p0.seal_post_id = ? AND p0.link = ?'],
+    'a binary uuid' => ['binary uuid', 'id', 'FROM Crate p0 WHERE p0.id = ?'],
+    'a doubly-strict cipher' => ['cipher', 'cipher', 'FROM Vault p0 WHERE p0.cipher = ? AND p0.zone = ?'],
+    'a converting sku' => ['sku', 'sku', 'FROM Listing p0 WHERE p0.sku = ?'],
+    'a guid beside a bigint' => ['guid', 'id', 'FROM Ticket p0 WHERE p0.id = ? AND p0.serial = ?'],
 ]);
 
 it('refuses the second of two new siblings on one key in memory, after probing the first', function (): void {
@@ -242,7 +245,8 @@ it('refuses the second of two new siblings on one key in memory, after probing t
     $recorder->reset();
 
     expect(new AssociationReader($entityManager)->findTakenIdentifiers($binder))->toBe(['sheets[1].code' => 'This value is already used.'])
-        ->and($recorder->statements())->toBe(['SELECT t0.code AS code_1, t0.title AS title_2, t0.binder_id AS binder_id_3 FROM Sheet t0 WHERE t0.binder_id = ? AND t0.code = ?']);
+        ->and($recorder->normalizedStatements())->toHaveCount(1)
+        ->and($recorder->normalizedStatements()[0])->toContain('FROM Sheet p0 WHERE p0.binder_id = ? AND p0.code = ?');
 });
 
 it('refuses the second of two new siblings under a new owner, whose key nothing can look up yet', function (): void {
@@ -287,7 +291,8 @@ it('refuses the second of two new siblings whose keys differ only in a spelling 
     $recorder->reset();
 
     expect(new AssociationReader($entityManager)->findTakenIdentifiers($binder))->toBe(['dividers[1].code' => 'This value is already used.'])
-        ->and($recorder->statements())->toBe(['SELECT t0.code AS code_1, t0.binder_id AS binder_id_2 FROM Divider t0 WHERE t0.code = ?']);
+        ->and($recorder->normalizedStatements())->toHaveCount(1)
+        ->and($recorder->normalizedStatements()[0])->toContain('FROM Divider p0 WHERE p0.code = ?');
 })->with([
     'under a stored owner' => [true],
     'under a new owner' => [false],
@@ -346,7 +351,8 @@ it('refuses a new record behind a cascading to-one by its property path', functi
     $recorder->reset();
 
     expect(new AssociationReader($entityManager)->findTakenIdentifiers($binder))->toBe(['spine.code' => 'This value is already used.'])
-        ->and($recorder->statements())->toBe(['SELECT t0.code AS code_1, t0.label AS label_2 FROM Spine t0 WHERE t0.code = ?']);
+        ->and($recorder->normalizedStatements())->toHaveCount(1)
+        ->and($recorder->normalizedStatements()[0])->toContain('FROM Spine p0 WHERE p0.code = ?');
 });
 
 it('walks only the associations a flush would cascade a new record through', function (): void {
@@ -408,7 +414,8 @@ it('reads a detached record, or one another manager keeps, as a new one — so i
     $recorder->reset();
 
     expect(new AssociationReader($entityManager)->findTakenIdentifiers($record))->toBe(['code' => 'This value is already used.'])
-        ->and($recorder->statements())->toBe(['SELECT t0.code AS code_1, t0.target AS target_2 FROM Shortlink t0 WHERE t0.code = ?']);
+        ->and($recorder->normalizedStatements())->toHaveCount(1)
+        ->and($recorder->normalizedStatements()[0])->toContain('FROM Shortlink p0 WHERE p0.code = ?');
 })->with([
     'detached' => [true],
     'kept by another manager over the same mapping' => [false],
@@ -523,7 +530,7 @@ it('answers nothing for the record itself, whether managed or persisted as new',
     'persisted as new' => [false],
 ]);
 
-it('finds the holder of an inheritance hierarchy through its root, whichever subclass holds the key', function (string $hierarchy, bool $managed, string $field, array $statements): void {
+it('finds the holder of an inheritance hierarchy through its root, whichever subclass holds the key', function (string $hierarchy, bool $managed, string $field, array $lookups): void {
     $recorder = new RecordingMiddleware();
     $entityManager = IdentifierGuardRig::create($recorder);
 
@@ -547,11 +554,12 @@ it('finds the holder of an inheritance hierarchy through its root, whichever sub
     $recorder->reset();
 
     expect(new AssociationReader($entityManager)->findTakenIdentifiers($record))->toBe([$field => 'This value is already used.'])
-        ->and($recorder->statements())->toBe($statements);
+        ->and($recorder->normalizedStatements())->toHaveCount(count($lookups))
+        ->each(static fn (Expectation $statement, int $index): Expectation => $statement->toContain($lookups[$index]));
 })->with([
-    'single table, the root stored' => ['single table', false, 'realm', ["SELECT t0.realm AS realm_1, t0.mark AS mark_2, t0.label AS label_3, t0.kind FROM Sigil t0 WHERE t0.realm = ? AND t0.mark = ? AND t0.kind IN ('sigil', 'child')"]],
+    'single table, the root stored' => ['single table', false, 'realm', ["FROM Sigil p0 WHERE p0.realm = ? AND p0.mark = ? AND p0.kind IN ('sigil', 'child')"]],
     'single table, the root managed' => ['single table', true, 'realm', []],
-    'class table, the root stored' => ['class table', false, 'code', ['SELECT t0.code AS code_2, t0.label AS label_3, t0.kind, t1.celsius AS celsius_4 FROM Carton t0 LEFT JOIN ChilledCarton t1 ON t0.code = t1.code WHERE t0.code = ?']],
+    'class table, the root stored' => ['class table', false, 'code', ['FROM Carton p0 LEFT JOIN ChilledCarton p1 ON p0.code = p1.code WHERE p0.code = ?']],
     'class table, the root managed' => ['class table', true, 'code', []],
 ]);
 

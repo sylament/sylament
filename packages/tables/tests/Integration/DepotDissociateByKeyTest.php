@@ -105,7 +105,7 @@ function depotByKeyUpdates(KernelBrowser $client, RecordingMiddleware $recorder,
     $recorder->reset();
     $component->call('callMountedAction');
 
-    return array_values(array_filter($recorder->statements(), static fn (string $sql): bool => str_starts_with($sql, 'UPDATE')));
+    return array_values(array_filter($recorder->normalizedStatements(), static fn (string $sql): bool => str_starts_with($sql, 'UPDATE')));
 }
 
 /**
@@ -125,7 +125,7 @@ function depotByKeyQuerySideUpdates(KernelBrowser $client, RecordingMiddleware $
     $recorder->reset();
     $component->call('callMountedAction');
 
-    return array_values(array_filter($recorder->statements(), static fn (string $sql): bool => str_starts_with($sql, 'UPDATE')));
+    return array_values(array_filter($recorder->normalizedStatements(), static fn (string $sql): bool => str_starts_with($sql, 'UPDATE')));
 }
 
 /**

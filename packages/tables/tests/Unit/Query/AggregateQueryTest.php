@@ -519,8 +519,8 @@ it('reads a single-identifier batch in one statement, narrowed as it always was'
     ksort($values);
 
     expect($values)->toBe([1 => 2, 3 => 1])
-        ->and($recorder->statements())->toBe([
-            'SELECT a0_.id AS id_0, COUNT(s1_.id) AS sclr_1 FROM Artist a0_ INNER JOIN Song s1_ ON a0_.id = s1_.artist_id WHERE a0_.id IN (?, ?, ?) GROUP BY a0_.id',
+        ->and($recorder->normalizedStatements())->toBe([
+            'SELECT a0_.id AS id_0, COUNT(a1_.id) AS sclr_1 FROM Artist a0_ INNER JOIN Song a1_ ON a0_.id = a1_.artist_id WHERE a0_.id IN (?, ?, ?) GROUP BY a0_.id',
         ]);
 });
 

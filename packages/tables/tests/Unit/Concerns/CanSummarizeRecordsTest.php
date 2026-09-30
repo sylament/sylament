@@ -64,7 +64,7 @@ function summaryStateHost(EntityManager $entityManager, array $columns, int|stri
 {
     $host = new TableHost(function (Table $table) use ($entityManager, $columns, $recordsPerPage): Table {
         $table = $table
-            ->query($entityManager->createQueryBuilder()->select('song')->from(Song::class, 'song')->orderBy('song.id', 'ASC'))
+            ->query($entityManager->createQueryBuilder()->select('song')->from(Song::class, 'song')->orderBy('song.id', SortDirection::Ascending))
             ->columns($columns);
 
         return $recordsPerPage === null ? $table->paginated(false) : $table->paginated([$recordsPerPage]);
@@ -161,7 +161,7 @@ it('names the record class own identifier in the page narrowing', function (): v
     EntityManagerFactory::seed($entityManager, new Book('a', 'Dune'), new Book('b', 'Ubik'), new Book('c', 'Solaris'));
 
     $host = new TableHost(fn (Table $table): Table => $table
-        ->query($entityManager->createQueryBuilder()->select('book')->from(Book::class, 'book')->orderBy('book.code', 'ASC'))
+        ->query($entityManager->createQueryBuilder()->select('book')->from(Book::class, 'book')->orderBy('book.code', SortDirection::Ascending))
         ->columns([TextColumn::make('title')->summarize(Count::make())])
         ->paginated([2]));
 
@@ -218,7 +218,7 @@ it('narrows the page summary of a composite table by every identifier field', fu
     EntityManagerFactory::seed($entityManager, new CompositePair(1, 1, 'first'), new CompositePair(1, 2, 'second'), new CompositePair(2, 1, 'third'));
 
     $host = new TableHost(fn (Table $table): Table => $table
-        ->query($entityManager->createQueryBuilder()->select('pair')->from(CompositePair::class, 'pair')->orderBy('pair.a', 'ASC')->addOrderBy('pair.b', 'ASC'))
+        ->query($entityManager->createQueryBuilder()->select('pair')->from(CompositePair::class, 'pair')->orderBy('pair.a', SortDirection::Ascending)->addOrderBy('pair.b', SortDirection::Ascending))
         ->columns([TextColumn::make('b')->summarize([Sum::make(), Count::make()])])
         ->paginated([2]));
 
@@ -239,7 +239,7 @@ it('narrows the page summary of a derived-identity table through its association
     $entityManager = summaryStateResidencies();
 
     $host = new TableHost(fn (Table $table): Table => $table
-        ->query($entityManager->createQueryBuilder()->select('residency')->from(Residency::class, 'residency')->orderBy('residency.position', 'ASC'))
+        ->query($entityManager->createQueryBuilder()->select('residency')->from(Residency::class, 'residency')->orderBy('residency.position', SortDirection::Ascending))
         ->columns([TextColumn::make('position')->summarize([Sum::make(), Count::make(), Average::make()])])
         ->paginated([2]));
 
@@ -259,7 +259,7 @@ it('narrows the page summary of a derived-identity table through its association
  */
 it('leaves a keyed page summary un-narrowed where one page holds the whole filtered set', function (): void {
     $host = new TableHost(fn (Table $table): Table => $table
-        ->query(summaryStateResidencies()->createQueryBuilder()->select('residency')->from(Residency::class, 'residency')->orderBy('residency.position', 'ASC'))
+        ->query(summaryStateResidencies()->createQueryBuilder()->select('residency')->from(Residency::class, 'residency')->orderBy('residency.position', SortDirection::Ascending))
         ->columns([TextColumn::make('position')->summarize(Sum::make())])
         ->paginated(['all']));
 
@@ -462,7 +462,7 @@ function groupedSummaryHost(EntityManager $entityManager, int|string|null $recor
 {
     $host = new TableHost(function (Table $table) use ($entityManager, $recordsPerPage, $configure): Table {
         $table = $table
-            ->query($entityManager->createQueryBuilder()->select('song')->from(Song::class, 'song')->orderBy('song.id', 'ASC'))
+            ->query($entityManager->createQueryBuilder()->select('song')->from(Song::class, 'song')->orderBy('song.id', SortDirection::Ascending))
             ->columns([TextColumn::make('plays')->summarize(Sum::make())])
             ->groups(['artist.name', 'title']);
 
@@ -713,7 +713,7 @@ it('reads past a fetch-joined to-many through the paginator', function (): void 
             ->select('song', 'sy_genres')
             ->from(Song::class, 'song')
             ->leftJoin('song.genres', 'sy_genres')
-            ->orderBy('song.id', 'ASC'))
+            ->orderBy('song.id', SortDirection::Ascending))
         ->columns([TextColumn::make('plays')->summarize(Sum::make())])
         ->groups(['artist.name'])
         ->paginated([2]));
@@ -734,7 +734,7 @@ function groupedResidencySummaryHost(EntityManager $entityManager, int $page = 1
 {
     $host = new TableHost(function (Table $table) use ($entityManager, $configure): Table {
         $table = $table
-            ->query($entityManager->createQueryBuilder()->select('residency')->from(Residency::class, 'residency')->orderBy('residency.season', 'ASC'))
+            ->query($entityManager->createQueryBuilder()->select('residency')->from(Residency::class, 'residency')->orderBy('residency.season', SortDirection::Ascending))
             ->columns([TextColumn::make('position')->summarize(Sum::make())])
             ->groups(['season'])
             ->paginated([1]);
@@ -772,7 +772,7 @@ it('summarizes each group of a keyed table in one statement of its own', functio
  */
 it('reads a range and a list off a keyed page', function (): void {
     $host = new TableHost(fn (Table $table): Table => $table
-        ->query(summaryStateResidencies()->createQueryBuilder()->select('residency')->from(Residency::class, 'residency')->orderBy('residency.position', 'ASC'))
+        ->query(summaryStateResidencies()->createQueryBuilder()->select('residency')->from(Residency::class, 'residency')->orderBy('residency.position', SortDirection::Ascending))
         ->columns([TextColumn::make('position')->summarize([Range::make(), Values::make()])])
         ->paginated([2]));
 
@@ -811,7 +811,7 @@ it('looks past a keyed page to the group the next one starts', function (int $pa
  */
 it('looks past a keyed page whose query joins a to-many', function (int $page, bool $rendered): void {
     $entityManager = summaryStateResidencies();
-    $query = $entityManager->createQueryBuilder()->select('residency')->from(Residency::class, 'residency')->orderBy('residency.season', 'ASC');
+    $query = $entityManager->createQueryBuilder()->select('residency')->from(Residency::class, 'residency')->orderBy('residency.season', SortDirection::Ascending);
 
     $host = groupedResidencySummaryHost($entityManager, page: $page, configure: fn (Table $table): Table => $table->query($query));
     $records = $host->getTableRecords()->getRecords();
@@ -834,7 +834,7 @@ it('looks past a keyed page whose query joins a to-many', function (int $page, b
  */
 it('refuses the trailing-group look-ahead where a joined query sets its own output walker', function (): void {
     $entityManager = summaryStateResidencies();
-    $query = $entityManager->createQueryBuilder()->select('residency')->from(Residency::class, 'residency')->orderBy('residency.season', 'ASC');
+    $query = $entityManager->createQueryBuilder()->select('residency')->from(Residency::class, 'residency')->orderBy('residency.season', SortDirection::Ascending);
 
     $host = groupedResidencySummaryHost($entityManager, configure: fn (Table $table): Table => $table->query($query));
     $lastRecord = array_first($host->getTableRecords()->getRecords());

@@ -14,7 +14,7 @@
     ],
     "require": {
         "php": "^8.5",
-        "doctrine/orm": "^3.6",
+        "doctrine/orm": "^3.7",
         "sylament/actions": "self.version",
         "sylament/notifications": "self.version",
         "sylament/schemas": "self.version",

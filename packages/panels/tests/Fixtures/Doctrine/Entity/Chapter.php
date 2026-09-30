@@ -7,6 +7,7 @@ namespace Sylament\Panels\Tests\Fixtures\Doctrine\Entity;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
+use SortDirection;
 
 /**
  * The root of the nested-resource rig: a chapter owning the verses a nested
@@ -27,7 +28,7 @@ class Chapter
      * @var Collection<int, Verse>
      */
     #[ORM\OneToMany(targetEntity: Verse::class, mappedBy: 'chapter')]
-    #[ORM\OrderBy(['position' => 'ASC'])]
+    #[ORM\OrderBy(['position' => SortDirection::Ascending])]
     private Collection $verses;
 
     public function __construct()

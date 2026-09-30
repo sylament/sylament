@@ -30,7 +30,7 @@ use Symfony\UX\LiveComponent\DefaultActionTrait;
  * Both halves of the owner's key are `LiveProp`s, so one host serves the owner
  * a test wants and the sibling that shares only its first half.
  *
- * `#[ORM\OrderBy(['heading' => 'ASC'])]` on {@see Shortcut::$notes} is what
+ * `#[ORM\OrderBy(['heading' => SortDirection::Ascending])]` on {@see Shortcut::$notes} is what
  * gives the table a default sort with no `defaultSort()` of its own.
  */
 #[AsLiveComponent(name: 'CompositeOwnerRelationshipTableNotes', template: '@TablesFixtures/components/CompositeOwnerRelationshipTableNotes.html.twig')]

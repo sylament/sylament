@@ -16,9 +16,11 @@ use Doctrine\ORM\PersistentCollection;
 use Doctrine\ORM\QueryBuilder;
 use LogicException;
 use ReflectionClass;
+use SortDirection;
 use Sylament\Schemas\Identity\IdentifierConstraint;
 use Sylament\Schemas\Identity\IdentifierFields;
 use Sylament\Schemas\Identity\RecordKey;
+use Sylament\Schemas\Query\SortDirections;
 use Symfony\Component\PropertyAccess\PropertyAccess;
 
 use function Sylament\Support\blank;
@@ -81,7 +83,10 @@ class AssociationReader
             mappedBy: $mapping instanceof InverseSideMapping ? $mapping->mappedBy : null,
             inversedBy: $mapping instanceof OwningSideMapping ? $mapping->inversedBy : null,
             isNullable: $isNullable,
-            orderBy: $mapping->isToMany() ? $mapping->orderBy() : [],
+            orderBy: $mapping->isToMany() ? array_map(
+                static fn (SortDirection|string $direction): SortDirection => $direction instanceof SortDirection ? $direction : SortDirections::from($direction),
+                $mapping->orderBy(),
+            ) : [],
         );
     }
 

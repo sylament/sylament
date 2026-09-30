@@ -513,7 +513,7 @@ already do for the same attribute; `forms` uses it and does **not** declare it �
 an open gap on that package, not a precedent). `doctrine/orm` is the judgment
 call: the symbol actually imported is `Doctrine\Persistence\ManagerRegistry`,
 which lives in `doctrine/persistence`, so a minimal declaration would name that
-package instead. The port declares `doctrine/orm: ^3.6` — the constraint
+package instead. The port declares `doctrine/orm: ^3.7` — the constraint
 `schemas`, `forms`, `tables` and `panels` already carry — because the ORM
 hard-requires `doctrine/persistence` (`^3.3.1 || ^4`), so the interface cannot
 leave the graph, and because a one-package-per-Doctrine-constraint monorepo is

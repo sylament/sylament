@@ -10,6 +10,7 @@ use Doctrine\ORM\QueryBuilder;
 use Doctrine\ORM\Tools\Pagination\LimitSubqueryOutputWalker;
 use LogicException;
 use Sylament\Schemas\Identity\IdentifierConstraint;
+use Sylament\Schemas\Query\SortDirections;
 
 final class FetchJoinPageQuery
 {
@@ -158,7 +159,7 @@ final class FetchJoinPageQuery
         }
 
         foreach ($items as [$expression, $direction]) {
-            $query->addOrderBy($expression, $direction);
+            $query->addOrderBy($expression, SortDirections::from($direction));
         }
     }
 }

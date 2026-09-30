@@ -7,6 +7,7 @@ namespace Sylament\Forms\Tests\Fixtures\Doctrine\Entity;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
+use SortDirection;
 
 /**
  * A derived identity: one identifier field is a to-one association, the other a
@@ -37,7 +38,7 @@ class PostTranslation
      * @var Collection<int, TranslationMark>
      */
     #[ORM\OneToMany(targetEntity: TranslationMark::class, mappedBy: 'translation', cascade: ['persist'], orphanRemoval: true)]
-    #[ORM\OrderBy(['position' => 'ASC'])]
+    #[ORM\OrderBy(['position' => SortDirection::Ascending])]
     private Collection $marks;
 
     public function __construct()

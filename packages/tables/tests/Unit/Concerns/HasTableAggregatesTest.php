@@ -58,7 +58,7 @@ function artistTableHost(EntityManager $entityManager, array $columns, int|strin
 {
     return new TableHost(function (Table $table) use ($entityManager, $columns, $recordsPerPage): Table {
         $table = $table
-            ->query($entityManager->createQueryBuilder()->select('artist')->from(Artist::class, 'artist')->orderBy('artist.id', 'ASC'))
+            ->query($entityManager->createQueryBuilder()->select('artist')->from(Artist::class, 'artist')->orderBy('artist.id', SortDirection::Ascending))
             ->columns($columns);
 
         return $recordsPerPage === 'all'
@@ -206,7 +206,7 @@ it('fills a table whose records carry an object identifier', function (): void {
     );
 
     $host = new TableHost(fn (Table $table): Table => $table
-        ->query($entityManager->createQueryBuilder()->select('venue')->from(Venue::class, 'venue')->orderBy('venue.handle', 'ASC'))
+        ->query($entityManager->createQueryBuilder()->select('venue')->from(Venue::class, 'venue')->orderBy('venue.handle', SortDirection::Ascending))
         ->columns([TextColumn::make('gigs_count')->counts('gigs')])
         ->paginated(false));
 
@@ -252,7 +252,7 @@ it('sorts ascending with the identifier tiebreak intact', function (): void {
         ->and(aggregateCellStates($secondPage, 'name'))->toBe(['Björk', 'Radiohead'])
         ->and(aggregateCellStates($secondPage, 'songs_count'))->toBe([2, 3])
         ->and($dql)->toContain('AS HIDDEN sy_agg1')
-        ->and($dql)->toContain('ORDER BY sy_agg1 asc, artist.id asc');
+        ->and($dql)->toContain('ORDER BY sy_agg1 ASC, artist.id ASC');
 });
 
 it('sorts a fetch-joined collection query through the limit-subquery walker', function (): void {
@@ -350,7 +350,7 @@ it('honours an explicit sort-column list over the aggregate', function (): void 
 
     expect(aggregateCellStates($host, 'name'))->toBe(['Adele', 'Björk'])
         ->and(aggregateCellStates($host, 'songs_count'))->toBe([1, 2])
-        ->and($dql)->toContain('ORDER BY artist.name asc')
+        ->and($dql)->toContain('ORDER BY artist.name ASC')
         ->and($dql)->not->toContain('HIDDEN');
 });
 
@@ -502,7 +502,7 @@ function aggregatedLockers(): EntityManager
 function compositeAggregateHost(EntityManager $entityManager, string $recordClass, string $alias, string $orderBy, array $columns): TableHost
 {
     return new TableHost(fn (Table $table): Table => $table
-        ->query($entityManager->createQueryBuilder()->select($alias)->from($recordClass, $alias)->orderBy("{$alias}.{$orderBy}", 'ASC'))
+        ->query($entityManager->createQueryBuilder()->select($alias)->from($recordClass, $alias)->orderBy("{$alias}.{$orderBy}", SortDirection::Ascending))
         ->columns($columns)
         ->paginated(false));
 }
@@ -596,7 +596,7 @@ it('sorts a composite-identifier table by an aggregate across a page boundary', 
         ->and(aggregateCellStates($secondPage, 'hits_count'))->toBe([1, 0])
         ->and($firstPage->getAllTableRecordsCount())->toBe(4)
         ->and($dql)->toContain('sy_ag1.host = shortcut.host AND sy_ag1.path = shortcut.path')
-        ->and($dql)->toContain('ORDER BY sy_agg1 desc, shortcut.host desc, shortcut.path desc');
+        ->and($dql)->toContain('ORDER BY sy_agg1 DESC, shortcut.host DESC, shortcut.path DESC');
 });
 
 it('sorts a derived-identity table by an aggregate', function (): void {

@@ -16,7 +16,7 @@
         "php": "^8.5",
         "ext-intl": "*",
         "ext-mbstring": "*",
-        "doctrine/orm": "^3.6",
+        "doctrine/orm": "^3.7",
         "sylament/actions": "self.version",
         "sylament/forms": "self.version",
         "sylament/schemas": "self.version",

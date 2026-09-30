@@ -5,6 +5,7 @@ declare(strict_types=1);
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\ORM\EntityManager;
 use Doctrine\ORM\QueryBuilder;
+use Sylament\Schemas\Query\SortDirections;
 use Sylament\Tables\Grouping\Group;
 use Sylament\Tables\Table;
 use Sylament\Tables\Tests\Fixtures\Concerns\TableHost;
@@ -272,7 +273,7 @@ it('orders by the grouped column in the asked direction', function (): void {
 
     Group::make('plays')->orderQuery($query, 'desc');
 
-    expect($query->getDQL())->toContain('ORDER BY song.plays desc');
+    expect($query->getDQL())->toContain('ORDER BY song.plays DESC');
 });
 
 it('orders across a relation by joining it', function (): void {
@@ -280,15 +281,15 @@ it('orders across a relation by joining it', function (): void {
 
     Group::make('artist.name')->orderQuery($query, 'asc');
 
-    expect($query->getDQL())->toContain('LEFT JOIN song.artist sy_artist', 'ORDER BY sy_artist.name asc');
+    expect($query->getDQL())->toContain('LEFT JOIN song.artist sy_artist', 'ORDER BY sy_artist.name ASC');
 });
 
 it('adds its ordering rather than replacing one already on the builder', function (): void {
-    $query = groupQueryBuilder()->addOrderBy('song.id', 'ASC');
+    $query = groupQueryBuilder()->addOrderBy('song.id', SortDirection::Ascending);
 
     Group::make('plays')->orderQuery($query, 'desc');
 
-    expect($query->getDQL())->toContain('ORDER BY song.id ASC, song.plays desc');
+    expect($query->getDQL())->toContain('ORDER BY song.id ASC, song.plays DESC');
 });
 
 it('takes an orderQueryUsing closure with column, direction and query injections', function (): void {
@@ -296,18 +297,18 @@ it('takes an orderQueryUsing closure with column, direction and query injections
 
     $group = Group::make('plays')->orderQueryUsing(
         function (QueryBuilder $query, string $column, string $direction): void {
-            $query->addOrderBy('song.title', $direction === 'desc' ? 'desc' : 'asc');
-            $query->addOrderBy('song.' . $column, 'asc');
+            $query->addOrderBy('song.title', SortDirections::from($direction));
+            $query->addOrderBy('song.' . $column, SortDirection::Ascending);
         },
     );
 
     expect($group->orderQuery($query, 'desc'))->toBe($query)
-        ->and($query->getDQL())->toContain('ORDER BY song.title desc, song.plays asc');
+        ->and($query->getDQL())->toContain('ORDER BY song.title DESC, song.plays ASC');
 });
 
 it('takes the builder an orderQueryUsing closure returns', function (): void {
     $query = groupQueryBuilder();
-    $ordered = groupQueryBuilder()->addOrderBy('song.title', 'desc');
+    $ordered = groupQueryBuilder()->addOrderBy('song.title', SortDirection::Descending);
 
     $group = Group::make('plays')->orderQueryUsing(fn (): QueryBuilder => $ordered);
 
@@ -328,7 +329,7 @@ it('needs no DATE() to order a date group', function (): void {
 
     Group::make('releasedAt')->date()->orderQuery($query, 'asc');
 
-    expect($query->getDQL())->toContain('ORDER BY song.releasedAt asc')
+    expect($query->getDQL())->toContain('ORDER BY song.releasedAt ASC')
         ->and($query->getDQL())->not->toContain('DATE(');
 });
 

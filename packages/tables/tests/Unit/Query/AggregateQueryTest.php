@@ -594,7 +594,7 @@ it('correlates a hidden sort select on a derived identity', function (): void {
 
     $ordered = array_map(
         static fn (Residency $residency): string => $residency->getSeason(),
-        $query->addOrderBy($alias, 'DESC')->addOrderBy('residency.season', 'ASC')->getQuery()->getResult(),
+        $query->addOrderBy($alias, SortDirection::Descending)->addOrderBy('residency.season', SortDirection::Ascending)->getQuery()->getResult(),
     );
 
     expect($query->getDQL())->toContain('sy_ag1.venue = residency.venue AND sy_ag1.season = residency.season')

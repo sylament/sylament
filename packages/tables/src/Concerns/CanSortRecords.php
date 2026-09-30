@@ -5,7 +5,9 @@ declare(strict_types=1);
 namespace Sylament\Tables\Concerns;
 
 use Doctrine\ORM\QueryBuilder;
+use SortDirection;
 use Sylament\Schemas\Identity\IdentifierConstraint;
+use Sylament\Schemas\Query\SortDirections;
 use Sylament\Tables\Columns\Column;
 use Sylament\Tables\Query\ColumnPathResolver;
 use Symfony\UX\LiveComponent\Attribute\LiveAction;
@@ -140,7 +142,7 @@ trait CanSortRecords
         if ($this->isTableReordering()) {
             return $query->orderBy(
                 ColumnPathResolver::resolveOrderable($query, (string) $table->getReorderColumn()),
-                $table->getReorderDirection() === 'desc' ? 'desc' : 'asc',
+                $table->getReorderDirection() === 'desc' ? SortDirection::Descending : SortDirection::Ascending,
             );
         }
 
@@ -163,7 +165,7 @@ trait CanSortRecords
             if ($defaultSortColumn instanceof Column) {
                 $defaultSortColumn->applySort($query, $sortDirection);
             } else {
-                $query->addOrderBy(ColumnPathResolver::resolveOrderable($query, $defaultSort), $sortDirection);
+                $query->addOrderBy(ColumnPathResolver::resolveOrderable($query, $defaultSort), SortDirections::from($sortDirection));
             }
         }
 

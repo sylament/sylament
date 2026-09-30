@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use Doctrine\ORM\Query\Expr\Comparison;
 use Doctrine\ORM\QueryBuilder;
+use Sylament\Schemas\Query\SortDirections;
 use Sylament\Support\Tests\Doctrine\TestPlatform;
 use Sylament\Tables\Columns\TextColumn;
 use Sylament\Tables\Table;
@@ -20,7 +21,7 @@ it('applies the default sort column in declared direction', function (): void {
 
     $table->getColumn('title')?->applySort($query, 'desc');
 
-    expect($query->getDQL())->toContain('ORDER BY song.title desc');
+    expect($query->getDQL())->toContain('ORDER BY song.title DESC');
 });
 
 it('applies a sort-column list in declared order', function (): void {
@@ -30,20 +31,20 @@ it('applies a sort-column list in declared order', function (): void {
 
     $sorted = $table->getColumn('title')?->applySort($query);
 
-    expect($sorted?->getDQL())->toContain('ORDER BY song.plays asc, song.title asc');
+    expect($sorted?->getDQL())->toContain('ORDER BY song.plays ASC, song.title ASC');
 });
 
 it('hands a sortable(query:) closure the query and direction and applies nothing else', function (): void {
     $query = EntityManagerFactory::create()->createQueryBuilder()->select('song')->from(Song::class, 'song');
     $table = new TableHost(fn (Table $table): Table => $table->columns([
         TextColumn::make('title')->sortable(query: function (QueryBuilder $query, string $direction): void {
-            $query->addOrderBy('song.plays', $direction);
+            $query->addOrderBy('song.plays', SortDirections::from($direction));
         }),
     ]))->getTable();
 
     $table->getColumn('title')?->applySort($query, 'desc');
 
-    expect($query->getDQL())->toContain('ORDER BY song.plays desc')
+    expect($query->getDQL())->toContain('ORDER BY song.plays DESC')
         ->and($query->getDQL())->not->toContain('song.title');
 });
 
@@ -147,9 +148,9 @@ it('resolves alias-headed dotted names, joins unaliased ones, and refuses unknow
     $column?->applySort($joined);
     $column?->applySort($unjoined);
 
-    expect($joined->getDQL())->toContain('ORDER BY artist.name asc')
+    expect($joined->getDQL())->toContain('ORDER BY artist.name ASC')
         ->and($joined->getQuery()->getSQL())->toContain('ORDER BY')
-        ->and($unjoined->getDQL())->toContain('LEFT JOIN song.artist sy_artist', 'ORDER BY sy_artist.name asc')
+        ->and($unjoined->getDQL())->toContain('LEFT JOIN song.artist sy_artist', 'ORDER BY sy_artist.name ASC')
         ->and($unjoined->getQuery()->getSQL())->toContain('ORDER BY');
     expect(fn (): ?QueryBuilder => $table->getColumn('publisher.name')?->applySort($unknown))
         ->toThrow(LogicException::class, 'is not an alias on the builder, a mapped field path, or an association path');
@@ -214,7 +215,7 @@ it('reuses the sort join for eager loading and selects the alias once', function
 
     expect(mb_substr_count($query->getDQL(), 'LEFT JOIN'))->toBe(1)
         ->and($query->getDQL())->toContain('SELECT song, sy_artist FROM')
-        ->and($query->getDQL())->toContain('ORDER BY sy_artist.name asc');
+        ->and($query->getDQL())->toContain('ORDER BY sy_artist.name ASC');
 });
 
 it('leaves a dotless, to-many, alias-headed, unmapped or association-terminal column unjoined', function (): void {

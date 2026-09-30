@@ -7,6 +7,7 @@ namespace Sylament\Forms\Tests\Fixtures\Doctrine\Entity;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
+use SortDirection;
 
 /**
  * An owner whose related records carry a date and an enum — leaves a
@@ -28,7 +29,7 @@ class Ferry
      * @var Collection<int, Crossing>
      */
     #[ORM\OneToMany(targetEntity: Crossing::class, mappedBy: 'ferry', cascade: ['persist'], orphanRemoval: true)]
-    #[ORM\OrderBy(['id' => 'ASC'])]
+    #[ORM\OrderBy(['id' => SortDirection::Ascending])]
     private Collection $crossings;
 
     #[ORM\OneToOne(cascade: ['persist'])]

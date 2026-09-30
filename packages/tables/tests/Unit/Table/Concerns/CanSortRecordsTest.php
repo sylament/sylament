@@ -26,7 +26,7 @@ it('orders a relation-scoped table by its mapping until a default sort is declar
     $sorted = $ordered->getDefaultSort($query, 'asc');
 
     expect($sorted)->toBe($query)
-        ->and($query->getDQL())->toEndWith('ORDER BY record.title asc')
+        ->and($query->getDQL())->toEndWith('ORDER BY record.title ASC')
         ->and($declared->getDefaultSort($declared->getQuery() ?? throw new LogicException(), 'desc'))->toBe('plays')
         ->and($unordered->getDefaultSort($unordered->getQuery() ?? throw new LogicException(), 'asc'))->toBeNull();
 });
@@ -42,7 +42,7 @@ it("appends the mapping's own direction, not a hardcoded ascending one", functio
     assert($query instanceof QueryBuilder);
 
     expect($table->getDefaultSort($query, 'asc'))->toBe($query)
-        ->and($query->getDQL())->toEndWith('ORDER BY record.title desc');
+        ->and($query->getDQL())->toEndWith('ORDER BY record.title DESC');
 });
 
 it('leaves a table whose query() won over its relationship unordered, with the closure unevaluated', function (): void {

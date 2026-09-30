@@ -7,6 +7,7 @@ namespace Sylament\Tables\Tests\Fixtures\Twig\Components;
 use Closure;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\QueryBuilder;
+use SortDirection;
 use Sylament\Actions\AssociateAction;
 use Sylament\Actions\Concerns\HasActions;
 use Sylament\Actions\Contracts\InteractsWithActions;
@@ -169,7 +170,7 @@ class ArtistSongsActionsTable implements InteractsWithActions, InteractsWithSche
                 return $query->andWhere("record.title <> 'Glory Box'");
             },
             'type' => static fn (QueryBuilder $builder): QueryBuilder => $builder->andWhere("record.title <> 'Exit Music'"),
-            'order' => static fn (QueryBuilder $builder): QueryBuilder => $builder->orderBy('record.plays', 'ASC'),
+            'order' => static fn (QueryBuilder $builder): QueryBuilder => $builder->orderBy('record.plays', SortDirection::Ascending),
             default => null,
         };
     }

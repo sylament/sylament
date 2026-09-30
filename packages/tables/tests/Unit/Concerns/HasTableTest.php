@@ -110,13 +110,13 @@ function seededResidencies(): EntityManager
 function shortcutTable(EntityManager $entityManager): TableHost
 {
     return new TableHost(fn (Table $table): Table => $table
-        ->query($entityManager->createQueryBuilder()->select('shortcut')->from(Shortcut::class, 'shortcut')->orderBy('shortcut.position', 'ASC')));
+        ->query($entityManager->createQueryBuilder()->select('shortcut')->from(Shortcut::class, 'shortcut')->orderBy('shortcut.position', SortDirection::Ascending)));
 }
 
 function residencyTable(EntityManager $entityManager): TableHost
 {
     return new TableHost(fn (Table $table): Table => $table
-        ->query($entityManager->createQueryBuilder()->select('residency')->from(Residency::class, 'residency')->orderBy('residency.position', 'ASC')));
+        ->query($entityManager->createQueryBuilder()->select('residency')->from(Residency::class, 'residency')->orderBy('residency.position', SortDirection::Ascending)));
 }
 
 it('builds the table through the host table() method exactly once', function (): void {

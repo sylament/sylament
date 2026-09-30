@@ -137,12 +137,12 @@ it('orders by the reorder column alone while reordering, bypassing both sorts', 
 
     $host->tableSort = 'title:asc';
 
-    expect($host->getFilteredSortedTableQuery()?->getDQL())->toContain('ORDER BY song.title asc');
+    expect($host->getFilteredSortedTableQuery()?->getDQL())->toContain('ORDER BY song.title ASC');
 
     $host->toggleTableReordering();
 
     expect($host->getFilteredSortedTableQuery()?->getDQL())->toBe(
-        'SELECT song FROM ' . Song::class . ' song ORDER BY song.position desc',
+        'SELECT song FROM ' . Song::class . ' song ORDER BY song.position DESC',
     );
 });
 

@@ -10,6 +10,7 @@ use Doctrine\ORM\QueryBuilder;
 use Doctrine\ORM\Tools\Pagination\LimitSubqueryOutputWalker;
 use Sylament\Schemas\Identity\IdentifierConstraint;
 use Sylament\Schemas\Identity\RecordKey;
+use Sylament\Schemas\Query\SortDirections;
 use Sylament\Support\Tests\Doctrine\RecordingMiddleware;
 use Sylament\Support\Tests\Doctrine\TestPlatform;
 use Sylament\Tables\Query\FetchJoinPageQuery;
@@ -152,7 +153,7 @@ function fetchJoinPageShortcutQuery(EntityManager $entityManager): QueryBuilder
         ->select('shortcut', 'sy_hits')
         ->from(Shortcut::class, 'shortcut')
         ->leftJoin('shortcut.hits', 'sy_hits')
-        ->orderBy('shortcut.position', 'ASC');
+        ->orderBy('shortcut.position', SortDirection::Ascending);
 
     IdentifierConstraint::orderBy($query, 'shortcut', Shortcut::class, 'asc');
 
@@ -165,7 +166,7 @@ function fetchJoinPageResidencyQuery(EntityManager $entityManager): QueryBuilder
         ->select('residency', 'sy_shows')
         ->from(Residency::class, 'residency')
         ->leftJoin('residency.shows', 'sy_shows')
-        ->orderBy('residency.position', 'ASC');
+        ->orderBy('residency.position', SortDirection::Ascending);
 
     IdentifierConstraint::orderBy($query, 'residency', Residency::class, 'asc');
 
@@ -179,7 +180,7 @@ function fetchJoinPageSealQuery(EntityManager $entityManager): QueryBuilder
         ->from(LockerSeal::class, 'seal')
         ->leftJoin('seal.locker', 'sy_locker')
         ->leftJoin('sy_locker.items', 'sy_items')
-        ->orderBy('seal.position', 'ASC');
+        ->orderBy('seal.position', SortDirection::Ascending);
 
     IdentifierConstraint::orderBy($query, 'seal', LockerSeal::class, 'asc');
 
@@ -191,7 +192,7 @@ function fetchJoinPageGigQuery(EntityManager $entityManager): QueryBuilder
     return $entityManager->createQueryBuilder()
         ->select('gig')
         ->from(Gig::class, 'gig')
-        ->orderBy('gig.id', 'ASC');
+        ->orderBy('gig.id', SortDirection::Ascending);
 }
 
 function fetchJoinPageLeaseQuery(EntityManager $entityManager): QueryBuilder
@@ -200,7 +201,7 @@ function fetchJoinPageLeaseQuery(EntityManager $entityManager): QueryBuilder
         ->select('lease', 'sy_notes')
         ->from(LockerLease::class, 'lease')
         ->leftJoin('lease.notes', 'sy_notes')
-        ->orderBy('lease.position', 'ASC');
+        ->orderBy('lease.position', SortDirection::Ascending);
 
     IdentifierConstraint::orderBy($query, 'lease', LockerLease::class, 'asc');
 
@@ -256,7 +257,7 @@ it('pages a derived identity across a collection reached through its identifier 
         ->from(Residency::class, 'residency')
         ->leftJoin('residency.venue', 'sy_venue')
         ->leftJoin('sy_venue.gigs', 'sy_gigs')
-        ->orderBy('residency.position', 'ASC');
+        ->orderBy('residency.position', SortDirection::Ascending);
 
     IdentifierConstraint::orderBy($query, 'residency', Residency::class, 'asc');
 
@@ -339,7 +340,7 @@ it('orders a page by a user sort on the identifier association, both ways', func
         ->select('residency', 'sy_shows')
         ->from(Residency::class, 'residency')
         ->leftJoin('residency.shows', 'sy_shows')
-        ->orderBy('residency.venue', $direction);
+        ->orderBy('residency.venue', SortDirections::from($direction));
 
     IdentifierConstraint::orderBy($query, 'residency', Residency::class, 'asc');
 
@@ -367,7 +368,7 @@ it('pages under a hidden aggregate sort already on the builder', function (): vo
             '(SELECT COUNT(sy_ag0_0) FROM %s sy_ag0 JOIN sy_ag0.shows sy_ag0_0 WHERE sy_ag0.venue = residency.venue AND sy_ag0.season = residency.season) AS HIDDEN sy_agg0',
             Residency::class,
         ))
-        ->orderBy('sy_agg0', 'DESC');
+        ->orderBy('sy_agg0', SortDirection::Descending);
 
     IdentifierConstraint::orderBy($query, 'residency', Residency::class, 'asc');
 
@@ -447,7 +448,7 @@ it('answers a list whatever the root is indexed by', function (): void {
         ->select('residency', 'sy_shows')
         ->from(Residency::class, 'residency', 'residency.label')
         ->leftJoin('residency.shows', 'sy_shows')
-        ->orderBy('residency.position', 'ASC');
+        ->orderBy('residency.position', SortDirection::Ascending);
 
     IdentifierConstraint::orderBy($query, 'residency', Residency::class, 'asc');
 
@@ -508,7 +509,7 @@ it('refuses an order item over a two-join-column association on an empty window 
     $query = $entityManager->createQueryBuilder()
         ->select('sy_show')
         ->from(ResidencyShow::class, 'sy_show')
-        ->orderBy('sy_show.residency', 'ASC');
+        ->orderBy('sy_show.residency', SortDirection::Ascending);
 
     FetchJoinPageQuery::read($query, ResidencyShow::class, 99, 2);
 })->throws(QueryException::class, 'composite primary key');

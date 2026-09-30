@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Sylament\Schemas\State;
 
+use SortDirection;
+
 /**
  * What a Doctrine entity mapping declares at one association property: the
  * entity to load or reference ({@see $targetClass}), whether the property holds
@@ -22,8 +24,7 @@ final readonly class AssociationTarget
 {
     /**
      * @param class-string $targetClass
-     * @param array<string, string> $orderBy the mapping's collection order exactly as declared — Doctrine's own
-     *                                       docblock says 'asc'|'desc' but hands 'ASC' through untouched; [] where none
+     * @param array<string, SortDirection> $orderBy the mapping's collection order; [] where none
      */
     public function __construct(
         public string $targetClass,

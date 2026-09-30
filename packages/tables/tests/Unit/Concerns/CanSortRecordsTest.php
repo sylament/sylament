@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use Doctrine\ORM\EntityManager;
 use Doctrine\ORM\QueryBuilder;
+use Sylament\Schemas\Query\SortDirections;
 use Sylament\Support\Tests\Doctrine\TestPlatform;
 use Sylament\Tables\Columns\TextColumn;
 use Sylament\Tables\Table;
@@ -113,7 +114,7 @@ it('orders by the user sort with the identifier tiebreaker appended', function (
 
     expect(sortedSongTitles($host))->toBe(['Alpha', 'Bravo', 'Charlie'])
         ->and(array_keys($host->getTableRecords()->getRecords()))->toBe([2, 3, 1])
-        ->and($host->getFilteredSortedTableQuery()?->getDQL())->toContain('ORDER BY song.title asc, song.id asc');
+        ->and($host->getFilteredSortedTableQuery()?->getDQL())->toContain('ORDER BY song.title ASC, song.id ASC');
 });
 
 it('applies the default sort when the user has not sorted', function (): void {
@@ -124,7 +125,7 @@ it('applies the default sort when the user has not sorted', function (): void {
         ->defaultSort('plays', 'desc'));
 
     expect(sortedSongTitles($host))->toBe(['Charlie', 'Bravo', 'Alpha'])
-        ->and($host->getFilteredSortedTableQuery()?->getDQL())->toContain('ORDER BY song.plays desc, song.id desc');
+        ->and($host->getFilteredSortedTableQuery()?->getDQL())->toContain('ORDER BY song.plays DESC, song.id DESC');
 });
 
 it('lowercases a mixed-case default sort direction', function (): void {
@@ -135,7 +136,7 @@ it('lowercases a mixed-case default sort direction', function (): void {
         ->defaultSort('plays', 'DESC'));
 
     expect($host->getTable()->getDefaultSortDirection())->toBe('desc')
-        ->and($host->getFilteredSortedTableQuery()?->getDQL())->toContain('ORDER BY song.plays desc, song.id desc')
+        ->and($host->getFilteredSortedTableQuery()?->getDQL())->toContain('ORDER BY song.plays DESC, song.id DESC')
         ->and(sortedSongTitles($host))->toBe(['Charlie', 'Bravo', 'Alpha']);
 });
 
@@ -148,7 +149,7 @@ it('appends the default sort as a secondary order under a user sort', function (
 
     $host->sortTable('title');
 
-    expect($host->getFilteredSortedTableQuery()?->getDQL())->toContain('ORDER BY song.title asc, song.plays asc, song.id asc')
+    expect($host->getFilteredSortedTableQuery()?->getDQL())->toContain('ORDER BY song.title ASC, song.plays ASC, song.id ASC')
         ->and(sortedSongTitles($host))->toBe(['Alpha', 'Bravo', 'Charlie']);
 });
 
@@ -161,7 +162,7 @@ it('orders everything after the user sort in the declared default direction', fu
 
     $host->sortTable('title', 'desc');
 
-    expect($host->getFilteredSortedTableQuery()?->getDQL())->toContain('ORDER BY song.title desc, song.plays asc, song.id asc')
+    expect($host->getFilteredSortedTableQuery()?->getDQL())->toContain('ORDER BY song.title DESC, song.plays ASC, song.id ASC')
         ->and(sortedSongTitles($host))->toBe(['Charlie', 'Bravo', 'Alpha']);
 });
 
@@ -176,7 +177,7 @@ it('does not double-apply a default sort naming the sorted column', function ():
 
     $dql = $host->getFilteredSortedTableQuery()?->getDQL() ?? '';
 
-    expect($dql)->toContain('ORDER BY song.title asc, song.id asc')
+    expect($dql)->toContain('ORDER BY song.title ASC, song.id ASC')
         ->and(mb_substr_count($dql, 'song.title'))->toBe(1)
         ->and(sortedSongTitles($host))->toBe(['Alpha', 'Bravo', 'Charlie']);
 });
@@ -188,7 +189,7 @@ it('resolves a default sort that is not a column through the path resolver', fun
         ->columns([TextColumn::make('title')->sortable()])
         ->defaultSort('plays'));
 
-    expect($host->getFilteredSortedTableQuery()?->getDQL())->toContain('ORDER BY song.plays asc, song.id asc')
+    expect($host->getFilteredSortedTableQuery()?->getDQL())->toContain('ORDER BY song.plays ASC, song.id ASC')
         ->and(sortedSongTitles($host))->toBe(['Alpha', 'Bravo', 'Charlie']);
 });
 
@@ -198,10 +199,10 @@ it('lets a default sort closure order the query itself', function (): void {
         ->query($entityManager->createQueryBuilder()->select('song')->from(Song::class, 'song'))
         ->columns([TextColumn::make('title')->sortable()])
         ->defaultSort(function (QueryBuilder $query, string $direction): void {
-            $query->addOrderBy('song.plays', $direction);
+            $query->addOrderBy('song.plays', SortDirections::from($direction));
         }, 'desc'));
 
-    expect($host->getFilteredSortedTableQuery()?->getDQL())->toContain('ORDER BY song.plays desc, song.id desc')
+    expect($host->getFilteredSortedTableQuery()?->getDQL())->toContain('ORDER BY song.plays DESC, song.id DESC')
         ->and(sortedSongTitles($host))->toBe(['Charlie', 'Bravo', 'Alpha']);
 });
 
@@ -219,7 +220,7 @@ it('lets a default sort closure replace the query', function (): void {
 
     expect($records)->toHaveCount(2)
         ->and(array_keys($records))->toBe([1, 3])
-        ->and($host->getFilteredSortedTableQuery()?->getDQL())->toContain('WHERE song.plays > 15 ORDER BY song.id asc');
+        ->and($host->getFilteredSortedTableQuery()?->getDQL())->toContain('WHERE song.plays > 15 ORDER BY song.id ASC');
 });
 
 it('drops the user sort when a default sort closure replaces the query', function (): void {
@@ -236,7 +237,7 @@ it('drops the user sort when a default sort closure replaces the query', functio
 
     $dql = $host->getFilteredSortedTableQuery()?->getDQL() ?? '';
 
-    expect($dql)->toContain('WHERE song.plays > 15 ORDER BY song.id asc')
+    expect($dql)->toContain('WHERE song.plays > 15 ORDER BY song.id ASC')
         ->and($dql)->not->toContain('song.title')
         ->and(array_keys($host->getTableRecords()->getRecords()))->toBe([1, 3]);
 });
@@ -252,7 +253,7 @@ it('reads the tiebreaker off the builder a default sort closure returned', funct
 
     $query = $host->getFilteredSortedTableQuery();
 
-    expect($query?->getDQL())->toContain('ORDER BY book.code asc')
+    expect($query?->getDQL())->toContain('ORDER BY book.code ASC')
         ->and($query?->getDQL())->not->toContain('song.')
         ->and($query?->getQuery()->getSQL())->toContain('ORDER BY');
 });
@@ -267,7 +268,7 @@ it('takes the default sort column and the key sort switch from closures', functi
 
     $dql = $host->getFilteredSortedTableQuery()?->getDQL() ?? '';
 
-    expect($dql)->toContain('ORDER BY song.plays desc')
+    expect($dql)->toContain('ORDER BY song.plays DESC')
         ->and($dql)->not->toContain('song.id')
         ->and(sortedSongTitles($host))->toBe(['Charlie', 'Bravo', 'Alpha']);
 });
@@ -278,7 +279,7 @@ it('suppresses the tiebreaker when the key is already ordered', function (): voi
         ->query($entityManager->createQueryBuilder()
             ->select('song')
             ->from(Song::class, 'song')
-            ->addOrderBy('song.id', 'DESC')));
+            ->addOrderBy('song.id', SortDirection::Descending)));
 
     $keyedDql = $keyed->getFilteredSortedTableQuery()?->getDQL() ?? '';
 
@@ -296,7 +297,7 @@ it('tiebreaks a composite identifier by every identifier field in mapping order'
     $host->sortTable('label');
 
     expect($host->getFilteredSortedTableQuery()?->getDQL())
-        ->toContain('ORDER BY shortcut.label asc, shortcut.host asc, shortcut.path asc');
+        ->toContain('ORDER BY shortcut.label ASC, shortcut.host ASC, shortcut.path ASC');
 });
 
 it('appends only the identifier fields the query does not already order by', function (): void {
@@ -305,11 +306,11 @@ it('appends only the identifier fields the query does not already order by', fun
         ->query($entityManager->createQueryBuilder()
             ->select('shortcut')
             ->from(Shortcut::class, 'shortcut')
-            ->addOrderBy('shortcut.path', 'DESC')));
+            ->addOrderBy('shortcut.path', SortDirection::Descending)));
 
     $dql = $host->getFilteredSortedTableQuery()?->getDQL() ?? '';
 
-    expect($dql)->toContain('ORDER BY shortcut.path DESC, shortcut.host asc')
+    expect($dql)->toContain('ORDER BY shortcut.path DESC, shortcut.host ASC')
         ->and(mb_substr_count($dql, 'shortcut.path'))->toBe(1);
 });
 
@@ -320,7 +321,7 @@ it('tiebreaks a derived identity by the association path, which orders by its jo
 
     $query = $host->getFilteredSortedTableQuery();
 
-    expect($query?->getDQL())->toContain('ORDER BY residency.venue asc, residency.season asc')
+    expect($query?->getDQL())->toContain('ORDER BY residency.venue ASC, residency.season ASC')
         ->and(array_map(static fn (Residency $record): string => $record->getLabel(), $query?->getQuery()->getResult() ?? []))
         ->toBe(['Arena summer', 'Arena winter', 'Shed summer']);
 });
@@ -334,7 +335,7 @@ it('omits the tiebreaker when defaultKeySort is off', function (): void {
 
     $host->sortTable('title');
 
-    expect($host->getFilteredSortedTableQuery()?->getDQL())->toContain('ORDER BY song.title asc')
+    expect($host->getFilteredSortedTableQuery()?->getDQL())->toContain('ORDER BY song.title ASC')
         ->and($host->getFilteredSortedTableQuery()?->getDQL())->not->toContain('song.id');
 });
 
@@ -350,9 +351,9 @@ it('sorts by a to-one relation both directions keeping null-relation rows', func
     $descending->sortTable('artist.name', 'desc');
 
     expect($ascending->getFilteredSortedTableQuery()?->getDQL())
-        ->toContain('LEFT JOIN song.artist sy_artist', 'ORDER BY sy_artist.name asc, song.id asc')
+        ->toContain('LEFT JOIN song.artist sy_artist', 'ORDER BY sy_artist.name ASC, song.id ASC')
         ->and($descending->getFilteredSortedTableQuery()?->getDQL())
-        ->toContain('ORDER BY sy_artist.name desc, song.id desc')
+        ->toContain('ORDER BY sy_artist.name DESC, song.id DESC')
         ->and(array_keys($ascending->getTableRecords()->getRecords()))->toBe(match (TestPlatform::current()) {
             TestPlatform::PostgreSql => [2, 1, 3],
             TestPlatform::Sqlite, TestPlatform::MySql => [3, 2, 1],
@@ -389,7 +390,7 @@ it('applies the identifier tiebreak alongside a relation sort', function (): voi
     $ascending->sortTable('artist.name');
     $descending->sortTable('artist.name', 'desc');
 
-    expect($ascending->getFilteredSortedTableQuery()?->getDQL())->toContain('ORDER BY sy_artist.name asc, song.id asc')
+    expect($ascending->getFilteredSortedTableQuery()?->getDQL())->toContain('ORDER BY sy_artist.name ASC, song.id ASC')
         ->and(array_keys($ascending->getTableRecords()->getRecords()))->toBe([2, 3, 1])
         ->and(array_keys($descending->getTableRecords()->getRecords()))->toBe([1, 3, 2]);
 });
@@ -403,7 +404,7 @@ it('still suppresses the tiebreak when the query already orders by the root iden
 
     $query = $host->getFilteredSortedTableQuery();
 
-    expect($query?->getDQL())->toContain('ORDER BY song.id desc')
+    expect($query?->getDQL())->toContain('ORDER BY song.id DESC')
         ->and($query?->getDQLPart('orderBy'))->toHaveCount(1)
         ->and(sortedSongTitles($host))->toBe(['Bravo', 'Alpha', 'Charlie']);
 });
@@ -418,19 +419,19 @@ it('no longer suppresses the tiebreak for a relation path ending in the identifi
             ->select('song')
             ->from(Song::class, 'song')
             ->leftJoin('song.artist', 'artist')
-            ->addOrderBy('artist.id', 'ASC')));
+            ->addOrderBy('artist.id', SortDirection::Ascending)));
 
     $host->sortTable('artist.id');
 
     $query = $host->getFilteredSortedTableQuery();
 
-    expect($query?->getDQL())->toContain('ORDER BY sy_artist.id asc, song.id asc')
+    expect($query?->getDQL())->toContain('ORDER BY sy_artist.id ASC, song.id ASC')
         ->and($query?->getDQLPart('orderBy'))->toHaveCount(2)
         ->and(array_keys($host->getTableRecords()->getRecords()))->toBe(match (TestPlatform::current()) {
             TestPlatform::PostgreSql => [1, 2, 3],
             TestPlatform::Sqlite, TestPlatform::MySql => [3, 1, 2],
         })
-        ->and($joined->getFilteredSortedTableQuery()?->getDQL())->toContain('ORDER BY artist.id ASC, song.id asc');
+        ->and($joined->getFilteredSortedTableQuery()?->getDQL())->toContain('ORDER BY artist.id ASC, song.id ASC');
 });
 
 it('resolves a relation path in the default sort', function (): void {
@@ -441,7 +442,7 @@ it('resolves a relation path in the default sort', function (): void {
         ->defaultSort('artist.name', 'desc'));
 
     expect($host->getFilteredSortedTableQuery()?->getDQL())
-        ->toContain('LEFT JOIN song.artist sy_artist', 'ORDER BY sy_artist.name desc, song.id desc')
+        ->toContain('LEFT JOIN song.artist sy_artist', 'ORDER BY sy_artist.name DESC, song.id DESC')
         ->and(array_keys($host->getTableRecords()->getRecords()))->toBe(match (TestPlatform::current()) {
             TestPlatform::PostgreSql => [3, 1, 2],
             TestPlatform::Sqlite, TestPlatform::MySql => [1, 2, 3],
@@ -454,11 +455,11 @@ it('keeps a user-authored order ahead of table sorts', function (): void {
         ->query($entityManager->createQueryBuilder()
             ->select('song')
             ->from(Song::class, 'song')
-            ->addOrderBy('song.plays', 'ASC'))
+            ->addOrderBy('song.plays', SortDirection::Ascending))
         ->columns([TextColumn::make('title')->sortable()]));
 
     $host->sortTable('title');
 
-    expect($host->getFilteredSortedTableQuery()?->getDQL())->toContain('ORDER BY song.plays ASC, song.title asc, song.id asc')
+    expect($host->getFilteredSortedTableQuery()?->getDQL())->toContain('ORDER BY song.plays ASC, song.title ASC, song.id ASC')
         ->and(sortedSongTitles($host))->toBe(['Alpha', 'Bravo', 'Charlie']);
 });

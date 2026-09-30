@@ -1158,10 +1158,17 @@ neither of them the named refusal the mapping deserved:
 wraps nothing, so it is a 500 with a **closed** `EntityManager`, while
 `DissociateBulkAction`'s fetching arm catches and answers a danger toast over
 that same closed manager. `orderBy` is the
-mapping's own collection order, exactly as declared: Doctrine's docblock types it
-`array<string, 'asc'|'desc'>` but hands `#[ORM\OrderBy(['position' => 'ASC'])]`
-back as `'ASC'`, so the field is typed `array<string, string>` and a consumer that
-needs a canonical direction lower-cases it.
+mapping's own collection order, typed `array<string, SortDirection>`: from ORM 3.7
+the metadata normalises `#[ORM\OrderBy(['position' => 'ASC'])]` to PHP 8.6's
+`SortDirection` enum (a string being deprecated there), while
+`ToManyAssociationMapping::orderBy()` still declares `SortDirection|'asc'|'desc'`,
+so the reader converts any string it is handed through schemas'
+`Query\SortDirections::from()` — the one place a table direction string becomes the
+enum Doctrine's builder takes — and a consumer passes the value straight to
+`addOrderBy()`. Until the floor rose to ORM 3.7 the field was the mapping's raw
+string, and tables lower-cased it with `mb_strtolower()`, which the enum turned
+into a `TypeError` on every relation-scoped table whose association declares an
+order.
 
 ### The accessor trait is shared with the table and action tiers
 

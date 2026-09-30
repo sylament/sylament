@@ -56,7 +56,7 @@ uses(InteractsWithLiveComponents::class);
  * Keys are written as literals, never minted through the codec in an
  * expectation. The three `Circuit` children sort by name against both their
  * identifier order and their seed order, so the mapping's
- * `#[ORM\OrderBy(['name' => 'DESC'])]` is visible in every unsorted list, and
+ * `#[ORM\OrderBy(['name' => SortDirection::Descending])]` is visible in every unsorted list, and
  * two of them carry the same stop count, so a sort by that count falls through
  * to the mapping order, which settles the tie, with the composite root's own
  * identifier order appended behind it.
@@ -386,7 +386,7 @@ it('takes the mapping order as its default sort and appends the identifier order
     expect(compositeOwnerTableKeys(compositeOwnerTableHost($entityManager, $root, 'children', compositeOwnerTableCircuitColumns(...))))->toBe(['north~four', 'south~two', 'north~two'])
         ->and(compositeOwnerTableKeys($sorted))->toBe(['north~two', 'north~four', 'south~two'])
         ->and((string) $sorted->getFilteredSortedTableQuery()?->getDQL())
-        ->toContain('ORDER BY sy_agg1 desc, record.name desc, record.region desc, record.slot desc');
+        ->toContain('ORDER BY sy_agg1 DESC, record.name DESC, record.region DESC, record.slot DESC');
 });
 
 it('counts a relation of the related records and sorts the scoped page by that count', function (): void {

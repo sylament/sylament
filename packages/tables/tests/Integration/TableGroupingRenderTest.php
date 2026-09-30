@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Sylament\Tables\Tests\Integration;
 
 use Closure;
+use SortDirection;
 use Sylament\Actions\Action;
 use Sylament\Actions\BulkAction;
 use Sylament\Tables\Columns\Summarizers\Sum;
@@ -522,7 +523,7 @@ function groupedSummaryTableHtml(?Closure $configure = null, bool $isSummarized 
 
     $host = new TableHost(fn (Table $table): Table => ($configure ?? static fn (Table $table): Table => $table)(
         $table
-            ->query($entityManager->createQueryBuilder()->select('song')->from(SongEntity::class, 'song')->orderBy('song.id', 'ASC'))
+            ->query($entityManager->createQueryBuilder()->select('song')->from(SongEntity::class, 'song')->orderBy('song.id', SortDirection::Ascending))
             ->columns([TextColumn::make('mood'), $isSummarized ? $plays->summarize(Sum::make()) : $plays])
             ->groups(['mood'])
             ->groupsOnly(),

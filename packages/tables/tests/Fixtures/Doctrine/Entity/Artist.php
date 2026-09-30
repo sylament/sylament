@@ -7,6 +7,7 @@ namespace Sylament\Tables\Tests\Fixtures\Doctrine\Entity;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
+use SortDirection;
 
 #[ORM\Entity]
 class Artist
@@ -15,7 +16,7 @@ class Artist
      * @var Collection<int, Song>
      */
     #[ORM\OneToMany(targetEntity: Song::class, mappedBy: 'artist')]
-    #[ORM\OrderBy(['title' => 'ASC'])]
+    #[ORM\OrderBy(['title' => SortDirection::Ascending])]
     private Collection $songs;
 
     /**
@@ -26,7 +27,7 @@ class Artist
      * @var Collection<int, Album>
      */
     #[ORM\OneToMany(targetEntity: Album::class, mappedBy: 'artist', orphanRemoval: true)]
-    #[ORM\OrderBy(['title' => 'DESC'])]
+    #[ORM\OrderBy(['title' => SortDirection::Descending])]
     private Collection $albums;
 
     /**
@@ -52,7 +53,7 @@ class Artist
     #[ORM\JoinColumn(name: 'artist_id', referencedColumnName: 'id')]
     #[ORM\InverseJoinColumn(name: 'shortcut_host', referencedColumnName: 'host', onDelete: 'CASCADE')]
     #[ORM\InverseJoinColumn(name: 'shortcut_path', referencedColumnName: 'path', onDelete: 'CASCADE')]
-    #[ORM\OrderBy(['label' => 'ASC'])]
+    #[ORM\OrderBy(['label' => SortDirection::Ascending])]
     private Collection $shortcuts;
 
     /**

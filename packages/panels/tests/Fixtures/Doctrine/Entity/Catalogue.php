@@ -7,6 +7,7 @@ namespace Sylament\Panels\Tests\Fixtures\Doctrine\Entity;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
+use SortDirection;
 
 /**
  * The single-identifier root of the composite rig: the parent a composite
@@ -28,7 +29,7 @@ class Catalogue
      * @var Collection<int, Stamp>
      */
     #[ORM\OneToMany(targetEntity: Stamp::class, mappedBy: 'catalogue')]
-    #[ORM\OrderBy(['code' => 'ASC'])]
+    #[ORM\OrderBy(['code' => SortDirection::Ascending])]
     private Collection $stamps;
 
     public function __construct()

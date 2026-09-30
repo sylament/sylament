@@ -7,6 +7,7 @@ namespace Sylament\Panels\Tests\Fixtures\Doctrine\Entity;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
+use SortDirection;
 
 /**
  * The scalar pair: two string identifier fields, seeded with the characters
@@ -38,7 +39,7 @@ class Imprint
      * @var Collection<int, Binding>
      */
     #[ORM\OneToMany(targetEntity: Binding::class, mappedBy: 'imprint')]
-    #[ORM\OrderBy(['title' => 'ASC'])]
+    #[ORM\OrderBy(['title' => SortDirection::Ascending])]
     private Collection $bindings;
 
     /**
@@ -52,7 +53,7 @@ class Imprint
     #[ORM\JoinColumn(name: 'imprint_house', referencedColumnName: 'house')]
     #[ORM\JoinColumn(name: 'imprint_year', referencedColumnName: 'year')]
     #[ORM\InverseJoinColumn(name: 'motif_id', referencedColumnName: 'id')]
-    #[ORM\OrderBy(['name' => 'ASC'])]
+    #[ORM\OrderBy(['name' => SortDirection::Ascending])]
     private Collection $motifs;
 
     public function __construct()

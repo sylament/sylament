@@ -40,7 +40,7 @@ function summarySongsQuery(EntityManager $entityManager): QueryBuilder
     return $entityManager->createQueryBuilder()
         ->select('song')
         ->from(Song::class, 'song')
-        ->orderBy('song.title', 'ASC');
+        ->orderBy('song.title', SortDirection::Ascending);
 }
 
 it('reads one flat row of aliases over the query', function (): void {

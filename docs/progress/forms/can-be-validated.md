@@ -636,7 +636,7 @@ since [M7 · 4](../roadmap.md#m7--composite-identifiers), narrows the probe
 through schemas' own
 [`IdentifierConstraint`](../schemas/record-key.md#the-operations-and-their-dql)
 rather than through a field name. No new
-dependency either way: forms declares `doctrine/orm ^3.6`, which guarantees every
+dependency either way: forms declares `doctrine/orm ^3.7`, which guarantees every
 `Doctrine\ORM\*` symbol transitively, and `sylament/schemas`, which it has
 always required.
 

@@ -245,17 +245,17 @@ it('groups by the plain path of every identifier field', function (): void {
 
 it('orders by the identifier fields that are not ordered yet', function (): void {
     $entityManager = IdentityRig::create();
-    $composite = identityQuery($entityManager, PostTranslation::class)->orderBy('record.locale', 'desc');
-    $single = identityQuery($entityManager, Post::class, 'post')->orderBy('post.title', 'asc');
-    $ordered = identityQuery($entityManager, Post::class, 'post')->orderBy('post.id', 'desc');
+    $composite = identityQuery($entityManager, PostTranslation::class)->orderBy('record.locale', SortDirection::Descending);
+    $single = identityQuery($entityManager, Post::class, 'post')->orderBy('post.title', SortDirection::Ascending);
+    $ordered = identityQuery($entityManager, Post::class, 'post')->orderBy('post.id', SortDirection::Descending);
 
     IdentifierConstraint::orderBy($composite, 'record', PostTranslation::class, 'desc');
     IdentifierConstraint::orderBy($single, 'post', Post::class, 'asc');
     IdentifierConstraint::orderBy($ordered, 'post', Post::class, 'asc');
 
-    expect($composite->getDQL())->toEndWith('ORDER BY record.locale desc, record.post desc')
-        ->and($single->getDQL())->toEndWith('ORDER BY post.title asc, post.id asc')
-        ->and($ordered->getDQL())->toEndWith('ORDER BY post.id desc')
+    expect($composite->getDQL())->toEndWith('ORDER BY record.locale DESC, record.post DESC')
+        ->and($single->getDQL())->toEndWith('ORDER BY post.title ASC, post.id ASC')
+        ->and($ordered->getDQL())->toEndWith('ORDER BY post.id DESC')
         ->and(identityTitles($composite))->toBe(['en', 'en/GB', 'pt-BR']);
 });
 

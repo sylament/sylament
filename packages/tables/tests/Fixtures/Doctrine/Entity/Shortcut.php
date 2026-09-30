@@ -7,6 +7,7 @@ namespace Sylament\Tables\Tests\Fixtures\Doctrine\Entity;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
+use SortDirection;
 
 /**
  * A record keyed by two string fields, seeded with the characters a row key has
@@ -30,7 +31,7 @@ class Shortcut
      * @var Collection<int, ShortcutNote>
      */
     #[ORM\OneToMany(targetEntity: ShortcutNote::class, mappedBy: 'shortcut')]
-    #[ORM\OrderBy(['heading' => 'ASC'])]
+    #[ORM\OrderBy(['heading' => SortDirection::Ascending])]
     private Collection $notes;
 
     /**

@@ -7,6 +7,7 @@ namespace Sylament\Tables\Tests\Fixtures\Doctrine\Entity;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
+use SortDirection;
 
 /**
  * A record keyed by two scalar fields that owns a collection of its own kind
@@ -27,7 +28,7 @@ class Circuit
      * @var Collection<int, Circuit>
      */
     #[ORM\OneToMany(targetEntity: self::class, mappedBy: 'owner')]
-    #[ORM\OrderBy(['name' => 'DESC'])]
+    #[ORM\OrderBy(['name' => SortDirection::Descending])]
     private Collection $children;
 
     /**

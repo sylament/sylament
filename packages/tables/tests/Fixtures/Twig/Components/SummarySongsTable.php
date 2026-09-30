@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Sylament\Tables\Tests\Fixtures\Twig\Components;
 
 use Doctrine\ORM\EntityManager;
+use SortDirection;
 use Sylament\Tables\Columns\Summarizers\Average;
 use Sylament\Tables\Columns\Summarizers\Count;
 use Sylament\Tables\Columns\Summarizers\Range;
@@ -37,7 +38,7 @@ class SummarySongsTable implements InteractsWithTable
     public function table(Table $table): Table
     {
         return $table
-            ->query($this->songs()->createQueryBuilder()->select('song')->from(Song::class, 'song')->orderBy('song.id', 'ASC'))
+            ->query($this->songs()->createQueryBuilder()->select('song')->from(Song::class, 'song')->orderBy('song.id', SortDirection::Ascending))
             ->columns([
                 TextColumn::make('title')->summarize(Range::make()->minimalTextualDifference()),
                 TextColumn::make('plays')->summarize([Sum::make(), Average::make()]),

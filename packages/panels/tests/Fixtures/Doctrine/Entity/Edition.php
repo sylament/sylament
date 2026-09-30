@@ -7,6 +7,7 @@ namespace Sylament\Panels\Tests\Fixtures\Doctrine\Entity;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
+use SortDirection;
 
 /**
  * A composite identifier one of whose fields is literally named `id` — the
@@ -33,7 +34,7 @@ class Edition
      * @var Collection<int, Variant>
      */
     #[ORM\OneToMany(targetEntity: Variant::class, mappedBy: 'edition')]
-    #[ORM\OrderBy(['name' => 'ASC'])]
+    #[ORM\OrderBy(['name' => SortDirection::Ascending])]
     private Collection $variants;
 
     public function __construct()

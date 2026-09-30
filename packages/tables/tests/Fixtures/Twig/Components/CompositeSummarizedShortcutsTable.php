@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Sylament\Tables\Tests\Fixtures\Twig\Components;
 
 use Doctrine\ORM\EntityManagerInterface;
+use SortDirection;
 use Sylament\Tables\Columns\Summarizers\Sum;
 use Sylament\Tables\Columns\TextColumn;
 use Sylament\Tables\Concerns\HasTable;
@@ -33,7 +34,7 @@ class CompositeSummarizedShortcutsTable implements InteractsWithTable
     public function table(Table $table): Table
     {
         return $table
-            ->query($this->entityManager->createQueryBuilder()->select('shortcut')->from(Shortcut::class, 'shortcut')->orderBy('shortcut.position', 'ASC'))
+            ->query($this->entityManager->createQueryBuilder()->select('shortcut')->from(Shortcut::class, 'shortcut')->orderBy('shortcut.position', SortDirection::Ascending))
             ->columns([
                 TextColumn::make('label'),
                 TextColumn::make('hits.agent')->searchable(),

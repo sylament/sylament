@@ -143,7 +143,7 @@ it('adds the grouping order before the sort', function (): void {
     $host->sortTable('title');
 
     expect($host->getFilteredSortedTableQuery()?->getDQL())
-        ->toContain('ORDER BY song.plays desc, song.title asc, song.id asc');
+        ->toContain('ORDER BY song.plays DESC, song.title ASC, song.id ASC');
 });
 
 it('adds no ordering of its own when nothing is grouped', function (): void {
@@ -151,7 +151,7 @@ it('adds no ordering of its own when nothing is grouped', function (): void {
     $host->sortTable('title');
 
     expect($host->getFilteredSortedTableQuery()?->getDQL())
-        ->toContain('ORDER BY song.title asc, song.id asc')
+        ->toContain('ORDER BY song.title ASC, song.id ASC')
         ->and($host->getFilteredSortedTableQuery()?->getDQL())->not->toContain('song.plays');
 });
 
@@ -161,7 +161,7 @@ it('lets a reorder replace the grouping order', function (): void {
     $host->sortTable('title');
     $host->toggleTableReordering();
 
-    expect($host->getFilteredSortedTableQuery()?->getDQL())->toContain('ORDER BY song.position asc')
+    expect($host->getFilteredSortedTableQuery()?->getDQL())->toContain('ORDER BY song.position ASC')
         ->and($host->getFilteredSortedTableQuery()?->getDQL())->not->toContain('song.plays')
         ->and($host->getFilteredSortedTableQuery()?->getDQL())->not->toContain('song.title');
 });
@@ -174,7 +174,7 @@ it('eager loads the grouped relation once', function (): void {
 
     expect($dql)->toContain('LEFT JOIN song.artist sy_artist', 'SELECT song, sy_artist')
         ->and(mb_substr_count($dql, 'LEFT JOIN song.artist'))->toBe(1)
-        ->and($dql)->toContain('ORDER BY sy_artist.name asc');
+        ->and($dql)->toContain('ORDER BY sy_artist.name ASC');
 });
 
 it('groups a relation path and orders the rows by it', function (): void {
@@ -377,7 +377,7 @@ it('applies the grouping order alone under groupsOnly(), skipping the sorts', fu
     $host->tableGrouping = 'plays:desc';
     $host->sortTable('title');
 
-    expect($host->getFilteredSortedTableQuery()?->getDQL())->toContain('ORDER BY song.plays desc')
+    expect($host->getFilteredSortedTableQuery()?->getDQL())->toContain('ORDER BY song.plays DESC')
         ->and($host->getFilteredSortedTableQuery()?->getDQL())->not->toContain('song.title')
         ->and($host->getFilteredSortedTableQuery()?->getDQL())->not->toContain('song.id');
 });

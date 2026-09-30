@@ -7,6 +7,7 @@ namespace Sylament\Panels\Tests\Fixtures\Doctrine\Entity;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
+use SortDirection;
 
 /**
  * The single-identifier owner of a many-to-many onto composite records: the
@@ -35,7 +36,7 @@ class Gallery
     #[ORM\JoinColumn(name: 'gallery_id', referencedColumnName: 'id')]
     #[ORM\InverseJoinColumn(name: 'imprint_house', referencedColumnName: 'house')]
     #[ORM\InverseJoinColumn(name: 'imprint_year', referencedColumnName: 'year')]
-    #[ORM\OrderBy(['label' => 'ASC'])]
+    #[ORM\OrderBy(['label' => SortDirection::Ascending])]
     private Collection $imprints;
 
     public function __construct()

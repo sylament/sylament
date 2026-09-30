@@ -29,7 +29,7 @@ use Symfony\UX\LiveComponent\DefaultActionTrait;
  * relation search narrows, and — under `joinsHits` — a fetch join of that same
  * collection on a page of one, which is the two-step keyed page.
  *
- * `#[ORM\OrderBy(['label' => 'ASC'])]` on `Artist::$shortcuts` is what gives
+ * `#[ORM\OrderBy(['label' => SortDirection::Ascending])]` on `Artist::$shortcuts` is what gives
  * the table a default sort with no `defaultSort()` of its own, and the seed
  * labels run against the identifier order on purpose.
  */

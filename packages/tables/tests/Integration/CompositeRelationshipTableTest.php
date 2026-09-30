@@ -32,7 +32,7 @@ uses(InteractsWithLiveComponents::class);
  * Keys are written as literals, never minted through the codec in an
  * expectation — a codec agreeing with itself proves nothing. `Almanac` sorts
  * before `Zenith` while its key sorts after, so the mapping's
- * `#[ORM\OrderBy(['label' => 'ASC'])]` is visible in every unsorted list.
+ * `#[ORM\OrderBy(['label' => SortDirection::Ascending])]` is visible in every unsorted list.
  *
  * Kernel reboot is disabled throughout for `CompositeKeyTableTest`'s reason:
  * the fixture database is an in-memory SQLite held by a container service, so

@@ -7,6 +7,7 @@ namespace Sylament\Schemas\Tests\Fixtures\Doctrine\Entity;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
+use SortDirection;
 
 #[ORM\Entity]
 class Post
@@ -32,7 +33,7 @@ class Post
      * @var Collection<int, PostSection>
      */
     #[ORM\OneToMany(targetEntity: PostSection::class, mappedBy: 'post', cascade: ['persist'], orphanRemoval: true)]
-    #[ORM\OrderBy(['position' => 'ASC'])]
+    #[ORM\OrderBy(['position' => SortDirection::Ascending])]
     private Collection $sections;
 
     /**
@@ -60,7 +61,7 @@ class Post
      * @var Collection<int, Reply>
      */
     #[ORM\OneToMany(targetEntity: Reply::class, mappedBy: 'post')]
-    #[ORM\OrderBy(['body' => 'DESC'])]
+    #[ORM\OrderBy(['body' => SortDirection::Descending])]
     private Collection $replies;
 
     /**

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Sylament\Tables\Tests\Integration;
 
 use Closure;
+use SortDirection;
 use Sylament\Actions\Action;
 use Sylament\Actions\BulkAction;
 use Sylament\Support\Tests\Doctrine\RecordingMiddleware;
@@ -78,7 +79,7 @@ function deferrableSummarizedTableHost(RecordingMiddleware $recorder, ?Closure $
 
     return new TableHost(fn (Table $table): Table => ($configure ?? static fn (Table $table): Table => $table)(
         $table
-            ->query($entityManager->createQueryBuilder()->select('song')->from(Song::class, 'song')->orderBy('song.id', 'ASC'))
+            ->query($entityManager->createQueryBuilder()->select('song')->from(Song::class, 'song')->orderBy('song.id', SortDirection::Ascending))
             ->columns([TextColumn::make('title'), TextColumn::make('plays')->summarize(Sum::make())]),
     ));
 }

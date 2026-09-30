@@ -312,7 +312,7 @@ it('pages a composite table whose query joins a to-many association', function (
             ->from(Residency::class, 'residency')
             ->leftJoin('residency.venue', 'sy_gig_venue')
             ->leftJoin('sy_gig_venue.gigs', 'sy_gigs')
-            ->orderBy('residency.position', 'ASC'))
+            ->orderBy('residency.position', SortDirection::Ascending))
         ->paginated([2]);
 
     $host = new TableHost($configure);
@@ -347,7 +347,7 @@ it('pages a single-derived-identity table whose query joins a to-many associatio
             ->from(LockerSeal::class, 'seal')
             ->leftJoin('seal.locker', 'sy_locker')
             ->leftJoin('sy_locker.items', 'sy_items')
-            ->orderBy('seal.position', 'ASC'))
+            ->orderBy('seal.position', SortDirection::Ascending))
         ->paginated([1]));
 
     $paginator = $host->getTableRecords();
@@ -369,7 +369,7 @@ it('probes one extra record past a keyed fetch-joined page', function (): void {
             ->from(Residency::class, 'residency')
             ->leftJoin('residency.venue', 'sy_gig_venue')
             ->leftJoin('sy_gig_venue.gigs', 'sy_gigs')
-            ->orderBy('residency.position', 'ASC'))
+            ->orderBy('residency.position', SortDirection::Ascending))
         ->paginated([3])
         ->paginationMode(PaginationMode::Simple);
 
@@ -403,7 +403,7 @@ it('narrows a single-identifier fetch-joined page through Doctrine, and a keyed 
             ->select('venue', 'sy_gigs')
             ->from(Venue::class, 'venue')
             ->leftJoin('venue.gigs', 'sy_gigs')
-            ->orderBy('venue.name', 'ASC'))
+            ->orderBy('venue.name', SortDirection::Ascending))
         ->paginated([1]));
 
     $recorder->reset();
@@ -417,7 +417,7 @@ it('narrows a single-identifier fetch-joined page through Doctrine, and a keyed 
             ->from(Residency::class, 'residency')
             ->leftJoin('residency.venue', 'sy_gig_venue')
             ->leftJoin('sy_gig_venue.gigs', 'sy_gigs')
-            ->orderBy('residency.position', 'ASC'))
+            ->orderBy('residency.position', SortDirection::Ascending))
         ->paginated([1]));
 
     $recorder->reset();
@@ -448,7 +448,7 @@ it('refuses a keyed fetch-joined page whose query sets its own output walker', f
         ->from(LockerSeal::class, 'seal')
         ->leftJoin('seal.locker', 'sy_locker')
         ->leftJoin('sy_locker.items', 'sy_items')
-        ->orderBy('seal.position', 'ASC');
+        ->orderBy('seal.position', SortDirection::Ascending);
 
     $query->setHint(Query::HINT_CUSTOM_OUTPUT_WALKER, CountOutputWalker::class);
 
@@ -470,7 +470,7 @@ it('refuses the total of a composite table whose query sets its own output walke
     $query = $entityManager->createQueryBuilder()
         ->select('residency')
         ->from(Residency::class, 'residency')
-        ->orderBy('residency.position', 'ASC');
+        ->orderBy('residency.position', SortDirection::Ascending);
 
     $query->setHint(Query::HINT_CUSTOM_OUTPUT_WALKER, CountOutputWalker::class);
 
@@ -511,7 +511,7 @@ it('pages and counts a single derived identity joining no collection under a cus
     $query = $entityManager->createQueryBuilder()
         ->select('seal')
         ->from(LockerSeal::class, 'seal')
-        ->orderBy('seal.position', 'ASC');
+        ->orderBy('seal.position', SortDirection::Ascending);
 
     if ($route === 'configuration') {
         $entityManager->getConfiguration()->setDefaultQueryHints([Query::HINT_CUSTOM_OUTPUT_WALKER => PassthroughOutputWalker::class]);
@@ -538,8 +538,8 @@ it('pages and counts a single derived identity joining no collection under a cus
 it('pages a keyed table joining no collection in simple mode under a custom output walker', function (string $flavour): void {
     $entityManager = $flavour === 'composite' ? pagedResidencies() : sealedLockers();
     $query = $flavour === 'composite'
-        ? $entityManager->createQueryBuilder()->select('residency')->from(Residency::class, 'residency')->orderBy('residency.position', 'ASC')
-        : $entityManager->createQueryBuilder()->select('seal')->from(LockerSeal::class, 'seal')->orderBy('seal.position', 'ASC');
+        ? $entityManager->createQueryBuilder()->select('residency')->from(Residency::class, 'residency')->orderBy('residency.position', SortDirection::Ascending)
+        : $entityManager->createQueryBuilder()->select('seal')->from(LockerSeal::class, 'seal')->orderBy('seal.position', SortDirection::Ascending);
 
     $query->setHint(Query::HINT_CUSTOM_OUTPUT_WALKER, PassthroughOutputWalker::class);
 
@@ -568,7 +568,7 @@ it('renders a composite table joining a to-many when it is not paged', function 
             ->from(Residency::class, 'residency')
             ->leftJoin('residency.venue', 'sy_gig_venue')
             ->leftJoin('sy_gig_venue.gigs', 'sy_gigs')
-            ->orderBy('residency.position', 'ASC'));
+            ->orderBy('residency.position', SortDirection::Ascending));
 
         return $option === 'all' ? $table->paginated([2, 'all']) : $table->paginated(false);
     });
@@ -597,7 +597,7 @@ it('shows everything under the all option with a custom output walker on the que
         ->from(Residency::class, 'residency')
         ->leftJoin('residency.venue', 'sy_gig_venue')
         ->leftJoin('sy_gig_venue.gigs', 'sy_gigs')
-        ->orderBy('residency.position', 'ASC');
+        ->orderBy('residency.position', SortDirection::Ascending);
 
     $query->setHint(Query::HINT_CUSTOM_OUTPUT_WALKER, PassthroughOutputWalker::class);
 
@@ -622,7 +622,7 @@ it('pages a composite table whose query joins no collection', function (): void 
     $recorder = new RecordingMiddleware();
     $entityManager = pagedResidencies($recorder);
     $host = new TableHost(fn (Table $table): Table => $table
-        ->query($entityManager->createQueryBuilder()->select('residency')->from(Residency::class, 'residency')->orderBy('residency.position', 'ASC'))
+        ->query($entityManager->createQueryBuilder()->select('residency')->from(Residency::class, 'residency')->orderBy('residency.position', SortDirection::Ascending))
         ->paginated([2]));
 
     $recorder->reset();
@@ -669,7 +669,7 @@ it('leaves a single-identifier table fetch-joining a to-many free to page', func
             ->select('song', 'sy_genres')
             ->from(Song::class, 'song')
             ->leftJoin('song.genres', 'sy_genres')
-            ->orderBy('song.id', 'ASC'))
+            ->orderBy('song.id', SortDirection::Ascending))
         ->paginated([2]));
 
     $paginator = $host->getTableRecords();
@@ -690,7 +690,7 @@ it('pages and counts a single-identifier fetch join under a custom output walker
         ->select('artist', 'sy_songs')
         ->from(Artist::class, 'artist')
         ->leftJoin('artist.songs', 'sy_songs')
-        ->orderBy('artist.name', 'ASC');
+        ->orderBy('artist.name', SortDirection::Ascending);
 
     $query->setHint(Query::HINT_CUSTOM_OUTPUT_WALKER, PassthroughOutputWalker::class);
 

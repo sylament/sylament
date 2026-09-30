@@ -13,6 +13,7 @@ use Doctrine\ORM\Query\Expr\OrderBy;
 use Doctrine\ORM\Query\Parameter;
 use Doctrine\ORM\QueryBuilder;
 use LogicException;
+use Sylament\Schemas\Query\SortDirections;
 
 final class IdentifierConstraint
 {
@@ -172,7 +173,7 @@ final class IdentifierConstraint
 
         foreach (self::groupBy($query, $alias, $class) as $path) {
             if (!in_array($path, $ordered, true)) {
-                $query->addOrderBy($path, $direction);
+                $query->addOrderBy($path, SortDirections::from($direction));
             }
         }
     }

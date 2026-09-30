@@ -27,7 +27,7 @@ function valuesRig(Values $summarizer, string $columnName = 'mood'): Values
     );
 
     $host = new TableHost(fn (Table $table): Table => $table->query(
-        $entityManager->createQueryBuilder()->select('song')->from(Song::class, 'song')->orderBy('song.title', 'ASC'),
+        $entityManager->createQueryBuilder()->select('song')->from(Song::class, 'song')->orderBy('song.title', SortDirection::Ascending),
     ));
 
     $summarizer

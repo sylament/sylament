@@ -181,7 +181,7 @@ it('sorts a relation-scoped query through a hop named after the subselect owner 
     $query = relationJoinerScopedCircuitsQuery();
 
     $expression = ColumnPathResolver::resolveOrderable($query, 'owner.name');
-    $records = $query->orderBy($expression, 'ASC')->getQuery()->getResult();
+    $records = $query->orderBy($expression, SortDirection::Ascending)->getQuery()->getResult();
 
     expect($expression)->toBe('sy_owner_2.name')
         ->and($query->getDQL())->toContain('LEFT JOIN record.owner sy_owner_2')
@@ -193,7 +193,7 @@ it('sorts a relation-scoped query through a hop named after the subselect correl
     $query = relationJoinerScopedCircuitsQuery();
 
     $expression = ColumnPathResolver::resolveOrderable($query, 'related.name');
-    $records = $query->orderBy($expression, 'ASC')->getQuery()->getResult();
+    $records = $query->orderBy($expression, SortDirection::Ascending)->getQuery()->getResult();
 
     expect($expression)->toBe('sy_related_2.name')
         ->and($query->getDQL())->toContain('LEFT JOIN record.related sy_related_2')

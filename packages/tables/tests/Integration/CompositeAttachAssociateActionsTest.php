@@ -305,7 +305,7 @@ it('refuses a malformed, unknown, already-attached or duplicated key by the same
         ->and(compositeAttachOutcome($client, 'plain~about'))->toContain('its select never offered')
         ->and(compositeAttachOutcome($client, ['plain~contact', 'plain~contact'], $multiple))->toContain('its select never offered')
         ->and(compositeAttachOutcome($client, ['plain~contact', 'www=2Eexample=2Ecom~=2Fblog=2F2026=2Fa=20b'], $multiple))->toBe('attached')
-        // `Artist::$shortcuts` carries `#[OrderBy(['label' => 'ASC'])]`, so the
+        // `Artist::$shortcuts` carries `#[OrderBy(['label' => SortDirection::Ascending])]`, so the
         // reloaded collection reads in label order rather than attach order.
         ->and(compositeAttachRelatedKeys($client, $entityManager, ArtistShortcutsAttachTable::class))
         ->toBe(['plain~about', 'www=2Eexample=2Ecom~=2Fblog=2F2026=2Fa=20b', 'plain~contact']);

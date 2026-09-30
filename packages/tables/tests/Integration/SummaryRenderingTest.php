@@ -6,6 +6,7 @@ namespace Sylament\Tables\Tests\Integration;
 
 use Closure;
 use Doctrine\ORM\QueryBuilder;
+use SortDirection;
 use Sylament\Actions\Action;
 use Sylament\Actions\BulkAction;
 use Sylament\Support\Tests\Doctrine\RecordingMiddleware;
@@ -65,7 +66,7 @@ function summarizedTableHost(array $columns, ?Closure $configure = null, ?string
 
     $host = new TableHost(fn (Table $table): Table => ($configure ?? static fn (Table $table): Table => $table)(
         $table
-            ->query($entityManager->createQueryBuilder()->select('song')->from(Song::class, 'song')->orderBy('song.id', 'ASC'))
+            ->query($entityManager->createQueryBuilder()->select('song')->from(Song::class, 'song')->orderBy('song.id', SortDirection::Ascending))
             ->columns($columns),
     ));
 
@@ -108,7 +109,7 @@ function keyedSummarizedTableHost(?RecordingMiddleware $recorder = null): TableH
     );
 
     return new TableHost(fn (Table $table): Table => $table
-        ->query($entityManager->createQueryBuilder()->select('residency')->from(Residency::class, 'residency')->orderBy('residency.position', 'ASC'))
+        ->query($entityManager->createQueryBuilder()->select('residency')->from(Residency::class, 'residency')->orderBy('residency.position', SortDirection::Ascending))
         ->columns([TextColumn::make('label'), TextColumn::make('position')->summarize(Sum::make())])
         ->paginated([2]));
 }
@@ -518,7 +519,7 @@ function moodEdgeSummaryCrawler(?Closure $configure = null): Crawler
 
     $host = new TableHost(fn (Table $table): Table => ($configure ?? static fn (Table $table): Table => $table)(
         $table
-            ->query($entityManager->createQueryBuilder()->select('song')->from(Song::class, 'song')->orderBy('song.id', 'ASC'))
+            ->query($entityManager->createQueryBuilder()->select('song')->from(Song::class, 'song')->orderBy('song.id', SortDirection::Ascending))
             ->columns([TextColumn::make('mood'), TextColumn::make('plays')->summarize(Sum::make())])
             ->groups(['mood']),
     ));

@@ -77,5 +77,6 @@ it('searches through the fetch join under another alias', function (): void {
     [$client] = fetchJoinedAliasSeededClient();
 
     expect((string) $this->createLiveComponent('ArtistShortcutsTable', ['joinsHits' => true], client: $client)->set('tableSearch', 'Mozilla')->render())
-        ->toContain('Zenith');
+        ->toContain('Zenith')
+        ->not->toContain('Almanac');
 });

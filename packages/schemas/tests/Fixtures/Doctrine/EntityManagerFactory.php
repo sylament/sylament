@@ -31,6 +31,7 @@ final class EntityManagerFactory
         SerialType::NAME => SerialType::class,
         AmountType::NAME => AmountType::class,
         TokenType::NAME => TokenType::class,
+        MonikerType::NAME => MonikerType::class,
     ];
 
     /**

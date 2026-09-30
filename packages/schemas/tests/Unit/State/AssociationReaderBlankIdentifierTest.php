@@ -8,6 +8,7 @@ use Sylament\Schemas\State\AssociationReader;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\Headband;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\Listing;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\ListingNote;
+use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\Nameplate;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\Post;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\PostTranslation;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\Redirect;
@@ -72,6 +73,12 @@ it('answers whether a record key still holds a blank component, read as persist(
 
             return $translation;
         })(),
+        'a value object printing blank beside a set half' => (static function (): Nameplate {
+            $nameplate = new Nameplate();
+            $nameplate->setSlot(1);
+
+            return $nameplate;
+        })(),
         default => (static function (): PostTranslation {
             $translation = new PostTranslation();
             $translation->setPost(new Post());
@@ -93,4 +100,5 @@ it('answers whether a record key still holds a blank component, read as persist(
     'a blank half beside a complete identifier association' => ['a blank half beside a complete identifier association', true],
     'a derived identity under an owner whose generated id is pending' => ['a derived identity under an owner whose generated id is pending', false],
     'a blank half beside an owner whose generated id is pending' => ['a blank half beside an owner whose generated id is pending', true],
+    'a value object printing blank beside a set half' => ['a value object printing blank beside a set half', true],
 ]);

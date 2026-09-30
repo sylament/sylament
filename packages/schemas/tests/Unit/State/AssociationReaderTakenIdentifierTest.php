@@ -20,6 +20,7 @@ use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\Divider;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\Enrolment;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\Headband;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\Listing;
+use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\Nameplate;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\Pennant;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\Placard;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\Plinth;
@@ -435,6 +436,9 @@ it('neither claims nor looks up a key holding a blank or a null component', func
     } elseif ($shape === 'blank target') {
         $record = new Headband();
         $record->setSpine(new Spine());
+    } elseif ($shape === 'blank value object') {
+        $record = new Nameplate();
+        $record->setSlot(1);
     } else {
         $record = new Shortlink();
         $record->setCode($shape === 'whitespace' ? '   ' : '');
@@ -450,6 +454,7 @@ it('neither claims nor looks up a key holding a blank or a null component', func
     'a single string of whitespace' => ['whitespace'],
     'an association half still null' => ['null half'],
     'an association onto a record whose own key is still blank' => ['blank target'],
+    'a value object printing blank' => ['blank value object'],
 ]);
 
 it('neither claims nor looks up two new siblings on a code of whitespace alone', function (): void {

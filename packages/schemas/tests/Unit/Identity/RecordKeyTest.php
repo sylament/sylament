@@ -14,6 +14,7 @@ use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\Flagged;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\Listing;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\ListingNote;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\ListingSeal;
+use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\Nameplate;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\Pallet;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\Placement;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\Post;
@@ -31,6 +32,7 @@ use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\Voucher;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\Zone;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\EntityManagerFactory;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\IdentityRig;
+use Sylament\Schemas\Tests\Fixtures\Doctrine\Moniker;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\Sku;
 use Sylament\Schemas\Tests\Fixtures\Identity\UntypedTranslation;
 use Sylament\Support\Tests\Doctrine\TestPlatform;
@@ -491,6 +493,33 @@ it('finds no key for a blank component before its type converts it', function ()
     $ticket->setSerial('');
 
     expect(RecordKey::find(EntityManagerFactory::create(), $ticket))->toBeNull();
+});
+
+it('finds no key while a value-object component prints blank, exactly as for a blank string', function (string $moniker): void {
+    $nameplate = new Nameplate();
+    $nameplate->setMoniker(new Moniker($moniker));
+    $nameplate->setSlot(1);
+
+    expect(RecordKey::find(EntityManagerFactory::create(), $nameplate))->toBeNull();
+})->with([
+    'empty' => [''],
+    'whitespace' => ['  '],
+]);
+
+it('keys a record once its value-object component prints something', function (): void {
+    $nameplate = new Nameplate();
+    $nameplate->setMoniker(new Moniker('front'));
+    $nameplate->setSlot(1);
+
+    expect(RecordKey::find(EntityManagerFactory::create(), $nameplate))->toBe('front~1');
+});
+
+it('refuses to key a record whose value-object component prints blank', function (): void {
+    $nameplate = new Nameplate();
+    $nameplate->setSlot(1);
+
+    expect(fn (): string => RecordKey::of(EntityManagerFactory::create(), $nameplate))
+        ->toThrow(LogicException::class, 'The identifier of [' . Nameplate::class . '] is not a printable value. It holds moniker "", slot 1.');
 });
 
 it('refuses a blank component through of() exactly as before the conversion', function (string $serial): void {

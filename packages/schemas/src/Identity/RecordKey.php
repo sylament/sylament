@@ -9,6 +9,8 @@ use Doctrine\DBAL\Types\Type;
 use Doctrine\ORM\EntityManagerInterface;
 use LogicException;
 
+use function Sylament\Support\blank;
+
 final class RecordKey
 {
     public const string SEPARATOR = '~';
@@ -30,12 +32,13 @@ final class RecordKey
 
     /**
      * Null when the record carries no complete identifier yet — a component
-     * that is null or still blank — which says nothing about whether it is
-     * persisted: an assigned key is complete before the first flush.
+     * that is null or blank, a `Stringable` that prints blank included — which
+     * says nothing about whether it is persisted: an assigned key is complete
+     * before the first flush.
      *
      * @param class-string|null $class the mapped class to key the record by, when the caller declares one
      *
-     * @throws LogicException      when a component is set but not printable
+     * @throws LogicException      when a component is not blank and still has no printed form
      * @throws ConversionException when a component's type refuses to convert it
      */
     public static function find(EntityManagerInterface $entityManager, object $record, ?string $class = null): ?string
@@ -43,7 +46,7 @@ final class RecordKey
         $class ??= $record::class;
         $values = self::flatten($entityManager, $record, $class);
 
-        if ($values === null || array_any($values, static fn (mixed $value): bool => is_string($value) && mb_trim($value) === '')) {
+        if ($values === null || array_any($values, static fn (mixed $value): bool => blank($value))) {
             return null;
         }
 
@@ -121,7 +124,7 @@ final class RecordKey
 
         return array_map(
             static function (mixed $value, string $name) use ($platform): mixed {
-                if (is_string($value) && mb_trim($value) === '') {
+                if (blank($value)) {
                     return $value;
                 }
 

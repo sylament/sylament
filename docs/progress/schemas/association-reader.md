@@ -381,7 +381,9 @@ single-identifier regression this milestone forbids. So an assigned single scala
 identifier left blank stays HEAD's behaviour here, unrefused.
 [M7 · 6](../roadmap.md#m7--composite-identifiers) left this predicate as it
 was: its taken-key pass treats a blank component as incomplete and looks nothing
-up, so a blank single scalar key on a create path still reaches Doctrine as it
+up — a `Stringable` component that prints blank included, since M7 · 9 reads
+blankness through support's `blank()` there as everywhere else in the reader —
+so a blank single scalar key on a create path still reaches Doctrine as it
 did — which is what keeps two new children whose `#[PrePersist]` fills that key
 from blank saving — and only [`ReplicateAction`](../actions/replicate-action.md)
 refuses one by name, because it asks once every filler has run.

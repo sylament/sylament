@@ -298,11 +298,11 @@ final class RecordKey
     public static function of(EntityManagerInterface $entityManager, object $record, ?string $class = null): string;
 
     /**
-     * Null while a component is missing or still blank; otherwise minted as of() mints.
+     * Null while a component is missing or blank — a `Stringable` that prints blank included; otherwise minted as of() mints.
      *
      * @param class-string|null $class the mapped class to key by, when the caller declares one
      *
-     * @throws LogicException when a component is set but not printable
+     * @throws LogicException when a component is not blank and still has no printed form
      */
     public static function find(EntityManagerInterface $entityManager, object $record, ?string $class = null): ?string;
 
@@ -893,13 +893,20 @@ refuses an id generator on a composite identifier — they part company: a recor
 whose fields the user has filled in is keyable before the first `flush()`, and
 `find()` answers its key. A caller that needs persistence asks the `UnitOfWork`.
 
-A component that is `null` **or still blank** counts as not assigned yet, and
+A component that is `null` **or still blank** — a whitespace-only string, or a
+`Stringable` that prints as one, the test support's `blank()` applies — counts
+as not assigned yet, and
 `find()` answers `null` for it: an assigned string key sits at `''` until a form
 fills it, and a create form's `unique(ignoreRecord:)` must be able to ask without
 a throw. `of()` draws the line differently on purpose and keeps both refusals a
 table has always raised — `has none set` for a missing component, `is not a
 printable value` for a blank or unprintable one — because a row index cannot
 proceed without a key.
+
+Before M7 · 9 the test read `is_string()` first, so a value object printing
+blank — a slug object whose constructor defaults to `''` — reached the printer
+and threw *"is not a printable value"* out of `find()`, where a blank string
+answered `null`.
 
 Completeness is **counted**, never tested for emptiness, and this is the trap the
 method exists to close. `ClassMetadata::getIdentifierValues()` **drops** a null
@@ -1005,7 +1012,7 @@ constraint it answers is not the one a reader assumes.
 private `asStored()`: per component,
 `Type::getType($name)->convertToPHPValue($type->convertToDatabaseValue($value, $platform), $platform)`,
 typed by `IdentifierFields::of()->types`. Two conversions per component per mint,
-none for a blank string component, which is handed back as it is, and no
+none for a blank component, which is handed back as it is, and no
 statement.
 
 Before [M7 · 6](../roadmap.md#m7--composite-identifiers) the mint printed the
@@ -1035,8 +1042,9 @@ and `toIdentifier()` still decodes no spelling the type would rewrite
 (*mints nothing through the type from raw values, and decodes no spelling the
 type would rewrite*). And a blank component is still no key at all: `find()`
 reads it **before** its type converts it and answers `null` (*finds no key for a
-blank component before its type converts it*), and `asStored()` hands a string
-component that is blank — whitespace alone included — back unconverted, so
+blank component before its type converts it*), and `asStored()` hands a blank
+component — whitespace alone, or a `Stringable` printing that — back
+unconverted, so
 `of()` refuses it with its documented *"… is not a printable value."*, exactly
 as before (*refuses a blank component through `of()` exactly as before the
 conversion*). That pass-through is load-bearing rather than tidy: a type's

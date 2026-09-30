@@ -600,7 +600,7 @@ class AssociationReader
         foreach ($metadata->identifier as $field) {
             $value = $metadata->getFieldValue($record, $field);
 
-            if ($value === null || (is_string($value) && mb_trim($value) === '')) {
+            if (blank($value)) {
                 return false;
             }
 
@@ -625,7 +625,7 @@ class AssociationReader
 
         $values = RecordKey::values($entityManager, $record, $metadata->getName());
 
-        if ($values === null || array_any($values, static fn (mixed $value): bool => is_string($value) && mb_trim($value) === '')) {
+        if ($values === null || array_any($values, static fn (mixed $value): bool => blank($value))) {
             return false;
         }
 

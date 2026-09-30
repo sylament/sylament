@@ -5,12 +5,17 @@ declare(strict_types=1);
 use Doctrine\DBAL\Exception\ForeignKeyConstraintViolationException;
 use Doctrine\DBAL\Platforms\SQLitePlatform;
 use Doctrine\DBAL\Types\Type;
+use Doctrine\ORM\Cache\CacheConfiguration;
+use Doctrine\ORM\Cache\DefaultCacheFactory;
+use Doctrine\ORM\Cache\RegionsConfiguration;
+use Doctrine\ORM\Configuration;
 use Sylament\Support\Tests\Doctrine\RecordingMiddleware;
 use Sylament\Support\Tests\Doctrine\TestEntityManagers;
 use Sylament\Support\Tests\Doctrine\TestPlatform;
 use Sylament\Support\Tests\Fixtures\Doctrine\Entity\Book;
 use Sylament\Support\Tests\Fixtures\Doctrine\Entity\Shelf;
 use Sylament\Support\Tests\Fixtures\Doctrine\ShoutType;
+use Symfony\Component\Cache\Adapter\ArrayAdapter;
 
 /**
  * @return list<string>
@@ -85,4 +90,23 @@ it('enforces foreign keys on SQLite without recording the pragma that turns them
     expect(fn (): int|string => $entityManager->getConnection()->executeStatement('DELETE FROM Shelf'))
         ->toThrow(ForeignKeyConstraintViolationException::class)
         ->and($recorder->statements())->each->not->toStartWith('PRAGMA');
+});
+
+it('hands the configuration to a callback before the manager is built, on the path the platform takes and on SQLite', function (): void {
+    $configure = static function (Configuration $config): void {
+        $cache = new CacheConfiguration();
+        $cache->setCacheFactory(new DefaultCacheFactory(new RegionsConfiguration(), new ArrayAdapter()));
+
+        $config->setSecondLevelCacheEnabled();
+        $config->setSecondLevelCacheConfiguration($cache);
+    };
+
+    $created = TestEntityManagers::create('support', doctrineFixtureEntityPaths(), configure: $configure);
+    $sqlite = TestEntityManagers::createSqlite('support', doctrineFixtureEntityPaths(), configure: $configure);
+
+    expect($created->getConfiguration()->isSecondLevelCacheEnabled())->toBeTrue()
+        ->and($sqlite->getConfiguration()->isSecondLevelCacheEnabled())->toBeTrue()
+        ->and($created->getCache())->not->toBeNull()
+        ->and($sqlite->getCache())->not->toBeNull()
+        ->and(TestEntityManagers::createSqlite('support', doctrineFixtureEntityPaths())->getConfiguration()->isSecondLevelCacheEnabled())->toBeFalse();
 });

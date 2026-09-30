@@ -600,7 +600,7 @@ class AssociationReader
         foreach ($metadata->identifier as $field) {
             $value = $metadata->getFieldValue($record, $field);
 
-            if ($value === null || (! $metadata->hasAssociation($field) && blank($value))) {
+            if ($metadata->hasAssociation($field) ? $value === null : blank($value)) {
                 return false;
             }
 

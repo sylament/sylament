@@ -10,6 +10,7 @@ use LogicException;
 use Sylament\Actions\Concerns\CanCustomizeProcess;
 use Sylament\Schemas\Identity\IdentifierConstraint;
 use Sylament\Schemas\State\AssociationTarget;
+use Sylament\Schemas\State\Relationship;
 use Throwable;
 
 class DissociateBulkAction extends BulkAction
@@ -60,11 +61,12 @@ class DissociateBulkAction extends BulkAction
      * over a one-column foreign key, SQL over the mapping's own join columns
      * where it spans several — bypassing the UnitOfWork the way
      * DeleteBulkAction's delete does — already-managed entities keep their stale
-     * owner until reloaded — and evicts the second-level cache region of the
-     * class it writes, which is all a cached collection needs to reload. Every
-     * mapping refusal runs before either arm — the four detach refusals and the
-     * many-to-many one — as does the by-key arm's own one, the shape of the
-     * keys, so all six propagate as developer errors rather than a toast.
+     * owner until reloaded — and evicts from the second-level cache the entity
+     * region of the class it writes and the collection region of the owner's
+     * association. Every mapping refusal runs before either arm — the four
+     * detach refusals and the many-to-many one — as does the by-key arm's own
+     * one, the shape of the keys, so all six propagate as developer errors
+     * rather than a toast.
      *
      * @param array<mixed> $records
      */
@@ -99,7 +101,7 @@ class DissociateBulkAction extends BulkAction
             $chunks = IdentifierConstraint::chunk($entityManager, $target->targetClass, $keys);
 
             try {
-                $action->reportBulkProcessingSuccessfulRecordsCount($action->dissociateSelectedRecordsByKey($entityManager, $target, $mappedBy, $chunks));
+                $action->reportBulkProcessingSuccessfulRecordsCount($action->dissociateSelectedRecordsByKey($entityManager, $relationship, $target, $mappedBy, $chunks));
             } catch (Throwable) {
                 // The chunks are one transaction, so a throw means the whole
                 // batch failed; the danger toast says so instead of a 500.
@@ -132,11 +134,12 @@ class DissociateBulkAction extends BulkAction
      * One `UPDATE` per chunk — DQL, or SQL where the foreign key spans several
      * columns — and one transaction from the second chunk on, so a mid-batch
      * failure means the whole batch failed —
-     * {@see DeleteBulkAction::deleteSelectedRecordsByKey()}'s shape.
+     * {@see DeleteBulkAction::deleteSelectedRecordsByKey()}'s shape. Once every
+     * chunk has run, it evicts the collection region of the owner's association.
      *
      * @param list<list<string>> $chunks
      */
-    private function dissociateSelectedRecordsByKey(EntityManagerInterface $entityManager, AssociationTarget $target, string $mappedBy, array $chunks): int
+    private function dissociateSelectedRecordsByKey(EntityManagerInterface $entityManager, Relationship $relationship, AssociationTarget $target, string $mappedBy, array $chunks): int
     {
         $dissociate = function () use ($entityManager, $target, $mappedBy, $chunks): int {
             $affectedRows = 0;
@@ -148,9 +151,13 @@ class DissociateBulkAction extends BulkAction
             return $affectedRows;
         };
 
-        return count($chunks) > 1
+        $affectedRows = count($chunks) > 1
             ? $entityManager->getConnection()->transactional($dissociate)
             : $dissociate();
+
+        $entityManager->getCache()?->evictCollectionRegion($entityManager->getClassMetadata($relationship->owner::class)->getName(), $relationship->name);
+
+        return $affectedRows;
     }
 
     /**

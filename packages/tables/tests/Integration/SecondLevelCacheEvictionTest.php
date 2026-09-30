@@ -21,8 +21,10 @@ uses(InteractsWithLiveComponents::class);
  * they evict the second-level cache themselves: the delete and the one-column
  * dissociate through Doctrine's own evict hint on their DQL statement, the
  * several-column dissociate through the target's entity region after its DBAL
- * statement. No collection region is evicted, and none needs to be: an owner's
- * cached collection that lists an evicted record misses and reloads.
+ * statement. The dissociate also evicts the owner association's collection
+ * region, since its records are cached again the moment they are read. The
+ * delete evicts the entity region alone, which suffices because a deleted
+ * record is never cached again, so a collection listing it misses and reloads.
  */
 
 beforeEach(function (): void {
@@ -98,7 +100,8 @@ it('warms the regions it evicts from, so the cases below read the cache rather t
     [, $entityManager] = cachedLampsSeed();
 
     expect($entityManager->getCache()?->containsEntity(Lamp::class, 1))->toBeTrue()
-        ->and($entityManager->getCache()?->containsCollection(Shelf::class, 'lamps', 1))->toBeTrue();
+        ->and($entityManager->getCache()?->containsCollection(Shelf::class, 'lamps', 1))->toBeTrue()
+        ->and($entityManager->getCache()?->containsCollection(Stand::class, 'lamps', ['region' => 'north', 'code' => 'one']))->toBeTrue();
 });
 
 it('evicts the lamps a by-key delete removed, and the shelf reads its lamps afresh', function (): void {
@@ -118,7 +121,11 @@ it('evicts the lamps a by-key dissociate wrote through DQL, over a one-column fo
     cachedLampsRun($client, 'shelf', 'dissociate', ['1']);
     $entityManager->clear();
 
-    expect($entityManager->find(Lamp::class, 1)?->getShelf())->toBeNull()
+    $lamp = $entityManager->find(Lamp::class, 1);
+    $entityManager->find(Lamp::class, 2);
+    $entityManager->find(Lamp::class, 3);
+
+    expect($lamp?->getShelf())->toBeNull()
         ->and(cachedLampIds($entityManager->find(Shelf::class, 1)?->getLamps() ?? []))->toBe([2, 3]);
 });
 
@@ -128,6 +135,10 @@ it('evicts the lamps a by-key dissociate wrote through DBAL, over a foreign key 
     cachedLampsRun($client, 'stand', 'dissociate', ['1']);
     $entityManager->clear();
 
-    expect($entityManager->find(Lamp::class, 1)?->getStand())->toBeNull()
+    $lamp = $entityManager->find(Lamp::class, 1);
+    $entityManager->find(Lamp::class, 2);
+    $entityManager->find(Lamp::class, 3);
+
+    expect($lamp?->getStand())->toBeNull()
         ->and(cachedLampIds($entityManager->find(Stand::class, ['region' => 'north', 'code' => 'one'])?->getLamps() ?? []))->toBe([2, 3]);
 });

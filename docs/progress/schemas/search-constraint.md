@@ -68,3 +68,8 @@ the builder — through the `$class` the caller hands in, as tables'
 nothing — an expression, an alias nobody declared — is left exactly as it was.
 The `''` literal is quoted through the connection when the DQL compiles, so a
 builder over a manager that must not connect cannot compile a cast search.
+`QueryAliases` is the third walk of a builder's join part, beside tables'
+[`Query\JoinCardinality`](../../../packages/tables/src/Query/JoinCardinality.php)
+and [`Query\RelationJoiner`](../../../packages/tables/src/Query/RelationJoiner.php),
+which M7 · 9 left as they were; folding those two onto `QueryAliases` is a
+follow-up.

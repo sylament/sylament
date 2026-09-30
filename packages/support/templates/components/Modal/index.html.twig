@@ -106,8 +106,8 @@
         }, overlayExtra.class ?? null),
         id: id ?: false,
         open: open ?: false,
-        'aria-labelledby': hasHeading and headingId ? headingId : false,
-        'aria-describedby': descriptionId ?: false,
+        'aria-labelledby': hasHeading and headingId ? headingId : null,
+        'aria-describedby': descriptionId ?: null,
         ...modalStimulus,
         ...(overlayExtra|filter((value, name) => name != 'class')),
     }) }}

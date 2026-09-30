@@ -44,7 +44,7 @@
             <twig:SylamentSupport:TabsItem
                     role="tab"
                     :id="tabId ? tabId ~ '-tab' : false"
-                    :aria-controls="tabId ?: false"
+                    :aria-controls="tabId ?: null"
                     :aria-selected="isActive ? 'true' : 'false'"
                     :active="isActive"
                     :data-tab-key="tabKey ?: false"

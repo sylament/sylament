@@ -104,7 +104,7 @@ it('leads every row with a labelled drag handle while reordering', function (): 
     expect($crawler->filter('table.sy-ta-table-reordering')->count())->toBe(1)
         ->and($crawler->filter('thead th')->first()->attr('class'))->toContain('sy-ta-reorder-header-cell')
         ->and($handle->count())->toBe(3)
-        ->and($handle->first()->attr('data-sortable-handle'))->toBe('')
+        ->and($handle->first()->attr('data-sortable-handle'))->toBe('true')
         ->and($handle->first()->attr('aria-label'))->toBe('Reorder item a')
         ->and($handle->first()->filter('svg.sy-icon')->count())->toBe(1);
 });

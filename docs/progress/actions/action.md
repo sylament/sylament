@@ -1001,23 +1001,26 @@ tampered-payload case in
 
 ### An uncolored badge or link action renders primary, not gray
 
-Every trigger template passes `:color="component.getColor"`, which is `null` for
-an action nobody called `->color()` on. Reading that, the obvious conclusion is
-that `null` reaches the primitive and lands in its gray branch. It does not.
-`{% props %}` compiles to `isset($context['__props']['color'])`
+`getColor()` is `null` for an action nobody called `->color()` on, and the
+`Badge`, `Button`, `IconButton` and `Link` triggers pass it as
+`:color="component.getColor ?? 'primary'"`. The fallback is load-bearing: since
+ux-twig-component 3.5, `{% props %}` compiles to
+`array_key_exists('color', $context['__props'])`
 ([`PropsNode.php`](../../../vendor/symfony/ux-twig-component/src/Twig/PropsNode.php)),
-and `isset()` is **false for null** — so an explicitly passed `null` is
-indistinguishable from an omitted prop and the prop default wins. An uncolored
-badge or link action therefore emits `sy-color sy-color-primary` and renders
-through the primitive's `.sy-color` branch; `:not(.sy-color)` is unreachable
-from these two triggers.
+so an explicitly passed `null` **replaces** the primitive's `'primary'` default
+rather than falling back to it. Until 3.5 the check was `isset()`, false for
+null, and the bare getter was enough; after it, the bare getter rendered every
+uncolored action with no colour classes at all. An uncolored badge or link
+action therefore still emits `sy-color sy-color-primary` and renders through the
+primitive's `.sy-color` branch; `:not(.sy-color)` is unreachable from these
+triggers.
 
 That is Filament's behaviour, not a divergence — `badge.blade.php` and
-`link.blade.php` both default `'color' => 'primary'` — and `Button` and
-`IconButton` have rendered this way since they were composed. The one trigger
-where the gray branch *is* reachable is `Grouped`, because
-[`DropdownItem`](../support/dropdown-item.md) defaults to `'gray'` instead,
-matching `dropdown/list/item.blade.php`.
+`link.blade.php` both default `'color' => 'primary'`. The one trigger where the
+gray branch *is* reachable is `Grouped`, which passes the bare getter on purpose:
+[`DropdownItem`](../support/dropdown-item.md) defaults to `'gray'`, matching
+`dropdown/list/item.blade.php`, and its colour policy emits nothing for either
+`gray` or `null`, so the two render the same.
 
 ### A dispatch action renders payload attributes, not a click binding
 

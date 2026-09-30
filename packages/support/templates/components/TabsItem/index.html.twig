@@ -28,7 +28,7 @@
         class: classes('sy sy-tabs-item', {
             'sy-active': active,
         }),
-        'aria-current': active ? (tag == 'a' ? 'page' : 'true') : false,
+        'aria-current': active ? (tag == 'a' ? 'page' : 'true') : null,
         href: tag == 'a' and href ? href : false,
         target: tag == 'a' and target == '_blank' ? '_blank' : false,
         type: tag == 'button' ? type : false,

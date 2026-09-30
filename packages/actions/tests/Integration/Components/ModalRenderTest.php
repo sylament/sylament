@@ -30,7 +30,7 @@ it('renders a closed dialog with the modal controller wiring', function (): void
         ->toContain('sylament-close-modal@window-&gt;sylament--support--modal#close')
         ->toContain('close-&gt;sylament--support--modal#restoreFocus')
         ->toContain('Delete?')
-        ->not->toMatch('/<dialog[^>]*\sopen[\s>]/');
+        ->not->toMatch('/<dialog[^>]*\sopen[\s=>]/');
 });
 
 it('declares its open state for the controller, defaulting to closed', function (): void {
@@ -210,11 +210,11 @@ it('spreads extra overlay and window attributes onto their elements', function (
 
 it('mirrors the open state into the native open attribute', function (): void {
     expect(renderModal('<twig:SylamentSupport:Modal id="m" :open="true" />'))
-        ->toMatch('/<dialog[^>]*\sopen[\s>]/')
+        ->toMatch('/<dialog[^>]*\sopen[\s=>]/')
         ->toContain('data-sylament--support--modal-open-value="true"');
 
     expect(renderModal('<twig:SylamentSupport:Modal id="m" />'))
-        ->not->toMatch('/<dialog[^>]*\sopen[\s>]/');
+        ->not->toMatch('/<dialog[^>]*\sopen[\s=>]/');
 });
 
 it('marks an overlaid modal so its dim is suppressed', function (): void {

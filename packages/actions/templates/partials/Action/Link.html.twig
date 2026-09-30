@@ -46,7 +46,7 @@
     :icon="component.getIcon"
     :iconSize="component.getIconSize"
     :iconPosition="component.getIconPosition"
-    :color="component.getColor"
+    :color="component.getColor ?? 'primary'"
     :size="component.getSize ?? 'md'"
     :disabled="component.isDisabled"
     :tag="component.getUrl ? 'a' : 'button'"

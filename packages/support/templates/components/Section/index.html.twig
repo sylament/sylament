@@ -83,8 +83,8 @@
                 'sy-collapsible': collapsible,
                 'sy-collapsed': collapsible and collapsed,
             }),
-            'aria-labelledby': labelledById ?: false,
-            'aria-describedby': descriptionId ?: false,
+            'aria-labelledby': labelledById ?: null,
+            'aria-describedby': descriptionId ?: null,
             ...(sectionStimulus ?: {}),
         }) }}
 >
@@ -140,7 +140,7 @@
                         {{ ...(stimulus_action(sectionController, 'toggleFromButton', 'click')|stimulus_target(sectionController, 'button')) }}
                         :aria-label="collapsed ? expandLabel : collapseLabel"
                         :aria-expanded="collapsed ? 'false' : 'true'"
-                        :aria-controls="hasBody and contentId ? contentId : false"
+                        :aria-controls="hasBody and contentId ? contentId : null"
                 />
             {% endif %}
         </header>

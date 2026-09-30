@@ -19,7 +19,7 @@
         "symfony/stimulus-bundle": "^3.1",
         "symfony/string": "^8.1",
         "symfony/ux-icons": "^3.3",
-        "symfony/ux-twig-component": "^3.1",
+        "symfony/ux-twig-component": "^3.5",
         "twig/twig": "^3.27"
     },
     "suggest": {

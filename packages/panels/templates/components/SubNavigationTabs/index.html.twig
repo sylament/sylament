@@ -15,7 +15,7 @@
                             :href="item.getUrl"
                             :target="item.shouldOpenUrlInNewTab ? '_blank' : null"
                             :icon="item.isActive ? (item.getActiveIcon ?? item.getIcon) : item.getIcon"
-                            :aria-current="item.isActive ? 'page' : false"
+                            :aria-current="item.isActive ? 'page' : null"
                         >{{ item.getLabel }}</twig:SylamentSupport:DropdownItem>
                     {% endfor %}
                 </twig:block>

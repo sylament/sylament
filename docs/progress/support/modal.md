@@ -59,7 +59,8 @@ window, `aria-labelledby`/`aria-describedby`, the gray-icon color suppression, t
 close button and its tab-order/window-autofocus juggling, the slide-over/sticky/
 click-through/alignment variant classes, the footer-actions wrapper and its
 alignment class, both extra attribute bags landing on their own elements, and
-the bare `open` attribute plus the `sy-modal-overlaid` class.
+the `open` attribute (`open=""` since ux-twig-component 3.5, the value a
+browser gives it too) plus the `sy-modal-overlaid` class.
 
 **What no test in this repo can reach.** There is no JS test rig — no jsdom, no
 browser driver, nothing that instantiates a Stimulus controller — so every

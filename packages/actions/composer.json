@@ -23,8 +23,8 @@
         "symfony/property-access": "^8.1",
         "symfony/service-contracts": "^3.6",
         "symfony/string": "^8.1",
-        "symfony/ux-live-component": "^3.1",
-        "symfony/ux-twig-component": "^3.1"
+        "symfony/ux-live-component": "^3.5",
+        "symfony/ux-twig-component": "^3.5"
     },
     "suggest": {
         "sylament/notifications": "Turns an action's success and failure notification titles into rendered toasts.",

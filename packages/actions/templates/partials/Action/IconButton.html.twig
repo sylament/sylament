@@ -52,7 +52,7 @@
     :icon="component.getIcon"
     :iconSize="component.getIconSize"
     :label="component.getLabel ?? component.getName"
-    :color="component.getColor"
+    :color="component.getColor ?? 'primary'"
     :size="component.getSize ?? 'md'"
     :disabled="component.isDisabled"
     :tag="component.getUrl ? 'a' : 'button'"

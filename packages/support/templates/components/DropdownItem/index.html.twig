@@ -24,7 +24,7 @@
             'sy-disabled': disabled,
         }, colorAttrs.class),
         style: styles(colorAttrs.style, attributes.all.style ?? null) ?: false,
-        'aria-disabled': disabled ? 'true' : false,
+        'aria-disabled': disabled ? 'true' : null,
         disabled: disabled and tag == 'button',
         form: formId ?: false,
         href: tag == 'a' and href ? href : false,

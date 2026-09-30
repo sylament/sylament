@@ -38,8 +38,8 @@
             (sizeValue ?? ''): sizeValue is not empty and sizeValue not in knownSizes,
         }, colorAttrs.class),
         style: styles(colorAttrs.style, attributes.all.style ?? null) ?: false,
-        'aria-disabled': disabled ? 'true' : false,
-        'aria-label': ariaLabel ?: false,
+        'aria-disabled': disabled ? 'true' : null,
+        'aria-label': ariaLabel ?: null,
         disabled: disabled and tag == 'button',
         form: tag == 'button' and formId ? formId : false,
         href: tag == 'a' and href ? href : false,
@@ -56,7 +56,7 @@
     {%- if deletable -%}
         <button type="button" {{ attrs({
             class: 'sy-badge-delete-btn',
-            'aria-label': deleteAriaLabel ?: false,
+            'aria-label': deleteAriaLabel ?: null,
         }, deleteAttributes) }}>
             {{- generateIconHtml('heroicons:x-mark-16-solid', constant('Sylament\\Support\\Twig\\SupportIconAlias::BADGE_DELETE_BUTTON'), {'aria-hidden': 'true'}, 'xs') -}}
         </button>

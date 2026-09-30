@@ -274,7 +274,7 @@ abstract class Resource
         $rootAlias = $query->getRootAliases()[0]
             ?? throw new LogicException(sprintf('The record query of resource [%s] names no root alias to resolve a record against.', static::class));
 
-        $keyName = $this->getRecordRouteKeyName();
+        $keyName = $this->getCheckedRecordRouteKeyName();
 
         if ($keyName === null) {
             $predicate = IdentifierConstraint::equals($query, $rootAlias, $this->getRecordClass(), (string) $key, 'sylament_record_key');
@@ -300,6 +300,38 @@ abstract class Resource
         return static::$recordRouteKeyName;
     }
 
+    /**
+     * The declared `$recordRouteKeyName`, or null, once the record class's
+     * mapping shows it can name one record: a mapped field, no association, and
+     * not one field of several an identifier is made of.
+     *
+     * @throws LogicException when it names an association, no mapped field, or one field of a several-field identifier
+     */
+    private function getCheckedRecordRouteKeyName(): ?string
+    {
+        $keyName = $this->getRecordRouteKeyName();
+
+        if ($keyName === null) {
+            return null;
+        }
+
+        $metadata = $this->getEntityManager()->getClassMetadata($this->getRecordClass());
+
+        if ($metadata->hasAssociation($keyName)) {
+            throw new LogicException(sprintf('Resource [%s] names [%s] as its $recordRouteKeyName, but [%s::$%s] is an association, and a URL can carry only a field\'s value. Name a mapped field, or override getRecordRouteKey() and resolveRecordRouteBinding() together.', static::class, $keyName, $metadata->getName(), $keyName));
+        }
+
+        if (! $metadata->hasField($keyName)) {
+            throw new LogicException(sprintf('Resource [%s] names [%s] as its $recordRouteKeyName, but [%s] maps no field of that name. Name a mapped field, or override getRecordRouteKey() and resolveRecordRouteBinding() together.', static::class, $keyName, $metadata->getName()));
+        }
+
+        if ($metadata->isIdentifierComposite && in_array($keyName, $metadata->identifier, true)) {
+            throw new LogicException(sprintf('Resource [%s] names [%s] as its $recordRouteKeyName, but it is one field of the several [%s] is identified by, so it cannot name a record on its own. Leave $recordRouteKeyName unset — the default key names a record by all of them — or override getRecordRouteKey() and resolveRecordRouteBinding() together.', static::class, $keyName, $metadata->getName()));
+        }
+
+        return $keyName;
+    }
+
     public function getRecordRouteKey(object $record): string
     {
         $recordClass = $this->getRecordClass();
@@ -308,7 +340,7 @@ abstract class Resource
             throw new LogicException(sprintf('Resource [%s] speaks for [%s]; it cannot key a [%s].', static::class, $recordClass, $record::class));
         }
 
-        $keyName = $this->getRecordRouteKeyName();
+        $keyName = $this->getCheckedRecordRouteKeyName();
 
         if ($keyName === null) {
             return RecordKey::of($this->getEntityManager(), $record, $recordClass);

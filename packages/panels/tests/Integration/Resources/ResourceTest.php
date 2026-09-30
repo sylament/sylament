@@ -406,6 +406,74 @@ it('keys and resolves a composite record by a declared route key name, without d
         ->and($resource->resolveRecordRouteBinding('plain~about'))->toBeNull();
 });
 
+it('refuses on first use a route key name that cannot name one record, before a statement runs', function (string $recordClass, string $keyName, string $message): void {
+    $recorder = $this::getContainer()->get(RecordingMiddleware::class);
+    assert($recorder instanceof RecordingMiddleware);
+    $entityManager = $this::getContainer()->get(EntityManagerInterface::class);
+    compositeSeamSeed($entityManager);
+
+    $resource = panelsWireResource(match ($keyName) {
+        'house' => new class extends Resource {
+            protected static ?string $recordClass = Imprint::class;
+
+            protected static ?string $recordRouteKeyName = 'house';
+        },
+        'author' => new class extends Resource {
+            protected static ?string $recordClass = Article::class;
+
+            protected static ?string $recordRouteKeyName = 'author';
+        },
+        'nickname' => new class extends Resource {
+            protected static ?string $recordClass = Article::class;
+
+            protected static ?string $recordRouteKeyName = 'nickname';
+        },
+        'author.name' => new class extends Resource {
+            protected static ?string $recordClass = Article::class;
+
+            protected static ?string $recordRouteKeyName = 'author.name';
+        },
+    });
+
+    $record = $recordClass === Imprint::class
+        ? compositeSeamRecord($entityManager, Imprint::class, ['label' => 'Plain'])
+        : (static function () use ($entityManager): Article {
+            $article = new Article()->setTitle('Hello')->setSlug('hello');
+            $entityManager->persist($article);
+            $entityManager->flush();
+
+            return $article;
+        })();
+
+    $recorder->reset();
+
+    expect(fn (): string => $resource->getRecordRouteKey($record))->toThrow(LogicException::class, sprintf($message, $resource::class, $keyName))
+        ->and(fn (): ?object => $resource->resolveRecordRouteBinding('plain'))->toThrow(LogicException::class, sprintf($message, $resource::class, $keyName))
+        ->and($recorder->statements())->toBe([]);
+})->with([
+    'one field of a two-field identifier' => [Imprint::class, 'house', 'Resource [%s] names [%s] as its $recordRouteKeyName, but it is one field of the several [' . Imprint::class . '] is identified by, so it cannot name a record on its own. Leave $recordRouteKeyName unset — the default key names a record by all of them — or override getRecordRouteKey() and resolveRecordRouteBinding() together.'],
+    'an association' => [Article::class, 'author', 'Resource [%s] names [%s] as its $recordRouteKeyName, but [' . Article::class . '::$author] is an association, and a URL can carry only a field\'s value. Name a mapped field, or override getRecordRouteKey() and resolveRecordRouteBinding() together.'],
+    'an unmapped name' => [Article::class, 'nickname', 'Resource [%s] names [%s] as its $recordRouteKeyName, but [' . Article::class . '] maps no field of that name. Name a mapped field, or override getRecordRouteKey() and resolveRecordRouteBinding() together.'],
+    'a dotted name that is no embedded field' => [Article::class, 'author.name', 'Resource [%s] names [%s] as its $recordRouteKeyName, but [' . Article::class . '] maps no field of that name. Name a mapped field, or override getRecordRouteKey() and resolveRecordRouteBinding() together.'],
+]);
+
+it('keys and resolves by a lone identifier field named as the route key', function (): void {
+    $resource = panelsWireResource(new class extends Resource {
+        protected static ?string $recordClass = Article::class;
+
+        protected static ?string $recordRouteKeyName = 'id';
+    });
+
+    $entityManager = $resource->getRecordQuery()->getEntityManager();
+    $article = new Article()->setTitle('Hello')->setSlug('hello');
+
+    $entityManager->persist($article);
+    $entityManager->flush();
+
+    expect($resource->getRecordRouteKey($article))->toBe((string) $article->getId())
+        ->and($resource->resolveRecordRouteBinding((string) $article->getId()))->toBe($article);
+});
+
 /**
  * An unmapped subclass of a fixture entity: Doctrine describes no metadata for
  * it, so it is keyable only through the class the resource declares.

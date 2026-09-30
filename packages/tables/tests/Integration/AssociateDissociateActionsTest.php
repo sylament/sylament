@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Sylament\Tables\Tests\Integration;
 
-use Doctrine\DBAL\Exception\DriverException;
 use Doctrine\ORM\EntityManagerInterface;
 use LogicException;
 use Sylament\Forms\Components\Select;
@@ -395,12 +394,8 @@ it('searches the columns recordSelectSearchColumns() names rather than the title
 
     expect($select->getSearchColumns())->toBe(['plays']);
 
-    match (TestPlatform::current()) {
-        TestPlatform::Sqlite, TestPlatform::MySql => expect($select->getSearchResults('300'))->toBe([30 => 'Exit Music'])
-            ->and($select->getSearchResults('Exit'))->toBe([]),
-        TestPlatform::PostgreSql => expect(fn (): mixed => $select->getSearchResults('300'))->toThrow(DriverException::class, 'function lower(integer) does not exist')
-            ->and(fn (): mixed => $select->getSearchResults('Exit'))->toThrow(DriverException::class, 'function lower(integer) does not exist'),
-    };
+    expect($select->getSearchResults('300'))->toBe([30 => 'Exit Music'])
+        ->and($select->getSearchResults('Exit'))->toBe([]);
 });
 
 it('refuses a search column the target class maps no field for', function (): void {

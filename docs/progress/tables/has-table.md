@@ -844,7 +844,7 @@ Two members of Filament's do not port. The `generate_search_term_expression()` /
 `generate_search_column_expression()` pair is Eloquent-and-driver-specific
 assembly, replaced by
 [`SearchConstraint::like()`](../../../packages/tables/src/Query/SearchConstraint.php)
-and its [narrower reach](table.md#the-default-search-comparison-assumes-a-string-typed-field).
+and its [PostgreSQL text cast](table.md#a-non-string-searchable-field-is-cast-to-text-on-postgresql).
 As of M3·4, `like()` itself lives in
 [`Sylament\Schemas\Query\SearchConstraint`](../schemas/search-constraint.md)
 — tables' class delegates — so forms' relationship search reuses it without

@@ -2,7 +2,6 @@
 
 declare(strict_types=1);
 
-use Doctrine\DBAL\Exception\DriverException;
 use Doctrine\ORM\EntityManager;
 use Doctrine\ORM\Query\Expr\Comparison;
 use Doctrine\ORM\QueryBuilder;
@@ -138,15 +137,11 @@ it('matches a single word across searchable columns', function (): void {
     $titleMatch->tableSearch = 'love';
     $playsMatch->tableSearch = '30';
 
-    match (TestPlatform::current()) {
-        TestPlatform::Sqlite, TestPlatform::MySql => expect(array_keys($titleMatch->getTableRecords()->getRecords()))->toBe([1, 2])
-            ->and(array_keys($playsMatch->getTableRecords()->getRecords()))->toBe([3]),
-        TestPlatform::PostgreSql => expect(fn (): mixed => $titleMatch->getTableRecords())->toThrow(DriverException::class, 'function lower(integer) does not exist')
-            ->and(fn (): mixed => $playsMatch->getTableRecords())->toThrow(DriverException::class, 'function lower(integer) does not exist'),
-    };
+    expect(array_keys($titleMatch->getTableRecords()->getRecords()))->toBe([1, 2])
+        ->and(array_keys($playsMatch->getTableRecords()->getRecords()))->toBe([3]);
 
     expect($titleMatch->getFilteredTableQuery()?->getDQL())->toContain(match (TestPlatform::current()) {
-        TestPlatform::PostgreSql => 'WHERE LOWER(song.title) LIKE :sylament_search_0 OR LOWER(song.plays) LIKE :sylament_search_1',
+        TestPlatform::PostgreSql => "WHERE LOWER(song.title) LIKE :sylament_search_0 OR LOWER(CONCAT(song.plays, '')) LIKE :sylament_search_1",
         TestPlatform::Sqlite, TestPlatform::MySql => 'WHERE song.title LIKE :sylament_search_0 OR song.plays LIKE :sylament_search_1',
     });
 });
@@ -162,15 +157,11 @@ it('composes split words with AND between groups', function (): void {
     $bothWords->tableSearch = 'silent love';
     $noOverlap->tableSearch = 'love noise';
 
-    match (TestPlatform::current()) {
-        TestPlatform::Sqlite, TestPlatform::MySql => expect(array_keys($bothWords->getTableRecords()->getRecords()))->toBe([2])
-            ->and($noOverlap->getTableRecords()->getRecords())->toBe([]),
-        TestPlatform::PostgreSql => expect(fn (): mixed => $bothWords->getTableRecords())->toThrow(DriverException::class, 'function lower(integer) does not exist')
-            ->and(fn (): mixed => $noOverlap->getTableRecords())->toThrow(DriverException::class, 'function lower(integer) does not exist'),
-    };
+    expect(array_keys($bothWords->getTableRecords()->getRecords()))->toBe([2])
+        ->and($noOverlap->getTableRecords()->getRecords())->toBe([]);
 
     expect($bothWords->getFilteredTableQuery()?->getDQL())->toContain(match (TestPlatform::current()) {
-        TestPlatform::PostgreSql => 'WHERE (LOWER(song.title) LIKE :sylament_search_0 OR LOWER(song.plays) LIKE :sylament_search_1) AND (LOWER(song.title) LIKE :sylament_search_2 OR LOWER(song.plays) LIKE :sylament_search_3)',
+        TestPlatform::PostgreSql => "WHERE (LOWER(song.title) LIKE :sylament_search_0 OR LOWER(CONCAT(song.plays, '')) LIKE :sylament_search_1) AND (LOWER(song.title) LIKE :sylament_search_2 OR LOWER(CONCAT(song.plays, '')) LIKE :sylament_search_3)",
         TestPlatform::Sqlite, TestPlatform::MySql => 'WHERE (song.title LIKE :sylament_search_0 OR song.plays LIKE :sylament_search_1) AND (song.title LIKE :sylament_search_2 OR song.plays LIKE :sylament_search_3)',
     });
 });
@@ -861,4 +852,15 @@ it('searches a non-string column through a searchable(query:) closure on every p
     $host->tableSearch = '30';
 
     expect(array_keys($host->getTableRecords()->getRecords()))->toBe([3]);
+});
+
+it('leaves a column that takes its own search over alone, even under a fetch-joined collection alias', function (): void {
+    $entityManager = searchableComposites();
+    $host = new TableHost(fn (Table $table): Table => $table
+        ->query($entityManager->createQueryBuilder()->select('shortcut')->from(Shortcut::class, 'shortcut')->leftJoin('shortcut.hits', 'hits')->addSelect('hits'))
+        ->columns([TextColumn::make('hits.agent')->searchable(query: fn (QueryBuilder $query, string $search): Comparison => $query->expr()->like('hits.agent', $query->expr()->literal("%{$search}%")))]));
+
+    $host->tableSearch = 'curl';
+
+    expect($host->getTableRecords()->getRecords())->toHaveCount(1);
 });

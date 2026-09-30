@@ -113,7 +113,7 @@ Rows never disappear — only their detail sections do.
 | [`persistSortInSession()` / `persistsSortInSession()`](../../../packages/tables/src/Table/Concerns/CanSortRecords.php) | [`Table\Concerns\CanSortRecords`](../../../vendor/filament/tables/src/Table/Concerns/CanSortRecords.php) | done | — | [has-table.md](has-table.md#the-session-key-is-the-host-class-so-two-instances-of-one-page-share-it) |
 | [`searchable()` / `isSearchable()` / `getExtraSearchableColumns()`](../../../packages/tables/src/Table/Concerns/CanSearchRecords.php) | [`Table\Concerns\CanSearchRecords`](../../../vendor/filament/tables/src/Table/Concerns/CanSearchRecords.php) | done | — | [semantics](#a-table-is-searchable-when-a-column-says-so-and-searchable-overrides-in-both-directions) |
 | [The search chrome — `searchPlaceholder()`, `searchDebounce()`, `searchOnBlur()` and their getters](../../../packages/tables/src/Table/Concerns/CanSearchRecords.php) | [`Table\Concerns\CanSearchRecords`](../../../vendor/filament/tables/src/Table/Concerns/CanSearchRecords.php) | done | — | [diverges](#getsearchdebouncemilliseconds-is-a-sylament-only-translation-of-filaments-duration-string) · [diverges](#searchonblur-renders-onchange-because-ux-live-component-has-no-blur-event) · [diverges](#the-search-field-flattens-supports-input-wrapper-into-two-classes) · [diverges](#items-center-is-lifted-onto-the-search-field-because-the-prefix-that-carried-it-is-gone) · [diverges](#the-search-input-adds-an-outline-none-vendor-does-not-have) |
-| [`splitSearchTerms()` / `shouldSplitSearchTerms()`, `searchUsing()` / `hasSearchUsingCallback()` / `callSearchUsing()`, `applyExtraSearchConstraints()`](../../../packages/tables/src/Table/Concerns/CanSearchRecords.php) | [`Table\Concerns\CanSearchRecords`](../../../vendor/filament/tables/src/Table/Concerns/CanSearchRecords.php) | done | — | [has-table.md](has-table.md#search-is-the-global-term-and-one-term-per-column) · [semantics](#extra-searchable-columns-take-closures-that-return-their-expression) · [diverges](#the-default-search-comparison-assumes-a-string-typed-field) · [diverges](#a-search-term-is-not-escaped-for-like) |
+| [`splitSearchTerms()` / `shouldSplitSearchTerms()`, `searchUsing()` / `hasSearchUsingCallback()` / `callSearchUsing()`, `applyExtraSearchConstraints()`](../../../packages/tables/src/Table/Concerns/CanSearchRecords.php) | [`Table\Concerns\CanSearchRecords`](../../../vendor/filament/tables/src/Table/Concerns/CanSearchRecords.php) | done | — | [has-table.md](has-table.md#search-is-the-global-term-and-one-term-per-column) · [semantics](#extra-searchable-columns-take-closures-that-return-their-expression) · [diverges](#a-non-string-searchable-field-is-cast-to-text-on-postgresql) · [diverges](#a-search-term-is-not-escaped-for-like) |
 | [`getSearchIndicator()`](../../../packages/tables/src/Table/Concerns/CanSearchRecords.php) | [`Table\Concerns\CanSearchRecords`](../../../vendor/filament/tables/src/Table/Concerns/CanSearchRecords.php) | done | — | [has-table.md](has-table.md#the-contract-is-thirty-five-methods-of-filaments-forty-six) · [detail](#the-unported-search-surface-splits-three-ways) |
 | [`persistSearchInSession()` / `persistsSearchInSession()`](../../../packages/tables/src/Table/Concerns/CanSearchRecords.php) | [`Table\Concerns\CanSearchRecords`](../../../vendor/filament/tables/src/Table/Concerns/CanSearchRecords.php) | done | — | [has-table.md](has-table.md#the-session-key-is-the-host-class-so-two-instances-of-one-page-share-it) |
 | [`persistColumnSearchesInSession()` / `persistsColumnSearchesInSession()`](../../../packages/tables/src/Table/Concerns/CanSearchRecords.php) | [`Table\Concerns\CanSearchRecords`](../../../vendor/filament/tables/src/Table/Concerns/CanSearchRecords.php) | done | — | [has-table.md](has-table.md#the-session-key-is-the-host-class-so-two-instances-of-one-page-share-it) |
@@ -1808,7 +1808,7 @@ carries: render `value` explicitly and **empty rather than absent** (`?? ''`).
 Do it in the same change as the writer, not before — an unconditional `value`
 today would only re-render what the morph already preserves.
 
-### The default search comparison assumes a string-typed field
+### A non-string searchable field is cast to text on PostgreSQL
 
 [`SearchConstraint::like()`](../../../packages/tables/src/Query/SearchConstraint.php)
 emits `path LIKE :param` — or `LOWER(path) LIKE :param` on the case-insensitive
@@ -1817,9 +1817,9 @@ arm — and nothing else. As of M3·4 the implementation itself lives in
 with tables' class delegating; the reach described below is unchanged. Filament's `generate_search_column_expression()` does
 more on Postgres: it double-quotes each segment of the name and appends `::text`,
 because Postgres refuses `integer LIKE text` outright where MySQL and SQLite
-coerce silently. So a `searchable()` integer column is portable in Filament and
-is not here: against Postgres it fails loudly at execution, while the same table
-against SQLite matches.
+coerce silently. So a `searchable()` integer column was portable in Filament and,
+until M7 · 9, not here: against Postgres it failed loudly at execution, while the
+same table against SQLite matched.
 
 There is no DQL counterpart to lift. `::text` is a Postgres cast written in SQL,
 and a DQL string is parsed by Doctrine before any platform sees it; the portable
@@ -1833,22 +1833,15 @@ consumer has called. A platform-conditional emission would also have to happen
 the platform for its case-insensitivity default — so a cast arm can be added
 there the day one is worth its dependency.
 
-The suites now run on PostgreSQL as well as SQLite and MySQL, so this limitation is
-pinned on every platform rather than described. A searchable integer column matches
-on SQLite and MySQL and is a driver error on PostgreSQL (`CanSearchRecordsTest`,
-`ColumnSearchLiveTest`, `AssociateDissociateActionsTest`, and forms'
-`SelectRelationshipTest`). `CanSearchRecordsTest` also pins the escape hatch below
-matching on all three.
+Since [M7 · 9](../roadmap.md#m7--composite-identifiers) the type-aware cast is
+what runs: schemas' `like()` wraps a non-character field in `CONCAT(path, '')` on
+PostgreSQL alone
+([search-constraint.md](../schemas/search-constraint.md#a-field-that-holds-no-character-data-is-cast-to-text-on-postgresql)),
+so a searchable integer column matches on all three platforms, and the pins M7 · 8
+wrote as a PostgreSQL error assert the match. The alias walk it needed is
+`QueryAliases`, shared with the refusal below.
 
-The way forward, when one is wanted, is a **type-aware** cast: `CONCAT(path, '')` on
-PostgreSQL only, and only for a path whose mapped field is not a string type. That
-answers the index objection above, because a string column keeps the indexable
-`LOWER(col)` and a non-string column has no text index for the cast to defeat.
-Resolving a path's field type needs the alias-to-entity walk across the builder's
-root and join parts, which `RelationConstraint`'s correlated subquery also has to
-answer. That walk is the real work.
-
-Two escape hatches exist meanwhile, both first-class API rather than workarounds:
+Two escape hatches exist beside it, both first-class API rather than workarounds:
 `searchable(query:)` on the column hands the closure the builder and takes back
 whatever expression it wants (a registered `CAST`, a `LOWER(CONCAT(…))`, a
 platform-specific literal), and `searchUsing()` on the table replaces the whole

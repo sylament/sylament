@@ -5,6 +5,7 @@ declare(strict_types=1);
 use Doctrine\ORM\EntityManager;
 use Sylament\Schemas\Identity\IdentifierConstraint;
 use Sylament\Schemas\Identity\RecordKey;
+use Sylament\Support\Tests\Doctrine\TestPlatform;
 use Sylament\Tables\Query\Hop;
 use Sylament\Tables\Query\RelationConstraint;
 use Sylament\Tables\Query\ResolvedRelationPath;
@@ -371,4 +372,27 @@ it('matches an embeddable field across a to-one hop', function (): void {
 
     expect($matches)->toHaveCount(2)
         ->and(array_map(static fn (Song $song): string => $song->getTitle(), $matches))->toBe(['Alpha', 'Beta']);
+});
+
+it('casts a related field that holds no character data on PostgreSQL alone', function (): void {
+    $query = EntityManagerFactory::create()->createQueryBuilder()->select('shortcut')->from(Shortcut::class, 'shortcut');
+    $path = new ResolvedRelationPath([new Hop('hits', ShortcutHit::class, true)], 'visits');
+
+    expect(RelationConstraint::existsLike($query, $path, '5', forceCaseInsensitive: false))->toContain(match (TestPlatform::current()) {
+        TestPlatform::PostgreSql => "CONCAT(sy_x0_0.visits, '') LIKE :sylament_search_0",
+        TestPlatform::Sqlite, TestPlatform::MySql => 'sy_x0_0.visits LIKE :sylament_search_0',
+    });
+});
+
+it('matches a root by a related integer on every platform', function (): void {
+    $entityManager = seededCompositeRelations();
+    $query = $entityManager->createQueryBuilder()->select('shortcut')->from(Shortcut::class, 'shortcut');
+    $path = new ResolvedRelationPath([new Hop('hits', ShortcutHit::class, true)], 'visits');
+
+    $query->andWhere(RelationConstraint::existsLike($query, $path, '5', forceCaseInsensitive: null));
+
+    $matches = $query->getQuery()->getResult();
+
+    expect($matches)->toHaveCount(1)
+        ->and(RecordKey::of($entityManager, $matches[0]))->toBe('sylament=2Etest~=2Fdocs=2Fa=20b');
 });

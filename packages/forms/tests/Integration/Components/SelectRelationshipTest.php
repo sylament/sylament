@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Sylament\Forms\Tests\Integration\Components;
 
-use Doctrine\DBAL\Exception\DriverException;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\PersistentCollection;
 use Doctrine\ORM\QueryBuilder;
@@ -453,15 +452,11 @@ it('searches every declared column, ORed', function (): void {
     );
     wireRecordSelect($select, $post);
 
-    match (TestPlatform::current()) {
-        TestPlatform::Sqlite, TestPlatform::MySql => expect($select->getSearchResults((string) $bob->getId()))->toBe([$bob->getId() => 'Bob'])
-            ->and($select->getSearchResults('Ada'))->toBe([$ada->getId() => 'Ada']),
-        TestPlatform::PostgreSql => expect(fn (): array => $select->getSearchResults((string) $bob->getId()))->toThrow(DriverException::class, 'function lower(integer) does not exist')
-            ->and(fn (): array => $select->getSearchResults('Ada'))->toThrow(DriverException::class, 'function lower(integer) does not exist'),
-    };
+    expect($select->getSearchResults((string) $bob->getId()))->toBe([$bob->getId() => 'Bob'])
+        ->and($select->getSearchResults('Ada'))->toBe([$ada->getId() => 'Ada']);
 
     expect($captured?->getDQL())->toContain(match (TestPlatform::current()) {
-        TestPlatform::PostgreSql => 'WHERE LOWER(record.name) LIKE :sylament_search_0 OR LOWER(record.id) LIKE :sylament_search_1',
+        TestPlatform::PostgreSql => "WHERE LOWER(record.name) LIKE :sylament_search_0 OR LOWER(CONCAT(record.id, '')) LIKE :sylament_search_1",
         TestPlatform::Sqlite, TestPlatform::MySql => 'WHERE record.name LIKE :sylament_search_0 OR record.id LIKE :sylament_search_1',
     });
 });

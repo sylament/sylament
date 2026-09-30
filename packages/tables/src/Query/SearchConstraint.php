@@ -10,9 +10,12 @@ use LogicException;
 
 final class SearchConstraint
 {
-    public static function like(QueryBuilder $query, string $path, string $search, ?bool $forceCaseInsensitive): Comparison
+    /**
+     * @param class-string|null $class the entity the path's alias stands for, when the builder does not declare that alias
+     */
+    public static function like(QueryBuilder $query, string $path, string $search, ?bool $forceCaseInsensitive, ?string $class = null): Comparison
     {
-        return \Sylament\Schemas\Query\SearchConstraint::like($query, $path, $search, $forceCaseInsensitive);
+        return \Sylament\Schemas\Query\SearchConstraint::like($query, $path, $search, $forceCaseInsensitive, $class);
     }
 
     /**

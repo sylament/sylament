@@ -4,11 +4,9 @@ declare(strict_types=1);
 
 namespace Sylament\Tables\Tests\Integration;
 
-use Sylament\Support\Tests\Doctrine\TestPlatform;
 use Symfony\Component\DomCrawler\Crawler;
 use Symfony\UX\LiveComponent\Test\InteractsWithLiveComponents;
 use Symfony\UX\LiveComponent\Test\TestLiveComponent;
-use Twig\Error\RuntimeError;
 
 use function Sylament\Tables\Tests\browseTo;
 use function Sylament\Tables\Tests\publishedProps;
@@ -67,12 +65,6 @@ it('publishes a seeded key for every individually searchable column, entries inc
 it('round-trips a column named after a reserved JavaScript array property', function (): void {
     $searched = fn (): TestLiveComponent => $this->createLiveComponent('ColumnSearchTable')->set('tableColumnSearches.entries', '33');
 
-    if (TestPlatform::current() === TestPlatform::PostgreSql) {
-        expect($searched)->toThrow(RuntimeError::class, 'function lower(integer) does not exist');
-
-        return;
-    }
-
     $component = $searched();
 
     expect($component->component()->tableColumnSearches['entries'])->toBe('33')
@@ -92,12 +84,6 @@ it('renders the chip between the search chip and the filter chips and clears it 
     $searched = fn (): TestLiveComponent => $this->createLiveComponent('ColumnSearchTable')
         ->set('tableSearch', 'a')
         ->set('tableColumnSearches.title', 'Air');
-
-    if (TestPlatform::current() === TestPlatform::PostgreSql) {
-        expect($searched)->toThrow(RuntimeError::class, 'function lower(integer) does not exist');
-
-        return;
-    }
 
     $component = $searched();
 

@@ -46,7 +46,7 @@ final class RelationConstraint
         }
 
         $correlation = IdentifierConstraint::correlate($query, $subAlias, $rootClass, $rootAlias);
-        $like = SearchConstraint::like($query, "{$currentAlias}.{$path->fieldPath}", $search, $forceCaseInsensitive);
+        $like = SearchConstraint::like($query, "{$currentAlias}.{$path->fieldPath}", $search, $forceCaseInsensitive, array_last($path->hops)?->targetClass);
 
         return "EXISTS ({$subselect} WHERE {$correlation} AND {$like})";
     }

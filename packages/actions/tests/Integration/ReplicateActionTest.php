@@ -8,12 +8,12 @@ use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\Event\PrePersistEventArgs;
 use Doctrine\ORM\Events;
 use Doctrine\ORM\Exception\EntityMissingAssignedId;
-use Doctrine\ORM\ORMInvalidArgumentException;
 use LogicException;
 use Sylament\Actions\ReplicateAction;
 use Sylament\Actions\Tests\Fixtures\Doctrine\Entity\AssignedNote;
 use Sylament\Actions\Tests\Fixtures\Doctrine\Entity\Bulb;
 use Sylament\Actions\Tests\Fixtures\Doctrine\Entity\Cover;
+use Sylament\Actions\Tests\Fixtures\Doctrine\Entity\Graft;
 use Sylament\Actions\Tests\Fixtures\Doctrine\Entity\Membership;
 use Sylament\Actions\Tests\Fixtures\Doctrine\Entity\Note;
 use Sylament\Actions\Tests\Fixtures\Doctrine\Entity\Planter;
@@ -22,8 +22,10 @@ use Sylament\Actions\Tests\Fixtures\Doctrine\Entity\Roster;
 use Sylament\Actions\Tests\Fixtures\Doctrine\Entity\Scion;
 use Sylament\Actions\Tests\Fixtures\Doctrine\Entity\Seedling;
 use Sylament\Actions\Tests\Fixtures\Doctrine\Entity\Ticket;
+use Sylament\Actions\Tests\Fixtures\Doctrine\Entity\Trellis;
 use Sylament\Actions\Tests\Fixtures\Twig\Components\GreenhouseHost;
 use Sylament\Actions\Tests\Fixtures\Twig\Components\RecordWriteHost;
+use Sylament\Schemas\Exceptions\ValidationException;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\UX\LiveComponent\Test\InteractsWithLiveComponents;
@@ -161,6 +163,18 @@ function gardenOriginal(string $class): object
 
             return $cover;
         })(),
+        Graft::class => (static function () use ($entityManager): Graft {
+            $note = new Note();
+            $note->setTitle('owner');
+
+            $entityManager->persist($note);
+
+            $graft = new Graft();
+            $graft->setNote($note);
+            $graft->setLabel('Rootstock');
+
+            return $graft;
+        })(),
         Membership::class => (static function () use ($entityManager): Membership {
             $note = new Note();
             $note->setTitle('owner');
@@ -204,6 +218,23 @@ function gardenOriginal(string $class): object
 
             return $ticket;
         })(),
+        Trellis::class => (static function () use ($entityManager): Trellis {
+            $note = new Note();
+            $note->setTitle('owner');
+
+            $roster = new Roster();
+            $roster->setTitle('crew');
+
+            $entityManager->persist($note);
+            $entityManager->persist($roster);
+
+            $trellis = new Trellis();
+            $trellis->setNote($note);
+            $trellis->setRoster($roster);
+            $trellis->setLabel('Espalier');
+
+            return $trellis;
+        })(),
     };
 
     $entityManager->persist($record);
@@ -233,6 +264,51 @@ function gardenRefusal(string $action, string $class): string
     return sprintf('The [%s] action built a replica of [%s] whose identifier is incomplete, so it cannot be saved as a new record. Put every identifier field the copy leaves unset in its schema() — enabled and dehydrated — or set it in beforeReplicaSaved().', $action, $class);
 }
 
+/**
+ * @param class-string $class
+ */
+function gardenTakenRefusal(string $action, string $class): string
+{
+    return sprintf('The [%s] action built a replica of [%s] whose key another record already holds, so it cannot be saved as a new record. Give the copy a key of its own: ask for it in schema(), or set it in beforeReplicaSaved() — an identifier association the copy keeps is left out with excludeAttributes().', $action, $class);
+}
+
+/**
+ * @return array<string, list<string>>
+ */
+function gardenValidationErrors(GreenhouseHost $host): array
+{
+    try {
+        $host->callMountedAction();
+    } catch (ValidationException $validationException) {
+        return $validationException->getErrors();
+    }
+
+    test()->fail('Expected the replicate to be refused with a ValidationException.');
+}
+
+/**
+ * A second membership of the original's note, on the role a hook moves a copy to.
+ */
+function gardenViewer(bool $storedOnly): void
+{
+    $entityManager = test()->getContainer()->get(EntityManagerInterface::class);
+
+    $note = $entityManager->find(Note::class, 1);
+    assert($note instanceof Note);
+
+    $viewer = new Membership();
+    $viewer->setNote($note);
+    $viewer->setRole('viewer');
+    $viewer->setLabel('Viewers');
+
+    $entityManager->persist($viewer);
+    $entityManager->flush();
+
+    if ($storedOnly) {
+        $entityManager->clear();
+    }
+}
+
 it('refuses by name, before persisting it, a replica whose key is still incomplete, writing nothing', function (string $class, string $key, string $action, string $table): void {
     gardenOriginal($class);
 
@@ -250,6 +326,119 @@ it('refuses by name, before persisting it, a replica whose key is still incomple
     'a single derived identity with no modal' => [Cover::class, '1', 'replicateBare', 'Cover'],
     'a single derived identity whose modal has no key field to name' => [Cover::class, '1', 'replicate', 'Cover'],
 ]);
+
+it("refuses by name, before persisting it, a copy that carries its original's key, writing nothing", function (string $class, string $key, string $table): void {
+    gardenOriginal($class);
+
+    $host = $this->createLiveComponent(GreenhouseHost::class, ['recordClass' => $class])->component();
+    $host->mountAction('replicateBare', [], ['recordKey' => $key]);
+
+    expect(fn (): mixed => $host->callMountedAction())->toThrow(LogicException::class, gardenTakenRefusal('replicateBare', $class))
+        ->and(gardenRowCount($table))->toBe(1)
+        ->and($this::getContainer()->get(EntityManagerInterface::class)->isOpen())->toBeTrue();
+})->with([
+    'a key made only of associations, which the copy keeps whole' => [Trellis::class, '1~1', 'Trellis'],
+    'an association beside a scalar half still on its default' => [Graft::class, '1~rootstock', 'Graft'],
+]);
+
+it('saves a copy of a key made only of associations once one is left out and the hook sets another, as the refusal advises', function (): void {
+    gardenOriginal(Trellis::class);
+
+    $entityManager = $this::getContainer()->get(EntityManagerInterface::class);
+    $second = new Roster();
+    $second->setTitle('second crew');
+
+    $entityManager->persist($second);
+    $entityManager->flush();
+
+    $host = $this->createLiveComponent(GreenhouseHost::class, ['recordClass' => Trellis::class])->component();
+    $host->mountAction('replicateRehomed', [], ['recordKey' => '1~1']);
+    $host->callMountedAction();
+
+    expect(gardenRows('SELECT note_id, roster_id, label FROM Trellis ORDER BY roster_id'))->toBe([
+        ['note_id' => 1, 'roster_id' => 1, 'label' => 'Espalier'],
+        ['note_id' => 1, 'roster_id' => 2, 'label' => 'Espalier'],
+    ]);
+});
+
+it('answers a payload-only modal over a key made only of associations as a record error, writing nothing', function (): void {
+    gardenOriginal(Trellis::class);
+
+    $host = $this->createLiveComponent(GreenhouseHost::class, ['recordClass' => Trellis::class])->component();
+    $host->mountAction('replicatePayload', [], ['recordKey' => '1~1']);
+
+    expect(gardenValidationErrors($host))->toBe(['mountedActionsData.0' => ['This value is already used.']])
+        ->and(gardenRowCount('Trellis'))->toBe(1);
+});
+
+it("refuses by name a key a beforeReplicaSaved() hook moves onto another record's, with no modal", function (bool $storedOnly): void {
+    gardenOriginal(Membership::class);
+    gardenViewer($storedOnly);
+
+    $host = $this->createLiveComponent(GreenhouseHost::class, ['recordClass' => Membership::class])->component();
+    $host->mountAction('replicateHooked', [], ['recordKey' => '1~editor']);
+
+    expect(fn (): mixed => $host->callMountedAction())->toThrow(LogicException::class, gardenTakenRefusal('replicateHooked', Membership::class))
+        ->and(gardenRows('SELECT note_id, role, label FROM Membership ORDER BY role'))->toBe([
+            ['note_id' => 1, 'role' => 'editor', 'label' => 'Editors'],
+            ['note_id' => 1, 'role' => 'viewer', 'label' => 'Viewers'],
+        ]);
+})->with([
+    'the holder managed' => [false],
+    'the holder only stored' => [true],
+]);
+
+it("answers in the modal a key a beforeReplicaSaved() hook moves onto another record's", function (): void {
+    gardenOriginal(Membership::class);
+    gardenViewer(false);
+
+    $host = $this->createLiveComponent(GreenhouseHost::class, ['recordClass' => Membership::class])->component();
+    $host->mountAction('replicateKeyedHooked', [], ['recordKey' => '1~editor']);
+    $host->mountedActionsData[0]['role'] = 'author';
+
+    expect(gardenValidationErrors($host))->toBe(['mountedActionsData.0.role' => ['This value is already used.']])
+        ->and(gardenRowCount('Membership'))->toBe(2);
+});
+
+it('saves the key a beforeReplicaSaved() hook sets after a keyed modal, once it is free', function (): void {
+    gardenOriginal(Membership::class);
+
+    $host = $this->createLiveComponent(GreenhouseHost::class, ['recordClass' => Membership::class])->component();
+    $host->mountAction('replicateKeyedHooked', [], ['recordKey' => '1~editor']);
+    $host->mountedActionsData[0]['role'] = 'author';
+    $host->callMountedAction();
+
+    expect(gardenRows('SELECT note_id, role, label FROM Membership ORDER BY role'))->toBe([
+        ['note_id' => 1, 'role' => 'editor', 'label' => 'Editors'],
+        ['note_id' => 1, 'role' => 'viewer', 'label' => 'Editors'],
+    ]);
+});
+
+it('refuses by name a blank single string key a prePersist listener on the event manager leaves blank', function (): void {
+    gardenOriginal(Ticket::class);
+    $entityManager = $this::getContainer()->get(EntityManagerInterface::class);
+    $eventManager = $entityManager->getEventManager();
+    $listener = new class {
+        public function prePersist(PrePersistEventArgs $args): void
+        {
+        }
+    };
+
+    $eventManager->addEventListener(Events::prePersist, $listener);
+
+    try {
+        $host = $this->createLiveComponent(GreenhouseHost::class, ['recordClass' => Ticket::class])->component();
+        $host->mountAction('replicateBare', [], ['recordKey' => 'T-1']);
+
+        expect(fn (): mixed => $host->callMountedAction())->toThrow(LogicException::class, gardenRefusal('replicateBare', Ticket::class));
+    } finally {
+        $eventManager->removeEventListener(Events::prePersist, $listener);
+    }
+
+    expect(gardenRows('SELECT code, title FROM Ticket'))->toBe([
+        ['code' => 'T-1', 'title' => 'Alpha'],
+    ]);
+});
 
 it('refuses by name, after every prePersist callback has run, a replica whose key is still incomplete, and takes it back out of the unit of work', function (string $action): void {
     gardenOriginal(Planter::class);
@@ -336,14 +525,14 @@ it('saves a replica whose blank single string key a mapped prePersist entity lis
     ]);
 });
 
-it("records a limit: a replica whose prePersist callback leaves its single string key blank ends in Doctrine's own refusal at the detach, writing nothing", function (): void {
+it('refuses by name a replica whose prePersist callback leaves its single string key blank, writing nothing and leaving it scheduled', function (): void {
     gardenOriginal(Bulb::class);
     $entityManager = $this::getContainer()->get(EntityManagerInterface::class);
 
     $host = $this->createLiveComponent(GreenhouseHost::class, ['recordClass' => Bulb::class])->component();
     $host->mountAction('replicateBare', [], ['recordKey' => 'tulip-1']);
 
-    expect(fn (): mixed => $host->callMountedAction())->toThrow(ORMInvalidArgumentException::class, 'Entity has no identity, therefore remove from identity map cannot be performed.')
+    expect(fn (): mixed => $host->callMountedAction())->toThrow(LogicException::class, gardenRefusal('replicateBare', Bulb::class))
         ->and(gardenRows('SELECT name, bloom, season FROM Bulb'))->toBe([
             ['name' => 'tulip-1', 'bloom' => 'red', 'season' => 'autumn'],
         ])

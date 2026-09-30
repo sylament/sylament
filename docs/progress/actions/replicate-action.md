@@ -234,7 +234,9 @@ taken with [M7 · 6](../roadmap.md#m7--composite-identifiers):
   every identifier association is copied **unless that one association is the
   whole identifier** — a single derived identity — because there the copy would
   carry its original's key with no field left to change it. An identifier made
-  of two associations keeps both.
+  of two associations keeps both — so its bare replicate carries its original's
+  key, which the arm refuses by name before `persist()` (below), as it does a
+  scalar half left on a declared default its original also holds.
 
 A replica whose key is still incomplete right before it is written is refused by
 name, at two points and with one message:
@@ -275,17 +277,17 @@ written, and both read through the record's **own** manager — the first as
 `new AssociationReader($manager)` rather than the container's reader, which
 breaks for a class a non-default manager maps.
 
-One shape stays Doctrine's, and is recorded in the
-[roadmap's ledger](../roadmap.md#m7--composite-identifiers) rather than refused:
-a class that **does** carry a `prePersist` hook and still leaves a **single**
-string key blank passes the first point, and the second point's `detach()` then
-throws Doctrine's `ORMInvalidArgumentException` — a loud 500 with nothing
-written, the action's transaction rolled back, and the replica left scheduled
-for the rest of that request. A composite blank key detaches, its identity hash
-being `' '` rather than `''`. The Integration
+One shape Doctrine cannot take back. A class that carries a `prePersist` hook —
+or any class, once a `prePersist` listener sits on its manager's event manager —
+passes the first point, and a **single** string key that every hook still leaves
+blank reaches the second point with an identity hash of `''`, which Doctrine can
+neither detach nor remove. Since [M7 · 9](../roadmap.md#m7--composite-identifiers)
+the arm catches that refusal and throws the named one all the same: nothing is
+written, and the replica stays scheduled for the rest of the request, since
+nothing flushes after the refusal. A composite blank key detaches, its identity
+hash being `' '` rather than `''`. The Integration
 [`ReplicateActionTest`](../../../packages/actions/tests/Integration/ReplicateActionTest.php)
-pins the shape as a limit — the exception, no row written, the replica still
-scheduled — so the day Doctrine can take such a replica back, it fails.
+pins both faces — the class callback and a no-op listener on the event manager.
 
 There is no default replicate schema: no panels host answers `ReplicateAction`
 with the resource form, and neither do Filament's pages. A modal's operation is
@@ -308,9 +310,20 @@ after it. So a keyed modal pre-filled with the original's key beside a hook that
 derives the copy's key is refused as unchanged where it saved before. The remedy
 is Filament's own: derive the key in `fillForm()` or `mutateRecordDataUsing()`,
 the way the demo's `ArticleResource` pre-fills its slug with `-copy`, or leave the
-key out of the modal and let the hook set it. A taken key such a hook sets is not
-looked up at all and stays Doctrine's `EntityIdentityCollisionException` —
-recorded in the [roadmap's ledger](../roadmap.md#m7--composite-identifiers).
+key out of the modal and let the hook set it. A taken key such a hook sets is
+looked up since [M7 · 9](../roadmap.md#m7--composite-identifiers). With a
+modal, the record check runs a second time after the hook, so the modal answers
+it under the key field, or as a record error naming no field when the modal maps
+none. Without one, `findTakenIdentifiers()` runs before `persist()` and a taken
+key is refused by name — *"… whose key another record already holds …"* —
+which also closes the two shapes whose copy is keyed before any hook runs: an
+identifier made only of associations, and a scalar half left on a default its
+original holds. The lookup costs one `find()` when the key is complete: nothing
+when the identity map holds the record, one primary-key `SELECT` otherwise; with
+a modal and a hook, the record's own constraints run twice. What stays
+Doctrine's is a key a `prePersist` hook or listener sets onto a taken one:
+`persist()` itself raises the collision, after the listener and before any seam
+here.
 
 Eloquent's `replicate()` also drops `uniqueIds()`; the port drops nothing on
 uniqueness grounds for a column that is no key, exactly as Filament's action does

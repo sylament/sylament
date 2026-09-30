@@ -8,6 +8,7 @@ use Closure;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\Events;
 use Doctrine\ORM\Mapping\ClassMetadata;
+use Doctrine\ORM\ORMInvalidArgumentException;
 use LogicException;
 use Sylament\Actions\Concerns\CanCustomizeProcess;
 use Sylament\Actions\Concerns\CanMutateRecordData;
@@ -117,8 +118,9 @@ class ReplicateAction extends Action
      * assigned key is incomplete is refused by name before anything is written:
      * before `persist()` where no filler could complete it, and after it —
      * once every prePersist callback and listener has run — where one was
-     * exempted and left a key half blank, the replica then taken back out of
-     * the unit of work.
+     * exempted and left a key half blank. A key a `beforeReplicaSaved()` hook
+     * leaves is checked again: a modal answers a taken one under its field, and
+     * without a modal a taken key is refused by name before `persist()`.
      *
      * @param array<string, mixed> $data
      */
@@ -139,19 +141,32 @@ class ReplicateAction extends Action
 
         $this->callBeforeReplicaSaved();
 
+        if ($schema instanceof Schema && $this->beforeReplicaSaved instanceof Closure) {
+            $schema->getLiveComponentOrNull()?->validateSchemaRecord($schema, $replica);
+        }
+
         $metadata = $manager->getClassMetadata($replica::class);
+        $reader = new AssociationReader($manager);
 
         if (
-            new AssociationReader($manager)->hasIncompleteAssignedIdentifier($replica)
+            $reader->hasIncompleteAssignedIdentifier($replica)
             || ($metadata->isIdentifierNatural() && ! $this->mayAssignIdentifierOnPersist($manager, $metadata) && RecordKey::values($manager, $replica) !== null && RecordKey::find($manager, $replica) === null)
         ) {
             throw $this->refuseIncompleteReplica($replica);
         }
 
+        if (! $schema instanceof Schema && $reader->findTakenIdentifiers($replica) !== []) {
+            throw $this->refuseTakenReplica($replica);
+        }
+
         $manager->persist($replica);
 
         if ($metadata->isIdentifierNatural() && RecordKey::find($manager, $replica) === null) {
-            $manager->detach($replica);
+            try {
+                $manager->detach($replica);
+            } catch (ORMInvalidArgumentException) {
+                // Doctrine can neither detach nor remove a persisted entity whose identity hash is '': it stays scheduled, and nothing flushes after the refusal.
+            }
 
             throw $this->refuseIncompleteReplica($replica);
         }
@@ -175,6 +190,15 @@ class ReplicateAction extends Action
     {
         return new LogicException(sprintf(
             'The [%s] action built a replica of [%s] whose identifier is incomplete, so it cannot be saved as a new record. Put every identifier field the copy leaves unset in its schema() — enabled and dehydrated — or set it in beforeReplicaSaved().',
+            $this->getName(),
+            $replica::class,
+        ));
+    }
+
+    private function refuseTakenReplica(object $replica): LogicException
+    {
+        return new LogicException(sprintf(
+            'The [%s] action built a replica of [%s] whose key another record already holds, so it cannot be saved as a new record. Give the copy a key of its own: ask for it in schema(), or set it in beforeReplicaSaved() — an identifier association the copy keeps is left out with excludeAttributes().',
             $this->getName(),
             $replica::class,
         ));

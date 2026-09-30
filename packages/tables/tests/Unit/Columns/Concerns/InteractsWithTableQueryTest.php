@@ -71,7 +71,7 @@ it('composes the default search columns into the Or expression', function (): vo
     $listTable->getColumn('title')?->applySearchConstraint($listQuery, $listExpression, 'foo');
 
     expect((string) $listExpression)->toBe(match (TestPlatform::current()) {
-        TestPlatform::PostgreSql => 'LOWER(song.title) LIKE :sylament_search_0 OR LOWER(song.plays) LIKE :sylament_search_1',
+        TestPlatform::PostgreSql => "LOWER(song.title) LIKE :sylament_search_0 OR LOWER(CONCAT(song.plays, '')) LIKE :sylament_search_1",
         TestPlatform::Sqlite, TestPlatform::MySql => 'song.title LIKE :sylament_search_0 OR song.plays LIKE :sylament_search_1',
     })
         ->and($listQuery->getParameter('sylament_search_1')?->getValue())->toBe('%foo%');

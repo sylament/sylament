@@ -370,10 +370,15 @@ been the id as a string.
 Two semantics to know, both shared with Filament's own mass delete: a DQL delete
 **bypasses ORM cascades and lifecycle callbacks** (Filament's skips model events
 the same way), and it leaves the identity map holding rows that no longer exist —
-which is harmless here because the response re-renders from a fresh query. The
-arm throws rather than guessing when the table is on the records lane or names no
-entity manager: deleting by key is a query-lane capability, and a `records()`
-table has no statement to issue.
+which is harmless here because the response re-renders from a fresh query. It
+does not leave the second-level cache holding them: since
+[M7 · 9](../roadmap.md#m7--composite-identifiers) the statement carries
+Doctrine's `HINT_CACHE_EVICT`, which evicts the record class's entity region, so
+`find()` no longer serves a deleted record from the cache. No collection region
+is evicted: a cached collection that lists an evicted record misses and reloads,
+which is all an owner needs. The arm throws rather than guessing when the table
+is on the records lane or names no entity manager: deleting by key is a
+query-lane capability, and a `records()` table has no statement to issue.
 
 **On a database that enforces foreign keys, a row something still references stops
 the statement.** Every platform the suites run on enforces them, SQLite included,

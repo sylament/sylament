@@ -299,3 +299,5 @@ M7 · 7 took the one-column foreign key back to DQL, above, and the first two
 answers now hold for the SQL arm alone. The chunk sizes are unchanged: they
 bound the statement's parameter count, and the DQL parse cost they were first
 sized against is paid on the one-column arm only.
+
+Both by-key statements evict the second-level cache since [M7 · 9](../roadmap.md#m7--composite-identifiers): the DQL `UPDATE` through Doctrine's `HINT_CACHE_EVICT`, the DBAL `UPDATE` — which Doctrine never sees — through `Cache::evictEntityRegion()` on the target class afterwards. The owner's cached collection is not evicted and needs no eviction: once the target's region is gone, a collection listing one of its records misses and reloads.

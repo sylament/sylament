@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Sylament\Actions;
 
 use Doctrine\ORM\EntityManagerInterface;
+use Doctrine\ORM\Query;
 use LogicException;
 use Sylament\Actions\Concerns\CanCustomizeProcess;
 use Sylament\Schemas\Identity\IdentifierConstraint;
@@ -52,7 +53,9 @@ class DeleteBulkAction extends BulkAction
 
     /**
      * The fetching arm removes each record through its own manager and flushes
-     * once; the by-key arm is one DQL `DELETE` per chunk of the plucked keys.
+     * once; the by-key arm is one DQL `DELETE` per chunk of the plucked keys,
+     * and evicts the second-level cache region of the class it writes, which is
+     * all a cached collection needs to reload.
      * Everything a developer can get wrong — the table, its entity manager, its
      * record class, the shape of the keys — is resolved before either arm's
      * `try`, so it propagates instead of becoming the danger toast;
@@ -172,6 +175,7 @@ class DeleteBulkAction extends BulkAction
         $affectedRows = $query
             ->where(IdentifierConstraint::in($query, 'sylament_deleted_record', $recordClass, $keys, 'sylament_selected_record_keys'))
             ->getQuery()
+            ->setHint(Query::HINT_CACHE_EVICT, true)
             ->execute();
 
         if (!is_int($affectedRows)) {

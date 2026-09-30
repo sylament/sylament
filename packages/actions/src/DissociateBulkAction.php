@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Sylament\Actions;
 
 use Doctrine\ORM\EntityManagerInterface;
+use Doctrine\ORM\Query;
 use LogicException;
 use Sylament\Actions\Concerns\CanCustomizeProcess;
 use Sylament\Schemas\Identity\IdentifierConstraint;
@@ -59,10 +60,11 @@ class DissociateBulkAction extends BulkAction
      * over a one-column foreign key, SQL over the mapping's own join columns
      * where it spans several — bypassing the UnitOfWork the way
      * DeleteBulkAction's delete does — already-managed entities keep their stale
-     * owner until reloaded. Every mapping refusal runs before either arm — the
-     * four detach refusals and the many-to-many one — as does the by-key arm's
-     * own one, the shape of the keys, so all six propagate as developer errors
-     * rather than a toast.
+     * owner until reloaded — and evicts the second-level cache region of the
+     * class it writes, which is all a cached collection needs to reload. Every
+     * mapping refusal runs before either arm — the four detach refusals and the
+     * many-to-many one — as does the by-key arm's own one, the shape of the
+     * keys, so all six propagate as developer errors rather than a toast.
      *
      * @param array<mixed> $records
      */
@@ -178,9 +180,13 @@ class DissociateBulkAction extends BulkAction
             $query->set($quoteStrategy->getJoinColumnName($joinColumn, $metadata, $platform), 'NULL');
         }
 
-        return (int) $query
+        $affectedRows = (int) $query
             ->where(IdentifierConstraint::inColumns($entityManager, $query, $target->targetClass, $keys, 'sylament_selected_record_keys'))
             ->executeStatement();
+
+        $entityManager->getCache()?->evictEntityRegion($target->targetClass);
+
+        return $affectedRows;
     }
 
     /**
@@ -195,6 +201,7 @@ class DissociateBulkAction extends BulkAction
         $affectedRows = $query
             ->where(IdentifierConstraint::in($query, 'sylament_dissociated_record', $target->targetClass, $keys, 'sylament_selected_record_keys'))
             ->getQuery()
+            ->setHint(Query::HINT_CACHE_EVICT, true)
             ->execute();
 
         if (! is_int($affectedRows)) {

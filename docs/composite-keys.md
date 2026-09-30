@@ -52,7 +52,7 @@ ReplicateAction::make()->schema([
 ]);
 ```
 
-A key set in `beforeReplicaSaved()` is not checked for clashes.
+A key set in `beforeReplicaSaved()` is checked for clashes too: with a form, a taken key is *This value is already used.*; without one, the replicate is refused with an error naming the fix. A key a `prePersist` callback or listener sets is not checked, and a taken one fails inside Doctrine.
 
 ## Relation managers
 
@@ -60,7 +60,7 @@ Attach, detach, associate and dissociate work for composite targets and owners. 
 
 ## Custom URLs
 
-Override `getRecordRouteKey()` and `resolveRecordRouteBinding()` on the resource to use a slug or another key. `$recordRouteKeyName` works only for a single unique column.
+Override `getRecordRouteKey()` and `resolveRecordRouteBinding()` on the resource to use a slug or another key. `$recordRouteKeyName` works only for a single unique column. Naming one field of a composite key, an association, or anything the record class does not map as a field is refused on the first render.
 
 ## Custom bulk actions
 

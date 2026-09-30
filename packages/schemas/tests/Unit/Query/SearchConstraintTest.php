@@ -52,7 +52,7 @@ it('names parameters uniquely across calls', function (): void {
         });
 });
 
-it('casts a field that holds no character data on PostgreSQL alone, whatever the case folding', function (string $path, bool $casts): void {
+it('casts a field that holds no character data on PostgreSQL alone, whatever the case folding', function (string $path, array $postgreSql, array $elsewhere): void {
     $query = EntityManagerFactory::create()->createQueryBuilder()
         ->select('post')
         ->from(Post::class, 'post')
@@ -64,20 +64,56 @@ it('casts a field that holds no character data on PostgreSQL alone, whatever the
     $folded = SearchConstraint::like($query, $path, '1', forceCaseInsensitive: true);
     $exact = SearchConstraint::like($query, $path, '1', forceCaseInsensitive: false);
 
-    $operand = $casts && TestPlatform::current() === TestPlatform::PostgreSql ? "CONCAT({$path}, '')" : $path;
-
-    expect((string) $folded)->toBe("LOWER({$operand}) LIKE :sylament_search_0")
-        ->and((string) $exact)->toBe("{$operand} LIKE :sylament_search_1");
+    expect([(string) $folded, (string) $exact])->toBe(match (TestPlatform::current()) {
+        TestPlatform::PostgreSql => $postgreSql,
+        TestPlatform::Sqlite, TestPlatform::MySql => $elsewhere,
+    });
 })->with([
-    'an integer on the root' => ['post.id', true],
-    'an integer across a join' => ['author.id', true],
-    'a guid' => ['ticket.id', true],
-    'a bigint' => ['ticket.serial', true],
-    'a boolean' => ['flagged.flag', true],
-    'a string' => ['post.title', false],
-    'a string under a type of its own' => ['listing.sku', false],
-    'an alias the builder does not declare' => ['sy_x0_0.id', false],
-    'an expression' => ['LOWER(post.title)', false],
+    'an integer on the root' => [
+        'post.id',
+        ["LOWER(CONCAT(post.id, '')) LIKE :sylament_search_0", "CONCAT(post.id, '') LIKE :sylament_search_1"],
+        ['LOWER(post.id) LIKE :sylament_search_0', 'post.id LIKE :sylament_search_1'],
+    ],
+    'an integer across a join' => [
+        'author.id',
+        ["LOWER(CONCAT(author.id, '')) LIKE :sylament_search_0", "CONCAT(author.id, '') LIKE :sylament_search_1"],
+        ['LOWER(author.id) LIKE :sylament_search_0', 'author.id LIKE :sylament_search_1'],
+    ],
+    'a guid' => [
+        'ticket.id',
+        ["LOWER(CONCAT(ticket.id, '')) LIKE :sylament_search_0", "CONCAT(ticket.id, '') LIKE :sylament_search_1"],
+        ['LOWER(ticket.id) LIKE :sylament_search_0', 'ticket.id LIKE :sylament_search_1'],
+    ],
+    'a bigint' => [
+        'ticket.serial',
+        ["LOWER(CONCAT(ticket.serial, '')) LIKE :sylament_search_0", "CONCAT(ticket.serial, '') LIKE :sylament_search_1"],
+        ['LOWER(ticket.serial) LIKE :sylament_search_0', 'ticket.serial LIKE :sylament_search_1'],
+    ],
+    'a boolean' => [
+        'flagged.flag',
+        ["LOWER(CONCAT(flagged.flag, '')) LIKE :sylament_search_0", "CONCAT(flagged.flag, '') LIKE :sylament_search_1"],
+        ['LOWER(flagged.flag) LIKE :sylament_search_0', 'flagged.flag LIKE :sylament_search_1'],
+    ],
+    'a string' => [
+        'post.title',
+        ['LOWER(post.title) LIKE :sylament_search_0', 'post.title LIKE :sylament_search_1'],
+        ['LOWER(post.title) LIKE :sylament_search_0', 'post.title LIKE :sylament_search_1'],
+    ],
+    'a string under a type of its own' => [
+        'listing.sku',
+        ['LOWER(listing.sku) LIKE :sylament_search_0', 'listing.sku LIKE :sylament_search_1'],
+        ['LOWER(listing.sku) LIKE :sylament_search_0', 'listing.sku LIKE :sylament_search_1'],
+    ],
+    'an alias the builder does not declare' => [
+        'sy_x0_0.id',
+        ['LOWER(sy_x0_0.id) LIKE :sylament_search_0', 'sy_x0_0.id LIKE :sylament_search_1'],
+        ['LOWER(sy_x0_0.id) LIKE :sylament_search_0', 'sy_x0_0.id LIKE :sylament_search_1'],
+    ],
+    'an expression' => [
+        'LOWER(post.title)',
+        ['LOWER(LOWER(post.title)) LIKE :sylament_search_0', 'LOWER(post.title) LIKE :sylament_search_1'],
+        ['LOWER(LOWER(post.title)) LIKE :sylament_search_0', 'LOWER(post.title) LIKE :sylament_search_1'],
+    ],
 ]);
 
 it('reads the class a subselect alias stands for from the caller', function (): void {

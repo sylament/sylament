@@ -430,10 +430,10 @@ everywhere below that, and `chunk()`/`batch()` hand strings back.
 **The decode is one pipeline, and every operation shares it.** A key is split
 into components (a single-field identifier is one component, verbatim); each
 component is **shape-checked** if and only if its field's type is, or extends,
-`BigIntType`, `DecimalType` or `GuidType` — the three types whose own conversion hands a malformed string
-straight back, so nothing downstream would refuse it before the database does,
-the `guid` arm running only where the platform declares a guid type of its own;
-each is then run
+`BigIntType`, `DecimalType` or `GuidType` — the three families, matched by
+class, whose own conversion hands a malformed string straight back, so nothing
+downstream would refuse it before the database does, the `guid` arm running
+only where the platform declares a guid type of its own; each is then run
 through its field's `Type::convertToPHPValue()` — and where that raises a
 `ConversionException`, through
 [the type's own writer first](#a-type-that-refuses-its-printed-form-on-read-only-decodes-it-through-its-own-writer),
@@ -1133,12 +1133,12 @@ runs a test against:
 
 | File:line | Mutator | Why the gate cannot run a test against it |
 | --- | --- | --- |
-| `IdentifierConstraint.php:19` | `DecrementInteger`, `IncrementInteger` | `MAX_PARAMETERS_PER_STATEMENT` is a class constant, and pcov records no executed line for a constant's declaration, so the plugin finds no covering test and reports it uncovered. |
-| `IdentifierConstraint.php:21` | `DecrementInteger`, `IncrementInteger` | The same, for `MAX_COMPOSITE_KEYS_PER_STATEMENT`. |
+| `IdentifierConstraint.php:20` | `DecrementInteger`, `IncrementInteger` | `MAX_PARAMETERS_PER_STATEMENT` is a class constant, and pcov records no executed line for a constant's declaration, so the plugin finds no covering test and reports it uncovered. |
+| `IdentifierConstraint.php:22` | `DecrementInteger`, `IncrementInteger` | The same, for `MAX_COMPOSITE_KEYS_PER_STATEMENT`. |
 
 Those four are not equivalent, and the suite does kill them. Run by hand, each fails
 `IdentifierConstraintTest`'s *chunks a key list to what one statement carries*, and
-the two on line 21 also fail *batches a composite key list by the chunk rule and a
+the two on line 22 also fail *batches a composite key list by the chunk rule and a
 single one whole*. So a changed statement limit still fails the schemas suite, just
 not this gate.
 

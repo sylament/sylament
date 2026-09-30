@@ -305,13 +305,20 @@ final readonly class IdentifierFields
     {
         $instance = Type::getType($type);
 
-        return match (true) {
-            $instance instanceof BigIntType => preg_match('/^(?:0|-?[1-9][0-9]*)$/D', $component) === 1,
-            $instance instanceof DecimalType => preg_match('/^-?(?:0|[1-9][0-9]*)(?:\.[0-9]+)?$/D', $component) === 1,
-            $instance instanceof GuidType => !$this->hasNativeGuidType($platform)
-                || preg_match('/^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/D', $component) === 1,
-            default => true,
-        };
+        if ($instance instanceof BigIntType) {
+            return preg_match('/^(?:0|-?[1-9][0-9]*)$/D', $component) === 1;
+        }
+
+        if ($instance instanceof DecimalType) {
+            return preg_match('/^-?(?:0|[1-9][0-9]*)(?:\.[0-9]+)?$/D', $component) === 1;
+        }
+
+        if ($instance instanceof GuidType) {
+            return !$this->hasNativeGuidType($platform)
+                || preg_match('/^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/D', $component) === 1;
+        }
+
+        return true;
     }
 
     /**

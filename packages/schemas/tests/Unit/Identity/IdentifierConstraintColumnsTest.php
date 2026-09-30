@@ -64,6 +64,18 @@ it('matches a single int identifier as one typed IN list', function (): void {
         ->and($query->getSQL())->toBe('SELECT title FROM Post WHERE id IN (:sylament_selected_record_keys)');
 });
 
+it('matches int keys exactly as the strings PHP turned them into', function (): void {
+    $entityManager = IdentityRig::create();
+    $query = sqlTwinQuery($entityManager);
+
+    $predicate = IdentifierConstraint::inColumns($entityManager, $query, Post::class, [1, 3, 3], 'sylament_selected_record_keys');
+
+    expect($predicate)->toBe('id IN (:sylament_selected_record_keys)')
+        ->and($query->getParameters())->toBe(['sylament_selected_record_keys' => [1, 3]])
+        ->and($query->getParameterTypes())->toBe(['sylament_selected_record_keys' => ArrayParameterType::INTEGER])
+        ->and(sqlTwinRows($query, 'title', 'Post', $predicate))->toBe(['Seven']);
+});
+
 it('matches a scalar pair as a disjunction of its two columns', function (): void {
     $entityManager = IdentityRig::create();
     $query = sqlTwinQuery($entityManager);

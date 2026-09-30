@@ -26,12 +26,12 @@ final class IdentifierConstraint
      *
      * @param class-string $class
      */
-    public static function equals(QueryBuilder $query, string $alias, string $class, string $key, string $parameter): ?string
+    public static function equals(QueryBuilder $query, string $alias, string $class, int|string $key, string $parameter): ?string
     {
         self::assertParameterBase($parameter);
 
         $fields = IdentifierFields::of($query->getEntityManager(), $class);
-        $values = $fields->toDatabaseValues($query->getEntityManager(), $key);
+        $values = $fields->toDatabaseValues($query->getEntityManager(), (string) $key);
 
         return $values === null ? null : self::bind($query, self::paths($alias, $fields), $fields, $values, $parameter);
     }
@@ -41,12 +41,12 @@ final class IdentifierConstraint
      *
      * @param class-string $class
      */
-    public static function notEquals(QueryBuilder $query, string $alias, string $class, string $key, string $parameter): ?string
+    public static function notEquals(QueryBuilder $query, string $alias, string $class, int|string $key, string $parameter): ?string
     {
         self::assertParameterBase($parameter);
 
         $fields = IdentifierFields::of($query->getEntityManager(), $class);
-        $values = $fields->toDatabaseValues($query->getEntityManager(), $key);
+        $values = $fields->toDatabaseValues($query->getEntityManager(), (string) $key);
 
         if ($values === null) {
             return null;
@@ -62,8 +62,8 @@ final class IdentifierConstraint
     }
 
     /**
-     * @param class-string $class
-     * @param list<string> $keys
+     * @param class-string     $class
+     * @param list<int|string> $keys an int is the key PHP made of a numeric string array key
      */
     public static function in(QueryBuilder $query, string $alias, string $class, array $keys, string $parameter): string
     {
@@ -73,8 +73,8 @@ final class IdentifierConstraint
     /**
      * Null when no well-formed key remains, so there is nothing to exclude.
      *
-     * @param class-string $class
-     * @param list<string> $keys
+     * @param class-string     $class
+     * @param list<int|string> $keys
      */
     public static function notIn(QueryBuilder $query, string $alias, string $class, array $keys, string $parameter): ?string
     {
@@ -96,8 +96,8 @@ final class IdentifierConstraint
      * identifier columns, quoted where the mapping quotes them, bound on a DBAL
      * builder — which carries no entity manager, so it is handed in.
      *
-     * @param class-string $class
-     * @param list<string> $keys
+     * @param class-string     $class
+     * @param list<int|string> $keys
      */
     public static function inColumns(EntityManagerInterface $entityManager, DbalQueryBuilder $query, string $class, array $keys, string $parameter): string
     {
@@ -179,8 +179,8 @@ final class IdentifierConstraint
     }
 
     /**
-     * @param class-string $class
-     * @param list<string> $keys
+     * @param class-string     $class
+     * @param list<int|string> $keys
      *
      * @return list<list<string>>
      */
@@ -192,7 +192,7 @@ final class IdentifierConstraint
 
         $width = count(IdentifierFields::of($entityManager, $class)->names);
 
-        return array_chunk(array_values(array_unique($keys)), $width === 1
+        return array_chunk(array_values(array_unique(self::strings($keys))), $width === 1
             ? self::MAX_PARAMETERS_PER_STATEMENT
             : max(1, min(self::MAX_COMPOSITE_KEYS_PER_STATEMENT, intdiv(self::MAX_PARAMETERS_PER_STATEMENT, $width))));
     }
@@ -202,8 +202,8 @@ final class IdentifierConstraint
      * whole list at once for a single identifier, and {@see chunk()}'s batches
      * for a composite one.
      *
-     * @param class-string $class
-     * @param list<string> $keys
+     * @param class-string     $class
+     * @param list<int|string> $keys
      *
      * @return list<list<string>>
      */
@@ -215,12 +215,12 @@ final class IdentifierConstraint
 
         return IdentifierFields::of($entityManager, $class)->isComposite()
             ? self::chunk($entityManager, $class, $keys)
-            : [$keys];
+            : [self::strings($keys)];
     }
 
     /**
-     * @param class-string $class
-     * @param list<string> $keys
+     * @param class-string     $class
+     * @param list<int|string> $keys
      */
     private static function membership(QueryBuilder $query, string $alias, string $class, array $keys, string $parameter): ?string
     {
@@ -274,7 +274,7 @@ final class IdentifierConstraint
      * The well-formed keys as the values the database holds, each once; a key no
      * record of the class could mint is dropped rather than bound.
      *
-     * @param list<string> $keys
+     * @param list<int|string> $keys
      *
      * @return list<list<mixed>>
      */
@@ -283,7 +283,7 @@ final class IdentifierConstraint
         $tuples = [];
 
         foreach (array_values(array_unique($keys)) as $key) {
-            $values = $fields->toDatabaseValues($entityManager, $key);
+            $values = $fields->toDatabaseValues($entityManager, (string) $key);
 
             if ($values !== null) {
                 $tuples[] = $values;
@@ -341,6 +341,16 @@ final class IdentifierConstraint
     private static function paths(string $alias, IdentifierFields $fields): array
     {
         return array_map(static fn (string $field): string => "{$alias}.{$field}", $fields->names);
+    }
+
+    /**
+     * @param list<int|string> $keys
+     *
+     * @return list<string>
+     */
+    private static function strings(array $keys): array
+    {
+        return array_map(static fn (int|string $key): string => (string) $key, $keys);
     }
 
     /**

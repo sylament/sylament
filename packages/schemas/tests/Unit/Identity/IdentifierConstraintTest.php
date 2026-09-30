@@ -406,3 +406,42 @@ it('batches a composite key list by the chunk rule and a single one whole', func
         ->and(IdentifierConstraint::batch($entityManager, CompositePair::class, []))->toBe([])
         ->and(IdentifierConstraint::batch($entityManager, Post::class, []))->toBe([]);
 });
+
+it('takes int keys as the strings PHP turned them into, on every entry point', function (): void {
+    $entityManager = IdentityRig::create();
+    $fromStrings = identityQuery($entityManager, Post::class, 'post');
+    $fromInts = identityQuery($entityManager, Post::class, 'post');
+
+    $inStrings = IdentifierConstraint::in($fromStrings, 'post', Post::class, ['1', '3'], 'keys');
+    $inInts = IdentifierConstraint::in($fromInts, 'post', Post::class, [1, 3, 3], 'keys');
+    $notInInts = IdentifierConstraint::notIn(identityQuery($entityManager, Post::class, 'post'), 'post', Post::class, [2], 'keys');
+    $equalsQuery = identityQuery($entityManager, Post::class, 'post');
+    $equals = IdentifierConstraint::equals($equalsQuery, 'post', Post::class, 1, 'key');
+    $notEqualsQuery = identityQuery($entityManager, Post::class, 'post');
+    $notEquals = IdentifierConstraint::notEquals($notEqualsQuery, 'post', Post::class, 1, 'key');
+
+    expect($inInts)->toBe($inStrings)
+        ->and($fromInts->getParameter('keys')?->getValue())->toBe($fromStrings->getParameter('keys')?->getValue())
+        ->and($notInInts)->toBe('post.id NOT IN (:keys)')
+        ->and($equals)->toBe('post.id = :key')
+        ->and($equalsQuery->getParameter('key')?->getValue())->toBe(1)
+        ->and($notEquals)->toBe('post.id <> :key')
+        ->and($equalsQuery->andWhere((string) $equals)->getQuery()->getResult())->toHaveCount(1);
+});
+
+it('takes the int key PHP made of a single derived identity like its string', function (): void {
+    $entityManager = IdentityRig::create();
+    $fromStrings = identityQuery($entityManager, PostSeal::class, 'seal');
+    $fromInts = identityQuery($entityManager, PostSeal::class, 'seal');
+
+    expect(IdentifierConstraint::in($fromInts, 'seal', PostSeal::class, [1], 'keys'))->toBe(IdentifierConstraint::in($fromStrings, 'seal', PostSeal::class, ['1'], 'keys'))
+        ->and($fromInts->getParameter('keys')?->getValue())->toBe($fromStrings->getParameter('keys')?->getValue());
+});
+
+it('chunks and batches int keys as strings, a repeated key once', function (): void {
+    $entityManager = EntityManagerFactory::create();
+
+    expect(IdentifierConstraint::chunk($entityManager, Post::class, [1, '1', 2]))->toBe([['1', '2']])
+        ->and(IdentifierConstraint::batch($entityManager, Post::class, [1, 2]))->toBe([['1', '2']])
+        ->and(IdentifierConstraint::batch($entityManager, CompositePair::class, ['1~1', '2~2']))->toBe([['1~1', '2~2']]);
+});

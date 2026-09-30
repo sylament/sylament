@@ -332,28 +332,28 @@ final class RecordKey
 final class IdentifierConstraint
 {
     /** @param class-string $class */
-    public static function equals(QueryBuilder $query, string $alias, string $class, string $key, string $parameter): ?string;
+    public static function equals(QueryBuilder $query, string $alias, string $class, int|string $key, string $parameter): ?string;
 
     /** @param class-string $class */
-    public static function notEquals(QueryBuilder $query, string $alias, string $class, string $key, string $parameter): ?string;
+    public static function notEquals(QueryBuilder $query, string $alias, string $class, int|string $key, string $parameter): ?string;
 
     /**
-     * @param class-string $class
-     * @param list<string> $keys
+     * @param class-string     $class
+     * @param list<int|string> $keys
      */
     public static function in(QueryBuilder $query, string $alias, string $class, array $keys, string $parameter): string;
 
     /**
-     * @param class-string $class
-     * @param list<string> $keys
+     * @param class-string     $class
+     * @param list<int|string> $keys
      */
     public static function notIn(QueryBuilder $query, string $alias, string $class, array $keys, string $parameter): ?string;
 
     /**
      * `in()` over raw SQL: the class's identifier columns, quoted where the mapping quotes them, bound on a DBAL builder
      *
-     * @param class-string $class
-     * @param list<string> $keys
+     * @param class-string     $class
+     * @param list<int|string> $keys
      */
     public static function inColumns(EntityManagerInterface $entityManager, \Doctrine\DBAL\Query\QueryBuilder $query, string $class, array $keys, string $parameter): string;
 
@@ -368,16 +368,16 @@ final class IdentifierConstraint
     public static function orderBy(QueryBuilder $query, string $alias, string $class, string $direction): void;
 
     /**
-     * @param class-string $class
-     * @param list<string> $keys
+     * @param class-string     $class
+     * @param list<int|string> $keys
      *
      * @return list<list<string>>
      */
     public static function chunk(EntityManagerInterface $entityManager, string $class, array $keys): array;
 
     /**
-     * @param class-string $class
-     * @param list<string> $keys
+     * @param class-string     $class
+     * @param list<int|string> $keys
      *
      * @return list<list<string>>
      */
@@ -421,6 +421,11 @@ builder it is handed.
 `select()`, `correlate()` and `groupBy()` bind nothing at all. `equals()`,
 `notEquals()` and `notIn()` answer `null` rather than throwing, and `null` means
 *there is no predicate to add*, never *something went wrong*.
+
+A key list may hold ints beside strings — PHP turns a numeric string array key
+into an int, so `array_keys()` of a map keyed by record key hands one back — and
+each is cast to its string once, where it enters; a key stays a string
+everywhere below that, and `chunk()`/`batch()` hand strings back.
 
 **The decode is one pipeline, and every operation shares it.** A key is split
 into components (a single-field identifier is one component, verbatim); each

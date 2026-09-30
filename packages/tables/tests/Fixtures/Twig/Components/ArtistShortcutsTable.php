@@ -27,7 +27,9 @@ use Symfony\UX\LiveComponent\DefaultActionTrait;
  * to reach at that width — the row key, a confirming record action, both
  * selection strategies, the relation the aggregate column counts and the
  * relation search narrows, and — under `joinsHits` — a fetch join of that same
- * collection on a page of one, which is the two-step keyed page.
+ * collection on a page of one, which is the two-step keyed page — and, under
+ * `hitsAlias: 'hits'`, the same fetch join under the searchable column's own
+ * head, which a search refuses.
  *
  * `#[ORM\OrderBy(['label' => SortDirection::Ascending])]` on `Artist::$shortcuts` is what gives
  * the table a default sort with no `defaultSort()` of its own, and the seed
@@ -45,6 +47,9 @@ class ArtistShortcutsTable implements InteractsWithActions, InteractsWithTable
 
     #[LiveProp]
     public bool $joinsHits = false;
+
+    #[LiveProp]
+    public string $hitsAlias = 'shortcutHit';
 
     public function __construct(private readonly EntityManagerInterface $entityManager)
     {
@@ -78,8 +83,10 @@ class ArtistShortcutsTable implements InteractsWithActions, InteractsWithTable
             return $table->paginated([10]);
         }
 
+        $alias = $this->hitsAlias;
+
         return $table
-            ->modifyQueryUsing(static fn (QueryBuilder $query): QueryBuilder => $query->addSelect('shortcutHit')->leftJoin('record.hits', 'shortcutHit'))
+            ->modifyQueryUsing(static fn (QueryBuilder $query): QueryBuilder => $query->addSelect($alias)->leftJoin('record.hits', $alias))
             ->paginated([1]);
     }
 }

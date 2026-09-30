@@ -1211,6 +1211,12 @@ refused the fetch join outright, by the M7 · 1 guard this epic deleted; a
 single derived identity never was. It is written down now because M7 · 2 ships
 the first table in the toolkit that comes within one alias of doing both.
 
+Since [M7 · 9](../roadmap.md#m7--composite-identifiers) the case that filters in
+silence is refused by name: `forColumn()` throws a `LogicException` when the head
+is an alias the query fetch-joins as a **collection**, naming the column, the
+alias and both ways out. A to-one join, a join the query does not select and an
+entity join keep the caller's own resolution, which is what rule 2 is for.
+
 ### The record class is read off the base query's root entity
 
 `getRecordClass()` answers the entity class the table's rows are instances of —

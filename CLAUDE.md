@@ -116,9 +116,9 @@ there. Milestones prove out here (see `docs/progress/roadmap.md`).
   `DerivedIdentityCard` fetch-joins its `blocks`, badges them, counts them in a
   sortable `blocks_count` and searches both `article.title` (a to-one hop that
   is also half the identifier) and `blocks.heading`, while `CompositeKeyCard`
-  summarizes `hits` with a `Sum` and an `Average` and, since M7 · 9, searches
-  it — a number matching as text on PostgreSQL too — searches `target.title` and
-  counts `target.sections` — a dotted aggregate, which is how a root owning no
+  summarizes `hits` with a `Sum` and an `Average`, searches it (since M7 · 9, a
+  number matching as text on PostgreSQL too) and `target.title`, and counts
+  `target.sections` — a dotted aggregate, which is how a root owning no
   collection of its own still gets a count. The join is aliased `block`,
   singular, on purpose: a searchable dotted path whose head names an alias the
   builder already declares is not routed into the correlated `EXISTS`, and

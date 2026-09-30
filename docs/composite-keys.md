@@ -60,7 +60,7 @@ Attach, detach, associate and dissociate work for composite targets and owners. 
 
 ## Custom URLs
 
-Override `getRecordRouteKey()` and `resolveRecordRouteBinding()` on the resource to use a slug or another key. `$recordRouteKeyName` works only for a single unique column. Naming one field of a composite key, an association, or anything the record class does not map as a field is refused on the first render.
+Override `getRecordRouteKey()` and `resolveRecordRouteBinding()` on the resource to use a slug or another key. `$recordRouteKeyName` works only for a single unique column. Naming one field of a composite key, an association, or anything the record class does not map as a field is refused on first use (the first row it keys or URL it binds).
 
 ## Custom bulk actions
 

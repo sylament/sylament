@@ -382,7 +382,10 @@ identifier left blank stays HEAD's behaviour here, unrefused.
 [M7 · 6](../roadmap.md#m7--composite-identifiers) left this predicate as it
 was: its taken-key pass treats a blank component as incomplete and looks nothing
 up — a `Stringable` component that prints blank included, since M7 · 9 reads
-blankness through support's `blank()` there as everywhere else in the reader —
+blankness through support's `blank()` there as everywhere else in the reader,
+and an identifier association only while it is `null`, as everywhere else too:
+its target is an entity, never a printed key component, so one whose
+`__toString()` prints blank or which counts no members is still looked up —
 so a blank single scalar key on a create path still reaches Doctrine as it
 did — which is what keeps two new children whose `#[PrePersist]` fills that key
 from blank saving — and only [`ReplicateAction`](../actions/replicate-action.md)

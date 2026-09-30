@@ -12,6 +12,7 @@ use Sylament\Schemas\Tests\Fixtures\Doctrine\Cipher;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\CompositeOwnerRig;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\CompositeTargetRig;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\Binder;
+use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\Brooch;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\Carton;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\Chain;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\ChilledCarton;
@@ -20,6 +21,7 @@ use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\Divider;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\Enrolment;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\Headband;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\Listing;
+use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\Medallion;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\Nameplate;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\Pennant;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\Placard;
@@ -456,6 +458,28 @@ it('neither claims nor looks up a key holding a blank or a null component', func
     'an association onto a record whose own key is still blank' => ['blank target'],
     'a value object printing blank' => ['blank value object'],
 ]);
+
+it('refuses a new record on a stored key whose association half targets a record that prints blank', function (): void {
+    $recorder = new RecordingMiddleware();
+    $entityManager = IdentifierGuardRig::create($recorder);
+    $medallion = new Medallion();
+    $stored = new Brooch();
+
+    $stored->setMedallion($medallion);
+    $stored->setSlot(1);
+
+    EntityManagerFactory::seed($entityManager, $medallion, $stored);
+
+    $record = new Brooch();
+    $record->setMedallion($entityManager->find(Medallion::class, 1));
+    $record->setSlot(1);
+
+    $recorder->reset();
+
+    expect(new AssociationReader($entityManager)->findTakenIdentifiers($record))->toBe(['slot' => 'This value is already used.'])
+        ->and($recorder->normalizedStatements())->toHaveCount(1)
+        ->and($recorder->normalizedStatements()[0])->toContain('FROM Brooch p0 WHERE p0.medallion_id = ? AND p0.slot = ?');
+});
 
 it('neither claims nor looks up two new siblings on a code of whitespace alone', function (): void {
     $recorder = new RecordingMiddleware();

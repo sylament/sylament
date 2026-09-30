@@ -379,3 +379,41 @@ it('deletes nothing and says so when a selected related row is still referenced'
     expect($entityManager->getRepository(Shortcut::class)->count([]))->toBe(4)
         ->and($toast)->toContain('Failed to delete 1 records');
 });
+
+/*
+ * The by-key arm is Filament's mass delete, and it does not clear join rows
+ * either: `shortcut_artist` declares no cascade, so a selected shortcut a troupe
+ * still lists stops the one `DELETE` whole, as any other reference does. The
+ * fetching arm's `remove()` would clear that join row itself.
+ */
+it('deletes nothing and says so when a selected related row sits in a join table that does not cascade', function (): void {
+    [$client, $entityManager] = compositeRelationTableSeededClient();
+
+    $helm = new Shortcut();
+    $helm->setHost('plain');
+    $helm->setPath('help');
+    $helm->setLabel('Helm');
+
+    $entityManager->persist($helm);
+
+    $ada = $entityManager->find(Artist::class, 1);
+    $bob = $entityManager->find(Artist::class, 2);
+    assert($ada instanceof Artist && $bob instanceof Artist);
+
+    $ada->addShortcut($helm);
+    $helm->addTroupe($bob);
+    $entityManager->flush();
+    $entityManager->clear();
+
+    $component = $this->createLiveComponent('ArtistShortcutsTable', client: $client)
+        ->set('selectedTableRecords', ['plain~help'])
+        ->call('mountAction', ['name' => 'delete', 'arguments' => [], 'context' => ['table' => true, 'bulk' => true]])
+        ->call('callMountedAction');
+
+    $toast = (string) ($component->getDispatchedBrowserEvent($component->render(), 'sylament:notification')['payload']['html'] ?? '');
+
+    $entityManager->clear();
+
+    expect($entityManager->getRepository(Shortcut::class)->count([]))->toBe(5)
+        ->and($toast)->toContain('Failed to delete 1 records');
+});

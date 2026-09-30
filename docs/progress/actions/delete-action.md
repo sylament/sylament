@@ -390,7 +390,14 @@ or the chunks' transaction, leaves every row in place, and the danger toast repo
 the whole batch. `CompositeRelationshipTableTest` and `CompositeQueryDepthTest` pin
 both halves: a relation-scoped delete and a joined-page delete through cascading
 join columns, and a referenced row refused. The hydrating arm is unaffected:
-`remove()` deletes a record's many-to-many join rows itself.
+`remove()` deletes a record's many-to-many join rows itself. Clearing join rows
+first was weighed and ruled out in
+[M7 · 9](../roadmap.md#m7--composite-identifiers): the by-key arm keeps
+Filament's mass-delete semantics, whose `delete()` leaves pivot rows to the
+database too. A join table whose columns pointing at the record declare
+`ON DELETE CASCADE` is cleared by the database; any other is a reason to leave
+the fetching arm on. `CompositeRelationshipTableTest` pins the join-row face
+beside the child one.
 
 ### Both arms swallow and report the same failure
 

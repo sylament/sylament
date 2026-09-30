@@ -374,11 +374,14 @@ which is harmless here because the response re-renders from a fresh query. It
 does not leave the second-level cache holding them: since
 [M7 · 9](../roadmap.md#m7--composite-identifiers) the statement carries
 Doctrine's `HINT_CACHE_EVICT`, which evicts the record class's entity region, so
-`find()` no longer serves a deleted record from the cache. No collection region
-is evicted: a cached collection that lists an evicted record misses and reloads,
-which is all an owner needs. The arm throws rather than guessing when the table
-is on the records lane or names no entity manager: deleting by key is a
-query-lane capability, and a `records()` table has no statement to issue.
+`find()` no longer serves a deleted record from the cache — a record of that
+class, that is: a child row the database itself removes through
+`ON DELETE CASCADE` sits in its own region and keeps its entry, the reach
+Doctrine's hint has too. The entity region alone suffices: a deleted record is
+never cached again, so a cached collection that lists it misses and reloads. The
+arm throws rather than guessing when the table is on the records lane or names no
+entity manager: deleting by key is a query-lane capability, and a `records()`
+table has no statement to issue.
 
 **On a database that enforces foreign keys, a row something still references stops
 the statement.** Every platform the suites run on enforces them, SQLite included,

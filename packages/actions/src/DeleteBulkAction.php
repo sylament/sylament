@@ -54,8 +54,9 @@ class DeleteBulkAction extends BulkAction
     /**
      * The fetching arm removes each record through its own manager and flushes
      * once; the by-key arm is one DQL `DELETE` per chunk of the plucked keys,
-     * and evicts the second-level cache region of the class it writes, which is
-     * all a cached collection needs to reload.
+     * and evicts from the second-level cache the entity region of the class it
+     * writes alone, since a deleted record is never cached again and a cached
+     * collection listing it therefore misses and reloads.
      * Everything a developer can get wrong — the table, its entity manager, its
      * record class, the shape of the keys — is resolved before either arm's
      * `try`, so it propagates instead of becoming the danger toast;

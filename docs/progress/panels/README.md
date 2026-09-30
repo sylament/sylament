@@ -3211,11 +3211,11 @@ until [M7 · 9](../roadmap.md#m7--composite-identifiers) refused them on first
 use: a name the record class maps as no field — unmapped, or dotted without
 being an embeddable's field — was a `QueryException`, and a name that is an
 **association** bound, resolved, and then minted nothing, the property read
-answering an entity that *"is not a printable value."*. So is a name that is
-**one field of a several-field identifier**, which is never unique on its own:
-the first render of a list minting its row URLs, or the first binding, now
-throws a `LogicException` naming the resource, the name and the two ways out —
-leave the static unset, or override `getRecordRouteKey()` and
+answering an entity that *"is not a printable value."* A name that is **one
+field of a several-field identifier**, which is never unique on its own, is
+refused too: the first render of a list minting its row URLs, or the first
+binding, now throws a `LogicException` naming the resource, the name and the
+two ways out — leave the static unset, or override `getRecordRouteKey()` and
 `resolveRecordRouteBinding()` together — before any statement runs. The check
 reads the record class's metadata and nothing else, so it costs no statement,
 and a resource that overrides the pair is never refused, since only the two

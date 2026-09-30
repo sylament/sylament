@@ -250,9 +250,12 @@ which is also what resolves a dot-path into a correlated `EXISTS` subselect
 rather than a join. It also refuses, since
 [M7 · 9](../roadmap.md#m7--composite-identifiers), a dotted globally searchable
 attribute whose head is an alias the resource's global-search query fetch-joins
-as a collection: the first global search throws a `LogicException` naming the
-attribute, the alias and both ways out, as a table search does
+as a collection: the first global search throws the `LogicException` a table
+search throws, naming the attribute and the alias
 ([table.md](../tables/table.md#a-searchable-dotted-path-and-a-fetch-join-alias-may-not-share-a-head-segment)).
+Of the two ways out that message names, only one exists here: a globally
+searchable attribute has no `searchable(query:)`, so the way out is to alias
+that join something the attribute does not begin with.
 
 ### The provider is resolved through a tagged registry rather than `app()`
 

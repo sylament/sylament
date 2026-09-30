@@ -268,12 +268,13 @@ still reaches Doctrine's `EntityMissingAssignedId`, as before.
 
 The second point is after `persist()`, once every `prePersist` callback and
 listener has run, and it exempts nothing: a replica `RecordKey::find()` still
-cannot key is taken back out of the unit of work, then refused. It is what
-closes a class whose own `#[PrePersist]` exempted it from the first point and
-then left a half blank — that replica inserted `('', '')` — while a key a
-callback does fill from blank saves, because the second point reads it after
-the callback. Both points run inside the action's transaction, so nothing is
-written, and both read through the record's **own** manager — the first as
+cannot key is taken back out of the unit of work where Doctrine can take it
+back — the one case it cannot is below — then refused. It is what closes a
+class whose own `#[PrePersist]` exempted it from the first point and then left
+a half blank — that replica inserted `('', '')` — while a key a callback does
+fill from blank saves, because the second point reads it after the callback.
+Both points run inside the action's transaction, so nothing is written, and
+both read through the record's **own** manager — the first as
 `new AssociationReader($manager)` rather than the container's reader, which
 breaks for a class a non-default manager maps.
 
@@ -320,10 +321,13 @@ which also closes the two shapes whose copy is keyed before any hook runs: an
 identifier made only of associations, and a scalar half left on a default its
 original holds. The lookup costs one `find()` when the key is complete: nothing
 when the identity map holds the record, one primary-key `SELECT` otherwise; with
-a modal and a hook, the record's own constraints run twice. What stays
-Doctrine's is a key a `prePersist` hook or listener sets onto a taken one:
-`persist()` itself raises the collision, after the listener and before any seam
-here.
+a modal and a hook, the record's own constraints run twice, and so may the key
+lookup. What stays Doctrine's is a key a `prePersist` hook or listener sets onto
+a taken one: `persist()` itself raises the collision, after the listener and
+before any seam here. The lookup reads the key before any `prePersist` hook
+runs, so a copy such a hook would move **off** a taken key is refused by name,
+as the modal's record check refuses it — derive that key in
+`beforeReplicaSaved()` instead.
 
 Eloquent's `replicate()` also drops `uniqueIds()`; the port drops nothing on
 uniqueness grounds for a column that is no key, exactly as Filament's action does

@@ -379,7 +379,12 @@ class, that is: a child row the database itself removes through
 `ON DELETE CASCADE` sits in its own region and keeps its entry, the reach
 Doctrine's hint has too. The entity region alone suffices: a deleted record is
 never cached again, so a cached collection that lists it misses and reloads. The
-arm throws rather than guessing when the table is on the records lane or names no
+hint evicts before its statement runs — inside the chunks' transaction when
+there are several — so a concurrent request reading a selected record between
+the eviction and the commit can put it back into a `NONSTRICT_READ_WRITE`
+region, which serves it until the entry expires: the window Doctrine's own hint
+has, which only a unit-of-work write closes, its cached persisters evicting
+again after the transaction. The arm throws rather than guessing when the table is on the records lane or names no
 entity manager: deleting by key is a query-lane capability, and a `records()`
 table has no statement to issue.
 

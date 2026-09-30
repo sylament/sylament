@@ -27,6 +27,7 @@ use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\StrongboxSeal;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\Tariff;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\Ticket;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\Vault;
+use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\Voucher;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\Zone;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\EntityManagerFactory;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\IdentityRig;
@@ -408,6 +409,27 @@ it('mints a loaded record the key it already held under a decimal or a boolean i
         ->and(RecordKey::find($entityManager, $off))->toBe('0')
         ->and(RecordKey::of($entityManager, $on))->toBe('1')
         ->and(RecordKey::find($entityManager, $on))->toBe('1');
+});
+
+it('keys and resolves a record whose guid, bigint and decimal halves are registered under names of their own', function (): void {
+    $entityManager = EntityManagerFactory::create();
+
+    $voucher = new Voucher();
+    $voucher->setToken(IdentityRig::TICKET_ID);
+    $voucher->setSerial(7);
+    $voucher->setAmount('12.25');
+    $voucher->setLabel('spring');
+
+    EntityManagerFactory::seed($entityManager, $voucher);
+
+    $key = IdentityRig::TICKET_ID . '~7~12=2E25';
+    $loaded = $entityManager->find(Voucher::class, RecordKey::toIdentifier($entityManager, Voucher::class, $key) ?? []);
+
+    assert($loaded instanceof Voucher);
+
+    expect(RecordKey::of($entityManager, $loaded))->toBe($key)
+        ->and($loaded->getLabel())->toBe('spring')
+        ->and(RecordKey::toIdentifier($entityManager, Voucher::class, IdentityRig::TICKET_ID . '~abc~12=2E25'))->toBeNull();
 });
 
 it('mints a new record the key its row will read back, through of() and find() alike', function (int|string $serial): void {

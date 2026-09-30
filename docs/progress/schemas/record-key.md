@@ -192,7 +192,12 @@ a fixed 36-character string declaration, since DBAL 4 ships no
 column is a plain `CHAR(36)` holding whatever the application put in it, and
 refusing a non-UUID spelling there would refuse a key the record side itself
 minted: a legacy table keyed on un-hyphenated text goes on resolving, which is
-the point of gating rather than dropping the check.
+the point of gating rather than dropping the check. The check reaches a type by
+**class**, not by name, since M7 · 9: a type an application registers under a
+name of its own and derives from `BigIntType`, `DecimalType` or `GuidType` is
+checked as the family it extends, where it used to escape the check — a
+`bigint` one turning a malformed `{record}` into a `TypeError` 500 rather than a
+404 with no statement.
 
 The third belongs to the **collation**, not to any type. A key is compared with
 `=`, so a platform whose collation ignores case or accents resolves a record
@@ -419,8 +424,8 @@ builder it is handed.
 
 **The decode is one pipeline, and every operation shares it.** A key is split
 into components (a single-field identifier is one component, verbatim); each
-component is **shape-checked** if and only if its field is `bigint`, `decimal`
-or `guid` — the three types whose own conversion hands a malformed string
+component is **shape-checked** if and only if its field's type is, or extends,
+`BigIntType`, `DecimalType` or `GuidType` — the three types whose own conversion hands a malformed string
 straight back, so nothing downstream would refuse it before the database does,
 the `guid` arm running only where the platform declares a guid type of its own;
 each is then run
@@ -796,9 +801,10 @@ clauses, in the order the decode runs them:
    component, a lowercase or short escape, an escape of a `safe` byte, invalid
    UTF-8 after unescaping.
 2. **The wrong shape for a type whose conversion refuses nothing** — exactly
-   three of them. A `bigint` component must match `^(?:0|-?[1-9][0-9]*)$`, a
-   `decimal` component `^-?(?:0|[1-9][0-9]*)(?:\.[0-9]+)?$`, and a `guid`
-   component must be UUID-shaped, because all three types hand a malformed string
+   three families of them, matched by class. A component whose type is or
+   extends `BigIntType` must match `^(?:0|-?[1-9][0-9]*)$`, one whose type is or
+   extends `DecimalType` `^-?(?:0|[1-9][0-9]*)(?:\.[0-9]+)?$`, and one whose type
+   is or extends `GuidType` must be UUID-shaped, because all three types hand a malformed string
    straight back and nothing downstream would refuse it before the database does.
    The `guid` arm runs **only where the platform declares a guid type of its
    own**, which `IdentifierFields::hasNativeGuidType()` decides by comparing
@@ -1426,3 +1432,15 @@ in an open tab. There is no version marker in the format to detect it with, and
 adding one would cost every key two characters forever. Treat the order of
 `#[Id]` declarations as part of the schema, like a column name; it is pinned by a
 test over the fixtures so the fact cannot quietly stop being true.
+
+### A type extending a shape-checked family is checked as that family
+
+The shape check reaches `BigIntType`, `DecimalType` and `GuidType` by class, so a
+type registered under a name of its own is checked as the family it extends —
+which is the point, since such a type inherits the conversion that hands a
+malformed string back untouched. The cost is a subclass whose PHP value prints
+**outside** its parent's shape — a `BigIntType` whose reader answers a `T-123`
+value object — whose every key the decode now refuses where it used to accept
+it. No such type is known, and the way out is not to extend the family whose
+shape it no longer prints. Pinned by `Voucher` in `IdentifierFieldsTest`
+and `RecordKeyTest` (M7 · 9).

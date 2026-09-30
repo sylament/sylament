@@ -28,6 +28,9 @@ final class EntityManagerFactory
         CaselessType::NAME => CaselessType::class,
         UuidType::NAME => UuidType::class,
         UlidType::NAME => UlidType::class,
+        SerialType::NAME => SerialType::class,
+        AmountType::NAME => AmountType::class,
+        TokenType::NAME => TokenType::class,
     ];
 
     /**

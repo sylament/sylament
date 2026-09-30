@@ -6,9 +6,11 @@ namespace Sylament\Schemas\Identity;
 
 use BackedEnum;
 use Doctrine\DBAL\Platforms\AbstractPlatform;
+use Doctrine\DBAL\Types\BigIntType;
 use Doctrine\DBAL\Types\ConversionException;
+use Doctrine\DBAL\Types\DecimalType;
+use Doctrine\DBAL\Types\GuidType;
 use Doctrine\DBAL\Types\Type;
-use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\EntityManagerInterface;
 use LogicException;
 use Stringable;
@@ -294,15 +296,19 @@ final readonly class IdentifierFields
     }
 
     /**
-     * The three types whose own conversion hands a malformed string back
-     * untouched, so nothing downstream would refuse it before the database does.
+     * The three type families whose own conversion hands a malformed string
+     * back untouched, so nothing downstream would refuse it before the database
+     * does — each matched by class, so a type registered under a name of its own
+     * is checked as the family it extends.
      */
     private function hasShapeOf(string $component, string $type, AbstractPlatform $platform): bool
     {
-        return match ($type) {
-            Types::BIGINT => preg_match('/^(?:0|-?[1-9][0-9]*)$/D', $component) === 1,
-            Types::DECIMAL => preg_match('/^-?(?:0|[1-9][0-9]*)(?:\.[0-9]+)?$/D', $component) === 1,
-            Types::GUID => !$this->hasNativeGuidType($platform)
+        $instance = Type::getType($type);
+
+        return match (true) {
+            $instance instanceof BigIntType => preg_match('/^(?:0|-?[1-9][0-9]*)$/D', $component) === 1,
+            $instance instanceof DecimalType => preg_match('/^-?(?:0|[1-9][0-9]*)(?:\.[0-9]+)?$/D', $component) === 1,
+            $instance instanceof GuidType => !$this->hasNativeGuidType($platform)
                 || preg_match('/^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/D', $component) === 1,
             default => true,
         };

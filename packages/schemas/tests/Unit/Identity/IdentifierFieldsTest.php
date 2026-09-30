@@ -20,6 +20,7 @@ use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\StrongboxSeal;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\Tariff;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\Ticket;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\Vault;
+use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\Voucher;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\Zone;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\EntityManagerFactory;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\IdentityRig;
@@ -163,6 +164,11 @@ it('answers the PHP values a key names, and nothing for a spelling the record si
     'a malformed bigint' => [Ticket::class, IdentityRig::TICKET_ID . '~abc', null],
     'a bigint beyond a PHP integer with a trailing newline' => [Ticket::class, IdentityRig::TICKET_ID . '~99999999999999999999=0A', null],
     'a bigint beyond a PHP integer with a leading zero' => [Ticket::class, IdentityRig::TICKET_ID . '~099999999999999999999', null],
+    'a guid, a bigint and a decimal each under a name of its own' => [Voucher::class, IdentityRig::TICKET_ID . '~7~12=2E25', [IdentityRig::TICKET_ID, 7, '12.25']],
+    'a malformed bigint under a name of its own' => [Voucher::class, IdentityRig::TICKET_ID . '~abc~12=2E25', null],
+    'a bigint with a leading zero under a name of its own' => [Voucher::class, IdentityRig::TICKET_ID . '~07~12=2E25', null],
+    'a malformed decimal under a name of its own' => [Voucher::class, IdentityRig::TICKET_ID . '~7~abc', null],
+    'a decimal with leading zeros under a name of its own' => [Voucher::class, IdentityRig::TICKET_ID . '~7~0012=2E25', null],
 ]);
 
 /*
@@ -183,6 +189,14 @@ it('shapes a guid component only where the platform declares a guid type of its 
     'a malformed guid' => ['not-a-guid~7', ['not-a-guid', 7]],
     'a guid with a trailing newline' => [IdentityRig::TICKET_ID . '=0A~7', [IdentityRig::TICKET_ID . "\n", 7]],
 ]);
+
+it('shapes a guid component registered under a name of its own only where the platform declares a guid type', function (): void {
+    $postgres = EntityManagerFactory::createForPostgres();
+    $sqlite = EntityManagerFactory::createForSqlite();
+
+    expect(IdentifierFields::of($postgres, Voucher::class)->toPhpValues($postgres, 'not-a-guid~7~12=2E25'))->toBeNull()
+        ->and(IdentifierFields::of($sqlite, Voucher::class)->toPhpValues($sqlite, 'not-a-guid~7~12=2E25'))->toEqual(['not-a-guid', 7, '12.25']);
+});
 
 it("reads a component its type cannot read back through the type's writer, alone, beside a string half and behind an association", function (string $class, string $key, array $expected): void {
     $entityManager = EntityManagerFactory::create();

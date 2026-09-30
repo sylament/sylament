@@ -14,7 +14,6 @@ class Brooch
 {
     #[ORM\Id]
     #[ORM\ManyToOne]
-    #[ORM\JoinColumn(nullable: false)]
     private ?Medallion $medallion = null;
 
     #[ORM\Id]

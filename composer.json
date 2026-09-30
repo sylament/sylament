@@ -84,7 +84,6 @@
         "format:lint": "php-cs-fixer --diff fix",
         "format:twig": "twig-cs-fixer fix",
         "test": [
-            "@putenv SYLAMENT_TEST_DATABASE_URL=",
             "@test:actions",
             "@test:forms",
             "@test:infolists",
@@ -111,21 +110,13 @@
             "@putenv SYLAMENT_TEST_DATABASE_URL=",
             "pest -c packages/schemas/phpunit.dist.xml --test-directory=packages/schemas/tests --mutate --path=packages/schemas/src/Identity --parallel --min=98.6"
         ],
-        "test:doctrine": [
-            "@test:support",
-            "@test:actions",
-            "@test:forms",
-            "@test:panels",
-            "@test:schemas",
-            "@test:tables"
-        ],
         "test:mysql": [
             "@putenv SYLAMENT_TEST_DATABASE_URL=mysql://root:sylament@127.0.0.1:33307/sylament_test?serverVersion=8.4.0&charset=utf8mb4",
-            "@test:doctrine"
+            "@test"
         ],
         "test:postgresql": [
             "@putenv SYLAMENT_TEST_DATABASE_URL=postgresql://postgres:sylament@127.0.0.1:55433/sylament_test?serverVersion=18&charset=utf8",
-            "@test:doctrine"
+            "@test"
         ],
         "test:widgets": "pest -c packages/widgets/phpunit.dist.xml --test-directory=packages/widgets/tests",
         "test:static": "phpstan analyse",

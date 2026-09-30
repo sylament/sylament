@@ -1818,9 +1818,10 @@ today would only re-render what the morph already preserves.
 
 [`SearchConstraint::like()`](../../../packages/tables/src/Query/SearchConstraint.php)
 emits `path LIKE :param` — or `LOWER(path) LIKE :param` on the case-insensitive
-arm — and nothing else. As of M3·4 the implementation itself lives in
+arm — and, on PostgreSQL, casts a non-character path to text first. As of M3·4
+the implementation itself lives in
 [`Sylament\Schemas\Query\SearchConstraint`](../schemas/search-constraint.md),
-with tables' class delegating; the reach described below is unchanged. Filament's `generate_search_column_expression()` does
+with tables' class delegating. Filament's `generate_search_column_expression()` does
 more on Postgres: it double-quotes each segment of the name and appends `::text`,
 because Postgres refuses `integer LIKE text` outright where MySQL and SQLite
 coerce silently. So a `searchable()` integer column was portable in Filament and,
@@ -1836,8 +1837,8 @@ function at all — the parser's built-in string list is `concat`, `substring`,
 `Configuration::addCustomStringFunction()`, which the toolkit cannot assume a
 consumer has called. A platform-conditional emission would also have to happen
 *before* the parser runs, which is exactly where `SearchConstraint` already reads
-the platform for its case-insensitivity default — so a cast arm can be added
-there the day one is worth its dependency.
+the platform for its case-insensitivity default — so that is where the cast arm
+was added, the M7 · 9 paragraph below saying how.
 
 Since [M7 · 9](../roadmap.md#m7--composite-identifiers) the type-aware cast is
 what runs: schemas' `like()` wraps a non-character field in `CONCAT(path, '')` on

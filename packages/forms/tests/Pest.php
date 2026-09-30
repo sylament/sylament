@@ -92,7 +92,7 @@ function wireField(Field $field): Field
  */
 function uploadStorageDir(string $storage = ''): string
 {
-    return mb_rtrim(dirname(__DIR__) . '/var/cache/' . ($_ENV['APP_ENV'] ?? $_SERVER['APP_ENV'] ?? 'test') . '/storage/' . $storage, '/');
+    return mb_rtrim(__DIR__ . '/../var/cache/' . ($_ENV['APP_ENV'] ?? $_SERVER['APP_ENV'] ?? 'test') . '/storage/' . $storage, '/');
 }
 
 function removeDirectory(string $directory): void

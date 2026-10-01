@@ -95,7 +95,7 @@ final class RecordKey
      * they differ from what {@see of()} prints. Null when a component is
      * missing at any level.
      *
-     * @internal read by the relation layer's owner bind, and not part of the key contract
+     * @internal read by the relation layer — the owner bind and the record check's taken-key and changed-key passes — and by ReplicateAction's blank-key check, and not part of the key contract
      *
      * @param class-string|null $class the mapped class to read the record by, when the caller declares one
      *

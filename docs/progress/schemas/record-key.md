@@ -68,7 +68,13 @@ and `IdentifierConstraint`, `IdentifierFields` and `KeySelection` did not move a
 all.
 Its other consumers took the interface as it stood: the record check's two
 passes read `values()` and `IdentifierFields::printable()`, and `ReplicateAction`
-asks `find()` whether a replica is keyable yet.
+reads `values()` and asks `find()` whether a replica is keyable yet.
+[M7 · 10](../roadmap.md#m7--composite-identifiers) moved `RecordKey.php` by one
+docblock line and no code: `values()`'s `@internal` note named the owner bind
+alone, and now names every reader it has — the owner bind, the record check's
+taken-key and changed-key passes, and `ReplicateAction`'s blank-key check, which
+reads it from another package. `@internal` keeps meaning *no part of the key
+contract*, and the note is the list of sanctioned readers.
 
 **Status:** done — see the [status vocabulary](../README.md#statuses).
 
@@ -85,7 +91,7 @@ and/or **diverges** → the permanent note in [Divergences](#divergences).
 | [`RecordKey::find()`](../../../packages/schemas/src/Identity/RecordKey.php) — the non-throwing twin, `null` while the identifier is incomplete, minted the same way | done | — | [semantics](#find-answers-identity-not-persistence) · [semantics](#a-key-is-minted-from-the-value-its-row-would-read-back) |
 | [`RecordKey::fromValues()`](../../../packages/schemas/src/Identity/RecordKey.php) — identifier values already in their PHP form, in mapping order, to the key a record mints — never a projected row's raw columns, which go through [`KeySelection::keyOf()`](../../../packages/schemas/src/Identity/KeySelection.php) | done | — | [semantics](#the-row-side-and-the-record-side-mint-one-string-and-only-the-codec-may) |
 | [`RecordKey::toIdentifier()`](../../../packages/schemas/src/Identity/RecordKey.php) — a client string to the field ⇒ PHP value map `EntityManager::find()` takes, `null` when malformed | done | — | [contract](#the-grammar) · [semantics](#a-malformed-key-never-reaches-the-database) |
-| [`RecordKey::values()`](../../../packages/schemas/src/Identity/RecordKey.php) — a record's identifier values before they are printed, an association reduced to its target's (`@internal`: the relation layer's owner bind reads it, and it is no part of the key contract) | done | — | [contract](#the-api) |
+| [`RecordKey::values()`](../../../packages/schemas/src/Identity/RecordKey.php) — a record's identifier values before they are printed, an association reduced to its target's (`@internal`: the relation layer's owner bind and the record check's taken-key and changed-key passes read it, and so does `ReplicateAction`'s blank-key check; it is no part of the key contract) | done | — | [contract](#the-api) |
 | [`IdentifierConstraint::equals()`](../../../packages/schemas/src/Identity/IdentifierConstraint.php) / `notEquals()` | done | — | [contract](#the-operations-and-their-dql) |
 | [`IdentifierConstraint::in()`](../../../packages/schemas/src/Identity/IdentifierConstraint.php) / `notIn()` | done | — | [contract](#the-operations-and-their-dql) · [semantics](#the-batch-is-a-balanced-or-tree-because-sqlite-counts-expression-depth-not-terms) |
 | [`IdentifierConstraint::inColumns()`](../../../packages/schemas/src/Identity/IdentifierConstraint.php) — `in()` in SQL, on the class's identifier **columns** over a DBAL `QueryBuilder`, for a statement that names one table | done | — | [contract](#incolumns-is-in-in-sql-for-a-statement-that-names-one-table) |
@@ -320,7 +326,7 @@ final class RecordKey
     public static function toIdentifier(EntityManagerInterface $entityManager, string $class, string $key): ?array;
 
     /**
-     * @internal read by the relation layer's owner bind, and not part of the key contract
+     * @internal read by the relation layer — the owner bind and the record check's taken-key and changed-key passes — and by ReplicateAction's blank-key check, and not part of the key contract
      *
      * @param class-string|null $class the mapped class to read the record by, when the caller declares one
      *

@@ -75,6 +75,7 @@ Sylament-only, so no row has a _Ports_ link.
 | Feature | Status | Blocked by | Detail |
 | --- | --- | --- | --- |
 | [`__construct(?EntityManagerInterface, ?PropertyAccessor)`](../../../packages/schemas/src/State/AssociationReader.php) + [`hasEntityManager()`](../../../packages/schemas/src/State/AssociationReader.php) — the optional-Doctrine seam, and the accessor the writes go through | done | — | [semantics](#the-entity-manager-is-optional-and-the-two-halves-answer-differently) |
+| [`withEntityManager(EntityManagerInterface $entityManager)`](../../../packages/schemas/src/State/AssociationReader.php) — this reader bound to another entity manager, as a clone that keeps its class, its accessor and what a subclass carries | done | — | [semantics](#withentitymanager-is-a-clone-so-a-subclassed-reader-survives-the-rebind) |
 | [`describe(string $class, string $property)`](../../../packages/schemas/src/State/AssociationReader.php) — the mapping at one property, or null | done | — | [semantics](#a-null-target-means-no-doctrine-answer-not-no-such-property) |
 | Transient / anonymous-class guarding inside `describe()` | done | — | [semantics](#istransient-answers-false-for-an-anonymous-class-so-it-is-not-the-whole-guard) |
 | [`getReference(string $class, int\|string $id)`](../../../packages/schemas/src/State/AssociationReader.php) — the record a key names, decoded before anything is looked up | done | — | [semantics](#getreference-decodes-first-and-then-picks-its-route) · [diverges](#getreference-throws-where-doctrine-returns-null) |
@@ -196,6 +197,62 @@ no Doctrine has no identity map for a key to move in or be held by — so a read
 built with `new`, which is what a schema built outside the container holds,
 guards nothing. Both test files pin it, *guards nothing without an entity
 manager*.
+
+### `withEntityManager()` is a clone, so a subclassed reader survives the rebind
+
+`withEntityManager(EntityManagerInterface $entityManager): static` answers this
+reader bound to another manager. It is a clone —
+`clone($this, ['entityManager' => $entityManager])`, PHP 8.5's clone-with, which
+reassigns the `private readonly` manager from inside the class, on a subclass's
+instance too — so the copy keeps the reader's class, its property accessor by
+identity and anything a subclass carries, and the reader it was called on keeps
+the manager it had. It answers a new instance every time, the house's `with*`
+shape ([`Paginator::withRecords()`](../support/pagination.md)). `new static(...)`
+was the alternative and is wrong: it breaks a subclass whose constructor takes
+arguments of its own, and drops whatever state one holds.
+
+It is not final, on purpose. A subclass's `__clone()` runs **before** the
+clone-with assignment, so one holding per-manager state resets it there. And a
+reader that **delegates** to another — the decorator shape, since the reader has
+no interface — keeps delegating to the old manager after a plain clone, because
+the clone copies its reference to the inner reader; it overrides the method to
+rebind that one too:
+
+```php
+public function withEntityManager(EntityManagerInterface $entityManager): static
+{
+    return clone(parent::withEntityManager($entityManager), ['inner' => $this->inner->withEntityManager($entityManager)]);
+}
+```
+
+It exists for the write seams that read through the manager they flush
+through, which since [M7 · 10](../roadmap.md#m7--composite-identifiers) rebind
+the reader they already hold rather than constructing one: `CreateAction`,
+`EditAction` and `ReplicateAction` their mounted schema's reader —
+`ReplicateAction`'s arm without a schema the action's own — tables' editable
+cell its table's, and the resource create and edit pages their form's. Built
+with `new`, each of those dropped a subclassed `sylament_schemas.association_reader`
+service — the service an application may decorate — and the container's
+property accessor with it.
+[`AssociationReaderConstructionTest`](../../../packages/schemas/tests/Architecture/AssociationReaderConstructionTest.php)
+keeps it so: in `packages/*/src` only `CanAccessAssociations`' manager-less
+fallback constructs a reader.
+
+A reader taking its manager per call instead — or resolving one from a
+`ManagerRegistry` per class — is deferred indefinitely. The record check runs
+inside `getData()`, through `InteractsWithSchemas::validateSchemaRecord()`, and
+only the caller knows which manager it will flush through, so a per-call manager
+would have to change that host contract; and a registry answers the first
+manager whose mapping knows a class, so it cannot pick a second manager over the
+same mapping — the shape a table whose `query()` runs on another manager has
+([below](#what-the-taken-key-probe-cannot-see)).
+
+Pinned by
+[`AssociationReaderWithEntityManagerTest`](../../../packages/schemas/tests/Unit/State/AssociationReaderWithEntityManagerTest.php):
+a clone bound to the manager with the original untouched, the accessor kept, a
+subclass and its own constructor argument kept, a bound reader rebound, and the
+manager used for real — a key moved on a record a second manager keeps is
+refused only by the reader rebound to that manager.
 
 ### A null target means "no Doctrine answer", not "no such property"
 
@@ -456,9 +513,11 @@ the three places that persist a record a form mapped:
 Each asks it after `persist()` and before `flush()`, and refuses a `true` by name.
 They refuse a key field the form leaves out, which the record check
 [leaves to them](can-be-validated.md#a-blank-assigned-key-is-refused-before-anything-is-written).
-The two create seams build the reader on the manager their flush writes
-through, never the container's default; `Select` asks the reader it persists and
-flushes through.
+The two create seams rebind the reader they hold to the manager their flush
+writes through, with
+[`withEntityManager()`](#withentitymanager-is-a-clone-so-a-subclassed-reader-survives-the-rebind),
+never the container's default; `Select` asks the reader it persists and flushes
+through.
 
 Where [`hasIncompleteAssignedIdentifier()`](#an-incomplete-assigned-identifier-is-the-question-the-create-paths-ask)
 reads the mapping to guess what will fill the key, this one reads the record after
@@ -623,14 +682,17 @@ Five limits, recorded rather than closed:
   over the same mapping, reads as new, and an unchanged write of it answers
   *already used*. Pinned as behaviour: *reads a detached record, or one another
   manager keeps, as a new one — so its own unchanged key answers taken*. The
-  hosts keep the second-manager half out of reach. An action binds its schema's
-  reader to the manager it writes through — `getEntityManagerForRecord()`, the
-  table query's manager, else the registry's for the class — so on a table
-  whose `query()` runs on a second manager both rules read that manager's unit
-  of work and database, where the flush runs; panels' create and edit pages
-  write through the container's manager, the one the schema's reader already
-  holds; and a custom host that writes through another manager binds its
-  schema's reader the same way, through `Schema::setAssociationReader()`. The
+  hosts keep the second-manager half out of reach. An action rebinds its
+  schema's reader to the manager it writes through, with
+  [`withEntityManager()`](#withentitymanager-is-a-clone-so-a-subclassed-reader-survives-the-rebind)
+  — `getEntityManagerForRecord()`, the table query's manager, else the
+  registry's for the class — so on a table whose `query()` runs on a second
+  manager both rules read that manager's unit of work and database, where the
+  flush runs; panels' create and edit pages bind their form's reader to the
+  manager they flush through, the container's unless a page overrides
+  `setRecordPersistence()`; and a custom host that writes through another
+  manager binds its schema's reader the same way,
+  `$schema->setAssociationReader($schema->getAssociationReader()->withEntityManager($manager))`. The
   detached record is what remains, and the base failed its write anyway:
   `persist()` takes a detached record for a new one, so its flush met the stored
   key. The hosts' half is pinned by actions'

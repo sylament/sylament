@@ -45,6 +45,16 @@ class AssociationReader
     }
 
     /**
+     * This reader bound to another entity manager: a clone, so its class, its
+     * property accessor and anything a subclass carries come along. A subclass
+     * that delegates to another reader rebinds that one too, by overriding this.
+     */
+    public function withEntityManager(EntityManagerInterface $entityManager): static
+    {
+        return clone($this, ['entityManager' => $entityManager]);
+    }
+
+    /**
      * What the entity mapping declares at a property, or null when there is no
      * entity manager, the class is not a managed entity, or the property is not
      * an association — so a caller keeps its non-association behaviour.

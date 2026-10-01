@@ -1213,8 +1213,15 @@ the first table in the toolkit that comes within one alias of doing both.
 
 Since [M7 · 9](../roadmap.md#m7--composite-identifiers) the case that filters in
 silence is refused by name: `forColumn()` throws a `LogicException` when the head
-is an alias the query fetch-joins as a **collection**, naming the column, the
-alias and both ways out. A to-one join, a join the query does not select and an
+is an alias the query fetch-joins as a **collection**, naming the path, the alias
+and the ways out. Since [M7 · 10](../roadmap.md#m7--composite-identifiers) the
+message speaks of a *searchable path* and *the query* rather than a column and
+the table query, because panels' global search reaches it through the same
+`forColumn()` and has no column to name: it leads with re-aliasing the join,
+which both callers can do, and offers `searchable(query:)` as what a table
+column can also do
+([global-search.md](../panels/global-search.md#the-per-attribute-constraint-hook-is-collapsed-into-one-method)).
+A to-one join, a join the query does not select and an
 entity join keep the caller's own resolution, which is what rule 2 is for.
 
 ### The record class is read off the base query's root entity

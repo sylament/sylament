@@ -253,9 +253,16 @@ attribute whose head is an alias the resource's global-search query fetch-joins
 as a collection: the first global search throws the `LogicException` a table
 search throws, naming the attribute and the alias
 ([table.md](../tables/table.md#a-searchable-dotted-path-and-a-fetch-join-alias-may-not-share-a-head-segment)).
-Of the two ways out that message names, only one exists here: a globally
-searchable attribute has no `searchable(query:)`, so the way out is to alias
-that join something the attribute does not begin with.
+Since [M7 · 10](../roadmap.md#m7--composite-identifiers) that message is worded
+for both its callers: it speaks of a *searchable path* and *the query*, leads
+with the way out that exists here — alias that join something the attribute
+does not begin with — and offers `searchable(query:)` only as what a **table
+column** can also do, since a globally searchable attribute has none. The
+message is pinned one tier down, in tables'
+[`FetchJoinedSearchAliasTest`](../../../packages/tables/tests/Integration/FetchJoinedSearchAliasTest.php)
+and `SearchConstraintTest`: global search reaches the same
+`SearchConstraint::forColumn()` a table search does, and no panels test quotes
+the message.
 
 ### The provider is resolved through a tagged registry rather than `app()`
 

@@ -63,7 +63,7 @@ it("refuses the first search when the fetch join takes the searchable column's h
     [$client] = fetchJoinedAliasSeededClient();
 
     expect(fn (): mixed => $this->createLiveComponent('ArtistShortcutsTable', ['joinsHits' => true, 'hitsAlias' => 'hits'], client: $client)->set('tableSearch', 'curl'))
-        ->toThrow(RuntimeError::class, 'The searchable column [hits.agent] begins with [hits]');
+        ->toThrow(RuntimeError::class, 'The searchable path [hits.agent] begins with [hits]');
 });
 
 it("renders the fetch join under the column's head until something is searched", function (): void {

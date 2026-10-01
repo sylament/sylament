@@ -59,7 +59,7 @@ function fetchJoinAliasQuery(string $join, string $alias, bool $selects): QueryB
 
 it('refuses a searchable path whose head is an alias the query fetch-joins as a collection', function (): void {
     expect(fn (): string|Comparison => SearchConstraint::forColumn(fetchJoinAliasQuery('record.hits', 'hits', selects: true), 'hits.agent', 'curl', null))
-        ->toThrow(LogicException::class, "The searchable column [hits.agent] begins with [hits], an alias the table query fetch-joins as a collection, so a search would narrow each row's [hits] rather than choose rows. Alias that join something the column does not begin with, or take the column's search over with searchable(query:).");
+        ->toThrow(LogicException::class, "The searchable path [hits.agent] begins with [hits], an alias the query fetch-joins as a collection, so a search would narrow each row's [hits] rather than choose rows. Alias that join something the path does not begin with; a table column can also take its search over with searchable(query:).");
 });
 
 it('keeps searching a declared alias the query joins without fetching, or fetches as a single record', function (string $join, string $alias, bool $selects, string $column): void {

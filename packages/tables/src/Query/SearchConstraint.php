@@ -47,7 +47,7 @@ final class SearchConstraint
 
         $path = match (true) {
             !$analysed instanceof ResolvedRelationPath => ColumnPathResolver::resolve($query, $column),
-            default => ($query->getRootAliases()[0] ?? throw new LogicException('The table query has no root alias to resolve column paths against.')) . ".{$analysed->fieldPath}",
+            default => ($query->getRootAliases()[0] ?? throw new LogicException('The query has no root alias to resolve a searchable path against.')) . ".{$analysed->fieldPath}",
         };
 
         return self::like($query, $path, $search, $forceCaseInsensitive);
@@ -65,7 +65,7 @@ final class SearchConstraint
         $head = explode('.', $column, 2)[0];
 
         if (QueryAliases::isFetchJoinedCollection($query, $head)) {
-            throw new LogicException(sprintf("The searchable column [%s] begins with [%s], an alias the table query fetch-joins as a collection, so a search would narrow each row's [%s] rather than choose rows. Alias that join something the column does not begin with, or take the column's search over with searchable(query:).", $column, $head, $head));
+            throw new LogicException(sprintf("The searchable path [%s] begins with [%s], an alias the query fetch-joins as a collection, so a search would narrow each row's [%s] rather than choose rows. Alias that join something the path does not begin with; a table column can also take its search over with searchable(query:).", $column, $head, $head));
         }
     }
 }

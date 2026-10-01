@@ -948,12 +948,20 @@ neither widens nor narrows that.
 `getData()` is the opposite. It writes **every** leaf path of the validated
 state and lets `NoSuchPropertyException` surface when the target cannot take one:
 by calling it you have declared that this state is the object's data, and
-silently dropping a key would silently drop a user's edit. A missing
-intermediate *object* is the one softened error: `setOnRecord()` wraps it in a
-`LogicException` naming the path, because Symfony's own message explains
-nothing at this boundary. The escape hatch for a page-only field is Filament's
-own idiom — `dehydrated(false)` removes it from `getState()` and therefore from
-the mapping. Ordering matters and is deliberate:
+silently dropping a key would silently drop a user's edit. Two errors are
+softened. A missing intermediate *object*: `setOnRecord()` wraps it in a
+`LogicException` naming the path, because Symfony's own message explains nothing
+at this boundary. And, since [M7 · 10](../roadmap.md#m7--composite-identifiers),
+a property **no setter can change** — a `public readonly` one, or a private one
+behind a getter alone: left alone when it already holds the value the state
+writes, and refused by name — the path, the class, the two value types — when it
+holds another or none yet
+([property-accessor.md](property-accessor.md#a-property-no-setter-can-change-is-left-alone-when-it-already-holds-the-value)).
+That is what lets a key a record's constructor sets save, where every such write
+was Symfony's `NoSuchPropertyException`; a property neither writable nor readable
+— a misspelled path — still surfaces it. The escape hatch for a page-only field
+is Filament's own idiom — `dehydrated(false)` removes it from `getState()` and
+therefore from the mapping. Ordering matters and is deliberate:
 `getData()` runs the validating `getState()` first, so a failing submit throws
 [`ValidationException`](can-be-validated.md) before the record is touched at all.
 
@@ -1469,6 +1477,17 @@ App\Entity\Membership requires constructor arguments …*. PHP's own
 relationship arm builds its record the same way. A class-string naming a class
 with a non-public constructor, or no class at all, surfaces as
 `ReflectionException`, where `new` threw PHP's `Error`.
+
+The resource create page builds its record itself since
+[M7 · 10](../roadmap.md#m7--composite-identifiers):
+`CreateRecord::makeRecord(array $data): object`, called once with the validated
+and mutated form data, answers the record the form is then mapped onto, so a
+record whose constructor takes arguments is built there; its default builds the
+resource's record class through the same `constructRecord()`, with advice naming
+`makeRecord()` ([the page](../panels/README.md#createrecord)). The schema tier's
+*"through `record()`"* advice therefore no longer reaches the page, whose form is
+bound to a class-string and could not take it; nor `CreateAction`, whose plain
+arm names `using()` as its relationship arm already did.
 
 This is the same boundary as
 [`Component::newInstance()`](../support/component.md)'s fallback: the container

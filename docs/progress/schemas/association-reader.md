@@ -84,7 +84,7 @@ Sylament-only, so no row has a _Ports_ link.
 | [`hasIncompleteAssignedIdentifier(object $entity)`](../../../packages/schemas/src/State/AssociationReader.php) — whether a component the **application** must assign is missing | done | — | [semantics](#an-incomplete-assigned-identifier-is-the-question-the-create-paths-ask) |
 | [`hasBlankAssignedIdentifier(object $record)`](../../../packages/schemas/src/State/AssociationReader.php) — whether a record's assigned key, as `persist()` left it, still holds a null or blank component | done | — | [semantics](#a-blank-assigned-identifier-is-read-after-persist-where-a-record-is-created) |
 | [`revertIdentifierChanges(object $record)`](../../../packages/schemas/src/State/AssociationReader.php) — put back every identifier field a managed record the loaded associations reach no longer prints, and answer each one by its property path (`@internal`: the record check and an editable cell's write call it) | done | — | [semantics](#a-changed-identifier-is-put-back-and-refused-and-costs-no-statement) |
-| [`findTakenIdentifiers(object $record)`](../../../packages/schemas/src/State/AssociationReader.php) — every new record a flush would insert whose assigned key is held already, answered by the field the form lets the user type (`@internal`: the record check calls it) | done | — | [semantics](#a-taken-identifier-is-looked-up-once-per-new-record-after-the-records-own-constraints-pass) · [semantics](#what-the-taken-key-probe-cannot-see) |
+| [`findTakenIdentifiers(object $record)`](../../../packages/schemas/src/State/AssociationReader.php) — every new record a flush would insert whose assigned key is held already, answered under every field the form could let the user type (`@internal`: the record check calls it and keeps the fields its schema maps, and `ReplicateAction`'s taken-key check with no schema asks whether it answers anything) | done | — | [semantics](#a-taken-identifier-is-looked-up-once-per-new-record-after-the-records-own-constraints-pass) · [semantics](#what-the-taken-key-probe-cannot-see) |
 | [`findBlankAssignedIdentifiers(object $record)`](../../../packages/schemas/src/State/AssociationReader.php) — every field a new record's blank assigned key could be refused under, in the order a refusal picks from (`@internal`: the record check calls it and refuses under the first one the schema maps) | done | — | [semantics](#a-new-records-blank-key-fields-are-the-record-checks-candidates) |
 | [`createOptionQuery(string $targetClass, string $alias = 'record')`](../../../packages/schemas/src/State/AssociationReader.php) — the base query an option list narrows | done | — | [semantics](#the-option-query-is-a-starting-point-not-a-result) |
 | [`Relationship`](../../../packages/schemas/src/State/Relationship.php) — one owner record's association, by name | done | — | [semantics](#the-relationship-query-is-rooted-at-the-target-and-needs-no-inverse-mapping) |
@@ -619,7 +619,9 @@ and collection, and the named `LogicException`.
 ### A taken identifier is looked up once per new record, after the record's own constraints pass
 
 `findTakenIdentifiers(object $record): array` is the taken-key rule, `@internal`
-and of the same shape, answering *"This value is already used."* — `UniqueEntity`'s
+— the record check's, and since M7 · 9 `ReplicateAction`'s on its arm without a
+schema, which asks only whether it answers anything — and of the same shape,
+answering *"This value is already used."* — `UniqueEntity`'s
 default text, from symfony/validator's own `validators` catalogue, so it is
 translated with no bridge installed. It walks the record and every record its
 loaded **cascade-persist** associations reach, which is exactly what a flush
@@ -644,13 +646,23 @@ keeps two new children whose key a `#[PrePersist]` fills from `''` saving. And
 `RecordKey::values()` gates the lookup, so an association half that is a new
 record with no identifier yet is never bound.
 
-The message lands on the field the form lets the user type: the first identifier
-field that is no association; failing that, the first that is not the
-back-reference the walk arrived through — the inverse collection's `mappedBy`;
-failing that, the first. So an `ArticleTranslation(article, locale)` is refused
-under **Locale** on a create page and in a relation manager's modal alike, and a
-join entity created from its festival's repeater under the band rather than the
-festival.
+The message lands on every field a form could let the user type: each
+identifier field that is no association, in identifier order. The reader answers
+them all, and the record check keeps the ones a component of its schema maps —
+a taken record's fields grouped by the property path they share. When the schema
+maps none of them, or the identifier has none, it lands where it always did: the
+first identifier field that is no association; failing that, the first that is
+not the back-reference the walk arrived through — the inverse collection's
+`mappedBy`; failing that, the first — and an unmapped one folds to the schema's
+own path. So a `(host, path)` key typed in both halves is refused under both, a
+form typing only the host under the host, an `ArticleTranslation(article,
+locale)` under **Locale** on a create page and in a relation manager's modal
+alike, and a join entity created from its festival's repeater under the band
+rather than the festival. Until [M7 · 10](../roadmap.md#m7--composite-identifiers)
+the reader answered the first such field alone, M7 · 6's ruling, so the second
+half of a scalar pair — the one a user may well have typed wrong — carried no
+mark. The message is still Symfony's own, translated in its 57 catalogues, so a
+copy under each half adds no string; a field label in it would have needed one.
 
 Where it runs is half of what it is. The record check calls it **only when** the
 changed-key pass and the record's own constraints raised nothing, because it
@@ -658,7 +670,9 @@ binds form values into `find()`: a malformed `guid` on an entity that declares
 `#[Assert\Uuid]` then answers that constraint's *"This value is not a valid
 UUID."* rather than PostgreSQL's `22P02` — without one, the lookup meets
 PostgreSQL's own `22P02`, as the base's `INSERT` did — and an application
-`UniqueEntity` answers first, so the toolkit never adds a second message. The
+`UniqueEntity` answers first, so the toolkit never adds a second message; and it
+does not run at all on a schema that
+[switches the key rules off](can-be-validated.md#the-key-rules-switch-off-per-schema-never-the-changed-key-one). The
 cost is one primary-key `SELECT` per new assigned-key record, none when the
 holder is managed, none for a generated id — and, for a save adding many new
 items, one each; batching them is [Beyond](../roadmap.md#beyond).
@@ -669,7 +683,15 @@ a stored, a managed and a persisted-unflushed holder, a free key after one
 `SELECT`, the sibling claim under a stored and a new owner, the cascade-only
 walk, the generated id, blank and `null` components, the unflushed association
 half, the record itself, both inheritance hierarchies through their root, and
-the placement over every shape.
+the placement over every shape, every field of a scalar pair or triple included
+([`AssociationReaderKeyShapesTest`](../../../packages/schemas/tests/Unit/State/AssociationReaderKeyShapesTest.php)
+beside it). The host's half — keeping the mapped fields, else the first — by
+[`HasSchemasTakenKeyPlacementTest`](../../../packages/schemas/tests/Integration/Concerns/HasSchemasTakenKeyPlacementTest.php)
+and forms'
+[`TakenKeyPlacementTest`](../../../packages/forms/tests/Integration/Components/TakenKeyPlacementTest.php):
+both halves, one, neither, a derived identity's scalar half, two of three, a
+hidden half that carries the message while only the visible one shows it, and a
+relationship repeater's items each under their own halves.
 
 ### What the taken-key probe cannot see
 

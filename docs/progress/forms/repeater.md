@@ -780,8 +780,9 @@ key that is *taken*, or a key half edited on an existing item, is the record
 check's since [M7 · 6](../roadmap.md#m7--composite-identifiers), which reaches
 every item through the owner's loaded collection. A new item on a key a stored
 row, an existing item or another new item claims is *"This value is already
-used."* under the new item's first identifier field that is no association — a
-join entity's under the one that does not point back at the owner
+used."* under every identifier field of the new item that is no association and
+that the item's schema maps — a join entity's, whose identifier is associations
+only, under the one that does not point back at the owner
 ([the rule](../schemas/can-be-validated.md#a-taken-assigned-key-is-a-field-error-not-a-unique-violation)) — and an existing item's key half edited is
 *"This value cannot be changed."*, put back, with nothing written
 ([the rule](../schemas/can-be-validated.md#a-changed-key-is-refused-and-put-back-not-handed-to-doctrine)). Two new items claiming one key are compared in

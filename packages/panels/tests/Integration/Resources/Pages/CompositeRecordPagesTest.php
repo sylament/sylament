@@ -485,7 +485,7 @@ it('refuses an edited key field under the field, writes nothing and keeps the pa
         ->and($entityManager->find(Imprint::class, ['house' => 'moved', 'year' => 'about']))->toBeNull();
 });
 
-it('refuses a composite record on a taken key under its first key field, writing nothing', function (): void {
+it('refuses a composite record on a taken key under every key field the form maps, writing nothing', function (): void {
     [$client, $entityManager] = compositeRecordClient();
 
     compositeRecordPushPanelRequest();
@@ -501,8 +501,11 @@ it('refuses a composite record on a taken key under its first key field, writing
     $html = (string) $client->getResponse()->getContent();
 
     expect($client->getResponse()->getStatusCode())->toBe(422)
-        ->and(compositeRecordFieldErrors($html))->toBe(['data.house' => ['This value is already used.']])
-        ->and(mb_substr_count($html, 'This value is already used.'))->toBe(1)
+        ->and(compositeRecordFieldErrors($html))->toBe([
+            'data.house' => ['This value is already used.'],
+            'data.year' => ['This value is already used.'],
+        ])
+        ->and(mb_substr_count($html, 'This value is already used.'))->toBe(2)
         ->and(compositeRecordWrites($recorder))->toBe([])
         ->and($entityManager->isOpen())->toBeTrue()
         ->and($entityManager->getRepository(Imprint::class)->count([]))->toBe(3);

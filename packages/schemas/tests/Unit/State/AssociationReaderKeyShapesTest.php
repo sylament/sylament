@@ -11,23 +11,23 @@ use Sylament\Schemas\Tests\Fixtures\Doctrine\EntityManagerFactory;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\KeyShapeRig;
 use Symfony\Component\Uid\Ulid;
 
-it('refuses a new record whose key of every supported shape is taken, under the field the user types', function (string $shape, string $field): void {
+it('refuses a new record whose key of every supported shape is taken, under every field the user types', function (string $shape, array $fields): void {
     $entityManager = EntityManagerFactory::create();
     KeyShapeRig::seed($entityManager, $shape);
 
     $record = KeyShapeRig::build($entityManager, $shape);
 
-    expect(new AssociationReader($entityManager)->findTakenIdentifiers($record))->toBe([$field => 'This value is already used.']);
+    expect(new AssociationReader($entityManager)->findTakenIdentifiers($record))->toBe(array_fill_keys($fields, 'This value is already used.'));
 })->with([
-    'three scalar fields' => ['three scalar fields', 'region'],
-    'an association in the middle' => ['an association in the middle', 'lane'],
-    'an int-backed enum half' => ['an int-backed enum half', 'tier'],
-    'ids on a mapped superclass' => ['ids on a mapped superclass', 'tenant'],
-    'a joined hierarchy under a composite root' => ['a joined hierarchy under a composite root', 'fleet'],
-    'a single identifier association' => ['a single identifier association', 'dock'],
-    'smallint and ascii_string' => ['smallint and ascii_string', 'a'],
-    "symfony's uuid beside an int" => ["symfony's uuid beside an int", 'batch'],
-    "symfony's ulid alone" => ["symfony's ulid alone", 'id'],
+    'three scalar fields' => ['three scalar fields', ['region', 'slot', 'code']],
+    'an association in the middle' => ['an association in the middle', ['lane', 'seq']],
+    'an int-backed enum half' => ['an int-backed enum half', ['tier', 'slot']],
+    'ids on a mapped superclass' => ['ids on a mapped superclass', ['tenant', 'code']],
+    'a joined hierarchy under a composite root' => ['a joined hierarchy under a composite root', ['fleet', 'number']],
+    'a single identifier association' => ['a single identifier association', ['dock']],
+    'smallint and ascii_string' => ['smallint and ascii_string', ['a', 'b']],
+    "symfony's uuid beside an int" => ["symfony's uuid beside an int", ['batch', 'seq']],
+    "symfony's ulid alone" => ["symfony's ulid alone", ['id']],
 ]);
 
 it('puts back a changed key of every supported shape and names the field', function (string $shape, string $key, string $field, Closure $change, Closure $read, mixed $stored): void {

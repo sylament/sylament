@@ -99,7 +99,7 @@ it('replicates a derived identity inside its own owner from a relation manager, 
         ->and($entityManager->getRepository(Stamp::class)->count(['catalogue' => 1]))->toBe(2);
 });
 
-it("answers a replica left on its original's key under the first key field the modal lets the user type", function (string $host, array $parameters, string $recordKey, string $path, string $class): void {
+it("answers a replica left on its original's key under every key field the modal lets the user type", function (string $host, array $parameters, string $recordKey, array $paths, string $class): void {
     [$client, $entityManager] = compositeReplicateClient();
 
     $component = $this->createLiveComponent($host, $parameters, client: $client)
@@ -111,12 +111,12 @@ it("answers a replica left on its original's key under the first key field the m
     $html = (string) $client->getResponse()->getContent();
 
     expect($client->getResponse()->getStatusCode())->toBe(422)
-        ->and(compositeReplicateFieldErrors($html))->toBe([$path => ['This value is already used.']])
+        ->and(compositeReplicateFieldErrors($html))->toBe(array_fill_keys($paths, ['This value is already used.']))
         ->and($entityManager->isOpen())->toBeTrue()
         ->and($entityManager->getRepository($class)->count([]))->toBe(1);
 })->with([
-    'a scalar pair on a list row' => [ListImprints::class, ['panelId' => 'key'], 'plain~about', 'mountedActionsData.0.house', Imprint::class],
-    'a derived identity on a relation-manager row' => [PlainStampsRelationManager::class, ['ownerRecord' => '1', 'pageClass' => EditCatalogue::class], '1~A=2FB=20C', 'mountedActionsData.0.code', Stamp::class],
+    'a scalar pair on a list row' => [ListImprints::class, ['panelId' => 'key'], 'plain~about', ['mountedActionsData.0.house', 'mountedActionsData.0.year'], Imprint::class],
+    'a derived identity on a relation-manager row' => [PlainStampsRelationManager::class, ['ownerRecord' => '1', 'pageClass' => EditCatalogue::class], '1~A=2FB=20C', ['mountedActionsData.0.code'], Stamp::class],
 ]);
 
 it('refuses by name a bare replicate of a single derived identity, which no modal can re-key', function (): void {

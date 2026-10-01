@@ -371,9 +371,13 @@ check answers it. A new record whose identifier is **assigned** — a composite
 key, which Doctrine gives no generator, or a single one the application sets —
 and already held, by a stored row, by a record the
 identity map holds, or by another new record the same save would insert, is
-refused with *"This value is already used."*: under the first identifier field
-that is no association, so the message sits on a field the user can change;
-nothing is written, and the entity manager stays open, short of a concurrent
+refused with *"This value is already used."* under every identifier field that
+is no association and that a component of the schema maps — both halves of a
+scalar pair the form types, never the association a derived identity's records
+share — so the message sits on the fields the user can change; when the schema
+maps none of them it sits under the first, which folds to the schema's own path
+([where it lands](association-reader.md#a-taken-identifier-is-looked-up-once-per-new-record-after-the-records-own-constraints-pass)).
+Nothing is written, and the entity manager stays open, short of a concurrent
 insert of the same key ([recorded](association-reader.md#what-the-taken-key-probe-cannot-see)).
 Before [M7 · 6](../roadmap.md#m7--composite-identifiers) it was a
 `UniqueConstraintViolationException` that closed the manager, or Doctrine's
@@ -386,6 +390,16 @@ probe is skipped whenever any of them fails. The cost of that order is
 enumerated rather than hidden: a record failing another constraint as well
 learns its key is taken one submit later, exactly as the base showed that
 constraint's message alone.
+
+Two ways change the message, both Symfony's own rather than a hook of ours. Per
+entity, an `#[UniqueEntity(fields: [...], message: ..., errorPath: ...)]` runs
+with the record's own constraints and so pre-empts the probe: one message, the
+application's, under the field `errorPath` names. Application-wide, the
+`validators` catalogue's entry for *This value is already used.* — which Symfony
+already translates into 57 locales — reaches it as it reaches every record
+violation. And [`validateRecordKey(false)`](#the-key-rules-switch-off-per-schema-never-the-changed-key-one)
+switches the probe off. A field's `validationMessages()` cannot reach it, since
+it is no constraint of the field's.
 
 Every create seam reaches it, because every one ends in `getData()`:
 [`CreateRecord`](../panels/README.md#createrecord), plain and nested;

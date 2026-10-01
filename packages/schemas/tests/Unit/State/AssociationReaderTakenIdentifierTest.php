@@ -166,31 +166,31 @@ function takenIdentifierSheet(string $code): Sheet
 }
 
 dataset('taken identifier shapes', [
-    'a single assigned string' => ['single', 'code', 'FROM Shortlink p0 WHERE p0.code = ?'],
-    'a scalar pair' => ['pair', 'host', 'FROM Redirect p0 WHERE p0.host = ? AND p0.path = ?'],
-    'an association plus a scalar' => ['derived', 'locale', 'FROM PostTranslation p0 WHERE p0.post_id = ? AND p0.locale = ?'],
-    'a single derived identity' => ['single derived', 'post', 'FROM PostSeal p0 WHERE p0.post_id = ?'],
-    'a chained derived identity' => ['chained', 'link', 'FROM Chain p0 WHERE p0.seal_post_id = ? AND p0.link = ?'],
-    'a binary uuid' => ['binary uuid', 'id', 'FROM Crate p0 WHERE p0.id = ?'],
-    'a doubly-strict cipher' => ['cipher', 'cipher', 'FROM Vault p0 WHERE p0.cipher = ? AND p0.zone = ?'],
-    'a converting sku, typed in another spelling' => ['sku', 'sku', 'FROM Listing p0 WHERE p0.sku = ?'],
-    'a backed enum' => ['enum', 'zone', 'FROM Placard p0 WHERE p0.zone = ?'],
-    'a guid beside a bigint, the bigint typed as a string' => ['guid', 'id', 'FROM Ticket p0 WHERE p0.id = ? AND p0.serial = ?'],
+    'a single assigned string' => ['single', ['code'], 'FROM Shortlink p0 WHERE p0.code = ?'],
+    'a scalar pair' => ['pair', ['host', 'path'], 'FROM Redirect p0 WHERE p0.host = ? AND p0.path = ?'],
+    'an association plus a scalar' => ['derived', ['locale'], 'FROM PostTranslation p0 WHERE p0.post_id = ? AND p0.locale = ?'],
+    'a single derived identity' => ['single derived', ['post'], 'FROM PostSeal p0 WHERE p0.post_id = ?'],
+    'a chained derived identity' => ['chained', ['link'], 'FROM Chain p0 WHERE p0.seal_post_id = ? AND p0.link = ?'],
+    'a binary uuid' => ['binary uuid', ['id'], 'FROM Crate p0 WHERE p0.id = ?'],
+    'a doubly-strict cipher' => ['cipher', ['cipher', 'zone'], 'FROM Vault p0 WHERE p0.cipher = ? AND p0.zone = ?'],
+    'a converting sku, typed in another spelling' => ['sku', ['sku'], 'FROM Listing p0 WHERE p0.sku = ?'],
+    'a backed enum' => ['enum', ['zone'], 'FROM Placard p0 WHERE p0.zone = ?'],
+    'a guid beside a bigint, the bigint typed as a string' => ['guid', ['id', 'serial'], 'FROM Ticket p0 WHERE p0.id = ? AND p0.serial = ?'],
 ]);
 
-it('refuses a new record on a stored key with one primary-key SELECT', function (string $shape, string $field, string $lookup): void {
+it('refuses a new record on a stored key with one primary-key SELECT', function (string $shape, array $fields, string $lookup): void {
     $recorder = new RecordingMiddleware();
     $entityManager = IdentifierGuardRig::create($recorder);
     $record = takenIdentifierRecord($entityManager, $shape);
 
     $recorder->reset();
 
-    expect(new AssociationReader($entityManager)->findTakenIdentifiers($record))->toBe([$field => 'This value is already used.'])
+    expect(new AssociationReader($entityManager)->findTakenIdentifiers($record))->toBe(array_fill_keys($fields, 'This value is already used.'))
         ->and($recorder->normalizedStatements())->toHaveCount(1)
         ->and($recorder->normalizedStatements()[0])->toContain($lookup);
 })->with('taken identifier shapes');
 
-it('refuses a new record on the key of a managed record with no statement', function (string $shape, string $field): void {
+it('refuses a new record on the key of a managed record with no statement', function (string $shape, array $fields): void {
     $recorder = new RecordingMiddleware();
     $entityManager = IdentifierGuardRig::create($recorder);
 
@@ -198,11 +198,11 @@ it('refuses a new record on the key of a managed record with no statement', func
     $record = takenIdentifierRecord($entityManager, $shape);
     $recorder->reset();
 
-    expect(new AssociationReader($entityManager)->findTakenIdentifiers($record))->toBe([$field => 'This value is already used.'])
+    expect(new AssociationReader($entityManager)->findTakenIdentifiers($record))->toBe(array_fill_keys($fields, 'This value is already used.'))
         ->and($recorder->statements())->toBe([]);
 })->with('taken identifier shapes');
 
-it('refuses a new record on the key of one persisted earlier and not yet flushed, with no statement', function (string $shape, string $field): void {
+it('refuses a new record on the key of one persisted earlier and not yet flushed, with no statement', function (string $shape, array $fields): void {
     $recorder = new RecordingMiddleware();
     $entityManager = IdentifierGuardRig::create($recorder);
 
@@ -211,7 +211,7 @@ it('refuses a new record on the key of one persisted earlier and not yet flushed
     $record = takenIdentifierRecord($entityManager, $shape);
     $recorder->reset();
 
-    expect(new AssociationReader($entityManager)->findTakenIdentifiers($record))->toBe([$field => 'This value is already used.'])
+    expect(new AssociationReader($entityManager)->findTakenIdentifiers($record))->toBe(array_fill_keys($fields, 'This value is already used.'))
         ->and($recorder->statements())->toBe([]);
 })->with('taken identifier shapes');
 
@@ -559,7 +559,7 @@ it('answers nothing for the record itself, whether managed or persisted as new',
     'persisted as new' => [false],
 ]);
 
-it('finds the holder of an inheritance hierarchy through its root, whichever subclass holds the key', function (string $hierarchy, bool $managed, string $field, array $lookups): void {
+it('finds the holder of an inheritance hierarchy through its root, whichever subclass holds the key', function (string $hierarchy, bool $managed, array $fields, array $lookups): void {
     $recorder = new RecordingMiddleware();
     $entityManager = IdentifierGuardRig::create($recorder);
 
@@ -582,14 +582,14 @@ it('finds the holder of an inheritance hierarchy through its root, whichever sub
 
     $recorder->reset();
 
-    expect(new AssociationReader($entityManager)->findTakenIdentifiers($record))->toBe([$field => 'This value is already used.'])
+    expect(new AssociationReader($entityManager)->findTakenIdentifiers($record))->toBe(array_fill_keys($fields, 'This value is already used.'))
         ->and($recorder->normalizedStatements())->toHaveCount(count($lookups))
         ->each(static fn (Expectation $statement, int $index): Expectation => $statement->toContain($lookups[$index]));
 })->with([
-    'single table, the root stored' => ['single table', false, 'realm', ["FROM Sigil p0 WHERE p0.realm = ? AND p0.mark = ? AND p0.kind IN ('sigil', 'child')"]],
-    'single table, the root managed' => ['single table', true, 'realm', []],
-    'class table, the root stored' => ['class table', false, 'code', ['FROM Carton p0 LEFT JOIN ChilledCarton p1 ON p0.code = p1.code WHERE p0.code = ?']],
-    'class table, the root managed' => ['class table', true, 'code', []],
+    'single table, the root stored' => ['single table', false, ['realm', 'mark'], ["FROM Sigil p0 WHERE p0.realm = ? AND p0.mark = ? AND p0.kind IN ('sigil', 'child')"]],
+    'single table, the root managed' => ['single table', true, ['realm', 'mark'], []],
+    'class table, the root stored' => ['class table', false, ['code'], ['FROM Carton p0 LEFT JOIN ChilledCarton p1 ON p0.code = p1.code WHERE p0.code = ?']],
+    'class table, the root managed' => ['class table', true, ['code'], []],
 ]);
 
 it('refuses the second of two new records of different classes in one hierarchy on one key', function (): void {
@@ -613,7 +613,10 @@ it('refuses the second of two new records of different classes in one hierarchy 
 
     $recorder->reset();
 
-    expect(new AssociationReader($entityManager)->findTakenIdentifiers($rack))->toBe(['sigils[1].realm' => 'This value is already used.']);
+    expect(new AssociationReader($entityManager)->findTakenIdentifiers($rack))->toBe([
+        'sigils[1].realm' => 'This value is already used.',
+        'sigils[1].mark' => 'This value is already used.',
+    ]);
 });
 
 it('names the field the form lets the user type, never the one pointing back at the record the walk came from', function (string $shape, string $path): void {
@@ -752,7 +755,7 @@ it('finds a taken key a SQL filter hides, restoring the filter after the one loo
     $entityManager = hiddenRedirectManager($recorder);
     $recorder->reset();
 
-    expect(new AssociationReader($entityManager)->findTakenIdentifiers(newRedirect('example.com', '/gone')))->toBe(['host' => 'This value is already used.'])
+    expect(new AssociationReader($entityManager)->findTakenIdentifiers(newRedirect('example.com', '/gone')))->toBe(['host' => 'This value is already used.', 'path' => 'This value is already used.'])
         ->and($recorder->statements())->toHaveCount(1)
         ->and($recorder->statements()[0])->not->toContain("label <> 'hidden'")
         ->and($entityManager->getFilters()->isEnabled('hidden_redirects'))->toBeTrue()

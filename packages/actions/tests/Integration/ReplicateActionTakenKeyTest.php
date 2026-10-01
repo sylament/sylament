@@ -116,20 +116,20 @@ function replicateTakenKeyField(CupboardKeyHost $host, string $name): ActionSche
     test()->fail(sprintf('No field [%s] in the mounted schema.', $name));
 }
 
-it('answers a modal left on the original key with the taken-key message under its first scalar field', function (string $class, string $recordKey, array $fill, string $path, string $rows, array $stored): void {
+it('answers a modal left on the original key with the taken-key message under every scalar key field it maps', function (string $class, string $recordKey, array $fill, array $paths, string $rows, array $stored): void {
     replicateTakenKeyOriginal($class);
 
     $host = replicateTakenKeyMounted($class, $recordKey, 'replicate');
 
     expect($host->getMountedActionData(0))->toBe($fill)
-        ->and(replicateTakenKeyRefusal($host))->toBe([$path => ['This value is already used.']])
+        ->and(replicateTakenKeyRefusal($host))->toBe(array_fill_keys($paths, ['This value is already used.']))
         ->and($this::getContainer()->get(EntityManagerInterface::class)->isOpen())->toBeTrue()
         ->and($host->mountedActions)->toHaveCount(1)
         ->and(replicateTakenKeyRows($rows))->toBe($stored);
 })->with([
-    'a scalar pair' => [Redirect::class, 'example=2Ecom~=2Fold', ['host' => 'example.com', 'path' => '/old', 'target' => '/new'], 'mountedActionsData.0.host', 'SELECT host, path, target FROM Redirect', [['host' => 'example.com', 'path' => '/old', 'target' => '/new']]],
-    'an association beside a scalar' => [Membership::class, '1~editor', ['role' => 'editor', 'label' => 'Editors'], 'mountedActionsData.0.role', 'SELECT note_id, role, label FROM Membership', [['note_id' => 1, 'role' => 'editor', 'label' => 'Editors']]],
-    'a single string key' => [Ticket::class, 'T-1', ['code' => 'T-1', 'title' => 'Alpha'], 'mountedActionsData.0.code', 'SELECT code, title FROM Ticket', [['code' => 'T-1', 'title' => 'Alpha']]],
+    'a scalar pair' => [Redirect::class, 'example=2Ecom~=2Fold', ['host' => 'example.com', 'path' => '/old', 'target' => '/new'], ['mountedActionsData.0.host', 'mountedActionsData.0.path'], 'SELECT host, path, target FROM Redirect', [['host' => 'example.com', 'path' => '/old', 'target' => '/new']]],
+    'an association beside a scalar' => [Membership::class, '1~editor', ['role' => 'editor', 'label' => 'Editors'], ['mountedActionsData.0.role'], 'SELECT note_id, role, label FROM Membership', [['note_id' => 1, 'role' => 'editor', 'label' => 'Editors']]],
+    'a single string key' => [Ticket::class, 'T-1', ['code' => 'T-1', 'title' => 'Alpha'], ['mountedActionsData.0.code'], 'SELECT code, title FROM Ticket', [['code' => 'T-1', 'title' => 'Alpha']]],
 ]);
 
 it('writes the replica once the modal key is changed', function (string $class, string $recordKey, string $field, string $value, string $rows, array $stored): void {
@@ -147,17 +147,17 @@ it('writes the replica once the modal key is changed', function (string $class, 
     'a single string key' => [Ticket::class, 'T-1', 'code', 'T-2', 'SELECT code, title FROM Ticket ORDER BY code', [['code' => 'T-1', 'title' => 'Alpha'], ['code' => 'T-2', 'title' => 'Alpha']]],
 ]);
 
-it('refuses a keyed modal whose beforeReplicaSaved() derives the key, since the key the modal mapped is checked first', function (string $class, string $recordKey, string $path, string $rows, array $stored): void {
+it('refuses a keyed modal whose beforeReplicaSaved() derives the key, since the key the modal mapped is checked first', function (string $class, string $recordKey, array $paths, string $rows, array $stored): void {
     replicateTakenKeyOriginal($class);
 
     $host = replicateTakenKeyMounted($class, $recordKey, 'replicateDerived');
 
-    expect(replicateTakenKeyRefusal($host))->toBe([$path => ['This value is already used.']])
+    expect(replicateTakenKeyRefusal($host))->toBe(array_fill_keys($paths, ['This value is already used.']))
         ->and(replicateTakenKeyRows($rows))->toBe($stored);
 })->with([
-    'a scalar pair' => [Redirect::class, 'example=2Ecom~=2Fold', 'mountedActionsData.0.host', 'SELECT host, path, target FROM Redirect', [['host' => 'example.com', 'path' => '/old', 'target' => '/new']]],
-    'an association beside a scalar' => [Membership::class, '1~editor', 'mountedActionsData.0.role', 'SELECT note_id, role, label FROM Membership', [['note_id' => 1, 'role' => 'editor', 'label' => 'Editors']]],
-    'a single string key' => [Ticket::class, 'T-1', 'mountedActionsData.0.code', 'SELECT code, title FROM Ticket', [['code' => 'T-1', 'title' => 'Alpha']]],
+    'a scalar pair' => [Redirect::class, 'example=2Ecom~=2Fold', ['mountedActionsData.0.host', 'mountedActionsData.0.path'], 'SELECT host, path, target FROM Redirect', [['host' => 'example.com', 'path' => '/old', 'target' => '/new']]],
+    'an association beside a scalar' => [Membership::class, '1~editor', ['mountedActionsData.0.role'], 'SELECT note_id, role, label FROM Membership', [['note_id' => 1, 'role' => 'editor', 'label' => 'Editors']]],
+    'a single string key' => [Ticket::class, 'T-1', ['mountedActionsData.0.code'], 'SELECT code, title FROM Ticket', [['code' => 'T-1', 'title' => 'Alpha']]],
 ]);
 
 it('leaves a key field disabled on edit enabled under a renamed EditAction, and answers a changed key under that field', function (): void {

@@ -422,14 +422,15 @@ class AssociationReader
      * itself first, then what the flush would insert with it — whose assigned
      * key a stored or managed record already holds, or a new record met earlier
      * in the same walk claims: `find()` per new record once its key is
-     * complete, the identity map first and then one SELECT. The refusal lands
-     * on the field the form lets the user type — the first identifier field
-     * that is no association, else the first that does not point back at the
-     * record the walk arrived from, else the first.
+     * complete, the identity map first and then one SELECT. Each is answered
+     * under every field a form could let the user type, in identifier order —
+     * each identifier field that is no association, or, for an identifier with
+     * none, the first that does not point back at the record the walk arrived
+     * from, else the first.
      *
-     * @internal the record check behind a schema's getData(), after the record's own constraints pass
+     * @internal the record check behind a schema's getData(), after the record's own constraints pass, which keeps the fields the schema maps; and ReplicateAction's taken-key check on its arm without a schema
      *
-     * @return array<string, string> the refusal, keyed by that field's property path from the record
+     * @return array<string, string> the refusal, keyed by each such field's property path from the record, a taken record's fields together
      */
     public function findTakenIdentifiers(object $record): array
     {
@@ -444,7 +445,9 @@ class AssociationReader
             }
 
             if ($this->isIdentifierTaken($current, $metadata, $claimed)) {
-                $refusals[$this->joinPropertyPath($path, $this->getTakenIdentifierField($metadata, $backReference))] = self::TAKEN_IDENTIFIER;
+                foreach ($this->getTakenIdentifierFields($metadata, $backReference) as $field) {
+                    $refusals[$this->joinPropertyPath($path, $field)] = self::TAKEN_IDENTIFIER;
+                }
             }
         }
 
@@ -676,12 +679,18 @@ class AssociationReader
 
     /**
      * @param ClassMetadata<object> $metadata
+     *
+     * @return non-empty-list<string>
      */
-    private function getTakenIdentifierField(ClassMetadata $metadata, ?string $backReference): string
+    private function getTakenIdentifierFields(ClassMetadata $metadata, ?string $backReference): array
     {
-        return array_find($metadata->identifier, static fn (string $field): bool => ! $metadata->hasAssociation($field))
-            ?? array_find($metadata->identifier, static fn (string $field): bool => $field !== $backReference)
-            ?? $metadata->identifier[0];
+        $fields = array_values(array_filter($metadata->identifier, static fn (string $field): bool => ! $metadata->hasAssociation($field)));
+
+        if ($fields !== []) {
+            return $fields;
+        }
+
+        return [array_find($metadata->identifier, static fn (string $field): bool => $field !== $backReference) ?? $metadata->identifier[0]];
     }
 
     /**

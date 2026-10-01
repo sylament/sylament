@@ -118,7 +118,7 @@ function compositeCreateActionHost(string $host): array
     };
 }
 
-it('refuses a create modal on a taken key under the first key field it lets the user type', function (string $host, array $data, string $path, bool $managed, ?array $holder, string $entity): void {
+it('refuses a create modal on a taken key under every key field it lets the user type', function (string $host, array $data, array $paths, bool $managed, ?array $holder, string $entity): void {
     [$client, $entityManager, $recorder] = compositeCreateActionClient();
 
     [$class, $parameters, $context] = compositeCreateActionHost($host);
@@ -143,25 +143,25 @@ it('refuses a create modal on a taken key under the first key field it lets the 
     $html = (string) $client->getResponse()->getContent();
 
     expect($client->getResponse()->getStatusCode())->toBe(422)
-        ->and(compositeCreateActionFieldErrors($html))->toBe([$path => ['This value is already used.']])
-        ->and(mb_substr_count($html, 'This value is already used.'))->toBe(1)
+        ->and(compositeCreateActionFieldErrors($html))->toBe(array_fill_keys($paths, ['This value is already used.']))
+        ->and(mb_substr_count($html, 'This value is already used.'))->toBe(count($paths))
         ->and(array_filter($recorder->statements(), static fn (string $sql): bool => ! str_starts_with($sql, 'SELECT')))->toBe([])
         ->and($entityManager->isOpen())->toBeTrue()
         ->and($entityManager->getRepository($entity)->count([]))->toBe($rows);
 })->with([
-    'a nested record page header, stored' => ['nested header', ['code' => 'AB-1', 'caption' => 'Dup'], 'mountedActionsData.0.code', false, null, Stamp::class],
-    'a nested record page header, managed' => ['nested header', ['code' => 'AB-1', 'caption' => 'Dup'], 'mountedActionsData.0.code', true, ['catalogue' => 1, 'code' => 'AB-1'], Stamp::class],
-    'a related-records page, stored' => ['related-records page', ['code' => 'AB-1', 'caption' => 'Dup'], 'mountedActionsData.0.code', false, null, Stamp::class],
-    'a related-records page, managed' => ['related-records page', ['code' => 'AB-1', 'caption' => 'Dup'], 'mountedActionsData.0.code', true, ['catalogue' => 1, 'code' => 'AB-1'], Stamp::class],
-    'a relation manager, stored' => ['relation manager', ['code' => 'AB-1', 'caption' => 'Dup'], 'mountedActionsData.0.code', false, null, Stamp::class],
-    'a relation manager, managed' => ['relation manager', ['code' => 'AB-1', 'caption' => 'Dup'], 'mountedActionsData.0.code', true, ['catalogue' => 1, 'code' => 'AB-1'], Stamp::class],
-    'a flat record page header, stored' => ['flat header', ['house' => 'plain', 'year' => 'about', 'label' => 'Dup'], 'mountedActionsData.0.house', false, null, Imprint::class],
-    'a flat record page header, managed' => ['flat header', ['house' => 'plain', 'year' => 'about', 'label' => 'Dup'], 'mountedActionsData.0.house', true, ['house' => 'plain', 'year' => 'about'], Imprint::class],
-    'a flat record page header whose own record holds the key' => ['flat header on the holder', ['house' => 'plain', 'year' => 'about', 'label' => 'Dup'], 'mountedActionsData.0.house', false, null, Imprint::class],
-    'a resource list over a scalar pair, stored' => ['edition list', ['id' => '5', 'locale' => 'en', 'title' => 'Dup'], 'mountedActionsData.0.id', false, null, Edition::class],
-    'a resource list over a scalar pair, managed' => ['edition list', ['id' => '5', 'locale' => 'en', 'title' => 'Dup'], 'mountedActionsData.0.id', true, ['id' => 5, 'locale' => 'en'], Edition::class],
-    'a resource list over a record keyed by its association, stored' => ['colophon list', ['catalogue' => '1', 'note' => 'Dup'], 'mountedActionsData.0.catalogue', false, null, Colophon::class],
-    'a resource list over a record keyed by its association, managed' => ['colophon list', ['catalogue' => '1', 'note' => 'Dup'], 'mountedActionsData.0.catalogue', true, ['catalogue' => 1], Colophon::class],
+    'a nested record page header, stored' => ['nested header', ['code' => 'AB-1', 'caption' => 'Dup'], ['mountedActionsData.0.code'], false, null, Stamp::class],
+    'a nested record page header, managed' => ['nested header', ['code' => 'AB-1', 'caption' => 'Dup'], ['mountedActionsData.0.code'], true, ['catalogue' => 1, 'code' => 'AB-1'], Stamp::class],
+    'a related-records page, stored' => ['related-records page', ['code' => 'AB-1', 'caption' => 'Dup'], ['mountedActionsData.0.code'], false, null, Stamp::class],
+    'a related-records page, managed' => ['related-records page', ['code' => 'AB-1', 'caption' => 'Dup'], ['mountedActionsData.0.code'], true, ['catalogue' => 1, 'code' => 'AB-1'], Stamp::class],
+    'a relation manager, stored' => ['relation manager', ['code' => 'AB-1', 'caption' => 'Dup'], ['mountedActionsData.0.code'], false, null, Stamp::class],
+    'a relation manager, managed' => ['relation manager', ['code' => 'AB-1', 'caption' => 'Dup'], ['mountedActionsData.0.code'], true, ['catalogue' => 1, 'code' => 'AB-1'], Stamp::class],
+    'a flat record page header, stored' => ['flat header', ['house' => 'plain', 'year' => 'about', 'label' => 'Dup'], ['mountedActionsData.0.house', 'mountedActionsData.0.year'], false, null, Imprint::class],
+    'a flat record page header, managed' => ['flat header', ['house' => 'plain', 'year' => 'about', 'label' => 'Dup'], ['mountedActionsData.0.house', 'mountedActionsData.0.year'], true, ['house' => 'plain', 'year' => 'about'], Imprint::class],
+    'a flat record page header whose own record holds the key' => ['flat header on the holder', ['house' => 'plain', 'year' => 'about', 'label' => 'Dup'], ['mountedActionsData.0.house', 'mountedActionsData.0.year'], false, null, Imprint::class],
+    'a resource list over a scalar pair, stored' => ['edition list', ['id' => '5', 'locale' => 'en', 'title' => 'Dup'], ['mountedActionsData.0.id', 'mountedActionsData.0.locale'], false, null, Edition::class],
+    'a resource list over a scalar pair, managed' => ['edition list', ['id' => '5', 'locale' => 'en', 'title' => 'Dup'], ['mountedActionsData.0.id', 'mountedActionsData.0.locale'], true, ['id' => 5, 'locale' => 'en'], Edition::class],
+    'a resource list over a record keyed by its association, stored' => ['colophon list', ['catalogue' => '1', 'note' => 'Dup'], ['mountedActionsData.0.catalogue'], false, null, Colophon::class],
+    'a resource list over a record keyed by its association, managed' => ['colophon list', ['catalogue' => '1', 'note' => 'Dup'], ['mountedActionsData.0.catalogue'], true, ['catalogue' => 1], Colophon::class],
 ]);
 
 it('refuses the second create of create-another on the key the first one wrote', function (): void {
@@ -185,7 +185,10 @@ it('refuses the second create of create-another on the key the first one wrote',
     $component->call('callMountedAction');
 
     expect($client->getResponse()->getStatusCode())->toBe(422)
-        ->and(compositeCreateActionFieldErrors((string) $client->getResponse()->getContent()))->toBe(['mountedActionsData.0.id' => ['This value is already used.']])
+        ->and(compositeCreateActionFieldErrors((string) $client->getResponse()->getContent()))->toBe([
+            'mountedActionsData.0.id' => ['This value is already used.'],
+            'mountedActionsData.0.locale' => ['This value is already used.'],
+        ])
         ->and($entityManager->find(Edition::class, ['id' => 6, 'locale' => 'en'])?->getTitle())->toBe('One');
 });
 

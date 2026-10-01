@@ -493,7 +493,7 @@ trait HasSchemas
             $violations = $this->schemaStateValidator->validate($record, RecordKeyGuard::constraint($this->getMappedBlankIdentifier($schema, $reader->findBlankAssignedIdentifiers($record))));
 
             if (count($violations) === 0) {
-                $violations = $this->schemaStateValidator->validate($record, RecordKeyGuard::constraint($reader->findTakenIdentifiers($record)));
+                $violations = $this->schemaStateValidator->validate($record, RecordKeyGuard::constraint($this->getMappedTakenIdentifiers($schema, $reader->findTakenIdentifiers($record))));
             }
         }
 
@@ -544,6 +544,35 @@ trait HasSchemas
         $field = array_find_key($candidates, static fn (string $message, string $field): bool => $translator->translate($field) !== null);
 
         return $field === null ? [] : [$field => $candidates[$field]];
+    }
+
+    /**
+     * Each taken record's candidates a component of the schema maps or, where it
+     * maps none of a record's, that record's first: a record's candidates share
+     * the property path up to their last segment.
+     *
+     * @param array<string, string> $candidates the refusal, keyed by each candidate field, a taken record's together in identifier order
+     *
+     * @return array<string, string>
+     */
+    private function getMappedTakenIdentifiers(Schema $schema, array $candidates): array
+    {
+        $translator = $schema->getRecordViolationPathTranslator();
+        $byRecord = [];
+
+        foreach ($candidates as $field => $message) {
+            $separator = mb_strrpos($field, '.');
+            $byRecord[$separator === false ? '' : mb_substr($field, 0, $separator)][$field] = $message;
+        }
+
+        $refusals = [];
+
+        foreach ($byRecord as $recordCandidates) {
+            $mapped = array_filter($recordCandidates, static fn (string $field): bool => $translator->translate($field) !== null, ARRAY_FILTER_USE_KEY);
+            $refusals = [...$refusals, ...($mapped === [] ? array_slice($recordCandidates, 0, 1, true) : $mapped)];
+        }
+
+        return $refusals;
     }
 
     /**

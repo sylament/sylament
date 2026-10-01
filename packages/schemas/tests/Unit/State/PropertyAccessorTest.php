@@ -4,17 +4,26 @@ declare(strict_types=1);
 
 namespace Sylament\Schemas\Tests\Unit\State;
 
+use Closure;
+use DateTimeImmutable;
 use LogicException;
+use ReflectionClass;
 use Sylament\Schemas\State\PropertyAccessor;
 use Sylament\Schemas\State\RecordTypeReader;
+use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\Category;
+use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\Post as PostEntity;
 use Sylament\Schemas\Tests\Fixtures\State\Author;
+use Sylament\Schemas\Tests\Fixtures\State\ConstructorSetRecord;
+use Sylament\Schemas\Tests\Fixtures\State\Money;
 use Sylament\Schemas\Tests\Fixtures\State\Post;
+use Sylament\Schemas\Tests\Fixtures\State\ProxiedCategory;
 use Sylament\Schemas\Tests\Fixtures\State\TaggedPost;
 use Sylament\Schemas\Tests\Fixtures\State\TypedRecord;
 use Sylament\Schemas\Tests\Fixtures\State\UninitializedPost;
 use Symfony\Component\PropertyAccess\Exception\AccessException;
 use Symfony\Component\PropertyAccess\Exception\NoSuchPropertyException;
 use Symfony\Component\PropertyAccess\PropertyAccess;
+use Symfony\Component\Uid\Uuid;
 
 function accessor(): PropertyAccessor
 {
@@ -333,6 +342,208 @@ it('refuses to construct an intermediate whose constructor requires arguments', 
 it('surfaces NoSuchPropertyException for a missing leaf setter on a record write', function (): void {
     expect(fn () => accessor()->setOnRecord(new Post(), 'nope', 'x'))
         ->toThrow(NoSuchPropertyException::class);
+});
+
+/**
+ * A record whose constructor set every property no setter can change, each
+ * holding a value the leaf rule compares; `$rank` and `$active` take the `0`
+ * and the `false` a blank write must not match.
+ */
+function constructorSetRecord(?Category $section = null, int $rank = 5, bool $active = true): ConstructorSetRecord
+{
+    return new ConstructorSetRecord(
+        host: 'example.com',
+        path: '/home',
+        secret: 'sesame',
+        rank: $rank,
+        active: $active,
+        publishedAt: new DateTimeImmutable('2026-10-01 12:00:00'),
+        token: Uuid::fromString('0e6f2c1a-7b2d-4c3e-9f10-1a2b3c4d5e6f'),
+        price: new Money(500, 'EUR'),
+        section: $section ?? new Category(),
+    );
+}
+
+function leafWriteRefusal(Closure $write): string
+{
+    try {
+        $write();
+    } catch (LogicException $logicException) {
+        return $logicException->getMessage();
+    }
+
+    test()->fail('Expected the write to be refused with a LogicException.');
+}
+
+function heldValueRefusal(string $path, string $held, string $written): string
+{
+    return sprintf("Cannot map state path \"%s\" onto %s: no setter can change that property, and it already holds another value (the record holds [%s], the write [%s]). Hand the constructor the form's value as it is, make the field's state match what the constructor keeps with dehydrateStateUsing(), or leave the field out of the form.", $path, ConstructorSetRecord::class, $held, $written);
+}
+
+it('writes a writable leaf through its setter even when it already holds the value', function (): void {
+    $record = constructorSetRecord();
+
+    accessor()->setOnRecord($record, 'title', 'Same');
+    accessor()->setOnRecord($record, 'title', 'Same');
+
+    expect($record->getTitle())->toBe('Same')
+        ->and($record->getTitleWrites())->toBe(2);
+});
+
+it('leaves a property no setter can change alone when it already holds the value', function (string $path, mixed $value): void {
+    $record = constructorSetRecord();
+    $held = accessor()->getFromRecord($record, $path);
+
+    accessor()->setOnRecord($record, $path, $value);
+
+    expect(accessor()->getFromRecord($record, $path))->toBe($held);
+})->with([
+    'a public readonly string' => ['host', 'example.com'],
+    'a private string behind a getter' => ['path', '/home'],
+    'an int written as its numeric string' => ['rank', '5'],
+    'an identical bool' => ['active', true],
+    'an equal date' => ['publishedAt', new DateTimeImmutable('2026-10-01 12:00')],
+    'an equal Uid' => ['token', Uuid::fromString('0e6f2c1a-7b2d-4c3e-9f10-1a2b3c4d5e6f')],
+    'an equal value object' => ['price', new Money(500, 'EUR')],
+]);
+
+it('takes an empty string and a null for each other on a property no setter can change', function (): void {
+    $record = new ConstructorSetRecord(host: '', path: '/home', secret: 'sesame');
+
+    accessor()->setOnRecord($record, 'rank', '');
+    accessor()->setOnRecord($record, 'host', null);
+
+    expect($record->rank)->toBeNull()
+        ->and($record->host)->toBe('');
+});
+
+it('leaves a held number alone when the write is the same number in another scalar type', function (mixed $value): void {
+    $record = constructorSetRecord(rank: 0);
+
+    accessor()->setOnRecord($record, 'rank', $value);
+
+    expect($record->rank)->toBe(0);
+})->with([
+    'a float' => [0.0],
+    'a numeric string' => ['0'],
+]);
+
+it('compares a bool strictly and a null only with an empty string, where loose equality would match', function (string $path, int $rank, bool $active, mixed $value, string $held, string $written): void {
+    expect(leafWriteRefusal(fn () => accessor()->setOnRecord(constructorSetRecord(rank: $rank, active: $active), $path, $value)))
+        ->toBe(heldValueRefusal($path, $held, $written));
+})->with([
+    'null over a held 0' => ['rank', 0, true, null, 'int', 'null'],
+    'null over a held false' => ['active', 5, false, null, 'bool', 'null'],
+    'a non-empty string over a held true' => ['active', 5, true, 'x', 'bool', 'string'],
+    'false over a held 0' => ['rank', 0, true, false, 'int', 'bool'],
+]);
+
+it('refuses another value on a property no setter can change, naming the two types and never the values', function (string $path, mixed $value, string $held, string $written, array $printed): void {
+    $message = leafWriteRefusal(fn () => accessor()->setOnRecord(constructorSetRecord(), $path, $value));
+
+    expect($message)->toBe(heldValueRefusal($path, $held, $written));
+
+    foreach ($printed as $fragment) {
+        expect($message)->not->toContain($fragment);
+    }
+})->with([
+    'another string' => ['host', 'other.org', 'string', 'string', ['example.com', 'other.org']],
+    'another date' => ['publishedAt', new DateTimeImmutable('2026-10-02'), DateTimeImmutable::class, DateTimeImmutable::class, ['2026-10-01', '2026-10-02']],
+    'a string over a date' => ['publishedAt', '2026-10-01 12:00:00', DateTimeImmutable::class, 'string', ['2026-10-01']],
+    'another value object' => ['price', new Money(600, 'EUR'), Money::class, Money::class, ['500', '600', 'EUR']],
+    'null over an int' => ['rank', null, 'int', 'null', ['5']],
+    'null over a value object, as the nullable-branch pass writes it' => ['price', null, Money::class, 'null', ['500', 'EUR']],
+]);
+
+it('refuses a property no setter can change that holds no value yet', function (string $path): void {
+    $record = new ReflectionClass(ConstructorSetRecord::class)->newInstanceWithoutConstructor();
+
+    expect(fn () => accessor()->setOnRecord($record, $path, 'example.com'))
+        ->toThrow(LogicException::class, sprintf("Cannot map state path \"%s\" onto %s: no setter can change that property, and it holds no value yet, so only the record's constructor can give it one. Build the record with that value before the form is mapped onto it, or leave the field out of the form.", $path, ConstructorSetRecord::class));
+})->with([
+    'public readonly' => ['host'],
+    'private behind a getter' => ['path'],
+]);
+
+it('compares a record association by identity, never by its fields', function (): void {
+    $section = new Category();
+    $record = constructorSetRecord($section);
+
+    accessor()->setOnRecord($record, 'section', $section);
+
+    expect($record->section)->toBe($section)
+        ->and(fn () => accessor()->setOnRecord($record, 'section', new Category()))
+        ->toThrow(LogicException::class, heldValueRefusal('section', Category::class, Category::class));
+});
+
+it('refuses a lazy record without loading it', function (): void {
+    $reflection = new ReflectionClass(Category::class);
+    $ghost = $reflection->newLazyGhost(static function (Category $category): void {
+        $category->setName('loaded');
+    });
+
+    expect(fn () => accessor()->setOnRecord(constructorSetRecord(), 'section', $ghost))
+        ->toThrow(LogicException::class, heldValueRefusal('section', Category::class, Category::class))
+        ->and($reflection->isUninitializedLazyObject($ghost))->toBeTrue();
+});
+
+it('reads a proxy subclass as the record it extends', function (): void {
+    $record = new ConstructorSetRecord(host: 'example.com', path: '/home', secret: 'sesame', section: new ProxiedCategory());
+
+    expect(fn () => accessor()->setOnRecord($record, 'section', new ProxiedCategory()))
+        ->toThrow(LogicException::class, heldValueRefusal('section', ProxiedCategory::class, ProxiedCategory::class));
+});
+
+it('still surfaces NoSuchPropertyException for a property it cannot read, whatever it holds', function (string $path, string $value): void {
+    expect(fn () => accessor()->setOnRecord(constructorSetRecord(), $path, $value))
+        ->toThrow(NoSuchPropertyException::class, sprintf('Could not determine access type for property "%s"', $path));
+})->with([
+    'a private readonly property with no getter, written the value it holds' => ['secret', 'sesame'],
+    'a misspelled property' => ['nope', 'x'],
+]);
+
+it('skips an association write of the record a property no setter can change already holds', function (): void {
+    $section = new Category();
+    $record = constructorSetRecord($section);
+
+    accessor()->setAssociationOnRecord($record, 'section', $section);
+
+    expect($record->section)->toBe($section);
+});
+
+it('refuses an association write of another record or null over the record a property no setter can change holds', function (?Category $value, string $written): void {
+    expect(fn () => accessor()->setAssociationOnRecord(constructorSetRecord(), 'section', $value))
+        ->toThrow(LogicException::class, sprintf('Cannot write association "section" onto %s: no setter can change that property, and it already holds another value (the record holds [%s], the write [%s]). Build the record around the record it is attached to, or give the property a setter.', ConstructorSetRecord::class, Category::class, $written));
+})->with([
+    'another record' => [new Category(), Category::class],
+    'null, as a detach writes it' => [null, 'null'],
+]);
+
+it('refuses an association write onto a property no setter can change that holds no record yet', function (): void {
+    $record = new ReflectionClass(ConstructorSetRecord::class)->newInstanceWithoutConstructor();
+
+    expect(fn () => accessor()->setAssociationOnRecord($record, 'section', new Category()))
+        ->toThrow(LogicException::class, sprintf("Cannot write association \"section\" onto %s: no setter can change that property, and it holds no value yet, so only the record's constructor can give it one. Build the record with its related record before attaching it.", ConstructorSetRecord::class));
+});
+
+it('writes a single related record onto a writable association as before', function (): void {
+    $record = constructorSetRecord();
+    $category = new Category();
+
+    accessor()->setAssociationOnRecord($record, 'category', $category);
+
+    expect($record->getCategory())->toBe($category);
+});
+
+it('writes a list raw, through the adder or Symfony refusal, never through the leaf rule', function (): void {
+    $category = new Category();
+    $post = new PostEntity();
+
+    accessor()->setAssociationOnRecord($category, 'posts', [$post]);
+
+    expect($category->getPosts()->toArray())->toBe([$post])
+        ->and(fn () => accessor()->setAssociationOnRecord(constructorSetRecord(), 'section', []))
+        ->toThrow(NoSuchPropertyException::class, 'is a promoted readonly property');
 });
 
 it('reports a nullable record property as accepting null', function (): void {

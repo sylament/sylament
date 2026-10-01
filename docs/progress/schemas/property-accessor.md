@@ -45,8 +45,8 @@ exists. _Blocked by_ names what has to land first. _Detail_ carries a
 | [`setInArray()`](../../../packages/schemas/src/State/PropertyAccessor.php) — write into a detached nested array, auto-vivifying/clobbering intermediates | [`Arr::set()`](../../../vendor/laravel/framework/src/Illuminate/Collections/Arr.php) | done | — | [diverges](#the-detached-array-trio-ports-laravels-arr-helpers-because-propertyaccess-is-host-only-and-has-no-key-removal) |
 | [`forgetFromArray()`](../../../packages/schemas/src/State/PropertyAccessor.php) — unset leaf path(s) from a detached array, leaving emptied parents | [`Arr::forget()`](../../../vendor/laravel/framework/src/Illuminate/Collections/Arr.php) | done | — | [diverges](#the-detached-array-trio-ports-laravels-arr-helpers-because-propertyaccess-is-host-only-and-has-no-key-removal) |
 | [`getFromRecord()`](../../../packages/schemas/src/State/PropertyAccessor.php) — read a record's object graph by dotted path (objects hop by property, arrays by key, null past a null/scalar intermediate) | [`data_get()`](../../../vendor/laravel/framework/src/Illuminate/Collections/helpers.php) | done | — | [diverges](#the-record-pair-completes-the-data_getdata_set-port-for-object-graphs) |
-| [`setOnRecord()`](../../../packages/schemas/src/State/PropertyAccessor.php) — write into a record's object graph; a null singular segment is constructed from its declared type, the remainder past the first segment that is neither an object nor constructible writes as a nested array | [`data_set()`](../../../vendor/laravel/framework/src/Illuminate/Collections/helpers.php) | done | — | [diverges](#the-record-pair-completes-the-data_getdata_set-port-for-object-graphs) · [diverges](#a-missing-singular-intermediate-is-constructed-an-object-collection-is-refused) · [semantics](#a-throwing-setonrecord-can-leave-a-constructed-intermediate-behind) |
-| [`setAssociationOnRecord()`](../../../packages/schemas/src/State/PropertyAccessor.php) — write an association value onto a record property, past `setOnRecord()`'s object-collection refusal | — (Sylament-invented) | done | — | [semantics](#the-association-write-is-the-collection-refusals-counterpart) |
+| [`setOnRecord()`](../../../packages/schemas/src/State/PropertyAccessor.php) — write into a record's object graph; a null singular segment is constructed from its declared type, the remainder past the first segment that is neither an object nor constructible writes as a nested array; a leaf no setter can change is left alone when it already holds the value and refused by name otherwise | [`data_set()`](../../../vendor/laravel/framework/src/Illuminate/Collections/helpers.php) | done | — | [diverges](#the-record-pair-completes-the-data_getdata_set-port-for-object-graphs) · [diverges](#a-missing-singular-intermediate-is-constructed-an-object-collection-is-refused) · [diverges](#eloquent-has-no-property-a-setter-cannot-change-so-the-leaf-rule-has-no-counterpart) · [semantics](#a-throwing-setonrecord-can-leave-a-constructed-intermediate-behind) · [semantics](#a-property-no-setter-can-change-is-left-alone-when-it-already-holds-the-value) |
+| [`setAssociationOnRecord()`](../../../packages/schemas/src/State/PropertyAccessor.php) — write an association value onto a record property, past `setOnRecord()`'s object-collection refusal; a single related record or null on a property no setter can change meets the same leaf rule, by identity | — (Sylament-invented) | done | — | [semantics](#the-association-write-is-the-collection-refusals-counterpart) · [semantics](#a-property-no-setter-can-change-is-left-alone-when-it-already-holds-the-value) |
 | [`hasInArray()`](../../../packages/schemas/src/State/PropertyAccessor.php) — whether a dotted path exists in a detached array (absent vs present-null) | [`Arr::has()`](../../../vendor/laravel/framework/src/Illuminate/Collections/Arr.php) | done | — | — |
 | [`acceptsNullOnRecord()`](../../../packages/schemas/src/State/PropertyAccessor.php) — whether the record's declared write-side type at a dotted path takes null (true when the type cannot be read) | — (Sylament-invented) | done | — | [semantics](#the-nullability-probe-lives-here-because-the-type-reader-does) |
 | [`getBuiltinTypeOnRecord()`](../../../packages/schemas/src/State/PropertyAccessor.php) — the native type the record declares at a dotted path (null for an object, a collection, a union or a type that cannot be read) | — (Sylament-invented) | done | — | [semantics](#the-nullability-probe-lives-here-because-the-type-reader-does) |
@@ -70,7 +70,22 @@ required-constructor-arguments refusal, the object-collection refusal at all fou
 of its sites — a declared segment, a declared leaf, an adder-shaped leaf, and an
 initialized collection met on the walk — the scalar-intermediate
 `LogicException`, and the pin that it names the object that rejected the array
-rather than the root record; `hasInArray()`'s present, present-null, absent and
+rather than the root record; the leaf rule for a property no setter can change —
+a writable leaf still written through its setter when it holds the value, an
+equal value left alone in seven shapes (a public readonly string, a private one
+behind a getter, an `int` written as its numeric string, an identical bool, an
+equal date, an equal `Uid`, an equal value object), an empty string and a `null`
+taken for each other both ways round, a held `0` left alone under `0.0` and
+`'0'`, the four pairs PHP's `==` would match refused (`null` over a held `0`,
+`null` over a held `false`, `'x'` over a held `true`, `false` over a held `0`),
+another value refused naming the two types and neither value in six, a property holding
+no value yet refused in both readable shapes, a record compared by identity —
+another instance refused though every field matches, a lazy one refused without
+being loaded, a proxy subclass read as the entity it extends — and a property it
+cannot read surfacing `NoSuchPropertyException` even when it holds the value;
+`setAssociationOnRecord()`'s single-record arm — the held record skipped, another
+one and `null` refused, a property holding none refused, a writable property
+written as before — and its list arm written raw; `hasInArray()`'s present, present-null, absent and
 past-scalar answers; and
 `acceptsNullOnRecord()`'s four — a nullable property, a non-nullable one, a path
 whose type cannot be read, and one read through an object hop rather than off the
@@ -84,8 +99,8 @@ pins both paths — a component from `make()` holds the container's accessor, on
 from `new` holds a locally built one — and
 [`LiveStateTest`](../../../packages/schemas/tests/Integration/LiveStateTest.php)
 drives it end-to-end through a real UX LiveComponent hydrate/dehydrate round-trip
-via `HasState`. The ninth method needs a database, so it is pinned beside the
-vendor behaviour it delegates to, in
+via `HasState`. The ninth method's list arm needs a database, so it is pinned
+beside the vendor behaviour it delegates to, in
 [`DoctrineCollectionWriteTest`](../../../packages/schemas/tests/Integration/State/DoctrineCollectionWriteTest.php)
 — the same case asserting that `setOnRecord()` refuses the write it accepts.
 
@@ -117,24 +132,29 @@ carries no identity for its items: nothing says which item is which entity, so a
 write could only replace the collection wholesale and lose every association
 Doctrine tracks. `setAssociationOnRecord()` is the same write with that premise
 removed — its caller has already resolved entities, and the identity is the
-mapping's own — so it hands the value straight to Symfony's accessor.
+mapping's own — so a list goes straight to Symfony's accessor.
 
 The bypass is narrow on purpose. It takes a single property rather than a dotted
 path (an association is a property, and a path through one is a different
-question), it makes no attempt to distinguish a to-one from a to-many (the caller
-read that off the Doctrine mapping to build the value in the first place), and it
-performs no type check at all — Symfony's accessor picks the adder/remover pair
-for a collection and the setter for a single object, which is exactly the
-difference the caller already encoded in what it passes. What it must never
-become is a general "write without checks" escape hatch: everything else on a
-record still goes through `setOnRecord()`, and the refusal it raises stays the
-default answer for a state-array write.
+question), and it performs no type check at all — Symfony's accessor picks the
+adder/remover pair for a collection and the setter for a single object, which is
+exactly the difference the caller already encoded in what it passes. The one
+distinction it draws is that encoding: a **list** is written raw, while a single
+related record or `null` — what a one-to-many child's mapped-by property takes —
+meets [the leaf rule](#a-property-no-setter-can-change-is-left-alone-when-it-already-holds-the-value)
+when the property has no setter, comparing records by identity alone. What it
+must never become is a general "write without checks" escape hatch: everything
+else on a record still goes through `setOnRecord()`, and the refusal it raises
+stays the default answer for a state-array write.
 
-Its only caller today is forms'
-[`HasRelationship`](../forms/select.md#the-save-arm-writes-a-desired-list-not-attachdetach),
-whose desired-list semantics (identity diffing, surviving collection instance,
-adders maintaining the owning side) are the vendor behaviour characterized in the
-same test file.
+Its callers write both shapes. Forms'
+[`HasRelationship`](../forms/select.md#the-save-arm-writes-a-desired-list-not-attachdetach)
+and the [relationship repeater](../forms/repeater.md#a-relationship-repeater-keys-its-items-by-identity-and-diffs-the-collection)
+write a desired list, whose semantics (identity diffing, surviving collection
+instance, adders maintaining the owning side) are the vendor behaviour
+characterized in the same test file; the [association reader](association-reader.md)'s
+`attach()` and `detach()` write a list onto a many-to-many and the owner, or
+`null`, onto a one-to-many child.
 
 ### A throwing `setOnRecord()` can leave a constructed intermediate behind
 
@@ -154,6 +174,106 @@ the method atomic would cost a second traversal to serve only the case where
 someone catches a `LogicException` and keeps using the record, which nothing does.
 Worth knowing before writing a test that asserts an untouched record after a
 caught throw.
+
+### A property no setter can change is left alone when it already holds the value
+
+Until [M7 · 10](../roadmap.md#m7--composite-identifiers) every leaf write went
+straight to Symfony's accessor, so a property no setter can change — a `public
+readonly` one, or a private one behind a getter alone — was a
+`NoSuchPropertyException` on every mapped write, whatever it held. That is the
+shape a record whose constructor takes its key has: the create page's
+`makeRecord()` hands the constructor the key the form maps, and `getData()` then
+writes the same key again. The leaf write now asks whether the property is
+writable first, and only one that is not takes another path:
+
+- **writable** — written, as before, through its setter and its side effects,
+  even when it already holds the value;
+- **not writable but readable** — read. Holding **the same value**, it is left
+  alone. Holding **another**, the write is refused with a `LogicException` naming
+  the state path, the record class and the two value *types* — never the values,
+  which can be personal data — and the ways out: hand the constructor the form's
+  value as it is, make the field's state match what the constructor keeps with
+  `dehydrateStateUsing()`, or leave the field out of the form. Holding **no value
+  yet** (`UninitializedPropertyException`), it is refused saying only the
+  record's constructor can give it one;
+- **neither** — Symfony's `NoSuchPropertyException`, unchanged, which is what a
+  misspelled path must surface. A `private readonly` property with no getter is
+  in this arm too, whatever it holds: the rule only sees what it can read, so
+  give such a property a getter or make it public. This arm relies on Symfony's
+  default `throw_exception_on_invalid_property_path: true`; an application that
+  turns it off reads an unreadable property as `null`, so a misspelled path there
+  meets the "another value" refusal where it used to be dropped in silence.
+
+"Readable" is read by calling the getter, not by Symfony's `isReadable()`, which
+answers `false` for an uninitialized property and would send the third case into
+the fourth.
+
+"The same value" is, in order: identical; `null` and `''`, either way round — the
+`null` a nullable key holds is what a blank field writes; two scalars, neither a
+bool, that compare equal — so `'5'` is the `5` an integer key holds and `0.0` the
+`0`; two arrays that compare equal; two objects of one class that is no record and
+compare equal — an equal date, `Uid` or value object; anything else is another
+value. That is narrower than PHP's `==` on purpose: `==` would also take `null`
+for the `0` an integer holds and the `false` a boolean holds, and `'x'` for a held
+`true`, so a blank field over a held `0` or `false` would be left alone where it is
+now refused. A bool compares strictly, and `null` matches nothing but `''`. The
+array tier is PHP's array comparison, which compares the elements loosely — inside
+an array `false` still meets `0`, and an object element is compared by its fields.
+A **record** compares by identity alone, because comparing an entity reads its
+fields — which loads a lazy one and recurses without end through a bidirectional
+association, a PHP `Error` (*Nesting level too deep*). An identity is enough where it matters: the
+mapper's `getReference()` and a constructor's `find()` both answer the identity
+map's one instance, so a derived identity's readonly association half, set by the
+constructor and mapped by a `Select::relationship()`, is left alone.
+
+The equal-comparing tiers are written `($current <=> $value) === 0`, which answers
+exactly what `==` answers for every pair they compare. `==` itself cannot be
+written: the repository's PHP-CS-Fixer configuration enables the risky
+`strict_comparison` rule, so a `==` here would become `===` on the next
+`composer format`, and those tiers would go strict without a test noticing first.
+
+What counts as a record is read off the object, since the accessor holds no
+entity manager: its class, or a class it extends, carries Doctrine's `#[Entity]`
+attribute. The parent walk is what lets a proxy subclass — the class Doctrine
+generates when native lazy objects are off — answer as the entity it stands for;
+a native lazy object is of the entity's own class, and is compared without being
+loaded. An entity mapped in XML or PHP rather than by attribute takes the object
+tier's `<=>`: right in outcome, since two distinct entities differ in their identifier,
+but it loads a lazy one and can recurse. `setAssociationOnRecord()` needs no such
+reading — its caller writes nothing but records and `null` there — so its single
+value compares by identity whatever the mapping.
+
+**Who meets it.** Every caller of the two methods: `getData()`'s leaf loop and its
+nullable-branch pass (whose `null` over a branch a property no setter can change
+still holds is refused), the to-one `Select::relationship()` write, a singular
+relationship's record and fields, a relationship repeater item's fields, tables'
+editable cell and reorder write, and the association reader's one-to-many
+`attach()` and `detach()` — so a nested create page whose child's constructor
+already set its parent keeps it through both attaches rather than throwing. Every
+non-writable write was a 500 before, so nothing that saved now fails:
+
+- **create** — a key the constructor sets and the form maps saves; a constructor
+  that normalises it (`strtolower()`) is the named refusal, with
+  `dehydrateStateUsing()` as the way out;
+- **edit** — an unchanged readonly key a dehydrated field maps no longer fails
+  every save, and a changed one is the named refusal. That leaves an asymmetry: a
+  **writable** changed key is the record check's field error *This value cannot be
+  changed.*
+  ([can-be-validated.md](can-be-validated.md#a-changed-key-is-refused-and-put-back-not-handed-to-doctrine)),
+  a 422 with the key put back, because the write lands and the check then sees it;
+  a **readonly** one is this `LogicException`, a 500, because the write is refused
+  before the check runs. `disabledOn('edit')` is the remedy for both;
+- **replicate** — Doctrine builds a replica without its constructor and copies no
+  identifier field, so a readonly scalar key a
+  [`ReplicateAction`](../actions/replicate-action.md) modal maps holds no value yet
+  and is the uninitialized refusal: a key no setter can set cannot be given to a
+  copy.
+
+**Not covered.** The to-many arm: a list `setAssociationOnRecord()` writes still
+goes straight to Symfony's accessor, which diffs it through the adder and remover.
+And an intermediate segment: a dotted path whose holder is a readonly object the
+walk would have to construct and assign is still Symfony's refusal, since the rule
+runs at the leaf alone.
 
 ### The nullability probe lives here because the type reader does
 
@@ -186,6 +306,18 @@ cannot hold is refused before `setOnRecord()` is reached at all — the same
 "refuse first with a message of its own" trade the nullability probe makes.
 
 ## Divergences
+
+### Eloquent has no property a setter cannot change, so the leaf rule has no counterpart
+
+Filament writes form data through `Model::fill()`, and an Eloquent attribute is
+always writable: `setAttribute()` stores into the model's attribute array, guarded
+by `$fillable` rather than by the class. A record whose constructor sets a
+property no setter can change is a Doctrine shape with no Eloquent equivalent, so
+Filament has nothing to skip or refuse, and
+[the leaf rule](#a-property-no-setter-can-change-is-left-alone-when-it-already-holds-the-value)
+is the mapper's own answer to it. It is monotonic over what came before — every
+such write was Symfony's `NoSuchPropertyException` — and it refuses rather than
+writes around a property the record closed: nothing sets one through reflection.
 
 ### The accessor is injected, not reached for
 

@@ -4,9 +4,11 @@ declare(strict_types=1);
 
 namespace Sylament\Schemas\State;
 
+use Doctrine\ORM\Mapping\Entity;
 use LogicException;
 use ReflectionClass;
 use Symfony\Component\PropertyAccess\Exception\InvalidArgumentException;
+use Symfony\Component\PropertyAccess\Exception\NoSuchPropertyException;
 use Symfony\Component\PropertyAccess\Exception\UninitializedPropertyException;
 use Symfony\Component\PropertyAccess\PropertyAccessorInterface;
 use Traversable;
@@ -111,9 +113,16 @@ final readonly class PropertyAccessor
      * throws LogicException naming the path, so the failure spells out the fix
      * rather than surfacing a type error.
      *
+     * A leaf no setter can change is left alone when it already holds the value
+     * ({@see holdsSameValue()}), and refused by name when it holds another one
+     * or none yet; a leaf that is neither writable nor readable surfaces
+     * Symfony's `NoSuchPropertyException`, as a misspelled path must.
+     *
      * @throws LogicException when a mapped segment declares or holds an object
      *                        collection, names a class the mapper cannot
-     *                        build, or rejects the array remainder
+     *                        build, or rejects the array remainder, or when a
+     *                        leaf no setter can change holds another value or
+     *                        none
      */
     public function setOnRecord(object $record, string $path, mixed $value): void
     {
@@ -174,7 +183,7 @@ final readonly class PropertyAccessor
             $this->assertNotCollection($leaf, $holder, $segments[0], $path);
         }
 
-        $this->accessor->setValue($holder, $segments[0], $value);
+        $this->writeLeaf($holder, $segments[0], $value, $path, isAssociation: false);
     }
 
     /**
@@ -185,11 +194,23 @@ final readonly class PropertyAccessor
      * A collection-valued association takes the whole desired list — Symfony's
      * accessor diffs it against what the property holds and calls the record's
      * adder and remover per element, so the collection instance survives and
-     * Doctrine sees only the difference.
+     * Doctrine sees only the difference. A single related record or null, on a
+     * property no setter can change, follows {@see setOnRecord()}'s leaf rule,
+     * comparing the related record by identity alone.
+     *
+     * @throws LogicException when a single related record or null meets a
+     *                        property no setter can change that holds another
+     *                        record or none
      */
     public function setAssociationOnRecord(object $record, string $property, mixed $value): void
     {
-        $this->accessor->setValue($record, $property, $value);
+        if (is_array($value)) {
+            $this->accessor->setValue($record, $property, $value);
+
+            return;
+        }
+
+        $this->writeLeaf($record, $property, $value, $property, isAssociation: true);
     }
 
     /**
@@ -403,6 +424,117 @@ final readonly class PropertyAccessor
             sprintf('state path "%s" onto %s', $path, $holder::class),
             sprintf('initialize "%s" before mapping.', $segment),
         );
+    }
+
+    /**
+     * Write one property, unless no setter can change it: then a property that
+     * already holds the value is left alone, and one holding another value or
+     * none is refused by name. `$path` is what the refusal names — the state
+     * path, or the association's property.
+     *
+     * @throws LogicException when the property cannot be written and holds
+     *                        another value, or none yet
+     */
+    private function writeLeaf(object $holder, string $property, mixed $value, string $path, bool $isAssociation): void
+    {
+        if ($this->accessor->isWritable($holder, $property)) {
+            $this->accessor->setValue($holder, $property, $value);
+
+            return;
+        }
+
+        $subject = $isAssociation
+            ? sprintf('Cannot write association "%s" onto %s', $path, $holder::class)
+            : sprintf('Cannot map state path "%s" onto %s', $path, $holder::class);
+
+        try {
+            $current = $this->accessor->getValue($holder, $property);
+        } catch (UninitializedPropertyException $exception) {
+            throw new LogicException(sprintf(
+                "%s: no setter can change that property, and it holds no value yet, so only the record's constructor can give it one. %s",
+                $subject,
+                $isAssociation
+                    ? 'Build the record with its related record before attaching it.'
+                    : 'Build the record with that value before the form is mapped onto it, or leave the field out of the form.',
+            ), $exception->getCode(), previous: $exception);
+        } catch (NoSuchPropertyException) {
+            // Neither writable nor readable: the write raises Symfony's own refusal, which a misspelled path must surface.
+            $this->accessor->setValue($holder, $property, $value);
+
+            return;
+        }
+
+        if ($this->holdsSameValue($current, $value, comparesObjectsByIdentity: $isAssociation)) {
+            return;
+        }
+
+        throw new LogicException(sprintf(
+            '%s: no setter can change that property, and it already holds another value (the record holds [%s], the write [%s]). %s',
+            $subject,
+            get_debug_type($current),
+            get_debug_type($value),
+            $isAssociation
+                ? 'Build the record around the record it is attached to, or give the property a setter.'
+                : "Hand the constructor the form's value as it is, make the field's state match what the constructor keeps with dehydrateStateUsing(), or leave the field out of the form.",
+        ));
+    }
+
+    /**
+     * Whether a property no setter can change already holds what a write would
+     * put there, in order: the identical value; `null` and `''`, either way
+     * round; two non-bool scalars that compare equal, so `'5'` is `5`; two
+     * arrays that compare equal; two objects of one class that is no record and
+     * compare equal. Anything else differs — a bool compares strictly, `null`
+     * matches nothing but `''`, and a record, or any object when
+     * `$comparesObjectsByIdentity` is set, only its own instance.
+     */
+    private function holdsSameValue(mixed $current, mixed $value, bool $comparesObjectsByIdentity): bool
+    {
+        if ($current === $value) {
+            return true;
+        }
+
+        if (($current === null && $value === '') || ($current === '' && $value === null)) {
+            return true;
+        }
+
+        if ($this->isNonBoolScalar($current) && $this->isNonBoolScalar($value)) {
+            return ($current <=> $value) === 0;
+        }
+
+        if (is_array($current) && is_array($value)) {
+            return ($current <=> $value) === 0;
+        }
+
+        if (! is_object($current) || ! is_object($value) || $current::class !== $value::class) {
+            return false;
+        }
+
+        if ($comparesObjectsByIdentity || $this->isRecord($current)) {
+            return false;
+        }
+
+        return ($current <=> $value) === 0;
+    }
+
+    private function isNonBoolScalar(mixed $value): bool
+    {
+        return is_int($value) || is_float($value) || is_string($value);
+    }
+
+    /**
+     * Whether the object's class, or a class it extends, is mapped as a Doctrine
+     * entity by attribute — a lazy proxy subclass answers through its parent.
+     */
+    private function isRecord(object $value): bool
+    {
+        for ($class = new ReflectionClass($value); $class !== false; $class = $class->getParentClass()) {
+            if ($class->getAttributes(Entity::class) !== []) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /**

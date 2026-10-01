@@ -1249,8 +1249,13 @@ thing to keep: table → host, never the reverse.
 
 `getRecordKey($record)` is the same one line against
 [`getTableRecordKey()`](has-table.md#object-records-are-keyed-by-a-readable-id-rather-than-an-eloquent-key),
-and reads the same way: the *convention* for identifying a record is the host's,
-and the table is the seam a template or a column reaches it through. That is why
+and reads the same way: the *convention* for identifying a record is the host's
+for **rendering** — the key a row renders, is ticked and mounts an action under —
+and the table is the seam a template or a column reaches it through. Reading a
+key back is not the host's on the query lane, where every read decodes through
+`RecordKey`, which is why an override answering another key is refused there
+([has-table.md](has-table.md#an-overridden-gettablerecordkey-keys-the-rows-and-the-query-lane-reads-keys-back-through-the-codec)).
+That is why
 the contract grew `getTableRecordKey()` rather than the table growing a resolver
 of its own — a second implementation of the `id` read would be one more place to
 keep in step with

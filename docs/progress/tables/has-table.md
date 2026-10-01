@@ -149,7 +149,7 @@ instead.
 | [`InteractsWithTable` — thirty-five methods](../../../packages/tables/src/Contracts/InteractsWithTable.php) | [`Contracts\HasTable`](../../../vendor/filament/tables/src/Contracts/HasTable.php) | in progress | — | [detail](#the-contract-is-thirty-five-methods-of-filaments-forty-six) |
 | [`flushCachedTableRecords()`](../../../packages/tables/src/Concerns/HasTable.php) | [`Concerns\HasRecords::flushCachedTableRecords()`](../../../vendor/filament/tables/src/Concerns/HasRecords.php) | done | — | on the contract since M4 · 2 — actions' `callMountedAction()` calls it in a `finally` after any mounted action runs on a table host. [detail](#the-contract-is-thirty-five-methods-of-filaments-forty-six) |
 | [`getTableHostId()` + the `$tableHostId` `LiveProp`](../../../packages/tables/src/Concerns/HasTable.php) | [`Livewire\Component::getId()`](../../../vendor/filament/tables/resources/views/index.blade.php) | done | — | [diverges](#the-host-id-is-a-random-liveprop-rather-than-a-framework-component-id) |
-| [`getTableRecordKey(object\|array $record): string`](../../../packages/tables/src/Concerns/HasTable.php) | [`Concerns\HasRecords::getTableRecordKey()`](../../../vendor/filament/tables/src/Concerns/HasRecords.php) | done | — | [diverges](#object-records-are-keyed-by-a-readable-id-rather-than-an-eloquent-key) |
+| [`getTableRecordKey(object\|array $record): string`](../../../packages/tables/src/Concerns/HasTable.php) | [`Concerns\HasRecords::getTableRecordKey()`](../../../vendor/filament/tables/src/Concerns/HasRecords.php) | done | — | [diverges](#object-records-are-keyed-by-a-readable-id-rather-than-an-eloquent-key) · [semantics](#an-overridden-gettablerecordkey-keys-the-rows-and-the-query-lane-reads-keys-back-through-the-codec) · [diverges](#a-query-lane-override-of-gettablerecordkey-the-codec-cannot-read-back-is-refused-where-filaments-misses-in-silence) |
 | [`getTableRecord(?string $key)` with its `resolveQueryTableRecord()` query arm](../../../packages/tables/src/Concerns/HasTable.php) | [`Concerns\HasRecords::getTableRecord()`](../../../vendor/filament/tables/src/Concerns/HasRecords.php) | done | — | [diverges](#gettablerecord-reads-fresh-when-the-render-cache-is-cold) · [diverges](#record-resolution-applies-no-limit-1-where-filaments-find-does) |
 | [`getAllTableRecordsCount(): int`](../../../packages/tables/src/Concerns/HasTable.php) | [`Concerns\HasRecords::getAllTableRecordsCount()`](../../../vendor/filament/tables/src/Concerns/HasRecords.php) | done | — | [diverges](#the-all-records-count-answers-four-ways-where-filaments-answers-two) · [diverges](#an-output-walker-of-the-querys-own-is-refused-by-name-only-where-doctrines-fallback-cannot-serve-a-keyed-root) |
 | [The query lane — `getFilteredTableQuery()`, `filterTableQuery()`, `applyFiltersToTableQuery()`, `getFilteredSortedTableQuery()`](../../../packages/tables/src/Concerns/HasTable.php) | [`Concerns\HasRecords`](../../../vendor/filament/tables/src/Concerns/HasRecords.php) | done | — | [semantics](#filtertablequery-applies-the-filters-then-the-search) · [diverges](#the-filtered-query-seam-is-gated-on-the-lane-not-on-the-presence-of-a-builder) |
@@ -1804,6 +1804,67 @@ rather than silently inflated. So the look-ahead's keyed arm is reached only
 under a `Summarizer::using()` summarizer, which is the escape that refusal
 names.
 
+### An overridden `getTableRecordKey()` keys the rows, and the query lane reads keys back through the codec
+
+`getTableRecordKey()` is public and on the contract, so a host may override it,
+and what an override moves is one side of a round trip. It is what a row is
+**keyed** by: `keyTableRecords()` keys every object row through it, so the row
+loop, each checkbox's `value`, every mount context and `Table::getRecordKey()`
+carry its answer. On the query lane nothing reads that key **back** through it.
+`getTableRecord()` — and with it every row action, column action and editable
+cell — the selection's `in()`/`notIn()`, the key pluck behind select-all, the
+reorder's re-resolution, the aggregate batch and the page summary's narrowing
+all decode a key through [`RecordKey`](../schemas/record-key.md) and
+`IdentifierConstraint`, so the only key they can read back is the one
+`RecordKey::of()` mints. On the `records()` lane an object row is keyed **and**
+read back by the method alone, so an override there is whole; an array row
+never asks it, being keyed by its `__key` entry.
+
+An override answering any other key on the query lane therefore misses
+everywhere. Executed against a host keying three songs as `S1`…`S3`, before the
+refusal below:
+
+- a row action, a column action or an editable cell on `S1` resolved nothing
+  and did nothing, with no error;
+- an explicit selection of `S1` and `S3` narrowed to `1 = 0`, so the bulk action
+  acted on no row;
+- select-all filled the selection with the codec's keys, which no rendered
+  checkbox matched, so every box stayed unticked while the bulk action acted on
+  all three;
+- **select all, untick `S2`, delete: all three were deleted.** `notIn()` answers
+  `null` when no deselected key decodes, and the selection query reads `null` as
+  *nothing left to exclude*, so the unticked row went with the others — on both
+  arms of `fetchSelectedRecords()`;
+- a reorder wrote nothing, an aggregate cell showed its default, and the page
+  summary narrowed to `1 = 0`.
+
+**Parity.** Resolution, selection, select-all, reorder and the deselection
+widening are Filament's too: its `find()`, `whereKey()`, `whereKeyNot()` and
+`getKeyName()` never ask the override either, and `whereKeyNot(['S2'])` against
+an integer key excludes nothing on SQLite and MySQL. The selectability
+constraint, the aggregate batch and the page summary miss only here, because
+Sylament reads keys where Filament reads none: Filament's selectability check
+re-keys through `getKey()`, its aggregates ride the page query, and its summary
+pages with `forPage()`. Before M7 the deselection bind was untyped, which on
+PostgreSQL was, by reading, an integer-cast error — a 500 rather than a
+deletion; the strict decode made the widening silent there too.
+
+**So the query lane refuses it.** Since
+[M7 · 10](../roadmap.md#m7--composite-identifiers), `keyTableRecords()` compares,
+for every object row that is an instance of the table's
+[record class](table.md#the-record-class-is-read-off-the-base-querys-root-entity),
+what `getTableRecordKey()` answers with what `RecordKey::of()` answers, and a
+difference throws a `LogicException` naming the host, the row's class, both keys
+and the two ways out — answer the codec's key, or list the rows through
+`records()`. Every render keys its rows there, so the first render refuses and
+none of the symptoms above is reachable. An override answering the codec's key
+renders as before, however it computes it; an array row, every `records()` row
+and a query-lane row that is no instance of the record class — a `SELECT NEW`
+projection, keyed by its `id` — are never compared. The cost is one more mint
+per row, a few microseconds and no statement. Pinned by
+[`HasTableRecordKeyOverrideTest`](../../../packages/tables/tests/Unit/Concerns/HasTableRecordKeyOverrideTest.php)
+over a fixture host whose override is a closure.
+
 ## Divergences
 
 Deliberate deviations from Filament — permanent, and the reason they hold. Say
@@ -2507,6 +2568,9 @@ else falls through to that convention unchanged: array records, every record on
 the closure lane, and — on the query lane — a DTO or any object that is not the
 table's entity, so a `SELECT NEW` projection or an object handed straight to
 `getTableRecordKey()` is keyed by its `id` exactly as before.
+A host that overrides the method must answer the same key on this lane for every
+row the table's record class hydrates, or the first render refuses it
+([semantics](#an-overridden-gettablerecordkey-keys-the-rows-and-the-query-lane-reads-keys-back-through-the-codec)).
 
 Two things about that guard. It asks the **table** what its record class is and
 tests the record with `instanceof`, rather than asking Doctrine whether the
@@ -2571,6 +2635,23 @@ the table's
 the table's key rather than taught Doctrine —
 [action.md](../actions/action.md#getcontext-drops-the-record-model-gate) carries
 the other half of this note.
+
+### A query-lane override of `getTableRecordKey()` the codec cannot read back is refused, where Filament's misses in silence
+
+Filament lets a host override `getTableRecordKey()` on an Eloquent table and
+then reads every key back through `find()`, `whereKey()` and `whereKeyNot()`,
+which never ask it — so an override answering anything but the model key
+resolves no record, selects nothing, and after a select-all with a row unticked
+acts on the unticked row too, all without an error. Ours failed the same way
+and in three places more
+([the semantics](#an-overridden-gettablerecordkey-keys-the-rows-and-the-query-lane-reads-keys-back-through-the-codec)),
+and one of the shared failures deletes rows the user deselected, so the query
+lane refuses such an override by name at the first render instead. It takes
+nothing a migrating user could have relied on: no read-back ever honoured the
+override there, so the refusal only names a table that was already broken. The
+`records()` lane keeps Filament's freedom, since it reads keys back through the
+method itself. Reverse it only if the query lane grows a host-side decode that
+pairs with the override.
 
 ### `getTableRecord()` reads fresh when the render cache is cold
 

@@ -193,6 +193,17 @@ trait HasTable
     }
 
     /**
+     * The key a row renders, is selected and is reordered under. On the query
+     * lane every read that turns a key back into rows — getTableRecord() (and
+     * so row actions, column actions and editable cells), the selection,
+     * select-all, reorder, the aggregate batch and the page summary — decodes
+     * it through RecordKey and IdentifierConstraint and never asks this
+     * method, so an override there must answer the key RecordKey::of()
+     * answers for every row that is an instance of the table's record class;
+     * one answering any other key is refused when the rows are first keyed.
+     * On the records() lane an object row is keyed and read back by this
+     * method alone; an array row is keyed by its `__key` entry and never asks it.
+     *
      * @param object|array<string, mixed> $record
      */
     public function getTableRecordKey(object|array $record): string
@@ -359,7 +370,14 @@ trait HasTable
                 throw new LogicException(sprintf('Records of table [%s] must be objects or field-keyed arrays, got %s.', static::class, get_debug_type($record)));
             }
 
-            $keyedRecords[$this->getTableRecordKey($record)] = $record;
+            $key = $this->getTableRecordKey($record);
+            $codecKey = $this->resolveQueryRecordKey($record);
+
+            if ($codecKey !== null && $codecKey !== $key) {
+                throw new LogicException(sprintf('Table [%s] keys a [%s] row as [%s] through getTableRecordKey(), but its query reads every key back through RecordKey, which keys that row as [%s], so a selection, an action or a reorder would miss the row, and a select-all with that row unticked would act on it too. Answer the key RecordKey::of() answers, or list the rows through records(), where an object row is keyed and read back by getTableRecordKey() alone.', static::class, get_debug_type($record), $key, $codecKey));
+            }
+
+            $keyedRecords[$key] = $record;
         }
 
         $this->fillTableAggregateValues(array_map(static fn (int|string $key): string => (string) $key, array_keys($keyedRecords)));

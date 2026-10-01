@@ -18,11 +18,10 @@ use Sylament\Schemas\Contracts\InteractsWithSchemas;
 use Sylament\Schemas\Exceptions\ValidationException;
 use Sylament\Schemas\Schema;
 use Sylament\Schemas\Validation\PresenceGate;
+use Sylament\Schemas\Validation\RecordKeyGuard;
 use Sylament\Support\Components\Attributes\ExposedLiveComponentMethod;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
 use Symfony\Component\HttpFoundation\Request;
-use Symfony\Component\Validator\Constraints\Callback;
-use Symfony\Component\Validator\Context\ExecutionContextInterface;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
 use Symfony\Contracts\Service\Attribute\Required;
 use Symfony\UX\LiveComponent\Attribute\LiveAction;
@@ -487,15 +486,15 @@ trait HasSchemas
 
         $reader = $schema->getAssociationReader();
 
-        $violations = $this->schemaStateValidator->validate($record, $this->getIdentifierGuard($reader->revertIdentifierChanges($record)));
+        $violations = $this->schemaStateValidator->validate($record, RecordKeyGuard::constraint($reader->revertIdentifierChanges($record)));
         $violations->addAll($this->schemaStateValidator->validate($record));
 
         if (count($violations) === 0) {
-            $violations = $this->schemaStateValidator->validate($record, $this->getIdentifierGuard($this->getMappedBlankIdentifier($schema, $reader->findBlankAssignedIdentifiers($record))));
+            $violations = $this->schemaStateValidator->validate($record, RecordKeyGuard::constraint($this->getMappedBlankIdentifier($schema, $reader->findBlankAssignedIdentifiers($record))));
         }
 
         if (count($violations) === 0) {
-            $violations = $this->schemaStateValidator->validate($record, $this->getIdentifierGuard($reader->findTakenIdentifiers($record)));
+            $violations = $this->schemaStateValidator->validate($record, RecordKeyGuard::constraint($reader->findTakenIdentifiers($record)));
         }
 
         if (count($violations) === 0) {
@@ -526,27 +525,6 @@ trait HasSchemas
         }
 
         throw new ValidationException($errors);
-    }
-
-    /**
-     * A record-key rule's refusals as a constraint in the record's own
-     * validation context, so each message is translated and filed as the
-     * record's own violations are. The changed-key rule is read before those
-     * run, since it puts the old key back; the blank-key rule and then the
-     * taken-key rule only once they pass, so it binds nothing the record's own
-     * constraints refuse. The blank-key rule refuses only under a key field a
-     * component of the schema maps, the first such candidate; a blank key field
-     * no component maps is left to the create that persists the record.
-     *
-     * @param array<string, string> $refusals the message, keyed by the record property path it belongs to
-     */
-    private function getIdentifierGuard(array $refusals): Callback
-    {
-        return new Callback(static function (object $record, ExecutionContextInterface $context) use ($refusals): void {
-            foreach ($refusals as $path => $message) {
-                $context->buildViolation($message)->atPath($path)->addViolation();
-            }
-        });
     }
 
     /**

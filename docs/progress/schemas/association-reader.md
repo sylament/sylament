@@ -570,7 +570,7 @@ with the gate, since an empty list now means nothing is blank. Pinned by
 `revertIdentifierChanges(object $record): array` is the changed-key rule
 [M7 · 6](../roadmap.md#m7--composite-identifiers) added — `@internal`, and
 called from two places: schemas' record check, first of the
-[three validator calls](can-be-validated.md#record-sourced-constraints-are-validated-on-the-mapped-object)
+[four validator calls](can-be-validated.md#record-sourced-constraints-are-validated-on-the-mapped-object)
 `getData()` ends in, and tables' editable-cell write, which runs it alone
 ([the cell](../tables/has-columns.md)). It answers `array<string, string>`: the
 message *"This value cannot be changed."*, keyed by the refused field's property

@@ -211,23 +211,35 @@ flush only when valid). Class-level constraints come free that way, which is the
 only route by which `UniqueEntity` can ever work: it needs the managed object,
 not a scalar path value.
 
-Since [M7 · 6](../roadmap.md#m7--composite-identifiers) the tail is three
-validator calls rather than one, in an order each of them depends on. First the
+Since [M7 · 6](../roadmap.md#m7--composite-identifiers) the tail is several
+validator calls rather than one — four since M7 · 7 — in an order each of them
+depends on. First the
 [changed-key pass](#a-changed-key-is-refused-and-put-back-not-handed-to-doctrine),
-validated as a private `Callback` in the record's own context, because it puts a
-moved key back and has to run before anything can flush it or read it. Then the
+validated as a `Callback` in the record's own context, because it puts a moved
+key back and has to run before anything can flush it or read it. Then the
 record's own constraints, unchanged, their violations added to the same list.
 Then — **only when neither raised anything** — the
+[blank-key pass](#a-blank-assigned-key-is-refused-before-anything-is-written),
+and, only when that raised nothing either, the
 [taken-key pass](#a-taken-assigned-key-is-a-field-error-not-a-unique-violation),
-as a second `Callback`: it binds form values into a lookup, so it runs only on a
-record whose own constraints passed, and an application `UniqueEntity` answers
-before it. Both key messages are raised through `ExecutionContext::buildViolation()`,
-so they are translated through the `validators` domain and path-translated
-exactly as the record's own violations are; nothing throws a
-`ValidationException` by hand, which would render nothing. The host now files a
+each a `Callback` of its own: the taken one binds form values into a lookup, so
+it runs only on a record whose own constraints passed, and an application
+`UniqueEntity` answers before it. Every key message is raised through
+`ExecutionContext::buildViolation()`, so it is translated through the
+`validators` domain and path-translated exactly as the record's own violations
+are; nothing throws a `ValidationException` by hand, which would render nothing.
+The `Callback` is
+[`RecordKeyGuard::constraint()`](../../../packages/schemas/src/Validation/RecordKeyGuard.php),
+`@internal`: one violation per refusal, at the refusal's path. It was a private
+method of the host until [M7 · 10](../roadmap.md#m7--composite-identifiers)
+moved it out for its second reader, tables' editable cell, which validates its
+own refusal through it so the column's validator translates the message as the
+form's does ([has-columns.md](../tables/has-columns.md)). The host now files a
 message **once per path**, so a `ValidationException` never lists one twice under
-a field. `InteractsWithSchemas` did not change. The order and the three are pinned
-by [`HasSchemasIdentifierGuardTest`](../../../packages/schemas/tests/Integration/Concerns/HasSchemasIdentifierGuardTest.php).
+a field. `InteractsWithSchemas` did not change. The order and the four are pinned
+by [`HasSchemasIdentifierGuardTest`](../../../packages/schemas/tests/Integration/Concerns/HasSchemasIdentifierGuardTest.php),
+and the constraint itself by
+[`RecordKeyGuardTest`](../../../packages/schemas/tests/Unit/Validation/RecordKeyGuardTest.php).
 
 The alternative — pulling `getMetadataFor($class)` property constraints into the
 per-field [`buildValidationConstraints()`](../forms/can-be-validated.md#the-subclass-seam-is-a-protected-builder-not-the-public-getter)

@@ -557,6 +557,10 @@ trait HasSchemas
      */
     private function getMappedTakenIdentifiers(Schema $schema, array $candidates): array
     {
+        if ($candidates === []) {
+            return [];
+        }
+
         $translator = $schema->getRecordViolationPathTranslator();
         $byRecord = [];
 

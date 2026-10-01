@@ -61,6 +61,7 @@ Sylament-only.
 | [`hasOwnRecord()`](../../../packages/schemas/src/Concerns/BelongsToRecord.php) | — | done | — | [semantics](#the-nearest-record-frame-is-the-first-node-above-a-component-that-binds-one) |
 | [`getData(?array $state = null)`](../../../packages/schemas/src/Concerns/BelongsToRecord.php) | — | done | — | [diverges](#reads-are-lenient-writes-are-strict) · [diverges](#mapping-walks-the-record-graph-by-declared-leaf-paths) · [diverges](#a-missing-singular-intermediate-is-constructed-from-its-declared-type) · [semantics](#a-caller-that-has-already-validated-hands-the-state-in) · [semantics](#a-refused-submit-on-the-query-lane-shows-in-the-row-until-the-next-request) |
 | [`getData()`'s record-validation tail](../../../packages/schemas/src/Concerns/BelongsToRecord.php) + [`getRecordViolationPathTranslator()`](../../../packages/schemas/src/Concerns/BelongsToRecord.php) | — | done | — | [diverges](can-be-validated.md#record-sourced-constraints-are-validated-on-the-mapped-object) · [diverges](can-be-validated.md#a-refused-submit-leaves-the-record-mutated) · [diverges](can-be-validated.md#a-taken-assigned-key-is-a-field-error-not-a-unique-violation) · [diverges](can-be-validated.md#a-changed-key-is-refused-and-put-back-not-handed-to-doctrine) · [detail](violation-path-translator.md) |
+| [`findUnmappedAdditions(array $before, array $after)`](../../../packages/schemas/src/Concerns/BelongsToRecord.php) — the paths a write seam's hook added that no component maps (`@internal`: the default write seams refuse what it answers) | — | done | — | [semantics](#a-hook-added-path-no-component-maps-is-answered-for-the-write-seams-to-refuse) · [diverges](#a-hook-added-key-no-component-maps-is-refused-where-eloquent-writes-or-drops-it) |
 | [`getNullableBranches()` + the branch pass in `getData()`](../../../packages/schemas/src/Concerns/BelongsToRecord.php) | — | done | — | [diverges](#a-declared-branch-is-nulled-whole-before-its-leaves-are-written) · [diverges](#a-component-can-own-its-whole-record-subtree) · [semantics](#a-branch-the-bag-no-longer-carries-is-skipped-not-nulled) · [semantics](#a-branch-the-record-cannot-null-is-refused-loudly) · [semantics](#a-nullable-branch-with-no-state-path-is-refused-not-ignored) · [semantics](#branches-are-ordered-by-path-depth-because-tree-order-is-not-path-order) |
 | [`getNestedRelationshipHooks()`](../../../packages/schemas/src/Concerns/BelongsToRecord.php) | — | done | — | [semantics](#a-hook-a-subtree-owner-routes-is-delegated-rather-than-refused) |
 | [`fill(object …)` object arm](../../../packages/schemas/src/Concerns/HasState.php) + [`readStateFromRecord()`](../../../packages/schemas/src/Concerns/BelongsToRecord.php) | — | done | — | [diverges](#fillobject-reads-only-the-paths-the-schema-declares) · [diverges](#mapping-walks-the-record-graph-by-declared-leaf-paths) · [diverges](#fillobject-does-not-bind-the-record) |
@@ -716,9 +717,54 @@ constraints are still answered on the object the mapping produced.
 
 The callers are the write-side seams that sit between validation and mapping —
 the modal actions' `CreateAction`/`EditAction` bodies after
-`mutateDataUsing()`, and the resource page bases after
-`mutateFormDataBeforeCreate()`/`mutateFormDataBeforeSave()`. Every
-zero-argument call site keeps the validating read.
+`mutateDataUsing()`, the resource page bases after
+`mutateFormDataBeforeCreate()`/`mutateFormDataBeforeSave()`, and since M7 · 10
+`Select`'s option actions after theirs. Every zero-argument call site keeps the
+validating read. Since [M7 · 10](../roadmap.md#m7--composite-identifiers) each of
+those seams first refuses a path its hook added that no component maps
+([below](#a-hook-added-path-no-component-maps-is-answered-for-the-write-seams-to-refuse)).
+
+### A hook-added path no component maps is answered for the write seams to refuse
+
+`findUnmappedAdditions(array $before, array $after): array` answers the leaf
+paths a write seam's hook added to the state it was handed that no component of
+the schema maps. It is `@internal`; its readers are the default write seams,
+which since [M7 · 10](../roadmap.md#m7--composite-identifiers) refuse a non-empty
+answer by name before mapping: both resource pages after their
+`mutateFormData…()` hook, `CreateAction`, `EditAction` and `ReplicateAction`'s
+modal arm at the head of their default write closures — so `using()` is never
+guarded — and `Select`'s option actions. Before, such a value was dropped in
+silence, since `getData()` writes the paths the record path map carries and
+nothing else; writing it instead is no option, because a host's writable `data`
+prop takes whatever keys a client sends, and writing unmapped state would be
+mass assignment.
+
+A leaf path of `$after` — a value that is no array, or an empty array — is
+**added** when `$before` does not hold it, read level by level, an unchanged
+subtree skipped on `===`; and a path where `$before` held an array and `$after`
+holds something else is answered too, since a hook writing `null` over a mapped
+`address.street` branch writes nothing `getData()` reads — no component maps
+`address` itself. A path is **covered** when a record path equals it or is its
+dotted ancestor, so a subtree owner speaks for everything beneath it, `null` over
+a relationship repeater's whole `items` included. What follows:
+
+- a key the state already held — a client's own, a `storeFileNamesIn()` sibling —
+  is never answered, whatever the hook does to it, so a client can never force
+  the refusal; it stays unwritten, as before;
+- an overwrite of a mapped key is never answered;
+- a key a hidden or `dehydrated(false)` component maps is covered **and
+  written**, since the map carries it and the hook put it back in the state;
+- a key added inside a relationship repeater's item is covered by the owner and
+  still dropped, since the owner writes the item paths its template declares —
+  recorded;
+- a key the hook spells with a dot (`'a.b' => 1`) is read as one key, where
+  `getData()` reads it as a path — at most a missed refusal, recorded;
+- a removed key, and a mapped branch emptied to `[]`, are no addition: the record
+  keeps what it held, as before — recorded.
+
+Pinned by
+[`BelongsToRecordUnmappedAdditionsTest`](../../../packages/schemas/tests/Unit/Concerns/BelongsToRecordUnmappedAdditionsTest.php),
+the null-over-a-branch case by name; each seam pins its own refusal.
 
 ### A refused submit on the query lane shows in the row until the next request
 
@@ -919,6 +965,25 @@ record already carries the rejected value
 ([the cost of that ordering](can-be-validated.md#a-refused-submit-leaves-the-record-mutated)).
 So the two failure modes of one call differ: a state failure leaves the record
 untouched, and a record failure leaves it mutated and unflushed.
+
+### A hook-added key no component maps is refused, where Eloquent writes or drops it
+
+Filament's write seams hand `$data` to Eloquent — `new $model` and `fill()`,
+`$record->update($data)` — and `Model::fill()` decides per key: a fillable key is
+written (an unknown column then fails at `save()`), an unfillable one is dropped
+in silence, unless the application turned on
+`preventSilentlyDiscardingAttributes()` or `shouldBeStrict()` or left the model
+wholly guarded — then it is a `MassAssignmentException`, *Add fillable property
+[house, year] …*. The record path map plays `$fillable` here, and until
+[M7 · 10](../roadmap.md#m7--composite-identifiers) the toolkit took the silent
+branch. It now takes the strict one, unconditionally, and only for the keys a
+**hook** added: `getState()` keeps a key a client typed that no component
+declares, where Filament's prunes to the keys its validation answered
+([schema.md](schema.md#getstate-validates-without-a-prepareforvalidation-mutation-layer)),
+so refusing every unmapped key would let a client force the refusal. The message
+lists the paths comma-separated, as Eloquent's does.
+
+Permanent.
 
 ### Mapping walks the record graph by declared leaf paths
 

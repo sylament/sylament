@@ -406,9 +406,23 @@ Two pieces stay permanently unported. `prepareForValidation()` — the host-side
 merge of `getRules()` / `getValidationAttributes()` into one Livewire call —
 has no counterpart because validation here is per path, not per component
 ([interacts-with-schemas.md](interacts-with-schemas.md)). And
-`pruneStateToMatchKeys()` re-syncs clean Livewire values after that whole-array
-rewrite; a per-path runner mutates a copy and discards it, and `getState()`
-never consumes a validated array, so there is nothing to prune. The
+`pruneStateToMatchKeys()`: Filament's `getState()` keeps only the keys its
+validation returned — Laravel's `validated()` answers the rule keys alone, and
+every field registers one, if only `nullable` — and prunes the raw state to them,
+so a key no field declares never leaves it. Here the runner validates per
+declared path and discards its copy, and `getState()` seeds the whole raw bag
+before the dehydration walk, which prunes only a non-dehydrated component's own
+path. So a key no component owns — one a client wrote into a host's writable
+`data` prop, every nested path of which ux-live-component makes writable — stays
+in `getState()` and in the `$data` every mutate hook and `using()` closure
+receives. Nothing of it reaches a record through the default seams, since
+`getData()` writes only the record path map's paths, and since
+[M7 · 10](../roadmap.md#m7--composite-identifiers) those seams refuse a path a
+hook adds that no component maps
+([belongs-to-record.md](belongs-to-record.md#a-hook-added-path-no-component-maps-is-answered-for-the-write-seams-to-refuse));
+but a `using()` closure that writes `$data` wholesale writes it too — a
+mass-assignment footgun. Pruning to declared keys is recorded in the roadmap's
+ledger, not done. The
 `Component::withVisibilityCache(...)` wrapper is likewise absent — no visibility
 cache exists. `$afterValidate` is invoked plainly with the final dehydrated state
 (Filament's `value($afterValidate, $state)` position).

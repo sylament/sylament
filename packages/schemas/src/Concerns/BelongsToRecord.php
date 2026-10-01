@@ -696,4 +696,59 @@ trait BelongsToRecord
 
         return $record;
     }
+
+    /**
+     * The leaf paths `$after` adds to `$before` that no component of this
+     * schema maps onto the record, in `$after`'s order — a path `$before` does
+     * not hold, or one where `$before` held an array and `$after` holds
+     * something else. A path a component maps, or one beneath it, is covered.
+     *
+     * @internal the default write seams, which refuse what it answers
+     *
+     * @param array<string, mixed> $before
+     * @param array<string, mixed> $after
+     *
+     * @return list<string>
+     */
+    public function findUnmappedAdditions(array $before, array $after): array
+    {
+        $recordPaths = array_map(strval(...), array_keys($this->getRecordPathMap()));
+
+        return array_values(array_filter(
+            $this->findAddedPaths($before, $after, ''),
+            static fn (string $path): bool => ! array_any($recordPaths, static fn (string $recordPath): bool => $path === $recordPath || str_starts_with($path, $recordPath . '.')),
+        ));
+    }
+
+    /**
+     * @param array<array-key, mixed> $after
+     *
+     * @return list<string>
+     */
+    private function findAddedPaths(mixed $before, array $after, string $prefix): array
+    {
+        $paths = [];
+
+        foreach ($after as $key => $value) {
+            $path = $prefix === '' ? (string) $key : $prefix . '.' . $key;
+            $isHeld = is_array($before) && array_key_exists($key, $before);
+            $held = is_array($before) ? ($before[$key] ?? null) : null;
+
+            if ($isHeld && $held === $value) {
+                continue;
+            }
+
+            if (is_array($value) && $value !== []) {
+                $paths = [...$paths, ...$this->findAddedPaths($held, $value, $path)];
+
+                continue;
+            }
+
+            if (! $isHeld || (is_array($held) && ! is_array($value))) {
+                $paths[] = $path;
+            }
+        }
+
+        return $paths;
+    }
 }

@@ -68,6 +68,7 @@ _Blocked by_ names what has to land first. _Detail_ carries a **detail** link
 | Host `getRules()` / `getValidationAttributes()` merges + `prepareForValidation()` | [`InteractsWithSchemas`](../../../vendor/filament/schemas/src/Concerns/InteractsWithSchemas.php) | skipped | — | [diverges](#the-livewire-whole-component-validate-plumbing-is-not-ported) |
 | Record-sourced constraints (an entity's own `#[Assert]` metadata, since M7 · 6 the taken-key and changed-key rules, and since M7 · 7 the blank-key rule) — the [`getData()`](belongs-to-record.md) tail | — | done | — | [diverges](#record-sourced-constraints-are-validated-on-the-mapped-object) · [diverges](#a-refused-submit-leaves-the-record-mutated) · [diverges](#a-taken-assigned-key-is-a-field-error-not-a-unique-violation) · [diverges](#a-changed-key-is-refused-and-put-back-not-handed-to-doctrine) · [diverges](#a-blank-assigned-key-is-refused-before-anything-is-written) |
 | [`HasSchemas::validateSchemaRecord()`](../../../packages/schemas/src/Concerns/HasSchemas.php) | — | done | — | [semantics](#a-host-holding-no-validator-skips-the-record-run-rather-than-refusing-to-map) · [semantics](#record-errors-are-sticky-but-the-silent-pass-cannot-reproduce-them) |
+| [`Schema::validateRecordKey()` / `isRecordKeyValidated()`](../../../packages/schemas/src/Concerns/CanBeValidated.php) — the switch over the record check's blank-key and taken-key passes | — | done | — | [semantics](#the-key-rules-switch-off-per-schema-never-the-changed-key-one) |
 | [`Schema::getRecordViolationPathTranslator()`](../../../packages/schemas/src/Concerns/BelongsToRecord.php) + the translator it builds | — | done | — | [detail](violation-path-translator.md) |
 
 Coverage: the walk (path keying, `isNeitherDehydratedNorValidated()` skip
@@ -191,6 +192,59 @@ skipped. The three Integration cases asserting the event on a container-built ho
 are what keep the guard from silently becoming always-false if the vendor property
 is ever renamed.
 
+### The key rules switch off per schema, never the changed-key one
+
+`Schema::validateRecordKey(bool|Closure $condition = true)` switches the two key
+rules that only ever answer for a **new** record — the
+[blank-key pass](#a-blank-assigned-key-is-refused-before-anything-is-written)
+and the [taken-key pass](#a-taken-assigned-key-is-a-field-error-not-a-unique-violation)
+— on or off for the schema whose `getData()` runs; `isRecordKeyValidated()`
+reads it through a plain `evaluate()`, so a closure receives the schema and
+nothing record-shaped. `HasSchemas::validateSchemaRecord()` reads it once, after
+the changed-key pass and the record's own constraints raised nothing, and skips
+both passes when it is false — which covers `ReplicateAction`'s second call
+after `beforeReplicaSaved()` too, since that reads the same schema.
+`InteractsWithSchemas` did not change.
+
+Switched off, the application owns a new record's key. A taken one reaches the
+flush, where the database's primary key refuses it and the entity manager
+closes; a blank key field the form maps is not refused under it, so it reaches
+the create seam's by-name refusal, whose advice then names the switch. Its use is
+an application that answers uniqueness itself — its own `#[UniqueEntity]`, which
+runs with the record's own constraints and pre-empts the probe whether the switch
+is on or not — or a save adding many new records whose one `SELECT` each it would
+rather not pay.
+
+What it never reaches, by design:
+
+- the **changed-key pass** and its put-back. Off, it would bring back the
+  IDENTITY generator's silent *Saved* over an edited key; it costs no statement;
+  and tables' editable cell runs it with no schema at all, so a form and a cell
+  over one key would disagree;
+- the record's own constraints, and a host with no validator, which skips the
+  whole tail as before;
+- every by-name `LogicException` at the create seams, `Select`, `Repeater` and
+  `ReplicateAction` — developer errors, which no switch silences.
+
+The flag is the schema's own, with no parent walk: the record check runs on the
+schema whose `getData()` ran. `Schema::configureUsing()` reaches every schema as a
+default — it runs inside `make()` — which a page's `form()` or an action's schema
+resolver then overrides. One reach is recorded rather than closed: the edit
+page's `EditAction` modal wraps the form in a fresh schema
+([`EditRecord`](../../../packages/panels/src/Resources/Pages/EditRecord.php)), so a
+flag set in `Resource::form()` does not reach it there — which matters only for
+the new records an edit creates.
+
+Filament has no automatic key rules, so the name is the toolkit's; it follows
+Filament's `bool | Closure $condition = true` switches (`deferLoading()`,
+`persistTab()`), and `renames.md` carries the row. Pinned by
+[`CanBeValidatedRecordKeyTest`](../../../packages/schemas/tests/Unit/Concerns/CanBeValidatedRecordKeyTest.php)
+— the default, a literal and a closure flag, and `configureUsing()`'s reach — and
+[`HasSchemasRecordKeySwitchTest`](../../../packages/schemas/tests/Integration/Concerns/HasSchemasRecordKeySwitchTest.php):
+switched off, a taken key reaches the flush and a blank mapped one is not
+refused, with no statement either way, while a changed key is still refused and
+put back and the record's own constraints still answer.
+
 ## Divergences
 
 Deliberate deviations from Filament, and the reason each holds. Provisional
@@ -234,7 +288,11 @@ The `Callback` is
 method of the host until [M7 · 10](../roadmap.md#m7--composite-identifiers)
 moved it out for its second reader, tables' editable cell, which validates its
 own refusal through it so the column's validator translates the message as the
-form's does ([has-columns.md](../tables/has-columns.md)). The host now files a
+form's does ([has-columns.md](../tables/has-columns.md)).
+Since M7 · 10 the blank and taken passes run only while the schema's
+[`validateRecordKey()`](#the-key-rules-switch-off-per-schema-never-the-changed-key-one)
+switch is on, which it is by default; the changed-key pass and the record's own
+constraints run either way. The host now files a
 message **once per path**, so a `ValidationException` never lists one twice under
 a field. `InteractsWithSchemas` did not change. The order and the four are pinned
 by [`HasSchemasIdentifierGuardTest`](../../../packages/schemas/tests/Integration/Concerns/HasSchemasIdentifierGuardTest.php),
@@ -368,7 +426,10 @@ mapping only the association gets it under the association. A key field declared
 `dehydrated(false)` counts as mapped, since a component still maps it, so its
 typed value never reaching the record is refused under it. A blank field the
 form leaves out is skipped on the way to one it maps, and when no component maps
-any of them `getData()` refuses nothing and hands the record on.
+any of them `getData()` refuses nothing and hands the record on. With the key rules
+[switched off](#the-key-rules-switch-off-per-schema-never-the-changed-key-one)
+it refuses nothing under a mapped field either, and the create seam below
+answers for every blank key field, naming the switch in its advice.
 
 **A key field the form leaves out is the create seam's.** The user cannot fix
 it, so it is a developer error, refused by name with an exception that says how to
@@ -448,8 +509,10 @@ same pass themselves and answer it as the cell's own error
 no change; a converting type's other spelling of it is one
 ([the detector](association-reader.md#a-changed-identifier-is-put-back-and-refused-and-costs-no-statement)).
 
-Both messages are private constants on the reader, with no error code, since
-nothing in the toolkit reads one. *"This value cannot be changed."* is new, and
+All three messages — the taken, the changed and the blank one — are private
+constants on the reader, with no error code, since nothing in the toolkit reads
+one. No switch reaches this pass
+([why](#the-key-rules-switch-off-per-schema-never-the-changed-key-one)). *"This value cannot be changed."* is new, and
 stays English unless the application's `translations/validators.*` maps it —
 Symfony ships no such message. `disabledOn('edit')` stays the UI and this is the server's guarantee,
 and it holds where the UI guard does not: a modal's operation is the action's

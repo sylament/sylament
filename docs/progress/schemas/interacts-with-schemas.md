@@ -157,6 +157,13 @@ the sticky-key bookkeeping that
 reads back. The machinery, semantics, and per-member divergences live in
 [`can-be-validated.md`](can-be-validated.md).
 
+The record tail reads one schema flag since
+[M7 · 10](../roadmap.md#m7--composite-identifiers),
+`Schema::isRecordKeyValidated()`, which switches its blank-key and taken-key
+passes off ([the switch](can-be-validated.md#the-key-rules-switch-off-per-schema-never-the-changed-key-one));
+the contract itself did not change, so a host implementing
+`validateSchemaRecord()` by hand reads the flag off the schema it is handed.
+
 ### clearSchemaValidation() is scoped where Filament resets the whole Livewire error bag
 
 Filament clears stale modal errors with Livewire's global `resetErrorBag()`,

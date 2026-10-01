@@ -489,12 +489,12 @@ trait HasSchemas
         $violations = $this->schemaStateValidator->validate($record, RecordKeyGuard::constraint($reader->revertIdentifierChanges($record)));
         $violations->addAll($this->schemaStateValidator->validate($record));
 
-        if (count($violations) === 0) {
+        if (count($violations) === 0 && $schema->isRecordKeyValidated()) {
             $violations = $this->schemaStateValidator->validate($record, RecordKeyGuard::constraint($this->getMappedBlankIdentifier($schema, $reader->findBlankAssignedIdentifiers($record))));
-        }
 
-        if (count($violations) === 0) {
-            $violations = $this->schemaStateValidator->validate($record, RecordKeyGuard::constraint($reader->findTakenIdentifiers($record)));
+            if (count($violations) === 0) {
+                $violations = $this->schemaStateValidator->validate($record, RecordKeyGuard::constraint($reader->findTakenIdentifiers($record)));
+            }
         }
 
         if (count($violations) === 0) {

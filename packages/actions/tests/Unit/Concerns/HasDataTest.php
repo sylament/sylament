@@ -56,6 +56,46 @@ it('refuses a mutator whose array is not keyed by field name', function (): void
         ->toThrow(TypeError::class, 'mutateDataUsing() must return an array');
 });
 
+it('keeps the array data() was handed before mutateDataUsing() ran', function (): void {
+    $fixture = new HasDataFixture()
+        ->mutateDataUsing(fn (array $data): array => [...$data, 'mutated' => true])
+        ->data(['title' => 'Foo']);
+
+    expect($fixture->getUnmutatedData())->toBe(['title' => 'Foo'])
+        ->and($fixture->getData())->toBe(['title' => 'Foo', 'mutated' => true]);
+});
+
+it('answers the handed array as the unmutated data when nothing mutates it', function (): void {
+    $plain = new HasDataFixture()->data(['title' => 'Foo']);
+    $skipped = new HasDataFixture()
+        ->mutateDataUsing(fn (array $data): array => [...$data, 'mutated' => true])
+        ->data(['title' => 'Bar'], shouldMutate: false);
+
+    expect($plain->getUnmutatedData())->toBe(['title' => 'Foo'])
+        ->and($skipped->getUnmutatedData())->toBe(['title' => 'Bar']);
+});
+
+it('replaces the unmutated data on every data() call', function (): void {
+    $fixture = new HasDataFixture()
+        ->mutateDataUsing(fn (array $data): array => [...$data, 'mutated' => true])
+        ->data(['title' => 'Foo'])
+        ->data(['title' => 'Bar']);
+
+    expect($fixture->getUnmutatedData())->toBe(['title' => 'Bar']);
+});
+
+it('has no unmutated data before data() and after resetData()', function (): void {
+    $fixture = new HasDataFixture();
+
+    expect($fixture->getUnmutatedData())->toBe([]);
+
+    $fixture->mutateDataUsing(fn (array $data): array => [...$data, 'mutated' => true])
+        ->data(['title' => 'Foo'])
+        ->resetData();
+
+    expect($fixture->getUnmutatedData())->toBe([]);
+});
+
 it('falls back to an empty array from getRawData() when no live component is bound', function (): void {
     // This fixture's getLiveComponentOrNull() is hardwired to null (see fixture docblock), so this
     // only exercises the ?? [] fallback. The non-empty read through InteractsWithActions::getMountedActionData()

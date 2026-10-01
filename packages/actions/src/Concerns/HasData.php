@@ -14,6 +14,11 @@ trait HasData
      */
     protected array $data = [];
 
+    /**
+     * @var array<string, mixed>
+     */
+    protected array $unmutatedData = [];
+
     protected ?Closure $mutateDataUsing = null;
 
     public function mutateDataUsing(?Closure $callback): static
@@ -28,6 +33,8 @@ trait HasData
      */
     public function data(array $data, bool $shouldMutate = true): static
     {
+        $this->unmutatedData = $data;
+
         if ($shouldMutate && $this->mutateDataUsing) {
             $data = $this->evaluate($this->mutateDataUsing, [
                 'data' => $data,
@@ -64,6 +71,21 @@ trait HasData
     public function getData(): array
     {
         return $this->data;
+    }
+
+    /**
+     * The array the last `data()` call was handed, before `mutateDataUsing()`
+     * ran: empty before any call and after `resetData()`.
+     *
+     * @internal the default write closures of `CreateAction`, `EditAction`,
+     *           `ReplicateAction` and `Select`'s option actions, which refuse a
+     *           path the mutation added that no component maps
+     *
+     * @return array<string, mixed>
+     */
+    public function getUnmutatedData(): array
+    {
+        return $this->unmutatedData;
     }
 
     /**

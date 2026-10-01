@@ -14,6 +14,7 @@ use Sylament\Tables\Columns\ToggleColumn;
 use Sylament\Tables\Concerns\HasTable;
 use Sylament\Tables\Contracts\InteractsWithTable;
 use Sylament\Tables\Table;
+use Sylament\Tables\Tests\Fixtures\Actions\RecordingDeleteBulkAction;
 use Sylament\Tables\Tests\Fixtures\Doctrine\Entity\Shortcut;
 use Symfony\UX\LiveComponent\Attribute\AsLiveComponent;
 use Symfony\UX\LiveComponent\Attribute\LiveProp;
@@ -23,9 +24,10 @@ use Symfony\UX\LiveComponent\DefaultActionTrait;
  * The scalar-pair composite host: a query-lane table over {@see Shortcut},
  * whose `host` and `path` both escape into the key, carrying every surface a
  * row key travels — a confirming record action that writes, an editable cell,
- * a by-key `DeleteBulkAction`, selection and a reorder column. The one
- * `LiveProp` flag is {@see BulkDeleteSongsTable}'s trick, so a test can rebuild
- * the same table with the fetching arm armed across a round trip. It declares
+ * a by-key `DeleteBulkAction`, selection and a reorder column. The two
+ * `LiveProp` flags are {@see BulkDeleteSongsTable}'s trick, so a test can
+ * rebuild the same table with the fetching arm armed, or with an override of
+ * the by-key delete in place, across a round trip. It declares
  * no summary and joins no collection, because a composite root under a
  * fetch-join paginator is epic 2's refusal.
  */
@@ -38,6 +40,9 @@ class CompositeShortcutsTable implements InteractsWithActions, InteractsWithTabl
 
     #[LiveProp]
     public bool $fetchesRecords = false;
+
+    #[LiveProp]
+    public ?string $deleteOverride = null;
 
     public function __construct(private readonly EntityManagerInterface $entityManager)
     {
@@ -60,8 +65,19 @@ class CompositeShortcutsTable implements InteractsWithActions, InteractsWithTabl
                         $this->entityManager->flush();
                     }),
             ])
-            ->toolbarActions([DeleteBulkAction::make()->fetchSelectedRecords($this->fetchesRecords)])
+            ->toolbarActions([$this->makeDeleteAction()->fetchSelectedRecords($this->fetchesRecords)])
             ->reorderable('position')
             ->paginated([10]);
+    }
+
+    /**
+     * The plain delete, or {@see RecordingDeleteBulkAction} answering as the
+     * test names.
+     */
+    private function makeDeleteAction(): DeleteBulkAction
+    {
+        return $this->deleteOverride === null
+            ? DeleteBulkAction::make()
+            : RecordingDeleteBulkAction::make()->answering($this->deleteOverride);
     }
 }

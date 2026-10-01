@@ -15,6 +15,7 @@ use Sylament\Tables\Columns\TextColumn;
 use Sylament\Tables\Concerns\HasTable;
 use Sylament\Tables\Contracts\InteractsWithTable;
 use Sylament\Tables\Table;
+use Sylament\Tables\Tests\Fixtures\Actions\RecordingDeleteBulkAction;
 use Sylament\Tables\Tests\Fixtures\Doctrine\Entity\Song;
 use Symfony\UX\LiveComponent\Attribute\AsLiveComponent;
 use Symfony\UX\LiveComponent\Attribute\LiveProp;
@@ -26,8 +27,9 @@ use Symfony\UX\LiveComponent\DefaultActionTrait;
  * {@see DeletableSongsTable} uses one, since a confirmed bulk delete spans two
  * live requests — carrying `DeleteBulkAction` and five hand-written bulk actions
  * that exercise the counter reports, the query injections and the transaction
- * arms. The three flags are `LiveProp`s so a test can rebuild the same table
- * with the other arm armed across a round trip.
+ * arms. The four flags are `LiveProp`s so a test can rebuild the same table
+ * with the other arm armed, or with an override of the by-key delete in place,
+ * across a round trip.
  */
 #[AsLiveComponent(name: 'BulkDeleteSongsTable', template: '@TablesFixtures/components/BulkDeleteSongsTable.html.twig')]
 class BulkDeleteSongsTable implements InteractsWithActions, InteractsWithTable
@@ -45,6 +47,9 @@ class BulkDeleteSongsTable implements InteractsWithActions, InteractsWithTable
     #[LiveProp]
     public bool $usesTransaction = false;
 
+    #[LiveProp]
+    public ?string $deleteOverride = null;
+
     public function __construct(private readonly EntityManagerInterface $entityManager)
     {
     }
@@ -55,7 +60,7 @@ class BulkDeleteSongsTable implements InteractsWithActions, InteractsWithTable
             ->query($this->entityManager->createQueryBuilder()->select('song')->from(Song::class, 'song'))
             ->columns([TextColumn::make('title')->searchable()])
             ->toolbarActions([
-                DeleteBulkAction::make()
+                $this->makeDeleteAction()
                     ->fetchSelectedRecords($this->fetchesRecords)
                     ->databaseTransaction($this->usesTransaction),
                 BulkAction::make('report-one')
@@ -104,6 +109,17 @@ class BulkDeleteSongsTable implements InteractsWithActions, InteractsWithTable
         }
 
         return $table;
+    }
+
+    /**
+     * The plain delete, or {@see RecordingDeleteBulkAction} answering as the
+     * test names.
+     */
+    private function makeDeleteAction(): DeleteBulkAction
+    {
+        return $this->deleteOverride === null
+            ? DeleteBulkAction::make()
+            : RecordingDeleteBulkAction::make()->answering($this->deleteOverride);
     }
 
     /**

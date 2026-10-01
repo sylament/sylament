@@ -10,6 +10,7 @@ use RuntimeException;
 use Sylament\Support\Tests\Doctrine\FailingWrite;
 use Sylament\Support\Tests\Doctrine\RecordingConnection;
 use Sylament\Support\Tests\Doctrine\RecordingMiddleware;
+use Sylament\Tables\Tests\Fixtures\Actions\RecordingDeleteBulkAction;
 use Sylament\Tables\Tests\Fixtures\Doctrine\Entity\Artist;
 use Sylament\Tables\Tests\Fixtures\Doctrine\Entity\Shortcut;
 use Sylament\Tables\Tests\Fixtures\Doctrine\Entity\Song;
@@ -368,13 +369,14 @@ it('leaves the unselectable record behind on the by-key delete too', function ()
 /*
  * A developer error — a by-key delete on a lane that has no query — must
  * propagate rather than become the danger toast. `deleteSelectedRecordsByKey()`
- * used to resolve the table, its entity manager and its record class *inside*
- * the action's own `catch (Throwable)`, which made it indistinguishable from a
- * failed statement: both produced the toast, and no test could tell them apart.
- * `DissociateBulkAction` places its mapping refusals before the try the same
- * way.
+ * resolves the table, its entity manager and its record class *inside* the
+ * action's own `catch (Throwable)`, which alone would make it indistinguishable
+ * from a failed statement, so the action resolves them once before the try and
+ * the override point is never reached. `DissociateBulkAction` places its mapping
+ * refusals before the try the same way.
  */
 it('propagates a by-key delete refusal instead of answering with the danger toast', function (): void {
+    RecordingDeleteBulkAction::$handedKeys = [];
     $client = test()->getContainer()->get('test.client');
     $client->disableReboot();
 
@@ -383,7 +385,8 @@ it('propagates a by-key delete refusal instead of answering with the danger toas
         ->call('mountAction', ['name' => 'delete', 'arguments' => [], 'context' => ['table' => true, 'bulk' => true]]);
 
     expect(fn (): object => $component->call('callMountedAction'))
-        ->toThrow(LogicException::class, 'deletes selected records by key, which needs a [query()] table');
+        ->toThrow(LogicException::class, 'deletes selected records by key, which needs a [query()] table')
+        ->and(RecordingDeleteBulkAction::$handedKeys)->toBe([]);
 });
 
 /*
@@ -393,6 +396,7 @@ it('propagates a by-key delete refusal instead of answering with the danger toas
  * says the table lookup itself sits outside the `catch (Throwable)`.
  */
 it('propagates a by-key delete mounted outside the table context', function (): void {
+    RecordingDeleteBulkAction::$handedKeys = [];
     $client = test()->getContainer()->get('test.client');
     $client->disableReboot();
 
@@ -401,7 +405,8 @@ it('propagates a by-key delete mounted outside the table context', function (): 
         ->call('mountAction', ['name' => 'untabledDelete', 'arguments' => [], 'context' => ['bulk' => true]]);
 
     expect(fn (): object => $component->call('callMountedAction'))
-        ->toThrow(LogicException::class, 'deletes selected records by key, which only a table can supply');
+        ->toThrow(LogicException::class, 'deletes selected records by key, which only a table can supply')
+        ->and(RecordingDeleteBulkAction::$handedKeys)->toBe([]);
 });
 
 /**
@@ -542,4 +547,97 @@ it('rolls a chunked composite delete back when a later chunk fails', function ()
         ->and($entityManager->getRepository(Shortcut::class)->findAll())->toHaveCount(501)
         ->and($html)->toContain('Failed to delete 501 records')
         ->and($html)->toContain('sy-status-danger');
+});
+
+/*
+ * The by-key arm's override point, from the subclass an application writes:
+ * `deleteSelectedRecordsByKey()` is handed the plucked keys once the action has
+ * resolved everything it can refuse, what it answers is the successful count
+ * the toast reads, and it runs inside the action's `catch (Throwable)`. The
+ * plucked keys are compared as a set: the selection is ordered by the
+ * identifier tiebreak, but the override's contract is the keys, not their order.
+ */
+it('hands an override of deleteSelectedRecordsByKey() the plucked keys and reports what it answers', function (): void {
+    RecordingDeleteBulkAction::$handedKeys = [];
+    [$client, $entityManager] = seededBulkSongsClient();
+
+    $html = (string) $this->createLiveComponent('BulkDeleteSongsTable', ['fetchesRecords' => false, 'deleteOverride' => RecordingDeleteBulkAction::DELEGATES], client: $client)
+        ->set('selectedTableRecords', ['2', '4'])
+        ->call('mountAction', ['name' => 'delete', 'arguments' => [], 'context' => ['table' => true, 'bulk' => true]])
+        ->call('callMountedAction')
+        ->render();
+
+    expect(RecordingDeleteBulkAction::$handedKeys)->toHaveCount(1)
+        ->and(RecordingDeleteBulkAction::$handedKeys[0])->toEqualCanonicalizing(['2', '4'])
+        ->and(survivingSongIds($entityManager))->toBe([1, 3])
+        ->and($html)->toContain('Deleted')
+        ->and($html)->toContain('sy-status-success')
+        ->and($html)->not->toContain('Failed to delete');
+});
+
+it('reports an override that answers fewer rows than it was handed as a partial delete', function (): void {
+    RecordingDeleteBulkAction::$handedKeys = [];
+    [$client, $entityManager] = seededBulkSongsClient();
+
+    $html = (string) $this->createLiveComponent('BulkDeleteSongsTable', ['fetchesRecords' => false, 'deleteOverride' => RecordingDeleteBulkAction::UNDERCOUNTS], client: $client)
+        ->set('selectedTableRecords', ['2', '4'])
+        ->call('mountAction', ['name' => 'delete', 'arguments' => [], 'context' => ['table' => true, 'bulk' => true]])
+        ->call('callMountedAction')
+        ->render();
+
+    expect(RecordingDeleteBulkAction::$handedKeys)->toHaveCount(1)
+        ->and($html)->toContain('Deleted 1 of 2')
+        ->and($html)->toContain('sy-status-warning')
+        ->and(survivingSongIds($entityManager))->toBe([1, 2, 3, 4]);
+});
+
+it('reports an override that throws as a failed delete', function (): void {
+    RecordingDeleteBulkAction::$handedKeys = [];
+    [$client, $entityManager] = seededBulkSongsClient();
+
+    $html = (string) $this->createLiveComponent('BulkDeleteSongsTable', ['fetchesRecords' => false, 'deleteOverride' => RecordingDeleteBulkAction::REFUSES], client: $client)
+        ->set('selectedTableRecords', ['2', '4'])
+        ->call('mountAction', ['name' => 'delete', 'arguments' => [], 'context' => ['table' => true, 'bulk' => true]])
+        ->call('callMountedAction')
+        ->render();
+
+    expect(RecordingDeleteBulkAction::$handedKeys)->toHaveCount(1)
+        ->and($html)->toContain('Failed to delete 2 records')
+        ->and($html)->toContain('sy-status-danger')
+        ->and(survivingSongIds($entityManager))->toBe([1, 2, 3, 4]);
+});
+
+/*
+ * The chunking stays the parent's: the 501-row rig above is two statements in
+ * one transaction, and the override sees the selection whole, once.
+ */
+it('hands an override a two-chunk selection in one call, which its parent deletes in one transaction', function (): void {
+    RecordingDeleteBulkAction::$handedKeys = [];
+    $shortcuts = [];
+
+    for ($index = 1; $index <= 501; $index++) {
+        $shortcuts[] = bulkShortcut('bulk.test', '/p/' . $index, 'Bulk ' . $index, $index);
+    }
+
+    [$client, $entityManager, $recorder] = seededBulkShortcutsClient(...$shortcuts);
+
+    $html = (string) $this->createLiveComponent('CompositeShortcutsTable', ['deleteOverride' => RecordingDeleteBulkAction::DELEGATES], client: $client)
+        ->set('isTrackingDeselectedTableRecords', true)
+        ->call('mountAction', ['name' => 'delete', 'arguments' => [], 'context' => ['table' => true, 'bulk' => true]])
+        ->call('callMountedAction')
+        ->render();
+
+    $statements = $recorder->statements();
+    $deletes = array_values(array_filter($statements, static fn (string $sql): bool => str_starts_with($sql, 'DELETE')));
+
+    $entityManager->clear();
+
+    expect(RecordingDeleteBulkAction::$handedKeys)->toHaveCount(1)
+        ->and(RecordingDeleteBulkAction::$handedKeys[0])->toHaveCount(501)
+        ->and(array_unique(RecordingDeleteBulkAction::$handedKeys[0]))->toHaveCount(501)
+        ->and($deletes)->toHaveCount(2)
+        ->and(array_count_values($statements)[RecordingConnection::BEGIN] ?? 0)->toBe(1)
+        ->and(array_count_values($statements)[RecordingConnection::COMMIT] ?? 0)->toBe(1)
+        ->and($entityManager->getRepository(Shortcut::class)->findAll())->toBe([])
+        ->and($html)->toContain('sy-status-success');
 });

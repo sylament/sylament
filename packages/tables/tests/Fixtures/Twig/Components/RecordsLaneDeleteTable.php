@@ -11,6 +11,7 @@ use Sylament\Tables\Columns\TextColumn;
 use Sylament\Tables\Concerns\HasTable;
 use Sylament\Tables\Contracts\InteractsWithTable;
 use Sylament\Tables\Table;
+use Sylament\Tables\Tests\Fixtures\Actions\RecordingDeleteBulkAction;
 use Symfony\UX\LiveComponent\Attribute\AsLiveComponent;
 use Symfony\UX\LiveComponent\DefaultActionTrait;
 
@@ -20,6 +21,8 @@ use Symfony\UX\LiveComponent\DefaultActionTrait;
  * is the only thing the call can produce. It is the rig for the placement —
  * a refusal raised outside the delete's `catch (Throwable)` reaches the caller,
  * one raised inside it becomes a "Failed to delete" toast no test can see.
+ * The action is the recording subclass, delegating, so a test can also see
+ * that neither refusal reaches the override point.
  */
 #[AsLiveComponent(name: 'RecordsLaneDeleteTable', template: '@TablesFixtures/components/RecordsLaneDeleteTable.html.twig')]
 class RecordsLaneDeleteTable implements InteractsWithActions, InteractsWithTable
@@ -36,7 +39,7 @@ class RecordsLaneDeleteTable implements InteractsWithActions, InteractsWithTable
                 ['__key' => '2', 'label' => 'Two'],
             ])
             ->columns([TextColumn::make('label')])
-            ->toolbarActions([DeleteBulkAction::make()->fetchSelectedRecords(false)]);
+            ->toolbarActions([RecordingDeleteBulkAction::make()->fetchSelectedRecords(false)]);
     }
 
     /**
@@ -46,6 +49,6 @@ class RecordsLaneDeleteTable implements InteractsWithActions, InteractsWithTable
      */
     public function untabledDeleteAction(): DeleteBulkAction
     {
-        return DeleteBulkAction::make('untabledDelete')->fetchSelectedRecords(false);
+        return RecordingDeleteBulkAction::make('untabledDelete')->fetchSelectedRecords(false);
     }
 }

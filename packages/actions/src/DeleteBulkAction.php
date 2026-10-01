@@ -53,13 +53,12 @@ class DeleteBulkAction extends BulkAction
 
     /**
      * The fetching arm removes each record through its own manager and flushes
-     * once; the by-key arm is one DQL `DELETE` per chunk of the plucked keys,
-     * and evicts the entity region of the class it writes from the second-level
-     * cache.
-     * Everything a developer can get wrong — the table, its entity manager, its
-     * record class, the shape of the keys — is resolved before either arm's
-     * `try`, so it propagates instead of becoming the danger toast;
-     * {@see DissociateBulkAction} places its mapping refusals the same way.
+     * once; the by-key arm hands the plucked keys to
+     * {@see deleteSelectedRecordsByKey()}. Everything a developer can get
+     * wrong — the table, its entity manager, its record class, the shape of the
+     * keys — is resolved before either arm's `try`, so it propagates instead of
+     * becoming the danger toast; {@see DissociateBulkAction} places its mapping
+     * refusals the same way.
      *
      * @param array<mixed> $records
      */
@@ -77,15 +76,7 @@ class DeleteBulkAction extends BulkAction
             return;
         }
 
-        $table = $action->getTable()
-            ?? throw new LogicException(sprintf('The action [%s] deletes selected records by key, which only a table can supply.', $action->getName()));
-
-        $entityManager = $table->getQueryEntityManager();
-        $recordClass = $table->getRecordClass();
-
-        if (!$entityManager instanceof EntityManagerInterface || $recordClass === null) {
-            throw new LogicException(sprintf('The action [%s] deletes selected records by key, which needs a [query()] table.', $action->getName()));
-        }
+        $action->resolveByKeyDeleteTarget();
 
         $keys = [];
 
@@ -97,14 +88,12 @@ class DeleteBulkAction extends BulkAction
             $keys[] = $record;
         }
 
-        $chunks = IdentifierConstraint::chunk($entityManager, $recordClass, $keys);
-
         try {
-            $action->reportBulkProcessingSuccessfulRecordsCount($action->deleteSelectedRecordsByKey($entityManager, $recordClass, $chunks));
+            $action->reportBulkProcessingSuccessfulRecordsCount($action->deleteSelectedRecordsByKey($keys));
         } catch (Throwable) {
             // The fetching arm's swallow, for the fetching arm's reason: the
-            // chunks are one transaction, so a throw means the whole batch failed
-            // and the danger toast is what says so instead of a 500.
+            // chunks are one transaction, so a throw — a statement's or an
+            // override's — means the batch failed and the danger toast says so.
             $action->reportCompleteBulkProcessingFailure();
         }
     }
@@ -141,14 +130,25 @@ class DeleteBulkAction extends BulkAction
     }
 
     /**
-     * One DQL `DELETE` per chunk, and one transaction from the second chunk on,
-     * so a mid-batch failure means the whole batch failed.
+     * Deletes the records the keys name and answers how many rows went, which
+     * the action reports as its successful count: one DQL `DELETE` per chunk,
+     * evicting the record class's entity region from the second-level cache,
+     * and one transaction from the second chunk on, so a mid-batch failure
+     * means the whole batch failed. The action never hands it an empty list,
+     * and calls it inside its `catch (Throwable)`, so anything an override
+     * throws is reported as a failed delete.
      *
-     * @param class-string       $recordClass
-     * @param list<list<string>> $chunks
+     * @param list<string> $keys the selection's record keys, unique
      */
-    protected function deleteSelectedRecordsByKey(EntityManagerInterface $entityManager, string $recordClass, array $chunks): int
+    protected function deleteSelectedRecordsByKey(array $keys): int
     {
+        if ($keys === []) {
+            return 0;
+        }
+
+        [$entityManager, $recordClass] = $this->resolveByKeyDeleteTarget();
+        $chunks = IdentifierConstraint::chunk($entityManager, $recordClass, $keys);
+
         $delete = function () use ($entityManager, $recordClass, $chunks): int {
             $affectedRows = 0;
 
@@ -162,6 +162,29 @@ class DeleteBulkAction extends BulkAction
         return count($chunks) > 1
             ? $entityManager->getConnection()->transactional($delete)
             : $delete();
+    }
+
+    /**
+     * The entity manager and record class the by-key arm deletes through, both
+     * memoised by the table.
+     *
+     * @return array{EntityManagerInterface, class-string}
+     *
+     * @throws LogicException when the action has no table, or its table is not on the query lane
+     */
+    private function resolveByKeyDeleteTarget(): array
+    {
+        $table = $this->getTable()
+            ?? throw new LogicException(sprintf('The action [%s] deletes selected records by key, which only a table can supply.', $this->getName()));
+
+        $entityManager = $table->getQueryEntityManager();
+        $recordClass = $table->getRecordClass();
+
+        if (!$entityManager instanceof EntityManagerInterface || $recordClass === null) {
+            throw new LogicException(sprintf('The action [%s] deletes selected records by key, which needs a [query()] table.', $this->getName()));
+        }
+
+        return [$entityManager, $recordClass];
     }
 
     /**

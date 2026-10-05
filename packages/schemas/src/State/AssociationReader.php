@@ -145,8 +145,26 @@ class AssociationReader
      */
     public function createRelationshipQuery(Relationship $relationship, string $alias = 'record'): QueryBuilder
     {
+        return $this->scopeToRelationship($this->createOptionQuery($this->describeRelationship($relationship)->targetClass, $alias), $relationship, $alias);
+    }
+
+    /**
+     * The owner's related records as {@see createRelationshipQuery()} reads
+     * them, but narrowing $query — rooted at the relationship's target under
+     * $alias — in place, so every condition the caller's own query carries
+     * holds beside the owner's. The narrowing claims the parameter names
+     * `sylament_relationship_owner` (with `_0`, `_1`, … for an owner keyed by
+     * several fields) and the subselect aliases `sy_owner` and `sy_related`.
+     *
+     * @throws LogicException when $query has no root under $alias
+     */
+    public function scopeToRelationship(QueryBuilder $query, Relationship $relationship, string $alias = 'record'): QueryBuilder
+    {
         $target = $this->describeRelationship($relationship);
-        $query = $this->createOptionQuery($target->targetClass, $alias);
+
+        if (! in_array($alias, $query->getRootAliases(), true)) {
+            throw new LogicException(sprintf('Cannot scope a query to the relationship [%s] of [%s]: it has no root under the alias [%s], which the scope narrows.', $relationship->name, $this->getEntityClass($relationship->owner), $alias));
+        }
 
         $query->andWhere($this->isScopedThroughOwner($relationship, $target)
             ? $this->getRelatedRecordsExists($query, $relationship, $target, $alias)

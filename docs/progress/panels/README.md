@@ -581,8 +581,8 @@ What is ported, by cluster:
   reading the root alias off the builder so an overridden query still works — the
   second parameter is Filament's, restored with the
   [nested resources](nested-resources.md) it belongs to, and it may answer with a
-  **different** builder, which is how a parent scope replaces the query rather
-  than adding a predicate to it — and
+  **different** builder — the parent scope answers the resource's own record
+  query narrowed to the parent, so an override holds on every nested page — and
   `getRecordRouteKey()` is the generation side of the same key —
   `$recordRouteKeyName` when set, else the key
   [`RecordKey::of()`](../schemas/record-key.md#the-api) mints for an identifier
@@ -3249,7 +3249,12 @@ property Filament's `getEloquentQuery()` comment describes: a resource that
 scopes its base query to the current user's rows must yield a **404** for a row
 outside that scope, not the row. Going through `find()` would bypass the scope
 entirely and leak by primary key, and the leak would be invisible — the list page
-would look correctly filtered while the edit URL served anything. The root alias
+would look correctly filtered while the edit URL served anything. Under a
+parent the property holds the same way: every nested read — the binding, the
+nested list, a mounted action's key and each ancestor step — starts from a clone
+of the resource's own `getRecordQuery()` and only narrows it to the parent
+([the composition](nested-resources.md#the-parent-scope-is-the-readers-narrowing-of-the-resources-own-query-not-a-predicate-we-write)),
+so an override hides its rows on every nested page at every depth. The root alias
 is read off the builder (`getRootAliases()[0]`) so an overridden query that names
 its own alias still works, and the predicate is
 [`IdentifierConstraint::equals()`](../schemas/record-key.md#the-operations-and-their-dql)
@@ -3287,12 +3292,11 @@ Filament's second parameter shipped with the cluster it belongs to.
 `resolveRecordRouteBinding(int|string $key, ?Closure $modifyQuery = null)` takes a
 query modifier, and the only closure Filament ever passes it is the parent-record
 scope — so it was deferred until
-[nested resources](nested-resources.md#the-parent-scope-is-the-readers-relationship-query-not-a-predicate-we-write)
+[nested resources](nested-resources.md#the-parent-scope-is-the-readers-narrowing-of-the-resources-own-query-not-a-predicate-we-write)
 arrived and now carries exactly that one caller, plus the mounted-action key
 resolution the same scope guards. Two facts about the modifier are ours rather
 than Filament's: it is handed the cloned query and keys against **what it
-returns**, so a scope may replace the builder wholesale (the reader's
-relationship query does), and a closure returning anything but a `QueryBuilder`
+returns**, so a scope may replace the builder wholesale, and a closure returning anything but a `QueryBuilder`
 or null throws rather than being ignored — a `Closure` carries no return type,
 so this is the only place the wrong shape is detectable.
 

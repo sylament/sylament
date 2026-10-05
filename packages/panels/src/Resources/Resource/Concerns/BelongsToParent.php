@@ -119,12 +119,20 @@ trait BelongsToParent
     }
 
     /**
-     * This resource's records narrowed to one parent record, as the root alias
-     * `record` — the scope every nested page and binding resolves through.
+     * This resource's own record query narrowed to one parent record under its
+     * root alias, so every condition an overridden {@see getRecordQuery()}
+     * carries holds beside the parent's — the scope every nested page and
+     * binding resolves through.
+     *
+     * @throws LogicException when the record query names no root alias
      */
     public function getParentScopedRecordQuery(object $parentRecord): QueryBuilder
     {
-        return $this->getAssociationReader()->createRelationshipQuery(new Relationship($parentRecord, $this->getParentRelationshipName()));
+        $query = clone $this->getRecordQuery();
+        $alias = $query->getRootAliases()[0]
+            ?? throw new LogicException(sprintf('The record query of resource [%s] names no root alias to scope to its parent record.', static::class));
+
+        return $this->getAssociationReader()->scopeToRelationship($query, new Relationship($parentRecord, $this->getParentRelationshipName()), $alias);
     }
 
     /**

@@ -81,7 +81,7 @@ do.
 | [`getParentResourceRegistration()`](../../../packages/panels/src/Resources/Resource/Concerns/BelongsToParent.php) | `BelongsToParent::getParentResourceRegistration()` | done | — | [semantics](#the-registration-and-the-derived-name-are-memoized-on-the-resource-service) |
 | [`getParentRelationshipName()`](../../../packages/panels/src/Resources/Resource/Concerns/BelongsToParent.php) | the registration's inflected `$relationshipName` | done | — | [diverges](#the-relationship-name-is-read-off-doctrines-mapping-never-inflected) |
 | [`getParentRouteParameterName()`](../../../packages/panels/src/Resources/Resource/Concerns/BelongsToParent.php) | `ParentResourceRegistration::getParentRouteParameterName()` | done | — | [diverges](#the-route-parameter-is-the-mappings-completing-field-and-is-not-singularised) |
-| [`getParentScopedRecordQuery()`](../../../packages/panels/src/Resources/Resource/Concerns/BelongsToParent.php) | `BelongsToParent::scopeEloquentQueryToParent()` | done | — | [diverges](#the-parent-scope-is-the-readers-relationship-query-not-a-predicate-we-write) |
+| [`getParentScopedRecordQuery()`](../../../packages/panels/src/Resources/Resource/Concerns/BelongsToParent.php) | `BelongsToParent::scopeEloquentQueryToParent()` | done | — | [diverges](#the-parent-scope-is-the-readers-narrowing-of-the-resources-own-query-not-a-predicate-we-write) |
 | [`attachRecordToParent()`](../../../packages/panels/src/Resources/Resource/Concerns/BelongsToParent.php) | [`CreateRecord::associateRecordWithParent()`](../../../vendor/filament/filament/src/Resources/Pages/CreateRecord.php) | done | — | [renamed](../renames.md#renames) · [diverges](#the-attach-lands-on-the-resource-and-writes-the-owning-side-in-memory) |
 | [`getRouteBaseName()`](../../../packages/panels/src/Resources/Resource.php)'s nested arm | [`HasRoutes::getRouteBaseName()`](../../../vendor/filament/filament/src/Resources/Resource/Concerns/HasRoutes.php) | done | — | [semantics](#a-nested-route-name-lights-the-parents-sidebar-item-for-free) |
 | The nested route family — the path recursion + `_sylament_parent_params` | [`HasRoutes::registerRoutes()`](../../../vendor/filament/filament/src/Resources/Resource/Concerns/HasRoutes.php)'s parent recursion | done | — | [diverges](#the-recursion-lives-in-the-loader-and-the-child-must-be-registered-on-the-panel) |
@@ -105,7 +105,7 @@ do.
 | Global-search suppression — a nested resource answers no result URL | `getGlobalSearchResultUrl()`'s own admitted limitation | done | — | [semantics](#the-suppressions-sit-where-the-trail-already-put-them) |
 | `authorizeParentRecordAccess()` / the page-level `canAccess(['record' => …])` arms | `InteractsWithParentRecord::authorizeParentRecordAccess()` | todo | the authorization epic | [detail](#the-nesting-surface-is-ungated-until-the-authorization-epic) |
 | `$record->setRelation(inverse, $parentRecord)` — seeding the resolved record's back-reference | `resolveRecord()` / `resolveParentRecord()` | skipped | — | [diverges](#the-inverse-relationship-is-never-a-name-we-hold) |
-| Morph arms in the parent scope | `scopeEloquentQueryToParent()`'s `MorphTo` branch | skipped | — | [diverges](#the-parent-scope-is-the-readers-relationship-query-not-a-predicate-we-write) |
+| Morph arms in the parent scope | `scopeEloquentQueryToParent()`'s `MorphTo` branch | skipped | — | [diverges](#the-parent-scope-is-the-readers-narrowing-of-the-resources-own-query-not-a-predicate-we-write) |
 | A cycle guard over `$parentResource` | no counterpart — Filament shares the hole | todo | — | [detail](#a-parent-resource-cycle-hangs-route-loading) |
 | Clusters as a second nesting axis (`BelongsToCluster`) | [`BelongsToCluster.php`](../../../vendor/filament/filament/src/Resources/Resource/Concerns/BelongsToCluster.php) | todo | clusters | — |
 
@@ -137,6 +137,15 @@ at depth two and its untitled-record arm, the scoped list, the create that
 attaches and redirects, the create modal that attaches, the delete that redirects
 onto the parent, the link-style action URLs carrying the whole chain, and the
 mounted-frame guard in both directions.
+[`Integration/Resources/Pages/NestedResourceRecordQueryTest`](../../../packages/panels/tests/Integration/Resources/Pages/NestedResourceRecordQueryTest.php)
+pins the composition over the `hush` panel, whose verse and line resources
+override `getRecordQuery()` to hide every row titled `Hidden …` — the verse's
+rooted at `verse` rather than `record` — with every hidden row under its real
+parent: the nested edit page 404s at depth one and two, an intermediate verse
+its own query hides 404s both the line edit page and the line list beneath it,
+the nested list omits the hidden line while the table's own `modifyQueryUsing()`
+still narrows past a third, a mounted frame naming the hidden verse is refused,
+and the visible rows and the wrong-parent 404 stand as controls.
 [`Unit/Routing/PanelRouteLoaderTest`](../../../packages/panels/tests/Unit/Routing/PanelRouteLoaderTest.php)
 and
 [`Integration/Routing/PanelRoutesTest`](../../../packages/panels/tests/Integration/Routing/PanelRoutesTest.php)
@@ -265,10 +274,11 @@ sibling under the same parent still mounting).
 
 `resolveRecordRouteBinding($key, ?Closure $modifyQuery)` hands the closure the
 cloned record query and keys against **what it returns**, falling back to the
-query it passed when the closure returns null — so the parent scope can replace
-the builder wholesale rather than adding a predicate to it, which is what
-[the reader's relationship query](#the-parent-scope-is-the-readers-relationship-query-not-a-predicate-we-write)
-needs. A closure returning anything else throws a `LogicException` naming the
+query it passed when the closure returns null — so a scope may replace the
+builder wholesale rather than adding a predicate to it. The parent scope no
+longer does:
+[it narrows the resource's own query](#the-parent-scope-is-the-readers-narrowing-of-the-resources-own-query-not-a-predicate-we-write),
+so what it answers carries every condition the clone it was handed carries. A closure returning anything else throws a `LogicException` naming the
 resource and the type it answered with, rather than being silently ignored: a
 `Closure` carries no return type information, so the wrong shape is only
 detectable here.
@@ -276,8 +286,10 @@ detectable here.
 ### The nested list page ships unexercised by any shipped page
 
 `ListRecords::table()` swaps its base query for the parent-scoped one whenever
-the page holds a parent record, and roots it at the same `record` alias, so every
-column, sort, search and filter the resource declares works unchanged. Filament
+the page holds a parent record — the resource's own record query narrowed to
+that parent, under the same root alias — so every column, sort, search and
+filter the resource declares works unchanged, and every condition an overridden
+`getRecordQuery()` carries holds there too. Filament
 supports the same hand-written nested list and its generator never produces one —
 a nested resource's default shape is `create` + `edit` with the parent doing the
 listing. Ours ships it for the same reason Filament does, and for one more: an
@@ -307,7 +319,7 @@ searchable nested resource renders no dead rows rather than rows that go nowhere
 ### A parent of any width scopes, and the two interim guards that stood in for it are gone
 
 A nested resource scopes every read to its parent through
-[the reader's relationship query](#the-parent-scope-is-the-readers-relationship-query-not-a-predicate-we-write),
+[the reader's relationship query](#the-parent-scope-is-the-readers-narrowing-of-the-resources-own-query-not-a-predicate-we-write),
 and until [M7 · 5](../roadmap.md#m7--composite-identifiers) that query could not
 bind a parent record carrying more than one identifier field. `BelongsToParent`
 asked first, in panel vocabulary — *"whose records of [%s] are not keyed by a
@@ -510,25 +522,45 @@ The seeding has no equivalent either, and needs none: it exists so Eloquent's
 lazy loading does not re-query the parent a resolver already has, where Doctrine
 returns the same managed instance from the identity map for free.
 
-### The parent scope is the reader's relationship query, not a predicate we write
+### The parent scope is the reader's narrowing of the resource's own query, not a predicate we write
 
 Filament's `scopeEloquentQueryToParent(Builder $query, Model $parentRecord)` is a
 **public static mutator**: it adds one of three predicates to a passed query —
 `whereMorphedTo`, `whereBelongsTo` or a `whereHas` subquery — depending on what
-the inverse relation turns out to be. It has no member here at all. Instead
-`getParentScopedRecordQuery($parentRecord)` **returns**
-`AssociationReader::createRelationshipQuery(new Relationship($parent, $name))` —
-the same M4 · 8 machinery a relation-scoped table already reads through, rooted at
-the same `record` alias `getRecordQuery()` uses, serving both cardinalities with
-DQL that has been probed against a real schema.
+the inverse relation turns out to be — and every nested read hands it the
+resource's own `getEloquentQuery()`, so a resource that narrows its base query
+stays narrowed under a parent. It has no member here at all. Instead
+`getParentScopedRecordQuery($parentRecord)` clones the resource's own
+`getRecordQuery()` and hands it to
+[`AssociationReader::scopeToRelationship()`](../schemas/association-reader.md#scopetorelationship-narrows-a-callers-query-rather-than-building-one)
+under the builder's own root alias — the same M4 · 8 machinery a relation-scoped
+table already reads through, serving both cardinalities and an owner of any width
+with DQL that has been probed against a real schema. Every nested read consumes
+that one method: the record binding, the nested list, a mounted action's key and
+each intermediate step of the ancestor chain, so an override that hides rows —
+the [404-not-the-row property](README.md#a-record-is-resolved-through-the-resources-own-query)
+— holds on every nested page and at every depth, Filament's composition exactly.
 
 Porting the mutator would mean copying the reader's one-to-many predicate and its
 many-to-many subselect into panels, where they would be a second opinion that can
-disagree with the first. Swapping the whole builder costs nothing, because our
-base record query is a bare select-from: the scoped query selects the same
-records with the same alias. That is why
-[`resolveRecordRouteBinding()`'s modifier may answer with a different query](#the-modifier-may-answer-with-a-different-query-and-refuses-anything-else)
-— the contract had to allow a replacement, not just a mutation.
+disagree with the first; the reader narrowing a builder it is handed keeps one.
+Until [M7 · 11](../roadmap.md#m7--composite-identifiers) the method answered the
+reader's own freshly built relationship query instead, on the reasoning that our
+base record query is a bare select-from — which held only while nobody overrode
+it: a nested resource whose `getRecordQuery()` hid rows served them on every
+nested page, and an intermediate ancestor's override was skipped the same way.
+The clone is there for the reason
+[the binding clones](README.md#a-record-is-resolved-through-the-resources-own-query):
+an override may return a memoised builder. A record query rooted at an alias
+other than `record` is narrowed under that alias, and one naming no root alias at
+all is refused by name. Two consequences of composing onto a builder the resource
+wrote: the narrowing claims the reader's parameter names and subselect aliases
+(`sylament_relationship_owner`, `sy_owner`, `sy_related`), so an override must not
+use them, and an override that fetch-joins a collection meets the binding's
+single-result read over a correlated `EXISTS` — the exposure Filament carries too.
+[`resolveRecordRouteBinding()`'s modifier may still answer with a different query](#the-modifier-may-answer-with-a-different-query-and-refuses-anything-else);
+the parent scope no longer needs it to, since what it answers starts from the
+same clone the modifier is handed.
 
 Filament's three arms collapse to the reader's two: **morphs have no Doctrine
 referent**, the same skip the tables tier already recorded, so a polymorphic

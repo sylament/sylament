@@ -90,6 +90,7 @@ Sylament-only, so no row has a _Ports_ link.
 | [`Relationship`](../../../packages/schemas/src/State/Relationship.php) — one owner record's association, by name | done | — | [semantics](#the-relationship-query-is-rooted-at-the-target-and-needs-no-inverse-mapping) |
 | [`describeRelationship(Relationship)`](../../../packages/schemas/src/State/AssociationReader.php) — the mapping at a relationship, refused rather than null | done | — | [semantics](#the-relationship-query-is-rooted-at-the-target-and-needs-no-inverse-mapping) |
 | [`createRelationshipQuery(Relationship, string $alias = 'record')`](../../../packages/schemas/src/State/AssociationReader.php) — the owner's related records, rooted at the target | done | — | [semantics](#the-relationship-query-is-rooted-at-the-target-and-needs-no-inverse-mapping) |
+| [`scopeToRelationship(QueryBuilder, Relationship, string $alias = 'record')`](../../../packages/schemas/src/State/AssociationReader.php) — the same narrowing onto a caller's own builder rooted at the target, which `createRelationshipQuery()` is over a bare select | done | — | [semantics](#scopetorelationship-narrows-a-callers-query-rather-than-building-one) |
 | [`createRelationshipCandidateQuery(Relationship, string $alias = 'record')`](../../../packages/schemas/src/State/AssociationReader.php) — every target record NOT related to this owner | done | — | [semantics](#the-relationship-query-is-rooted-at-the-target-and-needs-no-inverse-mapping) |
 | [`attach(Relationship, object $related)`](../../../packages/schemas/src/State/AssociationReader.php) — make a record one of the owner's, in memory | done | — | [semantics](#a-write-lands-on-the-side-doctrine-persists) · [diverges](#no-to-many-relation-verb-moves-a-primary-key) |
 | [`detach(Relationship, object $related)`](../../../packages/schemas/src/State/AssociationReader.php) — the mirror removal, after the dissociate refusals | done | — | [semantics](#a-write-lands-on-the-side-doctrine-persists) |
@@ -986,6 +987,42 @@ that silently matches nothing;
 is the one thing about the owner that is not the same for every width. Neither
 query orders anything: the mapping's `#[ORM\OrderBy]` is the *table's* default
 sort, not the query's, so a clicked sort can replace it.
+
+### `scopeToRelationship()` narrows a caller's query rather than building one
+
+`createRelationshipQuery()` builds its own select of the target and narrows it;
+`scopeToRelationship()` is that narrowing alone, applied **in place** to a builder
+the caller hands it, which must be rooted at the relationship's target under
+`$alias` (default `record`) — and `createRelationshipQuery()` is now exactly
+`scopeToRelationship()` over `createOptionQuery()`, so the two cannot drift. It
+appends one `andWhere()` — the mapped-by equality or the correlated `EXISTS`, by
+the same route test — and binds the owner, so every condition, join and
+parameter the caller's builder already carries holds beside the owner's;
+Doctrine brackets the appended predicate whenever the builder already had a
+`WHERE` and the predicate carries its own `AND`. A builder with no root under
+`$alias` is refused before anything is appended, naming the relationship, the
+owner's class and the alias:
+`Cannot scope a query to the relationship [<name>] of [<Owner>]: it has no root
+under the alias [<alias>], which the scope narrows.` — without it, a
+mapped-by arm would compile against an alias nothing declares, and an `EXISTS`
+arm would correlate to one.
+
+It exists for panels' nested resources: `BelongsToParent::getParentScopedRecordQuery()`
+hands it a clone of the resource's own `getRecordQuery()` under that builder's
+first root alias, so an override that hides rows holds on every nested page
+([the composition](../panels/nested-resources.md#the-parent-scope-is-the-readers-narrowing-of-the-resources-own-query-not-a-predicate-we-write)).
+The three reserved names above are the caller's to avoid in the builder it
+hands over, and only half of that is enforced: Doctrine refuses a caller's own
+`sy_owner` or `sy_related` alias, while a caller parameter named
+`sylament_relationship_owner` would be overwritten by the owner's. A caller
+builder that fetch-joins a collection keeps the join, so a single-result read
+over it meets every joined row — Filament's composition carries the same
+exposure.
+[`AssociationReaderScopeToRelationshipTest`](../../../packages/schemas/tests/Unit/State/AssociationReaderScopeToRelationshipTest.php)
+pins the caller's condition kept on the mapped-by arm, on a single-identifier
+many-to-many and on both arms of a composite owner, the builder returned being
+the one handed in, `createRelationshipQuery()` printing the same DQL as the
+scope over a bare select, and the refusal leaving the builder untouched.
 
 ### An owner of any width is scoped through its own collection rather than through a mapped-by path
 

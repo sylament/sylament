@@ -258,7 +258,7 @@ trait EntanglesStateWithSingularRelationship
 
         if ($this->getAssociationReader()->hasIncompleteAssignedIdentifier($related)) {
             throw new LogicException(sprintf(
-                'The [%s] relationship is saving a new [%s] whose identifier is incomplete, so no record key can be minted for it. Give every identifier field a component inside it — enabled, dehydrated and required — or drop relationship() and create the related record by hand after getData().',
+                'The [%s] relationship is saving a new [%s] whose identifier is incomplete, so no record key can be minted for it. Give every identifier field a component — enabled, dehydrated and required — inside the relationship, or on the record it hangs off when its identifier is that record, or drop relationship() and create the related record by hand after getData().',
                 $name,
                 $related::class,
             ));

@@ -16,6 +16,8 @@ use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\Binder;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\LintelBase;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\LintelHolder;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\LintelPair;
+use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\TrestleOwner;
+use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\TrestleTop;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\EntityManagerFactory;
 use Sylament\Support\Tests\Doctrine\RecordingMiddleware;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
@@ -65,7 +67,7 @@ it('refuses by name a new related record whose composite key the group leaves bl
 
     expect(fn (): object => $schema->getData())->toThrow(
         LogicException::class,
-        sprintf('The [pair] relationship is saving a new [%s] whose identifier is incomplete, so no record key can be minted for it. Give every identifier field a component inside it — enabled, dehydrated and required — or drop relationship() and create the related record by hand after getData().', LintelPair::class),
+        sprintf('The [pair] relationship is saving a new [%s] whose identifier is incomplete, so no record key can be minted for it. Give every identifier field a component — enabled, dehydrated and required — inside the relationship, or on the record it hangs off when its identifier is that record, or drop relationship() and create the related record by hand after getData().', LintelPair::class),
     );
 
     expect($recorder->statements())->toBe([]);
@@ -83,6 +85,23 @@ it('refuses by name a new related record whose key half no field inside the grou
     $recorder->reset();
 
     expect(fn (): object => $schema->getData())->toThrow(LogicException::class, sprintf('The [pair] relationship is saving a new [%s] whose identifier is incomplete', LintelPair::class));
+    expect($recorder->statements())->toBe([]);
+});
+
+it("refuses by name a new shared-key record whose identifier is the owner while the owner's optional key is blank, naming the owner in its advice", function (): void {
+    $recorder = new RecordingMiddleware();
+    $entityManager = EntityManagerFactory::create($recorder);
+    $owner = new TrestleOwner();
+
+    [$schema, $host] = singularKeySchema($owner, $entityManager, StateField::make('code'), Group::make([StateField::make('label')])->relationship('top'));
+    $host->data = ['code' => '   ', 'top' => ['label' => 'Topped']];
+    $recorder->reset();
+
+    expect(fn (): object => $schema->getData())->toThrow(
+        LogicException::class,
+        sprintf('The [top] relationship is saving a new [%s] whose identifier is incomplete, so no record key can be minted for it. Give every identifier field a component — enabled, dehydrated and required — inside the relationship, or on the record it hangs off when its identifier is that record, or drop relationship() and create the related record by hand after getData().', TrestleTop::class),
+    );
+
     expect($recorder->statements())->toBe([]);
 });
 

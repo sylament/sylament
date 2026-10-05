@@ -218,7 +218,8 @@ null or blank:
 
 > The [pair] relationship is saving a new [App\Entity\Pair] whose identifier is
 > incomplete, so no record key can be minted for it. Give every identifier field
-> a component inside it — enabled, dehydrated and required — or drop
+> a component — enabled, dehydrated and required — inside the relationship, or
+> on the record it hangs off when its identifier is that record, or drop
 > relationship() and create the related record by hand after getData().
 
 No blank-key seam read this record before
@@ -249,20 +250,23 @@ association into the record it points at, so a shared-key child whose identifier
 an owner whose key field is not required (`required(false)`, or a nullable
 property) and holds whitespace. That `getData()` passed before M7 · 11, the
 single scalar root key being exempt; the [`Repeater`](../forms/repeater.md#a-new-item-whose-identifier-is-incomplete-is-refused-before-the-save-returns)
-has refused its items under such an owner the same way since M7 · 7. The
-refusal is right, but its advice names the group, where the fix is the owner's
-key field. A required key field — which forms derives for a non-nullable
-property — never reaches it. Telling the two cases apart needs the reader's
-private walk behind
+has refused its items under such an owner the same way since M7 · 7, and the
+refusal stays: the child row could not be keyed after the flush either. A
+required key field — which forms derives for a non-nullable property — never
+reaches it. Telling the two causes apart needs the reader's private walk behind
 [`hasIncompleteAssignedIdentifier()`](association-reader.md#an-incomplete-assigned-identifier-is-the-question-the-create-paths-ask),
-which answers one boolean, so the residual is left for the
+which answers one boolean, so the message names both instead: since M7 · 11 its
+advice points at the record the relationship hangs off as well as at the
+components inside it, where it named the group alone and sent the developer
+past the owner's key field. The reach itself is left for the
 [roadmap's ledger](../roadmap.md#m7--composite-identifiers).
 
 Pinned by
 [`EntanglesStateWithSingularRelationshipKeyTest`](../../../packages/schemas/tests/Integration/Components/Concerns/EntanglesStateWithSingularRelationshipKeyTest.php)
-— a whitespace and an empty half, an unmapped half, a filled pair that saves, a
-blank single scalar key left alone, an existing record left alone and the
-syncing setter that saves — and, through real `TextInput`s, by forms'
+— a whitespace and an empty half, an unmapped half, a shared-key child refused
+over its owner's blank optional key, a filled pair that saves, a blank single
+scalar key left alone, an existing record left alone and the syncing setter that
+saves — and, through real `TextInput`s, by forms'
 [`EntangledIncompleteKeyTest`](../../../packages/forms/tests/Integration/Components/EntangledIncompleteKeyTest.php).
 
 ## Divergences

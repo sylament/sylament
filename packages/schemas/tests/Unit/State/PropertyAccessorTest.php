@@ -409,6 +409,19 @@ it('leaves a property no setter can change alone when it already holds the value
     'an array of the same numbers written as numeric strings' => ['codes', ['1', '2']],
 ]);
 
+it('leaves a held string alone when the write is the number a writable string property would hold as that string', function (string $held, int|float $value): void {
+    $record = constructorSetRecord(host: $held, codes: [$held]);
+
+    accessor()->setOnRecord($record, 'host', $value);
+    accessor()->setOnRecord($record, 'codes', [$value]);
+
+    expect($record->host)->toBe($held)
+        ->and($record->codes)->toBe([$held]);
+})->with([
+    'an int' => ['5', 5],
+    'a float' => ['1.5', 1.5],
+]);
+
 it('takes an empty string and a null for each other on a property no setter can change', function (): void {
     $record = new ConstructorSetRecord(host: '', path: '/home', secret: 'sesame');
 
@@ -459,6 +472,9 @@ it('refuses another value on a property no setter can change, naming the two typ
     'an array holding another numeric string' => ['codes', ['007'], 'array', 'array', ['007'], constructorSetRecord(codes: ['7'])],
     'an array holding 0 over a held false' => ['codes', [0], 'array', 'array', [], constructorSetRecord(codes: [false])],
     'an array holding one element more' => ['codes', [1, 2, 3], 'array', 'array', [], constructorSetRecord()],
+    'an int over a zero-padded string, which a writable string property would hold as another string' => ['host', 5, 'string', 'int', ['05'], constructorSetRecord(host: '05')],
+    'a float over a string spelling it otherwise' => ['host', 5.0, 'string', 'float', ['5.0'], constructorSetRecord(host: '5.0')],
+    'an array holding an int over a zero-padded string' => ['codes', [1], 'array', 'array', ['01'], constructorSetRecord(codes: ['01'])],
 ]);
 
 it('refuses a property no setter can change that holds no value yet', function (string $path): void {

@@ -117,16 +117,22 @@ outlive the detail sections above.
 `constructRecord()` is public for callers outside this class, but the rule it
 enforces is the accessor's own: the mapper builds a record only when it can build
 it with no arguments, because it has nothing to pass a constructor. Three places
-need exactly that — `setOnRecord()`'s null singular intermediate, the
+needed exactly that first — `setOnRecord()`'s null singular intermediate, the
 [entangled layout component](entangles-state-with-singular-relationship.md)
 building the related record a to-one association is missing, and the
 [relationship repeater](../forms/repeater.md) building an added item — and each
-wrote its own reflection-plus-refusal before this method existed. The two clauses
-that genuinely differ come in as arguments: `$subject` (what is being mapped, in
-the "Cannot map …" position) and `$advice` (what to do instead). Everything
-between them — the required-arguments test, the class name, "so the mapper cannot
-build it. Give the constructor defaults, or" — is stated once, so the three
-refusals cannot drift apart.
+wrote its own reflection-plus-refusal before this method existed. Since
+[M7 · 7](../roadmap.md#m7--composite-identifiers) both `BelongsToRecord` tiers'
+`getRecordInstance()` call it too, with the advice to bind the record through
+`record()`, and so do both [`CreateAction`](../actions/create-action.md) arms,
+whose advice names `using()`; since
+[M7 · 10](../roadmap.md#m7--composite-identifiers) so does the default
+`CreateRecord::makeRecord()`, whose advice is to override `makeRecord()`. The
+two clauses that genuinely differ come in as arguments: `$subject` (what is being
+mapped, in the "Cannot map …" position) and `$advice` (what to do instead).
+Everything between them — the required-arguments test, the class name, "so the
+mapper cannot build it. Give the constructor defaults, or" — is stated once, so
+the refusals cannot drift apart.
 
 ### The association write is the collection refusal's counterpart
 
@@ -212,9 +218,11 @@ answers `false` for an uninitialized property and would send the third case into
 the fourth.
 
 "The same value" is, in order: identical; `null` and `''`, either way round — the
-`null` a nullable key holds is what a blank field writes; two scalars, neither a
-bool and at least one an `int` or a `float`, that compare equal — so `'5'` is the
-`5` an integer key holds and `0.0` the `0`; two arrays with the same keys whose
+`null` a nullable key holds is what a blank field writes; a held string and a
+written `int` or `float` that the write would turn into that very string — so a
+held `'5'` is the `5` an option list's state cast hands over, and a held `'05'` is
+not; a held `int` or `float` and a scalar that is no bool and compares equal — so
+`'5'` is the `5` an integer key holds and `0.0` the `0`; two arrays with the same keys whose
 elements are each the same value by this same rule; two objects of one class that
 is no record and compare equal — an equal date, `Uid` or value object; anything else is another
 value. That is narrower than PHP's `==` on purpose: `==` would also take `null`
@@ -225,8 +233,21 @@ strings compare strictly too: PHP compares two numeric strings as numbers, so
 `'007'` would meet `'7'`, `'1.50'` `'1.5'` and `'1e3'` `'1000'`, and a changed
 zero-padded key written over a readonly one would be left alone — the save
 reporting success, writing nothing, and the changed-key pass seeing no change.
-The number tier exists to bridge a type a form's state and the record disagree on,
-never two spellings of one. Two arrays are compared element by element under the
+The number tier exists to bridge a type the form's state and the record disagree
+on — a string state over an `int` or `float` property, or a number over a string
+one — and it reads the two sides the way the property would. A held number is
+compared numerically, so every numeric spelling (`' 5'`, `'05'`, `'5.0'`, `'5e0'`)
+of the number held is that number, exactly as a writable `int` setter would
+receive `5` for each. A held string meets a written number only when the number
+prints as that string, since a writable `string` setter — Symfony's accessor
+writes without `strict_types` — would receive `'5'` for `5`: a held `'05'` and a
+written `5` are another value, refused rather than left alone. That second arm
+matters because `OptionStateCast` hands a canonical digit option over as an
+`int`, so a `Select`, `Radio` or `ToggleButtons` option `5` written over a held
+`'05'` was a changed value the rule used to drop in silence, the save reporting
+success; [`PropertyAccessorTest`](../../../packages/schemas/tests/Unit/State/PropertyAccessorTest.php)
+pins both arms, for a leaf and for an array element. Two values of the same
+type, two strings, never meet there. Two arrays are compared element by element under the
 same rule rather than by PHP's array `<=>`, which compares its elements loosely —
 `['007']` would meet `['7']` and `[false]` `[0]` — and compares an entity element by
 its fields. A **record** compares by identity alone, because comparing an entity reads its

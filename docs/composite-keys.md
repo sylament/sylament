@@ -29,18 +29,20 @@ Nothing in tables or relation managers is specific to composite keys. In forms:
 
 - Give every key field a form field. On the edit page, disable it with `disabledOn('edit')` and nothing else.
 - Do not add `dehydrated(false)` to a key field. The create page would then save no key, and the save is refused with *This value should not be blank.*
-- A key value set outside the form, for example in `mutateFormDataBeforeCreate()`, is only written if a field maps it. Use a `Hidden` field for keys the user should not type.
+- A key value set outside the form, for example in `mutateFormDataBeforeCreate()`, must be mapped by a field: a hook that adds a key no field maps fails the save with an error naming it. Use a `Hidden` field for a key the user should not type, with `required(false)` where the entity would make it required, or build the record with its key in `makeRecord()` (see [Entities with constructor arguments](#entities-with-constructor-arguments)).
 - A key field the form leaves out and nothing fills before the save — a `prePersist` listener may — fails the save with an error naming the class. It is a mistake in the form, not something the user can fix.
 - Leave a key field that a `prePersist` callback or listener fills out of the form. A key field the form shows is the user's to fill, and leaving it blank is refused under it, whatever a callback would do.
 - Override `getRecordTitle()` on the resource, since no single `$recordTitleAttribute` names a record with a composite key.
 
 ## What users see on create and edit
 
-- **A key another record already uses:** *This value is already used.*, under the first key field that is not an association. This also finds rows that a Doctrine SQL filter, such as soft delete, hides.
+- **A key another record already uses:** *This value is already used.*, under every key field of the form that is not an association — the host and the path of a key made of two strings. When the form has none of them, it is shown under the first key field that is not an association. This also finds rows that a Doctrine SQL filter, such as soft delete, hides.
 - **A key left blank:** *This value should not be blank.*, under that field.
 - **A changed key on edit:** *This value cannot be changed.*, and the stored key is put back.
 
-The first two messages are Symfony's own, translated through the `validators` domain; *This value cannot be changed.* is Sylament's and has no translation yet. If two users create the same key at the same moment, the second one gets a database error.
+The first two messages are Symfony's own, translated through the `validators` domain. *This value cannot be changed.* is Sylament's: Sylament ships no translation of it, and your application's `validators` catalog translates it, in a form and in an editable table cell alike. To word the taken-key message differently, translate it in that catalog, or declare `#[UniqueEntity(fields: ['host', 'path'], message: '…', errorPath: 'path')]` on the entity, which is checked first.
+
+`Schema::validateRecordKey(false)` — on one form, or on every schema through `Schema::configureUsing()` — switches the first two checks off: a taken key then fails in the database. A blank key field over a non-nullable property is still refused under the field, since the field is required on its own; one that is not required — it declares `required(false)`, or its property is nullable — fails the save with an error naming the class, which ends: *The schema switches the key rules off with validateRecordKey(false), so a key field it maps is not refused while blank; switch them back on to have the blank field refused under it.* A changed key is still refused. If two users create the same key at the same moment, the second one gets a database error.
 
 ## Replicating records
 
@@ -68,7 +70,29 @@ Override `getRecordRouteKey()` and `resolveRecordRouteBinding()` on the resource
 
 ## Entities with constructor arguments
 
-Sylament creates new records without calling a constructor with arguments. An entity whose constructor requires its key fails with an error naming the class. Give the constructor defaults, or build the record yourself: `CreateAction::using()` replaces the create step, and `Select::createOptionUsing()` replaces the create-option step. The resource create page has no such hook yet.
+Sylament creates new records without arguments, so an entity whose constructor requires them fails with an error naming the class until you build it yourself. On a resource create page, override `makeRecord()` and construct the record from the validated form data; the form is then mapped onto the record you return, which must be an instance of the resource's record class:
+
+```php
+final class CreateSiteRedirect extends CreateRecord
+{
+    protected static string $resource = SiteRedirectResource::class;
+
+    protected function makeRecord(array $data): SiteRedirect
+    {
+        return new SiteRedirect($data['host'], $data['path']);
+    }
+}
+```
+
+`$data` holds `mixed` values, so a real page narrows `host` and `path` to strings first, as its static analysis wants; the demo's `CreateSiteRedirect` checks both with `is_string()` and throws otherwise.
+
+Elsewhere, `CreateAction::using()` replaces the create step, and `Select::createOptionUsing()` replaces the create-option step.
+
+A key the constructor sets and no setter can change — a `readonly` property, or one with a getter and no setter — is left alone when the form writes the value it already holds, and refused with an error naming the field when it does not, for example when the constructor lowercases the host. "The value it already holds" is strict for a bool, for two strings (`'7'` over a held `'007'` is another value) and for an entity mapped with Doctrine attributes (the same instance); a blank field matches only a held `null` or `''`; a numeric string matches its number (`'5'` over a held `5`); two arrays match element by element under the same rule; and two dates or value objects of one class match when they compare equal. Hand the constructor the form's value as it is, make the field's state match with `dehydrateStateUsing()`, or leave the field out of the form. The property must be readable, through a getter or public visibility; one that is neither still fails with Symfony's `NoSuchPropertyException`. On the edit page an unchanged such key saves, and a changed one is refused with that error rather than with *This value cannot be changed.*; `disabledOn('edit')` avoids both.
+
+- Never `hiddenOn('create')` a key field the constructor sets: a taken key's error is filed under that field too, so when every key field is hidden the save is refused with no message. A `disabledOn('create')` field shows the error under a field the user cannot change.
+- Compute any value only `makeRecord()` reads inside it: the check for values no field maps runs first, so `mutateFormDataBeforeCreate()` cannot hand it a key no field maps.
+- `ReplicateAction` cannot copy a key no setter can change. Doctrine builds the copy without its constructor, so the property holds no value, and the replicate is refused with an error naming it.
 
 ## Case-insensitive databases
 

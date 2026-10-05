@@ -272,8 +272,9 @@ metadata into the per-field constraint build. The tail is
 `HasSchemas::validateSchemaRecord()`: `ValidatorInterface::validate($record)`,
 each violation's property path through the
 [translator](violation-path-translator.md) — filed under the component owning it
-when that component shows its own errors, at the schema's own path otherwise
-([why](violation-path-translator.md#a-message-is-filed-only-under-a-component-that-shows-its-own-errors))
+when that component shows its own errors, at the schema's own path otherwise,
+bar a layout component entangling a related record inside a repeater item
+([why, and that exception](violation-path-translator.md#a-message-is-filed-only-under-a-component-that-shows-its-own-errors))
 — the messages merged into the same
 per-schema bag `validateSchema()` fills, the schema key recorded sticky, and
 `ValidationException` thrown — the Symfony Form idiom (map, validate the object,

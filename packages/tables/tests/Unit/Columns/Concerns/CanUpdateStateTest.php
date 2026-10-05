@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use Doctrine\ORM\EntityManager;
+use Sylament\Schemas\State\AssociationReader;
 use Sylament\Schemas\State\Casts\Contracts\StateCast;
 use Sylament\Support\Tests\Doctrine\RecordingMiddleware;
 use Sylament\Tables\Columns\CheckboxColumn;
@@ -21,6 +22,7 @@ use Sylament\Tables\Tests\Fixtures\Doctrine\EntityManagerFactory;
 use Sylament\Tables\Tests\Fixtures\Doctrine\Handle;
 use Symfony\Component\Validator\Constraints\Length;
 use Symfony\Component\Validator\Validation;
+use Symfony\Contracts\Translation\TranslatorInterface;
 
 /**
  * A cast whose two directions are distinguishable from every other conversion the
@@ -357,8 +359,11 @@ it('refuses a changed identifier field with the bare message, puts the key back 
     $recorder->reset();
     $refusal = null;
 
+    $cell = $column()->table($table)->record($record);
+    $cell->setValidator(Validation::createValidator());
+
     try {
-        $column()->table($table)->record($record)->updateState($input);
+        $cell->updateState($input);
     } catch (RecordWriteException $recordWriteException) {
         $refusal = $recordWriteException;
     }
@@ -406,4 +411,95 @@ it('files a refused identifier write against the cell, echoing the posted input'
 
     expect($host->getTableColumnStateError('path', 'example=2Eorg~home'))->toBe(['message' => 'This value cannot be changed.', 'input' => 'index'])
         ->and($entityManager->getConnection()->fetchAllAssociative('SELECT host, path FROM Shortcut ORDER BY host, path'))->toBe([['host' => 'example.org', 'path' => 'about'], ['host' => 'example.org', 'path' => 'home'], ['host' => 'sylament.test', 'path' => 'home']]);
+});
+
+it('rebinds the table reader, subclass and all, to the manager the cell writes through', function (): void {
+    [$entityManager, , $table] = identifierWriteRig(Song::class);
+    $song = $entityManager->find(Song::class, 1) ?? throw new LogicException('The seeded song went missing.');
+
+    /** @var ArrayObject<int, array{string, AssociationReader}> $log */
+    $log = new ArrayObject();
+    $spy = new class ($log) extends AssociationReader {
+        /**
+         * @param ArrayObject<int, array{string, AssociationReader}> $log
+         */
+        public function __construct(private readonly ArrayObject $log)
+        {
+            parent::__construct();
+        }
+
+        public function revertIdentifierChanges(object $record): array
+        {
+            $this->log[] = [__FUNCTION__, $this];
+
+            return parent::revertIdentifierChanges($record);
+        }
+    };
+
+    $table->setAssociationReader($spy);
+
+    TextInputColumn::make('id')->table($table)->record($song)->updateState('1');
+
+    $boundManager = new ReflectionProperty(AssociationReader::class, 'entityManager');
+
+    expect($log)->toHaveCount(1)
+        ->and($log[0][0])->toBe('revertIdentifierChanges')
+        ->and($log[0][1])->toBeInstanceOf($spy::class)
+        ->and($log[0][1])->not->toBe($spy)
+        ->and($boundManager->getValue($log[0][1]))->toBe($entityManager)
+        ->and($boundManager->getValue($spy))->toBeNull();
+});
+
+it('raises the changed-key refusal through the column validator translator, in the validators domain', function (): void {
+    $translator = new class implements TranslatorInterface {
+        /** @var list<string> */
+        public array $domains = [];
+
+        public function trans(string $id, array $parameters = [], ?string $domain = null, ?string $locale = null): string
+        {
+            $this->domains[] = $domain ?? '';
+
+            return $id === 'This value cannot be changed.' ? 'Táto hodnota sa nedá zmeniť.' : strtr($id, $parameters);
+        }
+
+        public function getLocale(): string
+        {
+            return 'sk';
+        }
+    };
+
+    $validator = Validation::createValidatorBuilder()
+        ->setTranslator($translator)
+        ->setTranslationDomain('validators')
+        ->getValidator();
+
+    [$entityManager] = identifierWriteRig(Shortcut::class);
+
+    $host = new TableHost(fn (Table $table): Table => $table
+        ->query($entityManager->createQueryBuilder()->select('shortcut')->from(Shortcut::class, 'shortcut'))
+        ->columns([TextInputColumn::make('path')]));
+
+    $column = $host->getTable()->getColumn('path');
+
+    assert($column instanceof TextInputColumn);
+    $column->setValidator($validator);
+
+    $host->updateTableColumnState('path', 'example=2Eorg~home', 'index');
+
+    expect($host->getTableColumnStateError('path', 'example=2Eorg~home'))->toBe(['message' => 'Táto hodnota sa nedá zmeniť.', 'input' => 'index'])
+        ->and(array_values(array_unique($translator->domains)))->toBe(['validators'])
+        ->and($entityManager->getConnection()->fetchAllAssociative('SELECT host, path FROM Shortcut ORDER BY host, path'))->toBe([['host' => 'example.org', 'path' => 'about'], ['host' => 'example.org', 'path' => 'home'], ['host' => 'sylament.test', 'path' => 'home']]);
+});
+
+it('refuses a changed identifier on a column built without a validator, after putting the key back and before any statement', function (): void {
+    [$entityManager, $recorder, $table] = identifierWriteRig(Shortcut::class);
+    $record = $entityManager->getRepository(Shortcut::class)->findOneBy(['host' => 'example.org', 'path' => 'home']) ?? throw new LogicException('The seeded shortcut went missing.');
+    $recorder->reset();
+
+    $column = TextInputColumn::make('path')->table($table)->record($record);
+
+    expect(fn (): mixed => $column->updateState('index'))
+        ->toThrow(LogicException::class, 'The editable column [path] validates its input, which needs the container-built instance')
+        ->and($record->getPath())->toBe('home')
+        ->and($recorder->statements())->toBe([]);
 });

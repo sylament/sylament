@@ -160,18 +160,40 @@ updates the key. Doctrine keys its identity map by the old one, so before
 identifier field re-keyed the row silently, or — the new key being taken — threw
 a unique violation out of `updateTableColumnState()`. Now
 `CanUpdateState::updateState()` runs the record check's changed-key pass itself,
-after the write and before its flush:
-`new AssociationReader($manager)->revertIdentifierChanges($record)`, through the
-record's own manager
-([the pass](../schemas/association-reader.md#a-changed-identifier-is-put-back-and-refused-and-costs-no-statement)).
-Its first refusal is thrown as a
-[`RecordWriteException`](../../../packages/tables/src/Exceptions/RecordWriteException.php)
-carrying the bare *"This value cannot be changed."*, which the host files and the
-cell paints exactly as it does
+after the write and before its flush, on the **table's** association reader
+rebound to the record's own manager —
+`$this->getTable()->getAssociationReader()->withEntityManager($manager)` — so a
+reader the application subclassed or decorated runs here as it does under the
+form ([the pass](../schemas/association-reader.md#a-changed-identifier-is-put-back-and-refused-and-costs-no-statement)).
+Its refusals are raised the way the form raises them: as violations of a
+[`RecordKeyGuard`](../../../packages/schemas/src/Validation/RecordKeyGuard.php)
+constraint, validated by the column's own validator — the one
+[`CanBeValidated`](../../../packages/tables/src/Columns/Concerns/CanBeValidated.php)
+already holds for the input — and the first violation's message is thrown as a
+[`RecordWriteException`](../../../packages/tables/src/Exceptions/RecordWriteException.php),
+which the host files and the cell paints exactly as it does
 [the type refusal](#a-record-type-the-input-cannot-hold-seeds-a-type-constraint-and-the-write-refuses-the-rest).
+So *"This value cannot be changed."* goes through the validator's translator in
+its translation domain, and an application's `translations/validators.*` reaches
+the cell as it reaches the form. Until
+[M7 · 10](../roadmap.md#m7--composite-identifiers) the cell threw the bare
+constant and the host stored it verbatim, so no catalog could. The toolkit ships
+no catalog of its own — i18n stays parked — so without the application's the
+message stays English.
 The pass has already put the key back, so the row stays keyed as it was posted,
 the re-render keeps the error on its cell rather than losing it under a new key,
 and nothing is written.
+
+Two edges follow from the cell reading the table's reader and the column's
+validator. The validator is reached only when the pass refuses something, so a
+column built by hand without one writes as before until it changes a key, and
+then throws the `LogicException` naming the missing validator — after the key is
+put back and before any statement. And a column mounted to no table can no
+longer write through the default arm: it has no reader to rebind, so
+`getTable()` throws *"is not mounted to a table"* where the write used to fall
+back on the manager registry. No host reaches that case — every cell renders
+from a table, and `getUpdateStateError()` asks the table unconditionally — so it
+is recorded rather than kept.
 
 It is the changed-key pass alone: a cell writes a managed record, so there is no
 new record whose key could be taken. A cell writing the same key back in another
@@ -180,7 +202,9 @@ type — an integer id arrives as the string a control posts — is no change. A
 had, which answers first. Pinned by
 [`IdentifierCellsTest`](../../../packages/tables/tests/Integration/IdentifierCellsTest.php)
 over a live table and by
-[`CanUpdateStateTest`](../../../packages/tables/tests/Unit/Columns/Concerns/CanUpdateStateTest.php).
+[`CanUpdateStateTest`](../../../packages/tables/tests/Unit/Columns/Concerns/CanUpdateStateTest.php),
+which also pins the rebinding with a recording subclass of the reader set on the
+table, the translation with a stub translator, and the missing-validator throw.
 
 ### An array record throws where Filament writes nothing
 

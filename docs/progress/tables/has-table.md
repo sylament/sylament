@@ -1219,7 +1219,19 @@ Each has a [row](#surface) or a
 Since M7 · 7, `getSelectedTableRecords()` reads a selection over a record class keyed by several fields in batches of `IdentifierConstraint::batch()`, at most 500 keys a statement — 500 for two to four identifier fields, fewer above that ([the chunk rule](../schemas/record-key.md#the-chunk-rule)) — instead of one statement over the whole bag. The bags are client input, and one statement over them cost time quadratic in their length. A forged 10 000-key `selectedTableRecords` held a request for about 23 s, where a single-identifier table answered in about 23 ms. On PostgreSQL the tracked arm's `NOT (… OR …)` crossed the JIT threshold and ran for minutes. Three shapes follow:
 
 - **The selected bag** is batched. Each batch runs the query `getSelectedTableRecordsQuery()` would, narrowed to its keys.
-- **A tracked deselection** that fits one batch stays one `notIn()` statement. A larger one is subtracted in PHP from a pluck of every key the table admits (one statement binding no key), and the rest is read in batches, since an exclusion cannot be split across statements. The one-batch exclusion compares each deselected key decoded and bound by its field's type, so a spelling the codec accepts but no row mints — a decimal `1.0` for `1`, a case variant under a case-insensitive collation — excludes the row; the larger bag is subtracted by string, as the checkbox compares, and does not. Such a spelling never comes from a rendered checkbox, so only a forged bag sees the two arms disagree, and the only row it can affect is one rendered ticked, which the exclusion spares. The one-statement exclusion is a sequential scan on PostgreSQL 18, and from roughly 40 000 rows a 101–500-key one crosses `jit_above_cost`, where JIT adds about 130–280 ms to it ([measured](../schemas/record-key.md#the-chunk-rule)).
+- **A tracked deselection** that fits one batch stays one `notIn()` statement. A
+  larger one is subtracted in PHP from a pluck of every key the table admits
+  (one statement binding no key), and the rest is read in batches, since an
+  exclusion cannot be split across statements. The one-batch exclusion compares
+  each deselected key decoded and bound by its field's type, so a spelling the
+  codec accepts but no row mints — a decimal `1.0` for `1`, a case variant under
+  a case-insensitive collation — excludes the row; the larger bag is subtracted
+  by string, as the checkbox compares, and does not. Such a spelling never comes
+  from a rendered checkbox, so only a forged bag sees the two arms disagree, and
+  the only row it can affect is one rendered ticked, which the exclusion spares.
+  The one-statement exclusion is a sequential scan on PostgreSQL 18, and from
+  roughly 40 000 rows a 101–500-key one crosses `jit_above_cost`, where JIT adds
+  about 130–280 ms to it ([measured](../schemas/record-key.md#the-chunk-rule)).
 - **`fetchSelectedRecords(false)` beside `checkIfRecordIsSelectableUsing()`** hydrates each batch once and keys the selectable records in PHP. `getSelectedTableRecordsQuery(false)` binds them back as a second key list instead.
 
 The hydrated records come back in table order within a batch, and batch after batch across them; Filament's own chunked read comes back in id order, not the table's. Each record comes back once: two spellings of one key that the database compares equal — a decimal `1` and `1.0`, or a case variant under a case-insensitive collation — can land in different batches and hydrate the same managed record twice, so the batches' records are de-duplicated by identity before the selectability filter, as the single statement returned such a row once. `getSelectedTableRecordsQuery()` is unchanged: it returns one builder, a custom bulk action's `$selectedRecordsQuery`, so it binds every selected key. A bulk action over a large composite selection reads `$selectedRecords` instead. A single-identifier selection is untouched: one statement, one array parameter.
@@ -1869,7 +1881,7 @@ and a query-lane row that is no instance of the record class — a `SELECT NEW`
 projection, keyed by its `id` — are never compared. The codec's key is minted
 once per row, and `getTableRecordKey()` is asked only where the codec answers
 null or the host overrides the method — detected by the method's declaring file
-being another than `HasTable.php` — so the comparison costs an overriding table
+being other than `HasTable.php` — so the comparison costs an overriding table
 one more mint per row, a few microseconds and no statement, and a table that
 does not override costs nothing. Pinned by
 [`HasTableRecordKeyOverrideTest`](../../../packages/tables/tests/Unit/Concerns/HasTableRecordKeyOverrideTest.php)

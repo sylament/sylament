@@ -111,8 +111,8 @@ nothing inside the group maps — was a 422 with no message on screen.
 `translateToErrorPath()` answers `translate()`'s path only when the owning
 component declares that it shows its errors: it implements
 [`HasValidationConstraints`](../../../packages/schemas/src/Components/Contracts/HasValidationConstraints.php),
-as every form field does, or `HasKeyedItems`, as the repeater does. Otherwise it
-answers `null`, and
+as every form field does, or `HasKeyedItems`, as the repeater does — bar one
+shape inside a repeater item, below. Otherwise it answers `null`, and
 [`validateSchemaRecord()`](can-be-validated.md#record-sourced-constraints-are-validated-on-the-mapped-object)
 files the message at the schema's own path, which the page and the modal render
 above the form. The test is a positive one on purpose: a component that proves
@@ -131,6 +131,18 @@ nowhere: a 422 with no message on screen. `translateToErrorPath()` now answers
 renders above the form; a violation on a mapped item field still lands under
 that field, and one on the collection itself — or on an index naming no item —
 still lands on the repeater.
+
+One shape still escapes the test. It is asked of the component owning the
+record path — the root's owner, or the repeater for an item — and inside an item
+`translateToErrorPath()` answers whichever in-item path `getItemStatePaths()`
+lists, whatever component declared it. A `Group`, `Section` or `Fieldset` with
+`relationship()` inside a relationship repeater item declares such a path, so a
+class-level violation on its related record, or one on a property of it no inner
+field maps, is still filed at `data.<repeater>.<itemKey>.<group>`, which nothing
+renders. Closing it needs the component that declared the in-item path, which
+`HasKeyedItems::getItemStatePaths()` does not expose — a contract widening left
+to a later epic and recorded on
+[the roadmap's ledger](../roadmap.md#m7--composite-identifiers).
 
 Only the filing moved. The record check still asks `translate()` whether a
 component maps a blank or taken key candidate, so a group entangling the related

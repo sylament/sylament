@@ -1336,10 +1336,11 @@ a refused nested create takes the record back out of a many-to-many parent's
 collection: `mapRecordForCreation()` hands it back in a `finally` when the
 mapping refuses it, and the `ValidationException` leaves unchanged. Until
 [M7 · 11](../roadmap.md#m7--composite-identifiers) it stayed there for the rest
-of the request, so a later flush in that request — a listener's, or a
-`handleRecordCreation()` override that caught the refusal — failed with
-Doctrine's *A new entity was found through the relationship …*. Any other
-parent holds nothing of the record and is left alone.
+of the request, so a later flush in that request — an exception listener's, or
+one in a `create()` override that caught the refusal — failed with Doctrine's
+*A new entity was found through the relationship …*. Any other parent holds
+nothing of the record and is left alone — unless the child's setter writes it
+into the parent's collection itself, which the hand-back does not undo.
 
 Since M7 · 7 the default `handleRecordCreation()` also refuses by name a record
 whose assigned key is still blank after `persist()`. It asks

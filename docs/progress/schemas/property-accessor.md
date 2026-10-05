@@ -219,7 +219,8 @@ the fourth.
 
 "The same value" is, in order: identical; `null` and `''`, either way round — the
 `null` a nullable key holds is what a blank field writes; a held string and a
-written `int` or `float` that the write would turn into that very string — so a
+written `int` — or a `float`, which only application code writes, no shipped
+state cast producing one — that the write would turn into that very string — so a
 held `'5'` is the `5` an option list's state cast hands over, and a held `'05'` is
 not; a held `int` or `float` and a scalar that is no bool and compares equal — so
 `'5'` is the `5` an integer key holds and `0.0` the `0`; two arrays with the same keys whose

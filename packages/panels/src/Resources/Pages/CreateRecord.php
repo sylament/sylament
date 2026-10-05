@@ -291,7 +291,9 @@ abstract class CreateRecord extends Page
     /**
      * Take a record a refused create attached back out of a many-to-many
      * parent's collection, which would otherwise hold it unsaved for the rest
-     * of the request; any other parent holds nothing of it.
+     * of the request; any other parent holds nothing of it, unless the child's
+     * setter writes it into the parent's collection itself, which the hand-back
+     * does not undo.
      */
     private function handRecordBackToParent(object $record, object $parentRecord): void
     {

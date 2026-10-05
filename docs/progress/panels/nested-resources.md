@@ -592,8 +592,9 @@ refusal, as [`CreateAction`](../actions/create-action.md#the-created-record-join
 is: the one before the mapping when the mapping refuses, the one before the
 flush when `persist()` or the blank-key read does, each through
 `AssociationReader::detach()` in a `finally` that rethrows the original
-exception unchanged. A one-to-many or many-to-one parent holds nothing of the
-record, so only the many-to-many arm hands it back
+exception unchanged. A one-to-many parent holds nothing of the record — unless
+the child's setter writes it into the parent's collection itself, which the
+hand-back does not undo — so only the many-to-many arm hands it back
 ([the page's side](README.md#createrecord)).
 
 The move onto the resource is a [rename](../renames.md#renames) as well as a

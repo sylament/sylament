@@ -482,11 +482,12 @@ final readonly class PropertyAccessor
     /**
      * Whether a property no setter can change already holds what a write would
      * put there, in order: the identical value; `null` and `''`, either way
-     * round; a held string and a written int or float that the write would turn
-     * into that very string, so a held `'5'` is `5` and a held `'05'` is not; a
-     * held int or float and a non-bool scalar that compare equal, so `'5'` is
-     * `5`; two arrays with the same keys whose elements are each the same value
-     * by this rule; two objects of one class that is no record and compare
+     * round; a held string and a written int — or a float, which only
+     * application code writes, no shipped state cast producing one — that the
+     * write would turn into that very string, so a held `'5'` is `5` and a held
+     * `'05'` is not; a held int or float and a non-bool scalar that compare
+     * equal, so `'5'` is `5`; two arrays with the same keys whose elements are
+     * each the same value by this rule; two objects of one class that is no record and compare
      * equal. Anything else differs — two strings compare strictly, a bool
      * strictly, `null` matches nothing but `''`, and a record, or any object
      * when `$comparesObjectsByIdentity` is set, only its own instance.

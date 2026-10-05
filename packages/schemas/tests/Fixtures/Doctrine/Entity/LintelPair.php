@@ -9,7 +9,9 @@ use Doctrine\ORM\Mapping as ORM;
 /**
  * Two assigned string halves and no class-level filler, reached through a
  * holder's cascading to-one — so a record a singular relationship constructs
- * here is keyed by whatever its form wrote and nothing else.
+ * here is keyed by whatever its form wrote and nothing else. The second half's
+ * property is nullable, so an empty field writes null onto it rather than
+ * failing the mapping.
  */
 #[ORM\Entity]
 class LintelPair
@@ -20,7 +22,7 @@ class LintelPair
 
     #[ORM\Id]
     #[ORM\Column(length: 32)]
-    private string $b = '';
+    private ?string $b = null;
 
     #[ORM\Column]
     private string $label = '';
@@ -35,12 +37,12 @@ class LintelPair
         $this->a = $a;
     }
 
-    public function getB(): string
+    public function getB(): ?string
     {
         return $this->b;
     }
 
-    public function setB(string $b): void
+    public function setB(?string $b): void
     {
         $this->b = $b;
     }

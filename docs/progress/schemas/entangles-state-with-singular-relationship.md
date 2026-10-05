@@ -49,6 +49,7 @@ permanent note in [Divergences](#divergences).
 | [Fill from the related record](../../../packages/schemas/src/Components/Concerns/EntanglesStateWithSingularRelationship.php) | [`fillFromRelationship()` / `getStateFromRelatedRecord()`](../../../vendor/filament/schemas/src/Components/Concerns/EntanglesStateWithSingularRelationship.php) | done | — | [diverges](#the-subtree-is-read-and-written-per-declared-leaf-not-as-an-attribute-bag) |
 | [Save onto the existing related record](../../../packages/schemas/src/Components/Concerns/EntanglesStateWithSingularRelationship.php) | [`saveRelationshipsBeforeChildrenUsing()`'s `$record` arm](../../../vendor/filament/schemas/src/Components/Concerns/EntanglesStateWithSingularRelationship.php) | done | — | — |
 | [Construct the related record when there is none](../../../packages/schemas/src/Components/Concerns/EntanglesStateWithSingularRelationship.php) | [`saveRelationshipsBeforeChildrenUsing()`'s `new $relatedModel` arm](../../../vendor/filament/schemas/src/Components/Concerns/EntanglesStateWithSingularRelationship.php) | done | — | [semantics](#a-constructed-related-record-is-written-through-the-property-so-the-mapping-persists-it) |
+| [A constructed record whose assigned key is incomplete is refused by name](../../../packages/schemas/src/Components/Concerns/EntanglesStateWithSingularRelationship.php) | — (Laravel has no assigned composite key to leave incomplete) | done | — | [semantics](#a-constructed-record-whose-assigned-key-is-incomplete-is-refused-by-name) |
 | [Delete when the condition is false](../../../packages/schemas/src/Components/Concerns/EntanglesStateWithSingularRelationship.php) | [`$record?->delete()`](../../../vendor/filament/schemas/src/Components/Concerns/EntanglesStateWithSingularRelationship.php) | done | — | [diverges](#a-switched-off-relationship-nulls-the-property-and-removes-the-record-explicitly) |
 | [`hasRelationship()` / `getRelationshipName()`](../../../packages/schemas/src/Components/Concerns/EntanglesStateWithSingularRelationship.php) | [`hasRelationship()` / `getRelationshipName()`](../../../vendor/filament/schemas/src/Components/Concerns/EntanglesStateWithSingularRelationship.php) | done | — | [diverges](#the-association-core-is-shared-with-forms-relation-backed-fields) |
 | [Association resolution + refusals](../../../packages/schemas/src/Components/Concerns/BelongsToRelationship.php) | [`getRelationship()` / `getRelatedModel()`](../../../vendor/filament/schemas/src/Components/Concerns/EntanglesStateWithSingularRelationship.php) | done | — | [diverges](#the-relation-object-becomes-an-associationtarget-and-the-morphone-arm-is-cut) · [diverges](#the-association-core-is-shared-with-forms-relation-backed-fields) |
@@ -207,6 +208,47 @@ writes it onto the record through
 `cascade: ['persist']` inserts the new row at flush. Nothing is persisted by the
 component: a related record whose association declares no cascade needs the
 caller's own `persist()`, exactly as an unrelated entity would.
+
+### A constructed record whose assigned key is incomplete is refused by name
+
+Once the constructed record is written onto the owner, the save asks
+[`AssociationReader::hasIncompleteAssignedIdentifier()`](association-reader.md#an-incomplete-assigned-identifier-is-the-question-the-create-paths-ask)
+of it, and throws a `LogicException` when an assigned key component is still
+null or blank:
+
+> The [pair] relationship is saving a new [App\Entity\Pair] whose identifier is
+> incomplete, so no record key can be minted for it. Give every identifier field
+> a component inside it — enabled, dehydrated and required — or drop
+> relationship() and create the related record by hand after getData().
+
+No blank-key seam read this record before
+[M7 · 11](../roadmap.md#m7--composite-identifiers): the record check's blank pass
+descends identifier associations only, and the create seams read the root record
+alone. So a whitespace key half typed into a field over a nullable property —
+or a key half no field inside the group maps — passed `getData()`, the
+cascade inserted the row, and nothing could key it afterwards: the redirect and
+every listing failed on it. A field over a non-nullable key property never gets
+that far, since it is required on its own.
+
+It is read **after** the owner's setter runs, not before: a shared-key
+one-to-one held from its inverse side, whose setter syncs the owning side as
+Symfony's maker writes it, gets its whole key from that write. Read before it,
+the cap of a new base would be refused although the flush keys it. The refusal
+inherits the reader's exemptions — a single scalar key stays the application's
+`required()` to guard, and a class with a `prePersist` callback or entity
+listener is trusted to fill its key — and with them the
+[`Repeater`](../forms/repeater.md#a-new-item-whose-identifier-is-incomplete-is-refused-before-the-save-returns)'s
+recorded residual: a half such a callback leaves unfilled still reaches the
+table. As in the repeater, the record stays on the owner when the save throws,
+so only a flush the host never reaches could write it. An existing related
+record is never asked; its key is the changed-key pass's to guard.
+
+Pinned by
+[`EntanglesStateWithSingularRelationshipKeyTest`](../../../packages/schemas/tests/Integration/Components/Concerns/EntanglesStateWithSingularRelationshipKeyTest.php)
+— a whitespace and an empty half, an unmapped half, a filled pair that saves, a
+blank single scalar key left alone, an existing record left alone and the
+syncing setter that saves — and, through real `TextInput`s, by forms'
+[`EntangledIncompleteKeyTest`](../../../packages/forms/tests/Integration/Components/EntangledIncompleteKeyTest.php).
 
 ## Divergences
 

@@ -427,7 +427,10 @@ declaration becomes Symfony's own.
 ### A blank assigned key is refused before anything is written
 
 Since M7 · 7 a **new** record whose assigned key still has a blank component is
-refused before anything is written. A blank component is an empty or
+refused before anything is written — the record a save maps, with the records
+its identifier associations reach, the items a relationship `Repeater` adds and,
+since [M7 · 11](../roadmap.md#m7--composite-identifiers), the record a singular
+relationship constructs. A blank component is an empty or
 whitespace-only string, or an identifier association left unset or pointing at
 a record whose own assigned key is blank. Who refuses it depends on whether the
 form maps the blank field.
@@ -473,6 +476,14 @@ fix the form:
   recorded, not closed.
 - [`ReplicateAction`](../actions/replicate-action.md) refuses it after
   `beforeReplicaSaved()`.
+- A singular relationship's (`Group::relationship()`) constructed record was
+  read by no blank seam: a whitespace key half the group maps over a nullable
+  property, or one no field inside it maps, was inserted and the row could not
+  be keyed. Since [M7 · 11](../roadmap.md#m7--composite-identifiers) the save
+  refuses it by name inside `getData()`, once the record is written onto its
+  owner, under the
+  [`Repeater`'s rule](entangles-state-with-singular-relationship.md#a-constructed-record-whose-assigned-key-is-incomplete-is-refused-by-name)
+  and with its exemptions.
 
 M7 · 7's first form of this rule refused inside the mapping for every blank key
 field, filing an unmapped one under the schema's own state path. That pre-empted

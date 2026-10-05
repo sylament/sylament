@@ -192,9 +192,11 @@ trait EntanglesStateWithSingularRelationship
      * presence-gated exactly as the root edge gates its own, and leave the leaf
      * write; a load-only hook keeps its ordinary write.
      *
-     * @throws LogicException when the property cannot be nulled, or when the
+     * @throws LogicException when the property cannot be nulled, when the
      *                        association's target cannot be built without
-     *                        arguments
+     *                        arguments, or when a newly constructed related
+     *                        record's assigned identifier is still incomplete
+     *                        once it is written onto the record
      */
     public function saveStateToRelationship(object $record, mixed $state): void
     {
@@ -248,8 +250,18 @@ trait EntanglesStateWithSingularRelationship
             }
         }
 
-        if ($existing === null) {
-            $accessor->setOnRecord($record, $name, $related);
+        if ($existing !== null) {
+            return;
+        }
+
+        $accessor->setOnRecord($record, $name, $related);
+
+        if ($this->getAssociationReader()->hasIncompleteAssignedIdentifier($related)) {
+            throw new LogicException(sprintf(
+                'The [%s] relationship is saving a new [%s] whose identifier is incomplete, so no record key can be minted for it. Give every identifier field a component inside it — enabled, dehydrated and required — or drop relationship() and create the related record by hand after getData().',
+                $name,
+                $related::class,
+            ));
         }
     }
 

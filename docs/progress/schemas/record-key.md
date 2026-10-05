@@ -1519,7 +1519,9 @@ now decodes, each to the string it spells, so a **forged** key of such a field
 costs one statement that finds nothing where it used to cost none. Nothing is
 mis-keyed by that: the print-back rule holds there too, and one key still names
 one record. The fallback costs three or four conversions instead of one for a
-component the reader refuses, unmeasured, and only such a type pays. A reference to a class whose
+component the reader refuses or reads as another value, unmeasured, and only
+such a component pays — since M7 · 11 that includes a forged non-canonical
+spelling of any type, `05` for an `integer` half among them. A reference to a class whose
 every identifier field is scalar is still built at zero statements; one behind an
 association — a single derived identity onto such a target — is loaded, at one.
 

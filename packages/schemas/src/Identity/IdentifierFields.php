@@ -184,7 +184,7 @@ final readonly class IdentifierFields
             try {
                 $value = $type->convertToPHPValue($component, $platform);
             } catch (ConversionException) {
-                $value = $this->readThroughDatabaseForm($type, $component, $platform);
+                $value = null;
             }
 
             if (self::printable($value) !== $component) {

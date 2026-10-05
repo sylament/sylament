@@ -109,7 +109,7 @@ it('files a violation raised inside a singular relationship at the field that ma
         ->and($host->getErrorsForSchemaStatePath('data.author.name'))->toBe(['The author name is too short.']);
 });
 
-it('still files at the relationship a violation raised at a path no component inside it maps', function (): void {
+it("files at the schema's own path a violation raised at a path no component inside the relationship maps, since the layout component renders no error", function (): void {
     $entityManager = test()->getContainer()->get(EntityManagerInterface::class);
     $author = new ConstrainedAuthor();
     $author->setName('Ada');
@@ -129,7 +129,7 @@ it('still files at the relationship a violation raised at a path no component in
 
     $author->setName('Al');
 
-    expect(relatedRecordErrors($schema))->toBe(['data.author' => ['The author name is too short.']]);
+    expect(relatedRecordErrors($schema))->toBe(['data' => ['The author name is too short.']]);
 });
 
 it('refuses a moved key on the record a singular relationship holds, at its field', function (): void {

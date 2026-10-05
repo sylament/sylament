@@ -258,7 +258,10 @@ on the class — is answered by validating the object
 metadata into the per-field constraint build. The tail is
 `HasSchemas::validateSchemaRecord()`: `ValidatorInterface::validate($record)`,
 each violation's property path through the
-[translator](violation-path-translator.md), the messages merged into the same
+[translator](violation-path-translator.md) — filed under the component owning it
+when that component shows its own errors, at the schema's own path otherwise
+([why](violation-path-translator.md#a-message-is-filed-only-under-a-component-that-shows-its-own-errors))
+— the messages merged into the same
 per-schema bag `validateSchema()` fills, the schema key recorded sticky, and
 `ValidationException` thrown — the Symfony Form idiom (map, validate the object,
 flush only when valid). Class-level constraints come free that way, which is the
@@ -436,7 +439,13 @@ blank key field a component maps: the key fields holding a blank string first,
 then the identifier associations. An identifier association whose record's own
 key field is blank lists that field before itself — `spine.code`, then `spine` —
 so a form mapping the related record's key field gets the error under it, and one
-mapping only the association gets it under the association. A key field declared
+mapping only the association gets it under the association. A layout component
+entangling the association (`Group::relationship()`) counts as mapping it, but
+renders no error of its own, so since [M7 · 11](../roadmap.md#m7--composite-identifiers)
+the refusal lands at the schema's own state path instead, which the page and
+the action modal render above the form
+([why](violation-path-translator.md#a-message-is-filed-only-under-a-component-that-shows-its-own-errors));
+until then it was a 422 with no message on screen. A key field declared
 `dehydrated(false)` counts as mapped, since a component still maps it, so its
 typed value never reaching the record is refused under it. A blank field the
 form leaves out is skipped on the way to one it maps, and when no component maps

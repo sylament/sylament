@@ -6,6 +6,7 @@ namespace Sylament\Schemas\State;
 
 use Sylament\Schemas\Components\Component;
 use Sylament\Schemas\Components\Contracts\HasKeyedItems;
+use Sylament\Schemas\Components\Contracts\HasValidationConstraints;
 use Symfony\Component\PropertyAccess\Exception\InvalidPropertyPathException;
 use Symfony\Component\PropertyAccess\PropertyPath;
 
@@ -39,23 +40,14 @@ final readonly class ViolationPathTranslator
      */
     public function translate(string $violationPropertyPath): ?string
     {
-        try {
-            $propertyPath = new PropertyPath($violationPropertyPath);
-        } catch (InvalidPropertyPathException) {
-            // A class-level constraint carries the empty path, and a violation
-            // built by hand may carry one Symfony's own parser rejects: neither
-            // indexes the record graph, so no declared path can own it.
+        $match = $this->matchRecordPath($violationPropertyPath);
+
+        if ($match === null) {
             return null;
         }
 
-        $elements = $propertyPath->getElements();
-        $matchedDepth = $this->matchDepth($propertyPath);
+        [$propertyPath, $matchedDepth, $recordPath] = $match;
 
-        if ($matchedDepth === null) {
-            return null;
-        }
-
-        $recordPath = implode('.', array_slice($elements, 0, $matchedDepth));
         $statePath = filled($this->rootStatePath) ? $this->rootStatePath . '.' . $recordPath : $recordPath;
 
         $component = $this->recordPathMap[$recordPath];
@@ -85,6 +77,57 @@ final readonly class ViolationPathTranslator
         }
 
         return $statePath . '.' . implode('.', array_slice($remainder, 0, $declaredDepth));
+    }
+
+    /**
+     * The absolute state path a violation's message is shown under:
+     * translate()'s answer when the component owning it shows its own errors —
+     * a field declaring validation constraints, or a component keying items —
+     * and null when it shows none, as a layout component entangling a related
+     * record does, so the caller folds the message at the schema's own path.
+     */
+    public function translateToErrorPath(string $violationPropertyPath): ?string
+    {
+        $recordPath = $this->matchRecordPath($violationPropertyPath)[2] ?? null;
+
+        if ($recordPath === null) {
+            return null;
+        }
+
+        $component = $this->recordPathMap[$recordPath];
+
+        if (! $component instanceof HasValidationConstraints && ! $component instanceof HasKeyedItems) {
+            return null;
+        }
+
+        return $this->translate($violationPropertyPath);
+    }
+
+    /**
+     * The parsed violation path, how many of its leading elements the deepest
+     * declared record path covers, and that record path — or null when the
+     * path does not parse or no declared path covers it.
+     *
+     * @return array{PropertyPath, int, string}|null
+     */
+    private function matchRecordPath(string $violationPropertyPath): ?array
+    {
+        try {
+            $propertyPath = new PropertyPath($violationPropertyPath);
+        } catch (InvalidPropertyPathException) {
+            // A class-level constraint carries the empty path, and a violation
+            // built by hand may carry one Symfony's own parser rejects: neither
+            // indexes the record graph, so no declared path can own it.
+            return null;
+        }
+
+        $matchedDepth = $this->matchDepth($propertyPath);
+
+        if ($matchedDepth === null) {
+            return null;
+        }
+
+        return [$propertyPath, $matchedDepth, implode('.', array_slice($propertyPath->getElements(), 0, $matchedDepth))];
     }
 
     /**

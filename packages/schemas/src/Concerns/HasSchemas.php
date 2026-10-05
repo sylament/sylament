@@ -507,7 +507,7 @@ trait HasSchemas
         $errors = [];
 
         foreach ($violations as $violation) {
-            $path = $translator->translate($violation->getPropertyPath()) ?? $rootPath;
+            $path = $translator->translateToErrorPath($violation->getPropertyPath()) ?? $rootPath;
             $message = (string) $violation->getMessage();
 
             if (!in_array($message, $errors[$path] ?? [], true)) {

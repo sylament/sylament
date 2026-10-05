@@ -240,7 +240,7 @@ it('renders a violation inside a singular relationship under its field', functio
     'the related record re-keyed' => ['1', ['title' => 'Seal', 'serial' => 'P2'], 'data.seal.serial', 'This value cannot be changed.'],
 ]);
 
-it("characterizes: a violation on a singular relationship's record as a whole renders nowhere", function (): void {
+it("renders a violation on a singular relationship's record as a whole above the form", function (): void {
     [$client, $entityManager, $recorder] = portfolioSaveClient();
 
     $component = $this->createLiveComponent(EditPortfolio::class, ['record' => '1', 'panelId' => 'write'], client: $client);
@@ -256,14 +256,12 @@ it("characterizes: a violation on a singular relationship's record as a whole re
         $errors = $validationException->getErrors();
     }
 
-    // It folds onto the group's own path, and a group renders no error of its
-    // own path.
-    expect($errors)->toBe(['data.seal' => ['This seal is refused as a whole.']]);
+    expect($errors)->toBe(['data' => ['This seal is refused as a whole.']]);
 
     [$status, $html, $writes] = portfolioSave($component, $client, $entityManager, $recorder);
 
     expect($status)->toBe(422)
-        ->and(mb_substr_count($html, 'This seal is refused as a whole.'))->toBe(0)
+        ->and(mb_substr_count($html, 'This seal is refused as a whole.'))->toBe(1)
         ->and($writes)->toBe([]);
 });
 

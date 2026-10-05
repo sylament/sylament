@@ -1179,8 +1179,11 @@ dropped beneath a subtree owner, computed by the one walk that always computed
 them, and `getRecordViolationPathTranslator()` builds the translator over both.
 So `plaque.title` lands as `data.plaque.title`, under its field, with no contract
 member added. A class-level violation on the related record names no path inside
-it and still folds at the owner, where it still renders nowhere — a residue the
-[roadmap's ledger](../roadmap.md#m7--composite-identifiers) records. Pinned by
+it and still folds at the owner, which renders nothing, so since
+[M7 · 11](../roadmap.md#m7--composite-identifiers) the host files it at the
+schema's own path instead, where the page and the modal render it
+([why](violation-path-translator.md#a-message-is-filed-only-under-a-component-that-shows-its-own-errors)).
+Pinned by
 [`BelongsToRecordRelatedRecordTest`](../../../packages/schemas/tests/Integration/Concerns/BelongsToRecordRelatedRecordTest.php)
 and, rendered, by panels'
 [`EditRecordRelationshipsTest`](../../../packages/panels/tests/Integration/Resources/Pages/EditRecordRelationshipsTest.php).

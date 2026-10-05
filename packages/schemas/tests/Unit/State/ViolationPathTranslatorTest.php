@@ -5,8 +5,10 @@ declare(strict_types=1);
 namespace Sylament\Schemas\Tests\Unit\State;
 
 use Sylament\Schemas\State\ViolationPathTranslator;
+use Sylament\Schemas\Tests\Fixtures\Components\ConstrainedField;
 use Sylament\Schemas\Tests\Fixtures\Components\KeyedItemsOwner;
 use Sylament\Schemas\Tests\Fixtures\Components\StateField;
+use Sylament\Schemas\Tests\Fixtures\Components\StateGroup;
 use Sylament\Schemas\Tests\Fixtures\Components\SubtreeOwner;
 
 it('translates a declared leaf path onto the schema state path', function (): void {
@@ -160,3 +162,33 @@ it('ignores an index against a component that keys no items', function (): void 
 
     expect($translator->translate('meta[0].locale'))->toBe('data.meta');
 });
+
+it('answers the translated path as the error path when the owning component declares validation constraints', function (): void {
+    $translator = new ViolationPathTranslator(['spine.code' => ConstrainedField::make('code'), 'spine' => StateGroup::make()->statePath('spine')], 'data');
+
+    expect($translator->translateToErrorPath('spine.code'))->toBe('data.spine.code');
+});
+
+it('answers the item path as the error path when the owning component keys items', function (): void {
+    $translator = new ViolationPathTranslator([
+        'sections' => KeyedItemsOwner::make('sections')
+            ->itemKeys(['record-7'])
+            ->itemStatePaths(['heading']),
+    ], 'data');
+
+    expect($translator->translateToErrorPath('sections[0].heading'))->toBe('data.sections.record-7.heading');
+});
+
+it('answers no error path when the owning component shows no errors, though translate() names its path', function (): void {
+    $translator = new ViolationPathTranslator(['spine' => StateGroup::make()->statePath('spine')], 'data');
+
+    expect($translator->translate('spine.code'))->toBe('data.spine')
+        ->and($translator->translateToErrorPath('spine.code'))->toBeNull()
+        ->and($translator->translateToErrorPath('spine'))->toBeNull();
+});
+
+it('answers no error path for a path no declared path owns, the empty path or one Symfony cannot parse', function (string $path): void {
+    $translator = new ViolationPathTranslator(['title' => ConstrainedField::make('title')], 'data');
+
+    expect($translator->translateToErrorPath($path))->toBeNull();
+})->with(['unmapped' => 'publishedAt', 'empty' => '', 'unparseable' => 'title[', 'leading index' => '[0].title']);

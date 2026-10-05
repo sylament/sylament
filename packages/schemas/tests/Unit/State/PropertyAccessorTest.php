@@ -349,10 +349,10 @@ it('surfaces NoSuchPropertyException for a missing leaf setter on a record write
  * holding a value the leaf rule compares; `$rank` and `$active` take the `0`
  * and the `false` a blank write must not match.
  */
-function constructorSetRecord(?Category $section = null, int $rank = 5, bool $active = true): ConstructorSetRecord
+function constructorSetRecord(?Category $section = null, int $rank = 5, bool $active = true, string $host = 'example.com', array $codes = [1, 2]): ConstructorSetRecord
 {
     return new ConstructorSetRecord(
-        host: 'example.com',
+        host: $host,
         path: '/home',
         secret: 'sesame',
         rank: $rank,
@@ -361,6 +361,7 @@ function constructorSetRecord(?Category $section = null, int $rank = 5, bool $ac
         token: Uuid::fromString('0e6f2c1a-7b2d-4c3e-9f10-1a2b3c4d5e6f'),
         price: new Money(500, 'EUR'),
         section: $section ?? new Category(),
+        codes: $codes,
     );
 }
 
@@ -405,6 +406,7 @@ it('leaves a property no setter can change alone when it already holds the value
     'an equal date' => ['publishedAt', new DateTimeImmutable('2026-10-01 12:00')],
     'an equal Uid' => ['token', Uuid::fromString('0e6f2c1a-7b2d-4c3e-9f10-1a2b3c4d5e6f')],
     'an equal value object' => ['price', new Money(500, 'EUR')],
+    'an array of the same numbers written as numeric strings' => ['codes', ['1', '2']],
 ]);
 
 it('takes an empty string and a null for each other on a property no setter can change', function (): void {
@@ -438,8 +440,8 @@ it('compares a bool strictly and a null only with an empty string, where loose e
     'false over a held 0' => ['rank', 0, true, false, 'int', 'bool'],
 ]);
 
-it('refuses another value on a property no setter can change, naming the two types and never the values', function (string $path, mixed $value, string $held, string $written, array $printed): void {
-    $message = leafWriteRefusal(fn () => accessor()->setOnRecord(constructorSetRecord(), $path, $value));
+it('refuses another value on a property no setter can change, naming the two types and never the values', function (string $path, mixed $value, string $held, string $written, array $printed, ?ConstructorSetRecord $record = null): void {
+    $message = leafWriteRefusal(fn () => accessor()->setOnRecord($record ?? constructorSetRecord(), $path, $value));
 
     expect($message)->toBe(heldValueRefusal($path, $held, $written));
 
@@ -453,6 +455,9 @@ it('refuses another value on a property no setter can change, naming the two typ
     'another value object' => ['price', new Money(600, 'EUR'), Money::class, Money::class, ['500', '600', 'EUR']],
     'null over an int' => ['rank', null, 'int', 'null', ['5']],
     'null over a value object, as the nullable-branch pass writes it' => ['price', null, Money::class, 'null', ['500', 'EUR']],
+    'another numeric string, which PHP would compare as a number' => ['host', '7', 'string', 'string', ['007'], constructorSetRecord(host: '007')],
+    'an array holding another numeric string' => ['codes', ['007'], 'array', 'array', ['007'], constructorSetRecord(codes: ['7'])],
+    'an array holding 0 over a held false' => ['codes', [0], 'array', 'array', [], constructorSetRecord(codes: [false])],
 ]);
 
 it('refuses a property no setter can change that holds no value yet', function (string $path): void {

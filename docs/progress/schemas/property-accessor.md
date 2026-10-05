@@ -72,13 +72,16 @@ initialized collection met on the walk — the scalar-intermediate
 `LogicException`, and the pin that it names the object that rejected the array
 rather than the root record; the leaf rule for a property no setter can change —
 a writable leaf still written through its setter when it holds the value, an
-equal value left alone in seven shapes (a public readonly string, a private one
+equal value left alone in eight shapes (a public readonly string, a private one
 behind a getter, an `int` written as its numeric string, an identical bool, an
-equal date, an equal `Uid`, an equal value object), an empty string and a `null`
+equal date, an equal `Uid`, an equal value object, an array of `int`s written as
+their numeric strings), an empty string and a `null`
 taken for each other both ways round, a held `0` left alone under `0.0` and
 `'0'`, the four pairs PHP's `==` would match refused (`null` over a held `0`,
 `null` over a held `false`, `'x'` over a held `true`, `false` over a held `0`),
-another value refused naming the two types and neither value in six, a property holding
+another value refused naming the two types and neither value in nine — among them
+`'7'` over a held `'007'`, which PHP's `<=>` would call equal, `['007']` over a
+held `['7']`, and `[0]` over a held `[false]` — a property holding
 no value yet refused in both readable shapes, a record compared by identity —
 another instance refused though every field matches, a lazy one refused without
 being loaded, a proxy subclass read as the entity it extends — and a property it
@@ -210,23 +213,30 @@ the fourth.
 
 "The same value" is, in order: identical; `null` and `''`, either way round — the
 `null` a nullable key holds is what a blank field writes; two scalars, neither a
-bool, that compare equal — so `'5'` is the `5` an integer key holds and `0.0` the
-`0`; two arrays that compare equal; two objects of one class that is no record and
-compare equal — an equal date, `Uid` or value object; anything else is another
+bool and at least one an `int` or a `float`, that compare equal — so `'5'` is the
+`5` an integer key holds and `0.0` the `0`; two arrays with the same keys whose
+elements are each the same value by this same rule; two objects of one class that
+is no record and compare equal — an equal date, `Uid` or value object; anything else is another
 value. That is narrower than PHP's `==` on purpose: `==` would also take `null`
 for the `0` an integer holds and the `false` a boolean holds, and `'x'` for a held
 `true`, so a blank field over a held `0` or `false` would be left alone where it is
-now refused. A bool compares strictly, and `null` matches nothing but `''`. The
-array tier is PHP's array comparison, which compares the elements loosely — inside
-an array `false` still meets `0`, and an object element is compared by its fields.
-A **record** compares by identity alone, because comparing an entity reads its
+now refused. A bool compares strictly, and `null` matches nothing but `''`. Two
+strings compare strictly too: PHP compares two numeric strings as numbers, so
+`'007'` would meet `'7'`, `'1.50'` `'1.5'` and `'1e3'` `'1000'`, and a changed
+zero-padded key written over a readonly one would be left alone — the save
+reporting success, writing nothing, and the changed-key pass seeing no change.
+The number tier exists to bridge a type a form's state and the record disagree on,
+never two spellings of one. Two arrays are compared element by element under the
+same rule rather than by PHP's array `<=>`, which compares its elements loosely —
+`['007']` would meet `['7']` and `[false]` `[0]` — and compares an entity element by
+its fields. A **record** compares by identity alone, because comparing an entity reads its
 fields — which loads a lazy one and recurses without end through a bidirectional
 association, a PHP `Error` (*Nesting level too deep*). An identity is enough where it matters: the
 mapper's `getReference()` and a constructor's `find()` both answer the identity
 map's one instance, so a derived identity's readonly association half, set by the
 constructor and mapped by a `Select::relationship()`, is left alone.
 
-The equal-comparing tiers are written `($current <=> $value) === 0`, which answers
+The number and object tiers are written `($current <=> $value) === 0`, which answers
 exactly what `==` answers for every pair they compare. `==` itself cannot be
 written: the repository's PHP-CS-Fixer configuration enables the risky
 `strict_comparison` rule, so a `==` here would become `===` on the next
@@ -237,8 +247,8 @@ entity manager: its class, or a class it extends, carries Doctrine's `#[Entity]`
 attribute. The parent walk is what lets a proxy subclass — the class Doctrine
 generates when native lazy objects are off — answer as the entity it stands for;
 a native lazy object is of the entity's own class, and is compared without being
-loaded. An entity mapped in XML or PHP rather than by attribute takes the object
-tier's `<=>`: right in outcome, since two distinct entities differ in their identifier,
+loaded. An entity mapped in XML or PHP rather than by attribute — held directly,
+or as an element of an array — takes the object tier's `<=>`: right in outcome, since two distinct entities differ in their identifier,
 but it loads a lazy one and can recurse. `setAssociationOnRecord()` needs no such
 reading — its caller writes nothing but records and `null` there — so its single
 value compares by identity whatever the mapping.

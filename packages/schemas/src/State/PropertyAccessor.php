@@ -482,11 +482,13 @@ final readonly class PropertyAccessor
     /**
      * Whether a property no setter can change already holds what a write would
      * put there, in order: the identical value; `null` and `''`, either way
-     * round; two non-bool scalars that compare equal, so `'5'` is `5`; two
-     * arrays that compare equal; two objects of one class that is no record and
-     * compare equal. Anything else differs — a bool compares strictly, `null`
-     * matches nothing but `''`, and a record, or any object when
-     * `$comparesObjectsByIdentity` is set, only its own instance.
+     * round; two non-bool scalars, at least one an int or a float, that compare
+     * equal, so `'5'` is `5`; two arrays with the same keys whose elements are
+     * each the same value by this rule; two objects of one class that is no
+     * record and compare equal. Anything else differs — two strings compare
+     * strictly, a bool strictly, `null` matches nothing but `''`, and a record,
+     * or any object when `$comparesObjectsByIdentity` is set, only its own
+     * instance.
      */
     private function holdsSameValue(mixed $current, mixed $value, bool $comparesObjectsByIdentity): bool
     {
@@ -498,12 +500,16 @@ final readonly class PropertyAccessor
             return true;
         }
 
+        if (is_string($current) && is_string($value)) {
+            return false;
+        }
+
         if ($this->isNonBoolScalar($current) && $this->isNonBoolScalar($value)) {
             return ($current <=> $value) === 0;
         }
 
         if (is_array($current) && is_array($value)) {
-            return ($current <=> $value) === 0;
+            return $this->holdsSameElements($current, $value, $comparesObjectsByIdentity);
         }
 
         if (! is_object($current) || ! is_object($value) || $current::class !== $value::class) {
@@ -515,6 +521,19 @@ final readonly class PropertyAccessor
         }
 
         return ($current <=> $value) === 0;
+    }
+
+    /**
+     * @param array<mixed> $current
+     * @param array<mixed> $value
+     */
+    private function holdsSameElements(array $current, array $value, bool $comparesObjectsByIdentity): bool
+    {
+        if (count($current) !== count($value)) {
+            return false;
+        }
+
+        return array_all($current, fn ($element, $key): bool => array_key_exists((string) $key, $value) && $this->holdsSameValue($element, $value[$key], $comparesObjectsByIdentity));
     }
 
     private function isNonBoolScalar(mixed $value): bool

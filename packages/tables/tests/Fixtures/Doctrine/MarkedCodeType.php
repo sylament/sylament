@@ -17,7 +17,7 @@ use Doctrine\DBAL\Types\StringType;
  */
 final class MarkedCodeType extends StringType
 {
-    public const string NAME = 'marked_code';
+    public const string NAME = 'tables_marked_code';
 
     public function convertToDatabaseValue(mixed $value, AbstractPlatform $platform): ?string
     {

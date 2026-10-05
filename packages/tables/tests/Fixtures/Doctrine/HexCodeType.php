@@ -19,7 +19,7 @@ use Doctrine\DBAL\Types\Type;
  */
 final class HexCodeType extends Type
 {
-    public const string NAME = 'hex_code';
+    public const string NAME = 'tables_hex_code';
 
     public function getSQLDeclaration(array $column, AbstractPlatform $platform): string
     {

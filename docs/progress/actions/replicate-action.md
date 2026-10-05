@@ -49,7 +49,7 @@ recorded as Doctrine's), the Integration
 (a modal left on its original's key, a changed one, and a hook that derives the
 key) and
 [`RecordReplicatorTest`](../../../packages/actions/tests/Integration/Replication/RecordReplicatorTest.php)
-(the copy rules against real Doctrine metadata). Since M7 · 10, [`SubclassedAssociationReaderTest`](../../../packages/actions/tests/Integration/SubclassedAssociationReaderTest.php) pins both arms asking the container's own reader, rebound to a second manager. [`UnmappedHookDataTest`](../../../packages/actions/tests/Integration/UnmappedHookDataTest.php) pins the modal arm's refusal of a key `mutateDataUsing()` adds and no component maps.
+(the copy rules against real Doctrine metadata). Since M7 · 10, [`SubclassedAssociationReaderTest`](../../../packages/actions/tests/Integration/SubclassedAssociationReaderTest.php) pins both arms asking the container's own reader, rebound to a second manager. [`UnmappedHookDataTest`](../../../packages/actions/tests/Integration/UnmappedHookDataTest.php) pins the modal arm's refusal of a key `mutateDataUsing()` adds and no component maps. [`KeyAdviceTest`](../../../packages/actions/tests/Integration/KeyAdviceTest.php) pins the refusal of a modal mapping a key the record's constructor sets.
 
 ## Surface
 
@@ -293,6 +293,20 @@ nothing flushes after the refusal. A composite blank key detaches, its identity
 hash being `' '` rather than `''`. The Integration
 [`ReplicateActionTest`](../../../packages/actions/tests/Integration/ReplicateActionTest.php)
 pins both faces — the class callback and a no-op listener on the event manager.
+
+A key the record's **constructor** sets and no setter can change cannot be
+copied. The replicator builds the copy with `newInstance()`, which bypasses the
+constructor, so a `readonly` key property on the copy holds no value and nothing
+outside the class can give it one. A modal that maps the key field meets the
+[property accessor's rule](../schemas/property-accessor.md) for a property no
+setter can change: since [M7 · 10](../roadmap.md#m7--composite-identifiers) the
+mapping refuses by name a property that holds no value yet — naming the state
+path and the record class, never the value — where Symfony's
+`NoSuchPropertyException` spoke before, and nothing is written. There is no
+replicate construction hook (recorded on the roadmap); a `using()` closure that
+builds the copy through the constructor is the way to replicate such a record.
+Pinned by
+[`KeyAdviceTest`](../../../packages/actions/tests/Integration/KeyAdviceTest.php).
 
 There is no default replicate schema: no panels host answers `ReplicateAction`
 with the resource form, and neither do Filament's pages. A modal's operation is

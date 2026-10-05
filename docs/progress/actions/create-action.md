@@ -53,6 +53,7 @@ pins the record check asking the container's own reader — a subclass of it,
 rebound to a second manager — rather than one the action builds, for create,
 edit and both replicate arms.
 [`UnmappedHookDataTest`](../../../packages/actions/tests/Integration/UnmappedHookDataTest.php) pins the refusal of a key `mutateDataUsing()` adds and no component maps, and the four shapes it lets through, across create, edit and replicate.
+[`KeyAdviceTest`](../../../packages/actions/tests/Integration/KeyAdviceTest.php) pins the refusals' advice — `using()` for a class whose constructor requires arguments, `validateRecordKey()` when the modal switches the key rules off.
 
 ## Surface
 
@@ -110,7 +111,12 @@ is detached from the owner's collection on the way out, since nothing else takes
 it out again; a one-to-many attach touches no owner collection. The attach
 **after** keeps the relationship winning over a form field that maps the same
 association. With no relationship in force the body is the one `getData()` line
-it always was. And the order still serves `persist()`: Doctrine's
+it always was, under the class binding — preceded, since
+[M7 · 10](../roadmap.md#m7--composite-identifiers), by a check that refuses a
+class whose constructor requires arguments with the relationship arm's own
+`constructRecord()` message and advice, *build it in the action's using()
+closure*, where `getData()` answered with the schema's *through record()*, which
+an action cannot follow. And the order still serves `persist()`: Doctrine's
 `AssignedGenerator` throws `EntityMissingAssignedId` the moment it reads an
 unset identifier field, so a record whose identifier association *is* the
 relationship cannot be persisted before it is attached.
@@ -176,6 +182,17 @@ create save, and that a blank key field the modal maps on a class carrying a
 `prePersist` callback is the field error rather than this refusal; the
 many-to-many hand-back is pinned by tables'
 [`CreateActionRelationshipTest`](../../../packages/tables/tests/Integration/CreateActionRelationshipTest.php).
+
+A schema that switches the key rules off with
+[`validateRecordKey(false)`](../schemas/can-be-validated.md) skips the blank
+rule, so a blank key field it **maps** reaches this refusal too, where the
+advice to give every identifier field a field would be wrong. Since
+[M7 · 10](../roadmap.md#m7--composite-identifiers) the message then closes with
+*The schema switches the key rules off with validateRecordKey(false), so a key
+field it maps is not refused while blank; switch them back on to have the blank
+field refused under it.* With the rules on, the message is unchanged. Pinned by
+[`KeyAdviceTest`](../../../packages/actions/tests/Integration/KeyAdviceTest.php),
+beside the plain arm's construction refusal naming `using()`.
 
 ### The record check reads the container's reader, rebound; the relationship arm keeps the action's own
 

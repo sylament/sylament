@@ -6,6 +6,7 @@ namespace Sylament\Actions;
 
 use Closure;
 use LogicException;
+use ReflectionClass;
 use Sylament\Actions\Concerns\CanCustomizeProcess;
 use Sylament\Actions\Concerns\RefusesUnmappedData;
 use Sylament\Schemas\Schema;
@@ -173,7 +174,7 @@ class CreateAction extends Action
      * @param array<string, mixed> $data
      * @param class-string $recordClass
      *
-     * @throws LogicException when the hook added a path no component maps, or when the persisted record's assigned key is still blank
+     * @throws LogicException when the hook added a path no component maps, when the record class requires constructor arguments, or when the persisted record's assigned key is still blank
      */
     private function createRecord(array $data, Schema $schema, string $recordClass): object
     {
@@ -210,6 +211,8 @@ class CreateAction extends Action
 
             $reader->attach($relationship, $record);
         } else {
+            $this->refuseUnbuildableRecordClass($recordClass);
+
             $record = $schema->record($recordClass)->getData($data);
         }
 
@@ -223,14 +226,39 @@ class CreateAction extends Action
             $manager->detach($record);
 
             throw new LogicException(sprintf(
-                "The [%s] action built a [%s] whose identifier is still blank after persist(), so it was not saved. Give every identifier field a field in the action's schema() — a Hidden one for a value the user should not type — or fill it in a prePersist listener.",
+                "The [%s] action built a [%s] whose identifier is still blank after persist(), so it was not saved. Give every identifier field a field in the action's schema() — a Hidden one for a value the user should not type — or fill it in a prePersist listener.%s",
                 $this->getName(),
                 $record::class,
+                $schema->isRecordKeyValidated() ? '' : ' The schema switches the key rules off with validateRecordKey(false), so a key field it maps is not refused while blank; switch them back on to have the blank field refused under it.',
             ));
         }
 
         $manager->flush();
 
         return $record;
+    }
+
+    /**
+     * Refuse, naming `using()`, a record class whose constructor requires
+     * arguments: the plain arm maps under the class binding, where `getData()`
+     * would construct it and refuse with the schema's own advice, which an
+     * action cannot follow. `constructRecord()` words the refusal, as it does
+     * for the relationship arm.
+     *
+     * @param class-string $recordClass
+     *
+     * @throws LogicException when the class's constructor requires arguments
+     */
+    private function refuseUnbuildableRecordClass(string $recordClass): void
+    {
+        $constructor = new ReflectionClass($recordClass)->getConstructor();
+
+        if ($constructor !== null && $constructor->getNumberOfRequiredParameters() > 0) {
+            $this->getPropertyAccessor()->constructRecord(
+                $recordClass,
+                sprintf('a new record for the [%s] action', $this->getName()),
+                "build it in the action's using() closure.",
+            );
+        }
     }
 }

@@ -115,3 +115,39 @@ it('files each taken pair of a relationship repeater under the halves of its own
         ->and(mb_substr_count(renderToHtml($schema), '<li class="sy-fo-field-error-message">This value is already used.</li>'))->toBe(4)
         ->and($entityManager->getConnection()->fetchAllAssociative('SELECT bed, slot FROM Planter'))->toBe([]);
 });
+
+it('files a taken pair under the one half a relationship repeater item maps and nothing at the item itself', function (): void {
+    $entityManager = $this::getContainer()->get(EntityManagerInterface::class);
+
+    $stored = new Planter();
+    $stored->setBed('north');
+    $stored->setSlot('1');
+    $stored->setCrop('basil');
+
+    $entityManager->persist($stored);
+    $entityManager->flush();
+    $entityManager->clear();
+
+    $planter = new Planter();
+    $planter->setBed('south');
+    $planter->setSlot('1');
+
+    $greenhouse = new Greenhouse();
+    $greenhouse->addPlanter($planter);
+
+    [$schema, $host] = takenPairWire($greenhouse, [
+        TextInput::make('name'),
+        Repeater::make('planters')->relationship()->components([TextInput::make('bed'), TextInput::make('crop')]),
+    ]);
+
+    $itemKey = array_key_first($host->data['planters']);
+
+    $host->data['name'] = 'North';
+    $host->data['planters'][$itemKey]['bed'] = 'north';
+    $host->data['planters'][$itemKey]['crop'] = 'thyme';
+
+    expect(takenPairRefusal($schema))->toBe([
+        'data.planters.' . $itemKey . '.bed' => ['This value is already used.'],
+    ])
+        ->and($entityManager->getConnection()->fetchAllAssociative('SELECT bed, slot, crop FROM Planter'))->toBe([['bed' => 'north', 'slot' => '1', 'crop' => 'basil']]);
+});

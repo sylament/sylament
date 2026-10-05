@@ -549,7 +549,9 @@ trait HasSchemas
     /**
      * Each taken record's candidates a component of the schema maps or, where it
      * maps none of a record's, that record's first: a record's candidates share
-     * the property path up to their last segment.
+     * the property path up to their last segment, and a candidate that
+     * translates only to the record's own path, through the component mapping
+     * the record, is not mapped.
      *
      * @param array<string, string> $candidates the refusal, keyed by each candidate field, a taken record's together in identifier order
      *
@@ -571,8 +573,9 @@ trait HasSchemas
 
         $refusals = [];
 
-        foreach ($byRecord as $recordCandidates) {
-            $mapped = array_filter($recordCandidates, static fn (string $field): bool => $translator->translate($field) !== null, ARRAY_FILTER_USE_KEY);
+        foreach ($byRecord as $prefix => $recordCandidates) {
+            $own = $prefix === '' ? null : $translator->translate($prefix);
+            $mapped = array_filter($recordCandidates, static fn (string $field): bool => ($translation = $translator->translate($field)) !== null && $translation !== $own, ARRAY_FILTER_USE_KEY);
             $refusals = [...$refusals, ...($mapped === [] ? array_slice($recordCandidates, 0, 1, true) : $mapped)];
         }
 

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Sylament\Actions;
 
 use Closure;
+use Doctrine\ORM\ORMInvalidArgumentException;
 use LogicException;
 use ReflectionClass;
 use Sylament\Actions\Concerns\CanCustomizeProcess;
@@ -168,7 +169,9 @@ class CreateAction extends Action
      * reader, rebound to the manager the flush writes through. A record whose
      * assigned key is still blank once `persist()` has run every prePersist
      * listener is refused by name before the flush, handed back by a
-     * many-to-many owner and taken back out of the unit of work.
+     * many-to-many owner and taken back out of the unit of work — except one
+     * whose whole key flattens to `''`, which Doctrine cannot take back and
+     * which stays scheduled.
      *
      * @param array<string, mixed> $data
      * @param class-string $recordClass
@@ -222,7 +225,11 @@ class CreateAction extends Action
                 $this->getAssociationReader()->detach($relationship, $record);
             }
 
-            $manager->detach($record);
+            try {
+                $manager->detach($record);
+            } catch (ORMInvalidArgumentException) {
+                // Doctrine can neither detach nor remove a persisted entity whose identity hash is '': it stays scheduled, and nothing flushes after the refusal.
+            }
 
             throw new LogicException(sprintf(
                 "The [%s] action built a [%s] whose identifier is still blank after persist(), so it was not saved. Give every identifier field a field in the action's schema() — a Hidden one for a value the user should not type — or fill it in a prePersist listener.%s",

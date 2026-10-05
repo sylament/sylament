@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Sylament\Panels\Resources\Pages;
 
 use Doctrine\ORM\EntityManagerInterface;
+use Doctrine\ORM\ORMInvalidArgumentException;
 use LogicException;
 use Sylament\Actions\Action;
 use Sylament\Actions\ActionGroup;
@@ -307,8 +308,10 @@ abstract class CreateRecord extends Page
      * association the mapping refuses to leave empty would otherwise fail the
      * write rather than the form. A record whose assigned key is still blank
      * once `persist()` has run every prePersist listener is refused by name
-     * before the flush and taken back out of the unit of work; the form's own
-     * reader, rebound to the page's manager, answers that read.
+     * before the flush and taken back out of the unit of work — except one
+     * whose whole key flattens to `''`, which Doctrine cannot take back and
+     * which stays scheduled; the form's own reader, rebound to the page's
+     * manager, answers that read.
      *
      * @throws LogicException when the persisted record's assigned key is still blank
      */
@@ -327,7 +330,11 @@ abstract class CreateRecord extends Page
         $form = $this->getSchema('form');
 
         if ($form->getAssociationReader()->withEntityManager($entityManager)->hasBlankAssignedIdentifier($record)) {
-            $entityManager->detach($record);
+            try {
+                $entityManager->detach($record);
+            } catch (ORMInvalidArgumentException) {
+                // Doctrine can neither detach nor remove a persisted entity whose identity hash is '': it stays scheduled, and nothing flushes after the refusal.
+            }
 
             throw new LogicException(sprintf(
                 'The resource page [%s] built a [%s] whose identifier is still blank after persist(), so it was not saved. Give every identifier field a form field — a Hidden one for a value the user should not type — or fill it in a prePersist listener, in makeRecord(), or in handleRecordCreation() before calling the parent.%s',

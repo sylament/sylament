@@ -176,8 +176,21 @@ action's schema() — a Hidden one for a value the user should not type — or f
 it in a prePersist listener.* Nothing is flushed. Before the throw, a
 many-to-many owner gives the record back through the reader's `detach()`, as the
 mapping's own refusal already does, and the record is detached from the manager,
-so a later flush in the same request does not insert it. Before M7 · 7 the row
-was written with its blank key half. Pinned by
+so a later flush in the same request does not insert it — with one exception
+Doctrine makes. A record whose whole key flattens to `''` — a single derived
+identity whose target's single string key is still `''` — is filed under an
+identity hash of `''`, which Doctrine can neither detach nor remove, the shape
+[`ReplicateAction` already meets](replicate-action.md#a-replica-keeps-its-parent-and-one-whose-key-is-still-incomplete-is-refused-by-name).
+Until [M7 · 11](../roadmap.md#m7--composite-identifiers) the `detach()` raised
+Doctrine's *Entity has no identity, therefore remove from identity map cannot be
+performed* in place of the named refusal; the action now catches it and throws
+the named refusal all the same. Nothing is written, since nothing flushes after
+the refusal, but that record stays scheduled for the rest of the request. Pinned by
+[`CreateActionBlankIdentityHashTest`](../../../packages/actions/tests/Integration/CreateActionBlankIdentityHashTest.php),
+over a record whose no-argument constructor builds the record it derives from;
+panels' create page catches the same refusal, pinned by its
+[`CreateRecordBlankIdentityHashTest`](../../../packages/panels/tests/Integration/Resources/Pages/CreateRecordBlankIdentityHashTest.php).
+Before M7 · 7 the row was written with its blank key half. Pinned by
 [`CreateActionBlankKeyTest`](../../../packages/actions/tests/Integration/CreateActionBlankKeyTest.php),
 which also pins that a global `prePersist` listener filling the key lets the
 create save, and that a blank key field the modal maps on a class carrying a

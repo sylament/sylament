@@ -79,9 +79,9 @@ their numeric strings), an empty string and a `null`
 taken for each other both ways round, a held `0` left alone under `0.0` and
 `'0'`, the four pairs PHP's `==` would match refused (`null` over a held `0`,
 `null` over a held `false`, `'x'` over a held `true`, `false` over a held `0`),
-another value refused naming the two types and neither value in nine — among them
+another value refused naming the two types and neither value in ten — among them
 `'7'` over a held `'007'`, which PHP's `<=>` would call equal, `['007']` over a
-held `['7']`, and `[0]` over a held `[false]` — a property holding
+held `['7']`, `[0]` over a held `[false]`, and `[1, 2, 3]` over a held `[1, 2]` — a property holding
 no value yet refused in both readable shapes, a record compared by identity —
 another instance refused though every field matches, a lazy one refused without
 being loaded, a proxy subclass read as the entity it extends — and a property it

@@ -458,6 +458,7 @@ it('refuses another value on a property no setter can change, naming the two typ
     'another numeric string, which PHP would compare as a number' => ['host', '7', 'string', 'string', ['007'], constructorSetRecord(host: '007')],
     'an array holding another numeric string' => ['codes', ['007'], 'array', 'array', ['007'], constructorSetRecord(codes: ['7'])],
     'an array holding 0 over a held false' => ['codes', [0], 'array', 'array', [], constructorSetRecord(codes: [false])],
+    'an array holding one element more' => ['codes', [1, 2, 3], 'array', 'array', [], constructorSetRecord()],
 ]);
 
 it('refuses a property no setter can change that holds no value yet', function (string $path): void {

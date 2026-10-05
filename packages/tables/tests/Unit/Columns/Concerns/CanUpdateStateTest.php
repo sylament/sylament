@@ -353,7 +353,7 @@ function identifierWriteRig(string $class): array
     return [$entityManager, $recorder, $table];
 }
 
-it('refuses a changed identifier field with the bare message, puts the key back and runs no statement', function (string $class, array $criteria, Closure $column, string $input, Closure $key, mixed $storedKey, string $sql, array $rows): void {
+it("refuses a changed identifier field with the record check's message, puts the key back and runs no statement", function (string $class, array $criteria, Closure $column, string $input, Closure $key, mixed $storedKey, string $sql, array $rows): void {
     [$entityManager, $recorder, $table] = identifierWriteRig($class);
     $record = $entityManager->getRepository($class)->findOneBy($criteria) ?? throw new LogicException('The seeded record went missing.');
     $recorder->reset();

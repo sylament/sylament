@@ -192,8 +192,8 @@ put back and before any statement. And a column mounted to no table can no
 longer write through the default arm: it has no reader to rebind, so
 `getTable()` throws *"is not mounted to a table"* where the write used to fall
 back on the manager registry. No host reaches that case — every cell renders
-from a table, and `getUpdateStateError()` asks the table unconditionally — so it
-is recorded rather than kept.
+from a table, and `getUpdateStateError()` asks the table for every keyed cell —
+so it is recorded rather than kept.
 
 It is the changed-key pass alone: a cell writes a managed record, so there is no
 new record whose key could be taken. A cell writing the same key back in another

@@ -1107,8 +1107,10 @@ With the rules on, the message is the one above, byte for byte.
 `SelectOptionDataTest` pins both forms. The switch lifts the key pass alone: a
 key field over a non-nullable property is still
 [required by the record](can-be-validated.md#requirement-is-derived-from-the-records-write-side-types),
-so it reaches this check blank only once it declares `required(false)`, as the
-test's does.
+so it reaches this check blank only when it is not required — it declares
+`required(false)` (over a non-nullable property its blank must also survive
+dehydration as a string, as the test's whitespace does, since a null cannot be
+written there), or its property is nullable.
 
 It is a developer error rather than validation — the fix is a missing field in
 `createOptionForm()`, not something an end user can supply — so nothing is

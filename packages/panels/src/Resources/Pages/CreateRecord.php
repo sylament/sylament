@@ -11,7 +11,6 @@ use Sylament\Actions\ActionGroup;
 use Sylament\Notifications\Notification;
 use Sylament\Panels\Pages\Concerns\HasUnsavedDataChangesAlert;
 use Sylament\Schemas\Schema;
-use Sylament\Schemas\State\AssociationReader;
 use Sylament\Support\Enums\Operation;
 use Sylament\Support\Exceptions\Halt;
 use Symfony\Component\HttpFoundation\RedirectResponse;
@@ -47,6 +46,15 @@ abstract class CreateRecord extends Page
     public function setRecordPersistence(EntityManagerInterface $entityManager): void
     {
         $this->entityManager = $entityManager;
+    }
+
+    /**
+     * @throws LogicException when the page was built outside the container
+     */
+    private function requireEntityManager(): EntityManagerInterface
+    {
+        return $this->entityManager
+            ?? throw new LogicException(sprintf('The resource page [%s] was built outside the container, so it holds no entity manager; register it as an autowired service.', static::class));
     }
 
     /**
@@ -222,7 +230,9 @@ abstract class CreateRecord extends Page
      * The state mapped onto the record {@see makeRecord()} builds, called once.
      * One created under a parent joins it before the mapping, so the record
      * check that ends the mapping sees an identifier field the parent fills; the
-     * form is bound to the made record for the mapping alone.
+     * form is bound to the made record for the mapping alone, and that check
+     * reads the form's own reader, rebound to the manager the page writes
+     * through.
      *
      * @param array<string, mixed> $data
      *
@@ -251,6 +261,8 @@ abstract class CreateRecord extends Page
             $resource->attachRecordToParent($record, $parentRecord);
         }
 
+        $schema->setAssociationReader($schema->getAssociationReader()->withEntityManager($this->requireEntityManager()));
+
         $binding = $schema->getRecord() ?? $schema->getRecordClass();
 
         try {
@@ -265,14 +277,14 @@ abstract class CreateRecord extends Page
      * association the mapping refuses to leave empty would otherwise fail the
      * write rather than the form. A record whose assigned key is still blank
      * once `persist()` has run every prePersist listener is refused by name
-     * before the flush and taken back out of the unit of work.
+     * before the flush and taken back out of the unit of work; the form's own
+     * reader, rebound to the page's manager, answers that read.
      *
      * @throws LogicException when the persisted record's assigned key is still blank
      */
     protected function handleRecordCreation(object $record): object
     {
-        $entityManager = $this->entityManager
-            ?? throw new LogicException(sprintf('The resource page [%s] was built outside the container, so it holds no entity manager; register it as an autowired service.', static::class));
+        $entityManager = $this->requireEntityManager();
 
         $parentRecord = $this->getParentRecord();
 
@@ -282,7 +294,7 @@ abstract class CreateRecord extends Page
 
         $entityManager->persist($record);
 
-        if (new AssociationReader($entityManager)->hasBlankAssignedIdentifier($record)) {
+        if ($this->getSchema('form')->getAssociationReader()->withEntityManager($entityManager)->hasBlankAssignedIdentifier($record)) {
             $entityManager->detach($record);
 
             throw new LogicException(sprintf(

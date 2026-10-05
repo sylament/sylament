@@ -52,6 +52,15 @@ abstract class EditRecord extends Page
     }
 
     /**
+     * @throws LogicException when the page was built outside the container
+     */
+    private function requireEntityManager(): EntityManagerInterface
+    {
+        return $this->entityManager
+            ?? throw new LogicException(sprintf('The resource page [%s] was built outside the container, so it holds no entity manager; register it as an autowired service.', static::class));
+    }
+
+    /**
      * @param array<string, string> $parentRecords
      */
     public function mount(int|string $record, array $parentRecords = []): void
@@ -123,6 +132,8 @@ abstract class EditRecord extends Page
             });
 
             $data = $this->mutateFormDataBeforeSave($data);
+
+            $schema->setAssociationReader($schema->getAssociationReader()->withEntityManager($this->requireEntityManager()));
 
             $this->handleRecordUpdate($schema->getData($data));
 
@@ -272,8 +283,7 @@ abstract class EditRecord extends Page
 
     protected function handleRecordUpdate(object $record): object
     {
-        $entityManager = $this->entityManager
-            ?? throw new LogicException(sprintf('The resource page [%s] was built outside the container, so it holds no entity manager; register it as an autowired service.', static::class));
+        $entityManager = $this->requireEntityManager();
 
         $entityManager->persist($record);
         $entityManager->flush();

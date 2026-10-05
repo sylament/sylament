@@ -1155,9 +1155,10 @@ property, set by `create()` and read by `getRedirectUrl()` a few lines later,
 which is its whole life. `#[Required] setRecordPersistence(EntityManagerInterface)`
 is the persistence hop Filament does not need, because an Eloquent model saves
 itself; it is a setter rather than a constructor argument so a subclass declaring
-its own constructor never repeats it, and `handleRecordCreation()` opens with the
+its own constructor never repeats it, and a save that finds it unset throws the
 same container-registration `LogicException`
-[`getResourceInstance()`](#resource-pages) throws. `EditRecord` declares that
+[`getResourceInstance()`](#resource-pages) throws, before anything is mapped
+(`handleRecordCreation()` threw it after the mapping until M7 · 10). `EditRecord` declares that
 setter again rather than sharing a trait — two classes, and Filament keeps its
 record handlers per page too.
 
@@ -1337,6 +1338,24 @@ half and the redirect failed to mint its key. Pinned by
 which also pins that a global `prePersist` listener filling the key half lets the
 create save.
 
+**Both key reads ask the form's own reader, bound to the page's manager.** Before
+the mapping, `mapRecordForCreation()` sets the form's association reader to a
+clone of itself bound to the manager `setRecordPersistence()` injected —
+[`withEntityManager()`](../schemas/association-reader.md) — so the record check
+that ends `getData()` reads the unit of work and the database the flush writes
+to, and `handleRecordCreation()`'s blank-key read asks the form's reader rebound
+the same way, where it built a `new AssociationReader($entityManager)` until
+[M7 · 10](../roadmap.md#m7--composite-identifiers). So a reader service an
+application subclassed or decorated is the one both reads ask — a decorator that
+delegates must override `withEntityManager()` to rebind what it delegates to —
+and a page that overrides `setRecordPersistence()` with another manager is checked
+against that manager, where the check used to read the container's default while
+the flush wrote elsewhere. The bound reader is not put back afterwards, as
+`CreateAction`'s is not: a later read in the request asks a clone bound to the same
+manager. Pinned by
+[`RecordPageReaderTest`](../../../packages/panels/tests/Integration/Resources/Pages/RecordPageReaderTest.php),
+which hands the page a second manager and a subclassed reader.
+
 **The template.** `$template` points at the shared
 [form variant](form-actions.md), `partials/Page/form.html.twig`, which fills the
 chrome's `content` block with a `<form class="sy-pa-form">` bound by
@@ -1454,7 +1473,7 @@ The lifecycle, ours against Filament's:
 | transaction | `beginDatabaseTransaction()` | — deferred |
 | validate | `callHook('beforeValidate')` → `$this->form->getState(afterValidate: …)` | same, and the callback is Filament's pair: `callHook('afterValidate')` then `callHook('beforeSave')` |
 | mutate | `mutateFormDataBeforeSave($data)` | same — **after** `beforeSave`, which fired inside the state read |
-| write | `handleRecordUpdate($record, $data)` → `callHook('afterSave')` | `handleRecordUpdate($schema->getData($data))` → `$schema->loadStateFromRelationships()` → `callHook('afterSave')` — `persist()` + `flush()`, then the relationship-backed re-read |
+| write | `handleRecordUpdate($record, $data)` → `callHook('afterSave')` | the form's reader bound to the page's manager → `handleRecordUpdate($schema->getData($data))` → `$schema->loadStateFromRelationships()` → `callHook('afterSave')` — `persist()` + `flush()`, then the relationship-backed re-read |
 | events | `RecordUpdated`, `RecordSaved` | — no event layer |
 | remember | `rememberData()` | same, through [`HasUnsavedDataChangesAlert`](../../../packages/panels/src/Pages/Concerns/HasUnsavedDataChangesAlert.php) |
 | notify | `getSavedNotification()?->send()` when `$shouldSendSavedNotification` | `getSavedNotification()?->send()` |
@@ -1464,6 +1483,14 @@ The ladder is wrapped in the create page's `catch (Halt)` exactly as described
 there, and the `EditHookedArticle` fixture's `$haltsBeforeSave` arm is what pins
 it: the hooks that ran are `beforeValidate`, `afterValidate`, `beforeSave`, and
 the row is untouched.
+
+Before the mapping, `save()` binds the form's association reader to the manager
+the page writes through, as the create page does — a
+[`withEntityManager()`](../schemas/association-reader.md) clone of whatever reader
+the form holds — so the changed-, blank- and taken-key passes that end
+`getData()` read the unit of work and the database the flush writes to. Until
+[M7 · 10](../roadmap.md#m7--composite-identifiers) they read the form's unbound
+reader on the container's default manager.
 
 `getData($data)` is where the state reaches the record, and it **mutates before
 it can refuse**: a record-level violation

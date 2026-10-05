@@ -496,16 +496,21 @@ half no component maps reaches the table, recorded in
 [repeater.md](../forms/repeater.md#a-new-item-whose-identifier-is-incomplete-is-refused-before-the-save-returns)
 and on [the roadmap's ledger](../roadmap.md#m7--composite-identifiers).
 
-Three callers, all refusing **before anything is flushed**: `Select`'s
+Four callers, all refusing **before anything is flushed**: `Select`'s
 `createOptionUsing` default, which asks before `persist()`, `Repeater`'s
 relationship save, which refuses after the collection write and before the item-key
-map is re-read, and `ReplicateAction::replicateRecord()`, which asks after
-`beforeReplicaSaved()` and before `persist()`. Both name the field list that would fix it. Neither is validation:
+map is re-read, `ReplicateAction::replicateRecord()`, which asks after
+`beforeReplicaSaved()` and before `persist()`, and, since
+[M7 · 11](../roadmap.md#m7--composite-identifiers), a singular relationship's
+`saveStateToRelationship()`, which asks of a related record it constructed once
+that record is written onto its owner
+([entangles-state-with-singular-relationship.md](entangles-state-with-singular-relationship.md)).
+All four name the fields that would fix it. None is validation:
 a taken key, a changed key half and two new records claiming one key are the
 record check's since [M7 · 6](../roadmap.md#m7--composite-identifiers)
 ([changed](#a-changed-identifier-is-put-back-and-refused-and-costs-no-statement),
 [taken](#a-taken-identifier-is-looked-up-once-per-new-record-after-the-records-own-constraints-pass))
-— and none of the three restores the
+— and none of the four restores the
 in-memory graph on the way out: a refusal here is a developer error that ends the
 request, nothing has been flushed, and the two write paths that could have
 persisted something have not run.

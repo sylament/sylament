@@ -155,10 +155,15 @@ Filament's no-fetch arm hands the plucked keys straight to
 `$relationship->detach($records)`, which is one `DELETE FROM pivot WHERE … IN (…)`
 and returns the affected row count. The port cannot answer that way: **DQL cannot
 target a join table** — it addresses entities, and a many-to-many join table is
-mapped by no entity — and the toolkit writes no raw SQL. Going through DBAL was
-considered and rejected: quoting the join table and its two columns correctly
-means re-implementing Doctrine's `QuoteStrategy` against the same mapping the ORM
-already owns, and getting it subtly wrong is a data bug rather than a failure.
+mapped by no entity — and the detach arm writes no raw SQL either. The toolkit
+does write one DBAL statement, `DissociateBulkAction`'s `UPDATE` where a mapped-by
+spans several join columns, naming its table and columns through Doctrine's own
+`QuoteStrategy`
+([dissociate-action.md](dissociate-action.md#the-by-key-arm-is-a-dql-update-and-a-dbal-one-where-the-foreign-key-spans-several-columns)),
+so quoting is not the obstacle. What keeps the detach on references is the state
+beside the table: a `detach()` per reference keeps the unit of work's loaded
+collections and the second-level cache in step with the join rows it removes,
+and a join-table `DELETE` would bypass both.
 
 So the arm builds a **reference** per selected key
 ([`AssociationReader::getReference()`](../schemas/association-reader.md#getreference-decodes-first-and-then-picks-its-route)) and runs
@@ -172,11 +177,16 @@ where the map is cold, so the route is not a refinement — without it a
 derived-identity selection 500s on the first request after a page load. The arm
 is reached only where a host asks for it: `fetchSelectedRecords()` defaults to
 **true**, so the shipped default hydrates and this key route is opt-in. What it buys is what the flag promises:
-the selected rows are never `SELECT`ed — the end-to-end test asserts the contrast,
-the fetching arm running a hydrating selection over the keys and this one running
-none. The owning collection still loads once, which is the price of writing
-through the domain's remover rather than around it, and the same price a single
-`DetachAction` pays.
+on the owning side, the selected rows are never `SELECT`ed on their own — the
+end-to-end test asserts the contrast, the fetching arm running a hydrating
+selection over the keys and this one running none. The owning collection still
+loads once, which is the price of writing through the domain's remover rather
+than around it, and the same price a single `DetachAction` pays. On the
+**inverse** side the reader writes through the owning side, which is each
+selected record's own collection, so each reference is initialised: one
+`SELECT` of the row per key, where the fetching arm reads them all in one
+statement, and one collection load per key on either arm — the flag costs
+statements there rather than saving them.
 
 The reported count is the number of records the loop detached, not an affected-row
 count — there is no statement to read one off. A key naming a row that was already

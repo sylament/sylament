@@ -426,12 +426,12 @@ the tiebreaker off; both tiebreaker suppressions, the qualified key and the
 joined `artist.id` one; `defaultKeySort(false)` leaving no key ordering at all;
 and a `query()`-authored `orderBy` staying in front of everything the table adds.
 Three more pin the composite tiebreak. A sorted `Shortcut` query appends
-`ORDER BY shortcut.label asc, shortcut.host asc, shortcut.path asc` — every
+`ORDER BY shortcut.label ASC, shortcut.host ASC, shortcut.path ASC` — every
 identifier field the user's order did not already name, in mapping order, at the
 sort's own direction. A query that already orders `shortcut.path DESC` gets only
-`shortcut.host asc` appended, with `shortcut.path` named exactly once, which the
+`shortcut.host ASC` appended, with `shortcut.path` named exactly once, which the
 case asserts by counting occurrences. And a `Residency` query appends
-`ORDER BY residency.venue asc, residency.season asc` — the **plain association
+`ORDER BY residency.venue ASC, residency.season ASC` — the **plain association
 path** rather than `IDENTITY(residency.venue)`, which is what keeps the dedupe
 working by string equality against the spelling
 `ColumnPathResolver::resolveOrderable()` emits — then executes, so Doctrine
@@ -1219,7 +1219,7 @@ Each has a [row](#surface) or a
 Since M7 · 7, `getSelectedTableRecords()` reads a selection over a record class keyed by several fields in batches of `IdentifierConstraint::batch()`, at most 500 keys a statement — 500 for two to four identifier fields, fewer above that ([the chunk rule](../schemas/record-key.md#the-chunk-rule)) — instead of one statement over the whole bag. The bags are client input, and one statement over them cost time quadratic in their length. A forged 10 000-key `selectedTableRecords` held a request for about 23 s, where a single-identifier table answered in about 23 ms. On PostgreSQL the tracked arm's `NOT (… OR …)` crossed the JIT threshold and ran for minutes. Three shapes follow:
 
 - **The selected bag** is batched. Each batch runs the query `getSelectedTableRecordsQuery()` would, narrowed to its keys.
-- **A tracked deselection** that fits one batch stays one `notIn()` statement. A larger one is subtracted in PHP from a pluck of every key the table admits (one statement binding no key), and the rest is read in batches, since an exclusion cannot be split across statements. The one-statement exclusion is a sequential scan on PostgreSQL 18, and from roughly 40 000 rows a 101–500-key one crosses `jit_above_cost`, where JIT adds about 130–280 ms to it ([measured](../schemas/record-key.md#the-chunk-rule)).
+- **A tracked deselection** that fits one batch stays one `notIn()` statement. A larger one is subtracted in PHP from a pluck of every key the table admits (one statement binding no key), and the rest is read in batches, since an exclusion cannot be split across statements. The one-batch exclusion compares each deselected key decoded and bound by its field's type, so a spelling the codec accepts but no row mints — a decimal `1.0` for `1`, a case variant under a case-insensitive collation — excludes the row; the larger bag is subtracted by string, as the checkbox compares, and does not. Such a spelling never comes from a rendered checkbox, so only a forged bag sees the two arms disagree, and the only row it can affect is one rendered ticked, which the exclusion spares. The one-statement exclusion is a sequential scan on PostgreSQL 18, and from roughly 40 000 rows a 101–500-key one crosses `jit_above_cost`, where JIT adds about 130–280 ms to it ([measured](../schemas/record-key.md#the-chunk-rule)).
 - **`fetchSelectedRecords(false)` beside `checkIfRecordIsSelectableUsing()`** hydrates each batch once and keys the selectable records in PHP. `getSelectedTableRecordsQuery(false)` binds them back as a second key list instead.
 
 The hydrated records come back in table order within a batch, and batch after batch across them; Filament's own chunked read comes back in id order, not the table's. Each record comes back once: two spellings of one key that the database compares equal — a decimal `1` and `1.0`, or a case variant under a case-insensitive collation — can land in different batches and hydrate the same managed record twice, so the batches' records are de-duplicated by identity before the selectability filter, as the single statement returned such a row once. `getSelectedTableRecordsQuery()` is unchanged: it returns one builder, a custom bulk action's `$selectedRecordsQuery`, so it binds every selected key. A bulk action over a large composite selection reads `$selectedRecords` instead. A single-identifier selection is untouched: one statement, one array parameter.
@@ -1712,12 +1712,18 @@ through `CountOutputWalker`, which is composite-safe.
 Three things a reader would otherwise have to re-derive.
 
 **The walker's rows are remapped positionally and minted through
-`KeySelection::keyOf()`.** The walker names its own result columns — an
+`KeySelection::keyOfHydrated()`.** The walker names its own result columns — an
 identifier association under its bare property name carrying the **raw** driver
 value, a scalar field under `<alias>_<field>` and converted — in identifier
 order and exactly as wide as the identifier, so the row is written onto the
 aliases this class asked `select()` for, in order, and handed to the selection
-that authored them. `RecordKey::fromValues()` is the wrong call here and fails
+that authored them. Since [M7 · 11](../roadmap.md#m7--composite-identifiers) it is
+keyed through `keyOfHydrated()`, which converts the raw association halves alone:
+`keyOf()` read the already converted scalar fields through their types a second
+time, which minted another key for a custom type whose reader does not read its
+own PHP value back unchanged
+([the second reader](../schemas/record-key.md#a-hydrated-row-is-keyed-without-reading-its-fields-a-second-time)).
+`RecordKey::fromValues()` is the wrong call here and fails
 **silently**: it prints without converting, so against a type whose stored form
 differs from its printed one it mints a key the decode refuses, `in()` renders
 that as `1 = 0`, and the page comes back empty with no error anywhere. A row of
@@ -1860,8 +1866,12 @@ and the two ways out — answer the codec's key, or list the rows through
 none of the symptoms above is reachable. An override answering the codec's key
 renders as before, however it computes it; an array row, every `records()` row
 and a query-lane row that is no instance of the record class — a `SELECT NEW`
-projection, keyed by its `id` — are never compared. The cost is one more mint
-per row, a few microseconds and no statement. Pinned by
+projection, keyed by its `id` — are never compared. The codec's key is minted
+once per row, and `getTableRecordKey()` is asked only where the codec answers
+null or the host overrides the method — detected by the method's declaring file
+being another than `HasTable.php` — so the comparison costs an overriding table
+one more mint per row, a few microseconds and no statement, and a table that
+does not override costs nothing. Pinned by
 [`HasTableRecordKeyOverrideTest`](../../../packages/tables/tests/Unit/Concerns/HasTableRecordKeyOverrideTest.php)
 over a fixture host whose override is a closure.
 
@@ -2475,7 +2485,7 @@ else applied to the builder it replaced. Three cases in the
 [sorting suite](../../../packages/tables/tests/Unit/Concerns/CanSortRecordsTest.php)
 pin it — the replacement's `WHERE` reaching the executed query, the user's sort
 gone from the DQL, and the tiebreaker read off the replacement (`ORDER BY
-book.code asc` for a `Book` builder returned from a `Song` table's default sort).
+book.code ASC` for a `Book` builder returned from a `Song` table's default sort).
 
 Permanent, and it closes on its own if Filament ever consumes the return — the
 two agree again with no change here. It is the third arm of this family the port
@@ -2696,7 +2706,9 @@ than assumed to be `id`, and every value is **bound** — now typed by its field
 own DBAL type, which is the half of the guard that was missing: an untyped
 `'abc'` against an integer column is a `500` on PostgreSQL, because a DBAL
 `DriverException` is not an `HttpExceptionInterface` and
-`PageController::convertTwigError()` does not convert it. The other half is that
+`PageController::__invoke()`'s render catch, which rethrows a Twig `RuntimeError`'s
+previous exception only when it is an `HttpExceptionInterface`, does not convert
+it. The other half is that
 a key which is **malformed for the class** — the wrong arity, a non-canonical
 escape, a component its field's type cannot hold — answers null *without running
 a query at all*, which is what a row action, a column's own `action()` and an

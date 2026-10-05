@@ -1509,7 +1509,7 @@ built-in either passes the string through its writer or refuses it with a
 `ConversionException`.
 
 The fallback touches the decode alone: `toDatabaseValues()`, the split, the
-shape checks and `printable()` are as they were, and a type that reads its
+shape checks (bar M7 · 11's boolean arm, above) and `printable()` are as they were, and a type that reads its
 printed form back as itself never reaches it, so every existing dataset keeps its answer —
 `SkuType`'s `not-a-sku` included, its writer taking a `Sku` and nothing else.
 One shape widens further than the rest: where a type's **writer** takes any
@@ -1574,9 +1574,12 @@ test over the fixtures so the fact cannot quietly stop being true.
 The shape check reaches `BigIntType`, `DecimalType`, `GuidType` and `BooleanType` by class, so a
 type registered under a name of its own is checked as the family it extends —
 which is the point, since such a type inherits the conversion that hands a
-malformed string back untouched. The cost is a subclass whose PHP value prints
-**outside** its parent's shape — a `BigIntType` whose reader answers a `T-123`
-value object — whose every key the decode now refuses where it used to accept
-it. No such type is known, and the way out is not to extend the family whose
+malformed string back untouched — or, for `BooleanType`, whose PostgreSQL writer
+refuses an unrecognised literal with no `ConversionException`, the reason
+[M7 · 11](../roadmap.md#m7--composite-identifiers) added that arm once the
+decode began offering a component to the writer. The cost is a subclass whose
+PHP value prints **outside** its parent's shape — a `BigIntType` whose reader
+answers a `T-123` value object, or a `BooleanType` whose value is not a bool —
+whose every key the decode now refuses where it used to accept it. No such type is known, and the way out is not to extend the family whose
 shape it no longer prints. Pinned by `Voucher` in `IdentifierFieldsTest`
 and `RecordKeyTest` (M7 · 9).

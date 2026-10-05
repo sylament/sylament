@@ -3,7 +3,9 @@
 [`Sylament\Schemas\Components\Concerns\CanBeConcealed`](../../../packages/schemas/src/Components/Concerns/CanBeConcealed.php)
 on the base [`Component`](component.md) — the walk that answers "can something
 above me hide this component from view?". It ports
-[`schemas/src/Components/Concerns/CanBeConcealed.php`](../../../vendor/filament/schemas/src/Components/Concerns/CanBeConcealed.php).
+`schemas/src/Components/Concerns/CanBeConcealed.php`, which the installed
+Filament 5.9 no longer ships: its [`Component::isConcealed()`](../../../vendor/filament/schemas/src/Components/Component.php)
+is deprecated and answers `false`.
 
 Its consumers are the controls that render **native** constraint attributes: a
 `required` input inside an inactive Tab or a collapsed Section is
@@ -19,8 +21,8 @@ templates read `isConcealed()` and drop those attributes — see
 
 Reference — the Filament source this is diffed against:
 
-- [`schemas/src/Components/Concerns/CanBeConcealed.php`](../../../vendor/filament/schemas/src/Components/Concerns/CanBeConcealed.php)
-  — the memoised ancestor walk
+- `schemas/src/Components/Concerns/CanBeConcealed.php` — the memoised ancestor
+  walk, gone from the installed Filament 5.9
 - [`schemas/src/Components/Contracts/CanConcealComponents.php`](../../../vendor/filament/schemas/src/Components/Contracts/CanConcealComponents.php)
   — the contract a concealing component implements ([`Section::canConcealComponents()`](../../../packages/schemas/src/Components/Section.php) is `isCollapsible()`)
 
@@ -28,9 +30,9 @@ Reference — the Filament source this is diffed against:
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
-| [`getConcealingComponent()`](../../../packages/schemas/src/Components/Concerns/CanBeConcealed.php) | [`getConcealingComponent()`](../../../vendor/filament/schemas/src/Components/Concerns/CanBeConcealed.php) | done | — | [diverges](#the-js-visibility-arm-is-not-ported) |
-| [`isConcealed()`](../../../packages/schemas/src/Components/Concerns/CanBeConcealed.php) | [`isConcealed()`](../../../vendor/filament/schemas/src/Components/Concerns/CanBeConcealed.php) | done | — | — |
-| [`$cachedConcealingComponent` memoisation](../../../packages/schemas/src/Components/Concerns/CanBeConcealed.php) | [`$cachedConcealingComponent`](../../../vendor/filament/schemas/src/Components/Concerns/CanBeConcealed.php) | done | — | [semantics](#the-answer-is-memoised-for-the-life-of-the-component) |
+| [`getConcealingComponent()`](../../../packages/schemas/src/Components/Concerns/CanBeConcealed.php) | `getConcealingComponent()` | done | — | [diverges](#the-js-visibility-arm-is-not-ported) |
+| [`isConcealed()`](../../../packages/schemas/src/Components/Concerns/CanBeConcealed.php) | [`isConcealed()`](../../../vendor/filament/schemas/src/Components/Component.php) | done | — | — |
+| [`$cachedConcealingComponent` memoisation](../../../packages/schemas/src/Components/Concerns/CanBeConcealed.php) | `$cachedConcealingComponent` | done | — | [semantics](#the-answer-is-memoised-for-the-life-of-the-component) |
 
 Both rows are covered by
 [`Unit/Components/Concerns/CanBeConcealedTest`](../../../packages/schemas/tests/Unit/Components/Concerns/CanBeConcealedTest.php)

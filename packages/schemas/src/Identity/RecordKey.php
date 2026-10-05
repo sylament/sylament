@@ -55,9 +55,11 @@ final class RecordKey
 
     /**
      * Identifier values as a record holds them — already in their PHP form —
-     * to the key a record of that class mints. Never a projected row's raw
-     * columns: those go through {@see KeySelection::keyOf()}, which converts
-     * each through its field's DBAL type first.
+     * to the key a record of that class mints. Never a projected row: a
+     * scalar row goes through {@see KeySelection::keyOf()}, which converts each
+     * raw column through its field's DBAL type first, and a hydrated one through
+     * {@see KeySelection::keyOfHydrated()}, which converts only the association
+     * halves its hydrator left raw.
      *
      * @param class-string $class
      * @param list<mixed>  $values in the mapping's identifier order

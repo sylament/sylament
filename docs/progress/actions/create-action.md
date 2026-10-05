@@ -216,8 +216,11 @@ record back. Pinned by
 
 A schema that switches the key rules off with
 [`validateRecordKey(false)`](../schemas/can-be-validated.md) skips the blank
-rule, so a blank key field it **maps** reaches the save too, and what happens
-there depends on what the blank reaches the record as. A blank that reaches it
+rule. A blank key field over a non-nullable property left at the `required()`
+forms derives for it is still refused under the field, since `required()` trims,
+so only a field that is not required — one declaring `required(false)`, or one
+over a nullable property — reaches the save blank, and what happens there
+depends on what the blank reaches the record as. A blank that reaches it
 as a **string** — whitespace, which no text field trims by default — meets this
 refusal, where the advice to give every identifier field a field would be wrong.
 Since [M7 · 10](../roadmap.md#m7--composite-identifiers) the message then closes
@@ -228,8 +231,8 @@ Pinned by
 [`KeyAdviceTest`](../../../packages/actions/tests/Integration/KeyAdviceTest.php),
 beside the plain arm's construction refusal naming `using()`. An **empty** field
 dehydrates to `null` instead: over a nullable property it is Doctrine's
-`EntityMissingAssignedId` above, never this message, and over a non-nullable one
-the save fails earlier, at the mapping, with Symfony's `InvalidTypeException`,
+`EntityMissingAssignedId` above, never this message, and over a non-nullable
+property, on a field that declares `required(false)`, the save fails earlier, at the mapping, with Symfony's `InvalidTypeException`,
 since `null` cannot be written there. The reader's
 [own section](../schemas/association-reader.md#a-blank-assigned-identifier-is-read-after-persist-where-a-record-is-created)
 says why a null never reaches its read.

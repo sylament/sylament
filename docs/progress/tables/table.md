@@ -1588,12 +1588,15 @@ so the render reaches the three-lane refusal, `Table [...] must have [records()]
 declares a `records()` fallback of its own (`->records(fn (): array => [])`)
 rather than relying on the relationship closure answering `null`.
 
-One rig caveat, because it decides where a delete test may live: the tables
-fixture SQLite enforces no foreign keys, so a by-key delete of a record a join
-table still references leaves the join row dangling here where a real Postgres
-would refuse the statement. That is why the relation-scoped delete pins delete
-`Song`s through `Artist.songs`, whose rows own their own foreign key, and never
-`Genre`s through `Song.genres`, whose join table is `Song`'s mapping.
+Every SQLite manager the suites build enforces foreign keys since
+[M7 · 8](../roadmap.md#m7--composite-identifiers), as MySQL and PostgreSQL do,
+so a by-key delete of a record something still references is refused, apart from
+what the database's own `ON DELETE CASCADE` removes — a default many-to-many join
+table cascades. The referenced-row behaviour is pinned and described in
+[delete-action.md](../actions/delete-action.md#the-by-key-arm-is-a-dql-delete-over-the-plucked-keys).
+The relation-scoped delete pins delete `Song`s through `Artist.songs`, whose
+rows own their own foreign key, rather than `Genre`s through `Song.genres`, a
+test-design choice that keeps those pins off the join table.
 
 ### The mapping's order is the relation-scoped table's default sort
 

@@ -169,7 +169,10 @@ Its refusals are raised the way the form raises them: as violations of a
 [`RecordKeyGuard`](../../../packages/schemas/src/Validation/RecordKeyGuard.php)
 constraint, validated by the column's own validator — the one
 [`CanBeValidated`](../../../packages/tables/src/Columns/Concerns/CanBeValidated.php)
-already holds for the input — and the first violation's message is thrown as a
+already holds for the input, which `CanUpdateState` declares as an abstract
+`getValidator(): ValidatorInterface`, so a hand-written column composing
+`CanUpdateState` without `CanBeValidated` defines the method or fails at class
+load ([the upgrade note](../../upgrading.md#extensibility-m7--10)) — and the first violation's message is thrown as a
 [`RecordWriteException`](../../../packages/tables/src/Exceptions/RecordWriteException.php),
 which the host files and the cell paints exactly as it does
 [the type refusal](#a-record-type-the-input-cannot-hold-seeds-a-type-constraint-and-the-write-refuses-the-rest).

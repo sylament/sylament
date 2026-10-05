@@ -1110,7 +1110,16 @@ key field over a non-nullable property is still
 so it reaches this check blank only when it is not required — it declares
 `required(false)` (over a non-nullable property its blank must also survive
 dehydration as a string, as the test's whitespace does, since a null cannot be
-written there), or its property is nullable.
+written there), or its property is nullable. What reaches it then depends on
+what the blank reaches the record as. A blank that reaches it as a **string** —
+whitespace — meets this check and the message above whatever the class
+declares, since the check after `persist()` reads it too. An empty field over a
+nullable property reaches it as `null`: the check before `persist()` refuses that
+with the same message for a class with no `prePersist` callback or entity
+listener, and for one that declares either the check short-circuits, so
+`persist()` itself refuses the null with Doctrine's `EntityMissingAssignedId` —
+the post-persist read is never reached
+([why](../schemas/association-reader.md#a-blank-assigned-identifier-is-read-after-persist-where-a-record-is-created)).
 
 It is a developer error rather than validation — the fix is a missing field in
 `createOptionForm()`, not something an end user can supply — so nothing is

@@ -165,15 +165,23 @@ closure is never consulted either way. What the two arms do not share is the
 hydration, so that case clears the identity map and asserts the candidate was
 never loaded into it.
 
-Each row is keyed by `KeySelection::keyOf($row)`, never by reading a projected
-column back, and that closed a defect the single-identifier code carried: the
-array hydrator converts a **field path**, so a target whose identifier is a value
-object hydrated `record.<id> AS sy_key` into an *object* and
-`$options[$row['sy_key']]` was a `TypeError` in the attach modal. `keyOf()` runs
-every value the hydrator did not already build into an object through that
-field's own DBAL type before printing it, so the projected key is the key the
-record itself mints. The result alias moved from `sy_key` to `sy_key_0` with it
-— one query-cache miss, no behaviour
+Each row is keyed through the selection that projected it, never by reading a
+projected column back, and that closed a defect the single-identifier code
+carried: the array hydrator converts a **field path**, so a target whose
+identifier is a value object hydrated `record.<id> AS sy_key` into an *object*
+and `$options[$row['sy_key']]` was a `TypeError` in the attach modal. The
+projection is an array result, so since
+[M7 · 11](../roadmap.md#m7--composite-identifiers) each row is keyed by
+`KeySelection::keyOfHydrated($row)`, which takes every field as the hydrator
+handed it and converts only an `IDENTITY()` association half, raw under every
+hydrator, through its field's own DBAL type before printing — so the projected
+key is the key the record itself mints. Until then `keyOf()` read the already
+converted fields through their types a second time, which minted another key,
+with no error, for a custom type whose reader does not read its own PHP value
+back unchanged
+([the second reader](../schemas/record-key.md#a-hydrated-row-is-keyed-without-reading-its-fields-a-second-time)).
+The result alias moved from `sy_key` to `sy_key_0` with M7 · 4 — one
+query-cache miss, no behaviour
 ([record-key.md](../schemas/record-key.md#the-row-side-and-the-record-side-mint-one-string-and-only-the-codec-may)).
 
 ### `recordSelectOptionsQuery()` is evaluated with `query` and `search`

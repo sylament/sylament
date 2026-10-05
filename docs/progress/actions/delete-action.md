@@ -373,7 +373,8 @@ statement and leaves the placement below unchanged.
 
 **One statement is the normal case, not the guarantee.** The key list is split
 by [`IdentifierConstraint::chunk()`](../schemas/record-key.md#the-chunk-rule)
-first — 2 000 keys per statement for one identifier field, 500 for two or more —
+first — 2 000 keys per statement for one identifier field, `min(500, intdiv(2000, F))`
+for F ≥ 2 fields, so 500 for two to four and fewer above that —
 and any selection that fits a chunk, which is every selection a page can
 realistically produce, is still exactly one `DELETE`. When it does not fit, the
 chunks run inside one DBAL `transactional()`, so that "the whole batch failed"

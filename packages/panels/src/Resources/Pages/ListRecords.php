@@ -151,9 +151,10 @@ abstract class ListRecords extends Page implements InteractsWithTable
     }
 
     /**
-     * A nested list shows one parent's records: the scoped query is rooted at
-     * the same `record` alias the plain one is, so the resource's columns,
-     * sorts and searches are the same either way.
+     * A nested list shows one parent's records: the scoped query is the
+     * resource's own record query narrowed to the parent, under the same root
+     * alias, so the resource's columns, sorts and searches are the same either
+     * way.
      */
     public function table(Table $table): Table
     {

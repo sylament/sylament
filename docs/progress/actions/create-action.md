@@ -162,7 +162,9 @@ and, on a nested create page, by panels'
 
 Since M7 · 7 `createRecord()` asks
 [`AssociationReader::hasBlankAssignedIdentifier()`](../schemas/association-reader.md#a-blank-assigned-identifier-is-read-after-persist-where-a-record-is-created)
-between `persist()` and `flush()`, in both arms, on the mounted schema's own reader, rebound to the manager the flush writes through (next section). A record whose assigned key still holds a blank string
+between `persist()` and `flush()`, in both arms, on the mounted schema's own
+reader, rebound to the manager the flush writes through (next section). A
+record whose assigned key still holds a blank string
 there has a key field the modal does not map, since the record check refuses a
 mapped one as a field error
 ([the rule](../schemas/can-be-validated.md#a-blank-assigned-key-is-refused-before-anything-is-written)),

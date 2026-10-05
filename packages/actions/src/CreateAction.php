@@ -154,19 +154,18 @@ class CreateAction extends Action
     }
 
     /**
-     * The default persistence step `using()` replaces: map the validated —
-     * and, where `mutateDataUsing()` asked, mutated — state onto a new record
-     * of the action's class, then flush it. A path the hook added that no
-     * component of the schema maps is refused by name before anything is
-     * built. A relationship in force joins the
-     * record to its owner before the state is mapped, so the record check that
-     * ends the mapping sees an identifier field the association fills, and
-     * again after it, so the relationship still wins over a field the form maps
-     * onto the same association; the schema is bound to that record for the
-     * mapping alone, and a many-to-many owner's collection gives the record back
-     * when the mapping refuses it, since nothing else takes it out again. The
-     * record check reads the schema's own reader, rebound to the manager the
-     * flush writes through. A record whose
+     * The default persistence step `using()` replaces: map the validated — and,
+     * where `mutateDataUsing()` asked, mutated — state onto a new record of the
+     * action's class, then flush it. A path the hook added that no component of
+     * the schema maps is refused by name before anything is built. A
+     * relationship in force joins the record to its owner before the state is
+     * mapped, so the record check that ends the mapping sees an identifier field
+     * the association fills, and again after it, so the relationship still wins
+     * over a field the form maps onto the same association; the schema is bound
+     * to that record for the mapping alone, and a many-to-many owner's
+     * collection gives the record back when the mapping refuses it, since
+     * nothing else takes it out again. The record check reads the schema's own
+     * reader, rebound to the manager the flush writes through. A record whose
      * assigned key is still blank once `persist()` has run every prePersist
      * listener is refused by name before the flush, handed back by a
      * many-to-many owner and taken back out of the unit of work.

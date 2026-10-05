@@ -56,8 +56,8 @@ class EditAction extends Action
      * and, where `mutateDataUsing()` asked, mutated — state onto the bound
      * record, then flush it. A path the hook added that no component of the
      * schema maps is refused by name before the record is touched. The record
-     * check that ends the mapping reads the
-     * schema's own reader, rebound to the manager the flush writes through.
+     * check that ends the mapping reads the schema's own reader, rebound to the
+     * manager the flush writes through.
      *
      * @param array<string, mixed> $data
      *

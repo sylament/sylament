@@ -116,11 +116,10 @@ class ReplicateAction extends Action
      * Doctrine's metadata, map the modal's validated state onto the copy — or,
      * with no modal, the mutated field bag — then flush it. A path a modal's
      * hook added that no component maps is refused by name before the copy is
-     * built. One reader — the
-     * mounted schema's, or with no modal the action's own — rebound to the
-     * manager the copy is written through, answers the modal's record check and
-     * both key checks below. A replica whose
-     * assigned key is incomplete is refused by name before anything is written:
+     * built. One reader — the mounted schema's, or with no modal the action's
+     * own — rebound to the manager the copy is written through, answers the
+     * modal's record check and both key checks below. A replica whose assigned
+     * key is incomplete is refused by name before anything is written:
      * before `persist()` where no filler could complete it, and after it —
      * once every prePersist callback and listener has run — where one was
      * exempted and left a key half blank. A key a `beforeReplicaSaved()` hook

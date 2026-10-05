@@ -884,6 +884,25 @@ it('reads two spellings of one composite key that land in different batches as o
         ->and(placeholderCounts($recorder->statements()))->toBe([1000, 2]);
 });
 
+it('plucks two spellings of one composite key that land in different batches as one key', function (): void {
+    $recorder = new RecordingMiddleware();
+    $entityManager = EntityManagerFactory::create($recorder);
+    EntityManagerFactory::seed($entityManager, ...array_map(static fn (int $index): Fare => new Fare((string) $index, 'z', "Fare {$index}"), range(1, 500)));
+
+    $host = new TableHost(static fn (Table $table): Table => $table
+        ->query($entityManager->createQueryBuilder()->select('fare')->from(Fare::class, 'fare')->orderBy('fare.rate'))
+        ->columns([TextColumn::make('label')]));
+    $host->selectedTableRecordKeys = [...array_map(static fn (int $index): string => "{$index}~z", range(1, 500)), '1=2E0~z'];
+
+    $recorder->reset();
+
+    $keys = $host->getSelectedTableRecords(shouldFetchSelectedRecords: false);
+
+    expect($keys)->toHaveCount(500)
+        ->and(array_unique($keys))->toHaveCount(500)
+        ->and(placeholderCounts($recorder->statements()))->toBe([1000, 2]);
+});
+
 it('keeps a single-key selection past 2,000 keys in one statement, as before', function (): void {
     $recorder = new RecordingMiddleware();
     $entityManager = EntityManagerFactory::create($recorder);

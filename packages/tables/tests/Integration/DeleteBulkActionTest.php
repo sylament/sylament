@@ -575,6 +575,31 @@ it('hands an override of deleteSelectedRecordsByKey() the plucked keys and repor
         ->and($html)->not->toContain('Failed to delete');
 });
 
+/*
+ * An empty selection reports a count of 0 before the override point is
+ * reached, so an override is never handed an empty key list.
+ */
+it('reports an empty by-key selection as nothing deleted without calling the override', function (): void {
+    RecordingDeleteBulkAction::$handedKeys = [];
+    [$client, $entityManager, $recorder] = seededBulkSongsClient();
+
+    $html = (string) $this->createLiveComponent('BulkDeleteSongsTable', ['fetchesRecords' => false, 'deleteOverride' => RecordingDeleteBulkAction::DELEGATES], client: $client)
+        ->set('selectedTableRecords', [])
+        ->call('mountAction', ['name' => 'delete', 'arguments' => [], 'context' => ['table' => true, 'bulk' => true]])
+        ->call('callMountedAction')
+        ->render();
+
+    $deletes = array_values(array_filter($recorder->statements(), static fn (string $sql): bool => str_starts_with($sql, 'DELETE')));
+
+    expect(RecordingDeleteBulkAction::$handedKeys)->toBe([])
+        ->and($deletes)->toBe([])
+        ->and(survivingSongIds($entityManager))->toBe([1, 2, 3, 4])
+        ->and($html)->toContain('Deleted')
+        ->and($html)->toContain('sy-status-success')
+        ->and($html)->not->toContain('Failed to delete')
+        ->and($html)->not->toContain('sy-status-warning');
+});
+
 it('reports an override that answers fewer rows than it was handed as a partial delete', function (): void {
     RecordingDeleteBulkAction::$handedKeys = [];
     [$client, $entityManager] = seededBulkSongsClient();

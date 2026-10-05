@@ -393,8 +393,10 @@ class Select extends Field implements Contracts\CanDisableOptions, Contracts\Has
      * Beyond the association wiring the shared trait installs, a select binds the
      * search, label and selected-record arms of the association and the three
      * Doctrine defaults its option actions need: creating a target row, filling
-     * the edit modal from the selected one, and flushing an update. They are
-     * installed unconditionally, so a `createOptionUsing()` — or a
+     * the edit modal from the selected one, and flushing an update. The two
+     * write defaults map the option action's data, and refuse by name a path its
+     * `mutateDataUsing()` added that no component of the option form maps. They
+     * are installed unconditionally, so a `createOptionUsing()` — or a
      * `getOptionLabelUsing()` — of your own has to follow `relationship()` to
      * survive.
      *
@@ -432,13 +434,16 @@ class Select extends Field implements Contracts\CanDisableOptions, Contracts\Has
 
         $this->getOptionLabelsUsing(static fn (Select $component, array $values): array => $component->getOptionLabelsFromRelationship($values));
 
-        $this->createOptionUsing(static function (Select $component, Schema $schema): string {
+        $this->createOptionUsing(static function (Select $component, Schema $schema, Action $action): string {
+            $component->refuseUnmappedOptionData($schema, $action, 'createOptionUsing');
+
             $reader = $component->getAssociationReader();
-            $record = $schema->getData();
+            $record = $schema->getData($action->getData());
             $refusal = static fn (): LogicException => new LogicException(sprintf(
-                'The [%s] select created a [%s] whose identifier is incomplete, so no option could name it. Put every identifier field in createOptionForm().',
+                'The [%s] select created a [%s] whose identifier is incomplete, so no option could name it. Put every identifier field in createOptionForm().%s',
                 (string) $component->getName(),
                 $record::class,
+                $schema->isRecordKeyValidated() ? '' : ' The schema switches the key rules off with validateRecordKey(false), so a key field it maps is not refused while blank; switch them back on to have the blank field refused under it.',
             ));
 
             if ($reader->hasIncompleteAssignedIdentifier($record)) {
@@ -462,8 +467,10 @@ class Select extends Field implements Contracts\CanDisableOptions, Contracts\Has
 
         $this->fillEditOptionActionFormUsing(static fn (Select $component): ?object => $component->getSelectedRecord());
 
-        $this->updateOptionUsing(static function (Select $component, Schema $schema): void {
-            $schema->getData();
+        $this->updateOptionUsing(static function (Select $component, Schema $schema, Action $action): void {
+            $component->refuseUnmappedOptionData($schema, $action, 'updateOptionUsing');
+
+            $schema->getData($action->getData());
 
             $component->getAssociationReader()->flush();
             $component->forgetCachedRelationshipOptions();
@@ -778,6 +785,7 @@ class Select extends Field implements Contracts\CanDisableOptions, Contracts\Has
                 ));
 
                 $createdOptionKey = $component->evaluate($createOptionUsing, [
+                    'action' => $action,
                     'data' => $data,
                     'form' => $schema,
                     'schema' => $schema,
@@ -910,13 +918,14 @@ class Select extends Field implements Contracts\CanDisableOptions, Contracts\Has
                 $schema->record($component->getSelectedRecord()),
             ))
             ->fillForm(static fn (Select $component): object|array|null => $component->getEditOptionActionFormData())
-            ->action(static function (Select $component, array $data, Schema $schema): void {
+            ->action(static function (Action $action, Select $component, array $data, Schema $schema): void {
                 $updateOptionUsing = $component->getUpdateOptionUsing() ?? throw new LogicException(sprintf(
                     'The [%s] select declares an editOptionForm() but no updateOptionUsing() closure, so a submitted edit would have nowhere to be written. Call updateOptionUsing(), or declare relationship(), which installs a Doctrine default.',
                     (string) $component->getStatePath(),
                 ));
 
                 $component->evaluate($updateOptionUsing, [
+                    'action' => $action,
                     'data' => $data,
                     'form' => $schema,
                     'schema' => $schema,
@@ -1539,6 +1548,31 @@ class Select extends Field implements Contracts\CanDisableOptions, Contracts\Has
         }
 
         return $modifiedAction;
+    }
+
+    /**
+     * Refuses, before an option default maps anything, a path the option
+     * action's `mutateDataUsing()` added that no component of its form maps: the
+     * default would drop it in silence. A path the client sent is in what the
+     * action was handed, so it is never refused.
+     *
+     * @throws LogicException naming every such path, never its value
+     */
+    private function refuseUnmappedOptionData(Schema $schema, Action $action, string $using): void
+    {
+        $paths = $schema->findUnmappedAdditions($action->getUnmutatedData(), $action->getData());
+
+        if ($paths === []) {
+            return;
+        }
+
+        throw new LogicException(sprintf(
+            "The [%s] select's [%s] action added [%s] in mutateDataUsing(), but no component of its schema maps those paths, so the default write would drop them. Map each with a component — a Hidden one for a value the user should not type, with required(false) where the record would otherwise require it — or take the write over with %s().",
+            (string) $this->getStatePath(),
+            $action->getName(),
+            implode(', ', $paths),
+            $using,
+        ));
     }
 
     private function resolveOptionActionIcon(string $alias, string $fallback): string|BackedEnum|Markup

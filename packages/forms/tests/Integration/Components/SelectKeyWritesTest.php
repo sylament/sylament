@@ -7,6 +7,7 @@ namespace Sylament\Forms\Tests\Integration\Components;
 use Closure;
 use Doctrine\ORM\EntityManagerInterface;
 use Pest\Expectation;
+use Sylament\Actions\Action;
 use Sylament\Forms\Components\Select;
 use Sylament\Forms\Components\TextInput;
 use Sylament\Forms\Tests\Fixtures\Concerns\FieldRenderHost;
@@ -207,7 +208,7 @@ it("refuses a created option on a key a record already holds, under the option f
 
     $recorder = selectKeyWritesRecorder();
 
-    expect(selectKeyWritesRefusal(static fn (): mixed => $createOptionUsing($select, $optionSchema)))->toBe(['data.locale' => ['This value is already used.']])
+    expect(selectKeyWritesRefusal(static fn (): mixed => $createOptionUsing($select, $optionSchema, Action::make('createOption')->data($optionSchema->getState()))))->toBe(['data.locale' => ['This value is already used.']])
         ->and($recorder->normalizedStatements())->toHaveCount(count($lookups))
         ->each(static fn (Expectation $statement, int $index): Expectation => $statement->toContain($lookups[$index]))
         ->and($entityManager->isOpen())->toBeTrue()
@@ -238,7 +239,7 @@ it("refuses a created option whose whole key is a post that already has one, at 
 
     $recorder = selectKeyWritesRecorder();
 
-    expect(selectKeyWritesRefusal(static fn (): mixed => $createOptionUsing($select, $optionSchema)))->toBe(['data' => ['This value is already used.']])
+    expect(selectKeyWritesRefusal(static fn (): mixed => $createOptionUsing($select, $optionSchema, Action::make('createOption')->data($optionSchema->getState()))))->toBe(['data' => ['This value is already used.']])
         ->and(selectKeyWritesWrites($recorder->statements()))->toBe([])
         ->and($entityManager->isOpen())->toBeTrue()
         ->and($entityManager->getConnection()->fetchAllAssociative('SELECT post_id, note FROM PostSeal'))->toBe([
@@ -270,7 +271,7 @@ it("refuses its edit-option default changing the selected record's key, and leav
 
     $recorder = selectKeyWritesRecorder();
 
-    expect(selectKeyWritesRefusal(static fn (): mixed => $updateOptionUsing($select, $optionSchema)))->toBe(['data.locale' => ['This value cannot be changed.']])
+    expect(selectKeyWritesRefusal(static fn (): mixed => $updateOptionUsing($select, $optionSchema, Action::make('editOption')->data($optionSchema->getState()))))->toBe(['data.locale' => ['This value cannot be changed.']])
         ->and($select->getState())->toBe('1~en')
         ->and($selected->getLocale())->toBe('en');
 
@@ -315,7 +316,7 @@ it('names a created option by the key its row reads back, selects it, and saves 
     $createOptionUsing = $select->getCreateOptionUsing();
     assert($createOptionUsing instanceof Closure);
 
-    $createdKey = $createOptionUsing($select, $optionSchema);
+    $createdKey = $createOptionUsing($select, $optionSchema, Action::make('createOption')->data($optionSchema->getState()));
 
     $select->forgetCachedRelationshipOptions();
     $host->data['emblem'] = $createdKey;

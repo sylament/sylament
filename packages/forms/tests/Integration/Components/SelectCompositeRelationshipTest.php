@@ -7,6 +7,7 @@ namespace Sylament\Forms\Tests\Integration\Components;
 use Closure;
 use Doctrine\ORM\EntityManagerInterface;
 use LogicException;
+use Sylament\Actions\Action;
 use Sylament\Forms\Components\Select;
 use Sylament\Forms\Tests\Fixtures\Concerns\FieldRenderHost;
 use Sylament\Forms\Tests\Fixtures\Doctrine\Entity\CompositePair;
@@ -552,7 +553,7 @@ it('refuses a created option whose identifier is incomplete before it writes any
     $createOptionUsing = $select->getCreateOptionUsing();
 
     expect($createOptionUsing)->toBeInstanceOf(Closure::class)
-        ->and(static fn (): string => $createOptionUsing instanceof Closure ? $createOptionUsing($select, $schema) : '')
+        ->and(static fn (): string => $createOptionUsing instanceof Closure ? $createOptionUsing($select, $schema, Action::make('createOption')->data($schema->getState())) : '')
         ->toThrow(LogicException::class, 'whose identifier is incomplete, so no option could name it');
 
     $entityManager->flush();
@@ -580,7 +581,7 @@ it('refuses a created option whose key half is still blank after its prePersist 
     $createOptionUsing = $select->getCreateOptionUsing();
 
     expect($createOptionUsing)->toBeInstanceOf(Closure::class)
-        ->and(static fn (): string => $createOptionUsing instanceof Closure ? $createOptionUsing($select, $schema) : '')
+        ->and(static fn (): string => $createOptionUsing instanceof Closure ? $createOptionUsing($select, $schema, Action::make('createOption')->data($schema->getState())) : '')
         ->toThrow(LogicException::class, sprintf('The [planters] select created a [%s] whose identifier is incomplete, so no option could name it.', Planter::class));
 
     $entityManager->flush();
@@ -604,7 +605,7 @@ it('creates an option that carries every identifier field and hands back its key
     $createOptionUsing = $select->getCreateOptionUsing();
 
     expect($createOptionUsing)->toBeInstanceOf(Closure::class)
-        ->and($createOptionUsing instanceof Closure ? $createOptionUsing($select, $schema) : null)->toBe('2')
+        ->and($createOptionUsing instanceof Closure ? $createOptionUsing($select, $schema, Action::make('createOption')->data($schema->getState())) : null)->toBe('2')
         ->and($entityManager->getRepository(PostSeal::class)->count([]))->toBe(1);
 });
 

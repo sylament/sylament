@@ -90,8 +90,8 @@ _Blocked by_ names what has to land first. _Detail_ links a permanent note in
 | `getSelectedRecordUsing()` / `getSelectedRecord()` | [`Components/Select.php`](../../../vendor/filament/forms/src/Components/Select.php) | done | — | [semantics](#the-option-actions-are-suffix-actions-with-doctrine-defaults) |
 | [`relationship()`](../../../packages/forms/src/Components/Concerns/HasRelationship.php) — to-one and to-many, over the [association reader](../schemas/association-reader.md) | [`Components/Select.php`](../../../vendor/filament/forms/src/Components/Select.php) | done | — | [detail](#relationship-is-three-lazy-closures-over-the-association-reader) · [semantics](#a-relationship-map-is-full-or-an-exception-except-where-search-makes-it-partial-by-design) · [diverges](#the-save-arm-writes-a-desired-list-not-attachdetach) |
 | The relationship search and label arms — `getSearchResultsFromRelationship()`, `getOptionsFromRelationship()` (searchable / preload / limit / ordering), `getOptionLabelFromRelationship()`, `getOptionLabelsFromRelationship()`, and the shared `getOptionLabelFromRecordUsing()` trio | [`Components/Select.php`](../../../vendor/filament/forms/src/Components/Select.php) | done | — | [semantics](#the-relationship-search-arm-runs-a-like-per-column-over-the-scoped-option-query) · [diverges](#a-search-column-is-a-mapped-field-and-the-title-ordering-skips-what-it-cannot-order) |
-| `createOptionForm()` / `createOptionUsing()` / `createOptionAction()` / `getCreateOptionAction()` and the create modal chain | [`Components/Select.php`](../../../vendor/filament/forms/src/Components/Select.php) | done | — | [semantics](#the-option-actions-are-suffix-actions-with-doctrine-defaults) · [diverges](#the-non-relationship-schema-record-is-read-off-the-field-not-off-a-getactionschemamodel) |
-| `editOptionForm()` / `updateOptionUsing()` / `fillEditOptionActionFormUsing()` / `editOptionAction()` / `getEditOptionAction()` | [`Components/Select.php`](../../../vendor/filament/forms/src/Components/Select.php) | done | — | [semantics](#the-option-actions-are-suffix-actions-with-doctrine-defaults) · [diverges](#geteditoptionactionformdata-also-answers-an-object) |
+| `createOptionForm()` / `createOptionUsing()` / `createOptionAction()` / `getCreateOptionAction()` and the create modal chain | [`Components/Select.php`](../../../vendor/filament/forms/src/Components/Select.php) | done | — | [semantics](#the-option-actions-are-suffix-actions-with-doctrine-defaults) · [diverges](#the-non-relationship-schema-record-is-read-off-the-field-not-off-a-getactionschemamodel) · [diverges](#a-key-an-option-actions-mutation-adds-that-no-component-maps-is-refused) |
+| `editOptionForm()` / `updateOptionUsing()` / `fillEditOptionActionFormUsing()` / `editOptionAction()` / `getEditOptionAction()` | [`Components/Select.php`](../../../vendor/filament/forms/src/Components/Select.php) | done | — | [semantics](#the-option-actions-are-suffix-actions-with-doctrine-defaults) · [diverges](#geteditoptionactionformdata-also-answers-an-object) · [diverges](#a-key-an-option-actions-mutation-adds-that-no-component-maps-is-refused) |
 | `refreshSelectedOptionLabel()` | [`Components/Select.php`](../../../vendor/filament/forms/src/Components/Select.php) | done | — | [diverges](#refreshselectedoptionlabel-dispatches-a-browser-event-the-control-answers-by-re-syncing) · [renames](../renames.md#names-with-no-filament-source) |
 | `manageOptionForm()` / `manageOptionActions()` / the two modal headings | [`Components/Select.php`](../../../vendor/filament/forms/src/Components/Select.php) | done | — | [semantics](#the-option-actions-are-suffix-actions-with-doctrine-defaults) · [diverges](#the-option-action-strings-are-untranslated-literals) |
 | `relationship()` `ignoreRecord:` | [`Components/Select.php`](../../../vendor/filament/forms/src/Components/Select.php) | done | — | [semantics](#ignorerecord-narrows-the-two-option-arms-and-neither-label-arm) · [diverges](#a-record-of-another-class-than-the-association-target-is-refused) |
@@ -804,17 +804,33 @@ calls it, installs the
 [four search and label arms](#the-relationship-search-arm-runs-a-like-per-column-over-the-scoped-option-query),
 then three Doctrine defaults:
 
-- **`createOptionUsing`** — `Schema::getData()` builds the target entity from
-  the modal schema's class-string record (through
+- **`createOptionUsing`** — `Schema::getData($data)` builds the target entity
+  from the modal schema's class-string record (through
   `PropertyAccessor::constructRecord()`, so a target whose constructor requires
-  arguments is refused by name), the reader `persist()`s and `flush()`es it, and
-  the key it returns is `getRecordKey()`. The modal schema validates itself and
-  nothing else: its state path scopes the map, so the outer form is untouched.
+  arguments is refused by name) and maps the option action's data onto it: the
+  state the host validated, after the action's `mutateDataUsing()`. The reader
+  `persist()`s and `flush()`es it, and the key it returns is `getRecordKey()`.
+  The modal schema validates itself and nothing else: its state path scopes the
+  map, so the outer form is untouched.
 - **`fillEditOptionActionFormUsing`** — the selected record itself, as an object.
   `Schema::fill(object)` runs `readStateFromRecord()`, so the modal's fields
   arrive filled without a hand-built array.
-- **`updateOptionUsing`** — `Schema::getData()` maps the submitted state back onto
-  the bound instance and the reader `flush()`es it.
+- **`updateOptionUsing`** — `Schema::getData($data)` maps the option action's
+  data back onto the bound instance and the reader `flush()`es it.
+
+Both write defaults read that data off the option action, which the action's
+closure hands them by name as `action`, beside Filament's `data`, `form` and
+`schema`. Both first refuse, by name, a path the action's `mutateDataUsing()`
+added that no component of the option form maps
+([why](#a-key-an-option-actions-mutation-adds-that-no-component-maps-is-refused)).
+Until [M7 · 10](../roadmap.md#m7--composite-identifiers) both called `getData()`
+with no state, which re-read the modal's own state, so a `mutateDataUsing()` on
+either option action was discarded whole. Filament's defaults have always
+written `$data`. Pinned by
+[`SelectOptionDataTest`](../../../packages/forms/tests/Integration/Components/SelectOptionDataTest.php).
+Since the defaults no longer re-run `getState()`, the option form's second
+validation pass is gone too: every `unique()`/`exists()` probe it declares ran
+once more per submit, and now runs once.
 
 Both write defaults run `getData()`, so both end in the record check and, since
 [M7 · 6](../roadmap.md#m7--composite-identifiers), in its two key rules. A created
@@ -1078,6 +1094,21 @@ create modal that has already written it. So the default asks
 again **after** it and before the flush, and refuses by name:
 
 > `The [%s] select created a [%s] whose identifier is incomplete, so no option could name it. Put every identifier field in createOptionForm().`
+
+When the option form's schema turns the key rules off with
+[`validateRecordKey(false)`](../schemas/can-be-validated.md), a blank key field
+the form maps is no longer refused under that field and reaches this check
+instead. The bare advice would then be false for a field already in the form,
+so since [M7 · 10](../roadmap.md#m7--composite-identifiers) the message gains
+one sentence after it when the rules are off: *The schema switches the key
+rules off with validateRecordKey(false), so a key field it maps is not refused
+while blank; switch them back on to have the blank field refused under it.*
+With the rules on, the message is the one above, byte for byte.
+`SelectOptionDataTest` pins both forms. The switch lifts the key pass alone: a
+key field over a non-nullable property is still
+[required by the record](can-be-validated.md#requirement-is-derived-from-the-records-write-side-types),
+so it reaches this check blank only once it declares `required(false)`, as the
+test's does.
 
 It is a developer error rather than validation — the fix is a missing field in
 `createOptionForm()`, not something an end user can supply — so nothing is
@@ -1453,6 +1484,37 @@ what our components do expose:
 override. A select with no relationship needs `createOptionUsing()` anyway, and
 that closure receives the modal schema, so a form wanting a different record
 binds it there. The setter lands if and when schemas grows the concern.
+
+### A key an option action's mutation adds that no component maps is refused
+
+Filament's create-option default builds `newModelInstance()` and `fill($data)`s
+it, and its edit default calls `update($data)`. Eloquent's `fill()` drops a key
+the target's `$fillable` lacks in silence, or throws under
+`preventSilentlyDiscardingAttributes()`. The port maps through the option
+form's record path map instead, which plays `$fillable`'s part, so a key no
+component maps could only be dropped in silence. Since
+[M7 · 10](../roadmap.md#m7--composite-identifiers) both defaults refuse it. A
+path the option action's `mutateDataUsing()` added, present in what the action
+returned but absent from the validated state it was handed
+([`getUnmutatedData()`](../actions/README.md)), that no record path of the
+option form covers is a `LogicException` before anything is mapped:
+
+> `The [%s] select's [%s] action added [%s] in mutateDataUsing(), but no component of its schema maps those paths, so the default write would drop them. Map each with a component — a Hidden one for a value the user should not type, with required(false) where the record would otherwise require it — or take the write over with %s().`
+
+The first `%s` is the select's state path and the second the option action's
+name. The paths are listed comma-separated and never with their values. The
+last `%s` is `createOptionUsing` or `updateOptionUsing`. It is the same message
+the resource pages and the record actions print, with the select as its owner. Only an **addition** is
+refused. A key the client sent is in the state the action was handed, so it is
+never refused, and it is never written either, since no component maps it. An
+overwrite of a mapped key is written as before, and so is a value set on a path
+a `Hidden` field maps. A `createOptionUsing()` or `updateOptionUsing()` of your
+own is never guarded, because the check lives in the defaults. It is the rule
+the resource pages and the record actions apply at their own default write
+seams ([belongs-to-record.md](../schemas/belongs-to-record.md)). To reach the
+action's snapshot, the defaults are handed the option action itself, by name, as
+`action`. Filament's evaluation passes `data`, `form` and `schema` only, so a
+closure of your own that declares `$action` now receives it.
 
 ### `getEditOptionActionFormData()` also answers an object
 

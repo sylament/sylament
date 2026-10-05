@@ -212,7 +212,10 @@ after `beforeReplicaSaved()` too, since that reads the same schema.
 
 Switched off, the application owns a new record's key. A taken one reaches the
 flush, where the database's primary key refuses it and the entity manager
-closes; a blank key field the form maps is not refused under it. A blank that
+closes. A blank key field over a non-nullable property is still refused under
+the field, since the field is required on its own; one that is not required (it
+declares `required(false)`, or its property is nullable) is not, and what happens
+then depends on what the blank reaches the record as. A blank that
 reaches the record as a string — whitespace — then reaches the create seam's
 by-name refusal, whose advice names the switch. An empty field dehydrates to
 null instead: over a nullable property Doctrine refuses it inside `persist()`
@@ -232,8 +235,9 @@ What it never reaches, by design:
   over one key would disagree;
 - the record's own constraints, and a host with no validator, which skips the
   whole tail as before;
-- every by-name `LogicException` at the create seams, `Select`, `Repeater` and
-  `ReplicateAction` — developer errors, which no switch silences.
+- every by-name `LogicException` at the create seams, `Select`, `Repeater`, a
+  singular relationship (`Group`, `Section` or `Fieldset` with `relationship()`)
+  and `ReplicateAction` — developer errors, which no switch silences.
 
 The flag is the schema's own, with no parent walk: the record check runs on the
 schema whose `getData()` ran. `Schema::configureUsing()` reaches every schema as a

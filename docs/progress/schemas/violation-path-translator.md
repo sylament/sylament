@@ -117,6 +117,17 @@ above the form. The test is a positive one on purpose: a component that proves
 nothing — a new layout, an application's own — fails toward the path that always
 renders, never toward one that may not.
 
+The keyed-items arm promises less than that. The repeater is a field, so a
+message at its own path renders under it, and each item field renders its own;
+but `translate()` can also answer an **item's** own state path —
+`data.sections.record-7`, for a class-level violation on the item record or one
+on an item property no item field maps — and nothing reads that path. Such a
+message is carried on the exception and reachable through
+`getErrorsForSchemaStatePath()`, and shows nowhere: the
+[in-item fold](#a-violation-inside-an-item-folds-by-the-same-rule-as-one-at-the-root)
+is still a 422 with no message on screen. That residual is left for the
+[roadmap's ledger](../roadmap.md#m7--composite-identifiers), not closed here.
+
 Only the filing moved. The record check still asks `translate()` whether a
 component maps a blank or taken key candidate, so a group entangling the related
 record still counts as mapping it and the refusal is still raised; it is shown
@@ -172,12 +183,13 @@ the same walk `translate()` runs over the map at the root.
 So `heading` appends when a field declares it, `meta.locale.code` folds onto a
 declared `meta.locale`, and a path no item field maps (`internalNote`, or a
 child's class-level violation carrying no remainder at all) folds at the item's
-own state path — `data.sections.record-7`, the item schema's key. That is the
-in-item counterpart of the
-[root fold](#an-unowned-violation-returns-null-so-the-caller-folds-it-at-the-schema-root):
-a message on a container rather than an input, carried on the exception and
-reachable by path, never a state path no component owns. Appending the remainder
-unconditionally would invent one.
+own state path — `data.sections.record-7`, the item schema's key. Like the
+[root fold](#an-unowned-violation-returns-null-so-the-caller-folds-it-at-the-schema-root),
+it is a message on a container rather than an input, carried on the exception and
+reachable by path, never a state path no component owns. Unlike it, nothing
+renders it: the page and the modal read the schema's own path, and no template
+reads an item's ([the filing leaves it there](#a-message-is-filed-only-under-a-component-that-shows-its-own-errors)).
+Appending the remainder unconditionally would invent a path no component owns.
 
 ### The path is parsed by Symfony's own parser, not by splitting on dots
 

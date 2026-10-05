@@ -243,6 +243,21 @@ table. As in the repeater, the record stays on the owner when the save throws,
 so only a flush the host never reaches could write it. An existing related
 record is never asked; its key is the changed-key pass's to guard.
 
+One reach is recorded rather than closed. The reader follows an identifier
+association into the record it points at, so a shared-key child whose identifier
+**is** the owner is refused when the owner's own single scalar key is blank —
+an owner whose key field is not required (`required(false)`, or a nullable
+property) and holds whitespace. That `getData()` passed before M7 · 11, the
+single scalar root key being exempt; the [`Repeater`](../forms/repeater.md#a-new-item-whose-identifier-is-incomplete-is-refused-before-the-save-returns)
+has refused its items under such an owner the same way since M7 · 7. The
+refusal is right, but its advice names the group, where the fix is the owner's
+key field. A required key field — which forms derives for a non-nullable
+property — never reaches it. Telling the two cases apart needs the reader's
+private walk behind
+[`hasIncompleteAssignedIdentifier()`](association-reader.md#an-incomplete-assigned-identifier-is-the-question-the-create-paths-ask),
+which answers one boolean, so the residual is left for the
+[roadmap's ledger](../roadmap.md#m7--composite-identifiers).
+
 Pinned by
 [`EntanglesStateWithSingularRelationshipKeyTest`](../../../packages/schemas/tests/Integration/Components/Concerns/EntanglesStateWithSingularRelationshipKeyTest.php)
 — a whitespace and an empty half, an unmapped half, a filled pair that saves, a

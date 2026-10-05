@@ -324,13 +324,16 @@ abstract class CreateRecord extends Page
 
         $entityManager->persist($record);
 
-        if ($this->getSchema('form')->getAssociationReader()->withEntityManager($entityManager)->hasBlankAssignedIdentifier($record)) {
+        $form = $this->getSchema('form');
+
+        if ($form->getAssociationReader()->withEntityManager($entityManager)->hasBlankAssignedIdentifier($record)) {
             $entityManager->detach($record);
 
             throw new LogicException(sprintf(
-                'The resource page [%s] built a [%s] whose identifier is still blank after persist(), so it was not saved. Give every identifier field a form field — a Hidden one for a value the user should not type — or fill it in a prePersist listener, in makeRecord(), or in handleRecordCreation() before calling the parent.',
+                'The resource page [%s] built a [%s] whose identifier is still blank after persist(), so it was not saved. Give every identifier field a form field — a Hidden one for a value the user should not type — or fill it in a prePersist listener, in makeRecord(), or in handleRecordCreation() before calling the parent.%s',
                 static::class,
                 $record::class,
+                $form->isRecordKeyValidated() ? '' : ' The schema switches the key rules off with validateRecordKey(false), so a key field it maps is not refused while blank; switch them back on to have the blank field refused under it.',
             ));
         }
 

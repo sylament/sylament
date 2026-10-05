@@ -1342,7 +1342,18 @@ whose assigned key is still blank after `persist()`. It asks
 on the page's own entity manager, between `persist()` and `flush()`, so every
 `prePersist` listener has run. What it catches is a key field the form leaves
 out; a blank one the form maps is already a field error
-([the rule](../schemas/can-be-validated.md#a-blank-assigned-key-is-refused-before-anything-is-written)).
+([the rule](../schemas/can-be-validated.md#a-blank-assigned-key-is-refused-before-anything-is-written)) —
+unless the form switches the key rules off with
+[`validateRecordKey(false)`](../schemas/can-be-validated.md), when a blank mapped
+key whose field is not required reaches this refusal too — a field over a
+non-nullable property
+[is required on its own](../forms/can-be-validated.md#requirement-is-derived-from-the-records-write-side-types)
+until it says `required(false)` — and since M7 · 10 its message closes with a
+sentence saying so: *The schema switches the key rules off with
+validateRecordKey(false), so a key field it maps is not refused while blank;
+switch them back on to have the blank field refused under it.* With the rules on,
+the message is unchanged. Pinned by
+[`CreateRecordKeyAdviceTest`](../../../packages/panels/tests/Integration/Resources/Pages/CreateRecordKeyAdviceTest.php).
 It detaches the record from the manager and throws a `LogicException`: *The
 resource page [App\Admin\CreateEdition] built a [App\Entity\Edition] whose
 identifier is still blank after persist(), so it was not saved. Give every

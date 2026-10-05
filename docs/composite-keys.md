@@ -4,8 +4,9 @@ Sylament works with Doctrine entities whose identifier has more than one field, 
 
 ## Supported identifiers
 
-- Several scalar `#[ORM\Id]` fields: strings, integers, big integers, GUIDs and UUIDs, backed enums, and custom types that read back what they print.
+- Several scalar `#[ORM\Id]` fields: strings, integers, big integers, GUIDs and UUIDs, backed enums, and custom types that read back what they print — the value the type's writer stores reads back, through its reader, as the value the writer was given.
 - An `#[ORM\Id]` association plus scalar fields, for example a translation keyed by its article and a locale.
+- Two or more `#[ORM\Id]` associations, for example a membership keyed by its user and its group (a join entity with a payload).
 - A single `#[ORM\Id]` association (a shared primary key).
 
 Doctrine cannot persist or find an entity whose identifier field holds a date or time, and refuses to map an entity with a composite key inside another entity's identifier, so Sylament cannot offer them either.
@@ -36,13 +37,13 @@ Nothing in tables or relation managers is specific to composite keys. In forms:
 
 ## What users see on create and edit
 
-- **A key another record already uses:** *This value is already used.*, under every key field of the form that is not an association — the host and the path of a key made of two strings. When the form has none of them, it is shown under the first key field that is not an association. This also finds rows that a Doctrine SQL filter, such as soft delete, hides.
+- **A key another record already uses:** *This value is already used.*, under every key field of the form that is not an association — the host and the path of a key made of two strings. When the form maps none of them, the message is shown above the form, as an error of the form itself. This also finds rows that a Doctrine SQL filter, such as soft delete, hides.
 - **A key left blank:** *This value should not be blank.*, under that field.
 - **A changed key on edit:** *This value cannot be changed.*, and the stored key is put back.
 
 The first two messages are Symfony's own, translated through the `validators` domain. *This value cannot be changed.* is Sylament's: Sylament ships no translation of it, and your application's `validators` catalog translates it, in a form and in an editable table cell alike. To word the taken-key message differently, translate it in that catalog, or declare `#[UniqueEntity(fields: ['host', 'path'], message: '…', errorPath: 'path')]` on the entity, which is checked first.
 
-`Schema::validateRecordKey(false)` — on one form, or on every schema through `Schema::configureUsing()` — switches the first two checks off: a taken key then fails in the database. A blank key field over a non-nullable property is still refused under the field, since the field is required on its own; one that is not required — it declares `required(false)`, or its property is nullable — fails the save with an error naming the class, which ends: *The schema switches the key rules off with validateRecordKey(false), so a key field it maps is not refused while blank; switch them back on to have the blank field refused under it.* A changed key is still refused. If two users create the same key at the same moment, the second one gets a database error.
+`Schema::validateRecordKey(false)` — on one form, or on every schema through `Schema::configureUsing()` — switches the first two checks off: a taken key then fails in the database. A blank key field over a non-nullable property is still refused under the field, since the field is required on its own. One that is not required — it declares `required(false)`, or its property is nullable — is not, and what happens then depends on what the blank reaches the record as. Whitespace reaches it as a string and fails the save with an error naming the class, which ends: *The schema switches the key rules off with validateRecordKey(false), so a key field it maps is not refused while blank; switch them back on to have the blank field refused under it.* An empty field becomes `null`: over a nullable property Doctrine refuses it inside `persist()` with its own `EntityMissingAssignedId` (*Entity of type … is missing an assigned ID for field '…'*), and over a non-nullable property the save fails earlier, at the mapping, with Symfony's `InvalidTypeException`, since `null` cannot be written there. A `Select`'s create-option action refuses the `null` with the error above before `persist()` unless the class declares a `prePersist` callback or entity listener, when Doctrine's message is what appears. A `prePersist` listener that fills the key saves the record either way. A changed key is still refused. If two users create the same key at the same moment, the second one gets a database error.
 
 ## Replicating records
 
@@ -50,9 +51,12 @@ The first two messages are Symfony's own, translated through the `validators` do
 
 ```php
 ReplicateAction::make()->schema([
+    TextInput::make('host')->required(),
     TextInput::make('path')->required(),
 ]);
 ```
+
+A key made of an association plus scalars, such as a translation, needs only its scalar fields (`locale`), because the association is kept. A key made of two or more associations is copied whole, so the replicate is refused as a taken key unless a form or `beforeReplicaSaved()` gives the copy a new one.
 
 A key set in `beforeReplicaSaved()` is checked for clashes too: with a form, a taken key is *This value is already used.*; without one, the replicate is refused with an error naming the fix. A key a `prePersist` callback or listener sets is not checked, and a taken one fails inside Doctrine.
 
@@ -70,7 +74,7 @@ Override `getRecordRouteKey()` and `resolveRecordRouteBinding()` on the resource
 
 ## Entities with constructor arguments
 
-Sylament creates new records without arguments, so an entity whose constructor requires them fails with an error naming the class until you build it yourself. On a resource create page, override `makeRecord()` and construct the record from the validated form data; the form is then mapped onto the record you return, which must be an instance of the resource's record class:
+Sylament creates new records without arguments, so an entity whose constructor requires them fails with an error naming the class until you build it yourself. On a resource create page, override `makeRecord()` and construct the record from `$data`: the form's state after `mutateFormDataBeforeCreate()` — every field the form maps, validated, plus any other key the browser sent in `data`, unvalidated. Read only keys a field of the form maps. The form is then mapped onto the record you return, which must be an instance of the resource's record class:
 
 ```php
 final class CreateSiteRedirect extends CreateRecord

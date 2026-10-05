@@ -17,16 +17,18 @@ ships.
 | --- | --- |
 | PHP | 8.5 or newer, with `ext-mbstring` |
 | Symfony | 8.1 components (`symfony/property-access`, `symfony/string`, `symfony/validator`) |
-| Symfony UX | `ux-twig-component` ^3.1, `ux-live-component` ^3.1, `ux-icons` ^3.3, `stimulus-bundle` ^3.1 |
+| Symfony UX | `ux-twig-component` ^3.5, `ux-live-component` ^3.5, `ux-icons` ^3.3, `stimulus-bundle` ^3.1 |
 | Twig | 3.27 or newer |
+| Doctrine | `doctrine/orm` ^3.7, required by `schemas`, `forms`, `actions`, `tables` and `panels` |
 
-Doctrine is **not** required. Schemas bind to plain PHP objects; an entity is
-just the case where the bound object happens to be managed by Doctrine. It
-becomes conditional the way storage does below: nothing reaches for an entity
-manager until a field says `unique()` or `exists()`, or a `Select` /
-`CheckboxList` / `Repeater` says `relationship()` — and then the application
-needs `doctrine/doctrine-bundle` registered, which a record-bound form needs
-anyway.
+Composer installs the Doctrine ORM with any of those five packages, but an
+entity manager is not required. Schemas bind to plain PHP objects; an entity is
+just the case where the bound object happens to be managed by Doctrine. The
+entity manager is conditional the way storage is below: nothing reaches for one
+until a field says `unique()` or `exists()`, a `Select` / `CheckboxList` /
+`Repeater` says `relationship()`, or a table, resource or action works over
+entities — and then the application needs `doctrine/doctrine-bundle`
+registered, which a record-bound form needs anyway.
 
 `symfony/asset-mapper` is optional but recommended — it is how the compiled CSS
 and the Stimulus controllers reach your pages without you wiring anything. See

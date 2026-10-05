@@ -31,7 +31,10 @@ half a `before()` hook moved, refused above the form and put back), the
 Integration
 [`SubclassedAssociationReaderTest`](../../../packages/actions/tests/Integration/SubclassedAssociationReaderTest.php)
 (the record check asking a subclassed container reader, rebound to a second
-manager) and, for the
+manager), the Integration
+[`UnmappedHookDataTest`](../../../packages/actions/tests/Integration/UnmappedHookDataTest.php)
+(a key the hook adds and no component maps, refused; the four other shapes let
+through) and, for the
 rendered anchor, the
 Integration
 [`CanOpenUrlTest`](../../../packages/actions/tests/Integration/Concerns/CanOpenUrlTest.php)
@@ -76,7 +79,7 @@ port maps through the schema instead. The fill and the write are a pair:
   flushes through
   [`getEntityManagerForRecord()`](action.md#the-transaction-trio-resolves-a-doctrine-connection-instead-of-a-facade).
 
-Seven things about that pair are deliberate.
+Eight things about that pair are deliberate.
 
 **The record is bound before the fill runs, and by the host.** `fillForm()` fires
 inside `mountAction()`, so the record has to be on the action by then — which is
@@ -140,6 +143,16 @@ built a `new AssociationReader($manager)` until
 [M7 · 10](../roadmap.md#m7--composite-identifiers). So a reader service an
 application subclassed or decorated is the one the changed-key, blank-key and
 taken-key passes ask, and the table query's manager is the one they read.
+
+**A key `mutateDataUsing()` adds that no component maps is refused by name** —
+since [M7 · 10](../roadmap.md#m7--composite-identifiers), where it was dropped in
+silence. The first statement of the default write compares the hook's answer
+with the validated state it was handed and throws a `LogicException` naming the
+action, the hook and each added path, before the record is touched; an
+overwritten key, a key a client typed into the data bag, a key a hidden
+component maps and a `using()` override all pass. The message, the four shapes
+and the Filament comparison are written up once, in
+[create-action.md](create-action.md#the-modal-arm-persists-through-the-schemas-record-class).
 
 **The default persistence step is a typed private method, not an inline
 closure**, for the reason

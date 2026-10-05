@@ -7,12 +7,14 @@ namespace Sylament\Actions;
 use LogicException;
 use Sylament\Actions\Concerns\CanCustomizeProcess;
 use Sylament\Actions\Concerns\CanMutateRecordData;
+use Sylament\Actions\Concerns\RefusesUnmappedData;
 use Sylament\Schemas\Schema;
 
 class EditAction extends Action
 {
     use CanCustomizeProcess;
     use CanMutateRecordData;
+    use RefusesUnmappedData;
 
     public static function getDefaultName(): ?string
     {
@@ -52,13 +54,19 @@ class EditAction extends Action
     /**
      * The default persistence step `using()` replaces: map the validated —
      * and, where `mutateDataUsing()` asked, mutated — state onto the bound
-     * record, then flush it. The record check that ends the mapping reads the
+     * record, then flush it. A path the hook added that no component of the
+     * schema maps is refused by name before the record is touched. The record
+     * check that ends the mapping reads the
      * schema's own reader, rebound to the manager the flush writes through.
      *
      * @param array<string, mixed> $data
+     *
+     * @throws LogicException when the hook added a path no component maps
      */
     private function updateRecord(array $data, Schema $schema, object $record): object
     {
+        $this->refuseUnmappedData($schema, $data);
+
         $manager = $this->getEntityManagerForRecord($record);
 
         $schema->setAssociationReader($schema->getAssociationReader()->withEntityManager($manager));

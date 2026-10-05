@@ -52,6 +52,7 @@ the relationship winning and the lookup on the form's pick).
 pins the record check asking the container's own reader — a subclass of it,
 rebound to a second manager — rather than one the action builds, for create,
 edit and both replicate arms.
+[`UnmappedHookDataTest`](../../../packages/actions/tests/Integration/UnmappedHookDataTest.php) pins the refusal of a key `mutateDataUsing()` adds and no component maps, and the four shapes it lets through, across create, edit and replicate.
 
 ## Surface
 
@@ -212,18 +213,48 @@ record, writes every declared path onto it, answers the record's own
 constraints, and hands it back to be persisted and flushed through
 [`getEntityManagerForRecord()`](action.md#the-transaction-trio-resolves-a-doctrine-connection-instead-of-a-facade).
 
-**A mutated key the schema does not declare cannot reach the record.**
+**A key `mutateDataUsing()` adds that no component maps is refused by name.**
 `Schema::getData()` writes exactly the paths in
 [`getRecordPathMap()`](../schemas/belongs-to-record.md) — the paths the
-container's own components declare — so `mutateDataUsing()` can *change* a value
-a component owns but cannot *introduce* one. Filament's Eloquent
-`$record->fill($data)` mass-assigns any key the model permits, which is why
-`mutateFormDataUsing(fn ($data) => [...$data, 'position' => …])` is an idiom
-upstream; here that key is silently dropped. The port's shape for the same job
-is a component that owns the path — a `Hidden::make('position')->default(…)`
-in the create schema — which is what the demo's sections card does. Nothing
-warns: the record is simply constructed without it, so a non-nullable column
-fails at flush and a defaulted one quietly takes its default.
+container's own components declare, hidden and non-dehydrated ones included —
+so `mutateDataUsing()` can *change* a value a component maps but cannot
+*introduce* one. Filament's Eloquent `$record->fill($data)` mass-assigns any key
+the model permits, which is why `mutateFormDataUsing(fn ($data) => [...$data,
+'position' => …])` is an idiom upstream. Until
+[M7 · 10](../roadmap.md#m7--composite-identifiers) such a key was dropped in
+silence, so a non-nullable column failed at flush and a defaulted one quietly
+took its default. Now the first statement of the default write asks
+[`Schema::findUnmappedAdditions()`](../schemas/belongs-to-record.md) for every
+leaf path the hook's answer adds to the array it was handed — read back through
+`HasData::getUnmutatedData()` — that no component maps, and refuses a non-empty
+answer before anything is built:
+
+> `The [%s] action added [%s] in mutateDataUsing(), but no component of its schema maps those paths, so the default write would drop them. Map each with a component — a Hidden one for a value the user should not type, with required(false) where the record would otherwise require it — or take the write over with using().`
+
+The paths are dotted and comma-separated (`body, meta.source`), as Eloquent's
+*Add fillable property [house, year]* lists them; no value is printed. Four
+shapes pass. A key the hook **overwrites** was in the array it was handed, so it
+is no addition. A key a client typed into the mounted action's data bag is in
+that array too — the bag accepts any nested path and `getState()` keeps it — so
+it passes through, unrefused and unwritten, and no client can force the refusal.
+A key a hidden or `dehydrated(false)` component maps is covered by the map, so
+the hook's value is written. And `using()` replaces the default write wholesale,
+so it is never guarded; neither is a plain `Action` whose own closure reads a
+hook's key. Writing an unmapped path instead was never an option: the data bag
+is client-writable, so that would be mass assignment. Filament has no
+counterpart — `fill()` writes the key, or with `$fillable` declared drops it in
+silence unless `preventSilentlyDiscardingAttributes()` is on — so this is that
+strict Eloquent branch, always on and narrowed to what a hook added. The port's
+shape for the job stays a component that owns the path — a
+`Hidden::make('position')->default(…)` in the create schema, which is what the
+demo's sections card does. The guard is one trait,
+[`RefusesUnmappedData`](../../../packages/actions/src/Concerns/RefusesUnmappedData.php),
+and the same call opens
+[`EditAction`](edit-action.md#the-modal-arm-maps-the-validated-state-onto-the-bound-record)'s
+and the modal arm of
+[`ReplicateAction`](replicate-action.md#a-key-mutatedatausing-adds-that-no-component-of-the-modal-maps-is-refused-by-name)'s
+default writes. Pinned by
+[`UnmappedHookDataTest`](../../../packages/actions/tests/Integration/UnmappedHookDataTest.php).
 
 Four things about that body are deliberate.
 

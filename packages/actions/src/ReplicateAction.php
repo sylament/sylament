@@ -12,6 +12,7 @@ use Doctrine\ORM\ORMInvalidArgumentException;
 use LogicException;
 use Sylament\Actions\Concerns\CanCustomizeProcess;
 use Sylament\Actions\Concerns\CanMutateRecordData;
+use Sylament\Actions\Concerns\RefusesUnmappedData;
 use Sylament\Actions\Replication\RecordReplicator;
 use Sylament\Schemas\Identity\RecordKey;
 use Sylament\Schemas\Schema;
@@ -23,6 +24,7 @@ class ReplicateAction extends Action
 {
     use CanCustomizeProcess;
     use CanMutateRecordData;
+    use RefusesUnmappedData;
 
     protected ?Closure $beforeReplicaSaved = null;
 
@@ -112,7 +114,9 @@ class ReplicateAction extends Action
     /**
      * The default persistence step `using()` replaces: copy the record through
      * Doctrine's metadata, map the modal's validated state onto the copy — or,
-     * with no modal, the mutated field bag — then flush it. One reader — the
+     * with no modal, the mutated field bag — then flush it. A path a modal's
+     * hook added that no component maps is refused by name before the copy is
+     * built. One reader — the
      * mounted schema's, or with no modal the action's own — rebound to the
      * manager the copy is written through, answers the modal's record check and
      * both key checks below. A replica whose
@@ -124,9 +128,15 @@ class ReplicateAction extends Action
      * without a modal a taken key is refused by name before `persist()`.
      *
      * @param array<string, mixed> $data
+     *
+     * @throws LogicException when the modal's hook added a path no component maps
      */
     private function replicateRecord(array $data, ?Schema $schema, object $record): object
     {
+        if ($schema instanceof Schema) {
+            $this->refuseUnmappedData($schema, $data);
+        }
+
         $manager = $this->getEntityManagerForRecord($record);
         $reader = ($schema?->getAssociationReader() ?? $this->getAssociationReader())->withEntityManager($manager);
         $replicator = new RecordReplicator($manager);

@@ -7,6 +7,7 @@ namespace Sylament\Actions;
 use Closure;
 use LogicException;
 use Sylament\Actions\Concerns\CanCustomizeProcess;
+use Sylament\Actions\Concerns\RefusesUnmappedData;
 use Sylament\Schemas\Schema;
 use Sylament\Schemas\State\Relationship;
 
@@ -15,6 +16,7 @@ use function Sylament\Support\only;
 class CreateAction extends Action
 {
     use CanCustomizeProcess;
+    use RefusesUnmappedData;
 
     protected bool|Closure $canCreateAnother = true;
 
@@ -153,7 +155,9 @@ class CreateAction extends Action
     /**
      * The default persistence step `using()` replaces: map the validated —
      * and, where `mutateDataUsing()` asked, mutated — state onto a new record
-     * of the action's class, then flush it. A relationship in force joins the
+     * of the action's class, then flush it. A path the hook added that no
+     * component of the schema maps is refused by name before anything is
+     * built. A relationship in force joins the
      * record to its owner before the state is mapped, so the record check that
      * ends the mapping sees an identifier field the association fills, and
      * again after it, so the relationship still wins over a field the form maps
@@ -169,10 +173,12 @@ class CreateAction extends Action
      * @param array<string, mixed> $data
      * @param class-string $recordClass
      *
-     * @throws LogicException when the persisted record's assigned key is still blank
+     * @throws LogicException when the hook added a path no component maps, or when the persisted record's assigned key is still blank
      */
     private function createRecord(array $data, Schema $schema, string $recordClass): object
     {
+        $this->refuseUnmappedData($schema, $data);
+
         $manager = $this->getEntityManagerForRecord($recordClass);
         $recordReader = $schema->getAssociationReader()->withEntityManager($manager);
 

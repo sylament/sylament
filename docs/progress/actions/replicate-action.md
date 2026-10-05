@@ -49,7 +49,7 @@ recorded as Doctrine's), the Integration
 (a modal left on its original's key, a changed one, and a hook that derives the
 key) and
 [`RecordReplicatorTest`](../../../packages/actions/tests/Integration/Replication/RecordReplicatorTest.php)
-(the copy rules against real Doctrine metadata). Since M7 · 10, [`SubclassedAssociationReaderTest`](../../../packages/actions/tests/Integration/SubclassedAssociationReaderTest.php) pins both arms asking the container's own reader, rebound to a second manager.
+(the copy rules against real Doctrine metadata). Since M7 · 10, [`SubclassedAssociationReaderTest`](../../../packages/actions/tests/Integration/SubclassedAssociationReaderTest.php) pins both arms asking the container's own reader, rebound to a second manager. [`UnmappedHookDataTest`](../../../packages/actions/tests/Integration/UnmappedHookDataTest.php) pins the modal arm's refusal of a key `mutateDataUsing()` adds and no component maps.
 
 ## Surface
 
@@ -65,7 +65,7 @@ by_ names what has to land first. _Detail_ carries **diverges** → the note in
 | [`modalHeading()`](../../../packages/actions/src/ReplicateAction.php) (record title interpolated) | [`ReplicateAction.php`](../../../vendor/filament/actions/src/ReplicateAction.php) | done | — | [diverges](#the-strings-are-literals-not-translation-keys) |
 | [`icon('heroicons:square-2-stack-20-solid')` + `groupedIcon(...)`](../../../packages/actions/src/ReplicateAction.php) | [`ReplicateAction.php`](../../../vendor/filament/actions/src/ReplicateAction.php) `tableIcon()` + `groupedIcon()` | done | — | [diverges](#the-icon-is-a-literal-name-and-a-plain-icon-stands-in-for-tableicon) |
 | [`fillForm()` from the record, minus the excluded names](../../../packages/actions/src/ReplicateAction.php) | [`ReplicateAction.php`](../../../vendor/filament/actions/src/ReplicateAction.php) | done | — | [diverges](#the-fill-reads-the-schemas-declared-paths-not-an-attribute-bag) |
-| [The `action()` body — copy, map, hook, flush, `success()`](../../../packages/actions/src/ReplicateAction.php) | [`ReplicateAction.php`](../../../vendor/filament/actions/src/ReplicateAction.php) | done | — | [diverges](#doctrine-has-no-replicate-so-the-copy-is-read-off-classmetadata) · [diverges](#a-replica-keeps-its-parent-and-one-whose-key-is-still-incomplete-is-refused-by-name) · [diverges](#a-taken-key-answers-in-the-modal-and-any-other-unique-column-is-still-the-databases) · [semantics](#the-write-body-reads-the-mounted-schema-from-the-host-not-from-a-parameter) |
+| [The `action()` body — copy, map, hook, flush, `success()`](../../../packages/actions/src/ReplicateAction.php) | [`ReplicateAction.php`](../../../vendor/filament/actions/src/ReplicateAction.php) | done | — | [diverges](#doctrine-has-no-replicate-so-the-copy-is-read-off-classmetadata) · [diverges](#a-replica-keeps-its-parent-and-one-whose-key-is-still-incomplete-is-refused-by-name) · [diverges](#a-taken-key-answers-in-the-modal-and-any-other-unique-column-is-still-the-databases) · [diverges](#a-key-mutatedatausing-adds-that-no-component-of-the-modal-maps-is-refused-by-name) · [semantics](#the-write-body-reads-the-mounted-schema-from-the-host-not-from-a-parameter) |
 | [`getSchema()` re-pointing the container at the record class](../../../packages/actions/src/ReplicateAction.php) | [`ReplicateAction.php`](../../../vendor/filament/actions/src/ReplicateAction.php) | done | — | [semantics](#the-modal-container-is-re-pointed-twice-at-the-class-then-at-the-replica) |
 | [`excludeAttributes()` / `getExcludedAttributes()`](../../../packages/actions/src/ReplicateAction.php) | [`ReplicateAction.php`](../../../vendor/filament/actions/src/ReplicateAction.php) | done | — | [diverges](#attributes-are-mapped-field-and-association-names) |
 | [`beforeReplicaSaved()` / `callBeforeReplicaSaved()`](../../../packages/actions/src/ReplicateAction.php) | [`ReplicateAction.php`](../../../vendor/filament/actions/src/ReplicateAction.php) | done | — | — |
@@ -344,6 +344,22 @@ the tool for it is the form-level
 constraint on the field the index covers, which fails the modal with a message
 instead. An action replicating a uniquely-indexed record without a form arm, and
 without `excludeAttributes()`, is a caller error we let fail loudly.
+
+### A key `mutateDataUsing()` adds that no component of the modal maps is refused by name
+
+A modal replicate's default write opens with
+[`CreateAction`'s guard](create-action.md#the-modal-arm-persists-through-the-schemas-record-class),
+since [M7 · 10](../roadmap.md#m7--composite-identifiers): a path the hook adds
+that no component of the modal maps is refused by name, before the copy is even
+built, where Filament's `$this->replica->fill($data)` would mass-assign it or
+drop it, and the port dropped it in silence. An overwritten key, a key a client
+typed into the data bag, a key a hidden component maps and a `using()` override
+pass. The arm with no modal has no hook state to compare — the host hands the
+action no data — and its `mutateRecordDataUsing()` already refuses an unknown key
+through `RecordReplicator::setFieldValues()`
+([above](#the-no-schema-arm-is-the-only-place-mutaterecorddatausing-writes-the-record-itself)).
+Pinned by
+[`UnmappedHookDataTest`](../../../packages/actions/tests/Integration/UnmappedHookDataTest.php).
 
 ### `mutateRecordDataUsing()` is one shared trait, not three copies
 

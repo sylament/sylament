@@ -24,6 +24,8 @@ final class FailingWrite
      * row's delete increments inside the caller's transaction does it, so a
      * rollback resets the counter too. On a pooled server database, the counter
      * and its trigger are dropped before another test takes the database.
+     * Runs its setup, and on a server one SELECT naming the database, on the
+     * manager's own connection; a caller holding a recorder resets it afterwards.
      *
      * @param class-string $entityClass
      */

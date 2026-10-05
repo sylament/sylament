@@ -16,7 +16,7 @@ use function dirname;
  *
  * `Doctrine\DBAL\ParameterType` and `ArrayParameterType` are final classes of int
  * constants on DBAL 3 and native enums on DBAL 4. No package declares `doctrine/dbal`:
- * the omission rests on `doctrine/orm: ^3.6` hard-requiring `^3.8.2 || ^4` and on both
+ * the omission rests on `doctrine/orm: ^3.7` hard-requiring `^3.8.2 || ^4` and on both
  * symbols carrying the same *name* across that range. A name is all it licenses — their
  * constants as values, a `match` subject, a `setParameter()` argument — never a declared
  * parameter, return or property type, and never a positive `instanceof`, because a

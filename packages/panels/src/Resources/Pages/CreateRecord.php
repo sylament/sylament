@@ -107,11 +107,13 @@ abstract class CreateRecord extends Page
         try {
             $this->callHook('beforeValidate');
 
-            $data = $schema->getState();
+            $state = $schema->getState();
 
             $this->callHook('afterValidate');
 
-            $data = $this->mutateFormDataBeforeCreate($data);
+            $data = $this->mutateFormDataBeforeCreate($state);
+
+            $this->refuseUnmappedFormData($schema, $state, $data);
 
             $this->callHook('beforeCreate');
 
@@ -270,6 +272,34 @@ abstract class CreateRecord extends Page
         } finally {
             $schema->record($binding);
         }
+    }
+
+    /**
+     * Refuse by name every path `mutateFormDataBeforeCreate()` added to the
+     * validated state that no component of the form maps, which the mapping
+     * would drop.
+     *
+     * @param array<string, mixed> $state the validated state the hook was handed
+     * @param array<string, mixed> $data  the hook's answer
+     *
+     * @throws LogicException when the hook added a path no component of the form maps
+     */
+    private function refuseUnmappedFormData(Schema $schema, array $state, array $data): void
+    {
+        $paths = $schema->findUnmappedAdditions($state, $data);
+
+        if ($paths === []) {
+            return;
+        }
+
+        throw new LogicException(sprintf(
+            'The %s added [%s] in %s, but no component of its %s maps those paths, so the default write would drop them. Map each with a component — a Hidden one for a value the user should not type, with required(false) where the record would otherwise require it — or %s.',
+            sprintf('resource page [%s]', static::class),
+            implode(', ', $paths),
+            'mutateFormDataBeforeCreate()',
+            'form',
+            'set it on the record in makeRecord() or handleRecordCreation()',
+        ));
     }
 
     /**

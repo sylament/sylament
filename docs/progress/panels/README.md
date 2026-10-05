@@ -1197,7 +1197,7 @@ The lifecycle, ours against Filament's:
 | authorization | `authorizeAccess()` | — deferred with the auth cluster |
 | transaction | `beginDatabaseTransaction()` | — deferred |
 | validate | `callHook('beforeValidate')` → `$this->form->getState()` → `callHook('afterValidate')` | the same three steps, over `$this->getSchema('form')` |
-| mutate | `mutateFormDataBeforeCreate($data)` | same, an identity default a page overrides |
+| mutate | `mutateFormDataBeforeCreate($data)` | same, an identity default a page overrides — then a path it adds that no component maps is refused by name |
 | write | `callHook('beforeCreate')` → `handleRecordCreation($data)` → `saveRelationships()` → `callHook('afterCreate')` | `callHook('beforeCreate')` → `handleRecordCreation($this->mapRecordForCreation($schema, $data))`, the mapping onto the record `makeRecord($data)` builds → `callHook('afterCreate')` — `persist()` + `flush()`, no relationship pass |
 | events | `RecordCreated`, `RecordSaved` | — no event layer |
 | remember | `rememberData()` | same, through [`HasUnsavedDataChangesAlert`](../../../packages/panels/src/Pages/Concerns/HasUnsavedDataChangesAlert.php) |
@@ -1263,6 +1263,27 @@ still Symfony's `NoSuchPropertyException`. Pinned by
 over a two-field key the constructor sets and lower-cases, and over a nested
 derived identity whose constructor takes its parent
 ([nested-resources.md](nested-resources.md#a-child-whose-constructor-takes-its-parent-is-built-in-makerecord-and-both-attaches-leave-that-parent-alone)).
+
+**A path the mutator adds that no component maps is refused.** Right after
+`mutateFormDataBeforeCreate()`, before the `beforeCreate` hook and `makeRecord()`,
+`create()` asks the form's
+[`findUnmappedAdditions()`](../schemas/belongs-to-record.md) for every leaf path
+the hook added to the state it was handed that no component maps, and refuses any
+with a `LogicException`: *The resource page [App\Admin\CreateArticle] added
+[status] in mutateFormDataBeforeCreate(), but no component of its form maps those
+paths, so the default write would drop them. Map each with a component — a Hidden
+one for a value the user should not type, with required(false) where the record
+would otherwise require it — or set it on the record in makeRecord() or
+handleRecordCreation().* Until [M7 · 10](../roadmap.md#m7--composite-identifiers)
+such a path was dropped while the page reported *Created*. A key the client typed
+into `data` is already in the state the hook was handed, so it is never refused —
+and never written; an overwritten mapped key, and a key a hidden or non-dehydrated
+component maps, save as before. Because the check runs before `makeRecord()`, a
+value only `makeRecord()` reads must be computed there: a mutator cannot hand it a
+key no component maps.
+[Recorded as a divergence](#a-value-a-mutate-hook-adds-that-no-field-maps-is-refused-where-filaments-fill-keeps-or-drops-it);
+pinned by
+[`RecordPageHookDataTest`](../../../packages/panels/tests/Integration/Resources/Pages/RecordPageHookDataTest.php).
 
 `getRedirectUrl()` is the `edit` page when the resource has one, else the index —
 Filament's chain with the panel-level `getResourceCreatePageRedirect()` setting,
@@ -1392,9 +1413,10 @@ partial itself off it, replacing it with the shared
 real `Action`s — the cancel one
 [linking to the listing rather than going back in history](form-actions.md#the-cancel-action-links-to-the-index-where-filament-goes-back-in-history).
 
-Three divergences are shared with the edit page:
+Four divergences are shared with the edit page:
 [the notification titles are literals](#the-create-and-save-notification-titles-are-literals-not-translation-keys),
 [the schema is named `form`, not `schema`](#the-record-pages-schema-is-named-form-and-schemas-is-narrowed-to-it),
+[a path the mutator adds that no field maps is refused](#a-value-a-mutate-hook-adds-that-no-field-maps-is-refused-where-filaments-fill-keeps-or-drops-it),
 and [URL generation inside a live action resolves the default panel](#url-generation-inside-a-live-action-resolves-the-default-panel).
 One is its own: [it builds its record in `makeRecord()`](#the-create-page-builds-its-record-in-makerecord-which-filaments-page-never-needs).
 
@@ -1472,7 +1494,7 @@ The lifecycle, ours against Filament's:
 | authorization | `authorizeAccess()` | — deferred |
 | transaction | `beginDatabaseTransaction()` | — deferred |
 | validate | `callHook('beforeValidate')` → `$this->form->getState(afterValidate: …)` | same, and the callback is Filament's pair: `callHook('afterValidate')` then `callHook('beforeSave')` |
-| mutate | `mutateFormDataBeforeSave($data)` | same — **after** `beforeSave`, which fired inside the state read |
+| mutate | `mutateFormDataBeforeSave($data)` | same — **after** `beforeSave`, which fired inside the state read — then a path it adds that no component maps is refused by name |
 | write | `handleRecordUpdate($record, $data)` → `callHook('afterSave')` | the form's reader bound to the page's manager → `handleRecordUpdate($schema->getData($data))` → `$schema->loadStateFromRelationships()` → `callHook('afterSave')` — `persist()` + `flush()`, then the relationship-backed re-read |
 | events | `RecordUpdated`, `RecordSaved` | — no event layer |
 | remember | `rememberData()` | same, through [`HasUnsavedDataChangesAlert`](../../../packages/panels/src/Pages/Concerns/HasUnsavedDataChangesAlert.php) |
@@ -1483,6 +1505,13 @@ The ladder is wrapped in the create page's `catch (Halt)` exactly as described
 there, and the `EditHookedArticle` fixture's `$haltsBeforeSave` arm is what pins
 it: the hooks that ran are `beforeValidate`, `afterValidate`, `beforeSave`, and
 the row is untouched.
+
+`mutateFormDataBeforeSave()` meets the create page's refusal: a leaf path it adds
+to the state it was handed that no component of the form maps is refused by name,
+right after the hook and before the reader is bound or anything mapped, with *set
+it on the record in handleRecordUpdate()* as this page's way out
+([the create page's paragraph](#createrecord),
+[the divergence](#a-value-a-mutate-hook-adds-that-no-field-maps-is-refused-where-filaments-fill-keeps-or-drops-it)).
 
 Before the mapping, `save()` binds the form's association reader to the manager
 the page writes through, as the create page does — a
@@ -1610,9 +1639,10 @@ Filament labels it *Edit* and gives it a pencil-square glyph. A page declaring
 the two statics gets Filament's look today; porting the overrides is what makes
 it the default.
 
-Divergences, the three shared with the create page plus six of its own:
+Divergences, the four shared with the create page plus five of its own:
 [the notification titles are literals](#the-create-and-save-notification-titles-are-literals-not-translation-keys),
 [the schema is named `form`](#the-record-pages-schema-is-named-form-and-schemas-is-narrowed-to-it),
+[a path the mutator adds that no field maps is refused](#a-value-a-mutate-hook-adds-that-no-field-maps-is-refused-where-filaments-fill-keeps-or-drops-it),
 [URL generation inside a live action resolves the default panel](#url-generation-inside-a-live-action-resolves-the-default-panel),
 [the record prop carries the route key and needs a dehydration bridge](#the-record-prop-carries-the-route-key-and-needs-a-dehydration-bridge),
 [staying on the page is a `null` redirect](#staying-on-the-page-after-a-save-is-a-null-redirect-not-a-caught-authorization-exception),
@@ -3933,3 +3963,30 @@ come with it that Filament has no need for: a default that cannot build the clas
 names the hook, and an answer that is no instance of the resource's record class
 is refused before anything is mapped onto it. `CreateAction` gains no such member,
 as Filament's has none: `using()` is its seam.
+
+### A value a mutate hook adds that no field maps is refused, where Filament's fill keeps or drops it
+
+Filament's create page builds the model with `new ($this->getModel())($data)` and
+its edit page calls `$record->update($data)`, so a key `mutateFormDataBeforeCreate()`
+or `mutateFormDataBeforeSave()` adds goes through Eloquent's `fill()`: written when
+the attribute is fillable, dropped in silence when `$fillable` is declared without
+it, thrown under `preventSilentlyDiscardingAttributes()`. Ours maps through
+`Schema::getData($data)`, which writes only the paths a component maps — the record
+path map plays `$fillable` — so until
+[M7 · 10](../roadmap.md#m7--composite-identifiers) such a key was dropped with
+nothing said, the page reporting *Created* or *Saved*. Both pages now refuse it by
+name right after the hook, before the `beforeCreate` hook, `makeRecord()` or any
+write: a `LogicException` naming the page, the paths and the ways out — map each
+path with a component (a `Hidden` one for a value the user should not type, with
+`required(false)` where the record would otherwise require it), or set the value on
+the record in `makeRecord()` or `handleRecordCreation()` (create) or
+`handleRecordUpdate()` (edit). That is Eloquent's
+`preventSilentlyDiscardingAttributes()` branch, always on, and limited to what the
+**hook** added: the state the hook was handed is the baseline, and a key the
+client typed into the writable `data` prop is already in it, so no request can
+force the refusal — and that key is still never written, since writing state no
+component declares would be mass assignment. Overwriting a mapped key is unchanged,
+and a key a hidden or non-dehydrated component maps is written, since the map
+carries it. The query is the schema's
+[`findUnmappedAdditions()`](../schemas/belongs-to-record.md); the record actions and
+`Select`'s option forms refuse the same way, in the same words.

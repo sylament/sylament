@@ -126,12 +126,14 @@ abstract class EditRecord extends Page
 
             // Filament's order: `beforeSave` fires inside the state read, before the
             // mutator below — normalising it would be a silent divergence.
-            $data = $schema->getState(afterValidate: function (): void {
+            $state = $schema->getState(afterValidate: function (): void {
                 $this->callHook('afterValidate');
                 $this->callHook('beforeSave');
             });
 
-            $data = $this->mutateFormDataBeforeSave($data);
+            $data = $this->mutateFormDataBeforeSave($state);
+
+            $this->refuseUnmappedFormData($schema, $state, $data);
 
             $schema->setAssociationReader($schema->getAssociationReader()->withEntityManager($this->requireEntityManager()));
 
@@ -289,6 +291,34 @@ abstract class EditRecord extends Page
         $entityManager->flush();
 
         return $record;
+    }
+
+    /**
+     * Refuse by name every path `mutateFormDataBeforeSave()` added to the
+     * validated state that no component of the form maps, which the mapping
+     * would drop.
+     *
+     * @param array<string, mixed> $state the validated state the hook was handed
+     * @param array<string, mixed> $data  the hook's answer
+     *
+     * @throws LogicException when the hook added a path no component of the form maps
+     */
+    private function refuseUnmappedFormData(Schema $schema, array $state, array $data): void
+    {
+        $paths = $schema->findUnmappedAdditions($state, $data);
+
+        if ($paths === []) {
+            return;
+        }
+
+        throw new LogicException(sprintf(
+            'The %s added [%s] in %s, but no component of its %s maps those paths, so the default write would drop them. Map each with a component — a Hidden one for a value the user should not type, with required(false) where the record would otherwise require it — or %s.',
+            sprintf('resource page [%s]', static::class),
+            implode(', ', $paths),
+            'mutateFormDataBeforeSave()',
+            'form',
+            'set it on the record in handleRecordUpdate()',
+        ));
     }
 
     protected function getSavedNotification(): ?Notification

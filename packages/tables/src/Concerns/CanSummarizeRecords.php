@@ -27,7 +27,7 @@ trait CanSummarizeRecords
     /**
      * The same dataset narrowed to the keys of the page on screen — never by a limit,
      * which would bound the aggregate's own result row and read as the all-table
-     * figure. One identifier field narrows as today's `IN`, two or more as a
+     * figure. One identifier field narrows with an `IN` list, two or more as a
      * disjunction of per-field equalities, every component bound through its own
      * DBAL type. Null where there is no page to narrow to: off the query lane, on an
      * unpaginated table, and on an empty page, whose empty key list would narrow to

@@ -191,7 +191,10 @@ abstract class CreateRecord extends Page
     /**
      * The new record the form is mapped onto. The default builds the resource's
      * record class with no arguments; override it to build a record whose
-     * constructor takes them, from the validated and mutated form data.
+     * constructor takes them, from $data: the form's state after
+     * mutateFormDataBeforeCreate() — every field the form maps, validated, plus
+     * any other key the browser sent in `data`, unvalidated. Read only keys a
+     * field of the form maps.
      *
      * @param array<string, mixed> $data
      *

@@ -157,8 +157,7 @@ trait CanPaginateRecords
     /**
      * One window of the query's records, and the one place that decides how it
      * is read: a keyed root whose query joins a collection pages through the
-     * two-step read, everything else through Doctrine's own paginator exactly
-     * as before.
+     * two-step read, everything else through Doctrine's own paginator.
      *
      * `CanSummarizeRecords::readTableRecordAtOffset()` reads its window of one
      * from here, so the decision is written once.
@@ -189,7 +188,7 @@ trait CanPaginateRecords
      * The record class when Doctrine's pagination walkers cannot resolve its
      * rows through one identifier column — two or more identifier fields, or a
      * single one that is an association — and null on every other table, which
-     * keeps reading its pages the way it always has.
+     * pages through Doctrine's paginator.
      *
      * @return class-string|null
      */

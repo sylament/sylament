@@ -8,6 +8,7 @@ use Closure;
 use Doctrine\ORM\QueryBuilder;
 use Doctrine\ORM\Tools\Pagination\Paginator as DoctrinePaginator;
 use LogicException;
+use ReflectionMethod;
 use Stringable;
 use Sylament\Schemas\Components\Concerns\CanAccessProperties;
 use Sylament\Schemas\Identity\IdentifierConstraint;
@@ -349,6 +350,7 @@ trait HasTable
     private function keyTableRecords(iterable $records): array
     {
         $keyedRecords = [];
+        $overridesRecordKey = new ReflectionMethod($this, 'getTableRecordKey')->getFileName() !== __FILE__;
 
         foreach ($records as $sourceKey => $record) {
             if (is_array($record)) {
@@ -370,8 +372,8 @@ trait HasTable
                 throw new LogicException(sprintf('Records of table [%s] must be objects or field-keyed arrays, got %s.', static::class, get_debug_type($record)));
             }
 
-            $key = $this->getTableRecordKey($record);
             $codecKey = $this->resolveQueryRecordKey($record);
+            $key = $codecKey === null || $overridesRecordKey ? $this->getTableRecordKey($record) : $codecKey;
 
             if ($codecKey !== null && $codecKey !== $key) {
                 throw new LogicException(sprintf('Table [%s] keys a [%s] row as [%s] through getTableRecordKey(), but its query reads every key back through RecordKey, which keys that row as [%s], so a selection, an action or a reorder would miss the row, and a select-all with that row unticked would act on it too. Answer the key RecordKey::of() answers, or list the rows through records(), where an object row is keyed and read back by getTableRecordKey() alone.', static::class, get_debug_type($record), $key, $codecKey));

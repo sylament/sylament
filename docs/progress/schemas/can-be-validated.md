@@ -199,8 +199,12 @@ rules that only ever answer for a **new** record — the
 [blank-key pass](#a-blank-assigned-key-is-refused-before-anything-is-written)
 and the [taken-key pass](#a-taken-assigned-key-is-a-field-error-not-a-unique-violation)
 — on or off for the schema whose `getData()` runs; `isRecordKeyValidated()`
-reads it through a plain `evaluate()`, so a closure receives the schema and
-nothing record-shaped. `HasSchemas::validateSchemaRecord()` reads it once, after
+reads it through a plain `evaluate()`, so a closure receives the schema's usual
+injections, `$record` included: the record the schema is bound to. That is the
+record being mapped where the caller binds it before `getData()` (the resource
+create page, `CreateAction`'s relationship arm, an edit), and null under a
+class-string binding (`CreateAction`'s plain arm).
+`HasSchemas::validateSchemaRecord()` reads it once, after
 the changed-key pass and the record's own constraints raised nothing, and skips
 both passes when it is false — which covers `ReplicateAction`'s second call
 after `beforeReplicaSaved()` too, since that reads the same schema.
@@ -208,8 +212,13 @@ after `beforeReplicaSaved()` too, since that reads the same schema.
 
 Switched off, the application owns a new record's key. A taken one reaches the
 flush, where the database's primary key refuses it and the entity manager
-closes; a blank key field the form maps is not refused under it, so it reaches
-the create seam's by-name refusal, whose advice then names the switch. Its use is
+closes; a blank key field the form maps is not refused under it. A blank that
+reaches the record as a string — whitespace — then reaches the create seam's
+by-name refusal, whose advice names the switch. An empty field dehydrates to
+null instead: over a nullable property Doctrine refuses it inside `persist()`
+with its own `EntityMissingAssignedId`, and over a non-nullable one the mapping
+fails first with Symfony's `InvalidTypeException`
+([why the seams cannot see a null](association-reader.md#a-blank-assigned-identifier-is-read-after-persist-where-a-record-is-created)). Its use is
 an application that answers uniqueness itself — its own `#[UniqueEntity]`, which
 runs with the record's own constraints and pre-empts the probe whether the switch
 is on or not — or a save adding many new records whose one `SELECT` each it would

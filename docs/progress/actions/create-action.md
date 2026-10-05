@@ -176,21 +176,8 @@ action's schema() — a Hidden one for a value the user should not type — or f
 it in a prePersist listener.* Nothing is flushed. Before the throw, a
 many-to-many owner gives the record back through the reader's `detach()`, as the
 mapping's own refusal already does, and the record is detached from the manager,
-so a later flush in the same request does not insert it — with one exception
-Doctrine makes. A record whose whole key flattens to `''` — a single derived
-identity whose target's single string key is still `''` — is filed under an
-identity hash of `''`, which Doctrine can neither detach nor remove, the shape
-[`ReplicateAction` already meets](replicate-action.md#a-replica-keeps-its-parent-and-one-whose-key-is-still-incomplete-is-refused-by-name).
-Until [M7 · 11](../roadmap.md#m7--composite-identifiers) the `detach()` raised
-Doctrine's *Entity has no identity, therefore remove from identity map cannot be
-performed* in place of the named refusal; the action now catches it and throws
-the named refusal all the same. Nothing is written, since nothing flushes after
-the refusal, but that record stays scheduled for the rest of the request. Pinned by
-[`CreateActionBlankIdentityHashTest`](../../../packages/actions/tests/Integration/CreateActionBlankIdentityHashTest.php),
-over a record whose no-argument constructor builds the record it derives from;
-panels' create page catches the same refusal, pinned by its
-[`CreateRecordBlankIdentityHashTest`](../../../packages/panels/tests/Integration/Resources/Pages/CreateRecordBlankIdentityHashTest.php).
-Before M7 · 7 the row was written with its blank key half. Pinned by
+so a later flush in the same request does not insert it. Before M7 · 7 the row
+was written with its blank key half. Pinned by
 [`CreateActionBlankKeyTest`](../../../packages/actions/tests/Integration/CreateActionBlankKeyTest.php),
 which also pins that a global `prePersist` listener filling the key lets the
 create save, and that a blank key field the modal maps on a class carrying a
@@ -198,16 +185,54 @@ create save, and that a blank key field the modal maps on a class carrying a
 many-to-many hand-back is pinned by tables'
 [`CreateActionRelationshipTest`](../../../packages/tables/tests/Integration/CreateActionRelationshipTest.php).
 
+Doctrine makes one exception to the detach. A record whose whole key flattens to
+`''` — a single derived identity whose target's single string key is still `''`
+— is filed under an identity hash of `''`, which Doctrine can neither detach nor
+remove, the shape
+[`ReplicateAction` already meets](replicate-action.md#a-replica-keeps-its-parent-and-one-whose-key-is-still-incomplete-is-refused-by-name).
+Until [M7 · 11](../roadmap.md#m7--composite-identifiers) the `detach()` raised
+Doctrine's *Entity has no identity, therefore remove from identity map cannot be
+performed* in place of the named refusal; the action now catches it and throws
+the named refusal all the same. Nothing is written, since nothing flushes after
+the refusal, but that record stays scheduled for the rest of the request. Pinned
+by
+[`CreateActionBlankIdentityHashTest`](../../../packages/actions/tests/Integration/CreateActionBlankIdentityHashTest.php),
+over a record whose no-argument constructor builds the record it derives from;
+panels' create page catches the same refusal, pinned by its
+[`CreateRecordBlankIdentityHashTest`](../../../packages/panels/tests/Integration/Resources/Pages/CreateRecordBlankIdentityHashTest.php).
+
+A key component still **null** never reaches the read: Doctrine's
+`AssignedGenerator` refuses it inside `persist()` with its own
+`EntityMissingAssignedId` (*Entity of type … is missing an assigned ID for field
+'…'*), once every `prePersist` filler has run, and the action lets that refusal
+through unchanged. On the relationship arm the record is already in a
+many-to-many owner's collection by then, and until
+[M7 · 11](../roadmap.md#m7--composite-identifiers) it stayed there, so a later
+flush in the same request failed on *A new entity was found through the
+relationship*. The hand-back now runs in a `finally` around `persist()` and the
+read, so whatever fails there — Doctrine's refusal or the named one — gives the
+record back. Pinned by
+[`CreateActionMissingAssignedIdTest`](../../../packages/actions/tests/Integration/CreateActionMissingAssignedIdTest.php).
+
 A schema that switches the key rules off with
 [`validateRecordKey(false)`](../schemas/can-be-validated.md) skips the blank
-rule, so a blank key field it **maps** reaches this refusal too, where the
-advice to give every identifier field a field would be wrong. Since
-[M7 · 10](../roadmap.md#m7--composite-identifiers) the message then closes with
-*The schema switches the key rules off with validateRecordKey(false), so a key
-field it maps is not refused while blank; switch them back on to have the blank
-field refused under it.* With the rules on, the message is unchanged. Pinned by
+rule, so a blank key field it **maps** reaches the save too, and what happens
+there depends on what the blank reaches the record as. A blank that reaches it
+as a **string** — whitespace, which no text field trims by default — meets this
+refusal, where the advice to give every identifier field a field would be wrong.
+Since [M7 · 10](../roadmap.md#m7--composite-identifiers) the message then closes
+with *The schema switches the key rules off with validateRecordKey(false), so a
+key field it maps is not refused while blank; switch them back on to have the
+blank field refused under it.* With the rules on, the message is unchanged.
+Pinned by
 [`KeyAdviceTest`](../../../packages/actions/tests/Integration/KeyAdviceTest.php),
-beside the plain arm's construction refusal naming `using()`.
+beside the plain arm's construction refusal naming `using()`. An **empty** field
+dehydrates to `null` instead: over a nullable property it is Doctrine's
+`EntityMissingAssignedId` above, never this message, and over a non-nullable one
+the save fails earlier, at the mapping, with Symfony's `InvalidTypeException`,
+since `null` cannot be written there. The reader's
+[own section](../schemas/association-reader.md#a-blank-assigned-identifier-is-read-after-persist-where-a-record-is-created)
+says why a null never reaches its read.
 
 ### The record check reads the container's reader, rebound; the relationship arm keeps the action's own
 

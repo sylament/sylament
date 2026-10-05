@@ -168,10 +168,11 @@ class CreateAction extends Action
      * nothing else takes it out again. The record check reads the schema's own
      * reader, rebound to the manager the flush writes through. A record whose
      * assigned key is still blank once `persist()` has run every prePersist
-     * listener is refused by name before the flush, handed back by a
-     * many-to-many owner and taken back out of the unit of work — except one
-     * whose whole key flattens to `''`, which Doctrine cannot take back and
-     * which stays scheduled.
+     * listener is refused by name before the flush and taken back out of the
+     * unit of work — except one whose whole key flattens to `''`, which
+     * Doctrine cannot take back and which stays scheduled. A many-to-many owner
+     * hands the record back whenever `persist()` or that read fails, Doctrine's
+     * own refusal of a key still null rethrown unchanged.
      *
      * @param array<string, mixed> $data
      * @param class-string $recordClass
@@ -218,25 +219,31 @@ class CreateAction extends Action
             $record = $schema->record($recordClass)->getData($data);
         }
 
-        $manager->persist($record);
+        $persisted = false;
 
-        if ($recordReader->hasBlankAssignedIdentifier($record)) {
-            if ($relationship instanceof Relationship && $this->getAssociationReader()->describeRelationship($relationship)->isManyToMany) {
+        try {
+            $manager->persist($record);
+
+            if ($recordReader->hasBlankAssignedIdentifier($record)) {
+                try {
+                    $manager->detach($record);
+                } catch (ORMInvalidArgumentException) {
+                    // Doctrine can neither detach nor remove a persisted entity whose identity hash is '': it stays scheduled, and nothing flushes after the refusal.
+                }
+
+                throw new LogicException(sprintf(
+                    "The [%s] action built a [%s] whose identifier is still blank after persist(), so it was not saved. Give every identifier field a field in the action's schema() — a Hidden one for a value the user should not type — or fill it in a prePersist listener.%s",
+                    $this->getName(),
+                    $record::class,
+                    $schema->isRecordKeyValidated() ? '' : ' The schema switches the key rules off with validateRecordKey(false), so a key field it maps is not refused while blank; switch them back on to have the blank field refused under it.',
+                ));
+            }
+
+            $persisted = true;
+        } finally {
+            if (! $persisted && $relationship instanceof Relationship && $this->getAssociationReader()->describeRelationship($relationship)->isManyToMany) {
                 $this->getAssociationReader()->detach($relationship, $record);
             }
-
-            try {
-                $manager->detach($record);
-            } catch (ORMInvalidArgumentException) {
-                // Doctrine can neither detach nor remove a persisted entity whose identity hash is '': it stays scheduled, and nothing flushes after the refusal.
-            }
-
-            throw new LogicException(sprintf(
-                "The [%s] action built a [%s] whose identifier is still blank after persist(), so it was not saved. Give every identifier field a field in the action's schema() — a Hidden one for a value the user should not type — or fill it in a prePersist listener.%s",
-                $this->getName(),
-                $record::class,
-                $schema->isRecordKeyValidated() ? '' : ' The schema switches the key rules off with validateRecordKey(false), so a key field it maps is not refused while blank; switch them back on to have the blank field refused under it.',
-            ));
         }
 
         $manager->flush();

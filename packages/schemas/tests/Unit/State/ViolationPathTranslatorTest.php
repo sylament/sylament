@@ -189,6 +189,45 @@ it('answers the item path as the error path when the owning component keys items
     expect($translator->translateToErrorPath('sections[0].heading'))->toBe('data.sections.record-7.heading');
 });
 
+it('answers no error path for a violation that stops at an item, though translate() names the item', function (string $path): void {
+    $translator = new ViolationPathTranslator([
+        'sections' => KeyedItemsOwner::make('sections')
+            ->itemKeys(['record-7'])
+            ->itemStatePaths(['heading', 'tags']),
+    ], 'data');
+
+    expect($translator->translate($path))->toBe('data.sections.record-7')
+        ->and($translator->translateToErrorPath($path))->toBeNull();
+})->with([
+    'a class-level violation on the item record' => 'sections[0]',
+    'an item property no item field maps' => 'sections[0].internalNote',
+    'an index nesting under an unmapped item property' => 'sections[0].notes[1].body',
+]);
+
+it('answers the item field as the error path when a declared item path takes the remainder', function (): void {
+    $translator = new ViolationPathTranslator([
+        'sections' => KeyedItemsOwner::make('sections')
+            ->itemKeys(['record-7'])
+            ->itemStatePaths(['heading', 'tags']),
+    ], 'data');
+
+    expect($translator->translateToErrorPath('sections[0].heading.length'))->toBe('data.sections.record-7.heading')
+        ->and($translator->translateToErrorPath('sections[0].tags[1].name'))->toBe('data.sections.record-7.tags');
+});
+
+it('answers the keyed-items component itself as the error path for a violation on the collection or an index naming no item', function (string $path): void {
+    $translator = new ViolationPathTranslator([
+        'sections' => KeyedItemsOwner::make('sections')
+            ->itemKeys(['record-7'])
+            ->itemStatePaths(['heading']),
+    ], 'data');
+
+    expect($translator->translateToErrorPath($path))->toBe('data.sections');
+})->with([
+    'the collection itself' => 'sections',
+    'an index naming no item' => 'sections[4].heading',
+]);
+
 it('answers no error path when the owning component shows no errors, though translate() names its path', function (): void {
     $translator = new ViolationPathTranslator(['spine' => StateGroup::make()->statePath('spine')], 'data');
 

@@ -185,7 +185,7 @@ it('holds the attribution when a reorder left the collection in its old order', 
         ->toBe([]);
 });
 
-it('folds a violation on a property no item field maps onto the item itself', function (): void {
+it('files a violation on a property no item field maps at the schema, since nothing renders the item itself', function (): void {
     $entityManager = $this::getContainer()->get(EntityManagerInterface::class);
     [$post, $one] = seedValidatedSectionedPost($entityManager);
 
@@ -200,12 +200,12 @@ it('folds a violation on a property no item field maps onto the item itself', fu
     $host->data['sections']['record-' . $one->getId()]['heading'] = PostSection::REJECTED_BODY;
 
     expect(fn (): object => $schema->getData())->toThrow(ValidationException::class)
-        ->and($host->getErrorsForSchemaStatePath('data.sections.record-' . $one->getId()))
-        ->toBe(['That body is too short.'])
+        ->and($host->getErrorsForSchemaStatePath('data'))->toBe(['That body is too short.'])
+        ->and($host->getErrorsForSchemaStatePath('data.sections.record-' . $one->getId()))->toBe([])
         ->and($host->getErrorsForSchemaStatePath('data.sections.record-' . $one->getId() . '.body'))->toBe([]);
 });
 
-it('folds a class-level violation on a child onto the item itself', function (): void {
+it('files a class-level violation on a child at the schema, since nothing renders the item itself', function (): void {
     $entityManager = $this::getContainer()->get(EntityManagerInterface::class);
     [$post, $one] = seedValidatedSectionedPost($entityManager);
 
@@ -220,8 +220,8 @@ it('folds a class-level violation on a child onto the item itself', function ():
     $host->data['sections']['record-' . $one->getId()]['heading'] = PostSection::REJECTED_SECTION;
 
     expect(fn (): object => $schema->getData())->toThrow(ValidationException::class)
-        ->and($host->getErrorsForSchemaStatePath('data.sections.record-' . $one->getId()))
-        ->toBe(['That section is not publishable.'])
+        ->and($host->getErrorsForSchemaStatePath('data'))->toBe(['That section is not publishable.'])
+        ->and($host->getErrorsForSchemaStatePath('data.sections.record-' . $one->getId()))->toBe([])
         ->and($host->getErrorsForSchemaStatePath('data.sections'))->toBe([]);
 });
 

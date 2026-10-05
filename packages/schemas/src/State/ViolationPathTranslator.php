@@ -42,41 +42,7 @@ final readonly class ViolationPathTranslator
     {
         $match = $this->matchRecordPath($violationPropertyPath);
 
-        if ($match === null) {
-            return null;
-        }
-
-        [$propertyPath, $matchedDepth, $recordPath] = $match;
-
-        $statePath = filled($this->rootStatePath) ? $this->rootStatePath . '.' . $recordPath : $recordPath;
-
-        $component = $this->recordPathMap[$recordPath];
-
-        if (! $component instanceof HasKeyedItems) {
-            return $statePath;
-        }
-
-        $itemKey = $this->resolveItemKey($component, $propertyPath, $matchedDepth);
-
-        if ($itemKey === null) {
-            return $statePath;
-        }
-
-        $statePath .= '.' . $itemKey;
-
-        $remainder = $this->readItemRemainder($propertyPath, $matchedDepth);
-
-        if ($remainder === []) {
-            return $statePath;
-        }
-
-        $declaredDepth = $this->matchItemDepth($remainder, $component->getItemStatePaths());
-
-        if ($declaredDepth === null) {
-            return $statePath;
-        }
-
-        return $statePath . '.' . implode('.', array_slice($remainder, 0, $declaredDepth));
+        return $match === null ? null : $this->resolveStatePath(...$match)[0];
     }
 
     /**
@@ -84,23 +50,66 @@ final readonly class ViolationPathTranslator
      * translate()'s answer when the component owning it shows its own errors —
      * a field declaring validation constraints, or a component keying items —
      * and null when it shows none, as a layout component entangling a related
-     * record does, so the caller folds the message at the schema's own path.
+     * record does, or when the answer is a keyed item's own path, which no
+     * template reads; the caller folds the message at the schema's own path.
      */
     public function translateToErrorPath(string $violationPropertyPath): ?string
     {
-        $recordPath = $this->matchRecordPath($violationPropertyPath)[2] ?? null;
+        $match = $this->matchRecordPath($violationPropertyPath);
 
-        if ($recordPath === null) {
+        if ($match === null) {
             return null;
         }
 
-        $component = $this->recordPathMap[$recordPath];
+        $component = $this->recordPathMap[$match[2]];
 
         if (! $component instanceof HasValidationConstraints && ! $component instanceof HasKeyedItems) {
             return null;
         }
 
-        return $this->translate($violationPropertyPath);
+        [$statePath, $isItemPath] = $this->resolveStatePath(...$match);
+
+        return $isItemPath ? null : $statePath;
+    }
+
+    /**
+     * The absolute state path a matched violation lands on, and whether that is
+     * a keyed item's own path — an item the index named, whose remainder no
+     * path the item declares takes.
+     *
+     * @return array{string, bool}
+     */
+    private function resolveStatePath(PropertyPath $propertyPath, int $matchedDepth, string $recordPath): array
+    {
+        $statePath = filled($this->rootStatePath) ? $this->rootStatePath . '.' . $recordPath : $recordPath;
+
+        $component = $this->recordPathMap[$recordPath];
+
+        if (! $component instanceof HasKeyedItems) {
+            return [$statePath, false];
+        }
+
+        $itemKey = $this->resolveItemKey($component, $propertyPath, $matchedDepth);
+
+        if ($itemKey === null) {
+            return [$statePath, false];
+        }
+
+        $statePath .= '.' . $itemKey;
+
+        $remainder = $this->readItemRemainder($propertyPath, $matchedDepth);
+
+        if ($remainder === []) {
+            return [$statePath, true];
+        }
+
+        $declaredDepth = $this->matchItemDepth($remainder, $component->getItemStatePaths());
+
+        if ($declaredDepth === null) {
+            return [$statePath, true];
+        }
+
+        return [$statePath . '.' . implode('.', array_slice($remainder, 0, $declaredDepth)), false];
     }
 
     /**

@@ -34,7 +34,7 @@ nothing here diverges from one, so there is no Divergences section.
 | [`__construct(array $recordPathMap, ?string $rootStatePath)`](../../../packages/schemas/src/State/ViolationPathTranslator.php) — built by [`Schema::getRecordViolationPathTranslator()`](../../../packages/schemas/src/Concerns/BelongsToRecord.php), over the record path map and the paths it drops beneath a subtree owner | done | — | [semantics](#the-state-path-is-rebuilt-from-the-prefix-rather-than-read-off-the-component) |
 | [`translate(string $violationPropertyPath): ?string`](../../../packages/schemas/src/State/ViolationPathTranslator.php) — deepest declared path wins | done | — | [semantics](#a-violation-beneath-a-declared-leaf-folds-onto-that-leaf) |
 | The `null` return — a violation no declared path owns | done | — | [semantics](#an-unowned-violation-returns-null-so-the-caller-folds-it-at-the-schema-root) |
-| [`translateToErrorPath(string $violationPropertyPath): ?string`](../../../packages/schemas/src/State/ViolationPathTranslator.php) — `translate()`'s answer when the owning component implements [`HasValidationConstraints`](../../../packages/schemas/src/Components/Contracts/HasValidationConstraints.php) or `HasKeyedItems`, else `null`; the path `validateSchemaRecord()` files a message under | done | — | [semantics](#a-message-is-filed-only-under-a-component-that-shows-its-own-errors) |
+| [`translateToErrorPath(string $violationPropertyPath): ?string`](../../../packages/schemas/src/State/ViolationPathTranslator.php) — `translate()`'s answer when the owning component implements [`HasValidationConstraints`](../../../packages/schemas/src/Components/Contracts/HasValidationConstraints.php) or `HasKeyedItems` and the answer is no keyed item's own path, else `null`; the path `validateSchemaRecord()` files a message under | done | — | [semantics](#a-message-is-filed-only-under-a-component-that-shows-its-own-errors) |
 | The index arm — `sections[2].heading` → the item key the record's collection holds at key `2` | done | — | [semantics](#the-index-is-a-collection-key-not-a-position) |
 | The in-item fold — a violation naming a path the item schema declares nothing for | done | — | [semantics](#a-violation-inside-an-item-folds-by-the-same-rule-as-one-at-the-root) |
 | [`HasKeyedItems::getItemKeys()`](../../../packages/schemas/src/Components/Contracts/HasKeyedItems.php) — implemented by [`Repeater`](../forms/repeater.md) | done | — | [semantics](#the-index-is-a-collection-key-not-a-position) |
@@ -49,15 +49,17 @@ collection's own path, and the five stop conditions — an index naming no item,
 an in-item path the item declares nothing for, a class-level violation on the
 item record, a fold onto a declared item path, and a second index nesting
 inside the item — and `translateToErrorPath()`'s arms: a constrained field, a
-keyed item, a component showing no errors, and the four `null` paths);
+keyed item, a component showing no errors, the four `null` paths, the three
+shapes that stop at an item's own path, an item field taking the remainder, and
+the collection's own path);
 end-to-end against real Doctrine records by
 [`BelongsToRecordValidationTest`](../../../packages/schemas/tests/Integration/Concerns/BelongsToRecordValidationTest.php),
 the error placement by
 [`HasSchemasRecordErrorPlacementTest`](../../../packages/schemas/tests/Integration/Concerns/HasSchemasRecordErrorPlacementTest.php)
 and, for the index arm over a real `Repeater::relationship()`, by
 [`RepeaterRecordValidationTest`](../../../packages/forms/tests/Integration/Components/RepeaterRecordValidationTest.php)
-— which pins the attribution through a deletion and through a reorder, and both
-in-item fold shapes.
+— which pins the attribution through a deletion and through a reorder, and that
+both in-item fold shapes are filed at the schema's own path.
 
 ## Semantics
 
@@ -117,16 +119,18 @@ above the form. The test is a positive one on purpose: a component that proves
 nothing — a new layout, an application's own — fails toward the path that always
 renders, never toward one that may not.
 
-The keyed-items arm promises less than that. The repeater is a field, so a
-message at its own path renders under it, and each item field renders its own;
-but `translate()` can also answer an **item's** own state path —
+The keyed-items arm needs one more test. The repeater is a field, so a message
+at its own path renders under it, and each item field renders its own; but
+`translate()` can also answer an **item's** own state path —
 `data.sections.record-7`, for a class-level violation on the item record or one
-on an item property no item field maps — and nothing reads that path. Such a
-message is carried on the exception and reachable through
-`getErrorsForSchemaStatePath()`, and shows nowhere: the
-[in-item fold](#a-violation-inside-an-item-folds-by-the-same-rule-as-one-at-the-root)
-is still a 422 with no message on screen. That residual is left for the
-[roadmap's ledger](../roadmap.md#m7--composite-identifiers), not closed here.
+on an item property no item field maps — and nothing reads that path. Until
+[M7 · 11](../roadmap.md#m7--composite-identifiers) such a message was carried on
+the exception, reachable through `getErrorsForSchemaStatePath()`, and shown
+nowhere: a 422 with no message on screen. `translateToErrorPath()` now answers
+`null` for that path too, so the message is filed at the schema's own path and
+renders above the form; a violation on a mapped item field still lands under
+that field, and one on the collection itself — or on an index naming no item —
+still lands on the repeater.
 
 Only the filing moved. The record check still asks `translate()` whether a
 component maps a blank or taken key candidate, so a group entangling the related
@@ -185,11 +189,14 @@ declared `meta.locale`, and a path no item field maps (`internalNote`, or a
 child's class-level violation carrying no remainder at all) folds at the item's
 own state path — `data.sections.record-7`, the item schema's key. Like the
 [root fold](#an-unowned-violation-returns-null-so-the-caller-folds-it-at-the-schema-root),
-it is a message on a container rather than an input, carried on the exception and
-reachable by path, never a state path no component owns. Unlike it, nothing
-renders it: the page and the modal read the schema's own path, and no template
-reads an item's ([the filing leaves it there](#a-message-is-filed-only-under-a-component-that-shows-its-own-errors)).
-Appending the remainder unconditionally would invent a path no component owns.
+it is a message on a container rather than an input, never a state path no
+component owns. No template reads an item's own path, so since
+[M7 · 11](../roadmap.md#m7--composite-identifiers) the filing does not leave it
+there: `translateToErrorPath()` answers `null` for it, and the message is shown
+at the schema's own path, above the form
+([the filing](#a-message-is-filed-only-under-a-component-that-shows-its-own-errors)).
+`translate()` still answers the item's path, which is what it owns. Appending
+the remainder unconditionally would invent a path no component owns.
 
 ### The path is parsed by Symfony's own parser, not by splitting on dots
 

@@ -95,7 +95,7 @@ do.
 | [`getParentRecordTitle()`](../../../packages/panels/src/Resources/Pages/Concerns/InteractsWithParentRecord.php) | same | done | — | [diverges](#getparentrecordtitle-throws-for-a-parentless-page) |
 | [`getParentResourceInstance()`](../../../packages/panels/src/Resources/Pages/Concerns/InteractsWithParentRecord.php) | `InteractsWithParentRecord::getParentResource()` | done | — | [diverges](#the-pages-getparentresource-static-is-an-instance-hop-here) |
 | [`getParentRecordScope()`](../../../packages/panels/src/Resources/Pages/Concerns/InteractsWithParentRecord.php) — the one modifier every key resolution runs through | the `$modifyQuery` closure `resolveRecord()` builds | done | — | [semantics](#one-scope-serves-the-route-key-and-the-unchecksummed-action-key) |
-| [`CreateRecord`](../../../packages/panels/src/Resources/Pages/CreateRecord.php)'s parent arm — attach the record `makeRecord()` built, before the mapping and again before the flush | [`CreateRecord::handleRecordCreation()`](../../../vendor/filament/filament/src/Resources/Pages/CreateRecord.php) | done | — | [diverges](#the-attach-lands-on-the-resource-and-writes-the-owning-side-in-memory) · [semantics](#a-child-whose-constructor-takes-its-parent-is-built-in-makerecord-and-both-attaches-leave-that-parent-alone) |
+| [`CreateRecord`](../../../packages/panels/src/Resources/Pages/CreateRecord.php)'s parent arm — attach the record `makeRecord()` built, before the mapping and again before the flush, and hand it back from a many-to-many parent when either step refuses it | [`CreateRecord::handleRecordCreation()`](../../../vendor/filament/filament/src/Resources/Pages/CreateRecord.php) | done | — | [diverges](#the-attach-lands-on-the-resource-and-writes-the-owning-side-in-memory) · [semantics](#a-child-whose-constructor-takes-its-parent-is-built-in-makerecord-and-both-attaches-leave-that-parent-alone) |
 | [`Page::getDefaultActionRelationship()`](../../../packages/panels/src/Resources/Pages/Page.php) — a modal create under the parent | [`Resources/Pages/Page.php`](../../../vendor/filament/filament/src/Resources/Pages/Page.php) | done | — | — |
 | [`ListRecords`](../../../packages/panels/src/Resources/Pages/ListRecords.php)'s scoped query | [`ListRecords::makeTable()`](../../../vendor/filament/filament/src/Resources/Pages/ListRecords.php)'s `when($parentRecord)` arm | done | — | [semantics](#the-nested-list-page-ships-unexercised-by-any-shipped-page) |
 | [`Resource\Concerns\HasBreadcrumbs`](../../../packages/panels/src/Resources/Resource/Concerns/HasBreadcrumbs.php) — `$breadcrumb` + `getBreadcrumb()` | [`HasBreadcrumbs`](../../../vendor/filament/filament/src/Resources/Resource/Concerns/HasBreadcrumbs.php) | done | — | — |
@@ -582,6 +582,19 @@ flushes nothing at all, which is the defect M4 · 8 built `attach()` to avoid �
 keeping the write in memory means the record joins its parent in the *same*
 flush, so an association the mapping refuses to leave empty fails the form rather
 than the write.
+
+Writing in memory has a cost Eloquent's save does not: a create refused after
+the attach would leave the record in a many-to-many parent's collection, unsaved,
+for the rest of the request, and a later flush in it would fail on Doctrine's
+*A new entity was found through the relationship …*. So since
+[M7 · 11](../roadmap.md#m7--composite-identifiers) both attaches are undone on
+refusal, as [`CreateAction`](../actions/create-action.md#the-created-record-joins-the-relationship-in-the-same-flush)'s
+is: the one before the mapping when the mapping refuses, the one before the
+flush when `persist()` or the blank-key read does, each through
+`AssociationReader::detach()` in a `finally` that rethrows the original
+exception unchanged. A one-to-many or many-to-one parent holds nothing of the
+record, so only the many-to-many arm hands it back
+([the page's side](README.md#createrecord)).
 
 The move onto the resource is a [rename](../renames.md#renames) as well as a
 relocation, and both follow from where the knowledge is: the relationship name is

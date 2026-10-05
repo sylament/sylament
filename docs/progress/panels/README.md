@@ -1330,12 +1330,16 @@ another — and the lookup runs on the form's pick,
 Pinned by
 [`CreateRecordTakenKeyTest`](../../../packages/panels/tests/Integration/Resources/Pages/CreateRecordTakenKeyTest.php) and
 [`CompositeRecordPagesTest`](../../../packages/panels/tests/Integration/Resources/Pages/CompositeRecordPagesTest.php), whose
-taken-key case flipped in place from pinning the unique violation. Unlike
+taken-key case flipped in place from pinning the unique violation. Like
 [`CreateAction`](../actions/create-action.md#the-created-record-joins-the-relationship-in-the-same-flush),
-a refused nested create does not take the record back out of a many-to-many
-parent's collection: it stays there for the rest of the request, which is
-harmless, since `create()` lets the `ValidationException` out and the page
-flushes nothing after it.
+a refused nested create takes the record back out of a many-to-many parent's
+collection: `mapRecordForCreation()` hands it back in a `finally` when the
+mapping refuses it, and the `ValidationException` leaves unchanged. Until
+[M7 · 11](../roadmap.md#m7--composite-identifiers) it stayed there for the rest
+of the request, so a later flush in that request — a listener's, or a
+`handleRecordCreation()` override that caught the refusal — failed with
+Doctrine's *A new entity was found through the relationship …*. Any other
+parent holds nothing of the record and is left alone.
 
 Since M7 · 7 the default `handleRecordCreation()` also refuses by name a record
 whose assigned key is still blank after `persist()`. It asks
@@ -1353,9 +1357,11 @@ it inside `persist()` with its own `EntityMissingAssignedId`, and over a
 non-nullable one the mapping refuses it first with Symfony's
 `InvalidTypeException`
 ([the null arm](../schemas/association-reader.md#a-blank-assigned-identifier-is-read-after-persist-where-a-record-is-created)).
-A field over a non-nullable property
-[is required on its own](../forms/can-be-validated.md#requirement-is-derived-from-the-records-write-side-types)
-until it says `required(false)`. Since M7 · 10 the refusal's message closes with
+A key field over a non-nullable property
+[is required on its own](../forms/can-be-validated.md#requirement-is-derived-from-the-records-write-side-types),
+so until it says `required(false)` a blank in it is refused under the field
+first, whatever the key rules say, and the `InvalidTypeException` arm is reached
+only on a field that says it. Since M7 · 10 the refusal's message closes with
 a sentence saying the rules are off: *The schema switches the key rules off with
 validateRecordKey(false), so a key field it maps is not refused while blank;
 switch them back on to have the blank field refused under it.* With the rules on,
@@ -1367,11 +1373,25 @@ identifier is still blank after persist(), so it was not saved. Give every
 identifier field a form field — a Hidden one for a value the user should not type
 — or fill it in a prePersist listener, in makeRecord(), or in
 handleRecordCreation() before calling the parent.* (`makeRecord()` joined that
-advice with M7 · 10.) Nothing is flushed. An override that sets the key before calling the
-parent passes, since the check reads the record the parent persists. Under a
-many-to-many parent the refused record stays in the parent's collection, as with
-the mapping's own refusal above, and for the same reason it is harmless: nothing
-flushes after the exception. Before M7 · 7 the row was written with its blank key
+advice with M7 · 10.) Nothing is flushed. One record cannot be detached: a single
+derived identity whose target's string key is still `''` flattens to an identity
+hash of `''`, which Doctrine can neither detach nor remove, so since
+[M7 · 11](../roadmap.md#m7--composite-identifiers) the page swallows that
+`detach()` failure and throws its own message unchanged, where it used to fail
+with Doctrine's *Entity has no identity, therefore remove from identity map
+cannot be performed*; that record stays scheduled in the unit of work for the
+rest of the request, and nothing is written, since nothing flushes after the
+refusal (pinned by
+[`CreateRecordBlankIdentityHashTest`](../../../packages/panels/tests/Integration/Resources/Pages/CreateRecordBlankIdentityHashTest.php)).
+An override that sets the key before calling the parent passes, since the check
+reads the record the parent persists. Under a many-to-many parent the record is
+handed back out of the parent's collection whenever `persist()` or this read
+fails — Doctrine's own `EntityMissingAssignedId` for a key half still null
+included, rethrown unchanged — as with the mapping's own refusal above; until
+M7 · 11 it stayed there for the rest of the request. Pinned by
+[`CreateRecordParentHandBackTest`](../../../packages/panels/tests/Integration/Resources/Pages/CreateRecordParentHandBackTest.php),
+over a composite record under a many-to-many parent, refused at the mapping, at
+this read and inside `persist()`. Before M7 · 7 the row was written with its blank key
 half and the redirect failed to mint its key. Pinned by
 [`CompositeRecordPagesTest`](../../../packages/panels/tests/Integration/Resources/Pages/CompositeRecordPagesTest.php),
 which also pins that a global `prePersist` listener filling the key half lets the

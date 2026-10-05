@@ -12,6 +12,7 @@ use Sylament\Actions\ActionGroup;
 use Sylament\Notifications\Notification;
 use Sylament\Panels\Pages\Concerns\HasUnsavedDataChangesAlert;
 use Sylament\Schemas\Schema;
+use Sylament\Schemas\State\Relationship;
 use Sylament\Support\Enums\Operation;
 use Sylament\Support\Exceptions\Halt;
 use Symfony\Component\HttpFoundation\RedirectResponse;
@@ -235,7 +236,8 @@ abstract class CreateRecord extends Page
     /**
      * The state mapped onto the record {@see makeRecord()} builds, called once.
      * One created under a parent joins it before the mapping, so the record
-     * check that ends the mapping sees an identifier field the parent fills; the
+     * check that ends the mapping sees an identifier field the parent fills,
+     * and a many-to-many parent hands it back when the mapping refuses it; the
      * form is bound to the made record for the mapping alone, and that check
      * reads the form's own reader, rebound to the manager the page writes
      * through.
@@ -270,11 +272,34 @@ abstract class CreateRecord extends Page
         $schema->setAssociationReader($schema->getAssociationReader()->withEntityManager($this->requireEntityManager()));
 
         $binding = $schema->getRecord() ?? $schema->getRecordClass();
+        $mapped = false;
 
         try {
-            return $schema->record($record)->getData($data);
+            $record = $schema->record($record)->getData($data);
+            $mapped = true;
+
+            return $record;
         } finally {
             $schema->record($binding);
+
+            if (! $mapped && $parentRecord !== null) {
+                $this->handRecordBackToParent($record, $parentRecord);
+            }
+        }
+    }
+
+    /**
+     * Take a record a refused create attached back out of a many-to-many
+     * parent's collection, which would otherwise hold it unsaved for the rest
+     * of the request; any other parent holds nothing of it.
+     */
+    private function handRecordBackToParent(object $record, object $parentRecord): void
+    {
+        $reader = $this->getSchema('form')->getAssociationReader()->withEntityManager($this->requireEntityManager());
+        $relationship = new Relationship($parentRecord, $this->getResourceInstance()->getParentRelationshipName());
+
+        if ($reader->describeRelationship($relationship)->isManyToMany) {
+            $reader->detach($relationship, $record);
         }
     }
 
@@ -314,7 +339,9 @@ abstract class CreateRecord extends Page
      * before the flush and taken back out of the unit of work — except one
      * whose whole key flattens to `''`, which Doctrine cannot take back and
      * which stays scheduled; the form's own reader, rebound to the page's
-     * manager, answers that read.
+     * manager, answers that read. A many-to-many parent hands the record back
+     * whenever `persist()` or that read fails, Doctrine's own refusal of a key
+     * still null rethrown unchanged.
      *
      * @throws LogicException when the persisted record's assigned key is still blank
      */
@@ -328,23 +355,33 @@ abstract class CreateRecord extends Page
             $this->getResourceInstance()->attachRecordToParent($record, $parentRecord);
         }
 
-        $entityManager->persist($record);
+        $persisted = false;
 
-        $form = $this->getSchema('form');
+        try {
+            $entityManager->persist($record);
 
-        if ($form->getAssociationReader()->withEntityManager($entityManager)->hasBlankAssignedIdentifier($record)) {
-            try {
-                $entityManager->detach($record);
-            } catch (ORMInvalidArgumentException) {
-                // Doctrine can neither detach nor remove a persisted entity whose identity hash is '': it stays scheduled, and nothing flushes after the refusal.
+            $form = $this->getSchema('form');
+
+            if ($form->getAssociationReader()->withEntityManager($entityManager)->hasBlankAssignedIdentifier($record)) {
+                try {
+                    $entityManager->detach($record);
+                } catch (ORMInvalidArgumentException) {
+                    // Doctrine can neither detach nor remove a persisted entity whose identity hash is '': it stays scheduled, and nothing flushes after the refusal.
+                }
+
+                throw new LogicException(sprintf(
+                    'The resource page [%s] built a [%s] whose identifier is still blank after persist(), so it was not saved. Give every identifier field a form field — a Hidden one for a value the user should not type — or fill it in a prePersist listener, in makeRecord(), or in handleRecordCreation() before calling the parent.%s',
+                    static::class,
+                    $record::class,
+                    $form->isRecordKeyValidated() ? '' : ' The schema switches the key rules off with validateRecordKey(false), so a key field it maps is not refused while blank; switch them back on to have the blank field refused under it.',
+                ));
             }
 
-            throw new LogicException(sprintf(
-                'The resource page [%s] built a [%s] whose identifier is still blank after persist(), so it was not saved. Give every identifier field a form field — a Hidden one for a value the user should not type — or fill it in a prePersist listener, in makeRecord(), or in handleRecordCreation() before calling the parent.%s',
-                static::class,
-                $record::class,
-                $form->isRecordKeyValidated() ? '' : ' The schema switches the key rules off with validateRecordKey(false), so a key field it maps is not refused while blank; switch them back on to have the blank field refused under it.',
-            ));
+            $persisted = true;
+        } finally {
+            if (! $persisted && $parentRecord !== null) {
+                $this->handRecordBackToParent($record, $parentRecord);
+            }
         }
 
         $entityManager->flush();

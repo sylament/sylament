@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Sylament\Schemas\Tests\Unit\State;
 
+use Sylament\Schemas\Components\Component;
+use Sylament\Schemas\Components\Contracts\HasKeyedItems;
 use Sylament\Schemas\State\ViolationPathTranslator;
 use Sylament\Schemas\Tests\Fixtures\Components\ConstrainedField;
 use Sylament\Schemas\Tests\Fixtures\Components\KeyedItemsOwner;
@@ -169,12 +171,20 @@ it('answers the translated path as the error path when the owning component decl
     expect($translator->translateToErrorPath('spine.code'))->toBe('data.spine.code');
 });
 
-it('answers the item path as the error path when the owning component keys items', function (): void {
-    $translator = new ViolationPathTranslator([
-        'sections' => KeyedItemsOwner::make('sections')
-            ->itemKeys(['record-7'])
-            ->itemStatePaths(['heading']),
-    ], 'data');
+it('answers the item path as the error path when the owning component keys items, though it declares no constraints', function (): void {
+    $sections = new class extends Component implements HasKeyedItems {
+        public function getItemKeys(): array
+        {
+            return ['record-7'];
+        }
+
+        public function getItemStatePaths(): array
+        {
+            return ['heading'];
+        }
+    };
+
+    $translator = new ViolationPathTranslator(['sections' => $sections->statePath('sections')], 'data');
 
     expect($translator->translateToErrorPath('sections[0].heading'))->toBe('data.sections.record-7.heading');
 });

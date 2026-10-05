@@ -1232,7 +1232,9 @@ on the page the browser lands on.
 **The record is built in `makeRecord(array $data): object`.** Since
 [M7 · 10](../roadmap.md#m7--composite-identifiers) the create page asks one
 protected hook for the new record its form is mapped onto, handing it the
-validated and mutated data, and calls it once per create, with a parent or
+form's state after `mutateFormDataBeforeCreate()`: every field the form maps,
+validated, plus any other key the browser sent in `data`, unvalidated — so an
+override reads only keys a field of the form maps. It calls it once per create, with a parent or
 without. The default builds the resource's record class with no arguments through
 the schemas mapper's `constructRecord()`, so a class whose constructor requires
 arguments is refused by name — *Cannot map a new record on the resource page
@@ -1345,11 +1347,17 @@ out; a blank one the form maps is already a field error
 ([the rule](../schemas/can-be-validated.md#a-blank-assigned-key-is-refused-before-anything-is-written)) —
 unless the form switches the key rules off with
 [`validateRecordKey(false)`](../schemas/can-be-validated.md), when a blank mapped
-key whose field is not required reaches this refusal too — a field over a
-non-nullable property
+key whose field is not required reaches this refusal too, provided the blank
+reaches the record as a **string** — whitespace. An empty field dehydrates to
+null instead, which never gets here: over a nullable property Doctrine refuses
+it inside `persist()` with its own `EntityMissingAssignedId`, and over a
+non-nullable one the mapping refuses it first with Symfony's
+`InvalidTypeException`
+([the null arm](../schemas/association-reader.md#a-blank-assigned-identifier-is-read-after-persist-where-a-record-is-created)).
+A field over a non-nullable property
 [is required on its own](../forms/can-be-validated.md#requirement-is-derived-from-the-records-write-side-types)
-until it says `required(false)` — and since M7 · 10 its message closes with a
-sentence saying so: *The schema switches the key rules off with
+until it says `required(false)`. Since M7 · 10 the refusal's message closes with
+a sentence saying the rules are off: *The schema switches the key rules off with
 validateRecordKey(false), so a key field it maps is not refused while blank;
 switch them back on to have the blank field refused under it.* With the rules on,
 the message is unchanged. Pinned by

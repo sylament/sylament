@@ -367,9 +367,8 @@ class AssociationReader
      * Whether the record is missing an identifier component the application has
      * to assign — asked only of an identifier of more than one field, or one
      * carrying an association. A plain single scalar identifier is never refused
-     * here: the relation layer has always keyed the class, and an application may
-     * fill such a field from anywhere, including a listener no class-level mapping
-     * shows.
+     * here: an application may fill such a field from anywhere, including a
+     * listener no class-level mapping shows.
      */
     public function hasIncompleteAssignedIdentifier(object $entity): bool
     {
@@ -384,8 +383,10 @@ class AssociationReader
 
     /**
      * Whether a record's assigned identifier, as `persist()` left it — every
-     * prePersist callback and listener run — still has a component that is
-     * null or a blank string, an identifier association's own key included.
+     * prePersist callback and listener run — still has a component that is a
+     * blank string, an identifier association's own key included. A null
+     * identifier field never gets this far: Doctrine refuses a missing
+     * assigned identifier inside `persist()`, before this is asked.
      * False for a generated identifier, for a single scalar one, and for an
      * identifier association onto a record whose generated identifier is still
      * pending while no scalar identifier field is blank.

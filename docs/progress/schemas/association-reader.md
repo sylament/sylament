@@ -82,7 +82,7 @@ Sylament-only, so no row has a _Ports_ link.
 | [`getRecordKey(object $entity)`](../../../packages/schemas/src/State/AssociationReader.php) — the string key an entity is spoken by, of any width | done | — | [semantics](#the-record-key-is-tables-semantics-moved-onto-the-mapping) |
 | [`findRecordKey(object $entity)`](../../../packages/schemas/src/State/AssociationReader.php) — the same key, or null for an entity whose identifier is not complete yet | done | — | [semantics](#findrecordkey-answers-null-where-getrecordkey-throws) |
 | [`hasIncompleteAssignedIdentifier(object $entity)`](../../../packages/schemas/src/State/AssociationReader.php) — whether a component the **application** must assign is missing | done | — | [semantics](#an-incomplete-assigned-identifier-is-the-question-the-create-paths-ask) |
-| [`hasBlankAssignedIdentifier(object $record)`](../../../packages/schemas/src/State/AssociationReader.php) — whether a record's assigned key, as `persist()` left it, still holds a null or blank component | done | — | [semantics](#a-blank-assigned-identifier-is-read-after-persist-where-a-record-is-created) |
+| [`hasBlankAssignedIdentifier(object $record)`](../../../packages/schemas/src/State/AssociationReader.php) — whether a record's assigned key, as `persist()` left it, still holds a blank string component (a null one Doctrine refuses inside `persist()`) | done | — | [semantics](#a-blank-assigned-identifier-is-read-after-persist-where-a-record-is-created) |
 | [`revertIdentifierChanges(object $record)`](../../../packages/schemas/src/State/AssociationReader.php) — put back every identifier field a managed record the loaded associations reach no longer prints, and answer each one by its property path (`@internal`: the record check and an editable cell's write call it) | done | — | [semantics](#a-changed-identifier-is-put-back-and-refused-and-costs-no-statement) |
 | [`findTakenIdentifiers(object $record)`](../../../packages/schemas/src/State/AssociationReader.php) — every new record a flush would insert whose assigned key is held already, answered under every field the form could let the user type (`@internal`: the record check calls it and keeps the fields its schema maps, and `ReplicateAction`'s taken-key check with no schema asks whether it answers anything) | done | — | [semantics](#a-taken-identifier-is-looked-up-once-per-new-record-after-the-records-own-constraints-pass) · [semantics](#what-the-taken-key-probe-cannot-see) |
 | [`findBlankAssignedIdentifiers(object $record)`](../../../packages/schemas/src/State/AssociationReader.php) — every field a new record's blank assigned key could be refused under, in the order a refusal picks from (`@internal`: the record check calls it and refuses under the first one the schema maps) | done | — | [semantics](#a-new-records-blank-key-fields-are-the-record-checks-candidates) |
@@ -468,7 +468,14 @@ the event manager can assign a composite half too, and no class-level mapping
 shows it, so a record relying on one is refused here. The three short-circuits
 cover everything the class itself declares; covering the global case would need an
 opt-out nothing has asked for. Since M7 · 7 the residual reaches `Select`'s
-`createOption` default and the `Repeater`. The record check does not ask this
+`createOption` default and the `Repeater`, and `ReplicateAction` asks the same
+predicate before `persist()`; M7 · 11 executed the `Select` arm, and a created
+option whose key a global listener would fill is refused by name. Reading
+`EventManager::hasListeners(Events::prePersist)` as a fourth short-circuit is not
+the way out: it answers for every listener on every class, so one timestamping
+listener anywhere in an application would switch the refusal off for every
+record, and the `Repeater`, which has no post-`persist()` read behind it, would
+then write a blank key half no component maps. The record check does not ask this
 predicate: its blank-key pass reads
 [the record's blank key fields](#a-new-records-blank-key-fields-are-the-record-checks-candidates)
 and refuses only one the form maps, which is the user's to fill. The two create
@@ -489,15 +496,16 @@ half no component maps reaches the table, recorded in
 [repeater.md](../forms/repeater.md#a-new-item-whose-identifier-is-incomplete-is-refused-before-the-save-returns)
 and on [the roadmap's ledger](../roadmap.md#m7--composite-identifiers).
 
-Two callers, both refusing **before anything is flushed**: `Select`'s
-`createOptionUsing` default, which asks before `persist()`, and `Repeater`'s
+Three callers, all refusing **before anything is flushed**: `Select`'s
+`createOptionUsing` default, which asks before `persist()`, `Repeater`'s
 relationship save, which refuses after the collection write and before the item-key
-map is re-read. Both name the field list that would fix it. Neither is validation:
+map is re-read, and `ReplicateAction::replicateRecord()`, which asks after
+`beforeReplicaSaved()` and before `persist()`. Both name the field list that would fix it. Neither is validation:
 a taken key, a changed key half and two new records claiming one key are the
 record check's since [M7 · 6](../roadmap.md#m7--composite-identifiers)
 ([changed](#a-changed-identifier-is-put-back-and-refused-and-costs-no-statement),
 [taken](#a-taken-identifier-is-looked-up-once-per-new-record-after-the-records-own-constraints-pass))
-— and neither of the two restores the
+— and none of the three restores the
 in-memory graph on the way out: a refusal here is a developer error that ends the
 request, nothing has been flushed, and the two write paths that could have
 persisted something have not run.
@@ -505,8 +513,8 @@ persisted something have not run.
 ### A blank assigned identifier is read after persist(), where a record is created
 
 `hasBlankAssignedIdentifier(object $record): bool` asks whether a record's
-assigned key, as `persist()` left it, still holds a component that is null or a
-blank string, through an identifier association's own key too. Its callers are
+assigned key, as `persist()` left it, still holds a component that is a blank
+string, through an identifier association's own key too. Its callers are
 the three places that persist a record a form mapped:
 [`CreateAction::createRecord()`](../actions/create-action.md#a-key-the-modal-leaves-blank-is-refused-by-name-after-persist),
 [`CreateRecord::handleRecordCreation()`](../panels/README.md#createrecord) and
@@ -758,8 +766,12 @@ and the flush met the primary key: a `UniqueConstraintViolationException` and a
 closed entity manager. That was executed on PostgreSQL 18 and MySQL 8, for
 single and composite keys alike.
 
-The price is that a holder the filters hid is loaded into the identity map for
-the rest of that request, and its load listeners run. A create it refuses ends
+The price is that a holder the filters hid is loaded into the identity map, so a
+by-key `find()` or `getReference()` of that identifier — `AssociationReader::getReference()`
+included — answers it past the restored filter for the rest of that request, and
+its load listeners run; for a class under the second-level cache the unfiltered
+row is also written to its entity region, where a later request's `find()` hits
+it until eviction or expiry. DQL stays filtered either way. A create it refuses ends
 in a validation error before anything is flushed. With no filter enabled nothing
 changes, statement for statement.
 
@@ -1166,7 +1178,12 @@ the record's own adder and remover per element — so a domain adder with logic 
 it still runs, and the collection instance survives for Doctrine to diff. The
 contract that buys is the one forms already states: a collection-valued
 association needs an adder and a remover, a to-one a setter, or Symfony names
-what is missing.
+what is missing. Since M7 · 10 a to-one with no setter follows the accessor's leaf
+rule instead: a readable property that already holds the record written (by
+identity) is left alone, and one holding another record, or none yet, is refused
+by name with a `LogicException`. Symfony's own refusal remains only for a property
+that is neither writable nor readable
+([the leaf rule](property-accessor.md#a-property-no-setter-can-change-is-left-alone-when-it-already-holds-the-value)).
 
 Which record is written is decided by the mapping, not by which side the caller
 named. An inverse-side collection write emits **zero SQL** at flush, so a

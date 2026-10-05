@@ -48,6 +48,10 @@ constraints, a generated id adding no statement) and
 [`CreateActionRelationshipKeyTest`](../../../packages/actions/tests/Integration/CreateActionRelationshipKeyTest.php)
 (the attach before the mapping, the restored binding, the many-to-many give-back,
 the relationship winning and the lookup on the form's pick).
+[`SubclassedAssociationReaderTest`](../../../packages/actions/tests/Integration/SubclassedAssociationReaderTest.php)
+pins the record check asking the container's own reader — a subclass of it,
+rebound to a second manager — rather than one the action builds, for create,
+edit and both replicate arms.
 
 ## Surface
 
@@ -151,8 +155,7 @@ and, on a nested create page, by panels'
 
 Since M7 · 7 `createRecord()` asks
 [`AssociationReader::hasBlankAssignedIdentifier()`](../schemas/association-reader.md#a-blank-assigned-identifier-is-read-after-persist-where-a-record-is-created)
-between `persist()` and `flush()`, in both arms, on a reader bound to the manager
-the flush writes through. A record whose assigned key still holds a blank string
+between `persist()` and `flush()`, in both arms, on the mounted schema's own reader, rebound to the manager the flush writes through (next section). A record whose assigned key still holds a blank string
 there has a key field the modal does not map, since the record check refuses a
 mapped one as a field error
 ([the rule](../schemas/can-be-validated.md#a-blank-assigned-key-is-refused-before-anything-is-written)),
@@ -172,6 +175,25 @@ create save, and that a blank key field the modal maps on a class carrying a
 `prePersist` callback is the field error rather than this refusal; the
 many-to-many hand-back is pinned by tables'
 [`CreateActionRelationshipTest`](../../../packages/tables/tests/Integration/CreateActionRelationshipTest.php).
+
+### The record check reads the container's reader, rebound; the relationship arm keeps the action's own
+
+The reader the record check and the blank-key read go through is the mounted
+schema's own — the container's `sylament_schemas.association_reader` service, or
+whatever a host set on the schema — rebound to the manager the flush writes
+through with
+[`AssociationReader::withEntityManager()`](../schemas/association-reader.md), a
+clone, and set back on the schema for the mapping. Until
+[M7 · 10](../roadmap.md#m7--composite-identifiers) the body built a
+`new AssociationReader($manager)` there, which a subclassed or decorated reader
+service never reached. The relationship arm's `attach()`, `detach()` and
+`describeRelationship()` still go through the action's **own** reader — the
+container's, on its default manager — and that is recorded rather than changed:
+they read the owner's mapping and write the object graph through the property
+accessor, touching no unit of work but the `contains()` an attach's identifier
+guard asks, and a relation-scoped table's base query was built through that same
+default reader, so a second manager over the same mapping reads the same answer.
+Moving them onto the rebound reader would be a behaviour change no case needs.
 
 ## Divergences
 

@@ -27,7 +27,11 @@ chrome, the heading interpolation and the URL fallthrough), the Integration
 mount context's record, the `mutateRecordDataUsing()` rewrite, the write onto the
 same entity, and both record guards), the Integration
 [`EditActionChangedKeyTest`](../../../packages/actions/tests/Integration/EditActionChangedKeyTest.php) (a key
-half a `before()` hook moved, refused above the form and put back) and, for the
+half a `before()` hook moved, refused above the form and put back), the
+Integration
+[`SubclassedAssociationReaderTest`](../../../packages/actions/tests/Integration/SubclassedAssociationReaderTest.php)
+(the record check asking a subclassed container reader, rebound to a second
+manager) and, for the
 rendered anchor, the
 Integration
 [`CanOpenUrlTest`](../../../packages/actions/tests/Integration/Concerns/CanOpenUrlTest.php)
@@ -72,7 +76,7 @@ port maps through the schema instead. The fill and the write are a pair:
   flushes through
   [`getEntityManagerForRecord()`](action.md#the-transaction-trio-resolves-a-doctrine-connection-instead-of-a-facade).
 
-Six things about that pair are deliberate.
+Seven things about that pair are deliberate.
 
 **The record is bound before the fill runs, and by the host.** `fillForm()` fires
 inside `mountAction()`, so the record has to be on the action by then — which is
@@ -128,6 +132,14 @@ The UI half is `disabledOn('edit')`, and it is bound to the operation's
 **name** — a modal's operation is the action's name — so an
 `EditAction::make('editRenamed')` leaves such a field enabled and the refusal is
 what holds there.
+
+**The record check reads the schema's own reader, rebound.** The default write
+binds the mounted schema's reader to the manager the flush writes through with
+[`withEntityManager()`](../schemas/association-reader.md) — a clone — where it
+built a `new AssociationReader($manager)` until
+[M7 · 10](../roadmap.md#m7--composite-identifiers). So a reader service an
+application subclassed or decorated is the one the changed-key, blank-key and
+taken-key passes ask, and the table query's manager is the one they read.
 
 **The default persistence step is a typed private method, not an inline
 closure**, for the reason

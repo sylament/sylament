@@ -49,7 +49,7 @@ recorded as Doctrine's), the Integration
 (a modal left on its original's key, a changed one, and a hook that derives the
 key) and
 [`RecordReplicatorTest`](../../../packages/actions/tests/Integration/Replication/RecordReplicatorTest.php)
-(the copy rules against real Doctrine metadata).
+(the copy rules against real Doctrine metadata). Since M7 · 10, [`SubclassedAssociationReaderTest`](../../../packages/actions/tests/Integration/SubclassedAssociationReaderTest.php) pins both arms asking the container's own reader, rebound to a second manager.
 
 ## Surface
 
@@ -274,9 +274,13 @@ class whose own `#[PrePersist]` exempted it from the first point and then left
 a half blank — that replica inserted `('', '')` — while a key a callback does
 fill from blank saves, because the second point reads it after the callback.
 Both points run inside the action's transaction, so nothing is written, and
-both read through the record's **own** manager — the first as
-`new AssociationReader($manager)` rather than the container's reader, which
-breaks for a class a non-default manager maps.
+both read through the record's **own** manager. One reader serves them and the
+modal's record check: the mounted schema's, or with no modal the action's own,
+rebound with [`withEntityManager()`](../schemas/association-reader.md) since
+[M7 · 10](../roadmap.md#m7--composite-identifiers), where two
+`new AssociationReader($manager)` stood. So a class a non-default manager maps
+is read where it is written, and a reader service an application subclassed or
+decorated is the one asked.
 
 One shape Doctrine cannot take back. A class that carries a `prePersist` hook —
 or any class, once a `prePersist` listener sits on its manager's event manager —
@@ -300,8 +304,10 @@ under `replicate`, and reusing the resource form is
 
 A replicate modal left on its original's key is a create on a taken key, and the
 [record check](../schemas/can-be-validated.md#a-taken-assigned-key-is-a-field-error-not-a-unique-violation)
-answers it: *"This value is already used."* under the first identifier field the
-modal lets the user type, the first that is no association — nothing written.
+answers it: *"This value is already used."* under every identifier field that is
+no association and that the modal maps — both halves of a typed pair since
+[M7 · 10](../roadmap.md#m7--composite-identifiers) — or, when it maps none of
+them, where the record check files a key it cannot place — nothing written.
 Before [M7 · 6](../roadmap.md#m7--composite-identifiers) it was Doctrine's
 `EntityIdentityCollisionException`, the original being managed in the same
 request. A changed key saves the replica.

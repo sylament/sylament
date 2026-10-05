@@ -15,7 +15,6 @@ use Sylament\Actions\Concerns\CanMutateRecordData;
 use Sylament\Actions\Replication\RecordReplicator;
 use Sylament\Schemas\Identity\RecordKey;
 use Sylament\Schemas\Schema;
-use Sylament\Schemas\State\AssociationReader;
 use Sylament\Support\Evaluation\ClosureParameter;
 
 use function Sylament\Support\except;
@@ -113,8 +112,10 @@ class ReplicateAction extends Action
     /**
      * The default persistence step `using()` replaces: copy the record through
      * Doctrine's metadata, map the modal's validated state onto the copy — or,
-     * with no modal, the mutated field bag — then flush it. The modal's record
-     * check reads the manager the copy is written through. A replica whose
+     * with no modal, the mutated field bag — then flush it. One reader — the
+     * mounted schema's, or with no modal the action's own — rebound to the
+     * manager the copy is written through, answers the modal's record check and
+     * both key checks below. A replica whose
      * assigned key is incomplete is refused by name before anything is written:
      * before `persist()` where no filler could complete it, and after it —
      * once every prePersist callback and listener has run — where one was
@@ -127,13 +128,14 @@ class ReplicateAction extends Action
     private function replicateRecord(array $data, ?Schema $schema, object $record): object
     {
         $manager = $this->getEntityManagerForRecord($record);
+        $reader = ($schema?->getAssociationReader() ?? $this->getAssociationReader())->withEntityManager($manager);
         $replicator = new RecordReplicator($manager);
         $excluded = $this->getExcludedAttributes() ?? [];
         $replica = $replicator->replicate($record, $excluded);
         $this->replica = $replica;
 
         if ($schema instanceof Schema) {
-            $schema->setAssociationReader(new AssociationReader($manager));
+            $schema->setAssociationReader($reader);
             $schema->record($replica)->getData($data);
         } elseif ($data === [] && $this->mutateRecordDataUsing instanceof Closure) {
             $replicator->setFieldValues($replica, $this->mutateRecordData(except($replicator->getFieldValues($record), $excluded)));
@@ -146,7 +148,6 @@ class ReplicateAction extends Action
         }
 
         $metadata = $manager->getClassMetadata($replica::class);
-        $reader = new AssociationReader($manager);
 
         if (
             $reader->hasIncompleteAssignedIdentifier($replica)

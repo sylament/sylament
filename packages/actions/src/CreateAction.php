@@ -8,7 +8,6 @@ use Closure;
 use LogicException;
 use Sylament\Actions\Concerns\CanCustomizeProcess;
 use Sylament\Schemas\Schema;
-use Sylament\Schemas\State\AssociationReader;
 use Sylament\Schemas\State\Relationship;
 
 use function Sylament\Support\only;
@@ -161,7 +160,8 @@ class CreateAction extends Action
      * onto the same association; the schema is bound to that record for the
      * mapping alone, and a many-to-many owner's collection gives the record back
      * when the mapping refuses it, since nothing else takes it out again. The
-     * record check reads the manager the flush writes through. A record whose
+     * record check reads the schema's own reader, rebound to the manager the
+     * flush writes through. A record whose
      * assigned key is still blank once `persist()` has run every prePersist
      * listener is refused by name before the flush, handed back by a
      * many-to-many owner and taken back out of the unit of work.
@@ -174,7 +174,7 @@ class CreateAction extends Action
     private function createRecord(array $data, Schema $schema, string $recordClass): object
     {
         $manager = $this->getEntityManagerForRecord($recordClass);
-        $recordReader = new AssociationReader($manager);
+        $recordReader = $schema->getAssociationReader()->withEntityManager($manager);
 
         $schema->setAssociationReader($recordReader);
 

@@ -95,7 +95,7 @@ do.
 | [`getParentRecordTitle()`](../../../packages/panels/src/Resources/Pages/Concerns/InteractsWithParentRecord.php) | same | done | — | [diverges](#getparentrecordtitle-throws-for-a-parentless-page) |
 | [`getParentResourceInstance()`](../../../packages/panels/src/Resources/Pages/Concerns/InteractsWithParentRecord.php) | `InteractsWithParentRecord::getParentResource()` | done | — | [diverges](#the-pages-getparentresource-static-is-an-instance-hop-here) |
 | [`getParentRecordScope()`](../../../packages/panels/src/Resources/Pages/Concerns/InteractsWithParentRecord.php) — the one modifier every key resolution runs through | the `$modifyQuery` closure `resolveRecord()` builds | done | — | [semantics](#one-scope-serves-the-route-key-and-the-unchecksummed-action-key) |
-| [`CreateRecord`](../../../packages/panels/src/Resources/Pages/CreateRecord.php)'s parent arm — attach before the flush | [`CreateRecord::handleRecordCreation()`](../../../vendor/filament/filament/src/Resources/Pages/CreateRecord.php) | done | — | [diverges](#the-attach-lands-on-the-resource-and-writes-the-owning-side-in-memory) |
+| [`CreateRecord`](../../../packages/panels/src/Resources/Pages/CreateRecord.php)'s parent arm — attach the record `makeRecord()` built, before the mapping and again before the flush | [`CreateRecord::handleRecordCreation()`](../../../vendor/filament/filament/src/Resources/Pages/CreateRecord.php) | done | — | [diverges](#the-attach-lands-on-the-resource-and-writes-the-owning-side-in-memory) · [semantics](#a-child-whose-constructor-takes-its-parent-is-built-in-makerecord-and-both-attaches-leave-that-parent-alone) |
 | [`Page::getDefaultActionRelationship()`](../../../packages/panels/src/Resources/Pages/Page.php) — a modal create under the parent | [`Resources/Pages/Page.php`](../../../vendor/filament/filament/src/Resources/Pages/Page.php) | done | — | — |
 | [`ListRecords`](../../../packages/panels/src/Resources/Pages/ListRecords.php)'s scoped query | [`ListRecords::makeTable()`](../../../vendor/filament/filament/src/Resources/Pages/ListRecords.php)'s `when($parentRecord)` arm | done | — | [semantics](#the-nested-list-page-ships-unexercised-by-any-shipped-page) |
 | [`Resource\Concerns\HasBreadcrumbs`](../../../packages/panels/src/Resources/Resource/Concerns/HasBreadcrumbs.php) — `$breadcrumb` + `getBreadcrumb()` | [`HasBreadcrumbs`](../../../vendor/filament/filament/src/Resources/Resource/Concerns/HasBreadcrumbs.php) | done | — | — |
@@ -361,6 +361,30 @@ always appends `/` after a parent placeholder, so M7 · 3's greedy `[^/]+` — w
 is stamped on `{record}` alone — is not needed on one, and the compiler's default
 pattern is enough.
 
+### A child whose constructor takes its parent is built in `makeRecord()`, and both attaches leave that parent alone
+
+A nested create page attaches the new record to its parent twice — before the
+mapping, so the record check sees the key half the parent fills, and again in
+`handleRecordCreation()`, so the parent wins over a form that picks another.
+Since [M7 · 10](../roadmap.md#m7--composite-identifiers) the record both attach
+is the one [`makeRecord()`](README.md#createrecord) built, so a child whose
+constructor takes its parent — a derived identity whose parent half no setter can
+change, `new Translation($this->getParentRecord(), $data['locale'])` — is built
+there with the page's own parent record. Each attach writes the child's mapped-by
+property through the schemas mapper, and on a property no setter can change that
+write is
+[left alone when it already holds the same record](../schemas/property-accessor.md#a-property-no-setter-can-change-is-left-alone-when-it-already-holds-the-value),
+compared by identity: `getParentRecord()` answers the one instance the page
+resolved for the request, so both attaches pass. A constructor handed **another**
+parent is refused by name at the first attach — *Cannot write association …: no
+setter can change that property, and it already holds another value* — before
+anything is mapped or persisted, so nothing is saved under either parent; the
+attach's own identifier guard does not see it first, since it reads only a record
+the manager already holds. A `makeRecord()` that answers the parent record itself,
+or anything else that is no instance of the resource's record class, is refused
+before the first attach. Pinned by
+[`MakeRecordTest`](../../../packages/panels/tests/Integration/Resources/Pages/MakeRecordTest.php).
+
 ## Divergences
 
 ### The registration is a pure value object that names nothing it was not told
@@ -529,7 +553,8 @@ The move onto the resource is a [rename](../renames.md#renames) as well as a
 relocation, and both follow from where the knowledge is: the relationship name is
 derived on the resource, so a page-level method would only be able to ask the
 resource for it and hand it straight back. `CreateRecord::handleRecordCreation()`
-stays the page-level override seam it already was; a consumer's override of
+stays the page-level override seam it already was, and since M7 · 10 the record
+both attaches write is the one `makeRecord()` built; a consumer's override of
 Filament's `associateRecordWithParent()` is a method nothing calls, which is the
 failure a rename row exists to make greppable.
 

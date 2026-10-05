@@ -273,7 +273,7 @@ it('refuses by name a composite create whose form leaves a key half out, writing
     $recorder = compositeRecordRecorder();
 
     expect(fn (): mixed => $component->call('create'))->toThrow(new LogicException(sprintf(
-        'The resource page [%s] built a [%s] whose identifier is still blank after persist(), so it was not saved. Give every identifier field a form field — a Hidden one for a value the user should not type — or fill it in a prePersist listener, or in handleRecordCreation() before calling the parent.',
+        'The resource page [%s] built a [%s] whose identifier is still blank after persist(), so it was not saved. Give every identifier field a form field — a Hidden one for a value the user should not type — or fill it in a prePersist listener, in makeRecord(), or in handleRecordCreation() before calling the parent.',
         CreateYearlessImprint::class,
         Imprint::class,
     )));

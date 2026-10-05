@@ -1172,8 +1172,9 @@ record handlers per page too.
   fill mutator here, because Filament has none on its create page either.
 - `form(Schema)` stamps `statePath('data')`,
   `record($resource->getRecordClass())` — the **class-string** arm of
-  `BelongsToRecord`, which defers construction to `getRecordInstance()`'s
-  `constructRecord()` at save time — and `operation(Operation::Create->value)`,
+  `BelongsToRecord`, so nothing is built before the save, where `makeRecord()`
+  builds the record the form is then bound to — and
+  `operation(Operation::Create->value)`,
   then hands the schema to `$resource->form()`. The schema is named `form`, so
   `HasSchemas::getSchema('form')` resolves this very method and the template
   says `renderSchema('form')`.
@@ -1196,7 +1197,7 @@ The lifecycle, ours against Filament's:
 | transaction | `beginDatabaseTransaction()` | — deferred |
 | validate | `callHook('beforeValidate')` → `$this->form->getState()` → `callHook('afterValidate')` | the same three steps, over `$this->getSchema('form')` |
 | mutate | `mutateFormDataBeforeCreate($data)` | same, an identity default a page overrides |
-| write | `callHook('beforeCreate')` → `handleRecordCreation($data)` → `saveRelationships()` → `callHook('afterCreate')` | `callHook('beforeCreate')` → `handleRecordCreation($this->mapRecordForCreation($schema, $data))` → `callHook('afterCreate')` — `persist()` + `flush()`, no relationship pass |
+| write | `callHook('beforeCreate')` → `handleRecordCreation($data)` → `saveRelationships()` → `callHook('afterCreate')` | `callHook('beforeCreate')` → `handleRecordCreation($this->mapRecordForCreation($schema, $data))`, the mapping onto the record `makeRecord($data)` builds → `callHook('afterCreate')` — `persist()` + `flush()`, no relationship pass |
 | events | `RecordCreated`, `RecordSaved` | — no event layer |
 | remember | `rememberData()` | same, through [`HasUnsavedDataChangesAlert`](../../../packages/panels/src/Pages/Concerns/HasUnsavedDataChangesAlert.php) |
 | notify | `getCreatedNotification()?->send()` | same |
@@ -1227,6 +1228,41 @@ sent before the redirect**, so it lands in the flash bag and the
 `SylamentNotifications:Notifications` outlet in the [document](#routing) drains it
 on the page the browser lands on.
 
+**The record is built in `makeRecord(array $data): object`.** Since
+[M7 · 10](../roadmap.md#m7--composite-identifiers) the create page asks one
+protected hook for the new record its form is mapped onto, handing it the
+validated and mutated data, and calls it once per create, with a parent or
+without. The default builds the resource's record class with no arguments through
+the schemas mapper's `constructRecord()`, so a class whose constructor requires
+arguments is refused by name — *Cannot map a new record on the resource page
+[App\Admin\CreateRedirect]: App\Entity\Redirect requires constructor arguments, so
+the mapper cannot build it. Give the constructor defaults, or override
+makeRecord() to build it from the form data.* — and the schema tier's "through
+`record()`" advice, which no page could act on, no longer reaches it. An override
+calls the constructor the way it wants (`new Redirect($data['host'],
+$data['path'])`). What it answers must be an instance of the resource's record
+class: anything else — the parent record, a draft object — is refused by name
+before the attach and before the mapping, so nothing is written onto it. A key
+the constructor sets and the form maps then meets the mapper's
+[rule for a property no setter can change](../schemas/property-accessor.md#a-property-no-setter-can-change-is-left-alone-when-it-already-holds-the-value):
+left alone when it already holds the value the form writes, refused by name when
+the constructor kept it another way (`strtolower()`), whose way out is
+`dehydrateStateUsing()` on the field. Filament's page has no such member
+([recorded](#the-create-page-builds-its-record-in-makerecord-which-filaments-page-never-needs)).
+
+Two things to get right on such a page. **Never `hiddenOn('create')` a key field
+the constructor sets**: a taken key is filed under every key field the form maps,
+and a hidden field renders nowhere, so when every mapped key field is hidden the
+save is refused with no message at all, and when one half is hidden the message
+shows under the other half only; a `disabledOn('create')` one shows it under a
+field the user cannot change. **Give such a key a getter or make it public**: the
+rule sees only a property it can read, so a `private readonly` one with neither is
+still Symfony's `NoSuchPropertyException`. Pinned by
+[`MakeRecordTest`](../../../packages/panels/tests/Integration/Resources/Pages/MakeRecordTest.php),
+over a two-field key the constructor sets and lower-cases, and over a nested
+derived identity whose constructor takes its parent
+([nested-resources.md](nested-resources.md#a-child-whose-constructor-takes-its-parent-is-built-in-makerecord-and-both-attaches-leave-that-parent-alone)).
+
 `getRedirectUrl()` is the `edit` page when the resource has one, else the index —
 Filament's chain with the panel-level `getResourceCreatePageRedirect()` setting,
 the `view` arm and the two `can*()` guards all absent with their features. Both
@@ -1252,14 +1288,18 @@ page reaches the same place from the other side: the resource-page base answers
 
 Since [M7 · 6](../roadmap.md#m7--composite-identifiers) the parent is joined
 **before** the mapping as well. `create()` maps through a private
-`mapRecordForCreation()`, which with no parent is exactly `getData($data)` and
-constructs nothing extra, and under a parent constructs the record through
-`getRecordInstance()`, attaches it through `attachRecordToParent()` and maps with
-the form bound to that record, restoring the binding in a `finally` so a refused
-create re-renders exactly as before. That is what lets the record check that ends
+`mapRecordForCreation()`, which takes the record `makeRecord()` built, attaches
+it under a parent through `attachRecordToParent()` and maps with the form bound
+to that record, restoring the binding in a `finally` so a refused create
+re-renders exactly as before — the `hint` field of `MakeRecordTest`'s page and of
+`CreateRecordTakenKeyTest`'s nested one, shown only while the form is bound to no
+record, is what proves the binding came back. Until M7 · 10 the arm with no parent
+mapped under the class binding alone, so a closure taking `$record` saw `null`
+while the form was mapped; it now sees the new record, as the parent arm's always
+did. That is what lets the record check that ends
 the mapping see a key half the parent fills: a create on a taken key — nested or
 not, over any identifier width, a single assigned one included — is *"This value
-is already used."* under the first key field the form lets the user type rather
+is already used."* under every key field the form maps that is no association, rather
 than a unique-violation 500 ([the rule](../schemas/can-be-validated.md#a-taken-assigned-key-is-a-field-error-not-a-unique-violation)). `handleRecordCreation()`'s
 own attach is the *after*, so the parent still wins over a form that picks
 another — and the lookup runs on the form's pick,
@@ -1285,8 +1325,9 @@ It detaches the record from the manager and throws a `LogicException`: *The
 resource page [App\Admin\CreateEdition] built a [App\Entity\Edition] whose
 identifier is still blank after persist(), so it was not saved. Give every
 identifier field a form field — a Hidden one for a value the user should not type
-— or fill it in a prePersist listener, or in handleRecordCreation() before calling
-the parent.* Nothing is flushed. An override that sets the key before calling the
+— or fill it in a prePersist listener, in makeRecord(), or in
+handleRecordCreation() before calling the parent.* (`makeRecord()` joined that
+advice with M7 · 10.) Nothing is flushed. An override that sets the key before calling the
 parent passes, since the check reads the record the parent persists. Under a
 many-to-many parent the refused record stays in the parent's collection, as with
 the mapping's own refusal above, and for the same reason it is harmless: nothing
@@ -1336,6 +1377,7 @@ Three divergences are shared with the edit page:
 [the notification titles are literals](#the-create-and-save-notification-titles-are-literals-not-translation-keys),
 [the schema is named `form`, not `schema`](#the-record-pages-schema-is-named-form-and-schemas-is-narrowed-to-it),
 and [URL generation inside a live action resolves the default panel](#url-generation-inside-a-live-action-resolves-the-default-panel).
+One is its own: [it builds its record in `makeRecord()`](#the-create-page-builds-its-record-in-makerecord-which-filaments-page-never-needs).
 
 ### EditRecord
 
@@ -3847,3 +3889,20 @@ The full-page arms need no equivalent decision: `defaultForm()` is not ported �
 `CreateRecord::form()` and `EditRecord::form()` stamp a state path, a record and
 an operation and hand the schema to the resource — so a page form already renders
 exactly what the resource declared, and this only aligns the modal with it.
+
+### The create page builds its record in `makeRecord()`, which Filament's page never needs
+
+Filament's `CreateRecord::handleRecordCreation(array $data): Model` builds and
+saves in one step, `new ($this->getModel())($data)`, because an Eloquent model
+takes any attribute array in its constructor. Ours keeps
+[`handleRecordCreation()` taking the mapped record](#createrecord) — the parent
+attach and the record check sit on the record the mapping produced — so
+construction needed a seam of its own: `makeRecord(array $data): object`, called
+once, before the attach and the mapping. The name is borrowed from Filament's
+`TranslatableContentDriver::makeRecord(string $model, array $data)`, which answers
+the same question — an unsaved record from form data — on a contract the page
+never reaches; the [renames table](../renames.md) carries the row. Two refusals
+come with it that Filament has no need for: a default that cannot build the class
+names the hook, and an answer that is no instance of the resource's record class
+is refused before anything is mapped onto it. `CreateAction` gains no such member,
+as Filament's has none: `using()` is its seam.

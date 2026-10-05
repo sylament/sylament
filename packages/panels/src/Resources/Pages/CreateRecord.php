@@ -178,6 +178,24 @@ abstract class CreateRecord extends Page
     }
 
     /**
+     * The new record the form is mapped onto. The default builds the resource's
+     * record class with no arguments; override it to build a record whose
+     * constructor takes them, from the validated and mutated form data.
+     *
+     * @param array<string, mixed> $data
+     *
+     * @throws LogicException when the default meets a record class whose constructor requires arguments
+     */
+    protected function makeRecord(array $data): object
+    {
+        return $this->getSchema('form')->getPropertyAccessor()->constructRecord(
+            $this->getResourceInstance()->getRecordClass(),
+            sprintf('a new record on the resource page [%s]', static::class),
+            'override makeRecord() to build it from the form data.',
+        );
+    }
+
+    /**
      * @return object|array<string, mixed>|string|null
      */
     protected function getMountedActionSchemaRecord(): object|array|string|null
@@ -201,29 +219,39 @@ abstract class CreateRecord extends Page
     }
 
     /**
-     * The state mapped onto a new record. One created under a parent joins it
-     * before the mapping, so the record check that ends the mapping sees an
-     * identifier field the parent fills; the form is bound to that record for
-     * the mapping alone.
+     * The state mapped onto the record {@see makeRecord()} builds, called once.
+     * One created under a parent joins it before the mapping, so the record
+     * check that ends the mapping sees an identifier field the parent fills; the
+     * form is bound to the made record for the mapping alone.
      *
      * @param array<string, mixed> $data
+     *
+     * @throws LogicException when makeRecord() answers an object that is no instance of the resource's record class
      */
     private function mapRecordForCreation(Schema $schema, array $data): object
     {
+        $resource = $this->getResourceInstance();
+        $recordClass = $resource->getRecordClass();
+        $record = $this->makeRecord($data);
+
+        if (! $record instanceof $recordClass) {
+            throw new LogicException(sprintf(
+                'The resource page [%s] built a [%s] in makeRecord(), but its resource [%s] creates [%s] records, so the form was not mapped onto it. Answer a new [%s] from makeRecord().',
+                static::class,
+                $record::class,
+                $resource::class,
+                $recordClass,
+                $recordClass,
+            ));
+        }
+
         $parentRecord = $this->getParentRecord();
 
-        if ($parentRecord === null) {
-            return $schema->getData($data);
+        if ($parentRecord !== null) {
+            $resource->attachRecordToParent($record, $parentRecord);
         }
 
         $binding = $schema->getRecord() ?? $schema->getRecordClass();
-        $record = $schema->getRecordInstance();
-
-        if ($record === null) {
-            return $schema->getData($data);
-        }
-
-        $this->getResourceInstance()->attachRecordToParent($record, $parentRecord);
 
         try {
             return $schema->record($record)->getData($data);
@@ -258,7 +286,7 @@ abstract class CreateRecord extends Page
             $entityManager->detach($record);
 
             throw new LogicException(sprintf(
-                'The resource page [%s] built a [%s] whose identifier is still blank after persist(), so it was not saved. Give every identifier field a form field — a Hidden one for a value the user should not type — or fill it in a prePersist listener, or in handleRecordCreation() before calling the parent.',
+                'The resource page [%s] built a [%s] whose identifier is still blank after persist(), so it was not saved. Give every identifier field a form field — a Hidden one for a value the user should not type — or fill it in a prePersist listener, in makeRecord(), or in handleRecordCreation() before calling the parent.',
                 static::class,
                 $record::class,
             ));

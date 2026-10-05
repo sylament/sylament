@@ -2,13 +2,18 @@
 
 declare(strict_types=1);
 
+use Doctrine\DBAL\Types\ConversionException;
 use Sylament\Schemas\Identity\IdentifierConstraint;
 use Sylament\Schemas\Identity\RecordKey;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\CompositeOwnerRig;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\Crate;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\CrateSeal;
+use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\HexSwatch;
+use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\HexTile;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\Listing;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\ListingNote;
+use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\MarkedSwatch;
+use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\MarkedTile;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\Pallet;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\Placement;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\Post;
@@ -17,6 +22,7 @@ use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\PostSealNote;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\PostTranslation;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\Redirect;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\Ticket;
+use Sylament\Schemas\Tests\Fixtures\Doctrine\HexKeyRig;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\IdentityRig;
 
 it('selects an identifier association through IDENTITY() and a scalar field by its path', function (): void {
@@ -36,7 +42,7 @@ it('mints from a result row the key the record mints, whichever way the row was 
 
     /** @var list<array<string, mixed>> $rows */
     $rows = $hydration === 'scalar' ? $query->getQuery()->getScalarResult() : $query->getQuery()->getArrayResult();
-    $rowKeys = array_map($selection->keyOf(...), $rows);
+    $rowKeys = array_map($hydration === 'scalar' ? $selection->keyOf(...) : $selection->keyOfHydrated(...), $rows);
 
     /** @var list<object> $records */
     $records = $entityManager->createQueryBuilder()->select('record')->from($class, 'record')->getQuery()->getResult();
@@ -66,7 +72,7 @@ it('mints from a projected raw-bytes row the key its record mints', function (st
 
     /** @var list<array<string, mixed>> $rows */
     $rows = $hydration === 'scalar' ? $query->getQuery()->getScalarResult() : $query->getQuery()->getArrayResult();
-    $keys = array_map($selection->keyOf(...), $rows);
+    $keys = array_map($hydration === 'scalar' ? $selection->keyOf(...) : $selection->keyOfHydrated(...), $rows);
 
     sort($keys);
 
@@ -90,12 +96,59 @@ it('keys a row that carries other columns beside the key', function (): void {
         ->getArrayResult();
 
     expect($rows)->toHaveCount(1)
-        ->and($selection->keyOf($rows[0]))->toBe('1~pt-BR');
+        ->and($selection->keyOfHydrated($rows[0]))->toBe('1~pt-BR');
 });
 
-it('refuses a row that was not read through the selection', function (): void {
+it('refuses a row that was not read through the selection', function (string $method): void {
     $query = IdentityRig::create()->createQueryBuilder()->from(PostTranslation::class, 'record');
+    $selection = IdentifierConstraint::select($query, 'record', PostTranslation::class);
 
-    expect(fn (): string => IdentifierConstraint::select($query, 'record', PostTranslation::class)->keyOf(['sy_key_0' => 1]))
-        ->toThrow(LogicException::class, 'lacks the key column [sy_key_1]');
+    expect(fn (): string => $selection->{$method}(['sy_key_0' => 1]))
+        ->toThrow(LogicException::class, 'A result row of [Sylament\\Schemas\\Tests\\Fixtures\\Doctrine\\Entity\\PostTranslation] lacks the key column [sy_key_1], so it was not read through the selection that keys it.');
+})->with(['keyOf', 'keyOfHydrated']);
+
+it('mints from a row of a type whose reader is not idempotent the key the record mints', function (string $class, array $expected, string $hydration): void {
+    $entityManager = HexKeyRig::create();
+    $query = $entityManager->createQueryBuilder()->from($class, 'record');
+    $selection = IdentifierConstraint::select($query, 'record', $class);
+    $query->select(...$selection->expressions);
+
+    /** @var list<array<string, mixed>> $rows */
+    $rows = $hydration === 'scalar' ? $query->getQuery()->getScalarResult() : $query->getQuery()->getArrayResult();
+    $rowKeys = array_map($hydration === 'scalar' ? $selection->keyOf(...) : $selection->keyOfHydrated(...), $rows);
+
+    /** @var list<object> $records */
+    $records = $entityManager->createQueryBuilder()->select('record')->from($class, 'record')->getQuery()->getResult();
+    $recordKeys = array_map(static fn (object $record): string => RecordKey::of($entityManager, $record), $records);
+
+    sort($rowKeys);
+    sort($recordKeys);
+
+    expect($rowKeys)->toBe($expected)
+        ->and($recordKeys)->toBe($expected);
+})->with([
+    'a lenient reader, one field' => [HexSwatch::class, ['1a', 'ff']],
+    'a lenient reader, two fields' => [HexTile::class, ['1a~north', 'ff~north', 'ff~south']],
+    'a strict reader, one field' => [MarkedSwatch::class, ['alpha', 'beta']],
+    'a strict reader, two fields' => [MarkedTile::class, ['alpha~north', 'beta~south']],
+])->with(['scalar', 'array']);
+
+it('reads every value of a row through its field type in keyOf(), which a hydrated row has been already', function (): void {
+    $entityManager = HexKeyRig::create();
+    $query = $entityManager->createQueryBuilder()->from(HexSwatch::class, 'record');
+    $selection = IdentifierConstraint::select($query, 'record', HexSwatch::class);
+
+    /** @var list<array<string, mixed>> $rows */
+    $rows = $query->select(...$selection->expressions)->orderBy('record.label')->getQuery()->getArrayResult();
+
+    expect(array_map($selection->keyOf(...), $rows))->toBe(['0', '1'])
+        ->and(array_map($selection->keyOfHydrated(...), $rows))->toBe(['ff', '1a']);
+
+    $strict = $entityManager->createQueryBuilder()->from(MarkedSwatch::class, 'record');
+    $strictSelection = IdentifierConstraint::select($strict, 'record', MarkedSwatch::class);
+
+    /** @var list<array<string, mixed>> $strictRows */
+    $strictRows = $strict->select(...$strictSelection->expressions)->getQuery()->getArrayResult();
+
+    expect(fn (): string => $strictSelection->keyOf($strictRows[0]))->toThrow(ConversionException::class);
 });

@@ -26,6 +26,8 @@ final class EntityManagerFactory
         return TestEntityManagers::create('tables', [__DIR__ . '/Entity'], [
             HandleType::NAME => HandleType::class,
             LockerCodeType::NAME => LockerCodeType::class,
+            HexCodeType::NAME => HexCodeType::class,
+            MarkedCodeType::NAME => MarkedCodeType::class,
         ], $recorder, static function (Configuration $config): void {
             $cache = new CacheConfiguration();
             $cache->setCacheFactory(new DefaultCacheFactory(new RegionsConfiguration(), new ArrayAdapter()));

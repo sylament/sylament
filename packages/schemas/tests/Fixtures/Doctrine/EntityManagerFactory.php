@@ -32,6 +32,8 @@ final class EntityManagerFactory
         AmountType::NAME => AmountType::class,
         TokenType::NAME => TokenType::class,
         MonikerType::NAME => MonikerType::class,
+        HexCodeType::NAME => HexCodeType::class,
+        MarkedCodeType::NAME => MarkedCodeType::class,
     ];
 
     /**

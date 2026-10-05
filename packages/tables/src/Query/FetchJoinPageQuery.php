@@ -70,9 +70,10 @@ final class FetchJoinPageQuery
      *
      * The walker names its columns itself — an identifier association under the
      * bare property name carrying the raw driver value, a scalar field under
-     * `<alias>_<field>` and converted — so the row is remapped positionally
-     * onto the aliases this class asked `select()` for and minted through
-     * `keyOf()`, the one step that reconciles both halves.
+     * `<alias>_<field>` and already converted through its type — so the row is
+     * remapped positionally onto the aliases this class asked `select()` for and
+     * minted through `keyOfHydrated()`, which converts the association halves
+     * alone.
      *
      * @param class-string $recordClass
      *
@@ -109,7 +110,7 @@ final class FetchJoinPageQuery
                 $columns[self::KEY_ALIAS . '_' . $index] = $value;
             }
 
-            $keys[] = $selection->keyOf($columns);
+            $keys[] = $selection->keyOfHydrated($columns);
         }
 
         return $keys;

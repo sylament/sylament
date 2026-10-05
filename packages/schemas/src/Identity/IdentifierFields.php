@@ -7,6 +7,7 @@ namespace Sylament\Schemas\Identity;
 use BackedEnum;
 use Doctrine\DBAL\Platforms\AbstractPlatform;
 use Doctrine\DBAL\Types\BigIntType;
+use Doctrine\DBAL\Types\BooleanType;
 use Doctrine\DBAL\Types\ConversionException;
 use Doctrine\DBAL\Types\DecimalType;
 use Doctrine\DBAL\Types\GuidType;
@@ -187,7 +188,11 @@ final readonly class IdentifierFields
             }
 
             if (self::printable($value) !== $component) {
-                return null;
+                $value = $this->readThroughDatabaseForm($type, $component, $platform);
+
+                if (self::printable($value) !== $component) {
+                    return null;
+                }
             }
 
             $values[] = $value;
@@ -197,11 +202,12 @@ final readonly class IdentifierFields
     }
 
     /**
-     * A component the field's type refuses to read, offered to its writer
-     * first: a type whose column holds a form its printed one is not — a
-     * binary-backed uuid — takes that printed spelling on the way in and reads
-     * the database form it makes back. Null when either step refuses, which the
-     * print-back rule then answers as a key naming no record.
+     * A component the field's type refuses to read, or reads as another value,
+     * offered to its writer first: a type whose column holds a form its printed
+     * one is not — a binary-backed uuid, an integer printed as hex — takes that
+     * printed spelling on the way in and reads the database form it makes back.
+     * Null when either step refuses, which the print-back rule then answers as a
+     * key naming no record.
      */
     private function readThroughDatabaseForm(Type $type, string $component, AbstractPlatform $platform): mixed
     {
@@ -298,12 +304,18 @@ final readonly class IdentifierFields
     /**
      * The three type families whose own conversion hands a malformed string
      * back untouched, so nothing downstream would refuse it before the database
-     * does — each matched by class, so a type registered under a name of its own
-     * is checked as the family it extends.
+     * does, and the boolean one, which prints only `0` and `1` and whose writer
+     * refuses another spelling on PostgreSQL with no ConversionException — each
+     * matched by class, so a type registered under a name of its own is checked
+     * as the family it extends.
      */
     private function hasShapeOf(string $component, string $type, AbstractPlatform $platform): bool
     {
         $instance = Type::getType($type);
+
+        if ($instance instanceof BooleanType) {
+            return $component === '0' || $component === '1';
+        }
 
         if ($instance instanceof BigIntType) {
             return preg_match('/^(?:0|-?[1-9][0-9]*)$/D', $component) === 1;

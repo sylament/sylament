@@ -189,7 +189,7 @@ final class AggregateQuery
                 throw new LogicException(sprintf('The aggregate batch over [%s] returned a %s value, which no cell can carry.', $recordClass, get_debug_type($value)));
             }
 
-            $values[$selection->keyOf($row)] = $value;
+            $values[$selection->keyOfHydrated($row)] = $value;
         }
 
         return $values;

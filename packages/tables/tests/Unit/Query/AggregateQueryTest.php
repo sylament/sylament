@@ -11,6 +11,8 @@ use Sylament\Tables\Query\AggregateDeclaration;
 use Sylament\Tables\Query\AggregateQuery;
 use Sylament\Tables\Tests\Fixtures\Doctrine\Entity\Artist;
 use Sylament\Tables\Tests\Fixtures\Doctrine\Entity\Gig;
+use Sylament\Tables\Tests\Fixtures\Doctrine\Entity\HexSwatch;
+use Sylament\Tables\Tests\Fixtures\Doctrine\Entity\HexTile;
 use Sylament\Tables\Tests\Fixtures\Doctrine\Entity\Locker;
 use Sylament\Tables\Tests\Fixtures\Doctrine\Entity\LockerItem;
 use Sylament\Tables\Tests\Fixtures\Doctrine\Entity\LockerLease;
@@ -24,6 +26,7 @@ use Sylament\Tables\Tests\Fixtures\Doctrine\Entity\Song;
 use Sylament\Tables\Tests\Fixtures\Doctrine\Entity\Venue;
 use Sylament\Tables\Tests\Fixtures\Doctrine\EntityManagerFactory;
 use Sylament\Tables\Tests\Fixtures\Doctrine\Handle;
+use Sylament\Tables\Tests\Fixtures\Doctrine\HexKeyRig;
 
 /**
  * Radiohead with two songs, Adele with none, Björk with one — so a batch over
@@ -600,3 +603,18 @@ it('correlates a hidden sort select on a derived identity', function (): void {
     expect($query->getDQL())->toContain('sy_ag1.venue = residency.venue AND sy_ag1.season = residency.season')
         ->and($ordered)->toBe(['autumn/2026', 'winter', 'empty']);
 });
+
+it('keys a batch over a root whose identifier type reads its own output as another value by the key the record mints', function (string $recordClass, array $keys, array $expected): void {
+    $entityManager = EntityManagerFactory::create();
+    HexKeyRig::seed($entityManager);
+    $entityManager->clear();
+
+    $values = AggregateQuery::fetch($entityManager, $recordClass, aggregateDeclaration('COUNT', 'dots'), $keys);
+
+    ksort($values);
+
+    expect($values)->toBe($expected);
+})->with([
+    'one field' => [HexSwatch::class, ['ff', '1a', 'c'], ['1a' => 1, 'ff' => 2]],
+    'two fields' => [HexTile::class, ['ff~north', 'ff~south', '1a~north'], ['ff~north' => 2, 'ff~south' => 1]],
+]);

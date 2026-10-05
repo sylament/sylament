@@ -6,8 +6,13 @@ use Sylament\Schemas\Identity\IdentifierFields;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\Author;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\Crate;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\CrateSeal;
+use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\Flagged;
+use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\HexSwatch;
+use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\HexTile;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\Listing;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\ListingNote;
+use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\MarkedSwatch;
+use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\MarkedTile;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\Pallet;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\Placement;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\PostSeal;
@@ -236,6 +241,53 @@ it('keeps a doubly-strict key refused, since its writer refuses the printed form
     'a half of a scalar pair' => [Vault::class, 'zeta~north'],
     'a single derived identity onto one' => [StrongboxSeal::class, 'omega'],
 ]);
+
+it("reads a component its type misreads without refusing through the type's writer", function (string $class, string $key, array $expected, array $bound): void {
+    $entityManager = EntityManagerFactory::create();
+    $fields = IdentifierFields::of($entityManager, $class);
+
+    expect($fields->toPhpValues($entityManager, $key))->toBe($expected)
+        ->and($fields->toDatabaseValues($entityManager, $key))->toBe($bound);
+})->with([
+    'a lenient reader, one field' => [HexSwatch::class, 'ff', ['ff'], [255]],
+    'a lenient reader, a digit first' => [HexSwatch::class, '1a', ['1a'], [26]],
+    'a lenient reader, beside a string half' => [HexTile::class, 'ff~north', ['ff', 'north'], [255, 'north']],
+    'a value the lenient reader reads back unchanged' => [HexSwatch::class, '0', ['0'], [0]],
+    'a strict reader, one field' => [MarkedSwatch::class, 'alpha', ['alpha'], ['m:alpha']],
+    'a strict reader, beside a string half' => [MarkedTile::class, 'alpha~north', ['alpha', 'north'], ['m:alpha', 'north']],
+]);
+
+it('refuses every spelling of a misread component but the one its value prints', function (string $class, string $key): void {
+    $entityManager = EntityManagerFactory::create();
+
+    expect(IdentifierFields::of($entityManager, $class)->toPhpValues($entityManager, $key))->toBeNull();
+})->with([
+    'uppercase, which the writer refuses' => [HexSwatch::class, 'FF'],
+    'a leading zero, which the writer takes and prints back without' => [HexSwatch::class, '0ff'],
+    'a sign' => [HexSwatch::class, '+ff'],
+    'not hex at all' => [HexSwatch::class, 'zz'],
+    'uppercase beside a string half' => [HexTile::class, 'FF~north'],
+    'a leading zero beside a string half' => [HexTile::class, '0ff~north'],
+]);
+
+it('reads a boolean component from the two spellings a boolean prints, on every platform', function (string $key, bool $expected): void {
+    $postgres = EntityManagerFactory::createForPostgres();
+    $sqlite = EntityManagerFactory::createForSqlite();
+
+    expect(IdentifierFields::of($postgres, Flagged::class)->toPhpValues($postgres, $key))->toBe([$expected])
+        ->and(IdentifierFields::of($sqlite, Flagged::class)->toPhpValues($sqlite, $key))->toBe([$expected]);
+})->with([
+    'true' => ['1', true],
+    'false' => ['0', false],
+]);
+
+it("refuses every other boolean spelling before PostgreSQL's boolean writer can throw for it", function (string $key): void {
+    $postgres = EntityManagerFactory::createForPostgres();
+    $sqlite = EntityManagerFactory::createForSqlite();
+
+    expect(IdentifierFields::of($postgres, Flagged::class)->toPhpValues($postgres, $key))->toBeNull()
+        ->and(IdentifierFields::of($sqlite, Flagged::class)->toPhpValues($sqlite, $key))->toBeNull();
+})->with(['abc', 'true', 'f', '2', '01', '1 ', '-1']);
 
 it('answers the sixteen bytes a raw-bytes uuid column holds, for binding', function (): void {
     $entityManager = EntityManagerFactory::create();

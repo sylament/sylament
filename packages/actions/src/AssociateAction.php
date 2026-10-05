@@ -263,7 +263,7 @@ class AssociateAction extends Action
 
             foreach ($rows as $row) {
                 $title = $row['sy_title'] ?? null;
-                $options[$selection->keyOf($row)] = is_scalar($title) ? (string) $title : '';
+                $options[$selection->keyOfHydrated($row)] = is_scalar($title) ? (string) $title : '';
             }
 
             return $options;

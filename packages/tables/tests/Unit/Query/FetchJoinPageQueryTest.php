@@ -16,6 +16,8 @@ use Sylament\Support\Tests\Doctrine\TestPlatform;
 use Sylament\Tables\Query\FetchJoinPageQuery;
 use Sylament\Tables\Tests\Fixtures\Doctrine\Entity\Artist;
 use Sylament\Tables\Tests\Fixtures\Doctrine\Entity\Gig;
+use Sylament\Tables\Tests\Fixtures\Doctrine\Entity\HexSwatch;
+use Sylament\Tables\Tests\Fixtures\Doctrine\Entity\HexTile;
 use Sylament\Tables\Tests\Fixtures\Doctrine\Entity\Locker;
 use Sylament\Tables\Tests\Fixtures\Doctrine\Entity\LockerItem;
 use Sylament\Tables\Tests\Fixtures\Doctrine\Entity\LockerLease;
@@ -29,6 +31,7 @@ use Sylament\Tables\Tests\Fixtures\Doctrine\Entity\Song;
 use Sylament\Tables\Tests\Fixtures\Doctrine\Entity\Venue;
 use Sylament\Tables\Tests\Fixtures\Doctrine\EntityManagerFactory;
 use Sylament\Tables\Tests\Fixtures\Doctrine\Handle;
+use Sylament\Tables\Tests\Fixtures\Doctrine\HexKeyRig;
 
 /*
  * The two-step window a keyed root pages through: the page's identifiers off
@@ -519,3 +522,25 @@ it('refuses a query naming no root alias', function (): void {
 
     FetchJoinPageQuery::read($entityManager->createQueryBuilder()->select('1'), Residency::class, 0, 2);
 })->throws(LogicException::class, 'no root alias');
+
+it('pages a root whose identifier type reads its own output as another value, every row of the window', function (string $recordClass, array $keys, array $dots): void {
+    $entityManager = EntityManagerFactory::create();
+    HexKeyRig::seed($entityManager);
+    $entityManager->clear();
+
+    $query = $entityManager->createQueryBuilder()
+        ->select('hex', 'sy_dots')
+        ->from($recordClass, 'hex')
+        ->leftJoin('hex.dots', 'sy_dots')
+        ->orderBy('hex.label', SortDirection::Ascending);
+
+    IdentifierConstraint::orderBy($query, 'hex', $recordClass, 'asc');
+
+    $records = FetchJoinPageQuery::read($query, $recordClass, 0, 3);
+
+    expect(fetchJoinPageKeys($entityManager, $records))->toBe($keys)
+        ->and(array_map(static fn (object|array $record): int => $record instanceof HexSwatch || $record instanceof HexTile ? $record->getDots()->count() : -1, $records))->toBe($dots);
+})->with([
+    'one field' => [HexSwatch::class, ['c', 'ff', '1a'], [0, 2, 1]],
+    'two fields' => [HexTile::class, ['ff~north', 'ff~south', '1a~north'], [2, 1, 0]],
+]);

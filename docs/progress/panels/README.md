@@ -994,9 +994,8 @@ trait's own package, not here.
   [query first, resource last](#the-list-pages-table-is-stamped-query-first-and-resource-last).
   Since M6 · 3 the query has a second arm: a list page hanging under a parent
   record is seeded with
-  [that parent's relationship query](nested-resources.md#the-nested-list-page-ships-unexercised-by-any-shipped-page)
-  instead, rooted at the same `record` alias, so nothing else in the stamp
-  changes. `mount(array $parentRecords = [])` is declared for it — nothing here
+  [the resource's own record query narrowed to that parent](nested-resources.md#the-nested-list-page-ships-unexercised-by-any-shipped-page)
+  instead, under the same root alias, so nothing else in the stamp changes. `mount(array $parentRecords = [])` is declared for it — nothing here
   resolves at mount, but a page that scopes its own query should not depend on
   that staying true.
 - `getTitle()` is `static::$title ?? $resource->getTitleCasePluralRecordLabel()`,

@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use Doctrine\ORM\EntityManagerInterface;
+use Doctrine\ORM\QueryBuilder;
 use Sylament\Panels\CurrentPanel;
 use Sylament\Panels\PanelRegistry;
 use Sylament\Panels\Resources\ParentResourceRegistration;
@@ -256,4 +257,72 @@ it('scopes a depth-two record query to its own parent', function (): void {
     $lines = $registry->get(LineResource::class)->getParentScopedRecordQuery($verse)->getQuery()->getResult();
 
     expect(array_map(fn (Line $line): string => $line->getContent(), $lines))->toBe(['Kept']);
+});
+
+it('narrows a clone of an overridden record query under its own alias, keeping its condition', function (): void {
+    $entityManager = EntityManagerFactory::create();
+
+    $resource = new class extends Resource {
+        protected static ?string $recordClass = Verse::class;
+
+        protected static ?string $parentResource = ChapterResource::class;
+
+        private ?QueryBuilder $recordQuery = null;
+
+        public function getRecordQuery(): QueryBuilder
+        {
+            return $this->recordQuery ??= $this->getEntityManager()->createQueryBuilder()
+                ->select('verse')
+                ->from(Verse::class, 'verse')
+                ->andWhere("verse.heading <> 'Second'");
+        }
+    };
+
+    panelsParentRegistry($entityManager, [$resource]);
+
+    $genesis = new Chapter()->setTitle('Genesis');
+    $exodus = new Chapter()->setTitle('Exodus');
+
+    EntityManagerFactory::seed(
+        $entityManager,
+        $genesis,
+        $exodus,
+        new Verse()->setHeading('First')->setChapter($genesis),
+        new Verse()->setHeading('Second')->setChapter($genesis),
+        new Verse()->setHeading('Foreign')->setChapter($exodus),
+    );
+
+    $genesis = $entityManager->getRepository(Chapter::class)->findOneBy(['title' => 'Genesis']);
+    assert($genesis instanceof Chapter);
+
+    $scoped = $resource->getParentScopedRecordQuery($genesis);
+
+    /** @var list<Verse> $verses */
+    $verses = $scoped->getQuery()->getResult();
+
+    expect($scoped)->not->toBe($resource->getRecordQuery())
+        ->and($scoped->getDQL())->toContain('verse.chapter = :sylament_relationship_owner')
+        ->and(array_map(fn (Verse $verse): string => $verse->getHeading(), $verses))->toBe(['First'])
+        ->and($resource->getRecordQuery()->getDQL())->toBe('SELECT verse FROM ' . Verse::class . " verse WHERE verse.heading <> 'Second'")
+        ->and($resource->getRecordQuery()->getParameters())->toHaveCount(0);
+});
+
+it('refuses to scope a record query that names no root alias to its parent', function (): void {
+    $entityManager = EntityManagerFactory::create();
+
+    $resource = new class extends Resource {
+        protected static ?string $recordClass = Verse::class;
+
+        protected static ?string $parentResource = ChapterResource::class;
+
+        public function getRecordQuery(): QueryBuilder
+        {
+            return $this->getEntityManager()->createQueryBuilder();
+        }
+    };
+
+    panelsParentRegistry($entityManager, [$resource]);
+
+    expect(fn (): QueryBuilder => $resource->getParentScopedRecordQuery(new Chapter()))
+        ->toThrow(LogicException::class, sprintf('The record query of resource [%s] names no root alias to scope to its parent record.', $resource::class));
 });

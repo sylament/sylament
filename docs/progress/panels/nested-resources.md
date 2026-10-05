@@ -117,8 +117,10 @@ covers the derivation end to end: no registration and the parentless refusal, th
 memoized registration, both derived names at one and two levels, all three route
 parameter arms (`mappedBy`, `inversedBy`, the snake-cased basename), the
 two-candidate refusal and the `->relationship()` override that settles it, the
-attach surviving a flush and clear, and the scoped query's `record` alias, DQL
-and rows.
+attach surviving a flush and clear, the scoped query's `record` alias, DQL
+and rows, an overridden and memoised record query narrowed as a clone under its
+own `verse` alias with its condition kept, and the refusal of a record query
+naming no root alias.
 [`Unit/Resources/ResourceNestedUrlTest`](../../../packages/panels/tests/Unit/Resources/ResourceNestedUrlTest.php)
 pins the URL half against a real `UrlGenerator`: the nested base name, ancestor
 objects keyed and a wrong-class one refused, seven guessing cases including the
@@ -319,7 +321,7 @@ searchable nested resource renders no dead rows rather than rows that go nowhere
 ### A parent of any width scopes, and the two interim guards that stood in for it are gone
 
 A nested resource scopes every read to its parent through
-[the reader's relationship query](#the-parent-scope-is-the-readers-narrowing-of-the-resources-own-query-not-a-predicate-we-write),
+[the reader's narrowing of its own record query](#the-parent-scope-is-the-readers-narrowing-of-the-resources-own-query-not-a-predicate-we-write),
 and until [M7 · 5](../roadmap.md#m7--composite-identifiers) that query could not
 bind a parent record carrying more than one identifier field. `BelongsToParent`
 asked first, in panel vocabulary — *"whose records of [%s] are not keyed by a
@@ -514,8 +516,8 @@ resolvers do after a successful lookup. The reason is the one
 [`AssociationTarget`](../../../packages/schemas/src/State/AssociationTarget.php)
 surfaces `mappedBy` and `inversedBy` — so every job Filament needs the inverse
 name for is already answered. The route parameter reads the completing field
-directly, the parent scope is the reader's relationship query rather than a
-`whereHas` over the inverse, and the attach writes the owning side the mapping
+directly, the parent scope is the reader narrowing the resource's own query
+rather than a `whereHas` over the inverse, and the attach writes the owning side the mapping
 names.
 
 The seeding has no equivalent either, and needs none: it exists so Eloquent's

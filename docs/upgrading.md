@@ -3,7 +3,7 @@
 ## Requirements
 
 - **`doctrine/orm` ^3.7.** Doctrine's query builder and a to-many mapping's `orderBy` take PHP 8.6's `SortDirection` enum from ORM 3.7 on, and Sylament passes it; the ORM pulls in `symfony/polyfill-php86`, which defines the enum below PHP 8.6. `actions`, `forms`, `panels`, `schemas` and `tables` require it.
-- **`symfony/ux-twig-component` and `symfony/ux-live-component` ^3.5.** Two rendering changes in 3.5 matter to an application that overrides a Sylament template or passes props to one of its components: an explicit `null` prop now replaces the prop's declared default instead of falling back to it (pass the default at the call site, `component.getColor ?? 'primary'`), and an `aria-*` attribute set to `false` renders as `aria-x="false"` instead of being dropped — use `null` to drop it.
+- **`symfony/ux-twig-component` and `symfony/ux-live-component` ^3.5.** Two rendering changes in 3.5 matter to an application that overrides a Sylament template or passes props to one of its components: an explicit `null` prop now replaces the prop's declared default instead of falling back to it (pass the default at the call site, `component.getColor ?? 'primary'`), and an `aria-*` attribute set to `false` renders as `aria-x="false"` — use `null` to drop it.
 
 ## Composite keys (M7)
 

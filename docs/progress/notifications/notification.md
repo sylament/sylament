@@ -485,7 +485,7 @@ writes the empty-state icon as `:icon="emptyStateIcon ?? 'heroicons:x-mark'"` wi
 template's expression with one status instead of four. A fallback chain the
 template can compute is template data, and putting it in PHP would mean a getter
 whose value depends on a second getter — exactly what
-[`getExtraTemplateData()` is told to keep out](../../../CLAUDE.md). The rendered
+[`getExtraTemplateData()` is told to keep out](../../../.claude/rules/php.md). The rendered
 result is identical and the setters are untouched — `icon()` and `iconColor()` take
 the same arguments as Filament's.
 

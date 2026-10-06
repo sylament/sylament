@@ -497,7 +497,7 @@ Neither is reachable through a sibling: forms requires the validator, but the
 split-repo rule counts what this package's own `src/` imports.
 
 `league/commonmark` is the fourth, and it is a **suggest** rather than a require —
-the fourth [guarded optional integration](../../../CLAUDE.md) the toolkit ships,
+the fourth [guarded optional integration](../../internals/dependencies.md#the-guarded-optionals-and-their-pins) the toolkit ships,
 beside AssetMapper, tables' own `InteractsWithTable` branch in actions, and
 support's flysystem registry. The guard is a `class_exists()` around the one
 conversion call, and its failure mode is a `LogicException` naming the package
@@ -547,7 +547,7 @@ so does ours: a filter's control is a form field.
 types `getFormField(): ?Sylament\Forms\Components\Field` and
 [`Filter`](base-filter.md) builds a `Checkbox`, so the symbol is imported
 unconditionally by `src/` — the test the
-[split-repo dependency rule](../../../CLAUDE.md) sets for a `require`, not a
+[split-repo dependency rule](../../../.claude/rules/manifests.md) sets for a `require`, not a
 `suggest`. No cycle: `sylament/forms` requires only `actions`, `schemas`,
 `support`, `doctrine/orm` and its own Symfony deps, and nothing in forms
 references tables.

@@ -8,7 +8,7 @@ namespace Sylament\Actions\Tests\Integration\Components;
  * Covers the support-level `<twig:SylamentSupport:Button>` text-button primitive.
  * It lives in the actions suite because only a kernel that registers
  * TwigComponentBundle exercises the support Twig components — the actions kernel
- * is the nearest such home for the button/modal chrome (per CLAUDE.md).
+ * is the nearest such home for the button/modal chrome (per docs/internals/test-infrastructure.md).
  */
 function renderButton(string $template): string
 {

@@ -3767,7 +3767,7 @@ property — and `getRecord()` returns the resolved **entity**. Left alone, the
 wire would carry an object where a `?string` is declared, and the hydrator would
 throw on a value it cannot dehydrate. `dehydrateRecord()` returns `$this->record`,
 the raw key, and the prop is a scalar on the wire again. This is the
-[CLAUDE.md dehydration trap](../../../CLAUDE.md) in its second shipped form,
+[`docs/internals/php.md` dehydration trap](../../internals/php.md#a-liveprops-getter-shadows-it) in its second shipped form,
 mirroring tables' [`dehydrateTableSearch`](../tables/has-table.md#the-writable-props-dehydrate-in-their-elements-wire-vocabulary);
 the fix is always the bridge, never renaming the Filament getter. A composite
 key is one string too — the `?string` type, the checksum and the bridge carry

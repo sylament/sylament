@@ -598,7 +598,7 @@ not: it reads the state itself.
 
 ### `getExtraTemplateData()` makes the one `getOptions()` read both branches share
 
-The class hook — CLAUDE.md's Twig-side port of the `toEmbeddedHtml()`
+The class hook — `docs/internals/php.md`'s Twig-side port of the `toEmbeddedHtml()`
 local-variable preamble — performs the render's single `getOptions()` read (a
 `modifyQueryUsing` relationship map is not memoized, so three reads would be
 three queries and three maps that could disagree) and exposes four values both

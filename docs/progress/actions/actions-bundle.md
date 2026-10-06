@@ -475,7 +475,7 @@ found the five placeholder bundles — `infolists`, `notifications`, `panels`,
 alone is already complete for them. The rule adds nothing to a package that uses
 nothing. `twig/twig` and the ambient `symfony/dependency-injection` /
 `symfony/http-kernel` omissions are deliberate and recorded in
-[CLAUDE.md](../../../CLAUDE.md).
+[`docs/internals/dependencies.md`](../../internals/dependencies.md#the-transitive-guarantees-behind-the-omissions).
 
 The schemas↔actions integration epic adds the rule's first genuinely mutual
 edge: [`BelongsToSchemaComponent`](../../../packages/actions/src/Concerns/BelongsToSchemaComponent.php)
@@ -517,7 +517,7 @@ package instead. The port declares `doctrine/orm: ^3.7` — the constraint
 `schemas`, `forms`, `tables` and `panels` already carry — because the ORM
 hard-requires `doctrine/persistence` (`^3.3.1 || ^4`), so the interface cannot
 leave the graph, and because a one-package-per-Doctrine-constraint monorepo is
-what the [CLAUDE.md omission list](../../../CLAUDE.md) already reasons from
+what the [`docs/internals/dependencies.md` omission list](../../internals/dependencies.md#the-transitive-guarantees-behind-the-omissions) already reasons from
 (`doctrine/dbal` is undeclared everywhere on exactly this transitive-guarantee
 argument). Revisit if a split `sylament/actions` is ever consumed by an
 application that wants Doctrine's persistence contracts without the ORM.

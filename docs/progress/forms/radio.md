@@ -245,7 +245,7 @@ dropped rather than emitted as a class no stylesheet mentions. It is passed as a
 bare boolean rather than the plan's `'true'`-or-`null` ternary, so a valid field
 renders `aria-invalid="false"` instead of dropping the attribute: that is what
 `Checkbox`, `Toggle`, `Select`, `Textarea` and `TextInput` already emit — the bag
-[stringifies booleans for `aria-` names](../../../CLAUDE.md) — and one spelling
+[stringifies booleans for `aria-` names](../../internals/templates.md#how-do-the-two-attribute-bags-render-a-value) — and one spelling
 across every control beats a per-field ternary. Reversible by
 adding the pair back if a consumer's CSS ever needs a class hook the attribute
 selector cannot give it; nothing in the toolkit styles either name today.

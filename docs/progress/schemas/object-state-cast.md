@@ -97,7 +97,7 @@ actual value (nested graph traversal, name converters, docblock-driven type
 coercion) is exactly what the identity-free flat contract excludes, and
 adopting it would put a package-wide production dependency into `schemas` for
 every consumer (the
-[dependency rules](../../../CLAUDE.md#monorepo-wiring-read-this-before-touching-deps)
+[dependency rules](../../internals/dependencies.md#require-suggest-or-root-require-dev)
 make that a per-consumer install, not a dev convenience). The rejection's own
 closing note — Serializer "remains a candidate for leaf-level casts… where its
 normalizer half fits the existing StateCast seam" — is untouched: dates, enums

@@ -7,7 +7,7 @@
 via [`SylamentBundle`](../../../packages/support/src/SylamentBundle.php)). It
 does two things and inherits a third. `loadExtension()` PSR-4-loads the
 `Components/` directory so every field is a container-built, non-shared service —
-the toolkit-wide [component model](../../../CLAUDE.md), not anything
+the toolkit-wide [component model](../../internals/php.md#the-component-model), not anything
 `FormsServiceProvider` does, which binds no container services of its own.
 `prependExtension()` registers the built assets under `@sylament/forms`, the
 translation of Filament's asset registration. And the `@SylamentForms` Twig

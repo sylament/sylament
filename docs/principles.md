@@ -118,7 +118,7 @@ it, their naming is off, it pulls in too much.
 ### Adopting still costs a dependency
 
 Preferring the ecosystem does not suspend the
-[dependency-declaration rules](../CLAUDE.md#monorepo-wiring-read-this-before-touching-deps),
+[dependency-declaration rules](../.claude/rules/manifests.md),
 which are deliberately strict about which package declares what. Nor does it make
 adoption automatic: a new dependency is proposed and agreed, never added in
 passing. A package we adopt is a package every consumer installs — the ecosystem

@@ -288,7 +288,7 @@ each individual component the input-placeholder attribute makes sense for —
 and [`ModalTableSelect`](../../../vendor/filament/forms/src/Components/ModalTableSelect.php).
 Sylament's [`Field`](../../../packages/forms/src/Components/Field.php) uses the
 trait directly, so `placeholder()` / `getPlaceholder()` are available on every
-field. This follows the same uniform-fluent-composition choice CLAUDE.md records
+field. This follows the same uniform-fluent-composition choice `.claude/rules/php.md` records
 for `HasColumns` (a trait on the base even where only some subclasses use it):
 fields where a placeholder is meaningless (e.g. `Checkbox`, `Toggle`) inherit a
 harmless unused setter. Reversible by dropping `use HasPlaceholder` from `Field`

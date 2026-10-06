@@ -125,7 +125,7 @@ to generate a palette from or an explicit shade map. Because that is a union, th
 prototype is a `variableNode()` — `icons` next to it uses a `scalarPrototype()`
 and could not express the map arm.
 
-`->normalizeKeys(false)` is on it for the reason CLAUDE.md gives for the icons
+`->normalizeKeys(false)` is on it for the reason `docs/internals/bundles.md` gives for the icons
 node: `ArrayNode::preNormalize()` rewrites any key containing a dash and no
 underscore, so a palette registered as `brand-alt` would silently become
 `brand_alt` and match no class the templates emit.

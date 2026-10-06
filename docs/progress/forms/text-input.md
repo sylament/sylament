@@ -405,7 +405,7 @@ The setters narrow Filament's `scalar | Closure | null` to
 `int|float|string|Closure|null`, so `maxValue(true)` is a `TypeError` here where
 Filament interpolated it as `max:1`. `scalar` is a PHPDoc pseudo-type with no
 native equivalent, so a port that types its setters natively
-([convention](../../../CLAUDE.md)) has to enumerate the arms — and `bool` is the
+([convention](../../../.claude/rules/php.md)) has to enumerate the arms — and `bool` is the
 one left out, having no meaning as a numeric bound. The enumerated union is also
 what lets `getMaxValue()` carry a native return type at level max, since
 `evaluate()` infers it by subtracting `Closure` from the property's union.

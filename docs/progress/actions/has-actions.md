@@ -1366,7 +1366,7 @@ check comes **first** in the `elseif`, so a host without the contract falls
 through to generic resolution even when a client hands it a `table` context.
 
 It is the second instance of a pattern
-[CLAUDE.md](../../../CLAUDE.md) now names explicitly — the first is support's
+[`docs/internals/dependencies.md`](../../internals/dependencies.md#the-guarded-optionals-and-their-pins) now names explicitly — the first is support's
 `isAssetMapperAvailable()` guard around each bundle's `prependExtension()` —
 and its cost is that composer checks nothing: rename or move the contract and
 the branch dead-ends in silence. That is what

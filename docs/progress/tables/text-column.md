@@ -464,7 +464,7 @@ throws from `DateTimeImmutable` itself, exactly as `parse()` does.
 ### `markdown()` throws for the package it suggests, rather than falling through
 
 `league/commonmark` is a `suggest` of `sylament/tables`, not a `require` — a
-[guarded optional integration](../../../CLAUDE.md) like flysystem in support. The
+[guarded optional integration](../../internals/dependencies.md#the-guarded-optionals-and-their-pins) like flysystem in support. The
 guard is `class_exists(GithubFlavoredMarkdownConverter::class)` at the one place
 the converter is constructed, and its else-arm is a `LogicException` naming the
 package and the command that installs it.
@@ -554,7 +554,7 @@ The consequence worth naming is what happens to `toEmbeddedHtml()`'s
 the markup below reads the locals. A Twig template has no such preamble: it reads
 `component.x` per value, and anything it cannot get from a single getter call
 goes through `getExtraTemplateData()` — the house rule recorded in
-[CLAUDE.md](../../../CLAUDE.md). `getFormattedState()` below is that translation
+[`.claude/rules/php.md`](../../../.claude/rules/php.md). `getFormattedState()` below is that translation
 for the one value the preamble computed in two steps.
 
 ### The item element is never merged into the outer div

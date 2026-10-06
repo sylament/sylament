@@ -304,7 +304,7 @@ exceeding it, and the six contexts above are the named, checkable gap that
 ### The API
 
 `Sylament\Schemas\Identity\` is a capability directory at `src/` level, beside
-`Query\` and `State\`, per CLAUDE.md's rule that the engine a trait delegates to
+`Query\` and `State\`, per `.claude/rules/php.md`'s rule that the engine a trait delegates to
 is filed by capability. Three public classes; `IdentifierFields` is `@internal`
 and is the per-class descriptor the other two share — field names in mapping
 order, whether each is a to-one association, and the resolved DBAL type name each

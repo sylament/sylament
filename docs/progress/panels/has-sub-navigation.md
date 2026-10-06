@@ -222,7 +222,7 @@ which is Filament's shape.
 
 Assertions on the active tab target `[aria-current="page"]` and never a bare
 `[aria-current]`: an inactive `TabsItem` emits `aria-current="false"`, because
-[the attribute bag stringifies aria booleans](../../../CLAUDE.md) for Laravel
+[the attribute bag stringifies aria booleans](../../internals/templates.md#how-do-the-two-attribute-bags-render-a-value) for Laravel
 parity, so a bare-attribute selector matches every tab.
 
 ## Divergences

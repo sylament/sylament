@@ -963,7 +963,7 @@ the default.
 
 That declaration is forced twice over, so do not "fix" it to `?string`. PHPStan
 binds `evaluate()`'s `@return T` to `string` here, by subtracting `Closure` from
-the property's union ([the closure-typing convention](../../../CLAUDE.md)), which
+the property's union ([the closure-typing convention](../../internals/php.md#the-closure-typing-convention)), which
 makes `?string` a level-max `return.unusedType` error; and Rector's
 `typeDeclarations` set re-adds the declaration if it is dropped instead. It is
 also the contract the property already states — `$validationMessages` types its

@@ -1085,7 +1085,7 @@ coerced to the string `"1"` — every item keyed identically, and a coercion
 generation is on, with no generator override, so the default arm runs. The
 two-property split is the same fact seen from the type side: `evaluate()`'s
 generic reads a closure's return type off the property union by subtracting
-`Closure` from it, which the [closure-typing convention](../../../CLAUDE.md)
+`Closure` from it, which the [closure-typing convention](../../../.claude/rules/php.md)
 makes the *only* place a closure's return type may be stated. Filament's single
 property spends those arms on modes, so the generic infers `Closure`, and every
 check on the result is dead code at level max. Splitting the mode out lets the

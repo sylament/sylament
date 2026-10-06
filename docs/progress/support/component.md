@@ -99,7 +99,7 @@ No runtime method injection. The extension points are subclassing and
 factory calls instead of `new static()`. It delegates to
 [`ComponentResolver::instantiate()`](../../../packages/support/src/DependencyInjection/ComponentResolver.php),
 reached through the static-instance pattern (see "Static instance pattern" in
-[CLAUDE.md](../../../CLAUDE.md)) so components need no constructor injection
+[`docs/internals/php.md`](../../internals/php.md#static-instance-pattern)) so components need no constructor injection
 of their own to get there.
 
 - **`sylament.component` autoconfiguration.** `SylamentSupportBundle::build()`

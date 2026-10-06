@@ -234,7 +234,7 @@ with the narrow type, `$modifiedSchema` is `array|null` and the non-array branch
 is provably dead. Widening the property keeps the branch **live** rather than
 deleting it, which is the difference between preserving a Filament capability
 and quietly dropping one. See
-[the closure-typing convention](../../../CLAUDE.md).
+[the closure-typing convention](../../internals/php.md#the-closure-typing-convention).
 
 _See also:_ the state path this schema binds to is **not** Filament's
 `mountedActions.{i}.data` — it is a sibling bag, for reasons that belong to the

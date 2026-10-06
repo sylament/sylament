@@ -5,7 +5,7 @@ boolean fields compose, carrying the `inline()` setter and the `isInline()`
 getter that decide whether the control sits beside its label text or above it.
 The name collides with `Sylament\Schemas\Concerns\CanBeInline`, the root-object
 trait a child `Schema` uses; that is the inherited two-tier cost
-[CLAUDE.md](../../../CLAUDE.md) records — read the trait by its **import**, never
+[`docs/internals/php.md`](../../internals/php.md#the-by-import-trap) records — read the trait by its **import**, never
 by the bare `use CanBeInline;` in a class body.
 
 **Status:** done — see the [status vocabulary](../README.md#statuses).

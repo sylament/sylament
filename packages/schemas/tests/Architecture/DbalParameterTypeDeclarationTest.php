@@ -23,7 +23,7 @@ use function dirname;
  * declared `: ParameterType` is a TypeError the moment an application resolves DBAL 3.
  *
  * Only DBAL 4 is installed here, so the suite is structurally blind to that break: this
- * test is the gate, in the shape CLAUDE.md gives every guarded soft dependency.
+ * test is the gate, in the shape .claude/rules/manifests.md gives every guarded soft dependency.
  */
 
 /**

@@ -182,7 +182,7 @@ than `?Closure`, even though their setters take only a closure: `evaluate()`
 infers its return type by subtracting `Closure` from the property's union, so a
 bare `?Closure` would type the result `Closure` and `?? $action` would be dead
 code to PHPStan. Widening the property to the closure's own result type is the
-[house convention](../../../CLAUDE.md) for exactly this, and the setter signature
+[house convention](../../internals/php.md#evaluates-generic) for exactly this, and the setter signature
 still keeps an `Action` from ever being assigned.
 
 ### The footer slots take an Action, a Markup or a string, and the three-way split is resolved in PHP

@@ -451,7 +451,7 @@ Filament leaves bare.
 `:30` has `?Closure`. Both are Filament-exact in *name* and in what a consumer
 passes; the widening is the level-max gate rather than an API change.
 
-The reason is [`evaluate()`'s generic](../../../CLAUDE.md): it infers `T` by
+The reason is [`evaluate()`'s generic](../../internals/php.md#evaluates-generic): it infers `T` by
 subtracting `Closure` from the property's declared union, so a `?Closure` prop
 evaluates to `?Closure` — the read then has to be narrowed by hand at every call
 site, which is the shape an inline `@phpstan-ignore` grows out of. Declaring the

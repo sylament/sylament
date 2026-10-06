@@ -244,7 +244,7 @@ Both props carry `dehydrateWith:`, and that is mandatory rather than defensive.
 would hand the resolved **entity** to a `?string` wire prop and every render
 would throw. The bridges return the raw props. This is the shipped
 [`EditRecord::dehydrateRecord()`](README.md#editrecord) pattern, and it is the
-same trap the root `CLAUDE.md` records for tables' writable props.
+same trap `docs/internals/php.md` records for tables' writable props.
 
 `#[Locked]` needs no port: a non-writable `LiveProp` is checksummed by default.
 

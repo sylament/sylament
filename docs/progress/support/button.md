@@ -65,7 +65,7 @@ next step is. The **done** rows above — tag/`href`/`target`, `type`, `disabled
 `size`, and `color` (which diverges) — are covered by
 [`ButtonRenderTest`](../../../packages/actions/tests/Integration/Components/ButtonRenderTest.php):
 it renders `<twig:SylamentSupport:Button>` through a kernel that registers
-`TwigComponentBundle` (the actions suite is the nearest such home, per CLAUDE.md)
+`TwigComponentBundle` (the actions suite is the nearest such home, per `docs/internals/test-infrastructure.md`)
 and asserts the default primary/`md` classes and `type`, `<a>` tag-switching with
 `href` + `target="_blank"` and no `type`, the `disabled`/`aria-disabled`/
 `sy-disabled` trio, a gray color dropping the color classes, a semantic `danger`

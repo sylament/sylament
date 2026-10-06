@@ -16,7 +16,7 @@ repaints from the host's value store on every render. Extends
 — and support's `HasColor` and `HasReorderAnimationDuration`; reorder rides the
 shared [`sylament--support--sortable`](../support/sortable.md) control.
 
-**Status:** done — see the [status vocabulary](../README.md#statuses).
+**Status:** in progress — see the [status vocabulary](../README.md#statuses).
 
 Reference — the Filament source this is diffed against:
 

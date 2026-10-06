@@ -8,7 +8,7 @@ folds successive `columns()` calls plus per-entry closure evaluation into a
 `default`/`sm`/`md`/`lg`/`xl`/`2xl` map for the grid template. It ports Filament's
 identically-named schemas concern method for method.
 
-**Status:** done — see the [status vocabulary](../README.md#statuses).
+**Status:** in progress — see the [status vocabulary](../README.md#statuses).
 
 Reference — the Filament source this is diffed against:
 

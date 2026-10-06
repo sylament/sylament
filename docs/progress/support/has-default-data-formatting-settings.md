@@ -26,7 +26,7 @@ only ICU locale presets can answer, which belongs to the
 [`text-column.md`](../tables/text-column.md) blocks the `isoDate()` family on it
 and this trait holds the defaults those setters will read.
 
-**Status:** done — see the
+**Status:** in progress — see the
 [status vocabulary](../README.md#statuses).
 
 Reference — the Filament source this is diffed against:

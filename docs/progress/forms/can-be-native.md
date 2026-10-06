@@ -9,7 +9,7 @@ control — so it is promoted out of the picker's fold to a file of its own per
 [one row per file](../README.md#one-row-per-file-one-file-per-thing). Filament
 composes it on the same two families, unchanged between them.
 
-**Status:** done — see the [status vocabulary](../README.md#statuses).
+**Status:** in progress — see the [status vocabulary](../README.md#statuses).
 
 Reference — the Filament source this is diffed against:
 

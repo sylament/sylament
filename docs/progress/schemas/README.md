@@ -147,7 +147,7 @@ shared with the base `Component` or not yet started.
 | `CanBeHidden` | [`Concerns/CanBeHidden.php`](../../../vendor/filament/schemas/src/Concerns/CanBeHidden.php) | todo | — |
 | [`CanBeValidated`](../../../packages/schemas/src/Concerns/CanBeValidated.php) | [`Concerns/CanBeValidated.php`](../../../vendor/filament/schemas/src/Concerns/CanBeValidated.php) | in progress | [can-be-validated.md](can-be-validated.md) |
 | [`Cloneable`](../../../packages/schemas/src/Concerns/Cloneable.php) | [`Concerns/Cloneable.php`](../../../vendor/filament/schemas/src/Concerns/Cloneable.php) | done | [schema.md](schema.md#clonecomponents-never-stamps-the-original-and-always-resets-the-cache) |
-| [`HasColumns`](../../../packages/schemas/src/Components/Concerns/HasColumns.php) | [`Concerns/HasColumns.php`](../../../vendor/filament/schemas/src/Concerns/HasColumns.php) | done | [has-columns.md](has-columns.md) |
+| [`HasColumns`](../../../packages/schemas/src/Components/Concerns/HasColumns.php) | [`Concerns/HasColumns.php`](../../../vendor/filament/schemas/src/Concerns/HasColumns.php) | in progress | [has-columns.md](has-columns.md) |
 | [`HasGap`](../../../packages/schemas/src/Components/Concerns/HasGap.php) | [`Concerns/HasGap.php`](../../../vendor/filament/schemas/src/Concerns/HasGap.php) | done | [has-gap.md](has-gap.md) |
 | `HasEntryWrapper` | [`Concerns/HasEntryWrapper.php`](../../../vendor/filament/schemas/src/Concerns/HasEntryWrapper.php) | todo | — |
 | [`HasFieldWrapper`](../../../packages/schemas/src/Concerns/HasFieldWrapper.php) | [`Concerns/HasFieldWrapper.php`](../../../vendor/filament/schemas/src/Concerns/HasFieldWrapper.php) | done | [schema.md](schema.md#the-field-wrapper-view-is-opaque-data-with-no-closure-arm-and-no-parent-walk) |

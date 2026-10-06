@@ -49,6 +49,10 @@ A parent may **lag** its children — a package sits at _in progress_ while most
 of its components are still unlisted — but must never **lead** them. Never mark
 a package done while a listed row is unfinished.
 
+A parent over a **blocked** row is **in progress**: _blocked_ stays on the row
+that waits for its prerequisite, and the file's row in the package README, like
+the package's row here, reads _in progress_ until that row is settled.
+
 ### Divergences are addressable
 
 One `###` heading per divergence under `## Divergences`, phrased as a statement:

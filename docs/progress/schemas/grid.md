@@ -55,7 +55,7 @@ backwards is easiest.
 
 Filament's `Grid::toEmbeddedHtml()` emits a `<div>` with the component's `id` and
 extra attributes and no class at all. Sylament's root carries
-`class="sy sy-sc-grid"`: [`docs/styling.md`](../../styling.md) rule 2 makes the
+`class="sy sy-sc-grid"`: [`docs/internals/styling.md`](../../internals/styling.md) rule 2 makes the
 bare `sy` marker mandatory on every component root — it is how the scoped
 Tailwind preflight identifies Sylament markup — and `sy-sc-grid` follows the
 hook-class convention the rest of the port uses. Both are inert today; no CSS

@@ -147,10 +147,10 @@ it('turns headings into GitHub anchors', function (string $heading, string $anch
 it('finds a broken link and a broken anchor', function (): void {
     $file = 'docs/' . uniqid('documentation-probe-', true) . '.md';
     $path = documentationRepositoryRoot() . '/' . $file;
-    file_put_contents($path, "# Probe `Code` heading\n\n[here](#probe-code-heading) [gone](no-such-file.md) [bad](principles.md#no-such-heading) [ok](principles.md) `[code](ignored.md)`\n");
+    file_put_contents($path, "# Probe `Code` heading\n\n[here](#probe-code-heading) [gone](no-such-file.md) [bad](internals/principles.md#no-such-heading) [ok](internals/principles.md) `[code](ignored.md)`\n");
 
     try {
-        expect(documentationBrokenLinks($file))->toBe(['no-such-file.md (no such file)', 'principles.md#no-such-heading (no such heading)']);
+        expect(documentationBrokenLinks($file))->toBe(['no-such-file.md (no such file)', 'internals/principles.md#no-such-heading (no such heading)']);
     } finally {
         unlink($path);
     }

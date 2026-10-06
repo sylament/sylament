@@ -233,7 +233,7 @@ Filament's `getSubNavigationPosition()` is **static** at every tier, and reaches
 the panel through the `Filament` facade. Ours is an **instance** method on the
 page trait, on `Resource` and on the panel — a static that needs a dependency is
 exactly the signal
-[principles §1](../../principles.md#the-test) names for dropping `static`, and
+[principles §1](../../internals/principles.md#the-test) names for dropping `static`, and
 there is no facade to reach a panel through. Shipping both — a static answering
 without the panel tier and an instance twin answering with it — would be worse
 than the divergence: two methods of one name, one of them quietly wrong.

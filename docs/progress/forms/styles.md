@@ -43,7 +43,7 @@ same layer. Forms ships no
 aggregator, so these rules compile into support's single built stylesheet and
 reach a consumer through `@sylament/support`. The `fi-*` class prefix is
 translated to the forms component code `sy-fo-*` (see the
-[CSS contract](../../styling.md)) — which for the support-tier ports is
+[CSS contract](../../internals/styling.md)) — which for the support-tier ports is
 [more than a prefix swap](#the-control-stylesheets-carry-forms-coded-names-for-support-tier-classes).
 
 **Status:** in progress — see the [status vocabulary](../README.md#statuses).
@@ -370,12 +370,12 @@ confirms both shapes: `.sy-fo-field-label-content` emits as a single class where
 The consequence is narrower than it first looks, and worth stating so nobody
 "fixes" the wrong thing. It does **not** change what an ordinary host override can
 do: everything here ships inside the `components` cascade layer, and
-[styling.md rule 8](../../styling.md) makes unlayered consumer CSS win over any
+[styling.md rule 8](../../internals/styling.md) makes unlayered consumer CSS win over any
 layered rule at any specificity. What it changes is the contest *inside* the
 layer — a rule at (0,1,0) that lands in a `components` layer of the same name,
 whether a host's or another Sylament stylesheet's, now ties these rules and wins
 on source order, where against Filament's (0,2,0) it would have lost outright.
-That is a real loosening of a hook surface [styling.md](../../styling.md) treats
+That is a real loosening of a hook surface [styling.md](../../internals/styling.md) treats
 as public, which is why it is recorded rather than left to a diff.
 
 It is also **one stylesheet, not a package habit**: forms'
@@ -434,7 +434,7 @@ Tables'
 [`.sy-ta-sr-only`](../../../packages/tables/assets/src/styles/components/table.css)
 is the ninth copy and a different case: a *named* package-local twin nested under
 `.sy-ta` — the table root, not the `<table>` element, so the loading label outside
-the table is hidden too — which [styling.md rule 1](../../styling.md) tolerates
+the table is hidden too — which [styling.md rule 1](../../internals/styling.md) tolerates
 until a second package needs it. It is listed here for completeness, not as work.
 
 ### The checkbox skin moved to support when tables became its second consumer
@@ -449,7 +449,7 @@ column is that second package, so
 is gone with its import line and
 [`packages/support/assets/src/styles/components/checkbox.css`](../../../packages/support/assets/src/styles/components/checkbox.css)
 holds the skin as the code-less `.sy-checkbox` — support-level classes carrying
-no package code being [styling.md rule 1](../../styling.md)'s own wording. The
+no package code being [styling.md rule 1](../../internals/styling.md)'s own wording. The
 same escalation `InputWrapper` made one component earlier, and Filament's own
 layering restored.
 
@@ -566,14 +566,14 @@ rule for rule. The compensating `@apply grid` these two rules carried while
 `.filepond--label-action` — FilePond's "Browse" link — is `text-(--sy-text)
 hover:opacity-80 dark:text-(--sy-dark-text)` where vendor hardcodes
 `text-primary-700 hover:text-primary-600 …`; the link colour policy sits on the
-pond container and supplies the slots, per [styling.md rule 5](../../styling.md).
+pond container and supplies the slots, per [styling.md rule 5](../../internals/styling.md).
 
 ### The download and open action anchors are the port's own
 
 The two action anchors are ours (`sy-fo-file-upload-download-action` /
 `-open-action` with an inner `-icon` span) rather than vendor's
 `filepond--download-icon` / `filepond--open-icon`: our JS builds those anchors, so
-there is no vendor class to select at all — [rule 11](../../styling.md)'s second
+there is no vendor class to select at all — [rule 11](../../internals/styling.md)'s second
 branch has nothing to reach here. Their mask-image payloads are copied verbatim
 from vendor (`file-upload.css:82-83, 92-93`), which is why the download glyph is a
 Feather arrow and the open glyph a Heroicons external-link rather than a matched
@@ -589,7 +589,7 @@ top-level `.filepond--*` selectors and three global `@keyframes` (`spin`, `shake
 host application, so shipping that verbatim would style a host app's own
 `filepond--*` markup and — worse — steal `@keyframes spin`, which support's
 loading indicator already declares.
-[styling.md rule 11](../../styling.md) forbids it, and FilePond exposes no
+[styling.md rule 11](../../internals/styling.md) forbids it, and FilePond exposes no
 class-prefix option (its `className` only adds a class to the root), so the base
 sheet is **regenerated** instead of imported.
 
@@ -718,7 +718,7 @@ removes the padding, matching what the native branch already does.
 No bundled-library class is selected anywhere in this file any more — the engine
 builds its own DOM and SortableJS's `sortable-ghost` / `sortable-chosen` /
 `sortable-drag` go unstyled, as they do in Filament — so
-[styling.md rule 11](../../styling.md) holds vacuously here and waits on the
+[styling.md rule 11](../../internals/styling.md) holds vacuously here and waits on the
 repeater's drag control for its first live case. The remaining two-sided contract
 is with the [controller](forms-bundle.md#the-select-controller-binds-a-port-of-filaments-select-utility-to-the-live-host) and the engine it drives: a class
 renamed on either side breaks the paint in silence, and no test in this repo

@@ -217,7 +217,7 @@ initialising on lists nobody can drag.
 styles it (`@apply opacity-30`, Filament's rule for `fi-sortable-ghost`).
 `chosenClass`, `dragClass` and `fallbackClass` are left at SortableJS' defaults
 (`sortable-chosen`, `sortable-drag`, `sortable-fallback`) and are **not** styled.
-This is [styling.md](../../styling.md) rule 11's first live case: the toolkit's
+This is [styling.md](../../internals/styling.md) rule 11's first live case: the toolkit's
 stylesheet is page-wide, so selecting `.sortable-ghost` bare would style a host
 app's own widget of the same name — a class a bundled library emits is reachable
 only under a `sy-` name we hand the library ourselves, which is what `ghostClass`

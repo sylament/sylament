@@ -153,7 +153,7 @@ renders each icon alone for that reason.
 
 The other way to keep vendor's selectors would be to emit both spans always, as
 Filament does. That buys nothing back: it puts an empty element in every toggle's
-DOM and gives up two names [`docs/styling.md`](../../styling.md) counts as public
+DOM and gives up two names [`docs/internals/styling.md`](../../internals/styling.md) counts as public
 hook surface, in exchange for a selector that has to be reasoned about each time
 it is read. So this is settled rather than provisional — recorded because a
 future audit against the vendor stylesheet will find the selectors differ and

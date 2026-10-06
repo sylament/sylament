@@ -25,4 +25,4 @@ description: Template layout, component invocation, props and attribute renderin
 - **Emit only semantic `sy-` classes** (`sy-<package code>-<component>`: `ac` actions, `fo` forms, `in` infolists, `no` notifications, `pa` panels, `sc` schemas, `ta` tables, `wi` widgets; support's carry no code, `sy-btn`), never Tailwind utilities, because templates are not scanned (`source(none)`) and a utility silently does nothing; a root that can render standalone carries the bare `sy` marker, which the scoped preflight matches.
 - **Before changing a support component template,** find its suites with `grep -rlE 'SylamentSupport:<Name>([ />]|$)' packages/*/templates packages/*/tests` and run each hit's suite plus those of packages rendering the hit's templates; `InputWrapper` alone is rendered directly by forms, tables and panels.
 
-Background: `docs/internals/templates.md`, `docs/progress/support/component-attribute-bag.md`, `docs/progress/forms/hidden.md`, `docs/styling.md`.
+Background: `docs/internals/templates.md`, `docs/progress/support/component-attribute-bag.md`, `docs/progress/forms/hidden.md`, `docs/internals/styling.md`.

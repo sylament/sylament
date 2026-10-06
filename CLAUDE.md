@@ -14,14 +14,18 @@ What has shipped and what comes next is tracked in `docs/progress/roadmap.md`, a
 | `packages/<pkg>/assets/` | pnpm workspace `@sylament/<pkg>`; `dist/` is committed |
 | `packages/support/tests/{Doctrine,PHPUnit}/` | test infrastructure the Doctrine suites share (dev-only) |
 | `vendor/filament/` | Filament's source: read it before designing anything |
-| `docs/principles.md` | the two stances that outrank everything below |
 | `docs/progress/` | the port trail: status and reasoning per component (rules in its `README.md`) |
 | `docs/internals/` | the reasoning behind the rules, and the dev-only infrastructure |
 | `../demo` | the peer demo app, its own repo (skill: `demo`) |
 
 ## Rules for every task
 
-1. **Filament first.** Read `vendor/filament/<pkg>` before designing, and keep its public class, method and trait names and its closure-injection parameter names; translate only idioms (Eloquent → Doctrine, Livewire → UX LiveComponent, Blade → Twig, `Htmlable` → `Twig\Markup`). A rename passes the gate in `docs/progress/renames.md` first, and `docs/principles.md` outranks this rule.
+Two principles outrank every rule below; their tests and worked cases are in `docs/internals/principles.md`.
+
+- **Symfony idiom behind Filament's API.** Keep what the user types, and build what is behind it the Symfony way: a dependency arrives through the constructor or `#[Required]`, never a facade, service locator, global or static reach into a service, and no API hides from PHPStan (`__call()`, magic properties), because a Laravel mechanism does not become acceptable by arriving through Filament; a Laravel name is fine.
+- **The ecosystem before invention.** Use a Symfony package, wrap it when its API differs from ours, or add only the piece it lacks beside it, because its maintainers then carry the rest; replace one only for a named, checkable gap.
+
+1. **Filament first.** Read `vendor/filament/<pkg>` before designing, and keep its public class, method and trait names and its closure-injection parameter names; translate only idioms (Eloquent → Doctrine, Livewire → UX LiveComponent, Blade → Twig, `Htmlable` → `Twig\Markup`). A rename passes the gate in `docs/progress/renames.md` first, and the two principles above outrank this rule.
 2. **Dependencies.** `symfony/*` packages are pre-approved; any other vendor needs explicit sign-off first. Each package declares what its own `src/` and `templates/` use, because the split publishes every package alone.
 3. **One Composer project.** Never run `composer install` inside `packages/*`: there is one root `vendor/`. Dev tools go in the root `composer.json`. After editing a package's `composer.json`, run `composer update sylament/<pkg>` in each checkout, since features gated on Composer's runtime metadata stay off until you do.
 4. **Static analysis.** PHPStan runs at level max with no baseline, and shipped `src/` carries no inline `@phpstan-ignore`: fix the cause.
@@ -80,5 +84,6 @@ Rules in `.claude/rules/` load by themselves when you read or edit a file their 
 | a multi-step procedure | `.claude/skills/<name>/SKILL.md` |
 | a reason, an alternative, history | `docs/progress/` or `docs/internals/` |
 | status | `docs/progress/roadmap.md` |
+| a how-to for application developers | not written yet: the behaviour goes in its trail entry |
 
 Instruction files carry rules, never history; the details are in `.claude/rules/instructions.md`.

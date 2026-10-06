@@ -119,7 +119,7 @@ wrapped. Sylament's component emits one of each — the numbered list and a sing
 labelled select.
 
 Nothing is dropped in principle. The second per-page label is a
-[`fi-compact`](../../styling.md) responsive variant, and it needs the
+[`fi-compact`](../../internals/styling.md) responsive variant, and it needs the
 `input.wrapper` / `input.select` support components the port has not built (both
 are **todo** rows in [README](README.md#components)), so today the select is a
 bare `<select class="sy-pagination-per-page-select">`. The standalone
@@ -190,7 +190,7 @@ what would reverse the decision when it is provisional.
 
 ### The carrier is first-party rather than an ecosystem package
 
-[Principle §2](../../principles.md#2-prefer-the-ecosystem-over-invention) makes
+[Principle §2](../../internals/principles.md#2-prefer-the-ecosystem-over-invention) makes
 adoption the default and building the case that has to be argued, and the
 Symfony ecosystem has a pagination package — Pagerfanta — so this is the
 argument.
@@ -211,7 +211,7 @@ over four integers, which is what this class is — 180 lines, no dependency, an
 no `Countable`/`IteratorAggregate` mismatch with the record shapes the toolkit
 already carries.
 
-That is the [named, checkable gap](../../principles.md#we-can-do-it-better-means-wrap)
+That is the [named, checkable gap](../../internals/principles.md#we-can-do-it-better-means-wrap)
 the principle asks for: *the package's value is its adapters, and neither lane can
 use one.* The same reasoning is why EasyAdmin — the closest Symfony-side analogue
 — ships a paginator of its own rather than depending on one. Wrapping was

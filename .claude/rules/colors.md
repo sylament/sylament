@@ -19,4 +19,4 @@ description: "How a colour is named, how a contrast policy picks its shade, and 
 - **Templates take colour through `colorAttributes(policyClass, color)`** spread into `attrs()`: a name yields classes, a shade map yields `sy-color` plus inline `--sy-color-*` and `--sy-<slot>` declarations.
 - **`sylamentStyles()` emits only what the shipped stylesheet lacks:** `:root` values for palettes that differ from `DEFAULT_COLORS`, and a swap class for names outside them.
 
-Background: `docs/progress/support/color.md`, `docs/progress/support/color-manager.md`, `docs/progress/support/color-policies.md`, `docs/styling.md` rules 5 and 6.
+Background: `docs/progress/support/color.md`, `docs/progress/support/color-manager.md`, `docs/progress/support/color-policies.md`, `docs/internals/styling.md` rules 5 and 6.

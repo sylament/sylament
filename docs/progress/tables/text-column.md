@@ -444,7 +444,7 @@ which is `date()`'s token set with month and day *names* translated. This port
 normalises with a three-arm match — a `DateTimeInterface` through
 `DateTimeImmutable::createFromInterface()`, an `int` as `@<timestamp>`, a string
 through `new DateTimeImmutable($state)` — and prints with `format()`. Carbon is
-not adopted: [principles §2](../../principles.md) sends us to the platform
+not adopted: [principles §2](../../internals/principles.md) sends us to the platform
 mechanism, and the whole of what Carbon adds here is the name translation.
 
 The consequence is exact and bounded: output is **byte-identical** to Carbon's

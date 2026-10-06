@@ -1,6 +1,6 @@
 # The asset workspaces
 
-How the JavaScript and CSS each bundle ships are built, why the build scripts look the way they do, and how a consuming application picks the result up. The rules themselves are in `.claude/rules/frontend.md` and `.claude/rules/css.md`; the styling contract is `docs/styling.md`.
+How the JavaScript and CSS each bundle ships are built, why the build scripts look the way they do, and how a consuming application picks the result up. The rules themselves are in `.claude/rules/frontend.md` and `.claude/rules/css.md`; the styling contract is `docs/internals/styling.md`.
 
 ## How do the workspaces fit together?
 

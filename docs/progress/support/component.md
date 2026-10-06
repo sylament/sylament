@@ -91,7 +91,7 @@ deferral, not a principled rejection.
 
 No runtime method injection. The extension points are subclassing and
 `configureUsing()`. Reversing it would mean `__call()`-based APIs, which
-[principle §1](../../principles.md#the-test) rejects.
+[principle §1](../../internals/principles.md#the-test) rejects.
 
 ### `newInstance()` routes every `make()` through a locator
 

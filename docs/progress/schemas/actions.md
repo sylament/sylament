@@ -97,7 +97,7 @@ Filament classes the row container `fi-ac` (styled from the **actions**
 package's stylesheet) and the trigger buttons `fi-ac-<view>-action`. Sylament
 already spent the systematic translation of `fi-ac`: bare `sy-ac` is the action
 trigger marker (`sy sy-btn sy-ac`) and doubles as the actions package code
-prefix in the [styling contract](../../styling.md), so the row container takes
+prefix in the [styling contract](../../internals/styling.md), so the row container takes
 the schemas-namespaced `sy-sc-actions-ctn` — emitted only by this component's
 template. The row CSS itself ports `.fi-ac` verbatim under the new name (base
 gap, wrap + centering when not full-width, the `fi-align-end`/`fi-align-right`

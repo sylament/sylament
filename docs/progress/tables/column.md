@@ -426,7 +426,7 @@ header stamps on the column the table is currently sorted by, so a stylesheet
 written against the state would paint that column unconditionally. Filament has
 the identical collision on `fi-ta-header-cell-sorted` and does nothing about it,
 so neither does this port — prefixing or escaping the hook would break the
-[styling contract](../../styling.md) that the class *is* the column's name — but
+[styling contract](../../internals/styling.md) that the class *is* the column's name — but
 it is worth knowing before naming a column after a table state.
 
 ### The default label reads the second-to-last dotted segment

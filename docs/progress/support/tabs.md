@@ -148,7 +148,7 @@ item rather than to a non-active item. The port writes `&:not(.sy-active)`, the
 rule as intended. Everything else in the stylesheet is vendor's, prefix-rewritten;
 the active accent stays the literal `text-primary-700 dark:text-primary-400`
 because Filament defines no colour policy for tabs, so
-[styling.md](../../styling.md) rule 5 does not bind here.
+[styling.md](../../internals/styling.md) rule 5 does not bind here.
 
 _See also: the global [rename table](../renames.md) — the Blade → Twig render,
 the `fi-*` → `sy-*` class prefix and the Alpine → Stimulus client-runtime

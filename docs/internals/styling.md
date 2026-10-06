@@ -68,7 +68,7 @@ Consumers never need Tailwind installed.
    `--sy-*` token (`var(--sy-gray-950)`), not `var(--color-gray-950)`.
    Those six are defined twice on purpose: as `oklch()` values in the `@layer
    theme { :root }` **floor** of `index.css`, and as
-   [`ColorManager::DEFAULT_COLORS`](../packages/support/src/Colors/ColorManager.php)
+   [`ColorManager::DEFAULT_COLORS`](../../packages/support/src/Colors/ColorManager.php)
    in PHP, which is what the contrast policies measure against. The floor is why
    a consumer who calls nothing still gets coloured components — Filament's
    compiled theme defines no palette values and requires its `@filamentStyles`
@@ -86,7 +86,7 @@ Consumers never need Tailwind installed.
    deliberate. Filament behaves the same way.)
 
    **Which shade of that palette an element paints with is not written in CSS.**
-   A [contrast policy](progress/support/color-policies.md) resolves it per
+   A [contrast policy](../progress/support/color-policies.md) resolves it per
    palette at render time — `Badge` asks for *text readable against this
    palette's shade 50*, not for shade 600 — because palettes do not share a
    lightness curve and one fixed shade cannot serve them all. The policy's answer
@@ -183,7 +183,7 @@ Consumers never need Tailwind installed.
     `resources/css/sortable.css`). The second branch's is forms' **FilePond**
     skin (M3 · 7): the library hardcodes its `filepond--*` classes onto the DOM
     it builds inside the `.sy-fo-file-upload` wrapper we render, so
-    [`file-upload.css`](../packages/forms/assets/src/styles/components/file-upload.css)
+    [`file-upload.css`](../../packages/forms/assets/src/styles/components/file-upload.css)
     nests every override under that class. The image editor (pulled-forward 24)
     put the same branch to work a second time in that same file: Cropper.js
     hardcodes its `.cropper-*` classes onto the DOM it builds inside the
@@ -207,4 +207,4 @@ Consumers never need Tailwind installed.
     `sortable-chosen` / `sortable-drag` unstyled, exactly as Filament's select
     does. The Tom Select skin that used to ground this rule left with the engine
     swap
-    ([forms styles.md](progress/forms/styles.md#the-js-select-skin-is-filaments-on-the-ported-controls-container)).
+    ([forms styles.md](../progress/forms/styles.md#the-js-select-skin-is-filaments-on-the-ported-controls-container)).

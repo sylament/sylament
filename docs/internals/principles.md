@@ -1,13 +1,14 @@
 # Principles
 
 Sylament ports Filament's API to Symfony. These are the stances that decide what
-that means when the two pull in different directions, so they outrank the porting
-rules in [CLAUDE.md](../CLAUDE.md) rather than sitting beside them.
+that means when the two pull in different directions. [CLAUDE.md](../../CLAUDE.md)
+states both above its porting rules, which they outrank; this file holds the
+reasoning behind each.
 
 Each one states the position, the test that makes it decidable, and what it does
 *not* cover. They are judgment rules, not gates — nothing in CI checks them.
 Where one is knowingly broken, the
-[divergence convention](progress/README.md#divergences-are-addressable) is where
+[divergence convention](../progress/README.md#divergences-are-addressable) is where
 the reason gets written down.
 
 ## 1. Symfony idiom, not Laravel idiom
@@ -34,7 +35,7 @@ test just as easily. What is rejected is the property, not the pedigree.
    `static`, not to add a locator.
 2. **An API that neither PHPStan nor an IDE can see.** `__call()`-based method
    injection, magic properties, string-addressed dispatch — this is why
-   [Macroable is not ported](progress/support/component.md#macroable-is-not-ported).
+   [Macroable is not ported](../progress/support/component.md#macroable-is-not-ported).
 
 Reimplementing something Symfony already ships is the same mistake wearing a
 different hat, but it has nothing to do with Laravel and is governed by
@@ -57,13 +58,13 @@ misapplied by the person who had just finished writing it — evidence enough th
 the limit was worth stating.
 
 Deferral is also not rejection. `Conditionable` and `Tappable`
-[are skipped](progress/support/component.md#conditionable-and-tappable-are-not-ported)
+[are skipped](../progress/support/component.md#conditionable-and-tappable-are-not-ported)
 because nothing wants them yet, and that note says so in as many words — a later
 need reverses it without reopening this principle.
 
 ### Mechanisms, not names
 
-[`renames.md`](progress/renames.md#idiom) maps the *naming* translations:
+[`renames.md`](../progress/renames.md#idiom) maps the *naming* translations:
 `Htmlable` → `Markup`, Blade → Twig, Alpine → Stimulus. These are the *mechanism*
 ones, which have no rename to record because the Laravel side is simply absent.
 
@@ -78,7 +79,7 @@ The table is not exhaustive, and an unmapped case is a decision waiting to be
 made rather than a licence to reach for the Laravel shape. Validation was the
 open one, and M1 · 1 decided it: Filament emits Laravel rule strings, which have
 no Symfony analogue, so
-[`rule()` and `rules()` became `constraint()` and `constraints()` over Symfony `Constraint` objects](progress/forms/can-be-validated.md#rule-and-rules-become-constraint-and-constraints-over-symfony-constraint-objects).
+[`rule()` and `rules()` became `constraint()` and `constraints()` over Symfony `Constraint` objects](../progress/forms/can-be-validated.md#rule-and-rules-become-constraint-and-constraints-over-symfony-constraint-objects).
 
 ## 2. Prefer the ecosystem over invention
 
@@ -102,14 +103,14 @@ default and building our own is the case that has to be argued.
 ### "We can do it better" means wrap
 
 Wrapping answers almost every version of that thought, and
-[`IconManager`](../packages/support/src/Icons/IconManager.php) is the shape: it
+[`IconManager`](../../packages/support/src/Icons/IconManager.php) is the shape: it
 holds ux-icons' `IconRendererInterface`, exposes the API our components want, and
 throws naming `UXIconsBundle` when the package is absent. We get the API we
 wanted; they keep maintaining the renderer.
 
 Replacing outright needs a **named, checkable gap** — a sentence a reader could
 prove wrong.
-[`PropertyAccessor`](progress/schemas/property-accessor.md#the-detached-array-trio-ports-laravels-arr-helpers-because-propertyaccess-is-host-only-and-has-no-key-removal)
+[`PropertyAccessor`](../progress/schemas/property-accessor.md#the-detached-array-trio-ports-laravels-arr-helpers-because-propertyaccess-is-host-only-and-has-no-key-removal)
 sets the standard: *PropertyAccess is host-only and has no key removal.*
 
 Not sufficient, in any combination: cleaner, nicer API, we only need a tenth of
@@ -118,7 +119,7 @@ it, their naming is off, it pulls in too much.
 ### Adopting still costs a dependency
 
 Preferring the ecosystem does not suspend the
-[dependency-declaration rules](../.claude/rules/manifests.md),
+[dependency-declaration rules](../../.claude/rules/manifests.md),
 which are deliberately strict about which package declares what. Nor does it make
 adoption automatic: a new dependency is proposed and agreed, never added in
 passing. A package we adopt is a package every consumer installs — the ecosystem

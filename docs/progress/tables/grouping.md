@@ -605,7 +605,7 @@ both live in
 keyed off the `sy-ta-grouping-settings-dropdown-on-desktop` modifier class the
 wrapper carries under `groupingSettingsInDropdownOnDesktop()` — a stylesheet rule
 rather than a page-wide utility only this one caller would ever want, which is
-[the toolkit's standing rule for exactly this](../../styling.md).
+[the toolkit's standing rule for exactly this](../../internals/styling.md).
 
 One more delta rides inside both copies: the direction field's visibility
 is a server attribute rather than an Alpine binding — `hidden` when the property

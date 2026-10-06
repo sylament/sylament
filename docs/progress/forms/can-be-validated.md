@@ -589,7 +589,7 @@ throws, and `MacAddress`'s first positional is the message, not the type:
 
 First-party where nothing fits. `alpha()`, `alphaDash()`, `alphaNum()` and
 `ascii()` are four `Regex` **subclasses** carrying Laravel's own patterns and
-validated by Symfony's `RegexValidator` — [principles §2](../../principles.md)'s
+validated by Symfony's `RegexValidator` — [principles §2](../../internals/principles.md)'s
 *wrap* rung, their validator and our class. `Type('alpha')` is byte-only
 `ctype_alpha` where Laravel's is `\pL\pM`, and `Charset('ASCII')` passes control
 characters, must be spelled upper-case or it self-refutes, and is not an

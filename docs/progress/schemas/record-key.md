@@ -306,7 +306,7 @@ space, Sonata joins with `~`, API Platform writes `a=1;b=2`, Rails joins with
 `_`, and EasyAdmin and the Django admin refuse composite keys outright. The
 choice here was therefore between adopting a known-ambiguous convention and
 exceeding it, and the six contexts above are the named, checkable gap that
-[principles §2](../../principles.md) asks for before inventing.
+[principles §2](../../internals/principles.md) asks for before inventing.
 
 ### The API
 
@@ -1294,7 +1294,7 @@ nested tuple. If it ever weakened, every one of those would need revisiting.
 
 ### Doctrine's `IdentifierFlattener` is not adopted, because it misreads a chained derived identity
 
-[Principles §2](../../principles.md) says adopt what the ecosystem ships, and the
+[Principles §2](../../internals/principles.md) says adopt what the ecosystem ships, and the
 plan for this file was to: `Utility\IdentifierFlattener` is public, final,
 recursive and enum-aware, which is the whole job. It was **overturned on executed
 evidence**, which is the bar §2 sets for not adopting — a named, checkable gap

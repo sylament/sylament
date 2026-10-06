@@ -188,7 +188,7 @@ extends SplFileInfo`, and `SplFileInfo` resolves a real path in its constructor,
 which a file on a remote storage does not have. So ours is a plain final value
 object over the temp disk, carrying the getters the field actually calls.
 
-This is [principles §1](../../principles.md) — Symfony idiom over a Laravel
+This is [principles §1](../../internals/principles.md) — Symfony idiom over a Laravel
 internal — not an API change: the method names a migrating user greps for
 (`getClientOriginalName()`, `getClientOriginalExtension()`, `getMimeType()`,
 `getSize()`, `exists()`, `delete()`) are unchanged. Two of Filament's reads are

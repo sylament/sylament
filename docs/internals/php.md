@@ -142,7 +142,7 @@ Placement is by source:
 
 Each file is a Composer `files` autoload, imported with `use function`.
 
-Where `docs/principles.md` §2 maps a helper onto a Symfony mechanism, as it maps `data_get()`/`Arr::get()` onto `symfony/property-access`, use that mechanism. Never inline a helper's body at a call site: a hand-rolled `is_array` ternary once shipped five call sites away from `wrap()`.
+Where `docs/internals/principles.md` §1 maps a helper onto a Symfony mechanism, as it maps `data_get()`/`Arr::get()` onto `symfony/property-access`, use that mechanism. Never inline a helper's body at a call site: a hand-rolled `is_array` ternary once shipped five call sites away from `wrap()`.
 
 `blank()` and `filled()` mirror Laravel's, except that a `Twig\Markup` is read as text, `blank()` trims with `mb_trim`, and there is no Eloquent-model short-circuit. Each delta is reasoned in [helpers.md](../progress/support/helpers.md#divergences).
 

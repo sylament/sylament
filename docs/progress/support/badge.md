@@ -228,7 +228,7 @@ hover and focus) where
 hardcodes `text-color-700/50` and `text-gray-700/50`: the badge's own text colour
 is already the shade `BadgeComponent` resolved for this palette, so inheriting it
 keeps the one contrast decision in the policy instead of re-fixing a shade in the
-stylesheet — [rule 6](../../styling.md#the-rules) of the styling contract, whose
+stylesheet — [rule 6](../../internals/styling.md#the-rules) of the styling contract, whose
 own example is the `text-color-600` defect this component shipped once already.
 
 The hover and focus states moved with it, from the icon to the button:

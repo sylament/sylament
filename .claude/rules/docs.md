@@ -10,6 +10,5 @@ description: Where documentation lives and the rules for the port trail.
 - **Reasoning with no trail home**, meaning why a rule is what it is and how the tests, assets, monorepo and instruction files work, is explained in `docs/internals/<topic>.md`.
 - **`DocumentationFilesTest` fails on a broken link or anchor,** so renaming a heading or moving a file fixes its links in the same change.
 - **`docs/superpowers/` is local and gitignored**, so a committed file never links into it.
-- **`docs/principles.md`** outranks every other document.
 
 Background: `docs/progress/README.md`.

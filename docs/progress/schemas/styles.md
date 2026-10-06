@@ -7,7 +7,7 @@ Each stylesheet is `@apply`-authored into `components/<name>.css` and `@import`e
 into [`index.css`](../../../packages/schemas/assets/src/styles/index.css) under
 `layer(components)`, mirroring Filament's `index.css` structure. The `fi-*` class
 prefix is translated to the schemas component code `sy-sc-*` (see the
-[CSS contract](../../styling.md)). Seven of Filament's stylesheets are ported so
+[CSS contract](../../internals/styling.md)). Seven of Filament's stylesheets are ported so
 far (schema, section, icon, actions, flex, tabs, wizard) — `icon.css`, `flex.css` and
 `tabs.css` rule-for-rule, `schema.css` and `actions.css` dropping variants from
 their source, and `section.css` and `wizard.css` adding rules; the rest wait on

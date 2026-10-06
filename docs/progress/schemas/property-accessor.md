@@ -378,7 +378,7 @@ before initialization"*.
 
 There is no ambient global left in this path at all: the dependency is either
 injected or constructed on the spot, and nothing consults a mutable static.
-That satisfies [principle §1](../../principles.md#the-test) on both branches,
+That satisfies [principle §1](../../internals/principles.md#the-test) on both branches,
 and is why `PropertyAccessor` no longer appears in the static-instance roster.
 The cost is that a `new`-built component makes its own Symfony accessor rather
 than sharing one — bounded to code paths with no container, which is where

@@ -1720,7 +1720,7 @@ done without it — the write side reaches the target's owning field through
 negated subselect that needs no inverse mapping at all. A setter with nothing
 left to override would be an API that does nothing, which is worse than an
 absence; the guess itself is exactly the kind of internal
-[principles §1](../../principles.md) rejects. Three `— not ported` rows in
+[principles §1](../../internals/principles.md) rejects. Three `— not ported` rows in
 [renames.md](../renames.md) carry the names.
 
 Reversal is cheap but unmotivated: it needs a *reader* to want the inverse name

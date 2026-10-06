@@ -89,7 +89,7 @@ so blanking a field clears a defaulted-nullable value instead of resurrecting
 the default — the one case where the default still wins over a present `null`
 is a **non-nullable** defaulted parameter, where passing it would `TypeError`.
 `symfony/serializer` is deliberately **not** adopted,
-against [principles §2's](../../principles.md#2-prefer-the-ecosystem-over-invention)
+against [principles §2's](../../internals/principles.md#2-prefer-the-ecosystem-over-invention)
 default, on named checkable grounds: the job here is *flat item array → fresh
 object by declared names* — the singular-denormalize slice — for which
 reflection plus the already-present accessor is complete, while Serializer's

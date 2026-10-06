@@ -11,7 +11,7 @@ chain and finally to the host live component's class name. It is composed by
 [`disabledOn()`](can-be-disabled.md). The typed vocabulary for the three
 standard values is support's
 [`Operation`](../support/README.md) enum; `operation()` itself takes `?string`,
-as Filament's does. The record half of the same epic lives in
+as Filament's does. The record half of the host context lives in
 [`belongs-to-record.md`](belongs-to-record.md).
 
 **Status:** done — see the

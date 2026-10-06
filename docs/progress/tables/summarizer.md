@@ -26,7 +26,7 @@ components with the three
 bodies under them, and
 [`summary.css`](../../../packages/tables/assets/src/styles/components/summary.css).
 
-The grouping half of the same epic — which record starts a group, which one ends
+Grouping — which record starts a group, which one ends
 it, and the collapse the band renders under — is
 [`grouping.md`](grouping.md). This file is the figures.
 
@@ -94,7 +94,7 @@ instead.
 | `Count::icons()`'s per-icon counts, its template and its colour policy | [`Count::summarize()`](../../../vendor/filament/tables/src/Columns/Summarizers/Count.php)'s icon arm | todo | — | [detail](#counticons-ships-as-api-and-refuses-to-summarize) |
 | A summary over a `records()` table | [`Summarizer::getState()`](../../../vendor/filament/tables/src/Columns/Summarizers/Summarizer.php) (which fatals there) | todo | — | [diverges](#the-records-lane-is-refused-loudly-where-filaments-fatals-deep-in-summarize) |
 | The batched `GROUP BY` for per-group figures | [`index.blade.php`'s grouped summary batch](../../../vendor/filament/tables/resources/views/index.blade.php) | todo | — | [diverges](#the-per-group-figure-is-one-scoped-query-per-group-not-one-group-by) |
-| The summary rows' stacked-on-mobile variants | [`columns/summaries/`](../../../vendor/filament/tables/resources/css/columns) | blocked | the layout columns (M4 · 7) | They are the responsive half of the card rendering, with nothing to stack until `content()` has a list ([table.md](table.md#surface)) |
+| The summary rows' stacked-on-mobile variants | [`columns/summaries/`](../../../vendor/filament/tables/resources/css/columns) | blocked | the layout columns (`Columns\Layout`) | They are the responsive half of the card rendering, with nothing to stack until `content()` has a list ([table.md](table.md#surface)) |
 
 ## Details
 
@@ -112,8 +112,8 @@ it. `summarize()` therefore throws a `LogicException` naming `IconColumn` and
 `Summarizer::using()`, and `getSelectStatements()` returns `[]` so the batch
 skips it rather than aliasing a figure nothing will read.
 
-The blocker M4 · 4 removed was the column: `IconColumn` and its contrast policy
-ship now. What is left is scope — the template, a second policy under
+The column is not what holds it back: `IconColumn` and its contrast policy
+ship. What is left is scope — the template, a second policy under
 `Colors/Components/` and the per-icon query fan-out are a feature rather than a
 translation, and no consumer has asked for one.
 
@@ -249,40 +249,34 @@ too.
 A composite identifier narrows the same way, through
 [`IdentifierConstraint::in()`](../schemas/record-key.md#the-operations-and-their-dql)
 under `sylament_summary_keys`: one balanced OR of per-field ANDs where a
-single-identifier table emits `root.<id> IN (…)`. M7 · 1 moved this one site a
-whole epic early on purpose — before it, the call here was an **unguarded**
-`getSingleIdentifierFieldName()`, reachable only because `HasTable` refused to
-key the page first, and the moment keying stopped refusing a summarized
-composite table would have thrown a raw Doctrine `MappingException` out of a
-getter mid-render. The all-table row still reads its figure there — off
+single-identifier table emits `root.<id> IN (…)`. An **unguarded**
+`getSingleIdentifierFieldName()` here would throw a raw Doctrine
+`MappingException` out of a getter mid-render for every summarized composite
+table, because `HasTable` keys the page rather than refusing it. The all-table row still reads its figure there — off
 `getAllTableSummaryQuery()`, which is `getFilteredTableQuery()` and nothing
 else, so *All &lt;records&gt;* means the whole **filtered and searched** set and
 not the whole table. A search narrowing five rows to three moves both figures.
 
-The bind changed shape with that move even for a **single-identifier** table:
-the DQL text is unmoved, but the keys are converted to the identifier's own PHP
-type and bound under an `ArrayParameterType`, so anyone reading the parameter
-back sees `[3, 4]` where it used to be `['3', '4']`. M7 · 2 put the
+The bind has that shape even for a **single-identifier** table: the DQL text
+is the plain `IN`, but the keys are converted to the identifier's own PHP type
+and bound under an `ArrayParameterType`, so anyone reading the parameter back
+sees `[3, 4]`, not `['3', '4']`. The
 [aggregate batch](table.md#an-aggregate-is-a-batched-side-query-and-a-hidden-subselect-never-a-select-on-the-page-query)
-on that same footing under its own base, `sylament_agg_keys` — the base name
-kept rather than renamed, so a single-identifier batch's predicate text does
-not move (its *result* alias did, `sy_key` to `sy_key_0`, which is one
-query-cache miss and no behaviour) — and chunked it besides, which makes it
-the third site in the toolkit that chunks and the only one that is not part of
+stands on that same footing under its own base, `sylament_agg_keys`, and is
+chunked besides, which makes it the third site in the toolkit that chunks and the only one that is not part of
 a **write**; the by-key delete and the reorder's re-resolution are the other
 two.
 
-A **fetch-join** paginator over such a root was refused outright until M7 · 2,
-and loudly, because Doctrine pages that shape through a **single identifier
-column** and leaks the fact two different ways: a scalar-pair root reached
-`RootTypeWalker`'s `getSingleIdentifierFieldName()` and surfaced a raw
-`MappingException` mid-render, while a derived identity failed earlier still,
-inside `LimitSubqueryOutputWalker`, which re-emitted the identifier tiebreak's
+Doctrine's **fetch-join** paginator pages such a root through a **single
+identifier column** and leaks the fact two different ways: a scalar-pair root
+reaches `RootTypeWalker`'s `getSingleIdentifierFieldName()` and surfaces a raw
+`MappingException` mid-render, while a derived identity fails earlier still,
+inside `LimitSubqueryOutputWalker`, which re-emits the identifier tiebreak's
 `ORDER BY root.<association>` as a column its own derived table does not carry
-and ended the render in a driver error instead — on every platform outside that
+and ends the render in a driver error instead — on every platform outside that
 walker's `ROW_NUMBER` branch, which is SQLite here and MySQL and MariaDB in
 production. (The scalar-pair half is platform-independent; only the derived
-identity's carries that qualifier.) Neither happens now. This
+identity's carries that qualifier.) So this
 look-ahead and
 [`paginateTableQuery()`](has-table.md#the-page-state-has-its-query-lane-and-no-session-or-url-half)
 read their window through **one** private method on `CanPaginateRecords`, and
@@ -296,10 +290,10 @@ about the same builder. The window of one is taken on a **clone**, because that
 read windows the builder it is handed.
 
 "Byte for byte" is the page's claim, not this probe's: over a query that joins
-**no** collection the look-ahead was a plain `getResult()` before M7 · 2 and is
-now Doctrine's paginator with `fetchJoinCollection` false — the same single
-statement with the same binds, executed both ways on a single-identifier root,
-but a paginator where there was none.
+**no** collection the look-ahead is Doctrine's paginator with
+`fetchJoinCollection` false rather than a plain `getResult()` — the same single
+statement with the same binds on a single-identifier root, but through a
+paginator.
 
 An **unpaged** table never reaches any of it: `paginated(false)` and a
 `recordsPerPage` of `'all'` both return before a Doctrine paginator is built —
@@ -311,7 +305,7 @@ table, against a DQL parse time superlinear in key count — see
 [the chunk rule](../schemas/record-key.md#the-chunk-rule). Nothing reaches it.
 `hasPages()` is false whenever one page holds the whole filtered set — under
 `'all'`, and on any single-page table — the partial asks for the page query
-only when it is true, and since M7 · 2 the method itself answers the
+only when it is true, and the method itself answers the
 **un-narrowed** filtered query in exactly that shape. One page means the page
 *is* the filtered set, so the predicate only ever reproduced what it started
 from, at a cost of one bound parameter per key per identifier field. The guard
@@ -427,8 +421,8 @@ signature it guards is real. Vendor's fifth arm, the `CursorPaginator` branch at
 [`CanSummarizeRecords:46-55`](../../../vendor/filament/tables/src/Concerns/CanSummarizeRecords.php),
 has no counterpart here at all: `PaginationMode::Cursor` throws in
 [`paginateTableQuery()`](../../../packages/tables/src/Concerns/CanPaginateRecords.php), so
-the mode the arm exists for cannot reach this method — the epic's design settled
-it as skipped on the pagination row's own grounds.
+the mode the arm exists for cannot reach this method — it is skipped on the
+pagination row's own grounds.
 
 ### A group with no heading closes with no summary row, except under `groupsOnly()`
 
@@ -639,7 +633,7 @@ ships **two** copies of these mechanics — the same bodies under two receivers 
 so a fix to one of the shared members is owed to the other, while the three
 partings above are meant to stay apart. It is recorded on the
 [`CanFormatState` hoist row](../support/README.md#features) and stays **todo**
-until an epic wants a third reader.
+until a third reader is wanted.
 
 ### `hiddenLabel()` is honoured in all three markups where vendor honours it in one
 
@@ -658,8 +652,9 @@ way [the group header row's is](grouping.md#the-key-segment-of-every-id-this-row
 Vendor gives the band no ids at all. They exist because the rows are morph
 identity: whether a page row renders changes with the paginator, so an
 unidentified band pairs positionally and idiomorph can replace one row's whole
-`innerHTML` with another's — the defect class the column manager's search cells
-had to fix in M4 · 5.
+`innerHTML` with another's — the defect class
+[the per-column search cells](table.md#the-search-cells-carry-morph-keys-because-they-are-the-one-per-column-element-that-moves)
+guard against too.
 
 ### The band is handed the real all-table query even when the all-table row is off
 
@@ -672,9 +667,9 @@ answer, and the only place the two behaviours are visible is that header row.
 
 ### Every summary cell carries its column's responsive pair, where vendor's carries none
 
-M4 · 4 emits `<bp>:sy-ta-hidden` / `<bp>:sy-ta-visible` on every `<th>` and
-`<td>` a column owns, and M4 · 5 had to replicate the pair on the per-column
-search cells. Vendor's `summary/row.blade.php` emits neither, so at parity a
+`Column` emits `<bp>:sy-ta-hidden` / `<bp>:sy-ta-visible` on every
+`<th>` and `<td>` it owns, and the per-column search cells replicate the
+pair. Vendor's `summary/row.blade.php` emits neither, so at parity a
 `hiddenFrom('md')` column's summary cell would render below `md` while its header
 and its cells are hidden — one cell wider than the row it belongs to.
 `SummaryRow` stamps the pair from `getHiddenFrom()` / `getVisibleFrom()` on every
@@ -698,4 +693,4 @@ with vendor's `fi-wrapped` split, which is a no-op upstream.
 
 Both components publish an `extraHeadingColumn` and a `placeholderColumns` prop
 that no call site sets today: the table layout never needs either, and the
-content layout that does is M4 · 7's.
+content layout that does waits on the layout columns.

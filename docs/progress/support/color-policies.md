@@ -8,8 +8,8 @@ which shade does each slot of this element paint with?* — and expresses the
 answer as intent (`the text must be readable against this palette's shade 50`)
 rather than as a shade number.
 
-This is the layer that was missing before the colour epic, and the only one that
-was: the swap classes, the component CSS and the `--sy-*` token bridge all
+This is the layer the colour pipeline lacked, and the only one it
+lacked: the swap classes, the component CSS and the `--sy-*` token bridge all
 predate it. Without it every component hardcoded a shade — `badge.css` applied
 `text-color-600` — and since palettes do not share a lightness curve, one fixed
 shade cannot serve them all.

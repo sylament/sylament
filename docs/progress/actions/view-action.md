@@ -12,7 +12,7 @@ the panels side rather than on this class, and it already exists —
 [`Resources\Pages\Page::getDefaultActionUrl()`](../../../packages/panels/src/Resources/Pages/Page.php)
 answers `$resource->getUrl('view', …)` for a `ViewAction` on a resource whose
 `hasPage('view')`. What is missing is the page: no resource can register one
-until M5 · 2, so the arm never fires. This class does not change when it does.
+until panels ships a `ViewRecord` page, so the arm never fires. This class does not change when it does.
 
 **Status:** in progress — see the [status vocabulary](../README.md#statuses).
 
@@ -46,7 +46,7 @@ first. _Detail_ carries a **detail** link to a [Details](#details) write-up, a
 | [`disabledSchema()` + `fillForm()` from the record](../../../packages/actions/src/ViewAction.php) | [`ViewAction.php`](../../../vendor/filament/actions/src/ViewAction.php) | done | — | [detail](#the-modal-renders-the-form-disabled-where-filament-renders-an-infolist) |
 | [`mutateRecordDataUsing()`](../../../packages/actions/src/Concerns/CanMutateRecordData.php) | [`ViewAction.php`](../../../vendor/filament/actions/src/ViewAction.php) | done | — | [diverges](#mutaterecorddatausing-is-one-shared-trait-not-three-copies) |
 | [`icon('heroicons:eye-20-solid')` + `groupedIcon(...)`](../../../packages/actions/src/ViewAction.php) | [`ViewAction.php`](../../../vendor/filament/actions/src/ViewAction.php) `tableIcon()` + `groupedIcon()` | done | — | [diverges](#the-icon-is-a-literal-name-and-a-plain-icon-stands-in-for-tableicon) |
-| Modal content — Filament's view modal renders the resource's **infolist** | [`ViewAction.php`](../../../vendor/filament/actions/src/ViewAction.php), [`Resources/Pages/ViewRecord.php`](../../../vendor/filament/filament/src/Resources/Pages/ViewRecord.php) | in progress | infolists / `EmbeddedSchema` (M5 · 2) | [detail](#the-modal-renders-the-form-disabled-where-filament-renders-an-infolist) |
+| Modal content — Filament's view modal renders the resource's **infolist** | [`ViewAction.php`](../../../vendor/filament/actions/src/ViewAction.php), [`Resources/Pages/ViewRecord.php`](../../../vendor/filament/filament/src/Resources/Pages/ViewRecord.php) | in progress | infolists and a panels `ViewRecord` page | [detail](#the-modal-renders-the-form-disabled-where-filament-renders-an-infolist) |
 
 ## Details
 
@@ -72,8 +72,8 @@ than a disabled tree of inputs — because a Filament resource declares
 nothing else to answer. What changes when they land is the **resolver's answer**,
 not this class: nothing in `ViewAction` names a form.
 
-**Next step:** infolists plus `EmbeddedSchema` and the `ViewRecord` page
-(M5 · 2), at which point a resource that declares `infolist()` has it answered
+**Next step:** infolists and the panels `ViewRecord` page,
+at which point a resource that declares `infolist()` has it answered
 here.
 
 ## Divergences

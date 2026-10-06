@@ -374,7 +374,7 @@ anything further, a `tabindex` of `-1`),
 wrapper, never a route for a user-supplied value — so each of those five carries
 a `sy-fo-*-wrp` hook of its own into the port as it lands, and reading the
 parameter as a `ToggleButtons` quirk would silently cost the other four theirs.
-Two of the five landed with M3 · 9 and took **no** hook with them:
+Two of the five are ported and carry **no** hook yet:
 [`TagsInput`](tags-input.md) and [`KeyValue`](key-value.md) each render inside the
 shared field wrapper with no extra element, because the one rule vendor's hook
 carries is inline-label padding, which waits on schemas' `HasInlineLabel` exactly

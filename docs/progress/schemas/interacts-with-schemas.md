@@ -157,8 +157,7 @@ the sticky-key bookkeeping that
 reads back. The machinery, semantics, and per-member divergences live in
 [`can-be-validated.md`](can-be-validated.md).
 
-The record tail reads one schema flag since
-[M7 · 10](../roadmap.md#m7--composite-identifiers),
+The record tail reads one schema flag,
 `Schema::isRecordKeyValidated()`, which switches its blank-key and taken-key
 passes off ([the switch](can-be-validated.md#the-key-rules-switch-off-per-schema-never-the-changed-key-one));
 the contract itself did not change, so a host implementing
@@ -181,7 +180,7 @@ Filament stores the currently-validating schema on the Livewire component for
 two reasons: to scope the `prepareForValidation()` state mutation to one schema
 instead of all, and to break infinite loops in schemas that self-validate (the
 table query builder crashing while an action submits). Neither reason survives
-the translation. A mutation pass **has** since returned — M3 · 8's
+the translation. A mutation pass **has** since returned — the
 [`mutateStateForValidation()` walk](schema.md#getstate-validates-without-a-prepareforvalidation-mutation-layer)
 — but it needs no stored schema to scope it: `validateSchema()` calls it on the
 `Schema` it was handed, so the argument already carries the scope Filament has to

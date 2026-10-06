@@ -95,8 +95,8 @@ it('leaves every parent placeholder at the compiler default, because a slug alwa
     // The loader composes a parent placeholder as `/{param}` and then appends
     // `/` plus the child slug, so the character after it is always a slash and
     // the compiler's own `[^/]++` covers every character the key grammar uses.
-    // M7 · 3's greedy requirement is stamped on `{record}` alone, and this is
-    // what keeps that asymmetry harmless.
+    // The loader's greedy requirement is stamped on `{record}` alone, and this
+    // is what keeps that asymmetry harmless.
     expect($parented)->not->toBeEmpty();
 
     foreach ($parented as $name => $requirements) {

@@ -178,7 +178,7 @@ letting a `TypeError` surface from inside reflection:
 
 Nothing in the class references the `Repeater` — `get()`/`set()` transform one
 value, and any subtree owner (or, untested, a leaf field over a single embedded
-array) could apply it. The epic's test coverage is deliberately
+array) could apply it. Its test coverage is deliberately
 repeater-shaped: the cast's Unit matrix plus the repeater Integration suite,
 and no other consumer is claimed until one exists. The trail says "general by
 construction, repeater-only by test coverage" so a later consumer knows the

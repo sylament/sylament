@@ -99,8 +99,8 @@ what has to land first. _Detail_ links the write-up in [Details](#details)
 | [`HasMountableArguments`](../../../packages/actions/src/Concerns/HasMountableArguments.php) | [`Concerns/HasMountableArguments.php`](../../../vendor/filament/actions/src/Concerns/HasMountableArguments.php) | done | — | [diverges](#action-invocation-is-a-php-side-seam-only) |
 | [`HasName`](../../../packages/actions/src/Concerns/HasName.php) | [`Concerns/HasName.php`](../../../vendor/filament/actions/src/Concerns/HasName.php) | done | — | [diverges](#getname-tightens-its-return-type-to-non-nullable-string) |
 | [`HasSize`](../../../packages/actions/src/Concerns/HasSize.php) | [`Concerns/HasSize.php`](../../../vendor/filament/actions/src/Concerns/HasSize.php) | done | — | [diverges](#hassize-drops-the-optimized-render-fast-path-helper) |
-| [`InteractsWithRecord`](../../../packages/actions/src/Concerns/InteractsWithRecord.php) incl. `resolveRecordKey()` | [`Concerns/InteractsWithRecord.php`](../../../vendor/filament/actions/src/Concerns/InteractsWithRecord.php) | in progress | `CanBeLabeledFrom` (M4 · 1's deferral), the authorization arm | The record, record-class, record-label, plural-label and record-title chains all land — the plural trio (`pluralRecordLabel()` / `getCustomPluralRecordLabel()` / `getPluralRecordLabel()` / `getTitleCasePluralRecordLabel()`) with them, and `Action` hops each chain through its bound table — plus `ensureCorrectRecordType()` and Filament's `bool $withDefault` gate on `getRecord()`/`getRecordClass()` — [semantics](#the-record-chain-reaches-the-schema-the-component-and-the-host) · [semantics](#a-table-bound-action-titles-and-labels-through-its-table) · [rename](../renames.md#the-model-vocabulary-collapses-onto-record) · [diverges](#record-key-resolution-is-hoisted-to-hasactions) |
-| [`InteractsWithSelectedRecords`](../../../packages/actions/src/Concerns/InteractsWithSelectedRecords.php) | [`Concerns/InteractsWithSelectedRecords.php`](../../../vendor/filament/actions/src/Concerns/InteractsWithSelectedRecords.php) | in progress | the tables selection host (same epic), the authorization epic | [bulk-action.md](bulk-action.md) |
+| [`InteractsWithRecord`](../../../packages/actions/src/Concerns/InteractsWithRecord.php) incl. `resolveRecordKey()` | [`Concerns/InteractsWithRecord.php`](../../../vendor/filament/actions/src/Concerns/InteractsWithRecord.php) | in progress | `CanBeLabeledFrom`, the authorization arm | The record, record-class, record-label, plural-label and record-title chains all land — the plural trio (`pluralRecordLabel()` / `getCustomPluralRecordLabel()` / `getPluralRecordLabel()` / `getTitleCasePluralRecordLabel()`) with them, and `Action` hops each chain through its bound table — plus `ensureCorrectRecordType()` and Filament's `bool $withDefault` gate on `getRecord()`/`getRecordClass()` — [semantics](#the-record-chain-reaches-the-schema-the-component-and-the-host) · [semantics](#a-table-bound-action-titles-and-labels-through-its-table) · [rename](../renames.md#the-model-vocabulary-collapses-onto-record) · [diverges](#record-key-resolution-is-hoisted-to-hasactions) |
+| [`InteractsWithSelectedRecords`](../../../packages/actions/src/Concerns/InteractsWithSelectedRecords.php) | [`Concerns/InteractsWithSelectedRecords.php`](../../../vendor/filament/actions/src/Concerns/InteractsWithSelectedRecords.php) | in progress | `CanBeAuthorized` | [bulk-action.md](bulk-action.md) |
 
 ## Details
 
@@ -122,8 +122,8 @@ it resolves [`getRecordClass()`](#the-record-chain-reaches-the-schema-the-compon
 so a closure can name the class an action will create into before any record
 exists), `arguments`, `liveComponent` (the systematic
 `livewire` → `liveComponent` rename tracked in
-[`../renames.md`](../renames.md) — not a divergence), `data` (added with the
-forms-in-modals epic: `'data' => ClosureParameter::make($this->getData())`,
+[`../renames.md`](../renames.md) — not a divergence), `data`
+(`'data' => ClosureParameter::make($this->getData())`,
 backed by [`HasData`](../../../packages/actions/src/Concerns/HasData.php), so a
 mounted action's callback reads its submitted form state as `$data`), `table`
 (the [bound table](belongs-to-table.md), added with the label and title hops —
@@ -184,7 +184,7 @@ vendor-verified and kept). Two more landed with the bulk family:
 [`getSelectedRecords()` / `getSelectedRecordsQuery()`](bulk-action.md#the-two-record-readers-share-one-gate-and-one-message)
 behind the [access-flag gate](#the-selected-record-injections-are-gated-on-the-access-flag)
 Filament has no equivalent of, and resolving the plain selection where Filament
-resolves the [individually authorized](bulk-action.md#per-record-authorization-waits-on-the-authorization-epic)
+resolves the [individually authorized](bulk-action.md#per-record-authorization-waits-until-authorization-lands)
 one. Still missing: `mountedActions` (mounted-actions introspection
 beyond today's `HasActions`),
 `schemaOperation`/`context`/`operation`
@@ -321,7 +321,7 @@ database-notifications panel lands, alongside the notification-side surface
 
 **In:** `successNotificationTitle()` / `failureNotificationTitle()` and their
 `getSuccessNotificationTitle()` / `getFailureNotificationTitle()` evaluated
-getters, plus — since M4 · 2 — the object arms `successNotification()` /
+getters, plus the object arms `successNotification()` /
 `failureNotification()`: the `Notification|Closure|null` setters that let a
 caller replace or amend the whole notification, each deriving
 `isSuccessNotificationDisabled` / `isFailureNotificationDisabled` from a `null`
@@ -528,7 +528,7 @@ happens to key on, e.g. `sy-modal-md`). The *defaults* are Filament's, not the
 shape: `Width::Medium`/`Width::FourExtraLarge`
 ([vendor `CanOpenModal.php:653-664`](../../../vendor/filament/actions/src/Concerns/CanOpenModal.php))
 become `'md'`/`'4xl'`, which support's `modal.css` already knows. Answering `'md'`
-unconditionally, as the port did until M4 · 2's browser pass, squeezed a
+unconditionally, as the port once did, squeezed a
 four-tab article form into a `max-w-md` box — the kind of defect only a browser
 finds, since every assertion about a width passes either way.
 
@@ -633,7 +633,7 @@ The click gate itself is now **ported**, under the `Livewire` → `LiveComponent
 and `isLiveComponentClickHandlerEnabled(): bool` on the trait, with Filament's
 three arms in Filament's order — an explicit override wins, then `filled(getUrl())`
 and `canSubmitForm()` each turn it off, otherwise it is on. The two default arms
-had lived in the templates since the forms-in-modals epic
+once lived in the templates
 (`hasLiveClickBinding = not component.getUrl and not component.canSubmitForm` in
 [`Action/Button.html.twig`](../../../packages/actions/templates/partials/Action/Button.html.twig)
 and its `link`/`badge`/`grouped` siblings, and an extra term in
@@ -866,8 +866,8 @@ The **plural trio** — `pluralRecordLabel()`, `getCustomPluralRecordLabel()`,
 lives on the trait, pluralising through
 [`Sylament\Support\plural()`](../support/helpers.md); Filament's
 `getPluralModelLabel()` additionally branches on `locale_has_pluralization()`,
-which [i18n being parked](../roadmap.md) leaves nothing to ask, so that guard is
-the one piece not ported. What still keeps the row **in progress** is M4 · 1's
+which [i18n being parked](../renames.md#idiom) leaves nothing to ask, so that guard is
+the one piece not ported. What still keeps the row **in progress** is the
 `CanBeLabeledFrom` deferral, not these.
 
 **Three guards read `!== null` where Filament reads `filled()`**, and one arm is `??`
@@ -1084,6 +1084,8 @@ on both arms, the url arm still winning, the rank against the client and
 parent-call handlers across all five templates, and the icon-button shape
 reaching the same arms through its own guard expressions.
 
+The click wiring is one `{% if %}` chain written out in each trigger template — the same text in `Badge`, `Button`, `Grouped` and `Link`, and the same arms as ternaries in `IconButton` — so an arm added, removed or reordered changes all five templates together. The render test above pins the rank behaviourally across the five; nothing compares the templates' text, which is why the chain is kept identical by hand rather than factored out.
+
 The delivery half — who reads these attributes, and how a `'self'` emitter is
 resolved — is
 [actions-bundle.md](actions-bundle.md#the-dispatch-controller-is-page-wide-and-filament-has-no-counterpart-for-it).
@@ -1175,7 +1177,7 @@ per-exception commit/rollback split the pipeline needs; DBAL 4 nests
 unconditionally through savepoints, so the wrap composes with an outer test
 transaction.
 
-M4 · 2 put a fourth member beside the trio, for the write actions rather than for
+A fourth member sits beside the trio, for the write actions rather than for
 a transaction:
 [`getEntityManagerForRecord(object|class-string $recordOrClass): EntityManagerInterface`](../../../packages/actions/src/Concerns/CanUseDatabaseTransactions.php)
 answers *which manager owns this record's class*, on the same precedence the
@@ -1187,9 +1189,9 @@ resolves a model's connection from the model. It is `protected`, and it throws
 rather than degrading on each of its three misses — no registry names the
 container-built instance, no manager for the class names the class, and a
 non-ORM `ObjectManager` names the type it got. [`DeleteAction`](delete-action.md)
-and [`DeleteBulkAction`](bulk-action.md) keep resolving their own manager this
-epic, because their messages are pinned by tests; adopting the helper there is a
-sweep item.
+and [`DeleteBulkAction`](bulk-action.md) keep resolving their own manager,
+because their messages are pinned by tests; adopting the helper there is still
+to do.
 
 The precedence is the table's manager over the *record's class*, not merely over
 the registry: an action naming a `recordClass()` from a different manager than
@@ -1483,7 +1485,7 @@ guard against a table whose rows are a different model than the action's own
 record. Sylament has no model class to compare, so the key is emitted whenever
 *something* yields one — but **which** something now depends on the table.
 
-M7 · 1 gave that branch a table arm. When the action has a table and the record
+That branch has a table arm. When the action has a table and the record
 is an instance of the table's
 [record class](../tables/table.md#the-record-class-is-read-off-the-base-querys-root-entity),
 `getContext()` asks the table — `Table::getRecordKey()`, the host's own read,
@@ -1523,9 +1525,9 @@ it apart from the ordinary one: a record keyed by one scalar field whose
 readable `id` is something else — a legacy serial beside a natural key — mints
 that `id`, exactly as before the gate existed. On a panels page the resource
 then resolves it by the identifier and answers a 404. That is the
-`$recordRouteKeyName` family's pre-existing mismatch, recorded on the
-[roadmap](../roadmap.md#m7--composite-identifiers) and closed only by a host
-hook that lets a page mint the key itself, which no epic owns.
+[`$recordRouteKeyName`](../panels/README.md#a-custom-recordroutekeyname-names-one-column-and-the-codec-never-sees-it)
+family's pre-existing mismatch, closed only by a host hook that lets a page mint
+the key itself, which nothing provides yet.
 
 It also means the read can now **throw** where it used to stay quiet: a record
 of the table's own class whose identifier is incomplete — an explicitly-set,
@@ -1621,9 +1623,8 @@ now emits `data-action="sylament--support--modal#dismiss"`, a **client-side**
 close, matching Filament's `getJsClickHandler()`: the dialog closes in the
 browser, and the controller's `dismissed` event carries the
 [`cancelParentActions` round-trip](has-actions.md#the-stack-is-choreographed-declaratively-not-by-client-events)
-back to `unmountAction`. Until the nested-actions epic this branch dispatched
-`live_action('unmountAction')` directly — correct for a single slot, but it
-could not express "close this frame *and* cancel back to a named parent", which
+back to `unmountAction`. Dispatching `live_action('unmountAction')` directly
+would be correct for a single slot, but it could not express "close this frame *and* cancel back to a named parent", which
 is per-action state the close chain has to carry.
 
 Pinned by `ActionRenderTest`'s string/close/parent-call/precedence cases across
@@ -1701,7 +1702,7 @@ The state-based `url` closure parameter Filament's **schemas** / **tables**
 `CanOpenUrl` — the source this row ports — never had a `$state` argument to
 begin with, so nothing was dropped on that front. Support's
 [arity probe](../support/component.md#surface), which is what tells those
-siblings apart, shipped with the column catalog (M4 · 4) as
+siblings apart, is
 `EvaluatesClosures::evaluationValueIsFunctionAndHasParameter()` and reads the
 tables one; this row is unaffected either way.
 
@@ -1720,7 +1721,7 @@ already uses, and the one support's `isAssetMapperAvailable()` established:
   `Notification::class` on an imported name is a compile-time string and
   autoloads nothing, so in an install without the package the symbol is never
   resolved and both send methods stay the chainable no-ops they were. The object
-  arms M4 · 2 added *type* two properties and two setter parameters
+  arms *type* two properties and two setter parameters
   `Notification|Closure|null`, which is inert for the same reason: PHP resolves a
   property or parameter type lazily, only when a value meets it — and a caller
   with a `Notification` to pass demonstrably has the package.
@@ -1871,7 +1872,7 @@ null. That makes it **lenient where the host's twin is strict**: the same
 unreadable record throws from
 [`HasTable::getTableRecordKey()`](../tables/has-table.md), because a table
 building its row index cannot proceed without a key, while an action emitting
-a mount context can simply omit one. It is also, since M7 · 1, the **fallback**
+a mount context can simply omit one. It is also the **fallback**
 rather than the whole outbound answer — a table-bound action over one of the
 table's own records is handed the table's key first
 ([above](#getcontext-drops-the-record-model-gate)), and this literal `id` read
@@ -1901,9 +1902,8 @@ validates the mapped record as well
 and a violation that names no field the modal declares — a class-level
 constraint, an application `UniqueEntity` whose `errorPath` the modal lacks, a
 `before()` hook that moved a key half — folds onto the mounted schema's own state
-path, which belongs to no input. Until
-[M7 · 6](../roadmap.md#m7--composite-identifiers) that was a 422 with the modal
-open and nothing on screen, in every application.
+path, which belongs to no input. Without an outlet for it, that is a 422 with
+the modal open and nothing on screen, in every application.
 
 So [`ActionModal/index.html.twig`](../../../packages/actions/templates/components/ActionModal/index.html.twig),
 inside its `schema is not null` branch and before `renderComponent(schema)`,

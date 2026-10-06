@@ -16,7 +16,7 @@ bindings, loading indicator, SPA mode) are not built.
 Its stylesheet predates it. `.sy-dropdown-item` and `.sy-dropdown-item-label`
 shipped inside
 [`dropdown.css`](../../../packages/support/assets/src/styles/components/dropdown.css)
-with the dropdown epic, styling item markup only `actions` hand-wrote — in
+with the dropdown itself, styling item markup only `actions` hand-wrote — in
 [`Action/Grouped.html.twig`](../../../packages/actions/templates/partials/Action/Grouped.html.twig)
 and
 [`ActionGroup/GroupedTrigger.html.twig`](../../../packages/actions/templates/partials/ActionGroup/GroupedTrigger.html.twig)

@@ -9,8 +9,8 @@ ports the non-authorization half of
 [`Resources/Concerns/InteractsWithRelationshipTable.php`](../../../vendor/filament/filament/src/Resources/Concerns/InteractsWithRelationshipTable.php).
 
 Both hosts of the tier compose it: the embedded
-[`RelationManager`](relation-manager.md), where these members lived until this
-epic, and the routed [`ManageRelatedRecords`](manage-related-records.md) page,
+[`RelationManager`](relation-manager.md), where these members lived first, and
+the routed [`ManageRelatedRecords`](manage-related-records.md) page,
 which is why they moved. The extraction is Filament's own factoring, under
 Filament's own name.
 
@@ -52,8 +52,8 @@ do.
 | [`getTableQueryStringIdentifier()`](../../../packages/panels/src/Resources/Concerns/InteractsWithRelationshipTable.php) | `makeTable()`'s `->queryStringIdentifier(Str::lcfirst(class_basename(static::class)))` | done | — | [diverges](#the-table-side-querystringidentifier-is-deliberately-not-stamped) |
 | [`makeTable()`](../../../packages/panels/src/Resources/Concerns/InteractsWithRelationshipTable.php) — the active-tab query stamp | `->modifyQueryUsing($this->modifyQueryWithActiveTab(...))` | done | — | stamped before the related-resource hop, so a tab scopes the query that resource then configures |
 | [`HasTabs` on the trait](../../../packages/panels/src/Resources/Concerns/HasTabs.php) | `use HasTabs;` | done | — | [has-tabs.md](has-tabs.md) — composed here rather than on each host, so a relation manager and a `ManageRelatedRecords` page offer the same record filters. The insert stays [ungrouped](#the-composition-clauses-are-ungrouped-and-asymmetric-between-the-hosts) for the same Rector reason the `insteadof` blocks do |
-| `authorizeReorder()` in `makeTable()`, `getAuthorizationResponse()` and the 30-odd `can*()` / `get*AuthorizationResponse()` members | the same cluster | todo | the authorization epic | [detail](#the-authorization-half-of-the-trait-is-inventoried-not-ported) |
-| `checkPolicyExistence()` / `skipAuthorization()` / `shouldCheckPolicyExistence()` / `shouldSkipAuthorization()` | the same four | todo | the authorization epic | [detail](#the-authorization-half-of-the-trait-is-inventoried-not-ported) |
+| `authorizeReorder()` in `makeTable()`, `getAuthorizationResponse()` and the 30-odd `can*()` / `get*AuthorizationResponse()` members | the same cluster | todo | authorization | [detail](#the-authorization-half-of-the-trait-is-inventoried-not-ported) |
+| `checkPolicyExistence()` / `skipAuthorization()` / `shouldCheckPolicyExistence()` / `shouldSkipAuthorization()` | the same four | todo | authorization | [detail](#the-authorization-half-of-the-trait-is-inventoried-not-ported) |
 
 [`Unit/Resources/Concerns/InteractsWithRelationshipTableTest`](../../../packages/panels/tests/Unit/Resources/Concerns/InteractsWithRelationshipTableTest.php)
 covers the trait against both host shapes over a hand-wired registry: the
@@ -76,16 +76,16 @@ The two hosts' own suites are what pin the composition:
 Filament's trait is mostly authorization: `getAuthorizationResponse()` with its
 related-resource delegation, twenty `get*AuthorizationResponse()` methods, their
 `can*()` wrappers, the two policy-existence switches, and the
-`authorizeReorder()` seed in `makeTable()`. None of it ships, with the rest of
-the authorization epic. The consequence is stated in full on
-[relation-manager.md](relation-manager.md#every-registered-manager-is-reachable-by-anyone-until-the-authorization-epic)
+`authorizeReorder()` seed in `makeTable()`. None of it ships until authorization
+lands. The consequence is stated in full on
+[relation-manager.md](relation-manager.md#every-registered-manager-is-reachable-by-anyone-until-authorization-lands)
 and applies unchanged to the page host: **a relationship table is reachable and
 writable by anyone who can reach its host.**
 
 One arm of the deferral is worth naming separately, because it is the only place
 the related resource would change an *answer* rather than a gate: Filament's
 `getAuthorizationResponse()` forwards to the **related resource's** policy when
-the record belongs to it. That forwarding lands with the epic; nothing about the
+the record belongs to it. That forwarding lands with authorization; nothing about the
 trait's shape has to change for it.
 
 ## Semantics
@@ -155,7 +155,8 @@ because the static title chain above calls it. So the port keeps two arms: the
 static, else the
 [`LogicException`](relation-manager.md#a-manager-naming-no-relationship-throws-rather-than-reaching-for-a-related-resource)
 that already shipped — **`$relationship` stays mandatory even with a related
-resource set**, which is the M6 · 1 divergence widened rather than reversed.
+resource set**, which is the manager's own divergence widened rather than
+reversed.
 
 The affordance lost is narrow: Filament's own generator writes `$relationship`
 into every generated manager and page whether or not a related resource is
@@ -215,7 +216,7 @@ foreign parameter, which nothing in the tier knows.
 ### Both seeding probes clone the action, where vendor clones in one of four
 
 `makeTable()` seeds `recordAction()` and `recordUrl()` by walking the table's
-`view` and `edit` actions, which M4 · 3 landed on this tier and on
+`view` and `edit` actions, which landed on this tier and on
 [`ListRecords`](README.md#the-row-click-falls-through-to-the-resources-own-view-or-edit-page)
 together — so a row's whole body opens the related record now, not only its Edit
 button. The two closures are Filament's, member for member, with one deliberate

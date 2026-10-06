@@ -31,7 +31,7 @@ _Blocked by_ names what has to land first. _Detail_ links a permanent note in
 | --- | --- | --- | --- | --- |
 | [`native()` / `isNative()`](../../../packages/forms/src/Components/Concerns/CanBeNative.php) | [`Concerns/CanBeNative.php`](../../../vendor/filament/forms/src/Components/Concerns/CanBeNative.php) | done | — | — |
 | `Select` — `native(false)` renders the JS control | [`Components/Select.php`](../../../vendor/filament/forms/src/Components/Select.php) | done | — | [semantics](#a-select-is-native-only-when-nothing-forces-the-js-control) |
-| Date pickers — `native(false)` renders the JS calendar | [`Components/DateTimePicker.php`](../../../vendor/filament/forms/src/Components/DateTimePicker.php) | blocked | the JS calendar vertical ([roadmap](../roadmap.md#m3--forms-widening)) | [diverges](#nativefalse-throws-rather-than-falling-back-to-the-native-control) |
+| Date pickers — `native(false)` renders the JS calendar | [`Components/DateTimePicker.php`](../../../vendor/filament/forms/src/Components/DateTimePicker.php) | blocked | the JS calendar vertical | [diverges](#nativefalse-throws-rather-than-falling-back-to-the-native-control) |
 
 Coverage: the default, the literal and closure arms, and every picker composing
 it by

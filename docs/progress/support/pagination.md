@@ -4,8 +4,7 @@ Two pieces, one feature: the carrier
 [`Sylament\Support\Pagination\Paginator`](../../../packages/support/src/Pagination/Paginator.php)
 — one page of records plus the counts a footer needs — and the
 [`Pagination`](../../../packages/support/templates/components/Pagination/index.html.twig)
-Twig component that renders it. Both landed with the table upgrades epic, which
-is the only consumer today: a
+Twig component that renders it. Tables is the only consumer today: a
 [`records()`](../tables/has-table.md) closure receiving `page` and
 `recordsPerPage` slices its own data and returns a `Paginator`, and the
 [table partial](../tables/table.md) renders the component beneath the `<table>`.
@@ -202,9 +201,9 @@ none of them, because in both of its lanes the slicing already has an owner. On
 the **closure lane** the userland `records()` closure slices — it is handed
 `page` and `recordsPerPage` and returns what it fetched, and an adapter would sit
 between the closure and its own data doing nothing. On the **Doctrine `query()`
-lane**, which · 12 has since built, the slicing is
+lane** the slicing is
 `setFirstResult()`/`setMaxResults()` plus a count query, which the lane owns
-anyway to apply filters, sorts and searches to the same builder — and it landed
+anyway to apply filters, sorts and searches to the same builder — and it is built
 that way, over Doctrine's own `Tools\Pagination\Paginator` rather than an
 adapter. Strip the adapters and what is left of Pagerfanta is arithmetic
 over four integers, which is what this class is — 180 lines, no dependency, and
@@ -258,7 +257,7 @@ simple-paginated, because the footer
 [branches on what the carrier answers](#the-simple-footer-keeps-the-overview-and-the-item-list-where-filament-drops-both)
 rather than on a table setting. The Doctrine `query()` lane needs a setting for
 it, because there the toolkit owns the fetching and has to be told which shape to
-fetch — and · 12 built one:
+fetch — and it has one:
 [`paginationMode()` and two of `PaginationMode`'s three cases](../tables/table.md#the-pagination-mode-ships-two-cases-and-two-setters-wait-on-their-features),
 `Default` paying a `COUNT` for a true total and `Simple` probing one record past
 the page for the same `hasMoreRecords` flag a closure sets by hand.
@@ -431,8 +430,8 @@ ring through `focus-within:ring-2`, while `select.fi-select-input` is
 `border-none bg-transparent w-full` with `focus:ring-0 focus:outline-none` so it
 defers to it. Support ships the wrapper now
 ([input-wrapper.md](input-wrapper.md)), but the select itself is still
-[**todo**](README.md#components) and this footer has not been migrated onto
-the wrapper in this epic — a follow-up, not done here — so the footer renders a
+[**todo**](README.md#components) and this footer is not migrated onto
+the wrapper yet, so the footer renders a
 bare `<select class="sy-pagination-per-page-select">` and that one element carries
 both halves: the wrapper's surface, the select's own `block appearance-none
 py-1.5 ps-3 pe-8 text-sm leading-6 text-gray-950 dark:text-white` with the

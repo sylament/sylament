@@ -9,30 +9,21 @@ filters, actions, grouping, summaries.
 
 These tables map the full `tables/src` surface end to end (plus the rendered
 views, translations and assets), so no table carries an
-[unaudited row](../README.md#an-unaudited-table-says-so). The minimal tables
-vertical (M1 · 5), the record-action lane (M1 · 6) and five pulled-forward epics
-— table upgrades ([· 11](../roadmap.md#pulled-forward)), the Doctrine `query()`
-lane ([· 12](../roadmap.md#pulled-forward)), the relation arm
-([· 20](../roadmap.md#pulled-forward)) and table filters
-([· 21](../roadmap.md#pulled-forward)) and [`ImageColumn`](../roadmap.md#pulled-forward)
-([· 25](../roadmap.md#pulled-forward)) — plus, from
-[M4](../roadmap.md#m4--tables-widening), the header/toolbar/bulk-action epic
-(· 1), modal-mode record actions (· 2), row behaviour and query-string state
-(· 3), the column catalog (· 4) and relation-scoped tables (· 8), are what has
-landed so far
-— a linked first-column name is built and carries a real
+[unaudited row](../README.md#an-unaudited-table-says-so). A linked first-column
+name is built and carries a real
 [status](../README.md#statuses), with a detail file wherever a divergence, an
 open gap or real sub-structure earns one; a plain-text name is not built yet and
 is **todo**, **blocked** or **skipped**. Five of the host rows are **skipped**,
 all for the same reason: each of those five Filament traits is deprecated whole.
-`HasActions` and `HasRecordAction` are `*TableAction` delegates (both added by
-M1 · 6), `CanPollRecords` is a single deprecated getter (added by the table
-upgrades epic), and `CanBeStriped` and `HasEmptyState` are v3 host hooks the
-table object superseded (both settled by M4 · 3, which shipped what they front) —
+`HasActions` and `HasRecordAction` are `*TableAction` delegates,
+`CanPollRecords` is a single deprecated getter, and `CanBeStriped` and
+`HasEmptyState` are v3 host hooks the table object superseded and ships what
+they front —
 the project has never ported a deprecated Filament surface, and the machinery
 each fronts is built or tracked elsewhere, it just does not answer to those names
 here. A sixth **skipped** row, `Filters / MultiSelectFilter`, is the same rule one
-tier down.
+tier down. `Filters / TrashedFilter` is **skipped** for another reason:
+Doctrine has no soft deletes, so there is no trashed scope to filter.
 
 **todo** and **blocked** are distinguished here rather than collapsed, because
 the [vocabulary](../README.md#statuses) defines **todo** as having nothing to
@@ -42,37 +33,21 @@ README, so a **blocked** row names its prerequisite at the head of _Detail_,
 ahead of the detail-file link that carries the full write-up. Two rows are
 **blocked** today, both on the same thing — `CanBeStackedOnMobile` and
 `HasContent` configure the **card** rendering rather than the table one, so they
-wait on the layout columns (M4 · 7) that give them something to switch on.
-_Relation managers_ — what most rows here once waited on
-— was the last prerequisite to go before them: the
+wait on the layout columns (`Columns\Layout`) that give them something to switch
+on. Relation managers are not a prerequisite of anything here: the
 [relation-scoped table](table.md#the-relationship-query-is-the-base-query-rooted-at-the-target)
-turned out not to need it, because `Table::relationship()` is a **data lane**, a
-third case beside `records()` and `query()`, and it shipped with M4 · 8 *ahead*
-of relation managers rather than inside them — a relation manager is one
+does not need them, because `Table::relationship()` is a **data lane**, a
+third case beside `records()` and `query()` — a relation manager is one
 consumer of that lane and the actions that write through it are another.
-Four more stood here until their epics landed. _Table upgrades
-([pulled forward · 11](../roadmap.md#pulled-forward))_ went first: its rows are
-now **done**, **in progress** or — where what was left is Eloquent query
-assembly — moved onto the query lane, and the two that were waiting on nothing
-at all (deferred loading, polling) stayed plain **todo** until M4 · 3 took them.
-The _Doctrine `query()`
-lane ([pulled forward · 12](../roadmap.md#pulled-forward))_ then took those and
-flipped them in turn, leaving `HasQuery`, `InteractsWithTableQuery` and
-`PaginationMode` **in progress** against relation-aware resolution and a keyset
-carrier rather than against an epic. The _relation arm
-([pulled forward · 20](../roadmap.md#pulled-forward))_ closed the first of those:
+`HasQuery` is folded into [`table.md`](table.md) and
+`InteractsWithTableQuery` into [`column.md`](column.md), where
 [relationship traversal](column.md#relationship-traversal-ships-as-a-value-walk-a-side-store-and-one-kept-member),
-the aggregates and eager loading are in, so `InteractsWithTableQuery` folded into
-[`column.md`](column.md) and lost its row here, and what it did **not** take on —
-the relation-scoped table — was left with a destination rather than an open
-question, which [M4 · 8](../roadmap.md#m4--tables-widening) then shipped,
-folding `HasQuery` into [`table.md`](table.md) and taking its row with it.
-_Table bulk actions_ was the fourth, closed by
-[M4 · 1](../roadmap.md#m4--tables-widening): the `BulkAction` family landed in
-[`actions`](../actions/README.md), and the selection machinery it needed — the
+the aggregates and eager loading live, and `PaginationMode` stays
+**in progress** against a keyset carrier. The `BulkAction` family is in
+[`actions`](../actions/README.md), and the selection machinery it needs — the
 three writable props on the host, the checkbox settings on the table object, and
 the toolbar and header action sets that decide whether the checkboxes render at
-all — landed here with it, leaving the two selection rows **in progress**
+all — is here, which leaves the two selection rows **in progress**
 against the deferred settings each names rather than **blocked**. (The
 [`forms`](../forms/README.md) README records the opposite
 precedence — **todo** upstairs, **blocked** in the component's file — so the two
@@ -127,14 +102,7 @@ reason of its own: it is built and folded into [`table.md`](table.md) while the
 `Filters\Concerns\HasPlaceholder` keep rows for a different reason: they ship for
 `SelectFilter` alone, so they fold into
 [`select-filter.md`](select-filter.md) rather than into `base-filter.md` with the
-eleven above. `Columns\Concerns\InteractsWithTableQuery` kept a row on the same
-grounds until [· 20](../roadmap.md#pulled-forward) landed its aggregate and
-eager-loading half, and folded when it did; the eleven the column catalog landed
-folded on arrival — nine into `column.md`, and `CanUpdateState` / `CanBeValidated`
-into `has-columns.md` rather than into any one of the four editable columns that
-compose them. `HasCellState` and `CanAggregateRelatedRecords` are counted here
-too, and were not before: both have been folded into `column.md` since · 20, and
-were missing from this list rather than from that file. Everything
+eleven above. Everything
 Filament ships that the port has **not** reached keeps its
 own per-file row below, the way
 [`actions`](../actions/README.md#features) tracks the concerns `Action` has not
@@ -170,8 +138,7 @@ subtree into one navigational entry, as the
 [`forms`](../forms/README.md#supporting-surface) audit does for `RichEditor`:
 every file under it is a one-line class or trait aliasing
 `Filament\QueryBuilder\Constraints\*` from the separate `filament/query-builder`
-package, so there is nothing to diff per file until that package is on a
-milestone.
+package, so there is nothing to diff per file until that package is ported.
 
 | Component | Ports | Status | Detail |
 | --- | --- | --- | --- |
@@ -202,7 +169,7 @@ milestone.
 | Filters / QueryBuilder / Constraints | [`Filters/QueryBuilder/Constraints/`](../../../vendor/filament/tables/src/Filters/QueryBuilder/Constraints) | todo | — |
 | [Filters / SelectFilter](../../../packages/tables/src/Filters/SelectFilter.php) | [`Filters/SelectFilter.php`](../../../vendor/filament/tables/src/Filters/SelectFilter.php) | in progress | [select-filter.md](select-filter.md) |
 | [Filters / TernaryFilter](../../../packages/tables/src/Filters/TernaryFilter.php) | [`Filters/TernaryFilter.php`](../../../vendor/filament/tables/src/Filters/TernaryFilter.php) | in progress | [ternary-filter.md](ternary-filter.md) |
-| Filters / TrashedFilter | [`Filters/TrashedFilter.php`](../../../vendor/filament/tables/src/Filters/TrashedFilter.php) | todo | — |
+| Filters / TrashedFilter | [`Filters/TrashedFilter.php`](../../../vendor/filament/tables/src/Filters/TrashedFilter.php) | skipped | Doctrine has no soft deletes, so there is no trashed scope to filter — [delete-action.md](../actions/delete-action.md#there-is-no-soft-delete-arm-to-hide-behind) |
 | [Grouping / Group](../../../packages/tables/src/Grouping/Group.php) | [`Grouping/Group.php`](../../../vendor/filament/tables/src/Grouping/Group.php) | in progress | the value object, both `CanGroupRecords` tiers, the chrome and the collapse arm, with `Grouping\Concerns\BelongsToTable` folded in — [grouping.md](grouping.md) |
 | [`IconColumn`](../../../packages/tables/src/Columns/IconColumn.php) | [`Columns/IconColumn.php`](../../../vendor/filament/tables/src/Columns/IconColumn.php) | done | [icon-column.md](icon-column.md) |
 | [`ImageColumn`](../../../packages/tables/src/Columns/ImageColumn.php) | [`Columns/ImageColumn.php`](../../../vendor/filament/tables/src/Columns/ImageColumn.php) | done | [image-column.md](image-column.md) |
@@ -236,7 +203,7 @@ composes them and named for it:
   two sibling tiers,
   [`Columns/Summarizers/Concerns`](../../../vendor/filament/tables/src/Columns/Summarizers/Concerns)
   and [`Grouping/Concerns`](../../../vendor/filament/tables/src/Grouping/Concerns),
-  have no row left: every trait in both landed with M4 · 6 and folded into
+  have no row left: every trait in both is built and folded into
   [`summarizer.md`](summarizer.md) and [`grouping.md`](grouping.md).
 
 The prefix is load-bearing rather than decorative: twenty trait names occur in
@@ -270,7 +237,7 @@ pairs with, so it shares the first row below.
 | Host / HasHeader | [`Concerns/HasHeader.php`](../../../vendor/filament/tables/src/Concerns/HasHeader.php) | todo | — |
 | Host / HasRecordAction | [`Concerns/HasRecordAction.php`](../../../vendor/filament/tables/src/Concerns/HasRecordAction.php) | skipped | The file is one deprecated `getTableRecordAction()` host hook, superseded upstream by `Table::recordAction()` — the `Table / HasRecordAction` row below tracks that one |
 | Host / HasRecords | [`Concerns/HasRecords.php`](../../../vendor/filament/tables/src/Concerns/HasRecords.php) | in progress | [has-table.md](has-table.md) |
-| Table / CanBeStackedOnMobile | [`Table/Concerns/CanBeStackedOnMobile.php`](../../../vendor/filament/tables/src/Table/Concerns/CanBeStackedOnMobile.php) | blocked | the layout columns (M4 · 7) — it is the responsive half of the card rendering, with nothing to stack until `content()` has a list ([table.md](table.md#surface)) |
+| Table / CanBeStackedOnMobile | [`Table/Concerns/CanBeStackedOnMobile.php`](../../../vendor/filament/tables/src/Table/Concerns/CanBeStackedOnMobile.php) | blocked | the layout columns (`Columns\Layout`) — it is the responsive half of the card rendering, with nothing to stack until `content()` has a list ([table.md](table.md#surface)) |
 | [`Table / CanBeStriped`](../../../packages/tables/src/Table/Concerns/CanBeStriped.php) | [`Table/Concerns/CanBeStriped.php`](../../../vendor/filament/tables/src/Table/Concerns/CanBeStriped.php) | done | [table.md](table.md#surface) |
 | [`Table / CanDeferLoading`](../../../packages/tables/src/Table/Concerns/CanDeferLoading.php) | [`Table/Concerns/CanDeferLoading.php`](../../../vendor/filament/tables/src/Table/Concerns/CanDeferLoading.php) | done | [table.md](table.md#the-deferred-window-is-server-gated-and-client-closed) |
 | [`Table / CanPollRecords`](../../../packages/tables/src/Table/Concerns/CanPollRecords.php) | [`Table/Concerns/CanPollRecords.php`](../../../vendor/filament/tables/src/Table/Concerns/CanPollRecords.php) | done | [table.md](table.md#the-poll-interval-parses-strictly-and-carries-no-livewire-modifiers) |
@@ -278,7 +245,7 @@ pairs with, so it shares the first row below.
 | Table / HasArguments | [`Table/Concerns/HasArguments.php`](../../../vendor/filament/tables/src/Table/Concerns/HasArguments.php) | todo | — |
 | [`Table / HasBulkActions`](../../../packages/tables/src/Table/Concerns/HasBulkActions.php) | [`Table/Concerns/HasBulkActions.php`](../../../vendor/filament/tables/src/Table/Concerns/HasBulkActions.php) | in progress | [table.md](table.md#the-selection-settings-ship-as-a-subset-and-the-rest-are-listed) |
 | [`Table / HasColumnManager`](../../../packages/tables/src/Table/Concerns/HasColumnManager.php) | [`Table/Concerns/HasColumnManager.php`](../../../vendor/filament/tables/src/Table/Concerns/HasColumnManager.php) | in progress | [column-manager.md](column-manager.md) |
-| Table / HasContent | [`Table/Concerns/HasContent.php`](../../../vendor/filament/tables/src/Table/Concerns/HasContent.php) | blocked | the layout columns (M4 · 7) — `content()` replaces the `<table>` with a caller-supplied list, and there is no list until `Columns\Layout` ships ([table.md](table.md#surface)) |
+| Table / HasContent | [`Table/Concerns/HasContent.php`](../../../vendor/filament/tables/src/Table/Concerns/HasContent.php) | blocked | the layout columns (`Columns\Layout`) — `content()` replaces the `<table>` with a caller-supplied list, and there is no list until `Columns\Layout` ships ([table.md](table.md#surface)) |
 | [`Table / HasFilters`](../../../packages/tables/src/Table/Concerns/HasFilters.php) | [`Table/Concerns/HasFilters.php`](../../../vendor/filament/tables/src/Table/Concerns/HasFilters.php) | in progress | [table.md](table.md) |
 | Table / HasHeader | [`Table/Concerns/HasHeader.php`](../../../vendor/filament/tables/src/Table/Concerns/HasHeader.php) | todo | — |
 | [`Table / HasHeaderActions`](../../../packages/tables/src/Table/Concerns/HasHeaderActions.php) | [`Table/Concerns/HasHeaderActions.php`](../../../vendor/filament/tables/src/Table/Concerns/HasHeaderActions.php) | in progress | [table.md](table.md#the-header-and-toolbar-setters-are-destructive-because-the-flat-bulk-map-is-the-checkbox-switch) |
@@ -292,8 +259,8 @@ pairs with, so it shares the first row below.
 | Column / BelongsToLayout | [`Columns/Concerns/BelongsToLayout.php`](../../../vendor/filament/tables/src/Columns/Concerns/BelongsToLayout.php) | todo | — |
 | Column / CanBeCopied | [`Columns/Concerns/CanBeCopied.php`](../../../vendor/filament/tables/src/Columns/Concerns/CanBeCopied.php) | skipped | The whole trait is a `@deprecated` shim over `Support\Concerns\CanBeCopied`, and the port has never landed a deprecated Filament surface — the support trait it fronts ships as [`can-be-copied.md`](../support/can-be-copied.md) ([renames.md](../renames.md)) |
 | Column / HasSpace | [`Columns/Concerns/HasSpace.php`](../../../vendor/filament/tables/src/Columns/Concerns/HasSpace.php) | todo | — |
-| [`Filter / HasOptions`](../../../packages/tables/src/Filters/Concerns/HasOptions.php) | [`Filters/Concerns/HasOptions.php`](../../../vendor/filament/tables/src/Filters/Concerns/HasOptions.php) | in progress | the `options()` / `getOptions()` pair ships for `SelectFilter`; the enum and `Arrayable` arms and the three `getOption*Using()` seams wait on a tables filters epic — [select-filter.md](select-filter.md) |
-| [`Filter / HasPlaceholder`](../../../packages/tables/src/Filters/Concerns/HasPlaceholder.php) | [`Filters/Concerns/HasPlaceholder.php`](../../../vendor/filament/tables/src/Filters/Concerns/HasPlaceholder.php) | done | ships for `SelectFilter`, folded into [select-filter.md](select-filter.md). The column catalog (M4 · 4) landed a third copy — [`Support\Components\Concerns\HasPlaceholder`](../support/has-placeholder.md), which `Column` composes — and did **not** repoint this one: three copies under Filament's own three namespaces, the two lower ones narrower (`string\|Closure\|null` against the support trait's `Markup`-carrying union), so a repoint would widen a published signature. The dedupe is a follow-up to revisit only if a fourth copy is wanted, and it waits on M3 · 9, whose lanes own forms' copy ([has-placeholder.md](../support/has-placeholder.md#three-copies-of-this-trait-ship-and-that-is-filaments-shape-too)) |
+| [`Filter / HasOptions`](../../../packages/tables/src/Filters/Concerns/HasOptions.php) | [`Filters/Concerns/HasOptions.php`](../../../vendor/filament/tables/src/Filters/Concerns/HasOptions.php) | in progress | the `options()` / `getOptions()` pair ships for `SelectFilter`; the enum and `Arrayable` arms and the three `getOption*Using()` seams are not ported yet — [select-filter.md](select-filter.md) |
+| [`Filter / HasPlaceholder`](../../../packages/tables/src/Filters/Concerns/HasPlaceholder.php) | [`Filters/Concerns/HasPlaceholder.php`](../../../vendor/filament/tables/src/Filters/Concerns/HasPlaceholder.php) | done | ships for `SelectFilter`, folded into [select-filter.md](select-filter.md). A third copy ships — [`Support\Components\Concerns\HasPlaceholder`](../support/has-placeholder.md), which `Column` composes — and does **not** repoint this one: three copies under Filament's own three namespaces, the two lower ones narrower (`string\|Closure\|null` against the support trait's `Markup`-carrying union), so a repoint would widen a published signature. The dedupe is a follow-up to revisit only if a fourth copy is wanted ([has-placeholder.md](../support/has-placeholder.md#three-copies-of-this-trait-ship-and-that-is-filaments-shape-too)) |
 | Filter / HasRelationship | [`Filters/Concerns/HasRelationship.php`](../../../vendor/filament/tables/src/Filters/Concerns/HasRelationship.php) | todo | — |
 
 ## Supporting surface
@@ -335,8 +302,8 @@ folds into [`text-column.md`](text-column.md) the same way, against
 | [`TableExtension`](../../../packages/tables/src/Twig/Extension/TableExtension.php) (`renderTable()`) | — (Sylament-only; mirrors schemas' [`SchemaExtension`](../../../packages/schemas/src/Twig/Extension/SchemaExtension.php)) | done | [tables-bundle.md](tables-bundle.md#the-bundle-registers-a-rendertable-twig-extension-which-filament-has-no-counterpart-for) |
 | [`TablesIconAlias`](../../../packages/tables/src/Twig/TablesIconAlias.php) | [`View/TablesIconAlias.php`](../../../vendor/filament/tables/src/View/TablesIconAlias.php) | in progress | [tables-bundle.md](tables-bundle.md#the-alias-set-is-fifteen-constants-of-filaments-23) |
 | [`SylamentTablesBundle`](../../../packages/tables/src/SylamentTablesBundle.php) | [`TablesServiceProvider.php`](../../../vendor/filament/tables/src/TablesServiceProvider.php) | in progress | [tables-bundle.md](tables-bundle.md) |
-| [Styles](../../../packages/tables/assets/src/styles) | [`resources/css/`](../../../vendor/filament/tables/resources/css) | in progress | Eighteen sheets ship, each imported into [`index.css`](../../../packages/tables/assets/src/styles/index.css) alphabetically under `layer(components)`. The chrome: `table.css` (the container, rows, `<th>`/`<td>`, the cell wrapper, the empty state and the reorder handle), `header.css`, `header-toolbar.css`, `filters.css` (the panel, its trigger and the indicator row), `column-manager.css` (the panel and its item list, [whose block sits at top level rather than nested in the panel's](column-manager.md#the-item-list-block-sits-at-top-level-where-vendors-nests-inside-the-panel) because the modal layout renders the items without that wrapper), `search-field.css` (the field the toolbar and every per-column search cell mount, extracted from `header-toolbar.css` when the second call site arrived), `selection.css`, and M4 · 6's two: `grouping.css` (the toolbar selector's two copies and the swap between them, plus the group header row, its heading, its description and the collapsed row — greys only, [no colour token anywhere](grouping.md)) and `summary.css` (the three summarizer bodies and their labels — [summarizer.md](summarizer.md)). The columns, one sheet each: `text-column.css` — split along Filament's own line into the cell's layout, the item's type and the description ([text-column.md](text-column.md#the-item-element-is-never-merged-into-the-outer-div)), and carrying vendor's `<ul>` rules since the list arms ([text-column.md](text-column.md#the-list-wrapper-appeared-with-the-list-arms-and-closed-a-css-divergence-with-it)) — `image-column.css`, and the column catalog's `icon-column.css`, `color-column.css`, `toggle-column.css`, `checkbox-column.css`, `select-column.css` and `text-input-column.css`, plus `editable-cell.css`, which is Sylament-only: the two rules every editable cell shares (`.sy-ta-cell-error` and the in-flight `.sy-loading`) belong to none of the four columns that render them ([has-columns.md](has-columns.md#the-refusal-is-request-scoped-and-server-rendered-where-filaments-lives-on-the-client)). The four editable sheets are thin because the controls reuse forms' skins rather than restating them ([tables-bundle.md](tables-bundle.md#the-manifest-declares-sylamentforms)). Vendor's `content.css` and `columns/layout/` follow their features; its `columns/summaries/` arms landed with `summary.css` |
-| [Scripts](../../../packages/tables/assets/src) | [`resources/js/`](../../../vendor/filament/tables/resources/js) | in progress | the `@sylament/tables` workspace — the seventh, JS-only, added with record selection — ships four Stimulus controllers, all `fetch: eager`. [`table`](../../../packages/tables/assets/src/controllers/table_controller.ts) ports the **selection half** of vendor's [`components/table.js`](../../../vendor/filament/tables/resources/js/components/table.js) — the filters-dropdown positioning (support's `Dropdown` owns that) and five smaller arms are dropped, and four behaviours diverge, all listed in [tables-bundle.md](tables-bundle.md#asset-registration). M4 · 6 added its **grouping** arm beside the selection one: the two selects' change writes through the `groupTable()` action, the collapse set lives on the controller instance and never reaches the server, and a group tick writes the whole group's keys through the ValueStore ([grouping.md](grouping.md#collapse-is-keyed-by-title-and-so-is-the-group-break)). [`limited-list`](../../../packages/tables/assets/src/controllers/limited_list_controller.ts) replaces the inline `x-data="{ isLimited: true }"` a `TextColumn` with `expandableLimitedList()` carries — the state moves into a Stimulus value a live morph replays, which Alpine's per-render scope loses ([text-column.md](text-column.md#the-expand-toggles-render-only-where-there-is-something-to-expand)). [`editable-cell`](../../../packages/tables/assets/src/controllers/editable_cell_controller.ts) is one controller where Filament ships four Alpine components (`columns/checkbox`, `columns/select`, `columns/text-input`, `columns/toggle`): it commits the control's value through the host's write action and repaints the control from the cell root's authoritative `state` value, which is what makes the seam server-canonical ([has-columns.md](has-columns.md#the-cell-repaints-from-the-root-because-a-touched-control-is-pinned-through-every-morph)). [`column-manager`](../../../packages/tables/assets/src/controllers/column_manager_controller.ts) ports vendor's [`components/column-manager.js`](../../../vendor/filament/tables/resources/js/components/column-manager.js): every tick and drag writes the whole draft into the host's `tableDeferredColumns` through the ValueStore, so a deferred manager costs zero requests until Apply and a live one costs exactly one per change ([tables-bundle.md](tables-bundle.md#asset-registration)). The workspace's one import outside Stimulus, [`utils/live_host.ts`](../../../packages/tables/assets/src/utils/live_host.ts), which `table`, `editable-cell` and `column-manager` share, is the sanctioned copy of schemas' — [tables-bundle.md](tables-bundle.md#asset-registration) |
+| [Styles](../../../packages/tables/assets/src/styles) | [`resources/css/`](../../../vendor/filament/tables/resources/css) | in progress | Eighteen sheets ship, each imported into [`index.css`](../../../packages/tables/assets/src/styles/index.css) alphabetically under `layer(components)`. The chrome: `table.css` (the container, rows, `<th>`/`<td>`, the cell wrapper, the empty state and the reorder handle), `header.css`, `header-toolbar.css`, `filters.css` (the panel, its trigger and the indicator row), `column-manager.css` (the panel and its item list, [whose block sits at top level rather than nested in the panel's](column-manager.md#the-item-list-block-sits-at-top-level-where-vendors-nests-inside-the-panel) because the modal layout renders the items without that wrapper), `search-field.css` (the field the toolbar and every per-column search cell mount, extracted from `header-toolbar.css` when the second call site arrived), `selection.css`, and the two grouping and summary sheets: `grouping.css` (the toolbar selector's two copies and the swap between them, plus the group header row, its heading, its description and the collapsed row — greys only, [no colour token anywhere](grouping.md)) and `summary.css` (the three summarizer bodies and their labels — [summarizer.md](summarizer.md)). The columns, one sheet each: `text-column.css` — split along Filament's own line into the cell's layout, the item's type and the description ([text-column.md](text-column.md#the-item-element-is-never-merged-into-the-outer-div)), and carrying vendor's `<ul>` rules since the list arms ([text-column.md](text-column.md#the-list-wrapper-appeared-with-the-list-arms-and-closed-a-css-divergence-with-it)) — `image-column.css`, and the column catalog's `icon-column.css`, `color-column.css`, `toggle-column.css`, `checkbox-column.css`, `select-column.css` and `text-input-column.css`, plus `editable-cell.css`, which is Sylament-only: the two rules every editable cell shares (`.sy-ta-cell-error` and the in-flight `.sy-loading`) belong to none of the four columns that render them ([has-columns.md](has-columns.md#the-refusal-is-request-scoped-and-server-rendered-where-filaments-lives-on-the-client)). The four editable sheets are thin because the controls reuse forms' skins rather than restating them ([tables-bundle.md](tables-bundle.md#the-manifest-declares-sylamentforms)). Vendor's `content.css` and `columns/layout/` follow their features; its `columns/summaries/` arms landed with `summary.css` |
+| [Scripts](../../../packages/tables/assets/src) | [`resources/js/`](../../../vendor/filament/tables/resources/js) | in progress | the `@sylament/tables` workspace — the seventh, JS-only, added with record selection — ships four Stimulus controllers, all `fetch: eager`. [`table`](../../../packages/tables/assets/src/controllers/table_controller.ts) ports the **selection half** of vendor's [`components/table.js`](../../../vendor/filament/tables/resources/js/components/table.js) — the filters-dropdown positioning (support's `Dropdown` owns that) and five smaller arms are dropped, and four behaviours diverge, all listed in [tables-bundle.md](tables-bundle.md#asset-registration). Its **grouping** arm sits beside the selection one: the two selects' change writes through the `groupTable()` action, the collapse set lives on the controller instance and never reaches the server, and a group tick writes the whole group's keys through the ValueStore ([grouping.md](grouping.md#collapse-is-keyed-by-title-and-so-is-the-group-break)). [`limited-list`](../../../packages/tables/assets/src/controllers/limited_list_controller.ts) replaces the inline `x-data="{ isLimited: true }"` a `TextColumn` with `expandableLimitedList()` carries — the state moves into a Stimulus value a live morph replays, which Alpine's per-render scope loses ([text-column.md](text-column.md#the-expand-toggles-render-only-where-there-is-something-to-expand)). [`editable-cell`](../../../packages/tables/assets/src/controllers/editable_cell_controller.ts) is one controller where Filament ships four Alpine components (`columns/checkbox`, `columns/select`, `columns/text-input`, `columns/toggle`): it commits the control's value through the host's write action and repaints the control from the cell root's authoritative `state` value, which is what makes the seam server-canonical ([has-columns.md](has-columns.md#the-cell-repaints-from-the-root-because-a-touched-control-is-pinned-through-every-morph)). [`column-manager`](../../../packages/tables/assets/src/controllers/column_manager_controller.ts) ports vendor's [`components/column-manager.js`](../../../vendor/filament/tables/resources/js/components/column-manager.js): every tick and drag writes the whole draft into the host's `tableDeferredColumns` through the ValueStore, so a deferred manager costs zero requests until Apply and a live one costs exactly one per change ([tables-bundle.md](tables-bundle.md#asset-registration)). The workspace's one import outside Stimulus, [`utils/live_host.ts`](../../../packages/tables/assets/src/utils/live_host.ts), which `table`, `editable-cell` and `column-manager` share, is the sanctioned copy of schemas' — [tables-bundle.md](tables-bundle.md#asset-registration) |
 | [`Colors\Components\TextColumnComponent\ItemComponent`](../../../packages/tables/src/Colors/Components/TextColumnComponent/ItemComponent.php) | [`View/Components/Columns/TextColumnComponent/ItemComponent.php`](../../../vendor/filament/tables/src/View/Components/Columns/TextColumnComponent/ItemComponent.php) | done | [text-column.md](text-column.md#the-item-policy-measures-the-dark-surface-against-gray-900) |
 | [`Colors\Components\TextColumnComponent\ItemComponent\IconComponent`](../../../packages/tables/src/Colors/Components/TextColumnComponent/ItemComponent/IconComponent.php) | [`View/Components/Columns/TextColumnComponent/ItemComponent/IconComponent.php`](../../../vendor/filament/tables/src/View/Components/Columns/TextColumnComponent/ItemComponent/IconComponent.php) | done | [text-column.md](text-column.md#gray-is-a-colour-on-the-item-and-the-absence-of-one-on-the-icon) |
 | [`Colors\Components\IconColumnComponent\IconComponent`](../../../packages/tables/src/Colors/Components/IconColumnComponent/IconComponent.php) | [`View/Components/Columns/IconColumnComponent/IconComponent.php`](../../../vendor/filament/tables/src/View/Components/Columns/IconColumnComponent/IconComponent.php) | done | [icon-column.md](icon-column.md#the-policy-carries-a-map-and-the-default-gray-contract-at-once) |

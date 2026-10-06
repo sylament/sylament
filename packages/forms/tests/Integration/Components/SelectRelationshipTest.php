@@ -26,7 +26,7 @@ use Symfony\Component\Validator\Validator\ValidatorInterface;
  * Select::relationship() against a real Doctrine entity manager: the option map
  * comes off the target table, fill() reads the association's key through the load
  * hook, and getData() writes the association back through the save hook. Nothing
- * here is mocked — the point of the epic is that the two hooks and the reader
+ * here is mocked — the point of `relationship()` is that the two hooks and the reader
  * compose into a round-trip the ordinary walks drive.
  */
 

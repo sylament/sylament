@@ -100,10 +100,10 @@ do.
 | [`ListRecords`](../../../packages/panels/src/Resources/Pages/ListRecords.php)'s scoped query | [`ListRecords::makeTable()`](../../../vendor/filament/filament/src/Resources/Pages/ListRecords.php)'s `when($parentRecord)` arm | done | — | [semantics](#the-nested-list-page-ships-unexercised-by-any-shipped-page) |
 | [`Resource\Concerns\HasBreadcrumbs`](../../../packages/panels/src/Resources/Resource/Concerns/HasBreadcrumbs.php) — `$breadcrumb` + `getBreadcrumb()` | [`HasBreadcrumbs`](../../../vendor/filament/filament/src/Resources/Resource/Concerns/HasBreadcrumbs.php) | done | — | — |
 | [`Page::getResourceBreadcrumbs()`](../../../packages/panels/src/Resources/Pages/Page.php) / `hasResourceBreadcrumbs()` — the ancestor trail | [`Resources/Pages/Page.php`](../../../vendor/filament/filament/src/Resources/Pages/Page.php) | done | — | [diverges](#a-crumb-whose-url-the-trail-already-spends-renders-unlinked) |
-| The `canView()` / `canEdit()` gates on every crumb | the same two, per ancestor | todo | the authorization epic | [detail](#the-nesting-surface-is-ungated-until-the-authorization-epic) |
+| The `canView()` / `canEdit()` gates on every crumb | the same two, per ancestor | todo | authorization | [detail](#the-nesting-surface-is-ungated-until-authorization-lands) |
 | Sidebar suppression — the panel loop skips a nested resource | `registerNavigationItems()`'s third early return | done | — | [semantics](#the-suppressions-sit-where-the-trail-already-put-them) |
 | Global-search suppression — a nested resource answers no result URL | `getGlobalSearchResultUrl()`'s own admitted limitation | done | — | [semantics](#the-suppressions-sit-where-the-trail-already-put-them) |
-| `authorizeParentRecordAccess()` / the page-level `canAccess(['record' => …])` arms | `InteractsWithParentRecord::authorizeParentRecordAccess()` | todo | the authorization epic | [detail](#the-nesting-surface-is-ungated-until-the-authorization-epic) |
+| `authorizeParentRecordAccess()` / the page-level `canAccess(['record' => …])` arms | `InteractsWithParentRecord::authorizeParentRecordAccess()` | todo | authorization | [detail](#the-nesting-surface-is-ungated-until-authorization-lands) |
 | `$record->setRelation(inverse, $parentRecord)` — seeding the resolved record's back-reference | `resolveRecord()` / `resolveParentRecord()` | skipped | — | [diverges](#the-inverse-relationship-is-never-a-name-we-hold) |
 | Morph arms in the parent scope | `scopeEloquentQueryToParent()`'s `MorphTo` branch | skipped | — | [diverges](#the-parent-scope-is-the-readers-narrowing-of-the-resources-own-query-not-a-predicate-we-write) |
 | A cycle guard over `$parentResource` | no counterpart — Filament shares the hole | todo | — | [detail](#a-parent-resource-cycle-hangs-route-loading) |
@@ -168,7 +168,7 @@ and `getNavigationItems()` still answer) and
 Specifics for rows that are not finished. Delete a subsection when its row flips
 to **done**; the table row and any divergence it earned stay behind.
 
-### The nesting surface is ungated until the authorization epic
+### The nesting surface is ungated until authorization lands
 
 Filament gates the nesting in three places, and none of them is ported:
 `InteractsWithParentRecord::authorizeParentRecordAccess()` aborts 403 unless the
@@ -322,8 +322,8 @@ searchable nested resource renders no dead rows rather than rows that go nowhere
 
 A nested resource scopes every read to its parent through
 [the reader's narrowing of its own record query](#the-parent-scope-is-the-readers-narrowing-of-the-resources-own-query-not-a-predicate-we-write),
-and until [M7 · 5](../roadmap.md#m7--composite-identifiers) that query could not
-bind a parent record carrying more than one identifier field. `BelongsToParent`
+and that query once could not bind a parent record carrying more than one
+identifier field. `BelongsToParent`
 asked first, in panel vocabulary — *"whose records of [%s] are not keyed by a
 single scalar identifier; scoping a nested resource to such a parent record is
 not built yet"* — at two throw sites under one predicate:
@@ -367,11 +367,11 @@ relation layer **past** both throw sites, a modal `CreateAction` taking its
 relationship from `Page::getDefaultActionRelationship()` on a page that resolves
 no record of its own, was recorded as unguarded rather than closed, on the
 grounds that refusing there would need a new public entry point on `Resource` for
-a guard M7 · 5 would delete whole — and it simply works now, which is what that
+a guard the reader's widening would delete whole — and it simply works now, which is what that
 bet was. And one unstated invariant is what keeps a parent placeholder safe and
 is pinned rather than left to be rediscovered:
 [`PanelRouteLoader`](#the-recursion-lives-in-the-loader-and-the-child-must-be-registered-on-the-panel)
-always appends `/` after a parent placeholder, so M7 · 3's greedy `[^/]+` — which
+always appends `/` after a parent placeholder, so the greedy `[^/]+` — which
 is stamped on `{record}` alone — is not needed on one, and the compiler's default
 pattern is enough.
 
@@ -380,8 +380,7 @@ pattern is enough.
 A nested create page attaches the new record to its parent twice — before the
 mapping, so the record check sees the key half the parent fills, and again in
 `handleRecordCreation()`, so the parent wins over a form that picks another.
-Since [M7 · 10](../roadmap.md#m7--composite-identifiers) the record both attach
-is the one [`makeRecord()`](README.md#createrecord) built, so a child whose
+The record both attach is the one [`makeRecord()`](README.md#createrecord) built, so a child whose
 constructor takes its parent — a derived identity whose parent half no setter can
 change, `new Translation($this->getParentRecord(), $data['locale'])` — is built
 there with the page's own parent record. Each attach writes the child's mapped-by
@@ -535,7 +534,7 @@ stays narrowed under a parent. It has no member here at all. Instead
 `getParentScopedRecordQuery($parentRecord)` clones the resource's own
 `getRecordQuery()` and hands it to
 [`AssociationReader::scopeToRelationship()`](../schemas/association-reader.md#scopetorelationship-narrows-a-callers-query-rather-than-building-one)
-under the builder's own root alias — the same M4 · 8 machinery a relation-scoped
+under the builder's own root alias — the same machinery a relation-scoped
 table already reads through, serving both cardinalities and an owner of any width
 with DQL that has been probed against a real schema. Every nested read consumes
 that one method: the record binding, the nested list, a mounted action's key and
@@ -546,11 +545,11 @@ the [404-not-the-row property](README.md#a-record-is-resolved-through-the-resour
 Porting the mutator would mean copying the reader's one-to-many predicate and its
 many-to-many subselect into panels, where they would be a second opinion that can
 disagree with the first; the reader narrowing a builder it is handed keeps one.
-Until [M7 · 11](../roadmap.md#m7--composite-identifiers) the method answered the
-reader's own freshly built relationship query instead, on the reasoning that our
-base record query is a bare select-from — which held only while nobody overrode
-it: a nested resource whose `getRecordQuery()` hid rows served them on every
-nested page, and an intermediate ancestor's override was skipped the same way.
+The method does not answer the reader's own freshly built relationship query:
+that would rest on our base record query being a bare select-from, which holds
+only while nobody overrides it — a nested resource whose `getRecordQuery()` hid
+rows would serve them on every nested page, and an intermediate ancestor's
+override would be skipped the same way.
 The clone is there for the reason
 [the binding clones](README.md#a-record-is-resolved-through-the-resources-own-query):
 an override may return a memoised builder. A record query rooted at an alias
@@ -578,7 +577,7 @@ Eloquent relation save that writes and persists in one call. Ours is
 `AssociationReader::attach()`: it writes the **owning side** in memory and
 returns, and `handleRecordCreation()` persists and flushes as it already did.
 Both halves matter. The owning side is what emits SQL — an inverse-only write
-flushes nothing at all, which is the defect M4 · 8 built `attach()` to avoid — and
+flushes nothing at all, which is the defect `attach()` exists to avoid — and
 keeping the write in memory means the record joins its parent in the *same*
 flush, so an association the mapping refuses to leave empty fails the form rather
 than the write.
@@ -586,9 +585,8 @@ than the write.
 Writing in memory has a cost Eloquent's save does not: a create refused after
 the attach would leave the record in a many-to-many parent's collection, unsaved,
 for the rest of the request, and a later flush in it would fail on Doctrine's
-*A new entity was found through the relationship …*. So since
-[M7 · 11](../roadmap.md#m7--composite-identifiers) both attaches are undone on
-refusal, as [`CreateAction`](../actions/create-action.md#the-created-record-joins-the-relationship-in-the-same-flush)'s
+*A new entity was found through the relationship …*. So both attaches are undone
+on refusal, as [`CreateAction`](../actions/create-action.md#the-created-record-joins-the-relationship-in-the-same-flush)'s
 is: the one before the mapping when the mapping refuses, the one before the
 flush when `persist()` or the blank-key read does, each through
 `AssociationReader::detach()` in a `finally` that rethrows the original
@@ -601,8 +599,8 @@ The move onto the resource is a [rename](../renames.md#renames) as well as a
 relocation, and both follow from where the knowledge is: the relationship name is
 derived on the resource, so a page-level method would only be able to ask the
 resource for it and hand it straight back. `CreateRecord::handleRecordCreation()`
-stays the page-level override seam it already was, and since M7 · 10 the record
-both attaches write is the one `makeRecord()` built; a consumer's override of
+stays the page-level override seam it already was, and the record both
+attaches write is the one `makeRecord()` built; a consumer's override of
 Filament's `associateRecordWithParent()` is a method nothing calls, which is the
 failure a rename row exists to make greppable.
 
@@ -692,7 +690,7 @@ message that tells a caller what it forgot.
 
 Filament's arms 2 and 3 additionally append `'relation' => $relationshipName` to
 preselect the relation-manager tab through its `#[Url(as: 'relation')]` property.
-Ours is omitted, and the reason narrowed with M4 · 3: the property **is** now
+Ours is omitted, and not for want of a binding: the property **is**
 [URL-bound](has-relation-managers.md#the-relation-binding-is-the-toolkits-only-static-url-mapping),
 so the parameter would no longer be inert — it would preselect the tab exactly as
 Filament's does. What is left is the judgment the omission always also rested on:
@@ -730,8 +728,8 @@ route carries no such default and therefore no prop.
 security property rather than a style.** ux-twig-component assigns non-mount
 props *after* `mount()` returns, and a record page resolves its record inside its
 own mount tail — so a prop-only chain would arrive too late and the first GET
-would resolve **unscoped**, serving exactly the foreign record this epic exists
-to 404. Every record page therefore takes `mount(int|string $record, array
+would resolve **unscoped**, serving exactly the foreign record the parent scoping
+exists to 404. Every record page therefore takes `mount(int|string $record, array
 $parentRecords = [])` and assigns the parents first (`mountRecord()` is the one
 place that ordering lives), and `CreateRecord`/`ListRecords` take
 `mount(array $parentRecords = [])` for the same reason even though neither
@@ -776,10 +774,9 @@ plain text: `Articles → Genesis → Sections → In the beginning → Edit`, w
 never meets the edge — its arms 2 and 3 append `?relation=…`, which makes the two
 URLs differ — so this is an edge our
 [omission of that parameter](#the-parent-arms-carry-no-relation-parameter)
-creates. It was recorded as resolving when the URL binding landed; the binding
-landed with M4 · 3 and the omission did not go with it, so the crumb stays
-unlinked until that omission is revisited on its own terms. Nothing else changed:
-the trail is still correct, and the unlinked crumb still points at the page the
+creates. The URL binding exists and the omission stays, so the crumb stays unlinked
+until that omission is revisited on its own terms. Otherwise the trail is
+correct, and the unlinked crumb still points at the page the
 crumb above it already links.
 
 The test is on the whole trail, not on adjacency: any URL already spent is

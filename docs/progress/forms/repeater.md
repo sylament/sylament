@@ -137,9 +137,9 @@ shape.
 
 `hydrateItems()` is an `afterStateHydrated` hook, so *when* the schema fires
 those hooks decides whether it sees the record's shape or a wreck of it. Two
-orderings are load-bearing, and both were corrected in schemas' root
+orderings are load-bearing, and schemas' root
 [`HasState`](../schemas/schema.md#hasstate-still-lacks-constant-state-relationships-and-partial-rendering)
-with this epic. **Hooks run before `fillStateWithNull()`**: an item's raw value
+keeps both. **Hooks run before `fillStateWithNull()`**: an item's raw value
 is a scalar in simple mode (`['x', 'y']`), and the null-fill pass writes null at
 every unset leaf path — `tags.0.value` — which clobbers the scalar the wrap
 step was about to read, so a record fill would land two empty items. **Hooks run
@@ -199,7 +199,7 @@ ordinary collector. The repeater itself also derives nothing, by the existing
 `describe()` to see through an item segment would need element types that do not
 exist in the language.
 
-Under `relationship()` it is the other way round, since M3 · 10. Each item schema
+Under `relationship()` it is the other way round. Each item schema
 [binds the child it maps](#an-item-schema-is-stamped-with-the-child-it-maps), so
 the item schema *is*
 [the nearest record frame](../schemas/belongs-to-record.md#the-nearest-record-frame-is-the-first-node-above-a-component-that-binds-one)
@@ -207,9 +207,8 @@ and the field's path is read against the child class with the item segment
 already stripped — no element type needed, because the association's target
 declares one. A `TextInput::make('heading')` over a non-nullable child property
 derives required; one over a nullable property does not. A `DateTimePicker`
-inside such an item reads its object class from that same frame — and, since
-[M7 · 6](../roadmap.md#m7--composite-identifiers), its stored value too, which
-the item fill used to skip
+inside such an item reads its object class from that same frame — and its
+stored value too
 ([the item fill](#a-relationship-repeater-keys-its-items-by-identity-and-diffs-the-collection)).
 Nothing above changes: a plain-array repeater has no class to frame, so it
 derives nothing as it always did.
@@ -226,7 +225,7 @@ repeater **exposes undeclared item keys to the client** (and a client can
 tamper with them) — do not keep server-only values inside repeater items.
 And they survive only as payload: scoping the read to declared leaves, the way
 the section walk does, would need to know *which* saved item a state item is to
-merge into — the identity question this epic's
+merge into — the identity question the
 [scope boundary](#object-collections-stay-refused-until-a-relationship-supplies-the-identity)
 defers. Filament behaves identically.
 
@@ -291,10 +290,9 @@ an object-valued leaf enters the item only where the item field's own state
 casts flatten it, so a `DateTimePicker` or an enum-backed field fills from the
 child, as does a `Uuid` under a cast that flattens it, and a fill hook receives
 the object at its item path, while an association, and an object no cast
-flattens, still skip. Until
-[M7 · 6](../roadmap.md#m7--composite-identifiers) the item fill skipped **every**
-object leaf: such a field filled empty, and the next save — one that never
-touched it — wrote NULL over the stored value. Pinned by
+flattens, still skip. Skipping **every**
+object leaf would lose data: such a field would fill empty, and the next save —
+one that never touched it — would write NULL over the stored value. Pinned by
 [`RepeaterRelationshipObjectLeafTest`](../../../packages/forms/tests/Integration/Components/RepeaterRelationshipObjectLeafTest.php).
 
 `getData()` hands the whole keyed map to the save hook, which builds the
@@ -336,7 +334,7 @@ single `getData()` call, with no flush of its own: the caller flushes, once,
 exactly as with every other mapped field.
 
 An added item keeps its uuid key until something reads the collection back, and
-the save does not. Since [M7 · 6](../roadmap.md#m7--composite-identifiers)
+the save does not.
 `EditRecord` does: it calls
 [`Schema::loadStateFromRelationships()`](../schemas/belongs-to-record.md#loadstatefromrelationships-is-the-hosts-reload-after-its-flush-and-takes-no-parameter)
 after its flush — Filament's own post-save step — which runs this load hook again
@@ -490,6 +488,13 @@ its markers all drop out of the DOM together rather than rendering inert. The
 handle is the reorder action's own trigger, stamped `data-sortable-handle`
 through `extraAttributes(merge: true)`, which is why it renders with
 `liveComponentClickHandlerEnabled(false)`: it is grabbed, never clicked.
+The collapse, expand, collapse-all and expand-all actions render the same way,
+`liveComponentClickHandlerEnabled(false)` with the click bound by the repeater
+controller
+([forms-bundle.md](forms-bundle.md#the-repeater-controller-owns-the-items-collapse-state-and-bridges-the-drag-control-to-the-reorder-action)),
+so their clicks never reach the host; the handle's drop is what mounts
+`reorder`, through the controller, and the other six actions (`add`, `delete`,
+`clone`, `moveUp`, `moveDown`, `addBetween`) mount as ordinary actions.
 
 ### Collapse state is the client's once the controller connects
 
@@ -543,7 +548,7 @@ default path — uuid keying is on unless the null-uuid mode is chosen, whether 
 [`Repeater::fake()`](#uuid-generation-is-a-mode-flag-and-generateuuidusingtrue-mints-a-real-uuid)
 or by a consumer's own `generateUuidUsing(false)` — so it is recorded here as a
 vendor-parity edge rather than fixed. Hardening it (rebuilding the list positionally, which every
-dehydrate renumbers anyway) is the sweep's to take.
+dehydrate renumbers anyway) is a known gap, left open.
 
 Neither between-item element is a sortable item — no `data-sortable-item` — so
 the drag control skips them and an ordering never contains a divider's key.
@@ -638,15 +643,12 @@ plain array is written.
 published on the contract: a violation naming an in-item path it does not carry
 is a path no field maps, and the translator
 [folds it at the item](../schemas/violation-path-translator.md#a-violation-inside-an-item-folds-by-the-same-rule-as-one-at-the-root)
-rather than inventing a state path — and, since
-[M7 · 11](../roadmap.md#m7--composite-identifiers), the message is shown at the
+rather than inventing a state path — and the message is shown at the
 schema's own path, because nothing renders an item's own
 ([the filing](../schemas/violation-path-translator.md#a-message-is-filed-only-under-a-component-that-shows-its-own-errors)).
-Since
-[M7 · 6](../roadmap.md#m7--composite-identifiers), whose item fill asks each
+Because the item fill asks each
 item field whether its casts flatten an object leaf and so keys the fields by
-their path, a path two item leaves share is listed once, where it was listed
-twice before. Every consumer reads the list as a set — the save writes each path
+their path, a path two item leaves share is listed once. Every consumer reads the list as a set — the save writes each path
 onto the child, and the translator `array_flip()`s it — so nothing depends on
 the multiplicity.
 
@@ -678,7 +680,7 @@ them at map time would be a lie about when they run. Consumers that need a
 post-write moment use Doctrine's own lifecycle events (`postPersist`,
 `postUpdate`, `postRemove`, or an `onFlush` subscriber) — the same seam the ORM
 already gives every other write in the application. Reverses only if a
-`saveRelationships()` phase with its own flush is ever adopted, which the epic
+`saveRelationships()` phase with its own flush is ever adopted, which the port
 [decided against](../schemas/belongs-to-record.md#the-relationship-hooks-are-consulted-by-the-two-mapping-edges-not-by-a-schema-level-walk).
 
 `dehydrated(false)` **is not applied**. Filament prunes the repeater's state from
@@ -730,26 +732,26 @@ of every child it **constructed** this pass, and refuses by name:
 
 Four things about the rule, each of which the message alone gets wrong.
 
-**It is by *assignment*, and only where this epic made the class keyable.** A
+**It is by *assignment*, and only for a composite or association-carrying identifier.** A
 class whose identifier Doctrine generates is never incomplete — the id is the
 ORM's to fill at the insert — so the refusal cannot fire for the ordinary
 `id`-keyed child, whatever shape it is. Neither can it fire for a **plain
 single scalar** identifier the application assigns: the member answers `false`
 for one at the entry, before it reads a field, because such a class has always
 been keyable here and an application may fill that field from a listener no
-mapping shows. What is left is the identifier this epic made keyable — a
-composite key (Doctrine refuses an id generator on one) or one carrying an
-association — minus whatever a `#[PrePersist]` callback of the class or a mapped
+mapping shows. What is left is a
+composite key (Doctrine refuses an id generator on one) or an identifier carrying
+an association — minus whatever a `#[PrePersist]` callback of the class or a mapped
 entity listener fills at the flush.
 
-**A class-level `prePersist` callback lets an unmapped blank half through**,
-recorded since M7 · 7's review. The mapping short-circuit exempts every class
+**A class-level `prePersist` callback lets an unmapped blank half through.**
+The mapping short-circuit exempts every class
 declaring a `prePersist` callback or entity listener, whether or not it fills a
 key half. `CreateAction`, the resource create page and `Select`'s `createOption`
 default read the key again after `persist()`, once the callback has run; the
 repeater has no such moment, since it never persists an item itself — the
 owner's cascade inserts it at the application's flush. So for such a class a key
-half no component maps reaches the table blank, as it did before M7 · 7. Closing
+half no component maps reaches the table blank. Closing
 it needs a check at the owner's flush, which the repeater does not run. Pinned as
 behaviour by
 [`RepeaterKeyWritesTest`](../../../packages/forms/tests/Integration/Components/RepeaterKeyWritesTest.php)'s
@@ -781,7 +783,7 @@ therefore not a transaction guard: a caller that catches the `LogicException`
 and then flushes anyway still commits the half-keyed row it was warned about.
 Validating a
 key that is *taken*, or a key half edited on an existing item, is the record
-check's since [M7 · 6](../roadmap.md#m7--composite-identifiers), which reaches
+check's, which reaches
 every item through the owner's loaded collection. A new item on a key a stored
 row, an existing item or another new item claims is *"This value is already
 used."* under every identifier field of the new item that is no association and
@@ -896,7 +898,7 @@ rejected. Constant state is
 the Doctrine relation layer did not bring one, and the
 [record stamp](#an-item-schema-is-stamped-with-the-child-it-maps) that would be
 its natural companion resolves the child directly rather than through a constant
-— and schemas' `HasInlineLabel` is unported (deferred in M1 · 3), so an item
+— and schemas' `HasInlineLabel` is unported, so an item
 schema has no inherited inline-label state to switch off. Each stamp lands with
 its owner.
 
@@ -904,14 +906,11 @@ its owner.
 
 The mapper's object-collection refusal
 ([both triggers](../schemas/property-accessor.md#a-missing-singular-intermediate-is-constructed-an-object-collection-is-refused))
-**does not relax** for a plain Repeater; the array-backed epic narrowed what the
-message promises. `refuseCollection()` named "the Repeater epic" as the future
-owner; once the Repeater existed that read as a bug report, so the message was
-reworded to state the real boundary: array-backed lists are the Repeater's, and
-object collections need identity. That precedent applied a second time here —
-"which arrives with the Doctrine relationship layer … until then, map this
-property by hand" is a wait the reader has already finished, on the one path
-this epic fixes. Both messages now name the answer instead: `relationship()`
+**does not relax** for a plain Repeater, and its message promises nothing it
+cannot keep. A refusal that names future work as its owner reads as a bug report
+once that work exists, so both messages state the real boundary instead —
+array-backed lists are the Repeater's, and object collections need identity —
+and name the answer: `relationship()`
 supplies the item identity, so declare it on the component bound to the
 collection; hand-mapping after `getData()` is what is left for a collection no
 component declares one for. A repeater also refuses *early*:
@@ -932,8 +931,8 @@ overwrite it with value-shaped arrays, the
 [recorded price of reflection-only types](../schemas/record-type-reader.md#docblock-generics-are-invisible-and-that-is-the-point).
 `RecordTarget`'s provenance fields stay
 [skipped](../schemas/record-type-reader.md#the-value-object-carries-no-provenance):
-that epic was their named candidate, but its refusal builds the target it
-consumes in the same method, so provenance still has nothing to tell a caller.
+the repeater's early refusal was their named candidate, but it builds the
+target it consumes in the same method, so provenance still has nothing to tell a caller.
 
 **The reversal fired**, exactly as written — identity-keyed item state landed
 with [`relationship()`](#a-relationship-repeater-keys-its-items-by-identity-and-diffs-the-collection),
@@ -1032,8 +1031,7 @@ repeater into object mode — is **rejected**, permanently: it would silently
 change every existing docblock-typed array form the day it shipped, and a
 library cannot assume its consumers run PHPStan over their docblocks.
 *Opt-in inference* — a bare `itemsAs()` deriving the item class from the record
-property's docblock — is **deferred out of the epic by decision (Martin,
-2026-08-05)**. The constraints are recorded so a later slice designs against
+property's docblock — is **deferred by decision**. The constraints are recorded so a later slice designs against
 them instead of re-deriving them: it reads through a separate, scoped docblock
 reader (`PhpStanExtractor`-backed, used for item-class resolution only), never
 through [`RecordTypeReader`](../schemas/record-type-reader.md), whose

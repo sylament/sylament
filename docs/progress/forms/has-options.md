@@ -137,5 +137,5 @@ exactly as Filament does. The arm was dropped alongside the `Arrayable` one whil
 nothing consumed it — an enum class-string reaching a port with no `HasEnum` had
 nowhere to go — and it came back with that concern, on every option field at once.
 Recorded here rather than deleted because the trail carried it as a divergence for
-several epics, so a reader meeting the old note elsewhere needs the reversal to be
+as long as the arm was dropped, so a reader meeting the old note elsewhere needs the reversal to be
 findable.

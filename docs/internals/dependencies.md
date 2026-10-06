@@ -31,13 +31,13 @@ A `suggest` is invisible to Composer's own checks, and a renamed contract turns 
 | Package | Optional | Guard | Failure when used without it | Pin |
 |---|---|---|---|---|
 | `actions` | `sylament/tables` | `instanceof InteractsWithTable` in `Concerns\HasActions` | `LogicException` when a table context reaches a host that is not a table | `packages/tables/tests/Integration/RecordActionsResolutionTest.php` |
-| `actions` | `sylament/notifications` | `class_exists(Notification::class)` in `Concerns\CanNotify` | none: the notification is skipped silently | none |
+| `actions` | `sylament/notifications` | `class_exists(Notification::class)` in `Concerns\CanNotify` | none: the notification is skipped silently | `packages/notifications/tests/Integration/CanNotifyTest.php`, which boots both bundles because no actions-only kernel can reach the branch |
 | `support` | `league/flysystem`, `league/flysystem-bundle` | structural: `FilesystemRegistry` is never built without them | — | `packages/support/tests/Integration/SylamentSupportBundleTest.php` ("collects the flysystem storages by name") |
 | `tables` | `league/commonmark` | `class_exists(GithubFlavoredMarkdownConverter::class)` in the column and the summarizer `CanFormatState` | `LogicException` naming the package | `packages/tables/tests/Unit/Columns/Concerns/CanFormatStateTest.php`, which reads the guard site, because no install that has the library can reach the other branch |
 | `forms` | `symfony/security-core`, `symfony/security-bundle` | `class_exists(UserPassword::class)` in `TextInput::currentPassword()` | `LogicException` naming both packages | `packages/forms/tests/Integration/Components/TextInputTest.php` |
 | `support` | `symfony/asset-mapper` | `SylamentBundle::isAssetMapperAvailable()` around each bundle's `prependExtension()` | none: the asset path is not registered | no `suggest` entry (see the gaps below) |
 
-The rule is to throw where the user opts in. `CanNotify` is the one guard that degrades silently. Filament has no counterpart guard, because `filament/actions` requires `filament/notifications`.
+The rule is to throw where the user opts in. `CanNotify` is the one guard that degrades silently. Filament has no counterpart guard, because `filament/actions` requires `filament/notifications`. `actions` cannot require `sylament/notifications` back, because `notifications` requires `actions`, so the toast arm is a `suggest` behind the guard and its pin lives in the notifications suite.
 
 ## Why a return type forces a require
 
@@ -81,8 +81,36 @@ The rule is broken in a few places, and no decision covers these imports. Each i
 - `forms` imports `Symfony\Component\PropertyAccess\Exception\AccessException` without declaring `symfony/property-access`.
 - `panels` imports `Symfony\Contracts\Service\Attribute\Required` without declaring `symfony/service-contracts`.
 - `support` guards `symfony/asset-mapper` but no manifest suggests it.
-- `actions`' notifications guard is silent and unpinned.
+- `actions`' notifications guard degrades silently, by design (see the table).
 
 ## Third-party grants
 
-`symfony/*` packages are pre-approved, and every other vendor needs explicit sign-off. Each grant is recorded as a carried decision on `docs/progress/roadmap.md`, together with the manifests it lands in.
+`symfony/*` packages are pre-approved, and every other vendor needs explicit sign-off. Each grant is a row below: the package, what it is for, and the manifests that declare it. A package missing from the table has no sign-off.
+
+| Package | For | Manifests |
+| --- | --- | --- |
+| `twig/twig` | The template engine every bundle renders through; declared on `support`, which every package requires (see [the transitive guarantees](#the-transitive-guarantees-behind-the-omissions)). | `support` `require` (`^3.27`) |
+| `doctrine/orm` | Doctrine entities as records: the tables `query()` lane and record resolution, record mapping and relation fields in `schemas` and `forms`, the record actions, and panels' resources. | `actions`, `forms`, `panels`, `schemas`, `tables` `require` (`^3.7`); not in the root `composer.json` |
+| `league/flysystem` | The storage contract (`FilesystemOperator`) file uploads write through and `FilesystemRegistry` hands out. | `forms` `require` (`^3`); `support` `suggest` |
+| `league/flysystem-bundle` | Turns configuration into named storages tagged `flysystem.storage`, which support's `FilesystemRegistry` collects; the consuming application's own wiring. | root `require-dev` (`^3.7`); `support` `suggest` |
+| `league/commonmark` | Converts `TextColumn::markdown()` and the summarizers' `markdown()` cells; a guarded optional that throws by name when absent. | `tables` `suggest` |
+| `filament/filament` | Filament's source under `vendor/filament/`, read before designing anything and diffed against; no shipped code imports it. | root `require-dev` (`^5.0`) |
+| `@hotwired/stimulus` | The controller runtime every Stimulus controller extends; kept external in every build, so it resolves through the consuming application's importmap. | every `packages/*/assets/package.json` `peerDependencies` (`^3.0.0`) |
+| `@symfony/ux-live-component` | The JavaScript half of `symfony/ux-live-component`, which the live-aware controllers import; Symfony's own, so pre-approved, and kept external like Stimulus. | `actions`, `forms`, `panels`, `schemas`, `tables` asset `peerDependencies` (`^3.2.0`) |
+| `@floating-ui/dom` | Dropdown positioning: support's `dropdown` controller and the select engine forms' `select` controller inlines (Filament's `computePosition()` with `offset`, `shift` and `flip`, ported verbatim). Bundled into each owning dist, so no consumer importmap gains an entry. | `packages/support/assets/package.json` and `packages/forms/assets/package.json` `dependencies` (`^1.8.0`) |
+| `sortablejs` | The drag engine: support's `sortable` controller (repeater items, table rows, key-value rows, tag chips) and forms' select engine (chip reorder). Bundled into each owning dist through `BUNDLED_ENTRIES`, each dist inlining its own copy as Filament's bundles do, so no consumer importmap gains an entry; a `pnpm-workspace.yaml` override keeps the two copies on one version ([sortable.md](../progress/support/sortable.md#sortablejs-is-bundled-twice-pinned-to-one-version)). | `packages/support/assets/package.json` and `packages/forms/assets/package.json` `dependencies` (`^1.15.7`; `@types/sortablejs` in each `devDependencies`) |
+| `@fontsource-variable/inter` | The Inter Variable latin woff2 and its licence, copied into `dist/styles/fonts/` by `copy-fonts.mjs` for the panel font. | `packages/support/assets/package.json` `dependencies` (`^5.3.0`) |
+| `filepond` | The file-upload drop zone, bundled into forms' `file-upload` controller (no consumer importmap entry) with its stylesheet regenerated scoped under `.sy-fo-file-upload`. `symfony/ux-dropzone` was the declined alternative. | `packages/forms/assets/package.json` `dependencies` |
+| `filepond-plugin-file-validate-size` | Client-side size refusal in the drop zone. | `packages/forms/assets/package.json` `dependencies` |
+| `filepond-plugin-file-validate-type` | Client-side type refusal in the drop zone, resolved through `mimeTypeMap()`; FilePond's mime database is not bundled. | `packages/forms/assets/package.json` `dependencies` |
+| `filepond-plugin-image-preview` | Image thumbnails in the drop zone. | `packages/forms/assets/package.json` `dependencies` |
+| `filepond-plugin-image-crop` | Aspect-ratio cropping of an uploaded image. | `packages/forms/assets/package.json` `dependencies` |
+| `filepond-plugin-image-edit` | The hook that opens the image editor on a FilePond item. | `packages/forms/assets/package.json` `dependencies` |
+| `filepond-plugin-image-exif-orientation` | `orientImagesFromExif()`. | `packages/forms/assets/package.json` `dependencies` |
+| `filepond-plugin-image-resize` | The automatic resize family. | `packages/forms/assets/package.json` `dependencies` |
+| `filepond-plugin-image-transform` | Applies the crop and resize to the uploaded file before it is sent. | `packages/forms/assets/package.json` `dependencies` |
+| `cropperjs` | The image editor's engine (`FileUpload::imageEditor()`). Pintura and Doka were rejected as commercial; `symfony/ux-cropperjs` was declined because it is a Symfony Form type wrapping Cropper over a standalone image, not an editor over a FilePond item. | `packages/forms/assets/package.json` `dependencies` (`^1.5.13`) |
+
+Every FilePond plugin and `cropperjs` is bundled into forms' `file-upload` controller beside FilePond, and its licence heads that bundle.
+
+Development tooling needs no row of its own: the root `require-dev` carries Pest (whose mutation plugin runs `composer test:mutation`), PHPStan, Rector, PHP-CS-Fixer and Twig-CS-Fixer, and the asset workspaces' `devDependencies` and the root `package.json` carry the build and lint tools (esbuild, TypeScript, Tailwind CSS and its CLI, PostCSS, concurrently, Biome). None of them ships.

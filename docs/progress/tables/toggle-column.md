@@ -106,6 +106,6 @@ way to ask what colour a cell will paint.
 
 Filament's stylesheet has a `.fi-ta-table-stacked-on-mobile &` branch that drops
 the cell padding on small screens. It is dropped here with the rest of the card
-rendering, which waits on the layout columns (M4 · 7) — the same reason
+rendering, which waits on the layout columns (`Columns\Layout`) — the same reason
 `CanBeStackedOnMobile` is **blocked** on the package
 [README](README.md#features).

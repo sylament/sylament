@@ -19,8 +19,8 @@ owns collapse and the group tick, and
 [`grouping.css`](../../../packages/tables/assets/src/styles/components/grouping.css)
 skins all of it.
 
-The summaries that hang off a group boundary are the sibling half of the same
-epic and are tracked in [`summarizer.md`](summarizer.md); the per-group summary
+The summaries that hang off a group boundary are tracked in
+[`summarizer.md`](summarizer.md); the per-group summary
 row is the only thing the [boundary map](#the-group-boundaries-are-one-php-map-rather-than-loop-carried-template-state)
 computes a trailing answer for.
 
@@ -416,8 +416,8 @@ as neither `asc` nor `desc`, is cleared to `null` — the mount edge of the chec
 that bypasses the action. Then the **seed**. It runs at
 `#[PostMount(priority: 2)]`, after UX's URL seeding (which finishes before any
 component hook, whatever the priority) and after the session hook at 10, which has
-no grouping arm to run; the slot is its own because
-[M4 · 5 ruled shared priority slots out](column-manager.md) and the ladder is
+no grouping arm to run; the slot is its own because two hooks on one priority
+would resolve by reflection order over the flattened traits, and the ladder is
 pinned in `HasTableLivePropsTest`.
 
 ### A grouping change resets the page and flushes the record cache

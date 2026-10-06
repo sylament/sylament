@@ -128,7 +128,7 @@ function keyedSummarizedResidency(Venue $venue, string $season, int $position): 
 /**
  * One summary row of a host's own columns, rendered on its own — the only way
  * to reach `extraHeadingColumn`, which the table layout never sets because it
- * belongs to the content one (M4 · 7).
+ * belongs to the content layout (`content()`), which the port does not render yet.
  *
  * @param array<string, mixed> $props
  */
@@ -754,7 +754,7 @@ it('keeps every summary row exactly as wide as the header row', function (Record
         ->toBe([$headerCells - 1, $headerCells - 1]);
 })->with(function (): iterable {
     // `AfterContent` is excluded because it renders no cell at all in the table
-    // layout — it belongs to the content one, which is M4 · 7's.
+    // layout — it belongs to the content layout, which the port does not render yet.
     foreach ([RecordActionsPosition::BeforeCells, RecordActionsPosition::BeforeColumns, RecordActionsPosition::AfterColumns, RecordActionsPosition::AfterCells] as $actions) {
         foreach (RecordCheckboxPosition::cases() as $checkbox) {
             yield sprintf('%s actions, %s checkbox', $actions->name, $checkbox->name) => [$actions, $checkbox];

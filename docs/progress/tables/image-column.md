@@ -5,9 +5,8 @@
 elements: a plain URL or `data:` URI as-is, a storage path through
 [`FilesystemRegistry`](../support/filesystem-registry.md)'s URL minting. It
 ports Filament's
-[`Filament\Tables\Columns\ImageColumn`](../../../vendor/filament/tables/src/Columns/ImageColumn.php),
-pulled forward out of the [M4 · 4 column catalog](../roadmap.md#m4--tables-widening)
-as [pulled-forward 25](../roadmap.md#pulled-forward). Everything
+[`Filament\Tables\Columns\ImageColumn`](../../../vendor/filament/tables/src/Columns/ImageColumn.php).
+Everything
 [`Column`](column.md) carries — the name, the label, the record binding, the
 state read, the closure injections — is tracked there, not repeated here.
 

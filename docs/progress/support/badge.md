@@ -221,8 +221,8 @@ button rather than Filament's `fi-sr-only` span, matching
 [`IconButton`](icon-button.md) — support ships no sr-only class of its own, and
 the escaped-on-output caveat the `labelSrOnly` divergence records applies here
 too. `deleteLabel` defaults to the literal `'Remove'` where Filament reads
-`__('filament::components/badge.actions.delete.label')`, one more entry for the
-i18n epic. And the icon colour reads `currentColor` at 50 % opacity (75 % on
+`__('filament::components/badge.actions.delete.label')`, one more literal for the
+[deferred i18n pass](../../internals/i18n.md). And the icon colour reads `currentColor` at 50 % opacity (75 % on
 hover and focus) where
 [`badge.css`](../../../vendor/filament/support/resources/css/components/badge.css)
 hardcodes `text-color-700/50` and `text-gray-700/50`: the badge's own text colour

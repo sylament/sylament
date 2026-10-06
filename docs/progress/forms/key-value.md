@@ -10,7 +10,7 @@ what lets every cell bind by index.
 
 Filament renders no rows at all server-side: its block is `wire:ignore`, an
 Alpine object owns the row list, and the three `Action`s are inert chrome inside
-its click handlers. Ours is the roadmap's shape instead — rows rendered from the
+its click handlers. Ours is a server-owned shape instead — rows rendered from the
 raw state, per-cell `data-model` bindings, and `add`/`delete`/`reorder` as real
 mounted actions
 ([divergence](#the-rows-are-server-owned-and-the-three-actions-are-real)) — which
@@ -303,7 +303,7 @@ boundary.
 'Add row', 'Delete row', 'Reorder row', 'Key', 'Value', 'Reorder' and 'Actions'
 ship as English literals where Filament reads them from
 `filament-forms::components.key_value.*`. The standing
-[i18n deferral](../roadmap.md#m3--forms-widening): no translation layer exists
+[i18n deferral](../renames.md#idiom): no translation layer exists
 yet, and every ported literal will be retrofitted in one change when it does.
 
 ### Deprecated Filament members are not ported

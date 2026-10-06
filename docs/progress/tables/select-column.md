@@ -14,7 +14,7 @@ seam the four editable columns share is tracked on
 searchable, preloaded and relationship arms are **blocked** on the same thing —
 the select-engine promotion described on
 [`forms-bundle.md`](../forms/forms-bundle.md#the-select-controller-binds-a-port-of-filaments-select-utility-to-the-live-host)
-— which this epic deliberately does not trigger.
+— which this column deliberately does not trigger.
 
 Reference — the Filament source this is diffed against:
 
@@ -134,7 +134,7 @@ nothing in the port calls `getOptionComparisonState()` on a column.
 
 The whole searchable/preloaded/relationship group above is one decision: the
 searchable select is forms' JS control, and promoting it out of forms is a
-separate piece of work this epic does not trigger. `native()` is **blocked**
+separate piece of work this column does not trigger. `native()` is **blocked**
 rather than shipped returning `true`, because a setter no builder consults is
 worse than an absent one — a migrating user who calls `native(false)` and sees a
 native `<select>` learns nothing, where a missing method is an immediate answer.

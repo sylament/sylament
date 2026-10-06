@@ -364,10 +364,9 @@ identically with nothing failing anywhere. `ToggleButtonsTest` pins
 `input.sy-fo-toggle-buttons-input + label.sy-btn` in both variants for exactly
 that reason, beside the direct-child assertion the group arm needs.
 
-The arms landed at M3 · 1, after this field had already shipped: support's
-`button.css` had never carried Filament's checked block, so its colour rule
-applied to *any* `.sy-color` — every option glowed in its own colour whichever
-one was chosen, and a chosen gray option was the plainest thing on screen. The
+Without those arms, `button.css`'s colour rule would apply to *any*
+`.sy-color` — every option would glow in its own colour whichever one is
+chosen, and a chosen gray option would be the plainest thing on screen. The
 port ships vendor's split, including its gap: the `input:focus-visible` ring
 arms exist only for the coloured labels, so a gray option set is keyboard-focusable
 with no ring of its own.

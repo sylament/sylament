@@ -21,7 +21,7 @@ use Symfony\UX\LiveComponent\Test\TestLiveComponent;
 uses(InteractsWithLiveComponents::class);
 
 /*
- * The depths of this epic meeting on one live host, which no unit of them can
+ * The composite query depths meeting on one live host, which no unit of them can
  * reach alone: a keyed root fetch-joining a collection, sorted by a correlated
  * relationship count, narrowed by a relation search, paged, and acted on.
  *

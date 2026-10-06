@@ -351,7 +351,7 @@ offers since it has no row-value `IN`. The affected-row count feeds
 against the total the reader minted.
 
 `deleteSelectedRecordsByKey(array $keys): int` is the arm's **override point**,
-protected since M4 · 1 and Sylament's own: Filament inlines
+protected and Sylament's own: Filament inlines
 `getSelectedRecordsQuery()->delete()` and has no member to override. It is
 handed the plucked keys, canonical and unique, and never an empty list, since an
 empty selection reports a count of `0` before it is reached. It answers the
@@ -362,14 +362,10 @@ throws, such as an audit guard refusing a protected record, is the danger toast
 with nothing deleted, like any failed by-key delete. The chunking, the
 transaction and the per-chunk statement with its cache eviction stay private: an
 override that calls `parent::` keeps all three, and one that does not takes them
-on itself. [M7 · 1](../roadmap.md#m7--composite-identifiers) moved the signature
-to `(EntityManagerInterface $entityManager, string $recordClass, array
-$chunks)` when it moved the resolution out of the `catch`.
-[M7 · 10](../roadmap.md#m7--composite-identifiers) put the bare key list back
-before that change reached a release. The method now resolves the table's
-manager and record class a second time, inside itself, through the same memoised
-reads the pre-`try` resolution makes, so the restored signature costs no
-statement and leaves the placement below unchanged.
+on itself. The method resolves the table's manager and record class a second
+time, inside itself, through the same memoised reads the pre-`try` resolution
+makes, so the bare key-list signature costs no statement and leaves the
+placement below unchanged.
 
 **One statement is the normal case, not the guarantee.** The key list is split
 by [`IdentifierConstraint::chunk()`](../schemas/record-key.md#the-chunk-rule)
@@ -394,10 +390,9 @@ Two semantics to know, both shared with Filament's own mass delete: a DQL delete
 **bypasses ORM cascades and lifecycle callbacks** (Filament's skips model events
 the same way), and it leaves the identity map holding rows that no longer exist —
 which is harmless here because the response re-renders from a fresh query. It
-does not leave the second-level cache holding them: since
-[M7 · 9](../roadmap.md#m7--composite-identifiers) the statement carries
+does not leave the second-level cache holding them: the statement carries
 Doctrine's `HINT_CACHE_EVICT`, which evicts the record class's entity region, so
-`find()` no longer serves a deleted record from the cache — a record of that
+`find()` does not serve a deleted record from the cache — a record of that
 class, that is: a child row the database itself removes through
 `ON DELETE CASCADE` sits in its own region and keeps its entry, the reach
 Doctrine's hint has too. The entity region alone suffices: a deleted record is
@@ -422,8 +417,7 @@ the whole batch. `CompositeRelationshipTableTest` and `CompositeQueryDepthTest` 
 both halves: a relation-scoped delete and a joined-page delete through cascading
 join columns, and a referenced row refused. The hydrating arm is unaffected:
 `remove()` deletes a record's many-to-many join rows itself. Clearing join rows
-first was weighed and ruled out in
-[M7 · 9](../roadmap.md#m7--composite-identifiers): the by-key arm keeps
+first was weighed and ruled out: the by-key arm keeps
 Filament's mass-delete semantics, whose `delete()` leaves pivot rows to the
 database too. A join table whose columns pointing at the record declare
 `ON DELETE CASCADE` is cleared by the database; any other is a reason to leave
@@ -444,17 +438,16 @@ it, and of the contract the whole bulk-notification family exists for. One
 statement, several chunks are one `transactional()` — so the complete-failure
 report is the right shape for both.
 
-The catch is **not** total, and M7 · 1 is what narrowed it. Everything a
+The catch is **not** total. Everything a
 developer can get wrong is resolved before the `try`: the table, its entity
 manager, its record class and the shape of the keys, so a by-key delete
 on a `records()`-lane table propagates its `LogicException` instead of answering
 with the danger toast — [`DissociateBulkAction`](dissociate-action.md) places its
 four mapping refusals the same way, and `DeleteBulkActionTest` pins the
-placement. The keys are chunked inside the `try` again since
-[M7 · 10](../roadmap.md#m7--composite-identifiers), in the override point: the
+placement. The keys are chunked inside the `try`, in the override point: the
 chunk rule's only refusal, an identifier `IdentifierFields` cannot read, has
 already run outside it, for the same manager and class, while the selection
-plucked the keys, so the pre-`try` chunk M7 · 1 added could refuse nothing new.
+plucked the keys, so a pre-`try` chunk could refuse nothing new.
 What the catch still covers is the statements themselves, anything an override
 of `deleteSelectedRecordsByKey()` throws, and the one guard that can only fire
 once the statements have run: a DQL delete that answers with something other

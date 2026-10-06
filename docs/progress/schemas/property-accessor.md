@@ -121,12 +121,10 @@ needed exactly that first — `setOnRecord()`'s null singular intermediate, the
 [entangled layout component](entangles-state-with-singular-relationship.md)
 building the related record a to-one association is missing, and the
 [relationship repeater](../forms/repeater.md) building an added item — and each
-wrote its own reflection-plus-refusal before this method existed. Since
-[M7 · 7](../roadmap.md#m7--composite-identifiers) both `BelongsToRecord` tiers'
-`getRecordInstance()` call it too, with the advice to bind the record through
+wrote its own reflection-plus-refusal before this method existed. Both
+`BelongsToRecord` tiers' `getRecordInstance()` call it too, with the advice to bind the record through
 `record()`, and so do both [`CreateAction`](../actions/create-action.md) arms,
-whose advice names `using()`; since
-[M7 · 10](../roadmap.md#m7--composite-identifiers) so does the default
+whose advice names `using()`; so does the default
 `CreateRecord::makeRecord()`, whose advice is to override `makeRecord()`. The
 two clauses that genuinely differ come in as arguments: `$subject` (what is being
 mapped, in the "Cannot map …" position) and `$advice` (what to do instead).
@@ -186,17 +184,16 @@ caught throw.
 
 ### A property no setter can change is left alone when it already holds the value
 
-Until [M7 · 10](../roadmap.md#m7--composite-identifiers) every leaf write went
-straight to Symfony's accessor, so a property no setter can change — a `public
-readonly` one, or a private one behind a getter alone — was a
-`NoSuchPropertyException` on every mapped write, whatever it held. That is the
-shape a record whose constructor takes its key has: the create page's
+Handed straight to Symfony's accessor, a leaf write onto a property no setter
+can change — a `public readonly` one, or a private one behind a getter alone —
+is a `NoSuchPropertyException` on every mapped write, whatever it holds. That is
+the shape a record whose constructor takes its key has: the create page's
 `makeRecord()` hands the constructor the key the form maps, and `getData()` then
-writes the same key again. The leaf write now asks whether the property is
+writes the same key again. So the leaf write asks whether the property is
 writable first, and only one that is not takes another path:
 
-- **writable** — written, as before, through its setter and its side effects,
-  even when it already holds the value;
+- **writable** — written through its setter and its side effects, even when it
+  already holds the value;
 - **not writable but readable** — read. Holding **the same value**, it is left
   alone. Holding **another**, the write is refused with a `LogicException` naming
   the state path, the record class and the two value *types* — never the values,
@@ -216,6 +213,11 @@ writable first, and only one that is not takes another path:
 "Readable" is read by calling the getter, not by Symfony's `isReadable()`, which
 answers `false` for an uninitialized property and would send the third case into
 the fourth.
+
+The rule is the leaf's alone. A to-many list written onto a property no setter
+can change goes straight to Symfony's accessor, and so does the object
+`setOnRecord()` constructs for a null intermediate segment; on such a property
+both still throw Symfony's `NoSuchPropertyException`.
 
 "The same value" is, in order: identical; `null` and `''`, either way round — the
 `null` a nullable key holds is what a blank field writes; a held string and a
@@ -400,7 +402,7 @@ touch match what the hydrator round-trips. State concerns never guard for absent
 keys — a read returns null past any absent, null or non-array segment and a write
 vivifies the branch it needs — the ergonomics Livewire gave Filament for free.
 This is structural and permanent: it reverses only if the port ever adopts a
-Livewire-equivalent entanglement layer, which is not on the roadmap.
+Livewire-equivalent entanglement layer, which is not a goal.
 
 Walking those segments here rather than handing Symfony a whole `data[address][city]`
 bracket path is what makes that contract true. Symfony's `PropertyAccessor`
@@ -473,11 +475,11 @@ acts, and the two answers split the behaviour:
   the array remainder, which is what keeps the JSON-column shape working.
 - **A segment or leaf that is an object collection throws**, naming the path and
   `relationship()` as what supplies item identity. The message named
-  the `Repeater` epic until the [`Repeater`](../forms/repeater.md#object-collections-stay-refused-until-a-relationship-supplies-the-identity)
+  the `Repeater` until the [`Repeater`](../forms/repeater.md#object-collections-stay-refused-until-a-relationship-supplies-the-identity)
   shipped, at which point pointing at it would have read as a bug report: the
   repeater maps plain-array items, and an object collection needs to know which
-  state item is which entity, which is the relationship epic's problem. That
-  epic then answered it: a repeater declaring
+  state item is which entity, which is what a relationship supplies: a
+  repeater declaring
   [`relationship()`](../forms/repeater.md#a-relationship-repeater-keys-its-items-by-identity-and-diffs-the-collection)
   writes its collection through
   [`setAssociationOnRecord()`](#the-association-write-is-the-collection-refusals-counterpart)

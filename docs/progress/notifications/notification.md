@@ -200,7 +200,7 @@ gates the assertive-role split — an inline notification never gets
 as an assertive burst.
 
 **Next step:** port both, their two markup arms and their two stylesheet arms with
-the panel epic, and carry the `isInline` gate into the
+the database-notifications panel, and carry the `isInline` gate into the
 [`role` expression](#the-assertive-split-is-per-toast-and-the-container-stays-polite)
 in the same change.
 
@@ -231,8 +231,8 @@ restores it from the row key). Both lean on Laravel's notification infrastructur
 — `Illuminate\Notifications\Notification`, the `notify()` trait on the user model,
 Echo — none of which has been mapped to a Symfony counterpart yet.
 
-**Next step:** neither is on a milestone. The broadcast arm's Symfony shape is
-Mercure, the database arm's is a Doctrine entity plus the panel that reads it, and
+**Next step:** each waits on infrastructure the port does not have yet. The
+broadcast arm's Symfony shape is Mercure, the database arm's is a Doctrine entity plus the panel that reads it, and
 each carries its own delivery class (`BroadcastNotification`,
 `DatabaseNotification`) and its own **blocked** row in the
 [package README](README.md#components).
@@ -525,7 +525,7 @@ back through the Web Animations API — with a `prefers-reduced-motion` early re
 because `element.animate()` is not covered by a CSS reduced-motion reset.
 
 Sylament's toast enters with `@starting-style` (which covers a page-load render and
-an appended one identically, the same mechanism the modals epic used) and leaves by
+an appended one identically, the same mechanism the action modals use) and leaves by
 animating its own height to zero before removing itself, so siblings reflow through
 the same CSS transition; `prefers-reduced-motion` is one media query. The
 [controller](../../../packages/notifications/assets/src/controllers/notification_controller.ts)
@@ -615,8 +615,8 @@ value, so the root keeps exactly one `data-action` writer.
 
 The split is that branch's, not the whole cascade's, and the other arms are what a
 reader has to know before building against this. A trigger's click wiring is one
-`{% if %}` chain (identical in `Badge`, `Button`, `Grouped` and `Link`, the same
-set as ternaries in `IconButton`) picking exactly one of five:
+`{% if %}` chain ([kept identical across the five trigger templates by hand](../actions/action.md#a-dispatch-action-renders-payload-attributes-not-a-click-binding))
+picking exactly one of five:
 
 | Arm | What the trigger emits |
 | --- | --- |

@@ -10,8 +10,8 @@ and earn detail files of their own when they are audited.
 **Status:** done — see the
 [status vocabulary](../README.md#statuses). Every row below is settled: four
 **done** and the three Laravel traits **skipped**, the last of them — the arity
-probe — flipped by the column catalog (M4 · 4), whose `Column::hasStateBasedUrls()`
-is the reader that earned it. The table carries no unaudited row, so *done* here
+probe — flipped by [`Column::hasStateBasedUrls()`](../tables/column.md),
+the reader that earned it. The table carries no unaudited row, so *done* here
 is the whole base component, not the two subclasses: `ViewComponent` and
 `ComponentManager` keep their own rows in the [package README](README.md).
 

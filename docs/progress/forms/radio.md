@@ -268,7 +268,7 @@ package rendering it, and filing a rule beside the one template that emits it
 beats filing it beside the vendor that happened to author it. It reverses the
 same way — the moment a second package renders a radio, the rule moves down to
 support and loses the code. Worth noting because the research trail and the plan
-for this epic both wrote `sy-radio-input`, the straight `fi` → `sy` rename, which
+for this field both wrote `sy-radio-input`, the straight `fi` → `sy` rename, which
 would have left this field emitting a support-tier name while
 [`CheckboxList`](README.md#components) reuses the forms-coded `.sy-fo-checkbox`
 for the identical category one task later.

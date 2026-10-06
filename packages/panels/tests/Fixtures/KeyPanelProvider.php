@@ -24,7 +24,7 @@ use Sylament\Panels\Tests\Fixtures\Resources\StampMarkResource;
 use Sylament\Panels\Tests\Fixtures\Resources\StampResource;
 
 /**
- * The composite-identifier panel: every identifier flavour the epic keys, the
+ * The composite-identifier panel: every identifier flavour the port keys, the
  * two shapes it still refuses, and the separator paths the route loader has to
  * mount. Deliberately not the default one — the enumerating assertions of the
  * navigation and global-search suites name `admin` and `nest`, and a second

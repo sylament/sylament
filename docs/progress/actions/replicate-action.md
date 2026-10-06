@@ -38,7 +38,7 @@ re-point and the `replica` injection), the Integration
 [`ReplicateActionTest`](../../../packages/actions/tests/Integration/ReplicateActionTest.php)
 (both arms end to end against the fixture entity manager — the modal fill from
 the copy, the second row, the untouched original, and the `beforeReplicaSaved()`
-hook seeing an unsaved replica — and, since M7 · 6, the key a replica is asked
+hook seeing an unsaved replica — and the key a replica is asked
 for: a parent kept, an incomplete key refused by name at each of its two points
 — a single derived identity among them, where Doctrine's `EntityMissingAssignedId`
 spoke before — a blank-default single key refused on the first replicate, a key
@@ -49,7 +49,7 @@ recorded as Doctrine's), the Integration
 (a modal left on its original's key, a changed one, and a hook that derives the
 key) and
 [`RecordReplicatorTest`](../../../packages/actions/tests/Integration/Replication/RecordReplicatorTest.php)
-(the copy rules against real Doctrine metadata). Since M7 · 10, [`SubclassedAssociationReaderTest`](../../../packages/actions/tests/Integration/SubclassedAssociationReaderTest.php) pins both arms asking the container's own reader, rebound to a second manager. [`UnmappedHookDataTest`](../../../packages/actions/tests/Integration/UnmappedHookDataTest.php) pins the modal arm's refusal of a key `mutateDataUsing()` adds and no component maps. [`KeyAdviceTest`](../../../packages/actions/tests/Integration/KeyAdviceTest.php) pins the refusal of a modal mapping a key the record's constructor sets.
+(the copy rules against real Doctrine metadata). [`SubclassedAssociationReaderTest`](../../../packages/actions/tests/Integration/SubclassedAssociationReaderTest.php) pins both arms asking the container's own reader, rebound to a second manager. [`UnmappedHookDataTest`](../../../packages/actions/tests/Integration/UnmappedHookDataTest.php) pins the modal arm's refusal of a key `mutateDataUsing()` adds and no component maps. [`KeyAdviceTest`](../../../packages/actions/tests/Integration/KeyAdviceTest.php) pins the refusal of a modal mapping a key the record's constructor sets.
 
 ## Surface
 
@@ -221,8 +221,7 @@ owner (`address`) when the intent is to exclude what it holds.
 
 Eloquent's `replicate()` drops the primary key, and a Filament replica is a new
 auto-incremented row. A Doctrine key can be assigned, and it can
-be an association, so what the copy does with each half is a decision here —
-taken with [M7 · 6](../roadmap.md#m7--composite-identifiers):
+be an association, so what the copy does with each half is a decision here:
 
 - a **field** half is never copied, and the modal asks for it. The fill
   pre-fills it from the original — the modal is a create over a copy — so a key
@@ -244,7 +243,7 @@ name, at two points and with one message:
 > `The [%s] action built a replica of [%s] whose identifier is incomplete, so it cannot be saved as a new record. Put every identifier field the copy leaves unset in its schema() — enabled and dehydrated — or set it in beforeReplicaSaved().`
 
 The first point is before `persist()`, and it asks two questions. The first is
-epic 4's
+the create paths'
 [predicate](../schemas/association-reader.md#an-incomplete-assigned-identifier-is-the-question-the-create-paths-ask):
 is a component the application must supply still missing — asked of every
 identifier but a plain single scalar, and of no class a `prePersist` callback or
@@ -276,9 +275,8 @@ fill from blank saves, because the second point reads it after the callback.
 Both points run inside the action's transaction, so nothing is written, and
 both read through the record's **own** manager. One reader serves them and the
 modal's record check: the mounted schema's, or with no modal the action's own,
-rebound with [`withEntityManager()`](../schemas/association-reader.md) since
-[M7 · 10](../roadmap.md#m7--composite-identifiers), where two
-`new AssociationReader($manager)` stood. So a class a non-default manager maps
+rebound with [`withEntityManager()`](../schemas/association-reader.md) rather
+than two `new AssociationReader($manager)`s. So a class a non-default manager maps
 is read where it is written, and a reader service an application subclassed or
 decorated is the one asked.
 
@@ -286,8 +284,7 @@ One shape Doctrine cannot take back. A class that carries a `prePersist` hook �
 or any class, once a `prePersist` listener sits on its manager's event manager —
 passes the first point, and a **single** string key that every hook still leaves
 blank reaches the second point with an identity hash of `''`, which Doctrine can
-neither detach nor remove. Since [M7 · 9](../roadmap.md#m7--composite-identifiers)
-the arm catches that refusal and throws the named one all the same: nothing is
+neither detach nor remove. The arm catches that refusal and throws the named one all the same: nothing is
 written, and the replica stays scheduled for the rest of the request, since
 nothing flushes after the refusal. A composite blank key detaches, its identity
 hash being `' '` rather than `''`. The Integration
@@ -299,11 +296,11 @@ copied. The replicator builds the copy with `newInstance()`, which bypasses the
 constructor, so a `readonly` key property on the copy holds no value and nothing
 outside the class can give it one. A modal that maps the key field meets the
 [property accessor's rule](../schemas/property-accessor.md) for a property no
-setter can change: since [M7 · 10](../roadmap.md#m7--composite-identifiers) the
+setter can change: the
 mapping refuses by name a property that holds no value yet — naming the state
-path and the record class, never the value — where Symfony's
-`NoSuchPropertyException` spoke before, and nothing is written. There is no
-replicate construction hook (recorded on the roadmap); a `using()` closure that
+path and the record class, never the value — rather than letting Symfony's
+`NoSuchPropertyException` speak, and nothing is written. There is no
+replicate construction hook; a `using()` closure that
 builds the copy through the constructor is the way to replicate such a record.
 Pinned by
 [`KeyAdviceTest`](../../../packages/actions/tests/Integration/KeyAdviceTest.php).
@@ -319,10 +316,9 @@ under `replicate`, and reusing the resource form is
 A replicate modal left on its original's key is a create on a taken key, and the
 [record check](../schemas/can-be-validated.md#a-taken-assigned-key-is-a-field-error-not-a-unique-violation)
 answers it: *"This value is already used."* under every identifier field that is
-no association and that the modal maps — both halves of a typed pair since
-[M7 · 10](../roadmap.md#m7--composite-identifiers) — or, when it maps none of
+no association and that the modal maps — both halves of a typed pair — or, when it maps none of
 them, where the record check files a key it cannot place — nothing written.
-Before [M7 · 6](../roadmap.md#m7--composite-identifiers) it was Doctrine's
+Without the check it would be Doctrine's
 `EntityIdentityCollisionException`, the original being managed in the same
 request. A changed key saves the replica.
 
@@ -332,7 +328,7 @@ derives the copy's key is refused as unchanged where it saved before. The remedy
 is Filament's own: derive the key in `fillForm()` or `mutateRecordDataUsing()`,
 the way the demo's `ArticleResource` pre-fills its slug with `-copy`, or leave the
 key out of the modal and let the hook set it. A taken key such a hook sets is
-looked up since [M7 · 9](../roadmap.md#m7--composite-identifiers). With a
+looked up too. With a
 modal, the record check runs a second time after the hook, so the modal answers
 it under the key field, or as a record error naming no field when the modal maps
 none. Without one, `findTakenIdentifiers()` runs before `persist()` and a taken
@@ -363,10 +359,10 @@ without `excludeAttributes()`, is a caller error we let fail loudly.
 
 A modal replicate's default write opens with
 [`CreateAction`'s guard](create-action.md#the-modal-arm-persists-through-the-schemas-record-class),
-since [M7 · 10](../roadmap.md#m7--composite-identifiers): a path the hook adds
+so a path the hook adds
 that no component of the modal maps is refused by name, before the copy is even
 built, where Filament's `$this->replica->fill($data)` would mass-assign it or
-drop it, and the port dropped it in silence. An overwritten key, a key a client
+drop it. An overwritten key, a key a client
 typed into the data bag, a key a hidden component maps and a `using()` override
 pass. The arm with no modal has no hook state to compare — the host hands the
 action no data — and its `mutateRecordDataUsing()` already refuses an unknown key

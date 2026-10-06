@@ -1685,7 +1685,7 @@ it('matches the header cell count with leading record actions and a trailing che
 });
 
 /*
- * The search cells are the one per-column element this epic makes mobile — a
+ * The search cells are the one per-column element the column manager makes mobile — a
  * reorder or a toggle changes their order and their number — and idiomorph
  * pairs unkeyed siblings by position, which would leave a dirty input bound to
  * another column's model. Both the cell and its input carry the host-scoped key

@@ -110,6 +110,12 @@ empty-handed, so a resource's sort is independent of how many of the resources
 around it answered; `usort()` is stable, so resources that share a sort — every
 resource that sets none — keep the panel's registration order.
 
+The walk has no `try`/`catch`, and neither has Filament's: a resource that throws
+while answering — a refusal raised while keying one of its hits — takes the whole
+panel's topbar search down with it rather than dropping that resource's category.
+That is the honest failure for a misconfigured resource, and it is the one to look
+for when a single resource's refusal surfaces as a panel-wide search error.
+
 ### The debounce is translated for ux-live-component the way tables already does it
 
 `getGlobalSearchDebounce()` keeps Filament's duration string (`500ms` by
@@ -247,14 +253,13 @@ attribute group. We keep only the plural method: every predicate goes into one
 per-attribute seam a subclass would want is
 [`SearchConstraint::forColumn()`](../../../packages/tables/src/Query/SearchConstraint.php),
 which is also what resolves a dot-path into a correlated `EXISTS` subselect
-rather than a join. It also refuses, since
-[M7 · 9](../roadmap.md#m7--composite-identifiers), a dotted globally searchable
+rather than a join. It also refuses a dotted globally searchable
 attribute whose head is an alias the resource's global-search query fetch-joins
 as a collection: the first global search throws the `LogicException` a table
 search throws, naming the attribute and the alias
 ([table.md](../tables/table.md#a-searchable-dotted-path-and-a-fetch-join-alias-may-not-share-a-head-segment)).
-Since [M7 · 10](../roadmap.md#m7--composite-identifiers) that message is worded
-for both its callers: it speaks of a *searchable path* and *the query*, leads
+That message is worded for both its callers: it speaks of a *searchable path*
+and *the query*, leads
 with the way out that exists here — alias that join something the attribute
 does not begin with — and offers `searchable(query:)` only as what a **table
 column** can also do, since a globally searchable attribute has none. The

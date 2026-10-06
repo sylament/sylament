@@ -34,7 +34,7 @@ Every colour resolves through a `--sy-*` runtime token. `@theme inline` in suppo
 
 ## Why are the default palettes defined twice?
 
-The six default palettes exist as `oklch()` values in the `@layer theme { :root }` floor of support's `index.css`, and as [`ColorManager::DEFAULT_COLORS`](../../packages/support/src/Colors/ColorManager.php) in PHP, which is what the contrast policies measure. The floor is why an application that calls nothing still gets coloured components, where Filament's compiled theme defines no palette and requires its `@filamentStyles` directive; `sylamentStyles()` then emits only what an application adds on top ([color-manager.md](../progress/support/color-manager.md)). `CssPaletteFloorTest` pins the two copies to each other shade by shade.
+The six default palettes exist as `oklch()` values in the `@layer theme { :root }` floor of support's `index.css`, and as [`ColorManager::DEFAULT_COLORS`](../../packages/support/src/Colors/ColorManager.php) in PHP, which is what the contrast policies measure. The floor is why an application that calls nothing still gets coloured components, where Filament's compiled theme defines no palette and requires its `@filamentStyles` directive; `sylamentStyles()` then emits only what an application adds on top ([color-manager.md](../progress/support/color-manager.md)). `CssPaletteFloorTest` pins the two copies to each other shade by shade, and pins the `@theme inline` bridge (the floor palettes plus the dynamic `color`) and the `.sy-color-<palette>` swap classes in `utilities.css` to the same set, so a palette added to one copy and not the others fails.
 
 ## How does a component take a colour per instance?
 
@@ -49,6 +49,8 @@ Palettes do not share a lightness curve, so no fixed shade is readable against a
 ```
 
 Each of the eight slots (`bg` and `text`, plain and under `hover:`, `dark:` and `dark:hover:`) is set by a shade utility class the template emits beside the swap class: 92 hand-written rules in `utilities.css`, 44 for backgrounds (four prefixes × eleven shades) and 48 for text (the same plus `0`, white). The escaped colon belongs to the class name only (`.hover\:sy-text-color-500 { --sy-hover-text: var(--sy-color-500); }`): these rules carry no `:hover` selector and no dark variant of their own, because gating is the component CSS's job (`hover:text-(--sy-hover-text)`), which is what lets one utility serve every component. A policy that returns no slots is a real answer, meaning the palette swaps and the stylesheet picks the shade. Both halves of a slot mismatch fail in silence, the element painting the slot's unset default with nothing in the console, so `PolicyShadeGridTest` (support, schemas) and `ToggleColorSlotsTest` (forms) scan the stylesheets for it.
+
+A shade the policy measures against stays literal, and so does a shade nothing is measured against; the badge shows both. Its light text is measured against its own `bg-color-50`, the fixed side of the pair, and its dark text against gray-600, the stand-in `BadgeComponent` uses for a `dark:bg-color-400/10` tint no ratio can be taken against. Its ring (`ring-color-600/10`, `dark:ring-color-400/30`) stays a literal shade in both modes, because nothing is read against it and no palette can make a decorative shade unreadable.
 
 ## Why is preflight scoped to Sylament markup?
 

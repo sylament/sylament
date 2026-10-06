@@ -22,8 +22,7 @@ which ones does it not, may an existing record join this collection at all, and
 how do I put one in or take one out — asked through
 the same collaborator and answered from the same mapping. A tenth question rides
 beside them for the create paths: is this record still missing an identifier
-component the **application** has to supply. Since
-[M7 · 6](../roadmap.md#m7--composite-identifiers) two more ride beside it, and
+component the **application** has to supply. Two more ride beside it, and
 they are the record check's rather than a component's: which identifier did a
 managed record's write move, and which new record's assigned key is already
 held. The seam is also what
@@ -37,7 +36,7 @@ decodes one through [`RecordKey`](record-key.md) and narrows every query through
 association plus a scalar, by two associations or by an association alone is a
 relation **target** wherever a single-`id` entity is — and
 [the reader owns no copy of the codec's rules](#a-key-of-any-width-is-the-codecs-and-the-reader-keeps-only-the-route).
-Since [M7 · 5](../roadmap.md#m7--composite-identifiers) it is a relation
+It is a relation
 **owner** there too: both relationship queries narrow to an owner of any width
 [through the owner's own collection](#an-owner-of-any-width-is-scoped-through-its-own-collection-rather-than-through-a-mapped-by-path),
 adding no join to the outer builder and no operation to the codec.
@@ -63,9 +62,8 @@ wraps rather than a Filament port target:
 ## Surface
 
 Every point of the reader and its value object. _Blocked by_ names what has to
-land first, and answers `—` for every row since
-[M7 · 5](../roadmap.md#m7--composite-identifiers) closed the last one that
-waited. _Detail_ carries a **semantics** link (a permanent note in
+land first, and answers `—` for every row: the last one that waited has
+closed. _Detail_ carries a **semantics** link (a permanent note in
 [Semantics](#semantics)) and/or a **diverges** link (the permanent note in
 [Divergences](#divergences)), or `—`; there is no **detail** link and no
 `## Details` section any more, both having gone with that row, which is what
@@ -108,15 +106,14 @@ Sylament-only, so no row has a _Ports_ link.
 | Composite records as relationship-query **owners** — both queries, both arms, both sides | done | — | [semantics](#an-owner-of-any-width-is-scoped-through-its-own-collection-rather-than-through-a-mapped-by-path) · [diverges](#the-owner-scope-joins-through-the-owners-table-and-pays-a-self-join-postgresql-does-not-remove) |
 | Through-relations, morphs, pivot data | skipped | — | [diverges](#only-the-shapes-doctrine-states-in-one-mapping-are-read) |
 
-Every row is **done** or **skipped**. The last **blocked** one closed with
-[M7 · 5](../roadmap.md#m7--composite-identifiers), which is also when
+Every row is **done** or **skipped**. When the last **blocked** one closed,
 [`record-key.md`](record-key.md#owner-scoping-was-reserved-and-turned-out-not-to-be-needed)'s
-reserved owner-scoping row went — not by being built, but because the owner
+reserved owner-scoping row went with it — not by being built, but because the owner
 scope turned out to need no operation of the codec's at all.
 
 The unit suite
 ([`AssociationReaderTest`](../../../packages/schemas/tests/Unit/State/AssociationReaderTest.php),
-with M7 · 4's
+with
 [`AssociationReaderCompositeKeyTest`](../../../packages/schemas/tests/Unit/State/AssociationReaderCompositeKeyTest.php),
 [`AssociationReaderCompositeQueryTest`](../../../packages/schemas/tests/Unit/State/AssociationReaderCompositeQueryTest.php)
 and
@@ -190,8 +187,7 @@ requirement of the *runtime*. Without a manager the class splits in two:
 `hasEntityManager()` exists so a caller can branch **before** it commits to the
 relationship path, rather than catching the exception the operations throw.
 
-The two record-check passes [M7 · 6](../roadmap.md#m7--composite-identifiers)
-added take the `describe()` side rather than the operations': without a manager,
+The two record-check passes take the `describe()` side rather than the operations': without a manager,
 `revertIdentifierChanges()` and `findTakenIdentifiers()` walk nothing and answer
 no refusal. They run inside every `getData()` a validator reaches, and a host with
 no Doctrine has no identity map for a key to move in or be held by — so a reader
@@ -227,7 +223,7 @@ public function withEntityManager(EntityManagerInterface $entityManager): static
 ```
 
 It exists for the write seams that read through the manager they flush
-through, which since [M7 · 10](../roadmap.md#m7--composite-identifiers) rebind
+through, which rebind
 the reader they already hold rather than constructing one: `CreateAction`,
 `EditAction` and `ReplicateAction` their mounted schema's reader —
 `ReplicateAction`'s arm without a schema the action's own — tables' editable
@@ -343,14 +339,14 @@ would have aliased a row on PostgreSQL under emulated prepares or raised `22P02`
 under native ones —
 [the hole the codec exists to close](record-key.md#a-malformed-key-never-reaches-the-database).
 
-One **single-identifier** shape paid for that strictness from M7 · 4 until
-[M7 · 5b](../roadmap.md#m7--composite-identifiers). Where a DBAL type's
+One **single-identifier** shape paid for that strictness until the codec
+learned to read it back. Where a DBAL type's
 `convertToPHPValue()` reads only the database form, the decode refused the very
 key `getRecordKey()` minted, while the base had handed that printed key straight
 to Doctrine and the foreign-key write landed wherever the id property admits a
 string — so a relation-backed `Select` or `CheckboxList` threw on save and a
 by-key `DetachBulkAction` answered the danger toast where the base wrote. The
-remedy was the codec's, and 5b landed it: a component the reader refuses is read
+remedy was the codec's: a component the reader refuses is read
 back [through the type's own writer](record-key.md#a-type-that-refuses-its-printed-form-on-read-only-decodes-it-through-its-own-writer),
 so such a key decodes and the reference is taken again — built at zero
 statements where every identifier field is scalar, loaded at one behind a single
@@ -430,16 +426,16 @@ child cannot be inserted in its owner's flush at all — `JoinedSubclassPersiste
 throws *Unable to find … entity identifier associated with the UnitOfWork* — and
 this predicate passes it, correctly, leaving the failure where it belongs.
 
-So the member asks the mapping instead, and it asks only of the identifiers this
-epic made keyable. A **plain single scalar** identifier answers `false` at the
+So the member asks the mapping instead, and it asks only of a composite
+identifier or one carrying an association. A **plain single scalar** identifier answers `false` at the
 entry, before anything else is read: the relation layer has always keyed such a
 class, an application may fill that field from anywhere — including a listener no
-class-level mapping shows — and a new refusal there would be the
-single-identifier regression this milestone forbids. So an assigned single scalar
-identifier left blank stays HEAD's behaviour here, unrefused.
-[M7 · 6](../roadmap.md#m7--composite-identifiers) left this predicate as it
-was: its taken-key pass treats a blank component as incomplete and looks nothing
-up — a `Stringable` component that prints blank included, since M7 · 9 reads
+class-level mapping shows — and a new refusal there would be a
+single-identifier regression, which a wider key must never cause. So an assigned single scalar
+identifier left blank stays unrefused here, as it always was.
+The record check leaves this predicate as it
+is: its taken-key pass treats a blank component as incomplete and looks nothing
+up — a `Stringable` component that prints blank included, since it reads
 blankness through support's `blank()` there as everywhere else in the reader,
 and an identifier association only while it is `null`, as everywhere else too:
 its target is an entity, never a printed key component, so one whose
@@ -467,9 +463,9 @@ One residual, recorded rather than closed: a **global** `prePersist` listener on
 the event manager can assign a composite half too, and no class-level mapping
 shows it, so a record relying on one is refused here. The three short-circuits
 cover everything the class itself declares; covering the global case would need an
-opt-out nothing has asked for. Since M7 · 7 the residual reaches `Select`'s
+opt-out nothing has asked for. The residual reaches `Select`'s
 `createOption` default and the `Repeater`, and `ReplicateAction` asks the same
-predicate before `persist()`; M7 · 11 executed the `Select` arm, and a created
+predicate before `persist()`; the `Select` arm is executed, and a created
 option whose key a global listener would fill is refused by name. Reading
 `EventManager::hasListeners(Events::prePersist)` as a fourth short-circuit is not
 the way out: it answers for every listener on every class, so one timestamping
@@ -493,21 +489,19 @@ refuses such a record by the same message, detached before anything is flushed.
 The `Repeater` has no such moment — it never persists an item itself; the owner's
 cascade inserts it at the application's flush — so for such a class the blank
 half no component maps reaches the table, recorded in
-[repeater.md](../forms/repeater.md#a-new-item-whose-identifier-is-incomplete-is-refused-before-the-save-returns)
-and on [the roadmap's ledger](../roadmap.md#m7--composite-identifiers).
+[repeater.md](../forms/repeater.md#a-new-item-whose-identifier-is-incomplete-is-refused-before-the-save-returns).
 
 Four callers, all refusing **before anything is flushed**: `Select`'s
 `createOptionUsing` default, which asks before `persist()`, `Repeater`'s
 relationship save, which refuses after the collection write and before the item-key
 map is re-read, `ReplicateAction::replicateRecord()`, which asks after
-`beforeReplicaSaved()` and before `persist()`, and, since
-[M7 · 11](../roadmap.md#m7--composite-identifiers), a singular relationship's
+`beforeReplicaSaved()` and before `persist()`, and a singular relationship's
 `saveStateToRelationship()`, which asks of a related record it constructed once
 that record is written onto its owner
 ([entangles-state-with-singular-relationship.md](entangles-state-with-singular-relationship.md)).
 All four name the fields that would fix it. None is validation:
 a taken key, a changed key half and two new records claiming one key are the
-record check's since [M7 · 6](../roadmap.md#m7--composite-identifiers)
+record check's
 ([changed](#a-changed-identifier-is-put-back-and-refused-and-costs-no-statement),
 [taken](#a-taken-identifier-is-looked-up-once-per-new-record-after-the-records-own-constraints-pass))
 — and none of the four restores the
@@ -549,8 +543,7 @@ derived-identity child of an owner created in the same flush. `RecordKey::find()
 reads it as null too, but Doctrine defers the child's key to the owner's insert,
 so refusing it would refuse a working create. That exemption holds only while no
 scalar identifier field is blank: a blank string half beside a pending owner
-answers `true`, since the flush would write it as `''`. Until M7 · 7's review the
-seams let that half through.
+answers `true`, since the flush would write it as `''`.
 
 Pinned by
 [`AssociationReaderBlankIdentifierTest`](../../../packages/schemas/tests/Unit/State/AssociationReaderBlankIdentifierTest.php).
@@ -573,16 +566,15 @@ identifier and for a single scalar one, and a target whose identifier is
 generated is never blank here. It reads the record's fields rather than
 [`hasIncompleteAssignedIdentifier()`](#an-incomplete-assigned-identifier-is-the-question-the-create-paths-ask),
 so a `prePersist` callback or entity listener the class declares changes
-nothing: a key field the form maps is the user's to fill. Until M7 · 7's review it
-asked that predicate first, whose short-circuits exempt such a class, and fell
-back to the taken-key rule's field when no candidate matched; the fallback went
-with the gate, since an empty list now means nothing is blank. Pinned by
+nothing: a key field the form maps is the user's to fill. It does not ask that
+predicate first, whose short-circuits would exempt such a class, and it falls
+back to no other field when no candidate matches, since an empty list means
+nothing is blank. Pinned by
 [`HasSchemasIdentifierGuardTest`](../../../packages/schemas/tests/Integration/Concerns/HasSchemasIdentifierGuardTest.php).
 
 ### A changed identifier is put back and refused, and costs no statement
 
-`revertIdentifierChanges(object $record): array` is the changed-key rule
-[M7 · 6](../roadmap.md#m7--composite-identifiers) added — `@internal`, and
+`revertIdentifierChanges(object $record): array` is the changed-key rule — `@internal`, and
 called from two places: schemas' record check, first of the
 [four validator calls](can-be-validated.md#record-sourced-constraints-are-validated-on-the-mapped-object)
 `getData()` ends in, and tables' editable-cell write, which runs it alone
@@ -618,7 +610,7 @@ holds no original value for throws a `LogicException` by name. The restore is
 load-bearing rather than tidy: without it a flush later in the same request
 writes the new key after all, and a table's re-render loses the cell's error or
 collapses two rows onto one DOM id. It runs no statement; the walk costs about
-3 µs a loaded managed record per save, measured while the epic was planned — an
+3 µs a loaded managed record per save, measured when the rule was designed — an
 unchanged save of a record holding 5 000 loaded children went from 0.02 ms to
 16 ms. Its limit is the walk's: a key written into a related record **nobody
 loaded** is not seen, and is Doctrine's to drop — it writes the raw identifier,
@@ -633,7 +625,7 @@ and collection, and the named `LogicException`.
 ### A taken identifier is looked up once per new record, after the record's own constraints pass
 
 `findTakenIdentifiers(object $record): array` is the taken-key rule, `@internal`
-— the record check's, and since M7 · 9 `ReplicateAction`'s on its arm without a
+— the record check's, and `ReplicateAction`'s on its arm without a
 schema, which asks only whether it answers anything — and of the same shape,
 answering *"This value is already used."* — `UniqueEntity`'s
 default text, from symfony/validator's own `validators` catalogue, so it is
@@ -672,10 +664,9 @@ own path. So a `(host, path)` key typed in both halves is refused under both, a
 form typing only the host under the host, an `ArticleTranslation(article,
 locale)` under **Locale** on a create page and in a relation manager's modal
 alike, and a join entity created from its festival's repeater under the band
-rather than the festival. Until [M7 · 10](../roadmap.md#m7--composite-identifiers)
-the reader answered the first such field alone, M7 · 6's ruling, so the second
-half of a scalar pair — the one a user may well have typed wrong — carried no
-mark. The message is still Symfony's own, translated in its 57 catalogues, so a
+rather than the festival. Answering the first such field alone would leave the
+second half of a scalar pair — the one a user may well have typed wrong — with
+no mark. The message is still Symfony's own, translated in its 57 catalogues, so a
 copy under each half adds no string; a field label in it would have needed one.
 
 Where it runs is half of what it is. The record check calls it **only when** the
@@ -688,8 +679,10 @@ PostgreSQL's own `22P02`, as the base's `INSERT` did — and an application
 does not run at all on a schema that
 [switches the key rules off](can-be-validated.md#the-key-rules-switch-off-per-schema-never-the-changed-key-one). The
 cost is one primary-key `SELECT` per new assigned-key record, none when the
-holder is managed, none for a generated id — and, for a save adding many new
-items, one each; batching them is [Beyond](../roadmap.md#beyond).
+holder is managed, none for a generated id — so a save adding 200 assigned-key
+repeater items runs 200. Batching it per class through
+[`IdentifierConstraint::in()`](record-key.md#the-operations-and-their-dql) is the
+known remedy, and is not built for a cost nobody has met.
 
 Pinned by
 [`AssociationReaderTakenIdentifierTest`](../../../packages/schemas/tests/Unit/State/AssociationReaderTakenIdentifierTest.php):
@@ -769,18 +762,17 @@ Six limits, recorded rather than closed:
   where the insert then writes a second row differing from the first only in
   case. No code path of ours differs: the probe binds the value and takes the
   database's equality, which on PostgreSQL is the one its primary key enforces
-  anyway. Executed on both platforms while the epic was reviewed, and unpinned.
-- **MariaDB** is unexecuted. MySQL 8 ran the rules in the 2026-09-24 validation
-  and in M7 · 7's review; the suites run them on SQLite and the demo on
+  anyway. Executed on both platforms, and unpinned.
+- **MariaDB** is unexecuted. The suites run the rules on SQLite, MySQL 8 and
   PostgreSQL 18.
 
-**A Doctrine SQL filter no longer hides the holder** (M7 · 7). A primary key is
+**A Doctrine SQL filter does not hide the holder.** A primary key is
 unique whatever a filter shows, so the probe's `find()` runs with every enabled
 filter suspended, and restores them in a `finally`.
 
-Before this, a soft-deleted or other-tenant row holding the key read as free,
-and the flush met the primary key: a `UniqueConstraintViolationException` and a
-closed entity manager. That was executed on PostgreSQL 18 and MySQL 8, for
+Without the suspension, a soft-deleted or other-tenant row holding the key reads
+as free, and the flush meets the primary key: a `UniqueConstraintViolationException`
+and a closed entity manager. That was executed on PostgreSQL 18 and MySQL 8, for
 single and composite keys alike.
 
 The price is that a holder the filters hid is loaded into the identity map, so a
@@ -1055,10 +1047,9 @@ scope over a bare select, and the refusal leaving the builder untouched.
 
 ### An owner of any width is scoped through its own collection rather than through a mapped-by path
 
-An owner keyed by several fields takes the shape the many-to-many arm has taken
-for **every** owner since M7 · 4, when its `IN (SELECT …)` subselect — the form
-M4 · 8 introduced `Table::relationship()` with — became a correlated `EXISTS`
-over the owner's own association. It is now on both arms of both queries:
+An owner keyed by several fields takes the shape the many-to-many arm takes for
+**every** owner — a correlated `EXISTS` over the owner's own association rather
+than an `IN (SELECT …)` subselect — on both arms of both queries:
 
 ```
 SELECT record FROM <Target> record WHERE EXISTS (
@@ -1085,7 +1076,7 @@ moves four pinned assertions and puts `sy_owner`/`sy_related` on every
 one-to-many query in the toolkit, for rows that do not change.
 
 **The owner scope is one `equals()` on the subselect's alias, and that is the
-epic's whole new surface.** `IdentifierConstraint::equals($query, 'sy_owner',
+whole surface a composite owner adds.** `IdentifierConstraint::equals($query, 'sy_owner',
 $ownerClass, $this->getRecordKey($owner), 'sylament_relationship_owner')` — the
 owner handed over as the **key** it mints rather than as values, so
 [the codec](record-key.md#owner-scoping-was-reserved-and-turned-out-not-to-be-needed)
@@ -1096,9 +1087,8 @@ gained nothing at all. A `null` out of `equals()` **throws**:
 Dropping the scope instead would list every record that has *any* owner, which is
 the one failure this seam must not have; and the shape that reaches it is the
 one the codec records for a DBAL type that can neither read back nor take back
-what it prints, so the message names the cause rather than the width. Since
-[M7 · 5b](../roadmap.md#m7--composite-identifiers) a type that refuses its
-printed form on read only is not that shape: its key decodes
+what it prints, so the message names the cause rather than the width. A type
+that refuses its printed form on read only is not that shape: its key decodes
 [through the type's writer](record-key.md#a-type-that-refuses-its-printed-form-on-read-only-decodes-it-through-its-own-writer),
 and an owner with such a half — `Pallet` — scopes both queries on both arms,
 while `Vault`, whose half refuses it both ways, still throws before anything is
@@ -1121,6 +1111,16 @@ defines 2 parameters and you bound 3"*. What the guard that used to stand here
 refused is gone with it: a composite owner was refused by name because Doctrine
 will not bind such a record as a query parameter, and nothing binds one now.
 
+The scope stays inside the `WHERE` for a further reason, and it binds any later
+re-shaping. A custom bulk action's `$selectedRecordsQuery` is the table's query,
+and a closure calling `->delete()` or `->update()` on it is supported: Doctrine's
+`QueryBuilder` builds a bulk `DELETE` or `UPDATE` from the `FROM`, `SET` and
+`WHERE` parts alone and drops every join, so the correlated `EXISTS` survives the
+conversion unchanged. A scope that narrowed by **joining** the owner would not
+survive it: a predicate carried in the join's `WITH` is dropped silently, and
+one in the `WHERE` over the joined alias is a parse error, on relation-scoped
+tables alone.
+
 ### A single-identifier owner binds its identifier value, typed by the field's own DBAL type
 
 The three single-identifier DQL texts did not move, and neither did any driver
@@ -1128,9 +1128,8 @@ statement's text or parameter value for a built-in type without SQL-side
 conversion; the binding type now follows the field's DBAL type — `bigint` binds
 as a string, as Doctrine's own `BigIntType` does. One thing did: the parameter is
 the owner's identifier **value** under that value's DBAL type, rather than the
-owner entity. M7 · 5 took that for a plain **field** mapping, and
-[M7 · 5b](../roadmap.md#m7--composite-identifiers) for a single **derived**
-identity too, in one arm for both: the value is
+owner entity, for a plain **field** mapping and for a single **derived**
+identity alike, in one arm for both: the value is
 `RecordKey::values($entityManager, $owner, $ownerClass)[0]` — the codec's own
 walk, `@internal`, which reduces an identifier association to its target's value
 at any depth — and the type is `IdentifierFields::types[0]`, the **terminal**
@@ -1138,7 +1137,7 @@ field's, resolved through the association exactly as the decode resolves it. So
 an owner keyed on a `Post` binds the integer `1` under `integer` where it bound
 the entity, one keyed on a `Listing` that listing's `Sku` under `sku`, and one
 keyed on a raw-bytes `Crate` its `Uuid` under `binary_uuid`. `getRecordKey()`
-still runs first, as the gate it was: it carries M7 · 1's refusals, so an owner
+still runs first, as the gate it was: it carries the codec's refusals, so an owner
 with no identifier yet, or one whose target's identifier is blank or
 unprintable, is refused before anything is bound — and the `?? throw` behind it
 is there for the type system alone. The bind is also what makes this class the
@@ -1164,10 +1163,10 @@ a Uuid-keyed owner there — **executed** against a bridge-shaped copy of that
 type: the entity bind answered nothing on either arm of either query, and the
 typed bind answers the right rows. PostgreSQL's native `uuid` is unaffected.
 
-The derived arm was the same defect one hop deeper, and M7 · 5 recorded it as a
-residue because converting there means reaching into another class's
-identifier. That is exactly what the codec already does for every identifier
-association, so M7 · 5b's bind asks the codec rather than doing it itself.
+The derived arm was the same defect one hop deeper. Converting there means
+reaching into another class's identifier, which is exactly what the codec
+already does for every identifier association, so the bind asks the codec rather
+than doing it itself.
 Executed on SQLite and PostgreSQL 18.4 before the change: onto a converting
 target the entity bind scoped by the printed form, wrong rows in silence, and
 onto a raw-bytes target it related nothing and offered every record as a
@@ -1195,7 +1194,7 @@ the record's own adder and remover per element — so a domain adder with logic 
 it still runs, and the collection instance survives for Doctrine to diff. The
 contract that buys is the one forms already states: a collection-valued
 association needs an adder and a remover, a to-one a setter, or Symfony names
-what is missing. Since M7 · 10 a to-one with no setter follows the accessor's leaf
+what is missing. A to-one with no setter follows the accessor's leaf
 rule instead: a readable property that already holds the record written (by
 identity) is left alone, and one holding another record, or none yet, is refused
 by name with a `LogicException`. Symfony's own refusal remains only for a property
@@ -1237,8 +1236,7 @@ record the caller was writing, with every join row it had.
 `assertRelationshipAcceptsDetach()` returns for a many-to-many before it reads
 the flag at all, and the flag it would read is the one on the side the caller
 named, which is not the side that deletes; its first refusal is the analogous
-**one-to-many**, refused by name. So the refusal sits where
-[M7 · 5b](../roadmap.md#m7--composite-identifiers) opened a route into it: forms'
+**one-to-many**, refused by name. So the refusal sits on the one route into it: forms'
 [inverse-side save](../forms/select.md#an-inverse-side-many-to-many-is-saved-through-the-owning-side-and-still-written-on-its-own)
 computes its removals first and throws when the owning side deletes orphans.
 Neither verb moved for it.
@@ -1247,7 +1245,7 @@ None of this half reads the owner's identity, and that is a property of the code
 rather than a claim about it: `attach()`, `detach()`, `describeRelationship()`
 and both assertion members mint no key, bind no parameter and build no query, so
 they round-trip under every owner flavour, on both arms and from either side, and
-did so before the query half could. M7 · 5 pinned them rather than editing them —
+did so before the query half could. They are pinned rather than edited —
 the tests are the record that a later sweep must not route these four through the
 reader's query to "make them composite-aware".
 
@@ -1308,10 +1306,9 @@ them admits a null — and deliberately `true` for every other shape, since a
 collection and an inverse side have no column of their own to be null and the
 flag reads as "nothing here forbids a null" rather than as a claim about a column
 that does not exist. Only a to-one onto a composite class has more than one such
-column, so reading them all is no single-identifier change; until
-[M7 · 5](../roadmap.md#m7--composite-identifiers) only `joinColumns[0]` was read,
-and a foreign key whose **second** column was `nullable: false` passed
-`assertRelationshipAcceptsDetach()` and then died at flush — a
+column, so reading them all is no single-identifier change. Reading only
+`joinColumns[0]` would let a foreign key whose **second** column is
+`nullable: false` pass `assertRelationshipAcceptsDetach()` and then die at flush — a
 `NotNullConstraintViolationException` that reaches the user two different ways,
 neither of them the named refusal the mapping deserved:
 [`DissociateAction`](../actions/dissociate-action.md#dissociating-is-refused-where-the-mapping-forbids-it)
@@ -1348,7 +1345,7 @@ now, composed by `BelongsToRecord` unchanged. It keeps the `Components/Concerns/
 namespace under the repo's placement rule: a trait a component uses at all lives
 there, whether or not something else uses it too.
 
-Since [M7 · 6](../roadmap.md#m7--composite-identifiers) the root
+The root
 [`Schema`](schema.md) composes it as well, beside `CanAccessProperties`, so the
 host's record check reaches the reader through the schema it validates —
 `$schema->getAssociationReader()` — and no host contract changed for it. A schema
@@ -1388,19 +1385,20 @@ the paginator's `COUNT` 17 ms, the unbounded read planning as a
 `Parallel Hash Semi Join` over a sequential scan instead. That is an admin
 panel's page, not a hot path, and it is accepted on those terms.
 
-The faster shape is recorded so a later epic can take it against a real profile
+The faster shape is recorded so a later change can take it against a real profile
 rather than rediscover it, and so is what it cannot do. **A′** is
 `IDENTITY(record.<mappedBy>, '<f0>') = :p0 AND IDENTITY(…, '<f1>') = :p1` — no
-join, no subselect, no alias — and two things the roadmap's sketch of it did not
-say are what keep it out. Its candidate arm cannot be written the way today's
+join, no subselect, no alias — and two things a first sketch of it missed are
+what keep it out. Its candidate arm cannot be written the way today's
 one-to-many arm is:
 `record.<mappedBy> IS NULL OR …` is *"A single-valued association path expression
 to an entity with a composite primary key is not supported"*, so the null arm has
 to be spelled per field as well. And it cannot reach an **association**-valued
 key half at all — `IDENTITY(record.<mappedBy>, '<assocHalf>')` is
 *"Undefined reference field mapping"* — so it covers an all-scalar owner only,
-which would mean a second candidate form, a flavour branch the milestone's third
-carried decision forbids, and a new codec operation, for 0.03 ms on the owner
+which would mean a second candidate form, a flavour branch
+[no consumer ever takes](record-key.md#doctrines-identifierflattener-is-not-adopted-because-it-misreads-a-chained-derived-identity),
+and a new codec operation, for 0.03 ms on the owner
 anybody actually has. **B**, a join from the target to the owner, is not slower
 but **wrong**: it returns the wrong rows on every many-to-many candidate cell and
 flips the cardinality the paginator reads.
@@ -1416,7 +1414,7 @@ refuses it. Neither is reachable from anything the toolkit ships.
 
 Two platforms were never executed. PostgreSQL 18.4 and SQLite were; MySQL and
 MariaDB are historically weak on correlated `EXISTS`, and while the many-to-many
-arm has had this shape for every owner since M7 · 4 — so the toolkit already
+arm has this shape for every owner — so the toolkit already
 depends on the platform's semi-join handling — the one-to-many arm under a
 composite owner joins that dependency.
 
@@ -1432,6 +1430,29 @@ no query of ours involved. So there is no refusal of ours — the failure is lou
 immediate and Doctrine's own — and no fixture anywhere carries such a
 back-reference, because one poisons every cold hydration of the child class
 rather than only the case that declares it.
+
+### A JOINED leaf whose root declares the mapped-by cannot be scoped to an owner keyed by several fields
+
+Under an owner keyed by several fields the scope is the correlated `EXISTS`, and
+its `JOIN sy_owner.<collection>` over a **JOINED leaf** whose mapped-by the
+**root** declares puts the root's foreign-key columns on the leaf's alias —
+`INNER JOIN Toaster t3_ ON d2_.region = t3_.depot_region`, a column the leaf's
+table does not have — so the query fails on read before anything else runs.
+Plain DQL reproduces it with no code of ours involved, so it is Doctrine's and
+recorded rather than refused. A single-identifier owner is unaffected, since its
+scope is the mapped-by equality and joins nothing, which is why tables' `Depot`,
+the owner of the `Toaster` leaf, is keyed by one field.
+
+### A quoted single join column breaks the mapped-by scope of a single-identifier owner
+
+`SqlWalker::walkPathExpression()` writes a single-column to-one's join column
+unquoted even where the mapping quotes it, so a reserved-word column is a syntax
+error (`… WHERE o0_.select = ?`) and a relation-scoped query under a
+**single-identifier** owner with such a mapped-by fails on read. An owner keyed
+by several fields scopes through the correlated `EXISTS`, whose join the walker
+does quote. Doctrine's, recorded rather than worked around, and the reason tables'
+`Purchase`, whose join columns are quoted reserved words, hangs off `Bazaar`, an
+owner keyed by two fields.
 
 ### No to-many relation verb moves a primary key
 
@@ -1491,11 +1512,10 @@ this section before relying on it. A **to-one** relation-backed write is not
 refused here: `Select::make('post')->relationship()` on an *edit* form of a
 derived-identity record — and the same field inside an existing join-entity
 repeater item, which is the field this trail recommends for join entities —
-writes the picked reference onto the identifier half, and until
-[M7 · 6](../roadmap.md#m7--composite-identifiers) Doctrine emitted M1's `UPDATE`
-verbatim, closing the `EntityManager` when the new key was taken. The guard
-cannot be the one above, because a **create** form has to keep writing that
-field; it is a key-**change** guard, and M7 · 6 added it as
+writes the picked reference onto the identifier half, and unguarded, Doctrine
+would emit the key-moving `UPDATE` above verbatim, closing the `EntityManager`
+when the new key is taken. The guard cannot be the one above, because a
+**create** form has to keep writing that field; it is a key-**change** guard,
 [a pass of the record check's own](#a-changed-identifier-is-put-back-and-refused-and-costs-no-statement),
 which skips a record the unit of work has not keyed — what a create form writes —
 and puts a moved reference back under the field.

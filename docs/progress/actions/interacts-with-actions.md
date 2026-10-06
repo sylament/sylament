@@ -61,7 +61,7 @@ note in [Semantics](#semantics).
 | [`getDefaultActionSuccessRedirectUrl(Action $action)`](../../../packages/actions/src/Contracts/InteractsWithActions.php) / [`getDefaultActionFailureRedirectUrl(Action $action)`](../../../packages/actions/src/Contracts/InteractsWithActions.php) | [`Contracts/HasActions.php`](../../../vendor/filament/actions/src/Contracts/HasActions.php) | done | — | [semantics](#a-host-answering-the-url-hook-must-discriminate-by-action) |
 | [`getDefaultActionSchemaResolver(Action $action)`](../../../packages/actions/src/Contracts/InteractsWithActions.php) / [`getDefaultActionRecord(Action $action)`](../../../packages/actions/src/Contracts/InteractsWithActions.php) / [`getDefaultActionRecordTitle(Action $action)`](../../../packages/actions/src/Contracts/InteractsWithActions.php) / [`getDefaultActionRecordClass(Action $action)`](../../../packages/actions/src/Contracts/InteractsWithActions.php) / [`getDefaultActionRecordLabel(Action $action)`](../../../packages/actions/src/Contracts/InteractsWithActions.php) | [`Contracts/HasActions.php`](../../../vendor/filament/actions/src/Contracts/HasActions.php) | done | — | [detail](#the-panel-level-default-hooks-are-on-the-contract-the-authorization-pair-deferred) · [semantics](#a-host-answering-the-url-hook-must-discriminate-by-action) |
 | [`getDefaultActionRelationship(Action $action)`](../../../packages/actions/src/Contracts/InteractsWithActions.php) | [`Contracts/HasActions.php`](../../../vendor/filament/actions/src/Contracts/HasActions.php) | done | — | [detail](#the-panel-level-default-hooks-are-on-the-contract-the-authorization-pair-deferred) · [semantics](#a-host-answering-the-url-hook-must-discriminate-by-action) |
-| The two remaining `getDefaultAction*` hooks (declared by Filament, dropped here) | [`Contracts/HasActions.php`](../../../vendor/filament/actions/src/Contracts/HasActions.php) | blocked | the authorization epic | [detail](#the-panel-level-default-hooks-are-on-the-contract-the-authorization-pair-deferred) |
+| The two remaining `getDefaultAction*` hooks (declared by Filament, dropped here) | [`Contracts/HasActions.php`](../../../vendor/filament/actions/src/Contracts/HasActions.php) | blocked | `CanBeAuthorized` | [detail](#the-panel-level-default-hooks-are-on-the-contract-the-authorization-pair-deferred) |
 
 ## Details
 
@@ -86,9 +86,9 @@ it returns only if a second caller ever wants it. `mergeMountedActionArguments()
 is a real gap rather than a naming one: `callMountedAction()` merges the caller's
 arguments transiently and restores them afterwards, so nothing writes them back
 into the persisted descriptor, which is what a form resubmit at the same frame
-would need. M1 · 1's
+would need. The
 [keep-modal-open validation loop](has-actions.md#callmountedaction-drops-rate-limiting-and-authorization)
-resubmits exactly such a frame and landed without it: the client re-sends its
+resubmits exactly such a frame and works without it: the client re-sends its
 `#[LiveArg]` arguments on every submit, so the persisted copy is not what the
 retry reads. **Next step:** it lands with the first caller that resubmits a
 frame *without* re-sending the arguments it was mounted with.
@@ -123,9 +123,9 @@ five landed with the
 [record chain on `Action`](action.md#the-record-chain-reaches-the-schema-the-component-and-the-host)
 that reads them; the schema resolver's reader is
 [`HasSchema::getSchema()`](has-schema.md)'s host fallback rather than the chain,
-and it landed later in the same epic — the one place the recipe's
-"land it with its reader" was stretched to "land it with its epic", so that the
-contract widened exactly once.
+and the hook was declared before that reader existed — the one place the
+recipe's "land it with its reader" was stretched, so that the contract widened
+exactly once.
 Two of the cluster carry `renames.md` rows: `getDefaultActionModel` and
 `getDefaultActionModelLabel` speak the
 [record vocabulary](../renames.md#the-model-vocabulary-collapses-onto-record)
@@ -138,8 +138,8 @@ and typed by
 which is where Filament's `Relation` return type lands under Doctrine.
 
 The two that stay out are the ones with no consumer on this side: the
-authorization hooks, which wait on the parked authorization epic alongside
-`CanBeAuthorized`.
+authorization hooks, which wait on `CanBeAuthorized`, parked like the rest of
+authorization.
 
 **Next step:** each of the two lands with the `Action`-side concern that reads
 it, the way the nine before them did.
@@ -203,7 +203,7 @@ and decides open state on the client (see
 [declarative choreography](has-actions.md#the-stack-is-choreographed-declaratively-not-by-client-events)) —
 so they are promoted as Sylament-only host obligations, not ported declarations.
 
-The forms-in-modals epic added three more under the same rule.
+Three more are promoted under the same rule.
 `getMountedActionSchema(?int, ?Action): ?Schema` and
 `mountedActionHasSchema(?Action): bool` are what the modal renderer reads to
 decide whether a mounted action has a schema slot and to render it; like
@@ -218,15 +218,14 @@ Livewire property directly there, which Sylament cannot — the
 [sibling-bag divergence](has-actions.md#per-mount-form-state-lives-in-a-sibling-bag-not-in-the-stack-descriptor)
 explains why, and why the name is singular.
 
-The nesting-actions epic restored the full signatures the single-slot MVP had
-reduced, so no promoted method is a narrowing any more:
+The promoted methods keep Filament's full signatures, so none is a narrowing:
 `callMountedAction(array $arguments = [])`,
 `unmountAction(bool|string|null $cancelParentActions = null)`, and
 `getMountedAction(?int $actionNestingIndex = null)` all match Filament's trait
 version parameter for parameter.
 
 The contract stays **deliberately wider** than Filament's, and that is the
-standing rule rather than an accident of this epic: a method belongs here as
+standing rule rather than an accident: a method belongs here as
 soon as a shipped Sylament template calls it on an abstractly-typed host. The
 line is drawn at exactly that — `replaceMountedAction()` is a real ported trait
 method, but only PHP calls it (an action's own callback handing off to another

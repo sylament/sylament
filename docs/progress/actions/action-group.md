@@ -52,7 +52,7 @@ Reference — the Filament source this is diffed against:
 ## Surface
 
 Every point of this component and its own folded concern. _Blocked by_ names
-a later task in this same epic or an unbuilt package. _Detail_ links the
+what has to land first, in this package or an unbuilt one. _Detail_ links the
 write-up in [Details](#details) (deleted once the row is **done**), the
 permanent faithful-but-subtle note in [Semantics](#semantics), and/or the
 permanent note in [Divergences](#divergences).
@@ -176,11 +176,11 @@ badge and **button-group** have none, which is why
 The port's inline-row shape is `dropdown(false)`, which Filament also supports
 and which is the closer analogue to `fi-btn-group` in practice.
 
-What is left is the trigger alone: the CSS half landed at M3 · 1, when
+What is left is the trigger alone: the CSS half exists, because
 [`ToggleButtons::grouped()`](../forms/toggle-buttons.md#the-grouped-labels-must-stay-direct-children-of-the-group)
-became the toolkit's first button group and support's
-[`button.css`](../support/button.md) gained the `.sy-btn-group` rule this trigger
-would have needed too. So a `BUTTON_GROUP_TEMPLATE` now has a stylesheet waiting
+is a button group and support's
+[`button.css`](../support/button.md) carries the `.sy-btn-group` rule this trigger
+would need too. So a `BUTTON_GROUP_TEMPLATE` now has a stylesheet waiting
 for it and adds no CSS of its own. **Next step:** port the remaining
 `CanGenerate*Html` trigger shapes; adding `BUTTON_GROUP_TEMPLATE` is the point at
 which the `isButtonGroup()` predicate becomes portable and the stand-in can be

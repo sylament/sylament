@@ -60,7 +60,7 @@ file, a link to that file.
 | [`uploadSchemaComponentFile()`](../../../packages/schemas/src/Concerns/HasSchemas.php) | — | done | — | [interacts-with-schemas.md](interacts-with-schemas.md#uploadschemacomponentfile-carries-the-bytes-beside-the-seam) |
 | `partiallyRenderSchemaComponent()` | [`InteractsWithSchemas::callSchemaComponentMethod()`](../../../vendor/filament/schemas/src/Concerns/InteractsWithSchemas.php) | skipped | — | [diverges](#partiallyrenderschemacomponent-has-no-livecomponent-twin) |
 | [`ComponentToolsTrait` composition (`dispatchBrowserEvent()` and siblings)](../../../packages/schemas/src/Concerns/HasSchemas.php) | — | done | — | [diverges](#hasschemas-composes-componenttoolstrait-alongside-hasactions) |
-| [Validation integration (`validateSchema`, error bag, sticky re-validation, and the record tail `validateSchemaRecord()` with the three key rules it runs — the changed and taken ones since M7 · 6, the blank one since M7 · 7 — and, since M7 · 10, the validateRecordKey() switch over the last two)](../../../packages/schemas/src/Concerns/HasSchemas.php) | [`InteractsWithSchemas`](../../../vendor/filament/schemas/src/Concerns/InteractsWithSchemas.php) | in progress | — | [can-be-validated.md](can-be-validated.md) · [the order](can-be-validated.md#record-sourced-constraints-are-validated-on-the-mapped-object) |
+| [Validation integration (`validateSchema`, error bag, sticky re-validation, and the record tail `validateSchemaRecord()` with the three key rules it runs — changed, taken and blank — and the validateRecordKey() switch over the last two)](../../../packages/schemas/src/Concerns/HasSchemas.php) | [`InteractsWithSchemas`](../../../vendor/filament/schemas/src/Concerns/InteractsWithSchemas.php) | in progress | — | [can-be-validated.md](can-be-validated.md) · [the order](can-be-validated.md#record-sourced-constraints-are-validated-on-the-mapped-object) |
 | [`form-validation-error` browser event on a failing submit-path validation](../../../packages/schemas/src/Concerns/HasSchemas.php) | [`InteractsWithSchemas::validate()`](../../../vendor/filament/schemas/src/Concerns/InteractsWithSchemas.php) | done | — | [can-be-validated.md](can-be-validated.md#the-throwing-branch-announces-form-validation-error-carrying-the-schema-identity) |
 | Livewire file-upload integration (`use WithFileUploads`, `componentFileAttachments`, `isFileUploadForSchemaComponent`, `getSchemaComponentForFileUpload`) | [`InteractsWithSchemas`](../../../vendor/filament/schemas/src/Concerns/InteractsWithSchemas.php) | skipped | — | [interacts-with-schemas.md](interacts-with-schemas.md#uploadschemacomponentfile-carries-the-bytes-beside-the-seam) |
 | `ResolvesDynamicLivewireProperties` (used trait) | [`InteractsWithSchemas`](../../../vendor/filament/schemas/src/Concerns/InteractsWithSchemas.php) | blocked | `ResolvesDynamicLivewireProperties` port | [detail](#the-dynamic-property-and-testing-integrations-arrive-with-their-own-concerns) |
@@ -125,8 +125,8 @@ properties on a `ResolvesDynamicLivewireProperties` port, and the testing helper
 on `TestsSchemas`. The port wires them in through
 those concerns rather than re-inlining them here, so the trait stays a thin
 schema host. Nothing consumes them until a panel/live host lands. Filament's
-file-upload members were the third of this group until M3 · 7 landed
-`uploadSchemaComponentFile()`; they are now **skipped** rather than blocked,
+file-upload members, once the third of this group, are **skipped** rather than
+blocked now that `uploadSchemaComponentFile()` carries the bytes,
 because `use WithFileUploads` / `componentFileAttachments` /
 `isFileUploadForSchemaComponent()` / `getSchemaComponentForFileUpload()` exist
 only to fence the four Livewire upload RPC endpoints, and this port opens no such

@@ -52,8 +52,7 @@ real `<form>`
 ([support/modal.md](../support/modal.md#the-form-wrapper-carries-live_action-not-wiresubmit)),
 and the browser's `submit` event only fires after native constraint validation
 passes — so an empty required field blocks the request client-side and the
-server-side pass never runs. Confirmed in a browser during the forms-in-modals
-epic: `valueMissing: true`, **zero** network requests, modal stays open. This is
+server-side pass never runs. Confirmed in a browser: `valueMissing: true`, **zero** network requests, modal stays open. This is
 parity, not a divergence — Filament emits native `required` too
 (`vendor/filament/forms/src/Components/TextInput.php:365`) and `wire:submit` has
 the same event ordering. The consequence to keep in mind: `markAsRequired()` on

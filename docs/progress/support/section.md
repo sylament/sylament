@@ -59,8 +59,8 @@ branch is never taken. `SectionRenderTest` only asserts the wiring is **absent**
 (`->not->toContain('reset-schema-component-state')`, line 469); the positive path
 has no render test. **Next step:** land it with the first live-component-state
 consumer that populates the two props, adding a render test that sets them and
-asserts the `resetState` action appears — or, if the epic reshapes the contract,
-drop the forward stub. See the [divergence](#the-live-component-state-reset-wiring-is-a-sylament-addition).
+asserts the `resetState` action appears — or, if live-component state reshapes the
+contract, drop the forward stub. See the [divergence](#the-live-component-state-reset-wiring-is-a-sylament-addition).
 
 ## Divergences
 
@@ -114,7 +114,7 @@ is no locale lookup. Revisit when the `support` translations
 
 The `liveComponentId` / `schemaKey` props and the
 `reset-schema-component-state@window → resetState` Stimulus action have no
-counterpart in Filament's section view — they are forward wiring for the
-live-component-state epic. The branch is currently unreachable (no caller sets
+counterpart in Filament's section view — they are forward wiring for a
+live-component-state consumer. The branch is currently unreachable (no caller sets
 the props) and untested on its positive path, which is why the row is **in
 progress** rather than done; see its [detail](#details).

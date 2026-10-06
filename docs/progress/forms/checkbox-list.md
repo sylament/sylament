@@ -17,7 +17,7 @@ this field first or exclusively —
 [`CanBeSearchable`](can-be-searchable.md),
 [`CanLimitItemsLength`](can-limit-items-length.md) and
 [`HasRelationship`](#the-to-many-relationship-arm-serves-this-field-unchanged) —
-the first two shared with [`Select`](select.md) since the searchable-select epic,
+the first two shared with [`Select`](select.md),
 each with a file of its own.
 
 It is the field where three port-wide seams meet for the first time. It is the
@@ -65,7 +65,7 @@ _Detail_ links a permanent note in [Semantics](#semantics) /
 | `bulkToggleable()` / `isBulkToggleable()` | [`Components/CheckboxList.php`](../../../vendor/filament/forms/src/Components/CheckboxList.php) | done | — | [diverges](#the-bulk-toggle-actions-render-but-never-dispatch) |
 | `getSelectAllAction()` / `selectAllAction()` / `getSelectAllActionName()` | [`Components/CheckboxList.php`](../../../vendor/filament/forms/src/Components/CheckboxList.php) | done | — | [diverges](#the-bulk-toggle-actions-render-but-never-dispatch) · [diverges](#the-bulk-toggle-labels-are-untranslated-literals) |
 | `getDeselectAllAction()` / `deselectAllAction()` / `getDeselectAllActionName()` | [`Components/CheckboxList.php`](../../../vendor/filament/forms/src/Components/CheckboxList.php) | done | — | [diverges](#the-bulk-toggle-actions-render-but-never-dispatch) · [diverges](#the-bulk-toggle-labels-are-untranslated-literals) |
-| `relationship()` / `getRelationshipName()` / `getRelationshipTitleAttribute()` — via [`HasRelationship`](../../../packages/forms/src/Components/Concerns/HasRelationship.php) | [`Components/CheckboxList.php`](../../../vendor/filament/forms/src/Components/CheckboxList.php) | done | — | [detail](#the-to-many-relationship-arm-serves-this-field-unchanged) · [diverges](#the-relationship-state-is-not-pruned-from-the-dehydrated-bag) |
+| `relationship()` / `getRelationshipName()` / `getRelationshipTitleAttribute()` — via [`HasRelationship`](../../../packages/forms/src/Components/Concerns/HasRelationship.php) | [`Components/CheckboxList.php`](../../../vendor/filament/forms/src/Components/CheckboxList.php) | done | — | [detail](#the-to-many-relationship-arm-serves-this-field-unchanged) · [diverges](#the-relationship-state-is-not-pruned-from-the-dehydrated-bag) · [diverges](#the-relationship-option-map-is-unordered) |
 | `getRelationship()` — the association the mapping declares | [`Components/CheckboxList.php`](../../../vendor/filament/forms/src/Components/CheckboxList.php) | done | — | [detail](#the-to-many-relationship-arm-serves-this-field-unchanged) |
 | `fillStateFromRelationship()` / `saveStateToRelationship()` — the load and save hooks | [`Components/CheckboxList.php`](../../../vendor/filament/forms/src/Components/CheckboxList.php) | done | — | [semantics](select.md#the-save-arm-writes-a-desired-list-not-attachdetach) |
 | `getOptionLabelFromRecordUsing()` / `hasOptionLabelFromRecordUsingCallback()` / `getOptionLabelFromRecord()` | [`Components/CheckboxList.php`](../../../vendor/filament/forms/src/Components/CheckboxList.php) | done | — | [detail](#the-two-record-shaped-closures-build-labels-and-descriptions-off-one-query) |
@@ -190,8 +190,8 @@ Composite children ride that inheritance whole, and the field needed no edit for
 them either: the option keys, the state read and the desired-list write are all
 the trait's, so a `CheckboxList` over a target keyed by two fields renders one
 checkbox per record key, round-trips the checked list, and writes through the
-same per-key reference the `multiple()` select does
-([M7 · 4](../roadmap.md#m7--composite-identifiers)). The one thing worth knowing
+same per-key reference the `multiple()` select does.
+The one thing worth knowing
 is the value spelling: a key of two or more fields always carries `~`, so it
 stays a string through `in_array()`, through Twig's `==` and as a PHP array key
 — [the grammar](../schemas/record-key.md#the-grammar) is what makes that a
@@ -584,6 +584,16 @@ takes it — the port-wide reading already recorded in
 [repeater.md](repeater.md#the-relationship-family-loses-its-caches-its-lifecycle-hooks-and-its-query-scope),
 verified for this field rather than assumed and pinned by a case in
 [`CheckboxListRelationshipTest`](../../../packages/forms/tests/Integration/Components/CheckboxListRelationshipTest.php).
+
+### The relationship option map is unordered
+
+Filament's `CheckboxList` orders its title-attribute options by that attribute
+when the scoped query carries no order; the port's reads
+[`HasRelationship`](../../../packages/forms/src/Components/Concerns/HasRelationship.php)'s
+map as the database returns it. `Select` orders its own two arms
+([select.md](select.md#the-relationship-search-arm-runs-a-like-per-column-over-the-scoped-option-query));
+this field does not, so a consumer that wants an order sets it in the
+`relationship(modifyQueryUsing:)` closure.
 
 ### The options grid is always applied, and the option containers are unkeyed
 

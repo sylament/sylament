@@ -72,12 +72,12 @@ ones, which have no rename to record because the Laravel side is simply absent.
 | --- | --- |
 | `app()`, facades, `resolve()` | constructor or `#[Required]` injection |
 | `data_get()` / `Arr::get()` against an object | `symfony/property-access` |
-| `__()` | Symfony translation |
+| `__()` | Symfony translation — deferred: an English literal at the call site until the [toolkit-wide i18n pass](i18n.md) lands |
 | `config()` | bundle configuration and injected parameters |
 
 The table is not exhaustive, and an unmapped case is a decision waiting to be
 made rather than a licence to reach for the Laravel shape. Validation was the
-open one, and M1 · 1 decided it: Filament emits Laravel rule strings, which have
+open one, and it is settled: Filament emits Laravel rule strings, which have
 no Symfony analogue, so
 [`rule()` and `rules()` became `constraint()` and `constraints()` over Symfony `Constraint` objects](../progress/forms/can-be-validated.md#rule-and-rules-become-constraint-and-constraints-over-symfony-constraint-objects).
 

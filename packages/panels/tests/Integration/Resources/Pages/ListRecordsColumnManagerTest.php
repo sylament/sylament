@@ -15,8 +15,8 @@ uses(InteractsWithLiveComponents::class);
 /*
  * The column manager and the per-column terms on a routed list page, where the
  * table is built by a resource rather than by a fixture host: the manager reads
- * and writes the panel session across two visits, and neither half of the epic
- * reaches the query string the page does bind.
+ * and writes the panel session across two visits, and neither the manager nor the terms
+ * reach the query string the page does bind.
  */
 
 /**

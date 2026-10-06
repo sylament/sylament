@@ -74,9 +74,9 @@ do.
 | `processParentNavigationItems()` — the `key` / `parentItem` / `childItems` nesting pass | same | todo | [`NavigationItem`'s nesting arm](README.md#navigationitem) | [detail](#three-v1-skips-item-nesting-collapsible-groups-and-badge-tooltips) |
 | Collapsible sub-navigation groups | the Alpine collapse key Filament namespaces per band | skipped | — | [detail](#three-v1-skips-item-nesting-collapsible-groups-and-badge-tooltips) |
 | `badgeTooltip` on a band item | `NavigationItem::badgeTooltip()` | skipped | — | [detail](#three-v1-skips-item-nesting-collapsible-groups-and-badge-tooltips) |
-| The `canAccess()` filter in `generateNavigationItems()` | the `$isResourcePage ? canAccess($parameters) : canAccess()` pair | todo | the authorization epic | [detail](#three-v1-skips-item-nesting-collapsible-groups-and-badge-tooltips) |
+| The `canAccess()` filter in `generateNavigationItems()` | the `$isResourcePage ? canAccess($parameters) : canAccess()` pair | todo | authorization | [detail](#three-v1-skips-item-nesting-collapsible-groups-and-badge-tooltips) |
 | The cluster arms — `getSubNavigation()`'s cluster branch, the position's cluster tier | same | skipped | — | [diverges](#the-cluster-arms-are-not-ported-so-the-resource-page-hard-override-is-moot) |
-| Render hooks around the band | `PanelsRenderHook::PAGE_SUB_NAVIGATION_*` | todo | M6 · 6 (render hooks) | — |
+| Render hooks around the band | `PanelsRenderHook::PAGE_SUB_NAVIGATION_*` | todo | render hooks | — |
 
 [`Unit/Pages/Concerns/HasSubNavigationTest`](../../../packages/panels/tests/Unit/Pages/Concerns/HasSubNavigationTest.php)
 covers the trait with no kernel: the empty default, all four rungs of the
@@ -134,7 +134,7 @@ pin the panel knob (literal and closure) and the resource tier.
 - **`canAccess()`** has no port anywhere yet, so `generateNavigationItems()`
   filters on `shouldRegisterNavigation()` alone: **a band lists every sibling
   page, whether or not the viewer may open it.** Same exposure as the sidebar and
-  the resource pages themselves; it closes with the authorization epic.
+  the resource pages themselves; it closes when authorization lands.
 
 ### An `EditRecord` in a band is labelled by its class name
 
@@ -148,9 +148,8 @@ band where Filament reads *Edit*, and carries no icon unless the page declares
 one. Declaring the two statics on the page is the whole workaround, and porting
 Filament's overrides (with the `view-record` pair beside them — `CreateRecord`
 declares neither, and `PanelsIconAlias` ships no `create-record` navigation-item
-constant to port) is what makes the Filament look the default. The gap existed before this
-epic and was invisible: nothing read those methods on a resource page until the
-band did.
+constant to port) is what makes the Filament look the default. The gap shows only in the band:
+nothing else reads those methods on a resource page.
 
 ## Semantics
 
@@ -174,9 +173,7 @@ and `usort` is stable.
 ### An empty band never resolves a panel
 
 The band is emitted **once**, by
-[the base page chrome](README.md#routing) every page template extends — it was
-five copies across five partials until M6 · 2 collapsed them, and the copies were
-byte-identical, which is why nothing about the band changed in that move. The
+[the base page chrome](README.md#routing) every page template extends. The
 chrome reads `this.getCachedSubNavigation` first and only asks for the
 **position** when that is non-empty:
 
@@ -309,7 +306,7 @@ page no resource registers contributes nothing, silently — which is what
 Filament's `hasPage()` gates do too.
 
 Two consequences worth naming. The sibling's **own** resource mints the URL, so a
-band may list pages of another resource. And this epic therefore routes *around*
+band may list pages of another resource. And the band therefore routes *around*
 the parked static-shape decision rather than forcing it: nothing new is public,
 and `getResourcePageName()` still has no port.
 
@@ -337,10 +334,10 @@ rather than one `SubNavigation` with `<Variant>.html.twig` files beside its
 index. That is not a preference: schemas'
 [`ComponentTemplateLocationTest`](../../../packages/schemas/tests/Architecture/ComponentTemplateLocationTest.php)
 admits only `components/<Name>/index.html.twig`, and variants only under
-`partials/` — so a variant file here would fail an architecture test in a package
-this epic does not touch. The rule and its enforcement now agree in the
-[root `CLAUDE.md`](../../../CLAUDE.md), whose template-layout paragraph claimed
-variants were legal under both halves.
+`partials/` — so a variant file here would fail an architecture test in another
+package. The rule and its enforcement agree in
+[`.claude/rules/twig.md`](../../../.claude/rules/twig.md) (*Variants only under
+`partials/`*).
 
 The dispatcher is where the `end` flag is read: each partial mounts the component
 **twice**, once before its content and once after with `:end="true"`, and the
@@ -369,7 +366,7 @@ the content the column layout already produces, so a rule would have nothing to
 say. The class ships because it is the hook a consumer styles a top band through,
 and because the three modifiers are one family.
 
-The neighbouring divergence updates with this epic:
+The neighbouring divergence narrows with the band:
 [the page's main container is a flex column](README.md#the-pages-main-container-is-a-flex-column-where-v5-gates-that-on-a-full-height-page)
 where vendor gates that on `.fi-page-has-sub-navigation`. The sub-navigation half
 of that gate is now live and behaves identically — the band renders beside the
@@ -381,7 +378,7 @@ the `fullHeight` half alone.
 Filament's `getSubNavigation()` returns a cluster's components when the page
 belongs to one, and its `Resources\Pages\Page` overrides the method back to `[]`
 so a resource page never picks up its cluster's band by accident. Clusters are
-Beyond, so the base hook is a plain `[]` and the resource-page override has
+not ported, so the base hook is a plain `[]` and the resource-page override has
 nothing to guard against — it is not ported either.
 [`InteractsWithRecord::getSubNavigation()`](interacts-with-record.md) is what
 fills the hook on a **record** page, bridging to the resource, which is Filament's

@@ -73,7 +73,7 @@ Filament traits not yet on the base —
 `CanPartiallyRender`, `CanPoll`,
 `HasEntryWrapper`, `HasFieldWrapper`, `HasInlineLabel`, `HasMaxWidth`,
 `HasMeta` — each of which has its own row in the
-[schemas README](README.md) and lands with its own epic. Next step: compose them
+[schemas README](README.md) and lands on its own. Next step: compose them
 as their concerns are audited; nothing here blocks the already-composed set.
 
 ### The by-name closure-dependency map is missing one key
@@ -92,8 +92,7 @@ landed with the repeater chrome and answers `getParentRepeaterItemIndex()`
 already; what is missing is the arm that injects that number into a closure under
 that name. Filament's `model` key is deliberately absent, not pending — see
 [the dropped parameter](belongs-to-record.md#the-model-closure-parameter-is-not-ported).
-Next step: add the `$parentRepeaterItemIndex` key to the by-name map — deferred
-past the repeater-chrome epic and owned by its sweep.
+Next step: add the `$parentRepeaterItemIndex` key to the by-name map.
 
 ### `getExtraTemplateData()` is not overridden
 
@@ -126,8 +125,7 @@ which walks the parent chain looking for the outermost container bound to the
 same record — `@internal` in Filament but wanted for parity. The getters it
 compares now exist ([`BelongsToRecord`](belongs-to-record.md) supplies
 `getRecordClass()`/`getRecord()`), so what it waits on is its consumer — and the
-[Doctrine relation layer](../roadmap.md#pulled-forward) shipped **without**
-becoming one. Filament's only callers are the relationship-entangling
+Doctrine relation layer is **not** one. Filament's only callers are the relationship-entangling
 components, where the method roots the walk that collects every component naming
 one relationship so the first of them fills and saves for all; the port
 [refuses that merge outright](entangles-state-with-singular-relationship.md#two-components-entangling-one-relationship-throw-rather-than-merge)
@@ -198,10 +196,10 @@ It stays in progress because whole method families are deliberately absent —
 relationship-derived and constant state, and partial-render/JS hooks (each a
 divergence below) — and because one ported method, `formatStateUsing()`, has no
 direct test. The `mutateStateForValidation` members are no longer among them:
-they shipped with M3 · 8 and carry a
+they are ported and carry a
 [semantics note](#the-mutatestateforvalidation-members-mutate-the-runners-copy-of-one-path)
 of their own. Next step: add a `formatStateUsing` test; port the absent families
-under their respective epics (the
+each with the capability it needs (the
 [relationship-derived state](#relationship-derived-and-constant-state-are-dropped-from-the-component-trait)
 families below, `CanPartiallyRender`).
 
@@ -221,13 +219,13 @@ and the second is the one that reads like a bug — a defaults fill wiping state
 where no default was ever declared — so it is the one that gets "fixed" back into
 a skip.
 
-It was, here, until a browser pass on the table-filters epic caught it: a
+It was, here, until a browser pass on the table filters caught it: a
 `SelectFilter` builds a `Select` that takes a `default()` only when the *filter*
 declares one, so `resetTableFiltersForm()` left an applied `status` value
 standing in both bags while the sibling `Filter` — a `Checkbox`, which declares
 `default(false)` in its own `setUp()` — cleared correctly. The asymmetry is only
 reachable when the bag already holds state at fill time, which is why every
-mount-time fill looked right ([the epic side](../tables/has-table.md#filter-mutations-reset-the-page-and-flush-the-record-cache)).
+mount-time fill looked right ([the table side](../tables/has-table.md#filter-mutations-reset-the-page-and-flush-the-record-cache)).
 
 The null-write cannot stand alone, and that is what `$hydratedDefaultState` is
 for. It is a by-ref record, threaded through the whole walk by the
@@ -295,8 +293,7 @@ detail sections above. Provisional ones say what would reverse them.
 
 Filament ships `schema()` beside `components()` on this trait, undeprecated —
 pure back-compat surface for its own pre-v4 call sites. Sylament ships
-`components()` alone (decided 2026-08-04, with the Repeater epic's planning):
-a second name for the same call adds grep surface and a second spelling every
+`components()` alone: a second name for the same call adds grep surface and a second spelling every
 example must choose between, for call sites this port has none of. A migrating
 user's `->schema([...])` breaks loudly — missing method, and the fix is
 mechanical — which the [rename criterion](../renames.md) prefers to a silently
@@ -326,7 +323,7 @@ Filament's `toSchemaHtml()` emits the outer `<div>` with `wire:key`, `wire:poll`
 grid-column attributes, and the `fi-sc-component` inner wrapper — plus
 `renderWrapperBladeComponent()`. None is ported: it is entirely Livewire + Alpine
 + Blade and depends on the live-component-state runtime (state paths, `$wire`,
-polling, JS visibility). It returns in the epic that lands
+polling, JS visibility). It returns with
 [`getLiveComponent()`](has-schemas.md)-backed rendering.
 `renderWrapperBladeComponent()` (a Blade back-compat shim for
 `x-dynamic-component` wrappers) is **skipped** — a non-goal even then.
@@ -390,21 +387,20 @@ Filament's `HasState` composes `CanGetStateFromRelationships` and carries
 `getStatePathForRelationship`, `hasConstantState`) and the list-splitting helpers
 (`separator`/`getSeparator`, `distinctList`/`isDistinctList`). None is ported —
 they all assume Eloquent models/relationships. The
-[Doctrine relation layer](../roadmap.md#pulled-forward) did **not** reverse this,
-as an earlier note here predicted it would: it answers the relationship read
+Doctrine relation layer does **not** reverse this: it answers the relationship read
 with the [per-component hook pair](belongs-to-record.md#the-relationship-hooks-are-consulted-by-the-two-mapping-edges-not-by-a-schema-level-walk)
 consulted by the two mapping edges, so `loadStateFromRelationships` on the trait
 has nothing left to do — its post-save re-read is what
 [`Schema::loadStateFromRelationships()`](belongs-to-record.md#loadstatefromrelationships-is-the-hosts-reload-after-its-flush-and-takes-no-parameter)
-runs from the root since M7 · 6, over the record path map — and constant state — a *display* value read across a
+runs from the root, over the record path map — and constant state — a *display* value read across a
 relation, never dehydrated — has no consumer in the port yet. Revisit when one
 arrives (infolists is the likely first).
 
 ### The mutateStateForValidation members mutate the runner's copy of one path
 
 `mutateStateForValidationUsing()` / `mutateStateForValidation()` /
-`mutatesStateForValidation()` are ported verbatim, and this tree said until
-M3 · 8 that they never would be. The reason given was Livewire's shape: upstream,
+`mutatesStateForValidation()` are ported verbatim, though this tree once said
+they never would be. The reason given was Livewire's shape: upstream,
 the host's `prepareForValidation()` rewrites a whole nested attributes array
 before Laravel's validator sees it, and `getState()` then has to prune that array
 back down to the keys the schema owns. A per-path runner needs none of that

@@ -10,18 +10,19 @@ getter.
 It sits in support's **root** `Concerns/`, not under `Components/Concerns/`,
 because nothing that composes it is a nested component: Filament puts it on
 `Table` and `Schema`, and this port composes it on
-[`Tables\Table`](../tables/table.md) alone — `Schema` follows in M5, when
-`TextEntry` needs the same defaults.
+[`Tables\Table`](../tables/table.md) alone — `Schema` follows when infolists
+ship `TextEntry`, which needs the same defaults.
 
 Six of the eight settings gained their first reader with
 [`TextColumn`](../tables/text-column.md)'s date, money and numeric families, and
-M4 · 6 added two more readers of the same two date formats off the same table:
+grouping and summaries add two more readers of the same two date formats off the same table:
 a [`date()` group's title](../tables/grouping.md#a-date-group-is-a-half-open-day-range-bound-with-the-fields-own-type)
 formats through `getDefaultDateDisplayFormat()`, and
 [`Range::minimalDateTimeDifference()`](../tables/summarizer.md) picks between that
 and `getDefaultDateTimeDisplayFormat()` by how far apart its two ends fall. The
 three `iso*` ones are carried unread: their moment.js tokens (`L`, `LLL`, `LT`)
-only ICU locale presets can answer, which is the i18n epic's, so
+only ICU locale presets can answer, which belongs to the
+[deferred i18n pass](../../internals/i18n.md), so
 [`text-column.md`](../tables/text-column.md) blocks the `isoDate()` family on it
 and this trait holds the defaults those setters will read.
 
@@ -48,7 +49,7 @@ once the row is **done**; **semantics** → the permanent note in
 | [`defaultDateDisplayFormat()` / `defaultDateTimeDisplayFormat()` / `defaultTimeDisplayFormat()` and their getters](../../../packages/support/src/Concerns/HasDefaultDataFormattingSettings.php) | [`HasDefaultDataFormattingSettings`](../../../vendor/filament/support/src/Concerns/HasDefaultDataFormattingSettings.php) | done | — | [semantics](#the-three-display-formats-are-php-format-strings-because-the-reader-is-datetimeimmutableformat) |
 | [`defaultNumberLocale()` / `getDefaultNumberLocale()`](../../../packages/support/src/Concerns/HasDefaultDataFormattingSettings.php) | [`HasDefaultDataFormattingSettings`](../../../vendor/filament/support/src/Concerns/HasDefaultDataFormattingSettings.php) | done | — | [semantics](#a-null-number-locale-means-ask-the-process-not-no-locale) |
 | [`defaultIsoDateDisplayFormat()` / `defaultIsoDateTimeDisplayFormat()` / `defaultIsoTimeDisplayFormat()` and their getters](../../../packages/support/src/Concerns/HasDefaultDataFormattingSettings.php) | [`HasDefaultDataFormattingSettings`](../../../vendor/filament/support/src/Concerns/HasDefaultDataFormattingSettings.php) | done | — | [semantics](#the-three-iso-defaults-ship-with-no-reader) |
-| Composition on `Schema` | [`Schemas\Schema`](../../../vendor/filament/schemas/src/Schema.php) | todo | M5 — infolists | — |
+| Composition on `Schema` | [`Schemas\Schema`](../../../vendor/filament/schemas/src/Schema.php) | todo | infolists' `TextEntry` | — |
 
 Every member is exercised by
 [`HasDefaultDataFormattingSettingsTest`](../../../packages/support/tests/Unit/Concerns/HasDefaultDataFormattingSettingsTest.php)
@@ -59,8 +60,8 @@ requirement of its host.
 
 ## Details
 
-Every landed row is **done**; the one open row names its epic rather than a
-write-up.
+Every landed row is **done**; the one open row names the consumer that will need it
+rather than a write-up.
 
 ## Semantics
 
@@ -80,7 +81,8 @@ comparing `getDefaultCurrency()` against Filament's documented value.
 which is not a coincidence: Carbon's `translatedFormat()` takes PHP `date()`
 tokens too, and only differs from `format()` by translating month and day names.
 The port reads them through `DateTimeImmutable::format()`, so English output
-matches Carbon's exactly and every other locale is the i18n epic's — recorded at
+matches Carbon's exactly and every other locale waits on the
+[deferred i18n pass](../../internals/i18n.md) — recorded at
 [`text-column.md`](../tables/text-column.md).
 
 ### A null number locale means "ask the process", not "no locale"

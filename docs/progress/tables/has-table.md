@@ -25,7 +25,7 @@ metadata and its `toRecordKey()` helper that decides which scalars are printable
 as one, `getTableRecord()` with its `resolveQueryTableRecord()` helper that
 re-queries for a single one, `getAllTableRecordsCount()`,
 `fillTableAggregateValues()`, `flushCachedTableRecords()`,
-`getTableHostId()` and, since M4 · 3, the three query-string members
+`getTableHostId()` and the three query-string members
 `getTableUrlMapping()` (the per-prop
 [URL opt-in](#the-url-binding-is-a-per-prop-liveprop-modifier-opted-into-by-the-page)),
 `getTableQueryStringIdentifier()` and `getIdentifiedTableQueryStringPropertyNameFor()`.
@@ -38,8 +38,7 @@ and, on the query lane, every single time, the count of everything behind that
 page, the flush that empties the cache, and the per-host id every row and cell is
 stamped with.
 
-Around that core it composes ten host concerns, three of them landed by the
-table upgrades epic:
+Around that core it composes ten host concerns, three for browsing state:
 [`CanPaginateRecords`](../../../packages/tables/src/Concerns/CanPaginateRecords.php)
 (the page and per-page state plus the `gotoTablePage()` live action),
 [`CanSortRecords`](../../../packages/tables/src/Concerns/CanSortRecords.php)
@@ -47,28 +46,27 @@ table upgrades epic:
 [`CanSearchRecords`](../../../packages/tables/src/Concerns/CanSearchRecords.php)
 (the search term) — plus
 [`HasFilters`](../../../packages/tables/src/Concerns/HasFilters.php) (the two
-filter bags, the filters form and the five filter live actions), from the filter
-layer,
+filter bags, the filters form and the five filter live actions),
 [`HasBulkActions`](../../../packages/tables/src/Concerns/HasBulkActions.php) (the
 three selection props, the two resolution seams and the `selectAllTableRecords()`
-live action), from M4 · 1, and the three M4 · 3 added:
+live action), three for session, reordering and deferred loading:
 [`CanPersistTableState`](../../../packages/tables/src/Concerns/CanPersistTableState.php)
 (the session key, the read hook and the five per-prop writers),
 [`CanReorderRecords`](../../../packages/tables/src/Concerns/CanReorderRecords.php)
 (the reorder mode flag, its toggle and the `reorderTable()` write) and
 [`CanDeferLoading`](../../../packages/tables/src/Concerns/CanDeferLoading.php)
-(the deferred window's flag and the `loadTable()` action that closes it), and the
-two the column epics added:
+(the deferred window's flag and the `loadTable()` action that closes it), and
+two for columns:
 [`HasColumns`](../../../packages/tables/src/Concerns/HasColumns.php) (an editable
 cell's write-back, a column action's call and the request-scoped refusal bag both
-render through), from M4 · 4, and
+render through) and
 [`HasColumnManager`](../../../packages/tables/src/Concerns/HasColumnManager.php)
 (the applied and draft column bags, their mount and hydrate hooks, and the apply
-and reset live actions), from M4 · 5. Each is
+and reset live actions). Each is
 a per-file row below rather than a folded one, per
 [one row per file](../README.md#one-row-per-file-one-file-per-thing). What
-Filament's nineteen-trait host does beyond them — grouping and summaries — landed
-with M4 · 6 and is folded here rather than tracked as two rows upstairs, with the
+Filament's nineteen-trait host does beyond them — grouping and summaries — is
+folded here rather than tracked as two rows upstairs, with the
 features themselves in [`grouping.md`](grouping.md) and
 [`summarizer.md`](summarizer.md).
 
@@ -147,16 +145,16 @@ instead.
 | [`getTableRecords()` — resolve the data source once, eager-load, re-key, fill the aggregate store, cache](../../../packages/tables/src/Concerns/HasTable.php) | [`Concerns\HasRecords::getTableRecords()`](../../../vendor/filament/tables/src/Concerns/HasRecords.php) | in progress | — | [detail](#the-records-injections-match-filaments-eight) · [semantics](#a-records-closure-resolves-public-container-services-by-type) · [diverges](#gettablerecords-returns-a-keyed-array-or-a-paginator-never-a-collection) · [diverges](#eager-loading-runs-over-the-visible-columns-on-the-page-clone-alone) |
 | [`getTablePaginator(): ?Paginator` — the carrier, unwrapped for the footer](../../../packages/tables/src/Concerns/HasTable.php) | — (Sylament-only; Filament's records **are** the paginator) | done | — | [pagination.md](../support/pagination.md) · [semantics](#the-paginator-is-a-return-value-not-a-state-holder) |
 | [`InteractsWithTable` — thirty-five methods](../../../packages/tables/src/Contracts/InteractsWithTable.php) | [`Contracts\HasTable`](../../../vendor/filament/tables/src/Contracts/HasTable.php) | in progress | — | [detail](#the-contract-is-thirty-five-methods-of-filaments-forty-six) |
-| [`flushCachedTableRecords()`](../../../packages/tables/src/Concerns/HasTable.php) | [`Concerns\HasRecords::flushCachedTableRecords()`](../../../vendor/filament/tables/src/Concerns/HasRecords.php) | done | — | on the contract since M4 · 2 — actions' `callMountedAction()` calls it in a `finally` after any mounted action runs on a table host. [detail](#the-contract-is-thirty-five-methods-of-filaments-forty-six) |
+| [`flushCachedTableRecords()`](../../../packages/tables/src/Concerns/HasTable.php) | [`Concerns\HasRecords::flushCachedTableRecords()`](../../../vendor/filament/tables/src/Concerns/HasRecords.php) | done | — | on the contract — actions' `callMountedAction()` calls it in a `finally` after any mounted action runs on a table host. [detail](#the-contract-is-thirty-five-methods-of-filaments-forty-six) |
 | [`getTableHostId()` + the `$tableHostId` `LiveProp`](../../../packages/tables/src/Concerns/HasTable.php) | [`Livewire\Component::getId()`](../../../vendor/filament/tables/resources/views/index.blade.php) | done | — | [diverges](#the-host-id-is-a-random-liveprop-rather-than-a-framework-component-id) |
 | [`getTableRecordKey(object\|array $record): string`](../../../packages/tables/src/Concerns/HasTable.php) | [`Concerns\HasRecords::getTableRecordKey()`](../../../vendor/filament/tables/src/Concerns/HasRecords.php) | done | — | [diverges](#object-records-are-keyed-by-a-readable-id-rather-than-an-eloquent-key) · [semantics](#an-overridden-gettablerecordkey-keys-the-rows-and-the-query-lane-reads-keys-back-through-the-codec) · [diverges](#a-query-lane-override-of-gettablerecordkey-the-codec-cannot-read-back-is-refused-where-filaments-misses-in-silence) |
 | [`getTableRecord(?string $key)` with its `resolveQueryTableRecord()` query arm](../../../packages/tables/src/Concerns/HasTable.php) | [`Concerns\HasRecords::getTableRecord()`](../../../vendor/filament/tables/src/Concerns/HasRecords.php) | done | — | [diverges](#gettablerecord-reads-fresh-when-the-render-cache-is-cold) · [diverges](#record-resolution-applies-no-limit-1-where-filaments-find-does) |
 | [`getAllTableRecordsCount(): int`](../../../packages/tables/src/Concerns/HasTable.php) | [`Concerns\HasRecords::getAllTableRecordsCount()`](../../../vendor/filament/tables/src/Concerns/HasRecords.php) | done | — | [diverges](#the-all-records-count-answers-four-ways-where-filaments-answers-two) · [diverges](#an-output-walker-of-the-querys-own-is-refused-by-name-only-where-doctrines-fallback-cannot-serve-a-keyed-root) |
 | [The query lane — `getFilteredTableQuery()`, `filterTableQuery()`, `applyFiltersToTableQuery()`, `getFilteredSortedTableQuery()`](../../../packages/tables/src/Concerns/HasTable.php) | [`Concerns\HasRecords`](../../../vendor/filament/tables/src/Concerns/HasRecords.php) | done | — | [semantics](#filtertablequery-applies-the-filters-then-the-search) · [diverges](#the-filtered-query-seam-is-gated-on-the-lane-not-on-the-presence-of-a-builder) |
-| `getTableQueryForExport()` | [`Concerns\HasRecords::getTableQueryForExport()`](../../../vendor/filament/tables/src/Concerns/HasRecords.php) | blocked | the export surface | It bypasses the seams above, re-reading `getTable()->getQuery()` and re-applying filters, search and sorting itself, to assemble a query for Filament's export action — a surface with no counterpart here and on no milestone, the same one [`ExportColumn`](column.md#hascellstate-is-relocated-into-the-column-tier) waits on. It lands with that action or not at all |
+| `getTableQueryForExport()` | [`Concerns\HasRecords::getTableQueryForExport()`](../../../vendor/filament/tables/src/Concerns/HasRecords.php) | blocked | the export surface | It bypasses the seams above, re-reading `getTable()->getQuery()` and re-applying filters, search and sorting itself, to assemble a query for Filament's export action — a surface with no counterpart here, the same one [`ExportColumn`](column.md#hascellstate-is-relocated-into-the-column-tier) waits on. It lands with that action or not at all |
 | [`CanPaginateRecords` — `$tablePage`, `$tableRecordsPerPage`, `gotoTablePage()`, `getTablePage()`, `getTableRecordsPerPage()`, `dehydrateTableRecordsPerPage()`, `updatedTableRecordsPerPage()`, `paginateTableQuery()`](../../../packages/tables/src/Concerns/CanPaginateRecords.php) | [`Concerns\CanPaginateRecords`](../../../vendor/filament/tables/src/Concerns/CanPaginateRecords.php) | in progress | — | [detail](#the-page-state-has-its-query-lane-and-no-session-or-url-half) · [diverges](#gototablepage-replaces-livewires-paginator-trio) · [diverges](#per-page-is-validated-in-the-getter-on-every-read) · [diverges](#the-writable-props-dehydrate-in-their-elements-wire-vocabulary) · [diverges](#the-recordsperpage-injection-is-nullable) · [diverges](#the-session-key-is-the-host-class-so-two-instances-of-one-page-share-it) · [semantics](#a-keyed-root-that-joins-a-collection-pages-in-two-statements-because-doctrines-walkers-key-by-one-column) · [diverges](#an-output-walker-of-the-querys-own-is-refused-by-name-only-where-doctrines-fallback-cannot-serve-a-keyed-root) · [diverges](#a-single-scalar-identifier-fetch-joined-page-ordered-by-a-to-one-association-is-doctrines-limit-and-stays-one) |
 | [`CanSortRecords` — `$tableSort`, `sortTable()`, `healSeededTableSort()`, `getTableSortColumn()`, `getTableSortDirection()`, `applySortingToTableQuery()`](../../../packages/tables/src/Concerns/CanSortRecords.php) | [`Concerns\CanSortRecords`](../../../vendor/filament/tables/src/Concerns/CanSortRecords.php) | in progress | — | [detail](#sorting-composes-the-users-order-the-default-and-the-identifier-tiebreaker) · [diverges](#sorttable-ignores-a-column-the-table-did-not-declare-sortable) · [diverges](#a-default-sort-closures-replacement-builder-reaches-the-caller-where-filaments-is-discarded) · [diverges](#the-identifier-tiebreaker-is-suppressed-only-by-the-qualified-key) · [semantics](#a-column-name-containing-a-colon-cannot-be-cycled) · [diverges](#a-seeded-sort-is-healed-at-mount-where-filaments-is-trusted-to-the-query) · [diverges](#the-session-key-is-the-host-class-so-two-instances-of-one-page-share-it) |
-| [`CanSearchRecords` — `$tableSearch`, `updatedTableSearch()`, `getTableSearch()`, `dehydrateTableSearch()`, `applySearchToTableQuery()`, `applyGlobalSearchToTableQuery()`, `extractTableSearchWords()`](../../../packages/tables/src/Concerns/CanSearchRecords.php), the last delegating to [`Query\SearchTermSplitter`](../../../packages/tables/src/Query/SearchTermSplitter.php) | [`Concerns\CanSearchRecords`](../../../vendor/filament/tables/src/Concerns/CanSearchRecords.php) | in progress | — | [detail](#search-is-the-global-term-and-one-term-per-column) · [diverges](#the-writable-props-dehydrate-in-their-elements-wire-vocabulary) · [diverges](#the-session-key-is-the-host-class-so-two-instances-of-one-page-share-it) · [table.md](table.md#the-two-hidden-column-arms-landed-with-column-visibility-an-epic-after-their-loops) |
+| [`CanSearchRecords` — `$tableSearch`, `updatedTableSearch()`, `getTableSearch()`, `dehydrateTableSearch()`, `applySearchToTableQuery()`, `applyGlobalSearchToTableQuery()`, `extractTableSearchWords()`](../../../packages/tables/src/Concerns/CanSearchRecords.php), the last delegating to [`Query\SearchTermSplitter`](../../../packages/tables/src/Query/SearchTermSplitter.php) | [`Concerns\CanSearchRecords`](../../../vendor/filament/tables/src/Concerns/CanSearchRecords.php) | in progress | — | [detail](#search-is-the-global-term-and-one-term-per-column) · [diverges](#the-writable-props-dehydrate-in-their-elements-wire-vocabulary) · [diverges](#the-session-key-is-the-host-class-so-two-instances-of-one-page-share-it) · [table.md](table.md#sorting-and-global-search-both-skip-a-hidden-column) |
 | [Table state in the URL — the `getTableUrlMapping()` opt-in hook, the six `modifyTable*Prop()` `LiveProp` modifiers, `getTableQueryStringIdentifier()` and `getIdentifiedTableQueryStringPropertyNameFor()`](../../../packages/tables/src/Concerns/HasTable.php) | [`getIdentifiedTableQueryStringPropertyNameFor()`](../../../vendor/filament/tables/src/Concerns/InteractsWithTable.php), the six-attribute `#[Url]` block on [`ListRecords`](../../../vendor/filament/filament/src/Resources/Pages/ListRecords.php) and Livewire's own [`queryStringHandlesPagination()`](../../../vendor/livewire/livewire/src/Features/SupportPagination/HandlesPagination.php) for `page` | done | — | [diverges](#the-url-binding-is-a-per-prop-liveprop-modifier-opted-into-by-the-page) · [diverges](#the-query-string-identifier-is-live-on-the-table-and-dead-in-the-modifiers) |
 | The `reordering` URL bind | [`#[Url(as: 'reordering')]` redeclared on `ListRecords`](../../../vendor/filament/filament/src/Resources/Pages/ListRecords.php) | skipped | — | A transient UI mode rather than browsing state, and binding it would leave a permanent `reordering=0` in every URL under [the residue constraint](#the-url-binding-is-a-per-prop-liveprop-modifier-opted-into-by-the-page). The `grouping` bind beside it is a different answer: it [ships](grouping.md#a-bookmarked-grouping-beats-a-selectable-default-group), because a grouping is browsing state |
 | [Table state in the session — `CanPersistTableState`: the `RequestStack` setter, `getTableSessionKey()`, `persistTableStateToSession()`, `readTableSessionState()`, `forgetTableSessionState()`, the five per-prop writers and the `#[PostMount(priority: 10)]` read hook](../../../packages/tables/src/Concerns/CanPersistTableState.php) | [`Concerns\InteractsWithTable::bootedInteractsWithTable()`](../../../vendor/filament/tables/src/Concerns/InteractsWithTable.php) | done | — | [diverges](#the-session-key-is-the-host-class-so-two-instances-of-one-page-share-it) |
@@ -184,19 +182,18 @@ instead.
 Nineteen rows are **done**. Ten are the trait's own core — the build-once pair with
 `makeTable()`, the record key, the by-key lookup with its flush, the all-records
 count, the three filtered-query seams, the host id, and the paginator peek — and
-nine arrived with the state layer since: the filter mutations and `resetTableSearch()`
-from the filter epic, M4 · 6's [grouping](grouping.md) and the
+nine belong to the state layer: the filter mutations and `resetTableSearch()`,
+[grouping](grouping.md) and the
 [grouped selection](grouping.md#the-whole-universe-arm-costs-one-query-per-group-on-the-page)
 beside it — whose own summaries half stays **in progress**, against
 [`Count::icons()`](summarizer.md#counticons-ships-as-api-and-refuses-to-summarize) —
-and M4 · 3's
+the
 [URL binding](#the-url-binding-is-a-per-prop-liveprop-modifier-opted-into-by-the-page),
 [session persistence](#the-session-key-is-the-host-class-so-two-instances-of-one-page-share-it),
 [deferred loading](table.md#the-deferred-window-is-server-gated-and-client-closed)
 and [reordering](#the-reorder-write-is-a-unit-of-work-flush-not-one-mass-case-update),
-and M4 · 5's
-[per-column search](#search-is-the-global-term-and-one-term-per-column) — the
-column manager beside it being the one member of that epic still **in progress**,
+and [per-column search](#search-is-the-global-term-and-one-term-per-column) — the
+column manager beside it being still **in progress**,
 against [`ColumnGroup`](column-manager.md#the-columngroup-half-is-the-whole-of-what-is-left).
 Those four carry Integration suites of their own —
 [`TableUrlBindingTest`](../../../packages/tables/tests/Integration/TableUrlBindingTest.php),
@@ -303,9 +300,8 @@ statement run at all**, next to a canonical
 "refused before the bind" from "queried and missed"; and the single-identifier
 lane held to the same rule, where `abc`, `05`, ` 5`, `5abc`, a `7` trailed by a
 newline and `1~2~3` all answer null before any bind. Three of them coerced to an
-integer on the way into the old untyped bind: `05` and ` 5` resolved song 5
-before M7 · 1, and the newline-trailed `7` coerced just as readily — it missed
-only because the rig seeds no song 7.
+integer on the way into an untyped bind: `05` and ` 5` would resolve song 5,
+and the newline-trailed `7` coerces just as readily — the rig seeds no song 7.
 
 `getAllTableRecordsCount()` has one case carrying all four arms. Seven seeded
 songs are counted through the query with nothing rendered; the same table with
@@ -435,8 +431,7 @@ case asserts by counting occurrences. And a `Residency` query appends
 path** rather than `IDENTITY(residency.venue)`, which is what keeps the dedupe
 working by string equality against the spelling
 `ColumnPathResolver::resolveOrderable()` emits — then executes, so Doctrine
-emitting the foreign-key column is proven rather than asserted. Before M7 · 1 a
-composite root composed no `ORDER BY` at all.
+emitting the foreign-key column is proven rather than asserted.
 
 The **query half** of search has a file of its own for the same reason,
 [`CanSearchRecordsTest`](../../../packages/tables/tests/Unit/Concerns/CanSearchRecordsTest.php),
@@ -478,8 +473,8 @@ throwing; and `paginated(false)` handing back a plain array with
 for: three artists with three songs each, `leftJoin('artist.songs', 'songs')`
 with `addSelect()`, page size 2 — a raw `LIMIT 2` would answer two *rows* of one
 artist, so the case asserts two `Artist` records, a total of `3`, and a
-collection of three songs on the first of them. A keyed twin sits beside it
-since M7 · 2 — a root whose identifier is an association plus a scalar,
+collection of three songs on the first of them. A keyed twin sits beside it — a
+root whose identifier is an association plus a scalar,
 fetch-joining a collection two hops out, the gigs of the venue that is half
 its own identifier — which takes
 [the two-step read](#a-keyed-root-that-joins-a-collection-pages-in-two-statements-because-doctrines-walkers-key-by-one-column)
@@ -540,7 +535,7 @@ the chrome that edits it is rendered: `hasColumnManager()` gates the trigger
 alone, so `columnManager(false)` over toggleable columns still honours their
 declared `toggledHiddenByDefault()`. The chrome that edits it — the manager's two
 Twig components, its Stimulus controller, its stylesheet and the partial's two
-branches — landed in the same epic, and is tracked with the rest of the feature
+branches — is tracked with the rest of the feature
 on [`column-manager.md`](column-manager.md).
 
 The other direction of that gate is a **divergence**, and a deliberate one.
@@ -600,9 +595,8 @@ flat, dotted, trimmed map `getTableColumnSearches()` hands the query lane, so
 `['artist' => ['name' => ' x ']]` reaches the closure as `['artist.name' => 'x']`
 exactly as it reaches Filament's.
 
-Each arrived with the layer that gave it state, which is why the list was
-incomplete for two epics: `filters` came with the filter bags, `columnSearches`
-with [per-column search](#a-full-seed-replaces-filaments-reserved-key-list-and-a-blank-is-kept).
+Each comes from the layer that gives it state: `filters` from the filter bags,
+`columnSearches` from [per-column search](#a-full-seed-replaces-filaments-reserved-key-list-and-a-blank-is-kept).
 Two values differ in **type** rather than in content. `filters` is typed `array`
 where Filament types it `?array`: our prop is
 [an array and never null](#the-filter-bags-are-arrays-never-null-and-carry-no-getters),
@@ -621,8 +615,8 @@ injection a caller passes to `evaluate()`, and a public container service
 ### The page state has its query lane, and no session or URL half
 
 `Concerns\CanPaginateRecords` is the page number, the per-page option, the
-reset-to-page-one hook, the two getters the `records()` closure is handed, and —
-since · 12 — `paginateTableQuery()`, the slice the query lane takes. Two groups
+reset-to-page-one hook, the two getters the `records()` closure is handed, and
+`paginateTableQuery()`, the slice the query lane takes. Two groups
 of Filament members are still not in it.
 
 The query lane is a gate in `resolveTableRecords()`: an **unpaginated** table
@@ -641,17 +635,17 @@ Doctrine's own
 Wrapping it is why the slice is not a bare `LIMIT`: on a fetch-joined query a
 limit over the *joined rows* would hand back half a record's collection, where
 the Tools paginator limits a subquery over identifiers first and re-reads the
-whole rows. **Which joins earn that treatment narrowed with · 20.** Until then
-the test was `getDQLPart('join') !== []` — any join at all, deliberately broader
-than needed on the grounds that an extra subquery is cheaper than silently wrong
-rows. Then the relation arm started joining *for* the user, and "broader than
-needed" stopped being free: a to-one join added because someone clicked a
-sortable header would have flipped every such table into id-subquery mode for a
-join that multiplies no rows. So the heuristic became cardinality-aware —
+whole rows. **Which joins earn that treatment is decided by cardinality.** Any
+join at all — `getDQLPart('join') !== []` — would be broader than needed, on the
+grounds that an extra subquery is cheaper than silently wrong rows, but the
+relation arm joins *for* the user, so "broader than needed" is not free: a
+to-one join added because someone clicked a sortable header would flip every
+such table into id-subquery mode for a join that multiplies no rows. So the
+heuristic is cardinality-aware —
 [`JoinCardinality::joinsCollection()`](../../../packages/tables/src/Query/JoinCardinality.php)
 walks each join expression back to its class through the root entities and the
 joins before it, and answers true only for a **collection-valued** association.
-The original trade survives where it still applies: anything the mapping cannot
+The broad trade survives where it still applies: anything the mapping cannot
 classify — an arbitrary-class join, a join off an alias this builder never
 declared, a join on a property that is no association — counts as collection
 fetching, because there the two directions still cost differently, an extra
@@ -665,11 +659,11 @@ answers with a `MappingException` from inside a getter mid-render. A class
 keyed by a **single association** does have one, and Doctrine's walkers do
 serve it — right up to the identifier tiebreak's `ORDER BY <root>.<association>`,
 which the limit walker cannot re-emit on any platform outside its `ROW_NUMBER`
-branch. Since M7 · 2 either root, on a query that joins a collection, is paged
+branch. Either root, on a query that joins a collection, is paged
 by
 [a two-step read tables runs itself](#a-keyed-root-that-joins-a-collection-pages-in-two-statements-because-doctrines-walkers-key-by-one-column);
 every other table, single-**scalar**-`id` roots included, still goes through
-the Tools paginator exactly as before. The routing predicate reads metadata
+the Tools paginator. The routing predicate reads metadata
 alone and never the platform, so both shapes take the two-step read on
 PostgreSQL too, where the second would have worked either way. One private
 method makes that choice — `readTableRecordWindow()`, which
@@ -712,7 +706,7 @@ project-wide rule and are not ported at all.
 composes three orderings onto whatever the declared query already carries — a
 user-authored `orderBy()` in `query()` stays in front of all of them. First the
 user's: `getTableSortColumn()` is resolved through
-[`getSortableVisibleColumn()`](table.md#the-two-hidden-column-arms-landed-with-column-visibility-an-epic-after-their-loops)
+[`getSortableVisibleColumn()`](table.md#sorting-and-global-search-both-skip-a-hidden-column)
 and the column applies **itself** through
 [`Column::applySort()`](column.md#sort-columns-apply-in-declared-order-where-filament-reverses-them),
 so a `sortable(query:)` closure or a multi-column `sortable([…])` list decides
@@ -736,9 +730,9 @@ read from the mapping metadata rather than assumed to be `id`, appended in the
 same direction the default sort ran in. It is what makes a page boundary stable
 when the sorted column has ties. Exactly one thing suppresses it: an existing
 ordering whose path **is** the qualified key. Filament's second suppression —
-any ordering whose path merely *ends* in the same field name — shipped with · 12
-and was [removed by · 20](#the-identifier-tiebreaker-is-suppressed-only-by-the-qualified-key),
-because the relation arm made `artist.id` an ordering the table can now produce
+any ordering whose path merely *ends* in the same field name — is
+[not ported](#the-identifier-tiebreaker-is-suppressed-only-by-the-qualified-key),
+because the relation arm makes `artist.id` an ordering the table can produce
 by itself. A **composite** identifier is tiebroken by all of its fields rather
 than by one.
 [`IdentifierConstraint::orderBy()`](../schemas/record-key.md#the-operations-and-their-dql)
@@ -837,15 +831,15 @@ composition is `OR` within a word and `AND` between words — *every* word must
 match *something* — and a table with nothing searchable adds no `WHERE` at all
 rather than an empty parenthesis or a false predicate. The loop skips a **hidden**
 column before asking whether it is globally searchable, Filament's own order — an
-arm that could not be written until column visibility landed, and that arrived
-[with its sorting sibling](table.md#the-two-hidden-column-arms-landed-with-column-visibility-an-epic-after-their-loops).
+arm that needs column visibility, and that ships
+[with its sorting sibling](table.md#sorting-and-global-search-both-skip-a-hidden-column).
 
 Two members of Filament's do not port. The `generate_search_term_expression()` /
 `generate_search_column_expression()` pair is Eloquent-and-driver-specific
 assembly, replaced by
 [`SearchConstraint::like()`](../../../packages/tables/src/Query/SearchConstraint.php)
 and its [PostgreSQL text cast](table.md#a-non-string-searchable-field-is-cast-to-text-on-postgresql).
-As of M3·4, `like()` itself lives in
+`like()` itself lives in
 [`Sylament\Schemas\Query\SearchConstraint`](../schemas/search-constraint.md)
 — tables' class delegates — so forms' relationship search reuses it without
 depending on `sylament/tables`. The word splitter took the same shape one tier
@@ -882,7 +876,7 @@ column, filter, action, or test helper may call back into. Sylament's
 `InteractsWithTable` declares the thirty-five the shipped surface actually calls:
 `getTable()` (the template and the column layer need the table from the host),
 `getTableRecords()` (which [`Table::getRecords()`](table.md#getrecords-delegates-to-the-host-and-fetches-nothing)
-delegates to), and three that arrived with the record-action lane (M1 · 6) —
+delegates to), and three the record actions need —
 `getTableRecord()`, because a row-scoped action carries a record *key* across the
 request boundary and nothing else, so the actions layer resolves the record
 through the contract rather than reaching into the trait,
@@ -890,8 +884,8 @@ through the contract rather than reaching into the trait,
 [`Table::getRecordKey()`](table.md#getrecords-delegates-to-the-host-and-fetches-nothing)
 delegates to so a template can address the row it is rendering, and
 `getTableHostId()`, which the partial reads directly off the host to prefix its
-row and cell ids. The table upgrades epic added the next four, every one of them
-because a **template** reads it: `getTableSortColumn()` and
+row and cell ids. The next four are there because a **template** reads each
+of them: `getTableSortColumn()` and
 `getTableSortDirection()` (which `Table::getSortColumn()` / `getSortDirection()`
 delegate to, so a header cell can render its own `aria-sort`),
 `getTablePaginator()` (`Table::getPaginator()`'s delegate, the footer's data) and
@@ -938,8 +932,7 @@ deliberate hold, not an oversight: the check predates this trait and flipping it
 to a contract call is the filters panel's change to make, alongside the rest of
 the applying half.
 
-M4 · 1's selection lane added six at once, the largest single growth so far, and
-each one still names a consumer outside the trait. Three are **template** reads,
+The selection lane adds six, and each one names a consumer outside the trait. Three are **template** reads,
 so `TemplateHostCallsTest` enforces them the way it enforced the ninth:
 `isTableRecordSelected(string $key)` (each checkbox's server-rendered `checked`),
 `hasSelectedTableRecords()` (the server-side `hidden` on the selection banner and
@@ -962,7 +955,7 @@ selection [now calls it](#the-selection-is-server-canonical-and-re-derived-on-ev
 for the ceiling a total-less paginator cannot give: that call is trait-internal,
 and the template reads the selection count rather than the record count.
 
-M4 · 2 added the eighteenth, `flushCachedTableRecords()`, a **cross-package** read
+The eighteenth, `flushCachedTableRecords()`, is a **cross-package** read
 of the same shape as the selection's three: actions' `callMountedAction()` calls
 it in a `finally` on any host that `instanceof`s this interface, so a table never
 re-renders from the page of records a mounted action's write just invalidated.
@@ -977,8 +970,7 @@ instance an action mutated, so only a changed *set* of records tells a stale pag
 from a re-queried one; the action confirms first because a modal-less action runs
 during the mount, whose render is a request of its own and therefore a fresh host.
 
-M4 · 3 added the nineteenth and twentieth together, `isTableReordering()` and
-`isTableLoaded()`, and both are the **tenth's** shape rather than the selection's:
+The nineteenth and twentieth, `isTableReordering()` and `isTableLoaded()`, are the **tenth's** shape rather than the selection's:
 no template reads either off `getLiveComponent`, but
 [`Table::isReordering()`](table.md#surface) and
 [`Table::isLoaded()`](../../../packages/tables/src/Table/Concerns/CanDeferLoading.php)
@@ -1016,17 +1008,15 @@ the contract without the trait, so each new member lands there as an explicit
 divergence: the end state is the same set of members, minus whatever the
 Eloquent-only rows above turn out not to need.
 
-The column catalog added the twenty-first, `getTablePage()`, on the first of
-those grounds: `TextColumn::rowIndex()` turns a row's position on the page into
+The twenty-first, `getTablePage()`, joins on the first of those grounds: `TextColumn::rowIndex()` turns a row's position on the page into
 its position in the whole set, so it multiplies the page by the per-page count,
 and both reads go through a `getLiveComponent()` typed as this interface. The
 host already answered it — [`CanPaginateRecords`](../../../packages/tables/src/Concerns/CanPaginateRecords.php)
-has carried the getter since the table-upgrades epic — so the change is the
-declaration alone, which is the growth order this whole section describes: a
+carries the getter — so the change is the declaration alone, which is the growth order this whole section describes: a
 member joins when a shipped consumer calls it, never in anticipation.
 
-The same epic added the twenty-second, `getTableColumnStateError()`, on those
-same grounds one tier down: an editable column's partial paints the refusal a
+The twenty-second, `getTableColumnStateError()`, joins on those same grounds one
+tier down: an editable column's partial paints the refusal a
 write left against its own cell, and it asks for it through
 [`CanUpdateState::getUpdateStateError()`](../../../packages/tables/src/Columns/Concerns/CanUpdateState.php),
 which reaches the host through a `getLiveComponent()` typed as this interface.
@@ -1065,8 +1055,7 @@ published is again the finished answer rather than the state — the writable
 `$tableColumnSearches` bag stays off, on the same grounds `$tableSearch` does,
 and so do the two reset actions, which are called only over the wire.
 
-M4 · 6 added the last **nine**, the largest growth the contract has taken, and
-every one of them on the template's grounds rather than on a delegate's — the
+The last **nine** join on the template's grounds rather than on a delegate's — the
 partial reads all nine off `getLiveComponent`, so `TemplateHostCallsTest` is
 what would fail if any were dropped. [Grouping](grouping.md) brings five:
 `getTableGrouping()` (the resolved `Group` the preamble branches on),
@@ -1216,7 +1205,7 @@ Each has a [row](#surface) or a
 
 ### A composite selection larger than one batch is read in batches
 
-Since M7 · 7, `getSelectedTableRecords()` reads a selection over a record class keyed by several fields in batches of `IdentifierConstraint::batch()`, at most 500 keys a statement — 500 for two to four identifier fields, fewer above that ([the chunk rule](../schemas/record-key.md#the-chunk-rule)) — instead of one statement over the whole bag. The bags are client input, and one statement over them cost time quadratic in their length. A forged 10 000-key `selectedTableRecords` held a request for about 23 s, where a single-identifier table answered in about 23 ms. On PostgreSQL the tracked arm's `NOT (… OR …)` crossed the JIT threshold and ran for minutes. Three shapes follow:
+`getSelectedTableRecords()` reads a selection over a record class keyed by several fields in batches of `IdentifierConstraint::batch()`, at most 500 keys a statement — 500 for two to four identifier fields, fewer above that ([the chunk rule](../schemas/record-key.md#the-chunk-rule)) — instead of one statement over the whole bag. The bags are client input, and one statement over them cost time quadratic in their length. A forged 10 000-key `selectedTableRecords` held a request for about 23 s, where a single-identifier table answered in about 23 ms. On PostgreSQL the tracked arm's `NOT (… OR …)` crossed the JIT threshold and ran for minutes. Three shapes follow:
 
 - **The selected bag** is batched. Each batch runs the query `getSelectedTableRecordsQuery()` would, narrowed to its keys.
 - **A tracked deselection** that fits one batch stays one `notIn()` statement. A
@@ -1359,7 +1348,7 @@ before narrowing on the identifier, so a row action cannot reach a record
 outside the filtered set — and the `isResolvingRecord` flag skips the *apply*
 pass of any filter that called `excludeWhenResolvingRecord()`, never the base
 pass, which is where a filter's joins live. Search, sorting and pagination stay
-unapplied there per the epic-12 decision.
+unapplied there, as Filament's `resolveTableRecord()` leaves them.
 
 One thing Filament wraps around both passes has no port and needs none. On a
 deferring table its `applyFiltersToTableQuery()` re-roots the filters form at
@@ -1372,10 +1361,10 @@ names the applied bag directly, whatever the form happens to be bound to, so
 there is no path to flip and no cache to invalidate — the seam is the two loops
 and nothing else.
 
-Both of Filament's remaining applications have since filled these seams, each a
-body inside a seam rather than a new call site: **per-column** search slotted into
-`applySearchToTableQuery()` ahead of the global half (M4 · 5), and grouping wraps
-the sorted seam from outside (M4 · 6) —
+Both of Filament's remaining applications fill these seams, each a body inside a
+seam rather than a new call site: **per-column** search sits in
+`applySearchToTableQuery()` ahead of the global half, and grouping wraps the
+sorted seam from outside —
 `applySortingToTableQuery($this->applyGroupingToTableQuery($query))`, so the group
 order is appended first and every sort after it
 [breaks ties inside a group](grouping.md#the-group-order-is-appended-first-so-every-later-sort-breaks-ties-inside-a-group).
@@ -1661,6 +1650,23 @@ exist only in a using class's context, which is why the whole set arrived at
 once in a lane that had touched neither package — only the unscoped
 `composer test:static` sees them.
 
+### Private trait methods are called across the traits `HasTable` composes
+
+A private trait method is callable from any other trait the same class uses, and
+the table host relies on that six times. `CanReorderRecords` calls
+`HasBulkActions::resolveTableRecordKeyTarget()`; `CanSummarizeRecords` calls
+`CanPaginateRecords::readTableRecordWindow()`; `HasTable` calls
+`CanPaginateRecords::getCompositeTableRecordClass()` and
+`::assertTableQueryCarriesNoOutputWalker()`; `CanPaginateRecords` calls
+`HasTable::keyTableRecords()`; and `HasFilters` calls
+`CanPersistTableState::isPersistedTableFilterBag()`, a private **static** reached
+through `self::`. Each call is legal only because `HasTable` composes every one of
+those traits into one host. Neither file shows the coupling, so renaming,
+re-scoping or moving one of these methods breaks the other trait, and the break
+surfaces only through a class that composes both — which is why it takes
+[the unscoped static analysis](#a-host-trait-is-analysed-only-through-a-class-that-composes-it)
+to see it.
+
 ### Two `TableColumnState` vocabularies meet on one host, and both are Filament's
 
 `updateTableColumnState()` writes **one editable cell's value** —
@@ -1729,10 +1735,9 @@ identifier association under its bare property name carrying the **raw** driver
 value, a scalar field under `<alias>_<field>` and converted — in identifier
 order and exactly as wide as the identifier, so the row is written onto the
 aliases this class asked `select()` for, in order, and handed to the selection
-that authored them. Since [M7 · 11](../roadmap.md#m7--composite-identifiers) it is
-keyed through `keyOfHydrated()`, which converts the raw association halves alone:
-`keyOf()` read the already converted scalar fields through their types a second
-time, which minted another key for a custom type whose reader does not read its
+that authored them. It is keyed through `keyOfHydrated()`, which converts the
+raw association halves alone: `keyOf()` would read the already converted scalar
+fields through their types a second time, which mints another key for a custom type whose reader does not read its
 own PHP value back unchanged
 ([the second reader](../schemas/record-key.md#a-hydrated-row-is-keyed-without-reading-its-fields-a-second-time)).
 `RecordKey::fromValues()` is the wrong call here and fails
@@ -1747,8 +1752,7 @@ server-side and then strictly decoded again by `in()`, so an identifier type
 outside
 [the decode contract](../schemas/record-key.md#parameter-naming-and-what-an-empty-or-malformed-key-means)
 — one whose printed PHP form is a spelling its own `convertToPHPValue()`
-refuses and, since [M7 · 5b](../roadmap.md#m7--composite-identifiers), its
-`convertToDatabaseValue()` refuses too,
+refuses and whose `convertToDatabaseValue()` refuses too,
 [a type refusing it on read only](../schemas/record-key.md#a-type-that-refuses-its-printed-form-on-read-only-decodes-it-through-its-own-writer)
 being read back through its own writer — has every key of the page dropped, and
 the page comes back empty the same silent way, beside a correct total. That is the by-key seam's systemic
@@ -1863,12 +1867,11 @@ an integer key excludes nothing on SQLite and MySQL. The selectability
 constraint, the aggregate batch and the page summary miss only here, because
 Sylament reads keys where Filament reads none: Filament's selectability check
 re-keys through `getKey()`, its aggregates ride the page query, and its summary
-pages with `forPage()`. Before M7 the deselection bind was untyped, which on
-PostgreSQL was, by reading, an integer-cast error — a 500 rather than a
-deletion; the strict decode made the widening silent there too.
+pages with `forPage()`. The strict decode makes the widening silent on
+PostgreSQL too, where an untyped deselection bind would be an integer-cast
+error — a 500 rather than a deletion.
 
-**So the query lane refuses it.** Since
-[M7 · 10](../roadmap.md#m7--composite-identifiers), `keyTableRecords()` compares,
+**So the query lane refuses it.** `keyTableRecords()` compares,
 for every object row that is an instance of the table's
 [record class](table.md#the-record-class-is-read-off-the-base-querys-root-entity),
 what `getTableRecordKey()` answers with what `RecordKey::of()` answers, and a
@@ -2202,9 +2205,8 @@ the search and the column searches (`persistSearchInSession()` /
 (`persistColumnsInSession()`, opt-**out** — the only *flag* of the five that
 defaults on, and the only flag that gates its write without gating its read),
 and the per-page option —
-**unconditionally**, with no setter to turn it off. M4 · 3 shipped all of it but
-the column searches and the column state, which arrived together in M4 · 5 with
-[the bag they persist](#a-full-seed-replaces-filaments-reserved-key-list-and-a-blank-is-kept)
+**unconditionally**, with no setter to turn it off. The column searches and the
+column state are [the per-column search bag](#a-full-seed-replaces-filaments-reserved-key-list-and-a-blank-is-kept)
 and [the bag the manager edits](#the-column-state-is-re-derived-against-the-definition-on-every-read).
 All six suffixes go through
 [`CanPersistTableState`](../../../packages/tables/src/Concerns/CanPersistTableState.php)'s
@@ -2220,7 +2222,7 @@ choices — the `isPaginated()` gate around that arm is Filament's too.
 There is a seventh suffix that does not exist, and its absence is a port of an
 absence: **grouping** is persisted by neither codebase. A grep of the vendor tree
 for `persists*InSession` returns filters, search, column searches, sort and
-columns and nothing else, so M4 · 6 added no writer, no suffix and no setter —
+columns and nothing else, so the port adds no writer, no suffix and no setter —
 [the URL is where a grouping is kept](grouping.md#nothing-persists-a-grouping-in-the-session-and-filament-does-not-either),
 and a case in `TableSessionPersistenceTest` fails the moment a `…_grouping` key
 appears.
@@ -2308,10 +2310,10 @@ where `$pageName` is `getTablePaginationPageName()` — which is why `page` is t
 **only** one of the seven that `getIdentifiedTableQueryStringPropertyNameFor()` and
 the table's `queryStringIdentifier()` disambiguate per table, and why its
 `'history' => true` is the "pagination alone" that constraint 1 below names.
-M4 · 3 shipped the five names a routed page needs — `page` (identifier-prefixed),
-`sort`, `search`, `filters` and `tab` — through one mechanism UX makes available
-and Livewire does not, so the two halves collapse into one hook here, and M4 · 6
-added `grouping` as the sixth.
+Six names ship — the five a routed page needs, `page` (identifier-prefixed),
+`sort`, `search`, `filters` and `tab`, plus `grouping` — through one mechanism UX
+makes available and Livewire does not, so the two halves collapse into one hook
+here.
 
 The lever is `modifier:`, not `fieldName:`. Each URL-candidate `LiveProp` names a
 two-line modifier (`modifyTablePageProp()`, `modifyTableSortProp()`,
@@ -2370,8 +2372,13 @@ is worked around with JavaScript — the binding ships zero new JS.
 One name is deliberately **not** bound: `reordering`. Filament binds it; here it is
 a transient UI mode rather than browsing state, and binding it would leave a
 permanent `reordering=0` in the URL under constraint 2 above. `grouping` **is**
-bound, since M4 · 6 gave it a prop, and `perPage` and the column state stay
-session-or-transient exactly as Filament has them.
+bound, since it is a prop, and `perPage` and the column state stay
+session-or-transient exactly as Filament has them. The per-column search terms
+are not bound either, and the reason is Filament's: its `ListRecords` declares no
+`#[Url]` for `tableColumnSearches`, so a column term is transient, or
+session-held under `persistColumnSearchesInSession()`, and never in the URL.
+`modifyTableColumnSearchesProp()` still asks the hook, so a page that wants the
+terms in its URL answers `getTableUrlMapping('columnSearches')`.
 
 ### The query-string identifier is live on the table and dead in the modifiers
 
@@ -2645,11 +2652,8 @@ host: a mounted action carries a *key* back, and
 [`resolveTableAction()`](../actions/has-actions.md#the-table-branch-reaches-tables-through-a-guarded-soft-reference)
 turns it into a record with `getTableRecord()`, this trait's own map. What the
 twin still answers for itself is the outbound half — `Action::getContext()`'s
-`recordKey` for a row-scoped action — and that half is **no longer the twin's
-alone**. The "until" clause this paragraph used to end on arrived with
-[M7 · 1](../roadmap.md#m7--composite-identifiers), whose own deliverable is a
-row action on a composite entity, and the disagreement was closed the way this
-section proposed: when the action has a table and the record is an instance of
+`recordKey` for a row-scoped action — and that half is **not the twin's
+alone**: when the action has a table and the record is an instance of
 the table's
 [record class](table.md#the-record-class-is-read-off-the-base-querys-root-entity),
 `getContext()` asks the **table** for the key and falls back to
@@ -2780,8 +2784,7 @@ Permanent. The fetch-join resolution case pins it: it asserts all three songs an
 fails with "actual size 1 matches expected size 3" the moment the limit comes
 back.
 
-· 20 sharpened the *reason* without touching the code. Record resolution now
-takes neither the [eager joins](#eager-loading-runs-over-the-visible-columns-on-the-page-clone-alone)
+Record resolution takes neither the [eager joins](#eager-loading-runs-over-the-visible-columns-on-the-page-clone-alone)
 nor the aggregate batch, so a query written by a `query()` closure is the only
 thing that can fetch-join this clone — which narrows the trap to the case the
 test covers and widens the argument for keeping the limit off: the port cannot
@@ -2816,7 +2819,7 @@ heuristic in one place is worth more than a call site that answers a question
 nobody asks, and if the flag ever reaches the count path it will already be
 right.
 
-Since M7 · 2 the same call is fronted by one guard: a **composite** root — two
+The same call is fronted by one guard: a **composite** root — two
 or more identifier fields — whose query carries its own output walker is
 [refused by name](#an-output-walker-of-the-querys-own-is-refused-by-name-only-where-doctrines-fallback-cannot-serve-a-keyed-root)
 here, as it is in front of the paginator's own total, because
@@ -2863,14 +2866,12 @@ on each, placed **after** `getFilteredSortedTableQuery()` has returned and befor
 the query is paginated. Filament loops over the same set inside
 `filterTableQuery()`, so the set is no longer a delta — one remains.
 
-It read `getColumns()` until column visibility landed, and that was an absence
-rather than a decision: with no `isHidden()` to ask, every column *was* the
-visible set. Now a to-one column the developer hid, or the user toggled off,
-costs no share of a `LEFT JOIN`. The
-[global search loop](table.md#the-two-hidden-column-arms-landed-with-column-visibility-an-epic-after-their-loops)
-is the last place still recording the old gap.
+A to-one column the developer hid, or the user toggled off, therefore costs no
+share of a `LEFT JOIN`, and the
+[global search loop](table.md#sorting-and-global-search-both-skip-a-hidden-column)
+skips a hidden column the same way.
 
-M4 · 6 put one gate in front of the whole loop: under
+One gate sits in front of the whole loop: under
 [`groupsOnly()`](grouping.md#the-php-gates-of-groupsonly-are-unconditional-where-the-templates-are-not)
 it is skipped entirely, because no record row renders and nothing reads a cell.
 Filament has the same skip in the same spirit and a different place — its loop
@@ -2907,15 +2908,15 @@ consumers that would want a resolved record carrying its aggregates.
 `defaultKeySort()` appends the root's identifier so a page boundary is stable
 under ties, and it stands down when the query is already ordered by that key.
 Filament tests that with `afterLast('.')` — an ordering *ending* in the same
-field name suppresses it, whichever alias it hangs off — and · 12 ported the
-heuristic as written, with the reasoning that a query ordering by a joined key
-has almost always chosen its own tiebreaker. · 20 removed the loose half: the
-comparison is now against the fully qualified `{rootAlias}.{identifierField}`
-(or the bare field name, pre-resolution) and nothing else.
+field name suppresses it, whichever alias it hangs off — on the reasoning that a
+query ordering by a joined key has almost always chosen its own tiebreaker. The
+port drops the loose half: the comparison is against the fully qualified
+`{rootAlias}.{identifierField}` (or the bare field name, pre-resolution) and
+nothing else.
 
-What changed is who can produce the ordering being tested. Under · 12 an
-`artist.id` ordering could only come from a user who had written the join *and*
-named that column, which is the case the heuristic was charitable about. The
+The reason is who can produce the ordering being tested. Without the relation
+arm an `artist.id` ordering could only come from a user who had written the join
+*and* named that column, which is the case the heuristic is charitable about. The
 relation arm makes the same ordering something the **table** produces on its own:
 a user clicks a sortable `artist.id` column, the arm joins and orders by it, and
 the loose comparison would then read the port's own join as the user's chosen
@@ -2947,7 +2948,7 @@ cache. There is no browser event and no listener, because there is nothing for
 one to do: every call site is already inside a live request (the two `updated*`
 tails, and an action's deselect-after-completion), so the response's re-render
 carries the cleared props, the client store reinitialises from them, and the
-table controller repaints from that. This is the epic's central architectural
+table controller repaints from that. This is the selection's central architectural
 divergence stated at its smallest: Filament's selection is client-authoritative
 with the server reading a copy, ours is server-canonical with the client holding
 a working copy.
@@ -3300,8 +3301,8 @@ only a *dotted* path ending in an association is refused and a dotless name
 never reaches the mapping walk at all. What does not reach it is the
 identifier tiebreak, which on a single-scalar root orders by a field. It is
 Doctrine's,
-it predates this milestone, and M7 · 2 did not fix it: routing
-single-identifier pages through the keyed read would close it and was rejected,
+and it stays: routing single-identifier pages through the keyed read would close
+it and is rejected,
 because a proven lane that nothing asked us to move is worth more than the
 closure. A table meeting all three conditions joins the target and orders by
 its identifier field instead, or drops the fetch join.

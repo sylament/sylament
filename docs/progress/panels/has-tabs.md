@@ -58,7 +58,7 @@ carries two links: **diverges** → the permanent note in
 | [`updatedActiveTab()`](../../../packages/panels/src/Resources/Concerns/HasTabs.php) | [`HasTabs::updatedActiveTab()`](../../../vendor/filament/filament/src/Resources/Concerns/HasTabs.php) | done | — | [diverges](#the-update-hook-heals-flushes-and-resets-where-filaments-resets-and-rebuilds-columns) |
 | [`getTabsSchema()`](../../../packages/panels/src/Resources/Concerns/HasTabs.php) | [`HasTabs::getTabsContentComponent()`](../../../vendor/filament/filament/src/Resources/Concerns/HasTabs.php) | done | — | [diverges](#the-strip-is-a-schema-a-partial-renders-not-a-component-a-content-schema-holds) · [renames.md](../renames.md#renames) |
 | [`modifyQueryWithActiveTab()`](../../../packages/panels/src/Resources/Concerns/HasTabs.php) | [`HasTabs::modifyQueryWithActiveTab()`](../../../vendor/filament/filament/src/Resources/Concerns/HasTabs.php) | done | — | [semantics](#a-blank-key-and-an-unknown-key-are-both-no-ops-and-that-is-what-heals-a-bookmark) |
-| The column-manager half of `updatedActiveTab()` — `$cachedDefaultTableColumnState`, `applyTableColumnManager()` | [`HasTabs::updatedActiveTab()`](../../../vendor/filament/filament/src/Resources/Concerns/HasTabs.php) | blocked | the column manager (M4 · 5) | Two of the three statements Filament's update hook runs belong to a feature with no code here; they return with it |
+| The column-manager half of `updatedActiveTab()` — `$cachedDefaultTableColumnState`, `applyTableColumnManager()` | [`HasTabs::updatedActiveTab()`](../../../vendor/filament/filament/src/Resources/Concerns/HasTabs.php) | todo | — | Two of the three statements Filament's update hook runs reset and re-apply the column manager, which tables ships ([column-manager.md](../tables/column-manager.md)); `updatedActiveTab()` resets the page and flushes the record cache and does not yet call `applyTableColumnManager()` or clear `$cachedDefaultTableColumnState` |
 | Deferred tab badges — `$isBadgeDeferred` on a listing's tabs | [`Tab`](../../../vendor/filament/schemas/src/Components/Tabs/Tab.php) | skipped | — | [relation-manager.md](relation-manager.md#deferred-tab-badges-do-not-port) — the same decision one tier over: a deferred badge needs the client-mode `Tabs`, and a record filter renders in server mode |
 
 The nine methods are covered by
@@ -233,7 +233,8 @@ Both hooks fire when the active key changes. Filament's runs three statements:
 The page reset is the shared one, spelled differently because
 [the port's page prop is not writable](../tables/has-table.md#gototablepage-replaces-livewires-paginator-trio)
 and there is no `resetPage()` to call. The two column-manager statements are
-**blocked**, not dropped — that feature has no code here — and have a row above.
+**todo**, not dropped — tables ships the column manager, and this hook does not
+call it yet — and have a row above.
 
 The two additions are the interesting half. `loadDefaultActiveTab()` runs first
 because this hook *is* the untrusted edge: the strip is the only element that

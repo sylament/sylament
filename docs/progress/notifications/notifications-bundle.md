@@ -113,7 +113,7 @@ registers the panel that lists a user's stored notifications — a separate Live
 component with its own actions host, its own pagination and its own polling
 interval. Nothing of it is ported, so there is nothing to register.
 
-**Next step:** land the panel epic. Unlike the toast stack, that component is free
+**Next step:** build the database-notifications panel. Unlike the toast stack, that component is free
 to be a UX **live** component — it holds stored server-side state by nature, which
 is what the toast stack deliberately
 [does not](notifications.md#the-stack-holds-no-server-side-collection-so-filaments-collection-is-not-ported).
@@ -286,9 +286,10 @@ correct form, `path:%PACKAGE%/…`, is unwritable: Flex expands `%PACKAGE%` to t
 controller. The blast radius used to be the whole controller rather than the
 dispatch alone, because the built `notification_controller.js` carried the
 specifier at **top level** — an importmap missing the path entry 404s the module
-before it registers. That risk is gone here and inherited intact by
-[`@sylament/actions`](../actions/actions-bundle.md#the-asset-workspace-is-js-only-and-its-importmap-block-names-only-stimulus),
-which is the toolkit's only npm consumer of live-component now.
+before it registers. That risk is gone here and inherited intact by every
+workspace that still imports it at top level —
+[`@sylament/actions`](../actions/actions-bundle.md#the-asset-workspace-is-js-only-and-its-importmap-block-names-only-stimulus)
+first, and forms, schemas, tables and panels beside it.
 
 Its stylesheet is *not* built here: support's
 `assets/src/styles/index.css` imports every sibling package's

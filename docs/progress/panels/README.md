@@ -13,8 +13,8 @@ audited end to end yet.
 [`support/component.md`](../support/component.md) is the shape each detail file
 follows. The package's docs are in a deliberate mixed state: most detail lives as
 in-file anchors in this README (a recorded divergence from the tree rule), while
-M6 · 1 started the first per-component detail files and every surface since has
-followed that shape, fourteen so far — the relation-manager tier
+the relation-manager tier started the per-component detail files and every
+surface since has followed that shape, fourteen so far — the relation-manager tier
 ([relation-manager.md](relation-manager.md),
 [relation-group.md](relation-group.md),
 [has-relation-managers.md](has-relation-managers.md),
@@ -26,16 +26,14 @@ navigation concerns ([interacts-with-record.md](interacts-with-record.md),
 ([custom-pages.md](custom-pages.md), [form-actions.md](form-actions.md),
 [simple-page.md](simple-page.md),
 [unsaved-changes-alert.md](unsaved-changes-alert.md)),
-[global-search.md](global-search.md), and M4 · 3's
+[global-search.md](global-search.md), and
 [has-tabs.md](has-tabs.md). The inline sections stay until each is migrated.
 
 ## Carried decisions
 
 Settled while porting other packages, recorded here because they constrain how
-this one gets built and would otherwise be re-litigated once the panel epics
-reached them. All three have now been reached: the `Resource` decision was spent
-by M2 · 3 and is marked implemented, and the two shell constraints held through
-M2 · 1 to M2 · 3.
+this one is built and would otherwise be re-litigated. All three now govern the
+code: the `Resource` decision is implemented, and the two shell constraints hold.
 
 ### `Resource` is a service, not a static class-string registry
 
@@ -131,21 +129,21 @@ has to republish that alias public. The panels test kernel republishes
 `RequestStack` for precisely that path, and
 [`SylamentPanelsBundleTest`](../../../packages/panels/tests/Integration/SylamentPanelsBundleTest.php)
 pins the arm through a `NavigationGroup`, which carries no override.
-M2 · 2's current-panel lookup had to be derived the same way, from the request
+The current-panel lookup had to be derived the same way, from the request
 and never held in a stateful singleton, and
 [it is](#the-current-panel-is-derived-from-the-request-not-stored-on-a-manager).
 
 ### The shell is not live
 
 Filament v5's sidebar and topbar are Livewire components. Ours are anonymous Twig
-components rendering a plain PHP navigation model, because nothing in M2 needs a
-server round-trip from the shell: navigation is a set of links, collapse state is
+components rendering a plain PHP navigation model, because the shell itself needs
+no server round-trip: navigation is a set of links, collapse state is
 client-side, and the only interactive parts (the mobile drawer, per-group
 collapse) are markup plus one Stimulus controller. A live shell would buy
 re-rendering on the server and cost a component round-trip on every page.
 
 One thing in the shell has since needed exactly that round trip, and it is not
-the one this entry predicted. M6 · 4's [global search](global-search.md) asks
+the one this entry predicted. [Global search](global-search.md) asks
 the server between navigations — a query in, matching records out — so the
 topbar now carries a live root. It is a **sibling** of the static shell rather
 than a wrapper around it: `Topbar` stays anonymous and renders
@@ -308,7 +306,7 @@ nothing, so a plain panel page — the [`Dashboard`](#dashboard) included — he
 no trail, and [`Page/index.html.twig`](#routing) renders no `Header` at all
 unless something else fills it.
 
-Two more members arrived with M6 · 3. `shouldRegisterNavigation()` and its
+Two more members gate navigation. `shouldRegisterNavigation()` and its
 `protected static bool $shouldRegisterNavigation = true` are Filament's, and the
 flag gates both surfaces: the [sub-navigation band](has-sub-navigation.md)
 filters on it, and `Panel::getNavigation()`'s page loop `continue`s on it in the
@@ -328,7 +326,7 @@ default, `getCachedSubNavigation()` normalizes whatever a page answers with, and
 `generateNavigationItems()` builds one item per sibling page. The page's own
 `$subNavigationPosition` static is the first rung of the position ladder.
 
-**M6 · 2 turned the base into a page a user writes**, and the whole of that tier
+**The base is a page a user writes**, and the whole of that tier
 is [custom-pages.md](custom-pages.md). In one paragraph: the class now
 `implements InteractsWithActions` and `InteractsWithSchemas` and composes
 `HasActions` (aliased) and `HasSchemas`, so **every** panel page hosts actions
@@ -359,7 +357,7 @@ all — [a strictly larger surface here](simple-page.md#simplepage-extends-page-
 Deferred, all todo:
 
 - The `BasePage` split — Filament separates `BasePage` (the render/lifecycle
-  half) from `Page` (the panel-aware half); it waits on the auth epic, which is
+  half) from `Page` (the panel-aware half); it waits on porting auth, which is
   what first needs a page that knows no panel.
 - The panel-level breadcrumb toggle. Filament's `Panel::breadcrumbs(bool)` /
   `hasBreadcrumbs()` switches the trail off for a whole panel and its
@@ -416,7 +414,7 @@ each `string|Markup|Closure|null` under the standing `Htmlable` → `Markup`
 translation, plus `brandLogoHeight()` — consumed by the [`Logo`
 template](#layout-templates)) and
 [`HasGlobalSearch`](global-search.md) (the provider switch plus the field's
-debounce, key bindings and suffix), and the two M6 · 2 brought forward,
+debounce, key bindings and suffix), and the two the page tier needs,
 [`HasMaxContentWidth`](simple-page.md#the-width-resolution-is-one-ladder-in-the-controller)
 (`maxContentWidth()` and `simplePageMaxContentWidth()`, the two ends of the
 width ladder) and
@@ -537,8 +535,7 @@ Because it is a service, the whole surface is instance methods. `form(Schema)`,
 `infolist(Schema)` and `table(Table)` are Filament's identity defaults verbatim —
 `infolist()` ships ahead of infolists themselves because it is what a
 [`ViewAction`](../actions/view-action.md) mounted on a resource page resolves its
-modal schema through, and [M5 · 2](../roadmap.md#m5--view-page--infolists) fills
-it in; the five services
+modal schema through, and the view page fills it in; the five services
 the rest needs — `EntityManagerInterface`, `UrlGeneratorInterface`,
 `CurrentPanel`, `PanelRegistry` and schemas' `PropertyAccessor` — arrive through
 one `#[Required] setResourceServices()` setter, so a subclass declaring its own
@@ -597,7 +594,7 @@ What is ported, by cluster:
   fallback and its verbatim "does not have an [index] page" message.
   `getRouteBaseName(Panel)` composes `sylament.<panel>.resources.<slug>` in
   [exactly one place](#the-route-base-name-is-composed-in-one-place). All three
-  grew a nested arm with M6 · 3: the base name nests under the parent's plus the
+  have a nested arm: the base name nests under the parent's plus the
   kebab-cased relationship, `getUrl()` keys ancestor **objects** and takes
   `shouldGuessMissingParameters`, and `getIndexUrl()` answers from the parent's
   pages — [nested-resources.md](nested-resources.md) carries all three.
@@ -624,8 +621,8 @@ What is ported, by cluster:
   hook here is — [HasRelationManagers](has-relation-managers.md#getrelations-is-an-instance-method-like-every-other-resource-hook).
 
 Deferred, all todo: authorization (`canAccess()` and the whole `HasAuthorization`
-cluster), widgets, clusters, tenancy, and resource configurations. Two of that
-list came off it with M6 · 3: **nested/parent resources** ship as
+cluster), widgets, clusters, tenancy, and resource configurations. Two features
+that list once held ship: **nested/parent resources** as
 [`Resource\Concerns\BelongsToParent`](nested-resources.md) — the `$parentResource`
 static, the registration, the derived relationship name and route parameter, the
 parent-scoped query and the attach — and **sub-navigation** as
@@ -661,7 +658,7 @@ not a `RouteNotFoundException`, which is what Filament's own unconditional
 `getResourceUrl()` call would raise a layer further down. Parity, and the
 message names the fix.
 
-M6 · 3 narrows which resources can reach it. A **nested** resource's index is its
+Nesting narrows which resources can reach it. A **nested** resource's index is its
 parent's page, so `getIndexUrl()` answers from
 [four parent arms](nested-resources.md#the-parent-arms-carry-no-relation-parameter)
 before it ever tests `hasPage('index')` — which is the shape a generated nested
@@ -693,7 +690,7 @@ whole, as one self-contained cluster with nothing of the original five entangled
 in it, so there was no guess to make about where its members belong. That is the
 bar the rest of the split has to clear too. The one file is deliberate for now
 rather than a miss: the class is the
-largest new file the resource epic added, but the deferred list above is longer
+largest file in the resource tier, but the deferred list above is longer
 than what shipped, so splitting now would file each trait against a guess at
 where the unported members land — and a trait whose contents are guessed is
 harder to move later than a method is. The names are Filament's and stay
@@ -709,7 +706,7 @@ Filament's `Resources\Pages\Page`, which likewise extends the panel
 whole page surface (title, heading, template, live-component registration) and
 adds the resource hop.
 
-The **hosting** moved up with M6 · 2: `implements InteractsWithActions`, the
+The **hosting** sits one tier up: `implements InteractsWithActions`, the
 aliased `use HasActions`, `implements InteractsWithSchemas` and `use HasSchemas`
 all sit on [`Pages\Page`](#page) now, so a resource page composes only what it
 adds (tables' `HasTable` on the list page, `InteractsWithRecord` and
@@ -720,13 +717,13 @@ so a `getDefaultActionUrl()` here would be silently shadowed by `HasActions`'
 null-returning default in any subclass that re-`use`d the trait —
 [the actions host sits on the base because a trait outranks an inherited method](#the-actions-host-sits-on-the-base-because-a-trait-outranks-an-inherited-method).
 The header-action walk itself, `callHook()`, `halt()` and the `panelId` prop
-moved up in the same change, into
+sit one tier up as well, in
 [`Pages\Concerns\InteractsWithHeaderActions`](custom-pages.md) and the page
 base; what stayed is everything that needs a **resource**.
 
-Eleven members, plus what M6 · 3 added — the parent-record chain, the breadcrumb
+Eleven members, plus the nesting ones — the parent-record chain, the breadcrumb
 walk, `getDefaultActionRelationship()`, the sub-navigation position and item seam
-— and what M6 · 2 added, `getResourceUrl()`.
+— and `getResourceUrl()`.
 [`getPageClasses()`](custom-pages.md#getpageclasses-is-the-only-source-of-a-per-page-root-class)
 is **not** one of them: it arrives one tier up, on
 [`Pages\Page`](#page), and each concrete page overrides it.
@@ -746,7 +743,7 @@ is the instance-side URL helper a custom record page reaches for, filling the
 record from the page and threading the parent chain.
 `getHeaderActions(): array` returns `[]`, the override
 hook a page fills — it lives on
-[`Pages\Concerns\InteractsWithHeaderActions`](custom-pages.md) since M6 · 2 and
+[`Pages\Concerns\InteractsWithHeaderActions`](custom-pages.md) and
 is **public** where Filament's is `protected`, because the page template reads
 the bound list and Twig only reaches public members. That widening is
 self-enforcing: PHP refuses to narrow visibility in an override, so a user
@@ -786,7 +783,7 @@ any non-null answer wins, which is why Filament writes the same chain of guards.
 `EditAction` at the page already showing that record; the `ViewAction` arm below
 it carries no `! $this instanceof ViewRecord` twin only because there is no view
 page class to name yet — that clause lands with
-[M5 · 2](../roadmap.md#m5--view-page--infolists), and its absence changes nothing
+the view page, and its absence changes nothing
 until it does. `getRecord() !== null` guards the two record arms, because a URL
 for a record the action does not carry would be generated with a null parameter.
 
@@ -825,7 +822,7 @@ for hosts with no resource behind them.
 
 `resolveMountedActionRecord(array $descriptor)` is the eighth: the class-body
 override that resolves a mounted frame's record key through the resource's own
-scoped query rather than a bare lookup — and, since M6 · 3, through
+scoped query rather than a bare lookup — and through
 [the page's parent scope](nested-resources.md#one-scope-serves-the-route-key-and-the-unchecksummed-action-key)
 as well, because that key is client-supplied and unchecksummed where the route
 key is not. It keeps both of the trait's skip guards
@@ -876,7 +873,7 @@ markup and then let the template escape it, breaking the
 narrowed overrides on the three concrete pages keep the common case a plain
 `string`.
 
-M6 · 3 filled that trail in. `getBreadcrumbs()` is now
+Nesting fills that trail in: `getBreadcrumbs()` is
 `[...getResourceBreadcrumbs(), $this->getBreadcrumb()]`, and
 `getResourceBreadcrumbs()` — with `hasResourceBreadcrumbs()` beside it, Filament's
 pair — walks the page's **already-resolved** ancestor chain root-first,
@@ -901,8 +898,8 @@ A plain resource page therefore still trails
 nested one trails the whole chain,
 `Articles → Genesis → Sections → In the beginning → Edit`.
 
-One `LiveProp` arrived with M6 · 3 and moved up to
-[`Pages\Page`](#page) with M6 · 2: `public ?string $panelId`, minted by its own
+One `LiveProp` lives one tier up, on
+[`Pages\Page`](#page): `public ?string $panelId`, minted by its own
 getter's dehydration read and stamped back onto the request by a
 `#[PostHydrate(priority: 20)]` hook, so a live request — which reaches ux's route
 and therefore carries no `_sylament_panel` attribute — resolves the panel the
@@ -925,9 +922,9 @@ Two divergences hang off this base:
 
 Deferred, all todo: `getResourcePageName()` (Filament's reverse lookup of a
 page's own `getPages()` key —
-[this epic deliberately routed around it](has-sub-navigation.md#a-resource-page-item-is-built-by-the-band-because-a-page-cannot-name-its-own-route)
+[the sub-navigation band deliberately routes around it](has-sub-navigation.md#a-resource-page-item-is-built-by-the-band-because-a-page-cannot-name-its-own-route)
 rather than forcing the parked decision), the authorization concern, and
-`ViewRecord` / `ManageRecords`. Three of that list came off it with M6 · 3:
+`ViewRecord` / `ManageRecords`. Three features that list once held ship:
 sub-navigation ([the position override and the band's item seam](has-sub-navigation.md)),
 the parent-record concern ([`InteractsWithParentRecord`](nested-resources.md), on
 this base exactly as Filament composes its own), and
@@ -953,7 +950,7 @@ abstract class ListRecords extends Page implements InteractsWithTable
 One host contract declared here, three composed in total: actions'
 `InteractsWithActions`/`HasActions` **and** schemas'
 `InteractsWithSchemas`/`HasSchemas` sit on the plain [`Pages\Page`](#page) base
-since M6 · 2 and are inherited, and re-`use`ing either here would not merely be
+and are inherited, and re-`use`ing either here would not merely be
 redundant — the actions one would shadow the resource base's
 `getDefaultActionUrl()` with the trait's null default, and the schemas one would
 shadow the page base's empty `schemas()` with the trait's `['schema']` and
@@ -985,14 +982,14 @@ trait's own package, not here.
   and is **required**: `Page::getTemplate()` otherwise falls back to the base
   chrome, whose `content` block renders `renderSchema('content')` — empty on a
   list page — so the page would render a heading with no table and no error
-  anywhere. Since M6 · 2 that variant `{% extends %}` the base chrome and
+  anywhere. That variant `{% extends %}` the base chrome and
   overrides one block rather than repeating the
   [three-element page skeleton](#routing), so the rhythm rules are inherited
   rather than restated.
 - `table(Table $table): Table` stamps the resource's query and its record
   labels and title attribute, then hands the table to the resource —
   [query first, resource last](#the-list-pages-table-is-stamped-query-first-and-resource-last).
-  Since M6 · 3 the query has a second arm: a list page hanging under a parent
+  The query has a second arm: a list page hanging under a parent
   record is seeded with
   [the resource's own record query narrowed to that parent](nested-resources.md#the-nested-list-page-ships-unexercised-by-any-shipped-page)
   instead, under the same root alias, so nothing else in the stamp changes. `mount(array $parentRecords = [])` is declared for it — nothing here
@@ -1008,7 +1005,7 @@ trait's own package, not here.
   `HasSchemas::schemas()` defaults to `['schema']` and `getCachedSchemas()` then
   demands a `schema()` / `schemaSchema()` method the list page does not have, so
   the first `#[PreDehydrate] persistOldState()` threw `RuntimeException` and the
-  page 500'd on its very first render. Since M6 · 2 the **base** answers `[]`
+  page 500'd on its very first render. The **base** now answers `[]`
   ([why the discovery list is empty there](custom-pages.md#the-empty-discovery-list-is-mandatory-and-so-is-its-removal-from-every-leaf)),
   so the override is redundant — and keeping the trait alongside it would have
   been worse than redundant, since a trait outranks an inherited class. The
@@ -1086,7 +1083,7 @@ three-class [page skeleton](#routing) is inherited rather than repeated, and the
 root classes come from
 [`getPageClasses()`](custom-pages.md#getpageclasses-is-the-only-source-of-a-per-page-root-class)
 (`sy-pa-resource-list-records-page` plus the slug-derived
-`sy-pa-resource-<slug>` M6 · 2 added, Filament's `fi-resource-<slug>`). The
+`sy-pa-resource-<slug>`, Filament's `fi-resource-<slug>`). The
 variant
 [presumes a tabs host and a table host](form-actions.md#the-table-variant-presumes-two-host-traits-and-says-so-only-by-failing).
 Two placement rules survive the move, both invisible until they break. `renderTable()` takes no
@@ -1104,14 +1101,14 @@ chrome placing it once means
 Both files are `partials/`, not `components/`: they are rendered from PHP through
 `template_from_method`, and a `<twig:>` invocation would find no `this`.
 
-Three of that list's seven came off it with M4 · 3. **Tabs** ship as
+Three of the seven features that list once held ship. **Tabs** ship as
 [`HasTabs`](has-tabs.md) — `$activeTab`, `getTabs()`, `getCachedTabs()`,
 `getTabsSchema()` and `modifyQueryWithActiveTab()` — the strip rendered above
 `renderTable()` from the same `{% if tabs is not empty %}` guard all three
 tab-bearing partials carry. **Query-string binding** ships as
 [`getTableUrlMapping()`](../tables/has-table.md#the-url-binding-is-a-per-prop-liveprop-modifier-opted-into-by-the-page),
 overridden here to map six of the seven names Filament binds — `page`
-(identifier-prefixed), `sort`, `search`, `filters`, `tab` and, since M4 · 6,
+(identifier-prefixed), `sort`, `search`, `filters`, `tab` and
 [`grouping`](../tables/grouping.md#a-bookmarked-grouping-beats-a-selectable-default-group).
 The one left, `reordering`, is
 [deliberately unbound](../tables/has-table.md#the-url-binding-is-a-per-prop-liveprop-modifier-opted-into-by-the-page).
@@ -1124,8 +1121,8 @@ divergence. And **row-click defaulting** ships as the
 
 Still deferred, all todo: the deprecated `getTableQuery()` / `modelLabel()`
 seeding, `content()` and its `EmbeddedTable`, and the `ManageRecords` subclass.
-The parent-record scoping arm came off the list with M6 · 3, and the page partial
-gained [the sub-navigation band](has-sub-navigation.md) with it.
+The parent-record scoping arm ships, and the page partial carries
+[the sub-navigation band](has-sub-navigation.md) beside it.
 
 Three divergences are the list page's:
 [the table is stamped query-first and resource-last](#the-list-pages-table-is-stamped-query-first-and-resource-last),
@@ -1145,7 +1142,7 @@ abstract class CreateRecord extends Page
 }
 ```
 
-Both hosts come from the plain [`Pages\Page`](#page) base since M6 · 2, so the
+Both hosts come from the plain [`Pages\Page`](#page) base, so the
 one trait this page composes of its own is
 [the unsaved-changes marker](unsaved-changes-alert.md).
 Exactly one `LiveProp` of its own — `$data`, writable, the state bag every field
@@ -1156,9 +1153,8 @@ is the persistence hop Filament does not need, because an Eloquent model saves
 itself; it is a setter rather than a constructor argument so a subclass declaring
 its own constructor never repeats it, and a save that finds it unset throws the
 same container-registration `LogicException`
-[`getResourceInstance()`](#resource-pages) throws, before anything is mapped
-(`handleRecordCreation()` threw it after the mapping until M7 · 10). `EditRecord` declares that
-setter again rather than sharing a trait — two classes, and Filament keeps its
+[`getResourceInstance()`](#resource-pages) throws, before anything is mapped.
+`EditRecord` declares that setter again rather than sharing a trait — two classes, and Filament keeps its
 record handlers per page too.
 
 - `mount(array $parentRecords = [])` assigns the ancestor keys first — the
@@ -1208,7 +1204,7 @@ Every step from `beforeValidate` to the write runs inside a
 `try { … } catch (Halt) { return null; }`, so a lifecycle hook calling
 [`halt()`](custom-pages.md#halts-rollback-flag-is-carried-and-ignored) stops the
 ladder where it threw — no mutator, no write, no notification and no redirect.
-Before M6 · 2 a `Halt` from a hook escaped the action and answered 500.
+Without that catch a `Halt` from a hook would escape the action and answer 500.
 
 Three things about that table are load-bearing. **Validation is the `getState()`
 step and mapping is the `getData($data)` step**, and the split is what makes the
@@ -1219,8 +1215,8 @@ because ux-live-component's `LiveComponentSubscriber` re-renders the mutated
 component for exactly that status and the client morphs the errors in — and
 `Schema::getData($data)` then maps that already-validated, already-mutated array
 onto a fresh record. Handing `getData()` the array rather than letting it read
-state back is [the schemas seam](../schemas/belongs-to-record.md) this epic
-added for exactly this. **`handleRecordCreation()` takes the record, not an array** — the Filament
+state back is [the schemas seam](../schemas/belongs-to-record.md) that
+exists for exactly this. **`handleRecordCreation()` takes the record, not an array** — the Filament
 signature is `(array $data): Model` because Eloquent mass-assigns, while our
 `getData()` already returns the mapped object, so the hook's job shrinks to
 persisting; the name and the override role are kept. And **the notification is
@@ -1228,8 +1224,7 @@ sent before the redirect**, so it lands in the flash bag and the
 `SylamentNotifications:Notifications` outlet in the [document](#routing) drains it
 on the page the browser lands on.
 
-**The record is built in `makeRecord(array $data): object`.** Since
-[M7 · 10](../roadmap.md#m7--composite-identifiers) the create page asks one
+**The record is built in `makeRecord(array $data): object`.** The create page asks one
 protected hook for the new record its form is mapped onto, handing it the
 form's state after `mutateFormDataBeforeCreate()`: every field the form maps,
 validated, plus any other key the browser sent in `data`, unvalidated — so an
@@ -1275,8 +1270,8 @@ with a `LogicException`: *The resource page [App\Admin\CreateArticle] added
 paths, so the default write would drop them. Map each with a component — a Hidden
 one for a value the user should not type, with required(false) where the record
 would otherwise require it — or set it on the record in makeRecord() or
-handleRecordCreation().* Until [M7 · 10](../roadmap.md#m7--composite-identifiers)
-such a path was dropped while the page reported *Created*. A key the client typed
+handleRecordCreation().* Without the refusal such a path would be dropped while
+the page reported *Created*. A key the client typed
 into `data` is already in the state the hook was handed, so it is never refused —
 and never written; an overwritten mapped key, and a key a hidden or non-dehydrated
 component maps, save as before. Because the check runs before `makeRecord()`, a
@@ -1293,12 +1288,11 @@ arms spread the page's `parentRecords`, so a nested create lands on the nested
 edit page rather than raising a missing-parameter exception. The key the `edit`
 arm mints is the one the new row reads back
 ([record-key.md](../schemas/record-key.md#a-key-is-minted-from-the-value-its-row-would-read-back)):
-until [M7 · 6](../roadmap.md#m7--composite-identifiers) it printed the value
-the record held in memory, so a create whose key type rewrites the typed
-spelling — `new/1` read back as `NEW/1` — redirected to a URL the strict decode
-answered 404 for, the record existing under its canonical key.
+printing the value the record holds in memory instead would send a create whose
+key type rewrites the typed spelling — `new/1` read back as `NEW/1` — to a URL
+the strict decode answers 404 for, the record existing under its canonical key.
 
-`handleRecordCreation()` gained the parent arm with M6 · 3: with a parent record
+`handleRecordCreation()` has a parent arm: with a parent record
 in hand it calls
 [`Resource::attachRecordToParent()`](nested-resources.md#the-attach-lands-on-the-resource-and-writes-the-owning-side-in-memory)
 before the `persist()`/`flush()` pair, so the new record joins the parent's
@@ -1309,17 +1303,15 @@ page reaches the same place from the other side: the resource-page base answers
 `CreateAction`, which is the hook
 [`CreateAction`](../actions/create-action.md) already consulted.
 
-Since [M7 · 6](../roadmap.md#m7--composite-identifiers) the parent is joined
-**before** the mapping as well. `create()` maps through a private
+The parent is joined **before** the mapping as well. `create()` maps through a private
 `mapRecordForCreation()`, which takes the record `makeRecord()` built, attaches
 it under a parent through `attachRecordToParent()` and maps with the form bound
 to that record, restoring the binding in a `finally` so a refused create
 re-renders exactly as before — the `hint` field of `MakeRecordTest`'s page and of
 `CreateRecordTakenKeyTest`'s nested one, shown only while the form is bound to no
-record, is what proves the binding came back. Until M7 · 10 the arm with no parent
-mapped under the class binding alone, so a closure taking `$record` saw `null`
-while the form was mapped; it now sees the new record, as the parent arm's always
-did. That is what lets the record check that ends
+record, is what proves the binding came back. The arm with no parent maps with
+the form bound to the new record too, so a closure taking `$record` sees that
+record while the form is mapped rather than `null`. That is what lets the record check that ends
 the mapping see a key half the parent fills: a create on a taken key — nested or
 not, over any identifier width, a single assigned one included — is *"This value
 is already used."* under every key field the form maps that is no association, rather
@@ -1334,15 +1326,15 @@ taken-key case flipped in place from pinning the unique violation. Like
 [`CreateAction`](../actions/create-action.md#the-created-record-joins-the-relationship-in-the-same-flush),
 a refused nested create takes the record back out of a many-to-many parent's
 collection: `mapRecordForCreation()` hands it back in a `finally` when the
-mapping refuses it, and the `ValidationException` leaves unchanged. Until
-[M7 · 11](../roadmap.md#m7--composite-identifiers) it stayed there for the rest
-of the request, so a later flush in that request — an exception listener's, or
-one in a `create()` override that caught the refusal — failed with Doctrine's
+mapping refuses it, and the `ValidationException` leaves unchanged. Left there,
+it would stay for the rest of the request, so a later flush in that request — an
+exception listener's, or one in a `create()` override that caught the refusal —
+would fail with Doctrine's
 *A new entity was found through the relationship …*. Any other parent holds
 nothing of the record and is left alone — unless the child's setter writes it
 into the parent's collection itself, which the hand-back does not undo.
 
-Since M7 · 7 the default `handleRecordCreation()` also refuses by name a record
+The default `handleRecordCreation()` also refuses by name a record
 whose assigned key is still blank after `persist()`. It asks
 [`AssociationReader::hasBlankAssignedIdentifier()`](../schemas/association-reader.md#a-blank-assigned-identifier-is-read-after-persist-where-a-record-is-created)
 on the page's own entity manager, between `persist()` and `flush()`, so every
@@ -1362,8 +1354,8 @@ A key field over a non-nullable property
 [is required on its own](../forms/can-be-validated.md#requirement-is-derived-from-the-records-write-side-types),
 so until it says `required(false)` a blank in it is refused under the field
 first, whatever the key rules say, and the `InvalidTypeException` arm is reached
-only on a field that says it. Since M7 · 10 the refusal's message closes with
-a sentence saying the rules are off: *The schema switches the key rules off with
+only on a field that says it. When the rules are off, the refusal's message
+closes with a sentence saying so: *The schema switches the key rules off with
 validateRecordKey(false), so a key field it maps is not refused while blank;
 switch them back on to have the blank field refused under it.* With the rules on,
 the message is unchanged. Pinned by
@@ -1373,12 +1365,10 @@ resource page [App\Admin\CreateEdition] built a [App\Entity\Edition] whose
 identifier is still blank after persist(), so it was not saved. Give every
 identifier field a form field — a Hidden one for a value the user should not type
 — or fill it in a prePersist listener, in makeRecord(), or in
-handleRecordCreation() before calling the parent.* (`makeRecord()` joined that
-advice with M7 · 10.) Nothing is flushed. One record cannot be detached: a single
+handleRecordCreation() before calling the parent.* Nothing is flushed. One record cannot be detached: a single
 derived identity whose target's string key is still `''` flattens to an identity
-hash of `''`, which Doctrine can neither detach nor remove, so since
-[M7 · 11](../roadmap.md#m7--composite-identifiers) the page swallows that
-`detach()` failure and throws its own message unchanged, where it used to fail
+hash of `''`, which Doctrine can neither detach nor remove, so the page swallows
+that `detach()` failure and throws its own message unchanged rather than failing
 with Doctrine's *Entity has no identity, therefore remove from identity map
 cannot be performed*; that record stays scheduled in the unit of work for the
 rest of the request, and nothing is written, since nothing flushes after the
@@ -1388,12 +1378,11 @@ An override that sets the key before calling the parent passes, since the check
 reads the record the parent persists. Under a many-to-many parent the record is
 handed back out of the parent's collection whenever `persist()` or this read
 fails — Doctrine's own `EntityMissingAssignedId` for a key half still null
-included, rethrown unchanged — as with the mapping's own refusal above; until
-M7 · 11 it stayed there for the rest of the request. Pinned by
+included, rethrown unchanged — as with the mapping's own refusal above. Pinned by
 [`CreateRecordParentHandBackTest`](../../../packages/panels/tests/Integration/Resources/Pages/CreateRecordParentHandBackTest.php),
 over a composite record under a many-to-many parent, refused at the mapping, at
-this read and inside `persist()`. Before M7 · 7 the row was written with its blank key
-half and the redirect failed to mint its key. Pinned by
+this read and inside `persist()`. Without the refusal the row would be written
+with its blank key half and the redirect would fail to mint its key. Pinned by
 [`CompositeRecordPagesTest`](../../../packages/panels/tests/Integration/Resources/Pages/CompositeRecordPagesTest.php),
 which also pins that a global `prePersist` listener filling the key half lets the
 create save.
@@ -1404,8 +1393,8 @@ clone of itself bound to the manager `setRecordPersistence()` injected —
 [`withEntityManager()`](../schemas/association-reader.md) — so the record check
 that ends `getData()` reads the unit of work and the database the flush writes
 to, and `handleRecordCreation()`'s blank-key read asks the form's reader rebound
-the same way, where it built a `new AssociationReader($entityManager)` until
-[M7 · 10](../roadmap.md#m7--composite-identifiers). So a reader service an
+the same way rather than a `new AssociationReader($entityManager)` of its own.
+So a reader service an
 application subclassed or decorated is the one both reads ask — a decorator that
 delegates must override `withEntityManager()` to rebind what it delegates to —
 and a page that overrides `setRecordPersistence()` with another manager is checked
@@ -1432,7 +1421,7 @@ which belongs to no input, so without
 `this.getErrorsForSchemaStatePath('data')` it renders nowhere and the submit
 appears to do nothing. The demo hand-rolled this block for the same reason; this
 is the shipped version of it, in one file instead of three, wrapped in a
-`form_errors` block a page can replace. Since M7 · 6 one of the key rules lands
+`form_errors` block a page can replace. One of the key rules lands
 there too — a key a hook moved on a related record the form never maps is
 refused at the schema's own path — and actions' modal carries the twin,
 [its own record-error list](../actions/action.md#the-action-modal-renders-the-record-errors-that-name-no-field).
@@ -1445,11 +1434,10 @@ transactions (`CanUseDatabaseTransactions`, which
 [`halt()`'s carried rollback flag waits on](custom-pages.md#halts-rollback-flag-is-carried-and-ignored)),
 `previousUrl`, the record events, the
 authorization arms, and `content()` and its `Form`/`EmbeddedSchema`
-wrapper. The parent-record association came off that list with M6 · 3, and the
-partial gained [the sub-navigation band](has-sub-navigation.md); M6 · 2 took the
-partial itself off it, replacing it with the shared
-[form variant](form-actions.md) and declaring the Create and Cancel buttons as
-real `Action`s — the cancel one
+wrapper. The parent-record association ships, and the partial carries
+[the sub-navigation band](has-sub-navigation.md); the page's partial is the
+shared [form variant](form-actions.md), with the Create and Cancel buttons
+declared as real `Action`s — the cancel one
 [linking to the listing rather than going back in history](form-actions.md#the-cancel-action-links-to-the-index-where-filament-goes-back-in-history).
 
 Four divergences are shared with the edit page:
@@ -1475,9 +1463,9 @@ abstract class EditRecord extends Page
 
 Two `LiveProp`s: `$data` here, and `public ?string $record` —
 **the route key, never the record** — on
-[`InteractsWithRecord`](interacts-with-record.md), which M6 · 3 extracted out of
-this class unchanged so `ManageRelatedRecords` (and `ViewRecord` at M5 · 2) could
-compose the same six members. Both halves of the record prop are constrained by
+[`InteractsWithRecord`](interacts-with-record.md), which was extracted out of
+this class unchanged so `ManageRelatedRecords` (and `ViewRecord`, once the view
+page lands) could compose the same six members. Both halves of the record prop are constrained by
 the wire, and each has its own divergence:
 [the record prop carries the key and dehydrates through a bridge](#the-record-prop-carries-the-route-key-and-needs-a-dehydration-bridge).
 `protected ?object $resolvedRecord` memoises the resolution for the request.
@@ -1556,9 +1544,8 @@ Before the mapping, `save()` binds the form's association reader to the manager
 the page writes through, as the create page does — a
 [`withEntityManager()`](../schemas/association-reader.md) clone of whatever reader
 the form holds — so the changed-, blank- and taken-key passes that end
-`getData()` read the unit of work and the database the flush writes to. Until
-[M7 · 10](../roadmap.md#m7--composite-identifiers) they read the form's unbound
-reader on the container's default manager.
+`getData()` read the unit of work and the database the flush writes to, not the
+container's default manager the form's unbound reader would ask.
 
 `getData($data)` is where the state reaches the record, and it **mutates before
 it can refuse**: a record-level violation
@@ -1568,15 +1555,14 @@ else in the request may flush, which is why `handleRecordUpdate()` is the only
 write and why the demo's `testInvalidEditSubmitLeavesTheRowUntouched` is the
 carried pin for it.
 
-The record's **key** is the one field that does not stay mutated. Since
-[M7 · 6](../roadmap.md#m7--composite-identifiers) the record check refuses an
-edited identifier field — *"This value cannot be changed."* under it, whatever
+The record's **key** is the one field that does not stay mutated. The record
+check refuses an edited identifier field — *"This value cannot be changed."* under it, whatever
 generator fills it, IDENTITY included — and puts the stored value back, so even a
 flush later in the request has no key to write
-([the rule](../schemas/can-be-validated.md#a-changed-key-is-refused-and-put-back-not-handed-to-doctrine)). Before, a composite or assigned key re-keyed the
-row and stranded the page's record prop until the next request 404ed, a taken one
-closed the entity manager, and an IDENTITY one reported *Saved* while Doctrine
-dropped the edit. Pinned by
+([the rule](../schemas/can-be-validated.md#a-changed-key-is-refused-and-put-back-not-handed-to-doctrine)). Without that, a composite or assigned key would re-key
+the row and strand the page's record prop until the next request 404ed, a taken
+one would close the entity manager, and an IDENTITY one would report *Saved* while
+Doctrine dropped the edit. Pinned by
 [`EditRecordChangedKeyTest`](../../../packages/panels/tests/Integration/Resources/Pages/EditRecordChangedKeyTest.php) and by
 `CompositeRecordPagesTest`'s key-edit case, flipped in place from pinning the
 re-key.
@@ -1631,8 +1617,7 @@ edit-page GET.
   rather than new: the URL is generated inside a `#[LiveAction]`, so
   [the default panel answers](#url-generation-inside-a-live-action-resolves-the-default-panel)
   — right for every single-panel application, wrong for a resource mounted only
-  in a non-default panel, and one more instance against
-  [M6 · 6](../roadmap.md#m6--panel-depth)'s multi-panel URL row.
+  in a non-default panel, and one more instance of that defect.
 - `getDefaultActionSchemaResolver()` is the list page's create and view arms over
   the **resource's** `form()`, and an edit arm that is not: an `EditAction` on
   this page resolves to `$schema->components([EmbeddedSchema::make('form')])`,
@@ -1732,7 +1717,7 @@ Enums, contracts, HTTP layer, events, templates —
 | Item | Ports | Status | Detail |
 | --- | --- | --- | --- |
 | [Layout templates](../../../packages/panels/templates/components) | [`resources/views/components`](../../../vendor/filament/filament/resources/views/components) | in progress | [Layout templates](#layout-templates) |
-| [`Twig\PanelsIconAlias`](../../../packages/panels/src/Twig/PanelsIconAlias.php) | [`View/PanelsIconAlias.php`](../../../vendor/filament/filament/src/View/PanelsIconAlias.php) | in progress | ten constants: nine of Filament's 32 — the sidebar group chevron, the topbar hamburger, the three theme-switcher glyphs ([Layout templates](#layout-templates)), the dashboard's navigation icon ([Dashboard](#dashboard)), the global search field's magnifying glass ([global-search.md](global-search.md)), and the two this epic added, the sub-navigation mobile-menu chevron ([has-sub-navigation.md](has-sub-navigation.md)) and the manage-related-records navigation item ([manage-related-records.md](manage-related-records.md#the-navigation-label-and-icon-drop-their-related-resource-arms)) — plus [the user-menu trigger, which is an invention](#user_menu_trigger-is-an-addition-not-a-rename) |
+| [`Twig\PanelsIconAlias`](../../../packages/panels/src/Twig/PanelsIconAlias.php) | [`View/PanelsIconAlias.php`](../../../vendor/filament/filament/src/View/PanelsIconAlias.php) | in progress | ten constants: nine of Filament's 32 — the sidebar group chevron, the topbar hamburger, the three theme-switcher glyphs ([Layout templates](#layout-templates)), the dashboard's navigation icon ([Dashboard](#dashboard)), the global search field's magnifying glass ([global-search.md](global-search.md)), and the two the record surfaces use, the sub-navigation mobile-menu chevron ([has-sub-navigation.md](has-sub-navigation.md)) and the manage-related-records navigation item ([manage-related-records.md](manage-related-records.md#the-navigation-label-and-icon-drop-their-related-resource-arms)) — plus [the user-menu trigger, which is an invention](#user_menu_trigger-is-an-addition-not-a-rename) |
 | [Assets (JS/CSS)](../../../packages/panels/assets) | [`resources/js/`](../../../vendor/filament/filament/resources/js), [`resources/css/`](../../../vendor/filament/filament/resources/css) | in progress | the `@sylament/panels` workspace ships four Stimulus controllers (`sidebar`, `theme`, `global-search`, `unsaved-changes`) and the `sy-pa-*` rules, which compile into support's stylesheet — [Assets](#assets); `sub-navigation.css` and `page.css`'s band modifiers are [has-sub-navigation.md](has-sub-navigation.md#the-top-modifier-is-emitted-and-styled-by-nothing) |
 | [`Routing\PanelRouteLoader`](../../../packages/panels/src/Routing/PanelRouteLoader.php) | [`routes/web.php`](../../../vendor/filament/filament/routes/web.php) — the per-panel route group and its `$page::registerRoutes($panel)` / `$resource::registerRoutes($panel)` loops, [`Pages/Concerns/HasRoutes.php`](../../../vendor/filament/filament/src/Pages/Concerns/HasRoutes.php) `routes()`, [`Resources/Resource/Concerns/HasRoutes.php`](../../../vendor/filament/filament/src/Resources/Resource/Concerns/HasRoutes.php) `registerRoutes()` | in progress | [Routing](#routing) |
 | [`Controllers\PageController`](../../../packages/panels/src/Controllers/PageController.php) | no Filament counterpart — a Filament page **is** its own route action | in progress | [Routing](#routing) |
@@ -1821,7 +1806,7 @@ action is inert, Stimulus ignoring an action whose controller is on no ancestor.
 `UserMenu` is a support `Dropdown` whose trigger is an `IconButton` and whose
 panel today holds only the theme switcher, rendered
 [in place rather than teleported](#the-theme-switchers-dropdown-is-not-teleported).
-It is **a stub for the auth epic**, and every part of that is visible in the
+It is **a stub until auth is ported**, and every part of that is visible in the
 markup: there is no user name, no
 avatar, no menu items, no `getUserMenuItems()`, and none of Filament's four
 gates — `auth()->check()`, `hasThemeSwitcher()`, `hasDarkModeForced()`,
@@ -1878,8 +1863,8 @@ would inherit a chrome whose every element the child would have to empty.
 What Filament's shell has and this does not, all todo:
 
 - Desktop collapse (the narrow icon-only rail) and the collapsed-state tooltips
-  on items — both need panel-level sidebar settings. M2 · 2 introduced the only
-  one a panel carries (`collapsibleNavigationGroups()`), which is not these.
+  on items — both need panel-level sidebar settings. The only one a panel carries
+  is `collapsibleNavigationGroups()`, which is not these.
 - Sub-navigation: Filament renders `childItems` nested under an active item, and
   the nesting arm of `NavigationItem` is deferred whole (see
   [NavigationItem](#navigationitem)).
@@ -1901,7 +1886,7 @@ and [the render tests sit under
 `packages/panels/assets` is the `@sylament/panels` pnpm workspace, JS-only in the
 same shape as `@sylament/notifications`: four Stimulus controllers build to its own
 `dist`, while `src/styles/index.css` is imported by support's stylesheet and
-compiles into support's single built CSS. Since M6 · 2 it carries
+compiles into support's single built CSS. It carries
 `@symfony/ux-live-component` as a JS peer — in both `peerDependencies` and
 `devDependencies`, the workspace being `strictPeerDependencies: true` — which
 stays a bare specifier the consuming app's importmap resolves, exactly as in
@@ -1923,22 +1908,19 @@ worth naming:
   also carries the 26-rung
   [`sy-width-*` ladder](simple-page.md#the-ladder-shares-one-class-vocabulary-with-schemas-and-cannot-collide)
   nested under `.sy-pa-main, .sy-pa-simple-main`, and the four `.sy-pa-simple-*`
-  shell rules — both M6 · 2's.
+  shell rules.
 - `page.css` is the [page skeleton's](#routing) three rules — `py-8 gap-y-8` on
   the wrapper, a flex column on `sy-pa-page-main`
   ([a divergence](#the-pages-main-container-is-a-flex-column-where-v5-gates-that-on-a-full-height-page)),
-  and `grid flex-1 auto-cols-fr gap-y-8` on `sy-pa-page-content` — plus, since
-  M6 · 2, `.sy-pa-form` (`flex flex-col gap-6`, Filament's `fi-sc-form`, which
+  and `grid flex-1 auto-cols-fr gap-y-8` on `sy-pa-page-content` — plus
+  `.sy-pa-form` (`flex flex-col gap-6`, Filament's `fi-sc-form`, which
   is what replaced the old actions-row `mt-6` and error-list `mb-6`),
   `.sy-pa-form-errors` (the record-level error list, reading the `danger`
   palette the way forms' per-field errors do) and
-  `.sy-pa-simple-page-content`. A twelfth stylesheet, `resources.css`, was
-  **deleted** in the same change: its `.sy-pa-resource-form-errors` rule became
-  `.sy-pa-form-errors` here and its `.sy-pa-resource-form-actions` wrapper is
-  gone entirely, the row now being schemas' own `sy-sc-actions` — so
-  `index.css` lost an import rather than gaining one.
-- `header.css` is the page header's own rules, and M6 · 2 added three groups to
-  it: the two-level actions container
+  `.sy-pa-simple-page-content`. There is no resource-form stylesheet: the
+  record-level error rule is `.sy-pa-form-errors` here, and the form's actions
+  row is schemas' own `sy-sc-actions` with no wrapper of its own.
+- `header.css` is the page header's own rules, three groups among them: the two-level actions container
   ([why the alignment rides the inner row](custom-pages.md#the-alignment-class-rides-the-inner-row-and-the-container-is-what-the-breadcrumb-offset-hangs-off)),
   its seven `sy-align-*` arms, and the three `.sy-pa-simple-header-*` rules.
 - `relation-manager.css` is the [manager's](relation-manager.md) three rules:
@@ -2015,7 +1997,7 @@ non-collapsible group (same label class, no disclosure attributes — see
 stale localStorage entry can never collapse a group that has no control to
 reopen it.
 
-The fourth controller, `unsaved-changes`, arrived with M6 · 2's page tier and is
+The fourth controller, `unsaved-changes`, belongs to the page tier and is
 the port of Filament's `unsaved-changes-alert.js`. It binds the sentinel div the
 [page partial](#routing) emits rather than the live root above it — the same
 constraint the `global-search` controller lives under, since
@@ -2041,7 +2023,7 @@ its own client-side baseline
 And a **bfcache restore does not reconnect the controller**, so the baseline
 taken before the page was frozen survives and the guard stays armed — navigating
 away from a restored page with unsaved edits still prompts, which is the opposite
-of what the epic's design note predicted and what the browser pass confirms
+of the natural prediction and what the browser pass confirms
 ([the record](unsaved-changes-alert.md#a-bfcache-restore-keeps-the-guard-armed-rather-than-re-baselining)).
 
 It is declared `fetch: eager` like the other three, and for a sharper reason
@@ -2054,11 +2036,11 @@ still renders and still saves, so the omission is degraded, not broken.
 What Filament's panel assets have and this does not, all todo:
 
 - Desktop collapse (the icon-only rail) and its width/tooltip state — the
-  controller tracks the mobile drawer only. M2 · 2 shipped the one sidebar
-  setting a panel carries (`collapsibleNavigationGroups()`); the desktop-rail
+  controller tracks the mobile drawer only. The one sidebar setting a panel
+  carries is `collapsibleNavigationGroups()`; the desktop-rail
   settings behind this are still unported.
 - `scroll-sidebar.js` — restoring sidebar scroll position across navigations.
-- `error-notifications.js` — the surface it serves exists (M2 · 3's
+- `error-notifications.js` — the surface it serves exists (the
   [`CreateRecord`](#createrecord) / [`EditRecord`](#editrecord) forms, error
   outlet included), but the script is not ported, so a validation failure below
   the fold is silent. Its sibling `unsaved-changes-alert.js` **is** ported, as
@@ -2142,7 +2124,7 @@ renamed slug. And an entry that is not the subclass it claims to be throws a
 `LogicException` naming the class, at route-build time rather than at the request
 that finally hits it: `pages()` entries against `Page`, `resources()` entries
 against `Resource`, and a resource's own `getPages()` entries against `Page`.
-M6 · 2 added a third refusal in the same shape:
+A third refusal has the same shape:
 [every `{placeholder}` in a mounted path must reach the page](custom-pages.md#the-loader-refuses-a-placeholder-the-page-cannot-mount-which-filament-does-not)
 — through a parent key the loader folds itself, a `mount()` parameter, or a
 public property — else ux paints the leftover onto the live root as a stray HTML
@@ -2225,7 +2207,7 @@ has one), the theme head script, `sylamentStyles()`, the importmap, a
 [`getExtraBodyAttributes()`](custom-pages.md#a-page-with-no-body-attributes-still-renders-a-stray-space)
 answered, the shell component with the page's live component in its content block
 (invoked by the tag name `Page::getComponentName()` returns, and given
-`componentProps`), and the notifications outlet. Since M6 · 2 the shell is an
+`componentProps`), and the notifications outlet. The shell is an
 `{% if %}` over two literal `<twig:>` tags rather than one:
 `SylamentPanels:SimpleLayout` when the page's
 [`getLayout()`](custom-pages.md#a-third-shell-layout-is-a-document-override-not-a-getlayout-value)
@@ -2274,7 +2256,7 @@ view, not its layout. Ours has a second, harder reason —
 ux-twig-component's `ComponentStack`, so it only works rendered inside the
 component whose actions it shows, which a document-level outlet is not.
 `Page/index.html.twig` is what
-`Page::getTemplate()` falls back to, and since M6 · 2 it is **the chrome every
+`Page::getTemplate()` falls back to, and it is **the chrome every
 other page template extends** rather than a skeleton each of them repeats. It
 renders a `sy-pa-page` root — its classes coming from
 [`getPageClasses()`](custom-pages.md#getpageclasses-is-the-only-source-of-a-per-page-root-class)
@@ -2392,7 +2374,7 @@ What arrives in that context is the minting side's business, and the two sides
 only agree where the mint knows the resource's rule. A **table**-bound action
 carries the key the table itself minted, so a row action on a composite list
 resolves against the same string the row rendered. Every other action reads the
-literal `id` property — and, since M7 · 3, reads it
+literal `id` property — and reads it
 [only where one scalar field is the record's whole identity](../actions/action.md#getcontext-drops-the-record-model-gate).
 Without that guard, an ordinary `EditAction::make()->record($this->getRecord())`
 in a page header on a record keyed by `id` **and** a locale minted the partial
@@ -2407,7 +2389,7 @@ pre-existing mismatch — one scalar field *is* that record's identifier, so the
 literal reading still fires and still names a key the resource does not use —
 and so does a record carrying a legacy serial `id` beside the natural key it is
 really identified by. Both are a 404 on click, and both are closed only by the
-host hook that would let a page mint its own key, which no epic owns.
+host hook that would let a page mint its own key, which does not exist yet.
 
 ### A page lifecycle hook is a method name, not a registration
 
@@ -2472,10 +2454,10 @@ apparently equivalent eager one would not be.
 — Filament's own body, one line for one line. The modal renders the page's **own**
 `form` schema: the same object the page beneath it is bound to, on the same state
 path, with the same error bag. The arm waited on
-[`EmbeddedSchema`](../schemas/embedded-schema.md), which M6 · 1 pulled forward to
+[`EmbeddedSchema`](../schemas/embedded-schema.md), which was ported early to
 mount relation managers and which this was the first consumer of.
 
-What that retires is the port's one-epic divergence: the modal used to be a
+What that retires is a former divergence: the modal used to be a
 **second component tree** over the same record — its own state path, its own
 validation — which was correct for the modal and wrong for the page behind it,
 still showing the values it was filled with at mount. `afterActionCalled()` closed
@@ -2505,7 +2487,7 @@ distinct — and it follows from what an embed is: the schema has one id path, n
 one per place it renders. Closing it needs a render-time id scope on
 `EmbeddedSchema`, which Filament has no counterpart for either, so it is recorded
 rather than papered over — and "open the header Edit modal, then click a field
-label" belongs on the browser checklist of any epic that touches this arm.
+label" belongs on the browser checklist of any change that touches this arm.
 
 ## Divergences
 
@@ -2586,7 +2568,7 @@ same reason and on the same schedule as
 [the item's missing arm](#group-and-getgroup-carry-no-unitenum-arm) — the two
 have to agree about what a group key is, so they move together.
 
-M2 · 2 looked at it and deferred it again, deliberately. The panel's navigation
+It stays deferred, deliberately. The panel's navigation
 assembly buckets items by `getGroup()` and matches a registered group by key or
 label, all of it string-keyed; widening the page static alone would produce a
 group key nothing matches, and widening the whole path means answering how an
@@ -2701,8 +2683,8 @@ fill the wrapper instead of hugging its rows. Nothing visible differs today,
 because every page we ship fills its content anyway.
 
 It is a deliberate simplification, not a mistake: gating a rule on a class
-nothing emits would be dead CSS. **Half of that gate is now live.** M6 · 3 ships
-[sub-navigation](has-sub-navigation.md), so `sy-pa-page-has-sub-navigation` is
+nothing emits would be dead CSS. **Half of that gate is live.**
+[Sub-navigation](has-sub-navigation.md) ships, so `sy-pa-page-has-sub-navigation` is
 emitted and carries the two rules the band needs — `gap-8`, and `md:flex-row
 md:items-start` under the start/end modifiers — and the band behaves identically
 to vendor's on both edges. What stays unconditional here is the base
@@ -2776,7 +2758,7 @@ unported Avatar, sized to the avatar's 32px by a `user-menu.css` rule rather tha
 the icon-button default's 20px, and the alias exists so an application can swap
 that stand-in without waiting for the avatar. It is therefore surface a migrating
 user cannot have been using, and it goes away — or becomes an avatar setting —
-when [the auth epic](../roadmap.md) brings a real user to render.
+when ported auth brings a real user to render.
 
 ### Panels are collected from tagged providers, not registered imperatively
 
@@ -2893,7 +2875,7 @@ So `registerNavigationItems()` has no port, and its four early returns are
 distributed rather than dropped: `shouldRegisterNavigation()` is ported and
 consulted by the panel-side loop, in Filament's own position, and so is
 [`getParentResourceRegistration()`](nested-resources.md#the-suppressions-sit-where-the-trail-already-put-them)
-since M6 · 3 — a nested resource is skipped there and nowhere else, so it still
+— a nested resource is skipped there and nowhere else, so it still
 answers `getNavigationItems()` when something asks it directly. `getCluster()`
 guards an unported subsystem; `canAccess()` waits on authorization. Each of those lands in the loop when its subsystem does, not
 back inside the resource — a resource that answers `getNavigationItems()` with an
@@ -3292,8 +3274,7 @@ keys against is the **declared** `getRecordClass()`, never the builder's root
 entity: a modifier may replace the builder wholesale, and the resource still
 speaks for the class it says it does. And the decode runs **before** anything is
 bound, so a key that class could never mint — the wrong arity, a lower-case
-escape, a component its field's DBAL type refuses and, since
-[M7 · 5b](../roadmap.md#m7--composite-identifiers), its
+escape, a component its field's DBAL type refuses and its
 `convertToDatabaseValue()` refuses too,
 [a type refusing it on read only](../schemas/record-key.md#a-type-that-refuses-its-printed-form-on-read-only-decodes-it-through-its-own-writer)
 being read back through its own writer, or one it would print back differently
@@ -3348,11 +3329,11 @@ reach that exception at any identifier width. And the value reaches the
 [splits that token in two](custom-pages.md#getpageclasses-is-the-only-source-of-a-per-page-root-class),
 which the grammar makes impossible for a **composite** key.
 
-None of the three is new and none is composite-only. Two more shapes were 500s
-until [M7 · 9](../roadmap.md#m7--composite-identifiers) refused them on first
-use: a name the record class maps as no field — unmapped, or dotted without
-being an embeddable's field — was a `QueryException`, and a name that is an
-**association** bound, resolved, and then minted nothing, the property read
+None of the three is new and none is composite-only. Two more shapes are refused on
+first use rather than left as 500s: a name the record class maps as no field —
+unmapped, or dotted without being an embeddable's field — would be a
+`QueryException`, and a name that is an **association** would bind, resolve,
+and then mint nothing, the property read
 answering an entity that *"is not a printable value."* A name that is **one
 field of a several-field identifier**, which is never unique on its own, is
 refused too: the first render of a list minting its row URLs, or the first
@@ -3366,7 +3347,7 @@ untyped bind, and a named column that is not unique. The arm is otherwise left
 byte-identical on purpose: a user who declares the static has told
 us which column they mean, and the closing version of it — convert the value
 through the field's own DBAL type and compare it back to what the client sent —
-needs an addition to the frozen key contract, which is a later epic's to make.
+needs an addition to the frozen key contract, which is not made yet.
 Typing the bind alone was executed and is worse than the gap: it trades the 500
 for `5abc` silently resolving record 5.
 
@@ -3417,9 +3398,8 @@ the association reader settled on for the same reason.
 
 Filament's signature carries seven parameters; ours carries five. `$tenant` and
 `$configuration` belong to deferred features (tenancy, resource configurations)
-and are the whole of what is missing — `$shouldGuessMissingParameters` was the
-third until M6 · 3, and it ships with
-[nested resources](nested-resources.md#guessing-walks-the-records-own-associations-never-the-request)
+and are the whole of what is missing — `$shouldGuessMissingParameters` ships
+with [nested resources](nested-resources.md#guessing-walks-the-records-own-associations-never-the-request)
 under Filament's name and a different mechanism: it walks the record's own
 associations, where Filament reads the original request. What survives is
 widened: Filament takes `?string $panel` (a panel id) where ours takes
@@ -3544,8 +3524,8 @@ to instance methods (which changes a Filament API shape) or carrying the page's
 registration key on the instance, and both are worth deciding once rather than
 twice, so it waits for the task that needs a resource page to name its own route.
 
-M6 · 3 was the first task that could have been it, and
-[deliberately routed around it](has-sub-navigation.md#a-resource-page-item-is-built-by-the-band-because-a-page-cannot-name-its-own-route):
+The sub-navigation band was the first task that could have been it, and it
+[deliberately routes around it](has-sub-navigation.md#a-resource-page-item-is-built-by-the-band-because-a-page-cannot-name-its-own-route):
 the sub-navigation band needs a sibling resource page's URL, which in Filament is
 `static::getUrl()` over `getResourcePageName()`. The band builder runs on a page
 **instance** holding the registry, so it scans the sibling's own resource
@@ -3602,8 +3582,8 @@ table-side authorization arm is unported.
 
 #### The row click falls through to the resource's own view or edit page
 
-Row-click defaulting was the one this method was predicted to miss, and M4 · 3
-landed it — in `makeTable()` rather than in `table()`, which is the placement the
+Row-click defaulting was the one this method was predicted to miss, and it
+landed — in `makeTable()` rather than in `table()`, which is the placement the
 prediction got wrong and the reason matters. `table()` runs the resource hop last
 so a resource can override anything; `makeTable()` runs **before** `table()`, so
 seeding there means the resource's own `recordUrl()` still wins, which is the
@@ -3701,7 +3681,7 @@ of a working href — an easy line to forget, and silent when forgotten. A table
 **record** action needs none of this either way: `BelongsToLiveComponent` falls
 through the action's table to the table's host.
 
-The hook's two remaining members shipped with M6 · 2. `$headerActionsAlignment`
+The hook's two remaining members ship as well. `$headerActionsAlignment`
 and `getHeaderActionsAlignment()` sit on the trait and reach the `Header`
 component's new two-level DOM
 ([where the class lands, and why](custom-pages.md#the-alignment-class-rides-the-inner-row-and-the-container-is-what-the-breadcrumb-offset-hangs-off)),
@@ -3728,16 +3708,15 @@ PHP's precedence is *current class > inserted trait > inherited class*, so a
 subclass that re-`use`d `HasActions` would insert the trait's
 `getDefaultActionUrl(): ?string { return null; }` **over** the resource base's
 override, and every `CreateAction` on that page would render with no href — no
-error, no warning, just a dead button. Task 4 shipped `ListRecords` with its own
-`use HasActions`, which is exactly the arrangement that would have swallowed the
-hook; the trait moved onto the resource base when the override landed, and onto
-the plain page base with M6 · 2.
+error, no warning, just a dead button. A `ListRecords` with its own
+`use HasActions` is exactly the arrangement that would swallow the hook, so the
+trait sits above the resource base, on the plain page base.
 
-That second move is the closer parity: Filament composes
+That placement is also the closer parity: Filament composes
 `InteractsWithActions` on `BasePage`, so *every* page is an actions host there
 too — and here it is what lets a hand-written page declare header actions
 without extending a resource. The **same** rule and the same hazard apply one
-tier down to `HasSchemas`, which M6 · 2 also moved up, and there the failure is
+tier down to `HasSchemas`, which sits on the page base too, and there the failure is
 not a dead button but a 500 on the first dehydrate
 ([why every leaf had to drop it](custom-pages.md#the-empty-discovery-list-is-mandatory-and-so-is-its-removal-from-every-leaf)).
 So the rule for this hierarchy is simply: **a page never re-`use`s a trait its
@@ -3902,25 +3881,25 @@ Filament has the same problem and solves it with `original_request()`, a
 Livewire helper that reaches the request that rendered the component rather than
 the one carrying the update.
 
-**M6 · 3 closed it for resource pages; M6 · 2 closed it for every page.** The
+**It is closed for every page.** The
 `#[LiveProp] public ?string $panelId`, minted by the getter its dehydration
 reads and stamped back onto the request from a `#[PostHydrate]` hook — the
 mechanism [`GlobalSearch`](global-search.md#the-component-restores-its-panel-onto-a-live-request)
-already used, ported down a tier — landed on the resource-page base first and
-moved up to [`Pages\Page`](#page) with the page tier, where the stamp also took
+already used, ported down a tier — sits on [`Pages\Page`](#page), where the
+stamp takes
 [priority 20](custom-pages.md#the-stamp-runs-above-actions-own-hydration-hook-and-the-priority-is-the-whole-mechanism)
 so it precedes actions' own re-resolution of a mounted action at 10. So a live
 request that hydrates **any** panel page resolves the panel that page was opened
 in, and every URL that request mints — the trail, the band, a redirect, an action
-link — answers for it. Nesting forced the first half: on a non-default panel,
-every live re-render of a nested page threw `RouteNotFoundException` before the
-prop existed.
+link — answers for it. Nesting is what makes it necessary: without the prop,
+every live re-render of a nested page on a non-default panel throws
+`RouteNotFoundException`.
 
 One half stays open. A **nested live component** hydrating on its own — a
 [relation manager](relation-manager.md#every-url-a-manager-generates-resolves-the-default-panel)
 answering a table sort — never hydrates its host page, so nothing stamps the
-attribute for it. It waits on
-[M6 · 6](../roadmap.md#m6--panel-depth)'s multi-panel URL row.
+attribute for it. It waits on the panel id reaching nested live components as
+well.
 
 ### A create modal on a record page is anonymous
 
@@ -3933,24 +3912,22 @@ editing.
 That is coherent in Filament because a create modal on a record page is nearly
 always a *relationship* create, where the page record is the parent the new row
 hangs off, and Eloquent's relationship arm reads it as exactly that. Our
-relationship arm exists — `CreateAction::relationship()` shipped with M4 · 8 and a
-relation manager answers `getDefaultActionRelationship()` since M6 · 1 — but it
+relationship arm exists — `CreateAction::relationship()` ships and a
+relation manager answers `getDefaultActionRelationship()` — but it
 hangs off the *table* and the manager, never off an ambient page record, so on the
 page itself the same default would still be read the only other way it can be: as
 the record the create is *about*. A `CreateAction` seeded with an existing record fills its modal from
 that record and, on submit, maps state onto it. The create modal would silently
 become an edit of the page's record.
 
-Filament's own `ManageRelatedRecords` is the shape borrowed here: it is the page
-that hands a create action the *parent*, deliberately and explicitly, rather than
-letting the ambient record stand in. Until that seam exists, `null` is the honest
-answer — a create modal on a record page belongs to no record, and the resource's
-record class (which `getMountedActionSchemaRecord()` still answers) is all the
-schema needs to build a blank form.
-
-Revisit with relation managers ([M6 · 1](../roadmap.md#m6--panel-depth)), which
-is when a create modal on a record page will have a parent to be told about and a
-relationship arm to read it.
+Filament's own `ManageRelatedRecords` is the shape borrowed here, and ours
+([manage-related-records.md](manage-related-records.md)) and the
+[relation manager](relation-manager.md) are that shape: each hands a create action
+the *parent*, deliberately and explicitly, through `getDefaultActionRelationship()`,
+rather than letting the ambient record stand in. On the record page itself `null`
+stays the honest answer — a create modal there belongs to no record, and the
+resource's record class (which `getMountedActionSchemaRecord()` still answers) is
+all the schema needs to build a blank form.
 
 ### A modal's schema keeps the resource form's own column count
 
@@ -4015,9 +3992,8 @@ or `mutateFormDataBeforeSave()` adds goes through Eloquent's `fill()`: written w
 the attribute is fillable, dropped in silence when `$fillable` is declared without
 it, thrown under `preventSilentlyDiscardingAttributes()`. Ours maps through
 `Schema::getData($data)`, which writes only the paths a component maps — the record
-path map plays `$fillable` — so until
-[M7 · 10](../roadmap.md#m7--composite-identifiers) such a key was dropped with
-nothing said, the page reporting *Created* or *Saved*. Both pages now refuse it by
+path map plays `$fillable` — so such a key would be dropped with nothing said,
+the page reporting *Created* or *Saved*. Both pages instead refuse it by
 name right after the hook, before the `beforeCreate` hook, `makeRecord()` or any
 write: a `LogicException` naming the page, the paths and the ways out — map each
 path with a component (a `Hidden` one for a value the user should not type, with

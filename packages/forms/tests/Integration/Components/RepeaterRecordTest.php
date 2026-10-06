@@ -14,7 +14,7 @@ use Sylament\Schemas\Schema;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
 
 /*
- * The epic's proof: a repeater bound to a plain-array record property, filled
+ * The record binding's proof: a repeater bound to a plain-array record property, filled
  * off the record and mapped back onto it through the ordinary walks. The record
  * half is what the item pipeline exists for — the live bag keys items so a
  * mutation never renumbers a sibling, the record sees a positional list — so

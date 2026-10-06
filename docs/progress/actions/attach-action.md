@@ -114,8 +114,8 @@ malformed, outside recordSelectOptionsQuery()'s scope, or already attached.`
 Anything asserting the leading sentence still passes; anything asserting the
 message whole does not.
 
-A submission carrying **no** key at all is refused before that check rather than
-by it, since zero resolved records equals zero submitted keys and the count check
+A submission carrying **no** key at all is refused, with a `LogicException`
+naming the action, before that check rather than by it, since zero resolved records equals zero submitted keys and the count check
 would pass. Filament has no equivalent guard because it does not need one: its
 `->first()` hands `null` to `$relationship->attach(null)`, which throws. The
 select's `required()` gates the ordinary browser path either way; this is the
@@ -127,7 +127,7 @@ The select's own validation runs first: an unlabelled value fails
 error rather than an exception. The re-resolution behind it is what refuses a key
 that reaches the action body with the schema bypassed.
 
-Since M7 · 7 the fetch runs one statement per batch of
+The fetch runs one statement per batch of
 `IdentifierConstraint::batch()`: the whole submission for a single identifier,
 and at most 500 keys a statement for a composite one. A forged `multiple()`
 submission therefore costs time linear in its length. The batches' records merge
@@ -170,18 +170,16 @@ projected column back, and that closed a defect the single-identifier code
 carried: the array hydrator converts a **field path**, so a target whose
 identifier is a value object hydrated `record.<id> AS sy_key` into an *object*
 and `$options[$row['sy_key']]` was a `TypeError` in the attach modal. The
-projection is an array result, so since
-[M7 · 11](../roadmap.md#m7--composite-identifiers) each row is keyed by
+projection is an array result, so each row is keyed by
 `KeySelection::keyOfHydrated($row)`, which takes every field as the hydrator
 handed it and converts only an `IDENTITY()` association half, raw under every
 hydrator, through its field's own DBAL type before printing — so the projected
-key is the key the record itself mints. Until then `keyOf()` read the already
-converted fields through their types a second time, which minted another key,
+key is the key the record itself mints. `keyOf()` would read the already
+converted fields through their types a second time, which mints another key,
 with no error, for a custom type whose reader does not read its own PHP value
 back unchanged
 ([the second reader](../schemas/record-key.md#a-hydrated-row-is-keyed-without-reading-its-fields-a-second-time)).
-The result alias moved from `sy_key` to `sy_key_0` with M7 · 4 — one
-query-cache miss, no behaviour
+The result alias is `sy_key_0`, not `sy_key`
 ([record-key.md](../schemas/record-key.md#the-row-side-and-the-record-side-mint-one-string-and-only-the-codec-may)).
 
 ### `recordSelectOptionsQuery()` is evaluated with `query` and `search`

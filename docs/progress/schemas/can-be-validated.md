@@ -66,7 +66,7 @@ _Blocked by_ names what has to land first. _Detail_ carries a **detail** link
 | Host `validateOnly()` per-path validation | [`InteractsWithSchemas::validateOnly()`](../../../vendor/filament/schemas/src/Concerns/InteractsWithSchemas.php) | skipped | — | [diverges](#sticky-re-validation-replaces-filaments-submit-only-model) |
 | Host `onValidationError()` hook | [`InteractsWithSchemas::onValidationError()`](../../../vendor/filament/schemas/src/Concerns/InteractsWithSchemas.php) | todo | — | [detail](#the-onvalidationerror-hook-is-not-ported) |
 | Host `getRules()` / `getValidationAttributes()` merges + `prepareForValidation()` | [`InteractsWithSchemas`](../../../vendor/filament/schemas/src/Concerns/InteractsWithSchemas.php) | skipped | — | [diverges](#the-livewire-whole-component-validate-plumbing-is-not-ported) |
-| Record-sourced constraints (an entity's own `#[Assert]` metadata, since M7 · 6 the taken-key and changed-key rules, and since M7 · 7 the blank-key rule) — the [`getData()`](belongs-to-record.md) tail | — | done | — | [diverges](#record-sourced-constraints-are-validated-on-the-mapped-object) · [diverges](#a-refused-submit-leaves-the-record-mutated) · [diverges](#a-taken-assigned-key-is-a-field-error-not-a-unique-violation) · [diverges](#a-changed-key-is-refused-and-put-back-not-handed-to-doctrine) · [diverges](#a-blank-assigned-key-is-refused-before-anything-is-written) |
+| Record-sourced constraints (an entity's own `#[Assert]` metadata, and the taken-key, changed-key and blank-key rules) — the [`getData()`](belongs-to-record.md) tail | — | done | — | [diverges](#record-sourced-constraints-are-validated-on-the-mapped-object) · [diverges](#a-refused-submit-leaves-the-record-mutated) · [diverges](#a-taken-assigned-key-is-a-field-error-not-a-unique-violation) · [diverges](#a-changed-key-is-refused-and-put-back-not-handed-to-doctrine) · [diverges](#a-blank-assigned-key-is-refused-before-anything-is-written) |
 | [`HasSchemas::validateSchemaRecord()`](../../../packages/schemas/src/Concerns/HasSchemas.php) | — | done | — | [semantics](#a-host-holding-no-validator-skips-the-record-run-rather-than-refusing-to-map) · [semantics](#record-errors-are-sticky-but-the-silent-pass-cannot-reproduce-them) |
 | [`Schema::validateRecordKey()` / `isRecordKeyValidated()`](../../../packages/schemas/src/Concerns/CanBeValidated.php) — the switch over the record check's blank-key and taken-key passes | — | done | — | [semantics](#the-key-rules-switch-off-per-schema-never-the-changed-key-one) |
 | [`Schema::getRecordViolationPathTranslator()`](../../../packages/schemas/src/Concerns/BelongsToRecord.php) + the translator it builds | — | done | — | [detail](violation-path-translator.md) |
@@ -282,8 +282,7 @@ flush only when valid). Class-level constraints come free that way, which is the
 only route by which `UniqueEntity` can ever work: it needs the managed object,
 not a scalar path value.
 
-Since [M7 · 6](../roadmap.md#m7--composite-identifiers) the tail is several
-validator calls rather than one — four since M7 · 7 — in an order each of them
+The tail is four validator calls rather than one, in an order each of them
 depends on. First the
 [changed-key pass](#a-changed-key-is-refused-and-put-back-not-handed-to-doctrine),
 validated as a `Callback` in the record's own context, because it puts a moved
@@ -301,12 +300,11 @@ it runs only on a record whose own constraints passed, and an application
 are; nothing throws a `ValidationException` by hand, which would render nothing.
 The `Callback` is
 [`RecordKeyGuard::constraint()`](../../../packages/schemas/src/Validation/RecordKeyGuard.php),
-`@internal`: one violation per refusal, at the refusal's path. It was a private
-method of the host until [M7 · 10](../roadmap.md#m7--composite-identifiers)
-moved it out for its second reader, tables' editable cell, which validates its
+`@internal`: one violation per refusal, at the refusal's path. It lives outside
+the host for its second reader, tables' editable cell, which validates its
 own refusal through it so the column's validator translates the message as the
 form's does ([has-columns.md](../tables/has-columns.md)).
-Since M7 · 10 the blank and taken passes run only while the schema's
+The blank and taken passes run only while the schema's
 [`validateRecordKey()`](#the-key-rules-switch-off-per-schema-never-the-changed-key-one)
 switch is on, which it is by default; the changed-key pass and the record's own
 constraints run either way. The host now files a
@@ -365,7 +363,7 @@ discarding the request's entity manager, which is what a live component doing
 record carries the rejected value after the exception, and a re-read from the
 database still returns the old one.
 
-One field is the exception, since [M7 · 6](../roadmap.md#m7--composite-identifiers):
+One field is the exception:
 the record's key. The changed-key pass puts a moved identifier back on the spot,
 so a record refused for moving its key is left holding the key it was loaded
 with — every other field the mapping wrote stays written, as above — and a flush
@@ -396,8 +394,8 @@ maps none of them it sits under the first, which folds to the schema's own path
 ([where it lands](association-reader.md#a-taken-identifier-is-looked-up-once-per-new-record-after-the-records-own-constraints-pass)).
 Nothing is written, and the entity manager stays open, short of a concurrent
 insert of the same key ([recorded](association-reader.md#what-the-taken-key-probe-cannot-see)).
-Before [M7 · 6](../roadmap.md#m7--composite-identifiers) it was a
-`UniqueConstraintViolationException` that closed the manager, or Doctrine's
+Unchecked, it would be a
+`UniqueConstraintViolationException` that closes the manager, or Doctrine's
 `EntityIdentityCollisionException` with the new record still scheduled.
 
 It needs no declaration — no `UniqueEntity`, no `unique()` on a key field. The
@@ -440,11 +438,10 @@ declaration becomes Symfony's own.
 
 ### A blank assigned key is refused before anything is written
 
-Since M7 · 7 a **new** record whose assigned key still has a blank component is
+A **new** record whose assigned key still has a blank component is
 refused before anything is written — the record a save maps, with the records
-its identifier associations reach, the items a relationship `Repeater` adds and,
-since [M7 · 11](../roadmap.md#m7--composite-identifiers), the record a singular
-relationship constructs. A blank component is an empty or
+its identifier associations reach, the items a relationship `Repeater` adds and
+the record a singular relationship constructs. A blank component is an empty or
 whitespace-only string, or an identifier association left unset or pointing at
 a record whose own assigned key is blank. Who refuses it depends on whether the
 form maps the blank field.
@@ -458,11 +455,11 @@ key field is blank lists that field before itself — `spine.code`, then `spine`
 so a form mapping the related record's key field gets the error under it, and one
 mapping only the association gets it under the association. A layout component
 entangling the association (`Group::relationship()`) counts as mapping it, but
-renders no error of its own, so since [M7 · 11](../roadmap.md#m7--composite-identifiers)
+renders no error of its own, so
 the refusal lands at the schema's own state path instead, which the page and
 the action modal render above the form
 ([why](violation-path-translator.md#a-message-is-filed-only-under-a-component-that-shows-its-own-errors));
-until then it was a 422 with no message on screen. A key field declared
+filed under the association it would be a 422 with no message on screen. A key field declared
 `dehydrated(false)` counts as mapped, since a component still maps it, so its
 typed value never reaching the record is refused under it. A blank field the
 form leaves out is skipped on the way to one it maps, and when no component maps
@@ -490,32 +487,31 @@ fix the form:
   recorded, not closed.
 - [`ReplicateAction`](../actions/replicate-action.md) refuses it after
   `beforeReplicaSaved()`.
-- A singular relationship's (`Group::relationship()`) constructed record was
-  read by no blank seam: a whitespace key half the group maps over a nullable
-  property, or one no field inside it maps, was inserted and the row could not
-  be keyed. Since [M7 · 11](../roadmap.md#m7--composite-identifiers) the save
-  refuses it by name inside `getData()`, once the record is written onto its
-  owner, under the
+- A singular relationship's (`Group::relationship()`) constructed record is
+  refused by name inside `getData()`, once the record is written onto its owner,
+  under the
   [`Repeater`'s rule](entangles-state-with-singular-relationship.md#a-constructed-record-whose-assigned-key-is-incomplete-is-refused-by-name)
-  and with its exemptions.
+  and with its exemptions: a whitespace key half the group maps over a nullable
+  property, or one no field inside it maps, would otherwise be inserted as a row
+  that cannot be keyed.
 
-M7 · 7's first form of this rule refused inside the mapping for every blank key
-field, filing an unmapped one under the schema's own state path. That pre-empted
-every place a developer fills a key the form does not show:
+Refusing inside the mapping for every blank key field, filing an unmapped one
+under the schema's own state path, was the rule's first form and is rejected. It
+pre-empted every place a developer fills a key the form does not show:
 `beforeReplicaSaved()`, an overridden `handleRecordCreation()` that sets a key
 half before calling the parent, and a global `prePersist` listener, which had no
 escape at all. It also made `Select`'s own by-name refusal unreachable, and turned
 a single derived identity with its association unset into *This value should not
-be blank.* where the create used to fail in Doctrine's `persist()` and the
-replicate refused by name.
+be blank.* where the create fails in Doctrine's `persist()` and the replicate
+refuses by name.
 
 The seams read after `persist()` because that is the one moment nothing else can
 still fill the key. They look for a blank string only, through
 `AssociationReader::hasBlankAssignedIdentifier()`: a null component never reaches
 them, since Doctrine's `persist()` already refuses a missing assigned id by name.
 
-Before M7 · 7, such a record was inserted with its blank key. The redirect after
-the save could not mint its key, and every page listing the row failed with it.
+Unrefused, such a record is inserted with its blank key: the redirect after the
+save cannot mint its key, and every page listing the row fails with it.
 
 The rule skips a generated identifier and a single scalar one, which stays the
 application's `required()` to guard.
@@ -524,13 +520,13 @@ application's `required()` to guard.
 key field the form maps is the user's to fill, whatever a callback or entity
 listener of the class might do at the flush, so a blank one is the field error
 above. A key a callback fills belongs out of the form, where the create seam reads
-it after `persist()`. Until M7 · 7's review the in-mapping half skipped every
-class declaring a `prePersist` callback or entity listener, as
-`AssociationReader::hasIncompleteAssignedIdentifier()` does — and that is the
-commonest entity shape there is, a `#[PrePersist]` that stamps a timestamp. A key
-field the user left blank on such a class then reached the create seam, which
-refused it as a developer error whose advice, *give every identifier field a
-field*, was false: the field was in the form.
+it after `persist()`. The in-mapping half does not skip a class declaring a
+`prePersist` callback or entity listener, as
+`AssociationReader::hasIncompleteAssignedIdentifier()` does, because that is the
+commonest entity shape there is, a `#[PrePersist]` that stamps a timestamp.
+Skipping it would send a key field the user left blank on such a class to the
+create seam, which refuses it as a developer error whose advice, *give every
+identifier field a field*, is false: the field is in the form.
 
 ### A changed key is refused and put back, not handed to Doctrine
 
@@ -540,8 +536,7 @@ does with an edited one depends on the **id generator**, not on the key's width:
 under IDENTITY it ignores the edit and the page reports *Saved*; under every
 other generator it emits an `UPDATE` of the primary key, so the page's record
 prop goes stale and the next request 404s — or the new key is taken and the
-unique violation closes the entity manager. Since
-[M7 · 6](../roadmap.md#m7--composite-identifiers) the record check refuses it for
+unique violation closes the entity manager. The record check refuses it for
 every generator, IDENTITY included: *"This value cannot be changed."* under the
 field, the stored key put back, nothing written.
 
@@ -567,7 +562,7 @@ and it holds where the UI guard does not: a modal's operation is the action's
 **name**, so an `EditAction::make('editRenamed')` leaves a `disabledOn('edit')`
 key field enabled, and the refusal is what answers there. A key written into a
 related record **nobody loaded** is not seen — Doctrine drops that write itself —
-and is recorded in the roadmap's ledger.
+and is [recorded on the reader](association-reader.md#a-changed-identifier-is-put-back-and-refused-and-costs-no-statement).
 
 Permanent.
 
@@ -695,7 +690,7 @@ The host-level `getRules()`/`getValidationAttributes()` merges and
 component-wide `validate()` call. With per-schema `validateSchema()` they have
 no job. Permanent.
 
-The schema-side half of the same pipeline parts company with them as of M3 · 8:
+The schema-side half of the same pipeline parts company with them:
 `mutateStateForValidation` **is** ported, as a flat-map walk `validateSchema()`
 applies between reading every path and validating any of them
 ([schema.md](schema.md#getstate-validates-without-a-prepareforvalidation-mutation-layer)),
@@ -740,7 +735,7 @@ identities; the fix, when a consumer needs it, is to prefer the child schema's o
 key whenever it differs from the default child schema's.
 
 Reverses only if child-schema validation stops being a thing — the Wizard is its
-first consumer, and relation managers became the second at M6 · 1.
+first consumer, and relation managers the second.
 
 ### The throwing branch announces form-validation-error, carrying the schema identity
 

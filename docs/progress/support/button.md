@@ -108,7 +108,7 @@ and body. They split into two groups:
 up for it, the first/last corner rounding read through `:nth-child(1 of .sy-btn)`
 (which steps over the `<input>`s an option set interleaves), the `me-px` seam and
 its `rtl` and dark variants. It
-landed at M3 · 1 for
+exists for
 [`ToggleButtons::grouped()`](../forms/toggle-buttons.md#the-grouped-labels-must-stay-direct-children-of-the-group),
 the toolkit's first button group and today its only one;
 [`ActionGroup`'s button-group trigger](../actions/action-group.md#the-button-group-trigger-is-unported-which-is-why-hasdropdown-stands-in-for-isbuttongroup)
@@ -134,7 +134,7 @@ renders an option set in, and it is the one caller for which "coloured" is not a
 constant: the same markup is a chosen option and an unchosen one, and only the
 sibling input tells them apart. Filament splits its colour block accordingly, and
 that split had never been ported — our rule painted `bg-(--sy-bg)` on any
-`.sy-color`, so every option glowed whichever was chosen. It landed at M3 · 1, on
+`.sy-color`, so every option glowed whichever was chosen. It is ported on
 the same argument as the group arm: the selector is support's, the tree is the
 field's.
 

@@ -41,7 +41,7 @@ three-hop relationship chain),
 (the relationship arm, in tables' suite because only that kernel boots a table
 and a forms field — the src-mirror rule is relaxed there for the same reason
 [`PrebuiltDeleteActionTest`](../../../packages/tables/tests/Integration/PrebuiltDeleteActionTest.php)
-relaxes it). M7 · 6's create-path rules are pinned beside them by
+relaxes it). The create-path rules are pinned beside them by
 [`CreateActionTakenKeyTest`](../../../packages/actions/tests/Integration/CreateActionTakenKeyTest.php) (a taken
 key under its field, the create-another run, the order against the record's own
 constraints, a generated id adding no statement) and
@@ -94,9 +94,8 @@ then the host's
 An action inside a relation-scoped table therefore needs no configuration at
 all, and one that names its own owner overrides the table it sits in.
 
-The arm runs **before the mapping** in `createRecord()`, and again after it —
-since [M7 · 6](../roadmap.md#m7--composite-identifiers); M7 · 3 had it before
-`persist()` alone. The attach before is what the record check needs: `getData()`
+The arm runs **before the mapping** in `createRecord()`, and again after it.
+The attach before is what the record check needs: `getData()`
 ends by validating the record and
 [looking its assigned key up](../schemas/can-be-validated.md#a-taken-assigned-key-is-a-field-error-not-a-unique-violation),
 and an identifier field the association fills reads **unset** until the join is
@@ -111,8 +110,7 @@ is detached from the owner's collection on the way out, since nothing else takes
 it out again; a one-to-many attach touches no owner collection. The attach
 **after** keeps the relationship winning over a form field that maps the same
 association. With no relationship in force the body is the one `getData()` line
-it always was, under the class binding — preceded, since
-[M7 · 10](../roadmap.md#m7--composite-identifiers), by a check that refuses a
+it always was, under the class binding — preceded by a check that refuses a
 class whose constructor requires arguments with the relationship arm's own
 `constructRecord()` message and advice, *build it in the action's using()
 closure*, where `getData()` answered with the schema's *through record()*, which
@@ -160,7 +158,7 @@ and, on a nested create page, by panels'
 
 ### A key the modal leaves blank is refused by name after `persist()`
 
-Since M7 · 7 `createRecord()` asks
+`createRecord()` asks
 [`AssociationReader::hasBlankAssignedIdentifier()`](../schemas/association-reader.md#a-blank-assigned-identifier-is-read-after-persist-where-a-record-is-created)
 between `persist()` and `flush()`, in both arms, on the mounted schema's own
 reader, rebound to the manager the flush writes through (next section). A
@@ -176,8 +174,8 @@ action's schema() — a Hidden one for a value the user should not type — or f
 it in a prePersist listener.* Nothing is flushed. Before the throw, a
 many-to-many owner gives the record back through the reader's `detach()`, as the
 mapping's own refusal already does, and the record is detached from the manager,
-so a later flush in the same request does not insert it. Before M7 · 7 the row
-was written with its blank key half. Pinned by
+so a later flush in the same request does not insert it. Without the read, the
+row would be written with its blank key half. Pinned by
 [`CreateActionBlankKeyTest`](../../../packages/actions/tests/Integration/CreateActionBlankKeyTest.php),
 which also pins that a global `prePersist` listener filling the key lets the
 create save, and that a blank key field the modal maps on a class carrying a
@@ -190,9 +188,9 @@ Doctrine makes one exception to the detach. A record whose whole key flattens to
 — is filed under an identity hash of `''`, which Doctrine can neither detach nor
 remove, the shape
 [`ReplicateAction` already meets](replicate-action.md#a-replica-keeps-its-parent-and-one-whose-key-is-still-incomplete-is-refused-by-name).
-Until [M7 · 11](../roadmap.md#m7--composite-identifiers) the `detach()` raised
+There the `detach()` raises
 Doctrine's *Entity has no identity, therefore remove from identity map cannot be
-performed* in place of the named refusal; the action now catches it and throws
+performed* in place of the named refusal; the action catches it and throws
 the named refusal all the same. Nothing is written, since nothing flushes after
 the refusal, but that record stays scheduled for the rest of the request. Pinned
 by
@@ -206,10 +204,9 @@ A key component still **null** never reaches the read: Doctrine's
 `EntityMissingAssignedId` (*Entity of type … is missing an assigned ID for field
 '…'*), once every `prePersist` filler has run, and the action lets that refusal
 through unchanged. On the relationship arm the record is already in a
-many-to-many owner's collection by then, and until
-[M7 · 11](../roadmap.md#m7--composite-identifiers) it stayed there, so a later
-flush in the same request failed on *A new entity was found through the
-relationship*. The hand-back now runs in a `finally` around `persist()` and the
+many-to-many owner's collection by then, and left there it would fail a later
+flush in the same request on *A new entity was found through the
+relationship*. So the hand-back runs in a `finally` around `persist()` and the
 read, so whatever fails there — Doctrine's refusal or the named one — gives the
 record back. Pinned by
 [`CreateActionMissingAssignedIdTest`](../../../packages/actions/tests/Integration/CreateActionMissingAssignedIdTest.php).
@@ -223,7 +220,7 @@ over a nullable property — reaches the save blank, and what happens there
 depends on what the blank reaches the record as. A blank that reaches it
 as a **string** — whitespace, which no text field trims by default — meets this
 refusal, where the advice to give every identifier field a field would be wrong.
-Since [M7 · 10](../roadmap.md#m7--composite-identifiers) the message then closes
+The message then closes
 with *The schema switches the key rules off with validateRecordKey(false), so a
 key field it maps is not refused while blank; switch them back on to have the
 blank field refused under it.* With the rules on, the message is unchanged.
@@ -244,10 +241,9 @@ schema's own — the container's `sylament_schemas.association_reader` service, 
 whatever a host set on the schema — rebound to the manager the flush writes
 through with
 [`AssociationReader::withEntityManager()`](../schemas/association-reader.md), a
-clone, and set back on the schema for the mapping. Until
-[M7 · 10](../roadmap.md#m7--composite-identifiers) the body built a
-`new AssociationReader($manager)` there, which a subclassed or decorated reader
-service never reached. The relationship arm's `attach()`, `detach()` and
+clone, and set back on the schema for the mapping. A
+`new AssociationReader($manager)` built there instead would never reach a
+subclassed or decorated reader service. The relationship arm's `attach()`, `detach()` and
 `describeRelationship()` still go through the action's **own** reader — the
 container's, on its default manager — and that is recorded rather than changed:
 they read the owner's mapping and write the object graph through the property
@@ -280,10 +276,9 @@ container's own components declare, hidden and non-dehydrated ones included —
 so `mutateDataUsing()` can *change* a value a component maps but cannot
 *introduce* one. Filament's Eloquent `$record->fill($data)` mass-assigns any key
 the model permits, which is why `mutateFormDataUsing(fn ($data) => [...$data,
-'position' => …])` is an idiom upstream. Until
-[M7 · 10](../roadmap.md#m7--composite-identifiers) such a key was dropped in
-silence, so a non-nullable column failed at flush and a defaulted one quietly
-took its default. Now the first statement of the default write asks
+'position' => …])` is an idiom upstream. Dropped in silence, such a key would fail a
+non-nullable column at flush and let a defaulted one quietly take its default.
+So the first statement of the default write asks
 [`Schema::findUnmappedAdditions()`](../schemas/belongs-to-record.md) for every
 leaf path the hook's answer adds to the array it was handed — read back through
 `HasData::getUnmutatedData()` — that no component maps, and refuses a non-empty

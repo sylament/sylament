@@ -12,11 +12,11 @@ implements the schemas-side component contract
 through this trait.
 
 Filament's trait is one of the largest in the port — some eighty methods, almost
-all of them Laravel rule-string sugar. **Every one of them is now settled**: the
-M1 · 1 vertical landed `required()` / `nullable()`, the length constraints via
+all of them Laravel rule-string sugar. **Every one of them is now settled**:
+`required()` / `nullable()`, the length constraints via
 [`CanBeLengthConstrained`](can-be-length-constrained.md), `TextInput`'s
 `email()` / `numeric()` arms in [`text-input.md`](text-input.md) and
-`validationMessages()`; M3 · 2 the date comparison family; and M3 · 8 the rest —
+`validationMessages()`; the date comparison family; and the rest —
 the value-comparison and conditional-required arms, the data-layer pair, the
 format sugar, `regex()`/`notRegex()`, `in()`/`notIn()`, the affix family,
 `filled()`/`multipleOf()`, `distinct()`, the nested-constraint concern and the
@@ -158,7 +158,7 @@ the end-to-end path — a live host, a real validator, error messages read back 
 field and rendered into the shipped templates — by
 [`FieldErrorsTest`](../../../packages/forms/tests/Integration/Components/FieldErrorsTest.php).
 
-M3 · 8's arms extend that in place. In the Unit
+The remaining arms extend that in place. In the Unit
 [`CanBeValidatedTest`](../../../packages/forms/tests/Unit/Components/Concerns/CanBeValidatedTest.php):
 the sibling reader (the value baked in, the blank/null/unresolvable skips, the
 no-host silence across four different arms, the relative and both absolute
@@ -227,6 +227,13 @@ performs. The runner collects the whole constraint map before it reads any value
 so a constraint built this way can bake its partner's value in and stay a
 value-only constraint.
 
+Symfony's own cross-field mechanisms cannot stand in for this, because the runner
+validates each path's value alone, with no object around it. A comparison
+constraint's `propertyPath` reads its partner off `ExecutionContext::getObject()`,
+and `AbstractComparisonValidator` returns without a violation when that is `null`,
+so it is a silent pass rather than an error. `When`'s closure is called with the
+same `null` object, so it cannot read a sibling either.
+
 Three consequences, all inherited from the date family and all deliberate.
 
 **A field with no live host emits no cross-field constraint.** A unit-built
@@ -245,6 +252,18 @@ and the reader goes to the host, so `same('password')` with `trim()` on both
 fields compares a trimmed own value against an untrimmed partner. Filament's
 siblings see the mutated attributes array. Reversible by handing the reader the
 runner's mutated map, if a consumer ever hits it.
+
+### A closure the field registers takes the field as a parameter, never `$this`
+
+Every closure `CanBeValidated` hands to `constraint()`, `required()` or a
+condition is `static fn (Field $component) => …`, Filament's own shape, and reads
+the field through that parameter. A captured `$this` would be wrong inside a
+repeater: each item's components are clones built by `getClone()`, the closure
+travels with the clone unchanged, and the Invoker never rebinds `$this`, so the
+closure would read the template component's state path and siblings instead of
+the item's. `distinct()` resolves nothing without this, and the date comparison
+closures had the same latent defect. A new closure registered from inside a field
+follows the same shape.
 
 ### The sibling decides the match strictness
 
@@ -564,7 +583,7 @@ uuid-keyed repeater is one rename away from breaking that.
 
 Item-level error placement comes free, because the constraint sits on the item
 field's own path. `fixIndistinctState()` and
-`disableOptionsWhenSelectedInSiblingRepeaterItems()` landed with M3 · 9 and read
+`disableOptionsWhenSelectedInSiblingRepeaterItems()` read
 the same arithmetic: the five values this builder derived inline moved to
 [`RepeaterSiblingContext`](can-fix-indistinct-state.md#the-five-sibling-facts-are-one-value-object-not-string-surgery)
 behind `ResolvesRepeaterSiblingContext`, which `Field` composes and all three
@@ -631,8 +650,8 @@ Filament's `unique()`/`exists()` take an Eloquent table and column and lean on
 Laravel's query builder. The port takes an **entity class** and a **mapped
 property** and runs one DQL probe through schemas'
 [`AssociationReader`](../schemas/association-reader.md), which already ships
-`createOptionQuery()`, `findRecordKey()` and `hasEntityManager()` — and which,
-since [M7 · 4](../roadmap.md#m7--composite-identifiers), narrows the probe
+`createOptionQuery()`, `findRecordKey()` and `hasEntityManager()` — and which
+narrows the probe
 through schemas' own
 [`IdentifierConstraint`](../schemas/record-key.md#the-operations-and-their-dql)
 rather than through a field name. No new
@@ -685,7 +704,7 @@ The identifier to ignore comes from
 [`AssociationReader::findRecordKey()`](../schemas/association-reader.md#findrecordkey-answers-null-where-getrecordkey-throws),
 the sibling of `getRecordKey()` that answers null for an entity whose identifier
 is not complete yet instead of throwing — which is the create page's normal
-state, not an edge, and which since M7 · 4 covers an **assigned** key still
+state, not an edge, and which covers an **assigned** key still
 sitting blank as well as a generated one still pending. It is a record **key** of
 any width, so `UniqueValue::$ignoredIdentifier` carries one string and the
 exclusion is
@@ -695,8 +714,9 @@ non-null — a **malformed** key excludes nothing, which for that input is the s
 direction: a false *taken*, never a false *unique*. That base is a literal where
 the value arm still counts `sylament_probe_<n>`, because a parameter base ending
 in `_<digits>` is refused for **every** class, a single identifier included. For
-a single-identifier entity the rows the probe returns are identical to HEAD's and
-only the bound parameter's **name** moved, `:sylament_probe_1` →
+a single-identifier entity the exclusion returns the same rows the value arm's
+`:sylament_probe_<n>` exclusion returns, and only the bound parameter's **name**
+differs, `:sylament_probe_1` →
 `:sylament_ignored_record` — which is observable to a `modifyQueryUsing` closure
 that reads or rebinds parameters by name.
 
@@ -709,21 +729,21 @@ than worse: a record whose key is a different **width** now decodes to `null` an
 excludes nothing at all, where before it was a raw bind.
 
 `exists()` probes a **column**, never a key, and that classification is why
-[M7 · 4](../roadmap.md#m7--composite-identifiers) left `ExistingValueValidator`,
-`ProbesRecords` and `UniqueValue`'s own probe builder byte-identical on purpose.
+`ExistingValueValidator`, `ProbesRecords` and `UniqueValue`'s own probe builder
+have no key arm, on purpose.
 `createProbeQuery()` admits `getFieldNames()` only, so an identifier
 **association** is refused by name as the unmapped field it is — never probed by
 key — and a scalar identifier half is an ordinary column whose `=` and `IN`
-compare exactly as they did at the base, at every identifier width. The case
+compare as any column's do, at every identifier width. The case
 `refuses an identifier association as the unmapped field it is, rather than
 probing by key` in
 [`ExistingValueValidatorTest`](../../../packages/forms/tests/Unit/Validation/ExistingValueValidatorTest.php)
 is what pins it, so a later sweep over the by-key sites does not turn this one
-into a key probe. Only `unique(ignoreRecord:)` moved, and only its exclusion.
-[M7 · 6](../roadmap.md#m7--composite-identifiers) left it that way too: the key
-probe a taken assigned identifier needs is schemas' own, inside the record check
+into a key probe. Only `unique(ignoreRecord:)` reads a key, and only for its exclusion.
+A taken assigned identifier does not change that: the key
+probe it needs is schemas' own, inside the record check
 `getData()` ends in ([the rule](../schemas/can-be-validated.md#a-taken-assigned-key-is-a-field-error-not-a-unique-violation)), so no key field needs a
-`unique()` and no validator here grew a key arm. A `unique()` declared on a key
+`unique()` and no validator here has a key arm. A `unique()` declared on a key
 half anyway still probes that one column, under its own *"This value is already
 taken."*, and answers during field validation — before the record check runs.
 
@@ -746,12 +766,22 @@ to scope — `unique()` and `exists()` *are* the scoped forms here. **Skipped**,
 permanently. `modifyQueryUsing:` covers the case where a caller wants a narrower
 probe than the entity's own filters give.
 
+The other side of running through the filters is a row a filter hides. A
+soft-deleted row still holds the column's database unique index, so under a
+soft-delete filter `unique()` reads its value as free and the flush meets a
+`UniqueConstraintViolationException` — a 500. That is the policy rather than an
+oversight: `unique()` answers what the entity's own filters show, as Filament's
+scoped forms do. The record check's taken-**key** probe is the one read that
+suspends every filter, because a primary key is unique whatever a filter shows
+([what the taken-key probe cannot see](../schemas/association-reader.md#what-the-taken-key-probe-cannot-see)).
+
 ### Nested constraints land as one All where Laravel keys a path
 
 `HasNestedRecursiveValidationRules` ports as
 [`HasNestedRecursiveValidationConstraints`](../../../packages/forms/src/Components/Concerns/HasNestedRecursiveValidationConstraints.php)
-— trait and contract — under the same `rule` → `constraint` vocabulary the M1 · 1
-rename set: `nestedRecursiveConstraint()`, `nestedRecursiveConstraints()`,
+— trait and contract — under the same `rule` → `constraint` vocabulary
+[the rename table](../renames.md#laravel-rule-vocabulary-becomes-symfony-constraint-vocabulary)
+sets: `nestedRecursiveConstraint()`, `nestedRecursiveConstraints()`,
 `getNestedRecursiveValidationConstraints()`. Laravel's `"{$statePath}.*"` key has
 no per-path counterpart here, so the list is emitted as one `All` on the field's
 **own** path, which is where the wrapper puts a `.*` message upstream anyway; the
@@ -769,8 +799,7 @@ Consumers: [`Select`](select.md), [`CheckboxList`](checkbox-list.md),
 [`BaseFileUpload`](file-upload.md).
 `ToggleButtons` gets the **contract** as well as the trait, which fixes an upstream
 defect where its nested rules are silently dropped.
-[`FusedGroup`](fused-group.md) stays skipped — it is not a field — and
-[`TagsInput`](tags-input.md) joined the list with M3 · 9. For a file field the `All` is a non-`File`
+[`FusedGroup`](fused-group.md) stays skipped — it is not a field. For a file field the `All` is a non-`File`
 constraint and so stays on the collection set at save.
 
 Messages reach the nested members, which is a divergence in our favour: the

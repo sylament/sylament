@@ -19,8 +19,8 @@ plain-text name is not built yet and is **todo**, **blocked** or **skipped**.
 **blocked** rows outnumber **todo** ones here, and the split is the
 [vocabulary's](../README.md#statuses) rather than a mood: three whole arms of
 Filament's notifications package — the database panel, database storage and
-broadcast — are wanted for parity and each waits on infrastructure that has no
-epic yet (a notifications entity and the live panel that lists it; a Symfony
+broadcast — are wanted for parity and each waits on infrastructure the port does
+not have yet (a notifications entity and the live panel that lists it; a Symfony
 transport for broadcast, where Mercure is the direction). A row whose detail
 section names one of those is **blocked**; a row waiting on nothing at all —
 `date()`, `inline()`,
@@ -58,7 +58,7 @@ detail-file link.
 | --- | --- | --- | --- |
 | [`Notification`](../../../packages/notifications/src/Notification.php) | [`src/Notification.php`](../../../vendor/filament/notifications/src/Notification.php) | in progress | [notification.md](notification.md) |
 | [`Notifications`](../../../packages/notifications/src/Twig/Components/Notifications.php) (the stack) | [`Livewire/Notifications.php`](../../../vendor/filament/notifications/src/Livewire/Notifications.php) | in progress | [notifications.md](notifications.md) |
-| DatabaseNotifications | [`Livewire/DatabaseNotifications.php`](../../../vendor/filament/notifications/src/Livewire/DatabaseNotifications.php) | blocked | notification storage — the panel is its own epic, with its own live component ([why the stack's shape does not paint it into a corner](notifications.md#the-stack-holds-no-server-side-collection-so-filaments-collection-is-not-ported)) |
+| DatabaseNotifications | [`Livewire/DatabaseNotifications.php`](../../../vendor/filament/notifications/src/Livewire/DatabaseNotifications.php) | blocked | notification storage — the panel is a separate piece of work, with its own live component ([why the stack's shape does not paint it into a corner](notifications.md#the-stack-holds-no-server-side-collection-so-filaments-collection-is-not-ported)) |
 | BroadcastNotification | [`BroadcastNotification.php`](../../../vendor/filament/notifications/src/BroadcastNotification.php) | blocked | the broadcast delivery arm — [notification.md](notification.md#the-broadcast-and-database-delivery-arms-are-deferred-whole) |
 | DatabaseNotification | [`DatabaseNotification.php`](../../../vendor/filament/notifications/src/DatabaseNotification.php) | blocked | notification storage — [notification.md](notification.md#the-broadcast-and-database-delivery-arms-are-deferred-whole) |
 

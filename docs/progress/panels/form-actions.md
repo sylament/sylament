@@ -165,8 +165,8 @@ schema holding a [`Form`](../../../vendor/filament/schemas/src/Components/Form.p
 component wrapping an `EmbeddedSchema` and the form `Actions`, and the `<form>`
 element is that component's own markup, with `livewireSubmitHandler()` naming the
 action. `Form` is [todo in schemas](../schemas/README.md), so the `<form>` here is
-written in Twig — the arrangement the M2 · 3 record pages already shipped, now
-hoisted into one variant instead of repeated in three partials.
+written in Twig — the arrangement the record pages already used, hoisted into
+one variant instead of repeated in three partials.
 
 The variant is a strict subset rather than a different design: the same three
 blocks a `Form` component would expose (`form_errors`, `form_actions`,

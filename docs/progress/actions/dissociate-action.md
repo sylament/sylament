@@ -175,7 +175,7 @@ Under `fetchSelectedRecords(false)` the action nulls the mapped-by foreign key o
 
 **Several join columns.** Only a composite owner has a mapped-by spanning several join columns, and DQL cannot null such a to-one at all. The statement is then a DBAL `UPDATE` of the table declaring the association, nulling each join column over `IdentifierConstraint::inColumns()`. It carries no discriminator and no filter. That is safe while the keys are plucked through the relationship query, and it is recorded for a table that declares `query()` beside `relationship()`.
 
-**Why the split.** M7 · 5b routed every width through the DBAL statement. M7 · 7 put the single-column arm back on DQL, because under `query()` beside `relationship()` over a single-table or joined hierarchy, the DBAL statement wrote rows of other classes the DQL one had excluded: 2 rows became 3, and 2 became 4. Single-identifier targets were meant to stay unaffected.
+**Why the split.** The single-column arm stays on DQL rather than sharing the DBAL statement, because under `query()` beside `relationship()` over a single-table or joined hierarchy, the DBAL statement writes rows of other classes the DQL one excludes: 2 rows become 3, and 2 become 4. Single-identifier targets are meant to stay unaffected.
 
 Either arm's affected-row counts are summed and reported as the successful
 count, exactly as
@@ -228,25 +228,22 @@ while the arm still reads the relationship for the mapping to null. Over a host
 declaring `query(Gauge)` beside `relationship()` on a depot's `dials`, with a
 dial of that depot, a plain `Gauge` of it and a dial of another depot selected,
 the DQL arm's `AND kind IN ('dial')` writes **two** rows and leaves the plain
-gauge owned — the DBAL arm M7 · 5b shipped wrote three. The other depot's dial
+gauge owned — the DBAL statement would write three. The other depot's dial
 is nulled either way, since the arm scopes by key and never by owner; the last
 case of `DepotDissociateByKeyTest` pins exactly that, through
 `DepotQueryBesideRelationshipTable`. Guarding the arm on
 `isRelationshipBaseQuery()` would refuse a declaration the table supports, so
 that exposure — and the SQL arm's missing discriminator and filter under the
-same declaration — is [recorded in the ledger](../roadmap.md#m7--composite-identifiers)
-rather than closed.
+same declaration — is a known gap, left open rather than closed.
 
-M7 · 4's move to the typed decode closed a **data defect** rather than only
-widening the arm. Since
-[M7 · 1](../roadmap.md#m7--composite-identifiers) this action is handed the
-table selection's `RecordKey` strings, and it bound them raw against one
-identifier column — so a target whose column form is not its printed form (a
-`uuid` stored `BINARY(16)`, a value-object identifier) matched **zero rows**: a
-select-all of records that exist left every one of them owned and answered the
-danger toast `Failed to dissociate N records`, with nothing naming why. No
-fixture carried a target whose column form differs from its printed form until
-this epic's converting one, which is why nothing in the suite saw it. The typed
+The typed decode closes a **data defect** rather than only widening the arm.
+This action is handed the table selection's `RecordKey` strings; bound raw
+against one identifier column, they would make a target whose column form is not
+its printed form (a `uuid` stored `BINARY(16)`, a value-object identifier) match
+**zero rows**: a select-all of records that exist would leave every one of them
+owned and answer the danger toast `Failed to dissociate N records`, with nothing
+naming why. Only a fixture whose target's column form differs from its printed
+form shows it, which is why the suite carries a converting one. The typed
 decode is what makes the rows move.
 
 Five refusals run before either arm picks up, all of them `LogicException`s
@@ -273,35 +270,28 @@ builder — the mapped-by must be the owning to-one side, which Doctrine require
 of every one-to-many's mapped-by — guards the type system rather than the
 caller, since no mapping that reaches it fails it, and is not a seventh.
 
-There was a second by-key refusal, and
-[M7 · 5b](../roadmap.md#m7--composite-identifiers) deleted it with the DQL
-statement — the one public message that step removed:
-
-> `[%s::$%s] spans %d join columns, and DQL cannot null a to-one that spans more than one, so the action [%s] cannot dissociate by key here — drop fetchSelectedRecords(false) so the records are loaded and dissociated through the mapping.`
-
-It was [M7 · 5](../roadmap.md#m7--composite-identifiers)'s, and it was
-Doctrine's refusal rather than a limit of this port: a DQL
+Where the foreign key spans several join columns the by-key arm writes its
+statement in SQL, because DQL cannot write it — a limit of Doctrine rather than
+of this port: a DQL
 `UPDATE <Target> t SET t.<mappedBy> = NULL` over a to-one spanning several join
 columns is a `QueryException` raised in the SQL walker, and **no** DQL form of
 that statement exists. Only a composite owner produces such a foreign key, so
-every one-to-many under one was refused on this arm, while the fetching arm
-dissociated it at any width. The remedy it recorded is the one taken. Of the
-two routes it named — the codec's `@internal` field descriptor reached from
-`actions`, or a second public SQL-side operation in `schemas` — M7 · 5b took the
+a DQL-only arm would refuse every one-to-many under one, while the fetching arm
+dissociates it at any width. The SQL statement is the remedy. Of the two routes
+to it — the codec's `@internal` field descriptor reached from
+`actions`, or a second public SQL-side operation in `schemas` — the port takes the
 operation, so the key contract stays the one place a key is decoded and
 `actions` composes only the table and the `SET` half, from the mapping. The
-shapes the refusal named as unexecuted were prototyped before the arm was
+shapes that statement meets were prototyped before the arm was
 written, on SQLite and PostgreSQL 18.4: a JOINED target writes the declaring
 table, a single-table target its shared table with no discriminator, quoted
 identifiers go through the quote strategy, and a schema-qualified table through
-the same `getTableName()`. M7 · 5b sent every width through that statement;
-M7 · 7 took the one-column foreign key back to DQL, above, and the first two
-answers now hold for the SQL arm alone. The chunk sizes are unchanged: they
-bound the statement's parameter count, and the DQL parse cost they were first
+the same `getTableName()`. With the one-column foreign key on DQL, above, the
+first two answers hold for the SQL arm alone. The chunk sizes are the DQL
+arm's: they bound the statement's parameter count, and the DQL parse cost they were first
 sized against is paid on the one-column arm only.
 
-Both by-key statements evict the second-level cache since
-[M7 · 9](../roadmap.md#m7--composite-identifiers): the DQL `UPDATE` through
+Both by-key statements evict the second-level cache: the DQL `UPDATE` through
 Doctrine's `HINT_CACHE_EVICT`, the DBAL `UPDATE` — which Doctrine never sees —
 through `Cache::evictEntityRegion()` on the target class afterwards. Once every
 chunk has run, either arm also evicts the owner association's collection region

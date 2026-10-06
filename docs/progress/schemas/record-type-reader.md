@@ -115,8 +115,8 @@ decision from one place into three.
 
 ### A consumer may read the type to choose a *cast*, not only a write
 
-Every consumer above reads the reader at write time. M3·2 added the first that
-reads it at *configure* time:
+Every consumer above reads the reader at write time. One reads it at
+*configure* time:
 [`DateTimePicker::getDateTimeObjectClass()`](../forms/date-time-picker.md) walks
 the same guard chain forms' `isRequiredByRecord()` does —
 [`getNearestRecordClass()`](belongs-to-record.md#the-nearest-record-frame-is-the-first-node-above-a-component-that-binds-one)
@@ -164,10 +164,9 @@ might one day resolve a holder the reader did not describe. Nothing in the code
 can reach that state, and two unused public properties on a `final readonly`
 value object with two consumers, both in this repo, is not the place to park a
 hypothetical. They return the day a consumer holds a target it did not itself
-build — the `Repeater` epic's refusal messages being the first candidate — and
-adding a promoted property back is a one-line change. That candidate came and
-went without materialising them: the repeater's own early refusal builds the
-target it consumes in the same method, so it too holds the class and property it
+build, and adding a promoted property back is a one-line change. The `Repeater`'s
+refusal messages, the obvious candidate, do not materialise them: the repeater's
+own early refusal builds the target it consumes in the same method, so it too holds the class and property it
 would have read back, and the fields stay dropped.
 
 The one thing they did buy was test expressiveness: the dotted-path walk was
@@ -269,7 +268,7 @@ where an adder/remover pair states it in native types, reflection alone reaches 
 and [the object arm](#two-collection-flags-because-a-plain-array-is-a-collection-and-is-still-mappable)
 does refuse. **Skipped** rather than a defect, on two grounds:
 it is unchanged from before this reader existed, and it is unreachable until a
-`Repeater` can emit list-shaped state — which is the same epic that will decide how
-list items are identified. Reversing it means reading docblocks, which is exactly
-the autowiring the divergence above rejects; the identity-aware pass that epic
-needs is the real fix.
+`Repeater` can emit list-shaped state — which also has to decide how list items
+are identified. Reversing it means reading docblocks, which is exactly the
+autowiring the divergence above rejects; the identity-aware pass list-shaped
+state needs is the real fix.

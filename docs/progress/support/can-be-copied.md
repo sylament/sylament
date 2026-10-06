@@ -66,8 +66,8 @@ in the consuming column rather than here, exactly as Filament arranges it.
 ### The `Copied` default is an English literal
 
 Filament's `getCopyMessage()` falls back to
-`__('filament::components/copyable.messages.copied')`. i18n is deferred
-(the M3 · 1 decision, [roadmap](../roadmap.md)), so the port falls back to the
+`__('filament::components/copyable.messages.copied')`. i18n is
+[deferred toolkit-wide](../../internals/i18n.md), so the port falls back to the
 literal `'Copied'`, the same way every other user-visible default string in the
 toolkit does. The `2000` ms duration default is Filament's own literal and is
 unchanged. When i18n lands, this fallback is one of the strings it collects.

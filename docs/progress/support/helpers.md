@@ -241,9 +241,8 @@ document`, not `p-d-f document`) is not something a hand-rolled expression
 reproduces by accident. `Resource::getRecordLabel()` delegates here rather than
 keeping `panels`' own copy of the chain, leaving one definition.
 
-The consequence is a manifest line: support requires `symfony/string` from M4 · 2
-on — for this one function until M4 · 8, when
-[`plural()`](../../../packages/support/src/helpers.php) became its second
+The consequence is a manifest line: support requires `symfony/string` — for this
+function and for [`plural()`](../../../packages/support/src/helpers.php), its second
 consumer through `EnglishInflector`. It is the placement-by-source rule doing
 its job — this is Filament-**support**'s helper, and both `actions` and `panels`
 read it, so it cannot move up into either — and the constraint is the `^8.1`
@@ -321,7 +320,7 @@ swatch instead.
 
 ### `diff_for_humans()` is a Carbon port, not a Carbon dependency
 
-`nesbot/carbon` is not adopted (the M4 · 4 decision): the one call the toolkit
+`nesbot/carbon` is not adopted: the one call the toolkit
 needs is `diffForHumans()` at its `$parts = 1` default, and its algorithm is
 forty lines over `DateTimeInterface::diff()`. The port walks
 `year → month → week → day → hour → minute → second`, taking the **first

@@ -155,11 +155,10 @@ host by column name and record key.
 ### A changed identifier is the cell's own error
 
 Filament writes a cell over a primary key like any other column, and Eloquent
-updates the key. Doctrine keys its identity map by the old one, so before
-[M7 · 6](../roadmap.md#m7--composite-identifiers) an editable cell over an
-identifier field re-keyed the row silently, or — the new key being taken — threw
-a unique violation out of `updateTableColumnState()`. Now
-`CanUpdateState::updateState()` runs the record check's changed-key pass itself,
+updates the key. Doctrine keys its identity map by the old one, so an editable
+cell left to write an identifier field would re-key the row silently, or — the
+new key being taken — throw a unique violation out of
+`updateTableColumnState()`. So `CanUpdateState::updateState()` runs the record check's changed-key pass itself,
 after the write and before its flush, on the **table's** association reader
 rebound to the record's own manager —
 `$this->getTable()->getAssociationReader()->withEntityManager($manager)` — so a
@@ -178,9 +177,7 @@ which the host files and the cell paints exactly as it does
 [the type refusal](#a-record-type-the-input-cannot-hold-seeds-a-type-constraint-and-the-write-refuses-the-rest).
 So *"This value cannot be changed."* goes through the validator's translator in
 its translation domain, and an application's `translations/validators.*` reaches
-the cell as it reaches the form. Until
-[M7 · 10](../roadmap.md#m7--composite-identifiers) the cell threw the bare
-constant and the host stored it verbatim, so no catalog could. The toolkit ships
+the cell as it reaches the form. The toolkit ships
 no catalog of its own — i18n stays parked — so without the application's the
 message stays English.
 The pass has already put the key back, so the row stays keyed as it was posted,
@@ -460,5 +457,4 @@ user code and still propagates, as does a misconfigured column's own
 seed reaches, and the throwing override — are pinned over the
 [`TypeRefusalSongsTable`](../../../packages/tables/tests/Fixtures/Twig/Components/TypeRefusalSongsTable.php)
 fixture, whose columns carry no constraints of their own so the derivation is the
-only thing under test. Since [M7 · 6](../roadmap.md#m7--composite-identifiers)
-the same route carries a second refusal, [a changed identifier](#a-changed-identifier-is-the-cells-own-error).
+only thing under test. The same route carries a second refusal, [a changed identifier](#a-changed-identifier-is-the-cells-own-error).

@@ -74,7 +74,7 @@ do.
 | [`getDefaultActionRelationship()`](../../../packages/panels/src/Resources/Pages/ManageRelatedRecords.php) | same | done | — | — |
 | [`getDefaultActionSchemaResolver()`](../../../packages/panels/src/Resources/Pages/ManageRelatedRecords.php) | same | done | — | [semantics](#the-schema-resolver-is-the-hosts-not-the-tiers) |
 | [`getDefaultActionUrl()`](../../../packages/panels/src/Resources/Concerns/InteractsWithRelationshipTable.php) | the copy on this class | done | — | [diverges](interacts-with-relationship-table.md#the-url-arms-are-hoisted-once-and-carry-the-owner-explicitly) |
-| `schemas()` — **no longer declared here**; [`Pages\Page::schemas()`](../../../packages/panels/src/Pages/Page.php) answers `[]` for every page since M6 · 2 | no counterpart — Livewire has no schema-discovery list | done | — | [semantics](custom-pages.md#the-empty-discovery-list-is-mandatory-and-so-is-its-removal-from-every-leaf) — the override went when the base took the answer over, and re-`use`ing `HasSchemas` on this class would resolve back to `['schema']` and 500 the page on its first render |
+| `schemas()` — **no longer declared here**; [`Pages\Page::schemas()`](../../../packages/panels/src/Pages/Page.php) answers `[]` for every page | no counterpart — Livewire has no schema-discovery list | done | — | [semantics](custom-pages.md#the-empty-discovery-list-is-mandatory-and-so-is-its-removal-from-every-leaf) — the override went when the base took the answer over, and re-`use`ing `HasSchemas` on this class would resolve back to `['schema']` and 500 the page on its first render |
 | [`$template`](../../../packages/panels/templates/partials/Page/table.html.twig) | `content()` — a `Group` of tabs, render hooks and an `EmbeddedTable` | done | — | [diverges](#the-page-renders-a-template-not-a-content-schema) |
 | The sub-navigation band on the partial | the band block in `page/index.blade.php` | done | — | [has-sub-navigation.md](has-sub-navigation.md) |
 | `getDefaultActionSuccessRedirectUrl()`'s table-context narrowing | same | todo | — | [detail](#the-table-context-redirect-narrowing-is-not-ported) |
@@ -84,9 +84,9 @@ do.
 | `getRelationManagers()` + `HasRelationManagers` on this page | same | skipped | — | [diverges](#the-class-is-abstract-and-hosts-no-relation-managers-of-its-own) |
 | The record-filter tabs (`$activeTab`, the tab strip) | `HasTabs`, through the tier | done | — | [has-tabs.md](has-tabs.md) — composed through [`InteractsWithRelationshipTable`](interacts-with-relationship-table.md), so this page and a relation manager offer the same filters; the strip is built at render time rather than declared in a `content()` schema |
 | [`getTableUrlMapping()`](../../../packages/panels/src/Resources/Pages/ManageRelatedRecords.php) — `page` (identifier-prefixed), `sort`, `search`, `filters`, `grouping`, `tab` | the `#[Url(as: …)]` block redeclared on the page | done | — | [has-table.md](../tables/has-table.md#the-url-binding-is-a-per-prop-liveprop-modifier-opted-into-by-the-page) · the prefix comes from [the host hook](interacts-with-relationship-table.md#the-table-side-querystringidentifier-is-deliberately-not-stamped), never from the `Table` setter |
-| The `reordering` URL bind | `#[Url(as: 'reordering')]` | skipped | — | Reordering shipped with M4 · 3 and the bind [deliberately did not](../tables/has-table.md#the-url-binding-is-a-per-prop-liveprop-modifier-opted-into-by-the-page) — a transient UI mode rather than browsing state, and binding it would leave a permanent `reordering=0` in every URL |
-| The `grouping` URL bind | `#[Url(as: 'grouping')]` | done | — | Landed with M4 · 6, unprefixed like every name but `page` — the mapping arm sits between `filters` and `tab`, Filament's own declaration order ([grouping.md](../tables/grouping.md#a-bookmarked-grouping-beats-a-selectable-default-group)). The **relation manager** stays unbound, as Filament's does |
-| `canAccess()` / `authorizeAccess()` / `hydrate()` and the authorization response hooks | the same cluster | todo | the authorization epic | [detail](#the-page-is-reachable-by-anyone-who-can-reach-its-url) |
+| The `reordering` URL bind | `#[Url(as: 'reordering')]` | skipped | — | Reordering shipped and the bind [deliberately did not](../tables/has-table.md#the-url-binding-is-a-per-prop-liveprop-modifier-opted-into-by-the-page) — a transient UI mode rather than browsing state, and binding it would leave a permanent `reordering=0` in every URL |
+| The `grouping` URL bind | `#[Url(as: 'grouping')]` | done | — | Unprefixed like every name but `page` — the mapping arm sits between `filters` and `tab`, Filament's own declaration order ([grouping.md](../tables/grouping.md#a-bookmarked-grouping-beats-a-selectable-default-group)). The **relation manager** stays unbound, as Filament's does |
+| `canAccess()` / `authorizeAccess()` / `hydrate()` and the authorization response hooks | the same cluster | todo | authorization | [detail](#the-page-is-reachable-by-anyone-who-can-reach-its-url) |
 | `getWidgetData()` and the widget half | same | todo | `sylament/widgets` | — |
 
 [`Integration/Resources/Pages/ManageRelatedRecordsTest`](../../../packages/panels/tests/Integration/Resources/Pages/ManageRelatedRecordsTest.php)
@@ -113,8 +113,8 @@ The tier's own coverage is
 
 ### The page is reachable by anyone who can reach its URL
 
-`canAccess()`, `authorizeAccess()` and the `hydrate()` re-check are not ported,
-with the rest of the authorization epic — so **a `GET` of the page's URL renders
+`canAccess()`, `authorizeAccess()` and the `hydrate()` re-check are not ported
+until authorization lands — so **a `GET` of the page's URL renders
 it, and every action on it runs**, gated by nothing but the record scoping.
 Filament's own `canAccess()` is the most interesting of the deferrals to write
 later: it forwards to the *related resource's* `canAccess()` when there is one,
@@ -187,11 +187,10 @@ Filament also composes `HasRelationManagers` on it and then overrides
 the wiring whole — a page listing one association does not also host a tab bar of
 other associations, and nothing would fill it. The demo carries `sections` on
 both surfaces on purpose — `SectionsRelationManager` as a tab on the article edit
-page ([M6 · 1](relation-manager.md), the modal flow) beside `ManageArticleSections`
-as a routed page (this epic, the link flow) — so the one association shows what
+page ([the relation manager](relation-manager.md), the modal flow) beside
+`ManageArticleSections` as a routed page (this page, the link flow) — so the one association shows what
 each flow looks like rather than either standing in for the other. Record-filter
-tabs are the exception that did arrive: `HasTabs` landed with
-[M4 · 3](../roadmap.md#m4--tables-widening) on
+tabs are the exception that did arrive: `HasTabs` landed on
 [the shared tier](interacts-with-relationship-table.md) rather than on
 `ListRecords` alone, so this page offers record filters over its own association
 without the manager wiring above coming with them — [has-tabs.md](has-tabs.md).
@@ -201,11 +200,11 @@ without the manager wiring above coming with them — [has-tabs.md](has-tabs.md)
 Filament's `content()` returns a `Group` of the record-filter tabs, two render
 hooks and an `EmbeddedTable`, sibling to the relation-manager component. All four
 are deferred or placed elsewhere — `EmbeddedTable` and render hooks are unported,
-the managers are skipped above, and the tabs landed with M4 · 3 as a
+the managers are skipped above, and the tabs landed as a
 [schema the partial renders](has-tabs.md#the-strip-is-a-schema-a-partial-renders-not-a-component-a-content-schema-holds)
 rather than a component a `content()` would hold — which would leave a content
 schema wrapping one table and nothing else. So the page renders a template
-instead — since M6 · 2 the shared table variant
+instead — the shared table variant
 [`partials/Page/table.html.twig`](../../../packages/panels/templates/partials/Page/table.html.twig),
 which `{% extends %}` the base page chrome and fills its `content` block with the
 tabs strip and `{{ renderTable() }}`. The page root, the header with its
@@ -214,9 +213,8 @@ breadcrumbs and header actions, the sub-navigation band and
 [not optional](relation-manager.md#the-manager-renders-a-template-not-a-content-schema)
 — without it every action the page mounts renders nothing at all. It is the same
 call [`ListRecords`](README.md#listrecords) already made, one page over — and
-since M6 · 2 it is literally the same **file**: this page's own partial was
-deleted along with the list and create ones, the three shapes collapsing onto two
-variants of one chrome, and the per-page root class moving to
+it is literally the same **file**: the list, create and manage-related shapes
+collapse onto two variants of one chrome, and the per-page root class comes from
 [`getPageClasses()`](custom-pages.md#getpageclasses-is-the-only-source-of-a-per-page-root-class).
 
 ### The navigation label and icon drop their related-resource arms

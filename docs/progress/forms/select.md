@@ -214,7 +214,7 @@ runs, which `getRecordsFromRelationship()` executes for the trait's own map and
 which this field's [search, label and selected-record arms](#the-relationship-search-arm-runs-a-like-per-column-over-the-scoped-option-query)
 constrain, limit and order first. Those four arms are `Select`'s, installed by
 its own `relationship()` override on top of the trait's three; the trait keeps
-what both fields use, which since the searchable-select epic also includes the
+what both fields use, which also includes the
 record-label trio (`getOptionLabelFromRecordUsing()` /
 `hasOptionLabelFromRecordUsingCallback()` / `getOptionLabelFromRecord()`, moved
 here from `CheckboxList` — Filament duplicates it on both fields because it has
@@ -678,7 +678,7 @@ throw on the same missing entity manager from the write side. There is no
 fallback option map anywhere in the concern; a select whose options the port
 cannot enumerate is a configuration error, not a runtime state.
 
-What the searchable-select epic added is the one empty-map arm that is **not**
+One empty-map arm is **not**
 an accident: `Select::getOptionsFromRelationship()` answers `[]` for a searchable
 select that is not preloaded (Filament returns `null` there; ours keeps the
 `array` type and the validation builder distinguishes the two by predicate), and
@@ -753,8 +753,8 @@ details ride along. Both relationship option arms **order by the title
 attribute** when the scoped query carries no `orderBy` — on the title-attribute
 path only, exactly where Filament puts it; the record-label-callback branch
 orders nothing, so a `CheckboxList` with a callback and no title attribute is
-untouched, and the trait's own map is unordered as before (that field's ordering
-is its own epic's). And the callback branch is what the moved
+untouched, and the trait's own map is unordered
+([recorded on that field](checkbox-list.md#the-relationship-option-map-is-unordered)). And the callback branch is what the moved
 `getOptionLabelFromRecordUsing()` trio makes reachable on `Select`: with it, both
 the map and the search results label rows through the callback, in the order the
 database returns them.
@@ -827,17 +827,15 @@ closure hands them by name as `action`, beside Filament's `data`, `form` and
 `schema`. Both first refuse, by name, a path the action's `mutateDataUsing()`
 added that no component of the option form maps
 ([why](#a-key-an-option-actions-mutation-adds-that-no-component-maps-is-refused)).
-Until [M7 · 10](../roadmap.md#m7--composite-identifiers) both called `getData()`
-with no state, which re-read the modal's own state, so a `mutateDataUsing()` on
-either option action was discarded whole. Filament's defaults have always
-written `$data`. Pinned by
+Calling `getData()` with no state would re-read the modal's own state and
+discard a `mutateDataUsing()` on either option action whole; Filament's defaults
+write `$data`. Pinned by
 [`SelectOptionDataTest`](../../../packages/forms/tests/Integration/Components/SelectOptionDataTest.php).
-Since the defaults no longer re-run `getState()`, the option form's second
-validation pass is gone too: every `unique()`/`exists()` probe it declares ran
-once more per submit, and now runs once.
+Because the defaults do not re-run `getState()`, the option form validates once
+per submit, and so does every `unique()`/`exists()` probe it declares.
 
-Both write defaults run `getData()`, so both end in the record check and, since
-[M7 · 6](../roadmap.md#m7--composite-identifiers), in its two key rules. A created
+Both write defaults run `getData()`, so both end in the record check and
+in its two key rules. A created
 option on a key a record already holds is *"This value is already used."* under
 the option form's own field, with nothing written
 ([the rule](../schemas/can-be-validated.md#a-taken-assigned-key-is-a-field-error-not-a-unique-violation)); an edit-option save that changes the selected
@@ -872,7 +870,7 @@ the `Choice`. The one on the relationship default is belt and braces for a
 `createOptionUsing` that is replaced wholesale later in the chain.
 
 `getSelectedRecord()` is nothing but `evaluate()` over `getSelectedRecordUsing()`
-— Filament's shape, and the seam this epic ports — memoized on the field for as
+— Filament's shape, and the seam the port keeps — memoized on the field for as
 long as the selection stays the same, null for a blank selection or when no
 resolver is declared, so a **non-relationship** select with an
 `editOptionForm()` binds a record to its modal by declaring the resolver. The
@@ -1060,7 +1058,7 @@ cast as a gap.
 
 ### A composite label read runs one statement per batch, and a composite submission past `maxItems()` reads no label
 
-Since M7 · 7, `getOptionLabelsFromRelationship()` reads one statement per batch
+`getOptionLabelsFromRelationship()` reads one statement per batch
 of `IdentifierConstraint::batch()`, and merges the answers into a map keyed by
 record key. That is the whole list for a single identifier, and at most 500 keys
 a statement for a composite one. A `multiple()` relationship select whose target
@@ -1075,8 +1073,7 @@ statement per batch of at most 500 keys. A single identifier's is one statement
 over one array parameter, as cheap for a long list as for a short one, so there
 is nothing to save by skipping it. Every other `multiple()` select — a
 single-identifier relationship, static `options()`, an enum — therefore keeps
-reporting both the `Count` and the membership `Choice` violation, byte-identical
-to what it answered before M7 · 7. `hasCompositeRelationshipTarget()` asks the
+reporting both the `Count` and the membership `Choice` violation. `hasCompositeRelationshipTarget()` asks the
 target's class metadata (`isIdentifierComposite`) and issues no statement.
 [`SelectCompositeRelationshipTest`](../../../packages/forms/tests/Integration/Components/SelectCompositeRelationshipTest.php)
 pins both arms, and the membership violation alone for a forged key with no
@@ -1103,7 +1100,7 @@ When the option form's schema turns the key rules off with
 [`validateRecordKey(false)`](../schemas/can-be-validated.md), a blank key field
 the form maps is no longer refused under that field and reaches this check
 instead. The bare advice would then be false for a field already in the form,
-so since [M7 · 10](../roadmap.md#m7--composite-identifiers) the message gains
+so the message gains
 one sentence after it when the rules are off: *The schema switches the key
 rules off with validateRecordKey(false), so a key field it maps is not refused
 while blank; switch them back on to have the blank field refused under it.*
@@ -1134,14 +1131,13 @@ is Doctrine's to fill at the flush two lines later. So does an identifier a
 `#[PrePersist]` callback of the class or a mapped entity listener assigns — the
 check after `persist()` reads it filled. A callback or listener that fills **no**
 key half exempts the class from the first check, so the second one is what
-refuses a half it left blank; until M7 · 7's review that half was flushed, and
-minting the new option's key then failed on the row already written. And so does
+refuses a half it left blank; without it that half would be flushed, and
+minting the new option's key would then fail on the row already written. And so does
 a **plain single scalar** identifier, always: the member answers `false` for one
 before it reads anything,
-because the relation layer has always keyed such a class and a create option over
-one worked at HEAD. Validating a key that is *taken*, as opposed
-to one that is incomplete, is the record check's since
-[M7 · 6](../roadmap.md#m7--composite-identifiers), which this default reaches
+because the relation layer keys such a class with no check, and a create option
+over one needs none. Validating a key that is *taken*, as opposed
+to one that is incomplete, is the record check's, which this default reaches
 through `getData()` ([above](#the-option-actions-are-suffix-actions-with-doctrine-defaults)).
 An assigned single scalar key left blank still passes both: the taken-key rule
 treats a blank component as incomplete and looks nothing up, so it reaches
@@ -1162,9 +1158,8 @@ them builds an owner-scoped query — the option list is
 over the whole target class, and the loaded state is the association value read
 off the record — so the width of the owner's identifier is not a question this
 tier asks, and a record keyed by two scalars, by an association plus a scalar or
-by an association alone carried these fields before
-[M7 · 5](../roadmap.md#m7--composite-identifiers) built the owner half of the
-relationship queries, and carries them unchanged after.
+by an association alone carries these fields as any record does, though the
+owner half of the relationship queries is composite-aware.
 
 That is recorded rather than left implicit because the obvious "make it
 composite-aware" sweep is a regression here: routing a to-many field's load
@@ -1175,11 +1170,11 @@ already holding. The one owner-facing member the tier does call is
 `assertRelationshipAcceptsAssociate()`, which reads the owner's **class** and
 the target's identifier — [the re-keying
 refusal](../schemas/association-reader.md#no-to-many-relation-verb-moves-a-primary-key),
-not a scope. Since M7 · 5b an inverse-side many-to-many save calls the reader's
+not a scope. An inverse-side many-to-many save calls the reader's
 `detach()` and `attach()` as well —
 [the write half](../schemas/association-reader.md#a-write-lands-on-the-side-doctrine-persists),
 which mints no key and binds nothing, so the tier still never asks the owner's
-identity. M7 · 5 pinned the whole tier under a composite-owner record so the
+identity. Tests pin the whole tier under a composite-owner record so the
 sweep has a failing test to meet rather than a silent one to pass.
 
 ## Divergences
@@ -1197,11 +1192,9 @@ control**, ported to TypeScript as `packages/forms/assets/src/utils/select.ts`
 and driven by the thin first-party Stimulus controller `sylament--forms--select`,
 both bundled into forms' `dist` with `@floating-ui/dom` and `sortablejs`.
 
-M3 · 4 shipped it over **Tom Select** instead — the roadmap's carried decision
-(3), a "thin integration around Tom Select" over writing our own control — and
-that decision was revisited on 2026-08-19 and overturned. What forced the
-revisit was the friction list the integration accumulated in one epic, every
-item of it the cost of an engine that does not share the server's contract: an
+A thin integration around **Tom Select** was the alternative to porting the
+control, and it was dropped for the friction it accumulated, every item of it
+the cost of an engine that does not share the server's contract: an
 own delete button rendered beside Tom Select's, the dropdown settled by hand,
 a membership score written to keep the server's option order, `$order` and `$id`
 kept in sync per option, a duplicate `<option selected>` for the value the map
@@ -1369,8 +1362,7 @@ blocked — for `Select` and for [`CheckboxList`](checkbox-list.md) alike. Filam
 concern names extra columns to write onto a `BelongsToMany` pivot row. A Doctrine
 many-to-many has no columns to address: a join table the mapping owns is not a
 row object anything can set a column on, and a join carrying columns of its own is
-by definition a join *entity*. The recipe for one already ships, and M3 · 10 demoed
-it: `Repeater::relationship()` over the join entity, with a nested relation select
+by definition a join *entity*. The recipe for one already ships: `Repeater::relationship()` over the join entity, with a nested relation select
 inside the item schema for the far side, and one `Hidden::make('role')->default(…)`
 for a constant column. A `pivotData()` shim on top of that would be a second,
 worse spelling of the same thing, so none is added — the fatal names the missing
@@ -1389,13 +1381,13 @@ select stays dehydrated, deliberately.
 Doctrine persists a many-to-many from its **owning** side alone; an inverse
 collection is ignored at flush. So a to-many `relationship()` field on the
 inverse side — a [`CheckboxList`](checkbox-list.md) over a tag's posts is the
-likely one — wrote the desired list onto a collection nothing persists, and
-unless the entity's adder happened to call its counterpart back (the shape
-`make:entity` generates), the save reported success and wrote **no join row at
-all**, whatever the width of the record's identifier. Filament never meets it:
+likely one — would write the desired list onto a collection nothing persists,
+and unless the entity's adder happened to call its counterpart back (the shape
+`make:entity` generates), the save would report success and write **no join row
+at all**, whatever the width of the record's identifier. Filament never meets it:
 `BelongsToMany` writes the pivot from either end.
 
-Since [M7 · 5b](../roadmap.md#m7--composite-identifiers) the to-many arm asks
+The to-many arm therefore asks
 the mapping which side persists. On the inverse side of a many-to-many it first
 reconciles the desired list onto the owning side through the
 [association reader](../schemas/association-reader.md#a-write-lands-on-the-side-doctrine-persists) —
@@ -1429,9 +1421,9 @@ A save that only **adds** never reaches it, which is why the refusal is computed
 from the removals and not from the mapping alone. It costs one statement and
 writes nothing at all — not even a transaction — so the record and every join
 row it had survive; an owning side without the flag still deletes the dropped
-member's join row beside it. Nothing that worked stops working, since before
-M7 · 5b such a save wrote nothing either — the mapping is named now instead of
-being ignored in silence. The reader refuses the analogous **one-to-many** by
+member's join row beside it. Nothing that would otherwise work is refused, since
+without the reconcile such a save would write nothing either — the mapping is
+named instead of being ignored in silence. The reader refuses the analogous **one-to-many** by
 name and cannot see this one
 ([why](../schemas/association-reader.md#a-write-lands-on-the-side-doctrine-persists)),
 which is what puts the refusal here.
@@ -1482,7 +1474,7 @@ The quiet arms stay quiet: `null`, an array and a class-string record exclude
 nothing — a create page has no row to exclude — and neither does an entity whose
 identifier is not complete yet, which
 [`findRecordKey()`](../schemas/association-reader.md#findrecordkey-answers-null-where-getrecordkey-throws)
-answers `null` for — a generated id still pending, and, since M7 · 4, an
+answers `null` for — a generated id still pending, and an
 **assigned** string component still sitting blank, which is a create form's
 normal state for a composite key.
 
@@ -1507,8 +1499,8 @@ it, and its edit default calls `update($data)`. Eloquent's `fill()` drops a key
 the target's `$fillable` lacks in silence, or throws under
 `preventSilentlyDiscardingAttributes()`. The port maps through the option
 form's record path map instead, which plays `$fillable`'s part, so a key no
-component maps could only be dropped in silence. Since
-[M7 · 10](../roadmap.md#m7--composite-identifiers) both defaults refuse it. A
+component maps could only be dropped in silence. So
+both defaults refuse it. A
 path the option action's `mutateDataUsing()` added, present in what the action
 returned but absent from the validated state it was handed
 ([`getUnmutatedData()`](../actions/README.md)), that no record path of the

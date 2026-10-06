@@ -28,8 +28,9 @@ use Symfony\UX\LiveComponent\DefaultActionTrait;
  * `LiveProp` flags are {@see BulkDeleteSongsTable}'s trick, so a test can
  * rebuild the same table with the fetching arm armed, or with an override of
  * the by-key delete in place, across a round trip. It declares
- * no summary and joins no collection, because a composite root under a
- * fetch-join paginator is epic 2's refusal.
+ * no summary and joins no collection, so its page stays one statement; a
+ * composite root that fetch-joins a collection is
+ * {@see CompositeJoinedResidenciesTable}'s.
  */
 #[AsLiveComponent(name: 'CompositeShortcutsTable', template: '@TablesFixtures/components/CompositeShortcutsTable.html.twig')]
 class CompositeShortcutsTable implements InteractsWithActions, InteractsWithTable

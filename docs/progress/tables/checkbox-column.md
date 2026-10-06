@@ -59,4 +59,4 @@ renders — so the column adds no checkbox styling of its own, only the cell
 padding and alignment. Every editable cell reuses a shipped skin this way —
 support's `sy-checkbox` here, forms' `sy-fo-toggle*`, `sy-fo-input` and
 `sy-fo-select` in the other three — rather than hoisting them into support; the
-hoist is a follow-up, so this epic touches no forms file.
+hoist is a follow-up, so this column touches no forms file.

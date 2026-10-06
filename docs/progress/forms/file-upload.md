@@ -243,16 +243,16 @@ transform plugin resolves its output as a `Blob` carrying a `name` and a
 lastModified }`) rather than `File` — so `#process()` wraps it into a real
 `File` before the seam, which attaches the upload through a `DataTransfer` and
 accepts nothing else. A field with no crop or resize configured hands over the
-browser's own `File` untouched, which is why M3·7's cast never failed and why
-every transformed field threw until the wrap landed.
+browser's own `File` untouched, which is why a field with no transform never
+needs the wrap and a transformed one throws without it.
 
 `removeFile(id, { revert: true })` has two arms (`filepond.esm.js:4879-4934`) and
 both are already ours. A file uploaded in this session is a processed item, so
 FilePond calls `server.revert` — our `removeUploadedFile`, which drops the
 temporary file and its sidecar. A file loaded from the record is a `local` item,
 so it calls `server.remove` — our `deleteUploadedFile`, which disowns the state
-entry and leaves the stored file to the deleter closure, M3·7's semantics
-unchanged. Editing a stored file is therefore a replace, not a copy.
+entry and leaves the stored file to the deleter closure, as a plain remove
+does. Editing a stored file is therefore a replace, not a copy.
 
 The swap needs a guard, because the pond subtree is `data-live-ignore` and the
 reconcile runs on every morph: `#editorSwapName` holds the new file's name from
@@ -267,7 +267,7 @@ editor's state so a reconnected controller starts unguarded.
 One upstream override does nothing here. image-edit installs a
 `SHOULD_REMOVE_ON_REVERT` filter, but FilePond 4.32.12's core has no site for it
 (`REVERT_ITEM_PROCESSING` decides removal from `instantUpload` and `isMockItem`
-alone), so the filter is inert and the ✕ button keeps M3·7's behaviour.
+alone), so the filter is inert and the ✕ button behaves as it does without image-edit.
 
 ### EXIF orientation is the browser's on current engines
 
@@ -331,7 +331,7 @@ hook and none the getter. `getUploadedFileConstraints()` returns through
 `applyValidationMessages()` too, so a field's own message overrides reach an
 upload refusal.
 
-`HasNestedRecursiveValidationConstraints` is composed here as of M3 · 8, and it
+`HasNestedRecursiveValidationConstraints` is composed here, and it
 lands on the **collection** side of this split: what it emits is an `All`, a
 non-`File` constraint, so it runs at save over the whole set rather than per file
 at upload time. `ARRAY_VALIDATION_RULES` and `isArrayValidationRule()` have
@@ -542,9 +542,7 @@ bare `[]` would hand the controller's `Object` value an array. That is not a
 cosmetic mismatch: Stimulus's `object` reader **throws** on an array, and the
 first read sits inside `#detectType`, whose synchronous throw the type plugin's
 promise chain turns into a refusal — an uncast empty `mimeTypeMap()` made every
-file on an `acceptedFileTypes()` field "of invalid type" client-side, which is
-how the M3 · 7 browser pass found it (the third map shipped uncast; the render
-test had pinned only the first two). There is no in-repo precedent (`Select`'s
+file on an `acceptedFileTypes()` field "of invalid type" client-side. There is no in-repo precedent (`Select`'s
 option map is never empty-and-object), so this is a deliberate new one; the
 render test pins all three as `{}`.
 
@@ -553,7 +551,7 @@ aspect-ratio options render as buttons.
 
 The same encoding rule runs one level down on the `Array` side, which is why
 `getAcceptedFileTypes()` now returns `array_values()` on both arms: a *keyed*
-iterable or array — the only latent hazard the epic's cast audit found — encodes
+iterable or array — the only latent hazard an audit of the casts found — encodes
 as `{}`-shaped JSON and Stimulus's `array` reader throws on it exactly as its
 `object` reader throws on a list.
 
@@ -629,7 +627,7 @@ a state key — there is no open path to restrict.
 
 ### Literals, not translation keys
 
-Per the milestone's carried decision (4), user-facing text is a literal here and
+Per the [toolkit-wide i18n deferral](../renames.md#idiom), user-facing text is a literal here and
 is listed so a later i18n pass can find every one: `Download` and
 `Open in new tab` (the two item action labels the controller builds anchors
 for), `The %s field must not have more than %d items.` (the max-files message,
@@ -679,7 +677,7 @@ falls back to PNG for any type the engine cannot encode — `image/gif`,
 `image/bmp`, `image/tiff`, WebP where it is unsupported, or the empty type a
 stored item's `fetch()` may hand back — so keying the rename to the *requested*
 type would name PNG bytes `photo-v1.gif`, the same lie one source further along.
-One expression, the server untouched, and M3·7's naming semantics intact.
+One expression, the server untouched, and the storage-side naming semantics intact.
 
 A name carrying no dot at all is handled rather than mangled on the way through:
 `versionedName()` reads a missing dot as an empty extension and appends the one

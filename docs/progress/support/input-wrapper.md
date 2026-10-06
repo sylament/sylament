@@ -10,7 +10,7 @@ An affix holds up to three things — actions, an icon, a label — and is rende
 only when it holds at least one.
 
 It lives in **support**, not forms, because Filament files it here too and
-because a second package now renders it: the column catalog's
+because a second package renders it: tables'
 [`TextInputColumn`](../tables/text-input-column.md) and
 [`SelectColumn`](../tables/select-column.md) put their controls inside
 `<twig:SylamentSupport:InputWrapper>` directly. The placement stands, but not on
@@ -24,14 +24,14 @@ support is where a component two packages render belongs. The classes are
 because support is the package everything else builds on.
 
 Forms consumes it: every text-like control renders inside it, and
-`.sy-fo-input` / `.sy-fo-select` went transparent in the same epic
+`.sy-fo-input` / `.sy-fo-select` are transparent inside it
 ([field.md](../forms/field.md#the-wrapper-owns-the-chrome-and-the-control-is-transparent)).
 Its render coverage lives over there too —
 [`InputWrapperRenderTest`](../../../packages/forms/tests/Integration/Components/InputWrapperRenderTest.php)
 — because support's own fixture Kernel registers no TwigComponentBundle, so a
 shipped component's render tests live wherever its first consumer does, the
 split [pagination.md](pagination.md) and [badge.md](badge.md) record. Tables is
-the second home as of the column catalog: its
+the second home: its
 [`TextInputColumnTest`](../../../packages/tables/tests/Integration/Columns/TextInputColumnTest.php)
 and [`SelectColumnTest`](../../../packages/tables/tests/Integration/Columns/SelectColumnTest.php)
 render the wrapper's markup around a cell control, so a change to this template

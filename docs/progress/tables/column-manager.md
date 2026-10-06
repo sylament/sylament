@@ -148,7 +148,7 @@ two components and the enum-free item list — stay **in progress** rather than
 whole port.
 
 Two things were built to meet it half way rather than left to be retrofitted.
-The stored item carries a `type`, which is `'column'` for everything this epic
+The stored item carries a `type`, which is `'column'` for everything the port
 produces and `'group'` on read only — a state written by a later version loads
 rather than being refused whole by
 [the normalizer](has-table.md#the-column-state-is-re-derived-against-the-definition-on-every-read).
@@ -383,12 +383,10 @@ no width of its own to default, and the item's guarded `overflow: clip`,
 
 With `columnManagerColumns(2)` and five items, vendor's stylesheet lays the list
 out in **three** column positions and puts the third outside the panel — off the
-screen at a normal viewport, its control unreachable. M4 · 5's browser pass found
-it on the demo's showcase card, established it as inherited rather than
-mis-ported — the `-items` and `-item` rules, the
+screen at a normal viewport, its control unreachable. The spill is inherited
+rather than mis-ported — the `-items` and `-item` rules, the
 `->grid($columns, GridDirection::Column)` call and the emitted `column-count: 2`
-are all vendor's — and recorded it; the validation pass of 2026-09-04 found the
-mechanism, and the fix is one rule.
+are all vendor's — and the fix is one rule.
 
 The items element is a CSS multi-column box balancing `break-inside: avoid`
 items 44px tall — the `pt-6` rhythm over a 20px line. The reorder handle in each
@@ -400,8 +398,7 @@ longer fit the column height it settles on: two go in each column and the fifth
 opens an overflow column past the panel. A synthetic five-item list without the
 overhang balances 3 + 2 in the same browser, one whose child carries negative
 vertical margins reproduces the spill exactly, and `column-fill: auto` does not
-fix it but collapses the list to one column — which is what the epic's
-"collapses it" observation was seeing.
+fix it but collapses the list to one column.
 
 So `.sy-ta-col-manager-item` sets `overflow: clip` with
 `overflow-clip-margin: 10px`. The clip takes the overhang out of the item's

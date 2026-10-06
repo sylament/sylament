@@ -57,7 +57,7 @@ a **diverges** link to the note in [Divergences](#divergences), a **semantics** 
 | [`sy-cloak` while persisting](../../../packages/schemas/templates/partials/Tabs/index.html.twig) | [`x-cloak` on the nav](../../../vendor/filament/schemas/src/Components/Tabs.php) | done | — | [diverges](#cloaking-is-limited-to-persisttab-so-no-js-still-shows-a-tab) |
 | [`tabs.css`](../../../packages/schemas/assets/src/styles/components/tabs.css) | [`components/tabs.css`](../../../vendor/filament/schemas/resources/css/components/tabs.css) | done | — | — |
 | Stimulus controller (`sylament--schemas--tabs`) | [`resources/js/index.js`](../../../vendor/filament/schemas/resources/js) | in progress | — | [schemas-bundle.md](schemas-bundle.md) |
-| `startRenderHooks()` / `endRenderHooks()` / `getRenderHookScopes()` | [the three methods](../../../vendor/filament/schemas/src/Components/Tabs.php) | blocked | render hooks (M6 · 6) | [detail](#the-render-hook-trio-waits-on-the-render-hook-design) |
+| `startRenderHooks()` / `endRenderHooks()` / `getRenderHookScopes()` | [the three methods](../../../vendor/filament/schemas/src/Components/Tabs.php) | blocked | a render-hook registry | [detail](#the-render-hook-trio-waits-on-the-render-hook-design) |
 | `HasExtraAlpineAttributes` | [`Concerns/HasExtraAlpineAttributes`](../../../vendor/filament/support/src/Concerns/HasExtraAlpineAttributes.php) | skipped | — | [diverges](#alpine-only-surface-is-skipped-not-deferred), [diverges](../support/component-attribute-bag.md#extra-alpine-attributes-are-not-ported) |
 | `getTabVisibilityJs()` (`hiddenJs`/`visibleJs` per tab) | [the closure in `toEmbeddedHtml()`](../../../vendor/filament/schemas/src/Components/Tabs.php) | skipped | — | [diverges](#alpine-only-surface-is-skipped-not-deferred) |
 
@@ -89,7 +89,7 @@ button carries `x-on:click="$set('activeTab', 'all')"`; ours carries
 label falls back to the host's `generateTabLabel($key)` when it has that method
 (`method_exists` probe, Filament-exact), and each `Tab` is re-keyed to its array key so
 the value written into the property matches. What is left is the piece Filament has too:
-nothing on the component — the row is **done**. Its consumer arrived with M4 · 3:
+nothing on the component — the row is **done**. Its consumer is
 [panels' `HasTabs`](../panels/has-tabs.md) builds exactly this mode
 (`liveComponentProperty('activeTab')`, `contained(false)`) for a listing's record
 filters, and the `generateTabLabel()` probe above is the host method it answers
@@ -101,7 +101,7 @@ with. `Tab::query()` shipped as the scope half of that seam.
 inject markup at named points around the tabs. Nothing in this port has a render-hook
 registry, a `HasRenderHookScopes` contract or a Twig-side rendering point for one, so
 porting the three setters would ship an API that stores strings and drops them. Blocked on
-the render-hook design (roadmap M6 · 6). Next step: port with the registry, not before.
+the render-hook design. Next step: port with the registry, not before.
 
 ## Semantics
 
@@ -143,8 +143,8 @@ One deliberate delta from vendor in the same loop: Filament's `$tab->key(strval(
 takes `key()`'s default `$isInheritable = true`, so in its `livewireProperty` mode a tab's
 descendants are re-addressed as `{root}.{arrayKey}.{child}`; ours re-keys with
 `isInheritable: false`, so descendant keys stay `{root}.{child}` in both modes — the same
-rule D4 applies everywhere else (a child's absolute key never moves because a tab was
-renamed), and the mode M6 · 1's relation managers will use inherits it.
+rule that applies everywhere else (a child's absolute key never moves because a tab was
+renamed), and the relation managers' tabs, which use this mode, inherit it.
 
 ### `getTabs()` filters hidden tabs out, so every index is a visible position
 
@@ -251,7 +251,7 @@ live consumers of `Tabs` are the schema-side layout component (no persistence) a
 [panels' record filters](../panels/has-tabs.md), which use `liveComponentProperty()`
 and hold the key in a checksummed `LiveProp` — the shape that is
 [correct by construction](../tables/has-table.md#the-url-binding-is-a-per-prop-liveprop-modifier-opted-into-by-the-page)
-and the reason M4 · 3 bound table state through a `LiveProp` modifier rather than
+and the reason tables bind table state through a `LiveProp` modifier rather than
 by reading the request at render time.
 
 The fix, when a consumer wants it, is the same mechanism: give `Tabs` a bound

@@ -96,7 +96,6 @@ twelve are ported
 ([`checkbox-list`](checkbox-list.md#the-controller-is-the-only-behaviour-and-no-test-in-this-repo-runs-it),
 [`select`](#the-select-controller-binds-a-port-of-filaments-select-utility-to-the-live-host),
 [`file-upload`](#the-file-upload-controller-bundles-filepond-and-is-the-only-lazy-controller),
-and M3 · 9's
 [`key-value`](key-value.md#the-controller-is-a-reorder-bridge-and-a-focus-guard-not-a-row-store),
 [`tags-input`](tags-input.md#the-chip-list-is-client-owned-after-the-first-paint)
 and [`textarea`](textarea.md#the-sizer-grows-on-input-floors-at-the-initial-height-and-never-measures-a-hidden-control)).
@@ -161,21 +160,28 @@ for search. Sylament ports that utility —
 vendor method under its own name in vendor order — and replaces only the Alpine
 wrapper: [`select_controller.ts`](../../../packages/forms/assets/src/controllers/select_controller.ts)
 is the Stimulus binding that constructs the engine and joins it to the host live
-component. That is the 2026-08-19 swap of the M3 · 4 decision (carried roadmap
-decision (3): Tom Select behind a thin integration), taken because the vendor
-utility answers by construction what the Tom Select integration was paying for
+component. It replaces a thin integration over Tom Select because the vendor
+utility answers by construction what that integration was paying for
 by hand — the flip-and-shift positioning, the chip reorder, the max-items
 announcement, the `$order`/`$id` carry, and the six class settings that skinned
 a foreign DOM (the modal escape is not the engine's doing: vendor clips inside
 its modals, and ours escapes them through
 [support's fixed positioning context](../support/modal.md#the-modal-is-a-fixed-positioning-context)).
 
+`symfony/ux-autocomplete` was weighed for the select control and declined. Its
+Stimulus controller fetched results with a headerless GET, which cannot reach a
+live action; its one override seam would have replaced everything this
+controller exists to build; and it would have put its engine into every
+consumer's importmap, where the house bundles a library into the owning dist
+(`BUNDLED_ENTRIES`). Its `{value, text}` payload shape is not adopted either: the
+results never leave our own JavaScript, so the option payload stays Filament's
+([select.md](select.md#transformoptionsforjs-casts-a-markup-label-to-text)).
+
 - **The engine lives in forms, and only inside the bundle.** `utils/select.ts`
   is filed here because forms is its only consumer; it moves to a support
-  workspace on the second one — under the house promotion rule, the same
-  deferral the `schema_component_method.ts` note carries. Tables'
+  workspace on the second one — under [the promotion rule](../../internals/assets.md#when-does-a-utility-move-to-a-shared-workspace). Tables'
   `SelectColumn` was the candidate, and it did **not** trigger the promotion:
-  the column catalog (M4 · 4) shipped it
+  tables ships it
   [native-only](../tables/select-column.md), a plain `<select>` with no JS
   control of its own, so the engine still has exactly one consumer. Vendor's
   `columns/select.js` does import the same utility, so the trigger comes back
@@ -251,7 +257,7 @@ its modals, and ours escapes them through
   label repository, but the visible list is re-rendered only when the pool
   actually changed *and* no search query is typed — under an active query the
   results on screen are left alone and the new pool waits for the next clear
-  (M3 · 4's unrelated-render rule, now expressed in the engine's own
+  (the unrelated-render rule, expressed in the engine's own
   vocabulary), and the changed-pool guard is what stops an unrelated render from
   dropping keyboard focus out of an open list. `rememberLabels()` then refills
   the repository from `selectedOptions`. The value store's entry for `statePath`
@@ -286,12 +292,11 @@ its modals, and ours escapes them through
   `${componentKey}\0${method}` on the host, listens once per component for the
   result event (ignoring nested hosts' bubbling copies), and rejects every entry
   on `response:error` or when the action's promise resolves with the entry still
-  pending — all unchanged. What changed in M3 · 5 is its home: the deferral this
-  bullet used to carry ("moves to a schemas workspace on its second consumer")
-  came due when Wizard's `nextStep` and Tabs' `getDeferredTabBadges` became that
-  consumer, so the file moved to
+  pending. It lives in schemas because [the promotion rule](../../internals/assets.md#when-does-a-utility-move-to-a-shared-workspace) moves a file to a
+  schemas workspace on its second consumer, and Wizard's `nextStep` and Tabs'
+  `getDeferredTabBadges` are that consumer: the file is in
   [`packages/schemas/assets/src/utils/`](../../../packages/schemas/assets/src/utils/schema_component_method.ts)
-  and this import became the bare specifier
+  and this import is the bare specifier
   `@sylament/schemas/utils/schema_component_method.js`, resolved through schemas'
   `exports` map (`{"./utils/*.js": "./src/utils/*.ts"}`) and a
   `"@sylament/schemas": "workspace:*"` devDependency of this workspace. It costs a
@@ -356,13 +361,13 @@ its modals, and ours escapes them through
   (nobody `npm install`s a Sylament package, and StimulusBundle reads only the
   `symfony` key). `@floating-ui/dom`
   is already inlined twice on a page — support's dropdown controller carries its
-  own copy — and `sortablejs` is too, since M3 · 6's sortable controller in
-  support carries its own: Filament's own per-bundle inlining, ~10 KB gzipped
+  own copy — and `sortablejs` is too, since support's sortable controller
+  carries its own: Filament's own per-bundle inlining, ~10 KB gzipped
   each, recorded and accepted.
 - **No test in this repo runs the controller or the engine** — the
   [`checkbox-list` note](checkbox-list.md#the-controller-is-the-only-behaviour-and-no-test-in-this-repo-runs-it)
-  applies verbatim, and a JS rig was weighed for the engine and declined on
-  2026-08-19: its verification is the reviewer's method-by-method diff against
+  applies verbatim, and a JS rig was weighed for the engine and declined:
+  its verification is the reviewer's method-by-method diff against
   vendor's `select.js` plus the demo's browser pass.
 
 ### The repeater controller owns the items' collapse state and bridges the drag control to the reorder action
@@ -522,7 +527,7 @@ and the shape differs in seven ways worth knowing before touching it.
   `revert`/`remove` never call FilePond's `error` at all, its `load` resolves a
   failed fetch as an empty blob, and its `reorderfiles` handler `await`s the
   server inside an event listener nothing catches — a silent failure every time.
-  Literals, not translation keys, per the epic's carried decision (4).
+  Literals, not translation keys, per the [toolkit-wide i18n deferral](../renames.md#idiom).
 
 Two shipped-type gaps are worked around in the file and will bite anyone
 upgrading FilePond: `initfile` is a real event (`filepond.esm.js:8842`) missing
@@ -533,7 +538,7 @@ first argument is `{main, sub}` for a validation failure and `{type, code, body}
 for a transport one, so the message is composed defensively rather than rendered
 as Filament's `undefined: undefined`.
 
-Six sweep items the image-editor epic folded into the same file are worth
+Six details in the same file are worth
 reading as a set, because each is a shape that reappears whenever a seam call or
 a FilePond option is added. A cancelled upload's key is consumed on **both**
 settle arms and the item is `abort()`ed rather than `error()`ed, so the

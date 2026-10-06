@@ -29,8 +29,8 @@ uses(InteractsWithLiveComponents::class);
 /*
  * The whole relationship-action family over a relation whose **owner** is keyed
  * by several fields — a scalar pair, a derived identity, and a scalar pair
- * whose many-to-many target is composite too. Every one of these cells is the
- * owner refusal at the epic's base; what makes them pass is the reader routing
+ * whose many-to-many target is composite too. Every one of these cells is an
+ * owner a single-field reader refuses; what makes them pass is the reader routing
  * both relationship queries through the correlated subselect, so this file is
  * where the action family's half of that routing is pinned.
  *

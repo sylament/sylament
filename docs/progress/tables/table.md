@@ -32,8 +32,7 @@ upstairs, per
 sixteen still unported keep a per-file row in the package
 [README](README.md#features), the way
 [`actions`](../actions/README.md#features) tracks the concerns `Action` has not
-reached yet — as do the three action sets landed by
-[M4 · 1](../roadmap.md#m4--tables-widening), keeping theirs because the two
+reached yet — as do the three action sets, keeping theirs because the two
 selection ones still owe the settings [listed below](#the-selection-settings-ship-as-a-subset-and-the-rest-are-listed)
 and `HasToolbarActions` is simply **done** where a reader looks for it, and the
 two filter concerns, keeping theirs for the form seam and
@@ -107,7 +106,7 @@ Rows never disappear — only their detail sections do.
 | [`paginationMode()` / `getPaginationMode()`](../../../packages/tables/src/Table/Concerns/CanPaginateRecords.php) + [`PaginationMode`](../../../packages/tables/src/Enums/PaginationMode.php) | [`Table\Concerns\CanPaginateRecords`](../../../vendor/filament/tables/src/Table/Concerns/CanPaginateRecords.php), [`Enums/PaginationMode`](../../../vendor/filament/tables/src/Enums/PaginationMode.php) | in progress | its `Cursor` arm — a keyset carrier ([pagination.md](../support/pagination.md)) | [detail](#the-pagination-mode-ships-two-cases-and-two-setters-wait-on-their-features) · [has-table.md](has-table.md#the-page-state-has-its-query-lane-and-no-session-or-url-half) |
 | [`paginatedWhileReordering()` / `isPaginatedWhileReordering()`](../../../packages/tables/src/Table/Concerns/CanPaginateRecords.php) | [`Table\Concerns\CanPaginateRecords`](../../../vendor/filament/tables/src/Table/Concerns/CanPaginateRecords.php) | done | — | — |
 | `scrollToTopOnPageChange()` | [`Table\Concerns\CanPaginateRecords`](../../../vendor/filament/tables/src/Table/Concerns/CanPaginateRecords.php) | todo | — | [detail](#the-pagination-mode-ships-two-cases-and-two-setters-wait-on-their-features) |
-| [`getSortableVisibleColumn()` / `getSortColumn()` / `getSortDirection()`](../../../packages/tables/src/Table/Concerns/CanSortRecords.php) | [`Table\Concerns\CanSortRecords`](../../../vendor/filament/tables/src/Table/Concerns/CanSortRecords.php) | done | — | [diverges](#the-two-hidden-column-arms-landed-with-column-visibility-an-epic-after-their-loops) |
+| [`getSortableVisibleColumn()` / `getSortColumn()` / `getSortDirection()`](../../../packages/tables/src/Table/Concerns/CanSortRecords.php) | [`Table\Concerns\CanSortRecords`](../../../vendor/filament/tables/src/Table/Concerns/CanSortRecords.php) | done | — | [diverges](#sorting-and-global-search-both-skip-a-hidden-column) |
 | [`defaultSort()` / `getDefaultSort()` / `getDefaultSortDirection()` / `defaultKeySort()` / `hasDefaultKeySort()`](../../../packages/tables/src/Table/Concerns/CanSortRecords.php) | [`Table\Concerns\CanSortRecords`](../../../vendor/filament/tables/src/Table/Concerns/CanSortRecords.php) | done | — | [semantics](#the-default-sort-is-a-secondary-order-and-its-direction-rules-the-tiebreaker) · [has-table.md](has-table.md#sorting-composes-the-users-order-the-default-and-the-identifier-tiebreaker) · [has-table.md](has-table.md#a-default-sort-closures-replacement-builder-reaches-the-caller-where-filaments-is-discarded) · [semantics](#the-mappings-order-is-the-relation-scoped-tables-default-sort) |
 | `defaultSortOptionLabel()` / `getDefaultSortOptionLabel()` | [`Table\Concerns\CanSortRecords`](../../../vendor/filament/tables/src/Table/Concerns/CanSortRecords.php) | skipped | — | It labels the "unsorted" entry of the mobile sort **dropdown**, which the port does not render and nothing else reads; it belongs to that layout rather than to sorting, and lands only if the layout does |
 | [`persistSortInSession()` / `persistsSortInSession()`](../../../packages/tables/src/Table/Concerns/CanSortRecords.php) | [`Table\Concerns\CanSortRecords`](../../../vendor/filament/tables/src/Table/Concerns/CanSortRecords.php) | done | — | [has-table.md](has-table.md#the-session-key-is-the-host-class-so-two-instances-of-one-page-share-it) |
@@ -154,7 +153,7 @@ Rows never disappear — only their detail sections do.
 | [`heading()` / `description()`](../../../packages/tables/src/Table/Concerns/HasHeader.php) + [`rootHeadingLevel()` / `getHeadingLevel()` / `getHeadingTag()`](../../../packages/tables/src/Table/Concerns/HasHeadings.php) | [`Table\Concerns\HasHeader`](../../../vendor/filament/tables/src/Table/Concerns/HasHeader.php), [`Table\Concerns\HasHeadings`](../../../vendor/filament/tables/src/Table/Concerns/HasHeadings.php) | in progress | `header()` — the custom-header arm takes a Blade `View`, and its Twig analogue waits for a consumer | [detail](#the-partial-emits-no-header-scaffolding-and-no-content-wrapper) |
 | [`striped()` / `isStriped()`](../../../packages/tables/src/Table/Concerns/CanBeStriped.php) | [`CanBeStriped`](../../../vendor/filament/tables/src/Table/Concerns/CanBeStriped.php) | done | — | the host-side [`Concerns\CanBeStriped`](has-table.md#surface) it fronts is a deprecated shim and is **skipped** |
 | [`recordClasses()` / `getRecordClasses()`](../../../packages/tables/src/Table/Concerns/HasRecordClasses.php) | [`HasRecordClasses`](../../../vendor/filament/tables/src/Table/Concerns/HasRecordClasses.php) | done | — | — |
-| Presentation — `stackedOnMobile()` / `isStackedOnMobile()`, `content()` / `getContent()` / `contentGrid()` / `getContentGrid()` / `contentFooter()` / `getContentFooter()` | [`Table\Concerns\CanBeStackedOnMobile`](../../../vendor/filament/tables/src/Table/Concerns/CanBeStackedOnMobile.php), [`Table\Concerns\HasContent`](../../../vendor/filament/tables/src/Table/Concerns/HasContent.php) | blocked | the layout columns (M4 · 7) | Both configure the **card** rendering rather than the table one — `content()` replaces the `<table>` with a caller-supplied list and `stackedOnMobile()` is the responsive half of that list, whose whole point is the label-above-value stack a `<td>` cannot make. Neither has anything to switch on until `Columns\Layout`'s `Split`/`Stack`/`Panel`/`Grid` and `contentGrid()` land, and [`AfterContent` renders nothing](#the-partial-emits-no-header-scaffolding-and-no-content-wrapper) for the same reason. Split off from the striping row by M4 · 3, which shipped `striped()` and `recordClasses()` and left these two behind |
+| Presentation — `stackedOnMobile()` / `isStackedOnMobile()`, `content()` / `getContent()` / `contentGrid()` / `getContentGrid()` / `contentFooter()` / `getContentFooter()` | [`Table\Concerns\CanBeStackedOnMobile`](../../../vendor/filament/tables/src/Table/Concerns/CanBeStackedOnMobile.php), [`Table\Concerns\HasContent`](../../../vendor/filament/tables/src/Table/Concerns/HasContent.php) | blocked | the layout columns (`Columns\Layout`) | Both configure the **card** rendering rather than the table one — `content()` replaces the `<table>` with a caller-supplied list and `stackedOnMobile()` is the responsive half of that list, whose whole point is the label-above-value stack a `<td>` cannot make. Neither has anything to switch on until `Columns\Layout`'s `Split`/`Stack`/`Panel`/`Grid` and `contentGrid()` land, and [`AfterContent` renders nothing](#the-partial-emits-no-header-scaffolding-and-no-content-wrapper) for the same reason. They have a row apart from `striped()` and `recordClasses()`, which ship |
 | [`HasDefaultDataFormattingSettings` — the eight formatting defaults, composed here](../../../packages/tables/src/Table.php) | [`Table.php`'s composed `Support\Concerns\HasDefaultDataFormattingSettings`](../../../vendor/filament/tables/src/Table.php) | done | — | [has-default-data-formatting-settings.md](../support/has-default-data-formatting-settings.md) — the trait is support's, and `TextColumn`'s date, money and numeric families are what read it off the table |
 | `HasArguments`, `HasExtraAttributes` | [`Table.php`'s remaining composed traits](../../../vendor/filament/tables/src/Table.php) | todo | — | — |
 
@@ -164,12 +163,12 @@ what the done set covers, feature by feature. The **object itself**: `make()`,
 the host binding, the closure-injection wiring, and the partial that renders
 everything below. The **data lanes**: the `records()` declaration, the whole `query()` lane
 with the two members that read off it (`hasQuery()`, `getRecordClass()`), the
-relation-scoped lane · 20 added, and the host-delegating `getRecords()`,
+relation-scoped lane, and the host-delegating `getRecords()`,
 `getPaginator()` and `getRecordKey()` with the morph-stable row and cell keys built
 on the last of those. The **browsing state**: the pagination surface,
 `paginatedWhileReordering()`, the sort-resolution surface with the default-sort
 family beside it, the eight search rows — the declaration, the chrome, the query
-half · 12 landed, the global indicator, the two session flags, and M4 · 5's
+half, the global indicator, the two session flags, and the
 per-column pair with the search row it renders — and the query-string
 identifier, beside the session-persistence quartet (`persistSortInSession()`,
 `persistSearchInSession()`, `persistColumnSearchesInSession()`,
@@ -195,11 +194,11 @@ the column set (the layouts, and the manager against `ColumnGroup` and the
 [`Count::icons()`](summarizer.md#counticons-ships-as-api-and-refuses-to-summarize),
 the record-action position rows, the big `HasFilters` row against the four
 refused layouts, and the header row against `header()`'s Blade-`View` arm. The
-three chrome rows that stood here against grouping — the header/toolbar rows, the
-selection rows and the row chrome — are **done** since M4 · 6 landed the selector,
-the group header row, its checkbox and the stripe's per-group restart.
+three chrome rows grouping touches — the header/toolbar rows, the selection rows
+and the row chrome — are **done**, with the selector, the group header row, its
+checkbox and the stripe's per-group restart.
 
-The relation arm · 20 added to the lane has no row of its own here, and that is
+The relation arm of the query lane has no row of its own here, and that is
 the [one-row-per-file](../README.md#one-row-per-file-one-file-per-thing) rule
 holding: its surface belongs to the **column** ([column.md](column.md)), and the
 `Query/` helpers behind it are Sylament-only engines with no Filament file to
@@ -266,9 +265,8 @@ the package's Doctrine suites share one factory, so a fixture added for one
 lane is mapped for all of them. Four of them carry this suite:
 `Song` and `Artist` carry the `ManyToOne` / `OneToMany` pair, `Book`'s identifier
 is `code` rather than `id`, and `CompositePair` has two. The last two existed for
-what came later — a record key or a sort that assumes an `id` column passes
-against `Song` and fails against them — and it has since arrived, beside the
-composite families M7 · 1 and M7 · 2 added for it. The eight cases are
+what assumes an `id` column — a record key or a sort that does passes against
+`Song` and fails against them — beside the composite-identifier families. The eight cases are
 clone-per-read (two reads, neither the stored builder, same DQL), a caller
 mutation not leaking into
 the next read, a closure declaration evaluated once and re-evaluated after a
@@ -422,7 +420,7 @@ still carries the closure shape, so `ACTIONS_FILTER` and
 registering an alias and reading the trigger's icon back unchanged. It is the
 only other site in `packages/*/src` with that shape.
 
-The chrome those two actions are rendered into landed in the same epic — the
+The chrome those two actions are rendered into ships with them — the
 `ColumnManager` and `ColumnManagerContent` Twig components, the
 `sylament--tables--column-manager` controller that writes the draft,
 `column-manager.css`, and the partial's two branches — so what keeps this row
@@ -452,9 +450,8 @@ enum is Filament's verbatim, three pure cases in declaration order; the getter i
 typed `PaginationMode` where Filament declares `?PaginationMode` over a body that
 cannot return null.
 
-`paginatedWhileReordering()` came off this list with M4 · 3 and has a **done** row
-of its own — the table it reads on now exists. `scrollToTopOnPageChange()` is the
-one still here: an Alpine `$el.scrollIntoView()` in Filament's view, where the port
+`paginatedWhileReordering()` has a **done** row of its own, since the table it
+reads on exists. `scrollToTopOnPageChange()` is the one still here: an Alpine `$el.scrollIntoView()` in Filament's view, where the port
 has no scroll affordance at all, so it belongs with the
 [in-flight affordance](#loading-affordances-are-deferred-with-the-javascript-that-would-drive-them)
 that is still out rather than with pagination configuration, and returns with it.
@@ -462,19 +459,17 @@ that is still out rather than with pagination configuration, and returns with it
 ### The unported search surface splits three ways
 
 Filament's `Table\Concerns\CanSearchRecords` is 300 lines; the port keeps the
-declaration, the chrome, the query half (since · 12) and the global session half
-(since M4 · 3). What the surface divides into stays worth naming, because one of
+declaration, the chrome, the query half and the global session half. What the surface divides into stays worth naming, because one of
 the three arms is out whole and a second is half in.
 
-**Session persistence** split in two with M4 · 3 and closed in M4 · 5. Both
-setters ship against the host-side
+**Session persistence** ships whole. Both setters ship against the host-side
 [`CanPersistTableState`](has-table.md#the-session-key-is-the-host-class-so-two-instances-of-one-page-share-it):
 `persistSearchInSession()` arrived with that layer, and
 `persistColumnSearchesInSession()` with the bag it had nothing to persist
 without — its own `column_search` key, read at mount between the search and sort
 blocks and written back beside them.
 
-**The query lane's members landed with · 12** and have a **done** row of their own:
+**The query lane's members** have a **done** row of their own:
 `splitSearchTerms()`, which governs how the term is broken up *before* being
 turned into constraints, `searchUsing()` with its
 `callSearchUsing()`/`hasSearchUsingCallback()` pair — a closure handed the
@@ -488,9 +483,8 @@ builder, which bypasses column assembly entirely — and
 — and a closure member
 [returns its expression](#extra-searchable-columns-take-closures-that-return-their-expression)
 the way a column's `searchable(query:)` does. So a table declaring
-`searchable(['author.name'])` searches by it — across the association since · 20,
-where · 12 needed the join declared in `query()` — rather than merely reading as
-searchable. The composition around them —
+`searchable(['author.name'])` searches by it — across the association, with no
+join declared in `query()` — rather than merely reading as searchable. The composition around them —
 [one group per word, `AND`-ed](has-table.md#search-is-the-global-term-and-one-term-per-column) — is
 the host's.
 
@@ -504,7 +498,7 @@ and returns either a `LIKE` or a correlated `EXISTS` — so
 `searchable(['author.name'])` searches across the association with nothing
 declared, and no caller is left holding the branch this member exists to decide.
 
-**The per-column arm arrived in M4 · 5**, so only one member of it stays out.
+**The per-column arm ships**, and only one member of it stays out.
 `isSearchableByColumn()` answers whether any column wants its own input — the
 search row's gate — and `getColumnSearchIndicators()` delegates to the host for
 one `Filters\Indicator` per column-scoped term, keyed by column name so the
@@ -519,8 +513,8 @@ companion method.
 
 ### Loading affordances are deferred with the JavaScript that would drive them
 
-`deferLoading()` and `poll()` were held back until support had a loading
-affordance to render, and M4 · 3 is where they land: the deferred window renders
+`deferLoading()` and `poll()` ship over support's loading affordance: the
+deferred window renders
 support's `LoadingIndicator` at `2xl` inside a `sy-ta-table-loading-ctn`, and the
 poll interval is the table controller's `setInterval` over `component.render()`.
 The mechanics are the two sections below.
@@ -687,8 +681,8 @@ passthrough, while `cacheAction()` keeps its own
 action must **not** displace a same-named record or header action already in the
 map. Both members exist to serve that one caller, which is
 [blocked](#surface) — so the parameter stays where a caller will reach it and
-the passthrough returns with the caller that needs it. Every caller this epic
-added overwrites, so nothing here changed when the bulk half landed.
+the passthrough returns with the caller that needs it. Every other caller
+overwrites.
 
 ### The header and toolbar setters are destructive, because the flat bulk map is the checkbox switch
 
@@ -792,8 +786,8 @@ appends, and binds itself to each member as it goes, so a second call replaces
 the set and every column can reach the table and, through it, the host. Both are
 pinned by [`TableTest`](../../../packages/tables/tests/Unit/TableTest.php).
 `pushColumns()` returns as the public append seam when the column groups and
-layouts land — the tier the sentence above names, not the record grouping M4 · 6
-shipped, which appends no column at all.
+layouts land — the tier the sentence above names, not record grouping, which
+appends no column at all.
 
 ### An unshipped filters layout is refused where the chrome reads it
 
@@ -852,8 +846,8 @@ value with a `null` default — a width the caller states or does not. The modal
 layout falls back to `'md'` in the template for the same reason.
 
 [`Sylament\Support\Enums\Width`](../../../packages/support/src/Enums/Width.php)
-**now exists** — M6 · 2 landed all 26 cases for panels' page and panel width
-surfaces — so the condition that sentence named has been met and the back-fill is
+**exists** — all 26 cases, for panels' page and panel width surfaces — so the
+condition that sentence named has been met and the back-fill is
 **deferred** rather than blocked: nothing here was retyped, `filtersFormWidth()`
 still takes and answers a plain string, and re-deriving the column-count match
 plus narrowing the property is a filters-sized change of its own. The identical
@@ -959,8 +953,8 @@ A second `columns()` call rebuilds the column map but **not** the action cache,
 so the replaced set's action stays reachable by name — Filament does not evict
 either, and the record-action arm behaves the same way here (the two setters
 that do evict are `toolbarActions()` and `headerActions()`, both through
-`removeCachedActions()`). Worth knowing before the column manager (M4 · 5)
-starts swapping column sets at runtime: a stale column action stays mountable by
+`removeCachedActions()`). Worth knowing wherever column sets are swapped at
+runtime: a stale column action stays mountable by
 name, and that is inherited behaviour rather than a decision this port took.
 
 ### One filter setting drives three selection behaviours
@@ -1091,12 +1085,13 @@ this, and only the relationship lane consults it.
 Every query-side consumer of a column name — `Column::applySort()`, the host's
 `defaultSort` branch, `Column::applySearchConstraint()`, the table's extra
 searchable columns and `applyEagerLoading()` — resolves it the same way, in one
-fixed order, and the order is what keeps · 12's behaviour byte-for-byte intact
-while adding the relation arm on top of it:
+fixed order, and the order is what keeps a plain name and a hand-declared join
+resolving byte-for-byte as they do without the relation arm, which sits on top
+of them:
 
-1. **A dotless name** is `{rootAlias}.{name}`, exactly as before.
+1. **A dotless name** is `{rootAlias}.{name}`.
 2. **A dotted name whose head is an alias the builder already declares** is
-   returned verbatim, exactly as before — so a join written by hand in `query()`
+   returned verbatim — so a join written by hand in `query()`
    still wins, under whatever alias it was given, and a table that worked
    yesterday cannot be re-resolved out from under it.
 3. Otherwise
@@ -1106,6 +1101,17 @@ while adding the relation arm on top of it:
 4. Only if that resolves nothing does
    [`ColumnPathResolver`](../../../packages/tables/src/Query/ColumnPathResolver.php)
    throw — with a message naming all three resolutions it tried.
+
+A **dotless** name that happens to be a to-one association takes the first arm
+and becomes a bare `<rootAlias>.<assoc>`. `SelectFilter::apply()`,
+`Group::scopeQueryByKey()` and the sort and search consumers then compare or
+order it with `=`, `IN`, `IS NULL` or `ORDER BY`, every one of which Doctrine
+refuses with `associationPathCompositeKeyNotSupported` when the association's
+target is keyed by several fields, while the search consumer's `LIKE` is refused
+on any association path at all. Only a name that is a bare
+association *and* is sorted, searched, filtered or grouped by reaches it —
+displaying such a column is fine, as the next paragraphs show — and comparing
+rows by an entity is already a misconfiguration, so nothing refuses it by name.
 
 The walk itself has one rule worth stating, because it is not the obvious one:
 at each step the **whole remaining path** is tested as a field name *before* the
@@ -1153,8 +1159,8 @@ of its details look like choices and are constraints. The subselect is re-rooted
 on the **root entity** rather than started at the association, because DQL's
 `FROM` cannot name an association path (the installed parser answers "NOT YET
 IMPLEMENTED"). The correlation is **identifier equality** rather than entity
-equality, which sidesteps comparing objects across the two scopes — and since
-M7 · 2 it is equality on **every** identifier field, written by
+equality, which sidesteps comparing objects across the two scopes — and it is
+equality on **every** identifier field, written by
 [`IdentifierConstraint::correlate()`](../schemas/record-key.md#the-operations-and-their-dql),
 so a root keyed by a host and a path correlates
 `sy_x0.host = s.host AND sy_x0.path = s.path` where a single-`id` one keeps
@@ -1206,16 +1212,11 @@ identifiers and the trap is not composite-specific: it bites **any** table that
 fetch-joins a collection under the head segment of a searchable dotted path,
 single-identifier roots included, because Doctrine's paginator ANDs its
 identifier `IN` onto the `WHERE` the `LIKE` is already in and hydrates each
-collection from the rows that survived both. Only a *composite* root was ever
-refused the fetch join outright, by the M7 · 1 guard this epic deleted; a
-single derived identity never was. It is written down now because M7 · 2 ships
-the first table in the toolkit that comes within one alias of doing both.
+collection from the rows that survived both.
 
-Since [M7 · 9](../roadmap.md#m7--composite-identifiers) the case that filters in
-silence is refused by name: `forColumn()` throws a `LogicException` when the head
+The case that would filter in silence is refused by name: `forColumn()` throws a `LogicException` when the head
 is an alias the query fetch-joins as a **collection**, naming the path, the alias
-and the ways out. Since [M7 · 10](../roadmap.md#m7--composite-identifiers) the
-message speaks of a *searchable path* and *the query* rather than a column and
+and the ways out. The message speaks of a *searchable path* and *the query* rather than a column and
 the table query, because panels' global search reaches it through the same
 `forColumn()` and has no column to name: it leads with re-aliasing the join,
 which both callers can do, and offers `searchable(query:)` as what a table
@@ -1427,7 +1428,7 @@ Every other per-column element in the table is stationary within a render: a
 header cell and a record cell are rebuilt together and idiomorph's positional
 pairing is right by construction. The search cells are not. A reorder
 re-`columns()` the table in the stored order and a toggle drops a cell outright,
-so the row's children are the one place in the epic where the **set** and the
+so the row's children are the one place in the table where the **set** and the
 **order** of siblings both change under a live morph — and idiomorph pairs
 unkeyed siblings by position
 (`isIdSetMatch` → `findIdSetMatch` → `findSoftMatch`).
@@ -1499,9 +1500,9 @@ sit under. `rootHeadingLevel()` moves both together, so a table dropped inside a
 section can push its whole outline down one and keep the relationship.
 
 Vendor computes the variable once at the top of the blade and feeds it to **nine**
-call sites; this partial feeds two — the empty state and, since M4 · 6, the
+call sites; this partial feeds two — the empty state and the
 [group heading](grouping.md). Of the seven it does not, one is the grid layout's
-*second* group heading, which arrives with the layout columns (M4 · 7); one is the
+*second* group heading, which arrives with the layout columns; one is the
 [column manager](column-manager.md), whose panel takes a literal `headingLevel`
 prop of its own; and the remaining **five are the filters panel**, in all five of
 its layout positions: vendor hands the computed tag to
@@ -1588,8 +1589,8 @@ so the render reaches the three-lane refusal, `Table [...] must have [records()]
 declares a `records()` fallback of its own (`->records(fn (): array => [])`)
 rather than relying on the relationship closure answering `null`.
 
-Every SQLite manager the suites build enforces foreign keys since
-[M7 · 8](../roadmap.md#m7--composite-identifiers), as MySQL and PostgreSQL do,
+Every SQLite manager the suites build enforces foreign keys, as MySQL and
+PostgreSQL do,
 so a by-key delete of a record something still references is refused, apart from
 what the database's own `ON DELETE CASCADE` removes — a default many-to-many join
 table cascades. The referenced-row behaviour is pinned and described in
@@ -1629,26 +1630,31 @@ without it the map would be indistinguishable from a hardcoded `'asc'`.
 Filament has no counterpart: an Eloquent relation carries no readable default
 order, so this is an addition rather than a divergence.
 
+Each mapping entry is emitted as a raw `<rootAlias>.<field>` path with no field
+check. An `#[ORM\OrderBy]` entry naming an **association** therefore orders by a
+bare association path, which Doctrine refuses with a `QueryException` when that
+association's target is keyed by several fields. It is reachable only from a
+mapping that orders a collection by an association, and it stays Doctrine's
+refusal rather than one of ours.
+
 ### A composite-identifier root correlates and groups by every key field
 
 Relation search and the aggregate batch both reach the outer row through its
-identifier, and until M7 · 2 both did it with a single column —
+identifier, and a single column cannot carry every root —
 `WHERE sub.id = root.id` for the search `EXISTS`, `WHERE root.id IN (:keys)`
 and `GROUP BY root.id` for the aggregate batch. A record class keyed by two
 scalar fields, or by an association plus a scalar, has no such column:
-`getSingleIdentifierFieldName()` raised a `MappingException` at both sites and
-each re-threw a `LogicException` naming the limit. A record class keyed by an
-association **alone** is not composite at all — the flag counts identifier
-fields and a derived identity contributes one — so neither site ever refused
-it. Each emitted the association as a bare path in a `SELECT` list instead,
+`getSingleIdentifierFieldName()` raises a `MappingException` for it. A record
+class keyed by an association **alone** is not composite at all — the flag
+counts identifier fields and a derived identity contributes one — and a
+single-column clause emits the association as a bare path in a `SELECT` list,
 `SELECT sy_x0.<assoc>` for the search and `SELECT sy_r.<assoc> AS sy_key` for
 the batch, which Doctrine's parser rejects as *"Invalid PathExpression. Must be
-a StateFieldPathExpression."* with no Sylament message in front of it. None of
-the three does any of that now: every one of those clauses
-is written per identifier field by
+a StateFieldPathExpression."* with no Sylament message in front of it. So every
+one of those clauses is written per identifier field by
 [the predicate builder](../schemas/record-key.md#the-operations-and-their-dql),
-which emits today's text byte for byte for a single-`id` root and the per-field
-form for every other one.
+which emits the single-column text byte for byte for a single-`id` root and the
+per-field form for every other one.
 
 Three shapes are worth knowing, because none of them is the one a reader
 guesses. The batch **projects** `IDENTITY(root.venue) AS sy_key_0,
@@ -1669,14 +1675,11 @@ Paging is the third mechanism that correlates by identifier, and it is not
 here: a query joining a collection cannot be windowed by rows at all, so a
 keyed root takes
 [a two-step read of its own](has-table.md#a-keyed-root-that-joins-a-collection-pages-in-two-statements-because-doctrines-walkers-key-by-one-column).
-The relation layer caught up on the schemas side with
-[M7 · 4](../roadmap.md#m7--composite-identifiers), so
-`relationship()` now lists a composite **target** as readily as a composite
-root: its many-to-many arm is a correlated `EXISTS` built on the same predicate
+On the schemas side, `relationship()` lists a composite **target** as readily
+as a composite root: its many-to-many arm is a correlated `EXISTS` built on the same predicate
 builder, per identifier field
 ([association-reader.md](../schemas/association-reader.md#the-relationship-query-is-rooted-at-the-target-and-needs-no-inverse-mapping)).
-A composite **owner** of either arm caught up with
-[M7 · 5](../roadmap.md#m7--composite-identifiers), by the same mechanism rather
+A composite **owner** of either arm is handled by the same mechanism rather
 than a second one: both arms narrow to such an owner through a correlated
 `EXISTS` over the owner's **own** collection, so a relation-scoped table rooted
 at a scalar-pair, derived-identity or join-entity owner lists, keys, selects,
@@ -1759,24 +1762,21 @@ PHPStan-flagged smell at level max — and the input that distinguishes them
 `'all'` option is a string on purpose and is unaffected: it is matched by value,
 not by this branch.
 
-### The two hidden-column arms landed with column visibility, an epic after their loops
+### Sorting and global search both skip a hidden column
 
-Filament rejects a hidden column in two places, and the port omitted both for one
-reason: there was no `isHidden()` to call. Both arms ship now, one wave apart
-inside M4 · 5, because [`CanBeHidden` and `CanBeToggled`](column.md#surface)
-landed on the column first.
+Filament rejects a hidden column in two places, and both arms need an
+`isHidden()` to call, which [`CanBeHidden` and `CanBeToggled`](column.md#surface)
+give the column.
 
 `getSortableVisibleColumn()` rejects three things — an unknown column, a
-**hidden** one, and an unsortable one — and the middle check is the one that was
-missing. A column the developer hid, or the user toggled off, can no longer be
-sorted by. The name keeps the word *visible* deliberately: it is Filament's, and
+**hidden** one, and an unsortable one. A column the developer hid, or the user
+toggled off, cannot be sorted by. The name keeps the word *visible* deliberately: it is Filament's, and
 renaming it would break the API a migrating user greps for.
 
 The host's [global search loop](has-table.md#search-is-the-global-term-and-one-term-per-column)
-took the same check with the per-column half of that loop: it skips a hidden
-column before asking whether the column is globally searchable, Filament's own
-order. Until it did, a term matching nothing a reader could see narrowed the page
-anyway. Neither arm reads a client-supplied column set — both ask the column
+applies the same check: it skips a hidden column before asking whether the
+column is globally searchable, Filament's own order. Without it, a term matching
+nothing a reader could see would narrow the page anyway. Neither arm reads a client-supplied column set — both ask the column
 itself, after the visibility sync.
 
 ### `getSearchDebounceMilliseconds()` is a Sylament-only translation of Filament's duration string
@@ -1833,15 +1833,15 @@ today would only re-render what the morph already preserves.
 
 [`SearchConstraint::like()`](../../../packages/tables/src/Query/SearchConstraint.php)
 emits `path LIKE :param` — or `LOWER(path) LIKE :param` on the case-insensitive
-arm — and, on PostgreSQL, casts a non-character path to text first. As of M3·4
-the implementation itself lives in
+arm — and, on PostgreSQL, casts a non-character path to text first. The
+implementation itself lives in
 [`Sylament\Schemas\Query\SearchConstraint`](../schemas/search-constraint.md),
 with tables' class delegating. Filament's `generate_search_column_expression()` does
 more on Postgres: it double-quotes each segment of the name and appends `::text`,
 because Postgres refuses `integer LIKE text` outright where MySQL and SQLite
-coerce silently. So a `searchable()` integer column was portable in Filament and,
-until M7 · 9, not here: against Postgres it failed loudly at execution, while the
-same table against SQLite matched.
+coerce silently. So without a cast a `searchable()` integer column, portable in
+Filament, fails loudly at execution against Postgres while the same table against
+SQLite matches.
 
 There is no DQL counterpart to lift. `::text` is a Postgres cast written in SQL,
 and a DQL string is parsed by Doctrine before any platform sees it; the portable
@@ -1853,14 +1853,13 @@ function at all — the parser's built-in string list is `concat`, `substring`,
 consumer has called. A platform-conditional emission would also have to happen
 *before* the parser runs, which is exactly where `SearchConstraint` already reads
 the platform for its case-insensitivity default — so that is where the cast arm
-was added, the M7 · 9 paragraph below saying how.
+sits, the paragraph below saying how.
 
-Since [M7 · 9](../roadmap.md#m7--composite-identifiers) the type-aware cast is
-what runs: schemas' `like()` wraps a non-character field in `CONCAT(path, '')` on
+The type-aware cast is what runs: schemas' `like()` wraps a non-character field in `CONCAT(path, '')` on
 PostgreSQL alone
 ([search-constraint.md](../schemas/search-constraint.md#a-field-that-holds-no-character-data-is-cast-to-text-on-postgresql)),
-so a searchable integer column matches on all three platforms, and the pins M7 · 8
-wrote as a PostgreSQL error assert the match. The alias walk it needed is
+so a searchable integer column matches on all three platforms, and the
+PostgreSQL pins assert the match. The alias walk it needed is
 `QueryAliases`, shared with the refusal below.
 
 Two escape hatches exist beside it, both first-class API rather than workarounds:
@@ -1959,12 +1958,10 @@ consequences worth knowing:
   variable of a query in one flat namespace across its subselects — so a name
   already standing in `getDQL()` as an identifier token of its own is taken too,
   and `mintAlias()` scans for it. Without that scan a dotted sort or summary
-  whose first hop is a property named `owner` or `related` died with
+  whose first hop is a property named `owner` or `related` would die with
   *'sy_owner' is already defined*, against the two aliases the relation layer
-  reserves inside its own subselect. That was live at HEAD on the many-to-many
-  arm under **any** owner, and
-  [M7 · 5](../roadmap.md#m7--composite-identifiers) closed it — having otherwise
-  widened it to every one-to-many under a composite owner, where a mapped-by
+  reserves inside its own subselect — on the many-to-many arm under **any**
+  owner, and on every one-to-many under a composite owner, where a mapped-by
   field called `owner` is the commonest name there is. The scan reads the DQL
   rather than a list of the relation layer's names on purpose: there is no
   cross-package literal to keep in step, and it closes the `sy_x<n>` and
@@ -2012,11 +2009,9 @@ Filament reflex would otherwise silently drop the `IN (:keys)` and aggregate the
 whole table into one arbitrary key's cell. (A scope calling `groupBy()` still
 replaces the grouping — the same hazard, one layer along, and unfixed rather than
 unnoticed. A scope calling `select()` replaces the key projection, and that one
-already refused loudly; M7 · 2 only changes whose refusal it is. The batch
-re-keys each row through the selection that projected it, so a missing key
-column throws *"A result row of […] lacks the key column [sy_key_0]"* where the
-batch's own key guard used to answer *"its identifier read back as null, which
-is neither scalar nor stringable"*.)
+refuses loudly: the batch re-keys each row through the selection that projected
+it, so a missing key column throws *"A result row of […] lacks the key column
+[sy_key_0]"*.)
 
 A third contract arrived with composite keys: the batch is **chunked**. The
 scope closure runs once on the pristine builder, and each chunk of
@@ -2026,16 +2021,13 @@ second predicate ANDed onto the first answers nothing, and one base because a
 base carrying a chunk index of its own is refused. The per-chunk maps merge
 with `+` rather than `array_merge()`, which would renumber the integer array
 key a numeric record key becomes, handing every cell its neighbour's figure. A
-single-identifier page under two thousand keys is one chunk, so the page that
-was one statement before still is, over the same SQL it always was — only the
-result alias moved, `sy_key` to `sy_key_0`, which costs one query-cache miss
-and nothing else. The **input** narrowed at the same time: `fetch()` took
-`list<int|string>` before M7 · 2 and takes record keys as strings only now, an
-`int` being a `TypeError` raised three frames down in the identity seam
-(`IdentifierFields::toDatabaseValues()`) rather than a key that happens to
-work. The one in-repo caller, `HasTable::fillTableAggregateValues()`, has
-always mapped its keys to strings; a direct caller handing `array_keys()` of a
-map keyed by a numeric id straight in is the one that moves.
+single-identifier page under two thousand keys is one chunk, so it is one
+statement. The **input** is record keys as strings only: `fetch()` takes no
+`int`, an `int` being a `TypeError` raised three frames down in the identity
+seam (`IdentifierFields::toDatabaseValues()`) rather than a key that happens to
+work. The one in-repo caller, `HasTable::fillTableAggregateValues()`, maps its
+keys to strings; a direct caller handing `array_keys()` of a map keyed by a
+numeric id straight in is the one that breaks.
 
 **Sorting** cannot use the store, since the database has to do the ordering, so
 it takes a third shape: the same aggregate as a correlated subselect added to the
@@ -2177,12 +2169,11 @@ same work. The stylesheet addition is one rule, `max-w-full shrink-0` — vendor
 `& > * { flex min-h-9 items-center gap-x-4 }` already supplies.
 
 The group's contents keep Filament's order exactly — [reorder trigger]
-[toolbar actions] [grouping selector] — all three filled now, by M4 · 3, M4 · 1
-and M4 · 6 in that order, with the end group's third slot taken by the column
-manager (M4 · 5). Getting that order wrong is
-what forces a restructure two epics later, so the slots were load-bearing rather
-than decorative — each trigger dropped into its reserved position with no
-restructure, which is the payoff. Header actions rendered
+[toolbar actions] [grouping selector] — all three filled, with the end group's
+third slot taken by the column manager. Getting that order wrong forces a
+restructure when a later trigger arrives, so the slots are load-bearing rather
+than decorative — each trigger drops into its reserved position with no
+restructure. Header actions rendered
 here as a stopgap while no `sy-ta-header` band existed; they moved into the band
 (`sy-ta-header-actions` — named, not `fi-ta-actions`, for the same
 record-actions-collision reason as the start group) when the heading rows
@@ -2254,8 +2245,8 @@ count, as vendor's is, and it renders on an overflow (empty) page too: a
 selection outlives a page that lost its rows. Of vendor's two extra server gates
 one is ported — the banner does not render while a deferred table's window is
 still open — while `maxSelectableRecords(1)` stays unported. The `fi-selected`
-row tint is no longer among them: M4 · 3 gave the controller a `#repaint()` pass
-over each checkbox's closest `.sy-ta-row`, so `sy-selected` is stamped from the
+row tint is not among them: the controller runs a `#repaint()` pass over each
+checkbox's closest `.sy-ta-row`, so `sy-selected` is stamped from the
 client exactly as Filament's Alpine binds it, and the row chrome rather than the
 ticked checkbox carries the state now — the tint and its leading primary bar are
 `row.css`'s two rules ported verbatim, the bar as a `::before` on the row's first
@@ -2381,7 +2372,7 @@ component it contains: `.fi-input-wrp` paints the chrome, an inner
 `input.fi-input.fi-input-has-inline-prefix` sits in a
 `.fi-input-wrp-content-ctn` beside it. Support ships that component now
 ([input-wrapper.md](../support/input-wrapper.md)), but this field predates it
-and has not been migrated onto it in this epic — a follow-up, not done here —
+and is not migrated onto it — a follow-up —
 and the field itself is [ported inline into the partial](README.md) rather than
 as a component, so four vendor elements collapse to two — `<label
 class="sy-ta-search-field">` holding the icon and the input directly — and three
@@ -2474,7 +2465,7 @@ that first wants a resting outline on this input, with nothing to migrate.
 
 ### The search row carries the responsive classes vendor puts only on the header
 
-M4 · 4's `hiddenFrom()` / `visibleFrom()` emit a breakpoint class on **both** the
+`hiddenFrom()` / `visibleFrom()` emit a breakpoint class on **both** the
 header `<th>` and the record `<td>`, because a `<td>` that stays while its `<th>`
 goes leaves the whole row misaligned below that breakpoint. Vendor emits them on
 the `<th>` and on a `ColumnGroup`'s header cell only
@@ -2490,8 +2481,8 @@ hoists `getHiddenFrom()` / `getVisibleFrom()` exactly as the record-cell loop do
 and spreads the same two entries into the cell's `classes()` call.
 
 It is the rare divergence where *departing* from vendor is what preserves the
-rendering: the difference is downstream of M4 · 4's own divergence, not a fresh
-choice, and it would have to be reversed the same day that one was.
+rendering: the difference is downstream of the record cell's own divergence, not
+a fresh choice, and it would have to be reversed the same day that one was.
 
 ### The search cell drops vendor's per-column class hook, and the row's `sy-ta-row`
 
@@ -2589,8 +2580,8 @@ In Filament the pairs are distinct because there is a third thing in the row.
 `*Cells` sits outside the columns *and* outside the selection checkbox and the
 reorder handle; `*Columns` sits between them and the data columns — so
 `BeforeCells` puts the actions before the checkbox and `BeforeColumns` after it.
-M4 · 1 landed the checkbox and split the branches back apart at exactly those two
-points, and M4 · 3 landed the handle — but only the checkbox separates the pairs,
+The port splits the branches apart at exactly those two points, around the
+checkbox and the handle — but only the checkbox separates the pairs,
 because the two modes are mutually exclusive: reordering drops the checkbox cells
 *and* empties the action sets, so a row being dragged carries a handle, its
 columns, and no action cell at any of the four positions. The distinctness a
@@ -2683,7 +2674,7 @@ The **active-count badge stays a template chip**. Vendor calls
 `$filtersTriggerAction->badge($activeFiltersCount)` at each render site; our
 `Action::badge()` takes no value — it selects the badge *template variant* — and
 the `badge($value)` family is unported, so porting it here would mean smuggling
-a whole actions feature into a tables epic. The chip therefore keeps its
+a whole actions feature into a tables change. The chip therefore keeps its
 [existing composition](#the-trigger-badge-is-composed-in-the-table-partial-because-iconbutton-has-no-slot)
 one level out from the trigger, and the actions trail keeps the row.
 

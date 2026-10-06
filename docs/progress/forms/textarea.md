@@ -62,7 +62,7 @@ The asymmetry is the feature, and it is Filament's:
 `mutatesStateForValidation()` is `parent || hasStripCharacters() || isTrimmed()`,
 so a `Textarea` with neither set costs the mutation walk nothing.
 [The walk itself](../schemas/schema.md#getstate-validates-without-a-prepareforvalidation-mutation-layer)
-is schemas'. `TagsInput`, the third upstream consumer, landed with M3 · 9.
+is schemas'. `TagsInput` is the third upstream consumer.
 
 ### The sizer grows on `input`, floors at the initial height, and never measures a hidden control
 

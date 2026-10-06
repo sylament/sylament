@@ -11,7 +11,7 @@ It shipped first in `tables`
 ([table.md](../tables/table.md#a-non-string-searchable-field-is-cast-to-text-on-postgresql)),
 which still owns `forColumn()` (the relation-crossing dispatch a column's
 search resolves through) and its own `like()` that now delegates here.
-`like()` itself moved down in M3·4 so `forms`' relationship search arm can
+`like()` itself moved down so `forms`' relationship search arm can
 reuse it: `forms` and `tables` are sibling packages that both build on
 `schemas` and neither may depend on the other, so a helper both need moves
 down to their shared ancestor rather than one borrowing the other's package.
@@ -52,7 +52,7 @@ the SQL — whenever it resolves to a mapped field whose type is neither a
 native `UUID`). The folded arm becomes `LOWER(CONCAT(<path>, ''))`. A character
 field keeps `LOWER(<path>)`, so an index on `lower(col)` still serves it, and
 MySQL and SQLite emit exactly what they did, since they compare any column as
-text. Executed on PostgreSQL 18 (M7 · 9): `integer`, `smallint`, `bigint`,
+text. Executed on PostgreSQL 18: `integer`, `smallint`, `bigint`,
 `decimal`, `float`, `boolean`, `guid`, `date`, `datetime`, `datetimetz`, `time`
 and `json` all match through the cast; `jsonb`, `binary`/`blob` and arrays still
 fail, as they did with no cast, because their own `||` operator claims the
@@ -71,5 +71,5 @@ builder over a manager that must not connect cannot compile a cast search.
 `QueryAliases` is the third walk of a builder's join part, beside tables'
 [`Query\JoinCardinality`](../../../packages/tables/src/Query/JoinCardinality.php)
 and [`Query\RelationJoiner`](../../../packages/tables/src/Query/RelationJoiner.php),
-which M7 · 9 left as they were; folding those two onto `QueryAliases` is a
+which keep walks of their own; folding those two onto `QueryAliases` is a
 follow-up.

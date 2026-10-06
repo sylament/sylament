@@ -142,8 +142,8 @@ Filament: an `Action`/`ActionGroup` child (flagged `isAction` in the pair) goes
 into a bare `div.sy-sc-action` wrapper instead of the grid-cell +
 `sy-sc-component` wrappers, and `Schema::render()` returns `null` when nothing
 is visible — Filament's `''`-on-empty contract. The remaining gaps are genuine,
-not the client-runtime idiom translation — they reverse when the
-live-component-state epic and grid liberation land.
+not the client-runtime idiom translation — they reverse once live component
+state wiring and grid liberation are built.
 
 _See also: the global [rename table](../renames.md) — the Blade/`toEmbeddedHtml`
 → Twig render, `Htmlable` → `Twig\Markup`, the client-runtime and attribute-bag

@@ -33,7 +33,7 @@ Every built row is pinned by
 [`TernaryFilterTest`](../../../packages/tables/tests/Unit/Filters/TernaryFilterTest.php),
 which uses the `isFeatured` column added to the
 [`Song` fixture](../../../packages/tables/tests/Fixtures/Doctrine/Entity/Song.php)
-for this epic — nullable, so the three-state arms and the `nullable()` arms are
+for this filter — nullable, so the three-state arms and the `nullable()` arms are
 both reachable on one entity.
 
 ## Semantics
@@ -105,15 +105,15 @@ values are that catalogue's English ones, so the rendered chip and the two
 options match Filament byte for byte — but there is no catalogue to look them up
 in, the same
 [hardcoded-copy gap](table.md#the-copy-is-english-and-hardcoded-because-no-i18n-layer-ships) the
-empty state and the search chip carry, and it lifts with the toolkit-wide i18n
-epic. The `'-'` placeholder is not part of it: Filament hardcodes that one too.
+empty state and the search chip carry, and it lifts when toolkit-wide i18n
+ships. The `'-'` placeholder is not part of it: Filament hardcodes that one too.
 
 ### The `whereRelation` arms are deferred
 
 Each of Filament's four arms opens with a `queriesRelationships()` check and
 falls into `$query->whereRelation($relationshipName, $titleAttribute, …)`.
 `whereRelation` has no Doctrine counterpart, and the whole relationship surface
-of `SelectFilter` waits on a future filters-relationship epic
+of `SelectFilter` waits on a Doctrine design for the filters' relationship arm
 ([select-filter.md](select-filter.md#the-relationship-arm-is-deferred-with-a-documented-escape-hatch)).
 The same escape hatch applies: `attribute('artist.isFeatured')` over a query
 that already joins `artist` reaches a related boolean today.

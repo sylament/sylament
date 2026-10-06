@@ -16,16 +16,15 @@ of its own — a table, its actions and its modals — rather than a fragment of
 page. What the page hands it is a record **key** and its own class-string; the
 [`RelationManager`](relation-manager.md) resolves the owner from those.
 
-The embedded manager is one of **two** ways a record page shows an association
-since M6 · 3. The other is [`ManageRelatedRecords`](manage-related-records.md), a
+The embedded manager is one of **two** ways a record page shows an association.
+The other is [`ManageRelatedRecords`](manage-related-records.md), a
 routed page of its own reached through the record's
 [sub-navigation](has-sub-navigation.md) rather than a tab, which lists the same
 records and — with a `$relatedResource` — turns its Create/Edit actions into
 links into that resource's own [nested pages](nested-resources.md) instead of
 modals. Both hosts compose one tier,
 [`InteractsWithRelationshipTable`](interacts-with-relationship-table.md); what
-this trait owns is the **embedded** arm alone, and nothing here changed with that
-epic.
+this trait owns is the **embedded** arm alone.
 
 **Status:** in progress — see the [status vocabulary](../README.md#statuses).
 
@@ -51,7 +50,7 @@ Reference — the Filament source this is diffed against:
 | [`EditRecord::content()`](../../../packages/panels/src/Resources/Pages/EditRecord.php) + [`schemas()`](../../../packages/panels/src/Resources/Pages/EditRecord.php) | [`EditRecord::content()`](../../../vendor/filament/filament/src/Resources/Pages/EditRecord.php) | in progress | `Form`, form-level `Actions`, `EmbeddedTable` | [diverges](#content-ships-in-a-narrow-shape) |
 | [`EditRecord::hasRecord()` / `getRecordKey()`](../../../packages/panels/src/Resources/Pages/EditRecord.php) | [`InteractsWithRecord::hasRecord()`](../../../vendor/filament/filament/src/Resources/Pages/Concerns/InteractsWithRecord.php); no counterpart for the key | done | — | [semantics](#the-record-probes-read-the-wire-value-not-the-resolved-record) |
 | `hasCombinedRelationManagerTabsWithContent()` / `getContentTabComponent()` / `getContentTabLabel()` / `getContentTabIcon()` / `getContentTabPosition()` / `Enums\ContentTabPosition` | the same five plus the enum | skipped | — | [diverges](#the-combined-content-tab-does-not-port) |
-| The trait on `ViewRecord` | Filament composes it on the shared record page | todo | M5 · 2 (the view page) | — |
+| The trait on `ViewRecord` | Filament composes it on the shared record page | todo | the view page | — |
 | _rest not audited yet_ | | | | |
 
 [`Integration/Resources/Pages/Concerns/HasRelationManagersTest`](../../../packages/panels/tests/Integration/Resources/Pages/Concerns/HasRelationManagersTest.php)
@@ -75,8 +74,8 @@ answers `[]` outright while the page holds no record. That is Filament's shape
 unchanged — including the `array_filter()` that **preserves keys**, which the
 builder below depends on.
 
-The `canViewForRecord()` answer is `true` for every manager until the
-authorization epic ([relation-manager.md](relation-manager.md#every-registered-manager-is-reachable-by-anyone-until-the-authorization-epic)),
+The `canViewForRecord()` answer is `true` for every manager until
+authorization lands ([relation-manager.md](relation-manager.md#every-registered-manager-is-reachable-by-anyone-until-authorization-lands)),
 so the only registration a *shipped* manager ever loses to the filter is an empty
 group. The other branch is real all the same — a consumer overriding the hook
 today already gets it — so the suite pins both with a fixture manager that
@@ -198,7 +197,7 @@ form-level `Actions` (Save/Cancel), and the relation managers, with
 `ContentTabPosition` deciding whether the form itself is a tab beside them. Ours
 holds **only** the relation-manager component; the `<form>` element, the
 record-level error outlet, the Save button and the `Modals` outlet stay in the
-template — since M6 · 2 the shared
+template — the shared
 [form variant](form-actions.md) and the base page chrome above it, with
 [`partials/EditRecord/index.html.twig`](../../../packages/panels/templates/partials/EditRecord/index.html.twig)
 reduced to a seven-line child of the variant whose only content is an
@@ -211,7 +210,7 @@ with the same name.
 
 The reduction is deliberate: the faithful shape needs `Form` and form-level
 `Actions` — neither ported — plus a rewrite of all three record-page templates,
-which is M5-scale work. What ships is a strict subset, so upgrading later is
+which is work the size of the view page and infolists. What ships is a strict subset, so upgrading later is
 additive rather than a rewrite. The one thing the narrow shape fixes in place is
 placement: the managers render **after** the form element, never inside it,
 because a manager hosts forms of its own and a nested `<form>` is invalid HTML
@@ -233,7 +232,7 @@ override anywhere in its own source, so a default install never reaches them.
 ### The `relation` binding is the toolkit's only static `url:` mapping
 
 Filament binds the property with `#[Url(as: 'relation')]`, so a tab switch is
-linkable; M4 · 3 shipped the same binding, and it is the only place in the toolkit
+linkable; ours ships the same binding, and it is the only place in the toolkit
 that reaches UX's `url:` argument **directly** rather than through a
 [`modifier:`](../tables/has-table.md#the-url-binding-is-a-per-prop-liveprop-modifier-opted-into-by-the-page).
 The reason is that the name is fixed. A table's `?page=` has to be disambiguated
@@ -275,10 +274,10 @@ managers.
   covered by the render rig, which renders every child in full; child
   *preservation* across a parent re-render is only observable in a browser, and no
   consumer groups managers yet. The single-manager and tabs arms are the ones the
-  demo registers, so they are what the epic's browser pass covers; the group arms
-  are not, and no pass has run at the commit this page landed in.
+  demo registers, so they are what the browser pass covers; the group arms
+  are not.
 - **Every registered manager is POST-reachable by anyone.** The page filters with
-  `canViewForRecord()`, which answers `true` until the authorization epic — so
+  `canViewForRecord()`, which answers `true` until authorization lands — so
   hiding a tab hides nothing. Stated in full on
-  [relation-manager.md](relation-manager.md#every-registered-manager-is-reachable-by-anyone-until-the-authorization-epic);
+  [relation-manager.md](relation-manager.md#every-registered-manager-is-reachable-by-anyone-until-authorization-lands);
   repeated here because the page is where a reader looks for the filter.

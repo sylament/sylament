@@ -7,8 +7,8 @@ open. It ports
 [`Resources/RelationManagers/RelationManager.php`](../../../vendor/filament/filament/src/Resources/RelationManagers/RelationManager.php);
 the parts of
 [`Resources/Concerns/InteractsWithRelationshipTable.php`](../../../vendor/filament/filament/src/Resources/Concerns/InteractsWithRelationshipTable.php)
-that are not authorization or deprecations shipped on this class until M6 · 3 and
-now sit on the trait both hosts of the tier compose,
+that are not authorization or deprecations sit on the trait both hosts of the
+tier compose,
 [`InteractsWithRelationshipTable`](interacts-with-relationship-table.md) — the
 manager is one of the two hosts, [`ManageRelatedRecords`](manage-related-records.md)
 the other. It renders through
@@ -39,7 +39,7 @@ Reference — the Filament source this is diffed against:
 | The host union — `InteractsWithActions` + `InteractsWithSchemas` + `InteractsWithTable`, `DefaultActionTrait` | `Component implements HasActions, HasSchemas, HasTable` | done | — | [diverges](#the-manager-stands-beside-the-resource-page-base-rather-than-under-it) |
 | [`$ownerRecord` / `getOwnerRecord()`](../../../packages/panels/src/Resources/RelationManagers/RelationManager.php) | `#[Locked] public Model $ownerRecord` | done | — | [diverges](#the-owner-rides-the-wire-as-a-route-key-behind-a-dehydration-bridge) |
 | [`$pageClass` / `getPageClass()`](../../../packages/panels/src/Resources/RelationManagers/RelationManager.php) | `#[Locked] public ?string $pageClass` | done | — | [diverges](#the-owner-rides-the-wire-as-a-route-key-behind-a-dehydration-bridge) |
-| [`$relationship` / `getRelationshipName()`](../../../packages/panels/src/Resources/Concerns/InteractsWithRelationshipTable.php) — on the shared trait since M6 · 3 | [`InteractsWithRelationshipTable`](../../../vendor/filament/filament/src/Resources/Concerns/InteractsWithRelationshipTable.php) | done | — | [diverges](#a-manager-naming-no-relationship-throws-rather-than-reaching-for-a-related-resource) |
+| [`$relationship` / `getRelationshipName()`](../../../packages/panels/src/Resources/Concerns/InteractsWithRelationshipTable.php) — on the shared trait | [`InteractsWithRelationshipTable`](../../../vendor/filament/filament/src/Resources/Concerns/InteractsWithRelationshipTable.php) | done | — | [diverges](#a-manager-naming-no-relationship-throws-rather-than-reaching-for-a-related-resource) |
 | [`getTitle()`](../../../packages/panels/src/Resources/RelationManagers/RelationManager.php) + `$title` | `getTitle()` / `getRelationshipTitle()` | done | — | [semantics](#the-title-fallback-humanizes-the-relationship-name-without-pluralizing-it) |
 | [`getIcon()` / `getIconPosition()` / `getBadge()` / `getBadgeColor()` / `getBadgeTooltip()`](../../../packages/panels/src/Resources/RelationManagers/RelationManager.php) + their statics | same five statics | done | — | — |
 | [`getTabComponent()`](../../../packages/panels/src/Resources/RelationManagers/RelationManager.php) | `getTabComponent()` | done | — | [diverges](#deferred-tab-badges-do-not-port) |
@@ -50,15 +50,15 @@ Reference — the Filament source this is diffed against:
 | [`form()`](../../../packages/panels/src/Resources/Concerns/InteractsWithRelationshipTable.php) (on the trait) + [`getDefaultActionSchemaResolver()`](../../../packages/panels/src/Resources/RelationManagers/RelationManager.php) (stays here — [the resolver is the host's](manage-related-records.md#the-schema-resolver-is-the-hosts-not-the-tiers)) | same two | done | — | [semantics](#the-view-arm-shares-the-form-builder-because-viewaction-disables-its-own-schema), [diverges](#the-defaultform-two-column-wrapper-does-not-port) |
 | [`getDefaultActionRelationship()`](../../../packages/panels/src/Resources/RelationManagers/RelationManager.php) | [`Concerns/InteractsWithActions::getDefaultActionRelationship()`](../../../vendor/filament/actions/src/Concerns/InteractsWithActions.php) — Filament's manager inherits the `null` default | done | — | [diverges](#the-manager-answers-the-hosts-relationship-hook-where-filaments-leaves-it-null) |
 | [`schemas()`](../../../packages/panels/src/Resources/RelationManagers/RelationManager.php) | no counterpart — Livewire has no schema-discovery list | done | — | — |
-| [`canViewForRecord()`](../../../packages/panels/src/Resources/RelationManagers/RelationManager.php) | `canViewForRecord()` | in progress | the authorization epic | [answers `true` unconditionally](#every-registered-manager-is-reachable-by-anyone-until-the-authorization-epic) |
-| `isReadOnly()` / `canReorder()`'s read-only arm | `isReadOnly()`, `canReorder()` | todo | the authorization epic | [inventory](#every-registered-manager-is-reachable-by-anyone-until-the-authorization-epic) |
-| `getDefaultActionAuthorizationResponse()` / `getDefaultActionIndividualRecordAuthorizationResponseResolver()` / `CanAuthorizeAccess` / `checkPolicyExistence()` / `skipAuthorization()` | [`RelationManager.php`](../../../vendor/filament/filament/src/Resources/RelationManagers/RelationManager.php), [`Concerns/CanAuthorizeAccess.php`](../../../vendor/filament/filament/src/Resources/RelationManagers/Concerns/CanAuthorizeAccess.php) | todo | the authorization epic | [inventory](#every-registered-manager-is-reachable-by-anyone-until-the-authorization-epic) |
-| `content()` — the manager's own tabs + `EmbeddedTable` | `content()` | todo | `EmbeddedTable` | [diverges](#the-manager-renders-a-template-not-a-content-schema) — the record-filter tabs came off this blocker with M4 · 3 and render from the partial instead ([has-tabs.md](has-tabs.md)) |
+| [`canViewForRecord()`](../../../packages/panels/src/Resources/RelationManagers/RelationManager.php) | `canViewForRecord()` | in progress | authorization | [answers `true` unconditionally](#every-registered-manager-is-reachable-by-anyone-until-authorization-lands) |
+| `isReadOnly()` / `canReorder()`'s read-only arm | `isReadOnly()`, `canReorder()` | todo | authorization | [inventory](#every-registered-manager-is-reachable-by-anyone-until-authorization-lands) |
+| `getDefaultActionAuthorizationResponse()` / `getDefaultActionIndividualRecordAuthorizationResponseResolver()` / `CanAuthorizeAccess` / `checkPolicyExistence()` / `skipAuthorization()` | [`RelationManager.php`](../../../vendor/filament/filament/src/Resources/RelationManagers/RelationManager.php), [`Concerns/CanAuthorizeAccess.php`](../../../vendor/filament/filament/src/Resources/RelationManagers/Concerns/CanAuthorizeAccess.php) | todo | authorization | [inventory](#every-registered-manager-is-reachable-by-anyone-until-authorization-lands) |
+| `content()` — the manager's own tabs + `EmbeddedTable` | `content()` | todo | `EmbeddedTable` | [diverges](#the-manager-renders-a-template-not-a-content-schema) — the record-filter tabs do not wait on this blocker: they render from the partial instead ([has-tabs.md](has-tabs.md)) |
 | `$isBadgeDeferred` / `isBadgeDeferred()` | `RelationManager.php` | skipped | — | [diverges](#deferred-tab-badges-do-not-port) |
 | `CanBeLazy` — `lazy()` / `isLazy()` | [`support/src/Concerns/CanBeLazy.php`](../../../vendor/filament/support/src/Concerns/CanBeLazy.php) | skipped | — | [diverges](#lazy-loading-does-not-port-so-the-default-properties-are-empty) |
 | The six `@deprecated` label statics + `$inverseRelationship` and their `makeTable()` `when()` arms | `RelationManager.php` | skipped | — | [diverges](#the-deprecated-label-statics-do-not-port) |
 | [`$relatedResource` / `getRelatedResource()`](../../../packages/panels/src/Resources/Concerns/InteractsWithRelationshipTable.php) and [`getDefaultActionUrl()`](../../../packages/panels/src/Resources/Concerns/InteractsWithRelationshipTable.php)'s related-resource arms | `RelationManager.php`, byte-identical to the copy on `ManageRelatedRecords` | done | — | [interacts-with-relationship-table.md](interacts-with-relationship-table.md#the-url-arms-are-hoisted-once-and-carry-the-owner-explicitly) |
-| `getRenderHookScopes()` / `HasRenderHookScopes`, `render()` / `getViewData()` | `RelationManager.php` | todo | M6 · 6 (render hooks) | — |
+| `getRenderHookScopes()` / `HasRenderHookScopes`, `render()` / `getViewData()` | `RelationManager.php` | todo | render hooks | — |
 | [`getTableQueryStringIdentifier()`](../../../packages/panels/src/Resources/Concerns/InteractsWithRelationshipTable.php) and the manager's own record-filter [`HasTabs`](../../../packages/panels/src/Resources/Concerns/HasTabs.php) | [`InteractsWithRelationshipTable`](../../../vendor/filament/filament/src/Resources/Concerns/InteractsWithRelationshipTable.php) | done | — | [has-tabs.md](has-tabs.md) · the manager maps no state onto the URL, so its tabs render unlinkable — Filament's own manager behaviour — and the identifier is [the host hook rather than the `Table` setter](interacts-with-relationship-table.md#the-table-side-querystringidentifier-is-deliberately-not-stamped) |
 | `mount()` — `loadDefaultActiveTab()` | `mount()` | done | — | [diverges](#the-default-active-tab-loads-at-post-mount-and-the-manager-keeps-no-mount-of-its-own) — the manager declares no `mount()`; the hook is a `#[PostMount]` on [`HasTabs`](../../../packages/panels/src/Resources/Concerns/HasTabs.php) |
 | [`recordAction()` / `recordUrl()` row-click seeding in `makeTable()`](../../../packages/panels/src/Resources/Concerns/InteractsWithRelationshipTable.php) | [`InteractsWithRelationshipTable::makeTable()`](../../../vendor/filament/filament/src/Resources/Concerns/InteractsWithRelationshipTable.php) | done | — | [diverges](interacts-with-relationship-table.md#both-seeding-probes-clone-the-action-where-vendor-clones-in-one-of-four) |
@@ -83,7 +83,7 @@ pins the pass.
 
 ## Details
 
-### Every registered manager is reachable by anyone until the authorization epic
+### Every registered manager is reachable by anyone until authorization lands
 
 `canViewForRecord()` answers `true` unconditionally and nothing else in the
 authorization surface is ported. Stated plainly: **a registered relation manager
@@ -104,11 +104,11 @@ so it carries the toolkit's **highest** exposure to
 application and for any resource mounted in the default panel; wrong for a
 manager whose resource lives **only** in a non-default one, where the generated
 route name does not exist and `UrlGenerator` throws `RouteNotFoundException`.
-Inventoried here, fixed with the rest of that defect (M6 · 6) — the shape is the
+Inventoried here, fixed with the rest of that defect — the shape is the
 same either way: carry the panel id on the live component and pass `panel:`
 explicitly.
 
-M6 · 3 built exactly that shape one tier up, and it reaches a manager only
+That shape already exists one tier up, and it reaches a manager only
 sideways: the [resource-page base](README.md#resource-pages) now carries a
 `panelId` `LiveProp` and stamps `_sylament_panel` back onto the request when it
 hydrates, so a manager rendered **inside** a request that hydrates its host page
@@ -186,9 +186,7 @@ receiving listener.
 [`RelationManager`](#the-manager-stands-beside-the-resource-page-base-rather-than-under-it)
 and [`ManageRelatedRecords`](manage-related-records.md) each reach the
 association through it — and it decides nothing about the owner record. That is
-worth stating because it briefly did. Between
-[M7 · 3](../roadmap.md#m7--composite-identifiers) and
-[M7 · 5](../roadmap.md#m7--composite-identifiers) a private guard here refused an
+worth stating because it once did: a private guard here refused an
 owner *"not keyed by a single scalar identifier"*, in panel vocabulary, because
 the relationship query underneath could not bind one; it was written to be
 deleted whole and was, together with
@@ -230,9 +228,8 @@ through `pageClass::getResource()` → the resource registry →
 `resolveRecordRouteBinding()`, memoised for the request, `NotFoundHttpException`
 on a miss. The key is the resource's own route key at any identifier width, so
 the prop, its checksum and the bridge carry `1~A=2FB=20C` exactly as they carry
-`7`; and since [M7 · 5](../roadmap.md#m7--composite-identifiers) the query
-underneath carries such an owner too, so neither half of the round trip narrows
-what a manager may hang off
+`7`; and the query underneath carries such an owner too, so neither half of the
+round trip narrows what a manager may hang off
 ([how the scope reaches an owner of any width](../schemas/association-reader.md#an-owner-of-any-width-is-scoped-through-its-own-collection-rather-than-through-a-mapped-by-path)).
 `is_subclass_of($pageClass, Resources\Pages\Page::class)` gates the
 client-supplied class-string against the **resource**-page base, so the shell
@@ -269,8 +266,8 @@ class and the property instead — the alternative, PHP's "typed static property
 must not be accessed before initialization" `Error`, is the same failure with
 none of the diagnosis.
 
-**M6 · 3 widened this rather than reversing it: `$relationship` stays mandatory
-even with a `$relatedResource` set.** The middle arm reads the related resource's
+**A related resource widens this rather than reversing it: `$relationship` stays
+mandatory even with a `$relatedResource` set.** The middle arm reads the related resource's
 parent registration **statically**, which our instance-side registration cannot
 answer, and the method is itself static because the static title chain calls it —
 so instance-izing it would ripple through `getTitle()` and the whole tab read.
@@ -382,7 +379,7 @@ hooks are still unported, which would leave a content schema wrapping one table
 and nothing else. So the manager renders a partial instead: the tab strip when it
 has one, the table, and its own `<twig:SylamentActions:Modals />`, nothing more.
 
-The tabs are the piece that changed with M4 · 3 and did **not** move the decision:
+The tabs do **not** move the decision:
 [`HasTabs`](has-tabs.md) ships on
 [the shared tier](interacts-with-relationship-table.md), so a manager declaring
 `getTabs()` renders a strip above its table — but as a

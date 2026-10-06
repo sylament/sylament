@@ -180,7 +180,7 @@ table row and any divergence it earned stay behind.
 moment.js locale presets — `L`, `LLL`, `LT` — which name a *locale's* preferred
 date shape rather than a token sequence. `DateTimeImmutable::format()` has no
 such concept: handing it `'L'` emits the leap-year flag. Answering them means ICU
-locale data and a locale to read it under, which is the i18n epic's, so the six
+locale data and a locale to read it under, which is i18n's to supply, so the six
 setters ship as one **blocked** row rather than as a partial port that formats
 wrongly. Nothing else blocks them — the three defaults they read are already on
 [`HasDefaultDataFormattingSettings`](../support/has-default-data-formatting-settings.md),
@@ -264,6 +264,23 @@ the two carrier classes swap the palette and `text-column.css` reads
 `text-(--sy-text)` — would compile, ship, and paint nothing, because no class an
 empty map emits ever sets that variable. `PolicyShadeGridTest` pins the emitted
 set exactly so a slot added later cannot land without the rule moving with it.
+
+Those stylesheet shades are Filament's own, copied from its `columns/text.css`
+and `badge.css` — `text-color-500` on an `iconColor()`-coloured item icon,
+`text-gray-400 dark:text-gray-500` on an uncoloured one, and the same gray pair
+on a gray badge's icon. Against the surface each sits on — the table chrome's
+`bg-white dark:bg-gray-900` on `.sy-ta-ctn` for the item icons, the gray badge's
+own `bg-gray-50` for its icon — five pairings fall under the 3.0:1 a non-text
+element owes, all in light mode: the coloured item icon on `primary`, `success`
+and `warning`, the uncoloured item icon, and the gray badge icon. They stay as
+Filament ships them, because raising them is a sweep of both packages'
+stylesheets rather than anything this column's surface can reach, and no policy
+ever touches them.
+[`PolicyShadeGridTest`](../../../packages/tables/tests/Unit/Colors/Components/PolicyShadeGridTest.php)
+pins the failing list exactly, over every shipped palette, so it goes red when a
+shade is raised and when a palette lands that fails a pairing passing today. A
+consumer palette is outside that net: a theme that moves `primary` or `warning`
+changes which pairings fail.
 
 ### A `description()` position is compared, never evaluated
 
@@ -449,7 +466,7 @@ mechanism, and the whole of what Carbon adds here is the name translation.
 
 The consequence is exact and bounded: output is **byte-identical** to Carbon's
 for English, and for any other locale the month and day names stay English. That
-is the i18n epic's to close, and closing it does not change this API — only
+is i18n's to close, and closing it does not change this API — only
 what `format()` is replaced with. `since()` has the same shape one level up: it
 reads [`diff_for_humans()`](../support/helpers.md), a pure port of
 `CarbonInterval::forHumans()`'s single-unit cascade, whose words are English by
@@ -889,7 +906,7 @@ both declare their getter `getWeight(mixed $state = null)` /
 per badge. Sylament's ported
 [`HasWeight`](../../../packages/support/src/Components/Concerns/HasWeight.php) /
 [`HasFontFamily`](../../../packages/support/src/Components/Concerns/HasFontFamily.php)
-predate this epic and carry no `$state` parameter at all: `getWeight()` and
+predate this column and carry no `$state` parameter at all: `getWeight()` and
 `getFontFamily()` take zero arguments, so `evaluate()` passes no `'state'`
 injection for either.
 
@@ -1076,7 +1093,7 @@ cell's outer `div.sy-ta-text`, and
 answers each with `text-center` / `text-end` / `text-justify`. That moves inline
 content and does nothing to flex items, so while badges were flex children of the
 outer `div` the alignment classes landed, matched their rules, and changed
-nothing — a knowing gap this epic inherited.
+nothing — a knowing gap.
 
 The list wrapper closed it. Badges are now flex children of a `<ul>`, exactly as
 in Filament, so each `sy-align-*` arm pairs its `text-*` with a `justify-*` under

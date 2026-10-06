@@ -297,7 +297,7 @@ Symfony's `NotBlank` on purpose**, so `required()` there does mean "must be
 checked". That is not an inconsistency waiting to be tidied away: the checkbox
 emits the native `required` attribute and the toggle does not, so each field's
 server constraint says exactly what its own markup already enforces in the
-browser. A review of this epic read the checkbox as carrying the same defect the
+browser. A review read the checkbox as carrying the same defect the
 toggle had — it does not, and this paragraph exists because that reading is the
 natural one.
 

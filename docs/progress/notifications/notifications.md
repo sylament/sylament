@@ -12,7 +12,7 @@ not a live component, and its
 plus the stack Stimulus controller carry everything Filament's Livewire round trip
 carried.
 
-That is the epic's one architectural decision, and every divergence below is a
+That is the package's one architectural decision, and every divergence below is a
 face of it: the stack renders toasts, it does not *hold* them. Toast HTML has one
 renderer (Twig), the DOM is the only client-side state, and a closed toast is
 gone rather than pending removal on a server that might morph it back.
@@ -99,7 +99,7 @@ the view emits an inline `<script>` that binds `window.Echo.private(…).notific
 and `handleBroadcastNotification()` filters on `format === 'filament'` before
 pushing. `authGuard()` exists only to select the guard for that lookup.
 
-**Next step:** none until the broadcast delivery arm is on a milestone — the whole
+**Next step:** none until the broadcast delivery arm is built — the whole
 group lands with it, and the Symfony-side transport is Mercure rather than Echo.
 `authGuard()` is deferred with the group rather than ported early: a guard name is
 meaningless without the channel it selects a user for.
@@ -168,8 +168,8 @@ out-of-sync class twice already (the declarative modal `open` flag, and the
 
 Permanent for the toast stack. It says nothing about the
 **database-notifications panel**, which is a separate Livewire component in
-Filament too, with its own actions host and its own stored state — it arrives as
-its own epic and is free to be a live component.
+Filament too, with its own actions host and its own stored state — it arrives
+separately and is free to be a live component.
 
 ### Live delivery appends server-rendered HTML instead of re-requesting the stack
 

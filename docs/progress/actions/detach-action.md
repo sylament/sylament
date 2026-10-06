@@ -167,8 +167,7 @@ and a join-table `DELETE` would bypass both.
 
 So the arm builds a **reference** per selected key
 ([`AssociationReader::getReference()`](../schemas/association-reader.md#getreference-decodes-first-and-then-picks-its-route)) and runs
-the same `detach()` the fetching arm does. Since
-[M7 · 4](../roadmap.md#m7--composite-identifiers) that call decodes the key
+the same `detach()` the fetching arm does. That call decodes the key
 against the target's own mapping first and then takes one of two routes: a
 no-load reference for a scalar identifier of any width, and a `find()` where an
 identifier field is itself an association, because `getReference()` is a

@@ -133,7 +133,7 @@ or `null`. The field path is taken by stripping the item schema's own prefix
 rather than by cutting at a dot, which survives an item key holding one and a
 layout component sitting between the item schema and the field.
 
-The arithmetic is not new: `distinct()` shipped it in M3 · 8 and the extraction
+The arithmetic is not new: `distinct()` used it first, and the extraction
 is what the two concerns here build on, so all three read the same block.
 `null` means "outside a repeater item, or the only item" — the predicate then
 answers `false` and the hook returns.

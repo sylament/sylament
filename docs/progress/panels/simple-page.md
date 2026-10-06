@@ -9,8 +9,8 @@ returns. It picks that shell through the
 and narrows its own width through
 [`Pages\Concerns\HasMaxWidth`](../../../packages/panels/src/Pages/Concerns/HasMaxWidth.php).
 
-Around it this file also carries the whole **width vocabulary** the epic
-introduced, because it has no other home: support's
+Around it this file also carries the whole **width vocabulary**, because it has
+no other home: support's
 [`Width`](../../../packages/support/src/Enums/Width.php) enum, the
 `sy-width-<token>` ladder both `<main>` elements read, the page-level
 `$maxContentWidth`, and the two panel knobs
@@ -73,7 +73,7 @@ elsewhere links that file instead.
 | A raw string emitted verbatim as the consumer's own class | the same escape hatch | done | — | [semantics](#the-width-resolution-is-one-ladder-in-the-controller) |
 | `SimpleUserMenu` | [`Livewire/SimpleUserMenu.php`](../../../vendor/filament/filament/src/Livewire/SimpleUserMenu.php) | skipped | — | [diverges](#the-simple-layouts-auth-gates-are-absent-and-the-strip-holds-the-ordinary-user-menu) · [renames.md](../renames.md#renames) |
 | The strip's database-notifications trigger | the `@livewire('database-notifications')` arm | todo | database notifications | [diverges](#the-simple-layouts-auth-gates-are-absent-and-the-strip-holds-the-ordinary-user-menu) |
-| The `auth()->check()` gates on the strip | the same two | todo | the authorization epic | [diverges](#the-simple-layouts-auth-gates-are-absent-and-the-strip-holds-the-ordinary-user-menu) |
+| The `auth()->check()` gates on the strip | the same two | todo | auth | [diverges](#the-simple-layouts-auth-gates-are-absent-and-the-strip-holds-the-ordinary-user-menu) |
 | The modal `sy-modal-<token>` width ladder | `Modal`'s `Width` resolution | todo | — | [support/modal.md](../support/modal.md#the-default-width-is-md-not-sm) |
 | `Table::filtersFormWidth()`'s `Width` type | `getFiltersFormWidth(): ?Width` | todo | — | [tables/table.md](../tables/table.md#surface) |
 | _rest not audited yet_ | | | | |
@@ -176,8 +176,8 @@ out of the sidebar unless it asks to be there. Without the default, every
 routable simple page would appear in the navigation of the shell it deliberately
 does not render.
 
-The `BasePage` split itself stays deferred and now has one clear trigger: the
-auth epic, which is the first thing here that needs a page knowing no panel.
+The `BasePage` split itself stays deferred and now has one clear trigger:
+porting auth, which is the first thing here that needs a page knowing no panel.
 
 ### `getLayoutData()` answers two keys where Filament's answers three
 

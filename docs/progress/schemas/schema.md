@@ -69,7 +69,7 @@ their detail sections do.
 | [`fill(object\|array\|null $state = null)` — the object arm](../../../packages/schemas/src/Concerns/HasState.php) | — | done | — | [belongs-to-record.md](belongs-to-record.md#fillobject-reads-only-the-paths-the-schema-declares) |
 | [`readStateFromRecord()`](../../../packages/schemas/src/Concerns/BelongsToRecord.php) | — | done | — | [belongs-to-record.md](belongs-to-record.md#reads-are-lenient-writes-are-strict) |
 | [`loadStateFromRelationships()`](../../../packages/schemas/src/Concerns/BelongsToRecord.php) — the relationship-backed re-read a host runs after its flush | [`Concerns/BelongsToModel.php`](../../../vendor/filament/schemas/src/Concerns/BelongsToModel.php) | done | — | [belongs-to-record.md](belongs-to-record.md#loadstatefromrelationships-is-the-hosts-reload-after-its-flush-and-takes-no-parameter) |
-| [`CanAccessAssociations`](../../../packages/schemas/src/Components/Concerns/CanAccessAssociations.php) — `getAssociationReader()` / `setAssociationReader()`, composed since M7 · 6 so the host's record check reaches the reader through the schema it validates | — | done | — | [association-reader.md](association-reader.md#the-accessor-trait-is-shared-with-the-table-and-action-tiers) |
+| [`CanAccessAssociations`](../../../packages/schemas/src/Components/Concerns/CanAccessAssociations.php) — `getAssociationReader()` / `setAssociationReader()`, composed so the host's record check reaches the reader through the schema it validates | — | done | — | [association-reader.md](association-reader.md#the-accessor-trait-is-shared-with-the-table-and-action-tiers) |
 | [`HasKey`](../../../packages/schemas/src/Concerns/HasKey.php) | [`Concerns/HasKey.php`](../../../vendor/filament/schemas/src/Concerns/HasKey.php) | in progress | — | [detail](#haskey-ports-the-schema-key-chain-minus-the-state-path-fallback) |
 | [`HasHeadings`](../../../packages/schemas/src/Concerns/HasHeadings.php) | [`Concerns/HasHeadings.php`](../../../vendor/filament/schemas/src/Concerns/HasHeadings.php) | done | — | — |
 | [`CanModifyActions`](../../../packages/schemas/src/Concerns/CanModifyActions.php) | [`Concerns/CanModifyActions.php`](../../../vendor/filament/schemas/src/Concerns/CanModifyActions.php) | done | — | [diverges](#modifyaction-and-modifyactiongroup-guard-a-callbacks-return-type-at-runtime) |
@@ -150,8 +150,8 @@ and pinned by
 [`CloneableTest`](../../../packages/schemas/tests/Unit/Concerns/CloneableTest.php)
 ([diverges](#clonecomponents-never-stamps-the-original-and-always-resets-the-cache)).
 **Left:** `getFlatFields()` (depend on Fields),
-`clearCachedChildSchemas()` (depends on child-schema caching, landing with the
-Repeater epic's schemas lane — [repeater.md](../forms/repeater.md)); the
+`clearCachedChildSchemas()` (depends on child-schema caching —
+[repeater.md](../forms/repeater.md)); the
 `schema()` alias is deliberately not ported
 ([diverges](#the-schema-alias-is-not-ported)). **Next:** port
 the rest as Fields land. The structural
@@ -183,18 +183,17 @@ and the shared-state-path sibling handling. **Left**, all unported:
 
 - **Constant state** (`state()`/`constantState()`/`getConstantState()`) — the
   infolist static-state path; the record fallback chain it reads now exists
-  ([`BelongsToRecord`](belongs-to-record.md)), so it is **blocked** on the
-  infolists epic alone — plus the relationship state paths for its
+  ([`BelongsToRecord`](belongs-to-record.md)), so it is **blocked** on
+  infolists alone — plus the relationship state paths for its
   `getStatePathForRelationship()` arm.
 - **The relationship layer** (`saveRelationships()`, and
   `loadStateFromRelationships()` as a pass inside `getState()`) — **skipped**. The
-  [Doctrine relation layer](../roadmap.md#pulled-forward) landed the capability
-  without either walk: the per-component hook pair is
+  Doctrine relation layer provides the capability without either walk: the per-component hook pair is
   [consulted by the two mapping edges](belongs-to-record.md#the-relationship-hooks-are-consulted-by-the-two-mapping-edges-not-by-a-schema-level-walk)
   — `fill()` and `getData()` already traverse the record path map — and
   Doctrine's UnitOfWork collapses the two-phase create these root-tier walks
   exist to sequence, so a third pass would have nothing left to do. The load
-  half's post-save re-read came back with M7 · 6 as a member of its own,
+  half's post-save re-read is a member of its own,
   `loadStateFromRelationships()` on [`BelongsToRecord`](belongs-to-record.md#loadstatefromrelationships-is-the-hosts-reload-after-its-flush-and-takes-no-parameter),
   which the host calls after its flush rather than `getState()` calling it.
   [Recorded in renames.md](../renames.md#renames).
@@ -208,7 +207,7 @@ and the shared-state-path sibling handling. **Left**, all unported:
   protected `flushCachedAbsoluteStatePath()` exists; add the tree-walking flush
   when post-cache mutation (dynamic repeaters) becomes reachable.
 
-**Next:** port each with the epic named in its bullet — bar the skipped one,
+**Next:** port each once the prerequisite named in its bullet lands — bar the skipped one,
 which has no next step. Two small additions over
 Filament's container trait already ship: `hasStatePath()` is defined here (Filament
 inlines `filled($this->statePath)`), and the shared assembly resets the dehydrated
@@ -224,10 +223,10 @@ a hook is about to read (a simple `Repeater`'s scalar item, `tags.0`, against
 the leaf `tags.0.value`) — and `callAfterStateHydrated()` descends
 **children-first**, re-reading `getChildSchemas()` at each step, so a component
 that re-keys its own child state (a nested `Repeater`) never writes at a path
-its parent has just renamed. Both were corrected with the
+its parent has just renamed. The
 [Repeater](../forms/repeater.md#the-item-pipeline-runs-children-first-and-before-the-null-fill-pass)
-epic, which is the first component to make either observable; the forms
-repeater record round-trip pins them.
+is the first component to make either observable; the forms repeater record
+round-trip pins them.
 
 ### `HasKey` ports the schema key chain, minus the state-path fallback
 
@@ -388,7 +387,7 @@ runs `validate()` on entry (throwing
 `getStateSnapshot()` is the validation-free variant. Of the machinery Filament
 wraps around its validate call, one piece is ported and two are not.
 
-The mutation layer **is** ported, as of M3 · 8, but as a flat-map walk rather
+The mutation layer **is** ported, but as a flat-map walk rather
 than Livewire's nested rewrite: `Schema::mutateStateForValidation(array $state):
 array` takes the `absolutePath => value` map the runner has just read, walks the
 components child-schemas-first (`withActions: false, withHidden: true`, skipping
@@ -416,13 +415,11 @@ path. So a key no component owns — one a client wrote into a host's writable
 `data` prop, every nested path of which ux-live-component makes writable — stays
 in `getState()` and in the `$data` every mutate hook and `using()` closure
 receives. Nothing of it reaches a record through the default seams, since
-`getData()` writes only the record path map's paths, and since
-[M7 · 10](../roadmap.md#m7--composite-identifiers) those seams refuse a path a
-hook adds that no component maps
+`getData()` writes only the record path map's paths, and those seams refuse a
+path a hook adds that no component maps
 ([belongs-to-record.md](belongs-to-record.md#a-hook-added-path-no-component-maps-is-answered-for-the-write-seams-to-refuse));
 but a `using()` closure that writes `$data` wholesale writes it too — a
-mass-assignment footgun. Pruning to declared keys is recorded in the roadmap's
-ledger, not done. The
+mass-assignment footgun. Pruning to declared keys is a known gap, not done. The
 `Component::withVisibilityCache(...)` wrapper is likewise absent — no visibility
 cache exists. `$afterValidate` is invoked plainly with the final dehydrated state
 (Filament's `value($afterValidate, $state)` position).

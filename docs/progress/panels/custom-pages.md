@@ -51,7 +51,7 @@ Reference — the Filament source this is diffed against:
 
 ## Surface
 
-Every point of the page tier this epic added or moved. _Blocked by_ names what
+Every point of the page tier. _Blocked by_ names what
 has to land first. _Detail_ carries two links, either of them:
 **semantics** → the permanent note in [Semantics](#semantics); **diverges** →
 the permanent note in [Divergences](#divergences). A row whose gap is written up
@@ -84,9 +84,9 @@ elsewhere links that file instead.
 | `PageConfiguration`, `Page::make()`, `withConfiguration()` | [`Pages/PageConfiguration.php`](../../../vendor/filament/filament/src/Pages/PageConfiguration.php) | todo | — | [diverges](#the-configuration-object-is-not-ported) |
 | Page-level `CanUseDatabaseTransactions` | [`Pages/Concerns/CanUseDatabaseTransactions.php`](../../../vendor/filament/filament/src/Pages/Concerns/CanUseDatabaseTransactions.php) | todo | — | [diverges](#halts-rollback-flag-is-carried-and-ignored) |
 | `HasErrorNotifications` / `onValidationError()` / `$reportValidationErrorUsing` | [`Pages/Concerns/HasErrorNotifications.php`](../../../vendor/filament/filament/src/Pages/Concerns/HasErrorNotifications.php) | todo | — | the JS half is [Assets](README.md#assets)' `error-notifications.js` row |
-| `CanAuthorizeAccess` | [`Pages/Concerns/CanAuthorizeAccess.php`](../../../vendor/filament/filament/src/Pages/Concerns/CanAuthorizeAccess.php) | todo | the authorization epic | — |
-| `getRenderHookScopes()` and the page render hooks | `BasePage::getRenderHookScopes()` | todo | M6 · 6 (render hooks) | — |
-| Clusters (`getCluster()`, the cluster breadcrumb and navigation arms) | [`Clusters/`](../../../vendor/filament/filament/src/Clusters) | todo | the clusters epic | — |
+| `CanAuthorizeAccess` | [`Pages/Concerns/CanAuthorizeAccess.php`](../../../vendor/filament/filament/src/Pages/Concerns/CanAuthorizeAccess.php) | todo | authorization | — |
+| `getRenderHookScopes()` and the page render hooks | `BasePage::getRenderHookScopes()` | todo | render hooks | — |
+| Clusters (`getCluster()`, the cluster breadcrumb and navigation arms) | [`Clusters/`](../../../vendor/filament/filament/src/Clusters) | todo | clusters | — |
 | Widgets on a page (`getHeaderWidgets()`, `getFooterWidgets()`, `getWidgetData()`) | `BasePage`'s widget arms | todo | `sylament/widgets` | — |
 | _rest not audited yet_ | | | | |
 
@@ -194,9 +194,9 @@ survives the alignment.
 ### `getPageClasses()` is the only source of a per-page root class
 
 Every per-page class on the page root now comes from `getPageClasses()`, spread
-into the root `attrs()` beside `sy sy-pa-page`. Before this epic each resource
-partial hard-coded its own; those partials are gone, so the four resource pages
-override the method instead — `ListRecords` answers
+into the root `attrs()` beside `sy sy-pa-page`. No resource partial hard-codes
+its own: those partials are gone, so the four resource pages override the
+method instead — `ListRecords` answers
 `['sy-pa-resource-list-records-page', 'sy-pa-resource-<slug>']`, `EditRecord`
 adds `'sy-pa-resource-record-<key>'`, and the slug arm (Filament's
 `fi-resource-<slug>`) is new here. Every structural selector the suite already
@@ -388,8 +388,8 @@ to roll back and no honest place to consult it. It is carried rather than droppe
 so that porting the transactions concern is additive — the exception already
 tells it what to do.
 
-What the catch *does* fix is real: before this epic a `Halt` thrown from a
-`beforeSave` hook escaped `save()` and answered 500. The
+What the catch *does* fix is real: without it a `Halt` thrown from a
+`beforeSave` hook escapes `save()` and answers 500. The
 [`EditHookedArticle`](../../../packages/panels/tests/Fixtures/Resources/Pages/EditHookedArticle.php)
 fixture's `$haltsBeforeSave` arm pins the ladder stopping where the hook threw —
 no mutator, no write, no notification, no redirect, and the row untouched.

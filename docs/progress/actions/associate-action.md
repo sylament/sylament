@@ -98,7 +98,8 @@ body runs. The re-resolution is the second line, and it is what still holds when
 a consumer's `recordSelect()` reshapes the labelling — which is exactly how the
 Integration case reaches it.
 
-An **empty** submission is refused first, before the count check, because that
+An **empty** submission is refused first, with a `LogicException` naming the
+action, before the count check, because that
 check cannot tell zero resolved records from zero submitted keys: `0 !== 0` is
 false, the loop runs over nothing and the action falls through to its success
 toast, reporting a write that never happened. The select is `required()`, so the
@@ -112,7 +113,7 @@ is malformed, outside recordSelectOptionsQuery()'s scope, or already
 associated.` Anything asserting the leading sentence still passes; anything
 asserting the message whole does not.
 
-Since M7 · 7 the fetch runs one statement per batch of
+The fetch runs one statement per batch of
 `IdentifierConstraint::batch()`: the whole submission for a single identifier,
 and at most 500 keys a statement for a composite one. A forged `multiple()`
 submission therefore costs time linear in its length. The batches' records merge

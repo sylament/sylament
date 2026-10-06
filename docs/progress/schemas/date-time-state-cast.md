@@ -7,7 +7,7 @@ wants at that path — a `DateTimeImmutable`, a `DateTime`, or a string in the
 record's own format; `set()` writes any of those back as the string the input
 speaks.
 
-`DateTimePicker::getDefaultStateCasts()` builds it (forms, M3·2), passing
+`DateTimePicker::getDefaultStateCasts()` builds it (forms), passing
 `format` (the record-side spelling), `internalFormat` (the wire spelling the
 native control emits), `timezone` (the field's own zone) and `objectClass` —
 the target type, read off

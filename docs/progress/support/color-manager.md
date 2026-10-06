@@ -67,8 +67,8 @@ them to steer: Sylament ships one prebuilt `assets/dist`, and the shade set it
 defines is `ColorManager::SHADES`, pinned against the stylesheet by
 [`CssPaletteFloorTest`](../../../packages/support/tests/Architecture/CssPaletteFloorTest.php).
 
-They are **todo** rather than **skipped** because the panels milestone is the
-consumer that would make them mean something; until then, adding them would ship
+They are **todo** rather than **skipped** because a panel-side asset pipeline is the
+consumer that would make them mean something; until one exists, adding them would ship
 three setters whose values nothing reads. Reversing that judgement means
 deciding how a per-app shade set reaches the stylesheet at all, which is an
 asset-pipeline question rather than a registry one.
@@ -157,7 +157,7 @@ taste: running the ported
 [`ButtonComponent`](../../../packages/support/src/Colors/Components/ButtonComponent.php)
 policy over each candidate's four filled-button states — resting, hover, dark,
 dark hover — Blue fails hover in both modes at 3.74:1, and Indigo clears all
-four. Sky, which was Sylament's own `info` before this epic, fails the dark state
+four. Sky, Sylament's own earlier `info`, fails the dark state
 at 3.97:1; Amber, Filament's `primary`, clears all four, which is what vindicated
 keeping it. Across those four candidates for the two slots, Amber and Indigo are
 the only ones clean in every state, and adopting them turns three failing states
@@ -316,7 +316,7 @@ against the new palette.
 
 The trade is deliberate. Filament gets away with requiring the directive because
 the panel owns the page layout and its scaffolding generates one containing it;
-Sylament has neither in M1 and its pitch is embedding into an app it does not
+Sylament cannot count on either, because its pitch is embedding into an app it does not
 control, where a missing call would render every component colourless with no
 error. The cost is that the six palettes exist twice — once in
 `ColorManager::DEFAULT_COLORS` and once in `index.css` — which is exactly what
@@ -325,7 +325,7 @@ was written to make safe.
 
 ### An unknown colour no longer falls back to primary
 
-Before this epic, `index.css` carried a `:root { --sy-color-50 … --sy-color-950 }`
+`index.css` once carried a `:root { --sy-color-50 … --sy-color-950 }`
 block defaulting the dynamic palette to primary, so a colour name with no
 `.sy-color-<name>` rule rendered as primary. Those eleven declarations are
 deleted. An unknown name now renders with its colour declarations unresolved,

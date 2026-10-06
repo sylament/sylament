@@ -790,7 +790,8 @@ it('reads a range and a list off a keyed page', function (): void {
 
 /*
  * The look-ahead over a keyed root that joins nothing: a window of one at the next
- * page's offset, ordered deterministically by M7 · 1's identifier tiebreak.
+ * page's offset, ordered deterministically by the identifier tiebreaker `CanSortRecords`
+ * appends.
  */
 it('looks past a keyed page to the group the next one starts', function (int $page, bool $rendered): void {
     $host = groupedResidencySummaryHost(summaryStateResidencies(), page: $page);

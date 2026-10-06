@@ -42,7 +42,7 @@ Reference — the Filament source this is diffed against:
 | [`schema()` / `modifyFormFieldUsing()` / `getSchemaComponents()` / `hasSchema()` / `getFormField()`](../../../packages/tables/src/Filters/Concerns/HasSchema.php) | [`Concerns\HasSchema`](../../../vendor/filament/tables/src/Filters/Concerns/HasSchema.php) | done | — | [diverges](#the-form-alias-is-not-ported) |
 | [`getSchema()` — the filter's live child schema](../../../packages/tables/src/Filters/Concerns/HasSchema.php) | [`Concerns\HasSchema::getSchema()`](../../../vendor/filament/tables/src/Filters/Concerns/HasSchema.php) | done | — | [semantics](#getschema-is-unguarded-where-the-state-readers-beside-it-are-not) |
 | [`apply()` / `applyToBaseQuery()` / `query()` / `baseQuery()` / `excludeWhenResolvingRecord()`](../../../packages/tables/src/Filters/Concerns/InteractsWithTableQuery.php) | [`Concerns\InteractsWithTableQuery`](../../../vendor/filament/tables/src/Filters/Concerns/InteractsWithTableQuery.php) | done | — | [diverges](#there-is-no-closure-where-group-around-apply) · [semantics](#isactive-is-an-opt-out-not-an-opt-in) |
-| `HasRelationship` | [`Concerns/HasRelationship.php`](../../../vendor/filament/tables/src/Filters/Concerns/HasRelationship.php) | blocked | a future filters-relationship epic | — |
+| `HasRelationship` | [`Concerns/HasRelationship.php`](../../../vendor/filament/tables/src/Filters/Concerns/HasRelationship.php) | blocked | a Doctrine design for the filters' relationship arm | — |
 
 Coverage is the fifteen files under
 [`tests/Unit/Filters/`](../../../packages/tables/tests/Unit/Filters), one per
@@ -162,7 +162,7 @@ The label derivation is `symfony/string`'s
 `u($name)->before('.')->kebab()->replace('-', ' ')->title()`, matching Filament's
 `str()->before('.')->kebab()->replace(['-','_'], ' ')->ucfirst()` output
 (`is_featured` → `Is featured`; `kebab()` already eats the underscore). The
-`__()` pass and `translateLabel()` wait on the toolkit-wide i18n epic, like the
+`__()` pass and `translateLabel()` wait on toolkit-wide i18n, like the
 empty-state heading.
 
 ### The `form()` alias is not ported

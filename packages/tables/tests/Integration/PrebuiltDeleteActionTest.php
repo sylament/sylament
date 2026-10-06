@@ -24,7 +24,7 @@ uses(InteractsWithLiveComponents::class);
  * and the delete would prove nothing.
  *
  * The fixture kernel registers the notifications bundle (and a session) so this
- * suite renders the whole M2 delete shape — confirm, delete, toast. That is
+ * suite renders the whole delete flow — confirm, delete, toast. That is
  * also what makes it the end-to-end pin for actions' guarded notification
  * integration: `sylament/actions` only *suggests* `sylament/notifications`, and
  * a `DeleteAction`'s `successNotificationTitle('Deleted')` becomes a real

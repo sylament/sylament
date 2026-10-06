@@ -75,7 +75,7 @@ names what has to land first. _Detail_ carries a **detail** link to a
 | [`deselectRecordsAfterCompletion()` / `shouldDeselectRecordsAfterCompletion()`](../../../packages/actions/src/Concerns/CanDeselectRecordsAfterCompletion.php) | [`Concerns/CanDeselectRecordsAfterCompletion.php`](../../../vendor/filament/actions/src/Concerns/CanDeselectRecordsAfterCompletion.php) | done | — | — |
 | The `call()` `finally` that acts on that flag | [`Action.php`](../../../vendor/filament/actions/src/Action.php) (`call()`) | done | — | [semantics](#the-post-call-deselect-reaches-its-host-through-the-nullable-accessor) |
 | [`getSelectedRecords()` / `getSelectedRecordsQuery()`](../../../packages/actions/src/Concerns/InteractsWithSelectedRecords.php) + their closure-injection arms | [`Concerns/InteractsWithSelectedRecords.php`](../../../vendor/filament/actions/src/Concerns/InteractsWithSelectedRecords.php) | done | — | [semantics](#the-two-record-readers-share-one-gate-and-one-message) · [diverges](action.md#the-selected-record-injections-are-gated-on-the-access-flag) |
-| `getIndividuallyAuthorizedSelectedRecords()` + the grouped denial buckets | [`Concerns/InteractsWithSelectedRecords.php`](../../../vendor/filament/actions/src/Concerns/InteractsWithSelectedRecords.php) | blocked | the authorization epic | [detail](#per-record-authorization-waits-on-the-authorization-epic) |
+| `getIndividuallyAuthorizedSelectedRecords()` + the grouped denial buckets | [`Concerns/InteractsWithSelectedRecords.php`](../../../vendor/filament/actions/src/Concerns/InteractsWithSelectedRecords.php) | blocked | `CanBeAuthorized` | [detail](#per-record-authorization-waits-until-authorization-lands) |
 | `getBulkProcessingFailureMessages()` + the keyed `bulkProcessingFailureMessages` buckets | [`Concerns/InteractsWithSelectedRecords.php`](../../../vendor/filament/actions/src/Concerns/InteractsWithSelectedRecords.php) | todo | — | [diverges](#the-failure-reports-count-they-do-not-carry-keyed-messages) |
 
 ## Details
@@ -92,7 +92,7 @@ counting title closure needs, and the four
 own `failureNotificationTitle` reads. Filament returns five more, all keyed off
 machinery this port does not carry:
 `authorizationFailureMessages` and `missingAuthorizationFailureMessageCount`
-(the [authorization epic](#per-record-authorization-waits-on-the-authorization-epic)),
+(the [unported authorization](#per-record-authorization-waits-until-authorization-lands)),
 `processingFailureMessages`, `failureMessages` and
 `missingProcessingFailureMessageCount` (the
 [keyed message buckets](#the-failure-reports-count-they-do-not-carry-keyed-messages)).
@@ -104,7 +104,7 @@ from a user closure, which in Twig is a `Markup`-versus-escaped decision this
 package has not taken yet. **Next step:** land the keyed buckets and the body
 together, with the escaping contract written down first.
 
-### Per-record authorization waits on the authorization epic
+### Per-record authorization waits until authorization lands
 
 Filament's `getIndividuallyAuthorizedSelectedRecords()` filters the selected set
 through a per-record `Gate` check, decrementing the successful counter and
@@ -112,8 +112,8 @@ bucketing the grouped denial messages in a `finally`. There is no authorization
 concern anywhere in the actions port (`CanBeAuthorized` is a **todo** row in the
 [package README](README.md#features)), so the injection arms resolve plain
 `getSelectedRecords()` instead, and `shouldAuthorizeIndividualRecords()` has
-nothing to ask. **Blocked** on the parked authorization epic; port the filter
-and the buckets together when it lands.
+nothing to ask. **Blocked** on `CanBeAuthorized`, parked like the rest of
+authorization; port the filter and the buckets together when it lands.
 
 ## Semantics
 
@@ -145,30 +145,26 @@ component at all does not reach either message: `getLiveComponent()` throws its
 own `RuntimeException` first, exactly as Filament's does.
 
 Under `fetchSelectedRecords(false)` the `$records` a body receives are **record
-keys**, not raw column values, and since
-[M7 · 1](../roadmap.md#m7--composite-identifiers) that distinction bites on a
+keys**, not raw column values, and that distinction bites on a
 single identifier too: the key pluck mints each row's key through
 [`RecordKey`](../schemas/record-key.md), so an identifier whose column form is
 not its printed form — a `uuid` stored `BINARY(16)` on MySQL or SQLite — hands
-back the printed string rather than the bytes the old pluck returned. A body
+back the printed string rather than the bytes a raw pluck returns. A body
 that writes by key therefore **decodes through `IdentifierConstraint`** and
-never binds one raw, and every shipped one does: `DeleteBulkAction` since
-M7 · 1, and `DetachBulkAction` and `DissociateBulkAction` since
-[M7 · 4](../roadmap.md#m7--composite-identifiers) — the detach through the
+never binds one raw, and every shipped one does: `DeleteBulkAction`,
+`DetachBulkAction` and `DissociateBulkAction` — the detach through the
 reader's by-key reference, the dissociate through a chunked `in()` on its DQL
-`UPDATE` builder, and — where the foreign key spans several columns, since
-M7 · 5b — a chunked `inColumns()` on a DBAL one.
+`UPDATE` builder, and — where the foreign key spans several columns — a
+chunked `inColumns()` on a DBAL one.
 Where a body takes the selection's **shape** for granted the
-refusal now sits outside its `try`, so a host feeding neither entities nor keys
+refusal sits outside its `try`, so a host feeding neither entities nor keys
 is a developer error rather than a danger toast — though only in part.
 `DetachBulkAction` has one pre-walk outside its `try`, covering both shapes it
 accepts; `DissociateBulkAction` moved only its **by-key** walk, and its fetching
 arm still raises *can only dissociate entities* inside the `try`, where it
-becomes the danger toast. That by-key arm gained a second pre-flight with
-[M7 · 5](../roadmap.md#m7--composite-identifiers), for the one statement DQL
-cannot write at all — nulling a to-one that spans several join columns — and
-lost it again with [M7 · 5b](../roadmap.md#m7--composite-identifiers), which
-writes that statement in SQL
+becomes the danger toast. That by-key arm needs no second pre-flight for the one statement DQL
+cannot write at all — nulling a to-one that spans several join columns —
+because it writes that statement in SQL
 ([the refusal, and the SQL route that closed it for a foreign key spanning several columns](dissociate-action.md#the-by-key-arm-is-a-dql-update-and-a-dbal-one-where-the-foreign-key-spans-several-columns)).
 
 ### The post-call deselect reaches its host through the nullable accessor
@@ -248,12 +244,13 @@ port's is the bare assignment.
 
 `chunkSelectedRecords()` / `getSelectedRecordsChunkSize()` are dropped, so
 `CanFetchSelectedRecords` ships as the fetch flag alone — the **fetching** arm,
-that is. Since [M7 · 1](../roadmap.md#m7--composite-identifiers) a by-key arm
-chunks its own key list — the delete then, the dissociate since M7 · 4 — by
+that is. A by-key arm
+chunks its own key list — the delete's and the dissociate's — by
 [the chunk rule](../schemas/record-key.md#the-chunk-rule) rather than by a
 user-set size, because DQL parse time is superlinear in bound-key count and a
-platform caps the parameters one statement binds — the dissociate's statement
-has been SQL since M7 · 5b, so the cap alone is what its chunks answer. The
+platform caps the parameters one statement binds — where the dissociate's
+statement is SQL, for a foreign key spanning several columns, the cap alone is
+what its chunks answer. The
 two are unrelated mechanisms wearing one word, and only the fetching one is
 unported. Two reasons for that. **No
 shipped Filament action calls `chunkSelectedRecords()`** — the grep over

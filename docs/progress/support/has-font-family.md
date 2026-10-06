@@ -54,7 +54,7 @@ Filament's `getFontFamily(mixed $state = null)` threads `'state' => $state` into
 column/entry's per-row state. Sylament's `getFontFamily()` takes no argument and
 evaluates with no injected state, because nothing here passes one yet. The base
 [`Component`](component.md#surface)'s arity probe is no longer part of that
-reason: it shipped with the column catalog (M4 · 4) as
+reason: it exists as
 `EvaluatesClosures::evaluationValueIsFunctionAndHasParameter()`, the predicate
 `Column::hasStateBasedUrls()` asks. Re-add the parameter in the same change as
 the first state-carrying text consumer, where it finally has state to pass and

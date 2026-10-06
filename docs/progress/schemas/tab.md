@@ -9,7 +9,7 @@ constraints — and composes support's `HasBadge`, `HasBadgeTooltip`, `HasIcon` 
 
 It also carries the list-page seam Filament uses to scope a tab's records:
 `query()`/`modifyQueryUsing()`/`modifyQuery()` and
-`excludeQueryWhenResolvingRecord()`. Their consumer arrived with M4 · 3 —
+`excludeQueryWhenResolvingRecord()`. Their consumer is panels —
 [panels' `HasTabs`](../panels/has-tabs.md) calls `modifyQuery()` from
 `modifyQueryWithActiveTab()`, and reads `shouldExcludeQueryWhenResolvingRecord()`
 to decide whether a single-record lookup takes the scope too — so the seam is

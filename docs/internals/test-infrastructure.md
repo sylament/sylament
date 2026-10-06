@@ -9,7 +9,7 @@ Five suites run against Doctrine (`actions`, `forms`, `panels`, `schemas`, `tabl
 It is dev-only. Support's `.gitattributes` export-ignores `/tests`, so none of it ships, and nothing under any `src/` imports it. Two consequences follow:
 
 - `phpstan.neon.dist` names the two directories explicitly, so they are analysed at level max like shipped code. No other test file is analysed.
-- The architecture tests that scan `packages/*/src` (`StaticAnalysisSuppressionTest`, `DbalParameterTypeDeclarationTest`, `AssociationReaderConstructionTest`) do not see it, and neither does the roadmap's `composite identifier` grep over `packages/*/src`. The infrastructure is free to use what those checks forbid in shipped code.
+- The architecture tests that scan `packages/*/src` (`StaticAnalysisSuppressionTest`, `DbalParameterTypeDeclarationTest`, `AssociationReaderConstructionTest`) do not see it. The infrastructure is free to use what those checks forbid in shipped code.
 
 Support's own suite tests the rig: its tests sit in `tests/Unit/Doctrine/` and its fixtures in `tests/Fixtures/Doctrine/`, mirroring the infrastructure rather than `src/`. Support's fixture kernel boots no Doctrine, so it excludes `Fixtures/Doctrine` from its service glob. Support's `phpunit.dist.xml` registers the pool extension too, because those tests exercise the pool.
 
@@ -111,3 +111,15 @@ A hit under a package's `templates/` means that package's suite renders the comp
 | Tabs, TabsItem | panels, schemas templates |
 
 `InputWrapper` is the case to remember: forms' text-like controls and tables' `TextInputColumn` and `SelectColumn` cells both render it directly, so a change to it runs against both suites.
+
+## Why does a test that asserts a toast run as a live request?
+
+A notification is a session flash: `Notification::send()` reads the session off the `RequestStack`, and an in-process call on a host object has no request carrying one, so `callMountedAction()` throws `SessionNotFoundException` before it can toast. A test that asserts a toast, or anything the toast's re-render paints, therefore drives the host through `InteractsWithLiveComponents` (`createLiveComponent()` and `call()`), as `packages/actions/tests/Integration/CreateActionTest.php` does. A case that only checks state stays in-process, which is cheaper. The live cases disable the kernel reboot between requests, because the fixture database lives in memory on a container service and a reboot would hand the next request a freshly migrated, empty one.
+
+## Which fixtures carry a composite identifier?
+
+Every package that keys a record exercises both composite flavours in a test: two scalar fields, and an association plus a scalar. `CompositePair` (two scalar fields) sits in schemas', forms' and tables' `tests/Fixtures/Doctrine/Entity/`, and `Membership` (an association plus a scalar) in actions'. A new by-key site is tested over both.
+
+Panels has a family of its own: `Catalogue`, the single-identifier parent and owner; `Stamp`, that parent association plus a converting `string` code; `Colophon`, one identifier association alone — a single derived identity, the flavour an `isIdentifierComposite` check misses; `Imprint`, two strings seeded with `.`, `/`, a space, `~`, `=` and non-ASCII; and `Edition`, an `id` plus a `locale`. Their resources mount on a non-default `key` panel of their own (`tests/Fixtures/KeyPanelProvider.php`), because the navigation and global-search suites' enumerating assertions name the `admin` and `nest` panels, and a second default panel would reorder the one they resolve.
+
+The codec's own shape battery, with a fixture per supported identifier shape, is described in [record-key.md](../progress/schemas/record-key.md#the-shapes-the-fixtures-pin).

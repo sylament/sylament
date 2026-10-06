@@ -155,8 +155,8 @@ because its `size` prop enables the viewport-fitting middleware that can shrink
 the panel below its content height. Sylament has no `size` prop — that is the
 still-`todo` [size-middleware row](#size-middleware) — so the two conditions
 coincide here, and the second disjunct returns with that row.)
-The `overflow-y-auto` rule keys off that class. Sylament's port applied
-`overflow-y-auto` **unconditionally** for its first two epics — a porting
+The `overflow-y-auto` rule keys off that class. Sylament's port once applied
+`overflow-y-auto` **unconditionally** — a porting
 fidelity bug, not a design choice, and one with a real consequence: a
 non-`visible` `overflow-y` makes the UA re-adjust an `overflow-x: visible` to
 `auto`, so *every* panel was a clipping/scrolling container in both axes, and a

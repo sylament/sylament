@@ -141,7 +141,8 @@ itself lands — the migrations describe tables the port has no models for, the
 routes serve controllers the port doesn't have, and the commands generate
 classes (`Exporter`/`Importer`) the port doesn't define. All four are **blocked**
 on that subsystem, not skipped: background export/import is a wanted parity
-feature, just not started.
+feature, just not started. Filament runs those jobs on Laravel's queue; when
+the subsystem lands, they run as Symfony Messenger messages.
 
 ### Translations
 
@@ -256,21 +257,24 @@ copy's own `BUNDLED_ENTRIES` table** — empty here, where support's bundles
 sortable one, and forms' bundles both of them into the select one, its `license`
 a list and its `inlines` naming the engine module — so every entry ships
 per-file and unbundled with its import specifiers verbatim. Keeping the copies
-in lockstep is manual, and the searchable-select epic is what that costs in
+in lockstep is manual, and the searchable select shows what that costs in
 practice: `licenseBanner()` had to
 change in all five at once, learning to trim each `LICENSE` line before matching
 the copyright (for Tom Select's indented notice at the time), and again for the
 select engine swap, when `licenseBanner()` learned to take a list and `inlines`
 was added. `@symfony/ux-live-component` is declared dev **and** peer at `^3.2.0` —
-the npm version the installed PHP package v3.4.0 ships, the two halves
-versioning independently — and stays a bare specifier in the built file, resolved by the
-consuming app's importmap. This workspace was the toolkit's only npm consumer of
-it — notifications' dropped both declarations when its toast controller
-[handed the emit over](#the-dispatch-controller-is-page-wide-and-filament-has-no-counterpart-for-it)
-— until forms declared the same pair at the same version for its
+a floor written in the **npm** half's version numbers, which the PHP package's
+bundled copy versions independently of (the installed v3.5.1 bundles JS 3.5.1,
+which the floor admits), so the constraint tracks the JS line rather than the PHP
+release — and
+stays a bare specifier in the built file, resolved by the consuming app's
+importmap. Five workspaces declare the same dev-and-peer pair at the same
+version — actions, forms (for its
 [select controller](../forms/forms-bundle.md#the-select-controller-binds-a-port-of-filaments-select-utility-to-the-live-host),
-which resolves its host through the same `getComponent()` seam this one does;
-the two are the toolkit's two consumers now, on identical terms.
+which resolves its host through the same `getComponent()` seam this one does),
+schemas, tables and panels; notifications' is the one without it, having dropped
+both declarations when its toast controller
+[handed the emit over](#the-dispatch-controller-is-page-wide-and-filament-has-no-counterpart-for-it).
 
 No `symfony.importmap` entry is declared for it, and that is a decision rather
 than an omission — the same one notifications' workspace
@@ -417,6 +421,8 @@ It is also the arm
 [`dispatchSelf()` in a toast](../notifications/notification.md#the-toast-root-owns-the-click-and-the-dispatch-arm-carries-only-payload)
 falls through to.
 
+**A double-click is two emits, and the controller leaves batching to UX Live.** The controller does not debounce: each click emits, and every listener that hears the emit queues an action on its own component with a 1 ms debounce (`doEmit()` calls `this.action(action, data, 1)`). Two emits inside that window ride one live request; an emit that lands while the component already has a request in flight waits in `pendingActions` and goes out in the next request once the first completes (`tryStartingRequest()` and `performRequest()` in `vendor/symfony/ux-live-component/assets/dist/live_controller.js`). Either way the listener runs once per click, which is what Livewire does with a double-clicked `$dispatch` too. A listener that must not run twice guards itself; the controller does not try to tell a double-click from two intended clicks.
+
 **Close is deliberately not handled here.** `data-sylament-action-close` is a
 neutral marker meaning *this action closes its context*, and only the context
 knows what closing means — a toast removes itself, a modal dismisses. So the
@@ -477,15 +483,15 @@ nothing. `twig/twig` and the ambient `symfony/dependency-injection` /
 `symfony/http-kernel` omissions are deliberate and recorded in
 [`docs/internals/dependencies.md`](../../internals/dependencies.md#the-transitive-guarantees-behind-the-omissions).
 
-The schemas↔actions integration epic adds the rule's first genuinely mutual
+The schemas↔actions integration adds the rule's first genuinely mutual
 edge: [`BelongsToSchemaComponent`](../../../packages/actions/src/Concerns/BelongsToSchemaComponent.php)
 type-hints `Schemas\Components\Component` and `Schemas\Schema` directly, so
 `actions` now requires `sylament/schemas`. `schemas` requires `sylament/actions`
 back in the same commit, ahead of the schemas-side code (the component-level
 `HasActions` registration trait, `CanModifyActions`, the `HasComponents`
-child-schema unions, and everything the rest of the epic built on top) that
+child-schema unions, and everything the rest of the integration builds on top) that
 goes on to import `Action`/`ActionGroup` throughout the schemas↔actions
-integration epic — see
+integration — see
 [schemas-bundle.md](../schemas/schemas-bundle.md#sylamentactions-becomes-a-hard-composer-requirement).
 Filament already carries this cycle: `filament/schemas`'s composer.json requires
 `filament/actions` directly, and `filament/actions` reaches `filament/schemas`
@@ -522,8 +528,8 @@ what the [`docs/internals/dependencies.md` omission list](../../internals/depend
 argument). Revisit if a split `sylament/actions` is ever consumed by an
 application that wants Doctrine's persistence contracts without the ORM.
 
-`sylament/forms` is where the rule cuts the other way, and the epic that built
-the [six relationship actions](README.md#components) is what forced it.
+`sylament/forms` is where the rule cuts the other way, and the
+[six relationship actions](README.md#components) are what force it.
 [`AttachAction::getRecordSelect()`](attach-action.md#the-record-select-is-a-forms-select-which-is-why-actions-requires-forms)
 and [`AssociateAction`'s](associate-action.md#the-record-select-is-a-forms-select-which-is-why-actions-needs-forms)
 build a `Sylament\Forms\Components\Select` and **return** it, so the class is

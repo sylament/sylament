@@ -248,9 +248,9 @@ codebase's own blank test would be the surprising thing. Permanent.
   check at all: its body is `in_array($rule, ['Unique', 'Exists']) ? !
   $this->messages->has($attribute) : true`, so it holds back the two **database**
   rules once the attribute already has any message, "to avoid possible database
-  type comparison errors" in its own words. It was left open for the
-  [data-layer family](../forms/can-be-validated.md), which M3 · 8 has since
-  landed, and the answer is that nothing equivalent is needed: `UniqueValue` and
+  type comparison errors" in its own words. Against the
+  [data-layer family](../forms/can-be-validated.md) the answer is that nothing
+  equivalent is needed: `UniqueValue` and
   `ExistingValue` are not implicit, so the gate strips them from a blank string
   before the runner sees them, and their validators return on `null` — a blank
   required field never reaches the database. What Laravel's check additionally

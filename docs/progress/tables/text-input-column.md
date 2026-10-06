@@ -68,7 +68,7 @@ filed against the cell.
 ### `inputMode()` is a member of the class because forms has no `HasInputMode` yet
 
 Filament composes `Forms\Components\Concerns\HasInputMode` here. Forms has not
-ported that trait, and this epic
+ported that trait, and this column
 [touches no forms file](checkbox-column.md#the-skin-is-supports-sy-checkbox-the-one-selection-already-uses),
 so `inputMode()` / `getInputMode()` are declared on the column itself — the same
 two members, the same names, the same evaluation. When forms ports the trait the

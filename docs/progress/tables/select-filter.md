@@ -37,8 +37,8 @@ Reference — the Filament source this is diffed against:
 | [`getActiveCount()`](../../../packages/tables/src/Filters/SelectFilter.php) | `SelectFilter::getActiveCount()` | done | — | [semantics](#the-active-count-is-a-filled-test-not-an-indicator-count) |
 | [reset state](../../../packages/tables/src/Filters/SelectFilter.php) | `SelectFilter::setUp()` | done | — | [diverges](#the-reset-state-clears-the-key-the-state-actually-uses) |
 | [indicators](../../../packages/tables/src/Filters/SelectFilter.php) | `SelectFilter::setUp()` | in progress | — | [semantics](#a-user-supplied-indicator-object-passes-through-unsuffixed) · [diverges](#the-multi-value-label-follows-selection-order-and-a-blank-option-key-still-indicates) · [diverges](#the-relationship-arm-is-deferred-with-a-documented-escape-hatch) |
-| `searchable()`, `native()`, `preload()`, `optionsLimit()`, `getSearchResultsUsing()`, `getOptionLabelUsing()`, `getOptionLabelsUsing()`, `getOptionLabelFromRecordUsing()`, `forceSearchCaseInsensitive()` | `SelectFilter` | blocked | a tables filters epic | [diverges](#the-js-select-surface-is-dropped-from-the-field-chain) |
-| `relationship()`, `emptyRelationshipOptionLabel()`, `hasEmptyRelationshipOption()`, the `getOptions*FromRelationship()` family | `Concerns\HasRelationship` | blocked | a future filters-relationship epic | [diverges](#the-relationship-arm-is-deferred-with-a-documented-escape-hatch) |
+| `searchable()`, `native()`, `preload()`, `optionsLimit()`, `getSearchResultsUsing()`, `getOptionLabelUsing()`, `getOptionLabelsUsing()`, `getOptionLabelFromRecordUsing()`, `forceSearchCaseInsensitive()` | `SelectFilter` | blocked | a tables decision on filter searchability, and the relationship arm | [diverges](#the-js-select-surface-is-dropped-from-the-field-chain) |
+| `relationship()`, `emptyRelationshipOptionLabel()`, `hasEmptyRelationshipOption()`, the `getOptions*FromRelationship()` family | `Concerns\HasRelationship` | blocked | a Doctrine design for the filters' relationship arm | [diverges](#the-relationship-arm-is-deferred-with-a-documented-escape-hatch) |
 
 Every built row is pinned by
 [`SelectFilterTest`](../../../packages/tables/tests/Unit/Filters/SelectFilterTest.php).
@@ -71,7 +71,7 @@ harmless.
 the same resolver sorting and search use: a bare name is qualified with the root
 alias, a dotted path whose head is a declared alias passes through, and a dotted
 path whose head is not an alias throws by name. A filter joins nothing of its
-own — that is the epic-12 rule, and it is what makes the relationship escape
+own — that is the query lane's rule, and it is what makes the relationship escape
 hatch below work.
 
 The refusal itself is the filter's own, thrown from `getAttributePath()` ahead
@@ -133,7 +133,7 @@ the copy — the same
 [hardcoded-copy gap](table.md#the-copy-is-english-and-hardcoded-because-no-i18n-layer-ships) the
 empty state, the search chip and the
 [ternary arm labels](ternary-filter.md#the-arm-labels-are-hardcoded-english)
-carry, lifting with the toolkit-wide i18n epic. The branch returns with it,
+carry, lifting when toolkit-wide i18n ships. The branch returns with it,
 since the two keys stay separately overridable even though their English values
 agree.
 
@@ -159,12 +159,12 @@ otherwise. A fix, not a mirror; pinned by test and recorded in the
 Filament's `getFormField()` also calls `searchable()`, `native()`, `preload()`
 and `optionsLimit()`, plus the four `getOption*Using()` seams and
 `forceSearchCaseInsensitive()`. All nine exist on
-[forms' `Select`](../forms/select.md) now — the searchable-select epic shipped the
+[forms' `Select`](../forms/select.md) now — forms ships the
 JS control, so the premise this section was written on, *none exists on our
 `Select`, which is a native `<select>`*, is gone. What has **not** happened is
 the filter calling them, and the reason is no longer a missing dependency.
 
-Two things are left, and neither belonged to the epic that built the control. The
+Two things are left, and neither is the control's to settle. The
 first is a tables decision about what the words mean here: `searchable()` on a
 filter means the *filter form's* select, not the table's own search box, and the
 two would sit a few pixels apart in the same toolbar — the mechanism is ready
@@ -179,9 +179,8 @@ list — `getOptionLabelFromRecordUsing()`, and the `forceSearchCaseInsensitive(
 that only means something over a relation query — belongs with the
 [deferred relationship arm](#the-relationship-arm-is-deferred-with-a-documented-escape-hatch)
 rather than with searchability, so those two cannot land ahead of it either way.
-Until a tables filters epic settles both, the field chain stays the six methods
-it calls today, and the row's _Blocked by_ names that epic instead of the
-JS-select one it used to wait on.
+Until both are settled, the field chain stays the six methods it calls today,
+and the row's _Blocked by_ names them rather than the JS control.
 
 ### The multi-value label follows selection order, and a blank option key still indicates
 
@@ -208,12 +207,11 @@ declared option is selected, Filament's says nothing is.
 `Concerns\HasRelationship` is Eloquent through and through —
 `Relation::noConstraints`, `RelationshipJoiner`, `whereHas` /
 `whereDoesntHave` / `whereKey`, `pluck` — and the `apply()` and indicator
-relationship branches ride on it. All of it waits on a future
-filters-relationship epic. Epic 12 sent every tables relationship arm to the
-relation epic; that epic [has since landed as 20](../roadmap.md#pulled-forward)
-and deliberately did not take this one, routing filters' `HasRelationship` to
-"their own rows" instead — so the destination is the filters' own row, still
-unbuilt, rather than an epic that has already been and gone. Until then the
+relationship branches ride on it. All of it waits on a Doctrine design of its
+own: the
+[relation arm](column.md#relationship-traversal-ships-as-a-value-walk-a-side-store-and-one-kept-member)
+that gives columns, sorting and search their relationship traversal deliberately
+leaves filters' `HasRelationship` to its own row, still unbuilt. Until then the
 supported shape is `options()` plus a `query()` closure over a query that
 already joins: `ColumnPathResolver` is alias-aware, so
 `->attribute('artist.name')` works the moment the declared query carries

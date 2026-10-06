@@ -196,7 +196,7 @@ announcing into the live region and every repaint of the chip list live in
 alone. The three PHP suites cover the server's first paint, the state layer and
 the live round trip; none of them runs a line of the controller, the same gap
 [`CheckboxList`](checkbox-list.md#the-controller-is-the-only-behaviour-and-no-test-in-this-repo-runs-it)
-records. Every row above is `done` on the strength of the epic's browser pass for
+records. Every row above is `done` on the strength of a browser pass for
 that half — read the surface table with that in mind.
 
 ## Divergences

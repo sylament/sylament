@@ -33,9 +33,12 @@ the cancel cascade, per-frame modal ids and open state, and the stacked
 render loop — plus both scoped resolution branches
 (`resolveSchemaComponentAction()`, from the schemas↔actions integration, and
 `resolveTableAction()`, from the tables↔actions one) and the
-per-mount `Schema` with its mount/fill/submit lifecycle, and defers
-authorization, rate limiting, transactions, redirects, and the URL-bound
-default action.
+per-mount `Schema` with its mount/fill/submit lifecycle, the database
+transaction around each run, redirects (which
+[leave the pipeline as a returned response](#a-redirect-leaves-the-pipeline-as-a-returned-response-not-through-a-framework-side-bag)),
+and every `getDefaultAction*` host hook but the authorization pair; it defers
+authorization, rate limiting, and the `#[Url]`-bound default-action properties
+with the auto-mount they feed.
 
 The renderer is now Filament's real loop: `Modals/index.html.twig` walks
 `getMountedActions()` and renders one `ActionModal` per frame, gating only the
@@ -95,12 +98,12 @@ write-up in [Details](#details), **diverges** → the note in
 | Modals rendering ([`Modals/index.html.twig`](../../../packages/actions/templates/components/Modals/index.html.twig) + [`Twig\Components\Modals`](../../../packages/actions/src/Twig/Components/Modals.php)) | [`components/modals.blade.php`](../../../vendor/filament/actions/resources/views/components/modals.blade.php) | done | — | [diverges](#the-modals-renderer-resolves-its-host-from-the-render-stack-not-from-template-scope) · [diverges](#the-modal-is-opened-by-rendered-state-not-by-the-dispatched-event) · [diverges](#the-modals-renderer-emits-no-wrapper-element) · [diverges](#there-is-no-single-render-guard) · [diverges](#an-unresolvable-host-throws-instead-of-rendering-nothing) |
 | [Action-schema integration](../../../packages/actions/src/Concerns/HasActions.php) (`getMountedActionSchema()` incl. `resolveMountedActionSchemaRecord()` / `getMountedActionSchemaOperation()`, `mountedActionHasSchema()`, deprecated `mountedActionHasForm`/`getMountedActionForm`, `getMountedActionSchemaName()`, `getMountedActionSchemaRecord()`) | `Concerns/InteractsWithActions.php` (same methods) | in progress | — | [has-schema.md](has-schema.md) · [semantics](#the-per-mount-schema-is-seeded-with-the-actions-record-and-the-dotted-operation) · [detail](#the-schema-integrations-remainder-is-a-name-and-two-deprecated-aliases) · [diverges](#per-mount-form-state-lives-in-a-sibling-bag-not-in-the-stack-descriptor) · [diverges](#the-has-schema-check-is-memoised-separately-because-the-schema-cache-cannot-hold-null) · [diverges](#set-and-get-are-unavailable-to-an-action-inside-a-mounted-action-schema) |
 | [`$mountedActionsData`](../../../packages/actions/src/Concerns/HasActions.php) + `getMountedActionData()` | `Concerns/InteractsWithActions.php` `mountedActions.{i}.data` | done | — | [diverges](#per-mount-form-state-lives-in-a-sibling-bag-not-in-the-stack-descriptor) |
-| `#[Url]`-bound default-action state (`defaultAction`, `defaultActionArguments`, `defaultActionContext`, `defaultTableAction*`) | `Concerns/InteractsWithActions.php` public `#[Url]` properties | todo | — | the query-string mechanism arrived with M4 · 3 and the auto-mount machinery did not — [detail](#url-bound-default-action-state-is-not-ported) |
+| `#[Url]`-bound default-action state (`defaultAction`, `defaultActionArguments`, `defaultActionContext`, `defaultTableAction*`) | `Concerns/InteractsWithActions.php` public `#[Url]` properties | todo | — | the query-string mechanism exists and the auto-mount machinery does not — [detail](#url-bound-default-action-state-is-not-ported) |
 | [`getDefaultActionUrl()`](../../../packages/actions/src/Concerns/HasActions.php) | `Concerns/InteractsWithActions.php` `getDefaultActionUrl()` | done | — | [detail](#the-getdefaultaction-host-override-hooks-are-ported-the-authorization-pair-deferred) |
 | [`getDefaultActionSuccessRedirectUrl()`](../../../packages/actions/src/Concerns/HasActions.php) / [`getDefaultActionFailureRedirectUrl()`](../../../packages/actions/src/Concerns/HasActions.php) | `Concerns/InteractsWithActions.php` `getDefaultActionSuccessRedirectUrl()` / `getDefaultActionFailureRedirectUrl()` | done | — | [detail](#the-getdefaultaction-host-override-hooks-are-ported-the-authorization-pair-deferred) |
 | [`getDefaultActionSchemaResolver()`](../../../packages/actions/src/Concerns/HasActions.php) / [`getDefaultActionRecord()`](../../../packages/actions/src/Concerns/HasActions.php) / [`getDefaultActionRecordTitle()`](../../../packages/actions/src/Concerns/HasActions.php) / [`getDefaultActionRecordClass()`](../../../packages/actions/src/Concerns/HasActions.php) / [`getDefaultActionRecordLabel()`](../../../packages/actions/src/Concerns/HasActions.php) | `Concerns/InteractsWithActions.php` `getDefaultActionSchemaResolver()` / `getDefaultActionRecord()` / `getDefaultActionRecordTitle()` / `getDefaultActionModel()` / `getDefaultActionModelLabel()` | done | — | [detail](#the-getdefaultaction-host-override-hooks-are-ported-the-authorization-pair-deferred) |
 | [`getDefaultActionRelationship()`](../../../packages/actions/src/Concerns/HasActions.php) | `Concerns/InteractsWithActions.php` `getDefaultActionRelationship()` | done | — | [detail](#the-getdefaultaction-host-override-hooks-are-ported-the-authorization-pair-deferred) |
-| The two remaining `getDefaultAction*` host override hooks (AuthorizationResponse/IndividualRecordAuthorizationResponseResolver) | `Concerns/InteractsWithActions.php` `getDefaultActionAuthorizationResponse()` etc. | blocked | the authorization epic | [detail](#the-getdefaultaction-host-override-hooks-are-ported-the-authorization-pair-deferred) |
+| The two remaining `getDefaultAction*` host override hooks (AuthorizationResponse/IndividualRecordAuthorizationResponseResolver) | `Concerns/InteractsWithActions.php` `getDefaultActionAuthorizationResponse()` etc. | blocked | `CanBeAuthorized` | [detail](#the-getdefaultaction-host-override-hooks-are-ported-the-authorization-pair-deferred) |
 | `forceRender()` / `partiallyRenderActionParentSchema()` | `Concerns/InteractsWithActions.php` `forceRender()` / `partiallyRenderActionParentSchema()` | blocked | schemas partial-render infrastructure (`PartialsComponentHook`) | [detail](#partial-re-render-is-not-ported) |
 | [`afterActionCalled()`](../../../packages/actions/src/Concerns/HasActions.php) hook (empty protected method; runs after `callAfter()`, before the notification branch, happy path only — Filament-exact) | `Concerns/InteractsWithActions.php` `afterActionCalled()` | done | — | — |
 | `bootedInteractsWithActions()` boot wiring / `WithRateLimiting` | `Concerns/InteractsWithActions.php` `bootedInteractsWithActions()`, `DanHarrin\LivewireRateLimiting\WithRateLimiting` | skipped | — | [diverges](#there-is-no-boot-hook-or-rate-limiting-trait) |
@@ -195,10 +198,10 @@ state lift: guarded by `mountedActionHasSchema()`, it calls
 a schema-less action takes an `else` branch that calls `callBefore()` alone.
 `call()` then receives the mounted modal schema as both `form` and `schema`,
 Filament-exact — so an `action()` closure can ask for `Schema $schema` the same
-way a `mount()` closure already could. It went bare until M3 · 3 needed it,
-which is a silent gap rather than a loud one: the named resolver falls back to
+way a `mount()` closure already could. Leaving `call()` without that pair is a
+silent gap rather than a loud one: the named resolver falls back to
 `getSchemaContainer()`, null for an action registered on a schema component, so
-a typed `Schema $schema` parameter took a `TypeError` instead of a miss. A
+a typed `Schema $schema` parameter would take a `TypeError` instead of a miss. A
 schema-less action still passes `[]` rather than a pair of nulls, since there
 is no schema to name —
 [a divergence with its own note](#a-schema-less-action-is-called-with-no-arguments-not-with-a-pair-of-nulls).
@@ -284,8 +287,8 @@ are [not ported](#url-bound-default-action-state-is-not-ported)).
 `syncActionModals()` has no port and never will: see
 [declarative choreography](#the-stack-is-choreographed-declaratively-not-by-client-events).
 **Next step:** the `defaultAction*` reset lands with the properties it resets, and
-that is no longer the same thing as "the `#[Url]` row" — M4 · 3 shipped the
-query-string mechanism without the auto-mount machinery those properties feed, so
+that is not the same thing as "the `#[Url]` row" — the query-string mechanism
+exists without the auto-mount machinery those properties feed, so
 this row waits on the machinery rather than on a binding.
 
 ### `getAction()` ports the generic method-discovery arm in full
@@ -342,7 +345,7 @@ action can be pre-mounted from the query string on page load (and
 `'null'`-string URL bug). None of these properties, nor any code that reads
 them to auto-mount an action, exist in the port.
 
-The **mechanism** stopped being the blocker with M4 · 3. UX LiveComponent's
+The **mechanism** is not the blocker. UX LiveComponent's
 `#[LiveProp(url: …)]` — reached either statically or through a
 [per-prop `modifier:`](../tables/has-table.md#the-url-binding-is-a-per-prop-liveprop-modifier-opted-into-by-the-page)
 where the parameter name has to be computed — is Livewire's `#[Url]` equivalent,
@@ -392,8 +395,8 @@ redirect pair `getDefaultActionSuccessRedirectUrl()` /
 that walks to them. Four of those five are the chain's; the fifth,
 `getDefaultActionSchemaResolver()`, is read by
 [`HasSchema::getSchema()`](has-schema.md) instead — the record chain never walks
-to it — and that reader landed in the same epic, so the hook was declared here
-before anything called it. Two of the cluster are renames, `getDefaultActionModel`
+to it — and the hook was declared here before that reader existed, the two
+landing in one piece of work. Two of the cluster are renames, `getDefaultActionModel`
 and `getDefaultActionModelLabel` under the
 [record vocabulary](../renames.md#the-model-vocabulary-collapses-onto-record).
 The ninth, `getDefaultActionRelationship()`, landed with its reader the same way
@@ -426,8 +429,8 @@ above carries them.
 The remaining two stay unported for the same reason as ever — the `Action`
 concerns that would consume them are not ported either. Both are authorization
 hooks (`getDefaultActionAuthorizationResponse`,
-`getDefaultActionIndividualRecordAuthorizationResponseResolver`), waiting on the
-parked authorization epic alongside `CanBeAuthorized`.
+`getDefaultActionIndividualRecordAuthorizationResponseResolver`), waiting on
+`CanBeAuthorized`, which is parked like the rest of authorization.
 **Next step:** each lands with the `Action`-side concern that reads it.
 
 ### Partial re-render is not ported
@@ -1024,9 +1027,9 @@ and there is no tampering surface to guard for free — the client can still nam
 an action, but only through `mountAction`'s `#[LiveArg]`, which the
 [return-type gate](#getaction-ports-the-generic-method-discovery-arm-in-full)
 and the [schema-context resolution gate](#resolution-stops-at-the-first-null-frame-and-a-deeper-frame-reaches-schema-context-only-through-the-cache)
-both police. Epic 6 reversed this **deliberately but narrowly**: a form-in-modal
-needs client-writable per-frame form state, so a *sibling* bag got
-`writable: true` while the descriptor stack itself stayed server-controlled —
+both police. One exception is **deliberate and narrow**: a form-in-modal
+needs client-writable per-frame form state, so a *sibling* bag is
+`writable: true` while the descriptor stack itself stays server-controlled —
 see [the sibling-bag divergence](#per-mount-form-state-lives-in-a-sibling-bag-not-in-the-stack-descriptor).
 
 ### Per-mount form state lives in a sibling bag, not in the stack descriptor
@@ -1187,7 +1190,7 @@ byte-identical to the port's resolution chain, and
 `->makeGetUtility()` / `->makeSetUtility()` on the same unguarded expression.
 Filament fatals here too.
 
-The scope is narrow and was pinned empirically during the epic's browser pass:
+The scope is narrow and was pinned empirically in a browser:
 the same action declared in a **top-level** host schema works, because its
 container *does* have a parent component (a `Section`, say) for the second arm to
 find. So the limitation is specific to root schemas, of which the mounted-action
@@ -1198,7 +1201,7 @@ Workaround, not a fix: such an action can still inject `$liveComponent`,
 is recorded rather than patched because patching it would mean diverging from
 Filament's own deref on a path Filament shares — the right fix is upstream-shaped
 (bind the mounted-action schema to a component, or make the arms null-safe on
-both sides), and it is not this epic's to make.
+both sides), and it is out of scope here.
 
 ### The `$mountedActions` LiveProp dehydrates through a bridge method
 
@@ -1495,8 +1498,8 @@ page template cannot see it and therefore cannot avoid doubling.
 Filament guards with `@if ($this instanceof \Filament\Actions\Contracts\HasActions …)`,
 silently rendering nothing when the surrounding Livewire component is not an action
 host — because its shared panel layouts render the tag for every component, host or
-not. That guard has no work to do here: every panel page **is** an actions host
-since M6 · 2 made [`Pages\Page`](../panels/custom-pages.md) implement
+not. That guard has no work to do here: every panel page **is** an actions host,
+since [`Pages\Page`](../panels/custom-pages.md) implements
 `InteractsWithActions`, and outside a panel every occurrence of the tag is a host
 author writing it deliberately. So `getLiveComponent()` throws a `LogicException`
 naming both fixes (place it inside a host, or pass `:liveComponent`) rather than

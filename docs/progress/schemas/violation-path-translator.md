@@ -17,8 +17,7 @@ while the error bag
 walk: it walks the same
 [record path map](belongs-to-record.md#mapping-walks-the-record-graph-by-declared-leaf-paths)
 `getData()` wrote through, so a violation lands under the component that put the
-offending value there — or, since [M7 · 11](../roadmap.md#m7--composite-identifiers),
-at the schema's own path when that component shows no errors of its own.
+offending value there — or at the schema's own path when that component shows no errors of its own.
 
 **Status:** done — see the [status vocabulary](../README.md#statuses).
 
@@ -84,9 +83,8 @@ The component is consulted for one thing only: whether it keys its items.
 component that
 [owns its record subtree](belongs-to-record.md#a-component-can-own-its-whole-record-subtree)
 declares no leaf beneath it, so it is the deepest thing that can speak for the
-path. How deep that owner is depends on what the translator is handed: since
-[M7 · 6](../roadmap.md#m7--composite-identifiers) the map it is built over
-carries the paths the record path map drops beneath a subtree owner as well
+path. How deep that owner is depends on what the translator is handed: the
+map it is built over carries the paths the record path map drops beneath a subtree owner as well
 ([why](belongs-to-record.md#the-relationship-hooks-are-consulted-by-the-two-mapping-edges-not-by-a-schema-level-walk)),
 so a singular relationship's `plaque.title` lands under the `title` field
 declared inside it, and only a path nothing inside the owner declares — a
@@ -123,11 +121,10 @@ The keyed-items arm needs one more test. The repeater is a field, so a message
 at its own path renders under it, and each item field renders its own; but
 `translate()` can also answer an **item's** own state path —
 `data.sections.record-7`, for a class-level violation on the item record or one
-on an item property no item field maps — and nothing reads that path. Until
-[M7 · 11](../roadmap.md#m7--composite-identifiers) such a message was carried on
-the exception, reachable through `getErrorsForSchemaStatePath()`, and shown
-nowhere: a 422 with no message on screen. `translateToErrorPath()` now answers
-`null` for that path too, so the message is filed at the schema's own path and
+on an item property no item field maps — and nothing reads that path. Filed
+there, such a message would be carried on the exception, reachable through
+`getErrorsForSchemaStatePath()`, and shown nowhere: a 422 with no message on
+screen. So `translateToErrorPath()` answers `null` for that path too, so the message is filed at the schema's own path and
 renders above the form; a violation on a mapped item field still lands under
 that field, and one on the collection itself — or on an index naming no item —
 still lands on the repeater.
@@ -140,15 +137,13 @@ lists, whatever component declared it. A `Group`, `Section` or `Fieldset` with
 class-level violation on its related record, or one on a property of it no inner
 field maps, is still filed at `data.<repeater>.<itemKey>.<group>`, which nothing
 renders. Closing it needs the component that declared the in-item path, which
-`HasKeyedItems::getItemStatePaths()` does not expose — a contract widening left
-to a later epic and recorded on
-[the roadmap's ledger](../roadmap.md#m7--composite-identifiers).
+`HasKeyedItems::getItemStatePaths()` does not expose — a contract widening not
+made yet, so the shape is recorded here rather than closed.
 
 Only the filing moved. The record check still asks `translate()` whether a
 component maps a blank or taken key candidate, so a group entangling the related
 record still counts as mapping it and the refusal is still raised; it is shown
-above the form rather than nowhere. Landed in
-[M7 · 11](../roadmap.md#m7--composite-identifiers); pinned by
+above the form rather than nowhere. Pinned by
 [`HasSchemasRecordErrorPlacementTest`](../../../packages/schemas/tests/Integration/Concerns/HasSchemasRecordErrorPlacementTest.php)
 and, rendered, by panels'
 [`EditRecordRelationshipsTest`](../../../packages/panels/tests/Integration/Resources/Pages/EditRecordRelationshipsTest.php).
@@ -202,13 +197,25 @@ child's class-level violation carrying no remainder at all) folds at the item's
 own state path — `data.sections.record-7`, the item schema's key. Like the
 [root fold](#an-unowned-violation-returns-null-so-the-caller-folds-it-at-the-schema-root),
 it is a message on a container rather than an input, never a state path no
-component owns. No template reads an item's own path, so since
-[M7 · 11](../roadmap.md#m7--composite-identifiers) the filing does not leave it
-there: `translateToErrorPath()` answers `null` for it, and the message is shown
+component owns. No template reads an item's own path, so the filing does not
+leave it there: `translateToErrorPath()` answers `null` for it, and the message is shown
 at the schema's own path, above the form
 ([the filing](#a-message-is-filed-only-under-a-component-that-shows-its-own-errors)).
 `translate()` still answers the item's path, which is what it owns. Appending
 the remainder unconditionally would invent a path no component owns.
+
+### A violation inside a nested repeater's item folds onto the inner repeater
+
+The in-item remainder stops at the next index, because an item's own collection
+is a second keying the translator cannot resolve. So a violation on a
+**grandchild** — a field of an item of a repeater nested inside another
+repeater's item, such as the taken-key refusal on that grandchild's key — folds
+onto the inner repeater's own path and shows under the inner repeater, not under
+the grandchild's field: `sections[0].tags[1].name` translates to
+`data.sections.record-7.tags`. It is not specific to the key rules, and it is
+recorded rather than closed. Pinned by
+[`ViolationPathTranslatorTest`](../../../packages/schemas/tests/Unit/State/ViolationPathTranslatorTest.php)
+(*stops at the item when a second index nests inside it*).
 
 ### The path is parsed by Symfony's own parser, not by splitting on dots
 

@@ -48,9 +48,9 @@ Filament's tiers count toward that same thirty, which is why the support-hosted
 group belongs in the numerator here as well. All of them are folded into the
 surface table below rather than earning rows upstairs, per
 [one row per file](../README.md#one-row-per-file-one-file-per-thing) —
-`InteractsWithTableQuery` gave up the per-file row it kept in the package
-[README](README.md#features) for its aggregate and eager-loading half when the
-[relation arm](../roadmap.md#pulled-forward) landed both — and the
+`InteractsWithTableQuery` included, since its aggregate and eager-loading half is
+[built](#relationship-traversal-ships-as-a-value-walk-a-side-store-and-one-kept-member)
+— and the
 `Columns\Concerns\` traits not ported at
 all keep a row there too, bar the five [`TextColumn`](text-column.md) composes —
 `CanFormatState`, `HasColor`, `HasDescription`, `HasIcon` and `HasIconColor` —
@@ -118,8 +118,8 @@ sections do.
 | [`clearCachedState()`](../../../packages/tables/src/Columns/Concerns/HasCellState.php) | [`Support\Concerns\HasCellState`](../../../vendor/filament/support/src/Concerns/HasCellState.php) | done | — | [diverges](#the-state-cache-keys-off-the-bound-record-key) |
 | [`recordKey()` / `getRecordKey()`](../../../packages/tables/src/Columns/Concerns/HasRecord.php) | [`Concerns\HasRecord`](../../../vendor/filament/tables/src/Columns/Concerns/HasRecord.php) | done | — | [diverges](#the-record-key-setter-admits-an-int) |
 | [`rowLoop()` / `getRowLoop()` — the `$rowLoop` injection](../../../packages/tables/src/Columns/Concerns/HasRowLoopObject.php) | [`Concerns\HasRowLoopObject`](../../../vendor/filament/tables/src/Columns/Concerns/HasRowLoopObject.php) | done | — | [semantics](#the-row-loop-is-a-blade-shaped-object-built-from-twigs-array) |
-| Relationship traversal — `hasRelationship()`, `getRelationshipResults()`, `inverseRelationship()`, the seven name caches, `applyRelationshipAggregates()`, `applyEagerLoading()` | [`Support\Concerns\HasCellState`](../../../vendor/filament/support/src/Concerns/HasCellState.php), [`InteractsWithTableQuery`](../../../vendor/filament/tables/src/Columns/Concerns/InteractsWithTableQuery.php) | in progress | — | [detail](#relationship-traversal-ships-as-a-value-walk-a-side-store-and-one-kept-member) — `inverseRelationship()` is settled as **not ported** there since M4 · 6 gave it its only consumer and refused the case it exists for; what holds the row is `hasNestedMorphToRelationship()` |
-| [`applyEagerLoading()` — fetch-join the to-one chains a visible name reads through](../../../packages/tables/src/Columns/Concerns/InteractsWithTableQuery.php) | [`InteractsWithTableQuery::applyEagerLoading()`](../../../vendor/filament/tables/src/Columns/Concerns/InteractsWithTableQuery.php) | done | — | three lines since M4 · 6: the body is [`Query\RelationJoiner::fetchJoinPath()`](../../../packages/tables/src/Query/RelationJoiner.php), which a [`Group`](grouping.md) fetch-joins its own column through, so the two share an implementation rather than a copy. [diverges](#a-to-many-relation-stays-lazy-where-filament-eager-loads-every-cardinality) · [has-table.md](has-table.md#eager-loading-runs-over-the-visible-columns-on-the-page-clone-alone) |
+| Relationship traversal — `hasRelationship()`, `getRelationshipResults()`, `inverseRelationship()`, the seven name caches, `applyRelationshipAggregates()`, `applyEagerLoading()` | [`Support\Concerns\HasCellState`](../../../vendor/filament/support/src/Concerns/HasCellState.php), [`InteractsWithTableQuery`](../../../vendor/filament/tables/src/Columns/Concerns/InteractsWithTableQuery.php) | in progress | — | [detail](#relationship-traversal-ships-as-a-value-walk-a-side-store-and-one-kept-member) — `inverseRelationship()` is settled as **not ported** there, because the summarizer tier is its only consumer and refuses the case it exists for; what holds the row is `hasNestedMorphToRelationship()` |
+| [`applyEagerLoading()` — fetch-join the to-one chains a visible name reads through](../../../packages/tables/src/Columns/Concerns/InteractsWithTableQuery.php) | [`InteractsWithTableQuery::applyEagerLoading()`](../../../vendor/filament/tables/src/Columns/Concerns/InteractsWithTableQuery.php) | done | — | three lines: the body is [`Query\RelationJoiner::fetchJoinPath()`](../../../packages/tables/src/Query/RelationJoiner.php), which a [`Group`](grouping.md) fetch-joins its own column through, so the two share an implementation rather than a copy. [diverges](#a-to-many-relation-stays-lazy-where-filament-eager-loads-every-cardinality) · [has-table.md](has-table.md#eager-loading-runs-over-the-visible-columns-on-the-page-clone-alone) |
 | [The aggregate declarations — `avg()`, `counts()`, `exists()`, `max()`, `min()`, `sum()` and their getters](../../../packages/tables/src/Columns/Concerns/CanAggregateRelatedRecords.php) | [`Support\Concerns\CanAggregateRelatedModels`](../../../vendor/filament/support/src/Concerns/CanAggregateRelatedModels.php) | done | — | [rename](../renames.md#renames) · [diverges](#an-aggregate-column-names-itself-freely-where-filaments-must-match-laravels-alias) · [diverges](#the-illuminate-expression-arm-is-dropped-from-the-aggregated-column) · [diverges](#an-aggregate-declaration-that-claims-no-cell-computes-nothing) |
 | [`getCellAggregateDeclaration()` — which declaration this cell reads](../../../packages/tables/src/Columns/Concerns/CanAggregateRelatedRecords.php) | — (Sylament-only; Filament reads the value off the model as an attribute) | done | — | [diverges](#an-aggregate-column-names-itself-freely-where-filaments-must-match-laravels-alias) · [table.md](table.md#an-aggregate-is-a-batched-side-query-and-a-hidden-subselect-never-a-select-on-the-page-query) |
 | Visibility — [`hidden()` / `visible()` / `hiddenOn()` / `visibleOn()` / `isHidden()` / `isVisible()`](../../../packages/tables/src/Columns/Concerns/CanBeHidden.php) and [`toggleable()` / `toggledHiddenByDefault()` / `isToggleable()` / `isToggledHidden()`](../../../packages/tables/src/Columns/Concerns/CanBeToggled.php) | [`CanBeHidden`](../../../vendor/filament/tables/src/Columns/Concerns/CanBeHidden.php), [`CanBeToggled`](../../../vendor/filament/tables/src/Columns/Concerns/CanBeToggled.php) | done | — | [diverges](#istoggleables-blank-label-group-arm-is-dropped-with-columngroup) |
@@ -309,7 +309,7 @@ memo properties, and its `InteractsWithTableQuery` adds two consumers —
 to answer *which prefix of a dotted name is a relationship hop and which is an
 attribute*, so a to-many hop can be flattened into a list, counted, or preloaded.
 
-The [relation arm](../roadmap.md#pulled-forward) answers all three questions and
+The relation arm answers all three questions and
 keeps one of the member names. What changed is where the answer comes from.
 Filament's machinery derives the split by **asking an instantiated relation
 object** — `$record->isRelation($segment)` and the `Relation` it returns — and
@@ -335,7 +335,7 @@ a fetch join on the page query rather than a second `with()` query, and
 
 One member is genuinely still out, which is what holds the row at
 **in progress**: `hasNestedMorphToRelationship()` is morph machinery, and morphs
-are [out of the relation layer](../roadmap.md#pulled-forward) on both the schemas
+are out of the relation layer on both the schemas
 and the tables side, refused rather than guessed. It blocks nothing — a column
 with no polymorphic association reads, sorts, searches, counts and fetch-joins
 today.
@@ -477,7 +477,7 @@ initialiser, and it is invisible in the getter that looks symmetric.
 
 It is also harmless where a table reaches these getters, because it never reaches
 them on a column that declared nothing: a sort resolves its column through
-[`Table::getSortableVisibleColumn()`](table.md#the-two-hidden-column-arms-landed-with-column-visibility-an-epic-after-their-loops),
+[`Table::getSortableVisibleColumn()`](table.md#sorting-and-global-search-both-skip-a-hidden-column),
 which returns nothing for a column that is not sortable, and a search reaches
 only the columns that answer `isGloballySearchable()` — or, one input at a time,
 `isIndividuallySearchable()`. Where it shows is a column
@@ -643,7 +643,7 @@ evaluated by `isSortable()`. The two traits are otherwise line-for-line twins.
 The signature itself agrees with us — `Closure` is in the declared union, which
 it would not need to be if the intent were to accept a closure as a column name.
 
-The port therefore fixes it at the cause, the way the M1 · 6
+The port therefore fixes it at the cause, the way the
 [clone-map defect](../actions/action-group.md#getclone-rebuilds-the-flat-map-from-the-cloned-members-rather-than-cloning-it-separately)
 was fixed rather than mirrored. The cost is that a Filament user who wrote
 `searchable($someClosure)` *expecting* a search column gets different behaviour —
@@ -672,7 +672,7 @@ implements would spread one read across two packages to preserve a directory.
 
 This is provisional in exactly one way. Filament's placement pays off for its
 *second* consumer, `Actions\Exports\ExportColumn`, which is unported — the export
-layer is not on any milestone yet. When it lands, the trait moves to the lowest
+layer is not ported. When it is, the trait moves to the lowest
 package both consumers reach, which is `schemas` (both `tables` and `actions`
 require it) and still not `support`, because the accessor it reads through lives
 in schemas. This section then becomes a record of where it used to be; nothing
@@ -905,7 +905,7 @@ it as written. The cost is the one that matters and it is small and visible: a
 migrating table with a multi-column `sortable()` gets its tie-break priority the
 other way round on the first click.
 
-The [relation arm](../roadmap.md#pulled-forward) left this alone on purpose,
+The relation arm leaves this alone on purpose,
 though it is the change most likely to have quietly re-opened it. Its work
 happens *inside* the loop — each name now resolves through
 [`resolveOrderable()`](table.md#a-relation-sort-joins-where-filaments-orders-by-a-correlated-subquery)

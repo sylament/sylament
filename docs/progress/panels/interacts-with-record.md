@@ -10,15 +10,15 @@ minus its authorization hooks.
 
 The trait is mostly an extraction rather than new behaviour: the record prop and
 its dehydration bridge, `hasRecord()`, `getRecordKey()`, `getRecord()` and
-`getRecordTitle()` all shipped on [`EditRecord`](README.md#editrecord) with
-M2 · 3 and moved here **unchanged** when
+`getRecordTitle()` all lived on [`EditRecord`](README.md#editrecord) and
+moved here **unchanged** when
 [`ManageRelatedRecords`](manage-related-records.md) needed the same six. What the
 trait adds on top is what every record page shares and neither of them had: the
 record's own breadcrumb, the sub-navigation bridge, and `mountRecord()`, where
 the mount assignment order now lives. `EditRecord` composes
-it and keeps only its own form, save and action hooks; `ViewRecord` composes it
-at [M5 · 2](../roadmap.md#m5--view-page--infolists), which is the reason the
-extraction happened now rather than being reconciled across three copies later.
+it and keeps only its own form, save and action hooks; `ViewRecord` will compose it
+once the view page lands, which is the reason the extraction happened rather than
+three copies being reconciled later.
 
 ⚠️ **Not to be confused with
 [`Sylament\Actions\Concerns\InteractsWithRecord`](../actions/action.md#the-record-chain-reaches-the-schema-the-component-and-the-host)**,
@@ -38,7 +38,7 @@ Reference — the Filament source this is diffed against:
 - [`Resources/Pages/Concerns/InteractsWithRecord.php`](../../../vendor/filament/filament/src/Resources/Pages/Concerns/InteractsWithRecord.php)
   — the whole trait
 - [`Resources/Pages/EditRecord.php`](../../../vendor/filament/filament/src/Resources/Pages/EditRecord.php)
-  — the page that composes it, and where our members lived until this epic
+  — the page that composes it, and where our members lived before the extraction
 
 ## Surface
 
@@ -57,12 +57,12 @@ do.
 | [`hasRecord()`](../../../packages/panels/src/Resources/Pages/Concerns/InteractsWithRecord.php) / [`getRecordKey()`](../../../packages/panels/src/Resources/Pages/Concerns/InteractsWithRecord.php) | `hasRecord()`; no counterpart for the key | done | — | [semantics](has-relation-managers.md#the-record-probes-read-the-wire-value-not-the-resolved-record) |
 | [`getRecordTitle()`](../../../packages/panels/src/Resources/Pages/Concerns/InteractsWithRecord.php) | `getRecordTitle()` | done | — | [diverges](README.md#the-document-title-of-an-edit-page-carries-the-record-label-not-the-record-title) |
 | [`getBreadcrumbs()`](../../../packages/panels/src/Resources/Pages/Concerns/InteractsWithRecord.php) — the record's own crumb | `getBreadcrumbs()` | done | — | [diverges](#the-record-crumb-lands-on-plain-resources-too-and-that-is-new-behaviour) |
-| The crumb's `canView()` / `canEdit()` gates | the two `elseif` arms | todo | the authorization epic | [detail](#the-crumb-links-through-an-ungated-ladder) |
+| The crumb's `canView()` / `canEdit()` gates | the two `elseif` arms | todo | authorization | [detail](#the-crumb-links-through-an-ungated-ladder) |
 | [`getSubNavigation()`](../../../packages/panels/src/Resources/Pages/Concerns/InteractsWithRecord.php) | `getSubNavigation()` | done | — | — |
 | [`getSubNavigationParameters()`](../../../packages/panels/src/Resources/Pages/Concerns/InteractsWithRecord.php) | `getSubNavigationParameters()` | done | — | [diverges](#the-sub-navigation-parameters-carry-keys-and-the-parent-chain) |
 | `getDefaultActionRecord()` / `getDefaultActionRecordTitle()` / `getDefaultActionSuccessRedirectUrl()` / `getMountedActionSchemaRecord()` | the same four, the last as `getMountedActionSchemaModel()` | done | — | they stay on [`EditRecord`](README.md#editrecord) and [`ManageRelatedRecords`](manage-related-records.md), which answer them differently |
 | `afterActionCalled()` — nulling the record after a delete | `afterActionCalled()` | skipped | — | [diverges](README.md#the-record-prop-carries-the-route-key-and-needs-a-dehydration-bridge) — the redirect ends the request first, [as EditRecord records](README.md#editrecord) |
-| `mountCanAuthorizeAccess()` / `hydrateCanAuthorizeAccess()` | the same two | todo | the authorization epic | [detail](#the-crumb-links-through-an-ungated-ladder) |
+| `mountCanAuthorizeAccess()` / `hydrateCanAuthorizeAccess()` | the same two | todo | authorization | [detail](#the-crumb-links-through-an-ungated-ladder) |
 | `getWidgetData()` | `getWidgetData()` | todo | `sylament/widgets` | — |
 
 The extraction is covered by **not** having moved: the whole panels suite passed
@@ -91,7 +91,7 @@ authorization parked, the ladder collapses to `hasPage('view')` → `hasPage('ed
 → unlinked, and neither hook is ported. So **the crumb links every viewer to a
 page it does not check they may open**, which is the exposure the resource pages
 already carry rather than a new one — the pages behind those links are equally
-ungated. It closes with the authorization epic, in one place: the two `hasPage()`
+ungated. It closes when authorization lands, in one place: the two `hasPage()`
 tests gain their `can*()` halves.
 
 ## Semantics
@@ -121,7 +121,7 @@ parent chain itself as its first line.
 key **malformed for the record class** all throw `NotFoundHttpException`, which
 [`PageController` unwraps out of Twig's render error](README.md#a-mount-time-http-exception-is-unwrapped-from-twigs-render-error)
 into a real 404. The scope is null for a page whose resource nests under nothing,
-so a plain resource page resolves exactly as it did before this epic.
+so a plain resource page resolves unscoped, by its key alone.
 
 Laziness is what makes the prop safe on the wire: nothing is resolved at
 dehydration time, and the next request re-resolves the key it was handed —
@@ -159,8 +159,8 @@ seam catching the one kind ([the policy](../schemas/record-key.md#the-api)).
 ### The record crumb lands on plain resources too, and that is new behaviour
 
 Filament inserts the page's own record crumb behind `$record->exists &&
-hasRecordTitle()`, on every record page, nested or not. This port did not — the
-M2 · 3 edit page trailed two crumbs (`Articles → Edit`) with a test comment
+hasRecordTitle()`, on every record page, nested or not. This port did not at first — its
+edit page trailed two crumbs (`Articles → Edit`) with a test comment
 asserting that Filament did the same, which was simply wrong about vendor. The
 port now matches: a resource declaring `$recordTitleAttribute` trails
 `Articles → Alpha → Edit`, with the middle crumb linking to the record's view

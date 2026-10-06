@@ -134,7 +134,7 @@ overridable icon slot in the whole table builder. Sylament ships **fifteen** —
 `ACTIONS_FILTER` (the toolbar funnel), `EMPTY_STATE`,
 `FILTERS_REMOVE_ALL_BUTTON` (the indicators row's clear-all button), the three
 `HEADER_CELL_SORT_*` (unsorted, ascending, descending — the sortable header's
-chevron picks one by state), `SEARCH_FIELD`, the three M4 · 3 added —
+chevron picks one by state), `SEARCH_FIELD`, the three reordering ones —
 `ACTIONS_ENABLE_REORDERING` and `ACTIONS_DISABLE_REORDERING`, the toolbar
 trigger's two states, resolved inside
 [`getReorderRecordsTriggerAction($isReordering)`](../../../packages/tables/src/Table/Concerns/CanReorderRecords.php)
@@ -154,12 +154,12 @@ All fifteen have their consuming surface ported. Seven of the remaining eight
 belong to features that are not built yet: the filters query builder (the six
 `FILTERS_QUERY_BUILDER_CONSTRAINTS_*`) and the layout columns'
 `COLUMNS_COLLAPSE_BUTTON`
-(M4 · 7 — it collapses a `Columns\Layout\Stack`, which this package does not
+(it collapses a `Columns\Layout\Stack`, which this package does not
 render yet).
 
 The eighth, `ACTIONS_OPEN_BULK_ACTIONS`, is the one exception, and it is worth
-naming because its feature **is** built: bulk actions landed with M4 · 1 and the
-alias still did not, because nothing reads it here.
+naming because its feature **is** built: bulk actions ship and the
+alias still does not, because nothing reads it here.
 [`BulkActionGroup`](../actions/action-group.md) sets its trigger icon as a plain
 default in `setUp()`, and the trigger templates it renders through read
 `group.getIcon` directly — no actions partial resolves an alias at all. So the
@@ -274,8 +274,8 @@ server-rendered `checked` attribute — is what wins after the first morph. And,
 like [actions' page-wide `dispatch` controller](../actions/actions-bundle.md#the-dispatch-controller-is-page-wide-and-filament-has-no-counterpart-for-it),
 a consuming app that leaves `@sylament/tables` out of its `assets/controllers.json`
 loses every one of those behaviours with no error anywhere: the checkboxes render
-and do nothing. Filament needs Alpine the same way — but the cost of that omission
-rose with M4 · 3, and one arm of it is no longer silent-but-usable. A
+and do nothing. Filament needs Alpine the same way — but one arm of that omission
+is not silent-but-usable. A
 `deferLoading()` table renders its loading indicator and **nothing else, forever**:
 the second request that fetches the records is the controller's `loadTable` call on
 `connect()`, and with no controller there is no connect. That is the one place a
@@ -313,7 +313,7 @@ request and survives a morph the user did not ask for, and a successful apply is
 what replaces it. Both apply and reset stay plain live actions — the dirty draft
 rides every request, so nothing in the footer needs a hand from this controller.
 
-M4 · 6 filled the one arm that sentence had left out. The controller now carries
+The controller also carries
 a **grouping** half beside its selection one, ported from the same
 `filamentTable` data: `group()` composes the two selects into the one scalar
 `groupTable()` validates and re-syncs the dropdown copy with the inline one,
@@ -505,7 +505,7 @@ rather than a silent fall-through to raw text
 ([text-column.md](text-column.md#markdown-throws-for-the-package-it-suggests-rather-than-falling-through)),
 which is what makes the softer link safe: `markdown()` is opt-in, and a column
 that never calls it never reaches the branch. Upgrading to a require is one line
-if M5's `TextEntry` wants markdown too.
+if infolists' `TextEntry` wants markdown too.
 
 ### The empty-state alias value drops Filament's package prefix
 
@@ -561,8 +561,8 @@ to sixteen lines each. Reaching across a hard dependency for a class is not a
 package-boundary break — the styling contract's own test is whether the emitting
 package could be absent, and forms cannot be — but hoisting those three skins
 into support under code-less names, the way `checkbox.css` already went, is the
-cleaner end state and stays a follow-up, because it would touch forms files this
-epic deliberately left alone
+cleaner end state and stays a follow-up, because it would touch forms files the
+tables port deliberately leaves alone
 ([forms/styles.md](../forms/styles.md#the-checkbox-skin-moved-to-support-when-tables-became-its-second-consumer)).
 
 The test-kernel half rides along: `tests/Fixtures/Kernel.php` registers

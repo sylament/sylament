@@ -53,7 +53,7 @@ Coverage: the empty default, the replace and merge arms, closure resolution
 through `evaluate()`, and the bag getter, by
 [`HasExtraInputAttributesTest`](../../../packages/forms/tests/Unit/Components/Concerns/HasExtraInputAttributesTest.php),
 which also pins that the nine fields named in its dataset compose it —
-[`TagsInput`](tags-input.md), M3 · 9's addition, among them, and it carries a
+[`TagsInput`](tags-input.md) among them, and it carries a
 render case of its own besides
 ([`TagsInputTest`](../../../packages/forms/tests/Integration/Components/TagsInputTest.php),
 _appends the extra input attributes without unbinding the controller_). The

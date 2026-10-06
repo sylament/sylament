@@ -74,7 +74,7 @@ and its `MutationObserver`; the Escape listener a click-through dialog that
 starts open needs; the teardown path when a server-driven close lands on a
 dialog whose `open` attribute the morph already removed; and focus restoration
 across the hide/re-open cycle of a stacked frame. A manual browser smoke test
-of those paths was planned for the nested-actions epic and **was not
+of those paths has **not been
 performed** — treat this whole controller as unverified-at-merge until either a
 JS test rig lands or someone drives it in a browser.
 
@@ -115,8 +115,8 @@ first consumer that needs it.
 Filament stamps `wire:key` on the modal's header/content/footer regions so a
 Livewire morph tracks each one across a form's own re-renders. Sylament has no
 per-region key equivalent. The **form-in-modal wiring itself is ported** — the
-window-element swap and its submit binding both landed with the forms-in-modals
-epic (see [the form wrapper carries `live_action()`, not `wire:submit`](#the-form-wrapper-carries-live_action-not-wiresubmit))
+window-element swap and its submit binding both ship
+(see [the form wrapper carries `live_action()`, not `wire:submit`](#the-form-wrapper-carries-live_action-not-wiresubmit))
 — and a live browser pass confirmed idiomorph keeps a focused input's node and
 value across a foreign re-render inside an open modal form, so nothing is
 currently broken by the absence. The keys stay **blocked** on the `schemas` /
@@ -407,13 +407,13 @@ emitted verbatim as a `sy-modal-<value>` class rather than resolved through the
 `Width` enum's `fi-width-*` / `fi-width-screen` logic.
 
 [`Sylament\Support\Enums\Width`](../../../packages/support/src/Enums/Width.php)
-**now exists** — M6 · 2 landed all 26 cases for panels' page and panel width
-surfaces — so the trigger this note was waiting on has fired and the back-fill is
+**exists**, with all 26 cases, for panels' page and panel width
+surfaces, so the trigger this note was waiting on has fired and the back-fill is
 merely **deferred**: `width()` still takes a plain string, the class is still
 `sy-modal-<value>`, and nothing here was retyped. Doing it means narrowing the
 property's type, mapping each case to a modal class and re-deriving the
 `sy-modal-screen` arm, which is a modal-sized change of its own rather than a
-rider on a page epic. The same deferral, for the same reason, is recorded on
+rider on a page change. The same deferral, for the same reason, is recorded on
 [`Table::filtersFormWidth()`](../tables/table.md#surface).
 
 ### The open state is a Stimulus value, not only an event
@@ -536,8 +536,8 @@ listener while its panel is open and repositions on every scroll, the window's
 included. The class name is the prefix rename of Filament's marker pair, and
 nothing in support reads it — the markers carry no rules of their own in Filament
 either. Tables' content container will carry the same one when it lands, which is
-M4 · 7's [`content()`](../tables/table.md#surface) rather than the column
-catalog's: M4 · 4 shipped `SelectColumn` as a **native** `<select>`, which the
+[`content()`](../tables/table.md#surface)'s list rather than a column:
+`SelectColumn` ships as a **native** `<select>`, which the
 browser positions itself and which reads no marker class at all
 ([select-column.md](../tables/select-column.md)), so the first table surface that
 will need the marker is the one that replaces the `<table>` with a caller-supplied

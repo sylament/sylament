@@ -147,13 +147,11 @@ group arm keys an embed `"{class}-{group key}"` off a backslash-heavy
 class-string, which is exactly the shape where separators carry the meaning.
 Reach for a hash-style disambiguator if that ever bites.
 
-`~` and `=` are in that class **on purpose**, and M7 · 1 put them there:
+`~` and `=` are in that class **on purpose**:
 they are the two characters a composite
 [record key](record-key.md#the-grammar) is built from, so without them
-`5~en` and `5-en` would mint one morph identity. It was latent while the only
-embed in the toolkit keyed by class-string, and it went live with
-[M7 · 4](../roadmap.md#m7--composite-identifiers), which made a relationship
-repeater item's key a record key of any width — so an embed inside one is keyed
+`5~en` and `5-en` would mint one morph identity. It matters because a
+relationship repeater item's key is a record key of any width — so an embed inside one is keyed
 `record-1~zh=20Hans` and needs every character of that class. A collision test
 pins it.
 Do not widen the class further: the id lands raw in an HTML attribute, and the

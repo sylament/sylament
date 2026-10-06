@@ -11,8 +11,8 @@ and one template.
 
 The JS calendar behind `native(false)` — the Alpine panel, `displayFormat()`,
 `disabledDates()`, `firstDayOfWeek()` and the rest of its family — is not ported;
-it is a JS vertical of its own, [recorded as this epic's one
-gap](../roadmap.md#m3--forms-widening). Declaring `native(false)` is therefore a
+it is a JS vertical of its own and the field's one
+gap. Declaring `native(false)` is therefore a
 [fail-fast throw](can-be-native.md#nativefalse-throws-rather-than-falling-back-to-the-native-control)
 rather than a silent fallback.
 
@@ -57,7 +57,7 @@ another file.
 | [`getDateTimeObjectClass()`](../../../packages/forms/src/Components/DateTimePicker.php) — no Filament counterpart | — | done | — | [diverges](#the-cast-writes-an-object-when-the-record-declares-one) |
 | Date validity (`setUp()`'s always-on [`ValidDate`](can-be-validated.md#the-date-comparison-family-builds-constraints-where-filament-builds-rule-strings)) | [`DateTimePicker::setUp()`](../../../vendor/filament/forms/src/Components/DateTimePicker.php) — `rule('date', hasDate())` | done | — | [diverges](#every-variant-validates-as-a-date-including-the-time-only-one) |
 | [`CanBeNative`](can-be-native.md) | [`Concerns/CanBeNative.php`](../../../vendor/filament/forms/src/Components/Concerns/CanBeNative.php) | done | — | [detail](can-be-native.md) |
-| `native(false)` — the JS calendar control | [`DateTimePicker::toEmbeddedHtml()`](../../../vendor/filament/forms/src/Components/DateTimePicker.php) | blocked | the JS calendar vertical ([roadmap](../roadmap.md#m3--forms-widening)) | [diverges](can-be-native.md#nativefalse-throws-rather-than-falling-back-to-the-native-control) |
+| `native(false)` — the JS calendar control | [`DateTimePicker::toEmbeddedHtml()`](../../../vendor/filament/forms/src/Components/DateTimePicker.php) | blocked | the JS calendar vertical | [diverges](can-be-native.md#nativefalse-throws-rather-than-falling-back-to-the-native-control) |
 | [`CanBeReadOnly`](can-be-read-only.md) | [`Concerns/CanBeReadOnly.php`](../../../vendor/filament/forms/src/Components/Concerns/CanBeReadOnly.php) | done | — | [detail](can-be-read-only.md) |
 | [`HasStep`](has-step.md) | [`Concerns/HasStep.php`](../../../vendor/filament/forms/src/Components/Concerns/HasStep.php) | done | — | [detail](has-step.md) |
 | [`HasDatalistOptions`](has-datalist-options.md) | [`Concerns/HasDatalistOptions.php`](../../../vendor/filament/forms/src/Components/Concerns/HasDatalistOptions.php) | done | — | [detail](has-datalist-options.md) |

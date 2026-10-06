@@ -233,7 +233,7 @@ onto the DOM a port of Filament's own select utility builds:
 `& input.fi-revealable { @apply [&::-ms-reveal]:hidden }` suppresses Edge's
 native password-reveal glyph for a field that ships its own reveal button;
 [`revealable()`](text-input.md#a-revealable-input-is-rendered-as-a-password-server-side)
-landed with M3 · 9 and the rule came with it, as
+ships, and the rule with it, as
 `& input.sy-revealable`, in forms'
 [`text-input.css`](../../../packages/forms/assets/src/styles/components/text-input.css)
 — which is why that sheet now has a row of its own above, beside the two
@@ -403,7 +403,7 @@ at line 453 and emitted from eight of its packages. Sylament's is
 [`.sy-sr-only`](../../../packages/support/assets/src/styles/utilities.css), filed
 the same way — a code-less utility in support, on the tier that lets any package
 name it. It was forms' `.sy-fo-sr-only` at the bottom of `field.css` until the
-field sweep that closed M3, when the new fields' live region and chrome headers
+new fields' live region and chrome headers
 made forms' own copy the wrong tier for the second time; the move renamed it and
 retargeted every reference (the field wrapper's four labels, the table repeater's
 three headers, the select control's status region, ten test assertions), and
@@ -443,7 +443,7 @@ Filament files the checkbox skin in **support** and consumes it from both forms
 and tables. The port started it in forms as `.sy-fo-checkbox`, on the
 tracks-its-emitter rule [above](#the-control-stylesheets-carry-forms-coded-names-for-support-tier-classes),
 with that section's own escape clause attached: *the re-coding reverses the
-moment a second package renders one of these controls*. M4 · 1's record-selection
+moment a second package renders one of these controls*. Tables' record-selection
 column is that second package, so
 [`packages/forms/assets/src/styles/components/checkbox.css`](../../../packages/forms/assets/src/styles/components/)
 is gone with its import line and
@@ -454,7 +454,7 @@ same escalation `InputWrapper` made one component earlier, and Filament's own
 layering restored.
 
 Three sibling skins have **not** made that move, and their second consumer has
-now arrived. The column catalog (M4 · 4) renders tables' editable cells inside
+now arrived. Tables renders its editable cells inside
 forms' own classes — `sy-fo-toggle*` on
 [`ToggleColumn`](../tables/toggle-column.md), `sy-fo-input` on
 [`TextInputColumn`](../tables/text-input-column.md) and `sy-fo-select` on
@@ -462,7 +462,7 @@ forms' own classes — `sy-fo-toggle*` on
 `InputWrapper` — which is a class reuse across a hard dependency (tables
 requires forms) rather than a package-boundary break, and deliberately not the
 escalation above: the hoist would touch three forms stylesheets and every
-template that emits them, which are M3 · 9's files. So the escape clause is
+template that emits them. So the escape clause is
 **owed** on all three and not yet taken, and the note stands here rather than in
 tables so the next reader of *this* tree finds it. Taking it means moving
 `toggle.css`, `input.css` and `select.css`'s control halves into support under
@@ -688,7 +688,7 @@ border instead.
 `.fi-dropdown-header` (`flex w-full gap-2 p-3 text-sm font-medium`) and adds only
 `font-medium text-gray-500 dark:text-gray-400` in the select arm; support ships no
 `sy-dropdown-header`, so `.sy-fo-select-option-group-label` carries `p-2 text-sm`
-— the port's own M3 · 4 value, a step tighter than vendor's `p-3` — alongside
+— the port's own value, a step tighter than vendor's `p-3` — alongside
 them. It moves down the day that component lands.
 
 **The button suppresses its outline because the wrapper paints the ring.**

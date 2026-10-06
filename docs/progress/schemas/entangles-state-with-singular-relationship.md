@@ -100,8 +100,8 @@ and any divergence it earned stay behind.
 `…BeforeSaveUsing()` rewrite the state array on its way to and from the related
 record. Forms' [`Repeater`](../forms/repeater.md) ports all three for its items,
 so the shape and the "return the array you were handed" refusal already exist to
-copy. Left out here only because nothing in the epic needed them on a layout
-component. Next step: lift the trio out of `Repeater` into a shared concern when
+copy. Left out here only because nothing has needed them on a layout
+component yet. Next step: lift the trio out of `Repeater` into a shared concern when
 the second consumer arrives, rather than writing a third copy.
 
 ### The hidden-component skip waits on its flag
@@ -222,13 +222,12 @@ null or blank:
 > on the record it hangs off when its identifier is that record, or drop
 > relationship() and create the related record by hand after getData().
 
-No blank-key seam read this record before
-[M7 · 11](../roadmap.md#m7--composite-identifiers): the record check's blank pass
-descends identifier associations only, and the create seams read the root record
-alone. So a whitespace key half typed into a field over a nullable property —
-or a key half no field inside the group maps — passed `getData()`, the
-cascade inserted the row, and nothing could key it afterwards: the redirect and
-every listing failed on it. A field over a non-nullable key property never gets
+Without this read no blank-key seam reads this record: the record check's blank
+pass descends identifier associations only, and the create seams read the root
+record alone. So a whitespace key half typed into a field over a nullable
+property — or a key half no field inside the group maps — would pass
+`getData()`, the cascade would insert the row, and nothing could key it
+afterwards: the redirect and every listing would fail on it. A field over a non-nullable key property never gets
 that far, since it is required on its own.
 
 It is read **after** the owner's setter runs, not before: a shared-key
@@ -248,18 +247,16 @@ One reach is recorded rather than closed. The reader follows an identifier
 association into the record it points at, so a shared-key child whose identifier
 **is** the owner is refused when the owner's own single scalar key is blank —
 an owner whose key field is not required (`required(false)`, or a nullable
-property) and holds whitespace. That `getData()` passed before M7 · 11, the
-single scalar root key being exempt; the [`Repeater`](../forms/repeater.md#a-new-item-whose-identifier-is-incomplete-is-refused-before-the-save-returns)
-has refused its items under such an owner the same way since M7 · 7, and the
-refusal stays: the child row could not be keyed after the flush either. A
+property) and holds whitespace. Without the refusal that `getData()` would pass,
+the single scalar root key being exempt; the [`Repeater`](../forms/repeater.md#a-new-item-whose-identifier-is-incomplete-is-refused-before-the-save-returns)
+refuses its items under such an owner the same way, and the refusal stays: the child row could not be keyed after the flush either. A
 required key field — which forms derives for a non-nullable property — never
 reaches it. Telling the two causes apart needs the reader's private walk behind
 [`hasIncompleteAssignedIdentifier()`](association-reader.md#an-incomplete-assigned-identifier-is-the-question-the-create-paths-ask),
-which answers one boolean, so the message names both instead: since M7 · 11 its
-advice points at the record the relationship hangs off as well as at the
-components inside it, where it named the group alone and sent the developer
-past the owner's key field. The reach itself is left for the
-[roadmap's ledger](../roadmap.md#m7--composite-identifiers).
+which answers one boolean, so the message names both instead: its advice points
+at the record the relationship hangs off as well as at the components inside it,
+since naming the group alone would send the developer past the owner's key
+field.
 
 Pinned by
 [`EntanglesStateWithSingularRelationshipKeyTest`](../../../packages/schemas/tests/Integration/Components/Concerns/EntanglesStateWithSingularRelationshipKeyTest.php)
@@ -310,9 +307,9 @@ flatten it — the root fill's rule, asked of the same component
 a date or an enum fills from the related record, as does a `Uuid` under a cast
 that flattens it, and a fill hook receives the object at its path, while an
 association, and an object no cast flattens, still skip. A leaf the dehydrated
-state does not carry is skipped on the way out. Until [M7 · 6](../roadmap.md#m7--composite-identifiers) every
-object-valued leaf skipped here, so such a field filled empty and the next save —
-one that never touched it — wrote NULL over the stored value. Pinned by
+state does not carry is skipped on the way out. Skipping every object-valued
+leaf here would fill such a field empty, and the next save — one that never
+touched it — would write NULL over the stored value. Pinned by
 [`EntanglesStateWithSingularRelationshipObjectLeafTest`](../../../packages/schemas/tests/Integration/Components/Concerns/EntanglesStateWithSingularRelationshipObjectLeafTest.php)
 and, through a real `DateTimePicker` inside a `Group::relationship()`, by forms'
 [`RepeaterRelationshipObjectLeafTest`](../../../packages/forms/tests/Integration/Components/RepeaterRelationshipObjectLeafTest.php).
@@ -401,7 +398,7 @@ associates it, the others save through the relation. The port has no relation
 objects: it asks the reader for an
 [`AssociationTarget`](association-reader.md) and writes through the record's own
 setter, which is the same write on either side of a Doctrine to-one. `MorphOne`
-has no port at all — morphs are out of the epic's scope, and Doctrine's
+has no port at all — morphs are out of scope, and Doctrine's
 inheritance mapping is a different shape rather than a missing feature. A
 to-**many** association is refused with a message pointing at the Repeater, since
 one set of fields cannot map a collection.

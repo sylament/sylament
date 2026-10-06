@@ -21,8 +21,8 @@ tables' [`reorderable()`](../tables/table.md#the-drag-control-mounts-per-mode-wh
 is the second, and it binds the control differently — the `<tbody>` mounts it only
 while the table is in reorder mode, where a repeater's item list carries it
 always — which is the first proof that the control's live-host-agnostic contract
-survives being mounted and unmounted rather than only connected once. M3 · 9
-added two more, both the repeater's way — the container carries the control
+survives being mounted and unmounted rather than only connected once. The other
+two follow the repeater's way — the container carries the control
 whenever the field can be reordered at all, rather than per mode:
 [`KeyValue`](../forms/key-value.md) on its row `<tbody>`, and
 [`TagsInput`](../forms/tags-input.md) on its chip container, which is the first
@@ -246,8 +246,9 @@ The controller is a `BUNDLED_ENTRIES` build in
 inlined into `dist/controllers/sortable_controller.js` behind the banner the build
 composes from the installed package, and consumers need no importmap entry for it.
 Forms' `select` controller bundles its own copy the same way, so a page using both
-carries the library twice — sanctioned by the carried decision that each dist
-inlines its own copy, as Filament's own builds do. The two copies are kept from
+carries the library twice — the shape the
+[SortableJS grant](../../internals/dependencies.md#third-party-grants) sets, each
+dist inlining its own copy as Filament's own builds do. The two copies are kept from
 drifting into different **versions** by a `sortablejs: "^1.15.7"` override in
 [`pnpm-workspace.yaml`](../../../pnpm-workspace.yaml); nothing keeps them from
 being two objects at runtime, which is the point of the private-instance rule

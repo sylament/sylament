@@ -11,6 +11,16 @@ The tables below are structure only; nothing has been audited yet.
 [`support/component.md`](../support/component.md) is the shape each detail file
 follows.
 
+Two decisions are taken ahead of the audit. `Entry` extends the schemas
+`Component`, as Filament v5's does: an entry is a schema component reading
+schema state, not a second tree beside the schema. `TextEntry` shares the
+formatting catalogue [`TextColumn`](../tables/text-column.md) folds from
+`Columns\Concerns\CanFormatState` (badge, colours, icons, size/weight/font,
+copyable, date/money, lists, `html()`/`markdown()`) rather than porting the
+parallel copy Filament keeps in `Infolists\Components\Concerns\CanFormatState`.
+`CodeEntry` stays a gap: Filament highlights through Phiki, a vendor this port
+has no sign-off for.
+
 ## Components
 
 The `Entry` base and every entry —

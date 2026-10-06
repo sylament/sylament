@@ -222,7 +222,7 @@ it('skips callBeforeStateDehydrated when shouldCallHooksBefore is false', functi
 });
 
 /*
- * The validation identity (M3 · 5): a root schema keeps its registered name, a
+ * The validation identity: a root schema keeps its registered name, a
  * component's child schema is keyed by that component's absolute key, and the
  * sticky pass resolves the second form through `getSchemaComponent()`.
  */

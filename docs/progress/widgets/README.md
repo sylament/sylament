@@ -11,6 +11,10 @@ The tables below are structure only; nothing has been audited yet.
 [`support/component.md`](../support/component.md) is the shape each detail file
 follows.
 
+One decision is taken ahead of the audit: `ChartWidget` and its typed subclasses
+render through `symfony/ux-chartjs`, a pre-approved Symfony package, rather than
+a port of Filament's own Chart.js wiring.
+
 ## Components
 
 The `Widget` base and every widget —

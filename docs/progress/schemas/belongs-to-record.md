@@ -15,7 +15,7 @@ object arm and `getData()` — carry state between that object and the schema's
 state bag. The per-component relationship hooks reroute a path through its own
 component when a plain property read or write cannot express the association
 ([the collapse of Filament's third pass](#the-relationship-hooks-are-consulted-by-the-two-mapping-edges-not-by-a-schema-level-walk)).
-The operation half of the same epic lives in
+The operation half lives in
 [`has-operation.md`](has-operation.md).
 
 One further Sylament-only trait is tracked here rather than in a file of its own,
@@ -222,7 +222,7 @@ than the `new`-built fallback).
 `fillPartially()`/`hydrateStatePartially()` are not ported at all, blocked on a
 UX LiveComponent partial-render equivalent. The object arm — the one this file
 would own, sourcing a partial fill from a record rather than an array — is a
-one-line addition to whichever epic lands them.
+one-line addition once they land.
 
 **Next step:** land it with the partial-render decision.
 
@@ -282,7 +282,10 @@ own record path stripped), whether its walks route a hook there, and a `true`
 turns the third refusal arm into a delegation. `getNestedRelationshipHooks()` on
 the root tier is the walk behind both halves — the owner answers the vouch from
 it and routes from it — which is what keeps a vouch from outliving the routing it
-promises.
+promises. Why the vouch is pulled by the mapper rather than handed over when the
+map is built is
+[stated with the hooks](#the-relationship-hooks-are-consulted-by-the-two-mapping-edges-not-by-a-schema-level-walk):
+at `fill()` a relationship repeater has no item schemas to hand over.
 
 Three rules decide which component a delegation reaches, and each is the reason a
 neighbouring shape still refuses.
@@ -718,10 +721,9 @@ constraints are still answered on the object the mapping produced.
 The callers are the write-side seams that sit between validation and mapping —
 the modal actions' `CreateAction`/`EditAction` bodies after
 `mutateDataUsing()`, the resource page bases after
-`mutateFormDataBeforeCreate()`/`mutateFormDataBeforeSave()`, and since M7 · 10
-`Select`'s option actions after theirs. Every zero-argument call site keeps the
-validating read. Since [M7 · 10](../roadmap.md#m7--composite-identifiers) each of
-those seams first refuses a path its hook added that no component maps
+`mutateFormDataBeforeCreate()`/`mutateFormDataBeforeSave()`, and `Select`'s
+option actions after theirs. Every zero-argument call site keeps the validating
+read. Each of those seams first refuses a path its hook added that no component maps
 ([below](#a-hook-added-path-no-component-maps-is-answered-for-the-write-seams-to-refuse)).
 
 ### A hook-added path no component maps is answered for the write seams to refuse
@@ -729,8 +731,7 @@ those seams first refuses a path its hook added that no component maps
 `findUnmappedAdditions(array $before, array $after): array` answers the leaf
 paths a write seam's hook added to the state it was handed that no component of
 the schema maps. It is `@internal`; its readers are the default write seams,
-which since [M7 · 10](../roadmap.md#m7--composite-identifiers) refuse a non-empty
-answer by name before mapping: both resource pages after their
+which refuse a non-empty answer by name before mapping: both resource pages after their
 `mutateFormData…()` hook, `CreateAction`, `EditAction` and `ReplicateAction`'s
 modal arm at the head of their default write closures — so `using()` is never
 guarded — and `Select`'s option actions. Before, such a value was dropped in
@@ -798,7 +799,7 @@ carried no distinct behaviour. It would also have left every
 and `getModelRootContainer()`; the `*On()` rows in
 [can-be-hidden.md](can-be-hidden.md) / [can-be-disabled.md](can-be-disabled.md);
 the record/operation notes in [action.md](../actions/action.md) and
-[has-actions.md](../actions/has-actions.md)), and M2's Resource pages need this
+[has-actions.md](../actions/has-actions.md)), and the Resource pages need this
 surface anyway — they bind a record, set an operation, and set a state path
 exactly as Filament's do. The "record semantics" Filament attaches beyond
 binding — relationships, `exists` probes, `unique`/`exists` rules — is the
@@ -819,8 +820,8 @@ Three reasons, judged against the [rename criterion](../renames.md):
   (`EditRecord`, `getRecord()`), tables, actions — speaks "record"; only these
   two traits speak "model". We collapse onto Filament's own more prevalent name.
 - **"Model" names an Eloquent concept that does not exist here.** Entities are
-  POPOs; the concept-name leaves with the ecosystem, like rule → constraint in
-  M1 · 1 — where the loud, searchable break was judged better than a kept name
+  POPOs; the concept-name leaves with the ecosystem, like rule → constraint —
+  where the loud, searchable break was judged better than a kept name
   over changed semantics.
 - **It removes a real API trap.** With two setters over one last-write-wins
   property, `->record($article)->model(Article::class)` reads as additive but
@@ -850,7 +851,7 @@ means the object arm is *precisely* "`attributesToArray()`, scoped to the
 schema's fields": having built the array it runs the existing array arm
 unchanged, so state casts, `afterStateHydrated`, and the null-fill pass behave
 identically to a hand-written `fill([...])`. The page-level
-`mutateFormDataBeforeFill()`/`beforeFill`/`afterFill` hooks arrive with the M2
+`mutateFormDataBeforeFill()`/`beforeFill`/`afterFill` hooks belong to the
 Resource pages, as page surface rather than schema surface.
 
 ### Reads are lenient, writes are strict
@@ -868,9 +869,7 @@ the null-fill pass then supplies the key. A null or scalar *intermediate*
 supplies null for the leaf rather than skipping it — the same bag either way,
 since the null-fill pass would supply the key.
 
-The state-cast exemption is the widening this paragraph used to say a
-state-cast epic would bring, and it is gated on the cast rather than on the type,
-because the cast is the whole reason the value is representable at all. A leaf
+The state-cast exemption is gated on the cast rather than on the type, because the cast is the whole reason the value is representable at all. A leaf
 declaring [`EnumStateCast`](enum-state-cast.md) — or any cast that unwraps a
 case, which `OptionStateCast` and `OptionsArrayStateCast` also do — passes,
 because the hydration pass immediately behind the read turns the instance into
@@ -878,8 +877,8 @@ the scalar backing value the browser will send back. A leaf with **no** cast, or
 one whose casts leave the value an object, does not: it skips and null-fills
 exactly as it did before the exemption existed.
 
-It shipped enum-shaped and was widened to every object leaf by M3·2, which needed
-a `DateTimeImmutable` property to reach a `DateTimePicker`: the predicate
+It shipped enum-shaped and was widened to every object leaf so a
+`DateTimeImmutable` property could reach a `DateTimePicker`: the predicate
 (`isObjectCarriedByStateCasts()`, formerly `isEnumCarriedByStateCasts()`) lost
 its `instanceof BackedEnum` pre-check and kept its body, so what earns the
 exemption is unchanged — running the component's own casts forward and finding a
@@ -909,8 +908,7 @@ over an enum-typed property filled to `null` on every mount — the write side
 worked, the read side dropped it — which is why the widening ships with the enum
 seam rather than after it.
 
-**The relationship fills ask the same question.** Since
-[M7 · 6](../roadmap.md#m7--composite-identifiers) the predicate is the
+**The relationship fills ask the same question.** The predicate is the
 component's own —
 [`Component::isObjectCarriedByStateCasts(object $value)`](../../../packages/schemas/src/Components/Concerns/HasState.php),
 public, `@internal` and without a Filament counterpart, its body moved unchanged
@@ -919,10 +917,10 @@ relationship's fill of its related record
 ([`EntanglesStateWithSingularRelationship`](entangles-state-with-singular-relationship.md#the-subtree-is-read-and-written-per-declared-leaf-not-as-an-attribute-bag))
 and a relationship
 [`Repeater`](../forms/repeater.md#a-relationship-repeater-keys-its-items-by-identity-and-diffs-the-collection)'s
-fill of its items. Before, both skipped **every** object leaf, so a date, an enum
-or a `Uuid` inside a relationship repeater item or a `Group::relationship()`
-filled `null`, and the next save — one that never touched the field — wrote NULL
-over the stored value; M7 · 6's own probing found it. The component is the home
+fill of its items. Were both to skip **every** object leaf, a date, an enum or a
+`Uuid` inside a relationship repeater item or a `Group::relationship()` would
+fill `null`, and the next save — one that never touched the field — would write
+NULL over the stored value. The component is the home
 because the answer is its casts, and because it is the one place all three
 askers reach: the root read runs in `Schema` scope, the other two in a
 component's. Each walk asks the field that reads the leaf — the last declared,
@@ -951,14 +949,13 @@ by calling it you have declared that this state is the object's data, and
 silently dropping a key would silently drop a user's edit. Two errors are
 softened. A missing intermediate *object*: `setOnRecord()` wraps it in a
 `LogicException` naming the path, because Symfony's own message explains nothing
-at this boundary. And, since [M7 · 10](../roadmap.md#m7--composite-identifiers),
-a property **no setter can change** — a `public readonly` one, or a private one
+at this boundary. And a property **no setter can change** — a `public readonly` one, or a private one
 behind a getter alone: left alone when it already holds the value the state
 writes, and refused by name — the path, the class, the two value types — when it
 holds another or none yet
 ([property-accessor.md](property-accessor.md#a-property-no-setter-can-change-is-left-alone-when-it-already-holds-the-value)).
 That is what lets a key a record's constructor sets save, where every such write
-was Symfony's `NoSuchPropertyException`; a property neither writable nor readable
+would otherwise be Symfony's `NoSuchPropertyException`; a property neither writable nor readable
 — a misspelled path — still surfaces it. The escape hatch for a page-only field
 is Filament's own idiom — `dehydrated(false)` removes it from `getState()` and
 therefore from the mapping. Ordering matters and is deliberate:
@@ -982,10 +979,8 @@ written (an unknown column then fails at `save()`), an unfillable one is dropped
 in silence, unless the application turned on
 `preventSilentlyDiscardingAttributes()` or `shouldBeStrict()` or left the model
 wholly guarded — then it is a `MassAssignmentException`, *Add fillable property
-[house, year] …*. The record path map plays `$fillable` here, and until
-[M7 · 10](../roadmap.md#m7--composite-identifiers) the toolkit took the silent
-branch. It now takes the strict one, unconditionally, and only for the keys a
-**hook** added: `getState()` keeps a key a client typed that no component
+[house, year] …*. The record path map plays `$fillable` here, and the toolkit takes the strict
+branch, unconditionally, and only for the keys a **hook** added: `getState()` keeps a key a client typed that no component
 declares, where Filament's prunes to the keys its validation answered
 ([schema.md](schema.md#getstate-validates-without-a-prepareforvalidation-mutation-layer)),
 so refusing every unmapped key would let a client force the refusal. The message
@@ -1083,8 +1078,7 @@ Filament runs relationships as a **third** pass. `Schema::saveRelationships()`
 and `Schema::loadStateFromRelationships()` walk the component tree calling the
 per-component callbacks, driven from `Schema::getState()` and again by the
 create pages once the model row exists. Sylament has no such walk for the
-**save** and does not port one; the load half came back with
-[M7 · 6](../roadmap.md#m7--composite-identifiers), as a re-read the host runs
+**save** and does not port one; the load half is a re-read the host runs
 after its own flush rather than a pass inside `getState()`
 ([below](#loadstatefromrelationships-is-the-hosts-reload-after-its-flush-and-takes-no-parameter)). The two mapping edges already walk the record path map —
 `fill()`
@@ -1131,7 +1125,7 @@ because the row is not there yet, and again from the create page after
 in-memory graph, and the caller flushes once afterwards: the whole submission —
 leaves and relationships alike — reaches the database as one transaction, and a
 validation failure throws before any of it, since `getData()` validates first.
-That single-flush shape is the epic's central choice, and it is what makes both
+That single-flush shape is the relation layer's central choice, and it is what makes both
 the second walk and the `exists` guard unnecessary.
 
 **`castStateAfterLoadingFromRelationships()` has no seam to hang on.** In
@@ -1156,9 +1150,8 @@ discovers from its **template** child schema at that moment instead, and from th
 per-item schema at save. A handoff would also park mutable state on the owner
 between map builds, and the map is built per edge and again by the
 [violation translator](violation-path-translator.md). That translator is
-untouched by the delegation, deliberately — and since
-[M7 · 6](../roadmap.md#m7--composite-identifiers) it reaches beneath an owner
-by another route, the last paragraph of this section.
+untouched by the delegation, deliberately — and it reaches beneath an owner by
+another route, the last paragraph of this section.
 
 The correction that comes with it, because the shape it describes is easy to
 misread and this file said it wrong: Filament's own recursion is **not** limited
@@ -1169,19 +1162,18 @@ tree walk it sits inside, descends children-first over **every** item's schema
 before the item's own save runs, so the behaviour recurses for updated items too.
 Read the walk, not the method.
 
-**The translator is handed what the map drops beneath an owner.** Until
-[M7 · 6](../roadmap.md#m7--composite-identifiers), under an entangled owner a
-nested field's record-level violation folded at the owner's path, because the
-map carries only the owner — and a `Group` renders no error of its own path, so
-that was a 422 with nothing on screen. `getRecordPathMap()` is now a wrapper over
+**The translator is handed what the map drops beneath an owner.** Over the map
+alone, under an entangled owner a nested field's record-level violation would
+fold at the owner's path, because the map carries only the owner — and a `Group`
+renders no error of its own path, so that would be a 422 with nothing on screen.
+So `getRecordPathMap()` is a wrapper over
 a private `collectRecordPaths()`, which answers the map beside the paths it
 dropped beneath a subtree owner, computed by the one walk that always computed
 them, and `getRecordViolationPathTranslator()` builds the translator over both.
 So `plaque.title` lands as `data.plaque.title`, under its field, with no contract
 member added. A class-level violation on the related record names no path inside
-it and still folds at the owner, which renders nothing, so since
-[M7 · 11](../roadmap.md#m7--composite-identifiers) the host files it at the
-schema's own path instead, where the page and the modal render it
+it and still folds at the owner, which renders nothing, so the host files it at
+the schema's own path instead, where the page and the modal render it
 ([why](violation-path-translator.md#a-message-is-filed-only-under-a-component-that-shows-its-own-errors)).
 Pinned by
 [`BelongsToRecordRelatedRecordTest`](../../../packages/schemas/tests/Integration/Concerns/BelongsToRecordRelatedRecordTest.php)
@@ -1198,7 +1190,7 @@ run inside `getData()`, against an in-memory graph nothing has flushed yet — s
 the reload is the **host's** to call once its flush has run.
 [`EditRecord::save()`](../panels/README.md#editrecord) calls
 `$schema->loadStateFromRelationships()` after `handleRecordUpdate()` and before
-`afterSave`, since [M7 · 6](../roadmap.md#m7--composite-identifiers). The name
+`afterSave`. The name
 is Filament's; the `$shouldHydrate` parameter is dropped, because the one caller
 that matters passes `true` — it always hydrates.
 
@@ -1212,12 +1204,11 @@ runs no statement: it reads what the flush left in memory.
 
 It exists because a relationship [`Repeater`](../forms/repeater.md) keys an
 item the add action minted by a per-request uuid until something reads the
-collection back, and before M7 · 6 nothing did — so the next save constructed
-that item again. For an assigned key the second save was an
-`EntityIdentityCollisionException` 500, and under M7 · 6's taken-key rule it
-would have been a false *"This value is already used."* on the item just saved;
-for a generated id every added item was deleted and re-inserted on **every**
-save. With the reload the second save writes nothing and a generated id keeps
+collection back, and without the reload nothing does — so the next save would
+construct that item again. For an assigned key the second save would be an
+`EntityIdentityCollisionException` 500, and under the taken-key rule a false
+*"This value is already used."* on the item just saved; for a generated id every
+added item would be deleted and re-inserted on **every** save. With the reload the second save writes nothing and a generated id keeps
 its value.
 
 Four costs, all enumerated: a relation-backed component's `afterStateHydrated`
@@ -1228,19 +1219,18 @@ relationship repeater item saved on a blank key fails the save itself.
 The reload hands a relationship repeater's items and a singular relationship's
 group back as the record gives them, so a `dehydrated(false)` field there — state
 the save never wrote — reads what the record gives, `null` where the record holds
-no such property, after every successful save, where before M7 · 6 it kept what
-the user typed. That third cost is Filament's own behaviour, since its reload
+no such property, after every successful save, rather than keeping what the
+user typed. That third cost is Filament's own behaviour, since its reload
 runs inside the `getState()` its save makes, and it is accepted rather than
-worked around; the [roadmap's ledger](../roadmap.md#m7--composite-identifiers)
-records it. The fourth is the reload's mint. A relationship repeater item keyed
+worked around. The fourth is the reload's mint. A relationship repeater item keyed
 by a single natural string key that no `prePersist` fills, under a key field the
 form does not `required()`, can be saved blank: a blank component is incomplete
-to both key rules, so the flush inserts the `''` row as it did before M7 · 6. The
+to both key rules, so the flush inserts the `''` row. The
 reload then keys the item through `RecordKey::of()`, which refuses the blank
 component with a `LogicException` after the commit — so the save's own response
-is the 500, where before it answered *Saved* and the next request's fill was the
-500, the row written either way. `required()` on the key field is the
-application's guard, and the ledger records it. `EditAction`, `CreateAction` and
+is the 500, where without the reload it would answer *Saved* and the next
+request's fill would be the 500, the row written either way. `required()` on the
+key field is the application's guard. `EditAction`, `CreateAction` and
 the option modals unmount on success or refill for create-another, so none needs
 the reload. Pinned by
 [`BelongsToRecordReloadTest`](../../../packages/schemas/tests/Unit/Concerns/BelongsToRecordReloadTest.php)
@@ -1311,7 +1301,7 @@ branches, on three grounds — the third is the one that changed:
 Construction needs no declaration of its own: `record(SomeClass::class)` plus
 nested state paths is the entire user-facing flow, and the demo's vivifying
 `Article::getAuthor(): AuthorProfile` workaround — the one that produced an empty
-`AuthorProfile` on every save and started this epic — was deleted rather than
+`AuthorProfile` on every save — was deleted rather than
 replaced. What remains loud: a declared class whose constructor takes required
 arguments throws rather than being half-built, and Doctrine's constructor-bypass
 trick is deliberately not copied (`doctrine/instantiator` is not in the graph, and
@@ -1442,8 +1432,8 @@ authority at exactly the unbuilt surface (`dehydrated(false)`, multi-value
 fields, associations) where we want "not supported" to fail loudly — is answered
 by Serializer's `attributes` context option, which takes a **nested** tree: a
 schema can hand it the same declared leaf paths `getRecordPathMap()` already
-produces, and the schema stays in authority over what maps. That was checked when
-this epic reopened the question, not assumed.
+produces, and the schema stays in authority over what maps. That was checked, not
+assumed.
 
 **Surviving, and decisive on its own.** `deep_object_to_populate` updates
 singular children but **not arrays of objects** — it produces a fresh instance
@@ -1451,10 +1441,10 @@ per item. For Doctrine that is not a mapping error but a duplicate INSERT at
 flush, plus deletion of the originals under `orphanRemoval`; measured on a
 two-tag `Post`, re-saving after renaming one tag and deleting the other yielded
 one brand-new `Tag` row and reused neither original. That is precisely the
-collection shape the `Repeater` and relationship epics need, and it is the shape
+collection shape the `Repeater` and its relationship mode need, and it is the shape
 this mapper [refuses outright](property-accessor.md#a-missing-singular-intermediate-is-constructed-an-object-collection-is-refused)
 rather than getting wrong. Since identity matching is a state-shape decision
-those epics have to make anyway, adopting Serializer would buy the singular half
+the repeater has to make anyway, adopting Serializer would buy the singular half
 we already have and leave the hard half untouched — at the cost of a second
 exception vocabulary. A lesser point still holds: `normalize($record)` is
 over-broad against the read-scoping stance and initializes Doctrine proxies
@@ -1472,7 +1462,7 @@ container resolving an Eloquent model class. Symfony's container cannot make an
 unbound class, and an entity is not a service, so Sylament builds the class
 itself, through `PropertyAccessor::constructRecord()`.
 
-For a constructor with no required parameter that is `new`. Since M7 · 7, a
+For a constructor with no required parameter that is `new`. A
 constructor that requires arguments gets a `LogicException` naming the class
 and the way out: *Cannot map a new record onto the schema:
 App\Entity\Membership requires constructor arguments …*. PHP's own
@@ -1481,8 +1471,7 @@ relationship arm builds its record the same way. A class-string naming a class
 with a non-public constructor, or no class at all, surfaces as
 `ReflectionException`, where `new` threw PHP's `Error`.
 
-The resource create page builds its record itself since
-[M7 · 10](../roadmap.md#m7--composite-identifiers):
+The resource create page builds its record itself:
 `CreateRecord::makeRecord(array $data): object`, called once with the validated
 and mutated form data, answers the record the form is then mapped onto, so a
 record whose constructor takes arguments is built there; its default builds the

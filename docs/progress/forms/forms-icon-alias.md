@@ -61,13 +61,7 @@ the write-up in [Details](#details), deleted once the row is **done**, or
 
 The thirty values are pinned by
 [`FormsIconAliasTest`](../../../packages/forms/tests/Unit/Twig/FormsIconAliasTest.php),
-which is what makes the de-prefixing below a decision rather than a typo. Nine
-of the thirty landed together, ahead of the code that reads them: the sweep that
-closes M3 declares the key-value pair, the text input's three affix actions and
-the repeater's four item actions in one change, so the fields built across the
-rest of that epic resolve an alias that already exists rather than each adding
-its own — the repeater's four, whose actions already shipped, were wired to
-theirs immediately. Three of the thirty reach their icon through a template. Two
+which is what makes the de-prefixing below a decision rather than a typo. Three of the thirty reach their icon through a template. Two
 are the boolean pair, which `ToggleButtons`' two templates pass to the `Icon`
 tag's `alias` prop, resolving
 [at render rather than at `boolean()` call time](toggle-buttons.md#the-boolean-icons-resolve-their-alias-at-render-not-at-call-time),

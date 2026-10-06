@@ -78,7 +78,7 @@ across a `save()`),
 (a composing page still marking nothing while its panel's knob is off) and
 [`Integration/SylamentPanelsBundleTest`](../../../packages/panels/tests/Integration/SylamentPanelsBundleTest.php)
 (both built files resolving under `@sylament/panels`). The `beforeunload` prompt
-itself is browser behaviour and is verified by the epic's browser pass, not by a
+itself is browser behaviour and is verified in a browser pass, not by a
 test.
 
 ## Semantics
@@ -153,7 +153,7 @@ and `guardActions` (the panel knob).
    `guardActions` is on — Filament's `setUpUnsavedActionChangesAlert` over
    `HasActions`' existing prop. The prop it reads is the page host's own: a nested relation manager keeps its
    own `mountedActions`, so a modal opened from a manager does not arm the page
-   guard — Filament's page-level alert has the same scope (observed in the M6 · 2
+   guard — Filament's page-level alert has the same scope (observed in a
    browser pass, recorded rather than fixed).
 
 The controller only ever **reads**: `getData()`, `valueStore.getDirtyProps()`
@@ -248,7 +248,7 @@ state survives with it, and the guard stays armed. So navigating away from a
 restored page with unsaved edits still prompts, which is the behaviour the guard
 exists for.
 
-Recorded because the epic's design note predicted the opposite (a restore
+Recorded because the opposite is the natural prediction (a restore
 re-baselining and therefore *not* prompting); the shipped controller does not
 re-baseline, and the browser pass is what confirms which of the two the user
 sees.

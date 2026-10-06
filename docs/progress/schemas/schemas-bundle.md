@@ -74,7 +74,7 @@ and guarded by
 [`isAssetMapperAvailable()`](../../../packages/support/src/SylamentBundle.php) so
 a consumer without AssetMapper is not forced to install it).
 
-That registration exists as of M3 · 5, together with the
+That registration comes together with the
 [`@sylament/schemas` pnpm workspace](#the-schemas-package-grew-a-js-workspace-of-its-own)
 it points at — the sixth workspace in the monorepo. Three of vendor's four JS
 components are ported (`index.js`'s `filamentSchema` root handler as the `schema`
@@ -128,8 +128,7 @@ with the reverse edge (`actions` requiring `sylament/schemas`, for
 direct `Schemas\Components\Component`/`Schemas\Schema` type-hints — see
 [actions-bundle.md](../actions/actions-bundle.md#every-package-declares-what-its-own-source-needs-transitives-notwithstanding))
 in the same commit, ahead of the schemas-side code that goes on to import
-`Action`/`ActionGroup` throughout the rest of the schemas↔actions integration
-epic. Filament's own graph already has this cycle — `filament/schemas` requires
+`Action`/`ActionGroup` throughout the schemas↔actions integration. Filament's own graph already has this cycle — `filament/schemas` requires
 `filament/actions` directly, `filament/actions` reaches back to
 `filament/schemas` only transitively, through `filament/forms` — so this is not
 a new coupling, just the direct form of an edge Filament already has, declared
@@ -141,8 +140,8 @@ The provider's `Testable::mixin(new TestsSchemas)` and the `on('call', ...)` hoo
 that aborts unauthorized `_startUpload` / `_finishUpload` / `_uploadErrored` /
 `_removeUpload` calls are Livewire-runtime concerns. The Testable mixin is a
 deliberate non-goal (**skipped** — Sylament tests are Pest/`KernelTestCase`, not
-Livewire `Testable`). The file-upload security hook is **skipped** too, and M3 · 7
-is what settled that: uploads reach a schema component through a single
+Livewire `Testable`). The file-upload security hook is **skipped** too, because
+uploads reach a schema component through a single
 `#[LiveAction]`,
 [`uploadSchemaComponentFile()`](interacts-with-schemas.md#uploadschemacomponentfile-carries-the-bytes-beside-the-seam),
 which is gated on the `AcceptsUploadedFiles` contract and reads one named
@@ -155,9 +154,8 @@ does not exist here.
 
 `packages/schemas/assets/` is a pnpm workspace (`@sylament/schemas`, `private`),
 the sixth, and it is where the three Stimulus controllers live. Filament's
-equivalent JS ships from `filament/schemas` too, so the placement is parity — the
-roadmap line "support ships the tab chrome **and** its Stimulus controller" was
-re-read at design time: support ships the chrome (`Tabs`/`TabsItem`/
+equivalent JS ships from `filament/schemas` too, so the placement is parity — and
+the split follows the seams: support ships the chrome (`Tabs`/`TabsItem`/
 `LoadingIndicator` + `tabs.css`), and the *switching* controller has to be here,
 because deferred badges go through the schemas seam and support must not import
 schemas' helper.
@@ -425,8 +423,8 @@ the behaviour differs are worth naming rather than leaving to a diff:
 ### The schema-component-method helper lives here now
 
 [`utils/schema_component_method.ts`](../../../packages/schemas/assets/src/utils/schema_component_method.ts)
-moved from `packages/forms/assets/` in M3 · 5, unchanged. M3 · 4 had recorded that
-it moves "on the second consumer"; Wizard's `nextStep` and Tabs'
+moved from `packages/forms/assets/` unchanged when it gained a second consumer;
+Wizard's `nextStep` and Tabs'
 `getDeferredTabBadges` are that consumer, and the helper is the browser half of
 the [schemas host seam](has-schemas.md) — its home was always going to be here.
 Forms' `select` controller now imports it as
@@ -441,8 +439,8 @@ exports `resolveLiveHost(element)` — the closest `[data-controller~="live"]`
 ancestor resolved through UX Live's registry, retried once after that root's
 `live:connect` because `getComponent()` polls for only ~55 ms and the live
 controller may connect after ours. It is the select controller's private
-`resolveHost()` lifted and generalised (that controller keeps its own copy this
-epic; promoting it is a sweep item recorded in
+`resolveHost()` lifted and generalised (that controller keeps its own copy;
+promoting it is recorded in
 [forms-bundle.md](../forms/forms-bundle.md#the-select-controller-binds-a-port-of-filaments-select-utility-to-the-live-host)).
 [`utils/cloak.ts`](../../../packages/schemas/assets/src/utils/cloak.ts) is a
 **10-line duplicate** of support's: the per-file build ships specifiers verbatim,

@@ -334,10 +334,9 @@ it('runs no statement for a key that names no record', function (): void {
     expect($resource->resolveRecordRouteBinding('plain~about'))->toBeInstanceOf(Imprint::class)
         ->and($recorder->statements())->toHaveCount(1);
 
-    // The single-identifier arm is the one M1 moved, and it is the one SQLite
-    // would answer null for either way: `05` aliases the record under a raw
-    // bind and `abc` matches nothing at all, so the pin is that neither
-    // reaches the database.
+    // The single-identifier arm is the one SQLite would answer null for either
+    // way: `05` aliases the record under a raw bind and `abc` matches nothing
+    // at all, so the pin is that neither reaches the database.
     $catalogues = compositeSeamResource(CatalogueResource::class);
 
     $recorder->reset();

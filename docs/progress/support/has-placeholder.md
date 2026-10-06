@@ -51,5 +51,4 @@ placeholder is rendered content and takes `Markup`. Repointing them would widen 
 published signature.
 
 The dedupe is therefore a deliberate non-goal for now rather than debt: it is
-revisited only if a fourth copy is wanted, and the M4 · 4 spec parked it behind
-M3 · 9, whose lanes own the forms files a repoint would touch.
+revisited only if a fourth copy is wanted.

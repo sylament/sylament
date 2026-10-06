@@ -5,8 +5,7 @@ multi-value field carries: `minItems()` / `maxItems()` configure them, `getMinIt
 / `getMaxItems()` read them back (each closure-evaluable), and `getItemsCount()`
 counts the field's raw state.
 
-Three fields compose it. `Repeater` has since the
-[array-backed repeater epic](../roadmap.md), where the trait was folded into
+Three fields compose it. `Repeater` was the first, while the trait was still folded into
 [`repeater.md`](repeater.md); `CheckboxList` is the second consumer, which is what
 promoted it to a file of its own per
 [one row per file](../README.md#one-row-per-file-one-file-per-thing); and

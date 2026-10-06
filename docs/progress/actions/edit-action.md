@@ -121,8 +121,7 @@ persist-and-flush pair is the port's, and
 [`Panels\Resources\Pages\EditRecord::handleRecordUpdate()`](../panels/README.md#editrecord)
 is where it also lives page-side.
 
-**A changed key is refused, not written** — since
-[M7 · 6](../roadmap.md#m7--composite-identifiers). `getData()` ends in the
+**A changed key is refused, not written.** `getData()` ends in the
 record check, whose first pass puts back every identifier field the write moved
 and answers *"This value cannot be changed."*
 ([the rule](../schemas/can-be-validated.md#a-changed-key-is-refused-and-put-back-not-handed-to-doctrine)).
@@ -138,15 +137,13 @@ what holds there.
 
 **The record check reads the schema's own reader, rebound.** The default write
 binds the mounted schema's reader to the manager the flush writes through with
-[`withEntityManager()`](../schemas/association-reader.md) — a clone — where it
-built a `new AssociationReader($manager)` until
-[M7 · 10](../roadmap.md#m7--composite-identifiers). So a reader service an
+[`withEntityManager()`](../schemas/association-reader.md) — a clone — rather
+than building a `new AssociationReader($manager)`. So a reader service an
 application subclassed or decorated is the one the changed-key, blank-key and
 taken-key passes ask, and the table query's manager is the one they read.
 
-**A key `mutateDataUsing()` adds that no component maps is refused by name** —
-since [M7 · 10](../roadmap.md#m7--composite-identifiers), where it was dropped in
-silence. The first statement of the default write compares the hook's answer
+**A key `mutateDataUsing()` adds that no component maps is refused by name**,
+not dropped in silence. The first statement of the default write compares the hook's answer
 with the validated state it was handed and throws a `LogicException` naming the
 action, the hook and each added path, before the record is touched; an
 overwritten key, a key a client typed into the data bag, a key a hidden

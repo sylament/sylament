@@ -20,7 +20,7 @@ use Symfony\UX\LiveComponent\Attribute\LiveProp;
 use Symfony\UX\LiveComponent\DefaultActionTrait;
 
 /**
- * Every depth this epic reaches, on one builder over a derived-identity root: a
+ * Every composite query depth, on one builder over a derived-identity root: a
  * fetch-joined collection, a sortable relationship count, a relation search
  * across a to-many hop and one across a to-one hop that is itself an identifier
  * field, plus the row action, by-key bulk delete and reorder a keyed row

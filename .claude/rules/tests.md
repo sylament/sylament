@@ -16,6 +16,8 @@ description: How a package's Pest suite is laid out, booted and wired, and where
 - **Use `$this::` for `KernelTestCase` statics** inside `it()`/`test()` closures (`$this::getContainer()`), never `static::` or `self::`: Pest binds `$this` to the configured `TestCase`, while `static::` resolves against the closure's scope.
 - **Do not call `bootKernel()`** just to get a container, because `getContainer()` boots on demand; boot explicitly only to pass options (`$this::bootKernel(['environment' => 'icons'])`) or to hold the kernel itself.
 - **Support's Twig components are render-tested from other suites,** because support's fixture kernel registers no TwigComponentBundle; `composer test:support` alone never renders them.
+- **Assert a toast through a live request** (`createLiveComponent()` and `call()`): a notification is a session flash, and an in-process call on a host has no request to carry a session, so it throws before it can toast.
+- **When a change lifts a refusal, rewrite the tests that pinned it into tests that pin the support,** never delete them, so the shape the refusal guarded stays covered.
 - **The placeholder bundles** (`infolists`, `widgets`) keep their `Feature/ExampleTest.php` only until real tests land, which then take `Unit/` and `Integration/`; never add to `Feature/`.
 
 Background: `docs/internals/test-infrastructure.md`.

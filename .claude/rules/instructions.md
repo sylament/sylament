@@ -7,7 +7,7 @@ description: How instruction files are placed, scoped, sized and kept free of hi
 # Instruction-file rules
 
 - **One home per fact.** Grep `CLAUDE.md` and `.claude/` before adding a line; a duplicate drifts, and an agent cannot tell which copy wins.
-- **Placement.** A fact every task needs goes in `CLAUDE.md`; one about certain files goes in the rule whose `paths:` cover them; a multi-step procedure becomes a skill; a reason, an alternative or history goes to `docs/progress/` or `docs/internals/`; status goes to `docs/progress/roadmap.md`.
+- **Placement.** A fact every task needs goes in `CLAUDE.md`; one about certain files goes in the rule whose `paths:` cover them; a multi-step procedure becomes a skill; a reason, an alternative or history goes to `docs/progress/` or `docs/internals/`; a component's status is its trail row, and a plan, a backlog or what to build next stays out of the repository.
 - **Rules, not history.** No milestone tags, dates, commit hashes, card counts or lists of what shipped: an agent cannot act on them and they bury the rules. The check rejects tags, ISO dates and hash-like tokens.
 - **One rule per line:** the imperative, then one clause of why. The why is what lets a reader apply the rule to a case it does not name; anything longer is background and belongs in `docs/`.
 - **Every rule file** has frontmatter with `paths:` (a YAML list) and `description:` (one line), and ends with a `Background:` line. A rule without `paths:` loads in every session, which is the cost these files exist to avoid, so the check rejects it.

@@ -2,7 +2,7 @@
 
 Sylament ports Filament's PHP packages to Symfony: nine bundles under `packages/`, one Composer project, one pnpm workspace.
 `support` is the base. `schemas`, `actions` and `forms` require one another, `tables` builds on all three, `notifications` on `actions`, and `panels` composes everything; `infolists` and `widgets` are placeholders.
-What has shipped and what comes next is tracked in `docs/progress/roadmap.md`, and this file never restates it.
+A component's status is its row in the port trail; what to build next is decided outside the repository, and this file restates neither.
 
 ## Map
 
@@ -53,7 +53,7 @@ Two principles outrank every rule below; their tests and worked cases are in `do
 - `composer test:mysql`, `composer test:postgresql` and `composer test:mutation` green at landing; an inner loop may stay on SQLite.
 - `pnpm test:types` and `pnpm test:lint` green.
 - `composer format` applied; no hand-formatting.
-- A user-facing feature updates the demo showcase (cards, descriptions, the "Not built yet" footnotes) before its roadmap row flips.
+- A user-facing feature updates the demo showcase (cards, descriptions, the "Not built yet" footnotes) before its trail row flips to done.
 - Closing a milestone: run the `docs-audit` skill.
 - Instruction files current: a change that makes a rule or skill wrong, or sets a convention for files no rule covers, updates or creates the `.claude/rules/` or `.claude/skills/` file in the same change (shape: `.claude/rules/instructions.md`).
 
@@ -83,7 +83,8 @@ Rules in `.claude/rules/` load by themselves when you read or edit a file their 
 | about certain files | the `.claude/rules/` file whose `paths:` cover them, or a new one |
 | a multi-step procedure | `.claude/skills/<name>/SKILL.md` |
 | a reason, an alternative, history | `docs/progress/` or `docs/internals/` |
-| status | `docs/progress/roadmap.md` |
+| a component's status | its row in `docs/progress/` |
+| a plan, a backlog, what to build next | outside the repository |
 | a how-to for application developers | not written yet: the behaviour goes in its trail entry |
 
 Instruction files carry rules, never history; the details are in `.claude/rules/instructions.md`.

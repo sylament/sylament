@@ -1,7 +1,8 @@
 # Progress
 
-The working tracker for the Filament → Sylament port: what the rules are, what
-is done, and what is next.
+The working tracker for the Filament → Sylament port: what the rules are, and
+what is done and why, component by component. What to build next is decided
+outside the repository.
 
 This is the system of record for the Filament → Sylament port.
 
@@ -101,15 +102,11 @@ no `## Semantics` section keeps saying two.
   filled-in example: a surface table on top, per-row detail sections beneath,
   divergences at the bottom.
 
-Two files cut across every package rather than belonging to one:
+One file cuts across every package rather than belonging to one:
 
 - [`renames.md`](renames.md) — the global rename table, plus the systematic
   idiom and namespace translations that are **not** renames. Divergence sections
   link it rather than repeating an entry.
-- [`roadmap.md`](roadmap.md) — the build order: the milestone ladder, the epics
-  inside each milestone, and the `Now` cursor naming the next epic to pick up.
-  The tables here answer _how complete is the port_; the roadmap answers _what
-  do we build next_.
 
 ## Statuses
 
@@ -128,6 +125,10 @@ something we _want_ for parity and will build once the prerequisite in _Blocked
 by_ lands — even where we could stub it now. **skipped** is something we have
 decided the toolkit does not need. An item we simply have not reached yet, with
 nothing to wait on, is **todo**.
+
+A class or member Filament marks `@deprecated` is **skipped**, never ported: the
+port ships no deprecated surface, and the row names the replacement Filament
+points to.
 
 Divergence is **not** a status — it is orthogonal, and any row can carry one.
 A row we ported differently from Filament stays **done** and links its reasoning

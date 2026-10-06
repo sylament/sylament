@@ -37,10 +37,12 @@
         "symfony/asset-mapper": "^8.1",
         "symfony/cache": "^8.1",
         "symfony/doctrine-bridge": "^8.1",
+        "symfony/finder": "^8.1",
         "symfony/framework-bundle": "^8.0",
         "symfony/security-core": "^8.1",
         "symfony/test-pack": "^1.2",
         "symfony/twig-bundle": "^8.1",
+        "symfony/yaml": "^8.1",
         "vincentlanglet/twig-cs-fixer": "^4.0"
     },
     "autoload": {

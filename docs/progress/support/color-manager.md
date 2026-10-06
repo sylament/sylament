@@ -117,6 +117,14 @@ Filament's behaviour and is now ours; see
 [styling.md rule 6](../../styling.md) and
 [decision 6](#an-unknown-colour-no-longer-falls-back-to-primary) below.
 
+The map a policy returns is keyed from a closed set of eight — `bg` and `text`,
+each also as `hover:`, `dark:` and `dark:hover:` — and that set exists only as
+the `match` in `getComponentClasses()`. For a known colour name any other key
+throws `LogicException: Invalid color mapping key [<key>].` at render time. The
+inline-shade-map path, `getComponentCustomStyles()`, checks no key: it emits
+whatever the policy returns as a `--sy-<key>` declaration, colons turned to
+dashes, and a key no stylesheet reads paints nothing.
+
 ### The config node is a variable prototype with key normalisation off
 
 `sylament.colors` mirrors `register()`'s
@@ -130,9 +138,11 @@ node: `ArrayNode::preNormalize()` rewrites any key containing a dash and no
 underscore, so a palette registered as `brand-alt` would silently become
 `brand_alt` and match no class the templates emit.
 
-The `Color::` constants are unreachable from YAML, so PHP-side registration
-stays available by injecting the service —
-`$colorManager->register(['primary' => Color::Rose])`.
+The `Color::` constants reach the node from YAML too: Symfony's
+`YamlFileLoader` parses config files with `Yaml::PARSE_CONSTANT`, so
+`rose: !php/const Sylament\Support\Colors\Color::Rose` under `sylament.colors`
+registers the catalog palette. PHP-side registration stays available by
+injecting the service — `$colorManager->register(['primary' => Color::Rose])`.
 
 ## Divergences
 
@@ -294,6 +304,15 @@ Sylament keeps the six default palettes in the shipped stylesheet
 for a palette redefined or newly named, a `.sy-color-<name>` swap class for a
 name the stylesheet has none for, and an **empty string** — not a bare `<style>`
 element — when nothing is registered.
+
+Two consequences follow from the floor and the registry being separate. Overriding
+a `--sy-<palette>-<shade>` token in an application's own CSS changes the value
+painted but not the shade a policy picks, because the policies measure the
+palette `ColorManager` holds — so anything beyond a nudge is registered instead.
+And on a page that never calls `sylamentStyles()`, a newly registered name paints
+nothing, since no `.sy-color-<name>` rule points the dynamic palette at it, while
+a redefined default keeps the floor's shipped values in CSS with its shades picked
+against the new palette.
 
 The trade is deliberate. Filament gets away with requiring the directive because
 the panel owns the page layout and its scaffolding generates one containing it;

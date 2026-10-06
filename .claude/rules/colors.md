@@ -12,6 +12,7 @@ description: "How a colour is named, how a contrast policy picks its shade, and 
 - **A policy implements `HasColor::getColorMap(array $color): array<string, int>` and states intent, not a number:** `ComponentColorMap::make($color)->slot('text', surface: $color[50], fallback: 900)` means "readable against this palette's shade 50".
 - **Register every policy as a public service:** each `Colors/Components/` glob a bundle declares carries `->public()`, because `ColorManager` resolves a policy by class-string through `Container::get()`, which cannot reach a private service.
 - **Declare one glob per directory level** the package's policies occupy (`Colors/Components/*.php`, `*/*.php`, `*/*/*.php`); a policy nested one level deeper than any glob is never registered.
+- **Key a policy map only by the eight slots** `bg` and `text`, each also `hover:`, `dark:` and `dark:hover:`; `ColorManager` maps each to a shade utility class and throws on any other key for a named colour, while the inline shade-map path writes any key out as a `--sy-` declaration (colons to hyphens) without checking.
 - **A policy returning `[]` is complete, not a stub:** the two base classes `sy-color` and `sy-color-<name>` are built before the map is read, so an empty map still swaps the palette and CSS fixes the shade.
 - **`HasDefaultGrayColor` makes `gray` emit nothing,** so the component's CSS must paint gray in its `:not(.sy-color)` branch.
 - **An unknown name emits the two base classes and no shade class;** there is no fallback palette, and it renders uncoloured on purpose.

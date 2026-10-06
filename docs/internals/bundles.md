@@ -8,6 +8,10 @@ How a Sylament bundle class is put together, and why the wiring rules in `.claud
 
 The guard lets a consuming application run without `symfony/asset-mapper`. The monorepo installs it only as a root dev dependency, so the test kernels exercise the prepended path while no package manifest requires it. See `docs/progress/support/support-bundle.md`, section "Asset registration".
 
+## Why does an application register the bundles by hand?
+
+Sylament has no Flex recipe, and Flex's fallback does not fire either. For a package without a recipe, Flex (read at v2.11.0) builds an auto-generated recipe from `SymfonyBundle::getClassNames()`, whose `isBundleClass()` accepts a candidate class only when its file contains the string `Symfony\Component\HttpKernel\Bundle\Bundle` or `Symfony\Component\HttpKernel\Bundle\AbstractBundle`. Every concrete bundle extends `SylamentBundle` and names neither; only `packages/support/src/SylamentBundle.php` does, and it is abstract. So Flex registers none of them, and an application lists each one it installs in `config/bundles.php`, as the demo does.
+
 ## Why does `support` own the `sylament` alias?
 
 Settings the whole toolkit shares need one root, and `support` is the package whose services back them. `SylamentSupportBundle` sets `protected string $extensionAlias = 'sylament'`. Without it, `Symfony\Component\DependencyInjection\Kernel\AbstractBundle::getContainerExtension()` derives the alias from the class name minus `Bundle`, underscored: `sylament_support`.

@@ -239,7 +239,12 @@ definitions after the extension merge
 (`MergeExtensionConfigurationPass::process()` captures them up front and calls
 `addDefinitions()` last). `Integration/Colors/PolicyOverrideTest` pins both
 halves — shipped behaviour in the default environment, substituted behaviour in
-`color_policy` — and fails if the globs stop being `->public()`. The
+`color_policy` — and fails if the globs stop being `->public()`. A redefinition
+replaces the extension's definition wholesale, `->public()` included, so it must
+declare itself public or `Container::get()` cannot reach it; the `color_policy`
+environment in the test
+[`Kernel`](../../../packages/support/tests/Fixtures/Kernel.php) does exactly
+that. The
 consumer-facing write-up is
 [configuration.md](../../configuration.md#changing-how-a-component-picks-its-shades).
 

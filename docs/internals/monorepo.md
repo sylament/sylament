@@ -6,6 +6,8 @@ How the nine bundles share one Composer project, why the two lockfiles are treat
 
 The repository root is the only Composer project. Its `composer.json` declares one path repository, `packages/*`, and requires every bundle as `self.version`, so Composer symlinks each package into the root `vendor/` and resolves the whole graph once. There is one lockfile and one `vendor/`. A `packages/*/vendor/` or `packages/*/composer.lock` is leftover cruft from running Composer inside a package; delete it.
 
+The root package is `sylament/sylament`, and it is also what an application working from a checkout requires. The demo declares two path repositories, `../sylament` and `../sylament/packages/*`, and requires `sylament/sylament` at `@dev`; the root's `self.version` requirements then pull in all nine bundles, and Composer symlinks each one, so an edit in the monorepo is live in the application at once.
+
 Sub-package manifests carry production `require` entries only, meaning their real inter-bundle and third-party dependencies. Every dev tool goes in the root `require-dev`.
 
 ## Lockfile policy

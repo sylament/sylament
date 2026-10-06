@@ -183,10 +183,14 @@ where the column compares by value or the field's own writer normalises. A
 `Types::GUID` half on PostgreSQL is the first: the column is a native `uuid`
 compared by value, `GuidType` reads a string back untouched, so an uppercase
 spelling passes the shape check and the print-back rule and resolves the record
-the lowercase key names. A type whose writer normalises is the second, on every
-platform: the M7 · 9 fixture `CaselessType` lower-cases on write and reads back
-untouched, so `AB` and `Ab` both print back to themselves, both bind as `ab`,
-and `toIdentifier()` answers the non-canonical map it was handed. Both are
+the lowercase key names, while a braced or 32-hex spelling fails the shape
+check. That is how it behaved before M7, so lower-casing the component on a
+native-guid platform would turn that accepted spelling into a new single-key
+behaviour change; the behaviour is kept and recorded instead. A type whose
+writer normalises is the second, on every platform: the M7 · 9 fixture
+`CaselessType` lower-cases on write and reads back untouched, so `AB` and `Ab`
+both print back to themselves, both bind as `ab`, and `toIdentifier()` answers
+the non-canonical map it was handed. Both are
 self-aliasing — the row reached is the one the sender addressed. Four
 residuals are recorded rather than closed; the fourth is
 [a type that cannot read its own printed form](#a-type-that-cannot-read-its-own-printed-form-mints-keys-that-never-decode),
@@ -244,7 +248,10 @@ normalises and the print-back rule leaves them one accepted spelling; a plain
 that same collation, so the record a loose spelling reaches is the one the
 sender was already addressing and no scope is escaped — and an application that
 wants strictness declares the identifier column `BINARY`/`utf8mb4_bin` or
-normalises in the entity.
+normalises in the entity. Two new records whose keys the collation equates,
+saved in one form, pass the taken-key check, and the database refuses the
+second at the flush
+([the taken-key probe's limits](association-reader.md#what-the-taken-key-probe-cannot-see)).
 
 A **NUL byte** is not a residual, because `printable()` refuses one at both
 ends: no record mints a key carrying it, and no key carrying one decodes. A text

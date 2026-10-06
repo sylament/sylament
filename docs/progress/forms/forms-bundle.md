@@ -218,7 +218,12 @@ its modals, and ours escapes them through
   same element — because the host's `ExternalMutationTracker` must be observing
   when the engine inserts its container, or the first morph removes it. There is
   no "before the host is reachable" fallback: a `<select>` outside any live
-  component throws. The `<select>` itself stays as the inert carrier: the
+  component throws. Nor is there one for a missing controller: a page whose
+  `assets/controllers.json` leaves out forms' `select` block renders a JS-branch
+  select (`searchable()`, `multiple()`, `native(false)` or `allowHtml()`) as a
+  plain `<select>` that neither searches nor sends what the user picked, with no
+  error; a select that is none of those four is native, binds through its own
+  `data-model`, and needs no JavaScript. The `<select>` itself stays as the inert carrier: the
   controller takes its `id` for the engine's combobox button and restores it on
   disconnect ([the id handoff](select.md#the-hidden-select-lends-its-id-to-the-combobox-button)),
   hides it with an inline `display: none` (the stylesheet's `select.sy-fo-select
@@ -478,7 +483,10 @@ and the shape differs in seven ways worth knowing before touching it.
   a `data-controller="sylament--forms--file-upload"` element appears, which is
   exactly the trade this size justifies. Nothing else in the toolkit is lazy, so
   a consuming app that copies another controller's `controllers.json` entry will
-  make it eager by accident.
+  make it eager by accident. Leaving the entry out fails total rather than
+  partial: what remains is the bare `<input type="file">` the template renders
+  under the label, with no `name` and no `data-model`, and nothing listening to
+  it — no drop zone, no preview, and a picked file never leaves the page.
 - **No `mime` package.** Filament's `fileValidateTypeDetectType` falls back to the
   npm `mime` database, which is the single largest block of its 373 KB bundle.
   Ours resolves `mimeTypeMap[extension] || detectedType` and stops there, so the

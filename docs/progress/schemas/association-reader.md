@@ -709,7 +709,7 @@ relationship repeater's items each under their own halves.
 
 ### What the taken-key probe cannot see
 
-Five limits, recorded rather than closed:
+Six limits, recorded rather than closed:
 
 - **A detached record reads as new.** A reader reads its own entity manager's
   unit of work and database, and `UnitOfWork::getEntityState()` cannot tell a
@@ -751,6 +751,18 @@ Five limits, recorded rather than closed:
   manager. Reads still work, and DoctrineBundle's reset replaces the closed
   manager before the next request. This is recorded, not closed, as
   `UniqueEntity` and Filament leave it too.
+- **Two new records whose keys a case- or accent-insensitive collation equates**
+  — `Example.com` and `example.com` under MySQL's default `utf8mb4_0900_ai_ci`
+  — are not caught in one save: the walk claims a sibling's key by
+  `serialize()` of what its type's `convertToDatabaseValue()` writes, an exact
+  comparison in PHP, and the `find()` probe's identity-map hit is exact as well
+  while its SELECT sees only stored rows. The flush meets the unique index, and
+  the second is the same `UniqueConstraintViolationException` as two requests
+  at once, closing the manager. A type whose writer folds the spellings to one
+  value is caught, since the claim compares what reaches the column: the
+  fixture `CaselessType` lower-cases on write, so *refuses the second of two
+  new siblings whose keys differ only in a spelling their column stores alike*
+  pins that, not the collation.
 - **The lookup compares keys as the database does**, so a `guid` key spelled in
   the other letter case is taken on PostgreSQL, whose `uuid` type compares
   case-insensitively, and free on SQLite, which stores the guid as `CHAR(36)` —

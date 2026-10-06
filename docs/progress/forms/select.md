@@ -811,7 +811,11 @@ then three Doctrine defaults:
   state the host validated, after the action's `mutateDataUsing()`. The reader
   `persist()`s and `flush()`es it, and the key it returns is `getRecordKey()`.
   The modal schema validates itself and nothing else: its state path scopes the
-  map, so the outer form is untouched.
+  map, so the outer form is untouched. The refusal advises handing the schema a
+  record built through `record()`, which an option form cannot follow — the
+  arguments are the data its modal has yet to collect — so for such a target a
+  `createOptionUsing()` of the application's own, declared after
+  `relationship()`, replaces this step and is the way out.
 - **`fillEditOptionActionFormUsing`** — the selected record itself, as an object.
   `Schema::fill(object)` runs `readStateFromRecord()`, so the modal's fields
   arrive filled without a hand-built array.

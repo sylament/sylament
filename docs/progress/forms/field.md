@@ -142,7 +142,7 @@ checkbox sitting beside its label text wants `items-center` and a tighter gap,
 and one modifier on the wrapper covers every boolean field rather than each
 repeating the same override.
 
-This is a Sylament-only class, and [`docs/internals/styling.md`](../../internals/styling.md) makes
+This is a Sylament-only class, and [`docs/internals/styling.md`](../../internals/styling.md#why-are-the-emitted-classes-public) makes
 every emitted `sy-` class part of the public hook surface consumers may target —
 so it is recorded here rather than left to be discovered in a diff. Same category
 as the `aria-invalid` addition below: a rendering choice the port makes and

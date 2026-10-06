@@ -119,7 +119,7 @@ wrapped. Sylament's component emits one of each — the numbered list and a sing
 labelled select.
 
 Nothing is dropped in principle. The second per-page label is a
-[`fi-compact`](../../internals/styling.md) responsive variant, and it needs the
+[`fi-compact`](../../internals/styling.md#why-do-templates-carry-only-semantic-classes) responsive variant, and it needs the
 `input.wrapper` / `input.select` support components the port has not built (both
 are **todo** rows in [README](README.md#components)), so today the select is a
 bare `<select class="sy-pagination-per-page-select">`. The standalone

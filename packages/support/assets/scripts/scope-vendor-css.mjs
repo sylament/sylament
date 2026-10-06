@@ -4,7 +4,7 @@
  * CSS build/watch, so the redistributed copy is always byte-faithful to the installed
  * package). The shipped stylesheet is page-wide, so a bare vendor selector would style
  * a host app's element of the same name — every rule is rewritten under the component's
- * class and every global `@keyframes` name is prefixed (docs/internals/styling.md rule 11).
+ * class and every global `@keyframes` name is prefixed (docs/internals/styling.md, on bundled libraries).
  *
  * It lives in support because postcss is a support-workspace devDependency and pnpm
  * builds support before the workspaces that own the vendor packages; each entry's

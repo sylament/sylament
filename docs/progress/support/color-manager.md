@@ -114,7 +114,7 @@ exists to point the dynamic palette anywhere and no slot variable is set.
 The element therefore renders with its colour declarations invalid at
 computed-value time — inherited or unset, never the default palette. That is
 Filament's behaviour and is now ours; see
-[styling.md rule 6](../../internals/styling.md) and
+[styling.md](../../internals/styling.md#how-does-a-component-take-a-colour-per-instance) and
 [decision 6](#an-unknown-colour-no-longer-falls-back-to-primary) below.
 
 The map a policy returns is keyed from a closed set of eight — `bg` and `text`,
@@ -239,7 +239,7 @@ Sylament's are `--sy-color-600: …` and `--sy-text: var(--sy-color-900)`. Same 
 the `:root` and swap-class output of `sylamentStyles()`, and for the slot
 variables the component stylesheets read.
 
-The reasoning is in [`styling.md`](../../internals/styling.md) and is not colour-specific:
+The reasoning is in [`styling.md`](../../internals/styling.md#why-are-per-instance-values-inline-variables) and is not colour-specific:
 custom properties inherit, `--primary-600` and `--text` are among the most
 common token names in the wild, and Sylament embeds into a page it does not own —
 one `:root { --text: … }` in the host app would repaint every Sylament
@@ -299,7 +299,7 @@ compiled `theme.css` defines no palette values at all — verified in
 has no colours.
 
 Sylament keeps the six default palettes in the shipped stylesheet
-([styling.md decision on the CSS floor](../../internals/styling.md)), so
+([styling.md on the CSS floor](../../internals/styling.md#why-are-the-default-palettes-defined-twice)), so
 `sylamentStyles()` emits only what a consumer added on top: a `:root` override
 for a palette redefined or newly named, a `.sy-color-<name>` swap class for a
 name the stylesheet has none for, and an **empty string** — not a bare `<style>`

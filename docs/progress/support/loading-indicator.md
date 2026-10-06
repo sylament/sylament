@@ -71,7 +71,7 @@ Deliberate deviations from Filament — permanent, and the reason they hold.
 fi-size-{size}`, so it inherits `icon.css`'s size scale and Filament's own
 `loading-indicator.css` only has to add the spin. Ours emits
 `sy sy-loading-indicator sy-size-{size}` — the bare `sy` marker is mandatory
-([styling.md](../../internals/styling.md) rule 2) and `sy-icon` is deliberately absent,
+([styling.md](../../internals/styling.md#why-does-every-component-root-carry-the-bare-marker-class)) and `sy-icon` is deliberately absent,
 because `icon.css` also gives `.sy-icon > svg` an inherited box for the wrapped
 `<span>` shape the icon extension emits and the indicator *is* the `<svg>`, not a
 wrapper around one. The size scale is therefore repeated in

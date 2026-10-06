@@ -168,7 +168,7 @@ The gate is now a CSS variable rather than a class:
 writes `--sy-dropdown-overflow: auto` inline in the same branch that writes
 `--sy-dropdown-max-height`, and the stylesheet consumes
 `overflow-y: var(--sy-dropdown-overflow, visible)`. This follows the template
-asserts / `var()` consumes convention [rule 4 of `docs/internals/styling.md`](../../internals/styling.md)
+asserts / `var()` consumes convention [`docs/internals/styling.md`](../../internals/styling.md#why-are-per-instance-values-inline-variables)
 already sets for `width` and `max-height` on the same element, and it keeps the
 condition stated once, in the template, rather than re-derived in CSS. An
 earlier form of this fix pattern-matched the inline style with a

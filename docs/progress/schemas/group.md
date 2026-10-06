@@ -51,8 +51,8 @@ extra attributes, so `getId()` wins over a caller's
 
 Filament's `Group::toEmbeddedHtml()` emits a `<div>` with the component's `id`
 and extra attributes and no class at all. Sylament's root carries
-`class="sy sy-sc-group"`: [`docs/internals/styling.md`](../../internals/styling.md) rule 2 makes the
-bare `sy` marker mandatory on every component root — it is how the scoped
+`class="sy sy-sc-group"`: the bare `sy` marker is
+mandatory on every component root ([why](../../internals/styling.md#why-does-every-component-root-carry-the-bare-marker-class)) — it is how the scoped
 Tailwind preflight identifies Sylament markup — and `sy-sc-group` follows the
 hook-class convention the rest of the port uses. Both are inert today; no CSS
 rule matches either. (Filament renders `Group` through the shared grid view,

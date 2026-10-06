@@ -322,7 +322,7 @@ function iconShades(): array
  * contrast test upstairs reaches them, and five of the pairings miss the 3.0:1 a non-text element
  * owes. Every shade involved is Filament's (`columns/text.css`, `badge.css`), so the list is
  * pinned rather than fixed: raising them is a
- * [rule 1](../../../../../../docs/internals/styling.md) sweep across two packages, and this goes red in
+ * sweep of two packages' stylesheets, and this goes red in
  * either direction — when a shade is raised, and when a palette lands that fails one that passes
  * today.
  *

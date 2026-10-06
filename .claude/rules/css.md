@@ -24,4 +24,4 @@ description: How component stylesheets are written, scoped and coloured, and wha
 - **Never import a redistributed vendor stylesheet bare;** add it to `scope-vendor-css.mjs`, which rewrites it under the component's class and renames its keyframes.
 - **Never edit or commit a `*.generated.css`;** support's `build:css` regenerates all of them from the installed packages, and `.gitignore` excludes them.
 
-Background: `docs/internals/styling.md` (the full contract), `docs/internals/assets.md`, `docs/progress/support/color-policies.md`.
+Background: `docs/internals/styling.md`, `docs/internals/assets.md`, `docs/progress/support/color-policies.md`.

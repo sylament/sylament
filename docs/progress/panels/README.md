@@ -1917,7 +1917,7 @@ worth naming:
 
 - `layout.css` owns `.sy-pa-body`, the shell root, and the two custom properties
   the shell reads off it: `--sy-sidebar-width` (the drawer's width, a
-  [runtime token](../../internals/styling.md) like every other `--sy-*` name — not one of
+  [runtime token](../../internals/styling.md#why-are-per-instance-values-inline-variables) like every other `--sy-*` name — not one of
   the deliberately unprefixed emission-set variables the grid system uses, which
   are unprefixed only because they are Filament's verbatim) and `--font-sans`. It
   also carries the 26-rung
@@ -1966,7 +1966,7 @@ through the results, with no error anywhere
 defaulting to `'Inter Variable', ui-sans-serif, system-ui, sans-serif` — so the
 face reaches every component inside the panel through inheritance, the scoped
 preflight having dropped `font-*` from its `html` rule for exactly that reason
-([styling.md](../../internals/styling.md) rule 7), and nothing outside a panel is
+([styling.md](../../internals/styling.md#why-is-preflight-scoped-to-sylament-markup)), and nothing outside a panel is
 touched. The same rule also redefines Tailwind's own **`--font-sans`** to
 `var(--sy-font)` on that element: `sy-font-sans` compiles to `font-sans`, which
 reads `--font-sans`, so without the scoped override a component asking for the
@@ -2672,8 +2672,8 @@ carries no colour at all, only the `bg-gray-100 dark:bg-white/5` highlight. Both
 halves are v5's own values
 ([`sidebar.css:157-179`](../../../vendor/filament/filament/resources/css/components/sidebar.css)),
 so the divergence is not the shade but the *mechanism*.
-[styling.md](../../internals/styling.md)'s *never hardcode a shade for a colour a user can
-set* rule (rule 6) governs the **per-instance** `color` palette, which is chosen
+The *never hardcode a shade for a colour a user can
+set* rule ([why](../../internals/styling.md#why-does-a-policy-pick-the-shade-instead-of-the-stylesheet)) governs the **per-instance** `color` palette, which is chosen
 by a [contrast policy](../support/color-policies.md) because the palette is not
 known until render. The sidebar has no per-instance colour API — neither
 `NavigationItem` nor `NavigationGroup` composes `HasColor`, and there is nothing

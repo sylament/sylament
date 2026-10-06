@@ -67,8 +67,7 @@ Rules in `.claude/rules/` load by themselves when you read or edit a file their 
 | `frontend.md` | `packages/*/assets/**/*.{ts,mjs,json}`, `/package.json`, `/pnpm-workspace.yaml`, `/tsconfig.base.json`, `/biome.json` | TypeScript, the asset workspaces, the JS build script and how Stimulus controllers ship. |
 | `instructions.md` | `/CLAUDE.md`, `/.claude/**` | How instruction files are placed, scoped, sized and kept free of history. |
 | `manifests.md` | `/composer.json`, `packages/*/composer.json`, `packages/*/assets/package.json` | What each package manifest declares, when a dependency is a require or a suggest, and which omissions are deliberate. |
-| `php.md` | `packages/*/src/**/*.php` | How shipped PHP is written, from closure evaluation and typing to construction, static instances, trait placement, helpers and comments. |
-| `records.md` | `packages/{actions,forms,panels,schemas,tables}/src/**/*.php` | How code compares, keys and reads records, since a record may be keyed by several fields or by an association. |
+| `php.md` | `packages/*/src/**/*.php` | How shipped PHP is written, from closure evaluation and typing to construction, static instances, trait placement, record identity, helpers and comments. |
 | `tests.md` | `packages/*/tests/**` | How a package's Pest suite is laid out, booted and wired, and where support's Twig components are render-tested. |
 | `twig.md` | `packages/*/templates/**` | Template layout, component invocation, props and attribute rendering in the bundles' Twig templates. |
 

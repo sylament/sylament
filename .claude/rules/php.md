@@ -1,7 +1,7 @@
 ---
 paths:
   - "packages/*/src/**/*.php"
-description: How shipped PHP is written, from closure evaluation and typing to construction, static instances, trait placement, helpers and comments.
+description: How shipped PHP is written, from closure evaluation and typing to construction, static instances, trait placement, record identity, helpers and comments.
 ---
 # PHP rules
 
@@ -34,5 +34,8 @@ description: How shipped PHP is written, from closure evaluation and typing to c
 - **Comment content.** Type-carrying PHPDoc (`@param`, `@return`, `@template`, `@var`, `@phpstan-assert*`) is never optional at level max; beyond it, keep only contract prose a signature cannot carry, an invariant at its enforcement point (`// Security:`), and why a `catch` swallows, and judge a comment Filament or Laravel also carries the same way, since comment style is idiom.
 - **Live panel pages.** Give every concrete panel page and relation manager a bare `#[AsLiveComponent]`; UX finds a live parent by reflecting for it, and the page passes refuse a class without it.
 - **A new component directory** under `Components/` needs its level added to the bundle's service glob (`bundles.md`); the glob names levels, so an unlisted one registers nothing and `make()` falls back to `new`.
+- **Identity goes through `Identity\`.** Compare, select, group, order, chunk and batch record identifiers through `IdentifierConstraint`, and mint or decode keys through `RecordKey`, never through a single id column, because a record may be keyed by several fields or by an association.
+- **Decode a client-supplied key before binding it.** On a malformed key, answer "no such record" without querying (`IdentifierConstraint::equals()` returns `null`), because an untyped bind lets `05` alias record 5 and turns a non-numeric key into a 500.
+- **Never construct an `AssociationReader`.** Rebind the one a site already holds with `withEntityManager()`; an application may subclass or decorate the service, and `new AssociationReader(...)` drops that in silence. `AssociationReaderConstructionTest` pins it.
 
-Background: `docs/internals/php.md`, `docs/progress/support/component.md`, `docs/progress/support/component-manager.md`, `docs/progress/support/helpers.md`, `docs/progress/renames.md`.
+Background: `docs/internals/php.md`, `docs/progress/support/component.md`, `docs/progress/support/component-manager.md`, `docs/progress/support/helpers.md`, `docs/progress/renames.md`, `docs/progress/schemas/record-key.md`, `docs/progress/schemas/association-reader.md`.

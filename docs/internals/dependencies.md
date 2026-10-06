@@ -64,14 +64,14 @@ An omission is safe only while a package the importer requires hard-requires the
 | `doctrine/collections` | `actions` (`new ArrayCollection()`), `tables` (`instanceof Collection`) | `doctrine/orm` requires `^2.2 \|\| ^3.1` |
 | `symfony/polyfill-php86` | `schemas`, `tables` (the global `SortDirection` enum) | `doctrine/orm` requires `^1.37` |
 | `psr/container` | `support`, `panels` | `symfony/service-contracts`, which support requires, requires `^1.1\|^2.0` |
-| `symfony/config` | `support`, `forms` (`DefinitionConfigurator`), `panels` (`FileResource`) | `symfony/framework-bundle` requires `^7.4.4\|^8.0.4` |
-| `symfony/dependency-injection`, `symfony/http-kernel`, `symfony/framework-bundle` | every bundle | ambient: framework-bundle requires the other two |
+| `symfony/config` | `support`, `forms` (`DefinitionConfigurator`), `panels` (`FileResource`) | `symfony/stimulus-bundle`, which `support` and `forms` require, requires `^7.4\|^8.0` |
+| `symfony/dependency-injection`, `symfony/http-kernel`, `symfony/framework-bundle` | every bundle | through `support`: its `symfony/stimulus-bundle` requires the first two and its `symfony/ux-icons` requires framework-bundle, all `^7.4\|^8.0` |
 | `league/flysystem` | `tables` (`Columns\ImageColumn`) | `sylament/forms` requires `^3` |
 
 Notes on particular rows:
 - **`doctrine/dbal`.** Every imported name exists on DBAL 3 and DBAL 4. That was checked against a cached DBAL 3 archive as well as the installed DBAL 4, because only DBAL 4 is installed here. `ParameterType` and `ArrayParameterType` are the trap: on DBAL 3 they are final classes of `int` constants, and on DBAL 4 they are native enums. A declared `: ParameterType` is therefore a `TypeError` on every DBAL 3 application, and no gate here can see it. `packages/schemas/tests/Architecture/DbalParameterTypeDeclarationTest.php` stands in for the check Composer cannot make. A negative `instanceof` guard, as in `tables`' `Query\AggregateQuery`, is a value test and is allowed.
 - **`doctrine/collections`.** `actions`' `Replication\RecordReplicator` instantiates `ArrayCollection`, so an ORM-less `sylament/actions` would fatal there; `tables` only tests `instanceof`, which PHP does not autoload for. This is the omission to declare first if `doctrine/orm` ever stops being an `actions` requirement.
-- **The framework-bundle trio** is the weakest omission. `panels`' `Routing\PanelRouteLoader` implements `RouteLoaderInterface` from framework-bundle itself, which makes it a first-party import rather than a transitive guarantee. A split `sylament/panels` used outside a FrameworkBundle application fatals there. It stays undeclared because a panel cannot be assembled without framework-bundle anyway.
+- **The framework-bundle trio.** `panels`' `Routing\PanelRouteLoader` implements `RouteLoaderInterface` from framework-bundle itself. That import is still guaranteed, because `support` requires `symfony/ux-icons`, which requires framework-bundle; declare framework-bundle in `panels` the day `support` stops requiring `ux-icons`.
 - **`league/flysystem` in `tables`.** Only `ImageColumn`'s disk-path arm reaches the flysystem symbols, through the registry. A column whose state is already a URL works with no flysystem installed.
 
 ## Known gaps

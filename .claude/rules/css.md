@@ -8,7 +8,7 @@ description: How component stylesheets are written, scoped and coloured, and wha
 - **Select a component by its semantic `sy-<code>-<name>` class;** Tailwind scans no templates (`source(none)`), so the stylesheet is the only place a utility takes effect.
 - **Write one file per component, `styles/components/<name>.css`, with `@apply`,** and import it into the package's aggregator (`styles/index.css`, support's `styles/components.css`) with `layer(components)`; support's `index.css` raw-imports every package's aggregator and is the only Tailwind compile.
 - **Pass a per-instance value as an inline CSS variable, never a dynamic class;** prefix ours `--sy-*` and keep a Filament-verbatim set (the grid's `--cols-*`) unprefixed.
-- **Read colours through the `--sy-*` tokens,** and in plain CSS write `var(--sy-gray-950)`, never `var(--color-gray-950)`; the `@theme inline` names are not emitted at runtime.
+- **Read colours through the `--sy-*` tokens,** and in plain CSS write `var(--sy-gray-950)`, never `var(--color-gray-950)`: `--sy-*` is the runtime palette, while `--color-*` is only Tailwind's `@theme inline` alias of it, emitted wherever something happens to reference it.
 - **Never hardcode a shade a contrast policy picks;** read its slot variable (`text-(--sy-text)`), since palettes do not share a lightness curve and one fixed shade fails contrast on some.
 - **Hardcode a shade only where the element's policy returns `[]`** (icons do); an empty policy means the stylesheet picks the shade.
 - **Read only a slot the element's policy sets;** an unset slot paints its default in silence, which `PolicyShadeGridTest` and `ToggleColorSlotsTest` catch by scanning these files.

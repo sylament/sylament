@@ -25,13 +25,13 @@ Each is left undeclared because a package the importer already requires hard-req
 
 - **`twig/twig`** in six packages: `sylament/support` requires it.
 - **`symfony/type-info`** in `schemas` (`State\RecordTypeReader`): `symfony/property-info` requires it.
-- **`doctrine/dbal`** in `actions`, `schemas`, `tables`: `doctrine/orm` requires `^3.8.2 || ^4`, so import only names both majors carry, and use `ParameterType`/`ArrayParameterType` as values only, never as a declared type or a positive `instanceof`, since they are classes on DBAL 3 and enums on DBAL 4 (`DbalParameterTypeDeclarationTest` pins it).
+- **`doctrine/dbal`** in `actions`, `schemas`, `tables`: `doctrine/orm` requires `^3.8.2 || ^4`, so import only names both majors carry; how `ParameterType` is used across the two is in `php.md`.
 - **`doctrine/persistence`** in `actions`, `tables`: `doctrine/orm` requires it.
 - **`doctrine/collections`** in `actions`, `tables`: `doctrine/orm` requires it; declare it first if the ORM ever leaves `actions`, whose `RecordReplicator` instantiates `ArrayCollection` where `tables` only tests `instanceof`.
 - **`symfony/polyfill-php86`** (the global `SortDirection` enum) in `schemas`, `tables`: `doctrine/orm` requires it.
 - **`psr/container`** in `support`, `panels`: `symfony/service-contracts`, which `support` requires, requires it.
-- **`symfony/config`** in `support`, `forms`, `panels`: `symfony/framework-bundle` requires it.
-- **`symfony/dependency-injection`, `symfony/http-kernel`, `symfony/framework-bundle`** everywhere: a Symfony application is a framework-bundle application. This is the weakest omission, because `panels` imports `RouteLoaderInterface` itself, so declare framework-bundle once `panels` is usable without it.
+- **`symfony/config`** in `support`, `forms`, `panels`: `symfony/stimulus-bundle`, which `support` and `forms` require, requires it.
+- **`symfony/dependency-injection`, `symfony/http-kernel`, `symfony/framework-bundle`** everywhere: every package requires `support`, whose `symfony/stimulus-bundle` requires the first two and whose `symfony/ux-icons` requires framework-bundle, so even `panels`' own `RouteLoaderInterface` import is guaranteed.
 - **`league/flysystem`** in `tables` (`ImageColumn`): `sylament/forms` requires it, and only the disk-path arm reaches it.
 
 Background: `docs/internals/dependencies.md`, `docs/internals/monorepo.md`.

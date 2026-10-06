@@ -16,7 +16,6 @@ description: How a package's Pest suite is laid out, booted and wired, and where
 - **Use `$this::` for `KernelTestCase` statics** inside `it()`/`test()` closures (`$this::getContainer()`), never `static::` or `self::`: Pest binds `$this` to the configured `TestCase`, while `static::` resolves against the closure's scope.
 - **Do not call `bootKernel()`** just to get a container, because `getContainer()` boots on demand; boot explicitly only to pass options (`$this::bootKernel(['environment' => 'icons'])`) or to hold the kernel itself.
 - **Support's Twig components are render-tested from other suites,** because support's fixture kernel registers no TwigComponentBundle; `composer test:support` alone never renders them.
-- **Before changing a support component template,** find its suites with `grep -rlE 'SylamentSupport:<Name>([ />]|$)' packages/*/templates packages/*/tests` and run each hit's suite plus those of packages rendering the hit's templates; `InputWrapper` has two direct homes, forms and tables.
 - **The placeholder bundles** (`infolists`, `widgets`) keep their `Feature/ExampleTest.php` only until real tests land, which then take `Unit/` and `Integration/`; never add to `Feature/`.
 
 Background: `docs/internals/test-infrastructure.md`.

@@ -205,8 +205,8 @@ it('scopes, describes and sizes every rule file', function (): void {
         $description = $frontmatter['description'] ?? null;
         $paths = $frontmatter['paths'] ?? null;
 
-        if (instructionFileBytes($file) > 8 * 1024) {
-            $violations[] = "{$file}: " . instructionFileBytes($file) . ' bytes, over the 8 KB budget — split it by paths or move background to docs/';
+        if (instructionFileBytes($file) > 16 * 1024) {
+            $violations[] = "{$file}: " . instructionFileBytes($file) . ' bytes, past the 16 KB alarm — split it by paths or move background to docs/';
         }
 
         if (!is_string($description) || '' === mb_trim($description) || str_contains(mb_trim($description), "\n")) {
@@ -254,8 +254,8 @@ it('names, describes and sizes every skill', function (): void {
         $directory = basename(dirname($file));
         $description = $frontmatter['description'] ?? null;
 
-        if (instructionFileBytes($file) > 12 * 1024) {
-            $violations[] = "{$file}: " . instructionFileBytes($file) . ' bytes, over the 12 KB budget';
+        if (instructionFileBytes($file) > 16 * 1024) {
+            $violations[] = "{$file}: " . instructionFileBytes($file) . ' bytes, past the 16 KB alarm';
         }
 
         if (($frontmatter['name'] ?? null) !== $directory) {

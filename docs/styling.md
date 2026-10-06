@@ -63,7 +63,8 @@ Consumers never need Tailwind installed.
    tokens to runtime variables, so `@apply bg-primary-600` compiles to
    `background-color: var(--sy-primary-600)`. Semantic palettes: `primary`,
    `gray`, `danger`, `info`, `success`, `warning`. Important: `@theme inline`
-   variables are **not emitted at runtime** — plain CSS must reference the
+   variables are compile-time aliases of the `--sy-*` runtime tokens, emitted
+   only where something references them — plain CSS must reference the
    `--sy-*` token (`var(--sy-gray-950)`), not `var(--color-gray-950)`.
    Those six are defined twice on purpose: as `oklch()` values in the `@layer
    theme { :root }` **floor** of `index.css`, and as

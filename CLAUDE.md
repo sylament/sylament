@@ -16,7 +16,7 @@ What has shipped and what comes next is tracked in `docs/progress/roadmap.md`, a
 | `vendor/filament/` | Filament's source: read it before designing anything |
 | `docs/principles.md` | the two stances that outrank everything below |
 | `docs/progress/` | the port trail: status and reasoning per component (rules in its `README.md`) |
-| `docs/internals/` | reasoning behind dev-only infrastructure |
+| `docs/internals/` | the reasoning behind the rules, and the dev-only infrastructure |
 | `../demo` | the peer demo app, its own repo (skill: `demo`) |
 
 ## Rules for every task
@@ -50,6 +50,7 @@ What has shipped and what comes next is tracked in `docs/progress/roadmap.md`, a
 - `pnpm test:types` and `pnpm test:lint` green.
 - `composer format` applied; no hand-formatting.
 - A user-facing feature updates the demo showcase (cards, descriptions, the "Not built yet" footnotes) before its roadmap row flips.
+- Closing a milestone: run the `docs-audit` skill.
 - Instruction files current: a change that makes a rule or skill wrong, or sets a convention for files no rule covers, updates or creates the `.claude/rules/` or `.claude/skills/` file in the same change (shape: `.claude/rules/instructions.md`).
 
 ## Rule files

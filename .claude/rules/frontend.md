@@ -24,12 +24,11 @@ description: TypeScript, the asset workspaces, the JS build script and how Stimu
 - **After a new controller lands, add it to the demo's `assets/controllers.json`;** StimulusBundle registers only what that file lists and skips the rest without an error.
 - **Declare a new controller `fetch: eager`;** a lazy one registers only when its element appears, which an element-less one like `dispatch` never has.
 - **Make a controller `lazy` only when its bundle is heavy and its element rare,** as `file-upload` (FilePond) is; everything else loads up front.
-- **Repaint a controller's controls from `component.getData()` on `connect()` and every `render:finished`** once it writes LiveProps through `component.set(…, false)`; after a morph the store, not the server-rendered attribute, wins, and UX keeps every touched input as it was.
+- **Repaint a controller's controls on `connect()` and every `render:finished`,** from `component.getData()` once it writes LiveProps through `component.set(…, false)`, or from the root's authoritative value for a server-canonical control; after a morph the store, not the server-rendered attribute, wins, and UX keeps every touched input as it was, so the repaint is the only correction.
 - **Rebuild `dist/` with `pnpm build` and commit it with the source;** CI's `assets` job rebuilds it and fails on any difference.
 - **Never commit `dist/` written by `pnpm watch`;** watch emits inline sourcemaps and unminified CSS, which differ from the build.
 - **Let one task own the `dist/` rebuild when work runs in parallel;** every rebuild rewrites the same tree.
 - **Commit `pnpm-lock.yaml` with the manifest change;** CI installs with `--frozen-lockfile`.
 - **Without a TTY, rebuild with `pnpm build` instead of watching;** Tailwind's `--watch` exits when stdin closes, so the CSS half of `pnpm watch` stops before its first build, inside the workspace too.
-- **Repaint a server-canonical control** from its root's authoritative value on `connect()` and after every render; UX pins every touched input through every morph, so the repaint is the only correction.
 
 Background: `docs/internals/assets.md`, `docs/progress/forms/forms-bundle.md`, `docs/progress/tables/has-columns.md`.

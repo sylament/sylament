@@ -244,9 +244,7 @@ replaces the extension's definition wholesale, `->public()` included, so it must
 declare itself public or `Container::get()` cannot reach it; the `color_policy`
 environment in the test
 [`Kernel`](../../../packages/support/tests/Fixtures/Kernel.php) does exactly
-that. The
-consumer-facing write-up is
-[configuration.md](../../configuration.md#changing-how-a-component-picks-its-shades).
+that.
 
 Policies are autowired but **not** autoconfigured and carry no
 `sylament.component` tag: they are not `Component` subclasses and never go

@@ -73,8 +73,7 @@ Consumers never need Tailwind installed.
    a consumer who calls nothing still gets coloured components — Filament's
    compiled theme defines no palette values and requires its `@filamentStyles`
    directive — and the two copies are pinned to each other shade by shade by
-   `CssPaletteFloorTest`. Registering or overriding a palette:
-   [How consumers customize](#how-consumers-customize).
+   `CssPaletteFloorTest`.
 6. **Per-instance color uses the `color` palette** (Filament's trick): component
    CSS writes `@apply bg-color-500`; a `.sy-color-<palette>` class (see
    `support/assets/src/styles/utilities.css`) or inline `--sy-color-*` variables
@@ -209,48 +208,3 @@ Consumers never need Tailwind installed.
     does. The Tom Select skin that used to ground this rule left with the engine
     swap
     ([forms styles.md](progress/forms/styles.md#the-js-select-skin-is-filaments-on-the-ported-controls-container)).
-
-## How consumers customize
-
-- **Palettes**: register them under `sylament.colors`, keyed by name. A value is
-  either a colour to generate an eleven-shade palette from, or an explicit shade
-  map that must list every shade of the grid (50 … 950) — a missing or off-grid
-  shade throws, naming the palette, because a shade with no utility rule paints
-  nothing and reports nothing.
-
-  ```yaml
-  sylament:
-      colors:
-          primary: '#7c3aed'            # redefines a default
-          brand:                        # a new name, usable as ->color('brand')
-              50: 'oklch(0.97 0.014 254.604)'
-              # … through 950
-  ```
-
-  Render `{{ sylamentStyles() }}` once in the page `<head>` to emit them: a
-  `:root` override for a redefined palette, a `.sy-color-<name>` swap class for a
-  new one, and an empty string when nothing is registered. It is only needed for
-  what you added — the six defaults ship in the stylesheet (rule 5). The
-  `Color::` catalog constants are reachable from YAML through Symfony's
-  `!php/const` tag (`rose: !php/const Sylament\Support\Colors\Color::Rose`), since
-  the DI YAML loader parses with `Yaml::PARSE_CONSTANT`; PHP-side registration
-  stays available too, by injecting `ColorManager` and calling
-  `register(['primary' => Color::Rose])`.
-- **Theme tweaks**: override `--sy-*` custom properties (e.g. set `--sy-primary-600`)
-  in their own CSS — no build step, no Tailwind. This changes what the token
-  holds but not which shade a component chooses: the contrast policies measure
-  against `DEFAULT_COLORS` in PHP, so a palette overridden only in CSS can be
-  painted at a shade that no longer suits it. Register it instead when the change
-  is more than a nudge.
-- **Component tweaks**: target the `sy-` classes; consumer CSS is unlayered and wins.
-- **Shade choice**: replace a contrast policy by redefining its service id —
-  `ColorManager` resolves policies from the container by class-string, so an
-  application definition wins and applies everywhere that component renders. The
-  substitute must be `public` (the lookup is `Container::get()`), must return only
-  on-grid shades, and keeps `HasDefaultGrayColor` only if it declares it. Pinned by
-  `Integration/Colors/PolicyOverrideTest`; consumer-facing write-up in
-  [configuration.md](configuration.md#changing-how-a-component-picks-its-shades).
-- **Different markup**: override the bundle Twig template
-  (`templates/bundles/Sylament<Pkg>Bundle/components/...`).
-- **Full custom design**: disable the stylesheet autoimport and style the `sy-` classes
-  from scratch.

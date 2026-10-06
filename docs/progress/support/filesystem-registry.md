@@ -46,8 +46,8 @@ what has to land first. _Detail_ carries **diverges** → the permanent note in
 | [`getNames()` — the registered storage names, sorted](../../../packages/support/src/Filesystem/FilesystemRegistry.php) | — | done | — | — |
 | [`getDefaultDiskName()` — throws naming the config key when unset](../../../packages/support/src/Filesystem/FilesystemRegistry.php) | `config('filament.default_filesystem_disk')` | done | — | [semantics](#there-is-no-fallback-disk) |
 | [`getTemporaryUrlExpiryMinutes()`](../../../packages/support/src/Filesystem/FilesystemRegistry.php) | [`config('filament.temporary_file_url_expiry_minutes', 30)`](../../../vendor/filament/forms/src/Components/BaseFileUpload.php) | done | — | [semantics](#the-expiry-is-handed-out-in-minutes-and-the-caller-owns-the-rounding) |
-| [`sylament.default_filesystem_disk` — scalar, default null](../../../packages/support/src/SylamentSupportBundle.php) | [`config('filament.default_filesystem_disk')`](../../../vendor/filament/forms/src/Components/BaseFileUpload.php) | done | — | [configuration.md](../../configuration.md#storage) |
-| [`sylament.temporary_file_url_expiry_minutes` — integer ≥ 1, default 30](../../../packages/support/src/SylamentSupportBundle.php) | [`config('filament.temporary_file_url_expiry_minutes', 30)`](../../../vendor/filament/forms/src/Components/BaseFileUpload.php) | done | — | [configuration.md](../../configuration.md#storage) |
+| [`sylament.default_filesystem_disk` — scalar, default null](../../../packages/support/src/SylamentSupportBundle.php) | [`config('filament.default_filesystem_disk')`](../../../vendor/filament/forms/src/Components/BaseFileUpload.php) | done | — | [semantics](#there-is-no-fallback-disk) |
+| [`sylament.temporary_file_url_expiry_minutes` — integer ≥ 1, default 30](../../../packages/support/src/SylamentSupportBundle.php) | [`config('filament.temporary_file_url_expiry_minutes', 30)`](../../../vendor/filament/forms/src/Components/BaseFileUpload.php) | done | — | [semantics](#the-expiry-is-handed-out-in-minutes-and-the-caller-owns-the-rounding) |
 | [The `flysystem.storage` tag contract](../../../packages/support/src/SylamentSupportBundle.php) | — | done | — | [semantics](#a-consumer-without-the-bundle-tags-its-own-operator) |
 | Per-disk URL generation (`publicUrl()` / `temporaryUrl()`) | `Storage::disk()->url()` / `temporaryUrl()` | done | — | Overturned: this row was **skipped** ("not the registry's job — `forms`' `BaseFileUpload` calls them directly on the operator this returns") until tables' [`ImageColumn`](../tables/image-column.md) became the second component needing the identical minting logic, at which point the parallel copy the skip implied was the worse of the two shapes. Shipped as `getFileUrl()` below |
 | [`getFileUrl(FilesystemOperator $storage, string $path, ?string $visibility = null)`](../../../packages/support/src/Filesystem/FilesystemRegistry.php) | inline in [`BaseFileUpload::getUploadedFile()`](../../../vendor/filament/forms/src/Components/BaseFileUpload.php) and [`ImageColumn::getImageUrl()`](../../../vendor/filament/tables/src/Columns/ImageColumn.php) | done | — | [semantics](#getfileurl-mints-the-browser-facing-url) |
@@ -185,10 +185,3 @@ is the usual route, [a tag by hand](#a-consumer-without-the-bundle-tags-its-own-
 the other — and `sylament.default_filesystem_disk` naming one of them, without
 which every component that does not name a disk of its own throws on first use,
 naming the key.
-
-The consumer-facing how-to is not repeated here:
-[installation.md § 5](../../installation.md#5-storage-for-file-uploads) walks
-through installing the bundle, defining a storage and pointing the toolkit at
-it, and [configuration.md § Storage](../../configuration.md#storage) documents
-the keys, the per-component override and what private files cost on a `local`
-adapter.

@@ -260,6 +260,7 @@ than the other three panels controllers: a guard that arms late is absent exactl
 when it matters. It shares their failure mode, though — a consuming application
 that leaves the block out of `assets/controllers.json` navigates away from
 unsaved edits with no prompt and no error anywhere. The page still renders and
-still saves, so the omission is degraded rather than broken, which is why
-[installation.md](../../installation.md) names it rather than the toolkit
-guarding it.
+still saves, so the omission is degraded rather than broken, which is why it is
+recorded here and in
+[the asset notes](../../internals/assets.md#how-does-a-controller-reach-a-consuming-application)
+rather than guarded by the toolkit.

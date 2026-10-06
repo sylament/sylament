@@ -1959,7 +1959,7 @@ mode: a consuming app that leaves the block out of `assets/controllers.json`
 gets a field that renders and searches — `data-model` is what queries the
 server — but no ⌘K binding, no Escape, no click-away and no arrow-key walk
 through the results, with no error anywhere
-([installation.md](../../installation.md)).
+([how a controller reaches an application](../../internals/assets.md#how-does-a-controller-reach-a-consuming-application)).
 
 **The panel's font is Inter, and it is scoped.** `.sy-pa-body` sets
 `font-(family-name:--sy-font)`, where `--sy-font` is a support-level token
@@ -2048,7 +2048,7 @@ It is declared `fetch: eager` like the other three, and for a sharper reason
 than they have: a guard that arms late is absent exactly when it matters. It
 shares their failure mode too — a consuming app that leaves the block out of
 `assets/controllers.json` navigates away from unsaved edits with no prompt and
-no error anywhere ([installation.md](../../installation.md)); the page itself
+no error anywhere ([how a controller reaches an application](../../internals/assets.md#how-does-a-controller-reach-a-consuming-application)); the page itself
 still renders and still saves, so the omission is degraded, not broken.
 
 What Filament's panel assets have and this does not, all todo:

@@ -234,7 +234,7 @@ Livewire's preview route, which [`FileUpload`](file-upload.md) never calls.
 
 It lives under the derived `sylament_forms` alias rather than `sylament`,
 because a bundle cannot extend another bundle's config tree — see
-[`docs/configuration.md`](../../configuration.md).
+[why `support` owns the `sylament` alias](../../internals/bundles.md#why-does-support-own-the-sylament-alias).
 
 **Multi-server deployments need a shared temp storage or sticky sessions.** The
 upload request and the save request are different requests; with a local temp

@@ -50,24 +50,33 @@ What has shipped and what comes next is tracked in `docs/progress/roadmap.md`, a
 - `pnpm test:types` and `pnpm test:lint` green.
 - `composer format` applied; no hand-formatting.
 - A user-facing feature updates the demo showcase (cards, descriptions, the "Not built yet" footnotes) before its roadmap row flips.
+- Instruction files current: a change that makes a rule or skill wrong, or sets a convention for files no rule covers, updates or creates the `.claude/rules/` or `.claude/skills/` file in the same change (shape: `.claude/rules/instructions.md`).
 
 ## Rule files
 
 Rules in `.claude/rules/` load by themselves when you read or edit a file their `paths:` match. A lane working in a worktree outside the repo gets none of them, so its plan task names the files it needs and it reads them first.
 
-While `.claude/rules/` is being filled, read the section of `docs/internals/legacy-claude-md.md` that covers the area you touch.
-
 | File | Paths | Covers |
 | --- | --- | --- |
+| `bundles.md` | `packages/*/src/*Bundle.php`, `packages/*/src/DependencyInjection/**` | How a bundle class wires its services, config tree, asset path and component registration. |
+| `colors.md` | `packages/*/src/Colors/**`, `packages/support/src/Twig/Extension/ColorExtension.php` | How a colour is named, how a contrast policy picks its shade, and how policies are registered. |
+| `css.md` | `packages/*/assets/src/styles/**` | How component stylesheets are written, scoped and coloured, and what support's CSS build generates. |
 | `docs.md` | `/docs/**` | Where documentation lives and the rules for the port trail. |
+| `doctrine-tests.md` | `packages/{actions,forms,panels,schemas,tables}/tests/**`, `packages/support/tests/Doctrine/**`, `packages/support/tests/PHPUnit/**`, `packages/support/tests/Unit/Doctrine/**`, `packages/support/tests/Fixtures/Doctrine/**` | The database contract, the platform rule and the shared Doctrine test infrastructure the five Doctrine suites run on. |
+| `frontend.md` | `packages/*/assets/**/*.{ts,mjs,json}`, `/package.json`, `/pnpm-workspace.yaml`, `/tsconfig.base.json`, `/biome.json` | TypeScript, the asset workspaces, the JS build script and how Stimulus controllers ship. |
 | `instructions.md` | `/CLAUDE.md`, `/.claude/**` | How instruction files are placed, scoped, sized and kept free of history. |
+| `manifests.md` | `/composer.json`, `packages/*/composer.json`, `packages/*/assets/package.json` | What each package manifest declares, when a dependency is a require or a suggest, and which omissions are deliberate. |
+| `php.md` | `packages/*/src/**/*.php` | How shipped PHP is written, from closure evaluation and typing to construction, static instances, trait placement, helpers and comments. |
+| `records.md` | `packages/{actions,forms,panels,schemas,tables}/src/**/*.php` | How code compares, keys and reads records, since a record may be keyed by several fields or by an association. |
+| `tests.md` | `packages/*/tests/**` | How a package's Pest suite is laid out, booted and wired, and where support's Twig components are render-tested. |
+| `twig.md` | `packages/*/templates/**` | Template layout, component invocation, props and attribute rendering in the bundles' Twig templates. |
 
 ## Where a new fact goes
 
 | It is… | It goes to |
 | --- | --- |
 | needed by every task | this file |
-| about certain files | the `.claude/rules/` file whose `paths:` cover them |
+| about certain files | the `.claude/rules/` file whose `paths:` cover them, or a new one |
 | a multi-step procedure | `.claude/skills/<name>/SKILL.md` |
 | a reason, an alternative, history | `docs/progress/` or `docs/internals/` |
 | status | `docs/progress/roadmap.md` |

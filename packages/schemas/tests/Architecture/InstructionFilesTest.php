@@ -126,6 +126,11 @@ function instructionHistoryMarkers(string $content): array
     return array_values(array_unique($matches[0]));
 }
 
+function instructionFileBytes(string $file): int
+{
+    return (int) filesize(instructionRepositoryRoot() . '/' . $file);
+}
+
 function instructionFileContent(string $file): string
 {
     return (string) file_get_contents(instructionRepositoryRoot() . '/' . $file);
@@ -169,7 +174,7 @@ it('finds the history markers instruction files must not carry', function (strin
 ]);
 
 it('keeps the root CLAUDE.md within its budget', function (): void {
-    $size = mb_strlen(instructionFileContent('CLAUDE.md'));
+    $size = instructionFileBytes('CLAUDE.md');
 
     expect($size)->toBeLessThanOrEqual(12 * 1024, "CLAUDE.md is {$size} bytes; every session and subagent loads it, so it holds only what every task needs (12 KB budget). Move file-specific rules to .claude/rules/ and reasoning to docs/.");
 });
@@ -200,8 +205,8 @@ it('scopes, describes and sizes every rule file', function (): void {
         $description = $frontmatter['description'] ?? null;
         $paths = $frontmatter['paths'] ?? null;
 
-        if (mb_strlen($content) > 8 * 1024) {
-            $violations[] = "{$file}: " . mb_strlen($content) . ' bytes, over the 8 KB budget — split it by paths or move background to docs/';
+        if (instructionFileBytes($file) > 8 * 1024) {
+            $violations[] = "{$file}: " . instructionFileBytes($file) . ' bytes, over the 8 KB budget — split it by paths or move background to docs/';
         }
 
         if (!is_string($description) || '' === mb_trim($description) || str_contains(mb_trim($description), "\n")) {
@@ -249,8 +254,8 @@ it('names, describes and sizes every skill', function (): void {
         $directory = basename(dirname($file));
         $description = $frontmatter['description'] ?? null;
 
-        if (mb_strlen($content) > 12 * 1024) {
-            $violations[] = "{$file}: " . mb_strlen($content) . ' bytes, over the 12 KB budget';
+        if (instructionFileBytes($file) > 12 * 1024) {
+            $violations[] = "{$file}: " . instructionFileBytes($file) . ' bytes, over the 12 KB budget';
         }
 
         if (($frontmatter['name'] ?? null) !== $directory) {
@@ -277,4 +282,37 @@ it('keeps history out of every instruction file', function (): void {
     }
 
     expect($violations)->toBe([], "Instruction files carry rules, never history — move these to docs/:\n" . implode("\n", $violations));
+});
+
+it('lists every rule file in the CLAUDE.md index with its paths and description', function (): void {
+    $claude = instructionFileContent('CLAUDE.md');
+    $section = (string) preg_replace('/\A.*?^## Rule files$(.*?)(?=^## |\z).*\z/ms', '$1', $claude);
+    $violations = [];
+
+    foreach (instructionRuleFiles() as $file) {
+        try {
+            $frontmatter = instructionFrontmatter(instructionFileContent($file));
+        } catch (ParseException) {
+            continue;
+        }
+
+        $paths = is_array($frontmatter['paths'] ?? null) ? $frontmatter['paths'] : [];
+        $globs = implode(', ', array_map(static fn (mixed $glob): string => '`' . (is_string($glob) ? $glob : '') . '`', $paths));
+        $description = is_string($frontmatter['description'] ?? null) ? $frontmatter['description'] : '';
+        $row = '| `' . mb_substr($file, mb_strlen('.claude/rules/')) . "` | {$globs} | {$description} |";
+
+        if (!str_contains($section, $row)) {
+            $violations[] = "missing or stale index row: {$row}";
+        }
+    }
+
+    preg_match_all('/^\| `([^`]+\.md)` \|/m', $section, $rows);
+
+    foreach ($rows[1] as $name) {
+        if (!is_file(instructionRepositoryRoot() . '/.claude/rules/' . $name)) {
+            $violations[] = "index row for a rule that does not exist: {$name}";
+        }
+    }
+
+    expect($violations)->toBe([], implode("\n", $violations));
 });

@@ -11,8 +11,9 @@ use function dirname;
 /**
  * Convention test for the repository's markdown: CLAUDE.md, .claude/ and docs/. It holds what a machine
  * can prove about documentation — every relative link and anchor resolves, the instruction files name
- * only paths and scripts that exist, and no port-trail detail file is orphaned from its package README.
- * Whether a sentence is still true is a judgment, which the docs-audit skill makes at a milestone's end.
+ * only paths and scripts that exist, no port-trail detail file is orphaned from its package README, and
+ * docs/ carries no milestone label. Whether a sentence is still true is a judgment, which the docs-audit
+ * skill makes at a milestone's end.
  */
 function documentationRepositoryRoot(): string
 {
@@ -134,6 +135,16 @@ function documentationBrokenLinks(string $file): array
     return $broken;
 }
 
+/**
+ * @return list<string> the milestone labels in the content's prose, such as `M3` or `M7 · 5`
+ */
+function documentationMilestoneLabels(string $content): array
+{
+    preg_match_all('/\bM\d+(?:\s?·\s?\d+[a-z]?)?\b/u', documentationProse($content), $matches);
+
+    return array_values(array_unique($matches[0]));
+}
+
 it('turns headings into GitHub anchors', function (string $heading, string $anchor): void {
     expect(documentationSlug($heading))->toBe($anchor);
 })->with([
@@ -166,6 +177,34 @@ it('resolves every relative link and anchor in CLAUDE.md, .claude/ and docs/', f
     }
 
     expect($violations)->toBe([], "Broken documentation links:\n" . implode("\n", $violations));
+});
+
+it('finds the milestone labels docs/ must not carry', function (string $content, array $labels): void {
+    expect(documentationMilestoneLabels($content))->toBe($labels);
+})->with([
+    'a milestone tag' => ['since M7 · 5 the table', ['M7 · 5']],
+    'a compact tag' => ['the M4·6 grouping', ['M4·6']],
+    'a bare milestone' => ['the sweep that closed M3', ['M3']],
+    'a code span' => ['the `M7 · 5` example', []],
+]);
+
+it('keeps milestone labels out of docs/', function (): void {
+    $root = documentationRepositoryRoot();
+    $violations = [];
+
+    foreach (documentationMarkdownFiles() as $file) {
+        if (!str_starts_with($file, 'docs/')) {
+            continue;
+        }
+
+        $labels = documentationMilestoneLabels((string) file_get_contents($root . '/' . $file));
+
+        if ([] !== $labels) {
+            $violations[] = "{$file}: " . implode(', ', $labels);
+        }
+    }
+
+    expect($violations)->toBe([], "Milestone labels in docs/ (state the behaviour or the missing capability instead):\n" . implode("\n", $violations));
 });
 
 it('names only repository paths that exist in the instruction files', function (): void {

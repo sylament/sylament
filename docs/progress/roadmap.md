@@ -420,7 +420,7 @@ and a blank one inserted `('', '')`. In the demo both composite resources now
 create, their lists replicate asking for the key, and the article form re-reads
 its relationships after its flush, with no card, migration or entity, so the
 milestone's demo script runs end to end. Every ledger row is closed, recorded or
-none. Reaching `main`, and what comes after M7, are Martin's call. M7 · 7 closed
+none. What comes after M7 is Martin's call. M7 · 7 closed
 the validation's before-main list (2026-09-24); what it left open is in the
 ledger. M7 · 8 put the suites on MySQL and PostgreSQL, and CI now gates the
 split on both and on a mutation score over the codec. M7 · 9 closed the
@@ -441,6 +441,7 @@ component to its writer, a record violation a layout component cannot show
 renders above the form, a singular relationship refuses a new record it cannot
 key, and a refused create under a many-to-many hands its record back out of the
 owner's collection; what it left is recorded in the ledger.
+M7 reached `main` on 2026-10-06, fast-forwarded from its milestone branch.
 
 ## Pulled forward
 
@@ -486,7 +487,7 @@ story stays honest.
 | M4 | [Tables widening](#m4--tables-widening) | The table at Filament depth: bulk and header actions, row behaviour and query-string state, the column catalog, column manager, per-column search, grouping and summaries, relation-scoped tables. | todo |
 | M5 | [View page + infolists](#m5--view-page--infolists) | `sylament/infolists` from placeholder to entries, and `ViewRecord` as the third resource page. | todo |
 | M6 | [Panel depth](#m6--panel-depth) | Relation managers, custom pages, nested resources and sub-navigation, global search, widgets and the dashboard, shell completeness. | todo |
-| M7 | [Composite identifiers](#m7--composite-identifiers) | Entities with a composite Doctrine identifier — scalar fields, a derived identity, or both — work wherever a single-identifier entity does: table rows, resource records, relation targets and relation owners. | done | Closed with M7 · 7 (the 2026-09-24 validation's fixes, landed 2026-09-28), eight steps after it opened — six epics, 5b and 7 — and M7 · 8, the test-infrastructure step on the same branch, runs its suites on MySQL and PostgreSQL as well as SQLite without changing product code. An entity keyed by several scalar fields, by an association plus a scalar, by two associations or by an association alone works wherever a single-`id` entity does: table rows and their selection, reorder and bulk delete; resource records, their `{record}` URLs and global search; relation targets and relation owners; and, with the last epic, the create and edit paths, where a taken assigned key is a field error, a changed one is refused and `ReplicateAction` asks for the key. What Doctrine makes impossible is recorded as a divergence, and every ledger row is closed, recorded or none. Reaching `main` is Martin's call. |
+| M7 | [Composite identifiers](#m7--composite-identifiers) | Entities with a composite Doctrine identifier — scalar fields, a derived identity, or both — work wherever a single-identifier entity does: table rows, resource records, relation targets and relation owners. | done | Closed with M7 · 7 (the 2026-09-24 validation's fixes, landed 2026-09-28), eight steps after it opened — six epics, 5b and 7 — and M7 · 8, the test-infrastructure step on the same branch, runs its suites on MySQL and PostgreSQL as well as SQLite without changing product code. An entity keyed by several scalar fields, by an association plus a scalar, by two associations or by an association alone works wherever a single-`id` entity does: table rows and their selection, reorder and bulk delete; resource records, their `{record}` URLs and global search; relation targets and relation owners; and, with the last epic, the create and edit paths, where a taken assigned key is a field error, a changed one is refused and `ReplicateAction` asks for the key. What Doctrine makes impossible is recorded as a divergence, and every ledger row is closed, recorded or none. It reached `main` on 2026-10-06. |
 | — | [Beyond](#beyond) | Unordered candidates; the milestone after M7 is promoted from here. | — |
 
 ## M1 — Entity CRUD slice

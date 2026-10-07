@@ -20,7 +20,7 @@ It is both a leaf and a container: it carries a state path of its own *and* path
 
 The *plain* repeater maps **value-shaped array items only**.
 Object collections, a `Traversable`-typed property or a Doctrine `Collection` behind an adder, [stay refused by the mapper](../schemas/property-accessor.md#a-missing-singular-intermediate-is-constructed-an-object-collection-is-refused), because mapping collection *items* needs identity: which state row is which entity, and what happens to the rows that disappeared.
-The measured failure that draws the line is recorded in [the Serializer rejection](../schemas/belongs-to-record.md#a-serializer-based-mapper-stays-rejected-on-amended-grounds): identity-less collection population produced duplicate INSERTs and orphan deletions on a real two-tag `Post`.
+The measured failure that draws the line is recorded in [the Serializer rejection](../schemas/belongs-to-record.md#a-serializer-based-mapper-is-rejected-for-collection-population): identity-less collection population produced duplicate INSERTs and orphan deletions on a real two-tag `Post`.
 That identity is what [`relationship()`](repeater-relationship.md#a-relationship-repeater-keys-its-items-by-identity-and-diffs-the-collection) supplies, so a repeater that declares one maps a Doctrine collection and the refusal steps aside for it, [and only for it](#object-collections-stay-refused-until-a-relationship-supplies-the-identity).
 
 ## Surface
@@ -48,7 +48,7 @@ That identity is what [`relationship()`](repeater-relationship.md#a-relationship
 | `extraItemActions()` / `getExtraItemActions()` / `cacheExtraItemActions()` | [`HasExtraItemActions.php`](../../../vendor/filament/forms/src/Components/Concerns/HasExtraItemActions.php) | done | — | [semantics](#an-extra-item-action-reads-its-items-state) |
 | `grid()` / `getGridColumns()` | [`HasContainerGridLayout.php`](../../../vendor/filament/schemas/src/Components/Concerns/HasContainerGridLayout.php) | done | — | [semantics](#the-items-grid-is-supports-grid) |
 | `table()` / `getTableColumns()` / `isTable()` | [`Repeater.php`](../../../vendor/filament/forms/src/Components/Repeater.php) | done | — | [semantics](#table-mode-pairs-columns-by-position) · [diverges](#hidden-fields-render-in-a-trailing-hidden-cell) |
-| `partiallyRenderAfterActionsCalled()` / `shouldPartiallyRenderAfterActionsCalled()` | [`Repeater.php`](../../../vendor/filament/forms/src/Components/Repeater.php) | blocked | a UX LiveComponent partial-render equivalent | [detail](../schemas/schema.md#hasstate-still-lacks-constant-state-relationships-and-partial-rendering) |
+| `partiallyRenderAfterActionsCalled()` / `shouldPartiallyRenderAfterActionsCalled()` | [`Repeater.php`](../../../vendor/filament/forms/src/Components/Repeater.php) | blocked | a UX LiveComponent partial-render equivalent | [detail](../schemas/schema.md#fill-fires-the-hydrated-hooks-children-first-and-before-the-null-fill-pass) |
 | `array_move_before()` / `array_move_after()` | [`helpers.php`](../../../vendor/filament/forms/src/helpers.php) | done | — | [diverges](#the-move-helpers-correct-two-vendor-edge-defects) |
 | `getPublishedViewOverrideCheckPath()` | [`Repeater.php`](../../../vendor/filament/forms/src/Components/Repeater.php) | skipped | — | [diverges](toggle-buttons.md#there-is-nothing-to-publish-a-view-override-against) |
 | `createItemButtonLabel()` / `disableItemCreation()` / `disableItemDeletion()` / `disableItemMovement()` / `orderable()` / `inset()` (deprecated) | [`Repeater.php`](../../../vendor/filament/forms/src/Components/Repeater.php) | skipped | — | [diverges](#deprecated-filament-members-are-not-ported) |
@@ -77,7 +77,7 @@ Two consequences: the same field shows a *different* absolute path on every moun
 ### The item pipeline runs children-first, and before the null-fill pass
 
 `hydrateItems()` is an `afterStateHydrated` hook, so *when* the schema fires those hooks decides whether it sees the record's shape or a wreck of it.
-Two orderings are load-bearing, and schemas' root [`HasState`](../schemas/schema.md#hasstate-still-lacks-constant-state-relationships-and-partial-rendering) keeps both.
+Two orderings are load-bearing, and schemas' root [`HasState`](../schemas/schema.md#fill-fires-the-hydrated-hooks-children-first-and-before-the-null-fill-pass) keeps both.
 **Hooks run before `fillStateWithNull()`**: an item's raw value is a scalar in simple mode (`['x', 'y']`), and the null-fill pass writes null at every unset leaf path — `tags.0.value` — which clobbers the scalar the wrap step was about to read, so a record fill would land two empty items.
 **Hooks run children-first**, each descent re-reading `getChildSchemas()`: a nested repeater's hook has to re-key its own items *before* the outer one re-keys the map they sit in, or the inner component writes at a path its parent has just renamed and vivifies phantom items beside the real ones.
 Filament reaches both orderings for free — it hydrates recursively and fires each component's hooks at the end of its own descent — where the port walks flat lists, so it states the order explicitly.
@@ -106,7 +106,7 @@ The repeater itself also derives nothing, by the `isCollection` skip.
 This is acceptance, not a gap to close: teaching `describe()` to see through an item segment would need element types that do not exist in the language.
 
 Under `relationship()` it is the other way round.
-Each item schema [binds the child it maps](repeater-relationship.md#an-item-schema-is-stamped-with-the-child-it-maps), so the item schema *is* [the nearest record frame](../schemas/belongs-to-record.md#the-nearest-record-frame-is-the-first-node-above-a-component-that-binds-one) and the field's path is read against the child class with the item segment already stripped — no element type needed, because the association's target declares one.
+Each item schema [binds the child it maps](repeater-relationship.md#an-item-schema-is-stamped-with-the-child-it-maps), so the item schema *is* [the nearest record frame](../schemas/component-belongs-to-record.md#the-nearest-record-frame-is-the-first-node-above-a-component-that-binds-one) and the field's path is read against the child class with the item segment already stripped — no element type needed, because the association's target declares one.
 A `TextInput::make('heading')` over a non-nullable child property derives required; one over a nullable property does not.
 A `DateTimePicker` inside such an item reads its object class from that same frame — and its stored value too ([the item fill](repeater-relationship.md#a-relationship-repeater-keys-its-items-by-identity-and-diffs-the-collection)).
 A plain-array repeater has no class to frame, so it derives nothing.

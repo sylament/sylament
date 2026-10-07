@@ -345,7 +345,7 @@ Explicit declarations win in both directions and are unchanged — `required()`,
 Their equivalent is three manual declarations that must be kept in sync with the schema by hand — fields left un-`required()`, `requiredWith()` on the siblings, `condition:` on the container.
 
 **Class and path are both read in the nearest record frame** — `getNearestRecordClass()` and `getNearestRecordStatePath()`, the first node above the field that binds a record of its own, else the root container.
-The two have to name the same frame, and [the pair comes off one walk](../schemas/belongs-to-record.md#the-nearest-record-frame-is-the-first-node-above-a-component-that-binds-one) **so the two agree**.
+The two have to name the same frame, and [the pair comes off one walk](../schemas/component-belongs-to-record.md#the-nearest-record-frame-is-the-first-node-above-a-component-that-binds-one) **so the two agree**.
 Reading only the class nearest-first would mix them: `Section::make('author')->statePath('author')->record(Author::class)` would ask `describe(Author::class, 'author.name')`, which no type answers, and the walk would derive **not required** rather than failing.
 Framed on both halves, that section asks `describe(Author::class, 'name')`, so **a field inside a class-stamped frame over a non-nullable property derives required**.
 A stamped subtree needs the same: a [relationship repeater](repeater.md) item or an [entangled subtree](../schemas/entangles-state-with-singular-relationship.md) binding its own record derives against that record instead of asking the root about a `record-<id>` segment no property answers.

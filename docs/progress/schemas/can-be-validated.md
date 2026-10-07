@@ -1,24 +1,23 @@
 ---
-description: The root-tier validation trait on `Schema`, tracked here together with the host-side execution machinery it delegates to (the validation members of… (draft)
+description: Schema validation on Symfony Validator — the trait on `Schema`, the host's per-schema run and sticky errors, the record check and `ValidationException`.
 ports:
   - vendor/filament/schemas/src/Concerns/CanBeValidated.php
   - vendor/filament/schemas/src/Concerns/InteractsWithSchemas.php
   - vendor/filament/forms/src/Components/Contracts/HasValidationRules.php
 owns:
+  - packages/schemas/src/Components/Contracts/HasValidationConstraints.php
   - packages/schemas/src/Concerns/CanBeValidated.php
   - packages/schemas/src/Exceptions/
 ---
 # CanBeValidated (schemas)
 
-[`Sylament\Schemas\Concerns\CanBeValidated`](../../../packages/schemas/src/Concerns/CanBeValidated.php) — the root-tier validation trait on [`Schema`](schema.md), tracked here together with the host-side execution machinery it delegates to (the validation members of [`Concerns\HasSchemas`](has-schemas.md)), the component-tier contract [`HasValidationConstraints`](../../../packages/schemas/src/Components/Contracts/HasValidationConstraints.php), and [`ValidationException`](../../../packages/schemas/src/Exceptions/ValidationException.php).
+[`Sylament\Schemas\Concerns\CanBeValidated`](../../../packages/schemas/src/Concerns/CanBeValidated.php) is the root-tier validation trait on [`Schema`](schema.md); the host-side run it delegates to is the validation half of [`Concerns\HasSchemas`](has-schemas.md).
 It ports Filament's [`Concerns/CanBeValidated.php`](../../../vendor/filament/schemas/src/Concerns/CanBeValidated.php) and the validation members of [`Concerns/InteractsWithSchemas.php`](../../../vendor/filament/schemas/src/Concerns/InteractsWithSchemas.php) onto Symfony Validator: components implementing the contract build `Symfony\Component\Validator\Constraint` objects, the schema collects them keyed by absolute state path, and the host runs `ValidatorInterface` per path against the raw live state — filling a per-schema error bag, recording stickiness in a `#[LiveProp]`, and throwing `ValidationException` so ux-live-component's exception listener re-renders the mutated component.
 
-The port renames Filament's rule vocabulary to Symfony's — `getValidationRules()` → `getValidationConstraints()`, `dehydrateValidationRules()` → `dehydrateValidationConstraints()`, `HasValidationRules` → `HasValidationConstraints` — recorded in the [rename table](../renames.md); the payload changes ecosystem (Laravel rule strings/objects → Symfony `Constraint`), so the name change makes the migration break loud and searchable.
+The rule vocabulary becomes Symfony's (`getValidationRules()` → `getValidationConstraints()`, `HasValidationRules` → `HasValidationConstraints`), recorded in the [rename table](../renames.md).
 The host contract declarations these rows implement are tracked in [`interacts-with-schemas.md`](interacts-with-schemas.md), including the skipped `currentlyValidatingSchema()`.
 
 ## Surface
-
-Every point of the trait, the host machinery, the contract, and the exception.
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
@@ -31,27 +30,27 @@ Every point of the trait, the host machinery, the contract, and the exception.
 | [`PresenceGate::apply()`](../../../packages/schemas/src/Validation/PresenceGate.php) in front of each path's run | [`Validator::presentOrRuleIsImplicit()`](../../../vendor/laravel/framework/src/Illuminate/Validation/Validator.php) (Laravel) | done | — | [detail](presence-gate.md) |
 | [`HasSchemas::getErrorsForSchemaStatePath()`](../../../packages/schemas/src/Concerns/HasSchemas.php) | — | done | — | [semantics](#the-read-across-identities-de-duplicates) |
 | [The validation identity (`getSchemaValidationKey()` + `clearNestedSchemaValidation()`)](../../../packages/schemas/src/Concerns/HasSchemas.php) | — | done | — | [diverges](#a-components-child-schema-is-keyed-by-that-component-not-by-the-root) |
-| [`form-validation-error` dispatch on the throwing branch](../../../packages/schemas/src/Concerns/HasSchemas.php) | [`InteractsWithSchemas::validate()`](../../../vendor/filament/schemas/src/Concerns/InteractsWithSchemas.php) | done | — | [diverges](#the-throwing-branch-announces-form-validation-error-carrying-the-schema-identity) |
+| [`form-validation-error` dispatch on the throwing branch](../../../packages/schemas/src/Concerns/HasSchemas.php) | [`InteractsWithSchemas::validate()`](../../../vendor/filament/schemas/src/Concerns/InteractsWithSchemas.php) | done | — | [semantics](#the-throwing-branch-announces-form-validation-error-carrying-the-schema-identity) |
 | [`HasSchemas::clearSchemaValidation()`](../../../packages/schemas/src/Concerns/HasSchemas.php) | — | done | — | [diverges](interacts-with-schemas.md#clearschemavalidation-is-scoped-where-filament-resets-the-whole-livewire-error-bag) |
 | [`$validatedSchemas` `#[LiveProp]` + `#[PostHydrate(priority: -20)]` sticky re-validation](../../../packages/schemas/src/Concerns/HasSchemas.php) | — | done | — | [diverges](#sticky-re-validation-replaces-filaments-submit-only-model) · [semantics](#a-clean-silent-re-validation-keeps-the-schema-sticky) |
 | [`setSchemaStateValidator()` `#[Required]` injection](../../../packages/schemas/src/Concerns/HasSchemas.php) | — | done | — | — |
 | Host `validateOnly()` per-path validation | [`InteractsWithSchemas::validateOnly()`](../../../vendor/filament/schemas/src/Concerns/InteractsWithSchemas.php) | skipped | — | [diverges](#sticky-re-validation-replaces-filaments-submit-only-model) |
 | Host `onValidationError()` hook | [`InteractsWithSchemas::onValidationError()`](../../../vendor/filament/schemas/src/Concerns/InteractsWithSchemas.php) | todo | — | [detail](#the-onvalidationerror-hook-is-not-ported) |
 | Host `getRules()` / `getValidationAttributes()` merges + `prepareForValidation()` | [`InteractsWithSchemas`](../../../vendor/filament/schemas/src/Concerns/InteractsWithSchemas.php) | skipped | — | [diverges](#the-livewire-whole-component-validate-plumbing-is-not-ported) |
-| Record-sourced constraints (an entity's own `#[Assert]` metadata, and the taken-key, changed-key and blank-key rules) — the [`getData()`](belongs-to-record.md) tail | — | done | — | [diverges](#record-sourced-constraints-are-validated-on-the-mapped-object) · [diverges](#a-refused-submit-leaves-the-record-mutated) · [diverges](#a-taken-assigned-key-is-a-field-error-not-a-unique-violation) · [diverges](#a-changed-key-is-refused-and-put-back-not-handed-to-doctrine) · [diverges](#a-blank-assigned-key-is-refused-before-anything-is-written) |
+| [Record-sourced constraints](../../../packages/schemas/src/Concerns/HasSchemas.php) — the record's own `#[Assert]` metadata and the key rules | — | done | — | [diverges](#record-sourced-constraints-are-validated-on-the-mapped-object) · [diverges](#a-refused-submit-leaves-the-record-mutated) · [diverges](#a-taken-assigned-key-is-a-field-error-not-a-unique-violation) · [diverges](#a-changed-key-is-refused-and-put-back-not-handed-to-doctrine) · [diverges](#a-blank-assigned-key-is-refused-before-anything-is-written) |
 | [`HasSchemas::validateSchemaRecord()`](../../../packages/schemas/src/Concerns/HasSchemas.php) | — | done | — | [semantics](#a-host-holding-no-validator-skips-the-record-run-rather-than-refusing-to-map) · [semantics](#record-errors-are-sticky-but-the-silent-pass-cannot-reproduce-them) |
-| [`Schema::validateRecordKey()` / `isRecordKeyValidated()`](../../../packages/schemas/src/Concerns/CanBeValidated.php) — the switch over the record check's blank-key and taken-key passes | — | done | — | [semantics](#the-key-rules-switch-off-per-schema-never-the-changed-key-one) |
+| [`Schema::validateRecordKey()` / `isRecordKeyValidated()`](../../../packages/schemas/src/Concerns/CanBeValidated.php) — the key-rules switch | — | done | — | [semantics](#the-key-rules-switch-off-per-schema-never-the-changed-key-one) |
 | [`Schema::getRecordViolationPathTranslator()`](../../../packages/schemas/src/Concerns/BelongsToRecord.php) + the translator it builds | — | done | — | [detail](violation-path-translator.md) |
-
-Coverage: the walk (path keying, `isNeitherDehydratedNorValidated()` skip variants, child-schema recursion) by [`CanBeValidatedTest`](../../../packages/schemas/tests/Unit/Concerns/CanBeValidatedTest.php); the host machinery end-to-end through a real live host + validator — submit-path bag/stickiness/typed exception, silent path, success clearing, scoped and full clear, sticky re-validation across live round-trips including the stale-key drop, and the `getState()`/`getStateSnapshot()` split — by [`HasSchemasValidationTest`](../../../packages/schemas/tests/Integration/Concerns/HasSchemasValidationTest.php), which also carries the identity cases over a `Section`-nested fixture host (`ValidationNestedHost`): the root identity, the component's child-schema identity, its sticky round trip, the unresolvable-identity drop, the nested-clear on a root pass, the de-duplicated read, and the `form-validation-error` payload on each identity shape plus its absence on the silent path; the exception by [`ValidationExceptionTest`](../../../packages/schemas/tests/Unit/Exceptions/ValidationExceptionTest.php); the component-tier flag trio the walk guards on by the component [`HasStateTest`](../../../packages/schemas/tests/Unit/Components/Concerns/HasStateTest.php) (see [`component.md`](component.md)); the record tail — the four fold destinations (mapped leaf, nested cascade, class-level, unmapped property), the [empty root key of a pathless schema](#a-pathless-schema-folds-its-untranslatable-violations-at-the-empty-key), the clean pass, the mutated-but-unflushed reality, and the no-validator skip — by [`BelongsToRecordValidationTest`](../../../packages/schemas/tests/Integration/Concerns/BelongsToRecordValidationTest.php) over real Doctrine entities, and over a real `Repeater::relationship()` by forms' [`RepeaterRecordValidationTest`](../../../packages/forms/tests/Integration/Components/RepeaterRecordValidationTest.php).
+| [`RecordKeyGuard`](../../../packages/schemas/src/Validation/RecordKeyGuard.php) (`@internal`) | — | done | — | [diverges](#record-sourced-constraints-are-validated-on-the-mapped-object) |
 
 ## Details
 
 ### The onValidationError hook is not ported
 
-Filament's host trait ships an empty `onValidationError(ValidationException $exception)` hook that `validate()`/`validateOnly()` funnel failures through — panel pages override it to dispatch scroll-to-error browser events.
-No consumer exists here yet.
-**Next step:** port it (as a hook on `validateSchema()`'s throw path) when the panels layer needs failure-side effects beyond the re-render.
+Filament's host trait ships an empty `onValidationError(ValidationException $exception)` hook that `validate()` and `validateOnly()` call before they dispatch `form-validation-error` and rethrow.
+Its one Filament override is the panel `BasePage`'s, which hands the exception to a static `$reportValidationErrorUsing` callback; the scroll to the first error is the client's `form-validation-error` handler, not this hook.
+`validateSchema()`'s throwing branch has no such hook, and nothing in the port calls one: the panel consumer is its own row in [custom-pages.md](../panels/custom-pages.md).
+Porting it means a protected hook called on `validateSchema()`'s throw path, before the dispatch.
 
 ## Semantics
 
@@ -59,7 +58,7 @@ No consumer exists here yet.
 
 `validateSchema()` does not merge into the error bag: it rewrites the schema's entire bag section (or unsets it when clean) on every run.
 That is what clears stale paths whose conditional constraints disappeared between requests — a merge would leave a hidden-then-shown field's old errors behind.
-Reads (`getErrorsForSchemaStatePath()`) merge across schema sections, but in practice a path lives under one schema.
+Reads merge across schema sections and [de-duplicate](#the-read-across-identities-de-duplicates), because two identities can hold one path at once.
 
 ### A host holding no validator skips the record run rather than refusing to map
 
@@ -97,14 +96,19 @@ The de-duplication is on read rather than on write because each bag section is s
 
 The `form-validation-error` dispatch is guarded on the `LiveResponder` that UX LiveComponent's `ComponentToolsTrait` injects through a `#[Required]` setter: a host built with `new` (every schemas/forms render fixture that never boots a live request) never received one, and there is no browser to announce to.
 The bag, the stickiness and the throw are unchanged for such a host — only the announcement is skipped.
-The three Integration cases asserting the event on a container-built host are what keep the guard from silently becoming always-false if the vendor property is ever renamed.
+The Integration cases asserting the event's payload on a container-built host ([`HasSchemasValidationTest`](../../../packages/schemas/tests/Integration/Concerns/HasSchemasValidationTest.php), [`WizardLiveTest`](../../../packages/schemas/tests/Integration/Concerns/WizardLiveTest.php)) keep the guard from silently becoming always-false if the vendor property is renamed.
+
+### The throwing branch announces form-validation-error, carrying the schema identity
+
+`validateSchema()`'s throwing branch dispatches Filament's `form-validation-error` as a browser event with `['schemaKey' => $identity]` in place of Filament's `livewireId` ([why the id goes](../translations.md#a-browser-event-needs-no-livewireid-because-its-target-is-the-host)).
+The schema root's client handler ([`schema_controller.ts`](../../../packages/schemas/assets/src/controllers/schema_controller.ts)) recognises its host by the event's target and reads no payload, so no toolkit listener reads the identity.
+The silent path (`shouldThrow: false`) dispatches nothing — the sticky pass runs it on every request and an announcement per request would re-scroll the page.
 
 ### The key rules switch off per schema, never the changed-key one
 
 `Schema::validateRecordKey(bool|Closure $condition = true)` switches the two key rules that only ever answer for a **new** record — the [blank-key pass](#a-blank-assigned-key-is-refused-before-anything-is-written) and the [taken-key pass](#a-taken-assigned-key-is-a-field-error-not-a-unique-violation) — on or off for the schema whose `getData()` runs; `isRecordKeyValidated()` reads it through a plain `evaluate()`, so a closure receives the schema's usual injections, `$record` included: the record the schema is bound to.
 That is the record being mapped where the caller binds it before `getData()` (the resource create page, `CreateAction`'s relationship arm, an edit), and null under a class-string binding (`CreateAction`'s plain arm).
 `HasSchemas::validateSchemaRecord()` reads it once, after the changed-key pass and the record's own constraints raised nothing, and skips both passes when it is false — which covers `ReplicateAction`'s second call after `beforeReplicaSaved()` too, since that reads the same schema.
-`InteractsWithSchemas` did not change.
 
 Switched off, the application owns a new record's key.
 A taken one reaches the flush, where the database's primary key refuses it and the entity manager closes.
@@ -117,14 +121,14 @@ What it never reaches, by design:
 
 - the **changed-key pass** and its put-back.
   Off, it would bring back the IDENTITY generator's silent *Saved* over an edited key; it costs no statement; and tables' editable cell runs it with no schema at all, so a form and a cell over one key would disagree;
-- the record's own constraints, and a host with no validator, which skips the whole tail as before;
+- the record's own constraints, and a host with no validator, which skips the whole tail;
 - every by-name `LogicException` at the create seams, `Select`, `Repeater`, a singular relationship (`Group`, `Section` or `Fieldset` with `relationship()`) and `ReplicateAction` — developer errors, which no switch silences.
 
 The flag is the schema's own, with no parent walk: the record check runs on the schema whose `getData()` ran.
 `Schema::configureUsing()` reaches every schema as a default — it runs inside `make()` — which a page's `form()` or an action's schema resolver then overrides.
 One reach is recorded rather than closed: the edit page's `EditAction` modal wraps the form in a fresh schema ([`EditRecord`](../../../packages/panels/src/Resources/Pages/EditRecord.php)), so a flag set in `Resource::form()` does not reach it there — which matters only for the new records an edit creates.
 
-Filament has no automatic key rules, so the name is the toolkit's; it follows Filament's `bool | Closure $condition = true` switches (`deferLoading()`, `persistTab()`), and `renames.md` carries the row.
+Filament has no automatic key rules, so the name is the toolkit's; it follows Filament's `bool | Closure $condition = true` switches (`deferLoading()`, `persistTab()`), and [translations.md](../translations.md) carries the row.
 Pinned by [`CanBeValidatedRecordKeyTest`](../../../packages/schemas/tests/Unit/Concerns/CanBeValidatedRecordKeyTest.php) — the default, a literal and a closure flag, and `configureUsing()`'s reach — and [`HasSchemasRecordKeySwitchTest`](../../../packages/schemas/tests/Integration/Concerns/HasSchemasRecordKeySwitchTest.php): switched off, a taken key reaches the flush and a blank mapped one is not refused, with no statement either way, while a changed key is still refused and put back and the record's own constraints still answer.
 
 ## Divergences
@@ -143,8 +147,7 @@ Every key message is raised through `ExecutionContext::buildViolation()`, so it 
 The `Callback` is [`RecordKeyGuard::constraint()`](../../../packages/schemas/src/Validation/RecordKeyGuard.php), `@internal`: one violation per refusal, at the refusal's path.
 It lives outside the host for its second reader, tables' editable cell, which validates its own refusal through it so the column's validator translates the message as the form's does ([has-columns.md](../tables/has-columns.md)).
 The blank and taken passes run only while the schema's [`validateRecordKey()`](#the-key-rules-switch-off-per-schema-never-the-changed-key-one) switch is on, which it is by default; the changed-key pass and the record's own constraints run either way.
-The host now files a message **once per path**, so a `ValidationException` never lists one twice under a field.
-`InteractsWithSchemas` did not change.
+The host files a message **once per path**, so a `ValidationException` never lists one twice under a field.
 The order and the four are pinned by [`HasSchemasIdentifierGuardTest`](../../../packages/schemas/tests/Integration/Concerns/HasSchemasIdentifierGuardTest.php), and the constraint itself by [`RecordKeyGuardTest`](../../../packages/schemas/tests/Unit/Validation/RecordKeyGuardTest.php).
 
 The alternative — pulling `getMetadataFor($class)` property constraints into the per-field [`buildValidationConstraints()`](../forms/can-be-validated.md#the-subclass-seam-is-a-protected-builder-not-the-public-getter) seam before validation — is **rejected**: typed constraints (a `#[Assert\Positive]` on an `int` property) misfire against the raw, pre-cast string state a form bag holds, and every message would then travel two different pipelines depending on where the constraint was declared.
@@ -186,7 +189,7 @@ Unchecked, it would be a `UniqueConstraintViolationException` that closes the ma
 
 It needs no declaration — no `UniqueEntity`, no `unique()` on a key field.
 The message is `UniqueEntity`'s own, so an application that declares one as well sees one message: its constraint is among the record's own, which run first, and the probe is skipped whenever any of them fails.
-The cost of that order is enumerated rather than hidden: a record failing another constraint as well learns its key is taken one submit later, exactly as the base showed that constraint's message alone.
+The cost of that order is stated rather than hidden: a record failing another constraint as well learns its key is taken one submit later.
 
 Two ways change the message, both Symfony's own rather than a hook of ours.
 Per entity, an `#[UniqueEntity(fields: [...], message: ..., errorPath: ...)]` runs with the record's own constraints and so pre-empts the probe: one message, the application's, under the field `errorPath` names.
@@ -226,9 +229,9 @@ The user cannot fix it, so it is a developer error, refused by name with an exce
 - [`ReplicateAction`](../actions/replicate-action.md) refuses it after `beforeReplicaSaved()`.
 - A singular relationship's (`Group::relationship()`) constructed record is refused by name inside `getData()`, once the record is written onto its owner, under the [`Repeater`'s rule](entangles-state-with-singular-relationship.md#a-constructed-record-whose-assigned-key-is-incomplete-is-refused-by-name) and with its exemptions: a whitespace key half the group maps over a nullable property, or one no field inside it maps, would otherwise be inserted as a row that cannot be keyed.
 
-Refusing inside the mapping for every blank key field, filing an unmapped one under the schema's own state path, was the rule's first form and is rejected.
-It pre-empted every place a developer fills a key the form does not show: `beforeReplicaSaved()`, an overridden `handleRecordCreation()` that sets a key half before calling the parent, and a global `prePersist` listener, which had no escape at all.
-It also made `Select`'s own by-name refusal unreachable, and turned a single derived identity with its association unset into *This value should not be blank.* where the create fails in Doctrine's `persist()` and the replicate refuses by name.
+Refusing inside the mapping for every blank key field, filing an unmapped one under the schema's own state path, is rejected.
+It would pre-empt every place a developer fills a key the form does not show: `beforeReplicaSaved()`, an overridden `handleRecordCreation()` that sets a key half before calling the parent, and a global `prePersist` listener, which would have no escape at all.
+It would also make `Select`'s own by-name refusal unreachable, and turn a single derived identity with its association unset into *This value should not be blank.* where the create fails in Doctrine's `persist()` and the replicate refuses by name.
 
 The seams read after `persist()` because that is the one moment nothing else can still fill the key.
 They look for a blank string only, through `AssociationReader::hasBlankAssignedIdentifier()`: a null component never reaches them, since Doctrine's `persist()` already refuses a missing assigned id by name.
@@ -255,7 +258,7 @@ The same key in another PHP type is no change; a converting type's other spellin
 
 All three messages — the taken, the changed and the blank one — are private constants on the reader, with no error code, since nothing in the toolkit reads one.
 No switch reaches this pass ([why](#the-key-rules-switch-off-per-schema-never-the-changed-key-one)).
-*"This value cannot be changed."* is new, and stays English unless the application's `translations/validators.*` maps it — Symfony ships no such message.
+*"This value cannot be changed."* is the toolkit's own, and stays English unless the application's `translations/validators.*` maps it — Symfony ships no such message.
 `disabledOn('edit')` stays the UI and this is the server's guarantee, and it holds where the UI guard does not: a modal's operation is the action's **name**, so an `EditAction::make('editRenamed')` leaves a `disabledOn('edit')` key field enabled, and the refusal is what answers there.
 A key written into a related record **nobody loaded** is not seen — Doctrine drops that write itself — and is [recorded on the reader](association-reader.md#a-changed-identifier-is-put-back-and-refused-and-costs-no-statement).
 
@@ -300,13 +303,13 @@ Filament's host `validate($rules, $messages, $attributes)` delegates to Livewire
 Sylament's `validateSchema(Schema $schema, bool $shouldThrow = true)` validates one schema in three steps.
 It collects `$schema->getValidationConstraints()`; reads **every** one of those paths' raw client state through `$schema->getPropertyAccessor()->get($host, $path)` (the same read `getRawState()` does) into one flat map, which it hands to [`Schema::mutateStateForValidation()`](schema.md#getstate-validates-without-a-prepareforvalidation-mutation-layer) so each component may rewrite its own value; then, per path, filters that path's constraints through [`PresenceGate::apply()`](presence-gate.md) so a blank string reaches only the implicit ones and runs `ValidatorInterface::validate($value, $constraints)`, stringifying each violation message.
 Reading the whole map before validating any of it is what lets a cross-field constraint resolve its sibling at build time and bake the value in — the mechanism every comparison and conditional-required arm in [forms](../forms/can-be-validated.md) uses.
-Results key by `$schema->getKey()` — every cached schema is keyed by `getSchema()`/`cacheSchema()`, and a keyless schema throws a `LogicException` — so validation scopes per schema and nested modals cannot cross-contaminate, which is the reason ux-live-component's whole-object `ValidatableComponentTrait` was rejected.
+Results key by the schema's [validation identity](#a-components-child-schema-is-keyed-by-that-component-not-by-the-root) — its parent component's key, else `$schema->getKey()`, which `getSchema()`/`cacheSchema()` set, and a `LogicException` when neither exists — so validation scopes per schema and nested modals cannot cross-contaminate, which is the reason ux-live-component's whole-object `ValidatableComponentTrait` is rejected.
 The validator arrives via the `#[Required]` setter `setSchemaStateValidator()`; a host built with `new` outside DI fails fast with a `LogicException` naming the setter.
 Reverses only if a whole-component validation model returns — not planned.
 
 ### Sticky re-validation replaces Filament's submit-only model
 
-Deliberate UX divergence (design decision, 2026-07-29): Filament validates only on submit, so an error stays on screen until the next submit regardless of fixes.
+Filament validates only on submit, so an error stays on screen until the next submit regardless of fixes.
 Here a failed submit records the schema key in the `$validatedSchemas` `#[LiveProp]`, and `#[PostHydrate(priority: -20)] revalidateValidatedSchemas()` re-validates each sticky schema silently on every subsequent request — errors clear field-by-field as the user fixes them (the `ValidatableComponentTrait` idiom).
 The pass resolves an identity three ways: a cached or declared name through `getSchema()`, a [component's absolute key](#a-components-child-schema-is-keyed-by-that-component-not-by-the-root) through `getSchemaComponent($key)?->getChildSchema()`, and — when neither answers — nothing, so a sticky identity that no longer resolves (a stale mounted-action name that dodged cleanup, a Step removed from a Wizard) is dropped, the stale-stack self-heal idiom.
 The priority is a **cross-package contract** like [the −10 it sits under](has-schemas.md#livewires-updatingupdated-state-hooks-become-a-predehydrateposthydrate-snapshot-and-diff): −20 runs below the mounted-action schema re-cache (+10, actions) so mounted schemas are resolvable, and below `callAfterSchemaStateUpdated` (−10) so `afterStateUpdated` mutations (live slug generation) settle before re-validation reads state.
@@ -327,21 +330,13 @@ A root schema keeps the name the host registered it under (`schema`, `mountedAct
 Filament has no such rule because it never validates a child schema in isolation — its Wizard does (`Step::getChildSchema()->validate()`), and there the child schema inherits the root's key, so a per-step pass would overwrite the whole form's bag section and make the sticky `#[PostHydrate(-20)]` pass re-validate the entire form on the next request.
 Three consequences, all deliberate:
 
-- `revalidateValidatedSchemas()` gains a branch that resolves such an identity back through `getSchemaComponent($key)?->getChildSchema()` before falling through to `clearSchemaValidation()`, so a step's errors survive the round trip exactly as a root schema's do — and a step that has since disappeared from the schema self-heals the same way a stale mounted-action name does.
+- `revalidateValidatedSchemas()` has a branch that resolves such an identity back through `getSchemaComponent($key)?->getChildSchema()` before falling through to `clearSchemaValidation()`, so a step's errors survive the round trip exactly as a root schema's do — and a step that has since disappeared from the schema self-heals the same way a stale mounted-action name does.
 - Validating a **root** schema clears every sticky identity and bag section prefixed `<rootKey>.`: a root pass supersedes the passes over the components inside it, so the same message is never carried by two identities that both re-validate.
   A scoped `clearSchemaValidation('<rootKey>')` clears the same prefix, for the same reason — a reset that left the step identities behind would resurrect the cleared messages on the next sticky pass.
 - The child schema itself is **not** re-keyed.
   Descendant keys stay Filament-exact, so a field keeps `schema.author` when it moves under a Tab or a Step and everything addressing components by key is untouched.
 
 One limit the rule carries, recorded rather than solved: a component with **several** child schemas — a Repeater's per-item schemas, each keyed by its item key under one parent — shares a single identity (`schema.items`), and the sticky resolver maps that identity back to the component's *default* child schema, whose fields read the template paths rather than an item's.
-Today only `Action::getSchemaState()` inside a repeater item (`Schema::getState()` → `validate()`) can reach it, and the next root pass clears the `schema.`-prefixed identities; the fix, when a consumer needs it, is to prefer the child schema's own key whenever it differs from the default child schema's.
+Only `Action::getSchemaState()` inside a repeater item (`Schema::getState()` → `validate()`) can reach it, and the next root pass clears the `schema.`-prefixed identities; the fix, when a consumer needs it, is to prefer the child schema's own key whenever it differs from the default child schema's.
 
 Reverses only if child-schema validation stops being a thing — the Wizard is its first consumer, and relation managers the second.
-
-### The throwing branch announces form-validation-error, carrying the schema identity
-
-Filament dispatches `form-validation-error` with `livewireId: $this->getId()` from its Livewire `validate()`/`validateOnly()` overrides, and its client-side schema handler uses that id to decide whether the event belongs to it.
-Sylament dispatches the same event name from `validateSchema()`'s throwing branch with `['schemaKey' => $identity]` instead: there is no live-component id producer on this side, and the schema root the JS scopes to is identified by its key, so the payload carries what the listener actually needs.
-The silent path (`shouldThrow: false`) dispatches nothing — the sticky pass runs it on every request and an announcement per request would re-scroll the page.
-Recorded as a payload translation in [renames.md](../renames.md), not a behavioural divergence.
-

@@ -372,7 +372,7 @@ Widen the type in lockstep with an enum or `Markup` grouped icon if the actions 
 ### Label translation and the deprecated `disableLabel()` alias are not ported
 
 Filament's `HasLabel` carries `$shouldTranslateLabel` + `translateLabel()` and runs a string `getLabel()` result through Laravel's `__()` translator, plus a `@deprecated disableLabel()` alias whose replacement Filament names as `hiddenLabel()`.
-Sylament drops all three: no translation layer is wired into labels (the same call schemas' `HasLabel` makes, see [`schemas/has-label.md`](../schemas/has-label.md#label-translation-and-the-deprecated-disablelabel-are-not-ported)), and a fresh codebase has no reason to ship the deprecated alias when `hiddenLabel()` exists.
+Sylament drops all three: no translation layer is wired into labels (the same call schemas' `HasLabel` makes, see [`schemas/has-label.md`](../schemas/has-label.md#label-translation-is-not-ported)), and a fresh codebase has no reason to ship the deprecated alias when `hiddenLabel()` exists.
 Reverses for translation if a translation layer lands; the deprecated alias stays out regardless.
 
 ### Action invocation is a PHP-side seam only

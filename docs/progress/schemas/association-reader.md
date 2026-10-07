@@ -1,5 +1,5 @@
 ---
-description: '`Sylament\Schemas\State\AssociationReader` and the `AssociationTarget` value object it returns — a Sylament invention with no Filament counterpart… (draft)'
+description: The one Doctrine seam `schemas` reads associations, record keys and identifier rules through, and the `AssociationTarget` it answers.
 ports: []
 owns:
   - packages/schemas/src/State/AssociationReader.php
@@ -10,12 +10,8 @@ owns:
 [`Sylament\Schemas\State\AssociationReader`](../../../packages/schemas/src/State/AssociationReader.php) and the [`AssociationTarget`](../../../packages/schemas/src/State/AssociationTarget.php) value object it returns — a Sylament invention with **no Filament counterpart**, and the reason there is none is structural.
 Filament asks an Eloquent model for a relationship by calling it: `$record->{$name}()` hands back a `Relation` object that already knows its related model, its cardinality, and how to save itself, so a component reads and writes a relationship through the model instance it was given.
 Doctrine has no such object — an association is *mapping metadata*, read from the `EntityManager`, and writing it is the unit of work's job at flush time.
-This class is that translation, and it is the **only** seam through which `schemas` touches an `EntityManager`.
-
-It exists so that every later relation-aware component asks one collaborator the five questions the mapping can answer — what does this property relate to, how do I reference a related entity by its key, what key does a record answer to, what query lists the options, and how do I delete an orphan — instead of each growing its own `EntityManager` dependency and its own metadata reads.
-The relationship arm adds four more to the list — which records does this owner's collection hold, which ones does it not, may an existing record join this collection at all, and how do I put one in or take one out — asked through the same collaborator and answered from the same mapping.
-A tenth question rides beside them for the create paths: is this record still missing an identifier component the **application** has to supply.
-Two more ride beside it, and they are the record check's rather than a component's: which identifier did a managed record's write move, and which new record's assigned key is already held.
+This class is that translation, and it is the **only** seam through which `schemas` touches an `EntityManager`, so a relation-aware component asks it rather than growing its own `EntityManager` dependency and its own metadata reads.
+The relationship arm (scoping, listing and writing one owner's collection) is in [relationship.md](relationship.md).
 The seam is also what keeps Doctrine optional at runtime: an application with no `EntityManager` gets a reader that reports [no association anywhere](#a-null-target-means-no-doctrine-answer-not-no-such-property) rather than a container that cannot compile.
 
 A record key of any width travels through all of it.
@@ -24,50 +20,37 @@ It is a relation **owner** there too: both relationship queries narrow to an own
 
 ## Surface
 
-Every point of the reader and its value object.
-_Blocked by_ names what has to land first, and answers `—` for every row: the last one that waited has closed.
-_Detail_ carries a **semantics** link (a permanent note in [Semantics](#semantics)) and/or a **diverges** link (the permanent note in [Divergences](#divergences)), or `—`; there is no **detail** link and no `## Details` section any more, both having gone with that row, which is what the trail's own rule asks of a section whose row flips.
-Every row is Sylament-only, so no row has a _Ports_ link.
-
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
 | [`__construct(?EntityManagerInterface, ?PropertyAccessor)`](../../../packages/schemas/src/State/AssociationReader.php) + [`hasEntityManager()`](../../../packages/schemas/src/State/AssociationReader.php) — the optional-Doctrine seam, and the accessor the writes go through | — | done | — | [semantics](#the-entity-manager-is-optional-and-the-two-halves-answer-differently) |
-| [`withEntityManager(EntityManagerInterface $entityManager)`](../../../packages/schemas/src/State/AssociationReader.php) — this reader bound to another entity manager, as a clone that keeps its class, its accessor and what a subclass carries | — | done | — | [semantics](#withentitymanager-is-a-clone-so-a-subclassed-reader-survives-the-rebind) |
+| [`withEntityManager(EntityManagerInterface $entityManager)`](../../../packages/schemas/src/State/AssociationReader.php) — this reader bound to another entity manager | — | done | — | [semantics](#withentitymanager-is-a-clone-so-a-subclassed-reader-survives-the-rebind) |
 | [`describe(string $class, string $property)`](../../../packages/schemas/src/State/AssociationReader.php) — the mapping at one property, or null | — | done | — | [semantics](#a-null-target-means-no-doctrine-answer-not-no-such-property) |
 | Transient / anonymous-class guarding inside `describe()` | — | done | — | [semantics](#istransient-answers-false-for-an-anonymous-class-so-it-is-not-the-whole-guard) |
 | [`getReference(string $class, int\|string $id)`](../../../packages/schemas/src/State/AssociationReader.php) — the record a key names, decoded before anything is looked up | — | done | — | [semantics](#getreference-decodes-first-and-then-picks-its-route) · [diverges](#getreference-throws-where-doctrine-returns-null) |
 | [`getRecordKey(object $entity)`](../../../packages/schemas/src/State/AssociationReader.php) — the string key an entity is spoken by, of any width | — | done | — | [semantics](#the-record-key-is-tables-semantics-moved-onto-the-mapping) |
 | [`findRecordKey(object $entity)`](../../../packages/schemas/src/State/AssociationReader.php) — the same key, or null for an entity whose identifier is not complete yet | — | done | — | [semantics](#findrecordkey-answers-null-where-getrecordkey-throws) |
 | [`hasIncompleteAssignedIdentifier(object $entity)`](../../../packages/schemas/src/State/AssociationReader.php) — whether a component the **application** must assign is missing | — | done | — | [semantics](#an-incomplete-assigned-identifier-is-the-question-the-create-paths-ask) |
-| [`hasBlankAssignedIdentifier(object $record)`](../../../packages/schemas/src/State/AssociationReader.php) — whether a record's assigned key, as `persist()` left it, still holds a blank string component (a null one Doctrine refuses inside `persist()`) | — | done | — | [semantics](#a-blank-assigned-identifier-is-read-after-persist-where-a-record-is-created) |
-| [`revertIdentifierChanges(object $record)`](../../../packages/schemas/src/State/AssociationReader.php) — put back every identifier field a managed record the loaded associations reach no longer prints, and answer each one by its property path (`@internal`: the record check and an editable cell's write call it) | — | done | — | [semantics](#a-changed-identifier-is-put-back-and-refused-and-costs-no-statement) |
-| [`findTakenIdentifiers(object $record)`](../../../packages/schemas/src/State/AssociationReader.php) — every new record a flush would insert whose assigned key is held already, answered under every field the form could let the user type (`@internal`: the record check calls it and keeps the fields its schema maps, and `ReplicateAction`'s taken-key check with no schema asks whether it answers anything) | — | done | — | [semantics](#a-taken-identifier-is-looked-up-once-per-new-record-after-the-records-own-constraints-pass) · [semantics](#what-the-taken-key-probe-cannot-see) |
-| [`findBlankAssignedIdentifiers(object $record)`](../../../packages/schemas/src/State/AssociationReader.php) — every field a new record's blank assigned key could be refused under, in the order a refusal picks from (`@internal`: the record check calls it and refuses under the first one the schema maps) | — | done | — | [semantics](#a-new-records-blank-key-fields-are-the-record-checks-candidates) |
+| [`hasBlankAssignedIdentifier(object $record)`](../../../packages/schemas/src/State/AssociationReader.php) — whether a key `persist()` left still holds a blank string | — | done | — | [semantics](#a-blank-assigned-identifier-is-read-after-persist-where-a-record-is-created) |
+| [`revertIdentifierChanges(object $record)`](../../../packages/schemas/src/State/AssociationReader.php) (`@internal`) — the changed-key rule | — | done | — | [semantics](#a-changed-identifier-is-put-back-and-refused-and-costs-no-statement) |
+| [`findTakenIdentifiers(object $record)`](../../../packages/schemas/src/State/AssociationReader.php) (`@internal`) — the taken-key rule | — | done | — | [semantics](#a-taken-identifier-is-looked-up-once-per-new-record-after-the-records-own-constraints-pass) · [semantics](#what-the-taken-key-probe-cannot-see) |
+| [`findBlankAssignedIdentifiers(object $record)`](../../../packages/schemas/src/State/AssociationReader.php) (`@internal`) — the blank-key rule's candidate fields | — | done | — | [semantics](#a-new-records-blank-key-fields-are-the-record-checks-candidates) |
 | [`createOptionQuery(string $targetClass, string $alias = 'record')`](../../../packages/schemas/src/State/AssociationReader.php) — the base query an option list narrows | — | done | — | [semantics](#the-option-query-is-a-starting-point-not-a-result) |
 | [`remove(object $entity)`](../../../packages/schemas/src/State/AssociationReader.php) — delete an orphan through the unit of work | — | done | — | [semantics](#remove-is-here-so-orphan-deletion-does-not-grow-a-second-seam) |
 | [`persist(object $entity)`](../../../packages/schemas/src/State/AssociationReader.php) + [`flush()`](../../../packages/schemas/src/State/AssociationReader.php) — write a newly created related record | — | done | — | [semantics](#persist-and-flush-are-the-write-half-of-the-same-seam) |
 | [`AssociationTarget::$targetClass` / `$isToMany`](../../../packages/schemas/src/State/AssociationTarget.php) — what to load and in what shape | — | done | — | — |
 | [`AssociationTarget::$isOwningSide`](../../../packages/schemas/src/State/AssociationTarget.php) — whether writing this side writes the database | — | done | — | [semantics](#the-owning-side-and-orphan-removal-flags-are-what-a-writer-needs-not-trivia) |
-| [`AssociationTarget::$isOrphanRemoval`](../../../packages/schemas/src/State/AssociationTarget.php) — whether detaching an item deletes it | — | done | — | [diverges](#orphanremoval-is-a-plain-bool-on-the-orm-3-mapping-object) |
-| [`AssociationTarget::$isManyToMany` / `$mappedBy` / `$inversedBy` / `$isNullable` / `$orderBy`](../../../packages/schemas/src/State/AssociationTarget.php) — the cardinality, the two bidirectional field names, the join column's nullability and the collection's declared order | — | done | — | [semantics](#the-owning-side-and-orphan-removal-flags-are-what-a-writer-needs-not-trivia) |
-| [Service wiring](../../../packages/schemas/src/SylamentSchemasBundle.php) — `sylament_schemas.association_reader` plus a class alias, with an ignore-on-invalid `EntityManagerInterface` argument | — | done | — | [semantics](#the-entity-manager-is-optional-and-the-two-halves-answer-differently) |
+| [`AssociationTarget::$isOrphanRemoval`](../../../packages/schemas/src/State/AssociationTarget.php) — whether detaching an item deletes it | — | done | — | [semantics](#orphanremoval-is-a-plain-bool-on-the-orm-3-mapping-object) |
+| [`AssociationTarget::$isManyToMany` / `$mappedBy` / `$inversedBy` / `$isNullable` / `$orderBy`](../../../packages/schemas/src/State/AssociationTarget.php) — what a relationship writer reads | — | done | — | [semantics](#the-owning-side-and-orphan-removal-flags-are-what-a-writer-needs-not-trivia) |
+| [Service wiring](../../../packages/schemas/src/SylamentSchemasBundle.php) — `sylament_schemas.association_reader`, its class alias and a null-on-invalid `EntityManagerInterface` | — | done | — | [semantics](#the-entity-manager-is-optional-and-the-two-halves-answer-differently) |
 | [`CanAccessAssociations`](../../../packages/schemas/src/Components/Concerns/CanAccessAssociations.php) — the `#[Required]` setter every consumer tier reaches the reader through | — | done | — | [semantics](#the-accessor-trait-is-shared-with-the-table-and-action-tiers) |
-| Composite records as relation **targets** — keyed, referenced, listed, offered and written at any identifier width | — | done | — | [semantics](#a-key-of-any-width-is-the-codecs-and-the-reader-keeps-only-the-route) |
+| Composite records as relation **targets**, at any identifier width | — | done | — | [semantics](#a-key-of-any-width-is-the-codecs-and-the-reader-keeps-only-the-route) |
 | Through-relations, morphs, pivot data | — | skipped | — | [diverges](#only-the-shapes-doctrine-states-in-one-mapping-are-read) |
-
-Every row is **done** or **skipped**.
-When the last **blocked** one closed, [`record-key.md`](record-key.md#there-is-no-owner-scoping-operation-because-one-equals-on-the-owners-own-collection-scopes-an-owner-of-any-width)'s reserved owner-scoping row went with it — not by being built, but because the owner scope turned out to need no operation of the codec's at all.
-
-The unit suite ([`AssociationReaderTest`](../../../packages/schemas/tests/Unit/State/AssociationReaderTest.php), with [`AssociationReaderCompositeKeyTest`](../../../packages/schemas/tests/Unit/State/AssociationReaderCompositeKeyTest.php), [`AssociationReaderCompositeQueryTest`](../../../packages/schemas/tests/Unit/State/AssociationReaderCompositeQueryTest.php) and [`AssociationReaderIdentifierRelationTest`](../../../packages/schemas/tests/Unit/State/AssociationReaderIdentifierRelationTest.php) beside it) covers all four association shapes the fixture entities declare (many-to-one, the inverse one-to-many with orphan removal, the owning many-to-many, and the **inverse** one-to-one), the five mapping-shape fields across seven shapes (both sides of a bidirectional many-to-many, a unidirectional one, an ascending and a **descending** ordered one-to-many — the descending one being what tells the pass-through apart from a normalised direction — and a nullable and a not-null to-one), all three null answers (a scalar property, a non-entity class, an anonymous class), the four operations refusing without an entity manager, the record key against a persisted entity at every identifier flavour, and the two refusals that remain — an unpersisted entity, and a component that is set but not printable.
-The relationship seam is covered beside them: `describeRelationship()`'s four refusals and its uninitialised-owner arm, both query shapes asserted as DQL character for character and as the SQL SQLite renders, the candidate negation with its mandatory `IS NULL` arm and a composed `andWhere()` proving the two arms stay bracketed, the owner-without-an-identifier refusal, the composite-owner refusal on both builders and both arms, and — over the Integration rig, which persists and flushes by hand because [`EntityManagerFactory::seed()`](../../../packages/schemas/tests/Fixtures/Doctrine/EntityManagerFactory.php) clears the identity map — attach and detach on a unidirectional many-to-many, on both directions of the bidirectional `Post::$categories` ↔ `Category::$posts` pair (the owning direction re-read across a `clear()`, the inverse one written through the owning collection, and both named in one case that reads the untouched inverse collections as proof of where each write landed — [`Category`](../../../packages/schemas/tests/Fixtures/Doctrine/Entity/Category.php)'s adders deliberately heal nothing, so a mis-routed write really does lose the row), the one-to-many associate/dissociate through `Author::$posts`, a detach handed a reference rather than a hydrated record, the no-op attach of an already-related record, and the four dissociate refusals one fixture each ([`Post::$sections`](../../../packages/schemas/tests/Fixtures/Doctrine/Entity/Post.php) for orphan removal, the identifier half for the re-keying refusal, `Post::$comments` for the NOT NULL join column, `Post::$replies` for the setter that rejects null).
-
-Three properties of a composite target are pinned by their own cases, because a green suite would otherwise hide each of them: a malformed key is refused **before any statement**, read off a recording middleware rather than off a platform's leniency; a reference by key is taken against a **cleared** identity map, which is the only state in which the loading route's absence is a `TypeError`; and every expected key in an assertion is a string literal, never one minted through the codec in the expectation.
 
 ## Semantics
 
 ### The entity manager is optional, and the two halves answer differently
 
-The constructor takes `?EntityManagerInterface` and the bundle wires it with `service(EntityManagerInterface::class)->nullOnInvalid()`, so `schemas` compiles in an application with no Doctrine at all — the same shape as support's [AssetMapper guard](../support/support-bundle.md), and the reason `doctrine/orm` being a hard `require` of the package is still not a hard requirement of the *runtime*.
+The constructor takes `?EntityManagerInterface` and the bundle wires it with `service(EntityManagerInterface::class)->nullOnInvalid()`, so `schemas` compiles in an application with no Doctrine at all — the same shape as support's [AssetMapper guard](../support/support-bundle.md), and the reason `doctrine/orm` being a hard `require` of the package is not a hard requirement of the *runtime*.
 Without a manager the class splits in two:
 
 - **`describe()` answers null**, because "is this property an association?" has a meaningful negative answer — no Doctrine means no associations, and a caller keeps whatever non-association behaviour it already had.
@@ -76,9 +59,9 @@ Without a manager the class splits in two:
 
 `hasEntityManager()` exists so a caller can branch **before** it commits to the relationship path, rather than catching the exception the operations throw.
 
-The two record-check passes take the `describe()` side rather than the operations': without a manager, `revertIdentifierChanges()` and `findTakenIdentifiers()` walk nothing and answer no refusal.
+The record check's three members take the `describe()` side rather than the operations': without a manager, `revertIdentifierChanges()`, `findTakenIdentifiers()` and `findBlankAssignedIdentifiers()` answer no refusal.
 They run inside every `getData()` a validator reaches, and a host with no Doctrine has no identity map for a key to move in or be held by — so a reader built with `new`, which is what a schema built outside the container holds, guards nothing.
-Both test files pin it, *guards nothing without an entity manager*.
+The changed-key and taken-key test files pin it, *guards nothing without an entity manager*.
 
 ### `withEntityManager()` is a clone, so a subclassed reader survives the rebind
 
@@ -99,7 +82,7 @@ public function withEntityManager(EntityManagerInterface $entityManager): static
 ```
 
 It exists for the write seams that read through the manager they flush through, which rebind the reader they already hold rather than constructing one: `CreateAction`, `EditAction` and `ReplicateAction` their mounted schema's reader — `ReplicateAction`'s arm without a schema the action's own — tables' editable cell its table's, and the resource create and edit pages their form's.
-Built with `new`, each of those dropped a subclassed `sylament_schemas.association_reader` service — the service an application may decorate — and the container's property accessor with it.
+Built with `new`, each would drop a subclassed `sylament_schemas.association_reader` service — the service an application may decorate — and the container's property accessor with it.
 [`AssociationReaderConstructionTest`](../../../packages/schemas/tests/Architecture/AssociationReaderConstructionTest.php) keeps it so: in `packages/*/src` only `CanAccessAssociations`' manager-less fallback constructs a reader.
 
 A reader taking its manager per call instead — or resolving one from a `ManagerRegistry` per class — is deferred indefinitely.
@@ -123,34 +106,31 @@ A test double built as `new class { … }` is an ordinary thing to hand a schema
 ### A key of any width is the codec's, and the reader keeps only the route
 
 `getRecordKey()` and `findRecordKey()` are one line each — `RecordKey::of()` and `RecordKey::find()`, with the entity manager passed per call — and `getReference()` decodes through `RecordKey::toIdentifier()` before it looks anything up.
-The reader holds **no** identifier narrowing of its own: the `Stringable`/`is_scalar` coercion it used to carry was the fourth hand-written copy of one rule, and [the codec owns that rule now](record-key.md#the-row-side-and-the-record-side-mint-one-string-and-only-the-codec-may).
+The reader holds **no** identifier narrowing of its own: [the codec owns that rule](record-key.md#the-row-side-and-the-record-side-mint-one-string-and-only-the-codec-may).
 Minting a key and finding one branch on nothing — neither `getRecordKey()` nor `findRecordKey()` asks the identifier's width or flavour — which is what makes "a composite record is a relation target wherever a single-`id` record is" a property of the code rather than a claim about it.
 
-What the delegation moved, exactly — two answers changed, and both are the codec's stated contract rather than a decision taken here:
+Two answers a reader would not predict are the codec's stated contract rather than a decision taken here:
 
-- An identifier that is boolean **`false`** now keys to `'0'` where the reader threw.
-  `printable()` normalises a `bool` to `'1'`/`'0'` deliberately, because a plain `(string)` cast prints `false` as the empty string, which is an illegal empty component; the reader's old order called that value blank and refused it.
-- A **blank or whitespace-only assigned string** identifier makes `findRecordKey()` answer `null` where it threw — `getRecordKey()` still throws `is not a printable value`.
+- An identifier that is boolean **`false`** keys to `'0'`.
+  `printable()` normalises a `bool` to `'1'`/`'0'` deliberately, because a plain `(string)` cast prints `false` as the empty string, which is an illegal empty component.
+- A **blank or whitespace-only assigned string** identifier makes `findRecordKey()` answer `null`, while `getRecordKey()` throws `is not a printable value`.
   That is what lets `unique(ignoreRecord:)` and `Select::relationship(ignoreRecord:)` run on a create form over an assigned-key class: there is nothing to exclude yet, which is an answer rather than an error.
 
-Two things the delegation did **not** move, and both are worth stating because a reader assumes the opposite.
-Refusing a key is still cheap, and it never binds a fragment of the submitted text — but the two shapes of by-key read differ, and the difference is a statement.
+Refusing a key is cheap, and it never binds a fragment of the submitted text — but the two shapes of by-key read differ, and the difference is a statement.
 A by-key **lookup** executes **none**: `getReference()` refuses on the decode above, and `Select`'s selected-record lookup asks `IdentifierConstraint::equals()`, which answers `null` for a key that decodes to nothing — `createScopedOptionQuery()` has built a `QueryBuilder` by then, so what is never built or run is the statement.
 A by-key **batch** read is one statement narrowed to `1 = 0`: `Select`'s label list hands its scalar entries to `IdentifierConstraint::in()`, and a list whose every scalar entry is malformed leaves nothing to compare, so the query runs and returns no rows (a list with no scalar entry at all issues none).
-And the single-identifier DQL every consumer emits is today's text, byte for byte — `IdentifierConstraint` emits `alias.id = :base` and `alias.id IN (:base)` unchanged for a one-field class, so nothing that pinned those strings moved.
 
 ### `getReference()` decodes first, and then picks its route
 
-The signature is `getReference(string $class, int|string $id): object`, and it kept the `int|string` on purpose: a raw `int` prints to the very key a single-identifier class speaks, and a raw `int` handed to a two-field class decodes to nothing and is refused loudly, so no consumer had to move.
+The signature is `getReference(string $class, int|string $id): object`, and it takes `int|string` on purpose: a raw `int` prints to the very key a single-identifier class speaks, and a raw `int` handed to a two-field class decodes to nothing and is refused loudly.
 The body is two steps and the order is the whole point.
 
 **Decode, then look up.**
-`RecordKey::toIdentifier()` runs the class-aware grammar check, the per-type shape check and the print-back compare; `null` out of it is today's `LogicException` (`No [%s] carries the identifier [%s], so it cannot be referenced.`) raised **before** any query.
+`RecordKey::toIdentifier()` runs the class-aware grammar check, the per-type shape check and the print-back compare; `null` out of it is the `LogicException` `No [%s] carries the identifier [%s], so it cannot be referenced.`, raised **before** any query.
 So `05`, ` 5`, `5abc` and `1~2` against a one-field class each name no record at zero statements, where an untyped bind would have aliased a row on PostgreSQL under emulated prepares or raised `22P02` under native ones — [the hole the codec exists to close](record-key.md#a-malformed-key-never-reaches-the-database).
 
-One **single-identifier** shape paid for that strictness until the codec learned to read it back.
-Where a DBAL type's `convertToPHPValue()` reads only the database form, the decode refused the very key `getRecordKey()` minted, while the base had handed that printed key straight to Doctrine and the foreign-key write landed wherever the id property admits a string — so a relation-backed `Select` or `CheckboxList` threw on save and a by-key `DetachBulkAction` answered the danger toast where the base wrote.
-The remedy was the codec's: a component the reader refuses is read back [through the type's own writer](record-key.md#a-type-that-refuses-its-printed-form-on-read-only-decodes-it-through-its-own-writer), so such a key decodes and the reference is taken again — built at zero statements where every identifier field is scalar, loaded at one behind a single derived identity.
+Where a DBAL type's `convertToPHPValue()` reads only the database form, a strict decode would refuse the very key `getRecordKey()` minted, and a relation-backed `Select`, `CheckboxList` or by-key `DetachBulkAction` over that type would fail.
+The codec reads such a component back [through the type's own writer](record-key.md#a-type-that-refuses-its-printed-form-on-read-only-decodes-it-through-its-own-writer), so the key decodes and the reference is taken — built at zero statements where every identifier field is scalar, loaded at one behind a single derived identity.
 What stays refused is the type that refuses its printed form on **write** too — [the doubly-strict shape](record-key.md#a-type-that-cannot-read-its-own-printed-form-mints-keys-that-never-decode) — by construction rather than by omission, at zero statements ([`AssociationReaderCompositeKeyTest`](../../../packages/schemas/tests/Unit/State/AssociationReaderCompositeKeyTest.php) pins both).
 
 **Then `find()` where any identifier field is an association, and `getReference()` everywhere else.**
@@ -158,12 +138,12 @@ The predicate is `array_any($metadata->identifier, $metadata->hasAssociation(...
 Doctrine's `ProxyFactory` assigns a scalar identifier component straight into a typed association property, so `getReference()` against a **cold** identity map is a `TypeError` for a derived identity, a join entity and a single derived identity alike, while succeeding for all three once the record is already managed — which is precisely the defect a seeded test hides and a first cold request finds.
 `find()` works in every state, at one statement.
 
-The scalar route keeps its **zero** statements, which is why "always `find()`" was rejected: it would charge every single-identifier relationship write a `SELECT` it does not pay today.
+The scalar route keeps its **zero** statements, which is why "always `find()`" is rejected: it would charge every single-identifier relationship write a `SELECT`.
 One class of target pays anyway, and it is Doctrine's doing rather than this predicate's: a class that declares `subClasses` is routed through `find()` by `EntityManager::getReference()` itself, so an inheritance **root** costs one statement and refuses a missing row by name.
 And both routes hand back the very instance an owner's loaded collection holds — the identity-map instance, loaded before or after the call — which is the property `detach()`'s `!==` filter and `attach()`'s strict `in_array()` are built on.
 
 Three consequences recorded rather than closed.
-A **well-formed** key naming no row **of that class** is a lazy phantom proxy on the reference route, exactly as it was before, and a `LogicException` on the `find()` route — the two routes disagree, and the divergence [below](#getreference-throws-where-doctrine-returns-null) says why neither answer is a null.
+A **well-formed** key naming no row **of that class** is a lazy phantom proxy on the reference route and a `LogicException` on the `find()` route — the two routes disagree, and the divergence [below](#getreference-throws-where-doctrine-returns-null) says why neither answer is a null.
 *Of that class* is load-bearing under inheritance: a **sibling** subclass's key is well-formed for the columns the root declares, so a reference asked for on the wrong subclass is a proxy of the class that was asked for, and attaching it writes a join row the relationship query then never lists, because the discriminator excludes it.
 A key-forging client is not what produces that; a consumer passing the wrong `targetClass` is.
 
@@ -186,9 +166,9 @@ Doctrine writes that child in one flush, deferring the child's identifier to the
 One shape is Doctrine's own limit rather than ours: a **JOINED-inheritance** child cannot be inserted in its owner's flush at all — `JoinedSubclassPersister` throws *Unable to find … entity identifier associated with the UnitOfWork* — and this predicate passes it, correctly, leaving the failure where it belongs.
 
 So the member asks the mapping instead, and it asks only of a composite identifier or one carrying an association.
-A **plain single scalar** identifier answers `false` at the entry, before anything else is read: the relation layer has always keyed such a class, an application may fill that field from anywhere — including a listener no class-level mapping shows — and a new refusal there would be a single-identifier regression, which a wider key must never cause.
-So an assigned single scalar identifier left blank stays unrefused here, as it always was.
-The record check leaves this predicate as it is: its taken-key pass treats a blank component as incomplete and looks nothing up — a `Stringable` component that prints blank included, since it reads blankness through support's `blank()` there as everywhere else in the reader, and an identifier association only while it is `null`, as everywhere else too: its target is an entity, never a printed key component, so one whose `__toString()` prints blank or which counts no members is still looked up — so a blank single scalar key on a create path still reaches Doctrine as it did — which is what keeps two new children whose `#[PrePersist]` fills that key from blank saving — and only [`ReplicateAction`](../actions/replicate-action.md) refuses one by name, because it asks once every filler has run.
+A **plain single scalar** identifier answers `false` at the entry, before anything else is read: an application may fill that field from anywhere — including a listener no class-level mapping shows — and a refusal there would break single-identifier classes for the sake of wider keys.
+So an assigned single scalar identifier left blank is not refused here.
+The record check does not use this predicate: its taken-key pass treats a blank component as incomplete and looks nothing up — a `Stringable` component that prints blank included, since it reads blankness through support's `blank()` there as everywhere else in the reader, and an identifier association only while it is `null`, as everywhere else too: its target is an entity, never a printed key component, so one whose `__toString()` prints blank or which counts no members is still looked up — so a blank single scalar key on a create path reaches Doctrine — which is what keeps two new children whose `#[PrePersist]` fills that key from blank saving — and only [`ReplicateAction`](../actions/replicate-action.md) refuses one by name, because it asks once every filler has run.
 
 Everything else — a composite identifier, or one carrying an association — goes to the private, recursive `isMissingAssignedIdentifierComponent()`.
 Three mapping facts short-circuit it to `false`, and all three say the same thing: something other than the form fills this identifier at the flush.
@@ -260,7 +240,7 @@ A converting type's other spelling of the same key **is** one — `ab-1` typed o
 
 A changed field is put back on the spot — a scalar from that identifier, an association from `getOriginalEntityData()`, and an association the unit of work holds no original value for throws a `LogicException` by name.
 The restore is load-bearing rather than tidy: without it a flush later in the same request writes the new key after all, and a table's re-render loses the cell's error or collapses two rows onto one DOM id.
-It runs no statement; the walk costs about 3 µs a loaded managed record per save, measured when the rule was designed — an unchanged save of a record holding 5 000 loaded children went from 0.02 ms to 16 ms.
+It runs no statement; the walk costs about 3 µs per loaded managed record per save, measured as an unchanged save of a record holding 5 000 loaded children taking 16 ms against 0.02 ms without it.
 Its limit is the walk's: a key written into a related record **nobody loaded** is not seen, and is Doctrine's to drop — it writes the raw identifier, and a later load overwrites it.
 
 Pinned by [`AssociationReaderChangedIdentifierTest`](../../../packages/schemas/tests/Unit/State/AssociationReaderChangedIdentifierTest.php) — every shape the rigs seed untouched, the same key in another type, the skipped states, the paths through a collection, a to-one and a cycle, the unloaded proxy and collection, and the named `LogicException`.
@@ -280,13 +260,13 @@ And `RecordKey::values()` gates the lookup, so an association half that is a new
 
 The message lands on every field a form could let the user type: each identifier field that is no association, in identifier order.
 The reader answers them all, and the record check keeps the ones a component of its schema maps — a taken record's fields grouped by the property path they share.
-When the schema maps none of them, or the identifier has none, it lands where it always did: the first identifier field that is no association; failing that, the first that is not the back-reference the walk arrived through — the inverse collection's `mappedBy`; failing that, the first — and an unmapped one folds to the schema's own path.
-So a `(host, path)` key typed in both halves is refused under both, a form typing only the host under the host, an `ArticleTranslation(article, locale)` under **Locale** on a create page and in a relation manager's modal alike, and a join entity created from its festival's repeater under the band rather than the festival.
+When the schema maps none of them, or the identifier has none, it lands on one field: the first identifier field that is no association; failing that, the first that is not the back-reference the walk arrived through — the inverse collection's `mappedBy`; failing that, the first — and an unmapped one folds to the schema's own path.
+So a `(host, path)` key typed in both halves is refused under both, a form typing only the host under the host, a `PostTranslation(post, locale)` under its locale field on a create page and in a relation manager's modal alike, and a join entity created from its festival's repeater under the band rather than the festival.
 Answering the first such field alone would leave the second half of a scalar pair — the one a user may well have typed wrong — with no mark.
 The message is still Symfony's own, translated in its 57 catalogues, so a copy under each half adds no string; a field label in it would have needed one.
 
 Where it runs is half of what it is.
-The record check calls it **only when** the changed-key pass and the record's own constraints raised nothing, because it binds form values into `find()`: a malformed `guid` on an entity that declares `#[Assert\Uuid]` then answers that constraint's *"This value is not a valid UUID."* rather than PostgreSQL's `22P02` — without one, the lookup meets PostgreSQL's own `22P02`, as the base's `INSERT` did — and an application `UniqueEntity` answers first, so the toolkit never adds a second message; and it does not run at all on a schema that [switches the key rules off](can-be-validated.md#the-key-rules-switch-off-per-schema-never-the-changed-key-one).
+The record check calls it **only when** the changed-key pass and the record's own constraints raised nothing, because it binds form values into `find()`: a malformed `guid` on an entity that declares `#[Assert\Uuid]` then answers that constraint's *"This value is not a valid UUID."* rather than PostgreSQL's `22P02` — without one, the lookup meets PostgreSQL's own `22P02`, as the `INSERT` would — and an application `UniqueEntity` answers first, so the toolkit never adds a second message; and it does not run at all on a schema that [switches the key rules off](can-be-validated.md#the-key-rules-switch-off-per-schema-never-the-changed-key-one).
 The cost is one primary-key `SELECT` per new assigned-key record, none when the holder is managed, none for a generated id — so a save adding 200 assigned-key repeater items runs 200.
 Batching it per class through [`IdentifierConstraint::in()`](record-key-contract.md#the-operations-and-their-dql) is the known remedy, and is not built for a cost nobody has met.
 
@@ -302,9 +282,9 @@ Six limits, recorded rather than closed:
   Pinned as behaviour: *reads a detached record, or one another manager keeps, as a new one — so its own unchanged key answers taken*.
   The hosts keep the second-manager half out of reach.
   An action rebinds its schema's reader to the manager it writes through, with [`withEntityManager()`](#withentitymanager-is-a-clone-so-a-subclassed-reader-survives-the-rebind) — `getEntityManagerForRecord()`, the table query's manager, else the registry's for the class — so on a table whose `query()` runs on a second manager both rules read that manager's unit of work and database, where the flush runs; panels' create and edit pages bind their form's reader to the manager they flush through, the container's unless a page overrides `setRecordPersistence()`; and a custom host that writes through another manager binds its schema's reader the same way, `$schema->setAssociationReader($schema->getAssociationReader()->withEntityManager($manager))`.
-  The detached record is what remains, and the base failed its write anyway: `persist()` takes a detached record for a new one, so its flush met the stored key.
+  The detached record is what remains, and its write fails without the probe too: `persist()` takes a detached record for a new one, so its flush meets the stored key.
   The hosts' half is pinned by actions' [`TableQueryManagerKeyTest`](../../../packages/actions/tests/Integration/TableQueryManagerKeyTest.php): on a table over a second manager, an unchanged edit saves, a changed key is refused, and a create or a replica on a key only that manager's database holds is *already used*.
-- **A record whose class only another entity manager maps is skipped by both passes** of a reader over a manager that does not map it: the walk asks the reader's own manager's metadata factory, to which that class is transient, so neither this probe nor the changed-key pass sees it — no regression, since the base guarded nothing either.
+- **A record whose class only another entity manager maps is skipped by both passes** of a reader over a manager that does not map it: the walk asks the reader's own manager's metadata factory, to which that class is transient, so neither this probe nor the changed-key pass sees it.
   An action writing such a record binds its schema's reader to the manager that maps it, so both passes run there; what is left is a custom host that writes through that manager without binding its schema's reader.
   Unexecuted.
 - **Two requests creating one key at once** both pass the lookup, and the second meets the database's constraint: the probe is a read, not a lock.
@@ -331,17 +311,14 @@ DQL stays filtered either way.
 A create it refuses ends in a validation error before anything is flushed.
 With no filter enabled nothing changes, statement for statement.
 
-A lookup that loads nothing was also considered: an identity-map check, then a `SELECT 1` through `inColumns()`.
-It was rejected because it must decode the minted key again, so a type that cannot read its own printed form would read as free.
+A lookup that loads nothing — an identity-map check, then a `SELECT 1` through `inColumns()` — is rejected, because it must decode the minted key again, so a type that cannot read its own printed form would read as free.
 It would also change the single-key statement.
 
 ### The record key is tables' semantics, moved onto the mapping
 
-`getRecordKey()` is the same answer [`HasTable::resolveQueryRecordKey()`](../../../packages/tables/src/Concerns/HasTable.php) gives, and both reach it through the same codec: the identifier comes from `ClassMetadata::getIdentifierValues()` — never from an `id` property convention — a `Stringable` component is unwrapped, a `BackedEnum` becomes its backing value, a `bool` becomes `'1'`/`'0'`, and a component that is unset, non-scalar, blank or carrying a NUL byte is a `LogicException` rather than a key no lookup could resolve.
+`getRecordKey()` is the same answer [`HasTable::resolveQueryRecordKey()`](../../../packages/tables/src/Concerns/HasTable.php) gives, because both reach it through the same codec: the identifier comes from `ClassMetadata::getIdentifierValues()`, never from an `id` property convention.
 An entity mapped on `code` therefore keys by `code` with nothing configured; an entity mapped on `host` and `path` keys by both, joined and escaped by [the grammar](record-key-contract.md#the-grammar); and an entity that was never given its identifier fails at the point of binding instead of producing a row the client cannot address.
-
-The one refusal a reader would not predict belongs to the codec rather than to either consumer: completeness is **counted**, never tested for emptiness, because `getIdentifierValues()` *drops* a null component on the composite branch.
-A half-filled pair would otherwise read as complete — and the count is compared at every level of a chained derived identity, not only at the top.
+How each component prints, and why completeness is [counted rather than tested for emptiness](record-key.md#find-answers-identity-not-persistence), are the codec's rules, not the reader's.
 
 ### findRecordKey() answers null where getRecordKey() throws
 
@@ -350,7 +327,7 @@ A relation-backed field speaking an option list by key has a bug if the record i
 A `unique()` constraint asking "which row should I exclude from the probe?" has no bug at all — a create form's record is unkeyed by definition, and the honest answer is "nothing to exclude", which is exactly what `null` means to [`UniqueValue`](../forms/can-be-validated.md).
 `Select::relationship(…, ignoreRecord:)` is the third caller on the same terms: it reads this pair to drop one record from an option list, and an unkeyed one drops nothing ([select.md](../forms/select.md)).
 
-The line between them is the codec's, and it moved once: a component that is `null` **or still blank** counts as not assigned yet, so an assigned string key sitting at `''` until a form fills it answers `null` here rather than throwing.
+The line between them is the codec's: a component that is `null` **or still blank** counts as not assigned yet, so an assigned string key sitting at `''` until a form fills it answers `null` here rather than throwing.
 Only that arm is soft.
 A component that exists and cannot be spoken — non-scalar, not valid UTF-8, carrying a NUL — is `is not a printable value` from **both** members, because an identifier that exists and cannot be printed is an error either way, not "nothing to ignore".
 
@@ -366,10 +343,10 @@ Detaching an item from an association whose mapping declares `orphanRemoval` is 
 Routing it through the reader keeps the "only seam" property true: no relation-aware component holds an `EntityManager` of its own, and the null-manager refusal above covers deletion for free.
 [`attach()` and `detach()`](relationship.md#a-write-lands-on-the-side-doctrine-persists) are the third arm of the same argument, one tier up: they write an association rather than a record, and they route through the reader for the same reason.
 
-The first component to replace a collection did **not** end up calling it.
+The component that replaces a collection does **not** call it.
 The [relationship repeater](../forms/repeater-relationship.md#a-relationship-repeater-keys-its-items-by-identity-and-diffs-the-collection) leaves a dropped child out of the desired list and lets the mapping's `orphanRemoval` delete it, refusing an association that declares none rather than deleting on its own authority — because the mapping is where ownership is declared, and a form layer issuing DELETEs against a mapping that says "merely detach" is the data-loss shape `isOrphanRemoval` exists to warn about.
 
-Its caller is the one anticipated above: the record no mapping owns.
+Its caller is the record no mapping owns.
 A layout component [entangled with a to-one association](entangles-state-with-singular-relationship.md#a-switched-off-relationship-nulls-the-property-and-removes-the-record-explicitly) whose `relationship()` condition evaluates false nulls the property and calls `remove()` on what was there, `orphanRemoval` or not — the developer declared that this related record must not exist, which is a different statement from an end user dropping an item out of a list.
 Nulling alone would not even reach the database on an inverse side, so the explicit call is what makes the outcome independent of which side of the association the component is declared on.
 
@@ -390,7 +367,7 @@ Where the identifier is **assigned** rather than generated, that order has one m
 `isOwningSide` says whether writing this side changes the database at all — an inverse side is a read-through, so a component that writes one without also maintaining the owning side saves nothing, which is exactly the trap the fixture entities pin (`Post::$profile` is the **inverse** one-to-one; `Profile::$post` owns it).
 `isOrphanRemoval` says whether dropping an item deletes the entity or merely detaches it — the difference between a cleanup and data loss, and not something a caller may guess.
 
-The five the relationship seam added answer the questions a *relationship* writer asks on top of those.
+The other five answer the questions a *relationship* writer asks on top of those.
 `isManyToMany` picks between the two query shapes and the two write shapes — a many-to-many is a collection on both sides, everything else has a to-one field somewhere.
 `mappedBy` names the owning field on the target and is read on inverse sides only (an owning side has none, and Doctrine's `getAssociationMappedByTargetField()` throws rather than answering null there); `inversedBy` is its mirror, the inverse field on the target, read on owning sides only and null where the mapping is unidirectional.
 Between them they are how a write reaches the side Doctrine persists, how a one-to-many query finds the field to filter on, and what the re-keying guard tests against the target's identifier.
@@ -398,22 +375,27 @@ Between them they are how a write reaches the side Doctrine persists, how a one-
 Only a to-one onto a composite class has more than one such column, so reading them all is no single-identifier change.
 Reading only `joinColumns[0]` would let a foreign key whose **second** column is `nullable: false` pass `assertRelationshipAcceptsDetach()` and then die at flush — a `NotNullConstraintViolationException` that reaches the user two different ways, neither of them the named refusal the mapping deserved: [`DissociateAction`](#dissociating-is-refused-where-the-mapping-forbids-it) wraps nothing, so it is a 500 with a **closed** `EntityManager`, while `DissociateBulkAction`'s fetching arm catches and answers a danger toast over that same closed manager.
 `orderBy` is the mapping's own collection order, typed `array<string, SortDirection>`: from ORM 3.7 the metadata normalises `#[ORM\OrderBy(['position' => 'ASC'])]` to PHP 8.6's `SortDirection` enum (a string being deprecated there), while `ToManyAssociationMapping::orderBy()` still declares `SortDirection|'asc'|'desc'`, so the reader converts any string it is handed through schemas' `Query\SortDirections::from()` — the one place a table direction string becomes the enum Doctrine's builder takes — and a consumer passes the value straight to `addOrderBy()`.
-Until the floor rose to ORM 3.7 the field was the mapping's raw string, and tables lower-cased it with `mb_strtolower()`, which the enum turned into a `TypeError` on every relation-scoped table whose association declares an order.
 
 ### The accessor trait is shared with the table and action tiers
 
 The reader is injected onto a consumer by a `#[Required]` setter with a `new AssociationReader()` fallback, the same idiom [`CanBeValidated`](../forms/can-be-validated.md) uses for `RecordTypeReader`: a container-built consumer gets the container's reader, one built with `new` gets an entity-manager-less one that answers `hasEntityManager()` false and throws on everything needing an EM.
 
-The pair lived on the component-tier [`BelongsToRecord`](belongs-to-record.md) until the relationship seam gave two non-components the same need — `Table` builds its base query through the reader and `Action` writes an association through it — so it is [`CanAccessAssociations`](../../../packages/schemas/src/Components/Concerns/CanAccessAssociations.php) now, composed by `BelongsToRecord` unchanged.
+The pair is the trait [`CanAccessAssociations`](../../../packages/schemas/src/Components/Concerns/CanAccessAssociations.php) rather than part of the component-tier [`BelongsToRecord`](belongs-to-record.md), because two non-components share the need — `Table` builds its base query through the reader and `Action` writes an association through it — and `BelongsToRecord` composes it.
 It keeps the `Components/Concerns/` namespace under the repo's placement rule: a trait a component uses at all lives there, whether or not something else uses it too.
 
 The root [`Schema`](schema.md) composes it as well, beside `CanAccessProperties`, so the host's record check reaches the reader through the schema it validates — `$schema->getAssociationReader()` — and no host contract changed for it.
 A schema built with `new` holds the manager-less fallback and so guards nothing, the standing `#[Required]` trade; every host builds its schemas through the container, and [`HasSchemasIdentifierGuardTest`](../../../packages/schemas/tests/Integration/Concerns/HasSchemasIdentifierGuardTest.php) pins both faces.
 
 The blast radius is worth stating because it is wider than it looks.
-`BelongsToRecord` sits on the base `Component`, so **every** schemas component — and every component of every package built on schemas — consumes the reader service, where before nothing did and the container pruned it.
+`BelongsToRecord` sits on the base `Component`, so **every** schemas component — and every component of every package built on schemas — consumes the reader service.
 The service's `EntityManagerInterface` argument is `nullOnInvalid()` for exactly that reason: the schemas bundle boots inside forms', actions', notifications' and tables' test kernels, none of which registers Doctrine, and the setter has to autowire cleanly there.
 A container-compile failure in one of those suites is the signal that the nullability wiring broke.
+
+### `orphanRemoval` is a plain bool on the ORM 3 mapping object
+
+`AssociationMapping::$orphanRemoval` is declared `public bool $orphanRemoval = false` — not an array key, not nullable — so it is read directly, with no null-coalescing fallback.
+It is worth stating because ORM 2's association mappings are **arrays** (`$mapping['orphanRemoval']`, absent on many mappings), which is the shape most ported code and most training data assume; ORM 3 keeps the array access only through `ArrayAccess` on the mapping object.
+Level max rejects a `?? false` against a non-nullable bool, so the truthful form is the only one that compiles.
 
 ## Divergences
 
@@ -424,15 +406,24 @@ Our signature is non-nullable `object`, and the null answer becomes a `LogicExce
 The reason is what the callers do with it: a reference is fetched to *bind* a chosen option onto a record, so a null would be written straight into the association and silently unset the relationship the user just chose.
 Failing at the seam names the identifier that could not be referenced; the alternative pushes a null check onto every caller and gets it wrong once.
 
-The two routes therefore disagree about one input, and it is recorded rather than reconciled: a **well-formed** key naming no row **of that class** is a lazy phantom proxy on the reference route — ORM behaviour, byte for byte what this class did before — and a `LogicException` on the `find()` route.
+The two routes therefore disagree about one input, and it is recorded rather than reconciled: a **well-formed** key naming no row **of that class** is a lazy phantom proxy on the reference route — ORM behaviour — and a `LogicException` on the `find()` route.
 An inheritance root has no phantom at all, since Doctrine routes a class with `subClasses` through `find()` itself.
 Making the scalar route agree would cost every single-identifier relationship write a `SELECT` it does not pay; making the loading route agree would mean minting a reference the ORM cannot build.
 
-### `orphanRemoval` is a plain bool on the ORM 3 mapping object
+### Dissociating is refused where the mapping forbids it
 
-`AssociationMapping::$orphanRemoval` is declared `public bool $orphanRemoval = false` — not an array key, not nullable — so it is read directly, with no null-coalescing fallback.
-This is recorded because ORM 2 exposed association mappings as **arrays** (`$mapping['orphanRemoval']`, absent on many mappings), which is the shape most ported code and most training data assume; the array access still exists in ORM 3 only through `ArrayAccess` on the mapping object.
-Level max rejects a `?? false` against a non-nullable bool, so the truthful form is the only one that compiles.
+[`assertRelationshipAcceptsDetach()`](../../../packages/schemas/src/State/AssociationReader.php) refuses a one-to-many dissociation the mapping does not permit, checking four things in this order, so only the first that applies to a mapping fires:
+
+1. the owner's association declares **`orphanRemoval`**: a record removed from such a collection is *deleted*, so dissociating is not something the mapping permits, and the refusal names `DeleteAction`;
+2. the target's mapped-by field is part of the target's own **identifier**: nulling it would erase half the record's identity, so there is nothing to dissociate *to*, and the refusal names `DeleteAction` again.
+   It runs before the nullability check because Doctrine maps an `#[Id]` to-one's join column `nullable: false`, and advice to make an identifier column nullable cannot be followed;
+3. the target's join column is **`nullable: false`**: the column cannot hold the null a dissociation writes;
+4. the target's setter or property **does not accept null**: a non-nullable PHP type would make the write a `TypeError`.
+
+Filament checks none of these: its `DissociateAction` calls `dissociate()` on the inverse `BelongsTo` and `save()`s, and the database or the model answers.
+Each is a mapping fact rather than a runtime failure, so each throws a `LogicException` naming the fix, and [`DissociateAction`](../actions/dissociate-action.md) and `DissociateBulkAction` let it propagate, because swallowing it into a danger toast would hide a mapping bug behind a user-facing message.
+`detach()` asks the same question before it writes a one-to-many, so a `DetachAction` on a one-to-many meets the same refusals.
+A many-to-many always passes.
 
 ### Only the shapes Doctrine states in one mapping are read
 

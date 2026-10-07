@@ -1,7 +1,8 @@
 ---
-description: '`Sylament\Schemas\State\ViolationPathTranslator` and the `HasKeyedItems` component contract it consults — Sylament-only, with no Filament counterpart… (draft)'
+description: '`ViolationPathTranslator` and the `HasKeyedItems` contract: a record-graph violation path spoken back as the state path that shows it'
 ports: []
 owns:
+  - packages/schemas/src/Components/Contracts/HasKeyedItems.php
   - packages/schemas/src/State/ViolationPathTranslator.php
 ---
 # ViolationPathTranslator (schemas)
@@ -14,22 +15,17 @@ The translator is the inverse of the mapping walk: it walks the same [record pat
 
 ## Surface
 
-Every point of the translator and the contract.
-Nothing here ports a Filament source, so the _Ports_ column is dropped, and nothing here diverges from one, so there is no Divergences section.
-
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
-| [`__construct(array $recordPathMap, ?string $rootStatePath)`](../../../packages/schemas/src/State/ViolationPathTranslator.php) — built by [`Schema::getRecordViolationPathTranslator()`](../../../packages/schemas/src/Concerns/BelongsToRecord.php), over the record path map and the paths it drops beneath a subtree owner | — | done | — | [semantics](#the-state-path-is-rebuilt-from-the-prefix-rather-than-read-off-the-component) |
+| [`__construct(array $recordPathMap, ?string $rootStatePath)`](../../../packages/schemas/src/State/ViolationPathTranslator.php) — built by `Schema::getRecordViolationPathTranslator()` | — | done | — | [semantics](#the-state-path-is-rebuilt-from-the-prefix-rather-than-read-off-the-component) |
 | [`translate(string $violationPropertyPath): ?string`](../../../packages/schemas/src/State/ViolationPathTranslator.php) — deepest declared path wins | — | done | — | [semantics](#a-violation-beneath-a-declared-leaf-folds-onto-that-leaf) |
 | The `null` return — a violation no declared path owns | — | done | — | [semantics](#an-unowned-violation-returns-null-so-the-caller-folds-it-at-the-schema-root) |
-| [`translateToErrorPath(string $violationPropertyPath): ?string`](../../../packages/schemas/src/State/ViolationPathTranslator.php) — `translate()`'s answer when the owning component implements [`HasValidationConstraints`](../../../packages/schemas/src/Components/Contracts/HasValidationConstraints.php) or `HasKeyedItems` and the answer is no keyed item's own path, else `null`; the path `validateSchemaRecord()` files a message under | — | done | — | [semantics](#a-message-is-filed-only-under-a-component-that-shows-its-own-errors) |
+| [`translateToErrorPath(string $violationPropertyPath): ?string`](../../../packages/schemas/src/State/ViolationPathTranslator.php) — the path `validateSchemaRecord()` files a message under | — | done | — | [semantics](#a-message-is-filed-only-under-a-component-that-shows-its-own-errors) |
 | The index arm — `sections[2].heading` → the item key the record's collection holds at key `2` | — | done | — | [semantics](#the-index-is-a-collection-key-not-a-position) |
 | The in-item fold — a violation naming a path the item schema declares nothing for | — | done | — | [semantics](#a-violation-inside-an-item-folds-by-the-same-rule-as-one-at-the-root) |
 | [`HasKeyedItems::getItemKeys()`](../../../packages/schemas/src/Components/Contracts/HasKeyedItems.php) — implemented by [`Repeater`](../forms/repeater.md) | — | done | — | [semantics](#the-index-is-a-collection-key-not-a-position) |
 | [`HasKeyedItems::getItemStatePaths()`](../../../packages/schemas/src/Components/Contracts/HasKeyedItems.php) — implemented by [`Repeater`](../forms/repeater.md) | — | done | — | [semantics](#a-violation-inside-an-item-folds-by-the-same-rule-as-one-at-the-root) |
 | Parsing — `Symfony\Component\PropertyAccess\PropertyPath` | — | done | — | [semantics](#the-path-is-parsed-by-symfonys-own-parser-not-by-splitting-on-dots) |
-
-Coverage: every arm by [`ViolationPathTranslatorTest`](../../../packages/schemas/tests/Unit/State/ViolationPathTranslatorTest.php) (leaf, nested leaf, deepest-wins, fold-onto-owner, no-prefix, the three `null` arms, the index hop over a list key / a sparse key / a string key, the collection's own path, and the five stop conditions — an index naming no item, an in-item path the item declares nothing for, a class-level violation on the item record, a fold onto a declared item path, and a second index nesting inside the item — and `translateToErrorPath()`'s arms: a constrained field, a keyed item, a component showing no errors, the four `null` paths, the three shapes that stop at an item's own path, an item field taking the remainder, and the collection's own path); end-to-end against real Doctrine records by [`BelongsToRecordValidationTest`](../../../packages/schemas/tests/Integration/Concerns/BelongsToRecordValidationTest.php), the error placement by [`HasSchemasRecordErrorPlacementTest`](../../../packages/schemas/tests/Integration/Concerns/HasSchemasRecordErrorPlacementTest.php) and, for the index arm over a real `Repeater::relationship()`, by [`RepeaterRecordValidationTest`](../../../packages/forms/tests/Integration/Components/RepeaterRecordValidationTest.php) — which pins the attribution through a deletion and through a reorder, and that both in-item fold shapes are filed at the schema's own path.
 
 ## Semantics
 
@@ -51,7 +47,7 @@ Where the message is then **shown** is a second question, answered by [`translat
 
 `translate()` answers which declared path owns a violation; that is not always a path anything renders.
 Forms' `Field` reads its own state path's errors, and the page and the action modal read the schema's own, but a layout component entangling a related record — `Group`, `Section` or `Fieldset` with `relationship()` — reads none.
-A violation that folded onto such an owner — a class-level one on the related record, its constraint on a field the group does not map, or the blank-key refusal for a derived identity whose target key field nothing inside the group maps — was a 422 with no message on screen.
+A violation that folds onto such an owner — a class-level one on the related record, its constraint on a field the group does not map, or the blank-key refusal for a derived identity whose target key field nothing inside the group maps — would be a 422 with no message on screen if it were filed there.
 
 `translateToErrorPath()` answers `translate()`'s path only when the owning component declares that it shows its errors: it implements [`HasValidationConstraints`](../../../packages/schemas/src/Components/Contracts/HasValidationConstraints.php), as every form field does, or `HasKeyedItems`, as the repeater does — bar one shape inside a repeater item, below.
 Otherwise it answers `null`, and [`validateSchemaRecord()`](can-be-validated.md#record-sourced-constraints-are-validated-on-the-mapped-object) files the message at the schema's own path, which the page and the modal render above the form.
@@ -65,10 +61,10 @@ So `translateToErrorPath()` answers `null` for that path too, so the message is 
 One shape still escapes the test.
 It is asked of the component owning the record path — the root's owner, or the repeater for an item — and inside an item `translateToErrorPath()` answers whichever in-item path `getItemStatePaths()` lists, whatever component declared it.
 A `Group`, `Section` or `Fieldset` with `relationship()` inside a relationship repeater item declares such a path, so a class-level violation on its related record, or one on a property of it no inner field maps, is still filed at `data.<repeater>.<itemKey>.<group>`, which nothing renders.
-Closing it needs the component that declared the in-item path, which `HasKeyedItems::getItemStatePaths()` does not expose — a contract widening not made yet, so the shape is recorded here rather than closed.
+Closing it needs the component that declared the in-item path, which `HasKeyedItems::getItemStatePaths()` does not expose — a contract widening that is not made, so the shape is recorded here rather than closed.
 
-Only the filing moved.
-The record check still asks `translate()` whether a component maps a blank or taken key candidate, so a group entangling the related record still counts as mapping it and the refusal is still raised; it is shown above the form rather than nowhere.
+Only the filing follows `translateToErrorPath()`.
+The record check asks `translate()` whether a component maps a blank or taken key candidate, so a group entangling the related record still counts as mapping it and the refusal is still raised; it is shown above the form rather than nowhere.
 Pinned by [`HasSchemasRecordErrorPlacementTest`](../../../packages/schemas/tests/Integration/Concerns/HasSchemasRecordErrorPlacementTest.php) and, rendered, by panels' [`EditRecordRelationshipsTest`](../../../packages/panels/tests/Integration/Resources/Pages/EditRecordRelationshipsTest.php).
 
 ### An unowned violation returns null so the caller folds it at the schema root

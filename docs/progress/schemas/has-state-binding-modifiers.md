@@ -1,5 +1,5 @@
 ---
-description: 'The shared concern that lets a component declare *when* its state syncs to the server: live-on-input, live-on-blur (`lazy`), debounced, or not at all. (draft)'
+description: The concern that sets when a schema or component syncs its state to the server, translated into a UX LiveComponent data-model directive.
 ports:
   - vendor/filament/schemas/src/Concerns/HasStateBindingModifiers.php
 owns:
@@ -7,9 +7,9 @@ owns:
 ---
 # HasStateBindingModifiers (schemas)
 
-[`Sylament\Schemas\Components\Concerns\HasStateBindingModifiers`](../../../packages/schemas/src/Components/Concerns/HasStateBindingModifiers.php) — the shared concern that lets a component declare *when* its state syncs to the server: live-on-input, live-on-blur (`lazy`), debounced, or not at all.
+[`Sylament\Schemas\Components\Concerns\HasStateBindingModifiers`](../../../packages/schemas/src/Components/Concerns/HasStateBindingModifiers.php) is the shared concern that lets a component declare *when* its state syncs to the server: live-on-input, live-on-blur (`lazy`), debounced, or not at all.
 Both the [`Schema`](../../../packages/schemas/src/Schema.php) and the schemas base [`Component`](component.md) `use` it.
-It ports Filament's identically-named trait, translating the Livewire `wire:model` modifier grammar into a single Symfony UX LiveComponent `data-model` string — see [`property-accessor.md`](property-accessor.md) for the state backend that string drives and [`has-schemas.md`](has-schemas.md) for how a live component reaches its container.
+It ports Filament's identically-named trait, translating the Livewire `wire:model` modifier grammar into a single Symfony UX LiveComponent `data-model` string; [`property-accessor.md`](property-accessor.md) has the state backend that string drives and [`has-schemas.md`](has-schemas.md) how a live component reaches its container.
 
 ## Surface
 
@@ -22,7 +22,7 @@ It ports Filament's identically-named trait, translating the Livewire `wire:mode
 | [`getDataModel(statePath)` over a caller-supplied path](../../../packages/schemas/src/Components/Concerns/HasStateBindingModifiers.php) | — (no Filament equivalent) | done | — | [diverges](#the-optional-state-path-is-a-sylament-addition) |
 | [`getLiveDebounce()`](../../../packages/schemas/src/Components/Concerns/HasStateBindingModifiers.php) | [`getLiveDebounce()`](../../../vendor/filament/schemas/src/Concerns/HasStateBindingModifiers.php) | done | — | — |
 | [`reactive()` alias of `live()`](../../../packages/schemas/src/Components/Concerns/HasStateBindingModifiers.php) | [`reactive()`](../../../vendor/filament/schemas/src/Concerns/HasStateBindingModifiers.php) | in progress | — | [detail](#reactive-and-islivedebounced-are-ported-but-untested) |
-| [`isLive()` / `isLiveOnBlur()` container fallback](../../../packages/schemas/src/Components/Concerns/HasStateBindingModifiers.php) | [`isLive()`](../../../vendor/filament/schemas/src/Concerns/HasStateBindingModifiers.php) | in progress | — | [detail](#the-container-and-parent-fallback-arms-are-untested) · [diverges](#the-trait-carries-the-component-flavor-while-schema-overrides-the-getters) |
+| [`isLive()` / `isLiveOnBlur()` container fallback](../../../packages/schemas/src/Components/Concerns/HasStateBindingModifiers.php) | [`isLive()`](../../../vendor/filament/schemas/src/Concerns/HasStateBindingModifiers.php) | in progress | — | [detail](#the-blur-and-debounce-container-fallbacks-are-untested) · [diverges](#the-trait-carries-the-component-flavor-while-schema-overrides-the-getters) |
 | [`isLiveDebounced()`](../../../packages/schemas/src/Components/Concerns/HasStateBindingModifiers.php) | [`isLiveDebounced()`](../../../vendor/filament/schemas/src/Concerns/HasStateBindingModifiers.php) | in progress | — | [detail](#reactive-and-islivedebounced-are-ported-but-untested) |
 | `stateBindingModifiers()` / `applyStateBindingModifiers()` / `getStateBindingModifiers()` Livewire grammar | [`getStateBindingModifiers()`](../../../vendor/filament/schemas/src/Concerns/HasStateBindingModifiers.php) | skipped | — | [diverges](#livewire-modifier-array-grammar-becomes-a-single-getdatamodel-data-model-string) |
 | `isLazy()` alias | [`isLazy()`](../../../vendor/filament/schemas/src/Concerns/HasStateBindingModifiers.php) | todo | — | [detail](#islazy-and-getnormalizedlivedebounce-are-not-yet-ported) |
@@ -30,20 +30,17 @@ It ports Filament's identically-named trait, translating the Livewire `wire:mode
 
 ## Details
 
-The emit path is real: `live()` / `lazy()` / `debounce()` feeding `getDataModel()` is ported and exercised end-to-end by [`LiveStateTest`](../../../packages/schemas/tests/Integration/LiveStateTest.php), which renders a live host whose four fields span the modifier matrix and asserts the emitted strings — `data.title` (bare live path), `norender|data.slug` (not live, the default), `on(change)|data.heading` (blur), `debounce(250)|data.excerpt` (debounce).
-That covers `live()`, `lazy()`, `debounce()`, `isLive()`, `isLiveOnBlur()`, `getLiveDebounce()` and `getDataModel()`.
-The rows below are what that coverage does not reach, plus two methods not yet ported.
-
 ### `reactive()` and `isLiveDebounced()` are ported but untested
 
-Both exist and read correctly — `reactive()` calls `live()` with defaults; `isLiveDebounced()` returns `false` on blur, `true` when a local debounce is set, else delegates to the container.
-Neither is touched by `LiveStateTest`.
+Both exist: `reactive()` calls `live()` with defaults, and `isLiveDebounced()` returns `false` on blur, `true` when a local debounce is set, and otherwise delegates to the container.
+No test calls either.
 **Next step:** add a focused Unit test asserting `reactive()` produces the same binding as `live()`, and `isLiveDebounced()` true/false across the blur / debounce / plain cases.
 
-### The container and parent fallback arms are untested
+### The blur and debounce container fallbacks are untested
 
-Every field in `LiveStateTest` sets its own `isLive`, so the delegation branch — `$this->evaluate($this->isLive) ?? $this->getContainer()->isLive()` (and the same `?? getParentComponent()` arm on [`Schema`](../../../packages/schemas/src/Schema.php)) — never runs.
-**Next step:** a Unit test with a field that sets no own `isLive`, asserting it inherits `isLive` / `isLiveOnBlur` / `getLiveDebounce` from its container.
+`isLive()`'s delegation, `$this->evaluate($this->isLive) ?? $this->getContainer()->isLive()` and the `getParentComponent()` arm on [`Schema`](../../../packages/schemas/src/Schema.php), is exercised by tables' [`HasFiltersTest`](../../../packages/tables/tests/Integration/Concerns/HasFiltersTest.php), whose leaf filter field inherits the live filters form's `live()`.
+The same fallback in `isLiveOnBlur()` and `getLiveDebounce()` has no test.
+**Next step:** a Unit test with a field that sets no own `isLive`, asserting it inherits `isLiveOnBlur` and `getLiveDebounce` from its container.
 See [`has-schemas.md`](has-schemas.md) for the container wiring the fallback walks.
 
 ### `isLazy()` and `getNormalizedLiveDebounce()` are not yet ported
@@ -51,30 +48,27 @@ See [`has-schemas.md`](has-schemas.md) for the container wiring the fallback wal
 Filament's trait also defines `isLazy()` (a bare alias of `isLiveOnBlur()`) and `getNormalizedLiveDebounce()` (parses `'250ms'` / `'2s'` / numeric into an int of milliseconds).
 Neither exists in Sylament.
 `isLazy()` is a trivial alias; `getNormalizedLiveDebounce()` only matters once server-side debounce normalization is needed.
-**Next step:** port both when a consumer first needs them — provisional, not a non-goal.
+**Next step:** port both when a consumer first needs them; this is provisional, not a non-goal.
 
 ## Divergences
 
 ### Livewire modifier-array grammar becomes a single `getDataModel()` data-model string
 
-Filament exposes `applyStateBindingModifiers()` / `getStateBindingModifiers()`, returning arrays like `['live', 'blur']` or `['live', 'debounce', $ms]` and special-casing `$entangle(*)` expressions — all consumed by Blade `wire:model`.
-Sylament drops that surface entirely (and with it the `$stateBindingModifiers` array prop) and adds `getDataModel()`, which returns the ux-live-component modifier grammar (`modifier|…|path`, path last): `norender|<path>` when not live, `on(change)|<path>` for blur, `debounce(<ms>)|<path>` when debounced, else the bare path — parsed by `live_controller.js` (`get_model_binding_default`).
-Note what each modifier does client-side: `norender` suppresses the re-render but still syncs state for the next submit, `on(change)` switches the trigger event to blur/change, `debounce(<ms>)` overrides the default debounce, and a bare path binds live on `input` with that default.
-This is the Livewire → UX LiveComponent idiom translation, and it is stable: the two client runtimes have incompatible binding grammars, so it will not reverse.
+Filament exposes `applyStateBindingModifiers()` / `getStateBindingModifiers()`, returning arrays like `['live', 'blur']` or `['live', 'debounce', $ms]` and special-casing `$entangle(*)` expressions, all consumed by Blade `wire:model`.
+Sylament drops that surface entirely (and with it the `$stateBindingModifiers` array prop) and adds `getDataModel()`, which returns the ux-live-component modifier grammar (`modifier|…|path`, path last): `norender|<path>` when not live, `on(change)|<path>` for blur, `debounce(<ms>)|<path>` when debounced, else the bare path, which `live_controller.js` parses in `get_model_binding_default`.
+Client-side, `norender` suppresses the re-render but still syncs state for the next submit, `on(change)` switches the trigger event to blur/change, `debounce(<ms>)` overrides the default debounce, and a bare path binds live on `input` with that default.
+This is the Livewire → UX LiveComponent idiom translation, and it is stable: the two client runtimes have incompatible binding grammars.
 `stateBindingModifiers()`, `applyStateBindingModifiers()`, and `getStateBindingModifiers()` are therefore intentionally absent (**skipped**), not pending.
 
 ### The optional state path is a Sylament addition
 
-`getDataModel()` takes an optional `?string $statePath`: `null` — every one of the twelve shipped templates that calls it that way, and the only shape Filament's `applyStateBindingModifiers()` has — builds the directive over the component's own path, while a string builds the same `norender|` / `on(change)|` / `debounce(N)|` directive over the path the caller names.
+`getDataModel()` takes an optional `?string $statePath`: `null`, which is how most shipped templates call it and the only shape Filament's `applyStateBindingModifiers()` has, builds the directive over the component's own path, while a string builds the same `norender|` / `on(change)|` / `debounce(N)|` directive over the path the caller names.
 It exists because a component can render more than one bound input: [`KeyValue`](../forms/key-value.md) binds a key and a value cell per row at `<own path>.<index>.key` / `.value`, and those cells must inherit the field's own `live()` / `lazy()` / `debounce()` rather than re-deriving them.
-Filament needs no counterpart — its `KeyValue` rows are Alpine-owned and never carry a binding of their own.
-No interface declares the method and no subclass overrides it, so widening the signature reached every caller at once.
+Filament needs no counterpart: its `KeyValue` rows are Alpine-owned and never carry a binding of their own.
 
 ### The trait carries the component flavor while `Schema` overrides the getters
 
-Filament's single trait branches at runtime — `if ($this instanceof Component) return $this->getContainer()->…; elseif ($this->getParentComponent()) …`.
+Filament's single trait branches at runtime: `if ($this instanceof Component) return $this->getContainer()->…; elseif ($this->getParentComponent()) …`.
 Sylament splits it two-level instead: the trait's `isLive` / `isLiveOnBlur` / `isLiveDebounced` / `getLiveDebounce` delegate to `getContainer()` (the component flavor), and [`Schema`](../../../packages/schemas/src/Schema.php) overrides each to delegate to `getParentComponent()`.
 This is the same two-level split [`has-gap.md`](has-gap.md) and [`has-columns.md`](has-columns.md) record, and it keeps each context statically typed with no `instanceof` sniff.
 It reverses only if the two-level pattern is abandoned toolkit-wide.
-
-_See also: the global [rename table](../renames.md) — relocating the trait from Filament's `Concerns\` to `Components\Concerns\` is a systematic namespace translation recorded there, not a per-component divergence._

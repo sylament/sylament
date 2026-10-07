@@ -1,10 +1,12 @@
 ---
-description: '`HasNullableBranch` on the base `Component`: `nullWhenBlank()` and the branch pass in `getData()` that nulls a blank optional branch of the record graph (draft)'
+description: '`HasNullableBranch` on the base `Component`: `nullWhenBlank()` and the branch pass in `getData()` that nulls a blank optional branch of the record graph'
 ports: []
 owns:
   - packages/schemas/src/Components/Concerns/HasNullableBranch.php
 ---
 # HasNullableBranch (schemas)
+
+The trait declares the branch; the pass that acts on it is `getNullableBranches()` and the branch loop in `getData()`, whose row is in [belongs-to-record.md](belongs-to-record.md), and its entries are here because the feature reads as one.
 
 ## Surface
 
@@ -17,11 +19,11 @@ owns:
 ### `nullWhenBlank()` cannot compose with a save hook
 
 A component declaring both `nullWhenBlank()` and `saveRelationshipsUsing()` throws a `LogicException` from `getNullableBranches()`, naming the component class and the two ways out.
-This is a v1 refusal rather than a rule about what is possible, and the grounds are that the two declarations answer the same question differently.
+The refusal is a choice rather than a limit of what is possible, and the grounds are that the two declarations answer the same question differently.
 The branch pass writes `null` at the branch's own record path through the property accessor and then skips every path beneath it — but a save hook exists precisely because the accessor cannot write that path, so the "null the branch" half would either fail or write past the relationship the hook owns.
 Emptiness for a relationship is the hook's own business: a to-many hook clearing its collection and a to-one hook writing `null` both express it inside the callback, with the entity manager in reach.
 
-Placed before the state-path check in the same loop, so the conflict is reported even when the component also carries no state path — the pair of declarations is wrong independently of where it sits.
+The check sits before the state-path check in the same loop, so the conflict is reported even when the component also carries no state path — the pair of declarations is wrong independently of where it sits.
 
 ### The built-in blank test asks the branch's own leaves
 
@@ -29,19 +31,19 @@ Placed before the state-path check in the same loop, so the conflict is reported
 It walks the root schema's flat components and keeps every declared leaf whose absolute path sits under the branch's own — path-bearing, and not itself a container — then reads each leaf's value out of the slice and asks the leaf whether it is blank, through `Component::isBlankStateValue()`.
 Three consequences, all deliberate:
 
-1. **Unmanaged keys in the slice no longer influence the verdict.**
+1. **Unmanaged keys in the slice do not influence the verdict.**
    An array-backed branch keeping a sibling key the schema never declared ([leaf granularity](belongs-to-record.md#mapping-walks-the-record-graph-by-declared-leaf-paths)) is judged on the declared leaves alone — the same "the schema maps what it declares" rule the rest of both walks follows.
 2. **A leaf absent from the slice is blank, and membership is the path, not the tree.**
    Beneath-ness is the same absolute-path prefix the branch pass skips by, so a filled leaf three levels down keeps the branch alive — and so does one declared by a *sibling* component whose path nests under the branch, [the independence the ordering sort exists for](#branches-are-ordered-by-path-depth-because-tree-order-is-not-path-order).
-   Judging tree children instead let a branch null while a filled sibling leaf beneath its path was then skipped as nulled — silent data loss, caught in review before merge.
+   Judging tree children instead would let a branch null while a filled sibling leaf beneath its path was then skipped as nulled — silent data loss.
    A leaf whose key the slice does not carry simply contributes nothing.
-3. **A detached or path-less component falls back to the old value-recursive test**, so `shouldNullBranch()` stays total.
+3. **A detached or path-less component falls back to the value-recursive test**, so `shouldNullBranch()` stays total.
    Neither real walk can reach that arm — the mapper [refuses a path-less branch outright](#a-nullable-branch-with-no-state-path-is-refused-not-ignored) and forms' requirement walk is gated the same way — it exists so a component built with `new` in a unit test, with no container to enumerate leaves through, still answers.
    A wired component without a path of its own takes the same arm: its absolute path would be its container's, and enumerating leaves under that would judge the wrong branch.
 
-The trap that forced the change is a boolean.
+The value scan gets booleans wrong, which is why the leaves answer.
 `filled(false)` is `true`, and `Checkbox`/`Toggle` cast with `BooleanStateCast(isNullable: false)`, so an untouched box dehydrates `false` rather than null.
-Under the old value scan that made **any** boolean field inside a `nullWhenBlank()` branch permanently non-blank: derived requirement never suppressed, so the branch's non-nullable leaves stayed required and a blank branch could not be submitted, and had it been submitted the branch could never have nulled.
+A value scan would make **any** boolean field inside a `nullWhenBlank()` branch permanently non-blank: derived requirement would never be suppressed, so the branch's non-nullable leaves would stay required and a blank branch could not be submitted, and had it been submitted the branch could never null.
 Asking the leaf instead puts the answer where the state casts are — [`Checkbox`](../forms/checkbox.md) and [`Toggle`](../forms/toggle.md) override `isBlankStateValue()` to read their resting `false` as blank, the same field-side placement that already carries [their derivation opt-out](../forms/can-be-validated.md#a-boolean-field-opts-out-of-derivation-but-selectboolean-does-not).
 
 A branch that [owns its record subtree](belongs-to-record.md#a-component-can-own-its-whole-record-subtree) asks none of that: it judges its own whole slice through `isBlankStateValue()` and never enumerates a leaf, and the enumeration skips every leaf sitting under an owner for the same reason.
@@ -50,7 +52,7 @@ At mapping time an owner's slice has already been rewritten by its own dehydrati
 One all-blank item is the exact case: by value it is an item, by leaves it is nothing, and the two answers differ by a whole list.
 An owner nested inside an ordinary branch is answered the same way — the outer branch reads the owner's value, not the owner's leaves.
 
-The leaf-enumerating predicate the walk needs, `hasPathBearingDescendants()`, moved from a private helper on the root tier onto `Component` (via `HasChildComponents`) so both walks share one definition, the same convergence [`getRecordStatePath()`](component-belongs-to-record.md#getrecordstatepath-is-the-one-definition-of-record-relative-and-both-walks-must-share-it) argues for.
+The leaf-enumerating predicate the walk needs, `hasPathBearingDescendants()`, lives on `Component` (via `HasChildComponents`) so both walks share one definition, the same convergence [`getRecordStatePath()`](component-belongs-to-record.md#getrecordstatepath-is-the-one-definition-of-record-relative-and-both-walks-must-share-it) argues for.
 
 ### A branch the bag no longer carries is skipped, not nulled
 
@@ -60,25 +62,22 @@ If it holds none, the pass writes nothing at all.
 This is the guard that stops branch-nulling from being a data-loss bug, and the reason is that "hidden" and "blank" arrive at the pass looking identical.
 [The dehydration walk](component.md) *forgets* a non-dehydrated component's whole subtree — `isDehydrated()` ends in `! isHiddenAndNotDehydratedWhenHidden()` — so a hidden branch leaves no trace in the bag.
 Read that absence with `getFromArray()`, coerce the non-array to `[]`, and `shouldNullBranch([])` answers `true`, correctly, because an empty bag holds nothing filled.
-The pass had asked the wrong question.
-Measured, with a `Post` holding a real `Author('Ada')` and a *filled* author in state:
+With a `Post` holding a real `Author('Ada')` and a *filled* author in state:
 
-| schema | before | now |
+| schema | without the guard | with it |
 | --- | --- | --- |
 | `->statePath('author')->hidden()`, undeclared | survives | survives |
 | `->statePath('author')->nullWhenBlank()->hidden()` | **NULL — data loss** | survives |
 | `->statePath('author')->nullWhenBlank()` with a `->hidden()` leaf | **NULL — data loss** | survives |
 
-The realistic trigger is not exotic: `Section::make('Author')->statePath('author')->nullWhenBlank()->hiddenOn(Operation::Edit)` deleted an article's author every time someone edited its title, with no exception and no validation error.
+The realistic trigger is not exotic: without the guard, `Section::make('Author')->statePath('author')->nullWhenBlank()->hiddenOn(Operation::Edit)` would delete an article's author every time someone edited its title, with no exception and no validation error.
 
-**A `hasInArray()` check on the branch path itself is not enough**, and this file proposed exactly that before it was tested.
+**A `hasInArray()` check on the branch path itself is not enough.**
 [`forgetFromArray()`](property-accessor.md#the-detached-array-trio-ports-laravels-arr-helpers-because-propertyaccess-is-host-only-and-has-no-key-removal) unsets only the leaf key and deliberately leaves emptied parents behind, so pruning a branch's only leaf leaves `author => []` in the bag and `hasInArray($state, 'author')` still answers `true`.
-Swapping the leaf-path predicate for that one-liner fails the hidden-leaf case and nothing else — run as an experiment, not assumed.
+Swapping the leaf-path predicate for that one-liner fails the hidden-leaf case and nothing else.
 
-The same predicate settles two cases that were filed separately.
-A component with no declared leaf beneath it is a **leaf, not a branch** — `nullWhenBlank()` on a plain field now writes nothing, where before the pass nulled it every time and was saved only by the leaf walk overwriting the null a moment later.
-That rescue did not apply to a `dehydrated(false)` leaf, where the null reached the record and contradicted `getData()`'s own docblock.
-Both are gone.
+The same predicate makes a component with no declared leaf beneath it a **leaf, not a branch**: `nullWhenBlank()` on a plain field writes nothing.
+That matters most for a `dehydrated(false)` leaf, where a null written by the pass would reach the record, since the leaf walk never overwrites it, and contradict `getData()`'s own docblock.
 
 An [owner branch](belongs-to-record.md#a-component-can-own-its-whole-record-subtree) is asked at its **own** path instead, and that is not the one-liner rejected above.
 It has no mapped leaf beneath it at all — the owner speaks for them — so the leaf-path predicate would answer "absent" for every owner and no owner could ever null.
@@ -90,8 +89,8 @@ That is [the two-bag hazard](#a-nullwhenblank-closure-sees-two-different-bags), 
 ### A branch the record cannot null is refused loudly
 
 `nullWhenBlank()` on a property the record declares non-nullable — `private Author $author` rather than `?Author` — is a declaration that can never be honoured.
-It used to reach `setOnRecord($record, 'author', null)` unguarded and surface as Symfony's `InvalidTypeException`: a 500 whose message names neither `nullWhenBlank()` nor the fix, from a mapper whose [documented contract](belongs-to-record.md#reads-are-lenient-writes-are-strict) is that its failures spell the fix out.
-The pass now asks [`acceptsNullOnRecord()`](property-accessor.md#the-nullability-probe-lives-here-because-the-type-reader-does) and throws a `LogicException` naming the path, the record and the declaration.
+Unguarded, it would reach `setOnRecord($record, 'author', null)` and surface as Symfony's `InvalidTypeException`: a 500 whose message names neither `nullWhenBlank()` nor the fix, from a mapper whose [documented contract](belongs-to-record.md#reads-are-lenient-writes-are-strict) is that its failures spell the fix out.
+The pass asks [`acceptsNullOnRecord()`](property-accessor.md#the-nullability-probe-lives-here-because-the-type-reader-does) first and throws a `LogicException` naming the path, the record and the declaration.
 
 Two placement decisions inside that, both deliberate:
 
@@ -100,14 +99,14 @@ Two placement decisions inside that, both deliberate:
 - **After the presence guard, not before.**
   A branch the bag does not carry is not part of this submission at all, so a `hiddenOn(Operation::Edit)` branch over a non-nullable property does not throw on every edit.
 
-The alternative considered and rejected was to keep the mapper quiet and instead refuse the [derived-requirement suppression](../forms/can-be-validated.md#requirement-is-derived-from-the-records-write-side-types) for a non-nullable branch, so the user meets a field-level 422 instead.
-It does not actually close the hole: suppression only produces a 422 when some leaf beneath the branch derives a requirement, and a branch whose leaves are all themselves nullable stays blank, stays valid, and reaches the same crash.
+The alternative rejected is to keep the mapper quiet and instead refuse the [derived-requirement suppression](../forms/can-be-validated.md#requirement-is-derived-from-the-records-write-side-types) for a non-nullable branch, so the user meets a field-level 422 instead.
+It does not close the hole: suppression only produces a 422 when some leaf beneath the branch derives a requirement, and a branch whose leaves are all themselves nullable stays blank, stays valid, and reaches the same crash.
 It also aims a message at the *end user* for a mistake only the *developer* can fix, leaving `nullWhenBlank()` a silent no-op on that property — the same failure mode as the path-less case below.
 
 ### A nullable branch with no state path is refused, not ignored
 
 `getNullableBranches()` keys branches by [`getRecordStatePath()`](component-belongs-to-record.md#getrecordstatepath-is-the-one-definition-of-record-relative-and-both-walks-must-share-it), which is null for a component carrying no `statePath()` of its own.
-Such a component names no property, so it cannot be a branch — but dropping it silently meant that
+Such a component names no property, so it cannot be a branch — but dropping it silently would mean that
 
 ```php
 Section::make('Author')->nullWhenBlank()->components([
@@ -115,11 +114,11 @@ Section::make('Author')->nullWhenBlank()->components([
 ])
 ```
 
-— a natural way to write "this author block is optional" — did nothing at all, with no feedback.
-It now throws, naming the component class and the two ways out (give it the `statePath()` of the branch it wraps, or drop the declaration).
+— a natural way to write "this author block is optional" — would do nothing at all, with no feedback.
+It throws instead, naming the component class and the two ways out (give it the `statePath()` of the branch it wraps, or drop the declaration).
 
-Forms' validation walk had no such filter, which is how one field's requirement came to depend on unrelated fields elsewhere: `getRawState()` on a path-less component [falls through to the container's path](component.md), so `shouldNullBranch()` was handed the **whole form's** raw bag and suppressed requirement whenever *any* of it was blank.
-That walk is now gated the same way, so both agree on what a branch is — [the forms side](../forms/can-be-validated.md#requirement-is-derived-from-the-records-write-side-types).
+Forms' validation walk is gated the same way, so both agree on what a branch is — [the forms side](../forms/can-be-validated.md#requirement-is-derived-from-the-records-write-side-types).
+Without the gate, one field's requirement would depend on unrelated fields elsewhere: `getRawState()` on a path-less component [falls through to the container's path](component.md), so `shouldNullBranch()` would be handed the **whole form's** raw bag and suppress requirement whenever *any* of it was blank.
 
 ### Branches are ordered by path depth because tree order is not path order
 
@@ -128,7 +127,7 @@ That walk is now gated the same way, so both agree on what a branch is — [the 
 Do not delete it as redundant.**
 
 The tempting argument for deleting it is that `getFlatComponents()` already walks the tree depth-first, so a parent is always visited before its children and ancestors already come first.
-That argument is false, and it was made once — the sort's own author offered it, and it did not survive review.
+That argument is false.
 Tree nesting and path nesting are independent: a component's record path comes from `statePath()`, not from where it sits in the component tree, so two **siblings** can nest by path.
 
 ```php
@@ -140,12 +139,10 @@ Pre-order traversal reaches `meta.seo` first.
 Without the sort the pass evaluates the descendant before the ancestor, so nulling `meta` afterwards writes over a decision already taken about a path underneath it, and the `$nulledPrefixes` short-circuit — which only skips branches it has *already* seen a prefix for — cannot save it.
 Sorting by depth restores the invariant the short-circuit assumes.
 
-That exact sibling-by-path shape is now pinned through the refusal, so deleting the sort fails a test rather than a code review: the inner branch sits over a **non-nullable** property, which only survives the pass by being short-circuited under the nulled outer one, so an unsorted pass reaches it first and throws [the non-nullable refusal](#a-branch-the-record-cannot-null-is-refused-loudly) naming `meta.seo`.
+That sibling-by-path shape is pinned through the refusal, so deleting the sort fails a test rather than a code review: the inner branch sits over a **non-nullable** property, which only survives the pass by being short-circuited under the nulled outer one, so an unsorted pass reaches it first and throws [the non-nullable refusal](#a-branch-the-record-cannot-null-is-refused-loudly) naming `meta.seo`.
 
-One latent type detail rode along with it, now closed: PHP coerces a numeric-string array key to `int`, so a schema using `statePath('0')` would have `TypeError`d under `strict_types=1` — in the sort, whose callback hinted `(string $a, string $b)`, and equally at `setOnRecord()`, which takes a `string` path.
-The hints are `int|string`, and `getData()` normalises both walks' keys with `strval()` once rather than casting at each of the six use sites.
-The claim that this covered "both walks" was true only of the two inside `getData()`: the **fill** walk, `readStateFromRecord()`, iterated the same map's keys raw and `TypeError`d on `getFromRecord()`'s `string $path`.
-It normalises the same way now, so all three walks agree.
+PHP coerces a numeric-string array key to `int`, so a schema using `statePath('0')` keys its branch and its leaf by `0`, which `strict_types=1` rejects at a `string` parameter.
+The sort's callback hints `int|string`; `getData()` maps the path map's keys through `strval()` once and casts each branch key with `(string)`, and the fill walk, `readStateFromRecord()`, casts each key before `getFromRecord()`, so all three walks hand the accessor a `string` path.
 
 ## Divergences
 
@@ -179,12 +176,11 @@ It does not widen for an [owner branch](belongs-to-record.md#a-component-can-own
 
 It does widen, by one shape, for a repeater declaring [value-object items](../forms/repeater.md#the-item-cast-fires-at-the-repeaters-two-pipeline-boundaries-not-in-the-generic-seam): the built-in test stays verdict-stable there for the same reason (both bags are arrays, both empty or both not), but a **closure** condition on such a repeater reads uuid-keyed value *arrays* at validation and a positional list of *constructed objects* at mapping — so a closure reaching into an item (`$state[0]['title']`) is right about one bag and fatal on the other.
 
-The [presence guard](#a-branch-the-bag-no-longer-carries-is-skipped-not-nulled) narrowed that to a **mixed** branch.
-A branch whose leaves are *all* pruned is now skipped outright rather than nulled, so the discard needs at least one surviving leaf beside the pruned one.
-It did not remove the hazard, and the guard is not the fix — the two walks still read two bags.
+The [presence guard](#a-branch-the-bag-no-longer-carries-is-skipped-not-nulled) limits that to a **mixed** branch: a branch whose leaves are *all* pruned is skipped outright rather than nulled, so the discard needs at least one surviving leaf beside the pruned one.
+The guard is not the fix — the two walks still read two bags.
 
 Not fixed, and the reason is cost rather than doubt: making validation read dehydrated state would mean dehydrating a branch per field per request, on the hot path, to serve a combination (a pruned leaf inside a `nullWhenBlank()` branch) that no shipped schema uses.
-The practical rule until then — **do not put a pruned leaf inside a nullable branch**, where pruned covers a hidden leaf (`hidden()`, `hiddenOn(...)`, `visible(false)`) as much as a `dehydrated(false)` one, and the hidden shape is the likelier of the two to be written by accident — and write closure conditions against key *presence* and blankness rather than against an exact bag shape.
+The practical rule — **do not put a pruned leaf inside a nullable branch**, where pruned covers a hidden leaf (`hidden()`, `hiddenOn(...)`, `visible(false)`) as much as a `dehydrated(false)` one, and the hidden shape is the likelier of the two to be written by accident — and write closure conditions against key *presence* and blankness rather than against an exact bag shape.
 Reverses if the cost model changes or a real schema needs the combination.
 
 ### A Doctrine embeddable cannot be nulled

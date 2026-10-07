@@ -1,5 +1,5 @@
 ---
-description: 'A two-method trait holding a component''s machine name: a `name` property, the `name()` setter, and the `getName()` accessor. (draft)'
+description: The schemas-level HasName trait holding a field's machine name behind name() and getName().
 ports:
   - vendor/filament/schemas/src/Components/Concerns/HasName.php
 owns:
@@ -7,9 +7,9 @@ owns:
 ---
 # HasName (schemas)
 
-`Sylament\Schemas\Components\Concerns\HasName` — a two-method trait holding a component's machine name: a `name` property, the `name()` setter, and the `getName()` accessor.
-It ports Filament's identically-named base trait, which lives in the `schemas` namespace but is consumed by the field layers above it.
-Its one consumer today is [`Sylament\Forms\Components\Field`](../../../packages/forms/src/Components/Field.php); it stays a shared row here (rather than folding into `forms`) because Filament shares `HasName` across ~6 field/entry classes and Sylament will too as `infolists` and the remaining `forms` components land.
+`Sylament\Schemas\Components\Concerns\HasName` holds a component's machine name: a `name` property, the `name()` setter and the `getName()` accessor.
+It ports Filament's identically-named trait, which lives in the `schemas` namespace but is consumed by the field layers above it.
+Its consumer in the port is [`Sylament\Forms\Components\Field`](../../../packages/forms/src/Components/Field.php); it stays in schemas because Filament shares it across `Field`, infolists' `Entry`, `MorphToSelect`, `Builder\Block` and the rich editor's `RichEditorTool` and `ToolbarButtonGroup`.
 
 ## Surface
 
@@ -18,12 +18,11 @@ Its one consumer today is [`Sylament\Forms\Components\Field`](../../../packages/
 | [`name()`](../../../packages/schemas/src/Components/Concerns/HasName.php) | [`name()`](../../../vendor/filament/schemas/src/Components/Concerns/HasName.php) | done | — | [diverges](#hasname-is-nullable-unlike-filaments-required-string-name) |
 | [`getName()`](../../../packages/schemas/src/Components/Concerns/HasName.php) | [`getName()`](../../../vendor/filament/schemas/src/Components/Concerns/HasName.php) | done | — | [diverges](#hasname-is-nullable-unlike-filaments-required-string-name) |
 
-Both rows are **done** — the setter and accessor are ported faithfully and covered directly by [`HasNameTest.php`](../../../packages/schemas/tests/Unit/Components/Concerns/HasNameTest.php) (default `null`, `name('title')` set, reset with `null`) via [`HasNameFixture`](../../../packages/schemas/tests/Fixtures/Components/Concerns/HasNameFixture.php), so neither has a write-up here.
-
 ## Divergences
 
 ### HasName is nullable, unlike Filament's required string name
 
-Filament types the property `string $name` with no default and returns `getName(): string` — a field always has a name, and `Field::make()` throws when it cannot derive one.
-Sylament types it `?string $name = null`, with `name(?string)` and `getName(): ?string`, because [`Field::make(?string $name = null)`](../../../packages/forms/src/Components/Field.php) accepts a null name and the label fallbacks tolerate it rather than throwing.
-Reverse it by adopting Filament's throw-on-missing-name contract in the `Field` port; until then the nullability is what the consumer requires.
+Filament types the property `string $name` with no default and returns `getName(): string`.
+Sylament types it `?string $name = null`, with `name(?string)` and `getName(): ?string`, so a component that never received a name reads `null` rather than raising an uninitialized-property error.
+[`Field::make()`](../../../packages/forms/src/Components/Field.php) refuses a blank name as Filament's does, so a field built through `make()` always carries one; the nullable setter still admits a later `name(null)`, and the label and validation paths that read the name keep their null branches ([field.md](../forms/field.md#the-name-moves-from-the-constructor-to-a-setter)).
+Reverse it by typing the trait `string` once those null branches go.

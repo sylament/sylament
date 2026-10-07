@@ -1,5 +1,5 @@
 ---
-description: '`Sylament\Schemas\Components\Concerns\EntanglesStateWithSingularRelationship` binds a layout component''s whole subtree to a to-one Doctrine association. (draft)'
+description: EntanglesStateWithSingularRelationship, its contract and BelongsToRelationship, binding a layout component's subtree to a to-one Doctrine association.
 ports:
   - vendor/filament/schemas/src/Components/Concerns/EntanglesStateWithSingularRelationship.php
   - vendor/filament/schemas/src/Components/Contracts/CanEntangleWithSingularRelationships.php
@@ -18,10 +18,9 @@ Five components compose it — [`Section`](section.md), [`Grid`](grid.md), [`Gro
 
 The mechanics it stands on are elsewhere: the hook pair and the record path map in [`belongs-to-record.md`](belongs-to-record.md), the mapping reads in [`association-reader.md`](association-reader.md), the graph reads and writes in [`property-accessor.md`](property-accessor.md).
 The association itself — the name, the target and the refusals — comes from [`BelongsToRelationship`](../../../packages/schemas/src/Components/Concerns/BelongsToRelationship.php), [shared with forms' relation-backed fields](#the-association-core-is-shared-with-forms-relation-backed-fields).
+The Surface table lists every member of the Filament trait and its contract.
 
 ## Surface
-
-Every member of the Filament trait and its contract.
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
@@ -39,14 +38,9 @@ Every member of the Filament trait and its contract.
 | `cachedExistingRecord()` / `getCachedExistingRecord()` / `clearCachedExistingRecord()` | [the cache trio](../../../vendor/filament/schemas/src/Components/Concerns/EntanglesStateWithSingularRelationship.php) | skipped | — | [diverges](#the-existing-record-is-read-off-the-graph-rather-than-cached-on-the-component) |
 | [Child schema re-rooted onto the related record](../../../packages/schemas/src/Components/Concerns/EntanglesStateWithSingularRelationship.php) | [`getChildSchema()` override](../../../vendor/filament/schemas/src/Components/Concerns/EntanglesStateWithSingularRelationship.php) | done | — | [semantics](#the-subtree-is-re-rooted-and-its-nested-hooks-are-routed-onto-the-related-record) · [diverges](#the-stamp-is-a-closure-floored-at-the-target-class) |
 | [Relation-backed fields inside the entangled subtree](../../../packages/schemas/src/Components/Concerns/EntanglesStateWithSingularRelationship.php) | [`Schema::saveRelationships()`'s tree walk](../../../vendor/filament/schemas/src/Concerns/BelongsToModel.php) | done | — | [semantics](#the-subtree-is-re-rooted-and-its-nested-hooks-are-routed-onto-the-related-record) |
-| `mutateRelationshipDataBeforeFill/Create/Save` | [the three mutation hooks](../../../vendor/filament/schemas/src/Components/Concerns/EntanglesStateWithSingularRelationship.php) | todo | — | [detail](#the-three-mutation-hooks-are-not-ported-here-yet) |
-| Hidden-component skip (`shouldSaveRelationshipsWhenHidden()`) | [the save closure's `isHidden()` guard](../../../vendor/filament/schemas/src/Components/Concerns/EntanglesStateWithSingularRelationship.php) | todo | `shouldSaveRelationshipsWhenHidden()` | [detail](#the-hidden-component-skip-waits-on-its-flag) |
+| `mutateRelationshipDataBeforeFill()` / `…Create()` / `…Save()` and their `…Using()` setters | [the three mutation hooks](../../../vendor/filament/schemas/src/Components/Concerns/EntanglesStateWithSingularRelationship.php) | todo | — | [detail](#the-three-mutation-hooks-are-not-ported-here-yet) |
+| Hidden-component skip (`shouldSaveRelationshipsWhenHidden()`) | [the sibling walk's `isHidden()` guard](../../../vendor/filament/schemas/src/Components/Concerns/EntanglesStateWithSingularRelationship.php) | skipped | — | [diverges](#two-components-entangling-one-relationship-throw-rather-than-merge) · [component-belongs-to-record.md](component-belongs-to-record.md#the-exists-guarded-members-are-not-ported) |
 | Translatable content driver | [`makeFilamentTranslatableContentDriver()` branches](../../../vendor/filament/schemas/src/Components/Concerns/EntanglesStateWithSingularRelationship.php) | skipped | — | [diverges](#the-translatable-content-driver-has-no-port) |
-
-Covered by [`EntanglesStateWithSingularRelationshipTest`](../../../packages/schemas/tests/Integration/Components/Concerns/EntanglesStateWithSingularRelationshipTest.php), which drives a `Section` over `Post::$profile` against the real SQLite rig: fill from an existing profile, fill to nulls without one, an edit that holds the profile's identity across a flush, a create-when-missing that the cascade persists, a `condition: false` save that is gone after the flush, a nested container whose *leaves* are written rather than its own path, and the four refusals (duplicate siblings, a property with no association, a to-many association, a `relationship()` naming nothing).
-The re-rooting and the nested hooks are pinned there too: a nested component resolving the related record — and, with no related record bound, the target class rather than the outer record — every child-schema key stamped including a decoration one, `Section`'s own child-key configuration surviving the `getChildSchema()` override, a hooked leaf filling from and saving onto the related record while the ordinary leaves keep their walk, a hook declared in a decoration schema routed like any other, and a `condition: false` save that removes the branch without running a nested hook.
-The end-to-end shape — a `Select` mapping the *related* record's own association — lives in forms, where a relation-backed field can actually be built: [`EntangledNestedRelationshipTest`](../../../packages/forms/tests/Integration/Components/EntangledNestedRelationshipTest.php) drives `Select::make('handle')` inside `Section::make()->relationship('author')` through fill, a changed selection and a cleared one.
-One case runs over a second association, `Post::$byline`, mapped deliberately **without** `orphanRemoval`: switching that relationship off still deletes the row, which is the property the [explicit removal](#a-switched-off-relationship-nulls-the-property-and-removes-the-record-explicitly) exists for and the one an `orphanRemoval` association could never distinguish.
 
 ## Details
 
@@ -54,14 +48,8 @@ One case runs over a second association, `Post::$byline`, mapped deliberately **
 
 `mutateRelationshipDataBeforeFillUsing()` / `…BeforeCreateUsing()` / `…BeforeSaveUsing()` rewrite the state array on its way to and from the related record.
 Forms' [`Repeater`](../forms/repeater.md) ports all three for its items, so the shape and the "return the array you were handed" refusal already exist to copy.
-Left out here only because nothing has needed them on a layout component yet.
-Next step: lift the trio out of `Repeater` into a shared concern when the second consumer arrives, rather than writing a third copy.
-
-### The hidden-component skip waits on its flag
-
-Filament's save closure skips a component that `isHidden()` and does not `shouldSaveRelationshipsWhenHidden()`.
-The port has `isHidden()` but no `shouldSaveRelationshipsWhenHidden()` surface at all ([`can-be-hidden.md`](can-be-hidden.md)), and the walks it would guard prune hidden components' state before the save hook ever runs.
-Next step: port the flag with the rest of the hidden-state surface, then decide whether this guard is still doing anything the pruning does not.
+Left out here only because nothing has needed them on a layout component.
+Next step: lift the trio out of `Repeater` into a shared concern when a layout component needs them, rather than copying it.
 
 ## Semantics
 
@@ -84,11 +72,11 @@ A `condition: false` component vouches and still fills, but its save nulls and r
 
 The merge walks `getChildSchemas()` in its natural order and lets the last assignment win, which is the order the root's flat walk visits an owner's child schemas in — so the component the discovery keeps for a shared path is the one the record path map kept, and [the mapper's last-claimant rule](belongs-to-record.md#a-hook-a-subtree-owner-routes-is-delegated-rather-than-refused) and this walk cannot name different survivors.
 
-### Every closure inside the subtree now sees the related record
+### Every closure inside the subtree sees the related record
 
 Accepted consequence of the re-root, and Filament's semantics: a closure on a component in a stamped subtree receives the related record through `$record` injection, and `getRecordClass()` answers the related class.
 That is what makes a nested field's own target resolution correct — a relation-backed field reads `getRecordClass()` to find the association it maps — and it re-points the `unique()` / `exists()` default probe class with it.
-The constraint half of that agreement is not this trait's to make: the derivations that used to frame on the root container — `isRequiredByRecord()`, `DateTimePicker`'s object class — read the component-tier [nearest-record frame](belongs-to-record.md#the-nearest-record-frame-is-the-first-node-above-a-component-that-binds-one) instead, whose class-and-path pair resolves to the very record this stamp binds.
+The constraint half of that agreement is not this trait's to make: the derivations that need the record's class — `isRequiredByRecord()`, `DateTimePicker`'s object class — read the component-tier [nearest-record frame](component-belongs-to-record.md#the-nearest-record-frame-is-the-first-node-above-a-component-that-binds-one) rather than the root container, and its class-and-path pair resolves to the very record this stamp binds.
 
 ### Subtree ownership, not `dehydrated(false)`, is what makes the hooks fire
 
@@ -99,7 +87,7 @@ Ownership is keyed on the relationship being *declared*, not on its condition: a
 
 ### A constructed related record is written through the property, so the mapping persists it
 
-When the record holds no related object, the save builds the association's target through [`PropertyAccessor::constructRecord()`](property-accessor.md#the-mappers-construct-or-refuse-is-one-method-three-callers-borrow) — the same construct-or-refuse the accessor uses for a null intermediate, refusing a constructor with required arguments — maps the submitted leaves onto it, and writes it onto the record through `setOnRecord()` — the record's own setter.
+When the record holds no related object, the save builds the association's target through [`PropertyAccessor::constructRecord()`](property-accessor.md#the-mappers-construct-or-refuse-is-one-method-its-callers-borrow) — the same construct-or-refuse the accessor uses for a null intermediate, refusing a constructor with required arguments — maps the submitted leaves onto it, and writes it onto the record through `setOnRecord()` — the record's own setter.
 In the test rig that setter is `Post::setProfile()`, which maintains the owning side, and the association's `cascade: ['persist']` inserts the new row at flush.
 Nothing is persisted by the component: a related record whose association declares no cascade needs the caller's own `persist()`, exactly as an unrelated entity would.
 
@@ -183,10 +171,10 @@ The property is still nulled so the in-memory graph agrees with the database, an
 ### The association core is shared with forms' relation-backed fields
 
 Filament writes the association lookup three times — once in this trait, once in `Select`, once in `Repeater` — because each reaches a different Eloquent relation API.
-Ours is one Doctrine lookup, so the port keeps one copy: [`BelongsToRelationship`](../../../packages/schemas/src/Components/Concerns/BelongsToRelationship.php) holds `$relationship`, `getRelationshipName()`, `getRelationshipNameOrFail()`, `getRelationshipTarget()` and its three-arm refusal (no entity manager, no record class, no association at that property), and this trait, forms' [`Select`](../forms/select.md) and forms' [`Repeater`](../forms/repeater.md) all compose it.
-It sits in **schemas** rather than forms because that is the direction the dependency already runs — forms requires schemas, not the reverse — and forms' same-named trait is now a three-line adapter filling in the clauses a *field* says differently.
+Ours is one Doctrine lookup, so the port keeps one copy: [`BelongsToRelationship`](../../../packages/schemas/src/Components/Concerns/BelongsToRelationship.php) holds `$relationship`, `hasRelationship()`, `getRelationshipName()`, `getRelationshipNameOrFail()`, `getRelationshipTarget()` and its three-arm refusal (no entity manager, no record class, no association at that property), and this trait, forms' [`Select`](../forms/select.md) and forms' [`Repeater`](../forms/repeater.md) all compose it.
+It sits in **schemas** rather than forms because that is the direction the dependency already runs — forms requires schemas, not the reverse — and forms' same-named trait is an adapter filling in the two clauses a *field* says differently.
 
-Three seams carry the per-consumer prose, so no message lost a word to the sharing: `getRelationshipSubject()` (how a refusal names the thing that declared the relationship — `The [bio] field` against a field, the component class against a layout component), `getMissingEntityManagerConsequence()` (why a missing entity manager is fatal for *this* consumer), and `getMissingRelationshipNameNote()` (whether there was a name to fall back on).
+Four seams carry the per-consumer prose, so no message loses a word to the sharing: `getRelationshipSubject()` (how a refusal names the thing that declared the relationship — `The [bio] field` against a field, the component class against a layout component), `getRelationshipFallbackAdvice()` (the abstract closing clause saying what to do instead), `getMissingEntityManagerConsequence()` (why a missing entity manager is fatal for *this* consumer), and `getMissingRelationshipNameNote()` (whether there was a name to fall back on).
 The to-many refusal stays here, since it is this trait's alone — one set of fields cannot map a collection, where a `Repeater` wants exactly that.
 
 ### The relation object becomes an `AssociationTarget`, and the MorphOne arm is cut

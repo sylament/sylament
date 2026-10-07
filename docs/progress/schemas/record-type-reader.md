@@ -1,5 +1,5 @@
 ---
-description: '`Sylament\Schemas\State\RecordTypeReader` and the `RecordTarget` value object it returns — a Sylament invention with no Filament counterpart, and the… (draft)'
+description: '`RecordTypeReader` and its `RecordTarget`: what a record class declares at a dotted path, read from the write side through `symfony/property-info`'
 ports: []
 owns:
   - packages/schemas/src/State/RecordTarget.php
@@ -9,13 +9,10 @@ owns:
 
 [`Sylament\Schemas\State\RecordTypeReader`](../../../packages/schemas/src/State/RecordTypeReader.php) and the [`RecordTarget`](../../../packages/schemas/src/State/RecordTarget.php) value object it returns — a Sylament invention with **no Filament counterpart**, and the reason there is none is structural rather than an omission: Eloquent attributes are untyped, so "what does this record declare at this path?" is a question Filament's mapper cannot ask and never had to answer.
 
-It exists because [`PropertyAccessor::setOnRecord()`](property-accessor.md) used to write blind.
+It exists so that [`PropertyAccessor::setOnRecord()`](property-accessor.md) does not write blind.
 Given a record class and a dotted path it answers three things from one `symfony/property-info` call — what class to construct for an object segment, whether null may be written, and whether the property holds a collection — which is what lets the mapper construct a missing singular intermediate, lets [`getData()`](belongs-to-record.md) null a whole branch, lets forms [derive a field's requirement](../forms/can-be-validated.md#requirement-is-derived-from-the-records-write-side-types) from the record instead of a declaration, and lets an object collection be refused loudly instead of mapped wrongly.
 
 ## Surface
-
-Every point of the reader and its value object.
-Every row is Sylament-only, so no row has a _Ports_ link.
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
@@ -25,13 +22,9 @@ Every row is Sylament-only, so no row has a _Ports_ link.
 | [`RecordTarget::$objectClass`](../../../packages/schemas/src/State/RecordTarget.php) — the class to construct for an object segment, else null | — | done | — | [diverges](#objectclass-is-gated-on-instantiability-so-it-is-a-promise-not-a-hint) |
 | [`RecordTarget::$isNullable`](../../../packages/schemas/src/State/RecordTarget.php) — whether null may be **written** | — | done | — | [semantics](#nullability-is-the-mutators-even-when-the-getter-disagrees) |
 | [`RecordTarget::$isCollection` / `$isObjectCollection`](../../../packages/schemas/src/State/RecordTarget.php) — any collection, and the object-item arms only | — | done | — | [diverges](#two-collection-flags-because-a-plain-array-is-a-collection-and-is-still-mappable) |
-| [`RecordTarget::$builtinType`](../../../packages/schemas/src/State/RecordTarget.php) — the declared native type (`int`, `string`, `bool`, …), null for an object, a collection, a union or an unreadable type | — | done | — | [semantics](#nullability-is-the-mutators-even-when-the-getter-disagrees) |
-| [Service wiring](../../../packages/schemas/src/SylamentSchemasBundle.php) — `sylament_schemas.record_type_reader` plus a class alias, registered with **no** extractor argument | — | done | — | [diverges](#the-extractor-is-pinned-to-reflection-and-must-not-be-autowired) |
+| [`RecordTarget::$builtinType`](../../../packages/schemas/src/State/RecordTarget.php) — the declared native type | — | done | — | [semantics](#nullability-is-the-mutators-even-when-the-getter-disagrees) |
+| [Service wiring](../../../packages/schemas/src/SylamentSchemasBundle.php) — `sylament_schemas.record_type_reader`, no extractor argument | — | done | — | [diverges](#the-extractor-is-pinned-to-reflection-and-must-not-be-autowired) |
 | Generic collection element types (`array<int, Tag>`) | — | skipped | — | [diverges](#docblock-generics-are-invisible-and-that-is-the-point) |
-
-Every row is **done** or **skipped** — the unit suite ([`RecordTypeReaderTest`](../../../packages/schemas/tests/Unit/State/RecordTypeReaderTest.php)) covers both nullability arms, the getter/setter asymmetry, the native type a builtin property names against the three that name none (an object, a collection and an enum) and the same type read through the nullable wrapper and through an object hop, the array, `Traversable` and adder-derived `list<Tag>` collection arms and the two flags separating them, the enum arm that `class_exists()` alone would have waved through, the `DateTimeInterface` carve-out, the dotted-path walk, and both null answers (an unreadable property, a path traversing a non-object segment).
-The walk is pinned through the **leaf's own** answers rather than through provenance: `Post::$author` reports an `objectClass` and `TypedRecord::$money` is nullable, so `describe(…, 'author.name')` reporting no `objectClass` and `describe(…, 'money.amount')` reporting non-nullable are each reachable only by descending a segment — verified by disabling the walk, which fails that test and no other.
-The consumers pin the rest from their own suites: construction, refusal and the nullability probe in [`PropertyAccessorTest`](../../../packages/schemas/tests/Unit/State/PropertyAccessorTest.php), branch nulling in [`Unit/Concerns/BelongsToRecordTest`](../../../packages/schemas/tests/Unit/Concerns/BelongsToRecordTest.php), derivation in forms' [`CanBeValidatedTest`](../../../packages/forms/tests/Integration/Components/Concerns/CanBeValidatedTest.php).
 
 ## Semantics
 
@@ -48,35 +41,32 @@ Measured over four shapes:
 | `getAuthor(): Author` / `setAuthor(?Author)` | `?Author` | **`true`** |
 | `getAuthor(): ?Author` / `setAuthor(Author)` | `Author` | **`false`** |
 
-Rows three and four are the ones a reader re-deriving the answer from the class would get wrong, and row three is not hypothetical: it is exactly the shape the demo's `Article` carried while it hid a missing intermediate behind a vivifying `getAuthor(): AuthorProfile`.
+Rows three and four are the ones a reader re-deriving the answer from the class would get wrong, and row three is not hypothetical: it is the shape a record takes when it hides a missing intermediate behind a vivifying getter such as `getAuthor(): AuthorProfile`.
 The asymmetry is pinned by `TypedRecord::$vivifying`, whose getter and setter deliberately disagree.
 
 ### A null `RecordTarget` means "no type answer", not "no such property"
 
-Both methods return `null` rather than throwing, and every consumer reads that one way: *keep whatever behaviour you had before types were consulted.*
+Both methods return `null` rather than throwing, and every consumer reads that one way: *keep the behaviour you have when types are not consulted.*
 `setOnRecord()` falls through to the array-remainder write, [`acceptsNullOnRecord()`](property-accessor.md#the-nullability-probe-lives-here-because-the-type-reader-does) answers `true` so `getData()`'s branch pass raises no objection, and forms' `isRequiredByRecord()` returns `false`.
 So a null is never an error and never means "not nullable" — it means the reader declined to answer.
 
 Three different situations produce it, and they are deliberately not distinguished: the extractor read no type at all (`describeProperty()` on a property with no accessor, no mutator and no declaration), a `describe()` walk hit a segment whose `objectClass` is null and so could not continue, or the class does not exist.
-Distinguishing them would only move the "do what you did before" decision from one place into three.
+Distinguishing them would only move the "behave as if untyped" decision from one place into three.
 
 ### A consumer may read the type to choose a *cast*, not only a write
 
 Every consumer above reads the reader at write time.
-One reads it at *configure* time: [`DateTimePicker::getDateTimeObjectClass()`](../forms/date-time-picker.md) walks the same guard chain forms' `isRequiredByRecord()` does — [`getNearestRecordClass()`](belongs-to-record.md#the-nearest-record-frame-is-the-first-node-above-a-component-that-binds-one) → `getNearestRecordStatePath()` → `describe()`, class and path off one frame walk so the two agree — and hands the target's `objectClass` to [`DateTimeStateCast`](date-time-state-cast.md), so one `DateTimePicker::make('publishedAt')` writes a `DateTimeImmutable` to an immutable property, a `DateTime` to a mutable one, and a formatted string when there is no record at all.
+One reads it at *configure* time: [`DateTimePicker::getDateTimeObjectClass()`](../forms/date-time-picker.md) walks the same guard chain forms' `isRequiredByRecord()` does — [`getNearestRecordClass()`](component-belongs-to-record.md#the-nearest-record-frame-is-the-first-node-above-a-component-that-binds-one) → `getNearestRecordStatePath()` → `describe()`, class and path off one frame walk so the two agree — and hands the target's `objectClass` to [`DateTimeStateCast`](date-time-state-cast.md), so one `DateTimePicker::make('publishedAt')` writes a `DateTimeImmutable` to an immutable property, a `DateTime` to a mutable one, and a formatted string when there is no record at all.
 
 Two consequences fall straight out of the [instantiability gate](#objectclass-is-gated-on-instantiability-so-it-is-a-promise-not-a-hint) and are recorded there rather than worked around here.
 A property typed to the **interface** `DateTimeInterface` is the gate's one carve-out and reads as `DateTimeImmutable`, so that spelling round-trips like the concrete one rather than falling back to a string the property would reject.
-And the reader's `null` keeps meaning "do what you did before types were consulted", which for a cast choice is Filament's own string-in-`$format` behaviour, so a schema with no record behind it needs no special case.
+And the reader's `null` keeps meaning "behave as if untyped", which for a cast choice is Filament's own string-in-`$format` behaviour, so a schema with no record behind it needs no special case.
 
 ## Divergences
 
-Design decisions with no Filament source to deviate from — permanent, and the reason each holds.
-
 ### The value object carries no provenance
 
-`RecordTarget` was designed with `$class` and `$property` fields naming what had been described.
-They are **dropped**, because provenance is something every call site already has and none of them can be told anything new by:
+`RecordTarget` has no `$class` or `$property` fields naming what was described, because provenance is something every call site already has and none of them can be told anything new by:
 
 - Both places that hold a target — `assertNotCollection()` and the required-constructor throw in [`setOnRecord()`](property-accessor.md) — receive one built by `describeProperty($holder::class, $segment)` a few lines above, in the same method.
   `$target->class === $holder::class` and `$target->property === $segment` hold **by construction**, so interpolating the target instead of the walk's own variables is a substitution, not an accuracy gain.
@@ -84,11 +74,10 @@ They are **dropped**, because provenance is something every call site already ha
 
 That leaves the only argument for keeping them a hypothetical: that the walk might one day resolve a holder the reader did not describe.
 Nothing in the code can reach that state, and two unused public properties on a `final readonly` value object with two consumers, both in this repo, is not the place to park a hypothetical.
-They return the day a consumer holds a target it did not itself build, and adding a promoted property back is a one-line change.
-The `Repeater`'s refusal messages, the obvious candidate, do not materialise them: the repeater's own early refusal builds the target it consumes in the same method, so it too holds the class and property it would have read back, and the fields stay dropped.
+They arrive the day a consumer holds a target it did not itself build, and adding a promoted property is a one-line change.
+The `Repeater`'s refusal messages, the obvious candidate, do not need them: the repeater's own early refusal builds the target it consumes in the same method, so it too holds the class and property it would read back.
 
-The one thing they did buy was test expressiveness: the dotted-path walk was pinned by asserting the leaf's declaring class.
-That coverage is re-expressed rather than dropped, through leaf answers only reachable after a hop (above).
+Without a declaring-class field, the dotted-path walk is pinned through the **leaf's own** answers instead: `Post::$author` reports an `objectClass` and `TypedRecord::$money` is nullable, so `describe(…, 'author.name')` reporting no `objectClass` and `describe(…, 'money.amount')` reporting non-nullable are each reachable only by descending a segment.
 
 ### The extractor is pinned to reflection and must not be autowired
 
@@ -110,7 +99,7 @@ Interfaces never reach the gate; `class_exists()` already excludes them.
 
 `DateTimeInterface` is the **one carve-out**, resolved ahead of the gate and reported as `DateTimeImmutable`.
 Every other interface still reads as "no object", and the asymmetry is the gate's own logic rather than an exception to it: what the reader reports is what [`constructIntermediate()`](property-accessor.md) hands to `new`, so an interface name is only ever a fatal — except this one, where the language ships exactly two implementors, a `?DateTimeInterface` property accepts either, and the immutable half is what every date field already writes.
-Reporting `null` instead is what the carve-out replaces, and it was not a graceful degrade: it made [`DateTimePicker`](../forms/date-time-picker.md) fall back to its string form and write a string onto a property whose setter rejects one, a 500 out of `PropertyAccessor` on save.
+Reporting `null` instead would not be a graceful degrade: it would make [`DateTimePicker`](../forms/date-time-picker.md) fall back to its string form and write a string onto a property whose setter rejects one, a 500 out of `PropertyAccessor` on save.
 
 Constructible is deliberately not the same as *buildable*: a class with required constructor arguments still reports its `objectClass`, and the mapper throws a `LogicException` naming the class and telling the user to give the constructor defaults.
 Bypassing the constructor the way Doctrine's `Instantiator` does was rejected — `doctrine/instantiator` is not in the graph, and a bypassed constructor leaves typed properties uninitialized, which trades one crash for a later, worse one.
@@ -118,7 +107,7 @@ Bypassing the constructor the way Doctrine's `Instantiator` does was rejected �
 ### Two collection flags, because a plain array is a collection and is still mappable
 
 `isCollection` covers any collection (a plain `array` resolves to `CollectionType`); `isObjectCollection` covers the two arms whose items have no identity to map onto — a `Traversable`-typed object, and a `CollectionType` whose value type (unwrapped if nullable) is an object.
-The second arm is not a refinement but the mainstream Doctrine declaration: `getTags(): Collection` behind `addTag(Tag)`/`removeTag(Tag)` resolves mutator-first to `list<Tag>`, a `CollectionType` and never an `ObjectType`, so a predicate testing only the `Traversable` arm let the commonest association shape slip through as a plain list and be mapped wrongly.
+The second arm is not a refinement but the mainstream Doctrine declaration: `getTags(): Collection` behind `addTag(Tag)`/`removeTag(Tag)` resolves mutator-first to `list<Tag>`, a `CollectionType` and never an `ObjectType`, so a predicate testing only the `Traversable` arm would let the commonest association shape slip through as a plain list and be mapped wrongly.
 A native `array` resolves a **mixed** value type, which is what keeps it out of the object arm and mappable.
 They are not interchangeable and the split is load-bearing in both directions:
 
@@ -132,5 +121,5 @@ They are not interchangeable and the split is load-bearing in both directions:
 
 `ReflectionExtractor` builds a `TypeResolver` with no string resolver, so it never reads a docblock: `array<int, Tag>` and `array<string, mixed>` are the same native `array` to this reader.
 A DTO list of objects whose item class is stated only in a docblock therefore takes the array-remainder path rather than being refused — where an adder/remover pair states it in native types, reflection alone reaches it and [the object arm](#two-collection-flags-because-a-plain-array-is-a-collection-and-is-still-mappable) does refuse.
-**Skipped** rather than a defect, on two grounds: it is unchanged from before this reader existed, and it is unreachable until a `Repeater` can emit list-shaped state — which also has to decide how list items are identified.
+**Skipped** rather than a defect, on two grounds: the array-remainder path is what a docblock-typed list takes with or without this reader, and it is unreachable until a `Repeater` can emit list-shaped state — which also has to decide how list items are identified.
 Reversing it means reading docblocks, which is exactly the autowiring the divergence above rejects; the identity-aware pass list-shaped state needs is the real fix.

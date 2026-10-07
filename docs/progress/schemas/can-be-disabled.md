@@ -1,5 +1,5 @@
 ---
-description: Two identically-named traits, one per layer — Filament ships both under the same class name in different namespaces, so Sylament does too… (draft)
+description: The two CanBeDisabled traits, one on Schema and one on the base Component, and how a disabled component leaves the saved state.
 ports:
   - vendor/filament/schemas/src/Concerns/CanBeDisabled.php
   - vendor/filament/schemas/src/Components/Concerns/CanBeDisabled.php
@@ -9,19 +9,21 @@ owns:
 ---
 # CanBeDisabled (schemas)
 
-Two identically-named traits, one per layer — Filament ships both under the same class name in different namespaces, so Sylament does too: [`Sylament\Schemas\Concerns\CanBeDisabled`](../../../packages/schemas/src/Concerns/CanBeDisabled.php) on `Schema` and [`Sylament\Schemas\Components\Concerns\CanBeDisabled`](../../../packages/schemas/src/Components/Concerns/CanBeDisabled.php) on the base `Component`.
-The component-level trait also couples `disabled()` to `saved()` ({@see HasState}) so a disabled field drops out of `getState()`.
+Filament ships two traits under the same class name in different namespaces, and Sylament does too: [`Sylament\Schemas\Concerns\CanBeDisabled`](../../../packages/schemas/src/Concerns/CanBeDisabled.php) on `Schema` and [`Sylament\Schemas\Components\Concerns\CanBeDisabled`](../../../packages/schemas/src/Components/Concerns/CanBeDisabled.php) on the base `Component`.
+The component-level trait couples `disabled()` to `saved()` ([`HasState`](component.md)), so a disabled field drops out of `getState()`.
 
 ## Surface
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
 | [`Schema::disabled()` / `isDisabled()` / `isEnabled()`](../../../packages/schemas/src/Concerns/CanBeDisabled.php) | [`Concerns/CanBeDisabled.php`](../../../vendor/filament/schemas/src/Concerns/CanBeDisabled.php) | done | — | — |
-| [`Component::disabled()` / `isDisabled()` / `isEnabled()`](../../../packages/schemas/src/Components/Concerns/CanBeDisabled.php) | [`Components/Concerns/CanBeDisabled.php`](../../../vendor/filament/schemas/src/Components/Concerns/CanBeDisabled.php) | done | — | — |
+| [`Component::disabled()` / `isDisabled()` / `isEnabled()`](../../../packages/schemas/src/Components/Concerns/CanBeDisabled.php) | [`Components/Concerns/CanBeDisabled.php`](../../../vendor/filament/schemas/src/Components/Concerns/CanBeDisabled.php) | done | — | [semantics](#disabling-keeps-a-field-out-of-the-saved-state-not-out-of-the-request) |
 | [`Component::disabledOn()`](../../../packages/schemas/src/Components/Concerns/CanBeDisabled.php) | [`disabledOn()`](../../../vendor/filament/schemas/src/Components/Concerns/CanBeDisabled.php) | done | — | [diverges](can-be-hidden.md#arrwrap-maps-to-the-wrap-helper-never-an-array-cast) |
 
-All three rows are covered by [`Unit/Concerns/CanBeDisabledTest`](../../../packages/schemas/tests/Unit/Concerns/CanBeDisabledTest.php) and [`Unit/Components/Concerns/CanBeDisabledTest`](../../../packages/schemas/tests/Unit/Components/Concerns/CanBeDisabledTest.php) — defaults, literal and closure conditions, inheritance from the parent component / container, the `saved()` coupling that keeps a disabled field out of `getState()`, and `disabledOn('edit')` against the container's [operation](has-operation.md).
-The **rendering** half lives in forms, not schemas: both shipped field templates emit the native attribute from `component.isDisabled` ([`TextInput.html.twig:24`](../../../packages/forms/templates/partials/TextInput/index.html.twig), [`Textarea.html.twig:16`](../../../packages/forms/templates/partials/Textarea/index.html.twig)), asserted present-and-absent by [`TextInputTest`](../../../packages/forms/tests/Integration/Components/TextInputTest.php) and [`TextareaTest`](../../../packages/forms/tests/Integration/Components/TextareaTest.php).
-Filament's security note on `disabled()` carries over unchanged: disabling prevents saving, but a client can bypass the attribute — authorization belongs on the server.
+## Semantics
 
-`disabledOn()` is `CanBeHidden`'s `hiddenOn()`/`visibleOn()` body over `disabled()`, so its one translation — the `Arr::wrap` normalization that must not be an `(array)` cast — is written up once, in [can-be-hidden.md](can-be-hidden.md#arrwrap-maps-to-the-wrap-helper-never-an-array-cast), and linked from the row here.
+### Disabling keeps a field out of the saved state, not out of the request
+
+`disabled()` sets `saved(false)` on the component, so its value is left out of `getState()`, and the template emits the native `disabled` attribute.
+Neither stops a client from posting a value for that path: the attribute is a browser convention, and the live component's state still accepts the write.
+Filament's `disabled()` carries the same warning in a comment, and it holds here unchanged: authorization for a sensitive field belongs on the server.

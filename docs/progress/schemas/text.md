@@ -1,85 +1,68 @@
 ---
-description: The inline text content component, a `Component` subclass whose value is a piece of styled text (span-rendered by default). (draft)
+description: The schemas content component that renders a piece of styled text in a span, with a size, a weight, a font family and a colour.
 ports:
   - vendor/filament/schemas/src/Components/Text.php
-  - vendor/filament/support/src/Concerns/HasColor.php
-  - vendor/filament/support/src/Concerns/HasWeight.php
-  - vendor/filament/support/src/Concerns/HasFontFamily.php
-  - vendor/filament/support/src/Concerns/CanBeCopied.php
-  - vendor/filament/support/src/Concerns/HasIcon.php
-  - vendor/filament/support/src/Concerns/HasIconPosition.php
-  - vendor/filament/support/src/Concerns/HasIconSize.php
-  - vendor/filament/support/src/Concerns/HasTooltip.php
+  - vendor/filament/schemas/src/View/Components/TextComponent.php
   - vendor/filament/schemas/src/JsContent.php
 owns:
   - packages/schemas/src/Components/Text.php
+  - packages/schemas/src/Colors/Components/TextComponent.php
   - packages/schemas/templates/partials/Text/
 ---
 # Text (schemas)
 
-`Sylament\Schemas\Components\Text` — the inline text content component, a `Component` subclass whose value is a piece of styled text (span-rendered by default).
-It ports Filament's schema [`Text`](../../../vendor/filament/schemas/src/Components/Text.php).
-The content core is ported and tested — `content()`/`getContent()`, `size()`/`getSize()` with its `getSizeClass()` template helper, and the shared [`HasColor`](../../../packages/support/src/Components/Concerns/HasColor.php) / [`HasWeight`](../../../packages/support/src/Components/Concerns/HasWeight.php) / [`HasFontFamily`](../../../packages/support/src/Components/Concerns/HasFontFamily.php) styling concerns — all rendered through the [`Text/index.html.twig`](../../../packages/schemas/templates/partials/Text/index.html.twig) template on the `ViewComponent` path (the house replacement for Filament's `HasEmbeddedView::toEmbeddedHtml()`, so that contract is not ported — a systematic idiom translation recorded in the [rename table](../renames.md)).
-The larger half of Filament's `Text` surface — badge mode, copyable, icon, tooltip, and `js()` — is not yet ported.
+[`Sylament\Schemas\Components\Text`](../../../packages/schemas/src/Components/Text.php) — the inline text content component, whose value is a piece of styled text rendered in a `<span>`.
+It ports Filament's schema [`Text`](../../../vendor/filament/schemas/src/Components/Text.php) through the [`Text/index.html.twig`](../../../packages/schemas/templates/partials/Text/index.html.twig) template.
 
 ## Surface
-
-Rows for the shared styling concerns (`HasColor`/`HasWeight`/`HasFontFamily`) point at their Filament source; they are also tracked in the support tracker.
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
 | [`make(content)`](../../../packages/schemas/src/Components/Text.php) | [`Text::make()`](../../../vendor/filament/schemas/src/Components/Text.php) | done | — | — |
 | [`content()` / `getContent()`](../../../packages/schemas/src/Components/Text.php) | [`Text::content()`](../../../vendor/filament/schemas/src/Components/Text.php) | done | — | — |
 | [`size()` / `getSize()` normalization](../../../packages/schemas/src/Components/Text.php) | [`Text::size()`](../../../vendor/filament/schemas/src/Components/Text.php) | done | — | — |
-| [`getSizeClass()` (Sylament template helper)](../../../packages/schemas/src/Components/Text.php) | — (no Filament equivalent) | done | — | — |
-| [`HasColor` color/getColor/hasColor + default gray](../../../packages/support/src/Components/Concerns/HasColor.php) | [`HasColor`](../../../vendor/filament/support/src/Concerns/HasColor.php) | done | — | [diverges](#the-default-gray-color-lives-in-the-color-policy-not-setup) |
-| [`HasWeight` weight/getWeight/getWeightClass](../../../packages/support/src/Components/Concerns/HasWeight.php) | [`HasWeight`](../../../vendor/filament/support/src/Concerns/HasWeight.php) | done | — | — |
-| [`HasFontFamily` fontFamily/getFontFamily/getFontFamilyClass](../../../packages/support/src/Components/Concerns/HasFontFamily.php) | [`HasFontFamily`](../../../vendor/filament/support/src/Concerns/HasFontFamily.php) | done | — | — |
+| [`getSizeClass()` (Sylament template helper)](../../../packages/schemas/src/Components/Text.php) | — | done | — | — |
+| [`HasColor` color/getColor/hasColor + default gray](../../../packages/support/src/Components/Concerns/HasColor.php) | [`HasColor`](../../../vendor/filament/support/src/Concerns/HasColor.php) | done | — | [has-color.md](../support/has-color.md) · [diverges](#the-default-gray-color-lives-in-the-color-policy-not-setup) |
+| [`HasWeight` weight/getWeight/getWeightClass](../../../packages/support/src/Components/Concerns/HasWeight.php) | [`HasWeight`](../../../vendor/filament/support/src/Concerns/HasWeight.php) | done | — | [has-weight.md](../support/has-weight.md) |
+| [`HasFontFamily` fontFamily/getFontFamily/getFontFamilyClass](../../../packages/support/src/Components/Concerns/HasFontFamily.php) | [`HasFontFamily`](../../../vendor/filament/support/src/Concerns/HasFontFamily.php) | done | — | [has-font-family.md](../support/has-font-family.md) |
 | [Twig span render: `sy`/`sy-sc-text` classes, escaping, raw `Markup`, extra attrs](../../../packages/schemas/templates/partials/Text/index.html.twig) | [`Text::toEmbeddedHtml()`](../../../vendor/filament/schemas/src/Components/Text.php) | done | — | — |
+| [`Colors\Components\TextComponent`](../../../packages/schemas/src/Colors/Components/TextComponent.php) — the text's colour policy | [`View/Components/TextComponent.php`](../../../vendor/filament/schemas/src/View/Components/TextComponent.php) | done | — | [diverges](#the-default-gray-color-lives-in-the-color-policy-not-setup) |
 | `badge()` / `isBadge()` badge mode | [`Text::badge()`](../../../vendor/filament/schemas/src/Components/Text.php) | todo | — | [detail](#badge-mode) |
-| `CanBeCopied` (copyable + copy JS) | [`CanBeCopied`](../../../vendor/filament/support/src/Concerns/CanBeCopied.php) | todo | — | [detail](#copyable) |
+| `CanBeCopied` (copyable + copy interaction) | [`CanBeCopied`](../../../vendor/filament/support/src/Concerns/CanBeCopied.php) | todo | — | [detail](#copyable) |
 | `HasIcon` (`icon()`/`getIcon()`) | [`HasIcon`](../../../vendor/filament/support/src/Concerns/HasIcon.php) | todo | — | [detail](#icon-support) |
 | `HasIconPosition` (`IconPosition` Before/After) | [`HasIconPosition`](../../../vendor/filament/support/src/Concerns/HasIconPosition.php) | todo | — | [detail](#icon-support) |
 | `HasIconSize` (`IconSize`) | [`HasIconSize`](../../../vendor/filament/support/src/Concerns/HasIconSize.php) | todo | — | [detail](#icon-support) |
 | `HasTooltip` (`tooltip()`/`getTooltip()`) | [`HasTooltip`](../../../vendor/filament/support/src/Concerns/HasTooltip.php) | todo | — | [detail](#tooltip) |
 | `js()` / `JsContent` | [`JsContent`](../../../vendor/filament/schemas/src/JsContent.php) | todo | — | [detail](#js-and-jscontent) |
-| `HasEmbeddedView` contract / `toEmbeddedHtml()` | [`HasEmbeddedView`](../../../vendor/filament/support/src/Components/Contracts/HasEmbeddedView.php) | skipped | — | — |
-| `publishedViewOverrideCheckPath` (Blade view-override detection) | [`Text`](../../../vendor/filament/schemas/src/Components/Text.php) | skipped | — | — |
-
-The two **skipped** rows fall out of the Twig-rendering translation: markup is built in `Text/index.html.twig` on the `ViewComponent` render path, not in a PHP `toEmbeddedHtml()`, so neither the `HasEmbeddedView` contract nor Filament's Blade view-override probe has a role here.
-That translation is the house idiom documented in the [rename table](../renames.md), not a per-component divergence.
+| `HasEmbeddedView` contract / `toEmbeddedHtml()` | [`HasEmbeddedView`](../../../vendor/filament/support/src/Components/Contracts/HasEmbeddedView.php) | skipped | — | [diverges](../support/view-component.md#render-returns-a-string-the-htmlable--embedded-view-machinery-is-dropped) |
+| `publishedViewOverrideCheckPath` (Blade view-override detection) | [`Text`](../../../vendor/filament/schemas/src/Components/Text.php) | skipped | — | [diverges](../support/view-component.md#render-returns-a-string-the-htmlable--embedded-view-machinery-is-dropped) |
 
 ## Details
 
-The ported subset (content, size + `getSizeClass()`, and the three styling concerns) is exercised by [`TextTest`](../../../packages/schemas/tests/Unit/Components/TextTest.php) (content literal/closure/`$component` injection, `Markup` passthrough, size normalization, weight/font-family, and the `get*Class()` fragments) and [`TextRenderTest`](../../../packages/schemas/tests/Integration/Components/TextRenderTest.php) (span render, string escaping, raw `Markup`, size/weight/font-family classes, extra attributes, color palette classes and gray omission); the features below are untested only because they are unported.
-
 ### Badge mode
 
-`badge()` / `isBadge()` — Filament's flag that switches the root element from a `<span>` to a badge (a button when copyable), colored via `BadgeComponent` and wrapping the label in badge containers, and coerces the default `Size` to `Medium` in badge mode.
-None of it is ported.
-Next: add an `isBadge` flag (a small concern or inline) and a badge branch to `Text/index.html.twig` (`fi-badge` → `sy-badge` markup), including the badge-only `Size` default.
+Filament's `badge()` / `isBadge()` switch the root from a `<span>` to a badge (a `<button>` when copyable), coloured through `BadgeComponent` with a `primary` default, wrapping the label in badge containers and defaulting the size to `Size::Medium`.
+The port's `Text` has no badge flag, and its template has no badge branch; support's [`Badge`](../support/badge.md) component is the markup such a branch would render through.
 
 ### Copyable
 
-Filament's [`CanBeCopied`](../../../vendor/filament/support/src/Concerns/CanBeCopied.php) (`copyable()` / `getCopyableState()` / `getCopyMessage()` / `getCopyMessageDuration()` / `isCopyable()`) plus the click-to-copy wiring on the span/button is absent.
-Next: port `CanBeCopied` (into support or schemas) and add the copy interaction to the template — this needs a Stimulus clipboard controller standing in for Filament's Alpine `x-on:click` + copy-confirmation tooltip.
+Support's [`CanBeCopied`](../support/can-be-copied.md) exists, and `Text` does not compose it.
+Filament's template makes a copyable text clickable and keyboard-operable, writing the copyable state to the clipboard and confirming with a timed tooltip; the port's template has no copy interaction.
 
 ### Icon support
 
-The three icon concerns — [`HasIcon`](../../../vendor/filament/support/src/Concerns/HasIcon.php), [`HasIconPosition`](../../../vendor/filament/support/src/Concerns/HasIconPosition.php) (`IconPosition` Before/After), and [`HasIconSize`](../../../vendor/filament/support/src/Concerns/HasIconSize.php) — and the icon markup around the label are not ported.
-The `IconPosition` / `IconSize` enums already exist under `Sylament\Support\Enums`, and the [`Icon` component](icon.md) already renders icons.
-Next: port the three concerns and emit the icon before/after the label via `renderComponent` in `Text/index.html.twig`.
+Support's [`HasIcon`](../support/has-icon.md), [`HasIconPosition`](../../../packages/support/src/Components/Concerns/HasIconPosition.php) and [`HasIconSize`](../support/has-icon-size.md) exist, and `Text` composes none of them.
+Filament renders the icon only in badge mode, before or after the label, so these rows follow [badge mode](#badge-mode).
 
 ### Tooltip
 
-[`HasTooltip`](../../../vendor/filament/support/src/Concerns/HasTooltip.php) (`tooltip()` / `getTooltip()`) and the tooltip attribute wiring (with `allowHTML` derived from `Markup`-ness) are absent.
-Next: port `HasTooltip` into support and render a tooltip attribute — requires the Sylament runtime equivalent of Filament's Alpine `x-tooltip`.
+Support's [`HasTooltip`](../support/has-tooltip.md) exists, and `Text` does not compose it.
+Filament wires the tooltip through Alpine's `x-tooltip`, with `allowHTML` derived from `Htmlable`-ness, where the toolkit renders a tooltip as a native `title` ([column.md](../tables/column.md#a-tooltip-renders-as-a-native-title-and-markup-is-flattened-to-text)).
 
 ### `js()` and JsContent
 
-Filament's `js()` wraps content in [`JsContent`](../../../vendor/filament/schemas/src/JsContent.php) so it renders as an evaluated JS expression rather than literal text.
-Neither `Text::js()` nor `JsContent` is ported (the supporting-surface `JsContent` row in the [README](README.md) is still todo).
-Next: port `JsContent` and add `Text::js()` — this depends on the live-component / JS runtime layer.
+Filament's `js()` wraps the content in [`JsContent`](../../../vendor/filament/schemas/src/JsContent.php) so it renders as an evaluated JS expression rather than literal text.
+Neither `Text::js()` nor `JsContent` exists in the port.
 
 ## Divergences
 
@@ -87,6 +70,6 @@ Next: port `JsContent` and add `Text::js()` — this depends on the live-compone
 
 Filament's `Text::setUp()` calls `defaultColor('gray')`, so `getColor()` returns `'gray'` when no color is set.
 Sylament's `Text` has no `setUp()` override: `getColor()` returns `null` by default, and [`Text/index.html.twig`](../../../packages/schemas/templates/partials/Text/index.html.twig) computes nothing — it hands `getColor()` straight to `colorAttributes()`, which returns no classes for a blank color.
-Gray asked for **by name** is suppressed a step further in, by [`TextComponent`](../../../packages/schemas/src/Colors/Components/TextComponent.php) implementing `HasDefaultGrayColor`: `ColorManager::getComponentClasses()` returns an empty list for that pair, so both spellings fall through to the base `text-gray-600 dark:text-gray-400` on `.sy-sc-text` (the two `TextRenderTest` cases "omits color classes for the default gray" and "omits color classes for gray asked for by name" pin them).
+Gray asked for **by name** is suppressed a step further in, by [`TextComponent`](../../../packages/schemas/src/Colors/Components/TextComponent.php) implementing `HasDefaultGrayColor`: `ColorManager::getComponentClasses()` returns an empty list for that pair, so both spellings fall through to the base `text-gray-600 dark:text-gray-400` that [`text.css`](../../../packages/support/assets/src/styles/components/text.css) gives `.sy-sc-text`.
 Rendered output matches Filament — gray is the visual default — but the `getColor()` return value diverges (`null` vs `'gray'`).
 Reverses if a consumer needs `getColor()` to report the effective default programmatically.

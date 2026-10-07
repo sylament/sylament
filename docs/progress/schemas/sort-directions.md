@@ -1,13 +1,13 @@
 ---
-description: A Sylament invention with no Filament source. (draft)
+description: The helper that turns the asc or desc string of the sort API into the SortDirection enum Doctrine's query builder takes.
 ports: []
 owns:
   - packages/schemas/src/Query/SortDirections.php
 ---
 # SortDirections (schemas)
 
-[`Sylament\Schemas\Query\SortDirections`](../../../packages/schemas/src/Query/SortDirections.php) — a Sylament invention with **no Filament source**.
-Filament hands Eloquent's `orderBy()` the `asc`/`desc` string its sort API carries; from ORM 3.7 Doctrine's `QueryBuilder::orderBy()`/`addOrderBy()` and `Expr\OrderBy` take PHP 8.6's `SortDirection` enum instead, a string being deprecated there, and a to-many mapping's `orderBy()` answers the enum too.
+[`Sylament\Schemas\Query\SortDirections`](../../../packages/schemas/src/Query/SortDirections.php) has **no Filament source**.
+Filament hands Eloquent's `orderBy()` the `asc`/`desc` string its sort API carries; from ORM 3.7 Doctrine's `QueryBuilder::orderBy()`/`addOrderBy()` and `Expr\OrderBy` take PHP 8.6's `SortDirection` enum instead, a string being deprecated there, and a to-many mapping's `orderBy()` answers the enum or the string.
 
 The public sort API keeps Filament's strings — `defaultSort('id', 'desc')`, the `$direction` a `sortable(query:)` or `orderQueryUsing()` closure receives — so the string becomes the enum at the builder boundary, and this is the one place that happens: `IdentifierConstraint::orderBy()`, tables' column, default and group sorts, `FetchJoinPageQuery`'s re-emitted orderings, and [`AssociationReader`](association-reader.md), which normalises any string a mapping still hands it.
 
@@ -15,7 +15,7 @@ The public sort API keeps Filament's strings — `defaultSort('id', 'desc')`, th
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
-| [`from(string $direction): SortDirection`](../../../packages/schemas/src/Query/SortDirections.php) — `asc`/`desc` in any case as the enum | — | done | — | [semantics](#anything-but-asc-or-desc-throws) |
+| [`from(string $direction): SortDirection`](../../../packages/schemas/src/Query/SortDirections.php) | — (no Filament source) | done | — | [semantics](#anything-but-asc-or-desc-throws) |
 
 ## Semantics
 

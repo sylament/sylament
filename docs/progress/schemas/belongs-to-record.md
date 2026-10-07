@@ -1,24 +1,18 @@
 ---
-description: Two identically-named traits, one per tier — Filament ships both under the same class name in different namespaces, so Sylament does too… (draft)
+description: 'The root-tier record binding on `Schema`: `record()`, the `fill()` and `getData()` mapping edges over the record path map, and its relationship-hook routing.'
 ports:
   - vendor/filament/schemas/src/Concerns/BelongsToModel.php
-  - vendor/filament/filament/src/Resources/Pages/EditRecord.php
 owns:
   - packages/schemas/src/Concerns/BelongsToRecord.php
 ---
 # BelongsToRecord (schemas)
 
-Two identically-named traits, one per tier — Filament ships both under the same class name in different namespaces, so Sylament does too: [`Sylament\Schemas\Concerns\BelongsToRecord`](../../../packages/schemas/src/Concerns/BelongsToRecord.php) on [`Schema`](schema.md) and [`Sylament\Schemas\Components\Concerns\BelongsToRecord`](../../../packages/schemas/src/Components/Concerns/BelongsToRecord.php) on the base [`Component`](component.md).
-It ports Filament's `BelongsToModel` under the record-only vocabulary (see [the collapse](#the-record-vocabulary-collapses-onto-record) and the [rename table](../renames.md)): `record()` binds a Doctrine entity, a plain object, raw record data, or a class-string, and the two Sylament-only mapping edges — the [`fill()`](#fillobject-reads-only-the-paths-the-schema-declares) object arm and `getData()` — carry state between that object and the schema's state bag.
+[`Sylament\Schemas\Concerns\BelongsToRecord`](../../../packages/schemas/src/Concerns/BelongsToRecord.php) is the root tier, composed by [`Schema`](schema.md); Filament ships the component tier under the same class name in another namespace, and so does Sylament ([component-belongs-to-record.md](component-belongs-to-record.md)).
+It ports Filament's `BelongsToModel` under the record-only vocabulary ([the collapse](#the-record-vocabulary-collapses-onto-record)): `record()` binds a Doctrine entity, a plain object, raw record data, or a class-string, and the two Sylament-only mapping edges — the [`fill()`](#fillobject-reads-only-the-paths-the-schema-declares) object arm and `getData()` — carry state between that object and the schema's state bag.
 The per-component relationship hooks reroute a path through its own component when a plain property read or write cannot express the association ([the collapse of Filament's third pass](#the-relationship-hooks-are-consulted-by-the-two-mapping-edges-not-by-a-schema-level-walk)).
-The operation half lives in [`has-operation.md`](has-operation.md).
-
-One further Sylament-only trait is tracked here rather than in a file of its own, because `getData()` is its only consumer: [`Components\Concerns\HasNullableBranch`](../../../packages/schemas/src/Components/Concerns/HasNullableBranch.php) — `nullWhenBlank()`, composed onto the base `Component` alongside `HasColumns` so any container can declare itself an optional branch of the record graph.
-The write-side type lookup all of this now rests on has its own file, [`record-type-reader.md`](record-type-reader.md).
+The operation half lives in [`has-operation.md`](has-operation.md), the optional-branch declaration `getData()` consumes in [`has-nullable-branch.md`](has-nullable-branch.md), and the write-side type lookup in [`record-type-reader.md`](record-type-reader.md).
 
 ## Surface — Schema
-
-Every point of both tiers, plus the mapping edges and the closure-injection arms they feed.
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
@@ -26,38 +20,25 @@ Every point of both tiers, plus the mapping edges and the closure-injection arms
 | [`getRecordClass()`](../../../packages/schemas/src/Concerns/BelongsToRecord.php) | [`getModel()`](../../../vendor/filament/schemas/src/Concerns/BelongsToModel.php) | done | — | [diverges](#the-record-vocabulary-collapses-onto-record) |
 | [`getRecord(bool $withParentComponentRecord = true)`](../../../packages/schemas/src/Concerns/BelongsToRecord.php) | [`getRecord()`](../../../vendor/filament/schemas/src/Concerns/BelongsToModel.php) | done | — | — |
 | [`getRecordInstance()`](../../../packages/schemas/src/Concerns/BelongsToRecord.php) | [`getModelInstance()`](../../../vendor/filament/schemas/src/Concerns/BelongsToModel.php) | done | — | [diverges](#getrecordinstance-constructs-with-new-not-the-container) |
-| [`hasOwnRecord()`](../../../packages/schemas/src/Concerns/BelongsToRecord.php) | — | done | — | [semantics](#the-nearest-record-frame-is-the-first-node-above-a-component-that-binds-one) |
+| [`hasOwnRecord()`](../../../packages/schemas/src/Concerns/BelongsToRecord.php) | — | done | — | [semantics](component-belongs-to-record.md#the-nearest-record-frame-is-the-first-node-above-a-component-that-binds-one) |
 | [`getData(?array $state = null)`](../../../packages/schemas/src/Concerns/BelongsToRecord.php) | — | done | — | [diverges](#reads-are-lenient-writes-are-strict) · [diverges](#mapping-walks-the-record-graph-by-declared-leaf-paths) · [diverges](#a-missing-singular-intermediate-is-constructed-from-its-declared-type) · [semantics](#a-caller-that-has-already-validated-hands-the-state-in) · [semantics](#a-refused-submit-on-the-query-lane-shows-in-the-row-until-the-next-request) |
-| [`getData()`'s record-validation tail](../../../packages/schemas/src/Concerns/BelongsToRecord.php) + [`getRecordViolationPathTranslator()`](../../../packages/schemas/src/Concerns/BelongsToRecord.php) | — | done | — | [diverges](can-be-validated.md#record-sourced-constraints-are-validated-on-the-mapped-object) · [diverges](can-be-validated.md#a-refused-submit-leaves-the-record-mutated) · [diverges](can-be-validated.md#a-taken-assigned-key-is-a-field-error-not-a-unique-violation) · [diverges](can-be-validated.md#a-changed-key-is-refused-and-put-back-not-handed-to-doctrine) · [detail](violation-path-translator.md) |
+| [`getData()`'s record-validation tail](../../../packages/schemas/src/Concerns/BelongsToRecord.php) + [`getRecordViolationPathTranslator()`](../../../packages/schemas/src/Concerns/BelongsToRecord.php) | — | done | — | [diverges](can-be-validated.md#record-sourced-constraints-are-validated-on-the-mapped-object) · [diverges](can-be-validated.md#a-refused-submit-leaves-the-record-mutated) · [diverges](can-be-validated.md#a-taken-assigned-key-is-a-field-error-not-a-unique-violation) · [diverges](can-be-validated.md#a-changed-key-is-refused-and-put-back-not-handed-to-doctrine) · [violation-path-translator.md](violation-path-translator.md) |
 | [`findUnmappedAdditions(array $before, array $after)`](../../../packages/schemas/src/Concerns/BelongsToRecord.php) — the paths a write seam's hook added that no component maps (`@internal`: the default write seams refuse what it answers) | — | done | — | [semantics](#a-hook-added-path-no-component-maps-is-answered-for-the-write-seams-to-refuse) · [diverges](#a-hook-added-key-no-component-maps-is-refused-where-eloquent-writes-or-drops-it) |
 | [`getNullableBranches()` + the branch pass in `getData()`](../../../packages/schemas/src/Concerns/BelongsToRecord.php) | — | done | — | [diverges](has-nullable-branch.md#a-declared-branch-is-nulled-whole-before-its-leaves-are-written) · [diverges](#a-component-can-own-its-whole-record-subtree) · [semantics](has-nullable-branch.md#a-branch-the-bag-no-longer-carries-is-skipped-not-nulled) · [semantics](has-nullable-branch.md#a-branch-the-record-cannot-null-is-refused-loudly) · [semantics](has-nullable-branch.md#a-nullable-branch-with-no-state-path-is-refused-not-ignored) · [semantics](has-nullable-branch.md#branches-are-ordered-by-path-depth-because-tree-order-is-not-path-order) |
 | [`getNestedRelationshipHooks()`](../../../packages/schemas/src/Concerns/BelongsToRecord.php) | — | done | — | [semantics](#a-hook-a-subtree-owner-routes-is-delegated-rather-than-refused) |
 | [`fill(object …)` object arm](../../../packages/schemas/src/Concerns/HasState.php) + [`readStateFromRecord()`](../../../packages/schemas/src/Concerns/BelongsToRecord.php) | — | done | — | [diverges](#fillobject-reads-only-the-paths-the-schema-declares) · [diverges](#mapping-walks-the-record-graph-by-declared-leaf-paths) · [diverges](#fillobject-does-not-bind-the-record) |
-| [`getStateFromRecord()`](../../../packages/schemas/src/Concerns/BelongsToRecord.php) | — | done | — | the public reading of `readStateFromRecord()` — Eloquent's `attributesToArray()` has no port target, so this is a gap fill rather than a rename. [Declared paths only](#fillobject-reads-only-the-paths-the-schema-declares), so a column the schema does not carry is absent; the fill-side mutators read it instead of filling twice. |
+| [`getStateFromRecord()`](../../../packages/schemas/src/Concerns/BelongsToRecord.php) | — | done | — | [diverges](#fillobject-reads-only-the-paths-the-schema-declares) |
 | [`$record` property](../../../packages/schemas/src/Concerns/BelongsToRecord.php) | [`public $model`](../../../vendor/filament/schemas/src/Concerns/BelongsToModel.php) | done | — | [diverges](#the-root-record-property-is-protected) |
 | `saveRelationships()` | [`saveRelationships()`](../../../vendor/filament/schemas/src/Concerns/BelongsToModel.php) | skipped | — | [diverges](#the-relationship-hooks-are-consulted-by-the-two-mapping-edges-not-by-a-schema-level-walk) |
 | [`loadStateFromRelationships()`](../../../packages/schemas/src/Concerns/BelongsToRecord.php) | [`loadStateFromRelationships()`](../../../vendor/filament/schemas/src/Concerns/BelongsToModel.php) | done | — | [diverges](#loadstatefromrelationships-is-the-hosts-reload-after-its-flush-and-takes-no-parameter) · [diverges](#the-relationship-hooks-are-consulted-by-the-two-mapping-edges-not-by-a-schema-level-walk) |
-| `fillPartially()` object arm | — | blocked | schemas partial-fill port | [detail](#fillpartiallys-object-arm-waits-on-partial-rendering) |
-
-## Surface — Closure injection
-
-| Feature | Ports | Status | Blocked by | Detail |
-| --- | --- | --- | --- | --- |
-| [`$record` by name, both tiers](../../../packages/schemas/src/Schema.php) | [`Schema` / `Components\Component`](../../../vendor/filament/schemas/src/Schema.php) | done | — | — |
-| [Record probe by type, both tiers (`resolveDefaultClosureDependencyForEvaluationByType`)](../../../packages/schemas/src/Components/Component.php) | [`Model::class` / `$record::class` arms](../../../vendor/filament/schemas/src/Components/Component.php) | done | — | [diverges](#the-record-type-probe-is-instanceof-not-a-model-gate) |
-| `$model` by name | [`Components\Component`](../../../vendor/filament/schemas/src/Components/Component.php) | skipped | — | [diverges](#the-model-closure-parameter-is-not-ported) |
-| Lazy `$state`-snapshot injection | — | skipped | — | [diverges](#closures-receive-the-record-never-a-state-snapshot) |
-
-Coverage: the root tier by [`Unit/Concerns/BelongsToRecordTest`](../../../packages/schemas/tests/Unit/Concerns/BelongsToRecordTest.php) (instance / array / class-string / closure payloads, class-string-declares-without-binding, rebind-replaces, the all-null unbound case, closure memoization, by-name and by-type injection, and the `getData()` paths — onto a bound instance, onto a fresh one built from the declared class, `dehydrated(false)` exclusion, the strict-write `NoSuchPropertyException`, the unbound `LogicException` and the array-bound one, both pinned on the message text that names which arm was taken, the nested set: a nested graph mapped in place, a fresh instance with an initialized intermediate, a non-dehydrated nested leaf excluded, a present-but-null nested leaf written, an array-backed branch keeping its unmanaged keys, a missing nested object constructed, and a missing branch constructed with its leaves written; and the branch pass: a declared branch nulled when every leaf is blank, kept when one is filled, an undeclared branch still constructed while blank, a nulled branch skipping only the paths beneath it and not a sibling sharing its character prefix, a nested branch short-circuited beneath a nulled outer one, and the refusals — a hidden branch and a branch whose only leaf is hidden both left alone rather than nulled, a `nullWhenBlank()` leaf writing nothing because a leaf declares no branch, a non-nullable branch target throwing, and a path-less declaration throwing; plus the ordering pin — two sibling branches nesting by path, where the outer null must short-circuit the inner branch's non-nullable refusal, which is red the moment the `uksort()` goes, and a branch kept alive — the sibling's record leaf written — through a filled path-descendant leaf declared by a sibling section and again by a dotted sibling field; plus the record-subtree owner set, read off the map directly through a `Schema` subclass fixture — an owner mapped as a leaf with its descendants dropped, a plain container still contributing its descendants and not itself, a descendant two containers down still represented by the owner, the whole-property read on `fill()`, the wholesale write on `getData()` destroying an unmanaged key the state no longer carries, and the foreign path-descendant refusal pinned on both class names and the offending path; plus the owner arms of the branch pass — an owner nulled from the presence of its own path in a bag carrying no leaf path at all, with the leaf walk then not writing its value back over the null, an owner holding one all-blank item kept alive, a hidden owner left alone, and an owner over a non-nullable `array` property meeting the same loud refusal; plus the delegation set over a routing-owner fixture — a hooked leaf beneath a vouching owner neither refused nor mapped, and the five shapes that keep refusing beside it: a non-vouching owner, a path-less hook, a non-owner container hook, an inner non-vouching owner inside an outer vouching one, and the earlier of two hooked components sharing one record path); the discovery walk by [`Unit/Concerns/NestedRelationshipHooksTest`](../../../packages/schemas/tests/Unit/Concerns/NestedRelationshipHooksTest.php) (schema-relative keys through a plain container, a hooked nested owner taken as one entry with nothing beneath it, a hook-less component and a path-less hooked one both absent, last declaration winning a shared key, and an empty result for a schema declaring no hook); the branch declaration itself by [`Unit/Components/Concerns/HasNullableBranchTest`](../../../packages/schemas/tests/Unit/Components/Concerns/HasNullableBranchTest.php) (the default, the declaration, blank and filled leaves, a nested sub-branch on both sides of blank, the closure arm receiving the branch state, and the explicit `false` — all of those on a detached component, so they also pin the fallback arm; plus four wired trees for the declared-leaves rule: a branch judged blank while an unmanaged key beside it is filled, a branch kept alive through a leaf two containers down, a sibling component's path-descendant leaf counting toward the verdict, and a wired component without its own path falling back to the value test; plus the record-subtree owner arm on three shapes — detached, wired with a declared leaf whose key the slice does not carry, and nested inside a section branch that must read the owner's whole value rather than the owner's leaves — each pinned on the one item leaf enumeration would have called blank); the field-side half of the same rule by forms' [`CanBeValidatedTest`](../../../packages/forms/tests/Integration/Components/Concerns/CanBeValidatedTest.php) (requirement suppressed while a branch's only non-blank value is an untouched checkbox, resumed once it is ticked, and `getData()` nulling that branch) and by [`CheckboxTest`](../../../packages/forms/tests/Integration/Components/CheckboxTest.php) / [`ToggleTest`](../../../packages/forms/tests/Integration/Components/ToggleTest.php) (`isBlankStateValue()` over `false` / `true` / `null`); `getRecordStatePath()` by the component-tier suite (no path, a path-less component under a root state path, the prefix stripped, no root prefix to strip, and a memoized absolute path that no longer sits under the prefix); the component tier by [`Unit/Components/Concerns/BelongsToRecordTest`](../../../packages/schemas/tests/Unit/Components/Concerns/BelongsToRecordTest.php) (container fallback, own-record precedence, `withContainerRecord: false`, per-call re-evaluation, the detached-component all-null case and its still-working typed-closure evaluation, record injection, and `Get`/`Set` by type under non-mapped parameter names, which is what proves the by-type arm rather than the pre-existing by-name one; plus the nearest-frame pair — the root container when nothing between binds, where the path half must equal `getRecordStatePath()`, an intermediate **component** binding and an intermediate **child schema** binding, each framing the class and stripping its own prefix while the root-framed twin still spells the whole path, and a path-less component answering the class with a null path); the fill walk by [`Unit/Concerns/HasStateTest`](../../../packages/schemas/tests/Unit/Concerns/HasStateTest.php) (scoped read, null-fill of what the record cannot supply, uninitialized-property and object-value skips with both arms of the state-cast exemption beside them, over an enum leaf and a `DateTimeImmutable` one — a cast-bearing component reading the flattened value, a cast-less one skipping and null-filling so no object reaches the bag — array reads, the unchanged null/array arms, and the nested reads: a nested object path filled through the graph, null filled past a null intermediate, a leaf decorated with a path-less child schema staying a leaf, an array-backed branch read by declared leaves only, and a numeric-string leaf path surviving the walk's `string` hint); and the round trip through a real live host by [`Integration/Concerns/BelongsToRecordTest`](../../../packages/schemas/tests/Integration/Concerns/BelongsToRecordTest.php) (`fill($object)` → edited bag → `getData()` returns the same mutated instance; a failing validation leaves the record untouched; and the same pair over a nested `Post`/`Author` graph — the round trip mutating the associated object in place, a failing nested submit leaving it untouched); and the relationship hooks by [`Integration/Concerns/BelongsToRecordAssociationTest`](../../../packages/schemas/tests/Integration/Concerns/BelongsToRecordAssociationTest.php) (against a Doctrine `Post`: a load hook supplying a path `fill()` would otherwise skip as an object-valued leaf, a save hook taking the write off `setOnRecord()` while the property its path names stays untouched, an *unhooked* object collection still meeting the refusal — the pin that keeps the bypass opt-in — the `nullWhenBlank()`-plus-save-hook refusal, the three map-exclusion refusals, one per exclusion: a container whose children carry the mapped paths, a component with no state path, and a component beneath an owner that does not route it — each raised from `fill()`, which is the earlier of the two edges to reach the map — the delegated arm beside that last one, where a routing owner carries a hooked child through both edges without a refusal, and a container-built component receiving the container's `AssociationReader` rather than the `new`-built fallback).
+| `fillPartially()` object arm | — | blocked | `fillPartially()` ([schema.md](schema.md)) | [detail](#fillpartiallys-object-arm-waits-on-partial-rendering) |
 
 ## Details
 
 ### `fillPartially()`'s object arm waits on partial rendering
 
-`fillPartially()`/`hydrateStatePartially()` are not ported at all, blocked on a UX LiveComponent partial-render equivalent.
-The object arm — the one this file would own, sourcing a partial fill from a record rather than an array — is a one-line addition once they land.
-
-**Next step:** land it with the partial-render decision.
+`fillPartially()` / `hydrateStatePartially()` are not ported ([schema.md](schema.md)), because they wait on a UX LiveComponent partial-render equivalent.
+The object arm, sourcing a partial fill from a record rather than an array, would make the same `readStateFromRecord()` call the `fill()` object arm makes.
 
 ## Semantics
 
@@ -74,7 +55,7 @@ Three exclusions produce that shape, and `getRecordPathMap()` refuses each of th
 
 Left as a silent skip, a hook on any of the three would be the worst shape this mapper can produce: no error, no write, no trace — a relationship that simply never saves.
 The middle row is the one a user hits, because a container is the natural place to hang a relationship, and it is exactly the shape the forms `Repeater` needs; it maps only because `Repeater::ownsRecordSubtree()` returns true.
-The refusal is [the same stance](#reads-are-lenient-writes-are-strict) the mapper takes on a foreign path nesting under an owner, and the same one [`nullWhenBlank()` without a state path](has-nullable-branch.md#a-nullable-branch-with-no-state-path-is-refused-not-ignored) takes two lines away.
+The refusal is [the same stance](#reads-are-lenient-writes-are-strict) the mapper takes on a foreign path nesting under an owner, and the same one [`nullWhenBlank()` without a state path](has-nullable-branch.md#a-nullable-branch-with-no-state-path-is-refused-not-ignored) takes.
 
 The **third** row is the one a relation-backed field hits, and it is the only one with an exit the owner can open: an owner that [routes the hooks beneath it](#a-hook-a-subtree-owner-routes-is-delegated-rather-than-refused) takes delegation of that path and the refusal never fires.
 Where no owner does, the row's other exits stay dead for that shape — a `Select` mapping a to-one association from inside a relationship repeater has nowhere to move to, and dropping its hook only moves the failure to the owner's own write.
@@ -117,25 +98,6 @@ Keys are relative to the schema asked, not to the root, so an item schema and th
 Filament needs none of this machinery for the nested to-one, and not because its walk is richer: its select is conventionally named for the **foreign-key column** and stays dehydrated (`Select::relationship()` sets `dehydrated(fn (Select $component): bool => (! $component->isMultiple()) && $component->isSaved())`), so `$record->fill($itemData)` writes `author_id` as an ordinary attribute and the hook is not load-bearing there.
 Doctrine maps the association and no foreign-key scalar beside it, so the write has no attribute to land on and the hook is the only route — which is why the port met a wall Filament does not, and why closing it was mapper work rather than transcription.
 
-### The nearest record frame is the first node above a component that binds one
-
-`getRecordStatePath()` is root-framed: it strips the **root** container's state path, so its result indexes the root record.
-That is right for the map, which is built once at the root — and wrong for a component asking what its own path indexes once a subtree is bound to a different record, where the path segment naming the item (`record-4.author`) belongs to no property of anything.
-`getNearestRecordClass()` and `getNearestRecordStatePath()` are the frame-relative twins: the class of the nearest node above the component that binds a record of its own — container schemas and the components they hang off alike, **the component itself excluded** — and the component's path with that node's stripped.
-Both come off one private walk, so the class and the path can never name different frames.
-With nothing between, the frame is the root container and the path half equals `getRecordStatePath()`; the two diverge only where something in between binds.
-
-The probe the walk asks is `hasOwnRecord()`, new on both tiers, and it reads the **unevaluated** property.
-Neither existing getter can stand in: `getRecord()` returns `null` for a class-string binding, which is exactly the binding a subtree stamp uses, and `getRecordClass()` walks the chain, so it answers the same for a node that binds and one that inherits.
-Reading the raw property is also what keeps the walk free of side effects — the root tier [memoizes what it evaluates](#the-root-tier-memoizes-a-closure-record-the-component-tier-re-evaluates-it), and a frame walk that evaluated every node it passed would freeze closure bindings it merely looked at.
-The trade runs the other way too: those getters memoize the *evaluated* value back onto the property, so a closure binding that resolves `null` answers the probe `true` before any getter runs and `false` after — two different frames across calls.
-The shipped stamps floor at the target class-string, so the flip needs a stamp that resolves nothing under a bound root: a repeater whose `relationship()` names an association the mapping cannot describe answers `null` from the soft floor while the root still binds.
-The flip is benign there — that tree's fill and save edges refuse the unresolvable association loudly, so no derivation reading either frame survives to see it.
-
-The path half returns `null` twice over: for a component carrying no state path of its own, and for one whose path does not nest under the frame's.
-That second arm is where it parts company with `getRecordStatePath()`, which returns the whole path unstripped in the same situation.
-A path that does not nest under the frame's is not a path into the frame's record, and handing it to a type reader would answer about the wrong object; `null` is the caller's signal to fall back to whatever it did before a frame was involved.
-
 ### Two components cannot both map one record path wholesale
 
 The map is keyed by record path, so two components claiming the same one would leave the second silently replacing the first — and where one of them [owns its subtree](#a-component-can-own-its-whole-record-subtree), what is lost is not a shared leaf but a whole branch that one of the two would stop filling and saving without a trace.
@@ -155,7 +117,7 @@ The consequence worth knowing: a root-tier `record(fn () => $repository->find($i
 `getData()` reads `getState()` — which validates first — so a caller that has *already* validated and then mutated the array it got back cannot write that array through the state bag: `rawState()` + `getData()` would validate the mutated values a second time (a hashed password against the `Length(max: 20)` that passed on the plaintext, a stamped slug against a uniqueness probe) and re-run every dehydration mutation the components declare, `Repeater`'s item walk and `FileUpload`'s store move among them.
 Handing the array in as `$state` skips exactly one step, `$this->getState()`, and nothing else: the nullable branch pass, the relationship save hooks and the closing `validateSchemaRecord()` all run against the supplied array, so record-level constraints are still answered on the object the mapping produced.
 
-The callers are the write-side seams that sit between validation and mapping — the modal actions' `CreateAction`/`EditAction` bodies after `mutateDataUsing()`, the resource page bases after `mutateFormDataBeforeCreate()`/`mutateFormDataBeforeSave()`, and `Select`'s option actions after theirs.
+The callers are the write-side seams that sit between validation and mapping — the modal actions' `CreateAction`, `EditAction` and `ReplicateAction` bodies after their data hooks, the resource page bases after `mutateFormDataBeforeCreate()`/`mutateFormDataBeforeSave()`, and `Select`'s option actions after theirs.
 Every zero-argument call site keeps the validating read.
 Each of those seams first refuses a path its hook added that no component maps ([below](#a-hook-added-path-no-component-maps-is-answered-for-the-write-seams-to-refuse)).
 
@@ -163,18 +125,18 @@ Each of those seams first refuses a path its hook added that no component maps (
 
 `findUnmappedAdditions(array $before, array $after): array` answers the leaf paths a write seam's hook added to the state it was handed that no component of the schema maps.
 It is `@internal`; its readers are the default write seams, which refuse a non-empty answer by name before mapping: both resource pages after their `mutateFormData…()` hook, `CreateAction`, `EditAction` and `ReplicateAction`'s modal arm at the head of their default write closures — so `using()` is never guarded — and `Select`'s option actions.
-Before, such a value was dropped in silence, since `getData()` writes the paths the record path map carries and nothing else; writing it instead is no option, because a host's writable `data` prop takes whatever keys a client sends, and writing unmapped state would be mass assignment.
+Without the refusal such a value would be dropped in silence, since `getData()` writes the paths the record path map carries and nothing else; writing it instead is no option, because a host's writable `data` prop takes whatever keys a client sends, and writing unmapped state would be mass assignment.
 
 A leaf path of `$after` — a value that is no array, or an empty array — is **added** when `$before` does not hold it, read level by level, an unchanged subtree skipped on `===`; and a path where `$before` held an array and `$after` holds something else is answered too, since a hook writing `null` over a mapped `address.street` branch writes nothing `getData()` reads — no component maps `address` itself.
 A path is **covered** when a record path equals it or is its dotted ancestor, so a subtree owner speaks for everything beneath it, `null` over a relationship repeater's whole `items` included.
 What follows:
 
-- a key the state already held — a client's own, a `storeFileNamesIn()` sibling — is never answered, whatever the hook does to it, so a client can never force the refusal; it stays unwritten, as before;
+- a key the state already held — a client's own, a `storeFileNamesIn()` sibling — is never answered, whatever the hook does to it, so a client can never force the refusal; it stays unwritten;
 - an overwrite of a mapped key is never answered;
 - a key a hidden or `dehydrated(false)` component maps is covered **and written**, since the map carries it and the hook put it back in the state;
 - a key added inside a relationship repeater's item is covered by the owner and still dropped, since the owner writes the item paths its template declares — recorded;
 - a key the hook spells with a dot (`'a.b' => 1`) is read as one key, where `getData()` reads it as a path — at most a missed refusal, recorded;
-- a removed key, and a mapped branch emptied to `[]`, are no addition: the record keeps what it held, as before — recorded.
+- a removed key, and a mapped branch emptied to `[]`, are no addition: the record keeps what it held — recorded.
 
 Pinned by [`BelongsToRecordUnmappedAdditionsTest`](../../../packages/schemas/tests/Unit/Concerns/BelongsToRecordUnmappedAdditionsTest.php), the null-over-a-branch case by name; each seam pins its own refusal.
 
@@ -187,14 +149,6 @@ The next request re-queries and the row is correct again.
 Filament's `$record->update($data)` has the same shape — it fills before it saves — so this is faithful rather than a defect, and the escape is the one the divergence above already names: never flush on the failure path, and refresh or discard the entity manager if the request continues past it.
 
 ## Divergences
-
-### The `dataClass()` concept was rejected in favour of porting the record binding
-
-The typed boundary between a schema and the object behind it was carried as an open question, leaning toward a Sylament-only `dataClass()` deliberately distinct from Filament's record semantics.
-It resolves the other way.
-Because Doctrine entities are POPOs, the ported binding *subsumes* the idea for free — an "opt-in declared data class" is exactly `record(SomeDto::class)` or `record($someDto)`, and any object binds — so the distinct concept would have carried no distinct behaviour.
-It would also have left every `BelongsToModel`-triggered divergence in this tree permanently dangling (schema.md closure injection; component.md's by-name subset, by-type resolution and `getModelRootContainer()`; the `*On()` rows in [can-be-hidden.md](can-be-hidden.md) / [can-be-disabled.md](can-be-disabled.md); the record/operation notes in [action.md](../actions/action.md) and [has-actions.md](../actions/has-actions.md)), and the Resource pages need this surface anyway — they bind a record, set an operation, and set a state path exactly as Filament's do.
-The "record semantics" Filament attaches beyond binding — relationships, `exists` probes, `unique`/`exists` rules — is the unported remainder tracked above, not a reason for a parallel vocabulary.
 
 ### The record vocabulary collapses onto `record()`
 
@@ -211,7 +165,8 @@ Three reasons, judged against the [rename criterion](../renames.md):
   With two setters over one last-write-wins property, `->record($article)->model(Article::class)` reads as additive but silently unbinds the instance — and an unbound instance on an edit form means every save inserts a new row.
   One name, one call: `record($article ?? Article::class)`.
 
-It also converges with the codebase: actions' `InteractsWithRecord` already ships record-only, and schemas' `BelongsTo*` family (`BelongsToContainer`, `BelongsToLiveComponent`, `BelongsToParentComponent`) absorbs `BelongsToRecord` naturally.
+Because any object binds, `record(SomeDto::class)` or `record($someDto)` is also the typed boundary between a schema and the object behind it, so no Sylament-only `dataClass()` sits beside it.
+It also converges with the codebase: actions' `InteractsWithRecord` ships record-only, and schemas' `BelongsTo*` family (`BelongsToContainer`, `BelongsToLiveComponent`, `BelongsToParentComponent`) absorbs `BelongsToRecord` naturally.
 **Migration cost, stated:** Filament code calling `->model(...)` or type-hinting `fn ($model)` breaks loudly — a missing method or an unresolvable closure parameter, never a silent behaviour change.
 The rename set is recorded in the [rename table](../renames.md).
 
@@ -222,6 +177,7 @@ Filament's `EditRecord` fills from `$record->attributesToArray()` — every non-
 That is a privacy improvement, not just a scoping choice — the mutate hooks exist in Filament because the default is over-broad.
 It also means the object arm is *precisely* "`attributesToArray()`, scoped to the schema's fields": having built the array it runs the existing array arm unchanged, so state casts, `afterStateHydrated`, and the null-fill pass behave identically to a hand-written `fill([...])`.
 The page-level `mutateFormDataBeforeFill()`/`beforeFill`/`afterFill` hooks belong to the Resource pages, as page surface rather than schema surface.
+[`getStateFromRecord()`](../../../packages/schemas/src/Concerns/BelongsToRecord.php) is the same read handed back as an array instead of written into the bag, so a fill-side mutator reads the record without filling twice; Eloquent's `attributesToArray()` has no port target, so it is a gap fill rather than a rename, scoped to the declared paths like the rest.
 
 ### Reads are lenient, writes are strict
 
@@ -233,10 +189,9 @@ A null or scalar *intermediate* supplies null for the leaf rather than skipping 
 
 The state-cast exemption is gated on the cast rather than on the type, because the cast is the whole reason the value is representable at all.
 A leaf declaring [`EnumStateCast`](enum-state-cast.md) — or any cast that unwraps a case, which `OptionStateCast` and `OptionsArrayStateCast` also do — passes, because the hydration pass immediately behind the read turns the instance into the scalar backing value the browser will send back.
-A leaf with **no** cast, or one whose casts leave the value an object, does not: it skips and null-fills exactly as it did before the exemption existed.
+A leaf with **no** cast, or one whose casts leave the value an object, does not: it skips and null-fills.
 
-It shipped enum-shaped and was widened to every object leaf so a `DateTimeImmutable` property could reach a `DateTimePicker`: the predicate (`isObjectCarriedByStateCasts()`, formerly `isEnumCarriedByStateCasts()`) lost its `instanceof BackedEnum` pre-check and kept its body, so what earns the exemption is unchanged — running the component's own casts forward and finding a non-object at the end.
-The narrower gate was never the rule, only the one type that had a cast when it was written; asking the casts is the rule, and [`DateTimeStateCast`](date-time-state-cast.md) is the second answer they give.
+The predicate, `isObjectCarriedByStateCasts()`, asks no type question: what earns the exemption is running the component's own casts forward and finding a non-object at the end, so an enum leaf and a `DateTimeImmutable` leaf under [`DateTimeStateCast`](date-time-state-cast.md) pass by one rule.
 
 That gate is not fastidiousness about types.
 The state bag is a writable `array` LiveProp, and [`LiveComponentHydrator::isValueValidDehydratedValue()`](../../../vendor/symfony/ux-live-component/src/LiveComponentHydrator.php) accepts only bool, null, numeric and string — recursing into arrays — so an object anywhere inside the bag makes `dehydrateValue()` throw a `LogicException` naming the **LiveProp**, not the field that put it there.
@@ -244,19 +199,19 @@ A type-only exemption would therefore have turned a `TextInput` bound to an enum
 Running the chain twice — once here to ask, once behind the read to convert — costs a pure transform, since `StateCast::set()` is side-effect-free by contract.
 
 Every object-valued leaf no cast answers for still skips, because it has no bag spelling: an associated entity is the standing case, and an association that wants one declares [`loadStateFromRelationshipsUsing()`](#the-relationship-hooks-are-consulted-by-the-two-mapping-edges-not-by-a-schema-level-walk), which is checked before this skip.
-Without the exemption, `Select::options(MyEnum::class)` over an enum-typed property filled to `null` on every mount — the write side worked, the read side dropped it — which is why the widening ships with the enum seam rather than after it.
+Without the exemption, `Select::options(MyEnum::class)` over an enum-typed property would fill `null` on every mount while the write side worked.
 
 **The relationship fills ask the same question.**
-The predicate is the component's own — [`Component::isObjectCarriedByStateCasts(object $value)`](../../../packages/schemas/src/Components/Concerns/HasState.php), public, `@internal` and without a Filament counterpart, its body moved unchanged from this trait's private method — because two more walks ask it: a singular relationship's fill of its related record ([`EntanglesStateWithSingularRelationship`](entangles-state-with-singular-relationship.md#the-subtree-is-read-and-written-per-declared-leaf-not-as-an-attribute-bag)) and a relationship [`Repeater`](../forms/repeater-relationship.md#a-relationship-repeater-keys-its-items-by-identity-and-diffs-the-collection)'s fill of its items.
+The predicate is the component's own — [`Component::isObjectCarriedByStateCasts(object $value)`](../../../packages/schemas/src/Components/Concerns/HasState.php), public, `@internal` and without a Filament counterpart — because two more walks ask it: a singular relationship's fill of its related record ([`EntanglesStateWithSingularRelationship`](entangles-state-with-singular-relationship.md#the-subtree-is-read-and-written-per-declared-leaf-not-as-an-attribute-bag)) and a relationship [`Repeater`](../forms/repeater-relationship.md#a-relationship-repeater-keys-its-items-by-identity-and-diffs-the-collection)'s fill of its items.
 Were both to skip **every** object leaf, a date, an enum or a `Uuid` inside a relationship repeater item or a `Group::relationship()` would fill `null`, and the next save — one that never touched the field — would write NULL over the stored value.
 The component is the home because the answer is its casts, and because it is the one place all three askers reach: the root read runs in `Schema` scope, the other two in a component's.
 Each walk asks the field that reads the leaf — the last declared, where two share a path, as the record path map keeps it.
-The object enters the bag only where a hydration pass runs right behind the read and converts it — `fill()`, the array fill after `getStateFromRecord()`, and the host's [reload](#loadstatefromrelationships-is-the-hosts-reload-after-its-flush-and-takes-no-parameter), whose child-schema hydration is load-bearing for that reason — and a fill hook (`mutateFormDataBeforeFill()`, `mutateRecordDataUsing()`) now receives it at its path inside a relationship, as it always did at the root.
+The object enters the bag only where a hydration pass runs right behind the read and converts it — `fill()`, the array fill after `getStateFromRecord()`, and the host's [reload](#loadstatefromrelationships-is-the-hosts-reload-after-its-flush-and-takes-no-parameter), whose child-schema hydration is load-bearing for that reason — and a fill hook (`mutateFormDataBeforeFill()`, `mutateRecordDataUsing()`) receives it at its path inside a relationship as it does at the root.
 An association, a collection and an object no cast flattens still skip.
 Pinned by [`EntanglesStateWithSingularRelationshipObjectLeafTest`](../../../packages/schemas/tests/Integration/Components/Concerns/EntanglesStateWithSingularRelationshipObjectLeafTest.php) and forms' [`RepeaterRelationshipObjectLeafTest`](../../../packages/forms/tests/Integration/Components/RepeaterRelationshipObjectLeafTest.php).
 
 One hole is inherited rather than introduced, and is worth naming because the gate does not cover it: an **array** leaf is not object-valued, so a `list<MyEnum>` property enters the bag whole and relies on the component's cast (`EnumArrayStateCast`) to scalarize its elements.
-A cast-less component bound to one has always been able to leave instances nested in the bag; the exemption neither widens nor narrows that.
+A cast-less component bound to one can leave instances nested in the bag; the exemption neither widens nor narrows that.
 
 `getData()` is the opposite.
 It writes **every** leaf path of the validated state and lets `NoSuchPropertyException` surface when the target cannot take one: by calling it you have declared that this state is the object's data, and silently dropping a key would silently drop a user's edit.
@@ -286,14 +241,14 @@ Both mapping edges iterate one walk, `getRecordPathMap()`: every path-bearing le
 Three consequences are deliberate:
 
 - **Leaf granularity is the contract in both directions.**
-  An array-backed branch is read leaf-by-leaf — an unmanaged sibling key never enters the bag or reaches the client (previously the container row's whole-array read leaked it, contradicting the read-scoping stance above) — and written read-modify-write, so unmanaged keys survive `getData()` where the old wholesale top-level write destroyed them.
+  An array-backed branch is read leaf-by-leaf — an unmanaged sibling key never enters the bag or reaches the client — and written read-modify-write, so unmanaged keys survive `getData()`.
   Filament wholesale-replaces here; we diverge toward our own scoping rule: the schema maps what it declares, nothing else.
 - **A missing singular intermediate is constructed; an object collection is refused.**
   A null or uninitialized intermediate whose declared type names a constructible class is built and assigned, so a nested object path needs no hand-written vivifying getter.
-  This [overturns a recorded decision](#a-missing-singular-intermediate-is-constructed-from-its-declared-type), which is where the grounds are.
+  [The grounds](#a-missing-singular-intermediate-is-constructed-from-its-declared-type) are stated below.
   What still throws: a declared class needing constructor arguments, an object collection at any segment — recognised from the declared type (an adder resolves the property to a `list<Tag>`, not to a `Traversable`) and again from the collection instance met on the walk — and an array remainder a typed property rejects.
 - **Scope: plain nested objects and embeddable-shaped value objects.**
-  The walk will mechanically traverse a loaded Doctrine association and mutate the associated entity in place — almost never what a form edit means, and undetectable here (this walk is handed no `EntityManager`, so it reads declared PHP types and no mapping metadata, even though `schemas` now ships [`AssociationReader`](association-reader.md) for the component tier).
+  The walk will mechanically traverse a loaded Doctrine association and mutate the associated entity in place — almost never what a form edit means, and undetectable here (this walk is handed no `EntityManager`, so it reads declared PHP types and no mapping metadata, even though `schemas` ships [`AssociationReader`](association-reader.md) for the component tier).
   Associations are declared instead — `relationship()` on the owning component, routed through that reader — and this note is the warning, not a guard.
 
 The container test is `hasPathBearingDescendants()`, and it carries a second arm for the component that is both leaf and container: [a component may own its whole record subtree](#a-component-can-own-its-whole-record-subtree), in which case it maps as a leaf and speaks for every path beneath its own.
@@ -301,7 +256,7 @@ The container test is `hasPathBearingDescendants()`, and it carries a second arm
 ### A component can own its whole record subtree
 
 Sylament-only, because the record path map is Sylament-only.
-`ownsRecordSubtree()` — on `HasChildComponents`, default `false` — marks a component whose own dehydrated value **is** the record value for everything beneath its path — the shape no component had until [the forms `Repeater`](../forms/repeater.md), which is what the predicate exists for.
+`ownsRecordSubtree()` — on `HasChildComponents`, default `false` — marks a component whose own dehydrated value **is** the record value for everything beneath its path — the shape of [the forms `Repeater`](../forms/repeater.md) and of a layout component [entangling a singular relationship](entangles-state-with-singular-relationship.md).
 The map build answers it in two places.
 The container skip is owner-aware, so an owner is collected as a leaf despite its path-bearing descendants: `fill()` then reads its property whole and `getData()` writes the dehydrated value back wholesale, which is what carries item keys the schema never declared and what makes the leaf-granularity rule above stop at the owner.
 And a second pass drops every path collected beneath an owner, so nothing re-reads or re-writes a slice of a value the owner already speaks for.
@@ -357,7 +312,7 @@ At `fill($record)` the raw state is still empty, so no item schema exists yet, s
 A handoff would also park mutable state on the owner between map builds, and the map is built per edge and again by the [violation translator](violation-path-translator.md).
 That translator is untouched by the delegation, deliberately — and it reaches beneath an owner by another route, the last paragraph of this section.
 
-The correction that comes with it, because the shape it describes is easy to misread and this file said it wrong: Filament's own recursion is **not** limited to newly created items.
+Filament's own recursion is **not** limited to newly created items, which is easy to misread.
 `Repeater::saveToRelationship()` re-runs `$item->model($record)->saveRelationships()` only for the items it just created, which is true of that method read alone — but `Schema::saveRelationships()`, the tree walk it sits inside, descends children-first over **every** item's schema before the item's own save runs, so the behaviour recurses for updated items too.
 Read the walk, not the method.
 
@@ -370,7 +325,7 @@ Pinned by [`BelongsToRecordRelatedRecordTest`](../../../packages/schemas/tests/I
 
 ### `loadStateFromRelationships()` is the host's reload after its flush, and takes no parameter
 
-Filament re-reads relationship-backed state inside `Schema::getState()`: after `saveRelationships()` it calls `loadStateFromRelationships(shouldHydrate: true)` whenever the host hands `getState()` an `afterValidate` callback, which its `EditRecord::save()` does.
+Filament re-reads relationship-backed state inside `Schema::getState()`: after `saveRelationships()` it calls `loadStateFromRelationships(shouldHydrate: true)`, before dehydration, or after the `afterValidate` callback when the host hands one, as its `EditRecord::save()` does.
 Here there is no save walk to hang it on — the hooks run inside `getData()`, against an in-memory graph nothing has flushed yet — so the reload is the **host's** to call once its flush has run.
 [`EditRecord::save()`](../panels/edit-record.md) calls `$schema->loadStateFromRelationships()` after `handleRecordUpdate()` and before `afterSave`.
 The name is Filament's; the `$shouldHydrate` parameter is dropped, because the one caller that matters passes `true` — it always hydrates.
@@ -382,7 +337,7 @@ It exists because a relationship [`Repeater`](../forms/repeater.md) keys an item
 For an assigned key the second save would be an `EntityIdentityCollisionException` 500, and under the taken-key rule a false *"This value is already used."* on the item just saved; for a generated id every added item would be deleted and re-inserted on **every** save.
 With the reload the second save writes nothing and a generated id keeps its value.
 
-Four costs, all enumerated: a relation-backed component's `afterStateHydrated` hooks run once more per save; a host that flushes itself, outside `EditRecord`, keeps the old behaviour until it adds the one call after its flush — the demo's `Articles:ArticleForm` does; UI-only state inside a relationship is reset; and a relationship repeater item saved on a blank key fails the save itself.
+Four costs, all enumerated: a relation-backed component's `afterStateHydrated` hooks run once more per save; a host that flushes itself, outside `EditRecord`, has no reload until it adds the one call after its flush — the demo's `Articles:ArticleForm` does; UI-only state inside a relationship is reset; and a relationship repeater item saved on a blank key fails the save itself.
 The reload hands a relationship repeater's items and a singular relationship's group back as the record gives them, so a `dehydrated(false)` field there — state the save never wrote — reads what the record gives, `null` where the record holds no such property, after every successful save, rather than keeping what the user typed.
 That third cost is Filament's own behaviour, since its reload runs inside the `getState()` its save makes, and it is accepted rather than worked around.
 The fourth is the reload's mint.
@@ -394,34 +349,32 @@ Pinned by [`BelongsToRecordReloadTest`](../../../packages/schemas/tests/Unit/Con
 
 ### A missing singular intermediate is constructed from its declared type
 
-**This overturns a decision recorded in this file.**
-It previously read *"Intermediate objects are never constructed"*, on the grounds that type-directed construction is right for a value object and silently wrong for an association that should be looked up.
-That rejection no longer holds for **singular** branches, on three grounds — the third is the one that changed:
+Type-directed construction is right for a value object and silently wrong for an association that should be looked up; the port constructs **singular** intermediates anyway, on three grounds:
 
-- **The dangerous case is excluded elsewhere now.**
+- **The dangerous case is excluded elsewhere.**
   The shape where a wrong construction becomes duplicate INSERTs is a *collection*, and a collection is [refused outright](property-accessor.md#a-missing-singular-intermediate-is-constructed-an-object-collection-is-refused) before it can reach the mapper — the mainstream Doctrine declaration included, since the refusal reads both the adder-derived type and the initialized instance already on the entity.
-  The original argument rejected construction to avoid a case the collection refusal already removes.
+  The objection guards against a case the collection refusal already removes.
 - **Doctrine itself vivifies here.**
   An `#[ORM\Embedded]` write goes through `ReflectionEmbeddedProperty::setValue()`, which instantiates the embeddable through `Instantiator` when the property is null.
   Requiring a user to hand-write the vivification Doctrine performs for itself is the divergence; performing it is the parity.
 - **The type is declared, not guessed.**
-  The old reasoning was written when the mapper had no type information and would have had to infer a class from the path.
+  Without type information the mapper would have to infer a class from the path.
   With [`RecordTypeReader`](record-type-reader.md) the class comes from the property's own write-side declaration, gated on instantiability, so "construct what the record says goes here" is a reading of the record rather than an inference about it.
   A singular association that should be *looked up* is a field concern — a `Select` over related records — not a nested branch, and that surface is [`Select::relationship()`](../forms/select.md)'s either way, which the walk never sees.
 
-Construction needs no declaration of its own: `record(SomeClass::class)` plus nested state paths is the entire user-facing flow, and the demo's vivifying `Article::getAuthor(): AuthorProfile` workaround — the one that produced an empty `AuthorProfile` on every save — was deleted rather than replaced.
+Construction needs no declaration of its own: `record(SomeClass::class)` plus nested state paths is the entire user-facing flow.
 What remains loud: a declared class whose constructor takes required arguments throws rather than being half-built, and Doctrine's constructor-bypass trick is deliberately not copied (`doctrine/instantiator` is not in the graph, and a bypassed constructor leaves typed properties uninitialized — one crash traded for a later, stranger one).
 
-### A Serializer-based mapper stays rejected, on amended grounds
+### A Serializer-based mapper is rejected for collection population
 
-Amended twice now, and each round has *removed* an objection rather than added one — so read this as one surviving reason, not a pile.
+One reason decides it; two others are answered.
 
-**Answered, and no longer carrying the rejection.**
-The original reason — a denormalizer constructs where an edit must mutate the managed entity — is answered by Serializer's own `AbstractNormalizer::OBJECT_TO_POPULATE`.
-The second — that the type graph rather than the schema would decide what maps, inverting authority at exactly the unbuilt surface (`dehydrated(false)`, multi-value fields, associations) where we want "not supported" to fail loudly — is answered by Serializer's `attributes` context option, which takes a **nested** tree: a schema can hand it the same declared leaf paths `getRecordPathMap()` already produces, and the schema stays in authority over what maps.
+**Answered.**
+One objection — a denormalizer constructs where an edit must mutate the managed entity — is answered by Serializer's own `AbstractNormalizer::OBJECT_TO_POPULATE`.
+Another — that the type graph rather than the schema would decide what maps, inverting authority at exactly the unbuilt surface (`dehydrated(false)`, multi-value fields, associations) where we want "not supported" to fail loudly — is answered by Serializer's `attributes` context option, which takes a **nested** tree: a schema can hand it the same declared leaf paths `getRecordPathMap()` already produces, and the schema stays in authority over what maps.
 That was checked, not assumed.
 
-**Surviving, and decisive on its own.**
+**Decisive on its own.**
 `deep_object_to_populate` updates singular children but **not arrays of objects** — it produces a fresh instance per item.
 For Doctrine that is not a mapping error but a duplicate INSERT at flush, plus deletion of the originals under `orphanRemoval`; measured on a two-tag `Post`, re-saving after renaming one tag and deleting the other yielded one brand-new `Tag` row and reused neither original.
 That is precisely the collection shape the `Repeater` and its relationship mode need, and it is the shape this mapper [refuses outright](property-accessor.md#a-missing-singular-intermediate-is-constructed-an-object-collection-is-refused) rather than getting wrong.
@@ -438,47 +391,22 @@ Symfony's container cannot make an unbound class, and an entity is not a service
 
 For a constructor with no required parameter that is `new`.
 A constructor that requires arguments gets a `LogicException` naming the class and the way out: *Cannot map a new record onto the schema: App\Entity\Membership requires constructor arguments …*.
-PHP's own `ArgumentCountError` used to surface from this file.
 `CreateAction`'s relationship arm builds its record the same way.
-A class-string naming a class with a non-public constructor, or no class at all, surfaces as `ReflectionException`, where `new` threw PHP's `Error`.
+A class-string naming a class with a non-public constructor, or no class at all, surfaces as `ReflectionException`, where `new` would throw PHP's `Error`.
 
 The resource create page builds its record itself: `CreateRecord::makeRecord(array $data): object`, called once with the validated and mutated form data, answers the record the form is then mapped onto, so a record whose constructor takes arguments is built there; its default builds the resource's record class through the same `constructRecord()`, with advice naming `makeRecord()` ([the page](../panels/create-record.md)).
-The schema tier's *"through `record()`"* advice therefore no longer reaches the page, whose form is bound to a class-string and could not take it; nor `CreateAction`, whose plain arm names `using()` as its relationship arm already did.
+Neither the page nor `CreateAction` shows the schema tier's *"through `record()`"* advice, which a form bound to a class-string could not follow: the page names `makeRecord()`, and both arms of `CreateAction` name `using()`.
 
 This is the same boundary as [`Component::newInstance()`](../support/component.md)'s fallback: the container builds what was registered, and a record is built without arguments or refused by name.
 
-### The record type probe is `instanceof`, not a `Model` gate
-
-Filament resolves a closure parameter by type through two arms — `Model::class` and `$record::class` — after gating on `is_a($type, Model::class)`, so an arbitrary class-typed parameter never touches the record.
-There is no `Model` base class here, so both tiers instead probe `$record instanceof $parameterType`, which covers the exact class, any parent, any interface, and a Doctrine proxy.
-The safety the gate provided is restored differently: the component tier's container fallbacks are each `isset($this->container)`-guarded (the [`getLiveComponentOrNull()` idiom](belongs-to-live-component.md#getlivecomponent-throws-instead-of-returning-a-possibly-null-component)), because `$container` is an uninitialized typed property until a schema stamps it — so `evaluate()` on a detached component still resolves its own class rather than fataling on the back-reference.
-The component tier resolves its exact `Get::class`/`Set::class` arms before probing the record; the root tier's override is the probe alone, since its parent-component chain is already nullable.
-
 ### The root `$record` property is protected
 
-Filament declares the root-tier property `public Model | array | string | Closure
-| null $model` while the component tier's is `protected` — the asymmetry is a
-Livewire artifact (a public property is what Livewire's serializer can see), not an API decision.
+Filament declares the root-tier property `public Model | array | string | Closure | null $model` while the component tier's is `protected`; the asymmetry is a Livewire artifact (a public property is what Livewire's serializer can see), not an API decision.
 Sylament declares both `protected`, translating the artifact away like the other Livewire idioms.
 Nothing reads the property from outside; `getRecord()`/`getRecordClass()`/`getRecordInstance()` are the surface.
-
-### The `$model` closure parameter is not ported
-
-Filament injects `$model` (the class-string) alongside `$record` by name.
-Dropping the name is part of the rename set: `$record` covers the instance and `getRecordClass()` covers the class, so keeping `$model` would reintroduce exactly the vocabulary the collapse removed — for a parameter that is one method call away.
-Revisit only if a ported surface needs it as a parameter rather than a call.
-
-### Closures receive the record, never a state snapshot
-
-An alternative was carried in the design discussion: have a type-hinted closure parameter receive a lazily built, one-way snapshot object of the current state instead of the bound record.
-It is rejected.
-Filament's `$record` is the persisted record — deliberately stale until save — and live values already have `$get` and `$state`; a snapshot would silently change the meaning of every Filament example a migrating user pastes in.
-It stays additive if it is ever wanted.
 
 ### `fill($object)` does not bind the record
 
 Passing an object to `fill()` sources initial state from it and nothing more — it does not call `record()`.
 Binding is a schema-definition concern (`record()` alongside `operation()` and `statePath()`, rebuilt on every request), while `fill()` is a one-shot mount-time action; conflating them would mean a host that fills on mount silently loses its binding on the next request, when `fill()` is not called again.
 So an edit page writes both: `record($entity)` in the schema definition and `fill($entity)` in `mount()`.
-
-_See also: the global [rename table](../renames.md) — the `BelongsToModel` → `BelongsToRecord`, `model()` → `record()`, `getModel()` → `getRecordClass()`, and `getModelInstance()` → `getRecordInstance()` entries are recorded there, with the criterion they were judged against._

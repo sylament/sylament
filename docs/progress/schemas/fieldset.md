@@ -1,19 +1,18 @@
 ---
-description: '`Sylament\Schemas\Components\Fieldset` is the labelled, bordered layout component: a two-column `Grid` with a `<legend>` on it. (draft)'
+description: The labelled, bordered schemas layout component that lays its children out in two columns under a `<legend>`.
 ports:
   - vendor/filament/schemas/src/Components/Fieldset.php
-  - vendor/filament/support/resources/views/components/fieldset.blade.php
 owns:
   - packages/schemas/src/Components/Fieldset.php
   - packages/schemas/templates/partials/Fieldset/
 ---
 # Fieldset (schemas)
 
-[`Sylament\Schemas\Components\Fieldset`](../../../packages/schemas/src/Components/Fieldset.php) is the labelled, bordered layout component: a two-column [`Grid`](grid.md) with a `<legend>` on it.
+[`Sylament\Schemas\Components\Fieldset`](../../../packages/schemas/src/Components/Fieldset.php) is the labelled, bordered layout component: a `<legend>` over children laid out in two columns.
 It carries only the label, the containment flag and the required marker — the chrome itself is support's [`<twig:SylamentSupport:Fieldset>`](../../../packages/support/templates/components/Fieldset/index.html.twig) component, which the schemas partial bridges onto.
 Like `Grid` and [`Group`](group.md) it builds no grid of its own; `setUp()`'s `columns(2)` lands on the child [`Schema`](schema.md), which resolves the actual layout.
 
-It composes the shared [`EntanglesStateWithSingularRelationship`](entangles-state-with-singular-relationship.md) concern and implements its `CanEntangleWithSingularRelationships` contract, so `Fieldset::make()->relationship('profile')` binds its children to a to-one Doctrine association; that concern's file carries the status of what is and is not ported.
+It composes the shared [`EntanglesStateWithSingularRelationship`](entangles-state-with-singular-relationship.md) concern and implements its `CanEntangleWithSingularRelationships` contract, so `Fieldset::make()->relationship('profile')` binds its children to a to-one Doctrine association.
 
 ## Surface
 
@@ -28,9 +27,6 @@ It composes the shared [`EntanglesStateWithSingularRelationship`](entangles-stat
 | [Twig render (support chrome + child schema)](../../../packages/schemas/templates/partials/Fieldset/index.html.twig) | [`Fieldset::toEmbeddedHtml()`](../../../vendor/filament/schemas/src/Components/Fieldset.php) | done | — | [diverges](#the-chrome-lives-in-a-support-twig-component) |
 | [`id` + extra attributes on the root](../../../packages/schemas/templates/partials/Fieldset/index.html.twig) | [`Fieldset::toEmbeddedHtml()`](../../../vendor/filament/schemas/src/Components/Fieldset.php) | done | — | — |
 
-Covered by [`FieldsetTest`](../../../packages/schemas/tests/Unit/Components/FieldsetTest.php) (the label arms, the default and overridden columns, containment, label hiding, the constant `isRequired()`, the four `markAsRequired()` arms and `configureUsing()`) and [`FieldsetComponentRenderTest`](../../../packages/schemas/tests/Integration/Components/FieldsetComponentRenderTest.php), whose last two cases are the attribute-precedence gates: a caller's own `class` must not displace the `sy-sc-fieldset` hook, and a caller's own `id` must not displace `getId()`.
-The support component on its own is covered by [`FieldsetRenderTest`](../../../packages/schemas/tests/Integration/Components/FieldsetRenderTest.php).
-
 ## Semantics
 
 ### `isRequired()` is a constant `false` so the asterisk is opt-in
@@ -44,7 +40,8 @@ It does not, on either side of the port: the legend takes its asterisk only afte
 
 ### The chrome lives in a support Twig component
 
-`Fieldset::toEmbeddedHtml()` builds the `<fieldset>`, the `<legend>` and the required `<sup>` inline in the schemas component, even though Filament also ships `x-filament::fieldset` in support and the (unused in v5) `filament-schemas::components.fieldset` Blade renders through it.
+`Fieldset::toEmbeddedHtml()` builds the `<fieldset>`, the `<legend>` and the required `<sup>` inline in the schemas component, even though Filament also ships `x-filament::fieldset` in support.
+The `filament-schemas::components.fieldset` Blade renders through that support component, and Filament uses it only when an application publishes its own override of the view.
 Sylament keeps only the support component: the schemas partial [`Fieldset/index.html.twig`](../../../packages/schemas/templates/partials/Fieldset/index.html.twig) is a bridge that maps the component's getters onto the four props (`label`, `labelHidden`, `required`, `contained`) and passes the child schema as the slot — the same split [`Section`](section.md) already uses.
 
 The consequence to know when reading the markup: the `sy-fieldset*` classes and the whole element structure belong to **support**, while `sy-sc-fieldset` is schemas'.
@@ -54,5 +51,3 @@ A fieldset with `extraAttributes(['class' => 'custom'])` therefore renders `clas
 `id` cannot ride that same merge.
 `merge()` lets the **receiving** bag win for a non-appendable attribute, and the receiver here is the caller's extra attributes — so passing `id` as a merge default would hand `extraAttributes(['id' => …])` the win, where Filament's `->merge(['id' => $id])->merge($this->getExtraAttributes())` lets `getId()` win (Laravel's `merge()` ends `array_merge($attributeDefaults, $attributes)`, so the receiver holding the id overrides the extras it is passed).
 The partial therefore spreads `{id: component.getId}` over the flattened map **last**, which is the same last-source-wins placement [`Section`](section.md)'s `attrs()` call uses and which [`Grid`](grid.md) and [`Group`](group.md) repeat.
-
-_See also: the global [rename table](../renames.md) — `make()` arguments moving from constructors to setters, the `toEmbeddedHtml()` → Twig-template render idiom, and the `Htmlable` → `Twig\Markup` translation are systematic translations recorded there, not per-component divergences._

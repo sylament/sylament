@@ -1,15 +1,16 @@
 ---
-description: '`Sylament\Schemas\Contracts\InteractsWithSchemas` is the interface a schema host implements — the object that owns one or more named `Schema`… (draft)'
+description: The InteractsWithSchemas host contract, its browser-callable seams, and the AcceptsUploadedFiles component contract the upload seam gates on.
 ports:
   - vendor/filament/schemas/src/Contracts/HasSchemas.php
   - vendor/filament/schemas/src/Concerns/InteractsWithSchemas.php
 owns:
+  - packages/schemas/src/Components/Contracts/AcceptsUploadedFiles.php
   - packages/schemas/src/Contracts/
 ---
 # InteractsWithSchemas (schemas)
 
 [`Sylament\Schemas\Contracts\InteractsWithSchemas`](../../../packages/schemas/src/Contracts/InteractsWithSchemas.php) is the interface a schema **host** implements — the object that owns one or more named `Schema` instances and answers state lookups against them.
-It ports Filament's [`Contracts\HasSchemas`](../../../vendor/filament/schemas/src/Contracts/HasSchemas.php), under a swapped name: Filament's interface is `HasSchemas` and its trait is `InteractsWithSchemas`; Sylament reverses the pair, so this interface is `InteractsWithSchemas` and the implementing trait is [`Concerns\HasSchemas`](has-schemas.md).
+It ports Filament's [`Contracts\HasSchemas`](../../../vendor/filament/schemas/src/Contracts/HasSchemas.php), under a [swapped name](../renames.md#interface-and-trait-names-are-swapped): Filament's interface is `HasSchemas` and its trait is `InteractsWithSchemas`; Sylament reverses the pair, so this interface is `InteractsWithSchemas` and the implementing trait is [`Concerns\HasSchemas`](has-schemas.md).
 Every method it declares is supplied by that trait.
 
 ## Surface
@@ -32,36 +33,24 @@ Every method it declares is supplied by that trait.
 | [`dispatchBrowserEvent(string $eventName, array $payload = []): void`](../../../packages/schemas/src/Contracts/InteractsWithSchemas.php) | — | done | — | [diverges](#dispatchbrowserevent-is-a-sylament-only-contract-member) |
 | [`callSchemaComponentMethod(string $componentKey, string $method, array $arguments = []): void`](../../../packages/schemas/src/Contracts/InteractsWithSchemas.php) | [`Concerns\InteractsWithSchemas::callSchemaComponentMethod()`](../../../vendor/filament/schemas/src/Concerns/InteractsWithSchemas.php) | done | — | [diverges](#callschemacomponentmethod-answers-through-a-browser-event-with-no-partial-render) |
 | [`uploadSchemaComponentFile(string $componentKey, string $fileKey, Request $request): void`](../../../packages/schemas/src/Contracts/InteractsWithSchemas.php) | [`Concerns\InteractsWithSchemas`](../../../vendor/filament/schemas/src/Concerns/InteractsWithSchemas.php) (`use WithFileUploads`) | done | — | [diverges](#uploadschemacomponentfile-carries-the-bytes-beside-the-seam) |
+| [`AcceptsUploadedFiles`](../../../packages/schemas/src/Components/Contracts/AcceptsUploadedFiles.php) — Sylament-only component contract | — | done | — | [diverges](#uploadschemacomponentfile-carries-the-bytes-beside-the-seam) |
 | `makeFilamentTranslatableContentDriver()` | [`Contracts\HasSchemas::makeFilamentTranslatableContentDriver()`](../../../vendor/filament/schemas/src/Contracts/HasSchemas.php) | todo | — | [detail](#the-translatable-content-driver-method-is-not-declared) |
 | `currentlyValidatingSchema(?Schema)` | [`Contracts\HasSchemas::currentlyValidatingSchema()`](../../../vendor/filament/schemas/src/Contracts/HasSchemas.php) | skipped | — | [diverges](#currentlyvalidatingschema-is-not-ported) |
-| `getDefaultTestingSchemaName()` | [`Contracts\HasSchemas::getDefaultTestingSchemaName()`](../../../vendor/filament/schemas/src/Contracts/HasSchemas.php) | blocked | TestsSchemas (testing helper) | [detail](#the-testing-contract-method-is-not-declared) |
-
-Every declared method is covered: `schemas()`, `getSchema()`, `makeSchema()`, `cacheSchema()` and `hasCachedSchema()` directly by [`HasSchemasTest`](../../../packages/schemas/tests/Unit/Concerns/HasSchemasTest.php); `getOldSchemaState()` indirectly through the `afterStateUpdated` diff in [`LiveStateTest`](../../../packages/schemas/tests/Integration/LiveStateTest.php).
-`cacheSchema()`/`hasCachedSchema()` are also exercised through the interface by actions' [`HasActionsSchemaTest`](../../../packages/actions/tests/Integration/Concerns/HasActionsSchemaTest.php), which is why they are declared here at all: `HasActions::getMountedActionSchema()` calls them on a `$this` narrowed to this interface.
-The three validation methods are covered end-to-end by [`HasSchemasValidationTest`](../../../packages/schemas/tests/Integration/Concerns/HasSchemasValidationTest.php); their machinery and semantics are tracked in [`can-be-validated.md`](can-be-validated.md).
-`resolveSchemaByName()` and `getSchemaComponent()` are covered directly by [`HasSchemasTest`](../../../packages/schemas/tests/Unit/Concerns/HasSchemasTest.php); `callSchemaComponentMethod()` (and, through it, `dispatchBrowserEvent()`) is covered end-to-end by [`HasSchemasComponentMethodTest`](../../../packages/schemas/tests/Integration/Concerns/HasSchemasComponentMethodTest.php), and `uploadSchemaComponentFile()` by [`HasSchemasUploadTest`](../../../packages/schemas/tests/Integration/Concerns/HasSchemasUploadTest.php) beside it, which drives real `UploadedFile`s through `TestLiveComponent::call()`'s third argument.
-`resolveSchemaByName()` is also exercised through actions' [`resolveSchemaComponentAction()`](../actions/has-actions.md), which now calls it instead of carrying its own copy of the same reflection gate.
+| `getDefaultTestingSchemaName()` | [`Contracts\HasSchemas::getDefaultTestingSchemaName()`](../../../vendor/filament/schemas/src/Contracts/HasSchemas.php) | blocked | `TestsSchemas` | [detail](#the-testing-contract-method-is-not-declared) |
 
 ## Details
 
 ### The translatable-content-driver method is not declared
 
 Filament's `makeFilamentTranslatableContentDriver(): ?TranslatableContentDriver` supplies the per-host driver for translatable field content.
-The port has no translatable-content layer, so the method is absent.
-**Next step:** declare it with the translatable-content driver port, renamed off the `Filament` prefix per the systematic idiom translation.
+The port has no translatable-content layer and no driver type to return, so the method is absent.
+Next step: declare it with the translatable-content driver port, renamed off the `Filament` prefix per the systematic idiom translation.
 
 ### The testing contract method is not declared
 
-`getDefaultTestingSchemaName()` hangs off the schema-testing helpers the port has not reached: it is **blocked** on the `TestsSchemas` testing helper and returns to the interface in the same change that ports it.
+`getDefaultTestingSchemaName()` exists for Filament's testing helpers (`TestsSchemas`, `TestsForms`, `TestsActions`), which the port has not reached; it returns to the interface in the same change that ports `TestsSchemas`, beside [`HasSchemas`' testing helpers](has-schemas.md#the-testing-helpers-arrive-with-testsschemas).
 
 ## Divergences
-
-### The schema-host interface and trait swap names with Filament
-
-Filament's **interface** is `Contracts\HasSchemas` and its **trait** is `Concerns\InteractsWithSchemas`.
-Sylament swaps the two labels: the interface is `Contracts\InteractsWithSchemas` (here) and the trait is [`Concerns\HasSchemas`](has-schemas.md).
-`Has*` reads as a capability trait and `InteractsWith*` reads as a role/contract elsewhere in the codebase; the swap keeps that convention.
-It is a naming choice, not a deferral — nothing reverses it.
 
 ### The host contract declares `schemas()` and `makeSchema()` that Filament keeps only on the trait
 
@@ -103,7 +92,7 @@ Deliberate and permanent — the global wipe was a Livewire single-bag artifact,
 
 Filament stores the currently-validating schema on the Livewire component for two reasons: to scope the `prepareForValidation()` state mutation to one schema instead of all, and to break infinite loops in schemas that self-validate (the table query builder crashing while an action submits).
 Neither reason survives the translation.
-A mutation pass **has** since returned — the [`mutateStateForValidation()` walk](schema.md#getstate-validates-without-a-prepareforvalidation-mutation-layer) — but it needs no stored schema to scope it: `validateSchema()` calls it on the `Schema` it was handed, so the argument already carries the scope Filament has to stash on the component.
+A mutation pass exists — the [`mutateStateForValidation()` walk](schema.md#getstate-validates-without-a-prepareforvalidation-mutation-layer) — but it needs no stored schema to scope it: `validateSchema()` calls it on the `Schema` it was handed, so the argument already carries the scope Filament has to stash on the component.
 And there is no table self-validation to loop on.
 Stays skipped; it would only reverse if some pass had to know the current schema from somewhere other than its own call stack.
 
@@ -114,12 +103,12 @@ Sylament's `getSchema()` throws instead of gating (the fail-fast house rule for 
 `resolveSchemaByName(string $name): ?Schema` is where Filament's `cacheSchema()` gate is hoisted to, standing between a browser-supplied name and `getSchema()`: a cached schema wins outright; otherwise a `<name>()`/`<name>Schema()` method is accepted only when its first parameter (or, with none, its return type) is declared `Schema` — a name it refuses answers `null` rather than throwing.
 What is genuinely Sylament-only is the **name**: Filament has no member to rename from, because its gate is a private step inside `cacheSchema()` rather than a callable host method.
 Two hardenings sit on top of Filament's gate — Filament's own trait carries `Schema`-shaped members its arms admit as well (`makeSchema(): Schema`, `currentlyValidatingSchema(?Schema $schema)`), so this is a hardening past Filament rather than a gap only ours has: the candidate may not be a member `InteractsWithSchemas` itself declares (`validateSchema(Schema $schema, bool $shouldThrow = true)`, `validateSchemaRecord(Schema $schema, object $record)`, `makeSchema(): Schema` and, through the suffix arm, `make`), and a first-parameter match may not have more than one **required** parameter, since `getSchema()` passes exactly one argument.
-Without the first, `validateSchemaRecord.x` from a hostile client was an unhandled `ArgumentCountError` — a 500 on every live host — and `makeSchema`/`make` minted an empty schema keyed under a bogus name.
+Without them, `validateSchemaRecord.x` from a hostile client would be an unhandled `ArgumentCountError` — a 500 on every live host — and `makeSchema`/`make` would mint an empty schema keyed under a bogus name.
 The Unit cases in [`HasSchemasTest`](../../../packages/schemas/tests/Unit/Concerns/HasSchemasTest.php) pin both refusals — the four contract names, and a host's own schema-shaped method needing a second argument — and the Integration case in [`HasSchemasComponentMethodTest`](../../../packages/schemas/tests/Integration/Concerns/HasSchemasComponentMethodTest.php) pins the browser-facing half.
 What the gate still admits, exactly as Filament's does: a host's **own** parameterless `Schema`-returning getter — tables' `getTableFiltersForm(): Schema` is the live example — is invoked and, by `getSchema()`, keyed under the browser's name (`Schema::key()` on the schema the host already holds) for that request.
 Nothing is written beyond that request-scoped key, and narrowing it further would mean refusing a shape Filament accepts, so it stays.
-It is also an extraction, not a new mechanism: `HasActions::resolveSchemaComponentAction()` (`packages/actions/src/Concerns/HasActions.php:688-745` before this change) carried the same gate inline; it now calls this method instead, so the gate exists once.
-See the "Names with no Filament source" table in [renames.md](../renames.md).
+It is also the only copy of the gate: [`HasActions::resolveSchemaComponentAction()`](../../../packages/actions/src/Concerns/HasActions.php) calls this method rather than carrying its own.
+The name is recorded in [translations.md](../translations.md#names-with-no-filament-source).
 
 ### `getSchemaComponent()` drops the child-container skip list
 
@@ -131,8 +120,8 @@ Beyond that, the body is Filament-exact: split on the first `.` (no `.` answers 
 ### `dispatchBrowserEvent()` is a Sylament-only contract member
 
 Filament's Livewire component type carries `dispatch()` implicitly — every Livewire component has it, so nothing declares it on `Contracts\HasSchemas`.
-UX LiveComponent has no such ambient method; `Symfony\UX\LiveComponent\ComponentToolsTrait::dispatchBrowserEvent(string $eventName, array $payload = []): void` is the closest equivalent, and [`HasSchemas`](has-schemas.md) composes that trait so the contract can declare the method schemas' own `callSchemaComponentMethod()`, the `form-validation-error` announcement `validateSchema()`'s throwing branch makes (payload `{schemaKey}`, where Filament sends `livewireId` — [why](can-be-validated.md#the-throwing-branch-announces-form-validation-error-carrying-the-schema-identity)), and forms' `Select` (through `getLiveComponent()`) all call.
-A host built with `new` rather than resolved from the container has no injected `LiveResponder` and throws (an uninitialized-typed-property error) the moment it calls this — every real, container-built host has one via the trait's `#[Required]` setter, which is why the validation announcement is the one call site guarded on it ([why](can-be-validated.md#a-host-built-outside-the-container-announces-nothing)).
+UX LiveComponent has no such ambient method; `Symfony\UX\LiveComponent\ComponentToolsTrait::dispatchBrowserEvent(string $eventName, array $payload = []): void` is the closest equivalent, and [`HasSchemas`](has-schemas.md) composes that trait so the contract can declare the method its callers use: schemas' own `callSchemaComponentMethod()`, the `form-validation-error` announcement `validateSchema()`'s throwing branch makes (payload `{schemaKey}`, where Filament sends `livewireId` — [why](can-be-validated.md#the-throwing-branch-announces-form-validation-error-carrying-the-schema-identity)), `Schema`'s `reset-schema-component-state`, `Wizard`'s step events and forms' `Select`, the last three through `getLiveComponent()`.
+A host built with `new` rather than resolved from the container has no injected `LiveResponder` and throws (an uninitialized-typed-property error) the moment it calls this — every real, container-built host has one via `ComponentToolsTrait`'s `#[Required]` setter, and the validation announcement is the one call site guarded on it ([why](can-be-validated.md#a-host-built-outside-the-container-announces-nothing)).
 
 ### `callSchemaComponentMethod()` answers through a browser event, with no partial render
 
@@ -181,5 +170,3 @@ Ours is a **second `#[LiveAction]` beside the seam**, closed by construction rat
   A dedicated signed route would buy progress and abort back at the cost of a route, a signer and a second security boundary; it is the recorded follow-up if progress turns out to be non-negotiable.
 
 `RestrictsFileUploadsToSchemaComponents` is therefore **skipped**, not blocked: it fences an RPC surface this port never opens.
-
-_See also: the global [rename table](../renames.md) — the interface ⇄ trait name swap, the `Filament\Schemas\Contracts` → `Sylament\Schemas\Contracts` namespace prefix, `resolveSchemaByName()` and the `sylament:schema-component-method-result` browser event are recorded there._

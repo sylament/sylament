@@ -101,7 +101,7 @@ The CSS half of the button-group trigger exists: [`ToggleButtons::grouped()`](..
 ### `dropdownAutoPlacement()` waits for the controller's hands-off placement mode
 
 Filament's `dropdownAutoPlacement()` sets `dropdownPlacement('auto-placement')` and `dropdownFlip(false)`.
-The placement value is a [hands-off mode the positioning controller does not have](../support/dropdown.md#auto-placement-when-no-explicit-placement-is-given), so the setter would name a placement Floating UI takes literally.
+The placement value is a [hands-off mode the positioning controller does not have](../support/dropdown.md#the-placement-is-always-explicit-so-there-is-no-automatic-mode), so the setter would name a placement Floating UI takes literally.
 It lands with that mode.
 
 ### The group's closure resolver lacks the `table`, `mountedActions` and operation arms

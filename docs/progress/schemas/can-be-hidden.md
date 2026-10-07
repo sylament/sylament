@@ -1,5 +1,5 @@
 ---
-description: 'The visibility trait: `hidden()` / `visible()` and their `isHidden()` / `isVisible()` readers, plus `hiddenWhenAllChildComponentsHidden()`. (draft)'
+description: 'The schemas visibility trait: `hidden()` / `visible()` and their readers, the `*On()` operation forms and `hiddenWhenAllChildComponentsHidden()`.'
 ports:
   - vendor/filament/schemas/src/Components/Concerns/CanBeHidden.php
 owns:
@@ -7,8 +7,8 @@ owns:
 ---
 # CanBeHidden (schemas)
 
-[`Sylament\Schemas\Components\Concerns\CanBeHidden`](../../../packages/schemas/src/Components/Concerns/CanBeHidden.php) — the visibility trait: `hidden()` / `visible()` and their `isHidden()` / `isVisible()` readers, plus `hiddenWhenAllChildComponentsHidden()`.
-It ports Filament's identically-named base concern and is shared — the schemas base [`Component`](component.md) and the actions [`Action`](../../../packages/actions/src/Action.php) both `use` it — so it keeps its own row rather than folding into `component.md`.
+[`Sylament\Schemas\Components\Concerns\CanBeHidden`](../../../packages/schemas/src/Components/Concerns/CanBeHidden.php) is composed by the schemas base [`Component`](component.md).
+`Action` and `ActionGroup` compose the actions package's own `Sylament\Actions\Concerns\CanBeHidden`, as Filament's compose `Filament\Actions\Concerns\CanBeHidden`, and the tables columns, filters and summarizers each compose a tables trait of the same name.
 
 ## Surface
 
@@ -16,32 +16,36 @@ It ports Filament's identically-named base concern and is shared — the schemas
 | --- | --- | --- | --- | --- |
 | [`hidden()` / `visible()`](../../../packages/schemas/src/Components/Concerns/CanBeHidden.php) | [`hidden()` / `visible()`](../../../vendor/filament/schemas/src/Components/Concerns/CanBeHidden.php) | done | — | — |
 | [`isHidden()` / `isVisible()`](../../../packages/schemas/src/Components/Concerns/CanBeHidden.php) | [`isHidden()` / `isVisible()`](../../../vendor/filament/schemas/src/Components/Concerns/CanBeHidden.php) | done | — | — |
-| [`hiddenWhenAllChildComponentsHidden()`](../../../packages/schemas/src/Components/Concerns/CanBeHidden.php) | [`hiddenWhenAllChildComponentsHidden()`](../../../vendor/filament/schemas/src/Components/Concerns/CanBeHidden.php) | done | — | — |
-| `whenTruthy()` / `whenFalsy()` | [`whenTruthy()` / `whenFalsy()`](../../../vendor/filament/schemas/src/Components/Concerns/CanBeHidden.php) | todo | — | [detail](#only-the-visibility-core-is-ported) |
-| [`hiddenOn()` / `visibleOn()`](../../../packages/schemas/src/Components/Concerns/CanBeHidden.php) | [`hiddenOn()` / `visibleOn()`](../../../vendor/filament/schemas/src/Components/Concerns/CanBeHidden.php) | done | — | [diverges](#arrwrap-maps-to-the-wrap-helper-never-an-array-cast) |
-| `visibleJs()` / `hiddenJs()` (+ getters) | [`visibleJs()` …](../../../vendor/filament/schemas/src/Components/Concerns/CanBeHidden.php) | blocked | live-component-state | [diverges](#js-visibility-variants-and-the-visibility-cache-are-not-ported) |
-| static visibility cache | [`$visibilityCache` …](../../../vendor/filament/schemas/src/Components/Concerns/CanBeHidden.php) | skipped | — | [diverges](#js-visibility-variants-and-the-visibility-cache-are-not-ported) |
+| [`hiddenWhenAllChildComponentsHidden()`](../../../packages/schemas/src/Components/Concerns/CanBeHidden.php) | [`hiddenWhenAllChildComponentsHidden()`](../../../vendor/filament/schemas/src/Components/Concerns/CanBeHidden.php) | done | — | [diverges](component.md#getchildschemas-drops-the-withhidden-parameter) |
+| `whenTruthy()` / `whenFalsy()` | [`whenTruthy()` / `whenFalsy()`](../../../vendor/filament/schemas/src/Components/Concerns/CanBeHidden.php) | todo | — | [detail](#whentruthy-and-whenfalsy-have-every-prerequisite) |
+| [`hiddenOn()` / `visibleOn()`](../../../packages/schemas/src/Components/Concerns/CanBeHidden.php) | [`hiddenOn()` / `visibleOn()`](../../../vendor/filament/schemas/src/Components/Concerns/CanBeHidden.php) | done | — | [semantics](#arrwrap-maps-to-the-wrap-helper-never-an-array-cast) |
+| `visibleJs()` / `hiddenJs()` (+ getters) | [`visibleJs()` …](../../../vendor/filament/schemas/src/Components/Concerns/CanBeHidden.php) | blocked | live-component-state | [detail](#the-js-visibility-variants-wait-on-the-live-component-state-runtime) |
+| static visibility cache | [`$visibilityCache` …](../../../vendor/filament/schemas/src/Components/Concerns/CanBeHidden.php) | skipped | — | [diverges](#the-static-visibility-cache-is-not-ported) |
 
 ## Details
 
-### Only the visibility core is ported
+### `whenTruthy()` and `whenFalsy()` have every prerequisite
 
-`hidden()` / `visible()` / `isHidden()` / `isVisible()` and `hiddenWhenAllChildComponentsHidden()` are ported and covered by [`CanBeHiddenTest`](../../../packages/schemas/tests/Unit/Components/Concerns/CanBeHiddenTest.php) (literal and closure `hidden`/`visible`, and the all-hidden / any-visible / no-children branches of `hiddenWhenAllChildComponentsHidden`), and so are `hiddenOn()`/`visibleOn()` now that [`HasOperation`](has-operation.md) exists — the same suite covers a matching operation string, an [`Operation`](../support/README.md) case, a non-matching list, the host-class `instanceof` arm, and `visibleOn()`'s inversion.
-**Left:** `whenTruthy()` / `whenFalsy()` — a [`Get`](get.md) state read, unblocked and merely not reached yet; the JS variants and the visibility cache carry a divergence below.
-**Next step:** port `whenTruthy`/`whenFalsy` now; defer the rest to their prerequisites.
-Note `hiddenWhenAllChildComponentsHidden()` walks `getChildSchemas()` without the `withHidden` flag Filament passes — a knock-on of [`HasChildComponents` dropping that parameter](component.md#getchildschemas-drops-the-withhidden-parameter); behaviour matches under the current unfiltered traversal.
+Both register a `hidden()` closure that reads paths through [`Get`](get.md), which the port injects, so nothing blocks them.
 
-## Divergences
+### The JS visibility variants wait on the live-component-state runtime
 
-### JS visibility variants and the visibility cache are not ported
+Filament's `visibleJs()` / `hiddenJs()` / `getVisibleJs()` / `getHiddenJs()` carry client-side expressions that only its Alpine wrappers read: `Component::toSchemaHtml()`, and the per-child wrappers in `Tabs` and `Flex`.
+The client half of the port's render wrapper waits on the same runtime ([component.md](component.md#the-render-wrappers-client-half-waits-on-the-live-component-state-runtime)).
 
-Filament ships `visibleJs()` / `hiddenJs()` / `getVisibleJs()` / `getHiddenJs()` (client-side eval'd expressions) and a static visibility cache (`isCachingVisibility`, `$visibilityCache`, `enable`/`disable`/`with`/`get`/`set`/ `has`).
-The JS variants are **blocked** on the live-component-state runtime — they matter only under client-side DOM diffing, consumed by the unported [`toSchemaHtml`](component.md#the-livewirealpine-render-wrapper-toschemahtml-is-not-ported) wrapper.
-The cache is a render-time optimization the toolkit works without; **skipped**, provisional — revisit if profiling shows repeated `evaluate()` cost during a render pass.
+## Semantics
 
 ### `Arr::wrap` maps to the `wrap()` helper, never an `(array)` cast
 
-`hiddenOn()` / `visibleOn()` accept one operation or a list, and Filament normalizes with `Arr::wrap()` — whose established port is support's free function [`wrap()`](../support/helpers.md), used here as everywhere else.
-What the normalization must never be is the shorter `(array) $operations`: the parameter also accepts an [`Operation`](../support/README.md) enum case, and casting an object to an array dumps its properties (`['name' => 'Edit', 'value' => 'edit']`) instead of wrapping it — a silent mismatch, not an error.
+`hiddenOn()` / `visibleOn()` accept one operation or a list, and Filament normalizes with `Arr::wrap()`, whose port is support's free function [`wrap()`](../support/helpers.md).
+The shorter `(array) $operations` would be wrong: the parameter also accepts an [`Operation`](../support/enums.md) enum case, and casting an object to an array dumps its properties (`['name' => 'Edit', 'value' => 'edit']`) instead of wrapping it, a silent mismatch rather than an error.
 The enum case is unwrapped to its `->value` inside the loop; everything else, including the `$liveComponent instanceof $candidate` host-class arm, is Filament's logic verbatim (`instanceof` against a non-class string like `'create'` is `false`, not an error).
-`disabledOn()` in [can-be-disabled.md](can-be-disabled.md) carries the same body and the same note.
+`disabledOn()` in [can-be-disabled.md](can-be-disabled.md) has the same body.
+
+## Divergences
+
+### The static visibility cache is not ported
+
+Filament's `isHidden()` consults a static cache keyed by component key and closure id when `isVisibilityCacheEnabled()` is true, managed by `enableVisibilityCache()`, `disableVisibilityCache()`, `withVisibilityCache()`, `getVisibilityCacheValue()`, `setVisibilityCacheValue()` and `hasVisibilityCacheKey()`.
+The port's `isHidden()` evaluates `isHidden` and then `isVisible` on every call, which is Filament's uncached branch.
+The cache is a render-time optimization the toolkit works without; port it if a profile shows repeated `evaluate()` cost during a render pass.

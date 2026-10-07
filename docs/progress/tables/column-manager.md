@@ -12,8 +12,10 @@ ports:
 owns:
   - packages/tables/assets/src/controllers/column_manager_controller.ts
   - packages/tables/assets/src/styles/components/column-manager.css
+  - packages/tables/src/Concerns/HasColumnManager.php
   - packages/tables/src/Enums/ColumnManagerLayout.php
   - packages/tables/src/Enums/ColumnManagerResetActionPosition.php
+  - packages/tables/src/Table/Concerns/HasColumnManager.php
   - packages/tables/templates/components/ColumnManager/
   - packages/tables/templates/components/ColumnManagerContent/
 ---
@@ -28,23 +30,23 @@ Two traits of the same short name are in play here, [`Table\Concerns\HasColumnMa
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
-| [`columnManager()` / `hasColumnManager()` — an explicit answer, else derived from what there is to edit](../../../packages/tables/src/Table/Concerns/HasColumnManager.php) | [`Table\Concerns\HasColumnManager`](../../../vendor/filament/tables/src/Table/Concerns/HasColumnManager.php) | done | — | [host-has-column-manager.md](#the-column-state-is-re-derived-against-the-definition-on-every-read) |
+| [`columnManager()` / `hasColumnManager()` — an explicit answer, else derived from what there is to edit](../../../packages/tables/src/Table/Concerns/HasColumnManager.php) | [`Table\Concerns\HasColumnManager`](../../../vendor/filament/tables/src/Table/Concerns/HasColumnManager.php) | done | — | [semantics](#the-column-state-is-re-derived-against-the-definition-on-every-read) · [diverges](#an-explicit-columnmanagertrue-over-nothing-editable-lists-no-rows-where-filaments-lists-every-column) |
 | [`deferColumnManager()` / `hasDeferredColumnManager()`](../../../packages/tables/src/Table/Concerns/HasColumnManager.php) | [`Table\Concerns\HasColumnManager`](../../../vendor/filament/tables/src/Table/Concerns/HasColumnManager.php) | done | — | — |
-| [`reorderableColumns()` / `hasReorderableColumns()`](../../../packages/tables/src/Table/Concerns/HasColumnManager.php) | [`Table\Concerns\HasColumnManager`](../../../vendor/filament/tables/src/Table/Concerns/HasColumnManager.php) | done | — | [semantics](#the-order-is-followed-only-while-columns-are-reorderable) |
-| [`persistColumnsInSession()` / `persistsColumnsInSession()`](../../../packages/tables/src/Table/Concerns/HasColumnManager.php) | [`Table\Concerns\HasColumnManager`](../../../vendor/filament/tables/src/Table/Concerns/HasColumnManager.php) | done | — | [can-persist-table-state.md](can-persist-table-state.md#the-session-key-is-the-host-class-so-two-instances-of-one-page-share-it) · [diverges](#the-session-is-written-at-the-end-of-every-mutation-rather-than-once-per-request) |
+| [`reorderableColumns()` / `hasReorderableColumns()`](../../../packages/tables/src/Table/Concerns/HasColumnManager.php) | [`Table\Concerns\HasColumnManager`](../../../vendor/filament/tables/src/Table/Concerns/HasColumnManager.php) | done | — | [semantics](#the-order-is-followed-only-while-columns-are-reorderable) · [diverges](#the-reorderable-answer-is-asked-at-each-use-where-filament-memoises-it-per-host) |
+| [`persistColumnsInSession()` / `persistsColumnsInSession()`](../../../packages/tables/src/Table/Concerns/HasColumnManager.php) | [`Table\Concerns\HasColumnManager`](../../../vendor/filament/tables/src/Table/Concerns/HasColumnManager.php) | done | — | [can-persist-table-state.md](can-persist-table-state.md#the-session-key-is-the-host-class-so-two-instances-of-one-page-share-it) · [diverges](#the-session-is-written-at-the-end-of-every-mutation-rather-than-once-per-request) · [diverges](#the-session-read-ignores-persistcolumnsinsession-where-filaments-honours-it) |
 | [`columnManagerLayout()` / `getColumnManagerLayout()` / `hasColumnManagerDropdown()` / `hasColumnManagerModal()`](../../../packages/tables/src/Table/Concerns/HasColumnManager.php) + [`ColumnManagerLayout`](../../../packages/tables/src/Enums/ColumnManagerLayout.php) | [`Table\Concerns\HasColumnManager`](../../../vendor/filament/tables/src/Table/Concerns/HasColumnManager.php), [`Enums/ColumnManagerLayout`](../../../vendor/filament/tables/src/Enums/ColumnManagerLayout.php) | done | — | [diverges](#the-modal-layout-renders-one-reset-wherever-the-setting-puts-it) |
 | [`columnManagerResetActionPosition()` / `getColumnManagerResetActionPosition()`](../../../packages/tables/src/Table/Concerns/HasColumnManager.php) + [`ColumnManagerResetActionPosition`](../../../packages/tables/src/Enums/ColumnManagerResetActionPosition.php) | [`Table\Concerns\HasColumnManager`](../../../vendor/filament/tables/src/Table/Concerns/HasColumnManager.php), [`Enums/ColumnManagerResetActionPosition`](../../../vendor/filament/tables/src/Enums/ColumnManagerResetActionPosition.php) | done | — | [diverges](#the-modal-layout-renders-one-reset-wherever-the-setting-puts-it) |
 | [`columnManagerColumns()` / `getColumnManagerColumns()` / `columnManagerMaxHeight()` / `getColumnManagerMaxHeight()`](../../../packages/tables/src/Table/Concerns/HasColumnManager.php) | [`Table\Concerns\HasColumnManager`](../../../vendor/filament/tables/src/Table/Concerns/HasColumnManager.php) | done | — | [diverges](#the-item-clips-its-overflow-where-vendors-overhanging-handle-can-spill-a-column) · [semantics](#a-bare-integer-column-count-is-supports-shorthand-and-the-table-tier-hands-it-through-untouched) |
 | [`columnManagerWidth()` / `getColumnManagerWidth()`](../../../packages/tables/src/Table/Concerns/HasColumnManager.php) | [`Table\Concerns\HasColumnManager`](../../../vendor/filament/tables/src/Table/Concerns/HasColumnManager.php) | in progress | — | [detail](#the-width-is-a-css-length-and-the-columns-to-width-match-is-not-ported) |
 | [`columnManagerTriggerAction()` / `getColumnManagerTriggerAction()`](../../../packages/tables/src/Table/Concerns/HasColumnManager.php) | [`Table\Concerns\HasColumnManager`](../../../vendor/filament/tables/src/Table/Concerns/HasColumnManager.php) | done | — | [diverges](#the-trigger-drops-vendors-modal-footer-machinery-because-the-chrome-is-the-partials) · [has-filters.md](has-filters.md#the-trigger-opens-its-chrome-from-the-client-and-the-count-stays-a-template-chip) |
 | [`columnManagerApplyAction()` / `getColumnManagerApplyAction()`](../../../packages/tables/src/Table/Concerns/HasColumnManager.php) | [`Table\Concerns\HasColumnManager`](../../../vendor/filament/tables/src/Table/Concerns/HasColumnManager.php) | done | — | [diverges](#the-trigger-drops-vendors-modal-footer-machinery-because-the-chrome-is-the-partials) |
-| [`hasToggleableColumns()`](../../../packages/tables/src/Table/Concerns/HasColumnManager.php) | [`Table\Concerns\HasColumnManager`](../../../vendor/filament/tables/src/Table/Concerns/HasColumnManager.php) | done | — | [host-has-column-manager.md](#the-column-state-is-re-derived-against-the-definition-on-every-read) |
-| [`resolveColumnManagerIcon()` + `ACTIONS_COLUMN_MANAGER`](../../../packages/tables/src/Twig/TablesIconAlias.php) | [`FilamentIcon::resolve()` in `getColumnManagerTriggerAction()`](../../../vendor/filament/tables/src/Table/Concerns/HasColumnManager.php) | done | — | [table.md](#the-table-tiers-icon-manager-arrives-through-a-setter-of-its-own-name) · [tables-bundle.md](tables-bundle.md#an-alias-lands-with-the-component-that-reads-it) |
+| [`hasToggleableColumns()`](../../../packages/tables/src/Table/Concerns/HasColumnManager.php) | [`Table\Concerns\HasColumnManager`](../../../vendor/filament/tables/src/Table/Concerns/HasColumnManager.php) | done | — | [semantics](#the-column-state-is-re-derived-against-the-definition-on-every-read) |
+| [`resolveColumnManagerIcon()` + `ACTIONS_COLUMN_MANAGER`](../../../packages/tables/src/Twig/TablesIconAlias.php) | [`FilamentIcon::resolve()` in `getColumnManagerTriggerAction()`](../../../vendor/filament/tables/src/Table/Concerns/HasColumnManager.php) | done | — | [diverges](#the-table-tiers-icon-manager-arrives-through-a-setter-of-its-own-name) · [tables-bundle.md](tables-bundle.md#an-alias-lands-with-the-component-that-reads-it) |
 | `toggleColumnsTriggerAction()`, `getToggleColumnsTriggerAction()`, `columnToggleFormColumns()`, `getColumnToggleFormColumns()`, `columnToggleFormMaxHeight()`, `getColumnToggleFormMaxHeight()`, `columnToggleFormWidth()`, `getColumnToggleFormWidth()` | [`Table\Concerns\HasColumnManager`](../../../vendor/filament/tables/src/Table/Concerns/HasColumnManager.php) | skipped | — | [deprecated for the `columnManager*()` names](../README.md#statuses) |
-| [`$tableColumns` / `$tableDeferredColumns` — the applied bag and the client-writable draft](../../../packages/tables/src/Concerns/HasColumnManager.php) | [`Concerns\HasColumnManager::$tableColumns`](../../../vendor/filament/tables/src/Concerns/HasColumnManager.php) | done | — | [host-has-column-manager.md](#the-column-state-is-re-derived-against-the-definition-on-every-read) · [diverges](#the-stored-item-carries-four-keys-where-filaments-carries-seven) |
-| [`mountTableColumnManager()` / `afterTableColumnManagerHydrated()` — the two lifecycle hooks](../../../packages/tables/src/Concerns/HasColumnManager.php) | [`Concerns\HasColumnManager::initTableColumnManager()`](../../../vendor/filament/tables/src/Concerns/HasColumnManager.php) | done | — | [host-has-column-manager.md](#the-column-state-is-re-derived-against-the-definition-on-every-read) |
+| [`$tableColumns` / `$tableDeferredColumns` — the applied bag and the client-writable draft](../../../packages/tables/src/Concerns/HasColumnManager.php) | [`Concerns\HasColumnManager::$tableColumns`](../../../vendor/filament/tables/src/Concerns/HasColumnManager.php) | done | — | [semantics](#the-column-state-is-re-derived-against-the-definition-on-every-read) · [diverges](#the-stored-item-carries-four-keys-where-filaments-carries-seven) |
+| [`mountTableColumnManager()` / `afterTableColumnManagerHydrated()` — the two lifecycle hooks](../../../packages/tables/src/Concerns/HasColumnManager.php) | [`Concerns\HasColumnManager::initTableColumnManager()`](../../../vendor/filament/tables/src/Concerns/HasColumnManager.php) | done | — | [semantics](#the-column-state-is-re-derived-against-the-definition-on-every-read) |
 | [`applyTableColumnManager(?array $state = null)` / `resetTableColumnManager()` — the two live actions](../../../packages/tables/src/Concerns/HasColumnManager.php) | [`Concerns\HasColumnManager`](../../../vendor/filament/tables/src/Concerns/HasColumnManager.php) | done | — | [diverges](#reorderedness-is-asked-not-remembered-so-the-second-session-key-is-gone) |
-| [`getDefaultTableColumnState()` / `syncTableColumnState()` / `updateTableColumns()` / `setTableColumns()`](../../../packages/tables/src/Concerns/HasColumnManager.php) | [`Concerns\HasColumnManager`](../../../vendor/filament/tables/src/Concerns/HasColumnManager.php) | done | — | [host-has-column-manager.md](#the-column-state-is-re-derived-against-the-definition-on-every-read) · [semantics](#the-order-is-followed-only-while-columns-are-reorderable) |
+| [`getDefaultTableColumnState()` / `syncTableColumnState()` / `updateTableColumns()` / `setTableColumns()`](../../../packages/tables/src/Concerns/HasColumnManager.php) | [`Concerns\HasColumnManager`](../../../vendor/filament/tables/src/Concerns/HasColumnManager.php) | done | — | [semantics](#the-column-state-is-re-derived-against-the-definition-on-every-read) · [semantics](#the-order-is-followed-only-while-columns-are-reorderable) |
 | [`isTableColumnToggledHidden()`](../../../packages/tables/src/Concerns/HasColumnManager.php) | [`Concerns\HasColumnManager::isTableColumnToggledHidden()`](../../../vendor/filament/tables/src/Concerns/HasColumnManager.php) | done | — | [semantics](#an-absent-name-reads-as-hidden) · [interacts-with-table.md](interacts-with-table.md#a-member-is-on-the-contract-when-something-outside-the-host-trait-calls-it) |
 | [`getTableSessionKey('columns')`](../../../packages/tables/src/Concerns/CanPersistTableState.php) — `getTableColumnsSessionKey()` | [`Concerns\HasColumnManager`](../../../vendor/filament/tables/src/Concerns/HasColumnManager.php) | done | — | [can-persist-table-state.md](can-persist-table-state.md#the-session-key-is-the-host-class-so-two-instances-of-one-page-share-it) |
 | `getHasReorderedTableColumnsSessionKey()` / `persistHasReorderedTableColumns()` | [`Concerns\HasColumnManager`](../../../vendor/filament/tables/src/Concerns/HasColumnManager.php) | skipped | — | [diverges](#reorderedness-is-asked-not-remembered-so-the-second-session-key-is-gone) |
@@ -54,7 +56,7 @@ Two traits of the same short name are in play here, [`Table\Concerns\HasColumnMa
 | [`ColumnManager` — the panel's chrome](../../../packages/tables/templates/components/ColumnManager/index.html.twig) | [`views/components/column-manager/index.blade.php`](../../../vendor/filament/tables/resources/views/components/column-manager/index.blade.php) | in progress | — | [detail](#the-columngroup-half-is-the-whole-of-what-is-left) · [diverges](#the-modal-layout-renders-one-reset-wherever-the-setting-puts-it) |
 | [`ColumnManagerContent` — the item list](../../../packages/tables/templates/components/ColumnManagerContent/index.html.twig) | [`views/components/column-manager/content.blade.php`](../../../vendor/filament/tables/resources/views/components/column-manager/content.blade.php) | in progress | — | [detail](#the-columngroup-half-is-the-whole-of-what-is-left) · [diverges](#the-item-list-is-server-rendered-where-vendors-is-an-alpine-x-for) · [semantics](#the-checkbox-renders-only-where-there-is-something-to-toggle) |
 | [The partial's two branches — the toolbar trigger, the dropdown panel and the modal](../../../packages/tables/templates/partials/Table/index.html.twig) | [`index.blade.php`'s `fi-ta-col-manager` slot](../../../vendor/filament/tables/resources/views/index.blade.php) | done | — | [has-actions.md](has-actions.md#the-toolbars-start-group-carries-its-own-class-and-renders-only-when-it-has-content) |
-| [`sylament--tables--column-manager` — the draft writer](../../../packages/tables/assets/src/controllers/column_manager_controller.ts) | [`components/column-manager.js`](../../../vendor/filament/tables/resources/js/components/column-manager.js) | done | — | [tables-bundle.md](tables-bundle.md#the-assets-register-through-assetmapper-as-stimulus-controllers-not-as-alpine-components) · [diverges](#a-hidden-columns-entry-survives-a-drag-where-vendors-rebuild-drops-it) |
+| [`sylament--tables--column-manager` — the draft writer](../../../packages/tables/assets/src/controllers/column_manager_controller.ts) | [`components/column-manager.js`](../../../vendor/filament/tables/resources/js/components/column-manager.js) | done | — | [tables-bundle.md](tables-bundle.md#the-assets-register-through-assetmapper-as-stimulus-controllers-not-as-alpine-components) · [diverges](#the-column-manager-controller-drops-vendors-error-isloading-and-watch) · [diverges](#a-hidden-columns-entry-survives-a-drag-where-vendors-rebuild-drops-it) |
 | [`column-manager.css`](../../../packages/tables/assets/src/styles/components/column-manager.css) | [`resources/css/column-manager.css`](../../../vendor/filament/tables/resources/css/column-manager.css) | done | — | [diverges](#the-item-list-block-sits-at-top-level-where-vendors-nests-inside-the-panel) |
 | Column groups — the group row, its tri-state checkbox, the nested drag list and `toggleGroup()` | [`ColumnGroup`](../../../vendor/filament/tables/src/Columns/ColumnGroup.php), [`content.blade.php`](../../../vendor/filament/tables/resources/views/components/column-manager/content.blade.php), [`column-manager.js`](../../../vendor/filament/tables/resources/js/components/column-manager.js) | blocked | `ColumnGroup` ([column.md](column.md#surface)) | [detail](#the-columngroup-half-is-the-whole-of-what-is-left) |
 
@@ -82,6 +84,36 @@ Ours is `?string`, a raw CSS length handed to support's `Dropdown` and `Modal`, 
 It is the same gap [`filtersFormWidth()` records](has-filters.md#the-filters-form-columns-follow-the-layout-the-width-does-not), and the two setters land together.
 
 ## Semantics
+
+### The column state is re-derived against the definition on every read
+
+The applied bag `$tableColumns` and the client-writable draft `$tableDeferredColumns` are both **derived** values, never sources of truth.
+The definition — the columns `table()` declared — owns identity and toggleability; the stored state owns only the toggle, and the order too while [`reorderableColumns()`](#the-order-is-followed-only-while-columns-are-reorderable) is on.
+`syncTableColumnState()` runs that merge at every entry point: the mount hook, the hydrate hook and both live actions.
+So a column the definition dropped disappears from the state, a column it added arrives at its declared place, a column that cannot be toggled is forced on however the state reads, and a column whose stored sentinel says it was not toggleable when it was stored is re-seeded from the definition's current default rather than left at a stale choice.
+
+Everything arriving from outside goes through `normalizeTableColumnState()` first — the session, whose contents an earlier definition of this table may have written, and the writable draft, which is a client value like any other.
+It refuses a non-list or an item without a string `type` and `name` **whole**, and the caller then falls back to the definition's own state rather than to a partially-trusted one; a non-boolean toggle reads as on.
+Any string `type` passes, so a stored state carrying Filament's `group` items still loads rather than being refused whole; nothing here produces one.
+
+The state exists for any column the manager could toggle or move, whether or not the chrome that edits it is rendered: `hasColumnManager()` gates the trigger alone, so `columnManager(false)` over toggleable columns still honours their declared `toggledHiddenByDefault()`.
+
+The mount gate walks **every** column's `isToggleable()` closure, as Filament's does, because `hasToggleableColumns()` is `array_any()` over the declared set.
+
+The two hooks take priorities the rest of the package has to leave free: `#[PostMount(priority: 4)]`, below `CanPersistTableState`'s read at 10 and the filters mount at 20 and above the filters hook at 0, because 5 is [`CanSortRecords::healSeededTableSort()`](host-can-sort-records.md#sorting-composes-the-users-order-the-default-and-the-identifier-tiebreaker)'s and UX sorts equal priorities with a stable `arsort()`, which would resolve a tie by reflection order over flattened traits; and `#[PostHydrate(priority: -4)]`, which re-derives both bags before any read of either.
+
+### Two `TableColumnState` vocabularies meet on one host, and both are Filament's
+
+`updateTableColumnState()` writes **one editable cell's value** — [`has-columns.md`](has-columns.md#surface) owns it, and the state it names is a record's property.
+`getDefaultTableColumnState()`, `syncTableColumnState()`, `normalizeTableColumnState()`, `isReorderedTableColumnState()`, `hasTableColumnState()` and `setTableColumns()` all concern [the column manager's visibility-and-order bag](#the-column-state-is-re-derived-against-the-definition-on-every-read), which is about which columns render at all.
+The two have nothing to do with each other, they flatten into the same host class, and the phrase *table column state* means a different thing in each.
+
+The collision is **inherited, not minted**.
+Vendor's [`Concerns\HasColumns`](../../../vendor/filament/tables/src/Concerns/HasColumns.php) declares `updateTableColumnState(string $column, string $record, mixed $input)` and vendor's [`Concerns\HasColumnManager`](../../../vendor/filament/tables/src/Concerns/HasColumnManager.php) declares `getDefaultTableColumnState()` and `setTableColumns()`; Filament ships both vocabularies on the same host, so preserving its public API means preserving the ambiguity.
+Renaming the four coinages this port added (`normalizeTableColumnState`, `isReorderedTableColumnState`, `hasTableColumnState`, `syncTableColumnState` — the last collapsing Filament's `syncStaticColumnsFromTableColumnState()` and `syncReorderableColumnsFromDefaultTableColumnState()`) away from that stem would leave them inconsistent with the two Filament names they sit beside, which reads worse than the ambiguity does.
+
+The disambiguator is the **argument**, not the name: the editable write takes a column name *and a record key*, and every manager member takes a state array or nothing.
+A reader arriving at either family from the other should start there.
 
 ### An absent name reads as hidden
 
@@ -119,6 +151,37 @@ Vendor gates the same way, and the reason is UX rather than parity: a `reorderab
 The flag is computed once in the partial's preamble (`component.hasToggleableColumns`) and threaded through both layouts, so the dropdown and the modal cannot disagree about it.
 
 ## Divergences
+
+### The column-manager controller drops vendor's `error`, `isLoading` and `$watch`
+
+[`column_manager_controller.ts`](../../../packages/tables/assets/src/controllers/column_manager_controller.ts) ports vendor's [`components/column-manager.js`](../../../vendor/filament/tables/resources/js/components/column-manager.js) over the same value-store mechanism the selection controller uses: a tick or a drag rewrites the **whole** `tableDeferredColumns` array through `component.set(model, value, false)` and repaints the checkboxes from it, so a deferred manager reaches the server only when Apply is pressed and a live one once per change.
+Vendor's `error` and `isLoading` fields are dropped: vendor writes them around its `$wire` call and no column-manager template reads them, and UX's own overlay is the failure signal here.
+Vendor's `init()` also `$watch`es its `columns` array to re-seed the client draft whenever the applied state changes under it; there is no counterpart because the draft is a **server** prop — `afterTableColumnManagerHydrated()` re-derives `tableDeferredColumns` on every hydrate — so a dirty draft rides the request and survives a morph the user did not ask for, and a successful apply is what replaces it.
+Apply and reset stay plain live actions, because the dirty draft rides every request.
+
+### The table tier's icon manager arrives through a setter of its own name
+
+Filament resolves the trigger's glyph through the `FilamentIcon::resolve()` facade.
+[`resolveColumnManagerIcon()`](../../../packages/tables/src/Table/Concerns/HasColumnManager.php) reads the `ACTIONS_COLUMN_MANAGER` alias off an `IconManager` injected through `#[Required] setColumnManagerIconManager()`, the way [`CanReorderRecords`](../../../packages/tables/src/Table/Concerns/CanReorderRecords.php) and [`CanGroupRecords`](../../../packages/tables/src/Table/Concerns/CanGroupRecords.php) take theirs, and falls back to a bare manager, which resolves nothing, for a table built outside the container.
+The setter is not named `setIconManager()` because `Table` flattens `CanReorderRecords` into the same class, and a second setter under that name is a trait collision rather than a second injection.
+It is not `resolveFiltersIcon()`'s shape either, a closure taking `?IconManager $icons = null` for the Invoker to fill: `IconManager` is a private service and the Invoker asks `service_container`, so `has()` answers false and the parameter takes its `null` default.
+
+### An explicit `columnManager(true)` over nothing editable lists no rows, where Filament's lists every column
+
+`hasTableColumnState()` asks only whether a column could be toggled or moved, so an explicit `columnManager(true)` over columns that are neither seeds no state and lists no rows — a manager over nothing editable is an empty panel here, where Filament's `initTableColumnManager()` returns early only for a table with a columns layout and would list every column with its toggle off.
+Widening the gate to `hasColumnManager()` would cost every **plain** table two extra walks of `isToggleable()` over every column, on both hooks, which is the O(N) closure cost the [visible set](table.md#the-visible-set-asks-each-column-twice-and-is-memoised-until-columns-is-called-again) already pays twice; the chrome guards on the row count instead.
+
+### The reorderable answer is asked at each use, where Filament memoises it per host
+
+Filament memoises its reorderable answer once per host (`hasReorderableTableColumns()`, a `??=` on a host property); the port asks `Table::hasReorderableColumns()` afresh at each of its four sites, one of them inside the per-column default-state build, so a `reorderableColumns(fn () => …)` closure is evaluated O(N) times per request instead of once.
+The memo is droppable because it has no invalidation seam of its own and the table is built once per request; the cost is recorded here rather than paid for with a second uninvalidated memo beside the two `setTableColumns()` already drops.
+
+### The session read ignores `persistColumnsInSession()`, where Filament's honours it
+
+`persistTableColumns()` writes only while `persistsColumnsInSession()` is on, as Filament's does, but `mountTableColumnManager()` reads the stored `columns` entry whatever the flag says.
+Filament gates both halves: its `loadTableColumnsFromSession()` returns the default state when the flag is off.
+So `persistColumnsInSession(false)` here means "stop writing", not "stop reading", and a state stored before the flag was turned off keeps applying; a case in `TableSessionPersistenceTest` pins that by seeding a key for the opted-out fixture and reading it back.
+Nothing chose this deviation: it rests on a reading of Filament's read as ungated, and gating the read in `mountTableColumnManager()` on `persistsColumnsInSession()` would reverse it.
 
 ### The trigger drops vendor's modal-footer machinery, because the chrome is the partial's
 
@@ -172,7 +235,7 @@ Ours writes on the two live actions and on the mount that seeds the state, and t
 The divergence is mechanical: vendor's mount and its apply are one method, so the per-request write is a side effect of reusing it.
 Splitting them into a `#[PostMount]` seed and a `#[PostHydrate]` re-derivation makes the write a choice, and writing an unchanged value into the session on every render of every table with a toggleable column is a cost with no reader.
 
-The flag's polarity is Filament's and is inherited whole: `persistColumnsInSession()` defaults **on** and gates the **write** only, so the read is ungated; both halves are recorded on [`host-has-column-manager.md`](#the-column-state-is-re-derived-against-the-definition-on-every-read).
+`persistColumnsInSession()` defaults **on**, as Filament's does; the read it does not gate is [a divergence of its own](#the-session-read-ignores-persistcolumnsinsession-where-filaments-honours-it).
 
 ### The item list is server-rendered, where vendor's is an Alpine `x-for`
 

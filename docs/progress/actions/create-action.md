@@ -5,8 +5,9 @@ ports:
   - vendor/filament/actions/src/Concerns/CanCustomizeProcess.php
   - vendor/filament/actions/resources/lang/en/create.php
 owns:
-  - packages/actions/src/CreateAction.php
+  - packages/actions/src/Concerns/CanCustomizeProcess.php
   - packages/actions/src/Concerns/RefusesUnmappedData.php
+  - packages/actions/src/CreateAction.php
 ---
 # CreateAction (actions)
 
@@ -120,7 +121,7 @@ What it clears is a record bound by a `configureUsing()` closure registered on `
 ### The modal arm persists through the schema's record class
 
 Filament builds the record with `new $model` and `$record->fill($data)`, then calls `$schema->model($record)->saveRelationships()` in a second pass.
-Doctrine has no `fill()` and no second pass, so the port maps through the schema instead: the body re-points the mounted container at the action's record **class** and calls [`Schema::getData()`](../schemas/belongs-to-record.md) with the validated (and, where `mutateDataUsing()` asked, mutated) array, which constructs the record, writes every declared path onto it, answers the record's own constraints, and hands it back to be persisted and flushed through [`getEntityManagerForRecord()`](can-use-database-transactions.md#the-transaction-trio-resolves-a-doctrine-connection-instead-of-a-facade).
+Doctrine has no `fill()` and no second pass, so the port maps through the schema instead: the body re-points the mounted container at the action's record **class** and calls [`Schema::getData()`](../schemas/belongs-to-record.md) with the validated (and, where `mutateDataUsing()` asked, mutated) array, which constructs the record, writes every declared path onto it, answers the record's own constraints, and hands it back to be persisted and flushed through [`getEntityManagerForRecord()`](can-use-database-transactions.md#the-record-manager-resolver-has-no-filament-counterpart-and-the-table-wins).
 
 **The re-point is load-bearing.**
 The host seeds a mounted action's schema with a record ([`HasActions`](has-actions.md#the-per-mount-schema-is-seeded-with-the-actions-record-and-the-dotted-operation)), and for a host-level action, one no schema component owns, that seed reads `getRecord(withDefault: true)`, i.e. [the whole chain](action.md#the-record-chain-reaches-the-schema-the-component-and-the-host) down to the host's [`getDefaultActionRecord()`](has-actions.md#the-getdefaultaction-host-override-hooks-are-ported-the-authorization-pair-deferred).

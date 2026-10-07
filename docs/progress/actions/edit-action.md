@@ -5,6 +5,7 @@ ports:
   - vendor/filament/actions/src/Concerns/CanCustomizeProcess.php
   - vendor/filament/actions/resources/lang/en/edit.php
 owns:
+  - packages/actions/src/Concerns/CanMutateRecordData.php
   - packages/actions/src/EditAction.php
 ---
 # EditAction (actions)
@@ -37,7 +38,7 @@ Filament's body is `$record->update($data)`; Doctrine has no `update()`, so the 
 The fill and the write are a pair:
 
 - `fillForm(fn (Schema $schema): array => $this->getRecordDataForFill($schema, $this->getRecordForFill()))` runs at mount, and the `Schema` argument arrives because [`CanBeMounted::fillForm()`](../../../packages/actions/src/Concerns/CanBeMounted.php) forwards the mounted schema into the closure it wraps;
-- the `action()` body re-points that same container at the record and calls [`Schema::getData()`](../schemas/belongs-to-record.md) with the validated (and, where `mutateDataUsing()` asked, mutated) array, then persists and flushes through [`getEntityManagerForRecord()`](can-use-database-transactions.md#the-transaction-trio-resolves-a-doctrine-connection-instead-of-a-facade).
+- the `action()` body re-points that same container at the record and calls [`Schema::getData()`](../schemas/belongs-to-record.md) with the validated (and, where `mutateDataUsing()` asked, mutated) array, then persists and flushes through [`getEntityManagerForRecord()`](can-use-database-transactions.md#the-record-manager-resolver-has-no-filament-counterpart-and-the-table-wins).
 
 **The record is bound before the fill runs, and by the host.**
 `fillForm()` fires inside `mountAction()`, so the record has to be on the action by then, which is why a root frame's `recordKey` is resolved at **resolve** time rather than at call time ([`HasActions`](has-actions.md#the-per-mount-schema-is-seeded-with-the-actions-record-and-the-dotted-operation)).

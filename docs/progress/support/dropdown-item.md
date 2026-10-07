@@ -32,7 +32,7 @@ Its render tests live in the actions suite ([`DropdownItemRenderTest`](../../../
 | [`sy-selected` selected state](../../../packages/support/assets/src/styles/components/dropdown-item.css) | [`&.fi-selected` rules](../../../vendor/filament/support/resources/css/components/dropdown/list/item.css) | done | — | [semantics](#the-selected-state-is-a-class-callers-add) |
 | `tooltip` | [`x-tooltip` block + disabled-tooltip filter](../../../vendor/filament/support/resources/views/components/dropdown/list/item.blade.php) | todo | — | [detail](#a-tooltip-arrives-as-a-native-title-and-the-disabled-tooltip-handling-is-unported) |
 | Key bindings | [`x-mousetrap` block](../../../vendor/filament/support/resources/views/components/dropdown/list/item.blade.php) | todo | — | [detail](#key-bindings-loading-indicators-and-the-form-wrapper-are-not-built) |
-| Loading indicator | [`generate_loading_indicator_html(…)` + `wire:*`](../../../vendor/filament/support/resources/views/components/dropdown/list/item.blade.php) | todo | — | [detail](#key-bindings-loading-indicators-and-the-form-wrapper-are-not-built) |
+| Loading indicator | [`generate_loading_indicator_html(…)` + `wire:*`](../../../vendor/filament/support/resources/views/components/dropdown/list/item.blade.php) | todo | — | [detail](#key-bindings-loading-indicators-and-the-form-wrapper-are-not-built) · [icon-button.md](icon-button.md#the-loading-indicator-is-unwritten-though-its-live-equivalent-ships) |
 | SPA-mode href | [`generate_href_html($href, …, $spaMode)`](../../../vendor/filament/support/resources/views/components/dropdown/list/item.blade.php) | blocked | panels SPA navigation | — |
 | `tag: 'form'` POST-to-URL | [`($tag === 'form') ? '<form …>'`](../../../vendor/filament/support/resources/views/components/dropdown/list/item.blade.php) | todo | — | [detail](#key-bindings-loading-indicators-and-the-form-wrapper-are-not-built) |
 
@@ -72,6 +72,7 @@ The ported template sets `disabled` on any disabled button, and `item.css`'s `&:
   Filament binds a global `x-mousetrap` shortcut that clicks the item; the port has no shared key-binding controller for it to use.
 - **Loading indicator.**
   `generate_loading_indicator_html()`, the `wire:loading` / `wire:target` plumbing, the `loadingIndicator` prop and the `livewire_loading_delay` config have no counterpart in the template, and with them goes Filament's reason to set `disabled` through `wire:loading.attr`.
+  Their live equivalents ship, and what the primitive's half would translate to is written up for [`IconButton`](icon-button.md#the-loading-indicator-is-unwritten-though-its-live-equivalent-ships).
 - **`tag: 'form'`.**
   Filament wraps the item in a `<form method="post">` and renders the row as that form's submit button, which is how a grouped action POSTs to its URL rather than navigating to it.
   No caller can ask for it: the port has no `shouldPostToUrl()`, so `tag` is only ever `'a'` or `'button'`, and it lands with that `Action` concern.

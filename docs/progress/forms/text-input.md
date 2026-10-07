@@ -6,6 +6,7 @@ ports:
   - vendor/filament/forms/src/Components/Concerns/CanBeAutocapitalized.php
   - vendor/filament/forms/src/Components/Concerns/HasInputMode.php
 owns:
+  - packages/forms/assets/src/controllers/text_input_controller.ts
   - packages/forms/src/Components/Concerns/CanBeAutocapitalized.php
   - packages/forms/src/Components/TextInput.php
   - packages/forms/src/Components/TextInput/
@@ -39,6 +40,7 @@ owns:
 | [`TextInput\Actions\CopyAction`](../../../packages/forms/src/Components/TextInput/Actions/CopyAction.php) | [`TextInput/Actions/CopyAction.php`](../../../vendor/filament/forms/src/Components/TextInput/Actions/CopyAction.php) | done | — | [semantics](#the-affix-actions-resolve-their-own-icons) · [diverges](#copy-confirms-through-a-status-region-not-a-tooltip) |
 | [`CopyAction::copyMessage()` / `getCopyMessage()`](../../../packages/forms/src/Components/TextInput/Actions/CopyAction.php) | [`TextInput/Actions/CopyAction.php`](../../../vendor/filament/forms/src/Components/TextInput/Actions/CopyAction.php) | done | — | [semantics](#the-copy-message-closure-sees-the-render-time-state) |
 | [`CopyAction::copyMessageDuration()` / `getCopyMessageDuration()`](../../../packages/forms/src/Components/TextInput/Actions/CopyAction.php) | [`TextInput/Actions/CopyAction.php`](../../../vendor/filament/forms/src/Components/TextInput/Actions/CopyAction.php) | done | — | [semantics](#the-copy-message-closure-sees-the-render-time-state) |
+| [`sylament--forms--text-input`](../../../packages/forms/assets/src/controllers/text_input_controller.ts), the reveal and copy affix actions' client half | — | done | — | [diverges](#copy-confirms-through-a-status-region-not-a-tooltip) |
 | [`HasStep`](../../../packages/forms/src/Components/Concerns/HasStep.php) | [`Concerns/HasStep.php`](../../../vendor/filament/forms/src/Components/Concerns/HasStep.php) | done | — | [detail](has-step.md) |
 | [`HasAffixes`](../../../packages/forms/src/Components/Concerns/HasAffixes.php) (concern) | [`Concerns/HasAffixes.php`](../../../vendor/filament/forms/src/Components/Concerns/HasAffixes.php) | done | — | [detail](has-affixes.md) |
 | [`CanBeLengthConstrained`](../../../packages/forms/src/Components/Concerns/CanBeLengthConstrained.php) | [`Concerns/CanBeLengthConstrained.php`](../../../vendor/filament/forms/src/Components/Concerns/CanBeLengthConstrained.php) | done | — | [detail](can-be-length-constrained.md) |

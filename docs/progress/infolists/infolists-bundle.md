@@ -43,3 +43,20 @@ Support's `index.css` already imports it, so a sheet imported here reaches the b
 Filament registers its view namespace with `->hasViews()`.
 The port relies on TwigBundle's convention instead ([schemas-bundle.md](../schemas/schemas-bundle.md#the-view-namespace-is-registered-by-symfony-convention-not-by-an-explicit-provider-call)), and that convention maps a bundle's `templates/` directory to its namespace only when the directory exists.
 `packages/infolists/` has no `templates/` directory, so `@SylamentInfolists` resolves nothing.
+
+## Divergences
+
+### An entry is a schemas component, not a second tree beside the schema
+
+Filament's [`Entry`](../../../vendor/filament/infolists/src/Components/Entry.php) extends `Filament\Schemas\Components\Component`: an entry is a schema component reading schema state.
+The port's entries extend schemas' [`Component`](../schemas/component.md) the same way when they land, so an infolist is a `Schema` and no parallel component tree exists.
+
+### `TextEntry` shares the column's formatting trait instead of porting the infolists copy
+
+Filament's `TextEntry` composes `Infolists\Components\Concerns\CanFormatState`, a parallel copy of the formatting catalogue tables' `Columns\Concerns\CanFormatState` carries.
+The port's `TextEntry`, when it lands, composes the catalogue [`TextColumn`](../tables/text-column.md) uses (badge, colours, icons, size, weight and font, copyable, date and money, lists, `html()` and `markdown()`) rather than a third copy beside the column's and the summarizer's.
+
+### `CodeEntry` waits on a syntax-highlighting vendor
+
+Filament's [`CodeEntry`](../../../vendor/filament/infolists/src/Components/CodeEntry.php) highlights through Phiki (`Phiki\Phiki`), a vendor outside the pre-approved `symfony/*` packages.
+It stays unported, and blocked in the package README, until a highlighting vendor is signed off.

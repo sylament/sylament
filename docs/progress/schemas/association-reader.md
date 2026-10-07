@@ -2,6 +2,7 @@
 description: The one Doctrine seam `schemas` reads associations, record keys and identifier rules through, and the `AssociationTarget` it answers.
 ports: []
 owns:
+  - packages/schemas/src/Components/Concerns/CanAccessAssociations.php
   - packages/schemas/src/State/AssociationReader.php
   - packages/schemas/src/State/AssociationTarget.php
 ---

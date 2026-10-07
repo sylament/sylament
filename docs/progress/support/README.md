@@ -68,7 +68,6 @@ Ports [`filament/support`](../../../vendor/filament/support) into [`packages/sup
 | [`views/components/actions.blade.php`](../../../vendor/filament/support/resources/views/components/actions.blade.php) | todo | — | — |
 | [`views/components/avatar.blade.php`](../../../vendor/filament/support/resources/views/components/avatar.blade.php) | todo | — | — |
 | [`resources/css/components/avatar.css`](../../../vendor/filament/support/resources/css/components/avatar.css) | todo | — | — |
-| [`View/Components/CalloutComponent.php`](../../../vendor/filament/support/src/View/Components/CalloutComponent.php) | todo | — | — |
 | [`views/components/callout.blade.php`](../../../vendor/filament/support/resources/views/components/callout.blade.php) | todo | — | — |
 | [`resources/css/components/callout.css`](../../../vendor/filament/support/resources/css/components/callout.css) | todo | — | — |
 | [`views/components/card.blade.php`](../../../vendor/filament/support/resources/views/components/card.blade.php) | todo | — | — |
@@ -81,7 +80,7 @@ Ports [`filament/support`](../../../vendor/filament/support) into [`packages/sup
 | [`views/components/input/one-time-code.blade.php`](../../../vendor/filament/support/resources/views/components/input/one-time-code.blade.php) | todo | — | — |
 | [`resources/js/components/one-time-code.js`](../../../vendor/filament/support/resources/js/components/one-time-code.js) | todo | — | — |
 | [`views/components/input/radio.blade.php`](../../../vendor/filament/support/resources/views/components/input/radio.blade.php) | todo | — | — |
-| [`views/components/input/select.blade.php`](../../../vendor/filament/support/resources/views/components/input/select.blade.php) | skipped | — | — |
+| [`views/components/input/select.blade.php`](../../../vendor/filament/support/resources/views/components/input/select.blade.php) | skipped | — | [input-wrapper.md](input-wrapper.md#support-ships-no-select-input-component-because-forms-select-emits-filaments-pair-inside-this-wrapper) |
 | [`views/components/toggle.blade.php`](../../../vendor/filament/support/resources/views/components/toggle.blade.php) | todo | — | — |
 | [`views/components/button/group.blade.php`](../../../vendor/filament/support/resources/views/components/button/group.blade.php) | todo | — | — |
 | [`resources/js/components/tooltip.js`](../../../vendor/filament/support/resources/js/components/tooltip.js) | todo | — | — |

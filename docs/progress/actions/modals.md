@@ -4,6 +4,8 @@ ports:
   - vendor/filament/actions/resources/views/components/modals.blade.php
   - vendor/filament/actions/resources/views/action-modal.blade.php
   - vendor/filament/actions/src/Concerns/InteractsWithActions.php
+  - vendor/filament/actions/resources/js/components/modals.js
+  - vendor/filament/actions/resources/js/index.js
 owns:
   - packages/actions/src/Twig/Components/Modals.php
   - packages/actions/templates/components/Modals/

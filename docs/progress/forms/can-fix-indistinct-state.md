@@ -21,11 +21,6 @@ Composed by six fields: [`Checkbox`](checkbox.md), [`Toggle`](toggle.md), [`Radi
 | The scalar / bool arm — a matching sibling becomes `false` if it was `true`, else `null` | [`Concerns/CanFixIndistinctState.php`](../../../vendor/filament/forms/src/Components/Concerns/CanFixIndistinctState.php) | done | — | [semantics](#the-false-skip-comes-before-the-blank-test-and-nothing-can-observe-it) · [diverges](#the-comparison-reads-the-raw-state-not-the-cast-one) |
 | The sibling path arithmetic | [`Concerns/CanFixIndistinctState.php`](../../../vendor/filament/forms/src/Components/Concerns/CanFixIndistinctState.php) | done | — | [diverges](field.md#the-five-sibling-facts-are-one-value-object-not-string-surgery) |
 
-Coverage: the installs and the condition arm (literal and closure), and that every listed field composes it, by [`CanFixIndistinctStateTest`](../../../packages/forms/tests/Unit/Components/Concerns/CanFixIndistinctStateTest.php).
-The hook itself only fires from schemas' `#[PostHydrate]` walk, so it is driven through a real round trip by [`LiveIndistinctStateTest`](../../../packages/forms/tests/Integration/LiveIndistinctStateTest.php) against the [`IndistinctRepeaterForm`](../../../packages/forms/tests/Fixtures/Twig/Components/IndistinctRepeaterForm.php) fixture — one field per arm: the scalar clear and the untouched different-valued sibling, the ticked sibling flipping to `false` and the two unticked ones left alone, the array subtraction reindexed from zero, the three-item cascade pinned in both directions, an enum-backed field repaired by its backing value, a cleared value leaving its former twin alone, a `false` condition and a field outside any repeater.
-One case renders: the corrected sibling's `<select>` comes back with no `selected` option and its checkbox with no `checked` attribute, which is what the user actually sees.
-Item keys are read back off the mounted bag, never written into a test — a mount re-keys every item by uuid.
-
 ## Semantics
 
 ### The array arm cascades because our hooks fire for every changed path

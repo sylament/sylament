@@ -20,6 +20,7 @@ owns:
   - packages/tables/assets/src/styles/components/grouping.css
   - packages/tables/src/Concerns/CanGroupRecords.php
   - packages/tables/src/Grouping/
+  - packages/tables/src/Table/Concerns/CanGroupRecords.php
 ---
 # Grouping (tables)
 

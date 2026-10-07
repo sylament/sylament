@@ -7,6 +7,7 @@ ports:
   - vendor/filament/filament/src/Panel/Concerns/HasComponents.php
   - vendor/filament/support/src/Concerns/CanCallHooks.php
 owns:
+  - packages/panels/src/DependencyInjection/Compiler/PageComponentPass.php
   - packages/panels/src/Pages/Page.php
 ---
 # Page (panels)

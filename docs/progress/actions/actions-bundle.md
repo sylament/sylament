@@ -6,7 +6,9 @@ ports:
   - vendor/filament/actions/database/migrations/
 owns:
   - packages/actions/assets/src/controllers/
+  - packages/actions/assets/src/styles/index.css
   - packages/actions/src/SylamentActionsBundle.php
+  - packages/actions/src/Twig/Extension/ActionExtension.php
 ---
 # SylamentActionsBundle (actions)
 
@@ -108,7 +110,7 @@ Keeping the copies in lockstep is manual.
 `@symfony/ux-live-component` is declared dev **and** peer at `^3.2.0`, a floor written in the **npm** half's version numbers, which the PHP package's bundled copy versions independently of (the installed v3.5.1 bundles JS 3.5.1, which the floor admits), and it stays a bare specifier in the built file, resolved by the consuming app's importmap.
 Actions, forms, schemas, tables and panels declare the same dev-and-peer pair; notifications' workspace declares neither, because its toast controller [hands the emit to this one](#the-dispatch-controller-is-page-wide-and-filament-has-no-counterpart-for-it).
 
-No `symfony.importmap` entry is declared for it, and that is a decision rather than an omission, the same one notifications' workspace [records](../notifications/notifications-bundle.md#asset-registration-is-an-assetmapper-prepend-and-the-css-rides-supports-build).
+No `symfony.importmap` entry is declared for it, and that is a decision rather than an omission.
 The block names what a consumer's importmap must hold and might not otherwise get; here this package's own composer manifest requires `symfony/ux-live-component`, whose recipe installs the entry as a **path** to the vendored `live_controller.js`, and a version constraint beside it would name the CDN copy, a second artifact registering a second `live` controller.
 The blast radius if the path entry is missing anyway is the whole controller, not one arm: `@symfony/ux-live-component` is a **top-level** import in the built `dispatch_controller.js`, so an importmap without it 404s the module before `afterLoad()` ever runs, and every dispatch on the page dies with it.
 

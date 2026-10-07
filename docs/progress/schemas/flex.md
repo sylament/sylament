@@ -5,6 +5,7 @@ ports:
   - vendor/filament/support/src/Concerns/HasFromBreakpoint.php
 owns:
   - packages/schemas/src/Components/Flex.php
+  - packages/schemas/templates/partials/Flex/
   - packages/support/src/Components/Concerns/HasFromBreakpoint.php
 ---
 # Flex (schemas)

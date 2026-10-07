@@ -4,6 +4,16 @@ ports:
   - vendor/filament/tables/src/Table/Concerns/HasQuery.php
   - vendor/filament/tables/src/Table/Concerns/HasRecords.php
 owns:
+  - packages/tables/src/Query/AggregateDeclaration.php
+  - packages/tables/src/Query/AggregateQuery.php
+  - packages/tables/src/Query/ColumnPathResolver.php
+  - packages/tables/src/Query/Hop.php
+  - packages/tables/src/Query/RelationConstraint.php
+  - packages/tables/src/Query/RelationJoiner.php
+  - packages/tables/src/Query/RelationPathResolver.php
+  - packages/tables/src/Query/ResolvedRelationPath.php
+  - packages/tables/src/Query/SearchConstraint.php
+  - packages/tables/src/Table/Concerns/HasAggregateValues.php
   - packages/tables/src/Table/Concerns/HasQuery.php
 ---
 # HasQuery (tables)

@@ -29,8 +29,6 @@ The contract extends schemas' [`HasAffixActions`](../schemas/has-actions.md#the-
 | [`inlinePrefix()` / `inlineSuffix()` / `isPrefixInline()` / `isSuffixInline()`](../../../packages/forms/src/Components/Concerns/HasAffixes.php) | [`Concerns/HasAffixes.php`](../../../vendor/filament/forms/src/Components/Concerns/HasAffixes.php) | done | — | [semantics](#every-setter-also-writes-the-inline-flag-so-the-last-call-wins) |
 | [The contract](../../../packages/forms/src/Components/Contracts/HasAffixes.php) — the eight getters, `extends HasAffixActions` | [`Components/Contracts/HasAffixes.php`](../../../vendor/filament/forms/src/Components/Contracts/HasAffixes.php) | done | — | [translations](../translations.md#idiom) |
 
-Coverage: [`HasAffixesTest`](../../../packages/forms/tests/Unit/Components/Concerns/HasAffixesTest.php) — the literal, `Markup` and closure arms of every label, icon and colour; the inline-flag trap; append semantics across the singular and plural forms; a closure returning an array and a closure returning `null`; the name keying, the two cached defaults, `prepareAction()`'s schema component, and the splice into `getActions()`.
-
 ## Semantics
 
 ### Every setter also writes the inline flag, so the last call wins

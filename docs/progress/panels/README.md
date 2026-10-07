@@ -38,4 +38,6 @@ Ports [`filament/filament`](../../../vendor/filament/filament), the package Fila
 
 | Filament | Status | Blocked by | Detail |
 | --- | --- | --- | --- |
-| _not audited yet_ | — | — | — |
+| [`Resources/Pages/ManageRecords.php`](../../../vendor/filament/filament/src/Resources/Pages/ManageRecords.php) | todo | — | — |
+| [`Resources/Pages/ViewRecord.php`](../../../vendor/filament/filament/src/Resources/Pages/ViewRecord.php) | todo | — | — |
+| _rest not audited yet_ | — | — | — |

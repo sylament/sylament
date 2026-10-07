@@ -24,6 +24,7 @@ ports:
   - vendor/filament/tables/resources/css/columns/summaries/values.css
 owns:
   - packages/tables/assets/src/styles/components/summary.css
+  - packages/tables/src/Columns/Concerns/CanBeSummarized.php
   - packages/tables/src/Columns/Summarizers/Average.php
   - packages/tables/src/Columns/Summarizers/Concerns/
   - packages/tables/src/Columns/Summarizers/Contracts/HasSelectAlias.php

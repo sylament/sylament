@@ -59,7 +59,8 @@ It declares *how* records are reached — a `records()` closure, or a Doctrine `
 | [`$evaluationIdentifier = 'table'` + the `$liveComponent` name injection](../../../packages/tables/src/Table.php) | [`Table::resolveDefaultClosureDependencyForEvaluationByName()`](../../../vendor/filament/tables/src/Table.php) | done | — | — |
 | `$viewIdentifier = 'table'` | [`Table.php`](../../../vendor/filament/tables/src/Table.php) | skipped | — | [view-component.md](../support/view-component.md#the-instance-is-always-exposed-as-component) |
 | [`$template`](../../../packages/tables/src/Table.php) + [the partial it names](../../../packages/tables/templates/partials/Table/index.html.twig) | [`$view = 'filament-tables::index'`](../../../vendor/filament/tables/src/Table.php), [`index.blade.php`](../../../vendor/filament/tables/resources/views/index.blade.php) | done | — | [diverges](#the-partial-emits-no-header-scaffolding-and-no-content-wrapper) · [diverges](#every-rule-in-tablecss-is-scoped-under-the-sy-ta-root-one-class-above-vendors) · [semantics](#a-markup-header-label-swaps-the-sort-control-for-a-span-that-names-its-three-events) · [semantics](#aria-sort-is-dropped-with-null-because-false-would-render-as-a-string) · [has-actions.md](has-actions.md#the-selection-cells-carry-no-header-cell-class-and-their-checkbox-skin-is-supports) |
-| `LOADING_TARGETS` — the live actions a loading affordance waits on | [`Table::LOADING_TARGETS`](../../../vendor/filament/tables/src/Table.php) | todo | — | [can-defer-loading.md](can-defer-loading.md) |
+| `LOADING_TARGETS` — the live actions a loading affordance waits on | [`Table::LOADING_TARGETS`](../../../vendor/filament/tables/src/Table.php) | todo | — | [detail](#the-table-partial-renders-no-in-flight-loading-indicator) |
+| The in-flight loading indicators: the reorder banner's, the sort header's, the selection banner's and the search field's | [`index.blade.php`](../../../vendor/filament/tables/resources/views/index.blade.php) | todo | — | [detail](#the-table-partial-renders-no-in-flight-loading-indicator) |
 | [`recordLabel()` / `pluralRecordLabel()` / `recordTitle()` / `recordTitleAttribute()` and their getters, `hasCustomRecordTitle()`](../../../packages/tables/src/Table/Concerns/HasRecords.php) | [`HasRecords`](../../../vendor/filament/tables/src/Table/Concerns/HasRecords.php) | done | — | [renames.md](../renames.md#the-model-vocabulary-collapses-onto-record) · [semantics](#the-record-title-reads-the-attribute-through-the-accessor-and-falls-back-to-the-label) · [has-empty-state.md](has-empty-state.md#the-empty-state-texts-read-the-record-labels) |
 | [`getRecordKey()`](../../../packages/tables/src/Table/Concerns/HasRecords.php) | [`HasRecords::getRecordKey()`](../../../vendor/filament/tables/src/Table/Concerns/HasRecords.php) | done | — | [semantics](#getrecords-delegates-to-the-host-and-fetches-nothing) |
 | [Morph-stable row and cell keys](../../../packages/tables/templates/partials/Table/index.html.twig) | [`index.blade.php`'s `wire:key` stamps](../../../vendor/filament/tables/resources/views/index.blade.php) | done | — | [diverges](#the-morph-key-is-an-id-attribute-not-wirekey) · [semantics](#the-row-and-cell-morph-keys-disagree-on-record-vs-records) |
@@ -80,7 +81,6 @@ It declares *how* records are reached — a `records()` closure, or a Doctrine `
 | `header()` / `getHeader()` — the custom header block | [`Table\Concerns\HasHeader`](../../../vendor/filament/tables/src/Table/Concerns/HasHeader.php) | todo | — | [detail](#header-is-not-ported) |
 | [`striped()` / `isStriped()`](../../../packages/tables/src/Table/Concerns/CanBeStriped.php) | [`CanBeStriped`](../../../vendor/filament/tables/src/Table/Concerns/CanBeStriped.php) | done | — | — |
 | [`recordClasses()` / `getRecordClasses()`](../../../packages/tables/src/Table/Concerns/HasRecordClasses.php) | [`HasRecordClasses`](../../../vendor/filament/tables/src/Table/Concerns/HasRecordClasses.php) | done | — | — |
-| `stackedOnMobile()` / `isStackedOnMobile()`, `content()` / `getContent()` / `contentGrid()` / `getContentGrid()` / `contentFooter()` / `getContentFooter()` | [`Table\Concerns\CanBeStackedOnMobile`](../../../vendor/filament/tables/src/Table/Concerns/CanBeStackedOnMobile.php), [`Table\Concerns\HasContent`](../../../vendor/filament/tables/src/Table/Concerns/HasContent.php) | blocked | the layout columns (`Columns\Layout`) | [detail](#the-card-layout-settings-wait-on-the-layout-columns) |
 | [`HasDefaultDataFormattingSettings`, composed here](../../../packages/tables/src/Table.php) | [`Table.php`'s composed `Support\Concerns\HasDefaultDataFormattingSettings`](../../../vendor/filament/tables/src/Table.php) | done | — | [has-default-data-formatting-settings.md](../support/has-default-data-formatting-settings.md) |
 | `HasExtraAttributes`, composed here | [`Table.php`'s composed `Support\Concerns\HasExtraAttributes`](../../../vendor/filament/tables/src/Table.php) | todo | — | — |
 
@@ -100,11 +100,11 @@ What is kept is the shape that matters — `columns()` **resets** rather than ap
 Filament's `header()` takes a `View | Htmlable | Closure | null` and its template renders it in place of the heading, description and header actions.
 The port's [`HasHeader`](../../../packages/tables/src/Table/Concerns/HasHeader.php) carries `heading()` and `description()` only: there is no setter, no getter and no partial branch for a custom header block.
 
-### The card layout settings wait on the layout columns
+### The table partial renders no in-flight loading indicator
 
-`content()`, `contentGrid()`, `contentFooter()` and `stackedOnMobile()` configure the **card** rendering rather than the table one: `content()` replaces the `<table>` with a caller-supplied list, and `stackedOnMobile()` is the responsive half of that list, whose point is the label-above-value stack a `<td>` cannot make.
-Neither has anything to switch on until `Columns\Layout`'s `Split`, `Stack`, `Panel` and `Grid` exist, and the port has no `Columns\Layout` namespace.
-[`RecordActionsPosition::AfterContent` renders nothing](has-actions.md#the-four-rendered-positions-collapse-to-two) for the same reason.
+Filament renders `generate_loading_indicator_html()` wherever a control waits on a request: under `wire:loading` / `wire:target` in the reorder banner while `reorderTable` runs and in a sort header while its `sortTable()` runs, beside the selection banner's count while its Alpine `isLoading` flag is set, and in the search field's prefix through the input wrapper's `wire:target`.
+The port renders support's [`LoadingIndicator`](../support/loading-indicator.md) only in the deferred window's loading block, so a polling table repaints on arrival with no interim state, the search field's prefix holds its icon alone, and the selection banner has no spinner beside its count.
+UX LiveComponent's `data-loading` is the counterpart of `wire:loading`, and the partial uses it only to disable a column action's button; no indicator is wired to it.
 
 ## Semantics
 
@@ -224,6 +224,12 @@ The return type is therefore `string`, never null: the label always answers.
 That is what makes actions' unconditional table hop ([action.md](../actions/action.md#a-table-bound-action-titles-and-labels-through-its-table)) terminal — a table-bound action never reaches its host's title hook, because the table's answer is always filled.
 
 ## Divergences
+
+### The card layout settings wait on the layout columns
+
+`content()`, `contentGrid()`, `contentFooter()` and `stackedOnMobile()` configure the **card** rendering rather than the table one: `content()` replaces the `<table>` with a caller-supplied list, and `stackedOnMobile()` is the responsive half of that list, whose point is the label-above-value stack a `<td>` cannot make.
+Neither has anything to switch on until `Columns\Layout`'s `Split`, `Stack`, `Panel` and `Grid` exist, and the port has no `Columns\Layout` namespace.
+[`RecordActionsPosition::AfterContent` renders nothing](has-actions.md#the-four-rendered-positions-collapse-to-two) for the same reason.
 
 ### The partial emits no header scaffolding and no content wrapper
 

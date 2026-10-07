@@ -20,6 +20,7 @@ owns:
   - packages/schemas/src/Components/Concerns/HasContentBefore.php
   - packages/schemas/src/Components/Concerns/HasDescription.php
   - packages/schemas/src/Components/Concerns/HasFooterActions.php
+  - packages/schemas/src/Components/Concerns/HasFooterActionsAlignment.php
   - packages/schemas/src/Components/Concerns/HasHeaderActions.php
   - packages/schemas/src/Components/Concerns/HasHeading.php
   - packages/schemas/src/Components/Section.php

@@ -86,6 +86,7 @@ So the port keeps two arms: the static, else a `LogicException` — **`$relation
 
 The affordance lost is narrow: Filament's own generators write `$relationship` into every generated manager and page whether or not a related resource is named, so the fallback exists for a hand-written host that declares one and not the other.
 The refusal names the class and the property, and the message is host-neutral ("The relationship table [%s] names no relationship") because the trait serves an embedded manager and a routed page equally.
+The alternative, PHP's "typed static property must not be accessed before initialization" `Error`, is the same failure with none of the diagnosis.
 
 ### The related stamp is `configureTable()`'s four labels, not Filament's double set
 

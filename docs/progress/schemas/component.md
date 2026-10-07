@@ -155,6 +155,11 @@ And the mutated value is what [`PresenceGate`](presence-gate.md) sees, so trimmi
 The walk skips a component whose `isNeitherDehydratedNorValidated()` is true, the same guard the [validation collection walk](can-be-validated.md) skips on.
 Why `Field` does not force `mutatesStateForValidation()` to `true` is recorded [with the forms trait](../forms/can-be-validated.md#field-does-not-force-mutatesstateforvalidation-true).
 
+### Each template ports a PHP `toEmbeddedHtml()`, not a Blade view
+
+Filament's schemas components emit their HTML from a PHP `toEmbeddedHtml()` method, and each Twig template under [`packages/schemas/templates/partials/`](../../../packages/schemas/templates/partials) translates that method, rendered through support's [`ViewComponent`](../support/view-component.md).
+Filament's `resources/views/components/` holds only `fieldset.blade.php` and `grid.blade.php`, which back the `publishedViewOverrideCheckPath` of `Fieldset`, `Grid` and `Group` and `MorphToSelect`'s view; those three render from `toEmbeddedHtml()` too, and their templates port that method, not the Blade beside it.
+
 ## Divergences
 
 ### The schema() alias is not ported

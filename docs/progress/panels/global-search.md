@@ -12,6 +12,7 @@ ports:
 owns:
   - packages/panels/assets/src/controllers/global_search_controller.ts
   - packages/panels/assets/src/styles/components/global-search.css
+  - packages/panels/src/DependencyInjection/Compiler/GlobalSearchProviderPass.php
   - packages/panels/src/GlobalSearch/
   - packages/panels/src/Panel/Concerns/HasGlobalSearch.php
   - packages/panels/src/Resources/Resource/Concerns/HasGlobalSearch.php

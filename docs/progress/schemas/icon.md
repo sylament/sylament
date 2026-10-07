@@ -4,8 +4,9 @@ ports:
   - vendor/filament/schemas/src/Components/Icon.php
   - vendor/filament/schemas/src/View/Components/IconComponent.php
 owns:
-  - packages/schemas/src/Components/Icon.php
   - packages/schemas/src/Colors/Components/IconComponent.php
+  - packages/schemas/src/Components/Icon.php
+  - packages/schemas/templates/partials/Icon/
 ---
 # Icon (schemas)
 

@@ -8,6 +8,7 @@ owns:
   - packages/schemas/src/Components/Contracts/HasValidationConstraints.php
   - packages/schemas/src/Concerns/CanBeValidated.php
   - packages/schemas/src/Exceptions/
+  - packages/schemas/src/Validation/RecordKeyGuard.php
 ---
 # CanBeValidated (schemas)
 

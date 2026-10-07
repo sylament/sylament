@@ -28,7 +28,7 @@ owns:
 ### The action-modal template only renders part of the full action modal
 
 The template passes Filament's whole binding list to `<twig:SylamentSupport:Modal>` except two parts.
-Filament threads `alert` (`$action->isConfirmationRequired()`, `action-modal.blade.php:6,37`) through to the modal's `role="alertdialog"`; neither `CanOpenModal`'s template nor [`Modal/index.html.twig`](../../../packages/support/templates/components/Modal/index.html.twig) carries it (support's [breadth-fill row](../support/modal.md#the-remaining-filament-props-wait-on-their-first-consumer)).
+Filament threads `alert` (`$action->isConfirmationRequired()`, `action-modal.blade.php:6,37`) through to the modal's `role="alertdialog"`; neither `CanOpenModal`'s template nor [`Modal/index.html.twig`](../../../packages/support/templates/components/Modal/index.html.twig) carries it (support's [`alert` row](../support/modal.md#the-remaining-filament-props-wait-on-their-first-consumer)).
 And Filament brackets the custom content, the schema and the content footer in four `FilamentView::renderHook()` pairs (`MODAL_CUSTOM_CONTENT_{BEFORE,AFTER}`, `MODAL_SCHEMA_{BEFORE,AFTER}`, `MODAL_CUSTOM_CONTENT_FOOTER_{BEFORE,AFTER}`, `action-modal.blade.php:63-81`); Sylament has no render-hook facility.
 The three slots themselves render in Filament's order, with the schema arriving as a `schema` prop from [`Modals`](modals.md) rather than being resolved in-template.
 Each missing part lands with the facility named beside it, and the support `Modal` component takes its matching prop in the same change.

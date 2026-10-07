@@ -29,8 +29,6 @@ One declaration therefore does two jobs: it is the option source [`HasOptions`](
 | Enum-derived options (`options(MyEnum::class)`, `enum()` alone) | [`Concerns/HasOptions.php`](../../../vendor/filament/forms/src/Components/Concerns/HasOptions.php) | done | — | [detail](has-options.md) |
 | `Rule::enum()` as the implicit validation rule ([`CanBeValidated::getInValidationRule()`](../../../vendor/filament/forms/src/Components/Concerns/CanBeValidated.php)) | [`Components/Concerns/CanBeValidated.php`](../../../vendor/filament/forms/src/Components/Concerns/CanBeValidated.php) | skipped | — | [diverges](#the-enum-validates-through-the-option-choice-not-a-rule-of-its-own) |
 
-Coverage: storage and evaluation, `options()` seeding the enum, a non-enum literal string staying a value, the cast appended to a plain field's defaults, the multiplicity swap on `Select`, an enum surviving a custom cast, the pure `UnitEnum` throw, and `hasNullableBooleanState()` on both tiers — by [`HasEnumTest`](../../../packages/forms/tests/Unit/Components/Concerns/HasEnumTest.php); the round trip through a record whose properties are typed as the enum itself, single and `multiple()`, plus the enum-only select validating rather than throwing — by [`SelectTest`](../../../packages/forms/tests/Integration/Components/SelectTest.php), with the multiplicity swap re-run on the second field that overrides the getter by [`ToggleButtonsTest`](../../../packages/forms/tests/Integration/Components/ToggleButtonsTest.php).
-
 ## Semantics
 
 ### One declaration, two type contracts

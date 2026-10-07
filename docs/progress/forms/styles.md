@@ -28,6 +28,7 @@ ports:
 owns:
   - packages/forms/assets/src/styles/components/checkbox-list.css
   - packages/forms/assets/src/styles/components/field.css
+  - packages/forms/assets/src/styles/components/input.css
   - packages/forms/assets/src/styles/components/radio.css
   - packages/forms/assets/src/styles/components/repeater.css
   - packages/forms/assets/src/styles/components/select.css
@@ -35,11 +36,13 @@ owns:
   - packages/forms/assets/src/styles/components/text-input.css
   - packages/forms/assets/src/styles/components/toggle-buttons.css
   - packages/forms/assets/src/styles/components/toggle.css
+  - packages/forms/assets/src/styles/index.css
   - packages/support/assets/src/styles/components/checkbox.css
 ---
 # Styles (forms)
 
 The stylesheets under [`packages/forms/assets/src/styles/`](../../../packages/forms/assets/src/styles/) that no component file owns; `file-upload.css`, `fused-group.css` and `key-value.css` are in [file-upload.md](file-upload.md), [fused-group.md](fused-group.md) and [key-value.md](key-value.md).
+Every stylesheet in Filament's [`forms/resources/css/components/`](../../../vendor/filament/forms/resources/css/components/) has a row here or in the file that owns its port, and so does every file in support's `input/` directory but `wrapper.css`, which is [input-wrapper.md](../support/input-wrapper.md)'s.
 **The control chrome ports from [`support/resources/css/`](../../../vendor/filament/support/resources/css/):** Filament files the raw controls (checkbox, input, radio, select, toggle) in its *support* package and keeps only the field-and-wrapper layer in forms, so `select.css` and `toggle.css` have no counterpart in the forms tree, `input.css` is support's chrome plus vendor's forms `textarea.css` and one `date-time-picker.css` rule, and `radio.css` draws on forms only for its option set.
 Diffed against the forms tree, each of them reads as drift from beginning to end.
 `toggle-buttons.css` and `checkbox-list.css` are wholly forms', because their controls borrow support's button chrome (`toggle-buttons.css`) or the shared checkbox skin (`checkbox-list.css`) by class rather than restyling either.
@@ -63,13 +66,11 @@ The `fi-*` class prefix is translated to the forms component code `sy-fo-*` (see
 | Forms' `select.css` rules: `.fi-fo-select .fi-hidden` and the `.fi-fo-select-wrp` inline-label arm | [`components/select.css`](../../../vendor/filament/forms/resources/css/components/select.css) | blocked | schemas' `HasInlineLabel` | [detail](#two-vendor-stylesheets-are-partly-rather-than-wholly-unported) |
 | [`tags-input.css`](../../../packages/forms/assets/src/styles/components/tags-input.css): the chip container and its reorderable chips | [`components/tags-input.css`](../../../vendor/filament/forms/resources/css/components/tags-input.css) | in progress | — | [detail](#the-inline-label-arms-wait-on-schemas-hasinlinelabel) · [diverges](tags-input.md#the-alpine-data-object-becomes-a-stimulus-controller-over-a-cloned-twig-chip) · [diverges](tags-input.md#an-empty-list-keeps-the-container-and-drops-its-chrome) |
 | [`text-input.css`](../../../packages/forms/assets/src/styles/components/text-input.css): the wrapper, the revealable input and the copy status region | [`components/text-input.css`](../../../vendor/filament/forms/resources/css/components/text-input.css) | in progress | — | [detail](#two-vendor-stylesheets-are-partly-rather-than-wholly-unported) |
-| [`toggle-buttons.css`](../../../packages/forms/assets/src/styles/components/toggle-buttons.css): the option set and its hidden inputs | [`components/toggle-buttons.css`](../../../vendor/filament/forms/resources/css/components/toggle-buttons.css) | in progress | — | [detail](#the-inline-label-arms-wait-on-schemas-hasinlinelabel) · [semantics](toggle-buttons.md#the-grouped-labels-must-stay-direct-children-of-the-group) · [semantics](toggle-buttons.md#the-selected-state-is-painted-from-the-sibling-input-in-both-variants) · [diverges](toggle-buttons.md#extraattributes-stays-on-the-field-wrapper) |
+| [`toggle-buttons.css`](../../../packages/forms/assets/src/styles/components/toggle-buttons.css): the option set and its hidden inputs | [`components/toggle-buttons.css`](../../../vendor/filament/forms/resources/css/components/toggle-buttons.css) | in progress | — | [detail](#the-toggle-buttons-stylesheet-omits-the-full-width-arms-and-the-groups-max-w-full) · [detail](#the-inline-label-arms-wait-on-schemas-hasinlinelabel) · [semantics](toggle-buttons.md#the-grouped-labels-must-stay-direct-children-of-the-group) · [semantics](toggle-buttons.md#the-selected-state-is-painted-from-the-sibling-input-in-both-variants) · [diverges](toggle-buttons.md#extraattributes-stays-on-the-field-wrapper) |
 | [`toggle.css`](../../../packages/forms/assets/src/styles/components/toggle.css): the `.sy-fo-toggle` root, track, thumb and icon pair | [`support/…/components/toggle.css`](../../../vendor/filament/support/resources/css/components/toggle.css) | done | — | [diverges](toggle.md#the-toggle-is-a-styled-checkbox-not-a-button) · [diverges](toggle.md#the-icon-rules-select-by-name-where-filament-selects-by-position) · [diverges](toggle.md#the-two-colours-ride-on-two-elements) |
 | `builder.css` / `code-editor.css` / `color-picker.css` / `markdown-editor.css` / `modal-table-select.css` / `rich-editor.css` / `slider.css` | [`components/`](../../../vendor/filament/forms/resources/css/components/) | blocked | `Builder`, `CodeEditor`, `ColorPicker`, `MarkdownEditor`, `ModalTableSelect`, `RichEditor`, `Slider` | [detail](#the-unported-stylesheets-wait-on-what-they-style) |
 | `file-upload/filepond-plugin-media-preview.css` | [`components/file-upload/filepond-plugin-media-preview.css`](../../../vendor/filament/forms/resources/css/components/file-upload/filepond-plugin-media-preview.css) | blocked | FilePond's media-preview plugin in the bundle | [detail](#the-unported-stylesheets-wait-on-what-they-style) |
 | `input/one-time-code.css` | [`support/…/input/one-time-code.css`](../../../vendor/filament/support/resources/css/components/input/one-time-code.css) | blocked | `OneTimeCodeInput` | [detail](#the-unported-stylesheets-wait-on-what-they-style) |
-
-Every stylesheet in Filament's [`forms/resources/css/components/`](../../../vendor/filament/forms/resources/css/components/) has a row here or in the file that owns its port, and so does every file in support's `input/` directory but `wrapper.css`, which is [input-wrapper.md](../support/input-wrapper.md)'s.
 
 ## Details
 
@@ -77,7 +78,7 @@ Every stylesheet in Filament's [`forms/resources/css/components/`](../../../vend
 
 Every rule of vendor's `repeater.css` is ported except the arms keyed off infolists classes, in the table-mode compact block and its no-container-query copy: `.fi-in-entry` / `.fi-in-entry-label` (the entry's own gap and label, which the compact table hides the same way it hides a field's) and `.fi-in-entry-content` (its horizontal padding).
 [`infolists`](../infolists/README.md) ships a bundle class and nothing else, so there is no `sy-in-*` name to hang them on.
-Their siblings *are* ported (`.sy-fo-field`, `.sy-fo-field-label-content`, `.sy-fo-toggle-buttons .sy-fo-field-content-col` and `.sy-fo-radio` all carry their vendor rule), so the gap is exactly the infolists half.
+Their siblings are ported (`.sy-fo-field`, `.sy-fo-field-label-content`, `.sy-fo-toggle-buttons .sy-fo-field-content-col` and `.sy-fo-radio`), so the unported rules are exactly the infolists half; the toggle-buttons arm, though, sits on `.sy-fo-toggle-buttons`, the element inside the content column, so it cannot match until the port has a wrapper hook for it ([field.md](field.md#extra-attribute-precedence-is-fixed-by-source-order)).
 Add the rules in the same change that gives infolists an entry partial.
 
 ### The field stylesheet omits the leading-schema un-grow
@@ -102,7 +103,7 @@ Both text controls are transparent, with the ring, background and `focus-within`
 The affix hooks (`.sy-fo-input-has-inline-prefix`, its suffix twin and `.sy-fo-select-has-inline-prefix`) are ported, so what is left unported is:
 
 - **`input.fi-input`'s six `.fi-align-*` arms** (`center`, `end`, `left`, `right`, `justify`, `between`).
-  No field exposes an alignment setter, so nothing emits the class, but Filament's own fields do not emit it either; a consumer reaches those arms through `extraInputAttributes()`, which [the port also appends to the class list](has-extra-input-attributes.md).
+  No field exposes an alignment setter and Filament's own fields do not emit the class, but Filament's `TextInputColumn` emits it on its `<input>` ([text-input-column.md](../tables/text-input-column.md#alignment-lands-on-the-cell-root-where-no-rule-aligns-the-input)); a consumer reaches those arms through `extraInputAttributes()`, which [the port also appends to the class list](has-extra-input-attributes.md).
   So the hook is reachable here and the rules behind it are not, which makes this the arm a consumer can trip over.
 - **One of the three per-field wrapper rules has no element.**
   Vendor puts two of them on the input wrapper itself and the third on a `<div>` outside it.
@@ -141,6 +142,11 @@ Adding the plugin is a decision of its own.
 
 Support's `input/one-time-code.css` waits on `OneTimeCodeInput`.
 It is listed here rather than in a support file because a control's chrome arrives on the forms side, as `input/radio.css` does inside forms' [`radio.css`](../../../packages/forms/assets/src/styles/components/radio.css).
+
+### The toggle-buttons stylesheet omits the full-width arms and the group's `max-w-full`
+
+Vendor's `toggle-buttons.css` caps the grouped row at `max-w-full` and, under `fi-width-full`, stretches the group, grows the inline option containers and widens every button.
+The port's [`toggle-buttons.css`](../../../packages/forms/assets/src/styles/components/toggle-buttons.css) gives the group `w-max` alone and has no `sy-width-full` arm, which waits on the field's [`fullWidth()`](toggle-buttons.md#size-and-fullwidth-are-not-ported).
 
 ## Semantics
 
@@ -204,6 +210,7 @@ Tables' [`.sy-ta-sr-only`](../../../packages/tables/assets/src/styles/components
 
 Filament files the checkbox skin in **support** and consumes it from both forms and tables.
 Tables' record-selection column is the port's second package to render the control, so the skin is [`packages/support/assets/src/styles/components/checkbox.css`](../../../packages/support/assets/src/styles/components/checkbox.css) as the code-less `.sy-checkbox`, support-level classes carrying no package code being [styling.md](../../internals/styling.md#why-do-templates-carry-only-semantic-classes)'s own wording, and forms has no `checkbox.css`.
+Support ships the skin as a class, not as Filament's [`input/checkbox`](../../../vendor/filament/support/resources/views/components/input/checkbox.blade.php) Blade component: each emitter writes its own `<input>`, as Filament's own tables views and `CheckboxColumn` write `fi-checkbox-input` rather than calling that component.
 
 `sy-fo-checkbox` stays beside it.
 Both emitting templates, [`Checkbox`](../../../packages/forms/templates/partials/Checkbox/index.html.twig) and [`CheckboxList`](../../../packages/forms/templates/partials/CheckboxList/index.html.twig), write `class: 'sy-checkbox sy-fo-checkbox'`, as Filament writes `fi-checkbox-input` beside its own hooks, and [`checkbox-list.css`](../../../packages/forms/assets/src/styles/components/checkbox-list.css) reaches `.sy-fo-checkbox` for the option's own layout (`mt-1 shrink-0`) and its `:has(…:disabled)` arm.

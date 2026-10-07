@@ -10,7 +10,7 @@ owns:
 
 [`Sylament\Schemas\Components\EmbeddedSchema`](../../../packages/schemas/src/Components/EmbeddedSchema.php) renders **one of its host's own named schemas** in place.
 It is how a host composes a schema out of other schemas it already declares: an action's modal schema can hold `EmbeddedSchema::make('form')` and get the page's form tree itself, rather than a second tree built from the same definition.
-Its template is [`partials/EmbeddedSchema/index.html.twig`](../../../packages/schemas/templates/partials/EmbeddedSchema/index.html.twig) ([component-views.md](component-views.md)).
+Its template is [`partials/EmbeddedSchema/index.html.twig`](../../../packages/schemas/templates/partials/EmbeddedSchema/index.html.twig).
 
 ## Surface
 

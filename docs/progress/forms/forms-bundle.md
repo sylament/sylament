@@ -27,8 +27,10 @@ owns:
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
 | [Bundle registration + `@SylamentForms` view namespace](../../../packages/forms/src/SylamentFormsBundle.php) | [`->hasViews()`](../../../vendor/filament/forms/src/FormsServiceProvider.php) | done | — | [diverges](#the-view-namespace-is-registered-by-symfony-convention-not-by-an-explicit-provider-call) |
-| [`Components/` loaded as container-built, non-shared services](../../../packages/forms/src/SylamentFormsBundle.php) | — | done | — | [component model](../../internals/php.md#the-component-model) |
+| [`Components/` loaded as container-built, non-shared services](../../../packages/forms/src/SylamentFormsBundle.php) (`Components/{*,Repeater/*,TextInput/Actions/*}.php`) | — | done | — | [component model](../../internals/php.md#the-component-model) · [semantics](#the-component-glob-reaches-the-affix-actions-so-their-required-setters-run) |
 | [`Validation/*Validator.php` loaded as container services](../../../packages/forms/src/SylamentFormsBundle.php) | — | done | — | [semantics](probes-records.md#unique-and-exists-are-one-dql-probe-behind-a-container-service) |
+| [`utils/cloak.ts`](../../../packages/forms/assets/src/utils/cloak.ts), the `sy-cloak` reveal the `repeater` controller calls from `connect()` | — | done | — | [diverges](#the-per-file-controllers-carry-copies-of-cloakts-and-live_hostts) |
+| [`utils/live_host.ts`](../../../packages/forms/assets/src/utils/live_host.ts), `resolveLiveHost()` for the `key-value` and `tags-input` controllers | — | done | — | [diverges](#the-per-file-controllers-carry-copies-of-cloakts-and-live_hostts) |
 | [Asset registration under `@sylament/forms`](../../../packages/forms/src/SylamentFormsBundle.php) | [`packageBooted()`](../../../vendor/filament/forms/src/FormsServiceProvider.php) — `FilamentAsset::register()` | done | — | [semantics](#each-fields-script-ships-with-its-field-and-the-bundle-registers-the-built-directory-once) |
 | [`sylament--forms--select`](../../../packages/forms/assets/src/controllers/select_controller.ts) over [`utils/select.ts`](../../../packages/forms/assets/src/utils/select.ts) | [`components/select.js`](../../../vendor/filament/forms/resources/js/components/select.js) + [`utilities/select.js`](../../../vendor/filament/support/resources/js/utilities/select.js) | done | — | [diverges](#the-select-controller-binds-a-port-of-filaments-select-utility-to-the-live-host) |
 | [`sylament--forms--repeater`](../../../packages/forms/assets/src/controllers/repeater_controller.ts) | [`Repeater.php`](../../../vendor/filament/forms/src/Components/Repeater.php) — the embedded view's Alpine object | done | — | [diverges](#the-repeater-controller-owns-the-items-collapse-state-and-bridges-the-drag-control-to-the-reorder-action) |
@@ -64,9 +66,10 @@ The `repeater` and `text-input` controllers have no entry in that list: Filament
 
 The `select` and `file-upload` controllers are `BUNDLED_ENTRIES` builds, so their `dist/controllers/*.js` files exist only when the rebuilt dist is committed, and `AssetMapperRepository::findLogicalPath()` answers `null` for a missing file.
 
-[`utils/cloak.ts`](../../../packages/forms/assets/src/utils/cloak.ts) is a byte-for-byte copy of [support's](../../../packages/support/assets/src/utils/cloak.ts), and [`utils/live_host.ts`](../../../packages/forms/assets/src/utils/live_host.ts) a copy of [schemas' `resolveLiveHost()`](../../../packages/schemas/assets/src/utils/live_host.ts).
-The per-file build ships import specifiers verbatim, so a cross-package import from the per-file `repeater`, `key-value` and `tags-input` controllers would be a bare specifier every consumer's importmap has to resolve.
-A bundled entry has no such cost, which is why `file_upload_controller.ts` imports schemas' `resolveLiveHost()` directly and esbuild inlines it.
+### The component glob reaches the affix actions, so their `#[Required]` setters run
+
+`loadExtension()` registers every class matching `Components/{*,Repeater/*,TextInput/Actions/*}.php` as an autowired service.
+The `TextInput/Actions/*` arm is what makes `ShowPasswordAction`, `HidePasswordAction` and `CopyAction` container-built, so their `#[Required]` icon-manager setter runs and a registered alias replaces their icon ([text-input.md](text-input.md#the-affix-actions-resolve-their-own-icons)).
 
 ## Divergences
 
@@ -215,6 +218,13 @@ A cancelled upload's key is consumed on **both** settle arms and the item is `ab
 The two `void` seam calls carry rejection arms: a failed `reorderUploadedFiles` surfaces `The files could not be reordered.` and clears `#lastState`, the reconcile memo, so the next morph rebuilds the list in the server's order, and the cancel-time `removeUploadedFile` surfaces `The file could not be removed.`.
 `FilePond.create()` runs inside `try/finally` so the `#initializing` re-entrance flag cannot stick after a throw, `maxFileSize` is passed only under `hasMaxFileSizeValue` (an absent value is not a zero ceiling), and `resolveLiveHost()`'s rejection surfaces through the error banner instead of an unhandled promise rejection.
 `#detectType` resolves `mimeTypeMap[extension] || detectedType` with `||`, not `??`, so a map entry deliberately set to the empty string falls through to the browser's detected type: that is Filament's operator, and the reason an empty entry is a "let the browser decide" instruction rather than a hard "no type".
+
+### The per-file controllers carry copies of `cloak.ts` and `live_host.ts`
+
+Filament reaches `x-cloak` and `$wire` through Alpine, so it has no file for either.
+The `repeater`, `key-value` and `tags-input` controllers build per-file and unbundled, and the per-file build ships import specifiers verbatim, so an import of `@sylament/schemas/utils/live_host.js` or support's `cloak.ts` would ship to the browser as a bare specifier every consuming app's importmap would have to resolve.
+Forms keeps its own copies instead: [`cloak.ts`](../../../packages/forms/assets/src/utils/cloak.ts) byte for byte as [support](../../../packages/support/assets/src/utils/cloak.ts) and schemas carry it, and [`live_host.ts`](../../../packages/forms/assets/src/utils/live_host.ts) as [schemas'](../../../packages/schemas/assets/src/utils/live_host.ts) plus one comment line; tables and panels carry the same copy without that line.
+The bundled `file-upload` controller imports schemas' `live_host.js` directly, because esbuild inlines it through that package's `exports` map ([the controller](#the-file-upload-controller-bundles-filepond-and-is-the-only-lazy-controller)).
 
 ### Livewire-specific provider responsibilities are dropped, not ported
 

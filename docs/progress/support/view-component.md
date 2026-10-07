@@ -57,6 +57,7 @@ And `template(null)` clears an explicit template so the default applies again, w
 
 Filament reflects every public method of the component and injects them as view variables so Blade can call them bare.
 Twig calls methods on the instance directly (`component.getTemplate()`), and the instance is always in scope as `component`, so the reflection pass has no purpose here.
+Filament's `ViewComponent::extractPublicMethods()` delegates to `ComponentManager::extractPublicMethods()`, which caches the method names in a `methodCache` property; the port drops both, so the manager's skipped row in [component-manager.md](component-manager.md) links here.
 
 ### The template context does not seed an `attributes` bag
 

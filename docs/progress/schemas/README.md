@@ -17,7 +17,6 @@ Ports [`filament/schemas`](../../../vendor/filament/schemas) into [`packages/sch
 - [can-be-validated.md](can-be-validated.md)
 - [can-trim-state.md](can-trim-state.md)
 - [component-belongs-to-record.md](component-belongs-to-record.md)
-- [component-views.md](component-views.md)
 - [component.md](component.md)
 - [date-time-state-cast.md](date-time-state-cast.md)
 - [embedded-schema.md](embedded-schema.md)
@@ -90,13 +89,13 @@ Ports [`filament/schemas`](../../../vendor/filament/schemas) into [`packages/sch
 | [`Components/Concerns/CanPoll.php`](../../../vendor/filament/schemas/src/Components/Concerns/CanPoll.php) | todo | — | — |
 | [`Components/Concerns/HasEntryWrapper.php`](../../../vendor/filament/schemas/src/Components/Concerns/HasEntryWrapper.php) | todo | — | — |
 | [`Components/Concerns/HasFieldWrapper.php`](../../../vendor/filament/schemas/src/Components/Concerns/HasFieldWrapper.php) | todo | — | [forms twin](../forms/fused-group.md#the-component-tier-hasfieldwrapper-twin-is-not-ported) |
+| [`Components/Concerns/HasInlineLabel.php`](../../../vendor/filament/schemas/src/Components/Concerns/HasInlineLabel.php) | todo | — | [forms' isInline() guard](../forms/can-be-inline.md#isinline-drops-the-hasinlinelabel-guard) |
 | [`Components/Concerns/HasMaxWidth.php`](../../../vendor/filament/schemas/src/Components/Concerns/HasMaxWidth.php) | todo | — | [panels' twin](../panels/simple-page.md) |
 | [`Components/Concerns/HasMeta.php`](../../../vendor/filament/schemas/src/Components/Concerns/HasMeta.php) | todo | — | — |
 | [`Concerns/CanBeHidden.php`](../../../vendor/filament/schemas/src/Concerns/CanBeHidden.php) | todo | — | — |
 | [`Concerns/HasEntryWrapper.php`](../../../vendor/filament/schemas/src/Concerns/HasEntryWrapper.php) | todo | — | — |
 | [`Concerns/HasInlineLabels.php`](../../../vendor/filament/schemas/src/Concerns/HasInlineLabels.php) | todo | — | — |
-| [`Concerns/ResolvesDynamicLivewireProperties.php`](../../../vendor/filament/schemas/src/Concerns/ResolvesDynamicLivewireProperties.php) | todo | — | — |
-| [`Concerns/RestrictsFileUploadsToSchemaComponents.php`](../../../vendor/filament/schemas/src/Concerns/RestrictsFileUploadsToSchemaComponents.php) | skipped | — | [diverges](interacts-with-schemas.md#uploadschemacomponentfile-carries-the-bytes-beside-the-seam) |
+| [`Concerns/ResolvesDynamicLivewireProperties.php`](../../../vendor/filament/schemas/src/Concerns/ResolvesDynamicLivewireProperties.php) | skipped | — | [diverges](has-schemas.md#dynamic-livewire-properties-are-not-ported-because-they-hide-from-phpstan) |
 | [`Components/StateCasts/NumberStateCast.php`](../../../vendor/filament/schemas/src/Components/StateCasts/NumberStateCast.php) | todo | — | — |
 | [`Components/StateCasts/SliderStateCast.php`](../../../vendor/filament/schemas/src/Components/StateCasts/SliderStateCast.php) | todo | — | — |
 | [`Components/Contracts/ExposesStateToActionData.php`](../../../vendor/filament/schemas/src/Components/Contracts/ExposesStateToActionData.php) | todo | — | — |

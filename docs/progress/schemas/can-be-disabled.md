@@ -18,7 +18,7 @@ The component-level trait couples `disabled()` to `saved()` ([`HasState`](compon
 | --- | --- | --- | --- | --- |
 | [`Schema::disabled()` / `isDisabled()` / `isEnabled()`](../../../packages/schemas/src/Concerns/CanBeDisabled.php) | [`Concerns/CanBeDisabled.php`](../../../vendor/filament/schemas/src/Concerns/CanBeDisabled.php) | done | — | — |
 | [`Component::disabled()` / `isDisabled()` / `isEnabled()`](../../../packages/schemas/src/Components/Concerns/CanBeDisabled.php) | [`Components/Concerns/CanBeDisabled.php`](../../../vendor/filament/schemas/src/Components/Concerns/CanBeDisabled.php) | done | — | [semantics](#disabling-keeps-a-field-out-of-the-saved-state-not-out-of-the-request) |
-| [`Component::disabledOn()`](../../../packages/schemas/src/Components/Concerns/CanBeDisabled.php) | [`disabledOn()`](../../../vendor/filament/schemas/src/Components/Concerns/CanBeDisabled.php) | done | — | [diverges](can-be-hidden.md#arrwrap-maps-to-the-wrap-helper-never-an-array-cast) |
+| [`Component::disabledOn()`](../../../packages/schemas/src/Components/Concerns/CanBeDisabled.php) | [`disabledOn()`](../../../vendor/filament/schemas/src/Components/Concerns/CanBeDisabled.php) | done | — | [semantics](can-be-hidden.md#arrwrap-maps-to-the-wrap-helper-never-an-array-cast) |
 
 ## Semantics
 

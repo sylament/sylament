@@ -30,10 +30,6 @@ The Ports cells point into `vendor/livewire/`, the code this file ports; a `—`
 | [`sylament_forms.temporary_file_upload.{disk,directory,cleanup}`](../../../packages/forms/src/SylamentFormsBundle.php) | [`config/livewire.php`](../../../vendor/livewire/livewire/config/livewire.php) | done | — | [diverges](#the-config-tree-keeps-three-of-livewires-seven-keys) |
 | A console command that prunes on a schedule | — | skipped | — | [diverges](#there-is-no-prune-command-the-sweep-rides-on-upload-traffic) |
 
-Coverage: [`TemporaryUploadsTest`](../../../packages/forms/tests/Unit/Uploads/TemporaryUploadsTest.php) — the written bytes and sidecar, the token shape, the mime sniff overriding the browser's claim, the same-state-path round trip, and the refusals (a foreign prefix, a tampered signature, a swapped filename, a filename outside the minted shape, including a traversal and a sidecar name under a *valid* signature); a missing sidecar and missing bytes; the extension sanitiser; the sweep's age boundary, its `cleanup` flag on both settings, and its zero answer for a directory nothing has written to; and the constructor's refusal of a directory that normalises to the storage root.
-[`TemporaryUploadedFileTest`](../../../packages/forms/tests/Unit/Uploads/TemporaryUploadedFileTest.php) — the metadata getters, both serialisations, the stream read-back, a deleted file reporting gone rather than throwing, and `delete()` taking the sidecar with it and swallowing a second call.
-[`SylamentFormsBundleTest`](../../../packages/forms/tests/Integration/SylamentFormsBundleTest.php) — the store is a container service carrying the config tree's directory.
-
 ## Semantics
 
 ### What the HMAC binds is the field, not the user

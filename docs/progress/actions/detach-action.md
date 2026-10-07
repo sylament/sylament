@@ -36,8 +36,17 @@ It is the undo of [`AttachAction`](attach-action.md), and like it, it only makes
 | [The fetching arm — `detach()` per hydrated record, one `flush()`](../../../packages/actions/src/DetachBulkAction.php) | [`DetachBulkAction.php`](../../../vendor/filament/actions/src/DetachBulkAction.php) | done | — | [diverges](#the-bulk-detach-is-atomic-where-filaments-fetching-arm-is-per-record) |
 | [The `fetchSelectedRecords(false)` arm — `getReference()` per key, then the same](../../../packages/actions/src/DetachBulkAction.php) | [`DetachBulkAction.php`](../../../vendor/filament/actions/src/DetachBulkAction.php) (`$relationship->detach($records)`) | done | — | [diverges](#the-no-fetch-arm-detaches-through-references-not-a-join-table-delete) · [semantics](#a-stale-key-is-a-danger-toast-except-on-an-owning-side-many-to-many-over-a-scalar-identifier) |
 | [`CanCustomizeProcess`](../../../packages/actions/src/Concerns/CanCustomizeProcess.php) (`using()` / `process()`) | [`Concerns/CanCustomizeProcess.php`](../../../vendor/filament/actions/src/Concerns/CanCustomizeProcess.php) | done | — | — |
+| [The one-to-many refusal](../../../packages/actions/src/DetachBulkAction.php) raised before the `try` | — | in progress | — | [detail](#a-bulk-detach-over-a-one-to-many-the-reader-refuses-fails-as-a-danger-toast) |
 | Reporting the swallowed exception | [`DetachBulkAction.php`](../../../vendor/filament/actions/src/DetachBulkAction.php) (`report($exception)`) | blocked | a logger on `Action` | [delete-action.md](delete-action.md#the-swallowed-exception-has-nowhere-to-go-yet) |
 | The pivot-accessor delete in the fetching arm | [`DetachBulkAction.php`](../../../vendor/filament/actions/src/DetachBulkAction.php) | skipped | — | [diverges](#the-duplicates-arm-is-not-ported) |
+
+## Details
+
+### A bulk detach over a one-to-many the reader refuses fails as a danger toast
+
+`DetachBulkAction` raises no relationship refusal up front: `detach()` runs `assertRelationshipAcceptsDetach()` as the first statement of its one-to-many arm, so a bulk detach over a mapping the reader refuses fails on its **first** record, and it fails **inside** the action's `try`, which turns a developer error into the danger toast a stale key produces.
+`DissociateBulkAction` raises the same refusal up front, outside both `try` blocks, where it propagates.
+Calling `assertRelationshipAcceptsDetach()` before the `try`, as the twin does, closes it.
 
 ## Semantics
 

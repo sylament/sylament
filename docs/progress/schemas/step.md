@@ -17,7 +17,7 @@ It extends the schemas base [`Component`](component.md) and implements the [`Can
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
 | [`make(string $label)`](../../../packages/schemas/src/Components/Wizard/Step.php) | [`Step::make()`](../../../vendor/filament/schemas/src/Components/Wizard/Step.php) | done | — | — |
-| [Key derivation](../../../packages/schemas/src/Components/Wizard/Step.php) (`slug(label)::{statePath}::wizard-step`, non-inheritable) | [`Step::setUp()`](../../../vendor/filament/schemas/src/Components/Wizard/Step.php) | done | — | [diverges](wizard.md#the-key-keeps-filaments-state-path-segment-which-section-drops) |
+| [Key derivation](../../../packages/schemas/src/Components/Wizard/Step.php) (`slug(label)::{statePath}::wizard-step`, non-inheritable) | [`Step::setUp()`](../../../vendor/filament/schemas/src/Components/Wizard/Step.php) | done | — | [semantics](wizard.md#the-key-keeps-filaments-state-path-segment-which-section-drops) |
 | [`beforeValidation()` / `callBeforeValidation()`](../../../packages/schemas/src/Components/Wizard/Step.php) | [`Step::beforeValidation()`](../../../vendor/filament/schemas/src/Components/Wizard/Step.php) | done | — | — |
 | [`afterValidation()` / `callAfterValidation()`](../../../packages/schemas/src/Components/Wizard/Step.php) | [`Step::afterValidation()`](../../../vendor/filament/schemas/src/Components/Wizard/Step.php) | done | — | — |
 | `afterValidated()`, deprecated for `afterValidation()` | [`Step::afterValidated()`](../../../vendor/filament/schemas/src/Components/Wizard/Step.php) | skipped | — | [renames.md](../renames.md#a-deprecated-filament-member-is-not-ported) |

@@ -160,7 +160,7 @@ The systematic translations:
   All four are inert until `connect()` has run, because Stimulus fires them for pre-existing targets *before* `connect()`.
 - **`this.$refs.tabsData` / `stepsData` (a hidden input holding a JSON blob) is dropped.**
   The keys are read off the `tab`/`step` targets' `data-tab-key` / `data-step-key` in DOM order, so there is no second copy of the key list to keep in sync.
-- **The `livewireId` half of every guard is dropped**, because no producer of a live component id exists on this side: `reset-schema-component-state` and `form-validation-error` are matched by `event.target === this.element.closest('[data-controller~="live"]')` — the host that dispatched is the host that owns this schema — plus the `schemaKey` payload the events already carry.
+- **The `livewireId` half of every guard is dropped**, because no producer of a live component id exists on this side: `reset-schema-component-state` and `form-validation-error` are matched by `event.target === this.element.closest('[data-controller~="live"]')` — the host that dispatched is the host that owns this schema — plus, for `reset-schema-component-state`, the `schemaKey` payload it carries; `form-validation-error` is matched by the target alone.
 - **`window.tippy` is dropped**: a deferred badge's `badgeTooltip` renders as a native `title`, the house tooltip shape.
 
 Three details worth naming:

@@ -82,18 +82,16 @@ Ports [`filament/forms`](../../../vendor/filament/forms) into [`packages/forms`]
 | [`Components/TableSelect.php`](../../../vendor/filament/forms/src/Components/TableSelect.php) | todo | — | — |
 | [`Components/TableSelect/Livewire/TableSelectLivewireComponent.php`](../../../vendor/filament/forms/src/Components/TableSelect/Livewire/TableSelectLivewireComponent.php) | todo | — | — |
 | [`Components/ContentFaker.php`](../../../vendor/filament/forms/src/Components/ContentFaker.php) | todo | — | — |
-| [`FakerProvider.php`](../../../vendor/filament/forms/src/FakerProvider.php) | todo | — | — |
 | [`Components/Concerns/HasFileAttachments.php`](../../../vendor/filament/forms/src/Components/Concerns/HasFileAttachments.php) | todo | — | — |
 | [`Components/Concerns/HasMaxHeight.php`](../../../vendor/filament/forms/src/Components/Concerns/HasMaxHeight.php) | todo | — | — |
 | [`Components/Concerns/HasMinHeight.php`](../../../vendor/filament/forms/src/Components/Concerns/HasMinHeight.php) | todo | — | — |
 | [`Components/Concerns/HasPreview.php`](../../../vendor/filament/forms/src/Components/Concerns/HasPreview.php) | todo | — | — |
-| [`Components/Concerns/HasUploadingMessage.php`](../../../vendor/filament/forms/src/Components/Concerns/HasUploadingMessage.php) | blocked | a form-processing channel | [detail](file-upload.md#uploadingmessage-has-no-render-site) |
 | [`Components/Concerns/InteractsWithToolbarButtons.php`](../../../vendor/filament/forms/src/Components/Concerns/InteractsWithToolbarButtons.php) | todo | — | — |
 | [`Concerns/InteractsWithForms.php`](../../../vendor/filament/forms/src/Concerns/InteractsWithForms.php) | todo | — | — |
 | [`Contracts/HasForms.php`](../../../vendor/filament/forms/src/Contracts/HasForms.php) | todo | — | — |
 | [`FormsComponent.php`](../../../vendor/filament/forms/src/FormsComponent.php) | todo | — | — |
-| [`Testing/TestsForms.php`](../../../vendor/filament/forms/src/Testing/TestsForms.php) | todo | — | — |
-| [`Testing/TestsFormComponentActions.php`](../../../vendor/filament/forms/src/Testing/TestsFormComponentActions.php) | todo | — | — |
+| [`Testing/TestsForms.php`](../../../vendor/filament/forms/src/Testing/TestsForms.php) | skipped | — | [diverges](forms-bundle.md#livewire-specific-provider-responsibilities-are-dropped-not-ported) |
+| [`Testing/TestsFormComponentActions.php`](../../../vendor/filament/forms/src/Testing/TestsFormComponentActions.php) | skipped | — | [diverges](forms-bundle.md#livewire-specific-provider-responsibilities-are-dropped-not-ported) |
 | [`Commands/`](../../../vendor/filament/forms/src/Commands) | todo | — | — |
 | [`views/components/builder/`](../../../vendor/filament/forms/resources/views/components/builder) | todo | — | — |
 | [`resources/js/components/builder.js`](../../../vendor/filament/forms/resources/js/components/builder.js) | todo | — | — |

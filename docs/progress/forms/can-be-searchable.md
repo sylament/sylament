@@ -23,8 +23,6 @@ Filament composes the trait on `Select` and `MorphToSelect`, where `Select` over
 | `searchDebounce()` / `getSearchDebounce()` — 1000 ms by default | [`Concerns/CanBeSearchable.php`](../../../vendor/filament/forms/src/Components/Concerns/CanBeSearchable.php) | done | — | [semantics](#the-checkbox-list-search-is-client-side-only-and-mostly-select-only) |
 | `searchLabels()` / `searchValues()` / `getSearchableOptionFields()` | [`Concerns/CanBeSearchable.php`](../../../vendor/filament/forms/src/Components/Concerns/CanBeSearchable.php) | done | — | [diverges](#checkboxlist-composes-the-whole-trait-where-filament-inlines-four-members) · [diverges](#the-label-and-value-switches-take-null) |
 
-Coverage: the trait itself — the default, the literal, closure and `null` arms of `searchable()`, the message literals and their overrides, the debounce, and the label/value switches in every combination — by [`CanBeSearchableTest`](../../../packages/forms/tests/Unit/Components/Concerns/CanBeSearchableTest.php) over a fixture field; `Select`'s two overrides — `searchable(array)` setting the columns, `isSearchable()` reading `isMultiple()` when nothing was declared and a declared `false` winning over `multiple()` — by [`SelectTest`](../../../packages/forms/tests/Integration/Components/SelectTest.php); what the checkbox list does with the switch is covered where the field is, [`checkbox-list.md`](checkbox-list.md).
-
 ## Semantics
 
 ### `Select` widens `searchable()` to a column array, and defaults it to `multiple()`

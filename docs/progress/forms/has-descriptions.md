@@ -2,10 +2,8 @@
 description: 'The per-option description map of Radio and CheckboxList: a literal array, a closure, or a map derived from the enum cases.'
 ports:
   - vendor/filament/forms/src/Components/Concerns/HasDescriptions.php
-  - vendor/filament/support/src/Contracts/HasDescription.php
 owns:
   - packages/forms/src/Components/Concerns/HasDescriptions.php
-  - packages/support/src/Contracts/HasDescription.php
 ---
 # HasDescriptions (forms)
 
@@ -22,10 +20,6 @@ Both render the map under each option's label — [`Radio`](radio.md) and [`Chec
 | `descriptions()` / `getDescriptions()` — the literal map, the closure arm, and the memo the setter clears | [`Concerns/HasDescriptions.php`](../../../vendor/filament/forms/src/Components/Concerns/HasDescriptions.php) | done | — | [diverges](#the-arrayable-arm-is-dropped) |
 | `hasDescription()` / `getDescription()` — the per-option lookups | [`Concerns/HasDescriptions.php`](../../../vendor/filament/forms/src/Components/Concerns/HasDescriptions.php) | done | — | [semantics](#only-a-described-case-reaches-the-map) · [semantics](#a-markup-description-renders-raw-and-filaments-does-too) |
 | The enum fallback — support's [`HasDescription`](../../../packages/support/src/Contracts/HasDescription.php) over [`getEnum()`](has-enum.md)'s cases | [`Concerns/HasDescriptions.php`](../../../vendor/filament/forms/src/Components/Concerns/HasDescriptions.php) | done | — | [semantics](#only-a-described-case-reaches-the-map) |
-
-Coverage: the empty default, a literal map (string and `Markup` values alike), the closure arm, the enum fallback over a backed enum and over a pure `UnitEnum` keyed by case name, an enum without the contract deriving nothing, a literal map winning over the enum, one closure evaluation across two reads, and the setter clearing the memo — by [`HasDescriptionsTest`](../../../packages/forms/tests/Unit/Components/Concerns/HasDescriptionsTest.php) against the [`OptionPriority`](../../../packages/forms/tests/Fixtures/Components/Concerns/OptionPriority.php) and [`OptionStage`](../../../packages/forms/tests/Fixtures/Components/Concerns/OptionStage.php) fixture enums, the first of which describes one of its two cases with `null`.
-The rendered half — the description `<p>` under a described option and its absence under an undescribed one, from both a literal map and the enum fallback — is covered by [`RadioTest`](../../../packages/forms/tests/Integration/Components/RadioTest.php) and [`CheckboxListTest`](../../../packages/forms/tests/Integration/Components/CheckboxListTest.php).
-The map being **written** by a component rather than a caller — from [`CheckboxList`'s record-shaped description closure](checkbox-list.md#the-two-record-shaped-closures-build-labels-and-descriptions-off-one-query) — is covered a file over, in [`CheckboxListRelationshipTest`](../../../packages/forms/tests/Integration/Components/CheckboxListRelationshipTest.php), which is where the relationship arm's Doctrine rig lives.
 
 ## Semantics
 

@@ -9,6 +9,7 @@ ports:
 owns:
   - packages/tables/assets/src/styles/components/search-field.css
   - packages/tables/src/Table/Concerns/CanSearchRecords.php
+  - packages/tables/templates/components/SearchField/
 ---
 # CanSearchRecords (tables)
 

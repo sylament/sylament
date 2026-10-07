@@ -20,8 +20,6 @@ Filament also composes it on `Slider`, which has no port.
 | [`step()` / `getStep()`](../../../packages/forms/src/Components/Concerns/HasStep.php) | [`Concerns/HasStep.php`](../../../vendor/filament/forms/src/Components/Concerns/HasStep.php) | done | — | [semantics](#the-step-is-a-declaration-a-consumer-may-derive-past) |
 | The `step` attribute on each control | [`TextInput::toEmbeddedHtml()`](../../../vendor/filament/forms/src/Components/TextInput.php) | done | — | — |
 
-Coverage: the interval on a text input — seeded by [`numeric()` and `integer()`](text-input.md#numeric-seeds-the-step-through-isnumeric-not-the-captured-condition), set explicitly, and absent by default — by [`TextInputTest`](../../../packages/forms/tests/Integration/Components/TextInputTest.php); the picker's composed interval, in all six of its arms, by [`DateTimePickerTest`](../../../packages/forms/tests/Unit/Components/DateTimePickerTest.php).
-
 ## Semantics
 
 ### The step is a declaration a consumer may derive past

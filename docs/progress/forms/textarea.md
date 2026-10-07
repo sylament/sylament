@@ -3,10 +3,13 @@ description: The multi-line text field, with its `rows` / `cols` sizing and the 
 ports:
   - vendor/filament/forms/src/Components/Textarea.php
   - vendor/filament/forms/src/Components/Concerns/CanDisableGrammarly.php
+  - vendor/filament/forms/resources/js/components/textarea.js
 owns:
+  - packages/forms/assets/src/controllers/textarea_controller.ts
   - packages/forms/src/Components/Concerns/CanDisableGrammarly.php
   - packages/forms/src/Components/Textarea.php
   - packages/forms/templates/partials/Textarea/
+  - packages/schemas/src/Components/Concerns/CanStripCharactersFromState.php
 ---
 # Textarea (forms)
 
@@ -25,6 +28,7 @@ Extends [`Field`](../../../packages/forms/src/Components/Field.php) and adds the
 | Embedded view → Twig template | [`Textarea::toEmbeddedHtml()`](../../../vendor/filament/forms/src/Components/Textarea.php) | done | — | — |
 | Input wrapper (`wrapInputHtml`) — no affix API, Filament-exact | [`Textarea::toEmbeddedHtml()`](../../../vendor/filament/forms/src/Components/Textarea.php) | done | — | [semantics](field.md#the-wrapper-owns-the-chrome-and-the-control-is-transparent) · [diverges](#the-control-keeps-the-sy-fo-input-class-filaments-textarea-carries-none) |
 | [`autosize()` / `shouldAutosize()`](../../../packages/forms/src/Components/Textarea.php) | [`Components/Textarea.php`](../../../vendor/filament/forms/src/Components/Textarea.php) | done | — | [semantics](#the-sizer-grows-on-input-floors-at-the-initial-height-and-never-measures-a-hidden-control) · [diverges](#the-off-branchs-resize-mirror-is-not-ported) · [diverges](#only-the-keyboard-re-measures-a-server-set-state-change-does-not) |
+| [`sylament--forms--textarea`](../../../packages/forms/assets/src/controllers/textarea_controller.ts), the autosize sizer | [`resources/js/components/textarea.js`](../../../vendor/filament/forms/resources/js/components/textarea.js) | done | — | [semantics](#the-sizer-grows-on-input-floors-at-the-initial-height-and-never-measures-a-hidden-control) · [diverges](#the-off-branchs-resize-mirror-is-not-ported) · [diverges](#only-the-keyboard-re-measures-a-server-set-state-change-does-not) |
 | [Autocomplete (`CanBeAutocompleted`)](../../../packages/forms/src/Components/Concerns/CanBeAutocompleted.php) | [`Concerns/CanBeAutocompleted.php`](../../../vendor/filament/forms/src/Components/Concerns/CanBeAutocompleted.php) | done | — | [detail](can-be-autocompleted.md) |
 | [Read-only (`CanBeReadOnly`)](../../../packages/forms/src/Components/Concerns/CanBeReadOnly.php) | [`Concerns/CanBeReadOnly.php`](../../../vendor/filament/forms/src/Components/Concerns/CanBeReadOnly.php) | done | — | [detail](can-be-read-only.md) |
 | [Disable Grammarly (`CanDisableGrammarly`)](../../../packages/forms/src/Components/Concerns/CanDisableGrammarly.php) | [`Concerns/CanDisableGrammarly.php`](../../../vendor/filament/forms/src/Components/Concerns/CanDisableGrammarly.php) | done | — | — |

@@ -83,6 +83,12 @@ Two mechanical rules hold for every one of them.
 And a child template's own top-level `{% set %}` runs before the parent's body and shares one context, so `this`, `attributes` and every preamble variable the chrome computed are visible inside the child's blocks.
 That is what makes `renderSchema()`, `renderTable()` and `live_action()` legal in a child at all: all three read `this` out of the Twig context, and inside a `<twig:>` component's block body `this` is that component rather than the page, which is why the chrome is a **template** a child extends, and not a Twig component a page nests inside.
 
+### The chrome's nested classes carry the page's vertical rhythm
+
+`sy-pa-page-header-main-ctn` supplies `py-8 gap-y-8` and `sy-pa-page-content` the `gap-y-8` between whatever a page stacks inside it, so a page that renders its own root and skips the layers loses its spacing with nothing to see in the markup.
+A child template that `{% extends %}` the chrome inherits them, which is why the table and form variants fill a block rather than repeating the skeleton.
+The `partials/Page/` templates reach Twig only through the page's `getTemplate()`, never as a `<twig:>` tag, for the reason [the block contract](#the-block-contract-is-the-page-bodys-public-api) gives: inside a `<twig:>` component's block body `this` is that component rather than the page.
+
 ### `content` resolves by bare name, so an empty body costs a live request nothing
 
 `content` is deliberately **not** listed in `schemas()`.

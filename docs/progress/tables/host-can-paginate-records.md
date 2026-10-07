@@ -4,6 +4,8 @@ ports:
   - vendor/filament/tables/src/Concerns/CanPaginateRecords.php
 owns:
   - packages/tables/src/Concerns/CanPaginateRecords.php
+  - packages/tables/src/Query/FetchJoinPageQuery.php
+  - packages/tables/src/Query/JoinCardinality.php
 ---
 # Concerns\CanPaginateRecords (tables)
 

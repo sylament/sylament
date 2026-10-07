@@ -10,8 +10,14 @@ ports:
   - vendor/filament/schemas/src/Components/Concerns/HasContainerGridLayout.php
   - vendor/filament/support/src/Concerns/HasReorderAnimationDuration.php
 owns:
+  - packages/forms/src/Components/Concerns/CanBeCloned.php
+  - packages/forms/src/Components/Concerns/CanGenerateUuids.php
+  - packages/forms/src/Components/Concerns/HasExtraItemActions.php
   - packages/forms/src/Components/Repeater.php
+  - packages/forms/src/Components/Repeater/TableColumn.php
+  - packages/forms/src/helpers.php
   - packages/forms/templates/partials/Repeater/
+  - packages/schemas/src/Components/Concerns/HasContainerGridLayout.php
 ---
 # Repeater (forms)
 
@@ -22,6 +28,7 @@ The *plain* repeater maps **value-shaped array items only**.
 Object collections, a `Traversable`-typed property or a Doctrine `Collection` behind an adder, [stay refused by the mapper](../schemas/property-accessor.md#a-missing-singular-intermediate-is-constructed-an-object-collection-is-refused), because mapping collection *items* needs identity: which state row is which entity, and what happens to the rows that disappeared.
 The measured failure that draws the line is recorded in [the Serializer rejection](../schemas/belongs-to-record.md#a-serializer-based-mapper-is-rejected-for-collection-population): identity-less collection population produced duplicate INSERTs and orphan deletions on a real two-tag `Post`.
 That identity is what [`relationship()`](repeater-relationship.md#a-relationship-repeater-keys-its-items-by-identity-and-diffs-the-collection) supplies, so a repeater that declares one maps a Doctrine collection and the refusal steps aside for it, [and only for it](#object-collections-stay-refused-until-a-relationship-supplies-the-identity).
+The Surface table lists every public member of the ported classes and traits except two families with files of their own: `relationship()` and its family are in [repeater-relationship.md](repeater-relationship.md), and `minItems()` / `maxItems()` / `getItemsCount()` in [can-limit-items-length.md](can-limit-items-length.md).
 
 ## Surface
 
@@ -46,17 +53,15 @@ That identity is what [`relationship()`](repeater-relationship.md#a-relationship
 | `getCollapseAction()` / `getExpandAction()` / `getCollapseAllAction()` / `getExpandAllAction()`, their `*Action()` modifiers and `get*ActionName()` names, and `CanBeCollapsed` / `CanBeCompact` | [`Repeater.php`](../../../vendor/filament/forms/src/Components/Repeater.php) | done | — | [semantics](#collapse-state-is-the-clients-once-the-controller-connects) · [diverges](#the-repeater-item-owns-its-collapse-state-unlike-the-section) |
 | `getAddBetweenAction()` / `addBetweenAction()` / `getAddBetweenActionName()` / `addBetweenActionLabel()` / `getAddBetweenActionLabel()` / `labelBetweenItems()` / `getLabelBetweenItems()` | [`Repeater.php`](../../../vendor/filament/forms/src/Components/Repeater.php) | done | — | [semantics](#addbetween-hides-by-default-and-crowds-out-the-label-between-items) |
 | `extraItemActions()` / `getExtraItemActions()` / `cacheExtraItemActions()` | [`HasExtraItemActions.php`](../../../vendor/filament/forms/src/Components/Concerns/HasExtraItemActions.php) | done | — | [semantics](#an-extra-item-action-reads-its-items-state) |
-| `grid()` / `getGridColumns()` | [`HasContainerGridLayout.php`](../../../vendor/filament/schemas/src/Components/Concerns/HasContainerGridLayout.php) | done | — | [semantics](#the-items-grid-is-supports-grid) |
+| `grid()` / `getGridColumns()` | [`HasContainerGridLayout.php`](../../../vendor/filament/schemas/src/Components/Concerns/HasContainerGridLayout.php) | done | — | [semantics](#the-items-grid-is-supports-grid) · [diverges](#getgridcolumns-builds-its-map-fresh-and-skips-only-an-empty-breakpoint-name) |
 | `table()` / `getTableColumns()` / `isTable()` | [`Repeater.php`](../../../vendor/filament/forms/src/Components/Repeater.php) | done | — | [semantics](#table-mode-pairs-columns-by-position) · [diverges](#hidden-fields-render-in-a-trailing-hidden-cell) |
-| `partiallyRenderAfterActionsCalled()` / `shouldPartiallyRenderAfterActionsCalled()` | [`Repeater.php`](../../../vendor/filament/forms/src/Components/Repeater.php) | blocked | a UX LiveComponent partial-render equivalent | [detail](../schemas/schema.md#fill-fires-the-hydrated-hooks-children-first-and-before-the-null-fill-pass) |
+| `partiallyRenderAfterActionsCalled()` / `shouldPartiallyRenderAfterActionsCalled()` | [`Repeater.php`](../../../vendor/filament/forms/src/Components/Repeater.php) | blocked | a UX LiveComponent partial-render equivalent | [detail](../schemas/schema.md#partial-rendering-waits-on-a-ux-livecomponent-partial-render-equivalent) |
 | `array_move_before()` / `array_move_after()` | [`helpers.php`](../../../vendor/filament/forms/src/helpers.php) | done | — | [diverges](#the-move-helpers-correct-two-vendor-edge-defects) |
 | `getPublishedViewOverrideCheckPath()` | [`Repeater.php`](../../../vendor/filament/forms/src/Components/Repeater.php) | skipped | — | [diverges](toggle-buttons.md#there-is-nothing-to-publish-a-view-override-against) |
 | `createItemButtonLabel()` / `disableItemCreation()` / `disableItemDeletion()` / `disableItemMovement()` / `orderable()` / `inset()` (deprecated) | [`Repeater.php`](../../../vendor/filament/forms/src/Components/Repeater.php) | skipped | — | [diverges](#deprecated-filament-members-are-not-ported) |
 | `nullWhenBlank()` on a repeater | — | done | — | [semantics](#the-blank-test-judges-a-repeater-by-its-own-value) · [diverges](#a-repeater-owns-its-record-subtree) |
 | Object-collection refusal at hydration | — | done | — | [diverges](#object-collections-stay-refused-until-a-relationship-supplies-the-identity) |
 | `itemsAs()` value-object items over schemas' [`ObjectStateCast`](../schemas/object-state-cast.md) | — | done | — | [semantics](#a-cast-item-is-schema-complete-so-unmanaged-keys-stop-riding) · [diverges](#the-item-cast-fires-at-the-repeaters-two-pipeline-boundaries-not-in-the-generic-seam) · [diverges](#item-class-inference-is-deferred-the-declaration-stays-explicit) |
-
-The table lists every public member of the ported classes and traits except two families with files of their own: `relationship()` and its family are in [repeater-relationship.md](repeater-relationship.md), and `minItems()` / `maxItems()` / `getItemsCount()` in [can-limit-items-length.md](can-limit-items-length.md).
 
 ## Surface — TableColumn
 
@@ -359,6 +364,13 @@ The markup is valid, the input stays inside its row, and the cell is invisible e
 
 The counter is untouched by this: a `Hidden` field still consumes no column, and it is still dropped once the columns are exhausted, matching Filament's order (the column-budget guard wraps the Hidden branch rather than sitting inside it).
 So a `Hidden` declared *after* the last column-consuming component does not render at all — a Filament quirk kept on purpose, since diverging would make the column budget mean two different things depending on the component's type.
+
+### `getGridColumns()` builds its map fresh, and skips only an empty breakpoint name
+
+Filament's `getGridColumns()` seeds its result from the raw `$gridColumns` property and `unset()`s each key as its walk consumes it; the port builds the map fresh, the six-breakpoint default only when `grid()` was never called and an empty array the walk fills otherwise, in the shape [`HasColumns::getAllColumns()`](../../../packages/schemas/src/Components/Concerns/HasColumns.php) uses.
+The raw property holds closures and integer keys, so a map seeded from it cannot satisfy the declared `array<string, ?int>` return at PHPStan's max level.
+The empty-breakpoint guard is `$gridColumnBreakpoint === ''` where Filament calls `blank()`, which PHPStan rejects as an impossible type check over the narrowed `int|string` key.
+The two results differ only over a breakpoint name of whitespace alone, which no breakpoint map holds.
 
 ### Deprecated Filament members are not ported
 

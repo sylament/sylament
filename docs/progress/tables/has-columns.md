@@ -10,9 +10,13 @@ ports:
   - vendor/filament/tables/resources/js/components/columns/text-input.js
   - vendor/filament/tables/resources/js/components/columns/toggle.js
 owns:
+  - packages/tables/assets/src/controllers/editable_cell_controller.ts
+  - packages/tables/assets/src/styles/components/editable-cell.css
   - packages/tables/src/Columns/Concerns/CanBeValidated.php
   - packages/tables/src/Columns/Concerns/CanUpdateState.php
+  - packages/tables/src/Columns/Contracts/
   - packages/tables/src/Concerns/HasColumns.php
+  - packages/tables/src/Exceptions/RecordWriteException.php
 ---
 # HasColumns (tables host)
 

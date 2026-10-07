@@ -11,7 +11,7 @@ owns:
 
 [`Sylament\Schemas\Components\LiveComponent`](../../../packages/schemas/src/Components/LiveComponent.php) is the embed: a schema component that mounts **another live component** in place, by registered name (or class-string), with props the caller names.
 It ports [`schemas/src/Components/Livewire.php`](../../../vendor/filament/schemas/src/Components/Livewire.php) under the systematic Livewire → UX LiveComponent idiom translation, so the class is renamed without a [rename table](../renames.md) row; the [Idiom list](../translations.md#idiom) carries the example.
-Its template is [`partials/LiveComponent/index.html.twig`](../../../packages/schemas/templates/partials/LiveComponent/index.html.twig) ([component-views.md](component-views.md)).
+Its template is [`partials/LiveComponent/index.html.twig`](../../../packages/schemas/templates/partials/LiveComponent/index.html.twig).
 
 It is the mechanism panels' relation managers mount through: an edit page's content schema holds one embed per manager, each keyed by the manager class (joined with the group key inside a relation group), and each embed's `id` is what keeps that manager's own state across the page's re-renders.
 

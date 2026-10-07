@@ -3,12 +3,16 @@ description: The base class every actions-package action extends, with the membe
 ports:
   - vendor/filament/actions/src/Action.php
   - vendor/filament/actions/src/Concerns/BelongsToLivewire.php
+  - vendor/filament/actions/src/Concerns/CanBeMounted.php
   - vendor/filament/actions/src/Concerns/CanBeDisabled.php
   - vendor/filament/actions/src/Concerns/CanBeHidden.php
   - vendor/filament/actions/src/Concerns/CanBeOutlined.php
   - vendor/filament/actions/src/Concerns/CanCallParentAction.php
   - vendor/filament/actions/src/Concerns/CanRedirect.php
   - vendor/filament/actions/src/Concerns/HasArguments.php
+  - vendor/filament/actions/src/Concerns/HasData.php
+  - vendor/filament/actions/src/Concerns/HasExtraModalOverlayAttributes.php
+  - vendor/filament/actions/src/Concerns/HasExtraModalWindowAttributes.php
   - vendor/filament/actions/src/Concerns/HasGroupedIcon.php
   - vendor/filament/actions/src/Concerns/HasLabel.php
   - vendor/filament/actions/src/Concerns/HasLifecycleHooks.php
@@ -16,20 +20,34 @@ ports:
   - vendor/filament/actions/src/Concerns/HasName.php
   - vendor/filament/actions/src/Concerns/HasParentActions.php
   - vendor/filament/actions/src/Concerns/HasSize.php
+  - vendor/filament/actions/src/Events/ActionCalled.php
+  - vendor/filament/actions/src/Events/ActionCalling.php
+  - vendor/filament/support/src/Concerns/HasIconPosition.php
 owns:
   - packages/actions/src/Action.php
   - packages/actions/src/Concerns/BelongsToLiveComponent.php
   - packages/actions/src/Concerns/CanBeDisabled.php
   - packages/actions/src/Concerns/CanBeHidden.php
   - packages/actions/src/Concerns/CanBeMarkedAsRead.php
+  - packages/actions/src/Concerns/CanBeMounted.php
+  - packages/actions/src/Concerns/CanBeOutlined.php
   - packages/actions/src/Concerns/CanCallParentAction.php
   - packages/actions/src/Concerns/CanRedirect.php
   - packages/actions/src/Concerns/HasArguments.php
+  - packages/actions/src/Concerns/HasData.php
+  - packages/actions/src/Concerns/HasExtraModalOverlayAttributes.php
+  - packages/actions/src/Concerns/HasExtraModalWindowAttributes.php
+  - packages/actions/src/Concerns/HasGroupedIcon.php
+  - packages/actions/src/Concerns/HasLabel.php
   - packages/actions/src/Concerns/HasLifecycleHooks.php
   - packages/actions/src/Concerns/HasMountableArguments.php
   - packages/actions/src/Concerns/HasName.php
   - packages/actions/src/Concerns/HasParentActions.php
+  - packages/actions/src/Concerns/HasSize.php
+  - packages/actions/src/Events/ActionCalled.php
+  - packages/actions/src/Events/ActionCalling.php
   - packages/actions/templates/partials/Action/
+  - packages/support/src/Components/Concerns/HasIconPosition.php
 ---
 # Action (actions)
 
@@ -53,7 +71,7 @@ The Livewire → UX LiveComponent, Blade → Twig and `Htmlable` → `Markup` tr
 | [The `table` injection, by name and by `Table::class`](../../../packages/actions/src/Action.php) | [`Action.php`](../../../vendor/filament/actions/src/Action.php) (the name arm) | done | — | [diverges](#tableclass-resolves-by-type-as-well-as-by-name) · [semantics](#a-table-bound-action-titles-and-labels-through-its-table) |
 | [`getSchemaComponentState()` / `getSchemaState()`](../../../packages/actions/src/Action.php) | [`Action.php`](../../../vendor/filament/actions/src/Action.php) | done | — | [semantics](#schemastate-is-the-mounted-items-state-for-an-extra-item-action) · [semantics](#get-and-set-throw-on-an-action-with-no-schema-component-where-filament-fatals) |
 | [`badge()` / `button()` / `grouped()` / `iconButton()` / `link()` and the `is*()` predicates](../../../packages/actions/src/Action.php) | [`Action.php`](../../../vendor/filament/actions/src/Action.php) | done | — | [diverges](#the-view-switch-renders-through-twig-templates-not-tohtml-fast-paths) |
-| [`shouldClearRecordAfter()` / `clearRecordAfter()`](../../../packages/actions/src/Action.php) | [`Action.php`](../../../vendor/filament/actions/src/Action.php) | done | — | [semantics](#the-record-chain-reaches-the-schema-the-component-and-the-host) |
+| [`shouldClearRecordAfter()` / `clearRecordAfter()`](../../../packages/actions/src/Action.php) | [`Action.php`](../../../vendor/filament/actions/src/Action.php) | done | — | [diverges](#the-base-shouldclearrecordafter-answers-false-without-filaments-unsaved-record-arm) |
 | [`getContext()`](../../../packages/actions/src/Action.php) | [`Action.php`](../../../vendor/filament/actions/src/Action.php) | done | — | [diverges](#getcontext-drops-the-record-model-gate) |
 | [`getClone()`](../../../packages/actions/src/Action.php) | [`Action.php`](../../../vendor/filament/actions/src/Action.php) | done | — | [action-group.md](action-group.md#getclone-rebuilds-the-flat-map-from-the-cloned-members-rather-than-cloning-it-separately) |
 | [`toArray()` / `fromArray()`](../../../packages/actions/src/Action.php) | [`Action.php`](../../../vendor/filament/actions/src/Action.php) | done | — | [diverges](#the-serialized-enum-values-flatten-to-scalars-and-a-scalableicon-crosses-unflattened) · [semantics](#the-serialized-key-list-drops-alpineclickhandler-and-shouldposttourl) · [semantics](#fromarray-restores-only-the-five-built-in-templates) · [semantics](#fromarray-degrades-a-to-dispatch-with-no-target-component-to-a-plain-dispatch) |
@@ -75,16 +93,23 @@ The Livewire → UX LiveComponent, Blade → Twig and `Htmlable` → `Markup` tr
 | [`BelongsToLiveComponent`](../../../packages/actions/src/Concerns/BelongsToLiveComponent.php) | [`Concerns/BelongsToLivewire.php`](../../../vendor/filament/actions/src/Concerns/BelongsToLivewire.php) | done | — | [diverges](#the-live-component-chain-narrows-inline-instead-of-through-a-second-getter) |
 | [`CanBeDisabled`](../../../packages/actions/src/Concerns/CanBeDisabled.php) | [`Concerns/CanBeDisabled.php`](../../../vendor/filament/actions/src/Concerns/CanBeDisabled.php) | done | — | [diverges](#canbedisabled-drops-the-authorization-short-circuits) |
 | [`CanBeHidden`](../../../packages/actions/src/Concerns/CanBeHidden.php) | [`Concerns/CanBeHidden.php`](../../../vendor/filament/actions/src/Concerns/CanBeHidden.php) | in progress | — | [detail](#canbehidden-omits-authorization-group-and-table-cache-integration) |
+| [`CanBeMounted`](../../../packages/actions/src/Concerns/CanBeMounted.php) (`mount()` / `mountUsing()` / `getMountUsing()` / `fillForm()`) | [`Concerns/CanBeMounted.php`](../../../vendor/filament/actions/src/Concerns/CanBeMounted.php) | done | — | [diverges](#fillform-forwards-the-mounted-schema-and-mount-clears-no-visibility-cache) |
 | [`CanBeMarkedAsRead`](../../../packages/actions/src/Concerns/CanBeMarkedAsRead.php) | [`Action.php`](../../../vendor/filament/actions/src/Action.php) (`markAsRead()` and its five siblings) | in progress | — | [detail](#canbemarkedasread-carries-the-flags-nothing-reads-them-yet) |
 | [`CanBeOutlined`](../../../packages/actions/src/Concerns/CanBeOutlined.php) | [`Concerns/CanBeOutlined.php`](../../../vendor/filament/actions/src/Concerns/CanBeOutlined.php) | done | — | [button.md](../support/button.md#the-outlined-variant-is-selected-by-a-prop-and-by-a-second-policy-class) |
 | [`CanCallParentAction`](../../../packages/actions/src/Concerns/CanCallParentAction.php) | [`Concerns/CanCallParentAction.php`](../../../vendor/filament/actions/src/Concerns/CanCallParentAction.php) | done | — | [semantics](has-action.md#string-click-handlers-are-live-action-names-and-close-dismisses-client-side) |
 | [`CanRedirect`](../../../packages/actions/src/Concerns/CanRedirect.php) | [`Concerns/CanRedirect.php`](../../../vendor/filament/actions/src/Concerns/CanRedirect.php) | done | — | [diverges](#redirect-records-a-pending-url-instead-of-redirecting-the-host) |
 | [`HasArguments`](../../../packages/actions/src/Concerns/HasArguments.php) | [`Concerns/HasArguments.php`](../../../vendor/filament/actions/src/Concerns/HasArguments.php) | done | — | — |
+| [`data()` / `mutateDataUsing()` / `resetData()` / `getData()` / `getRawData()`](../../../packages/actions/src/Concerns/HasData.php) | [`Concerns/HasData.php`](../../../vendor/filament/actions/src/Concerns/HasData.php) | done | — | [diverges](#data-checks-the-mutated-array-and-keeps-the-unmutated-one) |
+| `getValidatedData()` / `fillData()` | [`Concerns/HasData.php`](../../../vendor/filament/actions/src/Concerns/HasData.php) | todo | — | [detail](#hasdata-lacks-getvalidateddata-and-filldata) |
+| `mutateFormDataUsing()` / `formData()` / `resetFormData()` / `getFormData()` / `getRawFormData()` (deprecated for the names without `Form`) | [`Concerns/HasData.php`](../../../vendor/filament/actions/src/Concerns/HasData.php) | skipped | — | [deprecated](../README.md#statuses) |
+| [`HasExtraModalOverlayAttributes`](../../../packages/actions/src/Concerns/HasExtraModalOverlayAttributes.php) | [`Concerns/HasExtraModalOverlayAttributes.php`](../../../vendor/filament/actions/src/Concerns/HasExtraModalOverlayAttributes.php) | in progress | — | [detail](#the-modal-attribute-setters-register-a-repeated-closure-twice) · [modal](../support/modal.md#the-modal-is-re-architected-onto-native-dialog) |
+| [`HasExtraModalWindowAttributes`](../../../packages/actions/src/Concerns/HasExtraModalWindowAttributes.php) | [`Concerns/HasExtraModalWindowAttributes.php`](../../../vendor/filament/actions/src/Concerns/HasExtraModalWindowAttributes.php) | in progress | — | [detail](#the-modal-attribute-setters-register-a-repeated-closure-twice) · [modal](../support/modal.md#the-form-wrapper-carries-live_action-not-wiresubmit) |
 | [`HasGroupedIcon`](../../../packages/actions/src/Concerns/HasGroupedIcon.php) | [`Concerns/HasGroupedIcon.php`](../../../vendor/filament/actions/src/Concerns/HasGroupedIcon.php) | done | — | [diverges](#hasgroupedicon-narrows-its-icon-type-to-string) |
 | [`label()` / `getLabel()`](../../../packages/actions/src/Concerns/HasLabel.php) | [`Concerns/HasLabel.php`](../../../vendor/filament/actions/src/Concerns/HasLabel.php) | done | — | [semantics](#the-name-derived-label-is-the-names-segment-before-the-first-dot) |
 | [`hiddenLabel()` / `isLabelHidden()` / `hasLabelHidden()`](../../../packages/actions/src/Concerns/HasLabel.php) | [`Concerns/HasLabel.php`](../../../vendor/filament/actions/src/Concerns/HasLabel.php) | done | — | — |
 | `translateLabel()` | [`Concerns/HasLabel.php`](../../../vendor/filament/actions/src/Concerns/HasLabel.php) | skipped | — | [diverges](#label-translation-and-the-deprecated-disablelabel-alias-are-not-ported) |
 | `disableLabel()` (deprecated) | [`Concerns/HasLabel.php`](../../../vendor/filament/actions/src/Concerns/HasLabel.php) | skipped | — | [diverges](#label-translation-and-the-deprecated-disablelabel-alias-are-not-ported) |
+| [`ActionCalling`](../../../packages/actions/src/Events/ActionCalling.php) / [`ActionCalled`](../../../packages/actions/src/Events/ActionCalled.php) | [`Events/ActionCalling.php`](../../../vendor/filament/actions/src/Events/ActionCalling.php) · [`Events/ActionCalled.php`](../../../vendor/filament/actions/src/Events/ActionCalled.php) | done | — | [diverges](#the-lifecycle-events-are-dispatched-as-objects-where-filament-dispatches-a-class-string) |
 | [`HasLifecycleHooks`](../../../packages/actions/src/Concerns/HasLifecycleHooks.php) | [`Concerns/HasLifecycleHooks.php`](../../../vendor/filament/actions/src/Concerns/HasLifecycleHooks.php) | done | — | [diverges](#the-lifecycle-events-are-dispatched-as-objects-where-filament-dispatches-a-class-string) · [has-actions.md](has-actions.md#callmountedaction-runs-filaments-pipeline-in-filaments-order) |
 | [`HasMountableArguments`](../../../packages/actions/src/Concerns/HasMountableArguments.php) | [`Concerns/HasMountableArguments.php`](../../../vendor/filament/actions/src/Concerns/HasMountableArguments.php) | done | — | [diverges](#action-invocation-is-a-php-side-seam-only) |
 | [`HasName`](../../../packages/actions/src/Concerns/HasName.php) | [`Concerns/HasName.php`](../../../vendor/filament/actions/src/Concerns/HasName.php) | done | — | [diverges](#getname-tightens-its-return-type-to-non-nullable-string) |
@@ -117,7 +142,7 @@ Filament's by-type resolver maps `Builder::class` to the selected-records query,
 The port maps `Doctrine\ORM\QueryBuilder::class` to [`getSelectedRecordsQuery()`](bulk-action.md#the-two-record-readers-share-one-gate-and-one-message), behind the same [access-flag gate](#the-selected-record-injections-are-gated-on-the-access-flag) the by-name arms carry.
 It has no collection arm, because a Doctrine read returns a plain `list` and the `records` name carries it.
 The record arm is missing.
-With no `Model::class` base to key it on, it would resolve on the record's own class, the way [`getCustomRecordTitle()`](#the-record-chain-reaches-the-schema-the-component-and-the-host)'s typed injection does, and the [`getRecord()`](#the-record-chain-reaches-the-schema-the-component-and-the-host) walk it would read already reaches the schema container and component.
+With no `Model::class` base to key it on, it would resolve on the record's own class, the way [`getCustomRecordTitle()`](interacts-with-record.md#getcustomrecordtitle-returns-null-without-a-record)'s typed injection does, and the [`getRecord()`](#the-record-chain-reaches-the-schema-the-component-and-the-host) walk it would read already reaches the schema container and component.
 A type-hinted record parameter therefore falls through to support's `EvaluatesClosures::resolveDefaultClosureDependencyForEvaluationByType()` and is not resolved.
 
 The override also carries [`Table::class`](#tableclass-resolves-by-type-as-well-as-by-name) and the [`Get`/`Set` pair](#getset-resolve-by-type-as-well-as-by-name), which Filament's does not.
@@ -160,7 +185,39 @@ The primitives' own tests ([`BadgeRenderTest`](../../../packages/actions/tests/I
 
 **Next step:** add both cases to `ActionRenderTest`; no code change is expected.
 
+### HasData lacks `getValidatedData()` and `fillData()`
+
+Filament's `getValidatedData()` validates the mounted action's schema, and an `ExposesStateToActionData` schema component's child schemas, and returns their state without running the action; `fillData()` fills only the state paths that fields of those schemas map.
+The port's [`HasData`](../../../packages/actions/src/Concerns/HasData.php) has neither, nor the `getMountedDataNestingIndex()` and `fillSchemaData()` helpers behind them.
+`ExposesStateToActionData` is unported too ([schemas README](../schemas/README.md#unported)).
+
+### The modal attribute setters register a repeated closure twice
+
+`extraModalOverlayAttributes()` and `extraModalWindowAttributes()` replace or merge, and their getters fold every entry through support's `ComponentAttributeBag` onto the `<dialog>` and the `.sy-modal-window` element.
+Filament's setters return early when a merged `Closure` is already in the list; the port's append it again, the same gap support's trait carries ([has-extra-attributes.md](../support/has-extra-attributes.md#merging-the-same-closure-twice-registers-it-twice)).
+
 ## Semantics
+
+### The record chain reaches the schema, the component and the host
+
+[`Action::getRecord(bool $withDefault = true)`](../../../packages/actions/src/Action.php) walks Filament's full chain: its **own** record, its **group**, its [**schema container**](belongs-to-schema-component.md), its **schema component**, and finally the host's `getDefaultActionRecord()`, running whatever it reaches through `ensureCorrectRecordType()`.
+The last hop is the only one `$withDefault: false` switches off, which makes it a question about *bindings* rather than about what the action would resolve at run time.
+`getRecordClass()` carries the same gate over its own chain — custom class → [`getTable()?->getRecordClass()`](../tables/has-query.md#the-record-class-is-read-off-the-base-querys-root-entity) → the resolved record's class → group → schema container → schema component → host `getDefaultActionRecordClass()` — so a create action inside a table resolves the class it will create into without a record existing yet.
+The table hop sits **above** the record hop, in Filament's order: a `records()`-lane table answers `null` (it has no root entity), so only the query lane contributes.
+The label, plural-label, title and title-attribute chains hop through the bound table too ([below](#a-table-bound-action-titles-and-labels-through-its-table)), and where a bound own record stops the walk is the trait's rule ([interacts-with-record.md](interacts-with-record.md#a-bound-record-stops-the-walk-even-when-the-record-class-guard-drops-it)).
+The trait and `ActionGroup` carry shorter chains, which is the split Filament gets from gating its walk on `$this instanceof Action` ([action-group.md](action-group.md#actiongroupgetrecord-restates-the-traits-group-fallback-to-satisfy-phpstan)).
+
+### A table-bound action titles and labels through its table
+
+`Action`'s four record chains each hop through `getTable()?->…` before their other fallbacks, in Filament's order: `getRecordLabel()` is custom → **table** → record class → host hook; `getPluralRecordLabel()` is custom → **table** → `plural(getRecordLabel())`; `getRecordTitle()` is custom → **table** → host hook → record label; `getRecordTitleAttribute()` is custom → **table**.
+
+Two of those hops are terminal for a table-bound action, and that is the part a reader is likely to misread as a bug.
+`Table::getRecordLabel()` and `Table::getRecordTitle()` both return `string`, because each falls back to the table's own record label ([table.md](../tables/table.md#the-record-title-reads-the-attribute-through-the-accessor-and-falls-back-to-the-label)).
+So once a table is bound, `getRecordLabel()` never reaches its class or host branch and `getRecordTitle()` never reaches [`getDefaultActionRecordTitle()`](interacts-with-actions.md): those branches serve **table-less** hosts — a page header action, a schema-hosted action — and are unreachable, not dead.
+Filament behaves identically, which is why its `Resource::configureTable()` pushes the resource's labels and title attribute *onto the table*; panels' `ListRecords::table()` does the same for the same reason, and a resource row action reads its record title through the table rather than through the page hook.
+
+The reads are all null-safe (`getTable()?->…`) because `sylament/tables` is a `suggest` of this package, not a `require` — the [guarded soft dependency](belongs-to-table.md).
+An action body may still call methods on the table `getTable()` returns, since such a body only runs mounted from a table.
 
 ### `$schemaState` is the mounted item's state for an extra item action
 
@@ -229,6 +286,34 @@ The one trigger where the gray branch *is* reachable is `Grouped`, which passes 
 They are kept as Filament's declared API rather than trimmed, and the rest of the trait is ported member for member.
 
 ## Divergences
+
+### The label and title chains differ from Filament's at the host arm and for a passed record
+
+Where the action's record class *is* the host's own `getDefaultActionRecordClass()`, [`getRecordLabel()`](../../../packages/actions/src/Action.php) takes the host's label, which is how a resource page names its records once instead of at every action.
+Filament returns the host's answer flatly there, so a host that owns the class but answers no label yields `null`; the port falls through to the label derived from the class, because a silent host is the common case (every host that has not overridden the hook) and `null` would leave a heading empty where the class name is at hand.
+`getRecordTitle()`'s host arm is `getDefaultActionRecordTitle($this) ?? $this->getRecordLabel()` where Filament wraps it in `filled()`, so a host answering `''` stops the title chain where Filament falls through to the label; its custom and table arms test `filled()` as Filament's do.
+Filament's `getRecordTitle()` also nulls a `$record` argument that is not of the custom record class before using it; the port passes the caller's argument straight to `getCustomRecordTitle()`, on the reading that an explicitly passed record is the caller's assertion, while `ensureCorrectRecordType()` still guards every record the chain resolves.
+
+### The base `shouldClearRecordAfter()` answers false, without Filament's unsaved-record arm
+
+Filament's base `shouldClearRecordAfter()` answers true when the action's own record is an Eloquent model whose `exists` flag is false, so an action holding a record it never saved drops it after the run.
+The port's [`shouldClearRecordAfter()`](../../../packages/actions/src/Action.php) answers false, and `clearRecordAfter()` returns without touching anything, so an action that never opts in keeps the record it was mounted with.
+Doctrine has no flag meaning "this record has a row" ([the same gap](../schemas/component-belongs-to-record.md#the-exists-guarded-members-are-not-ported)), so clearing is an opt-in override: [`CreateAction::shouldClearRecordAfter()`](create-action.md) answers true, as Filament's does, and nothing else overrides either method.
+
+### `fillForm()` forwards the mounted schema, and `mount()` clears no visibility cache
+
+Filament's `mount()` evaluates the mount closure inside a `try`/`finally` that calls `clearVisibilityCache()`; the port has no visibility cache, so its `mount()` only evaluates the closure.
+Filament's `fillForm()` closure declares `Action $action, ?Schema $schema` and calls `$action->evaluate($data)`; the port's declares `?Schema $schema` and calls `$this->evaluate($data, ['form' => $schema, 'schema' => $schema])`.
+The captured `$this` is the action an `$action` parameter would receive, because [`Invoker::call()`](../../../packages/support/src/Evaluation/Invoker.php) never rebinds a closure and `mount()` evaluates the stored closure through the instance that stored it; unlike an untyped `$action`, it is typed for PHPStan.
+The `form` and `schema` injections let `fillForm(fn (Schema $schema) => …)` read the modal's own schema, which the port's fill closures need because they read the record through [`Schema::getStateFromRecord()`](../schemas/belongs-to-record.md) where Filament's call `$record->attributesToArray()`.
+Without them, a `Schema` parameter resolves by name to the containing schema through `resolveDefaultClosureDependencyForEvaluationByName()`: the page's form on a record page, and `null` on a table row or a page header.
+
+### `data()` checks the mutated array and keeps the unmutated one
+
+Filament's `data()` stores whatever `mutateDataUsing()` returns; the port's passes it through `assertFieldKeyedData()`, which throws a `TypeError` naming the hook unless the result is an array keyed by field name.
+`mutateDataUsing` is a bare `?Closure`, so PHPStan cannot type its result, and the check is what gives `$data` its declared `array<string, mixed>`.
+`data()` also keeps the array it was handed, read through the `@internal` `getUnmutatedData()` and cleared by `resetData()`: the default write closures of `CreateAction`, `EditAction`, `ReplicateAction` and forms' `Select` option actions compare it with the mutated array to refuse a path the mutation added that no schema component maps ([create-action.md](create-action.md)).
+`getRawData()` reads the host's per-frame bag through [`InteractsWithActions::getMountedActionData()`](interacts-with-actions.md) where Filament reads `mountedActions.{i}.data` directly ([why](has-actions.md#per-mount-form-state-lives-in-a-sibling-bag-not-in-the-stack-descriptor)).
 
 ### The lifecycle events are dispatched as objects, where Filament dispatches a class-string
 
@@ -332,7 +417,7 @@ The **model gate** around `recordKey` is dropped: Filament only emits a key when
 Sylament has no model class to compare, so the key is emitted whenever *something* yields one, but **which** something depends on the table.
 
 When the action has a table and the record is an instance of the table's [record class](../tables/has-query.md#the-record-class-is-read-off-the-base-querys-root-entity), `getContext()` asks the table: `Table::getRecordKey()`, the host's own read, which goes through [`RecordKey::of()`](../schemas/record-key.md) on the query lane.
-Only otherwise does it fall back to [`resolveRecordKey()`](interacts-with-record.md#record-key-resolution-is-hoisted-to-hasactions)'s literal `id`.
+Only otherwise does it fall back to [`resolveRecordKey()`](interacts-with-record.md#resolverecordkey-reads-id-and-answers-null-for-a-record-with-no-usable-key)'s literal `id`.
 That is the gap [has-table.md](../tables/has-table.md#object-records-are-keyed-by-a-readable-id-rather-than-an-eloquent-key) names, closed the way it proposes: the actions layer is handed the table's key rather than taught Doctrine, so a row action on a `Book`, a `Shortcut` or a `Residency` mounts **with** its record.
 An action with no table, or over a record that is not the table's entity (a `SELECT NEW` projection, a DTO), reads `id`, and only where **one scalar field** is the record's whole identity, which is the shape a single property read can name.
 A private `isRecordKeyedByOneScalarField()` asks `ClassMetadata` for the identifier and answers true where it holds one field and that field is not an association, whatever the field is called, so a record keyed by a `sku` or a slug mints its key.

@@ -54,6 +54,12 @@ So every bulk body's catch swallows silently, `DeleteBulkAction`'s, [`DetachBulk
 
 ## Semantics
 
+### The delete bodies resolve their manager through the registry alone
+
+[`DeleteAction`](../../../packages/actions/src/DeleteAction.php) and [`DeleteBulkAction`](../../../packages/actions/src/DeleteBulkAction.php)'s fetching arm call `getManagerForClass()` on the injected registry themselves rather than [`getEntityManagerForRecord()`](can-use-database-transactions.md#the-record-manager-resolver-has-no-filament-counterpart-and-the-table-wins), so a query-lane table's manager does not take precedence for a delete as it does for the other write actions.
+They keep their own resolution because their container-built-instance messages are pinned by tests (`DeleteActionTest`).
+The by-key arm is the exception: it has no record to ask the registry about, so it deletes through the table's `getQueryEntityManager()` ([below](#the-by-key-arm-is-a-dql-delete-over-the-plucked-keys)).
+
 ### The headings interpolate, and fall back to the bare verb
 
 `DeleteAction`'s heading is `($title = $this->getRecordTitle()) === null ? 'Delete' : "Delete {$title}"`, and `DeleteBulkAction`'s is the same shape over `getTitleCasePluralRecordLabel()`: Filament's `__('…delete.single.modal.heading', ['label' => …])` minus the catalogue, the shape `EditAction` and `ReplicateAction` share.
@@ -184,3 +190,4 @@ Anything else that references a selected row makes the `DELETE` fail whole: the 
 The hydrating arm is unaffected: `remove()` deletes a record's many-to-many join rows itself.
 The by-key arm does not clear join rows first, because it keeps Filament's mass-delete semantics, whose `delete()` leaves pivot rows to the database too.
 A join table whose columns pointing at the record declare `ON DELETE CASCADE` is cleared by the database; any other is a reason to leave the fetching arm on.
+The relation-scoped delete pins ([`RelationshipTableTest`](../../../packages/tables/tests/Integration/RelationshipTableTest.php) over [`ArtistSongsTable`](../../../packages/tables/tests/Fixtures/Twig/Components/ArtistSongsTable.php)) delete `Song`s through `Artist.songs`, whose rows own their own foreign key, rather than `Genre`s through `Song.genres`, a test-design choice that keeps those pins off the join table.

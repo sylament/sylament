@@ -18,6 +18,7 @@ owns:
   - packages/schemas/assets/src/styles/components/icon.css
   - packages/schemas/assets/src/styles/components/schema.css
   - packages/schemas/assets/src/styles/components/section.css
+  - packages/schemas/assets/src/styles/index.css
   - packages/support/assets/src/styles/components/text.css
 ---
 # Styles (schemas)

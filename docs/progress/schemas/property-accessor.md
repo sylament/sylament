@@ -2,6 +2,7 @@
 description: The state backend that reads and writes a live host's state bag, a detached array and a record's object graph by dotted path.
 ports: []
 owns:
+  - packages/schemas/src/Components/Concerns/CanAccessProperties.php
   - packages/schemas/src/State/PropertyAccessor.php
 ---
 # PropertyAccessor (schemas)

@@ -29,7 +29,7 @@ owns:
 | [`getRedirectUrl()`](../../../packages/panels/src/Resources/Pages/CreateRecord.php) | `getRedirectUrl()` | done | — | [semantics](#the-redirect-mints-the-key-the-new-row-reads-back) |
 | `getRedirectUrlParameters()` | the same | todo | — | — |
 | [`getTitle()`](../../../packages/panels/src/Resources/Pages/CreateRecord.php) + [`getBreadcrumb()`](../../../packages/panels/src/Resources/Pages/CreateRecord.php) | the same two | done | — | [diverges](#the-create-and-save-notification-titles-are-literals-not-translation-keys) |
-| [`getMountedActionSchemaRecord()`](../../../packages/panels/src/Resources/Pages/CreateRecord.php) | `getMountedActionSchemaModel()` | done | — | [renames.md](../renames.md#the-model-vocabulary-collapses-onto-record) · [semantics](#the-mounted-schemas-record-answers-for-the-top-frame-and-depends-on-the-seeds-laziness) |
+| [`getMountedActionSchemaRecord()`](../../../packages/panels/src/Resources/Pages/CreateRecord.php) | `getMountedActionSchemaModel()` | in progress | — | [detail](#no-test-reaches-the-mounted-schema-record-override) · [renames.md](../renames.md#the-model-vocabulary-collapses-onto-record) · [semantics](#the-mounted-schemas-record-answers-for-the-top-frame-and-depends-on-the-seeds-laziness) |
 | [`getPageClasses()`](../../../packages/panels/src/Resources/Pages/CreateRecord.php) | the same | done | — | [custom-pages.md](custom-pages.md#getpageclasses-is-the-only-source-of-a-per-page-root-class) |
 | `getSubmitFormAction()` | the same | todo | — | — |
 | Create another — `$canCreateAnother`, `canCreateAnother()`, `disableCreateAnother()`, `createAnother()`, `preserveFormDataWhenCreatingAnother()`, `getCreateAnotherFormAction()` | the same six | todo | — | — |
@@ -43,6 +43,11 @@ owns:
 
 `create()` wraps every step from `beforeValidate` to the write in `try { … } catch (Halt) { return null; }`, so a lifecycle hook calling [`halt()`](custom-pages.md#halts-rollback-flag-is-carried-and-ignored) stops the ladder where it threw: no mutator, no write, no notification and no redirect.
 What is missing is a test: only the edit page's arm is pinned, by `EditRecordTest`'s halted `beforeSave` hook, and no create fixture halts.
+
+### No test reaches the mounted-schema record override
+
+`getMountedActionSchemaRecord()` answers the resource's record class, which is what `getDefaultActionRecordClass()` would have answered, for a frame whose action a schema component owns and whose component carries neither a record nor a record class.
+No shipped page builds such a frame, so no test in `packages/panels/tests/` calls the override; only the actions fixture `ActionSchemaHost` overrides the host's hook, and it is no resource page.
 
 ## Semantics
 
@@ -79,7 +84,7 @@ A key the constructor of a [`makeRecord()`](#the-create-page-builds-its-record-i
 Two consequences are easy to miss.
 **Never `hiddenOn('create')` such a key field**: a taken key is filed under every key field the form maps, and a hidden field renders nowhere, so when every mapped key field is hidden the save is refused with no message at all, and when one half is hidden the message shows under the other half only; a `disabledOn('create')` one shows it under a field the user cannot change.
 **Give such a key a getter or make it public**: the rule sees only a property it can read, so a `private readonly` one with neither is still Symfony's `NoSuchPropertyException`.
-[`MakeRecordTest`](../../../packages/panels/tests/Integration/Resources/Pages/MakeRecordTest.php) pins both over a two-field key the constructor sets and lower-cases, and over a nested derived identity whose constructor takes its parent ([nested-resources.md](#a-child-whose-constructor-takes-its-parent-is-built-in-makerecord-and-both-attaches-leave-that-parent-alone)).
+[`MakeRecordTest`](../../../packages/panels/tests/Integration/Resources/Pages/MakeRecordTest.php) pins both over a two-field key the constructor sets and lower-cases, and over a nested derived identity whose constructor takes its parent ([below](#a-child-whose-constructor-takes-its-parent-is-built-in-makerecord-and-both-attaches-leave-that-parent-alone)).
 
 ### The record joins its parent before the mapping, and leaves it when the create is refused
 

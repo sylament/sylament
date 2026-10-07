@@ -35,6 +35,11 @@ Two consequences worth stating.
 A selection can outlive the page that showed it — including onto an overflow page with no rows at all, since a page past the end [renders empty with the total intact](host-can-paginate-records.md#each-mode-pays-differently-for-its-total-and-all-reads-the-whole-query) — so the chrome that clears it has to stay reachable from an empty page.
 And on the records lane a surviving cross-page selection resolves to **nothing**, because that lane resolves off the current page collection; the keys are still held, still round-trip, and still count in the banner, but `getSelectedTableRecords()` returns only those on the page in front of you.
 
+### Select-all plucks one key per record off a fetch-joined query
+
+`pluckTableRecordKeys()` selects the identifier off the table's own query, fetch join and all, so a to-many join multiplies its rows the way it multiplies a page's.
+The `array_unique()` around its key map is what turns those rows back into one key per record, for a single-identifier root and a keyed one alike, and it runs after encoding, so a composite root's rows collapse on the printed key.
+
 ## Divergences
 
 ### The selection is server-canonical, and re-derived on every read

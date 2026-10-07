@@ -33,17 +33,13 @@ The seam that switches the children off is schemas' [`Schema::fieldWrapperView()
 | [`configureChildSchema()` — inline + embedded + small actions on the six inline slots](../../../packages/forms/src/Components/FusedGroup.php) | [`FusedGroup::configureChildSchema()`](../../../vendor/filament/schemas/src/Components/FusedGroup.php) | done | — | — |
 | [`isRequired()` — any default-slot child field is required-marked](../../../packages/forms/src/Components/FusedGroup.php) | [`FusedGroup::isRequired()`](../../../vendor/filament/schemas/src/Components/FusedGroup.php) | done | — | — |
 | [`getErrorMessages()` — the first path-bearing child field carrying any](../../../packages/forms/src/Components/FusedGroup.php) | [the collection loop in `toEmbeddedHtml()`](../../../vendor/filament/schemas/src/Components/FusedGroup.php) | done | — | [diverges](#the-error-collection-keeps-the-first-failing-field-and-nothing-else) |
-| [`FusedGroup/index.html.twig` — the group root inside `FieldWrapper`](../../../packages/forms/templates/partials/FusedGroup/index.html.twig) | [the wrapper rendering in `toEmbeddedHtml()`](../../../vendor/filament/schemas/src/Components/FusedGroup.php) | done | — | [semantics](#the-plain-branch-drops-the-label-affixes-so-an-inline-checkbox-fuses-to-nothing) · [diverges](#the-group-renders-through-fieldwrapper-instead-of-a-second-copy-of-it) · [diverges](#extraattributes-lands-on-the-field-wrapper-not-on-the-group-root) · [diverges](#the-group-root-carries-no-aria-describedby) |
+| [`FusedGroup/index.html.twig` — the group root inside `FieldWrapper`](../../../packages/forms/templates/partials/FusedGroup/index.html.twig) | [the wrapper rendering in `toEmbeddedHtml()`](../../../vendor/filament/schemas/src/Components/FusedGroup.php) | done | — | [semantics](#the-plain-branch-drops-the-label-affixes-so-an-inline-checkbox-fuses-to-nothing) · [diverges](#the-group-renders-through-fieldwrapper-instead-of-a-second-copy-of-it) · [diverges](#extraattributes-lands-on-the-field-wrapper-not-on-the-group-root) · [diverges](#the-group-root-carries-no-aria-describedby) · [semantics](#a-keyless-group-emits-no-label-id-and-no-aria-labelledby) |
 | [`fused-group.css` — the ring, the dividers and the corner rules](../../../packages/forms/assets/src/styles/components/fused-group.css) | [`components/fused-group.css`](../../../vendor/filament/schemas/resources/css/components/fused-group.css) | done | — | [semantics](#the-corner-rules-reach-through-two-elements-the-schema-partial-nests) |
 | [`Schema::fieldWrapperView()` (the seam) + `PLAIN_FIELD_WRAPPER_VIEW`](../../../packages/schemas/src/Concerns/HasFieldWrapper.php) | [`Concerns\HasFieldWrapper`](../../../vendor/filament/schemas/src/Concerns/HasFieldWrapper.php) | done | — | [diverges](#only-the-plain-wrapper-view-is-honored) |
+| [the one-column group's stacked dividers](../../../packages/forms/assets/src/styles/components/fused-group.css) | [`ComponentAttributeBag::grid()`'s `fi-grid-cols` gate](../../../vendor/filament/support/src/View/ComponentAttributeBag.php) | todo | — | [detail](#a-one-column-fused-group-renders-the-side-by-side-dividers) |
 | Component-tier `HasFieldWrapper` (own → container → default) | [`Components\Concerns\HasFieldWrapper`](../../../vendor/filament/schemas/src/Components/Concerns/HasFieldWrapper.php) | todo | — | [detail](#the-component-tier-hasfieldwrapper-twin-is-not-ported) |
 | `EntanglesStateWithSingularRelationship` / `CanEntangleWithSingularRelationships` | [`FusedGroup implements CanEntangleWithSingularRelationships`](../../../vendor/filament/schemas/src/Components/FusedGroup.php) | todo | — | [entangles-state-with-singular-relationship.md](../schemas/entangles-state-with-singular-relationship.md) |
 | `HasNestedRecursiveValidationRules` arm of the error collection | [the `{$statePath}.*` branch](../../../vendor/filament/schemas/src/Components/FusedGroup.php) | skipped | — | [diverges](#the-error-collection-keeps-the-first-failing-field-and-nothing-else) |
-
-Coverage: [`FusedGroupTest`](../../../packages/forms/tests/Integration/Components/FusedGroupTest.php) — the group root as the wrapper's content under one label, the child schema as its only immediate child, `role`/`id`/`aria-labelledby`, the children on the plain branch (screen-reader labels, no label column, no content column, wrappers intact), the gap drop, the required mark from a required child, a child violation surfacing once at group level with `aria-invalid`, the plain view on the default **and** slot schemas, `alignEnd()` on the after-label slot, the six inline slots against the four that stay block, and a slot component and helper text rendering.
-A keyless group is pinned emitting neither `id="-label"` nor an `aria-labelledby` pointing at it — `FieldWrapper` guards the concatenation on `field.getId is not empty`, as Filament guards its own on `filled($id)`.
-The regression pin that a field **outside** a group still gets the full wrapper lives in the same file.
-[`HasFieldWrapperTest`](../../../packages/schemas/tests/Unit/Concerns/HasFieldWrapperTest.php) pins the seam itself.
 
 ## Details
 
@@ -52,6 +48,12 @@ The regression pin that a field **outside** a group still gets the full wrapper 
 Filament carries the same trait twice: on the container (`Concerns\`), where a schema declares the view its fields use, and on the component (`Components\Concerns\`), whose `getFieldWrapperView()` resolves own → container → the framework default.
 Only the container tier ships here, because that is the tier `FusedGroup` writes to and the only one anything reads: our wrapper asks `field.getContainer().getFieldWrapperView()` directly, so a per-**component** override has no consumer.
 Porting the twin is a small addition once one exists — the resolution order is the whole of it.
+
+### A one-column fused group renders the side-by-side dividers
+
+The child schema's root always carries `sy-grid-cols` ([why](../support/component-attribute-bag.md#the-sy-grid-cols-marker-class-is-emitted-unconditionally)), and `fused-group.css` styles that marker with `divide-x divide-y-0` and horizontal corner rounding.
+Filament emits `fi-grid-cols` only above one default column, so its one-column group stacks with `divide-y`, where the port's gets the side-by-side treatment.
+**Next step:** gate `sy-grid-cols` on more than one default column in `GridExtension::getGridAttributes()`, as Filament does, and assert the class in a fused-group render test.
 
 ## Semantics
 
@@ -77,6 +79,11 @@ Our [`Schema` partial](../../../packages/schemas/templates/partials/Schema/index
 The translation is still literal: `:first-child` still names the grid-column div, `divide-*` still splits the direct children, and the descendant part still reaches the wrapper through the extra level.
 Nothing had to be re-selected, which is the only reason the stylesheet could be ported unchanged.
 
+### A keyless group emits no label id and no `aria-labelledby`
+
+The group root sets `aria-labelledby` to `<id>-label` only when the group has an id and a label, and `FieldWrapper` gives its heading label an id only when `field.getId is not empty`.
+A group without a key therefore emits neither `id="-label"` nor an `aria-labelledby` pointing at it, as Filament guards both on `filled($groupId)` and `filled($id)`.
+
 ## Divergences
 
 ### FusedGroup lives in forms, not schemas
@@ -85,6 +92,7 @@ Filament ships `Filament\Schemas\Components\FusedGroup`, and that class imports 
 That is the upward import from schemas into forms this port cannot reproduce: `forms` depends on `schemas`, and the CI split publishes each package standalone, so a `sylament/schemas` reaching a forms symbol breaks the moment it is installed alone.
 The same layering argument moved [`CanBeMarkedAsRequired` down](../translations.md#namespace-segments); here it moves the component **up** instead, to the package that already owns the field-wrapper chrome the group renders.
 Recorded in [translations.md](../translations.md#namespace-segments); the class name, its methods and its behaviour are unchanged, and the CSS class follows the package (`fi-sc-fused-group` → `sy-fo-fused-group`) rather than keeping a `-sc-` segment naming a package that does not hold it.
+Every class the stylesheet's rules reach into keeps the code of the package that emits it: `.sy-sc`, `.sy-sc-component` and `.sy-sc-actions` from schemas, `.sy-input-wrp` from support, `.sy-fo-field` and `.sy-fo-input` from forms.
 
 ### The group renders through `FieldWrapper` instead of a second copy of it
 

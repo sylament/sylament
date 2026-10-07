@@ -20,6 +20,7 @@ owns:
   - packages/tables/src/Columns/Concerns/CanFormatState.php
   - packages/tables/src/Columns/Concerns/HasColor.php
   - packages/tables/src/Columns/Concerns/HasDescription.php
+  - packages/tables/src/Columns/Concerns/HasIcon.php
   - packages/tables/src/Columns/Concerns/HasIconColor.php
   - packages/tables/src/Columns/TextColumn.php
   - packages/tables/templates/partials/TextColumn/

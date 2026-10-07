@@ -7,6 +7,7 @@ ports:
   - vendor/filament/filament/resources/views/components/layout/base.blade.php
 owns:
   - packages/panels/src/Controllers/PageController.php
+  - packages/panels/src/Routing/
   - packages/panels/templates/partials/Document/index.html.twig
 ---
 # Routing (panels)
@@ -21,6 +22,7 @@ The page chrome the page's own component renders is [custom-pages.md](custom-pag
 | [`PanelRouteLoader`](../../../packages/panels/src/Routing/PanelRouteLoader.php), the page family | [`routes/web.php`](../../../vendor/filament/filament/routes/web.php)'s page loop and [`Pages/Concerns/HasRoutes.php`](../../../vendor/filament/filament/src/Pages/Concerns/HasRoutes.php)' `registerRoutes()` / `routes()` | done | — | [semantics](#panelrouteloader-mounts-the-whole-panel-surface-in-one-pass-over-the-panel-registry) · [diverges](#the-route-import-carries-no-prefix-because-the-panel-path-is-authoritative) |
 | [`PanelRouteLoader`](../../../packages/panels/src/Routing/PanelRouteLoader.php), the resource family and its nesting | [`Resources/Resource/Concerns/HasRoutes.php`](../../../vendor/filament/filament/src/Resources/Resource/Concerns/HasRoutes.php)' `registerRoutes()` / `routes()` | done | — | [semantics](#panelrouteloader-mounts-the-whole-panel-surface-in-one-pass-over-the-panel-registry) · [nested-resources.md](nested-resources.md) |
 | [`PanelRouteLoader`](../../../packages/panels/src/Routing/PanelRouteLoader.php), the route-name collision guard | no Filament counterpart | done | — | [diverges](#two-mounts-deriving-one-route-name-throw-and-a-path-collision-stays-unguarded) |
+| [`PanelRouteLoader`'s placeholder guard](../../../packages/panels/src/Routing/PanelRouteLoader.php) | no Filament counterpart | done | — | [diverges](#the-loader-refuses-a-placeholder-the-page-cannot-mount-which-filament-does-not) · [diverges](#the-loader-narrows-a-record-placeholder-a-separator-follows-because-the-compilers-default-excludes-it) |
 | [`PageController`](../../../packages/panels/src/Controllers/PageController.php) | no Filament counterpart: a Filament page is its own route action | done | — | [diverges](#a-panel-page-is-rendered-by-a-controller-not-routed-to-directly) · [semantics](#the-controller-reads-the-document-values-off-the-un-mounted-page) |
 | [`PageController`](../../../packages/panels/src/Controllers/PageController.php), the route parameters as component props | no Filament counterpart | done | — | [semantics](#componentprops-hands-the-page-every-route-parameter-not-starting-with-_) |
 | [`PageController`](../../../packages/panels/src/Controllers/PageController.php), the mount-time HTTP exception unwrap | no Filament counterpart | done | — | [diverges](#a-mount-time-http-exception-is-unwrapped-from-twigs-render-error) |
@@ -109,6 +111,48 @@ What a user writes is unchanged — a `Page` subclass listed in `pages()` — an
 
 One wiring consequence falls out of it, and it is invisible until a panel is mounted near the root: `ux_live_component`'s path is `/{_live_component}/{_live_action}`, so an application importing that route without the recipe's `/_components` prefix has it match `/admin` first and every panel page 404s with *Component "admin" not found*.
 The panels test kernel mounts it under the prefix for that reason.
+
+### The loader refuses a placeholder the page cannot mount, which Filament does not
+
+For every `{name}` in a mounted path, [`PanelRouteLoader`](../../../packages/panels/src/Routing/PanelRouteLoader.php) requires one of three things: the name is a **parent parameter** the loader folds itself, the page's `mount()` **declares a parameter** of that name, or the page declares a **public property** of that name.
+Otherwise it throws a `LogicException` naming the page, the path and the placeholder, at route-build time, the shape its collision guards use.
+
+Filament needs no such guard because a Livewire page *is* its own route action and an unmatched parameter is a missing-argument error.
+Here the parameter is handed to ux-twig-component, which matches it against `mount()` parameters, then against writable properties, and paints whatever is left onto the live root as an HTML attribute — no exception, no log, and a page that silently shows the wrong record or none at all.
+
+The shipped guard reads placeholders with `/\{([^}]+)\}/`, so a Symfony inline requirement is captured **whole**: a path written `/{record<\d+>}` would be checked for a parameter literally named `record<\d+>` and refused.
+Nothing in the toolkit or the demo writes one — a page path is a slug and a bare `{record}` — so the shape is recorded rather than worked around; normalising the capture is a one-line change if a consumer ever wants inline requirements.
+
+### The loader narrows a record placeholder a separator follows, because the compiler's default excludes it
+
+`RouteCompiler` compiles a placeholder to a pattern that excludes the **next static separator** as well as `/`: `/{record}/edit` gives `[^/]++`, but `/{record}-preview` gives `[^/\-]++` and `/{record}~preview` gives `[^/~]++`.
+Four characters of the [key grammar](../schemas/record-key-contract.md#the-grammar) are in `RouteCompiler::SEPARATORS` — `-`, `_`, `~` and `=` — and the first two are *safe* bytes the codec never escapes, so the trap is not specific to composite keys: a UUID or slug `$recordRouteKeyName` already breaks against `/{record}-preview`.
+And it fails at **generation**, not at match — `UrlGenerator::generate()` raises `InvalidParameterException`, so the **listing** that mints the row URL 500s and the record page is never reached, or, under `framework.router.strict_requirements: null`, the link generates and the click 404s.
+"It 404s" sends a debugger to the wrong page.
+
+So `PanelRouteLoader` stamps `requirements: ['record' => '[^/]+']` on a mounted path whose `{record}` is followed, up to the next `/` or the end of the path, by non-empty **pure static** text — text carrying no `{` — that opens on a separator other than `/`.
+A declared requirement replaces the compiler's default wholesale, separator exclusion included, which is the whole fix.
+Three properties of it are load-bearing.
+It is **conditional**, so every path in this toolkit and in the demo — all `/{record}/…` or a bare `/{record}` — compiles to the compiler's own default pattern.
+It must stay **greedy**: the possessive `[^/]++` never gives the trailing static text back, so it generates a URL that then matches nothing, which is exactly the "tidy the regex to match the compiler's default" change a later reader makes.
+And only `{record}` is stamped — a parent placeholder is always followed by `/`, since the loader writes that slash itself, and any other placeholder on a page path is the developer's own, where narrowing it would change how *their* value splits.
+
+The rule is *any* non-slash separator, so `/{record}.pdf` is narrowed too.
+No **composite** key contains a dot and `.` is escaped into the pattern either way, so all the stamp buys there is that a single identifier holding one stops being refused.
+
+**Pure static** is what keeps the stamp from taking a URL apart differently.
+A greedy `[^/]+` runs to the **last** occurrence of the separator, so on a segment carrying a second placeholder it would re-split a URL that works unstamped: `/{record}-{locale}` reads `/5-en-GB` as `5` and `en-GB`, and a stamped pattern would read it `5-en` and `GB`.
+Such a segment is therefore left to the compiler's default pattern, and two residuals follow.
+On a placeholder-bearing segment a key containing that separator still cannot be generated — declare the page `/{record}/…` instead.
+And where the stamp does apply, an earlier-registered `/{record}-x` claims `/5-y-x` with `record = "5-y"`, where without the stamp a later `/{record}-y-x` would match it with `record = "5"`: order-dependent, and visible only to an app that registered both shapes.
+
+`PageRegistration` grows no `requirements()` member to go with it.
+The narrowing is computed from the path the page already declares, and a second place to narrow a route from is a second place for the two to disagree; a consumer's own placeholder is theirs to name in the path.
+
+Three shapes it does not touch.
+A bare `/{record}` registered **before** `/{record}-preview` matches `/5-preview` with `record = "5-preview"` — route order decides it, the loader registers a resource's pages in `getPages()` order, and that is Symfony's matching, not ours.
+And a Symfony inline requirement such as `/{record<\d+>}` can never match a composite key, which is [never numeric](../schemas/record-key-contract.md#the-grammar) — though the guard above refuses that path first, for its own reason.
+A `{record}` written with any of Symfony's inline syntaxes — `{record<\d+>}`, `{record?}`, `{!record}` — is read raw by the requirement test and is never stamped either.
 
 ### Two mounts deriving one route name throw, and a path collision stays unguarded
 

@@ -66,18 +66,9 @@ Ports [`filament/tables`](../../../vendor/filament/tables) into [`packages/table
 | [`Filters/QueryBuilder/Constraints/`](../../../vendor/filament/tables/src/Filters/QueryBuilder/Constraints) | todo | — | — |
 | [`Filters/TrashedFilter.php`](../../../vendor/filament/tables/src/Filters/TrashedFilter.php) | skipped | — | [delete-action.md](../actions/delete-action.md#there-is-no-soft-delete-arm-to-hide-behind) |
 | [`Columns/TagsColumn.php`](../../../vendor/filament/tables/src/Columns/TagsColumn.php) | skipped | — | [deprecated for `TextColumn`](../README.md#statuses) |
-| [`Concerns/CanBeStriped.php`](../../../vendor/filament/tables/src/Concerns/CanBeStriped.php) | skipped | — | [deprecated: override `table()`](../README.md#statuses) |
-| [`Concerns/CanPollRecords.php`](../../../vendor/filament/tables/src/Concerns/CanPollRecords.php) | skipped | — | [deprecated: override `table()`](../README.md#statuses) |
-| [`Concerns/HasActions.php`](../../../vendor/filament/tables/src/Concerns/HasActions.php) | skipped | — | [deprecated for the actions-host methods](../README.md#statuses) |
-| [`Concerns/HasContent.php`](../../../vendor/filament/tables/src/Concerns/HasContent.php) | todo | — | — |
-| [`Concerns/HasEmptyState.php`](../../../vendor/filament/tables/src/Concerns/HasEmptyState.php) | skipped | — | [deprecated: override `table()`](../README.md#statuses) |
-| [`Concerns/HasHeader.php`](../../../vendor/filament/tables/src/Concerns/HasHeader.php) | todo | — | — |
-| [`Concerns/HasRecordAction.php`](../../../vendor/filament/tables/src/Concerns/HasRecordAction.php) | skipped | — | [deprecated: override `table()`](../README.md#statuses) |
-| [`Table/Concerns/CanBeStackedOnMobile.php`](../../../vendor/filament/tables/src/Table/Concerns/CanBeStackedOnMobile.php) | blocked | the layout columns (`Columns\Layout`) | [table.md](table.md#surface) |
+| [`Table/Concerns/CanBeStackedOnMobile.php`](../../../vendor/filament/tables/src/Table/Concerns/CanBeStackedOnMobile.php) | blocked | the layout columns (`Columns\Layout`) | [detail](table.md#the-card-layout-settings-wait-on-the-layout-columns) |
 | [`Table/Concerns/HasArguments.php`](../../../vendor/filament/tables/src/Table/Concerns/HasArguments.php) | todo | — | — |
-| [`Table/Concerns/HasContent.php`](../../../vendor/filament/tables/src/Table/Concerns/HasContent.php) | blocked | the layout columns (`Columns\Layout`) | [table.md](table.md#surface) |
-| [`Table/Concerns/HasHeader.php`](../../../vendor/filament/tables/src/Table/Concerns/HasHeader.php) | todo | — | — |
-| [`Table/Concerns/HasHeadings.php`](../../../vendor/filament/tables/src/Table/Concerns/HasHeadings.php) | todo | — | — |
+| [`Table/Concerns/HasContent.php`](../../../vendor/filament/tables/src/Table/Concerns/HasContent.php) | blocked | the layout columns (`Columns\Layout`) | [detail](table.md#the-card-layout-settings-wait-on-the-layout-columns) |
 | [`Columns/Concerns/BelongsToGroup.php`](../../../vendor/filament/tables/src/Columns/Concerns/BelongsToGroup.php) | todo | — | — |
 | [`Columns/Concerns/BelongsToLayout.php`](../../../vendor/filament/tables/src/Columns/Concerns/BelongsToLayout.php) | todo | — | — |
 | [`Columns/Concerns/CanBeCopied.php`](../../../vendor/filament/tables/src/Columns/Concerns/CanBeCopied.php) | skipped | — | [deprecated for support's `CanBeCopied`](../README.md#statuses) |

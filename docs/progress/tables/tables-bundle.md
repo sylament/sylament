@@ -5,7 +5,11 @@ ports:
   - vendor/filament/tables/src/View/TablesIconAlias.php
   - vendor/filament/tables/resources/js/index.js
 owns:
+  - packages/tables/assets/src/styles/index.css
+  - packages/tables/assets/src/utils/live_host.ts
   - packages/tables/src/SylamentTablesBundle.php
+  - packages/tables/src/Twig/Extension/TableExtension.php
+  - packages/tables/src/Twig/TablesIconAlias.php
 ---
 # SylamentTablesBundle (tables)
 

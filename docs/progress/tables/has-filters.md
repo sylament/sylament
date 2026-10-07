@@ -7,6 +7,7 @@ ports:
   - vendor/filament/tables/src/Enums/FiltersResetActionPosition.php
   - vendor/filament/tables/resources/views/components/filters.blade.php
 owns:
+  - packages/tables/assets/src/styles/components/filters.css
   - packages/tables/src/Enums/FiltersLayout.php
   - packages/tables/src/Enums/FiltersResetActionPosition.php
   - packages/tables/src/Table/Concerns/HasFilterIndicators.php
@@ -119,7 +120,7 @@ That is an addition rather than a port: the three sit two to a footer, and one r
 `defaultSize()` is the [non-destructive setter](../actions/action.md), so a caller's own `size()` through `filtersApplyAction()` still wins — which is what keeps an addition from being a restriction.
 
 The icons resolve through a closure the action evaluates (`static fn (?IconManager $icons = null) => …`) rather than an injected manager field, because [`CanReorderRecords`](../../../packages/tables/src/Table/Concerns/CanReorderRecords.php) already declares a `#[Required] setIconManager()` on `Table` and a second trait declaring the same method is a fatal collision.
-The parameter is nullable with a `null` default so the Invoker's container arm answers inside DI and its default-value arm answers outside it, which keeps the fallback glyph readable from a unit fixture.
+The parameter is nullable with a `null` default, and the Invoker's container arm never fills it: `IconManager` is a private service and the Invoker asks `service_container`, whose `has()` answers false, so an application alias override never reaches the filters trigger or the remove-all button.
 
 ### The collapsible panel is a `<details>` element, and the modal opens through an invoker command
 
@@ -185,7 +186,7 @@ And the header's `.sy-ta-filters-header-actions` wrapper is a named hook carryin
 
 Each chip is a single `<twig:SylamentSupport:Badge>` carrying the indicator's label and colour, with the remove control rendered **inside** it through support's `Badge` [delete button](../support/badge.md#the-delete-button-is-three-props-not-an-attribute-carrying-slot) — Filament's shape exactly.
 The one translation is where the payload rides: Blade's `<x-slot name="deleteButton" :wire:click="…">` carries its attributes on the slot, a Twig block carries none, so the chip passes `:deletable`, `deleteLabel` and `:deleteAttributes` instead — and what it puts in that bag is `stimulus_action('live', 'action', parameters: …)` built from the [`FilterIndicator` carrier](indicator.md#removal-is-structured-not-a-click-handler-string), where Filament interpolates a `removeLivewireClickHandler()` expression string.
-The X is drawn under `SupportIconAlias::BADGE_DELETE_BUTTON`, so the chip's icon is overridable through the same alias a Filament app would use.
+The X is drawn under `SupportIconAlias::BADGE_DELETE_BUTTON`, so the chip's icon is overridable through an icon alias, which Filament's mask-painted glyph does not read ([badge.md](../support/badge.md#the-delete-button-is-three-props-not-an-attribute-carrying-slot)).
 
 The remove-all button follows Filament exactly — the `removeAllFilters` action, an x-mark icon button under the `FILTERS_REMOVE_ALL_BUTTON` alias, rendered only when at least one chip is removable, and the row's one icon button.
 Its `.sy-ta-filter-indicators-remove-all-btn` hook rides on the action's `extraAttributes()` rather than a template class, since `renderComponent()` takes no attributes from its call site.

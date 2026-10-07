@@ -69,7 +69,7 @@ Eloquent's `Model::replicate()` copies the raw attribute bag minus the key, the 
 Doctrine has no counterpart, and PHP's `clone` is not one: a shallow clone shares the original's `PersistentCollection` **instances**, so adding to one adds to the other and the join rows rewrite against whichever owner the unit of work sees; and `persist()` assumes a new entity, so a stale identifier on an assigned-id class would be inserted verbatim.
 
 [`RecordReplicator`](../../../packages/actions/src/Replication/RecordReplicator.php) builds the copy from the mapping instead.
-It takes the record's own `EntityManagerInterface` — resolved through [`getEntityManagerForRecord()`](can-use-database-transactions.md#the-transaction-trio-resolves-a-doctrine-connection-instead-of-a-facade), so a query-lane table's manager wins over the registry — and is constructed inline by the action rather than wired as a service, because there is nothing to configure and the manager is only known per record.
+It takes the record's own `EntityManagerInterface` — resolved through [`getEntityManagerForRecord()`](can-use-database-transactions.md#the-record-manager-resolver-has-no-filament-counterpart-and-the-table-wins), so a query-lane table's manager wins over the registry — and is constructed inline by the action rather than wired as a service, because there is nothing to configure and the manager is only known per record.
 `newInstance()` starts the copy, which bypasses the constructor (a record class may require arguments), and then, per mapping entry:
 
 - an identifier **field** is not copied — a generated one is the database's to fill, and an assigned one is [asked for](#a-replica-keeps-its-parent-and-one-whose-key-is-still-incomplete-is-refused-by-name);

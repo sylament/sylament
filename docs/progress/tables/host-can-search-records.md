@@ -21,7 +21,7 @@ owns:
 | `getReservedTableColumnSearchKeys()` / `fillReservedTableColumnSearchKeys()` | [`Concerns\CanSearchRecords`](../../../vendor/filament/tables/src/Concerns/CanSearchRecords.php) | skipped | — | [diverges](#a-full-seed-replaces-filaments-reserved-key-list-and-a-blank-is-kept) |
 | [`getTableSessionKey('search')` / `getTableSessionKey('column_search')`](../../../packages/tables/src/Concerns/CanPersistTableState.php) — `getTableSearchSessionKey()` / `getTableColumnSearchesSessionKey()` | [`Concerns\CanSearchRecords`](../../../vendor/filament/tables/src/Concerns/CanSearchRecords.php) | done | — | [can-persist-table-state.md](can-persist-table-state.md#the-session-key-is-the-host-class-so-two-instances-of-one-page-share-it) |
 | `shouldPersistTableSearchInSession()` / `shouldPersistTableColumnSearchInSession()` | [`Concerns\CanSearchRecords`](../../../vendor/filament/tables/src/Concerns/CanSearchRecords.php) | skipped | — | [deprecated: override `table()`](../README.md#statuses) |
-| [`resetTableSearch()`](../../../packages/tables/src/Concerns/CanSearchRecords.php) | [`Concerns\CanSearchRecords::resetTableSearch()`](../../../vendor/filament/tables/src/Concerns/CanSearchRecords.php) | done | — | [host-has-filters.md](host-has-filters.md#filter-mutations-reset-the-page-and-flush-the-record-cache) |
+| [`resetTableSearch()`](../../../packages/tables/src/Concerns/CanSearchRecords.php) | [`Concerns\CanSearchRecords::resetTableSearch()`](../../../vendor/filament/tables/src/Concerns/CanSearchRecords.php) | done | — | [diverges](#resettablesearch-inlines-its-reset-where-filament-delegates-to-updatedtablesearch) · [host-has-filters.md](host-has-filters.md#filter-mutations-reset-the-page-and-flush-the-record-cache) |
 
 ## Semantics
 
@@ -87,3 +87,9 @@ So the change is read off the bag itself.
 `hydrateTableColumnSearches()` keeps the value it was handed **on its first call only** (`??=`), which is the bag as it arrived, before any update the request carries; `afterTableColumnSearchesHydrated()` — `#[PostHydrate(priority: -5)]`, below the panel stamp every panels page runs at `20` and above schemas' state pass at `-10` — compares the hydrated bag against it and runs `handleTableColumnSearchUpdates()` only when they differ.
 Both sides are seeded and cast through the same two helpers before the compare, so a column that became searchable since the last request (a blank on both sides) and a leaf that arrived as a number rather than a string (`100` against `'100'`) are both *not* an edit.
 The handler is the same choreography the global term's `onUpdated` runs — deselect if the table says so, page back to `1`, flush the record cache, write the session — so a per-column keystroke and a global one are indistinguishable downstream.
+
+### `resetTableSearch()` inlines its reset where Filament delegates to `updatedTableSearch()`
+
+Filament's `resetTableSearch()` is `$this->tableSearch = ''; $this->updatedTableSearch();`.
+The port's repeats the hook's body instead (the deselection, `tableSearch = ''`, page one, the flush and the session write), because its `updatedTableSearch()` returns early when `$previousValue` equals the new term, and delegating would work only by the accident that the defaulted `null` never equals `''`.
+The cost is that a host overriding `updatedTableSearch()` does not see its override run from the reset path.

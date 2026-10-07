@@ -37,7 +37,7 @@ The Surface table carries no [unaudited row](../../internals/trail.md#an-unaudit
 | State-path seeding through [`HasState`](../../../packages/schemas/src/Components/Concerns/HasState.php) (schemas) | [`Concerns/HasState.php`](../../../vendor/filament/schemas/src/Components/Concerns/HasState.php) | done | — | [component.md](../schemas/component.md) |
 | [`getLabel()` / `getDefaultLabel()`](../../../packages/forms/src/Components/Field.php) humanization | [`Components/Field.php`](../../../vendor/filament/forms/src/Components/Field.php) | done | — | [diverges](#getdefaultlabel-drops-label-translation) |
 | [Field-wrapper slots](../../../packages/forms/src/Components/Field.php): the ten constants and setters, `makeChildSchema()` / `configureChildSchema()` | [`Components/Field.php`](../../../vendor/filament/forms/src/Components/Field.php) | done | — | — |
-| [`FieldWrapper`](../../../packages/forms/templates/components/FieldWrapper/index.html.twig), with the `labelPrefix` / `labelSuffix` slots | [`Field::wrapEmbeddedHtml()`](../../../vendor/filament/forms/src/Components/Field.php) | done | — | [diverges](#the-label-carries-an-inline-control-modifier-class) · [semantics](#the-native-required-attribute-follows-ismarkedasrequired-not-filaments-isrequired) |
+| [`FieldWrapper`](../../../packages/forms/templates/components/FieldWrapper/index.html.twig), with the `labelPrefix` / `labelSuffix` slots | [`Field::wrapEmbeddedHtml()`](../../../vendor/filament/forms/src/Components/Field.php) | done | — | [diverges](#the-label-carries-an-inline-control-modifier-class) · [diverges](#the-native-required-attribute-follows-ismarkedasrequired-not-filaments-isrequired) |
 | `inlineLabelVerticalAlignment` | [`Field::wrapEmbeddedHtml()`](../../../vendor/filament/forms/src/Components/Field.php) | blocked | schemas' `HasInlineLabel` | [detail](#inlinelabelverticalalignment-waits-on-schemas-hasinlinelabel) |
 | [The plain-wrapper branch](../../../packages/forms/templates/components/FieldWrapper/index.html.twig), chosen by `FusedGroup::PLAIN_FIELD_WRAPPER_VIEW` | [`plain-field-wrapper.blade.php`](../../../vendor/filament/forms/resources/views/components/plain-field-wrapper.blade.php) | done | — | [fused-group.md](fused-group.md) |
 | `labelTag` as `labelAsHeading` | [`Field::wrapEmbeddedHtml()`](../../../vendor/filament/forms/src/Components/Field.php) | done | — | [diverges](#labeltag-is-a-boolean-labelasheading) |
@@ -191,6 +191,14 @@ The port spells that as `attrs()` source order, which is later-source-wins: `att
 `extraAttributes()` wins, because it keeps the per-component setter authoritative over the wrapper one, which is the relationship Filament expresses by putting it on the inner element.
 
 It is revisited by routing `extraAttributes()` onto the input wrapper, where Filament has it; the two setters then stop sharing one element and the ordering stops mattering.
+
+### The native `required` attribute follows `isMarkedAsRequired()`, not Filament's `isRequired()`
+
+Filament emits a control's native `required` attribute from `isRequired()` in `TextInput`, `Textarea`, `Checkbox`, `Select` and `DateTimePicker`, and only the field wrapper's asterisk reads `isMarkedAsRequired()`.
+The port's `TextInput`, `Textarea`, `Checkbox`, `DateTimePicker` and native `Select` templates emit `required` from `component.isMarkedAsRequired and not component.isConcealed`, so one getter drives both the asterisk and the attribute.
+The two agree unless `markAsRequired()` is called explicitly: `markAsRequired()` on a field with no required constraint blocks submission in the browser while the server validates nothing, and `markAsRequired(false)` on a required field drops the attribute Filament keeps.
+The attribute does work inside a mounted action's modal, which renders as a real `<form>` ([support/modal.md](../support/modal.md#the-form-wrapper-carries-live_action-not-wiresubmit)): the browser fires `submit` only after native constraint validation passes, so an empty field carrying `required` stops the request on the client.
+No reason for following the marker is recorded; emitting the attribute from `isRequired()` would restore Filament's split.
 
 ### The five sibling facts are one value object, not string surgery
 

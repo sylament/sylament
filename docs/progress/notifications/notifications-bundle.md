@@ -26,7 +26,7 @@ What the port adds on top of the provider's responsibilities is container wiring
 | [AssetMapper prepend — `@sylament/notifications`](../../../packages/notifications/src/SylamentNotificationsBundle.php) | [`FilamentAsset::register([Js::make('notifications', …)])`](../../../vendor/filament/notifications/src/NotificationsServiceProvider.php), [`resources/js/index.js`](../../../vendor/filament/notifications/resources/js/index.js) | in progress | — | [detail](#nothing-asserts-the-assetmapper-prepend) · [diverges](#asset-registration-is-an-assetmapper-prepend-and-the-css-rides-supports-build) |
 | [Stylesheet entry point](../../../packages/notifications/assets/src/styles/index.css) | [`resources/css/index.css`](../../../vendor/filament/notifications/resources/css/index.css) | done | — | [diverges](#asset-registration-is-an-assetmapper-prepend-and-the-css-rides-supports-build) |
 | [`@SylamentNotifications` template namespace](../../../packages/notifications/templates) | [`->hasViews()`](../../../vendor/filament/notifications/src/NotificationsServiceProvider.php) | done | — | [diverges](../schemas/schemas-bundle.md#the-view-namespace-is-registered-by-symfony-convention-not-by-an-explicit-provider-call) |
-| [The package manifest's `symfony/*` requires](../../../packages/notifications/composer.json) | [`notifications/composer.json`](../../../vendor/filament/notifications/composer.json) | done | — | [diverges](#the-manifest-declares-every-symfony-package-src-imports) |
+| [The package manifest's `symfony/*` requires](../../../packages/notifications/composer.json) | [`notifications/composer.json`](../../../vendor/filament/notifications/composer.json) | in progress | — | [detail](#no-test-pins-the-manifests-symfony-requires) · [diverges](#the-manifest-declares-every-symfony-package-src-imports) |
 | `Livewire::component('notifications', …)` | [`packageBooted()`](../../../vendor/filament/notifications/src/NotificationsServiceProvider.php) | done | — | [diverges](#the-stack-is-registered-as-a-twig-component-not-a-live-one) |
 | `Livewire::component('database-notifications', …)` | [`packageBooted()`](../../../vendor/filament/notifications/src/NotificationsServiceProvider.php) | blocked | the database-notifications panel | [detail](#the-database-notifications-registration-waits-on-its-panel) |
 | Translations (`->hasTranslations()`) | [`configurePackage()`](../../../vendor/filament/notifications/src/NotificationsServiceProvider.php) | todo | — | [detail](#the-translation-catalogue-is-unported-so-the-close-label-is-an-english-literal) |
@@ -41,11 +41,18 @@ The shape and its reasoning are the [divergence below](#asset-registration-is-an
 
 What is missing is a test.
 Nothing asserts the path and alias are prepended when AssetMapper is present, and nothing exercises the negative branch of `isAssetMapperAvailable()` (the short-circuit that returns without prepending).
-The prepend, unlike the manifest, is assertable against the compiled container, which is why its row is **in progress** rather than done, on the same terms support's [identical row](../support/support-bundle.md#asset-registration) holds.
+The prepend is assertable against the compiled container, which is why its row is **in progress** rather than done, on the same terms support's [identical row](../support/support-bundle.md#asset-registration) holds.
 
 **Next step:** an Integration test asserting `@sylament/notifications` maps the built directory, plus a Unit test for the guard's false branch, and then this row flips to **done**.
 The positive half is written for actions: [`SylamentActionsBundleTest`](../../../packages/actions/tests/Integration/SylamentActionsBundleTest.php) asks the real `AssetMapperInterface` for a built controller by source path and requires the logical path back, which is the same call StimulusBundle's controllers-map generator makes.
 Copy it here; the guard's false branch is `support`'s to pin, since [`SylamentBundle`](../../../packages/support/src/SylamentBundle.php) owns it for every bundle.
+
+### No test pins the manifest's `symfony/*` requires
+
+The monorepo resolves every package out of one root `vendor/`, so a require dropped from [`composer.json`](../../../packages/notifications/composer.json) fails nothing in this suite and breaks only the split repository.
+A manifest entry is assertable all the same: actions' [`ManifestTest`](../../../packages/actions/tests/Architecture/ManifestTest.php) decodes its package's `composer.json` and pins each require and suggest, and [`SylamentTablesBundleTest`](../../../packages/tables/tests/Integration/SylamentTablesBundleTest.php) pins tables' `symfony/html-sanitizer` require the same way.
+Nothing under `packages/notifications/tests/` reads the manifest.
+What is missing is an Architecture `ManifestTest` that pins each `symfony/*` key the [divergence below](#the-manifest-declares-every-symfony-package-src-imports) names and `sylament/actions` as a require rather than a suggest.
 
 ### The database-notifications registration waits on its panel
 
@@ -153,8 +160,9 @@ The port's [manifest](../../../packages/notifications/composer.json) requires `s
 The [split-repo dependency rule](../../../CLAUDE.md) is why each is named rather than inherited through a sibling that already pulls it in.
 
 `sylament/actions` is a `require` rather than a `suggest` because [`Concerns\HasActions`](../../../packages/notifications/src/Concerns/HasActions.php) and `Notification`'s two array methods import `Action` and `ActionGroup` unconditionally, for [toast actions](notification.md#toast-actions-are-re-viewed-as-small-links-and-the-actions-key-restores-them).
-One absence is deliberate: `twig/twig` is not declared despite `Twig\Markup` and `Twig\Environment` appearing in `src/`, on the same grounds every other package leaves it out: `sylament/support` declares it and Twig cannot leave the graph.
-The manifest is a declaration with no runtime to assert; what would catch a missing require is a consumer install and the CI split.
+Two absences are deliberate.
+`twig/twig` is not declared despite `Twig\Markup` and `Twig\Environment` appearing in `src/`, on the same grounds every other package leaves it out: `sylament/support` declares it and Twig cannot leave the graph.
+`symfony/dependency-injection` is not declared despite the bundle class importing `ContainerBuilder` and `ContainerConfigurator`, because support's `symfony/stimulus-bundle` requires it ([manifests rule](../../../.claude/rules/manifests.md)).
 
 ### Livewire-specific provider responsibilities are dropped, not ported
 

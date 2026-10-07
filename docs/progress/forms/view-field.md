@@ -29,8 +29,6 @@ Ours carries one method, a fail-fast `getTemplate()` override, for a reason reco
 | Fail-fast on a missing template | [`ViewComponent::getView()`](../../../vendor/filament/support/src/Components/ViewComponent.php) | done | — | [diverges](#the-missing-template-throw-lives-on-viewfield-rather-than-the-base) |
 | `extractPublicMethods()` — `$get` / `$record` / `$operation` in template scope | [`support/Components/ViewComponent.php`](../../../vendor/filament/support/src/Components/ViewComponent.php) | skipped | — | [diverges](../support/view-component.md#extractpublicmethods-is-not-ported) |
 
-Coverage: a fixture template rendering with the field in scope as `component` (reading `getId()`, `getDataModel()` and `getState()` off it), `templateData` merged into that scope from both `template()`'s second argument and a separate `templateData()` call, the wrapper appearing only because the template opens it and being absent from an otherwise identical unwrapped variant, `defaultTemplate()` resolving when no explicit template is set, and the throw on both `getTemplate()` and the render path — by [`ViewFieldTest`](../../../packages/forms/tests/Integration/Components/ViewFieldTest.php), against the two fixture templates under [`tests/Fixtures/Twig/templates/partials/ViewFieldFixture/`](../../../packages/forms/tests/Fixtures/Twig/templates/partials/ViewFieldFixture).
-
 ## Semantics
 
 ### The wrapper is the template's to open

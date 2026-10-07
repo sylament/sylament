@@ -23,7 +23,7 @@ Filament does the same with Alpine, from an `x-data` object plus `x-show`/`x-bin
 | [`make(array\|Closure $steps = [])`](../../../packages/schemas/src/Components/Wizard.php) | [`Wizard::make()`](../../../vendor/filament/schemas/src/Components/Wizard.php) | done | — | — |
 | [`steps(array\|Closure)`](../../../packages/schemas/src/Components/Wizard.php) | [`Wizard::steps()`](../../../vendor/filament/schemas/src/Components/Wizard.php) | done | — | — |
 | [`getSteps(): list<Step>`](../../../packages/schemas/src/Components/Wizard.php) | [`Wizard::toEmbeddedHtml()` (inline filter)](../../../vendor/filament/schemas/src/Components/Wizard.php) | done | — | [diverges](#every-index-is-an-index-into-the-visible-steps) |
-| [Key derivation (`wizard` / `{statePath}::wizard` / `slug(label)::…`, non-inheritable)](../../../packages/schemas/src/Components/Wizard.php) | [`Wizard::setUp()`](../../../vendor/filament/schemas/src/Components/Wizard.php) | done | — | [diverges](#the-key-keeps-filaments-state-path-segment-which-section-drops) |
+| [Key derivation (`wizard` / `{statePath}::wizard` / `slug(label)::…`, non-inheritable)](../../../packages/schemas/src/Components/Wizard.php) | [`Wizard::setUp()`](../../../vendor/filament/schemas/src/Components/Wizard.php) | done | — | [semantics](#the-key-keeps-filaments-state-path-segment-which-section-drops) |
 | [`nextStep(int)` — `#[ExposedLiveComponentMethod]`](../../../packages/schemas/src/Components/Wizard.php) | [`Wizard::nextStep()`](../../../vendor/filament/schemas/src/Components/Wizard.php) | done | — | [diverges](#nextstep-hardens-an-out-of-range-index-and-fills-the-next-step-through-the-schema-tier-walker) · [semantics](#the-step-index-advances-before-validation-runs) |
 | [`previousStep(int)` — `#[ExposedLiveComponentMethod]`](../../../packages/schemas/src/Components/Wizard.php) | [`Wizard::previousStep()`](../../../vendor/filament/schemas/src/Components/Wizard.php) | done | — | [semantics](#previousstep-moves-the-server-index-and-announces-nothing) |
 | [`goToStep(string)`](../../../packages/schemas/src/Components/Wizard.php) | [`Wizard::goToStep()`](../../../vendor/filament/schemas/src/Components/Wizard.php) | done | — | — |
@@ -42,19 +42,12 @@ Filament does the same with Alpine, from an `x-data` object plus `x-show`/`x-bin
 | [`HasLabel` (the header's `aria-label`)](../../../packages/schemas/src/Components/Concerns/HasLabel.php) | [`Concerns/HasLabel.php`](../../../vendor/filament/schemas/src/Components/Concerns/HasLabel.php) | done | — | — |
 | [Per-step validation on the way forward](../../../packages/schemas/src/Components/Wizard.php) | [`Wizard::nextStep()`](../../../vendor/filament/schemas/src/Components/Wizard.php) | done | — | [can-be-validated.md](can-be-validated.md#a-components-child-schema-is-keyed-by-that-component-not-by-the-root) |
 | [Rendering (`Wizard/index.html.twig`)](../../../packages/schemas/templates/partials/Wizard/index.html.twig) | [`Wizard::toEmbeddedHtml()`](../../../vendor/filament/schemas/src/Components/Wizard.php) | done | — | [diverges](#the-server-renders-the-start-step-alpines-x-show-pairs-become-state-classes-and-css) |
-| [Styling (`wizard.css`)](../../../packages/schemas/assets/src/styles/components/wizard.css) | [`components/wizard.css`](../../../vendor/filament/schemas/resources/css/components/wizard.css) | done | — | [styles.md](styles.md) |
-| Enter inside a non-last step advances instead of submitting | [`Wizard::getAlpineSubmitHandler()` + `Step::formWrapper()`](../../../vendor/filament/schemas/src/Components/Wizard.php) | in progress | — | [detail](#the-enter-to-advance-keydown-has-no-behaviour-test-because-the-repository-has-no-js-runner) · [diverges](#alpinesubmithandler-and-formwrapper-are-skipped-their-behaviour-is-a-controller-keydown) |
+| [Styling (`wizard.css`)](../../../packages/schemas/assets/src/styles/components/wizard.css) | [`components/wizard.css`](../../../vendor/filament/schemas/resources/css/components/wizard.css) | done | — | [diverges](#wizard-css-writes-the-x-show-pairs-as-real-rules) |
+| Enter inside a non-last step advances instead of submitting | [`Wizard::getAlpineSubmitHandler()` + `Step::formWrapper()`](../../../vendor/filament/schemas/src/Components/Wizard.php) | done | — | [diverges](#alpinesubmithandler-and-formwrapper-are-skipped-their-behaviour-is-a-controller-keydown) |
 | `alpineSubmitHandler()` / `getAlpineSubmitHandler()` | [`Wizard::alpineSubmitHandler()`](../../../vendor/filament/schemas/src/Components/Wizard.php) | skipped | — | [diverges](#alpinesubmithandler-and-formwrapper-are-skipped-their-behaviour-is-a-controller-keydown) |
 | Extra Alpine attributes (`HasExtraAlpineAttributes`) | [`support/Concerns/HasExtraAlpineAttributes.php`](../../../vendor/filament/support/src/Concerns/HasExtraAlpineAttributes.php) | skipped | — | [diverges](#extra-alpine-attribute-passthrough-is-not-ported) · [diverges](../support/component-attribute-bag.md#extra-alpine-attributes-are-not-ported) |
 | `wire:ignore.self` on the root | [`Wizard::toEmbeddedHtml()`](../../../vendor/filament/schemas/src/Components/Wizard.php) | skipped | — | [diverges](#the-server-renders-the-start-step-alpines-x-show-pairs-become-state-classes-and-css) |
 | The `x-ref="stepsData"` hidden input | [`Wizard::toEmbeddedHtml()`](../../../vendor/filament/schemas/src/Components/Wizard.php) | skipped | — | [diverges](#the-server-renders-the-start-step-alpines-x-show-pairs-become-state-classes-and-css) |
-
-## Details
-
-### The Enter-to-advance keydown has no behaviour test, because the repository has no JS runner
-
-What exists: the template puts `keydown->sylament--schemas--wizard#onKeydown` on the root, which `WizardRenderTest` pins, and the controller's `onKeydown()` calls `requestNextStep()` for an Enter from a text-like `<input>` inside the active step unless that step is the last ([the behaviour](#alpinesubmithandler-and-formwrapper-are-skipped-their-behaviour-is-a-controller-keydown)).
-What is missing: a test that exercises `onKeydown()` itself; the repository runs no JavaScript tests, so that half rests on a browser pass.
 
 ## Semantics
 
@@ -68,6 +61,11 @@ A `ValidationException` also aborts the whole action, so nothing downstream read
 
 Filament's `previousStep()` clamps to the first step and writes the index, with no `dispatch()` — the Alpine component moves the view itself and never calls it.
 Ours is the same, kept for API parity: the Stimulus controller likewise walks back on its own, so the only thing a `previousStep()` round trip produces is the `callSchemaComponentMethod` result event.
+
+### The key keeps Filament's state-path segment, which Section drops
+
+`Wizard` and [`Step`](step.md) both build their key as Filament does — `{statePath}::wizard` / `slug(label)::{statePath}::wizard-step` — so a wizard in a `statePath('data')` form is keyed `data::wizard`.
+`Section`'s key [drops that segment](section.md#the-heading-derived-key-omits-the-state-path-segment); the wizard does not follow it, because the segment is what keeps two same-labelled wizards at different state paths from colliding.
 
 ## Divergences
 
@@ -83,16 +81,11 @@ Two departures inside an otherwise verbatim method.
 An index that names no step returns early instead of reading `$steps[$i]` off the end — the argument comes from the browser through `callSchemaComponentMethod()`, and every other browser-reachable path in this package validates its input before acting.
 And the next step's blank fill is `$nextStep?->getChildSchema()?->fillStateWithNull()` rather than Filament's `$nextStep?->fillStateWithNull()`: the component-tier walker here fills only the component's own path and does not recurse into its children, while the schema-tier one walks every descendant, which is what Filament's does.
 
-### The key keeps Filament's state-path segment, which Section drops
-
-`Wizard` and [`Step`](step.md) both build their key as Filament does — `{statePath}::wizard` / `slug(label)::{statePath}::wizard-step` — so a wizard in a `statePath('data')` form is keyed `data::wizard`.
-`Section`'s key [drops that segment](section.md#the-heading-derived-key-omits-the-state-path-segment); the wizard does not follow it, because the segment is what keeps two same-labelled wizards at different state paths from colliding.
-
 ### The footer actions are inert triggers, clicked through their wrapper
 
 `getNextAction()`/`getPreviousAction()` are Filament's actions with `liveComponentClickHandlerEnabled(false)` — they render a `button` with no mount wiring of its own — and the click lives on the wrapping `<div>` as `click->sylament--schemas--wizard#requestNextStep` / `#goToPreviousStep`, the shape forms' CheckboxList bulk toggle already uses.
 The wrapper is skipped when the action is `disabled()`, so a disabled Next is inert rather than merely styled.
-Filament additionally sets `livewireTarget('callSchemaComponentMethod')` on the next action, which scopes Livewire's loading state to that one call; UX Live's loading states are attribute-driven and un-targeted, so the wrapper carries `data-loading="addClass(sy-disabled)"` — the twin of Filament's `wire:loading.class` on the same element — and `livewireTarget()` is not set; [actions](../actions/action.md) does not port it either.
+Filament additionally sets `livewireTarget('callSchemaComponentMethod')` on the next action, which scopes Livewire's loading state to that one call; UX Live's loading states are attribute-driven and un-targeted, so the wrapper carries `data-loading="addClass(sy-disabled)"` — the counterpart of Filament's `wire:loading.attr="inert"` on the same element, styled by [`wizard.css`](#wizard-css-writes-the-x-show-pairs-as-real-rules) — and `livewireTarget()` is not set; [actions](../actions/action.md) does not port it either.
 
 The two `modify…ActionUsing` properties are typed `Action|Closure|null` rather than `?Closure`, even though their setters take only a closure: `evaluate()` infers its return type by subtracting `Closure` from the property's union, so a bare `?Closure` would type the result `Closure` and `?? $action` would be dead code to PHPStan.
 Widening the property to the closure's own result type is the [house convention](../../internals/php.md#evaluates-generic) for exactly this, and the setter signature still keeps an `Action` from ever being assigned.
@@ -117,6 +110,15 @@ The server read is the only read: the controller adopts the server's `startStep`
 Filament never needs the key of the initially active step, because Alpine computes the active state client-side from the step list.
 The server renders it here (see the render divergence below), so `getStartStepKey()` answers "which step does the server render active" for the `Step` partial's `sy-active` class.
 It returns `null` for a wizard with no steps.
+
+### Wizard CSS writes the x-show pairs as real rules
+
+`wizard.css` is vendor's rule set with the `fi-` → `sy-` prefix swap and four deltas, all consequences of the [server-rendered start step](#the-server-renders-the-start-step-alpines-x-show-pairs-become-state-classes-and-css).
+Filament shows and hides the completed tick against the number/icon with a pair of `x-show` expressions in the markup; here both live in every header row and the stylesheet does the switching: `&:not(.sy-completed) .sy-sc-wizard-header-step-completed-icon { hidden }` and `&.sy-completed .sy-sc-wizard-header-step-icon, &.sy-completed .sy-sc-wizard-header-step-number { hidden }`.
+The two screen-reader-only classes the markup emits get `@apply sr-only` inline (`.sy-sc-wizard-header-step-label-hidden`, `.sy-sc-wizard-header-step-status`) rather than a `sy-sr-only` utility, matching schemas' [`section.css`](styles.md#section-css-adds-the-sr-only-hidden-label-rule).
+An inactive panel is `invisible absolute h-0 overflow-hidden p-0` where vendor's is `hidden`, the shape an [inactive tab panel](tab.md#an-inactive-panel-is-hidden-not-removed) takes.
+The footer's `& > .sy-disabled { pointer-events-none opacity-70 }` styles the class the Next wrapper's `data-loading="addClass(sy-disabled)"` adds while a request runs ([the footer actions](#the-footer-actions-are-inert-triggers-clicked-through-their-wrapper)).
+Two rules move without changing what they match: the upcoming-step label rule, nested in vendor under `:not(.fi-completed)` and then `:not(.fi-active)` (`wizard.css:85-89`), is written as a sibling `&:not(.sy-active):not(.sy-completed)` block, and the completed block sits after the not-completed one; both selectors keep their specificity, and a step is never both completed and active, so neither move changes a rendered label.
 
 ### The server renders the start step; Alpine's x-show pairs become state classes and CSS
 

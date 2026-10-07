@@ -5,6 +5,7 @@ ports:
   - vendor/filament/forms/resources/js/components/tags-input.js
   - vendor/filament/forms/resources/css/components/tags-input.css
 owns:
+  - packages/forms/assets/src/controllers/tags_input_controller.ts
   - packages/forms/src/Components/TagsInput.php
   - packages/forms/templates/partials/TagsInput/
 ---
@@ -20,6 +21,7 @@ The Surface table carries no [unaudited row](../../internals/trail.md#an-unaudit
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
 | Construction and rendering: the unbound text box, the chip list, the delete button and the live region | [`Components/TagsInput.php`](../../../vendor/filament/forms/src/Components/TagsInput.php) | done | — | [semantics](#the-text-box-is-scratch-state-and-carries-no-data-model) · [semantics](#the-chip-list-is-client-owned-after-the-first-paint) · [semantics](#the-controller-is-the-only-behaviour-and-no-test-in-this-repo-runs-it) · [diverges](#the-alpine-data-object-becomes-a-stimulus-controller-over-a-cloned-twig-chip) · [diverges](#an-empty-list-keeps-the-container-and-drops-its-chrome) · [diverges](#a-non-string-tag-is-read-and-rewritten-as-a-string) |
+| [`sylament--forms--tags-input`](../../../packages/forms/assets/src/controllers/tags_input_controller.ts), the client-owned chip list | [`resources/js/components/tags-input.js`](../../../vendor/filament/forms/resources/js/components/tags-input.js) | done | — | [diverges](#the-alpine-data-object-becomes-a-stimulus-controller-over-a-cloned-twig-chip) |
 | `setUp()`: `default([])`, the hydration hook, the dehydration closure, the placeholder and the 100 ms reorder animation | [`Components/TagsInput.php`](../../../vendor/filament/forms/src/Components/TagsInput.php) | done | — | [semantics](#an-emptied-separator-field-dehydrates-to-an-empty-string) |
 | `hydrateTags()`: the non-array state, the `explode()` and the single-blank collapse | [`Components/TagsInput.php`](../../../vendor/filament/forms/src/Components/TagsInput.php) | done | — | [semantics](#hydratetags-runs-off-afterstatehydrated-so-only-a-fill-explodes-the-string) · [diverges](#three-lines-are-retyped-for-strict-types) |
 | `separator()` / `getSeparator()` | [`Components/TagsInput.php`](../../../vendor/filament/forms/src/Components/TagsInput.php) | done | — | [semantics](#an-emptied-separator-field-dehydrates-to-an-empty-string) |
@@ -40,15 +42,13 @@ The Surface table carries no [unaudited row](../../internals/trail.md#an-unaudit
 | `HasExtraAlpineAttributes` | [`support/Concerns/HasExtraAlpineAttributes.php`](../../../vendor/filament/support/src/Concerns/HasExtraAlpineAttributes.php) | skipped | — | [diverges](../support/component-attribute-bag.md#extra-alpine-attributes-are-not-ported) |
 | `$publishedViewOverrideCheckPath` | [`Components/TagsInput.php`](../../../vendor/filament/forms/src/Components/TagsInput.php) | skipped | — | [diverges](../support/view-component.md#render-returns-a-string-the-htmlable--embedded-view-machinery-is-dropped) |
 
-## Details
+## Semantics
 
 ### The controller is the only behaviour, and no test in this repo runs it
 
 Creating a tag, splitting a paste, deleting, reordering, rebuilding the datalist, announcing into the live region and every repaint of the chip list live in [`tags_input_controller`](../../../packages/forms/assets/src/controllers/tags_input_controller.ts) alone.
 The PHP suites cover the server's first paint, the state layer and the live round trip; none of them runs a line of the controller, the same gap [`CheckboxList`](checkbox-list.md#the-controller-is-the-only-behaviour-and-no-test-in-this-repo-runs-it) records.
 The rows' client halves are `done` on the strength of a browser pass, not a test.
-
-## Semantics
 
 ### The text box is scratch state and carries no `data-model`
 

@@ -16,9 +16,18 @@ ports:
   - vendor/filament/filament/src/Http/Middleware/SetUpPanel.php
 owns:
   - packages/panels/src/CurrentPanel.php
+  - packages/panels/src/Exceptions/NoDefaultPanelSetException.php
   - packages/panels/src/Panel.php
+  - packages/panels/src/Panel/Concerns/HasBrandLogo.php
+  - packages/panels/src/Panel/Concerns/HasBrandName.php
+  - packages/panels/src/Panel/Concerns/HasComponents.php
+  - packages/panels/src/Panel/Concerns/HasId.php
+  - packages/panels/src/Panel/Concerns/HasNavigation.php
+  - packages/panels/src/Panel/Concerns/HasRoutes.php
+  - packages/panels/src/Panel/Concerns/HasSidebar.php
   - packages/panels/src/PanelProvider.php
   - packages/panels/src/PanelRegistry.php
+  - packages/panels/src/SylamentPanelsBundle.php
 ---
 # Panel (panels)
 

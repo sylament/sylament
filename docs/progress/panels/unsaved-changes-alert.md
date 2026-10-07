@@ -32,7 +32,7 @@ Every point of the alert.
 | [`unsaved_changes_controller.ts`](../../../packages/panels/assets/src/controllers/unsaved_changes_controller.ts) — the three OR-ed signals | `setUpUnsavedDataChangesAlert` + `setUpUnsavedActionChangesAlert` | done | — | [semantics](#the-guard-is-three-or-ed-client-signals-not-one-hash-comparison) · [diverges](#no-hash-is-ever-computed-in-the-browser-so-the-prop-is-a-marker) |
 | The disarm on a redirect | `$wire.__instance.effects.redirect` | done | — | [semantics](#the-disarm-is-a-location-header-on-the-render-response) |
 | [`savedHashValueChanged()`](../../../packages/panels/assets/src/controllers/unsaved_changes_controller.ts) — the re-arm | no counterpart — Filament re-reads `$wire.savedDataHash` on every check | done | — | [semantics](#savedhash-is-a-re-arm-trigger-not-the-comparand) |
-| [`utils/live_host.ts`](../../../packages/panels/assets/src/utils/live_host.ts) — the third copy | no counterpart | done | — | [Assets](README.md#assets) |
+| [`utils/live_host.ts`](../../../packages/panels/assets/src/utils/live_host.ts) — the third copy | no counterpart | done | — | [Assets](assets.md) |
 | The `unsaved-changes` block in [`package.json`](../../../packages/panels/assets/package.json), `fetch: eager` | no counterpart — Filament ships one asset bundle | done | — | [diverges](#an-app-that-omits-the-controller-block-loses-the-guard-silently) |
 | `mountHasUnsavedDataChangesAlert()` | the trait's Livewire mount hook | skipped | — | [renames.md](../renames.md#renames) · [semantics](#the-alert-is-armed-by-explicit-rememberdata-calls-because-ux-has-no-mounttrait-hook) |
 | `js-md5` and the client-side hash | `window.jsMd5(...)` | skipped | — | [diverges](#no-hash-is-ever-computed-in-the-browser-so-the-prop-is-a-marker) |
@@ -131,7 +131,7 @@ There is no `#[Locked]` equivalent to port — UX props are non-writable unless 
 ### Filament's SPA arm has no counterpart
 
 `setUpSpaModeUnsavedDataChangesAlert` hooks `livewire:navigate` and raises a `confirm()` dialog with configurable body text before an SPA navigation.
-There is no `Livewire.navigate` here — the shell is [deliberately Turbo-indifferent](README.md#the-shell-is-turbo-indifferent-and-worker-safe) and every panel navigation is a real page load — so the only hook is `beforeunload`, whose prompt text the browser owns.
+There is no `Livewire.navigate` here — the shell is [deliberately Turbo-indifferent](layout-templates.md#the-shell-is-turbo-indifferent-and-worker-safe) and every panel navigation is a real page load — so the only hook is `beforeunload`, whose prompt text the browser owns.
 The configurable body string goes with it: nothing can display it.
 
 ### A bfcache restore keeps the guard armed rather than re-baselining

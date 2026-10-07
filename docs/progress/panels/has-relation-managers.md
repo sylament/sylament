@@ -10,7 +10,7 @@ owns:
 # HasRelationManagers (panels)
 
 [`Sylament\Panels\Resources\Pages\Concerns\HasRelationManagers`](../../../packages/panels/src/Resources/Pages/Concerns/HasRelationManagers.php) — the page half of relation managers: the registrations [`Resource::getRelations()`](../../../packages/panels/src/Resources/Resource.php) declares, filtered to the ones this record shows, and the single component that mounts them.
-It ports [`Resources/Pages/Concerns/HasRelationManagers.php`](../../../vendor/filament/filament/src/Resources/Pages/Concerns/HasRelationManagers.php) minus the combined content tab, and it is composed by [`EditRecord`](README.md#editrecord), whose `content()` schema is where the component it builds lands.
+It ports [`Resources/Pages/Concerns/HasRelationManagers.php`](../../../vendor/filament/filament/src/Resources/Pages/Concerns/HasRelationManagers.php) minus the combined content tab, and it is composed by [`EditRecord`](edit-record.md), whose `content()` schema is where the component it builds lands.
 
 Each manager is mounted through schemas' [`LiveComponent`](../schemas/live-component.md) embed, so it is a live component of its own — a table, its actions and its modals — rather than a fragment of the page.
 What the page hands it is a record **key** and its own class-string; the [`RelationManager`](relation-manager.md) resolves the owner from those.
@@ -89,7 +89,7 @@ A counting badge is one query per live request of the page — the accepted ceil
 ### `getRelations()` is an instance method, like every other resource hook
 
 Filament's is `public static function getRelations(): array` on the resource class-string.
-Ours is an instance method on the [registered resource service](README.md#resource-is-a-service-not-a-static-class-string-registry), for the reason every other resource hook is: a resource is a container service here, and a static could reach none of its injected dependencies.
+Ours is an instance method on the [registered resource service](resource.md#resource-is-a-service-not-a-static-class-string-registry), for the reason every other resource hook is: a resource is a container service here, and a static could reach none of its injected dependencies.
 The trait reaches it through `getResourceInstance()` rather than `static::getResource()::`.
 
 The signature is otherwise Filament's, including the union of what an entry may be — a manager class-string, a `RelationGroup`, or a `RelationManagerConfiguration`.

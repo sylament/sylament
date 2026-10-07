@@ -110,7 +110,7 @@ function isWiderThanItsPostgreSqlColumn(IdentifierFields $fields, array $decoded
  * Whether a tuple holds a guid component that is not a UUID, which a PostgreSQL
  * uuid column cannot hold, so no row or loaded record there mints its key: the
  * decode shape-checks guid only where the platform declares a native guid type,
- * as record-key.md records under "The grammar".
+ * as record-key-contract.md records under "The grammar".
  *
  * @param list<mixed> $php
  */

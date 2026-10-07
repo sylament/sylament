@@ -8,7 +8,6 @@ owns:
   - packages/forms/src/Components/Concerns/CanBeAutofocused.php
   - packages/forms/src/Components/Concerns/HasHint.php
   - packages/forms/src/Components/Concerns/HasPlaceholder.php
-  - packages/forms/src/Components/Concerns/HasRelationship.php
   - packages/forms/src/Components/Concerns/ResolvesRepeaterSiblingContext.php
   - packages/forms/src/Components/Field.php
   - packages/forms/templates/components/
@@ -74,7 +73,7 @@ Not `Checkbox` or `Toggle`, which is the natural guess and is wrong: both cast t
 It drives no state cast, which is the other natural guess.
 
 Its **only** consumer, here as in Filament, is the filter reset in tables' [`HasFilters`](../../../packages/tables/src/Concerns/HasFilters.php): `is_bool($state) => $field->hasNullableBooleanState() ? null : false`.
-The port carried that call site with the branch flattened to a hardcoded `false` for as long as the predicate was unported; the branch is [restored](../tables/has-table.md#filter-mutations-reset-the-page-and-flush-the-record-cache), so a custom `Filter::make(…)->schema([Select::make(…)->boolean()])` that declares no `resetState()` of its own now clears to the placeholder rather than flipping to its false arm.
+The port carried that call site with the branch flattened to a hardcoded `false` for as long as the predicate was unported; the branch is [restored](../tables/host-has-filters.md#filter-mutations-reset-the-page-and-flush-the-record-cache), so a custom `Filter::make(…)->schema([Select::make(…)->boolean()])` that declares no `resetState()` of its own now clears to the placeholder rather than flipping to its false arm.
 Both tiers of the predicate are pinned by [`HasEnumTest`](../../../packages/forms/tests/Unit/Components/Concerns/HasEnumTest.php), and both arms of the branch it drives by tables' [`HasFiltersTest`](../../../packages/tables/tests/Unit/Concerns/HasFiltersTest.php).
 
 ## Divergences

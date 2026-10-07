@@ -282,7 +282,7 @@ Filament wires each toast action's behaviour onto the trigger itself: [`getAlpin
 Sylament splits them on the arm a toast action actually takes: the **dispatch** branch of the five [trigger templates](../../../packages/actions/templates/partials/Action) emits `data-sylament-action-event`, `-event-data`, `-dispatch-to`, `-dispatch-self` and `-close` and stamps no handler beside them, and the single delegated handler lives on the toast root, written by the same `stimulus_controller(…)|stimulus_action(…)` hash that already carries the duration value, so the root keeps exactly one `data-action` writer.
 
 The split is that branch's, not the whole cascade's, and the other arms are what a reader has to know before building against this.
-A trigger's click wiring is one `{% if %}` chain ([kept identical across the five trigger templates by hand](../actions/action.md#a-dispatch-action-renders-payload-attributes-not-a-click-binding)) picking exactly one of five:
+A trigger's click wiring is one `{% if %}` chain ([kept identical across the five trigger templates by hand](../actions/can-dispatch-event.md#a-dispatch-action-renders-payload-attributes-not-a-click-binding)) picking exactly one of five:
 
 | Arm | What the trigger emits |
 | --- | --- |
@@ -310,7 +310,7 @@ It moved to a page-wide capture-phase document listener that actions ships, alon
 Three consequences land on the toast side.
 A toast is no longer the only context that can deliver a dispatch, so the payload attributes stopped being inert everywhere else — the "one delegating action per host" cost this section used to name is now paid once, globally, by a controller nothing has to opt into.
 The ordering `dispatch()->close()` depends on holds by phase rather than by statement order: the document listener runs in **capture**, so the emit is guaranteed to happen before this bubble-phase handler removes the toast from the DOM.
-And `dispatchSelf()` finally means something in a toast — the marker [is emitted now](../actions/action.md#a-dispatch-action-renders-payload-attributes-not-a-click-binding), though a toast is rendered outside every live component, so the trigger has no `live` ancestor to be self of and the delivery falls through to the plain-dispatch arm exactly as before.
+And `dispatchSelf()` finally means something in a toast — the marker [is emitted now](../actions/can-dispatch-event.md#a-dispatch-action-renders-payload-attributes-not-a-click-binding), though a toast is rendered outside every live component, so the trigger has no `live` ancestor to be self of and the delivery falls through to the plain-dispatch arm exactly as before.
 
 The workspace shed a dependency with the bridge: the toast controller no longer imports `@symfony/ux-live-component`, so `packages/notifications/assets` declares it neither dev nor peer, and the only bare specifier its built controller still carries is `@hotwired/stimulus`, which the workspace's own `symfony.importmap` block names — the [blast radius](notifications-bundle.md#asset-registration-is-an-assetmapper-prepend-and-the-css-rides-supports-build) a missing importmap entry used to have over auto-dismiss and hover-pause is gone with it.
 
@@ -327,5 +327,5 @@ A toast action is therefore written with `url()`, `dispatch()` or `close()`, and
 
 Filament's class declares `implements Arrayable, HasEmbeddedView`.
 Neither is ported.
-`Illuminate\Contracts\Support\Arrayable` is a Laravel marker for `toArray()`, which PHP needs no interface to call and Symfony ships no equivalent of; `HasEmbeddedView` marks a component that renders through `toEmbeddedHtml()` instead of a view file, and Sylament's rendering seam is `ViewComponent::render(Environment $twig)` against a Twig template — the same Blade → Twig translation recorded in [renames.md](../translations.md#idiom).
+`Illuminate\Contracts\Support\Arrayable` is a Laravel marker for `toArray()`, which PHP needs no interface to call and Symfony ships no equivalent of; `HasEmbeddedView` marks a component that renders through `toEmbeddedHtml()` instead of a view file, and Sylament's rendering seam is `ViewComponent::render(Environment $twig)` against a Twig template — the same Blade → Twig translation recorded in [translations.md](../translations.md#idiom).
 `toArray()` itself ships unchanged, and it is what crosses the session boundary either way.

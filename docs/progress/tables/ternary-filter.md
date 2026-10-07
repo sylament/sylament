@@ -66,7 +66,7 @@ A fix, not a mirror; recorded in the [renames table](../renames.md) and pinned b
 ### The arm labels are hardcoded English
 
 `setUp()` seeds `trueLabel('Yes')` and `falseLabel('No')` where Filament reads `__('filament-forms::components.select.boolean.true')` and its `false` twin.
-The values are that catalogue's English ones, so the rendered chip and the two options match Filament byte for byte — but there is no catalogue to look them up in, the same [hardcoded-copy gap](table.md#the-copy-is-english-and-hardcoded-because-no-i18n-layer-ships) the empty state and the search chip carry, and it lifts when toolkit-wide i18n ships.
+The values are that catalogue's English ones, so the rendered chip and the two options match Filament byte for byte — but there is no catalogue to look them up in, the same [hardcoded-copy gap](has-empty-state.md#the-copy-is-english-and-hardcoded-because-no-i18n-layer-ships) the empty state and the search chip carry, and it lifts when toolkit-wide i18n ships.
 The `'-'` placeholder is not part of it: Filament hardcodes that one too.
 
 ### The `whereRelation` arms are deferred

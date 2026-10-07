@@ -74,7 +74,7 @@ A host with no related resource therefore mounts an action modal on the host's o
 
 ### The title is an instance method, and the static title chain never reaches the related resource
 
-`getRelationshipTitle()` is an **instance** method here where Filament's is static, because its middle arm reads the related resource's `getTitleCasePluralRecordLabel()` — and a resource is a [service reached through the registry](README.md#resource-is-a-service-not-a-static-class-string-registry), which no static can reach.
+`getRelationshipTitle()` is an **instance** method here where Filament's is static, because its middle arm reads the related resource's `getTitleCasePluralRecordLabel()` — and a resource is a [service reached through the registry](resource.md#resource-is-a-service-not-a-static-class-string-registry), which no static can reach.
 The three sources are Filament's: `static::$relationshipTitle`, else the related resource's title-case plural label, else the humanized relationship name.
 
 The consequence is that the **static** title chain does not gain the related arm.
@@ -93,7 +93,7 @@ The refusal names the class and the property, and the message is host-neutral ("
 
 ### The related stamp is `configureTable()`'s four labels, not Filament's double set
 
-With `$relatedResource` set, `makeTable()` stamps `recordLabel`, `pluralRecordLabel`, `recordTitleAttribute` and `recordTitle` as callables and then hands the table to the resource's `table()` — which is `Resource::configureTable()`'s body, minus its `authorizeReorder()` seed, and the same stamp [`ListRecords::table()`](README.md#the-list-pages-table-is-stamped-query-first-and-resource-last) already makes.
+With `$relatedResource` set, `makeTable()` stamps `recordLabel`, `pluralRecordLabel`, `recordTitleAttribute` and `recordTitle` as callables and then hands the table to the resource's `table()` — which is `Resource::configureTable()`'s body, minus its `authorizeReorder()` seed, and the same stamp [`ListRecords::table()`](list-records.md#the-list-pages-table-is-stamped-query-first-and-resource-last) already makes.
 Filament sets `modelLabel` and `pluralModelLabel` *and then* calls `configureTable()`, which sets both again along with the other three: a dead double set, not ported.
 
 One consequence rides in from the list page unchanged: because `recordTitle` is stamped **unconditionally** as a callable, the table's own `recordTitleAttribute` branch can never be reached — the title read finds a `recordTitle` closure first.
@@ -115,7 +115,7 @@ Filament has the identical hole (it passes no owner anywhere), so this is invent
 
 ### Both seeding probes clone the action, where vendor clones in one of four
 
-`makeTable()` seeds `recordAction()` and `recordUrl()` by walking the table's `view` and `edit` actions, which landed on this tier and on [`ListRecords`](README.md#the-row-click-falls-through-to-the-resources-own-view-or-edit-page) together — so a row's whole body opens the related record now, not only its Edit button.
+`makeTable()` seeds `recordAction()` and `recordUrl()` by walking the table's `view` and `edit` actions, which landed on this tier and on [`ListRecords`](list-records.md#the-row-click-falls-through-to-the-resources-own-view-or-edit-page) together — so a row's whole body opens the related record now, not only its Edit button.
 The two closures are Filament's, member for member, with one deliberate correction.
 
 Both probes have to bind the record before they can ask an action whether it is hidden or where it points, and both walk the action's **group chain** doing it, because a hidden-or-URL arm reading the record through its group would otherwise answer for whatever row the chain last carried.
@@ -160,7 +160,7 @@ use InteractsWithRelationshipTable {
 }
 ```
 
-`ManageRelatedRecords` needs no URL exclusion because [the actions host sits on the resource-page base](README.md#the-actions-host-sits-on-the-base-because-a-trait-outranks-an-inherited-method): a trait on the leaf class outranks an inherited method by ordinary precedence, so the trait's `getDefaultActionUrl()` wins with no clause at all.
+`ManageRelatedRecords` needs no URL exclusion because [the actions host sits on the resource-page base](page.md#the-actions-host-sits-on-the-base-because-a-trait-outranks-an-inherited-method): a trait on the leaf class outranks an inherited method by ordinary precedence, so the trait's `getDefaultActionUrl()` wins with no clause at all.
 The manager composes `HasActions` itself, so there it is a genuine collision.
 
 **The grouped form (`use HasTable, InteractsWithRelationshipTable { … }`) does not survive `composer format`, and the failure is a fatal error rather than a lint complaint.**

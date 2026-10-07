@@ -108,7 +108,7 @@ Next step: add a `formatStateUsing` test; port the absent families each with the
 Both arms are Filament's ([`hydrateDefaultState`](../../../vendor/filament/schemas/src/Components/Concerns/HasState.php)), and the second is the one that reads like a bug — a defaults fill wiping state where no default was ever declared — so it is the one that gets "fixed" back into a skip.
 
 It was, here, until a browser pass on the table filters caught it: a `SelectFilter` builds a `Select` that takes a `default()` only when the *filter* declares one, so `resetTableFiltersForm()` left an applied `status` value standing in both bags while the sibling `Filter` — a `Checkbox`, which declares `default(false)` in its own `setUp()` — cleared correctly.
-The asymmetry is only reachable when the bag already holds state at fill time, which is why every mount-time fill looked right ([the table side](../tables/has-table.md#filter-mutations-reset-the-page-and-flush-the-record-cache)).
+The asymmetry is only reachable when the bag already holds state at fill time, which is why every mount-time fill looked right ([the table side](../tables/host-has-filters.md#filter-mutations-reset-the-page-and-flush-the-record-cache)).
 
 The null-write cannot stand alone, and that is what `$hydratedDefaultState` is for.
 It is a by-ref record, threaded through the whole walk by the [`Schema`](schema.md)-level `hydrateState()`, of every default already written, keyed by absolute state path; a component whose path the record already covers returns untouched.

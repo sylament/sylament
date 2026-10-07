@@ -13,7 +13,7 @@ owns:
 It ports [`Resources/Concerns/HasTabs.php`](../../../vendor/filament/filament/src/Resources/Concerns/HasTabs.php) member for member, with the strip's rendering seam reshaped for a Twig partial and the active key's persistence reshaped for a `LiveProp`.
 
 Three hosts compose it, and only two of them are routed.
-[`ListRecords`](README.md#listrecords) composes it directly; [`InteractsWithRelationshipTable`](interacts-with-relationship-table.md) composes it once for both of its own hosts, so a [`RelationManager`](relation-manager.md) and a [`ManageRelatedRecords`](manage-related-records.md) page offer the same record filters over the same association.
+[`ListRecords`](list-records.md) composes it directly; [`InteractsWithRelationshipTable`](interacts-with-relationship-table.md) composes it once for both of its own hosts, so a [`RelationManager`](relation-manager.md) and a [`ManageRelatedRecords`](manage-related-records.md) page offer the same record filters over the same association.
 The difference between them is the URL: `ManageRelatedRecords` and `ListRecords` map `tab` onto the query string through [`getTableUrlMapping()`](../tables/has-table.md#the-url-binding-is-a-per-prop-liveprop-modifier-opted-into-by-the-page), and an embedded relation manager maps nothing, so its tabs are transient by design — a nested live component writing `?tab=` into the page's URL would fight the page's own.
 
 The strip itself is schemas' [`Tabs`](../schemas/tabs.md) in its `liveComponentProperty()` mode: server-driven, writing the active key back onto this host through `live#update`, with no client controller loaded.
@@ -24,7 +24,7 @@ It is a **record filter**, not a layout — the tabs hold no components, only a 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
 | [`$activeTab` — the `#[LiveProp]` and its `modifyActiveTabProp()` modifier](../../../packages/panels/src/Resources/Concerns/HasTabs.php) | [`HasTabs::$activeTab`](../../../vendor/filament/filament/src/Resources/Concerns/HasTabs.php) + [`#[Url(as: 'tab')]` on `ListRecords`](../../../vendor/filament/filament/src/Resources/Pages/ListRecords.php) | done | — | [diverges](#the-url-binding-moves-off-the-page-and-onto-the-props-modifier) |
-| [`getTabs()` — the user hook](../../../packages/panels/src/Resources/Concerns/HasTabs.php) | [`HasTabs::getTabs()`](../../../vendor/filament/filament/src/Resources/Concerns/HasTabs.php) | done | — | [renames.md](../translations.md#names-with-no-filament-source) — the name collides with schemas' own `Tabs::getTabs()`, which answers what a component holds rather than declaring what a page offers. Both spellings are Filament's, and the collision is Filament's too |
+| [`getTabs()` — the user hook](../../../packages/panels/src/Resources/Concerns/HasTabs.php) | [`HasTabs::getTabs()`](../../../vendor/filament/filament/src/Resources/Concerns/HasTabs.php) | done | — | [translations.md](../translations.md#names-with-no-filament-source) — the name collides with schemas' own `Tabs::getTabs()`, which answers what a component holds rather than declaring what a page offers. Both spellings are Filament's, and the collision is Filament's too |
 | [`getCachedTabs()` — the memoised set, with generated labels stamped](../../../packages/panels/src/Resources/Concerns/HasTabs.php) | [`HasTabs::getCachedTabs()`](../../../vendor/filament/filament/src/Resources/Concerns/HasTabs.php) | done | — | [semantics](#the-cache-is-nullable-because-a-typed-uninitialised-property-cannot-be-asked) |
 | [`getDefaultActiveTab()`](../../../packages/panels/src/Resources/Concerns/HasTabs.php) | [`HasTabs::getDefaultActiveTab()`](../../../vendor/filament/filament/src/Resources/Concerns/HasTabs.php) | done | — | typed `?string` where Filament's is `string \| int \| null`, because the key is a `LiveProp`'s value and the wire carries strings |
 | [`loadDefaultActiveTab()` — the `#[PostMount(priority: 30)]` hook, healing a blank key **and** one the host no longer declares](../../../packages/panels/src/Resources/Concerns/HasTabs.php) | [`HasTabs::loadDefaultActiveTab()`](../../../vendor/filament/filament/src/Resources/Concerns/HasTabs.php), called from [`ListRecords::mount()`](../../../vendor/filament/filament/src/Resources/Pages/ListRecords.php) | done | — | [diverges](#the-default-loads-from-a-post-mount-hook-and-again-at-render) |
@@ -119,7 +119,7 @@ Both hooks fire when the active key changes.
 Filament's runs three statements: `resetPage()`, nulling `$cachedDefaultTableColumnState`, and `applyTableColumnManager()`.
 Ours runs three different ones: `loadDefaultActiveTab()`, `$this->tablePage = 1`, and `flushCachedTableRecords()`.
 
-The page reset is the shared one, spelled differently because [the port's page prop is not writable](../tables/has-table.md#gototablepage-replaces-livewires-paginator-trio) and there is no `resetPage()` to call.
+The page reset is the shared one, spelled differently because [the port's page prop is not writable](../tables/host-can-paginate-records.md#gototablepage-replaces-livewires-paginator-trio) and there is no `resetPage()` to call.
 The two column-manager statements are **todo**, not dropped — tables ships the column manager, and this hook does not call it yet — and have a row above.
 
 The two additions are the interesting half.
@@ -137,7 +137,7 @@ The `hidden(empty($tabs))` arm goes with the reshape: all three partials guard t
 
 One consequence is worth naming because it will look like duplication: the guard and the render are **byte-identical in two partials** — `Page/table.html.twig` and `RelationManager/index.html.twig` both carry the same `{% set tabs = this.getCachedTabs %}` and the same two-line `{% if %}`.
 That is deliberate.
-A shared partial would need `this` to be the host, which an `{% include %}` preserves but a `<twig:>` component does not ([the `renderTable()` trap](README.md#listrecords)), and the two lines are the whole of it.
+A shared partial would need `this` to be the host, which an `{% include %}` preserves but a `<twig:>` component does not ([the `renderTable()` trap](list-records.md)), and the two lines are the whole of it.
 Filament duplicates its own call three times for the same reason — `ListRecords::content()`, `ManageRelatedRecords::content()` and `RelationManager::content()` each place `getTabsContentComponent()` into their own schema, once per class.
 
 ### The seeding and the strip are duplicated across the two tiers, as Filament's are

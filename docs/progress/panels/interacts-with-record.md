@@ -11,11 +11,11 @@ owns:
 [`Sylament\Panels\Resources\Pages\Concerns\InteractsWithRecord`](../../../packages/panels/src/Resources/Pages/Concerns/InteractsWithRecord.php) — the one record a resource page is opened on: the route key the wire carries, the record it lazily resolves to (scoped to the page's parent chain when there is one), the title both are read through, the record's own breadcrumb, and the bridge to the resource's record [sub-navigation](has-sub-navigation.md).
 It ports [`Resources/Pages/Concerns/InteractsWithRecord.php`](../../../vendor/filament/filament/src/Resources/Pages/Concerns/InteractsWithRecord.php) minus its authorization hooks.
 
-The trait is mostly an extraction rather than new behaviour: the record prop and its dehydration bridge, `hasRecord()`, `getRecordKey()`, `getRecord()` and `getRecordTitle()` all lived on [`EditRecord`](README.md#editrecord) and moved here **unchanged** when [`ManageRelatedRecords`](manage-related-records.md) needed the same six.
+The trait is mostly an extraction rather than new behaviour: the record prop and its dehydration bridge, `hasRecord()`, `getRecordKey()`, `getRecord()` and `getRecordTitle()` all lived on [`EditRecord`](edit-record.md) and moved here **unchanged** when [`ManageRelatedRecords`](manage-related-records.md) needed the same six.
 What the trait adds on top is what every record page shares and neither of them had: the record's own breadcrumb, the sub-navigation bridge, and `mountRecord()`, where the mount assignment order now lives.
 `EditRecord` composes it and keeps only its own form, save and action hooks; `ViewRecord` will compose it once the view page lands, which is the reason the extraction happened rather than three copies being reconciled later.
 
-⚠️ **Not to be confused with [`Sylament\Actions\Concerns\InteractsWithRecord`](../actions/action.md#the-record-chain-reaches-the-schema-the-component-and-the-host)**, a different object tier that shares three member names.
+⚠️ **Not to be confused with [`Sylament\Actions\Concerns\InteractsWithRecord`](../actions/interacts-with-record.md#the-record-chain-reaches-the-schema-the-component-and-the-host)**, a different object tier that shares three member names.
 That one is composed by an `Action` and answers *what an action is acting on* (`getRecord()`, `getRecordTitle()`, `recordTitle()`); this one is composed by a page and answers *what the page is open on*.
 Both are Filament's own names in Filament's own places, so neither moves — read the trait by its **import**, never by the bare `use InteractsWithRecord;` in a class body, which is the standing rule for every name this codebase carries in two tiers.
 
@@ -23,17 +23,17 @@ Both are Filament's own names in Filament's own places, so neither moves — rea
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
-| [`$record`](../../../packages/panels/src/Resources/Pages/Concerns/InteractsWithRecord.php) + [`dehydrateRecord()`](../../../packages/panels/src/Resources/Pages/Concerns/InteractsWithRecord.php) | `#[Locked] public Model \| int \| string \| null $record` | done | — | [diverges](README.md#the-record-prop-carries-the-route-key-and-needs-a-dehydration-bridge) |
+| [`$record`](../../../packages/panels/src/Resources/Pages/Concerns/InteractsWithRecord.php) + [`dehydrateRecord()`](../../../packages/panels/src/Resources/Pages/Concerns/InteractsWithRecord.php) | `#[Locked] public Model \| int \| string \| null $record` | done | — | [diverges](#the-record-prop-carries-the-route-key-and-needs-a-dehydration-bridge) |
 | [`mountRecord()`](../../../packages/panels/src/Resources/Pages/Concerns/InteractsWithRecord.php) | the `$this->record = $this->resolveRecord($record)` line of each page's `mount()` | done | — | [semantics](#mountrecord-is-the-one-place-the-assignment-order-lives) |
 | [`getRecord()`](../../../packages/panels/src/Resources/Pages/Concerns/InteractsWithRecord.php) | `getRecord()` + `resolveRecord()` | done | — | [semantics](#the-resolution-is-lazy-scoped-and-re-run-every-request) |
 | [`hasRecord()`](../../../packages/panels/src/Resources/Pages/Concerns/InteractsWithRecord.php) / [`getRecordKey()`](../../../packages/panels/src/Resources/Pages/Concerns/InteractsWithRecord.php) | `hasRecord()`; no counterpart for the key | done | — | [semantics](has-relation-managers.md#the-record-probes-read-the-wire-value-not-the-resolved-record) |
-| [`getRecordTitle()`](../../../packages/panels/src/Resources/Pages/Concerns/InteractsWithRecord.php) | `getRecordTitle()` | done | — | [diverges](README.md#the-document-title-of-an-edit-page-carries-the-record-label-not-the-record-title) |
+| [`getRecordTitle()`](../../../packages/panels/src/Resources/Pages/Concerns/InteractsWithRecord.php) | `getRecordTitle()` | done | — | [diverges](edit-record.md#the-document-title-of-an-edit-page-carries-the-record-label-not-the-record-title) |
 | [`getBreadcrumbs()`](../../../packages/panels/src/Resources/Pages/Concerns/InteractsWithRecord.php) — the record's own crumb | `getBreadcrumbs()` | done | — | [diverges](#the-record-crumb-lands-on-plain-resources-too-and-that-is-new-behaviour) |
 | The crumb's `canView()` / `canEdit()` gates | the two `elseif` arms | todo | authorization | [detail](#the-crumb-links-through-an-ungated-ladder) |
 | [`getSubNavigation()`](../../../packages/panels/src/Resources/Pages/Concerns/InteractsWithRecord.php) | `getSubNavigation()` | done | — | — |
 | [`getSubNavigationParameters()`](../../../packages/panels/src/Resources/Pages/Concerns/InteractsWithRecord.php) | `getSubNavigationParameters()` | done | — | [diverges](#the-sub-navigation-parameters-carry-keys-and-the-parent-chain) |
-| `getDefaultActionRecord()` / `getDefaultActionRecordTitle()` / `getDefaultActionSuccessRedirectUrl()` / `getMountedActionSchemaRecord()` | the same four, the last as `getMountedActionSchemaModel()` | done | — | they stay on [`EditRecord`](README.md#editrecord) and [`ManageRelatedRecords`](manage-related-records.md), which answer them differently |
-| `afterActionCalled()` — nulling the record after a delete | `afterActionCalled()` | skipped | — | [diverges](README.md#the-record-prop-carries-the-route-key-and-needs-a-dehydration-bridge) — the redirect ends the request first, [as EditRecord records](README.md#editrecord) |
+| `getDefaultActionRecord()` / `getDefaultActionRecordTitle()` / `getDefaultActionSuccessRedirectUrl()` / `getMountedActionSchemaRecord()` | the same four, the last as `getMountedActionSchemaModel()` | done | — | they stay on [`EditRecord`](edit-record.md) and [`ManageRelatedRecords`](manage-related-records.md), which answer them differently |
+| `afterActionCalled()` — nulling the record after a delete | `afterActionCalled()` | skipped | — | [diverges](#the-record-prop-carries-the-route-key-and-needs-a-dehydration-bridge) — the redirect ends the request first, [as EditRecord records](edit-record.md) |
 | `mountCanAuthorizeAccess()` / `hydrateCanAuthorizeAccess()` | the same two | todo | authorization | [detail](#the-crumb-links-through-an-ungated-ladder) |
 | `getWidgetData()` | `getWidgetData()` | todo | `sylament/widgets` | — |
 
@@ -63,7 +63,7 @@ Filament has no equivalent method because it has no ordering problem: its `mount
 
 ### The resolution is lazy, scoped and re-run every request
 
-`getRecord()` resolves the key through the resource's `resolveRecordRouteBinding($key, $this->getParentRecordScope())` and memoizes on `$resolvedRecord` for the request — a blank key, a key matching nothing and a key **malformed for the record class** all throw `NotFoundHttpException`, which [`PageController` unwraps out of Twig's render error](README.md#a-mount-time-http-exception-is-unwrapped-from-twigs-render-error) into a real 404.
+`getRecord()` resolves the key through the resource's `resolveRecordRouteBinding($key, $this->getParentRecordScope())` and memoizes on `$resolvedRecord` for the request — a blank key, a key matching nothing and a key **malformed for the record class** all throw `NotFoundHttpException`, which [`PageController` unwraps out of Twig's render error](routing.md#a-mount-time-http-exception-is-unwrapped-from-twigs-render-error) into a real 404.
 The scope is null for a page whose resource nests under nothing, so a plain resource page resolves unscoped, by its key alone.
 
 Laziness is what makes the prop safe on the wire: nothing is resolved at dehydration time, and the next request re-resolves the key it was handed — through the parent scope again — rather than trusting anything the previous render decided.
@@ -76,7 +76,7 @@ Those are examples rather than the whole set — a trailing space, `5e0` and a N
 The refusal happens **before** anything is bound: on the default arm — a resource naming no `$recordRouteKeyName` — a key no record of the class could mint is answered with no statement of its own.
 That is a claim about the record's own binding and nothing else.
 A blank key never reaches the binding at all, being refused a frame earlier; and under a parent the chain above has already been resolved by a statement of its own, the scope being evaluated as the argument.
-Two well-formed-looking keys are still a 500 rather than a 404: a canonical integer too wide for its column decodes, prints back to itself, binds and raises the platform's own range error ([the residual](../schemas/record-key.md#an-integer-beyond-the-columns-width-still-raises-the-platforms-range-error)), and a hand-written identifier DBAL type that refuses a malformed string with anything but a `ConversionException` has that exception propagate, the frozen seam catching the one kind ([the policy](../schemas/record-key.md#the-api)).
+Two well-formed-looking keys are still a 500 rather than a 404: a canonical integer too wide for its column decodes, prints back to itself, binds and raises the platform's own range error ([the residual](../schemas/record-key.md#an-integer-beyond-the-columns-width-still-raises-the-platforms-range-error)), and a hand-written identifier DBAL type that refuses a malformed string with anything but a `ConversionException` has that exception propagate, the frozen seam catching the one kind ([the policy](../schemas/record-key-contract.md#the-api)).
 
 ## Divergences
 
@@ -98,3 +98,27 @@ Two differences, one forced and one required.
 The record is the **route key**, not the record, because the band's URLs are minted through `Resource::getUrl()`, which keys an object anyway; handing it the key skips a resolution the page may not otherwise need (a band renders on every page load, including one whose record nothing else reads).
 And the ancestors ride along, because a nested page's sibling pages live under the same chain: without them, every band item on a nested page would raise `MissingMandatoryParametersException` instead of rendering.
 Filament fills those from the request instead, through the guessing mechanism [it cannot have here](nested-resources.md#guessing-walks-the-records-own-associations-never-the-request).
+
+### The record prop carries the route key and needs a dehydration bridge
+
+Filament's `InteractsWithRecord` declares `public Model | int | string | null $record` and lets Livewire carry the model.
+Ours is `#[LiveProp(dehydrateWith: 'dehydrateRecord')] public ?string $record = null`, and both halves of that are forced by ux-live-component.
+
+**Single type.**
+`LiveComponentMetadataFactory::createLivePropMetadata()` throws `LogicException('Union or intersection types are not supported for LiveProps.')` for any union-typed prop, so Filament's `int|string` cannot survive on the property.
+It survives on `mount(int|string $record)`, which is not a prop and is the signature a migrating user actually writes.
+A route parameter arrives as a string anyway, so the cast in `mount()` is a formality.
+
+**The bridge.**
+`LiveComponentHydrator::dehydrate()` reads each prop through Symfony's `PropertyAccessor`, which prefers a same-named **getter** over the property — and `getRecord()` returns the resolved **entity**.
+Left alone, the wire would carry an object where a `?string` is declared, and the hydrator would throw on a value it cannot dehydrate.
+`dehydrateRecord()` returns `$this->record`, the raw key, and the prop is a scalar on the wire again.
+This is the [`docs/internals/php.md` dehydration trap](../../internals/php.md#a-liveprops-getter-shadows-it) in its second shipped form, mirroring tables' [`dehydrateTableSearch`](../tables/host-can-paginate-records.md#the-writable-props-dehydrate-in-their-elements-wire-vocabulary); the fix is always the bridge, never renaming the Filament getter.
+A composite key is one string too — the `?string` type, the checksum and the bridge carry `1~A=2FB=20C` exactly as they carry `7` — so the widening of the key format asked nothing of this prop, nor of the parent chain's `array<string, string>`, nor of a relation manager's `ownerRecord`.
+
+We could have sidestepped both by typing the prop to the entity and letting `DoctrineEntityHydrationExtension` carry the identifier (the demo's `ArticleForm` does exactly that, and it works).
+It was not done because a resource page must serve **any** record class, and a `LiveProp`'s type is read off the property at compile time, so there is no type to write on a generic base.
+The key is the one thing every resource can put on the wire, and `Resource::resolveRecordRouteBinding()` already exists to turn it back into a record through the resource's own query — which is also stricter than a `find()`: a record the query scopes out 404s instead of loading.
+
+`packages/panels/tests/Integration/Resources/Pages/EditRecordTest.php` reads the rendered `data-live-props-value` and asserts `record` is the key string, and `CompositeRecordPagesTest` asserts the same of a two-component one.
+Removing the bridge does not fail those two alone: the prop then dehydrates as the resolved **entity**, which the hydrator refuses, so every case that renders a record page goes red with it.

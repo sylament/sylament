@@ -52,7 +52,7 @@ One member is covered from outside that set: `getSchema()` needs a host with a r
 ### `getSchema()` is unguarded where the state readers beside it are not
 
 `getSchema()` reads the filter's live child schema off `$this->getLiveComponent()->getTableFiltersForm()` with no `method_exists()` check, two files away from `BelongsToTable`'s `getState()` / `getFormState()`, which [carry one and throw when it fails](#the-state-readers-are-guarded-because-the-contract-does-not-declare-them).
-The asymmetry is not an oversight and not a style drift: `getTableFiltersForm()` is [on the contract](has-table.md#the-contract-is-thirty-five-methods-of-filaments-forty-six) and the two state readers are not, so `getLiveComponent()` — typed `InteractsWithTable` — answers the first call at level max and cannot answer the other two.
+The asymmetry is not an oversight and not a style drift: `getTableFiltersForm()` is [on the contract](interacts-with-table.md#the-contract-is-thirty-five-methods-of-filaments-forty-six) and the two state readers are not, so `getLiveComponent()` — typed `InteractsWithTable` — answers the first call at level max and cannot answer the other two.
 A guard here would be unreachable code guarding a declared method; a guard there is the only thing standing between a contract-satisfying host and a fatal.
 Both disappear the same way, by the contract growing, and the rule for adding a guard is the same either way: check what the interface declares, not what the trait happens to supply.
 
@@ -94,7 +94,7 @@ So both are `method_exists()`-guarded and throw a `LogicException` naming [`HasT
 That is not defensive padding — `InteractsWithTable` is implementable by hand, and the alternative failure is a table that silently filters nothing.
 PHPStan narrows the guarded call to `mixed`, which a private normalizer turns back into `array<string, mixed>`, so shipped source carries no inline ignore.
 That last part is a **static** claim rather than a runtime guarantee: the normalizer casts each key with `(string)`, and PHP canonicalises a numeric string key straight back to an integer, so a bag that arrives keyed `0` stays keyed `0`.
-Against the shipped host that case no longer arises — [`getTableFilterState()`](has-table.md#one-filter-slice-is-a-plain-array-read-not-a-propertyaccessor-walk) reads a slice that is not field-keyed as `null`, so the normalizer sees `[]` — leaving the cast live only for a host that answers these methods by hand.
+Against the shipped host that case no longer arises — [`getTableFilterState()`](host-has-filters.md#one-filter-slice-is-a-plain-array-read-not-a-propertyaccessor-walk) reads a slice that is not field-keyed as `null`, so the normalizer sees `[]` — leaving the cast live only for a host that answers these methods by hand.
 Nothing downstream reads a filter slice positionally — every key is a field name a schema wrote — so the declared shape is the one every consumer needs and the residue is unreachable in practice.
 
 ### There is no closure-where group around `apply()`

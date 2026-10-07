@@ -12,7 +12,7 @@ owns:
 [`Sylament\Panels\Resources\Pages\ManageRelatedRecords`](../../../packages/panels/src/Resources/Pages/ManageRelatedRecords.php) — one owner record's association as a **page** of its own: the routed sibling of a [relation manager](relation-manager.md), reached through the record's [sub-navigation](has-sub-navigation.md), and the listing a [nested resource](nested-resources.md)'s records are reached through.
 It ports [`Resources/Pages/ManageRelatedRecords.php`](../../../vendor/filament/filament/src/Resources/Pages/ManageRelatedRecords.php).
 
-It is a resource page that is also a relationship-table host: it extends [`Resources\Pages\Page`](README.md#resource-pages) — so it carries the actions host, the breadcrumb chain and the parent-record chain — and composes [`InteractsWithRecord`](interacts-with-record.md) for the record it is opened on and [`InteractsWithRelationshipTable`](interacts-with-relationship-table.md) for the association it lists, with tables' `HasTable` and schemas' `HasSchemas` beside them.
+It is a resource page that is also a relationship-table host: it extends [`Resources\Pages\Page`](resource-pages.md) — so it carries the actions host, the breadcrumb chain and the parent-record chain — and composes [`InteractsWithRecord`](interacts-with-record.md) for the record it is opened on and [`InteractsWithRelationshipTable`](interacts-with-relationship-table.md) for the association it lists, with tables' `HasTable` and schemas' `HasSchemas` beside them.
 Its record **is** the relationship's owner, which is the whole identity of the class: `getOwnerRecord()` is `getRecord()`.
 
 A page is three statics and nothing else — for an `Article` whose `sections` also have a resource of their own:
@@ -79,7 +79,7 @@ The parking is the same one every host in this port carries; it is listed here b
 ### The table-context redirect narrowing is not ported
 
 Filament's `getDefaultActionSuccessRedirectUrl()` narrows the record page's: a **table-context** action returns null (a row delete must not redirect to the resource index), everything else falls through to `parent::`.
-Ours inherits the resource-page base's hook unchanged, and that base answers null for everything except a `DeleteAction` on [`EditRecord`](README.md#editrecord) — a class this page is not — so the observable behaviour today is identical: nothing this page mounts redirects.
+Ours inherits the resource-page base's hook unchanged, and that base answers null for everything except a `DeleteAction` on [`EditRecord`](edit-record.md) — a class this page is not — so the observable behaviour today is identical: nothing this page mounts redirects.
 The override lands when the base's hook grows an arm this page would have to narrow; recording it keeps the divergence from being discovered as a bug later.
 
 ## Semantics
@@ -120,7 +120,7 @@ Filament's `content()` returns a `Group` of the record-filter tabs, two render h
 All four are deferred or placed elsewhere — `EmbeddedTable` and render hooks are unported, the managers are skipped above, and the tabs landed as a [schema the partial renders](has-tabs.md#the-strip-is-a-schema-a-partial-renders-not-a-component-a-content-schema-holds) rather than a component a `content()` would hold — which would leave a content schema wrapping one table and nothing else.
 So the page renders a template instead — the shared table variant [`partials/Page/table.html.twig`](../../../packages/panels/templates/partials/Page/table.html.twig), which `{% extends %}` the base page chrome and fills its `content` block with the tabs strip and `{{ renderTable() }}`.
 The page root, the header with its breadcrumbs and header actions, the sub-navigation band and `<twig:SylamentActions:Modals />` all come from the chrome, and the outlet is [not optional](relation-manager.md#the-manager-renders-a-template-not-a-content-schema) — without it every action the page mounts renders nothing at all.
-It is the same call [`ListRecords`](README.md#listrecords) already made, one page over — and it is literally the same **file**: the list, create and manage-related shapes collapse onto two variants of one chrome, and the per-page root class comes from [`getPageClasses()`](custom-pages.md#getpageclasses-is-the-only-source-of-a-per-page-root-class).
+It is the same call [`ListRecords`](list-records.md) already made, one page over — and it is literally the same **file**: the list, create and manage-related shapes collapse onto two variants of one chrome, and the per-page root class comes from [`getPageClasses()`](custom-pages.md#getpageclasses-is-the-only-source-of-a-per-page-root-class).
 
 ### The navigation label and icon drop their related-resource arms
 
@@ -136,7 +136,7 @@ The icon alias itself is `PanelsIconAlias::RESOURCES_PAGES_MANAGE_RELATED_RECORD
 ### The title is a literal, not a translation key
 
 `getTitle()` is `static::$title ?? sprintf('Manage %s %s', $recordTitle, $relationshipTitle)` — *Manage Apollo Tasks* — where Filament reads `filament-panels::resources/pages/manage-related-records.title` with the same two placeholders.
-The same call [the create and save notification titles](README.md#the-create-and-save-notification-titles-are-literals-not-translation-keys) and `EditRecord::getTitle()`'s `'Edit %s'` made: i18n is parked, and the English literal is what the key resolves to.
+The same call [the create and save notification titles](create-record.md#the-create-and-save-notification-titles-are-literals-not-translation-keys) and `EditRecord::getTitle()`'s `'Edit %s'` made: i18n is parked, and the English literal is what the key resolves to.
 
 ### `getPageClass()` has no reader here
 
@@ -147,11 +147,11 @@ A method nothing calls is not ported.
 ### The root carries one page class, not three
 
 Filament's `getPageClasses()` returns `['fi-resource-manage-related-records-page', 'fi-resource-<slug>', 'fi-resource-record-<key>']`.
-The template writes `sy-pa-resource-manage-related-records-page` alone, which is the same call the [list page](README.md#listrecords) made: the slug-derived and record-derived halves wait for a reason to style one resource's — or one record's — page differently from another's.
+The template writes `sy-pa-resource-manage-related-records-page` alone, which is the same call the [list page](list-records.md) made: the slug-derived and record-derived halves wait for a reason to style one resource's — or one record's — page differently from another's.
 Nothing in the stylesheet selects any of the three.
 
 ### `previousUrl` is not ported anywhere in the port
 
 Filament's page fills `public ?string $previousUrl = null` from `url()->previous()` in `mount()`, feeding a cancel-via-history action.
 Nothing reads it on this page — its own cancel action is not ported either — so it is dead state on the wire.
-The record pages already record the same deferral ([`CreateRecord`](README.md#createrecord)); it is repeated here because the property is the one member of Filament's class that has no consumer even in Filament's own file.
+The record pages already record the same deferral ([`CreateRecord`](create-record.md)); it is repeated here because the property is the one member of Filament's class that has no consumer even in Filament's own file.

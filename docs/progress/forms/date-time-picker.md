@@ -39,7 +39,7 @@ Every point this field adds over `Field`.
 | [`getStep()`](../../../packages/forms/src/Components/DateTimePicker.php) — the [`HasStep`](has-step.md) override | [`DateTimePicker.php`](../../../vendor/filament/forms/src/Components/DateTimePicker.php) | done | — | [semantics](#the-time-steps-compose-into-one-native-step-in-seconds) |
 | [`getDefaultStateCasts()`](../../../packages/forms/src/Components/DateTimePicker.php) | [`DateTimePicker.php`](../../../vendor/filament/forms/src/Components/DateTimePicker.php) | done | — | [diverges](#the-cast-writes-an-object-when-the-record-declares-one) |
 | [`getDateTimeObjectClass()`](../../../packages/forms/src/Components/DateTimePicker.php) — no Filament counterpart | — | done | — | [diverges](#the-cast-writes-an-object-when-the-record-declares-one) |
-| Date validity (`setUp()`'s always-on [`ValidDate`](can-be-validated.md#the-date-comparison-family-builds-constraints-where-filament-builds-rule-strings)) | [`DateTimePicker::setUp()`](../../../vendor/filament/forms/src/Components/DateTimePicker.php) — `rule('date', hasDate())` | done | — | [diverges](#every-variant-validates-as-a-date-including-the-time-only-one) |
+| Date validity (`setUp()`'s always-on [`ValidDate`](date-comparison.md#the-date-comparison-family-builds-constraints-where-filament-builds-rule-strings)) | [`DateTimePicker::setUp()`](../../../vendor/filament/forms/src/Components/DateTimePicker.php) — `rule('date', hasDate())` | done | — | [diverges](#every-variant-validates-as-a-date-including-the-time-only-one) |
 | [`CanBeNative`](can-be-native.md) | [`Concerns/CanBeNative.php`](../../../vendor/filament/forms/src/Components/Concerns/CanBeNative.php) | done | — | [detail](can-be-native.md) |
 | `native(false)` — the JS calendar control | [`DateTimePicker::toEmbeddedHtml()`](../../../vendor/filament/forms/src/Components/DateTimePicker.php) | blocked | the JS calendar vertical | [diverges](can-be-native.md#nativefalse-throws-rather-than-falling-back-to-the-native-control) |
 | [`CanBeReadOnly`](can-be-read-only.md) | [`Concerns/CanBeReadOnly.php`](../../../vendor/filament/forms/src/Components/Concerns/CanBeReadOnly.php) | done | — | [detail](can-be-read-only.md) |
@@ -111,7 +111,7 @@ Only when seconds are on and no step was named does the field emit `step="1"`, w
 That is Filament's inline Blade preamble, ported into `getExtraTemplateData()` because a Twig template has no place to hold it.
 
 The **constraint** is not truncated.
-`minDate()` registers a [`DateComparison`](can-be-validated.md#the-date-comparison-family-builds-constraints-where-filament-builds-rule-strings) against `getMinDate()`, which keeps the time, so a date-only control whose bound carries `08:00:00` accepts `2026-01-01` in the browser and rejects it on the server.
+`minDate()` registers a [`DateComparison`](date-comparison.md#the-date-comparison-family-builds-constraints-where-filament-builds-rule-strings) against `getMinDate()`, which keeps the time, so a date-only control whose bound carries `08:00:00` accepts `2026-01-01` in the browser and rejects it on the server.
 Filament has the identical split (its rule reads `getMinDate()` too), and the resolution is the same there and here: give a date-only control a date-only bound.
 
 ### A bound no date parse accepts throws where a sibling reference is skipped
@@ -122,7 +122,7 @@ The alternative is to swallow the parse failure to a `null`, and it is worse tha
 
 Two limits on the throw's reach, both deliberate.
 It fires only on a control **without a time part**, because only that branch parses — a `datetime-local` bound is passed to the attribute verbatim and the browser ignores what it cannot read.
-And the constraint half stays silent whatever the bound: `minDate()` registers an `afterOrEqual()` boundary, whose builder tests the string with `strtotime()` and routes anything it cannot read to [the field-name arm](can-be-validated.md#the-date-comparison-family-builds-constraints-where-filament-builds-rule-strings), which resolves nothing and [drops the constraint](can-be-validated.md#a-blank-sibling-skips-the-comparison-where-laravel-fails-the-field).
+And the constraint half stays silent whatever the bound: `minDate()` registers an `afterOrEqual()` boundary, whose builder tests the string with `strtotime()` and routes anything it cannot read to [the field-name arm](date-comparison.md#the-date-comparison-family-builds-constraints-where-filament-builds-rule-strings), which resolves nothing and [drops the constraint](date-comparison.md#a-blank-sibling-skips-the-comparison-where-laravel-fails-the-field).
 That skip is the designed behaviour for a sibling reference and is not narrowed here; the attribute path is where a bad literal now surfaces.
 
 ### The `value` attribute reads the raw state, not the cast one
@@ -153,7 +153,7 @@ One limit rides along and is accepted: a field that is never wired into a schema
 ### Every variant validates as a date, including the time-only one
 
 Filament's `setUp()` registers `rule('date', fn ($component) => $component->hasDate())`, so a `TimePicker` carries no validity rule at all.
-The port registers an unconditional [`ValidDate`](can-be-validated.md#the-date-comparison-family-builds-constraints-where-filament-builds-rule-strings).
+The port registers an unconditional [`ValidDate`](date-comparison.md#the-date-comparison-family-builds-constraints-where-filament-builds-rule-strings).
 
 The condition is what makes Filament's version safe over there and unsafe here: a raw value that no parse accepts makes the cast return `null`, and that null is what `getData()` writes onto the record.
 A tampered `publishedAt` would silently clear the column instead of failing validation — the same hole the [option fields closed with an always-on `Choice`](select.md).
@@ -162,7 +162,7 @@ A tampered `publishedAt` would silently clear the column instead of failing vali
 ### The bounds are date comparison constraints, not Laravel rule strings
 
 `minDate()` / `maxDate()` push `"after_or_equal:{$date}"` / `"before_or_equal:{$date}"` rule strings in Filament.
-Here each registers a [`DateComparison`](can-be-validated.md#the-date-comparison-family-builds-constraints-where-filament-builds-rule-strings) through the same `afterOrEqual()` / `beforeOrEqual()` the user calls directly, so the bound is validated by the one constraint pair the port ships rather than by a second mechanism.
+Here each registers a [`DateComparison`](date-comparison.md#the-date-comparison-family-builds-constraints-where-filament-builds-rule-strings) through the same `afterOrEqual()` / `beforeOrEqual()` the user calls directly, so the bound is validated by the one constraint pair the port ships rather than by a second mechanism.
 Filament's laziness is kept exactly — the bound is a closure reading `getMinDate()` back off the component, re-evaluated on every validation run, and the pair's condition drops the constraint when the bound resolves blank.
 
 One consequence is worth stating: because both bounds and the user-facing `after()` family produce the same constraint class, a `validationMessages()` entry keyed `DateComparison::class` reaches all of them at once.

@@ -30,10 +30,10 @@ Coverage: the trait itself — the default, the literal, closure and `null` arms
 ### `Select` widens `searchable()` to a column array, and defaults it to `multiple()`
 
 The trait's setter takes `bool|Closure|null`.
-`Select` overrides it, Filament-exact, with `bool|array|Closure|null`: an array turns searching on **and** names the relationship columns the [search arm](select.md#the-relationship-search-arm-runs-a-like-per-column-over-the-scoped-option-query) runs its `LIKE`s over, where a bare `searchable()` searches the title attribute alone; every other arm assigns the condition and clears the columns, so `searchable(['name'])->searchable()` is back to the title attribute.
+`Select` overrides it, Filament-exact, with `bool|array|Closure|null`: an array turns searching on **and** names the relationship columns the [search arm](has-relationship.md#the-relationship-search-arm-runs-a-like-per-column-over-the-scoped-option-query) runs its `LIKE`s over, where a bare `searchable()` searches the title attribute alone; every other arm assigns the condition and clears the columns, so `searchable(['name'])->searchable()` is back to the title attribute.
 The `null` arm is the port's, not Filament's — the trait's setter is deliberately nullable so `searchable(null)` assigns rather than throwing, and an override may not narrow a parameter it inherits.
 
-`Select::isSearchable()` reads `evaluate($isSearchable) ?? isMultiple()`, also Filament-exact: a `multiple()` select is searchable unless told otherwise, which is what puts every multiple select on the JS chips control ([why that matters for a relationship select](select.md#a-relationship-map-is-full-or-an-exception-except-where-search-makes-it-partial-by-design)).
+`Select::isSearchable()` reads `evaluate($isSearchable) ?? isMultiple()`, also Filament-exact: a `multiple()` select is searchable unless told otherwise, which is what puts every multiple select on the JS chips control ([why that matters for a relationship select](has-relationship.md#a-relationship-map-is-full-or-an-exception-except-where-search-makes-it-partial-by-design)).
 The trait's own `isSearchable()` casts to `bool` and knows nothing of multiplicity — the class method wins over the trait's, so `CheckboxList` keeps the plain reading.
 Both overrides live on `Select`, not in the trait, because a `CheckboxList` has no columns to search and no multiplicity to default from.
 

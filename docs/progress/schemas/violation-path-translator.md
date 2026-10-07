@@ -37,7 +37,7 @@ Coverage: every arm by [`ViolationPathTranslatorTest`](../../../packages/schemas
 
 The map's values are components, each of which already knows its absolute state path, so `translate()` looks like it should return `$component->getStatePath()`.
 It instead re-joins `$rootStatePath` with the matched record path.
-The two are equal by construction — [`getRecordStatePath()`](belongs-to-record.md#getrecordstatepath-is-the-one-definition-of-record-relative-and-both-walks-must-share-it) strips exactly that prefix — and the string form is what the index arm needs anyway, since an item key is appended to a path no component in the map owns.
+The two are equal by construction — [`getRecordStatePath()`](component-belongs-to-record.md#getrecordstatepath-is-the-one-definition-of-record-relative-and-both-walks-must-share-it) strips exactly that prefix — and the string form is what the index arm needs anyway, since an item key is appended to a path no component in the map owns.
 The component is consulted for one thing only: whether it keys its items.
 
 ### A violation beneath a declared leaf folds onto that leaf

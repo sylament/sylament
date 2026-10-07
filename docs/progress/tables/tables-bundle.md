@@ -124,7 +124,7 @@ No `Commands/` subtree exists in the port, in any package.
 ### Translations
 
 `->hasTranslations()` registers [`resources/lang/`](../../../vendor/filament/tables/resources/lang) — the column labels, the empty-state heading and description, the filter and bulk-action strings, the pagination summary.
-Unported, and the immediate consequence is visible in [`table.md`](table.md#the-copy-is-english-and-hardcoded-because-no-i18n-layer-ships): `getEmptyStateHeading()` interpolates the plural record label into an English `"No …"` in PHP, because there is no catalogue to look the phrase up in.
+Unported, and the immediate consequence is visible in [`has-empty-state.md`](has-empty-state.md#the-copy-is-english-and-hardcoded-because-no-i18n-layer-ships): `getEmptyStateHeading()` interpolates the plural record label into an English `"No …"` in PHP, because there is no catalogue to look the phrase up in.
 **Next step:** port with the toolkit-wide i18n pass, which that divergence names as its one reversal step.
 
 ## Divergences
@@ -218,7 +218,7 @@ None of those has a UX LiveComponent counterpart that reads a **table** rather t
 Selection is the first job: the three props, the tri-state header checkbox and the banner.
 The **selected-row tint** is the second — `#repaint()` toggles `sy-selected` on each checkbox's closest `.sy-ta-row`, the same class Filament's Alpine binds, which the port previously left to the server and could not keep in step once a tick stopped costing a request.
 The **reorder bridge** is the third: it binds support's non-bubbling `sylament--support--sortable:end` event and turns the new order into the `reorderTable` action, which is the whole bridge, because [the drag control never talks to a live component](../support/sortable.md).
-The **poll timer** is the fourth, started and restarted from `pollIntervalValueChanged()` rather than only at connect, because a morph never re-runs `connect()` and [the attribute is dropped while reordering](table.md#the-poll-interval-parses-strictly-and-carries-no-livewire-modifiers).
+The **poll timer** is the fourth, started and restarted from `pollIntervalValueChanged()` rather than only at connect, because a morph never re-runs `connect()` and [the attribute is dropped while reordering](can-defer-loading.md#the-poll-interval-parses-strictly-and-carries-no-livewire-modifiers).
 The **deferred kick** is the fifth and the only one that binds no event at all: it fires `loadTable` once on connect, guarded by the flag it reads back out of the store rather than by a field of its own, so a reconnect after the load fires nothing.
 
 The element gate is what keeps the cost proportional, and it is the reason the five did not become five controllers.

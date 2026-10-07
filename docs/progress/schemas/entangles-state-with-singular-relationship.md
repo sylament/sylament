@@ -119,13 +119,13 @@ A field over a non-nullable key property never gets that far, since it is requir
 
 It is read **after** the owner's setter runs, not before: a shared-key one-to-one held from its inverse side, whose setter syncs the owning side as Symfony's maker writes it, gets its whole key from that write.
 Read before it, the cap of a new base would be refused although the flush keys it.
-The refusal inherits the reader's exemptions — a single scalar key stays the application's `required()` to guard, and a class with a `prePersist` callback or entity listener is trusted to fill its key — and with them the [`Repeater`](../forms/repeater.md#a-new-item-whose-identifier-is-incomplete-is-refused-before-the-save-returns)'s recorded residual: a half such a callback leaves unfilled still reaches the table.
+The refusal inherits the reader's exemptions — a single scalar key stays the application's `required()` to guard, and a class with a `prePersist` callback or entity listener is trusted to fill its key — and with them the [`Repeater`](../forms/repeater-relationship.md#a-new-item-whose-identifier-is-incomplete-is-refused-before-the-save-returns)'s recorded residual: a half such a callback leaves unfilled still reaches the table.
 As in the repeater, the record stays on the owner when the save throws, so only a flush the host never reaches could write it.
 An existing related record is never asked; its key is the changed-key pass's to guard.
 
 One reach is recorded rather than closed.
 The reader follows an identifier association into the record it points at, so a shared-key child whose identifier **is** the owner is refused when the owner's own single scalar key is blank — an owner whose key field is not required (`required(false)`, or a nullable property) and holds whitespace.
-Without the refusal that `getData()` would pass, the single scalar root key being exempt; the [`Repeater`](../forms/repeater.md#a-new-item-whose-identifier-is-incomplete-is-refused-before-the-save-returns) refuses its items under such an owner the same way, and the refusal stays: the child row could not be keyed after the flush either.
+Without the refusal that `getData()` would pass, the single scalar root key being exempt; the [`Repeater`](../forms/repeater-relationship.md#a-new-item-whose-identifier-is-incomplete-is-refused-before-the-save-returns) refuses its items under such an owner the same way, and the refusal stays: the child row could not be keyed after the flush either.
 A required key field — which forms derives for a non-nullable property — never reaches it.
 Telling the two causes apart needs the reader's private walk behind [`hasIncompleteAssignedIdentifier()`](association-reader.md#an-incomplete-assigned-identifier-is-the-question-the-create-paths-ask), which answers one boolean, so the message names both instead: its advice points at the record the relationship hangs off as well as at the components inside it, since naming the group alone would send the developer past the owner's key field.
 

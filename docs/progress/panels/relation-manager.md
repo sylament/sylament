@@ -65,11 +65,11 @@ That is the same exposure the resource pages already carry, doubled — a manage
 
 ### Every URL a manager generates resolves the default panel
 
-A manager has no GET route of its own — it lives entirely inside live requests — so it carries the toolkit's **highest** exposure to [URL generation inside a live action resolving the default panel](README.md#url-generation-inside-a-live-action-resolves-the-default-panel): `CurrentPanel::get()` is null on every request a manager will ever serve, so `PanelRegistry::getDefault()` answers all of them.
+A manager has no GET route of its own — it lives entirely inside live requests — so it carries the toolkit's **highest** exposure to [URL generation inside a live action resolving the default panel](resource.md#url-generation-inside-a-live-action-resolves-the-default-panel): `CurrentPanel::get()` is null on every request a manager will ever serve, so `PanelRegistry::getDefault()` answers all of them.
 Right for a single-panel application and for any resource mounted in the default panel; wrong for a manager whose resource lives **only** in a non-default one, where the generated route name does not exist and `UrlGenerator` throws `RouteNotFoundException`.
 Inventoried here, fixed with the rest of that defect — the shape is the same either way: carry the panel id on the live component and pass `panel:` explicitly.
 
-That shape already exists one tier up, and it reaches a manager only sideways: the [resource-page base](README.md#resource-pages) now carries a `panelId` `LiveProp` and stamps `_sylament_panel` back onto the request when it hydrates, so a manager rendered **inside** a request that hydrates its host page reads the right panel off that request attribute like anything else in the request.
+That shape already exists one tier up, and it reaches a manager only sideways: the [resource-page base](resource-pages.md) now carries a `panelId` `LiveProp` and stamps `_sylament_panel` back onto the request when it hydrates, so a manager rendered **inside** a request that hydrates its host page reads the right panel off that request attribute like anything else in the request.
 A manager's own live request — a sort, a page change, an action — hydrates the manager alone, stamps nothing, and still resolves the default panel.
 So the exposure is narrowed, not closed, and it closes when the manager carries its own prop.
 
@@ -85,7 +85,7 @@ A browser on a second panel meets it exactly as a test does, and a manager that 
 There is **no** pluralization step: the association name is already plural in every idiomatic mapping, so a manager over `tasks` is titled `Tasks` because that is what the property is called, not because anything inflected it.
 A singular association name titles singular, and that is Filament's behaviour too.
 
-The idiom is the same one [`Pages\Page::getHumanizedClassBasename()`](README.md#page) uses on a class basename, duplicated here rather than shared: the manager does not extend that class, and the two humanize different things.
+The idiom is the same one [`Pages\Page::getHumanizedClassBasename()`](page.md) uses on a class basename, duplicated here rather than shared: the manager does not extend that class, and the two humanize different things.
 
 ### The relationship is seeded in `makeTable()` and `table()` is never redeclared
 
@@ -114,7 +114,7 @@ A consumer who wants one wires it themselves with `emitUp()` + a `#[LiveListener
 
 `getRelationship()` is the one point both hosts pass through — a [`RelationManager`](#the-manager-stands-beside-the-resource-page-base-rather-than-under-it) and [`ManageRelatedRecords`](manage-related-records.md) each reach the association through it — and it decides nothing about the owner record.
 That is worth stating because it once did: a private guard here refused an owner *"not keyed by a single scalar identifier"*, in panel vocabulary, because the relationship query underneath could not bind one; it was written to be deleted whole and was, together with [the twin one level up](nested-resources.md#a-parent-of-any-width-scopes-and-the-two-interim-guards-that-stood-in-for-it-are-gone).
-A manager now hangs off an owner of any identifier width, the scope reaching it [through the owner's own collection](../schemas/association-reader.md#an-owner-of-any-width-is-scoped-through-its-own-collection-rather-than-through-a-mapped-by-path).
+A manager now hangs off an owner of any identifier width, the scope reaching it [through the owner's own collection](../schemas/relationship.md#an-owner-of-any-width-is-scoped-through-its-own-collection-rather-than-through-a-mapped-by-path).
 
 Two things went with the guard rather than surviving it.
 Its predicate was deliberately **wider** than the reader's — it refused a single derived identity, which the reader never did — so panels and the relation layer no longer disagree about a flavour, and there is one answer to "may this owner be scoped" rather than two.
@@ -125,7 +125,7 @@ And `setRelationshipTableEntityManager()`, a public `#[Required]` setter added o
 ### The manager stands beside the resource page base rather than under it
 
 Filament's `RelationManager` extends `Livewire\Component`; ours implements the three host contracts directly and composes `DefaultActionTrait` + `HasActions` + `HasSchemas` + `HasTable`.
-It deliberately does **not** extend [`Resources\Pages\Page`](README.md#resource-pages): that base answers five route and navigation statics for a route a manager does not have, and inherits the delete-to-index redirect a manager must not have.
+It deliberately does **not** extend [`Resources\Pages\Page`](resource-pages.md): that base answers five route and navigation statics for a route a manager does not have, and inherits the delete-to-index redirect a manager must not have.
 The cost is roughly twenty duplicated lines — `getComponentName()`, `getTemplate()`, the registry setter — and it is the same trade Filament makes.
 
 ### The owner rides the wire as a route key behind a dehydration bridge
@@ -133,13 +133,13 @@ The cost is roughly twenty duplicated lines — `getComponentName()`, `getTempla
 Filament's `ownerRecord` is a `#[Locked] Model` — Livewire serialises an Eloquent model by class and key.
 UX LiveComponent cannot: a generic base cannot declare the concrete entity type, and a `?object` prop hands the hydrator the useless class-string `object`.
 So the prop is the owner's **route key** (`?string`) plus a `?string $pageClass`, and `getOwnerRecord()` resolves it through `pageClass::getResource()` → the resource registry → `resolveRecordRouteBinding()`, memoised for the request, `NotFoundHttpException` on a miss.
-The key is the resource's own route key at any identifier width, so the prop, its checksum and the bridge carry `1~A=2FB=20C` exactly as they carry `7`; and the query underneath carries such an owner too, so neither half of the round trip narrows what a manager may hang off ([how the scope reaches an owner of any width](../schemas/association-reader.md#an-owner-of-any-width-is-scoped-through-its-own-collection-rather-than-through-a-mapped-by-path)).
+The key is the resource's own route key at any identifier width, so the prop, its checksum and the bridge carry `1~A=2FB=20C` exactly as they carry `7`; and the query underneath carries such an owner too, so neither half of the round trip narrows what a manager may hang off ([how the scope reaches an owner of any width](../schemas/relationship.md#an-owner-of-any-width-is-scoped-through-its-own-collection-rather-than-through-a-mapped-by-path)).
 `is_subclass_of($pageClass, Resources\Pages\Page::class)` gates the client-supplied class-string against the **resource**-page base, so the shell `Pages\Page` (and `Dashboard` with it) cannot get past it.
 
 Both props carry `dehydrateWith:`, and that is mandatory rather than defensive.
 `LiveComponentHydrator::dehydrate()` reads every prop through the `PropertyAccessor`, which prefers a same-named getter — so `getOwnerRecord()` would hand the resolved **entity** to a `?string` wire prop and every render would throw.
 The bridges return the raw props.
-This is the shipped [`EditRecord::dehydrateRecord()`](README.md#editrecord) pattern, and it is the same trap `docs/internals/php.md` records for tables' writable props.
+This is the shipped [`EditRecord::dehydrateRecord()`](edit-record.md) pattern, and it is the same trap `docs/internals/php.md` records for tables' writable props.
 
 `#[Locked]` needs no port: a non-writable `LiveProp` is checksummed by default.
 
@@ -219,6 +219,6 @@ The Integration suite pins it inside the root for that reason.
 
 Concrete manager classes carry a bare `#[AsLiveComponent]`, exactly as concrete pages do — UX recognises a live component by reflecting for the attribute, and without it a manager nested in a page is silently re-created on every parent re-render, losing its sort, page and selection with no error anywhere.
 [`RelationManagerComponentPass`](../../../packages/panels/src/DependencyInjection/Compiler/RelationManagerComponentPass.php) turns that into a compile-time `LogicException`: it walks the `sylament.panels.relation_manager` tag, skips abstract definitions, refuses a class without the attribute, then clears the keyless `twig.component` tag the attribute autoconfiguration materialised and re-adds the full eight-key live one keyed by `getComponentName()`.
-It is [`PageComponentPass`](README.md#pages-register-as-live-components-through-a-compiler-pass-over-a-per-class-attribute) minus the `PageController` locator — a manager has no route and no controller.
+It is [`PageComponentPass`](page.md#pages-register-as-live-components-through-a-compiler-pass-over-a-per-class-attribute) minus the `PageController` locator — a manager has no route and no controller.
 The authoring-surface cost (one attribute line Filament does not ask for) is the deliberate trade recorded there.
 

@@ -93,12 +93,12 @@ This is also why the regression suite tests the button separately from the other
 
 ### The tier is filed under `Colors\`, not under `Twig\Components\`
 
-Filament files these under `View\Components\`, and the repo's standing namespace translation is `View\` → `Twig\` ([renames.md](../translations.md#namespace-segments)).
+Filament files these under `View\Components\`, and the repo's standing namespace translation is `View\` → `Twig\` ([translations.md](../translations.md#namespace-segments)).
 Applying it here would land them in `Sylament\Support\Twig\Components\`, which already means something else: a **class-backed renderable** Twig component, the shape actions' `Modals` has.
 A colour policy is never rendered and has no template.
 
 So they are filed by capability at `src/` level instead — `Colors\Components\`, `Colors\Maps\`, `Colors\Contracts\` — the same rule that put `Evaluation\Invoker` and `Configuration\ComponentManager` where they are.
-Recorded in [renames.md](../translations.md#namespace-segments) so a migrating user grepping `View\Components\BadgeComponent` finds the destination.
+Recorded in [translations.md](../translations.md#namespace-segments) so a migrating user grepping `View\Components\BadgeComponent` finds the destination.
 
 The class names themselves are Filament-verbatim, including the nesting (`DropdownComponent\ItemComponent`), so only the leading segments move.
 

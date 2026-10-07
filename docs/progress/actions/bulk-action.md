@@ -113,7 +113,7 @@ One arithmetic detail goes with it: Filament's `reportBulkProcessingSuccessfulRe
 ### Chunking is not ported
 
 `chunkSelectedRecords()` / `getSelectedRecordsChunkSize()` are dropped, so `CanFetchSelectedRecords` ships as the fetch flag alone — the **fetching** arm, that is.
-A by-key arm chunks its own key list — the delete's and the dissociate's — by [the chunk rule](../schemas/record-key.md#the-chunk-rule) rather than by a user-set size, because DQL parse time is superlinear in bound-key count and a platform caps the parameters one statement binds — where the dissociate's statement is SQL, for a foreign key spanning several columns, the cap alone is what its chunks answer.
+A by-key arm chunks its own key list — the delete's and the dissociate's — by [the chunk rule](../schemas/record-key-contract.md#the-chunk-rule) rather than by a user-set size, because DQL parse time is superlinear in bound-key count and a platform caps the parameters one statement binds — where the dissociate's statement is SQL, for a foreign key spanning several columns, the cap alone is what its chunks answer.
 The two are unrelated mechanisms wearing one word, and only the fetching one is unported.
 Two reasons for that.
 **No shipped Filament action calls `chunkSelectedRecords()`** — the grep over `vendor/filament/actions/src` returns only the definitions — so the port would be API surface with no consumer on either side.

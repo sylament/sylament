@@ -249,7 +249,7 @@ Sylament inherits the first for free and cannot use the second.
 But top-layer paint order is `showModal()` **call** order, which has no relationship to DOM order, so no sibling selector can answer "is there a dialog above me".
 The port answers it on the server instead: an `overlaid` prop stamps `sy-modal-overlaid`, whose rule zeroes that dialog's own background so only the topmost frame paints a scrim (N stacked dims would otherwise compound).
 The hand-off animates for free — `background-color` is already in the container's transition list.
-Actions' `Modals` renderer is what computes the flag; see [has-actions.md](../actions/has-actions.md#the-parent-overlay-flag-is-server-stamped-not-a-sibling-css-selector).
+Actions' `Modals` renderer is what computes the flag; see [modals.md](../actions/modals.md#the-parent-overlay-flag-is-server-stamped-not-a-sibling-css-selector).
 
 ### Event names are fixed, and there is no quiet-close
 

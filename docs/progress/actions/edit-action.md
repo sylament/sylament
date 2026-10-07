@@ -22,7 +22,7 @@ Covered by [`EditActionTest`](../../../packages/actions/tests/Unit/EditActionTes
 | [`setUp()` label, success-notification title, `defaultColor('primary')`](../../../packages/actions/src/EditAction.php) | [`EditAction.php`](../../../vendor/filament/actions/src/EditAction.php) | done | — | [diverges](#the-strings-are-literals-not-translation-keys) |
 | [`icon('heroicons:pencil-square-20-solid')`](../../../packages/actions/src/EditAction.php) | [`EditAction.php`](../../../vendor/filament/actions/src/EditAction.php) `tableIcon()` + `groupedIcon()` | done | — | [diverges](#one-plain-icon-replaces-filaments-table-and-grouped-pair) |
 | [`CanCustomizeProcess`](../../../packages/actions/src/Concerns/CanCustomizeProcess.php) (`using()` / `process()`) | [`Concerns/CanCustomizeProcess.php`](../../../vendor/filament/actions/src/Concerns/CanCustomizeProcess.php) | done | — | — |
-| [URL mode — the host-hook fallthrough](../../../packages/actions/src/Concerns/CanOpenUrl.php) | [`Concerns/CanOpenUrl.php`](../../../vendor/filament/actions/src/Concerns/CanOpenUrl.php) `getUrl()` | done | — | [detail](action.md#geturl-carries-the-host-fallback-the-new-tab-introspection-helper-is-missing) |
+| [URL mode — the host-hook fallthrough](../../../packages/actions/src/Concerns/CanOpenUrl.php) | [`Concerns/CanOpenUrl.php`](../../../vendor/filament/actions/src/Concerns/CanOpenUrl.php) `getUrl()` | done | — | [detail](can-open-url.md#geturl-carries-the-host-fallback-the-new-tab-introspection-helper-is-missing) |
 | [Modal mode — `fillForm()` from the record and the `action()` body that updates it](../../../packages/actions/src/EditAction.php) | [`EditAction.php`](../../../vendor/filament/actions/src/EditAction.php) | done | — | [diverges](#the-modal-arm-maps-the-validated-state-onto-the-bound-record) |
 | [`modalHeading()` / `modalSubmitActionLabel()`](../../../packages/actions/src/EditAction.php) | [`EditAction.php`](../../../vendor/filament/actions/src/EditAction.php) | done | — | [diverges](#the-strings-are-literals-not-translation-keys) |
 | [`mutateRecordDataUsing()`](../../../packages/actions/src/Concerns/CanMutateRecordData.php) | [`EditAction.php`](../../../vendor/filament/actions/src/EditAction.php) | done | — | [diverges](#mutaterecorddatausing-is-one-shared-trait-not-three-copies) |
@@ -36,7 +36,7 @@ Filament's body is `$record->update($data)`; Doctrine has no `update()`, so the 
 The fill and the write are a pair:
 
 - `fillForm(fn (Schema $schema): array => $this->getRecordDataForFill($schema, $this->getRecordForFill()))` runs at mount, and the `Schema` argument arrives because [`CanBeMounted::fillForm()`](action.md) forwards the mounted schema into the closure it wraps.
-- the `action()` body re-points that same container at the record and calls [`Schema::getData()`](../schemas/belongs-to-record.md) with the validated — and, where `mutateDataUsing()` asked, mutated — array, then persists and flushes through [`getEntityManagerForRecord()`](action.md#the-transaction-trio-resolves-a-doctrine-connection-instead-of-a-facade).
+- the `action()` body re-points that same container at the record and calls [`Schema::getData()`](../schemas/belongs-to-record.md) with the validated — and, where `mutateDataUsing()` asked, mutated — array, then persists and flushes through [`getEntityManagerForRecord()`](can-use-database-transactions.md#the-transaction-trio-resolves-a-doctrine-connection-instead-of-a-facade).
 
 Eight things about that pair are deliberate.
 
@@ -57,12 +57,12 @@ The named injections `process()` does pass (`schema`, `form`, `record`) are what
 **`saveRelationships()` is not ported, and nothing replaces it.**
 Filament's `$record->update($data)` reaches it through its own `getState()`; here `getData()` writes the associations as part of the mapping and Doctrine orders the writes itself at flush, so there is nothing left to do after `persist()`.
 `persist()` on an already-managed entity is a no-op that still cascade-persists.
-Filament's own page has no counterpart to compare against — its `EditRecord::handleRecordUpdate()` calls `$record->update($data)`; the persist-and-flush pair is the port's, and [`Panels\Resources\Pages\EditRecord::handleRecordUpdate()`](../panels/README.md#editrecord) is where it also lives page-side.
+Filament's own page has no counterpart to compare against — its `EditRecord::handleRecordUpdate()` calls `$record->update($data)`; the persist-and-flush pair is the port's, and [`Panels\Resources\Pages\EditRecord::handleRecordUpdate()`](../panels/edit-record.md) is where it also lives page-side.
 
 **A changed key is refused, not written.**
 `getData()` ends in the record check, whose first pass puts back every identifier field the write moved and answers *"This value cannot be changed."*
 ([the rule](../schemas/can-be-validated.md#a-changed-key-is-refused-and-put-back-not-handed-to-doctrine)).
-A modal that declares the key field shows it under that field; one whose `before()` hook moved a key half the modal does not declare gets it on the mounted schema's own path, which the [modal's record-error list](action.md#the-action-modal-renders-the-record-errors-that-name-no-field) renders above the form.
+A modal that declares the key field shows it under that field; one whose `before()` hook moved a key half the modal does not declare gets it on the mounted schema's own path, which the [modal's record-error list](can-open-modal.md#the-action-modal-renders-the-record-errors-that-name-no-field) renders above the form.
 Either way the key is put back and nothing is written.
 The UI half is `disabledOn('edit')`, and it is bound to the operation's **name** — a modal's operation is the action's name — so an `EditAction::make('editRenamed')` leaves such a field enabled and the refusal is what holds there.
 
@@ -98,5 +98,5 @@ The name is the literal `heroicons:pencil-square-20-solid` rather than Filament'
 `label('Edit')`, the `Edit :label` modal heading, `modalSubmitActionLabel('Save changes')` and `successNotificationTitle('Saved')` are the English literals read from [`resources/lang/en/edit.php`](../../../vendor/filament/actions/resources/lang/en/edit.php), where Filament reads `__('filament-actions::edit.single…')` — the same call [create-action.md](create-action.md#the-strings-are-literals-not-translation-keys) records for the create side.
 Note the success title is `Saved`, not `Edited` — that is Filament's own wording, kept.
 
-The heading's `:label` interpolation becomes string interpolation over [`Action::getRecordTitle()`](action.md#the-record-chain-reaches-the-schema-the-component-and-the-host), which is why it is a closure rather than a literal: no title is known until the action is hosted and a record is bound.
+The heading's `:label` interpolation becomes string interpolation over [`Action::getRecordTitle()`](interacts-with-record.md#the-record-chain-reaches-the-schema-the-component-and-the-host), which is why it is a closure rather than a literal: no title is known until the action is hosted and a record is bound.
 It carries a fallback Filament does not have — when the whole title chain answers `null`, Filament would render a trailing-space `Edit `, so the port falls back to the bare verb `Edit`.

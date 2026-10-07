@@ -30,7 +30,7 @@ Coverage: the default, the literal and closure arms, and every picker composing 
 `isNative()` is a declaration, and on `Select` it is not the last word: the template renders the native `<select>` only when `! (isSearchable() || isMultiple() || isHtmlAllowed()) && isNative()` — Filament's `toEmbeddedHtml()` preamble verbatim.
 Searching needs a control that can ask the server, chips need one that can hold several values with a remove affordance, and a raw HTML label has no `<option>` to live in, so each of the three forces the JS control whatever `native()` said; `native(false)` alone is enough to get it on a plain select.
 The rule is computed once per render, in [`getExtraTemplateData()`](select.md#getextratemplatedata-makes-the-one-getoptions-read-both-branches-share), and both template branches read it from there.
-Two visible consequences: every `multiple()` select renders the chips control, and — because [`Select::isSearchable()` defaults to `isMultiple()`](can-be-searchable.md#select-widens-searchable-to-a-column-array-and-defaults-it-to-multiple) — a multiple relationship select enumerates [no options until the user types](select.md#a-relationship-map-is-full-or-an-exception-except-where-search-makes-it-partial-by-design) unless it declares `preload()`.
+Two visible consequences: every `multiple()` select renders the chips control, and — because [`Select::isSearchable()` defaults to `isMultiple()`](can-be-searchable.md#select-widens-searchable-to-a-column-array-and-defaults-it-to-multiple) — a multiple relationship select enumerates [no options until the user types](has-relationship.md#a-relationship-map-is-full-or-an-exception-except-where-search-makes-it-partial-by-design) unless it declares `preload()`.
 
 ## Divergences
 

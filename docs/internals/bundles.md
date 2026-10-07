@@ -52,7 +52,7 @@ Abstract bases need no exclusion. Symfony's `FileLoader` registers an abstract c
 
 `unique()` and `exists()` need the `AssociationReader` to run their DQL probe. `ContainerConstraintValidatorFactory` asks the container for a constraint's `validatedBy()` and falls back to `new $class()` when the container has no such service. So `SylamentFormsBundle` loads `Validation/*Validator.php` with `autowire()` and `autoconfigure()`. The `*Validator.php` suffix keeps out the constraints themselves, which are value objects and several take required constructor arguments, and `Validation/Concerns/`.
 
-The validators take `?AssociationReader $associationReader = null`, so a validator built with `new` constructs fine and throws a `LogicException` naming the bundle at its first probe. The full reasoning is in `docs/progress/forms/can-be-validated.md`, section "unique() and exists() are one DQL probe behind a container service".
+The validators take `?AssociationReader $associationReader = null`, so a validator built with `new` constructs fine and throws a `LogicException` naming the bundle at its first probe. The full reasoning is in `docs/progress/forms/probes-records.md`, section "unique() and exists() are one DQL probe behind a container service".
 
 ## How do static instances get booted?
 

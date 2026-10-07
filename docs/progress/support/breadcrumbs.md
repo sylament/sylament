@@ -15,7 +15,7 @@ It takes a single `breadcrumbs` prop — a map whose **key** is the URL and whos
 
 The component ships whole.
 Unlike the trigger primitives beside it, Filament's breadcrumbs Blade has **no PHP class behind it** — no colour map, no size resolution, nothing but markup — so a faithful port is the view and its stylesheet, with no interactive layer left to defer.
-Its only consumer today is panels' [`Header`](../panels/README.md#layout-templates), which fills it from `Page::getBreadcrumbs()`.
+Its only consumer today is panels' [`Header`](../panels/layout-templates.md), which fills it from `Page::getBreadcrumbs()`.
 
 ## Surface
 

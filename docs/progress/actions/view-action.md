@@ -57,7 +57,7 @@ The divergence recorded here is therefore only that this is stated rather than e
 
 `label('View')`, the `View :label` modal heading and the cancel action's `Close` are the English literals read from [`resources/lang/en/view.php`](../../../vendor/filament/actions/resources/lang/en/view.php), where Filament reads `__('filament-actions::view.single…')` — the same call [create-action.md](create-action.md#the-strings-are-literals-not-translation-keys) records for the create side, and the `Translations` row in [README](README.md#supporting-surface) tracks the catalogue.
 
-The heading's `:label` interpolation becomes string interpolation over [`Action::getRecordTitle()`](action.md#the-record-chain-reaches-the-schema-the-component-and-the-host), so it is a closure rather than a literal, with the same bare-verb fallback [`EditAction`](edit-action.md#the-strings-are-literals-not-translation-keys) carries: `View` where Filament would render a trailing-space `View `.
+The heading's `:label` interpolation becomes string interpolation over [`Action::getRecordTitle()`](interacts-with-record.md#the-record-chain-reaches-the-schema-the-component-and-the-host), so it is a closure rather than a literal, with the same bare-verb fallback [`EditAction`](edit-action.md#the-strings-are-literals-not-translation-keys) carries: `View` where Filament would render a trailing-space `View `.
 
 ### The icon is a literal name, and a plain `icon()` stands in for `tableIcon()`
 

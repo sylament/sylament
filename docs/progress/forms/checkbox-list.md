@@ -38,7 +38,7 @@ Every point this field adds over `Field`.
 | `getDeselectAllAction()` / `deselectAllAction()` / `getDeselectAllActionName()` | [`Components/CheckboxList.php`](../../../vendor/filament/forms/src/Components/CheckboxList.php) | done | — | [diverges](#the-bulk-toggle-actions-render-but-never-dispatch) · [diverges](#the-bulk-toggle-labels-are-untranslated-literals) |
 | `relationship()` / `getRelationshipName()` / `getRelationshipTitleAttribute()` — via [`HasRelationship`](../../../packages/forms/src/Components/Concerns/HasRelationship.php) | [`Components/CheckboxList.php`](../../../vendor/filament/forms/src/Components/CheckboxList.php) | done | — | [detail](#the-to-many-relationship-arm-serves-this-field-unchanged) · [diverges](#the-relationship-state-is-not-pruned-from-the-dehydrated-bag) · [diverges](#the-relationship-option-map-is-unordered) |
 | `getRelationship()` — the association the mapping declares | [`Components/CheckboxList.php`](../../../vendor/filament/forms/src/Components/CheckboxList.php) | done | — | [detail](#the-to-many-relationship-arm-serves-this-field-unchanged) |
-| `fillStateFromRelationship()` / `saveStateToRelationship()` — the load and save hooks | [`Components/CheckboxList.php`](../../../vendor/filament/forms/src/Components/CheckboxList.php) | done | — | [semantics](select.md#the-save-arm-writes-a-desired-list-not-attachdetach) |
+| `fillStateFromRelationship()` / `saveStateToRelationship()` — the load and save hooks | [`Components/CheckboxList.php`](../../../vendor/filament/forms/src/Components/CheckboxList.php) | done | — | [semantics](has-relationship.md#the-save-arm-writes-a-desired-list-not-attachdetach) |
 | `getOptionLabelFromRecordUsing()` / `hasOptionLabelFromRecordUsingCallback()` / `getOptionLabelFromRecord()` | [`Components/CheckboxList.php`](../../../vendor/filament/forms/src/Components/CheckboxList.php) | done | — | [detail](#the-two-record-shaped-closures-build-labels-and-descriptions-off-one-query) |
 | `getOptionDescriptionFromRecordUsing()` / `hasOptionDescriptionFromRecordUsingCallback()` / `getOptionDescriptionFromRecord()` | [`Components/CheckboxList.php`](../../../vendor/filament/forms/src/Components/CheckboxList.php) | done | — | [detail](#the-two-record-shaped-closures-build-labels-and-descriptions-off-one-query) |
 | `getLabel()` — derived from the relationship name when unset | [`Components/CheckboxList.php`](../../../vendor/filament/forms/src/Components/CheckboxList.php) | done | — | [diverges](#the-relationship-label-is-a-getdefaultlabel-override) |
@@ -52,7 +52,7 @@ Every point this field adds over `Field`.
 | [`CanBeSearchable`](can-be-searchable.md) — the markup, the debounce override and the client-side filter | [`Concerns/CanBeSearchable.php`](../../../vendor/filament/forms/src/Components/Concerns/CanBeSearchable.php) | done | — | [detail](can-be-searchable.md#the-checkbox-list-search-is-client-side-only-and-mostly-select-only) · [diverges](#the-controller-is-the-only-behaviour-and-no-test-in-this-repo-runs-it) |
 | [`CanLimitItemsLength`](../../../packages/forms/src/Components/Concerns/CanLimitItemsLength.php) — `minItems()` / `maxItems()` as a `Count` | [`Concerns/CanLimitItemsLength.php`](../../../vendor/filament/forms/src/Components/Concerns/CanLimitItemsLength.php) | done | — | [detail](can-limit-items-length.md) · [semantics](#the-three-server-side-guards-are-ordered-so-they-never-collide) |
 | The search field's magnifying-glass icon and its [input wrapper](../support/input-wrapper.md) prefix slot | [`Components/CheckboxList.php`](../../../vendor/filament/forms/src/Components/CheckboxList.php) | done | — | [semantics](#the-search-box-is-the-one-wrapper-a-template-opens-by-hand) |
-| `HasPivotData` — `pivotData()` on the save arm | [`Concerns/HasPivotData.php`](../../../vendor/filament/forms/src/Components/Concerns/HasPivotData.php) | skipped | — | [diverges](select.md#the-save-arm-writes-a-desired-list-not-attachdetach) |
+| `HasPivotData` — `pivotData()` on the save arm | [`Concerns/HasPivotData.php`](../../../vendor/filament/forms/src/Components/Concerns/HasPivotData.php) | skipped | — | [diverges](has-relationship.md#the-save-arm-writes-a-desired-list-not-attachdetach) |
 | [`HasNestedRecursiveValidationConstraints` + its contract](../../../packages/forms/src/Components/Concerns/HasNestedRecursiveValidationConstraints.php) — the per-element constraints | [`Concerns/HasNestedRecursiveValidationRules.php`](../../../vendor/filament/forms/src/Components/Concerns/HasNestedRecursiveValidationRules.php) | done | — | [diverges](can-be-validated.md#nested-constraints-land-as-one-all-where-laravel-keys-a-path) |
 | `CanFixIndistinctState` | [`Concerns/CanFixIndistinctState.php`](../../../vendor/filament/forms/src/Components/Concerns/CanFixIndistinctState.php) | done | — | [detail](can-fix-indistinct-state.md) |
 | `CanDisableOptionsWhenSelectedInSiblingRepeaterItems` | [`Concerns/CanDisableOptionsWhenSelectedInSiblingRepeaterItems.php`](../../../vendor/filament/forms/src/Components/Concerns/CanDisableOptionsWhenSelectedInSiblingRepeaterItems.php) | done | — | [detail](can-disable-options-when-selected-in-sibling-repeater-items.md) |
@@ -79,7 +79,7 @@ Both files keep this field's clauses word for word; only the fold moved.
 
 ### The to-many relationship arm serves this field unchanged
 
-`relationship()` is not reimplemented: this field composes the same [`HasRelationship`](../../../packages/forms/src/Components/Concerns/HasRelationship.php) `Select` does, and gets the whole three-closure arm ([how it works](select.md#relationship-is-three-lazy-closures-over-the-association-reader)) unchanged — the option query, the memo, the query scope, the `fill()` read and the desired-list write.
+`relationship()` is not reimplemented: this field composes the same [`HasRelationship`](../../../packages/forms/src/Components/Concerns/HasRelationship.php) `Select` does, and gets the whole three-closure arm ([how it works](has-relationship.md#relationship-is-three-lazy-closures-over-the-association-reader)) unchanged — the option query, the memo, the query scope, the `fill()` read and the desired-list write.
 
 Two things made that possible, and both are recorded rather than assumed:
 
@@ -90,7 +90,7 @@ Two things made that possible, and both are recorded rather than assumed:
   A `CheckboxList` answers a constant `true`, so pointing it at a to-one association fails with the trait's existing refusal ("holds a single …") and the to-many arm is the only one it can take.
 
 Composite children ride that inheritance whole, and the field needed no edit for them either: the option keys, the state read and the desired-list write are all the trait's, so a `CheckboxList` over a target keyed by two fields renders one checkbox per record key, round-trips the checked list, and writes through the same per-key reference the `multiple()` select does.
-The one thing worth knowing is the value spelling: a key of two or more fields always carries `~`, so it stays a string through `in_array()`, through Twig's `==` and as a PHP array key — [the grammar](../schemas/record-key.md#the-grammar) is what makes that a guarantee — while a **single derived identity** is one field and coerces to an `int` array key exactly as a single-`id` target does.
+The one thing worth knowing is the value spelling: a key of two or more fields always carries `~`, so it stays a string through `in_array()`, through Twig's `==` and as a PHP array key — [the grammar](../schemas/record-key-contract.md#the-grammar) is what makes that a guarantee — while a **single derived identity** is one field and coerces to an `int` array key exactly as a single-`id` target does.
 
 `getOptionsFromRelationship()` is the one method this field overrides, and only for [the record-shaped closures](#the-two-record-shaped-closures-build-labels-and-descriptions-off-one-query); with neither declared it delegates straight back to the trait's title-attribute build, aliased in as `getTitleAttributeOptionsFromRelationship()`.
 The query itself is shared: the trait grew a `getRecordsFromRelationship()` seam that both paths read, so there is one place the option query is built and scoped.
@@ -100,7 +100,7 @@ The query itself is shared: the trait grew a `getRecordsFromRelationship()` seam
 `getOptionLabelFromRecordUsing()` replaces the title attribute as the source of each option's label, and `getOptionDescriptionFromRecordUsing()` adds a description per option.
 Declaring **either** switches the option build onto the record path, and the descriptions are installed as a **side effect** of it — the component calls its own `descriptions()` while building the map, exactly as vendor does (`CheckboxList.php:169-177`), because both maps come off the one query and running it twice to keep them separate would be worse.
 
-The label trio — `getOptionLabelFromRecordUsing()`, `hasOptionLabelFromRecordUsingCallback()`, `getOptionLabelFromRecord()` — no longer lives on this class: it moved into the shared [`HasRelationship`](../../../packages/forms/src/Components/Concerns/HasRelationship.php) trait unchanged when [`Select`](select.md#the-relationship-search-arm-runs-a-like-per-column-over-the-scoped-option-query) grew the same callback for its search and label arms.
+The label trio — `getOptionLabelFromRecordUsing()`, `hasOptionLabelFromRecordUsingCallback()`, `getOptionLabelFromRecord()` — no longer lives on this class: it moved into the shared [`HasRelationship`](../../../packages/forms/src/Components/Concerns/HasRelationship.php) trait unchanged when [`Select`](has-relationship.md#the-relationship-search-arm-runs-a-like-per-column-over-the-scoped-option-query) grew the same callback for its search and label arms.
 Filament duplicates the three on both fields because it has no shared trait; the port has one, so both fields carry one copy, and the trait's own option build reads the callback too (`resolveOptionLabelFromRecord()`, callback first, title attribute otherwise).
 This field's override is untouched — it still branches ahead of the query for the description side effect.
 The description trio stays here: `Select` has no descriptions.
@@ -129,7 +129,7 @@ It is worth pinning because the resting shape is what makes the binding work at 
 2. **The `Count` from `minItems()` / `maxItems()`** — before the blank short-circuit, deliberately, because `minItems(2)` has to fail an empty selection and `blank([])` is true.
    `Select` and `ToggleButtons` have no such constraint, so this is the one place the port's shared multiple-arm shape grows a step.
 3. **The `Choice(multiple: true)`** over [`getEnabledOptionValues()`](can-disable-options.md), reached only once the payload left something there — which is a question about the [raw state](select.md#the-filled-gate-reads-the-raw-state-because-a-cast-can-null-a-tampered-value-out), since `EnumArrayStateCast` drops every element matching no case and a cast reading would hand a wholly tampered list back as an empty selection and skip the check that rejects it.
-   The same [membership guard](select.md#the-choice-constraint-is-the-fields-only-server-side-guard) every option field builds, and the same [no-options `LogicException`](select.md#a-relationship-map-is-full-or-an-exception-except-where-search-makes-it-partial-by-design) when the field can enumerate nothing.
+   The same [membership guard](select.md#the-choice-constraint-is-the-fields-only-server-side-guard) every option field builds, and the same [no-options `LogicException`](has-relationship.md#a-relationship-map-is-full-or-an-exception-except-where-search-makes-it-partial-by-design) when the field can enumerate nothing.
 
 Filament reaches the same three answers through a different mechanism — `hasInValidationOnMultipleValues(): true` moves its `In` rule onto `"{$statePath}.*"`, and `minItems`/`maxItems` become `array|min:|max:` rules — which the port has no wildcard path for ([why](can-be-validated.md#nested-constraints-land-as-one-all-where-laravel-keys-a-path)); `Choice(multiple: true)` validates element by element natively, so the per-element check lands on the one path without one.
 
@@ -245,7 +245,7 @@ Filament reads this field's multiplicity off a type: `getRelationship(): ?Belong
 The port's shared relationship arm asks the field instead — one trait serving a `Select` that may be either — so `CheckboxList` answers a constant `true` from an `isMultiple()` of its own.
 
 It is **internal**: no `multiple()` setter exists, because there is nothing to choose.
-Listed in [renames.md](../translations.md#names-with-no-filament-source) so a migrating user who greps Filament for it and finds nothing knows the absence is real.
+Listed in [translations.md](../translations.md#names-with-no-filament-source) so a migrating user who greps Filament for it and finds nothing knows the absence is real.
 
 ### The relationship label is a `getDefaultLabel()` override
 
@@ -259,12 +259,12 @@ The derivation itself is vendor's, spelled in Symfony's `u()`: `->before('.')->k
 
 Filament's `relationship()` ends with `dehydrated(false)`.
 This field's does not, and neither does `Select`'s or `Repeater`'s: the port's dehydration walk is what **routes** a value to its save hook, so pruning the path would switch the feature off rather than protect it.
-The state stays in the bag and the hook takes it — the port-wide reading already recorded in [renames.md](../renames.md#renames) and [repeater.md](repeater.md#the-relationship-family-loses-its-caches-its-lifecycle-hooks-and-its-query-scope), verified for this field rather than assumed and pinned by a case in [`CheckboxListRelationshipTest`](../../../packages/forms/tests/Integration/Components/CheckboxListRelationshipTest.php).
+The state stays in the bag and the hook takes it — the port-wide reading already recorded in [renames.md](../renames.md#renames) and [repeater-relationship.md](repeater-relationship.md#the-relationship-family-loses-its-caches-its-lifecycle-hooks-and-its-query-scope), verified for this field rather than assumed and pinned by a case in [`CheckboxListRelationshipTest`](../../../packages/forms/tests/Integration/Components/CheckboxListRelationshipTest.php).
 
 ### The relationship option map is unordered
 
 Filament's `CheckboxList` orders its title-attribute options by that attribute when the scoped query carries no order; the port's reads [`HasRelationship`](../../../packages/forms/src/Components/Concerns/HasRelationship.php)'s map as the database returns it.
-`Select` orders its own two arms ([select.md](select.md#the-relationship-search-arm-runs-a-like-per-column-over-the-scoped-option-query)); this field does not, so a consumer that wants an order sets it in the `relationship(modifyQueryUsing:)` closure.
+`Select` orders its own two arms ([has-relationship.md](has-relationship.md#the-relationship-search-arm-runs-a-like-per-column-over-the-scoped-option-query)); this field does not, so a consumer that wants an order sets it in the `relationship(modifyQueryUsing:)` closure.
 
 ### The options grid is always applied, and the option containers are unkeyed
 

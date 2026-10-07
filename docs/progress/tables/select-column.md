@@ -86,7 +86,7 @@ The whole searchable/preloaded/relationship group above is one decision: the sea
 ### The placeholder copy is English and hardcoded
 
 `setUp()` sets `placeholder('Select an option')`, Filament's own `filament-tables::table.columns.select.placeholder`.
-There is no i18n layer, so the string is inlined here as it is everywhere else in the port ([table.md](table.md#the-copy-is-english-and-hardcoded-because-no-i18n-layer-ships)).
+There is no i18n layer, so the string is inlined here as it is everywhere else in the port ([has-empty-state.md](has-empty-state.md#the-copy-is-english-and-hardcoded-because-no-i18n-layer-ships)).
 The placeholder renders as an `<option value="">`, selected while the record holds nothing, and blank while the column is disabled — Filament's own arm.
 
 ### Remembered options are memoised per column instance, not per row

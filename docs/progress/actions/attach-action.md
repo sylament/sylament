@@ -50,10 +50,10 @@ It sits there for the reason [`PrebuiltDeleteActionTest`](delete-action.md) does
 ### The submitted key is re-resolved through the candidate query
 
 The modal posts a record key, and a record key is client input.
-The submit never calls `find()` on it: it runs the **same** candidate query the select offered options from, narrowed by [`IdentifierConstraint::in()`](../schemas/record-key.md#the-operations-and-their-dql) under the base `sylament_selected_record_keys`, and refuses when fewer records come back than keys went in.
+The submit never calls `find()` on it: it runs the **same** candidate query the select offered options from, narrowed by [`IdentifierConstraint::in()`](../schemas/record-key-contract.md#the-operations-and-their-dql) under the base `sylament_selected_record_keys`, and refuses when fewer records come back than keys went in.
 A key the codec cannot decode is **dropped** by that predicate rather than bound, so it resolves nothing and falls into the same count check — which is why the refusal names three causes rather than two.
 A key that is malformed, one outside `recordSelectOptionsQuery()`'s scope and one naming a record the owner already has are all simply absent from the result, so the count differs and the attach throws rather than writing.
-The check still means what it says at any identifier width, because distinct records map to distinct keys by [the codec's injectivity](../schemas/record-key.md#invariants).
+The check still means what it says at any identifier width, because distinct records map to distinct keys by [the codec's injectivity](../schemas/record-key-contract.md#invariants).
 Filament resolves the same way — its `whereIn(...)->get()` on the relationship query is the same idea — and the port makes the count check explicit because a silently-dropped key would otherwise report success for a write that never happened.
 
 The message moved for **every** relation, a single-identifier one included: `The action [%s] was asked to attach a record its select never offered` is unchanged to the character, and what follows it is new — `— the key is malformed, outside recordSelectOptionsQuery()'s scope, or already attached.` Anything asserting the leading sentence still passes; anything asserting the message whole does not.
@@ -74,7 +74,7 @@ Pinned by [`CompositeAttachAssociateActionsTest`](../../../packages/tables/tests
 
 ### The title fast path projects the attribute
 
-When the record title is a plain mapped attribute — a title attribute is set, the action declares no `recordTitle()` closure, and either the action set the attribute itself or the table declares no `recordTitle()` closure either — the option list is read as one projection — [`IdentifierConstraint::select()`](../schemas/record-key.md#the-operations-and-their-dql)'s expressions plus `record.<title> AS sy_title`, so `record.id AS sy_key_0, record.<title> AS sy_title` for a single-`id` target and one aliased expression per identifier field for any other — rather than by hydrating every candidate.
+When the record title is a plain mapped attribute — a title attribute is set, the action declares no `recordTitle()` closure, and either the action set the attribute itself or the table declares no `recordTitle()` closure either — the option list is read as one projection — [`IdentifierConstraint::select()`](../schemas/record-key-contract.md#the-operations-and-their-dql)'s expressions plus `record.<title> AS sy_title`, so `record.id AS sy_key_0, record.<title> AS sy_title` for a single-`id` target and one aliased expression per identifier field for any other — rather than by hydrating every candidate.
 Otherwise the candidates are hydrated and titled one by one through `getRecordTitle($record)`, which is what lets a table's `recordTitle()` closure decide the option labels.
 This is Filament's `pluck()`-versus-`mapWithKeys()` branch, condition for condition.
 What is *not* condition for condition is where the ordering sits — [a divergence](#the-title-ordering-applies-to-both-arms-not-only-the-projected-one).

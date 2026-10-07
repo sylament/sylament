@@ -7,7 +7,7 @@ owns:
 ---
 # FormsIconAlias (forms)
 
-[`Sylament\Forms\Twig\FormsIconAlias`](../../../packages/forms/src/Twig/FormsIconAlias.php) — the overridable icon slots the forms package exposes, ported from Filament's [`View\FormsIconAlias`](../../../vendor/filament/forms/src/View/FormsIconAlias.php) (the `View\` → `Twig\` segment is the systematic Blade → Twig translation, recorded in [renames.md](../translations.md#namespace-segments)).
+[`Sylament\Forms\Twig\FormsIconAlias`](../../../packages/forms/src/Twig/FormsIconAlias.php) — the overridable icon slots the forms package exposes, ported from Filament's [`View\FormsIconAlias`](../../../vendor/filament/forms/src/View/FormsIconAlias.php) (the `View\` → `Twig\` segment is the systematic Blade → Twig translation, recorded in [translations.md](../translations.md#namespace-segments)).
 
 An alias is a name an application can register an icon override for under [`sylament.icons`](../support/icon-manager.md); it does nothing until something resolves it — usually a template passing it to `generateIconHtml()`, sometimes PHP calling `IconManager::resolve()` — which is why the constant set grows with the surface that renders the icons rather than up front.
 
@@ -53,7 +53,7 @@ Two are the boolean pair, which `ToggleButtons`' two templates pass to the `Icon
 The third has one too, since the input wrapper landed: the checkbox list's search box passes it to the wrapper's `prefixIconAlias` prop ([the one wrapper a template opens by hand](checkbox-list.md#the-search-box-is-the-one-wrapper-a-template-opens-by-hand)), so all three resolve against real markup.
 
 The rest resolve in PHP rather than through a template.
-The two select constants were the first **forms** aliases to do so, a shape panels reached first with [`Dashboard::getNavigationIcon()`](../panels/README.md#dashboard), which resolves `PanelsIconAlias::PAGES_DASHBOARD_NAVIGATION_ITEM` through an injected `IconManager` of its own.
+The two select constants were the first **forms** aliases to do so, a shape panels reached first with [`Dashboard::getNavigationIcon()`](../panels/dashboard.md), which resolves `PanelsIconAlias::PAGES_DASHBOARD_NAVIGATION_ITEM` through an injected `IconManager` of its own.
 Here an `Action`'s icon has no alias prop to pass one through, so [`Select` resolves them itself](select.md#the-option-action-strings-are-untranslated-literals) through an `IconManager` taken by a `#[Required]` setter, at the moment it builds each option action.
 An override registered for the create-option alias is pinned replacing the rendered icon by [`SelectCreateOptionTest`](../../../packages/forms/tests/Integration/Components/SelectCreateOptionTest.php), which is the second constant to have its override exercised against real markup rather than only its value asserted.
 
@@ -82,7 +82,7 @@ Sylament's drop the `forms::` segment: `components.checkbox-list.search-field`, 
 
 Filament is inconsistent about this — `SupportIconAlias`'s values are bare (`modal.close-button`, `section.collapse-button`) while every other package namespaces its own — and Sylament follows the unprefixed form throughout, so an application registering overrides under [`sylament.icons`](../support/icon-manager.md) reads one scheme rather than two.
 The **constant** names are untouched, which is how both codebases write them at every call site, so the difference is invisible to anyone who does not hardcode the string.
-Same decision as [`NotificationsIconAlias`](../notifications/notifications-icon-alias.md#the-alias-values-drop-filaments-package-prefix), [`PanelsIconAlias`](../panels/README.md#layout-templates) and tables' [`EMPTY_STATE`](../tables/tables-bundle.md#the-empty-state-alias-value-drops-filaments-package-prefix); all four are in the [rename table](../renames.md#renames).
+Same decision as [`NotificationsIconAlias`](../notifications/notifications-icon-alias.md#the-alias-values-drop-filaments-package-prefix), [`PanelsIconAlias`](../panels/layout-templates.md) and tables' [`EMPTY_STATE`](../tables/tables-bundle.md#the-empty-state-alias-value-drops-filaments-package-prefix); all four are in the [rename table](../renames.md#renames).
 
 Only the `forms::` prefix is dropped.
 The `components.` segment Filament's forms keys carry beneath it stays, so these values are one segment deeper than the bare `<component>.<part>` form the other packages ship (`notification.danger`, `table.empty-state`).

@@ -65,7 +65,7 @@ UX LiveComponent de- and rehydrates a `LiveProp` through Symfony's property acce
 That is load-bearing where the getter mints the value. Tables' `getTableHostId()` fills `$tableHostId` lazily, precisely because the dehydration read is the minting read. It is a defect where the client writes the prop back: an element bound to a model the getter retyped is permanently dirty and fires its `onUpdated` hook on every request.
 
 There are two bridges, and neither renames Filament's getter:
-- `dehydrateWith:` returns the value the element speaks ([has-table.md](../progress/tables/has-table.md#the-writable-props-dehydrate-in-their-elements-wire-vocabulary)).
+- `dehydrateWith:` returns the value the element speaks ([host-can-paginate-records.md](../progress/tables/host-can-paginate-records.md#the-writable-props-dehydrate-in-their-elements-wire-vocabulary)).
 - Renaming the property removes the shadow, and `fieldName:` keeps Filament's wire name, as `$selectedTableRecordKeys` does ([renames.md](../progress/renames.md#renames)).
 
 ## Static instance pattern
@@ -152,7 +152,7 @@ A guarded optional integration is code that is dead without a `suggest`ed packag
 - `TextColumn::markdown()` without `league/commonmark` ([text-column.md](../progress/tables/text-column.md#markdown-throws-for-the-package-it-suggests-rather-than-falling-through)).
 - `TextInput::currentPassword()` without `symfony/security-core`.
 
-The exception is an integration that Filament itself treats as ambient. An action's success and failure notifications are sent by every action without being asked for, and `sylament/notifications` is only suggested by `actions`. So `CanNotify` returns early when the class is missing, rather than breaking every action in an install without toasts ([action.md](../progress/actions/action.md#the-notification-arm-is-a-guarded-soft-integration-not-a-require)). The manifest side of the pattern is in `docs/internals/dependencies.md`.
+The exception is an integration that Filament itself treats as ambient. An action's success and failure notifications are sent by every action without being asked for, and `sylament/notifications` is only suggested by `actions`. So `CanNotify` returns early when the class is missing, rather than breaking every action in an install without toasts ([can-notify.md](../progress/actions/can-notify.md#the-notification-arm-is-a-guarded-soft-integration-not-a-require)). The manifest side of the pattern is in `docs/internals/dependencies.md`.
 
 ## DBAL parameter types
 

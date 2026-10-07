@@ -354,7 +354,7 @@ So this is the column's *state* run through the pipeline once, not a preview of 
 Filament types `formatStateUsing(?Closure $callback)` and then evaluates `$this->formatStateUsing ?? $state`, so the *null* case falls back to the state and a non-null case is always a closure.
 Sylament types the parameter `mixed` and branches on null explicitly, which means `->formatStateUsing('fixed')` is legal and pins every cell to the literal.
 
-This aligns the pair with `state()` / `getStateUsing()` on [`Column`](column.md#state-is-getstateusing-under-another-name), which Filament itself types `mixed` — a literal-or-closure setter is the port's default shape, and `evaluate()` returns a non-closure untouched, so the widening costs nothing and the narrower type here was the odd one out.
+This aligns the pair with `state()` / `getStateUsing()` on [`Column`](has-cell-state.md#state-is-getstateusing-under-another-name), which Filament itself types `mixed` — a literal-or-closure setter is the port's default shape, and `evaluate()` returns a non-closure untouched, so the widening costs nothing and the narrower type here was the odd one out.
 Every closure Filament accepts still works unchanged; only previously-rejected literals are new.
 
 ### `limit()` composes `slice()` rather than calling Symfony's `truncate()`
@@ -403,7 +403,7 @@ It is worth naming *why* the collapse is Filament's *default* rather than a simp
 [`getStateItems()`](#getstateitems-is-the-cells-value-list) is where the port makes that same split, so the two coercions no longer compete: it formats each value on its own and joins the results, and the JSON arm only ever sees a value that is itself an array.
 The partial loops the item list, which is why the badged case keeps one element per value while the plain case gets one.
 
-A consumer wanting a *different* join reaches for [`state()`](column.md#state-is-getstateusing-under-another-name), and **not** `formatStateUsing()`.
+A consumer wanting a *different* join reaches for [`state()`](has-cell-state.md#state-is-getstateusing-under-another-name), and **not** `formatStateUsing()`.
 The two read as interchangeable escape hatches and are not: the item list calls `formatState()` **per value**, so `formatStateUsing(fn (array $state) => implode(' · ', $state))` is handed `'symfony'` and then `'forms'` — never the list — and its `array` hint fails on the first one.
 `state(fn ($record) => implode(' · ', $record['tags']))` displaces the column's state *ahead of* the split instead, so `getStateItems()` sees one scalar and emits one item carrying the join the consumer wrote.
 
@@ -440,7 +440,7 @@ Filament evaluates the same closure as `$column->evaluate($condition)` — no in
 The evidence that this is a vendor defect rather than a design difference is inside the same `foreach`.
 The map's literal arm is `$condition === $state`, comparing against the *item* state in both codebases, because that `$state` is the wrapper closure's own injected parameter.
 So in Filament `colors(['success' => 'published'])` keys off the item and `colors(['success' => fn ($state) => $state === 'published'])` keys off the column — two arms of one map, written to read as alternatives, answering against different values.
-The port makes both arms agree, the same way the [`searchable()` closure arm](column.md#a-closure-condition-on-searchable-is-evaluated-not-filed-as-a-search-column) was fixed at the cause rather than mirrored.
+The port makes both arms agree, the same way the [`searchable()` closure arm](interacts-with-table-query.md#a-closure-condition-on-searchable-is-evaluated-not-filed-as-a-search-column) was fixed at the cause rather than mirrored.
 
 Visible where a cell holds more than one value: on a badged column each badge gets its own verdict here and one shared verdict there; on a collapsed cell the closure sees the joined string, which is [what `state` means on a collapsed item](#getstateitems-is-the-cells-value-list).
 A single-valued cell — every cell in most tables — cannot tell the two apart, since the item state and the column state are the same value.

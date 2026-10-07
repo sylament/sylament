@@ -234,7 +234,7 @@ Both `Action` and `ActionGroup` compose `BelongsToGroup` alongside `InteractsWit
 Rather than suppress it, both classes override `getRecord()` directly, which is what the guarded trait method reduces to for a class that always has `getGroup()`.
 `ActionGroup`'s is that reduction verbatim — evaluate, return `ensureCorrectRecordType()` on an `is_object() || filled()` own record, otherwise `ensureCorrectRecordType($this->getGroup()?->getRecord())`.
 Both guard calls are part of the equivalence rather than additions to it: the trait runs the same two, matching Filament, which guards its own record *and* its parent-group hop (`InteractsWithRecord.php:117-123`).
-`Action`'s override has since grown the [full chain](action.md#the-record-chain-reaches-the-schema-the-component-and-the-host) and is no longer a restatement of the trait at all, which is the same split Filament gets from gating that chain on `$this instanceof Action`: a group never reaches past its own group in either codebase.
+`Action`'s override has since grown the [full chain](interacts-with-record.md#the-record-chain-reaches-the-schema-the-component-and-the-host) and is no longer a restatement of the trait at all, which is the same split Filament gets from gating that chain on `$this instanceof Action`: a group never reaches past its own group in either codebase.
 The trait's own guarded version is unreached by `src/` code today and stays solely for a future class that mixes in `InteractsWithRecord` without `BelongsToGroup`.
 Reversible only by relaxing the guard's shape (e.g. an interface `BelongsToGroup` doesn't currently pair with) enough that PHPStan can no longer prove it either way — not attempted here since it would add a type purely to dodge the checker.
 

@@ -67,7 +67,7 @@ Covered by [`Unit/Pages/SimplePageTest`](../../../packages/panels/tests/Unit/Pag
 
 ### The width resolution is one ladder in the controller
 
-[`PageController`](README.md#routing) resolves exactly one value per request and threads it through the Document into the shell as `maxContentWidthClass`:
+[`PageController`](routing.md) resolves exactly one value per request and threads it through the Document into the shell as `maxContentWidthClass`:
 
 1. `getLayoutData()['maxContentWidth']` — which only `SimplePage` fills, from `getMaxWidth() ?? getMaxContentWidth()`;
 2. the page's own `getMaxContentWidth()`;
@@ -117,7 +117,7 @@ Ours returns `hasTopbar` and `maxContentWidth` only: our [`SimpleLayout`](../../
 ### The simple layout's auth gates are absent, and the strip holds the ordinary user menu
 
 Filament's `layout/simple.blade.php` gates its top strip twice on `auth()->check()` and fills it with database notifications and a `SimpleUserMenu` — a cut-down menu built for a page with no topbar.
-With authentication parked, ours gates the strip on `hasTopbar()` alone and puts the existing [`UserMenu`](README.md#layout-templates) in it, which today is the theme switcher: a simple page has no topbar, so without the strip it would have no theme affordance at all.
+With authentication parked, ours gates the strip on `hasTopbar()` alone and puts the existing [`UserMenu`](layout-templates.md) in it, which today is the theme switcher: a simple page has no topbar, so without the strip it would have no theme affordance at all.
 
 Two consequences follow.
 `SimpleUserMenu` is **not ported** and takes a [not-ported row](../renames.md#renames) rather than a todo, because the component it would cut down is already the cut-down one.

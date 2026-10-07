@@ -26,7 +26,7 @@ The capability is spread over one value object, two concerns and arms on everyth
 - [`Resources\Pages\Concerns\InteractsWithParentRecord`](../../../packages/panels/src/Resources/Pages/Concerns/InteractsWithParentRecord.php) — the page half: one `parentRecords` `LiveProp` of route **keys**, resolved root-first and stepwise-scoped, memoized per request.
 - [`Routing\PanelRouteLoader`](../../../packages/panels/src/Routing/PanelRouteLoader.php) — the nested path recursion and the `_sylament_parent_params` route default; [`Controllers\PageController`](../../../packages/panels/src/Controllers/PageController.php) turns those parameters into the one prop.
 - [`Resource`](../../../packages/panels/src/Resources/Resource.php)'s URL arms — `getRouteBaseName()`, `getUrl()` (object conversion + parameter guessing), `getIndexUrl()`'s four parent arms — and `resolveRecordRouteBinding($key, ?Closure $modifyQuery)`, whose second parameter returns here.
-- The page arms: [`CreateRecord`](README.md#createrecord) attaches, [`ListRecords`](README.md#listrecords) scopes, the [resource-page base](README.md#resource-pages) chains the breadcrumbs and threads the chain into every URL it mints.
+- The page arms: [`CreateRecord`](create-record.md) attaches, [`ListRecords`](list-records.md) scopes, the [resource-page base](resource-pages.md) chains the breadcrumbs and threads the chain into every URL it mints.
 - The suppressions: [`Panel\Concerns\HasNavigation`](../../../packages/panels/src/Panel/Concerns/HasNavigation.php) skips a nested resource in the navigation loop, and [`Resource\Concerns\HasGlobalSearch`](../../../packages/panels/src/Resources/Resource/Concerns/HasGlobalSearch.php) answers no result URL for one.
 
 ## Surface
@@ -87,7 +87,7 @@ Suppression is [`Integration/PanelNavigationTest`](../../../packages/panels/test
 
 Filament gates the nesting in three places, and none of them is ported: `InteractsWithParentRecord::authorizeParentRecordAccess()` aborts 403 unless the parent resource's `canView()` or `canEdit()` allows the resolved parent record; the breadcrumb walk links an ancestor crumb only when the same two pass; and a nested page's own `canAccess()` takes the record.
 Stated plainly: **a nested page's parent chain is checked for existence and for parentage, never for permission** — the scoping is a correctness and data-leak guard, not an authorization one.
-That is the same exposure every resource page already carries ([resource pages](README.md#resource-pages)), extended one record up the chain.
+That is the same exposure every resource page already carries ([resource pages](resource-pages.md)), extended one record up the chain.
 The crumb gates collapse to their unauthenticated arms in the meantime, which is why the trail links view → edit → unlinked with no `can*()` call in between.
 
 ### A parent-resource cycle hangs route loading
@@ -105,14 +105,14 @@ The cheap home for a fix is a compiler pass over the registered resources, where
 Filament re-derives both on every call, which costs it nothing — its derivation is string inflection.
 Ours reads Doctrine metadata, and the read happens on every URL, every breadcrumb, every band item and every route-load pass, so the memo is what keeps a live request O(1).
 
-The memo rests on a resource being a **shared** service, which is what the container gives it by default ([Resources](README.md#resources)).
+The memo rests on a resource being a **shared** service, which is what the container gives it by default ([Resources](resource.md)).
 A consumer that registers its resources non-shared gets a correct answer and pays the derivation again per instance; nothing breaks, and nothing announces it either.
 Worth knowing before declaring `shared: false` on a resource for unrelated reasons.
 
 ### A nested route name lights the parent's sidebar item for free
 
 `getRouteBaseName()` composes a nested name as the **parent's** base name plus the kebab-cased relationship — `sylament.admin.resources.articles.sections` — which is Filament's shape exactly, and the segment is the *relationship*, not the child's slug.
-The free consequence is that [active state is a route-name prefix match](README.md#active-state-is-a-route-name-prefix-match): the parent's navigation item is lit for any route under `sylament.admin.resources.articles.`, so every nested page keeps the parent's sidebar item highlighted with no code at all.
+The free consequence is that [active state is a route-name prefix match](resource.md#active-state-is-a-route-name-prefix-match): the parent's navigation item is lit for any route under `sylament.admin.resources.articles.`, so every nested page keeps the parent's sidebar item highlighted with no code at all.
 `PanelNavigationTest` pins it, so a later change to either half cannot quietly break the other.
 
 ### An ancestor travels under the name the route spells, and a page already holds that shape
@@ -152,7 +152,7 @@ Nothing shipped or demoed renders one; a fixture resource that registers an inde
 ### The suppressions sit where the trail already put them
 
 Filament's `Resource::registerNavigationItems()` has four early returns, one of which is a non-null parent registration.
-There is no port of that method — [navigation is pulled, not pushed](README.md#resource-navigation-is-pulled-through-the-registry-not-pushed-by-the-resource) — so the guard lands in `Panel::getNavigation()`'s resource loop, beside `shouldRegisterNavigation()` and in Filament's own order.
+There is no port of that method — [navigation is pulled, not pushed](panel.md#resource-navigation-is-pulled-through-the-registry-not-pushed-by-the-resource) — so the guard lands in `Panel::getNavigation()`'s resource loop, beside `shouldRegisterNavigation()` and in Filament's own order.
 `PanelNavigationTest` pins that a nested resource still answers `shouldRegisterNavigation()` **true** and still builds an item when asked directly: the panel decides not to ask, which is the recorded rule that a resource answering `getNavigationItems()` cannot also decide it should not have been asked.
 
 Global search is Filament's own admitted limitation ported with its shape: `getGlobalSearchResultUrl()` returns null for a nested resource, because its pages need ancestor parameters a search result carries nothing to fill.
@@ -164,7 +164,7 @@ A nested resource scopes every read to its parent through [the reader's narrowin
 `BelongsToParent` asked first, in panel vocabulary — *"whose records of [%s] are not keyed by a single scalar identifier; scoping a nested resource to such a parent record is not built yet"* — at two throw sites under one predicate: `getParentScopedRecordQuery()`, covering every read, and `attachRecordToParent()`, covering the routed nested **create** page's write, which reaches the first nowhere and would otherwise have persisted a row and redirected into a 500.
 [The twin one tier over](relation-manager.md#the-relationship-chokepoint-judges-nothing-about-the-owner-and-the-setter-it-needed-is-gone) guarded relation managers on the same predicate.
 
-Both are deleted, and nothing stands in their place: the reader now scopes an owner of any width [through the owner's own collection](../schemas/association-reader.md#an-owner-of-any-width-is-scoped-through-its-own-collection-rather-than-through-a-mapped-by-path), and panels adds nothing width-specific on top of it — no predicate of its own beyond the reader's scope and the codec's `RecordKey` / `IdentifierConstraint`.
+Both are deleted, and nothing stands in their place: the reader now scopes an owner of any width [through the owner's own collection](../schemas/relationship.md#an-owner-of-any-width-is-scoped-through-its-own-collection-rather-than-through-a-mapped-by-path), and panels adds nothing width-specific on top of it — no predicate of its own beyond the reader's scope and the codec's `RecordKey` / `IdentifierConstraint`.
 So the whole nested tier works under a parent of any width: the record page, the nested listing, a mounted action's scope, the routed create page's write, the three ancestor route-key mints (`Resource::getUrl()`, `guessAncestorParameters()` and [`Page::getResourceBreadcrumbs()`](#a-crumb-whose-url-the-trail-already-spends-renders-unlinked)), and a chain three deep with the composite level in the **middle**.
 
 Which flavours are pinned **here** is worth stating, because the tiers divide the matrix.
@@ -180,7 +180,7 @@ And one unstated invariant is what keeps a parent placeholder safe and is pinned
 ### A child whose constructor takes its parent is built in `makeRecord()`, and both attaches leave that parent alone
 
 A nested create page attaches the new record to its parent twice — before the mapping, so the record check sees the key half the parent fills, and again in `handleRecordCreation()`, so the parent wins over a form that picks another.
-The record both attach is the one [`makeRecord()`](README.md#createrecord) built, so a child whose constructor takes its parent — a derived identity whose parent half no setter can change, `new Translation($this->getParentRecord(), $data['locale'])` — is built there with the page's own parent record.
+The record both attach is the one [`makeRecord()`](create-record.md) built, so a child whose constructor takes its parent — a derived identity whose parent half no setter can change, `new Translation($this->getParentRecord(), $data['locale'])` — is built there with the page's own parent record.
 Each attach writes the child's mapped-by property through the schemas mapper, and on a property no setter can change that write is [left alone when it already holds the same record](../schemas/property-accessor.md#a-property-no-setter-can-change-is-left-alone-when-it-already-holds-the-value), compared by identity: `getParentRecord()` answers the one instance the page resolved for the request, so both attaches pass.
 A constructor handed **another** parent is refused by name at the first attach — *Cannot write association …: no setter can change that property, and it already holds another value* — before anything is mapped or persisted, so nothing is saved under either parent; the attach's own identifier guard does not see it first, since it reads only a record the manager already holds.
 A `makeRecord()` that answers the parent record itself, or anything else that is no instance of the resource's record class, is refused before the first attach.
@@ -264,12 +264,12 @@ The seeding has no equivalent either, and needs none: it exists so Eloquent's la
 
 Filament's `scopeEloquentQueryToParent(Builder $query, Model $parentRecord)` is a **public static mutator**: it adds one of three predicates to a passed query — `whereMorphedTo`, `whereBelongsTo` or a `whereHas` subquery — depending on what the inverse relation turns out to be — and every nested read hands it the resource's own `getEloquentQuery()`, so a resource that narrows its base query stays narrowed under a parent.
 It has no member here at all.
-Instead `getParentScopedRecordQuery($parentRecord)` clones the resource's own `getRecordQuery()` and hands it to [`AssociationReader::scopeToRelationship()`](../schemas/association-reader.md#scopetorelationship-narrows-a-callers-query-rather-than-building-one) under the builder's own root alias — the same machinery a relation-scoped table already reads through, serving both cardinalities and an owner of any width with DQL that has been probed against a real schema.
-Every nested read consumes that one method: the record binding, the nested list, a mounted action's key and each intermediate step of the ancestor chain, so an override that hides rows — the [404-not-the-row property](README.md#a-record-is-resolved-through-the-resources-own-query) — holds on every nested page and at every depth, Filament's composition exactly.
+Instead `getParentScopedRecordQuery($parentRecord)` clones the resource's own `getRecordQuery()` and hands it to [`AssociationReader::scopeToRelationship()`](../schemas/relationship.md#scopetorelationship-narrows-a-callers-query-rather-than-building-one) under the builder's own root alias — the same machinery a relation-scoped table already reads through, serving both cardinalities and an owner of any width with DQL that has been probed against a real schema.
+Every nested read consumes that one method: the record binding, the nested list, a mounted action's key and each intermediate step of the ancestor chain, so an override that hides rows — the [404-not-the-row property](resource.md#a-record-is-resolved-through-the-resources-own-query) — holds on every nested page and at every depth, Filament's composition exactly.
 
 Porting the mutator would mean copying the reader's one-to-many predicate and its many-to-many subselect into panels, where they would be a second opinion that can disagree with the first; the reader narrowing a builder it is handed keeps one.
 The method does not answer the reader's own freshly built relationship query: that would rest on our base record query being a bare select-from, which holds only while nobody overrides it — a nested resource whose `getRecordQuery()` hid rows would serve them on every nested page, and an intermediate ancestor's override would be skipped the same way.
-The clone is there for the reason [the binding clones](README.md#a-record-is-resolved-through-the-resources-own-query): an override may return a memoised builder.
+The clone is there for the reason [the binding clones](resource.md#a-record-is-resolved-through-the-resources-own-query): an override may return a memoised builder.
 A record query rooted at an alias other than `record` is narrowed under that alias, and one naming no root alias at all is refused by name.
 Two consequences of composing onto a builder the resource wrote: the narrowing claims the reader's parameter names and subselect aliases (`sylament_relationship_owner`, `sy_owner`, `sy_related`), so an override must not use them, and an override that fetch-joins a collection meets the binding's single-result read over a correlated `EXISTS` — the exposure Filament carries too.
 [`resolveRecordRouteBinding()`'s modifier may still answer with a different query](#the-modifier-may-answer-with-a-different-query-and-refuses-anything-else); the parent scope no longer needs it to, since what it answers starts from the same clone the modifier is handed.
@@ -285,7 +285,7 @@ The owning side is what emits SQL — an inverse-only write flushes nothing at a
 
 Writing in memory has a cost Eloquent's save does not: a create refused after the attach would leave the record in a many-to-many parent's collection, unsaved, for the rest of the request, and a later flush in it would fail on Doctrine's *A new entity was found through the relationship …*.
 So both attaches are undone on refusal, as [`CreateAction`](../actions/create-action.md#the-created-record-joins-the-relationship-in-the-same-flush)'s is: the one before the mapping when the mapping refuses, the one before the flush when `persist()` or the blank-key read does, each through `AssociationReader::detach()` in a `finally` that rethrows the original exception unchanged.
-A one-to-many parent holds nothing of the record — unless the child's setter writes it into the parent's collection itself, which the hand-back does not undo — so only the many-to-many arm hands it back ([the page's side](README.md#createrecord)).
+A one-to-many parent holds nothing of the record — unless the child's setter writes it into the parent's collection itself, which the hand-back does not undo — so only the many-to-many arm hands it back ([the page's side](create-record.md)).
 
 The move onto the resource is a [rename](../renames.md#renames) as well as a relocation, and both follow from where the knowledge is: the relationship name is derived on the resource, so a page-level method would only be able to ask the resource for it and hand it straight back.
 `CreateRecord::handleRecordCreation()` stays the page-level override seam it already was, and the record both attaches write is the one `makeRecord()` built; a consumer's override of Filament's `associateRecordWithParent()` is a method nothing calls, which is the failure a rename row exists to make greppable.
@@ -293,7 +293,7 @@ The move onto the resource is a [rename](../renames.md#renames) as well as a rel
 ### The recursion lives in the loader, and the child must be registered on the panel
 
 Filament's nested `registerRoutes()` recurses on the resource: a child asks its parent to register a route group and nests inside it, through the Laravel router facade.
-There is no ambient router here, and [the loader owns path construction](README.md#routing), so the recursion is `PanelRouteLoader`'s: it walks the registration chain root-first, contributing `<parent slug>/{<parent param>}` per ancestor, and mounts the child's own `getPages()` entries under the result.
+There is no ambient router here, and [the loader owns path construction](routing.md), so the recursion is `PanelRouteLoader`'s: it walks the registration chain root-first, contributing `<parent slug>/{<parent param>}` per ancestor, and mounts the child's own `getPages()` entries under the result.
 The route names, the defaults and the duplicate-name guard are unchanged — the guard is now genuinely load-bearing, since two resources nesting under one parent derive names that differ only in the relationship segment.
 
 The child must be registered on the panel in its own right, exactly as in Filament — a parent does not pull its children in.
@@ -366,7 +366,7 @@ Fail-fast with a message, rather than the same failure without one; no shipped p
 ### The page's `getParentResource()` static is an instance hop here
 
 Filament's `InteractsWithParentRecord::getParentResource()` is a static answering the parent's class-string.
-Ours is `getParentResourceInstance(): ?Resource`, answering the resource **service** — the same translation [`getResourceInstance()`](README.md#resource-pages) already made one level up, and for the same reason: everything the caller then does with it (a title, a label, a binding) is an instance method here.
+Ours is `getParentResourceInstance(): ?Resource`, answering the resource **service** — the same translation [`getResourceInstance()`](resource-pages.md) already made one level up, and for the same reason: everything the caller then does with it (a title, a label, a binding) is an instance method here.
 The class-string is still reachable where it is declared, on the child resource's `getParentResource()`, under Filament's name.
 
 ### A crumb whose URL the trail already spends renders unlinked

@@ -7,7 +7,7 @@ owns:
 ---
 # NotificationsIconAlias (notifications)
 
-[`Sylament\Notifications\Twig\NotificationsIconAlias`](../../../packages/notifications/src/Twig/NotificationsIconAlias.php) — the overridable icon slots the notifications package exposes, ported from Filament's [`View\NotificationsIconAlias`](../../../vendor/filament/notifications/src/View/NotificationsIconAlias.php) (the `View\` → `Twig\` segment is the systematic Blade → Twig translation, recorded in [renames.md](../translations.md#namespace-segments)).
+[`Sylament\Notifications\Twig\NotificationsIconAlias`](../../../packages/notifications/src/Twig/NotificationsIconAlias.php) — the overridable icon slots the notifications package exposes, ported from Filament's [`View\NotificationsIconAlias`](../../../vendor/filament/notifications/src/View/NotificationsIconAlias.php) (the `View\` → `Twig\` segment is the systematic Blade → Twig translation, recorded in [translations.md](../translations.md#namespace-segments)).
 
 An alias is a name an application can register an icon override for under [`sylament.icons`](../support/icon-manager.md); it does nothing until a template passes it to `generateIconHtml()`, which is why the constant set grows with the surface that renders the icons rather than up front.
 

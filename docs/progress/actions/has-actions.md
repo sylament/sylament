@@ -3,12 +3,8 @@ description: The host-side trait mixed onto the UX LiveComponent page that mount
 ports:
   - vendor/filament/actions/src/Concerns/InteractsWithActions.php
   - vendor/filament/actions/src/Contracts/HasActions.php
-  - vendor/filament/actions/resources/views/action-modal.blade.php
-  - vendor/filament/actions/resources/views/components/modals.blade.php
 owns:
   - packages/actions/src/Concerns/HasActions.php
-  - packages/actions/src/Twig/Components/
-  - packages/actions/templates/components/Modals/
 ---
 # HasActions (actions)
 
@@ -16,9 +12,6 @@ owns:
 It composes `ComponentToolsTrait` for `dispatchBrowserEvent()` and owns the `#[LiveProp] $mountedActions` **stack**, the `mountAction` / `callMountedAction` / `unmountAction` `#[LiveAction]` trio plus `replaceMountedAction()`, action lookup (`getAction`, `getMountedAction`, `getMountedActions`, `resolveActions`, `resolveAction`) backed by a per-name instance cache (`cacheAction`, `$cachedActions`) and a positional resolved-frame cache (`$cachedMountedActions`), the modal-open gate (`mountedActionShouldOpenModal`), the per-frame modal id and open-state helpers (`getActionsHostId` / `getMountedModalId` / `isMountedActionModalOpen`), the per-mount schema pipeline (the client-writable `$mountedActionsData` bag, `getMountedActionData`, `getMountedActionSchema`, `mountedActionHasSchema`), a `#[PostHydrate]` stale-stack self-heal, and a host-supplied `resolveRecordUsing()` callback for resolving a mounted action's record.
 Its rendered counterpart — [`<twig:SylamentActions:Modals />`](../../../packages/actions/templates/components/Modals/index.html.twig) plus the [`Modals`](../../../packages/actions/src/Twig/Components/Modals.php) component class behind it — folds in here rather than earning its own file, because it is a pure view over four of those methods (`getMountedActions` / `mountedActionShouldOpenModal` / `getMountedModalId` / `isMountedActionModalOpen`), the same relationship `ActionModal` has to `Action`.
 Filament's `InteractsWithActions` is a ~870-line trait built around a stack of mounted actions (nested/parent actions, per-action `Schema` mounting, authorization, rate limiting, database transactions, redirects, URL-bound default actions, table/schema-scoped action resolution); Sylament now ships the stack itself — append-on-mount, parent-modal descent, the cancel cascade, per-frame modal ids and open state, and the stacked render loop — plus both scoped resolution branches (`resolveSchemaComponentAction()`, from the schemas↔actions integration, and `resolveTableAction()`, from the tables↔actions one) and the per-mount `Schema` with its mount/fill/submit lifecycle, the database transaction around each run, redirects (which [leave the pipeline as a returned response](#a-redirect-leaves-the-pipeline-as-a-returned-response-not-through-a-framework-side-bag)), and every `getDefaultAction*` host hook but the authorization pair; it defers authorization, rate limiting, and the `#[Url]`-bound default-action properties with the auto-mount they feed.
-
-The renderer is now Filament's real loop: `Modals/index.html.twig` walks `getMountedActions()` and renders one `ActionModal` per frame, gating only the last (`{% if not loop.last or mountedActionShouldOpenModal(action) %}`), which is the exact port of Filament's `@if (! $loop->last || mountedActionShouldOpenModal())`.
-What is *not* ported is the client-side choreography Filament layers on top of that loop — see [declarative choreography](#the-stack-is-choreographed-declaratively-not-by-client-events).
 
 ## Surface
 
@@ -28,24 +21,19 @@ What is *not* ported is the client-side choreography Filament layers on top of t
 | [`$mountedActions`](../../../packages/actions/src/Concerns/HasActions.php) stack + `dehydrateMountedActions()` | `Concerns/InteractsWithActions.php` `$mountedActions` | done | — | [diverges](#the-mounted-action-stack-is-a-server-controlled-liveprop-not-a-client-writable-array) · [diverges](#the-mountedactions-liveprop-dehydrates-through-a-bridge-method) · [semantics](#the-mounted-action-descriptor-is-typed-string-keyed-and-the-client-fills-two-thirds-of-it) |
 | [`mountAction()`](../../../packages/actions/src/Concerns/HasActions.php) | `Concerns/InteractsWithActions.php` `mountAction()` | in progress | `CanBeAuthorized` | [detail](#mountaction-drops-authorization) · [diverges](#the-error-bag-reset-is-scoped-to-one-frame-not-a-global-reset) |
 | [`callMountedAction(array $arguments = [])`](../../../packages/actions/src/Concerns/HasActions.php) | `Concerns/InteractsWithActions.php` `callMountedAction()` | in progress | `CanBeRateLimited`, `CanBeAuthorized` | [detail](#callmountedaction-drops-rate-limiting-and-authorization) · [diverges](#a-redirect-leaves-the-pipeline-as-a-returned-response-not-through-a-framework-side-bag) · [diverges](#every-mounted-action-run-flushes-a-table-hosts-records-cache) · [semantics](#clearrecordafter-runs-at-both-of-filaments-sites) |
-| [`unmountAction(bool\|string\|null $cancelParentActions = null)`](../../../packages/actions/src/Concerns/HasActions.php) | `Concerns/InteractsWithActions.php` `unmountAction()` | in progress | the `defaultAction*` auto-mount machinery, not its URL binding | [detail](#unmountaction-drops-the-default-action-reset) · [diverges](#the-stack-is-choreographed-declaratively-not-by-client-events) · [diverges](#the-error-bag-reset-is-scoped-to-one-frame-not-a-global-reset) · [semantics](#clearrecordafter-runs-at-both-of-filaments-sites) |
-| [`replaceMountedAction()`](../../../packages/actions/src/Concerns/HasActions.php) | `Concerns/InteractsWithActions.php` `replaceMountedAction()` | done | — | [diverges](#a-frame-carries-two-identities-an-index-scoped-dialog-and-a-name-scoped-wrapper) |
+| [`unmountAction(bool\|string\|null $cancelParentActions = null)`](../../../packages/actions/src/Concerns/HasActions.php) | `Concerns/InteractsWithActions.php` `unmountAction()` | in progress | the `defaultAction*` auto-mount machinery, not its URL binding | [detail](#unmountaction-drops-the-default-action-reset) · [diverges](modals.md#the-stack-is-choreographed-declaratively-not-by-client-events) · [diverges](#the-error-bag-reset-is-scoped-to-one-frame-not-a-global-reset) · [semantics](#clearrecordafter-runs-at-both-of-filaments-sites) |
+| [`replaceMountedAction()`](../../../packages/actions/src/Concerns/HasActions.php) | `Concerns/InteractsWithActions.php` `replaceMountedAction()` | done | — | [diverges](modals.md#a-frame-carries-two-identities-an-index-scoped-dialog-and-a-name-scoped-wrapper) |
 | [`getMountedAction(?int $actionNestingIndex = null)`](../../../packages/actions/src/Concerns/HasActions.php) | `Concerns/InteractsWithActions.php` `getMountedAction()` | done | — | [diverges](#getmountedaction-never-guards-its-own-read-with-a-catch) |
 | [`getMountedActions()`](../../../packages/actions/src/Concerns/HasActions.php) | `Concerns/InteractsWithActions.php` `getMountedActions()` | done | — | [diverges](#the-mountedactions-liveprop-dehydrates-through-a-bridge-method) |
 | Resolved-frame cache ([`$cachedMountedActions`](../../../packages/actions/src/Concerns/HasActions.php), `cacheMountedActions()`) | `Concerns/InteractsWithActions.php` `$cachedMountedActions` | done | — | — |
 | The `#[PostHydrate]` stale-stack self-heal ([`afterMountedActionsHydrated()`](../../../packages/actions/src/Concerns/HasActions.php)) | `Concerns/InteractsWithActions.php` `bootedInteractsWithActions()`'s stale-stack drop | done | — | [diverges](#the-stale-stack-self-heal-is-a-posthydrate-hook-not-a-boot-hook) |
 | Per-frame schema re-cache at hydrate + the `#[PostHydrate(priority: 10)]` / `#[PostHydrate(priority: -10)]` ordering against [`HasSchemas::callAfterSchemaStateUpdated()`](../schemas/has-schemas.md) | `Concerns/InteractsWithActions.php` `resolveActions()`'s `$isMounting` schema caching (Livewire re-runs it per request; UX LiveComponent needs the explicit hook) | done | — | [diverges](#the-mounted-action-schema-re-cache-runs-above-callafterschemastateupdated-by-explicit-posthydrate-priorities) · [semantics](#a-mounted-modals-validation-errors-survive-an-unrelated-live-update) |
-| [`mountedActionShouldOpenModal()`](../../../packages/actions/src/Concerns/HasActions.php) | `Concerns/InteractsWithActions.php` `mountedActionShouldOpenModal()` | done | — | [diverges](#the-modal-open-gate-is-null-safe) |
 | [`getAction(string $name)`](../../../packages/actions/src/Concerns/HasActions.php) | `Concerns/InteractsWithActions.php` `getAction()` + `resolveAction()`'s method-discovery arm | in progress | — (the descriptor-array form and `$isMounting` have no blocker, only no consumer) | [detail](#getaction-ports-the-generic-method-discovery-arm-in-full) |
 | [`resolveActions()`](../../../packages/actions/src/Concerns/HasActions.php) (protected) | `Concerns/InteractsWithActions.php` `resolveActions()` | done | — | [diverges](#resolution-stops-at-the-first-null-frame-and-a-deeper-frame-reaches-schema-context-only-through-the-cache) · [diverges](#no-resolved-action-is-booted) · [diverges](#resolveactions-takes-no-ismounting-flag) · [diverges](#the-table-branch-reaches-tables-through-a-guarded-soft-reference) · [diverges](#the-mounted-action-schema-re-cache-runs-above-callafterschemastateupdated-by-explicit-posthydrate-priorities) |
 | [`resolveAction()`](../../../packages/actions/src/Concerns/HasActions.php) (protected) | `Concerns/InteractsWithActions.php` `resolveAction()` | done | — | [diverges](#a-root-frames-record-key-is-resolved-when-the-action-resolves-and-only-there) |
 | [`resolveTableAction()`](../../../packages/actions/src/Concerns/HasActions.php) (protected) | `Concerns/InteractsWithActions.php` `resolveTableAction()` | done | — | [semantics](#a-client-supplied-record-key-is-type-checked-before-the-lookup) · [diverges](#the-table-branch-reaches-tables-through-a-guarded-soft-reference) · [diverges](#a-table-context-on-a-non-table-host-is-a-wiring-bug-not-a-miss) |
 | [`resolveSchemaComponentAction()`](../../../packages/actions/src/Concerns/HasActions.php) (protected) | `Concerns/InteractsWithActions.php` `resolveSchemaComponentAction()` | done | — | [diverges](#schema-context-resolution-returns-null-instead-of-throwing) |
 | Action caching ([`cacheAction()`](../../../packages/actions/src/Concerns/HasActions.php), `$cachedActions`) | `Concerns/InteractsWithActions.php` `cacheAction()` / `mergeCachedActions()` / `cacheTraitActions()` | done | — | [diverges](#only-the-per-name-action-cache-is-ported) |
-| [`getActionsHostId()`](../../../packages/actions/src/Concerns/HasActions.php) + the `$actionsHostId` `#[LiveProp]` | `action-modal.blade.php`'s `$this->getId()` (Livewire component id) | done | — | [diverges](#the-host-id-is-a-round-tripped-liveprop-not-a-framework-component-id) |
-| [`getMountedModalId(?int $actionNestingIndex = null)`](../../../packages/actions/src/Concerns/HasActions.php) | `action-modal.blade.php` inline `$actionModalId` | done | — | [diverges](#a-frame-carries-two-identities-an-index-scoped-dialog-and-a-name-scoped-wrapper) |
-| [`isMountedActionModalOpen(int $actionNestingIndex)`](../../../packages/actions/src/Concerns/HasActions.php) | — (Sylament-only; replaces Filament's client-side stack machine) | done | — | [diverges](#the-stack-is-choreographed-declaratively-not-by-client-events) · [diverges](#the-parent-overlay-flag-is-server-stamped-not-a-sibling-css-selector) |
-| Modals rendering ([`Modals/index.html.twig`](../../../packages/actions/templates/components/Modals/index.html.twig) + [`Twig\Components\Modals`](../../../packages/actions/src/Twig/Components/Modals.php)) | [`components/modals.blade.php`](../../../vendor/filament/actions/resources/views/components/modals.blade.php) | done | — | [diverges](#the-modals-renderer-resolves-its-host-from-the-render-stack-not-from-template-scope) · [diverges](#the-modal-is-opened-by-rendered-state-not-by-the-dispatched-event) · [diverges](#the-modals-renderer-emits-no-wrapper-element) · [diverges](#there-is-no-single-render-guard) · [diverges](#an-unresolvable-host-throws-instead-of-rendering-nothing) |
 | [Action-schema integration](../../../packages/actions/src/Concerns/HasActions.php) (`getMountedActionSchema()` incl. `resolveMountedActionSchemaRecord()` / `getMountedActionSchemaOperation()`, `mountedActionHasSchema()`, deprecated `mountedActionHasForm`/`getMountedActionForm`, `getMountedActionSchemaName()`, `getMountedActionSchemaRecord()`) | `Concerns/InteractsWithActions.php` (same methods) | in progress | — | [has-schema.md](has-schema.md) · [semantics](#the-per-mount-schema-is-seeded-with-the-actions-record-and-the-dotted-operation) · [detail](#the-schema-integrations-remainder-is-a-name-and-two-deprecated-aliases) · [diverges](#per-mount-form-state-lives-in-a-sibling-bag-not-in-the-stack-descriptor) · [diverges](#the-has-schema-check-is-memoised-separately-because-the-schema-cache-cannot-hold-null) · [diverges](#set-and-get-are-unavailable-to-an-action-inside-a-mounted-action-schema) |
 | [`$mountedActionsData`](../../../packages/actions/src/Concerns/HasActions.php) + `getMountedActionData()` | `Concerns/InteractsWithActions.php` `mountedActions.{i}.data` | done | — | [diverges](#per-mount-form-state-lives-in-a-sibling-bag-not-in-the-stack-descriptor) |
 | `#[Url]`-bound default-action state (`defaultAction`, `defaultActionArguments`, `defaultActionContext`, `defaultTableAction*`) | `Concerns/InteractsWithActions.php` public `#[Url]` properties | todo | — | the query-string mechanism exists and the auto-mount machinery does not — [detail](#url-bound-default-action-state-is-not-ported) |
@@ -64,7 +52,7 @@ What is *not* ported is the client-side choreography Filament layers on top of t
 
 Filament's `mountAction()` pushes onto the stack, resolves the action (swallowing `ActionNotResolvableException`), bails via `unmountAction(cancelParentActions: false)` when the action is missing or disabled, validates any `ExposesStateToActionData` child schemas, checks `hasAuthorizationNotification()` / `getAuthorizationResponseWithMessage()` and sends an unauthorized notification + `Cancel`, runs `callBeforeFormFilled()` / `action->mount([...])` / `callAfterFormFilled()` against the action's per-mount `Schema` (catching `Halt`, `Cancel`, `ValidationException`), and only opens the modal when `mountedActionShouldOpenModal()` says the resolved action actually needs one (schema present, or explicit `modalHeading()`/description, etc.) — otherwise it calls the action immediately.
 The port's [`mountAction()`](../../../packages/actions/src/Concerns/HasActions.php) **appends** a `name`/`arguments`/`context` descriptor to `$mountedActions` (Filament's own push), seeds that frame's [data bag slot](#per-mount-form-state-lives-in-a-sibling-bag-not-in-the-stack-descriptor) before anything can render, resolves the action (swallowing `ActionNotResolvableException` into the unmount branch, Filament-same), unmounts with `cancelParentActions: false` — popping just the frame it pushed, leaving any parent frames intact — when it is `null` or `isDisabled()`, then runs Filament's mount lifecycle in Filament's order: `callBeforeFormFilled()` (only when the action has a schema) → `$action->mount(['form' => $schema, 'schema' => $schema])` (always) → `callAfterFormFilled()` (same gate), with `Halt` and `Cancel` unmounting the frame and returning null, and [`ValidationException`](../schemas/interacts-with-schemas.md) — raised out of a mount-time hook — unmounting the same way and **rethrowing**, so the client sees the 422 re-render rather than a silently dropped mount.
-It opens the modal when [`mountedActionShouldOpenModal()`](#the-modal-open-gate-is-null-safe) says so — now with `checkForSchemaUsing:` supplied, so a schema is on its own enough to warrant a modal — and otherwise returns `callMountedAction()`'s result, matching Filament's shape and `mixed` return.
+It opens the modal when [`mountedActionShouldOpenModal()`](modals.md#the-modal-open-gate-is-null-safe) says so — now with `checkForSchemaUsing:` supplied, so a schema is on its own enough to warrant a modal — and otherwise returns `callMountedAction()`'s result, matching Filament's shape and `mixed` return.
 Immediately before the open-modal dispatch it clears the validation state of the index it just pushed (`clearSchemaValidation('mountedActionSchema' . array_key_last(…))`, guarded by `instanceof InteractsWithSchemas`) — Filament's `resetErrorBag()` position, [scoped to the one frame](#the-error-bag-reset-is-scoped-to-one-frame-not-a-global-reset).
 Still absent: the authorization check (`hasAuthorizationNotification()` / `getAuthorizationResponseWithMessage()` and its unauthorized notification) and the `ExposesStateToActionData` child-schema validation (no such interface here).
 **Next step:** land `CanBeAuthorized` for the authorization branch.
@@ -99,7 +87,7 @@ The port's [`unmountAction()`](../../../packages/actions/src/Concerns/HasActions
 A `null` action (an unresolvable stack) takes the pop-one branch, Filament-same.
 Filament's full-empty `resetErrorBag()` has a port, but not on this method: dropping a frame's validation state is [`forgetMountedActionSchema()`](../../../packages/actions/src/Concerns/HasActions.php)'s job, which pairs `clearSchemaValidation("mountedActionSchema{$i}")` with the `cacheSchema(…, null)` it already ran — so every path that forgets a frame's schema (this cascade and `replaceMountedAction()` alike) clears that frame's errors too, [per frame rather than globally](#the-error-bag-reset-is-scoped-to-one-frame-not-a-global-reset).
 What is still absent is the `defaultAction*` reset (those `#[Url]` properties are [not ported](#url-bound-default-action-state-is-not-ported)).
-`syncActionModals()` has no port and never will: see [declarative choreography](#the-stack-is-choreographed-declaratively-not-by-client-events).
+`syncActionModals()` has no port and never will: see [declarative choreography](modals.md#the-stack-is-choreographed-declaratively-not-by-client-events).
 **Next step:** the `defaultAction*` reset lands with the properties it resets, and that is not the same thing as "the `#[Url]` row" — the query-string mechanism exists without the auto-mount machinery those properties feed, so this row waits on the machinery rather than on a binding.
 
 ### `getAction()` ports the generic method-discovery arm in full
@@ -141,7 +129,7 @@ Filament declares eleven `getDefaultAction*(Action $action)` methods (`Record`, 
 
 **Nine are now ported, and every one of them landed by the same recipe:** declare it on [the contract](interacts-with-actions.md), default it to `return null;` here, and land it *with* the `Action`-side concern that reads it.
 Contract and trait move together, so every host that already uses this trait satisfies the wider interface with no edit — which is the whole reason the recipe works, and it is the one to follow for the three that remain.
-[`getDefaultActionUrl()`](interacts-with-actions.md) went first, with the prebuilt [`CreateAction`](create-action.md) / [`EditAction`](edit-action.md), which set no `url()` of their own and reach their resource page through it; the redirect pair `getDefaultActionSuccessRedirectUrl()` / `getDefaultActionFailureRedirectUrl()` followed with [`CanRedirect`](action.md); and the record cluster — `getDefaultActionSchemaResolver()`, `getDefaultActionRecord()`, `getDefaultActionRecordTitle()`, `getDefaultActionRecordClass()` and `getDefaultActionRecordLabel()` — with the [record chain on `Action`](action.md#the-record-chain-reaches-the-schema-the-component-and-the-host) that walks to them.
+[`getDefaultActionUrl()`](interacts-with-actions.md) went first, with the prebuilt [`CreateAction`](create-action.md) / [`EditAction`](edit-action.md), which set no `url()` of their own and reach their resource page through it; the redirect pair `getDefaultActionSuccessRedirectUrl()` / `getDefaultActionFailureRedirectUrl()` followed with [`CanRedirect`](action.md); and the record cluster — `getDefaultActionSchemaResolver()`, `getDefaultActionRecord()`, `getDefaultActionRecordTitle()`, `getDefaultActionRecordClass()` and `getDefaultActionRecordLabel()` — with the [record chain on `Action`](interacts-with-record.md#the-record-chain-reaches-the-schema-the-component-and-the-host) that walks to them.
 Four of those five are the chain's; the fifth, `getDefaultActionSchemaResolver()`, is read by [`HasSchema::getSchema()`](has-schema.md) instead — the record chain never walks to it — and the hook was declared here before that reader existed, the two landing in one piece of work.
 Two of the cluster are renames, `getDefaultActionModel` and `getDefaultActionModelLabel` under the [record vocabulary](../renames.md#the-model-vocabulary-collapses-onto-record).
 The ninth, `getDefaultActionRelationship()`, landed with its reader the same way — [`CreateAction::getRelationship()`](create-action.md#the-created-record-joins-the-relationship-in-the-same-flush), whose last hop it is — once [`Relationship`](../schemas/association-reader.md) existed to be its return type.
@@ -225,7 +213,7 @@ The `array_map()` closure became a private method with the descriptor shape on i
 ### The mounted-action descriptor is typed string-keyed, and the client fills two thirds of it
 
 The stack is `array<int, array{name: string, arguments: array<string, mixed>, context: array<string, mixed>}>`, and `arguments` / `context` arrive as `#[LiveArg]` values — the client controls those two completely, so their key type is a **claim**, not a guarantee: a hand-written client can post a JSON array where a map belongs and leave a list in the descriptor.
-It is the right claim, because it is what everything downstream declares (`Action::$arguments`, `mergeArguments()` and `getArguments()` are all `array<string, mixed>`), and it needs no guard: a list merges by position and reads back as arguments no action asked for, with nothing to crash on — the same posture [`tableFilters`](../tables/has-table.md#the-filter-bags-are-arrays-never-null-and-carry-no-getters) takes for its own client-writable bag.
+It is the right claim, because it is what everything downstream declares (`Action::$arguments`, `mergeArguments()` and `getArguments()` are all `array<string, mixed>`), and it needs no guard: a list merges by position and reads back as arguments no action asked for, with nothing to crash on — the same posture [`tableFilters`](../tables/host-has-filters.md#the-filter-bags-are-arrays-never-null-and-carry-no-getters) takes for its own client-writable bag.
 
 The two are not equally cheap, though, and the difference is worth naming.
 A filter slice *is* indexed by field name once it reaches `apply()` — `$data['isActive']`, and `$data['value']` / `$data['values']` on [`SelectFilter`](../../../packages/tables/src/Filters/SelectFilter.php) — so a posted list reads as filter state that is silently absent, and the query comes back unfiltered.
@@ -270,7 +258,7 @@ Timing is the point.
 A fill at mount, a `getRecordClass()` read a `unique()` constraint's validator makes while the host hydrates, and a modal heading built from `getRecordTitle()` all happen before `callMountedAction()` is reached, and every one of them wants the record already there.
 The call-time bind stays as an idempotent second write.
 
-Both binds gate on `is_object($record) || filled($record)`, the same gate [`Action::getRecord()`](action.md#the-record-chain-reaches-the-schema-the-component-and-the-host) uses for an action's own record, and for the same reason: a resolved record is opaque, and `blank()` calls a `Countable` of zero or a `Stringable` casting to `''` blank.
+Both binds gate on `is_object($record) || filled($record)`, the same gate [`Action::getRecord()`](interacts-with-record.md#the-record-chain-reaches-the-schema-the-component-and-the-host) uses for an action's own record, and for the same reason: a resolved record is opaque, and `blank()` calls a `Countable` of zero or a `Stringable` casting to `''` blank.
 An entity whose `__toString()` returns an empty name — an ordinary Symfony idiom — would otherwise never be bound, and the failure lands a layer away as *"fills its form from a record but none is bound"*.
 Only a **scalar or array** record still has to be non-blank, which is the arm the gate keeps.
 
@@ -327,59 +315,12 @@ The port swallows that exception in exactly one place — [`cacheMountedActions(
 The guard is therefore absent, not forgotten — do not re-add it.
 Everything else about the method is Filament's: the optional `$actionNestingIndex` defaults to the top of the stack, a warm positional `$cachedMountedActions` entry short-circuits, and a cold read resolves the prefix `array_slice($mountedActions, 0, $index + 1)` so a deeper frame still resolves through its parents.
 
-### The modal-open gate is null-safe
-
-[`mountedActionShouldOpenModal(?Action $mountedAction = null): bool`](../../../packages/actions/src/Concerns/HasActions.php) delegates to `Action::shouldOpenModal()` — Filament's own body — so modal presence (`modal()` / `modalHidden()`), a custom heading, and a description (including the confirmation-string fallback that makes `requiresConfirmation()` imply a modal, Filament-exact) all flow through the single gate both `mountAction()` and the [Modals renderer](#the-modals-renderer-resolves-its-host-from-the-render-stack-not-from-template-scope) read, so the rule cannot drift between the two.
-It is on the [`InteractsWithActions`](../../../packages/actions/src/Contracts/InteractsWithActions.php) contract, because that renderer calls it on an abstractly-typed host.
-Two One delta from Filament: the port is null-safe — it returns `false` instead of fataling when nothing is mounted, so a template can call it bare.
-The `checkForSchemaUsing:` argument is now supplied (`$this->mountedActionHasSchema(...)`, Filament-exact), so an action whose only modal content is its schema opens a modal.
-The renderer keeps passing the already-resolved action in (`mountedActionShouldOpenModal(action)`), still the cheaper call since it skips a redundant lookup.
-
 ### Only the per-name action cache is ported
 
 Filament populates `$cachedActions` from three sources: `cacheAction()` (called by `resolveAction()` on every method-resolved action, and directly by external registrars), `mergeCachedActions()` (bulk registration), and `cacheTraitActions()` (a `class_uses_recursive()` walk on Livewire boot that lets sibling `*Actions`-suffixed traits register their own actions).
 The port ships [`cacheAction()`](../../../packages/actions/src/Concerns/HasActions.php) and the `$cachedActions` property — `getAction()` consults the cache before calling the `{name}Action()` factory and caches what it resolves, so the trigger button and the confirm modal now share one `Action` instance per name per request.
 `mergeCachedActions()` and `cacheTraitActions()` are **skipped**: both are bulk-registration mechanisms with no Sylament consumer (no `*Actions` sibling traits exist), and `cacheTraitActions()` additionally rides Livewire's boot hook, which has [no equivalent here](#there-is-no-boot-hook-or-rate-limiting-trait).
 Both return with their first bulk consumer (e.g. a table-actions trait).
-
-### The host id is a round-tripped LiveProp, not a framework component id
-
-Filament scopes its modal id with `$this->getId()` — the Livewire component's own runtime id, which Livewire mints and round-trips for free.
-UX LiveComponent exposes no equivalent stable per-instance id to a template, so the port mints its own: [`getActionsHostId()`](../../../packages/actions/src/Concerns/HasActions.php) lazily fills a `#[LiveProp] ?string $actionsHostId` with `bin2hex(random_bytes(4))` and returns it, so the same host keeps the same id across every re-render of a live session.
-This is the id-supply half of the [modal id](#a-frame-carries-two-identities-an-index-scoped-dialog-and-a-name-scoped-wrapper); it exists only because the framework does not supply one, and it is the first thing to delete if UX LiveComponent ever exposes a stable component id.
-
-A same-named-getter/LiveProp pair is exactly what forced the [dehydration bridge](#the-mountedactions-liveprop-dehydrates-through-a-bridge-method) on `$mountedActions`, and the collision exists here too — Symfony's `PropertyAccessor` reads `actionsHostId` through `getActionsHostId()`.
-It is benign here and deliberately left alone: the getter returns the same `string` the property holds (filling it as a side effect), so dehydrating through the getter round-trips the identical value, verified by a hydrate/dehydrate test rather than by inspection.
-
-One constraint the lazy fill carries, and it is not visible from the getter: **the id must first be minted from inside a `#[LiveAction]`**, which is what `mountAction()` / `unmountAction()` do today by way of `getMountedModalId()`.
-`AddLiveAttributesSubscriber::onPreRender` (`vendor/symfony/ux-live-component/src/EventListener/AddLiveAttributesSubscriber.php`) dehydrates every `#[LiveProp]` — this one included — *before* the component's template body renders, so an id first minted while rendering never reaches that dehydration pass: the next request hydrates `$actionsHostId` back to `null`, mints a different value, and every dialog id changes, breaking the DOM identity [the morph relies on](#a-frame-carries-two-identities-an-index-scoped-dialog-and-a-name-scoped-wrapper).
-Nothing enforces this.
-A `mount()`-seeded stack, or a future URL-driven default action, would violate it by reading the id first from the template instead of from a live action.
-
-### A frame carries two identities: an index-scoped dialog and a name-scoped wrapper
-
-Filament computes one id, inline in [`action-modal.blade.php`](../../../vendor/filament/actions/resources/views/action-modal.blade.php): `"fi-{$this->getId()}-action-{$action->getNestingIndex()}"` — host plus nesting index.
-The port's [`getMountedModalId(?int $actionNestingIndex = null)`](../../../packages/actions/src/Concerns/HasActions.php) is the same shape, `"sy-{$this->getActionsHostId()}-action-{$actionNestingIndex}"`, defaulting the index to the top of the stack; it is on the [`InteractsWithActions`](../../../packages/actions/src/Contracts/InteractsWithActions.php) contract despite having no Filament counterpart, because the shipped [Modals renderer](#the-modals-renderer-resolves-its-host-from-the-render-stack-not-from-template-scope) calls it on an abstractly-typed host.
-Two hosts on one page no longer collide, and neither do two frames of one stack.
-One sharp edge: on an **empty** stack the default index is `0`, so the bare call returns a real frame-0 id rather than a non-colliding sentinel.
-That is what `unmountAction()` wants — it reads the id *before* popping, so the close event names the frame being closed — but a future caller that asks for "the current modal id" while nothing is mounted gets a plausible-looking string, not a miss.
-
-Sylament adds a **second** id that Filament has no need for.
-[`ActionModal`](../../../packages/actions/templates/components/ActionModal/index.html.twig) wraps each dialog in a `<div id="{{ id }}-w-{{ action.getName }}">` that carries the frame's `dismissed → unmountAction` binding, because the binding cannot sit on the component tag itself (a caller `data-action` would replace the dialog's own Stimulus wiring inside `attributes.defaults()`) and the event bubbles.
-
-The **index**-scoped dialog id is the load-bearing one: an unchanged frame keeps the same id across re-renders, so Idiomorph matches it and it morphs in place, keeping its native `open` state instead of being replaced and re-animated.
-The wrapper's **name**-scoped id is a per-frame unique id and nothing more — it is explicitly *not* a subtree-swap trigger, because Idiomorph matches by id-set **intersection** and the unchanged dialog id inside keeps the wrapper matched even when the action name changes.
-That is harmless: a morphed node has its attributes synced from the incoming markup, so a `replaceMountedAction()` at the same index rewrites the wrapper's `cancelParentActions` argument for the replacing action anyway.
-The comment in that template used to teach the wrong model and now says this; do not re-derive the old one.
-
-Filament needs neither id: its close chain is computed client-side per open modal rather than baked into markup.
-
-### The parent-overlay flag is server-stamped, not a sibling CSS selector
-
-Filament suppresses the dim of a modal that has an open modal after it with a `:has(~ .fi-modal-open)` sibling rule — legal there because its modals are plain `<div>`s stacked in DOM order.
-A native `<dialog>` promoted by `showModal()` paints in **top-layer** order, which is `showModal()` **call** order and has no relationship to DOM order, so no sibling selector can express "is there a dialog above me".
-The port computes the answer server-side instead: `Modals/index.html.twig` passes `:overlaid="not loop.last"` to every non-top frame, `ActionModal` narrows it to `overlaid and open`, and support's `Modal` stamps `sy-modal-overlaid`, whose CSS zeroes that dialog's own background so only the topmost frame paints a scrim.
-The hand-off animates for free, since `background-color` is already in the container's transition list.
 
 ### There is no boot hook or rate-limiting trait
 
@@ -435,7 +376,7 @@ Per-frame clearing keeps each frame's errors alive for exactly as long as the fr
 It looks redundant and is not.
 
 Memoising is **required, not an optimisation.**
-[`isMountedActionModalOpen()`](#the-stack-is-choreographed-declaratively-not-by-client-events) runs the modal-open gate once per frame per render ([`Modals/index.html.twig:8,24`](../../../packages/actions/templates/components/Modals/index.html.twig)), and that gate now passes `checkForSchemaUsing: $this->mountedActionHasSchema(...)`.
+[`isMountedActionModalOpen()`](modals.md#the-stack-is-choreographed-declaratively-not-by-client-events) runs the modal-open gate once per frame per render ([`Modals/index.html.twig:8,24`](../../../packages/actions/templates/components/Modals/index.html.twig)), and that gate now passes `checkForSchemaUsing: $this->mountedActionHasSchema(...)`.
 Unmemoised, a stack of _n_ frames costs O(_n_²) schema constructions per render.
 
 The schema cache cannot do the job, because the answer that needs caching most is the negative one.
@@ -448,7 +389,7 @@ The maintenance rule is the whole cost, and it is worth stating plainly: **the t
 Let them drift and a replaced frame reports the previous frame's answer — a modal that opens with nothing in it, or one that never opens at all.
 
 No Filament analogue.
-Livewire's `$cachedSchemas` has the same null-is-absent shape, but Filament calls `mountedActionHasSchema()` once per modal render rather than once per frame per render, because its stack is choreographed client-side (see [declarative choreography](#the-stack-is-choreographed-declaratively-not-by-client-events)).
+Livewire's `$cachedSchemas` has the same null-is-absent shape, but Filament calls `mountedActionHasSchema()` once per modal render rather than once per frame per render, because its stack is choreographed client-side (see [declarative choreography](modals.md#the-stack-is-choreographed-declaratively-not-by-client-events)).
 The extra memo is a direct consequence of computing open state on the server.
 
 ### The mounted-action schema re-cache runs above `callAfterSchemaStateUpdated()`, by explicit `#[PostHydrate]` priorities
@@ -505,32 +446,7 @@ Symfony's `PropertyAccessor` resolves a property read by trying a same-named **g
 This has no Filament analogue: Filament has the identical property/getter name pair, but Livewire has no getter-precedence convention, so it never collides.
 It is the first occurrence of this Symfony-specific translation gotcha in the repo, and it is load-bearing rather than decorative — **do not delete it** when the pair looks redundant.
 Two consequences worth knowing: `getMountedActions()` runs on every dehydrate and its result is discarded (cheap — the cache is usually warm), and this prop must never gain `writable: true` while the getter exists, because the hydration side would have the same ambiguity in reverse.
-The same collision exists benignly on [`$actionsHostId`](#the-host-id-is-a-round-tripped-liveprop-not-a-framework-component-id).
-
-### The stack is choreographed declaratively, not by client events
-
-This is the headline divergence of the nested-actions work, and the one that explains most of the others.
-
-Filament coordinates a modal stack from the client.
-`unmountAction()` dispatches `sync-action-modals` with the new nesting index and an overlay flag; a JS object (`filamentActionModals`) keeps the stack state, and the modals themselves are opened and closed through `open-modal` / `close-modal` / `close-modal-quietly` events — the "quietly" variant existing purely to suppress a Livewire re-render round-trip.
-
-Sylament has no client stack state at all.
-Which frames exist is `$mountedActions`; whether a given frame's dialog is open is computed on the server by [`isMountedActionModalOpen(int $actionNestingIndex)`](../../../packages/actions/src/Concerns/HasActions.php) and rendered into the markup as both a Stimulus value and the native `open` attribute.
-The rule it implements: the **top** frame is open when its own `mountedActionShouldOpenModal()` holds; a **parent** frame stays open unless some deeper frame both opens a modal of its own *and* does not declare `overlayParentActions()`.
-The "opens a modal of its own" qualifier is load-bearing — without it, an `Action::halt()` on a modal-less child would close the parent modal that `halt()` exists to keep open.
-
-Consequences, each of which is why a Filament mechanism has no port here:
-
-- **No `sync-action-modals` dispatch, and no `syncActionModals()` method.**
-  The state it carries is already in the render.
-- **No `open-modal` / `close-modal-quietly` chain.**
-  `unmountAction()` still dispatches one `sylament-close-modal` for the frame it started on, and `mountAction()` one `sylament-open-modal`, but neither is authoritative — they are kept for imperative callers, and the controller guards make value and event idempotent (see [support/modal.md](../support/modal.md#the-open-state-is-a-stimulus-value-not-only-an-event)).
-- **`isMountedActionModalOpen()` is Sylament-only** and sits on the [`InteractsWithActions`](../../../packages/actions/src/Contracts/InteractsWithActions.php) contract, the same way `renderAction()` and `getMountedModalId()` are Sylament-only host obligations.
-- **Client dismissal is the one client→server edge that remains.**
-  A close button, ESC, click-away, or a `close()` action closes the dialog in the browser; the controller's `dismissed` event round-trips `unmountAction` with that frame's `cancelParentActions` value baked into the markup.
-
-Nothing reverses this.
-Event-driven opening cannot work for a dialog created by the response that asks it to open, which is every freshly mounted frame.
+The same collision exists benignly on [`$actionsHostId`](modals.md#the-host-id-is-a-round-tripped-liveprop-not-a-framework-component-id).
 
 ### Resolution stops at the first null frame, and a deeper frame reaches schema context only through the cache
 
@@ -585,56 +501,5 @@ The same file's `src`-mirror position is deliberately relaxed for the same reaso
 Filament's `resolveTableAction()` opens by throwing `ActionNotResolvableException` when the host is not a `HasTable` — the same swallowable exception its mount pipeline catches, so the frame silently unmounts.
 The port throws a `LogicException` naming the contract to implement instead, matching what [`resolveSchemaComponentAction()`](#schema-context-resolution-returns-null-instead-of-throwing) already does for a host missing `InteractsWithSchemas`.
 The case is unreachable through the dispatch — `resolveActions()` only takes the branch for a host that *is* an `InteractsWithTable` — so the throw guards a direct call, and the re-check doubles as the narrowing PHPStan needs for the `getTable()` / `getTableRecord()` calls that follow.
-
-### The modals renderer resolves its host from the render stack, not from template scope
-
-Filament's `modals.blade.php` reads `$this` because a Blade component inherits the Livewire component's scope.
-A Twig component gets a fresh context: ux-twig-component spreads the caller's context in and then **overwrites** `this` with the component being rendered ([`ComponentRenderer::preRender()`](../../../vendor/symfony/ux-twig-component/src/ComponentRenderer.php)), so inside `<twig:…>` `this` is that component, never the host.
-The two implicit Twig equivalents — `outerScope.this`, or staying an `{% include %}` — both bind to whatever render context encloses the tag, which is the host **only** when the tag sits directly in the host's own template; nest it in any other Twig component and they silently bind to that component's `AnonymousComponent`.
-(The [`NestedActionHost`](../../../packages/actions/tests/Fixtures/Twig/templates/components/NestedActionHost.html.twig) fixture keeps its trigger button outside the `Section` for exactly this reason — `this.deleteAction()` cannot resolve in there.)
-
-So `Modals` is the repo's first **class-based** Twig component (every other one is an anonymous template): [`getLiveComponent()`](../../../packages/actions/src/Twig/Components/Modals.php) walks `Symfony\UX\TwigComponent\ComponentStack` innermost-first to the nearest `InteractsWithActions`, skipping frames that are not hosts.
-That keeps Filament's zero-argument call site — `<twig:SylamentActions:Modals />` against `<x-filament-actions::modals />` — and stays correct at any nesting depth.
-An optional `:liveComponent="this"` prop overrides the walk, named for the vocabulary `BelongsToLiveComponent` / `Action::getLiveComponent()` already use for this object.
-
-`ComponentStack` is marked `@internal` in ux-twig-component — a real maintenance liability, accepted deliberately because the two supported alternatives are silently position-dependent.
-It is contained: the walk is one method, so a vendor change has a single repair site, and [`ModalsTest`](../../../packages/actions/tests/Unit/Twig/Components/ModalsTest.php) pins the contract against a hand-built stack so a break fails loudly in Unit rather than subtly in a render.
-
-### The modal is opened by rendered state, not by the dispatched event
-
-`mountAction()` dispatches `sylament-open-modal`, but that event alone cannot open a modal the same response is rendering for the first time: UX LiveComponent's `processRerender()` morphs the DOM and dispatches queued browser events synchronously in one task, while Stimulus binds `data-action` listeners from a `MutationObserver` microtask that runs after it — so the new `<dialog>` is not yet listening.
-The authoritative signal is therefore the markup: the renderer passes each frame's server-computed [`isMountedActionModalOpen()`](#the-stack-is-choreographed-declaratively-not-by-client-events) through `ActionModal` into `<twig:SylamentSupport:Modal>`, which renders it as both the Stimulus `open` value and the native `open` attribute, and the controller opens itself from that value.
-The dispatch stays for imperative callers and is harmless — the controller guards on `element.open`, so value and event are idempotent.
-Full reasoning in [support/modal.md](../support/modal.md#the-open-state-is-a-stimulus-value-not-only-an-event).
-
-Note the two-way split this creates: a **parent** frame under a non-overlaying child renders `open = false` while staying in the DOM, so it can morph back open in place when the child unmounts, and a modal-less top frame (an `Action::halt()` mid-flow) renders no dialog at all while its parent stays open.
-
-### The modals renderer emits no wrapper element
-
-Filament wraps its loop in `<div wire:partial="action-modals" x-data="filamentActionModals({ livewireId })" style="height: 0">` — a partial-render target, an Alpine data component, and an inline height so the always-present div costs no layout.
-Sylament's renderer emits the frames' modals or nothing at all.
-All three reasons for the wrapper are absent: partial re-render is [not ported](#partial-re-render-is-not-ported), the open/close behavior lives on the `sylament--support--modal` Stimulus controller attached to each `<dialog>` itself rather than an ancestor, and a native `<dialog>` is `display: none` until opened so it needs no layout-neutral host — the last point being why a stack of closed parent frames costs nothing to keep rendered.
-Reverses only if a partial-render mechanism lands and needs a stable DOM anchor.
-
-### There is no single-render guard
-
-Filament's `modals.blade.php` short-circuits on a `hasActionsModalRendered` flag (a `protected bool` on the trait, set from inside the view) so that the component renders at most once per request.
-It needs that because `<x-filament-actions::modals />` is baked into shared panel layouts — [`page/index.blade.php`](../../../vendor/filament/filament/resources/views/components/page/index.blade.php), `topbar.blade.php`, `sidebar.blade.php` — which can nest, so a page can include it several times without asking.
-
-Sylament's `panels` package **does** now place the tag on the author's behalf, and the flag still does not ship, because the placement is arranged so that placing it twice is not something a page can do by accident.
-The outlet is emitted **once**, by [the base page chrome](../panels/README.md#routing) — after the content, outside the header-main container, with the [unsaved-changes sentinel](../panels/unsaved-changes-alert.md#the-sentinel-is-an-inner-element-because-a-second-data-controller-would-take-the-live-binding-down) following it when the page or its panel arms the guard — and every shipped page template reaches it by `{% extends %}`ing that chrome and overriding a block, so a page inherits exactly one outlet however many blocks it fills.
-[`SimplePage`](../panels/simple-page.md)'s partial carries its own single copy for the same reason its chrome is a copy.
-The rule that follows is the one a page author needs: **a child template must never add a `<twig:SylamentActions:Modals />` of its own** — writing it twice would emit two full stacks of `<dialog>`s sharing the same [host- and index-scoped ids](#a-frame-carries-two-identities-an-index-scoped-dialog-and-a-name-scoped-wrapper), since the ids are unique per host and frame, not per *rendering* of the tag.
-
-A nested host is not a second rendering of the same stack: a [relation manager](../panels/relation-manager.md) mounts its own outlet inside its own live root, and each outlet resolves the nearest host by walking the `ComponentStack`, so the two stacks are different components' and neither duplicates the other.
-Reverses only if a layout ever places the tag somewhere a page template cannot see it and therefore cannot avoid doubling.
-
-### An unresolvable host throws instead of rendering nothing
-
-Filament guards with `@if ($this instanceof \Filament\Actions\Contracts\HasActions …)`, silently rendering nothing when the surrounding Livewire component is not an action host — because its shared panel layouts render the tag for every component, host or not.
-That guard has no work to do here: every panel page **is** an actions host, since [`Pages\Page`](../panels/custom-pages.md) implements `InteractsWithActions`, and outside a panel every occurrence of the tag is a host author writing it deliberately.
-So `getLiveComponent()` throws a `LogicException` naming both fixes (place it inside a host, or pass `:liveComponent`) rather than rendering nothing.
-Silence is the worse failure for the problem this component exists to solve — a modal that never appears and says nothing about why.
-Reverses only if a shell ever renders the tag around something that is not a host, at which point the guard belongs in that shell rather than here.
 
 _See also:_ the [rename table](../renames.md) for the `Has*` / `InteractsWith*` **swap** this whole file is the Sylament side of, and the systematic Livewire → UX LiveComponent translation (`ComponentToolsTrait`, `#[LiveAction]`/`#[LiveArg]`/`#[LiveProp]`, `dispatchBrowserEvent()`) this trait builds on — neither is a divergence.

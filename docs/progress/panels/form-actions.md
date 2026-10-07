@@ -24,7 +24,7 @@ Every point of the concern and of the two variants.
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
 | [`getFormActions()`](../../../packages/panels/src/Pages/Concerns/InteractsWithFormActions.php) | the same, `protected` on every Filament consumer | done | — | — |
-| [`getCachedFormActions()`](../../../packages/panels/src/Pages/Concerns/InteractsWithFormActions.php) + `$cachedFormActions` | no counterpart — Filament binds at boot through `cacheTraitActions()` | done | — | [diverges](README.md#header-actions-are-bound-lazily-rather-than-at-boot) — the same lazy walk, one list over |
+| [`getCachedFormActions()`](../../../packages/panels/src/Pages/Concerns/InteractsWithFormActions.php) + `$cachedFormActions` | no counterpart — Filament binds at boot through `cacheTraitActions()` | done | — | [diverges](custom-pages.md#header-actions-are-bound-lazily-rather-than-at-boot) — the same lazy walk, one list over |
 | [`getFormActionsContentComponent()`](../../../packages/panels/src/Pages/Concerns/InteractsWithFormActions.php) | [`CreateRecord::getFormActionsContentComponent()`](../../../vendor/filament/filament/src/Resources/Pages/CreateRecord.php) | done | — | [semantics](#the-row-is-never-rendered-standalone-it-hangs-under-a-named-page-schema) |
 | [`formActions(Schema): Schema`](../../../packages/panels/src/Pages/Concerns/InteractsWithFormActions.php) | no counterpart — Filament's row is a child of `content()` | done | — | [semantics](#the-row-is-never-rendered-standalone-it-hangs-under-a-named-page-schema) |
 | [`hasFullWidthFormActions()`](../../../packages/panels/src/Pages/Concerns/InteractsWithFormActions.php) | the same | done | — | — |
@@ -65,7 +65,7 @@ Binding is separate from all three and comes first: `getCachedFormActions()` sta
 An `Actions::make([...])` built inside a template would bind to nothing at all, which is why the component is minted in PHP.
 
 The two paths are used by different callers and both are needed.
-The schema path above is what a **browser** mount travels; the form-list arm of [`Page::getAction()`](README.md#the-actions-host-sits-on-the-base-because-a-trait-outranks-an-inherited-method) serves `getAction()` callers by name, running the two walks once when the trait's own lookup misses.
+The schema path above is what a **browser** mount travels; the form-list arm of [`Page::getAction()`](page.md#the-actions-host-sits-on-the-base-because-a-trait-outranks-an-inherited-method) serves `getAction()` callers by name, running the two walks once when the trait's own lookup misses.
 
 ### One method name drives both the `<form>` element and the submit action
 
@@ -81,7 +81,7 @@ That keeps Enter-to-submit and native constraint validation working, which a `->
 ### The table variant presumes two host traits and says so only by failing
 
 `partials/Page/table.html.twig` fills `content` with `this.getCachedTabs`, the tabs schema and `renderTable()` — so the page pointing `$template` at it must be both a [`HasTabs`](has-tabs.md) host and a `Tables\Contracts\InteractsWithTable`.
-Both shipped pages that use it ([`ListRecords`](README.md#listrecords) and [`ManageRelatedRecords`](manage-related-records.md)) are, and a page that is not fails at render on the missing method rather than at any earlier point.
+Both shipped pages that use it ([`ListRecords`](list-records.md) and [`ManageRelatedRecords`](manage-related-records.md)) are, and a page that is not fails at render on the missing method rather than at any earlier point.
 The presumption is stated here rather than guarded in the template: a Twig-side `instanceof` check would only turn one loud failure into a silent empty page.
 
 ### The alignment statics are process-global, exactly as Filament's are

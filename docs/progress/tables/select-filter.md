@@ -84,7 +84,7 @@ Keep the two in sync when it does.
 
 `setUp()` seeds the literal `'All'` where Filament branches on `isMultiple()` to read `__('filament-tables::table.filters.multi_select.placeholder')` or `__('filament-tables::table.filters.select.placeholder')`.
 Both keys carry `'All'` in that catalogue ([`lang/en/table.php`](../../../vendor/filament/tables/resources/lang/en/table.php) `:193` and `:198`), so the branch collapses to one literal and the rendered field matches Filament's copy verbatim — a filter's placeholder says *"All"*, not the generic form-select *"Select an option"* our own [`Select`](../forms/select.md) seeds.
-What is left is the mechanism rather than the copy — the same [hardcoded-copy gap](table.md#the-copy-is-english-and-hardcoded-because-no-i18n-layer-ships) the empty state, the search chip and the [ternary arm labels](ternary-filter.md#the-arm-labels-are-hardcoded-english) carry, lifting when toolkit-wide i18n ships.
+What is left is the mechanism rather than the copy — the same [hardcoded-copy gap](has-empty-state.md#the-copy-is-english-and-hardcoded-because-no-i18n-layer-ships) the empty state, the search chip and the [ternary arm labels](ternary-filter.md#the-arm-labels-are-hardcoded-english) carry, lifting when toolkit-wide i18n ships.
 The branch returns with it, since the two keys stay separately overridable even though their English values agree.
 
 ### The deprecated `column()` alias is not ported

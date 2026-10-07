@@ -20,7 +20,7 @@ Around that sit the seams a hand-written page reaches for — header actions and
 It ports [`Pages/Page.php`](../../../vendor/filament/filament/src/Pages/Page.php) and the half of [`Pages/BasePage.php`](../../../vendor/filament/filament/src/Pages/BasePage.php) that is not auth or widgets, with two Filament page concerns — [`InteractsWithHeaderActions`](../../../vendor/filament/filament/src/Pages/Concerns/InteractsWithHeaderActions.php) and (through [form-actions.md](form-actions.md)) `InteractsWithFormActions` — landing beside it under `Pages/Concerns/`.
 The [`SimplePage`](simple-page.md) subclass, the width vocabulary and the [unsaved-changes guard](unsaved-changes-alert.md) are this file's siblings.
 
-⚠️ **Not to be confused with [`Sylament\Panels\Resources\Pages\Page`](README.md#resource-pages)**, the resource-page base that **extends** this one.
+⚠️ **Not to be confused with [`Sylament\Panels\Resources\Pages\Page`](resource-pages.md)**, the resource-page base that **extends** this one.
 Both are named `Page` and both live under a `Pages\` namespace; the plain one knows a panel, the resource one also knows a resource.
 Read them by their **import** — the resource base imports the plain one as `use Sylament\Panels\Pages\Page as BasePage;`, which is the only place in the codebase where the name `BasePage` means our own class rather than Filament's.
 Every member this file describes is inherited by the resource base and by every resource page under it.
@@ -31,11 +31,11 @@ Every point of the page tier.
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
-| [`Page implements InteractsWithActions`](../../../packages/panels/src/Pages/Page.php) + the aliased `use HasActions` | `BasePage implements HasActions` + `InteractsWithActions` | done | — | [diverges](README.md#the-actions-host-sits-on-the-base-because-a-trait-outranks-an-inherited-method) |
+| [`Page implements InteractsWithActions`](../../../packages/panels/src/Pages/Page.php) + the aliased `use HasActions` | `BasePage implements HasActions` + `InteractsWithActions` | done | — | [diverges](page.md#the-actions-host-sits-on-the-base-because-a-trait-outranks-an-inherited-method) |
 | [`Page implements InteractsWithSchemas`](../../../packages/panels/src/Pages/Page.php) + `use HasSchemas` + [`schemas(): []`](../../../packages/panels/src/Pages/Page.php) | `BasePage implements HasSchemas` + `InteractsWithSchemas` | done | — | [semantics](#the-empty-discovery-list-is-mandatory-and-so-is-its-removal-from-every-leaf) |
 | [`content(Schema): Schema`](../../../packages/panels/src/Pages/Page.php) | [`Page::content()`](../../../vendor/filament/filament/src/Pages/Page.php) | done | — | [semantics](#content-resolves-by-bare-name-so-an-empty-body-costs-a-live-request-nothing) |
 | The `header` / `content` / `footer` blocks on [`partials/Page/index.html.twig`](../../../packages/panels/templates/partials/Page/index.html.twig) | the `header` / `footer` slots of `page/index.blade.php` and Filament's `getHeader()`/`getFooter()` | done | — | [semantics](#the-block-contract-is-the-page-bodys-public-api) · [renamed](../renames.md#renames) |
-| [`Pages\Concerns\InteractsWithHeaderActions`](../../../packages/panels/src/Pages/Concerns/InteractsWithHeaderActions.php) — `getHeaderActions()`, `getCachedHeaderActions()`, `$cachedHeaderActions` | [`Pages/Concerns/InteractsWithHeaderActions.php`](../../../vendor/filament/filament/src/Pages/Concerns/InteractsWithHeaderActions.php) | done | — | [diverges](README.md#header-actions-are-bound-lazily-rather-than-at-boot) |
+| [`Pages\Concerns\InteractsWithHeaderActions`](../../../packages/panels/src/Pages/Concerns/InteractsWithHeaderActions.php) — `getHeaderActions()`, `getCachedHeaderActions()`, `$cachedHeaderActions` | [`Pages/Concerns/InteractsWithHeaderActions.php`](../../../vendor/filament/filament/src/Pages/Concerns/InteractsWithHeaderActions.php) | done | — | [diverges](#header-actions-are-bound-lazily-rather-than-at-boot) |
 | [`$headerActionsAlignment`](../../../packages/panels/src/Pages/Concerns/InteractsWithHeaderActions.php) + `getHeaderActionsAlignment()` + the two-level [`Header`](../../../packages/panels/templates/components/Header/index.html.twig) DOM | the same property and the `fi-header-actions-ctn` wrapper | done | — | [semantics](#the-alignment-class-rides-the-inner-row-and-the-container-is-what-the-breadcrumb-offset-hangs-off) |
 | The placement default on a placement-less header `ActionGroup` | `dropdownPlacement('bottom-end')` in the same walk | done | — | — |
 | [`getPageClasses()`](../../../packages/panels/src/Pages/Page.php) | [`Page::getPageClasses()`](../../../vendor/filament/filament/src/Pages/Page.php) | done | — | [semantics](#getpageclasses-is-the-only-source-of-a-per-page-root-class) |
@@ -44,10 +44,10 @@ Every point of the page tier.
 | [`getLayoutData()`](../../../packages/panels/src/Pages/Page.php) | [`BasePage::getLayoutData()`](../../../vendor/filament/filament/src/Pages/BasePage.php) | done | — | [diverges](simple-page.md#getlayoutdata-answers-two-keys-where-filaments-answers-three) |
 | [`$maxContentWidth`](../../../packages/panels/src/Pages/Page.php) + `getMaxContentWidth()` | [`BasePage`](../../../vendor/filament/filament/src/Pages/BasePage.php)'s pair | done | — | [simple-page.md](simple-page.md#the-width-resolution-is-one-ladder-in-the-controller) |
 | [`halt()`](../../../packages/panels/src/Pages/Page.php) + the `catch (Halt)` on both record pages | [`BasePage::halt()`](../../../vendor/filament/filament/src/Pages/BasePage.php) and Filament's `try`/`catch` around each ladder | done | — | [diverges](#halts-rollback-flag-is-carried-and-ignored) |
-| [`callHook()`](../../../packages/panels/src/Pages/Page.php) | [`BasePage::callHook()`](../../../vendor/filament/filament/src/Pages/BasePage.php) | done | — | [semantics](README.md#a-page-lifecycle-hook-is-a-method-name-not-a-registration) |
+| [`callHook()`](../../../packages/panels/src/Pages/Page.php) | [`BasePage::callHook()`](../../../vendor/filament/filament/src/Pages/BasePage.php) | done | — | [semantics](page.md#a-page-lifecycle-hook-is-a-method-name-not-a-registration) |
 | [`refresh()`](../../../packages/panels/src/Pages/Page.php) under `#[LiveListener('refresh-page')]` | [`BasePage::refresh()`](../../../vendor/filament/filament/src/Pages/BasePage.php) under `#[On('refresh')]` | done | — | [semantics](#refresh-is-a-listener-and-therefore-also-a-no-op-action-any-client-can-call) |
 | [`getPanel()`](../../../packages/panels/src/Pages/Page.php) | `Filament::getCurrentOrDefaultPanel()` through the facade | done | — | [semantics](#getpanel-reads-the-sub-navigation-traits-private-context) |
-| [`$panelId`](../../../packages/panels/src/Pages/Page.php) + `getPanelId()` + [`stampPanelRequestAttribute()`](../../../packages/panels/src/Pages/Page.php) at priority 20 | `original_request()` inside Filament's URL arms | done | — | [diverges](README.md#url-generation-inside-a-live-action-resolves-the-default-panel) · [semantics](#the-stamp-runs-above-actions-own-hydration-hook-and-the-priority-is-the-whole-mechanism) |
+| [`$panelId`](../../../packages/panels/src/Pages/Page.php) + `getPanelId()` + [`stampPanelRequestAttribute()`](../../../packages/panels/src/Pages/Page.php) at priority 20 | `original_request()` inside Filament's URL arms | done | — | [diverges](resource.md#url-generation-inside-a-live-action-resolves-the-default-panel) · [semantics](#the-stamp-runs-above-actions-own-hydration-hook-and-the-priority-is-the-whole-mechanism) |
 | [`Resources\Pages\Page::getResourceUrl()`](../../../packages/panels/src/Resources/Pages/Page.php) | [`Resources/Pages/Page.php`](../../../vendor/filament/filament/src/Resources/Pages/Page.php) `getResourceUrl()` | done | — | [semantics](#getresourceurl-fills-the-record-and-threads-the-parent-chain) |
 | [`PanelRouteLoader`'s placeholder guard](../../../packages/panels/src/Routing/PanelRouteLoader.php) | no Filament counterpart | done | — | [diverges](#the-loader-refuses-a-placeholder-the-page-cannot-mount-which-filament-does-not) |
 | `mount()` on the base | `BasePage` declares none either | skipped | — | [semantics](#a-custom-resource-page-is-a-mount-a-static-and-a-body) |
@@ -55,7 +55,7 @@ Every point of the page tier.
 | `getView()` / `getViewData()` | the same two | skipped | — | [diverges](#getview-and-getviewdata-have-no-counterpart-because-a-page-names-a-template) |
 | `PageConfiguration`, `Page::make()`, `withConfiguration()` | [`Pages/PageConfiguration.php`](../../../vendor/filament/filament/src/Pages/PageConfiguration.php) | todo | — | [diverges](#the-configuration-object-is-not-ported) |
 | Page-level `CanUseDatabaseTransactions` | [`Pages/Concerns/CanUseDatabaseTransactions.php`](../../../vendor/filament/filament/src/Pages/Concerns/CanUseDatabaseTransactions.php) | todo | — | [diverges](#halts-rollback-flag-is-carried-and-ignored) |
-| `HasErrorNotifications` / `onValidationError()` / `$reportValidationErrorUsing` | [`Pages/Concerns/HasErrorNotifications.php`](../../../vendor/filament/filament/src/Pages/Concerns/HasErrorNotifications.php) | todo | — | the JS half is [Assets](README.md#assets)' `error-notifications.js` row |
+| `HasErrorNotifications` / `onValidationError()` / `$reportValidationErrorUsing` | [`Pages/Concerns/HasErrorNotifications.php`](../../../vendor/filament/filament/src/Pages/Concerns/HasErrorNotifications.php) | todo | — | the JS half is [Assets](assets.md)' `error-notifications.js` row |
 | `CanAuthorizeAccess` | [`Pages/Concerns/CanAuthorizeAccess.php`](../../../vendor/filament/filament/src/Pages/Concerns/CanAuthorizeAccess.php) | todo | authorization | — |
 | `getRenderHookScopes()` and the page render hooks | `BasePage::getRenderHookScopes()` | todo | render hooks | — |
 | Clusters (`getCluster()`, the cluster breadcrumb and navigation arms) | [`Clusters/`](../../../vendor/filament/filament/src/Clusters) | todo | clusters | — |
@@ -88,7 +88,7 @@ That is what makes `renderSchema()`, `renderTable()` and `live_action()` legal i
 `content` is deliberately **not** listed in `schemas()`.
 `HasSchemas::getSchema('content')` resolves the name against a same-named method at render time, while the list in `schemas()` is what the de/hydration hooks force-build on every live request.
 So a page that never overrides `content()` renders `renderSchema('content')` into an empty schema at page load and builds nothing at all on a live round trip.
-[`EditRecord`](README.md#editrecord) is the one page that *does* list it, because its `content()` carries the relation managers and their tab state has to survive a re-render.
+[`EditRecord`](edit-record.md) is the one page that *does* list it, because its `content()` carries the relation managers and their tab state has to survive a re-render.
 
 ### The empty discovery list is mandatory, and so is its removal from every leaf
 
@@ -115,14 +115,14 @@ No resource partial hard-codes its own: those partials are gone, so the four res
 Every structural selector the suite already pinned still matches byte for byte, which is what makes the partial deletion a refactor rather than a rewrite.
 A hand-written page returning `['sy-pa-settings-page']` gets the same scoping hook with no template of its own.
 
-The record key goes into that token **raw**, and for a **composite** key that is safe by construction rather than by luck: the [key grammar](../schemas/record-key.md#the-grammar) admits `[A-Za-z0-9_-]`, `~` and `=` and no whitespace at all, so a composite key cannot split one class token into two.
+The record key goes into that token **raw**, and for a **composite** key that is safe by construction rather than by luck: the [key grammar](../schemas/record-key-contract.md#the-grammar) admits `[A-Za-z0-9_-]`, `~` and `=` and no whitespace at all, so a composite key cannot split one class token into two.
 That is the whole of what the grammar closes.
-A key of **one** identifier field is the flattened value verbatim — no escaping, no alphabet check — so a single `string` identifier holding whitespace still splits the token; and so does a resource declaring `$recordRouteKeyName`, which stamps an arbitrary property [without passing it through the codec at all](README.md#a-custom-recordroutekeyname-names-one-column-and-the-codec-never-sees-it).
+A key of **one** identifier field is the flattened value verbatim — no escaping, no alphabet check — so a single `string` identifier holding whitespace still splits the token; and so does a resource declaring `$recordRouteKeyName`, which stamps an arbitrary property [without passing it through the codec at all](resource.md#a-custom-recordroutekeyname-names-one-column-and-the-codec-never-sees-it).
 Only `EditRecord` and `ManageRelatedRecords` emit the token at all — a custom record page inherits `Pages\Page`'s empty `getPageClasses()` and has none — and nothing in the toolkit's CSS, JavaScript or Twig selects it, so `~` and `=` inside it cost nothing either.
 
 ### A page with no body attributes still renders a stray space
 
-`getExtraBodyAttributes()` is read off the **un-mounted** page by [`PageController`](README.md#routing), like `getTitle()`, and passed to the Document as `bodyAttributes`.
+`getExtraBodyAttributes()` is read off the **un-mounted** page by [`PageController`](routing.md), like `getTitle()`, and passed to the Document as `bodyAttributes`.
 The Document renders `<body {{ attrs(bodyAttributes) }}>` unconditionally, so a page that adds nothing emits `<body >` — a single stray space inside the tag.
 It is valid HTML and every parser ignores it; guarding it would mean an `{% if %}` around an attribute expression that is already a no-op, so the space is accepted rather than spelled around.
 
@@ -147,7 +147,7 @@ UX orders higher priorities first, so the stamp must precede it or those URLs an
 `PageRenderTest`'s *"stamps the panel before a mounted action rebuilds the header, not after"* is the falsifiable form of that sentence: it mounts and calls an action on the non-default **probe** panel and reads the header link's `href` off the response.
 
 The prop is minted by the getter its dehydration read runs (`$this->panelId ??= $this->currentPanel?->get()?->getId()`) rather than in a mount, because a page's `mount()` signature is the page's own and the base has none.
-Moving both up from the resource base closed the plain-page half of the [multi-panel URL divergence](README.md#url-generation-inside-a-live-action-resolves-the-default-panel); the nested-live-component half stays open.
+Moving both up from the resource base closed the plain-page half of the [multi-panel URL divergence](resource.md#url-generation-inside-a-live-action-resolves-the-default-panel); the nested-live-component half stays open.
 
 ### `getResourceUrl()` fills the record and threads the parent chain
 
@@ -155,7 +155,7 @@ Moving both up from the resource base closed the plain-page half of the [multi-p
 When `$name` is filled, is not `'index'`, and the page has a `getRecordKey()` (that is, composes [`InteractsWithRecord`](interacts-with-record.md)), it defaults `$parameters['record']` to this page's own key; then it delegates to `Resource::getUrl()` with the page's `parentRecords` spread ahead of the caller's parameters, exactly as every other URL arm on the base does.
 
 Both halves are what make `$this->getResourceUrl('edit')` a complete call on a nested page: the record comes off the page and the ancestors come off the chain, so nothing raises `MissingMandatoryParametersException`.
-The **static** `Resource::getUrl()` family stays what it was — [the recorded wrong-answer surface](README.md#resources-are-collected-from-a-tag-not-discovered-on-the-filesystem) for a page that has a record in hand.
+The **static** `Resource::getUrl()` family stays what it was — [the recorded wrong-answer surface](resource.md#resources-are-collected-from-a-tag-not-discovered-on-the-filesystem) for a page that has a record in hand.
 
 ### A custom resource page is a `mount()`, a static and a body
 
@@ -190,7 +190,7 @@ Four things the shape depends on:
 - **`InteractsWithRecord` is composable on a resource page only.**
   It reaches `getResourceInstance()` for the scoped binding, which a plain `Pages\Page` does not have.
 - **`getRecordTitle()` is the only pre-mount-safe title reader.**
-  `PageController` reads `getTitle()` off an **un-mounted** page for the document `<title>`, so a `getTitle()` override that calls `getRecord()` 404s every GET of the page — [the trap the edit page's own guard exists for](README.md#the-document-title-of-an-edit-page-carries-the-record-label-not-the-record-title).
+  `PageController` reads `getTitle()` off an **un-mounted** page for the document `<title>`, so a `getTitle()` override that calls `getRecord()` 404s every GET of the page — [the trap the edit page's own guard exists for](edit-record.md#the-document-title-of-an-edit-page-carries-the-record-label-not-the-record-title).
 - **The body is either a `content()` override or a child template.**
   The fixture [`PreviewProbePage`](../../../packages/panels/tests/Fixtures/Resources/Pages/PreviewProbePage.php) takes the template route, extending the base chrome and filling `{% block content %}` with markup that reads `this.getRecord`.
 
@@ -237,11 +237,11 @@ Nothing in the toolkit or the demo writes one — a page path is a slug and a ba
 ### The loader narrows a record placeholder a separator follows, because the compiler's default excludes it
 
 `RouteCompiler` compiles a placeholder to a pattern that excludes the **next static separator** as well as `/`: `/{record}/edit` gives `[^/]++`, but `/{record}-preview` gives `[^/\-]++` and `/{record}~preview` gives `[^/~]++`.
-Four characters of the [key grammar](../schemas/record-key.md#the-grammar) are in `RouteCompiler::SEPARATORS` — `-`, `_`, `~` and `=` — and the first two are *safe* bytes the codec never escapes, so the trap predates composite keys entirely: a UUID or slug `$recordRouteKeyName` already breaks against `/{record}-preview`.
+Four characters of the [key grammar](../schemas/record-key-contract.md#the-grammar) are in `RouteCompiler::SEPARATORS` — `-`, `_`, `~` and `=` — and the first two are *safe* bytes the codec never escapes, so the trap predates composite keys entirely: a UUID or slug `$recordRouteKeyName` already breaks against `/{record}-preview`.
 And it fails at **generation**, not at match — `UrlGenerator::generate()` raises `InvalidParameterException`, so the **listing** that mints the row URL 500s and the record page is never reached, or, under `framework.router.strict_requirements: null`, the link generates and the click 404s.
 "It 404s" sends a debugger to the wrong page.
 
-So [`PanelRouteLoader`](README.md#routing) stamps `requirements: ['record' => '[^/]+']` on a mounted path whose `{record}` is followed, up to the next `/` or the end of the path, by non-empty **pure static** text — text carrying no `{` — that opens on a separator other than `/`.
+So [`PanelRouteLoader`](routing.md) stamps `requirements: ['record' => '[^/]+']` on a mounted path whose `{record}` is followed, up to the next `/` or the end of the path, by non-empty **pure static** text — text carrying no `{` — that opens on a separator other than `/`.
 A declared requirement replaces the compiler's default wholesale, separator exclusion included, which is the whole fix.
 Three properties of it are load-bearing.
 It is **conditional**, so every path in this toolkit and in the demo — all `/{record}/…` or a bare `/{record}` — compiles to the byte-identical pattern it compiled to before.
@@ -263,12 +263,43 @@ Recorded as a decision rather than an omission.
 
 Three shapes it does not touch.
 A bare `/{record}` registered **before** `/{record}-preview` matches `/5-preview` with `record = "5-preview"` — route order decides it, the loader registers a resource's pages in `getPages()` order, and that is Symfony's matching, not ours.
-And a Symfony inline requirement such as `/{record<\d+>}` can never match a composite key, which is [never numeric](../schemas/record-key.md#the-grammar) — though the guard above refuses that path first, for its own reason.
+And a Symfony inline requirement such as `/{record<\d+>}` can never match a composite key, which is [never numeric](../schemas/record-key-contract.md#the-grammar) — though the guard above refuses that path first, for its own reason.
 A `{record}` written with any of Symfony's inline syntaxes — `{record<\d+>}`, `{record?}`, `{!record}` — is read raw by the requirement test and is never stamped either.
 
 ### The configuration object is not ported
 
 Filament's `Page::make()` returns a `PageConfiguration`, and `withConfiguration()` lets a cluster or a plugin adjust a page's registration without subclassing it.
-Neither ships here: a page is a **container service** reached by class-string through the [page locator](README.md#pages-register-as-live-components-through-a-compiler-pass-over-a-per-class-attribute), and a panel registers it by naming the class in `pages()`, so there is no registration object to configure.
+Neither ships here: a page is a **container service** reached by class-string through the [page locator](page.md#pages-register-as-live-components-through-a-compiler-pass-over-a-per-class-attribute), and a panel registers it by naming the class in `pages()`, so there is no registration object to configure.
 The consumers that force the indirection over there — clusters and plugins — are both unported.
 Revisit with whichever lands first.
+
+### Header actions are bound lazily rather than at boot
+
+Filament caches header actions into the page's action registry at boot, through three hops: Livewire's `bootedInteractsWithActions()` (`vendor/filament/actions/src/Concerns/InteractsWithActions.php:118`) calls `cacheTraitActions()` (`:487`), which `class_uses_recursive()`-walks the class for every `cache<TraitBasename>` method and so reaches `cacheInteractsWithHeaderActions()` (`vendor/filament/filament/src/Pages/Concerns/InteractsWithHeaderActions.php:18`).
+That last one walks `getHeaderActions()`, stamps `->livewire($this)` on each group, sets a dropdown placement, and registers every action through `cacheAction()`; Blade then renders `getCachedHeaderActions()`, the already-bound list.
+UX LiveComponent has no `booted*()`/`cache*()` trait hook to hang that on, so [`Pages\Concerns\InteractsWithHeaderActions`](../../../packages/panels/src/Pages/Concerns/InteractsWithHeaderActions.php) — composed by [`Pages\Page`](page.md), so **every** panel page has it, not only a resource page — does the same work **lazily**, at whichever of the two reads comes first.
+[`InteractsWithFormActions`](form-actions.md) carries the identical walk for the form row one list over.
+
+`getCachedHeaderActions()` is that walk.
+It memoises into a `?array $cachedHeaderActions` — set to `[]` *before* `getHeaderActions()` is called, so a declaration that itself reaches `getAction()` cannot recurse — stamps every `ActionGroup` with `liveComponent($this)` (which propagates to its members) and `cacheAction()`s every plain entry and every `getFlatActions()` member of a group, then keeps and returns the declared list.
+`cacheAction()` is what does both halves in one call: it stamps `liveComponent($this)` *and* registers the action under its own name.
+
+The two reads are the two directions, and each needs a different half:
+
+- **Out**, at render: the base page chrome reads `this.getCachedHeaderActions` rather than `this.getHeaderActions` — once, for every page that extends it — because the *binding* is what a trigger renders from.
+  `CanOpenUrl::getUrl()` reaches the page through `getLiveComponentOrNull()`, so an unbound `CreateAction` renders as a `<button>` with no href instead of an `<a>` to the resource's create page — and `getDefaultActionRecordClass()`, `getDefaultActionRecordLabel()` and `getDefaultActionRecordTitle()` are skipped with it.
+  No error anywhere, which is why the shipped fixture pins the rendered `href`.
+- **In**, when the browser posts a mount back: `getAction()` is overridden on the base to try the trait's own lookup first — the action cache, then [actions' method discovery](../actions/has-actions.md), which finds a `<name>Action()` or `<name>()` method returning an `Action` — and, **only when that misses**, to run the walk once and look again.
+  Render-time reading alone could never cover this: the request that *calls* a mounted action renders no header at all, so nothing would have populated the cache by the time the name was looked up.
+
+So every declaration form works and none of them is stamped by hand.
+`$this->fooAction()` listed in `getHeaderActions()` is the Filament shape and still resolves through discovery; an action built **inline** in the list resolves too, and renders its URL, because the list the template renders is the bound one.
+An earlier arrangement had the walk on the way in only, leaving the template on the raw `getHeaderActions()` and a user's own `cacheAction()` call as the price of a working href — an easy line to forget, and silent when forgotten.
+A table **record** action needs none of this either way: `BelongsToLiveComponent` falls through the action's table to the table's host.
+
+The hook's two remaining members ship as well.
+`$headerActionsAlignment` and `getHeaderActionsAlignment()` sit on the trait and reach the `Header` component's new two-level DOM ([where the class lands, and why](custom-pages.md#the-alignment-class-rides-the-inner-row-and-the-container-is-what-the-breadcrumb-offset-hangs-off)), and the walk stamps `dropdownPlacement('bottom-end')` on an `ActionGroup` whose placement is null — Filament's own default, so a bare header group opens under the end of its trigger rather than wherever the component default put it.
+
+The residue is the memoisation's scope.
+Filament's cache is per boot and ours is per request object, which is the same thing for a page — but a `getHeaderActions()` that returns a *different* list depending on state read after the first call would be read once and frozen, where Filament would have frozen it at boot instead.
+Both are caches of a declaration, and a declaration that varies mid-request is out of contract in either framework.

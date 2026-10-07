@@ -90,7 +90,7 @@ There is no facade layer here, so the seam is an injected service; `sylament/for
 
 What does **not** change is the word.
 Filament's public API says `disk()` — `FileUpload::make('x')->disk('s3')` — and every migrating user greps for it, so the setter keeps its name even though the value it takes is a *flysystem storage name* rather than a Laravel disk key.
-The idiom translation is recorded in [renames.md](../translations.md#idiom); nothing in the user-facing API is renamed.
+The idiom translation is recorded in [translations.md](../translations.md#idiom); nothing in the user-facing API is renamed.
 
 ### `league/flysystem` is suggested rather than required
 

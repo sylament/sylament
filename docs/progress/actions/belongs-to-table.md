@@ -33,7 +33,7 @@ And a consumer who *does* install both gets no Composer signal beyond the `sugge
 
 Two later reads sit inside that guarantee rather than outside it.
 An action **body** may call methods on whatever `getTable()` returns — the shape [`DeleteBulkAction`](delete-action.md) already ships — because such a body only ever runs mounted from a table, so the value is non-null by construction there.
-And [`Action`](action.md#a-table-bound-action-titles-and-labels-through-its-table) injects the bound table into an evaluated closure by the name `table` and by `Table::class`: the by-type arm is a `match` over a `::class` constant, which compares compile-time strings and never autoloads, so it answers `null` in a tables-less install exactly as the property does.
+And [`Action`](interacts-with-record.md#a-table-bound-action-titles-and-labels-through-its-table) injects the bound table into an evaluated closure by the name `table` and by `Table::class`: the by-type arm is a `match` over a `::class` constant, which compares compile-time strings and never autoloads, so it answers `null` in a tables-less install exactly as the property does.
 
 The one thing that is genuinely ours: the trait leans on `getGroup()` from [`BelongsToGroup`](action-group.md) without composing it, the same way [`BelongsToLiveComponent`](action.md#the-live-component-chain-narrows-inline-instead-of-through-a-second-getter) leans on the schema getters.
 Both consumers compose both traits, so PHPStan resolves the call in every context it analyses; a future class mixing in `BelongsToTable` without `BelongsToGroup` fails the run, which is the intended signal rather than an oversight to guard with a `method_exists()` check.

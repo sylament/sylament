@@ -29,7 +29,7 @@ The create-path rules are pinned beside them by [`CreateActionTakenKeyTest`](../
 | [`getDefaultName()`](../../../packages/actions/src/CreateAction.php) (`'create'`) | [`CreateAction.php`](../../../vendor/filament/actions/src/CreateAction.php) | done | — | — |
 | [`setUp()` label + success-notification title](../../../packages/actions/src/CreateAction.php) | [`CreateAction.php`](../../../vendor/filament/actions/src/CreateAction.php) | done | — | [diverges](#the-strings-are-literals-not-translation-keys) |
 | [`CanCustomizeProcess`](../../../packages/actions/src/Concerns/CanCustomizeProcess.php) (`using()` / `process()`) | [`Concerns/CanCustomizeProcess.php`](../../../vendor/filament/actions/src/Concerns/CanCustomizeProcess.php) | done | — | — |
-| [URL mode — the host-hook fallthrough](../../../packages/actions/src/Concerns/CanOpenUrl.php) | [`Concerns/CanOpenUrl.php`](../../../vendor/filament/actions/src/Concerns/CanOpenUrl.php) `getUrl()` | done | — | [detail](action.md#geturl-carries-the-host-fallback-the-new-tab-introspection-helper-is-missing) |
+| [URL mode — the host-hook fallthrough](../../../packages/actions/src/Concerns/CanOpenUrl.php) | [`Concerns/CanOpenUrl.php`](../../../vendor/filament/actions/src/Concerns/CanOpenUrl.php) `getUrl()` | done | — | [detail](can-open-url.md#geturl-carries-the-host-fallback-the-new-tab-introspection-helper-is-missing) |
 | [Modal mode — the `action()` body that persists a new record](../../../packages/actions/src/CreateAction.php) | [`CreateAction.php`](../../../vendor/filament/actions/src/CreateAction.php) | done | — | [diverges](#the-modal-arm-persists-through-the-schemas-record-class) |
 | [`modalHeading()` / `modalSubmitActionLabel()`](../../../packages/actions/src/CreateAction.php) | [`CreateAction.php`](../../../vendor/filament/actions/src/CreateAction.php) | done | — | [diverges](#the-strings-are-literals-not-translation-keys) |
 | [`groupedIcon('heroicons:plus-20-solid')`](../../../packages/actions/src/CreateAction.php) | [`CreateAction.php`](../../../vendor/filament/actions/src/CreateAction.php) | done | — | [diverges](#icons-are-literal-heroicon-names-with-no-alias-indirection) |
@@ -45,7 +45,7 @@ The create-path rules are pinned beside them by [`CreateActionTakenKeyTest`](../
 
 ### The created record joins the relationship in the same flush
 
-`getRelationship()` walks three hops, Filament-verbatim: the action's own `relationship()` closure, then [the table's](../tables/table.md#the-relationship-query-is-the-base-query-rooted-at-the-target), then the host's [`getDefaultActionRelationship()`](interacts-with-actions.md#the-panel-level-default-hooks-are-on-the-contract-the-authorization-pair-deferred).
+`getRelationship()` walks three hops, Filament-verbatim: the action's own `relationship()` closure, then [the table's](../tables/has-query.md#the-relationship-query-is-the-base-query-rooted-at-the-target), then the host's [`getDefaultActionRelationship()`](interacts-with-actions.md#the-panel-level-default-hooks-are-on-the-contract-the-authorization-pair-deferred).
 An action inside a relation-scoped table therefore needs no configuration at all, and one that names its own owner overrides the table it sits in.
 
 The arm runs **before the mapping** in `createRecord()`, and again after it.
@@ -56,7 +56,7 @@ When the mapping refuses a **many-to-many** create, the record is detached from 
 The attach **after** keeps the relationship winning over a form field that maps the same association.
 With no relationship in force the body is the one `getData()` line it always was, under the class binding — preceded by a check that refuses a class whose constructor requires arguments with the relationship arm's own `constructRecord()` message and advice, *build it in the action's using() closure*, where `getData()` answered with the schema's *through record()*, which an action cannot follow.
 And the order still serves `persist()`: Doctrine's `AssignedGenerator` throws `EntityMissingAssignedId` the moment it reads an unset identifier field, so a record whose identifier association *is* the relationship cannot be persisted before it is attached.
-[`CreateRecord`](../panels/README.md#createrecord) joins a parent the same way under a nested page.
+[`CreateRecord`](../panels/create-record.md) joins a parent the same way under a nested page.
 `persist()` stays explicit because the membership write is not a cascade: the owner's association may declare none, and an unpersisted record that a collection merely holds is not inserted by a mapping that does not cascade.
 The attach runs on the object graph rather than as its own write — [`AssociationReader::attach()`](../schemas/association-reader.md) sets the owning collection or the target's mapped-by field through the property accessor — so the single `flush()` writes the record and its membership together, and a failure of either rolls back both.
 
@@ -116,7 +116,7 @@ Moving them onto the rebound reader would be a behaviour change no case needs.
 ### The modal arm persists through the schema's record class
 
 Filament builds the record with `new $model` and `$record->fill($data)`, then calls `$schema->model($record)->saveRelationships()` in a second pass.
-Doctrine has no `fill()` and no second pass, so the port maps through the schema instead: the body re-points the mounted container at the action's record **class** and calls [`Schema::getData()`](../schemas/belongs-to-record.md) with the validated — and, where `mutateDataUsing()` asked, mutated — array, which constructs the record, writes every declared path onto it, answers the record's own constraints, and hands it back to be persisted and flushed through [`getEntityManagerForRecord()`](action.md#the-transaction-trio-resolves-a-doctrine-connection-instead-of-a-facade).
+Doctrine has no `fill()` and no second pass, so the port maps through the schema instead: the body re-points the mounted container at the action's record **class** and calls [`Schema::getData()`](../schemas/belongs-to-record.md) with the validated — and, where `mutateDataUsing()` asked, mutated — array, which constructs the record, writes every declared path onto it, answers the record's own constraints, and hands it back to be persisted and flushed through [`getEntityManagerForRecord()`](can-use-database-transactions.md#the-transaction-trio-resolves-a-doctrine-connection-instead-of-a-facade).
 
 **A key `mutateDataUsing()` adds that no component maps is refused by name.**
 `Schema::getData()` writes exactly the paths in [`getRecordPathMap()`](../schemas/belongs-to-record.md) — the paths the container's own components declare, hidden and non-dehydrated ones included — so `mutateDataUsing()` can *change* a value a component maps but cannot *introduce* one.
@@ -141,7 +141,7 @@ Pinned by [`UnmappedHookDataTest`](../../../packages/actions/tests/Integration/U
 Four things about that body are deliberate.
 
 **The re-point is load-bearing, not a belt.**
-The host seeds a mounted action's schema with a record ([`HasActions`](has-actions.md#the-per-mount-schema-is-seeded-with-the-actions-record-and-the-dotted-operation)), and for a host-level action — one no schema component owns — that seed reads `getRecord(withDefault: true)`, i.e. [the whole chain](action.md#the-record-chain-reaches-the-schema-the-component-and-the-host) down to the host's [`getDefaultActionRecord()`](has-actions.md#the-getdefaultaction-host-override-hooks-are-ported-the-authorization-pair-deferred).
+The host seeds a mounted action's schema with a record ([`HasActions`](has-actions.md#the-per-mount-schema-is-seeded-with-the-actions-record-and-the-dotted-operation)), and for a host-level action — one no schema component owns — that seed reads `getRecord(withDefault: true)`, i.e. [the whole chain](interacts-with-record.md#the-record-chain-reaches-the-schema-the-component-and-the-host) down to the host's [`getDefaultActionRecord()`](has-actions.md#the-getdefaultaction-host-override-hooks-are-ported-the-authorization-pair-deferred).
 On a record page that last hop answers the page's **record**, so the seed is the very object a create modal must not write into: `$schema->record($recordClass)` in the body is what re-points the container at the class, and it is the only thing standing between a create action hosted beside an edit form and the record being edited.
 
 `setUp()`'s `record(null)` is Filament-verbatim and narrower than it reads.
@@ -176,7 +176,7 @@ It is **skipped**, not blocked: nothing will make it necessary.
 Filament reads every user-visible string through `__('filament-actions::create.single…')`.
 The port sets the English literals directly, read from [`resources/lang/en/create.php`](../../../vendor/filament/actions/resources/lang/en/create.php): `New :label` for the trigger, `Create :label` for the modal heading, `Create` for the submit button, `Create & create another` for the extra footer button and `Created` for the success toast — because no translation catalogue is ported yet (the `Translations` row in [README](README.md#supporting-surface) tracks it).
 
-The two `:label` interpolations become string interpolation over [`Action::getRecordLabel()`](action.md#the-record-chain-reaches-the-schema-the-component-and-the-host) and `getTitleCaseRecordLabel()`, which is why they are closures rather than literals: neither label is known until the action is hosted.
+The two `:label` interpolations become string interpolation over [`Action::getRecordLabel()`](interacts-with-record.md#the-record-chain-reaches-the-schema-the-component-and-the-host) and `getTitleCaseRecordLabel()`, which is why they are closures rather than literals: neither label is known until the action is hosted.
 Both carry a fallback Filament does not have — when nothing names a record class the label is `null`, and Filament would render a trailing-space `New ` and `Create `, so the port falls back to the bare verb `Create` for each.
 That fallback is reachable only by an action with no record class from any source, which is a misconfiguration everywhere except url mode, where the trigger's text is all that renders.
 

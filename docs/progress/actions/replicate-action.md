@@ -77,7 +77,7 @@ Eloquent's `Model::replicate()` copies the raw attribute bag minus the key, the 
 Doctrine has no counterpart, and PHP's `clone` is not one: a shallow clone shares the original's `PersistentCollection` **instances**, so adding to one adds to the other and the join rows rewrite against whichever owner the unit of work sees; and `persist()` assumes a new entity, so a stale identifier on an assigned-id class would be inserted verbatim.
 
 [`RecordReplicator`](../../../packages/actions/src/Replication/RecordReplicator.php) builds the copy from the mapping instead.
-It takes the record's own `EntityManagerInterface` — resolved through [`getEntityManagerForRecord()`](action.md#the-transaction-trio-resolves-a-doctrine-connection-instead-of-a-facade), so a query-lane table's manager wins over the registry — and is constructed inline by the action rather than wired as a service, because there is nothing to configure and the manager is only known per record.
+It takes the record's own `EntityManagerInterface` — resolved through [`getEntityManagerForRecord()`](can-use-database-transactions.md#the-transaction-trio-resolves-a-doctrine-connection-instead-of-a-facade), so a query-lane table's manager wins over the registry — and is constructed inline by the action rather than wired as a service, because there is nothing to configure and the manager is only known per record.
 `newInstance()` starts the copy, which bypasses the constructor (a record class may require arguments), and then, per mapping entry:
 
 - an identifier **field** is not copied — a generated one is the database's to fill, and an assigned one is [asked for](#a-replica-keeps-its-parent-and-one-whose-key-is-still-incomplete-is-refused-by-name);
@@ -171,7 +171,7 @@ The lookup reads the key before any `prePersist` hook runs, so a copy such a hoo
 
 Eloquent's `replicate()` also drops `uniqueIds()`; the port drops nothing on uniqueness grounds for a column that is no key, exactly as Filament's action does not.
 A duplicate violating such an index still reaches the database and comes back as an unhandled `UniqueConstraintViolationException`.
-That is deliberate: the tool for it is the form-level [`unique()`](../forms/can-be-validated.md#unique-and-exists-are-one-dql-probe-behind-a-container-service) constraint on the field the index covers, which fails the modal with a message instead.
+That is deliberate: the tool for it is the form-level [`unique()`](../forms/probes-records.md#unique-and-exists-are-one-dql-probe-behind-a-container-service) constraint on the field the index covers, which fails the modal with a message instead.
 An action replicating a uniquely-indexed record without a form arm, and without `excludeAttributes()`, is a caller error we let fail loudly.
 
 ### A key `mutateDataUsing()` adds that no component of the modal maps is refused by name
@@ -194,7 +194,7 @@ Porting a deprecated alias would publish an API we would then have to deprecate,
 ### The strings are literals, not translation keys
 
 `label('Replicate')`, the `Replicate :label` modal heading, the submit label and the `Replicated` toast title are the English literals read from [`resources/lang/en/replicate.php`](../../../vendor/filament/actions/resources/lang/en/replicate.php), where Filament reads `__('filament-actions::replicate.single…')` — the same call [create-action.md](create-action.md#the-strings-are-literals-not-translation-keys) records, with the `Translations` row in [README](README.md#supporting-surface) tracking the catalogue.
-The `:label` interpolation becomes string interpolation over [`Action::getRecordTitle()`](action.md#the-record-chain-reaches-the-schema-the-component-and-the-host), so the heading is a closure with the bare-verb fallback its siblings carry: `Replicate` where Filament would render a trailing-space `Replicate `.
+The `:label` interpolation becomes string interpolation over [`Action::getRecordTitle()`](interacts-with-record.md#the-record-chain-reaches-the-schema-the-component-and-the-host), so the heading is a closure with the bare-verb fallback its siblings carry: `Replicate` where Filament would render a trailing-space `Replicate `.
 
 ### The icon is a literal name, and a plain `icon()` stands in for `tableIcon()`
 

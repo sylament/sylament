@@ -179,3 +179,7 @@ A row with no Ports link is Sylament-only — no Filament source to diff against
 | [Styles](../../../packages/schemas/assets/src/styles) | [`resources/css/`](../../../vendor/filament/schemas/resources/css) | in progress | [styles.md](styles.md) |
 | [Scripts](../../../packages/schemas/assets/src) | [`resources/js/`](../../../vendor/filament/schemas/resources/js) | in progress | [schemas-bundle.md](schemas-bundle.md#the-schemas-package-grew-a-js-workspace-of-its-own) · [diverges](interacts-with-schemas.md#uploadschemacomponentfile-carries-the-bytes-beside-the-seam) |
 | Translations | [`resources/lang/`](../../../vendor/filament/schemas/resources/lang) | todo | — |
+
+<!-- split-links:start -->
+Also in this package: [component-belongs-to-record.md](component-belongs-to-record.md) · [has-nullable-branch.md](has-nullable-branch.md) · [record-key-contract.md](record-key-contract.md) · [relationship.md](relationship.md).
+<!-- split-links:end -->

@@ -17,7 +17,7 @@ Filament ships both names in both tiers and the port keeps them; read the import
 
 Do not confuse the **state** either.
 `updateTableColumnState()` below writes one editable cell's value onto a record; the `…TableColumnState` family on [`Concerns\HasColumnManager`](column-manager.md) means the column manager's visibility-and-order bag.
-Both vocabularies are Filament's own and both flatten into the same host class — [why they were kept](has-table.md#two-tablecolumnstate-vocabularies-meet-on-one-host-and-both-are-filaments).
+Both vocabularies are Filament's own and both flatten into the same host class — [why they were kept](host-has-column-manager.md#two-tablecolumnstate-vocabularies-meet-on-one-host-and-both-are-filaments).
 
 ## Surface
 
@@ -103,7 +103,7 @@ The port throws instead — an editable column on the `records()` array lane has
 
 Filament's `updateState()` carries a third target beside "the record" and "the far side of a to-one relationship": when the **table** is scoped to a `BelongsToMany` and the column names one of that relation's pivot columns, the write lands on the pivot row rather than on either entity (`$record->getRelationValue($tableRelationship->getPivotAccessor())`).
 That arm is skipped, and the reason is structural rather than a judgment.
-Eloquent's `BelongsToMany` hands back a pivot **model** with its own attributes, which is what makes it a write target; Doctrine's many-to-many is a join table with no entity behind it, so [`Table::relationship()`](table.md#the-relationship-query-is-the-base-query-rooted-at-the-target) roots its query at the *target* entity and there is no third object to address.
+Eloquent's `BelongsToMany` hands back a pivot **model** with its own attributes, which is what makes it a write target; Doctrine's many-to-many is a join table with no entity behind it, so [`Table::relationship()`](has-query.md#the-relationship-query-is-the-base-query-rooted-at-the-target) roots its query at the *target* entity and there is no third object to address.
 An application that wants columns on the join models it as an entity in its own right — Doctrine's own advice — at which point the association is two to-manys and the pivot is an ordinary record the dotted path already reaches.
 
 ### The write is not authorization-checked
@@ -128,6 +128,16 @@ UX LiveComponent has no such channel: `component.action()` resolves to a `Backen
 The port therefore types the live action `void` and the closure's own return is discarded — the re-render is the whole answer, which is the same rule the rest of the toolkit's live actions follow.
 
 A closure that wants to change what the user sees writes host state (a `LiveProp`, the record through Doctrine) and lets the re-render show it, rather than returning something.
+
+### The editable seam is server-canonical too, and the cell controller repaints
+
+The column catalog's write-back is the same inversion one tier down, and it is worth naming beside select-all because the two are the toolkit's only places where a client control's value and the server's disagree mid-request.
+`updateTableColumnState()` is a `#[LiveAction]` returning `void`: the browser posts the control's new value, the host validates it, writes it onto the record and re-renders, and the re-render is the whole reply — a refusal reaches the screen as a `<p class="sy-ta-cell-error">` the same request paints, from a bag that is a plain property rather than a `LiveProp`, so it lives for exactly that one response ([has-columns.md](has-columns.md#the-refusal-is-request-scoped-and-server-rendered-where-filaments-lives-on-the-client)).
+Filament holds that error in Alpine on the client instead, and re-renders nothing.
+
+The one thing a re-render cannot do here is correct the control itself.
+UX pins every input the user has touched through every morph, so the authoritative value rides the cell **root** — a `div` the tracker ignores — and the `sylament--tables--editable-cell` controller writes it onto the control after each render.
+That is the same mechanism the selection checkboxes use, for the same reason: after the first morph the client state, not the server-rendered attribute, is what the DOM shows unless something puts the server's answer back ([has-columns.md](has-columns.md#the-cell-repaints-from-the-root-because-a-touched-control-is-pinned-through-every-morph)).
 
 ## Semantics
 

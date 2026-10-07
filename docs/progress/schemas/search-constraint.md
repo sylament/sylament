@@ -11,7 +11,7 @@ owns:
 [`Sylament\Schemas\Query\SearchConstraint`](../../../packages/schemas/src/Query/SearchConstraint.php) — a Sylament invention with **no Filament source**.
 Filament's analogue is the `generate_search_column_expression()` / `generate_search_term_expression()` pair ([`vendor/filament/support/src/helpers.php:242-338`](../../../vendor/filament/support/src/helpers.php)), Eloquent-and-driver-specific string assembly with no DQL counterpart to lift.
 
-It shipped first in `tables` ([table.md](../tables/table.md#a-non-string-searchable-field-is-cast-to-text-on-postgresql)), which still owns `forColumn()` (the relation-crossing dispatch a column's search resolves through) and its own `like()` that now delegates here.
+It shipped first in `tables` ([can-search-records.md](../tables/can-search-records.md#a-non-string-searchable-field-is-cast-to-text-on-postgresql)), which still owns `forColumn()` (the relation-crossing dispatch a column's search resolves through) and its own `like()` that now delegates here.
 `like()` itself moved down so `forms`' relationship search arm can reuse it: `forms` and `tables` are sibling packages that both build on `schemas` and neither may depend on the other, so a helper both need moves down to their shared ancestor rather than one borrowing the other's package.
 
 ## Surface
@@ -27,7 +27,7 @@ It shipped first in `tables` ([table.md](../tables/table.md#a-non-string-searcha
 
 `$forceCaseInsensitive` is the caller's override; left `null`, the constraint asks `$query`'s own connection whether it is Postgres (`instanceof PostgreSQLPlatform`) and folds case only there — Postgres' `LIKE` is case-sensitive where MySQL and SQLite's are not, so the platform read keeps the same `searchable()` declaration matching consistently across backends without the caller naming one.
 Each call also mints its own parameter name off `count($query->getParameters())` (`sylament_search_<n>`), so repeat calls against one builder — a multi-word search, or a search crossing several searchable columns — never collide.
-Folding case is not casting: a field that holds no character data is cast separately, on PostgreSQL alone — [below](#a-field-that-holds-no-character-data-is-cast-to-text-on-postgresql), with the table-side story in [table.md](../tables/table.md#a-non-string-searchable-field-is-cast-to-text-on-postgresql).
+Folding case is not casting: a field that holds no character data is cast separately, on PostgreSQL alone — [below](#a-field-that-holds-no-character-data-is-cast-to-text-on-postgresql), with the table-side story in [can-search-records.md](../tables/can-search-records.md#a-non-string-searchable-field-is-cast-to-text-on-postgresql).
 
 ### A field that holds no character data is cast to text on PostgreSQL
 

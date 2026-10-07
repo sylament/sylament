@@ -123,7 +123,7 @@ Support's `assets/src/styles/index.css` imports this package's [`src/styles/inde
 ### The dispatch controller is page-wide, and Filament has no counterpart for it
 
 Filament needs no such controller: its trigger Blade emits `wire:click="$dispatch(…)"`, an inline JavaScript expression Livewire evaluates against whatever component encloses it.
-The port has no arbitrary-JS seam and [does not want one](action.md#a-dispatch-action-renders-payload-attributes-not-a-click-binding), so the templates stamp payload attributes and something else does the delivery.
+The port has no arbitrary-JS seam and [does not want one](can-dispatch-event.md#a-dispatch-action-renders-payload-attributes-not-a-click-binding), so the templates stamp payload attributes and something else does the delivery.
 [`dispatch_controller.ts`](../../../packages/actions/assets/src/controllers/dispatch_controller.ts) is that something, and it is deliberately *not* a per-element controller.
 
 **It never binds to an element.**
@@ -159,7 +159,7 @@ From `event.target` the handler walks `closest('[data-sylament-action-event]')`;
 It then reads the trigger's *nearest* live root once — `closest('[data-controller~="live"]')`, `null` when the trigger sits outside every live component — and, inside one `try`, takes exactly one of these:
 
 1. `data-sylament-action-dispatch-self` present **and** a nearest root exists → `emitSelf(name, data)` on that root's component.
-   This is what gives `dispatchSelf()` real self semantics: all five trigger templates [emit the marker](action.md#a-dispatch-action-renders-payload-attributes-not-a-click-binding) whenever the direction is `'self'`.
+   This is what gives `dispatchSelf()` real self semantics: all five trigger templates [emit the marker](can-dispatch-event.md#a-dispatch-action-renders-payload-attributes-not-a-click-binding) whenever the direction is `'self'`.
    The read is a **presence** test, matching a marker that carries no value.
 2. Anything else — no self marker, or a self marker with no live ancestor to be self of — → `emit(name, data, to)`, with `data-sylament-action-dispatch-to` passed as `emit()`'s third argument and `null` when absent or empty.
    The emitter is the nearest root when there is one and the page's **first** `[data-controller~="live"]` element otherwise; with neither, the dispatch is dropped.
@@ -190,7 +190,7 @@ A listener that must not run twice guards itself; the controller does not try to
 **Close is deliberately not handled here.**
 `data-sylament-action-close` is a neutral marker meaning *this action closes its context*, and only the context knows what closing means — a toast removes itself, a modal dismisses.
 So the close arm stays with whoever owns the click context and this controller reads the attribute nowhere.
-The split is the same one the [payload attributes](action.md#a-dispatch-action-renders-payload-attributes-not-a-click-binding) were designed around: templates stamp payload, context owners deliver behaviour, and dispatch is the one behaviour that has no context.
+The split is the same one the [payload attributes](can-dispatch-event.md#a-dispatch-action-renders-payload-attributes-not-a-click-binding) were designed around: templates stamp payload, context owners deliver behaviour, and dispatch is the one behaviour that has no context.
 
 Exactly **one** context implements the marker today, and the asymmetry is worth stating rather than assuming from the design.
 The toast root's controller is its only reader in the repo; support's modal is served instead by the explicit `data-action="sylament--support--modal#dismiss"` token the **bare-close** arm emits beside the marker, and the dispatch arm emits no `data-action` at all — so a `dispatch()->close()` rendered inside a modal stamps a marker nothing reads, and the modal stays open.
@@ -240,7 +240,7 @@ The soft link and the hard one need the same kind of pin for opposite reasons �
 [`ManifestTest`](../../../packages/actions/tests/Architecture/ManifestTest.php) reads `composer.json` instead, asserting the three hard requires and the two suggestions directly.
 
 The notifications seam is the rule's **second** guarded soft integration, and the first one forced by a cycle rather than by weight.
-[`CanNotify`](action.md#the-notification-arm-is-a-guarded-soft-integration-not-a-require) imports `Sylament\Notifications\Notification` in `src/` and sends a real toast from `sendSuccessNotification()` / `sendFailureNotification()` — yet `sylament/actions` requires `sylament/notifications` **nowhere**, because `sylament/notifications` requires `sylament/actions` (its notifications carry `Action`s), and a require back would close a composer cycle.
+[`CanNotify`](can-notify.md#the-notification-arm-is-a-guarded-soft-integration-not-a-require) imports `Sylament\Notifications\Notification` in `src/` and sends a real toast from `sendSuccessNotification()` / `sendFailureNotification()` — yet `sylament/actions` requires `sylament/notifications` **nowhere**, because `sylament/notifications` requires `sylament/actions` (its notifications carry `Action`s), and a require back would close a composer cycle.
 Filament has no such problem: `filament/actions` requires `filament/notifications`, and `filament/notifications` reaches actions only transitively.
 So the port takes the shape this section already sanctions for tables — a `class_exists()` guard in front of every use (the `::class` constant autoloads nothing, so an install without the package never resolves the symbol), a composer `suggest` entry, and a test in the suite that has both packages to keep the reference honest: [`CanNotifyTest`](../../../packages/notifications/tests/Integration/CanNotifyTest.php) in the notifications Integration suite.
 

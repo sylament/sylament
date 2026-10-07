@@ -76,7 +76,7 @@ Nothing had to be re-selected, which is the only reason the stylesheet could be 
 Filament ships `Filament\Schemas\Components\FusedGroup`, and that class imports three **forms** concerns — `CanBeMarkedAsRequired`, `HasExtraFieldWrapperAttributes` and `HasHelperText` — plus `Forms\Components\Field` for its error walk.
 That is the upward import from schemas into forms this port cannot reproduce: `forms` depends on `schemas`, and the CI split publishes each package standalone, so a `sylament/schemas` reaching a forms symbol breaks the moment it is installed alone.
 The same layering argument moved [`CanBeMarkedAsRequired` down](../translations.md#namespace-segments); here it moves the component **up** instead, to the package that already owns the field-wrapper chrome the group renders.
-Recorded in [renames.md](../translations.md#namespace-segments); the class name, its methods and its behaviour are unchanged, and the CSS class follows the package (`fi-sc-fused-group` → `sy-fo-fused-group`) rather than keeping a `-sc-` segment naming a package that no longer holds it.
+Recorded in [translations.md](../translations.md#namespace-segments); the class name, its methods and its behaviour are unchanged, and the CSS class follows the package (`fi-sc-fused-group` → `sy-fo-fused-group`) rather than keeping a `-sc-` segment naming a package that no longer holds it.
 
 ### The group renders through `FieldWrapper` instead of a second copy of it
 

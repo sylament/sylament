@@ -131,3 +131,7 @@ The host-side [`Modals`](../../../packages/actions/templates/components/Modals/i
 | Translations | [`resources/lang/`](../../../vendor/filament/actions/resources/lang) | todo | - |
 | [Assets (JS/CSS)](../../../packages/actions/assets) | [`resources/js/`](../../../vendor/filament/actions/resources/js), [`resources/css/`](../../../vendor/filament/actions/resources/css) | in progress | the workspace ships one Sylament-only Stimulus controller (page-wide dispatch delegation) and the `sy-ac-*` rules, which compile into support's stylesheet; the built `dist` is mapped into AssetMapper as `@sylament/actions` ([actions-bundle.md](actions-bundle.md#asset-registration-is-an-assetmapper-prepend)), and Filament's Alpine modal-nesting plugin is unported — [actions-bundle.md](actions-bundle.md#the-asset-workspace-is-js-only-and-its-importmap-block-names-only-stimulus) |
 | [`SylamentActionsBundle`](../../../packages/actions/src/SylamentActionsBundle.php) | [`ActionsServiceProvider.php`](../../../vendor/filament/actions/src/ActionsServiceProvider.php) | in progress | [actions-bundle.md](actions-bundle.md) |
+
+<!-- split-links:start -->
+Also in this package: [can-dispatch-event.md](can-dispatch-event.md) · [can-notify.md](can-notify.md) · [can-open-modal.md](can-open-modal.md) · [can-open-url.md](can-open-url.md) · [can-use-database-transactions.md](can-use-database-transactions.md) · [has-action.md](has-action.md) · [interacts-with-record.md](interacts-with-record.md) · [modals.md](modals.md).
+<!-- split-links:end -->

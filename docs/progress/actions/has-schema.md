@@ -5,6 +5,7 @@ ports:
   - vendor/filament/actions/src/Concerns/HasWizard.php
 owns:
   - packages/actions/src/Concerns/HasSchema.php
+  - packages/actions/src/Concerns/HasWizard.php
 ---
 # HasSchema (actions)
 

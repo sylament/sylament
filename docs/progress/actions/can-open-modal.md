@@ -5,6 +5,7 @@ ports:
   - vendor/filament/actions/src/Concerns/CanRequireConfirmation.php
   - vendor/filament/actions/resources/views/action-modal.blade.php
 owns:
+  - packages/actions/assets/src/styles/components/action-modal.css
   - packages/actions/src/Concerns/CanOpenModal.php
   - packages/actions/src/Concerns/CanRequireConfirmation.php
   - packages/actions/templates/components/ActionModal/

@@ -1,16 +1,15 @@
 ---
-description: 'The shared concern behind the native `readonly` attribute: the `readOnly()` setter, the `readOnlyOn()` operation gate, and the `isReadOnly()` reader… (draft)'
+description: The `readOnly()` / `readOnlyOn()` / `isReadOnly()` concern behind the native `readonly` attribute of the text fields and date pickers.
 ports:
   - vendor/filament/forms/src/Components/Concerns/CanBeReadOnly.php
-  - vendor/filament/schemas/src/Components/Concerns/CanBeDisabled.php
 owns:
   - packages/forms/src/Components/Concerns/CanBeReadOnly.php
 ---
 # CanBeReadOnly (forms)
 
-`Sylament\Forms\Components\Concerns\CanBeReadOnly` — the shared concern behind the native `readonly` attribute: the `readOnly()` setter, the `readOnlyOn()` operation gate, and the `isReadOnly()` reader the field templates emit from.
-The port's two text fields compose it, `TextInput` and `Textarea`, as does [`DateTimePicker`](date-time-picker.md) and through it the two picker variants, so it keeps a row of its own rather than folding into any of them.
-Filament composes it on one more — `OneTimeCodeInput` — which is not ported; it picks the concern up unchanged when it lands.
+`Sylament\Forms\Components\Concerns\CanBeReadOnly` is the shared concern behind the native `readonly` attribute: the `readOnly()` setter, the `readOnlyOn()` operation gate, and the `isReadOnly()` reader the field templates emit from.
+The port's two text fields compose it, `TextInput` and `Textarea`, as does [`DateTimePicker`](date-time-picker.md) and through it `DatePicker` and `TimePicker`.
+Filament composes it on one more, `OneTimeCodeInput`, which has no port.
 
 ## Surface
 
@@ -18,13 +17,7 @@ Filament composes it on one more — `OneTimeCodeInput` — which is not ported;
 | --- | --- | --- | --- | --- |
 | [`readOnly()` / `isReadOnly()`](../../../packages/forms/src/Components/Concerns/CanBeReadOnly.php) | [`Concerns/CanBeReadOnly.php`](../../../vendor/filament/forms/src/Components/Concerns/CanBeReadOnly.php) | done | — | [semantics](#read-only-is-not-disabled--the-state-still-dehydrates) |
 | [`readOnlyOn()`](../../../packages/forms/src/Components/Concerns/CanBeReadOnly.php) | [`readOnlyOn()`](../../../vendor/filament/forms/src/Components/Concerns/CanBeReadOnly.php) | done | — | [diverges](#readonlyon-accepts-an-operation-case-where-filaments-takes-strings-only) |
-| The `readonly` attribute on each control | [`TextInput::toEmbeddedHtml()`](../../../vendor/filament/forms/src/Components/TextInput.php) | done | — | — |
-
-Coverage: the `false` default, the literal and closure conditions, the operation match in both the string and enum spellings, a non-matching list, and the host `instanceof` arm by [`CanBeReadOnlyTest`](../../../packages/forms/tests/Unit/Components/Concerns/CanBeReadOnlyTest.php), which also pins that both text fields compose it.
-That last case sets the schema's operation and matches against an **interface** the host implements, so the `===` arm beside it cannot be what satisfies the match — a candidate equal to the operation string short-circuits the `||` and leaves `instanceof` unexercised, which is exactly what a class-string candidate does under `getOperation()`'s host-class fallback.
-The rendered attribute is asserted present-and-absent per field by the `renders the readonly attribute only when read-only` case in [`TextInputTest`](../../../packages/forms/tests/Integration/Components/TextInputTest.php) and [`TextareaTest`](../../../packages/forms/tests/Integration/Components/TextareaTest.php).
-
-Neither template guards the attribute with an `{% if %}`: [`ComponentAttributeBag`](../../../packages/support/src/Twig/ComponentAttributeBag.php) drops a `false` value and renders a bare attribute for `true`, so `readonly: component.isReadOnly` already *is* the condition — the same shape `disabled` and `autofocus` beside it use.
+| The `readonly` attribute on each control | [`TextInput::toEmbeddedHtml()`](../../../vendor/filament/forms/src/Components/TextInput.php) | done | — | [semantics](#the-readonly-attribute-renders-unguarded-because-the-bag-drops-a-false) |
 
 ## Semantics
 
@@ -37,6 +30,10 @@ That is Filament's behaviour too, and it is the useful half of the pair: a field
 Neither attribute is authorization.
 Filament's [security note on `disabled()`](../schemas/can-be-disabled.md) applies here word for word: a client can strip either one, so the server decides what may be written.
 
+### The `readonly` attribute renders unguarded, because the bag drops a `false`
+
+No template guards the attribute with an `{% if %}`: [`ComponentAttributeBag`](../../../packages/support/src/Twig/ComponentAttributeBag.php) drops a `false` value and renders a bare attribute for `true`, so `readonly: component.isReadOnly` already *is* the condition, the same shape `disabled` and `autofocus` beside it use.
+
 ## Divergences
 
 ### `readOnlyOn()` accepts an `Operation` case where Filament's takes strings only
@@ -47,4 +44,4 @@ It fails two ways there: `readOnlyOn(Operation::Edit)` raises a `TypeError` at t
 
 The port takes the widened signature for all three, so `readOnlyOn()` runs `disabledOn()`'s loop over `readOnly()` — the same matching, without the `saved()` coupling that [separates the two](#read-only-is-not-disabled--the-state-still-dehydrates).
 Its one translation — `Arr::wrap` mapping to support's [`wrap()`](../support/helpers.md) helper and never to the shorter `(array)` cast, which would dump an enum's properties instead of wrapping it — is written up once, in [can-be-hidden.md](../schemas/can-be-hidden.md#arrwrap-maps-to-the-wrap-helper-never-an-array-cast).
-The `HasSchemas $livewire` → `InteractsWithSchemas $liveComponent` parameter is the [interface swap and the Livewire → UX LiveComponent vocabulary](../renames.md), not a divergence.
+The `HasSchemas $livewire` → `InteractsWithSchemas $liveComponent` parameter is the [interface swap](../renames.md#interface-and-trait-names-are-swapped) and the Livewire → UX LiveComponent vocabulary, not a divergence.

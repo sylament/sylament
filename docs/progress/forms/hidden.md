@@ -1,5 +1,5 @@
 ---
-description: The field that holds a value without showing one. (draft)
+description: The `Hidden` field, which holds a value in one bare `<input type="hidden">` without showing one.
 ports:
   - vendor/filament/forms/src/Components/Hidden.php
   - vendor/filament/forms/docs/21-hidden.md
@@ -9,29 +9,24 @@ owns:
 ---
 # Hidden (forms)
 
-`Sylament\Forms\Components\Hidden` — the field that holds a value without showing one.
-Extends [`Field`](../../../packages/forms/src/Components/Field.php) and adds exactly two things over it: a `setUp()` that spans its grid column `'hidden'`, and a template that renders one `<input type="hidden">` and nothing else.
+`Sylament\Forms\Components\Hidden` is the field that holds a value without showing one.
+It extends [`Field`](../../../packages/forms/src/Components/Field.php) and adds exactly two things over it: a `setUp()` that spans its grid column `'hidden'`, and a template that renders one `<input type="hidden">` and nothing else.
 No wrapper, no label, no error message, no stylesheet.
 
 Its whole API is `Hidden::make('token')` — everything else it exposes is `Field`'s.
 
 ## Surface
 
-Every point this field adds over `Field`.
-`Field`'s own surface is tracked in [`field.md`](field.md), not here.
-
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
-| Construction &amp; rendering (`Hidden::make('token')`) | [`Components/Hidden.php`](../../../vendor/filament/forms/src/Components/Hidden.php) | done | — | — |
-| `columnSpan(['default' => 'hidden'])` collapsing the schema slot | [`Hidden::setUp()`](../../../vendor/filament/forms/src/Components/Hidden.php) | done | — | [semantics](#the-slot-collapse-is-the-whole-styling-story) |
-| Embedded view → Twig template, rendered with no field wrapper | [`Hidden::toEmbeddedHtml()`](../../../vendor/filament/forms/src/Components/Hidden.php) | done | — | [semantics](#nothing-wraps-the-input-and-nothing-should) |
-| `id` / `data-model` binding | [`Hidden::toEmbeddedHtml()`](../../../vendor/filament/forms/src/Components/Hidden.php) | done | — | — |
-| State rendered server-side into `value` | [`Hidden::toEmbeddedHtml()`](../../../vendor/filament/forms/src/Components/Hidden.php) | done | — | [diverges](#the-value-attribute-is-rendered-server-side-and-never-omitted) |
-| `extraAttributes()` merged onto the input | [`Hidden::toEmbeddedHtml()`](../../../vendor/filament/forms/src/Components/Hidden.php) | done | — | — |
-| No `name` attribute | [`Hidden::toEmbeddedHtml()`](../../../vendor/filament/forms/src/Components/Hidden.php) | done | — | [semantics](#the-input-carries-no-name-attribute) |
-| `getPublishedViewOverrideCheckPath()` | [`Components/Hidden.php`](../../../vendor/filament/forms/src/Components/Hidden.php) | skipped | — | [diverges](toggle-buttons.md#there-is-nothing-to-publish-a-view-override-against) |
-
-Coverage: the bare input and the absence of any wrapper, label or error element; the `type` / `id` / `data-model` attributes; the empty `value` attribute an unset field renders; a `default()` round-tripping through `value` off a hydrated schema; the `'hidden'` column span both on the component and as `sy-hidden` on the rendered schema slot; extra attributes reaching the input and appending to its class list; and the absent `name` attribute — by [`HiddenTest`](../../../packages/forms/tests/Integration/Components/HiddenTest.php).
+| [Construction &amp; rendering (`Hidden::make('token')`)](../../../packages/forms/src/Components/Hidden.php) | [`Components/Hidden.php`](../../../vendor/filament/forms/src/Components/Hidden.php) | done | — | — |
+| [`columnSpan(['default' => 'hidden'])`](../../../packages/forms/src/Components/Hidden.php) collapsing the schema slot | [`Hidden::setUp()`](../../../vendor/filament/forms/src/Components/Hidden.php) | done | — | [semantics](#the-slot-collapse-is-the-whole-styling-story) |
+| [Embedded view → Twig template](../../../packages/forms/templates/partials/Hidden/index.html.twig), rendered with no field wrapper | [`Hidden::toEmbeddedHtml()`](../../../vendor/filament/forms/src/Components/Hidden.php) | done | — | [semantics](#nothing-wraps-the-input-and-nothing-should) |
+| [`id` / `data-model` binding](../../../packages/forms/templates/partials/Hidden/index.html.twig) | [`Hidden::toEmbeddedHtml()`](../../../vendor/filament/forms/src/Components/Hidden.php) | done | — | — |
+| [State rendered server-side into `value`](../../../packages/forms/templates/partials/Hidden/index.html.twig) | [`Hidden::toEmbeddedHtml()`](../../../vendor/filament/forms/src/Components/Hidden.php) | done | — | [diverges](#the-value-attribute-is-rendered-server-side-and-never-omitted) |
+| [`extraAttributes()` merged onto the input](../../../packages/forms/templates/partials/Hidden/index.html.twig) | [`Hidden::toEmbeddedHtml()`](../../../vendor/filament/forms/src/Components/Hidden.php) | done | — | — |
+| [No `name` attribute](../../../packages/forms/templates/partials/Hidden/index.html.twig) | [`Hidden::toEmbeddedHtml()`](../../../vendor/filament/forms/src/Components/Hidden.php) | done | — | [semantics](#the-input-carries-no-name-attribute) |
+| `$publishedViewOverrideCheckPath` | [`Components/Hidden.php`](../../../vendor/filament/forms/src/Components/Hidden.php) | skipped | — | [diverges](toggle-buttons.md#there-is-nothing-to-publish-a-view-override-against) |
 
 ## Semantics
 
@@ -76,6 +71,6 @@ The state arrives back through the same `data-model` write path as any other fie
 Filament emits only `wire:model` and lets Livewire fill the input once it boots.
 The port renders `value: component.getState ?? ''`, so a server-rendered edit page carries the stored value before any JavaScript runs — the same class of addition as the [`checked` attribute](checkbox.md#the-checked-attribute-is-rendered-server-side) on `Checkbox` and the `value` on [`TextInput`](../../../packages/forms/templates/partials/TextInput/index.html.twig).
 
-The `?? ''` is the load-bearing half.
-`getState()` is null for an unset field, and a **missing** `value` attribute is not the same as `value=""` to idiomorph, which will not reset a user-typed value against an attribute that isn't there.
-Dropping the coalesce would leave a stale client value in place across a re-render on exactly the field whose value nobody can see.
+The `?? ''` renders an unset field as `value=""` rather than dropping the attribute, since `getState()` is null there and `attrs()` drops a null.
+Idiomorph takes two different branches for the two: a new input with no `value` attribute has the old element's value cleared and its attribute removed, while one carrying `value` is compared and updated only when it differs.
+On a hidden input both branches end at the same empty value, because its `value` property writes through to the attribute, so the coalesce keeps the markup in step with `TextInput`'s rather than changing what a re-render leaves behind.

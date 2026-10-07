@@ -1,5 +1,5 @@
 ---
-description: The overridable icon slots the notifications package exposes, ported from Filament's `View\NotificationsIconAlias` (the `View\` → `Twig\` segment is… (draft)
+description: The overridable icon aliases the notifications package exposes, ported from Filament's `View\NotificationsIconAlias`.
 ports:
   - vendor/filament/notifications/src/View/NotificationsIconAlias.php
 owns:
@@ -7,9 +7,10 @@ owns:
 ---
 # NotificationsIconAlias (notifications)
 
-[`Sylament\Notifications\Twig\NotificationsIconAlias`](../../../packages/notifications/src/Twig/NotificationsIconAlias.php) — the overridable icon slots the notifications package exposes, ported from Filament's [`View\NotificationsIconAlias`](../../../vendor/filament/notifications/src/View/NotificationsIconAlias.php) (the `View\` → `Twig\` segment is the systematic Blade → Twig translation, recorded in [translations.md](../translations.md#namespace-segments)).
+[`Sylament\Notifications\Twig\NotificationsIconAlias`](../../../packages/notifications/src/Twig/NotificationsIconAlias.php) holds the overridable icon slots the notifications package exposes, ported from Filament's [`View\NotificationsIconAlias`](../../../vendor/filament/notifications/src/View/NotificationsIconAlias.php) (the `View\` → `Twig\` segment is the systematic Blade → Twig translation, recorded in [translations.md](../translations.md#namespace-segments)).
 
 An alias is a name an application can register an icon override for under [`sylament.icons`](../support/icon-manager.md); it does nothing until a template passes it to `generateIconHtml()`, which is why the constant set grows with the surface that renders the icons rather than up front.
+Every shipped constant is read by [the toast template](../../../packages/notifications/templates/partials/Notification/index.html.twig): the status ones through the `statusAliases` map handed to `generateIconHtml()`, and the close-button one on the `IconButton` tag.
 
 ## Surface
 
@@ -22,26 +23,21 @@ An alias is a name an application can register an icon override for under [`syla
 | [`NOTIFICATION_WARNING`](../../../packages/notifications/src/Twig/NotificationsIconAlias.php) | [`NotificationsIconAlias`](../../../vendor/filament/notifications/src/View/NotificationsIconAlias.php) | done | — | [diverges](#the-alias-values-drop-filaments-package-prefix) |
 | `DATABASE_MODAL_EMPTY_STATE` | [`NotificationsIconAlias`](../../../vendor/filament/notifications/src/View/NotificationsIconAlias.php) | blocked | the database-notifications panel | [detail](#the-sixth-constant-waits-for-the-panel-that-renders-it) |
 
-All five shipped constants are read by [the toast template](../../../packages/notifications/templates/partials/Notification/index.html.twig) — the four status ones through the `statusAliases` map handed to `generateIconHtml()`, and the close-button one on the `IconButton` tag — so every constant that ships is overridable end to end.
-Two of those paths are exercised by [`NotificationRenderTest`](../../../packages/notifications/tests/Integration/NotificationRenderTest.php): the status fallback renders the aliased icon's SVG, and an explicit `icon()` wins over it, which is the branch that passes `null` as the alias so a user-set icon is never re-aliased.
-
 ## Details
 
 ### The sixth constant waits for the panel that renders it
 
-`DATABASE_MODAL_EMPTY_STATE = 'notifications::database.modal.empty-state'` names the icon of the empty state inside the database-notifications modal — the one Filament constant with no toast-side consumer.
-Declaring it now would ship a name an application could register an override for that nothing would ever read.
+`DATABASE_MODAL_EMPTY_STATE = 'notifications::database.modal.empty-state'` names the icon of the empty state inside the database-notifications modal, the one Filament constant with no toast-side consumer.
+Declaring it before the panel would ship a name an application could register an override for that nothing ever reads.
 
-**Next step:** add it in the change that ports the panel's empty state, with the de-prefixed value the five below already use (`database.modal.empty-state`).
-This is the growth order [`SupportIconAlias`](../support/support-icon-alias.md#pagination-rtl-aliases) and [`TablesIconAlias`](../tables/tables-bundle.md#the-alias-set-is-fifteen-constants-of-filaments-23) already follow.
+**Next step:** add it in the change that ports the panel's empty state, with the de-prefixed value the shipped constants use (`database.modal.empty-state`).
+This is the growth order [`SupportIconAlias`](../support/support-icon-alias.md#pagination-rtl-aliases) and [`TablesIconAlias`](../tables/tables-bundle.md#the-alias-set-is-fifteen-constants-of-filaments-23) follow.
 
 ## Divergences
 
 ### The alias values drop Filament's package prefix
 
-Filament's values are namespaced by package — `notifications::notification.close-button`, `notifications::notification.danger`, and so on.
+Filament's values are namespaced by package: `notifications::notification.close-button`, `notifications::notification.danger`, and so on.
 Sylament's are the bare `<component>.<part>` form: `notification.close-button`, `notification.danger`, `notification.info`, `notification.success`, `notification.warning`.
-
-Filament is inconsistent about this — `SupportIconAlias`'s values are bare (`modal.close-button`, `section.collapse-button`) while every other package namespaces its own — and Sylament follows the bare form throughout, so an application registering overrides under [`sylament.icons`](../support/icon-manager.md) reads one scheme rather than two.
-The **constant** names are untouched, which is how both codebases write them at every call site, so the difference is invisible to anyone who does not hardcode the string.
-This is the same decision tables' `EMPTY_STATE` [already recorded](../tables/tables-bundle.md#the-empty-state-alias-value-drops-filaments-package-prefix), and both are in the [rename table](../renames.md#renames).
+The **constant** names are untouched, so the difference is invisible to anyone who does not hardcode the string.
+Why every package drops the prefix is recorded once, in [renames.md](../renames.md#icon-alias-values-drop-filaments-package-prefix).

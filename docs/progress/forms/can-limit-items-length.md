@@ -1,20 +1,17 @@
 ---
-description: 'The item-count bounds a multi-value field carries: `minItems()` / `maxItems()` configure them, `getMinItems()` / `getMaxItems()` read them back (each… (draft)'
+description: The `minItems()` / `maxItems()` item-count bounds and the raw-state `getItemsCount()` of Repeater, CheckboxList and multiple Select.
 ports:
   - vendor/filament/forms/src/Components/Concerns/CanLimitItemsLength.php
-  - vendor/filament/forms/src/Components/Repeater.php
-  - vendor/filament/forms/src/Components/CheckboxList.php
-  - vendor/filament/forms/src/Components/Select.php
 owns:
   - packages/forms/src/Components/Concerns/CanLimitItemsLength.php
 ---
 # CanLimitItemsLength (forms)
 
-`Sylament\Forms\Components\Concerns\CanLimitItemsLength` — the item-count bounds a multi-value field carries: `minItems()` / `maxItems()` configure them, `getMinItems()` / `getMaxItems()` read them back (each closure-evaluable), and `getItemsCount()` counts the field's raw state.
+`Sylament\Forms\Components\Concerns\CanLimitItemsLength` holds the item-count bounds a multi-value field carries: `minItems()` / `maxItems()` configure them, `getMinItems()` / `getMaxItems()` read them back (each closure-evaluable), and `getItemsCount()` counts the field's raw state.
 
-Three fields compose it.
-`Repeater` was the first, while the trait was still folded into [`repeater.md`](repeater.md); `CheckboxList` is the second consumer, which is what promoted it to a file of its own per [one row per file](../../internals/trail.md#one-file-per-piece-of-code-one-row-per-feature); and [`Select`](select.md) is the third, taking `maxItems()` for its `multiple()` chips control (the JS control refuses a further pick and shows `getMaxItemsMessage()`) and both bounds as a `Count` in the same shape as the checkbox list's.
-Filament composes the same trait on all three fields, unchanged between them.
+[`Repeater`](repeater.md), [`CheckboxList`](checkbox-list.md) and [`Select`](select.md) compose it.
+`Select` takes `maxItems()` for its `multiple()` chips control (the JS control refuses a further pick and shows `getMaxItemsMessage()`) and both bounds as a `Count` in the same shape as the checkbox list's.
+Filament composes the same trait on those three plus `Builder`, `TableSelect` and `ModalTableSelect`, which have no port, unchanged between them.
 
 ## Surface
 
@@ -22,10 +19,6 @@ Filament composes the same trait on all three fields, unchanged between them.
 | --- | --- | --- | --- | --- |
 | `minItems()` / `maxItems()` / `getMinItems()` / `getMaxItems()` — the bounds and their closure arms | [`Concerns/CanLimitItemsLength.php`](../../../vendor/filament/forms/src/Components/Concerns/CanLimitItemsLength.php) | done | — | [diverges](#the-setters-register-no-rules-the-composing-field-builds-the-constraint) |
 | `getItemsCount()` — the raw-state count | [`Concerns/CanLimitItemsLength.php`](../../../vendor/filament/forms/src/Components/Concerns/CanLimitItemsLength.php) | done | — | — |
-
-Coverage: the null default, both setters, closure bounds evaluated against each other, and the count over a wired raw-state slice — including the non-array arm answering `0` — by [`CanLimitItemsLengthTest`](../../../packages/forms/tests/Unit/Components/Concerns/CanLimitItemsLengthTest.php).
-Each composer covers what it does with the bounds in its own suite: the repeater's `isAddable()` gate and its `Count` constraint in [`repeater.md`](repeater.md#surface), the checkbox list's in [`checkbox-list.md`](checkbox-list.md), the select's `Count` and its `maxItemsMessage()` substitution in [`select.md`](select.md).
-
 ## Divergences
 
 ### The setters register no rules; the composing field builds the constraint

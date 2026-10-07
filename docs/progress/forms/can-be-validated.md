@@ -224,7 +224,7 @@ Here two non-numeric strings compare lexicographically and mixed types coerce.
 A consumer wanting Laravel's length semantics writes it with `Length` or a `Callback`.
 Messages are Symfony's stock ones, which interpolate `{{ compared_value }}` where Laravel's interpolate `:value`.
 
-A blank, null or unresolvable sibling drops the constraint rather than failing the field — the same ruling the [date family](date-comparison.md#a-blank-sibling-skips-the-comparison-where-laravel-fails-the-field) made, and Laravel's own answer for a missing sibling is direction-dependent (passes `after`, fails `before`, fails `gt`), so there is nothing coherent to be faithful to.
+A blank, null or unresolvable sibling drops the constraint rather than failing the field — the same ruling the [date family](date-comparison.md#a-blank-sibling-skips-the-comparison-where-laravels-verdict-depends-on-the-operator) made, and Laravel's own answer for a missing sibling is direction-dependent (passes `after`, fails `before`, fails `gt`), so there is nothing coherent to be faithful to.
 Filament's `gt('5')` — a numeric literal rather than a field name — always fails upstream and resolves to a missing sibling here, i.e. no constraint; literal bounds are [`minValue()` / `maxValue()`](text-input.md#the-value-bounds-are-comparison-constraints-not-laravels-min-and-max).
 
 **One class-key cost is real.**

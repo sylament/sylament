@@ -1,10 +1,10 @@
 ---
-description: 'The row of buttons below a page''s form: the declaration hook, the bound and memoised list, the one `Actions` component that carries it, the named… (draft)'
+description: 'The row of buttons below a page''s form: InteractsWithFormActions, the form and table template variants, and the record pages'' Save, Create and Cancel actions.'
 ports:
   - vendor/filament/filament/src/Pages/Concerns/InteractsWithFormActions.php
   - vendor/filament/filament/src/Resources/Pages/CreateRecord.php
   - vendor/filament/filament/src/Resources/Pages/EditRecord.php
-  - vendor/filament/schemas/src/Components/Actions.php
+  - vendor/filament/filament/src/Pages/BasePage.php
 owns:
   - packages/panels/src/Pages/Concerns/InteractsWithFormActions.php
   - packages/panels/templates/partials/EditRecord/
@@ -12,39 +12,36 @@ owns:
 ---
 # Form actions (panels)
 
-[`Sylament\Panels\Pages\Concerns\InteractsWithFormActions`](../../../packages/panels/src/Pages/Concerns/InteractsWithFormActions.php) — the row of buttons below a page's form: the declaration hook, the bound and memoised list, the one `Actions` component that carries it, the named `formActions` page schema the template renders it through, the submit method name both the `<form>` element and the submit action read, and the process-global alignment statics.
-Beside it sit the two template variants the concern exists for — [`partials/Page/form.html.twig`](../../../packages/panels/templates/partials/Page/form.html.twig) and [`partials/Page/table.html.twig`](../../../packages/panels/templates/partials/Page/table.html.twig) — and the create/edit pages' own `getFormActions()`, which is where the Save, Create and Cancel buttons the toolkit ships are declared.
+[`InteractsWithFormActions`](../../../packages/panels/src/Pages/Concerns/InteractsWithFormActions.php) is the row of buttons below a page's form: the declaration hook, the bound and memoised list, the one `Actions` component that carries it, the named `formActions` page schema the template renders it through, the submit method name both the `<form>` element and the submit action read, and the process-global alignment statics.
+Beside it sit the two template variants the concern exists for, [`partials/Page/form.html.twig`](../../../packages/panels/templates/partials/Page/form.html.twig) and [`partials/Page/table.html.twig`](../../../packages/panels/templates/partials/Page/table.html.twig), and the create and edit pages' own `getFormActions()`, which declare the Save, Create and Cancel buttons the toolkit ships.
 
-It ports [`Pages/Concerns/InteractsWithFormActions.php`](../../../vendor/filament/filament/src/Pages/Concerns/InteractsWithFormActions.php) **by name only**: Filament's trait is dead code in v5 — nothing composes it and its `getFormActions()` is `protected` while its own would-be callers are not — so the port keeps the name and fills it with the eight-method shape Filament's five real consumers hand-roll on their pages.
+It ports [`Pages/Concerns/InteractsWithFormActions.php`](../../../vendor/filament/filament/src/Pages/Concerns/InteractsWithFormActions.php) by name only: nothing in Filament composes that trait (it carries `@phpstan-ignore trait.unused`), and every real consumer hand-rolls its own protected `getFormActions()` and helpers, so the port keeps the name and fills it with the shape those consumers share.
+The alignment, sticky and inline-label statics live on Filament's `BasePage`, and here on the trait.
 
 ## Surface
-
-Every point of the concern and of the two variants.
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
 | [`getFormActions()`](../../../packages/panels/src/Pages/Concerns/InteractsWithFormActions.php) | the same, `protected` on every Filament consumer | done | — | — |
-| [`getCachedFormActions()`](../../../packages/panels/src/Pages/Concerns/InteractsWithFormActions.php) + `$cachedFormActions` | no counterpart — Filament binds at boot through `cacheTraitActions()` | done | — | [diverges](custom-pages.md#header-actions-are-bound-lazily-rather-than-at-boot) — the same lazy walk, one list over |
+| [`getCachedFormActions()`](../../../packages/panels/src/Pages/Concerns/InteractsWithFormActions.php) + `$cachedFormActions` | no counterpart — Filament binds at boot through `cacheTraitActions()` | done | — | [diverges](custom-pages.md#header-actions-are-bound-lazily-rather-than-at-boot) |
 | [`getFormActionsContentComponent()`](../../../packages/panels/src/Pages/Concerns/InteractsWithFormActions.php) | [`CreateRecord::getFormActionsContentComponent()`](../../../vendor/filament/filament/src/Resources/Pages/CreateRecord.php) | done | — | [semantics](#the-row-is-never-rendered-standalone-it-hangs-under-a-named-page-schema) |
 | [`formActions(Schema): Schema`](../../../packages/panels/src/Pages/Concerns/InteractsWithFormActions.php) | no counterpart — Filament's row is a child of `content()` | done | — | [semantics](#the-row-is-never-rendered-standalone-it-hangs-under-a-named-page-schema) |
 | [`hasFullWidthFormActions()`](../../../packages/panels/src/Pages/Concerns/InteractsWithFormActions.php) | the same | done | — | — |
 | [`getSubmitFormLiveComponentMethodName()`](../../../packages/panels/src/Pages/Concerns/InteractsWithFormActions.php) | `getSubmitFormLivewireMethodName()` | done | — | [renamed](../translations.md#idiom) · [semantics](#one-method-name-drives-both-the-form-element-and-the-submit-action) |
-| [`$formActionsAlignment`](../../../packages/panels/src/Pages/Concerns/InteractsWithFormActions.php) + `getFormActionsAlignment()` + `formActionsAlignment()` + `alignFormActionsStart()` / `Center()` / `End()` | the same six | done | — | [semantics](#the-alignment-statics-are-process-global-exactly-as-filaments-are) |
+| [`$formActionsAlignment`](../../../packages/panels/src/Pages/Concerns/InteractsWithFormActions.php) + `getFormActionsAlignment()` + `formActionsAlignment()` + `alignFormActionsStart()` / `Center()` / `End()` | the same six on [`BasePage.php`](../../../vendor/filament/filament/src/Pages/BasePage.php) | done | — | [semantics](#the-alignment-statics-are-process-global-exactly-as-filaments-are) |
 | [`partials/Page/form.html.twig`](../../../packages/panels/templates/partials/Page/form.html.twig) — the `<form>`, `form_errors`, `renderSchema('form')`, `form_actions`, `after_form` | no counterpart — v5's create and edit pages have no view; `content()` returns a `Form` wrapping an `EmbeddedSchema` and the row | done | — | [diverges](#the-form-element-stays-in-twig-because-the-schemas-form-component-is-unported) |
 | [`partials/Page/table.html.twig`](../../../packages/panels/templates/partials/Page/table.html.twig) — the tabs strip and `renderTable()` | same — `ListRecords::content()` returns an `EmbeddedTable` | done | — | [semantics](#the-table-variant-presumes-two-host-traits-and-says-so-only-by-failing) |
-| [`partials/EditRecord/index.html.twig`](../../../packages/panels/templates/partials/EditRecord/index.html.twig) — the seven-line child of the form variant | same | done | — | [has-relation-managers.md](has-relation-managers.md#content-ships-in-a-narrow-shape) |
+| [`partials/EditRecord/index.html.twig`](../../../packages/panels/templates/partials/EditRecord/index.html.twig) — the child of the form variant | same | done | — | [has-relation-managers.md](has-relation-managers.md#content-ships-in-a-narrow-shape) |
 | [`CreateRecord::getFormActions()`](../../../packages/panels/src/Resources/Pages/CreateRecord.php) + `getCreateFormAction()` | the same two | done | — | — |
 | [`EditRecord::getFormActions()`](../../../packages/panels/src/Resources/Pages/EditRecord.php) + `getSaveFormAction()` | the same two | done | — | [semantics](#one-method-name-drives-both-the-form-element-and-the-submit-action) |
 | `getCancelFormAction()` on both record pages | the same, over `alpineClickHandler()` | done | — | [diverges](#the-cancel-action-links-to-the-index-where-filament-goes-back-in-history) |
-| `inlineLabels()` / `hasInlineLabels()` | the pair on Filament's trait | skipped | — | [diverges](#inlinelabels-is-not-ported-because-nothing-reads-it) |
+| `inlineLabels()` / `hasInlineLabels()` | the pair on [`BasePage.php`](../../../vendor/filament/filament/src/Pages/BasePage.php) | skipped | — | [diverges](#inlinelabels-is-not-ported-because-nothing-reads-it) |
 | `hasFormWrapper()` | the same | skipped | — | [diverges](#hasformwrapper-is-not-ported-because-the-form-element-is-the-variants) |
-| `alignFormActionsLeft()` / `alignFormActionsRight()` | the two `@deprecated` aliases | skipped | — | the port ships no deprecated Filament surface — [renames.md](../renames.md#renames) |
-| `Actions::sticky()` on the row (`areFormActionsSticky()`, `stickyFormActions()`) | the same | blocked | the Stimulus sticky controller | [schemas/actions.md](../schemas/actions.md#sticky-mode-is-not-ported) |
-| `keyBindings(['mod+s'])` on the submit action | [`Actions/Concerns/HasKeyBindings.php`](../../../vendor/filament/actions/src/Concerns/HasKeyBindings.php) | todo | — | [actions README](../actions/README.md) — a mousetrap-shaped Stimulus controller |
+| `alignFormActionsLeft()` / `alignFormActionsRight()` | the two `@deprecated` aliases on [`BasePage.php`](../../../vendor/filament/filament/src/Pages/BasePage.php) | skipped | — | [deprecated for `alignFormActionsStart()` / `alignFormActionsEnd()`](../renames.md#renames) |
+| `Actions::sticky()` on the row (`areFormActionsSticky()`, `stickyFormActions()`) | the pair on [`BasePage.php`](../../../vendor/filament/filament/src/Pages/BasePage.php) | blocked | the Stimulus sticky controller | [schemas/actions.md](../schemas/actions.md#sticky-mode-is-not-ported) |
+| `keyBindings(['mod+s'])` on the submit action | `getCreateFormAction()` / `getSaveFormAction()` | blocked | `HasKeyBindings` | [actions README](../actions/README.md) |
 | `previousUrl` and the history-back cancel | `public ?string $previousUrl` | skipped | — | [diverges](manage-related-records.md#previousurl-is-not-ported-anywhere-in-the-port) |
 | _rest not audited yet_ | — | — | — | — |
-
-Covered by [`Unit/Pages/Concerns/InteractsWithFormActionsTest`](../../../packages/panels/tests/Unit/Pages/Concerns/InteractsWithFormActionsTest.php) (the empty default and its alignment, the binding-and-registration walk, the once-only read, the one keyed `Actions` component, the schema it is wrapped in, and the alignment static carrying across pages and back), [`Integration/Twig/PageRenderTest`](../../../packages/panels/tests/Integration/Twig/PageRenderTest.php) (the rendered row on a hand-written page, and the live round trip that mounts a closure form action through `schemaComponent: formActions.form-actions`), and [`Integration/Resources/Pages/CreateRecordTest`](../../../packages/panels/tests/Integration/Resources/Pages/CreateRecordTest.php) / [`EditRecordTest`](../../../packages/panels/tests/Integration/Resources/Pages/EditRecordTest.php) (the submit button under `form.sy-pa-form .sy-sc-actions`, and the gray cancel link beside it).
 
 ## Semantics
 
@@ -86,17 +83,17 @@ The presumption is stated here rather than guarded in the template: a Twig-side 
 
 ### The alignment statics are process-global, exactly as Filament's are
 
-`public static string|Alignment $formActionsAlignment = Alignment::Start` and its four setters are **statics on the page class**, so `alignFormActionsEnd()` called anywhere moves every page of that class for the rest of the process.
-That is Filament's own shape and is kept; the cost is that a test setting one must reset it, which [`InteractsWithFormActionsTest`](../../../packages/panels/tests/Unit/Pages/Concerns/InteractsWithFormActionsTest.php) does.
+`public static string|Alignment $formActionsAlignment = Alignment::Start` and its four setters are statics declared once, through the trait, on `Pages\Page`, so `alignFormActionsEnd()` called on any page class moves every page that does not redeclare the static, for the rest of the process.
+That is Filament's own shape, where the static sits on `BasePage`, and is kept; the cost is that a test setting one must reset it.
 
 ## Divergences
 
 ### The form element stays in Twig, because the schemas `Form` component is unported
 
 Filament v5 gives its create and edit pages no view at all: `content()` returns a schema holding a [`Form`](../../../vendor/filament/schemas/src/Components/Form.php) component wrapping an `EmbeddedSchema` and the form `Actions`, and the `<form>` element is that component's own markup, with `livewireSubmitHandler()` naming the action.
-`Form` is [todo in schemas](../schemas/README.md), so the `<form>` here is written in Twig — the arrangement the record pages already used, hoisted into one variant instead of repeated in three partials.
+`Form` is [todo in schemas](../schemas/README.md), so the `<form>` here is written in Twig, in one variant the record pages share.
 
-The variant is a strict subset rather than a different design: the same three blocks a `Form` component would expose (`form_errors`, `form_actions`, `after_form`) are named blocks, so a page customising one today keeps that override when the component lands and the template's inner half is replaced.
+The variant is a strict subset rather than a different design: the same three blocks a `Form` component would expose (`form_errors`, `form_actions`, `after_form`) are named blocks, so a page customising one keeps that override when the component lands and the template's inner half is replaced.
 The record-level error outlet inside `form_errors` is required rather than decorative — a class-level violation that names no field folds onto the schema's own state path, which belongs to no input, so without it a refused submit appears to do nothing.
 
 ### The cancel action links to the index where Filament goes back in history
@@ -111,11 +108,10 @@ It is also what makes the button a link rather than a button, so middle-click an
 **The default cancel URL fails fast on a resource that registers no index page.**
 `Resource::getIndexUrl()` mints the `index` route, and a resource without one raises a `LogicException` naming the resource and pointing at `getIndexUrl()` the moment the form row is built — before any route is consulted.
 Filament fails identically — its `CanGenerateUrls::getUrl(null)` fails on the same missing route, there as a `RouteNotFoundException` — so this is parity rather than a new constraint, but it is the one shape a custom record page hits: a page whose resource has no listing overrides `getFormActions()` to return the submit action alone.
-The six relation-manager fixture pages in the panels suite do exactly that, which is what keeps them mountable.
 
 ### `inlineLabels()` is not ported, because nothing reads it
 
-Filament's trait carries `inlineLabels(bool)` / `hasInlineLabels()`, a page-level default its `Schema::inlineLabel()` consumers read.
+Filament's `BasePage` carries `inlineLabels(bool)` / `hasInlineLabels()`, a page-level default its record pages hand to `Schema::inlineLabel()`.
 `Schema::inlineLabel()` has no port here, so a setter on the page would write a flag nothing consults.
 It returns with the schema-level surface, not before.
 
@@ -123,4 +119,4 @@ It returns with the schema-level surface, not before.
 
 Filament's flag lets a page render its form schema **without** the surrounding `<form>`, for a page whose submit lives elsewhere.
 Here the `<form>` is the template variant's, not the schema's: a page that wants no form element points `$template` at the base chrome instead of the form variant and renders its schema from its own `content` block.
-That is the same capability reached through the seam this port already has, so a second flag would be a second way to say it.
+That is the same capability reached through a seam the port has, so a second flag would be a second way to say it.

@@ -114,7 +114,7 @@ Swallowing the parse failure to a `null` would render no `min` attribute while t
 
 The throw's reach has two deliberate limits.
 It fires only on a control **without a time part**, because only that branch parses; a `datetime-local` bound is passed to the attribute verbatim and the browser ignores what it cannot read.
-And the constraint half stays silent whatever the bound: `minDate()` registers an `afterOrEqual()` boundary, whose builder tests the string with `strtotime()` and routes anything it cannot read to [the field-name arm](date-comparison.md#the-date-comparison-family-builds-constraints-where-filament-builds-rule-strings), which resolves nothing and [drops the constraint](date-comparison.md#a-blank-sibling-skips-the-comparison-where-laravel-fails-the-field).
+And the constraint half stays silent whatever the bound: `minDate()` registers an `afterOrEqual()` boundary, whose builder tests the string with `strtotime()` and routes anything it cannot read to [the field-name arm](date-comparison.md#the-date-comparison-family-builds-constraints-where-filament-builds-rule-strings), which resolves nothing and [drops the constraint](date-comparison.md#a-blank-sibling-skips-the-comparison-where-laravels-verdict-depends-on-the-operator).
 That skip is the designed behaviour for a sibling reference and is not narrowed here, so the attribute path is where a bad literal surfaces.
 
 ### The `value` attribute reads the raw state, not the cast one

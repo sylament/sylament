@@ -1,18 +1,15 @@
 ---
-description: 'One owner record''s association as a page of its own: the routed sibling of a relation manager, reached through the record''s sub-navigation, and the… (draft)'
+description: 'ManageRelatedRecords, one owner record''s association as a routed page: the sibling of a relation manager and the listing of a nested resource.'
 ports:
   - vendor/filament/filament/src/Resources/Pages/ManageRelatedRecords.php
-  - vendor/filament/filament/src/Resources/Concerns/InteractsWithRelationshipTable.php
-  - vendor/filament/filament/src/Resources/Pages/ListRecords.php
 owns:
   - packages/panels/src/Resources/Pages/ManageRelatedRecords.php
 ---
 # ManageRelatedRecords (panels)
 
-[`Sylament\Panels\Resources\Pages\ManageRelatedRecords`](../../../packages/panels/src/Resources/Pages/ManageRelatedRecords.php) — one owner record's association as a **page** of its own: the routed sibling of a [relation manager](relation-manager.md), reached through the record's [sub-navigation](has-sub-navigation.md), and the listing a [nested resource](nested-resources.md)'s records are reached through.
-It ports [`Resources/Pages/ManageRelatedRecords.php`](../../../vendor/filament/filament/src/Resources/Pages/ManageRelatedRecords.php).
+[`ManageRelatedRecords`](../../../packages/panels/src/Resources/Pages/ManageRelatedRecords.php) is one owner record's association as a **page** of its own: the routed sibling of a [relation manager](relation-manager.md), reached through the record's [sub-navigation](has-sub-navigation.md), and the listing a [nested resource](nested-resources.md)'s records are reached through.
 
-It is a resource page that is also a relationship-table host: it extends [`Resources\Pages\Page`](resource-pages.md) — so it carries the actions host, the breadcrumb chain and the parent-record chain — and composes [`InteractsWithRecord`](interacts-with-record.md) for the record it is opened on and [`InteractsWithRelationshipTable`](interacts-with-relationship-table.md) for the association it lists, with tables' `HasTable` and schemas' `HasSchemas` beside them.
+It is a resource page that is also a relationship-table host: it extends [`Resources\Pages\Page`](resource-pages.md) — so it carries the actions host, the breadcrumb chain and the parent-record chain — and composes [`InteractsWithRecord`](interacts-with-record.md) for the record it is opened on and [`InteractsWithRelationshipTable`](interacts-with-relationship-table.md) for the association it lists, with tables' `HasTable` beside them; schemas' `HasSchemas` arrives through the page base.
 Its record **is** the relationship's owner, which is the whole identity of the class: `getOwnerRecord()` is `getRecord()`.
 
 A page is three statics and nothing else — for an `Article` whose `sections` also have a resource of their own:
@@ -35,7 +32,7 @@ registered as `'sections' => ManageArticleSections::route('/{record}/sections')`
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
-| The class — a resource page composing `HasSchemas`, `HasTable`, `InteractsWithRecord`, `InteractsWithRelationshipTable` | the same composition, plus `HasRelationManagers` | done | — | [diverges](#the-class-is-abstract-and-hosts-no-relation-managers-of-its-own) |
+| [The class](../../../packages/panels/src/Resources/Pages/ManageRelatedRecords.php) — a resource page composing `HasTable`, `InteractsWithRecord`, `InteractsWithRelationshipTable` | the same composition, plus `HasRelationManagers` | done | — | [diverges](#the-class-is-abstract-and-hosts-no-relation-managers-of-its-own) |
 | [`mount()`](../../../packages/panels/src/Resources/Pages/ManageRelatedRecords.php) | `mount(int \| string $record)` | done | — | [diverges](nested-resources.md#the-chain-rides-one-liveprop-of-keys-assigned-inside-mount) |
 | [`getOwnerRecord()`](../../../packages/panels/src/Resources/Pages/ManageRelatedRecords.php) | same | done | — | — |
 | [`getTitle()`](../../../packages/panels/src/Resources/Pages/ManageRelatedRecords.php) | same | done | — | [diverges](#the-title-is-a-literal-not-a-translation-key) |
@@ -48,39 +45,28 @@ registered as `'sections' => ManageArticleSections::route('/{record}/sections')`
 | [`getDefaultActionRelationship()`](../../../packages/panels/src/Resources/Pages/ManageRelatedRecords.php) | same | done | — | — |
 | [`getDefaultActionSchemaResolver()`](../../../packages/panels/src/Resources/Pages/ManageRelatedRecords.php) | same | done | — | [semantics](#the-schema-resolver-is-the-hosts-not-the-tiers) |
 | [`getDefaultActionUrl()`](../../../packages/panels/src/Resources/Concerns/InteractsWithRelationshipTable.php) | the copy on this class | done | — | [diverges](interacts-with-relationship-table.md#the-url-arms-are-hoisted-once-and-carry-the-owner-explicitly) |
-| `schemas()` — **no longer declared here**; [`Pages\Page::schemas()`](../../../packages/panels/src/Pages/Page.php) answers `[]` for every page | no counterpart — Livewire has no schema-discovery list | done | — | [semantics](custom-pages.md#the-empty-discovery-list-is-mandatory-and-so-is-its-removal-from-every-leaf) — the override went when the base took the answer over, and re-`use`ing `HasSchemas` on this class would resolve back to `['schema']` and 500 the page on its first render |
+| `schemas()`, inherited from [`Pages\Page`](../../../packages/panels/src/Pages/Page.php) | no counterpart — Livewire has no schema-discovery list | done | — | [semantics](custom-pages.md#the-empty-discovery-list-is-mandatory-and-so-is-its-removal-from-every-leaf) |
 | [`$template`](../../../packages/panels/templates/partials/Page/table.html.twig) | `content()` — a `Group` of tabs, render hooks and an `EmbeddedTable` | done | — | [diverges](#the-page-renders-a-template-not-a-content-schema) |
 | The sub-navigation band on the partial | the band block in `page/index.blade.php` | done | — | [has-sub-navigation.md](has-sub-navigation.md) |
-| `getDefaultActionSuccessRedirectUrl()`'s table-context narrowing | same | todo | — | [detail](#the-table-context-redirect-narrowing-is-not-ported) |
+| `getDefaultActionSuccessRedirectUrl()`, inherited from `HasActions` | the table-context narrowing on this class | done | — | [semantics](#filaments-redirect-narrowing-answers-null-for-every-action-as-the-inherited-hook-does) |
 | `getPageClass()` | same | skipped | — | [diverges](#getpageclass-has-no-reader-here) |
-| `getPageClasses()` — the record-keyed root classes | same | skipped | — | [diverges](#the-root-carries-one-page-class-not-three) |
+| [`getPageClasses()`](../../../packages/panels/src/Resources/Pages/ManageRelatedRecords.php) — the page, resource-slug and record-key root classes | same | done | — | — |
 | `previousUrl` | `public ?string $previousUrl` | skipped | — | [diverges](#previousurl-is-not-ported-anywhere-in-the-port) |
 | `getRelationManagers()` + `HasRelationManagers` on this page | same | skipped | — | [diverges](#the-class-is-abstract-and-hosts-no-relation-managers-of-its-own) |
-| The record-filter tabs (`$activeTab`, the tab strip) | `HasTabs`, through the tier | done | — | [has-tabs.md](has-tabs.md) — composed through [`InteractsWithRelationshipTable`](interacts-with-relationship-table.md), so this page and a relation manager offer the same filters; the strip is built at render time rather than declared in a `content()` schema |
-| [`getTableUrlMapping()`](../../../packages/panels/src/Resources/Pages/ManageRelatedRecords.php) — `page` (identifier-prefixed), `sort`, `search`, `filters`, `grouping`, `tab` | the `#[Url(as: …)]` block redeclared on the page | done | — | [has-table.md](../tables/has-table.md#the-url-binding-is-a-per-prop-liveprop-modifier-opted-into-by-the-page) · the prefix comes from [the host hook](interacts-with-relationship-table.md#the-table-side-querystringidentifier-is-deliberately-not-stamped), never from the `Table` setter |
-| The `reordering` URL bind | `#[Url(as: 'reordering')]` | skipped | — | Reordering shipped and the bind [deliberately did not](../tables/has-table.md#the-url-binding-is-a-per-prop-liveprop-modifier-opted-into-by-the-page) — a transient UI mode rather than browsing state, and binding it would leave a permanent `reordering=0` in every URL |
-| The `grouping` URL bind | `#[Url(as: 'grouping')]` | done | — | Unprefixed like every name but `page` — the mapping arm sits between `filters` and `tab`, Filament's own declaration order ([grouping.md](../tables/grouping.md#a-bookmarked-grouping-beats-a-selectable-default-group)). The **relation manager** stays unbound, as Filament's does |
-| `canAccess()` / `authorizeAccess()` / `hydrate()` and the authorization response hooks | the same cluster | todo | authorization | [detail](#the-page-is-reachable-by-anyone-who-can-reach-its-url) |
-| `getWidgetData()` and the widget half | same | todo | `sylament/widgets` | — |
-
-[`Integration/Resources/Pages/ManageRelatedRecordsTest`](../../../packages/panels/tests/Integration/Resources/Pages/ManageRelatedRecordsTest.php) mounts real pages over a fixture `Project`/`Task` pair on a panel of their own: the page rendering with the **related resource's** table (its columns, its record actions, only the owner's rows), the trail ending in the relationship title, the header create linking at the related create page and the rows linking at its edit page **under the same owner**, a delete through a table-context action, the two security pins (a table action naming another owner's record never mounts, and the scoped `getTableRecord()` underneath it), the record band on both sibling pages with the right item active on each, and both `getIndexUrl()` arms — the manage page answering when the key matches the relationship, and the parent's edit page answering when it does not.
-A second fixture page, whose related resource registers **no create page**, is what reaches the five host hooks at all: the header create mounts a modal labelled from the relationship table, creating through it joins the owner, the frame titles resolve three ways, and a table frame carries no owner record.
-A third, declaring no `$relatedResource`, pins that the modal opens on the page's own schema rather than erroring.
-The tier's own coverage is [interacts-with-relationship-table.md](interacts-with-relationship-table.md).
+| The record-filter tabs (`$activeTab`, the tab strip) | `HasTabs`, through the tier | done | — | [has-tabs.md](has-tabs.md) · [interacts-with-relationship-table.md](interacts-with-relationship-table.md) |
+| [`getTableUrlMapping()`](../../../packages/panels/src/Resources/Pages/ManageRelatedRecords.php) — `page` (identifier-prefixed), `sort`, `search`, `filters`, `grouping`, `tab` | the `#[Url(as: …)]` block redeclared on the page | done | — | [has-table.md](../tables/has-table.md#the-url-binding-is-a-per-prop-liveprop-modifier-opted-into-by-the-page) · [identifier](interacts-with-relationship-table.md#the-table-side-querystringidentifier-is-deliberately-not-stamped) |
+| The `reordering` URL bind | `#[Url(as: 'reordering')]` | skipped | — | [diverges](../tables/has-table.md#the-url-binding-is-a-per-prop-liveprop-modifier-opted-into-by-the-page) |
+| The `grouping` URL bind | `#[Url(as: 'grouping')]` | done | — | [grouping.md](../tables/grouping.md#a-bookmarked-grouping-beats-a-selectable-default-group) |
+| `canAccess()` / `authorizeAccess()` / `hydrate()` and the authorization response hooks | the same cluster | blocked | authorization | [detail](#the-page-is-reachable-by-anyone-who-can-reach-its-url) |
+| `getWidgetData()` and the widget half | same | blocked | `sylament/widgets` | — |
 
 ## Details
 
 ### The page is reachable by anyone who can reach its URL
 
-`canAccess()`, `authorizeAccess()` and the `hydrate()` re-check are not ported until authorization lands — so **a `GET` of the page's URL renders it, and every action on it runs**, gated by nothing but the record scoping.
+`canAccess()`, `authorizeAccess()` and the `hydrate()` re-check wait on authorization, so **a `GET` of the page's URL renders it, and every action on it runs**, gated by nothing but the record scoping.
 Filament's own `canAccess()` is the most interesting of the deferrals to write later: it forwards to the *related resource's* `canAccess()` when there is one, and otherwise asks the `viewAny` policy of the class the relationship targets.
 The parking is the same one every host in this port carries; it is listed here because a page has a URL, which a relation manager does not.
-
-### The table-context redirect narrowing is not ported
-
-Filament's `getDefaultActionSuccessRedirectUrl()` narrows the record page's: a **table-context** action returns null (a row delete must not redirect to the resource index), everything else falls through to `parent::`.
-Ours inherits the resource-page base's hook unchanged, and that base answers null for everything except a `DeleteAction` on [`EditRecord`](edit-record.md) — a class this page is not — so the observable behaviour today is identical: nothing this page mounts redirects.
-The override lands when the base's hook grows an arm this page would have to narrow; recording it keeps the divergence from being discovered as a bug later.
 
 ## Semantics
 
@@ -93,13 +79,18 @@ Four `getDefaultAction*` hooks discriminate, and all four use Filament's own spl
 - `getDefaultActionRecordTitle()` — null for the first two, the owner's title otherwise, so a modal heading on a page-level action names the owner.
 
 Reaching them at all takes a page-level action whose related resource registers no page for it: a table-mounted action short-circuits every one of them (the table answers the class, the label and the record before any host hook is consulted), and a related resource with a `create` page turns the trigger into a link before a modal exists.
-That is why the fixture set carries a second manage page built precisely that way.
 
 ### The schema resolver is the host's, not the tier's
 
 `getDefaultActionSchemaResolver()` is declared on this class rather than hoisted onto the relationship-table trait, matching Filament: Create and Edit resolve `$this->form(...)`, View resolves `$this->infolist($this->form($schema))`, and `RelationManager` keeps its own.
 The resolver is the **host's** action contract — each host decides which of its schemas an action opens — where the URL arms it sits beside are pure related-resource logic and therefore hoisted.
 The two resolvers are not identical either: the manager's view arm shares the form builder, because [`ViewAction` disables its own schema](relation-manager.md#the-view-arm-shares-the-form-builder-because-viewaction-disables-its-own-schema) and no infolist tier exists yet.
+
+### Filament's redirect narrowing answers null for every action, as the inherited hook does
+
+Filament's `ManageRelatedRecords::getDefaultActionSuccessRedirectUrl()` returns null for a table-context action and `parent::getDefaultActionSuccessRedirectUrl()` otherwise.
+The class method shadows the `DeleteAction` arm of the `InteractsWithRecord` trait it composes, and `parent::` resolves through `Resources\Pages\Page` and `BasePage` to `InteractsWithActions`, which answers null, so a header `DeleteAction` on Filament's page does not redirect either.
+The port declares no override: the page inherits `HasActions::getDefaultActionSuccessRedirectUrl()`, which answers null for every action, and only [`EditRecord`](edit-record.md) overrides it, for a `DeleteAction`.
 
 ## Divergences
 
@@ -111,16 +102,15 @@ A class modifier, not a rename: a subclass sees no difference.
 
 Filament also composes `HasRelationManagers` on it and then overrides `getRelationManagers()` to `[]`, wiring the whole tab machinery inert.
 We skip the wiring whole — a page listing one association does not also host a tab bar of other associations, and nothing would fill it.
-The demo carries `sections` on both surfaces on purpose — `SectionsRelationManager` as a tab on the article edit page ([the relation manager](relation-manager.md), the modal flow) beside `ManageArticleSections` as a routed page (this page, the link flow) — so the one association shows what each flow looks like rather than either standing in for the other.
-Record-filter tabs are the exception that did arrive: `HasTabs` landed on [the shared tier](interacts-with-relationship-table.md) rather than on `ListRecords` alone, so this page offers record filters over its own association without the manager wiring above coming with them — [has-tabs.md](has-tabs.md).
+Record-filter tabs come through [the shared tier](interacts-with-relationship-table.md) instead ([has-tabs.md](has-tabs.md)), so this page offers record filters over its own association without the manager wiring.
 
 ### The page renders a template, not a content schema
 
 Filament's `content()` returns a `Group` of the record-filter tabs, two render hooks and an `EmbeddedTable`, sibling to the relation-manager component.
-All four are deferred or placed elsewhere — `EmbeddedTable` and render hooks are unported, the managers are skipped above, and the tabs landed as a [schema the partial renders](has-tabs.md#the-strip-is-a-schema-a-partial-renders-not-a-component-a-content-schema-holds) rather than a component a `content()` would hold — which would leave a content schema wrapping one table and nothing else.
+All four are deferred or placed elsewhere — `EmbeddedTable` and render hooks are unported, the managers are skipped above, and the tabs are a [schema the partial renders](has-tabs.md#the-strip-is-a-schema-a-partial-renders-not-a-component-a-content-schema-holds) rather than a component a `content()` would hold — which would leave a content schema wrapping one table and nothing else.
 So the page renders a template instead — the shared table variant [`partials/Page/table.html.twig`](../../../packages/panels/templates/partials/Page/table.html.twig), which `{% extends %}` the base page chrome and fills its `content` block with the tabs strip and `{{ renderTable() }}`.
 The page root, the header with its breadcrumbs and header actions, the sub-navigation band and `<twig:SylamentActions:Modals />` all come from the chrome, and the outlet is [not optional](relation-manager.md#the-manager-renders-a-template-not-a-content-schema) — without it every action the page mounts renders nothing at all.
-It is the same call [`ListRecords`](list-records.md) already made, one page over — and it is literally the same **file**: the list, create and manage-related shapes collapse onto two variants of one chrome, and the per-page root class comes from [`getPageClasses()`](custom-pages.md#getpageclasses-is-the-only-source-of-a-per-page-root-class).
+It is the same call [`ListRecords`](list-records.md) makes, and it is literally the same **file**: the list, create and manage-related shapes collapse onto two variants of one chrome, and the per-page root class comes from [`getPageClasses()`](custom-pages.md#getpageclasses-is-the-only-source-of-a-per-page-root-class).
 
 ### The navigation label and icon drop their related-resource arms
 
@@ -144,14 +134,8 @@ Filament's `getPageClass(): string` answers `static::class`, and exists so a rel
 This page embeds none ([above](#the-class-is-abstract-and-hosts-no-relation-managers-of-its-own)), and the [relation manager](relation-manager.md) that does read a page class is handed it as a mount prop by the page that embeds it.
 A method nothing calls is not ported.
 
-### The root carries one page class, not three
-
-Filament's `getPageClasses()` returns `['fi-resource-manage-related-records-page', 'fi-resource-<slug>', 'fi-resource-record-<key>']`.
-The template writes `sy-pa-resource-manage-related-records-page` alone, which is the same call the [list page](list-records.md) made: the slug-derived and record-derived halves wait for a reason to style one resource's — or one record's — page differently from another's.
-Nothing in the stylesheet selects any of the three.
-
 ### `previousUrl` is not ported anywhere in the port
 
 Filament's page fills `public ?string $previousUrl = null` from `url()->previous()` in `mount()`, feeding a cancel-via-history action.
 Nothing reads it on this page — its own cancel action is not ported either — so it is dead state on the wire.
-The record pages already record the same deferral ([`CreateRecord`](create-record.md)); it is repeated here because the property is the one member of Filament's class that has no consumer even in Filament's own file.
+The record pages record the same deferral ([`CreateRecord`](create-record.md)); it is repeated here because the property is the one member of Filament's class that has no consumer even in Filament's own file.

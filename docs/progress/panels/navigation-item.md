@@ -7,47 +7,58 @@ owns:
 ---
 # NavigationItem (panels)
 
+`Sylament\Panels\Navigation\NavigationItem` extends support's `Component` and composes its `HasIcon`.
+
 ## Surface
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
-| [`Navigation\NavigationItem`](../../../packages/panels/src/Navigation/NavigationItem.php) | [`Navigation/NavigationItem.php`](../../../vendor/filament/filament/src/Navigation/NavigationItem.php) | in progress | — | — |
-| _rest not audited yet_ | — | — | — | — |
+| [`make()`](../../../packages/panels/src/Navigation/NavigationItem.php) / `label()` / `getLabel()` | [`NavigationItem.php`](../../../vendor/filament/filament/src/Navigation/NavigationItem.php)'s constructor, `make()` and label pair | done | — | [semantics](#make-without-a-label-leaves-getlabel-fatal) |
+| [`icon()` / `getIcon()`](../../../packages/support/src/Components/Concerns/HasIcon.php) through `HasIcon` | the icon pair | done | — | — |
+| [`activeIcon()` / `getActiveIcon()`](../../../packages/panels/src/Navigation/NavigationItem.php) | the active-icon pair | done | — | — |
+| [`url()` / `getUrl()`](../../../packages/panels/src/Navigation/NavigationItem.php) / `openUrlInNewTab()` / `shouldOpenUrlInNewTab()` | the url and new-tab pairs | done | — | [diverges](#a-user-derived-navigation-url-must-be-validated-before-it-reaches-href) |
+| [`badge()` / `getBadge()`](../../../packages/panels/src/Navigation/NavigationItem.php) | the badge pair | done | — | [diverges](#badge-preserves-a-badge-colour-set-before-it) |
+| [`badgeColor()` / `getBadgeColor()`](../../../packages/panels/src/Navigation/NavigationItem.php) | the badge-colour pair | done | — | [diverges](#getbadgecolor-takes-no-badge-argument) |
+| [`group()` / `getGroup()`](../../../packages/panels/src/Navigation/NavigationItem.php) | the group pair | done | — | [diverges](#group-and-getgroup-carry-no-unitenum-arm) |
+| [`sort()` / `getSort()`](../../../packages/panels/src/Navigation/NavigationItem.php) | the sort pair | done | — | — |
+| [`visible()` / `hidden()` / `isVisible()` / `isHidden()`](../../../packages/panels/src/Navigation/NavigationItem.php) | the visibility pairs, hidden winning | done | — | — |
+| [`isActiveWhen()` / `isActive()`](../../../packages/panels/src/Navigation/NavigationItem.php) | the memoising active-state pair | done | — | [panel.md](panel.md#navigation-is-assembled-on-the-panel-not-by-a-navigationmanager) |
+| [`setEvaluationServices()`](../../../packages/panels/src/Navigation/NavigationItem.php) and its closure seam | `app()->make()` inside Filament's closure evaluation | done | — | [diverges](#the-item-hands-its-own-services-to-evaluated-closures) · [semantics](#the-evaluation-services-are-a-container-build-requirement) |
+| `key()` / `getKey()` | the key pair | todo | — | [detail](#the-nesting-arm-waits-on-key) |
+| `parentItem()` / `getParentItem()` / `childItems()` / `getChildItems()` / `isChildItemsActive()`, and `getIcon()`'s parent-without-icon refusal | the nesting arm | todo | — | [detail](#the-nesting-arm-waits-on-key) |
+| `HasBadgeTooltip` | [`Support/Concerns/HasBadgeTooltip.php`](../../../vendor/filament/support/src/Concerns/HasBadgeTooltip.php) | todo | — | [detail](#the-badge-tooltip-and-extra-attributes-wait-on-a-sidebar-template-that-renders-them) |
+| `HasExtraAttributes` | [`Support/Concerns/HasExtraAttributes.php`](../../../vendor/filament/support/src/Concerns/HasExtraAttributes.php) | todo | — | [detail](#the-badge-tooltip-and-extra-attributes-wait-on-a-sidebar-template-that-renders-them) |
 
 ## Details
 
-### The item's own surface is ported and its nesting arm is deferred
+### The nesting arm waits on `key()`
 
-The item's own surface is ported — label, icon and active icon, url with the new-tab flag, badge and badge colour, sort, group, the visible/hidden pair with hidden winning, and the memoising `isActiveWhen()`/`isActive()`.
+`key()` is the identity a nested item is addressed by, and `getKey()` falls back to the label, so it earns its keep only once items nest.
+The nesting arm lands whole with it: the parent and child pairs, `isChildItemsActive()`, and the `LogicException` Filament's `getIcon()` throws for a parent item with no icon.
+[The band's `processParentNavigationItems()` pass](has-sub-navigation.md#item-nesting-waits-on-navigationitems-nesting-arm) waits on the same arm.
 
-Deferred, all todo:
+### The badge tooltip and extra attributes wait on a sidebar template that renders them
 
-- `key()` / `getKey()` — the identity a nested item is addressed by; it only earns its keep once items nest.
-- `parentItem()` / `getParentItem()` and `childItems()` / `getChildItems()` / `isChildItemsActive()` — the nesting arm, deferred whole with `key`, which is what makes [the band's `processParentNavigationItems()` pass](has-sub-navigation.md#three-v1-skips-item-nesting-collapsible-groups-and-badge-tooltips) wait too.
-- The badge tooltip (`HasBadgeTooltip`) — not ported in `support` yet.
-- Extra attributes.
-  `Sylament\Support\Components\Concerns\HasExtraAttributes` is ported, but `NavigationItem` does not compose it: nothing in the sidebar templates renders an item attribute bag yet, so composing it would publish a setter with no effect.
-
-A container-built item also carries an injected service set — `UrlGeneratorInterface`, `RequestStack`, `IconManager` — that it hands to its own evaluated closures ahead of the `Invoker`'s container arm, which is what lets sylament's shipped url, active-state and icon closures run against a stock container: [the item hands its own services to evaluated closures](#the-item-hands-its-own-services-to-evaluated-closures).
-
-That set is a **build-time** requirement, not only a render-time one, and it is consumer-visible.
-`setEvaluationServices()` is a plain `#[Required]` setter on an autowired service, so all three types must be resolvable when the container *compiles*: an application that disables `framework.router` — leaving no `UrlGeneratorInterface` to autowire — fails at container build with an unresolved argument, not at the first navigation render.
-The coupling is benign in practice, since a panel exists to mount routes and cannot work without the router anyway, and it is the price of not publishing three public aliases in every consuming application.
-It is recorded because the failure names `NavigationItem`, which is not where a reader would look for a router dependency.
-A `new`-built item is unaffected — the setter only fires through the container.
-
-Four deltas against Filament's item, each with its own divergence: [`badge()` keeps a colour set earlier](#badge-preserves-a-badge-colour-set-before-it), [`group()`/`getGroup()` carry no `UnitEnum` arm](#group-and-getgroup-carry-no-unitenum-arm), [`getBadgeColor()` takes no `$badge` argument](#getbadgecolor-takes-no-badge-argument), and [the security invariant Filament states in a comment lives here](#a-user-derived-navigation-url-must-be-validated-before-it-reaches-href).
-The uninitialised `$label` property is a [semantics note](#make-without-a-label-leaves-getlabel-fatal).
+Support ships both concerns ([`HasBadgeTooltip`](../../../packages/support/src/Components/Concerns/HasBadgeTooltip.php) and [`HasExtraAttributes`](../../../packages/support/src/Components/Concerns/HasExtraAttributes.php)), and `NavigationItem` composes neither.
+[`SidebarItem`](../../../packages/panels/templates/components/SidebarItem/index.html.twig) renders no badge tooltip and no item attribute bag, so composing either would publish a setter with no effect.
 
 ## Semantics
 
 ### `make()` without a label leaves `getLabel()` fatal
 
-`NavigationItem::$label` is typed `string|Closure` with **no** default and no constructor assignment, so it is a typed-but-uninitialised property.
+`NavigationItem::$label` is typed `string|Closure` with no default and no constructor assignment, so it is a typed-but-uninitialised property.
 `NavigationItem::make()` only calls `label()` when a label is `filled()`, which means `NavigationItem::make()->getLabel()` throws `Error: Typed property … must not be accessed before initialization` rather than returning `null`.
 That is Filament's shape exactly — its constructor guards the same `label()` call with `filled()` over the same undefaulted property — and it is deliberate: a navigation item with no label is not a valid item, and the fatal names the missing call.
 The reason it reads like a bug is the nullable parameter on `make()`, which exists so a `Closure` label can be passed positionally; nothing else about it says the label is optional.
 Anything building items from data must supply the label at `make()` or call `label()` before rendering.
+
+### The evaluation services are a container-build requirement
+
+`setEvaluationServices()` is a plain `#[Required]` setter on an autowired service, so `UrlGeneratorInterface`, `RequestStack` and `IconManager` must all be resolvable when the container compiles.
+An application that disables `framework.router`, leaving no `UrlGeneratorInterface` to autowire, fails at container build with an unresolved argument, not at the first navigation render.
+The coupling is benign in practice, since a panel exists to mount routes and cannot work without the router anyway, and it is the price of not publishing three public aliases in every consuming application.
+It is recorded because the failure names `NavigationItem`, which is not where a reader would look for a router dependency.
+A `new`-built item is unaffected, because the setter only fires through the container.
 
 ## Divergences
 
@@ -55,13 +66,13 @@ Anything building items from data must supply the label at `make()` or call `lab
 
 Filament's `badge($badge, $color = null)` assigns `$this->badgeColor = $color` unconditionally, so `->badgeColor('danger')->badge('12')` silently clears the colour back to `null`.
 Ours writes the colour only when one is passed, so the earlier `badgeColor()` survives and the two setters compose in either order.
-The cost is that `badge()` can no longer *clear* a colour — pass `badgeColor(null)` for that, which is the explicit spelling anyway.
+The cost is that `badge()` cannot clear a colour; `badgeColor(null)` does that, which is the explicit spelling anyway.
 
 ### `group()` and `getGroup()` carry no `UnitEnum` arm
 
 Filament types the group `string | UnitEnum | Closure | null` and returns `string | UnitEnum | null`, so an enum case can name a group and `NavigationGroup::fromEnum()` reads its label and icon off the case.
 Ours is string-only.
-The enum arm lands with `fromEnum()` and the `HasLabel` / `HasIcon` / `Collapsible` enum contracts it needs, none of which are ported — deferring it here keeps the two halves from disagreeing about what a group key is.
+The enum arm lands with [`fromEnum()`](navigation-group.md#fromenum-waits-on-the-collapsible-enum-contract), which waits on the `Collapsible` enum contract (support ports `HasLabel` and `HasIcon`) — deferring it here keeps the two halves from disagreeing about what a group key is.
 
 ### `getBadgeColor()` takes no `$badge` argument
 
@@ -87,6 +98,6 @@ So the item carries them instead.
 Those are exactly the three types sylament's own closures hint ([`Page::getNavigationItems()`](page.md) builds the url and active-state ones, [`Dashboard`](dashboard.md) the icon one), so the shipped navigation works against a stock container.
 
 Two things the design deliberately leaves alone.
-A `new`-built item behaves exactly as before — the properties stay `null`, the hook returns `null`, and the container arm is consulted — so nothing that worked outside the container stops working.
+A `new`-built item keeps its three properties `null`, the hook returns `null` and the container arm is consulted, so nothing that works outside the container depends on the setter.
 And `NavigationGroup` gets **no** override: its closures have no shipped service-hinting examples, and leaving it bare is what keeps the container arm under test ([`SylamentPanelsBundleTest`](../../../packages/panels/tests/Integration/SylamentPanelsBundleTest.php) evaluates a `RequestStack` closure on a group, which passes only because the panels test kernel republishes that one alias).
 A consumer hinting a fourth service type still republishes its alias, and that is the case the group test stands in for.

@@ -1,12 +1,12 @@
 ---
-description: '`Sylament\Schemas\Identity\RecordKey`, `IdentifierConstraint` and `KeySelection`, over the `@internal` per-class descriptor `IdentifierFields` — a… (draft)'
+description: 'The record-key codec and identifier predicate builder: `RecordKey`, `IdentifierConstraint` and `KeySelection` over the internal `IdentifierFields`.'
 ports: []
 owns:
   - packages/schemas/src/Identity/
 ---
 # RecordKey (schemas)
 
-[`Sylament\Schemas\Identity\RecordKey`](../../../packages/schemas/src/Identity/RecordKey.php), [`IdentifierConstraint`](../../../packages/schemas/src/Identity/IdentifierConstraint.php) and [`KeySelection`](../../../packages/schemas/src/Identity/KeySelection.php), over the `@internal` per-class descriptor [`IdentifierFields`](../../../packages/schemas/src/Identity/IdentifierFields.php) — a Sylament invention with **no Filament source**.
+[`Sylament\Schemas\Identity\RecordKey`](../../../packages/schemas/src/Identity/RecordKey.php), [`IdentifierConstraint`](../../../packages/schemas/src/Identity/IdentifierConstraint.php) and [`KeySelection`](../../../packages/schemas/src/Identity/KeySelection.php), over the `@internal` per-class descriptor [`IdentifierFields`](../../../packages/schemas/src/Identity/IdentifierFields.php), are a Sylament invention with **no Filament source**.
 Eloquent has no composite-key vocabulary at all: `Model::getKeyName()` is one string, `getKey()` reads one attribute, and `Builder::whereKey(array)` means *many keys*, never one tuple — so Filament's `getRecordKey(Model | array $record): string` inherits a single-column world and there is nothing over there to diff against.
 
 **A record key is one string everywhere it travels.**
@@ -18,36 +18,29 @@ A composite identifier is either several scalar `#[Id]` fields or a **derived id
 The bar is capability, not a feature list: every feature that works for a single-identifier entity, and is possible for a composite one, works for a composite one, and what Doctrine itself makes impossible is recorded as a divergence in the file of the thing it constrains — [below](#divergences) for the key itself — never worked around and never left as a silent gap.
 There is no Filament surface to mirror and none to break, so every public signature that speaks a record key — `getTableRecordKey(object|array $record): string`, the `{record}` route parameter, an option value — keeps its single-identifier shape, and the composite support lives behind it.
 
-The three classes' consumers include tables' [`HasTable`](../tables/has-table.md#object-records-are-keyed-by-a-readable-id-rather-than-an-eloquent-key), `HasBulkActions`, `CanReorderRecords`, `CanSortRecords` and `CanSummarizeRecords`, with `Query\AggregateQuery`, `Query\RelationConstraint` and `Query\FetchJoinPageQuery`; actions' [`DeleteBulkAction`](../actions/delete-action.md#the-by-key-arm-is-a-dql-delete-over-the-plucked-keys), [`Action::getContext()`](../actions/action.md#getcontext-drops-the-record-model-gate), the four relationship actions and `ReplicateAction`; panels' [`Resources\Resource`](../panels/resource.md#a-record-is-resolved-through-the-resources-own-query), the `{record}` route key both ways through `of()` and `equals()`; and the relation layer — `AssociationReader`, forms' `Select`, `HasRelationship`, `Repeater` and `UniqueValueValidator` — which uses `select()` + `keyOf()` on the `IDENTITY()`-selected halves, raw under every hydrator.
-Four members serve one need each: [`inColumns()`](record-key-contract.md#incolumns-is-in-in-sql-for-a-statement-that-names-one-table) is `in()` spelled over a DBAL builder's identifier columns, for the by-key dissociate over a mapped-by spanning several join columns, which no DQL operation can narrow; `batch()` splits a key list the client sizes; [`keyOfHydrated()`](#a-hydrated-row-is-keyed-without-reading-its-fields-a-second-time) keys a row whose hydrator already read its fields through their types — an array result, or the rows Doctrine's limit walker answers — converting only the `IDENTITY()` association halves; and `values()` is the one `@internal` read of `RecordKey`.
-Its note names every reader it has — the relation layer's owner bind, the record check's taken-key and changed-key passes, and `ReplicateAction`'s blank-key check, which reads it from another package — because `@internal` means *no part of the key contract*, and the note is the list of sanctioned readers.
-`of()` and `find()` mint each component [as its row would read it back](#a-key-is-minted-from-the-value-its-row-would-read-back), and the decode reads a component back [through its type's own writer](#a-type-that-refuses-its-printed-form-on-read-only-decodes-it-through-its-own-writer) when its reader refuses it or reads it as another value.
-The owner scope of both relationship queries is one `equals()` on a subselect's alias, so the operation reserved for it was never built ([why](record-key-contract.md#owner-scoping-was-reserved-and-turned-out-not-to-be-needed)).
-One addition is still missing: closing panels' custom `$recordRouteKeyName` arm needs a typed bind with a print-back compare against a *named column*, which is not an operation this file exposes ([why it is still open](../panels/resource.md#a-custom-recordroutekeyname-names-one-column-and-the-codec-never-sees-it)).
+The interface consumers build against is [the contract](record-key-contract.md#contract), and each row below links its part.
+Panels' custom `$recordRouteKeyName` arm needs a typed bind with a print-back compare against a *named column*, which no operation here exposes ([why it is open](../panels/resource.md#a-custom-recordroutekeyname-names-one-column-and-the-codec-never-sees-it)).
 
 ## Surface
 
-Every operation these three classes expose.
-_Detail_ carries **contract** → the frozen interface in [Contract](record-key-contract.md#contract), **semantics** → the write-up in [Semantics](#semantics), and/or **diverges** → the permanent note in [Divergences](#divergences).
-
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
-| [`RecordKey::of()`](../../../packages/schemas/src/Identity/RecordKey.php) — a record to its key, throwing on an incomplete or unprintable identifier, each component minted as its row would read it back | — | done | — | [contract](record-key-contract.md#the-api) · [semantics](#find-answers-identity-not-persistence) · [semantics](#a-key-is-minted-from-the-value-its-row-would-read-back) |
-| [`RecordKey::find()`](../../../packages/schemas/src/Identity/RecordKey.php) — the non-throwing twin, `null` while the identifier is incomplete, minted the same way | — | done | — | [semantics](#find-answers-identity-not-persistence) · [semantics](#a-key-is-minted-from-the-value-its-row-would-read-back) |
-| [`RecordKey::fromValues()`](../../../packages/schemas/src/Identity/RecordKey.php) — identifier values already in their PHP form, in mapping order, to the key a record mints — never a projected row's raw columns, which go through [`KeySelection::keyOf()`](../../../packages/schemas/src/Identity/KeySelection.php) | — | done | — | [semantics](#the-row-side-and-the-record-side-mint-one-string-and-only-the-codec-may) |
-| [`RecordKey::toIdentifier()`](../../../packages/schemas/src/Identity/RecordKey.php) — a client string to the field ⇒ PHP value map `EntityManager::find()` takes, `null` when malformed | — | done | — | [contract](record-key-contract.md#the-grammar) · [semantics](#a-malformed-key-never-reaches-the-database) |
-| [`RecordKey::values()`](../../../packages/schemas/src/Identity/RecordKey.php) — a record's identifier values before they are printed, an association reduced to its target's (`@internal`: the relation layer's owner bind and the record check's taken-key and changed-key passes read it, and so does `ReplicateAction`'s blank-key check; it is no part of the key contract) | — | done | — | [contract](record-key-contract.md#the-api) |
+| [`RecordKey::of()`](../../../packages/schemas/src/Identity/RecordKey.php) — a record to its key, throwing | — | done | — | [contract](record-key-contract.md#the-api) · [semantics](#find-answers-identity-not-persistence) · [semantics](#a-key-is-minted-from-the-value-its-row-would-read-back) |
+| [`RecordKey::find()`](../../../packages/schemas/src/Identity/RecordKey.php) — `null` while incomplete | — | done | — | [semantics](#find-answers-identity-not-persistence) · [semantics](#a-key-is-minted-from-the-value-its-row-would-read-back) |
+| [`RecordKey::fromValues()`](../../../packages/schemas/src/Identity/RecordKey.php) — PHP-form values to a key | — | done | — | [semantics](#the-row-side-and-the-record-side-mint-one-string-and-only-the-codec-may) |
+| [`RecordKey::toIdentifier()`](../../../packages/schemas/src/Identity/RecordKey.php) — a key to `find()`'s map | — | done | — | [contract](record-key-contract.md#the-grammar) · [semantics](#a-malformed-key-never-reaches-the-database) |
+| [`RecordKey::values()`](../../../packages/schemas/src/Identity/RecordKey.php) (`@internal`) | — | done | — | [contract](record-key-contract.md#the-api) |
 | [`IdentifierConstraint::equals()`](../../../packages/schemas/src/Identity/IdentifierConstraint.php) / `notEquals()` | — | done | — | [contract](record-key-contract.md#the-operations-and-their-dql) |
 | [`IdentifierConstraint::in()`](../../../packages/schemas/src/Identity/IdentifierConstraint.php) / `notIn()` | — | done | — | [contract](record-key-contract.md#the-operations-and-their-dql) · [semantics](#the-batch-is-a-balanced-or-tree-because-sqlite-counts-expression-depth-not-terms) |
-| [`IdentifierConstraint::inColumns()`](../../../packages/schemas/src/Identity/IdentifierConstraint.php) — `in()` in SQL, on the class's identifier **columns** over a DBAL `QueryBuilder`, for a statement that names one table | — | done | — | [contract](record-key-contract.md#incolumns-is-in-in-sql-for-a-statement-that-names-one-table) |
-| [`IdentifierConstraint::correlate()`](../../../packages/schemas/src/Identity/IdentifierConstraint.php) — `alias.f = outer.f AND …` as **text**, because `RelationConstraint` splices a subselect string | — | done | — | [contract](record-key-contract.md#the-operations-and-their-dql) · [diverges](#comparing-two-identification-variables-compares-the-first-identifier-column-only) |
-| [`IdentifierConstraint::select()`](../../../packages/schemas/src/Identity/IdentifierConstraint.php) + [`KeySelection::keyOf()`](../../../packages/schemas/src/Identity/KeySelection.php) (a scalar row) / `keyOfHydrated()` (an array row, or the limit walker's) | — | done | — | [contract](record-key-contract.md#the-operations-and-their-dql) · [semantics](#the-row-side-and-the-record-side-mint-one-string-and-only-the-codec-may) · [semantics](#a-hydrated-row-is-keyed-without-reading-its-fields-a-second-time) |
-| [`IdentifierConstraint::groupBy()`](../../../packages/schemas/src/Identity/IdentifierConstraint.php) — the bare path per field, never `IDENTITY()` | — | done | — | [diverges](#bare-identitypath-on-a-multi-column-association-answers-only-the-first-column) |
-| [`IdentifierConstraint::orderBy()`](../../../packages/schemas/src/Identity/IdentifierConstraint.php) — the identifier tiebreak, per field, deduped against the existing order | — | done | — | [contract](record-key-contract.md#the-operations-and-their-dql) |
+| [`IdentifierConstraint::inColumns()`](../../../packages/schemas/src/Identity/IdentifierConstraint.php) — `in()` in SQL | — | done | — | [contract](record-key-contract.md#incolumns-is-in-in-sql-for-a-statement-that-names-one-table) |
+| [`IdentifierConstraint::correlate()`](../../../packages/schemas/src/Identity/IdentifierConstraint.php) | — | done | — | [contract](record-key-contract.md#the-operations-and-their-dql) · [diverges](#comparing-two-identification-variables-compares-the-first-identifier-column-only) |
+| [`IdentifierConstraint::select()`](../../../packages/schemas/src/Identity/IdentifierConstraint.php) + [`KeySelection`](../../../packages/schemas/src/Identity/KeySelection.php) `keyOf()` / `keyOfHydrated()` | — | done | — | [contract](record-key-contract.md#the-operations-and-their-dql) · [semantics](#the-row-side-and-the-record-side-mint-one-string-and-only-the-codec-may) · [semantics](#a-hydrated-row-is-keyed-without-reading-its-fields-a-second-time) |
+| [`IdentifierConstraint::groupBy()`](../../../packages/schemas/src/Identity/IdentifierConstraint.php) — bare paths | — | done | — | [diverges](#bare-identitypath-on-a-multi-column-association-answers-only-the-first-column) |
+| [`IdentifierConstraint::orderBy()`](../../../packages/schemas/src/Identity/IdentifierConstraint.php) — the identifier tiebreak | — | done | — | [contract](record-key-contract.md#the-operations-and-their-dql) |
 | [`IdentifierConstraint::chunk()`](../../../packages/schemas/src/Identity/IdentifierConstraint.php) | — | done | — | [contract](record-key-contract.md#the-chunk-rule) |
 | [`IdentifierConstraint::batch()`](../../../packages/schemas/src/Identity/IdentifierConstraint.php) | — | done | — | [contract](record-key-contract.md#the-chunk-rule) |
-| Owner scoping — `scopeToOwner()` / the owner tuple | — | skipped | — | [contract](record-key-contract.md#owner-scoping-was-reserved-and-turned-out-not-to-be-needed) |
-| [`IdentifierFields`](../../../packages/schemas/src/Identity/IdentifierFields.php) — the per-class descriptor both public classes share (`@internal`) | — | done | — | [diverges](#identifier-order-is-declaration-order-so-reordering-two-id-properties-invalidates-every-minted-key) |
+| Owner scoping — `scopeToOwner()` / the owner tuple | — | skipped | — | [diverges](#there-is-no-owner-scoping-operation-because-one-equals-on-the-owners-own-collection-scopes-an-owner-of-any-width) |
+| [`IdentifierFields`](../../../packages/schemas/src/Identity/IdentifierFields.php) (`@internal`) | — | done | — | [diverges](#identifier-order-is-declaration-order-so-reordering-two-id-properties-invalidates-every-minted-key) |
 
 ## Semantics
 
@@ -57,7 +50,7 @@ _Detail_ carries **contract** → the frozen interface in [Contract](record-key-
 With a generated id the two coincide; with an **assigned** one — which is every composite key, since Doctrine refuses an id generator on a composite identifier — they part company: a record whose fields the user has filled in is keyable before the first `flush()`, and `find()` answers its key.
 A caller that needs persistence asks the `UnitOfWork`.
 
-A component that is `null` **or still blank** — a whitespace-only string, or a `Stringable` that prints as one, the test support's `blank()` applies — counts as not assigned yet, and `find()` answers `null` for it: an assigned string key sits at `''` until a form fills it, and a create form's `unique(ignoreRecord:)` must be able to ask without a throw.
+A component that is `null` **or still blank** — a whitespace-only string, or a `Stringable` that prints as one, as support's `blank()` decides — counts as not assigned yet, and `find()` answers `null` for it: an assigned string key sits at `''` until a form fills it, and a create form's `unique(ignoreRecord:)` must be able to ask without a throw.
 `of()` draws the line differently on purpose and keeps both refusals a table has always raised — `has none set` for a missing component, `is not a printable value` for a blank or unprintable one — because a row index cannot proceed without a key.
 
 Testing `is_string()` first would let a value object printing blank — a slug object whose constructor defaults to `''` — reach the printer and throw *"is not a printable value"* out of `find()`, where a blank string answers `null`.
@@ -78,7 +71,7 @@ They are the same function by construction: a reader normalises its row's values
 The normalisation is where a hand-rolled copy would go wrong, and the rule is **one rule, not a table of special cases**: every value the row hands back still raw is run through its field's own DBAL type, once, before it is printed.
 Which values are raw is the hydrator's answer, and **no hydrator converts every key column and the hydrators disagree about which ones they do**.
 The scalar hydrator converts *none* — an aliased select is `isScalar`, and `AbstractHydrator::gatherScalarRowData()` skips both the DBAL type and `enumType` for those under a documented `// WARNING: BC break!` decision (`vendor/doctrine/orm/src/Internal/Hydration/AbstractHydrator.php:422-424`).
-The array hydrator converts a *field path* but not an `IDENTITY()` expression, which `SqlWalker` registers as a plain `'string'` (`SqlWalker.php:1338`, against `:1303` for a field path).
+The array hydrator converts a *field path* but not an `IDENTITY()` expression, which `SqlWalker` registers as a plain `'string'` (`vendor/doctrine/orm/src/Query/SqlWalker.php:1370`, against `:1315` for a field path).
 So a `Handle`-keyed `Venue` reached through `IDENTITY()` arrives raw under **both** hydrations, a `BackedEnum` arrives as an *instance* under the array hydrator and as its **backing value** under the scalar one, and converting only the association arm of a scalar row mints a different string on the row side than the record side mints.
 So `keyOf()`, over a scalar row, converts every value, and `keyOfHydrated()`, over an array row, converts the association halves alone ([the second reader](#a-hydrated-row-is-keyed-without-reading-its-fields-a-second-time)).
 A value the hydrator already built into an **object** is the one thing left alone, and it needs nothing: the printable rule unwraps a `BackedEnum` to its backing value and a `Stringable` to its string, which is exactly what the record side does with the same object.
@@ -102,10 +95,10 @@ A key is client input, and the guard is a strict decode *before anything is boun
 The typed bind alone does not close the hole: on PostgreSQL 18 a `'5abc'` bound `PARAM_INT` raises `22P02` under native prepares and, under emulated prepares, **matches record 5**.
 And a `DriverException` is not an `HttpExceptionInterface`, so `PageController::__invoke()`'s render catch, which rethrows a Twig `RuntimeError`'s previous exception only when it is an `HttpExceptionInterface`, does not convert it — the render ends in a **500**.
 
-That 500 is still live wherever a client-supplied key is bound outside the table lane, and naming those here is the point.
+That 500 is live wherever a client-supplied key is bound raw, and naming those sites here is the point.
 `Resource::resolveRecordRouteBinding()` routes its default arm through this decode, so `/admin/articles/abc/edit` is a 404 that runs no statement and `/admin/articles/05/edit` does not resolve article 5 — while its `$recordRouteKeyName` arm binds one named column raw and [keeps the 500](../panels/resource.md#a-custom-recordroutekeyname-names-one-column-and-the-codec-never-sees-it).
 The relation layer decodes too: a relationship `Select`'s selected-record and option-label lookups and `AttachAction`, `AssociateAction` and `DissociateBulkAction`'s key `IN` all take client state, and all of them decode before they bind, while `Select::relationship(ignoreRecord:)` and `unique(ignoreRecord:)` bind a server-derived identifier, so those two convert for composite correctness rather than for the hole.
-With the **table** lane closed — row resolution, editable cells, selection, reorder and the by-key delete — and panels' default route arm, the one client-supplied key still bound raw is `Resource`'s `$recordRouteKeyName` arm, deliberately.
+The **table** lane — row resolution, editable cells, selection, reorder and the by-key delete — and panels' default route arm decode too, so the one client-supplied key bound raw is `Resource`'s `$recordRouteKeyName` arm, deliberately.
 
 So `equals()` on a malformed key returns `null` and binds nothing, and the caller's contract is to answer "no such record" **without querying**.
 This is pinned by asserting the refusal — that no statement was executed, through a recording middleware — rather than by asserting a platform's leniency, which differs per driver and per prepare mode.
@@ -129,15 +122,14 @@ Both remedies at the call site were measured and lost: `refresh()` registers a *
 
 A loaded record's key does not move — it already holds `convertToPHPValue()` of its row, and the round trip is idempotent for a well-behaved type — which [`RecordKeyTest`](../../../packages/schemas/tests/Unit/Identity/RecordKeyTest.php) pins over every converting fixture type, a raw-bytes uuid, a cipher, a decimal and a boolean.
 A **new** record's key is normalised through its type: an integer half typed `'0007'` mints `…~7`, the key its row will answer to, through `of()` and `find()` alike.
-Three things did not move.
-`fromValues()` still prints what it is handed — it is fed values already in their PHP form — and `toIdentifier()` still decodes no spelling the type would rewrite (*mints nothing through the type from raw values, and decodes no spelling the type would rewrite*).
-And a blank component is still no key at all: `find()` reads it **before** its type converts it and answers `null` (*finds no key for a blank component before its type converts it*), and `asStored()` hands a blank component — whitespace alone, or a `Stringable` printing that — back unconverted, so `of()` refuses it with its documented *"… is not a printable value."*, exactly as before (*refuses a blank component through `of()` exactly as before the conversion*).
+`fromValues()` converts nothing — it prints what it is handed, values already in their PHP form — and `toIdentifier()` decodes no spelling the type would rewrite.
+And a blank component is no key at all: `find()` reads it **before** its type converts it and answers `null`, and `asStored()` hands a blank component — whitespace alone, or a `Stringable` printing that — back unconverted, so `of()` refuses it with its documented *"… is not a printable value."*.
 That pass-through is load-bearing rather than tidy: a type's reader may assert what it reads — DBAL's `BigIntType` asserts a numeric value — and an unguarded round trip would turn `of()`'s refusal of a blank `bigint` half into an `AssertionError`, or a `TypeError` with assertions off.
 
 Two faces of a new record are not pinned.
-A **non-numeric** string in an integer-typed key half (which only an untyped or `int|string` property can hold) now raises that type's own error from `of()` and `find()` — `bigint`'s `AssertionError` under `zend.assertions=1`, a `TypeError` with assertions off, which is why no test pins the message — or, under `integer` or `smallint`, whose readers answer `0`, mints `…0`; before, it minted a key that never decoded.
+A **non-numeric** string in an integer-typed key half (which only an untyped or `int|string` property can hold) raises that type's own error from `of()` and `find()` — `bigint`'s `AssertionError` under `zend.assertions=1`, a `TypeError` with assertions off, which is why no test pins the message — or, under `integer` or `smallint`, whose readers answer `0`, mints `…0`.
 The `bigint` face was executed through the mint, on the one fixture property that can hold such a string; the `integer` and `smallint` face at the type level alone.
-And a value its type's **writer** refuses, on a new record, now throws that type's `ConversionException` from the mint where it was printed before.
+And a value its type's **writer** refuses, on a new record, throws that type's `ConversionException` from the mint.
 No fixture property can hold such a value, so no test reaches it.
 
 ### The shapes the fixtures pin
@@ -169,7 +161,7 @@ It checks four properties:
 1. **Round trip.**
    A generated tuple's key decodes to the same printed values and re-encodes to itself, and a record holding the raw values mints the key its row binds.
 2. **Only canonical spellings decode.**
-   Every one of 31 misspellings is refused, or is itself the canonical key of another tuple, and `equals()` agrees with the decode.
+   Every misspelling the harness generates is refused, or is itself the canonical key of another tuple, and `equals()` agrees with the decode.
 3. **A single identifier keys verbatim.**
 4. **Totality.**
    No client string makes the decode or a constraint builder throw, nor the lookup that follows a decode.
@@ -202,9 +194,6 @@ The plugin swaps the mutated file in through a `file` stream wrapper that stays 
 
 ## Divergences
 
-Limits that are permanent, and the reason each holds.
-There is no Filament counterpart to deviate from here, so these are deviations from what a reader would otherwise assume the codec guarantees — most of them Doctrine's own, all of them recorded rather than left as a silent gap.
-
 ### An identifier association always resolves to exactly one join column
 
 That is the load-bearing fact, and it is worth stating more carefully than "a composite-key entity cannot be part of another entity's identifier", which is what a reader assumes and is not quite what Doctrine enforces.
@@ -216,7 +205,6 @@ The fact is why `alias.assoc = :p` is legal DQL on the record's own query, why `
 If it ever weakened, every one of those would need revisiting.
 
 The codec's `LogicException` above is the only refusal in shipped code that turns a record away for its identifier's width.
-`grep -rn "composite identifier" packages/*/src` finds it beside `IdentifierConstraint`'s parameter-naming `LogicException` and a docblock sentence in actions' `Action.php`, neither of which refuses anything about a width.
 
 ### Doctrine's single-identifier API refuses a composite identifier, so nothing here calls it on one
 
@@ -227,8 +215,8 @@ Verified against ORM 3.7; re-verify on a major bump.
 
 ### Doctrine's `IdentifierFlattener` is not adopted, because it misreads a chained derived identity
 
-[Principles §2](../../internals/principles.md) says adopt what the ecosystem ships, and the plan for this file was to: `Utility\IdentifierFlattener` is public, final, recursive and enum-aware, which is the whole job.
-It was **overturned on executed evidence**, which is the bar §2 sets for not adopting — a named, checkable gap rather than a preference.
+[Principles §2](../../internals/principles.md) says adopt what the ecosystem ships, and `Utility\IdentifierFlattener` is public, final, recursive and enum-aware, which is the whole job.
+It is not adopted on **executed evidence**, which is the bar §2 sets for not adopting — a named, checkable gap rather than a preference.
 
 Two gaps.
 Fed an **incomplete** identifier it answers `''` plus a PHP warning rather than refusing, and under Pest a warning is an exception.
@@ -237,7 +225,7 @@ That second one only appears **once the target is managed**, which a row read fr
 A suite that keys its fixtures before flushing stays green over it, which is exactly the defect class this trail exists to catch.
 
 `RecordKey::flatten()` therefore recurses itself, in one private method that also subsumes the completeness count and needs no unit of work.
-What survives of the original decision is its second half, which was the important one: **no consumer ever branches on the identifier flavour.**
+Either way **no consumer branches on the identifier flavour.**
 
 ### `getReference()` on a derived identity is state-dependent, so the codec never mints one
 
@@ -253,7 +241,7 @@ The scalar route keeps the reference's zero statements.
 Silently — no exception, no warning, just the first join column's value.
 The two-argument form `IDENTITY(path, 'field')` does not rescue it either: it resolves **field mappings only**, so a component that is itself an association raises `Undefined reference field mapping`.
 An identifier association resolves to [exactly one join column](#an-identifier-association-always-resolves-to-exactly-one-join-column), so the codec's projection is safe by construction — and, where that guarantee is weakest, by the codec's own throw rather than by a silent truncation.
-`groupBy()` still emits the **bare path** rather than `IDENTITY()`, both because `IDENTITY()` is illegal in a `GROUP BY` and so that no consumer learns the wrong habit from this file.
+`groupBy()` emits the **bare path** rather than `IDENTITY()`, both because `IDENTITY()` is illegal in a `GROUP BY` and so that no consumer learns the wrong habit from this file.
 
 ### Comparing two identification variables compares the first identifier column only
 
@@ -264,7 +252,7 @@ Doctrine's parser resolves an identification variable in a comparison to a singl
 `MEMBER OF` fails the same way from the other end: `outer MEMBER OF alias.<collection>` compares every inverse join column of the association against the target's **first** identifier column, and returns nothing at all.
 
 So `correlate()` exists, and it is the only correlation the toolkit writes.
-It emits one `AND`ed equality per identifier field — `i.id = o.id` for a single-`id` class, so today's text is unmoved — and every consumer that needs two aliases of one class compared uses it: tables' relation search ([has-query.md](../tables/has-query.md#a-composite-identifier-root-correlates-and-groups-by-every-key-field)) and the relationship query's many-to-many arm ([relationship.md](relationship.md#the-relationship-query-is-rooted-at-the-target-and-needs-no-inverse-mapping)), whose `MEMBER OF` alternative this closes for good rather than parking as an optimisation.
+It emits one `AND`ed equality per identifier field — `i.id = o.id` for a single-`id` class — and every consumer that needs two aliases of one class compared uses it: tables' relation search ([has-query.md](../tables/has-query.md#a-composite-identifier-root-correlates-and-groups-by-every-key-field)) and the relationship query's many-to-many arm ([relationship.md](relationship.md#the-relationship-query-is-rooted-at-the-target-and-needs-no-inverse-mapping)), whose `MEMBER OF` alternative this closes for good rather than parking as an optimisation.
 
 DQL the application writes itself is outside that guarantee.
 An association path to a target keyed by several fields, or a comparison of two aliases, inside a builder the application hands over — a table's `query()`, a query modifier — is the application's to join and correlate, through the public `correlate()` if it likes; the toolkit neither rewrites nor refuses it.
@@ -280,8 +268,7 @@ It is **not** prior art for a key that crosses a request boundary, and it is rec
 An identifier field whose PHP value is an object with no `__toString()` fatals inside `UnitOfWork::addToIdentityMap()`, before anything of ours runs.
 So for such an object the codec's *not a printable value* refusal can only fire on a record that was never persistable.
 The same refusal fires for a blank string component, and that one the database accepts — see [the next section](#a-stored-row-with-a-blank-string-component-cannot-be-keyed).
-The rule it applies is today's, in one place: `BackedEnum` → backing value, `Stringable` → `__toString()`, `bool` → `'1'`/`'0'`, any other scalar → `(string)` — and a result that is non-scalar, not valid UTF-8, blank, or carrying a NUL byte refuses.
-The `bool` arm is the one addition to the rule as it stood: a plain cast prints `false` as the empty string, which would mint an illegal empty component that the key's own decode then refuses.
+The rule it applies is [the one printable rule](record-key-contract.md#the-api), `IdentifierFields::printable()`.
 
 ### A stored row with a blank string component cannot be keyed
 
@@ -294,15 +281,15 @@ A single string identifier `''` behaves the same way.
 
 The refusal names the row — *The identifier of [App\Entity\ProductVariant] is not a printable value.
 It holds code "SKU-1", suffix "".* — so an operator can find it.
-A create can no longer write such a row: a new record whose assigned key is still blank is refused before anything is written ([can-be-validated.md](can-be-validated.md#a-blank-assigned-key-is-refused-before-anything-is-written)).
+A create cannot write such a row: a new record whose assigned key is still blank is refused before anything is written ([can-be-validated.md](can-be-validated.md#a-blank-assigned-key-is-refused-before-anything-is-written)).
 
-A reserved spelling for an empty component (a lone `=`, which is malformed today) would let such legacy rows list.
+A reserved spelling for an empty component (a lone `=`, which is malformed) would let such legacy rows list.
 It is recorded, not built.
 
-### A single string identifier containing `.` or `/` is broken today and stays broken
+### A single string identifier containing `.` or `/` stays broken
 
-[The grammar](record-key-contract.md#the-grammar) exempts a one-field identifier from escaping, so existing URLs, option values and tests do not move — and that deliberately **preserves** a pre-existing hole rather than closing it.
-A `Book` keyed on `code` with the value `sy/0.1` already breaks the `{record}` route (the `/`) and already re-addresses a repeater item's state path (the `.`), and it still does.
+[The grammar](record-key-contract.md#the-grammar) exempts a one-field identifier from escaping, so a single-identifier key is the identifier value itself — and that deliberately **leaves** a hole open rather than closing it.
+A `Book` keyed on `code` with the value `sy/0.1` breaks the `{record}` route (the `/`) and re-addresses a repeater item's state path (the `.`).
 This is stated so the first user with a slug-keyed entity does not read the contract as a guarantee it does not make: **only a composite key carries the alphabet guarantee.**
 Closing it for single identifiers would move every URL and every pinned test in the repo, a breaking change of its own.
 
@@ -313,8 +300,8 @@ A key of `99999999999999999999` **names no record**: `IntegerType`'s `(int)` cas
 `BigIntType` does not saturate, so it gets [a shape check](record-key-contract.md#parameter-naming-and-what-an-empty-or-malformed-key-means) instead.
 
 What remains is an integer that is valid for PHP and too wide for the **column** — `5000000000` against a `smallint`, say.
-That decodes, binds, and raises the platform's own out-of-range error exactly as it does today for a single `id`.
-Checking it would mean reading the column's declared width and reproducing each platform's limits, which is a per-platform table that would drift; it was considered and rejected.
+That decodes, binds, and raises the platform's own out-of-range error exactly as it does for a single `id`.
+Checking it would mean reading the column's declared width and reproducing each platform's limits, which is a per-platform table that would drift, so it is rejected.
 The residual is recorded rather than hidden.
 
 ### A type that cannot read its own printed form mints keys that never decode
@@ -343,24 +330,24 @@ Every consumer is on that one call — panels' `{record}` binding, tables' row r
 
 The print-back rule is what keeps it one key per record.
 The writer takes spellings the printed form is not — uppercase, thirty-two hex digits, braces, a `urn:uuid:` prefix, base58 and base32 all name one uuid to `Uuid::fromString()` — and each reads back to a value that prints lowercase and dashed, so each is refused at zero statements, as are garbage and the sixteen raw bytes themselves.
-Neither step catches more than `ConversionException`: a custom type whose writer throws anything else for a forged component breaks DBAL's contract, and that exception now surfaces where the strict decode answered `null` — a forged `{record}` against such a type is a 500 where it was a 404.
+Neither step catches more than `ConversionException`: a custom type whose writer throws anything else for a forged component breaks DBAL's contract, and that exception surfaces from the decode — a forged `{record}` against such a type is a 500, not a 404.
 Catching `Throwable` would turn a genuine bug inside a type into *this key names no record*, which is a catch-and-ignore; `ramsey/uuid-doctrine` wraps every failure into a `ConversionException` on both sides, so it loses nothing.
 The writer is reached for **every** non-canonical spelling of a type whose reader answers without refusing — `05` for an `integer` half, `FF` for a hex one — so a writer that raises anything but a `ConversionException`, or a PHP deprecation (`hexdec()` raises one for `+ff`), surfaces there, where a decode without the writer would answer `null`.
 DBAL's own boolean writer is the one built-in that does, on PostgreSQL, with an `UnexpectedValueException` for an unrecognised literal, which is why [the decode](record-key-contract.md#parameter-naming-and-what-an-empty-or-malformed-key-means) shape-checks a boolean component as `0` or `1` before any conversion; every other built-in either passes the string through its writer or refuses it with a `ConversionException`.
 
-The fallback touches the decode alone: `toDatabaseValues()`, the split, the shape checks (bar the boolean arm, above) and `printable()` are as they were, and a type that reads its printed form back as itself never reaches it, so every existing dataset keeps its answer — `SkuType`'s `not-a-sku` included, its writer taking a `Sku` and nothing else.
-One shape widens further than the rest: where a type's **writer** takes any string at all — DBAL's four JSON types, `json`, `jsonb`, `json_object` and `jsonb_object`, whose writer is `json_encode()` — every well-formed component now decodes, each to the string it spells, so a **forged** key of such a field costs one statement that finds nothing where it used to cost none.
+The fallback touches the decode alone: `toDatabaseValues()`, the split, the shape checks and `printable()` do not reach it, and a type that reads its printed form back as itself never reaches it either, so such a type answers as a strict decode would — `SkuType`'s `not-a-sku` included, its writer taking a `Sku` and nothing else.
+One shape widens further than the rest: where a type's **writer** takes any string at all — DBAL's four JSON types, `json`, `jsonb`, `json_object` and `jsonb_object`, whose writer is `json_encode()` — every well-formed component decodes, each to the string it spells, so a **forged** key of such a field costs one statement that finds nothing.
 Nothing is mis-keyed by that: the print-back rule holds there too, and one key still names one record.
 The fallback costs three or four conversions instead of one for a component the reader refuses or reads as another value, unmeasured, and only such a component pays — that includes a forged non-canonical spelling of any type, `05` for an `integer` half among them.
-A reference to a class whose every identifier field is scalar is still built at zero statements; one behind an association — a single derived identity onto such a target — is loaded, at one.
+A reference to a class whose every identifier field is scalar is built at zero statements; one behind an association — a single derived identity onto such a target — is loaded, at one.
 
 Pinned over [`BinaryUuidType`](../../../packages/schemas/tests/Fixtures/Doctrine/BinaryUuidType.php), a mimic of ramsey's `UuidBinaryType` over `symfony/uid` — ramsey deliberately not a dependency — and three owners of it, `Crate` (one such identifier), `Pallet` (such a half beside a string) and `CrateSeal` (a single derived identity onto `Crate`), in [`IdentifierFieldsTest`](../../../packages/schemas/tests/Unit/Identity/IdentifierFieldsTest.php), [`IdentifierConstraintTest`](../../../packages/schemas/tests/Unit/Identity/IdentifierConstraintTest.php), [`AssociationReaderCompositeKeyTest`](../../../packages/schemas/tests/Unit/State/AssociationReaderCompositeKeyTest.php) and [`AssociationReaderOwnerScopeTest`](../../../packages/schemas/tests/Unit/State/AssociationReaderOwnerScopeTest.php).
-It is the first fixture type in the repo to reach the per-field `BINARY` bind and its array twin, and it reads a **stream** where PostgreSQL's hydrator hands `bytea` back as one — a mimic without that arm passes every SQLite suite and breaks on PostgreSQL alone.
+It reaches the per-field `BINARY` bind and its array twin, and it reads a **stream** where PostgreSQL's hydrator hands `bytea` back as one — a mimic without that arm passes every SQLite suite and breaks on PostgreSQL alone.
 
-The carve-out was written for an **object**-returning type, the `uuid_binary` shape, and a scalar one meets it too.
+The fallback serves an **object**-returning type, the `uuid_binary` shape, and a scalar one too.
 The fixtures' `HexCodeType` holds an integer column as its lower-case hex spelling and reads whatever it is handed as a decimal number, so its reader takes the printed `ff` without refusing and answers `0`; a fallback reached only on a `ConversionException` would never run for it, and every key such a class mints — the record side's `ff~north`, through the writer and back — would be refused at every decode site.
 The retry on a failed print-back reaches the writer (`ff` → 255) and reads 255 back as `ff`, while `FF` (the writer refuses), `0ff` (the writer takes it, and it prints back without the zero) and `+ff` stay refused.
-The retry lands only with the row side's [second reader](#a-hydrated-row-is-keyed-without-reading-its-fields-a-second-time): on its own it would have turned such a type's silent `0` options into keys that decode, to the wrong record.
+The retry depends on the row side's [second reader](#a-hydrated-row-is-keyed-without-reading-its-fields-a-second-time): without it, such a type's silent `0` options would be keys that decode, to the wrong record.
 Pinned over `HexSwatch` and `HexTile` in [`IdentifierFieldsTest`](../../../packages/schemas/tests/Unit/Identity/IdentifierFieldsTest.php), beside the boolean shape check over `Flagged` on a PostgreSQL and a SQLite platform.
 
 ### Identifier order is declaration order, so reordering two `#[Id]` properties invalidates every minted key
@@ -373,6 +360,14 @@ Treat the order of `#[Id]` declarations as part of the schema, like a column nam
 ### A type extending a shape-checked family is checked as that family
 
 The shape check reaches `BigIntType`, `DecimalType`, `GuidType` and `BooleanType` by class, so a type registered under a name of its own is checked as the family it extends — which is the point, since such a type inherits the conversion that hands a malformed string back untouched — or, for `BooleanType`, whose PostgreSQL writer refuses an unrecognised literal with no `ConversionException`, the reason that arm exists once the decode offers a component to the writer.
-The cost is a subclass whose PHP value prints **outside** its parent's shape — a `BigIntType` whose reader answers a `T-123` value object, or a `BooleanType` whose value is not a bool — whose every key the decode now refuses where it used to accept it.
-No such type is known, and the way out is not to extend the family whose shape it no longer prints.
+The cost is a subclass whose PHP value prints **outside** its parent's shape — a `BigIntType` whose reader answers a `T-123` value object, or a `BooleanType` whose value is not a bool — whose every key the decode refuses.
+No such type is known, and the way out is not to extend a family whose shape it does not print.
 Pinned by `Voucher` in `IdentifierFieldsTest` and `RecordKeyTest`.
+
+### There is no owner-scoping operation, because one `equals()` on the owner's own collection scopes an owner of any width
+
+`IdentifierConstraint` has no `scopeToOwner()` and no owner tuple.
+Such an operation would **mutate** the builder rather than only binding on it, and a derived-identity owner would need a join — inner for the related query, **left plus `IS NULL`** for the candidate one.
+The relation layer needs neither: its owner scope is one `equals()` call (a plain equality for a single-identifier owner) against the alias of a correlated subselect over the owner's **own** collection, so nothing is mutated, no join reaches the outer builder, and the candidate arm is that same text under `NOT EXISTS` — which keeps a partially-`NULL` foreign key where a negated equality drops it ([the shape, and the two measured against it](relationship.md#an-owner-of-any-width-is-scoped-through-its-own-collection-rather-than-through-a-mapped-by-path)).
+The join is not merely unnecessary but **wrong**, executed: it returns the wrong rows on every many-to-many candidate cell, because narrowing the target by joining the owner inverts what the negation is taken over.
+The other candidate, `IDENTITY(path, 'field')` per key field, cannot reach an association-valued key half at all.

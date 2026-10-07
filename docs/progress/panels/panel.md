@@ -1,10 +1,18 @@
 ---
-description: 'The panel definition a provider configures, the provider contract, the registry that collects panels and the current-panel lookup.'
+description: 'The panel definition a provider configures, the provider contract, the registry that collects panels, the current-panel lookup and the bundle wiring.'
 ports:
   - vendor/filament/filament/src/Panel.php
+  - vendor/filament/filament/src/Panel/Concerns/HasBrandLogo.php
+  - vendor/filament/filament/src/Panel/Concerns/HasBrandName.php
+  - vendor/filament/filament/src/Panel/Concerns/HasComponents.php
+  - vendor/filament/filament/src/Panel/Concerns/HasId.php
+  - vendor/filament/filament/src/Panel/Concerns/HasNavigation.php
+  - vendor/filament/filament/src/Panel/Concerns/HasRoutes.php
+  - vendor/filament/filament/src/Panel/Concerns/HasSidebar.php
   - vendor/filament/filament/src/PanelProvider.php
   - vendor/filament/filament/src/PanelRegistry.php
   - vendor/filament/filament/src/FilamentManager.php
+  - vendor/filament/filament/src/FilamentServiceProvider.php
   - vendor/filament/filament/src/Http/Middleware/SetUpPanel.php
 owns:
   - packages/panels/src/CurrentPanel.php
@@ -14,60 +22,108 @@ owns:
 ---
 # Panel (panels)
 
+`Sylament\Panels\Panel` is the definition a [`PanelProvider`](../../../packages/panels/src/PanelProvider.php) configures; [`PanelRegistry`](../../../packages/panels/src/PanelRegistry.php) collects the panels and [`CurrentPanel`](../../../packages/panels/src/CurrentPanel.php) finds the one serving the request.
+Four of the panel's traits are documented with the code that reads them: [`HasSubNavigation`](has-sub-navigation.md), [`HasGlobalSearch`](global-search.md), [`HasMaxContentWidth`](simple-page.md#the-width-resolution-is-one-ladder-in-the-controller) and [`HasUnsavedChangesAlerts`](unsaved-changes-alert.md).
+
 ## Surface
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
-| [`Panel`](../../../packages/panels/src/Panel.php) | [`Panel.php`](../../../vendor/filament/filament/src/Panel.php) | in progress | — | — |
-| [`PanelProvider`](../../../packages/panels/src/PanelProvider.php) | [`PanelProvider.php`](../../../vendor/filament/filament/src/PanelProvider.php) | in progress | — | — |
-| [`PanelRegistry`](../../../packages/panels/src/PanelRegistry.php) | [`PanelRegistry.php`](../../../vendor/filament/filament/src/PanelRegistry.php) | in progress | — | — |
-| [`CurrentPanel`](../../../packages/panels/src/CurrentPanel.php) | [`FilamentManager.php`](../../../vendor/filament/filament/src/FilamentManager.php) current-panel arm, [`Http/Middleware/SetUpPanel.php`](../../../vendor/filament/filament/src/Http/Middleware/SetUpPanel.php) | in progress | — | — |
+| [`Panel::make()`](../../../packages/panels/src/Panel.php) | [`Panel::make()`](../../../vendor/filament/filament/src/Panel.php) | done | — | [diverges](#make-configures-the-panel-before-its-id-is-set) |
+| [`default()` / `isDefault()`](../../../packages/panels/src/Panel.php) | the same pair | done | — | — |
+| `register()` / `boot()` / `bootUsing()` | the panel lifecycle | skipped | — | [diverges](#the-panel-has-no-register-or-boot) |
+| [`HasId`](../../../packages/panels/src/Panel/Concerns/HasId.php): `id()` / `getId()` | [`Panel/Concerns/HasId.php`](../../../vendor/filament/filament/src/Panel/Concerns/HasId.php) | done | — | — |
+| [`HasRoutes`](../../../packages/panels/src/Panel/Concerns/HasRoutes.php): `path()` / `getPath()` | [`Panel/Concerns/HasRoutes.php`](../../../vendor/filament/filament/src/Panel/Concerns/HasRoutes.php) | done | — | [routing.md](routing.md#the-route-import-carries-no-prefix-because-the-panel-path-is-authoritative) |
+| `HasRoutes`: domains, the home URL, the route closures, `getUrl()` and `getRedirectUrl()` | the rest of `HasRoutes.php` | todo | — | — |
+| [`HasComponents`](../../../packages/panels/src/Panel/Concerns/HasComponents.php): `pages()` / `resources()` / `getPages()` / `getResources()` | [`Panel/Concerns/HasComponents.php`](../../../vendor/filament/filament/src/Panel/Concerns/HasComponents.php) | done | — | [diverges](#getpages-re-indexes-where-filament-keeps-array_uniques-gapped-keys) · [semantics](#a-registered-page-or-resource-is-validated-by-the-route-loader-not-at-registration) |
+| `HasComponents`: `discoverPages()`, `discoverResources()`, `discoverClusters()`, `discoverWidgets()`, `discoverLivewireComponents()` and the component cache | the discovery arms | todo | — | [detail](#filesystem-discovery-would-return-only-as-a-convenience-over-service-registration) |
+| `HasComponents`: `widgets()` / `getWidgets()` | the widget registration arm | blocked | a `Widget` class in `sylament/widgets` | — |
+| `HasComponents`: page and resource configurations, clusters, `getModelResource()`, the relation-manager read-only default and the create / edit page redirects | the rest of `HasComponents.php` | todo | — | [custom-pages.md](custom-pages.md#the-configuration-object-is-not-ported) |
+| [`HasNavigation`](../../../packages/panels/src/Panel/Concerns/HasNavigation.php): `navigationGroups()` / `navigationItems()` / their getters / `getNavigation()` | [`Panel/Concerns/HasNavigation.php`](../../../vendor/filament/filament/src/Panel/Concerns/HasNavigation.php) | done | — | [semantics](#getnavigation-merges-every-source-before-it-sorts-and-buckets) · [diverges](#navigation-is-assembled-on-the-panel-not-by-a-navigationmanager) · [diverges](#resource-navigation-is-pulled-through-the-registry-not-pushed-by-the-resource) |
+| `HasNavigation`: `navigation()`, `NavigationBuilder`, `hasNavigation()` / `hasNavigationBuilder()` | the navigation builder | todo | — | [detail](#the-navigation-builder-escape-hatch-is-deferred-not-rejected) |
+| [`HasSidebar`](../../../packages/panels/src/Panel/Concerns/HasSidebar.php): `collapsibleNavigationGroups()` / `hasCollapsibleNavigationGroups()` | [`Panel/Concerns/HasSidebar.php`](../../../vendor/filament/filament/src/Panel/Concerns/HasSidebar.php) | done | — | [navigation-group.md](navigation-group.md) |
+| `HasSidebar`: `sidebarCollapsibleOnDesktop()` / `sidebarFullyCollapsibleOnDesktop()` / `sidebarWidth()` / `collapsedSidebarWidth()`, their getters and `sidebarLivewireComponent()` | the rest of `HasSidebar.php` | todo | — | — |
+| [`HasBrandName`](../../../packages/panels/src/Panel/Concerns/HasBrandName.php) | [`Panel/Concerns/HasBrandName.php`](../../../vendor/filament/filament/src/Panel/Concerns/HasBrandName.php) | done | — | [diverges](#getbrandname-returns-null-where-filament-falls-back-to-the-app-name) |
+| [`HasBrandLogo`](../../../packages/panels/src/Panel/Concerns/HasBrandLogo.php) | [`Panel/Concerns/HasBrandLogo.php`](../../../vendor/filament/filament/src/Panel/Concerns/HasBrandLogo.php) | done | — | [layout-templates.md](layout-templates.md) |
+| `darkMode()` / `themeSwitcher()` / `hasDarkMode()` / `hasDarkModeForced()` / `hasThemeSwitcher()`, `defaultThemeMode()` / `getDefaultThemeMode()` | [`Panel/Concerns/HasDarkMode.php`](../../../vendor/filament/filament/src/Panel/Concerns/HasDarkMode.php), [`Panel/Concerns/HasTheme.php`](../../../vendor/filament/filament/src/Panel/Concerns/HasTheme.php) | todo | — | — |
+| `breadcrumbs()` / `hasBreadcrumbs()` / `hasNavigationHierarchyInBreadcrumbs()` | [`Panel/Concerns/HasBreadcrumbs.php`](../../../vendor/filament/filament/src/Panel/Concerns/HasBreadcrumbs.php) | todo | — | [page.md](page.md#the-navigation-hierarchy-breadcrumbs-wait-on-the-panels-breadcrumb-settings) |
+| The other `Panel/Concerns` traits no Sylament code composes: auth, tenancy, colours, icons, assets, render hooks, middleware, plugins, fonts and the rest | [`Panel/Concerns/`](../../../vendor/filament/filament/src/Panel/Concerns) | todo | — | — |
+
+## Surface — PanelProvider
+
+| Feature | Ports | Status | Blocked by | Detail |
+| --- | --- | --- | --- | --- |
+| [`panel()`](../../../packages/panels/src/PanelProvider.php) | [`PanelProvider::panel()`](../../../vendor/filament/filament/src/PanelProvider.php) | done | — | [diverges](#panels-are-collected-from-tagged-providers-not-registered-imperatively) |
+| `register()` | `PanelProvider::register()` | skipped | — | [diverges](#panels-are-collected-from-tagged-providers-not-registered-imperatively) |
+
+## Surface — PanelRegistry
+
+| Feature | Ports | Status | Blocked by | Detail |
+| --- | --- | --- | --- | --- |
+| [`all()`](../../../packages/panels/src/PanelRegistry.php) | [`PanelRegistry::all()`](../../../vendor/filament/filament/src/PanelRegistry.php) | done | — | [diverges](#panels-are-collected-from-tagged-providers-not-registered-imperatively) |
+| [`get()`](../../../packages/panels/src/PanelRegistry.php) | `PanelRegistry::get()` | done | — | [diverges](#panelregistryget-has-no-fuzzy-arm) |
+| [`getDefault()`](../../../packages/panels/src/PanelRegistry.php) | `PanelRegistry::getDefault()` | done | — | — |
+| [`getProviderClass()`](../../../packages/panels/src/PanelRegistry.php) | no Filament counterpart | done | — | [routing.md](routing.md#panelrouteloader-mounts-the-whole-panel-surface-in-one-pass-over-the-panel-registry) |
+| `register()` | `PanelRegistry::register()` | skipped | — | [diverges](#panels-are-collected-from-tagged-providers-not-registered-imperatively) |
+
+## Surface — CurrentPanel
+
+| Feature | Ports | Status | Blocked by | Detail |
+| --- | --- | --- | --- | --- |
+| [`CurrentPanel::get()`](../../../packages/panels/src/CurrentPanel.php) | [`FilamentManager`](../../../vendor/filament/filament/src/FilamentManager.php)'s current panel and [`SetUpPanel`](../../../vendor/filament/filament/src/Http/Middleware/SetUpPanel.php) | done | — | [diverges](#the-current-panel-is-derived-from-the-request-not-stored-on-a-manager) |
+| `getCurrentOrDefaultPanel()` | `FilamentManager::getCurrentOrDefaultPanel()` | skipped | — | [diverges](#the-current-panel-is-derived-from-the-request-not-stored-on-a-manager) |
+| _rest not audited yet_ | — | — | — | — |
+
+## Surface — SylamentPanelsBundle
+
+| Feature | Ports | Status | Blocked by | Detail |
+| --- | --- | --- | --- | --- |
+| [`SylamentPanelsBundle`](../../../packages/panels/src/SylamentPanelsBundle.php): autoconfiguration tags, compiler passes, services and the `@sylament/panels` AssetMapper path | [`FilamentServiceProvider.php`](../../../vendor/filament/filament/src/FilamentServiceProvider.php) | done | — | [diverges](#panels-are-collected-from-tagged-providers-not-registered-imperatively) |
+| `Make*` commands (`hasCommands()`) | [`FilamentServiceProvider.php`](../../../vendor/filament/filament/src/FilamentServiceProvider.php) | todo | — | — |
+| Translations (`hasTranslations()`) | [`FilamentServiceProvider.php`](../../../vendor/filament/filament/src/FilamentServiceProvider.php) | todo | — | [i18n](../../internals/i18n.md#translation-is-one-deferred-pass-not-a-per-component-port) |
 | _rest not audited yet_ | — | — | — | — |
 
 ## Details
 
-### The panel is the definition a provider configures, beside the services that collect and locate panels
+### Filesystem discovery would return only as a convenience over service registration
 
-The definition surface a panel provider configures, plus the two services that collect and locate panels.
-`Panel` composes eleven of Filament's `Panel/Concerns` traits — `HasId` (write-once id, fatal when read unset), `HasRoutes` (the path only), `HasComponents` ([`pages()` and `resources()`, each accumulating, de-duplicated and re-indexed](#getpages-re-indexes-where-filament-keeps-array_uniques-gapped-keys)), `HasNavigation` (`navigationGroups()`/`navigationItems()` registration plus `getNavigation()`, whose resource loop also [leaves a nested resource out](nested-resources.md#the-suppressions-sit-where-the-trail-already-put-them)), `HasSubNavigation` (`subNavigationPosition()` alone — the panel-wide default the [band's position ladder](has-sub-navigation.md#the-position-is-one-instance-method-with-no-static-twin) ends at), `HasSidebar` (`collapsibleNavigationGroups()` alone — the panel-level default [`NavigationGroup::isCollapsible()`](navigation-group.md) falls back to), `HasBrandName`, `HasBrandLogo` (`brandLogo()`/`darkModeBrandLogo()`, each `string|Markup|Closure|null` under the standing `Htmlable` → `Markup` translation, plus `brandLogoHeight()` — consumed by the [`Logo` template](layout-templates.md)) and [`HasGlobalSearch`](global-search.md) (the provider switch plus the field's debounce, key bindings and suffix), and the two the page tier needs, [`HasMaxContentWidth`](simple-page.md#the-width-resolution-is-one-ladder-in-the-controller) (`maxContentWidth()` and `simplePageMaxContentWidth()`, the two ends of the width ladder) and [`HasUnsavedChangesAlerts`](unsaved-changes-alert.md) (`unsavedChangesAlerts()`, off by default, so shipping it changed nothing until a panel opted in) — with `default()`/`isDefault()` on the class itself, matching Filament.
+Filament's `discover*()` arms scan directories for classes to register.
+Resources and pages are [collected from a service tag](resource.md#resources-are-collected-from-a-tag-not-discovered-on-the-filesystem) here, which replaces discovery for services, so a discovery arm would return only as a convenience over the application's service configuration.
 
-`HasGlobalSearch` carries one member Filament files elsewhere: `isGlobalSearchEnabled()` is a `FilamentManager` method over there, and there is no manager here — a panel is reached through `PanelRegistry`/`CurrentPanel` — so it sits on the panel under its **unchanged** Filament name.
-A relocation, not a rename, which is why it earns no row in [the rename table](../renames.md) and is recorded [here and in global-search.md](global-search.md#isglobalsearchenabled-moved-off-the-manager-onto-the-panel) instead.
+### The navigation builder escape hatch is deferred, not rejected
 
-`getNavigation()` is the assembly step: it clones every item each registered page contributes, then every item each registered resource contributes, then the panel's own `navigationItems()`, drops the hidden ones, sorts by `getSort()`, and buckets what is left by `getGroup()`.
+Filament's `navigation(Closure | bool)` with `NavigationBuilder`, plus `hasNavigation()` / `hasNavigationBuilder()`, replaces the derived navigation with a hand-built one.
+It needs nothing from [the assembly](#getnavigation-merges-every-source-before-it-sorts-and-buckets) and can land whole, unchanged in shape, whenever a consumer wants it.
+
+## Semantics
+
+### `getNavigation()` merges every source before it sorts and buckets
+
+`getNavigation()` clones every item each registered page contributes, then every item each registered resource contributes, then the panel's own `navigationItems()`, drops the hidden ones, sorts by `getSort()`, and buckets what is left by `getGroup()`.
+All three sources land in one list before that pass, so a resource item sorts and groups against the page items rather than trailing them; source order decides ties alone, `usort` being stable.
 The ungrouped bucket becomes the leading label-less group; each registered group then claims its bucket by key **or** label (a clone, so the registration survives repeated calls); buckets no registration matched follow in encounter order.
-Every group that comes out is stamped with `collapsibleFallback($this->hasCollapsibleNavigationGroups())`.
-A group with no items is never built, so a registration nothing matched simply does not render.
+Every group that comes out is stamped with `collapsibleFallback($this->hasCollapsibleNavigationGroups())`, and a group with no items is never built, so a registration nothing matched does not render.
 Cloning at both ends is what makes the method idempotent — `items()` mutates, and the registered objects are the panel's, not the render's.
-All three sources land in one list before the filter/sort/bucket pass, so a resource item sorts and groups against the page items rather than trailing them; source order decides ties alone, `usort` being stable.
-`HasComponents` types its page list `class-string<Page>` for this: the assembly calls `Page`'s static navigation methods on each entry.
+A resource's items are built fresh on every call, so cloning them is not needed for that, and it is done anyway: it keeps the three loops identical to read, and a memoisation inside `getNavigationItems()` could not leak one render's [destructive `isActive()`](#navigation-is-assembled-on-the-panel-not-by-a-navigationmanager) into the next.
 
-The resource arm is the one source that needs a service.
-A registered resource is a class-string, and turning it into the instance whose `getNavigationItems($this)` answers means going through [`ResourceRegistry`](resource.md) — so `HasNavigation` takes one through a `#[Required] setResourceRegistry()` setter, exactly as [`NavigationItem`](navigation-item.md#the-item-hands-its-own-services-to-evaluated-closures) takes its three.
+### A `new`-built panel cannot assemble resource navigation
+
+A registered resource is a class-string, and turning it into the instance whose `getNavigationItems($this)` answers means going through [`ResourceRegistry`](resource.md), so `HasNavigation` takes one through a `#[Required] setResourceRegistry()` setter, as [`NavigationItem`](navigation-item.md#the-item-hands-its-own-services-to-evaluated-closures) takes its three services.
 `Panel` is a `sylament.component`-tagged, container-built, non-shared service, so the setter fires on every `Panel::make()`.
 A panel built with `new` holds no registry, and `getNavigation()` then throws *"Resource navigation needs the container-built panel"* the moment it reaches a registered resource — the same [fail-fast](resource.md#a-new-built-resource-fails-fast-rather-than-degrading) shape `Resource`'s own service set uses, rather than silently dropping half the navigation.
 A `new`-built panel that registers no resource still assembles normally, because the loop body is what needs the registry.
-`shouldRegisterNavigation()` is consulted here, in the loop, rather than inside `getNavigationItems()` — Filament's placement exactly, and the [pulled rather than pushed](#resource-navigation-is-pulled-through-the-registry-not-pushed-by-the-resource) entry covers why the loop exists at all.
-A resource's items are built fresh on every call, so cloning them buys nothing today and is done anyway: it keeps the three loops identical to read, and it means a later memoisation inside `getNavigationItems()` cannot leak one render's [destructive `isActive()`](#navigation-is-assembled-on-the-panel-not-by-a-navigationmanager) into the next.
 
-`PanelProvider` is the abstract `panel(Panel $panel): Panel` contract; every subclass an application registers as a service is tagged `sylament.panels.panel_provider` by autoconfiguration.
-`PanelRegistry` consumes that tagged iterator, builds each provider's panel once (memoised), keys them by id, rejects a duplicate id, and answers `getDefault()` or throws `NoDefaultPanelSetException`.
-`CurrentPanel` reads the `_sylament_panel` request attribute off the `RequestStack` and resolves it through the registry.
-Both are ordinary private services: [`PanelRouteLoader`](routing.md) injects the registry and [`PageController`](routing.md) injects the current-panel lookup.
+### A registered page or resource is validated by the route loader, not at registration
 
-`resources()` / `getResources()` is the same shape as `pages()`, typed `class-string<Resource>` and equally unvalidated at registration time — the route loader is where a non-`Resource` entry is caught.
-Both readers are live: [`PanelRouteLoader`](routing.md) mounts every page a registered resource declares, and `getNavigation()` above merges the item that resource contributes.
-
-Deferred, all todo: the other 23 `Panel/Concerns` traits (auth, tenancy, colors, assets, render hooks, middleware, plugins, …); `discoverResources()` / `discoverPages()`, Filament's filesystem-scanning registration arms, which the [tag-collected](resource.md#resources-are-collected-from-a-tag-not-discovered-on-the-filesystem) shape replaces for services and which would only return as a convenience over `services.yaml`; the widget registration arm; `navigation()` / `NavigationBuilder` — the hand-built navigation escape hatch, which needs nothing from the assembly above and lands when a consumer wants it; the parent-item nesting pass and the `UnitEnum` group arm, both waiting on [`NavigationItem`'s deferred `key()`](navigation-item.md); and the widget contribution to the item list, which arrives with that subsystem.
-
-Nine deltas, each with its own divergence: [panels are collected from tagged providers rather than registered by a service provider](#panels-are-collected-from-tagged-providers-not-registered-imperatively), [the current panel is derived from the request, never stored](#the-current-panel-is-derived-from-the-request-not-stored-on-a-manager), [`PanelRegistry::get()` has no fuzzy arm](#panelregistryget-has-no-fuzzy-arm), [navigation is assembled on the panel rather than by a `NavigationManager`](#navigation-is-assembled-on-the-panel-not-by-a-navigationmanager), [resource navigation is pulled through the registry rather than pushed by the resource](#resource-navigation-is-pulled-through-the-registry-not-pushed-by-the-resource), [the panel has no `register()` or `boot()`](#the-panel-has-no-register-or-boot), [`make()` configures before the id is set](#make-configures-the-panel-before-its-id-is-set), [`getBrandName()` returns `null` rather than an application name](#getbrandname-returns-null-where-filament-falls-back-to-the-app-name), and [`getPages()` re-indexes](#getpages-re-indexes-where-filament-keeps-array_uniques-gapped-keys).
+`pages()` and `resources()` accumulate across calls and type their entries `class-string<Page>` and `class-string<Resource>`, but nothing checks an entry when it is registered.
+[`PanelRouteLoader`](routing.md#panelrouteloader-mounts-the-whole-panel-surface-in-one-pass-over-the-panel-registry) is where a non-`Page` or non-`Resource` entry is refused, at route-build time.
 
 ## Divergences
 
 ### Panels are collected from tagged providers, not registered imperatively
 
 Filament's `PanelProvider` extends Laravel's `ServiceProvider` and its `register()` calls `Filament::registerPanel(fn () => $this->panel(Panel::make()))`, so a panel exists because a provider imperatively pushed it into the manager.
-Symfony has no service-provider tier to hook: ours is a plain abstract class carrying `panel()` alone, autoconfigured with `sylament.panels.panel_provider`, and `PanelRegistry` receives the tagged iterator and builds each panel lazily on first `all()`.
+Symfony has no service-provider tier to hook: ours is a plain abstract class carrying `panel()` alone, autoconfigured with `sylament.panels.panel_provider` by `SylamentPanelsBundle`, and `PanelRegistry` receives the tagged iterator and builds each panel once, on the first `all()`, keyed by id.
 The user-facing shape is unchanged — write a `PanelProvider` subclass with a `panel()` method — while registration becomes container wiring, the same trade `AsController`/`AsEventListener` make.
 
 The tag buys one behaviour Filament's registry has no place for: two providers claiming the same id throw naming both classes, where Filament's `$this->panels[$panel->getId()] = $panel` silently overwrites the first.
@@ -85,7 +141,7 @@ Under php-fpm that is invisible, because the manager dies with the request.
 Under a long-running worker the second request onwards finds the flag already true and skips booting its panel entirely, so the colours, icons and render hooks of whichever panel happened to be served first are the ones every later request gets.
 The port has no flag to forget to reset because it has nothing to boot ([the panel has no `register()` or `boot()`](#the-panel-has-no-register-or-boot)) and nothing to remember.
 
-Filament's `getCurrentOrDefaultPanel()` fallback is not ported here: `get()` returns `null` outside a panel, and a caller that wants the default asks `PanelRegistry::getDefault()` for it.
+Filament's `getCurrentOrDefaultPanel()` fallback is not ported: `get()` returns `null` outside a panel, and a caller that wants the default asks `PanelRegistry::getDefault()` for it.
 
 ### `PanelRegistry::get()` has no fuzzy arm
 
@@ -97,7 +153,7 @@ Nothing calls the fuzzy arm with `$isStrict: false` except Filament's own artisa
 
 Filament's `Panel::getNavigation()` resolves a `NavigationManager` out of the container, hands itself to it via a `$navigationManager` property the registration setters then redirect to, and reads the result back — a round trip that buys a per-request scratch object (it clones the panel's groups and items in its constructor) which `navigationGroups()`/`navigationItems()` can still be called on *while* the navigation is being built, the seam plugins register through.
 Ours does the assembly in `HasNavigation::getNavigation()` directly.
-The panel already holds every input (its pages, groups and items), the method needs no service, and the manager's mid-build registration arm has no caller here until plugins land.
+The panel already holds every input (its pages, groups and items), the method needs no service beyond the resource registry, and the manager's mid-build registration arm has no caller here until plugins land.
 The piece worth keeping from it is the cloning discipline, which ours has: groups and items are cloned on the way out, so repeated calls neither accumulate items on a registered group nor let one render's mutation reach the next.
 
 That discipline covers `getNavigation()` and nothing else.
@@ -105,19 +161,17 @@ That discipline covers `getNavigation()` and nothing else.
 Read against them, [`NavigationItem::isActive()`](navigation-item.md) is destructive: it overwrites its `isActiveWhen()` closure with the boolean the first evaluation produced, so a raw item asked once whether it is active answers that way for the life of the process, on every request, whatever the route.
 Navigation is read through `getNavigation()`, whose clones absorb exactly that; the raw getters are registration-time composition surface — what a provider reads to add to what an earlier call registered — and are not a render path.
 
-The escape hatch Filament layers on top — `navigation(Closure | bool)` with `NavigationBuilder`, plus `hasNavigation()` / `hasNavigationBuilder()` — is deferred rather than rejected: it replaces the derived navigation with a hand-built one and can land whole, unchanged in shape, whenever a consumer wants it.
-
 ### Resource navigation is pulled through the registry, not pushed by the resource
 
 Filament's `Resource::registerNavigationItems()` is a `void` static that reaches `Filament::getCurrentOrDefaultPanel()` and **pushes** its items onto the panel with `->navigationItems(...)`; `NavigationManager::mountNavigation()` calls it once per registered page and resource, then reads the accumulated list back off itself.
 Both halves of that are forced by the same thing: a Filament resource is a static class with no panel in hand, so it needs the facade to find one, and pushing onto the real panel would accumulate items across requests, so it needs the manager's per-request scratch lists to push *into* — two arrays seeded by cloning the panel's own, which `Panel::navigationItems()` redirects into for as long as a manager is set.
 
 Ours pulls.
-`getNavigation()` resolves each registered class-string through [`ResourceRegistry`](resource.md) and calls `getNavigationItems($this)` on the instance — the panel is handed over, not looked up, the same inversion [`Page::getNavigationItems(Panel)`](page.md#getnavigationitems-takes-the-panel-rather-than-reaching-a-facade) already uses — and merges the returned array locally.
+`getNavigation()` resolves each registered class-string through [`ResourceRegistry`](resource.md) and calls `getNavigationItems($this)` on the instance — the panel is handed over, not looked up, the same inversion [`Page::getNavigationItems(Panel)`](page.md#getnavigationitems-takes-the-panel-rather-than-reaching-a-facade) uses — and merges the returned array locally.
 Nothing mutates the panel, so there is no accumulation to clone away and no scratch object to own the result.
 The one thing the push model buys that this does not is a third party queueing items into a build already under way; that is the plugin seam, deferred with the rest of plugins.
 
-So `registerNavigationItems()` has no port, and its four early returns are distributed rather than dropped: `shouldRegisterNavigation()` is ported and consulted by the panel-side loop, in Filament's own position, and so is [`getParentResourceRegistration()`](nested-resources.md#the-suppressions-sit-where-the-trail-already-put-them) — a nested resource is skipped there and nowhere else, so it still answers `getNavigationItems()` when something asks it directly.
+So `registerNavigationItems()` has no port, and its four early returns are distributed rather than dropped: `shouldRegisterNavigation()` is ported and consulted by the panel-side loop, in Filament's own position, and so is `getParentResourceRegistration()` — a [nested resource](nested-resources.md) is skipped there and nowhere else, so it still answers `getNavigationItems()` when something asks it directly.
 `getCluster()` guards an unported subsystem; `canAccess()` waits on authorization.
 Each of those lands in the loop when its subsystem does, not back inside the resource — a resource that answers `getNavigationItems()` with an array cannot also decide it should not have been asked.
 
@@ -138,7 +192,7 @@ Filament's `Panel::make()` is `app(static::class)` and configures nothing; `conf
 So every `Panel::configureUsing()` closure Filament runs sees a panel that already knows its id, and a closure keyed on it — `fn (Panel $panel) => $panel->getId() === 'admin' ? … : …` — works.
 
 Ours follows the house `make()` shape instead: `Panel::make()` calls `newInstance()` then `configure()`, the same two lines every other Sylament component's factory has, and `id()` is a plain write-once setter.
-The ordering inverts — configuration runs first, the id arrives after — and the cost is narrow but real: a `Panel::configureUsing()` closure that reads `getId()` does not see a different id, it **fatals**, because [`HasId::getId()` throws when the property is unset](#the-panel-is-the-definition-a-provider-configures-beside-the-services-that-collect-and-locate-panels).
+The ordering inverts — configuration runs first, the id arrives after — and the cost is narrow but real: a `Panel::configureUsing()` closure that reads `getId()` does not see a different id, it throws, because `HasId::getId()` throws a `LogicException` while no id is set.
 Nothing in-repo does that (the panels suite registers no panel-level `configureUsing()`), so the divergence is recorded rather than fixed.
 Adopting Filament's placement would mean `id()` calling `configure()`, which double-configures every panel built through `make()` unless `make()` stops doing it — a change to the one factory shape the whole toolkit shares, for a closure nobody has written yet.
 Revisit the moment a consumer hits it.

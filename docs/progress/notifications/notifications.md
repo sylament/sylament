@@ -1,5 +1,5 @@
 ---
-description: The `<twig:SylamentNotifications:Notifications />` stack, placed once in an application layout. (draft)
+description: The toast stack `<twig:SylamentNotifications:Notifications />`, placed once in an application layout, with its template and Stimulus controller.
 ports:
   - vendor/filament/notifications/src/Livewire/Notifications.php
   - vendor/filament/notifications/resources/views/notifications.blade.php
@@ -11,7 +11,7 @@ owns:
 ---
 # Notifications — the toast stack (notifications)
 
-[`Sylament\Notifications\Twig\Components\Notifications`](../../../packages/notifications/src/Twig/Components/Notifications.php) — the `<twig:SylamentNotifications:Notifications />` stack, placed once in an application layout.
+[`Sylament\Notifications\Twig\Components\Notifications`](../../../packages/notifications/src/Twig/Components/Notifications.php) is the `<twig:SylamentNotifications:Notifications />` stack, placed once in an application layout.
 It ports Filament's [`Livewire\Notifications`](../../../vendor/filament/notifications/src/Livewire/Notifications.php) component and its [`notifications.blade.php`](../../../vendor/filament/notifications/resources/views/notifications.blade.php) view, which fold together here: the class is a **class-backed Twig component**, not a live component, and its [template](../../../packages/notifications/templates/components/Notifications/index.html.twig) plus the stack Stimulus controller carry everything Filament's Livewire round trip carried.
 
 That is the package's one architectural decision, and every divergence below is a face of it: the stack renders toasts, it does not *hold* them.
@@ -32,12 +32,6 @@ Toast HTML has one renderer (Twig), the DOM is the only client-side state, and a
 | `$isFilamentNotificationsComponent` | [`Livewire/Notifications.php`](../../../vendor/filament/notifications/src/Livewire/Notifications.php) | skipped | — | [diverges](#the-flip-marker-prop-has-nothing-to-mark) |
 | `pushNotificationFromEvent()` (`#[On('notificationSent')]`) | [`Livewire/Notifications.php`](../../../vendor/filament/notifications/src/Livewire/Notifications.php) | todo | — | [detail](#the-client-side-builders-entry-point-waits-on-the-builder) |
 | `handleBroadcastNotification()` / `getBroadcastChannel()` / `getUser()` / `authGuard()` + the Echo `<script>` | [`Livewire/Notifications.php`](../../../vendor/filament/notifications/src/Livewire/Notifications.php), [`notifications.blade.php`](../../../vendor/filament/notifications/resources/views/notifications.blade.php) | blocked | the broadcast delivery arm | [detail](#the-broadcast-channel-arrives-with-the-broadcast-arm) |
-
-The **done** rows are covered by [`NotificationsTest`](../../../packages/notifications/tests/Integration/Twig/Components/NotificationsTest.php): the default placement (`sy-align-right` + `sy-vertical-align-start`, Filament's defaults) with the polite container attributes and the stack controller's `sylament:notification@window` action; two flashed notifications rendering inline and the flash draining as they do; and `alignment` / `verticalAlignment` accepting an enum or a bare string.
-The live-delivery row is covered from the other side, by [`LiveDeliverySubscriberTest`](../../../packages/notifications/tests/Integration/Delivery/LiveDeliverySubscriberTest.php).
-
-The container-styles row is the one **done** row with no assertion of its own, and it cannot have one — no suite reads CSS.
-What stands behind its status is that its seven rules — the base plus the six placement variants — are a selector-for-selector port of `notifications.css` under the `fi-*` → `sy-*` rename, and that the three classes they key off (`sy-no`, `sy-align-*`, `sy-vertical-align-*`) are pinned by the two placement cases above, so a template that stopped emitting them would fail.
 
 ## Details
 
@@ -64,7 +58,7 @@ Filament's stack subscribes to the authenticated user's private Echo channel: `g
 Two things drain `sylament.notifications`: this component's `getFlashed()` on a full page load, and the [live-delivery subscriber](notifications-bundle.md#the-live-delivery-decision-point-is-a-prerenderevent-subscriber-not-a-dehydrate-hook) on a live request.
 Both call the same [`SessionNotifications::pull()`](../../../packages/notifications/src/Delivery/SessionNotifications.php), which is a flash-bag `get()` — it empties the bag as it reads.
 So whichever runs first in a given request takes everything, and any later reader finds nothing: several live components rendering in one batched request produce one delivery, not one per component, and a page load that renders the stack twice renders the toasts once.
-Filament reaches the same outcome through its `claimed_notifications` key; here it falls out of the flash bag's own semantics, with no second key to keep in sync.
+Filament reaches the same outcome because `session()->pull()` drains too, and adds a second `claimed_notifications` key between its hook and the stack's re-request; here it falls out of the flash bag's own semantics, with no second key to keep in sync.
 
 ## Divergences
 
@@ -74,7 +68,7 @@ Filament configures the stack through three static setters called from a service
 Sylament's stack is a Twig tag, so the two placement settings are **props**: `<twig:SylamentNotifications:Notifications :alignment="'center'" :verticalAlignment="'end'" />`, each accepting the support enum ([`Alignment`](../../../packages/support/src/Enums/Alignment.php), [`VerticalAlignment`](../support/vertical-alignment.md)) or its string value, and each defaulting to Filament's default (`right` / `start` — a top-right stack).
 
 Configuration therefore lives in the layout, which is the file the tag is in anyway, and nothing has to run at boot for a placement to take effect.
-The enums, the class names and the emitted `sy-align-*` / `sy-vertical-align-*` classes are Filament's unchanged, so a migrating stylesheet still matches.
+The enums and their values are Filament's, and the emitted `sy-align-*` / `sy-vertical-align-*` classes are Filament's `fi-align-*` / `fi-vertical-align-*` under the `fi-*` → `sy-*` class rename.
 `authGuard()` is not a placement setting and is [deferred with the broadcast arm](#the-broadcast-channel-arrives-with-the-broadcast-arm) instead.
 
 ### The stack holds no server-side collection, so Filament's `Collection` is not ported
@@ -86,10 +80,9 @@ There is no property to hydrate, so there is nothing for a `Wireable` carrier to
 What that buys is the absence of a whole bug class.
 A server-held collection has to stay in sync with the screen: closing a toast must tell the server, or the next render morphs it back; adding one costs a round trip; and the two can disagree in between.
 Symfony UX also has no synthesizer equivalent, so the hydration Livewire supplies for free would have to be hand-built.
-This repo has paid for the out-of-sync class twice already (the declarative modal `open` flag, and the `dehydrateWith:` bridge in tables), which is what settled it here.
 
 Permanent for the toast stack.
-It says nothing about the **database-notifications panel**, which is a separate Livewire component in Filament too, with its own actions host and its own stored state — it arrives separately and is free to be a live component.
+It says nothing about the **database-notifications panel**, which is a separate Livewire component in Filament too, with its own actions host and its own stored state, and is free to be a live component.
 
 ### Live delivery appends server-rendered HTML instead of re-requesting the stack
 

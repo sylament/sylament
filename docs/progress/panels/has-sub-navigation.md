@@ -1,8 +1,9 @@
 ---
-description: The band of sibling pages a page draws beside its own content — Edit ↔ Manage Sections on one article's record pages — in three positions, and the… (draft)
+description: The band of sibling pages a page draws beside its content, its three positions and the position ladder, and the item factory that fills it.
 ports:
   - vendor/filament/filament/src/Pages/Concerns/HasSubNavigation.php
   - vendor/filament/filament/src/Pages/Enums/SubNavigationPosition.php
+  - vendor/filament/filament/src/Panel/Concerns/HasSubNavigation.php
   - vendor/filament/filament/src/Resources/Resource/Concerns/HasNavigation.php
   - vendor/filament/filament/resources/views/components/page/sub-navigation/
   - vendor/filament/filament/resources/css/components/page.css
@@ -18,13 +19,8 @@ owns:
 ---
 # Sub-navigation (panels)
 
-The band of sibling pages a page draws beside its own content — Edit ↔ Manage Sections on one article's record pages — in three positions, and the machinery behind it:
-
-- [`Pages\Concerns\HasSubNavigation`](../../../packages/panels/src/Pages/Concerns/HasSubNavigation.php) on the base [`Pages\Page`](page.md): the `getSubNavigation()` hook, the `getCachedSubNavigation()` normalization every template reads, `generateNavigationItems()` (the item factory a resource's `getRecordSubNavigation()` calls), `getSubNavigationParameters()` and the position ladder.
-- [`Pages\Enums\SubNavigationPosition`](../../../packages/panels/src/Pages/Enums/SubNavigationPosition.php) — `Start` / `End` / `Top`, Filament-exact.
-- [`Panel\Concerns\HasSubNavigation`](../../../packages/panels/src/Panel/Concerns/HasSubNavigation.php) — the panel-wide `subNavigationPosition()` knob, defaulting to `Start`.
-- [`Resource::getRecordSubNavigation(Page)`](../../../packages/panels/src/Resources/Resource.php) and `Resource::getSubNavigationPosition()`, which [`InteractsWithRecord`](interacts-with-record.md) bridges to, plus the resource-page override of the position and `Page::generateResourcePageNavigationItems()`, the seam that turns a sibling **resource** page into an item.
-- Four templates — `SubNavigation` (the dispatcher), `SubNavigationSidebar` (`Start`/`End`), `SubNavigationTabs` (`Top`) and `SubNavigationMobileMenu` (every position, below `md`) — mounted by the five page partials (`Page`, `ListRecords`, `CreateRecord`, `EditRecord` and `ManageRelatedRecords`), plus `sub-navigation.css` and two `page.css` rules.
+The band of sibling pages a page draws beside its own content — Edit ↔ Manage Sections on one article's record pages.
+[`Pages\Concerns\HasSubNavigation`](../../../packages/panels/src/Pages/Concerns/HasSubNavigation.php) sits on the base [`Pages\Page`](page.md), and on a record page [`InteractsWithRecord`](interacts-with-record.md) fills its hook from the resource.
 
 ## Surface
 
@@ -33,10 +29,9 @@ The band of sibling pages a page draws beside its own content — Edit ↔ Manag
 | [`SubNavigationPosition`](../../../packages/panels/src/Pages/Enums/SubNavigationPosition.php) | [`Pages/Enums/SubNavigationPosition.php`](../../../vendor/filament/filament/src/Pages/Enums/SubNavigationPosition.php) | done | — | — |
 | [`getSubNavigation()`](../../../packages/panels/src/Pages/Concerns/HasSubNavigation.php) | `HasSubNavigation::getSubNavigation()` | done | — | [diverges](#the-cluster-arms-are-not-ported-so-the-resource-page-hard-override-is-moot) |
 | [`getCachedSubNavigation()`](../../../packages/panels/src/Pages/Concerns/HasSubNavigation.php) | `HasSubNavigation::getCachedSubNavigation()` | done | — | [semantics](#the-normalization-answers-groups-only-and-the-ungrouped-bucket-comes-first) |
-| [`generateNavigationItems()`](../../../packages/panels/src/Pages/Concerns/HasSubNavigation.php) | `HasSubNavigation::generateNavigationItems()` | done | — | [diverges](#a-plain-page-item-is-built-here-where-filament-asks-the-page-for-it) |
+| [`generateNavigationItems()`](../../../packages/panels/src/Pages/Concerns/HasSubNavigation.php) | `HasSubNavigation::generateNavigationItems()` | done | — | [diverges](#a-plain-page-item-is-built-here-where-filament-asks-the-page-for-it) · [diverges](#the-active-state-is-page-class-identity-not-a-route-match) |
 | [`getSubNavigationParameters()`](../../../packages/panels/src/Pages/Concerns/HasSubNavigation.php) | same | done | — | [diverges](interacts-with-record.md#the-sub-navigation-parameters-carry-keys-and-the-parent-chain) |
-| [`Page::shouldRegisterNavigation()`](../../../packages/panels/src/Pages/Page.php) + its static | [`Pages/Page.php`](../../../vendor/filament/filament/src/Pages/Page.php) | done | — | — |
-| [`getSubNavigationPosition()`](../../../packages/panels/src/Pages/Concerns/HasSubNavigation.php) — the page tier | `HasSubNavigation::getSubNavigationPosition()` | done | — | [diverges](#the-position-is-one-instance-method-with-no-static-twin) |
+| [`getSubNavigationPosition()`](../../../packages/panels/src/Pages/Concerns/HasSubNavigation.php) + `$subNavigationPosition` — the page tier | `HasSubNavigation::getSubNavigationPosition()` | done | — | [diverges](#the-position-is-one-instance-method-with-no-static-twin) |
 | [`Panel::subNavigationPosition()`](../../../packages/panels/src/Panel/Concerns/HasSubNavigation.php) / `getSubNavigationPosition()` | [`Panel/Concerns/HasSubNavigation.php`](../../../vendor/filament/filament/src/Panel/Concerns/HasSubNavigation.php) | done | — | — |
 | [`Resource::getSubNavigationPosition()`](../../../packages/panels/src/Resources/Resource.php) + its static | `Resource\Concerns\HasNavigation::getSubNavigationPosition()` | done | — | [diverges](#the-position-is-one-instance-method-with-no-static-twin) |
 | [`Resources\Pages\Page::getSubNavigationPosition()`](../../../packages/panels/src/Resources/Pages/Page.php) | [`Resources/Pages/Page.php`](../../../vendor/filament/filament/src/Resources/Pages/Page.php) | done | — | [diverges](#a-resource-page-keeps-its-own-position-static-where-filaments-drops-it) |
@@ -44,45 +39,41 @@ The band of sibling pages a page draws beside its own content — Edit ↔ Manag
 | [`Resources\Pages\Page::generateResourcePageNavigationItems()`](../../../packages/panels/src/Resources/Pages/Page.php) | `Resources\Pages\Page::getNavigationItems(array $urlParameters)` | done | — | [diverges](#a-resource-page-item-is-built-by-the-band-because-a-page-cannot-name-its-own-route) |
 | [`SubNavigation`](../../../packages/panels/templates/components/SubNavigation/index.html.twig) — the dispatcher | the position branch inside [`page/index.blade.php`](../../../vendor/filament/filament/resources/views/components/page/index.blade.php) | done | — | [diverges](#three-sibling-components-not-one-with-variants) |
 | [`SubNavigationSidebar`](../../../packages/panels/templates/components/SubNavigationSidebar/index.html.twig) — `Start` / `End` | [`page/sub-navigation/sidebar.blade.php`](../../../vendor/filament/filament/resources/views/components/page/sub-navigation/sidebar.blade.php) | done | — | [semantics](#the-band-reuses-the-sidebar-group-and-prefixes-its-dom-ids) |
-| [`SubNavigationTabs`](../../../packages/panels/templates/components/SubNavigationTabs/index.html.twig) — `Top` | [`page/sub-navigation/tabs.blade.php`](../../../vendor/filament/filament/resources/views/components/page/sub-navigation/tabs.blade.php) | done | — | [semantics](#the-top-variant-is-the-first-pin-of-tabsitems-anchor-arm) |
+| [`SubNavigationTabs`](../../../packages/panels/templates/components/SubNavigationTabs/index.html.twig) — `Top` | [`page/sub-navigation/tabs.blade.php`](../../../vendor/filament/filament/resources/views/components/page/sub-navigation/tabs.blade.php) | done | — | [semantics](#the-active-tab-is-selected-by-aria-currentpage-because-an-active-group-trigger-carries-aria-currenttrue) |
 | [`SubNavigationMobileMenu`](../../../packages/panels/templates/components/SubNavigationMobileMenu/index.html.twig) | [`page/sub-navigation/mobile-menu.blade.php`](../../../vendor/filament/filament/resources/views/components/page/sub-navigation/mobile-menu.blade.php) | done | — | [diverges](#the-mobile-menu-renders-no-group-headers) |
 | The band on the base page chrome + the root modifiers | the same block in `page/index.blade.php` | done | — | [semantics](#an-empty-band-never-resolves-a-panel) |
 | [`sub-navigation.css`](../../../packages/panels/assets/src/styles/components/sub-navigation.css) + the two `page.css` rules | [`components/page.css`](../../../vendor/filament/filament/resources/css/components/page.css) | done | — | [diverges](#the-top-modifier-is-emitted-and-styled-by-nothing) |
-| The record pages' own `getNavigationLabel()` / `getNavigationIcon()` overrides — what labels an `EditRecord` in a band | [`Resources/Pages/EditRecord.php`](../../../vendor/filament/filament/src/Resources/Pages/EditRecord.php) and its `ViewRecord` sibling — `CreateRecord` declares neither | todo | — | [detail](#an-editrecord-in-a-band-is-labelled-by-its-class-name) |
-| `processParentNavigationItems()` — the `key` / `parentItem` / `childItems` nesting pass | same | todo | [`NavigationItem`'s nesting arm](navigation-item.md) | [detail](#three-v1-skips-item-nesting-collapsible-groups-and-badge-tooltips) |
-| Collapsible sub-navigation groups | the Alpine collapse key Filament namespaces per band | skipped | — | [detail](#three-v1-skips-item-nesting-collapsible-groups-and-badge-tooltips) |
-| `badgeTooltip` on a band item | `NavigationItem::badgeTooltip()` | skipped | — | [detail](#three-v1-skips-item-nesting-collapsible-groups-and-badge-tooltips) |
-| The `canAccess()` filter in `generateNavigationItems()` | the `$isResourcePage ? canAccess($parameters) : canAccess()` pair | todo | authorization | [detail](#three-v1-skips-item-nesting-collapsible-groups-and-badge-tooltips) |
+| The record pages' own `getNavigationLabel()` / `getNavigationIcon()` overrides — what labels an `EditRecord` in a band | [`Resources/Pages/EditRecord.php`](../../../vendor/filament/filament/src/Resources/Pages/EditRecord.php) and its `ViewRecord` sibling | todo | — | [edit-record.md](edit-record.md#an-editrecord-in-a-band-is-labelled-by-its-class-name) |
+| `processParentNavigationItems()` — the `key` / `parentItem` / `childItems` nesting pass | same | blocked | [`NavigationItem`'s nesting arm](navigation-item.md#the-nesting-arm-waits-on-key) | [detail](#item-nesting-waits-on-navigationitems-nesting-arm) |
+| Collapsible sub-navigation groups | the Alpine collapse key Filament namespaces per band | blocked | a storage namespace on the sidebar controller | [detail](#band-groups-never-collapse-because-sidebar-collapse-state-is-keyed-by-label) |
+| `badgeTooltip` on a band item | `NavigationItem::badgeTooltip()` on the plain-page item | blocked | [`HasBadgeTooltip` on `NavigationItem`](navigation-item.md#the-badge-tooltip-and-extra-attributes-wait-on-a-sidebar-template-that-renders-them) | [detail](#a-band-item-carries-no-badge-tooltip-until-navigationitem-has-one) |
+| The `canAccess()` filter in `generateNavigationItems()` | the `$isResourcePage ? canAccess($parameters) : canAccess()` pair | blocked | authorization | [detail](#a-band-lists-every-sibling-page-whether-or-not-the-viewer-may-open-it) |
 | The cluster arms — `getSubNavigation()`'s cluster branch, the position's cluster tier | same | skipped | — | [diverges](#the-cluster-arms-are-not-ported-so-the-resource-page-hard-override-is-moot) |
-| Render hooks around the band | `PanelsRenderHook::PAGE_SUB_NAVIGATION_*` | todo | render hooks | — |
-
-[`Unit/Pages/Concerns/HasSubNavigationTest`](../../../packages/panels/tests/Unit/Pages/Concerns/HasSubNavigationTest.php) covers the trait with no kernel: the empty default, all four rungs of the position ladder including a page with no services at all, the five normalization facts (ungrouped items wrapped in one label-less group first, grouped items folded by label, a **label-less declared group** folded into the same bucket, per-group sorting, hidden items dropped from both), the never-collapsible groups, the render memo, the plain-page item with its group and its active state, the `shouldRegisterNavigation()` filter, and the two refusals — a resource page listed by a plain page, and a URL asked for outside any panel.
-[`Unit/Resources/Pages/PageTest`](../../../packages/panels/tests/Unit/Resources/Pages/PageTest.php) carries the resource-page half: the page static winning over the resource in both directions, one item per sibling page with exactly one active, a nested band URL carrying the whole chain, and a page its resource registers nowhere contributing nothing.
-[`Integration/Twig/SubNavigationRenderTest`](../../../packages/panels/tests/Integration/Twig/SubNavigationRenderTest.php) renders it: the tabs variant with its anchors, its one `[aria-current="page"]` and its group dropdown; the sidebar variant before **and** after the content (adjacent-sibling selectors, so document order is asserted rather than presence); the band's groups staying expanded and off the sidebar controller; the mobile dropdown in all three positions, labelled by the active item and triggered through its icon alias; the root modifiers; the band on the three resource partials it serves — `ListRecords`, `CreateRecord` and `EditRecord` — at both sidebar edges; and a page with no band drawing nothing at all.
-The fifth partial's band is rendered by [`Integration/Resources/Pages/ManageRelatedRecordsTest`](../../../packages/panels/tests/Integration/Resources/Pages/ManageRelatedRecordsTest.php) instead, which asserts it on both the edit page and the manage page and pins which of the two is active.
-[`Unit/PanelTest`](../../../packages/panels/tests/Unit/PanelTest.php) and [`Integration/Resources/ResourceTest`](../../../packages/panels/tests/Integration/Resources/ResourceTest.php) pin the panel knob (literal and closure) and the resource tier.
+| Render hooks around the band | `PanelsRenderHook::PAGE_SUB_NAVIGATION_*` | blocked | render hooks | — |
 
 ## Details
 
-### Three v1 skips: item nesting, collapsible groups and badge tooltips
+### Item nesting waits on `NavigationItem`'s nesting arm
 
-- **`processParentNavigationItems()`** is deferred whole, with the [`NavigationItem` nesting arm](navigation-item.md) it needs: the pass groups items by `getParentItem()` and hangs them off a parent's `childItems()`, and none of `key()` / `parentItem()` / `childItems()` is ported.
-  Filament's own tabs variant ignores child items anyway, and its sidebar variant is the only renderer of them, so the visible gap is one variant of one band.
-  It returns with the item's nesting arm, not before.
-- **Collapsible groups.**
-  Every group `getCachedSubNavigation()` returns is stamped `collapsible(false)`, so a labelled band group renders as a plain labelled list.
-  Filament's groups collapse, keyed by a namespaced Alpine store entry; ours would share [`SidebarGroup`'s label-keyed storage](layout-templates.md#sidebar-group-ids-are-positional-not-derived-from-the-label) with the **main** sidebar, so a band group and a sidebar group of the same label would collapse each other.
-  Non-collapsible is the honest v1; the fix is a storage namespace on the sidebar controller, not on the band.
-- **`badgeTooltip`** is not ported on `NavigationItem` at all, and Filament's own resource-page item factory drops it too — so the band matches vendor here by accident rather than by decision, and both close together.
-- **`canAccess()`** has no port anywhere yet, so `generateNavigationItems()` filters on `shouldRegisterNavigation()` alone: **a band lists every sibling page, whether or not the viewer may open it.**
-  Same exposure as the sidebar and the resource pages themselves; it closes when authorization lands.
+`processParentNavigationItems()` is deferred whole, with the [`NavigationItem` nesting arm](navigation-item.md#the-nesting-arm-waits-on-key) it needs: the pass groups items by `getParentItem()` and hangs them off a parent's `childItems()`, and none of `key()` / `parentItem()` / `childItems()` is ported.
+Filament's tabs variant ignores child items; its sidebar variant nests them under their parent and its mobile menu lists them after it.
+It returns with the item's nesting arm, not before.
 
-### An `EditRecord` in a band is labelled by its class name
+### Band groups never collapse, because sidebar collapse state is keyed by label
 
-Filament's `EditRecord` overrides `getNavigationLabel()` to *Edit* and `getNavigationIcon()` to a pencil-square alias — both exist **for** the band, and neither is ported ([EditRecord](edit-record.md) records the deferral).
-The band therefore labels an edit page through the inherited chain on [`Pages\Page`](page.md): `$navigationLabel`, then `$title`, then the humanized class basename — so an `EditArticle` page reads *Edit Article* in the band where Filament reads *Edit*, and carries no icon unless the page declares one.
-Declaring the two statics on the page is the whole workaround, and porting Filament's overrides (with the `view-record` pair beside them — `CreateRecord` declares neither, and `PanelsIconAlias` ships no `create-record` navigation-item constant to port) is what makes the Filament look the default.
-The gap shows only in the band: nothing else reads those methods on a resource page.
+Every group `getCachedSubNavigation()` returns is stamped `collapsible(false)`, so a labelled band group renders as a plain labelled list.
+Filament's groups collapse, keyed by a namespaced Alpine store entry; ours would share [`SidebarGroup`'s label-keyed storage](layout-templates.md#sidebar-group-ids-are-positional-not-derived-from-the-label) with the **main** sidebar, so a band group and a sidebar group of the same label would collapse each other.
+The fix is a storage namespace on the sidebar controller, not on the band.
+
+### A band item carries no badge tooltip until `NavigationItem` has one
+
+`badgeTooltip` is not ported on `NavigationItem` at all, so neither item factory can set it.
+Filament's own resource-page item factory drops it too, and only its plain-page factory (`Pages\Page::getNavigationItems()`) sets it, so the resource-page band matches vendor and the plain-page band does not.
+
+### A band lists every sibling page, whether or not the viewer may open it
+
+`canAccess()` has no port, so `generateNavigationItems()` filters on `shouldRegisterNavigation()` alone.
+Same exposure as the sidebar and the resource pages themselves; it closes when authorization lands.
 
 ## Semantics
 
@@ -118,12 +109,13 @@ The reuse costs one thing, and the template pays it at the call site: `SidebarGr
 The band passes `:groupIndex="'sub-' ~ loop.index0"`, so the two id families cannot collide; `SubNavigationRenderTest` pins `#sy-pa-sidebar-group-items-sub-0`.
 Filament has no such collision because its band is a different component with no ids at all.
 
-### The `Top` variant is the first pin of `TabsItem`'s anchor arm
+### The active tab is selected by `[aria-current="page"]`, because an active group trigger carries `aria-current="true"`
 
-The `Top` band renders support's `Tabs` with `tag="a"` `TabsItem`s carrying `:href` and `:active` — the anchor arm of that component, which nothing had rendered until now, so the band's render test is also that arm's first coverage.
+The `Top` band renders support's `Tabs` with `tag="a"` `TabsItem`s carrying `:href` and `:active` — the band is the one renderer of that component's anchor arm.
 A labelled group becomes a dropdown-triggering tab over support's `Dropdown`, which is Filament's shape.
 
-Assertions on the active tab target `[aria-current="page"]` and never a bare `[aria-current]`: an inactive `TabsItem` emits `aria-current="false"`, because [the attribute bag stringifies aria booleans](../../internals/templates.md#how-do-the-two-attribute-bags-render-a-value) for Laravel parity, so a bare-attribute selector matches every tab.
+`TabsItem` emits `aria-current="page"` on an active anchor and `aria-current="true"` on an active button, and the trigger tab of the group holding the active item is a button.
+So an assertion on the active tab targets `[aria-current="page"]` and never a bare `[aria-current]`, which also matches that group trigger.
 
 ## Divergences
 
@@ -136,14 +128,14 @@ Shipping both — a static answering without the panel tier and an instance twin
 The ladder itself is Filament's, one rung shorter: the page's own `protected static ?SubNavigationPosition $subNavigationPosition` → (on a resource page) the resource's own static → the panel knob → `Start`.
 Filament's missing rung is the cluster tier, deferred with clusters.
 
-One authoring trap comes with the static, and it is not new: a page that **assigns** `static::$subNavigationPosition` rather than declaring it writes the property on `Pages\Page` itself and sets the position for every page in the process.
+One authoring trap comes with the static: a page that **assigns** `static::$subNavigationPosition` rather than declaring it writes the property on `Pages\Page` itself and sets the position for every page in the process.
 A concrete page that means to set its position from PHP must redeclare the property; declaring it (`protected static ?SubNavigationPosition $subNavigationPosition = SubNavigationPosition::Top;`) is the ordinary way and has no such edge.
 
 ### A resource page keeps its own position static where Filament's drops it
 
 Filament's `Resources\Pages\Page::getSubNavigationPosition()` is `static::getResource()::getSubNavigationPosition()` — a flat override, so the page-level static it inherits from `HasSubNavigation` is dead on every resource page.
 Ours reads `static::$subNavigationPosition ?? $this->getResourceInstance()->getSubNavigationPosition()`, so the tier a user would reasonably expect to work does work: one page of a resource can name a position the rest of the resource does not.
-Pinned in both directions, since the difference is invisible until someone declares the static and it is ignored.
+`Unit/Resources/Pages/PageTest` pins it in both directions, because the difference is invisible until someone declares the static and it is ignored.
 
 ### A plain page item is built here, where Filament asks the page for it
 
@@ -154,7 +146,7 @@ The reason is one signature: `Pages\Page::getNavigationItems(Panel $panel)` [tak
 So the band builds what it needs.
 The two item shapes agree on everything a user declares; a page listed in a band gets its `->group()` exactly as a sidebar item does, which is what lets a labelled band group hold plain pages at all.
 
-A page whose panel or URL generator cannot be resolved raises a `LogicException` naming both rather than rendering an item that links nowhere.
+A page whose panel or URL generator cannot be resolved raises a `LogicException` naming the page rather than rendering an item that links nowhere.
 
 ### A resource page item is built by the band because a page cannot name its own route
 
@@ -167,7 +159,7 @@ A page no resource registers contributes nothing, silently — which is what Fil
 
 Two consequences worth naming.
 The sibling's **own** resource mints the URL, so a band may list pages of another resource.
-And the band therefore routes *around* the parked static-shape decision rather than forcing it: nothing new is public, and `getResourcePageName()` still has no port.
+And the band therefore routes *around* the parked static-shape decision rather than forcing it: nothing new is public, and `getResourcePageName()` has no port.
 
 ### The active state is page-class identity, not a route match
 
@@ -184,24 +176,24 @@ The band is four templates under `templates/components/` — `SubNavigation/inde
 That is not a preference: schemas' [`ComponentTemplateLocationTest`](../../../packages/schemas/tests/Architecture/ComponentTemplateLocationTest.php) admits only `components/<Name>/index.html.twig`, and variants only under `partials/` — so a variant file here would fail an architecture test in another package.
 The rule and its enforcement agree in [`.claude/rules/twig.md`](../../../.claude/rules/twig.md) (*Variants only under `partials/`*).
 
-The dispatcher is where the `end` flag is read: each partial mounts the component **twice**, once before its content and once after with `:end="true"`, and the component draws the sidebar at exactly one of them (`Start` before, `End` after), the tabs before, and the mobile menu on the pre-content pass only.
+The dispatcher is where the `end` flag is read: the base page chrome mounts the component **twice**, once before its content and once after with `:end="true"`, and the component draws the sidebar at exactly one of them (`Start` before, `End` after), the tabs before, and the mobile menu on the pre-content pass only.
 One component serving both sidebar edges with the DOM order decided by the caller is Filament's own arrangement.
 
 ### The mobile menu renders no group headers
 
 Filament's `< md` band (`page/sub-navigation/mobile-menu.blade.php`) is a dropdown that emits a `dropdown.header` per labelled group.
 Support ships no dropdown-header component, so ours flattens every group's items into one list under a trigger labelled by the active item (falling back to the first).
-Groups are a v1 affordance of the two wide variants only.
+Groups are an affordance of the two wide variants only.
 It closes the day support grows the header component; nothing else about the menu changes with it.
 
 ### The `Top` modifier is emitted and styled by nothing
 
-`page.css` gains exactly two rules — `gap-8` on `sy-pa-page-main` under `sy-pa-page-has-sub-navigation`, and `md:flex-row md:items-start` under the `-start` / `-end` modifiers — while `sy-pa-page-has-sub-navigation-top` is emitted on the root and matched by no rule at all.
+`page.css` carries two band rules — `gap-8` on `sy-pa-page-main` under `sy-pa-page-has-sub-navigation`, and `md:flex-row md:items-start` under the `-start` / `-end` modifiers — while `sy-pa-page-has-sub-navigation-top` is emitted on the root and matched by no rule at all.
 That is deliberate rather than missing: the `Top` band is a `Tabs` component that styles itself and stacks above the content the column layout already produces, so a rule would have nothing to say.
 The class ships because it is the hook a consumer styles a top band through, and because the three modifiers are one family.
 
 The neighbouring divergence narrows with the band: [the page's main container is a flex column](assets.md#the-pages-main-container-is-a-flex-column-where-v5-gates-that-on-a-full-height-page) where vendor gates that on `.fi-page-has-sub-navigation`.
-The sub-navigation half of that gate is now live and behaves identically — the band renders beside the content at `md` and above in both codebases — so what remains deferred there is the `fullHeight` half alone.
+The sub-navigation half of that gate behaves identically — the band renders beside the content at `md` and above in both codebases — so what remains deferred there is the `fullHeight` half alone.
 
 ### The cluster arms are not ported, so the resource-page hard override is moot
 

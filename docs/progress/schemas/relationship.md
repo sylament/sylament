@@ -96,7 +96,7 @@ A single identifier and a **single derived identity** owner therefore keep all t
 Taking every owner through the subselect was executed and rejected: it moves four pinned assertions and puts `sy_owner`/`sy_related` on every one-to-many query in the toolkit, for rows that do not change.
 
 **The owner scope is one `equals()` on the subselect's alias, and that is the whole surface a composite owner adds.**
-`IdentifierConstraint::equals($query, 'sy_owner', $ownerClass, $this->getRecordKey($owner), 'sylament_relationship_owner')` — the owner handed over as the **key** it mints rather than as values, so [the codec](record-key-contract.md#owner-scoping-was-reserved-and-turned-out-not-to-be-needed) gained nothing at all.
+`IdentifierConstraint::equals($query, 'sy_owner', $ownerClass, $this->getRecordKey($owner), 'sylament_relationship_owner')` — the owner handed over as the **key** it mints rather than as values, so [the codec](record-key.md#there-is-no-owner-scoping-operation-because-one-equals-on-the-owners-own-collection-scopes-an-owner-of-any-width) gained nothing at all.
 A `null` out of `equals()` **throws**:
 
 > `The owner [%s] mints the key [%s], which does not decode against its own mapping, so the relationship [%s] cannot be scoped to it — an identifier type that cannot read its own printed form.`

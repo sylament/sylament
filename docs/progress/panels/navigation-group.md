@@ -1,7 +1,9 @@
 ---
-description: 'The sidebar navigation group: label, icon, items, collapsible state and active state.'
+description: 'The sidebar navigation group: label, icon, items, the collapsible pair and the active state.'
 ports:
   - vendor/filament/filament/src/Navigation/NavigationGroup.php
+  - vendor/filament/filament/src/Navigation/Concerns/HasExtraSidebarAttributes.php
+  - vendor/filament/filament/src/Navigation/Concerns/HasExtraTopbarAttributes.php
 owns:
   - packages/panels/src/Navigation/NavigationGroup.php
 ---
@@ -11,24 +13,28 @@ owns:
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
-| [`Navigation\NavigationGroup`](../../../packages/panels/src/Navigation/NavigationGroup.php) | [`Navigation/NavigationGroup.php`](../../../vendor/filament/filament/src/Navigation/NavigationGroup.php) | in progress | — | — |
-| _rest not audited yet_ | — | — | — | — |
+| [`make()` / `label()` / `getLabel()`](../../../packages/panels/src/Navigation/NavigationGroup.php) | [`NavigationGroup.php`](../../../vendor/filament/filament/src/Navigation/NavigationGroup.php) | done | — | — |
+| `icon()` / `getIcon()`, through support's [`HasIcon`](../support/has-icon.md) | [`NavigationGroup.php`](../../../vendor/filament/filament/src/Navigation/NavigationGroup.php) | done | — | — |
+| [`items()` / `getItems()`](../../../packages/panels/src/Navigation/NavigationGroup.php) | [`NavigationGroup.php`](../../../vendor/filament/filament/src/Navigation/NavigationGroup.php) | done | — | [diverges](#getitems-evaluates-a-closure-where-filament-accepts-an-arrayable) |
+| [`collapsed()` / `isCollapsed()`](../../../packages/panels/src/Navigation/NavigationGroup.php) | [`NavigationGroup.php`](../../../vendor/filament/filament/src/Navigation/NavigationGroup.php) | done | — | [diverges](#collapsed-does-not-also-make-the-group-collapsible) |
+| [`collapsible()` / `isCollapsible()`](../../../packages/panels/src/Navigation/NavigationGroup.php), with `collapsibleFallback()` | [`NavigationGroup.php`](../../../vendor/filament/filament/src/Navigation/NavigationGroup.php) | done | — | [diverges](#the-panel-collapsible-default-is-stamped-on-the-group-not-read-from-a-facade) |
+| [`isActive()`](../../../packages/panels/src/Navigation/NavigationGroup.php) | [`NavigationGroup.php`](../../../vendor/filament/filament/src/Navigation/NavigationGroup.php) | done | — | [diverges](#isactive-skips-hidden-items) |
+| `fromEnum()` | [`NavigationGroup.php`](../../../vendor/filament/filament/src/Navigation/NavigationGroup.php) | todo | — | [detail](#fromenum-waits-on-the-collapsible-enum-contract) |
+| `extraSidebarAttributes()` / `getExtraSidebarAttributes()` / `getExtraSidebarAttributeBag()` | [`HasExtraSidebarAttributes.php`](../../../vendor/filament/filament/src/Navigation/Concerns/HasExtraSidebarAttributes.php) | todo | — | [detail](#the-per-surface-attribute-traits-wait-on-a-template-that-renders-a-group-attribute-bag) |
+| `extraTopbarAttributes()` / `getExtraTopbarAttributes()` / `getExtraTopbarAttributeBag()` | [`HasExtraTopbarAttributes.php`](../../../vendor/filament/filament/src/Navigation/Concerns/HasExtraTopbarAttributes.php) | todo | — | [detail](#the-per-surface-attribute-traits-wait-on-a-template-that-renders-a-group-attribute-bag) |
 
 ## Details
 
-### The group ports its label, icon, items, collapsible pair and active state
+### `fromEnum()` waits on the `Collapsible` enum contract
 
-Label, icon, items, the collapsible/collapsed pair and `isActive()` are ported.
+Filament's `fromEnum()` reads a group's label, icon and collapsible pair off an enum case through the `HasLabel`, `HasIcon` and `Collapsible` contracts.
+Support ports `HasLabel` and `HasIcon` under `Sylament\Support\Contracts`, but not `Collapsible`.
+The `UnitEnum` group arm that [`NavigationItem::group()`](navigation-item.md#group-and-getgroup-carry-no-unitenum-arm) defers lands with this method, so the two halves agree about what a group key is.
 
-Deferred, all todo:
+### The per-surface attribute traits wait on a template that renders a group attribute bag
 
-- `HasExtraSidebarAttributes` / `HasExtraTopbarAttributes` — Filament's two per-surface attribute traits (`Filament\Navigation\Concerns`), neither ported; same reason `NavigationItem` records for extra attributes, since no template renders a group attribute bag.
-- `fromEnum()` — needs the `HasLabel` / `HasIcon` / `Collapsible` enum contracts, and the `UnitEnum` group arm `NavigationItem::group()` also defers.
-
-The panel-level collapsible default is wired: `isCollapsible()` falls back to `collapsibleFallback()`, a plain `bool` setter [`Panel::getNavigation()`](panel.md) stamps onto every group it assembles from `hasCollapsibleNavigationGroups()`.
-A group built outside a panel keeps the `true` the property initialises to.
-
-Four deliberate deltas beyond that, each with its own divergence: [`collapsed()` no longer forces the group collapsible](#collapsed-does-not-also-make-the-group-collapsible), [`isActive()` skips hidden items](#isactive-skips-hidden-items), [`getItems()` evaluates a `Closure` instead of accepting an `Arrayable`](#getitems-evaluates-a-closure-where-filament-accepts-an-arrayable), and [the panel collapsible default is stamped on the group rather than read from a facade](#the-panel-collapsible-default-is-stamped-on-the-group-not-read-from-a-facade).
+Filament composes `HasExtraSidebarAttributes` and `HasExtraTopbarAttributes` into the group only.
+Neither is ported, because no panels template renders a group attribute bag, so composing them would publish setters with no effect; [`NavigationItem`](navigation-item.md) leaves `HasExtraAttributes` out for the same reason.
 
 ## Divergences
 

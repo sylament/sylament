@@ -1,25 +1,27 @@
 ---
-description: 'The topbar search that answers across every resource of a panel: the two value objects a search answers with, the `Resource` concern that turns a… (draft)'
+description: 'The topbar search across a panel''s resources: the result value objects, the resource concern, the providers, the panel knobs and the live component.'
 ports:
   - vendor/filament/filament/src/GlobalSearch/GlobalSearchResult.php
   - vendor/filament/filament/src/GlobalSearch/GlobalSearchResults.php
   - vendor/filament/filament/src/Resources/Resource/Concerns/HasGlobalSearch.php
-  - vendor/filament/filament/src/GlobalSearch/Providers/
+  - vendor/filament/filament/src/GlobalSearch/Providers/Contracts/GlobalSearchProvider.php
+  - vendor/filament/filament/src/GlobalSearch/Providers/DefaultGlobalSearchProvider.php
   - vendor/filament/filament/src/Panel/Concerns/HasGlobalSearch.php
   - vendor/filament/filament/src/Livewire/GlobalSearch.php
+  - vendor/filament/filament/resources/views/livewire/global-search.blade.php
 owns:
   - packages/panels/assets/src/controllers/global_search_controller.ts
   - packages/panels/assets/src/styles/components/global-search.css
   - packages/panels/src/GlobalSearch/
   - packages/panels/src/Panel/Concerns/HasGlobalSearch.php
   - packages/panels/src/Resources/Resource/Concerns/HasGlobalSearch.php
-  - packages/panels/src/Twig/Components/
+  - packages/panels/src/Twig/Components/GlobalSearch.php
   - packages/panels/templates/components/GlobalSearch/
-  - packages/panels/templates/components/Topbar/
 ---
 # Global search (panels)
 
-The topbar search that answers across every resource of a panel: the two value objects a search answers with, the `Resource` concern that turns a search term into records, the provider that walks the panel's resources, the `Panel` knobs that configure the field, and the live component that renders it.
+The topbar search that answers across every resource of a panel.
+The `Topbar` template that mounts it is [layout-templates.md](layout-templates.md)'s.
 
 ## Surface
 
@@ -46,6 +48,7 @@ The topbar search that answers across every resource of a panel: the two value o
 | [`GlobalSearchProvider`](../../../packages/panels/src/GlobalSearch/Providers/Contracts/GlobalSearchProvider.php) | [`Providers/Contracts/GlobalSearchProvider.php`](../../../vendor/filament/filament/src/GlobalSearch/Providers/Contracts/GlobalSearchProvider.php) | done | — | — |
 | [`DefaultGlobalSearchProvider`](../../../packages/panels/src/GlobalSearch/Providers/DefaultGlobalSearchProvider.php) | [`Providers/DefaultGlobalSearchProvider.php`](../../../vendor/filament/filament/src/GlobalSearch/Providers/DefaultGlobalSearchProvider.php) | done | — | [semantics](#the-default-provider-searches-the-current-panel-and-sorts-before-it-skips) · [diverges](#the-default-provider-narrows-the-contracts-nullable-return) |
 | [`GlobalSearchProviderRegistry`](../../../packages/panels/src/GlobalSearch/GlobalSearchProviderRegistry.php) | — | done | — | [diverges](#the-provider-is-resolved-through-a-tagged-registry-rather-than-app) |
+| [`DependencyInjection\Compiler\GlobalSearchProviderPass`](../../../packages/panels/src/DependencyInjection/Compiler/GlobalSearchProviderPass.php) | — | done | — | [diverges](#the-provider-is-resolved-through-a-tagged-registry-rather-than-app) |
 | [`globalSearch()`](../../../packages/panels/src/Panel/Concerns/HasGlobalSearch.php) | `Panel\Concerns\HasGlobalSearch::globalSearch()` | done | — | [diverges](#the-provider-is-resolved-through-a-tagged-registry-rather-than-app) · [diverges](#the-panels-position-platform-suffix-and-opt-in-arms-are-not-ported) |
 | [`getGlobalSearchProviderClass()`](../../../packages/panels/src/Panel/Concerns/HasGlobalSearch.php) | `Panel\Concerns\HasGlobalSearch::getGlobalSearchProvider()` | done | — | [diverges](#the-provider-is-resolved-through-a-tagged-registry-rather-than-app) |
 | [`globalSearchDebounce()`](../../../packages/panels/src/Panel/Concerns/HasGlobalSearch.php) | `Panel\Concerns\HasGlobalSearch::globalSearchDebounce()` | done | — | — |
@@ -55,7 +58,7 @@ The topbar search that answers across every resource of a panel: the two value o
 | [`getGlobalSearchKeyBindings()`](../../../packages/panels/src/Panel/Concerns/HasGlobalSearch.php) | `Panel\Concerns\HasGlobalSearch::getGlobalSearchKeyBindings()` | done | — | [diverges](#the-key-binding-is-suppressed-while-a-modal-is-open) |
 | [`globalSearchFieldSuffix()`](../../../packages/panels/src/Panel/Concerns/HasGlobalSearch.php) | `Panel\Concerns\HasGlobalSearch::globalSearchFieldSuffix()` | done | — | — |
 | [`getGlobalSearchFieldSuffix()`](../../../packages/panels/src/Panel/Concerns/HasGlobalSearch.php) | `Panel\Concerns\HasGlobalSearch::getGlobalSearchFieldSuffix()` | done | — | — |
-| [`isGlobalSearchEnabled()`](../../../packages/panels/src/Panel/Concerns/HasGlobalSearch.php) | `FilamentManager::isGlobalSearchEnabled()` | done | — | [semantics](#isglobalsearchenabled-moved-off-the-manager-onto-the-panel) |
+| [`isGlobalSearchEnabled()`](../../../packages/panels/src/Panel/Concerns/HasGlobalSearch.php) | `FilamentManager::isGlobalSearchEnabled()` | done | — | [diverges](#isglobalsearchenabled-sits-on-the-panel-not-on-a-manager) |
 | `globalSearchPosition` | `HasGlobalSearch::globalSearch()`'s `$position` | skipped | — | [diverges](#the-panels-position-platform-suffix-and-opt-in-arms-are-not-ported) |
 | `globalSearchFieldKeyBindingSuffix()` | `Panel\Concerns\HasGlobalSearch::globalSearchFieldKeyBindingSuffix()` | skipped | — | [diverges](#the-panels-position-platform-suffix-and-opt-in-arms-are-not-ported) |
 | `globalSearchResourceOptIn()` | `Panel\Concerns\HasGlobalSearch::globalSearchResourceOptIn()` | skipped | — | [diverges](#the-panels-position-platform-suffix-and-opt-in-arms-are-not-ported) |
@@ -64,11 +67,26 @@ The topbar search that answers across every resource of a panel: the two value o
 | [Topbar mount](../../../packages/panels/templates/components/Topbar/index.html.twig) | [`livewire/topbar.blade.php`](../../../vendor/filament/filament/resources/views/livewire/topbar.blade.php)'s `fi-topbar-end` | done | — | [semantics](#the-topbar-mount-is-a-threaded-flag-rather-than-a-facade-call) |
 | [`PanelsIconAlias::GLOBAL_SEARCH_FIELD`](../../../packages/panels/src/Twig/PanelsIconAlias.php) | `PanelsIconAlias::GLOBAL_SEARCH_FIELD` | done | — | — |
 | The `sylament--panels--global-search` Stimulus controller | the field's `x-mousetrap.global` binding and the results container's inline Alpine `x-data` | done | — | [diverges](#the-key-binding-is-suppressed-while-a-modal-is-open) |
-| Render hooks around the field | `PanelsRenderHook::GLOBAL_SEARCH_*` | skipped | — | [diverges](#the-render-hooks-around-the-field-have-no-port-target) |
-| Busy indicator on the field | the input wrapper's `wire:target="search"` in [`livewire/global-search.blade.php`](../../../vendor/filament/filament/resources/views/livewire/global-search.blade.php) | blocked | a loading branch on support's [`InputWrapper`](../../../packages/support/templates/components/InputWrapper/index.html.twig) | [diverges](#the-field-carries-no-busy-indicator) |
+| Render hooks around the field | `PanelsRenderHook::GLOBAL_SEARCH_*` | blocked | render hooks | [detail](#the-render-hooks-around-the-field-have-no-port-target) |
+| Busy indicator on the field | the input wrapper's `wire:target="search"` in [`livewire/global-search.blade.php`](../../../vendor/filament/filament/resources/views/livewire/global-search.blade.php) | blocked | a loading branch on support's [`InputWrapper`](../../../packages/support/templates/components/InputWrapper/index.html.twig) | [detail](#the-field-carries-no-busy-indicator) |
 | Results panel enter/leave fade | `x-transition:enter-start` / `x-transition:leave-end` on `fi-global-search-results-ctn` | skipped | — | [diverges](#the-panel-opens-and-closes-with-no-fade) |
 | Topbar-end `x-persist` | [`livewire/topbar.blade.php`](../../../vendor/filament/filament/resources/views/livewire/topbar.blade.php)'s `x-persist="topbar.end.panel-…"` | skipped | — | [diverges](#there-is-no-spa-navigation-for-the-field-to-survive) |
 | _rest not audited yet_ | — | — | — | — |
+
+## Details
+
+### The field carries no busy indicator
+
+Filament passes `wire:target="search"` to its input wrapper, which swaps the prefix magnifying glass for a spinner while the search request is in flight.
+Support's [`InputWrapper`](../../../packages/support/templates/components/InputWrapper/index.html.twig) has no loading branch, and adding one is a cross-package template change every suite that renders a field depends on, so the field ships without the affordance rather than working around it locally.
+
+The design when it lands: ux-live-component ships a `LoadingPlugin` that reads `data-loading` off any element inside a live root and scopes it to one action or model (`data-loading="model(search)|…"`, the direct translation of `wire:target="search"`), so the seam is a prop on `InputWrapper` — a loading target it stamps onto the prefix slot — rather than anything global search owns.
+Doing it that way is what makes the same indicator available to tables' search field and to every text-like forms control, which is also why it is not worth half-building inside this template.
+
+### The render hooks around the field have no port target
+
+`PanelsRenderHook::GLOBAL_SEARCH_START`/`END` (inside the component) and `GLOBAL_SEARCH_BEFORE`/`AFTER` (around the topbar mount) are four of Filament's render hooks, and the render-hook system as a whole has no port.
+Nothing here is specific to global search: the hooks come back with the system, or not at all.
 
 ## Semantics
 
@@ -76,6 +94,12 @@ The topbar search that answers across every resource of a panel: the two value o
 
 `getGlobalSearchResults()` caps the **query** at `getGlobalSearchResultsLimit()`, then drops every record whose `getGlobalSearchResultUrl()` came back blank — so a resource that answers no URL for some of its records returns fewer results than the limit, never a topped-up page.
 Filament's `limit()`-then-`filter()` chain does exactly the same thing; re-deriving it the other way round (filter, then cap) would quietly change how many results a group shows.
+
+### A nested resource answers no global search result URL
+
+`getGlobalSearchResultUrl()` returns null for a resource with a parent registration, Filament's own admitted limitation ported with its shape: a nested resource's pages need ancestor route parameters a search result carries nothing to fill.
+No `canGloballySearch()` guard is needed on top: the resource's own `getGlobalSearchResults()` loop skips a record whose URL is blank, and the default provider skips a resource that yields no results, so a searchable nested resource renders no rows that go nowhere.
+A nested resource that overrides `getGlobalSearchResultUrl()` with its own URL is searched like any other.
 
 ### The default provider searches the current panel, and sorts before it skips
 
@@ -90,15 +114,9 @@ That is the honest failure for a misconfigured resource, and it is the one to lo
 `getGlobalSearchDebounce()` keeps Filament's duration string (`500ms` by default, evaluated so a closure may answer it), and `getGlobalSearchDebounceMilliseconds()` turns it into the bare integer `data-model="debounce(N)|search"` wants — `1s` → 1000, a bare `300` → 300, anything unparseable → 500.
 The body is [`CanSearchRecords::getSearchDebounceMilliseconds()`](../../../packages/tables/src/Table/Concerns/CanSearchRecords.php) verbatim, the same translation tables' own search field already needed; the name has no Filament source and the [renames trail](../renames.md) carries it beside the tables one.
 
-### `isGlobalSearchEnabled()` moved off the manager onto the panel
-
-Filament puts this on `FilamentManager`, which delegates every other question here to the current panel anyway.
-There is no manager in this port — a panel is reached through `PanelRegistry`/`CurrentPanel` — so the method sits on `Panel` under its Filament name: false when the provider is switched off, otherwise true as soon as one registered resource `canGloballySearch()`.
-Filament memoises the answer per request because each resource's check runs an authorization policy; ours only asks whether a resource named searchable attributes, so it re-reads them instead.
-
 ### The component restores its panel onto a live request
 
-The topbar field is the shell's first live component, so it is the first thing here that re-renders on a request carrying no panel route default — `_sylament_panel` is a default of the *page* routes, and a live request goes to ux-live-component's own route instead.
+The topbar field is a live component of its own, so it re-renders on a request carrying no panel route default — `_sylament_panel` is a default of the *page* routes, and a live request goes to ux-live-component's own route instead.
 `mount()` therefore reads the panel once (`CurrentPanel::get() ?? PanelRegistry::getDefault()`) into a `LiveProp`, and a `#[PostHydrate]` hook stamps that id back onto the request every subsequent round trip.
 Without the stamp the provider would silently search the **default** panel's resources and every `Resource::getUrl()` underneath would generate against it — right on a single-panel application, wrong the moment there are two.
 
@@ -115,20 +133,21 @@ The position inside `.sy-pa-topbar-end` is Filament's: the search opens the grou
 
 ## Divergences
 
+### `isGlobalSearchEnabled()` sits on the panel, not on a manager
+
+Filament puts this on `FilamentManager`, which delegates every other question here to the current panel anyway.
+There is no manager in this port — a panel is reached through `PanelRegistry`/`CurrentPanel` — so the method sits on `Panel` under its Filament name: false when the provider is switched off, otherwise true as soon as one registered resource `canGloballySearch()`.
+Filament memoises the answer per request because each resource's check runs an authorization policy; ours only asks whether a resource named searchable attributes, so it re-reads them instead.
+
 ### Nothing dispatches an open event; a morph reopens the panel
 
 Filament's component dispatches `open-global-search-results` from `getResults()`, and the results container listens for it on the window to set its Alpine `isOpen` back to true.
 We need no such event: the container is only in the markup when `getResults()` answered non-null, and every live morph re-stamps the server's markup over whatever the client did — so a client-set `hidden` from the close action is wiped by the next search response, which is exactly the reopen Filament buys with the event.
 Behaviour identical, one less moving part.
 
-### The render hooks around the field have no port target
-
-`PanelsRenderHook::GLOBAL_SEARCH_START`/`END` (inside the component) and `GLOBAL_SEARCH_BEFORE`/`AFTER` (around the topbar mount) are four of Filament's render hooks, and the render-hook system as a whole has no port — it is listed among panels' unported pieces in [the panels README](README.md).
-Nothing here is specific to global search: the hooks come back with the system, or not at all.
-
 ### The searchability check and the result URL ladder drop Filament's authorization gates
 
-Panels has no authorization layer yet, so `canGloballySearch()` is `$isGloballySearchable && $this->getGloballySearchableAttributes() !== []` with no `canAccess()` term, and `getGlobalSearchResultUrl()` walks view page → edit page → index URL with no `canView()`/`canEdit()` gate in front of either page arm.
+Panels has no authorization layer, so `canGloballySearch()` is `$isGloballySearchable && $this->getGloballySearchableAttributes() !== []` with no `canAccess()` term, and `getGlobalSearchResultUrl()` walks view page → edit page → index URL with no `canView()`/`canEdit()` gate in front of either page arm.
 **A panel with global search on therefore surfaces every record of every searchable resource to every viewer.**
 Filament's two remaining fallbacks — the index URL carrying `tableAction`/`tableActionRecord` query parameters so the list page opens a view or edit modal — have no port target either: our tables read no such parameters.
 Authorization revisits all three when it lands.
@@ -147,7 +166,7 @@ The seam that matters is the **provider** — `GlobalSearchProvider` is a contra
 ### `hasDetailLabels()` is a per-result check
 
 Filament's `global-search.blade.php` decides once per render whether details carry labels, memoising `Arr::isAssoc()` over the first result it sees.
-We put the question on the result itself (`! array_is_list($this->details)`), so two results in one search may legitimately disagree — a list of values renders label-less beside a labelled map.
+We put the question on the result itself (`$this->details !== [] && ! array_is_list($this->details)`), so two results in one search may legitimately disagree — a list of values renders label-less beside a labelled map.
 The name has no Filament source; the [renames trail](../renames.md) carries it.
 
 ### `getGlobalSearchEloquentQuery()` is `getGlobalSearchRecordQuery()`
@@ -180,7 +199,7 @@ The contract keeps Filament's `?GlobalSearchResults`: `null` is a custom provide
 
 Three arms of Filament's panel concern stay out, so `globalSearch()` takes the provider alone.
 `GlobalSearchPosition` and the `$position` parameter buy a sidebar mount for a shell that may have no topbar; ours always has one, so there is nothing to choose between.
-`globalSearchFieldKeyBindingSuffix()` — which renders the first key binding as a platform glyph (`⌘K` on a Mac, `CTRL+K` elsewhere) — rides on `Support\Enums\Platform`, a User-Agent sniff with no port yet; `globalSearchFieldSuffix()` **is** ported, so a panel spells the hint out itself.
+`globalSearchFieldKeyBindingSuffix()` — which renders the first key binding as a platform glyph (`⌘K` on a Mac, `CTRL+K` elsewhere) — rides on `Support\Enums\Platform`, a User-Agent sniff with no port; `globalSearchFieldSuffix()` **is** ported, so a panel spells the hint out itself.
 And `globalSearchResourceOptIn()` is the panel half of the resource opt-in mode dropped [below](#the-resource-opt-in-mode-and-the-globalsearchsort-setter-are-not-ported) — with no `ReflectionProperty` dance on the resource side there is no switch for it to flip.
 
 ### The resource opt-in mode and the `globalSearchSort()` setter are not ported
@@ -218,10 +237,3 @@ Filament wraps its whole `fi-topbar-end` in `x-persist="topbar.end.panel-{id}"`,
 Our shell does full page loads — [it is not live](layout-templates.md#the-shell-is-not-live), and nothing in it teleports across a navigation — so there is no re-render for the directive to skip.
 It returns only if the shell ever gains SPA navigation, and then for the whole topbar rather than for the search alone.
 
-### The field carries no busy indicator
-
-Filament passes `wire:target="search"` to its input wrapper, which swaps the prefix magnifying glass for a spinner while the search request is in flight.
-Support's [`InputWrapper`](../../../packages/support/templates/components/InputWrapper/index.html.twig) has no loading branch, and adding one is a cross-package template change six suites render against — so v1 ships without the affordance and the gap is recorded here rather than worked around locally.
-
-The design when it lands: ux-live-component ships a `LoadingPlugin` that reads `data-loading` off any element inside a live root and scopes it to one action or model (`data-loading="model(search)|…"`, the direct translation of `wire:target="search"`), so the seam is a prop on `InputWrapper` — a loading target it stamps onto the prefix slot — rather than anything global search owns.
-Doing it that way is what makes the same indicator available to tables' search field and to every text-like forms control, which is also why it is not worth half-building inside this template.

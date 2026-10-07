@@ -1,32 +1,24 @@
 ---
-description: One declaration, `gridDirection()`, deciding whether a field's options flow across the grid's columns or down them. (draft)
+description: The `gridDirection()` declaration deciding whether Radio, CheckboxList and ToggleButtons options flow across the grid's columns or down them.
 ports:
   - vendor/filament/forms/src/Components/Concerns/HasGridDirection.php
-  - vendor/filament/support/src/Enums/GridDirection.php
-  - vendor/filament/forms/src/Components/Radio.php
-  - vendor/filament/forms/src/Components/CheckboxList.php
-  - vendor/filament/forms/src/Components/ToggleButtons.php
 owns:
   - packages/forms/src/Components/Concerns/HasGridDirection.php
 ---
 # HasGridDirection (forms)
 
-`Sylament\Forms\Components\Concerns\HasGridDirection` — one declaration, `gridDirection()`, deciding whether a field's options flow across the grid's columns or down them.
-It is storage and coercion only: the direction it answers is a [`Sylament\Support\Enums\GridDirection`](../../../packages/support/src/Enums/GridDirection.php), and everything that direction *does* was already ported with schemas' grid — support's [`grid()`](../../../packages/support/src/Twig/Extension/GridExtension.php) Twig function emits the `sy-grid-direction-col` class and the bare `--cols-*` custom properties its stylesheet reads, from the column map schemas' [`HasColumns`](../schemas/has-columns.md) supplies.
+`Sylament\Forms\Components\Concerns\HasGridDirection` holds one declaration, `gridDirection()`, deciding whether a field's options flow across the grid's columns or down them.
+It is storage and coercion only: the direction it answers is a [`Sylament\Support\Enums\GridDirection`](../support/enums.md), and what that direction *does* is support's [`grid()`](../../../packages/support/src/Twig/Extension/GridExtension.php) Twig function, which emits the `sy-grid-direction-col` class and the bare `--cols-*` custom properties its stylesheet reads, from the column map schemas' [`HasColumns`](../schemas/has-columns.md) supplies.
 
-Three fields compose it — `Radio`, `CheckboxList` and `ToggleButtons` — which is why it is filed here rather than folded into one of them.
-[`Radio`](radio.md) is the first built, and the first template to pass the direction to `grid()`; [`ToggleButtons`](toggle-buttons.md) is the second, spelling the same `Column` default at the one of its two templates that lays out a grid at all; and [`CheckboxList`](checkbox-list.md) is the third, the only one with no `inline()` escape from the grid at all.
+[`Radio`](radio.md), [`ToggleButtons`](toggle-buttons.md) and [`CheckboxList`](checkbox-list.md) compose it, as in Filament, and each template passes the direction to `grid()`.
+`Radio` and `ToggleButtons` skip the grid under `inline()` (and `ToggleButtons` under `grouped()`, whose template lays out no grid), while `CheckboxList` has no `inline()` and always grids.
 
 ## Surface
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
-| `gridDirection()` — the enum, string and closure arms | [`Concerns/HasGridDirection.php`](../../../vendor/filament/forms/src/Components/Concerns/HasGridDirection.php) | done | — | — |
-| `getGridDirection()` — evaluation, string coercion, and the unset answer | [`Concerns/HasGridDirection.php`](../../../vendor/filament/forms/src/Components/Concerns/HasGridDirection.php) | done | — | [semantics](#the-column-default-belongs-to-the-field-not-to-this-getter) · [diverges](#an-empty-direction-string-answers-null-where-filaments-getter-fatals) |
-
-Coverage: the null default, a `GridDirection` kept as given, `'row'` and `'column'` coerced, a closure evaluated, an unrecognised string and the empty one both answering null, and a direction unset again — by [`HasGridDirectionTest`](../../../packages/forms/tests/Unit/Components/Concerns/HasGridDirectionTest.php).
-What the direction then emits is covered a package down, by [`GridExtensionTest`](../../../packages/support/tests/Unit/Twig/Extension/GridExtensionTest.php), whose first case pins the column arm's class and styles, and end to end — the default column grid, an explicit `'row'`, and `inline()` suppressing the call altogether — by [`RadioTest`](../../../packages/forms/tests/Integration/Components/RadioTest.php), with the column default and the `inline()` suppression re-run against the second composer — plus `grouped()`, which suppresses the grid a second way — by [`ToggleButtonsTest`](../../../packages/forms/tests/Integration/Components/ToggleButtonsTest.php), and the column default re-run once more against a field that always grids, by [`CheckboxListTest`](../../../packages/forms/tests/Integration/Components/CheckboxListTest.php).
-
+| [`gridDirection()`](../../../packages/forms/src/Components/Concerns/HasGridDirection.php), the enum, string and closure arms | [`Concerns/HasGridDirection.php`](../../../vendor/filament/forms/src/Components/Concerns/HasGridDirection.php) | done | — | — |
+| [`getGridDirection()`](../../../packages/forms/src/Components/Concerns/HasGridDirection.php), evaluation, string coercion and the unset answer | [`Concerns/HasGridDirection.php`](../../../vendor/filament/forms/src/Components/Concerns/HasGridDirection.php) | done | — | [semantics](#the-column-default-belongs-to-the-field-not-to-this-getter) · [diverges](#an-empty-direction-string-answers-null-where-filaments-getter-fatals) |
 ## Semantics
 
 ### The `Column` default belongs to the field, not to this getter

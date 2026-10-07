@@ -1,8 +1,9 @@
 ---
-description: The shared acceptance concern the boolean fields compose. (draft)
+description: The `accepted()` / `declined()` concern Checkbox and Toggle compose, registering an IsTrue or IsFalse constraint.
 ports:
   - vendor/filament/forms/src/Components/Concerns/CanBeAccepted.php
-owns: []
+owns:
+  - packages/forms/src/Components/Concerns/CanBeAccepted.php
 ---
 # CanBeAccepted (forms)
 
@@ -13,11 +14,8 @@ owns: []
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
-| `accepted()` | [`Concerns/CanBeAccepted.php`](../../../vendor/filament/forms/src/Components/Concerns/CanBeAccepted.php) | done | — | [diverges](#the-accepted-and-declined-rules-become-istrue-and-isfalse) |
-| `declined()` | [`Concerns/CanBeAccepted.php`](../../../vendor/filament/forms/src/Components/Concerns/CanBeAccepted.php) | done | — | [diverges](#the-accepted-and-declined-rules-become-istrue-and-isfalse) |
-
-Coverage: the empty default, both constraint builds, the false-condition skip, the message hand-off, and — pinning the order-independence below — a message set *after* the `accepted()` / `declined()` call, by [`CanBeAcceptedTest`](../../../packages/forms/tests/Unit/Components/Concerns/CanBeAcceptedTest.php) against the [`FixtureBooleanField`](../../../packages/forms/tests/Fixtures/Components/FixtureBooleanField.php) fixture.
-That the trait actually reaches its consumers is pinned separately, by [`CheckboxTest`](../../../packages/forms/tests/Integration/Components/CheckboxTest.php).
+| [`accepted()`](../../../packages/forms/src/Components/Concerns/CanBeAccepted.php) | [`Concerns/CanBeAccepted.php`](../../../vendor/filament/forms/src/Components/Concerns/CanBeAccepted.php) | done | — | [diverges](#the-accepted-and-declined-rules-become-istrue-and-isfalse) |
+| [`declined()`](../../../packages/forms/src/Components/Concerns/CanBeAccepted.php) | [`Concerns/CanBeAccepted.php`](../../../vendor/filament/forms/src/Components/Concerns/CanBeAccepted.php) | done | — | [diverges](#the-accepted-and-declined-rules-become-istrue-and-isfalse) |
 
 ## Divergences
 
@@ -45,4 +43,3 @@ The two halves then land differently, and the asymmetry is the part to remember:
 
 The constraint is registered as a plain instance, and a message keys the class it is: `validationMessages([IsTrue::class => …])` / `[IsFalse::class => …]`.
 Call order does not matter — the [post-pass](can-be-validated.md#validation-messages-apply-after-the-constraints-are-built) applies messages over the finished constraint list, so a `validationMessages()` call made *after* `accepted()` / `declined()` still lands.
-These arms registered a closure until that post-pass existed, purely to defer the message read.

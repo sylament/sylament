@@ -1,21 +1,16 @@
 ---
-description: 'The one record a resource page is opened on: the route key the wire carries, the record it lazily resolves to (scoped to the page''s parent chain when… (draft)'
+description: 'The record a resource page is opened on: the route key on the wire, its lazy scoped resolution, the record title and crumb, and the sub-navigation bridge.'
 ports:
   - vendor/filament/filament/src/Resources/Pages/Concerns/InteractsWithRecord.php
-  - vendor/filament/filament/src/Resources/Pages/EditRecord.php
 owns:
   - packages/panels/src/Resources/Pages/Concerns/InteractsWithRecord.php
 ---
 # InteractsWithRecord (panels)
 
-[`Sylament\Panels\Resources\Pages\Concerns\InteractsWithRecord`](../../../packages/panels/src/Resources/Pages/Concerns/InteractsWithRecord.php) — the one record a resource page is opened on: the route key the wire carries, the record it lazily resolves to (scoped to the page's parent chain when there is one), the title both are read through, the record's own breadcrumb, and the bridge to the resource's record [sub-navigation](has-sub-navigation.md).
-It ports [`Resources/Pages/Concerns/InteractsWithRecord.php`](../../../vendor/filament/filament/src/Resources/Pages/Concerns/InteractsWithRecord.php) minus its authorization hooks.
+[`Sylament\Panels\Resources\Pages\Concerns\InteractsWithRecord`](../../../packages/panels/src/Resources/Pages/Concerns/InteractsWithRecord.php) is composed by [`EditRecord`](edit-record.md) and [`ManageRelatedRecords`](manage-related-records.md).
+Each composer keeps its own mount tail, form and action hooks; the trait holds what every record page shares.
 
-The trait is mostly an extraction rather than new behaviour: the record prop and its dehydration bridge, `hasRecord()`, `getRecordKey()`, `getRecord()` and `getRecordTitle()` all lived on [`EditRecord`](edit-record.md) and moved here **unchanged** when [`ManageRelatedRecords`](manage-related-records.md) needed the same six.
-What the trait adds on top is what every record page shares and neither of them had: the record's own breadcrumb, the sub-navigation bridge, and `mountRecord()`, where the mount assignment order now lives.
-`EditRecord` composes it and keeps only its own form, save and action hooks; `ViewRecord` will compose it once the view page lands, which is the reason the extraction happened rather than three copies being reconciled later.
-
-⚠️ **Not to be confused with [`Sylament\Actions\Concerns\InteractsWithRecord`](../actions/action.md#the-record-chain-reaches-the-schema-the-component-and-the-host)**, a different object tier that shares three member names.
+⚠️ **Not to be confused with [`Sylament\Actions\Concerns\InteractsWithRecord`](../actions/interacts-with-record.md)**, a different object tier that shares three member names.
 That one is composed by an `Action` and answers *what an action is acting on* (`getRecord()`, `getRecordTitle()`, `recordTitle()`); this one is composed by a page and answers *what the page is open on*.
 Both are Filament's own names in Filament's own places, so neither moves — read the trait by its **import**, never by the bare `use InteractsWithRecord;` in a class body, which is the standing rule for every name this codebase carries in two tiers.
 
@@ -26,20 +21,16 @@ Both are Filament's own names in Filament's own places, so neither moves — rea
 | [`$record`](../../../packages/panels/src/Resources/Pages/Concerns/InteractsWithRecord.php) + [`dehydrateRecord()`](../../../packages/panels/src/Resources/Pages/Concerns/InteractsWithRecord.php) | `#[Locked] public Model \| int \| string \| null $record` | done | — | [diverges](#the-record-prop-carries-the-route-key-and-needs-a-dehydration-bridge) |
 | [`mountRecord()`](../../../packages/panels/src/Resources/Pages/Concerns/InteractsWithRecord.php) | the `$this->record = $this->resolveRecord($record)` line of each page's `mount()` | done | — | [semantics](#mountrecord-is-the-one-place-the-assignment-order-lives) |
 | [`getRecord()`](../../../packages/panels/src/Resources/Pages/Concerns/InteractsWithRecord.php) | `getRecord()` + `resolveRecord()` | done | — | [semantics](#the-resolution-is-lazy-scoped-and-re-run-every-request) |
-| [`hasRecord()`](../../../packages/panels/src/Resources/Pages/Concerns/InteractsWithRecord.php) / [`getRecordKey()`](../../../packages/panels/src/Resources/Pages/Concerns/InteractsWithRecord.php) | `hasRecord()`; no counterpart for the key | done | — | [semantics](has-relation-managers.md#the-record-probes-read-the-wire-value-not-the-resolved-record) |
+| [`hasRecord()`](../../../packages/panels/src/Resources/Pages/Concerns/InteractsWithRecord.php) / [`getRecordKey()`](../../../packages/panels/src/Resources/Pages/Concerns/InteractsWithRecord.php) | `hasRecord()`; no counterpart for the key | done | — | [semantics](#the-record-probes-read-the-wire-value-not-the-resolved-record) |
 | [`getRecordTitle()`](../../../packages/panels/src/Resources/Pages/Concerns/InteractsWithRecord.php) | `getRecordTitle()` | done | — | [diverges](edit-record.md#the-document-title-of-an-edit-page-carries-the-record-label-not-the-record-title) |
-| [`getBreadcrumbs()`](../../../packages/panels/src/Resources/Pages/Concerns/InteractsWithRecord.php) — the record's own crumb | `getBreadcrumbs()` | done | — | [diverges](#the-record-crumb-lands-on-plain-resources-too-and-that-is-new-behaviour) |
-| The crumb's `canView()` / `canEdit()` gates | the two `elseif` arms | todo | authorization | [detail](#the-crumb-links-through-an-ungated-ladder) |
+| [`getBreadcrumbs()`](../../../packages/panels/src/Resources/Pages/Concerns/InteractsWithRecord.php) — the record's own crumb | `getBreadcrumbs()` | done | — | — |
+| The crumb's `canView()` / `canEdit()` gates | the two `elseif` arms | blocked | authorization | [detail](#the-crumb-links-through-an-ungated-ladder) |
 | [`getSubNavigation()`](../../../packages/panels/src/Resources/Pages/Concerns/InteractsWithRecord.php) | `getSubNavigation()` | done | — | — |
 | [`getSubNavigationParameters()`](../../../packages/panels/src/Resources/Pages/Concerns/InteractsWithRecord.php) | `getSubNavigationParameters()` | done | — | [diverges](#the-sub-navigation-parameters-carry-keys-and-the-parent-chain) |
-| `getDefaultActionRecord()` / `getDefaultActionRecordTitle()` / `getDefaultActionSuccessRedirectUrl()` / `getMountedActionSchemaRecord()` | the same four, the last as `getMountedActionSchemaModel()` | done | — | they stay on [`EditRecord`](edit-record.md) and [`ManageRelatedRecords`](manage-related-records.md), which answer them differently |
-| `afterActionCalled()` — nulling the record after a delete | `afterActionCalled()` | skipped | — | [diverges](#the-record-prop-carries-the-route-key-and-needs-a-dehydration-bridge) — the redirect ends the request first, [as EditRecord records](edit-record.md) |
-| `mountCanAuthorizeAccess()` / `hydrateCanAuthorizeAccess()` | the same two | todo | authorization | [detail](#the-crumb-links-through-an-ungated-ladder) |
-| `getWidgetData()` | `getWidgetData()` | todo | `sylament/widgets` | — |
-
-The extraction is covered by **not** having moved: the whole panels suite passed with zero test edits at the commit that moved the six members off `EditRecord`, which is what a behaviour-preserving refactor of test-pinned code looks like.
-The members' own coverage is where it already was — [`Integration/Resources/Pages/EditRecordTest`](../../../packages/panels/tests/Integration/Resources/Pages/EditRecordTest.php) for the wire prop, the two 404 shapes and the trail, and [`Integration/Resources/Pages/Concerns/HasRelationManagersTest`](../../../packages/panels/tests/Integration/Resources/Pages/Concerns/HasRelationManagersTest.php) for the key probes an embedded manager is mounted with.
-What is new here is covered by [`Integration/Resources/Pages/NestedResourcePagesTest`](../../../packages/panels/tests/Integration/Resources/Pages/NestedResourcePagesTest.php) (the scoped resolution, the ancestor trail, the untitled-record arm), [`Integration/Resources/Pages/ManageRelatedRecordsTest`](../../../packages/panels/tests/Integration/Resources/Pages/ManageRelatedRecordsTest.php) (the second host) and [`Unit/Resources/Pages/PageTest`](../../../packages/panels/tests/Unit/Resources/Pages/PageTest.php) (the band bridge and its parameters).
+| `getDefaultActionRecord()` / `getDefaultActionRecordTitle()` / `getDefaultActionSuccessRedirectUrl()` / `getMountedActionSchemaRecord()` — on each record page | the same four, the last as `getMountedActionSchemaModel()` | done | — | [edit-record.md](edit-record.md#surface) · [manage-related-records.md](manage-related-records.md) |
+| `afterActionCalled()` — nulling the record after a delete | `afterActionCalled()` | skipped | — | [diverges](#afteractioncalled-is-not-ported-because-the-delete-redirect-ends-the-request-first) |
+| `mountCanAuthorizeAccess()` / `hydrateCanAuthorizeAccess()` | the same two | blocked | authorization | [detail](#the-crumb-links-through-an-ungated-ladder) |
+| `getWidgetData()` | `getWidgetData()` | blocked | a widgets port (`sylament/widgets` ships no widget) | — |
 
 ## Details
 
@@ -48,7 +39,7 @@ What is new here is covered by [`Integration/Resources/Pages/NestedResourcePages
 Filament's record crumb links to the view page when `canView($record)`, else the edit page when `canEdit($record)`, else nothing; both `mountCanAuthorizeAccess()` and `hydrateCanAuthorizeAccess()` abort 403 before a page renders at all.
 With authorization parked, the ladder collapses to `hasPage('view')` → `hasPage('edit')` → unlinked, and neither hook is ported.
 So **the crumb links every viewer to a page it does not check they may open**, which is the exposure the resource pages already carry rather than a new one — the pages behind those links are equally ungated.
-It closes when authorization lands, in one place: the two `hasPage()` tests gain their `can*()` halves.
+It closes when authorization lands, in one place: the two `hasPage()` tests in `Resources\Pages\Page::getRecordBreadcrumbUrl()` gain their `can*()` halves.
 
 ## Semantics
 
@@ -56,10 +47,18 @@ It closes when authorization lands, in one place: the two `hasPage()` tests gain
 
 `mountRecord(int|string $record, array $parentRecords = [])` assigns the parent keys **first** and the record key second, and does nothing else — no resolution, no fill.
 Both halves are load-bearing.
-The order is the D8 security property written down once rather than in every page's `mount()` ([why](nested-resources.md#the-chain-rides-one-liveprop-of-keys-assigned-inside-mount)): a record page resolves inside its own mount tail, so a chain assigned after that scopes nothing and the first GET would serve a foreign record.
-And the emptiness is what lets each page keep its own tail — `EditRecord::mount()` calls `mountRecord()` then `fillForm()`, `ManageRelatedRecords::mount()` calls it and stops.
+The order is a security property written down once rather than in every page's `mount()` ([why](nested-resources.md#the-chain-rides-one-liveprop-of-keys-assigned-inside-mount)): a record page resolves inside its own mount tail, so a chain assigned after that scopes nothing and the first GET would serve a foreign record.
+And the emptiness is what lets each page keep its own tail — `EditRecord::mount()` calls `mountRecord()`, then `fillForm()` and `rememberData()`; `ManageRelatedRecords::mount()` calls it and stops.
 
 Filament has no equivalent method because it has no ordering problem: its `mount()` resolves the record eagerly through `resolveRecord()`, which mounts the parent chain itself as its first line.
+
+### The record probes read the wire value, not the resolved record
+
+`hasRecord()` and `getRecordKey()` both answer off the `$record` `LiveProp`, which holds the route key.
+Filament's `hasRecord()` is a null check on a resolved model and it has no key probe at all, because its relation-manager embed is handed the model itself.
+Ours cannot be: the [`HasRelationManagers`](has-relation-managers.md) embed is a live component whose own `ownerRecord` property is a string on the wire ([relation-manager.md](relation-manager.md#the-owner-rides-the-wire-as-a-route-key-behind-a-dehydration-bridge)).
+
+Reading the raw property rather than `getRecord()` is also what keeps `hasRecord()` cheap and total — it is called on an un-mounted page (the page controller reads a page's title before mounting it), where `getRecord()` throws.
 
 ### The resolution is lazy, scoped and re-run every request
 
@@ -68,27 +67,12 @@ The scope is null for a page whose resource nests under nothing, so a plain reso
 
 Laziness is what makes the prop safe on the wire: nothing is resolved at dehydration time, and the next request re-resolves the key it was handed — through the parent scope again — rather than trusting anything the previous render decided.
 
-The third shape is the one that changed behaviour for URLs that used to work, and it is worth spelling out rather than discovering.
-A single-identifier key encodes to itself, so `/admin/articles/7/edit` is untouched — but a run of looser spellings resolved article 5 before and is a 404 now, on both platforms and with no redirect to the canonical one: `05`, a percent-encoded leading space, a trailing newline and `+5` resolved it on SQLite **and** on PostgreSQL, and `5.0` on SQLite only, PostgreSQL having answered that one `22P02`, a 500, exactly as it answered `abc`.
-Those are examples rather than the whole set — a trailing space, `5e0` and a NUL-terminated spelling resolved it on SQLite too.
-`abc` and `5abc` now reach no database at all, which is how `/admin/articles/abc/edit` stopped being a 500 on PostgreSQL.
-
-The refusal happens **before** anything is bound: on the default arm — a resource naming no `$recordRouteKeyName` — a key no record of the class could mint is answered with no statement of its own.
+On the default arm — a resource naming no `$recordRouteKeyName` — a malformed key is refused before anything is bound ([the decode](../schemas/record-key.md#a-malformed-key-never-reaches-the-database)): `/admin/articles/abc/edit` is a 404 that runs no statement, a looser spelling such as `05` or `+5` does not resolve article 5, and nothing redirects to the canonical spelling.
 That is a claim about the record's own binding and nothing else.
 A blank key never reaches the binding at all, being refused a frame earlier; and under a parent the chain above has already been resolved by a statement of its own, the scope being evaluated as the argument.
 Two well-formed-looking keys are still a 500 rather than a 404: a canonical integer too wide for its column decodes, prints back to itself, binds and raises the platform's own range error ([the residual](../schemas/record-key.md#an-integer-beyond-the-columns-width-still-raises-the-platforms-range-error)), and a hand-written identifier DBAL type that refuses a malformed string with anything but a `ConversionException` has that exception propagate, the frozen seam catching the one kind ([the policy](../schemas/record-key-contract.md#the-api)).
 
 ## Divergences
-
-### The record crumb lands on plain resources too, and that is new behaviour
-
-Filament inserts the page's own record crumb behind `$record->exists && hasRecordTitle()`, on every record page, nested or not.
-This port did not at first — its edit page trailed two crumbs (`Articles → Edit`) with a test comment asserting that Filament did the same, which was simply wrong about vendor.
-The port now matches: a resource declaring `$recordTitleAttribute` trails `Articles → Alpha → Edit`, with the middle crumb linking to the record's view page, else its edit page, else unlinked.
-
-The blast radius is every titled resource's edit page — in the demo, `/admin/articles/{id}/edit`, `/admin/authors/{id}/edit` and `/admin/topics/{id}/edit` each grew a crumb.
-Create and list pages are untouched (they carry no record), and a resource with no `recordTitleAttribute` is untouched (the gate stays closed, which `NestedResourcePagesTest`'s untitled-record case pins).
-Recorded as a divergence from **our own shipped behaviour** rather than from Filament's, because the change is what removed the divergence: gating the crumb on nesting instead would have made `/admin/articles/{id}/edit` and `/admin/articles/{a}/sections/{s}/edit` trail differently for no reason a user can see.
 
 ### The sub-navigation parameters carry keys, and the parent chain
 
@@ -107,18 +91,25 @@ Ours is `#[LiveProp(dehydrateWith: 'dehydrateRecord')] public ?string $record = 
 **Single type.**
 `LiveComponentMetadataFactory::createLivePropMetadata()` throws `LogicException('Union or intersection types are not supported for LiveProps.')` for any union-typed prop, so Filament's `int|string` cannot survive on the property.
 It survives on `mount(int|string $record)`, which is not a prop and is the signature a migrating user actually writes.
-A route parameter arrives as a string anyway, so the cast in `mount()` is a formality.
+A route parameter arrives as a string anyway, so the cast in `mountRecord()` is a formality.
 
 **The bridge.**
 `LiveComponentHydrator::dehydrate()` reads each prop through Symfony's `PropertyAccessor`, which prefers a same-named **getter** over the property — and `getRecord()` returns the resolved **entity**.
 Left alone, the wire would carry an object where a `?string` is declared, and the hydrator would throw on a value it cannot dehydrate.
 `dehydrateRecord()` returns `$this->record`, the raw key, and the prop is a scalar on the wire again.
 This is the [`docs/internals/php.md` dehydration trap](../../internals/php.md#a-liveprops-getter-shadows-it) in its second shipped form, mirroring tables' [`dehydrateTableSearch`](../tables/host-can-paginate-records.md#the-writable-props-dehydrate-in-their-elements-wire-vocabulary); the fix is always the bridge, never renaming the Filament getter.
-A composite key is one string too — the `?string` type, the checksum and the bridge carry `1~A=2FB=20C` exactly as they carry `7` — so the widening of the key format asked nothing of this prop, nor of the parent chain's `array<string, string>`, nor of a relation manager's `ownerRecord`.
+A composite key is one string too — the `?string` type, the checksum and the bridge carry `1~A=2FB=20C` exactly as they carry `7` — so a composite key asks nothing of this prop, nor of the parent chain's `array<string, string>`, nor of a relation manager's `ownerRecord`.
 
-We could have sidestepped both by typing the prop to the entity and letting `DoctrineEntityHydrationExtension` carry the identifier (the demo's `ArticleForm` does exactly that, and it works).
-It was not done because a resource page must serve **any** record class, and a `LiveProp`'s type is read off the property at compile time, so there is no type to write on a generic base.
+Typing the prop to the entity and letting `DoctrineEntityHydrationExtension` carry the identifier would sidestep both (the demo's `ArticleForm` does exactly that, and it works).
+The port does not, because a resource page must serve **any** record class, and a `LiveProp`'s type is read off the property at compile time, so there is no type to write on a generic base.
 The key is the one thing every resource can put on the wire, and `Resource::resolveRecordRouteBinding()` already exists to turn it back into a record through the resource's own query — which is also stricter than a `find()`: a record the query scopes out 404s instead of loading.
 
 `packages/panels/tests/Integration/Resources/Pages/EditRecordTest.php` reads the rendered `data-live-props-value` and asserts `record` is the key string, and `CompositeRecordPagesTest` asserts the same of a two-component one.
 Removing the bridge does not fail those two alone: the prop then dehydrates as the resolved **entity**, which the hydrator refuses, so every case that renders a record page goes red with it.
+
+### `afterActionCalled()` is not ported, because the delete redirect ends the request first
+
+Filament's trait overrides `afterActionCalled()` to null `$this->record` once the record does not exist, so Livewire does not try to dehydrate a deleted row after a delete action.
+The port's record pages send a header delete away instead: `EditRecord::getDefaultActionSuccessRedirectUrl()` answers the resource's index URL for a `DeleteAction`, and `HasActions` returns that redirect from the live action before any re-render.
+With no re-render left to protect, there is nothing for the override to null.
+It returns if a record page ever keeps rendering after deleting its own record.

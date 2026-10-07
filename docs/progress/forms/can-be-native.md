@@ -1,5 +1,5 @@
 ---
-description: The `native()` / `isNative()` switch between a field's native browser control and its JavaScript one. (draft)
+description: The `native()` / `isNative()` switch between a field's native browser control and its JavaScript one, on Select and the date pickers.
 ports:
   - vendor/filament/forms/src/Components/Concerns/CanBeNative.php
   - vendor/filament/forms/src/Components/Select.php
@@ -9,9 +9,9 @@ owns:
 ---
 # CanBeNative (forms)
 
-`Sylament\Forms\Components\Concerns\CanBeNative` — the `native()` / `isNative()` switch between a field's native browser control and its JavaScript one.
-Two families compose it: the [date pickers](date-time-picker.md), where the JS calendar is not ported and `native(false)` throws, and [`Select`](select.md), where `native(false)` is one of the four things that put the field on the JS control — so it is promoted out of the picker's fold to a file of its own per [one row per file](../../internals/trail.md#one-file-per-piece-of-code-one-row-per-feature).
-Filament composes it on the same two families, unchanged between them.
+`Sylament\Forms\Components\Concerns\CanBeNative` is the `native()` / `isNative()` switch between a field's native browser control and its JavaScript one.
+Two families compose it: the [date pickers](date-time-picker.md), where the JS calendar is not ported and `native(false)` throws, and [`Select`](select.md), where `native(false)` is one of the four things that put the field on the JS control.
+Filament composes it on the same two families plus `MorphToSelect`, which has no port, unchanged between them.
 
 ## Surface
 
@@ -20,8 +20,6 @@ Filament composes it on the same two families, unchanged between them.
 | [`native()` / `isNative()`](../../../packages/forms/src/Components/Concerns/CanBeNative.php) | [`Concerns/CanBeNative.php`](../../../vendor/filament/forms/src/Components/Concerns/CanBeNative.php) | done | — | — |
 | `Select` — `native(false)` renders the JS control | [`Components/Select.php`](../../../vendor/filament/forms/src/Components/Select.php) | done | — | [semantics](#a-select-is-native-only-when-nothing-forces-the-js-control) |
 | Date pickers — `native(false)` renders the JS calendar | [`Components/DateTimePicker.php`](../../../vendor/filament/forms/src/Components/DateTimePicker.php) | blocked | the JS calendar vertical | [diverges](#nativefalse-throws-rather-than-falling-back-to-the-native-control) |
-
-Coverage: the default, the literal and closure arms, and every picker composing it by [`CanBeNativeTest`](../../../packages/forms/tests/Unit/Components/Concerns/CanBeNativeTest.php); the picker's throw by [`DateTimePickerTest`](../../../packages/forms/tests/Unit/Components/DateTimePickerTest.php); the select's effective-nativeness table — `native(false)`, `searchable()`, `multiple()` and `allowHtml()` each forcing the JS branch, `native(true)` alone not restoring it — by [`SelectTest`](../../../packages/forms/tests/Integration/Components/SelectTest.php).
 
 ## Semantics
 
@@ -37,11 +35,11 @@ Two visible consequences: every `multiple()` select renders the chips control, a
 ### `native(false)` throws rather than falling back to the native control
 
 On the [date pickers](date-time-picker.md) the trait is ported verbatim — the flag, the setter, the reader — and Filament's default (`true`) is the port's only working value.
-`getType()` throws a `LogicException` naming the picker file when the flag is false.
+`getType()` throws a `LogicException` naming the field and pointing at `docs/progress/forms/date-time-picker.md` when the flag is false.
 
 The alternative was to ignore the flag and render the native control anyway.
 That is worse in the way silent fallbacks are always worse: `native(false)` is the one call whose *entire meaning* is "do not render the native control", so honouring the signature while ignoring the intent hands the user a form that looks configured and is not.
-The throw is reached the moment the field renders, names the flag and points at the row above it, so the failure is a five-second read rather than a hunt.
+The throw is reached the moment the field renders and names `native(false)`, so the failure explains itself.
 
 `getType()` is the throw site because it is the one member of the native branch that has no meaning at all for the JS control — the panel renders a button and a hidden model, not a typed input.
-Reverses when the [calendar lands](date-time-picker.md#the-js-calendar-family-waits-on-a-js-vertical-of-its-own): the guard becomes the branch that picks the other template, exactly as [`Select`'s does today](#a-select-is-native-only-when-nothing-forces-the-js-control).
+Reverses when the [calendar lands](date-time-picker.md#the-js-calendar-family-waits-on-a-js-vertical-of-its-own): the guard becomes the branch that picks the other template, as [`Select`'s does](#a-select-is-native-only-when-nothing-forces-the-js-control).

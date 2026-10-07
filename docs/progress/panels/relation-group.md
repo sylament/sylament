@@ -1,5 +1,5 @@
 ---
-description: 'Several relation managers behind one tab: the group supplies the tab''s label and chrome, and the page mounts every manager it holds inside that tab. (draft)'
+description: 'RelationGroup, several relation managers behind one tab, and RelationManagerConfiguration, one manager registration with its mount props.'
 ports:
   - vendor/filament/filament/src/Resources/RelationManagers/RelationGroup.php
   - vendor/filament/filament/src/Resources/RelationManagers/RelationManagerConfiguration.php
@@ -9,11 +9,9 @@ owns:
 ---
 # RelationGroup (panels)
 
-[`Sylament\Panels\Resources\RelationManagers\RelationGroup`](../../../packages/panels/src/Resources/RelationManagers/RelationGroup.php) — several [relation managers](relation-manager.md) behind one tab: the group supplies the tab's label and chrome, and the page mounts every manager it holds inside that tab.
-It ports [`Resources/RelationManagers/RelationGroup.php`](../../../vendor/filament/filament/src/Resources/RelationManagers/RelationGroup.php).
+[`RelationGroup`](../../../packages/panels/src/Resources/RelationManagers/RelationGroup.php) puts several [relation managers](relation-manager.md) behind one tab: the group supplies the tab's label and chrome, and the page mounts every manager it holds inside that tab.
 
-[`RelationManagerConfiguration`](../../../packages/panels/src/Resources/RelationManagers/RelationManagerConfiguration.php) is folded in here: it is the value object `RelationManager::make()` returns — a manager class-string plus the mount props that one registration adds — and it appears in a `getRelations()` list wherever a bare class-string can, groups included.
-It ports [`Resources/RelationManagers/RelationManagerConfiguration.php`](../../../vendor/filament/filament/src/Resources/RelationManagers/RelationManagerConfiguration.php).
+[`RelationManagerConfiguration`](../../../packages/panels/src/Resources/RelationManagers/RelationManagerConfiguration.php) is the value object `RelationManager::make()` returns — a manager class-string plus the mount props that one registration adds — and it appears in a `getRelations()` list wherever a bare class-string can, groups included.
 
 ## Surface
 
@@ -23,14 +21,11 @@ It ports [`Resources/RelationManagers/RelationManagerConfiguration.php`](../../.
 | [`getLabel()`](../../../packages/panels/src/Resources/RelationManagers/RelationGroup.php) | `getLabel()` | done | — | — |
 | [`getManagers()`](../../../packages/panels/src/Resources/RelationManagers/RelationGroup.php) | `getManagers()` | done | — | [diverges](#the-closure-manager-list-is-evaluated-filaments-is-returned-raw) |
 | [`ownerRecord()` / `getOwnerRecord()` / `pageClass()` / `getPageClass()`](../../../packages/panels/src/Resources/RelationManagers/RelationGroup.php) | same four | done | — | — |
-| [`badge()` / `badgeColor()` / `badgeTooltip()` / `icon()` / `iconPosition()`](../../../packages/panels/src/Resources/RelationManagers/RelationGroup.php) — support's `HasBadge`, `HasBadgeTooltip`, `HasIcon`, `HasIconPosition` | the same four Filament concerns plus the group's own `badge`/`badgeColor` | done | — | — |
+| [`badge()` / `badgeColor()` / `badgeTooltip()` / `icon()` / `iconPosition()`](../../../packages/panels/src/Resources/RelationManagers/RelationGroup.php) and their getters, through support's concerns | `HasBadgeTooltip`, `HasIcon`, `HasIconPosition` and the group's own `badge()` / `badgeColor()` | done | — | — |
 | [`tab()` / `getTabComponent()`](../../../packages/panels/src/Resources/RelationManagers/RelationGroup.php) | `tab()` / `getTabComponent()` | done | — | [diverges](#the-badge-is-resolved-before-the-colour-and-tooltip-closures-read-it) |
 | [`resolveDefaultClosureDependencyForEvaluationBy{Name,Type}()`](../../../packages/panels/src/Resources/RelationManagers/RelationGroup.php) — `$ownerRecord` / `$pageClass` injection | the same two overrides | done | — | — |
 | [`RelationManagerConfiguration`](../../../packages/panels/src/Resources/RelationManagers/RelationManagerConfiguration.php) — `$relationManager` + `getProperties()` | [`RelationManagerConfiguration.php`](../../../vendor/filament/filament/src/Resources/RelationManagers/RelationManagerConfiguration.php) | done | — | — |
-| `deferBadge()` / `isBadgeDeferred()` | `RelationGroup.php` | skipped | — | [rides the manager's divergence](relation-manager.md#deferred-tab-badges-do-not-port) |
-| _rest not audited yet_ | — | — | — | — |
-
-[`Unit/Resources/RelationManagers/RelationGroupTest`](../../../packages/panels/tests/Unit/Resources/RelationManagers/RelationGroupTest.php) covers the literal and closure arms of both `make()` arguments, the unfiltered list before the owner and page are known, the filter dropping a manager that declines the record in both its class-string and configuration forms, the owner/page closure injection, the badge ordering, and the `tab()` callback.
+| `deferBadge()` / `isBadgeDeferred()` | `RelationGroup.php` | skipped | — | [diverges](relation-manager.md#deferred-tab-badges-do-not-port) |
 
 ## Divergences
 

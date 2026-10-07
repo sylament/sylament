@@ -2,7 +2,8 @@
 description: '`Repeater::relationship()`: a Doctrine collection mapped item by item, its fill, save, order and mutate arms, and relation-backed fields inside an item'
 ports:
   - vendor/filament/forms/src/Components/Repeater.php
-owns: []
+owns:
+  - packages/forms/src/Components/Concerns/BelongsToRelationship.php
 ---
 # Repeater relationship (forms)
 

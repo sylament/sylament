@@ -4,7 +4,6 @@ ports:
   - vendor/filament/forms/src/Components/Select.php
   - vendor/filament/forms/src/Components/Concerns/HasPivotData.php
 owns:
-  - packages/forms/src/Components/Concerns/BelongsToRelationship.php
   - packages/forms/src/Components/Concerns/HasRelationship.php
 ---
 # HasRelationship (forms)

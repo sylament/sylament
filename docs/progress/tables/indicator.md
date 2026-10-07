@@ -31,7 +31,7 @@ Covered by [`IndicatorTest`](../../../packages/tables/tests/Unit/Filters/Indicat
 Filament's `Indicator::make()` is the one factory in its component tier that calls `app(static::class, …)` and returns — no `configure()`, so an `Indicator::configureUsing()` registration would never fire.
 Almost certainly an oversight rather than a decision: every sibling factory configures.
 Ours goes through the house `newInstance()` → seed → `configure()` idiom like everything else, pinned by a test.
-[renames.md row](../renames.md#divergences).
+[renames.md row](../renames.md).
 
 ### Removal is structured, not a click-handler string
 

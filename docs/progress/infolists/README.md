@@ -36,3 +36,7 @@ Contracts, templates, test helpers — [`src/Contracts`](../../../vendor/filamen
 | Item | Ports | Status | Detail |
 | --- | --- | --- | --- |
 | _not audited yet_ | | | |
+
+<!-- split-links:start -->
+Also in this package: [infolists-bundle.md](infolists-bundle.md).
+<!-- split-links:end -->

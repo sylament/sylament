@@ -1,5 +1,5 @@
 ---
-description: '`Sylament\Forms\Components\Concerns\HasAffixes` and its contract `Sylament\Forms\Components\Contracts\HasAffixes` — the prefix/suffix surface of the… (draft)'
+description: 'The prefix/suffix surface of the text-like controls and its contract: affix labels, icons and their colours, affix actions and the inline flags.'
 ports:
   - vendor/filament/forms/src/Components/Concerns/HasAffixes.php
   - vendor/filament/forms/src/Components/Contracts/HasAffixes.php
@@ -10,7 +10,7 @@ owns:
 # HasAffixes (forms)
 
 `Sylament\Forms\Components\Concerns\HasAffixes` and its contract `Sylament\Forms\Components\Contracts\HasAffixes` — the prefix/suffix surface of the text-like controls: a label, an icon (with its own colour), and any number of actions on either side of the input, plus the inline flag that decides whether each side sits inside the input wrapper's border or beside it.
-Four fields compose it — [`TextInput`](text-input.md), [`Select`](select.md), [`TagsInput`](tags-input.md) and [`DateTimePicker`](date-time-picker.md), the last passing it down to [`DatePicker`](date-picker.md) and [`TimePicker`](time-picker.md).
+[`TextInput`](text-input.md), [`Select`](select.md), [`TagsInput`](tags-input.md) and [`DateTimePicker`](date-time-picker.md) compose it, the last passing it down to [`DatePicker`](date-picker.md) and [`TimePicker`](time-picker.md); Filament also composes it on `ColorPicker`, which has no port.
 
 Three prebuilt affix actions ship against it, all [`TextInput`](text-input.md)'s — `ShowPasswordAction`, `HidePasswordAction` and `CopyAction` — and it is `cacheSuffixActions()`'s `prepareAction()` that gives `CopyAction`'s `copyMessage()` / `copyMessageDuration()` closures their `state` injection.
 That state is the **field's own**, even inside a repeater item, since `prepareAction()` calls `schemaComponent()` and nothing else ([detail](text-input.md#the-copy-message-closure-sees-the-render-time-state)).
@@ -27,7 +27,7 @@ The contract extends schemas' [`HasAffixActions`](../schemas/has-actions.md#the-
 | [`prefixAction()` / `prefixActions()` / `suffixAction()` / `suffixActions()`](../../../packages/forms/src/Components/Concerns/HasAffixes.php) | [`Concerns/HasAffixes.php`](../../../vendor/filament/forms/src/Components/Concerns/HasAffixes.php) | done | — | [semantics](#the-plural-forms-append-and-a-closure-may-return-several-actions) |
 | [`getPrefixActions()` / `cachePrefixActions()` / `getSuffixActions()` / `cacheSuffixActions()`](../../../packages/forms/src/Components/Concerns/HasAffixes.php) | [`Concerns/HasAffixes.php`](../../../vendor/filament/forms/src/Components/Concerns/HasAffixes.php) | done | — | [semantics](#the-cache-contributes-two-defaults-and-nothing-else) |
 | [`inlinePrefix()` / `inlineSuffix()` / `isPrefixInline()` / `isSuffixInline()`](../../../packages/forms/src/Components/Concerns/HasAffixes.php) | [`Concerns/HasAffixes.php`](../../../vendor/filament/forms/src/Components/Concerns/HasAffixes.php) | done | — | [semantics](#every-setter-also-writes-the-inline-flag-so-the-last-call-wins) |
-| [The contract](../../../packages/forms/src/Components/Contracts/HasAffixes.php) — the eight getters, `extends HasAffixActions` | [`Components/Contracts/HasAffixes.php`](../../../vendor/filament/forms/src/Components/Contracts/HasAffixes.php) | done | — | [diverges](#htmlable-becomes-markup-in-the-contract-too) |
+| [The contract](../../../packages/forms/src/Components/Contracts/HasAffixes.php) — the eight getters, `extends HasAffixActions` | [`Components/Contracts/HasAffixes.php`](../../../vendor/filament/forms/src/Components/Contracts/HasAffixes.php) | done | — | [translations](../translations.md#idiom) |
 
 Coverage: [`HasAffixesTest`](../../../packages/forms/tests/Unit/Components/Concerns/HasAffixesTest.php) — the literal, `Markup` and closure arms of every label, icon and colour; the inline-flag trap; append semantics across the singular and plural forms; a closure returning an array and a closure returning `null`; the name keying, the two cached defaults, `prepareAction()`'s schema component, and the splice into `getActions()`.
 
@@ -66,13 +66,5 @@ Filament is identical.
 
 ### The icon colour defaults nowhere in PHP
 
-`getPrefixIconColor()` / `getSuffixIconColor()` return `null` when unset — the `'gray'` default lives at the call site in the templates, exactly as Filament's Blade does.
+`getPrefixIconColor()` / `getSuffixIconColor()` return `null` when unset — the `'gray'` default lives at the call site in the templates, as Filament's lives at its render call site (`?? 'gray'` in `Field`'s input-wrapper rendering).
 Reading them in PHP therefore tells you what the caller asked for, not what renders.
-
-## Divergences
-
-### `Htmlable` becomes `Markup` in the contract too
-
-The house translation: wherever Filament types a human-text or icon value `string | Htmlable`, the port types it `string|Markup` — plain strings are escaped by the template, `Markup` renders raw.
-It applies to the labels and the icons in both the trait's properties and the contract's return types.
-The icon setters also carry the `BackedEnum` arm every house icon setter has ([`HasIcon`](../support/has-icon.md), [`HasToggleIcons`](toggle.md#hastoggleicons-tests-for-null-not-truthiness)), matching the vendor trait.

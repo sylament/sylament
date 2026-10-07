@@ -1,24 +1,19 @@
 ---
-description: The boolean field rendering a native `<input type="checkbox">`. (draft)
+description: The boolean field rendering a native `<input type="checkbox">`, with its boolean constraint and its must-be-ticked `required()`.
 ports:
   - vendor/filament/forms/src/Components/Checkbox.php
-  - vendor/filament/forms/src/Components/Concerns/
 owns:
   - packages/forms/src/Components/Checkbox.php
-  - packages/forms/src/Components/Concerns/CanBeAccepted.php
-  - packages/forms/src/Components/Concerns/CanBeInline.php
   - packages/forms/templates/partials/Checkbox/
 ---
 # Checkbox (forms)
 
 `Sylament\Forms\Components\Checkbox` — the boolean field rendering a native `<input type="checkbox">`.
-Extends [`Field`](../../../packages/forms/src/Components/Field.php), defaults its state to `false`, casts state through schemas' [`BooleanStateCast`](../../../packages/schemas/src/State/Casts/BooleanStateCast.php), and composes the two shared boolean concerns ([`CanBeInline`](can-be-inline.md), [`CanBeAccepted`](can-be-accepted.md)).
+Extends [`Field`](../../../packages/forms/src/Components/Field.php), defaults its state to `false`, casts state through schemas' [`BooleanStateCast`](../../../packages/schemas/src/State/Casts/BooleanStateCast.php), and composes the shared boolean concerns ([`CanBeInline`](can-be-inline.md), [`CanBeAccepted`](can-be-accepted.md)).
+`Field`'s own surface is tracked in [`field.md`](field.md); the table lists what this field adds.
 It ships no JavaScript: the control is a real checkbox bound with `data-model`, and `ux-live-component` reads `element.checked` natively.
 
 ## Surface
-
-Every point this field adds over `Field`.
-`Field`'s own surface is tracked in [`field.md`](field.md), not here.
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
@@ -55,22 +50,29 @@ Laravel's `boolean` rule is not implicit either, so this is the faithful behavio
 An unset field still passes: `TypeValidator` short-circuits on `null` before it reaches `is_bool`, so a state bag with no key for the field produces no violation here.
 `required()` is what rejects that case.
 
+### Both label slots are declared unconditionally
+
+The template hands the input to the wrapper's `labelPrefix` slot when [`isInline()`](can-be-inline.md) and to the default `content` slot otherwise, and it declares **both** `<twig:block>` tags unconditionally with the `{% if %}` inside each.
+The obvious shape — one `{% if %}` choosing which block to declare — does not compile: `<twig:block>` becomes a Twig `{% block %}`, whose own parser subparse swallows the `{% endif %}` and fails with `Unexpected "endblock" tag (expecting closing tag for the "if" tag)`.
+The failure is loud, so this is a note for whoever tries to "simplify" the template, not a silent trap.
+
+## Divergences
+
 ### required() on a checkbox means "must be checked"
 
-The field overrides `getRequiredConstraint()` to Symfony's `NotBlank`, which rejects `false` outright — `false === $value` is the first clause of [`NotBlankValidator`](../../../vendor/symfony/validator/Constraints/NotBlankValidator.php).
+Filament's `required()` adds Laravel's `required` rule, and [`validateRequired()`](../../../vendor/laravel/framework/src/Illuminate/Validation/Concerns/ValidatesAttributes.php) reads `false` as present, so a required Filament checkbox passes server-side validation unticked; only the native `required` attribute in its markup makes the browser insist.
+The port overrides `getRequiredConstraint()` to Symfony's `NotBlank`, which rejects `false` outright — `false === $value` is the first clause of [`NotBlankValidator`](../../../vendor/symfony/validator/Constraints/NotBlankValidator.php).
 That agrees with the native `required` attribute the template emits, which browsers read as "this box must be ticked", so the client and the server say the same thing.
 [`accepted()`](can-be-accepted.md) is the explicit spelling of the same rule and is what to reach for when the intent matters to a reader.
 
-The override is what carries that meaning, and it has been explicit only since the shared constraint stopped supplying it: `required()` builds [`RequiredValue`](can-be-validated.md#required-carries-laravels-blank-set-not-symfonys), which follows Laravel in reading `false` as present.
-Until then the checkbox inherited "must be ticked" from a default that meant it by accident — the same accident that made every *other* field over a non-nullable `bool` column unsubmittable while off.
+The override is needed because the shared `required()` builds [`RequiredValue`](can-be-validated.md#required-carries-laravels-blank-set-not-symfonys), which follows Laravel in reading `false` as present.
+`isRequiredByRecord()` answers `false` for the same reason: a non-nullable `bool` column would otherwise make every checkbox over it "must be ticked" without anyone asking.
 
 **[`Toggle`](toggle.md#required-means-presence-not-truth) deliberately does the opposite** — it overrides `getRequiredConstraint()` to `NotNull`, so a required toggle validates while off.
 The asymmetry is not an oversight to reconcile: each field's constraint matches the attribute its own template emits.
 The checkbox emits native `required`, which the browser enforces as "must be ticked", so a server rule that accepted `false` would contradict the client and let a submit through that the browser had already blocked.
 The toggle emits no such attribute, so it is free to mean presence.
 Change one and you must change its template too.
-
-## Divergences
 
 ### The checked attribute is rendered server-side
 
@@ -83,7 +85,7 @@ The input carries **no `value` attribute**, and that absence is load-bearing rat
 ### The checkbox's extra input attributes win where Filament's lose
 
 `extraInputAttributes()` outranks the attributes the field computes on **every** field that composes [the concern](has-extra-input-attributes.md#the-extras-beat-the-attributes-the-field-computes).
-That is Filament's own order on five of the seven it composes the trait on — `TextInput`, `Textarea`, `Select`, `Radio` and `CheckboxList` each start the control's attributes *from* the extras bag and merge their own in as defaults — but not on the two exceptions.
+That is Filament's own order on `TextInput`, `Textarea`, `Select`, `Radio` and `CheckboxList`, which each start the control's attributes *from* the extras bag and merge their own in as defaults, but not on `Checkbox` and `ToggleButtons`.
 [`Checkbox`](../../../vendor/filament/forms/src/Components/Checkbox.php) is the first: its `toEmbeddedHtml()` builds the declared attributes first and then `->merge($this->getExtraInputAttributes())`.
 A Laravel bag's `merge()` takes its **argument** as the defaults, so there the extras lose every key the field already set: `extraInputAttributes(['disabled' => false])` cannot un-disable a Filament checkbox, though it can un-disable a Filament text input.
 [`ToggleButtons`](toggle-buttons.md#the-extra-input-attributes-win-where-filaments-lose-by-going-last) is the second, by a different route — it never merges at all, printing its own attributes as raw HTML and appending the extras bag after them, which a browser resolves first-wins.
@@ -92,9 +94,3 @@ The port applies one precedence to all of them rather than reproducing either od
 Nothing in Filament's checkbox reads as intent: the same chain demotes `extraAttributes()` too, while the three fields that own a wrapper element start that element's bag from `getExtraAttributeBag()` — so the split tracks which `merge()` happens to come first in each embedded view, not a decision about who should win.
 A hatch whose precedence flips with the field it is called on is the shape a consumer cannot hold in their head.
 Reversible on a concrete report that someone depends on the checkbox arm losing.
-
-### Both label slots are declared unconditionally
-
-The template hands the input to the wrapper's `labelPrefix` slot when [`isInline()`](can-be-inline.md) and to the default `content` slot otherwise, and it declares **both** `<twig:block>` tags unconditionally with the `{% if %}` inside each.
-The obvious shape — one `{% if %}` choosing which block to declare — does not compile: `<twig:block>` becomes a Twig `{% block %}`, whose own parser subparse swallows the `{% endif %}` and fails with `Unexpected "endblock" tag (expecting closing tag for the "if" tag)`.
-The failure is loud, so this is a note for whoever tries to "simplify" the template, not a silent trap.

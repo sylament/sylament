@@ -133,5 +133,5 @@ The host-side [`Modals`](../../../packages/actions/templates/components/Modals/i
 | [`SylamentActionsBundle`](../../../packages/actions/src/SylamentActionsBundle.php) | [`ActionsServiceProvider.php`](../../../vendor/filament/actions/src/ActionsServiceProvider.php) | in progress | [actions-bundle.md](actions-bundle.md) |
 
 <!-- split-links:start -->
-Also in this package: [can-dispatch-event.md](can-dispatch-event.md) · [can-notify.md](can-notify.md) · [can-open-modal.md](can-open-modal.md) · [can-open-url.md](can-open-url.md) · [can-use-database-transactions.md](can-use-database-transactions.md) · [has-action.md](has-action.md) · [interacts-with-record.md](interacts-with-record.md) · [modals.md](modals.md).
+Also in this package: [can-dispatch-event.md](can-dispatch-event.md) · [can-notify.md](can-notify.md) · [can-open-modal.md](can-open-modal.md) · [can-open-url.md](can-open-url.md) · [can-submit-form.md](can-submit-form.md) · [can-use-database-transactions.md](can-use-database-transactions.md) · [enums.md](enums.md) · [exceptions.md](exceptions.md) · [has-action.md](has-action.md) · [has-id.md](has-id.md) · [interacts-with-record.md](interacts-with-record.md) · [modals.md](modals.md).
 <!-- split-links:end -->

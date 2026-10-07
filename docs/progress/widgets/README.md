@@ -33,3 +33,7 @@ Widget configuration, templates, assets — [`src/WidgetConfiguration.php`](../.
 | Item | Ports | Status | Detail |
 | --- | --- | --- | --- |
 | _not audited yet_ | | | |
+
+<!-- split-links:start -->
+Also in this package: [widgets-bundle.md](widgets-bundle.md).
+<!-- split-links:end -->

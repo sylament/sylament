@@ -1,8 +1,8 @@
 ---
-description: The multi-line text field. (draft)
+description: The multi-line text field, with its `rows` / `cols` sizing and the autosize controller.
 ports:
   - vendor/filament/forms/src/Components/Textarea.php
-  - vendor/filament/forms/src/Components/Concerns/
+  - vendor/filament/forms/src/Components/Concerns/CanDisableGrammarly.php
 owns:
   - packages/forms/src/Components/Concerns/CanDisableGrammarly.php
   - packages/forms/src/Components/Textarea.php
@@ -12,11 +12,9 @@ owns:
 
 `Sylament\Forms\Components\Textarea` — the multi-line text field.
 Extends [`Field`](../../../packages/forms/src/Components/Field.php) and adds the `rows` / `cols` sizing setters on top of the shared length-constraint concern.
+`Field`'s own surface is tracked in [`field.md`](field.md); the table lists what this field adds.
 
 ## Surface
-
-Every point this field adds over `Field`.
-`Field`'s own surface is tracked in [`field.md`](field.md), not here.
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
@@ -33,8 +31,8 @@ Every point this field adds over `Field`.
 | [`HasPlaceholder`](field.md) — already on `Field` here | [`Concerns/HasPlaceholder.php`](../../../vendor/filament/forms/src/Components/Concerns/HasPlaceholder.php) | done | — | [diverges](field.md#hasplaceholder-is-composed-on-the-base-field) |
 | [Extra input attributes (`HasExtraInputAttributes`)](../../../packages/forms/src/Components/Concerns/HasExtraInputAttributes.php) | [`Concerns/HasExtraInputAttributes.php`](../../../vendor/filament/forms/src/Components/Concerns/HasExtraInputAttributes.php) | done | — | [detail](has-extra-input-attributes.md) |
 | Extra Alpine attributes (`HasExtraAlpineAttributes`) | [`support/Concerns/HasExtraAlpineAttributes.php`](../../../vendor/filament/support/src/Concerns/HasExtraAlpineAttributes.php) | skipped | — | [diverges](../support/component-attribute-bag.md#extra-alpine-attributes-are-not-ported) |
-| [Trim state (`CanTrimState`)](../../../packages/schemas/src/Components/Concerns/CanTrimState.php) | [`schemas/Concerns/CanTrimState.php`](../../../vendor/filament/schemas/src/Components/Concerns/CanTrimState.php) | done | — | [semantics](#trim-reaches-the-saved-value-strip-reaches-it-through-a-cast-neither-reaches-the-raw-bag) |
-| [Strip characters (`CanStripCharactersFromState`)](../../../packages/schemas/src/Components/Concerns/CanStripCharactersFromState.php) | [`schemas/Concerns/CanStripCharactersFromState.php`](../../../vendor/filament/schemas/src/Components/Concerns/CanStripCharactersFromState.php) | done | — | [semantics](#trim-reaches-the-saved-value-strip-reaches-it-through-a-cast-neither-reaches-the-raw-bag) |
+| [Trim state (`CanTrimState`)](../../../packages/schemas/src/Components/Concerns/CanTrimState.php) | [`Components/Concerns/CanTrimState.php`](../../../vendor/filament/schemas/src/Components/Concerns/CanTrimState.php) | done | — | [semantics](#trim-reaches-the-saved-value-strip-reaches-it-through-a-cast-neither-reaches-the-raw-bag) |
+| [Strip characters (`CanStripCharactersFromState`)](../../../packages/schemas/src/Components/Concerns/CanStripCharactersFromState.php) | [`Components/Concerns/CanStripCharactersFromState.php`](../../../vendor/filament/schemas/src/Components/Concerns/CanStripCharactersFromState.php) | done | — | [semantics](#trim-reaches-the-saved-value-strip-reaches-it-through-a-cast-neither-reaches-the-raw-bag) |
 | [State casts + `mutate*` / `mutates*` hooks](../../../packages/forms/src/Components/Textarea.php) | [`Components/Textarea.php`](../../../vendor/filament/forms/src/Components/Textarea.php) | done | — | [semantics](#trim-reaches-the-saved-value-strip-reaches-it-through-a-cast-neither-reaches-the-raw-bag) |
 | [Native constraint attributes drop when concealed](../../../packages/forms/templates/partials/Textarea/index.html.twig) — `required`, `minlength`, `maxlength` | [`toEmbeddedHtml()`](../../../vendor/filament/forms/src/Components/Textarea.php) | done | — | [can-be-concealed.md](../schemas/can-be-concealed.md) |
 
@@ -52,7 +50,7 @@ The asymmetry is the feature, and it is Filament's:
 
 `mutatesStateForValidation()` is `parent || hasStripCharacters() || isTrimmed()`, so a `Textarea` with neither set costs the mutation walk nothing.
 [The walk itself](../schemas/schema.md#getstate-validates-without-a-prepareforvalidation-mutation-layer) is schemas'.
-`TagsInput` is the third upstream consumer.
+`TagsInput` composes `CanTrimState` too, upstream and here.
 
 ### The sizer grows on `input`, floors at the initial height, and never measures a hidden control
 
@@ -73,10 +71,10 @@ The height the controller writes is an inline style, which survives a live re-re
 
 Filament renders the sizer unconditionally and mounts its Alpine component either way: with `autosize()` the component grows the sizer, and **without** it a `ResizeObserver` mirrors whatever height the user dragged the control to onto the sizer, because the sizer is the element the wrapper's `overflow-hidden` clips.
 Neither half of that branch is ported.
-Without `autosize()` there is no sizer, no controller and no `sy-autosizable` class — the rendered markup is byte-identical to what shipped before autosize landed, and `textarea.sy-fo-input`'s own `resize-y` hands the grip back to the platform with nothing to mirror it onto.
+Without `autosize()` there is no sizer, no controller and no `sy-autosizable` class — the rendered markup is the bare control inside the input wrapper, and `textarea.sy-fo-input`'s own `resize-y` hands the grip back to the platform with nothing to mirror it onto.
 [`TextareaTest`](../../../packages/forms/tests/Integration/Components/TextareaTest.php) pins that off arm as an exact string, so the branch cannot grow an element by accident.
 
-It reverses by rendering the sizer unconditionally and giving the controller the mirroring arm, which is worth doing only if the sizer ever carries chrome of its own — today it carries only a height.
+It reverses by rendering the sizer unconditionally and giving the controller the mirroring arm, which is worth doing only if the sizer ever carries chrome of its own; it carries only a height.
 
 ### Only the keyboard re-measures: a server-set state change does not
 
@@ -89,9 +87,9 @@ The controller writes `element.style.height` itself, which the live component's 
 Under autosize the sizer is `overflow-hidden` and the control is `resize-none`, so a value longer than the box does not grow it: the control scrolls internally with its grip off, which is the shape `autosize()` exists to avoid.
 
 Closing it needs a fourth trigger — the host's `render:finished`, which tables' [`table` controller](../tables/has-table.md) already subscribes to.
-The resolver that reaches the host is not part of the cost: the same sweep landed forms' own [`utils/live_host.ts`](../../../packages/forms/assets/src/utils/live_host.ts) for the `key-value` and `tags-input` controllers, and this one builds per-file and unbundled exactly as those two do, so it would take the identical relative `../utils/live_host.js` import.
+The resolver that reaches the host is not part of the cost: forms' own [`utils/live_host.ts`](../../../packages/forms/assets/src/utils/live_host.ts) already serves the `key-value`, `tags-input` and `file-upload` controllers, and this one builds per-file and unbundled exactly as those do, so it would take the identical relative `../utils/live_host.js` import.
 What is left is the subscription and the shape [`tags_input_controller.ts`](../../../packages/forms/assets/src/controllers/tags_input_controller.ts) already carries around one: an `async connect()` that returns quietly when no live host answers, a generation counter so a disconnect during the resolve cannot bind a listener on behalf of a dead element, and a `disconnect()` that calls `component.off()`.
-Deliberate for now, on that smaller ground: every shipped arm drives the field from its own keyboard.
+It stays deliberate on that smaller ground: every shipped arm drives the field from its own keyboard.
 
 ### The control keeps the `sy-fo-input` class, Filament's textarea carries none
 
@@ -100,7 +98,4 @@ Ours keeps `class="sy-fo-input"` on the control and lets the shared rule paint i
 What the wrapper class carries here is only what is genuinely the wrapper's: `.sy-fo-textarea { overflow-hidden }`, vendor's own first declaration, without which the control's square corners spill past the wrapper's `rounded-lg`.
 
 The placement is what diverges, not the result — a shipped `<textarea>` renders the same box either way.
-The two rules now do disagree, and the class still stays: `.sy-fo-textarea.sy-autosizable textarea.sy-fo-input` beats the shared `textarea.sy-fo-input` on specificity in either emission order, so autosize overrides the `min-h-20 resize-y` pair with `h-full min-h-0 resize-none` without moving a single declaration off the shared rule.
-
-The rest of the ported subset (`rows`, `cols`, length constraints, the field-wrapper chrome, and the Twig template) is a faithful port; the `wire:model` → `data-model` binding, the `Htmlable` / `toEmbeddedHtml` → Twig template translation, and placeholder escaping via Twig are systematic idiom translations recorded in the [rename table](../renames.md), not divergences.
-The `required` and `aria-invalid` attributes the template emits are `Field`-level concerns (`CanBeMarkedAsRequired` and the error display), tracked in [`field.md`](field.md), not here.
+Under autosize the two rules disagree, and the class still stays: `.sy-fo-textarea.sy-autosizable textarea.sy-fo-input` beats the shared `textarea.sy-fo-input` on specificity in either emission order, so autosize overrides the `min-h-20 resize-y` pair with `h-full min-h-0 resize-none` without moving a single declaration off the shared rule.

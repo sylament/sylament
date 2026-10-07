@@ -172,7 +172,7 @@ Filament seals `Notification::__construct(string $id)` and fills it through `app
 Sylament's `make()` resolves the instance first — through [`Component::newInstance()`](../support/component.md#newinstance-routes-every-make-through-a-locator) and its class-keyed service locator, which cannot pass constructor arguments — then calls the existing `id()` setter with `$id ?? Uuid::v7()->toRfc4122()` (`symfony/uid` translating `Str::orderedUuid()`, same time-ordered v7 shape).
 The constructor is gone entirely, so a user subclass can declare constructor dependencies of its own.
 
-This is the global [`make()` arguments move from constructors to setters](../renames.md#make-arguments-move-from-constructors-to-setters) rule applied here, and it is invisible at the call site: `Notification::make()` and `Notification::make('my-id')` both behave exactly as they do in Filament.
+This is the global [`make()` arguments move from constructors to setters](../support/component.md#make-arguments-move-from-constructors-to-setters) rule applied here, and it is invisible at the call site: `Notification::make()` and `Notification::make('my-id')` both behave exactly as they do in Filament.
 
 ### `fromArray()` drops a value it cannot type, where Filament's typed setters throw
 

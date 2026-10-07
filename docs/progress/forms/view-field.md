@@ -1,5 +1,5 @@
 ---
-description: 'The escape hatch: a field whose entire body is a Twig template the user writes. (draft)'
+description: 'The escape-hatch field whose entire body is a Twig template the user writes, with a fail-fast guard for a missing template.'
 ports:
   - vendor/filament/forms/src/Components/ViewField.php
   - vendor/filament/support/src/Components/ViewComponent.php
@@ -16,11 +16,9 @@ Filament's class is literally `class ViewField extends Field {}`.
 Ours carries one method, a fail-fast `getTemplate()` override, for a reason recorded [below](#the-missing-template-throw-lives-on-viewfield-rather-than-the-base).
 
 `view()` → `template()` and `viewData()` → `templateData()` are the systematic Blade → Twig translation, not renames — the [idiom table](../translations.md#idiom) owns that row, and this file does not re-decide it.
+`Field`'s own surface is tracked in [`field.md`](field.md) and the inherited template surface in [`support/view-component.md`](../support/view-component.md); the table lists what this field adds.
 
 ## Surface
-
-Every point this field adds over `Field`.
-`Field`'s own surface is tracked in [`field.md`](field.md), the inherited template surface in [`support/view-component.md`](../support/view-component.md).
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
@@ -57,12 +55,12 @@ The fixture is the shape to copy:
 </twig:SylamentForms:FieldWrapper>
 ```
 
-The [input wrapper](../support/input-wrapper.md) is the template's to open too, and for the same reason — it is what paints the ring, background and focus state a text control no longer carries itself, so a `sy-fo-input` outside one renders as bare text on the page background.
+The [input wrapper](../support/input-wrapper.md) is the template's to open too, and for the same reason — it is what paints the ring, background and focus state a text control does not carry itself, so a `sy-fo-input` outside one renders as bare text on the page background.
 The second fixture, [`Unwrapped`](../../../packages/forms/tests/Fixtures/Twig/templates/partials/ViewFieldFixture/Unwrapped.html.twig), opens neither wrapper on purpose: a custom field that wants no chrome at all is a valid thing to want, and it is the case that proves nothing is inherited.
 
 The tag names the wrapper directly where Filament's example resolves it through `$getFieldWrapperView()`.
-Schemas' [`HasFieldWrapper`](../schemas/schema.md) does ship now, but as an opaque marker forms reads for exactly one value — the plain branch a [`FusedGroup`](fused-group.md#only-the-plain-wrapper-view-is-honored) puts on its children — not as a template name a custom field could point anywhere.
-Swapping a wrapper today still means writing a different tag in the template, which is what the indirection buys anyway.
+Schemas' [`HasFieldWrapper`](../schemas/schema.md) ships as an opaque marker forms reads for exactly one value — the plain branch a [`FusedGroup`](fused-group.md#only-the-plain-wrapper-view-is-honored) puts on its children — not as a template name a custom field could point anywhere.
+Swapping a wrapper means writing a different tag in the template, which is what the indirection buys anyway.
 
 Both halves matter.
 `:field="component"` is how the wrapper reaches the label, the hint, the error messages and the ten slots — the field is in scope as `component`, never as `field` ([why](../support/view-component.md#the-instance-is-always-exposed-as-component)) — and `data-model` is what binds the control to the host's state bag, the same attribute [`TextInput`](../../../packages/forms/templates/partials/TextInput/index.html.twig) emits.
@@ -91,6 +89,6 @@ public function getTemplate(): string
 }
 ```
 
-The return type narrows to `string`, so a caller no longer has to null-check what cannot be null.
+The return type narrows to `string`, so a caller does not null-check what cannot be null.
 `static::class` names the subclass, so a user's own `ViewField` descendant reports itself rather than this class.
 The behaviour a consumer sees is Filament's — a loud failure naming the class and the fix — reached from the opposite direction, and the alternative was a field that renders as an empty string with no error anywhere, which is the failure mode the house rule against silent fallbacks exists to prevent.

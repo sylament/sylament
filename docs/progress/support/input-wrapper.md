@@ -110,7 +110,7 @@ A consumer that genuinely needs client-side repainting can write the classes its
 
 ### The hover ring the text controls carried moves onto the wrapper
 
-Filament's wrapper has no `hover:` ring; ours does — `hover:ring-gray-950/20 dark:hover:ring-white/20` — because our `.sy-fo-input` and `.sy-fo-select` shipped exactly that pair as a recorded divergence from Filament's controls ([forms/styles.md](../forms/styles.md#the-input-wrapper-invents-a-hover-ring), which owns the note now that the ring lives here).
+Filament's wrapper has no `hover:` ring; ours does — `hover:ring-gray-950/20 dark:hover:ring-white/20` — because our `.sy-fo-input` and `.sy-fo-select` shipped exactly that pair as a recorded divergence from Filament's controls ([forms/styles.md](#the-hover-ring-the-text-controls-carried-moves-onto-the-wrapper), which owns the note now that the ring lives here).
 Leaving it behind on the transparent controls would have painted nothing and dropping it would have been a visual regression nobody decided, so the divergence moved across unchanged.
 
 ### Nothing is stripped from the passthrough attributes

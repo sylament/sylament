@@ -1,10 +1,8 @@
 ---
-description: 'The per-option description map: the secondary line of text an option carries beneath its label, configured as a literal array keyed by option value… (draft)'
+description: 'The per-option description map of Radio and CheckboxList: a literal array, a closure, or a map derived from the enum cases.'
 ports:
   - vendor/filament/forms/src/Components/Concerns/HasDescriptions.php
   - vendor/filament/support/src/Contracts/HasDescription.php
-  - vendor/filament/forms/src/Components/Radio.php
-  - vendor/filament/forms/src/Components/CheckboxList.php
 owns:
   - packages/forms/src/Components/Concerns/HasDescriptions.php
   - packages/support/src/Contracts/HasDescription.php
@@ -15,7 +13,7 @@ owns:
 The map is memoised per field instance, and `descriptions()` is what clears it.
 
 Two fields compose it, `Radio` and `CheckboxList` — `ToggleButtons` does not, in Filament or here, since a button's extra text is its tooltip.
-Both are built and both render the map — [`Radio`](radio.md) under each option's label, [`CheckboxList`](checkbox-list.md) under each option's — so this file describes the concern alone and each field's rendering is described in its own.
+Both render the map under each option's label — [`Radio`](radio.md) and [`CheckboxList`](checkbox-list.md) each describe their own rendering — so this file describes the concern alone.
 
 ## Surface
 
@@ -36,7 +34,7 @@ The map being **written** by a component rather than a caller — from [`Checkbo
 The enum fallback filters on [`filled()`](../support/helpers.md): a case whose `getDescription()` answers `null` — or an empty string — is **left out of the map entirely** rather than being stored against a null value.
 `hasDescription()` is `array_key_exists()` over that map, so it answers `false` for such a case and the render site emits no description element at all, instead of an empty one.
 
-This is Filament's behaviour, and it is the one asymmetry among the four enum-backed map concerns: `HasColors` and `HasIcons` add **every** case, including the ones answering `null`, so their maps carry null values and their `getColor()` / `getIcon()` lookups lean on `?? null` instead.
+This is Filament's behaviour, and it is the one asymmetry among the enum-backed map concerns: `HasColors` and `HasIcons` add **every** case, including the ones answering `null`, so their maps carry null values and their `getColor()` / `getIcon()` lookups lean on `?? null` instead.
 Only descriptions filter.
 The asymmetry is inherited deliberately — the two lookups have different questions to answer, since a null colour still means "this option is styled by the default" while a null description means "this option has nothing to say" — and the colours/icons half is written up with its consumer in [`toggle-buttons.md`](toggle-buttons.md).
 
@@ -58,9 +56,7 @@ The fallback gate reads `$descriptions === []` where Filament reads `blank($desc
 The two are the same test for the only type that can reach it — `blank()`'s last line *is* `$value === []`, an array being neither `Countable` nor `Stringable` — and the port's property is `array|Closure` with [the `Arrayable` arm dropped](#the-arrayable-arm-is-dropped), so after `evaluate()` an array is all there is.
 
 Writing it out is what support's [`@phpstan-assert` decision](../support/helpers.md#the-phpstan-assert-tags-model-these-as-null-checks-only) prescribes: the tags model both helpers as **null-checks only**, so a call on a value already narrowed past `null` is `function.impossibleType` at level max, and the prescribed response is to remove the call rather than suppress it.
-The gate here was defending against a `null` the property type cannot hold.
-
-Nothing surfaced it until [`Radio`](radio.md) composed the trait and gave PHPStan a concrete `$this` to resolve `evaluate()` through — the same [analysed-only-through-a-composer](../tables/has-table.md#a-host-trait-is-analysed-only-through-a-class-that-composes-it) effect that named the rule, one package over.
+A `blank()` gate would defend against a `null` the property type cannot hold.
 
 ## Divergences
 

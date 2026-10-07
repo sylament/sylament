@@ -1,7 +1,8 @@
 ---
-description: 'The concern behind the native `step` attribute: the `step()` setter and the `getStep()` reader the field templates emit from. (draft)'
+description: 'The concern behind the native `step` attribute: the `step()` setter and the `getStep()` reader the control templates emit from.'
 ports:
   - vendor/filament/forms/src/Components/Concerns/HasStep.php
+  - vendor/filament/forms/src/Components/TextInput.php
   - vendor/filament/forms/src/Components/DateTimePicker.php
 owns:
   - packages/forms/src/Components/Concerns/HasStep.php
@@ -9,8 +10,8 @@ owns:
 # HasStep (forms)
 
 `Sylament\Forms\Components\Concerns\HasStep` — the concern behind the native `step` attribute: the `step()` setter and the `getStep()` reader the field templates emit from.
-Two fields compose it, [`TextInput`](text-input.md) and [`DateTimePicker`](date-time-picker.md), so it is promoted out of the former's fold and keeps a row of its own.
-Filament composes it on two more — `Slider` and tables' `TextInputColumn` — neither of them ported; each picks the concern up unchanged when it lands.
+[`TextInput`](text-input.md), [`DateTimePicker`](date-time-picker.md) and tables' [`TextInputColumn`](../tables/text-input-column.md) compose it.
+Filament also composes it on `Slider`, which has no port.
 
 ## Surface
 
@@ -20,8 +21,6 @@ Filament composes it on two more — `Slider` and tables' `TextInputColumn` — 
 | The `step` attribute on each control | [`TextInput::toEmbeddedHtml()`](../../../vendor/filament/forms/src/Components/TextInput.php) | done | — | — |
 
 Coverage: the interval on a text input — seeded by [`numeric()` and `integer()`](text-input.md#numeric-seeds-the-step-through-isnumeric-not-the-captured-condition), set explicitly, and absent by default — by [`TextInputTest`](../../../packages/forms/tests/Integration/Components/TextInputTest.php); the picker's composed interval, in all six of its arms, by [`DateTimePickerTest`](../../../packages/forms/tests/Unit/Components/DateTimePickerTest.php).
-
-The templates guard nothing: [`ComponentAttributeBag`](../../../packages/support/src/Twig/ComponentAttributeBag.php) drops a `null` value, so `step: component.getStep` already *is* the condition.
 
 ## Semantics
 
@@ -37,3 +36,4 @@ The property is never written behind the user's back there.
 
 Both shapes are Filament's own.
 What they have in common is the invariant worth stating: `step()` is the caller's last word in either field, and a field that derives an interval must check the declared one first.
+The templates guard nothing: [`ComponentAttributeBag`](../../../packages/support/src/Twig/ComponentAttributeBag.php) drops a `null` value, so `step: component.getStep` already *is* the condition.

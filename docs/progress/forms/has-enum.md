@@ -1,12 +1,13 @@
 ---
-description: 'Three lines of storage (`enum()` / `getEnum()`) that are the whole enum seam, plus the `Field`-tier plumbing they drive: `getEnumDefaultStateCast()`… (draft)'
+description: 'The enum seam on every field: `enum()` / `getEnum()` and the field-tier enum state cast they drive, swapped for the array cast under `multiple()`.'
 ports:
   - vendor/filament/forms/src/Components/Concerns/HasEnum.php
   - vendor/filament/forms/src/Components/Field.php
   - vendor/filament/forms/src/Components/Select.php
+  - vendor/filament/forms/src/Components/ToggleButtons.php
+  - vendor/filament/forms/src/Components/Concerns/CanBeValidated.php
 owns:
   - packages/forms/src/Components/Concerns/HasEnum.php
-  - packages/forms/src/Components/ToggleButtons.php
 ---
 # HasEnum (forms)
 
@@ -14,6 +15,7 @@ owns:
 Composed on the **base `Field`**, so `enum()` exists on every field rather than on the option-shaped ones only, exactly as Filament composes it.
 
 One declaration therefore does two jobs: it is the option source [`HasOptions`](has-options.md) falls back to, and it is the state cast that turns a submitted backing value into a case on the way in and back into a string on the way out.
+[`HasDescriptions`](has-descriptions.md), `HasColors` and `HasIcons` read `getEnum()` too, each deriving its own per-case map through support's `HasDescription` / `HasColor` / `HasIcon` contracts; each fallback is written up with its concern, the colours and icons in [toggle-buttons.md](toggle-buttons.md#hascolors-hasicons-and-hastooltips-are-this-fields-alone).
 
 ## Surface
 
@@ -26,9 +28,6 @@ One declaration therefore does two jobs: it is the option source [`HasOptions`](
 | [`ToggleButtons::getEnumDefaultStateCast()`](../../../packages/forms/src/Components/ToggleButtons.php) → the same swap under its own `multiple()` | [`Components/ToggleButtons.php`](../../../vendor/filament/forms/src/Components/ToggleButtons.php) | done | — | — |
 | Enum-derived options (`options(MyEnum::class)`, `enum()` alone) | [`Concerns/HasOptions.php`](../../../vendor/filament/forms/src/Components/Concerns/HasOptions.php) | done | — | [detail](has-options.md) |
 | `Rule::enum()` as the implicit validation rule ([`CanBeValidated::getInValidationRule()`](../../../vendor/filament/forms/src/Components/Concerns/CanBeValidated.php)) | [`Components/Concerns/CanBeValidated.php`](../../../vendor/filament/forms/src/Components/Concerns/CanBeValidated.php) | skipped | — | [diverges](#the-enum-validates-through-the-option-choice-not-a-rule-of-its-own) |
-
-Filament reads `getEnum()` from four map concerns, not one: [`HasOptions`](has-options.md) is ported here, and [`HasDescriptions`](has-descriptions.md), `HasColors` and `HasIcons` each derive their own per-case map through support's `HasDescription` / `HasColor` / `HasIcon` contracts.
-All three have since landed with the fields that read them, so each enum fallback is written up there rather than here — descriptions in [has-descriptions.md](has-descriptions.md), colours and icons in [toggle-buttons.md](toggle-buttons.md#hascolors-hasicons-and-hastooltips-are-this-fields-alone).
 
 Coverage: storage and evaluation, `options()` seeding the enum, a non-enum literal string staying a value, the cast appended to a plain field's defaults, the multiplicity swap on `Select`, an enum surviving a custom cast, the pure `UnitEnum` throw, and `hasNullableBooleanState()` on both tiers — by [`HasEnumTest`](../../../packages/forms/tests/Unit/Components/Concerns/HasEnumTest.php); the round trip through a record whose properties are typed as the enum itself, single and `multiple()`, plus the enum-only select validating rather than throwing — by [`SelectTest`](../../../packages/forms/tests/Integration/Components/SelectTest.php), with the multiplicity swap re-run on the second field that overrides the getter by [`ToggleButtonsTest`](../../../packages/forms/tests/Integration/Components/ToggleButtonsTest.php).
 
@@ -67,12 +66,12 @@ That is the intended shape, not an accident of ordering.
 Filament's `CanBeValidated::getInValidationRule()` falls back to `Rule::enum($enum)` when a field carries an enum and no explicit `in` values.
 The port ships no such fallback and needs none: an enum'd field's `getOptions()` already enumerates every case, and the `Choice` constraint each option field builds runs over exactly that list — so the enum is validated, strictly, by the same constraint that guards a literal option map, with one code path instead of two.
 
-Sharing that path has one precondition, and missing it was a real bypass: the gate deciding whether to build the `Choice` must read the [raw state, not the cast one](select.md#the-filled-gate-reads-the-raw-state-because-a-cast-can-null-a-tampered-value-out).
-[`EnumStateCast`](../schemas/enum-state-cast.md) fails closed to `null` for a value matching no case, so an enum'd field is the one place where a filled payload has a *blank* cast state — and a cast reading of the gate skipped the `Choice` for precisely the values it exists to reject.
-A literal option map never showed it, because [`OptionStateCast`](../schemas/option-state-cast.md) hands a tampered scalar back unchanged.
+Sharing that path has one precondition: the gate deciding whether to build the `Choice` must read the [raw state, not the cast one](select.md#the-filled-gate-reads-the-raw-state-because-a-cast-can-null-a-tampered-value-out).
+[`EnumStateCast`](../schemas/enum-state-cast.md) fails closed to `null` for a value matching no case, so an enum'd field is the one place where a filled payload has a *blank* cast state — and a cast reading of the gate would skip the `Choice` for precisely the values it exists to reject.
+A literal option map cannot show it, because [`OptionStateCast`](../schemas/option-state-cast.md) hands a tampered scalar back unchanged.
 
-The one place the absence showed was `Select`'s no-options `LogicException`, which fired whenever `options()` had never been called.
-It now asks `$this->options === null && $this->getEnum() === null`, so an enum-only field validates rather than throwing — the guard exists to make "validates nothing" impossible, and an enum is a full enumeration.
+`Select`'s no-options `LogicException` is where the missing rule would otherwise surface: Filament throws when `$this->options === null`, which an enum-only select is.
+The port asks `$this->options === null && $this->getEnum() === null`, so an enum-only field validates rather than throwing — the guard exists to make "validates nothing" impossible, and an enum is a full enumeration.
 
 ### A pure `UnitEnum` is refused at the field, not deep in the cast
 

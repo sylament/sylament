@@ -1,5 +1,5 @@
 ---
-description: '`Sylament\Forms\Uploads\TemporaryUploads` and its value object `Sylament\Forms\Uploads\TemporaryUploadedFile` — where a browser upload lives between… (draft)'
+description: The temporary-upload store and its value object, which hold a browser upload behind a signed token between its request and the form's save.
 ports: []
 owns:
   - packages/forms/src/Uploads/
@@ -9,13 +9,12 @@ owns:
 `Sylament\Forms\Uploads\TemporaryUploads` and its value object `Sylament\Forms\Uploads\TemporaryUploadedFile` — where a browser upload lives between the request that carried it and the form's save.
 Filament has no such class: it leans on **Livewire's** `SupportFileUploads` feature, so this is a port of Livewire, not of Filament, and the only piece of the file-upload vertical with no `vendor/filament` counterpart at all.
 The bytes go straight to a flysystem storage; what the field's raw state carries is a `sylament-file:<hmac>:<filename>` **token**, so nothing binary ever travels through live-component hydration.
-The store also owns the 24-hour sweep that keeps abandoned uploads from accumulating, and the `sylament_forms` config tree that names its disk and directory — the toolkit's [first package-specific tree](forms-bundle.md).
+The store also owns the 24-hour sweep that keeps abandoned uploads from accumulating, and the `sylament_forms` config tree that names its disk and directory, which [the forms bundle](forms-bundle.md) declares.
 
-The field that mints and redeems these tokens is [`FileUpload`](file-upload.md); the constraint filed beside them, [`MinFileSize`](can-be-validated.md), is here because Symfony's `File` caps a size and never floors it.
+The field that mints and redeems these tokens is [`FileUpload`](file-upload.md).
+The Ports cells point into `vendor/livewire/`, the code this file ports; a `—` there means the member has no Livewire counterpart.
 
 ## Surface
-
-A row whose _Ports_ cell is `—` has no Livewire counterpart.
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
@@ -31,12 +30,9 @@ A row whose _Ports_ cell is `—` has no Livewire counterpart.
 | [`sylament_forms.temporary_file_upload.{disk,directory,cleanup}`](../../../packages/forms/src/SylamentFormsBundle.php) | [`config/livewire.php`](../../../vendor/livewire/livewire/config/livewire.php) | done | — | [diverges](#the-config-tree-keeps-three-of-livewires-seven-keys) |
 | A console command that prunes on a schedule | — | skipped | — | [diverges](#there-is-no-prune-command-the-sweep-rides-on-upload-traffic) |
 
-Coverage: [`TemporaryUploadsTest`](../../../packages/forms/tests/Unit/Uploads/TemporaryUploadsTest.php) — the written bytes and sidecar, the token shape, the mime sniff overriding the browser's claim, the same-state-path round trip, and the four refusals (a foreign prefix, a tampered signature, a swapped filename, a filename outside the minted shape, including a traversal and a sidecar name under a *valid* signature); a missing sidecar and missing bytes; the extension sanitiser across seven names; the sweep's age boundary, its `cleanup` flag on both settings, and its zero answer for a directory nothing has written to; and the constructor's refusal of a directory that normalises to the storage root.
+Coverage: [`TemporaryUploadsTest`](../../../packages/forms/tests/Unit/Uploads/TemporaryUploadsTest.php) — the written bytes and sidecar, the token shape, the mime sniff overriding the browser's claim, the same-state-path round trip, and the refusals (a foreign prefix, a tampered signature, a swapped filename, a filename outside the minted shape, including a traversal and a sidecar name under a *valid* signature); a missing sidecar and missing bytes; the extension sanitiser; the sweep's age boundary, its `cleanup` flag on both settings, and its zero answer for a directory nothing has written to; and the constructor's refusal of a directory that normalises to the storage root.
 [`TemporaryUploadedFileTest`](../../../packages/forms/tests/Unit/Uploads/TemporaryUploadedFileTest.php) — the metadata getters, both serialisations, the stream read-back, a deleted file reporting gone rather than throwing, and `delete()` taking the sidecar with it and swallowing a second call.
 [`SylamentFormsBundleTest`](../../../packages/forms/tests/Integration/SylamentFormsBundleTest.php) — the store is a container service carrying the config tree's directory.
-
-Both `Unit/Uploads` suites build their stores through [`TemporaryUploadsRig`](../../../packages/forms/tests/Unit/Uploads/TemporaryUploadsRig.php) rather than the file-level Pest helper functions used everywhere else in the monorepo, because two files need the same rig and a helper declared in one of them exists only while the other is loaded too — which a full run does and a single-file run does not.
-The rig also tracks every path it puts on disk so each suite's `afterEach` can remove it: these are the first tests here to write outside the kernel's cache directory, and nothing rolls a unit test's disk writes back.
 
 ## Semantics
 
@@ -138,6 +134,6 @@ Livewire has the identical hole and answers it with "use S3"; the honest answer 
 
 ### There is no prune command; the sweep rides on upload traffic
 
-Neither Livewire nor Filament ships a console command for this, and we have not added one, so the only thing that ages temp files out is a later successful upload.
+Neither Livewire nor Filament ships a console command for this, and the port adds none, so the only thing that ages temp files out is a later successful upload.
 A `sylament:forms:prune-temporary-uploads` command wrapping `TemporaryUploads::prune()` is the obvious follow-up — it is a few lines and Symfony makes it cron-able — and it is recorded here rather than built so the gap is a decision rather than an oversight.
 What would reverse this: a deployment where uploads are bursty enough that a week of stale files matters, or a temp disk that bills for storage — or, the strongest of the three, the [deep listing every upload pays for](#the-sweep-rides-on-upload-traffic-and-races-itself-on-purpose), which a scheduled sweep takes off the request path.

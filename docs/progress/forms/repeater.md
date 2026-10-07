@@ -1,79 +1,78 @@
 ---
-description: 'The array-backed repeatable field: one child schema cloned per item, items added, removed and reordered through the mounted-action pipeline, the whole… (draft)'
+description: The repeatable field over a plain array, its item pipeline, structural actions, table mode and value-object items; relationship() has its own file.
 ports:
   - vendor/filament/forms/src/Components/Repeater.php
-  - vendor/filament/forms/src/Components/Concerns/CanGenerateUuids.php
-  - vendor/filament/forms/src/Components/Concerns/CanLimitItemsLength.php
-  - vendor/filament/forms/src/Components/Concerns/CanBeCloned.php
-  - vendor/filament/forms/src/Components/Concerns/HasExtraItemActions.php
-  - vendor/filament/schemas/src/Components/Concerns/HasChildComponents.php
-  - vendor/filament/schemas/src/Components/Concerns/Cloneable.php
   - vendor/filament/forms/src/Components/Repeater/TableColumn.php
+  - vendor/filament/forms/src/Components/Concerns/CanBeCloned.php
+  - vendor/filament/forms/src/Components/Concerns/CanGenerateUuids.php
+  - vendor/filament/forms/src/Components/Concerns/HasExtraItemActions.php
+  - vendor/filament/forms/src/helpers.php
   - vendor/filament/schemas/src/Components/Concerns/HasContainerGridLayout.php
-  - vendor/filament/schemas/src/Components/Concerns/CanBeRepeated.php
-  - vendor/filament/schemas/src/Components/Contracts/HasExtraItemActions.php
   - vendor/filament/support/src/Concerns/HasReorderAnimationDuration.php
-  - vendor/filament/support/src/Concerns/HasWidth.php
-  - vendor/filament/support/src/Concerns/CanWrapHeader.php
-  - vendor/filament/forms/resources/css/components/repeater.css
-  - vendor/filament/forms/resources/lang/en/components.php
 owns:
   - packages/forms/src/Components/Repeater.php
   - packages/forms/templates/partials/Repeater/
 ---
 # Repeater (forms)
 
-`Sylament\Forms\Components\Repeater` — the array-backed repeatable field: one child schema cloned per item, items added, removed and reordered through the mounted-action pipeline, the whole list written into a plain `?array` record property (the JSON-column shape [`setOnRecord()`](../schemas/property-accessor.md) already round-trips).
-It extends [`Field`](field.md) and is the first component that is **both a leaf and a container**: it carries a state path of its own *and* path-bearing children, which is the case the record walks were [explicitly flagged as unready for](../schemas/belongs-to-record.md#mapping-walks-the-record-graph-by-declared-leaf-paths) and now [answer with an owner predicate](#a-repeater-owns-its-record-subtree).
+`Sylament\Forms\Components\Repeater` extends [`Field`](field.md): one child schema cloned per item, items added, removed and reordered through the mounted-action pipeline, and the whole list written into a plain `?array` record property (the JSON-column shape [`setOnRecord()`](../schemas/property-accessor.md) round-trips).
+It is both a leaf and a container: it carries a state path of its own *and* path-bearing children, which the record walks [answer with an owner predicate](#a-repeater-owns-its-record-subtree).
 
-**Scope boundary, stated up front:** the *plain* repeater maps **value-shaped array items only**.
-Object collections — a `Traversable`-typed property, a Doctrine `Collection` behind an adder — [stay refused by the mapper](../schemas/property-accessor.md#a-missing-singular-intermediate-is-constructed-an-object-collection-is-refused), because mapping collection *items* needs identity — which state row is which entity, and what happens to the rows that disappeared.
+The *plain* repeater maps **value-shaped array items only**.
+Object collections, a `Traversable`-typed property or a Doctrine `Collection` behind an adder, [stay refused by the mapper](../schemas/property-accessor.md#a-missing-singular-intermediate-is-constructed-an-object-collection-is-refused), because mapping collection *items* needs identity: which state row is which entity, and what happens to the rows that disappeared.
 The measured failure that draws the line is recorded in [the Serializer rejection](../schemas/belongs-to-record.md#a-serializer-based-mapper-stays-rejected-on-amended-grounds): identity-less collection population produced duplicate INSERTs and orphan deletions on a real two-tag `Post`.
-That identity is exactly what [`relationship()`](repeater-relationship.md#a-relationship-repeater-keys-its-items-by-identity-and-diffs-the-collection) supplies, so a repeater that declares one maps a Doctrine collection and the refusal steps aside for it — [and only for it](#object-collections-stay-refused-until-a-relationship-supplies-the-identity).
-`table()` mode ships, over that same item pipeline.
+That identity is what [`relationship()`](repeater-relationship.md#a-relationship-repeater-keys-its-items-by-identity-and-diffs-the-collection) supplies, so a repeater that declares one maps a Doctrine collection and the refusal steps aside for it, [and only for it](#object-collections-stay-refused-until-a-relationship-supplies-the-identity).
 
 ## Surface
 
-Every point of Filament's class and its concerns, grouped where a family shares one fate.
+| Feature | Ports | Status | Blocked by | Detail |
+| --- | --- | --- | --- | --- |
+| [`make()` / `components()`](../../../packages/forms/src/Components/Repeater.php) (the `schema()` alias is [not ported](../renames.md)) | [`Repeater.php`](../../../vendor/filament/forms/src/Components/Repeater.php) | done | — | [semantics](#an-item-field-derives-no-requirement-from-the-record) · [diverges](#every-item-schema-is-keyed-as-well-as-re-pathed) |
+| `hydrateItems()` / `dehydrateItems()` | [`Repeater.php`](../../../vendor/filament/forms/src/Components/Repeater.php) | done | — | [semantics](#items-are-uuid-keyed-in-the-live-bag-and-positional-on-the-record) · [semantics](#the-item-pipeline-runs-children-first-and-before-the-null-fill-pass) · [semantics](#unmanaged-item-keys-round-trip-through-the-client) |
+| `generateUuidUsing()` / `generateUuid()` / `fake()` | [`CanGenerateUuids.php`](../../../vendor/filament/forms/src/Components/Concerns/CanGenerateUuids.php) | done | — | [diverges](#uuid-generation-is-a-mode-flag-and-generateuuidusingtrue-mints-a-real-uuid) |
+| `getItems()` / `getDefaultChildSchemas()` / `areCachedDefaultChildSchemasFresh()` | [`Repeater.php`](../../../vendor/filament/forms/src/Components/Repeater.php) | done | — | [diverges](#every-item-schema-is-keyed-as-well-as-re-pathed) · [diverges](#an-item-schema-carries-no-constant-state-or-inline-label-stamp) |
+| `defaultItems()` / `default()` and the hydrated-default merge | [`Repeater.php`](../../../vendor/filament/forms/src/Components/Repeater.php) | done | — | [diverges](#a-defaults-fill-over-a-populated-repeater-resurrects-its-pre-fill-items) |
+| `simple()` / `isSimple()` / `getSimpleField()` | [`Repeater.php`](../../../vendor/filament/forms/src/Components/Repeater.php) | done | — | [semantics](#the-item-pipeline-runs-children-first-and-before-the-null-fill-pass) |
+| `getAddAction()` / `addAction()` / `getAddActionName()` / `addActionLabel()` / `getAddActionLabel()` / `addActionAlignment()` / `getAddActionAlignment()` / `addable()` / `isAddable()` | [`Repeater.php`](../../../vendor/filament/forms/src/Components/Repeater.php) | done | — | [semantics](#a-structural-action-fires-the-repeaters-afterstateupdated-hooks-itself) |
+| `getDeleteAction()` / `deleteAction()` / `getDeleteActionName()` / `deletable()` / `isDeletable()` | [`Repeater.php`](../../../vendor/filament/forms/src/Components/Repeater.php) | done | — | [semantics](#a-structural-action-fires-the-repeaters-afterstateupdated-hooks-itself) |
+| `getCloneAction()` / `cloneAction()` / `getCloneActionName()` / `cloneable()` / `isCloneable()` | [`Repeater.php`](../../../vendor/filament/forms/src/Components/Repeater.php) · [`CanBeCloned.php`](../../../vendor/filament/forms/src/Components/Concerns/CanBeCloned.php) | done | — | [semantics](#a-structural-action-fires-the-repeaters-afterstateupdated-hooks-itself) |
+| `getMoveUpAction()` / `getMoveDownAction()` / `moveUpAction()` / `moveDownAction()` / `getMoveUpActionName()` / `getMoveDownActionName()` / `reorderable()` / `reorderableWithButtons()` / `isReorderable()` / `isReorderableWithButtons()` | [`Repeater.php`](../../../vendor/filament/forms/src/Components/Repeater.php) | done | — | [semantics](#a-structural-action-fires-the-repeaters-afterstateupdated-hooks-itself) · [diverges](#the-move-helpers-correct-two-vendor-edge-defects) |
+| `getReorderAction()` / `reorderAction()` / `getReorderActionName()` / `reorderableWithDragAndDrop()` / `isReorderableWithDragAndDrop()` | [`Repeater.php`](../../../vendor/filament/forms/src/Components/Repeater.php) | done | — | [semantics](#the-drag-reorder-round-trip-accepts-the-clients-order) · [diverges](#the-reorder-action-is-hardened-and-answers-only-real-moves) |
+| `reorderAnimationDuration()` / `getReorderAnimationDuration()` | [`HasReorderAnimationDuration.php`](../../../vendor/filament/support/src/Concerns/HasReorderAnimationDuration.php) | done | — | — |
+| `itemLabel()` / `getItemLabel()` / `hasItemLabels()` / `itemNumbers()` / `hasItemNumbers()` / `itemHeaders()` / `hasItemHeaders()` / `truncateItemLabel()` / `isItemLabelTruncated()` / `getHeadingsCount()` | [`Repeater.php`](../../../vendor/filament/forms/src/Components/Repeater.php) | done | — | — |
+| `getItemState()` / `getRawItemState()` | [`Repeater.php`](../../../vendor/filament/forms/src/Components/Repeater.php) | done | — | — |
+| `getItemKeys()` / `getItemStatePaths()` (Sylament's [`HasKeyedItems`](../schemas/violation-path-translator.md)) | — | done | — | [semantics](#a-save-records-which-collection-key-each-item-was-written-to) |
+| [`getTemplate()`](../../../packages/forms/src/Components/Repeater.php) and the `partials/Repeater/` templates, for `toEmbeddedHtml()` | [`Repeater.php`](../../../vendor/filament/forms/src/Components/Repeater.php) | done | — | [semantics](#collapse-state-is-the-clients-once-the-controller-connects) · [diverges](field.md#labeltag-is-a-boolean-labelasheading) |
+| `getCollapseAction()` / `getExpandAction()` / `getCollapseAllAction()` / `getExpandAllAction()`, their `*Action()` modifiers and `get*ActionName()` names, and `CanBeCollapsed` / `CanBeCompact` | [`Repeater.php`](../../../vendor/filament/forms/src/Components/Repeater.php) | done | — | [semantics](#collapse-state-is-the-clients-once-the-controller-connects) · [diverges](#the-repeater-item-owns-its-collapse-state-unlike-the-section) |
+| `getAddBetweenAction()` / `addBetweenAction()` / `getAddBetweenActionName()` / `addBetweenActionLabel()` / `getAddBetweenActionLabel()` / `labelBetweenItems()` / `getLabelBetweenItems()` | [`Repeater.php`](../../../vendor/filament/forms/src/Components/Repeater.php) | done | — | [semantics](#addbetween-hides-by-default-and-crowds-out-the-label-between-items) |
+| `extraItemActions()` / `getExtraItemActions()` / `cacheExtraItemActions()` | [`HasExtraItemActions.php`](../../../vendor/filament/forms/src/Components/Concerns/HasExtraItemActions.php) | done | — | [semantics](#an-extra-item-action-reads-its-items-state) |
+| `grid()` / `getGridColumns()` | [`HasContainerGridLayout.php`](../../../vendor/filament/schemas/src/Components/Concerns/HasContainerGridLayout.php) | done | — | [semantics](#the-items-grid-is-supports-grid) |
+| `table()` / `getTableColumns()` / `isTable()` | [`Repeater.php`](../../../vendor/filament/forms/src/Components/Repeater.php) | done | — | [semantics](#table-mode-pairs-columns-by-position) · [diverges](#hidden-fields-render-in-a-trailing-hidden-cell) |
+| `partiallyRenderAfterActionsCalled()` / `shouldPartiallyRenderAfterActionsCalled()` | [`Repeater.php`](../../../vendor/filament/forms/src/Components/Repeater.php) | blocked | a UX LiveComponent partial-render equivalent | [detail](../schemas/schema.md#hasstate-still-lacks-constant-state-relationships-and-partial-rendering) |
+| `array_move_before()` / `array_move_after()` | [`helpers.php`](../../../vendor/filament/forms/src/helpers.php) | done | — | [diverges](#the-move-helpers-correct-two-vendor-edge-defects) |
+| `getPublishedViewOverrideCheckPath()` | [`Repeater.php`](../../../vendor/filament/forms/src/Components/Repeater.php) | skipped | — | [diverges](toggle-buttons.md#there-is-nothing-to-publish-a-view-override-against) |
+| `createItemButtonLabel()` / `disableItemCreation()` / `disableItemDeletion()` / `disableItemMovement()` / `orderable()` / `inset()` (deprecated) | [`Repeater.php`](../../../vendor/filament/forms/src/Components/Repeater.php) | skipped | — | [diverges](#deprecated-filament-members-are-not-ported) |
+| `nullWhenBlank()` on a repeater | — | done | — | [semantics](#the-blank-test-judges-a-repeater-by-its-own-value) · [diverges](#a-repeater-owns-its-record-subtree) |
+| Object-collection refusal at hydration | — | done | — | [diverges](#object-collections-stay-refused-until-a-relationship-supplies-the-identity) |
+| `itemsAs()` value-object items over schemas' [`ObjectStateCast`](../schemas/object-state-cast.md) | — | done | — | [semantics](#a-cast-item-is-schema-complete-so-unmanaged-keys-stop-riding) · [diverges](#the-item-cast-fires-at-the-repeaters-two-pipeline-boundaries-not-in-the-generic-seam) · [diverges](#item-class-inference-is-deferred-the-declaration-stays-explicit) |
+
+The table lists every public member of the ported classes and traits except two families with files of their own: `relationship()` and its family are in [repeater-relationship.md](repeater-relationship.md), and `minItems()` / `maxItems()` / `getItemsCount()` in [can-limit-items-length.md](can-limit-items-length.md).
+
+## Surface — TableColumn
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
-| `Repeater::make()` + `components()` item schema definition (the `schema()` alias is [not ported](../renames.md)) | [`Repeater.php`](../../../vendor/filament/forms/src/Components/Repeater.php) | done | — | [semantics](#an-item-field-derives-no-requirement-from-the-record) · [diverges](#every-item-schema-is-keyed-as-well-as-re-pathed) |
-| `hydrateItems()` / `dehydrateItems()` + `CanGenerateUuids` (`generateUuidUsing()` / `generateUuid()` / `fake()`) | [`Repeater.php`](../../../vendor/filament/forms/src/Components/Repeater.php) · [`CanGenerateUuids.php`](../../../vendor/filament/forms/src/Components/Concerns/CanGenerateUuids.php) | done | — | [semantics](#items-are-uuid-keyed-in-the-live-bag-and-positional-on-the-record) · [semantics](#the-item-pipeline-runs-children-first-and-before-the-null-fill-pass) · [semantics](#unmanaged-item-keys-round-trip-through-the-client) · [diverges](#uuid-generation-is-a-mode-flag-and-generateuuidusingtrue-mints-a-real-uuid) |
-| `getItems()` / `getDefaultChildSchemas()` / `areCachedDefaultChildSchemasFresh()` | [`Repeater.php`](../../../vendor/filament/forms/src/Components/Repeater.php) | done | — | [diverges](#every-item-schema-is-keyed-as-well-as-re-pathed) · [diverges](#an-item-schema-carries-no-constant-state-or-inline-label-stamp) |
-| `defaultItems()` / `default()` + the hydrated-default merge | [`Repeater.php`](../../../vendor/filament/forms/src/Components/Repeater.php) | done | — | [diverges](#a-defaults-fill-over-a-populated-repeater-resurrects-its-pre-fill-items) |
-| `simple()` / `isSimple()` / `getSimpleField()` | [`Repeater.php`](../../../vendor/filament/forms/src/Components/Repeater.php) | done | — | [semantics](#the-item-pipeline-runs-children-first-and-before-the-null-fill-pass) |
-| Add action (`getAddAction()` / `addAction()` / `addActionLabel()` / `addActionAlignment()` / `addable()` / `isAddable()`) | [`Repeater.php`](../../../vendor/filament/forms/src/Components/Repeater.php) | done | — | [semantics](#a-structural-action-fires-the-repeaters-afterstateupdated-hooks-itself) |
-| Delete action (`getDeleteAction()` / `deleteAction()` / `deletable()` / `isDeletable()`) | [`Repeater.php`](../../../vendor/filament/forms/src/Components/Repeater.php) | done | — | [semantics](#a-structural-action-fires-the-repeaters-afterstateupdated-hooks-itself) |
-| Clone action (`getCloneAction()` / `cloneAction()`) + `CanBeCloned` (`cloneable()` / `isCloneable()`) | [`Repeater.php`](../../../vendor/filament/forms/src/Components/Repeater.php) · [`CanBeCloned.php`](../../../vendor/filament/forms/src/Components/Concerns/CanBeCloned.php) | done | — | [semantics](#a-structural-action-fires-the-repeaters-afterstateupdated-hooks-itself) |
-| Move actions + button reorder (`getMoveUpAction()` / `getMoveDownAction()` / `moveUpAction()` / `moveDownAction()` / `reorderable()` / `reorderableWithButtons()` / `isReorderable()` / `isReorderableWithButtons()`) | [`Repeater.php`](../../../vendor/filament/forms/src/Components/Repeater.php) | done | — | [semantics](#a-structural-action-fires-the-repeaters-afterstateupdated-hooks-itself) · [diverges](#the-move-helpers-correct-two-vendor-edge-defects) |
-| Drag-and-drop reorder (`getReorderAction()` / `reorderAction()` / `reorderableWithDragAndDrop()` / `isReorderableWithDragAndDrop()`) + `HasReorderAnimationDuration` | [`Repeater.php`](../../../vendor/filament/forms/src/Components/Repeater.php) | done | — | [semantics](#the-drag-reorder-round-trip-accepts-the-clients-order) · [diverges](#the-reorder-action-is-hardened-and-answers-only-real-moves) |
-| [`CanLimitItemsLength`](../../../packages/forms/src/Components/Concerns/CanLimitItemsLength.php) (`minItems()` / `maxItems()` / `getItemsCount()`) — shared with `CheckboxList`, so it keeps [its own file](can-limit-items-length.md) | [`CanLimitItemsLength.php`](../../../vendor/filament/forms/src/Components/Concerns/CanLimitItemsLength.php) | done | — | [detail](can-limit-items-length.md) · [semantics](#an-item-field-derives-no-requirement-from-the-record) |
-| Item chrome (`itemLabel()` / `getItemLabel()` / `hasItemLabels()` / `itemNumbers()` / `itemHeaders()` / `truncateItemLabel()` / `getHeadingsCount()`) | [`Repeater.php`](../../../vendor/filament/forms/src/Components/Repeater.php) | done | — | — |
-| `getItemState()` / `getRawItemState()` | [`Repeater.php`](../../../vendor/filament/forms/src/Components/Repeater.php) | done | — | — |
-| `getItemKeys()` / `getItemStatePaths()` ([`HasKeyedItems`](../../../packages/schemas/src/Components/Contracts/HasKeyedItems.php)) — the collection-keyed item keys and the item's declared paths the [violation-path translator](../schemas/violation-path-translator.md) resolves a record-side violation against | — | done | — | [semantics](#a-save-records-which-collection-key-each-item-was-written-to) |
-| Template + stylesheet (`toEmbeddedHtml()` / `toSimpleEmbeddedHtml()` / `toTableEmbeddedHtml()` → `partials/Repeater/{index,Simple,Table}.html.twig`, `repeater.css`) | [`Repeater.php`](../../../vendor/filament/forms/src/Components/Repeater.php) | done | — | [semantics](#collapse-state-is-the-clients-once-the-controller-connects) · [diverges](field.md#labeltag-is-a-boolean-labelasheading) |
-| Collapse chrome (`getCollapseAction()` / `getExpandAction()` / `getCollapseAllAction()` / `getExpandAllAction()` + their modifiers, `CanBeCollapsed` / `CanBeCompact` composition, `canConcealComponents()`, `shouldPersistCollapsed()`) | [`Repeater.php`](../../../vendor/filament/forms/src/Components/Repeater.php) | done | — | [semantics](#collapse-state-is-the-clients-once-the-controller-connects) · [diverges](#the-repeater-item-owns-its-collapse-state-unlike-the-section) |
-| `addBetween` pair (`getAddBetweenAction()` / `addBetweenAction()` / `addBetweenActionLabel()`) + `labelBetweenItems()` / `getLabelBetweenItems()` | [`Repeater.php`](../../../vendor/filament/forms/src/Components/Repeater.php) | done | — | [semantics](#addbetween-hides-by-default-and-crowds-out-the-label-between-items) |
-| `extraItemActions()` (`HasExtraItemActions`) | [`HasExtraItemActions.php`](../../../vendor/filament/forms/src/Components/Concerns/HasExtraItemActions.php) | done | — | [semantics](#an-extra-item-action-reads-its-items-state) |
-| Items grid (`HasContainerGridLayout`) | [`Repeater.php`](../../../vendor/filament/forms/src/Components/Repeater.php) | done | — | [semantics](#the-items-grid-is-supports-grid) |
-| `table()` mode (`table()` / `getTableColumns()` / `isTable()` / `toTableEmbeddedHtml()`; the `TableColumn` class keeps [its own README row](README.md#components)) | [`Repeater.php`](../../../vendor/filament/forms/src/Components/Repeater.php) | done | — | [semantics](#table-mode-pairs-columns-by-position) · [diverges](#hidden-fields-render-in-a-trailing-hidden-cell) |
-| `partiallyRenderAfterActionsCalled()` / `shouldPartiallyRenderAfterActionsCalled()` | [`Repeater.php`](../../../vendor/filament/forms/src/Components/Repeater.php) | blocked | UX LiveComponent partial-render equivalent | — |
-| `array_move_before()` / `array_move_after()` (`packages/forms/src/helpers.php`, the reorder bodies) | [`helpers.php`](../../../vendor/filament/forms/src/helpers.php) | done | — | — |
-| Deprecated members (`createItemButtonLabel()`, `disableItemCreation()` / `disableItemDeletion()` / `disableItemMovement()`, `orderable()`, `inset()`) | [`Repeater.php`](../../../vendor/filament/forms/src/Components/Repeater.php) | skipped | — | [diverges](#deprecated-filament-members-are-not-ported) |
-| `nullWhenBlank()` composition — an empty repeater as `null` instead of `[]` | — | done | — | [semantics](#the-blank-test-judges-a-repeater-by-its-own-value) · [diverges](#a-repeater-owns-its-record-subtree) |
-| Early object-collection refusal at hydration | — | done | — | [diverges](#object-collections-stay-refused-until-a-relationship-supplies-the-identity) |
-| `itemsAs()` value-object item mode — explicit item class + optional denormalize/normalize pair over schemas' [`ObjectStateCast`](../schemas/object-state-cast.md) | — | done | — | [semantics](#a-cast-item-is-schema-complete-so-unmanaged-keys-stop-riding) · [diverges](#the-item-cast-fires-at-the-repeaters-two-pipeline-boundaries-not-in-the-generic-seam) · [diverges](#item-class-inference-is-deferred-the-declaration-stays-explicit) |
+| [`TableColumn::make()`](../../../packages/forms/src/Components/Repeater/TableColumn.php) / `getLabel()` / `hiddenHeaderLabel()` / `isHeaderLabelHidden()` / `markAsRequired()` / `isMarkedAsRequired()` | [`Repeater/TableColumn.php`](../../../vendor/filament/forms/src/Components/Repeater/TableColumn.php) | done | — | [semantics](#table-mode-pairs-columns-by-position) |
 
 ## Semantics
 
 ### Items are uuid-keyed in the live bag and positional on the record
 
 One list, two shapes, and the boundary between them is dehydration.
-In the live bag items are keyed by per-request v4 uuids (`symfony/uid`'s `Uuid::v4()`, the `Str::uuid()` idiom translation; the dependency is declared by `forms`, approved 2026-08-04) — minted at hydration (`hydrateItems()` re-keys whatever `fill()` read) and by every add/clone — so a structural mutation never renumbers a sibling's state path mid-edit, which is what keeps validation errors, morph anchors and in-flight input attached to the right item.
+In the live bag items are keyed by per-request v4 uuids (`symfony/uid`'s `Uuid::v4()`, the `Str::uuid()` idiom translation, a dependency `forms` declares), minted at hydration (`hydrateItems()` re-keys whatever `fill()` read) and by every add/clone — so a structural mutation never renumbers a sibling's state path mid-edit, which is what keeps validation errors, morph anchors and in-flight input attached to the right item.
 Everything that runs before dehydration sees uuid keys: absolute state paths, the constraint collector, the error bag, `getRawState()`.
 `dehydrateItems()` then `array_values()`es the map, so everything after — `getState()`, `getData()`, the record property — sees a positional list, and the uuids never persist.
-Two consequences: the same field shows a *different* absolute path on every mount (never key an assertion or a morph anchor on a literal uuid), and under `Repeater::fake()` (uuid generation disabled, the test idiom) items are positionally keyed end to end, which the record walks already survive — their `strval()` normalisations were landed for exactly this key shape.
+Two consequences: the same field shows a *different* absolute path on every mount (never key an assertion or a morph anchor on a literal uuid), and under `Repeater::fake()` (uuid generation disabled, the test idiom) items are positionally keyed end to end, which the record walks survive through their `strval()` normalisations.
 
 ### The item pipeline runs children-first, and before the null-fill pass
 
@@ -82,7 +81,7 @@ Two orderings are load-bearing, and schemas' root [`HasState`](../schemas/schema
 **Hooks run before `fillStateWithNull()`**: an item's raw value is a scalar in simple mode (`['x', 'y']`), and the null-fill pass writes null at every unset leaf path — `tags.0.value` — which clobbers the scalar the wrap step was about to read, so a record fill would land two empty items.
 **Hooks run children-first**, each descent re-reading `getChildSchemas()`: a nested repeater's hook has to re-key its own items *before* the outer one re-keys the map they sit in, or the inner component writes at a path its parent has just renamed and vivifies phantom items beside the real ones.
 Filament reaches both orderings for free — it hydrates recursively and fires each component's hooks at the end of its own descent — where the port walks flat lists, so it states the order explicitly.
-Dehydration already ran inner-first (a component's `mutateDehydratedState` applies after its children's), which is why a nested repeater positionalises inner-first and the shapes compose.
+Dehydration runs inner-first (a component's `mutateDehydratedState` applies after its children's), which is why a nested repeater positionalises inner-first and the shapes compose.
 
 ### A structural action fires the repeater's afterStateUpdated hooks itself
 
@@ -103,14 +102,14 @@ The default stays Filament's: an untouched empty repeater dehydrates `[]` and wr
 This is the **plain-array** repeater, and it is where the heading holds.
 [Derived requirement](can-be-validated.md#requirement-is-derived-from-the-records-write-side-types) reads the record's write-side type at the field's record path, and at `tags.{uuid}.name` there is nothing to read: the walk stops at `tags` (a plain `array` declares no element type — PHP has none to declare, and [docblock generics are invisible by design](../schemas/record-type-reader.md#docblock-generics-are-invisible-and-that-is-the-point)), `describe()` answers null, and null means [keep the pre-types behaviour](../schemas/record-type-reader.md#a-null-recordtarget-means-no-type-answer-not-no-such-property).
 So such item fields are never auto-required and never auto-suppressed — one that must be filled says `required()` out loud, which validates per item through the ordinary collector.
-The repeater itself also derives nothing, by the existing `isCollection` skip.
+The repeater itself also derives nothing, by the `isCollection` skip.
 This is acceptance, not a gap to close: teaching `describe()` to see through an item segment would need element types that do not exist in the language.
 
 Under `relationship()` it is the other way round.
 Each item schema [binds the child it maps](repeater-relationship.md#an-item-schema-is-stamped-with-the-child-it-maps), so the item schema *is* [the nearest record frame](../schemas/belongs-to-record.md#the-nearest-record-frame-is-the-first-node-above-a-component-that-binds-one) and the field's path is read against the child class with the item segment already stripped — no element type needed, because the association's target declares one.
 A `TextInput::make('heading')` over a non-nullable child property derives required; one over a nullable property does not.
 A `DateTimePicker` inside such an item reads its object class from that same frame — and its stored value too ([the item fill](repeater-relationship.md#a-relationship-repeater-keys-its-items-by-identity-and-diffs-the-collection)).
-Nothing above changes: a plain-array repeater has no class to frame, so it derives nothing as it always did.
+A plain-array repeater has no class to frame, so it derives nothing.
 
 ### Unmanaged item keys round-trip through the client
 
@@ -128,7 +127,7 @@ That is the value-object contract — schema-complete by definition — not a ga
 The set the item bag carries is the *class's*, not the schema's: a DTO member no item field declares still rides in the live item (`note` beside a lone `title` input) and is written straight back into the fresh instance, so the round trip is lossless for everything the class names and lossy only for keys it does not.
 
 The same per-item reading is why `simple()` and `itemsAs()` refuse each other, loudly and in either declaration order.
-The simple arm's dehydrate pluck (`$itemData[$name] ?? null` behind `is_array`) would silently null every constructed object, and the composed meaning — a one-scalar item that is also an object — belongs to a *leaf* cast on the simple field (`->simple(TextInput::make('value')->stateCast(…))`), which the shipped child walk already runs correctly.
+The simple arm's dehydrate pluck (`$itemData[$name] ?? null` behind `is_array`) would silently null every constructed object, and the composed meaning — a one-scalar item that is also an object — belongs to a *leaf* cast on the simple field (`->simple(TextInput::make('value')->stateCast(…))`), which the child walk runs correctly.
 The `LogicException` names that path.
 
 Conversion closures beside a **prebuilt** `ObjectStateCast` refuse the same way, and in both spellings: the declaration-time guard catches the literal instance, and a second guard in `getItemCast()` catches the instance a closure declaration resolved to.
@@ -178,8 +177,8 @@ Neither between-item element is a sortable item — no `data-sortable-item` — 
 The binding is what makes the action's `$schemaState` resolve to the *item's* state rather than the repeater's: `Action::getSchemaState()` sees the host implements schemas' `HasExtraItemActions` contract and answers `getItemState($itemKey)`.
 So `Action::make('inspect')->action(fn (array $schemaState) => …)` receives one item's array, which is the whole point of the family.
 
-The forms concern keys its cache by `getName()` rather than by position, because schemas' `cacheActions()` splices the map into its own with a spread and PHP renumbers integer keys through a spread — a positional list would collide with the structural actions already in that cache.
-The splice does not run `prepareAction()` over the merged map, so the concern stamps `schemaComponent($this)` itself, along with the icon-button defaults (`defaultColor('gray')`, `defaultSize(Size::Small)`, `defaultTemplate(Action::ICON_BUTTON_TEMPLATE)`) that a caller's own `color()`/`size()`/`button()` still overrides.
+The concern is Filament's line for line: it keys its cache by `getName()`, because schemas' `cacheActions()` splices the map into its own with a spread and a positional list would collide with the structural actions already there.
+The splice does not run `prepareAction()` over the merged map, so the concern runs it on each action itself, which stamps `schemaComponent($this)`, beside the icon-button defaults (`defaultColor('gray')`, `defaultSize(Size::Small)`, `defaultTemplate(Action::ICON_BUTTON_TEMPLATE)`) that a caller's own `color()` / `size()` / `button()` still overrides.
 
 ### The items grid is support's `grid()`
 
@@ -187,7 +186,7 @@ The splice does not run `prepareAction()` over the merged map, so the concern st
 The repeater's own stylesheet therefore declares no `display: grid` on either item list; it only adds the spacing and alignment the grid does not carry.
 An ungridded repeater still gets `--cols-default: repeat(1, …)`, which is why the default rendering is a single column without a special case.
 
-The simple and table views take the same call, so `grid()` composes with `simple()`; `table()` lays its items out as rows and the grid on the (unused) list element never renders there.
+The simple view takes the same call, so `grid()` composes with `simple()`; the table view lays its items out as rows and does not call `grid()`.
 
 ### Table mode pairs columns by position
 
@@ -213,7 +212,7 @@ State order is not that key: the association write goes through the accessor's a
 So the save hook reads the collection back after the write and pairs each element with the item key it was written from — **by identity**, since an item the client added has no record key of its own until a flush — and `getItemKeys()` returns that pairing.
 Before any save (a fill, or an array-mode repeater whose items the record holds as a positional list) there is nothing to pair and the state's own keys are returned in order, which is exactly how a plain array is written.
 
-`getItemStatePaths()` is the same list the fill and save arms already walk, published on the contract: a violation naming an in-item path it does not carry is a path no field maps, and the translator [folds it at the item](../schemas/violation-path-translator.md#a-violation-inside-an-item-folds-by-the-same-rule-as-one-at-the-root) rather than inventing a state path — and the message is shown at the schema's own path, because nothing renders an item's own ([the filing](../schemas/violation-path-translator.md#a-message-is-filed-only-under-a-component-that-shows-its-own-errors)).
+`getItemStatePaths()` is the same list the fill and save arms walk, published on the contract: a violation naming an in-item path it does not carry is a path no field maps, and the translator [folds it at the item](../schemas/violation-path-translator.md#a-violation-inside-an-item-folds-by-the-same-rule-as-one-at-the-root) rather than inventing a state path — and the message is shown at the schema's own path, because nothing renders an item's own ([the filing](../schemas/violation-path-translator.md#a-message-is-filed-only-under-a-component-that-shows-its-own-errors)).
 Because the item fill asks each item field whether its casts flatten an object leaf and so keys the fields by their path, a path two item leaves share is listed once.
 Every consumer reads the list as a set — the save writes each path onto the child, and the translator `array_flip()`s it — so nothing depends on the multiplicity.
 
@@ -221,16 +220,17 @@ Every consumer reads the list as a set — the save writes each path onto the ch
 
 ### Every item schema is keyed as well as re-pathed
 
-Each item schema is a `getClone()` of the `components()` template re-pathed onto the item's key, and takes `->key((string) $itemKey)` on top — a stamp Filament does not make, and not a redundant echo of the state path.
-Filament's `Schema::getKey()` ends in `?? getStatePath(isAbsolute: false)`, so an unkeyed item schema keys itself by the item's state path for free.
+Each item schema is the `components()` template re-pathed onto the item's key with `statePath($itemKey)`, keyed with `->key($itemKey)` and then cloned; the key is a stamp Filament does not make, and not a redundant echo of the state path.
+Filament's `Schema::getKey()` falls back to `getStatePath(isAbsolute: false)`, so an unkeyed item schema keys itself by the item's state path for free.
 The port's root-tier [`HasKey`](../schemas/schema.md#haskey-ports-the-schema-key-chain-minus-the-state-path-fallback) drops that fallback, so an unkeyed item schema returns `null` and its `getInheritanceKey()` walks up to the repeater's own key: every item's fields would then resolve the same absolute key — and the same DOM id, since `getId()` is `getCustomId() ?? getKey()` — collapsing onto `<repeaterKey>.<fieldName>` across all items, with the `<li>` ids and each field wrapper's `for` / `aria-labelledby` targets duplicated with them.
 It is pinned by the render test asserting each item's input id (`<repeaterKey>.0.name` against `<repeaterKey>.1.name`), which collapses to one value the moment the stamp goes.
-The stamp is the first call site compensating for that gap (the schemas trail's open **Next** item on it points here); it comes back out if the schema-tier fallback is restored.
+The stamp comes back out if the schema-tier fallback is restored.
 
 ### An item schema carries no constant-state or inline-label stamp
 
-Filament builds each item schema with `->constantState(null)` and `->inlineLabel(false)`; ours builds neither, and both are waiting rather than rejected.
-Constant state is [unported for want of a consumer](../schemas/component.md#relationship-derived-and-constant-state-are-dropped-from-the-component-trait) — the Doctrine relation layer did not bring one, and the [record stamp](repeater-relationship.md#an-item-schema-is-stamped-with-the-child-it-maps) that would be its natural companion resolves the child directly rather than through a constant — and schemas' `HasInlineLabel` is unported, so an item schema has no inherited inline-label state to switch off.
+Filament builds each item schema with `->constantState()`, the item's own array for an item that is not an existing relationship record and `null` otherwise, and with `->inlineLabel(false)`; ours builds neither, and both are waiting rather than rejected.
+Constant state is [unported for want of a consumer](../schemas/component.md#relationship-derived-and-constant-state-are-dropped-from-the-component-trait): the Doctrine relation layer has none, and the [record stamp](repeater-relationship.md#an-item-schema-is-stamped-with-the-child-it-maps) that would be its natural companion resolves the child directly rather than through a constant.
+Schemas' `HasInlineLabel` is unported, so an item schema has no inherited inline-label state to switch off.
 Each stamp lands with its owner.
 
 ### Object collections stay refused until a relationship supplies the identity
@@ -238,21 +238,21 @@ Each stamp lands with its owner.
 The mapper's object-collection refusal ([both triggers](../schemas/property-accessor.md#a-missing-singular-intermediate-is-constructed-an-object-collection-is-refused)) **does not relax** for a plain Repeater, and its message promises nothing it cannot keep.
 A refusal that names future work as its owner reads as a bug report once that work exists, so both messages state the real boundary instead — array-backed lists are the Repeater's, and object collections need identity — and name the answer: `relationship()` supplies the item identity, so declare it on the component bound to the collection; hand-mapping after `getData()` is what is left for a collection no component declares one for.
 A repeater also refuses *early*: `hydrateItems()` asks the type reader at the repeater's own record path and throws when the declared type is an object collection — otherwise `fill()` silently skips the object-valued read, the repeater renders empty, and the developer meets the mapper's refusal only on first save.
-That path is read against the **nearest** record frame rather than against the root container, so the early refusal reaches one shape it used to miss whole: a plain-array repeater sitting inside a [stamped item schema](repeater-relationship.md#an-item-schema-is-stamped-with-the-child-it-maps), whose `record-<id>` segment used to defeat the type walk and leave the check inert.
-Such a repeater over a collection-typed property of the *child* now refuses at hydration, in the same words, with the path relative to the record it names.
+That path is read against the **nearest** record frame rather than against the root container, so the early refusal also reaches a plain-array repeater sitting inside a [stamped item schema](repeater-relationship.md#an-item-schema-is-stamped-with-the-child-it-maps), whose `record-<id>` segment a root-relative type walk could not cross.
+Such a repeater over a collection-typed property of the *child* refuses at hydration, in the same words, with the path relative to the record it names.
 A DTO list typed only by docblock (`/** @var list<Money> */ private array $items`) remains invisible to both checks and takes the array path — the repeater will overwrite it with value-shaped arrays, the [recorded price of reflection-only types](../schemas/record-type-reader.md#docblock-generics-are-invisible-and-that-is-the-point).
-`RecordTarget`'s provenance fields stay [skipped](../schemas/record-type-reader.md#the-value-object-carries-no-provenance): the repeater's early refusal was their named candidate, but it builds the target it consumes in the same method, so provenance still has nothing to tell a caller.
+`RecordTarget`'s provenance fields stay [skipped](../schemas/record-type-reader.md#the-value-object-carries-no-provenance): the repeater's early refusal builds the target it consumes in the same method, so provenance has nothing to tell a caller.
 
-**The reversal fired**, exactly as written — identity-keyed item state landed with [`relationship()`](repeater-relationship.md#a-relationship-repeater-keys-its-items-by-identity-and-diffs-the-collection), so both refusals now step aside for a repeater that declares one: the early check returns before it reads the type, and the mapper's own refusal is never reached because the save hook, not `setOnRecord()`, owns that path.
-The reversal is *scoped to the declaration* — everything above still holds verbatim for a repeater without `relationship()`, so the early refusal itself is unchanged and still fires; only its *advice* moved on, reworded in the same commit that made the old advice false.
+Both refusals step aside for a repeater that declares [`relationship()`](repeater-relationship.md#a-relationship-repeater-keys-its-items-by-identity-and-diffs-the-collection), which supplies the item identity: the early check returns before it reads the type, and the mapper's own refusal is never reached because the save hook, not `setOnRecord()`, owns that path.
+The exception is *scoped to the declaration*: everything above holds for a repeater without `relationship()`.
 The docblock-only DTO list is unaffected in both modes.
 
 ### A repeater owns its record subtree
 
 Sylament-only, because the record path map is Sylament-only.
-A new component-tier predicate, `ownsRecordSubtree()` (default false, `Repeater` true), marks a component whose own dehydrated value **is** the record value for everything beneath its path.
-The walks change in three places, and the permanent write-ups land in [belongs-to-record.md](../schemas/belongs-to-record.md) with the code: `getRecordPathMap()` treats an owner as a leaf even though it has path-bearing descendants — resolving the [flagged predicate](../schemas/belongs-to-record.md#mapping-walks-the-record-graph-by-declared-leaf-paths) — and drops every collected path beneath an owner; the branch pass's presence guard asks for the owner's own path instead of leaf paths beneath it, and after nulling an owner-branch skips the exact path as well as the prefix; the built-in blank test short-circuits to the [value arm](#the-blank-test-judges-a-repeater-by-its-own-value).
-Dehydration needs no change — its pruning already forgets by own-path, which is subtree-safe — and forms' requirement walk inherits the new arms through `shouldNullBranch()`.
+A component-tier predicate, `ownsRecordSubtree()` (default false, `Repeater` true), marks a component whose own dehydrated value **is** the record value for everything beneath its path.
+It changes the walks in three places, written up in [belongs-to-record.md](../schemas/belongs-to-record.md): `getRecordPathMap()` treats an owner as a leaf even though it has path-bearing descendants (the [owner predicate](../schemas/belongs-to-record.md#mapping-walks-the-record-graph-by-declared-leaf-paths)) and drops every collected path beneath an owner; the branch pass's presence guard asks for the owner's own path instead of leaf paths beneath it, and after nulling an owner-branch skips the exact path as well as the prefix; the built-in blank test short-circuits to the [value arm](#the-blank-test-judges-a-repeater-by-its-own-value).
+Dehydration needs no arm of its own, because its pruning forgets by own path, which is subtree-safe, and forms' requirement walk inherits these arms through `shouldNullBranch()`.
 One refusal rides along: a path-bearing component declared *outside* the owner's tree whose path nests under the owner's (`TextInput::make('tags.extra')` beside `Repeater::make('tags')`) would silently neither fill nor save — its reads and writes belong to the owner's wholesale value — so the map build throws, naming both components and the two ways out (move the field inside the repeater's schema, or move its path out from under the repeater).
 
 ### The item cast fires at the repeater's two pipeline boundaries, not in the generic seam
@@ -266,22 +266,22 @@ So the repeater applies the cast itself, at the two item-pipeline boundaries whe
 `array_values()` therefore always runs over arrays, and construction always follows it.
 All four nesting quadrants are pinned by tests.
 
-**Everything mid-edit keeps today's shapes.**
+**Everything mid-edit keeps the uncast shapes.**
 Because `$stateCasts` stays empty, `getState()`, `getOldState()`, the `$state` closure injection, `getItemState()` / `getRawItemState()`, every structural action body, the structural freshness fingerprint, and validation (raw, per path, unchanged) all see exactly what they see on an uncast repeater — uuid-keyed value arrays.
 The `minItems()`/`maxItems()` `Count` constraint counts the raw map.
-Programmatic `$set()` takes array items, as it does today; handing it DTOs is undefined, not converted.
+Programmatic `$set()` takes array items, as on an uncast repeater; handing it DTOs is undefined, not converted.
 The DTO shape exists at exactly two places: the record read that `fill()` makes, and the dehydrated bag from the mutate pass on — which is what `getData()` maps and what a host's `getState()` returns.
 
 `nullWhenBlank()` composes unchanged for the built-in test.
 The [owner value arm](#the-blank-test-judges-a-repeater-by-its-own-value) judges `blank()` over the branch's own slice, and that answer is shape-stable: a uuid-keyed array map at validation and a positional DTO list at mapping are both non-empty arrays or both empty ones, so an empty cast repeater still nulls and a filled one still survives, over `?array`-typed and untyped properties alike (a `Collection`-typed property never gets this far — the early refusal fires first).
-A **closure** condition, though, now sees arrays at validation and DTOs at mapping — a widening of the recorded [two-bags hazard](../schemas/has-nullable-branch.md#a-nullwhenblank-closure-sees-two-different-bags) that landed in that note's text with this code.
+A **closure** condition, though, sees arrays at validation and DTOs at mapping, which widens the recorded [two-bags hazard](../schemas/has-nullable-branch.md#a-nullwhenblank-closure-sees-two-different-bags).
 
 ### Item-class inference is deferred; the declaration stays explicit
 
 `itemsAs(Line::class)` names the item class out loud, and that is the only arm that ships.
 *Implicit* derivation — a `list<Line>` docblock alone flipping the repeater into object mode — is **rejected**, permanently: it would silently change every existing docblock-typed array form the day it shipped, and a library cannot assume its consumers run PHPStan over their docblocks.
 *Opt-in inference* — a bare `itemsAs()` deriving the item class from the record property's docblock — is **deferred by decision**.
-The constraints are recorded so a later slice designs against them instead of re-deriving them: it reads through a separate, scoped docblock reader (`PhpStanExtractor`-backed, used for item-class resolution only), never through [`RecordTypeReader`](../schemas/record-type-reader.md), whose pinned-to-reflection mutator-first contract and collection flags must not change; an underivable type (no docblock, `array<string, mixed>`, a union, a non-instantiable class) throws loudly rather than falling back to array mode; and it costs a new production dependency (`phpstan/phpdoc-parser` behind property-info's `PhpStanExtractor`) — not taken now, and note that the flat per-item construction needs no docblock extractor at all, which is part of why the mode ships dependency-free.
+The constraints are recorded so a later slice designs against them instead of re-deriving them: it reads through a separate, scoped docblock reader (`PhpStanExtractor`-backed, used for item-class resolution only), never through [`RecordTypeReader`](../schemas/record-type-reader.md), whose pinned-to-reflection mutator-first contract and collection flags must not change; an underivable type (no docblock, `array<string, mixed>`, a union, a non-instantiable class) throws loudly rather than falling back to array mode; and it costs a new production dependency (`phpstan/phpdoc-parser` behind property-info's `PhpStanExtractor`) — not taken; the flat per-item construction needs no docblock extractor at all, which is part of why the mode has no dependency of its own.
 Sugar over the explicit arm, additive, breaking nothing.
 Optional polish that survives the deferral: a dev-time mismatch guard when a readable docblock contradicts the explicit class.
 
@@ -332,12 +332,11 @@ The stale item fields run next, and that record does not cover them: the default
 Each field is defaultless, so each [null-writes](../schemas/component.md#a-defaults-fill-nulls-a-defaultless-component-and-the-shared-record-is-what-protects-a-containers-default), and the accessor vivifies the missing intermediates on the way — which is what rebuilds `tags.0` and `tags.1` as items.
 Filament never reaches this: its `hydrateState()` recurses, re-reading `getChildSchemas()` at each descent, so the item schemas it visits are the ones the default just created.
 
-**Pre-existing shape, escalated by the defaults-fill fix.**
-Materialise-once is older than this; what changed is that a defaultless component now *writes* null where it used to be skipped, so a stale item schema went from inert to state-producing.
-Nothing that ships reaches it, caller by caller: `HasFilters::mountTableFilters()` and `CanBeMounted`'s default `mountUsing` fill a freshly built schema over an empty bag; `Repeater::getAddAction()` fills the one item schema it has just created empty; `HasSchemas::fill(null)` is the host-facing entry and every host calls it from `mount()`, again over an empty bag; and `HasFilters::resetTableFiltersForm()` — the only one that fills a **populated** bag, which is how the null-write's absence was caught at all — fills a filters form, and no filter that ships puts a repeater in one.
+A stale item schema produces state only because a defaultless component [null-writes](../schemas/component.md#a-defaults-fill-nulls-a-defaultless-component-and-the-shared-record-is-what-protects-a-containers-default) in a defaults fill.
+Nothing that ships reaches it, caller by caller: `HasFilters::mountTableFilters()` and `CanBeMounted`'s default `mountUsing` fill a freshly built schema over an empty bag; `Repeater::getAddAction()` fills the one item schema it has just created empty; `HasSchemas::fill(null)` is the host-facing entry and every host calls it from `mount()`, again over an empty bag; and `HasFilters::resetTableFiltersForm()`, the only one that fills a **populated** bag, fills a filters form, and no filter that ships puts a repeater in one.
 It becomes reachable the first time a host re-fills a populated form: a "reset to defaults" button over a form holding a repeater is the exact shape.
 
-Today's output is pinned as-is by [`it characterizes the ghost items a defaults fill leaves over a populated repeater`](../../../packages/forms/tests/Unit/Components/RepeaterTest.php), a characterization test rather than a wanted one — the assertion changes when the fix lands, and the diff is what states its cost.
+The current output is pinned by [`it characterizes the ghost items a defaults fill leaves over a populated repeater`](../../../packages/forms/tests/Unit/Components/RepeaterTest.php), a characterization test rather than a wanted one: the assertion changes with the fix, and the diff states its cost.
 The fix is on the walk, not on the repeater: either recurse the way Filament does (re-reading child schemas per descent), or flush a container's cached child schemas the moment its own default replaces the state they were derived from.
 
 ### The repeater item owns its collapse state, unlike the Section
@@ -347,8 +346,9 @@ A repeater item cannot: it needs a header that is a click target *and* holds its
 So the repeater item is a plain `<li>` whose state is a class before its controller connects and a `data-collapsed` attribute after, and the content is hidden by CSS rather than by the element's own semantics.
 
 The cost is the one `<details>` would have paid for us: the collapsed content stays in the DOM.
-That is deliberate rather than incidental — the fields inside a collapsed item must keep their live bindings, so the item can be submitted and validated without ever being opened — and it is why `canConcealComponents()` returns `isCollapsible()`.
-A concealing component drops the native constraints (`required`, `maxlength`) off the controls inside it, so a browser cannot refuse to submit a form over a field the user cannot see; the server-side validation still runs.
+That is deliberate rather than incidental: the fields inside a collapsed item must keep their live bindings, so the item can be submitted and validated without ever being opened, and it is why `canConcealComponents()` returns `isCollapsible()`.
+A [concealing component](../schemas/can-be-concealed.md) drops the native constraints (`required`, `maxlength`) off the controls inside it, so a browser cannot refuse to submit a form over a field the user cannot see; the server-side validation still runs.
+Filament's `Repeater` implements no concealing contract, and its `isConcealed()` answers false.
 `Section` reaches the same contract by the same reasoning.
 
 ### Hidden fields render in a trailing hidden cell
@@ -362,8 +362,6 @@ So a `Hidden` declared *after* the last column-consuming component does not rend
 
 ### Deprecated Filament members are not ported
 
-`createItemButtonLabel()`, `disableItemCreation()` / `disableItemDeletion()` / `disableItemMovement()`, `orderable()` and `inset()` are all tagged `@deprecated` upstream (or, for `inset()`, an explicit no-op "no longer part of the design system").
-They exist to keep Filament's own historical call sites compiling; a fresh port has none, and shipping them would hand every new Sylament user a deprecated spelling beside the real one.
-A migrating user's call breaks loudly — missing method, current name one grep away in Filament's own deprecation notice.
-
-_See also: the global [rename table](../renames.md) — `ownsRecordSubtree()`, `itemsAs()` and `ObjectStateCast` all sit among the Sylament-only names recorded there, and the unported `schema()` alias has its row there; everything else in this file keeps Filament's spelling._
+Each of these members is tagged `@deprecated` upstream, and each notice but one names its replacement: `createItemButtonLabel()` → `addActionLabel()`, `disableItemCreation()` → `addable()`, `disableItemDeletion()` → `deletable()`, `disableItemMovement()` → `reorderable()` and `orderable()` → `orderColumn()`, while `inset()` is a no-op "no longer part of the design system" with no replacement.
+A fresh port has no call sites to keep compiling, and shipping them would hand every new Sylament user a deprecated spelling beside the real one.
+A migrating user's call breaks loudly as a missing method, with the current name one grep away in Filament's own deprecation notice.

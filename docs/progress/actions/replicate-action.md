@@ -1,5 +1,5 @@
 ---
-description: 'The prebuilt per-record duplicate: a two-squares trigger that copies the bound record, optionally opens a form on the copy, and saves it as a new row. (draft)'
+description: The prebuilt per-record duplicate that copies the bound record through Doctrine metadata, optionally opens a form on the copy, and saves it.
 ports:
   - vendor/filament/actions/src/ReplicateAction.php
   - vendor/filament/actions/src/Concerns/CanCustomizeProcess.php
@@ -10,21 +10,14 @@ owns:
 ---
 # ReplicateAction (actions)
 
-[`Sylament\Actions\ReplicateAction`](../../../packages/actions/src/ReplicateAction.php) — the prebuilt per-record duplicate: a two-squares trigger that copies the bound record, optionally opens a form on the copy, and saves it as a new row.
-Filament duplicates through Eloquent's `Model::replicate()`; Doctrine ships no such member, so the copy rules live in a class of this package's own, [`Sylament\Actions\Replication\RecordReplicator`](../../../packages/actions/src/Replication/RecordReplicator.php), which is audited [in the same surface table below](#surface) — it exists only to serve this action, and the two are only readable together.
+[`Sylament\Actions\ReplicateAction`](../../../packages/actions/src/ReplicateAction.php) is the prebuilt per-record duplicate: a two-squares trigger that copies the bound record, optionally opens a form on the copy, and saves it as a new row.
+Filament duplicates through Eloquent's `Model::replicate()`; Doctrine ships no such member, so the copy rules live in a class of this package's own, [`Sylament\Actions\Replication\RecordReplicator`](../../../packages/actions/src/Replication/RecordReplicator.php), which is audited [in the same surface table below](#surface): it exists only to serve this action, and the two are only readable together.
 
 It is modal-only, and unlike [`CreateAction`](create-action.md) and [`EditAction`](edit-action.md) it has no URL arm to grow: Filament routes no page at a replication either.
 
-The success toast is a title here, `successNotificationTitle('Replicated')`; a caller wanting a whole notification object passes one to `successNotification()`, which [`CanNotify`](action.md) supplies to every action alike.
-
-Covered by [`ReplicateActionTest`](../../../packages/actions/tests/Unit/ReplicateActionTest.php) (the chrome, the heading interpolation, the evaluated exclusions, the class re-point and the `replica` injection), the Integration [`ReplicateActionTest`](../../../packages/actions/tests/Integration/ReplicateActionTest.php) (both arms end to end against the fixture entity manager — the modal fill from the copy, the second row, the untouched original, and the `beforeReplicaSaved()` hook seeing an unsaved replica — and the key a replica is asked for: a parent kept, an incomplete key refused by name at each of its two points — a single derived identity among them, where Doctrine's `EntityMissingAssignedId` spoke before — a blank-default single key refused on the first replicate, a key a `prePersist` callback or an event-manager listener fills saved, a single assigned `int` nothing sets left to Doctrine as before, and the one shape recorded as Doctrine's), the Integration [`ReplicateActionTakenKeyTest`](../../../packages/actions/tests/Integration/ReplicateActionTakenKeyTest.php) (a modal left on its original's key, a changed one, and a hook that derives the key) and [`RecordReplicatorTest`](../../../packages/actions/tests/Integration/Replication/RecordReplicatorTest.php) (the copy rules against real Doctrine metadata).
-[`SubclassedAssociationReaderTest`](../../../packages/actions/tests/Integration/SubclassedAssociationReaderTest.php) pins both arms asking the container's own reader, rebound to a second manager.
-[`UnmappedHookDataTest`](../../../packages/actions/tests/Integration/UnmappedHookDataTest.php) pins the modal arm's refusal of a key `mutateDataUsing()` adds and no component maps.
-[`KeyAdviceTest`](../../../packages/actions/tests/Integration/KeyAdviceTest.php) pins the refusal of a modal mapping a key the record's constructor sets.
+The unit [`ReplicateActionTest`](../../../packages/actions/tests/Unit/ReplicateActionTest.php) covers the class alone, the integration [`ReplicateActionTest`](../../../packages/actions/tests/Integration/ReplicateActionTest.php) both arms end to end, and [`RecordReplicatorTest`](../../../packages/actions/tests/Integration/Replication/RecordReplicatorTest.php) the copy rules against real Doctrine metadata; the tests that pin each rule are named in its entry below.
 
 ## Surface
-
-Every member Filament's class carries, plus the replicator behind it.
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
@@ -41,18 +34,17 @@ Every member Filament's class carries, plus the replicator behind it.
 | [`mutateRecordDataUsing()`](../../../packages/actions/src/Concerns/CanMutateRecordData.php) | [`ReplicateAction.php`](../../../vendor/filament/actions/src/ReplicateAction.php) | done | — | [diverges](#mutaterecorddatausing-is-one-shared-trait-not-three-copies) · [semantics](#the-no-schema-arm-is-the-only-place-mutaterecorddatausing-writes-the-record-itself) |
 | [`CanCustomizeProcess`](../../../packages/actions/src/Concerns/CanCustomizeProcess.php) (`using()` / `process()`) | [`Concerns/CanCustomizeProcess.php`](../../../vendor/filament/actions/src/Concerns/CanCustomizeProcess.php) | done | — | — |
 | `afterReplicaSaved()` | [`ReplicateAction.php`](../../../vendor/filament/actions/src/ReplicateAction.php) | skipped | — | [diverges](#afterreplicasaved-is-not-ported) |
-| [`RecordReplicator::replicate()`](../../../packages/actions/src/Replication/RecordReplicator.php) | [`Model::replicate()`](../../../vendor/laravel/framework/src/Illuminate/Database/Eloquent/Model.php) | done | — | [diverges](#doctrine-has-no-replicate-so-the-copy-is-read-off-classmetadata) · [diverges](#a-replica-keeps-its-parent-and-one-whose-key-is-still-incomplete-is-refused-by-name) |
-| [`RecordReplicator::getFieldValues()` / `setFieldValues()`](../../../packages/actions/src/Replication/RecordReplicator.php) | [`Model::attributesToArray()`](../../../vendor/laravel/framework/src/Illuminate/Database/Eloquent/Model.php) + `fill()` | done | — | [diverges](#doctrine-has-no-replicate-so-the-copy-is-read-off-classmetadata) |
+| [`RecordReplicator::replicate()`](../../../packages/actions/src/Replication/RecordReplicator.php) | Eloquent's `Model::replicate()` | done | — | [diverges](#doctrine-has-no-replicate-so-the-copy-is-read-off-classmetadata) · [diverges](#a-replica-keeps-its-parent-and-one-whose-key-is-still-incomplete-is-refused-by-name) |
+| [`RecordReplicator::getFieldValues()` / `setFieldValues()`](../../../packages/actions/src/Replication/RecordReplicator.php) | Eloquent's `Model::attributesToArray()` + `fill()` | done | — | [diverges](#doctrine-has-no-replicate-so-the-copy-is-read-off-classmetadata) |
 
 ## Semantics
 
 ### The write body reads the mounted schema from the host, not from a parameter
 
-Filament's process closure takes `?Schema $schema`, but nothing hands it the mounted container: `CanCustomizeProcess::process()` passes no injections at all, and vendor `Action.php:575` resolves `schema` to `[$this->getSchemaContainer()]` — the schema the *trigger* lives in, which is null for a table row action.
-So the explicit map below is a repair rather than a translation.
-Here [`Invoker::call()`](../../../packages/support/src/Evaluation/Invoker.php) resolves a `Schema $schema` parameter **by name** first, and [`Action`](action.md)'s named resolver answers `schema` with `getSchemaContainer()` — the schema the *trigger* lives in, which for a table row action is the table's own container and not the modal's.
-So the body reads the modal container once, up front, through [`getMountedSchema()`](has-schema.md#the-host-resolver-answers-only-when-the-action-declares-nothing), and passes it down as an explicit named injection.
-A `using()` closure therefore still receives `$data`, `$record` and `$schema` exactly as Filament's does — and `$schema` is `null` for a confirmation-shaped mount, which is what the second arm below keys on.
+Filament's process closure takes `?Schema $schema`, but nothing hands it the mounted container: `CanCustomizeProcess::process()` passes no injections at all, and vendor `Action.php:578` resolves `schema` to `[$this->getSchemaContainer()]`, the schema the *trigger* lives in, which is null for a table row action.
+The port resolves the name the same way: [`Invoker::call()`](../../../packages/support/src/Evaluation/Invoker.php) resolves a `Schema $schema` parameter **by name** first, and [`Action`](action.md)'s named resolver answers `schema` with `getSchemaContainer()`, which for a table row action is the table's own container and not the modal's.
+So the body reads the modal container once, up front, through [`getMountedSchema()`](has-schema.md#the-host-resolver-answers-only-when-the-action-declares-nothing), and passes it down as an explicit named injection, a repair rather than a translation.
+A `using()` closure therefore receives `$data`, `$record` and `$schema` as Filament's does, and `$schema` is `null` for a confirmation-shaped mount, which is what the no-schema arm keys on.
 
 ### The modal container is re-pointed twice, at the class then at the replica
 
@@ -66,7 +58,7 @@ Both re-points are on the container object the host owns, so nothing is copied a
 
 A bare `ReplicateAction::make()` still opens a modal — a confirmation-shaped one, because `hasCustomModalHeading()` is true — and mounts with no schema, so the validated state is `[]` and there is nothing to map.
 Filament keeps `mutateRecordDataUsing()` honest there by mutating the raw attribute bag instead; the port does the same over the replicator's field bag (`getFieldValues()` → `mutateRecordData()` → `setFieldValues()`).
-The guard is `$data === []` **and** a mutator being set, so an action that declares neither does no extra work, and a modal-mode run never takes this path.
+The guard is no mounted schema, `$data === []` **and** a mutator being set, so an action that declares no mutator does no extra work, and a modal-mode run never takes this path.
 `setFieldValues()` throws for a key the copy rules decline, which is the only place a typo in a mutator's return surfaces at all.
 
 ## Divergences
@@ -96,7 +88,7 @@ It takes the record's own `EntityManagerInterface` — resolved through [`getEnt
 - an **uninitialised** typed property is skipped rather than read, which would throw.
 
 The initialisation check goes through `ClassMetadata::getPropertyAccessor()` and its `getUnderlyingReflector()`.
-The accessor **interface** is marked `@internal` in ORM 3.6 while the metadata method handing one out is public; the documented alternative, `getReflectionProperty()`, is deprecated, so the `@internal` type is the supported route and this is where that trade is recorded.
+The accessor **interface** is marked `@internal` in Doctrine ORM while the metadata method handing one out is public; the documented alternative, `getReflectionProperty()`, is deprecated, so the `@internal` type is the supported route and this is where that trade is recorded.
 It is named outright — Rector normalises the `null` check on the accessor into an `instanceof`, so `Doctrine\ORM\Mapping\PropertyAccessors\PropertyAccessor` is a `use` import in shipped source, and an ORM release that moves it is a compile error here rather than a silent behaviour change.
 ORM's own accessors already answer `null` for an uninitialised property, so the check itself is belt-and-braces rather than load-bearing — if the interface ever moves, the guard is what has to be re-derived, not the copy.
 
@@ -125,16 +117,16 @@ A replica whose key is still incomplete right before it is written is refused by
 
 The first point is before `persist()`, and it asks two questions.
 The first is the create paths' [predicate](../schemas/association-reader.md#an-incomplete-assigned-identifier-is-the-question-the-create-paths-ask): is a component the application must supply still missing — asked of every identifier but a plain single scalar, and of no class a `prePersist` callback or mapped entity listener exempts — so Doctrine's own `EntityMissingAssignedId` never speaks first.
-A **single derived identity**, whose one association the copy leaves off, is the case that changed: its bare replicate was that Doctrine exception and is now the named refusal, a 500 with nothing written either way.
+A **single derived identity**, whose one association the copy leaves off, is caught here: its bare replicate meets the named refusal rather than Doctrine's exception, a 500 with nothing written either way.
 The second question makes no exception for a plain single scalar, and it is asked only of a class no `prePersist` hook could key — no lifecycle callback, no mapped entity listener, no listener on the event manager: does a key whose values are all set still mint none, because a component is blank?
 The reason is Doctrine's.
-A persisted entity whose identity hash is `''` — a single string key left blank — can be neither detached nor removed, so the second point could not take it back; asked here, a single string key whose default is `''`, left blank by every filler, is refused on the **first** replicate, where it wrote a row no key names and left the listing failing on every render.
+A persisted entity whose identity hash is `''` — a single string key left blank — can be neither detached nor removed, so the second point could not take it back; asked here, a single string key whose default is `''`, left blank by every filler, is refused on the **first** replicate, where letting it through would write a row no key names and leave the listing failing on every render.
 A class such a hook could key — and every class, once a `prePersist` listener sits on its manager's event manager — is left to the second point, so a blank key that listener fills still saves.
-A single assigned `int` nothing set holds no value at all, so it still reaches Doctrine's `EntityMissingAssignedId`, as before.
+A single assigned `int` nothing set holds no value at all, so it reaches Doctrine's `EntityMissingAssignedId`.
 
 The second point is after `persist()`, once every `prePersist` callback and listener has run, and it exempts nothing: a replica `RecordKey::find()` still cannot key is taken back out of the unit of work where Doctrine can take it back — the one case it cannot is below — then refused.
-It is what closes a class whose own `#[PrePersist]` exempted it from the first point and then left a half blank — that replica inserted `('', '')` — while a key a callback does fill from blank saves, because the second point reads it after the callback.
-Both points run inside the action's transaction, so nothing is written, and both read through the record's **own** manager.
+It is what closes a class whose own `#[PrePersist]` exempted it from the first point and then left a half blank, a replica that would otherwise insert `('', '')`, while a key a callback does fill from blank saves, because the second point reads it after the callback.
+Neither point has flushed, so nothing is written, and both read through the record's **own** manager.
 One reader serves them and the modal's record check: the mounted schema's, or with no modal the action's own, rebound with [`withEntityManager()`](../schemas/association-reader.md) rather than two `new AssociationReader($manager)`s.
 So a class a non-default manager maps is read where it is written, and a reader service an application subclassed or decorated is the one asked.
 
@@ -160,7 +152,7 @@ Without the check it would be Doctrine's `EntityIdentityCollisionException`, the
 A changed key saves the replica.
 
 The check reads the key the modal **mapped**, and `beforeReplicaSaved()` runs after it.
-So a keyed modal pre-filled with the original's key beside a hook that derives the copy's key is refused as unchanged where it saved before.
+So a keyed modal pre-filled with the original's key beside a hook that derives the copy's key is refused as unchanged.
 The remedy is Filament's own: derive the key in `fillForm()` or `mutateRecordDataUsing()`, the way the demo's `ArticleResource` pre-fills its slug with `-copy`, or leave the key out of the modal and let the hook set it.
 A taken key such a hook sets is looked up too.
 With a modal, the record check runs a second time after the hook, so the modal answers it under the key field, or as a record error naming no field when the modal maps none.
@@ -176,15 +168,14 @@ An action replicating a uniquely-indexed record without a form arm, and without 
 
 ### A key `mutateDataUsing()` adds that no component of the modal maps is refused by name
 
-A modal replicate's default write opens with [`CreateAction`'s guard](create-action.md#the-modal-arm-persists-through-the-schemas-record-class), so a path the hook adds that no component of the modal maps is refused by name, before the copy is even built, where Filament's `$this->replica->fill($data)` would mass-assign it or drop it.
+A modal replicate's default write opens with [`CreateAction`'s guard](create-action.md#a-key-mutatedatausing-adds-that-no-component-maps-is-refused-by-name), so a path the hook adds that no component of the modal maps is refused by name, before the copy is even built, where Filament's `$this->replica->fill($data)` would mass-assign it or drop it.
 An overwritten key, a key a client typed into the data bag, a key a hidden component maps and a `using()` override pass.
 The arm with no modal has no hook state to compare — the host hands the action no data — and its `mutateRecordDataUsing()` already refuses an unknown key through `RecordReplicator::setFieldValues()` ([above](#the-no-schema-arm-is-the-only-place-mutaterecorddatausing-writes-the-record-itself)).
 Pinned by [`UnmappedHookDataTest`](../../../packages/actions/tests/Integration/UnmappedHookDataTest.php).
 
 ### `mutateRecordDataUsing()` is one shared trait, not three copies
 
-Filament declares the property and the setter on this class, on [`EditAction`](edit-action.md#mutaterecorddatausing-is-one-shared-trait-not-three-copies) and on [`ViewAction`](view-action.md); the port composes one [`CanMutateRecordData`](../../../packages/actions/src/Concerns/CanMutateRecordData.php) onto all three, and its row in [README](README.md#features) carries the reasoning.
-No member changed name, so `renames.md` is untouched by it.
+Filament declares the property and the setter on this class, on [`EditAction`](edit-action.md#mutaterecorddatausing-is-one-shared-trait-not-three-copies) and on [`ViewAction`](view-action.md); the port composes one [`CanMutateRecordData`](../../../packages/actions/src/Concerns/CanMutateRecordData.php) onto all three, for the reason [edit-action.md](edit-action.md#mutaterecorddatausing-is-one-shared-trait-not-three-copies) records.
 
 ### `afterReplicaSaved()` is not ported
 
@@ -193,13 +184,13 @@ Porting a deprecated alias would publish an API we would then have to deprecate,
 
 ### The strings are literals, not translation keys
 
-`label('Replicate')`, the `Replicate :label` modal heading, the submit label and the `Replicated` toast title are the English literals read from [`resources/lang/en/replicate.php`](../../../vendor/filament/actions/resources/lang/en/replicate.php), where Filament reads `__('filament-actions::replicate.single…')` — the same call [create-action.md](create-action.md#the-strings-are-literals-not-translation-keys) records, with the `Translations` row in [README](README.md#supporting-surface) tracking the catalogue.
+`label('Replicate')`, the `Replicate :label` modal heading, the submit label and the `Replicated` toast title are the English literals read from [`resources/lang/en/replicate.php`](../../../vendor/filament/actions/resources/lang/en/replicate.php), where Filament reads `__('filament-actions::replicate.single…')` — the same call [create-action.md](create-action.md#the-strings-are-literals-not-translation-keys) records.
 The `:label` interpolation becomes string interpolation over [`Action::getRecordTitle()`](interacts-with-record.md#the-record-chain-reaches-the-schema-the-component-and-the-host), so the heading is a closure with the bare-verb fallback its siblings carry: `Replicate` where Filament would render a trailing-space `Replicate `.
 
 ### The icon is a literal name, and a plain `icon()` stands in for `tableIcon()`
 
 Filament resolves both icons through `FilamentIcon::resolve(ActionsIconAlias::REPLICATE_ACTION) ?? Heroicon::Square2Stack`; the port sets the literal `heroicons:square-2-stack-20-solid` the alias falls back to, for the reason [create-action.md](create-action.md#icons-are-literal-heroicon-names-with-no-alias-indirection) records — including why the name spells the mini-solid set.
-`ActionsIconAlias` (unported, tracked in [README](README.md#supporting-surface)) gains a third action's worth of indirection with this class, and the placement diverges the way [`EditAction`](edit-action.md#one-plain-icon-replaces-filaments-table-and-grouped-pair)'s does: no `HasTableIcon` here, so `icon()` carries what Filament puts on `tableIcon()`.
+The placement diverges the way [`EditAction`](edit-action.md#one-plain-icon-replaces-filaments-table-and-grouped-pair)'s does: no `HasTableIcon` here, so `icon()` carries what Filament puts on `tableIcon()`.
 
 ### The fill reads the schema's declared paths, not an attribute bag
 

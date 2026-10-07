@@ -33,7 +33,7 @@ Coverage: the concern surface — flattening, per-option disabling, the label in
 Every option field builds one the same way — over the enabled options, in both the cast-stored form and the raw submitted string — so the method moved onto this trait unchanged rather than being copied per field.
 It reads only `getEnabledOptions()` and the schemas-level `getStateCasts()`, both of which any field composing this trait already has, so the move needed no seam.
 
-Why the list carries both forms, and why a multi-value cast's list is spread rather than pushed, is [`select.md`](select.md#the-choice-choices-cover-both-forms-the-raw-state-can-take) — the reasoning belongs beside the constraint builder that consumes it, and the `Select` suite is what pins the move.
+Why the list carries both forms, and why a multi-value cast's list is spread rather than pushed, is [`select.md`](#the-choice-choices-cover-both-forms-the-raw-state-can-take) — the reasoning belongs beside the constraint builder that consumes it, and the `Select` suite is what pins the move.
 
 ## Divergences
 

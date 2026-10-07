@@ -1,5 +1,5 @@
 ---
-description: 'The container that fuses several controls into one bordered box under a single label: a ring and a rounded corner pair on the child schema, a divider… (draft)'
+description: The container fusing several controls into one bordered box under a single label, rendered through forms' `FieldWrapper` with its children's chrome off.
 ports:
   - vendor/filament/schemas/src/Components/FusedGroup.php
   - vendor/filament/schemas/src/Concerns/HasFieldWrapper.php
@@ -36,7 +36,7 @@ The seam that switches the children off is schemas' [`Schema::fieldWrapperView()
 | [`FusedGroup/index.html.twig` — the group root inside `FieldWrapper`](../../../packages/forms/templates/partials/FusedGroup/index.html.twig) | [the wrapper rendering in `toEmbeddedHtml()`](../../../vendor/filament/schemas/src/Components/FusedGroup.php) | done | — | [semantics](#the-plain-branch-drops-the-label-affixes-so-an-inline-checkbox-fuses-to-nothing) · [diverges](#the-group-renders-through-fieldwrapper-instead-of-a-second-copy-of-it) · [diverges](#extraattributes-lands-on-the-field-wrapper-not-on-the-group-root) · [diverges](#the-group-root-carries-no-aria-describedby) |
 | [`fused-group.css` — the ring, the dividers and the corner rules](../../../packages/forms/assets/src/styles/components/fused-group.css) | [`components/fused-group.css`](../../../vendor/filament/schemas/resources/css/components/fused-group.css) | done | — | [semantics](#the-corner-rules-reach-through-two-elements-the-schema-partial-nests) |
 | [`Schema::fieldWrapperView()` (the seam) + `PLAIN_FIELD_WRAPPER_VIEW`](../../../packages/schemas/src/Concerns/HasFieldWrapper.php) | [`Concerns\HasFieldWrapper`](../../../vendor/filament/schemas/src/Concerns/HasFieldWrapper.php) | done | — | [diverges](#only-the-plain-wrapper-view-is-honored) |
-| Component-tier `HasFieldWrapper` (own → container → default) | [`Components\Concerns\HasFieldWrapper`](../../../vendor/filament/schemas/src/Components/Concerns/HasFieldWrapper.php) | todo | — | [diverges](#the-component-tier-hasfieldwrapper-twin-is-not-ported) |
+| Component-tier `HasFieldWrapper` (own → container → default) | [`Components\Concerns\HasFieldWrapper`](../../../vendor/filament/schemas/src/Components/Concerns/HasFieldWrapper.php) | todo | — | [detail](#the-component-tier-hasfieldwrapper-twin-is-not-ported) |
 | `EntanglesStateWithSingularRelationship` / `CanEntangleWithSingularRelationships` | [`FusedGroup implements CanEntangleWithSingularRelationships`](../../../vendor/filament/schemas/src/Components/FusedGroup.php) | todo | — | [entangles-state-with-singular-relationship.md](../schemas/entangles-state-with-singular-relationship.md) |
 | `HasNestedRecursiveValidationRules` arm of the error collection | [the `{$statePath}.*` branch](../../../vendor/filament/schemas/src/Components/FusedGroup.php) | skipped | — | [diverges](#the-error-collection-keeps-the-first-failing-field-and-nothing-else) |
 
@@ -44,6 +44,14 @@ Coverage: [`FusedGroupTest`](../../../packages/forms/tests/Integration/Component
 A keyless group is pinned emitting neither `id="-label"` nor an `aria-labelledby` pointing at it — `FieldWrapper` guards the concatenation on `field.getId is not empty`, as Filament guards its own on `filled($id)`.
 The regression pin that a field **outside** a group still gets the full wrapper lives in the same file.
 [`HasFieldWrapperTest`](../../../packages/schemas/tests/Unit/Concerns/HasFieldWrapperTest.php) pins the seam itself.
+
+## Details
+
+### The Component-tier `HasFieldWrapper` twin is not ported
+
+Filament carries the same trait twice: on the container (`Concerns\`), where a schema declares the view its fields use, and on the component (`Components\Concerns\`), whose `getFieldWrapperView()` resolves own → container → the framework default.
+Only the container tier ships here, because that is the tier `FusedGroup` writes to and the only one anything reads: our wrapper asks `field.getContainer().getFieldWrapperView()` directly, so a per-**component** override has no consumer.
+Porting the twin is a small addition once one exists — the resolution order is the whole of it.
 
 ## Semantics
 
@@ -76,7 +84,7 @@ Nothing had to be re-selected, which is the only reason the stylesheet could be 
 Filament ships `Filament\Schemas\Components\FusedGroup`, and that class imports three **forms** concerns — `CanBeMarkedAsRequired`, `HasExtraFieldWrapperAttributes` and `HasHelperText` — plus `Forms\Components\Field` for its error walk.
 That is the upward import from schemas into forms this port cannot reproduce: `forms` depends on `schemas`, and the CI split publishes each package standalone, so a `sylament/schemas` reaching a forms symbol breaks the moment it is installed alone.
 The same layering argument moved [`CanBeMarkedAsRequired` down](../translations.md#namespace-segments); here it moves the component **up** instead, to the package that already owns the field-wrapper chrome the group renders.
-Recorded in [translations.md](../translations.md#namespace-segments); the class name, its methods and its behaviour are unchanged, and the CSS class follows the package (`fi-sc-fused-group` → `sy-fo-fused-group`) rather than keeping a `-sc-` segment naming a package that no longer holds it.
+Recorded in [translations.md](../translations.md#namespace-segments); the class name, its methods and its behaviour are unchanged, and the CSS class follows the package (`fi-sc-fused-group` → `sy-fo-fused-group`) rather than keeping a `-sc-` segment naming a package that does not hold it.
 
 ### The group renders through `FieldWrapper` instead of a second copy of it
 
@@ -87,7 +95,7 @@ The visible consequence is that the group's chrome cannot drift from a field's �
 ### The error collection keeps the first failing field and nothing else
 
 Filament's loop tracks three things per child — a single message, a message list, and whether HTML messages are allowed — collapses a one-element list back to the scalar, and checks a second `"{$statePath}.*"` key for a child implementing `HasNestedRecursiveValidationRules`.
-None of that has a referent here: our wrapper [shows every message for a path in one `<ul>`](field.md#error-display-shows-every-message-for-the-path), there is no HTML-messages switch, and `HasNestedRecursiveValidationRules` is unported.
+None of that has a referent here: our wrapper [shows every message for a path in one `<ul>`](field.md#error-display-shows-every-message-for-the-path), there is no HTML-messages switch, and the port of `HasNestedRecursiveValidationRules` [emits its nested constraints on the field's own path](can-be-validated.md#nested-constraints-land-as-one-all-where-laravel-keys-a-path), so the own-path lookup already finds their messages and a `.*` key has nothing to catch.
 So `getErrorMessages()` walks the default-slot child fields in order and returns the first non-empty message list it finds — Filament's `break` semantics, minus the shapes our wrapper has no use for.
 The group therefore shows one field's errors at a time, exactly as Filament's does.
 
@@ -109,12 +117,6 @@ Give the wrapper's error list an id and this becomes a two-line addition on both
 
 Filament's seam is a view **name**: any Blade view a user publishes can be named through `fieldWrapperView()`, and `toEmbeddedHtml()` resolves it at render time.
 Ours stores the string and interprets exactly one value — `FusedGroup::PLAIN_FIELD_WRAPPER_VIEW` — which forms' [`FieldWrapper`](../../../packages/forms/templates/components/FieldWrapper/index.html.twig) branches on.
-The value is Filament's `filament-forms::plain-field-wrapper` with the vendor prefix swapped, and it is an opaque token: nothing resolves it as a template path, so a user template name put there today does nothing rather than half-working.
+The value is Filament's `filament-forms::plain-field-wrapper` with the vendor prefix swapped, and it is an opaque token: nothing resolves it as a template path, so a user template name put there does nothing rather than half-working.
 Schemas stores it and interprets nothing, which is what keeps the seam legal across the package boundary.
 A real custom-wrapper capability wants a Twig component name and a resolution step in `FieldWrapper`; it is wanted for parity and unbuilt.
-
-### The Component-tier `HasFieldWrapper` twin is not ported
-
-Filament carries the same trait twice: on the container (`Concerns\`), where a schema declares the view its fields use, and on the component (`Components\Concerns\`), whose `getFieldWrapperView()` resolves own → container → the framework default.
-Only the container tier ships here, because that is the tier `FusedGroup` writes to and the only one anything reads: our wrapper asks `field.getContainer().getFieldWrapperView()` directly, so a per-**component** override has no consumer to serve yet.
-Porting the twin is a small addition once one exists — the resolution order is the whole of it.

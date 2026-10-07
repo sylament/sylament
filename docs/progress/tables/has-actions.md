@@ -196,7 +196,7 @@ The body cell keeps both classes, and `.sy-ta-selection-cell` is authored *after
 A record the table refuses renders the cell **empty** rather than a disabled input — Filament's shape, and behavioural rather than cosmetic: the controller's page-key walk reads `.sy-ta-record-checkbox` values off the DOM, so a record with no input is excluded from "select page" by construction.
 
 The `<input>` is inline in the template with no support Twig component behind it, again Filament's shape, and its skin is the code-less `.sy-checkbox` class support gained in the same change, beside the `sy-ta-page-checkbox` / `sy-ta-record-checkbox` hooks.
-Moving the skin there is what gave the page checkbox its `:indeterminate` arm, which forms' copy never carried because nothing in forms can set that property ([forms' styles.md](../forms/styles.md#the-checkbox-skin-moved-to-support-when-tables-became-its-second-consumer)).
+Moving the skin there is what gave the page checkbox its `:indeterminate` arm, which forms' copy never carried because nothing in forms can set that property ([forms' styles.md](../forms/styles.md#the-checkbox-skin-lives-in-support-because-tables-renders-it-too)).
 
 The two ARIA labels are Filament's own strings with one word translated — "Select/deselect all records on this page for bulk actions." and "Select/deselect record :key for bulk actions." against vendor's "Select/deselect all items for bulk actions." and "Select/deselect item :key for bulk actions."
 *Record* is this toolkit's word for what vendor's translation calls an item, and the page checkbox says which rows it covers because our header cell is the only place that label appears.

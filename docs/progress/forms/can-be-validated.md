@@ -290,7 +290,7 @@ The facts are resolved at build time and handed over as plain values, so the con
 The field's path *within* its item is taken by stripping the item schema's own prefix, where Filament does string surgery on the first dot — which assumes an item key contains none, and a uuid-keyed repeater is one rename away from breaking that.
 
 Item-level error placement comes free, because the constraint sits on the item field's own path.
-`fixIndistinctState()` and `disableOptionsWhenSelectedInSiblingRepeaterItems()` read the same arithmetic: the five values this builder derived inline moved to [`RepeaterSiblingContext`](can-fix-indistinct-state.md#the-five-sibling-facts-are-one-value-object-not-string-surgery) behind `ResolvesRepeaterSiblingContext`, which `Field` composes and all three consumers call.
+`fixIndistinctState()` and `disableOptionsWhenSelectedInSiblingRepeaterItems()` read the same arithmetic: the five values this builder derived inline moved to [`RepeaterSiblingContext`](field.md#the-five-sibling-facts-are-one-value-object-not-string-surgery) behind `ResolvesRepeaterSiblingContext`, which `Field` composes and all three consumers call.
 Semantics are unchanged — the extraction preserved every `null` return, and these tests are what characterized it.
 
 ### The format sugar is stock where a constraint fits, and first-party where none does

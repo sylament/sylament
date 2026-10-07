@@ -1,5 +1,5 @@
 ---
-description: 'The column''s relationship aggregate declarations and the one a cell reads. (draft)'
+description: The column's relationship aggregate declarations and the declaration its cell reads.
 ports:
   - vendor/filament/support/src/Concerns/CanAggregateRelatedModels.php
 owns:
@@ -12,7 +12,7 @@ owns:
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
 | [The aggregate declarations — `avg()`, `counts()`, `exists()`, `max()`, `min()`, `sum()` and their getters](../../../packages/tables/src/Columns/Concerns/CanAggregateRelatedRecords.php) | [`Support\Concerns\CanAggregateRelatedModels`](../../../vendor/filament/support/src/Concerns/CanAggregateRelatedModels.php) | done | — | [rename](../renames.md#renames) · [diverges](#an-aggregate-column-names-itself-freely-where-filaments-must-match-laravels-alias) · [diverges](#the-illuminate-expression-arm-is-dropped-from-the-aggregated-column) · [diverges](#an-aggregate-declaration-that-claims-no-cell-computes-nothing) |
-| [`getCellAggregateDeclaration()` — which declaration this cell reads](../../../packages/tables/src/Columns/Concerns/CanAggregateRelatedRecords.php) | — (Sylament-only; Filament reads the value off the model as an attribute) | done | — | [diverges](#an-aggregate-column-names-itself-freely-where-filaments-must-match-laravels-alias) · [has-query.md](has-query.md#an-aggregate-is-a-batched-side-query-and-a-hidden-subselect-never-a-select-on-the-page-query) |
+| [`getCellAggregateDeclaration()` / `hasRelationshipAggregates()`](../../../packages/tables/src/Columns/Concerns/CanAggregateRelatedRecords.php) | — (Sylament-only) | done | — | [diverges](#an-aggregate-column-names-itself-freely-where-filaments-must-match-laravels-alias) · [has-query.md](has-query.md#an-aggregate-is-a-batched-side-query-and-a-hidden-subselect-never-a-select-on-the-page-query) |
 
 ## Divergences
 
@@ -24,7 +24,7 @@ The name is therefore not a choice — it is Laravel's derived alias, and a colu
 Here the value never touches the record: it is fetched into a [side store](has-query.md#an-aggregate-is-a-batched-side-query-and-a-hidden-subselect-never-a-select-on-the-page-query) keyed by the column's own name, so `TextColumn::make('track_total')->counts('songs')` works, and the name is free.
 The derivation is still ported, because the **array** form declares several aggregates through one call and something has to say which of them fills this cell: there, an entry whose alias matches the column name wins, with `'relationship as alias'` honoured exactly as Laravel honours it.
 
-Two deltas inside that derivation, both from `UnicodeString::snake()` standing in for `Str::snake()` over a string Laravel pre-mangles.
+The derivation differs from Laravel's in two ways, both because `UnicodeString::snake()` stands in for `Str::snake()` over a string Laravel pre-mangles.
 Laravel strips every character that is not alphanumeric, space or underscore *before* snaking, so a dotted path loses its dot: `artist.label` derives `artistlabel_count` there and `artist_label_count` here.
 And Laravel lowercases the aggregated column wholesale rather than snaking it, so `avg('songs', 'totalDuration')` derives `songs_avg_totalduration` there and `songs_avg_total_duration` here.
 Both are strictly more readable, both only ever matter to the array form, and neither can silently mis-bind: a name that matches nothing resolves to no declaration rather than to the wrong one.
@@ -55,4 +55,4 @@ There is no Doctrine referent to keep.
 Typing the parameter to accept one would promise a payload the aggregate builder could only interpolate blindly into a DQL string it then fails to parse.
 
 What replaces it is the scope closure the array form already carries: an aggregate that needs more than a field name narrows its set with `counts(['songs' => fn (QueryBuilder $query, string $alias) => $query->andWhere(…)])`, which is DQL the parser accepts.
-A genuinely computed aggregate — `SUM(price * quantity)` — is out of reach today and lands, if it lands, as a declared DQL expression rather than as a raw-SQL union member.
+A genuinely computed aggregate — `SUM(price * quantity)` — is out of reach, and would arrive as a declared DQL expression rather than as a raw-SQL union member.

@@ -165,7 +165,7 @@ The gap closes with that method.
 Filament's banner is one `fi-ta-selection-indicator` holding two children, so its `& > :nth-child(1)` / `:nth-child(2)` rules can address them: the first a `<div>` around the loading indicator and the count text, the second a `<div>` wrapping `fi-ta-selection-indicator-actions-ctn`, a wrapper that exists only because two render hooks bracket it.
 There are no render hooks here, so the second wrapper is dropped and `.sy-ta-selection-indicator-actions-ctn` **is** the second child.
 That makes vendor's own `& .fi-ta-selection-indicator-actions-ctn { flex gap-x-3 }` redundant with the `& > *` rule above it, so it is not ported either and the class survives as the DOM hook the tests and the controller select on.
-The loading indicator inside the first child goes with [the loading affordances](can-defer-loading.md#loading-affordances-are-deferred-with-the-javascript-that-would-drive-them) the toolkit has not ported at all.
+The loading indicator inside the first child goes with [the loading affordances](table.md#the-table-partial-renders-no-in-flight-loading-indicator) the toolkit has not ported at all.
 
 Both links are `<twig:SylamentSupport:Link tag="button">`, which is exactly what `<x-filament::link tag="button">` is on the other side, so `primary` and `danger` come from the colour policy rather than a banner-local rule, and [`selection.css`](../../../packages/tables/assets/src/styles/components/selection.css) carries no link styling at all.
 "Select all" ships a server `hidden` and is revealed by the controller only where a ceiling is known and not everything is selected; "Deselect all" is visible whenever the banner is.

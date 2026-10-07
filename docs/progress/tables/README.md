@@ -30,7 +30,6 @@ Ports [`filament/tables`](../../../vendor/filament/tables) into [`packages/table
 - [host-can-search-records.md](host-can-search-records.md)
 - [host-can-sort-records.md](host-can-sort-records.md)
 - [host-has-bulk-actions.md](host-has-bulk-actions.md)
-- [host-has-column-manager.md](host-has-column-manager.md)
 - [host-has-filters.md](host-has-filters.md)
 - [icon-column.md](icon-column.md)
 - [image-column.md](image-column.md)

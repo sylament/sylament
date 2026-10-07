@@ -1,5 +1,5 @@
 ---
-description: 'The table''s pagination settings: page options, the default page size, extreme links and the pagination mode (draft)'
+description: The table's pagination settings — page options, the default page size, extreme links, the pagination mode and its enum.
 ports:
   - vendor/filament/tables/src/Table/Concerns/CanPaginateRecords.php
   - vendor/filament/tables/src/Enums/PaginationMode.php
@@ -13,24 +13,39 @@ owns:
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
-| [`paginated()` / `isPaginated()` / `paginationPageOptions()` / `getPaginationPageOptions()` / `defaultPaginationPageOption()` / `getDefaultPaginationPageOption()` / `extremePaginationLinks()` / `hasExtremePaginationLinks()`](../../../packages/tables/src/Table/Concerns/CanPaginateRecords.php) | [`Table\Concerns\CanPaginateRecords`](../../../vendor/filament/tables/src/Table/Concerns/CanPaginateRecords.php) | done | — | [diverges](#the-ten-per-page-default-is-matched-strictly) |
-| [`paginationMode()` / `getPaginationMode()`](../../../packages/tables/src/Table/Concerns/CanPaginateRecords.php) + [`PaginationMode`](../../../packages/tables/src/Enums/PaginationMode.php) | [`Table\Concerns\CanPaginateRecords`](../../../vendor/filament/tables/src/Table/Concerns/CanPaginateRecords.php), [`Enums/PaginationMode`](../../../vendor/filament/tables/src/Enums/PaginationMode.php) | in progress | its `Cursor` arm — a keyset carrier ([pagination.md](../support/pagination.md)) | [detail](#the-pagination-mode-ships-two-cases-and-two-setters-wait-on-their-features) · [host-can-paginate-records.md](host-can-paginate-records.md#a-paginated-query-lane-table-pages-through-doctrines-tools-paginator-and-only-a-collection-join-switches-it-to-identifiers-first) |
+| [`paginated()` / `isPaginated()` / `paginationPageOptions()` / `getPaginationPageOptions()`](../../../packages/tables/src/Table/Concerns/CanPaginateRecords.php) | [`Table\Concerns\CanPaginateRecords`](../../../vendor/filament/tables/src/Table/Concerns/CanPaginateRecords.php) | done | — | — |
+| [`defaultPaginationPageOption()` / `getDefaultPaginationPageOption()`](../../../packages/tables/src/Table/Concerns/CanPaginateRecords.php) | [`Table\Concerns\CanPaginateRecords`](../../../vendor/filament/tables/src/Table/Concerns/CanPaginateRecords.php) | done | — | [diverges](#the-ten-per-page-default-is-matched-strictly) |
+| [`extremePaginationLinks()` / `hasExtremePaginationLinks()`](../../../packages/tables/src/Table/Concerns/CanPaginateRecords.php) | [`Table\Concerns\CanPaginateRecords`](../../../vendor/filament/tables/src/Table/Concerns/CanPaginateRecords.php) | done | — | — |
+| [`paginationMode()` / `getPaginationMode()`](../../../packages/tables/src/Table/Concerns/CanPaginateRecords.php) + [`PaginationMode::Default` / `Simple`](../../../packages/tables/src/Enums/PaginationMode.php) | [`Table\Concerns\CanPaginateRecords`](../../../vendor/filament/tables/src/Table/Concerns/CanPaginateRecords.php), [`Enums/PaginationMode`](../../../vendor/filament/tables/src/Enums/PaginationMode.php) | done | — | [semantics](#the-pagination-mode-selects-nothing-on-a-records-closure-table) · [host-can-paginate-records.md](host-can-paginate-records.md#a-paginated-query-lane-table-pages-through-doctrines-tools-paginator-and-only-a-collection-join-switches-it-to-identifiers-first) |
+| [`PaginationMode::Cursor`](../../../packages/tables/src/Enums/PaginationMode.php) | [`Enums/PaginationMode`](../../../vendor/filament/tables/src/Enums/PaginationMode.php) | blocked | a keyset paginator carrier in support ([pagination.md](../support/pagination.md)) | [detail](#cursor-pagination-waits-on-a-keyset-carrier) |
 | [`paginatedWhileReordering()` / `isPaginatedWhileReordering()`](../../../packages/tables/src/Table/Concerns/CanPaginateRecords.php) | [`Table\Concerns\CanPaginateRecords`](../../../vendor/filament/tables/src/Table/Concerns/CanPaginateRecords.php) | done | — | — |
-| `scrollToTopOnPageChange()` | [`Table\Concerns\CanPaginateRecords`](../../../vendor/filament/tables/src/Table/Concerns/CanPaginateRecords.php) | todo | — | [detail](#the-pagination-mode-ships-two-cases-and-two-setters-wait-on-their-features) |
+| `persistRecordsPerPageInSession()` / `persistsRecordsPerPageInSession()` | [`Table\Concerns\CanPaginateRecords`](../../../vendor/filament/tables/src/Table/Concerns/CanPaginateRecords.php) | todo | — | [detail](#the-per-page-choice-persists-with-no-opt-out) |
+| `scrollToTopOnPageChange()` / `shouldScrollToTopOnPageChange()` | [`Table\Concerns\CanPaginateRecords`](../../../vendor/filament/tables/src/Table/Concerns/CanPaginateRecords.php) | todo | — | [detail](#scrolltotoponpagechange-has-no-browser-half) |
 
 ## Details
 
-### The pagination mode ships two cases, and two setters wait on their features
+### Cursor pagination waits on a keyset carrier
 
-`paginationMode()` selects between Laravel's length-aware, simple and cursor paginators, all three built by the query lane's [`paginateTableQuery()`](host-can-paginate-records.md#a-paginated-query-lane-table-pages-through-doctrines-tools-paginator-and-only-a-collection-join-switches-it-to-identifiers-first) — on the closure lane the userland closure returns whatever it built, so the enum selects nothing there, which is why it arrived with the lane rather than with the rest of the pagination configuration.
-Two of its three cases ship.
+`PaginationMode::Cursor` needs a keyset paginator that support does not ship, and it is refused where the mode is consumed rather than where it is set: a `Closure` mode has no value at set time, so the host's `paginateTableQuery()` throws a `LogicException` naming the missing carrier and the two modes that work.
+
+### The per-page choice persists with no opt-out
+
+Filament's table carries `persistRecordsPerPageInSession()`, defaulting on, and its host reads, writes and forgets the per-page session entry only while `persistsRecordsPerPageInSession()` answers true.
+The port has neither member, so [`CanPersistTableState`](can-persist-table-state.md#the-session-read-is-a-post-mount-hook-and-its-priority-is-the-precedence-rule) reads and writes the per-page entry for every paginated host with a session, which matches Filament's default and leaves no way to turn it off.
+
+### `scrollToTopOnPageChange()` has no browser half
+
+Filament's host `setPage()` dispatches a `scrollToTopOfTable` event when the flag is on, and its Alpine `table.js` scrolls the table root into view on it.
+The port has neither the setter nor the event; the host's `gotoTablePage()` action and the table controller are where the two halves would land.
+
+## Semantics
+
+### The pagination mode selects nothing on a `records()` closure table
+
+`paginationMode()` is read only by the query lane's [`paginateTableQuery()`](host-can-paginate-records.md#a-paginated-query-lane-table-pages-through-doctrines-tools-paginator-and-only-a-collection-join-switches-it-to-identifiers-first); a `records()` closure returns whatever it built, so the enum selects nothing there.
 **Default** pages against a true total, counted by Doctrine's Tools paginator.
-**Simple** runs no count: the lane probes one record past the page and support's [`Paginator`](../support/pagination.md) takes the null total, the footer [branching on it](../support/pagination.md#the-simple-footer-keeps-the-overview-and-the-item-list-where-filament-drops-both) — which a `records()` closure could already reach, so what the enum added was the query lane's fetching.
-**Cursor** still needs a keyset carrier the toolkit does not ship, and is refused where the mode is consumed rather than where it is set: a `Closure` mode has no value at set time, so `paginateTableQuery()` throws a `LogicException` naming the missing carrier and the two modes that work.
+**Simple** runs no count: the lane probes one record past the page and support's [`Paginator`](../support/pagination.md) takes the null total, the footer [branching on it](../support/pagination.md#the-simple-footer-keeps-the-overview-and-the-item-list-where-filament-drops-both).
 The enum is Filament's verbatim, three pure cases in declaration order; the getter is typed `PaginationMode` where Filament declares `?PaginationMode` over a body that cannot return null.
-
-`paginatedWhileReordering()` has a **done** row of its own, since the table it reads on exists.
-`scrollToTopOnPageChange()` is the one still here: an Alpine `$el.scrollIntoView()` in Filament's view, where the port has no scroll affordance at all, so it belongs with the [in-flight affordance](can-defer-loading.md#loading-affordances-are-deferred-with-the-javascript-that-would-drive-them) that is still out rather than with pagination configuration, and returns with it.
 
 ## Divergences
 

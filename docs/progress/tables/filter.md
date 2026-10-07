@@ -1,5 +1,5 @@
 ---
-description: 'The checkbox filter: a `BaseFilter` whose form is one boolean field named `isActive`, and whose query pass that field gates. (draft)'
+description: The checkbox filter, a `BaseFilter` whose form is one boolean `isActive` field that gates its query pass and its indicator.
 ports:
   - vendor/filament/tables/src/Filters/Filter.php
 owns:
@@ -7,9 +7,7 @@ owns:
 ---
 # Filter (tables)
 
-[`Sylament\Tables\Filters\Filter`](../../../packages/tables/src/Filters/Filter.php) — the checkbox filter: a [`BaseFilter`](base-filter.md) whose form is one boolean field named `isActive`, and whose query pass that field gates.
-It ports [`Filament\Tables\Filters\Filter`](../../../vendor/filament/tables/src/Filters/Filter.php), which declares seven members over its base — four of its own (`$formComponent`, `toggle()`, `checkbox()`, `formComponent()`) and three overrides (`setUp()`, `getFormField()`, `getResetState()`), folded into five surface rows below.
-Everything the base carries — the name, the label, the schema resolution, the reset state, the query seam, the closure injections — is tracked in [`base-filter.md`](base-filter.md), not repeated here.
+[`Sylament\Tables\Filters\Filter`](../../../packages/tables/src/Filters/Filter.php) extends [`BaseFilter`](base-filter.md), which carries the name, the label, the schema resolution, the reset state, the query seam and the closure injections.
 
 ## Surface
 
@@ -20,8 +18,6 @@ Everything the base carries — the name, the label, the schema resolution, the 
 | [`getFormField()`](../../../packages/tables/src/Filters/Filter.php) | `Filter::getFormField()` | done | — | [semantics](#a-false-default-does-reach-the-field-because-filledfalse-is-true) |
 | [`getResetState()`](../../../packages/tables/src/Filters/Filter.php) | `Filter::getResetState()` | done | — | [semantics](#a-schema-less-filter-ignores-resetstate-outright) |
 | [`setUp()` — the default indicator](../../../packages/tables/src/Filters/Filter.php) | `Filter::setUp()` | done | — | [semantics](#the-indicator-gate-defaults-to-false-where-the-query-gate-defaults-to-true) |
-
-Every row is pinned by [`FilterTest`](../../../packages/tables/tests/Unit/Filters/FilterTest.php).
 
 ## Semantics
 
@@ -47,4 +43,3 @@ Faithful to Filament.
 `setUp()`'s `indicateUsing` bails on `!($state['isActive'] ?? false)` — an absent key means *no indicator*.
 The query seam in [`InteractsWithTableQuery`](base-filter.md) bails on `!(bool) ($data['isActive'] ?? true)` — an absent key means *apply anyway*.
 The polarities are opposite on purpose: the query gate is opt-out so a custom-`schema()` filter (which has no `isActive` key at all) still applies, while the indicator gate is opt-in so a filter nobody has ticked shows no chip.
-Both directions are pinned by one case in `FilterTest`.

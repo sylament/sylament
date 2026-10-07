@@ -1,73 +1,85 @@
 ---
-description: 'The figures under a table: one row for the page on screen, one for the whole filtered set, and one under each group. (draft)'
+description: 'The figures under a table: the summarizer classes, the column, table and host members that feed them, and the summary rows the partial renders'
 ports:
   - vendor/filament/tables/src/Columns/Summarizers/Summarizer.php
-  - vendor/filament/tables/src/Columns/Summarizers/Concerns/
+  - vendor/filament/tables/src/Columns/Summarizers/Average.php
+  - vendor/filament/tables/src/Columns/Summarizers/Count.php
+  - vendor/filament/tables/src/Columns/Summarizers/Range.php
+  - vendor/filament/tables/src/Columns/Summarizers/Sum.php
+  - vendor/filament/tables/src/Columns/Summarizers/Values.php
+  - vendor/filament/tables/src/Columns/Summarizers/Concerns/BelongsToColumn.php
+  - vendor/filament/tables/src/Columns/Summarizers/Concerns/CanBeHidden.php
+  - vendor/filament/tables/src/Columns/Summarizers/Concerns/CanFormatState.php
+  - vendor/filament/tables/src/Columns/Summarizers/Concerns/HasLabel.php
+  - vendor/filament/tables/src/Columns/Summarizers/Concerns/InteractsWithTableQuery.php
   - vendor/filament/tables/src/Columns/Concerns/CanBeSummarized.php
   - vendor/filament/tables/src/Table/Concerns/CanSummarizeRecords.php
   - vendor/filament/tables/src/Concerns/CanSummarizeRecords.php
   - vendor/filament/tables/resources/views/components/summary/index.blade.php
   - vendor/filament/tables/resources/views/components/summary/row.blade.php
   - vendor/filament/tables/resources/views/index.blade.php
-  - vendor/filament/tables/resources/css/columns/
+  - vendor/filament/tables/resources/css/columns/summaries/icon-count.css
+  - vendor/filament/tables/resources/css/columns/summaries/range.css
+  - vendor/filament/tables/resources/css/columns/summaries/text.css
+  - vendor/filament/tables/resources/css/columns/summaries/values.css
 owns:
   - packages/tables/assets/src/styles/components/summary.css
   - packages/tables/src/Columns/Summarizers/Average.php
   - packages/tables/src/Columns/Summarizers/Concerns/
+  - packages/tables/src/Columns/Summarizers/Contracts/HasSelectAlias.php
   - packages/tables/src/Columns/Summarizers/Count.php
   - packages/tables/src/Columns/Summarizers/Range.php
   - packages/tables/src/Columns/Summarizers/Sum.php
   - packages/tables/src/Columns/Summarizers/Summarizer.php
   - packages/tables/src/Columns/Summarizers/Values.php
+  - packages/tables/src/Concerns/CanSummarizeRecords.php
   - packages/tables/src/Query/SummaryQuery.php
   - packages/tables/src/Table/Concerns/CanSummarizeRecords.php
+  - packages/tables/templates/components/Summary/
+  - packages/tables/templates/components/SummaryRow/
   - packages/tables/templates/partials/Summarizer/
 ---
 # Summarizers (tables)
 
-The figures under a table: one row for the page on screen, one for the whole filtered set, and one under each group.
-The tier is [`Sylament\Tables\Columns\Summarizers\Summarizer`](../../../packages/tables/src/Columns/Summarizers/Summarizer.php) plus the five concrete classes ([`Sum`](../../../packages/tables/src/Columns/Summarizers/Sum.php), [`Average`](../../../packages/tables/src/Columns/Summarizers/Average.php), [`Count`](../../../packages/tables/src/Columns/Summarizers/Count.php), [`Range`](../../../packages/tables/src/Columns/Summarizers/Range.php), [`Values`](../../../packages/tables/src/Columns/Summarizers/Values.php)), the six concerns and one contract folded in with them, and everything that feeds them: [`Columns\Concerns\CanBeSummarized`](../../../packages/tables/src/Columns/Concerns/CanBeSummarized.php) on the column, [`Table\Concerns\CanSummarizeRecords`](../../../packages/tables/src/Table/Concerns/CanSummarizeRecords.php) on the table, [`Concerns\CanSummarizeRecords`](../../../packages/tables/src/Concerns/CanSummarizeRecords.php) on the host, [`Query\SummaryQuery`](../../../packages/tables/src/Query/SummaryQuery.php) as the read primitive, the [`Summary`](../../../packages/tables/templates/components/Summary/index.html.twig) and [`SummaryRow`](../../../packages/tables/templates/components/SummaryRow/index.html.twig) components with the three [`partials/Summarizer/`](../../../packages/tables/templates/partials/Summarizer) bodies under them, and [`summary.css`](../../../packages/tables/assets/src/styles/components/summary.css).
-
+A table's summary band holds one row for the page on screen and one for the whole filtered set, and each group closes with a row of its own.
+The tier is [`Summarizer`](../../../packages/tables/src/Columns/Summarizers/Summarizer.php) and its five concrete classes, fed by [`Columns\Concerns\CanBeSummarized`](../../../packages/tables/src/Columns/Concerns/CanBeSummarized.php) on the column, [`Table\Concerns\CanSummarizeRecords`](../../../packages/tables/src/Table/Concerns/CanSummarizeRecords.php) on the table, [`Concerns\CanSummarizeRecords`](../../../packages/tables/src/Concerns/CanSummarizeRecords.php) on the host and [`Query\SummaryQuery`](../../../packages/tables/src/Query/SummaryQuery.php) as the read primitive, and rendered by the [`Summary`](../../../packages/tables/templates/components/Summary/index.html.twig) and [`SummaryRow`](../../../packages/tables/templates/components/SummaryRow/index.html.twig) components.
 Grouping — which record starts a group, which one ends it, and the collapse the band renders under — is [`grouping.md`](grouping.md).
-This file is the figures.
 
 ## Surface
 
-Every point of the tier, from the summarizer up to the band.
-
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
-| [`Summarizer::make()` / `id()` / `getId()` / `using()`](../../../packages/tables/src/Columns/Summarizers/Summarizer.php) | [`Summarizers\Summarizer`](../../../vendor/filament/tables/src/Columns/Summarizers/Summarizer.php) | done | — | the class is concrete, as vendor's is — `Summarizer::make()->using(…)` is documented API — and a `using()` closure answers [ahead of both refusals its own message names](#summarizing-an-aggregate-column-is-refused-where-filament-produces-a-wrong-number) |
+| [`Summarizer::make()` / `id()` / `getId()` / `using()`](../../../packages/tables/src/Columns/Summarizers/Summarizer.php) | [`Summarizers\Summarizer`](../../../vendor/filament/tables/src/Columns/Summarizers/Summarizer.php) | done | — | [diverges](#summarizing-an-aggregate-column-is-refused-where-filament-produces-a-wrong-number) |
 | [`getState()` / `getSelectedState()` / `hasSelectedState()` / `selectedState()`](../../../packages/tables/src/Columns/Summarizers/Summarizer.php) | [`Summarizers\Summarizer`](../../../vendor/filament/tables/src/Columns/Summarizers/Summarizer.php) | done | — | [semantics](#the-batch-short-circuit-asks-whether-the-alias-was-there-not-whether-the-value-is-filled) |
 | [`summarize()` / `getSelectStatements()`](../../../packages/tables/src/Columns/Summarizers/Summarizer.php) | [`Summarizers\Summarizer`](../../../vendor/filament/tables/src/Columns/Summarizers/Summarizer.php) | done | — | [semantics](#emitting-no-select-statement-is-how-a-summarizer-opts-out-of-the-batch) |
 | [`getExtraTemplateData()` — the formatted state, read once](../../../packages/tables/src/Columns/Summarizers/Summarizer.php) | [`Summarizer::toEmbeddedHtml()`](../../../vendor/filament/tables/src/Columns/Summarizers/Summarizer.php)'s local | done | — | [semantics](#the-list-summary-formats-per-entry-where-the-range-formats-its-pair-whole) |
 | [`Sum`](../../../packages/tables/src/Columns/Summarizers/Sum.php) / [`Average`](../../../packages/tables/src/Columns/Summarizers/Average.php) | [`Sum`](../../../vendor/filament/tables/src/Columns/Summarizers/Sum.php), [`Average`](../../../vendor/filament/tables/src/Columns/Summarizers/Average.php) | done | — | [semantics](#every-numeric-figure-is-normalised-once-at-the-summarizer-boundary) |
 | [`Count`](../../../packages/tables/src/Columns/Summarizers/Count.php) | [`Count`](../../../vendor/filament/tables/src/Columns/Summarizers/Count.php) | in progress | — | [detail](#counticons-ships-as-api-and-refuses-to-summarize) · [diverges](#count-counts-the-column-on-both-paths-where-vendors-single-query-counts-rows) |
-| [`Range` — `summarize()`, `excludeNull()`, `minimalDateTimeDifference()`, `minimalTextualDifference()`](../../../packages/tables/src/Columns/Summarizers/Range.php) | [`Range`](../../../vendor/filament/tables/src/Columns/Summarizers/Range.php) | done | — | [semantics](#the-list-summary-formats-per-entry-where-the-range-formats-its-pair-whole) · [has-default-data-formatting-settings.md](../support/has-default-data-formatting-settings.md) |
+| [`Range` — `summarize()`, `excludeNull()` / `shouldExcludeNull()`, `minimalDateTimeDifference()`, `minimalTextualDifference()`](../../../packages/tables/src/Columns/Summarizers/Range.php) | [`Range`](../../../vendor/filament/tables/src/Columns/Summarizers/Range.php) | done | — | [semantics](#the-list-summary-formats-per-entry-where-the-range-formats-its-pair-whole) · [has-default-data-formatting-settings.md](../support/has-default-data-formatting-settings.md) |
 | [`Values` — `summarize()`, `bulleted()` / `isBulleted()`](../../../packages/tables/src/Columns/Summarizers/Values.php) | [`Values`](../../../vendor/filament/tables/src/Columns/Summarizers/Values.php) | done | — | [semantics](#a-list-summary-shows-the-drivers-own-values) |
 | [`Concerns\BelongsToColumn` — `column()` / `getColumn()` / `getTable()` / `getLiveComponent()`](../../../packages/tables/src/Columns/Summarizers/Concerns/BelongsToColumn.php) | [`Summarizers\Concerns\BelongsToColumn`](../../../vendor/filament/tables/src/Columns/Summarizers/Concerns/BelongsToColumn.php) | done | — | — |
 | [`Concerns\CanBeHidden` — `hidden()` / `visible()` / `hiddenOn()` / `visibleOn()` / `isHidden()` / `isVisible()`](../../../packages/tables/src/Columns/Summarizers/Concerns/CanBeHidden.php) | [`Summarizers\Concerns\CanBeHidden`](../../../vendor/filament/tables/src/Columns/Summarizers/Concerns/CanBeHidden.php) | done | — | [semantics](#the-visibility-cache-is-keyed-by-the-query-with-a-doctrine-key) |
 | [`Concerns\CanFormatState` — `formatStateUsing()`, `limit()`, `prefix()` / `suffix()`, `placeholder()`, `money()`, `numeric()`, `html()`, `markdown()`, `formatState()` and their getters](../../../packages/tables/src/Columns/Summarizers/Concerns/CanFormatState.php) | [`Summarizers\Concerns\CanFormatState`](../../../vendor/filament/tables/src/Columns/Summarizers/Concerns/CanFormatState.php) | done | — | [diverges](#the-formatting-trait-is-a-copy-of-the-columns-and-the-hoist-is-owed) · [text-column.md](text-column.md#markdown-throws-for-the-package-it-suggests-rather-than-falling-through) |
 | [`Concerns\HasLabel` — `label()` / `getLabel()` / `getDefaultLabel()` / `hiddenLabel()` / `isLabelHidden()`](../../../packages/tables/src/Columns/Summarizers/Concerns/HasLabel.php) | [`Summarizers\Concerns\HasLabel`](../../../vendor/filament/tables/src/Columns/Summarizers/Concerns/HasLabel.php) | done | — | [diverges](#hiddenlabel-is-honoured-in-all-three-markups-where-vendor-honours-it-in-one) |
-| `translateLabel()` | [`Summarizers\Concerns\HasLabel`](../../../vendor/filament/tables/src/Columns/Summarizers/Concerns/HasLabel.php) | skipped | — | It runs the label through Laravel's translator; i18n is parked whole for the toolkit, so there is nothing behind the flag to switch on ([renames.md](../renames.md#renames)) |
+| `translateLabel()` | [`Summarizers\Concerns\HasLabel`](../../../vendor/filament/tables/src/Columns/Summarizers/Concerns/HasLabel.php) | skipped | — | [renames.md](../renames.md#renames) · [translations.md](../translations.md#idiom) |
 | [`Concerns\InteractsWithTableQuery` — `query()` / `getQuery()` / `hasQueryModification()`](../../../packages/tables/src/Columns/Summarizers/Concerns/InteractsWithTableQuery.php) | [`Summarizers\Concerns\InteractsWithTableQuery`](../../../vendor/filament/tables/src/Columns/Summarizers/Concerns/InteractsWithTableQuery.php) | done | — | [semantics](#one-query-setter-carries-two-slots-told-apart-by-type) |
-| [`Concerns\HasSelectAlias` + `Contracts\HasSelectAlias` — `selectAlias()` / `getSelectAlias()` / `getSelectedState()` / `hasSelectedState()`](../../../packages/tables/src/Columns/Summarizers/Concerns/HasSelectAlias.php) | the same trio copied into [`Sum`](../../../vendor/filament/tables/src/Columns/Summarizers/Sum.php), [`Average`](../../../vendor/filament/tables/src/Columns/Summarizers/Average.php) and [`Count`](../../../vendor/filament/tables/src/Columns/Summarizers/Count.php) | done | — | [diverges](#the-alias-trio-is-one-trait-behind-a-marker-interface-where-filament-copies-it-three-times) |
+| [`Concerns\HasSelectAlias`](../../../packages/tables/src/Columns/Summarizers/Concerns/HasSelectAlias.php) + [`Contracts\HasSelectAlias`](../../../packages/tables/src/Columns/Summarizers/Contracts/HasSelectAlias.php) | the alias trio in [`Sum`](../../../vendor/filament/tables/src/Columns/Summarizers/Sum.php), [`Average`](../../../vendor/filament/tables/src/Columns/Summarizers/Average.php) and [`Count`](../../../vendor/filament/tables/src/Columns/Summarizers/Count.php) | done | — | [diverges](#the-alias-trio-is-one-trait-behind-a-marker-interface-where-filament-copies-it-three-times) |
 | [`Column::summarize()` / `getSummarizer()` / `getSummarizers()` / `hasSummary()`](../../../packages/tables/src/Columns/Concerns/CanBeSummarized.php) | [`Columns\Concerns\CanBeSummarized`](../../../vendor/filament/tables/src/Columns/Concerns/CanBeSummarized.php) | done | — | [semantics](#getsummarizers-re-points-every-summarizer-and-that-mutation-is-the-mechanism) · [diverges](#summarizing-an-aggregate-column-is-refused-where-filament-produces-a-wrong-number) |
 | [`Table::summaries()` / `hasPageSummary()` / `hasAllTableSummary()` / `hasSummary()`](../../../packages/tables/src/Table/Concerns/CanSummarizeRecords.php) | [`Table\Concerns\CanSummarizeRecords`](../../../vendor/filament/tables/src/Table/Concerns/CanSummarizeRecords.php) | done | — | [semantics](#hassummary-walks-every-column-while-the-batch-walks-the-visible-ones) |
-| [`getAllTableSummaryQuery()` / `getPageTableSummaryQuery()`](../../../packages/tables/src/Concerns/CanSummarizeRecords.php) | [`Concerns\CanSummarizeRecords`](../../../vendor/filament/tables/src/Concerns/CanSummarizeRecords.php) | done | — | [semantics](#a-page-summary-narrows-by-keys-never-by-a-limit) · [interacts-with-table.md](interacts-with-table.md#the-contract-is-thirty-five-methods-of-filaments-forty-six) |
+| [`getAllTableSummaryQuery()` / `getPageTableSummaryQuery()`](../../../packages/tables/src/Concerns/CanSummarizeRecords.php) | [`Concerns\CanSummarizeRecords`](../../../vendor/filament/tables/src/Concerns/CanSummarizeRecords.php) | done | — | [semantics](#a-page-summary-narrows-by-keys-never-by-a-limit) · [interacts-with-table.md](interacts-with-table.md#a-member-is-on-the-contract-when-something-outside-the-host-trait-calls-it) |
 | [`getGroupedTableSummaryQuery()`](../../../packages/tables/src/Concerns/CanSummarizeRecords.php) | — (Sylament-only; Filament batches one `GROUP BY` instead) | done | — | [diverges](#the-per-group-figure-is-one-scoped-query-per-group-not-one-group-by) · [translations.md](../translations.md#names-with-no-filament-source) |
 | [`getTableSummarySelectedState()` — the one batched SELECT](../../../packages/tables/src/Concerns/CanSummarizeRecords.php) | [`Concerns\CanSummarizeRecords::getTableSummarySelectedState()`](../../../vendor/filament/tables/src/Concerns/CanSummarizeRecords.php) | done | — | [semantics](#the-alias-is-pushed-before-the-statements-are-read-and-the-ordinal-is-one-per-declared-summarizer) · [diverges](#the-batch-keeps-a-to-one-relation-column-and-refuses-a-to-many-one) |
-| `getTableSummarySelectedState()`'s `$modifyQueryUsing` parameter | [`Concerns\CanSummarizeRecords`](../../../vendor/filament/tables/src/Concerns/CanSummarizeRecords.php) | skipped | — | [diverges](#the-per-group-figure-is-one-scoped-query-per-group-not-one-group-by) — its only caller upstream is the grouped `GROUP BY` batch the per-group query replaces |
+| `getTableSummarySelectedState()`'s `$modifyQueryUsing` parameter | [`Concerns\CanSummarizeRecords`](../../../vendor/filament/tables/src/Concerns/CanSummarizeRecords.php) | skipped | — | [diverges](#the-per-group-figure-is-one-scoped-query-per-group-not-one-group-by) |
 | [`shouldRenderTrailingGroupedTableSummary()`](../../../packages/tables/src/Concerns/CanSummarizeRecords.php) | [`Concerns\CanSummarizeRecords`](../../../vendor/filament/tables/src/Concerns/CanSummarizeRecords.php) | done | — | [semantics](#the-trailing-group-is-followed-past-the-page-break-with-a-record-not-a-scalar) · [grouping.md](grouping.md#the-group-boundaries-are-one-php-map-rather-than-loop-carried-template-state) |
 | [`Query\SummaryQuery::readRow()` / `readDistinct()` / `qualifyAttribute()`](../../../packages/tables/src/Query/SummaryQuery.php) | [the `->select()` / `->get()` calls inside](../../../vendor/filament/tables/src/Columns/Summarizers/Summarizer.php) each summarizer | done | — | [semantics](#every-summary-read-is-one-clone-with-the-order-reset-and-the-paging-cleared) · [diverges](#a-to-many-join-on-the-summarized-query-is-refused-where-filament-inflates-in-silence) · [translations.md](../translations.md#namespaces-with-no-filament-source) |
-| [`Summary` — the band's header row and the two rows under it](../../../packages/tables/templates/components/Summary/index.html.twig) | [`views/components/summary/index.blade.php`](../../../vendor/filament/tables/resources/views/components/summary/index.blade.php) | done | — | [diverges](#the-band-is-handed-the-real-all-table-query-even-when-the-all-table-row-is-off) · [semantics](#the-placeholder-cells-follow-the-record-rows-order-not-vendors) |
+| [`Summary` — the band's header row and the two rows under it](../../../packages/tables/templates/components/Summary/index.html.twig) | [`views/components/summary/index.blade.php`](../../../vendor/filament/tables/resources/views/components/summary/index.blade.php) | done | — | [diverges](#the-band-is-handed-the-real-all-table-query-even-when-the-all-table-row-is-off) · [semantics](#the-placeholder-cells-follow-the-record-rows-order-not-vendors) · [diverges](#the-table-partial-drops-the-grouped-column-before-it-calls-summary) |
 | [`SummaryRow` — one row: a band row or a group boundary's](../../../packages/tables/templates/components/SummaryRow/index.html.twig) | [`views/components/summary/row.blade.php`](../../../vendor/filament/tables/resources/views/components/summary/row.blade.php) | done | — | [diverges](#every-summary-cell-carries-its-columns-responsive-pair-where-vendors-carries-none) · [semantics](#the-heading-cell-spans-to-the-first-summarized-column-and-drops-a-summarizer-on-the-first-one) |
-| [The three summarizer bodies — `index`, `range`, `values`](../../../packages/tables/templates/partials/Summarizer) + [`summary.css`](../../../packages/tables/assets/src/styles/components/summary.css) | [`Summarizer::toEmbeddedHtml()`](../../../vendor/filament/tables/src/Columns/Summarizers/Summarizer.php) and its two overrides, [`columns/summaries/`](../../../vendor/filament/tables/resources/css/columns) | done | — | [diverges](#hiddenlabel-is-honoured-in-all-three-markups-where-vendor-honours-it-in-one) |
+| [The three summarizer bodies — `index`, `range`, `values`](../../../packages/tables/templates/partials/Summarizer) + [`summary.css`](../../../packages/tables/assets/src/styles/components/summary.css) | [`Summarizer::toEmbeddedHtml()`](../../../vendor/filament/tables/src/Columns/Summarizers/Summarizer.php) and its two overrides, [`columns/summaries/`](../../../vendor/filament/tables/resources/css/columns/summaries) | done | — | [diverges](#hiddenlabel-is-honoured-in-all-three-markups-where-vendor-honours-it-in-one) |
 | [The band's placement — inside `<tbody>`, after the record loop, gated on the summary and on the mode](../../../packages/tables/templates/partials/Table/index.html.twig) | [`index.blade.php`'s `<x-filament-tables::summary>`](../../../vendor/filament/tables/resources/views/index.blade.php) | done | — | [semantics](#the-page-row-is-what-the-query-proves-not-what-the-paginator-claims) · [semantics](#a-group-with-no-heading-closes-with-no-summary-row-except-under-groupsonly) · [diverges](#every-row-of-the-band-carries-a-host-scoped-id) |
 | `Count::icons()`'s per-icon counts, its template and its colour policy | [`Count::summarize()`](../../../vendor/filament/tables/src/Columns/Summarizers/Count.php)'s icon arm | todo | — | [detail](#counticons-ships-as-api-and-refuses-to-summarize) |
-| A summary over a `records()` table | [`Summarizer::getState()`](../../../vendor/filament/tables/src/Columns/Summarizers/Summarizer.php) (which fatals there) | todo | — | [diverges](#the-records-lane-is-refused-loudly-where-filaments-fatals-deep-in-summarize) |
-| The batched `GROUP BY` for per-group figures | [`index.blade.php`'s grouped summary batch](../../../vendor/filament/tables/resources/views/index.blade.php) | todo | — | [diverges](#the-per-group-figure-is-one-scoped-query-per-group-not-one-group-by) |
-| The summary rows' stacked-on-mobile variants | [`columns/summaries/`](../../../vendor/filament/tables/resources/css/columns) | blocked | the layout columns (`Columns\Layout`) | They are the responsive half of the card rendering, with nothing to stack until `content()` has a list ([table.md](table.md#surface)) |
+| A summary over a `records()` table | [`Summarizer::getState()`](../../../vendor/filament/tables/src/Columns/Summarizers/Summarizer.php) (which fatals there) | skipped | — | [diverges](#the-records-lane-is-refused-loudly-where-filaments-fatals-deep-in-summarize) |
+| The batched `GROUP BY` for per-group figures | [`index.blade.php`'s grouped summary batch](../../../vendor/filament/tables/resources/views/index.blade.php) | skipped | — | [diverges](#the-per-group-figure-is-one-scoped-query-per-group-not-one-group-by) |
+| The summary rows' stacked-on-mobile variants | [`columns/summaries/`](../../../vendor/filament/tables/resources/css/columns/summaries) | blocked | the layout columns (`Columns\Layout`) | [color-column.md](color-column.md#the-stacked-on-mobile-rule-has-nothing-to-select) · [table.md](table.md#the-card-layout-settings-wait-on-the-layout-columns) |
 
 ## Details
 
@@ -77,8 +89,8 @@ Every point of the tier, from the summarizer up to the band.
 What an icon count *does* is not built: vendor runs one `COUNT` per distinct icon an [`IconColumn`](icon-column.md) would render, renders them through an `icon-count` view with a colour policy of its own, and pays `1 + N` queries for it.
 `summarize()` therefore throws a `LogicException` naming `IconColumn` and `Summarizer::using()`, and `getSelectStatements()` returns `[]` so the batch skips it rather than aliasing a figure nothing will read.
 
-The column is not what holds it back: `IconColumn` and its contrast policy ship.
-What is left is scope — the template, a second policy under `Colors/Components/` and the per-icon query fan-out are a feature rather than a translation, and no consumer has asked for one.
+The column is not what holds it back: [`IconColumn`](icon-column.md) and its colour policy ship.
+What is missing is the `icon-count` template, a second colour policy under `Colors/Components/` for it, and the per-icon query fan-out.
 
 ## Semantics
 
@@ -154,23 +166,9 @@ The all-table row still reads its figure there — off `getAllTableSummaryQuery(
 A search narrowing five rows to three moves both figures.
 
 The bind has that shape even for a **single-identifier** table: the DQL text is the plain `IN`, but the keys are converted to the identifier's own PHP type and bound under an `ArrayParameterType`, so anyone reading the parameter back sees `[3, 4]`, not `['3', '4']`.
-The [aggregate batch](has-query.md#an-aggregate-is-a-batched-side-query-and-a-hidden-subselect-never-a-select-on-the-page-query) stands on that same footing under its own base, `sylament_agg_keys`, and is chunked besides, which makes it the third site in the toolkit that chunks and the only one that is not part of a **write**; the by-key delete and the reorder's re-resolution are the other two.
-
-Doctrine's **fetch-join** paginator pages such a root through a **single identifier column** and leaks the fact two different ways: a scalar-pair root reaches `RootTypeWalker`'s `getSingleIdentifierFieldName()` and surfaces a raw `MappingException` mid-render, while a derived identity fails earlier still, inside `LimitSubqueryOutputWalker`, which re-emits the identifier tiebreak's `ORDER BY root.<association>` as a column its own derived table does not carry and ends the render in a driver error instead — on every platform outside that walker's `ROW_NUMBER` branch, which is SQLite here and MySQL and MariaDB in production.
-(The scalar-pair half is platform-independent; only the derived identity's carries that qualifier.)
-So this look-ahead and [`paginateTableQuery()`](host-can-paginate-records.md#a-paginated-query-lane-table-pages-through-doctrines-tools-paginator-and-only-a-collection-join-switches-it-to-identifiers-first) read their window through **one** private method on `CanPaginateRecords`, and that method routes a keyed root whose query joins a collection into [a two-step read tables runs itself](host-can-paginate-records.md#a-keyed-root-that-joins-a-collection-pages-in-two-statements-because-doctrines-walkers-key-by-one-column) while every other table keeps Doctrine's paginator byte for byte.
-Writing the decision once is what the look-ahead earns: a page is built before its successor is probed, over the same query, and the page's joins are always a superset of the probe's, so two copies of the test would be free to disagree about the same builder.
-The window of one is taken on a **clone**, because that read windows the builder it is handed.
-
-"Byte for byte" is the page's claim, not this probe's: over a query that joins **no** collection the look-ahead is Doctrine's paginator with `fetchJoinCollection` false rather than a plain `getResult()` — the same single statement with the same binds on a single-identifier root, but through a paginator.
-
-An **unpaged** table never reaches any of it: `paginated(false)` and a `recordsPerPage` of `'all'` both return before a Doctrine paginator is built — `'all'` does build support's own carrier over the rows it read.
-
-One caveat that reads worse than it is: the page query narrows by every key the page holds, and under `recordsPerPage: 'all'` that would be every key on the table, against a DQL parse time superlinear in key count — see [the chunk rule](../schemas/record-key-contract.md#the-chunk-rule).
-Nothing reaches it.
-`hasPages()` is false whenever one page holds the whole filtered set — under `'all'`, and on any single-page table — the partial asks for the page query only when it is true, and the method itself answers the **un-narrowed** filtered query in exactly that shape.
-One page means the page *is* the filtered set, so the predicate only ever reproduced what it started from, at a cost of one bound parameter per key per identifier field.
-The guard sits **below** the empty-page guard and not above it, and the ordering is the whole of it: an empty table reports one page too, and it owes `null` rather than a figure over everything.
+Where the paginator reports one page — under `recordsPerPage: 'all'`, and on any single-page table — the method answers the **un-narrowed** filtered query, because the page *is* the filtered set there.
+Narrowing it would only reproduce that set, at the cost of one bound parameter per key per identifier field against a DQL parse time superlinear in key count ([the chunk rule](../schemas/record-key-contract.md#the-chunk-rule)).
+The guard sits **below** the empty-page guard and not above it: an empty table reports one page too, and it owes `null` rather than a figure over everything.
 
 ### The page row is what the query proves, not what the paginator claims
 
@@ -238,12 +236,12 @@ The port gates the same way, and for the same reason: the heading a per-group ro
 The one arm that is the port's own is `groupsOnly()`.
 There the per-group row **is** the group — it carries the title in place of a header row that is not rendered at all — so it is emitted whether or not the title is filled, and the blank group keeps its row.
 Gating it there would take a whole group off the page rather than take a heading off a figure.
-Vendor's groups-only branch is a different rendering (a distinct-key group query, [still a row here](#surface)), so this is a new arm rather than a delta against one of theirs.
+Vendor's groups-only branch renders its rows off the grouped `GROUP BY` batch the port [does not run](#the-per-group-figure-is-one-scoped-query-per-group-not-one-group-by), so this is a new arm rather than a delta against one of theirs.
 
 ### The placeholder cells follow the record row's order, not vendor's
 
 A summary row emits its leading and trailing placeholder cells in the **record row's** order — `actionsBeforeCells`, `checkboxLeading`, `actionsBeforeColumns`, then the columns, then `actionsAfterColumns`, `checkboxTrailing`, `actionsAfterCells`.
-Vendor emits *actions then checkbox* on both sides, which lands one column off under `BeforeColumns` + `BeforeCells` and under `AfterCells` + `AfterCells`.
+Vendor emits *actions then checkbox* on both sides, which lands one column off with the actions `BeforeColumns` and the checkbox `BeforeCells`, and with both `AfterCells`.
 The eight combinations of the two action positions and the two checkbox positions are asserted cell-for-cell against the `thead`.
 
 The six booleans replace vendor's two position enums for the same reason the record row's own gates are booleans: the partial has already resolved which cells exist, and passing the resolved answer keeps one arithmetic in one place.
@@ -265,7 +263,7 @@ The port runs `getGroupedTableSummaryQuery($record)` per group instead — a fre
 
 The batch was measured and refused on three counts, not on taste: the SQL group key would have to string-equal `Group::getStringKey()` for five different kinds of group and does not, a `date()` group needs the `DATE()` DQL has not got, and a relationship group needs join-splicing the batch has no place for.
 The per-group query has none of those problems and honours `scopeQueryUsing()` on the same path the [group header](grouping.md) resolved its own key with, so the figure and the heading over it cannot disagree.
-The batched shape returns if a consuming application ever configures a `DATE()` DQL function; `$modifyQueryUsing` disappears with the batch, since that was its only caller.
+The batched shape returns if a consuming application configures a `DATE()` DQL function; `getTableSummarySelectedState()`'s `$modifyQueryUsing` parameter is skipped with it, because the batch is its only caller upstream.
 
 ### A to-many join on the summarized query is refused where Filament inflates in silence
 
@@ -287,7 +285,7 @@ So the alternative to refusing is a page row that is right sitting beside an all
 A `records()` table's rows were never queried, so there is no dataset to aggregate.
 Filament's summarizer reaches a `TypeError` several frames down; `getState()` throws a `LogicException` here that names the lane, the column and the two ways out (`query()` / `relationship()`, or dropping the summarizer).
 
-A PHP fold over the loaded rows is the obvious follow-up and is not built: it doubles the tier — every summarizer would need a second implementation — and it cannot honour `query(Closure)` or `using()`, both of which are defined in terms of a query builder.
+A PHP fold over the loaded rows is not built: it doubles the tier — every summarizer would need a second implementation — and it cannot honour `query(Closure)` or `using()`, both of which are defined in terms of a query builder.
 
 ### `Count` counts the column on both paths where vendor's single query counts rows
 
@@ -318,27 +316,25 @@ The bundle's component glob leaves `Contracts/` unregistered.
 `Summarizers\Concerns\CanFormatState` ports vendor's whole member set — `formatStateUsing`, `limit`, `money`, `numeric`, `placeholder`, `markdown`, `prefix`, `suffix`, `html`, `formatState`, and the getters — by **copying** the [column trait's](text-column.md) bodies wherever the two share a member, which is Filament's own shape: it files four copies of this trait (tables, infolists, summarizers, exports) and none of them in support.
 So `money()` and `numeric()` format through `NumberFormatter` here exactly as a column's do, `html()` sanitizes through the app's own `HtmlSanitizerInterface` arriving by `#[Required]` setter, and `markdown()` [throws for `league/commonmark` rather than falling through](text-column.md#markdown-throws-for-the-package-it-suggests-rather-than-falling-through).
 
-**What the copy actually shares**, since the debt below is only worth stating precisely: `money()`, `numeric()`, `html()`, `markdown()`, the CommonMark pair, `prefix()`/`suffix()`, `limit()` and the private helpers `sanitizeState()`, `affixState()`, `escape()`, `formatterResult()` and `resolveNumberLocale()` are the column trait's bodies with two edits — the closure receiver retyped (`TextColumn $column` → `Summarizer $summarizer`, every call site inside `money()` and `numeric()` renamed with it), and four `LogicException` messages resubjected from the column and `$this->getName()` to the summarizer and `static::class` (`formatState()`'s stringable throw, `formatterResult()`, `sanitizeState()`'s commonmark throw and `getHtmlSanitizer()`'s).
-The two files are 393 lines against 599, and the shared bodies differ in `!` spacing throughout, so a mechanical `diff` of the pair is noisier than the substance is.
+**What the copy shares**, stated precisely because the debt below depends on it: `money()`, `numeric()`, `html()`, `markdown()`, the CommonMark pair, `prefix()`/`suffix()`, `limit()` and the private helpers `sanitizeState()`, `affixState()`, `escape()`, `formatterResult()` and `resolveNumberLocale()` are the column trait's bodies with two edits — the closure receiver retyped (`TextColumn $column` → `Summarizer $summarizer`, every call site inside `money()` and `numeric()` renamed with it), and four `LogicException` messages resubjected from the column and `$this->getName()` to the summarizer and `static::class` (`formatState()`'s stringable throw, `formatterResult()`, `sanitizeState()`'s commonmark throw and `getHtmlSanitizer()`'s).
 
 **Where the two deliberately part**, and where a copy-back in either direction would be a defect:
 
 - `formatState()` is structurally different.
   The column `json_encode`s an array state and returns `null` for a null one; the summarizer returns an array **whole** — vendor's affix and placeholder tail would fatal on a `Range`'s pair, and the pass-through is what makes [the per-entry / whole-pair split](#the-list-summary-formats-per-entry-where-the-range-formats-its-pair-whole) work — throws only for a non-null non-stringable, and ends on a placeholder tail (`mb_trim((string) $affixed) === '' ? placeholder : affixed`) the column trait has not got.
 - `placeholder()` is declared inside this trait and nowhere on the column side.
-  A column's is support's [`Components\Concerns\HasPlaceholder`](../support/README.md#files), composed on the `Column` base and read by the cell; a summarizer's is a `string|Closure|null` prop of the formatter itself, because `formatState()` is the only thing that reads it.
+  A column's is support's [`Components\Concerns\HasPlaceholder`](../support/has-placeholder.md), composed on the `Column` base and read by the cell; a summarizer's is a `string|Closure|null` prop of the formatter itself, because `formatState()` is the only thing that reads it.
 - The date family (`date()` / `dateTime()` / `time()` / `since()` and their four tooltip siblings, `timezone()`, `resolveTimeZone()`, `toDateTimeImmutable()`) and the word family (`words()`, `getWordLimit()` / `getWordLimitEnd()`) are absent, as they are on vendor's summarizer trait — and with no `words()` the word half of `truncateState()` is dropped from the copy rather than left unfed.
 
 One thing differs from vendor inside the copy: `limit()` is the column's **property pair** (`getCharacterLimit()` / `getCharacterLimitEnd()`) rather than vendor's formatter install, which comes with the bodies.
 
-The debt this creates is Sylament's own rather than Filament's: the toolkit now ships **two** copies of these mechanics — the same bodies under two receivers — so a fix to one of the shared members is owed to the other, while the three partings above are meant to stay apart.
-It is recorded on the [`CanFormatState` hoist row](../support/README.md#files) and stays **todo** until a third reader is wanted.
+The debt this creates is Sylament's own rather than Filament's: the toolkit ships **two** copies of these mechanics — the same bodies under two receivers — so a fix to one of the shared members is owed to the other, while the three partings above are meant to stay apart.
 
 ### `hiddenLabel()` is honoured in all three markups where vendor honours it in one
 
 Vendor's `hiddenLabel()` lives on the shared `HasLabel` trait and is read only by the text summarizer's view — a range or a list renders its label whatever the flag says.
 All three bodies here wrap the label in `sy-sr-only` when the flag is set, which is what a shared API implies.
-The class is support's [`.sy-sr-only`](../support/README.md#files), not a tables-tier spelling of the same idea.
+The class is support's [`.sy-sr-only`](../forms/styles.md#most-screen-reader-markup-still-inlines-the-utility-instead-of-the-shared-class), not a tables-tier spelling of the same idea.
 
 ### Every row of the band carries a host-scoped id
 
@@ -367,4 +363,10 @@ A placeholder cell carries `sy-ta-cell` where vendor emits a bare `<td>`, matchi
 And `Summary` / `SummaryRow` are **sibling** components rather than `components/Summary/Row/`, because the architecture test admits only `components/<Name>/index.html.twig` — and a group boundary renders `SummaryRow` alone, so the pair is right either way.
 `getExtraHeaderAttributeBag()` and `canHeaderWrap()` have no counterpart on this port's `Column` and are dropped with vendor's `fi-wrapped` split, which is a no-op upstream.
 
-Both components publish an `extraHeadingColumn` and a `placeholderColumns` prop that no call site sets today: the table layout never needs either, and the content layout that does waits on the layout columns.
+Both components publish an `extraHeadingColumn` and a `placeholderColumns` prop that no call site sets: the table layout never needs either, and the content layout that does waits on the layout columns.
+
+### The table partial drops the grouped column before it calls `Summary`
+
+Under groups-only, Filament's summary component takes a `groupColumn` prop and rejects that column itself.
+The port's `Summary` has no such prop: the table partial filters the grouped column out of `summaryColumns` before it calls the component, so the band and its rows only ever receive the columns they render.
+It is the same shape as the six placeholder booleans: the partial resolves which cells exist and hands the component the answer.

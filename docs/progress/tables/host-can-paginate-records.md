@@ -34,7 +34,7 @@ Anything the mapping cannot classify (an arbitrary-class join, a join off an ali
 
 ### Each mode pays differently for its total, and `'all'` reads the whole query
 
-The [mode](can-paginate-records.md#the-pagination-mode-ships-two-cases-and-two-setters-wait-on-their-features) is read here, where it is consumed, rather than in the setter, because a `Closure` mode has no value at set time.
+The [mode](can-paginate-records.md#cursor-pagination-waits-on-a-keyset-carrier) is read here, where it is consumed, rather than in the setter, because a `Closure` mode has no value at set time.
 `Default` reads `DoctrinePaginator::count()`, a `COUNT` that ignores the first and max results already set, so the carrier carries a true total and a page past the end comes back **empty with that total intact** rather than clamped to the last page, which is what leaves the footer a way back.
 `Simple` runs no count at all: it asks for one record more than the page holds, drops the extra, and reports `hasMoreRecords` from whether it arrived, support's carrier [taking a null total for exactly this](../support/pagination.md#the-simple-footer-keeps-the-overview-and-the-item-list-where-filament-drops-both).
 `Cursor` throws, naming the keyset carrier that would answer it.

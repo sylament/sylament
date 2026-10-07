@@ -18,7 +18,7 @@ owns:
 
 [`Sylament\Tables\Concerns\HasColumns`](../../../packages/tables/src/Concerns/HasColumns.php) is the **host**-tier column concern [`HasTable`](has-table.md) composes: the live actions a cell's own controls fire back into.
 It is not [`Sylament\Tables\Table\Concerns\HasColumns`](../../../packages/tables/src/Table/Concerns/HasColumns.php), the **table**-tier trait of the same name that owns `columns()` / `getColumns()` / `getColumn()` and folds into [`table.md`](table.md); Filament ships both names in both tiers and the port keeps them, so read the import, never the bare `use`.
-`updateTableColumnState()` writes one editable cell's value onto a record, where the `…TableColumnState` family on [`Concerns\HasColumnManager`](column-manager.md) means the column manager's visibility-and-order bag; both vocabularies are Filament's own and both flatten into the same host class ([why they were kept](host-has-column-manager.md#two-tablecolumnstate-vocabularies-meet-on-one-host-and-both-are-filaments)).
+`updateTableColumnState()` writes one editable cell's value onto a record, where the `…TableColumnState` family on [`Concerns\HasColumnManager`](column-manager.md) means the column manager's visibility-and-order bag; both vocabularies are Filament's own and both flatten into the same host class ([why they were kept](column-manager.md#two-tablecolumnstate-vocabularies-meet-on-one-host-and-both-are-filaments)).
 `updateTableColumnState()` is the only channel the editable columns ([`ToggleColumn`](toggle-column.md), [`CheckboxColumn`](checkbox-column.md), [`SelectColumn`](select-column.md), [`TextInputColumn`](text-input-column.md)) write through.
 
 ## Surface

@@ -1,11 +1,13 @@
 ---
-description: 'The column tier''s cell state: the record read by dotted path, the per-record cache, the default, the split and the distinct list. (draft)'
+description: The column's cell state — the record read by dotted path, the per-record cache, the default, the split and the distinct list.
 ports:
   - vendor/filament/support/src/Concerns/HasCellState.php
 owns:
   - packages/tables/src/Columns/Concerns/HasCellState.php
 ---
 # HasCellState (tables)
+
+The relationship members of Filament's trait are [column.md](column.md#relationship-traversal-ships-as-a-value-walk-a-side-store-and-one-kept-member)'s row.
 
 ## Surface
 
@@ -14,9 +16,10 @@ owns:
 | [`state()` / `getStateUsing()` / `getState()` — cached per record key](../../../packages/tables/src/Columns/Concerns/HasCellState.php) | [`Support\Concerns\HasCellState`](../../../vendor/filament/support/src/Concerns/HasCellState.php) | done | — | [diverges](#hascellstate-is-relocated-into-the-column-tier) · [diverges](#the-state-cache-keys-off-the-bound-record-key) · [semantics](#state-is-getstateusing-under-another-name) |
 | [`getStateFromRecord()` — object graph or array, by dotted path, fanning out over a collection](../../../packages/tables/src/Columns/Concerns/HasCellState.php) | [`HasCellState::getStateFromRecord()`](../../../vendor/filament/support/src/Concerns/HasCellState.php) | done | — | [diverges](#the-object-read-is-lenient-where-the-accessor-is-strict) · [diverges](#a-to-one-chain-keeps-the-raw-read-where-filaments-relationship-arm-drops-blanks) · [diverges](#the-list-shape-is-metadata-derived-where-filaments-is-cached-off-the-first-row) |
 | [`default()` / `getDefaultState()`](../../../packages/tables/src/Columns/Concerns/HasCellState.php) | [`Support\Concerns\HasCellState`](../../../vendor/filament/support/src/Concerns/HasCellState.php) | done | — | [semantics](#the-default-and-the-split-run-inside-the-per-record-cache-in-that-order) |
-| [`separator()` — split a string into a list](../../../packages/tables/src/Columns/Concerns/HasCellState.php) | [`Support\Concerns\HasCellState`](../../../vendor/filament/support/src/Concerns/HasCellState.php) | done | — | [semantics](#the-default-and-the-split-run-inside-the-per-record-cache-in-that-order) |
+| [`separator()` / `getSeparator()` — split a string into a list](../../../packages/tables/src/Columns/Concerns/HasCellState.php) | [`Support\Concerns\HasCellState`](../../../vendor/filament/support/src/Concerns/HasCellState.php) | done | — | [semantics](#the-default-and-the-split-run-inside-the-per-record-cache-in-that-order) |
 | [`distinctList()` / `isDistinctList()`](../../../packages/tables/src/Columns/Concerns/HasCellState.php) | [`Support\Concerns\HasCellState`](../../../vendor/filament/support/src/Concerns/HasCellState.php) | done | — | [semantics](#distinctlist-dedupes-entity-values-by-value-not-by-identity) |
 | [`clearCachedState()`](../../../packages/tables/src/Columns/Concerns/HasCellState.php) | [`Support\Concerns\HasCellState`](../../../vendor/filament/support/src/Concerns/HasCellState.php) | done | — | [diverges](#the-state-cache-keys-off-the-bound-record-key) |
+| `getGetStateUsingCallback()` | [`Support\Concerns\HasCellState`](../../../vendor/filament/support/src/Concerns/HasCellState.php) | skipped | — | [diverges](#the-raw-state-callback-has-no-getter-because-validation-reads-the-input-directly) |
 
 ## Semantics
 
@@ -32,7 +35,6 @@ Once either is set, `getStateFromRecord()` is not called at all, so the column n
 ### The default and the split run inside the per-record cache, in that order
 
 `getState()` caches one value per record key, and both `separator()` and `default()` run **inside** that cache rather than around it — so a `default()` closure is evaluated once per record, not once per read, and a template asking for the state three times gets one evaluation.
-`ColumnTest`'s `'caches the defaulted state per record key'` case counts the calls, which is what a refactor moving either step outside `resolveState()` would break.
 
 The order is Filament's and it matters both ways.
 The split runs first, so a string state becomes a list before the blank test sees it — which is how a column whose whole value is `''` or `'   '` reaches `default()` at all: `explode()` yields one blank part, that single-blank case collapses to `[]`, and `[]` is blank.
@@ -45,7 +47,7 @@ And the blank test is [`blank()`](../support/helpers.md), not falsiness: a state
 
 The single-blank collapse spells `mb_trim($parts[0]) === ''` rather than calling `blank()` on it, and that is a static-analysis constraint rather than a preference: `blank()` carries `@phpstan-assert-if-false !null $value`, so against an argument PHPStan already knows is a `string` the true branch is unreachable and the call is reported `function.impossibleType` at level max.
 `explode()` returns `list<string>`, which is exactly that case.
-Four other `src/` sites reach for the same spelling for the same reason; widening the assertion is support's to do, and until it happens a statically-known string cannot be passed to `blank()` anywhere in the toolkit.
+Other `src/` sites use the same spelling for the same reason; widening the assertion is support's to do, and while it stands a statically-known string cannot be passed to `blank()` anywhere in the toolkit.
 
 ### `distinctList()` dedupes entity values by value, not by identity
 
@@ -53,11 +55,17 @@ Four other `src/` sites reach for the same spelling for the same reason; widenin
 For the ordinary case — a list of strings pulled off a collection — that is exactly what it reads as.
 For a path that ends **at** an association, where the values are entities rather than scalars, `==` on two objects of the same class compares their properties one by one, so two distinct rows that happen to carry equal field values collapse into one entry while `===` would have kept both.
 
-It is Filament's behaviour too, reached by the same kind of comparison: `Collection::unique()` defaults to `$strict = false` and tests membership with `in_array($value, $exists, false)`, which is `==` again.
+It is Filament's behaviour too, by the very same call: `Collection::unique()` with no key and its default `$strict = false` is `array_unique($this->items, SORT_REGULAR)`.
 So neither codebase dedupes by identity here, and the note exists because the code says `SORT_REGULAR` — a flag that reads like "the default, nothing to see" and is in fact the whole semantics.
 `SORT_STRING` (PHP's actual default for `array_unique()`) would be worse, not stricter: it would stringify the entities first and throw on any that are not `Stringable`.
 
 ## Divergences
+
+### The raw state callback has no getter, because validation reads the input directly
+
+Filament's one reader of `getGetStateUsingCallback()` is `Columns\Concerns\CanBeValidated::validate()`, which swaps the column's state for the input while the validator runs and restores the callback afterwards.
+The port's [`CanBeValidated::validate()`](../../../packages/tables/src/Columns/Concerns/CanBeValidated.php) hands the input straight to the validator without that swap, so nothing would read the getter and it is not ported.
+A consumer that needs the raw callback would reverse this.
 
 ### `HasCellState` is relocated into the column tier
 
@@ -70,13 +78,9 @@ The state read goes through schemas' [`PropertyAccessor`](../schemas/property-ac
 The alternatives were both worse: pushing `PropertyAccessor` down into support would drag `symfony/property-info` and `symfony/type-info` into the base package for one consumer, and a support-hosted trait calling an abstract hook the column implements would spread one read across two packages to preserve a directory.
 
 This is provisional in exactly one way.
-Filament's placement pays off for its *second* consumer, `Actions\Exports\ExportColumn`, which is unported — the export layer is not ported.
-When it is, the trait moves to the lowest package both consumers reach, which is `schemas` (both `tables` and `actions` require it) and still not `support`, because the accessor it reads through lives in schemas.
-This section then becomes a record of where it used to be; nothing else about it changes.
-
-A second support-hosted trait followed it for the same reason and is recorded in the same [table](../translations.md#namespace-segments): `CanAggregateRelatedModels` → `CanAggregateRelatedRecords`, whose declarations are read by tables' own Doctrine query builder.
-Both would need the ORM in the base package to stay where Filament puts them, both are composed by `ExportColumn` over there, and both move to `schemas` together if it lands.
-That one is [also renamed](../renames.md#renames), which this one is not.
+Filament's placement pays off for its *second* consumer, `Actions\Exports\ExportColumn`, which is unported.
+Porting it moves the trait to the lowest package both consumers reach, which is `schemas` (both `tables` and `actions` require it) and still not `support`, because the accessor it reads through lives in schemas.
+[`CanAggregateRelatedRecords`](can-aggregate-related-records.md) is relocated for the same reason and moves with it ([translations.md](../translations.md#hascellstate-and-canaggregaterelatedrecords-move-up-into-tables)).
 
 ### The state cache keys off the bound record key
 
@@ -115,8 +119,8 @@ Here a chain of to-one hops is read straight — `''` stays `''` — and only a 
 The divergence is narrow and it is deliberate: a to-one hop has no list to compact, so dropping a blank there is not list hygiene but a **value rewrite**, and the one thing it changes is which of `''` and `null` a formatter or a `default()` sees.
 Filament can afford it because `getState()` immediately maps `blank($state)` onto `getDefaultState()` anyway, so the two collapse over there whenever a default is declared.
 
-`default()` has since landed, which resolves the revisit this section reserved: `getState()` now runs the same blank-to-default step, so `''` and `null` collapse here exactly as they do upstream and the two ports answer alike at the only place a caller reads.
-What still differs is one level down — `getStateFromRecord()` returns `''` where Filament's relationship arm returns `null` — which is why [`ColumnTest`](../../../packages/tables/tests/Unit/Columns/ColumnTest.php)'s `'reads a to-one chain unchanged, blank leaf included'` case asserts the raw read **and** the defaulted one: the pair is what pins the divergence to that level and proves it does not surface above it.
+`getState()` here runs the same blank-to-default step, so `''` and `null` collapse in the state exactly as they do upstream, and the two ports answer alike at the place a caller reads.
+What differs is one level down: `getStateFromRecord()` returns `''` where Filament's relationship arm returns `null`.
 
 ### The list shape is metadata-derived, where Filament's is cached off the first row
 

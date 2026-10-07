@@ -51,7 +51,7 @@ The enum ships whole rather than trimmed, because the case *names* are the API a
 What the port refuses instead is the *consumption*, and it does so in `getConsumableFiltersLayout()` — the private probe every layout question in `HasFilters` runs through, and the toolbar reaches at least one of them for any filterable table — with a `LogicException` naming the case and the six that work.
 `getFiltersLayout()` stays total: it evaluates the closure arm and returns whatever was set, so a reader, a test or `getFiltersFormColumns()`'s fallback can ask what the table wants without tripping the refusal.
 
-That split is [`PaginationMode::Cursor`'s](can-paginate-records.md#the-pagination-mode-ships-two-cases-and-two-setters-wait-on-their-features) precedent applied a second time — refuse where the value is consumed, not where it is set — and the reason is the same: a `Closure` layout has no value at set time, so a setter-side check would be unenforceable for exactly the callers most likely to need it.
+That split is [`PaginationMode::Cursor`'s](can-paginate-records.md#cursor-pagination-waits-on-a-keyset-carrier) precedent applied a second time — refuse where the value is consumed, not where it is set — and the reason is the same: a `Closure` layout has no value at set time, so a setter-side check would be unenforceable for exactly the callers most likely to need it.
 Each refused case lifts as its chrome lands; nothing about the enum changes when it does.
 
 ### The filters form columns follow the layout, the width does not

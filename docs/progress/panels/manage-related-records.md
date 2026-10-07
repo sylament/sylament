@@ -56,7 +56,7 @@ registered as `'sections' => ManageArticleSections::route('/{record}/sections')`
 | The record-filter tabs (`$activeTab`, the tab strip) | `HasTabs`, through the tier | done | — | [has-tabs.md](has-tabs.md) · [interacts-with-relationship-table.md](interacts-with-relationship-table.md) |
 | [`getTableUrlMapping()`](../../../packages/panels/src/Resources/Pages/ManageRelatedRecords.php) — `page` (identifier-prefixed), `sort`, `search`, `filters`, `grouping`, `tab` | the `#[Url(as: …)]` block redeclared on the page | done | — | [has-table.md](../tables/has-table.md#the-url-binding-is-a-per-prop-liveprop-modifier-opted-into-by-the-page) · [identifier](interacts-with-relationship-table.md#the-table-side-querystringidentifier-is-deliberately-not-stamped) |
 | The `reordering` URL bind | `#[Url(as: 'reordering')]` | skipped | — | [diverges](../tables/has-table.md#the-url-binding-is-a-per-prop-liveprop-modifier-opted-into-by-the-page) |
-| The `grouping` URL bind | `#[Url(as: 'grouping')]` | done | — | [grouping.md](../tables/grouping.md#a-bookmarked-grouping-beats-a-selectable-default-group) |
+| The `grouping` URL bind | `#[Url(as: 'grouping')]` | done | — | [grouping.md](../tables/grouping.md#the-mount-clears-a-grouping-the-table-does-not-offer-before-it-seeds-the-default) |
 | `canAccess()` / `authorizeAccess()` / `hydrate()` and the authorization response hooks | the same cluster | blocked | authorization | [detail](#the-page-is-reachable-by-anyone-who-can-reach-its-url) |
 | `getWidgetData()` and the widget half | same | blocked | `sylament/widgets` | — |
 

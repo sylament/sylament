@@ -60,7 +60,7 @@ It ports Filament's [`Filters\BaseFilter`](../../../vendor/filament/tables/src/F
 ### `getSchema()` is unguarded where the state readers beside it are not
 
 `getSchema()` reads the filter's live child schema off `$this->getLiveComponent()->getTableFiltersForm()` with no `method_exists()` check, two files away from `BelongsToTable`'s `getState()` / `getFormState()`, which [carry one and throw when it fails](#the-state-readers-are-guarded-because-the-contract-does-not-declare-them).
-The asymmetry is not an oversight and not a style drift: `getTableFiltersForm()` is [on the contract](interacts-with-table.md#the-contract-is-thirty-five-methods-of-filaments-forty-six) and the two state readers are not, so `getLiveComponent()` — typed `InteractsWithTable` — answers the first call at level max and cannot answer the other two.
+The asymmetry is not an oversight and not a style drift: `getTableFiltersForm()` is [on the contract](interacts-with-table.md#a-member-is-on-the-contract-when-something-outside-the-host-trait-calls-it) and the two state readers are not, so `getLiveComponent()` — typed `InteractsWithTable` — answers the first call at level max and cannot answer the other two.
 A guard here would be unreachable code guarding a declared method; a guard there is the only thing standing between a contract-satisfying host and a fatal.
 Both disappear the same way, by the contract growing, and the rule for adding a guard is the same either way: check what the interface declares, not what the trait happens to supply.
 

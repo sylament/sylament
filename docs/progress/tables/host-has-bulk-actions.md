@@ -84,7 +84,7 @@ With a callback set it is Filament's documented performance cliff: the whole fil
 The one shape whose paginator carries no total is simple-mode pagination, and there it takes Filament's last arm and counts the filtered query, through [`getAllTableRecordsCount()`](has-table.md#the-all-records-count-answers-four-ways-where-filaments-answers-two) — which cannot throw on that path, since everything past the page-only branch has a query (`selectsCurrentPageOnly()` is true for every `records()` table, so the lane that has no total to count is also the lane that never gets there).
 A simple-paginated table with selection on therefore pays one `COUNT` per render, exactly as Filament's does; the alternative was a ceiling-less banner on a table that can perfectly well be counted.
 
-So the `?int` is contract slack rather than a case this trait reaches: it is typed nullable because [the contract](interacts-with-table.md#the-contract-is-thirty-five-methods-of-filaments-forty-six) lets a host satisfy it without this trait, and because the chrome has to render *something* for a host that answers null — the banner falls back to counting the page, and the select-all-across-pages link, which needs a ceiling, does not appear.
+So the `?int` is contract slack rather than a case this trait reaches: it is typed nullable because [the contract](interacts-with-table.md#a-member-is-on-the-contract-when-something-outside-the-host-trait-calls-it) lets a host satisfy it without this trait, and because the chrome has to render *something* for a host that answers null — the banner falls back to counting the page, and the select-all-across-pages link, which needs a ceiling, does not appear.
 
 ### A composite selection larger than one batch is read in batches
 

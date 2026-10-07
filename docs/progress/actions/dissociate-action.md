@@ -1,43 +1,21 @@
 # DissociateAction (actions)
 
-[`Sylament\Actions\DissociateAction`](../../../packages/actions/src/DissociateAction.php)
-— the prebuilt per-row undo of [`AssociateAction`](associate-action.md): a
-danger-coloured cross that confirms, then nulls the record's owner and flushes.
-Its bulk sibling
-[`DissociateBulkAction`](../../../packages/actions/src/DissociateBulkAction.php)
-is audited [at the bottom of this file](#dissociatebulkaction), the way
-[`DeleteBulkAction`](delete-action.md#deletebulkaction) rides along with
-`DeleteAction`.
+[`Sylament\Actions\DissociateAction`](../../../packages/actions/src/DissociateAction.php) — the prebuilt per-row undo of [`AssociateAction`](associate-action.md): a danger-coloured cross that confirms, then nulls the record's owner and flushes.
+Its bulk sibling [`DissociateBulkAction`](../../../packages/actions/src/DissociateBulkAction.php) is audited [at the bottom of this file](#dissociatebulkaction), the way [`DeleteBulkAction`](delete-action.md#deletebulkaction) rides along with `DeleteAction`.
 
-Both read the relationship off the **table**, and both refuse — as developer
-errors, not toasts — where the mapping does not permit a dissociation at all; see
-[the four refusals](#dissociating-is-refused-where-the-mapping-forbids-it).
+Both read the relationship off the **table**, and both refuse — as developer errors, not toasts — where the mapping does not permit a dissociation at all; see [the four refusals](#dissociating-is-refused-where-the-mapping-forbids-it).
 
 **Status:** done — see the [status vocabulary](../README.md#statuses).
 
 Reference — the Filament source this is diffed against:
 
-- [`actions/src/DissociateAction.php`](../../../vendor/filament/actions/src/DissociateAction.php)
-  — the class this ports, whole
-- [`actions/src/DissociateBulkAction.php`](../../../vendor/filament/actions/src/DissociateBulkAction.php)
-  — the bulk class, whole
-- [`actions/src/Concerns/CanCustomizeProcess.php`](../../../vendor/filament/actions/src/Concerns/CanCustomizeProcess.php)
-  — the trait both compose (row in [README](README.md#features))
-- [`actions/resources/lang/en/dissociate.php`](../../../vendor/filament/actions/resources/lang/en/dissociate.php)
-  — the strings both set
+- [`actions/src/DissociateAction.php`](../../../vendor/filament/actions/src/DissociateAction.php) — the class this ports, whole
+- [`actions/src/DissociateBulkAction.php`](../../../vendor/filament/actions/src/DissociateBulkAction.php) — the bulk class, whole
+- [`actions/src/Concerns/CanCustomizeProcess.php`](../../../vendor/filament/actions/src/Concerns/CanCustomizeProcess.php) — the trait both compose (row in [README](README.md#features))
+- [`actions/resources/lang/en/dissociate.php`](../../../vendor/filament/actions/resources/lang/en/dissociate.php) — the strings both set
 
-Covered by
-[`DissociateActionTest`](../../../packages/actions/tests/Unit/DissociateActionTest.php)
-for the confirmation chrome, the record-titled heading and the hostless refusal,
-and end to end by
-[`AssociateDissociateActionsTest`](../../../packages/tables/tests/Integration/AssociateDissociateActionsTest.php)
-in the **tables** suite — the row dissociate with its `Dissociate Airbag`
-heading, the surviving siblings, the success toast, the orphan-removal
-refusal on both arms, and `DissociateBulkAction`'s own hostless refusal — that
-last one driven against a container-built host rather than a mounted request,
-because a table whose `relationship()` answers null cannot render at all. It sits there for the reason
-[`PrebuiltDeleteActionTest`](delete-action.md) does: only a table host supplies a
-relationship, and the actions test kernel registers neither tables nor forms.
+Covered by [`DissociateActionTest`](../../../packages/actions/tests/Unit/DissociateActionTest.php) for the confirmation chrome, the record-titled heading and the hostless refusal, and end to end by [`AssociateDissociateActionsTest`](../../../packages/tables/tests/Integration/AssociateDissociateActionsTest.php) in the **tables** suite — the row dissociate with its `Dissociate Airbag` heading, the surviving siblings, the success toast, the orphan-removal refusal on both arms, and `DissociateBulkAction`'s own hostless refusal — that last one driven against a container-built host rather than a mounted request, because a table whose `relationship()` answers null cannot render at all.
+It sits there for the reason [`PrebuiltDeleteActionTest`](delete-action.md) does: only a table host supplies a relationship, and the actions test kernel registers neither tables nor forms.
 
 ## Surface
 
@@ -55,94 +33,51 @@ relationship, and the actions test kernel registers neither tables nor forms.
 
 ### The heading resolves the record title through the table
 
-`getRecordTitle()` walks the action's own chain — a custom title, then the
-table's `recordTitle()` / `recordTitleAttribute()`, then the host's
-`getDefaultActionRecordTitle()`, then the record label. So a relation-scoped
-table naming `recordTitleAttribute('title')` is what turns the confirmation into
-`Dissociate Airbag`; with nothing to title by, the heading is the bare verb.
+`getRecordTitle()` walks the action's own chain — a custom title, then the table's `recordTitle()` / `recordTitleAttribute()`, then the host's `getDefaultActionRecordTitle()`, then the record label.
+So a relation-scoped table naming `recordTitleAttribute('title')` is what turns the confirmation into `Dissociate Airbag`; with nothing to title by, the heading is the bare verb.
 
 ## Divergences
 
 ### The write goes through the association reader, not a `BelongsTo`
 
-Filament reaches the target's inverse `BelongsTo` object
-(`$table->getInverseRelationshipFor($record)`) and calls `dissociate()` on it.
-Doctrine has no such object: the port asks
-[`AssociationReader::detach()`](../schemas/association-reader.md) instead, which
-reads `mappedBy` off the mapping and writes `null` through the record's own
-setter, then flushes through the action's entity manager. The whole inverse
-family is therefore not ported.
+Filament reaches the target's inverse `BelongsTo` object (`$table->getInverseRelationshipFor($record)`) and calls `dissociate()` on it.
+Doctrine has no such object: the port asks [`AssociationReader::detach()`](../schemas/association-reader.md) instead, which reads `mappedBy` off the mapping and writes `null` through the record's own setter, then flushes through the action's entity manager.
+The whole inverse family is therefore not ported.
 
 ### Dissociating is refused where the mapping forbids it
 
-A one-to-many is only dissociable when the mapping actually permits an ownerless
-target. The reader checks **four** things, in this order, and only the first
-reachable one on any given mapping can fire:
+A one-to-many is only dissociable when the mapping actually permits an ownerless target.
+The reader checks **four** things, in this order, and only the first reachable one on any given mapping can fire:
 
-1. the owner's association declares **`orphanRemoval`** — a record removed from
-   such a collection is *deleted*, so dissociating is not something the mapping
-   permits at all and `DeleteAction` is the intended action;
-2. the target's mapped-by field is part of the target's own **identifier** —
-   nulling it would erase half the record's identity, so there is nothing to
-   dissociate *to* and `DeleteAction` is again the intended action. This one
-   refused before it had a name: an `#[Id]` to-one's join column is
-   `nullable: false` in `ClassMetadata`, so such a mapping tripped (3) and was
-   told to make the column nullable, which for an identifier column is
-   impossible. The refusal did not move; the advice did;
-3. the target's join column is **`nullable: false`** — the column cannot hold the
-   null a dissociation would write;
-4. the target's setter or property **does not accept null** — a non-nullable PHP
-   type, which would `TypeError` on the write.
+1. the owner's association declares **`orphanRemoval`** — a record removed from such a collection is *deleted*, so dissociating is not something the mapping permits at all and `DeleteAction` is the intended action;
+2. the target's mapped-by field is part of the target's own **identifier** — nulling it would erase half the record's identity, so there is nothing to dissociate *to* and `DeleteAction` is again the intended action.
+   This one refused before it had a name: an `#[Id]` to-one's join column is `nullable: false` in `ClassMetadata`, so such a mapping tripped (3) and was told to make the column nullable, which for an identifier column is impossible.
+   The refusal did not move; the advice did;
+3. the target's join column is **`nullable: false`** — the column cannot hold the null a dissociation would write;
+4. the target's setter or property **does not accept null** — a non-nullable PHP type, which would `TypeError` on the write.
 
-All four are mapping facts rather than runtime failures, so all four throw a
-`LogicException` naming the fix and propagate: they are a developer
-misconfiguration, and swallowing them into a danger toast would hide a mapping
-bug behind a user-facing message. The demo's `Article::$sections` trips (1) —
-which is why the demo's dissociate card is elsewhere. A many-to-many always
-passes; detaching from one is `DetachAction`'s job.
+All four are mapping facts rather than runtime failures, so all four throw a `LogicException` naming the fix and propagate: they are a developer misconfiguration, and swallowing them into a danger toast would hide a mapping bug behind a user-facing message.
+The demo's `Article::$sections` trips (1) — which is why the demo's dissociate card is elsewhere.
+A many-to-many always passes; detaching from one is `DetachAction`'s job.
 
 ### The icons are literal names, not resolved aliases
 
-Filament resolves `ActionsIconAlias::DISSOCIATE_ACTION` /
-`DISSOCIATE_ACTION_MODAL` through the icon facade, falling back to two Heroicons.
-The port sets the two names outright — `heroicons:x-mark-20-solid` on the trigger
-and `heroicons:x-mark` on the modal — and an alias layer over them is a later,
-toolkit-wide change.
+Filament resolves `ActionsIconAlias::DISSOCIATE_ACTION` / `DISSOCIATE_ACTION_MODAL` through the icon facade, falling back to two Heroicons.
+The port sets the two names outright — `heroicons:x-mark-20-solid` on the trigger and `heroicons:x-mark` on the modal — and an alias layer over them is a later, toolkit-wide change.
 
 ### The strings are literals, not translation keys
 
-i18n is deferred toolkit-wide, so both classes hardcode Filament's `en` strings:
-`Dissociate` / `Dissociate :label` / `Dissociated`, and `Dissociate selected` /
-`Dissociate selected :label` / `Dissociated`. The counting failure title beside
-them has no `en` source — it is
-[an addition the atomic shape forces](detach-action.md#the-counting-failure-title-is-an-addition-filament-has-neither-of).
+i18n is deferred toolkit-wide, so both classes hardcode Filament's `en` strings: `Dissociate` / `Dissociate :label` / `Dissociated`, and `Dissociate selected` / `Dissociate selected :label` / `Dissociated`.
+The counting failure title beside them has no `en` source — it is [an addition the atomic shape forces](detach-action.md#the-counting-failure-title-is-an-addition-filament-has-neither-of).
 
 ## DissociateBulkAction
 
-[`Sylament\Actions\DissociateBulkAction`](../../../packages/actions/src/DissociateBulkAction.php)
-— the same dissociation over a table's **selected records**. It extends
-[`BulkAction`](bulk-action.md) (so `bulk()` and `accessSelectedRecords()` arrive
-on) and composes the same
-[`CanCustomizeProcess`](../../../packages/actions/src/Concerns/CanCustomizeProcess.php),
-so a caller replaces the whole body with `using()`.
+[`Sylament\Actions\DissociateBulkAction`](../../../packages/actions/src/DissociateBulkAction.php) — the same dissociation over a table's **selected records**.
+It extends [`BulkAction`](bulk-action.md) (so `bulk()` and `accessSelectedRecords()` arrive on) and composes the same [`CanCustomizeProcess`](../../../packages/actions/src/Concerns/CanCustomizeProcess.php), so a caller replaces the whole body with `using()`.
 
-**Status:** in progress — the chrome, both arms and the counting failure
-notification ship; the `report($exception)` call has nowhere to go
-([the same gap `DeleteBulkAction` records](delete-action.md#the-swallowed-exception-has-nowhere-to-go-yet)).
+**Status:** in progress — the chrome, both arms and the counting failure notification ship; the `report($exception)` call has nowhere to go ([the same gap `DeleteBulkAction` records](delete-action.md#the-swallowed-exception-has-nowhere-to-go-yet)).
 
-Covered by
-[`DissociateBulkActionTest`](../../../packages/actions/tests/Unit/DissociateBulkActionTest.php)
-for the chrome, the inherited presets and the failure title's arithmetic, and end
-to end by
-[`AssociateDissociateActionsTest`](../../../packages/tables/tests/Integration/AssociateDissociateActionsTest.php)
-in the **tables** suite — the fetching arm's three `UPDATE`s under one flush, the
-by-key arm's single `UPDATE … IN (?, ?, ?)` and the refusals that run before any
-statement does — with the by-key arm's other shapes beside it:
-[`CompositeOwnerRelationshipActionsTest`](../../../packages/tables/tests/Integration/CompositeOwnerRelationshipActionsTest.php)
-for a composite owner's foreign key nulled whole in one statement, and
-[`DepotDissociateByKeyTest`](../../../packages/tables/tests/Integration/DepotDissociateByKeyTest.php)
-for a JOINED leaf's inherited foreign key, reserved words the mapping quotes, a
-single-table leaf, and a selected key the table query excludes.
+Covered by [`DissociateBulkActionTest`](../../../packages/actions/tests/Unit/DissociateBulkActionTest.php) for the chrome, the inherited presets and the failure title's arithmetic, and end to end by [`AssociateDissociateActionsTest`](../../../packages/tables/tests/Integration/AssociateDissociateActionsTest.php) in the **tables** suite — the fetching arm's three `UPDATE`s under one flush, the by-key arm's single `UPDATE … IN (?, ?, ?)` and the refusals that run before any statement does — with the by-key arm's other shapes beside it: [`CompositeOwnerRelationshipActionsTest`](../../../packages/tables/tests/Integration/CompositeOwnerRelationshipActionsTest.php) for a composite owner's foreign key nulled whole in one statement, and [`DepotDissociateByKeyTest`](../../../packages/tables/tests/Integration/DepotDissociateByKeyTest.php) for a JOINED leaf's inherited foreign key, reserved words the mapping quotes, a single-table leaf, and a selected key the table query excludes.
 
 ### Surface
 
@@ -159,47 +94,36 @@ single-table leaf, and a selected key the table query excludes.
 
 ### The fetching arm is atomic where Filament's is per-record
 
-Filament dissociates and `save()`s record by record inside the loop, catching per
-record and counting partial success. The port writes every record in memory and
-flushes **once**, so the batch lands whole or not at all and any `Throwable`
-becomes `reportCompleteBulkProcessingFailure()` — the shape
-[`DeleteBulkAction` already carries](delete-action.md#the-bulk-delete-is-atomic-where-filaments-is-per-record),
-for the same reason: a Doctrine `flush()` is one transaction, and a failure part
-way through leaves the unit of work unusable rather than partially applied.
+Filament dissociates and `save()`s record by record inside the loop, catching per record and counting partial success.
+The port writes every record in memory and flushes **once**, so the batch lands whole or not at all and any `Throwable` becomes `reportCompleteBulkProcessingFailure()` — the shape [`DeleteBulkAction` already carries](delete-action.md#the-bulk-delete-is-atomic-where-filaments-is-per-record), for the same reason: a Doctrine `flush()` is one transaction, and a failure part way through leaves the unit of work unusable rather than partially applied.
 
 ### The by-key arm is a DQL update, and a DBAL one where the foreign key spans several columns
 
 Under `fetchSelectedRecords(false)` the action nulls the mapped-by foreign key of the plucked keys: one statement per chunk, and several chunks in one transaction.
 
-**One join column.** For a mapped-by with one join column, the statement is a DQL `UPDATE … SET … = NULL WHERE IdentifierConstraint::in(…)`. Doctrine's SQL walker adds to it what it adds to every DQL update: a single-table target's discriminator, every enabled SQL filter, and, for a joined target, the multi-table executor, which narrows by the leaf table.
+**One join column.**
+For a mapped-by with one join column, the statement is a DQL `UPDATE … SET … = NULL WHERE IdentifierConstraint::in(…)`.
+Doctrine's SQL walker adds to it what it adds to every DQL update: a single-table target's discriminator, every enabled SQL filter, and, for a joined target, the multi-table executor, which narrows by the leaf table.
 
-**Several join columns.** Only a composite owner has a mapped-by spanning several join columns, and DQL cannot null such a to-one at all. The statement is then a DBAL `UPDATE` of the table declaring the association, nulling each join column over `IdentifierConstraint::inColumns()`. It carries no discriminator and no filter. That is safe while the keys are plucked through the relationship query, and it is recorded for a table that declares `query()` beside `relationship()`.
+**Several join columns.**
+Only a composite owner has a mapped-by spanning several join columns, and DQL cannot null such a to-one at all.
+The statement is then a DBAL `UPDATE` of the table declaring the association, nulling each join column over `IdentifierConstraint::inColumns()`.
+It carries no discriminator and no filter.
+That is safe while the keys are plucked through the relationship query, and it is recorded for a table that declares `query()` beside `relationship()`.
 
-**Why the split.** The single-column arm stays on DQL rather than sharing the DBAL statement, because under `query()` beside `relationship()` over a single-table or joined hierarchy, the DBAL statement writes rows of other classes the DQL one excludes: 2 rows become 3, and 2 become 4. Single-identifier targets are meant to stay unaffected.
+**Why the split.**
+The single-column arm stays on DQL rather than sharing the DBAL statement, because under `query()` beside `relationship()` over a single-table or joined hierarchy, the DBAL statement writes rows of other classes the DQL one excludes: 2 rows become 3, and 2 become 4.
+Single-identifier targets are meant to stay unaffected.
 
-Either arm's affected-row counts are summed and reported as the successful
-count, exactly as
-[`deleteSelectedRecordsByKey()`](delete-action.md#the-by-key-arm-is-a-dql-delete-over-the-plucked-keys)
-does for the delete — the fourth and last site to take
-[the chunk rule](../schemas/record-key.md#the-chunk-rule), with one
-`Connection::transactional()` around the chunks from the second on, so a
-mid-batch failure means the whole batch failed. The delete is DQL at every
-width, since a `DELETE` names no association and so has nothing DQL cannot
-write. Both arms bypass the ORM's unit of work, so an entity already in the
-identity map keeps its stale owner until it is reloaded or the manager is
-cleared.
+Either arm's affected-row counts are summed and reported as the successful count, exactly as [`deleteSelectedRecordsByKey()`](delete-action.md#the-by-key-arm-is-a-dql-delete-over-the-plucked-keys) does for the delete — the fourth and last site to take [the chunk rule](../schemas/record-key.md#the-chunk-rule), with one `Connection::transactional()` around the chunks from the second on, so a mid-batch failure means the whole batch failed.
+The delete is DQL at every width, since a `DELETE` names no association and so has nothing DQL cannot write.
+Both arms bypass the ORM's unit of work, so an entity already in the identity map keeps its stale owner until it is reloaded or the manager is cleared.
 
-Every name in the SQL arm's statement is the **mapping's**, read through
-Doctrine's own `QuoteStrategy`, and its `WHERE` is
-[`IdentifierConstraint::inColumns()`](../schemas/record-key.md#incolumns-is-in-in-sql-for-a-statement-that-names-one-table)'s.
-The table is `getTableName()` of the entity the mapped-by to-one was inherited
-from — `$mapping->inherited`, falling back to the target — which is the ORM's
-own rule for a JOINED hierarchy, so an inherited foreign key is written on the
-root's table, and a mapped superclass, which has no table, is never named.
-There is one `SET` per join column, each through `getJoinColumnName()`, so a
-foreign key onto a composite owner is nulled whole in one statement. A reserved
-word is quoted where the mapping quotes it and nowhere else. Executed, through
-the real action:
+Every name in the SQL arm's statement is the **mapping's**, read through Doctrine's own `QuoteStrategy`, and its `WHERE` is [`IdentifierConstraint::inColumns()`](../schemas/record-key.md#incolumns-is-in-in-sql-for-a-statement-that-names-one-table)'s.
+The table is `getTableName()` of the entity the mapped-by to-one was inherited from — `$mapping->inherited`, falling back to the target — which is the ORM's own rule for a JOINED hierarchy, so an inherited foreign key is written on the root's table, and a mapped superclass, which has no table, is never named.
+There is one `SET` per join column, each through `getJoinColumnName()`, so a foreign key onto a composite owner is nulled whole in one statement.
+A reserved word is quoted where the mapping quotes it and nowhere else.
+Executed, through the real action:
 
 | Target | The statement |
 | --- | --- |
@@ -209,99 +133,37 @@ the real action:
 | a single-table leaf (DQL) | `UPDATE Gauge SET depot_id = NULL WHERE (id IN (?)) AND kind IN ('dial')` |
 | a JOINED leaf whose root declares the mapped-by (DQL) | `UPDATE Appliance SET depot_id = NULL WHERE (appliance_id) IN (SELECT appliance_id FROM Appliance_id_tmp)`, after an `INSERT` into that temporary table selecting from `Toaster` joined to `Appliance` |
 
-The JOINED row's temporary-table name is Doctrine's to mint, so
-`DepotDissociateByKeyTest` pins that statement's shape rather than its text. A
-schema-qualified table goes through the same `getTableName()`, and was executed
-on SQLite and PostgreSQL 18.4 while the SQL arm was prototyped; it is unpinned
-by choice — SQLite hosts one only behind an `ATTACH` that every test factory
-would have to carry — and not because it cannot be pinned.
+The JOINED row's temporary-table name is Doctrine's to mint, so `DepotDissociateByKeyTest` pins that statement's shape rather than its text.
+A schema-qualified table goes through the same `getTableName()`, and was executed on SQLite and PostgreSQL 18.4 while the SQL arm was prototyped; it is unpinned by choice — SQLite hosts one only behind an `ATTACH` that every test factory would have to carry — and not because it cannot be pinned.
 
-The keys either arm narrows by are **plucked** through the table's base query,
-which is DQL and so already discriminated and filtered, and a selected key
-naming a row that query excludes is written by nothing:
-`DepotDissociateByKeyTest` pins it for another owner's record and for a
-root-class row sharing the leaf's table. That base query is the relationship's
-only while the table declares no `query()` of its own; declare both and the
-query wins, which is
-[what makes it a query table](../tables/table.md#the-mappings-order-is-the-relation-scoped-tables-default-sort),
-while the arm still reads the relationship for the mapping to null. Over a host
-declaring `query(Gauge)` beside `relationship()` on a depot's `dials`, with a
-dial of that depot, a plain `Gauge` of it and a dial of another depot selected,
-the DQL arm's `AND kind IN ('dial')` writes **two** rows and leaves the plain
-gauge owned — the DBAL statement would write three. The other depot's dial
-is nulled either way, since the arm scopes by key and never by owner; the last
-case of `DepotDissociateByKeyTest` pins exactly that, through
-`DepotQueryBesideRelationshipTable`. Guarding the arm on
-`isRelationshipBaseQuery()` would refuse a declaration the table supports, so
-that exposure — and the SQL arm's missing discriminator and filter under the
-same declaration — is a known gap, left open rather than closed.
+The keys either arm narrows by are **plucked** through the table's base query, which is DQL and so already discriminated and filtered, and a selected key naming a row that query excludes is written by nothing: `DepotDissociateByKeyTest` pins it for another owner's record and for a root-class row sharing the leaf's table.
+That base query is the relationship's only while the table declares no `query()` of its own; declare both and the query wins, which is [what makes it a query table](../tables/table.md#the-mappings-order-is-the-relation-scoped-tables-default-sort), while the arm still reads the relationship for the mapping to null.
+Over a host declaring `query(Gauge)` beside `relationship()` on a depot's `dials`, with a dial of that depot, a plain `Gauge` of it and a dial of another depot selected, the DQL arm's `AND kind IN ('dial')` writes **two** rows and leaves the plain gauge owned — the DBAL statement would write three.
+The other depot's dial is nulled either way, since the arm scopes by key and never by owner; the last case of `DepotDissociateByKeyTest` pins exactly that, through `DepotQueryBesideRelationshipTable`.
+Guarding the arm on `isRelationshipBaseQuery()` would refuse a declaration the table supports, so that exposure — and the SQL arm's missing discriminator and filter under the same declaration — is a known gap, left open rather than closed.
 
 The typed decode closes a **data defect** rather than only widening the arm.
-This action is handed the table selection's `RecordKey` strings; bound raw
-against one identifier column, they would make a target whose column form is not
-its printed form (a `uuid` stored `BINARY(16)`, a value-object identifier) match
-**zero rows**: a select-all of records that exist would leave every one of them
-owned and answer the danger toast `Failed to dissociate N records`, with nothing
-naming why. Only a fixture whose target's column form differs from its printed
-form shows it, which is why the suite carries a converting one. The typed
-decode is what makes the rows move.
+This action is handed the table selection's `RecordKey` strings; bound raw against one identifier column, they would make a target whose column form is not its printed form (a `uuid` stored `BINARY(16)`, a value-object identifier) match **zero rows**: a select-all of records that exist would leave every one of them owned and answer the danger toast `Failed to dissociate N records`, with nothing naming why.
+Only a fixture whose target's column form differs from its printed form shows it, which is why the suite carries a converting one.
+The typed decode is what makes the rows move.
 
-Five refusals run before either arm picks up, all of them `LogicException`s
-raised outside the two `try` blocks so none is swallowed into the danger toast.
-[The four dissociate refusals](#dissociating-is-refused-where-the-mapping-forbids-it)
-are the first, so an orphan-removal mapping throws before any statement is issued
-rather than nulling a column the mapping treats as ownership; the fifth is that
-the relationship must be a **one-to-many**, and the refusal says to use
-`DetachBulkAction` instead. That fifth one reads `AssociationTarget::$isManyToMany`
-rather than testing `$mappedBy` for null — Doctrine sets `mappedBy` on *every*
-inverse side, many-to-many included, so a null test would let an inverse-side
-many-to-many straight through to the by-key arm, whose to-one guard would throw
-inside its `try` and report it as a failed batch. It gates the fetching arm too, even though `detach()`
-would quietly do a many-to-many removal there: the class is the one-to-many action
-on both arms, and a batch that succeeds or refuses depending on
-`fetchSelectedRecords()` is worse than one refusal naming the right action.
-`$mappedBy` keeps its own `?? throw` behind that branch as a one-to-many sanity
-check, matching the reader's own. **One more guards the by-key arm alone**,
-raised before its `try`: every selection entry must be a string record key
-(`DissociateBulkAction dissociates by key from record keys, got %s.`), walked
-beside the chunking, so a host feeding something else is the developer error it
-is rather than a danger toast. Six in all. A narrowing inside the statement
-builder — the mapped-by must be the owning to-one side, which Doctrine requires
-of every one-to-many's mapped-by — guards the type system rather than the
-caller, since no mapping that reaches it fails it, and is not a seventh.
+Five refusals run before either arm picks up, all of them `LogicException`s raised outside the two `try` blocks so none is swallowed into the danger toast.
+[The four dissociate refusals](#dissociating-is-refused-where-the-mapping-forbids-it) are the first, so an orphan-removal mapping throws before any statement is issued rather than nulling a column the mapping treats as ownership; the fifth is that the relationship must be a **one-to-many**, and the refusal says to use `DetachBulkAction` instead.
+That fifth one reads `AssociationTarget::$isManyToMany` rather than testing `$mappedBy` for null — Doctrine sets `mappedBy` on *every* inverse side, many-to-many included, so a null test would let an inverse-side many-to-many straight through to the by-key arm, whose to-one guard would throw inside its `try` and report it as a failed batch.
+It gates the fetching arm too, even though `detach()` would quietly do a many-to-many removal there: the class is the one-to-many action on both arms, and a batch that succeeds or refuses depending on `fetchSelectedRecords()` is worse than one refusal naming the right action.
+`$mappedBy` keeps its own `?? throw` behind that branch as a one-to-many sanity check, matching the reader's own.
+**One more guards the by-key arm alone**, raised before its `try`: every selection entry must be a string record key (`DissociateBulkAction dissociates by key from record keys, got %s.`), walked beside the chunking, so a host feeding something else is the developer error it is rather than a danger toast.
+Six in all.
+A narrowing inside the statement builder — the mapped-by must be the owning to-one side, which Doctrine requires of every one-to-many's mapped-by — guards the type system rather than the caller, since no mapping that reaches it fails it, and is not a seventh.
 
-Where the foreign key spans several join columns the by-key arm writes its
-statement in SQL, because DQL cannot write it — a limit of Doctrine rather than
-of this port: a DQL
-`UPDATE <Target> t SET t.<mappedBy> = NULL` over a to-one spanning several join
-columns is a `QueryException` raised in the SQL walker, and **no** DQL form of
-that statement exists. Only a composite owner produces such a foreign key, so
-a DQL-only arm would refuse every one-to-many under one, while the fetching arm
-dissociates it at any width. The SQL statement is the remedy. Of the two routes
-to it — the codec's `@internal` field descriptor reached from
-`actions`, or a second public SQL-side operation in `schemas` — the port takes the
-operation, so the key contract stays the one place a key is decoded and
-`actions` composes only the table and the `SET` half, from the mapping. The
-shapes that statement meets were prototyped before the arm was
-written, on SQLite and PostgreSQL 18.4: a JOINED target writes the declaring
-table, a single-table target its shared table with no discriminator, quoted
-identifiers go through the quote strategy, and a schema-qualified table through
-the same `getTableName()`. With the one-column foreign key on DQL, above, the
-first two answers hold for the SQL arm alone. The chunk sizes are the DQL
-arm's: they bound the statement's parameter count, and the DQL parse cost they were first
-sized against is paid on the one-column arm only.
+Where the foreign key spans several join columns the by-key arm writes its statement in SQL, because DQL cannot write it — a limit of Doctrine rather than of this port: a DQL `UPDATE <Target> t SET t.<mappedBy> = NULL` over a to-one spanning several join columns is a `QueryException` raised in the SQL walker, and **no** DQL form of that statement exists.
+Only a composite owner produces such a foreign key, so a DQL-only arm would refuse every one-to-many under one, while the fetching arm dissociates it at any width.
+The SQL statement is the remedy.
+Of the two routes to it — the codec's `@internal` field descriptor reached from `actions`, or a second public SQL-side operation in `schemas` — the port takes the operation, so the key contract stays the one place a key is decoded and `actions` composes only the table and the `SET` half, from the mapping.
+The shapes that statement meets were prototyped before the arm was written, on SQLite and PostgreSQL 18.4: a JOINED target writes the declaring table, a single-table target its shared table with no discriminator, quoted identifiers go through the quote strategy, and a schema-qualified table through the same `getTableName()`.
+With the one-column foreign key on DQL, above, the first two answers hold for the SQL arm alone.
+The chunk sizes are the DQL arm's: they bound the statement's parameter count, and the DQL parse cost they were first sized against is paid on the one-column arm only.
 
-Both by-key statements evict the second-level cache: the DQL `UPDATE` through
-Doctrine's `HINT_CACHE_EVICT`, the DBAL `UPDATE` — which Doctrine never sees —
-through `Cache::evictEntityRegion()` on the target class afterwards. Once every
-chunk has run, either arm also evicts the owner association's collection region
-through `Cache::evictCollectionRegion()`: a dissociated record stays in the
-database, so reading it again puts it back into the target's region, and from
-then on an owner's cached collection that still listed it would hit and serve
-it. A concurrent request reading a target between an eviction and its commit —
-the DQL arm's hint evicts before its statement, and under the chunks'
-transaction the DBAL arm's eviction after its own statement lands before the
-commit too — can put its pre-write row back into a `NONSTRICT_READ_WRITE`
-region, which serves it until the entry expires: the window Doctrine's own hint
-has too, which only a unit-of-work write closes, its cached persister writing
-the entry afresh once the transaction has committed.
+Both by-key statements evict the second-level cache: the DQL `UPDATE` through Doctrine's `HINT_CACHE_EVICT`, the DBAL `UPDATE` — which Doctrine never sees — through `Cache::evictEntityRegion()` on the target class afterwards.
+Once every chunk has run, either arm also evicts the owner association's collection region through `Cache::evictCollectionRegion()`: a dissociated record stays in the database, so reading it again puts it back into the target's region, and from then on an owner's cached collection that still listed it would hit and serve it.
+A concurrent request reading a target between an eviction and its commit — the DQL arm's hint evicts before its statement, and under the chunks' transaction the DBAL arm's eviction after its own statement lands before the commit too — can put its pre-write row back into a `NONSTRICT_READ_WRITE` region, which serves it until the entry expires: the window Doctrine's own hint has too, which only a unit-of-work write closes, its cached persister writing the entry afresh once the transaction has committed.

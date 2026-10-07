@@ -1,104 +1,31 @@
 # Forms — port progress
 
-Ports [`filament/forms`](../../../vendor/filament/forms) into
-[`packages/forms`](../../../packages/forms): the field catalog — the `Field`
-base, every field built on it, their shared concerns, and validation.
+Ports [`filament/forms`](../../../vendor/filament/forms) into [`packages/forms`](../../../packages/forms): the field catalog — the `Field` base, every field built on it, their shared concerns, and validation.
 
-**Status:** in progress — see the [status vocabulary](../README.md#statuses) and
-[what goes where](../README.md#one-row-per-file-one-file-per-thing).
+**Status:** in progress — see the [status vocabulary](../README.md#statuses) and [what goes where](../README.md#one-row-per-file-one-file-per-thing).
 
-These tables map the full `forms/src` surface end to end, so no table carries an
-[unaudited row](../README.md#an-unaudited-table-says-so). The per-component audit
-against Filament has now resolved every **started** row (a linked first-column
-source) to a real [status](../README.md#statuses) — **done** or **in progress** —
-with a detail file wherever a divergence, an open gap, or real sub-structure earns
-one. A plain-text name is not built yet and stays **todo** here even where a
-component's detail file marks that concern **blocked** for itself — these tables
-carry no _Blocked by_ column, and a prerequisite only means anything against the
-component waiting on it — an escape no row uses at present, so no name in these tables reads **todo** here while its
-detail file calls it **blocked**. That escape covers **blocked** only: a concern
-we have decided against is **skipped** in both places, since a non-goal is not
-relative to the component that reached the decision — so `HasInputMode` is
-**skipped** below and in
-[`text-input.md`](text-input.md#input-mode-is-a-bespoke-getter-not-the-hasinputmode-concern).
+These tables map the full `forms/src` surface end to end, so no table carries an [unaudited row](../README.md#an-unaudited-table-says-so).
+The per-component audit against Filament has now resolved every **started** row (a linked first-column source) to a real [status](../README.md#statuses) — **done** or **in progress** — with a detail file wherever a divergence, an open gap, or real sub-structure earns one.
+A plain-text name is not built yet and stays **todo** here even where a component's detail file marks that concern **blocked** for itself — these tables carry no _Blocked by_ column, and a prerequisite only means anything against the component waiting on it — an escape no row uses at present, so no name in these tables reads **todo** here while its detail file calls it **blocked**.
+That escape covers **blocked** only: a concern we have decided against is **skipped** in both places, since a non-goal is not relative to the component that reached the decision — so `HasInputMode` is **skipped** below and in [`text-input.md`](text-input.md#input-mode-is-a-bespoke-getter-not-the-hasinputmode-concern).
 
-The five single-use concerns Filament composes onto the base `Field` —
-`CanBeAutofocused`, `HasExtraFieldWrapperAttributes`, `HasHelperText`, `HasHint`,
-and `HasPlaceholder` — have folded into [`field.md`](field.md) and left the
-Features table, per
-[one row per file](../README.md#one-row-per-file-one-file-per-thing). The sixth,
-`CanBeMarkedAsRequired`, is no longer tracked here at all: it relocated to schemas
-so its `Fieldset` could reach it, and is tracked in
-[`../schemas/can-be-marked-as-required.md`](../schemas/can-be-marked-as-required.md).
-`CanBeLengthConstrained`, `CanBeReadOnly` and `CanBeAutocompleted` are shared by
-`TextInput` and `Textarea`, so they keep their own rows, and `CanBeValidated`
-keeps one despite sitting on `Field` alone, because its Filament surface is some
-eighty methods and it is the field half of a validation vertical spanning three
-packages — folding it would swamp [`field.md`](field.md). `HasEnum` keeps one for the
-opposite reason: `Field` composes it, but its consumers are the option fields and
-`Select`'s multiplicity-aware cast override, so it is filed
-[cross-component](has-enum.md) rather than under any one of them. The same fold
-applies
-to every other concern only one built component uses:
-`CanSelectPlaceholder`, `CanBePreloaded` and `HasLoadingMessage` are `Select`'s
-alone in the port and live in [`select.md`](select.md), `HasToggleIcons` and `HasToggleColors` are
-`Toggle`'s alone and live in [`toggle.md`](toggle.md), `CanBeAutocapitalized`
-is `TextInput`'s alone and lives
-in [`text-input.md`](text-input.md), `HasColors`, `HasIcons` and `HasTooltips`
-are `ToggleButtons`' alone and live in
-[`toggle-buttons.md`](toggle-buttons.md#hascolors-hasicons-and-hastooltips-are-this-fields-alone),
-and `CanBeCloned` and `CanGenerateUuids` are
-`Repeater`'s alone and live in
-[`repeater.md`](repeater.md) — which also carries `helpers.php`, whose two
-reorder functions no other component calls — while `CanBeInline` and
-`CanBeAccepted` are shared by `Checkbox` and `Toggle`,
-`CanLimitItemsLength` by `Repeater`, `CheckboxList` and `Select`,
-`HasRelationship` by `Select` and `CheckboxList` — which ports no Filament
-concern at all, being the relationship half of `Select` itself, kept as a trait
-here because a fourteen-method relation surface on a field class is what
-`Concerns/` exists to prevent, and whose association-resolution core split off
-again as `BelongsToRelationship` once `Repeater` grew a `relationship()` of its
-own, then
-[moved down to schemas](../schemas/entangles-state-with-singular-relationship.md#the-association-core-is-shared-with-forms-relation-backed-fields)
-once the entangled layout components needed the same lookup, leaving forms'
-same-named trait as the field-flavoured adapter over it —
-`HasOptions` and `CanDisableOptions` by every option field, and
-`HasExtraInputAttributes` by every field that renders a control, so those keep
-rows of their own. The fold reads the port, not Filament — Filament composes
-`HasStep` onto `DateTimePicker` and `Slider` (and
-tables' `TextInputColumn`), and `HasDatalistOptions` onto `DateTimePicker`, so
-each is promoted back to a row of its own the moment the second consumer lands.
-Both are that promotion now: the [date pickers](date-time-picker.md) are the
-second consumer of each, so `HasStep` and `HasDatalistOptions` left
-[`text-input.md`](text-input.md)'s fold and carry
-[`has-step.md`](has-step.md) and
-[`has-datalist-options.md`](has-datalist-options.md).
-`HasOptions` and `CanDisableOptions` are the same move:
-`Select` folded
-them until the option fields arrived, and they now carry
-[`has-options.md`](has-options.md) and
-[`can-disable-options.md`](can-disable-options.md).
-`CanLimitItemsLength` is the same move — `Repeater`'s alone until
-`CheckboxList` composed the identical trait — now carrying
-[`can-limit-items-length.md`](can-limit-items-length.md) and a row below.
-`CanBeAutocapitalized` and the three
-`ToggleButtons` concerns are the four folds Filament agrees with — it composes
-`CanBeAutocapitalized` on `TextInput` and `HasColors` / `HasIcons` /
-`HasTooltips` on `ToggleButtons`, each on that class and nothing else, so no
-unported consumer is queued to promote any of them.
-[`support/component.md`](../support/component.md) is the shape each detail file
-follows.
+The five single-use concerns Filament composes onto the base `Field` — `CanBeAutofocused`, `HasExtraFieldWrapperAttributes`, `HasHelperText`, `HasHint`, and `HasPlaceholder` — have folded into [`field.md`](field.md) and left the Features table, per [one row per file](../README.md#one-row-per-file-one-file-per-thing).
+The sixth, `CanBeMarkedAsRequired`, is no longer tracked here at all: it relocated to schemas so its `Fieldset` could reach it, and is tracked in [`../schemas/can-be-marked-as-required.md`](../schemas/can-be-marked-as-required.md).
+`CanBeLengthConstrained`, `CanBeReadOnly` and `CanBeAutocompleted` are shared by `TextInput` and `Textarea`, so they keep their own rows, and `CanBeValidated` keeps one despite sitting on `Field` alone, because its Filament surface is some eighty methods and it is the field half of a validation vertical spanning three packages — folding it would swamp [`field.md`](field.md).
+`HasEnum` keeps one for the opposite reason: `Field` composes it, but its consumers are the option fields and `Select`'s multiplicity-aware cast override, so it is filed [cross-component](has-enum.md) rather than under any one of them.
+The same fold applies to every other concern only one built component uses: `CanSelectPlaceholder`, `CanBePreloaded` and `HasLoadingMessage` are `Select`'s alone in the port and live in [`select.md`](select.md), `HasToggleIcons` and `HasToggleColors` are `Toggle`'s alone and live in [`toggle.md`](toggle.md), `CanBeAutocapitalized` is `TextInput`'s alone and lives in [`text-input.md`](text-input.md), `HasColors`, `HasIcons` and `HasTooltips` are `ToggleButtons`' alone and live in [`toggle-buttons.md`](toggle-buttons.md#hascolors-hasicons-and-hastooltips-are-this-fields-alone), and `CanBeCloned` and `CanGenerateUuids` are `Repeater`'s alone and live in [`repeater.md`](repeater.md) — which also carries `helpers.php`, whose two reorder functions no other component calls — while `CanBeInline` and `CanBeAccepted` are shared by `Checkbox` and `Toggle`, `CanLimitItemsLength` by `Repeater`, `CheckboxList` and `Select`, `HasRelationship` by `Select` and `CheckboxList` — which ports no Filament concern at all, being the relationship half of `Select` itself, kept as a trait here because a fourteen-method relation surface on a field class is what `Concerns/` exists to prevent, and whose association-resolution core split off again as `BelongsToRelationship` once `Repeater` grew a `relationship()` of its own, then [moved down to schemas](../schemas/entangles-state-with-singular-relationship.md#the-association-core-is-shared-with-forms-relation-backed-fields) once the entangled layout components needed the same lookup, leaving forms' same-named trait as the field-flavoured adapter over it — `HasOptions` and `CanDisableOptions` by every option field, and `HasExtraInputAttributes` by every field that renders a control, so those keep rows of their own.
+The fold reads the port, not Filament — Filament composes `HasStep` onto `DateTimePicker` and `Slider` (and tables' `TextInputColumn`), and `HasDatalistOptions` onto `DateTimePicker`, so each is promoted back to a row of its own the moment the second consumer lands.
+Both are that promotion now: the [date pickers](date-time-picker.md) are the second consumer of each, so `HasStep` and `HasDatalistOptions` left [`text-input.md`](text-input.md)'s fold and carry [`has-step.md`](has-step.md) and [`has-datalist-options.md`](has-datalist-options.md).
+`HasOptions` and `CanDisableOptions` are the same move: `Select` folded them until the option fields arrived, and they now carry [`has-options.md`](has-options.md) and [`can-disable-options.md`](can-disable-options.md).
+`CanLimitItemsLength` is the same move — `Repeater`'s alone until `CheckboxList` composed the identical trait — now carrying [`can-limit-items-length.md`](can-limit-items-length.md) and a row below.
+`CanBeAutocapitalized` and the three `ToggleButtons` concerns are the four folds Filament agrees with — it composes `CanBeAutocapitalized` on `TextInput` and `HasColors` / `HasIcons` / `HasTooltips` on `ToggleButtons`, each on that class and nothing else, so no unported consumer is queued to promote any of them.
+[`support/component.md`](../support/component.md) is the shape each detail file follows.
 
 ## Components
 
-The `Field` base and every field a user instantiates —
-[`src/Components`](../../../vendor/filament/forms/src/Components). The nested rows
-(`Builder / Block`, `MorphToSelect / Type`, `Repeater / TableColumn`) are the
-user-instantiable building blocks a parent field composes; `Field` heads the
-table, the rest follow alphabetically. One row ports a class Filament files in
-**schemas**: `FusedGroup` composes three forms concerns and renders forms'
-field-wrapper chrome, so it lands here instead —
-[why](../renames.md#namespace-segments).
+The `Field` base and every field a user instantiates — [`src/Components`](../../../vendor/filament/forms/src/Components).
+The nested rows (`Builder / Block`, `MorphToSelect / Type`, `Repeater / TableColumn`) are the user-instantiable building blocks a parent field composes; `Field` heads the table, the rest follow alphabetically.
+One row ports a class Filament files in **schemas**: `FusedGroup` composes three forms concerns and renders forms' field-wrapper chrome, so it lands here instead — [why](../renames.md#namespace-segments).
 
 | Component | Ports | Status | Detail |
 | --- | --- | --- | --- |
@@ -142,84 +69,21 @@ field-wrapper chrome, so it lands here instead —
 
 ## Features
 
-Cross-cutting field concerns —
-[`src/Components/Concerns`](../../../vendor/filament/forms/src/Components/Concerns)
-(field-level) — plus the host-level
-[`src/Concerns`](../../../vendor/filament/forms/src/Concerns) trait a
-Livewire/LiveComponent host uses to resolve form schemas. A concern used by a
-single component is tracked in that component's detail file, not here: the base
-`Field`'s five started concerns (`CanBeAutofocused`,
-`HasExtraFieldWrapperAttributes`, `HasHelperText`, `HasHint`,
-`HasPlaceholder`) have folded into
-[`field.md`](field.md), where the Sylament-only
-`ResolvesRepeaterSiblingContext` is tracked with them — a sixth,
-`CanBeMarkedAsRequired`, relocated to schemas
-and is tracked in
-[`../schemas/can-be-marked-as-required.md`](../schemas/can-be-marked-as-required.md)
-— `Select`'s three single-use concerns (`CanSelectPlaceholder`,
-`CanBePreloaded`, `HasLoadingMessage`) into
-[`select.md`](select.md), `Toggle`'s
-`HasToggleIcons` and `HasToggleColors` into [`toggle.md`](toggle.md),
-`TextInput`'s `CanBeAutocapitalized` into
-[`text-input.md`](text-input.md), `ToggleButtons`' `HasColors`, `HasIcons` and
-`HasTooltips` into [`toggle-buttons.md`](toggle-buttons.md), and
-`Repeater`'s two (`CanBeCloned`, `CanGenerateUuids`)
-into [`repeater.md`](repeater.md), per
-[one row per file](../README.md#one-row-per-file-one-file-per-thing). The shared
-ones stay below — `CanBeLengthConstrained`, `CanBeReadOnly` and
-`CanBeAutocompleted` are used by `TextInput` and `Textarea`, `CanBeInline` and
-`CanBeAccepted` by `Checkbox` and `Toggle`, `BelongsToRelationship` by `Select`
-and `Repeater`, `HasRelationship` by `Select` and `CheckboxList`,
-`CanLimitItemsLength` by `Repeater`, `CheckboxList` and `Select`,
-`CanAllowHtml` and `CanBeSearchable` by `CheckboxList` and `Select`,
-`CanBeNative` by the [date pickers](date-time-picker.md) and `Select`,
-`HasOptions` and `CanDisableOptions` by every
-option field, and `HasExtraInputAttributes` by `TextInput`, `Textarea`,
-`Select`, `Checkbox`, `Toggle`, `Radio`, `ToggleButtons`, `CheckboxList`,
-`DateTimePicker`, `FileUpload` and `TagsInput`,
-and `HasStep` and `HasDatalistOptions` by `TextInput` and the
-[date pickers](date-time-picker.md).
-`HasEnum` stays below too, on the other test: `Field` composes it, so every
-field has it.
+Cross-cutting field concerns — [`src/Components/Concerns`](../../../vendor/filament/forms/src/Components/Concerns) (field-level) — plus the host-level [`src/Concerns`](../../../vendor/filament/forms/src/Concerns) trait a Livewire/LiveComponent host uses to resolve form schemas.
+A concern used by a single component is tracked in that component's detail file, not here: the base `Field`'s five started concerns (`CanBeAutofocused`, `HasExtraFieldWrapperAttributes`, `HasHelperText`, `HasHint`, `HasPlaceholder`) have folded into [`field.md`](field.md), where the Sylament-only `ResolvesRepeaterSiblingContext` is tracked with them — a sixth, `CanBeMarkedAsRequired`, relocated to schemas and is tracked in [`../schemas/can-be-marked-as-required.md`](../schemas/can-be-marked-as-required.md) — `Select`'s three single-use concerns (`CanSelectPlaceholder`, `CanBePreloaded`, `HasLoadingMessage`) into [`select.md`](select.md), `Toggle`'s `HasToggleIcons` and `HasToggleColors` into [`toggle.md`](toggle.md), `TextInput`'s `CanBeAutocapitalized` into [`text-input.md`](text-input.md), `ToggleButtons`' `HasColors`, `HasIcons` and `HasTooltips` into [`toggle-buttons.md`](toggle-buttons.md), and `Repeater`'s two (`CanBeCloned`, `CanGenerateUuids`) into [`repeater.md`](repeater.md), per [one row per file](../README.md#one-row-per-file-one-file-per-thing).
+The shared ones stay below — `CanBeLengthConstrained`, `CanBeReadOnly` and `CanBeAutocompleted` are used by `TextInput` and `Textarea`, `CanBeInline` and `CanBeAccepted` by `Checkbox` and `Toggle`, `BelongsToRelationship` by `Select` and `Repeater`, `HasRelationship` by `Select` and `CheckboxList`, `CanLimitItemsLength` by `Repeater`, `CheckboxList` and `Select`, `CanAllowHtml` and `CanBeSearchable` by `CheckboxList` and `Select`, `CanBeNative` by the [date pickers](date-time-picker.md) and `Select`, `HasOptions` and `CanDisableOptions` by every option field, and `HasExtraInputAttributes` by `TextInput`, `Textarea`, `Select`, `Checkbox`, `Toggle`, `Radio`, `ToggleButtons`, `CheckboxList`, `DateTimePicker`, `FileUpload` and `TagsInput`, and `HasStep` and `HasDatalistOptions` by `TextInput` and the [date pickers](date-time-picker.md).
+`HasEnum` stays below too, on the other test: `Field` composes it, so every field has it.
 
 One of the folded five has a **support** sibling, and the dedupe is a standing follow-up rather than debt.
-[`Support\Components\Concerns\HasPlaceholder`](../support/has-placeholder.md)
-landed for the cell tier beside this `Field` copy and tables'
-`Filters\Concerns\HasPlaceholder`, which is Filament's own three-namespace
-arrangement kept rather than collapsed — and the two lower copies are
-**narrower** (`string|Closure|null`, an input's `placeholder` attribute, where a
-cell's placeholder is rendered content and takes `Markup`), so repointing them
-would widen a published signature. Revisit only if a fourth copy is wanted; a repoint would touch
-`TextInput.php`, `Textarea.php` and `Select.php`
-([has-placeholder.md](../support/has-placeholder.md#three-copies-of-this-trait-ship-and-that-is-filaments-shape-too)).
-The follow-up is prose here and a row on
-[tables/README.md](../tables/README.md) for the reason the fold rule gives: this
-copy folded into [`field.md`](field.md) and has no row to carry it, while tables'
-`Filters\Concerns\HasPlaceholder` still has one.
+[`Support\Components\Concerns\HasPlaceholder`](../support/has-placeholder.md) landed for the cell tier beside this `Field` copy and tables' `Filters\Concerns\HasPlaceholder`, which is Filament's own three-namespace arrangement kept rather than collapsed — and the two lower copies are **narrower** (`string|Closure|null`, an input's `placeholder` attribute, where a cell's placeholder is rendered content and takes `Markup`), so repointing them would widen a published signature.
+Revisit only if a fourth copy is wanted; a repoint would touch `TextInput.php`, `Textarea.php` and `Select.php` ([has-placeholder.md](../support/has-placeholder.md#three-copies-of-this-trait-ship-and-that-is-filaments-shape-too)).
+The follow-up is prose here and a row on [tables/README.md](../tables/README.md) for the reason the fold rule gives: this copy folded into [`field.md`](field.md) and has no row to carry it, while tables' `Filters\Concerns\HasPlaceholder` still has one.
 
-Every concern that was listed here **ahead of** the field composing it now has
-that field, and each then went one of two ways.
-[`HasDescriptions`](has-descriptions.md) is `Radio`'s and `CheckboxList`'s and
-[`HasGridDirection`](has-grid-direction.md) theirs and `ToggleButtons`', both
-clearing the shared bar so each keeps a row and a file of its own, while
-`HasColors`, `HasIcons` and `HasTooltips` landed on
-[`ToggleButtons`](toggle-buttons.md#hascolors-hasicons-and-hastooltips-are-this-fields-alone)
-as their sole consumer and folded out of the table entirely, exactly as the
-single-use concerns above did. `CanAllowHtml` and `CanBeSearchable` kept a row
-while their detail was folded into [`checkbox-list.md`](checkbox-list.md),
-because their second consumer was planned rather than hypothetical; `Select`
-then took both — `searchable()` with the server-side arm a checkbox list has no use for,
-and `allowHtml()` — and each is now a shared concern with a file of its own
-([can-be-searchable.md](can-be-searchable.md),
-[can-allow-html.md](can-allow-html.md)), the row repointed. `CanBeNative` went
-the same way: the date pickers held it
-in [`date-time-picker.md`](date-time-picker.md) until `Select` composed it, and
-[can-be-native.md](can-be-native.md) now carries both the pickers' throw and the
-select's branch. [`CanLimitItemsLength`](can-limit-items-length.md)
-was never one of either group: `Repeater` composes it too, and `CheckboxList`
-being its second consumer is what promoted it out of
-[`repeater.md`](repeater.md) ahead of that field landing; `Select` is its
-third.
+Every concern that was listed here **ahead of** the field composing it now has that field, and each then went one of two ways.
+[`HasDescriptions`](has-descriptions.md) is `Radio`'s and `CheckboxList`'s and [`HasGridDirection`](has-grid-direction.md) theirs and `ToggleButtons`', both clearing the shared bar so each keeps a row and a file of its own, while `HasColors`, `HasIcons` and `HasTooltips` landed on [`ToggleButtons`](toggle-buttons.md#hascolors-hasicons-and-hastooltips-are-this-fields-alone) as their sole consumer and folded out of the table entirely, exactly as the single-use concerns above did.
+`CanAllowHtml` and `CanBeSearchable` kept a row while their detail was folded into [`checkbox-list.md`](checkbox-list.md), because their second consumer was planned rather than hypothetical; `Select` then took both — `searchable()` with the server-side arm a checkbox list has no use for, and `allowHtml()` — and each is now a shared concern with a file of its own ([can-be-searchable.md](can-be-searchable.md), [can-allow-html.md](can-allow-html.md)), the row repointed.
+`CanBeNative` went the same way: the date pickers held it in [`date-time-picker.md`](date-time-picker.md) until `Select` composed it, and [can-be-native.md](can-be-native.md) now carries both the pickers' throw and the select's branch.
+[`CanLimitItemsLength`](can-limit-items-length.md) was never one of either group: `Repeater` composes it too, and `CheckboxList` being its second consumer is what promoted it out of [`repeater.md`](repeater.md) ahead of that field landing; `Select` is its third.
 
 | Feature | Ports | Status | Detail |
 | --- | --- | --- | --- |
@@ -263,17 +127,8 @@ third.
 
 ## Supporting surface
 
-Everything with no field class of its own: the field contracts, the nested
-enums, the RichEditor infrastructure subtree, the prebuilt affix/toolbar
-actions, the Livewire table-select component, the icon-alias registry, the test
-helpers, the `make:` commands and their file generators, the component
-stylesheets, and the bundle wiring —
-[`src/Contracts`](../../../vendor/filament/forms/src/Contracts),
-[`src/Components/Contracts`](../../../vendor/filament/forms/src/Components/Contracts),
-[`src/Testing`](../../../vendor/filament/forms/src/Testing),
-[`src/View`](../../../vendor/filament/forms/src/View),
-[`src/Commands`](../../../vendor/filament/forms/src/Commands). A row named for a
-directory collapses that whole subtree into one navigational entry.
+Everything with no field class of its own: the field contracts, the nested enums, the RichEditor infrastructure subtree, the prebuilt affix/toolbar actions, the Livewire table-select component, the icon-alias registry, the test helpers, the `make:` commands and their file generators, the component stylesheets, and the bundle wiring — [`src/Contracts`](../../../vendor/filament/forms/src/Contracts), [`src/Components/Contracts`](../../../vendor/filament/forms/src/Components/Contracts), [`src/Testing`](../../../vendor/filament/forms/src/Testing), [`src/View`](../../../vendor/filament/forms/src/View), [`src/Commands`](../../../vendor/filament/forms/src/Commands).
+A row named for a directory collapses that whole subtree into one navigational entry.
 
 | Item | Ports | Status | Detail |
 | --- | --- | --- | --- |

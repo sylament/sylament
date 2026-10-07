@@ -1,46 +1,24 @@
 # Schemas — port progress
 
-Ports [`filament/schemas`](../../../vendor/filament/schemas) into
-[`packages/schemas`](../../../packages/schemas). The component model: the base
-`Component`, the `Schema` container, the layout and content components, the
-shared concerns, and the state loop (`$get`/`$set`, state casts).
+Ports [`filament/schemas`](../../../vendor/filament/schemas) into [`packages/schemas`](../../../packages/schemas).
+The component model: the base `Component`, the `Schema` container, the layout and content components, the shared concerns, and the state loop (`$get`/`$set`, state casts).
 
-**Status:** in progress — see the [status vocabulary](../README.md#statuses) and
-[what goes where](../README.md#one-row-per-file-one-file-per-thing).
+**Status:** in progress — see the [status vocabulary](../README.md#statuses) and [what goes where](../README.md#one-row-per-file-one-file-per-thing).
 
-These tables map the full `schemas` surface — every class, trait, contract,
-template, asset, and translation set. The per-component audit against Filament
-has now resolved every **started** row (a linked first-column source) to a real
-[status](../README.md#statuses) — **done** or **in progress** — with a detail
-file wherever a divergence, an open gap, or real sub-structure earns one. A
-plain-text name is not built yet and stays **todo**. Single-use concerns have
-folded into the detail file of the component that uses them (Schema's into
-[`schema.md`](schema.md), the base Component's into [`component.md`](component.md),
-Section's into [`section.md`](section.md), Tabs' into [`tabs.md`](tabs.md)) and left the Features tables, per
-[one row per file](../README.md#one-row-per-file-one-file-per-thing).
-[`support/component.md`](../support/component.md) is the shape each detail file
-follows.
+These tables map the full `schemas` surface — every class, trait, contract, template, asset, and translation set.
+The per-component audit against Filament has now resolved every **started** row (a linked first-column source) to a real [status](../README.md#statuses) — **done** or **in progress** — with a detail file wherever a divergence, an open gap, or real sub-structure earns one.
+A plain-text name is not built yet and stays **todo**.
+Single-use concerns have folded into the detail file of the component that uses them (Schema's into [`schema.md`](schema.md), the base Component's into [`component.md`](component.md), Section's into [`section.md`](section.md), Tabs' into [`tabs.md`](tabs.md)) and left the Features tables, per [one row per file](../README.md#one-row-per-file-one-file-per-thing).
+[`support/component.md`](../support/component.md) is the shape each detail file follows.
 
-A first-column link whose target file is named differently from the row is a
-rename or relocation the port already made — the idiom translations (Livewire →
-UX LiveComponent, Blade view → Twig template, `Htmlable` → `Markup`), the
-`BelongsToLivewire` → `BelongsToLiveComponent`, `BelongsToModel` →
-`BelongsToRecord` (both tiers, with `model()` absorbed into `record()`), and
-`SchemasServiceProvider` → `SylamentSchemasBundle` renames, and the schema-host `HasSchemas` (interface) ⇄
-`InteractsWithSchemas` (trait) name swap. These are recorded in
-[`renames.md`](../renames.md).
+A first-column link whose target file is named differently from the row is a rename or relocation the port already made — the idiom translations (Livewire → UX LiveComponent, Blade view → Twig template, `Htmlable` → `Markup`), the `BelongsToLivewire` → `BelongsToLiveComponent`, `BelongsToModel` → `BelongsToRecord` (both tiers, with `model()` absorbed into `record()`), and `SchemasServiceProvider` → `SylamentSchemasBundle` renames, and the schema-host `HasSchemas` (interface) ⇄ `InteractsWithSchemas` (trait) name swap.
+These are recorded in [`renames.md`](../renames.md).
 
 ## Components
 
-The classes a user instantiates — the `Schema` root, the base `Component`, and
-the layout/content components in
-[`src/Components`](../../../vendor/filament/schemas/src/Components). The
-`Components/Concerns` traits are [Features](#features); `Components/StateCasts`,
-`Components/Utilities`, and `Components/Contracts` are the
-[Supporting surface](#supporting-surface). One row's code lives one package up:
-`FusedGroup` renders forms' field-wrapper chrome and composes three forms
-concerns, so it ships in `sylament/forms` and its row here points there —
-[why](../renames.md#namespace-segments).
+The classes a user instantiates — the `Schema` root, the base `Component`, and the layout/content components in [`src/Components`](../../../vendor/filament/schemas/src/Components).
+The `Components/Concerns` traits are [Features](#features); `Components/StateCasts`, `Components/Utilities`, and `Components/Contracts` are the [Supporting surface](#supporting-surface).
+One row's code lives one package up: `FusedGroup` renders forms' field-wrapper chrome and composes three forms concerns, so it ships in `sylament/forms` and its row here points there — [why](../renames.md#namespace-segments).
 
 | Component | Ports | Status | Detail |
 | --- | --- | --- | --- |
@@ -73,33 +51,21 @@ concerns, so it ships in `sylament/forms` and its row here points there —
 
 ## Features
 
-Cross-cutting concerns and traits shared across components. A concern used by a
-single component is tracked in that component's detail file, not here:
+Cross-cutting concerns and traits shared across components.
+A concern used by a single component is tracked in that component's detail file, not here:
 
-- the base **Component**'s own concerns (`BelongsToContainer`,
-  `HasChildComponents`, `HasId`, and the component-level `HasState` / `HasKey` /
-  `HasHeadings`) → [`component.md`](component.md);
-- **Section**'s (`CanBeCollapsed`, `CanBeCompact`, `CanBeDivided`,
-  `CanBeSecondary`, `HasDescription`, `HasHeading`, `HasHeaderActions`,
-  `HasFooterActions`, `HasFooterActionsAlignment`, `CanBeAside`,
-  `HasContentBefore`) → [`section.md`](section.md);
-- **Schema**'s (`BelongsToParentComponent`, `CanBeEmbeddedInParentComponent`,
-  `CanBeInline`, `CanModifyActions`, `HasComponents`, and the schema-level
-  `HasState` / `HasKey` / `HasHeadings`) → [`schema.md`](schema.md).
+- the base **Component**'s own concerns (`BelongsToContainer`, `HasChildComponents`, `HasId`, and the component-level `HasState` / `HasKey` / `HasHeadings`) → [`component.md`](component.md);
+- **Section**'s (`CanBeCollapsed`, `CanBeCompact`, `CanBeDivided`, `CanBeSecondary`, `HasDescription`, `HasHeading`, `HasHeaderActions`, `HasFooterActions`, `HasFooterActionsAlignment`, `CanBeAside`, `HasContentBefore`) → [`section.md`](section.md);
+- **Schema**'s (`BelongsToParentComponent`, `CanBeEmbeddedInParentComponent`, `CanBeInline`, `CanModifyActions`, `HasComponents`, and the schema-level `HasState` / `HasKey` / `HasHeadings`) → [`schema.md`](schema.md).
 
-`HasLabel`, `CanBeHidden`, and `BelongsToLiveComponent` are **not** folded — each
-is shared with `actions`/`forms` components, so it keeps its own row below.
+`HasLabel`, `CanBeHidden`, and `BelongsToLiveComponent` are **not** folded — each is shared with `actions`/`forms` components, so it keeps its own row below.
 
-Names collide across the two directories (`HasKey`, `HasState`, `HasHeadings`,
-…) because they solve the same problem at component vs container scope; the Ports
-path disambiguates.
+Names collide across the two directories (`HasKey`, `HasState`, `HasHeadings`, …) because they solve the same problem at component vs container scope; the Ports path disambiguates.
 
 ### Component-level concerns
 
-Traits on the base `Component` —
-[`src/Components/Concerns`](../../../vendor/filament/schemas/src/Components/Concerns).
-The rows below are the ones still shared or not yet started; the base Component's
-own single-use concerns folded into [`component.md`](component.md).
+Traits on the base `Component` — [`src/Components/Concerns`](../../../vendor/filament/schemas/src/Components/Concerns).
+The rows below are the ones still shared or not yet started; the base Component's own single-use concerns folded into [`component.md`](component.md).
 
 | Feature | Ports | Status | Detail |
 | --- | --- | --- | --- |
@@ -134,10 +100,8 @@ own single-use concerns folded into [`component.md`](component.md).
 
 ### Schema-level concerns
 
-Traits on the `Schema` container and its wiring —
-[`src/Concerns`](../../../vendor/filament/schemas/src/Concerns). Schema's own
-single-use concerns folded into [`schema.md`](schema.md); the rows below are
-shared with the base `Component` or not yet started.
+Traits on the `Schema` container and its wiring — [`src/Concerns`](../../../vendor/filament/schemas/src/Concerns).
+Schema's own single-use concerns folded into [`schema.md`](schema.md); the rows below are shared with the base `Component` or not yet started.
 
 | Feature | Ports | Status | Detail |
 | --- | --- | --- | --- |
@@ -160,23 +124,9 @@ shared with the base `Component` or not yet started.
 
 ## Supporting surface
 
-Everything with no user-instantiated component of its own: the state loop
-(`$get`/`$set`, the `PropertyAccessor` backend, the `RecordTypeReader` behind
-record mapping, the `AssociationReader` seam onto Doctrine's mapping, and the
-state casts), the [record-key codec and identifier predicate builder](record-key.md),
-the validation presence gate, contracts,
-the view layer, the test helper, value objects, CLI commands, templates, assets,
-and translations —
-[`src/Components/Utilities`](../../../vendor/filament/schemas/src/Components/Utilities),
-[`src/Components/StateCasts`](../../../vendor/filament/schemas/src/Components/StateCasts),
-[`src/Components/Contracts`](../../../vendor/filament/schemas/src/Components/Contracts),
-[`src/Contracts`](../../../vendor/filament/schemas/src/Contracts),
-[`src/View`](../../../vendor/filament/schemas/src/View),
-[`src/Testing`](../../../vendor/filament/schemas/src/Testing),
-[`src/Commands`](../../../vendor/filament/schemas/src/Commands), and
-[`resources`](../../../vendor/filament/schemas/resources). A row named for a
-directory collapses a subtree we expect to port, if at all, as a unit. A row
-with no Ports link is Sylament-only — no Filament source to diff against.
+Everything with no user-instantiated component of its own: the state loop (`$get`/`$set`, the `PropertyAccessor` backend, the `RecordTypeReader` behind record mapping, the `AssociationReader` seam onto Doctrine's mapping, and the state casts), the [record-key codec and identifier predicate builder](record-key.md), the validation presence gate, contracts, the view layer, the test helper, value objects, CLI commands, templates, assets, and translations — [`src/Components/Utilities`](../../../vendor/filament/schemas/src/Components/Utilities), [`src/Components/StateCasts`](../../../vendor/filament/schemas/src/Components/StateCasts), [`src/Components/Contracts`](../../../vendor/filament/schemas/src/Components/Contracts), [`src/Contracts`](../../../vendor/filament/schemas/src/Contracts), [`src/View`](../../../vendor/filament/schemas/src/View), [`src/Testing`](../../../vendor/filament/schemas/src/Testing), [`src/Commands`](../../../vendor/filament/schemas/src/Commands), and [`resources`](../../../vendor/filament/schemas/resources).
+A row named for a directory collapses a subtree we expect to port, if at all, as a unit.
+A row with no Ports link is Sylament-only — no Filament source to diff against.
 
 | Item | Ports | Status | Detail |
 | --- | --- | --- | --- |

@@ -1,33 +1,23 @@
 # TextInputColumn (tables)
 
-[`Sylament\Tables\Columns\TextInputColumn`](../../../packages/tables/src/Columns/TextInputColumn.php)
-— an editable [`Column`](column.md) whose cell is a text input: committing it on
-`change` writes the typed value back onto the record through the host's
-[`updateTableColumnState()`](has-columns.md) live action. It ports Filament's
-[`Filament\Tables\Columns\TextInputColumn`](../../../vendor/filament/tables/src/Columns/TextInputColumn.php).
-Everything [`Column`](column.md) carries is tracked there, and the write-back
-seam the four editable columns share is tracked on
-[`has-columns.md`](has-columns.md), not repeated here.
+[`Sylament\Tables\Columns\TextInputColumn`](../../../packages/tables/src/Columns/TextInputColumn.php) — an editable [`Column`](column.md) whose cell is a text input: committing it on `change` writes the typed value back onto the record through the host's [`updateTableColumnState()`](has-columns.md) live action.
+It ports Filament's [`Filament\Tables\Columns\TextInputColumn`](../../../vendor/filament/tables/src/Columns/TextInputColumn.php).
+Everything [`Column`](column.md) carries is tracked there, and the write-back seam the four editable columns share is tracked on [`has-columns.md`](has-columns.md), not repeated here.
 
-**Status:** done — see the
-[status vocabulary](../README.md#statuses). One row is **skipped**
-(`mask()`), and it is the only point of the class not built.
+**Status:** done — see the [status vocabulary](../README.md#statuses).
+One row is **skipped** (`mask()`), and it is the only point of the class not built.
 
 Reference — the Filament source this is diffed against:
 
-- [`tables/src/Columns/TextInputColumn.php`](../../../vendor/filament/tables/src/Columns/TextInputColumn.php)
-  — the class and its `toEmbeddedHtml()`
-- [`tables/resources/css/columns/text-input.css`](../../../vendor/filament/tables/resources/css/columns/text-input.css)
-  — the stylesheet [`text-input-column.css`](../../../packages/tables/assets/src/styles/components/text-input-column.css)
-  is the prefix-renamed port of
+- [`tables/src/Columns/TextInputColumn.php`](../../../vendor/filament/tables/src/Columns/TextInputColumn.php) — the class and its `toEmbeddedHtml()`
+- [`tables/resources/css/columns/text-input.css`](../../../vendor/filament/tables/resources/css/columns/text-input.css) — the stylesheet [`text-input-column.css`](../../../packages/tables/assets/src/styles/components/text-input-column.css) is the prefix-renamed port of
 
 ## Surface
 
-Every point of this component. _Blocked by_ names what has to land first.
-_Detail_ carries up to three links: **detail** → the write-up in Details,
-deleted once the row is **done**; **diverges** → the permanent note in
-[Divergences](#divergences); **semantics** → the permanent note in
-[Semantics](#semantics). Rows never disappear — only their detail sections do.
+Every point of this component.
+_Blocked by_ names what has to land first.
+_Detail_ carries up to three links: **detail** → the write-up in Details, deleted once the row is **done**; **diverges** → the permanent note in [Divergences](#divergences); **semantics** → the permanent note in [Semantics](#semantics).
+Rows never disappear — only their detail sections do.
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
@@ -48,55 +38,32 @@ deleted once the row is **done**; **diverges** → the permanent note in
 | `x-tooltip` for the error bubble, `wire:ignore.self` on the root | [`TextInputColumn::toEmbeddedHtml()`](../../../vendor/filament/tables/src/Columns/TextInputColumn.php) | skipped | — | Same two reasons as [`ToggleColumn`](toggle-column.md#surface): the refusal is server-rendered, and the root must morph to carry the `state` value |
 | `mask()` / `getMask()` | [`TextInputColumn::mask()`](../../../vendor/filament/tables/src/Columns/TextInputColumn.php) | skipped | — | The setter takes a `RawJs` and configures Alpine Mask, an Alpine plugin the toolkit does not ship; a setter no builder consults is worse than an absent one ([column.md](column.md#surface)) |
 
-Every built row is covered by the Unit
-[`TextInputColumnTest`](../../../packages/tables/tests/Unit/Columns/TextInputColumnTest.php)
-and the Integration
-[`TextInputColumnTest`](../../../packages/tables/tests/Integration/Columns/TextInputColumnTest.php);
-the write itself is
-[`HasColumnsTest`](../../../packages/tables/tests/Integration/Concerns/HasColumnsTest.php)'s.
+Every built row is covered by the Unit [`TextInputColumnTest`](../../../packages/tables/tests/Unit/Columns/TextInputColumnTest.php) and the Integration [`TextInputColumnTest`](../../../packages/tables/tests/Integration/Columns/TextInputColumnTest.php); the write itself is [`HasColumnsTest`](../../../packages/tables/tests/Integration/Concerns/HasColumnsTest.php)'s.
 
-This is the one editable column that declares no constraint of its own — the two
-boolean columns seed a `Type('bool')` and `SelectColumn` a `Choice` — so what
-stands between a posted value and the record is entirely what
-[`CanBeValidated` derives from the record's declared type](has-columns.md#a-record-type-the-input-cannot-hold-seeds-a-type-constraint-and-the-write-refuses-the-rest):
-`Type('numeric')` over an `int` or `float` property, `Type('string')` over a
-`string` one, and, where nothing can be derived, the write seam's own refusal
-filed against the cell.
+This is the one editable column that declares no constraint of its own — the two boolean columns seed a `Type('bool')` and `SelectColumn` a `Choice` — so what stands between a posted value and the record is entirely what [`CanBeValidated` derives from the record's declared type](has-columns.md#a-record-type-the-input-cannot-hold-seeds-a-type-constraint-and-the-write-refuses-the-rest): `Type('numeric')` over an `int` or `float` property, `Type('string')` over a `string` one, and, where nothing can be derived, the write seam's own refusal filed against the cell.
 
 ## Divergences
 
 ### `inputMode()` is a member of the class because forms has no `HasInputMode` yet
 
-Filament composes `Forms\Components\Concerns\HasInputMode` here. Forms has not
-ported that trait, and this column
-[touches no forms file](checkbox-column.md#the-skin-is-supports-sy-checkbox-the-one-selection-already-uses),
-so `inputMode()` / `getInputMode()` are declared on the column itself — the same
-two members, the same names, the same evaluation. When forms ports the trait the
-column composes it and the pair goes.
+Filament composes `Forms\Components\Concerns\HasInputMode` here.
+Forms has not ported that trait, and this column [touches no forms file](checkbox-column.md#the-skin-is-supports-sy-checkbox-the-one-selection-already-uses), so `inputMode()` / `getInputMode()` are declared on the column itself — the same two members, the same names, the same evaluation.
+When forms ports the trait the column composes it and the pair goes.
 
 ## Semantics
 
 ### The affix surface is the column's own, not forms' `HasAffixes`
 
-Filament declares the eight affix members on the column rather than composing
-forms' `HasAffixes`, and the port follows: forms' trait carries prefix and suffix
-**actions**, which a table cell has nowhere to put. So `prefix()` and `suffix()`
-take an `isInline` second argument that forwards to `inlinePrefix()` /
-`inlineSuffix()`, and `prefixIcon()` / `suffixIcon()` do the same — one setter
-call decides both the affix and its placement.
+Filament declares the eight affix members on the column rather than composing forms' `HasAffixes`, and the port follows: forms' trait carries prefix and suffix **actions**, which a table cell has nowhere to put.
+So `prefix()` and `suffix()` take an `isInline` second argument that forwards to `inlinePrefix()` / `inlineSuffix()`, and `prefixIcon()` / `suffixIcon()` do the same — one setter call decides both the affix and its placement.
 
 ### The placeholder is the input's, not the empty-cell copy
 
-`HasPlaceholder` is a `Column`-level trait, and on a read-only column it is the
-copy shown when the cell state is blank. Here it is the `<input placeholder>`
-instead: an editable cell always renders its control, so there is no blank branch
-to fill. The setter, the getter and the closure evaluation are the same trait.
+`HasPlaceholder` is a `Column`-level trait, and on a read-only column it is the copy shown when the cell state is blank.
+Here it is the `<input placeholder>` instead: an editable cell always renders its control, so there is no blank branch to fill.
+The setter, the getter and the closure evaluation are the same trait.
 
 ### The chrome is support's `InputWrapper` around forms' `sy-fo-input`
 
-The cell renders `<twig:SylamentSupport:InputWrapper>` — the input chrome every
-text-like forms control renders inside — around `input.sy-fo-input`, minus the
-`id`, `name` and `data-model` a schema field carries and plus an `aria-label`
-taken from the column label with any markup stripped. The wrapper's `valid` prop
-is what paints the refusal ring, and the affix props are what render the
-prefix/suffix labels and icons.
+The cell renders `<twig:SylamentSupport:InputWrapper>` — the input chrome every text-like forms control renders inside — around `input.sy-fo-input`, minus the `id`, `name` and `data-model` a schema field carries and plus an `aria-label` taken from the column label with any markup stripped.
+The wrapper's `valid` prop is what paints the refusal ring, and the affix props are what render the prefix/suffix labels and icons.

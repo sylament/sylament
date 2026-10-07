@@ -1,22 +1,14 @@
 # DatePicker (forms)
 
-`Sylament\Forms\Components\DatePicker` — the date-only field: a
-[`DateTimePicker`](date-time-picker.md) whose `hasTime()` is a constant `false`,
-so it renders `<input type="date">`, formats state as `Y-m-d`, emits no `step`,
-and [truncates a bound carrying a time](date-time-picker.md#a-date-only-control-truncates-its-bounds-for-the-attribute-but-not-for-the-constraint)
-for its native `min` / `max` attributes.
+`Sylament\Forms\Components\DatePicker` — the date-only field: a [`DateTimePicker`](date-time-picker.md) whose `hasTime()` is a constant `false`, so it renders `<input type="date">`, formats state as `Y-m-d`, emits no `step`, and [truncates a bound carrying a time](date-time-picker.md#a-date-only-control-truncates-its-bounds-for-the-attribute-but-not-for-the-constraint) for its native `min` / `max` attributes.
 
-Everything else — the formats, the bounds, the timezone, the state cast, the
-validity constraint, the template, and the `native(false)` gap — is the parent's
-and is tracked in [date-time-picker.md](date-time-picker.md).
+Everything else — the formats, the bounds, the timezone, the state cast, the validity constraint, the template, and the `native(false)` gap — is the parent's and is tracked in [date-time-picker.md](date-time-picker.md).
 
-**Status:** in progress — see the [status vocabulary](../README.md#statuses);
-the parent's unfinished rows are inherited whole.
+**Status:** in progress — see the [status vocabulary](../README.md#statuses); the parent's unfinished rows are inherited whole.
 
 Reference — the Filament source this is diffed against:
 
-- [`forms/src/Components/DatePicker.php`](../../../vendor/filament/forms/src/Components/DatePicker.php)
-  — the subclass, which is this one method and nothing else
+- [`forms/src/Components/DatePicker.php`](../../../vendor/filament/forms/src/Components/DatePicker.php) — the subclass, which is this one method and nothing else
 
 ## Surface
 
@@ -27,9 +19,4 @@ _Detail_ links the parent's file, where every inherited row lives.
 | [`hasTime()`](../../../packages/forms/src/Components/DatePicker.php) — constant `false` | [`DatePicker::hasTime()`](../../../vendor/filament/forms/src/Components/DatePicker.php) | done | — | [detail](date-time-picker.md) |
 | Everything inherited | [`DateTimePicker.php`](../../../vendor/filament/forms/src/Components/DateTimePicker.php) | in progress | — | [detail](date-time-picker.md) |
 
-Coverage: the type, both formats, the absent step, the truncated bound and the
-always-on validity constraint by
-[`DateTimePickerTest`](../../../packages/forms/tests/Unit/Components/DateTimePickerTest.php),
-which asserts each variant beside the others rather than in a file of its own —
-the class is one overridden method, and the behaviour worth pinning is the
-difference from its parent.
+Coverage: the type, both formats, the absent step, the truncated bound and the always-on validity constraint by [`DateTimePickerTest`](../../../packages/forms/tests/Unit/Components/DateTimePickerTest.php), which asserts each variant beside the others rather than in a file of its own — the class is one overridden method, and the behaviour worth pinning is the difference from its parent.

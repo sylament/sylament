@@ -1,21 +1,20 @@
 # Rename table
 
-The single global record of API renames. Preserve Filament's API names by
-default — migrating users grep for them. Rename only when Filament itself is
-inconsistent and the better name already exists in their codebase; record every
-rename here in the same change.
+The single global record of API renames.
+Preserve Filament's API names by default — migrating users grep for them.
+Rename only when Filament itself is inconsistent and the better name already exists in their codebase; record every rename here in the same change.
 
 Two questions this file answers:
 
-1. **Did this Filament name change?** → [Renames](#renames). If it isn't in that
-   table, the name carries over unchanged.
+1. **Did this Filament name change?** → [Renames](#renames).
+   If it isn't in that table, the name carries over unchanged.
 2. **Where does this namespace or idiom land?** → [Not renames](#not-renames).
    Those are systematic and derivable, so they are documented, not enumerated.
 
 ## Renames
 
-Sorted by Filament name. Every row is a name a migrating user could **not**
-derive from the conventions below.
+Sorted by Filament name.
+Every row is a name a migrating user could **not** derive from the conventions below.
 
 | Filament | Sylament | Kind | Home | Why |
 | --- | --- | --- | --- | --- |
@@ -115,89 +114,48 @@ derive from the conventions below.
 
 ### Interface and trait names are swapped
 
-⚠️ **Grep trap.** For schemas, actions and tables alike, `Has*` and
-`InteractsWith*` exist on **both** sides with **opposite** meanings:
+⚠️ **Grep trap.**
+For schemas, actions and tables alike, `Has*` and `InteractsWith*` exist on **both** sides with **opposite** meanings:
 
 | | Filament | Sylament |
 | --- | --- | --- |
 | **interface** | `HasSchemas` / `HasActions` / `HasTable` | `InteractsWithSchemas` / `InteractsWithActions` / `InteractsWithTable` |
 | **trait** | `InteractsWithSchemas` / `InteractsWithActions` / `InteractsWithTable` | `HasSchemas` / `HasActions` / `HasTable` |
 
-Here `Has*` is reserved for traits, matching every other trait in the codebase,
-and the interface names the behavior the host implements. Porting code that
-mentions either name means checking which one it is first.
+Here `Has*` is reserved for traits, matching every other trait in the codebase, and the interface names the behavior the host implements.
+Porting code that mentions either name means checking which one it is first.
 
 ### Laravel rule vocabulary becomes Symfony constraint vocabulary
 
-The validation payload changed ecosystems — Laravel rule strings and rule
-objects became Symfony `Constraint` instances —
-and the API vocabulary follows it: a migrating user's
-`->rules('required|max:255')` cannot work under any name, and a missing method
-is a louder, more searchable break than a kept name that greps clean and then
-type-errors. Names derived from the same vocabulary translate systematically
-and carry no table rows of their own: `getValidationRules()` →
-`getValidationConstraints()` (field tier and `Schema` alike),
-`dehydrateValidationRules()` → `dehydrateValidationConstraints()`,
-`getLengthValidationRules()` → `getLengthValidationConstraints()`,
-`nestedRecursiveRule()` / `nestedRecursiveRules()` →
-`nestedRecursiveConstraint()` / `nestedRecursiveConstraints()`,
-`getNestedRecursiveValidationRules()` →
-`getNestedRecursiveValidationConstraints()`, the trait and contract name
-`HasNestedRecursiveValidationRules` → `HasNestedRecursiveValidationConstraints`,
-and `getInValidationRule()` / `getInValidationRuleValues()` →
-`getInValidationConstraint()` / `getInValidationConstraintValues()`. Names that
-are not rule vocabulary keep Filament's spelling: `required()`, `nullable()`,
-`validationMessages()` (the method name — its *keys* are re-vocabularied, row
-above), `validate()`, `in()`, `notIn()`, `hasInValidationOnMultipleValues()`.
+The validation payload changed ecosystems — Laravel rule strings and rule objects became Symfony `Constraint` instances — and the API vocabulary follows it: a migrating user's `->rules('required|max:255')` cannot work under any name, and a missing method is a louder, more searchable break than a kept name that greps clean and then type-errors.
+Names derived from the same vocabulary translate systematically and carry no table rows of their own: `getValidationRules()` → `getValidationConstraints()` (field tier and `Schema` alike), `dehydrateValidationRules()` → `dehydrateValidationConstraints()`, `getLengthValidationRules()` → `getLengthValidationConstraints()`, `nestedRecursiveRule()` / `nestedRecursiveRules()` → `nestedRecursiveConstraint()` / `nestedRecursiveConstraints()`, `getNestedRecursiveValidationRules()` → `getNestedRecursiveValidationConstraints()`, the trait and contract name `HasNestedRecursiveValidationRules` → `HasNestedRecursiveValidationConstraints`, and `getInValidationRule()` / `getInValidationRuleValues()` → `getInValidationConstraint()` / `getInValidationConstraintValues()`.
+Names that are not rule vocabulary keep Filament's spelling: `required()`, `nullable()`, `validationMessages()` (the method name — its *keys* are re-vocabularied, row above), `validate()`, `in()`, `notIn()`, `hasInValidationOnMultipleValues()`.
 
-The **column** tier reaches the same answer from a much smaller surface, and it
-is worth naming because Filament's tables-tier `Columns\Concerns\CanBeValidated`
-is seven methods of which five are rule vocabulary. `rules()` becomes
-`constraint()` / `constraints()` — the same pair the forms row above names,
-reached from a setter that takes only the array form — and `getRules()` becomes
-`getValidationConstraints()` under the systematic translation listed at the top of
-this section. Two members have **no** Sylament counterpart at all, rather than a
-renamed one. `validationAttribute()` and its `getValidationAttribute()` name the
-attribute a Laravel message interpolates into `:attribute`; a Symfony violation
-message carries no such placeholder, so there is nothing for the setter to fill
-and neither is ported. And Filament's implicit `'nullable'`, prepended to every
-column's rule list, has no constraint to become: nullability here is the
-**absence** of a presence constraint, so the port seeds one only when the
-record's declared write-side type refuses `null`
-([has-columns.md](tables/has-columns.md#a-record-type-that-rejects-null-seeds-a-presence-constraint)).
-Both omissions follow this section's own rule — a missing method reads louder
-than a kept name that means something else.
+The **column** tier reaches the same answer from a much smaller surface, and it is worth naming because Filament's tables-tier `Columns\Concerns\CanBeValidated` is seven methods of which five are rule vocabulary.
+`rules()` becomes `constraint()` / `constraints()` — the same pair the forms row above names, reached from a setter that takes only the array form — and `getRules()` becomes `getValidationConstraints()` under the systematic translation listed at the top of this section.
+Two members have **no** Sylament counterpart at all, rather than a renamed one.
+`validationAttribute()` and its `getValidationAttribute()` name the attribute a Laravel message interpolates into `:attribute`; a Symfony violation message carries no such placeholder, so there is nothing for the setter to fill and neither is ported.
+And Filament's implicit `'nullable'`, prepended to every column's rule list, has no constraint to become: nullability here is the **absence** of a presence constraint, so the port seeds one only when the record's declared write-side type refuses `null` ([has-columns.md](tables/has-columns.md#a-record-type-that-rejects-null-seeds-a-presence-constraint)).
+Both omissions follow this section's own rule — a missing method reads louder than a kept name that means something else.
 
-The message keys move with the payload. A rule name was the only handle Laravel
-gave a message, so Filament keys `validationMessages()` by it; Symfony puts the
-message on the constraint object, so the constraint class is the handle and the
-option names are its own properties. `Length`'s three keys (`size`, `max`, `min`)
-collapse onto one class with an option map, and `Toggle`'s `required` becomes
-`NotNull::class` rather than the `RequiredValue::class` every other field emits,
-because that is the constraint it emits.
+The message keys move with the payload.
+A rule name was the only handle Laravel gave a message, so Filament keys `validationMessages()` by it; Symfony puts the message on the constraint object, so the constraint class is the handle and the option names are its own properties.
+`Length`'s three keys (`size`, `max`, `min`) collapse onto one class with an option map, and `Toggle`'s `required` becomes `NotNull::class` rather than the `RequiredValue::class` every other field emits, because that is the constraint it emits.
 
 ### The model vocabulary collapses onto record
 
-Decided with Martin. Filament itself is inconsistent
-here: root-tier `record()` aliases `model()` onto one last-write-wins property
-with divergent payload types, the component tier ships `model()` but no
-`record()`, and the rest of Filament — panels (`EditRecord`, `getRecord()`),
-tables, actions — speaks "record". Sylament collapses onto Filament's own more
-prevalent name, which also removes a real trap
-(`->record($x)->model(Y::class)` looks additive but silently unbinds the
-instance) and converges with actions' record-only `InteractsWithRecord`.
-"Model" is additionally an Eloquent concept-name with no Doctrine referent —
-the concept-name goes with its ecosystem, the constraint-vocabulary precedent.
-Migration cost, accepted: `->model(...)` and `fn ($model)` break loudly
-(missing method / unresolvable parameter) instead of grepping clean. Kept
-names: `record()`, `getRecord()`. Full rationale and surface:
-[belongs-to-record.md](schemas/belongs-to-record.md).
+Decided with Martin.
+Filament itself is inconsistent here: root-tier `record()` aliases `model()` onto one last-write-wins property with divergent payload types, the component tier ships `model()` but no `record()`, and the rest of Filament — panels (`EditRecord`, `getRecord()`), tables, actions — speaks "record".
+Sylament collapses onto Filament's own more prevalent name, which also removes a real trap (`->record($x)->model(Y::class)` looks additive but silently unbinds the instance) and converges with actions' record-only `InteractsWithRecord`.
+"Model" is additionally an Eloquent concept-name with no Doctrine referent — the concept-name goes with its ecosystem, the constraint-vocabulary precedent.
+Migration cost, accepted: `->model(...)` and `fn ($model)` break loudly (missing method / unresolvable parameter) instead of grepping clean.
+Kept names: `record()`, `getRecord()`.
+Full rationale and surface: [belongs-to-record.md](schemas/belongs-to-record.md).
 
 ## Not renames
 
-Systematic translations that follow the conventions in
-[CLAUDE.md](../../CLAUDE.md). They are **not** renames and must not be added to
-the table above.
+Systematic translations that follow the conventions in [CLAUDE.md](../../CLAUDE.md).
+They are **not** renames and must not be added to the table above.
 
 ### Idiom
 
@@ -222,49 +180,30 @@ the table above.
 | `Arr::first()` | `array_first()` (PHP 8.5 native) | The same cast's single-file read. The language grew the function Laravel's helper existed for, so there is nothing to port to [`helpers.php`](support/helpers.md) — the no-callback arm of `Arr::first()` is `array_first()` exactly, including the `null` for an empty array. |
 | Laravel's translator (`__('filament-…::…')` keys, `translateLabel()`) | an English literal | Every user-facing string ships as Filament's `en` text, because i18n is [deferred toolkit-wide to one dedicated pass](../internals/i18n.md) rather than ported per component. Each detail file lists the literals it adds in a "literals, not translation keys" divergence ([file-upload.md](forms/file-upload.md#literals-not-translation-keys)), so that pass can find every one. |
 
-CSS class names are not a flat prefix swap: bundles above support insert a
-package code (`sy-fo-input`, `sy-sc-grid`), support-level classes carry none
-(`sy-icon-btn`), and every template root also gets the bare `sy` marker class.
+CSS class names are not a flat prefix swap: bundles above support insert a package code (`sy-fo-input`, `sy-sc-grid`), support-level classes carry none (`sy-icon-btn`), and every template root also gets the bare `sy` marker class.
 Why: [`docs/internals/styling.md`](../internals/styling.md#why-do-templates-carry-only-semantic-classes).
 
-The same `fi-` → `sy-` translation covers **CSS custom properties**, and there it
-is load-bearing rather than cosmetic. Filament's colour variables are unprefixed
-— `--primary-600`, `--color-600`, `--text`, `--dark-hover-bg` — and Sylament's
-are `--sy-primary-600`, `--sy-color-600`, `--sy-text`, `--sy-dark-hover-bg`,
-whether they are written in a stylesheet, emitted inline by
-`ColorManager::getComponentCustomStyles()`, or emitted into a `<style>` element
-by `sylamentStyles()`. Custom properties inherit and Sylament embeds into a page
-it does not own, so one `:root { --text: … }` in the host app would otherwise
-repaint every Sylament component. The exception is the Filament-*verbatim* grid
-variables (`--cols-lg`, `--col-span-default`), which stay unprefixed on purpose —
-[styling.md](../internals/styling.md#why-are-per-instance-values-inline-variables) draws that line. Measured porting cost of the
-prefix, and the reasoning:
-[color-manager.md](support/color-manager.md#every-emitted-custom-property-carries-the---sy--prefix).
+The same `fi-` → `sy-` translation covers **CSS custom properties**, and there it is load-bearing rather than cosmetic.
+Filament's colour variables are unprefixed — `--primary-600`, `--color-600`, `--text`, `--dark-hover-bg` — and Sylament's are `--sy-primary-600`, `--sy-color-600`, `--sy-text`, `--sy-dark-hover-bg`, whether they are written in a stylesheet, emitted inline by `ColorManager::getComponentCustomStyles()`, or emitted into a `<style>` element by `sylamentStyles()`.
+Custom properties inherit and Sylament embeds into a page it does not own, so one `:root { --text: … }` in the host app would otherwise repaint every Sylament component.
+The exception is the Filament-*verbatim* grid variables (`--cols-lg`, `--col-span-default`), which stay unprefixed on purpose — [styling.md](../internals/styling.md#why-are-per-instance-values-inline-variables) draws that line.
+Measured porting cost of the prefix, and the reasoning: [color-manager.md](support/color-manager.md#every-emitted-custom-property-carries-the---sy--prefix).
 
 ### Namespace segments
 
-Segments carry over from Filament **verbatim** — `Components\`, `Enums\`,
-`Exceptions\`, `Concerns\`, `Contracts\`, `Icons\` and the rest all keep
-Filament's spelling, so `Filament\Support\Components\Concerns\` is
-`Sylament\Support\Components\Concerns\`. Exactly two segments change, each only
-because the thing it named was replaced or has no Symfony counterpart at all:
+Segments carry over from Filament **verbatim** — `Components\`, `Enums\`, `Exceptions\`, `Concerns\`, `Contracts\`, `Icons\` and the rest all keep Filament's spelling, so `Filament\Support\Components\Concerns\` is `Sylament\Support\Components\Concerns\`.
+Exactly two segments change, each only because the thing it named was replaced or has no Symfony counterpart at all:
 
 | Filament | Sylament | Why |
 | --- | --- | --- |
 | `View\` | `Twig\` | The Blade → Twig idiom — the template engine itself changed. Laravel's `ComponentAttributeBag` and Filament's `SupportIconAlias` both live in `Sylament\Support\Twig\`. |
 | `Http\Controllers\` | `Controllers\` | Only the Laravel `Http\` tier drops — Symfony has no `Http/` application layer (middleware became event listeners, and a response is Symfony's own object), so the segment names nothing here. The plural `Controllers` is Filament's spelling kept verbatim, matching the repo's plural object directories (`Pages\`, `Components\`, `Exceptions\`). Symfony's own bundles use singular `Controller\` (FrameworkBundle, WebProfilerBundle); the plural is a deliberate in-repo-consistency choice, the same trade the `Exception\` note below records. |
 
-No segment is renamed for style. Symfony's own habit of singular `Exception\`
-(its components and bundles both use it) is **not** followed here: matching
-Filament costs a migrating user nothing to learn, and one carve-out is worse
-than none.
+No segment is renamed for style.
+Symfony's own habit of singular `Exception\` (its components and bundles both use it) is **not** followed here: matching Filament costs a migrating user nothing to learn, and one carve-out is worse than none.
 
-Three namespaces **leave `Components\`**, because what they hold is not part of
-the component tier — neither a component, nor a concern or contract of one. Two
-of them land under `State\` rather than at the root, filing beside the
-[`PropertyAccessor`](schemas/property-accessor.md) they read and write through;
-each drops the segment that `State\` now says for it (`StateCasts` → `Casts`,
-`Utilities` → nothing, since the word named no category):
+Three namespaces **leave `Components\`**, because what they hold is not part of the component tier — neither a component, nor a concern or contract of one.
+Two of them land under `State\` rather than at the root, filing beside the [`PropertyAccessor`](schemas/property-accessor.md) they read and write through; each drops the segment that `State\` now says for it (`StateCasts` → `Casts`, `Utilities` → nothing, since the word named no category):
 
 | Filament | Sylament | Holds |
 | --- | --- | --- |
@@ -272,12 +211,9 @@ each drops the segment that `State\` now says for it (`StateCasts` → `Casts`,
 | `Filament\Schemas\Components\Utilities\` | `Sylament\Schemas\State\` | `Get` / `Set` — the closure-injected state accessors |
 | `Filament\Support\Components\ComponentManager` | `Sylament\Support\Configuration\ComponentManager` | The `configureUsing()` registry — an engine, filed by capability like `Evaluation\Invoker`, not beside what it configures |
 
-A migrating user importing `Filament\Schemas\Components\Utilities\Get` will
-not find it by prefix swap alone, which is why these are recorded here rather
-than left to the verbatim rule.
+A migrating user importing `Filament\Schemas\Components\Utilities\Get` will not find it by prefix swap alone, which is why these are recorded here rather than left to the verbatim rule.
 
-The colour tier leaves `View\` for the same reason, and is the one place the
-`View\` → `Twig\` translation above is deliberately **not** applied:
+The colour tier leaves `View\` for the same reason, and is the one place the `View\` → `Twig\` translation above is deliberately **not** applied:
 
 | Filament | Sylament | Holds |
 | --- | --- | --- |
@@ -287,113 +223,67 @@ The colour tier leaves `View\` for the same reason, and is the one place the
 | `Filament\Schemas\View\Components\` | `Sylament\Schemas\Colors\Components\` | schemas' `TextComponent` and `IconComponent` |
 | `Filament\Tables\View\Components\Columns\` | `Sylament\Tables\Colors\Components\` | tables' `TextColumnComponent\ItemComponent` and `TextColumnComponent\ItemComponent\IconComponent` |
 
-`Sylament\Support\Twig\Components\` — where the translation would have put
-them — already means a class-backed **renderable** Twig component, the shape
-actions' `Modals` has. A colour policy is never rendered and has no template, so
-it is filed by capability at `src/` level like `Evaluation\Invoker` and
-`Configuration\ComponentManager`. Class names, including the nesting
-(`DropdownComponent\ItemComponent`, `TextColumnComponent\ItemComponent\IconComponent`),
-are Filament-verbatim to any depth; only the leading segments move. Detail:
-[color-policies.md](support/color-policies.md#the-tier-is-filed-under-colors-not-under-twigcomponents).
+`Sylament\Support\Twig\Components\` — where the translation would have put them — already means a class-backed **renderable** Twig component, the shape actions' `Modals` has.
+A colour policy is never rendered and has no template, so it is filed by capability at `src/` level like `Evaluation\Invoker` and `Configuration\ComponentManager`.
+Class names, including the nesting (`DropdownComponent\ItemComponent`, `TextColumnComponent\ItemComponent\IconComponent`), are Filament-verbatim to any depth; only the leading segments move.
+Detail: [color-policies.md](support/color-policies.md#the-tier-is-filed-under-colors-not-under-twigcomponents).
 
-The tables row absorbs one more segment than the others, and that is the whole of
-the difference: Filament groups its tables policies under a `Columns\` directory
-which is the **only** child `View\Components\` has there, so it separates nothing
-from anything and is dropped into the leading segments rather than carried.
-Everything below it is untouched — an icon policy that belongs to the text
-column's item is `TextColumnComponent\ItemComponent\IconComponent` here exactly as
-it is there, the same nesting support's still-blocked
-[`DropdownComponent\ItemComponent\IconComponent`](support/color-policies.md#surface)
-already carries. The nesting is a class-string a consumer types into
-`colorAttributes()`, so a flatter spelling would be a rename in everything but
-name.
+The tables row absorbs one more segment than the others, and that is the whole of the difference: Filament groups its tables policies under a `Columns\` directory which is the **only** child `View\Components\` has there, so it separates nothing from anything and is dropped into the leading segments rather than carried.
+Everything below it is untouched — an icon policy that belongs to the text column's item is `TextColumnComponent\ItemComponent\IconComponent` here exactly as it is there, the same nesting support's still-blocked [`DropdownComponent\ItemComponent\IconComponent`](support/color-policies.md#surface) already carries.
+The nesting is a class-string a consumer types into `colorAttributes()`, so a flatter spelling would be a rename in everything but name.
 
-Support-level traits split by **who composes them**, so
-`Filament\Support\Concerns\` has two destinations:
+Support-level traits split by **who composes them**, so `Filament\Support\Concerns\` has two destinations:
 
 | Filament | Sylament | Which traits |
 | --- | --- | --- |
 | `Filament\Support\Concerns\` | `Sylament\Support\Components\Concerns\` | Everything only a component composes — `HasIcon`, `HasColor`, `HasExtraAttributes`, … and `Configurable`, whose sole consumer is `Component` |
 | `Filament\Support\Concerns\` | `Sylament\Support\Concerns\` | `EvaluatesClosures` alone |
 
-`EvaluatesClosures` stays at root against that rule for a reason that is
-checkable in Filament rather than a matter of taste: of its three direct
-importers there, two — `Colors\ColorManager` and `TimezoneManager` — are plain
-manager classes, not components. That is no longer a prediction:
-[`Sylament\Support\Colors\ColorManager`](../../packages/support/src/Colors/ColorManager.php)
-composes the trait today, to evaluate a `Closure` palette registration, and it is
-not a component — so a trait under `Support\Components\Concerns\` would be the
-wrong import. The hold stands on a real consumer now rather than on Filament's,
-and moves only if that consumer goes away.
+`EvaluatesClosures` stays at root against that rule for a reason that is checkable in Filament rather than a matter of taste: of its three direct importers there, two — `Colors\ColorManager` and `TimezoneManager` — are plain manager classes, not components.
+That is no longer a prediction: [`Sylament\Support\Colors\ColorManager`](../../packages/support/src/Colors/ColorManager.php) composes the trait today, to evaluate a `Closure` palette registration, and it is not a component — so a trait under `Support\Components\Concerns\` would be the wrong import.
+The hold stands on a real consumer now rather than on Filament's, and moves only if that consumer goes away.
 
-One trait moves **down a package** for the same who-composes-it reason, except
-that here the layering forces it rather than merely suggesting it:
+One trait moves **down a package** for the same who-composes-it reason, except that here the layering forces it rather than merely suggesting it:
 
 | Filament | Sylament | Which trait |
 | --- | --- | --- |
 | `Filament\Forms\Components\Concerns\` | `Sylament\Schemas\Components\Concerns\` | `CanBeMarkedAsRequired` alone |
 
-Filament hosts the trait in forms yet imports it from schemas'
-`Fieldset` (`vendor/filament/schemas/src/Components/Fieldset.php`) — an upward
-import from schemas into forms. Here `forms` depends on `schemas`, so that
-direction cannot be reproduced, and the trait has to sit at or below the lower
-package for both consumers to reach it. Nor is that a style question: the CI
-split publishes each package standalone, so a package leaning on a symbol only a
-sibling declares breaks the moment it is installed on its own. See
-[schemas/can-be-marked-as-required.md](schemas/can-be-marked-as-required.md).
-The class name, methods and body are unchanged, which is why this is a
-relocation rather than a rename.
+Filament hosts the trait in forms yet imports it from schemas' `Fieldset` (`vendor/filament/schemas/src/Components/Fieldset.php`) — an upward import from schemas into forms.
+Here `forms` depends on `schemas`, so that direction cannot be reproduced, and the trait has to sit at or below the lower package for both consumers to reach it.
+Nor is that a style question: the CI split publishes each package standalone, so a package leaning on a symbol only a sibling declares breaks the moment it is installed on its own.
+See [schemas/can-be-marked-as-required.md](schemas/can-be-marked-as-required.md).
+The class name, methods and body are unchanged, which is why this is a relocation rather than a rename.
 
-One **component** moves the other way for the same reason, and it is the same
-Filament file that forced the trait down:
+One **component** moves the other way for the same reason, and it is the same Filament file that forced the trait down:
 
 | Filament | Sylament | Which class |
 | --- | --- | --- |
 | `Filament\Schemas\Components\FusedGroup` | `Sylament\Forms\Components\FusedGroup` | `FusedGroup` alone |
 
-The criterion in both directions is **the lowest package that reaches every
-symbol the thing needs**. For a trait two tiers compose, that is the lower
-package, so `CanBeMarkedAsRequired` went down. `FusedGroup` imports three forms
-concerns — `CanBeMarkedAsRequired`, `HasExtraFieldWrapperAttributes`,
-`HasHelperText` — plus `Forms\Components\Field` for its error walk, and what it
-renders is forms' field-wrapper chrome; nothing it needs can move down with it,
-so the lowest package reaching all of it is `forms` and the class goes up.
-Filament can host it in schemas because Laravel ships every Filament package
-together; the CI split here publishes each one standalone, so a
-`sylament/schemas` importing a forms symbol breaks on install. Class name,
-factory, methods and behaviour are unchanged; only the namespace moves, taking
-the CSS class code with it — `fi-sc-fused-group` becomes `sy-fo-fused-group`,
-the [component code](../internals/styling.md#why-do-templates-carry-only-semantic-classes) naming the package that ships the component
-rather than the vendor directory the rules were copied from. See
-[forms/fused-group.md](forms/fused-group.md#fusedgroup-lives-in-forms-not-schemas).
+The criterion in both directions is **the lowest package that reaches every symbol the thing needs**.
+For a trait two tiers compose, that is the lower package, so `CanBeMarkedAsRequired` went down.
+`FusedGroup` imports three forms concerns — `CanBeMarkedAsRequired`, `HasExtraFieldWrapperAttributes`, `HasHelperText` — plus `Forms\Components\Field` for its error walk, and what it renders is forms' field-wrapper chrome; nothing it needs can move down with it, so the lowest package reaching all of it is `forms` and the class goes up.
+Filament can host it in schemas because Laravel ships every Filament package together; the CI split here publishes each one standalone, so a `sylament/schemas` importing a forms symbol breaks on install.
+Class name, factory, methods and behaviour are unchanged; only the namespace moves, taking the CSS class code with it — `fi-sc-fused-group` becomes `sy-fo-fused-group`, the [component code](../internals/styling.md#why-do-templates-carry-only-semantic-classes) naming the package that ships the component rather than the vendor directory the rules were copied from.
+See [forms/fused-group.md](forms/fused-group.md#fusedgroup-lives-in-forms-not-schemas).
 
-Two traits move **up** out of `support`, and the same layering argument runs the
-other way for them — they are two of the traits Filament's
-`Column` composes from `Support\Concerns\`. Both reach Doctrine, and `support`
-depends on neither Doctrine nor schemas — deliberately, since
-[nothing is pushed down into support that support does not use](../../.claude/rules/manifests.md)
-— so hosting them there would mean either dragging the ORM into the base package
-for one consumer or splitting one read across two packages:
+Two traits move **up** out of `support`, and the same layering argument runs the other way for them — they are two of the traits Filament's `Column` composes from `Support\Concerns\`.
+Both reach Doctrine, and `support` depends on neither Doctrine nor schemas — deliberately, since [nothing is pushed down into support that support does not use](../../.claude/rules/manifests.md) — so hosting them there would mean either dragging the ORM into the base package for one consumer or splitting one read across two packages:
 
 | Filament | Sylament | Which trait |
 | --- | --- | --- |
 | `Filament\Support\Concerns\HasCellState` | `Sylament\Tables\Columns\Concerns\HasCellState` | The cell read, which goes through schemas' `PropertyAccessor` — [why](tables/column.md#hascellstate-is-relocated-into-the-column-tier) |
 | `Filament\Support\Concerns\CanAggregateRelatedModels` | `Sylament\Tables\Columns\Concerns\CanAggregateRelatedRecords` | The six aggregate declarations, read by tables' own [batched aggregate query](tables/table.md#an-aggregate-is-a-batched-side-query-and-a-hidden-subselect-never-a-select-on-the-page-query) |
 
-Filament's placement pays off for a **second** consumer in both cases —
-`Actions\Exports\ExportColumn` composes each of them — and that class is
-unported, since the port has no export surface yet. When it lands, both move to
-the lowest package both consumers reach, which is `schemas` (`tables` and
-`actions` each require it) and still not `support`. The first is a pure
-relocation; the second is [also renamed](#renames), which is why it has a table
-row of its own and this one does not repeat it.
+Filament's placement pays off for a **second** consumer in both cases — `Actions\Exports\ExportColumn` composes each of them — and that class is unported, since the port has no export surface yet.
+When it lands, both move to the lowest package both consumers reach, which is `schemas` (`tables` and `actions` each require it) and still not `support`.
+The first is a pure relocation; the second is [also renamed](#renames), which is why it has a table row of its own and this one does not repeat it.
 
 ### Names with no Filament source
 
-Methods, classes and events that exist only here, because a port needed behaviour
-Filament has no member for. Nothing to rename from, so they are listed rather than
-mapped — and listed at all so a migrating user who greps Filament for the name and
-finds nothing knows the absence is real.
+Methods, classes and events that exist only here, because a port needed behaviour Filament has no member for.
+Nothing to rename from, so they are listed rather than mapped — and listed at all so a migrating user who greps Filament for the name and finds nothing knows the absence is real.
 
 | Sylament | On | Why it is not a rename |
 | --- | --- | --- |
@@ -442,12 +332,7 @@ finds nothing knows the absence is real.
 | [`getGlobalSearchDebounceMilliseconds()`](panels/global-search.md#the-debounce-is-translated-for-ux-live-component-the-way-tables-already-does-it) | `Sylament\Panels\Panel\Concerns\HasGlobalSearch` | The panel's debounce as ux-live-component's `debounce(N)` modifier wants it. Exactly the [`getSearchDebounceMilliseconds()`](#names-with-no-filament-source) row above, one package up and for the same reason: `globalSearchDebounce()` / `getGlobalSearchDebounce()` are ported unchanged and still carry Filament's duration string (`'500ms'`), Livewire parses that string itself, and the UX modifier takes milliseconds only — so the translation needs a member on both search fields and there is nothing to rename either from. |
 | [`getWizard()`](schemas/step.md#the-owning-wizard-is-a-method-that-throws-rather-than-a-docblock-assertion) | `Sylament\Schemas\Components\Wizard\Step` | The step's owning wizard. Filament reads `$this->getContainer()->getParentComponent()` into a local under a `/** @var Wizard */` inside `Step::toEmbeddedHtml()` and never exposes it; a Twig template has no place to hold that local, and the docblock is a promise a `Step` used outside a `Wizard` breaks one line later, so the port names the hop and throws on it. Not a rename of the panel tier's `getWizardComponent()`, which *builds* a page's wizard rather than answering a step's parent. |
 
-`RecordTypeReader`, `RecordTarget` and `HasNullableBranch` are likewise
-Sylament-only classes rather than renamed Filament ones; the reason none of them
-has a Filament counterpart is structural and is recorded in
-[record-type-reader.md](schemas/record-type-reader.md) — Eloquent attributes are
-untyped, so the write-side type question Filament's mapper would have to answer
-cannot be asked there.
+`RecordTypeReader`, `RecordTarget` and `HasNullableBranch` are likewise Sylament-only classes rather than renamed Filament ones; the reason none of them has a Filament counterpart is structural and is recorded in [record-type-reader.md](schemas/record-type-reader.md) — Eloquent attributes are untyped, so the write-side type question Filament's mapper would have to answer cannot be asked there.
 | [`CanPersistTableState`](tables/has-table.md#the-session-key-is-the-host-class-so-two-instances-of-one-page-share-it) — the trait, plus `getTableSessionKey()`, `persistTableStateToSession()`, `readTableSessionState()`, `forgetTableSessionState()`, `getTableStateMainRequest()` and the four `persistTable*InSession()` writers | `Sylament\Tables\Concerns\CanPersistTableState` | Filament has no such trait: its session reads and writes are inline in `InteractsWithTable::bootedInteractsWithTable()`, one `session()->get()`/`session()->put()` pair per prop, and the key helpers hang off the concern that owns each prop (`getTablePerPageSessionKey()` on `CanPaginateRecords`, `getTableSortSessionKey()` on `CanSortRecords`, …). The port has no `booted*` hook to inline them into and no `session()` facade to reach, so the reads became one `#[PostMount(priority: 10)]` and the writes became per-prop methods the mutating actions call — which needs a home, and a host concern is the house shape. The **member names** are therefore new rather than renamed: nothing over there is called `getTableSessionKey()`, and the per-suffix keys it builds are Filament's `md5(static::class)` shape exactly. |
 | [`groupTable()`](tables/grouping.md#the-state-is-one-non-writable-scalar-and-its-getter-is-what-forces-dehydratewith) and [`mountTableGrouping()`](tables/grouping.md#a-bookmarked-grouping-beats-a-selectable-default-group) | `Sylament\Tables\Concerns\CanGroupRecords` | The two writers of the grouping property. Filament needs neither: Livewire writes `$tableGrouping` straight from the client because the prop is public and bound, and it seeds the default inside `bootedInteractsWithTable()`, a hook UX has no counterpart for. Here the prop is **non-writable**, so the only client path to it is a live action that validates the id and the direction once, and the seed is a `#[PostMount]` of its own — which is also what lets a bookmarked `?grouping=` win over a selectable default. Two members forced by the mechanism, with nothing to rename from. |
 | [`getTableGroupingColumn()`](tables/grouping.md#a-null-direction-is-not-ungrouped) | `Sylament\Tables\Concerns\CanGroupRecords` | The id half of the `<id>:<direction>` token, read back off the property. Filament splits the same string inside its Alpine `x-data` (`;[group, direction] = grouping.split(':')`), so the value exists only on the client over there and its own `getTableGroupingDirection()` — which **is** ported under that name — has no PHP sibling for the column. Exactly the position [`getTableSortColumn()`](tables/has-table.md#sorting-composes-the-users-order-the-default-and-the-identifier-tiebreaker) is in, one feature over: the port renders the `selected` attribute itself, which means asking PHP what the token holds. |
@@ -466,8 +351,8 @@ cannot be asked there.
 
 ### Namespaces with no Filament source
 
-Segments that exist only here, because a port needed classes Filament does not
-have. Nothing to rename from, so they are listed rather than mapped.
+Segments that exist only here, because a port needed classes Filament does not have.
+Nothing to rename from, so they are listed rather than mapped.
 
 | Sylament | Holds | Why it exists |
 | --- | --- | --- |
@@ -480,78 +365,48 @@ have. Nothing to rename from, so they are listed rather than mapped.
 
 ## Divergences
 
-Deliberate deviations that are **global** rather than component-local —
-permanent, and the reason they hold. A divergence constraining one component
-lives in that component's file, per
-[the placement rule](README.md#divergences-are-addressable); what earns a heading
-here is a decision every ported component inherits. The first three are the
-`make()` mechanics; the rest came with the colour registry, and each states the
-decision and links the write-up rather than repeating it.
+Deliberate deviations that are **global** rather than component-local — permanent, and the reason they hold.
+A divergence constraining one component lives in that component's file, per [the placement rule](README.md#divergences-are-addressable); what earns a heading here is a decision every ported component inherits.
+The first three are the `make()` mechanics; the rest came with the colour registry, and each states the decision and links the write-up rather than repeating it.
 
 ### `make()` arguments move from constructors to setters
 
-Filament passes `make()` arguments through `app(static::class, ['name' => $name])`,
-letting the container fill a constructor parameter positionally. Symfony's
-container cannot pass constructor arguments through a service locator lookup,
-so `make()` resolves the instance first — through
-[`Component::newInstance()`](../../packages/support/src/Components/Component.php),
-see [component.md](support/component.md#newinstance-routes-every-make-through-a-locator)
-— and applies the value via the existing setter instead. Behaviour is
-identical either way: the setter still runs before `configure()`/`setUp()`.
+Filament passes `make()` arguments through `app(static::class, ['name' => $name])`, letting the container fill a constructor parameter positionally.
+Symfony's container cannot pass constructor arguments through a service locator lookup, so `make()` resolves the instance first — through [`Component::newInstance()`](../../packages/support/src/Components/Component.php), see [component.md](support/component.md#newinstance-routes-every-make-through-a-locator) — and applies the value via the existing setter instead.
+Behaviour is identical either way: the setter still runs before `configure()`/`setUp()`.
 
 ### The `final` constructors are deleted
 
-Filament seals `Action::__construct` (and its siblings) `final`; Sylament
-removes the constructor entirely so a user subclass can declare its own
-constructor dependencies, autowired through
-[`ComponentResolver`](support/component.md#newinstance-routes-every-make-through-a-locator).
+Filament seals `Action::__construct` (and its siblings) `final`; Sylament removes the constructor entirely so a user subclass can declare its own constructor dependencies, autowired through [`ComponentResolver`](support/component.md#newinstance-routes-every-make-through-a-locator).
 This is the entire point of the mechanism.
 
 ### `Indicator::make()` runs `configure()`
 
-Filament's is the one factory in its component tier that skips it, so an
-`Indicator::configureUsing()` registration silently never fires. Ours goes
-through the house `newInstance()` → seed → `configure()` idiom like every other
-`make()`, pinned by a test — [indicator.md](tables/indicator.md#make-runs-configure).
+Filament's is the one factory in its component tier that skips it, so an `Indicator::configureUsing()` registration silently never fires.
+Ours goes through the house `newInstance()` → seed → `configure()` idiom like every other `make()`, pinned by a test — [indicator.md](tables/indicator.md#make-runs-configure).
 
 ### The shipped stylesheet keeps a palette floor, so nothing has to be called
 
-Filament's compiled `theme.css` defines **no** palette values — every colour on
-a Filament page comes from the `@filamentStyles` directive at runtime. Sylament
-keeps the six default palettes in `index.css`, and
-`ColorExtension::sylamentStyles()` emits only what a consumer registered on top,
-returning an empty string when that is nothing.
+Filament's compiled `theme.css` defines **no** palette values — every colour on a Filament page comes from the `@filamentStyles` directive at runtime.
+Sylament keeps the six default palettes in `index.css`, and `ColorExtension::sylamentStyles()` emits only what a consumer registered on top, returning an empty string when that is nothing.
 
-Filament can require the directive because its panel owns the page layout and its
-scaffolding generates one containing it. Sylament has neither and embeds into an
-app it does not control, where a forgotten call would render every component
-colourless with no error. The cost is that the six palettes exist in both PHP and
-CSS, which
-[`CssPaletteFloorTest`](../../packages/support/tests/Architecture/CssPaletteFloorTest.php)
-exists to make safe. Detail:
-[color-manager.md](support/color-manager.md#sylamentstyles-emits-only-the-delta-over-the-shipped-css-floor).
+Filament can require the directive because its panel owns the page layout and its scaffolding generates one containing it.
+Sylament has neither and embeds into an app it does not control, where a forgotten call would render every component colourless with no error.
+The cost is that the six palettes exist in both PHP and CSS, which [`CssPaletteFloorTest`](../../packages/support/tests/Architecture/CssPaletteFloorTest.php) exists to make safe.
+Detail: [color-manager.md](support/color-manager.md#sylamentstyles-emits-only-the-delta-over-the-shipped-css-floor).
 
 ### `info` defaults to Indigo, and the default palettes were chosen by measurement
 
-`ColorManager::DEFAULT_COLORS` is Filament's, with one entry changed: `info` is
-Indigo where Filament uses Blue. Blue fails the filled button's hover state in
-both light and dark mode at 3.74:1; Indigo clears all four states. `primary`
-stays Filament's Amber — which also clears all four — and, as in Filament,
-`warning` is Amber too, so the two render identically.
+`ColorManager::DEFAULT_COLORS` is Filament's, with one entry changed: `info` is Indigo where Filament uses Blue.
+Blue fails the filled button's hover state in both light and dark mode at 3.74:1; Indigo clears all four states.
+`primary` stays Filament's Amber — which also clears all four — and, as in Filament, `warning` is Amber too, so the two render identically.
 
-This is a global divergence rather than a button-local one because every
-component measures against these palettes. Full measurements, including the two
-danger states that still fail and why they are pinned rather than fixed:
-[color-manager.md](support/color-manager.md#info-defaults-to-indigo-where-filament-uses-blue).
+This is a global divergence rather than a button-local one because every component measures against these palettes.
+Full measurements, including the two danger states that still fail and why they are pinned rather than fixed: [color-manager.md](support/color-manager.md#info-defaults-to-indigo-where-filament-uses-blue).
 
 ### A palette registered shade by shade must fill the shade grid exactly
 
-Filament accepts any palette shape and fails later — silently for an empty one,
-with a crash inside a policy for a sparse one, and invisibly for a shade off the
-grid, which emits a class no stylesheet defines. Sylament checks every explicit
-palette against `ColorManager::SHADES` on the way in and throws an
-`InvalidArgumentException` naming the palette and what is wrong, whether the
-palette came from `sylament.colors`, from `register()`, or inline from
-`->color([...])`. The corollary is that Filament's int-valued **shade aliases**
-(`950 => 900`) are not accepted. Detail:
-[color-manager.md](support/color-manager.md#a-registered-palette-must-fill-the-shade-grid-exactly).
+Filament accepts any palette shape and fails later — silently for an empty one, with a crash inside a policy for a sparse one, and invisibly for a shade off the grid, which emits a class no stylesheet defines.
+Sylament checks every explicit palette against `ColorManager::SHADES` on the way in and throws an `InvalidArgumentException` naming the palette and what is wrong, whether the palette came from `sylament.colors`, from `register()`, or inline from `->color([...])`.
+The corollary is that Filament's int-valued **shade aliases** (`950 => 900`) are not accepted.
+Detail: [color-manager.md](support/color-manager.md#a-registered-palette-must-fill-the-shade-grid-exactly).

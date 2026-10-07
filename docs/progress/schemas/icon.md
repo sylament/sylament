@@ -1,31 +1,21 @@
 # Icon (schemas)
 
-[`Sylament\Schemas\Components\Icon`](../../../packages/schemas/src/Components/Icon.php)
-is the schema content component that renders a single icon. It ports Filament's
-[`Schemas\Components\Icon`](../../../vendor/filament/schemas/src/Components/Icon.php):
-an `icon()` value (name / `BackedEnum` / `Markup` / closure), a `size()` that
-normalizes a known string to an [`IconSize`](../../../packages/support/src/Enums/IconSize.php)
-case, plus color, tooltip, and visibility folded in from support concerns. The
-fluent API and the basic Twig render are ported and tested; Filament's
-accessibility render path (a visually-hidden text alternative + `aria-label`
-reconciliation) and `extraAttributes` forwarding are not yet implemented.
+[`Sylament\Schemas\Components\Icon`](../../../packages/schemas/src/Components/Icon.php) is the schema content component that renders a single icon.
+It ports Filament's [`Schemas\Components\Icon`](../../../vendor/filament/schemas/src/Components/Icon.php): an `icon()` value (name / `BackedEnum` / `Markup` / closure), a `size()` that normalizes a known string to an [`IconSize`](../../../packages/support/src/Enums/IconSize.php) case, plus color, tooltip, and visibility folded in from support concerns.
+The fluent API and the basic Twig render are ported and tested; Filament's accessibility render path (a visually-hidden text alternative + `aria-label` reconciliation) and `extraAttributes` forwarding are not yet implemented.
 
 **Status:** in progress — see the [status vocabulary](../README.md#statuses).
 
 Reference — the Filament source this is diffed against:
 
-- [`schemas/src/Components/Icon.php`](../../../vendor/filament/schemas/src/Components/Icon.php)
-  — the component, its getters, and the `toEmbeddedHtml()` render path
-- [`support/src/Concerns/HasColor.php`](../../../vendor/filament/support/src/Concerns/HasColor.php),
-  [`support/src/Concerns/HasTooltip.php`](../../../vendor/filament/support/src/Concerns/HasTooltip.php)
-  — the two support concerns composed here (shared with [Text](text.md))
+- [`schemas/src/Components/Icon.php`](../../../vendor/filament/schemas/src/Components/Icon.php) — the component, its getters, and the `toEmbeddedHtml()` render path
+- [`support/src/Concerns/HasColor.php`](../../../vendor/filament/support/src/Concerns/HasColor.php), [`support/src/Concerns/HasTooltip.php`](../../../vendor/filament/support/src/Concerns/HasTooltip.php) — the two support concerns composed here (shared with [Text](text.md))
 
 ## Surface
 
-Every point of this component. _Blocked by_ names what has to land first.
-_Detail_ carries **detail** → the write-up in [Details](#details) (deleted once
-the row is **done**), **diverges** → the permanent note in
-[Divergences](#divergences), or `—`.
+Every point of this component.
+_Blocked by_ names what has to land first.
+_Detail_ carries **detail** → the write-up in [Details](#details) (deleted once the row is **done**), **diverges** → the permanent note in [Divergences](#divergences), or `—`.
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
@@ -42,68 +32,35 @@ the row is **done**), **diverges** → the permanent note in
 
 ### The accessible text alternative is not rendered
 
-In: `icon()`/`getIcon()` (literal, closure, `$component` injection), size
-normalization, color, tooltip, visibility, and the basic Twig render (the `<svg>`,
-`sy-sc-icon` + `sy-icon` classes, `sy-color-*` palette class, size class,
-tooltip-as-`title`) — all covered by
-[`IconTest`](../../../packages/schemas/tests/Unit/Components/IconTest.php) and
-[`IconComponentRenderTest`](../../../packages/schemas/tests/Integration/Components/IconComponentRenderTest.php).
+In: `icon()`/`getIcon()` (literal, closure, `$component` injection), size normalization, color, tooltip, visibility, and the basic Twig render (the `<svg>`, `sy-sc-icon` + `sy-icon` classes, `sy-color-*` palette class, size class, tooltip-as-`title`) — all covered by [`IconTest`](../../../packages/schemas/tests/Unit/Components/IconTest.php) and [`IconComponentRenderTest`](../../../packages/schemas/tests/Integration/Components/IconComponentRenderTest.php).
 
-Left: Filament's `toEmbeddedHtml()` gives the decorative (`aria-hidden`) SVG a
-visually-hidden text alternative — an explicit user `aria-label` pulled off the
-SVG, or the tooltip text as fallback, skipped when the user set `aria-labelledby`
-— emitted inside a `fi-sr-only` (→ `sy-sr-only`) span. Sylament's template emits
-neither the span nor the reconciliation; the `title` attribute is the only
-accessible-name source today. Because it is not a declared non-goal, it is tracked
-as an open gap, not a settled divergence.
+Left: Filament's `toEmbeddedHtml()` gives the decorative (`aria-hidden`) SVG a visually-hidden text alternative — an explicit user `aria-label` pulled off the SVG, or the tooltip text as fallback, skipped when the user set `aria-labelledby` — emitted inside a `fi-sr-only` (→ `sy-sr-only`) span.
+Sylament's template emits neither the span nor the reconciliation; the `title` attribute is the only accessible-name source today.
+Because it is not a declared non-goal, it is tracked as an open gap, not a settled divergence.
 
-Next step: decide whether the `title` attribute is accepted as the accessible-name
-mechanism (then record the dropped sr-only span as a divergence) or port the text
-alternative + `aria-label` reconciliation into
-[`Icon/index.html.twig`](../../../packages/schemas/templates/partials/Icon/index.html.twig) /
-`getExtraTemplateData()`; then add a render test asserting the visually-hidden name.
+Next step: decide whether the `title` attribute is accepted as the accessible-name mechanism (then record the dropped sr-only span as a divergence) or port the text alternative + `aria-label` reconciliation into [`Icon/index.html.twig`](../../../packages/schemas/templates/partials/Icon/index.html.twig) / `getExtraTemplateData()`; then add a render test asserting the visually-hidden name.
 
 ### `extraAttributes` are not forwarded into the icon
 
-Filament merges `getExtraAttributes()` onto the icon's attribute bag before
-`generate_icon_html()`. Sylament's template emits only the class and optional
-`title`, so per-instance `extraAttributes()` do not reach the icon markup.
+Filament merges `getExtraAttributes()` onto the icon's attribute bag before `generate_icon_html()`.
+Sylament's template emits only the class and optional `title`, so per-instance `extraAttributes()` do not reach the icon markup.
 
-Next step: forward the component's extra attributes onto the bag in the template
-(coordinated with the `aria-label` handling above, which reads from the same bag),
-and cover the passthrough with a render test.
+Next step: forward the component's extra attributes onto the bag in the template (coordinated with the `aria-label` handling above, which reads from the same bag), and cover the passthrough with a render test.
 
 ## Divergences
 
 ### The default icon color is gray with no color class, not Filament's primary
 
-Filament's `toEmbeddedHtml()` passes `color(IconComponent::class, $this->getColor()
-?? 'primary')`, so an uncolored icon defaults to the primary palette. Sylament's
-`Icon` leaves `getColor()` at `null` and its policy
-[`IconComponent`](../../../packages/schemas/src/Colors/Components/IconComponent.php)
-implements `HasDefaultGrayColor`, so both an unset color and an explicit `'gray'`
-emit no color class and the icon takes the base `text-gray-400 dark:text-gray-500`
-that [`icon.css`](../../../packages/schemas/assets/src/styles/components/icon.css)
-gives `.sy-sc-icon` — Filament carries the same base rule, but reaches it only when
-a consumer asks for gray. Every other color goes through the policy like any
-other component's: a palette name emits `sy-color sy-color-<name>`, an array
-palette emits `sy-color` plus the inline `--sy-color-*` variables, and neither
-carries a shade class, because the policy declares no slots and the stylesheet
-fixes the icon at 500/400. All four cases are pinned by
-[`IconComponentRenderTest`](../../../packages/schemas/tests/Integration/Components/IconComponentRenderTest.php).
-Reverses if the toolkit adopts Filament's primary-default convention for bare
-icons.
+Filament's `toEmbeddedHtml()` passes `color(IconComponent::class, $this->getColor() ?? 'primary')`, so an uncolored icon defaults to the primary palette.
+Sylament's `Icon` leaves `getColor()` at `null` and its policy [`IconComponent`](../../../packages/schemas/src/Colors/Components/IconComponent.php) implements `HasDefaultGrayColor`, so both an unset color and an explicit `'gray'` emit no color class and the icon takes the base `text-gray-400 dark:text-gray-500` that [`icon.css`](../../../packages/schemas/assets/src/styles/components/icon.css) gives `.sy-sc-icon` — Filament carries the same base rule, but reaches it only when a consumer asks for gray.
+Every other color goes through the policy like any other component's: a palette name emits `sy-color sy-color-<name>`, an array palette emits `sy-color` plus the inline `--sy-color-*` variables, and neither carries a shade class, because the policy declares no slots and the stylesheet fixes the icon at 500/400.
+All four cases are pinned by [`IconComponentRenderTest`](../../../packages/schemas/tests/Integration/Components/IconComponentRenderTest.php).
+Reverses if the toolkit adopts Filament's primary-default convention for bare icons.
 
 ### `getSize()` drops Filament's `'base'` → `null` shortcut
 
-Filament's `getSize()` returns `null` when the size is the literal `'base'`, so no
-class is emitted and the icon keeps its base size. Sylament's `getSize()` has no
-such branch: `'base'` is neither an `IconSize` case nor blank, so it is returned
-verbatim as a string (the render-side `generate_icon_html` then `IconSize::tryFrom`s
-it to `null` anyway). Behaviorally equivalent at render time, but the getter
-contract differs — Sylament's `IconSize` enum has no `base` token.
+Filament's `getSize()` returns `null` when the size is the literal `'base'`, so no class is emitted and the icon keeps its base size.
+Sylament's `getSize()` has no such branch: `'base'` is neither an `IconSize` case nor blank, so it is returned verbatim as a string (the render-side `generate_icon_html` then `IconSize::tryFrom`s it to `null` anyway).
+Behaviorally equivalent at render time, but the getter contract differs — Sylament's `IconSize` enum has no `base` token.
 
-_See also: the global [rename table](../renames.md) — the `Htmlable` → `Markup`
-escaping-contract translation and the Blade/`toEmbeddedHtml()` → Twig-template
-render idiom are systematic translations recorded there, not per-component
-divergences._
+_See also: the global [rename table](../renames.md) — the `Htmlable` → `Markup` escaping-contract translation and the Blade/`toEmbeddedHtml()` → Twig-template render idiom are systematic translations recorded there, not per-component divergences._

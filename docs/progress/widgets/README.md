@@ -1,24 +1,18 @@
 # Widgets — port progress
 
-Ports [`filament/widgets`](../../../vendor/filament/widgets) into
-[`packages/widgets`](../../../packages/widgets). Dashboard widgets: stats overview,
-charts, and table widgets.
+Ports [`filament/widgets`](../../../vendor/filament/widgets) into [`packages/widgets`](../../../packages/widgets).
+Dashboard widgets: stats overview, charts, and table widgets.
 
-**Status:** todo — see the [status vocabulary](../README.md#statuses) and
-[what goes where](../README.md#one-row-per-file-one-file-per-thing).
+**Status:** todo — see the [status vocabulary](../README.md#statuses) and [what goes where](../README.md#one-row-per-file-one-file-per-thing).
 
 The tables below are structure only; nothing has been audited yet.
-[`support/component.md`](../support/component.md) is the shape each detail file
-follows.
+[`support/component.md`](../support/component.md) is the shape each detail file follows.
 
-One decision is taken ahead of the audit: `ChartWidget` and its typed subclasses
-render through `symfony/ux-chartjs`, a pre-approved Symfony package, rather than
-a port of Filament's own Chart.js wiring.
+One decision is taken ahead of the audit: `ChartWidget` and its typed subclasses render through `symfony/ux-chartjs`, a pre-approved Symfony package, rather than a port of Filament's own Chart.js wiring.
 
 ## Components
 
-The `Widget` base and every widget —
-[`src/`](../../../vendor/filament/widgets/src).
+The `Widget` base and every widget — [`src/`](../../../vendor/filament/widgets/src).
 
 | Component | Ports | Status | Detail |
 | --- | --- | --- | --- |
@@ -26,8 +20,7 @@ The `Widget` base and every widget —
 
 ## Features
 
-Cross-cutting concerns and traits —
-[`src/Concerns`](../../../vendor/filament/widgets/src/Concerns).
+Cross-cutting concerns and traits — [`src/Concerns`](../../../vendor/filament/widgets/src/Concerns).
 
 | Feature | Ports | Status | Detail |
 | --- | --- | --- | --- |
@@ -35,9 +28,7 @@ Cross-cutting concerns and traits —
 
 ## Supporting surface
 
-Widget configuration, templates, assets —
-[`src/WidgetConfiguration.php`](../../../vendor/filament/widgets/src/WidgetConfiguration.php),
-[`src/View`](../../../vendor/filament/widgets/src/View).
+Widget configuration, templates, assets — [`src/WidgetConfiguration.php`](../../../vendor/filament/widgets/src/WidgetConfiguration.php), [`src/View`](../../../vendor/filament/widgets/src/View).
 
 | Item | Ports | Status | Detail |
 | --- | --- | --- | --- |

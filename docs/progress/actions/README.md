@@ -1,65 +1,27 @@
 # Actions — port progress
 
-Ports [`filament/actions`](../../../vendor/filament/actions) into
-[`packages/actions`](../../../packages/actions): action objects — button / link /
-icon-button / badge styling, modals, and the mount/call lifecycle — plus the
-bulk, relationship, and import/export action families built on the `Action` base.
+Ports [`filament/actions`](../../../vendor/filament/actions) into [`packages/actions`](../../../packages/actions): action objects — button / link / icon-button / badge styling, modals, and the mount/call lifecycle — plus the bulk, relationship, and import/export action families built on the `Action` base.
 
-**Status:** in progress — see the [status vocabulary](../README.md#statuses) and
-[what goes where](../README.md#one-row-per-file-one-file-per-thing).
+**Status:** in progress — see the [status vocabulary](../README.md#statuses) and [what goes where](../README.md#one-row-per-file-one-file-per-thing).
 
-These tables map the full `actions/src` surface end to end (plus the rendered
-views, translations, and assets), so no table carries an
-[unaudited row](../README.md#an-unaudited-table-says-so). The per-component audit
-against Filament has now resolved every **started** row (a linked first-column
-source) to a real [status](../README.md#statuses) — **done**, **in progress**,
-**blocked**, or **skipped** — with a detail file wherever a divergence, an open
-gap, or real sub-structure earns one. A plain-text name is not built yet and
-stays **todo**.
+These tables map the full `actions/src` surface end to end (plus the rendered views, translations, and assets), so no table carries an [unaudited row](../README.md#an-unaudited-table-says-so).
+The per-component audit against Filament has now resolved every **started** row (a linked first-column source) to a real [status](../README.md#statuses) — **done**, **in progress**, **blocked**, or **skipped** — with a detail file wherever a divergence, an open gap, or real sub-structure earns one.
+A plain-text name is not built yet and stays **todo**.
 
-The 26 concerns Filament composes onto the `Action` base —
-`BelongsToLiveComponent`, `CanBeDisabled`, `CanBeHidden`, `CanBeOutlined`,
-`CanCallParentAction`, `CanClose`, `CanDeselectRecordsAfterCompletion`,
-`CanDispatchEvent`, `CanFetchSelectedRecords`, `CanNotify`,
-`CanOpenModal`, `CanOpenUrl`, `CanRedirect`, `CanRequireConfirmation`,
-`CanUseDatabaseTransactions`,
-`HasAction`, `HasArguments`, `HasGroupedIcon`, `HasLabel`,
-`HasLifecycleHooks`, `HasMountableArguments`, `HasName`, `HasParentActions`,
-`HasSize`,
-`InteractsWithRecord` and `InteractsWithSelectedRecords` — have folded into
-[`action.md`](action.md) and left the Features table, per
-[one row per file](../README.md#one-row-per-file-one-file-per-thing). Most are
-single-consumer in the port; the four `ActionGroup` also composes —
-`CanBeOutlined`, `HasGroupedIcon`, `HasLabel`, `HasSize` — stay written up once
-in `action.md`, with reference rows in [`action-group.md`](action-group.md);
-the host-side `HasActions` trait keeps its own row. `Action`'s rendering
-templates fold in the same way (see the [Supporting surface](#supporting-surface)
-note). [`support/component.md`](../support/component.md) is the shape each detail
-file follows.
+The 26 concerns Filament composes onto the `Action` base — `BelongsToLiveComponent`, `CanBeDisabled`, `CanBeHidden`, `CanBeOutlined`, `CanCallParentAction`, `CanClose`, `CanDeselectRecordsAfterCompletion`, `CanDispatchEvent`, `CanFetchSelectedRecords`, `CanNotify`, `CanOpenModal`, `CanOpenUrl`, `CanRedirect`, `CanRequireConfirmation`, `CanUseDatabaseTransactions`, `HasAction`, `HasArguments`, `HasGroupedIcon`, `HasLabel`, `HasLifecycleHooks`, `HasMountableArguments`, `HasName`, `HasParentActions`, `HasSize`, `InteractsWithRecord` and `InteractsWithSelectedRecords` — have folded into [`action.md`](action.md) and left the Features table, per [one row per file](../README.md#one-row-per-file-one-file-per-thing).
+Most are single-consumer in the port; the four `ActionGroup` also composes — `CanBeOutlined`, `HasGroupedIcon`, `HasLabel`, `HasSize` — stay written up once in `action.md`, with reference rows in [`action-group.md`](action-group.md); the host-side `HasActions` trait keeps its own row.
+`Action`'s rendering templates fold in the same way (see the [Supporting surface](#supporting-surface) note).
+[`support/component.md`](../support/component.md) is the shape each detail file follows.
 
-Names follow Filament except where the port deliberately renames: the first
-column links the Sylament file under **its own** name, the **Ports** column names
-the Filament source. The rename to know while reading these tables is the
-`Has*` / `InteractsWith*` **swap** (recorded in [`renames.md`](../renames.md)) —
-in Sylament, `HasActions` is the host-side **trait** (ports Filament's
-[`Concerns/InteractsWithActions`](../../../vendor/filament/actions/src/Concerns/InteractsWithActions.php))
-and `InteractsWithActions` is the **interface** (ports Filament's
-[`Contracts/HasActions`](../../../vendor/filament/actions/src/Contracts/HasActions.php)),
-the exact inverse of Filament.
+Names follow Filament except where the port deliberately renames: the first column links the Sylament file under **its own** name, the **Ports** column names the Filament source.
+The rename to know while reading these tables is the `Has*` / `InteractsWith*` **swap** (recorded in [`renames.md`](../renames.md)) — in Sylament, `HasActions` is the host-side **trait** (ports Filament's [`Concerns/InteractsWithActions`](../../../vendor/filament/actions/src/Concerns/InteractsWithActions.php)) and `InteractsWithActions` is the **interface** (ports Filament's [`Contracts/HasActions`](../../../vendor/filament/actions/src/Contracts/HasActions.php)), the exact inverse of Filament.
 
 ## Components
 
-The `Action` base, the prebuilt record / relationship / import / export actions,
-`ActionGroup`, and the bulk-action family — [`src/`](../../../vendor/filament/actions/src).
-`Action` heads the table; the rest follow alphabetically. (`ActionName` and the
-service provider live in [Supporting surface](#supporting-surface).) Four rows
-share a detail file with the class they preset, the way a component's concerns
-fold into its own file: `BulkActionGroup` into
-[`action-group.md`](action-group.md), `DeleteBulkAction` into
-[`delete-action.md`](delete-action.md#deletebulkaction), `DetachBulkAction` into
-[`detach-action.md`](detach-action.md#detachbulkaction) and
-`DissociateBulkAction` into
-[`dissociate-action.md`](dissociate-action.md#dissociatebulkaction).
+The `Action` base, the prebuilt record / relationship / import / export actions, `ActionGroup`, and the bulk-action family — [`src/`](../../../vendor/filament/actions/src).
+`Action` heads the table; the rest follow alphabetically.
+(`ActionName` and the service provider live in [Supporting surface](#supporting-surface).)
+Four rows share a detail file with the class they preset, the way a component's concerns fold into its own file: `BulkActionGroup` into [`action-group.md`](action-group.md), `DeleteBulkAction` into [`delete-action.md`](delete-action.md#deletebulkaction), `DetachBulkAction` into [`detach-action.md`](detach-action.md#detachbulkaction) and `DissociateBulkAction` into [`dissociate-action.md`](dissociate-action.md#dissociatebulkaction).
 
 | Component | Ports | Status | Detail |
 | --- | --- | --- | --- |
@@ -93,22 +55,11 @@ fold into its own file: `BulkActionGroup` into
 ## Features
 
 Cross-cutting action concerns — [`src/Concerns`](../../../vendor/filament/actions/src/Concerns).
-Most are mixed onto the `Action` base; the `InteractsWith*` traits are host-side
-(mixed onto the Livewire / LiveComponent page that mounts actions). The 23
-concerns `Action` composes are folded into [`action.md`](action.md) and no longer
-carry rows here — the remaining rows are the not-yet-started concerns, the
-host-side `HasActions` trait, and the two-method extra-modal-attribute traits
-whose whole surface fits in a row. `BelongsToGroup` folds the same way into
-[`action-group.md`](action-group.md) instead: `Action` and `ActionGroup` both
-compose it, but its own surface (the back-reference pair) is small enough to
-write up once, in the file for the class it primarily describes, rather than
-spinning up a third detail file. `HasDropdown` folds into
-[`action-group.md`](action-group.md) too, single-consumer (`ActionGroup`
-only) and audited there, and so leaves this table the same way `Action`'s own
-single-consumer concerns do. Ordered by the name in the first column: the
-Sylament `HasActions` row (in the `H` block) is the port of Filament's
-`Concerns/InteractsWithActions` trait — see the
-[swap note above](#actions--port-progress).
+Most are mixed onto the `Action` base; the `InteractsWith*` traits are host-side (mixed onto the Livewire / LiveComponent page that mounts actions).
+The 23 concerns `Action` composes are folded into [`action.md`](action.md) and no longer carry rows here — the remaining rows are the not-yet-started concerns, the host-side `HasActions` trait, and the two-method extra-modal-attribute traits whose whole surface fits in a row.
+`BelongsToGroup` folds the same way into [`action-group.md`](action-group.md) instead: `Action` and `ActionGroup` both compose it, but its own surface (the back-reference pair) is small enough to write up once, in the file for the class it primarily describes, rather than spinning up a third detail file.
+`HasDropdown` folds into [`action-group.md`](action-group.md) too, single-consumer (`ActionGroup` only) and audited there, and so leaves this table the same way `Action`'s own single-consumer concerns do.
+Ordered by the name in the first column: the Sylament `HasActions` row (in the `H` block) is the port of Filament's `Concerns/InteractsWithActions` trait — see the [swap note above](#actions--port-progress).
 
 | Feature | Ports | Status | Detail |
 | --- | --- | --- | --- |
@@ -139,42 +90,10 @@ Sylament `HasActions` row (in the `H` block) is the port of Filament's
 
 ## Supporting surface
 
-Everything with no action class of its own: the host contract, the status enum,
-the call events, the resolve exception, the `ActionName` attribute, the
-import/export subsystem (the user-facing `Exporter` / `Importer` / column bases
-plus their Eloquent models, queue jobs, downloaders, HTTP controllers, and `make:`
-commands), the test helpers, the icon-alias and render-hook registries, the
-`renderAction()` Twig helper, the rendered views, the translations and assets,
-and the bundle wiring —
-[`src/Contracts`](../../../vendor/filament/actions/src/Contracts),
-[`src/Enums`](../../../vendor/filament/actions/src/Enums),
-[`src/Events`](../../../vendor/filament/actions/src/Events),
-[`src/Exceptions`](../../../vendor/filament/actions/src/Exceptions),
-[`src/Exports`](../../../vendor/filament/actions/src/Exports),
-[`src/Imports`](../../../vendor/filament/actions/src/Imports),
-[`src/Commands`](../../../vendor/filament/actions/src/Commands),
-[`src/Testing`](../../../vendor/filament/actions/src/Testing),
-[`src/View`](../../../vendor/filament/actions/src/View),
-[`resources/views`](../../../vendor/filament/actions/resources/views). A row named
-for a directory collapses that whole subtree into one navigational entry.
-`Action`'s own rendering templates — the trigger family
-([`Action/Button.html.twig`](../../../packages/actions/templates/partials/Action/Button.html.twig),
-[`Action/Link.html.twig`](../../../packages/actions/templates/partials/Action/Link.html.twig),
-[`Action/Badge.html.twig`](../../../packages/actions/templates/partials/Action/Badge.html.twig),
-[`Action/Grouped.html.twig`](../../../packages/actions/templates/partials/Action/Grouped.html.twig),
-[`Action/IconButton.html.twig`](../../../packages/actions/templates/partials/Action/IconButton.html.twig),
-and `ActionGroup`'s own
-[`GroupedTrigger.html.twig`](../../../packages/actions/templates/partials/ActionGroup/GroupedTrigger.html.twig);
-each a thin composition over the support-layer primitive Filament's matching
-`*_VIEW` constant points at, so none carries markup of its own to track) and
-[`ActionModal/index.html.twig`](../../../packages/actions/templates/components/ActionModal/index.html.twig)
-(porting [`action-modal.blade.php`](../../../vendor/filament/actions/resources/views/action-modal.blade.php))
-— are folded into [`action.md`](action.md) as its trigger- and modal-rendering
-rows rather than carrying rows here. The host-side
-[`Modals`](../../../packages/actions/templates/components/Modals/index.html.twig)
-component (porting [`components/modals.blade.php`](../../../vendor/filament/actions/resources/views/components/modals.blade.php))
-folds the same way into [`has-actions.md`](has-actions.md), being a pure view over
-that trait's mounted-action state.
+Everything with no action class of its own: the host contract, the status enum, the call events, the resolve exception, the `ActionName` attribute, the import/export subsystem (the user-facing `Exporter` / `Importer` / column bases plus their Eloquent models, queue jobs, downloaders, HTTP controllers, and `make:` commands), the test helpers, the icon-alias and render-hook registries, the `renderAction()` Twig helper, the rendered views, the translations and assets, and the bundle wiring — [`src/Contracts`](../../../vendor/filament/actions/src/Contracts), [`src/Enums`](../../../vendor/filament/actions/src/Enums), [`src/Events`](../../../vendor/filament/actions/src/Events), [`src/Exceptions`](../../../vendor/filament/actions/src/Exceptions), [`src/Exports`](../../../vendor/filament/actions/src/Exports), [`src/Imports`](../../../vendor/filament/actions/src/Imports), [`src/Commands`](../../../vendor/filament/actions/src/Commands), [`src/Testing`](../../../vendor/filament/actions/src/Testing), [`src/View`](../../../vendor/filament/actions/src/View), [`resources/views`](../../../vendor/filament/actions/resources/views).
+A row named for a directory collapses that whole subtree into one navigational entry.
+`Action`'s own rendering templates — the trigger family ([`Action/Button.html.twig`](../../../packages/actions/templates/partials/Action/Button.html.twig), [`Action/Link.html.twig`](../../../packages/actions/templates/partials/Action/Link.html.twig), [`Action/Badge.html.twig`](../../../packages/actions/templates/partials/Action/Badge.html.twig), [`Action/Grouped.html.twig`](../../../packages/actions/templates/partials/Action/Grouped.html.twig), [`Action/IconButton.html.twig`](../../../packages/actions/templates/partials/Action/IconButton.html.twig), and `ActionGroup`'s own [`GroupedTrigger.html.twig`](../../../packages/actions/templates/partials/ActionGroup/GroupedTrigger.html.twig); each a thin composition over the support-layer primitive Filament's matching `*_VIEW` constant points at, so none carries markup of its own to track) and [`ActionModal/index.html.twig`](../../../packages/actions/templates/components/ActionModal/index.html.twig) (porting [`action-modal.blade.php`](../../../vendor/filament/actions/resources/views/action-modal.blade.php)) — are folded into [`action.md`](action.md) as its trigger- and modal-rendering rows rather than carrying rows here.
+The host-side [`Modals`](../../../packages/actions/templates/components/Modals/index.html.twig) component (porting [`components/modals.blade.php`](../../../vendor/filament/actions/resources/views/components/modals.blade.php)) folds the same way into [`has-actions.md`](has-actions.md), being a pure view over that trait's mounted-action state.
 
 | Item | Ports | Status | Detail |
 | --- | --- | --- | --- |

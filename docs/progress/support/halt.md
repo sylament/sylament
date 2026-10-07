@@ -1,26 +1,21 @@
 # Halt (support)
 
-`Sylament\Support\Exceptions\Halt` — the control-flow exception an action closure
-throws to stop the lifecycle cleanly while keeping its modal mounted (no failure
-notification). Filament keeps it in `support` because several packages throw it;
-[`actions`](../../../packages/actions/src/Action.php) is the port's first thrower
-and [`HasActions`](../../../packages/actions/src/Concerns/HasActions.php) its
-first catcher. Ported whole: the marker exception plus its
-database-transaction rollback control.
+`Sylament\Support\Exceptions\Halt` — the control-flow exception an action closure throws to stop the lifecycle cleanly while keeping its modal mounted (no failure notification).
+Filament keeps it in `support` because several packages throw it; [`actions`](../../../packages/actions/src/Action.php) is the port's first thrower and [`HasActions`](../../../packages/actions/src/Concerns/HasActions.php) its first catcher.
+Ported whole: the marker exception plus its database-transaction rollback control.
 
-**Status:** done — see the
-[status vocabulary](../README.md#statuses).
+**Status:** done — see the [status vocabulary](../README.md#statuses).
 
 Reference — the Filament source this is diffed against:
 
-- [`support/src/Exceptions/Halt.php`](../../../vendor/filament/support/src/Exceptions/Halt.php)
-  — the exception class and its rollback-control state
+- [`support/src/Exceptions/Halt.php`](../../../vendor/filament/support/src/Exceptions/Halt.php) — the exception class and its rollback-control state
 
 ## Surface
 
-Every point of this exception. _Blocked by_ names what has to land first.
-_Detail_ carries the row's own note; a row that needed a Details section no
-longer has one. Rows never disappear — only their detail sections do.
+Every point of this exception.
+_Blocked by_ names what has to land first.
+_Detail_ carries the row's own note; a row that needed a Details section no longer has one.
+Rows never disappear — only their detail sections do.
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |

@@ -1,33 +1,20 @@
 # Support — port progress
 
-Ports [`filament/support`](../../../vendor/filament/support) into
-[`packages/support`](../../../packages/support). Foundation for every other bundle:
-the base component model, shared UI components, colors, icons, assets, helpers.
+Ports [`filament/support`](../../../vendor/filament/support) into [`packages/support`](../../../packages/support).
+Foundation for every other bundle: the base component model, shared UI components, colors, icons, assets, helpers.
 
-**Status:** in progress — see the [status vocabulary](../README.md#statuses) and
-[what goes where](../README.md#one-row-per-file-one-file-per-thing).
+**Status:** in progress — see the [status vocabulary](../README.md#statuses) and [what goes where](../README.md#one-row-per-file-one-file-per-thing).
 
-These tables map the full `support/src` surface end to end. A linked name in the
-first column is code that already exists in the port; the per-component audit
-against Filament has now resolved every one to a real
-[status](../README.md#statuses) — **done** or **in progress** — linking a detail
-file wherever a divergence, an open gap, or real sub-structure earns one. A
-plain-text name is not built yet and carries **Status** `todo`. A row named for
-a directory (`Commands`, `Facades`, `Translations`, `Color policies`, …) collapses a
-whole subtree into one navigational entry — a cluster we expect to port, if at
-all, as a unit rather than file by file.
+These tables map the full `support/src` surface end to end.
+A linked name in the first column is code that already exists in the port; the per-component audit against Filament has now resolved every one to a real [status](../README.md#statuses) — **done** or **in progress** — linking a detail file wherever a divergence, an open gap, or real sub-structure earns one.
+A plain-text name is not built yet and carries **Status** `todo`.
+A row named for a directory (`Commands`, `Facades`, `Translations`, `Color policies`, …) collapses a whole subtree into one navigational entry — a cluster we expect to port, if at all, as a unit rather than file by file.
 
 ## Components
 
-The shared UI kit — the component model in
-[`src/Components`](../../../vendor/filament/support/src/Components) and the rendered
-widgets in [`src/View/Components`](../../../vendor/filament/support/src/View/Components)
+The shared UI kit — the component model in [`src/Components`](../../../vendor/filament/support/src/Components) and the rendered widgets in [`src/View/Components`](../../../vendor/filament/support/src/View/Components)
 + [`resources/views/components`](../../../vendor/filament/support/resources/views/components).
-Several `View/Components/*Component.php` files are **colour policies** rather than
-renderable widgets; where one backs a widget the row below owns both, and the
-policy tier itself — including `ToggleComponent`, which backs no support-level
-widget at all — is the `Color policies` row in the
-[Supporting surface](#supporting-surface).
+  Several `View/Components/*Component.php` files are **colour policies** rather than renderable widgets; where one backs a widget the row below owns both, and the policy tier itself — including `ToggleComponent`, which backs no support-level widget at all — is the `Color policies` row in the [Supporting surface](#supporting-surface).
 
 | Component | Ports | Status | Detail |
 | --- | --- | --- | --- |
@@ -63,11 +50,8 @@ widget at all — is the `Color policies` row in the
 
 ## Features
 
-Cross-cutting concerns and traits —
-[`src/Concerns`](../../../vendor/filament/support/src/Concerns). The base
-`Component`'s own traits (`Configurable`, `EvaluatesClosures`, `Macroable`, and the
-Laravel `Conditionable`/`Tappable`) are tracked in [`component.md`](component.md),
-not here.
+Cross-cutting concerns and traits — [`src/Concerns`](../../../vendor/filament/support/src/Concerns).
+The base `Component`'s own traits (`Configurable`, `EvaluatesClosures`, `Macroable`, and the Laravel `Conditionable`/`Tappable`) are tracked in [`component.md`](component.md), not here.
 
 | Feature | Ports | Status | Detail |
 | --- | --- | --- | --- |
@@ -106,38 +90,13 @@ not here.
 
 ## Supporting surface
 
-Everything with no user-facing UI class of its own: enums, contracts, colors, icons,
-assets, storage, facades, the view layer, exceptions, events, CLI commands, Eloquent
-query services, root value classes, translations, and the bundle wiring —
-[`src/Enums`](../../../vendor/filament/support/src/Enums),
-[`src/Contracts`](../../../vendor/filament/support/src/Contracts),
-[`src/Colors`](../../../vendor/filament/support/src/Colors),
-[`src/Icons`](../../../vendor/filament/support/src/Icons),
-[`src/Assets`](../../../vendor/filament/support/src/Assets),
-[`src/View`](../../../vendor/filament/support/src/View),
-[`src/Commands`](../../../vendor/filament/support/src/Commands) — plus the shipped
-front-end resources that back no `src/` class at all
-([`resources/js`](../../../vendor/filament/support/resources/js),
-[`resources/css`](../../../vendor/filament/support/resources/css)), whose ports are
-this package's Stimulus controllers and `assets/src/styles/components/*.css` rules.
+Everything with no user-facing UI class of its own: enums, contracts, colors, icons, assets, storage, facades, the view layer, exceptions, events, CLI commands, Eloquent query services, root value classes, translations, and the bundle wiring — [`src/Enums`](../../../vendor/filament/support/src/Enums), [`src/Contracts`](../../../vendor/filament/support/src/Contracts), [`src/Colors`](../../../vendor/filament/support/src/Colors), [`src/Icons`](../../../vendor/filament/support/src/Icons), [`src/Assets`](../../../vendor/filament/support/src/Assets), [`src/View`](../../../vendor/filament/support/src/View), [`src/Commands`](../../../vendor/filament/support/src/Commands) — plus the shipped front-end resources that back no `src/` class at all ([`resources/js`](../../../vendor/filament/support/resources/js), [`resources/css`](../../../vendor/filament/support/resources/css)), whose ports are this package's Stimulus controllers and `assets/src/styles/components/*.css` rules.
 
-Three symbols in this package share the name `HasColor`, and Filament collides
-the same way. **[`Components\Concerns\HasColor`](../../../packages/support/src/Components/Concerns/HasColor.php)**
-is the fluent setter trait a component uses (`color()` / `defaultColor()` /
-`getColor()`); it is tracked in the [Features](#features) table above.
-**[`Colors\Contracts\HasColor`](../../../packages/support/src/Colors/Contracts/HasColor.php)**
-is the policy contract every contrast policy implements (`getColorMap()`); it
-shipped with the colour registry and is tracked in
-[color-policies.md](color-policies.md). **`Contracts\HasColor`** — the row
-below — is the *state* contract: one method, `getColor(): string|array|null`,
-meant for a user's status enum so a table column can colour itself from record
-state; it has no consumer in this package yet. Filament carries the same two
-contracts (`Support\Contracts\HasColor` and
-`Support\View\Components\Contracts\HasColor`) and hits the same clash one level
-up: `infolists/Components/Concerns/HasColor.php` declares `trait HasColor` and
-needs the enum contract, so it imports it `as ColorInterface` — unaliased, the
-`use` would collide with the trait's own declaration of the same unqualified
-name.
+Three symbols in this package share the name `HasColor`, and Filament collides the same way.
+**[`Components\Concerns\HasColor`](../../../packages/support/src/Components/Concerns/HasColor.php)** is the fluent setter trait a component uses (`color()` / `defaultColor()` / `getColor()`); it is tracked in the [Features](#features) table above.
+**[`Colors\Contracts\HasColor`](../../../packages/support/src/Colors/Contracts/HasColor.php)** is the policy contract every contrast policy implements (`getColorMap()`); it shipped with the colour registry and is tracked in [color-policies.md](color-policies.md).
+**`Contracts\HasColor`** — the row below — is the *state* contract: one method, `getColor(): string|array|null`, meant for a user's status enum so a table column can colour itself from record state; it has no consumer in this package yet.
+Filament carries the same two contracts (`Support\Contracts\HasColor` and `Support\View\Components\Contracts\HasColor`) and hits the same clash one level up: `infolists/Components/Concerns/HasColor.php` declares `trait HasColor` and needs the enum contract, so it imports it `as ColorInterface` — unaliased, the `use` would collide with the trait's own declaration of the same unqualified name.
 
 | Item | Ports | Status | Detail |
 | --- | --- | --- | --- |

@@ -1,33 +1,23 @@
 # CheckboxColumn (tables)
 
-[`Sylament\Tables\Columns\CheckboxColumn`](../../../packages/tables/src/Columns/CheckboxColumn.php)
-— an editable [`Column`](column.md) whose cell is a plain checkbox: ticking it
-writes a boolean back onto the record through the host's
-[`updateTableColumnState()`](has-columns.md) live action. It ports Filament's
-[`Filament\Tables\Columns\CheckboxColumn`](../../../vendor/filament/tables/src/Columns/CheckboxColumn.php).
-Everything [`Column`](column.md) carries is tracked there, and the write-back
-seam the four editable columns share is tracked on
-[`has-columns.md`](has-columns.md), not repeated here.
+[`Sylament\Tables\Columns\CheckboxColumn`](../../../packages/tables/src/Columns/CheckboxColumn.php) — an editable [`Column`](column.md) whose cell is a plain checkbox: ticking it writes a boolean back onto the record through the host's [`updateTableColumnState()`](has-columns.md) live action.
+It ports Filament's [`Filament\Tables\Columns\CheckboxColumn`](../../../vendor/filament/tables/src/Columns/CheckboxColumn.php).
+Everything [`Column`](column.md) carries is tracked there, and the write-back seam the four editable columns share is tracked on [`has-columns.md`](has-columns.md), not repeated here.
 
-**Status:** done — see the
-[status vocabulary](../README.md#statuses).
+**Status:** done — see the [status vocabulary](../README.md#statuses).
 
 Reference — the Filament source this is diffed against:
 
-- [`tables/src/Columns/CheckboxColumn.php`](../../../vendor/filament/tables/src/Columns/CheckboxColumn.php)
-  — the class and its `toEmbeddedHtml()`
-- [`tables/resources/css/columns/checkbox.css`](../../../vendor/filament/tables/resources/css/columns/checkbox.css)
-  — the stylesheet [`checkbox-column.css`](../../../packages/tables/assets/src/styles/components/checkbox-column.css)
-  is the prefix-renamed port of
+- [`tables/src/Columns/CheckboxColumn.php`](../../../vendor/filament/tables/src/Columns/CheckboxColumn.php) — the class and its `toEmbeddedHtml()`
+- [`tables/resources/css/columns/checkbox.css`](../../../vendor/filament/tables/resources/css/columns/checkbox.css) — the stylesheet [`checkbox-column.css`](../../../packages/tables/assets/src/styles/components/checkbox-column.css) is the prefix-renamed port of
 
 ## Surface
 
-Every point of this component. _Blocked by_ names what has to land first.
-_Detail_ carries up to two links here: **detail** → the write-up in Details,
-deleted once the row is **done**; **semantics** → the permanent note in
-[Semantics](#semantics). This component has no divergences of its own; the
-write-back's are on [`has-columns.md`](has-columns.md#divergences). Rows never
-disappear — only their detail sections do.
+Every point of this component.
+_Blocked by_ names what has to land first.
+_Detail_ carries up to two links here: **detail** → the write-up in Details, deleted once the row is **done**; **semantics** → the permanent note in [Semantics](#semantics).
+This component has no divergences of its own; the write-back's are on [`has-columns.md`](has-columns.md#divergences).
+Rows never disappear — only their detail sections do.
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
@@ -41,22 +31,12 @@ disappear — only their detail sections do.
 | `wire:loading.attr` / `wire:target` on the control | [`CheckboxColumn::toEmbeddedHtml()`](../../../vendor/filament/tables/src/Columns/CheckboxColumn.php) | done | — | [toggle-column.md](toggle-column.md#the-in-flight-affordance-is-the-controllers-not-a-loading-attribute) |
 | `x-tooltip` for the error bubble, `wire:ignore.self` on the root | [`CheckboxColumn::toEmbeddedHtml()`](../../../vendor/filament/tables/src/Columns/CheckboxColumn.php) | skipped | — | Same two reasons as [`ToggleColumn`](toggle-column.md#surface): the refusal is server-rendered, and the root must morph to carry the `state` value |
 
-Every row is covered by the Unit
-[`CheckboxColumnTest`](../../../packages/tables/tests/Unit/Columns/CheckboxColumnTest.php)
-and the Integration
-[`CheckboxColumnTest`](../../../packages/tables/tests/Integration/Columns/CheckboxColumnTest.php);
-the write itself is
-[`HasColumnsTest`](../../../packages/tables/tests/Integration/Concerns/HasColumnsTest.php)'s.
+Every row is covered by the Unit [`CheckboxColumnTest`](../../../packages/tables/tests/Unit/Columns/CheckboxColumnTest.php) and the Integration [`CheckboxColumnTest`](../../../packages/tables/tests/Integration/Columns/CheckboxColumnTest.php); the write itself is [`HasColumnsTest`](../../../packages/tables/tests/Integration/Concerns/HasColumnsTest.php)'s.
 
 ## Semantics
 
 ### The skin is support's `sy-checkbox`, the one selection already uses
 
-Filament's cell renders `input.fi-checkbox`, the same skin as the row-selection
-boxes. The port does the same with `sy-checkbox`, which
-[support already ships](../support/README.md) and record selection already
-renders — so the column adds no checkbox styling of its own, only the cell
-padding and alignment. Every editable cell reuses a shipped skin this way —
-support's `sy-checkbox` here, forms' `sy-fo-toggle*`, `sy-fo-input` and
-`sy-fo-select` in the other three — rather than hoisting them into support; the
-hoist is a follow-up, so this column touches no forms file.
+Filament's cell renders `input.fi-checkbox`, the same skin as the row-selection boxes.
+The port does the same with `sy-checkbox`, which [support already ships](../support/README.md) and record selection already renders — so the column adds no checkbox styling of its own, only the cell padding and alignment.
+Every editable cell reuses a shipped skin this way — support's `sy-checkbox` here, forms' `sy-fo-toggle*`, `sy-fo-input` and `sy-fo-select` in the other three — rather than hoisting them into support; the hoist is a follow-up, so this column touches no forms file.

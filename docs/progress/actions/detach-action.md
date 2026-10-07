@@ -1,56 +1,28 @@
 # DetachAction (actions)
 
-[`Sylament\Actions\DetachAction`](../../../packages/actions/src/DetachAction.php)
-— the prebuilt many-to-many detach: a danger-coloured cross trigger that opens a
-confirmation modal and, on confirm, undoes the bound record's membership of the
-table's relationship and flushes. It is the undo of
-[`AttachAction`](attach-action.md), and like it, it only makes sense on a
-[relation-scoped table](../tables/table.md): `Table::relationship()` names the
-owner and the association, and without one the action refuses.
+[`Sylament\Actions\DetachAction`](../../../packages/actions/src/DetachAction.php) — the prebuilt many-to-many detach: a danger-coloured cross trigger that opens a confirmation modal and, on confirm, undoes the bound record's membership of the table's relationship and flushes.
+It is the undo of [`AttachAction`](attach-action.md), and like it, it only makes sense on a [relation-scoped table](../tables/table.md): `Table::relationship()` names the owner and the association, and without one the action refuses.
 
-Unlike its attach sibling it is **complete**: detaching needs no form, so there
-is no schema to build and nothing waiting on forms.
+Unlike its attach sibling it is **complete**: detaching needs no form, so there is no schema to build and nothing waiting on forms.
 
-Its bulk sibling
-[`DetachBulkAction`](../../../packages/actions/src/DetachBulkAction.php) is
-audited [at the bottom of this file](#detachbulkaction), the way
-[`DeleteBulkAction`](delete-action.md#deletebulkaction) rides along with
-`DeleteAction`: it is the same detach over a table's selection instead of over
-one row.
+Its bulk sibling [`DetachBulkAction`](../../../packages/actions/src/DetachBulkAction.php) is audited [at the bottom of this file](#detachbulkaction), the way [`DeleteBulkAction`](delete-action.md#deletebulkaction) rides along with `DeleteAction`: it is the same detach over a table's selection instead of over one row.
 
 **Status:** done — see the [status vocabulary](../README.md#statuses).
 
 Reference — the Filament source this is diffed against:
 
-- [`actions/src/DetachAction.php`](../../../vendor/filament/actions/src/DetachAction.php)
-  — the class this ports, whole
-- [`actions/src/DetachBulkAction.php`](../../../vendor/filament/actions/src/DetachBulkAction.php)
-  — the bulk sibling below
-- [`actions/src/Concerns/CanCustomizeProcess.php`](../../../vendor/filament/actions/src/Concerns/CanCustomizeProcess.php)
-  — the trait both compose, ported whole (row in [README](README.md#features))
-- [`actions/resources/lang/en/detach.php`](../../../vendor/filament/actions/resources/lang/en/detach.php)
-  — the strings they set
+- [`actions/src/DetachAction.php`](../../../vendor/filament/actions/src/DetachAction.php) — the class this ports, whole
+- [`actions/src/DetachBulkAction.php`](../../../vendor/filament/actions/src/DetachBulkAction.php) — the bulk sibling below
+- [`actions/src/Concerns/CanCustomizeProcess.php`](../../../vendor/filament/actions/src/Concerns/CanCustomizeProcess.php) — the trait both compose, ported whole (row in [README](README.md#features))
+- [`actions/resources/lang/en/detach.php`](../../../vendor/filament/actions/resources/lang/en/detach.php) — the strings they set
 
-Covered by
-[`DetachActionTest`](../../../packages/actions/tests/Unit/DetachActionTest.php)
-and
-[`DetachBulkActionTest`](../../../packages/actions/tests/Unit/DetachBulkActionTest.php)
-for the chrome, the presets and the counting titles, and end to end by
-[`AttachDetachActionsTest`](../../../packages/tables/tests/Integration/AttachDetachActionsTest.php)
-in the **tables** suite — a row detach with its record-titled heading and its
-toast, and the bulk detach on both arms with the no-fetch arm proved never to
-hydrate the selection, plus `DetachBulkAction`'s own hostless refusal — that one
-driven against a container-built host rather than a mounted request, because a
-table whose `relationship()` answers null cannot render at all. It sits there for the reason
-[`PrebuiltDeleteActionTest`](delete-action.md) does: only a table host supplies a
-relationship, a bound row record and a selection, and the actions test kernel has
-none of the three.
+Covered by [`DetachActionTest`](../../../packages/actions/tests/Unit/DetachActionTest.php) and [`DetachBulkActionTest`](../../../packages/actions/tests/Unit/DetachBulkActionTest.php) for the chrome, the presets and the counting titles, and end to end by [`AttachDetachActionsTest`](../../../packages/tables/tests/Integration/AttachDetachActionsTest.php) in the **tables** suite — a row detach with its record-titled heading and its toast, and the bulk detach on both arms with the no-fetch arm proved never to hydrate the selection, plus `DetachBulkAction`'s own hostless refusal — that one driven against a container-built host rather than a mounted request, because a table whose `relationship()` answers null cannot render at all.
+It sits there for the reason [`PrebuiltDeleteActionTest`](delete-action.md) does: only a table host supplies a relationship, a bound row record and a selection, and the actions test kernel has none of the three.
 
 ## Surface
 
-Every member Filament's class carries. _Detail_ carries **diverges** → the note
-in [Divergences](#divergences), and/or **semantics** → the permanent note in
-[Semantics](#semantics).
+Every member Filament's class carries.
+_Detail_ carries **diverges** → the note in [Divergences](#divergences), and/or **semantics** → the permanent note in [Semantics](#semantics).
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
@@ -63,35 +35,25 @@ in [Divergences](#divergences), and/or **semantics** → the permanent note in
 
 ## Semantics
 
-Faithful ports whose behaviour is easy to misread. Permanent.
+Faithful ports whose behaviour is easy to misread.
+Permanent.
 
 ### The headings interpolate, and fall back to the bare verb
 
-`"Detach {$this->getRecordTitle()}"` reads the action's record chain — custom
-title → **table** → host hook → record label — so a table declaring
-`recordTitleAttribute('name')` is what makes a row's modal read *Detach Rock*
-rather than *Detach genre*. With nothing bound and nothing naming a class the
-chain answers null, and the heading collapses to the bare `Detach`. Same shape
-one file over on [`DeleteAction`](delete-action.md#the-headings-interpolate-and-fall-back-to-the-bare-verb).
+`"Detach {$this->getRecordTitle()}"` reads the action's record chain — custom title → **table** → host hook → record label — so a table declaring `recordTitleAttribute('name')` is what makes a row's modal read *Detach Rock* rather than *Detach genre*.
+With nothing bound and nothing naming a class the chain answers null, and the heading collapses to the bare `Detach`.
+Same shape one file over on [`DeleteAction`](delete-action.md#the-headings-interpolate-and-fall-back-to-the-bare-verb).
 
-Because it confirms, the modal's default width is `md`; a non-confirming action's
-default is `4xl`. Neither action sets a width of its own.
+Because it confirms, the modal's default width is `md`; a non-confirming action's default is `4xl`.
+Neither action sets a width of its own.
 
 ### The write goes through the association reader, on the owning side
 
-[`AssociationReader::detach()`](../schemas/association-reader.md) does the
-removal, and it always writes the side Doctrine persists: a many-to-many removes
-from the owner's collection, or from the *target's* when the owner holds the
-inverse side, since an inverse-only write emits no SQL at all. The removal runs
-through the domain's own remover (Symfony's adder/remover diff over the whole
-desired list), not through `Collection::removeElement()` — which is why the
-contract is the one forms already state: a collection-valued association needs an
-adder and a remover.
+[`AssociationReader::detach()`](../schemas/association-reader.md) does the removal, and it always writes the side Doctrine persists: a many-to-many removes from the owner's collection, or from the *target's* when the owner holds the inverse side, since an inverse-only write emits no SQL at all.
+The removal runs through the domain's own remover (Symfony's adder/remover diff over the whole desired list), not through `Collection::removeElement()` — which is why the contract is the one forms already state: a collection-valued association needs an adder and a remover.
 
-A one-to-many detach is a *dissociation*, and the reader refuses it where the
-mapping forbids one (orphan removal, a `nullable: false` join column, a setter
-that will not take null). `DetachAction` does not screen for that itself — the
-reader's `LogicException` is the answer, and it names the fix.
+A one-to-many detach is a *dissociation*, and the reader refuses it where the mapping forbids one (orphan removal, a `nullable: false` join column, a setter that will not take null).
+`DetachAction` does not screen for that itself — the reader's `LogicException` is the answer, and it names the fix.
 
 ## Divergences
 
@@ -99,42 +61,29 @@ Where the port deliberately differs from Filament.
 
 ### The duplicates arm is not ported
 
-Filament branches on `$table->allowsDuplicates()`: with duplicates allowed it
-deletes the pivot row the record was hydrated with, else it calls
-`$relationship->detach($record)`. Doctrine has no pivot model and a join table's
-primary key is the pair, so a duplicate join row is unrepresentable and the
-branch has nothing to select between — the port carries only the second arm.
+Filament branches on `$table->allowsDuplicates()`: with duplicates allowed it deletes the pivot row the record was hydrated with, else it calls `$relationship->detach($record)`.
+Doctrine has no pivot model and a join table's primary key is the pair, so a duplicate join row is unrepresentable and the branch has nothing to select between — the port carries only the second arm.
 Same skip as [`AttachAction`](attach-action.md#pivot-data-duplicates-morphs-and-relationshipjoiner-are-not-ported).
 
 ### The icons are literal names, not resolved aliases
 
-Filament reads both icons through `FilamentIcon::resolve(ActionsIconAlias::…)`
-with a `Heroicon` enum fallback. The port has no per-action icon-alias registry
-(support's `IconManager` registers aliases toolkit-wide instead), so the two
-names are literal: `heroicons:x-mark-20-solid` on the trigger and the outlined
-`heroicons:x-mark` on the modal. The same call
-[`DeleteAction`](delete-action.md#one-plain-icon-replaces-filaments-table-and-grouped-pair)
-made.
+Filament reads both icons through `FilamentIcon::resolve(ActionsIconAlias::…)` with a `Heroicon` enum fallback.
+The port has no per-action icon-alias registry (support's `IconManager` registers aliases toolkit-wide instead), so the two names are literal: `heroicons:x-mark-20-solid` on the trigger and the outlined `heroicons:x-mark` on the modal.
+The same call [`DeleteAction`](delete-action.md#one-plain-icon-replaces-filaments-table-and-grouped-pair) made.
 
 ### The strings are literals, not translation keys
 
-Filament reads every string through `__('filament-actions::detach…')`. i18n is
-deferred for the whole toolkit, so the port hardcodes Filament's `en` values —
-`Detach`, `Detach {label}`, `Detached`, and the bulk trio below.
+Filament reads every string through `__('filament-actions::detach…')`. i18n is deferred for the whole toolkit, so the port hardcodes Filament's `en` values — `Detach`, `Detach {label}`, `Detached`, and the bulk trio below.
 
 ---
 
 ## DetachBulkAction
 
-[`Sylament\Actions\DetachBulkAction`](../../../packages/actions/src/DetachBulkAction.php)
-— the same detach over a table's selection: a danger toolbar action that confirms,
-detaches every selected record and deselects afterwards. It extends
-[`BulkAction`](bulk-action.md), so it inherits the selection plumbing,
-`fetchSelectedRecords()` and the counting failure report.
+[`Sylament\Actions\DetachBulkAction`](../../../packages/actions/src/DetachBulkAction.php) — the same detach over a table's selection: a danger toolbar action that confirms, detaches every selected record and deselects afterwards.
+It extends [`BulkAction`](bulk-action.md), so it inherits the selection plumbing, `fetchSelectedRecords()` and the counting failure report.
 
 **Status:** in progress — see the [status vocabulary](../README.md#statuses).
-Everything Filament's class does is ported; the row stays short of complete for
-the reason `DeleteBulkAction`'s does — the swallowed exception has nowhere to go.
+Everything Filament's class does is ported; the row stays short of complete for the reason `DeleteBulkAction`'s does — the swallowed exception has nowhere to go.
 
 ### Surface
 
@@ -151,117 +100,53 @@ the reason `DeleteBulkAction`'s does — the swallowed exception has nowhere to 
 
 ### The no-fetch arm detaches through references, not a join-table DELETE
 
-Filament's no-fetch arm hands the plucked keys straight to
-`$relationship->detach($records)`, which is one `DELETE FROM pivot WHERE … IN (…)`
-and returns the affected row count. The port cannot answer that way: **DQL cannot
-target a join table** — it addresses entities, and a many-to-many join table is
-mapped by no entity — and the detach arm writes no raw SQL either. The toolkit
-does write one DBAL statement, `DissociateBulkAction`'s `UPDATE` where a mapped-by
-spans several join columns, naming its table and columns through Doctrine's own
-`QuoteStrategy`
-([dissociate-action.md](dissociate-action.md#the-by-key-arm-is-a-dql-update-and-a-dbal-one-where-the-foreign-key-spans-several-columns)),
-so quoting is not the obstacle. What keeps the detach on references is the state
-beside the table: a `detach()` per reference keeps the unit of work's loaded
-collections and the second-level cache in step with the join rows it removes,
-and a join-table `DELETE` would bypass both.
+Filament's no-fetch arm hands the plucked keys straight to `$relationship->detach($records)`, which is one `DELETE FROM pivot WHERE … IN (…)` and returns the affected row count.
+The port cannot answer that way: **DQL cannot target a join table** — it addresses entities, and a many-to-many join table is mapped by no entity — and the detach arm writes no raw SQL either.
+The toolkit does write one DBAL statement, `DissociateBulkAction`'s `UPDATE` where a mapped-by spans several join columns, naming its table and columns through Doctrine's own `QuoteStrategy` ([dissociate-action.md](dissociate-action.md#the-by-key-arm-is-a-dql-update-and-a-dbal-one-where-the-foreign-key-spans-several-columns)), so quoting is not the obstacle.
+What keeps the detach on references is the state beside the table: a `detach()` per reference keeps the unit of work's loaded collections and the second-level cache in step with the join rows it removes, and a join-table `DELETE` would bypass both.
 
-So the arm builds a **reference** per selected key
-([`AssociationReader::getReference()`](../schemas/association-reader.md#getreference-decodes-first-and-then-picks-its-route)) and runs
-the same `detach()` the fetching arm does. That call decodes the key
-against the target's own mapping first and then takes one of two routes: a
-no-load reference for a scalar identifier of any width, and a `find()` where an
-identifier field is itself an association, because `getReference()` is a
-`TypeError` for those against a **cold** identity map. A bulk detach is exactly
-where the map is cold, so the route is not a refinement — without it a
-derived-identity selection 500s on the first request after a page load. The arm
-is reached only where a host asks for it: `fetchSelectedRecords()` defaults to
-**true**, so the shipped default hydrates and this key route is opt-in. What it buys is what the flag promises:
-on the owning side, the selected rows are never `SELECT`ed on their own — the
-end-to-end test asserts the contrast, the fetching arm running a hydrating
-selection over the keys and this one running none. The owning collection still
-loads once, which is the price of writing through the domain's remover rather
-than around it, and the same price a single `DetachAction` pays. On the
-**inverse** side the reader writes through the owning side, which is each
-selected record's own collection, so each reference is initialised: one
-`SELECT` of the row per key, where the fetching arm reads them all in one
-statement, and one collection load per key on either arm — the flag costs
-statements there rather than saving them.
+So the arm builds a **reference** per selected key ([`AssociationReader::getReference()`](../schemas/association-reader.md#getreference-decodes-first-and-then-picks-its-route)) and runs the same `detach()` the fetching arm does.
+That call decodes the key against the target's own mapping first and then takes one of two routes: a no-load reference for a scalar identifier of any width, and a `find()` where an identifier field is itself an association, because `getReference()` is a `TypeError` for those against a **cold** identity map.
+A bulk detach is exactly where the map is cold, so the route is not a refinement — without it a derived-identity selection 500s on the first request after a page load.
+The arm is reached only where a host asks for it: `fetchSelectedRecords()` defaults to **true**, so the shipped default hydrates and this key route is opt-in.
+What it buys is what the flag promises: on the owning side, the selected rows are never `SELECT`ed on their own — the end-to-end test asserts the contrast, the fetching arm running a hydrating selection over the keys and this one running none.
+The owning collection still loads once, which is the price of writing through the domain's remover rather than around it, and the same price a single `DetachAction` pays.
+On the **inverse** side the reader writes through the owning side, which is each selected record's own collection, so each reference is initialised: one `SELECT` of the row per key, where the fetching arm reads them all in one statement, and one collection load per key on either arm — the flag costs statements there rather than saving them.
 
-The reported count is the number of records the loop detached, not an affected-row
-count — there is no statement to read one off. A key naming a row that was already
-detached therefore still counts, where Filament's `DELETE` would not have counted
-it.
+The reported count is the number of records the loop detached, not an affected-row count — there is no statement to read one off.
+A key naming a row that was already detached therefore still counts, where Filament's `DELETE` would not have counted it.
 
-One refusal moved with it, and the move is about where a **developer** error
-surfaces. A selection entry that is neither an entity nor a key is a host feeding
-the action something it never promised — `DetachBulkAction can only detach
-entities or their keys, got %s.` — and it used to be raised inside the `try`,
-where the arm's own catch turned it into the danger toast a stale key produces.
-It is now a pre-walk **outside** the `try`, which also casts each key to
-`string`, so a developer error propagates as one and only client state toasts.
-That is the rule
-[`DeleteBulkAction`](delete-action.md#the-by-key-arm-is-a-dql-delete-over-the-plucked-keys)
-states and the dissociate twin follows. A *malformed* key never arrives from a
-table at all — the selection query narrowed it through the codec before it was
-ever plucked — so what stays inside the `try` is the **stale** key, a row
-detached or deleted between the render and the submit. What that produces
-depends on the route the reference took, and the two disagree. On
-[the loading route](../schemas/association-reader.md#getreference-decodes-first-and-then-picks-its-route) `find()`
-answers null and the reader's own `LogicException` becomes the failure toast; on
-a one-to-many the reference route reaches the same place by another door, since
-nulling the mapped-by initialises the proxy and Doctrine raises
-`EntityNotFoundException`. But on an **owning-side many-to-many over a scalar
-identifier** — the commonest shape there is — the phantom is never initialised,
-because `detach()` filters the **owner's** collection by identity and never
-reads the phantom at all: the `!==` filter removes nothing, the record is
-counted, and the arm reports success for a row that does not exist
-([the reader's `getReference()` contract](../schemas/association-reader.md#getreference-throws-where-doctrine-returns-null)).
-An **inverse-side** many-to-many does not get that far — there `detach()` reads
-the related record's mapped-by collection off the phantom, which initialises it,
-so it lands on `EntityNotFoundException` with the one-to-many. Either way it is
-not a 500. Neither refusal is reachable from a shipped host, so both are pinned
-through a fixture host that overrides `getSelectedTableRecords()`.
+One refusal moved with it, and the move is about where a **developer** error surfaces.
+A selection entry that is neither an entity nor a key is a host feeding the action something it never promised — `DetachBulkAction can only detach entities or their keys, got %s.` — and it used to be raised inside the `try`, where the arm's own catch turned it into the danger toast a stale key produces.
+It is now a pre-walk **outside** the `try`, which also casts each key to `string`, so a developer error propagates as one and only client state toasts.
+That is the rule [`DeleteBulkAction`](delete-action.md#the-by-key-arm-is-a-dql-delete-over-the-plucked-keys) states and the dissociate twin follows.
+A *malformed* key never arrives from a table at all — the selection query narrowed it through the codec before it was ever plucked — so what stays inside the `try` is the **stale** key, a row detached or deleted between the render and the submit.
+What that produces depends on the route the reference took, and the two disagree.
+On [the loading route](../schemas/association-reader.md#getreference-decodes-first-and-then-picks-its-route) `find()` answers null and the reader's own `LogicException` becomes the failure toast; on a one-to-many the reference route reaches the same place by another door, since nulling the mapped-by initialises the proxy and Doctrine raises `EntityNotFoundException`.
+But on an **owning-side many-to-many over a scalar identifier** — the commonest shape there is — the phantom is never initialised, because `detach()` filters the **owner's** collection by identity and never reads the phantom at all: the `!==` filter removes nothing, the record is counted, and the arm reports success for a row that does not exist ([the reader's `getReference()` contract](../schemas/association-reader.md#getreference-throws-where-doctrine-returns-null)).
+An **inverse-side** many-to-many does not get that far — there `detach()` reads the related record's mapped-by collection off the phantom, which initialises it, so it lands on `EntityNotFoundException` with the one-to-many.
+Either way it is not a 500.
+Neither refusal is reachable from a shipped host, so both are pinned through a fixture host that overrides `getSelectedTableRecords()`.
 
 ### The bulk detach is atomic where Filament's fetching arm is per-record
 
-Filament's fetching arm deletes inside `$records->each(...)`, catching per record,
-so one failure reports a single failure and the rest still go. The port's body
-ends in **one** `flush()`, so the batch detaches whole or not at all: any
-`Throwable` becomes `reportCompleteBulkProcessingFailure()` and the danger toast
-says the whole selection failed. Same shape and same reasoning as
-[`DeleteBulkAction`](delete-action.md#the-bulk-delete-is-atomic-where-filaments-is-per-record):
-a Doctrine `flush()` is the unit of work, so a per-record report would be a lie
-about what landed.
+Filament's fetching arm deletes inside `$records->each(...)`, catching per record, so one failure reports a single failure and the rest still go.
+The port's body ends in **one** `flush()`, so the batch detaches whole or not at all: any `Throwable` becomes `reportCompleteBulkProcessingFailure()` and the danger toast says the whole selection failed.
+Same shape and same reasoning as [`DeleteBulkAction`](delete-action.md#the-bulk-delete-is-atomic-where-filaments-is-per-record): a Doctrine `flush()` is the unit of work, so a per-record report would be a lie about what landed.
 
-The identity-map caveat `DeleteBulkAction` records applies here too: after the
-flush the detached references are still managed objects, and a test re-reading
-through the same manager must `clear()` or `refresh()` first.
+The identity-map caveat `DeleteBulkAction` records applies here too: after the flush the detached references are still managed objects, and a test re-reading through the same manager must `clear()` or `refresh()` first.
 
 ### The counting failure title is an addition Filament has neither of
 
-`DetachBulkAction` sets a `failureNotificationTitle()` closure answering
-`Detached %d of %d` and `Failed to detach %d records`. Filament's does not, and
-there is nothing to port: `vendor/filament/actions/src/DetachBulkAction.php`
-declares no `failureNotificationTitle()`, and `resources/lang/en/detach.php`
-carries no `*_partial` or `*_none` key — only `delete.php` does, for
-`DeleteBulkAction`'s three soft-delete siblings.
+`DetachBulkAction` sets a `failureNotificationTitle()` closure answering `Detached %d of %d` and `Failed to detach %d records`.
+Filament's does not, and there is nothing to port: `vendor/filament/actions/src/DetachBulkAction.php` declares no `failureNotificationTitle()`, and `resources/lang/en/detach.php` carries no `*_partial` or `*_none` key — only `delete.php` does, for `DeleteBulkAction`'s three soft-delete siblings.
 
-The addition is forced by the atomic shape above. Filament's per-record arm
-reports each failure as it happens through `reportBulkProcessingFailure()`, so a
-partial outcome describes itself; one flush has no per-record outcome to
-describe, and without a title `CanNotify::sendFailureNotification()` guards on
-`filled($notification?->getTitle())` and sends nothing at all — a silently
-half-done batch. The wording follows `DeleteBulkAction`'s, whose title *is* a port — the two
-`sprintf`s and their `successCount` / `totalCount`
-[injections](bulk-action.md#the-failure-notification-carries-four-injections-of-filaments-nine)
-come from there, not from vendor's detach.
+The addition is forced by the atomic shape above.
+Filament's per-record arm reports each failure as it happens through `reportBulkProcessingFailure()`, so a partial outcome describes itself; one flush has no per-record outcome to describe, and without a title `CanNotify::sendFailureNotification()` guards on `filled($notification?->getTitle())` and sends nothing at all — a silently half-done batch.
+The wording follows `DeleteBulkAction`'s, whose title *is* a port — the two `sprintf`s and their `successCount` / `totalCount` [injections](bulk-action.md#the-failure-notification-carries-four-injections-of-filaments-nine) come from there, not from vendor's detach.
 
 ### The swallowed exception has nowhere to go yet
 
-Filament calls Laravel's `report($exception)` in its catch blocks, so the counting
-notification is the *user-facing* answer while the log still carries the cause.
-`Action` has no logger — a `psr/log` optional setter is a non-`symfony/*`
-dependency and needs sign-off — so the port's catch swallows silently and the
-danger toast is the only trace. Recorded rather than papered over, exactly as on
-[`DeleteBulkAction`](delete-action.md#the-swallowed-exception-has-nowhere-to-go-yet),
-and it lifts for both at once.
+Filament calls Laravel's `report($exception)` in its catch blocks, so the counting notification is the *user-facing* answer while the log still carries the cause.
+`Action` has no logger — a `psr/log` optional setter is a non-`symfony/*` dependency and needs sign-off — so the port's catch swallows silently and the danger toast is the only trace.
+Recorded rather than papered over, exactly as on [`DeleteBulkAction`](delete-action.md#the-swallowed-exception-has-nowhere-to-go-yet), and it lifts for both at once.

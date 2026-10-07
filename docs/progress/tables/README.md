@@ -1,144 +1,43 @@
 # Tables — port progress
 
-Ports [`filament/tables`](../../../vendor/filament/tables) into
-[`packages/tables`](../../../packages/tables). The table builder: query, columns,
-filters, actions, grouping, summaries.
+Ports [`filament/tables`](../../../vendor/filament/tables) into [`packages/tables`](../../../packages/tables).
+The table builder: query, columns, filters, actions, grouping, summaries.
 
-**Status:** in progress — see the [status vocabulary](../README.md#statuses) and
-[what goes where](../README.md#one-row-per-file-one-file-per-thing).
+**Status:** in progress — see the [status vocabulary](../README.md#statuses) and [what goes where](../README.md#one-row-per-file-one-file-per-thing).
 
-These tables map the full `tables/src` surface end to end (plus the rendered
-views, translations and assets), so no table carries an
-[unaudited row](../README.md#an-unaudited-table-says-so). A linked first-column
-name is built and carries a real
-[status](../README.md#statuses), with a detail file wherever a divergence, an
-open gap or real sub-structure earns one; a plain-text name is not built yet and
-is **todo**, **blocked** or **skipped**. Five of the host rows are **skipped**,
-all for the same reason: each of those five Filament traits is deprecated whole.
-`HasActions` and `HasRecordAction` are `*TableAction` delegates,
-`CanPollRecords` is a single deprecated getter, and `CanBeStriped` and
-`HasEmptyState` are v3 host hooks the table object superseded and ships what
-they front —
-the project has never ported a deprecated Filament surface, and the machinery
-each fronts is built or tracked elsewhere, it just does not answer to those names
-here. A sixth **skipped** row, `Filters / MultiSelectFilter`, is the same rule one
-tier down. `Filters / TrashedFilter` is **skipped** for another reason:
-Doctrine has no soft deletes, so there is no trashed scope to filter.
+These tables map the full `tables/src` surface end to end (plus the rendered views, translations and assets), so no table carries an [unaudited row](../README.md#an-unaudited-table-says-so).
+A linked first-column name is built and carries a real [status](../README.md#statuses), with a detail file wherever a divergence, an open gap or real sub-structure earns one; a plain-text name is not built yet and is **todo**, **blocked** or **skipped**.
+Five of the host rows are **skipped**, all for the same reason: each of those five Filament traits is deprecated whole.
+`HasActions` and `HasRecordAction` are `*TableAction` delegates, `CanPollRecords` is a single deprecated getter, and `CanBeStriped` and `HasEmptyState` are v3 host hooks the table object superseded and ships what they front — the project has never ported a deprecated Filament surface, and the machinery each fronts is built or tracked elsewhere, it just does not answer to those names here.
+A sixth **skipped** row, `Filters / MultiSelectFilter`, is the same rule one tier down.
+`Filters / TrashedFilter` is **skipped** for another reason: Doctrine has no soft deletes, so there is no trashed scope to filter.
 
-**todo** and **blocked** are distinguished here rather than collapsed, because
-the [vocabulary](../README.md#statuses) defines **todo** as having nothing to
-wait on — so a row whose detail file already names a prerequisite would be
-false as **todo**. These tables carry the same four columns as every package
-README, so a **blocked** row names its prerequisite at the head of _Detail_,
-ahead of the detail-file link that carries the full write-up. Two rows are
-**blocked** today, both on the same thing — `CanBeStackedOnMobile` and
-`HasContent` configure the **card** rendering rather than the table one, so they
-wait on the layout columns (`Columns\Layout`) that give them something to switch
-on. Relation managers are not a prerequisite of anything here: the
-[relation-scoped table](table.md#the-relationship-query-is-the-base-query-rooted-at-the-target)
-does not need them, because `Table::relationship()` is a **data lane**, a
-third case beside `records()` and `query()` — a relation manager is one
-consumer of that lane and the actions that write through it are another.
-`HasQuery` is folded into [`table.md`](table.md) and
-`InteractsWithTableQuery` into [`column.md`](column.md), where
-[relationship traversal](column.md#relationship-traversal-ships-as-a-value-walk-a-side-store-and-one-kept-member),
-the aggregates and eager loading live, and `PaginationMode` stays
-**in progress** against a keyset carrier. The `BulkAction` family is in
-[`actions`](../actions/README.md), and the selection machinery it needs — the
-three writable props on the host, the checkbox settings on the table object, and
-the toolbar and header action sets that decide whether the checkboxes render at
-all — is here, which leaves the two selection rows **in progress**
-against the deferred settings each names rather than **blocked**. (The
-[`forms`](../forms/README.md) README records the opposite
-precedence — **todo** upstairs, **blocked** in the component's file — so the two
-packages disagree until that one is revisited.)
+**todo** and **blocked** are distinguished here rather than collapsed, because the [vocabulary](../README.md#statuses) defines **todo** as having nothing to wait on — so a row whose detail file already names a prerequisite would be false as **todo**.
+These tables carry the same four columns as every package README, so a **blocked** row names its prerequisite at the head of _Detail_, ahead of the detail-file link that carries the full write-up.
+Two rows are **blocked** today, both on the same thing — `CanBeStackedOnMobile` and `HasContent` configure the **card** rendering rather than the table one, so they wait on the layout columns (`Columns\Layout`) that give them something to switch on.
+Relation managers are not a prerequisite of anything here: the [relation-scoped table](table.md#the-relationship-query-is-the-base-query-rooted-at-the-target) does not need them, because `Table::relationship()` is a **data lane**, a third case beside `records()` and `query()` — a relation manager is one consumer of that lane and the actions that write through it are another.
+`HasQuery` is folded into [`table.md`](table.md) and `InteractsWithTableQuery` into [`column.md`](column.md), where [relationship traversal](column.md#relationship-traversal-ships-as-a-value-walk-a-side-store-and-one-kept-member), the aggregates and eager loading live, and `PaginationMode` stays **in progress** against a keyset carrier.
+The `BulkAction` family is in [`actions`](../actions/README.md), and the selection machinery it needs — the three writable props on the host, the checkbox settings on the table object, and the toolbar and header action sets that decide whether the checkboxes render at all — is here, which leaves the two selection rows **in progress** against the deferred settings each names rather than **blocked**.
+(The [`forms`](../forms/README.md) README records the opposite precedence — **todo** upstairs, **blocked** in the component's file — so the two packages disagree until that one is revisited.)
 
-Sixty-two concerns the port has landed are **folded** into the detail file of
-the class that composes them and carry no row here, per
-[one row per file](../README.md#one-row-per-file-one-file-per-thing) — fourteen
-`Table\Concerns\` traits (`BelongsToLivewire`, `CanGroupRecords`,
-`CanPaginateRecords`,
-`CanSearchRecords`, `CanSortRecords`, `CanSummarizeRecords`, `HasActions`,
-`HasAggregateValues`,
-`HasColumns`, `HasEmptyState`, `HasFilterIndicators`, `HasQuery`,
-`HasRecordActions`, `HasRecords`) into
-[`table.md`](table.md), twenty-one `Columns\Concerns\` traits
-(`BelongsToTable`, `CanAggregateRelatedRecords`, `CanBeDisabled`, `CanBeHidden`,
-`CanBeHiddenResponsively`, `CanBeInline`,
-`CanBeSearchable`, `CanBeSortable`, `CanBeSummarized`, `CanBeToggled`,
-`CanCallAction`,
-`CanOpenUrl`,
-`HasCellState`, `HasExtraCellAttributes`, `HasExtraHeaderAttributes`, `HasLabel`,
-`HasName`, `HasRecord`, `HasRowLoopObject`, `HasTooltip`,
-`InteractsWithTableQuery`) into
-[`column.md`](column.md), two more
-`Columns\Concerns\` traits (`CanBeValidated`, `CanUpdateState`) into
-[`has-columns.md`](has-columns.md) — the write-back seam that calls both, which
-all four editable columns link to rather than any one of them owning it — five
-`Columns\Concerns\` traits
-(`CanFormatState`, `HasColor`, `HasDescription`, `HasIcon`, `HasIconColor`)
-into
-[`text-column.md`](text-column.md), eleven `Filters\Concerns\` traits
-(`BelongsToTable`, `CanBeHidden`, `CanResetState`, `CanSpanColumns`,
-`HasColumns`, `HasDefaultState`, `HasIndicators`, `HasLabel`, `HasName`,
-`HasSchema`, `InteractsWithTableQuery`) into
-[`base-filter.md`](base-filter.md), the six `Columns\Summarizers\Concerns\`
-traits (`BelongsToColumn`, `CanBeHidden`, `CanFormatState`, `HasLabel`,
-`HasSelectAlias` — Sylament-only — and `InteractsWithTableQuery`) into
-[`summarizer.md`](summarizer.md) with the `Contracts\HasSelectAlias` marker
-beside them, the one `Grouping\Concerns\` trait (`BelongsToTable`) into
-[`grouping.md`](grouping.md), and the two `Concerns\` host traits
-(`CanGroupRecords`, `CanSummarizeRecords`) into
-[`has-table.md`](has-table.md), which is the one place a **host** concern folds
-rather than keeping a row: their feature files are the two above, so a row here
-would be a third status for the same thing. Filament's
-`resources/views/index.blade.php`
-folds the same way, into `table.md`'s `$template` row.
-`Table\Concerns\HasFilters` is a landed concern that keeps a row anyway, for a
-reason of its own: it is built and folded into [`table.md`](table.md) while the
-`filtersFormSchema()` override and the four before/after-content layouts are not
-— so the row is where the deferred half stays findable.
-`Filters\Concerns\HasOptions` and
-`Filters\Concerns\HasPlaceholder` keep rows for a different reason: they ship for
-`SelectFilter` alone, so they fold into
-[`select-filter.md`](select-filter.md) rather than into `base-filter.md` with the
-eleven above. Everything
-Filament ships that the port has **not** reached keeps its
-own per-file row below, the way
-[`actions`](../actions/README.md#features) tracks the concerns `Action` has not
-reached yet — so a deferred feature is findable here rather than only inside a
-detail file. [`support/component.md`](../support/component.md) is the shape each
-detail file follows.
+Sixty-two concerns the port has landed are **folded** into the detail file of the class that composes them and carry no row here, per [one row per file](../README.md#one-row-per-file-one-file-per-thing) — fourteen `Table\Concerns\` traits (`BelongsToLivewire`, `CanGroupRecords`, `CanPaginateRecords`, `CanSearchRecords`, `CanSortRecords`, `CanSummarizeRecords`, `HasActions`, `HasAggregateValues`, `HasColumns`, `HasEmptyState`, `HasFilterIndicators`, `HasQuery`, `HasRecordActions`, `HasRecords`) into [`table.md`](table.md), twenty-one `Columns\Concerns\` traits (`BelongsToTable`, `CanAggregateRelatedRecords`, `CanBeDisabled`, `CanBeHidden`, `CanBeHiddenResponsively`, `CanBeInline`, `CanBeSearchable`, `CanBeSortable`, `CanBeSummarized`, `CanBeToggled`, `CanCallAction`, `CanOpenUrl`, `HasCellState`, `HasExtraCellAttributes`, `HasExtraHeaderAttributes`, `HasLabel`, `HasName`, `HasRecord`, `HasRowLoopObject`, `HasTooltip`, `InteractsWithTableQuery`) into [`column.md`](column.md), two more `Columns\Concerns\` traits (`CanBeValidated`, `CanUpdateState`) into [`has-columns.md`](has-columns.md) — the write-back seam that calls both, which all four editable columns link to rather than any one of them owning it — five `Columns\Concerns\` traits (`CanFormatState`, `HasColor`, `HasDescription`, `HasIcon`, `HasIconColor`) into [`text-column.md`](text-column.md), eleven `Filters\Concerns\` traits (`BelongsToTable`, `CanBeHidden`, `CanResetState`, `CanSpanColumns`, `HasColumns`, `HasDefaultState`, `HasIndicators`, `HasLabel`, `HasName`, `HasSchema`, `InteractsWithTableQuery`) into [`base-filter.md`](base-filter.md), the six `Columns\Summarizers\Concerns\` traits (`BelongsToColumn`, `CanBeHidden`, `CanFormatState`, `HasLabel`, `HasSelectAlias` — Sylament-only — and `InteractsWithTableQuery`) into [`summarizer.md`](summarizer.md) with the `Contracts\HasSelectAlias` marker beside them, the one `Grouping\Concerns\` trait (`BelongsToTable`) into [`grouping.md`](grouping.md), and the two `Concerns\` host traits (`CanGroupRecords`, `CanSummarizeRecords`) into [`has-table.md`](has-table.md), which is the one place a **host** concern folds rather than keeping a row: their feature files are the two above, so a row here would be a third status for the same thing.
+Filament's `resources/views/index.blade.php` folds the same way, into `table.md`'s `$template` row.
+`Table\Concerns\HasFilters` is a landed concern that keeps a row anyway, for a reason of its own: it is built and folded into [`table.md`](table.md) while the `filtersFormSchema()` override and the four before/after-content layouts are not — so the row is where the deferred half stays findable.
+`Filters\Concerns\HasOptions` and `Filters\Concerns\HasPlaceholder` keep rows for a different reason: they ship for `SelectFilter` alone, so they fold into [`select-filter.md`](select-filter.md) rather than into `base-filter.md` with the eleven above.
+Everything Filament ships that the port has **not** reached keeps its own per-file row below, the way [`actions`](../actions/README.md#features) tracks the concerns `Action` has not reached yet — so a deferred feature is findable here rather than only inside a detail file.
+[`support/component.md`](../support/component.md) is the shape each detail file follows.
 
-Two consequences of that split are worth stating, because they are where a
-reader would otherwise look and find nothing. The **record-label machinery**
-(`recordLabel()`, `pluralRecordLabel()`, `recordTitle()`,
-`recordTitleAttribute()`) and **record identity** (`getRecordKey()`) live in
-`Table\Concerns\HasRecords`, which is landed and folded — their status is
-[`table.md`](table.md)'s _Record labels and titles_ and _Record identity_ rows. The **`TextColumn` formatting catalog** (`limit()`, `words()`,
-`prefix()`, `date()`, `money()`, `badge()`, …) lives in
-`Columns\Concerns\CanFormatState`, likewise landed and folded — its status is
-[`text-column.md`](text-column.md)'s formatting rows.
+Two consequences of that split are worth stating, because they are where a reader would otherwise look and find nothing.
+The **record-label machinery** (`recordLabel()`, `pluralRecordLabel()`, `recordTitle()`, `recordTitleAttribute()`) and **record identity** (`getRecordKey()`) live in `Table\Concerns\HasRecords`, which is landed and folded — their status is [`table.md`](table.md)'s _Record labels and titles_ and _Record identity_ rows.
+The **`TextColumn` formatting catalog** (`limit()`, `words()`, `prefix()`, `date()`, `money()`, `badge()`, …) lives in `Columns\Concerns\CanFormatState`, likewise landed and folded — its status is [`text-column.md`](text-column.md)'s formatting rows.
 
 ## Components
 
-`Table` plus the column, filter and grouping catalogs —
-[`src/Table.php`](../../../vendor/filament/tables/src/Table.php),
-[`src/Columns`](../../../vendor/filament/tables/src/Columns),
-[`src/Filters`](../../../vendor/filament/tables/src/Filters),
-[`src/Grouping`](../../../vendor/filament/tables/src/Grouping). `Table` and the
-`Column` base head the table; the rest follow alphabetically, with a
-`Parent / Child` name for anything nested below a directory. Filament's action
-classes are not a tables catalog — table actions are `Filament\Actions` classes
-reached through `Table\Concerns\HasActions`, whose row is in
-[Features](#features).
+`Table` plus the column, filter and grouping catalogs — [`src/Table.php`](../../../vendor/filament/tables/src/Table.php), [`src/Columns`](../../../vendor/filament/tables/src/Columns), [`src/Filters`](../../../vendor/filament/tables/src/Filters), [`src/Grouping`](../../../vendor/filament/tables/src/Grouping).
+`Table` and the `Column` base head the table; the rest follow alphabetically, with a `Parent / Child` name for anything nested below a directory.
+Filament's action classes are not a tables catalog — table actions are `Filament\Actions` classes reached through `Table\Concerns\HasActions`, whose row is in [Features](#features).
 
-The `Filters / QueryBuilder / Constraints` row collapses that whole 30-file
-subtree into one navigational entry, as the
-[`forms`](../forms/README.md#supporting-surface) audit does for `RichEditor`:
-every file under it is a one-line class or trait aliasing
-`Filament\QueryBuilder\Constraints\*` from the separate `filament/query-builder`
-package, so there is nothing to diff per file until that package is ported.
+The `Filters / QueryBuilder / Constraints` row collapses that whole 30-file subtree into one navigational entry, as the [`forms`](../forms/README.md#supporting-surface) audit does for `RichEditor`: every file under it is a one-line class or trait aliasing `Filament\QueryBuilder\Constraints\*` from the separate `filament/query-builder` package, so there is nothing to diff per file until that package is ported.
 
 | Component | Ports | Status | Detail |
 | --- | --- | --- | --- |
@@ -182,40 +81,20 @@ package, so there is nothing to diff per file until that package is ported.
 
 ## Features
 
-Cross-cutting concerns and traits, one row per file, grouped by the tier that
-composes them and named for it:
+Cross-cutting concerns and traits, one row per file, grouped by the tier that composes them and named for it:
 
-- **`Host / …`** — [`src/Concerns`](../../../vendor/filament/tables/src/Concerns),
-  the traits a Livewire / UX Live Component host composes through
-  `InteractsWithTable`. The port's counterpart is
-  [`HasTable`](../../../packages/tables/src/Concerns/HasTable.php), whose row
-  heads the table.
-- **`Table / …`** — [`src/Table/Concerns`](../../../vendor/filament/tables/src/Table/Concerns),
-  the traits [`Table`](table.md) composes. Every host feature has a table-level
-  twin here — `Host / CanPaginateRecords` reads the host's page state,
-  `Table / CanPaginateRecords` declares the table's pagination options — so the
-  two lists overlap by name on purpose.
-- **`Column / …`** — [`src/Columns/Concerns`](../../../vendor/filament/tables/src/Columns/Concerns),
-  shared by [`Column`](column.md), `ColumnGroup`, the `Columns\Layout\`
-  components and the concrete column types.
-- **`Filter / …`** —
-  [`Filters/Concerns`](../../../vendor/filament/tables/src/Filters/Concerns). Its
-  two sibling tiers,
-  [`Columns/Summarizers/Concerns`](../../../vendor/filament/tables/src/Columns/Summarizers/Concerns)
-  and [`Grouping/Concerns`](../../../vendor/filament/tables/src/Grouping/Concerns),
-  have no row left: every trait in both is built and folded into
-  [`summarizer.md`](summarizer.md) and [`grouping.md`](grouping.md).
+- **`Host / …`** — [`src/Concerns`](../../../vendor/filament/tables/src/Concerns), the traits a Livewire / UX Live Component host composes through `InteractsWithTable`.
+  The port's counterpart is [`HasTable`](../../../packages/tables/src/Concerns/HasTable.php), whose row heads the table.
+- **`Table / …`** — [`src/Table/Concerns`](../../../vendor/filament/tables/src/Table/Concerns), the traits [`Table`](table.md) composes.
+  Every host feature has a table-level twin here — `Host / CanPaginateRecords` reads the host's page state, `Table / CanPaginateRecords` declares the table's pagination options — so the two lists overlap by name on purpose.
+- **`Column / …`** — [`src/Columns/Concerns`](../../../vendor/filament/tables/src/Columns/Concerns), shared by [`Column`](column.md), `ColumnGroup`, the `Columns\Layout\` components and the concrete column types.
+- **`Filter / …`** — [`Filters/Concerns`](../../../vendor/filament/tables/src/Filters/Concerns).
+  Its two sibling tiers, [`Columns/Summarizers/Concerns`](../../../vendor/filament/tables/src/Columns/Summarizers/Concerns) and [`Grouping/Concerns`](../../../vendor/filament/tables/src/Grouping/Concerns), have no row left: every trait in both is built and folded into [`summarizer.md`](summarizer.md) and [`grouping.md`](grouping.md).
 
-The prefix is load-bearing rather than decorative: twenty trait names occur in
-two of these tiers and five (`BelongsToTable`, `CanBeHidden`, `HasColumns`,
-`HasLabel`, `InteractsWithTableQuery`) in three, which is the same
-[read-by-import, never by the bare `use`](../../internals/php.md#the-by-import-trap) trap the schemas
-tiers carry. The sixty-two landed concerns folded into their component's detail
-file are named in the [preamble](#tables--port-progress) and carry no row here.
+The prefix is load-bearing rather than decorative: twenty trait names occur in two of these tiers and five (`BelongsToTable`, `CanBeHidden`, `HasColumns`, `HasLabel`, `InteractsWithTableQuery`) in three, which is the same [read-by-import, never by the bare `use`](../../internals/php.md#the-by-import-trap) trap the schemas tiers carry.
+The sixty-two landed concerns folded into their component's detail file are named in the [preamble](#tables--port-progress) and carry no row here.
 
-`Contracts/HasTable.php` is not listed in
-[Supporting surface](#supporting-surface): it is inseparable from the trait it
-pairs with, so it shares the first row below.
+`Contracts/HasTable.php` is not listed in [Supporting surface](#supporting-surface): it is inseparable from the trait it pairs with, so it shares the first row below.
 
 | Feature | Ports | Status | Detail |
 | --- | --- | --- | --- |
@@ -265,37 +144,15 @@ pairs with, so it shares the first row below.
 
 ## Supporting surface
 
-Everything with no table, column or filter class of its own: the enums, the
-editable-column contract, the Livewire table component, the test helpers, the
-`make:` commands and their file generators, the icon-alias and render-hook
-registries, the view components, the `renderTable()` Twig helper, the rendered
-views, the translations and assets, and the bundle wiring —
-[`src/Enums`](../../../vendor/filament/tables/src/Enums),
-[`src/Columns/Contracts`](../../../vendor/filament/tables/src/Columns/Contracts),
-[`src/Commands`](../../../vendor/filament/tables/src/Commands),
-[`src/Testing`](../../../vendor/filament/tables/src/Testing),
-[`src/View`](../../../vendor/filament/tables/src/View),
-[`resources`](../../../vendor/filament/tables/resources). A row named for a
-directory collapses that whole subtree into one navigational entry. A row whose
-Ports cell names no Filament source is Sylament-only — nothing to diff against.
+Everything with no table, column or filter class of its own: the enums, the editable-column contract, the Livewire table component, the test helpers, the `make:` commands and their file generators, the icon-alias and render-hook registries, the view components, the `renderTable()` Twig helper, the rendered views, the translations and assets, and the bundle wiring — [`src/Enums`](../../../vendor/filament/tables/src/Enums), [`src/Columns/Contracts`](../../../vendor/filament/tables/src/Columns/Contracts), [`src/Commands`](../../../vendor/filament/tables/src/Commands), [`src/Testing`](../../../vendor/filament/tables/src/Testing), [`src/View`](../../../vendor/filament/tables/src/View), [`resources`](../../../vendor/filament/tables/resources).
+A row named for a directory collapses that whole subtree into one navigational entry.
+A row whose Ports cell names no Filament source is Sylament-only — nothing to diff against.
 
-`Actions/HeaderActionsPosition.php` sits here rather than in
-[Components](#components) despite its directory: it is an enum, not an action
-class, and it is the only file Filament's tables package keeps under `Actions/`.
-The port files it under `Enums/` beside its five siblings, which is where its
-_Feature_ cell links — [table.md](table.md#headeractionsposition-files-under-enums-where-filament-keeps-it-under-actions)
-carries that one-line divergence.
+`Actions/HeaderActionsPosition.php` sits here rather than in [Components](#components) despite its directory: it is an enum, not an action class, and it is the only file Filament's tables package keeps under `Actions/`.
+The port files it under `Enums/` beside its five siblings, which is where its _Feature_ cell links — [table.md](table.md#headeractionsposition-files-under-enums-where-filament-keeps-it-under-actions) carries that one-line divergence.
 
-The bundle owns the two Twig-side rows as well as its own, so all three share
-[tables-bundle.md](tables-bundle.md): what `loadExtension()` wires and why
-Filament's provider has no counterpart for it, the `renderTable()` helper, and
-the alias set's growth order. Filament's
-[`index.blade.php`](../../../vendor/filament/tables/resources/views/index.blade.php)
-carries no row — it is ported by
-[`Table/index.html.twig`](../../../packages/tables/templates/partials/Table/index.html.twig)
-and folded into [`table.md`](table.md)'s `$template` row; `TextColumn`'s partial
-folds into [`text-column.md`](text-column.md) the same way, against
-`TextColumn::toEmbeddedHtml()` rather than a Blade file of its own.
+The bundle owns the two Twig-side rows as well as its own, so all three share [tables-bundle.md](tables-bundle.md): what `loadExtension()` wires and why Filament's provider has no counterpart for it, the `renderTable()` helper, and the alias set's growth order.
+Filament's [`index.blade.php`](../../../vendor/filament/tables/resources/views/index.blade.php) carries no row — it is ported by [`Table/index.html.twig`](../../../packages/tables/templates/partials/Table/index.html.twig) and folded into [`table.md`](table.md)'s `$template` row; `TextColumn`'s partial folds into [`text-column.md`](text-column.md) the same way, against `TextColumn::toEmbeddedHtml()` rather than a Blade file of its own.
 
 | Item | Ports | Status | Detail |
 | --- | --- | --- | --- |

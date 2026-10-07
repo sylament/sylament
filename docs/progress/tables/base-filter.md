@@ -1,8 +1,18 @@
 ---
-description: 'The root object of the filter tier: a support `Component` composing the eleven `Filters\Concerns\` traits that carry a filter''s identity, visibility… (draft)'
+description: 'The root object of the filter tier: `BaseFilter` and the concerns carrying a filter''s identity, visibility, state, schema and query application.'
 ports:
   - vendor/filament/tables/src/Filters/BaseFilter.php
-  - vendor/filament/tables/src/Filters/Concerns/
+  - vendor/filament/tables/src/Filters/Concerns/BelongsToTable.php
+  - vendor/filament/tables/src/Filters/Concerns/CanBeHidden.php
+  - vendor/filament/tables/src/Filters/Concerns/CanResetState.php
+  - vendor/filament/tables/src/Filters/Concerns/CanSpanColumns.php
+  - vendor/filament/tables/src/Filters/Concerns/HasColumns.php
+  - vendor/filament/tables/src/Filters/Concerns/HasDefaultState.php
+  - vendor/filament/tables/src/Filters/Concerns/HasIndicators.php
+  - vendor/filament/tables/src/Filters/Concerns/HasLabel.php
+  - vendor/filament/tables/src/Filters/Concerns/HasName.php
+  - vendor/filament/tables/src/Filters/Concerns/HasSchema.php
+  - vendor/filament/tables/src/Filters/Concerns/InteractsWithTableQuery.php
 owns:
   - packages/tables/src/Filters/BaseFilter.php
   - packages/tables/src/Filters/Concerns/BelongsToTable.php
@@ -19,9 +29,9 @@ owns:
 ---
 # BaseFilter (tables)
 
-[`Sylament\Tables\Filters\BaseFilter`](../../../packages/tables/src/Filters/BaseFilter.php) — the root object of the filter tier: a support [`Component`](../support/component.md) composing the eleven `Filters\Concerns\` traits that carry a filter's identity, visibility, state, schema and query application.
-It ports Filament's [`Filters\BaseFilter`](../../../vendor/filament/tables/src/Filters/BaseFilter.php) and the eleven concerns it composes, folded into the surface table below per [one row per file](../../internals/trail.md#one-file-per-piece-of-code-one-row-per-feature).
-[`Indicator`](indicator.md) is tracked separately, because it is a component of its own rather than a concern, and so is each subclass that extends this one — [`Filter`](filter.md), [`SelectFilter`](select-filter.md) and [`TernaryFilter`](ternary-filter.md), each carrying its own status in its own file.
+[`Sylament\Tables\Filters\BaseFilter`](../../../packages/tables/src/Filters/BaseFilter.php) is the root object of the filter tier: a support [`Component`](../support/component.md) composing the `Filters\Concerns\` traits that carry a filter's identity, visibility, state, schema and query application.
+It ports Filament's [`Filters\BaseFilter`](../../../vendor/filament/tables/src/Filters/BaseFilter.php) and the concerns it composes.
+[`Indicator`](indicator.md) is tracked separately, because it is a component of its own rather than a concern, and so is each subclass — [`Filter`](filter.md), [`SelectFilter`](select-filter.md) and [`TernaryFilter`](ternary-filter.md).
 
 ## Surface
 
@@ -31,21 +41,19 @@ It ports Filament's [`Filters\BaseFilter`](../../../vendor/filament/tables/src/F
 | [`getActiveCount()`](../../../packages/tables/src/Filters/BaseFilter.php) | [`BaseFilter::getActiveCount()`](../../../vendor/filament/tables/src/Filters/BaseFilter.php) | done | — | — |
 | [`$filter` / `$liveComponent` / `$table` closure injections](../../../packages/tables/src/Filters/BaseFilter.php) | [`resolveDefaultClosureDependencyForEvaluationByName()`](../../../vendor/filament/tables/src/Filters/BaseFilter.php) | done | — | — |
 | [`table()` / `getTable()` / `getLiveComponent()` / `getState()` / `getFormState()`](../../../packages/tables/src/Filters/Concerns/BelongsToTable.php) | [`Concerns\BelongsToTable`](../../../vendor/filament/tables/src/Filters/Concerns/BelongsToTable.php) | done | — | [diverges](#the-state-readers-are-guarded-because-the-contract-does-not-declare-them) |
-| [`hidden()` / `visible()` / `hiddenOn()` / `visibleOn()`](../../../packages/tables/src/Filters/Concerns/CanBeHidden.php) | [`Concerns\CanBeHidden`](../../../vendor/filament/tables/src/Filters/Concerns/CanBeHidden.php) | done | — | — |
+| [`hidden()` / `visible()` / `hiddenOn()` / `visibleOn()` / `isHidden()` / `isVisible()`](../../../packages/tables/src/Filters/Concerns/CanBeHidden.php) | [`Concerns\CanBeHidden`](../../../vendor/filament/tables/src/Filters/Concerns/CanBeHidden.php) | done | — | — |
 | [`resetState()` / `getResetState()`](../../../packages/tables/src/Filters/Concerns/CanResetState.php) | [`Concerns\CanResetState`](../../../vendor/filament/tables/src/Filters/Concerns/CanResetState.php) | done | — | — |
-| [`columnSpan()` / `columnSpanFull()` / `columnStart()`](../../../packages/tables/src/Filters/Concerns/CanSpanColumns.php) | [`Concerns\CanSpanColumns`](../../../vendor/filament/tables/src/Filters/Concerns/CanSpanColumns.php) | done | — | [semantics](#the-span-getters-return-raw-closures) |
-| [`columns()`](../../../packages/tables/src/Filters/Concerns/HasColumns.php) | [`Concerns\HasColumns`](../../../vendor/filament/tables/src/Filters/Concerns/HasColumns.php) | done | — | — |
+| [`columnSpan()` / `columnSpanFull()` / `columnStart()` and their getters](../../../packages/tables/src/Filters/Concerns/CanSpanColumns.php) | [`Concerns\CanSpanColumns`](../../../vendor/filament/tables/src/Filters/Concerns/CanSpanColumns.php) | done | — | [semantics](#the-span-getters-return-raw-closures) |
+| [`columns()` / `getColumns()`](../../../packages/tables/src/Filters/Concerns/HasColumns.php) | [`Concerns\HasColumns`](../../../vendor/filament/tables/src/Filters/Concerns/HasColumns.php) | done | — | — |
 | [`default()` / `getDefaultState()`](../../../packages/tables/src/Filters/Concerns/HasDefaultState.php) | [`Concerns\HasDefaultState`](../../../vendor/filament/tables/src/Filters/Concerns/HasDefaultState.php) | done | — | — |
 | [`indicator()` / `indicateUsing()` / `getIndicators()` / `getIndicator()`](../../../packages/tables/src/Filters/Concerns/HasIndicators.php) | [`Concerns\HasIndicators`](../../../vendor/filament/tables/src/Filters/Concerns/HasIndicators.php) | done | — | [semantics](#a-string-array-key-becomes-the-chips-remove-field) |
 | [`label()` / `getLabel()`](../../../packages/tables/src/Filters/Concerns/HasLabel.php) | [`Concerns\HasLabel`](../../../vendor/filament/tables/src/Filters/Concerns/HasLabel.php) | done | — | [diverges](#translatelabel-is-not-ported) |
+| `translateLabel()` | [`Concerns\HasLabel`](../../../vendor/filament/tables/src/Filters/Concerns/HasLabel.php) | skipped | — | [diverges](#translatelabel-is-not-ported) · [translations.md](../translations.md#idiom) |
 | [`name()` / `getName()`](../../../packages/tables/src/Filters/Concerns/HasName.php) | [`Concerns\HasName`](../../../vendor/filament/tables/src/Filters/Concerns/HasName.php) | done | — | — |
-| [`schema()` / `modifyFormFieldUsing()` / `getSchemaComponents()` / `hasSchema()` / `getFormField()`](../../../packages/tables/src/Filters/Concerns/HasSchema.php) | [`Concerns\HasSchema`](../../../vendor/filament/tables/src/Filters/Concerns/HasSchema.php) | done | — | [diverges](#the-form-alias-is-not-ported) |
+| [`schema()` / `modifyFormFieldUsing()` / `getSchemaComponents()` / `hasSchema()` / `getFormField()`](../../../packages/tables/src/Filters/Concerns/HasSchema.php) | [`Concerns\HasSchema`](../../../vendor/filament/tables/src/Filters/Concerns/HasSchema.php) | done | — | — |
+| `form()` / `getFormSchema()` (deprecated; `schema()` / `getSchemaComponents()` replace them) | [`Concerns\HasSchema`](../../../vendor/filament/tables/src/Filters/Concerns/HasSchema.php) | skipped | — | [diverges](#the-form-alias-is-not-ported) |
 | [`getSchema()` — the filter's live child schema](../../../packages/tables/src/Filters/Concerns/HasSchema.php) | [`Concerns\HasSchema::getSchema()`](../../../vendor/filament/tables/src/Filters/Concerns/HasSchema.php) | done | — | [semantics](#getschema-is-unguarded-where-the-state-readers-beside-it-are-not) |
-| [`apply()` / `applyToBaseQuery()` / `query()` / `baseQuery()` / `excludeWhenResolvingRecord()`](../../../packages/tables/src/Filters/Concerns/InteractsWithTableQuery.php) | [`Concerns\InteractsWithTableQuery`](../../../vendor/filament/tables/src/Filters/Concerns/InteractsWithTableQuery.php) | done | — | [diverges](#there-is-no-closure-where-group-around-apply) · [semantics](#isactive-is-an-opt-out-not-an-opt-in) |
-| `HasRelationship` | [`Concerns/HasRelationship.php`](../../../vendor/filament/tables/src/Filters/Concerns/HasRelationship.php) | blocked | a Doctrine design for the filters' relationship arm | — |
-
-Coverage is the fifteen files under [`tests/Unit/Filters/`](../../../packages/tables/tests/Unit/Filters), one per source file, plus two [`SylamentTablesBundleTest`](../../../packages/tables/tests/Integration/SylamentTablesBundleTest.php) cases: a filter and an indicator built through `make()` carry the **container's** `Invoker`, and `FilterIndicator` is absent from the container.
-One member is covered from outside that set: `getSchema()` needs a host with a real filters form to read from, so its two cases — the happy path and the no-group refusal — sit in [`tests/Integration/Concerns/HasFiltersTest.php`](../../../packages/tables/tests/Integration/Concerns/HasFiltersTest.php) beside the form that produces them, not in `Unit/Filters/Concerns/HasSchemaTest.php`.
+| [`apply()` / `applyToBaseQuery()` / `query()` / `baseQuery()` / `modifyQueryUsing()` / `modifyBaseQueryUsing()` / `excludeWhenResolvingRecord()`](../../../packages/tables/src/Filters/Concerns/InteractsWithTableQuery.php) | [`Concerns\InteractsWithTableQuery`](../../../vendor/filament/tables/src/Filters/Concerns/InteractsWithTableQuery.php) | done | — | [diverges](#there-is-no-closure-where-group-around-apply) · [semantics](#isactive-is-an-opt-out-not-an-opt-in) |
 
 ## Semantics
 
@@ -55,9 +63,6 @@ One member is covered from outside that set: `getSchema()` needs a host with a r
 The asymmetry is not an oversight and not a style drift: `getTableFiltersForm()` is [on the contract](interacts-with-table.md#the-contract-is-thirty-five-methods-of-filaments-forty-six) and the two state readers are not, so `getLiveComponent()` — typed `InteractsWithTable` — answers the first call at level max and cannot answer the other two.
 A guard here would be unreachable code guarding a declared method; a guard there is the only thing standing between a contract-satisfying host and a fatal.
 Both disappear the same way, by the contract growing, and the rule for adding a guard is the same either way: check what the interface declares, not what the trait happens to supply.
-
-That is also why this method landed a commit after the rest of the trait rather than with it.
-The contract addition and this reader ship together by necessity — level max cannot type a call the interface does not declare — and the alternative, a temporary `method_exists()` guard deleted one commit later, would have been scaffolding written to be removed.
 
 ### The span getters return raw closures
 
@@ -94,7 +99,7 @@ So both are `method_exists()`-guarded and throw a `LogicException` naming [`HasT
 That is not defensive padding — `InteractsWithTable` is implementable by hand, and the alternative failure is a table that silently filters nothing.
 PHPStan narrows the guarded call to `mixed`, which a private normalizer turns back into `array<string, mixed>`, so shipped source carries no inline ignore.
 That last part is a **static** claim rather than a runtime guarantee: the normalizer casts each key with `(string)`, and PHP canonicalises a numeric string key straight back to an integer, so a bag that arrives keyed `0` stays keyed `0`.
-Against the shipped host that case no longer arises — [`getTableFilterState()`](host-has-filters.md#one-filter-slice-is-a-plain-array-read-not-a-propertyaccessor-walk) reads a slice that is not field-keyed as `null`, so the normalizer sees `[]` — leaving the cast live only for a host that answers these methods by hand.
+The shipped host never produces that case — [`getTableFilterState()`](host-has-filters.md#one-filter-slice-is-a-plain-array-read-not-a-propertyaccessor-walk) reads a slice that is not field-keyed as `null`, so the normalizer sees `[]` — leaving the cast live only for a host that answers these methods by hand.
 Nothing downstream reads a filter slice positionally — every key is a field name a schema wrote — so the declared shape is the one every consumer needs and the residue is unreachable in practice.
 
 ### There is no closure-where group around `apply()`
@@ -102,7 +107,7 @@ Nothing downstream reads a filter slice positionally — every key is a field na
 Filament wraps the whole apply pass in one `$query->where(function (Builder $q) …)` so a filter's internal `orWhere` cannot leak into the search or another filter.
 DQL has no closure-where.
 Both passes run sequentially on the one builder via `andWhere()` composition instead — correct for the AND-shaped mainstream, and a filter needing internal OR writes the idiomatic `$query->andWhere($query->expr()->orX(…))`.
-The consumer footgun this leaves is worth stating plainly: a bare `->orWhere()` inside a filter callback widens the **whole** query, search included.
+The consumer footgun this leaves: a bare `->orWhere()` inside a filter callback widens the **whole** query, search included.
 The base/apply split survives as ordering only.
 
 ### `translateLabel()` is not ported
@@ -113,5 +118,4 @@ The `__()` pass and `translateLabel()` wait on toolkit-wide i18n, like the empty
 ### The `form()` alias is not ported
 
 Filament ships `form()` / `getFormSchema()` as deprecated aliases of `schema()` / `getSchemaComponents()`.
-Neither is ported — the same call the port made for `HasChildComponents::schema()`.
-[renames.md row](../renames.md#renames).
+A deprecated Filament member [is not ported](../renames.md#a-deprecated-filament-member-is-not-ported), and the [renames table](../renames.md#renames) carries the row.

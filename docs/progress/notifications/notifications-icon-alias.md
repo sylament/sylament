@@ -31,7 +31,7 @@ Every shipped constant is read by [the toast template](../../../packages/notific
 Declaring it before the panel would ship a name an application could register an override for that nothing ever reads.
 
 **Next step:** add it in the change that ports the panel's empty state, with the de-prefixed value the shipped constants use (`database.modal.empty-state`).
-This is the growth order [`SupportIconAlias`](../support/support-icon-alias.md#pagination-rtl-aliases) and [`TablesIconAlias`](../tables/tables-bundle.md#the-alias-set-is-fifteen-constants-of-filaments-23) follow.
+This is the growth order [`SupportIconAlias`](../support/support-icon-alias.md#an-alias-constant-lands-with-the-template-that-reads-it) and [`TablesIconAlias`](../tables/tables-bundle.md#an-alias-lands-with-the-component-that-reads-it) follow.
 
 ## Divergences
 

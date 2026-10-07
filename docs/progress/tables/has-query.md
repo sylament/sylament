@@ -1,11 +1,16 @@
 ---
-description: 'The table''s Doctrine query lane: `HasQuery`, the relation-scoped table, and the relation arm''s search, sort and aggregate shapes (draft)'
+description: 'The table''s Doctrine query lane: HasQuery, the relation-scoped table, and the relation arm''s path resolution, search, sort and aggregate shapes.'
 ports:
   - vendor/filament/tables/src/Table/Concerns/HasQuery.php
+  - vendor/filament/tables/src/Table/Concerns/HasRecords.php
 owns:
   - packages/tables/src/Table/Concerns/HasQuery.php
 ---
 # HasQuery (tables)
+
+[`Sylament\Tables\Table\Concerns\HasQuery`](../../../packages/tables/src/Table/Concerns/HasQuery.php) declares how a table reaches its records through Doctrine: a `query()`, or a `relationship()` rooted at its target.
+The relation arm behind it — the `Query/` helpers such as [`ColumnPathResolver`](../../../packages/tables/src/Query/ColumnPathResolver.php), [`RelationPathResolver`](../../../packages/tables/src/Query/RelationPathResolver.php), [`RelationConstraint`](../../../packages/tables/src/Query/RelationConstraint.php), [`RelationJoiner`](../../../packages/tables/src/Query/RelationJoiner.php) and [`AggregateQuery`](../../../packages/tables/src/Query/AggregateQuery.php) — is a set of Sylament-only engines with no Filament file to diff, whose surface is the column's ([column.md](column.md)), so it has no rows here.
+The entries below record the shapes it settled: the [resolution order](#a-dotted-name-is-resolved-against-the-mapping-before-it-is-refused), the [search shape](#a-relation-search-is-a-correlated-exists-at-every-cardinality), the [sort shape](#a-relation-sort-joins-where-filaments-orders-by-a-correlated-subquery), the [aggregate delivery](#an-aggregate-is-a-batched-side-query-and-a-hidden-subselect-never-a-select-on-the-page-query) and [what a composite identifier changes](#a-composite-identifier-root-correlates-and-groups-by-every-key-field).
 
 ## Surface
 
@@ -16,15 +21,6 @@ owns:
 | [`getRecordClass()`](../../../packages/tables/src/Table/Concerns/HasRecords.php) | [`HasRecords::getModel()`](../../../vendor/filament/tables/src/Table/Concerns/HasRecords.php) | done | — | [rename](../renames.md#renames) · [semantics](#the-record-class-is-read-off-the-base-querys-root-entity) |
 | [The relation-scoped table — `relationship()` / `getRelationship()` / `getRelationshipQuery()` / `isRelationshipBaseQuery()`](../../../packages/tables/src/Table/Concerns/HasQuery.php) | [`Table\Concerns\HasQuery`](../../../vendor/filament/tables/src/Table/Concerns/HasQuery.php) | done | — | [semantics](#the-relationship-query-is-the-base-query-rooted-at-the-target) · [semantics](#the-mappings-order-is-the-relation-scoped-tables-default-sort) |
 | The inverse-name derivation — `inverseRelationship()`, `getInverseRelationship()`, `getInverseRelationshipFor()` | [`Table\Concerns\HasQuery`](../../../vendor/filament/tables/src/Table/Concerns/HasQuery.php) | skipped | — | [diverges](#the-inverse-relationship-is-read-off-the-mapping-not-derived) |
-
-The relation arm of the query lane has no row of its own here, and that is the [one-row-per-file](../../internals/trail.md#one-file-per-piece-of-code-one-row-per-feature) rule holding: its surface belongs to the **column** ([column.md](column.md)), and the `Query/` helpers behind it are Sylament-only engines with no Filament file to diff, the way `ColumnPathResolver` and `SearchConstraint` already are.
-What lands here is what the lane decided — the [resolution order](#a-dotted-name-is-resolved-against-the-mapping-before-it-is-refused), the [search shape](#a-relation-search-is-a-correlated-exists-at-every-cardinality), the [sort shape](#a-relation-sort-joins-where-filaments-orders-by-a-correlated-subquery), the [aggregate delivery](#an-aggregate-is-a-batched-side-query-and-a-hidden-subselect-never-a-select-on-the-page-query) and [what a composite identifier changes about two of them](#a-composite-identifier-root-correlates-and-groups-by-every-key-field) — in the sections below.
-
-The query lane is covered by [`HasQueryTest`](../../../packages/tables/tests/Unit/Table/Concerns/HasQueryTest.php), against a real in-memory SQLite `EntityManager` rather than a mock — an assertion about clone isolation or a DQL string is only worth making against a builder Doctrine itself would accept.
-[`EntityManagerFactory`](../../../packages/tables/tests/Fixtures/Doctrine/EntityManagerFactory.php) builds one per case, schema included, over **every** entity in that directory — the package's Doctrine suites share one factory, so a fixture added for one lane is mapped for all of them.
-Four of them carry this suite: `Song` and `Artist` carry the `ManyToOne` / `OneToMany` pair, `Book`'s identifier is `code` rather than `id`, and `CompositePair` has two.
-The last two existed for what assumes an `id` column — a record key or a sort that does passes against `Song` and fails against them — beside the composite-identifier families.
-The eight cases are clone-per-read (two reads, neither the stored builder, same DQL), a caller mutation not leaking into the next read, a closure declaration evaluated once and re-evaluated after a fresh `query()`, two scopes applied in registration order with the `void` one still counted, the `isResolvingRecord` flag reaching a scope as `[false, true]`, `getQueryEntityManager()` answering the manager and null, `hasQuery()` across a bare table and a `records()` set and cleared, and `getRecordClass()` reading `Song`, caching, answering `null` with no query and re-reading after a new one.
 
 ## Semantics
 
@@ -58,12 +54,12 @@ It is a branch rather than a `??=` because the read has a second job: it records
 That is exactly the case the value-plus-flag pair [`getRecordClass()` keeps](#the-record-class-is-read-off-the-base-querys-root-entity) exists to cover on its side, and it is deliberately not kept here, because the null means *this table has no query*: every reader branches on it at once and none of them re-enters this getter, so the repeat costs one closure call rather than a getter per row.
 The shape to know about is a closure doing real work before returning null — it pays that call per read.
 
-Filament clones too (`$query->clone()`) but memoises nothing: its `getQuery()` calls `$this->evaluate($this->query)` on every read, and `getModel()` keeps a cache of its own because it is the one reader hit per row.
+Filament clones too (`$query->clone()`) but memoises nothing: its `getQuery()` calls `$this->evaluate($this->query)` on every read, and `getModel()` keeps a cache of its own.
 The port memoises one level lower, which subsumes that cache and covers the other readers with it.
 
 Two members carry the rest of the lane.
 `applyQueryScopes()` is public and takes the builder to scope, so a caller that built its own query — a count query, a relation-scoped one — can put the table's scopes on it; scopes run in registration order, and one returning nothing (a `void` closure mutating in place) leaves the query it was handed, which is what makes both closure shapes valid.
-It has no such caller yet, and one shipped query deliberately does not become one: the [aggregate batch](#an-aggregate-is-a-batched-side-query-and-a-hidden-subselect-never-a-select-on-the-page-query) builds its own builder over the record class and is *not* scoped, because it is already narrowed to the keys of a page the scopes produced — running them again would re-filter a set that has been filtered, and a scope reading the search term would filter it by a term the aggregated relation has no field for.
+Its only in-repo caller is `getQuery()`, and one shipped query deliberately does not become one: the [aggregate batch](#an-aggregate-is-a-batched-side-query-and-a-hidden-subselect-never-a-select-on-the-page-query) builds its own builder over the record class and is *not* scoped, because it is already narrowed to the keys of a page the scopes produced — running them again would re-filter a set that has been filtered, and a scope reading the search term would filter it by a term the aggregated relation has no field for.
 `getQueryEntityManager()` is Sylament-only: an Eloquent builder carries its connection and every Filament consumer reaches the model statically, where Doctrine's read side needs the `EntityManagerInterface` explicitly — so the entity manager behind the base query needs a seam, and on the `query()` lane it is read off the builder the caller handed over rather than injected.
 The relationship lane is the case that stance did not foresee: there is no builder to read from until something has *built* one, and building it is a mapping read.
 So `Table` composes [`CanAccessAssociations`](../../../packages/schemas/src/Components/Concerns/CanAccessAssociations.php) — the reader arrives the way it reaches every schemas component, through a `#[Required]` setter on the container-built table, with an entity-manager-less fallback for one built outside the container that refuses at use rather than at construction.
@@ -108,9 +104,9 @@ The correlation is **identifier equality** rather than entity equality, which si
 And the `LIKE` parameter is registered on the **outer** builder, because one DQL query has one parameter space no matter how deeply a subselect nests — which is also why the subselect's own aliases are seeded from the outer parameter count, so two searchable relation columns in one word's `OR` group cannot collide.
 The seeding survives the wider correlation for a reason worth naming: `correlate()` binds **nothing**, so the parameter count a second term reads is still the count the `LIKE`s put there.
 
-What the subselect *projects* stayed one column at every identifier width: the **first** identifier field, wrapped in `IDENTITY()` when that field is an association.
+What the subselect *projects* is one column at every identifier width: the **first** identifier field, wrapped in `IDENTITY()` when that field is an association.
 `EXISTS` never reads a projection, and DQL leaves no alternative — a subselect takes no comma list, and an aliased expression inside one is a parse error reached through a path, a function or an identification variable alike — so the width lives in the correlation and nowhere else.
-The `IDENTITY()` arm is not cosmetic: it is what stopped a root whose whole identifier is one association from emitting `SELECT sy_x0.song` and dying in the parser, which it did with no Sylament refusal in front of it.
+The `IDENTITY()` arm is not cosmetic: without it a root whose whole identifier is one association would emit `SELECT sy_x0.song` and die in Doctrine's parser with no Sylament refusal in front of it.
 
 One routing caveat rides with all of this and bites hardest on a fetch-joined table: [a searchable dotted path may not share its head segment with a join alias](#a-searchable-dotted-path-and-a-fetch-join-alias-may-not-share-a-head-segment).
 
@@ -121,7 +117,7 @@ Everything the search assembly does around it is unchanged: one `Orx` per word, 
 A dotted column name reaches the correlated `EXISTS` above only when [the mapping resolves it](#a-dotted-name-is-resolved-against-the-mapping-before-it-is-refused), and it does not when the path's **head names an alias the builder already declares** — there the caller's own resolution wins, deliberately, so `SearchConstraint::forColumn()` falls through and the term becomes a plain `LIKE` on that alias.
 On a query that fetch-joins the collection under that same name, the `LIKE` lands on the **joined rows**, and Doctrine hydrates each record's collection out of exactly the rows that survived it: the search then filters the badge list *inside* every matching row instead of choosing which rows match, with no error anywhere and an aggregate cell beside it still counting the whole set.
 Alias the join anything the searchable path does not begin with — `leftJoin('translation.blocks', 'block')` beside a searchable `blocks.heading` — and both arms behave.
-The routing is older than composite identifiers and the trap is not composite-specific: it bites **any** table that fetch-joins a collection under the head segment of a searchable dotted path, single-identifier roots included, because Doctrine's paginator ANDs its identifier `IN` onto the `WHERE` the `LIKE` is already in and hydrates each collection from the rows that survived both.
+The trap is not composite-specific: it bites **any** table that fetch-joins a collection under the head segment of a searchable dotted path, single-identifier roots included, because Doctrine's paginator ANDs its identifier `IN` onto the `WHERE` the `LIKE` is already in and hydrates each collection from the rows that survived both.
 
 The case that would filter in silence is refused by name: `forColumn()` throws a `LogicException` when the head is an alias the query fetch-joins as a **collection**, naming the path, the alias and the ways out.
 The message speaks of a *searchable path* and *the query* rather than a column and the table query, because panels' global search reaches it through the same `forColumn()` and has no column to name: it leads with re-aliasing the join, which both callers can do, and offers `searchable(query:)` as what a table column can also do ([global-search.md](../panels/global-search.md#the-per-attribute-constraint-hook-is-collapsed-into-one-method)).
@@ -150,10 +146,6 @@ The relationship closure is evaluated **once** per table instance and memoised b
 A closure answering `null` leaves the table with no base query at all, and that is not a quieter empty state: `hasQuery()` is still true — no `records()` closure is set — so the render reaches the three-lane refusal, `Table [...] must have [records()], [query()] or [relationship()]`.
 A host whose owner may be missing therefore declares a `records()` fallback of its own (`->records(fn (): array => [])`) rather than relying on the relationship closure answering `null`.
 
-Every SQLite manager the suites build enforces foreign keys, as MySQL and PostgreSQL do, so a by-key delete of a record something still references is refused, apart from what the database's own `ON DELETE CASCADE` removes — a default many-to-many join table cascades.
-The referenced-row behaviour is pinned and described in [delete-action.md](../actions/delete-action.md#the-by-key-arm-is-a-dql-delete-over-the-plucked-keys).
-The relation-scoped delete pins delete `Song`s through `Artist.songs`, whose rows own their own foreign key, rather than `Genre`s through `Song.genres`, a test-design choice that keeps those pins off the join table.
-
 ### The mapping's order is the relation-scoped table's default sort
 
 Doctrine applies `#[ORM\OrderBy]` when it hydrates a collection, so every other read of `Artist::$songs` comes back title-ascending.
@@ -164,7 +156,6 @@ A table declaring both `query()` and `relationship()` is a query table, and appe
 
 That arm is why nothing else had to move: the host applies the *user's* sort first and the default's parts after it ([the composition](host-can-sort-records.md#sorting-composes-the-users-order-the-default-and-the-identifier-tiebreaker)), so a clicked header wins and the mapping order degrades to a tiebreaker beneath it, exactly as a hand-written `defaultSort(fn ($query) => …)` would.
 The direction is read off the mapping rather than off the table, as the `SortDirection` the [reader](../schemas/association-reader.md) answers, and handed to `addOrderBy()` unchanged.
-`Artist::$albums` is declared `Descending` for exactly that reason: it is the only fixture mapping whose direction disagrees with the caller's, so without it the map would be indistinguishable from a hardcoded `'asc'`.
 Filament has no counterpart: an Eloquent relation carries no readable default order, so this is an addition rather than a divergence.
 
 Each mapping entry is emitted as a raw `<rootAlias>.<field>` path with no field check.
@@ -179,10 +170,10 @@ A record class keyed by an association **alone** is not composite at all — the
 Must be a StateFieldPathExpression."* with no Sylament message in front of it.
 So every one of those clauses is written per identifier field by [the predicate builder](../schemas/record-key-contract.md#the-operations-and-their-dql), which emits the single-column text byte for byte for a single-`id` root and the per-field form for every other one.
 
-Three shapes are worth knowing, because none of them is the one a reader guesses.
+The batch's shapes are worth knowing, because neither is the one a reader guesses.
 The batch **projects** `IDENTITY(root.venue) AS sy_key_0, root.season AS sy_key_1` — an identifier association through `IDENTITY()`, a field bare — and **groups** by the bare paths of both, `IDENTITY()` being illegal in `GROUP BY`.
 The batch **re-keys** each returned row through the selection that projected it rather than by joining the raw values: `IDENTITY()` hands back the **raw** driver value under either hydrator while a field path hands back the converted object, and only the selection reconciles the two, so a type whose stored spelling differs from its printed one keys correctly instead of filling the side store under strings no cell ever asks for.
-And the search subselect **projects one column whatever the width** — the first identifier field — because `EXISTS` never reads a projection and DQL admits neither a comma list nor an alias there; the width lives in the correlation.
+The search subselect keeps [one projected column](#a-relation-search-is-a-correlated-exists-at-every-cardinality) whatever the width.
 
 Paging is the third mechanism that correlates by identifier, and it is not here: a query joining a collection cannot be windowed by rows at all, so a keyed root takes [a two-step read of its own](host-can-paginate-records.md#a-keyed-root-that-joins-a-collection-pages-in-two-statements-because-doctrines-walkers-key-by-one-column).
 On the schemas side, `relationship()` lists a composite **target** as readily as a composite root: its many-to-many arm is a correlated `EXISTS` built on the same predicate builder, per identifier field ([relationship.md](../schemas/relationship.md#the-relationship-query-is-rooted-at-the-target-and-needs-no-inverse-mapping)).
@@ -196,14 +187,14 @@ The selection is a set and is read as one; no assertion on it may depend on the 
 ### The inverse relationship is read off the mapping, not derived
 
 Filament's relation-scoped table carries three members the port does not: `inverseRelationship()`, `getInverseRelationship()` and `getInverseRelationshipFor()`.
-They exist because Eloquent cannot be asked what the other side of a relation is called, so Filament *guesses* it — the parent class's basename, singularised and camel-cased — reached through a magic dynamic call on the relation object, and `inverseRelationship()` is the setter that overrides the guess when it is wrong.
+They exist because Eloquent cannot be asked what the other side of a relation is called, so Filament *guesses* it — the parent class's basename, camel-cased, singular for a has-one-or-many and plural otherwise — reached through a magic dynamic call on the record (`$record->{$this->getInverseRelationship()}()`), and `inverseRelationship()` is the setter that overrides the guess when it is wrong.
 
 Doctrine already carries the answer: an association mapping names its counterpart (`mappedBy` on an inverse side, `inversedBy` on an owning one) and [`AssociationTarget`](../../../packages/schemas/src/State/AssociationTarget.php) surfaces both.
 So the two jobs Filament needs the inverse name for are already done without it — the write side reaches the target's owning field through `mappedBy`, and the candidate query excludes already-related records with a negated subselect that needs no inverse mapping at all.
 A setter with nothing left to override would be an API that does nothing, which is worse than an absence; the guess itself is exactly the kind of internal [principles §1](../../internals/principles.md) rejects.
-Three `— not ported` rows in [renames.md](../renames.md) carry the names.
+[renames.md](../renames.md#renames) lists the names as `— not ported`.
 
-Reversal is cheap but unmotivated: it needs a *reader* to want the inverse name by itself, and the only known caller — Filament's own `RelationManager::makeTable()` — reaches it from a `@deprecated` static property this port will not carry either.
+Reversal is cheap but unmotivated: it needs a *reader* to want the inverse name by itself, and the setter's only Filament caller — `RelationManager::makeTable()` — reaches it from a `@deprecated` static property this port will not carry either.
 
 ### A dotted path into a JSON column is refused, where Filament's Eloquent pushes it through
 
@@ -213,7 +204,7 @@ Here the same name is refused: the resolver asks Doctrine's mapping, which knows
 The cell **display** side is unaffected and this is the asymmetry to keep in mind: `getStateFromRecord()` walks a decoded array by key, so a `data.theme` column renders perfectly and only refuses when someone marks it `sortable()` or `searchable()`.
 
 What it would take to close it is the reason it is not closed: DQL has no JSON path operator, so the query would need a registered custom DQL function per platform (`JSON_EXTRACT` on MySQL/SQLite, `#>>` on PostgreSQL) plus a way for the resolver to know which prefix is a JSON column and which is a path inside it — a per-application registration, not something a port can infer from mapping metadata.
-Until then the escape hatches are the ones the message names: `sortable(query:)` and `searchable(query:)`, which hand the user the builder and let them write the platform's own expression.
+The escape hatches are the ones the message names: `sortable(query:)` and `searchable(query:)`, which hand the user the builder and let them write the platform's own expression.
 
 ### A relation sort joins, where Filament's orders by a correlated subquery
 
@@ -258,12 +249,10 @@ And the key narrowing is applied **after** the scope closure has run, because Do
 (A scope calling `groupBy()` still replaces the grouping — the same hazard, one layer along, and unfixed rather than unnoticed.
 A scope calling `select()` replaces the key projection, and that one refuses loudly: the batch re-keys each row through the selection that projected it, so a missing key column throws *"A result row of […] lacks the key column [sy_key_0]"*.)
 
-A third contract arrived with composite keys: the batch is **chunked**.
+A third contract: the batch is **chunked**.
 The scope closure runs once on the pristine builder, and each chunk of [`IdentifierConstraint::chunk()`](../schemas/record-key-contract.md#the-chunk-rule) narrows a **clone** of it under the one parameter base — a copy because a second predicate ANDed onto the first answers nothing, and one base because a base carrying a chunk index of its own is refused.
 The per-chunk maps merge with `+` rather than `array_merge()`, which would renumber the integer array key a numeric record key becomes, handing every cell its neighbour's figure.
-A single-identifier page under two thousand keys is one chunk, so it is one statement.
-The **input** is record keys as strings only: `fetch()` takes no `int`, an `int` being a `TypeError` raised three frames down in the identity seam (`IdentifierFields::toDatabaseValues()`) rather than a key that happens to work.
-The one in-repo caller, `HasTable::fillTableAggregateValues()`, maps its keys to strings; a direct caller handing `array_keys()` of a map keyed by a numeric id straight in is the one that breaks.
+A single-identifier page of at most two thousand keys is one chunk, so it is one statement.
 
 **Sorting** cannot use the store, since the database has to do the ordering, so it takes a third shape: the same aggregate as a correlated subselect added to the sorted clone `AS HIDDEN sy_agg{n}`, with `addOrderBy()` naming that alias.
 `HIDDEN` is what keeps hydration pure — the scalar is projected for the SQL's benefit and dropped before the result is built — and it survives both paginator walkers (`LimitSubqueryOutputWalker` un-hides it into the inner SQL by design, `CountOutputWalker` wraps the whole statement), which is the property the whole approach rests on.

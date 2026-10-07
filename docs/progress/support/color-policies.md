@@ -76,7 +76,7 @@ Policies a package above support declares are tracked in that package, such as s
 Porting one before its element would register a service nothing resolves and add a row to the contrast regression suite for markup that does not exist.
 
 The header policy waits on the dropdown header, a todo row in [`dropdown.md`](dropdown.md#surface).
-The item icon policy waits on the dropdown item's `iconColor` prop, a todo row in [`dropdown-item.md`](dropdown-item.md#iconcolor); the policy is an empty map, so it lands in the same change as the prop.
+The item icon policy waits on the dropdown item's `iconColor` prop, a todo row in [`dropdown-item.md`](dropdown-item.md#there-is-no-iconcolor-prop-so-the-icon-inherits-the-rows-colour); the policy is an empty map, so it lands in the same change as the prop.
 The callout pair waits on a `Callout` component, which neither support nor schemas has.
 
 ## Semantics

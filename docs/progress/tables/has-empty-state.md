@@ -29,7 +29,7 @@ The i18n pass turns both into catalogue lookups without changing what they inter
 Two consequences worth naming.
 The heading says `No records` only where the table has no record class to read — a `records()` table, or one configured with neither; a `query()` table over `Song` says `No songs`, through [`plural()`](../support/helpers.md).
 And the description is a *stored closure* rather than a getter fallback, which is what makes `emptyStateDescription(null)` clear it: the setter overwrites the closure, so a caller can turn the default off, exactly as in Filament.
-`hasAction('create')` reads the [shared flat map](has-actions.md#the-flat-action-map-keeps-one-trim-and-its-caller), so a `create` action declared as a record, header or toolbar action all count.
+`hasAction('create')` reads the [shared flat map](has-actions.md#mergecachedflatactions-drops-the-overwrite-passthrough-and-its-one-caller-loops-cacheaction), so a `create` action declared as a record, header or toolbar action all count.
 
 ### The empty state's heading tag demotes itself when the table has no heading
 
@@ -39,7 +39,7 @@ That reads like an inconsistency and is vendor's `$secondLevelHeadingTag` verbat
 
 Vendor computes the variable once at the top of the blade and feeds it to **nine** call sites; this partial feeds two — the empty state and the [group heading](grouping.md).
 Of the seven it does not, one is the grid layout's *second* group heading, which arrives with the layout columns; one is the [column manager](column-manager.md), whose panel takes a literal `headingLevel` prop of its own; and the remaining **five are the filters panel**, in all five of its layout positions: vendor hands the computed tag to `<x-filament-tables::filters>` every time.
-Ours does not, and that is the deliberate part — the panel takes a literal `headingLevel` of 3 ([`headingTag` → `headingLevel`](../renames.md#renames) is a recorded rename), because it is [fixed chrome](has-filters.md#the-panel-is-fixed-chrome-with-no-action-objects-behind-it) rather than part of the table's outline.
+Ours does not, and that is the deliberate part — the panel takes a literal `headingLevel` of 3 ([`headingTag` → `headingLevel`](../renames.md#renames) is a recorded rename), because it is [fixed chrome](has-filters.md#the-panel-takes-the-apply-actions-visibility-as-a-prop-and-its-groups-stay-keyed) rather than part of the table's outline.
 So the empty state is the one place here that reads the demoting tag at all.
 
 ## Divergences

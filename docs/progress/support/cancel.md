@@ -1,5 +1,5 @@
 ---
-description: The control-flow exception an action closure throws to abort the lifecycle and unmount the action (closing the modal) without a failure notification. (draft)
+description: The control-flow exception an action closure throws to abort the lifecycle and unmount the action without a failure notification.
 ports:
   - vendor/filament/support/src/Exceptions/Cancel.php
 owns:
@@ -7,12 +7,20 @@ owns:
 ---
 # Cancel (support)
 
-`Sylament\Support\Exceptions\Cancel` — the control-flow exception an action closure throws to abort the lifecycle and unmount the action (closing the modal) without a failure notification.
-It ports Filament's `Filament\Support\Exceptions\Cancel`, and `Sylament\Actions\Action` throws it from `cancel()` for `HasActions` to catch and fall through to unmount.
+`Sylament\Support\Exceptions\Cancel` ports `Filament\Support\Exceptions\Cancel`.
+[`Action::cancel()`](../../../packages/actions/src/Action.php) throws it, and [`HasActions`](../../../packages/actions/src/Concerns/HasActions.php) catches it, settles the action's database transaction and falls through to unmount, which closes the modal.
 
 ## Surface
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
-| [Marker exception](../../../packages/support/src/Exceptions/Cancel.php) | [`Exceptions/Cancel.php`](../../../vendor/filament/support/src/Exceptions/Cancel.php) | done | — | — |
-| [Rollback-transaction control](../../../packages/support/src/Exceptions/Cancel.php) | [`Exceptions/Cancel.php`](../../../vendor/filament/support/src/Exceptions/Cancel.php) | done | — | Filament's own casing pair is kept verbatim — the setter `rollBackDatabaseTransaction(bool $condition = true)` with a capital B, the reader `shouldRollbackDatabaseTransaction()` with a lowercase one — and the flag defaults to `false`, so a thrower **commits** what ran before it unless it opts out. Its reader is [`HasActions::callMountedAction()`](../actions/has-actions.md#callmountedaction-runs-filaments-pipeline-in-filaments-order), which catches the exception and calls the action's `rollBackDatabaseTransaction()` or `commitDatabaseTransaction()` accordingly; the mechanics live on [`CanUseDatabaseTransactions`](../actions/can-use-database-transactions.md#the-transaction-trio-resolves-a-doctrine-connection-instead-of-a-facade). The panel pages that read the same flag for their own save paths are still unported |
+| [`Cancel`](../../../packages/support/src/Exceptions/Cancel.php) marker exception | [`Exceptions/Cancel.php`](../../../vendor/filament/support/src/Exceptions/Cancel.php) | done | — | — |
+| [`rollBackDatabaseTransaction()` / `shouldRollbackDatabaseTransaction()`](../../../packages/support/src/Exceptions/Cancel.php) | [`Exceptions/Cancel.php`](../../../vendor/filament/support/src/Exceptions/Cancel.php) | done | — | [semantics](#the-rollback-flag-defaults-to-false-so-a-thrower-commits-what-ran-before-it) |
+
+## Semantics
+
+### The rollback flag defaults to `false`, so a thrower commits what ran before it
+
+`Cancel` and [`Halt`](halt.md) carry the same flag with Filament's method names unchanged: the setter `rollBackDatabaseTransaction(bool $condition = true)` has a capital B and the reader `shouldRollbackDatabaseTransaction()` a lowercase one.
+The flag starts `false`, so an exception thrown without opting in leaves the work that ran before it committed.
+[`HasActions::callMountedAction()`](../actions/has-actions.md#callmountedaction-runs-filaments-pipeline-in-filaments-order) reads the flag and calls the action's `rollBackDatabaseTransaction()` or `commitDatabaseTransaction()`, whose mechanics live on [`CanUseDatabaseTransactions`](../actions/can-use-database-transactions.md#the-transaction-trio-resolves-a-doctrine-connection-instead-of-a-facade).

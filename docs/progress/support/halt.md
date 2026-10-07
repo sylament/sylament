@@ -1,5 +1,5 @@
 ---
-description: The control-flow exception an action closure throws to stop the lifecycle cleanly while keeping its modal mounted (no failure notification). (draft)
+description: The control-flow exception a closure throws to stop the lifecycle cleanly while its action modal stays mounted, without a failure notification.
 ports:
   - vendor/filament/support/src/Exceptions/Halt.php
 owns:
@@ -7,13 +7,12 @@ owns:
 ---
 # Halt (support)
 
-`Sylament\Support\Exceptions\Halt` — the control-flow exception an action closure throws to stop the lifecycle cleanly while keeping its modal mounted (no failure notification).
-Filament keeps it in `support` because several packages throw it; [`actions`](../../../packages/actions/src/Action.php) is the port's first thrower and [`HasActions`](../../../packages/actions/src/Concerns/HasActions.php) its first catcher.
-Ported whole: the marker exception plus its database-transaction rollback control.
+`Sylament\Support\Exceptions\Halt` ports `Filament\Support\Exceptions\Halt`.
+Filament keeps it in `support` because several packages throw or catch it: [`Action::halt()`](../../../packages/actions/src/Action.php) and the panels [`Page::halt()`](../../../packages/panels/src/Pages/Page.php) throw it, and [`HasActions`](../../../packages/actions/src/Concerns/HasActions.php), the record pages and the [`Wizard`](../../../packages/schemas/src/Components/Wizard.php) catch it.
 
 ## Surface
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
-| [Marker exception](../../../packages/support/src/Exceptions/Halt.php) | [`Exceptions/Halt.php`](../../../vendor/filament/support/src/Exceptions/Halt.php) | done | — | — |
-| [Rollback control](../../../packages/support/src/Exceptions/Halt.php) | [`Exceptions/Halt.php`](../../../vendor/filament/support/src/Exceptions/Halt.php) | done | — | Filament's own casing pair is kept verbatim — the setter `rollBackDatabaseTransaction(bool $condition = true)` with a capital B, the reader `shouldRollbackDatabaseTransaction()` with a lowercase one — and the flag defaults to `false`, so a thrower **commits** what ran before it unless it opts out. Its reader is [`HasActions::callMountedAction()`](../actions/has-actions.md#callmountedaction-runs-filaments-pipeline-in-filaments-order), which catches the exception and calls the action's `rollBackDatabaseTransaction()` or `commitDatabaseTransaction()` accordingly; the mechanics live on [`CanUseDatabaseTransactions`](../actions/can-use-database-transactions.md#the-transaction-trio-resolves-a-doctrine-connection-instead-of-a-facade). The panel pages that read the same flag for their own save paths are still unported |
+| [`Halt`](../../../packages/support/src/Exceptions/Halt.php) marker exception | [`Exceptions/Halt.php`](../../../vendor/filament/support/src/Exceptions/Halt.php) | done | — | — |
+| [`rollBackDatabaseTransaction()` / `shouldRollbackDatabaseTransaction()`](../../../packages/support/src/Exceptions/Halt.php) | [`Exceptions/Halt.php`](../../../vendor/filament/support/src/Exceptions/Halt.php) | done | — | [semantics](cancel.md#the-rollback-flag-defaults-to-false-so-a-thrower-commits-what-ran-before-it) · [record pages](../panels/custom-pages.md#halts-rollback-flag-is-carried-and-ignored) |

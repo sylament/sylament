@@ -58,7 +58,7 @@ Unlike the toast stack, that component is free to be a UX **live** component: it
 ### The translation catalogue is unported, so the close label is an English literal
 
 `->hasTranslations()` registers [`resources/lang/`](../../../vendor/filament/notifications/resources/lang): the close-button label (`notification.php`) and the database-modal string set (`database.php`).
-The visible consequence is in the toast template: the close button's `label` is the English literal `'Close notification'`, the way tables' `getEmptyStateHeading()` builds an English heading ([tables-bundle.md](../tables/tables-bundle.md#translations)).
+The visible consequence is in the toast template: the close button's `label` is the English literal `'Close notification'`, the way tables' `getEmptyStateHeading()` builds an English heading ([tables-bundle.md](../tables/tables-bundle.md#the-translations-namespace-is-not-registered)).
 
 **Next step:** port with the toolkit-wide i18n pass, which is the same destination tables' translations row names.
 Nothing about notifications makes its strings a special case, and doing them first would fix a catalogue shape the other packages then inherit.

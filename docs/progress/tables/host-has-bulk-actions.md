@@ -1,5 +1,5 @@
 ---
-description: 'The host trait `HasBulkActions` that `HasTable` composes: the selection props, the selected-records resolution and select-all. (draft)'
+description: 'The host trait `HasBulkActions` that `HasTable` composes: the selection props, the selected-records resolution and select-all.'
 ports:
   - vendor/filament/tables/src/Concerns/HasBulkActions.php
 owns:
@@ -11,11 +11,31 @@ owns:
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
-| [`HasBulkActions` — the three selection props, `isTableRecordSelected()`, `hasSelectedTableRecords()`, `getSelectedTableRecords()`, `getSelectedTableRecordsQuery()`, `getAllSelectableTableRecordKeys()`, `getAllSelectableTableRecordsCount()`, `selectAllTableRecords()`, `deselectAllTableRecords()`](../../../packages/tables/src/Concerns/HasBulkActions.php) | [`Concerns\HasBulkActions`](../../../vendor/filament/tables/src/Concerns/HasBulkActions.php) | in progress | — | [detail](#the-selection-is-server-canonical-and-re-derived-on-every-read) · [semantics](#a-selection-outlives-a-page-and-a-sort-and-not-a-filter-or-a-search) · [diverges](#deselectalltablerecords-clears-the-server-state-where-filaments-only-dispatches-an-event) · [diverges](#select-all-across-pages-is-a-state-writing-live-action-not-an-answered-call) |
+| [`HasBulkActions` — the three selection props, `isTableRecordSelected()`, `hasSelectedTableRecords()`, `getSelectedTableRecords()`, `getSelectedTableRecordsQuery()`, `getAllSelectableTableRecordKeys()`, `getAllSelectableTableRecordsCount()`, `selectAllTableRecords()`, `deselectAllTableRecords()`](../../../packages/tables/src/Concerns/HasBulkActions.php) | [`Concerns\HasBulkActions`](../../../vendor/filament/tables/src/Concerns/HasBulkActions.php) | done | — | [diverges](#the-selection-is-server-canonical-and-re-derived-on-every-read) · [diverges](#a-composite-selection-larger-than-one-batch-is-read-in-batches) · [semantics](#a-selection-outlives-a-page-and-a-sort-and-not-a-filter-or-a-search) · [diverges](#deselectalltablerecords-clears-the-server-state-where-filaments-only-dispatches-an-event) · [diverges](#select-all-across-pages-is-a-state-writing-live-action-not-an-answered-call) |
 | [Grouped selection — `getGroupedSelectableTableRecordKeys()`](../../../packages/tables/src/Concerns/HasBulkActions.php), the group checkbox | [`Concerns\HasBulkActions`](../../../vendor/filament/tables/src/Concerns/HasBulkActions.php) | done | — | [grouping.md](grouping.md#the-whole-universe-arm-costs-one-query-per-group-on-the-page) · [diverges](grouping.md#both-selection-lanes-key-through-getstringkey-where-filaments-records-lane-reads-the-column-raw) |
-| The deprecated `*TableBulkAction*` host shims — `mountTableBulkAction()`, `callMountedTableBulkAction()`, `replaceMountedTableBulkAction()`, `getMountedTableBulkAction()`, `shouldSelectCurrentPageOnly()`, `getTableBulkActions()`, … | [`Concerns\HasBulkActions`](../../../vendor/filament/tables/src/Concerns/HasBulkActions.php) | skipped | — | Every one is a v4→v5 bridge delegating to the unified action API, and the project has never ported a deprecated Filament surface. What they front is built: a bulk mount is `mountAction($name, context: ['table' => true, 'bulk' => true])`, exactly what `mountTableBulkAction()` forwards to |
+| The `$chunkSize` argument of `getSelectedTableRecords()` / `getSelectedTableRecordsQuery()` | [`Concerns\HasBulkActions`](../../../vendor/filament/tables/src/Concerns/HasBulkActions.php) | skipped | — | [bulk-action.md](../actions/bulk-action.md#chunking-is-not-ported) |
+| The `maxSelectableRecords` cap on the resolved selection | [`Concerns\HasBulkActions`](../../../vendor/filament/tables/src/Concerns/HasBulkActions.php) | blocked | the table's `maxSelectableRecords()` setting | [has-actions.md](has-actions.md#a-selection-cap-waits-for-one-meaning-across-both-universes) |
+| The deprecated `*TableBulkAction*` shims, `shouldSelectCurrentPageOnly()`, `shouldDeselectAllRecordsWhenTableFiltered()` and `getTableBulkActions()` (the unified action methods and `table()` replace them) | [`Concerns\HasBulkActions`](../../../vendor/filament/tables/src/Concerns/HasBulkActions.php) | skipped | — | [renames.md](../renames.md#a-deprecated-filament-member-is-not-ported) |
 
-## Details
+## Semantics
+
+### A selection outlives a page and a sort, and not a filter or a search
+
+Which state changes clear the selection is not derivable from the code that clears it, because the clearing lives in the filter and search update tails rather than anywhere a reader would look.
+The rule, ported from Filament verbatim: a **filter** change, a **search** change and a **column search** change deselect everything (when `deselectAllRecordsWhenFiltered()` is on, the default); a **sort**, a **page** change and a **per-page** change do not.
+The hook points are `handleTableFilterUpdates()` — the single tail of all five filter mutations — `updatedTableSearch()` and `handleTableColumnSearchUpdates()` (Filament's `updatedTableColumnSearches()`), in each case immediately before the page reset.
+
+One more site is Sylament's own: `resetTableSearch()`, the clear button's `#[LiveAction]`, deselects on the same terms.
+Filament has no such action — its search input is a live model write, so clearing it goes through `updatedTableSearch()` like any other edit — and without the splice the port would have two channels to one state change disagreeing about the selection.
+
+Nothing is deliberately absent from that list: `sortTable()`, `gotoTablePage()` and `updatedTableRecordsPerPage()` reset the page and flush the record cache without touching the three props, so a selection made on page 1 is still a selection on page 3.
+That is the whole reason the query lane resolves by key rather than from the page collection.
+
+Two consequences worth stating.
+A selection can outlive the page that showed it — including onto an overflow page with no rows at all, since a page past the end [renders empty with the total intact](host-can-paginate-records.md#each-mode-pays-differently-for-its-total-and-all-reads-the-whole-query) — so the chrome that clears it has to stay reachable from an empty page.
+And on the records lane a surviving cross-page selection resolves to **nothing**, because that lane resolves off the current page collection; the keys are still held, still round-trip, and still count in the banner, but `getSelectedTableRecords()` returns only those on the page in front of you.
+
+## Divergences
 
 ### The selection is server-canonical, and re-derived on every read
 
@@ -37,7 +57,7 @@ Every read re-derives:
 Two universes, as everywhere else on this trait.
 On the **records lane** the selection resolves off the current page collection — `array_intersect_key()` for the keys, `array_diff_key()` for the deselections, Filament's `only`/`except` spelled in PHP — so a key selected on page 1 does not resolve from page 2, the same asymmetry [`getTableRecord()`](has-table.md#gettablerecord-reads-fresh-when-the-render-cache-is-cold) already has.
 On the **query lane** it is a fresh query, narrowed by [`IdentifierConstraint::in()`](../schemas/record-key-contract.md#the-operations-and-their-dql) or, while tracking, `notIn()`, both built the way `resolveQueryTableRecord()` builds its single-key constraint.
-A single-identifier class emits exactly the `IN (:keys)` / `NOT IN (:deselected)` over the qualified identifier this lane always emitted — now with the list **typed** by the identifier's own DBAL type — and a composite one emits the balanced OR of per-field ANDs that DQL's missing row-value `IN` forces.
+A single-identifier class emits `IN (:keys)` / `NOT IN (:deselected)` over the qualified identifier, the list **typed** by the identifier's own DBAL type, and a composite one emits the balanced OR of per-field ANDs that DQL's missing row-value `IN` forces.
 A key that is malformed for the class is **dropped** rather than refused, so one stale entry in a selection bag cannot fail a bulk action over the rest of it, and the keys are de-duplicated on the way.
 An empty bag means opposite things on the two arms, and the port has to say so, because Doctrine says neither: DBAL expands an empty list parameter to `NULL`, so **both** `IN (NULL)` and `NOT IN (NULL)` match nothing.
 On the `IN` arm that is the right answer — an empty selection selects no rows — and `getSelectedTableRecords()` never reaches the query anyway, since it opens with the empty-and-not-tracking early-out and returns `[]` without touching the database.
@@ -66,15 +86,11 @@ A simple-paginated table with selection on therefore pays one `COUNT` per render
 
 So the `?int` is contract slack rather than a case this trait reaches: it is typed nullable because [the contract](interacts-with-table.md#the-contract-is-thirty-five-methods-of-filaments-forty-six) lets a host satisfy it without this trait, and because the chrome has to render *something* for a host that answers null — the banner falls back to counting the page, and the select-all-across-pages link, which needs a ceiling, does not appear.
 
-Not ported, with the settings they belong to: chunked resolution (`chunkSelectedRecords()`, `lazyById()` — no shipped action asks for it and Doctrine's iteration story differs), the `maxSelectableRecords` enforcement in both universes, `resolveSelectedRecordsUsing()`, and the grouped key enumeration.
-Each has a [row](#surface) or a [table-side row](has-actions.md#the-selection-settings-ship-as-a-subset-and-the-rest-are-listed).
-
 ### A composite selection larger than one batch is read in batches
 
 `getSelectedTableRecords()` reads a selection over a record class keyed by several fields in batches of `IdentifierConstraint::batch()`, at most 500 keys a statement — 500 for two to four identifier fields, fewer above that ([the chunk rule](../schemas/record-key-contract.md#the-chunk-rule)) — instead of one statement over the whole bag.
-The bags are client input, and one statement over them cost time quadratic in their length.
-A forged 10 000-key `selectedTableRecords` held a request for about 23 s, where a single-identifier table answered in about 23 ms.
-On PostgreSQL the tracked arm's `NOT (… OR …)` crossed the JIT threshold and ran for minutes.
+The bags are client input, and one statement over them costs time quadratic in their length.
+In one statement a forged 10 000-key `selectedTableRecords` holds a request for about 23 s, where a single-identifier table answers in about 23 ms, and on PostgreSQL the tracked arm's `NOT (… OR …)` crosses the JIT threshold and runs for minutes.
 Three shapes follow:
 
 - **The selected bag** is batched.
@@ -88,30 +104,10 @@ Three shapes follow:
   `getSelectedTableRecordsQuery(false)` binds them back as a second key list instead.
 
 The hydrated records come back in table order within a batch, and batch after batch across them; Filament's own chunked read comes back in id order, not the table's.
-Each record comes back once: two spellings of one key that the database compares equal — a decimal `1` and `1.0`, or a case variant under a case-insensitive collation — can land in different batches and hydrate the same managed record twice, so the batches' records are de-duplicated by identity before the selectability filter, as the single statement returned such a row once.
-`getSelectedTableRecordsQuery()` is unchanged: it returns one builder, a custom bulk action's `$selectedRecordsQuery`, so it binds every selected key.
+Each record comes back once: two spellings of one key that the database compares equal — a decimal `1` and `1.0`, or a case variant under a case-insensitive collation — can land in different batches and hydrate the same managed record twice, so the batches' records are de-duplicated by identity before the selectability filter, as a single statement returns such a row once.
+`getSelectedTableRecordsQuery()` does not batch: it returns one builder, a custom bulk action's `$selectedRecordsQuery`, so it binds every selected key.
 A bulk action over a large composite selection reads `$selectedRecords` instead.
 A single-identifier selection is untouched: one statement, one array parameter.
-
-## Semantics
-
-### A selection outlives a page and a sort, and not a filter or a search
-
-Which state changes clear the selection is not derivable from the code that clears it, because the clearing lives in two `updated*` tails rather than anywhere a reader would look.
-The rule, ported from Filament verbatim: a **filter** change and a **search** change deselect everything (when `deselectAllRecordsWhenFiltered()` is on, the default); a **sort**, a **page** change and a **per-page** change do not.
-The hook points are `handleTableFilterUpdates()` — already the single tail of all five filter mutations — and `updatedTableSearch()`, in both cases immediately before the existing page reset.
-
-A third site is Sylament's own: `resetTableSearch()`, the clear button's `#[LiveAction]`, deselects on the same terms.
-Filament has no such action — its search input is a live model write, so clearing it goes through `updatedTableSearch()` like any other edit — and without the splice the port would have two channels to one state change disagreeing about the selection.
-
-Nothing is deliberately absent from that list: `sortTable()`, `gotoTablePage()` and `updatedTableRecordsPerPage()` reset the page and flush the record cache without touching the three props, so a selection made on page 1 is still a selection on page 3.
-That is the whole reason the query lane resolves by key rather than from the page collection.
-
-Two consequences worth stating.
-A selection can outlive the page that showed it — including onto an overflow page with no rows at all, since a page past the end [renders empty with the total intact](host-can-paginate-records.md#the-page-state-has-its-query-lane-and-no-session-or-url-half) — so the chrome that clears it has to stay reachable from an empty page.
-And on the records lane a surviving cross-page selection resolves to **nothing**, because that lane resolves off the current page collection; the keys are still held, still round-trip, and still count in the banner, but `getSelectedTableRecords()` returns only those on the page in front of you.
-
-## Divergences
 
 ### `deselectAllTableRecords()` clears the server state, where Filament's only dispatches an event
 
@@ -120,7 +116,7 @@ The Alpine component clears *its* sets and the emptied selection reaches the ser
 So anything reading `$selectedTableRecords` later in the same request — after the deselect-on-completion hook of a bulk action, say — sees a selection that has just been cleared.
 
 Ours writes the three props to their empty defaults and nulls the resolution cache.
-There is no browser event and no listener, because there is nothing for one to do: every call site is already inside a live request (the two `updated*` tails, and an action's deselect-after-completion), so the response's re-render carries the cleared props, the client store reinitialises from them, and the table controller repaints from that.
+There is no browser event and no listener, because there is nothing for one to do: every call site is already inside a live request (the filter and search update tails, and an action's deselect-after-completion), so the response's re-render carries the cleared props, the client store reinitialises from them, and the table controller repaints from that.
 This is the selection's central architectural divergence stated at its smallest: Filament's selection is client-authoritative with the server reading a copy, ours is server-canonical with the client holding a working copy.
 
 ### Select-all across pages is a state-writing live action, not an answered call

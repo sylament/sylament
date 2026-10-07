@@ -39,7 +39,7 @@ So the composition is `OR` within a word and `AND` between words — *every* wor
 The loop skips a **hidden** column before asking whether it is globally searchable, Filament's own order — an arm that needs column visibility, and that ships [with its sorting sibling](can-sort-records.md#sorting-and-global-search-both-skip-a-hidden-column).
 
 Two members of Filament's do not port.
-The `generate_search_term_expression()` / `generate_search_column_expression()` pair is Eloquent-and-driver-specific assembly, replaced by [`SearchConstraint::like()`](../../../packages/tables/src/Query/SearchConstraint.php) and its [PostgreSQL text cast](can-search-records.md#a-non-string-searchable-field-is-cast-to-text-on-postgresql).
+The `generate_search_term_expression()` / `generate_search_column_expression()` pair is Eloquent-and-driver-specific assembly, replaced by [`SearchConstraint::like()`](../../../packages/tables/src/Query/SearchConstraint.php) and its [PostgreSQL text cast](../schemas/search-constraint.md#a-field-that-holds-no-character-data-is-cast-to-text-on-postgresql).
 `like()` itself lives in [`Sylament\Schemas\Query\SearchConstraint`](../schemas/search-constraint.md) — tables' class delegates — so forms' relationship search reuses it without depending on `sylament/tables`.
 The word splitter took the same shape one tier down for the same reason: the body sat in a **host trait**, so the only way to reach it was to be a table host, and panels' global search is not one.
 Hoisting it into `Query\SearchTermSplitter` — a pure static, the tier tables' other query helpers already live at — makes it callable from a panel resource, and leaves the trait method in place at its own visibility so no caller and no override moved.

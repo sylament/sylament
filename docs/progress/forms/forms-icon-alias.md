@@ -57,7 +57,7 @@ Filament declares every overridable icon slot in the whole field catalog up fron
 Sylament declares the constants of the fields it builds: the two option fields, the select's option actions, the repeater's actions, the file-upload editor's toolbar buttons, the key-value field's row actions and the text input's affix actions.
 The constants it leaves out name icons of fields that are not built here at all: the builder's item actions, the rich editor's panel buttons and the modal table select's select action.
 
-An alias is only overridable once something reads it, so each constant lands in the same change as the field that renders its icon — the growth order [`SupportIconAlias`](../support/support-icon-alias.md#pagination-rtl-aliases), [`TablesIconAlias`](../tables/tables-bundle.md#the-alias-set-is-fifteen-constants-of-filaments-23) and [`NotificationsIconAlias`](../notifications/notifications-icon-alias.md#the-sixth-constant-waits-for-the-panel-that-renders-it) all follow.
+An alias is only overridable once something reads it, so each constant lands in the same change as the field that renders its icon — the growth order [`SupportIconAlias`](../support/support-icon-alias.md#an-alias-constant-lands-with-the-template-that-reads-it), [`TablesIconAlias`](../tables/tables-bundle.md#an-alias-lands-with-the-component-that-reads-it) and [`NotificationsIconAlias`](../notifications/notifications-icon-alias.md#the-sixth-constant-waits-for-the-panel-that-renders-it) all follow.
 
 ## Semantics
 

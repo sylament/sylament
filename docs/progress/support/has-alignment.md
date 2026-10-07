@@ -1,16 +1,13 @@
 ---
-description: The shared concern that gives a component a configurable horizontal alignment. (draft)
+description: The concern that gives a component a horizontal alignment, its align*() shortcuts and the class a template emits for it.
 ports:
   - vendor/filament/support/src/Concerns/HasAlignment.php
-  - vendor/filament/support/src/Enums/Alignment.php
 owns:
   - packages/support/src/Components/Concerns/HasAlignment.php
 ---
 # HasAlignment (support)
 
-`Sylament\Support\Components\Concerns\HasAlignment` — the shared concern that gives a component a configurable horizontal alignment.
-It ports Filament's `HasAlignment`: an `Alignment | string | Closure | null` property, a fluent `alignment()` setter, seven `align*()` shortcut helpers each taking a `bool | Closure` condition, a `getAlignment()` reader that normalizes a known string to its [`Alignment`](../../../packages/support/src/Enums/Alignment.php) case, and a `hasDynamicAlignment()` probe.
-Sylament adds one method with no Filament counterpart — `getAlignmentClass()` — so this port carries a divergence.
+`Sylament\Support\Components\Concerns\HasAlignment` ports Filament's trait of the same name; `getAlignment()` normalizes a known string to its [`Alignment`](../../../packages/support/src/Enums/Alignment.php) case and passes any other string through.
 
 ## Surface
 
@@ -22,14 +19,10 @@ Sylament adds one method with no Filament counterpart — `getAlignmentClass()` 
 | [`hasDynamicAlignment()`](../../../packages/support/src/Components/Concerns/HasAlignment.php) | [`HasAlignment::hasDynamicAlignment()`](../../../vendor/filament/support/src/Concerns/HasAlignment.php) | done | — | — |
 | [`getAlignmentClass()`](../../../packages/support/src/Components/Concerns/HasAlignment.php) | — (no Filament equivalent) | done | — | [diverges](#getalignmentclass-centralizes-the-alignment-to-class-mapping) |
 
-## Details
-
-Every row above is **done** — the port is faithful and every method, including the added `getAlignmentClass()`, is exercised by [`HasAlignmentTest`](../../../packages/support/tests/Unit/Components/Concerns/HasAlignmentTest.php).
-
 ## Divergences
 
 ### `getAlignmentClass()` centralizes the alignment-to-class mapping
 
-Filament's `HasAlignment` stops at `getAlignment()`; each Blade template that renders an aligned component then maps the `Alignment` case to a CSS class with its own inline `match ($alignment) { … }`.
-Sylament folds that mapping into the trait: `getAlignmentClass()` returns `sy-align-<value>` for an enum case, a custom string as-is, and `null` when unaligned — so Twig templates emit `component.getAlignmentClass` without type-sniffing the enum-vs-string union that `getAlignment()` returns.
-It is additive (nothing in Filament is removed or renamed) and covered by the class-building cases in [`HasAlignmentTest`](../../../packages/support/tests/Unit/Components/Concerns/HasAlignmentTest.php).
+Filament's `HasAlignment` stops at `getAlignment()`; each Blade template that renders an aligned component maps the `Alignment` case to a CSS class itself, with an inline `match` or ternary.
+Sylament folds that mapping into the trait: `getAlignmentClass()` returns `sy-align-<value>` for an enum case, a custom string as-is, and `null` when unaligned, so a Twig template emits `component.getAlignmentClass` without type-sniffing the enum-or-string union `getAlignment()` returns.
+It is additive, and it is one member of the [`get*Class()` family](../translations.md#the-getclass-family-is-one-pattern-and-filaments-getclass-means-a-class-string).

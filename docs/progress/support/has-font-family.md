@@ -1,16 +1,14 @@
 ---
-description: The shared component trait that ports Filament's `HasFontFamily`. (draft)
+description: The concern that gives a component a font family and the class a template emits for it.
 ports:
   - vendor/filament/support/src/Concerns/HasFontFamily.php
-  - vendor/filament/tables/src/Columns/TextColumn.php
-  - vendor/filament/infolists/src/Components/TextEntry.php
 owns:
   - packages/support/src/Components/Concerns/HasFontFamily.php
 ---
 # HasFontFamily (support)
 
-`Sylament\Support\Components\Concerns\HasFontFamily` — the shared component trait that ports Filament's `HasFontFamily`.
-It holds a closure-evaluable `FontFamily | string | null` value and normalizes a string that names a known enum case back to the `FontFamily` enum, so text-rendering components (schemas' `Text`, and the future table/infolist text surfaces) can carry a font-family override.
+`Sylament\Support\Components\Concerns\HasFontFamily` ports Filament's trait of the same name; `getFontFamily()` normalizes a known string to its [`FontFamily`](../../../packages/support/src/Enums/FontFamily.php) case and passes any other string through.
+Schemas' [`Text`](../schemas/text.md) and tables' [`TextColumn`](../tables/text-column.md) compose it.
 
 ## Surface
 
@@ -18,26 +16,18 @@ It holds a closure-evaluable `FontFamily | string | null` value and normalizes a
 | --- | --- | --- | --- | --- |
 | [`fontFamily()`](../../../packages/support/src/Components/Concerns/HasFontFamily.php) | [`HasFontFamily::fontFamily()`](../../../vendor/filament/support/src/Concerns/HasFontFamily.php) | done | — | — |
 | [`getFontFamily()`](../../../packages/support/src/Components/Concerns/HasFontFamily.php) | [`HasFontFamily::getFontFamily()`](../../../vendor/filament/support/src/Concerns/HasFontFamily.php) | done | — | [diverges](#getfontfamily-drops-the-state-parameter) |
-| [`getFontFamilyClass()`](../../../packages/support/src/Components/Concerns/HasFontFamily.php) | _(no Filament equivalent — inlined at each call site)_ | done | — | [diverges](#getfontfamilyclass-centralizes-the-class-ternary) |
+| [`getFontFamilyClass()`](../../../packages/support/src/Components/Concerns/HasFontFamily.php) | — (no Filament equivalent) | done | — | [diverges](#getfontfamilyclass-centralizes-the-class-ternary) |
 | [`hasFontFamily()`](../../../packages/support/src/Components/Concerns/HasFontFamily.php) | [`HasFontFamily::hasFontFamily()`](../../../vendor/filament/support/src/Concerns/HasFontFamily.php) | done | — | — |
-
-## Details
-
-Every row above is **done** — covered by schemas' `Text` tests, which exercise this trait directly through its only current consumer: [`Text` unit test](../../../packages/schemas/tests/Unit/Components/TextTest.php) asserts the string→enum normalization of `getFontFamily()` and the `sy-font-serif` / `null` outputs of `getFontFamilyClass()`, and the [render test](../../../packages/schemas/tests/Integration/Components/TextRenderTest.php) asserts the class reaches the emitted markup.
 
 ## Divergences
 
 ### `getFontFamily()` drops the `$state` parameter
 
-Filament's `getFontFamily(mixed $state = null)` threads `'state' => $state` into `evaluate()` so a `fn ($state) => …` font-family closure can branch on the column/entry's per-row state.
-Sylament's `getFontFamily()` takes no argument and evaluates with no injected state, because nothing here passes one yet.
-The base [`Component`](component.md#surface)'s arity probe is no longer part of that reason: it exists as `EvaluatesClosures::evaluationValueIsFunctionAndHasParameter()`, the predicate `Column::hasStateBasedUrls()` asks.
-Re-add the parameter in the same change as the first state-carrying text consumer, where it finally has state to pass and behavior to test.
+Filament's `getFontFamily(mixed $state = null)` threads `'state' => $state` into `evaluate()`, so a `fn ($state) => …` closure can branch on one item of a text column's or entry's state.
+Sylament's `getFontFamily()` takes no argument and evaluates with no injected state, for the reason and with the consequence [`getWeight()`'s entry](has-weight.md#getweight-drops-the-state-argument) gives.
 
 ### `getFontFamilyClass()` centralizes the class ternary
 
-Filament has no `getFontFamilyClass()`: every consumer inlines the same `($fontFamily instanceof FontFamily) ? "fi-font-{$fontFamily->value}" : (is_string($fontFamily) ? $fontFamily : '')` ternary at its call site (`TextColumn`, `TextEntry`, the link Blade).
-Sylament adds one method on the trait that returns `sy-font-<value>` for an enum case, a custom string as-is, or `null` when unset, so Twig templates never type-sniff the enum-vs-string union — they read a single `component.getFontFamilyClass`.
-This mirrors the sibling `getSizeClass()` / `getWeightClass()` helpers and keeps the `fi-*`→`sy-*` prefix rewrite (a systematic translation) in PHP rather than scattered across templates.
-
-_See also: the global [rename table](../renames.md) — the `fi-*` → `sy-*` class prefix and the `Support\Concerns\` → `Support\Components\Concerns\` trait split are systematic translations recorded there, not per-trait divergences._
+Filament has no `getFontFamilyClass()`: `TextColumn`, `TextEntry` and schemas' `Text` each inline the same `($fontFamily instanceof FontFamily) ? "fi-font-{$fontFamily->value}" : …` ternary.
+Sylament's trait returns `sy-font-<value>` for an enum case, a custom string as-is, or `null` when unset, so a Twig template reads one `component.getFontFamilyClass` instead of type-sniffing the enum-or-string union.
+It is one member of the [`get*Class()` family](../translations.md#the-getclass-family-is-one-pattern-and-filaments-getclass-means-a-class-string).

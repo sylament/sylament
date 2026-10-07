@@ -162,7 +162,7 @@ It then reads the trigger's *nearest* live root once, `closest('[data-controller
    That matches a dispatch nobody listens to, and it is why the `catch` is empty but for its why-swallow comment.
 
 Each root resolves through `resolveComponent()`: UX Live's registry, retried once after that element's `live:connect` when the registry is not ready.
-That is the piece of schemas' [`utils/live_host.ts`](../../../packages/schemas/assets/src/utils/live_host.ts) this controller carries, minus the `closest()` half the arms need separately, inlined rather than imported, the same per-file-build trade [tables' copy](../tables/tables-bundle.md#asset-registration) records.
+That is the piece of schemas' [`utils/live_host.ts`](../../../packages/schemas/assets/src/utils/live_host.ts) this controller carries, minus the `closest()` half the arms need separately, inlined rather than imported, the same per-file-build trade [tables' copy](../tables/tables-bundle.md#the-assets-register-through-assetmapper-as-stimulus-controllers-not-as-alpine-components) records.
 It diverges from both copies in one way, and the reason is where it runs: those two resolve once per controller connect, this one runs from a page-wide click listener, so an unbounded wait would leave one pending promise and one `live:connect` listener behind per click on a root that never connects.
 The wait is bounded by a timeout that rejects into arm 3.
 

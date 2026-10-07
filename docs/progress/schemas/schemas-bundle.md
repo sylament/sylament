@@ -204,7 +204,7 @@ The duplicate is deliberate and cheap; it collapses if a shared `@sylament/suppo
 ### The icon alias values drop Filament's `schema::` prefix
 
 Filament's values are namespaced, `schema::components.tabs.dropdown-trigger-button`; ours are the bare `components.tabs.dropdown-trigger-button`.
-The constant names are Filament's, and the bare value follows the scheme [tables-bundle.md](../tables/tables-bundle.md#the-empty-state-alias-value-drops-filaments-package-prefix) records, so an app registering overrides under `sylament.icons` reads one scheme rather than two.
+The constant names are Filament's, and the bare value follows the scheme [renames.md](../renames.md#icon-alias-values-drop-filaments-package-prefix) records, so an app registering overrides under `sylament.icons` reads one scheme rather than two.
 
 ## The controllers' values, targets and actions
 

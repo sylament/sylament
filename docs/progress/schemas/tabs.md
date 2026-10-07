@@ -140,7 +140,7 @@ A user who has clicked a tab in between is unaffected: that click is a recorded 
 **Filament ships the same defect**, for the same reason — its `getActiveTab()` reads `request()->query()`, and a Livewire round trip's request is likewise not the page's — masked over there only on `EditRecord`, which uses `livewireProperty()` instead and never reaches the query-string branch.
 It is recorded rather than fixed because nothing in this port calls `persistTabInQueryString()`: the port's own `Tabs` consumers are [panels' record filters](../panels/has-tabs.md) and the relation managers, which use `liveComponentProperty()` and hold the key in a `LiveProp` that rides every live request — the shape that is [correct by construction](../tables/has-table.md#the-url-binding-is-a-per-prop-liveprop-modifier-opted-into-by-the-page) and the reason tables bind table state through a `LiveProp` modifier rather than by reading the request at render time.
 
-The fix, when a consumer wants it, is the same mechanism: give `Tabs` a bound host property instead of a request read, or have the controller re-assert `#tab` on `render:finished` the way [tables' controller repaints its selection](../tables/tables-bundle.md#the-table-controller-absorbs-four-jobs-livewire-does-with-attributes).
+The fix, when a consumer wants it, is the same mechanism: give `Tabs` a bound host property instead of a request read, or have the controller re-assert `#tab` on `render:finished` the way [tables' controller repaints its selection](../tables/table.md#the-table-controller-absorbs-four-jobs-livewire-does-with-attributes).
 
 ### Two Sylament-only accessors carry what Alpine read from the client
 

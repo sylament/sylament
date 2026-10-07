@@ -212,7 +212,7 @@ Both emitting templates, [`Checkbox`](../../../packages/forms/templates/partials
 Two things differ from the forms-coded controls.
 The selector is element-qualified (`input[type='checkbox'].sy-checkbox`, **(0,2,1)**), because a code-less class in support is reachable by any package's markup and the qualifier is what keeps it meaning *a checkbox*.
 And the whole `&:indeterminate` block is ported: the dash glyph, `bg-primary-600`, the focus arm, the disabled arm and its `[aria-invalid='true']` nesting.
-`HTMLInputElement.indeterminate` is a DOM property no server-rendered attribute can set and no forms control sets; tables' tri-state page checkbox is driven by [the selection controller](../tables/tables-bundle.md#the-selection-controller-diverges-from-tablejs-in-four-places), which sets exactly that property.
+`HTMLInputElement.indeterminate` is a DOM property no server-rendered attribute can set and no forms control sets; tables' tri-state page checkbox is driven by [the selection controller](../tables/table.md#the-selection-controller-diverges-from-tablejs-in-four-places), which sets exactly that property.
 
 ### The checkbox and radio pin their checked glyph's size and placement
 

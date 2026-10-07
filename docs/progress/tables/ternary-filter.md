@@ -1,5 +1,5 @@
 ---
-description: 'The yes / no / either filter: a `SelectFilter` whose field is a two-option boolean select and whose query pass is a three-arm dispatcher installed as… (draft)'
+description: 'The yes / no / either filter: a `SelectFilter` with a two-option boolean field and a three-arm query dispatcher.'
 ports:
   - vendor/filament/tables/src/Filters/TernaryFilter.php
 owns:
@@ -18,12 +18,19 @@ Everything [`SelectFilter`](select-filter.md) carries — the field chain, the a
 | [`trueLabel()` / `falseLabel()` + getters](../../../packages/tables/src/Filters/TernaryFilter.php) | `TernaryFilter::trueLabel()` | done | — | [diverges](#the-arm-labels-are-hardcoded-english) |
 | [`getFormField()`](../../../packages/tables/src/Filters/TernaryFilter.php) | `TernaryFilter::getFormField()` | done | — | [semantics](#boolean-rebuilds-the-options-the-parent-chain-just-set) |
 | [`queries()`](../../../packages/tables/src/Filters/TernaryFilter.php) | `TernaryFilter::queries()` | done | — | [semantics](#the-dispatcher-is-installed-as-the-filters-own-query-callback) |
-| [`boolean()`](../../../packages/tables/src/Filters/TernaryFilter.php) | `TernaryFilter::boolean()` | in progress | — | [diverges](#the-arms-qualify-the-attribute-where-filaments-leave-it-bare) · [diverges](#the-whererelation-arms-are-deferred) |
-| [`nullable()`](../../../packages/tables/src/Filters/TernaryFilter.php) | `TernaryFilter::nullable()` | in progress | — | [diverges](#the-arms-qualify-the-attribute-where-filaments-leave-it-bare) · [diverges](#the-whererelation-arms-are-deferred) |
+| [`boolean()`](../../../packages/tables/src/Filters/TernaryFilter.php) | `TernaryFilter::boolean()` | in progress | — | [detail](#the-whererelation-arms-are-deferred) · [diverges](#the-arms-qualify-the-attribute-where-filaments-leave-it-bare) |
+| [`nullable()`](../../../packages/tables/src/Filters/TernaryFilter.php) | `TernaryFilter::nullable()` | in progress | — | [detail](#the-whererelation-arms-are-deferred) · [diverges](#the-arms-qualify-the-attribute-where-filaments-leave-it-bare) |
 | [`getDefaultState()`](../../../packages/tables/src/Filters/TernaryFilter.php) | `TernaryFilter::getDefaultState()` | done | — | [semantics](#the-state-is-1--0--null-not-true--false--null) |
 | [indicator override](../../../packages/tables/src/Filters/TernaryFilter.php) | `TernaryFilter::setUp()` | done | — | [semantics](#the-indicator-reads-the-arm-label-not-the-option-map) |
 
-Every built row is pinned by [`TernaryFilterTest`](../../../packages/tables/tests/Unit/Filters/TernaryFilterTest.php), which uses the `isFeatured` column added to the [`Song` fixture](../../../packages/tables/tests/Fixtures/Doctrine/Entity/Song.php) for this filter — nullable, so the three-state arms and the `nullable()` arms are both reachable on one entity.
+## Details
+
+### The `whereRelation` arms are deferred
+
+Each of Filament's four arms opens with a `queriesRelationships()` check and falls into `$query->whereRelation($relationshipName, $titleAttribute, …)`.
+`whereRelation` has no Doctrine counterpart, and the whole relationship surface of `SelectFilter` waits on a Doctrine design for the filters' relationship arm ([select-filter.md](select-filter.md#the-relationship-arm-is-deferred-with-a-documented-escape-hatch)).
+`boolean()` and `nullable()` ship the attribute half of each arm and lack the relationship half.
+The same escape hatch applies: `attribute('artist.isFeatured')` over a query that already joins `artist` reaches a related boolean.
 
 ## Semantics
 
@@ -31,7 +38,6 @@ Every built row is pinned by [`TernaryFilterTest`](../../../packages/tables/test
 
 `getFormField()` is `parent::getFormField()->boolean(trueLabel:, falseLabel:, placeholder:)`, and [`Select::boolean()`](../forms/select.md) re-calls `options()` and `placeholder()` internally and installs a `BooleanStateCast(isStoredAsInt: true)`.
 So the `options()` closure the parent chain attached is overwritten on purpose, and a ternary filter's `options()` is dead configuration.
-Named arguments are used at that call because the three labels are not a positional run — a padded call would break silently the moment `boolean()` grew a parameter.
 
 ### The dispatcher is installed as the filter's own `query()` callback
 
@@ -68,9 +74,3 @@ A fix, not a mirror; recorded in the [renames table](../renames.md) and pinned b
 `setUp()` seeds `trueLabel('Yes')` and `falseLabel('No')` where Filament reads `__('filament-forms::components.select.boolean.true')` and its `false` twin.
 The values are that catalogue's English ones, so the rendered chip and the two options match Filament byte for byte — but there is no catalogue to look them up in, the same [hardcoded-copy gap](has-empty-state.md#the-copy-is-english-and-hardcoded-because-no-i18n-layer-ships) the empty state and the search chip carry, and it lifts when toolkit-wide i18n ships.
 The `'-'` placeholder is not part of it: Filament hardcodes that one too.
-
-### The `whereRelation` arms are deferred
-
-Each of Filament's four arms opens with a `queriesRelationships()` check and falls into `$query->whereRelation($relationshipName, $titleAttribute, …)`.
-`whereRelation` has no Doctrine counterpart, and the whole relationship surface of `SelectFilter` waits on a Doctrine design for the filters' relationship arm ([select-filter.md](select-filter.md#the-relationship-arm-is-deferred-with-a-documented-escape-hatch)).
-The same escape hatch applies: `attribute('artist.isFeatured')` over a query that already joins `artist` reaches a related boolean today.

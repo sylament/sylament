@@ -126,7 +126,7 @@ For schemas, actions and tables alike, `Has*` and `InteractsWith*` exist on **bo
 | **interface** | `HasSchemas` / `HasActions` / `HasTable` | `InteractsWithSchemas` / `InteractsWithActions` / `InteractsWithTable` |
 | **trait** | `InteractsWithSchemas` / `InteractsWithActions` / `InteractsWithTable` | `HasSchemas` / `HasActions` / `HasTable` |
 
-Here `Has*` is reserved for traits, matching every other trait in the codebase (`HasName`, `HasComponents`, `HasRecords`, …), and the interface names the behaviour the host implements.
+Here `Has*` names the trait, as it does for `HasName`, `HasComponents` and `HasRecords`, and the interface names the behaviour the host implements; support's `Contracts\HasColor`, `HasDescription`, `HasIcon` and `HasLabel` keep Filament's own interface names.
 Porting code that mentions either name means checking which one it is first.
 
 ### Laravel rule vocabulary becomes Symfony constraint vocabulary

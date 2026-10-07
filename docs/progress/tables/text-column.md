@@ -370,7 +370,7 @@ The port is faithful to `Str::limit()`'s *ellipsis placement*, not its *width co
 
 Filament never explicitly casts state to a string: `formatState()` passes it untouched into `Str::limit()`, string concatenation, and eventually Blade's `{{ }}`, so an object with no `__toString()` reaching that far fails wherever PHP's implicit string coercion first runs, uncontrolled and with no column named in the error.
 Sylament's pipeline casts once, explicitly (`(string) $state`, ahead of truncation and affixing), and PHPStan level max will not let that cast stand for a `mixed`-typed value without proof it is safe.
-`formatState()` checks `is_scalar($state) || $state instanceof Stringable` immediately before the cast and throws a `LogicException` naming the column when neither holds, the same [fail-fast rule](../../../CLAUDE.md) applied to `color()`/`icon()`'s `true` arm below.
+`formatState()` checks `is_scalar($state) || $state instanceof Stringable` immediately before the cast and throws a `LogicException` naming the column when neither holds, the same fail-fast check as the [`true` arm of `color()`/`icon()`](#an-explicit-true-colour-or-icon-throws-where-filament-lets-it-through-and-crashes).
 A scalar, a `Stringable` (including `Markup`), an array (already coerced to JSON above), a `HasLabel` (already unwrapped above) and a `BackedEnum` (unwrapped to its backing value immediately after) never reach the check.
 
 That enum unwrap is Filament's, reached from the other end, and it is what keeps the throw narrow.
@@ -400,7 +400,7 @@ Reversing it means adding the `$state` parameter and the matching injection to b
 Filament's own getters declare `string | array | null` / `string | BackedEnum | Htmlable | null` and check only `$color === false`, so an evaluated `true`, which the type accepts, falls through to `filled($color)`, which is `true` for a bare `true`, and the getter returns it: a `TypeError` at the return statement, because `true` is not a member of the declared return type.
 
 Sylament's `getColor()` / `getIcon()` test `$color === true` / `$icon === true` ahead of the `false` check and throw a `LogicException` naming the column, `Color of column [%s] must be a palette name, a shade map, or false; true given.` and the icon equivalent, rather than reaching Filament's uncontrolled `TypeError` and rather than swallowing the mistake into `null`.
-This is the project's [fail-fast rule](../../../CLAUDE.md): a caller who sets `true` meant something else, so the toolkit says so at the point the mistake was made, in a message naming the column.
+This fails fast: a caller who sets `true` meant something else, so the toolkit says so at the point the mistake was made, in a message naming the column.
 Every `false` call site keeps its meaning; a `true` call site could never return successfully in Filament either.
 
 ### A `colors()` or `icons()` closure is handed the item state, where Filament's is handed the column's
@@ -452,7 +452,7 @@ Both go away together: a `getExtraTemplateData()` entry resolving the size once 
 The throwing arm is **unreachable** against this class as it stands, because the pipeline casts before it returns, so those three are the only shapes it produces.
 
 It exists because `formatState()`'s declared return is Filament's `mixed` and PHPStan cannot narrow through it, since `formatStateUsing` is itself `mixed` and `evaluate()`'s generic binds to nothing useful, while `getStateItems()` promises `content: string|Markup|null` in its own array shape.
-The choice at that point is a silent cast, an [inline suppression the codebase does not allow](../../../CLAUDE.md), or a runtime check; the check is the same [fail-fast rule](../../../CLAUDE.md) as the [stringify guard](#formatstate-throws-for-a-state-it-cannot-stringify) and the [`true` colour arm](#an-explicit-true-colour-or-icon-throws-where-filament-lets-it-through-and-crashes), and unlike those two it is proof rather than a policy about user input.
+The choice at that point is a silent cast, an [inline suppression the codebase does not allow](../../../CLAUDE.md), or a runtime check; the check fails fast like the [stringify guard](#formatstate-throws-for-a-state-it-cannot-stringify) and the [`true` colour arm](#an-explicit-true-colour-or-icon-throws-where-filament-lets-it-through-and-crashes), and unlike those two it is proof rather than a policy about user input.
 It becomes reachable when a subclass overrides `formatState()`, which is public API, and then it names the column instead of failing inside Twig.
 
 ### `alignment()` reaches a badge row through the list, not through `text-align`

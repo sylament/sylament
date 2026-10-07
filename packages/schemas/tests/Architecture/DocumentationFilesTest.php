@@ -236,7 +236,7 @@ it('names only composer and pnpm scripts that exist in the instruction files', f
 
     foreach (documentationInstructionFiles() as $file) {
         $content = (string) file_get_contents($root . '/' . $file);
-        preg_match_all('/`composer ((?:test|format)(?::[a-z-]+)?)\b/', $content, $composerNames);
+        preg_match_all('/`composer ((?:test|format|docs)(?::[a-z-]+)?)\b/', $content, $composerNames);
         preg_match_all('/`pnpm ((?:test|format|build|watch|clean)(?::[a-z-]+)?)\b/', $content, $pnpmNames);
 
         foreach (array_unique($composerNames[1]) as $script) {

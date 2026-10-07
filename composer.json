@@ -78,6 +78,7 @@
         "sort-packages": true
     },
     "scripts": {
+        "docs:index": "@php packages/schemas/tests/Architecture/Trail/write-index.php",
         "format": [
             "@format:rector",
             "@format:lint",

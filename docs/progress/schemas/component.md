@@ -1,3 +1,17 @@
+---
+description: The abstract base every schema component (Section, and the form fields to come) extends. (draft)
+ports:
+  - vendor/filament/schemas/src/Components/Component.php
+  - vendor/filament/schemas/src/Components/Concerns/
+owns:
+  - packages/schemas/src/Components/Component.php
+  - packages/schemas/src/Components/Concerns/BelongsToContainer.php
+  - packages/schemas/src/Components/Concerns/HasChildComponents.php
+  - packages/schemas/src/Components/Concerns/HasHeadings.php
+  - packages/schemas/src/Components/Concerns/HasId.php
+  - packages/schemas/src/Components/Concerns/HasKey.php
+  - packages/schemas/src/Components/Concerns/HasState.php
+---
 # Component (schemas)
 
 [`Sylament\Schemas\Components\Component`](../../../packages/schemas/src/Components/Component.php) — the abstract base every schema component (Section, and the form fields to come) extends.
@@ -9,19 +23,9 @@ The base `evaluate()` / `Configurable` machinery and the support-level traits it
 The cross-component schema concerns it composes have their own files: [`HasColumns`](has-columns.md), [`HasGap`](has-gap.md), [`HasStateBindingModifiers`](has-state-binding-modifiers.md), the visibility concern [`CanBeHidden`](can-be-hidden.md), and the concealment walk [`CanBeConcealed`](can-be-concealed.md).
 The single-use concerns below (`BelongsToContainer`, `HasChildComponents`, `HasId`, plus the component-level `HasState`, `HasKey`, `HasHeadings`) are folded into this file as surface rows.
 
-**Status:** in progress — see the [status vocabulary](../README.md#statuses).
-
-Reference — the Filament source this is diffed against:
-
-- [`schemas/src/Components/Component.php`](../../../vendor/filament/schemas/src/Components/Component.php) — the base class, its trait set, and the closure-dependency overrides
-- [`schemas/src/Components/Concerns/`](../../../vendor/filament/schemas/src/Components/Concerns) — the folded concern implementations behind the rows below
-
 ## Surface
 
 Every point this class adds, plus one row per folded concern.
-_Blocked by_ names what has to land first.
-_Detail_ carries a **detail** link (the write-up in [Details](#details), deleted once the row is **done**), a **semantics** link (a permanent note in [Semantics](#semantics)), and/or a **diverges** link (the permanent note in [Divergences](#divergences)), or `—`.
-Rows never disappear; only their detail sections do.
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
@@ -41,9 +45,6 @@ Rows never disappear; only their detail sections do.
 | [`HasHeadings`](../../../packages/schemas/src/Components/Concerns/HasHeadings.php) | [`Concerns/HasHeadings.php`](../../../vendor/filament/schemas/src/Components/Concerns/HasHeadings.php) | done | — | — |
 
 ## Details
-
-Specifics for rows that are not finished — what is in, what is left, the next step.
-Delete a subsection when its row flips to **done**; the row and any divergence it earned stay behind.
 
 ### Trait composition ports a subset of Filament's
 
@@ -101,9 +102,6 @@ Next step: add a `formatStateUsing` test; port the absent families each with the
 
 ## Semantics
 
-Faithful ports whose behaviour a reader would plausibly misread from the source.
-Permanent — these outlive the detail sections above.
-
 ### A defaults fill nulls a defaultless component, and the shared record is what protects a container's default
 
 `Schema::fill()` with no argument runs `hydrateState(applyDefaults: true)`, and that pass is a **replacement**, not a gap-filler: a component declaring a default gets it written over whatever the bag held, and a component declaring **none** gets `rawState(null)`.
@@ -141,10 +139,6 @@ Filament folds the same three into one closure for the same reason.
 A concern that has to add to a slot another concern owns cannot do it through the setter at all.
 
 ## Divergences
-
-Deliberate deviations from Filament, and the reason each holds.
-These outlive the detail sections above.
-Provisional ones say what would reverse them.
 
 ### The schema() alias is not ported
 

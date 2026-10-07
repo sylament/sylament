@@ -1,3 +1,13 @@
+---
+description: The root-tier validation trait on `Schema`, tracked here together with the host-side execution machinery it delegates to (the validation members of… (draft)
+ports:
+  - vendor/filament/schemas/src/Concerns/CanBeValidated.php
+  - vendor/filament/schemas/src/Concerns/InteractsWithSchemas.php
+  - vendor/filament/forms/src/Components/Contracts/HasValidationRules.php
+owns:
+  - packages/schemas/src/Concerns/CanBeValidated.php
+  - packages/schemas/src/Exceptions/
+---
 # CanBeValidated (schemas)
 
 [`Sylament\Schemas\Concerns\CanBeValidated`](../../../packages/schemas/src/Concerns/CanBeValidated.php) — the root-tier validation trait on [`Schema`](schema.md), tracked here together with the host-side execution machinery it delegates to (the validation members of [`Concerns\HasSchemas`](has-schemas.md)), the component-tier contract [`HasValidationConstraints`](../../../packages/schemas/src/Components/Contracts/HasValidationConstraints.php), and [`ValidationException`](../../../packages/schemas/src/Exceptions/ValidationException.php).
@@ -6,19 +16,9 @@ It ports Filament's [`Concerns/CanBeValidated.php`](../../../vendor/filament/sch
 The port renames Filament's rule vocabulary to Symfony's — `getValidationRules()` → `getValidationConstraints()`, `dehydrateValidationRules()` → `dehydrateValidationConstraints()`, `HasValidationRules` → `HasValidationConstraints` — recorded in the [rename table](../renames.md); the payload changes ecosystem (Laravel rule strings/objects → Symfony `Constraint`), so the name change makes the migration break loud and searchable.
 The host contract declarations these rows implement are tracked in [`interacts-with-schemas.md`](interacts-with-schemas.md), including the skipped `currentlyValidatingSchema()`.
 
-**Status:** in progress — see the [status vocabulary](../README.md#statuses).
-
-Reference — the Filament source this is diffed against:
-
-- [`schemas/src/Concerns/CanBeValidated.php`](../../../vendor/filament/schemas/src/Concerns/CanBeValidated.php) — the root-tier trait (walks, messages/attributes, `validate()`)
-- [`schemas/src/Concerns/InteractsWithSchemas.php`](../../../vendor/filament/schemas/src/Concerns/InteractsWithSchemas.php) — the host-side members (`validate`/`validateOnly`/`onValidationError`/ `prepareForValidation`/`getRules`/`getValidationAttributes`)
-- [`forms/src/Components/Contracts/HasValidationRules.php`](../../../vendor/filament/forms/src/Components/Contracts/HasValidationRules.php) — the component contract this relocates into schemas
-
 ## Surface
 
 Every point of the trait, the host machinery, the contract, and the exception.
-_Blocked by_ names what has to land first.
-_Detail_ carries a **detail** link (the write-up in [Details](#details), deleted once the row is **done**), a **semantics** link (a permanent note in [Semantics](#semantics)), and/or a **diverges** link (the permanent note in [Divergences](#divergences)), or `—`.
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
@@ -54,9 +54,6 @@ No consumer exists here yet.
 **Next step:** port it (as a hook on `validateSchema()`'s throw path) when the panels layer needs failure-side effects beyond the re-render.
 
 ## Semantics
-
-Faithful-in-spirit behaviour a reader would plausibly misread from the source.
-Permanent — these outlive the detail sections above.
 
 ### The bag section is replaced wholesale on every validation
 
@@ -131,9 +128,6 @@ Filament has no automatic key rules, so the name is the toolkit's; it follows Fi
 Pinned by [`CanBeValidatedRecordKeyTest`](../../../packages/schemas/tests/Unit/Concerns/CanBeValidatedRecordKeyTest.php) — the default, a literal and a closure flag, and `configureUsing()`'s reach — and [`HasSchemasRecordKeySwitchTest`](../../../packages/schemas/tests/Integration/Concerns/HasSchemasRecordKeySwitchTest.php): switched off, a taken key reaches the flush and a blank mapped one is not refused, with no statement either way, while a changed key is still refused and put back and the record's own constraints still answer.
 
 ## Divergences
-
-Deliberate deviations from Filament, and the reason each holds.
-Provisional ones say what would reverse them.
 
 ### Record-sourced constraints are validated on the mapped object
 

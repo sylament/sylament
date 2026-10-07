@@ -1,3 +1,13 @@
+---
+description: The layout component that renders a row of action buttons anywhere a schema child can go, with an optional label heading above the row. (draft)
+ports:
+  - vendor/filament/schemas/src/Components/Actions.php
+  - vendor/filament/schemas/resources/css/components/actions.css
+  - vendor/filament/actions/resources/css/actions.css
+owns:
+  - packages/schemas/src/Components/Actions.php
+  - packages/schemas/templates/partials/Actions/
+---
 # Actions (schemas)
 
 `Sylament\Schemas\Components\Actions` — the layout component that renders a row of action buttons anywhere a schema child can go, with an optional label heading above the row.
@@ -9,19 +19,7 @@ The required `make()` argument feeds `actions()`, whose whole body is `$this->co
 Shared concerns keep their own rows elsewhere: the label surface is the schemas `HasLabel` concern (package [README](README.md)), the alignment surface is support's `HasAlignment`.
 Filament additionally composes support's `HasVerticalAlignment`, which Sylament has not ported — tracked as a blocked row below.
 
-**Status:** in progress — see the [status vocabulary](../README.md#statuses).
-
-Reference — the Filament source this is diffed against:
-
-- [`schemas/src/Components/Actions.php`](../../../vendor/filament/schemas/src/Components/Actions.php) — the component, its slots, sticky mode, and the `toEmbeddedHtml()` render
-- [`schemas/resources/css/components/actions.css`](../../../vendor/filament/schemas/resources/css/components/actions.css) — the `.fi-sc-actions` column/label/sticky/vertical-alignment styling
-- [`actions/resources/css/actions.css`](../../../vendor/filament/actions/resources/css/actions.css) — the `.fi-ac` row styling the Sylament row container ports
-
 ## Surface
-
-Every point of this component.
-_Blocked by_ names what has to land first.
-_Detail_ carries either or both: **detail** → the write-up in [Details](#details), deleted once the row is **done**; **diverges** → the permanent note in [Divergences](#divergences).
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
@@ -35,9 +33,6 @@ _Detail_ carries either or both: **detail** → the write-up in [Details](#detai
 | Label/content slots + slot-action downsizing | [`Actions::beforeLabel()` …](../../../vendor/filament/schemas/src/Components/Actions.php) | todo | — | [detail](#the-four-labelcontent-slots-are-not-ported-yet) |
 
 ## Details
-
-Specifics for rows that are not finished — what is already in, what is left, and the next step.
-Delete a subsection when its row flips to **done**; the table row and any divergence it earned stay behind.
 
 ### Sticky mode is not ported
 
@@ -58,9 +53,6 @@ Filament's `Actions` ships the same four auxiliary slots as `Section` (`before_l
 Deferred for now; next step is mirroring Section's implementation when the slots are wanted.
 
 ## Divergences
-
-Deliberate deviations from Filament — permanent, and the reason they hold.
-Say what would reverse the decision when it is provisional.
 
 ### The actions row container class is `sy-sc-actions-ctn`, not a `fi-ac` translation
 

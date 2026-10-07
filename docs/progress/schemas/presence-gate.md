@@ -1,3 +1,10 @@
+---
+description: '`Sylament\Schemas\Validation\PresenceGate` and the `ImplicitConstraint` marker interface it consults — a port of Laravel''s presence check, not of… (draft)'
+ports: []
+owns:
+  - packages/schemas/src/Validation/Contracts/
+  - packages/schemas/src/Validation/PresenceGate.php
+---
 # PresenceGate (schemas)
 
 [`Sylament\Schemas\Validation\PresenceGate`](../../../packages/schemas/src/Validation/PresenceGate.php) and the [`ImplicitConstraint`](../../../packages/schemas/src/Validation/Contracts/ImplicitConstraint.php) marker interface it consults — a port of **Laravel's** presence check, not of anything in Filament.
@@ -8,17 +15,9 @@ So before this gate, an **optional** field a user typed into and then cleared re
 Laravel runs none of those rules on a blank string.
 `PresenceGate::apply()` filters a path's constraints down to the implicit ones before [`validateSchema()`](can-be-validated.md#validateschema-runs-symfonys-validator-per-state-path-instead-of-livewires-whole-component-validate) hands them to the validator, which restores that.
 
-**Status:** done — see the [status vocabulary](../README.md#statuses).
-
-Reference — the sources this is diffed against:
-
-- [`Illuminate/Validation/Validator.php`](../../../vendor/laravel/framework/src/Illuminate/Validation/Validator.php) — `isValidatable()` → `presentOrRuleIsImplicit()` → `isImplicit()`, and the `$implicitRules` list the implicit set is mapped from
-- [`Illuminate/Contracts/Validation/ImplicitRule.php`](../../../vendor/laravel/framework/src/Illuminate/Contracts/Validation/ImplicitRule.php) — the marker interface `ImplicitConstraint` mirrors
-
 ## Surface
 
 Every point of the gate.
-_Detail_ carries a **semantics** link (a permanent note in [Semantics](#semantics)) and/or a **diverges** link (the permanent note in [Divergences](#divergences)), or `—`.
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
@@ -34,9 +33,6 @@ The runner applying it — a blank string gated down to nothing, `NotBlank` surv
 The user-visible fix, and that `required()` still bites, by [`TextInputTest`](../../../packages/forms/tests/Integration/Components/TextInputTest.php); `Toggle`'s swapped `NotNull` still violating through the gate by [`ToggleTest`](../../../packages/forms/tests/Integration/Components/ToggleTest.php); [`Select`'s non-interaction](#the-gate-is-a-no-op-for-select-which-already-guarded-itself) by [`SelectTest`](../../../packages/forms/tests/Integration/Components/SelectTest.php).
 
 ## Semantics
-
-Faithful-in-spirit behaviour a reader would plausibly misread from the source.
-Permanent.
 
 ### The implicit set is matched by instanceof, where Laravel's is matched by name
 

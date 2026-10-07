@@ -1,23 +1,20 @@
+---
+description: 'An editable `Column` whose cell is a `<select>`: choosing an option writes its key back onto the record through the host''s `updateTableColumnState()`… (draft)'
+ports:
+  - vendor/filament/tables/src/Columns/SelectColumn.php
+  - vendor/filament/tables/resources/css/columns/select.css
+owns:
+  - packages/tables/assets/src/styles/components/select-column.css
+  - packages/tables/src/Columns/SelectColumn.php
+  - packages/tables/templates/partials/SelectColumn/
+---
 # SelectColumn (tables)
 
 [`Sylament\Tables\Columns\SelectColumn`](../../../packages/tables/src/Columns/SelectColumn.php) — an editable [`Column`](column.md) whose cell is a `<select>`: choosing an option writes its key back onto the record through the host's [`updateTableColumnState()`](has-columns.md) live action.
 It ports Filament's [`Filament\Tables\Columns\SelectColumn`](../../../vendor/filament/tables/src/Columns/SelectColumn.php).
 Everything [`Column`](column.md) carries is tracked there, and the write-back seam the four editable columns share is tracked on [`has-columns.md`](has-columns.md), not repeated here.
 
-**Status:** in progress — see the [status vocabulary](../README.md#statuses).
-The native cell ships whole; the searchable, preloaded and relationship arms are **blocked** on the same thing — the select-engine promotion described on [`forms-bundle.md`](../forms/forms-bundle.md#the-select-controller-binds-a-port-of-filaments-select-utility-to-the-live-host) — which this column deliberately does not trigger.
-
-Reference — the Filament source this is diffed against:
-
-- [`tables/src/Columns/SelectColumn.php`](../../../vendor/filament/tables/src/Columns/SelectColumn.php) — the class and its `toEmbeddedHtml()`
-- [`tables/resources/css/columns/select.css`](../../../vendor/filament/tables/resources/css/columns/select.css) — the stylesheet [`select-column.css`](../../../packages/tables/assets/src/styles/components/select-column.css) is the prefix-renamed port of
-
 ## Surface
-
-Every point of this component.
-_Blocked by_ names what has to land first.
-_Detail_ carries up to three links: **detail** → the write-up in Details, deleted once the row is **done**; **diverges** → the permanent note in [Divergences](#divergences); **semantics** → the permanent note in [Semantics](#semantics).
-Rows never disappear — only their detail sections do.
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |

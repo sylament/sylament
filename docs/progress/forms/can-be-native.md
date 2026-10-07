@@ -1,21 +1,19 @@
+---
+description: The `native()` / `isNative()` switch between a field's native browser control and its JavaScript one. (draft)
+ports:
+  - vendor/filament/forms/src/Components/Concerns/CanBeNative.php
+  - vendor/filament/forms/src/Components/Select.php
+  - vendor/filament/forms/src/Components/DateTimePicker.php
+owns:
+  - packages/forms/src/Components/Concerns/CanBeNative.php
+---
 # CanBeNative (forms)
 
 `Sylament\Forms\Components\Concerns\CanBeNative` — the `native()` / `isNative()` switch between a field's native browser control and its JavaScript one.
 Two families compose it: the [date pickers](date-time-picker.md), where the JS calendar is not ported and `native(false)` throws, and [`Select`](select.md), where `native(false)` is one of the four things that put the field on the JS control — so it is promoted out of the picker's fold to a file of its own per [one row per file](../README.md#one-row-per-file-one-file-per-thing).
 Filament composes it on the same two families, unchanged between them.
 
-**Status:** in progress — see the [status vocabulary](../README.md#statuses).
-
-Reference — the Filament source this is diffed against:
-
-- [`forms/src/Components/Concerns/CanBeNative.php`](../../../vendor/filament/forms/src/Components/Concerns/CanBeNative.php) — the trait
-- [`forms/src/Components/Select.php`](../../../vendor/filament/forms/src/Components/Select.php) — `toEmbeddedHtml()`'s `$isNative` preamble, the rule that decides which branch renders
-- [`forms/src/Components/DateTimePicker.php`](../../../vendor/filament/forms/src/Components/DateTimePicker.php) — the picker's own two-branch render, of which only the native branch is ported
-
 ## Surface
-
-_Blocked by_ names what has to land first.
-_Detail_ links a permanent note in [Semantics](#semantics) or [Divergences](#divergences), or `—`.
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
@@ -35,9 +33,6 @@ The rule is computed once per render, in [`getExtraTemplateData()`](select.md#ge
 Two visible consequences: every `multiple()` select renders the chips control, and — because [`Select::isSearchable()` defaults to `isMultiple()`](can-be-searchable.md#select-widens-searchable-to-a-column-array-and-defaults-it-to-multiple) — a multiple relationship select enumerates [no options until the user types](select.md#a-relationship-map-is-full-or-an-exception-except-where-search-makes-it-partial-by-design) unless it declares `preload()`.
 
 ## Divergences
-
-Deliberate deviations from Filament, and the reason each holds.
-Provisional ones say what would reverse them.
 
 ### `native(false)` throws rather than falling back to the native control
 

@@ -1,3 +1,12 @@
+---
+description: The anonymous Twig component (`<twig:SylamentSupport:IconButton>`) that ports Filament's `<x-filament::icon-button>`. (draft)
+ports:
+  - vendor/filament/support/resources/views/components/icon-button.blade.php
+  - vendor/filament/support/src/View/Components/IconButtonComponent.php
+owns:
+  - packages/support/assets/src/styles/components/icon-button.css
+  - packages/support/templates/components/IconButton/
+---
 # Icon button (support)
 
 `packages/support/templates/components/IconButton/index.html.twig` — the anonymous Twig component (`<twig:SylamentSupport:IconButton>`) that ports Filament's `<x-filament::icon-button>`.
@@ -5,18 +14,7 @@ It renders a `<button>` or `<a>` whose sole content is an icon, deriving the ico
 The Blade component's behaviour is split across two Filament files: the `icon-button.blade.php` view (markup, props, size and attribute logic) and the `IconButtonComponent.php` PHP class (the WCAG-AA contrast color map).
 Sylament ports the structural view faithfully but leaves the whole interactive/decorative layer — Livewire loading indicator, badge, key bindings, tooltip, SPA-mode href — and the color-map machinery unbuilt, pending the infrastructure each depends on.
 
-**Status:** in progress — see the [status vocabulary](../README.md#statuses).
-
-Reference — the Filament source this is diffed against:
-
-- [`support/resources/views/components/icon-button.blade.php`](../../../vendor/filament/support/resources/views/components/icon-button.blade.php) — the Blade view: props, size resolution, attribute merge, markup
-- [`support/src/View/Components/IconButtonComponent.php`](../../../vendor/filament/support/src/View/Components/IconButtonComponent.php) — the color-map provider the view's `->color(IconButtonComponent::class, …)` call resolves against
-
 ## Surface
-
-Every point of this component.
-_Blocked by_ names what has to land first.
-_Detail_ carries either or both: **detail** → the write-up in [Details](#details), deleted once the row is **done**; **diverges** → the permanent note in [Divergences](#divergences).
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |

@@ -1,23 +1,21 @@
+---
+description: The shared trait that gives a component a configurable icon. (draft)
+ports:
+  - vendor/filament/support/src/Concerns/HasIcon.php
+owns:
+  - packages/support/src/Components/Concerns/HasIcon.php
+  - packages/support/src/Contracts/HasIcon.php
+---
 # HasIcon (support)
 
 `Sylament\Support\Components\Concerns\HasIcon` — the shared trait that gives a component a configurable icon.
 It ports Filament's `HasIcon` concern: an `icon()` setter that stores a literal, enum, `Markup`, or closure (collapsing a blank value to a `false` sentinel), a `getIcon()` that evaluates the stored value and falls back to a default only when the icon is unset, and a `hasIcon()` predicate.
-
-**Status:** done — see the [status vocabulary](../README.md#statuses).
-
-Reference — the Filament source this is diffed against:
-
-- [`support/src/Concerns/HasIcon.php`](../../../vendor/filament/support/src/Concerns/HasIcon.php) — the trait, its `false`-sentinel semantics, and the `Renderable` branch
 
 ## Surface
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
 | [`icon()` / `getIcon()` / `hasIcon()`](../../../packages/support/src/Components/Concerns/HasIcon.php) | [`Concerns/HasIcon.php`](../../../vendor/filament/support/src/Concerns/HasIcon.php) | done | — | [diverges](#the-renderable-normalization-branch-is-dropped) |
-
-## Details
-
-Every row above is settled — none has a write-up here.
 
 ## Divergences
 

@@ -1,3 +1,17 @@
+---
+description: 'The notification builder: `Notification::make()->title(''Saved'')->success()->send()`. (draft)'
+ports:
+  - vendor/filament/notifications/src/Notification.php
+  - vendor/filament/notifications/src/Concerns/
+  - vendor/filament/notifications/resources/css/notification.css
+  - vendor/filament/notifications/resources/js/components/notification.js
+owns:
+  - packages/notifications/assets/src/controllers/notification_controller.ts
+  - packages/notifications/assets/src/styles/components/
+  - packages/notifications/src/Concerns/
+  - packages/notifications/src/Notification.php
+  - packages/notifications/templates/partials/
+---
 # Notification (notifications)
 
 [`Sylament\Notifications\Notification`](../../../packages/notifications/src/Notification.php) — the notification builder: `Notification::make()->title('Saved')->success()->send()`.
@@ -6,20 +20,7 @@ It ports Filament's [`Filament\Notifications\Notification`](../../../vendor/fila
 The six ported concerns carry no rows of their own upstairs: each has exactly one consumer, so they are folded into the table below per [one row per file](../README.md#one-row-per-file-one-file-per-thing).
 Filament's toast markup lives in `toEmbeddedHtml()` rather than in a Blade view, so its port — [`partials/Notification/index.html.twig`](../../../packages/notifications/templates/partials/Notification/index.html.twig) — is folded here too, together with the toast stylesheet and the toast Stimulus controller, which port `resources/css/notification.css` and the Alpine `notificationComponent` in `resources/js/components/notification.js`.
 
-**Status:** in progress — see the [status vocabulary](../README.md#statuses).
-
-Reference — the Filament source this is diffed against:
-
-- [`notifications/src/Notification.php`](../../../vendor/filament/notifications/src/Notification.php) — the builder, `toArray()`/`fromArray()`, the four delivery methods, the test assertions and `toEmbeddedHtml()`
-- [`notifications/src/Concerns/`](../../../vendor/filament/notifications/src/Concerns) — the ten concerns behind the rows below
-- [`notifications/resources/css/notification.css`](../../../vendor/filament/notifications/resources/css/notification.css) and [`resources/js/components/notification.js`](../../../vendor/filament/notifications/resources/js/components/notification.js) — the toast's styles and its client behaviour
-
 ## Surface
-
-Every point of this component.
-_Blocked by_ names what has to land first.
-_Detail_ carries any of three: **detail** → the write-up in [Details](#details), deleted once the row is **done**; **semantics** → the permanent note in [Semantics](#semantics); **diverges** → the permanent note in [Divergences](#divergences).
-Rows never disappear — only their detail sections do.
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
@@ -53,9 +54,6 @@ The unported rows have no coverage because they have no code.
 
 ## Details
 
-Specifics for rows that are not finished — what is already in, what is left, and what the next step is.
-Delete a subsection when its row flips to **done**; the table row and any divergence or semantics note it earned stay behind.
-
 ### The toast markup is missing the date and inline arms
 
 `toEmbeddedHtml()` renders four things the port renders too — the icon, the title, the body and the close button — plus two it does not: a `<time class="fi-no-notification-date">` element when `getDate()` is filled, and an `fi-inline` class that switches the whole toast from a floating card to a list row (the database-notifications modal renders its stored notifications inline).
@@ -82,7 +80,7 @@ The [toast controller](../../../packages/notifications/assets/src/controllers/no
 Nothing waits on this, which is why it is **todo** rather than **blocked**: the id is already on the object (`getId()`), the event is a plain `CustomEvent`, and `close()` is the method the close button already calls.
 
 **Next step:** emit the id as a Stimulus value on the toast root and add a `sylament:close-notification@window` action that closes when the detail id matches.
-The event name takes the [`sylament:` prefix](../renames.md#names-with-no-filament-source) the delivery event already uses, so the pair reads as one namespace.
+The event name takes the [`sylament:` prefix](../translations.md#names-with-no-filament-source) the delivery event already uses, so the pair reads as one namespace.
 
 ### `markAsRead()` and `markAsUnread()` belong to the database panel
 
@@ -126,9 +124,6 @@ The two `src/Testing/` files keep their **todo** rows in the [package README](RE
 
 ## Semantics
 
-Faithful behaviour subtle enough to be misread from the code alone.
-Permanent — these stay once every row above is **done**.
-
 ### A `send()` during the acting component's own render arrives on the next page load
 
 The live arm drains the flash on ux-twig-component's `PreRenderEvent`, ahead of the subscriber that writes a live component's root attributes.
@@ -158,7 +153,7 @@ Nothing about this is a divergence in the port — the same library, a different
 
 [`getActions()`](../../../packages/notifications/src/Concerns/HasActions.php) re-views every entry at read time — `defaultTemplate(Action::LINK_TEMPLATE)` on an action, `defaultTriggerTemplate(ActionGroup::LINK_TEMPLATE)` on a group, `defaultSize(Size::Small)` on both, and a fourth call on the group alone that [Filament does not make](#the-re-view-defaults-a-group-to-teleport-where-filaments-toast-groups-clip).
 They are **defaults**, not settings, so an action that called `template()` or `size()` itself keeps what it chose; only an unconfigured one becomes a small link.
-That is Filament's [`defaultView` / `defaultTriggerView`](../../../vendor/filament/notifications/src/Concerns/HasActions.php) pair with the [Blade view → Twig template](../renames.md#idiom) translation applied, and it runs on the way **out** as well: `toArray()` serializes the re-viewed action, so the template and size cross the hop as literal values rather than being re-derived.
+That is Filament's [`defaultView` / `defaultTriggerView`](../../../vendor/filament/notifications/src/Concerns/HasActions.php) pair with the [Blade view → Twig template](../translations.md#idiom) translation applied, and it runs on the way **out** as well: `toArray()` serializes the re-viewed action, so the template and size cross the hop as literal values rather than being re-derived.
 
 Coming back, `fromArray()` tells a group from an action by the presence of an `actions` key on the entry — the same discriminator [`ActionGroup::fromArray()`](../../../packages/actions/src/ActionGroup.php) uses for its own children, and it is exact because `Action::toArray()` never writes that key and `ActionGroup::toArray()` always does.
 Nesting therefore restores to any depth without a type tag in the payload.
@@ -170,9 +165,6 @@ Toast actions dispatch events and open URLs, and they do **not** mount modals �
 Worth stating because the obvious reading of "actions on a notification" is that a toast can ask for confirmation, and neither codebase can.
 
 ## Divergences
-
-Deliberate deviations from Filament — permanent, and the reason they hold.
-Say what would reverse the decision when it is provisional.
 
 ### `make()` mints the id itself, because the resolver takes no constructor arguments
 
@@ -335,5 +327,5 @@ A toast action is therefore written with `url()`, `dispatch()` or `close()`, and
 
 Filament's class declares `implements Arrayable, HasEmbeddedView`.
 Neither is ported.
-`Illuminate\Contracts\Support\Arrayable` is a Laravel marker for `toArray()`, which PHP needs no interface to call and Symfony ships no equivalent of; `HasEmbeddedView` marks a component that renders through `toEmbeddedHtml()` instead of a view file, and Sylament's rendering seam is `ViewComponent::render(Environment $twig)` against a Twig template — the same Blade → Twig translation recorded in [renames.md](../renames.md#idiom).
+`Illuminate\Contracts\Support\Arrayable` is a Laravel marker for `toArray()`, which PHP needs no interface to call and Symfony ships no equivalent of; `HasEmbeddedView` marks a component that renders through `toEmbeddedHtml()` instead of a view file, and Sylament's rendering seam is `ViewComponent::render(Environment $twig)` against a Twig template — the same Blade → Twig translation recorded in [renames.md](../translations.md#idiom).
 `toArray()` itself ships unchanged, and it is what crosses the session boundary either way.

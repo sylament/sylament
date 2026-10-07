@@ -1,3 +1,25 @@
+---
+description: 'A panel page that renders as a centred card on an empty ground: no sidebar, no navigation, an optional top strip holding the user menu, and a header… (draft)'
+ports:
+  - vendor/filament/filament/src/Pages/SimplePage.php
+  - vendor/filament/filament/src/Pages/Concerns/HasMaxWidth.php
+  - vendor/filament/filament/src/Pages/Concerns/HasTopbar.php
+  - vendor/filament/filament/src/Panel/Concerns/HasMaxContentWidth.php
+  - vendor/filament/support/src/Enums/Width.php
+  - vendor/filament/filament/resources/views/components/layout/simple.blade.php
+  - vendor/filament/filament/resources/views/components/header/simple.blade.php
+  - vendor/filament/filament/resources/views/components/page/simple.blade.php
+owns:
+  - packages/panels/assets/src/styles/components/layout.css
+  - packages/panels/src/Pages/Concerns/HasMaxWidth.php
+  - packages/panels/src/Pages/Concerns/HasTopbar.php
+  - packages/panels/src/Pages/SimplePage.php
+  - packages/panels/src/Panel/Concerns/HasMaxContentWidth.php
+  - packages/panels/templates/components/SimpleHeader/
+  - packages/panels/templates/components/SimpleLayout/
+  - packages/panels/templates/partials/SimplePage/
+  - packages/support/src/Enums/Width.php
+---
 # SimplePage and the width vocabulary (panels)
 
 [`Sylament\Panels\Pages\SimplePage`](../../../packages/panels/src/Pages/SimplePage.php) — a panel page that renders as a **centred card on an empty ground**: no sidebar, no navigation, an optional top strip holding the user menu, and a header of logo, heading and subheading above whatever the page's `content()` returns.
@@ -11,22 +33,9 @@ The [unsaved-changes guard](unsaved-changes-alert.md) rides the simple page exac
 The other, `Sylament\Schemas\Components\Concerns\HasMaxWidth`, is a *component*-tier concern that is still [todo](../schemas/README.md) and carries a fluent `maxWidth()` setter when it lands.
 Both are Filament's names in Filament's places, so neither moves — read the trait by its **import**, never by the bare `use HasMaxWidth;` in a class body, which is the standing rule for every name this codebase carries in two tiers.
 
-**Status:** in progress — see the [status vocabulary](../README.md#statuses).
-
-Reference — the Filament source this is diffed against:
-
-- [`Pages/SimplePage.php`](../../../vendor/filament/filament/src/Pages/SimplePage.php) — the class, its layout, `hasLogo()` and `getLayoutData()`
-- [`Pages/Concerns/HasMaxWidth.php`](../../../vendor/filament/filament/src/Pages/Concerns/HasMaxWidth.php) and [`HasTopbar.php`](../../../vendor/filament/filament/src/Pages/Concerns/HasTopbar.php)
-- [`Panel/Concerns/HasMaxContentWidth.php`](../../../vendor/filament/filament/src/Panel/Concerns/HasMaxContentWidth.php)
-- [`support/src/Enums/Width.php`](../../../vendor/filament/support/src/Enums/Width.php) — the 26 cases
-- [`resources/views/components/layout/simple.blade.php`](../../../vendor/filament/filament/resources/views/components/layout/simple.blade.php), [`components/header/simple.blade.php`](../../../vendor/filament/filament/resources/views/components/header/simple.blade.php), [`components/page/simple.blade.php`](../../../vendor/filament/filament/resources/views/components/page/simple.blade.php)
-
 ## Surface
 
 Every point of the simple page and the width vocabulary.
-_Blocked by_ names what has to land first.
-_Detail_ carries two links, either of them: **semantics** → the permanent note in [Semantics](#semantics); **diverges** → the permanent note in [Divergences](#divergences).
-A row whose gap is written up elsewhere links that file instead.
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
@@ -50,7 +59,7 @@ A row whose gap is written up elsewhere links that file instead.
 | The `auth()->check()` gates on the strip | the same two | todo | auth | [diverges](#the-simple-layouts-auth-gates-are-absent-and-the-strip-holds-the-ordinary-user-menu) |
 | The modal `sy-modal-<token>` width ladder | `Modal`'s `Width` resolution | todo | — | [support/modal.md](../support/modal.md#the-default-width-is-md-not-sm) |
 | `Table::filtersFormWidth()`'s `Width` type | `getFiltersFormWidth(): ?Width` | todo | — | [tables/table.md](../tables/table.md#surface) |
-| _rest not audited yet_ | | | | |
+| _rest not audited yet_ | — | — | — | — |
 
 Covered by [`Unit/Pages/SimplePageTest`](../../../packages/panels/tests/Unit/Pages/SimplePageTest.php) (the layout it names, the navigation opt-out and the logo, and both arms of `getLayoutData()`), [`Unit/Pages/Concerns/HasMaxWidthTest`](../../../packages/panels/tests/Unit/Pages/Concerns/HasMaxWidthTest.php) and [`HasTopbarTest`](../../../packages/panels/tests/Unit/Pages/Concerns/HasTopbarTest.php), [`Unit/Panel/Concerns/HasMaxContentWidthTest`](../../../packages/panels/tests/Unit/Panel/Concerns/HasMaxContentWidthTest.php) (enum, raw class and closure arms for both knobs), [`Unit/Enums/WidthTest`](../../../packages/support/tests/Unit/Enums/WidthTest.php) (the 26 backing values), [`Integration/Twig/SimpleLayoutRenderTest`](../../../packages/panels/tests/Integration/Twig/SimpleLayoutRenderTest.php) (the card shell, the strip under `hasTopbar`, the width class, and the four `SimpleHeader` arms) and [`Integration/Controllers/PageControllerTest`](../../../packages/panels/tests/Integration/Controllers/PageControllerTest.php) (the panel default width, a page's own width, the raw-string arm asserting **no** `sy-width-` prefix anywhere, the whole `/probe/simple` document, and the refusal of an unknown layout).
 

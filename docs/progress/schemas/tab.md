@@ -1,3 +1,13 @@
+---
+description: '`Sylament\Schemas\Components\Tabs\Tab` is one tab of a `Tabs`: a label, an optional icon and badge on the nav side, and a child schema rendered as the… (draft)'
+ports:
+  - vendor/filament/schemas/src/Components/Tabs/Tab.php
+owns:
+  - packages/schemas/src/Components/Tabs/
+  - packages/schemas/templates/partials/Tab/
+  - packages/support/src/Components/Concerns/HasBadge.php
+  - packages/support/src/Components/Concerns/HasBadgeTooltip.php
+---
 # Tabs\Tab (schemas)
 
 [`Sylament\Schemas\Components\Tabs\Tab`](../../../packages/schemas/src/Components/Tabs/Tab.php) is one tab of a [`Tabs`](tabs.md): a label, an optional icon and badge on the nav side, and a child schema rendered as the panel.
@@ -6,17 +16,7 @@ It implements `CanConcealComponents` — an inactive panel is in the DOM but vis
 It also carries the list-page seam Filament uses to scope a tab's records: `query()`/`modifyQueryUsing()`/`modifyQuery()` and `excludeQueryWhenResolvingRecord()`.
 Their consumer is panels — [panels' `HasTabs`](../panels/has-tabs.md) calls `modifyQuery()` from `modifyQueryWithActiveTab()`, and reads `shouldExcludeQueryWhenResolvingRecord()` to decide whether a single-record lookup takes the scope too — so the seam is [live rather than waiting](../panels/has-tabs.md#a-blank-key-and-an-unknown-key-are-both-no-ops-and-that-is-what-heals-a-bookmark).
 
-**Status:** done — see the [status vocabulary](../README.md#statuses).
-
-Reference — the Filament source this is diffed against:
-
-- [`schemas/src/Components/Tabs/Tab.php`](../../../vendor/filament/schemas/src/Components/Tabs/Tab.php) — the API and the two `toEmbeddedHtml()` arms
-
 ## Surface
-
-Every point of this component.
-_Blocked by_ names what has to land first.
-_Detail_ carries a **diverges** link to the note in [Divergences](#divergences), a **semantics** link to [Semantics](#semantics), or `—`.
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
@@ -39,8 +39,6 @@ Covered by [`TabTest`](../../../packages/schemas/tests/Unit/Components/Tabs/TabT
 
 ## Semantics
 
-Faithful ports subtle enough that re-deriving them from the source would plausibly get them wrong.
-
 ### An inactive panel is hidden, not removed
 
 `canConcealComponents()` is unconditionally true: in client mode every tab's panel is in the DOM and the inactive ones are hidden by CSS (`invisible absolute h-0`), so their inputs still post with the form and a `required` one would block native submission from a tab the user cannot see.
@@ -58,8 +56,6 @@ Filament's `Tab::toEmbeddedHtml()` returns `''` when the child schema has no com
 Either way the tab still appears in the nav and is still selectable — the panel is simply absent — which is what makes a tab whose content is entirely hidden by conditions degrade quietly.
 
 ## Divergences
-
-Deliberate deviations from Filament — permanent, and the reason they hold.
 
 ### The panel points `aria-labelledby` at its tab button
 

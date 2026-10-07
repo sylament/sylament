@@ -1,3 +1,14 @@
+---
+description: 'One owner record''s association as a live component of its own: a table scoped to that association, the actions that write it, and the modals those… (draft)'
+ports:
+  - vendor/filament/filament/src/Resources/RelationManagers/RelationManager.php
+  - vendor/filament/filament/src/Resources/Concerns/InteractsWithRelationshipTable.php
+  - vendor/filament/filament/src/Resources/RelationManagers/Concerns/CanAuthorizeAccess.php
+owns:
+  - packages/panels/assets/src/styles/components/relation-manager.css
+  - packages/panels/src/Resources/RelationManagers/RelationManager.php
+  - packages/panels/templates/partials/RelationManager/
+---
 # RelationManager (panels)
 
 [`Sylament\Panels\Resources\RelationManagers\RelationManager`](../../../packages/panels/src/Resources/RelationManagers/RelationManager.php) — one owner record's association as a live component of its own: a table scoped to that association, the actions that write it, and the modals those actions open.
@@ -5,14 +16,6 @@ It ports [`Resources/RelationManagers/RelationManager.php`](../../../vendor/fila
 It renders through [`partials/RelationManager/index.html.twig`](../../../packages/panels/templates/partials/RelationManager/index.html.twig) and is registered as a live component by [`RelationManagerComponentPass`](../../../packages/panels/src/DependencyInjection/Compiler/RelationManagerComponentPass.php).
 
 A manager is never routed to: the page that owns the record embeds it through schemas' [`LiveComponent`](../schemas/live-component.md) embed, which is what keeps its sort, page and selection across the page's own re-renders.
-
-**Status:** in progress — see the [status vocabulary](../README.md#statuses).
-
-Reference — the Filament source this is diffed against:
-
-- [`Resources/RelationManagers/RelationManager.php`](../../../vendor/filament/filament/src/Resources/RelationManagers/RelationManager.php)
-- [`Resources/Concerns/InteractsWithRelationshipTable.php`](../../../vendor/filament/filament/src/Resources/Concerns/InteractsWithRelationshipTable.php) — `$relationship`, `getRelationshipName()`, `getRelationshipTitle()`, `makeTable()`, all of them now on [the shared trait](interacts-with-relationship-table.md)
-- [`Resources/RelationManagers/Concerns/CanAuthorizeAccess.php`](../../../vendor/filament/filament/src/Resources/RelationManagers/Concerns/CanAuthorizeAccess.php) — the authorization surface, inventoried below and unported
 
 ## Surface
 
@@ -45,7 +48,7 @@ Reference — the Filament source this is diffed against:
 | `mount()` — `loadDefaultActiveTab()` | `mount()` | done | — | [diverges](#the-default-active-tab-loads-at-post-mount-and-the-manager-keeps-no-mount-of-its-own) — the manager declares no `mount()`; the hook is a `#[PostMount]` on [`HasTabs`](../../../packages/panels/src/Resources/Concerns/HasTabs.php) |
 | [`recordAction()` / `recordUrl()` row-click seeding in `makeTable()`](../../../packages/panels/src/Resources/Concerns/InteractsWithRelationshipTable.php) | [`InteractsWithRelationshipTable::makeTable()`](../../../vendor/filament/filament/src/Resources/Concerns/InteractsWithRelationshipTable.php) | done | — | [diverges](interacts-with-relationship-table.md#both-seeding-probes-clone-the-action-where-vendor-clones-in-one-of-four) |
 | [`$relationshipTitle` / `getRelationshipTitle()`](../../../packages/panels/src/Resources/Concerns/InteractsWithRelationshipTable.php) | [`InteractsWithRelationshipTable`](../../../vendor/filament/filament/src/Resources/Concerns/InteractsWithRelationshipTable.php) | done | — | [diverges](interacts-with-relationship-table.md#the-title-is-an-instance-method-and-the-static-title-chain-never-reaches-the-related-resource) — the getter is an instance method, so the **static** `getTitle()` below never reaches its related arm |
-| _rest not audited yet_ | | | | |
+| _rest not audited yet_ | — | — | — | — |
 
 [`Unit/Resources/RelationManagers/RelationManagerTest`](../../../packages/panels/tests/Unit/Resources/RelationManagers/RelationManagerTest.php) covers the statics, the title fallback and its override, the tab component in both its badged and bare arms, `make()`'s configuration, the component name, and the two refusals (no relationship, no page class) and the `CreateAction`-only gate on the host relationship hook — plus the load-bearing pin that `getTable()` applies the subclass `table()` hook **once**.
 [`Integration/Resources/RelationManagers/RelationManagerTest`](../../../packages/panels/tests/Integration/Resources/RelationManagers/RelationManagerTest.php) mounts real managers over the fixture `Project`/`Task` pair: the heading and the association-scoped rows, the live root, an action modal rendering inside the manager's own outlet, a paginated manager's second page and its extreme links, a `CreateAction` landing attached to the owner with its toast, the [delete that redirects nowhere](#a-delete-on-a-manager-redirects-nowhere), and an owner key the resource cannot answer for.

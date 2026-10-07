@@ -1,21 +1,18 @@
+---
+description: The shared concern that gives a component a configurable vertical alignment. (draft)
+ports:
+  - vendor/filament/support/src/Concerns/HasVerticalAlignment.php
+  - vendor/filament/support/src/Enums/VerticalAlignment.php
+owns:
+  - packages/support/src/Components/Concerns/HasVerticalAlignment.php
+---
 # HasVerticalAlignment (support)
 
 `Sylament\Support\Components\Concerns\HasVerticalAlignment` — the shared concern that gives a component a configurable vertical alignment.
 It ports Filament's `HasVerticalAlignment`: a `VerticalAlignment | string | Closure | null` property, a fluent `verticalAlignment()` setter, three `verticallyAlign*()` shortcut helpers each taking a `bool | Closure` condition, a `getVerticalAlignment()` reader that normalizes a known string to its [`VerticalAlignment`](../../../packages/support/src/Enums/VerticalAlignment.php) case, and a `hasDynamicVerticalAlignment()` probe.
 Sylament adds one method with no Filament counterpart — `getVerticalAlignmentClass()` — so this port carries a divergence, exactly as its horizontal sibling [`HasAlignment`](has-alignment.md) does.
 
-**Status:** done — see the [status vocabulary](../README.md#statuses).
-
-Reference — the Filament source this is diffed against:
-
-- [`support/src/Concerns/HasVerticalAlignment.php`](../../../vendor/filament/support/src/Concerns/HasVerticalAlignment.php) — the trait ported here, method for method
-- [`support/src/Enums/VerticalAlignment.php`](../../../vendor/filament/support/src/Enums/VerticalAlignment.php) — the enum the property and helpers resolve to
-
 ## Surface
-
-Every point of this concern.
-_Blocked by_ names what has to land first.
-_Detail_ carries either or both: **detail** → the write-up in [Details](#details), deleted once the row is **done**; **diverges** → the permanent note in [Divergences](#divergences).
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
@@ -28,7 +25,6 @@ _Detail_ carries either or both: **detail** → the write-up in [Details](#detai
 ## Details
 
 Every row above is **done** — the port is faithful and every method, including the added `getVerticalAlignmentClass()`, is exercised by [`HasVerticalAlignmentTest`](../../../packages/support/tests/Unit/Components/Concerns/HasVerticalAlignmentTest.php).
-No row has a write-up here.
 
 ## Divergences
 

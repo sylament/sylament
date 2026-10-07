@@ -1,3 +1,10 @@
+---
+description: The state cast behind multi-value option fields. (draft)
+ports:
+  - vendor/filament/schemas/src/Components/StateCasts/OptionsArrayStateCast.php
+owns:
+  - packages/schemas/src/State/Casts/OptionsArrayStateCast.php
+---
 # OptionsArrayStateCast (schemas)
 
 `Sylament\Schemas\State\Casts\OptionsArrayStateCast` — the state cast behind multi-value option fields.
@@ -6,15 +13,7 @@ The result is always a list, so a drop reindexes.
 
 `forms`' [`Select`](../forms/select.md) is its only consumer today, selected by `multiple()`, and the to-many relationship arm builds on the same shape.
 
-**Status:** done — see the [status vocabulary](../README.md#statuses).
-
-Reference — the Filament source this is diffed against:
-
-- [`schemas/src/Components/StateCasts/OptionsArrayStateCast.php`](../../../vendor/filament/schemas/src/Components/StateCasts/OptionsArrayStateCast.php)
-
 ## Surface
-
-_Detail_ links a permanent note in [Semantics](#semantics) or [Divergences](#divergences), or `—`.
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
@@ -36,8 +35,6 @@ Nothing reports the drop, and nothing needs to: the field's [`Choice` constraint
 That holds for the array-shaped raw state this paragraph is about; a raw state that is not an array at all is failed by [a `Type` constraint](../forms/select.md#a-non-array-raw-state-is-failed-by-a-type-constraint) instead, since `Choice(multiple: true)` cannot be evaluated against one.
 
 ## Divergences
-
-Deliberate deviations from Filament, and the reason each holds.
 
 ### Blank state is a constructor switch rather than a fixed empty list
 

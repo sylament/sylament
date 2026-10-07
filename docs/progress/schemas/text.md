@@ -1,3 +1,20 @@
+---
+description: The inline text content component, a `Component` subclass whose value is a piece of styled text (span-rendered by default). (draft)
+ports:
+  - vendor/filament/schemas/src/Components/Text.php
+  - vendor/filament/support/src/Concerns/HasColor.php
+  - vendor/filament/support/src/Concerns/HasWeight.php
+  - vendor/filament/support/src/Concerns/HasFontFamily.php
+  - vendor/filament/support/src/Concerns/CanBeCopied.php
+  - vendor/filament/support/src/Concerns/HasIcon.php
+  - vendor/filament/support/src/Concerns/HasIconPosition.php
+  - vendor/filament/support/src/Concerns/HasIconSize.php
+  - vendor/filament/support/src/Concerns/HasTooltip.php
+  - vendor/filament/schemas/src/JsContent.php
+owns:
+  - packages/schemas/src/Components/Text.php
+  - packages/schemas/templates/partials/Text/
+---
 # Text (schemas)
 
 `Sylament\Schemas\Components\Text` — the inline text content component, a `Component` subclass whose value is a piece of styled text (span-rendered by default).
@@ -5,21 +22,9 @@ It ports Filament's schema [`Text`](../../../vendor/filament/schemas/src/Compone
 The content core is ported and tested — `content()`/`getContent()`, `size()`/`getSize()` with its `getSizeClass()` template helper, and the shared [`HasColor`](../../../packages/support/src/Components/Concerns/HasColor.php) / [`HasWeight`](../../../packages/support/src/Components/Concerns/HasWeight.php) / [`HasFontFamily`](../../../packages/support/src/Components/Concerns/HasFontFamily.php) styling concerns — all rendered through the [`Text/index.html.twig`](../../../packages/schemas/templates/partials/Text/index.html.twig) template on the `ViewComponent` path (the house replacement for Filament's `HasEmbeddedView::toEmbeddedHtml()`, so that contract is not ported — a systematic idiom translation recorded in the [rename table](../renames.md)).
 The larger half of Filament's `Text` surface — badge mode, copyable, icon, tooltip, and `js()` — is not yet ported.
 
-**Status:** in progress — see the [status vocabulary](../README.md#statuses).
-
-Reference — the Filament source this is diffed against:
-
-- [`schemas/src/Components/Text.php`](../../../vendor/filament/schemas/src/Components/Text.php) — the component, its content/size/badge/js surface, and the embedded view
-- [`support/src/Concerns/HasColor.php`](../../../vendor/filament/support/src/Concerns/HasColor.php), [`HasWeight.php`](../../../vendor/filament/support/src/Concerns/HasWeight.php), [`HasFontFamily.php`](../../../vendor/filament/support/src/Concerns/HasFontFamily.php) — the styling concerns composed here
-- [`support/src/Concerns/CanBeCopied.php`](../../../vendor/filament/support/src/Concerns/CanBeCopied.php), [`HasIcon.php`](../../../vendor/filament/support/src/Concerns/HasIcon.php), [`HasIconPosition.php`](../../../vendor/filament/support/src/Concerns/HasIconPosition.php), [`HasIconSize.php`](../../../vendor/filament/support/src/Concerns/HasIconSize.php), [`HasTooltip.php`](../../../vendor/filament/support/src/Concerns/HasTooltip.php) — the not-yet-ported feature concerns
-- [`schemas/src/JsContent.php`](../../../vendor/filament/schemas/src/JsContent.php) — the JS-expression content wrapper behind `js()`
-
 ## Surface
 
-Every point of this component.
 Rows for the shared styling concerns (`HasColor`/`HasWeight`/`HasFontFamily`) point at their Filament source; they are also tracked in the support tracker.
-_Blocked by_ names what has to land first.
-_Detail_ carries **detail** → the write-up in [Details](#details) (gone once the row is **done**), **diverges** → the permanent note in [Divergences](#divergences), or `—`.
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
@@ -46,7 +51,6 @@ That translation is the house idiom documented in the [rename table](../renames.
 
 ## Details
 
-Specifics for the rows that are not finished — what is in, what is left, and the next step.
 The ported subset (content, size + `getSizeClass()`, and the three styling concerns) is exercised by [`TextTest`](../../../packages/schemas/tests/Unit/Components/TextTest.php) (content literal/closure/`$component` injection, `Markup` passthrough, size normalization, weight/font-family, and the `get*Class()` fragments) and [`TextRenderTest`](../../../packages/schemas/tests/Integration/Components/TextRenderTest.php) (span render, string escaping, raw `Markup`, size/weight/font-family classes, extra attributes, color palette classes and gray omission); the features below are untested only because they are unported.
 
 ### Badge mode

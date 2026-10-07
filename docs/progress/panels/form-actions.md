@@ -1,3 +1,15 @@
+---
+description: 'The row of buttons below a page''s form: the declaration hook, the bound and memoised list, the one `Actions` component that carries it, the named… (draft)'
+ports:
+  - vendor/filament/filament/src/Pages/Concerns/InteractsWithFormActions.php
+  - vendor/filament/filament/src/Resources/Pages/CreateRecord.php
+  - vendor/filament/filament/src/Resources/Pages/EditRecord.php
+  - vendor/filament/schemas/src/Components/Actions.php
+owns:
+  - packages/panels/src/Pages/Concerns/InteractsWithFormActions.php
+  - packages/panels/templates/partials/EditRecord/
+  - packages/panels/templates/partials/Page/form.html.twig
+---
 # Form actions (panels)
 
 [`Sylament\Panels\Pages\Concerns\InteractsWithFormActions`](../../../packages/panels/src/Pages/Concerns/InteractsWithFormActions.php) — the row of buttons below a page's form: the declaration hook, the bound and memoised list, the one `Actions` component that carries it, the named `formActions` page schema the template renders it through, the submit method name both the `<form>` element and the submit action read, and the process-global alignment statics.
@@ -5,20 +17,9 @@ Beside it sit the two template variants the concern exists for — [`partials/Pa
 
 It ports [`Pages/Concerns/InteractsWithFormActions.php`](../../../vendor/filament/filament/src/Pages/Concerns/InteractsWithFormActions.php) **by name only**: Filament's trait is dead code in v5 — nothing composes it and its `getFormActions()` is `protected` while its own would-be callers are not — so the port keeps the name and fills it with the eight-method shape Filament's five real consumers hand-roll on their pages.
 
-**Status:** in progress — see the [status vocabulary](../README.md#statuses).
-
-Reference — the Filament source this is diffed against:
-
-- [`Pages/Concerns/InteractsWithFormActions.php`](../../../vendor/filament/filament/src/Pages/Concerns/InteractsWithFormActions.php) — the name, the alignment statics and the full-width flag
-- [`Resources/Pages/CreateRecord.php`](../../../vendor/filament/filament/src/Resources/Pages/CreateRecord.php) and [`EditRecord.php`](../../../vendor/filament/filament/src/Resources/Pages/EditRecord.php) — `getFormActions()`, `getCreateFormAction()`, `getSaveFormAction()`, `getCancelFormAction()`, `getSubmitFormLivewireMethodName()`
-- [`Schemas/Components/Actions.php`](../../../vendor/filament/schemas/src/Components/Actions.php) — the component the row hangs under
-
 ## Surface
 
 Every point of the concern and of the two variants.
-_Blocked by_ names what has to land first.
-_Detail_ carries two links, either of them: **semantics** → the permanent note in [Semantics](#semantics); **diverges** → the permanent note in [Divergences](#divergences).
-A row whose gap is written up elsewhere links that file instead.
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
@@ -27,7 +28,7 @@ A row whose gap is written up elsewhere links that file instead.
 | [`getFormActionsContentComponent()`](../../../packages/panels/src/Pages/Concerns/InteractsWithFormActions.php) | [`CreateRecord::getFormActionsContentComponent()`](../../../vendor/filament/filament/src/Resources/Pages/CreateRecord.php) | done | — | [semantics](#the-row-is-never-rendered-standalone-it-hangs-under-a-named-page-schema) |
 | [`formActions(Schema): Schema`](../../../packages/panels/src/Pages/Concerns/InteractsWithFormActions.php) | no counterpart — Filament's row is a child of `content()` | done | — | [semantics](#the-row-is-never-rendered-standalone-it-hangs-under-a-named-page-schema) |
 | [`hasFullWidthFormActions()`](../../../packages/panels/src/Pages/Concerns/InteractsWithFormActions.php) | the same | done | — | — |
-| [`getSubmitFormLiveComponentMethodName()`](../../../packages/panels/src/Pages/Concerns/InteractsWithFormActions.php) | `getSubmitFormLivewireMethodName()` | done | — | [renamed](../renames.md#idiom) · [semantics](#one-method-name-drives-both-the-form-element-and-the-submit-action) |
+| [`getSubmitFormLiveComponentMethodName()`](../../../packages/panels/src/Pages/Concerns/InteractsWithFormActions.php) | `getSubmitFormLivewireMethodName()` | done | — | [renamed](../translations.md#idiom) · [semantics](#one-method-name-drives-both-the-form-element-and-the-submit-action) |
 | [`$formActionsAlignment`](../../../packages/panels/src/Pages/Concerns/InteractsWithFormActions.php) + `getFormActionsAlignment()` + `formActionsAlignment()` + `alignFormActionsStart()` / `Center()` / `End()` | the same six | done | — | [semantics](#the-alignment-statics-are-process-global-exactly-as-filaments-are) |
 | [`partials/Page/form.html.twig`](../../../packages/panels/templates/partials/Page/form.html.twig) — the `<form>`, `form_errors`, `renderSchema('form')`, `form_actions`, `after_form` | no counterpart — v5's create and edit pages have no view; `content()` returns a `Form` wrapping an `EmbeddedSchema` and the row | done | — | [diverges](#the-form-element-stays-in-twig-because-the-schemas-form-component-is-unported) |
 | [`partials/Page/table.html.twig`](../../../packages/panels/templates/partials/Page/table.html.twig) — the tabs strip and `renderTable()` | same — `ListRecords::content()` returns an `EmbeddedTable` | done | — | [semantics](#the-table-variant-presumes-two-host-traits-and-says-so-only-by-failing) |
@@ -41,7 +42,7 @@ A row whose gap is written up elsewhere links that file instead.
 | `Actions::sticky()` on the row (`areFormActionsSticky()`, `stickyFormActions()`) | the same | blocked | the Stimulus sticky controller | [schemas/actions.md](../schemas/actions.md#sticky-mode-is-not-ported) |
 | `keyBindings(['mod+s'])` on the submit action | [`Actions/Concerns/HasKeyBindings.php`](../../../vendor/filament/actions/src/Concerns/HasKeyBindings.php) | todo | — | [actions README](../actions/README.md) — a mousetrap-shaped Stimulus controller |
 | `previousUrl` and the history-back cancel | `public ?string $previousUrl` | skipped | — | [diverges](manage-related-records.md#previousurl-is-not-ported-anywhere-in-the-port) |
-| _rest not audited yet_ | | | | |
+| _rest not audited yet_ | — | — | — | — |
 
 Covered by [`Unit/Pages/Concerns/InteractsWithFormActionsTest`](../../../packages/panels/tests/Unit/Pages/Concerns/InteractsWithFormActionsTest.php) (the empty default and its alignment, the binding-and-registration walk, the once-only read, the one keyed `Actions` component, the schema it is wrapped in, and the alignment static carrying across pages and back), [`Integration/Twig/PageRenderTest`](../../../packages/panels/tests/Integration/Twig/PageRenderTest.php) (the rendered row on a hand-written page, and the live round trip that mounts a closure form action through `schemaComponent: formActions.form-actions`), and [`Integration/Resources/Pages/CreateRecordTest`](../../../packages/panels/tests/Integration/Resources/Pages/CreateRecordTest.php) / [`EditRecordTest`](../../../packages/panels/tests/Integration/Resources/Pages/EditRecordTest.php) (the submit button under `form.sy-pa-form .sy-sc-actions`, and the gray cancel link beside it).
 

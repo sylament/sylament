@@ -1,3 +1,15 @@
+---
+description: 'One file for both halves of the vertical: the abstract `Sylament\Forms\Components\BaseFileUpload`, which carries the whole upload lifecycle, and the… (draft)'
+ports:
+  - vendor/filament/forms/src/Components/BaseFileUpload.php
+  - vendor/filament/forms/src/Components/FileUpload.php
+  - vendor/filament/schemas/src/Components/StateCasts/FileUploadStateCast.php
+owns:
+  - packages/forms/assets/src/styles/components/file-upload.css
+  - packages/forms/src/Components/BaseFileUpload.php
+  - packages/forms/src/Components/FileUpload.php
+  - packages/forms/templates/partials/FileUpload/
+---
 # File upload
 
 One file for both halves of the vertical: the abstract [`Sylament\Forms\Components\BaseFileUpload`](../../../packages/forms/src/Components/BaseFileUpload.php), which carries the whole upload lifecycle, and the shipped field [`Sylament\Forms\Components\FileUpload`](../../../packages/forms/src/Components/FileUpload.php), which adds only what FilePond needs.
@@ -7,20 +19,7 @@ Two neighbours own the pieces this page leans on.
 The bytes live on [`TemporaryUploads`](temporary-uploads.md) between the upload and the save, and the token in raw state is what stands in for them; the minimum-size constraint Symfony has no counterpart for is [`MinFileSize`](can-be-validated.md), filed with the other first-party constraints.
 The storage seam itself is support's [`FilesystemRegistry`](../support/filesystem-registry.md), and the browser reaches the field through schemas' [`uploadSchemaComponentFile()`](../schemas/interacts-with-schemas.md).
 
-**Status:** in progress — see the [status vocabulary](../README.md#statuses).
-Everything the scoped FilePond bundle and the editor serve is done; the deprecated aliases are **skipped**, as the port ships no deprecated surface.
-
-Reference — the Filament source this is diffed against:
-
-- [`forms/src/Components/BaseFileUpload.php`](../../../vendor/filament/forms/src/Components/BaseFileUpload.php)
-- [`forms/src/Components/FileUpload.php`](../../../vendor/filament/forms/src/Components/FileUpload.php)
-- [`schemas/src/Components/StateCasts/FileUploadStateCast.php`](../../../vendor/filament/schemas/src/Components/StateCasts/FileUploadStateCast.php) — ported into schemas, tracked there
-
 ## Surface — `BaseFileUpload`
-
-_Blocked by_ names what has to land first.
-_Detail_ links a permanent note in [Semantics](#semantics) or [Divergences](#divergences), or `—`.
-A row whose _Ports_ cell is `—` has no Filament counterpart.
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
@@ -366,7 +365,7 @@ Our [`uploadSchemaComponentFile()`](../schemas/interacts-with-schemas.md) resolv
 
 ### Literals, not translation keys
 
-Per the [toolkit-wide i18n deferral](../renames.md#idiom), user-facing text is a literal here and is listed so a later i18n pass can find every one: `Download` and `Open in new tab` (the two item action labels the controller builds anchors for), `The %s field must not have more than %d items.` (the max-files message, `sprintf`-formatted with the field's label), and `The submitted file path is not authorised.` (the tampering violation).
+Per the [toolkit-wide i18n deferral](../translations.md#idiom), user-facing text is a literal here and is listed so a later i18n pass can find every one: `Download` and `Open in new tab` (the two item action labels the controller builds anchors for), `The %s field must not have more than %d items.` (the max-files message, `sprintf`-formatted with the field's label), and `The submitted file path is not authorised.` (the tampering violation).
 `The file could not be uploaded.` is the controller-side default for a refusal that arrives with no message and lives with the JS.
 
 The editor adds the rest.

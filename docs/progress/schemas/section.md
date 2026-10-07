@@ -1,3 +1,23 @@
+---
+description: The boxed layout component with a heading/description/label header, an icon, collapse/compact/divided/secondary/ aside variants, and six auxiliary… (draft)
+ports:
+  - vendor/filament/schemas/src/Components/Section.php
+  - vendor/filament/schemas/src/Components/Concerns/
+  - vendor/filament/support/src/Concerns/HasExtraAlpineAttributes.php
+owns:
+  - packages/schemas/src/Components/Concerns/CanBeAside.php
+  - packages/schemas/src/Components/Concerns/CanBeCollapsed.php
+  - packages/schemas/src/Components/Concerns/CanBeCompact.php
+  - packages/schemas/src/Components/Concerns/CanBeDivided.php
+  - packages/schemas/src/Components/Concerns/CanBeSecondary.php
+  - packages/schemas/src/Components/Concerns/HasContentBefore.php
+  - packages/schemas/src/Components/Concerns/HasDescription.php
+  - packages/schemas/src/Components/Concerns/HasFooterActions.php
+  - packages/schemas/src/Components/Concerns/HasHeaderActions.php
+  - packages/schemas/src/Components/Concerns/HasHeading.php
+  - packages/schemas/src/Components/Section.php
+  - packages/schemas/templates/partials/Section/
+---
 # Section (schemas)
 
 `Sylament\Schemas\Components\Section` — the boxed layout component with a heading/description/label header, an icon, collapse/compact/divided/secondary/ aside variants, and six auxiliary slots (after-header, footer, before/after label, above/below content).
@@ -10,19 +30,9 @@ Shared concerns keep their own rows in the [package README](README.md): the labe
 Slot setters replace, so a user `->afterHeader(...)`/`->footer(...)` call discards the seeded actions — Filament-exact, test-pinned.
 `configureChildSchema()` defaults actions in the four label/content slots to `Size::Small` and the link trigger template (`Action::LINK_TEMPLATE`, Filament's `LINK_VIEW`) and action groups to the small size only; header/footer slot actions keep the button default — Filament-exact, and an explicit `->button()` on a slot action still wins.
 
-**Status:** done — see the [status vocabulary](../README.md#statuses).
-
-Reference — the Filament source this is diffed against:
-
-- [`schemas/src/Components/Section.php`](../../../vendor/filament/schemas/src/Components/Section.php) — the component, its slots, key derivation, and the `toEmbeddedHtml()` render
-- [`schemas/src/Components/Concerns/`](../../../vendor/filament/schemas/src/Components/Concerns) — the collapse/compact/divided/secondary/heading/description concerns folded below
-- [`support/src/Concerns/HasExtraAlpineAttributes.php`](../../../vendor/filament/support/src/Concerns/HasExtraAlpineAttributes.php) — the Alpine passthrough Filament composes but Sylament omits
-
 ## Surface
 
 Every point of this component and its folded concerns.
-_Blocked by_ names what has to land first.
-_Detail_ carries a **diverges** link to the permanent note in [Divergences](#divergences), or `—`.
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
@@ -49,9 +59,6 @@ _Detail_ carries a **diverges** link to the permanent note in [Divergences](#div
 | [`HasContentBefore`](../../../packages/schemas/src/Components/Concerns/HasContentBefore.php) | [`Section::formBefore()` (inline)](../../../vendor/filament/schemas/src/Components/Section.php) | done | — | [diverges](#formbefore-becomes-contentbefore-extracted-into-a-hascontentbefore-concern) |
 
 ## Divergences
-
-Deliberate deviations from Filament — permanent, and the reason they hold.
-Say what would reverse the decision when it is provisional.
 
 ### The array-heading constructor shorthand is dropped
 

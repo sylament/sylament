@@ -1,3 +1,10 @@
+---
+description: The state cast behind single-value option fields. (draft)
+ports:
+  - vendor/filament/schemas/src/Components/StateCasts/OptionStateCast.php
+owns:
+  - packages/schemas/src/State/Casts/OptionStateCast.php
+---
 # OptionStateCast (schemas)
 
 `Sylament\Schemas\State\Casts\OptionStateCast` — the state cast behind single-value option fields.
@@ -5,15 +12,7 @@ It normalises whatever a request delivers into the one shape an option value can
 
 `forms`' [`Select`](../forms/select.md) is its only consumer today, where the int narrowing is load-bearing twice over — it is what makes `options([1 => 'One'])` round-trip, and what lets the auto-added `Choice(strict: true)` constraint match an integer option key.
 
-**Status:** done — see the [status vocabulary](../README.md#statuses).
-
-Reference — the Filament source this is diffed against:
-
-- [`schemas/src/Components/StateCasts/OptionStateCast.php`](../../../vendor/filament/schemas/src/Components/StateCasts/OptionStateCast.php)
-
 ## Surface
-
-_Detail_ links a permanent note in [Divergences](#divergences), or `—`.
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
@@ -26,8 +25,6 @@ _Detail_ links a permanent note in [Divergences](#divergences), or `—`.
 Coverage: the full edge matrix — both nullable modes, the digit-string narrowing, leading-zero and `PHP_INT_MAX`-overflow preservation, enum unwrapping, both fail-closed guards, and the int passthrough — by [`OptionStateCastTest`](../../../packages/schemas/tests/Unit/State/Casts/OptionStateCastTest.php).
 
 ## Divergences
-
-Deliberate deviations from Filament, and the reason each holds.
 
 ### An int state skips the overflow check
 

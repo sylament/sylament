@@ -18,7 +18,7 @@ These are recorded in [`renames.md`](../renames.md).
 
 The classes a user instantiates — the `Schema` root, the base `Component`, and the layout/content components in [`src/Components`](../../../vendor/filament/schemas/src/Components).
 The `Components/Concerns` traits are [Features](#features); `Components/StateCasts`, `Components/Utilities`, and `Components/Contracts` are the [Supporting surface](#supporting-surface).
-One row's code lives one package up: `FusedGroup` renders forms' field-wrapper chrome and composes three forms concerns, so it ships in `sylament/forms` and its row here points there — [why](../renames.md#namespace-segments).
+One row's code lives one package up: `FusedGroup` renders forms' field-wrapper chrome and composes three forms concerns, so it ships in `sylament/forms` and its row here points there — [why](../translations.md#namespace-segments).
 
 | Component | Ports | Status | Detail |
 | --- | --- | --- | --- |

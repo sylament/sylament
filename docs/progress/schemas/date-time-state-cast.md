@@ -1,3 +1,10 @@
+---
+description: The state cast behind a field whose value is a moment in time. (draft)
+ports:
+  - vendor/filament/schemas/src/Components/StateCasts/DateTimeStateCast.php
+owns:
+  - packages/schemas/src/State/Casts/DateTimeStateCast.php
+---
 # DateTimeStateCast (schemas)
 
 `Sylament\Schemas\State\Casts\DateTimeStateCast` — the state cast behind a field whose value is a moment in time.
@@ -5,15 +12,7 @@
 
 `DateTimePicker::getDefaultStateCasts()` builds it (forms), passing `format` (the record-side spelling), `internalFormat` (the wire spelling the native control emits), `timezone` (the field's own zone) and `objectClass` — the target type, read off [`RecordTypeReader::describe()`](record-type-reader.md) so a record with a `?DateTimeImmutable` property is written an instance while a card with no record at all keeps a wire-safe string.
 
-**Status:** done — see the [status vocabulary](../README.md#statuses).
-
-Reference — the Filament source this is diffed against:
-
-- [`schemas/src/Components/StateCasts/DateTimeStateCast.php`](../../../vendor/filament/schemas/src/Components/StateCasts/DateTimeStateCast.php)
-
 ## Surface
-
-_Detail_ links a permanent note in [Semantics](#semantics) or [Divergences](#divergences), or `—`.
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
@@ -49,8 +48,6 @@ Both are legal values of the same control, so the strict `createFromFormat()` pa
 Trailing data is an *error* to `createFromFormat()` rather than a warning, so the seconds variant fails the strict pass and reaches the lenient one with its seconds intact — a value more precise than the field's format keeps its precision instead of being silently truncated.
 
 ## Divergences
-
-Deliberate deviations from Filament, and the reason each holds.
 
 ### The cast produces the record's object because nothing downstream will
 

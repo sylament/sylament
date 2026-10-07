@@ -1,3 +1,12 @@
+---
+description: '`Sylament\Schemas\Components\Fieldset` is the labelled, bordered layout component: a two-column `Grid` with a `<legend>` on it. (draft)'
+ports:
+  - vendor/filament/schemas/src/Components/Fieldset.php
+  - vendor/filament/support/resources/views/components/fieldset.blade.php
+owns:
+  - packages/schemas/src/Components/Fieldset.php
+  - packages/schemas/templates/partials/Fieldset/
+---
 # Fieldset (schemas)
 
 [`Sylament\Schemas\Components\Fieldset`](../../../packages/schemas/src/Components/Fieldset.php) is the labelled, bordered layout component: a two-column [`Grid`](grid.md) with a `<legend>` on it.
@@ -6,18 +15,7 @@ Like `Grid` and [`Group`](group.md) it builds no grid of its own; `setUp()`'s `c
 
 It composes the shared [`EntanglesStateWithSingularRelationship`](entangles-state-with-singular-relationship.md) concern and implements its `CanEntangleWithSingularRelationships` contract, so `Fieldset::make()->relationship('profile')` binds its children to a to-one Doctrine association; that concern's file carries the status of what is and is not ported.
 
-**Status:** done — see the [status vocabulary](../README.md#statuses).
-
-Reference — the Filament source this is diffed against:
-
-- [`schemas/src/Components/Fieldset.php`](../../../vendor/filament/schemas/src/Components/Fieldset.php) — the label constructor, `setUp()`'s `columns(2)`, the constant `isRequired()` and the `toEmbeddedHtml()` render path
-- [`support/resources/views/components/fieldset.blade.php`](../../../vendor/filament/support/resources/views/components/fieldset.blade.php) — the `<fieldset>` / `<legend>` chrome the component renders through
-
 ## Surface
-
-Every point of this component.
-_Blocked by_ names what has to land first.
-_Detail_ carries a **diverges** link to the permanent note in [Divergences](#divergences), a **semantics** link to [Semantics](#semantics), or `—`.
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
@@ -35,9 +33,6 @@ The support component on its own is covered by [`FieldsetRenderTest`](../../../p
 
 ## Semantics
 
-Faithful-in-spirit behaviour a reader would plausibly misread from the source.
-Permanent — these outlive the detail sections above.
-
 ### `isRequired()` is a constant `false` so the asterisk is opt-in
 
 `Fieldset::isRequired()` returns `false` unconditionally.
@@ -46,8 +41,6 @@ A reader re-deriving the component would reasonably expect a fieldset to inherit
 It does not, on either side of the port: the legend takes its asterisk only after an explicit `markAsRequired()`.
 
 ## Divergences
-
-Deliberate deviations from Filament — permanent, and the reason they hold.
 
 ### The chrome lives in a support Twig component
 

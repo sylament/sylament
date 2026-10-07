@@ -1,3 +1,11 @@
+---
+description: 'The one record a resource page is opened on: the route key the wire carries, the record it lazily resolves to (scoped to the page''s parent chain when… (draft)'
+ports:
+  - vendor/filament/filament/src/Resources/Pages/Concerns/InteractsWithRecord.php
+  - vendor/filament/filament/src/Resources/Pages/EditRecord.php
+owns:
+  - packages/panels/src/Resources/Pages/Concerns/InteractsWithRecord.php
+---
 # InteractsWithRecord (panels)
 
 [`Sylament\Panels\Resources\Pages\Concerns\InteractsWithRecord`](../../../packages/panels/src/Resources/Pages/Concerns/InteractsWithRecord.php) — the one record a resource page is opened on: the route key the wire carries, the record it lazily resolves to (scoped to the page's parent chain when there is one), the title both are read through, the record's own breadcrumb, and the bridge to the resource's record [sub-navigation](has-sub-navigation.md).
@@ -11,19 +19,7 @@ What the trait adds on top is what every record page shares and neither of them 
 That one is composed by an `Action` and answers *what an action is acting on* (`getRecord()`, `getRecordTitle()`, `recordTitle()`); this one is composed by a page and answers *what the page is open on*.
 Both are Filament's own names in Filament's own places, so neither moves — read the trait by its **import**, never by the bare `use InteractsWithRecord;` in a class body, which is the standing rule for every name this codebase carries in two tiers.
 
-**Status:** in progress — see the [status vocabulary](../README.md#statuses).
-
-Reference — the Filament source this is diffed against:
-
-- [`Resources/Pages/Concerns/InteractsWithRecord.php`](../../../vendor/filament/filament/src/Resources/Pages/Concerns/InteractsWithRecord.php) — the whole trait
-- [`Resources/Pages/EditRecord.php`](../../../vendor/filament/filament/src/Resources/Pages/EditRecord.php) — the page that composes it, and where our members lived before the extraction
-
 ## Surface
-
-Every point of this trait.
-_Blocked by_ names what has to land first.
-_Detail_ carries three links, any of them: **detail** → the write-up in [Details](#details), deleted once the row is **done**; **semantics** → the permanent note in [Semantics](#semantics); **diverges** → the permanent note in [Divergences](#divergences).
-Rows never disappear — only their detail sections do.
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |

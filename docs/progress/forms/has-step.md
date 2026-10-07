@@ -1,20 +1,18 @@
+---
+description: 'The concern behind the native `step` attribute: the `step()` setter and the `getStep()` reader the field templates emit from. (draft)'
+ports:
+  - vendor/filament/forms/src/Components/Concerns/HasStep.php
+  - vendor/filament/forms/src/Components/DateTimePicker.php
+owns:
+  - packages/forms/src/Components/Concerns/HasStep.php
+---
 # HasStep (forms)
 
 `Sylament\Forms\Components\Concerns\HasStep` — the concern behind the native `step` attribute: the `step()` setter and the `getStep()` reader the field templates emit from.
 Two fields compose it, [`TextInput`](text-input.md) and [`DateTimePicker`](date-time-picker.md), so it is promoted out of the former's fold and keeps a row of its own.
 Filament composes it on two more — `Slider` and tables' `TextInputColumn` — neither of them ported; each picks the concern up unchanged when it lands.
 
-**Status:** done — see the [status vocabulary](../README.md#statuses).
-
-Reference — the Filament source this is diffed against:
-
-- [`forms/src/Components/Concerns/HasStep.php`](../../../vendor/filament/forms/src/Components/Concerns/HasStep.php) — the trait
-- [`forms/src/Components/DateTimePicker.php`](../../../vendor/filament/forms/src/Components/DateTimePicker.php) — `getStep()`, the one override in the port's two consumers
-
 ## Surface
-
-_Blocked by_ names what has to land first.
-_Detail_ links a permanent note in [Semantics](#semantics), or `—`.
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |

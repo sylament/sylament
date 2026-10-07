@@ -1,3 +1,14 @@
+---
+description: The single-line text field, extending `Field`. (draft)
+ports:
+  - vendor/filament/forms/src/Components/TextInput.php
+  - vendor/filament/forms/src/Components/Concerns/
+owns:
+  - packages/forms/src/Components/Concerns/CanBeAutocapitalized.php
+  - packages/forms/src/Components/TextInput.php
+  - packages/forms/src/Components/TextInput/
+  - packages/forms/templates/partials/TextInput/
+---
 # TextInput (forms)
 
 `Sylament\Forms\Components\TextInput` — the single-line text field, extending [`Field`](../../../packages/forms/src/Components/Field.php).
@@ -6,19 +17,10 @@ Two rows are still open: `mask()`, which waits on [a masking-engine decision](#i
 
 Two concerns this file used to fold have left it: `HasStep` and `HasDatalistOptions` are [`DateTimePicker`](date-time-picker.md)'s too now, so each carries its own file — [has-step.md](has-step.md), [has-datalist-options.md](has-datalist-options.md) — and what stays here is what is this field's alone, the step seed the type sugar writes.
 
-**Status:** in progress — see the [status vocabulary](../README.md#statuses).
-
-Reference — the Filament source this is diffed against:
-
-- [`forms/src/Components/TextInput.php`](../../../vendor/filament/forms/src/Components/TextInput.php) — the field and every trait it composes
-- [`forms/src/Components/Concerns/`](../../../vendor/filament/forms/src/Components/Concerns) — the concerns behind the unported rows below
-
 ## Surface
 
 Every point this field adds over `Field`.
 `Field`'s own surface (label, hint, helper text, placeholder, required, slots, rendering chrome) is tracked in [`field.md`](field.md), not here.
-_Blocked by_ names what has to land first.
-_Detail_ links a permanent note in [Semantics](#semantics) / [Divergences](#divergences).
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
@@ -58,8 +60,6 @@ _Detail_ links a permanent note in [Semantics](#semantics) / [Divergences](#dive
 | [Native constraint attributes drop when concealed](../../../packages/forms/templates/partials/TextInput/index.html.twig) — `required`, `min`, `max`, `minlength`, `maxlength` | [`toEmbeddedHtml()`](../../../vendor/filament/forms/src/Components/TextInput.php) | done | — | [can-be-concealed.md](../schemas/can-be-concealed.md) |
 
 ## Semantics
-
-Behaviour that is faithful to Filament but easy to misread here.
 
 ### `integer()` delegates to `numeric()`, so both arms ship and the step order matters
 

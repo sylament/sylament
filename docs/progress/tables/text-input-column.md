@@ -1,23 +1,20 @@
+---
+description: 'An editable `Column` whose cell is a text input: committing it on `change` writes the typed value back onto the record through the host''s… (draft)'
+ports:
+  - vendor/filament/tables/src/Columns/TextInputColumn.php
+  - vendor/filament/tables/resources/css/columns/text-input.css
+owns:
+  - packages/tables/assets/src/styles/components/text-input-column.css
+  - packages/tables/src/Columns/TextInputColumn.php
+  - packages/tables/templates/partials/TextInputColumn/
+---
 # TextInputColumn (tables)
 
 [`Sylament\Tables\Columns\TextInputColumn`](../../../packages/tables/src/Columns/TextInputColumn.php) — an editable [`Column`](column.md) whose cell is a text input: committing it on `change` writes the typed value back onto the record through the host's [`updateTableColumnState()`](has-columns.md) live action.
 It ports Filament's [`Filament\Tables\Columns\TextInputColumn`](../../../vendor/filament/tables/src/Columns/TextInputColumn.php).
 Everything [`Column`](column.md) carries is tracked there, and the write-back seam the four editable columns share is tracked on [`has-columns.md`](has-columns.md), not repeated here.
 
-**Status:** done — see the [status vocabulary](../README.md#statuses).
-One row is **skipped** (`mask()`), and it is the only point of the class not built.
-
-Reference — the Filament source this is diffed against:
-
-- [`tables/src/Columns/TextInputColumn.php`](../../../vendor/filament/tables/src/Columns/TextInputColumn.php) — the class and its `toEmbeddedHtml()`
-- [`tables/resources/css/columns/text-input.css`](../../../vendor/filament/tables/resources/css/columns/text-input.css) — the stylesheet [`text-input-column.css`](../../../packages/tables/assets/src/styles/components/text-input-column.css) is the prefix-renamed port of
-
 ## Surface
-
-Every point of this component.
-_Blocked by_ names what has to land first.
-_Detail_ carries up to three links: **detail** → the write-up in Details, deleted once the row is **done**; **diverges** → the permanent note in [Divergences](#divergences); **semantics** → the permanent note in [Semantics](#semantics).
-Rows never disappear — only their detail sections do.
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |

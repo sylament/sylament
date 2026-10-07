@@ -1,3 +1,13 @@
+---
+description: 'The prebuilt many-to-many detach: a danger-coloured cross trigger that opens a confirmation modal and, on confirm, undoes the bound record''s… (draft)'
+ports:
+  - vendor/filament/actions/src/DetachAction.php
+  - vendor/filament/actions/src/DetachBulkAction.php
+  - vendor/filament/actions/src/Concerns/CanCustomizeProcess.php
+  - vendor/filament/actions/resources/lang/en/detach.php
+owns:
+  - packages/actions/src/DetachAction.php
+---
 # DetachAction (actions)
 
 [`Sylament\Actions\DetachAction`](../../../packages/actions/src/DetachAction.php) — the prebuilt many-to-many detach: a danger-coloured cross trigger that opens a confirmation modal and, on confirm, undoes the bound record's membership of the table's relationship and flushes.
@@ -7,22 +17,10 @@ Unlike its attach sibling it is **complete**: detaching needs no form, so there 
 
 Its bulk sibling [`DetachBulkAction`](../../../packages/actions/src/DetachBulkAction.php) is audited [at the bottom of this file](#detachbulkaction), the way [`DeleteBulkAction`](delete-action.md#deletebulkaction) rides along with `DeleteAction`: it is the same detach over a table's selection instead of over one row.
 
-**Status:** done — see the [status vocabulary](../README.md#statuses).
-
-Reference — the Filament source this is diffed against:
-
-- [`actions/src/DetachAction.php`](../../../vendor/filament/actions/src/DetachAction.php) — the class this ports, whole
-- [`actions/src/DetachBulkAction.php`](../../../vendor/filament/actions/src/DetachBulkAction.php) — the bulk sibling below
-- [`actions/src/Concerns/CanCustomizeProcess.php`](../../../vendor/filament/actions/src/Concerns/CanCustomizeProcess.php) — the trait both compose, ported whole (row in [README](README.md#features))
-- [`actions/resources/lang/en/detach.php`](../../../vendor/filament/actions/resources/lang/en/detach.php) — the strings they set
-
 Covered by [`DetachActionTest`](../../../packages/actions/tests/Unit/DetachActionTest.php) and [`DetachBulkActionTest`](../../../packages/actions/tests/Unit/DetachBulkActionTest.php) for the chrome, the presets and the counting titles, and end to end by [`AttachDetachActionsTest`](../../../packages/tables/tests/Integration/AttachDetachActionsTest.php) in the **tables** suite — a row detach with its record-titled heading and its toast, and the bulk detach on both arms with the no-fetch arm proved never to hydrate the selection, plus `DetachBulkAction`'s own hostless refusal — that one driven against a container-built host rather than a mounted request, because a table whose `relationship()` answers null cannot render at all.
 It sits there for the reason [`PrebuiltDeleteActionTest`](delete-action.md) does: only a table host supplies a relationship, a bound row record and a selection, and the actions test kernel has none of the three.
 
 ## Surface
-
-Every member Filament's class carries.
-_Detail_ carries **diverges** → the note in [Divergences](#divergences), and/or **semantics** → the permanent note in [Semantics](#semantics).
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
@@ -34,9 +32,6 @@ _Detail_ carries **diverges** → the note in [Divergences](#divergences), and/o
 | The `allowsDuplicates()` branch (`$record->getRelationValue($pivotAccessor)->delete()`) | [`DetachAction.php`](../../../vendor/filament/actions/src/DetachAction.php) | skipped | — | [diverges](#the-duplicates-arm-is-not-ported) |
 
 ## Semantics
-
-Faithful ports whose behaviour is easy to misread.
-Permanent.
 
 ### The headings interpolate, and fall back to the bare verb
 
@@ -56,8 +51,6 @@ A one-to-many detach is a *dissociation*, and the reader refuses it where the ma
 `DetachAction` does not screen for that itself — the reader's `LogicException` is the answer, and it names the fix.
 
 ## Divergences
-
-Where the port deliberately differs from Filament.
 
 ### The duplicates arm is not ported
 
@@ -81,9 +74,6 @@ Filament reads every string through `__('filament-actions::detach…')`. i18n is
 
 [`Sylament\Actions\DetachBulkAction`](../../../packages/actions/src/DetachBulkAction.php) — the same detach over a table's selection: a danger toolbar action that confirms, detaches every selected record and deselects afterwards.
 It extends [`BulkAction`](bulk-action.md), so it inherits the selection plumbing, `fetchSelectedRecords()` and the counting failure report.
-
-**Status:** in progress — see the [status vocabulary](../README.md#statuses).
-Everything Filament's class does is ported; the row stays short of complete for the reason `DeleteBulkAction`'s does — the swallowed exception has nowhere to go.
 
 ### Surface
 

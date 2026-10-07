@@ -1,3 +1,23 @@
+---
+description: The forms bundle's component CSS — `packages/forms/assets/src/styles/` — is ten authored stylesheets plus two the build generates, and only seven of… (draft)
+ports:
+  - vendor/filament/forms/resources/css/components/
+  - vendor/filament/support/resources/css/components/input/
+  - vendor/filament/schemas/resources/css/components/fused-group.css
+  - vendor/filament/support/resources/css/components/toggle.css
+  - vendor/filament/support/resources/css/utilities.css
+owns:
+  - packages/forms/assets/src/styles/components/checkbox-list.css
+  - packages/forms/assets/src/styles/components/field.css
+  - packages/forms/assets/src/styles/components/radio.css
+  - packages/forms/assets/src/styles/components/repeater.css
+  - packages/forms/assets/src/styles/components/select.css
+  - packages/forms/assets/src/styles/components/tags-input.css
+  - packages/forms/assets/src/styles/components/text-input.css
+  - packages/forms/assets/src/styles/components/toggle-buttons.css
+  - packages/forms/assets/src/styles/components/toggle.css
+  - packages/support/assets/src/styles/components/checkbox.css
+---
 # Styles (forms)
 
 The forms bundle's component CSS — [`packages/forms/assets/src/styles/`](../../../packages/forms/assets/src/styles/) — is ten authored stylesheets plus two the build generates, and only seven of them draw on [`forms/resources/css/`](../../../vendor/filament/forms/resources/css/) at all.
@@ -11,16 +31,6 @@ Every row below names the vendor file it was actually written against.
 Each authored stylesheet lands in `components/<name>.css` and is `@import`ed into [`index.css`](../../../packages/forms/assets/src/styles/index.css) under `layer(components)`, mirroring Filament's `index.css` structure; the two generated sheets sit at the top of `src/styles/` (the gitignore glob is one level deep) and are imported first, so the skin that overrides them comes later in the same layer.
 Forms ships no `assets/dist` and joins no pnpm workspace: support's [`index.css`](../../../packages/support/assets/src/styles/index.css) imports this aggregator, so these rules compile into support's single built stylesheet and reach a consumer through `@sylament/support`.
 The `fi-*` class prefix is translated to the forms component code `sy-fo-*` (see the [CSS contract](../../internals/styling.md#why-do-templates-carry-only-semantic-classes)) — which for the support-tier ports is [more than a prefix swap](#the-control-stylesheets-carry-forms-coded-names-for-support-tier-classes).
-
-**Status:** in progress — see the [status vocabulary](../README.md#statuses).
-
-Reference — the Filament source this is diffed against:
-
-- [`forms/resources/css/components/`](../../../vendor/filament/forms/resources/css/components/) — the twenty per-component stylesheets: `checkbox-list.css`, `field.css`, `file-upload.css`, `key-value.css`, `radio.css`, `repeater.css`, `tags-input.css` and `toggle-buttons.css` ported directly, `textarea.css` folded into `input.css`, `text-input.css`, `select.css` and `date-time-picker.css` partly, the other eight unported
-- [`support/resources/css/components/input/`](../../../vendor/filament/support/resources/css/components/input/) — `index.css`, `radio.css` and `select.css`, the three control sources still ported into this tree, plus the `wrapper.css` chrome the port collapses into its controls; the fourth, `checkbox.css`, is [support's](../support/README.md#supporting-surface) now
-- [`schemas/resources/css/components/fused-group.css`](../../../vendor/filament/schemas/resources/css/components/fused-group.css) — the fused box, ported whole with the component that emits its class
-- [`support/resources/css/components/toggle.css`](../../../vendor/filament/support/resources/css/components/toggle.css) — the switch chrome `toggle.css` re-architects onto a checkbox
-- [`support/resources/css/utilities.css`](../../../vendor/filament/support/resources/css/utilities.css) — where `fi-sr-only` lives, the utility `field.css` mis-tiers
 
 ## Surface
 
@@ -63,9 +73,6 @@ One stylesheet is under an automated check, and it checks a variable contract ra
 Everything else is guarded only by the CI check that support's committed `assets/dist` matches a fresh build.
 
 ## Details
-
-Specifics for rows that are not finished — what is in, what is left, and the next step.
-Delete a subsection when its row flips to **done**; the table row and any divergence it earned stay behind.
 
 ### The repeater stylesheet waits on infolists for two rules
 
@@ -141,9 +148,6 @@ One support-tier stylesheet sits in the same position one package over: `input/o
 It is listed here rather than in a support trail because the cross-package ports above establish that a control's chrome arrives on the forms side — `input/radio.css` was the most recent of them, landing inside forms' [`radio.css`](../../../packages/forms/assets/src/styles/components/radio.css) with [`Radio`](radio.md).
 
 ## Divergences
-
-Deliberate deviations from Filament — permanent, and the reason they hold.
-These outlive the detail sections above.
 
 ### The control stylesheets carry forms-coded names for support-tier classes
 

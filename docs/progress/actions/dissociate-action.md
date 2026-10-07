@@ -1,18 +1,19 @@
+---
+description: 'The prebuilt per-row undo of `AssociateAction`: a danger-coloured cross that confirms, then nulls the record''s owner and flushes. (draft)'
+ports:
+  - vendor/filament/actions/src/DissociateAction.php
+  - vendor/filament/actions/src/DissociateBulkAction.php
+  - vendor/filament/actions/src/Concerns/CanCustomizeProcess.php
+  - vendor/filament/actions/resources/lang/en/dissociate.php
+owns:
+  - packages/actions/src/DissociateAction.php
+---
 # DissociateAction (actions)
 
 [`Sylament\Actions\DissociateAction`](../../../packages/actions/src/DissociateAction.php) — the prebuilt per-row undo of [`AssociateAction`](associate-action.md): a danger-coloured cross that confirms, then nulls the record's owner and flushes.
 Its bulk sibling [`DissociateBulkAction`](../../../packages/actions/src/DissociateBulkAction.php) is audited [at the bottom of this file](#dissociatebulkaction), the way [`DeleteBulkAction`](delete-action.md#deletebulkaction) rides along with `DeleteAction`.
 
 Both read the relationship off the **table**, and both refuse — as developer errors, not toasts — where the mapping does not permit a dissociation at all; see [the four refusals](#dissociating-is-refused-where-the-mapping-forbids-it).
-
-**Status:** done — see the [status vocabulary](../README.md#statuses).
-
-Reference — the Filament source this is diffed against:
-
-- [`actions/src/DissociateAction.php`](../../../vendor/filament/actions/src/DissociateAction.php) — the class this ports, whole
-- [`actions/src/DissociateBulkAction.php`](../../../vendor/filament/actions/src/DissociateBulkAction.php) — the bulk class, whole
-- [`actions/src/Concerns/CanCustomizeProcess.php`](../../../vendor/filament/actions/src/Concerns/CanCustomizeProcess.php) — the trait both compose (row in [README](README.md#features))
-- [`actions/resources/lang/en/dissociate.php`](../../../vendor/filament/actions/resources/lang/en/dissociate.php) — the strings both set
 
 Covered by [`DissociateActionTest`](../../../packages/actions/tests/Unit/DissociateActionTest.php) for the confirmation chrome, the record-titled heading and the hostless refusal, and end to end by [`AssociateDissociateActionsTest`](../../../packages/tables/tests/Integration/AssociateDissociateActionsTest.php) in the **tables** suite — the row dissociate with its `Dissociate Airbag` heading, the surviving siblings, the success toast, the orphan-removal refusal on both arms, and `DissociateBulkAction`'s own hostless refusal — that last one driven against a container-built host rather than a mounted request, because a table whose `relationship()` answers null cannot render at all.
 It sits there for the reason [`PrebuiltDeleteActionTest`](delete-action.md) does: only a table host supplies a relationship, and the actions test kernel registers neither tables nor forms.
@@ -74,8 +75,6 @@ The counting failure title beside them has no `en` source — it is [an addition
 
 [`Sylament\Actions\DissociateBulkAction`](../../../packages/actions/src/DissociateBulkAction.php) — the same dissociation over a table's **selected records**.
 It extends [`BulkAction`](bulk-action.md) (so `bulk()` and `accessSelectedRecords()` arrive on) and composes the same [`CanCustomizeProcess`](../../../packages/actions/src/Concerns/CanCustomizeProcess.php), so a caller replaces the whole body with `using()`.
-
-**Status:** in progress — the chrome, both arms and the counting failure notification ship; the `report($exception)` call has nowhere to go ([the same gap `DeleteBulkAction` records](delete-action.md#the-swallowed-exception-has-nowhere-to-go-yet)).
 
 Covered by [`DissociateBulkActionTest`](../../../packages/actions/tests/Unit/DissociateBulkActionTest.php) for the chrome, the inherited presets and the failure title's arithmetic, and end to end by [`AssociateDissociateActionsTest`](../../../packages/tables/tests/Integration/AssociateDissociateActionsTest.php) in the **tables** suite — the fetching arm's three `UPDATE`s under one flush, the by-key arm's single `UPDATE … IN (?, ?, ?)` and the refusals that run before any statement does — with the by-key arm's other shapes beside it: [`CompositeOwnerRelationshipActionsTest`](../../../packages/tables/tests/Integration/CompositeOwnerRelationshipActionsTest.php) for a composite owner's foreign key nulled whole in one statement, and [`DepotDissociateByKeyTest`](../../../packages/tables/tests/Integration/DepotDissociateByKeyTest.php) for a JOINED leaf's inherited foreign key, reserved words the mapping quotes, a single-table leaf, and a selected key the table query excludes.
 

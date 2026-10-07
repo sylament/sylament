@@ -1,19 +1,19 @@
+---
+description: The registry that maps icon aliases (`panels::pages.dashboard.navigation-item`) to concrete icon references (`heroicons:home`, a `BackedEnum`, or a… (draft)
+ports:
+  - vendor/filament/support/src/Icons/IconManager.php
+  - vendor/filament/support/src/Facades/FilamentIcon.php
+owns:
+  - packages/support/src/Icons/
+---
 # IconManager (support)
 
 `Sylament\Support\Icons\IconManager` — the registry that maps icon aliases (`panels::pages.dashboard.navigation-item`) to concrete icon references (`heroicons:home`, a `BackedEnum`, or a `Markup`).
 It ports Filament's `IconManager` `register`/`resolve` pair verbatim and adds a `renderIcon()` shim that turns a resolved name into SVG markup via `symfony/ux-icons` — the rendering half that Filament keeps in a Blade component, not on the manager.
 
-**Status:** done — see the [status vocabulary](../README.md#statuses).
-
-Reference — the Filament source this is diffed against:
-
-- [`support/src/Icons/IconManager.php`](../../../vendor/filament/support/src/Icons/IconManager.php) — the `register`/`resolve` registry
-- [`support/src/Facades/FilamentIcon.php`](../../../vendor/filament/support/src/Facades/FilamentIcon.php) — the facade that reaches the singleton, replaced here by plain injection
-
 ## Surface
 
 Every capability of the manager.
-_Detail_ carries **semantics** → the permanent note in [Semantics](#semantics), **diverges** → the permanent note in [Divergences](#divergences), or `—`.
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
@@ -29,7 +29,6 @@ Every row above is **done** — the surface is fully ported and tested by [`test
 
 ## Semantics
 
-Faithful ports subtle enough that re-deriving them from the source would plausibly get them wrong.
 Both notes below are about the **icon name a template or a PHP default writes**, which is what every icon in the toolkit hands `renderIcon()`, so they govern all nine packages rather than this class alone.
 
 ### An unprefixed Heroicon case is the mini 20px set, and our literals must spell it

@@ -1,3 +1,13 @@
+---
+description: The anonymous Twig component (`<twig:SylamentSupport:Badge>`) that ports Filament's `<x-filament::badge>`. (draft)
+ports:
+  - vendor/filament/support/resources/views/components/badge.blade.php
+  - vendor/filament/support/src/View/Components/BadgeComponent.php
+  - vendor/filament/support/resources/css/components/badge.css
+owns:
+  - packages/support/assets/src/styles/components/badge.css
+  - packages/support/templates/components/Badge/
+---
 # Badge (support)
 
 `packages/support/templates/components/Badge/index.html.twig` — the anonymous Twig component (`<twig:SylamentSupport:Badge>`) that ports Filament's `<x-filament::badge>`.
@@ -5,19 +15,7 @@ It renders a short status pill — a `<span>` by default, a `<button>` or an `<a
 The Blade component's behaviour is split across two Filament files: the `badge.blade.php` view (markup, props, attribute merge) and the `BadgeComponent.php` PHP class (the WCAG-AA contrast color map).
 Sylament ports the structural view faithfully — the deletable badge and the color map included — and leaves the whole interactive layer unbuilt (Livewire loading indicator, key bindings, tooltip, SPA-mode href), pending the infrastructure each depends on.
 
-**Status:** in progress — see the [status vocabulary](../README.md#statuses).
-
-Reference — the Filament source this is diffed against:
-
-- [`support/resources/views/components/badge.blade.php`](../../../vendor/filament/support/resources/views/components/badge.blade.php) — the Blade view: props, size resolution, attribute merge, markup
-- [`support/src/View/Components/BadgeComponent.php`](../../../vendor/filament/support/src/View/Components/BadgeComponent.php) — the color-map provider the view's `->color(BadgeComponent::class, …)` call resolves against
-- [`support/resources/css/components/badge.css`](../../../vendor/filament/support/resources/css/components/badge.css) — the rules [`badge.css`](../../../packages/support/assets/src/styles/components/badge.css) ports
-
 ## Surface
-
-Every point of this component.
-_Blocked by_ names what has to land first.
-_Detail_ carries up to three links: **detail** → the write-up in [Details](#details), deleted once the row is **done**; **diverges** → the permanent note in [Divergences](#divergences); **semantics** → the permanent note in [Semantics](#semantics).
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
@@ -56,9 +54,6 @@ Filament's `toBadgeHtml()` renders the whole badge as a `<form action=… method
 The template already interpolates `tag` freely, so the work is the missing `action`/`method` attributes and the `type` derivation Filament's tag `match` does — reachable the moment `postToUrl()` is ported.
 
 ## Semantics
-
-Faithful ports subtle enough that the next reader would misread the code.
-Permanent, and addressable by anchor.
 
 ### The outer label span is what pins the badge's baseline
 

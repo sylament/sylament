@@ -1,3 +1,11 @@
+---
+description: 'The prebuilt record delete: a danger-coloured trash trigger that opens a confirmation modal and, on confirm, removes the record through Doctrine and… (draft)'
+ports:
+  - vendor/filament/actions/src/DeleteAction.php
+  - vendor/filament/actions/src/Concerns/CanCustomizeProcess.php
+owns:
+  - packages/actions/src/DeleteAction.php
+---
 # DeleteAction (actions)
 
 [`Sylament\Actions\DeleteAction`](../../../packages/actions/src/DeleteAction.php) — the prebuilt record delete: a danger-coloured trash trigger that opens a confirmation modal and, on confirm, removes the record through Doctrine and reports `success()`.
@@ -5,21 +13,10 @@ Unlike [`CreateAction`](create-action.md) and [`EditAction`](edit-action.md) it 
 
 Its bulk sibling [`DeleteBulkAction`](../../../packages/actions/src/DeleteBulkAction.php) is audited [at the bottom of this file](#deletebulkaction), the way [`BulkActionGroup`](action-group.md) rides along with the group it presets: it is the same delete over a table's selection instead of over one row, so the two are easier to read — and to keep honest — side by side than a file apart.
 
-**Status:** in progress — see the [status vocabulary](../README.md#statuses).
-
-Reference — the Filament source this is diffed against:
-
-- [`actions/src/DeleteAction.php`](../../../vendor/filament/actions/src/DeleteAction.php) — the class this ports, whole
-- [`actions/src/Concerns/CanCustomizeProcess.php`](../../../vendor/filament/actions/src/Concerns/CanCustomizeProcess.php) — the trait it composes, ported whole (row in [README](README.md#features))
-
 Covered by [`DeleteActionTest`](../../../packages/actions/tests/Unit/DeleteActionTest.php) for the chrome and the `using()` / status paths, and end to end by [`PrebuiltDeleteActionTest`](../../../packages/tables/tests/Integration/PrebuiltDeleteActionTest.php) in the **tables** suite — mount a row action, confirm it, and the record is gone from the database and from the re-render.
 It sits there for the reason [`RecordActionsResolutionTest`](has-actions.md#the-table-branch-reaches-tables-through-a-guarded-soft-reference) does: only a table host can bind a row's record to the action, and the actions test kernel has neither a table nor a database.
 
 ## Surface
-
-Every member Filament's class carries.
-_Blocked by_ names what has to land first.
-_Detail_ carries a **semantics** link to [Semantics](#semantics), a **diverges** link to [Divergences](#divergences), or `—`.
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
@@ -35,9 +32,6 @@ _Detail_ carries a **semantics** link to [Semantics](#semantics), a **diverges**
 | Success redirect after the delete | [`Concerns/CanRedirect.php`](../../../vendor/filament/actions/src/Concerns/CanRedirect.php) | done | — | [semantics](#a-delete-redirects-only-where-the-host-page-answers) |
 
 ## Semantics
-
-Faithful ports whose obvious reading is wrong.
-Permanent, unlike the details above.
 
 ### The headings interpolate, and fall back to the bare verb
 
@@ -61,9 +55,6 @@ The URL leaves the pipeline as a [returned `RedirectResponse`](has-actions.md#a-
 And a caller can have the redirect on any host by naming it per action with `->successRedirectUrl('/…')`.
 
 ## Divergences
-
-Deliberate deviations from Filament — permanent, and the reason they hold.
-These outlive the detail sections above.
 
 ### The delete goes through a Doctrine manager registry, not through the record
 
@@ -136,8 +127,6 @@ What is *not* here is the failure toast's counterpart: `DeleteAction` sets no `f
 
 [`Sylament\Actions\DeleteBulkAction`](../../../packages/actions/src/DeleteBulkAction.php) — the same delete over a table's **selected records**.
 It extends [`BulkAction`](bulk-action.md) (so it arrives with `bulk()` and `accessSelectedRecords()` already on) and composes the same [`CanCustomizeProcess`](../../../packages/actions/src/Concerns/CanCustomizeProcess.php) `DeleteAction` does, so a caller replaces the whole body with `using()`.
-
-**Status:** in progress — the chrome, both delete arms and the counting failure notification ship; the two `missingBulk*NotificationMessage` hooks wait on the [keyed failure buckets](bulk-action.md#the-failure-reports-count-they-do-not-carry-keyed-messages) and the swallowed exception has nowhere to be logged — see the [status vocabulary](../README.md#statuses).
 
 Reference — the Filament source this is diffed against:
 

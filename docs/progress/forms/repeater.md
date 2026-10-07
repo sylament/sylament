@@ -1,3 +1,26 @@
+---
+description: 'The array-backed repeatable field: one child schema cloned per item, items added, removed and reordered through the mounted-action pipeline, the whole… (draft)'
+ports:
+  - vendor/filament/forms/src/Components/Repeater.php
+  - vendor/filament/forms/src/Components/Concerns/CanGenerateUuids.php
+  - vendor/filament/forms/src/Components/Concerns/CanLimitItemsLength.php
+  - vendor/filament/forms/src/Components/Concerns/CanBeCloned.php
+  - vendor/filament/forms/src/Components/Concerns/HasExtraItemActions.php
+  - vendor/filament/schemas/src/Components/Concerns/HasChildComponents.php
+  - vendor/filament/schemas/src/Components/Concerns/Cloneable.php
+  - vendor/filament/forms/src/Components/Repeater/TableColumn.php
+  - vendor/filament/schemas/src/Components/Concerns/HasContainerGridLayout.php
+  - vendor/filament/schemas/src/Components/Concerns/CanBeRepeated.php
+  - vendor/filament/schemas/src/Components/Contracts/HasExtraItemActions.php
+  - vendor/filament/support/src/Concerns/HasReorderAnimationDuration.php
+  - vendor/filament/support/src/Concerns/HasWidth.php
+  - vendor/filament/support/src/Concerns/CanWrapHeader.php
+  - vendor/filament/forms/resources/css/components/repeater.css
+  - vendor/filament/forms/resources/lang/en/components.php
+owns:
+  - packages/forms/src/Components/Repeater.php
+  - packages/forms/templates/partials/Repeater/
+---
 # Repeater (forms)
 
 `Sylament\Forms\Components\Repeater` — the array-backed repeatable field: one child schema cloned per item, items added, removed and reordered through the mounted-action pipeline, the whole list written into a plain `?array` record property (the JSON-column shape [`setOnRecord()`](../schemas/property-accessor.md) already round-trips).
@@ -9,27 +32,9 @@ The measured failure that draws the line is recorded in [the Serializer rejectio
 That identity is exactly what [`relationship()`](#a-relationship-repeater-keys-its-items-by-identity-and-diffs-the-collection) supplies, so a repeater that declares one maps a Doctrine collection and the refusal steps aside for it — [and only for it](#object-collections-stay-refused-until-a-relationship-supplies-the-identity).
 `table()` mode ships, over that same item pipeline.
 
-**Status:** in progress — see the [status vocabulary](../README.md#statuses).
-The array-backed field ships end to end: item pipeline, per-item child schemas, the eleven structural actions, item chrome, the collapse family, `addBetween` / `labelBetweenItems`, `extraItemActions()`, the items grid, `table()` mode, the three partials, the record round-trip, the [value-object item mode](#the-item-cast-fires-at-the-repeaters-two-pipeline-boundaries-not-in-the-generic-seam) and the [relationship mode](#a-relationship-repeater-keys-its-items-by-identity-and-diffs-the-collection) over a Doctrine collection — [relation-backed fields inside an item](#a-nested-relation-backed-field-is-routed-by-the-item-not-by-the-map) included, repeaters nested in repeaters with them.
-What is left is the one **blocked** row, `partiallyRenderAfterActionsCalled()`, which wants a UX LiveComponent partial-render equivalent.
-
-Reference — the Filament source this is diffed against, walked end to end for this table, so it carries no [unaudited row](../README.md#an-unaudited-table-says-so):
-
-- [`forms/src/Components/Repeater.php`](../../../vendor/filament/forms/src/Components/Repeater.php) — the class, its eleven registered actions, the item pipeline, the three embedded views
-- [`forms/src/Components/Concerns/CanGenerateUuids.php`](../../../vendor/filament/forms/src/Components/Concerns/CanGenerateUuids.php), [`CanLimitItemsLength.php`](../../../vendor/filament/forms/src/Components/Concerns/CanLimitItemsLength.php), [`CanBeCloned.php`](../../../vendor/filament/forms/src/Components/Concerns/CanBeCloned.php), [`HasExtraItemActions.php`](../../../vendor/filament/forms/src/Components/Concerns/HasExtraItemActions.php) — the forms-tier concerns it composes
-- [`schemas/src/Components/Concerns/HasChildComponents.php`](../../../vendor/filament/schemas/src/Components/Concerns/HasChildComponents.php) and [`Cloneable.php`](../../../vendor/filament/schemas/src/Components/Concerns/Cloneable.php) — the keyed-child-schema cache and clone layer the item schemas ride on
-- [`forms/src/Components/Repeater/TableColumn.php`](../../../vendor/filament/forms/src/Components/Repeater/TableColumn.php) — the table-mode column object
-- [`schemas/src/Components/Concerns/HasContainerGridLayout.php`](../../../vendor/filament/schemas/src/Components/Concerns/HasContainerGridLayout.php), [`CanBeRepeated.php`](../../../vendor/filament/schemas/src/Components/Concerns/CanBeRepeated.php) and [`schemas/src/Components/Contracts/HasExtraItemActions.php`](../../../vendor/filament/schemas/src/Components/Contracts/HasExtraItemActions.php) — the schemas-tier seams the chrome sits on
-- [`support/src/Concerns/HasReorderAnimationDuration.php`](../../../vendor/filament/support/src/Concerns/HasReorderAnimationDuration.php), [`HasWidth.php`](../../../vendor/filament/support/src/Concerns/HasWidth.php) and [`CanWrapHeader.php`](../../../vendor/filament/support/src/Concerns/CanWrapHeader.php) — the support-tier concerns the drag control and the table columns compose
-- [`forms/resources/css/components/repeater.css`](../../../vendor/filament/forms/resources/css/components/repeater.css) — the stylesheet all three views are painted by
-- [`forms/resources/lang/en/components.php`](../../../vendor/filament/forms/resources/lang/en/components.php) — the `repeater` block, which is where every label and column heading string here comes from
-
 ## Surface
 
 Every point of Filament's class and its concerns, grouped where a family shares one fate.
-_Blocked by_ names what has to land first.
-_Detail_ carries a **semantics** link (a permanent note in [Semantics](#semantics)) and/or a **diverges** link (the permanent note in [Divergences](#divergences)), or `—`.
-A row with no _Ports_ link is Sylament-only.
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
@@ -63,9 +68,6 @@ A row with no _Ports_ link is Sylament-only.
 | `itemsAs()` value-object item mode — explicit item class + optional denormalize/normalize pair over schemas' [`ObjectStateCast`](../schemas/object-state-cast.md) | — | done | — | [semantics](#a-cast-item-is-schema-complete-so-unmanaged-keys-stop-riding) · [diverges](#the-item-cast-fires-at-the-repeaters-two-pipeline-boundaries-not-in-the-generic-seam) · [diverges](#item-class-inference-is-deferred-the-declaration-stays-explicit) |
 
 ## Semantics
-
-Faithful-in-spirit behaviour a reader would plausibly misread from the source.
-Permanent — these outlive the detail sections above.
 
 ### Items are uuid-keyed in the live bag and positional on the record
 
@@ -295,9 +297,6 @@ Because the item fill asks each item field whether its casts flatten an object l
 Every consumer reads the list as a set — the save writes each path onto the child, and the translator `array_flip()`s it — so nothing depends on the multiplicity.
 
 ## Divergences
-
-Deliberate deviations from Filament, and the reason each holds.
-Provisional ones say what would reverse them.
 
 ### The relationship family loses its caches, its lifecycle hooks and its query scope
 

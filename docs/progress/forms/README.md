@@ -25,7 +25,7 @@ Both are that promotion now: the [date pickers](date-time-picker.md) are the sec
 
 The `Field` base and every field a user instantiates — [`src/Components`](../../../vendor/filament/forms/src/Components).
 The nested rows (`Builder / Block`, `MorphToSelect / Type`, `Repeater / TableColumn`) are the user-instantiable building blocks a parent field composes; `Field` heads the table, the rest follow alphabetically.
-One row ports a class Filament files in **schemas**: `FusedGroup` composes three forms concerns and renders forms' field-wrapper chrome, so it lands here instead — [why](../renames.md#namespace-segments).
+One row ports a class Filament files in **schemas**: `FusedGroup` composes three forms concerns and renders forms' field-wrapper chrome, so it lands here instead — [why](../translations.md#namespace-segments).
 
 | Component | Ports | Status | Detail |
 | --- | --- | --- | --- |

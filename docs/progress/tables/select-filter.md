@@ -1,15 +1,18 @@
+---
+description: 'The option-list filter: a `BaseFilter` whose form is one `Select` and whose query pass is a parameter-bound equality or `IN` on a column the developer… (draft)'
+ports:
+  - vendor/filament/tables/src/Filters/SelectFilter.php
+  - vendor/filament/tables/src/Filters/Concerns/HasRelationship.php
+owns:
+  - packages/tables/src/Filters/Concerns/HasOptions.php
+  - packages/tables/src/Filters/Concerns/HasPlaceholder.php
+  - packages/tables/src/Filters/SelectFilter.php
+---
 # SelectFilter (tables)
 
 [`Sylament\Tables\Filters\SelectFilter`](../../../packages/tables/src/Filters/SelectFilter.php) — the option-list filter: a [`BaseFilter`](base-filter.md) whose form is one [`Select`](../forms/select.md) and whose query pass is a parameter-bound equality or `IN` on a column the developer names.
 It ports [`Filament\Tables\Filters\SelectFilter`](../../../vendor/filament/tables/src/Filters/SelectFilter.php) and the two `Filters\Concerns\` traits it adds — [`HasOptions`](../../../packages/tables/src/Filters/Concerns/HasOptions.php) and [`HasPlaceholder`](../../../packages/tables/src/Filters/Concerns/HasPlaceholder.php) — folded in here rather than earning rows upstairs.
 Everything [`BaseFilter`](base-filter.md) carries is tracked there.
-
-**Status:** in progress — see the [status vocabulary](../README.md#statuses).
-
-Reference — the Filament source this is diffed against:
-
-- [`tables/src/Filters/SelectFilter.php`](../../../vendor/filament/tables/src/Filters/SelectFilter.php) — the field chain, `apply()`, the indicator `setUp()`, and the searchable / native / preload / relationship surface that does not come across
-- [`tables/src/Filters/Concerns/HasRelationship.php`](../../../vendor/filament/tables/src/Filters/Concerns/HasRelationship.php) — deferred wholesale, see the divergence below
 
 ## Surface
 

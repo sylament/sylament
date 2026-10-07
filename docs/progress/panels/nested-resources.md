@@ -1,3 +1,19 @@
+---
+description: 'A resource that declares a parent — `protected static ?string $parentResource = ArticleResource::class;` — and everything that follows from it: its… (draft)'
+ports:
+  - vendor/filament/filament/src/Resources/ParentResourceRegistration.php
+  - vendor/filament/filament/src/Resources/Resource/Concerns/BelongsToParent.php
+  - vendor/filament/filament/src/Resources/Pages/Concerns/InteractsWithParentRecord.php
+  - vendor/filament/filament/src/Resources/Resource/Concerns/CanGenerateUrls.php
+  - vendor/filament/filament/src/Resources/Resource/Concerns/HasRoutes.php
+  - vendor/filament/filament/src/Resources/Resource/Concerns/HasBreadcrumbs.php
+  - vendor/filament/filament/src/Resources/Pages/Page.php
+owns:
+  - packages/panels/src/Resources/Pages/Concerns/InteractsWithParentRecord.php
+  - packages/panels/src/Resources/ParentResourceRegistration.php
+  - packages/panels/src/Resources/Resource/Concerns/BelongsToParent.php
+  - packages/panels/src/Resources/Resource/Concerns/HasBreadcrumbs.php
+---
 # Nested resources (panels)
 
 A resource that declares a parent — `protected static ?string $parentResource = ArticleResource::class;` — and everything that follows from it: its pages mount **under** the parent's records (`/admin/articles/{article}/sections/{record}/edit`), every record it resolves is scoped to the ancestor above it so a cross-parent URL 404s, a record created on one of its pages joins the parent's association, its breadcrumbs chain through the ancestors, and both the sidebar and global search leave it out.
@@ -13,23 +29,7 @@ The capability is spread over one value object, two concerns and arms on everyth
 - The page arms: [`CreateRecord`](README.md#createrecord) attaches, [`ListRecords`](README.md#listrecords) scopes, the [resource-page base](README.md#resource-pages) chains the breadcrumbs and threads the chain into every URL it mints.
 - The suppressions: [`Panel\Concerns\HasNavigation`](../../../packages/panels/src/Panel/Concerns/HasNavigation.php) skips a nested resource in the navigation loop, and [`Resource\Concerns\HasGlobalSearch`](../../../packages/panels/src/Resources/Resource/Concerns/HasGlobalSearch.php) answers no result URL for one.
 
-**Status:** in progress — see the [status vocabulary](../README.md#statuses).
-
-Reference — the Filament source this is diffed against:
-
-- [`Resources/ParentResourceRegistration.php`](../../../vendor/filament/filament/src/Resources/ParentResourceRegistration.php) — the registration, its inflected names and its route-parameter derivation
-- [`Resources/Resource/Concerns/BelongsToParent.php`](../../../vendor/filament/filament/src/Resources/Resource/Concerns/BelongsToParent.php) — the resource half, including `scopeEloquentQueryToParent()`
-- [`Resources/Pages/Concerns/InteractsWithParentRecord.php`](../../../vendor/filament/filament/src/Resources/Pages/Concerns/InteractsWithParentRecord.php) — the page half and its ancestor walk
-- [`Resources/Resource/Concerns/CanGenerateUrls.php`](../../../vendor/filament/filament/src/Resources/Resource/Concerns/CanGenerateUrls.php) — `getUrl()`'s guessing arm and `getIndexUrl()`'s four parent arms
-- [`Resources/Resource/Concerns/HasRoutes.php`](../../../vendor/filament/filament/src/Resources/Resource/Concerns/HasRoutes.php) — the nested `registerRoutes()` recursion and `getRouteBaseName()`
-- [`Resources/Resource/Concerns/HasBreadcrumbs.php`](../../../vendor/filament/filament/src/Resources/Resource/Concerns/HasBreadcrumbs.php), [`Resources/Pages/Page.php`](../../../vendor/filament/filament/src/Resources/Pages/Page.php) `getResourceBreadcrumbs()` — the ancestor trail
-
 ## Surface
-
-Every point of this capability.
-_Blocked by_ names what has to land first.
-_Detail_ carries three links, any of them: **detail** → the write-up in [Details](#details), deleted once the row is **done**; **semantics** → the permanent note in [Semantics](#semantics); **diverges** → the permanent note in [Divergences](#divergences).
-Rows never disappear — only their detail sections do.
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
@@ -83,9 +83,6 @@ Suppression is [`Integration/PanelNavigationTest`](../../../packages/panels/test
 
 ## Details
 
-Specifics for rows that are not finished.
-Delete a subsection when its row flips to **done**; the table row and any divergence it earned stay behind.
-
 ### The nesting surface is ungated until authorization lands
 
 Filament gates the nesting in three places, and none of them is ported: `InteractsWithParentRecord::authorizeParentRecordAccess()` aborts 403 unless the parent resource's `canView()` or `canEdit()` allows the resolved parent record; the breadcrumb walk links an ancestor crumb only when the same two pass; and a nested page's own `canAccess()` takes the record.
@@ -101,8 +98,6 @@ Filament shares the hole exactly (`getRouteBaseName()` recurses through the regi
 The cheap home for a fix is a compiler pass over the registered resources, where a cycle is a build-time `LogicException` rather than a request that never returns; it is recorded rather than written because nothing in the toolkit validates resource registrations today and one guard is not worth a pass of its own.
 
 ## Semantics
-
-Faithful ports subtle enough that re-deriving them from the source would get them wrong.
 
 ### The registration and the derived name are memoized on the resource service
 

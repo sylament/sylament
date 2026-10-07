@@ -1,15 +1,27 @@
+---
+description: 'The root object of the filter tier: a support `Component` composing the eleven `Filters\Concerns\` traits that carry a filter''s identity, visibility… (draft)'
+ports:
+  - vendor/filament/tables/src/Filters/BaseFilter.php
+  - vendor/filament/tables/src/Filters/Concerns/
+owns:
+  - packages/tables/src/Filters/BaseFilter.php
+  - packages/tables/src/Filters/Concerns/BelongsToTable.php
+  - packages/tables/src/Filters/Concerns/CanBeHidden.php
+  - packages/tables/src/Filters/Concerns/CanResetState.php
+  - packages/tables/src/Filters/Concerns/CanSpanColumns.php
+  - packages/tables/src/Filters/Concerns/HasColumns.php
+  - packages/tables/src/Filters/Concerns/HasDefaultState.php
+  - packages/tables/src/Filters/Concerns/HasIndicators.php
+  - packages/tables/src/Filters/Concerns/HasLabel.php
+  - packages/tables/src/Filters/Concerns/HasName.php
+  - packages/tables/src/Filters/Concerns/HasSchema.php
+  - packages/tables/src/Filters/Concerns/InteractsWithTableQuery.php
+---
 # BaseFilter (tables)
 
 [`Sylament\Tables\Filters\BaseFilter`](../../../packages/tables/src/Filters/BaseFilter.php) — the root object of the filter tier: a support [`Component`](../support/component.md) composing the eleven `Filters\Concerns\` traits that carry a filter's identity, visibility, state, schema and query application.
 It ports Filament's [`Filters\BaseFilter`](../../../vendor/filament/tables/src/Filters/BaseFilter.php) and the eleven concerns it composes, folded into the surface table below per [one row per file](../README.md#one-row-per-file-one-file-per-thing).
 [`Indicator`](indicator.md) is tracked separately, because it is a component of its own rather than a concern, and so is each subclass that extends this one — [`Filter`](filter.md), [`SelectFilter`](select-filter.md) and [`TernaryFilter`](ternary-filter.md), each carrying its own status in its own file.
-
-**Status:** in progress — see the [status vocabulary](../README.md#statuses).
-
-Reference — the Filament source this is diffed against:
-
-- [`tables/src/Filters/BaseFilter.php`](../../../vendor/filament/tables/src/Filters/BaseFilter.php)
-- [`tables/src/Filters/Concerns/`](../../../vendor/filament/tables/src/Filters/Concerns) — fourteen files, of which eleven are composed here; `HasOptions` and `HasPlaceholder` ship for `SelectFilter` and `HasRelationship` is deferred
 
 ## Surface
 

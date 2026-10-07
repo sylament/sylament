@@ -1,3 +1,13 @@
+---
+description: The palette registry. (draft)
+ports:
+  - vendor/filament/support/src/Colors/ColorManager.php
+  - vendor/filament/support/src/Assets/AssetManager.php
+  - vendor/filament/support/src/Facades/FilamentColor.php
+owns:
+  - packages/support/src/Colors/ColorManager.php
+  - packages/support/src/Twig/Extension/ColorExtension.php
+---
 # ColorManager (support)
 
 `Sylament\Support\Colors\ColorManager` — the palette registry.
@@ -8,20 +18,7 @@ Templates reach it through two functions on [`ColorExtension`](../../../packages
 `sylamentStyles()` has a row below: its Filament counterpart is the colour half of `AssetManager::renderStyles()`, and nothing else here ports the asset manager.
 `colorAttributes()` does **not** have a row: it is the port of `ComponentAttributeBag::color()`, whose row is in [`component-attribute-bag.md`](component-attribute-bag.md#surface) alongside the `grid()` / `gridColumn()` macros it was translated with, so its status lives there and only there.
 
-**Status:** in progress — see the [status vocabulary](../README.md#statuses).
-
-Reference — the Filament source this is diffed against:
-
-- [`support/src/Colors/ColorManager.php`](../../../vendor/filament/support/src/Colors/ColorManager.php) — the registry, the class emission and the custom-style emission
-- [`support/src/Assets/AssetManager.php`](../../../vendor/filament/support/src/Assets/AssetManager.php) — `renderStyles()`, whose colour half `sylamentStyles()` ports
-- [`support/src/Facades/FilamentColor.php`](../../../vendor/filament/support/src/Facades/FilamentColor.php) — the facade the manager is reached through there
-
 ## Surface
-
-Every point of this class.
-_Blocked by_ names what has to land first.
-_Detail_ carries three links, any of them: **detail** → the write-up in [Details](#details), deleted once the row is **done**; **semantics** → the permanent note in [Semantics](#semantics); **diverges** → the permanent note in [Divergences](#divergences).
-Rows never disappear — only their detail sections do.
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
@@ -38,9 +35,6 @@ Rows never disappear — only their detail sections do.
 
 ## Details
 
-Specifics for rows that are not finished — what is already in, what is left, and what the next step is.
-Delete a subsection when its row flips to **done**; the table row and any divergence it earned stay behind.
-
 ### The six shade-mutation methods are not ported
 
 `overrideShades()`, `addShades()` and `removeShades()` — with their three getters — let a Filament **panel theme** restate which shades of a palette the panel's compiled CSS should carry, and nothing reads them except the panel-side asset pipeline.
@@ -50,9 +44,6 @@ They are **todo** rather than **skipped** because a panel-side asset pipeline is
 Reversing that judgement means deciding how a per-app shade set reaches the stylesheet at all, which is an asset-pipeline question rather than a registry one.
 
 ## Semantics
-
-Faithful ports that a reader re-deriving the behaviour from the source would plausibly get wrong.
-Permanent, and true once the row is **done**.
 
 ### Registration is lazy and last-write-wins per name
 
@@ -92,9 +83,6 @@ The `Color::` constants reach the node from YAML too: Symfony's `YamlFileLoader`
 PHP-side registration stays available by injecting the service — `$colorManager->register(['primary' => Color::Rose])`.
 
 ## Divergences
-
-Deliberate deviations from Filament — permanent, and the reason they hold.
-Say what would reverse the decision when it is provisional.
 
 ### `info` defaults to Indigo where Filament uses Blue
 

@@ -1,3 +1,13 @@
+---
+description: 'One owner record''s association as a table, and everything that follows from the records also having a resource of their own: the association the table… (draft)'
+ports:
+  - vendor/filament/filament/src/Resources/Concerns/InteractsWithRelationshipTable.php
+  - vendor/filament/filament/src/Resources/Pages/ManageRelatedRecords.php
+  - vendor/filament/filament/src/Resources/RelationManagers/RelationManager.php
+  - vendor/filament/filament/src/Resources/Resource.php
+owns:
+  - packages/panels/src/Resources/Concerns/InteractsWithRelationshipTable.php
+---
 # InteractsWithRelationshipTable (panels)
 
 [`Sylament\Panels\Resources\Concerns\InteractsWithRelationshipTable`](../../../packages/panels/src/Resources/Concerns/InteractsWithRelationshipTable.php) — one owner record's association as a table, and everything that follows from the records also having a **resource** of their own: the association the table is seeded with, the title the tier carries, and — with `$relatedResource` set — the form, infolist, labels, columns and page URLs that resource answers with.
@@ -6,20 +16,7 @@ It ports the non-authorization half of [`Resources/Concerns/InteractsWithRelatio
 Both hosts of the tier compose it: the embedded [`RelationManager`](relation-manager.md), where these members lived first, and the routed [`ManageRelatedRecords`](manage-related-records.md) page, which is why they moved.
 The extraction is Filament's own factoring, under Filament's own name.
 
-**Status:** in progress — see the [status vocabulary](../README.md#statuses).
-
-Reference — the Filament source this is diffed against:
-
-- [`Resources/Concerns/InteractsWithRelationshipTable.php`](../../../vendor/filament/filament/src/Resources/Concerns/InteractsWithRelationshipTable.php) — the whole trait
-- [`Resources/Pages/ManageRelatedRecords.php`](../../../vendor/filament/filament/src/Resources/Pages/ManageRelatedRecords.php), [`Resources/RelationManagers/RelationManager.php`](../../../vendor/filament/filament/src/Resources/RelationManagers/RelationManager.php) — the two hosts, and the `getDefaultActionUrl()` Filament duplicates in both
-- [`Resources/Resource.php`](../../../vendor/filament/filament/src/Resources/Resource.php) `configureTable()` — the label stamp the related arm reproduces
-
 ## Surface
-
-Every point of this trait.
-_Blocked by_ names what has to land first.
-_Detail_ carries three links, any of them: **detail** → the write-up in [Details](#details), deleted once the row is **done**; **semantics** → the permanent note in [Semantics](#semantics); **diverges** → the permanent note in [Divergences](#divergences).
-Rows never disappear — only their detail sections do.
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |

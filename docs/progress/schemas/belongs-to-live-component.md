@@ -1,18 +1,16 @@
+---
+description: 'The trait that binds an object to the UX LiveComponent host it lives on: a nullable `liveComponent` property, the `liveComponent()` setter, and the… (draft)'
+ports:
+  - vendor/filament/schemas/src/Concerns/BelongsToLivewire.php
+owns:
+  - packages/schemas/src/Concerns/BelongsToLiveComponent.php
+---
 # BelongsToLiveComponent (schemas)
 
 [`Sylament\Schemas\Concerns\BelongsToLiveComponent`](../../../packages/schemas/src/Concerns/BelongsToLiveComponent.php) — the trait that binds an object to the UX LiveComponent host it lives on: a nullable `liveComponent` property, the `liveComponent()` setter, and the `getLiveComponent()` accessor.
 It ports Filament's `BelongsToLivewire` (renamed under the Livewire → UX LiveComponent idiom translation) and is shared — both the [`Schema`](schema.md) root and the actions [`Action`](../../../packages/actions/src/Action.php) `use` it — so it keeps its own row rather than folding into either.
 
-**Status:** done — see the [status vocabulary](../README.md#statuses).
-
-Reference — the Filament source this is diffed against:
-
-- [`schemas/src/Concerns/BelongsToLivewire.php`](../../../vendor/filament/schemas/src/Concerns/BelongsToLivewire.php) — the property, setter, and getter ported here
-
 ## Surface
-
-Every point of this trait.
-_Detail_ carries a **diverges** link to the permanent note in [Divergences](#divergences), or `—`.
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |

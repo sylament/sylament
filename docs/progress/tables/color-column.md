@@ -1,3 +1,14 @@
+---
+description: 'A `Column` whose cell is swatches: one rounded square per state value, painted with the value itself as a `background-color` and named for assistive… (draft)'
+ports:
+  - vendor/filament/tables/src/Columns/ColorColumn.php
+  - vendor/filament/tables/resources/css/columns/color.css
+  - vendor/filament/support/src/SupportServiceProvider.php
+owns:
+  - packages/tables/assets/src/styles/components/color-column.css
+  - packages/tables/src/Columns/ColorColumn.php
+  - packages/tables/templates/partials/ColorColumn/
+---
 # ColorColumn (tables)
 
 [`Sylament\Tables\Columns\ColorColumn`](../../../packages/tables/src/Columns/ColorColumn.php) — a [`Column`](column.md) whose cell is swatches: one rounded square per state value, painted with the value itself as a `background-color` and named for assistive technology by the sanitized colour, optionally copyable.
@@ -7,19 +18,7 @@ Everything [`Column`](column.md) carries — the name, the label, the record bin
 The class adds **no members of its own**: it is two traits and a template name, exactly as upstream is two traits and a `toEmbeddedHtml()`.
 Its whole surface is [`CanBeCopied`](../support/can-be-copied.md), `CanWrap` and the per-item resolution the partial consumes, `getStateItems()`.
 
-**Status:** done — see the [status vocabulary](../README.md#statuses).
-
-Reference — the Filament source this is diffed against:
-
-- [`tables/src/Columns/ColorColumn.php`](../../../vendor/filament/tables/src/Columns/ColorColumn.php) — the class and its `toEmbeddedHtml()`, including the comment on the copyable swatch's missing name that this port acts on
-- [`tables/resources/css/columns/color.css`](../../../vendor/filament/tables/resources/css/columns/color.css) — the stylesheet [`color-column.css`](../../../packages/tables/assets/src/styles/components/color-column.css) is the prefix-renamed port of
-- [`support/src/SupportServiceProvider.php`](../../../vendor/filament/support/src/SupportServiceProvider.php) — the `Str::sanitizeCssColor` macro [`sanitize_css_color()`](../support/helpers.md#sanitize_css_color-is-the-second-macro-that-lands-as-a-helper) ports
-
 ## Surface
-
-Every point of this component.
-_Blocked by_ names what has to land first.
-_Detail_ carries **diverges** → the permanent note in [Divergences](#divergences), and **semantics** → the permanent note in [Semantics](#semantics).
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
@@ -38,17 +37,7 @@ _Detail_ carries **diverges** → the permanent note in [Divergences](#divergenc
 
 The surface rows are covered by the Unit [`ColorColumnTest`](../../../packages/tables/tests/Unit/Columns/ColorColumnTest.php) — the sanitizer over eight state shapes including the declaration-injection attempt and the backed enum, the list state, the blank state, and the copy values in all three arms (absent while the column is not copyable, the `Copied` / 2000 ms defaults, and the configured trio) — and by the Integration [`ColorColumnTest`](../../../packages/tables/tests/Integration/Columns/ColorColumnTest.php), which renders columns inside a real table and reads the cell out of `td.sy-ta-cell > div.sy-ta-col > div.sy.sy-ta-color`: the painted and named swatch, the unsanitizable one that paints and names nothing, the copyable one carrying the clipboard controller's three values and the three activation bindings with no server-rendered `tabindex`, the copyable **and** unsanitizable one that paints nothing and still names itself, the wrapped list, the placeholder, the per-item `title`, and the two `url()` arities — a state-based one wrapping each swatch in its own `<a>`, and a plain one leaving the wrapper anchor to carry the cell alone.
 
-## Details
-
-Specifics for rows that are not finished.
-Delete a subsection when its row flips to **done**.
-
-Every row above is settled — **done** — so none has a write-up here now.
-A row moving to **in progress** or **blocked** grows one.
-
 ## Semantics
-
-Behaviour that is faithful to Filament but easy to misread here.
 
 ### An unsanitizable value paints nothing, and a plain swatch names nothing
 
@@ -72,8 +61,6 @@ The keys exist on every item because the partial reads them unconditionally; the
 A value the sanitizer rejects is therefore still copyable, and copies what the record holds, which is what a user clicking a broken swatch wants to see.
 
 ## Divergences
-
-Deliberate deviations from Filament, and the reason each holds.
 
 ### The copyable swatch is named where Filament leaves it nameless
 

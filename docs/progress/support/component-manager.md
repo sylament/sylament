@@ -1,22 +1,18 @@
+---
+description: The registry behind `configureUsing()`. (draft)
+ports:
+  - vendor/filament/support/src/Components/ComponentManager.php
+  - vendor/filament/support/src/Components/Contracts/ScopedComponentManager.php
+owns:
+  - packages/support/src/Configuration/
+---
 # ComponentManager (support)
 
 `Sylament\Support\Configuration\ComponentManager` — the registry behind `configureUsing()`.
 The [`Configurable`](../../../packages/support/src/Components/Concerns/Configurable.php) trait calls into it: `X::configureUsing($closure)` registers a class-keyed closure, and every `make()` runs `configure()`, which walks the component's class hierarchy root-first — calling `setUp()` at its declaring class's position, each class's registered closures after it, and `isImportant` closures last.
 It is the Filament `configureUsing()` port and is reached through the static-instance pattern (`resolve()`), so components need no constructor injection.
 
-**Status:** in progress — see the [status vocabulary](../README.md#statuses).
-
-Reference — the Filament source this is diffed against:
-
-- [`support/src/Components/ComponentManager.php`](../../../vendor/filament/support/src/Components/ComponentManager.php) — the manager itself
-- [`support/src/Components/Contracts/ScopedComponentManager.php`](../../../vendor/filament/support/src/Components/Contracts/ScopedComponentManager.php) — the contract Filament's manager implements, driving `resolveScoped()`
-
 ## Surface
-
-Every point of this component.
-_Blocked by_ names what has to land first.
-_Detail_ carries only two links, either or both: **detail** → the write-up in [Details](#details), deleted once the row is **done**; **diverges** → the permanent note in [Divergences](#divergences).
-Rows never disappear — only their detail sections do.
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
@@ -28,9 +24,6 @@ Rows never disappear — only their detail sections do.
 
 ## Details
 
-Specifics for rows that are not finished — what is already in, what is left, and what the next step is.
-Delete a subsection when its row flips to **done**; the table row and any divergence it earned stay behind.
-
 ### The scoped component manager is not ported
 
 Filament clones the manager per Livewire request via `clone()` and binds the copy under `ScopedComponentManager`, so `configureUsing()` calls made during one request don't leak into the next; `resolveScoped()` fetches that per-request copy.
@@ -39,10 +32,6 @@ Per-request config isolation is wanted, but it belongs to the live-component-sta
 The `ScopedComponentManager` contract is separately tracked as **todo** in the [package README](README.md).
 
 ## Divergences
-
-Deliberate deviations from Filament — permanent, and the reason they hold.
-These outlive the detail sections above: a row stays **done** or **skipped** and keeps pointing here.
-Say what would reverse the decision when it is provisional.
 
 ### `resolve()` uses the static-instance pattern, not a scoped container
 

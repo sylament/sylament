@@ -1,3 +1,12 @@
+---
+description: 'The prebuilt header action of a one-to-many relation-scoped table: a modal carrying one record select over every target record that is *not* this… (draft)'
+ports:
+  - vendor/filament/actions/src/AssociateAction.php
+  - vendor/filament/actions/src/Concerns/CanCustomizeProcess.php
+  - vendor/filament/actions/resources/lang/en/associate.php
+owns:
+  - packages/actions/src/AssociateAction.php
+---
 # AssociateAction (actions)
 
 [`Sylament\Actions\AssociateAction`](../../../packages/actions/src/AssociateAction.php) — the prebuilt header action of a **one-to-many** relation-scoped table: a modal carrying one record select over every target record that is *not* this owner's, which on submit points each picked record at the owner and flushes.
@@ -5,22 +14,10 @@ It is the one-to-many half of the pair Filament ships; `AttachAction` is the man
 
 The relationship it writes is the **table's** — [`Table::relationship()`](../tables/table.md) is the only thing that supplies one, and the action refuses with a `LogicException` naming that when a host mounts it without one.
 
-**Status:** done — see the [status vocabulary](../README.md#statuses).
-
-Reference — the Filament source this is diffed against:
-
-- [`actions/src/AssociateAction.php`](../../../vendor/filament/actions/src/AssociateAction.php) — the class this ports, whole
-- [`actions/src/Concerns/CanCustomizeProcess.php`](../../../vendor/filament/actions/src/Concerns/CanCustomizeProcess.php) — the trait it composes, ported whole (row in [README](README.md#features))
-- [`actions/resources/lang/en/associate.php`](../../../vendor/filament/actions/resources/lang/en/associate.php) — the six strings it sets
-
 Covered by [`AssociateActionTest`](../../../packages/actions/tests/Unit/AssociateActionTest.php) for the chrome, the footer action, the select's shape, the evaluated `multiple()` and the hostless refusal, and end to end by [`AssociateDissociateActionsTest`](../../../packages/tables/tests/Integration/AssociateDissociateActionsTest.php) in the **tables** suite — the candidate list, the association, the re-point of another owner's record, the toast and unmount, the "associate another" arm, the multiple arm, the preloaded options and both refusals of a smuggled key, and beside those the select's own arms: the title ordering (the candidate list's unowned song is titled so that title order and key order disagree, which is what makes the assertion an assertion on the `ORDER BY`) on the projecting branch and, through a table-level `recordTitle()` closure whose upper-cased answers no projection could return, on the hydrating one, the action's own `recordTitle()` closure that no table title can stand in for, the action's own title attribute overriding a table that titles by closure, `recordSelectOptionsQuery()` narrowing the candidates through each of its two documented injections — the builder by parameter name with the search beside it, and the builder by type hint — a third arm that orders the builder itself, whose order survives, `recordSelectSearchColumns()` searching a mapped **non-title** field with the title no longer matching, the unmapped-column refusal, and the `LOWER()` that `forceSearchCaseInsensitive()` puts in the emitted SQL and its absence without the flag.
 It sits there for the reason [`PrebuiltDeleteActionTest`](delete-action.md) does: only a table host supplies a relationship, and the actions test kernel registers neither tables nor forms.
 
 ## Surface
-
-Every member Filament's class carries.
-_Blocked by_ names what has to land first.
-_Detail_ carries a **semantics** link to [Semantics](#semantics), a **diverges** link to [Divergences](#divergences), or `—`.
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
@@ -43,8 +40,6 @@ _Detail_ carries a **semantics** link to [Semantics](#semantics), a **diverges**
 | `disableAssociateAnother()` | [`AssociateAction.php`](../../../vendor/filament/actions/src/AssociateAction.php) | skipped | — | a `@deprecated` alias — [renames.md](../renames.md) |
 
 ## Semantics
-
-Faithful ports whose obvious reading is wrong.
 
 ### The submitted key is re-resolved through the candidate query
 

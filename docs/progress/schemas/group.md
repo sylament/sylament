@@ -1,3 +1,11 @@
+---
+description: '`Sylament\Schemas\Components\Group` is `Grid`''s schema-in-the-factory sibling: it takes its children rather than a column count, sets no columns of… (draft)'
+ports:
+  - vendor/filament/schemas/src/Components/Group.php
+owns:
+  - packages/schemas/src/Components/Group.php
+  - packages/schemas/templates/partials/Group/
+---
 # Group (schemas)
 
 [`Sylament\Schemas\Components\Group`](../../../packages/schemas/src/Components/Group.php) is [`Grid`](grid.md)'s schema-in-the-factory sibling: it takes its children rather than a column count, sets no columns of its own, and so its child [`Schema`](schema.md) falls back to the default map (`default => 1`).
@@ -5,17 +13,7 @@ The result is that a `Group` claims one cell of the outer grid and stacks everyt
 
 It composes the shared [`EntanglesStateWithSingularRelationship`](entangles-state-with-singular-relationship.md) concern and implements its `CanEntangleWithSingularRelationships` contract, so `Group::make()->relationship('profile')` binds its children to a to-one Doctrine association; that concern's file carries the status of what is and is not ported.
 
-**Status:** done — see the [status vocabulary](../README.md#statuses).
-
-Reference — the Filament source this is diffed against:
-
-- [`schemas/src/Components/Group.php`](../../../vendor/filament/schemas/src/Components/Group.php) — the constructor's schema forwarding and the `toEmbeddedHtml()` render path
-
 ## Surface
-
-Every point of this component.
-_Blocked by_ names what has to land first.
-_Detail_ carries a **diverges** link to the permanent note in [Divergences](#divergences), or `—`.
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |

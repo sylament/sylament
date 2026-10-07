@@ -1,3 +1,10 @@
+---
+description: '`Sylament\Schemas\State\RecordTypeReader` and the `RecordTarget` value object it returns — a Sylament invention with no Filament counterpart, and the… (draft)'
+ports: []
+owns:
+  - packages/schemas/src/State/RecordTarget.php
+  - packages/schemas/src/State/RecordTypeReader.php
+---
 # RecordTypeReader (schemas)
 
 [`Sylament\Schemas\State\RecordTypeReader`](../../../packages/schemas/src/State/RecordTypeReader.php) and the [`RecordTarget`](../../../packages/schemas/src/State/RecordTarget.php) value object it returns — a Sylament invention with **no Filament counterpart**, and the reason there is none is structural rather than an omission: Eloquent attributes are untyped, so "what does this record declare at this path?" is a question Filament's mapper cannot ask and never had to answer.
@@ -5,41 +12,28 @@
 It exists because [`PropertyAccessor::setOnRecord()`](property-accessor.md) used to write blind.
 Given a record class and a dotted path it answers three things from one `symfony/property-info` call — what class to construct for an object segment, whether null may be written, and whether the property holds a collection — which is what lets the mapper construct a missing singular intermediate, lets [`getData()`](belongs-to-record.md) null a whole branch, lets forms [derive a field's requirement](../forms/can-be-validated.md#requirement-is-derived-from-the-records-write-side-types) from the record instead of a declaration, and lets an object collection be refused loudly instead of mapped wrongly.
 
-**Status:** done — see the [status vocabulary](../README.md#statuses).
-
-Reference — this is Sylament-invented, so it is diffed against the sources it wraps rather than a Filament port target:
-
-- [`property-info/Extractor/ReflectionExtractor.php`](../../../vendor/symfony/property-info/Extractor/ReflectionExtractor.php) — the one extractor this reader is pinned to, and whose `getType()` resolution order the whole contract rests on
-- [`framework-bundle/Resources/config/property_info.php`](../../../vendor/symfony/framework-bundle/Resources/config/property_info.php) — the chained `property_info` service the bundle deliberately does **not** autowire in
-
 ## Surface
 
 Every point of the reader and its value object.
-_Blocked by_ names what has to land first.
-_Detail_ carries a **semantics** link (a permanent note in [Semantics](#semantics)) and/or a **diverges** link (the permanent note in [Divergences](#divergences)), or `—`.
 Every row is Sylament-only, so no row has a _Ports_ link.
 
-| Feature | Status | Blocked by | Detail |
-| --- | --- | --- | --- |
-| [`describe(string $recordClass, string $path)`](../../../packages/schemas/src/State/RecordTypeReader.php) — describe a dotted path, hopping object segments by their declared class | done | — | [semantics](#a-null-recordtarget-means-no-type-answer-not-no-such-property) |
-| [`describeProperty(string $class, string $property)`](../../../packages/schemas/src/State/RecordTypeReader.php) — describe one property of one class | done | — | [semantics](#nullability-is-the-mutators-even-when-the-getter-disagrees) |
-| `RecordTarget::$class` / `$property` — provenance fields | skipped | — | [diverges](#the-value-object-carries-no-provenance) |
-| [`RecordTarget::$objectClass`](../../../packages/schemas/src/State/RecordTarget.php) — the class to construct for an object segment, else null | done | — | [diverges](#objectclass-is-gated-on-instantiability-so-it-is-a-promise-not-a-hint) |
-| [`RecordTarget::$isNullable`](../../../packages/schemas/src/State/RecordTarget.php) — whether null may be **written** | done | — | [semantics](#nullability-is-the-mutators-even-when-the-getter-disagrees) |
-| [`RecordTarget::$isCollection` / `$isObjectCollection`](../../../packages/schemas/src/State/RecordTarget.php) — any collection, and the object-item arms only | done | — | [diverges](#two-collection-flags-because-a-plain-array-is-a-collection-and-is-still-mappable) |
-| [`RecordTarget::$builtinType`](../../../packages/schemas/src/State/RecordTarget.php) — the declared native type (`int`, `string`, `bool`, …), null for an object, a collection, a union or an unreadable type | done | — | [semantics](#nullability-is-the-mutators-even-when-the-getter-disagrees) |
-| [Service wiring](../../../packages/schemas/src/SylamentSchemasBundle.php) — `sylament_schemas.record_type_reader` plus a class alias, registered with **no** extractor argument | done | — | [diverges](#the-extractor-is-pinned-to-reflection-and-must-not-be-autowired) |
-| Generic collection element types (`array<int, Tag>`) | skipped | — | [diverges](#docblock-generics-are-invisible-and-that-is-the-point) |
+| Feature | Ports | Status | Blocked by | Detail |
+| --- | --- | --- | --- | --- |
+| [`describe(string $recordClass, string $path)`](../../../packages/schemas/src/State/RecordTypeReader.php) — describe a dotted path, hopping object segments by their declared class | — | done | — | [semantics](#a-null-recordtarget-means-no-type-answer-not-no-such-property) |
+| [`describeProperty(string $class, string $property)`](../../../packages/schemas/src/State/RecordTypeReader.php) — describe one property of one class | — | done | — | [semantics](#nullability-is-the-mutators-even-when-the-getter-disagrees) |
+| `RecordTarget::$class` / `$property` — provenance fields | — | skipped | — | [diverges](#the-value-object-carries-no-provenance) |
+| [`RecordTarget::$objectClass`](../../../packages/schemas/src/State/RecordTarget.php) — the class to construct for an object segment, else null | — | done | — | [diverges](#objectclass-is-gated-on-instantiability-so-it-is-a-promise-not-a-hint) |
+| [`RecordTarget::$isNullable`](../../../packages/schemas/src/State/RecordTarget.php) — whether null may be **written** | — | done | — | [semantics](#nullability-is-the-mutators-even-when-the-getter-disagrees) |
+| [`RecordTarget::$isCollection` / `$isObjectCollection`](../../../packages/schemas/src/State/RecordTarget.php) — any collection, and the object-item arms only | — | done | — | [diverges](#two-collection-flags-because-a-plain-array-is-a-collection-and-is-still-mappable) |
+| [`RecordTarget::$builtinType`](../../../packages/schemas/src/State/RecordTarget.php) — the declared native type (`int`, `string`, `bool`, …), null for an object, a collection, a union or an unreadable type | — | done | — | [semantics](#nullability-is-the-mutators-even-when-the-getter-disagrees) |
+| [Service wiring](../../../packages/schemas/src/SylamentSchemasBundle.php) — `sylament_schemas.record_type_reader` plus a class alias, registered with **no** extractor argument | — | done | — | [diverges](#the-extractor-is-pinned-to-reflection-and-must-not-be-autowired) |
+| Generic collection element types (`array<int, Tag>`) | — | skipped | — | [diverges](#docblock-generics-are-invisible-and-that-is-the-point) |
 
 Every row is **done** or **skipped** — the unit suite ([`RecordTypeReaderTest`](../../../packages/schemas/tests/Unit/State/RecordTypeReaderTest.php)) covers both nullability arms, the getter/setter asymmetry, the native type a builtin property names against the three that name none (an object, a collection and an enum) and the same type read through the nullable wrapper and through an object hop, the array, `Traversable` and adder-derived `list<Tag>` collection arms and the two flags separating them, the enum arm that `class_exists()` alone would have waved through, the `DateTimeInterface` carve-out, the dotted-path walk, and both null answers (an unreadable property, a path traversing a non-object segment).
 The walk is pinned through the **leaf's own** answers rather than through provenance: `Post::$author` reports an `objectClass` and `TypedRecord::$money` is nullable, so `describe(…, 'author.name')` reporting no `objectClass` and `describe(…, 'money.amount')` reporting non-nullable are each reachable only by descending a segment — verified by disabling the walk, which fails that test and no other.
 The consumers pin the rest from their own suites: construction, refusal and the nullability probe in [`PropertyAccessorTest`](../../../packages/schemas/tests/Unit/State/PropertyAccessorTest.php), branch nulling in [`Unit/Concerns/BelongsToRecordTest`](../../../packages/schemas/tests/Unit/Concerns/BelongsToRecordTest.php), derivation in forms' [`CanBeValidatedTest`](../../../packages/forms/tests/Integration/Components/Concerns/CanBeValidatedTest.php).
-No row has a write-up here.
 
 ## Semantics
-
-Behaviour a reader would plausibly misread from the source.
-Permanent.
 
 ### Nullability is the mutator's, even when the getter disagrees
 

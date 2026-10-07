@@ -1,3 +1,12 @@
+---
+description: 'One owner record''s association as a page of its own: the routed sibling of a relation manager, reached through the record''s sub-navigation, and the… (draft)'
+ports:
+  - vendor/filament/filament/src/Resources/Pages/ManageRelatedRecords.php
+  - vendor/filament/filament/src/Resources/Concerns/InteractsWithRelationshipTable.php
+  - vendor/filament/filament/src/Resources/Pages/ListRecords.php
+owns:
+  - packages/panels/src/Resources/Pages/ManageRelatedRecords.php
+---
 # ManageRelatedRecords (panels)
 
 [`Sylament\Panels\Resources\Pages\ManageRelatedRecords`](../../../packages/panels/src/Resources/Pages/ManageRelatedRecords.php) — one owner record's association as a **page** of its own: the routed sibling of a [relation manager](relation-manager.md), reached through the record's [sub-navigation](has-sub-navigation.md), and the listing a [nested resource](nested-resources.md)'s records are reached through.
@@ -22,20 +31,7 @@ final class ManageArticleSections extends ManageRelatedRecords
 
 registered as `'sections' => ManageArticleSections::route('/{record}/sections')` — and that key is a contract, not a convention: [`Resource::getIndexUrl()`](nested-resources.md#the-parent-arms-carry-no-relation-parameter) looks the page up on the parent by exactly `kebab($relationship)`, so a page registered under any other key is never the listing its related resource answers with.
 
-**Status:** in progress — see the [status vocabulary](../README.md#statuses).
-
-Reference — the Filament source this is diffed against:
-
-- [`Resources/Pages/ManageRelatedRecords.php`](../../../vendor/filament/filament/src/Resources/Pages/ManageRelatedRecords.php) — the whole class
-- [`Resources/Concerns/InteractsWithRelationshipTable.php`](../../../vendor/filament/filament/src/Resources/Concerns/InteractsWithRelationshipTable.php) — the tier it composes, [ported here](interacts-with-relationship-table.md)
-- [`Resources/Pages/ListRecords.php`](../../../vendor/filament/filament/src/Resources/Pages/ListRecords.php) — the page shape its template follows
-
 ## Surface
-
-Every point of this page.
-_Blocked by_ names what has to land first.
-_Detail_ carries three links, any of them: **detail** → the write-up in [Details](#details), deleted once the row is **done**; **semantics** → the permanent note in [Semantics](#semantics); **diverges** → the permanent note in [Divergences](#divergences).
-Rows never disappear — only their detail sections do.
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |

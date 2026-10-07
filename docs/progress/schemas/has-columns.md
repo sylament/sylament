@@ -1,20 +1,17 @@
+---
+description: The shared grid concern used by both `Schema` and the schemas `Component`. (draft)
+ports:
+  - vendor/filament/schemas/src/Concerns/HasColumns.php
+owns:
+  - packages/schemas/src/Components/Concerns/HasColumns.php
+---
 # HasColumns (schemas)
 
 [`Sylament\Schemas\Components\Concerns\HasColumns`](../../../packages/schemas/src/Components/Concerns/HasColumns.php) — the shared grid concern used by **both** [`Schema`](schema.md) and the schemas [`Component`](component.md).
 It gives a component a `columns` property that accepts a literal int, a responsive `breakpoint => int` map, or a `Closure`, and folds successive `columns()` calls plus per-entry closure evaluation into a `default`/`sm`/`md`/`lg`/`xl`/`2xl` map for the grid template.
 It ports Filament's identically-named schemas concern method for method.
 
-**Status:** in progress — see the [status vocabulary](../README.md#statuses).
-
-Reference — the Filament source this is diffed against:
-
-- [`schemas/src/Concerns/HasColumns.php`](../../../vendor/filament/schemas/src/Concerns/HasColumns.php) — the trait, setter, and getters ported here
-
 ## Surface
-
-Every point of this trait.
-_Blocked by_ names what has to land first.
-_Detail_ carries either a **detail** write-up in [Details](#details) (deleted once the row is **done**), a **diverges** link to the permanent note in [Divergences](#divergences), or `—`.
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |

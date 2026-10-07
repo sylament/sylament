@@ -1,22 +1,20 @@
+---
+description: 'An editable `Column` whose cell is a switch: flipping it writes a boolean back onto the record through the host''s `updateTableColumnState()` live… (draft)'
+ports:
+  - vendor/filament/tables/src/Columns/ToggleColumn.php
+  - vendor/filament/tables/resources/css/columns/toggle.css
+owns:
+  - packages/tables/assets/src/styles/components/toggle-column.css
+  - packages/tables/src/Columns/ToggleColumn.php
+  - packages/tables/templates/partials/ToggleColumn/
+---
 # ToggleColumn (tables)
 
 [`Sylament\Tables\Columns\ToggleColumn`](../../../packages/tables/src/Columns/ToggleColumn.php) — an editable [`Column`](column.md) whose cell is a switch: flipping it writes a boolean back onto the record through the host's [`updateTableColumnState()`](has-columns.md) live action.
 It ports Filament's [`Filament\Tables\Columns\ToggleColumn`](../../../vendor/filament/tables/src/Columns/ToggleColumn.php).
 Everything [`Column`](column.md) carries — the name, the label, the record binding, the state read, the alignment, the closure injections — is tracked there, and the write-back seam the four editable columns share is tracked on [`has-columns.md`](has-columns.md), not repeated here.
 
-**Status:** done — see the [status vocabulary](../README.md#statuses).
-
-Reference — the Filament source this is diffed against:
-
-- [`tables/src/Columns/ToggleColumn.php`](../../../vendor/filament/tables/src/Columns/ToggleColumn.php) — the class and its `toEmbeddedHtml()`
-- [`tables/resources/css/columns/toggle.css`](../../../vendor/filament/tables/resources/css/columns/toggle.css) — the stylesheet [`toggle-column.css`](../../../packages/tables/assets/src/styles/components/toggle-column.css) is the prefix-renamed port of
-
 ## Surface
-
-Every point of this component.
-_Blocked by_ names what has to land first.
-_Detail_ carries up to three links: **detail** → the write-up in Details, deleted once the row is **done**; **diverges** → the permanent note in [Divergences](#divergences); **semantics** → the permanent note in [Semantics](#semantics).
-Rows never disappear — only their detail sections do.
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |

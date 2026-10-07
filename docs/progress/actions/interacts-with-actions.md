@@ -1,3 +1,11 @@
+---
+description: 'The host contract: whatever UX LiveComponent hosts action mounting (today the test fixtures `ActionHost` / `RecordActionHost`; eventually panel… (draft)'
+ports:
+  - vendor/filament/actions/src/Contracts/HasActions.php
+  - vendor/filament/actions/src/Concerns/InteractsWithActions.php
+owns:
+  - packages/actions/src/Contracts/
+---
 # InteractsWithActions (actions)
 
 `Sylament\Actions\Contracts\InteractsWithActions` — the host contract: whatever UX LiveComponent hosts action mounting (today the test fixtures `ActionHost` / `RecordActionHost`; eventually panel resource pages and table hosts) implements it, and `Action` holds a nullable reference to one through [`BelongsToLiveComponent`](../../../packages/actions/src/Concerns/BelongsToLiveComponent.php) (`liveComponent()` / `getLiveComponent()`), typing the callback target abstractly instead of against a concrete class.
@@ -5,18 +13,9 @@ It is a bare interface — no default methods, nothing composed.
 This is the **SWAP**: Sylament's `InteractsWithActions` **interface** ports Filament's `Contracts\HasActions` **interface**, while Sylament's `HasActions` **trait** (audited separately, in [has-actions.md](has-actions.md)) ports Filament's `Concerns\InteractsWithActions` **trait** — the exact inverse naming, recorded in [renames.md](../renames.md).
 Deep behavioral parity of the mount/call pipeline itself (schema state, database transactions, rate limiting, redirects) belongs to that trait's own audit, not this one; this file judges only the contract's method inventory and signatures.
 
-**Status:** in progress — see the [status vocabulary](../README.md#statuses).
-
-Reference — the Filament source this is diffed against:
-
-- [`actions/src/Contracts/HasActions.php`](../../../vendor/filament/actions/src/Contracts/HasActions.php) — the interface this ports (name-swapped)
-- [`actions/src/Concerns/InteractsWithActions.php`](../../../vendor/filament/actions/src/Concerns/InteractsWithActions.php) — the trait whose `mountAction` / `callMountedAction` / `unmountAction` / `getMountedAction` / `mountedActionShouldOpenModal` / `getAction` implementations this contract's declared methods are diffed against (the trait itself is **not** on Filament's `Contracts\HasActions`; five of its methods, plus the Sylament-only `getMountedModalId` and `isMountedActionModalOpen`, are promoted onto Sylament's interface — see [Divergences](#divergences))
-
 ## Surface
 
 Every method the interface declares, plus every method Filament's contract declares that Sylament's does not.
-_Blocked by_ names what has to land first.
-_Detail_ carries three link types, any of them: **detail** → the write-up in [Details](#details), deleted once the row is **done**; **diverges** → the permanent note in [Divergences](#divergences); **semantics** → the permanent note in [Semantics](#semantics).
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
@@ -42,9 +41,6 @@ _Detail_ carries three link types, any of them: **detail** → the write-up in [
 | The two remaining `getDefaultAction*` hooks (declared by Filament, dropped here) | [`Contracts/HasActions.php`](../../../vendor/filament/actions/src/Contracts/HasActions.php) | blocked | `CanBeAuthorized` | [detail](#the-panel-level-default-hooks-are-on-the-contract-the-authorization-pair-deferred) |
 
 ## Details
-
-Specifics for rows that are not finished — what is already in, what is left, and the next step.
-Delete a subsection when its row flips to **done**; the table row and any divergence it earned stay behind.
 
 ### Schema-mount plumbing is not on the contract
 
@@ -73,8 +69,6 @@ The two that stay out are the ones with no consumer on this side: the authorizat
 
 ## Semantics
 
-Faithful ports subtle enough to be misread from the source alone — permanent, addressable by anchor.
-
 ### A host answering the URL hook must discriminate by action
 
 `getDefaultActionUrl()` is asked for **every** action the host renders that has no `url()` of its own, and an action that returns a URL renders as an anchor — [`CanOpenUrl::getUrl()`](../../../packages/actions/src/Concerns/CanOpenUrl.php) is what the trigger templates branch on, and only an explicit `->modal()` call suppresses it.
@@ -83,9 +77,6 @@ Filament's own implementation (`Resources\Pages\Page::getDefaultActionUrl()`) is
 The default the trait ships returns `null`, so the trap is reachable only by a host that overrides it.
 
 ## Divergences
-
-Deliberate deviations from Filament — permanent, and the reason they hold.
-These outlive the detail sections above.
 
 ### Host methods are promoted onto the interface when a template calls them
 

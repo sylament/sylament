@@ -1,20 +1,17 @@
+---
+description: 'The shared concern that lets a component offer its state to the clipboard: `copyable()` turns the control on, `copyableState()` overrides what is… (draft)'
+ports:
+  - vendor/filament/support/src/Concerns/CanBeCopied.php
+owns:
+  - packages/support/src/Components/Concerns/CanBeCopied.php
+---
 # CanBeCopied (support)
 
 `Sylament\Support\Components\Concerns\CanBeCopied` — the shared concern that lets a component offer its state to the clipboard: `copyable()` turns the control on, `copyableState()` overrides what is written, and `copyMessage()` / `copyMessageDuration()` set the confirmation and how long it stays.
 It ports Filament's support-tier `CanBeCopied` method for method, including its four state-injected getters.
 The client half — the `sylament--support--clipboard` Stimulus controller a template hands these values to — is tracked separately in [copyable.md](copyable.md).
 
-**Status:** done — see the [status vocabulary](../README.md#statuses).
-
-Reference — the Filament source this is diffed against:
-
-- [`support/src/Concerns/CanBeCopied.php`](../../../vendor/filament/support/src/Concerns/CanBeCopied.php) — the trait ported here, method for method
-
 ## Surface
-
-Every point of this concern.
-_Blocked by_ names what has to land first.
-_Detail_ carries **detail** → the write-up in [Details](#details), deleted once the row is **done**; **semantics** → the permanent note in [Semantics](#semantics); **diverges** → the permanent note in [Divergences](#divergences).
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
@@ -27,7 +24,6 @@ _Detail_ carries **detail** → the write-up in [Details](#details), deleted onc
 ## Details
 
 Every row is **done**, exercised by [`CanBeCopiedTest`](../../../packages/support/tests/Unit/Components/Concerns/CanBeCopiedTest.php) — the defaults, the state injection on all four getters, and the two fallbacks.
-No row has a write-up here.
 
 ## Semantics
 

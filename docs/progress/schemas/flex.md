@@ -1,17 +1,20 @@
+---
+description: 'The one-dimensional layout row: children sit side by side rather than in the schema grid, each growing to fill the space unless it opts out with… (draft)'
+ports:
+  - vendor/filament/schemas/src/Components/Flex.php
+  - vendor/filament/schemas/resources/css/components/flex.css
+  - vendor/filament/support/src/Concerns/HasFromBreakpoint.php
+  - vendor/filament/support/src/Concerns/HasVerticalAlignment.php
+owns:
+  - packages/schemas/src/Components/Flex.php
+  - packages/support/src/Components/Concerns/HasFromBreakpoint.php
+---
 # Flex (schemas)
 
 [`Sylament\Schemas\Components\Flex`](../../../packages/schemas/src/Components/Flex.php) — the one-dimensional layout row: children sit side by side rather than in the schema grid, each growing to fill the space unless it opts out with `grow(false)`.
 It ports [`schemas/src/Components/Flex.php`](../../../vendor/filament/schemas/src/Components/Flex.php) and its template is [`partials/Flex/index.html.twig`](../../../packages/schemas/templates/partials/Flex/index.html.twig) ([component-views.md](component-views.md)).
 
 Like [`Group`](group.md) and [`Section`](section.md) it can entangle its subtree with a singular association ([`EntanglesStateWithSingularRelationship`](entangles-state-with-singular-relationship.md)), so a flex row over an author's fields writes back through `author`.
-
-**Status:** done — see the [status vocabulary](../README.md#statuses).
-
-Reference — the Filament source this is diffed against:
-
-- [`schemas/src/Components/Flex.php`](../../../vendor/filament/schemas/src/Components/Flex.php) — the class, its trait set, and `toEmbeddedHtml()`
-- [`schemas/resources/css/components/flex.css`](../../../vendor/filament/schemas/resources/css/components/flex.css) — the stylesheet, ported as [`components/flex.css`](../../../packages/schemas/assets/src/styles/components/flex.css) ([styles.md](styles.md))
-- [`support/src/Concerns/HasFromBreakpoint.php`](../../../vendor/filament/support/src/Concerns/HasFromBreakpoint.php), [`HasVerticalAlignment.php`](../../../vendor/filament/support/src/Concerns/HasVerticalAlignment.php) — the two support concerns this component is the first consumer of
 
 ## Surface
 

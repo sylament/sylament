@@ -1,3 +1,12 @@
+---
+description: '`Sylament\Forms\Components\Concerns\HasAffixes` and its contract `Sylament\Forms\Components\Contracts\HasAffixes` — the prefix/suffix surface of the… (draft)'
+ports:
+  - vendor/filament/forms/src/Components/Concerns/HasAffixes.php
+  - vendor/filament/forms/src/Components/Contracts/HasAffixes.php
+owns:
+  - packages/forms/src/Components/Concerns/HasAffixes.php
+  - packages/forms/src/Components/Contracts/HasAffixes.php
+---
 # HasAffixes (forms)
 
 `Sylament\Forms\Components\Concerns\HasAffixes` and its contract `Sylament\Forms\Components\Contracts\HasAffixes` — the prefix/suffix surface of the text-like controls: a label, an icon (with its own colour), and any number of actions on either side of the input, plus the inline flag that decides whether each side sits inside the input wrapper's border or beside it.
@@ -8,17 +17,7 @@ That state is the **field's own**, even inside a repeater item, since `prepareAc
 
 The contract extends schemas' [`HasAffixActions`](../schemas/has-actions.md#the-affix-contract-is-typed-as-a-name-keyed-map), which is what lets `Schema`'s action cache find an affix action by name without knowing anything about forms.
 
-**Status:** done — see the [status vocabulary](../README.md#statuses).
-
-Reference — the Filament source this is diffed against:
-
-- [`forms/src/Components/Concerns/HasAffixes.php`](../../../vendor/filament/forms/src/Components/Concerns/HasAffixes.php) — the trait
-- [`forms/src/Components/Contracts/HasAffixes.php`](../../../vendor/filament/forms/src/Components/Contracts/HasAffixes.php) — the contract the templates type against
-
 ## Surface
-
-_Blocked by_ names what has to land first.
-_Detail_ links a permanent note in [Semantics](#semantics), or `—`.
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |

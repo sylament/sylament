@@ -1,3 +1,19 @@
+---
+description: 'Records gathered under headings: which value a row is keyed by, how that key reads as a heading, how the query is ordered and narrowed by it, and the… (draft)'
+ports:
+  - vendor/filament/tables/src/Grouping/Group.php
+  - vendor/filament/tables/src/Grouping/Concerns/BelongsToTable.php
+  - vendor/filament/tables/src/Table/Concerns/CanGroupRecords.php
+  - vendor/filament/tables/src/Concerns/CanGroupRecords.php
+  - vendor/filament/tables/resources/views/index.blade.php
+  - vendor/filament/tables/resources/js/components/table.js
+  - vendor/filament/tables/resources/css/row.css
+  - vendor/filament/tables/resources/css/cell.css
+  - vendor/filament/tables/resources/css/container.css
+owns:
+  - packages/tables/assets/src/styles/components/grouping.css
+  - packages/tables/src/Grouping/
+---
 # Grouping (tables)
 
 Records gathered under headings: which value a row is keyed by, how that key reads as a heading, how the query is ordered and narrowed by it, and the chrome that lets a user choose between the ways a table offers.
@@ -8,25 +24,9 @@ The summaries that hang off a group boundary are tracked in [`summarizer.md`](su
 Two traits named `CanGroupRecords` are in play — one per tier — and two classes named `Group`: this one and [`Sylament\Schemas\Components\Group`](../schemas/README.md), the layout component.
 Read the **import**, never the bare `use`.
 
-**Status:** in progress — see the [status vocabulary](../README.md#statuses).
-What is left is one alternative rendering: [`groupsOnly()` reads the page](#groupsonly-still-hydrates-the-page-it-does-not-render) rather than a distinct-key query.
-
-Reference — the Filament source this is diffed against:
-
-- [`tables/src/Grouping/Group.php`](../../../vendor/filament/tables/src/Grouping/Group.php) — the value object, its key/title/description chains and its four query arms
-- [`tables/src/Grouping/Concerns/BelongsToTable.php`](../../../vendor/filament/tables/src/Grouping/Concerns/BelongsToTable.php)
-- [`tables/src/Table/Concerns/CanGroupRecords.php`](../../../vendor/filament/tables/src/Table/Concerns/CanGroupRecords.php) — the settings, the deprecated alias and the trigger action
-- [`tables/src/Concerns/CanGroupRecords.php`](../../../vendor/filament/tables/src/Concerns/CanGroupRecords.php) — the host state, and `InteractsWithTable::bootedInteractsWithTable()` for its seed
-- [`tables/resources/views/index.blade.php`](../../../vendor/filament/tables/resources/views/index.blade.php) — the grouping selector, the group header row, its checkbox and the stripe reset
-- [`tables/resources/js/components/table.js`](../../../vendor/filament/tables/resources/js/components/table.js) — the Alpine collapse state the Stimulus arm replaces
-- [`tables/resources/css/row.css`](../../../vendor/filament/tables/resources/css/row.css), [`cell.css`](../../../vendor/filament/tables/resources/css/cell.css), [`container.css`](../../../vendor/filament/tables/resources/css/container.css) — the `fi-ta-group-*` and `fi-ta-grouping-settings` arms
-
 ## Surface
 
 Every point of the feature, across all three tiers and the chrome.
-_Blocked by_ names what has to land first.
-_Detail_ carries up to three links: **detail** → the write-up in [Details](#details), deleted once the row is **done**; **diverges** → the permanent note in [Divergences](#divergences); **semantics** → the permanent note in [Semantics](#semantics).
-A **skipped** row states its reason inline instead.
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
@@ -69,9 +69,6 @@ A **skipped** row states its reason inline instead.
 
 ## Details
 
-Specifics for rows that are not finished.
-Delete a subsection when its row flips to **done**.
-
 ### `groupsOnly()` still hydrates the page it does not render
 
 Under `groupsOnly()` the port renders one summary row per group and no record rows — which is parity — but it gets the groups by loading the records and walking their boundaries, exactly as vendor does: the page is unpaginated (the [four PHP gates](#the-php-gates-of-groupsonly-are-unconditional-where-the-templates-are-not) see to that), so a groups-only table over ten thousand rows hydrates ten thousand records whose only product is G boundaries and G summary queries.
@@ -80,9 +77,6 @@ The cheaper shape is a `SELECT DISTINCT` of the group keys plus one representati
 Both are decisions, not translations, so they wait for a table big enough to make the cost real.
 
 ## Semantics
-
-Faithful ports subtle enough that the next reader would misread the code.
-Permanent, and addressable by anchor.
 
 ### The label fallback names the relation a dotted column crosses
 
@@ -218,8 +212,6 @@ Grouping has none in either codebase (a grep of the vendor tree for `persists*In
 The URL is where a grouping is kept, through the [bind a routed page opts into](has-table.md#the-url-binding-is-a-per-prop-liveprop-modifier-opted-into-by-the-page).
 
 ## Divergences
-
-Deliberate deviations from Filament, each phrased as a statement and addressable by anchor.
 
 ### A blank id and an id carrying a colon are both refused by name
 

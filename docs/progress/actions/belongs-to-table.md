@@ -1,3 +1,10 @@
+---
+description: 'The binding between an action and the table that renders it: `table()` sets it, `getTable()` reads it or falls back through the action''s group, and… (draft)'
+ports:
+  - vendor/filament/actions/src/Concerns/BelongsToTable.php
+owns:
+  - packages/actions/src/Concerns/BelongsToTable.php
+---
 # BelongsToTable (actions)
 
 [`Sylament\Actions\Concerns\BelongsToTable`](../../../packages/actions/src/Concerns/BelongsToTable.php) — the binding between an action and the table that renders it: `table()` sets it, `getTable()` reads it or falls back through the action's group, and `hasTable()` is the predicate the mount context and the live-component chain branch on.
@@ -5,18 +12,10 @@
 Both [`Action`](action.md) and [`ActionGroup`](action-group.md) compose it, and three consumers read it today: the live-component chain's [table hop](action.md#the-live-component-chain-narrows-inline-instead-of-through-a-second-getter), [`getContext()`](action.md#getcontext-drops-the-record-model-gate)'s `table => true` entry, and the group fallback inside `getTable()` itself.
 It earns a file of its own only because of the divergence below, which constrains the trait rather than either consumer.
 
-**Status:** done — see the [status vocabulary](../README.md#statuses).
-
-Reference — the Filament source this is diffed against:
-
-- [`actions/src/Concerns/BelongsToTable.php`](../../../vendor/filament/actions/src/Concerns/BelongsToTable.php) — the trait this ports, method for method and body for body
-
 Covered by [`ActionsBelongsToTableTest`](../../../packages/tables/tests/Unit/ActionsBelongsToTableTest.php), which lives in the **tables** suite rather than the actions one: the binding takes a real `Sylament\Tables\Table`, and the actions test kernel registers no tables bundle to build one from.
 Its four cases pin the group fallback, an own binding winning over the group's, the `table` context flag with its nested-frame suppression, and the live-component table hop.
 
 ## Divergences
-
-Deliberate deviations from Filament — permanent, and the reason they hold.
 
 ### The `Table` reference is a guarded soft dependency, not a declared one
 

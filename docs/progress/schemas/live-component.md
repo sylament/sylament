@@ -1,18 +1,19 @@
+---
+description: 'The embed: a schema component that mounts another live component in place, by registered name (or class-string), with props the caller names. (draft)'
+ports:
+  - vendor/filament/schemas/src/Components/Livewire.php
+  - vendor/filament/schemas/src/Components/Concerns/HasKey.php
+owns:
+  - packages/schemas/src/Components/LiveComponent.php
+  - packages/schemas/templates/partials/LiveComponent/
+---
 # LiveComponent (schemas)
 
 [`Sylament\Schemas\Components\LiveComponent`](../../../packages/schemas/src/Components/LiveComponent.php) — the embed: a schema component that mounts **another live component** in place, by registered name (or class-string), with props the caller names.
-It ports [`schemas/src/Components/Livewire.php`](../../../vendor/filament/schemas/src/Components/Livewire.php) under the systematic Livewire → UX LiveComponent idiom translation, so the class is renamed but nothing in the [rename table](../renames.md) claims it — the [Idiom list](../renames.md#idiom) carries the example.
+It ports [`schemas/src/Components/Livewire.php`](../../../vendor/filament/schemas/src/Components/Livewire.php) under the systematic Livewire → UX LiveComponent idiom translation, so the class is renamed but nothing in the [rename table](../renames.md) claims it — the [Idiom list](../translations.md#idiom) carries the example.
 Its template is [`partials/LiveComponent/index.html.twig`](../../../packages/schemas/templates/partials/LiveComponent/index.html.twig) ([component-views.md](component-views.md)).
 
 It is the mechanism panels' relation managers mount through: an edit page's content schema holds one embed per manager, each keyed by the manager class, and each embed's `id` is what keeps that manager's own state across the page's re-renders.
-
-**Status:** in progress — see the [status vocabulary](../README.md#statuses).
-
-Reference — the Filament source this is diffed against:
-
-- [`schemas/src/Components/Livewire.php`](../../../vendor/filament/schemas/src/Components/Livewire.php) — the class, its `getComponentProperties()` and its `toEmbeddedHtml()` mount
-- [`schemas/src/Components/Concerns/HasKey.php`](../../../vendor/filament/schemas/src/Components/Concerns/HasKey.php) — `getLivewireKey()`, ported here as `getLiveComponentKey()`
-- [`symfony/ux-live-component/src/Util/LiveControllerAttributesCreator.php`](../../../vendor/symfony/ux-live-component/src/Util/LiveControllerAttributesCreator.php), [`EventListener/InterceptChildComponentRenderSubscriber.php`](../../../vendor/symfony/ux-live-component/src/EventListener/InterceptChildComponentRenderSubscriber.php) — where an explicit `id` input prop overrides the deterministic id
 
 ## Surface
 

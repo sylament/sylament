@@ -1,3 +1,12 @@
+---
+description: The shared drag-and-drop control — `packages/support/assets/src/controllers/sortable_controller.ts`, the port of Filament's `x-sortable` Alpine… (draft)
+ports:
+  - vendor/filament/support/resources/js/sortable.js
+  - vendor/filament/support/resources/css/sortable.css
+owns:
+  - packages/support/assets/src/controllers/sortable_controller.ts
+  - packages/support/assets/src/styles/components/sortable.css
+---
 # Sortable (support)
 
 The shared drag-and-drop control — [`packages/support/assets/src/controllers/sortable_controller.ts`](../../../packages/support/assets/src/controllers/sortable_controller.ts), the port of Filament's `x-sortable` Alpine directive, plus the one rule its ghost class needs ([`assets/src/styles/components/sortable.css`](../../../packages/support/assets/src/styles/components/sortable.css)).
@@ -10,18 +19,7 @@ Forms' `sylament--forms--repeater` was the first; tables' [`reorderable()`](../t
 The other two follow the repeater's way — the container carries the control whenever the field can be reordered at all, rather than per mode: [`KeyValue`](../forms/key-value.md) on its row `<tbody>`, and [`TagsInput`](../forms/tags-input.md) on its chip container, which is the first mount inside a `data-live-ignore` subtree the consumer's own controller repaints.
 `FileUpload` is **not** one — FilePond owns its own list and reorders through its `allowReorder` option.
 
-**Status:** done — see the [status vocabulary](../README.md#statuses).
-
-Reference — the Filament source this is diffed against:
-
-- [`support/resources/js/sortable.js`](../../../vendor/filament/support/resources/js/sortable.js) — the whole `x-sortable` directive (47 lines), option for option
-- [`support/resources/css/sortable.css`](../../../vendor/filament/support/resources/css/sortable.css) — the single ghost rule
-
 ## Surface
-
-Every point of this control.
-_Blocked by_ names what has to land first.
-_Detail_ carries **detail** → the write-up in [Semantics](#semantics), and/or **diverges** → the permanent note in [Divergences](#divergences).
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
@@ -107,8 +105,6 @@ Filament neither undoes the client move nor guards against this — it simply al
 A handler that silently no-ops (disabled, a failed validation, a lost race) costs a rebuilt item, which is why the control has no "rejected" path and why the write lives in the consumer that can promise this rather than in the control.
 
 ## Divergences
-
-Deliberate deviations from Filament — permanent, and the reason they hold.
 
 ### The answer is a namespaced, non-bubbling event dispatched only on a real move
 

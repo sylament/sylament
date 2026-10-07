@@ -1,22 +1,17 @@
+---
+description: The HTML attribute container behind the `attrs()` / `classes()` / `styles()` Twig functions (`AttributeExtension`), Sylament's replacement for Twig's… (draft)
+ports:
+  - vendor/filament/support/src/View/ComponentAttributeBag.php
+owns:
+  - packages/support/src/Twig/ComponentAttributeBag.php
+---
 # ComponentAttributeBag (support)
 
 `Sylament\Support\Twig\ComponentAttributeBag` — the HTML attribute container behind the `attrs()` / `classes()` / `styles()` Twig functions ([`AttributeExtension`](../../../packages/support/src/Twig/Extension/AttributeExtension.php)), Sylament's replacement for Twig's `html_attr()`.
 It ports Filament's `ComponentAttributeBag`, but where Filament subclasses Laravel's `Illuminate\View\ComponentAttributeBag` to reuse Blade's echo-and-escape rendering, Sylament has no Laravel bag to inherit — so it reimplements only the slice its templates need: normalize-on-construct, defaults-first `merge()`, and its own `html_attr()`-faithful renderer.
 Filament's three rendering-time helpers are all here, as Twig functions rather than bag methods: `grid()`/`gridColumn()` in `GridExtension`, and `color()` — the last row to settle, with the colour registry — as `colorAttributes()` in `ColorExtension`.
 
-**Status:** done — see the [status vocabulary](../README.md#statuses).
-
-Reference — the Filament source this is diffed against:
-
-- [`support/src/View/ComponentAttributeBag.php`](../../../vendor/filament/support/src/View/ComponentAttributeBag.php) — Filament's optimized subclass (the overrides + `color`/`grid`/`gridColumn`)
-- [`laravel/framework/.../View/ComponentAttributeBag.php`](../../../vendor/laravel/framework/src/Illuminate/View/ComponentAttributeBag.php) — the Laravel base Filament extends and Sylament does not inherit
-
 ## Surface
-
-Every point of this component.
-_Blocked by_ names what has to land first.
-_Detail_ carries one link today — **diverges** → the permanent note in [Divergences](#divergences).
-Every row is settled, so there is no Details section; one comes back with the first unfinished row.
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
@@ -30,8 +25,6 @@ Every row is settled, so there is no Details section; one comes back with the fi
 | Laravel base API (`get`/`has`/`only`/`except`/`filter`/`ArrayAccess`/…) + macros (`__call`/`hasMacro`) | [Laravel base](../../../vendor/laravel/framework/src/Illuminate/View/ComponentAttributeBag.php) | skipped | — | [diverges](#the-laravel-base-bag-and-macros-are-not-inherited) |
 
 ## Divergences
-
-Deliberate deviations from Filament — permanent, and the reason they hold.
 
 ### `color()` is the `colorAttributes()` Twig function, not a bag method
 

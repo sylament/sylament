@@ -1,21 +1,22 @@
+---
+description: The multi-line text field. (draft)
+ports:
+  - vendor/filament/forms/src/Components/Textarea.php
+  - vendor/filament/forms/src/Components/Concerns/
+owns:
+  - packages/forms/src/Components/Concerns/CanDisableGrammarly.php
+  - packages/forms/src/Components/Textarea.php
+  - packages/forms/templates/partials/Textarea/
+---
 # Textarea (forms)
 
 `Sylament\Forms\Components\Textarea` — the multi-line text field.
 Extends [`Field`](../../../packages/forms/src/Components/Field.php) and adds the `rows` / `cols` sizing setters on top of the shared length-constraint concern.
 
-**Status:** done — see the [status vocabulary](../README.md#statuses).
-
-Reference — the Filament source this is diffed against:
-
-- [`forms/src/Components/Textarea.php`](../../../vendor/filament/forms/src/Components/Textarea.php) — the field class and the traits it composes
-- [`forms/src/Components/Concerns/`](../../../vendor/filament/forms/src/Components/Concerns) — the field-attribute concerns it layers on
-
 ## Surface
 
 Every point this field adds over `Field`.
 `Field`'s own surface is tracked in [`field.md`](field.md), not here.
-_Blocked by_ names what has to land first.
-_Detail_ links a permanent note in [Divergences](#divergences) or [Semantics](#semantics), or `—`.
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |

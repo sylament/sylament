@@ -1,3 +1,40 @@
+---
+description: 'The base of the column catalog: a `ViewComponent` named after the record path it reads, bound to a `Table`, and handed one record at a time. (draft)'
+ports:
+  - vendor/filament/tables/src/Columns/Column.php
+  - vendor/filament/tables/src/Columns/Concerns/HasName.php
+  - vendor/filament/tables/src/Columns/Concerns/HasLabel.php
+  - vendor/filament/tables/src/Columns/Concerns/BelongsToTable.php
+  - vendor/filament/tables/src/Columns/Concerns/HasRecord.php
+  - vendor/filament/support/src/Concerns/HasCellState.php
+owns:
+  - packages/support/src/Components/Concerns/CanGrow.php
+  - packages/support/src/Components/Concerns/CanWrapHeader.php
+  - packages/support/src/Components/Concerns/HasWidth.php
+  - packages/tables/src/Columns/Column.php
+  - packages/tables/src/Columns/Concerns/BelongsToTable.php
+  - packages/tables/src/Columns/Concerns/CanAggregateRelatedRecords.php
+  - packages/tables/src/Columns/Concerns/CanBeDisabled.php
+  - packages/tables/src/Columns/Concerns/CanBeHidden.php
+  - packages/tables/src/Columns/Concerns/CanBeHiddenResponsively.php
+  - packages/tables/src/Columns/Concerns/CanBeInline.php
+  - packages/tables/src/Columns/Concerns/CanBeSearchable.php
+  - packages/tables/src/Columns/Concerns/CanBeSortable.php
+  - packages/tables/src/Columns/Concerns/CanBeSummarized.php
+  - packages/tables/src/Columns/Concerns/CanBeToggled.php
+  - packages/tables/src/Columns/Concerns/CanCallAction.php
+  - packages/tables/src/Columns/Concerns/CanOpenUrl.php
+  - packages/tables/src/Columns/Concerns/HasCellState.php
+  - packages/tables/src/Columns/Concerns/HasExtraCellAttributes.php
+  - packages/tables/src/Columns/Concerns/HasIcon.php
+  - packages/tables/src/Columns/Concerns/HasLabel.php
+  - packages/tables/src/Columns/Concerns/HasName.php
+  - packages/tables/src/Columns/Concerns/HasRecord.php
+  - packages/tables/src/Columns/Concerns/HasRowLoopObject.php
+  - packages/tables/src/Columns/Concerns/HasTooltip.php
+  - packages/tables/src/Columns/Concerns/InteractsWithTableQuery.php
+  - packages/tables/src/Columns/Contracts/
+---
 # Column (tables)
 
 [`Sylament\Tables\Columns\Column`](../../../packages/tables/src/Columns/Column.php) — the base of the column catalog: a [`ViewComponent`](../../../packages/support/src/Components/ViewComponent.php) named after the record path it reads, bound to a [`Table`](table.md), and handed one record at a time.
@@ -12,23 +49,7 @@ It resolves nothing itself: the host fetches records ([`has-table.md`](has-table
 Given the table's [`QueryBuilder`](table.md#every-read-clones-a-memoised-base-query) it also applies its own ordering, contributes its own `LIKE` arm and fetch-joins what it displays, through `applySort()`, `applySearchConstraint()` and `applyEagerLoading()` — the column declares what sorting, searching and reading *by it* mean, and the table decides when to ask.
 A name crossing an association needs nothing declared in `query()`: the [relation arm](table.md#a-dotted-name-is-resolved-against-the-mapping-before-it-is-refused) resolves it against Doctrine's mapping.
 
-**Status:** in progress — see the [status vocabulary](../README.md#statuses).
-
-Reference — the Filament source this is diffed against:
-
-- [`tables/src/Columns/Column.php`](../../../vendor/filament/tables/src/Columns/Column.php) — the class, its `make()` blank guard and both closure-injection hooks
-- [`tables/src/Columns/Concerns/HasName.php`](../../../vendor/filament/tables/src/Columns/Concerns/HasName.php)
-- [`tables/src/Columns/Concerns/HasLabel.php`](../../../vendor/filament/tables/src/Columns/Concerns/HasLabel.php)
-- [`tables/src/Columns/Concerns/BelongsToTable.php`](../../../vendor/filament/tables/src/Columns/Concerns/BelongsToTable.php)
-- [`tables/src/Columns/Concerns/HasRecord.php`](../../../vendor/filament/tables/src/Columns/Concerns/HasRecord.php)
-- [`support/src/Concerns/HasCellState.php`](../../../vendor/filament/support/src/Concerns/HasCellState.php) — the state read, hosted in support there and in the column tier here
-
 ## Surface
-
-Every point of this component.
-_Blocked by_ names what has to land first.
-_Detail_ carries up to three links: **detail** → the write-up in [Details](#details), deleted once the row is **done**; **diverges** → the permanent note in [Divergences](#divergences); **semantics** → the permanent note in [Semantics](#semantics).
-Rows never disappear — only their detail sections do.
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
@@ -103,9 +124,6 @@ The last two rows — the aggregate declarations and the cell they bind to — a
 
 ## Details
 
-Specifics for rows that are not finished — what is already in, what is left, and what the next step is.
-Delete a subsection when its row flips to **done**; the table row and any divergence it earned stay behind.
-
 ### `getTable()` refuses without Filament's three-source chain
 
 Filament's `Column::getTable()` chains three sources — the column's own table, its group's, its layout's — and throws `LogicException("The column [x] is not mounted to a table.")` when all three are absent.
@@ -141,9 +159,6 @@ It names the reverse accessor a summarizer walks back through, and the [summariz
 The port [refuses the to-many case outright](summarizer.md#the-batch-keeps-a-to-one-relation-column-and-refuses-a-to-many-one) and batches the to-one one off the alias the eager load already joined, so there is no query left to re-root and nothing for the setter to name — and Filament's own default for it is an English-inflection guess reached through a magic dynamic call, which is the shape the port [does not carry](../renames.md#renames) one tier up either.
 
 ## Semantics
-
-Faithful ports subtle enough that the next reader would misread the code.
-Permanent, and addressable by anchor.
 
 ### The row loop is a Blade-shaped object built from Twig's array
 
@@ -240,9 +255,6 @@ So neither codebase dedupes by identity here, and the note exists because the co
 
 ## Divergences
 
-Deliberate deviations from Filament — permanent, and the reason they hold.
-Say what would reverse the decision when it is provisional.
-
 ### `isToggleable()`'s blank-label group arm is dropped with `ColumnGroup`
 
 Filament's [`isToggleable()`](../../../vendor/filament/tables/src/Columns/Concerns/CanBeToggled.php) returns true unconditionally for a column whose label is blank and whose group is a `ColumnGroup`, so the manager can toggle a whole group through its members.
@@ -312,7 +324,7 @@ Filament's placement pays off for its *second* consumer, `Actions\Exports\Export
 When it is, the trait moves to the lowest package both consumers reach, which is `schemas` (both `tables` and `actions` require it) and still not `support`, because the accessor it reads through lives in schemas.
 This section then becomes a record of where it used to be; nothing else about it changes.
 
-A second support-hosted trait followed it for the same reason and is recorded in the same [table](../renames.md#namespace-segments): `CanAggregateRelatedModels` → `CanAggregateRelatedRecords`, whose declarations are read by tables' own Doctrine query builder.
+A second support-hosted trait followed it for the same reason and is recorded in the same [table](../translations.md#namespace-segments): `CanAggregateRelatedModels` → `CanAggregateRelatedRecords`, whose declarations are read by tables' own Doctrine query builder.
 Both would need the ORM in the base package to stay where Filament puts them, both are composed by `ExportColumn` over there, and both move to `schemas` together if it lands.
 That one is [also renamed](../renames.md#renames), which this one is not.
 

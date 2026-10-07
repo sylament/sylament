@@ -1,22 +1,22 @@
+---
+description: The boolean switch field. (draft)
+ports:
+  - vendor/filament/forms/src/Components/Toggle.php
+  - vendor/filament/forms/src/Components/Concerns/
+owns:
+  - packages/forms/src/Components/Toggle.php
+  - packages/forms/templates/partials/Toggle/
+---
 # Toggle (forms)
 
 `Sylament\Forms\Components\Toggle` — the boolean switch field.
 Extends [`Field`](../../../packages/forms/src/Components/Field.php), defaults its state to `false`, casts it to a non-nullable `bool`, and renders a real `<input type="checkbox" role="switch">` that CSS replaces with a track and a thumb.
 It composes the two shared boolean concerns ([`CanBeInline`](can-be-inline.md), [`CanBeAccepted`](can-be-accepted.md)) and adds its own on/off icon pair.
 
-**Status:** done — see the [status vocabulary](../README.md#statuses).
-
-Reference — the Filament source this is diffed against:
-
-- [`forms/src/Components/Toggle.php`](../../../vendor/filament/forms/src/Components/Toggle.php) — the field class, its `setUp()` and its embedded view
-- [`forms/src/Components/Concerns/`](../../../vendor/filament/forms/src/Components/Concerns) — the concerns it composes
-
 ## Surface
 
 Every point this field adds over `Field`.
 `Field`'s own surface is tracked in [`field.md`](field.md), not here.
-_Blocked by_ names what has to land first.
-_Detail_ links a permanent note in [Divergences](#divergences); a **done** row without a permanent note reads `—`.
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
@@ -37,9 +37,6 @@ _Detail_ links a permanent note in [Divergences](#divergences); a **done** row w
 Coverage: [`ToggleTest`](../../../packages/forms/tests/Integration/Components/ToggleTest.php) renders the field through a real `Schema` and asserts the switch markup, the input's identity and binding attributes, the absence of a `value` attribute, the inline/not-inline placement (in both directions, that the control renders exactly *once* — the guard against the hoisted-`{% block %}` trap described below — and that its root element is the `<span>` or the `<label for>` the layout calls for), the hydrated `false` default and its `bool` round trip, the `checked` attribute in both states, the icon spans present and absent and each one alone (so the on and off branches cannot pass for each other), the `bool` `Type` constraint and its post-hoc message, `required()` building `NotNull` and validating an off switch, `disabled` / `autofocus`, `aria-invalid` in both directions (the `true` case against a real validator run, which the `.sy-fo-toggle-input[aria-invalid='true']` ring depends on), the deliberately missing `required` attribute, the two colours landing on the elements that carry them — the resolved class list for a named palette, the inline `--sy-color-*` declarations for an array one, primary on the track and nothing on the root when neither is set, and nothing at all for gray — the extra input attributes reaching the input rather than the root and outranking what the field computes, and `isBlankStateValue()` answering `true` for `false` and `null` but not `true`, the override that keeps a resting switch from holding a [`nullWhenBlank()` branch](../schemas/belongs-to-record.md#the-built-in-blank-test-asks-the-branchs-own-leaves) alive.
 
 ## Divergences
-
-Deliberate deviations from Filament, and the reason each holds.
-Provisional ones say what would reverse them.
 
 ### The toggle is a styled checkbox, not a button
 

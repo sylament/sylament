@@ -1,23 +1,23 @@
+---
+description: 'The free-text tag list: one unbound text box for the tag being typed, and a chip per tag already in the list, each chip a… (draft)'
+ports:
+  - vendor/filament/forms/src/Components/TagsInput.php
+  - vendor/filament/forms/resources/js/components/tags-input.js
+  - vendor/filament/forms/resources/css/components/tags-input.css
+owns:
+  - packages/forms/src/Components/TagsInput.php
+  - packages/forms/templates/partials/TagsInput/
+---
 # TagsInput (forms)
 
 `Sylament\Forms\Components\TagsInput` — the free-text tag list: one unbound text box for the tag being typed, and a chip per tag already in the list, each chip a [`<twig:SylamentSupport:Badge>`](../support/badge.md) with a delete button.
 It is the first field whose control writes its state through **`component.set()` alone** — nothing in it carries a `data-model`, because the value is an array and a live model read of a non-checkbox element is a scalar — and the first whose visible list is a client-owned subtree (`data-live-ignore`) that the [Stimulus controller](#the-chip-list-is-client-owned-after-the-first-paint) repaints from the host's value store on every render.
 Extends [`Field`](field.md), composes [`HasAffixes`](has-affixes.md), [`HasExtraInputAttributes`](has-extra-input-attributes.md), [`HasNestedRecursiveValidationConstraints`](can-be-validated.md), schemas' `CanTrimState` / `CanStripCharactersFromState` — [per element](#the-trim-and-strip-hooks-map-over-the-list) — and support's `HasColor` and `HasReorderAnimationDuration`; reorder rides the shared [`sylament--support--sortable`](../support/sortable.md) control.
 
-**Status:** in progress — see the [status vocabulary](../README.md#statuses).
-
-Reference — the Filament source this is diffed against:
-
-- [`forms/src/Components/TagsInput.php`](../../../vendor/filament/forms/src/Components/TagsInput.php) — the field class and its embedded view
-- [`forms/resources/js/components/tags-input.js`](../../../vendor/filament/forms/resources/js/components/tags-input.js) — the Alpine data object the Stimulus controller ports
-- [`forms/resources/css/components/tags-input.css`](../../../vendor/filament/forms/resources/css/components/tags-input.css) — the container and chip chrome
-
 ## Surface
 
 Every point this field adds over `Field`.
 `Field`'s own surface is tracked in [`field.md`](field.md), not here.
-_Blocked by_ names what has to land first.
-_Detail_ links a permanent note in [Semantics](#semantics) / [Divergences](#divergences), or the write-up in another file.
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |

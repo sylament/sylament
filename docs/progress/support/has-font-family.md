@@ -1,20 +1,18 @@
+---
+description: The shared component trait that ports Filament's `HasFontFamily`. (draft)
+ports:
+  - vendor/filament/support/src/Concerns/HasFontFamily.php
+  - vendor/filament/tables/src/Columns/TextColumn.php
+  - vendor/filament/infolists/src/Components/TextEntry.php
+owns:
+  - packages/support/src/Components/Concerns/HasFontFamily.php
+---
 # HasFontFamily (support)
 
 `Sylament\Support\Components\Concerns\HasFontFamily` — the shared component trait that ports Filament's `HasFontFamily`.
 It holds a closure-evaluable `FontFamily | string | null` value and normalizes a string that names a known enum case back to the `FontFamily` enum, so text-rendering components (schemas' `Text`, and the future table/infolist text surfaces) can carry a font-family override.
 
-**Status:** done — see the [status vocabulary](../README.md#statuses).
-
-Reference — the Filament source this is diffed against:
-
-- [`support/src/Concerns/HasFontFamily.php`](../../../vendor/filament/support/src/Concerns/HasFontFamily.php) — the trait ported here
-- [`tables/src/Columns/TextColumn.php`](../../../vendor/filament/tables/src/Columns/TextColumn.php) and [`infolists/src/Components/TextEntry.php`](../../../vendor/filament/infolists/src/Components/TextEntry.php) — Filament's call sites that inline the `fi-font-{value}` class ternary this trait centralizes
-
 ## Surface
-
-Every point of this trait.
-_Blocked by_ names what has to land first.
-_Detail_ carries only two links, either or both: **detail** → the write-up in [Details](#details), deleted once the row is **done**; **diverges** → the permanent note in [Divergences](#divergences).
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
@@ -26,11 +24,8 @@ _Detail_ carries only two links, either or both: **detail** → the write-up in 
 ## Details
 
 Every row above is **done** — covered by schemas' `Text` tests, which exercise this trait directly through its only current consumer: [`Text` unit test](../../../packages/schemas/tests/Unit/Components/TextTest.php) asserts the string→enum normalization of `getFontFamily()` and the `sy-font-serif` / `null` outputs of `getFontFamilyClass()`, and the [render test](../../../packages/schemas/tests/Integration/Components/TextRenderTest.php) asserts the class reaches the emitted markup.
-No row has an open write-up.
 
 ## Divergences
-
-Deliberate deviations from Filament — permanent, and the reason they hold.
 
 ### `getFontFamily()` drops the `$state` parameter
 

@@ -1,3 +1,15 @@
+---
+description: 'The multi-step layout component: a header stepper, one panel per `Step`, a footer carrying its own Back/Next pair plus caller-supplied cancel/submit… (draft)'
+ports:
+  - vendor/filament/schemas/src/Components/Wizard.php
+  - vendor/filament/schemas/resources/js/components/wizard.js
+  - vendor/filament/schemas/resources/css/components/wizard.css
+  - vendor/filament/support/src/Concerns/HasExtraAlpineAttributes.php
+owns:
+  - packages/schemas/assets/src/styles/components/wizard.css
+  - packages/schemas/src/Components/Wizard.php
+  - packages/schemas/templates/partials/Wizard/
+---
 # Wizard (schemas)
 
 `Sylament\Schemas\Components\Wizard` — the multi-step layout component: a header stepper, one panel per [`Step`](step.md), a footer carrying its own Back/Next pair plus caller-supplied cancel/submit slots, per-step validation on the way forward, and optional query-string persistence of the current step.
@@ -6,20 +18,7 @@ It extends the schemas base [`Component`](component.md) and ports Filament's [`W
 The switching itself is client state: the server renders the step `getStartStep()` picks (its `sy-active` panel, the header's `sy-active`/`sy-completed`/`disabled`/status text, the footer slots' `sy-hidden`), and the `sylament--schemas--wizard` Stimulus controller owns every switch after that.
 Filament does the same with Alpine, from an `x-data` object plus `x-show`/`x-bind:class` expressions; here the initial state is real markup and the transitions are class toggles UX Live's mutation tracker replays across a morph, so a no-JS page still shows one step with every panel's inputs in the form.
 
-**Status:** in progress — see the [status vocabulary](../README.md#statuses).
-
-Reference — the Filament source this is diffed against:
-
-- [`schemas/src/Components/Wizard.php`](../../../vendor/filament/schemas/src/Components/Wizard.php) — the component, its key derivation, `nextStep()`/`goToStep()`, the two footer actions and the `toEmbeddedHtml()` render
-- [`schemas/resources/js/components/wizard.js`](../../../vendor/filament/schemas/resources/js/components/wizard.js) — the Alpine component the Stimulus controller ports
-- [`schemas/resources/css/components/wizard.css`](../../../vendor/filament/schemas/resources/css/components/wizard.css) — the stylesheet [`wizard.css`](../../../packages/schemas/assets/src/styles/components/wizard.css) ports
-- [`support/src/Concerns/HasExtraAlpineAttributes.php`](../../../vendor/filament/support/src/Concerns/HasExtraAlpineAttributes.php) — the Alpine passthrough Filament composes and Sylament omits
-
 ## Surface
-
-Every point of this component.
-_Blocked by_ names what has to land first.
-_Detail_ carries a **diverges** link to the permanent note in [Divergences](#divergences), a **detail** link to the write-up in [Details](#details), or `—`.
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
@@ -64,8 +63,6 @@ Next step: nothing on this side.
 
 ## Semantics
 
-Behaviour worth stating once, that the code alone does not make obvious.
-
 ### The step index advances before validation runs
 
 `nextStep()` calls `currentStepIndex($i + 1)` **before** `getChildSchema()->validate()`, so a failing step leaves the server-side index pointing at the step the user could not reach.
@@ -78,8 +75,6 @@ Filament's `previousStep()` clamps to the first step and writes the index, with 
 Ours is the same, kept for API parity: the Stimulus controller likewise walks back on its own, so the only thing a `previousStep()` round trip produces is the `callSchemaComponentMethod` result event.
 
 ## Divergences
-
-Deliberate deviations from Filament — permanent unless the note says what would reverse it.
 
 ### Every index is an index into the visible steps
 

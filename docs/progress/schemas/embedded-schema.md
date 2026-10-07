@@ -1,14 +1,16 @@
+---
+description: A component that renders one of its host's own named schemas in place. (draft)
+ports:
+  - vendor/filament/schemas/src/Components/EmbeddedSchema.php
+owns:
+  - packages/schemas/src/Components/EmbeddedSchema.php
+  - packages/schemas/templates/partials/EmbeddedSchema/
+---
 # EmbeddedSchema (schemas)
 
 [`Sylament\Schemas\Components\EmbeddedSchema`](../../../packages/schemas/src/Components/EmbeddedSchema.php) — a component that renders **one of its host's own named schemas** in place.
 It is how a host composes a schema out of other schemas it already declares: an action's modal schema can hold `EmbeddedSchema::make('form')` and get the page's form tree itself, rather than a second tree built from the same definition.
 It ports [`schemas/src/Components/EmbeddedSchema.php`](../../../vendor/filament/schemas/src/Components/EmbeddedSchema.php), and its template is [`partials/EmbeddedSchema/index.html.twig`](../../../packages/schemas/templates/partials/EmbeddedSchema/index.html.twig) ([component-views.md](component-views.md)).
-
-**Status:** done — see the [status vocabulary](../README.md#statuses).
-
-Reference — the Filament source this is diffed against:
-
-- [`schemas/src/Components/EmbeddedSchema.php`](../../../vendor/filament/schemas/src/Components/EmbeddedSchema.php) — the whole class: two setters, `getName()`, and a one-line `toEmbeddedHtml()`
 
 ## Surface
 

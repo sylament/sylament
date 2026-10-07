@@ -1,3 +1,9 @@
+---
+description: '`Sylament\Schemas\Identity\RecordKey`, `IdentifierConstraint` and `KeySelection`, over the `@internal` per-class descriptor `IdentifierFields` — a… (draft)'
+ports: []
+owns:
+  - packages/schemas/src/Identity/
+---
 # RecordKey (schemas)
 
 [`Sylament\Schemas\Identity\RecordKey`](../../../packages/schemas/src/Identity/RecordKey.php), [`IdentifierConstraint`](../../../packages/schemas/src/Identity/IdentifierConstraint.php) and [`KeySelection`](../../../packages/schemas/src/Identity/KeySelection.php), over the `@internal` per-class descriptor [`IdentifierFields`](../../../packages/schemas/src/Identity/IdentifierFields.php) — a Sylament invention with **no Filament source**.
@@ -19,32 +25,29 @@ Its note names every reader it has — the relation layer's owner bind, the reco
 The owner scope of both relationship queries is one `equals()` on a subselect's alias, so the operation reserved for it was never built ([why](#owner-scoping-was-reserved-and-turned-out-not-to-be-needed)).
 One addition is still missing: closing panels' custom `$recordRouteKeyName` arm needs a typed bind with a print-back compare against a *named column*, which is not an operation this file exposes ([why it is still open](../panels/README.md#a-custom-recordroutekeyname-names-one-column-and-the-codec-never-sees-it)).
 
-**Status:** done — see the [status vocabulary](../README.md#statuses).
-
 ## Surface
 
 Every operation these three classes expose.
-_Blocked by_ names what has to land first.
 _Detail_ carries **contract** → the frozen interface in [Contract](#contract), **semantics** → the write-up in [Semantics](#semantics), and/or **diverges** → the permanent note in [Divergences](#divergences).
 
-| Feature | Status | Blocked by | Detail |
-| --- | --- | --- | --- |
-| [`RecordKey::of()`](../../../packages/schemas/src/Identity/RecordKey.php) — a record to its key, throwing on an incomplete or unprintable identifier, each component minted as its row would read it back | done | — | [contract](#the-api) · [semantics](#find-answers-identity-not-persistence) · [semantics](#a-key-is-minted-from-the-value-its-row-would-read-back) |
-| [`RecordKey::find()`](../../../packages/schemas/src/Identity/RecordKey.php) — the non-throwing twin, `null` while the identifier is incomplete, minted the same way | done | — | [semantics](#find-answers-identity-not-persistence) · [semantics](#a-key-is-minted-from-the-value-its-row-would-read-back) |
-| [`RecordKey::fromValues()`](../../../packages/schemas/src/Identity/RecordKey.php) — identifier values already in their PHP form, in mapping order, to the key a record mints — never a projected row's raw columns, which go through [`KeySelection::keyOf()`](../../../packages/schemas/src/Identity/KeySelection.php) | done | — | [semantics](#the-row-side-and-the-record-side-mint-one-string-and-only-the-codec-may) |
-| [`RecordKey::toIdentifier()`](../../../packages/schemas/src/Identity/RecordKey.php) — a client string to the field ⇒ PHP value map `EntityManager::find()` takes, `null` when malformed | done | — | [contract](#the-grammar) · [semantics](#a-malformed-key-never-reaches-the-database) |
-| [`RecordKey::values()`](../../../packages/schemas/src/Identity/RecordKey.php) — a record's identifier values before they are printed, an association reduced to its target's (`@internal`: the relation layer's owner bind and the record check's taken-key and changed-key passes read it, and so does `ReplicateAction`'s blank-key check; it is no part of the key contract) | done | — | [contract](#the-api) |
-| [`IdentifierConstraint::equals()`](../../../packages/schemas/src/Identity/IdentifierConstraint.php) / `notEquals()` | done | — | [contract](#the-operations-and-their-dql) |
-| [`IdentifierConstraint::in()`](../../../packages/schemas/src/Identity/IdentifierConstraint.php) / `notIn()` | done | — | [contract](#the-operations-and-their-dql) · [semantics](#the-batch-is-a-balanced-or-tree-because-sqlite-counts-expression-depth-not-terms) |
-| [`IdentifierConstraint::inColumns()`](../../../packages/schemas/src/Identity/IdentifierConstraint.php) — `in()` in SQL, on the class's identifier **columns** over a DBAL `QueryBuilder`, for a statement that names one table | done | — | [contract](#incolumns-is-in-in-sql-for-a-statement-that-names-one-table) |
-| [`IdentifierConstraint::correlate()`](../../../packages/schemas/src/Identity/IdentifierConstraint.php) — `alias.f = outer.f AND …` as **text**, because `RelationConstraint` splices a subselect string | done | — | [contract](#the-operations-and-their-dql) · [diverges](#comparing-two-identification-variables-compares-the-first-identifier-column-only) |
-| [`IdentifierConstraint::select()`](../../../packages/schemas/src/Identity/IdentifierConstraint.php) + [`KeySelection::keyOf()`](../../../packages/schemas/src/Identity/KeySelection.php) (a scalar row) / `keyOfHydrated()` (an array row, or the limit walker's) | done | — | [contract](#the-operations-and-their-dql) · [semantics](#the-row-side-and-the-record-side-mint-one-string-and-only-the-codec-may) · [semantics](#a-hydrated-row-is-keyed-without-reading-its-fields-a-second-time) |
-| [`IdentifierConstraint::groupBy()`](../../../packages/schemas/src/Identity/IdentifierConstraint.php) — the bare path per field, never `IDENTITY()` | done | — | [diverges](#bare-identitypath-on-a-multi-column-association-answers-only-the-first-column) |
-| [`IdentifierConstraint::orderBy()`](../../../packages/schemas/src/Identity/IdentifierConstraint.php) — the identifier tiebreak, per field, deduped against the existing order | done | — | [contract](#the-operations-and-their-dql) |
-| [`IdentifierConstraint::chunk()`](../../../packages/schemas/src/Identity/IdentifierConstraint.php) | done | — | [contract](#the-chunk-rule) |
-| [`IdentifierConstraint::batch()`](../../../packages/schemas/src/Identity/IdentifierConstraint.php) | done | — | [contract](#the-chunk-rule) |
-| Owner scoping — `scopeToOwner()` / the owner tuple | skipped | — | [contract](#owner-scoping-was-reserved-and-turned-out-not-to-be-needed) |
-| [`IdentifierFields`](../../../packages/schemas/src/Identity/IdentifierFields.php) — the per-class descriptor both public classes share (`@internal`) | done | — | [diverges](#identifier-order-is-declaration-order-so-reordering-two-id-properties-invalidates-every-minted-key) |
+| Feature | Ports | Status | Blocked by | Detail |
+| --- | --- | --- | --- | --- |
+| [`RecordKey::of()`](../../../packages/schemas/src/Identity/RecordKey.php) — a record to its key, throwing on an incomplete or unprintable identifier, each component minted as its row would read it back | — | done | — | [contract](#the-api) · [semantics](#find-answers-identity-not-persistence) · [semantics](#a-key-is-minted-from-the-value-its-row-would-read-back) |
+| [`RecordKey::find()`](../../../packages/schemas/src/Identity/RecordKey.php) — the non-throwing twin, `null` while the identifier is incomplete, minted the same way | — | done | — | [semantics](#find-answers-identity-not-persistence) · [semantics](#a-key-is-minted-from-the-value-its-row-would-read-back) |
+| [`RecordKey::fromValues()`](../../../packages/schemas/src/Identity/RecordKey.php) — identifier values already in their PHP form, in mapping order, to the key a record mints — never a projected row's raw columns, which go through [`KeySelection::keyOf()`](../../../packages/schemas/src/Identity/KeySelection.php) | — | done | — | [semantics](#the-row-side-and-the-record-side-mint-one-string-and-only-the-codec-may) |
+| [`RecordKey::toIdentifier()`](../../../packages/schemas/src/Identity/RecordKey.php) — a client string to the field ⇒ PHP value map `EntityManager::find()` takes, `null` when malformed | — | done | — | [contract](#the-grammar) · [semantics](#a-malformed-key-never-reaches-the-database) |
+| [`RecordKey::values()`](../../../packages/schemas/src/Identity/RecordKey.php) — a record's identifier values before they are printed, an association reduced to its target's (`@internal`: the relation layer's owner bind and the record check's taken-key and changed-key passes read it, and so does `ReplicateAction`'s blank-key check; it is no part of the key contract) | — | done | — | [contract](#the-api) |
+| [`IdentifierConstraint::equals()`](../../../packages/schemas/src/Identity/IdentifierConstraint.php) / `notEquals()` | — | done | — | [contract](#the-operations-and-their-dql) |
+| [`IdentifierConstraint::in()`](../../../packages/schemas/src/Identity/IdentifierConstraint.php) / `notIn()` | — | done | — | [contract](#the-operations-and-their-dql) · [semantics](#the-batch-is-a-balanced-or-tree-because-sqlite-counts-expression-depth-not-terms) |
+| [`IdentifierConstraint::inColumns()`](../../../packages/schemas/src/Identity/IdentifierConstraint.php) — `in()` in SQL, on the class's identifier **columns** over a DBAL `QueryBuilder`, for a statement that names one table | — | done | — | [contract](#incolumns-is-in-in-sql-for-a-statement-that-names-one-table) |
+| [`IdentifierConstraint::correlate()`](../../../packages/schemas/src/Identity/IdentifierConstraint.php) — `alias.f = outer.f AND …` as **text**, because `RelationConstraint` splices a subselect string | — | done | — | [contract](#the-operations-and-their-dql) · [diverges](#comparing-two-identification-variables-compares-the-first-identifier-column-only) |
+| [`IdentifierConstraint::select()`](../../../packages/schemas/src/Identity/IdentifierConstraint.php) + [`KeySelection::keyOf()`](../../../packages/schemas/src/Identity/KeySelection.php) (a scalar row) / `keyOfHydrated()` (an array row, or the limit walker's) | — | done | — | [contract](#the-operations-and-their-dql) · [semantics](#the-row-side-and-the-record-side-mint-one-string-and-only-the-codec-may) · [semantics](#a-hydrated-row-is-keyed-without-reading-its-fields-a-second-time) |
+| [`IdentifierConstraint::groupBy()`](../../../packages/schemas/src/Identity/IdentifierConstraint.php) — the bare path per field, never `IDENTITY()` | — | done | — | [diverges](#bare-identitypath-on-a-multi-column-association-answers-only-the-first-column) |
+| [`IdentifierConstraint::orderBy()`](../../../packages/schemas/src/Identity/IdentifierConstraint.php) — the identifier tiebreak, per field, deduped against the existing order | — | done | — | [contract](#the-operations-and-their-dql) |
+| [`IdentifierConstraint::chunk()`](../../../packages/schemas/src/Identity/IdentifierConstraint.php) | — | done | — | [contract](#the-chunk-rule) |
+| [`IdentifierConstraint::batch()`](../../../packages/schemas/src/Identity/IdentifierConstraint.php) | — | done | — | [contract](#the-chunk-rule) |
+| Owner scoping — `scopeToOwner()` / the owner tuple | — | skipped | — | [contract](#owner-scoping-was-reserved-and-turned-out-not-to-be-needed) |
+| [`IdentifierFields`](../../../packages/schemas/src/Identity/IdentifierFields.php) — the per-class descriptor both public classes share (`@internal`) | — | done | — | [diverges](#identifier-order-is-declaration-order-so-reordering-two-id-properties-invalidates-every-minted-key) |
 
 ## Contract
 

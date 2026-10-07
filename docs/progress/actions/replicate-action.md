@@ -1,3 +1,13 @@
+---
+description: 'The prebuilt per-record duplicate: a two-squares trigger that copies the bound record, optionally opens a form on the copy, and saves it as a new row. (draft)'
+ports:
+  - vendor/filament/actions/src/ReplicateAction.php
+  - vendor/filament/actions/src/Concerns/CanCustomizeProcess.php
+  - vendor/filament/actions/resources/lang/en/replicate.php
+owns:
+  - packages/actions/src/ReplicateAction.php
+  - packages/actions/src/Replication/
+---
 # ReplicateAction (actions)
 
 [`Sylament\Actions\ReplicateAction`](../../../packages/actions/src/ReplicateAction.php) — the prebuilt per-record duplicate: a two-squares trigger that copies the bound record, optionally opens a form on the copy, and saves it as a new row.
@@ -7,15 +17,6 @@ It is modal-only, and unlike [`CreateAction`](create-action.md) and [`EditAction
 
 The success toast is a title here, `successNotificationTitle('Replicated')`; a caller wanting a whole notification object passes one to `successNotification()`, which [`CanNotify`](action.md) supplies to every action alike.
 
-**Status:** done — see the [status vocabulary](../README.md#statuses).
-
-Reference — the Filament source this is diffed against:
-
-- [`actions/src/ReplicateAction.php`](../../../vendor/filament/actions/src/ReplicateAction.php) — the class this ports, whole
-- [`actions/src/Concerns/CanCustomizeProcess.php`](../../../vendor/filament/actions/src/Concerns/CanCustomizeProcess.php) — the trait it composes, ported whole (row in [README](README.md#features))
-- [`framework/src/Illuminate/Database/Eloquent/Model.php`](../../../vendor/laravel/framework/src/Illuminate/Database/Eloquent/Model.php) `replicate()` — the copy the replicator stands in for
-- [`actions/resources/lang/en/replicate.php`](../../../vendor/filament/actions/resources/lang/en/replicate.php) — the four strings it sets
-
 Covered by [`ReplicateActionTest`](../../../packages/actions/tests/Unit/ReplicateActionTest.php) (the chrome, the heading interpolation, the evaluated exclusions, the class re-point and the `replica` injection), the Integration [`ReplicateActionTest`](../../../packages/actions/tests/Integration/ReplicateActionTest.php) (both arms end to end against the fixture entity manager — the modal fill from the copy, the second row, the untouched original, and the `beforeReplicaSaved()` hook seeing an unsaved replica — and the key a replica is asked for: a parent kept, an incomplete key refused by name at each of its two points — a single derived identity among them, where Doctrine's `EntityMissingAssignedId` spoke before — a blank-default single key refused on the first replicate, a key a `prePersist` callback or an event-manager listener fills saved, a single assigned `int` nothing sets left to Doctrine as before, and the one shape recorded as Doctrine's), the Integration [`ReplicateActionTakenKeyTest`](../../../packages/actions/tests/Integration/ReplicateActionTakenKeyTest.php) (a modal left on its original's key, a changed one, and a hook that derives the key) and [`RecordReplicatorTest`](../../../packages/actions/tests/Integration/Replication/RecordReplicatorTest.php) (the copy rules against real Doctrine metadata).
 [`SubclassedAssociationReaderTest`](../../../packages/actions/tests/Integration/SubclassedAssociationReaderTest.php) pins both arms asking the container's own reader, rebound to a second manager.
 [`UnmappedHookDataTest`](../../../packages/actions/tests/Integration/UnmappedHookDataTest.php) pins the modal arm's refusal of a key `mutateDataUsing()` adds and no component maps.
@@ -24,8 +25,6 @@ Covered by [`ReplicateActionTest`](../../../packages/actions/tests/Unit/Replicat
 ## Surface
 
 Every member Filament's class carries, plus the replicator behind it.
-_Blocked by_ names what has to land first.
-_Detail_ carries **diverges** → the note in [Divergences](#divergences), and/or **semantics** → the permanent note in [Semantics](#semantics).
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
@@ -46,9 +45,6 @@ _Detail_ carries **diverges** → the note in [Divergences](#divergences), and/o
 | [`RecordReplicator::getFieldValues()` / `setFieldValues()`](../../../packages/actions/src/Replication/RecordReplicator.php) | [`Model::attributesToArray()`](../../../vendor/laravel/framework/src/Illuminate/Database/Eloquent/Model.php) + `fill()` | done | — | [diverges](#doctrine-has-no-replicate-so-the-copy-is-read-off-classmetadata) |
 
 ## Semantics
-
-Faithful ports whose behaviour is easy to misread.
-Permanent.
 
 ### The write body reads the mounted schema from the host, not from a parameter
 
@@ -74,8 +70,6 @@ The guard is `$data === []` **and** a mutator being set, so an action that decla
 `setFieldValues()` throws for a key the copy rules decline, which is the only place a typo in a mutator's return surfaces at all.
 
 ## Divergences
-
-Deliberate deviations from Filament — permanent, and the reason they hold.
 
 ### Doctrine has no `replicate()`, so the copy is read off `ClassMetadata`
 

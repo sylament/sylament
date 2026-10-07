@@ -1,3 +1,12 @@
+---
+description: '`Sylament\Forms\Components\Concerns\CanDisableOptions` and its `Contracts\CanDisableOptions` interface — per-option disabling over the map… (draft)'
+ports:
+  - vendor/filament/forms/src/Components/Concerns/CanDisableOptions.php
+  - vendor/filament/forms/src/Components/Contracts/CanDisableOptions.php
+owns:
+  - packages/forms/src/Components/Concerns/CanDisableOptions.php
+  - packages/forms/src/Components/Contracts/CanDisableOptions.php
+---
 # CanDisableOptions (forms)
 
 `Sylament\Forms\Components\Concerns\CanDisableOptions` and its [`Contracts\CanDisableOptions`](../../../packages/forms/src/Components/Contracts/CanDisableOptions.php) interface — per-option disabling over the map [`HasOptions`](has-options.md) supplies: `disableOptionWhen()` registers the predicates, `isOptionDisabled()` answers per option, and `getEnabledOptions()` flattens one optgroup level and filters.
@@ -5,17 +14,7 @@ It carries one member Filament has no counterpart for, `getEnabledOptionValues()
 
 Promoted out of [`select.md`](select.md) ahead of the option fields that share it, per [one row per file](../README.md#one-row-per-file-one-file-per-thing).
 
-**Status:** done — see the [status vocabulary](../README.md#statuses).
-
-Reference — the Filament source this is diffed against:
-
-- [`Components/Concerns/CanDisableOptions.php`](../../../vendor/filament/forms/src/Components/Concerns/CanDisableOptions.php) — the trait
-- [`Components/Contracts/CanDisableOptions.php`](../../../vendor/filament/forms/src/Components/Contracts/CanDisableOptions.php) — the interface
-
 ## Surface
-
-_Blocked by_ names what has to land first.
-_Detail_ links a permanent note in [Semantics](#semantics) or [Divergences](#divergences), or `—`.
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
@@ -37,9 +36,6 @@ It reads only `getEnabledOptions()` and the schemas-level `getStateCasts()`, bot
 Why the list carries both forms, and why a multi-value cast's list is spread rather than pushed, is [`select.md`](select.md#the-choice-choices-cover-both-forms-the-raw-state-can-take) — the reasoning belongs beside the constraint builder that consumes it, and the `Select` suite is what pins the move.
 
 ## Divergences
-
-Deliberate deviations from Filament, and the reason each holds.
-Provisional ones say what would reverse them.
 
 ### A null callback merges to nothing
 

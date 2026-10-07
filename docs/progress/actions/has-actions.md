@@ -1,3 +1,15 @@
+---
+description: The host-side trait mixed onto the UX LiveComponent page that mounts and calls `Action`s (the `Sylament\Actions\Contracts\InteractsWithActions`… (draft)
+ports:
+  - vendor/filament/actions/src/Concerns/InteractsWithActions.php
+  - vendor/filament/actions/src/Contracts/HasActions.php
+  - vendor/filament/actions/resources/views/action-modal.blade.php
+  - vendor/filament/actions/resources/views/components/modals.blade.php
+owns:
+  - packages/actions/src/Concerns/HasActions.php
+  - packages/actions/src/Twig/Components/
+  - packages/actions/templates/components/Modals/
+---
 # HasActions (actions)
 
 `Sylament\Actions\Concerns\HasActions` — the host-side trait mixed onto the UX LiveComponent page that mounts and calls `Action`s (the `Sylament\Actions\Contracts\InteractsWithActions` implementor); it is the **swap** counterpart of Filament's `Concerns\InteractsWithActions` trait (see the [rename table](../renames.md)).
@@ -8,19 +20,7 @@ Filament's `InteractsWithActions` is a ~870-line trait built around a stack of m
 The renderer is now Filament's real loop: `Modals/index.html.twig` walks `getMountedActions()` and renders one `ActionModal` per frame, gating only the last (`{% if not loop.last or mountedActionShouldOpenModal(action) %}`), which is the exact port of Filament's `@if (! $loop->last || mountedActionShouldOpenModal())`.
 What is *not* ported is the client-side choreography Filament layers on top of that loop — see [declarative choreography](#the-stack-is-choreographed-declaratively-not-by-client-events).
 
-**Status:** in progress — see the [status vocabulary](../README.md#statuses).
-
-Reference — the Filament source this is diffed against:
-
-- [`actions/src/Concerns/InteractsWithActions.php`](../../../vendor/filament/actions/src/Concerns/InteractsWithActions.php) — the host trait this file ports (Filament name; see the swap note above)
-- [`actions/src/Contracts/HasActions.php`](../../../vendor/filament/actions/src/Contracts/HasActions.php) — the interface Filament's trait implicitly targets, ported as Sylament's [`InteractsWithActions`](../../../packages/actions/src/Contracts/InteractsWithActions.php)
-- [`actions/resources/views/action-modal.blade.php`](../../../vendor/filament/actions/resources/views/action-modal.blade.php) — where Filament computes the per-nesting-index modal id this file's `getMountedModalId()` substitutes for
-- [`actions/resources/views/components/modals.blade.php`](../../../vendor/filament/actions/resources/views/components/modals.blade.php) — the host-side renderer ported as `<twig:SylamentActions:Modals />` (its row below)
-
 ## Surface
-
-_Blocked by_ names what has to land first.
-_Detail_ carries **detail** → the write-up in [Details](#details), **diverges** → the note in [Divergences](#divergences), and/or **semantics** → the permanent note in [Semantics](#semantics).
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
@@ -59,9 +59,6 @@ _Detail_ carries **detail** → the write-up in [Details](#details), **diverges*
 | `bootedInteractsWithActions()` boot wiring / `WithRateLimiting` | `Concerns/InteractsWithActions.php` `bootedInteractsWithActions()`, `DanHarrin\LivewireRateLimiting\WithRateLimiting` | skipped | — | [diverges](#there-is-no-boot-hook-or-rate-limiting-trait) |
 
 ## Details
-
-Specifics for rows that are not finished — what is already in, what is left, and the next step.
-Delete a subsection when its row flips to **done**; the table row and any divergence it earned stay behind.
 
 ### `mountAction()` drops authorization
 
@@ -170,9 +167,6 @@ Sylament has no `PartialsComponentHook` equivalent anywhere in the codebase — 
 
 ## Semantics
 
-Faithful behaviour subtle enough that the next reader would misread the code.
-Permanent, and outliving the detail sections above.
-
 ### The per-mount schema is seeded with the action's record and the dotted operation
 
 `getMountedActionSchema()` hands the fresh container a `record()` and an `operation()` beside its key, state path and heading level — Filament's own seed, under the [record vocabulary](../renames.md#the-model-vocabulary-collapses-onto-record).
@@ -241,9 +235,6 @@ So the same wrong shape costs a filter a wrong result set and costs an action no
 `name` is not a claim but a guarantee, which is why `resolveActions()` may index it without a `??` fallback: it is a native `string` parameter of `mountAction()`, the only other writer is `replaceMountedAction()`, and the prop is **not** writable — so a hydrated stack that reshaped it would fail ux-live-component's checksum before this trait ever saw it.
 
 ## Divergences
-
-Deliberate deviations from Filament — permanent, and the reason they hold.
-These outlive the detail sections above.
 
 ### A redirect leaves the pipeline as a returned response, not through a framework-side bag
 

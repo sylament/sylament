@@ -1,3 +1,11 @@
+---
+description: The schemas bundle class. (draft)
+ports:
+  - vendor/filament/schemas/src/SchemasServiceProvider.php
+owns:
+  - packages/schemas/assets/src/controllers/
+  - packages/schemas/src/SylamentSchemasBundle.php
+---
 # SylamentSchemasBundle (schemas)
 
 [`Sylament\Schemas\SylamentSchemasBundle`](../../../packages/schemas/src/SylamentSchemasBundle.php) — the schemas bundle class.
@@ -5,17 +13,7 @@ It ports Filament's [`SchemasServiceProvider`](../../../vendor/filament/schemas/
 Today it wires the two services the ported surface needs — the [`SchemaExtension`](schema-extension.md) Twig extension and the state [`PropertyAccessor`](property-accessor.md) — registers the built JS under `@sylament/schemas`, and inherits the `@SylamentSchemas` Twig namespace by AbstractBundle/TwigBundle convention.
 `Make*` commands and translations are not ported yet; the file-upload security hook never will be, because the surface it fences is one this port does not open.
 
-**Status:** in progress — see the [status vocabulary](../README.md#statuses).
-
-Reference — the Filament source this is diffed against:
-
-- [`schemas/src/SchemasServiceProvider.php`](../../../vendor/filament/schemas/src/SchemasServiceProvider.php) — the provider whose `configurePackage()` / `packageBooted()` this bundle ports
-
 ## Surface
-
-Every provider responsibility.
-_Blocked by_ names what has to land first.
-_Detail_ carries a **detail** link to a [Details](#details) write-up, a **diverges** link to [Divergences](#divergences), or `—`.
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |

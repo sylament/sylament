@@ -1,3 +1,13 @@
+---
+description: The shared `<twig:SylamentSupport:Dropdown>` primitive, a positioned-panel port of Filament's Alpine/floating-ui-driven `<x-filament::dropdown>`. (draft)
+ports:
+  - vendor/filament/support/resources/views/components/dropdown/index.blade.php
+  - vendor/filament/support/resources/js/index.js
+owns:
+  - packages/support/assets/src/controllers/dropdown_controller.ts
+  - packages/support/assets/src/styles/components/dropdown.css
+  - packages/support/templates/components/Dropdown/
+---
 # Dropdown (support)
 
 `packages/support/templates/components/Dropdown/index.html.twig` — the shared `<twig:SylamentSupport:Dropdown>` primitive, a positioned-panel port of Filament's Alpine/floating-ui-driven `<x-filament::dropdown>`.
@@ -5,17 +15,7 @@ It is template-only: there is no Sylament PHP `DropdownComponent` class, mirrori
 The markup shell — root/trigger/panel structure, the `placement`/`offset`/`flip`/`teleport`/`width`/`maxHeight` props — and the `sylament--support--dropdown` Stimulus controller/target/action wiring are both in place, `actions`' `ActionGroup` composes the shell, and the panel now carries divider-separated `.sy-dropdown-list` sections and nests one level down as a submenu.
 The rows inside those sections are a component of their own, `<twig:SylamentSupport:DropdownItem>` — tracked in [dropdown-item.md](dropdown-item.md), which also took the `.sy-dropdown-item` rules out of this shell's stylesheet.
 
-**Status:** in progress — see the [status vocabulary](../README.md#statuses).
-
-Reference — the Filament source this is diffed against:
-
-- [`support/resources/views/components/dropdown/index.blade.php`](../../../vendor/filament/support/resources/views/components/dropdown/index.blade.php) — the Blade view whose props and structure this template diffs against
-- [`support/resources/js/index.js`](../../../vendor/filament/support/resources/js/index.js) — registers the `@awcodes/alpine-floating-ui` plugin backing the `x-float` directive the deferred rows below diff against
-
 ## Surface
-
-_Blocked by_ names what has to land first.
-_Detail_ carries **detail** → the write-up in [Details](#details), and/or **diverges** → the note in [Divergences](#divergences).
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
@@ -57,8 +57,6 @@ Deferred; re-lands with the positioning controller if a consumer needs viewport-
 The **scrollbar** half of Filament's feature — the `fi-scrollable` class it applies whenever a max-height exists — is *not* part of this row any more; it ships independently and has its [own row](#surface) above.
 
 ## Divergences
-
-Deliberate deviations from Filament — permanent, and the reason they hold.
 
 ### The root is a positioned, shrink-to-fit box where Filament's carries no rule at all
 

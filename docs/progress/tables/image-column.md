@@ -1,23 +1,20 @@
+---
+description: 'A `Column` that renders its cell state as one or more `<img>` elements: a plain URL or `data:` URI as-is, a storage path through… (draft)'
+ports:
+  - vendor/filament/tables/src/Columns/ImageColumn.php
+  - vendor/filament/tables/resources/css/columns/image.css
+owns:
+  - packages/tables/assets/src/styles/components/image-column.css
+  - packages/tables/src/Columns/ImageColumn.php
+  - packages/tables/templates/partials/ImageColumn/
+---
 # ImageColumn (tables)
 
 [`Sylament\Tables\Columns\ImageColumn`](../../../packages/tables/src/Columns/ImageColumn.php) — a [`Column`](column.md) that renders its cell state as one or more `<img>` elements: a plain URL or `data:` URI as-is, a storage path through [`FilesystemRegistry`](../support/filesystem-registry.md)'s URL minting.
 It ports Filament's [`Filament\Tables\Columns\ImageColumn`](../../../vendor/filament/tables/src/Columns/ImageColumn.php).
 Everything [`Column`](column.md) carries — the name, the label, the record binding, the state read, the closure injections — is tracked there, not repeated here.
 
-**Status:** done — see the [status vocabulary](../README.md#statuses).
-The five rows that waited on `Column`-level concerns (tooltip, url, placeholder, `inline()`, the wrapper `extraAttributes()`) landed with the column catalog's base surface.
-
-Reference — the Filament source this is diffed against:
-
-- [`tables/src/Columns/ImageColumn.php`](../../../vendor/filament/tables/src/Columns/ImageColumn.php) — the class and its `toEmbeddedHtml()`
-- [`tables/resources/css/columns/image.css`](../../../vendor/filament/tables/resources/css/columns/image.css) — the stylesheet [`image-column.css`](../../../packages/tables/assets/src/styles/components/image-column.css) is the prefix-renamed port of
-
 ## Surface
-
-Every point of this component.
-_Blocked by_ names what has to land first.
-_Detail_ carries up to three links: **detail** → the write-up in Details, deleted once the row is **done**; **diverges** → the permanent note in [Divergences](#divergences); **semantics** → the permanent note in [Semantics](#semantics).
-Rows never disappear — only their detail sections do.
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
@@ -51,9 +48,6 @@ The five rows the column catalog unblocked are asserted in the same Integration 
 
 ## Semantics
 
-Faithful ports subtle enough that the next reader would misread the code.
-Permanent, and addressable by anchor.
-
 ### A default image beats the placeholder
 
 The blank branch renders `<p class="sy-ta-placeholder">` and nothing else — but only when there is genuinely nothing to draw.
@@ -64,7 +58,7 @@ Filament's order is the same (`$state = [null]` before the `blank($state)` check
 
 Filament's `toEmbeddedHtml()` wraps, default-substitutes and slices the state inline, then resolves each item's `src` inside a `$formatState` closure the markup calls.
 The port puts all of that behind two getters so the partial stays a loop: `getStateItems()` answers one `{url, alt}` pair per value — the blank-state-with-default `[null]` substitution, the limit slice, the `getImageUrl() ?? defaultImageUrl` fallback and the per-item `alt` evaluation included — and `getStateOverLimitCount()` answers the `+N` count.
-Both are Sylament-only members with rows in [renames.md's no-Filament-source table](../renames.md#names-with-no-filament-source); the rendered-dimension fallback chain (`imageHeight ?? (stacked ? 2rem : 2.5rem)`, width defaulting to the height for a circular or square column) lives in `getExtraTemplateData()`, the house home for exactly that kind of chain.
+Both are Sylament-only members with rows in [renames.md's no-Filament-source table](../translations.md#names-with-no-filament-source); the rendered-dimension fallback chain (`imageHeight ?? (stacked ? 2rem : 2.5rem)`, width defaulting to the height for a circular or square column) lives in `getExtraTemplateData()`, the house home for exactly that kind of chain.
 
 One narrowing rides on it: a **non-string** state value (an entity, an array entry that is not a path) falls to the default image rather than reaching `getImageUrl(?string)`.
 Filament's untyped closure would `TypeError` inside the view; here the guard is explicit and the outcome is the same picture the blank state gets.
@@ -97,8 +91,6 @@ Filament's stylesheet answers `fi-size-base` beside `fi-size-md`, but its own cl
 The port's `getLimitedRemainingTextSizeClass()` behaves identically (`sy-size-` prefix for enum cases, custom strings as-is), so the dead arm is dropped from [`image-column.css`](../../../packages/tables/assets/src/styles/components/image-column.css): `xs`, `md` and `lg` have rules, `sm` is the element's base `text-sm`.
 
 ## Divergences
-
-Deliberate deviations from Filament — permanent, and the reason they hold.
 
 ### The cell renders a Twig partial where Filament emits an embedded view
 

@@ -1,3 +1,15 @@
+---
+description: The multi-choice option field, rendering one native `<input type="checkbox">` per option inside an `aria-labelledby`-pointed `role="group"` container. (draft)
+ports:
+  - vendor/filament/forms/src/Components/CheckboxList.php
+  - vendor/filament/forms/resources/js/components/checkbox-list.js
+  - vendor/filament/forms/resources/css/components/checkbox-list.css
+  - vendor/filament/support/resources/css/components/input/checkbox.css
+owns:
+  - packages/forms/assets/src/controllers/checkbox_list_controller.ts
+  - packages/forms/src/Components/CheckboxList.php
+  - packages/forms/templates/partials/CheckboxList/
+---
 # CheckboxList (forms)
 
 `Sylament\Forms\Components\CheckboxList` — the multi-choice option field, rendering one native `<input type="checkbox">` per option inside an `aria-labelledby`-pointed `role="group"` container.
@@ -8,21 +20,10 @@ It is the only option field that is **inherently multiple**, so it is the second
 It is the first field to [register component-level actions](#the-bulk-toggle-actions-render-but-never-dispatch) that are deliberately inert — the click lives on the markup around them.
 And it is the first field to ship a Stimulus controller, which is what [`@sylament/forms`](#the-controller-is-the-only-behaviour-and-no-test-in-this-repo-runs-it) joined the JS workspace to carry: the template renders every option and every target server side, and [`checkbox_list_controller`](../../../packages/forms/assets/src/controllers/checkbox_list_controller.ts) supplies the search filtering and the bulk toggle on top of it.
 
-**Status:** done — see the [status vocabulary](../README.md#statuses).
-
-Reference — the Filament source this is diffed against:
-
-- [`forms/src/Components/CheckboxList.php`](../../../vendor/filament/forms/src/Components/CheckboxList.php) — the field class and its embedded view
-- [`forms/resources/js/components/checkbox-list.js`](../../../vendor/filament/forms/resources/js/components/checkbox-list.js) — the Alpine component the search and bulk toggle run on
-- [`forms/resources/css/components/checkbox-list.css`](../../../vendor/filament/forms/resources/css/components/checkbox-list.css) — the option-set chrome
-- [`support/resources/css/components/input/checkbox.css`](../../../vendor/filament/support/resources/css/components/input/checkbox.css) — the control chrome, which vendor files a package down and the port already ships as `.sy-fo-checkbox`
-
 ## Surface
 
 Every point this field adds over `Field`.
 `Field`'s own surface is tracked in [`field.md`](field.md), not here.
-_Blocked by_ names what has to land first.
-_Detail_ links a permanent note in [Semantics](#semantics) / [Divergences](#divergences).
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
@@ -41,7 +42,7 @@ _Detail_ links a permanent note in [Semantics](#semantics) / [Divergences](#dive
 | `getOptionLabelFromRecordUsing()` / `hasOptionLabelFromRecordUsingCallback()` / `getOptionLabelFromRecord()` | [`Components/CheckboxList.php`](../../../vendor/filament/forms/src/Components/CheckboxList.php) | done | — | [detail](#the-two-record-shaped-closures-build-labels-and-descriptions-off-one-query) |
 | `getOptionDescriptionFromRecordUsing()` / `hasOptionDescriptionFromRecordUsingCallback()` / `getOptionDescriptionFromRecord()` | [`Components/CheckboxList.php`](../../../vendor/filament/forms/src/Components/CheckboxList.php) | done | — | [detail](#the-two-record-shaped-closures-build-labels-and-descriptions-off-one-query) |
 | `getLabel()` — derived from the relationship name when unset | [`Components/CheckboxList.php`](../../../vendor/filament/forms/src/Components/CheckboxList.php) | done | — | [diverges](#the-relationship-label-is-a-getdefaultlabel-override) |
-| `isMultiple()` — port plumbing, no Filament source | — | done | — | [diverges](#ismultiple-is-port-plumbing-with-no-filament-counterpart) · [renames](../renames.md#names-with-no-filament-source) |
+| `isMultiple()` — port plumbing, no Filament source | — | done | — | [diverges](#ismultiple-is-port-plumbing-with-no-filament-counterpart) · [renames](../translations.md#names-with-no-filament-source) |
 | [`HasOptions`](../../../packages/forms/src/Components/Concerns/HasOptions.php) | [`Concerns/HasOptions.php`](../../../vendor/filament/forms/src/Components/Concerns/HasOptions.php) | done | — | [detail](has-options.md) |
 | [`CanDisableOptions`](../../../packages/forms/src/Components/Concerns/CanDisableOptions.php) + [contract](../../../packages/forms/src/Components/Contracts/CanDisableOptions.php) | [`Concerns/CanDisableOptions.php`](../../../vendor/filament/forms/src/Components/Concerns/CanDisableOptions.php) | done | — | [detail](can-disable-options.md) |
 | [`HasDescriptions`](../../../packages/forms/src/Components/Concerns/HasDescriptions.php) | [`Concerns/HasDescriptions.php`](../../../vendor/filament/forms/src/Components/Concerns/HasDescriptions.php) | done | — | [detail](has-descriptions.md) |
@@ -62,8 +63,6 @@ The relationship arm runs against the real Doctrine rig — option enumeration, 
 The binding mechanism itself needs a live host, so it is driven through a real round-trip by [`LiveCheckboxListTest`](../../../packages/forms/tests/Integration/LiveCheckboxListTest.php) against the [`CheckboxListForm`](../../../packages/forms/tests/Fixtures/Twig/Components/CheckboxListForm.php) fixture, which asserts the resting `[]` on the wire before it asserts anything about checking.
 
 ## Semantics
-
-Behaviour that is faithful to Filament but easy to misread here.
 
 ### The search box is the one wrapper a template opens by hand
 
@@ -144,9 +143,6 @@ That is enough: the constraint is one call to [`filled()`](../support/helpers.md
 
 ## Divergences
 
-Deliberate deviations from Filament, and the reason each holds.
-Provisional ones say what would reverse them.
-
 ### The `checked` attribute is rendered server-side
 
 Filament emits only `wire:model` on each input and lets Livewire set the checked property client-side once it boots.
@@ -190,7 +186,7 @@ The `Action` objects exist so `label()`, `size()`, `icon()`, `color()` and the u
 
 The port reproduces that mode exactly, and reproducing it needed the switch itself.
 Our action partials computed the equivalent guard inline (`{% set hasLiveClickBinding = not component.getUrl and not component.canSubmitForm %}`), which is precisely the fallback chain of Filament's `isLivewireClickHandlerEnabled()` — with no way to override it, a plain `Action` always reached the partial's final branch and emitted `stimulus_action('live', 'action', parameters: {action: 'mountAction', …})`, a server round-trip per click.
-So the guard moved into PHP where Filament keeps it: [`HasAction`](../../../packages/actions/src/Concerns/HasAction.php) grew `liveComponentClickHandlerEnabled()` / `isLiveComponentClickHandlerEnabled()` — the `Livewire` → `LiveComponent` [idiom translation](../renames.md#idiom), not a rename — with Filament's own precedence (an explicit value wins; otherwise a URL or a form submission turns it off; otherwise on), and the four partials that had the inline expression now read the getter.
+So the guard moved into PHP where Filament keeps it: [`HasAction`](../../../packages/actions/src/Concerns/HasAction.php) grew `liveComponentClickHandlerEnabled()` / `isLiveComponentClickHandlerEnabled()` — the `Livewire` → `LiveComponent` [idiom translation](../translations.md#idiom), not a rename — with Filament's own precedence (an explicit value wins; otherwise a URL or a form submission turns it off; otherwise on), and the four partials that had the inline expression now read the getter.
 Behaviour is identical for every existing action, which the actions, tables and panels suites pin.
 
 The click then lives on the markup, as vendor's does: each action sits inside a `<span>` carrying `data-sylament--forms--checkbox-list-target="selectAllWrap"` (or `deselectAllWrap`, which starts `hidden`) and `data-action="click->sylament--forms--checkbox-list#toggleAll"`.
@@ -249,7 +245,7 @@ Filament reads this field's multiplicity off a type: `getRelationship(): ?Belong
 The port's shared relationship arm asks the field instead — one trait serving a `Select` that may be either — so `CheckboxList` answers a constant `true` from an `isMultiple()` of its own.
 
 It is **internal**: no `multiple()` setter exists, because there is nothing to choose.
-Listed in [renames.md](../renames.md#names-with-no-filament-source) so a migrating user who greps Filament for it and finds nothing knows the absence is real.
+Listed in [renames.md](../translations.md#names-with-no-filament-source) so a migrating user who greps Filament for it and finds nothing knows the absence is real.
 
 ### The relationship label is a `getDefaultLabel()` override
 

@@ -1,19 +1,16 @@
+---
+description: The shared layout concern the boolean fields compose, carrying the `inline()` setter and the `isInline()` getter that decide whether the control sits… (draft)
+ports:
+  - vendor/filament/forms/src/Components/Concerns/CanBeInline.php
+  - vendor/filament/schemas/src/Components/Concerns/HasInlineLabel.php
+owns: []
+---
 # CanBeInline (forms)
 
 `Sylament\Forms\Components\Concerns\CanBeInline` — the shared layout concern the boolean fields compose, carrying the `inline()` setter and the `isInline()` getter that decide whether the control sits beside its label text or above it.
 The name collides with `Sylament\Schemas\Concerns\CanBeInline`, the root-object trait a child `Schema` uses; that is the inherited two-tier cost [`docs/internals/php.md`](../../internals/php.md#the-by-import-trap) records — read the trait by its **import**, never by the bare `use CanBeInline;` in a class body.
 
-**Status:** done — see the [status vocabulary](../README.md#statuses).
-
-Reference — the Filament source this is diffed against:
-
-- [`Components/Concerns/CanBeInline.php`](../../../vendor/filament/forms/src/Components/Concerns/CanBeInline.php) — the trait
-- [`Components/Concerns/HasInlineLabel.php`](../../../vendor/filament/schemas/src/Components/Concerns/HasInlineLabel.php) — the schemas concern Filament's getter defers to (unported)
-
 ## Surface
-
-_Blocked by_ names what has to land first.
-_Detail_ links a permanent note in [Divergences](#divergences), or `—`.
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
@@ -22,9 +19,6 @@ _Detail_ links a permanent note in [Divergences](#divergences), or `—`.
 Coverage: the `true` default, the literal-`false` setter and closure evaluation by [`CanBeInlineTest`](../../../packages/forms/tests/Unit/Components/Concerns/CanBeInlineTest.php) against the [`FixtureBooleanField`](../../../packages/forms/tests/Fixtures/Components/FixtureBooleanField.php) fixture.
 
 ## Divergences
-
-Deliberate deviations from Filament, and the reason each holds.
-Provisional ones say what would reverse them.
 
 ### isInline() drops the hasInlineLabel() guard
 

@@ -1,20 +1,19 @@
+---
+description: 'The component-level action-registration trait: `registerActions()` / `action()` append to the list and set the "main" action, `getActions()` (memoized… (draft)'
+ports:
+  - vendor/filament/schemas/src/Components/Concerns/HasActions.php
+owns:
+  - packages/schemas/src/Components/Concerns/HasActions.php
+  - packages/schemas/src/Components/Contracts/HasAffixActions.php
+  - packages/schemas/src/Components/Contracts/HasExtraItemActions.php
+---
 # HasActions (schemas)
 
 [`Sylament\Schemas\Components\Concerns\HasActions`](../../../packages/schemas/src/Components/Concerns/HasActions.php) — the component-level action-registration trait: `registerActions()` / `action()` append to the list and set the "main" action, `getActions()` (memoized via `cacheActions()`) merges `getDefaultActions()`, the affix actions of a component implementing [`HasAffixActions`](../../../packages/schemas/src/Components/Contracts/HasAffixActions.php), and the registered list — later entries win by name — stamping every own `Action` with `prepareAction()` (`$action->schemaComponent($this)`, from the actions package's [`BelongsToSchemaComponent`](../../../packages/actions/src/Concerns/BelongsToSchemaComponent.php)).
 It ports Filament's identically-named concern verbatim in name: the [rename table](../renames.md#interface-and-trait-names-are-swapped) only swaps the *host-level* `HasActions` / `InteractsWithActions` pair (tracked in [`actions/has-actions.md`](../actions/has-actions.md)), not this component-level trait.
 Composed onto the base [`Component`](component.md), so every schemas component gets it.
 
-**Status:** in progress — see the [status vocabulary](../README.md#statuses).
-
-Reference — the Filament source this is diffed against:
-
-- [`schemas/src/Components/Concerns/HasActions.php`](../../../vendor/filament/schemas/src/Components/Concerns/HasActions.php) — properties, method bodies, and the `cacheActions()` merge order
-
 ## Surface
-
-Every point of this concern.
-_Blocked by_ names what has to land first.
-_Detail_ carries a **diverges** link to [Divergences](#divergences), or `—`.
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
@@ -29,8 +28,6 @@ _Detail_ carries a **diverges** link to [Divergences](#divergences), or `—`.
 | `actionSchemaModel()` / `getActionSchemaModel()` | [`actionSchemaModel()` / `getActionSchemaModel()`](../../../vendor/filament/schemas/src/Components/Concerns/HasActions.php) | blocked | the action→schema record hop | [diverges](#actionschemamodel-is-not-ported) |
 
 ## Divergences
-
-Deliberate deviations from Filament — permanent, and the reason they hold.
 
 ### The affix contract is typed as a name-keyed map
 

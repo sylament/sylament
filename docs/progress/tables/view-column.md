@@ -1,3 +1,12 @@
+---
+description: 'The escape hatch: a column whose entire cell body is a Twig template the user writes. (draft)'
+ports:
+  - vendor/filament/tables/src/Columns/ViewColumn.php
+  - vendor/filament/support/src/Components/ViewComponent.php
+  - vendor/filament/forms/src/Components/ViewField.php
+owns:
+  - packages/tables/src/Columns/ViewColumn.php
+---
 # ViewColumn (tables)
 
 [`Sylament\Tables\Columns\ViewColumn`](../../../packages/tables/src/Columns/ViewColumn.php) — the escape hatch: a column whose entire cell body is a Twig template the user writes.
@@ -6,22 +15,12 @@ It adds no state handling, no chrome and no options of its own; everything a con
 It is [`ViewField`](../forms/view-field.md)'s twin one package over, down to the one method each carries.
 Filament's class is literally `class ViewColumn extends Column {}`; ours adds the same fail-fast `getTemplate()` override, for the reason recorded on that file ([why the throw is not on the base](../forms/view-field.md#the-missing-template-throw-lives-on-viewfield-rather-than-the-base)) — so this file is mostly pointers, and the reasoning is not duplicated here.
 
-`view()` → `template()` and `viewData()` → `templateData()` are the systematic Blade → Twig translation, not renames — the [idiom table](../renames.md#idiom) owns that row.
-
-**Status:** done — see the [status vocabulary](../README.md#statuses).
-
-Reference — the Filament source this is diffed against:
-
-- [`tables/src/Columns/ViewColumn.php`](../../../vendor/filament/tables/src/Columns/ViewColumn.php) — the whole class, three lines
-- [`support/src/Components/ViewComponent.php`](../../../vendor/filament/support/src/Components/ViewComponent.php) — `view()` / `viewData()` / `getView()`, where the surface actually lives
-- [`forms/src/Components/ViewField.php`](../../../vendor/filament/forms/src/Components/ViewField.php) — the twin, and the shape this port copies
+`view()` → `template()` and `viewData()` → `templateData()` are the systematic Blade → Twig translation, not renames — the [idiom table](../translations.md#idiom) owns that row.
 
 ## Surface
 
 Every point this column adds over `Column`.
 `Column`'s own surface is tracked in [`column.md`](column.md), the inherited template surface in [`support/view-component.md`](../support/view-component.md).
-_Blocked by_ names what has to land first.
-_Detail_ links a permanent note in [Divergences](#divergences).
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
@@ -34,17 +33,7 @@ _Detail_ links a permanent note in [Divergences](#divergences).
 
 Coverage: a fixture template rendering with the column in scope as `component` (reading `getName()`, `getState()` and `getRecord()` off it), `templateData` merged into that scope from `template()`'s second argument, the absence of a `record` variable, and the throw on both `getTemplate()` and the render path — by the Unit [`ViewColumnTest`](../../../packages/tables/tests/Unit/Columns/ViewColumnTest.php) and the Integration [`ViewColumnTest`](../../../packages/tables/tests/Integration/Columns/ViewColumnTest.php), against the fixture template under [`tests/Fixtures/Twig/templates/partials/ViewColumnFixture/`](../../../packages/tables/tests/Fixtures/Twig/templates/partials/ViewColumnFixture).
 
-## Details
-
-Specifics for rows that are not finished.
-Delete a subsection when its row flips to **done**.
-
-Every row above is settled — **done** or **skipped** — so none has a write-up here now.
-A row moving to **in progress** or **blocked** grows one.
-
 ## Divergences
-
-Deliberate deviations from Filament, and the reason each holds.
 
 ### No `record` variable is exposed — the getter is the API
 

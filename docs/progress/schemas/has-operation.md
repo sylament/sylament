@@ -1,3 +1,10 @@
+---
+description: 'The trait that names *what the host is doing* with a schema: `operation()` stores a free-form string (`''create''`, `''edit''`, `''view''`, or anything a… (draft)'
+ports:
+  - vendor/filament/schemas/src/Concerns/HasOperation.php
+owns:
+  - packages/schemas/src/Concerns/HasOperation.php
+---
 # HasOperation (schemas)
 
 [`Sylament\Schemas\Concerns\HasOperation`](../../../packages/schemas/src/Concerns/HasOperation.php) — the trait that names *what the host is doing* with a schema: `operation()` stores a free-form string (`'create'`, `'edit'`, `'view'`, or anything a host invents) and `getOperation()` resolves it, falling back up the parent-component chain and finally to the host live component's class name.
@@ -5,16 +12,9 @@ It is composed by [`Schema`](schema.md) and consumed at the component tier by th
 The typed vocabulary for the three standard values is support's [`Operation`](../support/README.md) enum; `operation()` itself takes `?string`, as Filament's does.
 The record half of the host context lives in [`belongs-to-record.md`](belongs-to-record.md).
 
-**Status:** done — see the [status vocabulary](../README.md#statuses).
-
-Reference — the Filament source this is diffed against:
-
-- [`schemas/src/Concerns/HasOperation.php`](../../../vendor/filament/schemas/src/Concerns/HasOperation.php) — the property, the setter, the deprecated alias, and the fallback chain
-
 ## Surface
 
 Every point of this trait, plus the component-tier injection it feeds.
-_Detail_ carries a **diverges** link to the permanent note in [Divergences](#divergences), or `—`.
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |

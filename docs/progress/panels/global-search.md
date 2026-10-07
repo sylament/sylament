@@ -1,22 +1,27 @@
+---
+description: 'The topbar search that answers across every resource of a panel: the two value objects a search answers with, the `Resource` concern that turns a… (draft)'
+ports:
+  - vendor/filament/filament/src/GlobalSearch/GlobalSearchResult.php
+  - vendor/filament/filament/src/GlobalSearch/GlobalSearchResults.php
+  - vendor/filament/filament/src/Resources/Resource/Concerns/HasGlobalSearch.php
+  - vendor/filament/filament/src/GlobalSearch/Providers/
+  - vendor/filament/filament/src/Panel/Concerns/HasGlobalSearch.php
+  - vendor/filament/filament/src/Livewire/GlobalSearch.php
+owns:
+  - packages/panels/assets/src/controllers/global_search_controller.ts
+  - packages/panels/assets/src/styles/components/global-search.css
+  - packages/panels/src/GlobalSearch/
+  - packages/panels/src/Panel/Concerns/HasGlobalSearch.php
+  - packages/panels/src/Resources/Resource/Concerns/HasGlobalSearch.php
+  - packages/panels/src/Twig/Components/
+  - packages/panels/templates/components/GlobalSearch/
+  - packages/panels/templates/components/Topbar/
+---
 # Global search (panels)
 
 The topbar search that answers across every resource of a panel: the two value objects a search answers with, the `Resource` concern that turns a search term into records, the provider that walks the panel's resources, the `Panel` knobs that configure the field, and the live component that renders it.
 
-**Status:** in progress — see the [status vocabulary](../README.md#statuses).
-
-Reference — the Filament source this is diffed against:
-
-- [`filament/src/GlobalSearch/GlobalSearchResult.php`](../../../vendor/filament/filament/src/GlobalSearch/GlobalSearchResult.php), [`GlobalSearchResults.php`](../../../vendor/filament/filament/src/GlobalSearch/GlobalSearchResults.php) — the value objects
-- [`filament/src/Resources/Resource/Concerns/HasGlobalSearch.php`](../../../vendor/filament/filament/src/Resources/Resource/Concerns/HasGlobalSearch.php) — the per-resource search surface
-- [`filament/src/GlobalSearch/Providers/`](../../../vendor/filament/filament/src/GlobalSearch/Providers) — the provider contract and the default provider
-- [`filament/src/Panel/Concerns/HasGlobalSearch.php`](../../../vendor/filament/filament/src/Panel/Concerns/HasGlobalSearch.php), [`filament/src/Livewire/GlobalSearch.php`](../../../vendor/filament/filament/src/Livewire/GlobalSearch.php) — the panel knobs and the component
-
 ## Surface
-
-Every point of this feature.
-_Blocked by_ names what has to land first.
-_Detail_ carries three links, any of them: **detail** → the write-up in [Details](#details), deleted once the row is **done**; **semantics** → the permanent note in [Semantics](#semantics); **diverges** → the permanent note in [Divergences](#divergences).
-Rows never disappear — only their detail sections do.
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
@@ -63,18 +68,9 @@ Rows never disappear — only their detail sections do.
 | Busy indicator on the field | the input wrapper's `wire:target="search"` in [`livewire/global-search.blade.php`](../../../vendor/filament/filament/resources/views/livewire/global-search.blade.php) | blocked | a loading branch on support's [`InputWrapper`](../../../packages/support/templates/components/InputWrapper/index.html.twig) | [diverges](#the-field-carries-no-busy-indicator) |
 | Results panel enter/leave fade | `x-transition:enter-start` / `x-transition:leave-end` on `fi-global-search-results-ctn` | skipped | — | [diverges](#the-panel-opens-and-closes-with-no-fade) |
 | Topbar-end `x-persist` | [`livewire/topbar.blade.php`](../../../vendor/filament/filament/resources/views/livewire/topbar.blade.php)'s `x-persist="topbar.end.panel-…"` | skipped | — | [diverges](#there-is-no-spa-navigation-for-the-field-to-survive) |
-| _rest not audited yet_ | | | | |
-
-## Details
-
-Specifics for rows that are not finished — what is already in, what is left, and what the next step is.
-Delete a subsection when its row flips to **done**; the table row and any divergence it earned stay behind.
-
-_Nothing outstanding on the listed rows._
+| _rest not audited yet_ | — | — | — | — |
 
 ## Semantics
-
-Faithful ports subtle enough to be misread.
 
 ### The result limit is spent before the URL filter runs
 
@@ -118,8 +114,6 @@ There is no facade here, and a panel is reached through `CurrentPanel`/`PanelReg
 The position inside `.sy-pa-topbar-end` is Filament's: the search opens the group, ahead of the end slot and the user menu.
 
 ## Divergences
-
-Deliberate deviations from Filament — permanent, and the reason they hold.
 
 ### Nothing dispatches an open event; a morph reopens the panel
 

@@ -1,3 +1,12 @@
+---
+description: 'Several relation managers behind one tab: the group supplies the tab''s label and chrome, and the page mounts every manager it holds inside that tab. (draft)'
+ports:
+  - vendor/filament/filament/src/Resources/RelationManagers/RelationGroup.php
+  - vendor/filament/filament/src/Resources/RelationManagers/RelationManagerConfiguration.php
+owns:
+  - packages/panels/src/Resources/RelationManagers/RelationGroup.php
+  - packages/panels/src/Resources/RelationManagers/RelationManagerConfiguration.php
+---
 # RelationGroup (panels)
 
 [`Sylament\Panels\Resources\RelationManagers\RelationGroup`](../../../packages/panels/src/Resources/RelationManagers/RelationGroup.php) — several [relation managers](relation-manager.md) behind one tab: the group supplies the tab's label and chrome, and the page mounts every manager it holds inside that tab.
@@ -5,8 +14,6 @@ It ports [`Resources/RelationManagers/RelationGroup.php`](../../../vendor/filame
 
 [`RelationManagerConfiguration`](../../../packages/panels/src/Resources/RelationManagers/RelationManagerConfiguration.php) is folded in here: it is the value object `RelationManager::make()` returns — a manager class-string plus the mount props that one registration adds — and it appears in a `getRelations()` list wherever a bare class-string can, groups included.
 It ports [`Resources/RelationManagers/RelationManagerConfiguration.php`](../../../vendor/filament/filament/src/Resources/RelationManagers/RelationManagerConfiguration.php).
-
-**Status:** in progress — see the [status vocabulary](../README.md#statuses).
 
 ## Surface
 
@@ -21,7 +28,7 @@ It ports [`Resources/RelationManagers/RelationManagerConfiguration.php`](../../.
 | [`resolveDefaultClosureDependencyForEvaluationBy{Name,Type}()`](../../../packages/panels/src/Resources/RelationManagers/RelationGroup.php) — `$ownerRecord` / `$pageClass` injection | the same two overrides | done | — | — |
 | [`RelationManagerConfiguration`](../../../packages/panels/src/Resources/RelationManagers/RelationManagerConfiguration.php) — `$relationManager` + `getProperties()` | [`RelationManagerConfiguration.php`](../../../vendor/filament/filament/src/Resources/RelationManagers/RelationManagerConfiguration.php) | done | — | — |
 | `deferBadge()` / `isBadgeDeferred()` | `RelationGroup.php` | skipped | — | [rides the manager's divergence](relation-manager.md#deferred-tab-badges-do-not-port) |
-| _rest not audited yet_ | | | | |
+| _rest not audited yet_ | — | — | — | — |
 
 [`Unit/Resources/RelationManagers/RelationGroupTest`](../../../packages/panels/tests/Unit/Resources/RelationManagers/RelationGroupTest.php) covers the literal and closure arms of both `make()` arguments, the unfiltered list before the owner and page are known, the filter dropping a manager that declines the record in both its class-string and configuration forms, the owner/page closure injection, the badge ordering, and the `tab()` callback.
 

@@ -1,3 +1,21 @@
+---
+description: The chrome that lets a user hide, show and reorder a table's columns, and the state behind it. (draft)
+ports:
+  - vendor/filament/tables/src/Table/Concerns/HasColumnManager.php
+  - vendor/filament/tables/src/Concerns/HasColumnManager.php
+  - vendor/filament/tables/src/Enums/ColumnManagerLayout.php
+  - vendor/filament/tables/src/Enums/ColumnManagerResetActionPosition.php
+  - vendor/filament/tables/resources/views/components/column-manager/index.blade.php
+  - vendor/filament/tables/resources/views/components/column-manager/content.blade.php
+  - vendor/filament/tables/resources/js/components/column-manager.js
+  - vendor/filament/tables/resources/css/column-manager.css
+owns:
+  - packages/tables/assets/src/controllers/column_manager_controller.ts
+  - packages/tables/assets/src/styles/components/column-manager.css
+  - packages/tables/src/Enums/ColumnManagerLayout.php
+  - packages/tables/src/Enums/ColumnManagerResetActionPosition.php
+  - packages/tables/templates/components/ColumnManager/
+---
 # Column manager (tables)
 
 The chrome that lets a **user** hide, show and reorder a table's columns, and the state behind it.
@@ -9,24 +27,9 @@ This file is only the manager: the state a user's choices live in, and the panel
 
 Two traits of the same short name are in play here and [two more](has-columns.md) elsewhere in the package — read the **import**, never the bare `use HasColumnManager;`.
 
-**Status:** in progress — see the [status vocabulary](../README.md#statuses).
-What holds it back is [`ColumnGroup`](#the-columngroup-half-is-the-whole-of-what-is-left): vendor's manager lists column *groups* beside columns, with a tri-state group checkbox and a nested drag list, and none of that is ported.
-
-Reference — the Filament source this is diffed against:
-
-- [`tables/src/Table/Concerns/HasColumnManager.php`](../../../vendor/filament/tables/src/Table/Concerns/HasColumnManager.php) — the settings, the eight deprecated aliases and the two chrome actions
-- [`tables/src/Concerns/HasColumnManager.php`](../../../vendor/filament/tables/src/Concerns/HasColumnManager.php) — the host state, its two sync directions and the session
-- [`tables/src/Enums/ColumnManagerLayout.php`](../../../vendor/filament/tables/src/Enums/ColumnManagerLayout.php), [`tables/src/Enums/ColumnManagerResetActionPosition.php`](../../../vendor/filament/tables/src/Enums/ColumnManagerResetActionPosition.php)
-- [`tables/resources/views/components/column-manager/index.blade.php`](../../../vendor/filament/tables/resources/views/components/column-manager/index.blade.php) and [`content.blade.php`](../../../vendor/filament/tables/resources/views/components/column-manager/content.blade.php)
-- [`tables/resources/js/components/column-manager.js`](../../../vendor/filament/tables/resources/js/components/column-manager.js) — the Alpine data the Stimulus controller replaces
-- [`tables/resources/css/column-manager.css`](../../../vendor/filament/tables/resources/css/column-manager.css)
-
 ## Surface
 
 Every point of the feature, across both tiers.
-_Blocked by_ names what has to land first.
-_Detail_ carries up to three links: **detail** → the write-up in [Details](#details), deleted once the row is **done**; **diverges** → the permanent note in [Divergences](#divergences); **semantics** → the permanent note in [Semantics](#semantics).
-A **skipped** row states its reason inline instead.
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
@@ -71,9 +74,6 @@ Mount through a live rig and probe the seeded state before asserting on a toggle
 
 ## Details
 
-Specifics for rows that are not finished — what is already in, what is left, and what the next step is.
-Delete a subsection when its row flips to **done**; the table row and any divergence it earned stay behind.
-
 ### The `ColumnGroup` half is the whole of what is left
 
 Filament's manager is a list of two kinds of thing.
@@ -87,8 +87,6 @@ And the drag list's sortable ids are `column::<name>`, the same `type::name` sha
 Four class names are reserved for the group arm and are deliberately not emitted now, so the eventual port does not have to rename anything already shipped: `sy-ta-col-manager-group`, `sy-ta-col-manager-group-header`, `sy-ta-col-manager-group-label` and `sy-ta-col-manager-group-items`.
 
 ## Divergences
-
-Permanent departures from Filament, each with the reason.
 
 ### The trigger drops vendor's modal-footer machinery, because the chrome is the partial's
 
@@ -208,8 +206,6 @@ Verified on the demo's showcase card in headless Chrome — two columns, nothing
 Nothing in the PHP suites can pin a layout, so the browser pass is the proof.
 
 ## Semantics
-
-Behaviour worth knowing that is not a divergence.
 
 ### The state exists for the columns, not for the chrome
 

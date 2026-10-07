@@ -1,20 +1,17 @@
+---
+description: The `$get` callable a component hands its evaluated closures so they can read sibling and cross-container state by path. (draft)
+ports:
+  - vendor/filament/schemas/src/Components/Utilities/Get.php
+owns:
+  - packages/schemas/src/State/Get.php
+---
 # Get (schemas)
 
 [`Sylament\Schemas\State\Get`](../../../packages/schemas/src/State/Get.php) — the `$get` callable a component hands its evaluated closures so they can read sibling and cross-container state by path.
 `__invoke($path, $isAbsolute)` resolves the path against the component's own state, a sibling, or another container, falling back to a raw read off the live component.
 It ports Filament's [`Get`](../../../vendor/filament/schemas/src/Components/Utilities/Get.php), whose `__invoke` is faithfully mirrored while the typed-accessor layer above it is not yet ported.
 
-**Status:** in progress — see the [status vocabulary](../README.md#statuses).
-
-Reference — the Filament source this is diffed against:
-
-- [`schemas/src/Components/Utilities/Get.php`](../../../vendor/filament/schemas/src/Components/Utilities/Get.php) — `__invoke`, the nine typed accessors, and the skip-child-containers toggle
-
 ## Surface
-
-Every point of this utility.
-_Blocked by_ names what has to land first.
-_Detail_ carries a **detail** link to the write-up in [Details](#details) (deleted once the row is **done**), a **diverges** link to the permanent note in [Divergences](#divergences), or `—`.
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |

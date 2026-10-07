@@ -1,3 +1,12 @@
+---
+description: 'The per-action schema declaration: an `Action` names the components its modal should contain with `schema()`, and `getSchema(Schema $schema)` turns… (draft)'
+ports:
+  - vendor/filament/actions/src/Concerns/HasSchema.php
+  - vendor/filament/actions/src/Concerns/HasWizard.php
+  - vendor/filament/actions/src/Concerns/InteractsWithActions.php
+owns:
+  - packages/actions/src/Concerns/HasSchema.php
+---
 # HasSchema (actions)
 
 [`Sylament\Actions\Concerns\HasSchema`](../../../packages/actions/src/Concerns/HasSchema.php) — the per-action schema **declaration**: an `Action` names the components its modal should contain with `schema()`, and `getSchema(Schema $schema)` turns that declaration into a real [`Schema`](../schemas/schema.md) when a host hands it one to populate.
@@ -7,20 +16,7 @@ This file covers only the action-side surface.
 Its sole consumer is [`Sylament\Actions\Action`](../../../packages/actions/src/Action.php), via its trait block.
 It earns a file of its own rather than folding into [`action.md`](action.md) because its counterpart lives in a second file: the declaration and the host pipeline are two halves of one feature, and each needs one addressable home to link the other from.
 
-**Status:** done — see the [status vocabulary](../README.md#statuses).
-Every ported row is **done**; the one unported row (the deprecated aliases) is a permanent omission with its reason recorded below.
-The host schema-resolver fallback was the last outstanding row, waiting until the hook family it calls existed to be called.
-
-Reference — the Filament source this is diffed against:
-
-- [`actions/src/Concerns/HasSchema.php`](../../../vendor/filament/actions/src/Concerns/HasSchema.php) — the trait this ports
-- [`actions/src/Concerns/HasWizard.php`](../../../vendor/filament/actions/src/Concerns/HasWizard.php) — the sibling concern the wizard arm reads
-- [`actions/src/Concerns/InteractsWithActions.php`](../../../vendor/filament/actions/src/Concerns/InteractsWithActions.php) — where Filament consumes `getSchema()`, ported as [`HasActions::getMountedActionSchema()`](has-actions.md)
-
 ## Surface
-
-_Blocked by_ names what has to land first.
-_Detail_ carries **detail** → the write-up in [Details](#details), and/or **diverges** → the note in [Divergences](#divergences).
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
@@ -73,8 +69,6 @@ So the read is explicit instead: `getLiveComponentOrNull()?->getMountedActionSch
 Filament's own bodies sidestep the problem by reading `$record->attributesToArray()` rather than a schema; ours read [`Schema::getStateFromRecord()`](../schemas/belongs-to-record.md), which needs the schema to read it *from*.
 
 ## Divergences
-
-Deliberate deviations from Filament — permanent, and the reason they hold.
 
 ### The wizard arm drops the Alpine submit handler
 

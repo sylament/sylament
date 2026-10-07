@@ -1,3 +1,13 @@
+---
+description: The anonymous Twig component (`<twig:SylamentSupport:InputWrapper>`) that ports Filament's `<x-filament::input.wrapper>`. (draft)
+ports:
+  - vendor/filament/support/resources/views/components/input/wrapper.blade.php
+  - vendor/filament/support/resources/css/components/input/wrapper.css
+  - vendor/filament/forms/src/Components/Field.php
+owns:
+  - packages/support/assets/src/styles/components/input-wrapper.css
+  - packages/support/templates/components/InputWrapper/
+---
 # Input wrapper (support)
 
 `packages/support/templates/components/InputWrapper/index.html.twig` — the anonymous Twig component (`<twig:SylamentSupport:InputWrapper>`) that ports Filament's `<x-filament::input.wrapper>`.
@@ -13,19 +23,7 @@ Forms consumes it: every text-like control renders inside it, and `.sy-fo-input`
 Its render coverage lives over there too — [`InputWrapperRenderTest`](../../../packages/forms/tests/Integration/Components/InputWrapperRenderTest.php) — because support's own fixture Kernel registers no TwigComponentBundle, so a shipped component's render tests live wherever its first consumer does, the split [pagination.md](pagination.md) and [badge.md](badge.md) record.
 Tables is the second home: its [`TextInputColumnTest`](../../../packages/tables/tests/Integration/Columns/TextInputColumnTest.php) and [`SelectColumnTest`](../../../packages/tables/tests/Integration/Columns/SelectColumnTest.php) render the wrapper's markup around a cell control, so a change to this template has to be verified in two suites rather than one.
 
-**Status:** in progress — see the [status vocabulary](../README.md#statuses).
-
-Reference — the Filament source this is diffed against:
-
-- [`support/resources/views/components/input/wrapper.blade.php`](../../../vendor/filament/support/resources/views/components/input/wrapper.blade.php) — the Blade view: the props, the affix presence tests, the render order
-- [`support/resources/css/components/input/wrapper.css`](../../../vendor/filament/support/resources/css/components/input/wrapper.css) — the stylesheet, ported with the prefix rewrite and the deltas below
-- [`forms/src/Components/Field.php`](../../../vendor/filament/forms/src/Components/Field.php) (`wrapInputHtml()`) — the live path that fills the props from a field, which forms' own affix surface will port
-
 ## Surface
-
-Every point of this component.
-_Blocked by_ names what has to land first.
-_Detail_ carries two links, either of them: **semantics** → the permanent note in [Semantics](#semantics); **diverges** → the permanent note in [Divergences](#divergences) — or a pointer to the file that owns the row.
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
@@ -49,8 +47,6 @@ The passthrough merge on the root is pinned one file over, by the checkbox list'
 The colour policy is pinned separately by [`SylamentSupportBundleTest`](../../../packages/support/tests/Integration/SylamentSupportBundleTest.php), which resolves it by class-string — the whole of what a policy this shallow can get wrong.
 
 ## Semantics
-
-Faithful ports subtle enough that re-deriving them from the source would plausibly get them wrong.
 
 ### An affix's presence is decided by the rendered icon, not by the icon prop
 
@@ -83,8 +79,6 @@ It is a class-name coupling across packages that no test holds: support's styles
 Renaming `sy-ac` silently restores the wrong ring.
 
 ## Divergences
-
-Deliberate deviations from Filament — permanent, and the reason they hold.
 
 ### No loading indicator, and three CSS hooks go with it
 

@@ -1,3 +1,14 @@
+---
+description: Two identically-named traits, one per tier — Filament ships both under the same class name in different namespaces, so Sylament does too… (draft)
+ports:
+  - vendor/filament/schemas/src/Concerns/BelongsToModel.php
+  - vendor/filament/schemas/src/Components/Concerns/BelongsToModel.php
+  - vendor/filament/filament/src/Resources/Pages/EditRecord.php
+owns:
+  - packages/schemas/src/Components/Concerns/BelongsToRecord.php
+  - packages/schemas/src/Components/Concerns/HasNullableBranch.php
+  - packages/schemas/src/Concerns/BelongsToRecord.php
+---
 # BelongsToRecord (schemas)
 
 Two identically-named traits, one per tier — Filament ships both under the same class name in different namespaces, so Sylament does too: [`Sylament\Schemas\Concerns\BelongsToRecord`](../../../packages/schemas/src/Concerns/BelongsToRecord.php) on [`Schema`](schema.md) and [`Sylament\Schemas\Components\Concerns\BelongsToRecord`](../../../packages/schemas/src/Components/Concerns/BelongsToRecord.php) on the base [`Component`](component.md).
@@ -8,20 +19,9 @@ The operation half lives in [`has-operation.md`](has-operation.md).
 One further Sylament-only trait is tracked here rather than in a file of its own, because `getData()` is its only consumer: [`Components\Concerns\HasNullableBranch`](../../../packages/schemas/src/Components/Concerns/HasNullableBranch.php) — `nullWhenBlank()`, composed onto the base `Component` alongside `HasColumns` so any container can declare itself an optional branch of the record graph.
 The write-side type lookup all of this now rests on has its own file, [`record-type-reader.md`](record-type-reader.md).
 
-**Status:** in progress — see the [status vocabulary](../README.md#statuses).
-
-Reference — the Filament source this is diffed against:
-
-- [`schemas/src/Concerns/BelongsToModel.php`](../../../vendor/filament/schemas/src/Concerns/BelongsToModel.php) — the root-tier binding, the getter chain, and the relationship walks
-- [`schemas/src/Components/Concerns/BelongsToModel.php`](../../../vendor/filament/schemas/src/Components/Concerns/BelongsToModel.php) — the component-tier binding plus the per-component relationship save/load members
-- [`filament/src/Resources/Pages/EditRecord.php`](../../../vendor/filament/filament/src/Resources/Pages/EditRecord.php) — where Filament does the mapping our two edges replace (`attributesToArray()` in, `$record->update($data)` out)
-
 ## Surface
 
 Every point of both tiers, plus the mapping edges and the closure-injection arms they feed.
-_Blocked by_ names what has to land first.
-_Detail_ carries a **detail** link (the write-up in [Details](#details), deleted once the row is **done**), a **semantics** link (a permanent note in [Semantics](#semantics)), and/or a **diverges** link (the permanent note in [Divergences](#divergences)), or `—`.
-A row with no _Ports_ link is Sylament-only.
 
 ### Root tier — `Schema`
 
@@ -619,7 +619,7 @@ A branch that [owns its record subtree](#a-component-can-own-its-whole-record-su
 Presence is read at the branch's **own** path rather than through a leaf it does not have; the blank test short-circuits to the value arm; and nulling records the branch path exactly as well as by prefix, because an owner *is* a mapped path where an ordinary branch never is — without the exact skip the leaf walk would immediately write the owner's wholesale value back over the `null` the pass just wrote, and the declaration would silently do nothing.
 
 There is no Filament counterpart and the near neighbour has opposite polarity — `relationship(condition:)` says *save when true* and ships no blank test, so a Filament user writes the emptiness check by hand every time.
-The name is recorded as a Sylament invention rather than a rename in the [rename table](../renames.md#names-with-no-filament-source).
+The name is recorded as a Sylament invention rather than a rename in the [rename table](../translations.md#names-with-no-filament-source).
 
 Two consequences worth stating.
 **An undeclared branch is not nulled**, it is constructed: leave `nullWhenBlank()` off and a blank nested object still gets built, then fails validation on its first non-nullable leaf — which is the behaviour that makes the declaration opt-in rather than a default.

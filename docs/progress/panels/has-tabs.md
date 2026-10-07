@@ -1,3 +1,12 @@
+---
+description: 'The record filters a listing offers as a strip above its table: the tabs a host declares, the one that is active, and the scope that one lays over the… (draft)'
+ports:
+  - vendor/filament/filament/src/Resources/Concerns/HasTabs.php
+  - vendor/filament/filament/src/Resources/Pages/ListRecords.php
+  - vendor/filament/schemas/src/Components/Tabs.php
+owns:
+  - packages/panels/src/Resources/Concerns/HasTabs.php
+---
 # HasTabs (panels)
 
 [`Sylament\Panels\Resources\Concerns\HasTabs`](../../../packages/panels/src/Resources/Concerns/HasTabs.php) — the record filters a listing offers as a strip above its table: the tabs a host declares, the one that is active, and the scope that one lays over the table's query.
@@ -10,25 +19,12 @@ The difference between them is the URL: `ManageRelatedRecords` and `ListRecords`
 The strip itself is schemas' [`Tabs`](../schemas/tabs.md) in its `liveComponentProperty()` mode: server-driven, writing the active key back onto this host through `live#update`, with no client controller loaded.
 It is a **record filter**, not a layout — the tabs hold no components, only a query scope — which is why the whole feature is nine methods, two properties and a `Tabs` call rather than a component of its own.
 
-**Status:** done — see the [status vocabulary](../README.md#statuses).
-
-Reference — the Filament source this is diffed against:
-
-- [`Resources/Concerns/HasTabs.php`](../../../vendor/filament/filament/src/Resources/Concerns/HasTabs.php) — the whole trait, all nine members
-- [`Resources/Pages/ListRecords.php`](../../../vendor/filament/filament/src/Resources/Pages/ListRecords.php) — `#[Url(as: 'tab')] public ?string $activeTab` and the `mount()` that loads the default
-- [`Schemas/Components/Tabs.php`](../../../vendor/filament/schemas/src/Components/Tabs.php) — `livewireProperty()`, the mode the strip renders in
-
 ## Surface
-
-Every point of this trait.
-_Blocked by_ names what has to land first.
-_Detail_ carries two links: **diverges** → the permanent note in [Divergences](#divergences), and **semantics** → the permanent note in [Semantics](#semantics).
-No row is unfinished, so there is no Details section.
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
 | [`$activeTab` — the `#[LiveProp]` and its `modifyActiveTabProp()` modifier](../../../packages/panels/src/Resources/Concerns/HasTabs.php) | [`HasTabs::$activeTab`](../../../vendor/filament/filament/src/Resources/Concerns/HasTabs.php) + [`#[Url(as: 'tab')]` on `ListRecords`](../../../vendor/filament/filament/src/Resources/Pages/ListRecords.php) | done | — | [diverges](#the-url-binding-moves-off-the-page-and-onto-the-props-modifier) |
-| [`getTabs()` — the user hook](../../../packages/panels/src/Resources/Concerns/HasTabs.php) | [`HasTabs::getTabs()`](../../../vendor/filament/filament/src/Resources/Concerns/HasTabs.php) | done | — | [renames.md](../renames.md#names-with-no-filament-source) — the name collides with schemas' own `Tabs::getTabs()`, which answers what a component holds rather than declaring what a page offers. Both spellings are Filament's, and the collision is Filament's too |
+| [`getTabs()` — the user hook](../../../packages/panels/src/Resources/Concerns/HasTabs.php) | [`HasTabs::getTabs()`](../../../vendor/filament/filament/src/Resources/Concerns/HasTabs.php) | done | — | [renames.md](../translations.md#names-with-no-filament-source) — the name collides with schemas' own `Tabs::getTabs()`, which answers what a component holds rather than declaring what a page offers. Both spellings are Filament's, and the collision is Filament's too |
 | [`getCachedTabs()` — the memoised set, with generated labels stamped](../../../packages/panels/src/Resources/Concerns/HasTabs.php) | [`HasTabs::getCachedTabs()`](../../../vendor/filament/filament/src/Resources/Concerns/HasTabs.php) | done | — | [semantics](#the-cache-is-nullable-because-a-typed-uninitialised-property-cannot-be-asked) |
 | [`getDefaultActiveTab()`](../../../packages/panels/src/Resources/Concerns/HasTabs.php) | [`HasTabs::getDefaultActiveTab()`](../../../vendor/filament/filament/src/Resources/Concerns/HasTabs.php) | done | — | typed `?string` where Filament's is `string \| int \| null`, because the key is a `LiveProp`'s value and the wire carries strings |
 | [`loadDefaultActiveTab()` — the `#[PostMount(priority: 30)]` hook, healing a blank key **and** one the host no longer declares](../../../packages/panels/src/Resources/Concerns/HasTabs.php) | [`HasTabs::loadDefaultActiveTab()`](../../../vendor/filament/filament/src/Resources/Concerns/HasTabs.php), called from [`ListRecords::mount()`](../../../vendor/filament/filament/src/Resources/Pages/ListRecords.php) | done | — | [diverges](#the-default-loads-from-a-post-mount-hook-and-again-at-render) |
@@ -43,9 +39,6 @@ The nine methods are covered by [`HasTabsTest`](../../../packages/panels/tests/U
 The rendered half is [`ListRecordsTabsTest`](../../../packages/panels/tests/Integration/Resources/Pages/ListRecordsTabsTest.php), which boots the real panel: the strip above the table and its absence, the first tab active with every record under it, `?tab=` narrowing the list, the page reset on a tab change, and the four healing cases the divergences below describe — a bookmarked key the list no longer declares, an empty `?tab=`, a key the client blanks, and a strip whose first render is a hydration.
 
 ## Semantics
-
-Faithful ports subtle enough that the next reader would misread the code.
-Permanent, and addressable by anchor.
 
 ### The cache is nullable because a typed uninitialised property cannot be asked
 
@@ -79,9 +72,6 @@ A tab's scope normally applies to the single-record lookup too, so a row action 
 Both arms are pinned.
 
 ## Divergences
-
-Deliberate deviations from Filament — permanent, and the reason they hold.
-Say what would reverse the decision when it is provisional.
 
 ### The URL binding moves off the page and onto the prop's modifier
 

@@ -1,20 +1,19 @@
+---
+description: The shared character-length concern composed on both `TextInput` and `Textarea`, together with the `Contracts\CanBeLengthConstrained` interface those… (draft)
+ports:
+  - vendor/filament/forms/src/Components/Concerns/CanBeLengthConstrained.php
+  - vendor/filament/forms/src/Components/Contracts/CanBeLengthConstrained.php
+  - vendor/filament/forms/src/Components/Contracts/CanHaveNumericState.php
+owns:
+  - packages/forms/src/Components/Concerns/CanBeLengthConstrained.php
+  - packages/forms/src/Components/Contracts/CanBeLengthConstrained.php
+---
 # CanBeLengthConstrained (forms)
 
 `Sylament\Forms\Components\Concerns\CanBeLengthConstrained` — the shared character-length concern composed on both `TextInput` and `Textarea`, together with the [`Contracts\CanBeLengthConstrained`](../../../packages/forms/src/Components/Contracts/CanBeLengthConstrained.php) interface those two fields implement.
 It carries the `length` / `maxLength` / `minLength` setters and getters, and turns them into Symfony `Length` constraints for [`CanBeValidated`](can-be-validated.md) to fold into the field's constraint list.
 
-**Status:** done — see the [status vocabulary](../README.md#statuses).
-
-Reference — the Filament source this is diffed against:
-
-- [`Components/Concerns/CanBeLengthConstrained.php`](../../../vendor/filament/forms/src/Components/Concerns/CanBeLengthConstrained.php) — the trait
-- [`Components/Contracts/CanBeLengthConstrained.php`](../../../vendor/filament/forms/src/Components/Contracts/CanBeLengthConstrained.php) — the interface the trait satisfies (its own [Supporting row](README.md#supporting-surface))
-- [`Components/Contracts/CanHaveNumericState.php`](../../../vendor/filament/forms/src/Components/Contracts/CanHaveNumericState.php) — the contract Filament's rule builder branches on (unported)
-
 ## Surface
-
-_Blocked by_ names what has to land first.
-_Detail_ links a permanent note in [Divergences](#divergences), or `—`.
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
@@ -26,9 +25,6 @@ _Detail_ links a permanent note in [Divergences](#divergences), or `—`.
 Coverage: the setter fan-out, the exact-`Length` build, the separate max/min builds, the no-bounds case and closure evaluation by [`CanBeLengthConstrainedTest`](../../../packages/forms/tests/Unit/Components/Concerns/CanBeLengthConstrainedTest.php); the hand-off from the field's constraint list by [`CanBeValidatedTest`](../../../packages/forms/tests/Unit/Components/Concerns/CanBeValidatedTest.php) and, ordered against the other arms, by [`TextInputTest`](../../../packages/forms/tests/Integration/Components/TextInputTest.php); the rendered `maxlength` / `minlength` attributes by the `TextInput` and `Textarea` integration suites.
 
 ## Divergences
-
-Deliberate deviations from Filament, and the reason each holds.
-Provisional ones say what would reverse them.
 
 ### Numeric fields get plain Length constraints, not digit counts
 

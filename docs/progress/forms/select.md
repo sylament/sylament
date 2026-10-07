@@ -1,22 +1,32 @@
+---
+description: The select field, over a static option map, an enum, or a Doctrine association, rendered as the native `<select>` or — once it is searchable… (draft)
+ports:
+  - vendor/filament/forms/src/Components/Select.php
+  - vendor/filament/forms/src/Components/Concerns/HasOptions.php
+  - vendor/filament/forms/src/Components/Concerns/CanSelectPlaceholder.php
+  - vendor/filament/forms/src/Components/Concerns/CanDisableOptions.php
+  - vendor/filament/forms/src/Components/Concerns/CanBeSearchable.php
+  - vendor/filament/forms/src/Components/Concerns/CanBePreloaded.php
+  - vendor/filament/forms/src/Components/Concerns/HasLoadingMessage.php
+  - vendor/filament/forms/src/Components/Concerns/CanBeNative.php
+  - vendor/filament/forms/src/Components/Concerns/CanAllowHtml.php
+  - vendor/filament/forms/src/Components/Concerns/CanLimitItemsLength.php
+  - vendor/filament/support/resources/js/utilities/select.js
+  - vendor/filament/forms/resources/js/components/select.js
+  - vendor/filament/forms/resources/lang/en/components.php
+owns:
+  - packages/forms/src/Components/Concerns/CanBePreloaded.php
+  - packages/forms/src/Components/Concerns/HasLoadingMessage.php
+  - packages/forms/src/Components/Select.php
+  - packages/forms/templates/partials/Select/
+---
 # Select (forms)
 
 `Sylament\Forms\Components\Select` — the select field, over a static option map, an enum, or a Doctrine association, rendered as the native `<select>` or — once it is searchable, multiple, renders HTML labels or declares `native(false)` — as the JS control forms' `select` Stimulus controller builds — a port of Filament's own select utility.
 It composes the shared option pair ([`HasOptions`](has-options.md), [`CanDisableOptions`](can-disable-options.md) and its [contract](../../../packages/forms/src/Components/Contracts/CanDisableOptions.php)), the searchable trio it shares with [`CheckboxList`](checkbox-list.md) ([`CanBeSearchable`](can-be-searchable.md), [`CanAllowHtml`](can-allow-html.md), [`CanLimitItemsLength`](can-limit-items-length.md)), the native switch it shares with the date pickers ([`CanBeNative`](can-be-native.md)), three single-use concerns folded here — [`CanSelectPlaceholder`](../../../packages/forms/src/Components/Concerns/CanSelectPlaceholder.php), [`CanBePreloaded`](../../../packages/forms/src/Components/Concerns/CanBePreloaded.php), [`HasLoadingMessage`](../../../packages/forms/src/Components/Concerns/HasLoadingMessage.php) — and [`HasRelationship`](../../../packages/forms/src/Components/Concerns/HasRelationship.php), which it shares with [`CheckboxList`](checkbox-list.md#the-to-many-relationship-arm-serves-this-field-unchanged) and whose write-up stays here as the arm's home.
 It casts its state through schemas' [`OptionStateCast`](../schemas/option-state-cast.md) — or, under `multiple()`, [`OptionsArrayStateCast`](../schemas/options-array-state-cast.md), or, under an [enum](has-enum.md), [`EnumStateCast`](../schemas/enum-state-cast.md) / [`EnumArrayStateCast`](../schemas/enum-array-state-cast.md) — and guards a submitted value server-side by a Symfony `Choice` over its enabled options where the option map is the whole truth, and by [probing the value's label](#the-choice-constraint-is-the-fields-only-server-side-guard) where it is not.
 
-**Status:** done — see the [status vocabulary](../README.md#statuses).
-
-Reference — the Filament source this is diffed against:
-
-- [`Components/Select.php`](../../../vendor/filament/forms/src/Components/Select.php) — the field, its `toEmbeddedHtml()` two-branch render, and the four `#[ExposedLivewireMethod]` members its Alpine control calls
-- [`Components/Concerns/HasOptions.php`](../../../vendor/filament/forms/src/Components/Concerns/HasOptions.php), [`CanSelectPlaceholder.php`](../../../vendor/filament/forms/src/Components/Concerns/CanSelectPlaceholder.php), [`CanDisableOptions.php`](../../../vendor/filament/forms/src/Components/Concerns/CanDisableOptions.php), [`CanBeSearchable.php`](../../../vendor/filament/forms/src/Components/Concerns/CanBeSearchable.php), [`CanBePreloaded.php`](../../../vendor/filament/forms/src/Components/Concerns/CanBePreloaded.php), [`HasLoadingMessage.php`](../../../vendor/filament/forms/src/Components/Concerns/HasLoadingMessage.php), [`CanBeNative.php`](../../../vendor/filament/forms/src/Components/Concerns/CanBeNative.php), [`CanAllowHtml.php`](../../../vendor/filament/forms/src/Components/Concerns/CanAllowHtml.php), [`CanLimitItemsLength.php`](../../../vendor/filament/forms/src/Components/Concerns/CanLimitItemsLength.php) — the concerns (the last four each have a file of their own, linked above)
-- [`support/resources/js/utilities/select.js`](../../../vendor/filament/support/resources/js/utilities/select.js) and [`forms/resources/js/components/select.js`](../../../vendor/filament/forms/resources/js/components/select.js) — Filament's own first-party JS control, which the port [carries as its engine](#nativefalse-switches-to-the-js-control)
-- [`forms/resources/lang/en/components.php`](../../../vendor/filament/forms/resources/lang/en/components.php) — the `select.*` strings the literals stand in for
-
 ## Surface
-
-_Blocked by_ names what has to land first.
-_Detail_ links a permanent note in [Details](#details), [Semantics](#semantics) or [Divergences](#divergences), or `—`.
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
@@ -50,7 +60,7 @@ _Detail_ links a permanent note in [Details](#details), [Semantics](#semantics) 
 | The relationship search and label arms — `getSearchResultsFromRelationship()`, `getOptionsFromRelationship()` (searchable / preload / limit / ordering), `getOptionLabelFromRelationship()`, `getOptionLabelsFromRelationship()`, and the shared `getOptionLabelFromRecordUsing()` trio | [`Components/Select.php`](../../../vendor/filament/forms/src/Components/Select.php) | done | — | [semantics](#the-relationship-search-arm-runs-a-like-per-column-over-the-scoped-option-query) · [diverges](#a-search-column-is-a-mapped-field-and-the-title-ordering-skips-what-it-cannot-order) |
 | `createOptionForm()` / `createOptionUsing()` / `createOptionAction()` / `getCreateOptionAction()` and the create modal chain | [`Components/Select.php`](../../../vendor/filament/forms/src/Components/Select.php) | done | — | [semantics](#the-option-actions-are-suffix-actions-with-doctrine-defaults) · [diverges](#the-non-relationship-schema-record-is-read-off-the-field-not-off-a-getactionschemamodel) · [diverges](#a-key-an-option-actions-mutation-adds-that-no-component-maps-is-refused) |
 | `editOptionForm()` / `updateOptionUsing()` / `fillEditOptionActionFormUsing()` / `editOptionAction()` / `getEditOptionAction()` | [`Components/Select.php`](../../../vendor/filament/forms/src/Components/Select.php) | done | — | [semantics](#the-option-actions-are-suffix-actions-with-doctrine-defaults) · [diverges](#geteditoptionactionformdata-also-answers-an-object) · [diverges](#a-key-an-option-actions-mutation-adds-that-no-component-maps-is-refused) |
-| `refreshSelectedOptionLabel()` | [`Components/Select.php`](../../../vendor/filament/forms/src/Components/Select.php) | done | — | [diverges](#refreshselectedoptionlabel-dispatches-a-browser-event-the-control-answers-by-re-syncing) · [renames](../renames.md#names-with-no-filament-source) |
+| `refreshSelectedOptionLabel()` | [`Components/Select.php`](../../../vendor/filament/forms/src/Components/Select.php) | done | — | [diverges](#refreshselectedoptionlabel-dispatches-a-browser-event-the-control-answers-by-re-syncing) · [renames](../translations.md#names-with-no-filament-source) |
 | `manageOptionForm()` / `manageOptionActions()` / the two modal headings | [`Components/Select.php`](../../../vendor/filament/forms/src/Components/Select.php) | done | — | [semantics](#the-option-actions-are-suffix-actions-with-doctrine-defaults) · [diverges](#the-option-action-strings-are-untranslated-literals) |
 | `relationship()` `ignoreRecord:` | [`Components/Select.php`](../../../vendor/filament/forms/src/Components/Select.php) | done | — | [semantics](#ignorerecord-narrows-the-two-option-arms-and-neither-label-arm) · [diverges](#a-record-of-another-class-than-the-association-target-is-refused) |
 | `pivotData()` | [`Concerns/HasPivotData.php`](../../../vendor/filament/forms/src/Components/Concerns/HasPivotData.php) | skipped | — | [diverges](#the-save-arm-writes-a-desired-list-not-attachdetach) |
@@ -460,9 +470,6 @@ Tests pin the whole tier under a composite-owner record so the sweep has a faili
 
 ## Divergences
 
-Deliberate deviations from Filament, and the reason each holds.
-Provisional ones say what would reverse them.
-
 ### `native(false)` switches to the JS control
 
 Filament's `native(false)` switches `Select` from a real `<select>` to its own first-party JavaScript control — `support/resources/js/utilities/select.js`, some 2 400 lines on `@floating-ui/dom` + `sortablejs` (the trail once said Choices.js; v5 dropped it, and the premise was stale).
@@ -503,7 +510,7 @@ The setter and getter stand, the string reaches the controller as a value, and n
 Filament's two option-action closures end by dispatching a **Livewire** event, `filament-forms::select.refreshSelectedOptionLabel`, carrying `livewireId` + `statePath` so the one Alpine control among many can match itself and re-fetch its selected label.
 The port's closures call the same method at the same two points — the create action right after the state write and its hooks, before the create-another branch (`Select.php:272`), the edit action after `updateOptionUsing` (`:417`) — and it dispatches a **browser** event on the host's own root, `sylament:select-refresh-selected-option-label`, payload `{statePath}` alone (the id is unnecessary on the host's element).
 The controller matches on `event.target === component.element` and `detail.statePath === statePathValue`, and answers by re-syncing from the values the same response re-rendered — no second label round-trip.
-A channel change and a name change together, so it has a ["no Filament source" row](../renames.md#names-with-no-filament-source).
+A channel change and a name change together, so it has a ["no Filament source" row](../translations.md#names-with-no-filament-source).
 What sat in its place before the JS control was the [option-map bust](#the-option-actions-are-suffix-actions-with-doctrine-defaults), which still runs and is still what makes a re-render show a new row.
 
 ### A search column is a mapped field, and the title ordering skips what it cannot order

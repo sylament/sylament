@@ -1,3 +1,14 @@
+---
+description: 'The tab chrome: two anonymous Twig components, `Tabs/index.html.twig` (`<twig:SylamentSupport:Tabs>`, the `<nav>` shell) and… (draft)'
+ports:
+  - vendor/filament/support/resources/views/components/tabs/index.blade.php
+  - vendor/filament/support/resources/views/components/tabs/item.blade.php
+  - vendor/filament/support/resources/css/components/tabs.css
+owns:
+  - packages/support/assets/src/styles/components/tabs.css
+  - packages/support/templates/components/Tabs/
+  - packages/support/templates/components/TabsItem/
+---
 # Tabs (support)
 
 The tab chrome: two anonymous Twig components, [`Tabs/index.html.twig`](../../../packages/support/templates/components/Tabs/index.html.twig) (`<twig:SylamentSupport:Tabs>`, the `<nav>` shell) and [`TabsItem/index.html.twig`](../../../packages/support/templates/components/TabsItem/index.html.twig) (`<twig:SylamentSupport:TabsItem>`, one tab trigger), plus their shared stylesheet [`tabs.css`](../../../packages/support/assets/src/styles/components/tabs.css).
@@ -7,19 +18,9 @@ The chrome is *only* chrome: it carries no active-tab state, no switching and no
 Whoever renders it says what the elements mean — schemas' [`Tabs`](../schemas/tabs.md) partial passes `role="tablist"`/`role="tab"` and the Stimulus wiring, and a plain link-tab nav (Filament's other consumer) passes `tag="a"` and nothing else.
 That split is Filament's, and it is why `role` is the caller's attribute rather than a template literal.
 
-**Status:** done — see the [status vocabulary](../README.md#statuses).
-
-Reference — the Filament source this is diffed against:
-
-- [`support/resources/views/components/tabs/index.blade.php`](../../../vendor/filament/support/resources/views/components/tabs/index.blade.php) — the `<nav>`, the `contained`/`vertical` classes, the `aria-label` merge
-- [`support/resources/views/components/tabs/item.blade.php`](../../../vendor/filament/support/resources/views/components/tabs/item.blade.php) — the tag/type/href arms, `aria-current`, the icon positions, the badge branch
-- [`support/resources/css/components/tabs.css`](../../../vendor/filament/support/resources/css/components/tabs.css) — the stylesheet, ported with the prefix rewrite and one selector fix
-
 ## Surface
 
 One row per feature cluster across the two templates.
-_Blocked by_ names what has to land first.
-_Detail_ carries **semantics** → the note in [Semantics](#semantics), **diverges** → the note in [Divergences](#divergences), or `—`.
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
@@ -39,8 +40,6 @@ That suite renders the `<nav>` classes and `aria-label`, every item arm (active/
 
 ## Semantics
 
-Faithful ports subtle enough that re-deriving them from the source would plausibly get them wrong.
-
 ### `aria-current` is `page` for an anchor and `true` for a button
 
 Filament merges `'aria-current' => $active ? (($tag === 'a') ? 'page' : 'true') : null` — the value depends on the *tag*, because `page` is only meaningful for a link to the current document.
@@ -54,8 +53,6 @@ The block wins when both are present, matching Blade's branch order.
 `markup()` returns `null` for a blank capture, so a block that renders only whitespace (schemas' Tabs partial emits the badge block unconditionally and fills it only for a deferred tab) falls through to the scalar arm instead of swallowing it.
 
 ## Divergences
-
-Deliberate deviations from Filament — permanent, and the reason they hold.
 
 ### The navigation label fallback is a literal, not a translation key
 

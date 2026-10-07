@@ -105,7 +105,7 @@ Concerns and contracts sit one directory per object tier, placed by who uses the
 - `actions` has only the root tier: `Action` and `ActionGroup` *are* actions' root objects, and `HasActions`, the host trait, sits beside their traits.
 - `tables` follows Filament's own split: `Table/Concerns/` for the `Table` object, `Columns/`, `Filters/`, `Grouping/` and `Columns/Summarizers/` for their tiers, and `src/Concerns/` for the host traits such as `HasTable`.
 - `support` composes nearly everything into components, so `Configurable` lives in `Components/Concerns/` beside `HasIcon` and the rest.
-- `support` keeps two traits at root. One is `EvaluatesClosures`, which `ColorManager`, a plain class, also composes ([renames.md](../progress/renames.md#namespace-segments)). The other is `HasDefaultDataFormattingSettings`, which a root object, `Tables\Table`, composes ([has-default-data-formatting-settings.md](../progress/support/has-default-data-formatting-settings.md)).
+- `support` keeps two traits at root. One is `EvaluatesClosures`, which `ColorManager`, a plain class, also composes ([translations.md](../progress/translations.md#namespace-segments)). The other is `HasDefaultDataFormattingSettings`, which a root object, `Tables\Table`, composes ([has-default-data-formatting-settings.md](../progress/support/has-default-data-formatting-settings.md)).
 
 A trait any component uses lives under `Components/` even when the root object uses it too, as schemas' `CanAccessProperties`, `HasColumns` and `HasGap` do for `Schema`. The root `Concerns/` holds only what components never import.
 

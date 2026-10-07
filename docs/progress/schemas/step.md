@@ -1,3 +1,11 @@
+---
+description: 'One panel of a `Wizard`: a required label, an optional description and icon pair for the header stepper, before/after validation callbacks the wizard… (draft)'
+ports:
+  - vendor/filament/schemas/src/Components/Wizard/Step.php
+owns:
+  - packages/schemas/src/Components/Wizard/
+  - packages/schemas/templates/partials/Step/
+---
 # Wizard\Step (schemas)
 
 `Sylament\Schemas\Components\Wizard\Step` — one panel of a [`Wizard`](wizard.md): a required label, an optional description and icon pair for the header stepper, before/after validation callbacks the wizard runs on the way forward, and a child schema holding the step's own components.
@@ -6,16 +14,8 @@ It extends the schemas base [`Component`](component.md), implements [`CanConceal
 A step renders as a `role="group"` panel named by its header button — never `role="tabpanel"`, since the header is an `<ol>` stepper of plain buttons with `aria-current="step"` rather than a `tablist`, so a role implying an owning tab would be incoherent.
 Filament reasons the same way in its own comment; when the wizard hides its header there is no button to name the panel, so it falls back to its own label.
 
-**Status:** in progress — see the [status vocabulary](../README.md#statuses).
-
-Reference — the Filament source this is diffed against:
-
-- [`schemas/src/Components/Wizard/Step.php`](../../../vendor/filament/schemas/src/Components/Wizard/Step.php) — the component, its key derivation, the validation callbacks and the `toEmbeddedHtml()` render
-
 ## Surface
 
-Every point of this component.
-_Blocked by_ names what has to land first.
 _Detail_ carries a **diverges** link to the permanent note in [Divergences](#divergences), a link to the wizard's own note, or `—`.
 
 | Feature | Ports | Status | Blocked by | Detail |
@@ -39,8 +39,6 @@ _Detail_ carries a **diverges** link to the permanent note in [Divergences](#div
 Coverage: the key derivation, both icons, the description, the validation callbacks (including a `Halt` escaping one), the columns fallback, the concealment contract and the template data by [`StepTest`](../../../packages/schemas/tests/Unit/Components/Wizard/StepTest.php); the rendered panel — `role="group"`, the `aria-labelledby`/`aria-label` split, `tabindex`, `data-step-key`, the target and the `expand` action, plus the header half (label, hidden label, description, icons, numbering) — by [`WizardRenderTest`](../../../packages/schemas/tests/Integration/Components/WizardRenderTest.php).
 
 ## Divergences
-
-Deliberate deviations from Filament — permanent unless the note says what would reverse it.
 
 ### The owning wizard is a method that throws rather than a docblock assertion
 

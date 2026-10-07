@@ -1,3 +1,10 @@
+---
+description: The state cast behind a field whose value is a single backed enum case. (draft)
+ports:
+  - vendor/filament/schemas/src/Components/StateCasts/EnumStateCast.php
+owns:
+  - packages/schemas/src/State/Casts/EnumStateCast.php
+---
 # EnumStateCast (schemas)
 
 `Sylament\Schemas\State\Casts\EnumStateCast` — the state cast behind a field whose value is a single backed enum case.
@@ -6,15 +13,7 @@
 `Field::getEnumDefaultStateCast()` builds it for any field that calls `enum()`.
 `Radio` reaches it through that base implementation unchanged; `ToggleButtons` and `Select` each override the method but still return this cast outside `multiple()`, falling back to [`EnumArrayStateCast`](enum-array-state-cast.md) — its plural — once `multiple()` is on.
 
-**Status:** done — see the [status vocabulary](../README.md#statuses).
-
-Reference — the Filament source this is diffed against:
-
-- [`schemas/src/Components/StateCasts/EnumStateCast.php`](../../../vendor/filament/schemas/src/Components/StateCasts/EnumStateCast.php)
-
 ## Surface
-
-_Detail_ links a permanent note in [Semantics](#semantics) or [Divergences](#divergences), or `—`.
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
@@ -39,8 +38,6 @@ The asymmetry is deliberate on both casts.
 The array cast is where a non-enum element does get coerced, because there the result type is [pinned to `list<string>`](enum-array-state-cast.md#set-returns-a-list-of-strings-rather-than-a-mixed-array).
 
 ## Divergences
-
-Deliberate deviations from Filament, and the reason each holds.
 
 ### `tryFrom()` is replaced by a scan over the cases' string spellings
 

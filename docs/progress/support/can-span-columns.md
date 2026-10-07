@@ -1,20 +1,17 @@
+---
+description: The shared trait that lets a component declare how many grid columns it spans (`columnSpan`) and which column it starts on (`columnStart`), per… (draft)
+ports:
+  - vendor/filament/support/src/Concerns/CanSpanColumns.php
+owns:
+  - packages/support/src/Components/Concerns/CanSpanColumns.php
+---
 # CanSpanColumns (support)
 
 `Sylament\Support\Components\Concerns\CanSpanColumns` — the shared trait that lets a component declare how many grid columns it spans (`columnSpan`) and which column it starts on (`columnStart`), per responsive breakpoint.
 Values are literals or closures, resolved through `EvaluatesClosures`; getters fold the accumulated per-breakpoint entries into a `default`/`sm`/`md`/`lg`/`xl`/`2xl` map (or a single value when a breakpoint is named).
 It ports Filament's identically-named base trait.
 
-**Status:** done — see the [status vocabulary](../README.md#statuses).
-
-Reference — the Filament source this is diffed against:
-
-- [`support/src/Concerns/CanSpanColumns.php`](../../../vendor/filament/support/src/Concerns/CanSpanColumns.php) — the trait, setters, and getters ported here
-
 ## Surface
-
-Every point of this trait.
-_Blocked by_ names what has to land first.
-_Detail_ carries a **diverges** link to the permanent note in [Divergences](#divergences), or `—`.
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |

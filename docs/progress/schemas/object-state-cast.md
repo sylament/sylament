@@ -1,3 +1,9 @@
+---
+description: 'The state cast that carries a value-shaped array across the object boundary: `get()` constructs a fresh instance of a declared class from an array''s… (draft)'
+ports: []
+owns:
+  - packages/schemas/src/State/Casts/ObjectStateCast.php
+---
 # ObjectStateCast (schemas)
 
 `Sylament\Schemas\State\Casts\ObjectStateCast` — the state cast that carries a value-shaped array across the object boundary: `get()` constructs a fresh instance of a declared class from an array's keys, `set()` deconstructs an instance back into that array.
@@ -5,22 +11,20 @@ It is the mechanism behind the `Repeater`'s [value-object item mode](../forms/re
 
 **Sylament-only.**
 Filament ships no counterpart anywhere in `Components/StateCasts/` — its answer to object-shaped repeater state is `relationship()`, which is identity-keyed Eloquent mapping, the exact surface [this cast's scope excludes](#fresh-construction-is-the-contract-because-value-objects-carry-no-identity).
-The class name follows the shipped family (`BooleanStateCast`, `OptionStateCast`) and sits among [renames.md's Sylament-only names](../renames.md#names-with-no-filament-source).
-
-**Status:** done — see the [status vocabulary](../README.md#statuses).
+The class name follows the shipped family (`BooleanStateCast`, `OptionStateCast`) and sits among [renames.md's Sylament-only names](../translations.md#names-with-no-filament-source).
 
 ## Surface
 
 _Detail_ links a decision section below, or `—`.
 No _Ports_ column — there is no Filament source to diff against.
 
-| Feature | Status | Blocked by | Detail |
-| --- | --- | --- | --- |
-| `get()` — item array → fresh object (constructor params by name, then writable properties) | done | — | [decision](#construction-is-a-hand-mapper-over-the-graphs-existing-pieces) · [decision](#the-name-set-is-the-fidelity-contract) |
-| `set()` — object → item array (readable properties over the same name set) | done | — | [decision](#the-name-set-is-the-fidelity-contract) |
-| User-supplied conversion pair (`denormalizeUsing` / `normalizeUsing` closures overriding either half) | done | — | [decision](#the-user-can-own-either-half-of-the-conversion) |
-| Guards — non-instantiable class at construction; wrong-class or scalar value in `set()`; a non-optional constructor param meeting null in `get()` | done | — | [decision](#every-failure-names-its-fix) |
-| Unknown-key tolerance in `get()` (fail-open on extra keys, matching the fail-closed posture of `OptionStateCast` toward tampered payloads) | done | — | [decision](#the-name-set-is-the-fidelity-contract) |
+| Feature | Ports | Status | Blocked by | Detail |
+| --- | --- | --- | --- | --- |
+| `get()` — item array → fresh object (constructor params by name, then writable properties) | — | done | — | [decision](#construction-is-a-hand-mapper-over-the-graphs-existing-pieces) · [decision](#the-name-set-is-the-fidelity-contract) |
+| `set()` — object → item array (readable properties over the same name set) | — | done | — | [decision](#the-name-set-is-the-fidelity-contract) |
+| User-supplied conversion pair (`denormalizeUsing` / `normalizeUsing` closures overriding either half) | — | done | — | [decision](#the-user-can-own-either-half-of-the-conversion) |
+| Guards — non-instantiable class at construction; wrong-class or scalar value in `set()`; a non-optional constructor param meeting null in `get()` | — | done | — | [decision](#every-failure-names-its-fix) |
+| Unknown-key tolerance in `get()` (fail-open on extra keys, matching the fail-closed posture of `OptionStateCast` toward tampered payloads) | — | done | — | [decision](#the-name-set-is-the-fidelity-contract) |
 
 Coverage: the full edge matrix — both directions over promoted-constructor, setter-based and `can`-prefixed DTOs (the accessor honours `get`/`is`/`has`/`can` and so does the name set, so a `canPublish()`/`setPublish()` pair round-trips rather than dropping its value), the null and existing-instance passthroughs, the constructor-default arms (absent key, explicit null against a nullable and a non-nullable default), the unknown-key arms including property-path-shaped keys, both closure overrides, and every guard — by [`ObjectStateCastTest`](../../../packages/schemas/tests/Unit/State/Casts/ObjectStateCastTest.php), plus the repeater-side Integration suite recorded in [repeater.md](../forms/repeater.md).
 

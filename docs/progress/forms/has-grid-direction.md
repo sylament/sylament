@@ -1,3 +1,14 @@
+---
+description: One declaration, `gridDirection()`, deciding whether a field's options flow across the grid's columns or down them. (draft)
+ports:
+  - vendor/filament/forms/src/Components/Concerns/HasGridDirection.php
+  - vendor/filament/support/src/Enums/GridDirection.php
+  - vendor/filament/forms/src/Components/Radio.php
+  - vendor/filament/forms/src/Components/CheckboxList.php
+  - vendor/filament/forms/src/Components/ToggleButtons.php
+owns:
+  - packages/forms/src/Components/Concerns/HasGridDirection.php
+---
 # HasGridDirection (forms)
 
 `Sylament\Forms\Components\Concerns\HasGridDirection` — one declaration, `gridDirection()`, deciding whether a field's options flow across the grid's columns or down them.
@@ -6,18 +17,7 @@ It is storage and coercion only: the direction it answers is a [`Sylament\Suppor
 Three fields compose it — `Radio`, `CheckboxList` and `ToggleButtons` — which is why it is filed here rather than folded into one of them.
 [`Radio`](radio.md) is the first built, and the first template to pass the direction to `grid()`; [`ToggleButtons`](toggle-buttons.md) is the second, spelling the same `Column` default at the one of its two templates that lays out a grid at all; and [`CheckboxList`](checkbox-list.md) is the third, the only one with no `inline()` escape from the grid at all.
 
-**Status:** done — see the [status vocabulary](../README.md#statuses).
-
-Reference — the Filament source this is diffed against:
-
-- [`Components/Concerns/HasGridDirection.php`](../../../vendor/filament/forms/src/Components/Concerns/HasGridDirection.php) — the trait
-- [`support/src/Enums/GridDirection.php`](../../../vendor/filament/support/src/Enums/GridDirection.php) — the enum, [ported](../support/README.md) with support
-- [`Components/Radio.php`](../../../vendor/filament/forms/src/Components/Radio.php), [`CheckboxList.php`](../../../vendor/filament/forms/src/Components/CheckboxList.php), [`ToggleButtons.php`](../../../vendor/filament/forms/src/Components/ToggleButtons.php) — the three composers, each naming the default this getter does not
-
 ## Surface
-
-_Blocked by_ names what has to land first.
-_Detail_ links a permanent note in [Semantics](#semantics) or [Divergences](#divergences), or `—`.
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
@@ -41,9 +41,6 @@ A string naming no direction — `gridDirection('diagonal')` — coerces to `nul
 Filament does the same, and the failure is deliberately soft because the value only ever picks a CSS class.
 
 ## Divergences
-
-Deliberate deviations from Filament, and the reason each holds.
-Provisional ones say what would reverse them.
 
 ### An empty direction string answers null where Filament's getter fatals
 

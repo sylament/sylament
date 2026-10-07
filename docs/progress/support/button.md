@@ -1,3 +1,13 @@
+---
+description: The `<twig:SylamentSupport:Button>` anonymous template — the shared text-button widget. (draft)
+ports:
+  - vendor/filament/support/resources/views/components/button/index.blade.php
+  - vendor/filament/support/src/View/Components/ButtonComponent.php
+  - vendor/filament/support/resources/css/components/button.css
+owns:
+  - packages/support/assets/src/styles/components/button.css
+  - packages/support/templates/components/Button/
+---
 # Button (support)
 
 The `<twig:SylamentSupport:Button>` anonymous template — the shared text-button widget.
@@ -5,19 +15,7 @@ It has no Sylament PHP class: it ports Filament's Blade `button/index.blade.php`
 The current Twig is a thin subset — it renders a `<button>`/`<a>` with a size, a leading icon, a disabled state, and a color class, and leaves Filament's badge, tooltip, key-binding, loading-indicator, form-processing, and `labeledFrom` behavior unported.
 The ported skeleton is render-tested from the actions suite ([`ButtonRenderTest`](../../../packages/actions/tests/Integration/Components/ButtonRenderTest.php)); the interactive and decorative surface is not built yet, so the component as a whole stays **in progress**.
 
-**Status:** in progress — see the [status vocabulary](../README.md#statuses).
-
-Reference — the Filament source this is diffed against:
-
-- [`support/resources/views/components/button/index.blade.php`](../../../vendor/filament/support/resources/views/components/button/index.blade.php) — the rendered markup this Twig ports
-- [`support/src/View/Components/ButtonComponent.php`](../../../vendor/filament/support/src/View/Components/ButtonComponent.php) — the color-map class applied via `->color(ButtonComponent::make($outlined), $color)`
-- [`support/resources/css/components/button.css`](../../../vendor/filament/support/resources/css/components/button.css) — the `.fi-btn` chrome and the `.fi-btn-group` arm that [`button.css`](../../../packages/support/assets/src/styles/components/button.css) ports
-
 ## Surface
-
-Every point of this component.
-_Blocked by_ names what has to land first.
-_Detail_ carries either or both: **detail** → the write-up in [Details](#details), deleted once the row is **done**; **diverges** → the permanent note in [Divergences](#divergences).
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
@@ -42,7 +40,6 @@ _Detail_ carries either or both: **detail** → the write-up in [Details](#detai
 
 ## Details
 
-Specifics for rows that are not finished — what is in, what is missing, what the next step is.
 The **done** rows above — tag/`href`/`target`, `type`, `disabled`, `size`, and `color` (which diverges) — are covered by [`ButtonRenderTest`](../../../packages/actions/tests/Integration/Components/ButtonRenderTest.php): it renders `<twig:SylamentSupport:Button>` through a kernel that registers `TwigComponentBundle` (the actions suite is the nearest such home, per `docs/internals/test-infrastructure.md`) and asserts the default primary/`md` classes and `type`, `<a>` tag-switching with `href` + `target="_blank"` and no `type`, the `disabled`/`aria-disabled`/ `sy-disabled` trio, a gray color dropping the color classes, a semantic `danger` color, and extra-attribute forwarding.
 So they carry no write-up here.
 

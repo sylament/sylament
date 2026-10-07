@@ -1,18 +1,15 @@
+---
+description: The shared acceptance concern the boolean fields compose. (draft)
+ports:
+  - vendor/filament/forms/src/Components/Concerns/CanBeAccepted.php
+owns: []
+---
 # CanBeAccepted (forms)
 
 `Sylament\Forms\Components\Concerns\CanBeAccepted` — the shared acceptance concern the boolean fields compose.
 `accepted()` demands a true value and `declined()` a false one, each registering a Symfony constraint for [`CanBeValidated`](can-be-validated.md) to fold into the field's constraint list.
 
-**Status:** done — see the [status vocabulary](../README.md#statuses).
-
-Reference — the Filament source this is diffed against:
-
-- [`Components/Concerns/CanBeAccepted.php`](../../../vendor/filament/forms/src/Components/Concerns/CanBeAccepted.php) — the trait
-
 ## Surface
-
-_Blocked by_ names what has to land first.
-_Detail_ links a permanent note in [Divergences](#divergences), or `—`.
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
@@ -23,9 +20,6 @@ Coverage: the empty default, both constraint builds, the false-condition skip, t
 That the trait actually reaches its consumers is pinned separately, by [`CheckboxTest`](../../../packages/forms/tests/Integration/Components/CheckboxTest.php).
 
 ## Divergences
-
-Deliberate deviations from Filament, and the reason each holds.
-Provisional ones say what would reverse them.
 
 ### The accepted and declined rules become IsTrue and IsFalse
 

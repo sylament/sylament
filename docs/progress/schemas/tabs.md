@@ -1,3 +1,16 @@
+---
+description: '`Sylament\Schemas\Components\Tabs` is the tabbed layout component: it takes `Tab` children, renders support''s tab chrome as its nav and each tab''s… (draft)'
+ports:
+  - vendor/filament/schemas/src/Components/Tabs.php
+  - vendor/filament/schemas/src/Components/Concerns/CanPersistTab.php
+  - vendor/filament/schemas/resources/js/
+  - vendor/filament/schemas/resources/css/components/tabs.css
+owns:
+  - packages/schemas/assets/src/styles/components/tabs.css
+  - packages/schemas/src/Components/Concerns/CanPersistTab.php
+  - packages/schemas/src/Components/Tabs.php
+  - packages/schemas/templates/partials/Tabs/
+---
 # Tabs (schemas)
 
 [`Sylament\Schemas\Components\Tabs`](../../../packages/schemas/src/Components/Tabs.php) is the tabbed layout component: it takes [`Tab`](tab.md) children, renders support's [tab chrome](../support/tabs.md) as its nav and each tab's child schema as a panel, and hands the switching to the `sylament--schemas--tabs` Stimulus controller.
@@ -7,20 +20,7 @@ Two arms, and which one renders is decided by `liveComponentProperty()`.
 **Client mode** (the default) renders every visible tab's panel, marks the one `getActiveTab()` picks active, and attaches the controller — switching is then a class swap in the browser, no round-trip.
 **Server mode** (`liveComponentProperty('activeTab')`) renders no controller at all: each tab button writes the host's live property through UX Live's `live#update`, and only the active tab's panel is rendered.
 
-**Status:** in progress — see the [status vocabulary](../README.md#statuses).
-
-Reference — the Filament source this is diffed against:
-
-- [`schemas/src/Components/Tabs.php`](../../../vendor/filament/schemas/src/Components/Tabs.php) — the API, the two `toEmbeddedHtml()` arms, `getDeferredTabBadges()`
-- [`schemas/src/Components/Concerns/CanPersistTab.php`](../../../vendor/filament/schemas/src/Components/Concerns/CanPersistTab.php) — the persistence concern
-- [`schemas/resources/js/index.js`](../../../vendor/filament/schemas/resources/js) — the Alpine `tabsSchemaComponent` the Stimulus controller ports
-- [`schemas/resources/css/components/tabs.css`](../../../vendor/filament/schemas/resources/css/components/tabs.css) — the stylesheet
-
 ## Surface
-
-Every point of this component.
-_Blocked by_ names what has to land first.
-_Detail_ carries a **diverges** link to the note in [Divergences](#divergences), a **semantics** link to [Semantics](#semantics), a **detail** link to [Details](#details), or `—`.
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
@@ -55,8 +55,6 @@ Support's [`Tabs`/`TabsItem`/`LoadingIndicator`](../support/tabs.md) components 
 
 ## Details
 
-Write-ups for the rows that are not **done** — what is in, what is left, the next step.
-
 ### Server mode is the `livewireProperty` arm translated to UX Live
 
 `liveComponentProperty('activeTab')` is Filament's `livewireProperty()`, and the translation is the systematic Livewire → LiveComponent one, not a rename.
@@ -75,8 +73,6 @@ Blocked on the render-hook design.
 Next step: port with the registry, not before.
 
 ## Semantics
-
-Faithful ports subtle enough that re-deriving them from the source would plausibly get them wrong.
 
 ### The non-inheritable key is what keeps a child's absolute key unchanged
 
@@ -117,8 +113,6 @@ Each tab button spreads `tab.getExtraAttributeBag.toScalarAttributes` first and 
 That is Filament's own order — `Tabs.php:410` merges `$tabExtraAttributeBag->getAttributes()` and *then* its `role`/`aria-selected`/`x-on:click` map — so the behaviour is parity, not a divergence; it is stated here because the `ComponentAttributeBag` merge rules (class and style token lists append, later scalars win) make "the last spread wins" easy to misread as "everything merges".
 
 ## Divergences
-
-Deliberate deviations from Filament — permanent, and the reason they hold.
 
 ### The active tab is server-rendered and then owned by the controller
 

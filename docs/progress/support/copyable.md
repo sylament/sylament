@@ -1,3 +1,12 @@
+---
+description: The shared copy-to-clipboard control — `packages/support/assets/src/controllers/clipboard_controller.ts`, the port of the Alpine `x-on:click` +… (draft)
+ports:
+  - vendor/filament/tables/src/Columns/TextColumn.php
+  - vendor/filament/tables/resources/css/columns/color.css
+owns:
+  - packages/support/assets/src/controllers/clipboard_controller.ts
+  - packages/support/assets/src/styles/components/copyable.css
+---
 # Copyable (support)
 
 The shared copy-to-clipboard control — [`packages/support/assets/src/controllers/clipboard_controller.ts`](../../../packages/support/assets/src/controllers/clipboard_controller.ts), the port of the Alpine `x-on:click` + `$tooltip()` pair Filament writes inline in every copyable component, plus the two rules its chip and its live region need ([`assets/src/styles/components/copyable.css`](../../../packages/support/assets/src/styles/components/copyable.css)).
@@ -5,18 +14,7 @@ It is the client half of [`CanBeCopied`](can-be-copied.md): a template that has 
 
 It is deliberately **host-agnostic** — no live action, no `@symfony/ux-live-component` import, no knowledge of tables — for the reason [`sortable`](sortable.md) is: `support` is the base workspace and a live-component peer here would land on every consumer of it.
 
-**Status:** done — see the [status vocabulary](../README.md#statuses).
-
-Reference — the Filament source this is diffed against:
-
-- [`tables/src/Columns/TextColumn.php`](../../../vendor/filament/tables/src/Columns/TextColumn.php) — the `x-on:click.prevent.stop` handler it emits: `window.navigator.clipboard.writeText()` followed by `$tooltip(message, { theme, timeout })`
-- [`tables/resources/css/columns/color.css`](../../../vendor/filament/tables/resources/css/columns/color.css) — the `fi-copyable` cursor and focus ring, ported as `.sy-copyable`
-
 ## Surface
-
-Every point of this control.
-_Blocked by_ names what has to land first.
-_Detail_ carries **semantics** → the permanent note in [Semantics](#semantics), and/or **diverges** → the permanent note in [Divergences](#divergences).
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |

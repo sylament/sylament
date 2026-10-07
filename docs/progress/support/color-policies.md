@@ -1,3 +1,20 @@
+---
+description: The per-element contrast policies, plus the two contracts in `Colors\Contracts\` and the three shade resolvers in `Colors\Maps\`. (draft)
+ports:
+  - vendor/filament/support/src/View/Components/
+owns:
+  - packages/support/src/Colors/Components/BadgeComponent.php
+  - packages/support/src/Colors/Components/ButtonComponent.php
+  - packages/support/src/Colors/Components/DropdownComponent/
+  - packages/support/src/Colors/Components/IconButtonComponent.php
+  - packages/support/src/Colors/Components/LinkComponent.php
+  - packages/support/src/Colors/Components/ModalComponent/
+  - packages/support/src/Colors/Components/OutlinedButtonComponent.php
+  - packages/support/src/Colors/Components/SectionComponent/
+  - packages/support/src/Colors/Components/ToggleComponent.php
+  - packages/support/src/Colors/Contracts/
+  - packages/support/src/Colors/Maps/
+---
 # Color policies (support)
 
 `Sylament\Support\Colors\Components\` — the per-element contrast policies, plus the two contracts in `Colors\Contracts\` and the three shade resolvers in `Colors\Maps\`.
@@ -8,22 +25,11 @@ Without it every component hardcoded a shade — `badge.css` applied `text-color
 
 The registry that calls into these is [`color-manager.md`](color-manager.md); the palette maths they measure with is [`color.md`](color.md).
 
-**Status:** in progress — see the [status vocabulary](../README.md#statuses).
-
-Reference — the Filament source this is diffed against:
-
-- [`support/src/View/Components/`](../../../vendor/filament/support/src/View/Components) — the thirteen policy objects, the `Contracts/` pair and the `ColorMaps/` trio
-
 Two scope notes, because that directory is not homogeneous.
 `View/Components/ModalComponent.php` sits in it and is **not** a colour policy — it is the static global-defaults holder for modals, tracked as the deferred defaults seam in [`modal.md`](modal.md).
 And the rows below track the **policy objects**; how each rendered element *reaches* its policy — the prop, the template call, the CSS branch — stays in that element's own file ([`badge.md`](badge.md), [`button.md`](button.md), [`link.md`](link.md), [`icon-button.md`](icon-button.md), [`dropdown-item.md`](dropdown-item.md), [`modal.md`](modal.md), [`section.md`](section.md), [`input-wrapper.md`](input-wrapper.md), [`forms/toggle.md`](../forms/toggle.md)), so no element's colour status is recorded twice.
 
 ## Surface
-
-Every point of this tier.
-_Blocked by_ names what has to land first.
-_Detail_ carries three links, any of them: **detail** → the write-up in [Details](#details), deleted once the row is **done**; **semantics** → the permanent note in [Semantics](#semantics); **diverges** → the permanent note in [Divergences](#divergences).
-Rows never disappear — only their detail sections do.
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
@@ -51,9 +57,6 @@ That split is not cosmetic — the CI split publishes each package standalone, s
 
 ## Details
 
-Specifics for rows that are not finished — what is already in, what is left, and what the next step is.
-Delete a subsection when its row flips to **done**; the table row and any divergence it earned stay behind.
-
 ### Three policies wait on the elements they would colour
 
 `DropdownComponent\HeaderComponent`, `DropdownComponent\ItemComponent\IconComponent` and the two `CalloutComponent` policies are all **blocked**, not skipped: each is wanted at parity and each is a handful of lines, but none has an element to paint yet.
@@ -63,9 +66,6 @@ One of the three is near: the dropdown item's `iconColor` prop is already a trac
 The callout pair waits on a `Callout` component in both support and schemas.
 
 ## Semantics
-
-Faithful ports that a reader re-deriving the behaviour from the source would plausibly get wrong.
-Permanent, and true once the row is **done**.
 
 ### An empty map is a real answer, not a missing one
 
@@ -91,16 +91,14 @@ This is also why the regression suite tests the button separately from the other
 
 ## Divergences
 
-Deliberate deviations from Filament — permanent, and the reason they hold.
-
 ### The tier is filed under `Colors\`, not under `Twig\Components\`
 
-Filament files these under `View\Components\`, and the repo's standing namespace translation is `View\` → `Twig\` ([renames.md](../renames.md#namespace-segments)).
+Filament files these under `View\Components\`, and the repo's standing namespace translation is `View\` → `Twig\` ([renames.md](../translations.md#namespace-segments)).
 Applying it here would land them in `Sylament\Support\Twig\Components\`, which already means something else: a **class-backed renderable** Twig component, the shape actions' `Modals` has.
 A colour policy is never rendered and has no template.
 
 So they are filed by capability at `src/` level instead — `Colors\Components\`, `Colors\Maps\`, `Colors\Contracts\` — the same rule that put `Evaluation\Invoker` and `Configuration\ComponentManager` where they are.
-Recorded in [renames.md](../renames.md#namespace-segments) so a migrating user grepping `View\Components\BadgeComponent` finds the destination.
+Recorded in [renames.md](../translations.md#namespace-segments) so a migrating user grepping `View\Components\BadgeComponent` finds the destination.
 
 The class names themselves are Filament-verbatim, including the nesting (`DropdownComponent\ItemComponent`), so only the leading segments move.
 

@@ -1,18 +1,16 @@
+---
+description: 'The concern behind the native `<datalist>`: the `datalist()` setter and the `getDatalistOptions()` reader the field templates loop over to render… (draft)'
+ports:
+  - vendor/filament/forms/src/Components/Concerns/HasDatalistOptions.php
+owns:
+  - packages/forms/src/Components/Concerns/HasDatalistOptions.php
+---
 # HasDatalistOptions (forms)
 
 `Sylament\Forms\Components\Concerns\HasDatalistOptions` — the concern behind the native `<datalist>`: the `datalist()` setter and the `getDatalistOptions()` reader the field templates loop over to render browser-side suggestions.
 Two fields compose it, [`TextInput`](text-input.md) and [`DateTimePicker`](date-time-picker.md), so it is promoted out of the former's fold and keeps a row of its own.
 
-**Status:** done — see the [status vocabulary](../README.md#statuses).
-
-Reference — the Filament source this is diffed against:
-
-- [`forms/src/Components/Concerns/HasDatalistOptions.php`](../../../vendor/filament/forms/src/Components/Concerns/HasDatalistOptions.php) — the trait
-
 ## Surface
-
-_Blocked by_ names what has to land first.
-_Detail_ links a permanent note in [Divergences](#divergences), or `—`.
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |

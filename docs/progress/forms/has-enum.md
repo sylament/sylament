@@ -1,3 +1,13 @@
+---
+description: 'Three lines of storage (`enum()` / `getEnum()`) that are the whole enum seam, plus the `Field`-tier plumbing they drive: `getEnumDefaultStateCast()`… (draft)'
+ports:
+  - vendor/filament/forms/src/Components/Concerns/HasEnum.php
+  - vendor/filament/forms/src/Components/Field.php
+  - vendor/filament/forms/src/Components/Select.php
+owns:
+  - packages/forms/src/Components/Concerns/HasEnum.php
+  - packages/forms/src/Components/ToggleButtons.php
+---
 # HasEnum (forms)
 
 `Sylament\Forms\Components\Concerns\HasEnum` — three lines of storage (`enum()` / `getEnum()`) that are the whole enum seam, plus the `Field`-tier plumbing they drive: `getEnumDefaultStateCast()` and the `getDefaultStateCasts()` override that appends it.
@@ -5,18 +15,7 @@ Composed on the **base `Field`**, so `enum()` exists on every field rather than 
 
 One declaration therefore does two jobs: it is the option source [`HasOptions`](has-options.md) falls back to, and it is the state cast that turns a submitted backing value into a case on the way in and back into a string on the way out.
 
-**Status:** done — see the [status vocabulary](../README.md#statuses).
-
-Reference — the Filament source this is diffed against:
-
-- [`Components/Concerns/HasEnum.php`](../../../vendor/filament/forms/src/Components/Concerns/HasEnum.php) — the trait
-- [`Components/Field.php`](../../../vendor/filament/forms/src/Components/Field.php) — `getDefaultStateCasts()` / `getEnumDefaultStateCast()`, the Field-tier half
-- [`Components/Select.php`](../../../vendor/filament/forms/src/Components/Select.php) — the multiplicity-aware override
-
 ## Surface
-
-_Blocked by_ names what has to land first.
-_Detail_ links a permanent note in [Semantics](#semantics) or [Divergences](#divergences), or `—`.
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
@@ -62,9 +61,6 @@ So the two escapes are not symmetrical, and the asymmetry is Filament's:
 That is the intended shape, not an accident of ordering.
 
 ## Divergences
-
-Deliberate deviations from Filament, and the reason each holds.
-Provisional ones say what would reverse them.
 
 ### The enum validates through the option `Choice`, not a rule of its own
 

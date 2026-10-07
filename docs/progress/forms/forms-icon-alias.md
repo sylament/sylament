@@ -1,19 +1,17 @@
+---
+description: The overridable icon slots the forms package exposes, ported from Filament's `View\FormsIconAlias` (the `View\` → `Twig\` segment is the systematic… (draft)
+ports:
+  - vendor/filament/forms/src/View/FormsIconAlias.php
+owns:
+  - packages/forms/src/Twig/
+---
 # FormsIconAlias (forms)
 
-[`Sylament\Forms\Twig\FormsIconAlias`](../../../packages/forms/src/Twig/FormsIconAlias.php) — the overridable icon slots the forms package exposes, ported from Filament's [`View\FormsIconAlias`](../../../vendor/filament/forms/src/View/FormsIconAlias.php) (the `View\` → `Twig\` segment is the systematic Blade → Twig translation, recorded in [renames.md](../renames.md#namespace-segments)).
+[`Sylament\Forms\Twig\FormsIconAlias`](../../../packages/forms/src/Twig/FormsIconAlias.php) — the overridable icon slots the forms package exposes, ported from Filament's [`View\FormsIconAlias`](../../../vendor/filament/forms/src/View/FormsIconAlias.php) (the `View\` → `Twig\` segment is the systematic Blade → Twig translation, recorded in [renames.md](../translations.md#namespace-segments)).
 
 An alias is a name an application can register an icon override for under [`sylament.icons`](../support/icon-manager.md); it does nothing until something resolves it — usually a template passing it to `generateIconHtml()`, sometimes PHP calling `IconManager::resolve()` — which is why the constant set grows with the surface that renders the icons rather than up front.
 
-**Status:** in progress — see the [status vocabulary](../README.md#statuses).
-
-Reference — the Filament source this is diffed against:
-
-- [`forms/src/View/FormsIconAlias.php`](../../../vendor/filament/forms/src/View/FormsIconAlias.php) — the 41 alias constants and their values
-
 ## Surface
-
-_Blocked by_ names what has to land first.
-_Detail_ carries either **detail** → the write-up in [Details](#details), deleted once the row is **done**, or **diverges** → the permanent note in [Divergences](#divergences).
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
@@ -66,9 +64,6 @@ The file-upload editor's thirteen take that route as well: they resolve in PHP t
 
 ## Details
 
-Specifics for rows that are not finished — what is already in, what is left, and what the next step is.
-Delete a subsection when its rows flip to **done**.
-
 ### The alias set is thirty constants of Filament's 41
 
 Filament declares every overridable icon slot in the whole field catalog up front.
@@ -79,8 +74,6 @@ The remaining 11 name icons of fields that are not built here at all: the builde
 An alias is only overridable once something reads it, so each constant lands in the same change as the field or feature that renders its icon — the growth order [`SupportIconAlias`](../support/support-icon-alias.md#pagination-rtl-aliases), [`TablesIconAlias`](../tables/tables-bundle.md#the-alias-set-is-fifteen-constants-of-filaments-23) and [`NotificationsIconAlias`](../notifications/notifications-icon-alias.md#the-sixth-constant-waits-for-the-panel-that-renders-it) all follow.
 
 ## Divergences
-
-Deliberate deviations from Filament — permanent, and the reason they hold.
 
 ### The alias values drop Filament's package prefix
 

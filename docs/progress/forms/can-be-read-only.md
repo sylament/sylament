@@ -1,20 +1,18 @@
+---
+description: 'The shared concern behind the native `readonly` attribute: the `readOnly()` setter, the `readOnlyOn()` operation gate, and the `isReadOnly()` reader… (draft)'
+ports:
+  - vendor/filament/forms/src/Components/Concerns/CanBeReadOnly.php
+  - vendor/filament/schemas/src/Components/Concerns/CanBeDisabled.php
+owns:
+  - packages/forms/src/Components/Concerns/CanBeReadOnly.php
+---
 # CanBeReadOnly (forms)
 
 `Sylament\Forms\Components\Concerns\CanBeReadOnly` — the shared concern behind the native `readonly` attribute: the `readOnly()` setter, the `readOnlyOn()` operation gate, and the `isReadOnly()` reader the field templates emit from.
 The port's two text fields compose it, `TextInput` and `Textarea`, as does [`DateTimePicker`](date-time-picker.md) and through it the two picker variants, so it keeps a row of its own rather than folding into any of them.
 Filament composes it on one more — `OneTimeCodeInput` — which is not ported; it picks the concern up unchanged when it lands.
 
-**Status:** done — see the [status vocabulary](../README.md#statuses).
-
-Reference — the Filament source this is diffed against:
-
-- [`Components/Concerns/CanBeReadOnly.php`](../../../vendor/filament/forms/src/Components/Concerns/CanBeReadOnly.php) — the trait
-- [`schemas/src/Components/Concerns/CanBeDisabled.php`](../../../vendor/filament/schemas/src/Components/Concerns/CanBeDisabled.php) — `disabledOn()`, the body `readOnlyOn()` mirrors
-
 ## Surface
-
-_Blocked by_ names what has to land first.
-_Detail_ links a permanent note in [Divergences](#divergences) or [Semantics](#semantics), or `—`.
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
@@ -40,9 +38,6 @@ Neither attribute is authorization.
 Filament's [security note on `disabled()`](../schemas/can-be-disabled.md) applies here word for word: a client can strip either one, so the server decides what may be written.
 
 ## Divergences
-
-Deliberate deviations from Filament, and the reason each holds.
-Provisional ones say what would reverse them.
 
 ### `readOnlyOn()` accepts an `Operation` case where Filament's takes strings only
 

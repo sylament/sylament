@@ -1,3 +1,12 @@
+---
+description: The `Sylament\Support`-namespaced global functions (composer `files` autoload, imported with `use function`). (draft)
+ports:
+  - vendor/filament/support/src/helpers.php
+  - vendor/filament/support/src/SupportServiceProvider.php
+owns:
+  - packages/support/src/Twig/Extension/IconExtension.php
+  - packages/support/src/helpers.php
+---
 # helpers.php (support)
 
 `packages/support/src/helpers.php` — the `Sylament\Support`-namespaced global functions (composer `files` autoload, imported with `use function`).
@@ -5,20 +14,9 @@ It ports Filament's own `helpers.php` **and** the Laravel global helpers Filamen
 Today the file holds those six Laravel foundations plus `sanitize_url()` and `sanitize_css_color()`, two `Str` macros Filament declares in its service provider rather than in `helpers.php`, `get_record_label()`, the record-vocabulary port of Filament's `get_model_label()`, and `diff_for_humans()`, the port of the one Carbon call the toolkit needs; every function in it is pure, and that is now an invariant — see [the divergence below](#generate_icon_html-moved-to-the-twig-extension).
 The rest of Filament's `helpers.php` surface is not built yet.
 
-**Status:** in progress — see the [status vocabulary](../README.md#statuses).
-
-Reference — the Filament source this is diffed against:
-
-- [`support/src/helpers.php`](../../../vendor/filament/support/src/helpers.php) — the Filament helper set (the sixteen functions tracked below)
-- [`support/src/SupportServiceProvider.php`](../../../vendor/filament/support/src/SupportServiceProvider.php) — `packageBooted()`'s `Str` macros, two of which (`sanitizeUrl`, `sanitizeCssColor`) land here as functions
-- [`Illuminate/Support/helpers.php`](../../../vendor/laravel/framework/src/Illuminate/Support/helpers.php) — Laravel's `blank()` / `filled()`, which Filament's file consumes
-- [`Illuminate/Collections/Arr.php`](../../../vendor/laravel/framework/src/Illuminate/Collections/Arr.php) — Laravel's `Arr::wrap()`, `Arr::only()` and `Arr::except()`, ported as the free functions `wrap()`, `only()` and `except()`
-
 ## Surface
 
 Every function this file defines, then the Filament helpers still to port.
-_Blocked by_ names what has to land first.
-_Detail_ carries **detail** → the write-up in [Details](#details), and/or **diverges** → the permanent note in [Divergences](#divergences).
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
@@ -50,7 +48,6 @@ _Detail_ carries **detail** → the write-up in [Details](#details), and/or **di
 
 ## Details
 
-Specifics for the rows that are not finished.
 The eleven `done` rows are covered by [`tests/Unit/HelpersTest.php`](../../../packages/support/tests/Unit/HelpersTest.php) (`blank`/`filled` valueless-vs-meaningful data sets, the Markup text-semantics case, the `wrap` cases, the `sanitize_url` refusal set, the `get_record_label` derivations, the `only`/`except` key sets, the `plural()` last-word cases, the `sanitize_css_color` accept/refuse pair and the `diff_for_humans` interval table) and, for the icon row, [`tests/Unit/Twig/Extension/IconExtensionTest.php`](../../../packages/support/tests/Unit/Twig/Extension/IconExtensionTest.php) plus [its Integration counterpart](../../../packages/support/tests/Integration/Twig/Extension/IconExtensionTest.php) against the real ux-icons renderer; they carry no write-up here.
 
 ### The rest of Filament's `helpers.php`

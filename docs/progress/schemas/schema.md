@@ -1,3 +1,22 @@
+---
+description: 'The root container of the component model: the object a live component holds, the state root every field binds through, and the grid/flex layout that… (draft)'
+ports:
+  - vendor/filament/schemas/src/Schema.php
+  - vendor/filament/schemas/src/Concerns/
+owns:
+  - packages/schemas/src/Components/Concerns/CanAccessAssociations.php
+  - packages/schemas/src/Concerns/BelongsToParentComponent.php
+  - packages/schemas/src/Concerns/CanBeEmbeddedInParentComponent.php
+  - packages/schemas/src/Concerns/CanBeInline.php
+  - packages/schemas/src/Concerns/CanModifyActions.php
+  - packages/schemas/src/Concerns/HasComponents.php
+  - packages/schemas/src/Concerns/HasFieldWrapper.php
+  - packages/schemas/src/Concerns/HasHeadings.php
+  - packages/schemas/src/Concerns/HasKey.php
+  - packages/schemas/src/Concerns/HasState.php
+  - packages/schemas/src/Schema.php
+  - packages/schemas/templates/partials/Schema/
+---
 # Schema (schemas)
 
 [`Sylament\Schemas\Schema`](../../../packages/schemas/src/Schema.php) — the root container of the component model: the object a live component holds, the state root every field binds through, and the grid/flex layout that renders the child tree.
@@ -7,19 +26,9 @@ The **shared** concerns Schema composes keep their own detail files and are name
 From `support` it composes [`HasAlignment`](../support/has-alignment.md) (the four alignment factories build on it) and `HasExtraAttributes`.
 The single-use validation concern [`CanBeValidated`](can-be-validated.md) also keeps its own file rather than folding in here — it spans the root trait and the host-side machinery in [`HasSchemas`](has-schemas.md).
 
-**Status:** in progress — see the [status vocabulary](../README.md#statuses).
-
-Reference — the Filament source this is diffed against:
-
-- [`schemas/src/Schema.php`](../../../vendor/filament/schemas/src/Schema.php) — the container class and its inline overrides
-- [`schemas/src/Concerns/`](../../../vendor/filament/schemas/src/Concerns) — the folded concern implementations behind the rows below
-
 ## Surface
 
 Every point of this container, plus one row per folded concern.
-_Blocked by_ names what has to land first.
-_Detail_ carries either or both: **detail** → the write-up in [Details](#details), deleted once the row is **done**; **diverges** → the permanent note in [Divergences](#divergences).
-Rows never disappear — only their detail sections do.
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
@@ -53,9 +62,6 @@ Beyond the folded concerns, four of Filament's composed traits are not yet porte
 (`CanBeDisabled`, `CanBeValidated`, `BelongsToRecord`, and `HasOperation` are composed and tracked in their own files: [can-be-disabled.md](can-be-disabled.md), [can-be-validated.md](can-be-validated.md), [belongs-to-record.md](belongs-to-record.md), [has-operation.md](has-operation.md).)
 
 ## Details
-
-Specifics for rows that are not finished — what is already in, what is left, and the next step.
-Delete a subsection when its row flips to **done**; the table row and any divergence it earned stay behind.
 
 ### The parent-walk inheritance overrides are untested
 
@@ -114,9 +120,6 @@ Restoring the fallback removes that stamp.
 The deprecated `name()`/`getName()` aliases are a separate, deliberate [skip](#the-deprecated-name-and-getname-aliases-are-not-ported).
 
 ## Divergences
-
-Deliberate deviations from Filament — permanent, and the reason they hold.
-Each says what would reverse it when the decision is provisional.
 
 ### The schema() alias is not ported
 

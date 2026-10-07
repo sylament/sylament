@@ -1,3 +1,13 @@
+---
+description: 'The prebuilt many-to-many attach: a gray header trigger that opens a modal carrying one field, a record select over every target record the owner does… (draft)'
+ports:
+  - vendor/filament/actions/src/AttachAction.php
+  - vendor/filament/actions/src/Concerns/CanCustomizeProcess.php
+  - vendor/filament/actions/resources/lang/en/attach.php
+  - vendor/filament/support/src/Services/RelationshipJoiner.php
+owns:
+  - packages/actions/src/AttachAction.php
+---
 # AttachAction (actions)
 
 [`Sylament\Actions\AttachAction`](../../../packages/actions/src/AttachAction.php) — the prebuilt many-to-many attach: a gray header trigger that opens a modal carrying one field, a record select over every target record the owner does **not** already have, and on submit makes the picked record(s) one of the owner's.
@@ -7,24 +17,10 @@ Its undo, [`DetachAction`](detach-action.md), is a file of its own, with [`Detac
 
 The success toast is a title here, `successNotificationTitle('Attached')`; a caller wanting a whole notification object passes one to `successNotification()`, which [`CanNotify`](action.md) supplies to every action alike.
 
-**Status:** in progress — see the [status vocabulary](../README.md#statuses).
-Every ported member is done; what keeps the row short of complete is the `tableSelect()` trio, blocked on forms' unported `TableSelect`.
-
-Reference — the Filament source this is diffed against:
-
-- [`actions/src/AttachAction.php`](../../../vendor/filament/actions/src/AttachAction.php) — the class this ports, whole
-- [`actions/src/Concerns/CanCustomizeProcess.php`](../../../vendor/filament/actions/src/Concerns/CanCustomizeProcess.php) — the trait it composes, ported whole (row in [README](README.md#features))
-- [`actions/resources/lang/en/attach.php`](../../../vendor/filament/actions/resources/lang/en/attach.php) — the strings it sets
-- [`support/src/Services/RelationshipJoiner.php`](../../../vendor/filament/support/src/Services/RelationshipJoiner.php) — the Eloquent machinery the candidate query stands in for
-
 Covered by [`AttachActionTest`](../../../packages/actions/tests/Unit/AttachActionTest.php) (the chrome, the footer arm, the record select's shape and the hostless refusal) and end to end by [`AttachDetachActionsTest`](../../../packages/tables/tests/Integration/AttachDetachActionsTest.php) in the **tables** suite — the candidate list, the search, the closure-titled arm (the table's closure, the action's own closure, and the action's own title attribute overriding a table that titles by closure), the preloaded arm, the single and multiple submits, the attach-another arm, both smuggled-key refusals and the empty-submission one, and beside those the select's own arms: the title ordering (over song 2, whose two candidates sort by title in the opposite order to their keys, so the assertion is on the `ORDER BY` rather than on the insertion order) on both the plucking and the hydrating branch, `recordSelectOptionsQuery()` narrowing the candidates through each of its two documented injections — the builder by parameter name with the search beside it, and the builder by type hint — a third arm that orders the builder itself, whose order survives (the escape hatch below), the unmapped-search-column refusal, and the `LOWER()` that `forceSearchCaseInsensitive()` puts in the emitted SQL and its absence without the flag.
 It sits there for the reason [`PrebuiltDeleteActionTest`](delete-action.md) does, one step further: only a table host supplies a relationship, and the actions test kernel registers neither the tables nor the forms bundle, so the record select could not even be built there.
 
 ## Surface
-
-Every member Filament's class carries.
-_Blocked by_ names what has to land first.
-_Detail_ carries **diverges** → the note in [Divergences](#divergences), and/or **semantics** → the permanent note in [Semantics](#semantics).
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
@@ -50,9 +46,6 @@ _Detail_ carries **diverges** → the note in [Divergences](#divergences), and/o
 | `getRelationCountHash()` self-join hash, `whereNotMorphedTo()`, `HasOneOrManyThrough`, `RelationshipJoiner` | [`AttachAction.php`](../../../vendor/filament/actions/src/AttachAction.php) | skipped | — | [diverges](#pivot-data-duplicates-morphs-and-relationshipjoiner-are-not-ported) |
 
 ## Semantics
-
-Faithful ports whose behaviour is easy to misread.
-Permanent.
 
 ### The submitted key is re-resolved through the candidate query
 
@@ -117,8 +110,6 @@ The port reads the getter once and passes `$searchColumns === null ? true : arra
 The arm is `CreateAction`'s five statements — `callAfter()`, `sendSuccessNotification()`, `record(null)`, `$schema->fill()`, `halt()` — and deliberately *not* its full create-another block: there is no `preserveFormDataWhenCreatingAnother()` counterpart to honour and no client-side state reset to dispatch, because the modal holds exactly one field and refilling it is the whole reset.
 
 ## Divergences
-
-Where the port deliberately differs from Filament.
 
 ### The candidate query needs no inverse relationship
 

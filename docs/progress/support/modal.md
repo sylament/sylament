@@ -1,3 +1,13 @@
+---
+description: The shared `<twig:SylamentSupport:Modal>` primitive, a native-`<dialog>` re-architecture of Filament's Alpine-driven `<x-filament::modal>`. (draft)
+ports:
+  - vendor/filament/support/src/View/Components/ModalComponent.php
+  - vendor/filament/support/resources/views/components/modal/index.blade.php
+owns:
+  - packages/support/assets/src/controllers/modal_controller.ts
+  - packages/support/assets/src/styles/components/modal.css
+  - packages/support/templates/components/Modal/
+---
 # Modal (support)
 
 `packages/support/templates/components/Modal/index.html.twig` — the shared `<twig:SylamentSupport:Modal>` primitive, a native-`<dialog>` re-architecture of Filament's Alpine-driven `<x-filament::modal>`.
@@ -5,17 +15,7 @@ It is template-only: there is no Sylament PHP `ModalComponent` class.
 The port covers the chrome the `actions` layer drives — heading/description/icon header with a close button, body + footer slots, footer actions and their alignment, a semantic width, slide-over (with position), sticky header/footer, modal alignment, click-through, the extra window/overlay attribute bags, and the `sylament--support--modal` Stimulus open/close/escape/click-away/dismiss/restore wiring.
 What is still deferred is the `ModalComponent` global-defaults seam and a short list of Filament props with no consumer yet.
 
-**Status:** in progress — see the [status vocabulary](../README.md#statuses).
-
-Reference — the Filament source this is diffed against:
-
-- [`support/src/View/Components/ModalComponent.php`](../../../vendor/filament/support/src/View/Components/ModalComponent.php) — the static-config class (`$hasCloseButton`, `$isClosedByClickingAway`, …)
-- [`support/resources/views/components/modal/index.blade.php`](../../../vendor/filament/support/resources/views/components/modal/index.blade.php) — the Blade view whose props and structure this template diffs against
-
 ## Surface
-
-_Blocked by_ names what has to land first.
-_Detail_ carries **detail** → the write-up in [Details](#details), and/or **diverges** → the note in [Divergences](#divergences).
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
@@ -47,8 +47,6 @@ A manual browser smoke test of those paths has **not been performed** — treat 
 
 ## Details
 
-Write-ups for the unfinished rows only.
-
 ### `ModalComponent` static config
 
 Filament ships a `ModalComponent` class whose four static properties + configurators (`autofocus()`, `closeButton()`, `closedByClickingAway()`, `closedByEscaping()`) let an app change the modal defaults globally; the blade view and `CanOpenModal` both read those statics as their fallbacks.
@@ -69,8 +67,6 @@ The **form-in-modal wiring itself is ported** — the window-element swap and it
 The keys stay **blocked** on the `schemas` / `forms` breadth that would first exercise region-level re-render stability (partial rendering, a form whose header or footer changes independently of its body), not on the form wrapper.
 
 ## Divergences
-
-Deliberate deviations from Filament — permanent unless a row above flips.
 
 ### The modal is re-architected onto native `<dialog>`
 

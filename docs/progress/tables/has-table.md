@@ -1,3 +1,29 @@
+---
+description: 'The host axis of the tables package: the trait `Sylament\Tables\Concerns\HasTable` a UX Live Component mixes in to own a `Table`, and the contract… (draft)'
+ports:
+  - vendor/filament/tables/src/Concerns/InteractsWithTable.php
+  - vendor/filament/tables/src/Concerns/HasRecords.php
+  - vendor/filament/tables/src/Concerns/CanPaginateRecords.php
+  - vendor/filament/tables/src/Concerns/CanSortRecords.php
+  - vendor/filament/tables/src/Concerns/CanSearchRecords.php
+  - vendor/filament/tables/src/Concerns/HasBulkActions.php
+  - vendor/filament/tables/src/Contracts/HasTable.php
+owns:
+  - packages/tables/src/Concerns/CanDeferLoading.php
+  - packages/tables/src/Concerns/CanGroupRecords.php
+  - packages/tables/src/Concerns/CanPaginateRecords.php
+  - packages/tables/src/Concerns/CanPersistTableState.php
+  - packages/tables/src/Concerns/CanReorderRecords.php
+  - packages/tables/src/Concerns/CanSearchRecords.php
+  - packages/tables/src/Concerns/CanSortRecords.php
+  - packages/tables/src/Concerns/CanSummarizeRecords.php
+  - packages/tables/src/Concerns/HasBulkActions.php
+  - packages/tables/src/Concerns/HasColumnManager.php
+  - packages/tables/src/Concerns/HasFilters.php
+  - packages/tables/src/Concerns/HasTable.php
+  - packages/tables/src/Contracts/
+  - packages/tables/src/Query/SearchTermSplitter.php
+---
 # HasTable / InteractsWithTable (tables)
 
 The host axis of the tables package: the trait [`Sylament\Tables\Concerns\HasTable`](../../../packages/tables/src/Concerns/HasTable.php) a UX Live Component mixes in to own a [`Table`](table.md), and the contract [`Sylament\Tables\Contracts\InteractsWithTable`](../../../packages/tables/src/Contracts/InteractsWithTable.php) that names what the table may call back into.
@@ -14,24 +40,9 @@ The trait presumes no host property beyond the fifteen `#[LiveProp]`s it and its
 Writability is the security line and it is [deliberate on each prop](#per-page-is-validated-in-the-getter-on-every-read): page, sort and the two mode flags move only through a `#[LiveAction]` — and a seed, where the prop is [bound to the URL](#the-url-binding-is-a-per-prop-liveprop-modifier-opted-into-by-the-page) or read back from the session, which is why a seeded page is [floored and capped in the getter](#gototablepage-replaces-livewires-paginator-trio) and a seeded sort is [run through `sortTable()`'s own check at mount](#a-seeded-sort-is-healed-at-mount-where-filaments-is-trusted-to-the-query) — while the four a `data-model` writes are re-validated on every read; and the per-page and search props each dehydrate [in the vocabulary of the element bound to it](#the-writable-props-dehydrate-in-their-elements-wire-vocabulary) rather than through a validating getter, which is also why [neither bag may grow one](#the-filter-bags-are-arrays-never-null-and-carry-no-getters).
 A host can still mix the trait in beside [`HasSchemas`](../schemas/has-schemas.md) and [`HasActions`](../actions/has-actions.md) — the property names are disjoint, which is what keeps them composable.
 
-**Status:** in progress — see the [status vocabulary](../README.md#statuses).
-
-Reference — the Filament source this is diffed against:
-
-- [`tables/src/Concerns/InteractsWithTable.php`](../../../vendor/filament/tables/src/Concerns/InteractsWithTable.php) — the host trait, reduced here to its build-and-fetch core
-- [`tables/src/Concerns/HasRecords.php`](../../../vendor/filament/tables/src/Concerns/HasRecords.php) — the host-side record resolution `getTableRecords()` ports
-- [`tables/src/Concerns/CanPaginateRecords.php`](../../../vendor/filament/tables/src/Concerns/CanPaginateRecords.php) — the host's page and per-page state, plus the query-lane `paginateTableQuery()`
-- [`tables/src/Concerns/CanSortRecords.php`](../../../vendor/filament/tables/src/Concerns/CanSortRecords.php) — `sortTable()`, the `column:direction` parse, and `applySortingToTableQuery()`
-- [`tables/src/Concerns/CanSearchRecords.php`](../../../vendor/filament/tables/src/Concerns/CanSearchRecords.php) — the global search term, the per-column searches, and their query application
-- [`tables/src/Concerns/HasBulkActions.php`](../../../vendor/filament/tables/src/Concerns/HasBulkActions.php) — the host-side selection state, its two resolution seams and the key enumeration
-- [`tables/src/Contracts/HasTable.php`](../../../vendor/filament/tables/src/Contracts/HasTable.php) — the 46-method interface this reduces to thirty-five
-
 ## Surface
 
 Every point of this trait and its contract.
-_Blocked by_ names what has to land first.
-_Detail_ carries up to three links: **detail** → the write-up in [Details](#details), deleted once the row is **done**; **diverges** → the permanent note in [Divergences](#divergences); **semantics** → the permanent note in [Semantics](#semantics).
-A **skipped** row states its reason inline instead.
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
@@ -159,9 +170,6 @@ For the bridge that is a `LogicException` from `dehydrateValue()`, which the Int
 Writability is a security property — a prop that silently became writable is exactly the failure [the validating getter](#per-page-is-validated-in-the-getter-on-every-read) exists to survive, and this is the test that would notice.
 
 ## Details
-
-Specifics for rows that are not finished — what is left and what the next step is.
-Delete a subsection when its row flips to **done**; the row and any divergence stay behind.
 
 ### The column state is re-derived against the definition on every read
 
@@ -483,9 +491,6 @@ Every other field clears to null, including one whose filter declares no `defaul
 
 ## Semantics
 
-Faithful ports subtle enough that the next reader would misread the code.
-Permanent, and addressable by anchor.
-
 ### `filterTableQuery()` applies the filters, then the search
 
 The name is Filament's and it is now accurate: the body is `applySearchToTableQuery($this->applyFiltersToTableQuery($query))` — filters first, then [the global search](#search-is-the-global-term-and-one-term-per-column), Filament's order.
@@ -726,9 +731,6 @@ The codec's key is minted once per row, and `getTableRecordKey()` is asked only 
 Pinned by [`HasTableRecordKeyOverrideTest`](../../../packages/tables/tests/Unit/Concerns/HasTableRecordKeyOverrideTest.php) over a fixture host whose override is a closure.
 
 ## Divergences
-
-Deliberate deviations from Filament — permanent, and the reason they hold.
-Say what would reverse the decision when it is provisional.
 
 ### The host id is a random `LiveProp`, rather than a framework component id
 

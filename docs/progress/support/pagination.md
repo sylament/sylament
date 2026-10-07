@@ -1,3 +1,13 @@
+---
+description: 'Two pieces, one feature: the carrier `Sylament\Support\Pagination\Paginator` — one page of records plus the counts a footer needs — and the… (draft)'
+ports:
+  - vendor/filament/support/resources/views/components/pagination/index.blade.php
+  - vendor/filament/support/resources/views/components/pagination/item.blade.php
+owns:
+  - packages/support/assets/src/styles/components/pagination.css
+  - packages/support/src/Pagination/
+  - packages/support/templates/components/Pagination/
+---
 # Pagination (support)
 
 Two pieces, one feature: the carrier [`Sylament\Support\Pagination\Paginator`](../../../packages/support/src/Pagination/Paginator.php) — one page of records plus the counts a footer needs — and the [`Pagination`](../../../packages/support/templates/components/Pagination/index.html.twig) Twig component that renders it.
@@ -6,20 +16,9 @@ Tables is the only consumer today: a [`records()`](../tables/has-table.md) closu
 The pair ports Filament's [`views/components/pagination/index.blade.php`](../../../vendor/filament/support/resources/views/components/pagination/index.blade.php) — but only the **view** half has a Filament source.
 Filament's carrier is Laravel's `LengthAwarePaginator`, a framework class Sylament has no equivalent of, so `Paginator` is a Sylament-only class whose shape is dictated by what the ported view reads off it (`total()`, `currentPage()`, `firstItem()`, `lastItem()`, `lastPage()`, `onFirstPage()`, `hasMorePages()`, `hasPages()`, and the `elements` window `render()` builds through Laravel's `UrlWindow`).
 
-**Status:** in progress — see the [status vocabulary](../README.md#statuses).
-
-Reference — the Filament and Laravel sources this is diffed against:
-
-- [`support/resources/views/components/pagination/index.blade.php`](../../../vendor/filament/support/resources/views/components/pagination/index.blade.php) — the rendered footer: overview, per-page select, the item list
-- [`support/resources/views/components/pagination/item.blade.php`](../../../vendor/filament/support/resources/views/components/pagination/item.blade.php) — the single item, a button-or-span with an icon or a label
-- `Illuminate\Pagination\LengthAwarePaginator`, `Illuminate\Pagination\Paginator` and `Illuminate\Pagination\UrlWindow` — the counts, the unknown-total predicates and the elided page window `Paginator` reimplements
-
 ## Surface
 
 Every point of both pieces.
-_Blocked by_ names what has to land first.
-_Detail_ carries up to three links: **detail** → the write-up in [Details](#details), deleted once the row is **done**; **diverges** → the permanent note in [Divergences](#divergences); **semantics** → the permanent note in [Semantics](#semantics).
-A **skipped** row states its reason inline, or links the divergence carrying it.
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
@@ -53,9 +52,6 @@ The last two are the arms of the [footer condition](../tables/table.md#getrecord
 
 ## Details
 
-Specifics for rows that are not finished — what is already in, what is left, and what the next step is.
-Delete a subsection when its row flips to **done**.
-
 ### The component renders one of Filament's two layouts
 
 Filament's view emits **two** presentations at once and lets CSS choose: a pair of standalone previous/next `<x-filament::button>`s (the mobile and simple-paginator layout) *and* the numbered `<ol>`; likewise two per-page `<label>`s, one compact and one prefixed, differing only in how the select is wrapped.
@@ -75,9 +71,6 @@ The prefixed label is an `input.wrapper` carrying a `prefix` around an `input.se
 Everything else in `pagination.css` that reaches an element this footer renders is ported, with the collapses and the drops accounted for in the divergences below.
 
 ## Semantics
-
-Faithful ports subtle enough that the next reader would misread the code.
-Permanent, and addressable by anchor.
 
 ### The constructor validates what its docblock cannot narrow
 
@@ -99,9 +92,6 @@ The paginator a `records()` closure returns is never the one the template render
 And the counts are carried through untouched — `withRecords()` does not recompute `totalRecordCount` from the array it is handed, because the whole point of the carrier is that the total is bigger than the page.
 
 ## Divergences
-
-Deliberate deviations from Filament — permanent, and the reason they hold.
-Say what would reverse the decision when it is provisional.
 
 ### The carrier is first-party rather than an ecosystem package
 
@@ -142,7 +132,7 @@ Nothing is renamed *from Filament* — Filament never names these, it inherits t
 Two reasons it goes this way.
 The toolkit's vocabulary is **record**, not *item* ([the model vocabulary collapses onto record](../renames.md#the-model-vocabulary-collapses-onto-record)), and a paginator answering `items()` beside a table answering `getRecords()` would be the only place the two words meet.
 And `get*` prefixes are the house form for every getter in the port, Filament's included, so `total()` would read as a Laravel import in a file that has no other.
-The names are recorded in the [rename table](../renames.md#names-with-no-filament-source) as names with no Filament source.
+The names are recorded in the [rename table](../translations.md#names-with-no-filament-source) as names with no Filament source.
 A user migrating a Blade `$paginator->total()` has to rewrite it, which is the cost; the call sites are in a footer nobody hand-writes twice.
 
 ### The page window is a flat list of numbers and gaps, not Laravel's nested `elements` array

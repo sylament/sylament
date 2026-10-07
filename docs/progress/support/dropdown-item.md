@@ -1,3 +1,14 @@
+---
+description: 'The anonymous `<twig:SylamentSupport:DropdownItem>` primitive: one row inside a dropdown panel, rendered as a `<button>` or an `<a>` carrying an… (draft)'
+ports:
+  - vendor/filament/support/resources/views/components/dropdown/list/item.blade.php
+  - vendor/filament/support/src/View/Concerns/CanGenerateDropdownItemHtml.php
+  - vendor/filament/support/src/View/Components/DropdownComponent/ItemComponent.php
+  - vendor/filament/support/resources/css/components/dropdown/list/item.css
+owns:
+  - packages/support/assets/src/styles/components/dropdown-item.css
+  - packages/support/templates/components/DropdownItem/
+---
 # Dropdown item (support)
 
 `packages/support/templates/components/DropdownItem/index.html.twig` — the anonymous `<twig:SylamentSupport:DropdownItem>` primitive: one row inside a [dropdown](dropdown.md) panel, rendered as a `<button>` or an `<a>` carrying an optional leading icon and a label span.
@@ -11,20 +22,7 @@ Both rules moved byte-for-byte into [`dropdown-item.css`](../../../packages/supp
 They have since been trued up to [`item.css`](../../../vendor/filament/support/resources/css/components/dropdown/list/item.css) — `p-2` padding, the four dropped box declarations, the `gray-50` hover surface, the disabled-gated hover/focus arm and the label's `flex-1`.
 The three `.sy-selected` arms landed last, with the select engine swap: nothing in this template emits the class, and no prop drives it in Filament's view either — it is applied by callers, and forms' select engine is the first ([forms styles.md](../forms/styles.md#the-js-select-skin-is-filaments-on-the-ported-controls-container)).
 
-**Status:** in progress — see the [status vocabulary](../README.md#statuses).
-
-Reference — the Filament source this is diffed against:
-
-- [`support/resources/views/components/dropdown/list/item.blade.php`](../../../vendor/filament/support/resources/views/components/dropdown/list/item.blade.php) — the Blade view: props, attribute merge, markup
-- [`support/src/View/Concerns/CanGenerateDropdownItemHtml.php`](../../../vendor/filament/support/src/View/Concerns/CanGenerateDropdownItemHtml.php) — the v5 PHP generator `Action::toGroupedHtml()` actually calls, whose props differ from the Blade view's in one place that matters
-- [`support/src/View/Components/DropdownComponent/ItemComponent.php`](../../../vendor/filament/support/src/View/Components/DropdownComponent/ItemComponent.php) — the color-map provider `->color(ItemComponent::class, $color)` resolves against
-- [`support/resources/css/components/dropdown/list/item.css`](../../../vendor/filament/support/resources/css/components/dropdown/list/item.css) — the stylesheet the shipped rules are diffed against
-
 ## Surface
-
-Every point of this component.
-_Blocked by_ names what has to land first.
-_Detail_ carries any of: **detail** → the write-up in [Details](#details), deleted once the row is **done**; **semantics** → the permanent note in [Semantics](#semantics); **diverges** → the permanent note in [Divergences](#divergences).
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |

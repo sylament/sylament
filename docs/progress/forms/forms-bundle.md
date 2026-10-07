@@ -1,3 +1,18 @@
+---
+description: The forms bundle class. (draft)
+ports:
+  - vendor/filament/forms/src/FormsServiceProvider.php
+owns:
+  - packages/forms/assets/src/controllers/file_upload_controller.ts
+  - packages/forms/assets/src/controllers/repeater_controller.ts
+  - packages/forms/assets/src/controllers/select_controller.ts
+  - packages/forms/assets/src/controllers/tags_input_controller.ts
+  - packages/forms/assets/src/controllers/text_input_controller.ts
+  - packages/forms/assets/src/controllers/textarea_controller.ts
+  - packages/forms/assets/src/utils/select.ts
+  - packages/forms/src/SylamentFormsBundle.php
+  - packages/schemas/assets/src/utils/schema_component_method.ts
+---
 # SylamentFormsBundle (forms)
 
 [`Sylament\Forms\SylamentFormsBundle`](../../../packages/forms/src/SylamentFormsBundle.php) — the forms bundle class.
@@ -8,17 +23,7 @@ It does two things and inherits a third.
 And the `@SylamentForms` Twig namespace arrives by AbstractBundle/TwigBundle convention with no call at all.
 `Make*` commands, translations, the `table-select` Livewire component and the `Testable` mixins are not ported yet.
 
-**Status:** in progress — see the [status vocabulary](../README.md#statuses).
-
-Reference — the Filament source this is diffed against:
-
-- [`forms/src/FormsServiceProvider.php`](../../../vendor/filament/forms/src/FormsServiceProvider.php) — the provider whose `configurePackage()` / `packageBooted()` this bundle ports
-
 ## Surface
-
-Every provider responsibility.
-_Blocked by_ names what has to land first.
-_Detail_ carries a **detail** link to a [Details](#details) write-up, a **diverges** link to [Divergences](#divergences), or `—`.
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
@@ -207,7 +212,7 @@ Ours is [`file_upload_controller.ts`](../../../packages/forms/assets/src/control
   Everything downstream reads the captured reference.
 - **Four JS-owned literals join the four PHP-side ones** [file-upload.md](file-upload.md#literals-not-translation-keys) opens with.
   `The file could not be uploaded.` is Filament's; `The file could not be removed.`, `The file could not be loaded.` and `The files could not be reordered.` are ours, because Filament's `revert`/`remove` never call FilePond's `error` at all, its `load` resolves a failed fetch as an empty blob, and its `reorderfiles` handler `await`s the server inside an event listener nothing catches — a silent failure every time.
-  Literals, not translation keys, per the [toolkit-wide i18n deferral](../renames.md#idiom).
+  Literals, not translation keys, per the [toolkit-wide i18n deferral](../translations.md#idiom).
 
 Two shipped-type gaps are worked around in the file and will bite anyone upgrading FilePond: `initfile` is a real event (`filepond.esm.js:8842`) missing from the `FilePondEvent` union, and `maxFileSize`/`minFileSize` are `Type.INT` options declared `string` — the controller passes the byte ceiling as a decimal string, which FilePond parses back to exactly that integer.
 The `error` event's first argument is `{main, sub}` for a validation failure and `{type, code, body}` for a transport one, so the message is composed defensively rather than rendered as Filament's `undefined: undefined`.

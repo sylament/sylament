@@ -1,21 +1,36 @@
+---
+description: The Twig templates in `packages/schemas/templates/partials/` — `Actions`, `EmbeddedSchema`, `Fieldset`, `Flex`, `Grid`, `Group`, `Html`, `Icon`… (draft)
+ports:
+  - vendor/filament/schemas/src/Components/Actions.php
+  - vendor/filament/schemas/src/Components/Fieldset.php
+  - vendor/filament/schemas/src/Components/Flex.php
+  - vendor/filament/schemas/src/Components/Grid.php
+  - vendor/filament/schemas/src/Components/Group.php
+  - vendor/filament/schemas/src/Components/Html.php
+  - vendor/filament/schemas/src/Components/Icon.php
+  - vendor/filament/schemas/src/Components/Section.php
+  - vendor/filament/schemas/src/Components/Tabs.php
+  - vendor/filament/schemas/src/Components/Tabs/Tab.php
+  - vendor/filament/schemas/src/Components/Text.php
+  - vendor/filament/schemas/src/Components/Livewire.php
+  - vendor/filament/schemas/src/Components/EmbeddedSchema.php
+  - vendor/filament/schemas/src/Schema.php
+  - vendor/filament/schemas/resources/views/components/
+owns:
+  - packages/schemas/templates/partials/Flex/
+  - packages/schemas/templates/partials/Html/
+  - packages/schemas/templates/partials/Icon/
+---
 # Component views (schemas)
 
 The Twig templates in [`packages/schemas/templates/partials/`](../../../packages/schemas/templates/partials) — `Actions`, `EmbeddedSchema`, `Fieldset`, `Flex`, `Grid`, `Group`, `Html`, `Icon`, `LiveComponent`, `Schema`, `Section`, `Step`, `Tab`, `Tabs`, `Text`, `Wizard` — that render the schemas components through Support's [`ViewComponent`](../support/component.md).
 Each ports the HTML that a Filament schemas component emits from its PHP `toEmbeddedHtml()` (Filament v5 no longer ships Blade files for these — see the divergence below).
 This file is a thin cross-index over those templates; per-feature specifics live in the per-component files ([`actions.md`](actions.md), [`fieldset.md`](fieldset.md), [`flex.md`](flex.md), [`grid.md`](grid.md), [`group.md`](group.md), [`icon.md`](icon.md), [`live-component.md`](live-component.md), [`embedded-schema.md`](embedded-schema.md), [`tab.md`](tab.md), [`tabs.md`](tabs.md), [`text.md`](text.md), [`section.md`](section.md), [`schema.md`](schema.md), [`wizard.md`](wizard.md), [`step.md`](step.md)), not here.
 
-**Status:** in progress — see the [status vocabulary](../README.md#statuses).
-
-Reference — the Filament source this is diffed against:
-
-- [`schemas/src/Components/Actions.php`](../../../vendor/filament/schemas/src/Components/Actions.php), [`Fieldset.php`](../../../vendor/filament/schemas/src/Components/Fieldset.php), [`Flex.php`](../../../vendor/filament/schemas/src/Components/Flex.php), [`Grid.php`](../../../vendor/filament/schemas/src/Components/Grid.php), [`Group.php`](../../../vendor/filament/schemas/src/Components/Group.php), [`Html.php`](../../../vendor/filament/schemas/src/Components/Html.php), [`Icon.php`](../../../vendor/filament/schemas/src/Components/Icon.php), [`Section.php`](../../../vendor/filament/schemas/src/Components/Section.php), [`Tabs.php`](../../../vendor/filament/schemas/src/Components/Tabs.php), [`Tabs/Tab.php`](../../../vendor/filament/schemas/src/Components/Tabs/Tab.php), [`Text.php`](../../../vendor/filament/schemas/src/Components/Text.php), [`Livewire.php`](../../../vendor/filament/schemas/src/Components/Livewire.php), [`EmbeddedSchema.php`](../../../vendor/filament/schemas/src/Components/EmbeddedSchema.php), [`Schema.php`](../../../vendor/filament/schemas/src/Schema.php) — the `toEmbeddedHtml()` methods each template translates to Twig
-- [`schemas/resources/views/components/`](../../../vendor/filament/schemas/resources/views/components) — the only Blade views Filament still ships (`fieldset`, `grid`); both are ported now ([`fieldset.md`](fieldset.md), [`grid.md`](grid.md))
-
 ## Surface
 
 One row per template.
 _Ports_ links the Filament source it renders.
-_Blocked by_ names what has to land first.
 _Detail_ points to the per-component file for in-progress features, a **diverges** note here for a structural one, or `—`.
 
 | Feature | Ports | Status | Blocked by | Detail |
@@ -43,7 +58,6 @@ The `html_attr()` / `html_classes()` ban is guarded across every bundle by Twig-
 
 ## Details
 
-Write-ups for the rows that are not **done** — what is in, what is left, the next step.
 Feature-level state stays in the per-component file each row links.
 
 ### Actions template — label and row rendered

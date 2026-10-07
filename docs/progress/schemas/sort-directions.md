@@ -1,3 +1,9 @@
+---
+description: A Sylament invention with no Filament source. (draft)
+ports: []
+owns:
+  - packages/schemas/src/Query/SortDirections.php
+---
 # SortDirections (schemas)
 
 [`Sylament\Schemas\Query\SortDirections`](../../../packages/schemas/src/Query/SortDirections.php) — a Sylament invention with **no Filament source**.
@@ -5,13 +11,11 @@ Filament hands Eloquent's `orderBy()` the `asc`/`desc` string its sort API carri
 
 The public sort API keeps Filament's strings — `defaultSort('id', 'desc')`, the `$direction` a `sortable(query:)` or `orderQueryUsing()` closure receives — so the string becomes the enum at the builder boundary, and this is the one place that happens: `IdentifierConstraint::orderBy()`, tables' column, default and group sorts, `FetchJoinPageQuery`'s re-emitted orderings, and [`AssociationReader`](association-reader.md), which normalises any string a mapping still hands it.
 
-**Status:** done — see the [status vocabulary](../README.md#statuses).
-
 ## Surface
 
-| Feature | Status | Blocked by | Detail |
-| --- | --- | --- | --- |
-| [`from(string $direction): SortDirection`](../../../packages/schemas/src/Query/SortDirections.php) — `asc`/`desc` in any case as the enum | done | — | [semantics](#anything-but-asc-or-desc-throws) |
+| Feature | Ports | Status | Blocked by | Detail |
+| --- | --- | --- | --- | --- |
+| [`from(string $direction): SortDirection`](../../../packages/schemas/src/Query/SortDirections.php) — `asc`/`desc` in any case as the enum | — | done | — | [semantics](#anything-but-asc-or-desc-throws) |
 
 ## Semantics
 

@@ -1,22 +1,24 @@
+---
+description: The boolean field rendering a native `<input type="checkbox">`. (draft)
+ports:
+  - vendor/filament/forms/src/Components/Checkbox.php
+  - vendor/filament/forms/src/Components/Concerns/
+owns:
+  - packages/forms/src/Components/Checkbox.php
+  - packages/forms/src/Components/Concerns/CanBeAccepted.php
+  - packages/forms/src/Components/Concerns/CanBeInline.php
+  - packages/forms/templates/partials/Checkbox/
+---
 # Checkbox (forms)
 
 `Sylament\Forms\Components\Checkbox` — the boolean field rendering a native `<input type="checkbox">`.
 Extends [`Field`](../../../packages/forms/src/Components/Field.php), defaults its state to `false`, casts state through schemas' [`BooleanStateCast`](../../../packages/schemas/src/State/Casts/BooleanStateCast.php), and composes the two shared boolean concerns ([`CanBeInline`](can-be-inline.md), [`CanBeAccepted`](can-be-accepted.md)).
 It ships no JavaScript: the control is a real checkbox bound with `data-model`, and `ux-live-component` reads `element.checked` natively.
 
-**Status:** done — see the [status vocabulary](../README.md#statuses).
-
-Reference — the Filament source this is diffed against:
-
-- [`forms/src/Components/Checkbox.php`](../../../vendor/filament/forms/src/Components/Checkbox.php) — the field class, its `setUp()` and its embedded view
-- [`forms/src/Components/Concerns/`](../../../vendor/filament/forms/src/Components/Concerns) — the field concerns it composes
-
 ## Surface
 
 Every point this field adds over `Field`.
 `Field`'s own surface is tracked in [`field.md`](field.md), not here.
-_Blocked by_ names what has to land first.
-_Detail_ links a permanent note in [Semantics](#semantics) / [Divergences](#divergences).
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
@@ -35,8 +37,6 @@ Coverage: the inline / not-inline placement in both directions, the extra input 
 The `aria-invalid` attribute needs a live host to read an error bag from, so it is pinned in both directions from [`FieldErrorsTest`](../../../packages/forms/tests/Integration/Components/FieldErrorsTest.php), whose fixture form carries an `accepted()` checkbox beside its text fields.
 
 ## Semantics
-
-Behaviour that is faithful to Filament but easy to misread here.
 
 ### Validation reads the raw state, so the boolean Type constraint is live
 
@@ -71,8 +71,6 @@ The toggle emits no such attribute, so it is free to mean presence.
 Change one and you must change its template too.
 
 ## Divergences
-
-Deliberate deviations from Filament, and the reason each holds.
 
 ### The checked attribute is rendered server-side
 

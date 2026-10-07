@@ -1,21 +1,18 @@
+---
+description: The shared concern that gives a component a configurable font weight. (draft)
+ports:
+  - vendor/filament/support/src/Concerns/HasWeight.php
+  - vendor/filament/support/src/Enums/FontWeight.php
+owns:
+  - packages/support/src/Components/Concerns/HasWeight.php
+---
 # HasWeight (support)
 
 `Sylament\Support\Components\Concerns\HasWeight` — the shared concern that gives a component a configurable font weight.
 It ports Filament's `HasWeight`: a `FontWeight | string | Closure | null` property, a fluent `weight()` setter, a `getWeight()` reader that normalizes a known string to its [`FontWeight`](../../../packages/support/src/Enums/FontWeight.php) case, and a `hasWeight()` probe.
 Sylament adds one method with no Filament counterpart — `getWeightClass()` — and drops the `$state` argument from `getWeight()`, so this port carries two divergences.
 
-**Status:** done — see the [status vocabulary](../README.md#statuses).
-
-Reference — the Filament source this is diffed against:
-
-- [`support/src/Concerns/HasWeight.php`](../../../vendor/filament/support/src/Concerns/HasWeight.php) — the trait ported here, method for method
-- [`support/src/Enums/FontWeight.php`](../../../vendor/filament/support/src/Enums/FontWeight.php) — the enum the property and helpers resolve to
-
 ## Surface
-
-Every point of this concern.
-_Blocked by_ names what has to land first.
-_Detail_ carries either or both: **detail** → the write-up in [Details](#details), deleted once the row is **done**; **diverges** → the permanent note in [Divergences](#divergences).
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
@@ -27,7 +24,6 @@ _Detail_ carries either or both: **detail** → the write-up in [Details](#detai
 ## Details
 
 Every row above is **done** — the port is faithful and every method, including the added `getWeightClass()`, is exercised by the concern's sole consumer, schemas' `Text`: the string-normalization and class-fragment cases in [`TextTest`](../../../packages/schemas/tests/Unit/Components/TextTest.php) cover `getWeight()` (enum normalization and verbatim custom string) and `getWeightClass()` (`sy-font-<value>`, custom string as-is, `null` when unset), and the render case in [`TextRenderTest`](../../../packages/schemas/tests/Integration/Components/TextRenderTest.php) asserts the weight class reaches the emitted markup.
-No row has a write-up here.
 
 ## Divergences
 

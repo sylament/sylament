@@ -1,15 +1,16 @@
+---
+description: 'The time-only field: a `DateTimePicker` whose `hasDate()` is a constant `false`, so it renders `<input type="time">` and formats state as `H:i:s`… (draft)'
+ports:
+  - vendor/filament/forms/src/Components/TimePicker.php
+owns:
+  - packages/forms/src/Components/TimePicker.php
+---
 # TimePicker (forms)
 
 `Sylament\Forms\Components\TimePicker` — the time-only field: a [`DateTimePicker`](date-time-picker.md) whose `hasDate()` is a constant `false`, so it renders `<input type="time">` and formats state as `H:i:s` — `H:i` under `seconds(false)`.
 
 Everything else — the formats, the bounds, the timezone, the state cast, the validity constraint, the template, and the `native(false)` gap — is the parent's and is tracked in [date-time-picker.md](date-time-picker.md).
 One of those rows is not inherited quietly: this variant validates as a date too, where [Filament leaves a time-only picker unvalidated](date-time-picker.md#every-variant-validates-as-a-date-including-the-time-only-one).
-
-**Status:** in progress — see the [status vocabulary](../README.md#statuses); the parent's unfinished rows are inherited whole.
-
-Reference — the Filament source this is diffed against:
-
-- [`forms/src/Components/TimePicker.php`](../../../vendor/filament/forms/src/Components/TimePicker.php) — the subclass, which is this one method and nothing else
 
 ## Surface
 

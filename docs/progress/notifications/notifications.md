@@ -1,3 +1,14 @@
+---
+description: The `<twig:SylamentNotifications:Notifications />` stack, placed once in an application layout. (draft)
+ports:
+  - vendor/filament/notifications/src/Livewire/Notifications.php
+  - vendor/filament/notifications/resources/views/notifications.blade.php
+  - vendor/filament/notifications/resources/css/notifications.css
+owns:
+  - packages/notifications/assets/src/controllers/notifications_controller.ts
+  - packages/notifications/src/Twig/Components/
+  - packages/notifications/templates/components/
+---
 # Notifications — the toast stack (notifications)
 
 [`Sylament\Notifications\Twig\Components\Notifications`](../../../packages/notifications/src/Twig/Components/Notifications.php) — the `<twig:SylamentNotifications:Notifications />` stack, placed once in an application layout.
@@ -6,19 +17,7 @@ It ports Filament's [`Livewire\Notifications`](../../../vendor/filament/notifica
 That is the package's one architectural decision, and every divergence below is a face of it: the stack renders toasts, it does not *hold* them.
 Toast HTML has one renderer (Twig), the DOM is the only client-side state, and a closed toast is gone rather than pending removal on a server that might morph it back.
 
-**Status:** in progress — see the [status vocabulary](../README.md#statuses).
-
-Reference — the Filament source this is diffed against:
-
-- [`notifications/src/Livewire/Notifications.php`](../../../vendor/filament/notifications/src/Livewire/Notifications.php) — the collection, the three `#[On]` listeners, the three statics, the broadcast channel
-- [`notifications/resources/views/notifications.blade.php`](../../../vendor/filament/notifications/resources/views/notifications.blade.php) — the container markup and the Echo subscription script
-- [`notifications/resources/css/notifications.css`](../../../vendor/filament/notifications/resources/css/notifications.css) — the seven container rules
-
 ## Surface
-
-Every point of this component.
-_Blocked by_ names what has to land first.
-_Detail_ carries any of three: **detail** → the write-up in [Details](#details), deleted once the row is **done**; **semantics** → the permanent note in [Semantics](#semantics); **diverges** → the permanent note in [Divergences](#divergences).
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
@@ -42,9 +41,6 @@ What stands behind its status is that its seven rules — the base plus the six 
 
 ## Details
 
-Specifics for rows that are not finished — what is already in, what is left, and what the next step is.
-Delete a subsection when its row flips to **done**.
-
 ### The client-side builder's entry point waits on the builder
 
 `pushNotificationFromEvent()` listens for the Livewire `notificationSent` event that Filament's client-side `FilamentNotification` builder ([`resources/js/Notification.js`](../../../vendor/filament/notifications/resources/js/Notification.js)) dispatches: the browser composes a notification as data, the server rebuilds it through `Notification::fromArray()` and renders it.
@@ -63,8 +59,6 @@ Filament's stack subscribes to the authenticated user's private Echo channel: `g
 
 ## Semantics
 
-Faithful behaviour subtle enough to be misread from the code alone.
-
 ### The first reader of the flash wins, and both readers are idempotent
 
 Two things drain `sylament.notifications`: this component's `getFlashed()` on a full page load, and the [live-delivery subscriber](notifications-bundle.md#the-live-delivery-decision-point-is-a-prerenderevent-subscriber-not-a-dehydrate-hook) on a live request.
@@ -73,8 +67,6 @@ So whichever runs first in a given request takes everything, and any later reade
 Filament reaches the same outcome through its `claimed_notifications` key; here it falls out of the flash bag's own semantics, with no second key to keep in sync.
 
 ## Divergences
-
-Deliberate deviations from Filament — permanent, and the reason they hold.
 
 ### Stack placement is tag props, not Livewire statics
 

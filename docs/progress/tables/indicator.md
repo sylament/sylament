@@ -1,10 +1,16 @@
+---
+description: 'One chip in the active-filters row: a label, a colour, whether it can be removed, and which field it removes. (draft)'
+ports:
+  - vendor/filament/tables/src/Filters/Indicator.php
+owns:
+  - packages/tables/src/Filters/FilterIndicator.php
+  - packages/tables/src/Filters/Indicator.php
+---
 # Indicator (tables)
 
 [`Sylament\Tables\Filters\Indicator`](../../../packages/tables/src/Filters/Indicator.php) — one chip in the active-filters row: a label, a colour, whether it can be removed, and which field it removes.
 It ports Filament's [`Filters\Indicator`](../../../vendor/filament/tables/src/Filters/Indicator.php).
 [`FilterIndicator`](../../../packages/tables/src/Filters/FilterIndicator.php), the readonly carrier pairing an indicator with its removal target, ships beside it and folds into this file.
-
-**Status:** done — see the [status vocabulary](../README.md#statuses).
 
 ## Surface
 

@@ -1,14 +1,15 @@
+---
+description: 'The checkbox filter: a `BaseFilter` whose form is one boolean field named `isActive`, and whose query pass that field gates. (draft)'
+ports:
+  - vendor/filament/tables/src/Filters/Filter.php
+owns:
+  - packages/tables/src/Filters/Filter.php
+---
 # Filter (tables)
 
 [`Sylament\Tables\Filters\Filter`](../../../packages/tables/src/Filters/Filter.php) — the checkbox filter: a [`BaseFilter`](base-filter.md) whose form is one boolean field named `isActive`, and whose query pass that field gates.
 It ports [`Filament\Tables\Filters\Filter`](../../../vendor/filament/tables/src/Filters/Filter.php), which declares seven members over its base — four of its own (`$formComponent`, `toggle()`, `checkbox()`, `formComponent()`) and three overrides (`setUp()`, `getFormField()`, `getResetState()`), folded into five surface rows below.
 Everything the base carries — the name, the label, the schema resolution, the reset state, the query seam, the closure injections — is tracked in [`base-filter.md`](base-filter.md), not repeated here.
-
-**Status:** done — see the [status vocabulary](../README.md#statuses).
-
-Reference — the Filament source this is diffed against:
-
-- [`tables/src/Filters/Filter.php`](../../../vendor/filament/tables/src/Filters/Filter.php) — the `$formComponent` property, the `setUp()` indicator, the three swappers, `getFormField()` and the `getResetState()` override
 
 ## Surface
 

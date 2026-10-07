@@ -1,20 +1,19 @@
+---
+description: The support-level Section Twig component — `packages/support/templates/components/Section/index.html.twig`, the port of Filament's `filament::section`… (draft)
+ports:
+  - vendor/filament/support/resources/views/components/section/index.blade.php
+owns:
+  - packages/support/assets/src/controllers/section_controller.ts
+  - packages/support/assets/src/styles/components/section.css
+  - packages/support/templates/components/Section/
+---
 # Section (support)
 
 The support-level Section Twig component — `packages/support/templates/components/Section/index.html.twig`, the port of Filament's `filament::section` Blade view.
 It renders the section chrome (header with icon/heading/description/after-header, collapsible disclosure, content and footer containers) and nothing schema-aware: it is a presentational widget that takes literal props.
 The schemas `Section` component wraps it — its template embeds `<twig:SylamentSupport:Section>` and feeds it computed values — so this file tracks only the support widget, not the schemas component of the same name.
 
-**Status:** in progress — see the [status vocabulary](../README.md#statuses).
-
-Reference — the Filament source this is diffed against:
-
-- [`support/resources/views/components/section/index.blade.php`](../../../vendor/filament/support/resources/views/components/section/index.blade.php) — the Blade view this template ports, prop for prop and branch for branch
-
 ## Surface
-
-Every point of this component.
-_Blocked by_ names what has to land first.
-_Detail_ carries **detail** → the write-up in [Details](#details), and/or **diverges** → the permanent note in [Divergences](#divergences).
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
@@ -27,9 +26,6 @@ _Detail_ carries **detail** → the write-up in [Details](#details), and/or **di
 | [Live-state reset wiring](../../../packages/support/templates/components/Section/index.html.twig) | — | in progress | — | [detail](#details) · [diverges](#the-live-component-state-reset-wiring-is-a-sylament-addition) |
 
 ## Details
-
-Specifics for rows that are not finished — what is already in, what is left, and what the next step is.
-Delete a subsection when its row flips to **done**.
 
 ### Live-state reset wiring
 
@@ -48,8 +44,6 @@ The template carries `liveComponentId` and `schemaKey` props (both defaulting to
 See the [divergence](#the-live-component-state-reset-wiring-is-a-sylament-addition).
 
 ## Divergences
-
-Deliberate deviations from Filament — permanent, and the reason they hold.
 
 ### Element ids and ARIA landmark wiring are rendered from server-computed props
 

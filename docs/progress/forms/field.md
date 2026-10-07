@@ -1,3 +1,18 @@
+---
+description: The abstract base every user-instantiable form field extends. (draft)
+ports:
+  - vendor/filament/forms/src/Components/Field.php
+  - vendor/filament/forms/src/Components/Concerns/
+  - vendor/filament/schemas/src/Components/Concerns/
+owns:
+  - packages/forms/src/Components/Concerns/CanBeAutofocused.php
+  - packages/forms/src/Components/Concerns/HasHint.php
+  - packages/forms/src/Components/Concerns/HasPlaceholder.php
+  - packages/forms/src/Components/Concerns/HasRelationship.php
+  - packages/forms/src/Components/Concerns/ResolvesRepeaterSiblingContext.php
+  - packages/forms/src/Components/Field.php
+  - packages/forms/templates/components/
+---
 # Field (forms)
 
 `Sylament\Forms\Components\Field` — the abstract base every user-instantiable form field extends.
@@ -7,18 +22,9 @@ The sixth, [`CanBeValidated`](can-be-validated.md), keeps its own file — its F
 The seventh, [`HasEnum`](has-enum.md), keeps one too: it is composed here but consumed across the option fields, and its own file carries the `Field`-tier cast plumbing (`getDefaultStateCasts()` / `getEnumDefaultStateCast()`) that the Surface table below rows for.
 The schemas-level `HasName` / `HasLabel` / `HasState` it inherits stay tracked in schemas, and so does [`CanBeMarkedAsRequired`](../schemas/can-be-marked-as-required.md), which moved down to schemas so its `Fieldset` could reach it.
 
-**Status:** in progress — see the [status vocabulary](../README.md#statuses).
-
-Reference — the Filament source this is diffed against:
-
-- [`forms/src/Components/Field.php`](../../../vendor/filament/forms/src/Components/Field.php) — the base class, the traits it composes, and its `wrapEmbeddedHtml` / `wrapInputHtml` rendering
-- [`forms/src/Components/Concerns/`](../../../vendor/filament/forms/src/Components/Concerns) — the five folded field concerns audited below
-- [`schemas/src/Components/Concerns/`](../../../vendor/filament/schemas/src/Components/Concerns) — the inherited `HasName` / `HasLabel` / `HasState` behind the identity rows
-
 ## Surface
 
 Every point of this component and its five folded concerns.
-_Blocked by_ names what has to land first.
 _Detail_ links a permanent note in [Semantics](#semantics) or [Divergences](#divergences), and/or a note carried by a concern's own file.
 
 | Feature | Ports | Status | Blocked by | Detail |
@@ -47,8 +53,6 @@ _Detail_ links a permanent note in [Semantics](#semantics) or [Divergences](#div
 
 ## Semantics
 
-Behaviour worth stating that is not a divergence — the port and Filament agree, but the reason is not obvious from the code.
-
 ### The wrapper owns the chrome and the control is transparent
 
 `wrapInputHtml` is support's [`InputWrapper`](../support/input-wrapper.md), and every text-like control renders inside it: [`TextInput`](text-input.md), [`Textarea`](textarea.md), [`Select`](select.md), the [`DateTimePicker`](date-time-picker.md) family and [`CheckboxList`](checkbox-list.md)'s search box.
@@ -74,9 +78,6 @@ The port carried that call site with the branch flattened to a hardcoded `false`
 Both tiers of the predicate are pinned by [`HasEnumTest`](../../../packages/forms/tests/Unit/Components/Concerns/HasEnumTest.php), and both arms of the branch it drives by tables' [`HasFiltersTest`](../../../packages/tables/tests/Unit/Concerns/HasFiltersTest.php).
 
 ## Divergences
-
-Deliberate deviations from Filament — permanent, and the reason they hold.
-These outlive the detail sections above.
 
 ### The label carries an inline-control modifier class
 

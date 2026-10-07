@@ -1,3 +1,12 @@
+---
+description: 'The page half of relation managers: the registrations `Resource::getRelations()` declares, filtered to the ones this record shows, and the single… (draft)'
+ports:
+  - vendor/filament/filament/src/Resources/Pages/Concerns/HasRelationManagers.php
+  - vendor/filament/filament/src/Resources/Resource.php
+  - vendor/filament/filament/src/Resources/Pages/EditRecord.php
+owns:
+  - packages/panels/src/Resources/Pages/Concerns/HasRelationManagers.php
+---
 # HasRelationManagers (panels)
 
 [`Sylament\Panels\Resources\Pages\Concerns\HasRelationManagers`](../../../packages/panels/src/Resources/Pages/Concerns/HasRelationManagers.php) — the page half of relation managers: the registrations [`Resource::getRelations()`](../../../packages/panels/src/Resources/Resource.php) declares, filtered to the ones this record shows, and the single component that mounts them.
@@ -9,14 +18,6 @@ What the page hands it is a record **key** and its own class-string; the [`Relat
 The embedded manager is one of **two** ways a record page shows an association.
 The other is [`ManageRelatedRecords`](manage-related-records.md), a routed page of its own reached through the record's [sub-navigation](has-sub-navigation.md) rather than a tab, which lists the same records and — with a `$relatedResource` — turns its Create/Edit actions into links into that resource's own [nested pages](nested-resources.md) instead of modals.
 Both hosts compose one tier, [`InteractsWithRelationshipTable`](interacts-with-relationship-table.md); what this trait owns is the **embedded** arm alone.
-
-**Status:** in progress — see the [status vocabulary](../README.md#statuses).
-
-Reference — the Filament source this is diffed against:
-
-- [`Resources/Pages/Concerns/HasRelationManagers.php`](../../../vendor/filament/filament/src/Resources/Pages/Concerns/HasRelationManagers.php) — the whole trait
-- [`Resources/Resource.php`](../../../vendor/filament/filament/src/Resources/Resource.php) — `getRelations()`, the static this reads
-- [`Resources/Pages/EditRecord.php`](../../../vendor/filament/filament/src/Resources/Pages/EditRecord.php) — `content()`, the schema the component is placed in
 
 ## Surface
 
@@ -32,7 +33,7 @@ Reference — the Filament source this is diffed against:
 | [`EditRecord::hasRecord()` / `getRecordKey()`](../../../packages/panels/src/Resources/Pages/EditRecord.php) | [`InteractsWithRecord::hasRecord()`](../../../vendor/filament/filament/src/Resources/Pages/Concerns/InteractsWithRecord.php); no counterpart for the key | done | — | [semantics](#the-record-probes-read-the-wire-value-not-the-resolved-record) |
 | `hasCombinedRelationManagerTabsWithContent()` / `getContentTabComponent()` / `getContentTabLabel()` / `getContentTabIcon()` / `getContentTabPosition()` / `Enums\ContentTabPosition` | the same five plus the enum | skipped | — | [diverges](#the-combined-content-tab-does-not-port) |
 | The trait on `ViewRecord` | Filament composes it on the shared record page | todo | the view page | — |
-| _rest not audited yet_ | | | | |
+| _rest not audited yet_ | — | — | — | — |
 
 [`Integration/Resources/Pages/Concerns/HasRelationManagersTest`](../../../packages/panels/tests/Integration/Resources/Pages/Concerns/HasRelationManagersTest.php) covers all four arms, the registration-key preservation, the string cast, the self-healing default, a manager's own default properties and a configuration's properties over them, both filter branches (a manager whose `canViewForRecord()` answers `false`, and a group that names none), both group arms, and the two render shapes — a lone manager under the page form, and one manager at a time behind the tab bar with a live switch between them.
 

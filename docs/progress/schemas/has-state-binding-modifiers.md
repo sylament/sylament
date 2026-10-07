@@ -1,20 +1,17 @@
+---
+description: 'The shared concern that lets a component declare *when* its state syncs to the server: live-on-input, live-on-blur (`lazy`), debounced, or not at all. (draft)'
+ports:
+  - vendor/filament/schemas/src/Concerns/HasStateBindingModifiers.php
+owns:
+  - packages/schemas/src/Components/Concerns/HasStateBindingModifiers.php
+---
 # HasStateBindingModifiers (schemas)
 
 [`Sylament\Schemas\Components\Concerns\HasStateBindingModifiers`](../../../packages/schemas/src/Components/Concerns/HasStateBindingModifiers.php) — the shared concern that lets a component declare *when* its state syncs to the server: live-on-input, live-on-blur (`lazy`), debounced, or not at all.
 Both the [`Schema`](../../../packages/schemas/src/Schema.php) and the schemas base [`Component`](component.md) `use` it.
 It ports Filament's identically-named trait, translating the Livewire `wire:model` modifier grammar into a single Symfony UX LiveComponent `data-model` string — see [`property-accessor.md`](property-accessor.md) for the state backend that string drives and [`has-schemas.md`](has-schemas.md) for how a live component reaches its container.
 
-**Status:** in progress — see the [status vocabulary](../README.md#statuses).
-
-Reference — the Filament source this is diffed against:
-
-- [`schemas/src/Concerns/HasStateBindingModifiers.php`](../../../vendor/filament/schemas/src/Concerns/HasStateBindingModifiers.php) — the single trait ported and split here (relocated to `Components/Concerns/`, a systematic namespace translation, not a rename)
-
 ## Surface
-
-Every point of this concern.
-_Blocked by_ names what has to land first.
-_Detail_ carries a **detail** link to the [Details](#details) write-up (deleted once the row is **done**), a **diverges** link to [Divergences](#divergences), or `—`.
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |

@@ -1,21 +1,19 @@
+---
+description: 'The searchable switch and the six messages around it: `searchable()`, the `noOptionsMessage()` / `noSearchResultsMessage()` / `searchPrompt()` /… (draft)'
+ports:
+  - vendor/filament/forms/src/Components/Concerns/CanBeSearchable.php
+  - vendor/filament/forms/src/Components/Select.php
+  - vendor/filament/forms/resources/lang/en/components.php
+owns:
+  - packages/forms/src/Components/Concerns/CanBeSearchable.php
+---
 # CanBeSearchable (forms)
 
 `Sylament\Forms\Components\Concerns\CanBeSearchable` — the searchable switch and the six messages around it: `searchable()`, the `noOptionsMessage()` / `noSearchResultsMessage()` / `searchPrompt()` / `searchingMessage()` quartet, `searchDebounce()`, and the `searchLabels()` / `searchValues()` pair that `getSearchableOptionFields()` composes.
 Two fields compose it — [`CheckboxList`](checkbox-list.md), whose search is a client-side filter over the options it already rendered, and [`Select`](select.md), whose search is the server-side arm the whole trait exists for — so it is promoted out of the former's fold to a file of its own per [one row per file](../README.md#one-row-per-file-one-file-per-thing).
 Filament composes it on the same two fields, and `Select` overrides two of its members there exactly as it does here.
 
-**Status:** done — see the [status vocabulary](../README.md#statuses).
-
-Reference — the Filament source this is diffed against:
-
-- [`forms/src/Components/Concerns/CanBeSearchable.php`](../../../vendor/filament/forms/src/Components/Concerns/CanBeSearchable.php) — the trait
-- [`forms/src/Components/Select.php`](../../../vendor/filament/forms/src/Components/Select.php) — `searchable()` widened to the column-array arm and `isSearchable()` defaulting to `isMultiple()`, the two overrides
-- [`forms/resources/lang/en/components.php`](../../../vendor/filament/forms/resources/lang/en/components.php) — the `select.*` message keys the four literals stand in for
-
 ## Surface
-
-_Blocked by_ names what has to land first.
-_Detail_ links a permanent note in [Semantics](#semantics) or [Divergences](#divergences), or `—`.
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
@@ -58,8 +56,6 @@ Four things are worth stating, because three of them read as omissions:
 4. **The four message literals are untranslated** ([below](#the-four-message-literals-are-untranslated)).
 
 ## Divergences
-
-Deliberate deviations from Filament, and the reason each holds.
 
 ### The four message literals are untranslated
 

@@ -1,3 +1,13 @@
+---
+description: The actions bundle class. (draft)
+ports:
+  - vendor/filament/actions/src/ActionsServiceProvider.php
+  - vendor/filament/actions/routes/web.php
+  - vendor/filament/actions/database/migrations/
+owns:
+  - packages/actions/assets/src/controllers/
+  - packages/actions/src/SylamentActionsBundle.php
+---
 # SylamentActionsBundle (actions)
 
 [`Sylament\Actions\SylamentActionsBundle`](../../../packages/actions/src/SylamentActionsBundle.php) — the actions bundle class.
@@ -8,18 +18,7 @@ Its two `loadExtension()` responsibilities have no Filament counterpart — `Act
 A third responsibility runs before those, in `prependExtension()`: mapping `assets/dist` into AssetMapper as `@sylament/actions`, which is what makes the built dispatch controller reachable at all.
 The `filament.actions` middleware group, the export/import routes and migrations, the `Make*Exporter`/`Make*Importer` commands, translations, and the `TestsActions` `Testable` mixin are not ported yet — all of them either serve the unbuilt Exports/Imports subsystem or are Livewire-specific.
 
-**Status:** in progress — see the [status vocabulary](../README.md#statuses).
-
-Reference — the Filament source this is diffed against:
-
-- [`actions/src/ActionsServiceProvider.php`](../../../vendor/filament/actions/src/ActionsServiceProvider.php) — the provider whose `configurePackage()` / `packageRegistered()` / `packageBooted()` this bundle ports
-- [`actions/routes/web.php`](../../../vendor/filament/actions/routes/web.php), [`actions/database/migrations/`](../../../vendor/filament/actions/database/migrations) — what `hasRoutes('web')` / `hasMigrations()` actually register, read to judge what the routes/migrations row is blocked on
-
 ## Surface
-
-Every provider responsibility.
-_Blocked by_ names what has to land first.
-_Detail_ carries a **detail** link to a [Details](#details) write-up, a **diverges** link to [Divergences](#divergences), or `—`.
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |

@@ -1,3 +1,12 @@
+---
+description: 'The host-tier column concern `HasTable` composes: the live actions a cell''s own controls fire back into. (draft)'
+ports:
+  - vendor/filament/tables/src/Concerns/HasColumns.php
+owns:
+  - packages/tables/src/Columns/Concerns/CanBeValidated.php
+  - packages/tables/src/Columns/Concerns/CanUpdateState.php
+  - packages/tables/src/Concerns/HasColumns.php
+---
 # HasColumns (tables host)
 
 [`Sylament\Tables\Concerns\HasColumns`](../../../packages/tables/src/Concerns/HasColumns.php) — the **host**-tier column concern [`HasTable`](has-table.md) composes: the live actions a cell's own controls fire back into.
@@ -10,17 +19,7 @@ Do not confuse the **state** either.
 `updateTableColumnState()` below writes one editable cell's value onto a record; the `…TableColumnState` family on [`Concerns\HasColumnManager`](column-manager.md) means the column manager's visibility-and-order bag.
 Both vocabularies are Filament's own and both flatten into the same host class — [why they were kept](has-table.md#two-tablecolumnstate-vocabularies-meet-on-one-host-and-both-are-filaments).
 
-**Status:** in progress — see the [status vocabulary](../README.md#statuses).
-
-Reference — the Filament source this is diffed against:
-
-- [`tables/src/Concerns/HasColumns.php`](../../../vendor/filament/tables/src/Concerns/HasColumns.php) — `callTableColumnAction()`, `updateTableColumnState()`, `callTableColumnMethod()` and the deprecated `getTableColumns()`
-
 ## Surface
-
-Every point of this trait.
-_Blocked by_ names what has to land first.
-_Detail_ carries up to three links: **detail** → the write-up in [Details](#details), deleted once the row is **done**; **diverges** → the permanent note in [Divergences](#divergences); **semantics** → the permanent note in [Semantics](#semantics).
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
@@ -32,7 +31,7 @@ _Detail_ carries up to three links: **detail** → the write-up in [Details](#de
 | [`getClientState()` — the display state the cell root publishes](../../../packages/tables/src/Columns/Concerns/CanUpdateState.php) | — (Sylament-only, for [the repaint](#the-cell-repaints-from-the-root-because-a-touched-control-is-pinned-through-every-morph)) | done | — | [detail](#the-cell-repaints-from-the-root-because-a-touched-control-is-pinned-through-every-morph) |
 | `callTableColumnMethod()` — dispatch to an `#[ExposedLivewireMethod]` on a column | [`HasColumns::callTableColumnMethod()`](../../../vendor/filament/tables/src/Concerns/HasColumns.php) | blocked | the select-engine promotion ([forms-bundle.md](../forms/forms-bundle.md#the-select-controller-binds-a-port-of-filaments-select-utility-to-the-live-host)) | Its only Filament consumer is `SelectColumn`'s searchable arm, which ships native-only |
 | `getTableColumns()` | [`HasColumns::getTableColumns()`](../../../vendor/filament/tables/src/Concerns/HasColumns.php) | skipped | — | The whole method carries `@deprecated Override the \`table()\` method`, and the port has never landed a deprecated Filament surface — [renames.md](../renames.md) |
-| _rest not audited yet_ | | | | |
+| _rest not audited yet_ | — | — | — | — |
 
 `updateTableColumnState()` is what the four editable columns ([`ToggleColumn`](toggle-column.md), [`CheckboxColumn`](checkbox-column.md), [`SelectColumn`](select-column.md), [`TextInputColumn`](text-input-column.md)) write through, and it is the only channel they have: the client posts, the host writes, and the re-render — plus [the repaint](#the-cell-repaints-from-the-root-because-a-touched-control-is-pinned-through-every-morph) that carries it onto a touched control — is the whole answer.
 Its arms are covered by the second half of [`HasColumnsTest`](../../../packages/tables/tests/Integration/Concerns/HasColumnsTest.php), which drives the live fixture [`EditableSongsTable`](../../../packages/tables/tests/Fixtures/Twig/Components/EditableSongsTable.php) over the wire and reads every outcome off the **container's** entity manager and off `(string) ->render()` — never off `->component()`, which re-hydrates a fresh host and would let a refusal pass whatever the write actually did.
@@ -42,9 +41,6 @@ Between them those cases cover the write itself and its re-render, the boolean a
 The wiring that fires it — the cell wrapper's `button` arm choosing `callTableColumnAction` over `mountAction` by [`Column::getActionKind()`](column.md) — is pinned in [`TableRenderingTest`](../../../packages/tables/tests/Integration/TableRenderingTest.php).
 
 ## Details
-
-Specifics for rows that are not finished — what is already in, what is left, and what the next step is.
-Delete a subsection when its row flips to **done**; the table row and any divergence it earned stay behind.
 
 ### The cell repaints from the root because a touched control is pinned through every morph
 

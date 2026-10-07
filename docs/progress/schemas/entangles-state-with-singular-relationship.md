@@ -1,3 +1,13 @@
+---
+description: '`Sylament\Schemas\Components\Concerns\EntanglesStateWithSingularRelationship` binds a layout component''s whole subtree to a to-one Doctrine association. (draft)'
+ports:
+  - vendor/filament/schemas/src/Components/Concerns/EntanglesStateWithSingularRelationship.php
+  - vendor/filament/schemas/src/Components/Contracts/CanEntangleWithSingularRelationships.php
+owns:
+  - packages/schemas/src/Components/Concerns/BelongsToRelationship.php
+  - packages/schemas/src/Components/Concerns/EntanglesStateWithSingularRelationship.php
+  - packages/schemas/src/Components/Contracts/CanEntangleWithSingularRelationships.php
+---
 # EntanglesStateWithSingularRelationship (schemas)
 
 [`Sylament\Schemas\Components\Concerns\EntanglesStateWithSingularRelationship`](../../../packages/schemas/src/Components/Concerns/EntanglesStateWithSingularRelationship.php) binds a layout component's whole subtree to a **to-one** Doctrine association.
@@ -9,18 +19,9 @@ Five components compose it — [`Section`](section.md), [`Grid`](grid.md), [`Gro
 The mechanics it stands on are elsewhere: the hook pair and the record path map in [`belongs-to-record.md`](belongs-to-record.md), the mapping reads in [`association-reader.md`](association-reader.md), the graph reads and writes in [`property-accessor.md`](property-accessor.md).
 The association itself — the name, the target and the refusals — comes from [`BelongsToRelationship`](../../../packages/schemas/src/Components/Concerns/BelongsToRelationship.php), [shared with forms' relation-backed fields](#the-association-core-is-shared-with-forms-relation-backed-fields).
 
-**Status:** in progress — see the [status vocabulary](../README.md#statuses).
-
-Reference — the Filament source this is diffed against:
-
-- [`schemas/src/Components/Concerns/EntanglesStateWithSingularRelationship.php`](../../../vendor/filament/schemas/src/Components/Concerns/EntanglesStateWithSingularRelationship.php) — the trait, its two wired closures, and the cached-existing-record surface
-- [`schemas/src/Components/Contracts/CanEntangleWithSingularRelationships.php`](../../../vendor/filament/schemas/src/Components/Contracts/CanEntangleWithSingularRelationships.php) — the contract the closures type-hint
-
 ## Surface
 
 Every member of the Filament trait and its contract.
-_Blocked by_ names what has to land first.
-_Detail_ carries either or both: **detail** → the write-up in [Details](#details), deleted once the row is **done**; **diverges** → the permanent note in [Divergences](#divergences).
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
@@ -49,9 +50,6 @@ One case runs over a second association, `Post::$byline`, mapped deliberately **
 
 ## Details
 
-Specifics for rows that are not finished — what is already in, what is left, and the next step.
-Delete a subsection when its row flips to **done**; the table row and any divergence it earned stay behind.
-
 ### The three mutation hooks are not ported here yet
 
 `mutateRelationshipDataBeforeFillUsing()` / `…BeforeCreateUsing()` / `…BeforeSaveUsing()` rewrite the state array on its way to and from the related record.
@@ -66,8 +64,6 @@ The port has `isHidden()` but no `shouldSaveRelationshipsWhenHidden()` surface a
 Next step: port the flag with the rest of the hidden-state surface, then decide whether this guard is still doing anything the pruning does not.
 
 ## Semantics
-
-Faithful-but-subtle behaviour — permanent notes that are not deviations.
 
 ### The subtree is re-rooted, and its nested hooks are routed, onto the related record
 
@@ -136,9 +132,6 @@ Telling the two causes apart needs the reader's private walk behind [`hasIncompl
 Pinned by [`EntanglesStateWithSingularRelationshipKeyTest`](../../../packages/schemas/tests/Integration/Components/Concerns/EntanglesStateWithSingularRelationshipKeyTest.php) — a whitespace and an empty half, an unmapped half, a shared-key child refused over its owner's blank optional key, a filled pair that saves, a blank single scalar key left alone, an existing record left alone and the syncing setter that saves — and, through real `TextInput`s, by forms' [`EntangledIncompleteKeyTest`](../../../packages/forms/tests/Integration/Components/EntangledIncompleteKeyTest.php).
 
 ## Divergences
-
-Deliberate deviations from Filament — permanent, and the reason they hold.
-Say what would reverse the decision when it is provisional.
 
 ### The `relatedModel` argument is dropped; the mapping names the target
 

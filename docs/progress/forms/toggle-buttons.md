@@ -1,3 +1,15 @@
+---
+description: 'The option field whose controls are buttons: one visually hidden `<input>` per option with a `<label class="sy-btn">` over it, inside an… (draft)'
+ports:
+  - vendor/filament/forms/src/Components/ToggleButtons.php
+  - vendor/filament/forms/resources/css/components/toggle-buttons.css
+  - vendor/filament/support/resources/css/components/button.css
+owns:
+  - packages/forms/src/Components/Concerns/HasColors.php
+  - packages/forms/src/Components/Concerns/HasIcons.php
+  - packages/forms/src/Components/Concerns/HasTooltips.php
+  - packages/forms/templates/partials/ToggleButtons/
+---
 # ToggleButtons (forms)
 
 `Sylament\Forms\Components\ToggleButtons` — the option field whose controls are buttons: one visually hidden `<input>` per option with a `<label class="sy-btn">` over it, inside an `aria-labelledby`-pointed `role="radiogroup"` (or `role="group"`) container.
@@ -5,20 +17,10 @@ Like [`Repeater`](repeater.md) it renders in **two** shapes from one class — a
 Extends [`Field`](field.md), casts state through schemas' [`OptionStateCast`](../../../packages/schemas/src/State/Casts/OptionStateCast.php) or [`OptionsArrayStateCast`](../../../packages/schemas/src/State/Casts/OptionsArrayStateCast.php), and composes seven option-field concerns — [`HasOptions`](has-options.md), [`CanDisableOptions`](can-disable-options.md), [`HasGridDirection`](has-grid-direction.md), [`HasExtraInputAttributes`](has-extra-input-attributes.md), and the three this file folds in: [`HasColors`](#hascolors-hasicons-and-hastooltips-are-this-fields-alone), `HasIcons` and `HasTooltips`.
 It ships no JavaScript: the controls are real radios and checkboxes bound with `data-model`, and `ux-live-component` reads and repaints them natively.
 
-**Status:** done — see the [status vocabulary](../README.md#statuses).
-
-Reference — the Filament source this is diffed against:
-
-- [`forms/src/Components/ToggleButtons.php`](../../../vendor/filament/forms/src/Components/ToggleButtons.php) — the field class and its two embedded views
-- [`forms/resources/css/components/toggle-buttons.css`](../../../vendor/filament/forms/resources/css/components/toggle-buttons.css) — the option-set chrome
-- [`support/resources/css/components/button.css`](../../../vendor/filament/support/resources/css/components/button.css) — the button and button-group chrome the labels borrow
-
 ## Surface
 
 Every point this field adds over `Field`.
 `Field`'s own surface is tracked in [`field.md`](field.md), not here.
-_Blocked by_ names what has to land first.
-_Detail_ links a permanent note in [Semantics](#semantics) / [Divergences](#divergences), or the write-up in another file.
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
@@ -53,8 +55,6 @@ Coverage: the default tree (container role, per-option `div`, hidden input, the 
 Both bindings need a live host, so they are driven through real round-trips by [`LiveToggleButtonsTest`](../../../packages/forms/tests/Integration/LiveToggleButtonsTest.php) against the [`ToggleButtonsForm`](../../../packages/forms/tests/Fixtures/Twig/Components/ToggleButtonsForm.php) fixture, which carries one field of each multiplicity.
 
 ## Semantics
-
-Behaviour that is faithful to Filament but easy to misread here.
 
 ### `HasColors`, `HasIcons` and `HasTooltips` are this field's alone
 
@@ -185,9 +185,6 @@ Without those arms, `button.css`'s colour rule would apply to *any* `.sy-color` 
 The port ships vendor's split, including its gap: the `input:focus-visible` ring arms exist only for the coloured labels, so a gray option set is keyboard-focusable with no ring of its own.
 
 ## Divergences
-
-Deliberate deviations from Filament, and the reason each holds.
-Provisional ones say what would reverse them.
 
 ### The `checked` attribute is rendered server-side
 

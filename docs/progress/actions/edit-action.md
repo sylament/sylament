@@ -1,23 +1,20 @@
+---
+description: The prebuilt per-record edit action a table row or a record page carries. (draft)
+ports:
+  - vendor/filament/actions/src/EditAction.php
+  - vendor/filament/actions/src/Concerns/CanCustomizeProcess.php
+owns:
+  - packages/actions/src/EditAction.php
+---
 # EditAction (actions)
 
 [`Sylament\Actions\EditAction`](../../../packages/actions/src/EditAction.php) — the prebuilt per-record edit action a table row or a record page carries.
 Like [`CreateAction`](create-action.md) it works both of Filament's ways off one class: with an edit page to link to it renders an anchor, and without one it opens a modal, fills a form from the bound record, maps the validated state back onto that record and flushes it.
 The page-beats-a-modal rule is stated once for all four record actions at the top of [create-action.md](create-action.md) and holds here unchanged.
 
-**Status:** done — see the [status vocabulary](../README.md#statuses).
-
-Reference — the Filament source this is diffed against:
-
-- [`actions/src/EditAction.php`](../../../vendor/filament/actions/src/EditAction.php) — the class this ports
-- [`actions/src/Concerns/CanCustomizeProcess.php`](../../../vendor/filament/actions/src/Concerns/CanCustomizeProcess.php) — the trait it composes, ported whole (row in [README](README.md#features))
-
 Covered by [`EditActionTest`](../../../packages/actions/tests/Unit/EditActionTest.php) (the chrome, the heading interpolation and the URL fallthrough), the Integration [`EditActionTest`](../../../packages/actions/tests/Integration/EditActionTest.php) (the modal arm end to end against the fixture entity manager — fill from the mount context's record, the `mutateRecordDataUsing()` rewrite, the write onto the same entity, and both record guards), the Integration [`EditActionChangedKeyTest`](../../../packages/actions/tests/Integration/EditActionChangedKeyTest.php) (a key half a `before()` hook moved, refused above the form and put back), the Integration [`SubclassedAssociationReaderTest`](../../../packages/actions/tests/Integration/SubclassedAssociationReaderTest.php) (the record check asking a subclassed container reader, rebound to a second manager), the Integration [`UnmappedHookDataTest`](../../../packages/actions/tests/Integration/UnmappedHookDataTest.php) (a key the hook adds and no component maps, refused; the four other shapes let through) and, for the rendered anchor, the Integration [`CanOpenUrlTest`](../../../packages/actions/tests/Integration/Concerns/CanOpenUrlTest.php) against the [`DefaultActionUrlHostFixture`](../../../packages/actions/tests/Fixtures/Concerns/DefaultActionUrlHostFixture.php).
 
 ## Surface
-
-Every member Filament's class carries.
-_Blocked by_ names what has to land first.
-_Detail_ carries a **detail** link to another file's write-up, a **diverges** link to [Divergences](#divergences), or `—`.
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
@@ -32,9 +29,6 @@ _Detail_ carries a **detail** link to another file's write-up, a **diverges** li
 | The `BelongsToMany` pivot-column split in the fill and the write | [`EditAction.php`](../../../vendor/filament/actions/src/EditAction.php) | skipped | — | The pivot surface is skipped whole one layer down — a Doctrine association table carrying payload is an entity of its own, so a relation-scoped table's row has no pivot attributes to fill from or write back ([`table.md`](../tables/table.md#surface), [`create-action.md`](create-action.md#the-created-record-joins-the-relationship-in-the-same-flush)) |
 
 ## Divergences
-
-Deliberate deviations from Filament — permanent, and the reason they hold.
-These outlive the detail sections above.
 
 ### The modal arm maps the validated state onto the bound record
 

@@ -1,21 +1,28 @@
+---
+description: The escape hatch for attributes on a field's control element, the sibling of `Field`'s `HasExtraFieldWrapperAttributes`, which reaches the wrapper… (draft)
+ports:
+  - vendor/filament/forms/src/Components/Concerns/HasExtraInputAttributes.php
+  - vendor/filament/forms/src/Components/TextInput.php
+  - vendor/filament/forms/src/Components/Textarea.php
+  - vendor/filament/forms/src/Components/Select.php
+  - vendor/filament/forms/src/Components/Checkbox.php
+  - vendor/filament/forms/src/Components/Radio.php
+  - vendor/filament/forms/src/Components/ToggleButtons.php
+  - vendor/filament/forms/src/Components/CheckboxList.php
+  - vendor/filament/forms/src/Components/DateTimePicker.php
+  - vendor/filament/forms/src/Components/FileUpload.php
+  - vendor/filament/forms/src/Components/TagsInput.php
+  - vendor/filament/forms/src/Components/Toggle.php
+owns:
+  - packages/forms/src/Components/Concerns/HasExtraInputAttributes.php
+---
 # HasExtraInputAttributes (forms)
 
 `Sylament\Forms\Components\Concerns\HasExtraInputAttributes` — the escape hatch for attributes on a field's **control element**, the sibling of `Field`'s [`HasExtraFieldWrapperAttributes`](field.md), which reaches the wrapper `<div>` instead.
 Every field that renders a control composes it — one control or one per option: `TextInput`, `Textarea`, `Select`, `Checkbox`, `Radio`, `ToggleButtons`, `CheckboxList`, `DateTimePicker`, `FileUpload` and `TagsInput` — Filament's own set among the ported fields — plus `Toggle`, which Filament pointedly leaves out and the port composes anyway ([divergence](toggle.md#the-toggle-carries-extra-input-attributes-filaments-does-not)).
 [`Radio`](radio.md) is the first composer whose control is not singular, and it reaches **every** radio in the group rather than picking one; the trait itself is unchanged by that, since where the bag lands is each template's business, [`ToggleButtons`](toggle-buttons.md) is the second, across both of its templates, and [`CheckboxList`](checkbox-list.md) the third.
 
-**Status:** done — see the [status vocabulary](../README.md#statuses).
-
-Reference — the Filament source this is diffed against:
-
-- [`Components/Concerns/HasExtraInputAttributes.php`](../../../vendor/filament/forms/src/Components/Concerns/HasExtraInputAttributes.php) — the trait
-- [`Components/TextInput.php`](../../../vendor/filament/forms/src/Components/TextInput.php), [`Textarea.php`](../../../vendor/filament/forms/src/Components/Textarea.php), [`Select.php`](../../../vendor/filament/forms/src/Components/Select.php), [`Checkbox.php`](../../../vendor/filament/forms/src/Components/Checkbox.php), [`Radio.php`](../../../vendor/filament/forms/src/Components/Radio.php), [`ToggleButtons.php`](../../../vendor/filament/forms/src/Components/ToggleButtons.php), [`CheckboxList.php`](../../../vendor/filament/forms/src/Components/CheckboxList.php), [`DateTimePicker.php`](../../../vendor/filament/forms/src/Components/DateTimePicker.php), [`FileUpload.php`](../../../vendor/filament/forms/src/Components/FileUpload.php), [`TagsInput.php`](../../../vendor/filament/forms/src/Components/TagsInput.php) — the ten composers the port shares with Filament, whose embedded views carry the merge order
-- [`Components/Toggle.php`](../../../vendor/filament/forms/src/Components/Toggle.php) — the field Filament withholds the trait from, against the port's eleventh composer ([divergence](toggle.md#the-toggle-carries-extra-input-attributes-filaments-does-not))
-
 ## Surface
-
-_Blocked by_ names what has to land first.
-_Detail_ links a permanent note in [Semantics](#semantics), or `—`.
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |

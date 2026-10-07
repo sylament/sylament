@@ -1,3 +1,20 @@
+---
+description: 'The map-backed field: a two-column table of key/value rows over a plain `?array` record property, rows added, removed and reordered through the… (draft)'
+ports:
+  - vendor/filament/forms/src/Components/KeyValue.php
+  - vendor/filament/schemas/src/Components/StateCasts/KeyValueStateCast.php
+  - vendor/filament/forms/resources/js/components/key-value.js
+  - vendor/filament/forms/resources/css/components/key-value.css
+  - vendor/filament/support/src/Concerns/HasReorderAnimationDuration.php
+  - vendor/filament/support/src/Concerns/HasExtraAlpineAttributes.php
+owns:
+  - packages/forms/assets/src/controllers/key_value_controller.ts
+  - packages/forms/assets/src/styles/components/key-value.css
+  - packages/forms/src/Components/KeyValue.php
+  - packages/forms/templates/partials/KeyValue/
+  - packages/schemas/src/State/Casts/KeyValueStateCast.php
+  - packages/support/src/Components/Concerns/HasReorderAnimationDuration.php
+---
 # KeyValue (forms)
 
 `Sylament\Forms\Components\KeyValue` — the map-backed field: a two-column table of key/value rows over a plain `?array` record property, rows added, removed and reordered through the mounted-action pipeline.
@@ -6,23 +23,10 @@ It extends [`Field`](field.md), defaults its state to `[]`, and carries [`KeyVal
 Filament renders no rows at all server-side: its block is `wire:ignore`, an Alpine object owns the row list, and the three `Action`s are inert chrome inside its click handlers.
 Ours is a server-owned shape instead — rows rendered from the raw state, per-cell `data-model` bindings, and `add`/`delete`/`reorder` as real mounted actions ([divergence](#the-rows-are-server-owned-and-the-three-actions-are-real)) — which puts every flag, label and gate under PHP test and leaves ~50 lines of JavaScript.
 
-**Status:** in progress — see the [status vocabulary](../README.md#statuses).
-The field ships end to end; the one unfinished row is the inline-label stylesheet rule, which waits on schemas' `HasInlineLabel` like every other field's.
-
-Reference — the Filament source this is diffed against, walked end to end for this table, so it carries no [unaudited row](../README.md#an-unaudited-table-says-so):
-
-- [`forms/src/Components/KeyValue.php`](../../../vendor/filament/forms/src/Components/KeyValue.php) — the class, its three registered actions and its embedded view
-- [`schemas/src/Components/StateCasts/KeyValueStateCast.php`](../../../vendor/filament/schemas/src/Components/StateCasts/KeyValueStateCast.php) — the rows ⇄ map cast
-- [`forms/resources/js/components/key-value.js`](../../../vendor/filament/forms/resources/js/components/key-value.js) — the Alpine object that owns the rows there
-- [`forms/resources/css/components/key-value.css`](../../../vendor/filament/forms/resources/css/components/key-value.css) — the stylesheet
-- [`support/src/Concerns/HasReorderAnimationDuration.php`](../../../vendor/filament/support/src/Concerns/HasReorderAnimationDuration.php), [`support/src/Concerns/HasExtraAlpineAttributes.php`](../../../vendor/filament/support/src/Concerns/HasExtraAlpineAttributes.php) — the support concerns it composes
-
 ## Surface
 
 Every point this field adds over `Field`.
 `Field`'s own surface is tracked in [`field.md`](field.md), not here.
-_Blocked by_ names what has to land first.
-_Detail_ links the write-up in [Details](#details), a permanent note in [Semantics](#semantics) or a deviation in [Divergences](#divergences); a **done** row with no permanent note reads `—`.
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
@@ -50,9 +54,6 @@ Coverage: [`KeyValueTest`](../../../packages/forms/tests/Unit/Components/KeyValu
 
 ## Details
 
-Specifics for rows that are not finished — what is in, what is left, the next step.
-Delete a subsection when its row flips to **done**.
-
 ### The inline-label rule waits on HasInlineLabel
 
 Vendor's stylesheet ends with a second block, `.fi-fo-key-value-wrp .fi-fo-field-has-inline-label .fi-fo-field-label-col { @apply sm:pt-1.5 }`, which nudges the label column down so it lines up with the first row of the table when the field's label sits beside its control.
@@ -60,8 +61,6 @@ Nothing here emits `sy-fo-field-has-inline-label`, because schemas' `HasInlineLa
 **Next step:** the rule lands with that concern, in one change across every field that carries one.
 
 ## Semantics
-
-Faithful behaviour that the next reader would plausibly re-derive wrongly.
 
 ### The raw bag is never empty and never sparse
 
@@ -121,8 +120,6 @@ A map whose *values* are arrays therefore reads as a row list and comes back man
 
 ## Divergences
 
-Deliberate deviations from Filament, and the reason each holds.
-
 ### The rows are server-owned and the three actions are real
 
 Filament renders no rows: the block carries `wire:ignore` plus a `wire:key` hash of the disabled flag, an Alpine object holds `rows` and syncs a pruned copy into the entangled state, and the three `Action`s render as inert markup that Alpine's `x-on:click` handlers act on — the buttons never reach Livewire.
@@ -160,7 +157,7 @@ Ours decodes with `JSON_THROW_ON_ERROR`, and refuses a state that is neither an 
 ### The seven literals are untranslated
 
 'Add row', 'Delete row', 'Reorder row', 'Key', 'Value', 'Reorder' and 'Actions' ship as English literals where Filament reads them from `filament-forms::components.key_value.*`.
-The standing [i18n deferral](../renames.md#idiom): no translation layer exists yet, and every ported literal will be retrofitted in one change when it does.
+The standing [i18n deferral](../translations.md#idiom): no translation layer exists yet, and every ported literal will be retrofitted in one change when it does.
 
 ### Deprecated Filament members are not ported
 

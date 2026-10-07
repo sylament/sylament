@@ -1,14 +1,15 @@
+---
+description: The string-backed enum naming the three vertical alignments (`start`, `center`, `end`) that stacked or vertically-positioned components resolve against. (draft)
+ports:
+  - vendor/filament/support/src/Enums/VerticalAlignment.php
+owns:
+  - packages/support/src/Enums/VerticalAlignment.php
+---
 # VerticalAlignment (support)
 
 `Sylament\Support\Enums\VerticalAlignment` — the string-backed enum naming the three vertical alignments (`start`, `center`, `end`) that stacked or vertically-positioned components resolve against.
 It ports Filament's `Filament\Support\Enums\VerticalAlignment` name for name and value for value.
 It carries no methods or interface implementations — a pure-cases value type whose consumers `tryFrom` its string against a set value, mirroring the horizontal [`Alignment`](../../../packages/support/src/Enums/Alignment.php) enum beside it.
-
-**Status:** done — see the [status vocabulary](../README.md#statuses).
-
-Reference — the Filament source this is diffed against:
-
-- [`support/src/Enums/VerticalAlignment.php`](../../../vendor/filament/support/src/Enums/VerticalAlignment.php) — the three cases, no methods
 
 ## Surface
 

@@ -1,21 +1,18 @@
+---
+description: '`Sylament\Schemas\Contracts\InteractsWithSchemas` is the interface a schema host implements — the object that owns one or more named `Schema`… (draft)'
+ports:
+  - vendor/filament/schemas/src/Contracts/HasSchemas.php
+  - vendor/filament/schemas/src/Concerns/InteractsWithSchemas.php
+owns:
+  - packages/schemas/src/Contracts/
+---
 # InteractsWithSchemas (schemas)
 
 [`Sylament\Schemas\Contracts\InteractsWithSchemas`](../../../packages/schemas/src/Contracts/InteractsWithSchemas.php) is the interface a schema **host** implements — the object that owns one or more named `Schema` instances and answers state lookups against them.
 It ports Filament's [`Contracts\HasSchemas`](../../../vendor/filament/schemas/src/Contracts/HasSchemas.php), under a swapped name: Filament's interface is `HasSchemas` and its trait is `InteractsWithSchemas`; Sylament reverses the pair, so this interface is `InteractsWithSchemas` and the implementing trait is [`Concerns\HasSchemas`](has-schemas.md).
 Every method it declares is supplied by that trait.
 
-**Status:** in progress — see the [status vocabulary](../README.md#statuses).
-
-Reference — the Filament source this is diffed against:
-
-- [`schemas/src/Contracts/HasSchemas.php`](../../../vendor/filament/schemas/src/Contracts/HasSchemas.php) — the host interface this reshapes
-- [`schemas/src/Concerns/InteractsWithSchemas.php`](../../../vendor/filament/schemas/src/Concerns/InteractsWithSchemas.php) — Filament's trait, where `schemas()`/`makeSchema()` live (promoted onto the interface here)
-
 ## Surface
-
-Every point of this contract.
-_Blocked by_ names what has to land first.
-_Detail_ carries a **detail** link to the write-up in [Details](#details) (deleted once the row is **done**), a **diverges** link to the permanent note in [Divergences](#divergences), or `—`.
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |

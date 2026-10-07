@@ -1,3 +1,60 @@
+---
+description: 'The root object of the tables package, the counterpart to schemas'' `Schema`: a `ViewComponent` a host builds through `HasTable`, carrying the record… (draft)'
+ports:
+  - vendor/filament/tables/src/Table.php
+  - vendor/filament/tables/src/Table/Concerns/BelongsToLivewire.php
+  - vendor/filament/tables/src/Table/Concerns/HasRecords.php
+  - vendor/filament/tables/src/Table/Concerns/HasQuery.php
+  - vendor/filament/tables/src/Table/Concerns/HasEmptyState.php
+  - vendor/filament/tables/src/Table/Concerns/HasColumns.php
+  - vendor/filament/tables/src/Table/Concerns/HasActions.php
+  - vendor/filament/tables/src/Table/Concerns/HasRecordActions.php
+  - vendor/filament/tables/src/Table/Concerns/CanPaginateRecords.php
+  - vendor/filament/tables/src/Table/Concerns/CanSortRecords.php
+  - vendor/filament/tables/src/Table/Concerns/CanSearchRecords.php
+  - vendor/filament/tables/src/Enums/RecordActionsPosition.php
+owns:
+  - packages/tables/assets/src/controllers/table_controller.ts
+  - packages/tables/assets/src/styles/components/header-toolbar.css
+  - packages/tables/assets/src/styles/components/search-field.css
+  - packages/tables/assets/src/styles/components/selection.css
+  - packages/tables/assets/src/styles/components/table.css
+  - packages/tables/src/Enums/FiltersLayout.php
+  - packages/tables/src/Enums/FiltersResetActionPosition.php
+  - packages/tables/src/Enums/HeaderActionsPosition.php
+  - packages/tables/src/Enums/PaginationMode.php
+  - packages/tables/src/Enums/RecordActionsPosition.php
+  - packages/tables/src/Enums/RecordCheckboxPosition.php
+  - packages/tables/src/Table.php
+  - packages/tables/src/Table/Concerns/BelongsToLiveComponent.php
+  - packages/tables/src/Table/Concerns/CanBeStriped.php
+  - packages/tables/src/Table/Concerns/CanDeferLoading.php
+  - packages/tables/src/Table/Concerns/CanGroupRecords.php
+  - packages/tables/src/Table/Concerns/CanPaginateRecords.php
+  - packages/tables/src/Table/Concerns/CanPollRecords.php
+  - packages/tables/src/Table/Concerns/CanReorderRecords.php
+  - packages/tables/src/Table/Concerns/CanSearchRecords.php
+  - packages/tables/src/Table/Concerns/CanSortRecords.php
+  - packages/tables/src/Table/Concerns/HasActions.php
+  - packages/tables/src/Table/Concerns/HasBulkActions.php
+  - packages/tables/src/Table/Concerns/HasColumnManager.php
+  - packages/tables/src/Table/Concerns/HasColumns.php
+  - packages/tables/src/Table/Concerns/HasEmptyState.php
+  - packages/tables/src/Table/Concerns/HasFilterIndicators.php
+  - packages/tables/src/Table/Concerns/HasFilters.php
+  - packages/tables/src/Table/Concerns/HasHeader.php
+  - packages/tables/src/Table/Concerns/HasHeaderActions.php
+  - packages/tables/src/Table/Concerns/HasHeadings.php
+  - packages/tables/src/Table/Concerns/HasQuery.php
+  - packages/tables/src/Table/Concerns/HasQueryStringIdentifier.php
+  - packages/tables/src/Table/Concerns/HasRecordAction.php
+  - packages/tables/src/Table/Concerns/HasRecordActions.php
+  - packages/tables/src/Table/Concerns/HasRecordClasses.php
+  - packages/tables/src/Table/Concerns/HasRecordUrl.php
+  - packages/tables/src/Table/Concerns/HasRecords.php
+  - packages/tables/src/Table/Concerns/HasToolbarActions.php
+  - packages/tables/templates/partials/Table/
+---
 # Table (tables)
 
 [`Sylament\Tables\Table`](../../../packages/tables/src/Table.php) — the root object of the tables package, the counterpart to schemas' [`Schema`](../schemas/schema.md): a [`ViewComponent`](../../../packages/support/src/Components/ViewComponent.php) a host builds through [`HasTable`](has-table.md), carrying the record data source and the empty-state copy.
@@ -8,30 +65,7 @@ The rows below group those files by feature, which is what the per-file rows ups
 The `Table` fetches nothing itself.
 It declares *how* records are reached — a `records()` closure, or a Doctrine `query()` — and the host resolves and caches them; see [`has-table.md`](has-table.md) for that half of the axis.
 
-**Status:** in progress — see the [status vocabulary](../README.md#statuses).
-
-Reference — the Filament source this is diffed against:
-
-- [`tables/src/Table.php`](../../../vendor/filament/tables/src/Table.php) — the class, its `make()`, `setUp()` and closure-injection hook
-- [`tables/src/Table/Concerns/BelongsToLivewire.php`](../../../vendor/filament/tables/src/Table/Concerns/BelongsToLivewire.php)
-- [`tables/src/Table/Concerns/HasRecords.php`](../../../vendor/filament/tables/src/Table/Concerns/HasRecords.php)
-- [`tables/src/Table/Concerns/HasQuery.php`](../../../vendor/filament/tables/src/Table/Concerns/HasQuery.php)
-- [`tables/src/Table/Concerns/HasEmptyState.php`](../../../vendor/filament/tables/src/Table/Concerns/HasEmptyState.php)
-- [`tables/src/Table/Concerns/HasColumns.php`](../../../vendor/filament/tables/src/Table/Concerns/HasColumns.php)
-- [`tables/src/Table/Concerns/HasActions.php`](../../../vendor/filament/tables/src/Table/Concerns/HasActions.php)
-- [`tables/src/Table/Concerns/HasRecordActions.php`](../../../vendor/filament/tables/src/Table/Concerns/HasRecordActions.php)
-- [`tables/src/Table/Concerns/CanPaginateRecords.php`](../../../vendor/filament/tables/src/Table/Concerns/CanPaginateRecords.php)
-- [`tables/src/Table/Concerns/CanSortRecords.php`](../../../vendor/filament/tables/src/Table/Concerns/CanSortRecords.php)
-- [`tables/src/Table/Concerns/CanSearchRecords.php`](../../../vendor/filament/tables/src/Table/Concerns/CanSearchRecords.php)
-- [`tables/src/Enums/RecordActionsPosition.php`](../../../vendor/filament/tables/src/Enums/RecordActionsPosition.php)
-
 ## Surface
-
-Every point of this component.
-_Blocked by_ names what has to land first.
-_Detail_ carries up to three links: **detail** → the write-up in [Details](#details), deleted once the row is **done**; **diverges** → the permanent note in [Divergences](#divergences); **semantics** → the permanent note in [Semantics](#semantics).
-A **skipped** row states its reason inline instead, where the decision is one line and applies a policy recorded elsewhere.
-Rows never disappear — only their detail sections do.
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
@@ -176,9 +210,6 @@ The all-hidden case asserts the absence of `sy-ta-actions` from the whole render
 And the clone case gives two records a record-dependent `url()` and demands both hrefs, which fails if the actions are bound once and reused — the single bug the per-record clone exists to prevent.
 
 ## Details
-
-Specifics for rows that are not finished — what is already in, what is left, and what the next step is.
-Delete a subsection when its row flips to **done**; the table row and any divergence it earned stay behind.
 
 ### The column manager's table tier ships whole, and the chrome around it now does too
 
@@ -393,9 +424,6 @@ The modal layout falls back to `'md'` in the template for the same reason.
 The identical deferral is recorded on [the modal's own ladder](../support/modal.md#the-default-width-is-md-not-sm).
 
 ## Semantics
-
-Faithful ports subtle enough that the next reader would misread the code.
-Permanent, and addressable by anchor.
 
 ### The visible set asks each column twice, and is memoised until `columns()` is called again
 
@@ -770,9 +798,6 @@ The selection is a set and is read as one; no assertion on it may depend on the 
 
 ## Divergences
 
-Deliberate deviations from Filament — permanent, and the reason they hold.
-Say what would reverse the decision when it is provisional.
-
 ### The inverse relationship is read off the mapping, not derived
 
 Filament's relation-scoped table carries three members the port does not: `inverseRelationship()`, `getInverseRelationship()` and `getInverseRelationshipFor()`.
@@ -789,7 +814,7 @@ Reversal is cheap but unmotivated: it needs a *reader* to want the inverse name 
 
 Filament's `HeaderActionsPosition` is the only file its tables package keeps in `src/Actions/`, and it is an enum rather than an action class.
 The port files it in `Enums/` beside `RecordActionsPosition`, `RecordCheckboxPosition`, `FiltersLayout`, `FiltersResetActionPosition` and `PaginationMode`, so the six enums are in one place.
-Cases, name and defaults are Filament's; only the namespace segment moves, which is the [namespace translation](../renames.md#namespace-segments) rule rather than a rename.
+Cases, name and defaults are Filament's; only the namespace segment moves, which is the [namespace translation](../translations.md#namespace-segments) rule rather than a rename.
 `RecordCheckboxPosition` is **not** a divergence of any kind — Filament already keeps that one in `Enums/`.
 
 ### The ten-per-page default is matched strictly
@@ -819,7 +844,7 @@ Filament stores `searchDebounce('500ms')` and interpolates the string straight i
 
 `searchDebounce()` and `getSearchDebounce()` keep Filament's exact shape — the setter takes and the getter returns the duration string, defaulting to `'500ms'` — so a migrating call site is unchanged; the new member sits beside them as a derived read.
 It accepts `500ms`, `1s`, a bare number (read as milliseconds), and returns 500 for anything it cannot parse rather than throwing: a debounce is a comfort setting, and a typo'd one should not take a page down.
-Recorded in the [rename table](../renames.md#names-with-no-filament-source) as a name with no Filament source.
+Recorded in the [rename table](../translations.md#names-with-no-filament-source) as a name with no Filament source.
 Permanent — the string is the API, the integer is the wire format.
 
 ### `searchOnBlur()` renders `on(change)`, because ux-live-component has no blur event
@@ -951,7 +976,7 @@ Filament types `getEmptyStateIcon(): string | BackedEnum` — never null — bec
 Sylament types it `string|BackedEnum|Markup|null` and returns only what the user set.
 
 Only the **nullability** differs.
-The settable union is Filament's `string | BackedEnum | Htmlable | Closure | null` under the standard `Htmlable` → [`Twig\Markup`](../renames.md#idiom) translation, matching support's own [`HasIcon`](../../../packages/support/src/Components/Concerns/HasIcon.php) — so a raw `<svg>` handed to `emptyStateIcon()` survives the getter untouched rather than being escaped or rejected.
+The settable union is Filament's `string | BackedEnum | Htmlable | Closure | null` under the standard `Htmlable` → [`Twig\Markup`](../translations.md#idiom) translation, matching support's own [`HasIcon`](../../../packages/support/src/Components/Concerns/HasIcon.php) — so a raw `<svg>` handed to `emptyStateIcon()` survives the getter untouched rather than being escaped or rejected.
 Filament's own getter return type (`string | BackedEnum`) is narrower than its property union and could not actually carry the `Htmlable` arm it accepts; the getter here admits `Markup` so the two agree.
 
 The chain is not dropped, it moves: the alias hook and the `heroicons:x-mark` default sit next to each other in the table template, which is where the rest of the toolkit already puts them — the same shape support's `Modal` close button uses.

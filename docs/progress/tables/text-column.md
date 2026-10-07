@@ -1,3 +1,23 @@
+---
+description: 'The first concrete column of the catalog: a `Column` that renders its cell state as text, plus the formatting pipeline that sits between the raw state… (draft)'
+ports:
+  - vendor/filament/tables/src/Columns/TextColumn.php
+  - vendor/filament/tables/src/Columns/Concerns/CanFormatState.php
+  - vendor/filament/tables/src/Columns/Concerns/HasColor.php
+  - vendor/filament/tables/src/Columns/Concerns/HasIcon.php
+  - vendor/filament/tables/src/Columns/Concerns/HasIconColor.php
+  - vendor/filament/tables/src/Columns/Concerns/HasDescription.php
+owns:
+  - packages/support/src/Components/Concerns/HasLineClamp.php
+  - packages/tables/assets/src/controllers/limited_list_controller.ts
+  - packages/tables/assets/src/styles/components/text-column.css
+  - packages/tables/src/Columns/Concerns/CanFormatState.php
+  - packages/tables/src/Columns/Concerns/HasColor.php
+  - packages/tables/src/Columns/Concerns/HasDescription.php
+  - packages/tables/src/Columns/Concerns/HasIconColor.php
+  - packages/tables/src/Columns/TextColumn.php
+  - packages/tables/templates/partials/TextColumn/
+---
 # TextColumn (tables)
 
 [`Sylament\Tables\Columns\TextColumn`](../../../packages/tables/src/Columns/TextColumn.php) — the first concrete column of the catalog: a [`Column`](column.md) that renders its cell state as text, plus the formatting pipeline that sits between the raw state and the template.
@@ -8,23 +28,7 @@ It is a thin subclass on purpose.
 Filament's `TextColumn` is ~700 lines of badges, icons, colours, list flattening, date/money/number formatting and the embedded-view render; this is that surface minus the `iso*` family and the deprecated arms, over a state pipeline and a template path.
 The gaps are the surface table below.
 
-**Status:** in progress — see the [status vocabulary](../README.md#statuses).
-
-Reference — the Filament source this is diffed against:
-
-- [`tables/src/Columns/TextColumn.php`](../../../vendor/filament/tables/src/Columns/TextColumn.php) — the class, its composed traits and `toEmbeddedHtml()`
-- [`tables/src/Columns/Concerns/CanFormatState.php`](../../../vendor/filament/tables/src/Columns/Concerns/CanFormatState.php) — the formatting pipeline: `formatStateUsing`, the array-to-JSON coercion, the `HasLabel` unwrap, `limit()` / `words()`, `prefix()` / `suffix()` and their escaping, `html()` / `markdown()`, and the date, money and numeric formatters all port here; the `iso*` family does not yet
-- [`tables/src/Columns/Concerns/HasColor.php`](../../../vendor/filament/tables/src/Columns/Concerns/HasColor.php) — the colour setter, the `colors()` map and the state-contract fallback
-- [`tables/src/Columns/Concerns/HasIcon.php`](../../../vendor/filament/tables/src/Columns/Concerns/HasIcon.php) — the icon setter, the `icons()` map, the position enum and the state-contract fallback
-- [`tables/src/Columns/Concerns/HasIconColor.php`](../../../vendor/filament/tables/src/Columns/Concerns/HasIconColor.php) — the icon-colour setter, evaluated with no map and no state-contract fallback
-- [`tables/src/Columns/Concerns/HasDescription.php`](../../../vendor/filament/tables/src/Columns/Concerns/HasDescription.php) — the above/below secondary line
-
 ## Surface
-
-Every point of this component.
-_Blocked by_ names what has to land first.
-_Detail_ carries up to three links: **detail** → the write-up in [Details](#details), deleted once the row is **done**; **diverges** → the permanent note in [Divergences](#divergences); **semantics** → the permanent note in [Semantics](#semantics).
-Rows never disappear — only their detail sections do.
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
@@ -49,11 +53,11 @@ Rows never disappear — only their detail sections do.
 | [Lists — `bulleted()`, `listWithLineBreaks()`, `limitList()`, `expandableLimitedList()`, `getStateOverListLimitCount()`](../../../packages/tables/src/Columns/TextColumn.php) + [`limited_list_controller.ts`](../../../packages/tables/assets/src/controllers/limited_list_controller.ts) | [`TextColumn.php`](../../../vendor/filament/tables/src/Columns/TextColumn.php) | done | — | [semantics](#getstateitems-is-the-cells-value-list) · [diverges](#the-expand-toggles-render-only-where-there-is-something-to-expand) |
 | [`rowIndex()`](../../../packages/tables/src/Columns/TextColumn.php) | [`TextColumn::rowIndex()`](../../../vendor/filament/tables/src/Columns/TextColumn.php) | done | — | [column.md](column.md) — the `$rowLoop` object it reads · [diverges](#rowindex-refuses-a-cell-with-no-row-loop-rather-than-numbering-it-null) |
 | `isoDate()`-adjacent deprecations — `BadgeColumn`, `BooleanColumn`, `enum()`, `getStateUsing()`'s deprecated twins | [`TextColumn.php`](../../../vendor/filament/tables/src/Columns/TextColumn.php) | skipped | — | Filament ships these for migration off v2/v3 APIs that never existed here |
-| _rest not audited yet_ | | | | |
+| _rest not audited yet_ | — | — | — | — |
 
 The state-pipeline rows are covered by [`CanFormatStateTest`](../../../packages/tables/tests/Unit/Columns/Concerns/CanFormatStateTest.php) — the array-to-JSON coercion, the `HasLabel` unwrap and the [backed-enum unwrap](#formatstate-throws-for-a-state-it-cannot-stringify) beneath it, the markup flag being re-read off an unwrapped `Markup` label (a second assignment that looks redundant and is what keeps that label out of the truncation), character and word truncation (including the ellipsis-after-length and trailing-whitespace-trim cases), the two **zero** limits as no-ops — the character one because `limit(0)` would otherwise slice the state away and return the ellipsis alone, the word one asserted with an error handler installed, because `words(0)` interpolates `{1,0}` into the quantifier and the failure is the raise rather than the returned string — the pipeline's order at both places a reader could get it wrong (truncation before affixing, so the limit measures the state alone; the character limit before the word limit), prefix/suffix concatenation, and the state/affix markup-escaping matrix — plus [`TextColumnTest`](../../../packages/tables/tests/Unit/Columns/TextColumnTest.php)'s pre-pipeline cases: unformatted state passing through, a format closure receiving both `$state` and `$record`, a literal `formatStateUsing('fixed')` displacing the state, and the collapse boundary itself, pinned with a single-entry array of a non-string so that `state` is still the `int` a colour closure would be handed — which is what a `count($values) >= 1` off-by-one would turn into the formatted string `content` already holds.
 Each presentation concern keeps a unit file of its own beside those — [`HasColorTest`](../../../packages/tables/tests/Unit/Columns/Concerns/HasColorTest.php), [`HasIconTest`](../../../packages/tables/tests/Unit/Columns/Concerns/HasIconTest.php) (where `hasIcon()` is asserted on all three arms, the `false` sentinel included, so an unconditional `return false` no longer passes), [`HasDescriptionTest`](../../../packages/tables/tests/Unit/Columns/Concerns/HasDescriptionTest.php) and [`HasIconColorTest`](../../../packages/tables/tests/Unit/Columns/Concerns/HasIconColorTest.php), the last covering the literal, the state-injected closure, an inline shade map, and the deliberate **absence** of the state-contract fallback `color()` and `icon()` both have.
-The `$template` row is covered by the Integration [`TextColumnTest`](../../../packages/tables/tests/Integration/Columns/TextColumnTest.php), which renders columns inside a real table and reads the cells back through a `DomCrawler` selecting the full chain (`td.sy-ta-cell > div.sy-ta-col > div.sy.sy-ta-text`), so the element carrying the state is the asserted one: a dotted path and a `formatStateUsing()` closure landing in the cell, an iterable state joining into one, a null state rendering the outer element empty rather than dropping it, and — reaching one level deeper, into the `.sy-ta-text-item` element the partial always emits, whose tag follows the [list wrapper](#the-list-wrapper-appeared-with-the-list-arms-and-closed-a-css-divergence-with-it) (`span` for a single unbulleted value, `li` inside the `<ul>` otherwise, so a **multi-value badged** cell is `div.sy-ta-text > ul > li.sy-ta-text-item > span.sy-badge` where a single-value one is `div.sy-ta-text > span.sy-ta-text-item > span.sy-badge`) — a badge per value carrying its colour classes, the descriptions bracketing the item above and below, the size/weight/font-family classes with the line-clamp variable, the badged icon landing **inside** the badge rather than beside it, a **non**-badged `->color()` reaching the item policy and a `->iconColor()` reaching the icon policy, the column's alignment class reaching the outer element, and a blank description dropping both its `<p>` and the layout class it would otherwise flip — in the plain-string form and again as a whitespace-only [`Markup`](../renames.md#idiom), which is a different mechanism rather than the same case twice, since `Markup` is `Countable` and only [`filled()`](../support/helpers.md)'s text-semantics carve-out keeps a count-first reading from calling it filled.
+The `$template` row is covered by the Integration [`TextColumnTest`](../../../packages/tables/tests/Integration/Columns/TextColumnTest.php), which renders columns inside a real table and reads the cells back through a `DomCrawler` selecting the full chain (`td.sy-ta-cell > div.sy-ta-col > div.sy.sy-ta-text`), so the element carrying the state is the asserted one: a dotted path and a `formatStateUsing()` closure landing in the cell, an iterable state joining into one, a null state rendering the outer element empty rather than dropping it, and — reaching one level deeper, into the `.sy-ta-text-item` element the partial always emits, whose tag follows the [list wrapper](#the-list-wrapper-appeared-with-the-list-arms-and-closed-a-css-divergence-with-it) (`span` for a single unbulleted value, `li` inside the `<ul>` otherwise, so a **multi-value badged** cell is `div.sy-ta-text > ul > li.sy-ta-text-item > span.sy-badge` where a single-value one is `div.sy-ta-text > span.sy-ta-text-item > span.sy-badge`) — a badge per value carrying its colour classes, the descriptions bracketing the item above and below, the size/weight/font-family classes with the line-clamp variable, the badged icon landing **inside** the badge rather than beside it, a **non**-badged `->color()` reaching the item policy and a `->iconColor()` reaching the icon policy, the column's alignment class reaching the outer element, and a blank description dropping both its `<p>` and the layout class it would otherwise flip — in the plain-string form and again as a whitespace-only [`Markup`](../translations.md#idiom), which is a different mechanism rather than the same case twice, since `Markup` is `Countable` and only [`filled()`](../support/helpers.md)'s text-semantics carve-out keeps a count-first reading from calling it filled.
 
 The two colour cases are the only render-level reach into the policies, and the badged case cannot stand in for either: the badge branch [skips `ItemComponent` outright](#a-badged-icon-goes-through-the-badges-own-props-and-loses-iconcolor-doing-it), and `colorAttributes()` returns early on a blank colour, so with only a badged `->color('success')` rendered, neither of the partial's two policy class-string literals — nor the container lookup each drives — ran in any test.
 The icon one carries the sharper edge: its class-string sits a namespace level deeper than the item's, so a bundle glob that does not reach that depth is a container error at render rather than a quietly uncoloured icon, which is what that case now fails with.
@@ -67,9 +71,6 @@ It also pins the [`gray` asymmetry](#gray-is-a-colour-on-the-item-and-the-absenc
 
 ## Details
 
-Specifics for rows that are not finished — what is already in, what is left, and what the next step is.
-Delete a subsection when its row flips to **done**; the table row and any divergence it earned stay behind.
-
 ### The `iso*` family waits on i18n, and only on that
 
 `isoDate()`, `isoDateTime()`, `isoTime()` and their three tooltips take moment.js locale presets — `L`, `LLL`, `LT` — which name a *locale's* preferred date shape rather than a token sequence.
@@ -78,9 +79,6 @@ Answering them means ICU locale data and a locale to read it under, which is i18
 Nothing else blocks them — the three defaults they read are already on [`HasDefaultDataFormattingSettings`](../support/has-default-data-formatting-settings.md), carried unread for exactly this.
 
 ## Semantics
-
-Faithful ports subtle enough that the next reader would misread the code.
-Permanent, and addressable by anchor.
 
 ### A `Markup` state skips truncation, and affixing escapes whichever side is not already `Markup`
 
@@ -195,14 +193,11 @@ In the collapsed branch there is no raw per-item value left — collapsing is it
 The consequence: a `colors()` / `icons()` map keyed on the column's original per-value identifiers (`colors(['success' => 'symfony'])`) matches those identifiers only while the column is badged (or single-valued); once a multi-value cell collapses, its one item's `state` is the joined string (`"symfony, forms"`), which cannot match any per-value key in the map.
 Badging a multi-value column is what turns per-value colouring back on — not a bug, the shape the state-item model was built to expose.
 
-This note and [`getFormattedState()`](#getformattedstate-replaces-the-embedded-views-local-preamble)'s sit in different sections despite identical provenance — both members are Sylament-only, and both have rows in [renames.md's no-Filament-source table](../renames.md#names-with-no-filament-source), which is where that shared fact is recorded once.
+This note and [`getFormattedState()`](#getformattedstate-replaces-the-embedded-views-local-preamble)'s sit in different sections despite identical provenance — both members are Sylament-only, and both have rows in [renames.md's no-Filament-source table](../translations.md#names-with-no-filament-source), which is where that shared fact is recorded once.
 What splits them is what each note *says*: the other one explains why a member exists at all where Filament had a local variable, which is a deviation in surface; this one explains behaviour that is Filament's inline loop unchanged and only reads wrong.
 Neither section claims provenance — read that off renames.md, not off which heading a note landed under.
 
 ## Divergences
-
-Deliberate deviations from Filament — permanent, and the reason they hold.
-Say what would reverse the decision when it is provisional.
 
 ### The date family formats through `DateTimeImmutable`, so only English reads right
 
@@ -344,7 +339,7 @@ Revisit if the table chrome's background changes, and re-run [`PolicyShadeGridTe
 ### `getFormattedState()` replaces the embedded view's local preamble
 
 `getFormattedState()` has no Filament counterpart: it is `formatState(getState())` under a name — the translation named above for the one value `toEmbeddedHtml()`'s preamble computed in two steps.
-It is the same kind of member as the [names with no Filament source](../renames.md#names-with-no-filament-source) — Sylament-only, nothing to rename from, and so is [`getStateItems()`](#getstateitems-is-the-cells-value-list), which is filed under Semantics for [reasons of what its note says](#getstateitems-is-the-cells-value-list) rather than of where it came from.
+It is the same kind of member as the [names with no Filament source](../translations.md#names-with-no-filament-source) — Sylament-only, nothing to rename from, and so is [`getStateItems()`](#getstateitems-is-the-cells-value-list), which is filed under Semantics for [reasons of what its note says](#getstateitems-is-the-cells-value-list) rather than of where it came from.
 
 Its purpose is the composition, not being any particular caller's seam: a Twig template reaching one getter for the column's whole formatted state, the same translation regardless of which template reaches for it.
 It formats the *whole* column state in one call, which is why it is not what [`getStateItems()`](#getstateitems-is-the-cells-value-list) calls — a cell can hold more than one value, so the item list reads `getState()` and `formatState()` directly, per item, rather than through this method.
@@ -461,7 +456,7 @@ The declared return type stays Filament's `mixed` rather than being narrowed to 
 
 ### The collapsed join flattens a `Markup` item, where Filament keeps it raw
 
-`getStateItems()`' collapse branch maps `(string) $this->formatStateForItem($value)` over the values and joins the results, so an item that formatted to [`Markup`](../renames.md#idiom) contributes its raw HTML to a **plain** string — and the template escapes plain content, so that item's markup renders as visible tags.
+`getStateItems()`' collapse branch maps `(string) $this->formatStateForItem($value)` over the values and joins the results, so an item that formatted to [`Markup`](../translations.md#idiom) contributes its raw HTML to a **plain** string — and the template escapes plain content, so that item's markup renders as visible tags.
 Filament joins through its `$formatState` closure, whose `e()` call [passes an `Htmlable` through with `toHtml()`](../../../vendor/laravel/framework/src/Illuminate/Support/helpers.php) and escapes everything else, then echoes the joined result raw — so the markup survives the collapse there.
 
 The direction is the safe one and that is why it is not treated as a bug: the port over-escapes rather than emitting unreviewed HTML, and the per-item branch is unaffected — a badged or single-valued cell keeps `Markup` as `Markup` in `content` and renders it raw.
@@ -471,7 +466,7 @@ Closing it means deciding escaping per item inside the join and wrapping the res
 ### `getSizeClass()` is Sylament-only, and the partial resolves the size twice
 
 Filament reads `$size = $this->getSize($stateItem)` into a local at the top of its per-item closure and builds the class from that one value.
-The port has no local to read from, so `getSize()` answers the enum-or-string union and `getSizeClass()` turns it into `sy-size-<value>` or passes a custom string through — one of the Sylament-only [`*Class()` getters](../renames.md#names-with-no-filament-source), and the only one on this class.
+The port has no local to read from, so `getSize()` answers the enum-or-string union and `getSizeClass()` turns it into `sy-size-<value>` or passes a custom string through — one of the Sylament-only [`*Class()` getters](../translations.md#names-with-no-filament-source), and the only one on this class.
 
 The cost is that the partial calls **both**: `getSize(item.state)` for the value the `Badge` prop and the icon-size choice need, and `getSizeClass(item.state)` for the class, which resolves the size a second time.
 So `size(fn ($state) => …)` runs twice per non-badge item where Filament's runs once — invisible for a pure closure, observable for one that counts calls or reads something that moves.

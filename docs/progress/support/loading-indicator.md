@@ -1,3 +1,14 @@
+---
+description: The anonymous Twig component (`<twig:SylamentSupport:LoadingIndicator>`) rendering the spinner Filament's `<x-filament::loading-indicator>` renders… (draft)
+ports:
+  - vendor/filament/support/resources/views/components/loading-indicator.blade.php
+  - vendor/filament/support/src/View/DefaultLoadingIndicator.php
+  - vendor/filament/support/src/Contracts/LoadingIndicator.php
+  - vendor/filament/support/resources/css/components/loading-indicator.css
+owns:
+  - packages/support/assets/src/styles/components/loading-indicator.css
+  - packages/support/templates/components/LoadingIndicator/
+---
 # Loading indicator (support)
 
 [`LoadingIndicator/index.html.twig`](../../../packages/support/templates/components/LoadingIndicator/index.html.twig) — the anonymous Twig component (`<twig:SylamentSupport:LoadingIndicator>`) rendering the spinner Filament's `<x-filament::loading-indicator>` renders, with [`loading-indicator.css`](../../../packages/support/assets/src/styles/components/loading-indicator.css) supplying the spin and the size scale.
@@ -6,19 +17,7 @@ Its first consumer is schemas' [`Tabs`](../schemas/tabs.md) partial, which shows
 Filament's view is a one-liner delegating to `generate_loading_indicator_html()`, which resolves a container-bound `LoadingIndicator` contract — by default [`DefaultLoadingIndicator`](../../../vendor/filament/support/src/View/DefaultLoadingIndicator.php), a class emitting the two-path SVG.
 The **markup** is ported here; the contract/override seam is not (rows below), so the SVG is the template's own body rather than something a consumer can swap.
 
-**Status:** in progress — see the [status vocabulary](../README.md#statuses).
-
-Reference — the Filament source this is diffed against:
-
-- [`support/resources/views/components/loading-indicator.blade.php`](../../../vendor/filament/support/resources/views/components/loading-indicator.blade.php) — the view, one call to the helper
-- [`support/src/View/DefaultLoadingIndicator.php`](../../../vendor/filament/support/src/View/DefaultLoadingIndicator.php) — the SVG this template's body ports, and the `aria-hidden` default
-- [`support/src/Contracts/LoadingIndicator.php`](../../../vendor/filament/support/src/Contracts/LoadingIndicator.php) — the override seam, unported
-- [`support/resources/css/components/loading-indicator.css`](../../../vendor/filament/support/resources/css/components/loading-indicator.css) — the stylesheet (one rule)
-
 ## Surface
-
-_Blocked by_ names what has to land first.
-_Detail_ carries a **diverges** link to the note in [Divergences](#divergences), a **detail** link to [Details](#details), or `—`.
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
@@ -40,8 +39,6 @@ Nothing in the toolkit needs the indirection yet — one consumer, one shape —
 Next step: revisit when a second consumer wants a different spinner, and decide the seam then rather than porting the container binding shape.
 
 ## Divergences
-
-Deliberate deviations from Filament — permanent, and the reason they hold.
 
 ### The root carries `sy-loading-indicator` without `sy-icon`, so the size scale is its own
 

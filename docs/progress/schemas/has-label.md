@@ -1,18 +1,16 @@
+---
+description: 'The human-facing label surface: `label()` / `getLabel()`, the `hiddenLabel()` / `isLabelHidden()` screen-reader toggle, and `hasCustomLabel()`. (draft)'
+ports:
+  - vendor/filament/schemas/src/Components/Concerns/HasLabel.php
+owns:
+  - packages/schemas/src/Components/Concerns/HasLabel.php
+---
 # HasLabel (schemas)
 
 [`Sylament\Schemas\Components\Concerns\HasLabel`](../../../packages/schemas/src/Components/Concerns/HasLabel.php) — the human-facing label surface: `label()` / `getLabel()`, the `hiddenLabel()` / `isLabelHidden()` screen-reader toggle, and `hasCustomLabel()`.
 It ports Filament's identically-named base concern and is shared — the [`Section`](section.md) box, the [`Fieldset`](fieldset.md) legend, the forms [`Field`](../../../packages/forms/src/Components/Field.php), and the actions [`Action`](../../../packages/actions/src/Action.php) all `use` it — so it keeps its own row rather than folding into any one of them.
 
-**Status:** done — see the [status vocabulary](../README.md#statuses).
-
-Reference — the Filament source this is diffed against:
-
-- [`schemas/src/Components/Concerns/HasLabel.php`](../../../vendor/filament/schemas/src/Components/Concerns/HasLabel.php) — the label property, setter/getter, hidden-label toggle, and translation surface
-
 ## Surface
-
-Every point of this concern.
-_Detail_ carries a **diverges** link to the permanent note in [Divergences](#divergences), or `—`.
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |

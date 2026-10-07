@@ -1,3 +1,15 @@
+---
+description: The browser's own "leave site?" prompt, raised when a page is navigated away from with edits it has not saved or a modal action still mounted. (draft)
+ports:
+  - vendor/filament/filament/src/Pages/Concerns/HasUnsavedDataChangesAlert.php
+  - vendor/filament/filament/src/Panel/Concerns/HasUnsavedChangesAlerts.php
+  - vendor/filament/filament/resources/js/unsaved-changes-alert.js
+owns:
+  - packages/panels/assets/src/controllers/unsaved_changes_controller.ts
+  - packages/panels/assets/src/utils/
+  - packages/panels/src/Pages/Concerns/HasUnsavedDataChangesAlert.php
+  - packages/panels/src/Panel/Concerns/HasUnsavedChangesAlerts.php
+---
 # The unsaved-changes alert (panels)
 
 The browser's own "leave site?" prompt, raised when a page is navigated away from with edits it has not saved or a modal action still mounted.
@@ -6,20 +18,9 @@ Three pieces: [`Pages\Concerns\HasUnsavedDataChangesAlert`](../../../packages/pa
 It ports [`Pages/Concerns/HasUnsavedDataChangesAlert.php`](../../../vendor/filament/filament/src/Pages/Concerns/HasUnsavedDataChangesAlert.php), [`Panel/Concerns/HasUnsavedChangesAlerts.php`](../../../vendor/filament/filament/src/Panel/Concerns/HasUnsavedChangesAlerts.php) and the first and third functions of [`resources/js/unsaved-changes-alert.js`](../../../vendor/filament/filament/resources/js/unsaved-changes-alert.js).
 The PHP surface is Filament's name for name; the JavaScript is not, and the reason is the whole of this file: the hash Filament compares in the browser **cannot be recomputed there** under Sylament's binding defaults, so the port compares three client-side signals instead and treats the hash as a marker.
 
-**Status:** in progress — see the [status vocabulary](../README.md#statuses).
-
-Reference — the Filament source this is diffed against:
-
-- [`Pages/Concerns/HasUnsavedDataChangesAlert.php`](../../../vendor/filament/filament/src/Pages/Concerns/HasUnsavedDataChangesAlert.php) — `$savedDataHash`, `rememberData()`, `hasUnsavedDataChangesAlert()`, `mountHasUnsavedDataChangesAlert()`
-- [`Panel/Concerns/HasUnsavedChangesAlerts.php`](../../../vendor/filament/filament/src/Panel/Concerns/HasUnsavedChangesAlerts.php)
-- [`resources/js/unsaved-changes-alert.js`](../../../vendor/filament/filament/resources/js/unsaved-changes-alert.js) — `setUpUnsavedDataChangesAlert`, `setUpSpaModeUnsavedDataChangesAlert`, `setUpUnsavedActionChangesAlert`
-
 ## Surface
 
 Every point of the alert.
-_Blocked by_ names what has to land first.
-_Detail_ carries two links, either of them: **semantics** → the permanent note in [Semantics](#semantics); **diverges** → the permanent note in [Divergences](#divergences).
-A row whose gap is written up elsewhere links that file instead.
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
@@ -38,7 +39,7 @@ A row whose gap is written up elsewhere links that file instead.
 | `setUpSpaModeUnsavedDataChangesAlert` — the SPA arm | the same | skipped | — | [diverges](#filaments-spa-arm-has-no-counterpart) |
 | The bfcache re-baseline | Filament re-reads `$wire.data` on every check, so a restore compares fresh | done | — | [diverges](#a-bfcache-restore-keeps-the-guard-armed-rather-than-re-baselining) |
 | A confirm dialog with configurable body text | the `body` argument of the SPA arm | skipped | — | [diverges](#filaments-spa-arm-has-no-counterpart) |
-| _rest not audited yet_ | | | | |
+| _rest not audited yet_ | — | — | — | — |
 
 Covered by [`Unit/Pages/Concerns/HasUnsavedDataChangesAlertTest`](../../../packages/panels/tests/Unit/Pages/Concerns/HasUnsavedDataChangesAlertTest.php) (the null marker while the alert is off, the hash taken when it is on, a different hash after a change, the page override beating the panel, and the panel knob arming a page that names nothing), [`Unit/Panel/Concerns/HasUnsavedChangesAlertsTest`](../../../packages/panels/tests/Unit/Panel/Concerns/HasUnsavedChangesAlertsTest.php) (off by default; the bare, conditional and closure arms), [`Integration/Twig/PageRenderTest`](../../../packages/panels/tests/Integration/Twig/PageRenderTest.php) (the rendered sentinel's three values, the actions-only arm on a page with no `data`, the absence of a sentinel on a panel that guards nothing, the negative that the live root's `data-controller` is exactly `live`, and the hash changing across a `save()`), [`Integration/Controllers/PageControllerTest`](../../../packages/panels/tests/Integration/Controllers/PageControllerTest.php) (the same inner-element pin on the simple page), [`Integration/Resources/Pages/EditRecordTest`](../../../packages/panels/tests/Integration/Resources/Pages/EditRecordTest.php) (a composing page still marking nothing while its panel's knob is off) and [`Integration/SylamentPanelsBundleTest`](../../../packages/panels/tests/Integration/SylamentPanelsBundleTest.php) (both built files resolving under `@sylament/panels`).
 The `beforeunload` prompt itself is browser behaviour and is verified in a browser pass, not by a test.

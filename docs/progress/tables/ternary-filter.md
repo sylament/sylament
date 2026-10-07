@@ -1,14 +1,15 @@
+---
+description: 'The yes / no / either filter: a `SelectFilter` whose field is a two-option boolean select and whose query pass is a three-arm dispatcher installed as… (draft)'
+ports:
+  - vendor/filament/tables/src/Filters/TernaryFilter.php
+owns:
+  - packages/tables/src/Filters/TernaryFilter.php
+---
 # TernaryFilter (tables)
 
 [`Sylament\Tables\Filters\TernaryFilter`](../../../packages/tables/src/Filters/TernaryFilter.php) — the yes / no / either filter: a [`SelectFilter`](select-filter.md) whose field is a two-option boolean select and whose query pass is a three-arm dispatcher installed as the filter's own `query()` callback.
 It ports [`Filament\Tables\Filters\TernaryFilter`](../../../vendor/filament/tables/src/Filters/TernaryFilter.php).
 Everything [`SelectFilter`](select-filter.md) carries — the field chain, the attribute resolution, the active count, the parameter binding — is tracked there.
-
-**Status:** in progress — see the [status vocabulary](../README.md#statuses).
-
-Reference — the Filament source this is diffed against:
-
-- [`tables/src/Filters/TernaryFilter.php`](../../../vendor/filament/tables/src/Filters/TernaryFilter.php) — the labels, `getFormField()`, `queries()`, `boolean()`, `nullable()`, the `getDefaultState()` int cast and the indicator override
 
 ## Surface
 

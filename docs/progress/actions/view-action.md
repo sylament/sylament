@@ -1,3 +1,11 @@
+---
+description: 'The prebuilt per-record read-only action: a grey eye trigger that opens a modal, fills a form from the bound record, disables it and offers a single… (draft)'
+ports:
+  - vendor/filament/actions/src/ViewAction.php
+  - vendor/filament/actions/resources/lang/en/view.php
+owns:
+  - packages/actions/src/ViewAction.php
+---
 # ViewAction (actions)
 
 [`Sylament\Actions\ViewAction`](../../../packages/actions/src/ViewAction.php) — the prebuilt per-record read-only action: a grey eye trigger that opens a modal, fills a form from the bound record, disables it and offers a single **Close** button.
@@ -7,20 +15,9 @@ It is modal-only here today, but not for want of the URL arm: that arm lives on 
 What is missing is the page: no resource can register one until panels ships a `ViewRecord` page, so the arm never fires.
 This class does not change when it does.
 
-**Status:** in progress — see the [status vocabulary](../README.md#statuses).
-
-Reference — the Filament source this is diffed against:
-
-- [`actions/src/ViewAction.php`](../../../vendor/filament/actions/src/ViewAction.php) — the class this ports, whole
-- [`actions/resources/lang/en/view.php`](../../../vendor/filament/actions/resources/lang/en/view.php) — the three strings it sets
-
 Covered by [`ViewActionTest`](../../../packages/actions/tests/Unit/ViewActionTest.php) (the chrome, the heading interpolation and the absent action closure) and the Integration [`ViewActionTest`](../../../packages/actions/tests/Integration/ViewActionTest.php) (the fill from the mount context's record, the disabled schema, the Close-only footer, the rendered `disabled` field against a writable `EditAction` control, and that dismissing the modal writes nothing).
 
 ## Surface
-
-Every member Filament's class carries.
-_Blocked by_ names what has to land first.
-_Detail_ carries a **detail** link to a [Details](#details) write-up, a **diverges** link to [Divergences](#divergences), or `—`.
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
@@ -33,9 +30,6 @@ _Detail_ carries a **detail** link to a [Details](#details) write-up, a **diverg
 | Modal content — Filament's view modal renders the resource's **infolist** | [`ViewAction.php`](../../../vendor/filament/actions/src/ViewAction.php), [`Resources/Pages/ViewRecord.php`](../../../vendor/filament/filament/src/Resources/Pages/ViewRecord.php) | in progress | infolists and a panels `ViewRecord` page | [detail](#the-modal-renders-the-form-disabled-where-filament-renders-an-infolist) |
 
 ## Details
-
-Specifics for rows that are not finished — what is already in, what is left, and the next step.
-Delete a subsection when its row flips to **done**.
 
 ### The modal renders the form disabled where Filament renders an infolist
 
@@ -51,9 +45,6 @@ What changes when they land is the **resolver's answer**, not this class: nothin
 **Next step:** infolists and the panels `ViewRecord` page, at which point a resource that declares `infolist()` has it answered here.
 
 ## Divergences
-
-Deliberate deviations from Filament — permanent, and the reason they hold.
-These outlive the detail sections above.
 
 ### The footer is a Close button because nothing else is there
 

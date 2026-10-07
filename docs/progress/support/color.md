@@ -1,21 +1,17 @@
+---
+description: The palette catalog and the colour maths every contrast policy measures with. (draft)
+ports:
+  - vendor/filament/support/src/Colors/Color.php
+owns:
+  - packages/support/src/Colors/Color.php
+---
 # Color (support)
 
 `Sylament\Support\Colors\Color` — the palette catalog and the colour maths every contrast policy measures with.
 Pure static, no dependencies, no state: 26 palette constants, five WCAG ratio constants, the three format conversions, the contrast calculation, the shade search, and the palette generator.
 The registry that holds palettes is [`color-manager.md`](color-manager.md); the objects that decide which shade an element paints with are [`color-policies.md`](color-policies.md).
 
-**Status:** in progress — see the [status vocabulary](../README.md#statuses).
-
-Reference — the Filament source this is diffed against:
-
-- [`support/src/Colors/Color.php`](../../../vendor/filament/support/src/Colors/Color.php) — the catalog, the conversions and the contrast maths
-
 ## Surface
-
-Every point of this class.
-_Blocked by_ names what has to land first.
-_Detail_ carries three links, any of them: **detail** → the write-up in [Details](#details), deleted once the row is **done**; **semantics** → the permanent note in [Semantics](#semantics); **diverges** → the permanent note in [Divergences](#divergences).
-Rows never disappear — only their detail sections do.
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
@@ -33,9 +29,6 @@ Rows never disappear — only their detail sections do.
 
 ## Details
 
-Specifics for rows that are not finished — what is already in, what is left, and what the next step is.
-Delete a subsection when its row flips to **done**; the table row and any divergence it earned stay behind.
-
 ### Five public helpers are ported with no caller and no test
 
 `convertToHex()`, the `hex()` / `rgb()` aliases of `generatePalette()`, and the two `is*ContrastRatioAccessible()` predicates carry over verbatim so a migrating user's call still resolves, but nothing in the port calls them and no test exercises them — so they are **in progress** rather than **done** under the [vocabulary](../README.md#statuses), which requires a test.
@@ -47,9 +40,6 @@ Each flips to **done** the moment something calls it and a case pins the result 
 `convertToRgb()` is **done** despite having no direct test of its own: both of its branches are exercised through `calculateContrastRatio()`, which converts every colour it is handed, and the suite drives it with hex pairs and with oklch palettes.
 
 ## Semantics
-
-Faithful ports that a reader re-deriving the behaviour from the source would plausibly get wrong.
-Permanent, and true once the row is **done**.
 
 ### The contrast maths approximates WCAG's formula rather than implementing it
 
@@ -64,8 +54,6 @@ Note also that `convertToRgb()` — which every contrast call runs first — per
 The approximation is only in the luminance step.
 
 ## Divergences
-
-Deliberate deviations from Filament — permanent, and the reason they hold.
 
 ### An unparseable colour throws instead of yielding black
 

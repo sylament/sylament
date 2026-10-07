@@ -1,3 +1,14 @@
+---
+description: The date-and-time field, extending `Field`. (draft)
+ports:
+  - vendor/filament/forms/src/Components/DateTimePicker.php
+  - vendor/filament/forms/src/Components/Concerns/CanBeNative.php
+  - vendor/filament/schemas/src/Components/StateCasts/DateTimeStateCast.php
+  - vendor/filament/forms/resources/css/components/date-time-picker.css
+owns:
+  - packages/forms/src/Components/DateTimePicker.php
+  - packages/forms/templates/partials/DateTimePicker/
+---
 # DateTimePicker (forms)
 
 `Sylament\Forms\Components\DateTimePicker` — the date-and-time field, extending [`Field`](field.md).
@@ -7,21 +18,10 @@ Its two thin subclasses drop one half each — [`DatePicker`](date-picker.md) ha
 The JS calendar behind `native(false)` — the Alpine panel, `displayFormat()`, `disabledDates()`, `firstDayOfWeek()` and the rest of its family — is not ported; it is a JS vertical of its own and the field's one gap.
 Declaring `native(false)` is therefore a [fail-fast throw](can-be-native.md#nativefalse-throws-rather-than-falling-back-to-the-native-control) rather than a silent fallback.
 
-**Status:** in progress — see the [status vocabulary](../README.md#statuses).
-
-Reference — the Filament source this is diffed against:
-
-- [`forms/src/Components/DateTimePicker.php`](../../../vendor/filament/forms/src/Components/DateTimePicker.php) — the field and every trait it composes
-- [`forms/src/Components/Concerns/CanBeNative.php`](../../../vendor/filament/forms/src/Components/Concerns/CanBeNative.php) — the native/JS switch
-- [`schemas/src/Components/StateCasts/DateTimeStateCast.php`](../../../vendor/filament/schemas/src/Components/StateCasts/DateTimeStateCast.php) — the Carbon cast this field appends, ported in [date-time-state-cast.md](../schemas/date-time-state-cast.md)
-- [`forms/resources/css/components/date-time-picker.css`](../../../vendor/filament/forms/resources/css/components/date-time-picker.css) — the stylesheet, of which only the WebKit rule applies to a native control
-
 ## Surface
 
 Every point this field adds over `Field`.
 `Field`'s own surface (label, hint, helper text, placeholder, required, slots, rendering chrome) is tracked in [`field.md`](field.md), not here.
-_Blocked by_ names what has to land first.
-_Detail_ links a permanent note in [Semantics](#semantics) or [Divergences](#divergences), a **detail** write-up in [Details](#details), or another file.
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
@@ -69,9 +69,6 @@ The rendered control, the validation run through a live host and the record roun
 
 ## Details
 
-Specifics for rows that are not finished — what is in, what is left, the next step.
-Delete a subsection when its row flips to **done**.
-
 ### The JS calendar family waits on a JS vertical of its own
 
 Ten members exist only to configure the Alpine calendar panel Filament renders when `native(false)`: the display format (and its five `default*DisplayFormat` fallbacks), the first day of the week, the locale, the disabled dates, the initially focused date, the close-on-selection flag, and the extra attributes for the panel's trigger button.
@@ -82,9 +79,6 @@ Everything the panel needs from PHP is already reachable: the flags, the formats
 The `extraTriggerAttributes()` pair additionally wants an attribute-bag getter of the [`HasExtraInputAttributes`](has-extra-input-attributes.md) shape, and `displayFormat()` wants a PHP → JS date-format translation (Filament's `convert_date_format()` helper), neither of which exists yet.
 
 ## Semantics
-
-Faithful-in-spirit behaviour a reader would plausibly misread from the source.
-Permanent — these outlive the detail sections above.
 
 ### `format()` is the record-side shape and `getInternalFormat()` the wire-side one
 
@@ -140,8 +134,6 @@ The `?? ''` beside it is the idiomorph rule every input template follows: an uns
 
 ## Divergences
 
-Deliberate deviations from Filament, and the reason each holds.
-Provisional ones say what would reverse them.
 The `native(false)` throw is recorded with the concern it belongs to, in [can-be-native.md](can-be-native.md#nativefalse-throws-rather-than-falling-back-to-the-native-control), since `Select` composes the same trait and takes the other branch.
 
 ### The cast writes an object when the record declares one
@@ -194,5 +186,5 @@ No deprecated surface ships here — a port that starts with the previous genera
 ### The Alpine and published-view surface has no counterpart
 
 `HasExtraAlpineAttributes` adds `x-*` attributes to the control, and `$publishedViewOverrideCheckPath` lets Filament warn when a user has published and edited the Blade view this component would otherwise render.
-Neither has a target here: Alpine translates to [Stimulus](../renames.md#idiom) rather than to an attribute bag, and the port has no view-publishing mechanism to check against.
+Neither has a target here: Alpine translates to [Stimulus](../translations.md#idiom) rather than to an attribute bag, and the port has no view-publishing mechanism to check against.
 **Skipped**, both permanently.

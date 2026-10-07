@@ -1,24 +1,21 @@
+---
+description: The abstract root every Sylament component extends. (draft)
+ports:
+  - vendor/filament/support/src/Components/Component.php
+  - vendor/filament/support/src/Concerns/
+owns:
+  - packages/support/src/Components/Component.php
+  - packages/support/src/Components/Concerns/Configurable.php
+  - packages/support/src/Components/Concerns/HasColor.php
+  - packages/support/src/Concerns/EvaluatesClosures.php
+---
 # Component (support)
 
 `Sylament\Support\Components\Component` — the abstract root every Sylament component extends.
 It composes two of the five traits Filament's base composes; all five are rows below, tracked here rather than in files of their own.
 The Twig-rendering subclass `ViewComponent` and the `ComponentManager` that `Configurable` calls into have their own rows in the [package README](README.md) and earn detail files of their own when they are audited.
 
-**Status:** done — see the [status vocabulary](../README.md#statuses).
-Every row below is settled: four **done** and the three Laravel traits **skipped**, the last of them — the arity probe — flipped by [`Column::hasStateBasedUrls()`](../tables/column.md), the reader that earned it.
-The table carries no unaudited row, so *done* here is the whole base component, not the two subclasses: `ViewComponent` and `ComponentManager` keep their own rows in the [package README](README.md).
-
-Reference — the Filament source this is diffed against:
-
-- [`support/src/Components/Component.php`](../../../vendor/filament/support/src/Components/Component.php) — the base class and the five traits it composes
-- [`support/src/Concerns/`](../../../vendor/filament/support/src/Concerns) — the trait implementations behind each row below
-
 ## Surface
-
-Every point of this component.
-_Blocked by_ names what has to land first.
-_Detail_ carries only two links, either or both: **detail** → the write-up in [Details](#details), deleted once the row is **done**; **diverges** → the permanent note in [Divergences](#divergences).
-Rows never disappear — only their detail sections do.
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
@@ -30,18 +27,7 @@ Rows never disappear — only their detail sections do.
 | Tappable | [`Illuminate\Support\Traits\Tappable`](../../../vendor/laravel/framework/src/Illuminate/Support/Traits/Tappable.php) | skipped | — | [diverges](#conditionable-and-tappable-are-not-ported) |
 | Macroable | [`Concerns/Macroable.php`](../../../vendor/filament/support/src/Concerns/Macroable.php) | skipped | — | [diverges](#macroable-is-not-ported) |
 
-## Details
-
-Specifics for rows that are not finished — what is already in, what is left, and what the next step is.
-Delete a subsection when its row flips to **done**; the table row and any divergence it earned stay behind.
-
-No row has a write-up here.
-
 ## Divergences
-
-Deliberate deviations from Filament — permanent, and the reason they hold.
-These outlive the detail sections above: a row stays **done** or **skipped** and keeps pointing here.
-Say what would reverse the decision when it is provisional.
 
 ### Closure resolution lives in a service
 

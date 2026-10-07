@@ -1,3 +1,11 @@
+---
+description: The prebuilt "new record" action a resource's list page puts in its header. (draft)
+ports:
+  - vendor/filament/actions/src/CreateAction.php
+  - vendor/filament/actions/src/Concerns/CanCustomizeProcess.php
+owns:
+  - packages/actions/src/CreateAction.php
+---
 # CreateAction (actions)
 
 [`Sylament\Actions\CreateAction`](../../../packages/actions/src/CreateAction.php) — the prebuilt "new record" action a resource's list page puts in its header.
@@ -8,13 +16,6 @@ With a create page to link to it renders as a link; without one it opens a modal
 [`CanOpenUrl::getUrl()`](../../../packages/actions/src/Concerns/CanOpenUrl.php) answers the action's own `url()` and then the host's [`getDefaultActionUrl()`](interacts-with-actions.md#the-panel-level-default-hooks-are-on-the-contract-the-authorization-pair-deferred) hook, and an action with a URL renders an anchor that is never mounted — so setting a modal heading, as this class now does, does not by itself open one.
 There are exactly three ways in: the host answers no URL (a resource that registers no create page, which is all a "simple (modal) resource" is — the absence of a page, not a feature), `->modal()` forces one (a hard `true` from `hasModal()` short-circuits `getUrl()` to `null` before either arm is read), or the action names a `recordClass()` its host declines to route.
 
-**Status:** done — see the [status vocabulary](../README.md#statuses).
-
-Reference — the Filament source this is diffed against:
-
-- [`actions/src/CreateAction.php`](../../../vendor/filament/actions/src/CreateAction.php) — the class this ports
-- [`actions/src/Concerns/CanCustomizeProcess.php`](../../../vendor/filament/actions/src/Concerns/CanCustomizeProcess.php) — the trait it composes, ported whole (row in [README](README.md#features))
-
 Covered by [`CreateActionTest`](../../../packages/actions/tests/Unit/CreateActionTest.php) (the chrome, the label interpolation, the create-another footer action and the three-hop relationship chain), [`CreateActionTest`](../../../packages/actions/tests/Integration/CreateActionTest.php) (the modal arm end to end against the fixture entity manager) and [`CreateActionRelationshipTest`](../../../packages/tables/tests/Integration/CreateActionRelationshipTest.php) (the relationship arm, in tables' suite because only that kernel boots a table and a forms field — the src-mirror rule is relaxed there for the same reason [`PrebuiltDeleteActionTest`](../../../packages/tables/tests/Integration/PrebuiltDeleteActionTest.php) relaxes it).
 The create-path rules are pinned beside them by [`CreateActionTakenKeyTest`](../../../packages/actions/tests/Integration/CreateActionTakenKeyTest.php) (a taken key under its field, the create-another run, the order against the record's own constraints, a generated id adding no statement) and [`CreateActionRelationshipKeyTest`](../../../packages/actions/tests/Integration/CreateActionRelationshipKeyTest.php) (the attach before the mapping, the restored binding, the many-to-many give-back, the relationship winning and the lookup on the form's pick).
 [`SubclassedAssociationReaderTest`](../../../packages/actions/tests/Integration/SubclassedAssociationReaderTest.php) pins the record check asking the container's own reader — a subclass of it, rebound to a second manager — rather than one the action builds, for create, edit and both replicate arms.
@@ -22,10 +23,6 @@ The create-path rules are pinned beside them by [`CreateActionTakenKeyTest`](../
 [`KeyAdviceTest`](../../../packages/actions/tests/Integration/KeyAdviceTest.php) pins the refusals' advice — `using()` for a class whose constructor requires arguments, `validateRecordKey()` when the modal switches the key rules off.
 
 ## Surface
-
-Every member Filament's class carries.
-_Blocked by_ names what has to land first.
-_Detail_ carries a **detail** link to another file's write-up, a **semantics** link to [Semantics](#semantics), a **diverges** link to [Divergences](#divergences), or `—`.
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
@@ -45,8 +42,6 @@ _Detail_ carries a **detail** link to another file's write-up, a **semantics** l
 | The `BelongsToMany` pivot-column split inside the relationship arm | [`CreateAction.php`](../../../vendor/filament/actions/src/CreateAction.php) | skipped | — | The whole pivot surface is skipped one layer down — a Doctrine association table carrying payload is an entity of its own, so there are no pivot columns to split out of the data ([`table.md`](../tables/table.md#surface)) |
 
 ## Semantics
-
-Faithful ports subtle enough to be misread from the source alone — permanent, addressable by anchor.
 
 ### The created record joins the relationship in the same flush
 
@@ -117,9 +112,6 @@ The relationship arm's `attach()`, `detach()` and `describeRelationship()` still
 Moving them onto the rebound reader would be a behaviour change no case needs.
 
 ## Divergences
-
-Deliberate deviations from Filament — permanent, and the reason they hold.
-These outlive the detail sections above.
 
 ### The modal arm persists through the schema's record class
 

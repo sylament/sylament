@@ -1,3 +1,11 @@
+---
+description: A Sylament invention with no Filament source. (draft)
+ports:
+  - vendor/filament/support/src/helpers.php
+owns:
+  - packages/schemas/src/Query/QueryAliases.php
+  - packages/schemas/src/Query/SearchConstraint.php
+---
 # SearchConstraint (schemas)
 
 [`Sylament\Schemas\Query\SearchConstraint`](../../../packages/schemas/src/Query/SearchConstraint.php) — a Sylament invention with **no Filament source**.
@@ -6,14 +14,12 @@ Filament's analogue is the `generate_search_column_expression()` / `generate_sea
 It shipped first in `tables` ([table.md](../tables/table.md#a-non-string-searchable-field-is-cast-to-text-on-postgresql)), which still owns `forColumn()` (the relation-crossing dispatch a column's search resolves through) and its own `like()` that now delegates here.
 `like()` itself moved down so `forms`' relationship search arm can reuse it: `forms` and `tables` are sibling packages that both build on `schemas` and neither may depend on the other, so a helper both need moves down to their shared ancestor rather than one borrowing the other's package.
 
-**Status:** done — see the [status vocabulary](../README.md#statuses).
-
 ## Surface
 
-| Feature | Status | Blocked by | Detail |
-| --- | --- | --- | --- |
-| [`like(QueryBuilder $query, string $path, string $search, ?bool $forceCaseInsensitive, ?string $class = null): Comparison`](../../../packages/schemas/src/Query/SearchConstraint.php) — a `LIKE` (or case-insensitive `LOWER(...) LIKE`) comparison, parameter-bound onto `$query` | done | — | [semantics](#case-insensitivity-defaults-off-the-querys-platform-not-a-fixed-choice), [casts](#a-field-that-holds-no-character-data-is-cast-to-text-on-postgresql) |
-| [`QueryAliases::classOf()` / `isFetchJoinedCollection()`](../../../packages/schemas/src/Query/QueryAliases.php) — the entity a builder alias stands for, and whether it is a fetch-joined collection | done | — | [casts](#a-field-that-holds-no-character-data-is-cast-to-text-on-postgresql) |
+| Feature | Ports | Status | Blocked by | Detail |
+| --- | --- | --- | --- | --- |
+| [`like(QueryBuilder $query, string $path, string $search, ?bool $forceCaseInsensitive, ?string $class = null): Comparison`](../../../packages/schemas/src/Query/SearchConstraint.php) — a `LIKE` (or case-insensitive `LOWER(...) LIKE`) comparison, parameter-bound onto `$query` | — | done | — | [semantics](#case-insensitivity-defaults-off-the-querys-platform-not-a-fixed-choice), [casts](#a-field-that-holds-no-character-data-is-cast-to-text-on-postgresql) |
+| [`QueryAliases::classOf()` / `isFetchJoinedCollection()`](../../../packages/schemas/src/Query/QueryAliases.php) — the entity a builder alias stands for, and whether it is a fetch-joined collection | — | done | — | [casts](#a-field-that-holds-no-character-data-is-cast-to-text-on-postgresql) |
 
 ## Semantics
 

@@ -1,3 +1,10 @@
+---
+description: The storage seam every file-handling component reaches through. (draft)
+ports:
+  - vendor/filament/forms/src/Components/BaseFileUpload.php
+owns:
+  - packages/support/src/Filesystem/
+---
 # FilesystemRegistry (support)
 
 [`Sylament\Support\Filesystem\FilesystemRegistry`](../../../packages/support/src/Filesystem/FilesystemRegistry.php) — the storage seam every file-handling component reaches through.
@@ -7,18 +14,9 @@ There is no Filament class to diff against — the facade *is* the original — 
 The storages themselves are not ours.
 `league/flysystem-bundle` compiles each `flysystem.storages.<name>` entry into a private `Filesystem` definition tagged `flysystem.storage` with a `storage` attribute; the registry is constructed with `tagged_locator('flysystem.storage', 'storage')` — the bundle's own convention, the same locator its `PushCommand` and `PullCommand` take — so every configured storage is reachable by the name the application gave it, private definitions included.
 
-**Status:** done — see the [status vocabulary](../README.md#statuses).
-
-Reference — there is no Filament source; these are what it translates:
-
-- `Illuminate\Support\Facades\Storage::disk()` — the call Filament's [`BaseFileUpload`](../../../vendor/filament/forms/src/Components/BaseFileUpload.php) makes for every read, write and delete
-- [`vendor/league/flysystem-bundle/src/DependencyInjection/FlysystemExtension.php`](../../../vendor/league/flysystem-bundle/src/DependencyInjection/FlysystemExtension.php) — where the `flysystem.storage` tag is stamped and where the same `tagged_locator` shape is used
-
 ## Surface
 
 Every point of the registry and the configuration behind it.
-_Blocked by_ names what has to land first.
-_Detail_ carries **diverges** → the permanent note in [Divergences](#divergences), and **semantics** → the permanent note in [Semantics](#semantics).
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
@@ -92,7 +90,7 @@ There is no facade layer here, so the seam is an injected service; `sylament/for
 
 What does **not** change is the word.
 Filament's public API says `disk()` — `FileUpload::make('x')->disk('s3')` — and every migrating user greps for it, so the setter keeps its name even though the value it takes is a *flysystem storage name* rather than a Laravel disk key.
-The idiom translation is recorded in [renames.md](../renames.md#idiom); nothing in the user-facing API is renamed.
+The idiom translation is recorded in [renames.md](../translations.md#idiom); nothing in the user-facing API is renamed.
 
 ### `league/flysystem` is suggested rather than required
 

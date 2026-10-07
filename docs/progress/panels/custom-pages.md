@@ -1,3 +1,17 @@
+---
+description: '`Sylament\Panels\Pages\Page` as a surface a user writes against: the plain panel page is now an actions host and a schemas host, its partial is a… (draft)'
+ports:
+  - vendor/filament/filament/src/Pages/BasePage.php
+  - vendor/filament/filament/src/Pages/Page.php
+  - vendor/filament/filament/src/Pages/Concerns/InteractsWithHeaderActions.php
+  - vendor/filament/filament/resources/views/components/page/index.blade.php
+  - vendor/filament/filament/src/Resources/Pages/Page.php
+owns:
+  - packages/panels/src/Pages/Concerns/InteractsWithHeaderActions.php
+  - packages/panels/src/Routing/
+  - packages/panels/templates/components/Header/
+  - packages/panels/templates/partials/Page/index.html.twig
+---
 # Custom pages (panels)
 
 [`Sylament\Panels\Pages\Page`](../../../packages/panels/src/Pages/Page.php) as a surface a user writes against: the plain panel page is now an **actions host and a schemas host**, its partial is a chrome template with three named blocks, and a body arrives either as a `content(Schema): Schema` override or as a child template that `{% extends %}` the chrome and fills `{% block content %}`.
@@ -11,22 +25,9 @@ Both are named `Page` and both live under a `Pages\` namespace; the plain one kn
 Read them by their **import** — the resource base imports the plain one as `use Sylament\Panels\Pages\Page as BasePage;`, which is the only place in the codebase where the name `BasePage` means our own class rather than Filament's.
 Every member this file describes is inherited by the resource base and by every resource page under it.
 
-**Status:** in progress — see the [status vocabulary](../README.md#statuses).
-
-Reference — the Filament source this is diffed against:
-
-- [`Pages/BasePage.php`](../../../vendor/filament/filament/src/Pages/BasePage.php) — the render/lifecycle half: the two host contracts, `content()`, `getLayoutData()`, `getExtraBodyAttributes()`, `refresh()`, `halt()`
-- [`Pages/Page.php`](../../../vendor/filament/filament/src/Pages/Page.php) — the panel-aware half: `$layout`, `getHeader()`/`getFooter()`, `getPageClasses()`
-- [`Pages/Concerns/InteractsWithHeaderActions.php`](../../../vendor/filament/filament/src/Pages/Concerns/InteractsWithHeaderActions.php) — the header list, its cache and its alignment
-- [`resources/views/components/page/index.blade.php`](../../../vendor/filament/filament/resources/views/components/page/index.blade.php) — the chrome our base partial is
-- [`Resources/Pages/Page.php`](../../../vendor/filament/filament/src/Resources/Pages/Page.php) — `getResourceUrl()`
-
 ## Surface
 
 Every point of the page tier.
-_Blocked by_ names what has to land first.
-_Detail_ carries two links, either of them: **semantics** → the permanent note in [Semantics](#semantics); **diverges** → the permanent note in [Divergences](#divergences).
-A row whose gap is written up elsewhere links that file instead.
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
@@ -59,7 +60,7 @@ A row whose gap is written up elsewhere links that file instead.
 | `getRenderHookScopes()` and the page render hooks | `BasePage::getRenderHookScopes()` | todo | render hooks | — |
 | Clusters (`getCluster()`, the cluster breadcrumb and navigation arms) | [`Clusters/`](../../../vendor/filament/filament/src/Clusters) | todo | clusters | — |
 | Widgets on a page (`getHeaderWidgets()`, `getFooterWidgets()`, `getWidgetData()`) | `BasePage`'s widget arms | todo | `sylament/widgets` | — |
-| _rest not audited yet_ | | | | |
+| _rest not audited yet_ | — | — | — | — |
 
 The tier is covered by [`Unit/Pages/PageTest`](../../../packages/panels/tests/Unit/Pages/PageTest.php) (the two hosts and the empty discovery list, the identity `content()`, the layout seam and a page naming its own, the width/classes/body-attribute defaults, `halt()` carrying its flag, `refresh()` as a listener, an action resolved by name out of the form row, and the fail-fast when a `new`-built page is asked for its panel), [`Unit/Pages/Concerns/InteractsWithHeaderActionsTest`](../../../packages/panels/tests/Unit/Pages/Concerns/InteractsWithHeaderActionsTest.php) (the binding-and-registration walk, its once-only read, the placement default and the alignment), [`Integration/Twig/PageRenderTest`](../../../packages/panels/tests/Integration/Twig/PageRenderTest.php) (a whole plain page rendered off the **probe** panel — header actions, the alignment DOM, the form row, the `after_form` block, the sentinel and the negative that the live root's `data-controller` is exactly `live`; plus the two live round trips that mount a grouped header action and a form-row action, and the two that prove the panel stamp beats actions' own re-resolution), [`Integration/Resources/Pages/PageTest`](../../../packages/panels/tests/Integration/Resources/Pages/PageTest.php) (a user-authored resource page: its body block reading the record, its trail, its band entry, its `getResourceUrl()` header link and its 404) and [`Unit/Routing/PanelRouteLoaderTest`](../../../packages/panels/tests/Unit/Routing/PanelRouteLoaderTest.php) (the placeholder guard's refusal and its three admits).
 
@@ -199,7 +200,7 @@ Four things the shape depends on:
 
 Filament's `BasePage` renders through `$view` plus `getView()` / `getViewData()`, a Blade view name and a variable bag the page's own `render()` merges.
 Ours renders through UX LiveComponent's `template_from_method: getTemplate`, which takes a template **name** and hands the component itself to Twig as `this` — so there is no bag to fill: a template reads whatever it needs off `this` by calling the page's own getters.
-`$template` and `getTemplate()` are the port of `$view` and `getView()` under the standing Blade-view → Twig-template [idiom translation](../renames.md#idiom); `getViewData()` has nothing left to do and is not ported.
+`$template` and `getTemplate()` are the port of `$view` and `getView()` under the standing Blade-view → Twig-template [idiom translation](../translations.md#idiom); `getViewData()` has nothing left to do and is not ported.
 
 The same reasoning covers `getLayoutData()`'s third key — [recorded on `SimplePage`](simple-page.md#getlayoutdata-answers-two-keys-where-filaments-answers-three), the only class that fills it.
 

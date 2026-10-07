@@ -1,3 +1,13 @@
+---
+description: 'The option map every option-shaped field is configured with: a literal array (flat or one optgroup level deep), a closure evaluated per render, or an… (draft)'
+ports:
+  - vendor/filament/forms/src/Components/Concerns/HasOptions.php
+  - vendor/filament/forms/src/Components/Concerns/HasEnum.php
+  - vendor/filament/support/src/Contracts/HasLabel.php
+owns:
+  - packages/forms/src/Components/Concerns/HasOptions.php
+  - packages/support/src/Contracts/HasLabel.php
+---
 # HasOptions (forms)
 
 `Sylament\Forms\Components\Concerns\HasOptions` — the option map every option-shaped field is configured with: a literal array (flat or one optgroup level deep), a closure evaluated per render, or an **enum class-string**, which also seeds [`HasEnum`](has-enum.md) so the same declaration drives the field's state cast.
@@ -5,24 +15,13 @@ It carries one member Filament has no counterpart for, `getOptionComparisonState
 
 Promoted out of [`select.md`](select.md) ahead of the option fields that share it, per [one row per file](../README.md#one-row-per-file-one-file-per-thing).
 
-**Status:** done — see the [status vocabulary](../README.md#statuses).
-
-Reference — the Filament source this is diffed against:
-
-- [`Components/Concerns/HasOptions.php`](../../../vendor/filament/forms/src/Components/Concerns/HasOptions.php) — the trait
-- [`Components/Concerns/HasEnum.php`](../../../vendor/filament/forms/src/Components/Concerns/HasEnum.php) — the enum seam `options()` writes into
-- [`support/src/Contracts/HasLabel.php`](../../../vendor/filament/support/src/Contracts/HasLabel.php) — the contract an enum case's label comes from
-
 ## Surface
-
-_Blocked by_ names what has to land first.
-_Detail_ links a permanent note in [Semantics](#semantics) or [Divergences](#divergences), or `—`.
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
 | `options()` / `getOptions()` / `hasDynamicOptions()` | [`Concerns/HasOptions.php`](../../../vendor/filament/forms/src/Components/Concerns/HasOptions.php) | done | — | [diverges](#the-arrayable-arm-is-dropped) |
 | The enum class-string arm — `options(MyEnum::class)` also calling `enum()`, and `getOptions()` expanding `cases()` through support's [`HasLabel`](../../../packages/support/src/Contracts/HasLabel.php) | [`Concerns/HasOptions.php`](../../../vendor/filament/forms/src/Components/Concerns/HasOptions.php) | done | — | [detail](has-enum.md) · [semantics](#an-enum-label-stays-markup-rather-than-being-stringified) |
-| `getOptionComparisonState()` — no Filament source | — | done | — | [semantics](#the-option-vocabulary-is-normalized-once-rather-than-per-template) · [renames](../renames.md#names-with-no-filament-source) |
+| `getOptionComparisonState()` — no Filament source | — | done | — | [semantics](#the-option-vocabulary-is-normalized-once-rather-than-per-template) · [renames](../translations.md#names-with-no-filament-source) |
 
 Coverage: the enum arm — a `HasLabel` enum's labelled map, a backed enum without the contract keying off its value, a pure `UnitEnum` keying off its case name, `enum()` alone with no `options()` call, an explicit map winning over the enum, a class-string returned by a closure, and a non-enum literal string (`options('date')`) staying a value rather than seeding the enum — by [`HasOptionsTest`](../../../packages/forms/tests/Unit/Components/Concerns/HasOptionsTest.php); the comparison state — a backed enum unwrapped, a boolean coerced to its int key, an iterable mapped item by item with the uncomparable dropped, scalars passed through and everything else nulled — by its [Integration twin](../../../packages/forms/tests/Integration/Components/Concerns/HasOptionsTest.php), which binds a real host so the normalization runs over state that travelled the cast chain; closure options and the empty default by [`CanDisableOptionsTest`](../../../packages/forms/tests/Unit/Components/Concerns/CanDisableOptionsTest.php); the rendered end of it — an enum's options as `<option>` elements and the enum-valued state's option marked `selected` — by [`SelectTest`](../../../packages/forms/tests/Integration/Components/SelectTest.php).
 
@@ -51,9 +50,6 @@ Three signatures widened with it, and two of the three move *towards* Filament r
 The third, `Select::getOptionLabel(): string|Markup|null`, is the recorded departure — Filament declares `?string` there, which only survives because Blade never runs under strict types.
 
 ## Divergences
-
-Deliberate deviations from Filament, and the reason each holds.
-Provisional ones say what would reverse them.
 
 ### The `Arrayable` arm is dropped
 

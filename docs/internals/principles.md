@@ -64,7 +64,7 @@ need reverses it without reopening this principle.
 
 ### Mechanisms, not names
 
-[`renames.md`](../progress/renames.md#idiom) maps the *naming* translations:
+[`translations.md`](../progress/translations.md#idiom) maps the *naming* translations:
 `Htmlable` → `Markup`, Blade → Twig, Alpine → Stimulus. These are the *mechanism*
 ones, which have no rename to record because the Laravel side is simply absent.
 

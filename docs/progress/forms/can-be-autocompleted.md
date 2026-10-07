@@ -1,3 +1,11 @@
+---
+description: 'The shared concern behind the native `autocomplete` attribute: the `autocomplete()` setter and the `getAutocomplete()` reader that maps `true` to… (draft)'
+ports:
+  - vendor/filament/forms/src/Components/Concerns/CanBeAutocompleted.php
+  - vendor/filament/forms/src/Components/Concerns/CanBeAutocapitalized.php
+owns:
+  - packages/forms/src/Components/Concerns/CanBeAutocompleted.php
+---
 # CanBeAutocompleted (forms)
 
 `Sylament\Forms\Components\Concerns\CanBeAutocompleted` — the shared concern behind the native `autocomplete` attribute: the `autocomplete()` setter and the `getAutocomplete()` reader that maps `true` to `'on'`, `false` to `'off'` and passes any other token (`given-name`, `one-time-code`, …) straight through.
@@ -6,17 +14,7 @@ The port's two text fields compose it, `TextInput` and `Textarea`, so it keeps a
 Its sibling `CanBeAutocapitalized` is the same trait over the `autocapitalize` attribute, line for line.
 Filament composes that one on `TextInput` alone, so it folds into [`text-input.md`](text-input.md) per [one row per file](../README.md#one-row-per-file-one-file-per-thing); the [divergence](#the-deprecated-disable-aliases-are-not-ported) below covers both, since the trimmed method is the same on each.
 
-**Status:** done — see the [status vocabulary](../README.md#statuses).
-
-Reference — the Filament source this is diffed against:
-
-- [`Components/Concerns/CanBeAutocompleted.php`](../../../vendor/filament/forms/src/Components/Concerns/CanBeAutocompleted.php) — the trait
-- [`Components/Concerns/CanBeAutocapitalized.php`](../../../vendor/filament/forms/src/Components/Concerns/CanBeAutocapitalized.php) — the sibling, and the second half of the divergence below
-
 ## Surface
-
-_Blocked by_ names what has to land first.
-_Detail_ links a permanent note in [Divergences](#divergences), or `—`.
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
@@ -35,9 +33,6 @@ PHPStan does not carry a type through an assignment made in a match condition �
 Behaviour is identical, and no other `match` in the port assigns in its subject either.
 
 ## Divergences
-
-Deliberate deviations from Filament, and the reason each holds.
-Provisional ones say what would reverse them.
 
 ### The deprecated disable aliases are not ported
 

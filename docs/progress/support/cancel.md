@@ -1,19 +1,16 @@
+---
+description: The control-flow exception an action closure throws to abort the lifecycle and unmount the action (closing the modal) without a failure notification. (draft)
+ports:
+  - vendor/filament/support/src/Exceptions/Cancel.php
+owns:
+  - packages/support/src/Exceptions/Cancel.php
+---
 # Cancel (support)
 
 `Sylament\Support\Exceptions\Cancel` — the control-flow exception an action closure throws to abort the lifecycle and unmount the action (closing the modal) without a failure notification.
 It ports Filament's `Filament\Support\Exceptions\Cancel`, and `Sylament\Actions\Action` throws it from `cancel()` for `HasActions` to catch and fall through to unmount.
 
-**Status:** done — see the [status vocabulary](../README.md#statuses).
-
-Reference — the Filament source this is diffed against:
-
-- [`support/src/Exceptions/Cancel.php`](../../../vendor/filament/support/src/Exceptions/Cancel.php) — the exception and its DB-transaction rollback control
-
 ## Surface
-
-Every point of this exception.
-_Blocked by_ names what has to land first.
-_Detail_ carries the row's own note; a row that needed a Details section no longer has one.
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |

@@ -1,3 +1,12 @@
+---
+description: The anonymous Twig component (`<twig:SylamentSupport:Link>`) that ports Filament's `<x-filament::link>`. (draft)
+ports:
+  - vendor/filament/support/resources/views/components/link.blade.php
+  - vendor/filament/support/src/View/Components/LinkComponent.php
+owns:
+  - packages/support/assets/src/styles/components/link.css
+  - packages/support/templates/components/Link/
+---
 # Link (support)
 
 `packages/support/templates/components/Link/index.html.twig` — the anonymous Twig component (`<twig:SylamentSupport:Link>`) that ports Filament's `<x-filament::link>`.
@@ -5,18 +14,7 @@ It renders an `<a>` or `<button>` styled as inline text: a label span flanked by
 As with the other trigger primitives, the Blade component's behaviour is split across two Filament files — the `link.blade.php` view (markup, props, size and attribute logic) and the `LinkComponent.php` class (the WCAG-AA contrast color map).
 Sylament ports the structural view faithfully and leaves the whole interactive and decorative layer — Livewire loading indicator, badge slot, key bindings, tooltip, SPA-mode href — and the color-map machinery unbuilt, pending the infrastructure each depends on.
 
-**Status:** in progress — see the [status vocabulary](../README.md#statuses).
-
-Reference — the Filament source this is diffed against:
-
-- [`support/resources/views/components/link.blade.php`](../../../vendor/filament/support/resources/views/components/link.blade.php) — the Blade view: props, size and weight resolution, attribute merge, markup
-- [`support/src/View/Components/LinkComponent.php`](../../../vendor/filament/support/src/View/Components/LinkComponent.php) — the color-map provider the view's `->color(LinkComponent::class, …)` call resolves against
-
 ## Surface
-
-Every point of this component.
-_Blocked by_ names what has to land first.
-_Detail_ carries any of three: **detail** → the write-up in [Details](#details), deleted once the row is **done**; **semantics** → the permanent note in [Semantics](#semantics); **diverges** → the permanent note in [Divergences](#divergences).
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
@@ -69,9 +67,6 @@ The Sylament port has no `postToUrl()` on `Action` and no `shouldPostToUrl()` an
 The primitive needs no change to accept it — `tag` is a free string — but the `action`/`method` attributes and the nested submit button that make the form work are unported along with their caller.
 
 ## Semantics
-
-Faithful ports whose behaviour a reader would plausibly misread from the source.
-Permanent — these outlive the detail sections above.
 
 ### `form` is emitted regardless of tag, unlike on Badge
 

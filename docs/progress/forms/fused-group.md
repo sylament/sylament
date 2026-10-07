@@ -1,3 +1,15 @@
+---
+description: 'The container that fuses several controls into one bordered box under a single label: a ring and a rounded corner pair on the child schema, a divider… (draft)'
+ports:
+  - vendor/filament/schemas/src/Components/FusedGroup.php
+  - vendor/filament/schemas/src/Concerns/HasFieldWrapper.php
+  - vendor/filament/forms/resources/views/components/plain-field-wrapper.blade.php
+  - vendor/filament/schemas/resources/css/components/fused-group.css
+owns:
+  - packages/forms/assets/src/styles/components/fused-group.css
+  - packages/forms/src/Components/FusedGroup.php
+  - packages/forms/templates/partials/FusedGroup/
+---
 # FusedGroup (forms)
 
 [`Sylament\Forms\Components\FusedGroup`](../../../packages/forms/src/Components/FusedGroup.php) — the container that fuses several controls into one bordered box under a single label: a ring and a rounded corner pair on the child schema, a divider between the children, and every child's own wrapper chrome switched off.
@@ -7,20 +19,7 @@ It lives in **forms**, not schemas, which is the one structural departure from F
 
 The seam that switches the children off is schemas' [`Schema::fieldWrapperView()`](../schemas/schema.md), pure data there; forms honors exactly one value, the `PLAIN_FIELD_WRAPPER_VIEW` constant this class declares, and `FieldWrapper` branches on it.
 
-**Status:** in progress — see the [status vocabulary](../README.md#statuses).
-
-Reference — the Filament source this is diffed against:
-
-- [`schemas/src/Components/FusedGroup.php`](../../../vendor/filament/schemas/src/Components/FusedGroup.php) — the class: the ten slots, the two child-schema hooks, the error collection loop and `isRequired()`
-- [`schemas/src/Concerns/HasFieldWrapper.php`](../../../vendor/filament/schemas/src/Concerns/HasFieldWrapper.php) — the container-tier seam ported into schemas
-- [`forms/resources/views/components/plain-field-wrapper.blade.php`](../../../vendor/filament/forms/resources/views/components/plain-field-wrapper.blade.php) — the view the seam points at, which becomes a branch of our one wrapper
-- [`schemas/resources/css/components/fused-group.css`](../../../vendor/filament/schemas/resources/css/components/fused-group.css) — the stylesheet, ported whole
-
 ## Surface
-
-Every point of this component.
-_Blocked by_ names what has to land first.
-_Detail_ carries either or both: **semantics** → the permanent note in [Semantics](#semantics); **diverges** → the permanent note in [Divergences](#divergences) — or a pointer to the file that owns the row.
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
@@ -76,8 +75,8 @@ Nothing had to be re-selected, which is the only reason the stylesheet could be 
 
 Filament ships `Filament\Schemas\Components\FusedGroup`, and that class imports three **forms** concerns — `CanBeMarkedAsRequired`, `HasExtraFieldWrapperAttributes` and `HasHelperText` — plus `Forms\Components\Field` for its error walk.
 That is the upward import from schemas into forms this port cannot reproduce: `forms` depends on `schemas`, and the CI split publishes each package standalone, so a `sylament/schemas` reaching a forms symbol breaks the moment it is installed alone.
-The same layering argument moved [`CanBeMarkedAsRequired` down](../renames.md#namespace-segments); here it moves the component **up** instead, to the package that already owns the field-wrapper chrome the group renders.
-Recorded in [renames.md](../renames.md#namespace-segments); the class name, its methods and its behaviour are unchanged, and the CSS class follows the package (`fi-sc-fused-group` → `sy-fo-fused-group`) rather than keeping a `-sc-` segment naming a package that no longer holds it.
+The same layering argument moved [`CanBeMarkedAsRequired` down](../translations.md#namespace-segments); here it moves the component **up** instead, to the package that already owns the field-wrapper chrome the group renders.
+Recorded in [renames.md](../translations.md#namespace-segments); the class name, its methods and its behaviour are unchanged, and the CSS class follows the package (`fi-sc-fused-group` → `sy-fo-fused-group`) rather than keeping a `-sc-` segment naming a package that no longer holds it.
 
 ### The group renders through `FieldWrapper` instead of a second copy of it
 

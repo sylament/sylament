@@ -1,3 +1,39 @@
+---
+description: The base class every actions-package action extends. (draft)
+ports:
+  - vendor/filament/actions/src/Action.php
+  - vendor/filament/actions/src/Concerns/
+owns:
+  - packages/actions/src/Action.php
+  - packages/actions/src/Concerns/BelongsToLiveComponent.php
+  - packages/actions/src/Concerns/CanBeDisabled.php
+  - packages/actions/src/Concerns/CanBeHidden.php
+  - packages/actions/src/Concerns/CanBeMarkedAsRead.php
+  - packages/actions/src/Concerns/CanCallParentAction.php
+  - packages/actions/src/Concerns/CanClose.php
+  - packages/actions/src/Concerns/CanCustomizeProcess.php
+  - packages/actions/src/Concerns/CanDeselectRecordsAfterCompletion.php
+  - packages/actions/src/Concerns/CanDispatchEvent.php
+  - packages/actions/src/Concerns/CanFetchSelectedRecords.php
+  - packages/actions/src/Concerns/CanMutateRecordData.php
+  - packages/actions/src/Concerns/CanNotify.php
+  - packages/actions/src/Concerns/CanOpenModal.php
+  - packages/actions/src/Concerns/CanOpenUrl.php
+  - packages/actions/src/Concerns/CanRedirect.php
+  - packages/actions/src/Concerns/CanRequireConfirmation.php
+  - packages/actions/src/Concerns/CanUseDatabaseTransactions.php
+  - packages/actions/src/Concerns/HasAction.php
+  - packages/actions/src/Concerns/HasArguments.php
+  - packages/actions/src/Concerns/HasLifecycleHooks.php
+  - packages/actions/src/Concerns/HasMountableArguments.php
+  - packages/actions/src/Concerns/HasName.php
+  - packages/actions/src/Concerns/HasParentActions.php
+  - packages/actions/src/Concerns/InteractsWithRecord.php
+  - packages/actions/src/Concerns/InteractsWithSelectedRecords.php
+  - packages/actions/templates/components/ActionModal/
+  - packages/actions/templates/partials/Action/
+  - packages/support/src/Components/Concerns/HasIconPosition.php
+---
 # Action (actions)
 
 `Sylament\Actions\Action` — the base class every actions-package action extends.
@@ -5,18 +41,9 @@ It composes `Sylament\Support\Components\ViewComponent` (Twig-backed rendering) 
 It also composes three multi-consumer actions-package concerns tracked outside this file — `BelongsToGroup` (shared with `ActionGroup`, written up in [`action-group.md`](action-group.md)), `BelongsToTable` (shared with `ActionGroup`, written up in [`belongs-to-table.md`](belongs-to-table.md)) and `BelongsToSchemaComponent` (shared with `ActionGroup`, a `done` row with no detail file in the [package README](README.md#features), since its whole surface is a two-method back-reference pair) and the two modal attribute-bag concerns `HasExtraModalOverlayAttributes` / `HasExtraModalWindowAttributes` (`done` rows in the same README, each a two-method pair as well) — plus 6 support-level traits (`HasColor`, `HasExtraAttributes`, `HasIcon`, `HasIconPosition`, `HasIconSize`, `HasTooltip`) that stay tracked in the [`support`](../support/README.md) package and appear here only as reference rows.
 The port is a deliberate MVP subset of Filament's `Action` — a single-purpose "confirm and run a closure" action wired to a live component, not the mounting/modal/form/grouping/wizard platform Filament's class has grown into.
 
-**Status:** in progress — see the [status vocabulary](../README.md#statuses).
-
-Reference — the Filament source this is diffed against:
-
-- [`actions/src/Action.php`](../../../vendor/filament/actions/src/Action.php) — the base class and the ~50 traits/interfaces it composes
-- [`actions/src/Concerns/`](../../../vendor/filament/actions/src/Concerns) — the folded concerns audited below
-
 ## Surface
 
 Every point of this component and its folded concerns.
-_Blocked by_ names what has to land first.
-_Detail_ links the write-up in [Details](#details) (deleted once the row is **done**), the permanent faithful-but-subtle note in [Semantics](#semantics), and/or the permanent note in [Divergences](#divergences).
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
@@ -74,9 +101,6 @@ _Detail_ links the write-up in [Details](#details) (deleted once the row is **do
 | [`InteractsWithSelectedRecords`](../../../packages/actions/src/Concerns/InteractsWithSelectedRecords.php) | [`Concerns/InteractsWithSelectedRecords.php`](../../../vendor/filament/actions/src/Concerns/InteractsWithSelectedRecords.php) | in progress | `CanBeAuthorized` | [bulk-action.md](bulk-action.md) |
 
 ## Details
-
-Specifics for rows that are not finished — what is already in, what is left, and the next step.
-Delete a subsection when its row flips to **done**; the table row and any divergence it earned stay behind.
 
 ### `resolveDefaultClosureDependencyForEvaluationByName` covers 14 of 16 names
 
@@ -225,7 +249,7 @@ Missing vs Filament's `HasAction`:
 - **`hasAction(): bool`.**
   Helper predicate not ported; trivially derivable from `getAction() !== null` at call sites today, but no equivalent method or test exists.
 
-The click gate itself is now **ported**, under the `Livewire` → `LiveComponent` [idiom translation](../renames.md#idiom): `liveComponentClickHandlerEnabled(bool|Closure|null $condition = true)` and `isLiveComponentClickHandlerEnabled(): bool` on the trait, with Filament's three arms in Filament's order — an explicit override wins, then `filled(getUrl())` and `canSubmitForm()` each turn it off, otherwise it is on.
+The click gate itself is now **ported**, under the `Livewire` → `LiveComponent` [idiom translation](../translations.md#idiom): `liveComponentClickHandlerEnabled(bool|Closure|null $condition = true)` and `isLiveComponentClickHandlerEnabled(): bool` on the trait, with Filament's three arms in Filament's order — an explicit override wins, then `filled(getUrl())` and `canSubmitForm()` each turn it off, otherwise it is on.
 The two default arms once lived in the templates (`hasLiveClickBinding = not component.getUrl and not component.canSubmitForm` in [`Action/Button.html.twig`](../../../packages/actions/templates/partials/Action/Button.html.twig) and its `link`/`badge`/`grouped` siblings, and an extra term in [`Action/IconButton.html.twig`](../../../packages/actions/templates/partials/Action/IconButton.html.twig)'s `mountAttributes`); all five now read the getter instead, which moves the logic without changing a single rendered attribute.
 That guard is load-bearing rather than tidiness: [`getModalSubmitAction()`](../../../packages/actions/src/Concerns/CanOpenModal.php) gives a form-wrapped action `->submit(name)->action(null)`, so without it the trigger falls through its click cascade to the `mountAction` default and every confirm click fires a **second**, unrelated live request — `mountAction('submit')`, naming an action that does not exist — alongside the form's own `callMountedAction`.
 The close arm is unaffected in both codebases: Filament keeps it on a separate `x-on:click`, the port on a separate `data-action`.
@@ -278,9 +302,6 @@ Each lands with the concern named beside it; the support `Modal` component takes
 
 ## Semantics
 
-Faithful ports whose behaviour a reader would plausibly misread from the source.
-Permanent — these outlive the detail sections above.
-
 ### The record chain reaches the schema, the component and the host
 
 [`Action::getRecord(bool $withDefault = true)`](../../../packages/actions/src/Action.php) walks Filament's full chain: its **own** record (evaluated, then run through `ensureCorrectRecordType()`), its **group**, its [**schema container**](belongs-to-schema-component.md), its **schema component**, and finally the host's `getDefaultActionRecord()`.
@@ -321,7 +342,7 @@ Nothing renders differently today (no shipped host answered the hook before this
 
 **The table hops and the plural trio both landed**, once tables grew the [label and title surface](../tables/table.md) they call.
 `getRecordLabel()`, `getPluralRecordLabel()`, `getRecordTitle()` and `getRecordTitleAttribute()` each hop through `getTable()?->…` before falling back, beside `getRecordClass()`'s older hop — Filament's chains verbatim, and what they mean for the host hook is its own [semantics note](#a-table-bound-action-titles-and-labels-through-its-table).
-The **plural trio** — `pluralRecordLabel()`, `getCustomPluralRecordLabel()`, `getPluralRecordLabel()` and `getTitleCasePluralRecordLabel()` — is table-free and lives on the trait, pluralising through [`Sylament\Support\plural()`](../support/helpers.md); Filament's `getPluralModelLabel()` additionally branches on `locale_has_pluralization()`, which [i18n being parked](../renames.md#idiom) leaves nothing to ask, so that guard is the one piece not ported.
+The **plural trio** — `pluralRecordLabel()`, `getCustomPluralRecordLabel()`, `getPluralRecordLabel()` and `getTitleCasePluralRecordLabel()` — is table-free and lives on the trait, pluralising through [`Sylament\Support\plural()`](../support/helpers.md); Filament's `getPluralModelLabel()` additionally branches on `locale_has_pluralization()`, which [i18n being parked](../translations.md#idiom) leaves nothing to ask, so that guard is the one piece not ported.
 What still keeps the row **in progress** is the `CanBeLabeledFrom` deferral, not these.
 
 **Three guards read `!== null` where Filament reads `filled()`**, and one arm is `??` where Filament tests `filled()`.
@@ -432,9 +453,6 @@ The reads are all null-safe (`getTable()?->…`) because `sylament/tables` is a 
 An action body may still call methods on the table `getTable()` returns, since such a body only runs mounted from a table.
 
 ## Divergences
-
-Deliberate deviations from Filament — permanent, and the reason they hold.
-These outlive the detail sections above.
 
 ### The lifecycle events are dispatched as objects, where Filament dispatches a class-string
 

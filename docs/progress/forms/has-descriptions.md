@@ -1,3 +1,14 @@
+---
+description: 'The per-option description map: the secondary line of text an option carries beneath its label, configured as a literal array keyed by option value… (draft)'
+ports:
+  - vendor/filament/forms/src/Components/Concerns/HasDescriptions.php
+  - vendor/filament/support/src/Contracts/HasDescription.php
+  - vendor/filament/forms/src/Components/Radio.php
+  - vendor/filament/forms/src/Components/CheckboxList.php
+owns:
+  - packages/forms/src/Components/Concerns/HasDescriptions.php
+  - packages/support/src/Contracts/HasDescription.php
+---
 # HasDescriptions (forms)
 
 `Sylament\Forms\Components\Concerns\HasDescriptions` — the per-option description map: the secondary line of text an option carries beneath its label, configured as a literal array keyed by option value, as a closure, or derived from the field's [enum](has-enum.md) through support's [`HasDescription`](../../../packages/support/src/Contracts/HasDescription.php) contract.
@@ -6,18 +17,7 @@ The map is memoised per field instance, and `descriptions()` is what clears it.
 Two fields compose it, `Radio` and `CheckboxList` — `ToggleButtons` does not, in Filament or here, since a button's extra text is its tooltip.
 Both are built and both render the map — [`Radio`](radio.md) under each option's label, [`CheckboxList`](checkbox-list.md) under each option's — so this file describes the concern alone and each field's rendering is described in its own.
 
-**Status:** done — see the [status vocabulary](../README.md#statuses).
-
-Reference — the Filament source this is diffed against:
-
-- [`Components/Concerns/HasDescriptions.php`](../../../vendor/filament/forms/src/Components/Concerns/HasDescriptions.php) — the trait
-- [`support/src/Contracts/HasDescription.php`](../../../vendor/filament/support/src/Contracts/HasDescription.php) — the contract an enum case's description comes from
-- [`Components/Radio.php`](../../../vendor/filament/forms/src/Components/Radio.php), [`CheckboxList.php`](../../../vendor/filament/forms/src/Components/CheckboxList.php) — the two composers, and the render sites that escape a description
-
 ## Surface
-
-_Blocked by_ names what has to land first.
-_Detail_ links a permanent note in [Semantics](#semantics) or [Divergences](#divergences), or `—`.
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
@@ -63,9 +63,6 @@ The gate here was defending against a `null` the property type cannot hold.
 Nothing surfaced it until [`Radio`](radio.md) composed the trait and gave PHPStan a concrete `$this` to resolve `evaluate()` through — the same [analysed-only-through-a-composer](../tables/has-table.md#a-host-trait-is-analysed-only-through-a-class-that-composes-it) effect that named the rule, one package over.
 
 ## Divergences
-
-Deliberate deviations from Filament, and the reason each holds.
-Provisional ones say what would reverse them.
 
 ### The `Arrayable` arm is dropped
 

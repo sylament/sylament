@@ -1,3 +1,14 @@
+---
+description: The abstract `Component` subclass that adds Twig-backed rendering. (draft)
+ports:
+  - vendor/filament/support/src/Components/ViewComponent.php
+  - vendor/filament/support/src/Components/Contracts/HasEmbeddedView.php
+owns:
+  - packages/support/src/Components/Concerns/HasExtraAttributes.php
+  - packages/support/src/Components/Concerns/HasIconSize.php
+  - packages/support/src/Components/Concerns/HasTooltip.php
+  - packages/support/src/Components/ViewComponent.php
+---
 # ViewComponent (support)
 
 `Sylament\Support\Components\ViewComponent` — the abstract `Component` subclass that adds Twig-backed rendering.
@@ -5,19 +16,7 @@ It ports Filament's `ViewComponent`: a closure-evaluable template name plus one 
 Every rendered Sylament component (schemas' `Schema` and `Component`, `actions`' `Action`) extends it, and the `renderComponent()` Twig function drives it.
 The port keeps the data-plumbing surface Filament-exact while dropping the Blade/Livewire embedded-view machinery that the Twig/UX render path replaces.
 
-**Status:** done — see the [status vocabulary](../README.md#statuses).
-
-Reference — the Filament source this is diffed against:
-
-- [`support/src/Components/ViewComponent.php`](../../../vendor/filament/support/src/Components/ViewComponent.php) — the base class this ports
-- [`support/src/Components/Contracts/HasEmbeddedView.php`](../../../vendor/filament/support/src/Components/Contracts/HasEmbeddedView.php) — the embedded-view contract the render path branches on
-
 ## Surface
-
-Every point of this component.
-_Blocked by_ names what has to land first.
-_Detail_ carries only two links, either or both: **detail** → the write-up in [Details](#details), deleted once the row is **done**; **diverges** → the permanent note in [Divergences](#divergences).
-Rows never disappear — only their detail sections do.
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
@@ -31,19 +30,7 @@ Rows never disappear — only their detail sections do.
 | `attributes` seeding | [`renderView()`](../../../vendor/filament/support/src/Components/ViewComponent.php) | skipped | — | [diverges](#the-template-context-does-not-seed-an-attributes-bag) |
 | `viewIdentifier` | [`viewIdentifier`](../../../vendor/filament/support/src/Components/ViewComponent.php) | skipped | — | [diverges](#the-instance-is-always-exposed-as-component) |
 
-## Details
-
-Specifics for rows that are not finished — what is already in, what is left, and what the next step is.
-Delete a subsection when its row flips to **done**; the table row and any divergence it earned stay behind.
-
-Every row above is settled — **done** or **skipped** — so none has a write-up here now.
-A row moving to **in progress** or **blocked** grows one.
-
 ## Divergences
-
-Deliberate deviations from Filament — permanent, and the reason they hold.
-These outlive the detail sections above: a row stays **done** or **skipped** and keeps pointing here.
-Say what would reverse the decision when it is provisional.
 
 ### `render()` returns a string; the `Htmlable` / embedded-view machinery is dropped
 

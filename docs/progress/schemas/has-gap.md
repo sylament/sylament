@@ -1,20 +1,17 @@
+---
+description: The shared concern used by both `Schema` and `Component` to declare whether a schema renders inter-item gap (`hasGap`) and whether it packs densely… (draft)
+ports:
+  - vendor/filament/schemas/src/Concerns/HasGap.php
+owns:
+  - packages/schemas/src/Components/Concerns/HasGap.php
+---
 # HasGap (schemas)
 
 `Sylament\Schemas\Components\Concerns\HasGap` — the shared concern used by both `Schema` and `Component` to declare whether a schema renders inter-item gap (`hasGap`) and whether it packs densely (`isDense`).
 Each value is a `bool|Closure|null` property with a fluent setter (`gap()` / `dense()`) and a getter that evaluates the closure and falls back to the container.
 It ports Filament's identically-named base trait.
 
-**Status:** done — see the [status vocabulary](../README.md#statuses).
-
-Reference — the Filament source this is diffed against:
-
-- [`schemas/src/Concerns/HasGap.php`](../../../vendor/filament/schemas/src/Concerns/HasGap.php) — the trait, both setters, and both getters ported here
-
 ## Surface
-
-Every point of this trait.
-_Blocked by_ names what has to land first.
-_Detail_ carries a **diverges** link to the permanent note in [Divergences](#divergences), or `—`.
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
@@ -25,11 +22,9 @@ _Detail_ carries a **diverges** link to the permanent note in [Divergences](#div
 
 ## Details
 
-Every row above is **done**.
 The setters, and `hasGap()`/`isDense()` in their component (container-delegation) flavor, are ported faithfully.
 Direct coverage lives in [`HasGapTest`](../../../packages/schemas/tests/Unit/Concerns/HasGapTest.php) (the Schema-side `isDense` override — default `false`, inline coupling forces `true`, explicit `dense(false)` beats the inline coupling) and in [`SchemaRenderTest`](../../../packages/schemas/tests/Integration/Components/SchemaRenderTest.php) (`gap()`/`dense()` setters, the default gap class dropping when gap is disabled, a gap closure evaluated at render, the dense class).
 The trait's own component-flavor getter bodies run indirectly where a child `Schema` delegates up to its parent `Section` (a `Component`) — no direct Component-level gap/dense test exists, but the delegation path is exercised.
-No row has a write-up here.
 
 ## Divergences
 

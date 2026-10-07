@@ -1,3 +1,9 @@
+---
+description: '`Sylament\Forms\Uploads\TemporaryUploads` and its value object `Sylament\Forms\Uploads\TemporaryUploadedFile` — where a browser upload lives between… (draft)'
+ports: []
+owns:
+  - packages/forms/src/Uploads/
+---
 # Temporary uploads (forms)
 
 `Sylament\Forms\Uploads\TemporaryUploads` and its value object `Sylament\Forms\Uploads\TemporaryUploadedFile` — where a browser upload lives between the request that carried it and the form's save.
@@ -7,19 +13,8 @@ The store also owns the 24-hour sweep that keeps abandoned uploads from accumula
 
 The field that mints and redeems these tokens is [`FileUpload`](file-upload.md); the constraint filed beside them, [`MinFileSize`](can-be-validated.md), is here because Symfony's `File` caps a size and never floors it.
 
-**Status:** done — see the [status vocabulary](../README.md#statuses).
-
-Reference — the Livewire source this is diffed against:
-
-- [`SupportFileUploads/FileUploadConfiguration.php`](../../../vendor/livewire/livewire/src/Features/SupportFileUploads/FileUploadConfiguration.php) — the disk/directory resolution and the whitespace path normalisation
-- [`SupportFileUploads/TemporaryUploadedFile.php`](../../../vendor/livewire/livewire/src/Features/SupportFileUploads/TemporaryUploadedFile.php) — the value object that extends `UploadedFile` and the `-meta<base64>-` filename scheme, neither of which we take
-- [`SupportFileUploads/WithFileUploads.php`](../../../vendor/livewire/livewire/src/Features/SupportFileUploads/WithFileUploads.php) · [`GenerateSignedUploadUrl.php`](../../../vendor/livewire/livewire/src/Features/SupportFileUploads/GenerateSignedUploadUrl.php) — the three-request dance and its signed URL, replaced by one live request; `cleanupOldUploads()` on the trait is the sweep `prune()` ports
-- [`config/livewire.php`](../../../vendor/livewire/livewire/config/livewire.php) — the `temporary_file_upload` config block the `sylament_forms` tree maps onto
-
 ## Surface
 
-_Blocked by_ names what has to land first.
-_Detail_ links a permanent note in [Semantics](#semantics) or [Divergences](#divergences), or `—`.
 A row whose _Ports_ cell is `—` has no Livewire counterpart.
 
 | Feature | Ports | Status | Blocked by | Detail |

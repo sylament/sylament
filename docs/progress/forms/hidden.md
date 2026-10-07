@@ -1,3 +1,12 @@
+---
+description: The field that holds a value without showing one. (draft)
+ports:
+  - vendor/filament/forms/src/Components/Hidden.php
+  - vendor/filament/forms/docs/21-hidden.md
+owns:
+  - packages/forms/src/Components/Hidden.php
+  - packages/forms/templates/partials/Hidden/
+---
 # Hidden (forms)
 
 `Sylament\Forms\Components\Hidden` — the field that holds a value without showing one.
@@ -6,19 +15,10 @@ No wrapper, no label, no error message, no stylesheet.
 
 Its whole API is `Hidden::make('token')` — everything else it exposes is `Field`'s.
 
-**Status:** done — see the [status vocabulary](../README.md#statuses).
-
-Reference — the Filament source this is diffed against:
-
-- [`forms/src/Components/Hidden.php`](../../../vendor/filament/forms/src/Components/Hidden.php) — the whole class: `setUp()`, `toEmbeddedHtml()`, and the published-view path
-- [`forms/docs/21-hidden.md`](../../../vendor/filament/forms/docs/21-hidden.md) — the user-facing docs, one example and one warning
-
 ## Surface
 
 Every point this field adds over `Field`.
 `Field`'s own surface is tracked in [`field.md`](field.md), not here.
-_Blocked by_ names what has to land first.
-_Detail_ links a permanent note in [Semantics](#semantics) / [Divergences](#divergences).
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
@@ -34,8 +34,6 @@ _Detail_ links a permanent note in [Semantics](#semantics) / [Divergences](#dive
 Coverage: the bare input and the absence of any wrapper, label or error element; the `type` / `id` / `data-model` attributes; the empty `value` attribute an unset field renders; a `default()` round-tripping through `value` off a hydrated schema; the `'hidden'` column span both on the component and as `sy-hidden` on the rendered schema slot; extra attributes reaching the input and appending to its class list; and the absent `name` attribute — by [`HiddenTest`](../../../packages/forms/tests/Integration/Components/HiddenTest.php).
 
 ## Semantics
-
-Behaviour that is faithful to Filament but easy to misread here.
 
 ### Nothing wraps the input, and nothing should
 
@@ -72,8 +70,6 @@ Filament's docs carry the warning verbatim, and it survives the port unchanged: 
 The state arrives back through the same `data-model` write path as any other field's, so the server must treat it as user input.
 
 ## Divergences
-
-Deliberate deviations from Filament, and the reason each holds.
 
 ### The `value` attribute is rendered server-side, and never omitted
 

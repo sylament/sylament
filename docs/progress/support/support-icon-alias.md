@@ -1,19 +1,16 @@
+---
+description: The string-keyed registry of icon *alias* names apps register overrides against (through `IconManager`), so a component's default icon can be swapped… (draft)
+ports:
+  - vendor/filament/support/src/View/SupportIconAlias.php
+owns:
+  - packages/support/src/Twig/SupportIconAlias.php
+---
 # SupportIconAlias (support)
 
 `Sylament\Support\Twig\SupportIconAlias` — the string-keyed registry of icon *alias* names apps register overrides against (through `IconManager`), so a component's default icon can be swapped without touching its template.
 It ports Filament's `Filament\Support\View\SupportIconAlias`, a flat class of `const` alias literals, one per overridable icon slot across the kit.
 
-**Status:** in progress — see the [status vocabulary](../README.md#statuses).
-
-Reference — the Filament source this is diffed against:
-
-- [`support/src/View/SupportIconAlias.php`](../../../vendor/filament/support/src/View/SupportIconAlias.php) — the full alias set (13 constants)
-
 ## Surface
-
-Every point of this item.
-_Blocked by_ names what has to land first.
-_Detail_ carries **detail** → the write-up in [Details](#details), and/or **diverges** → the permanent note in [Divergences](#divergences).
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
@@ -25,8 +22,6 @@ _Detail_ carries **detail** → the write-up in [Details](#details), and/or **di
 | Pagination RTL aliases (the other 4) | [`SupportIconAlias.php`](../../../vendor/filament/support/src/View/SupportIconAlias.php) | blocked | [the pagination RTL branch](pagination.md#the-footer-has-no-rtl-branch) | [detail](#details) |
 
 ## Details
-
-Specifics for rows that are not finished — what is already in, what is left, and what the next step is.
 
 ### Pagination RTL aliases
 

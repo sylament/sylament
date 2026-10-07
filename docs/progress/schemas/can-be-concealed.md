@@ -1,3 +1,10 @@
+---
+description: '`Sylament\Schemas\Components\Concerns\CanBeConcealed` on the base `Component` — the walk that answers "can something above me hide this component from… (draft)'
+ports:
+  - vendor/filament/schemas/src/Components/Contracts/CanConcealComponents.php
+owns:
+  - packages/schemas/src/Components/Concerns/CanBeConcealed.php
+---
 # CanBeConcealed (schemas)
 
 [`Sylament\Schemas\Components\Concerns\CanBeConcealed`](../../../packages/schemas/src/Components/Concerns/CanBeConcealed.php) on the base [`Component`](component.md) — the walk that answers "can something above me hide this component from view?".
@@ -6,13 +13,6 @@ It ports `schemas/src/Components/Concerns/CanBeConcealed.php`, which the install
 Its consumers are the controls that render **native** constraint attributes: a `required` input inside an inactive Tab or a collapsed Section is `display`-hidden, and the browser refuses to submit the form around it with no visible error ("An invalid form control … is not focusable").
 Forms' five gated templates read `isConcealed()` and drop those attributes — see [text-input.md](../forms/text-input.md), [textarea.md](../forms/textarea.md), [checkbox.md](../forms/checkbox.md), [date-time-picker.md](../forms/date-time-picker.md) and [select.md](../forms/select.md).
 Server-side validation is untouched.
-
-**Status:** done — see the [status vocabulary](../README.md#statuses).
-
-Reference — the Filament source this is diffed against:
-
-- `schemas/src/Components/Concerns/CanBeConcealed.php` — the memoised ancestor walk, gone from the installed Filament 5.9
-- [`schemas/src/Components/Contracts/CanConcealComponents.php`](../../../vendor/filament/schemas/src/Components/Contracts/CanConcealComponents.php) — the contract a concealing component implements ([`Section::canConcealComponents()`](../../../packages/schemas/src/Components/Section.php) is `isCollapsible()`)
 
 ## Surface
 

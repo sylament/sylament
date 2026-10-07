@@ -1,3 +1,10 @@
+---
+description: 'The host-side trait a component (a panel page, a UX Live Component) mixes in to own one or more `Schema` instances: it enumerates their names… (draft)'
+ports:
+  - vendor/filament/schemas/src/Concerns/InteractsWithSchemas.php
+owns:
+  - packages/schemas/src/Concerns/HasSchemas.php
+---
 # HasSchemas (schemas)
 
 [`Sylament\Schemas\Concerns\HasSchemas`](../../../packages/schemas/src/Concerns/HasSchemas.php) — the host-side trait a component (a panel page, a UX Live Component) mixes in to own one or more [`Schema`](schema.md) instances: it enumerates their names, builds-and-caches each from a same-named method, fills their state, and fires their `afterStateUpdated` hooks across a request round-trip.
@@ -10,16 +17,8 @@ Because the trait presumes no state shape, one host can carry several independen
 The label is swapped as part of the documented interface⇄trait switch: Filament's *trait* `InteractsWithSchemas` becomes Sylament's *trait* `HasSchemas`, while Filament's *interface* `HasSchemas` becomes Sylament's *interface* [`InteractsWithSchemas`](interacts-with-schemas.md) — recorded in the [rename table](../renames.md).
 No production schemas class uses this trait yet; it is ported ahead of its real consumers (panel pages / UX live hosts), and today only test fixtures mix it in.
 
-**Status:** in progress — see the [status vocabulary](../README.md#statuses).
-
-Reference — the Filament source this is diffed against:
-
-- [`schemas/src/Concerns/InteractsWithSchemas.php`](../../../vendor/filament/schemas/src/Concerns/InteractsWithSchemas.php) — the large host trait this reduces to its schema-hosting and state-hook core
-
 ## Surface
 
-Every point of this trait.
-_Blocked by_ names what has to land first.
 _Detail_ carries either **detail** → the write-up in [Details](#details), deleted once the row is **done**, or **diverges** → the permanent note in [Divergences](#divergences) — or, for the validation surface tracked in its own file, a link to that file.
 
 | Feature | Ports | Status | Blocked by | Detail |
@@ -56,9 +55,6 @@ The core is covered by [`HasSchemasTest`](../../../packages/schemas/tests/Unit/C
 `uploadSchemaComponentFile()` — the second browser-callable action, which carries the bytes the seam's JSON arguments cannot — is covered beside it by [`HasSchemasUploadTest`](../../../packages/schemas/tests/Integration/Concerns/HasSchemasUploadTest.php) (the `AcceptsUploadedFiles` gate, the file-key shape check, the part-name match, and the hidden/unknown/refusing arms), and its divergence from Filament's Livewire-upload route is written up in [interacts-with-schemas.md](interacts-with-schemas.md#uploadschemacomponentfile-carries-the-bytes-beside-the-seam).
 
 ## Details
-
-Specifics for the rows that are not finished — what is left and what the next step is.
-Delete a subsection when its row flips to **done**; the row and any divergence stay behind.
 
 ### The dynamic-property and testing integrations arrive with their own concerns
 

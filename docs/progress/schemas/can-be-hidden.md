@@ -1,19 +1,16 @@
+---
+description: 'The visibility trait: `hidden()` / `visible()` and their `isHidden()` / `isVisible()` readers, plus `hiddenWhenAllChildComponentsHidden()`. (draft)'
+ports:
+  - vendor/filament/schemas/src/Components/Concerns/CanBeHidden.php
+owns:
+  - packages/schemas/src/Components/Concerns/CanBeHidden.php
+---
 # CanBeHidden (schemas)
 
 [`Sylament\Schemas\Components\Concerns\CanBeHidden`](../../../packages/schemas/src/Components/Concerns/CanBeHidden.php) — the visibility trait: `hidden()` / `visible()` and their `isHidden()` / `isVisible()` readers, plus `hiddenWhenAllChildComponentsHidden()`.
 It ports Filament's identically-named base concern and is shared — the schemas base [`Component`](component.md) and the actions [`Action`](../../../packages/actions/src/Action.php) both `use` it — so it keeps its own row rather than folding into `component.md`.
 
-**Status:** in progress — see the [status vocabulary](../README.md#statuses).
-
-Reference — the Filament source this is diffed against:
-
-- [`schemas/src/Components/Concerns/CanBeHidden.php`](../../../vendor/filament/schemas/src/Components/Concerns/CanBeHidden.php) — the visibility core, JS variants, operation/state gates, and the visibility cache
-
 ## Surface
-
-Every point of this concern.
-_Blocked by_ names what has to land first.
-_Detail_ carries a **detail** link to the [Details](#details) write-up (deleted once the row is **done**), a **diverges** link to [Divergences](#divergences), or `—`.
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |

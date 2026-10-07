@@ -1,3 +1,16 @@
+---
+description: Groups a list of `Action`/`ActionGroup` children behind a single trigger, so a table row or a toolbar can collapse many actions into one control. (draft)
+ports:
+  - vendor/filament/actions/src/ActionGroup.php
+  - vendor/filament/actions/src/Concerns/BelongsToGroup.php
+  - vendor/filament/actions/src/Concerns/HasDropdown.php
+owns:
+  - packages/actions/assets/src/styles/components/action-group.css
+  - packages/actions/src/ActionGroup.php
+  - packages/actions/src/BulkActionGroup.php
+  - packages/actions/src/Concerns/BelongsToGroup.php
+  - packages/actions/templates/partials/ActionGroup/
+---
 # ActionGroup (actions)
 
 `Sylament\Actions\ActionGroup` — groups a list of `Action`/`ActionGroup` children behind a single trigger, so a table row or a toolbar can collapse many actions into one control.
@@ -8,19 +21,9 @@ It also reuses four already-folded `Action` concerns unchanged — `CanBeOutline
 The model core (the children list, the eager name-keyed flat map, and the group back-reference wiring), the dropdown trigger config, visibility composition, context propagation to children (`liveComponent()`, `getRecord()` fallback, default-template push onto `Action` children), and the rendering of both extra-attribute bags (the shared trigger bag plus the group-only `extraDropdownAttributes()` family) have landed.
 Submenus have landed too: `getDropdownActionLists()` ports Filament's dropdown rendering plan, so a nested group either flattens into its own divider-separated section or embeds as a real dropdown-in-dropdown, with placement and trigger-template defaults propagated to it.
 
-**Status:** in progress — the dropdown-rendering base (model, visibility, triggers, submenus, and `render()` producing the complete dropdown or inline row) is complete, as is the per-row layer a table needs (the table binding, the root-group walk, and the deep clone), as is serialization through `toArray()`/`fromArray()`, as is the `BulkActionGroup` preset; the remaining rows are deferred (additional trigger kinds, auto-placement, `hasNonBulkAction()`) — see the [status vocabulary](../README.md#statuses).
-
-Reference — the Filament source this is diffed against:
-
-- [`actions/src/ActionGroup.php`](../../../vendor/filament/actions/src/ActionGroup.php) — the base class and the ~24 traits (plus the `Arrayable`/`HasEmbeddedView` interfaces) it composes
-- [`actions/src/Concerns/BelongsToGroup.php`](../../../vendor/filament/actions/src/Concerns/BelongsToGroup.php) — the back-reference concern audited below
-- [`actions/src/Concerns/HasDropdown.php`](../../../vendor/filament/actions/src/Concerns/HasDropdown.php) — the trigger-config concern, audited below
-
 ## Surface
 
 Every point of this component and its own folded concern.
-_Blocked by_ names what has to land first, in this package or an unbuilt one.
-_Detail_ links the write-up in [Details](#details) (deleted once the row is **done**), the permanent faithful-but-subtle note in [Semantics](#semantics), and/or the permanent note in [Divergences](#divergences).
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
@@ -103,9 +106,6 @@ It is **todo** rather than written because its only reader is Filament's table t
 Write it in that change.
 
 ## Semantics
-
-Faithful ports whose behaviour a reader would plausibly misread from the source.
-Permanent — these outlive the detail sections above.
 
 ### `dropdownTeleport()` is a positioning strategy, not a DOM move, in either codebase
 

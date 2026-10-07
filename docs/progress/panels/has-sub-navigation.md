@@ -1,3 +1,21 @@
+---
+description: The band of sibling pages a page draws beside its own content — Edit ↔ Manage Sections on one article's record pages — in three positions, and the… (draft)
+ports:
+  - vendor/filament/filament/src/Pages/Concerns/HasSubNavigation.php
+  - vendor/filament/filament/src/Pages/Enums/SubNavigationPosition.php
+  - vendor/filament/filament/src/Resources/Resource/Concerns/HasNavigation.php
+  - vendor/filament/filament/resources/views/components/page/sub-navigation/
+  - vendor/filament/filament/resources/css/components/page.css
+owns:
+  - packages/panels/assets/src/styles/components/sub-navigation.css
+  - packages/panels/src/Pages/Concerns/HasSubNavigation.php
+  - packages/panels/src/Pages/Enums/
+  - packages/panels/src/Panel/Concerns/HasSubNavigation.php
+  - packages/panels/templates/components/SubNavigation/
+  - packages/panels/templates/components/SubNavigationMobileMenu/
+  - packages/panels/templates/components/SubNavigationSidebar/
+  - packages/panels/templates/components/SubNavigationTabs/
+---
 # Sub-navigation (panels)
 
 The band of sibling pages a page draws beside its own content — Edit ↔ Manage Sections on one article's record pages — in three positions, and the machinery behind it:
@@ -8,22 +26,7 @@ The band of sibling pages a page draws beside its own content — Edit ↔ Manag
 - [`Resource::getRecordSubNavigation(Page)`](../../../packages/panels/src/Resources/Resource.php) and `Resource::getSubNavigationPosition()`, which [`InteractsWithRecord`](interacts-with-record.md) bridges to, plus the resource-page override of the position and `Page::generateResourcePageNavigationItems()`, the seam that turns a sibling **resource** page into an item.
 - Four templates — `SubNavigation` (the dispatcher), `SubNavigationSidebar` (`Start`/`End`), `SubNavigationTabs` (`Top`) and `SubNavigationMobileMenu` (every position, below `md`) — mounted by the five page partials (`Page`, `ListRecords`, `CreateRecord`, `EditRecord` and `ManageRelatedRecords`), plus `sub-navigation.css` and two `page.css` rules.
 
-**Status:** in progress — see the [status vocabulary](../README.md#statuses).
-
-Reference — the Filament source this is diffed against:
-
-- [`Pages/Concerns/HasSubNavigation.php`](../../../vendor/filament/filament/src/Pages/Concerns/HasSubNavigation.php) — the trait, the normalization and the item factory
-- [`Pages/Enums/SubNavigationPosition.php`](../../../vendor/filament/filament/src/Pages/Enums/SubNavigationPosition.php)
-- [`Resources/Resource/Concerns/HasNavigation.php`](../../../vendor/filament/filament/src/Resources/Resource/Concerns/HasNavigation.php) — `getRecordSubNavigation()`
-- [`resources/views/components/page/sub-navigation/`](../../../vendor/filament/filament/resources/views/components/page/sub-navigation) — the three rendering variants
-- [`resources/css/components/page.css`](../../../vendor/filament/filament/resources/css/components/page.css) — the `fi-page-has-sub-navigation` cascade
-
 ## Surface
-
-Every point of this feature.
-_Blocked by_ names what has to land first.
-_Detail_ carries three links, any of them: **detail** → the write-up in [Details](#details), deleted once the row is **done**; **semantics** → the permanent note in [Semantics](#semantics); **diverges** → the permanent note in [Divergences](#divergences).
-Rows never disappear — only their detail sections do.
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |

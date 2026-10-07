@@ -1,22 +1,22 @@
+---
+description: 'A `Column` whose cell is icons: one per state value, coloured through a policy of its own and named for assistive technology by a screen-reader-only… (draft)'
+ports:
+  - vendor/filament/tables/src/Columns/IconColumn.php
+  - vendor/filament/tables/src/View/Components/Columns/IconColumnComponent/IconComponent.php
+  - vendor/filament/tables/resources/css/columns/icon.css
+owns:
+  - packages/tables/assets/src/styles/components/icon-column.css
+  - packages/tables/src/Colors/Components/IconColumnComponent/
+  - packages/tables/src/Columns/IconColumn.php
+  - packages/tables/templates/partials/IconColumn/
+---
 # IconColumn (tables)
 
 [`Sylament\Tables\Columns\IconColumn`](../../../packages/tables/src/Columns/IconColumn.php) — a [`Column`](column.md) whose cell is icons: one per state value, coloured through a policy of its own and named for assistive technology by a screen-reader-only span, with a boolean mode that turns a `true`/`false` cell into a check or a cross.
 It ports Filament's [`Filament\Tables\Columns\IconColumn`](../../../vendor/filament/tables/src/Columns/IconColumn.php).
 Everything [`Column`](column.md) carries — the name, the label, the record binding, the state read, the placeholder, the tooltips, the per-item links, the closure injections — is tracked there, not repeated here.
 
-**Status:** done — see the [status vocabulary](../README.md#statuses).
-
-Reference — the Filament source this is diffed against:
-
-- [`tables/src/Columns/IconColumn.php`](../../../vendor/filament/tables/src/Columns/IconColumn.php) — the class and its `toEmbeddedHtml()`
-- [`tables/src/View/Components/Columns/IconColumnComponent/IconComponent.php`](../../../vendor/filament/tables/src/View/Components/Columns/IconColumnComponent/IconComponent.php) — the colour policy [`IconComponent`](../../../packages/tables/src/Colors/Components/IconColumnComponent/IconComponent.php) ports
-- [`tables/resources/css/columns/icon.css`](../../../vendor/filament/tables/resources/css/columns/icon.css) — the stylesheet [`icon-column.css`](../../../packages/tables/assets/src/styles/components/icon-column.css) is the prefix-renamed port of
-
 ## Surface
-
-Every point of this component.
-_Blocked by_ names what has to land first.
-_Detail_ carries **diverges** → the permanent note in [Divergences](#divergences), and **semantics** → the permanent note in [Semantics](#semantics).
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
@@ -42,17 +42,7 @@ _Detail_ carries **diverges** → the permanent note in [Divergences](#divergenc
 The surface rows are covered by the Unit [`IconColumnTest`](../../../packages/tables/tests/Unit/Columns/IconColumnTest.php) — the boolean defaults, every `true*`/`false*` setter turning the column boolean, the two-stage icon and colour resolution (base first, then the boolean pair, with `false` suppressing and `true` still throwing), the null-state arm, the size resolution including `'base'`, the metadata auto-detect on a `query()` lane against both a boolean and a non-boolean field and its absence on the `records()` lane, and the item list with its text-alternative chain — and by the Integration [`IconColumnTest`](../../../packages/tables/tests/Integration/Columns/IconColumnTest.php), which renders columns inside a real table and reads the cell out of `td.sy-ta-cell > div.sy-ta-col > div.sy.sy-ta-icon`: the two boolean glyphs and their palettes, a state carrying the icon/colour/label contracts, the list and line-break shapes, the dropped blank-icon item, the per-item links, the placeholder, and the `title` a `Markup` tooltip flattens to.
 The colour policy is pinned by [`PolicyShadeGridTest`](../../../packages/tables/tests/Unit/Colors/Components/PolicyShadeGridTest.php), which measures its slots against the `&.sy-color` rule in `icon-column.css` over the adversarial palettes.
 
-## Details
-
-Specifics for rows that are not finished.
-Delete a subsection when its row flips to **done**.
-
-Every row above is settled — **done** or **skipped** — so none has a write-up here now.
-A row moving to **in progress** or **blocked** grows one.
-
 ## Semantics
-
-Behaviour that is faithful to Filament but easy to misread here.
 
 ### Every `true` and `false` setter turns the column boolean
 
@@ -102,8 +92,6 @@ Contrast that with the text column, where [`gray` is a visible colour on the ite
 Here the shade is resolved, because the icons are the cell's only content and owe their surface a measured ratio.
 
 ## Divergences
-
-Deliberate deviations from Filament, and the reason each holds.
 
 ### The boolean auto-detect reads Doctrine metadata off the table's record class
 

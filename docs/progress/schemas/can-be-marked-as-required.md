@@ -1,19 +1,17 @@
+---
+description: 'The required-marker toggle: `markAsRequired()` sets it, `isMarkedAsRequired()` reads it and falls back to `$this->isRequired()` when nothing explicit… (draft)'
+ports:
+  - vendor/filament/forms/src/Components/Concerns/CanBeMarkedAsRequired.php
+owns:
+  - packages/schemas/src/Components/Concerns/CanBeMarkedAsRequired.php
+---
 # CanBeMarkedAsRequired (schemas)
 
 [`Sylament\Schemas\Components\Concerns\CanBeMarkedAsRequired`](../../../packages/schemas/src/Components/Concerns/CanBeMarkedAsRequired.php) — the required-marker toggle: `markAsRequired()` sets it, `isMarkedAsRequired()` reads it and falls back to `$this->isRequired()` when nothing explicit was set.
 That fallback is a contract on the **using class**, which must declare `isRequired()`: the forms [`Field`](../../../packages/forms/src/Components/Field.php) gets it from [`CanBeValidated`](../forms/can-be-validated.md) and reports the real validation state, while schemas' [`Fieldset`](fieldset.md) declares a constant `false`, so its legend takes an asterisk only after an explicit `markAsRequired()`.
 Two consumers in two packages is what earns this its own file rather than a fold into either — see [one row per file](../README.md#one-row-per-file-one-file-per-thing).
 
-**Status:** done — see the [status vocabulary](../README.md#statuses).
-
-Reference — the Filament source this is diffed against:
-
-- [`forms/src/Components/Concerns/CanBeMarkedAsRequired.php`](../../../vendor/filament/forms/src/Components/Concerns/CanBeMarkedAsRequired.php) — the marker property, its setter, and the `isRequired()` fallback getter
-
 ## Surface
-
-Every point of this concern.
-_Detail_ carries a **diverges** link to the permanent note in [Divergences](#divergences), a **semantics** link to [Semantics](#semantics), or `—`.
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
@@ -21,9 +19,6 @@ _Detail_ carries a **diverges** link to the permanent note in [Divergences](#div
 | [`isMarkedAsRequired()`](../../../packages/schemas/src/Components/Concerns/CanBeMarkedAsRequired.php) | [`isMarkedAsRequired()`](../../../vendor/filament/forms/src/Components/Concerns/CanBeMarkedAsRequired.php) | done | — | [semantics](#the-native-required-attribute-is-load-bearing-inside-a-modal-form) |
 
 ## Semantics
-
-Faithful-in-spirit behaviour a reader would plausibly misread from the source.
-Permanent — these outlive the detail sections above.
 
 ### The native `required` attribute is load-bearing inside a modal form
 
@@ -37,8 +32,6 @@ This is parity, not a divergence — Filament emits native `required` too (`vend
 The consequence to keep in mind: `markAsRequired()` on a field that declares no constraint still blocks submission in the browser while validating nothing on the server, and conversely a server-side violation on a required field is only reachable through a path the native check does not cover (a whitespace-only value, a programmatic `set()`, a non-input field).
 
 ## Divergences
-
-Deliberate deviations from Filament — permanent, and the reason they hold.
 
 ### The trait lives in schemas, not forms
 

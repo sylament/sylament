@@ -1,3 +1,9 @@
+---
+description: '`Sylament\Schemas\State\PropertyAccessor` is the port''s state backend — a Sylament invention with no Filament counterpart… (draft)'
+ports: []
+owns:
+  - packages/schemas/src/State/PropertyAccessor.php
+---
 # PropertyAccessor (schemas)
 
 [`Sylament\Schemas\State\PropertyAccessor`](../../../packages/schemas/src/State/PropertyAccessor.php) is the port's state backend — a Sylament invention with **no Filament counterpart** (`vendor/filament/schemas/src/State/` does not exist).
@@ -5,19 +11,7 @@ It is the seam Filament's Livewire-entanglement state binding lands on once ther
 The record pair additionally takes a [`RecordTypeReader`](record-type-reader.md), which is what lets a write know what the record declares where it is writing.
 State concerns reach it through [`CanAccessProperties`](../../../packages/schemas/src/Components/Concerns/CanAccessProperties.php), composed onto `Schema` and the schemas `Component` base — see [the divergence below](#the-accessor-is-injected-not-reached-for).
 
-**Status:** done — see the [status vocabulary](../README.md#statuses).
-
-Reference — this is Sylament-invented, so it is diffed against the sources it deliberately mirrors rather than a Filament port target:
-
-- [`ux-live-component/src/LiveComponentHydrator.php`](../../../vendor/symfony/ux-live-component/src/LiveComponentHydrator.php) — `adjustPropertyPathForData`, whose root-property-then-array-indices bag model `get()`/`set()` follow so the paths they touch match what the hydrator round-trips
-- [`laravel/framework/src/Illuminate/Collections/Arr.php`](../../../vendor/laravel/framework/src/Illuminate/Collections/Arr.php) — `Arr::get` / `Arr::set` / `Arr::forget`, ported as the detached-array trio
-
 ## Surface
-
-Every point of this class.
-`Ports` is `—` where the method has no upstream at all (Sylament-invented mechanics); it links the mirrored vendor source where one exists.
-_Blocked by_ names what has to land first.
-_Detail_ carries a **diverges** link (the permanent note in [Divergences](#divergences)) and/or a **semantics** link (a permanent note in [Semantics](#semantics)), or `—`.
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
@@ -39,9 +33,6 @@ Every row is **done** — the unit suite ([`PropertyAccessorTest`](../../../pack
 The ninth method's list arm needs a database, so it is pinned beside the vendor behaviour it delegates to, in [`DoctrineCollectionWriteTest`](../../../packages/schemas/tests/Integration/State/DoctrineCollectionWriteTest.php) — the same case asserting that `setOnRecord()` refuses the write it accepts.
 
 ## Semantics
-
-Behaviour a reader would plausibly misread from the source.
-Permanent — these outlive the detail sections above.
 
 ### The mapper's construct-or-refuse is one method three callers borrow
 

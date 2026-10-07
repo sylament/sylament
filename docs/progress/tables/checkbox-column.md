@@ -1,23 +1,22 @@
+---
+description: 'An editable `Column` whose cell is a plain checkbox: ticking it writes a boolean back onto the record through the host''s `updateTableColumnState()`… (draft)'
+ports:
+  - vendor/filament/tables/src/Columns/CheckboxColumn.php
+  - vendor/filament/tables/resources/css/columns/checkbox.css
+owns:
+  - packages/tables/assets/src/styles/components/checkbox-column.css
+  - packages/tables/src/Columns/CheckboxColumn.php
+  - packages/tables/templates/partials/CheckboxColumn/
+---
 # CheckboxColumn (tables)
 
 [`Sylament\Tables\Columns\CheckboxColumn`](../../../packages/tables/src/Columns/CheckboxColumn.php) — an editable [`Column`](column.md) whose cell is a plain checkbox: ticking it writes a boolean back onto the record through the host's [`updateTableColumnState()`](has-columns.md) live action.
 It ports Filament's [`Filament\Tables\Columns\CheckboxColumn`](../../../vendor/filament/tables/src/Columns/CheckboxColumn.php).
 Everything [`Column`](column.md) carries is tracked there, and the write-back seam the four editable columns share is tracked on [`has-columns.md`](has-columns.md), not repeated here.
 
-**Status:** done — see the [status vocabulary](../README.md#statuses).
-
-Reference — the Filament source this is diffed against:
-
-- [`tables/src/Columns/CheckboxColumn.php`](../../../vendor/filament/tables/src/Columns/CheckboxColumn.php) — the class and its `toEmbeddedHtml()`
-- [`tables/resources/css/columns/checkbox.css`](../../../vendor/filament/tables/resources/css/columns/checkbox.css) — the stylesheet [`checkbox-column.css`](../../../packages/tables/assets/src/styles/components/checkbox-column.css) is the prefix-renamed port of
-
 ## Surface
 
-Every point of this component.
-_Blocked by_ names what has to land first.
-_Detail_ carries up to two links here: **detail** → the write-up in Details, deleted once the row is **done**; **semantics** → the permanent note in [Semantics](#semantics).
 This component has no divergences of its own; the write-back's are on [`has-columns.md`](has-columns.md#divergences).
-Rows never disappear — only their detail sections do.
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |

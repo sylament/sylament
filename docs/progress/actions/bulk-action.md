@@ -1,3 +1,13 @@
+---
+description: The preset an action takes to run over a table's selected records rather than over one row. (draft)
+ports:
+  - vendor/filament/actions/src/BulkAction.php
+  - vendor/filament/actions/src/Concerns/InteractsWithSelectedRecords.php
+  - vendor/filament/actions/src/Concerns/CanFetchSelectedRecords.php
+  - vendor/filament/actions/src/Concerns/CanDeselectRecordsAfterCompletion.php
+owns:
+  - packages/actions/src/BulkAction.php
+---
 # BulkAction (actions)
 
 [`Sylament\Actions\BulkAction`](../../../packages/actions/src/BulkAction.php) — the preset an action takes to run over a table's **selected records** rather than over one row.
@@ -6,21 +16,11 @@ Every capability it presets lives on [`Action`](action.md) through three concern
 
 [`BulkActionGroup`](../../../packages/actions/src/BulkActionGroup.php) is audited in [`action-group.md`](action-group.md), where the rest of the group surface it presets lives.
 
-**Status:** in progress — the flag pair, the failure accounting, the client visibility marker, the two record readers (`getSelectedRecords()` / `getSelectedRecordsQuery()`), their closure-injection arms and the post-call deselect have all landed; what is left is the keyed failure-message buckets and the per-record authorization filter, each blocked on its own prerequisite — see the [status vocabulary](../README.md#statuses).
-
-Reference — the Filament source this is diffed against:
-
-- [`actions/src/BulkAction.php`](../../../vendor/filament/actions/src/BulkAction.php) — the class this ports, whole (26 lines)
-- [`actions/src/Concerns/InteractsWithSelectedRecords.php`](../../../vendor/filament/actions/src/Concerns/InteractsWithSelectedRecords.php) — the record-access and failure-accounting engine
-- [`actions/src/Concerns/CanFetchSelectedRecords.php`](../../../vendor/filament/actions/src/Concerns/CanFetchSelectedRecords.php) and [`actions/src/Concerns/CanDeselectRecordsAfterCompletion.php`](../../../vendor/filament/actions/src/Concerns/CanDeselectRecordsAfterCompletion.php) — the two flag concerns beside it
-
 Covered by [`BulkActionTest`](../../../packages/actions/tests/Unit/BulkActionTest.php) for the preset, the marker, the accounting and the two readers' gates, by [`ActionTest`](../../../packages/actions/tests/Unit/ActionTest.php) for the gated-off injection arms on an ordinary action, by [`DeleteBulkActionTest`](../../../packages/tables/tests/Integration/DeleteBulkActionTest.php) in the **tables** suite for the minted counters and the two failure toasts they title (a real selection host and a real database are what mint them), by [`SylamentActionsBundleTest`](../../../packages/actions/tests/Integration/SylamentActionsBundleTest.php) for the service registration `make()` depends on, by [`ActionsBelongsToTableTest`](../../../packages/tables/tests/Unit/ActionsBelongsToTableTest.php) in the **tables** suite for the `bulk` context key (which needs a real `Table`), and by [`CanNotifyTest`](../../../packages/notifications/tests/Integration/CanNotifyTest.php) in the **notifications** suite for the partial-failure warning arm (which needs both bundles booted).
 
 ## Surface
 
 Every member of the preset and of the three concerns it turns on.
-_Blocked by_ names what has to land first.
-_Detail_ carries a **detail** link to a [Details](#details) write-up, a **diverges** link to [Divergences](#divergences), or `—`.
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
@@ -42,9 +42,6 @@ _Detail_ carries a **detail** link to a [Details](#details) write-up, a **diverg
 
 ## Details
 
-Specifics for rows that are not finished — what is already in, what is left, and the next step.
-Delete a subsection when its row flips to **done**.
-
 ### The failure notification carries four injections of Filament's nine
 
 [`CanNotify::getFailureNotificationNamedInjections()`](../../../packages/actions/src/Concerns/CanNotify.php) returns `failureCount`, `isAll`, `successCount` and `totalCount` — the four a counting title closure needs, and the four [`DeleteBulkAction`](../../../vendor/filament/actions/src/DeleteBulkAction.php)'s own `failureNotificationTitle` reads.
@@ -59,9 +56,6 @@ There is no authorization concern anywhere in the actions port (`CanBeAuthorized
 **Blocked** on `CanBeAuthorized`, parked like the rest of authorization; port the filter and the buckets together when it lands.
 
 ## Semantics
-
-Faithful ports whose behaviour is easy to misread.
-Permanent.
 
 ### The two record readers share one gate and one message
 
@@ -98,9 +92,6 @@ Here the throwing accessor would fatal any detached action carrying the flag —
 The deselect is in a `finally`, so it also runs when the body throws or halts: a selection is cleared because the action *ran*, not because it succeeded.
 
 ## Divergences
-
-Deliberate departures from Filament.
-Permanent.
 
 ### Bulk-only visibility is a data marker the table controller flips, not an Alpine expression
 

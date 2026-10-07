@@ -1,14 +1,16 @@
+---
+description: Two identically-named traits, one per layer — Filament ships both under the same class name in different namespaces, so Sylament does too… (draft)
+ports:
+  - vendor/filament/schemas/src/Concerns/CanBeDisabled.php
+  - vendor/filament/schemas/src/Components/Concerns/CanBeDisabled.php
+owns:
+  - packages/schemas/src/Components/Concerns/CanBeDisabled.php
+  - packages/schemas/src/Concerns/CanBeDisabled.php
+---
 # CanBeDisabled (schemas)
 
 Two identically-named traits, one per layer — Filament ships both under the same class name in different namespaces, so Sylament does too: [`Sylament\Schemas\Concerns\CanBeDisabled`](../../../packages/schemas/src/Concerns/CanBeDisabled.php) on `Schema` and [`Sylament\Schemas\Components\Concerns\CanBeDisabled`](../../../packages/schemas/src/Components/Concerns/CanBeDisabled.php) on the base `Component`.
 The component-level trait also couples `disabled()` to `saved()` ({@see HasState}) so a disabled field drops out of `getState()`.
-
-**Status:** done — see the [status vocabulary](../README.md#statuses).
-
-Reference — the Filament source this is diffed against:
-
-- [`schemas/src/Concerns/CanBeDisabled.php`](../../../vendor/filament/schemas/src/Concerns/CanBeDisabled.php) — the schema-level core, fully ported
-- [`schemas/src/Components/Concerns/CanBeDisabled.php`](../../../vendor/filament/schemas/src/Components/Concerns/CanBeDisabled.php) — the component-level core plus `disabledOn()`
 
 ## Surface
 

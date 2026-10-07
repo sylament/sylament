@@ -1,19 +1,17 @@
+---
+description: 'A two-method trait holding a component''s machine name: a `name` property, the `name()` setter, and the `getName()` accessor. (draft)'
+ports:
+  - vendor/filament/schemas/src/Components/Concerns/HasName.php
+owns:
+  - packages/schemas/src/Components/Concerns/HasName.php
+---
 # HasName (schemas)
 
 `Sylament\Schemas\Components\Concerns\HasName` — a two-method trait holding a component's machine name: a `name` property, the `name()` setter, and the `getName()` accessor.
 It ports Filament's identically-named base trait, which lives in the `schemas` namespace but is consumed by the field layers above it.
 Its one consumer today is [`Sylament\Forms\Components\Field`](../../../packages/forms/src/Components/Field.php); it stays a shared row here (rather than folding into `forms`) because Filament shares `HasName` across ~6 field/entry classes and Sylament will too as `infolists` and the remaining `forms` components land.
 
-**Status:** done — see the [status vocabulary](../README.md#statuses).
-
-Reference — the Filament source this is diffed against:
-
-- [`schemas/src/Components/Concerns/HasName.php`](../../../vendor/filament/schemas/src/Components/Concerns/HasName.php) — the property, setter, and accessor ported here
-
 ## Surface
-
-Every point of this trait.
-_Detail_ carries a **diverges** link to the permanent note in [Divergences](#divergences), or `—`.
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |

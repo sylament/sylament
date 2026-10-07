@@ -1,3 +1,28 @@
+---
+description: The field-side half of the validation vertical, composed on `Field`. (draft)
+ports:
+  - vendor/filament/forms/src/Components/Concerns/CanBeValidated.php
+  - vendor/filament/forms/src/Components/Contracts/HasValidationRules.php
+  - vendor/filament/forms/src/Components/Concerns/HasNestedRecursiveValidationRules.php
+owns:
+  - packages/forms/src/Components/Concerns/CanBeValidated.php
+  - packages/forms/src/Validation/ActiveUrl.php
+  - packages/forms/src/Validation/Alpha.php
+  - packages/forms/src/Validation/AlphaDash.php
+  - packages/forms/src/Validation/AlphaNum.php
+  - packages/forms/src/Validation/Ascii.php
+  - packages/forms/src/Validation/DateComparison.php
+  - packages/forms/src/Validation/Distinct.php
+  - packages/forms/src/Validation/EndsWith.php
+  - packages/forms/src/Validation/ExistingValue.php
+  - packages/forms/src/Validation/MatchesField.php
+  - packages/forms/src/Validation/MinFileSize.php
+  - packages/forms/src/Validation/Prohibited.php
+  - packages/forms/src/Validation/RequiredValue.php
+  - packages/forms/src/Validation/StartsWith.php
+  - packages/forms/src/Validation/UniqueValue.php
+  - packages/forms/src/Validation/ValidDate.php
+---
 # CanBeValidated (forms)
 
 [`Sylament\Forms\Components\Concerns\CanBeValidated`](../../../packages/forms/src/Components/Concerns/CanBeValidated.php) — the field-side half of the validation vertical, composed on [`Field`](field.md).
@@ -17,19 +42,10 @@ The package's own `Validation/` directory grew with it: fourteen constraint clas
 The rule → constraint vocabulary is a rename, recorded in the [rename table](../renames.md): `rule()` / `rules()` → `constraint()` / `constraints()`, `getValidationRules()` → `getValidationConstraints()`, `dehydrateValidationRules()` → `dehydrateValidationConstraints()`.
 The payload changes ecosystem (Laravel rule strings → Symfony `Constraint` objects), so the rename makes the migration break loud and searchable instead of type-erroring on a grep hit.
 
-**Status:** done — see the [status vocabulary](../README.md#statuses).
-
-Reference — the Filament source this is diffed against:
-
-- [`forms/src/Components/Concerns/CanBeValidated.php`](../../../vendor/filament/forms/src/Components/Concerns/CanBeValidated.php) — the trait
-- [`forms/src/Components/Contracts/HasValidationRules.php`](../../../vendor/filament/forms/src/Components/Contracts/HasValidationRules.php) — the contract it satisfies, [relocated into schemas](../schemas/can-be-validated.md#the-component-contract-is-relocated-from-forms-into-schemas)
-- [`forms/src/Components/Concerns/HasNestedRecursiveValidationRules.php`](../../../vendor/filament/forms/src/Components/Concerns/HasNestedRecursiveValidationRules.php) — the sibling concern for per-element rules, ported as [`HasNestedRecursiveValidationConstraints`](#nested-constraints-land-as-one-all-where-laravel-keys-a-path)
-
 ## Surface
 
 Every point of Filament's trait, grouped where a family shares one fate.
 Every row is settled, so the _Blocked by_ column is empty throughout and the **Details** section is gone — its four subsections were deleted with the rows they described.
-_Detail_ now carries a **semantics** link (a permanent note in [Semantics](#semantics)), a **diverges** link (the permanent note in [Divergences](#divergences)), a pointer into another file, or `—`.
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
@@ -81,9 +97,6 @@ The required constraint's blank set runs there too, through the real validator a
 The constraints themselves are driven against a real Symfony validator, one file per class under [`tests/Unit/Validation/`](../../../packages/forms/tests/Unit/Validation) — including `ActiveUrl` through a DNS-seam subclass so the suite never touches the network, and `UniqueValue`/`ExistingValue` over the SQLite rig with their three `LogicException` arms; the container route for the two service validators by [`ConstraintValidatorServicesTest`](../../../packages/forms/tests/Integration/Validation/ConstraintValidatorServicesTest.php); the nested concern by [`HasNestedRecursiveValidationConstraintsTest`](../../../packages/forms/tests/Unit/Components/Concerns/HasNestedRecursiveValidationConstraintsTest.php), message recursion included; and `trim()`/`stripCharacters()`'s three-way asymmetry by [`TextInputTest`](../../../packages/forms/tests/Integration/Components/TextInputTest.php) and [`TextareaTest`](../../../packages/forms/tests/Integration/Components/TextareaTest.php).
 
 ## Semantics
-
-Faithful-in-spirit behaviour a reader would plausibly misread from the source.
-Permanent — these outlive the detail sections above.
 
 ### Every cross-field arm resolves its sibling at build time
 
@@ -227,9 +240,6 @@ Two consequences land on this trait's surface.
 What each Symfony validator would have done with `''`, and the `mb_trim` / `null` / `blank()` decisions the gate makes, are recorded [there](../schemas/presence-gate.md#what-each-symfony-validator-does-with-the-empty-string-and-why-the-gate-is-not-defensive) rather than repeated here.
 
 ## Divergences
-
-Deliberate deviations from Filament, and the reason each holds.
-Provisional ones say what would reverse them.
 
 ### The ordering arms compare with PHP, not with Laravel's size table
 
@@ -540,7 +550,7 @@ Four things follow.
 - **It is implicit.**
   `RequiredValue` is the first implementor of schemas' [`ImplicitConstraint`](../schemas/presence-gate.md) marker, without which the presence gate would drop it for exactly the blank string it exists to reject.
 
-The name is `RequiredValue` rather than `Required` for the reason [`UniqueValue` is not `Unique`](../renames.md#names-with-no-filament-source): Symfony ships `Symfony\Contracts\Service\Attribute\Required`, the DI attribute this trait itself imports for `setRecordTypeReader()`, so the two collide in one import list — and a `validationMessages()` key auto-imported from the wrong one is silently ignored by design.
+The name is `RequiredValue` rather than `Required` for the reason [`UniqueValue` is not `Unique`](../translations.md#names-with-no-filament-source): Symfony ships `Symfony\Contracts\Service\Attribute\Required`, the DI attribute this trait itself imports for `setRecordTypeReader()`, so the two collide in one import list — and a `validationMessages()` key auto-imported from the wrong one is silently ignored by design.
 
 ### The required constraint is swappable per field
 
@@ -572,7 +582,7 @@ Two constraints ship with it, because neither has a stock counterpart:
   Symfony's own comparison validators cannot do this job: `AbstractComparisonValidator` converts a string `comparedValue` only when the **validated value** is already a `DateTimeInterface`, and the runner validates raw wire strings, so `GreaterThan(value: $date)` would compare a string against an object.
 - **`ValidDate`** is the port of the `rule('date')` that [`DateTimePicker::setUp()`](date-time-picker.md#every-variant-validates-as-a-date-including-the-time-only-one) registers, with no stock equivalent either — `Type('string')` says nothing about parseability and `DateTime` (the constraint) demands an exact format, where the field's wire format is deliberately [loose about the `T` and the seconds](date-time-picker.md#the-wire-format-uses-a-space-and-the-browser-answers-with-a-t).
 
-Both are listed in the [rename table](../renames.md#names-with-no-filament-source) as names with no Filament source.
+Both are listed in the [rename table](../translations.md#names-with-no-filament-source) as names with no Filament source.
 The boundary is resolved **per validation run**, not at declaration: `after('2026-01-01')` re-parses the literal each time, and `after('startsAt')` re-reads the sibling each time, which is what lets a comparison against another field track that field as the user types.
 
 The literal-versus-field-name discrimination is Filament's, `strtotime()` and all: a value `strtotime()` reads is the boundary itself, anything else is a state path resolved through [`resolveRelativeStatePath()`](../schemas/component.md), the same resolver [`Get`](../schemas/get.md) uses.

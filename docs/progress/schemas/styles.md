@@ -1,3 +1,16 @@
+---
+description: The schemas bundle's component CSS — `packages/schemas/assets/src/styles/` — ports Filament's `schemas/resources/css/`. (draft)
+ports:
+  - vendor/filament/schemas/resources/css/schema.css
+  - vendor/filament/schemas/resources/css/components/
+owns:
+  - packages/schemas/assets/src/styles/components/actions.css
+  - packages/schemas/assets/src/styles/components/flex.css
+  - packages/schemas/assets/src/styles/components/icon.css
+  - packages/schemas/assets/src/styles/components/schema.css
+  - packages/schemas/assets/src/styles/components/section.css
+  - packages/support/assets/src/styles/components/text.css
+---
 # Styles (schemas)
 
 The schemas bundle's component CSS — [`packages/schemas/assets/src/styles/`](../../../packages/schemas/assets/src/styles/) — ports Filament's [`schemas/resources/css/`](../../../vendor/filament/schemas/resources/css/).
@@ -5,18 +18,10 @@ Each stylesheet is `@apply`-authored into `components/<name>.css` and `@import`e
 The `fi-*` class prefix is translated to the schemas component code `sy-sc-*` (see the [CSS contract](../../internals/styling.md#why-do-templates-carry-only-semantic-classes)).
 Seven of Filament's stylesheets are ported so far (schema, section, icon, actions, flex, tabs, wizard) — `icon.css`, `flex.css` and `tabs.css` rule-for-rule, `schema.css` and `actions.css` dropping variants from their source, and `section.css` and `wizard.css` adding rules; the rest wait on the components they style.
 
-**Status:** in progress — see the [status vocabulary](../README.md#statuses).
-
-Reference — the Filament source this is diffed against:
-
-- [`schemas/resources/css/schema.css`](../../../vendor/filament/schemas/resources/css/schema.css) — the grid/gap/alignment stylesheet ported into `components/schema.css`
-- [`schemas/resources/css/components/`](../../../vendor/filament/schemas/resources/css/components/) — the eleven per-component stylesheets: six ported here (actions, flex, icon, section, tabs, wizard), two ported into the package that emits their classes (text into support, fused-group into forms), and three unported (form, image, unordered-list)
-
 ## Surface
 
 One row per stylesheet.
 _Blocked by_ names the component whose port unblocks the CSS.
-_Detail_ carries a **diverges** link to a permanent note in [Divergences](#divergences), a **detail** link to the write-up in [Details](#details), or `—`.
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |

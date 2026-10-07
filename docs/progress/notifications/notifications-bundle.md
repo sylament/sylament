@@ -1,3 +1,12 @@
+---
+description: 'The notifications bundle class, plus the delivery pair it wires and the package manifest it ships behind: `SessionNotifications` (the flash-bag key… (draft)'
+ports:
+  - vendor/filament/notifications/src/NotificationsServiceProvider.php
+  - vendor/filament/notifications/composer.json
+owns:
+  - packages/notifications/src/Delivery/
+  - packages/notifications/src/SylamentNotificationsBundle.php
+---
 # SylamentNotificationsBundle (notifications)
 
 [`Sylament\Notifications\SylamentNotificationsBundle`](../../../packages/notifications/src/SylamentNotificationsBundle.php) — the notifications bundle class, plus the delivery pair it wires and the package manifest it ships behind: [`SessionNotifications`](../../../packages/notifications/src/Delivery/SessionNotifications.php) (the flash-bag key, with `push()` / `pull()`) and [`LiveDeliverySubscriber`](../../../packages/notifications/src/Delivery/LiveDeliverySubscriber.php) (the live arm).
@@ -7,18 +16,9 @@ The provider's own body is six statements carrying seven responsibilities: `conf
 All seven have a row below; the database-notifications registration is the one that is **blocked**, with its panel.
 What the port adds on top is container wiring, which Filament needs none of.
 
-**Status:** in progress — see the [status vocabulary](../README.md#statuses).
-
-Reference — the Filament source this is diffed against:
-
-- [`notifications/src/NotificationsServiceProvider.php`](../../../vendor/filament/notifications/src/NotificationsServiceProvider.php) — `configurePackage()` and `packageBooted()`, including the dehydrate hook this bundle's subscriber replaces
-- [`notifications/composer.json`](../../../vendor/filament/notifications/composer.json) — the manifest the port's requires are diffed against
-
 ## Surface
 
 Every provider responsibility, plus the delivery pair the bundle owns and the package manifest that declares what its `src/` needs.
-_Blocked by_ names what has to land first.
-_Detail_ carries any of three: **detail** → the write-up in [Details](#details), deleted once the row is **done**; **semantics** → the permanent note in [Semantics](#semantics); **diverges** → the permanent note in [Divergences](#divergences).
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
@@ -39,9 +39,6 @@ The manifest is a declaration with no runtime to assert; what would catch it is 
 The AssetMapper prepend is untested too, but unlike the manifest it *is* assertable against the compiled container — which is why its row is **in progress** rather than done, on the same terms support's [identical row](../support/support-bundle.md#asset-registration) holds.
 
 ## Details
-
-Specifics for rows that are not finished — what is already in, what is left, and what the next step is.
-Delete a subsection when its row flips to **done**.
 
 ### Asset registration
 
@@ -72,8 +69,6 @@ Nothing about notifications makes its strings a special case, and doing them fir
 
 ## Semantics
 
-Faithful behaviour subtle enough to be misread from the code alone.
-
 ### A redirecting live action keeps its toast for the destination page, for free
 
 Filament's dehydrate hook guards on the redirect store (`store($component)->has('redirect')`) and skips delivery when the component is redirecting, so the notification stays in the session and renders on the page the user lands on.
@@ -81,8 +76,6 @@ The port needs no equivalent check: a redirecting live action **renders no compo
 Same semantics, arrived at by not having a code path rather than by adding a guard — which is why a reader looking for the redirect check finds nothing, and the third case of [`LiveDeliverySubscriberTest`](../../../packages/notifications/tests/Integration/Delivery/LiveDeliverySubscriberTest.php) is what pins it.
 
 ## Divergences
-
-Deliberate deviations from Filament — permanent, and the reason they hold.
 
 ### The bundle registers container services, which Filament's provider has no counterpart for
 

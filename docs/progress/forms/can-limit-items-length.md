@@ -1,3 +1,13 @@
+---
+description: 'The item-count bounds a multi-value field carries: `minItems()` / `maxItems()` configure them, `getMinItems()` / `getMaxItems()` read them back (each… (draft)'
+ports:
+  - vendor/filament/forms/src/Components/Concerns/CanLimitItemsLength.php
+  - vendor/filament/forms/src/Components/Repeater.php
+  - vendor/filament/forms/src/Components/CheckboxList.php
+  - vendor/filament/forms/src/Components/Select.php
+owns:
+  - packages/forms/src/Components/Concerns/CanLimitItemsLength.php
+---
 # CanLimitItemsLength (forms)
 
 `Sylament\Forms\Components\Concerns\CanLimitItemsLength` — the item-count bounds a multi-value field carries: `minItems()` / `maxItems()` configure them, `getMinItems()` / `getMaxItems()` read them back (each closure-evaluable), and `getItemsCount()` counts the field's raw state.
@@ -6,17 +16,7 @@ Three fields compose it.
 `Repeater` was the first, while the trait was still folded into [`repeater.md`](repeater.md); `CheckboxList` is the second consumer, which is what promoted it to a file of its own per [one row per file](../README.md#one-row-per-file-one-file-per-thing); and [`Select`](select.md) is the third, taking `maxItems()` for its `multiple()` chips control (the JS control refuses a further pick and shows `getMaxItemsMessage()`) and both bounds as a `Count` in the same shape as the checkbox list's.
 Filament composes the same trait on all three fields, unchanged between them.
 
-**Status:** done — see the [status vocabulary](../README.md#statuses).
-
-Reference — the Filament source this is diffed against:
-
-- [`Components/Concerns/CanLimitItemsLength.php`](../../../vendor/filament/forms/src/Components/Concerns/CanLimitItemsLength.php) — the trait, and the four `rule()` registrations its two setters make
-- [`Components/Repeater.php`](../../../vendor/filament/forms/src/Components/Repeater.php), [`CheckboxList.php`](../../../vendor/filament/forms/src/Components/CheckboxList.php), [`Select.php`](../../../vendor/filament/forms/src/Components/Select.php) — the three composers
-
 ## Surface
-
-_Blocked by_ names what has to land first.
-_Detail_ links a permanent note in [Divergences](#divergences), or `—`.
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
@@ -27,8 +27,6 @@ Coverage: the null default, both setters, closure bounds evaluated against each 
 Each composer covers what it does with the bounds in its own suite: the repeater's `isAddable()` gate and its `Count` constraint in [`repeater.md`](repeater.md#surface), the checkbox list's in [`checkbox-list.md`](checkbox-list.md), the select's `Count` and its `maxItemsMessage()` substitution in [`select.md`](select.md).
 
 ## Divergences
-
-Deliberate deviations from Filament, and the reason each holds.
 
 ### The setters register no rules; the composing field builds the constraint
 

@@ -1,19 +1,17 @@
+---
+description: The repair half of `distinct()`. (draft)
+ports:
+  - vendor/filament/forms/src/Components/Concerns/CanFixIndistinctState.php
+owns:
+  - packages/forms/src/Components/Concerns/CanFixIndistinctState.php
+---
 # CanFixIndistinctState (forms)
 
 `Sylament\Forms\Components\Concerns\CanFixIndistinctState` — the repair half of [`distinct()`](can-be-validated.md#distinct-is-three-arms-of-one-first-party-constraint-not-laravels-rule).
 `fixIndistinctState()` installs `distinct($condition)`, `live(condition: $condition)` and an `afterStateUpdated()` hook that takes the value the user just picked away from every sibling repeater item holding it, so two items never claim the same one.
 Composed by the six option-bearing fields: [`Checkbox`](checkbox.md), [`Toggle`](toggle.md), [`Radio`](radio.md), [`Select`](select.md), [`CheckboxList`](checkbox-list.md) and [`ToggleButtons`](toggle-buttons.md).
 
-**Status:** done — see the [status vocabulary](../README.md#statuses).
-
-Reference — the Filament source this is diffed against:
-
-- [`Components/Concerns/CanFixIndistinctState.php`](../../../vendor/filament/forms/src/Components/Concerns/CanFixIndistinctState.php) — the trait
-
 ## Surface
-
-_Blocked by_ names what has to land first.
-_Detail_ links a permanent note in [Semantics](#semantics) or [Divergences](#divergences), or `—`.
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
@@ -29,8 +27,6 @@ One case renders: the corrected sibling's `<select>` comes back with no `selecte
 Item keys are read back off the mounted bag, never written into a test — a mount re-keys every item by uuid.
 
 ## Semantics
-
-Behaviour that is faithful to Filament but easy to misread here.
 
 ### The array arm cascades because our hooks fire for every changed path
 
@@ -60,9 +56,6 @@ The array arm compares through `array_diff()` / `array_intersect()`, which compa
 No option map can produce a non-scalar value — only a malformed client payload can — and such an entry does not survive a repair of the sibling holding it.
 
 ## Divergences
-
-Deliberate deviations from Filament, and the reason each holds.
-Provisional ones say what would reverse them.
 
 ### The comparison reads the raw state, not the cast one
 

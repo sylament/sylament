@@ -1,14 +1,15 @@
+---
+description: '`Sylament\Schemas\State\Set` is the `$set` writer handed to closures during evaluation — the write-side twin of `Get`. (draft)'
+ports:
+  - vendor/filament/schemas/src/Components/Utilities/Set.php
+owns:
+  - packages/schemas/src/State/Set.php
+---
 # Set (schemas)
 
 [`Sylament\Schemas\State\Set`](../../../packages/schemas/src/State/Set.php) is the `$set` writer handed to closures during evaluation — the write-side twin of [`Get`](get.md).
 An invokable bound to one [`Component`](component.md) (only that binding is `readonly`), its `__invoke($path, $state, $isAbsolute, $shouldCallUpdatedHooks)` resolves the (relative-or-absolute) state path to a component, closure-evaluates `$state`, then either writes through the owning component's `state()` (optionally firing its after-update hooks) or, when no component owns the path, sets it on the live component's raw data bag.
 It ports Filament's identically-named [`Set`](../../../vendor/filament/schemas/src/Components/Utilities/Set.php).
-
-**Status:** in progress — see the [status vocabulary](../README.md#statuses).
-
-Reference — the Filament source this is diffed against:
-
-- [`schemas/src/Components/Utilities/Set.php`](../../../vendor/filament/schemas/src/Components/Utilities/Set.php) — the invokable, its skip toggle, and both write branches
 
 ## Surface
 

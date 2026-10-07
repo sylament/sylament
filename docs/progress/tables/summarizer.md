@@ -1,3 +1,28 @@
+---
+description: 'The figures under a table: one row for the page on screen, one for the whole filtered set, and one under each group. (draft)'
+ports:
+  - vendor/filament/tables/src/Columns/Summarizers/Summarizer.php
+  - vendor/filament/tables/src/Columns/Summarizers/Concerns/
+  - vendor/filament/tables/src/Columns/Concerns/CanBeSummarized.php
+  - vendor/filament/tables/src/Table/Concerns/CanSummarizeRecords.php
+  - vendor/filament/tables/src/Concerns/CanSummarizeRecords.php
+  - vendor/filament/tables/resources/views/components/summary/index.blade.php
+  - vendor/filament/tables/resources/views/components/summary/row.blade.php
+  - vendor/filament/tables/resources/views/index.blade.php
+  - vendor/filament/tables/resources/css/columns/
+owns:
+  - packages/tables/assets/src/styles/components/summary.css
+  - packages/tables/src/Columns/Summarizers/Average.php
+  - packages/tables/src/Columns/Summarizers/Concerns/
+  - packages/tables/src/Columns/Summarizers/Count.php
+  - packages/tables/src/Columns/Summarizers/Range.php
+  - packages/tables/src/Columns/Summarizers/Sum.php
+  - packages/tables/src/Columns/Summarizers/Summarizer.php
+  - packages/tables/src/Columns/Summarizers/Values.php
+  - packages/tables/src/Query/SummaryQuery.php
+  - packages/tables/src/Table/Concerns/CanSummarizeRecords.php
+  - packages/tables/templates/partials/Summarizer/
+---
 # Summarizers (tables)
 
 The figures under a table: one row for the page on screen, one for the whole filtered set, and one under each group.
@@ -6,25 +31,9 @@ The tier is [`Sylament\Tables\Columns\Summarizers\Summarizer`](../../../packages
 Grouping — which record starts a group, which one ends it, and the collapse the band renders under — is [`grouping.md`](grouping.md).
 This file is the figures.
 
-**Status:** in progress — see the [status vocabulary](../README.md#statuses).
-Three things are named and not built: [`Count::icons()`](#counticons-ships-as-api-and-refuses-to-summarize), a [summary over a `records()` table](#the-records-lane-is-refused-loudly-where-filaments-fatals-deep-in-summarize) and the [batched `GROUP BY`](#the-per-group-figure-is-one-scoped-query-per-group-not-one-group-by).
-
-Reference — the Filament source this is diffed against:
-
-- [`tables/src/Columns/Summarizers/Summarizer.php`](../../../vendor/filament/tables/src/Columns/Summarizers/Summarizer.php) and its five subclasses
-- [`tables/src/Columns/Summarizers/Concerns/`](../../../vendor/filament/tables/src/Columns/Summarizers/Concerns) — `BelongsToColumn`, `CanBeHidden`, `CanFormatState`, `HasLabel`, `InteractsWithTableQuery`
-- [`tables/src/Columns/Concerns/CanBeSummarized.php`](../../../vendor/filament/tables/src/Columns/Concerns/CanBeSummarized.php)
-- [`tables/src/Table/Concerns/CanSummarizeRecords.php`](../../../vendor/filament/tables/src/Table/Concerns/CanSummarizeRecords.php), [`tables/src/Concerns/CanSummarizeRecords.php`](../../../vendor/filament/tables/src/Concerns/CanSummarizeRecords.php)
-- [`tables/resources/views/components/summary/index.blade.php`](../../../vendor/filament/tables/resources/views/components/summary/index.blade.php) and [`row.blade.php`](../../../vendor/filament/tables/resources/views/components/summary/row.blade.php)
-- [`tables/resources/views/index.blade.php`](../../../vendor/filament/tables/resources/views/index.blade.php) — the band's placement inside `<tbody>`, the grouped summary batch and the trailing-group probe
-- [`tables/resources/css/columns/summaries/`](../../../vendor/filament/tables/resources/css/columns)
-
 ## Surface
 
 Every point of the tier, from the summarizer up to the band.
-_Blocked by_ names what has to land first.
-_Detail_ carries up to three links: **detail** → the write-up in [Details](#details), deleted once the row is **done**; **diverges** → the permanent note in [Divergences](#divergences); **semantics** → the permanent note in [Semantics](#semantics).
-A **skipped** row states its reason inline instead.
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
@@ -46,11 +55,11 @@ A **skipped** row states its reason inline instead.
 | [`Column::summarize()` / `getSummarizer()` / `getSummarizers()` / `hasSummary()`](../../../packages/tables/src/Columns/Concerns/CanBeSummarized.php) | [`Columns\Concerns\CanBeSummarized`](../../../vendor/filament/tables/src/Columns/Concerns/CanBeSummarized.php) | done | — | [semantics](#getsummarizers-re-points-every-summarizer-and-that-mutation-is-the-mechanism) · [diverges](#summarizing-an-aggregate-column-is-refused-where-filament-produces-a-wrong-number) |
 | [`Table::summaries()` / `hasPageSummary()` / `hasAllTableSummary()` / `hasSummary()`](../../../packages/tables/src/Table/Concerns/CanSummarizeRecords.php) | [`Table\Concerns\CanSummarizeRecords`](../../../vendor/filament/tables/src/Table/Concerns/CanSummarizeRecords.php) | done | — | [semantics](#hassummary-walks-every-column-while-the-batch-walks-the-visible-ones) |
 | [`getAllTableSummaryQuery()` / `getPageTableSummaryQuery()`](../../../packages/tables/src/Concerns/CanSummarizeRecords.php) | [`Concerns\CanSummarizeRecords`](../../../vendor/filament/tables/src/Concerns/CanSummarizeRecords.php) | done | — | [semantics](#a-page-summary-narrows-by-keys-never-by-a-limit) · [has-table.md](has-table.md#the-contract-is-thirty-five-methods-of-filaments-forty-six) |
-| [`getGroupedTableSummaryQuery()`](../../../packages/tables/src/Concerns/CanSummarizeRecords.php) | — (Sylament-only; Filament batches one `GROUP BY` instead) | done | — | [diverges](#the-per-group-figure-is-one-scoped-query-per-group-not-one-group-by) · [renames.md](../renames.md#names-with-no-filament-source) |
+| [`getGroupedTableSummaryQuery()`](../../../packages/tables/src/Concerns/CanSummarizeRecords.php) | — (Sylament-only; Filament batches one `GROUP BY` instead) | done | — | [diverges](#the-per-group-figure-is-one-scoped-query-per-group-not-one-group-by) · [renames.md](../translations.md#names-with-no-filament-source) |
 | [`getTableSummarySelectedState()` — the one batched SELECT](../../../packages/tables/src/Concerns/CanSummarizeRecords.php) | [`Concerns\CanSummarizeRecords::getTableSummarySelectedState()`](../../../vendor/filament/tables/src/Concerns/CanSummarizeRecords.php) | done | — | [semantics](#the-alias-is-pushed-before-the-statements-are-read-and-the-ordinal-is-one-per-declared-summarizer) · [diverges](#the-batch-keeps-a-to-one-relation-column-and-refuses-a-to-many-one) |
 | `getTableSummarySelectedState()`'s `$modifyQueryUsing` parameter | [`Concerns\CanSummarizeRecords`](../../../vendor/filament/tables/src/Concerns/CanSummarizeRecords.php) | skipped | — | [diverges](#the-per-group-figure-is-one-scoped-query-per-group-not-one-group-by) — its only caller upstream is the grouped `GROUP BY` batch the per-group query replaces |
 | [`shouldRenderTrailingGroupedTableSummary()`](../../../packages/tables/src/Concerns/CanSummarizeRecords.php) | [`Concerns\CanSummarizeRecords`](../../../vendor/filament/tables/src/Concerns/CanSummarizeRecords.php) | done | — | [semantics](#the-trailing-group-is-followed-past-the-page-break-with-a-record-not-a-scalar) · [grouping.md](grouping.md#the-group-boundaries-are-one-php-map-rather-than-loop-carried-template-state) |
-| [`Query\SummaryQuery::readRow()` / `readDistinct()` / `qualifyAttribute()`](../../../packages/tables/src/Query/SummaryQuery.php) | [the `->select()` / `->get()` calls inside](../../../vendor/filament/tables/src/Columns/Summarizers/Summarizer.php) each summarizer | done | — | [semantics](#every-summary-read-is-one-clone-with-the-order-reset-and-the-paging-cleared) · [diverges](#a-to-many-join-on-the-summarized-query-is-refused-where-filament-inflates-in-silence) · [renames.md](../renames.md#namespaces-with-no-filament-source) |
+| [`Query\SummaryQuery::readRow()` / `readDistinct()` / `qualifyAttribute()`](../../../packages/tables/src/Query/SummaryQuery.php) | [the `->select()` / `->get()` calls inside](../../../vendor/filament/tables/src/Columns/Summarizers/Summarizer.php) each summarizer | done | — | [semantics](#every-summary-read-is-one-clone-with-the-order-reset-and-the-paging-cleared) · [diverges](#a-to-many-join-on-the-summarized-query-is-refused-where-filament-inflates-in-silence) · [renames.md](../translations.md#namespaces-with-no-filament-source) |
 | [`Summary` — the band's header row and the two rows under it](../../../packages/tables/templates/components/Summary/index.html.twig) | [`views/components/summary/index.blade.php`](../../../vendor/filament/tables/resources/views/components/summary/index.blade.php) | done | — | [diverges](#the-band-is-handed-the-real-all-table-query-even-when-the-all-table-row-is-off) · [semantics](#the-placeholder-cells-follow-the-record-rows-order-not-vendors) |
 | [`SummaryRow` — one row: a band row or a group boundary's](../../../packages/tables/templates/components/SummaryRow/index.html.twig) | [`views/components/summary/row.blade.php`](../../../vendor/filament/tables/resources/views/components/summary/row.blade.php) | done | — | [diverges](#every-summary-cell-carries-its-columns-responsive-pair-where-vendors-carries-none) · [semantics](#the-heading-cell-spans-to-the-first-summarized-column-and-drops-a-summarizer-on-the-first-one) |
 | [The three summarizer bodies — `index`, `range`, `values`](../../../packages/tables/templates/partials/Summarizer) + [`summary.css`](../../../packages/tables/assets/src/styles/components/summary.css) | [`Summarizer::toEmbeddedHtml()`](../../../vendor/filament/tables/src/Columns/Summarizers/Summarizer.php) and its two overrides, [`columns/summaries/`](../../../vendor/filament/tables/resources/css/columns) | done | — | [diverges](#hiddenlabel-is-honoured-in-all-three-markups-where-vendor-honours-it-in-one) |
@@ -62,9 +71,6 @@ A **skipped** row states its reason inline instead.
 
 ## Details
 
-Specifics for rows that are not finished.
-Delete a subsection when its row flips to **done**.
-
 ### `Count::icons()` ships as API and refuses to summarize
 
 `icons()` and `hasIcons()` are on `Count` with Filament's signatures, and a counting `Count` behaves exactly as upstream.
@@ -75,9 +81,6 @@ The column is not what holds it back: `IconColumn` and its contrast policy ship.
 What is left is scope — the template, a second policy under `Colors/Components/` and the per-icon query fan-out are a feature rather than a translation, and no consumer has asked for one.
 
 ## Semantics
-
-Faithful ports subtle enough that the next reader would misread the code.
-Permanent, and addressable by anchor.
 
 ### `hasSummary()` walks every column while the batch walks the visible ones
 
@@ -254,8 +257,6 @@ That is vendor's arithmetic exactly, and it is worth knowing before writing a fi
 Both are vendor's own a11y notes, ported with their reasons.
 
 ## Divergences
-
-Deliberate deviations from Filament, each phrased as a statement and addressable by anchor.
 
 ### The per-group figure is one scoped query per group, not one `GROUP BY`
 

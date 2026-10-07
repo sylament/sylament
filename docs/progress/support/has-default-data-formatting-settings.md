@@ -1,3 +1,11 @@
+---
+description: The eight toolkit-wide formatting defaults a date, money or number formatter falls back to when the component that renders it names none. (draft)
+ports:
+  - vendor/filament/support/src/Concerns/HasDefaultDataFormattingSettings.php
+  - vendor/filament/tables/src/Table.php
+owns:
+  - packages/support/src/Concerns/HasDefaultDataFormattingSettings.php
+---
 # HasDefaultDataFormattingSettings (support)
 
 `Sylament\Support\Concerns\HasDefaultDataFormattingSettings` — the eight toolkit-wide formatting defaults a date, money or number formatter falls back to when the component that renders it names none.
@@ -8,18 +16,7 @@ It sits in support's **root** `Concerns/`, not under `Components/Concerns/`, bec
 Six of the eight settings gained their first reader with [`TextColumn`](../tables/text-column.md)'s date, money and numeric families, and grouping and summaries add two more readers of the same two date formats off the same table: a [`date()` group's title](../tables/grouping.md#a-date-group-is-a-half-open-day-range-bound-with-the-fields-own-type) formats through `getDefaultDateDisplayFormat()`, and [`Range::minimalDateTimeDifference()`](../tables/summarizer.md) picks between that and `getDefaultDateTimeDisplayFormat()` by how far apart its two ends fall.
 The three `iso*` ones are carried unread: their moment.js tokens (`L`, `LLL`, `LT`) only ICU locale presets can answer, which belongs to the [deferred i18n pass](../../internals/i18n.md), so [`text-column.md`](../tables/text-column.md) blocks the `isoDate()` family on it and this trait holds the defaults those setters will read.
 
-**Status:** in progress — see the [status vocabulary](../README.md#statuses).
-
-Reference — the Filament source this is diffed against:
-
-- [`support/src/Concerns/HasDefaultDataFormattingSettings.php`](../../../vendor/filament/support/src/Concerns/HasDefaultDataFormattingSettings.php) — the trait ported here, member for member and default for default
-- [`tables/src/Table.php`](../../../vendor/filament/tables/src/Table.php) — one of the two classes that compose it upstream
-
 ## Surface
-
-Every point of this concern.
-_Blocked by_ names what has to land first.
-_Detail_ carries either or both: **detail** → the write-up in [Details](#details), deleted once the row is **done**; **semantics** → the permanent note in [Semantics](#semantics).
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
@@ -36,9 +33,6 @@ Every member is exercised by [`HasDefaultDataFormattingSettingsTest`](../../../p
 Every landed row is **done**; the one open row names the consumer that will need it rather than a write-up.
 
 ## Semantics
-
-Faithful ports subtle enough that the next reader would misread the code.
-Permanent, and addressable by anchor.
 
 ### The currency default is a lowercase code, and stays one
 

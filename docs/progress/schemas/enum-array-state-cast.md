@@ -1,3 +1,10 @@
+---
+description: The state cast behind a field whose value is a *set* of backed enum cases. (draft)
+ports:
+  - vendor/filament/schemas/src/Components/StateCasts/EnumArrayStateCast.php
+owns:
+  - packages/schemas/src/State/Casts/EnumArrayStateCast.php
+---
 # EnumArrayStateCast (schemas)
 
 `Sylament\Schemas\State\Casts\EnumArrayStateCast` — the state cast behind a field whose value is a *set* of backed enum cases.
@@ -6,15 +13,7 @@ It is the plural of [`EnumStateCast`](enum-state-cast.md): the whole selection i
 
 `CheckboxList` and a `multiple()` `ToggleButtons` or `Select` all apply it — each overrides `getEnumDefaultStateCast()` to select this cast over the scalar one exactly when the field takes more than one value, which for `CheckboxList` is every time.
 
-**Status:** done — see the [status vocabulary](../README.md#statuses).
-
-Reference — the Filament source this is diffed against:
-
-- [`schemas/src/Components/StateCasts/EnumArrayStateCast.php`](../../../vendor/filament/schemas/src/Components/StateCasts/EnumArrayStateCast.php)
-
 ## Surface
-
-_Detail_ links a permanent note in [Semantics](#semantics) or [Divergences](#divergences), or `—`.
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
@@ -37,8 +36,6 @@ The flag lands here the day a field needs `null` written rather than `[]`, and n
 The behaviour needs no guard of its own: [`wrap()`](../support/helpers.md) maps `null` to `[]`, and every other blank spelling survives wrapping only to be dropped by the element cast, so the empty result falls out of the composition.
 
 ## Divergences
-
-Deliberate deviations from Filament, and the reason each holds.
 
 ### An unresolvable element is dropped rather than pushed as null
 

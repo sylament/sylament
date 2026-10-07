@@ -1,19 +1,17 @@
+---
+description: The read half of `distinct()`. (draft)
+ports:
+  - vendor/filament/forms/src/Components/Concerns/CanDisableOptionsWhenSelectedInSiblingRepeaterItems.php
+owns:
+  - packages/forms/src/Components/Concerns/CanDisableOptionsWhenSelectedInSiblingRepeaterItems.php
+---
 # CanDisableOptionsWhenSelectedInSiblingRepeaterItems (forms)
 
 `Sylament\Forms\Components\Concerns\CanDisableOptionsWhenSelectedInSiblingRepeaterItems` — the read half of [`distinct()`](can-be-validated.md#distinct-is-three-arms-of-one-first-party-constraint-not-laravels-rule).
 `disableOptionsWhenSelectedInSiblingRepeaterItems()` installs `distinct()`, `live()` and a [`disableOptionWhen()`](can-disable-options.md) predicate that greys out an option another item of the parent repeater already holds, so the refusal never has to fire.
 Composed by the four fields that implement [`Contracts\CanDisableOptions`](can-disable-options.md): [`Radio`](radio.md), [`Select`](select.md), [`CheckboxList`](checkbox-list.md) and [`ToggleButtons`](toggle-buttons.md).
 
-**Status:** done — see the [status vocabulary](../README.md#statuses).
-
-Reference — the Filament source this is diffed against:
-
-- [`Components/Concerns/CanDisableOptionsWhenSelectedInSiblingRepeaterItems.php`](../../../vendor/filament/forms/src/Components/Concerns/CanDisableOptionsWhenSelectedInSiblingRepeaterItems.php) — the trait
-
 ## Surface
-
-_Blocked by_ names what has to land first.
-_Detail_ links a permanent note in [Semantics](#semantics), or `—`.
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
@@ -26,8 +24,6 @@ _Detail_ links a permanent note in [Semantics](#semantics), or `—`.
 Coverage: the `distinct()` and `live()` installs, the predicate's presence and that all four fields compose it, by [`CanDisableOptionsWhenSelectedInSiblingRepeaterItemsTest`](../../../packages/forms/tests/Unit/Components/Concerns/CanDisableOptionsWhenSelectedInSiblingRepeaterItemsTest.php); the predicate itself — a sibling's value disabled and the others not, a value this item also holds left enabled, blank siblings disabling nothing, an enum sibling matched by its backing value, a `CheckboxList`'s array-valued state, an int-keyed option map against a sibling holding the submitted string, and a field outside any repeater — over the repeater-item rig by [its Integration namesake](../../../packages/forms/tests/Integration/Components/Concerns/CanDisableOptionsWhenSelectedInSiblingRepeaterItemsTest.php).
 
 ## Semantics
-
-Behaviour that is faithful to Filament but easy to misread here.
 
 ### A value this item also holds stays clickable
 

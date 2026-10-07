@@ -1,3 +1,12 @@
+---
+description: 'The tables bundle class, plus the two Twig-side pieces it owns: `TableExtension` (the `renderTable()` template helper) and `TablesIconAlias` (the… (draft)'
+ports:
+  - vendor/filament/tables/src/TablesServiceProvider.php
+  - vendor/filament/tables/src/View/TablesIconAlias.php
+owns:
+  - packages/tables/src/SylamentTablesBundle.php
+  - packages/tables/templates/components/SearchField/
+---
 # SylamentTablesBundle (tables)
 
 [`Sylament\Tables\SylamentTablesBundle`](../../../packages/tables/src/SylamentTablesBundle.php) — the tables bundle class, plus the two Twig-side pieces it owns: [`TableExtension`](../../../packages/tables/src/Twig/Extension/TableExtension.php) (the `renderTable()` template helper) and [`TablesIconAlias`](../../../packages/tables/src/Twig/TablesIconAlias.php) (the overridable icon slots).
@@ -11,18 +20,9 @@ The column catalog brought the four interactive-column Alpine components that re
 The package manifest gained `sylament/forms` with the filter layer: a filter builds its control out of real form fields (`Checkbox`, `Select`), so `src/` imports `Sylament\Forms\Components\Field` directly and the split-repo dependency rule makes that a `require` rather than something inherited through a sibling — [below](#the-manifest-declares-sylamentforms).
 The column catalog added four more lines to it, three requires and a suggest — [below](#the-manifest-grew-three-requires-and-one-suggest-for-the-column-catalog).
 
-**Status:** in progress — see the [status vocabulary](../README.md#statuses).
-
-Reference — the Filament source this is diffed against:
-
-- [`tables/src/TablesServiceProvider.php`](../../../vendor/filament/tables/src/TablesServiceProvider.php) — the provider whose `configurePackage()` / `packageBooted()` this bundle ports
-- [`tables/src/View/TablesIconAlias.php`](../../../vendor/filament/tables/src/View/TablesIconAlias.php) — the 23 alias constants, read to judge what the alias row is missing
-
 ## Surface
 
 Every provider responsibility, plus the two Twig-side classes the bundle owns and the package manifest that declares what its `src/` needs.
-_Blocked by_ names what has to land first.
-_Detail_ carries a **detail** link to a [Details](#details) write-up, a **diverges** link to [Divergences](#divergences), or `—`.
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
@@ -48,9 +48,6 @@ Deleting the guard, or replacing the throw with a silent fall-through to raw tex
 The unported responsibilities have no coverage because they have no code.
 
 ## Details
-
-Specifics for rows that are not finished — what is already in, what is left, and what the next step is.
-Delete a subsection when its row flips to **done**.
 
 ### The alias set is fifteen constants of Filament's 23
 
@@ -132,15 +129,12 @@ Unported, and the immediate consequence is visible in [`table.md`](table.md#the-
 
 ## Divergences
 
-Deliberate deviations from Filament — permanent, and the reason they hold.
-Say what would reverse the decision when it is provisional.
-
 ### The bundle registers container services, which Filament's provider has no counterpart for
 
 `TablesServiceProvider` binds nothing into the Laravel container: a Filament `Table` or `Column` is constructed with `new` inside its own `make()`, and Laravel's `app()->make()` fills any constructor dependency by reflection without a registration.
 Symfony's container cannot do that, so [`loadExtension()`](../../../packages/tables/src/SylamentTablesBundle.php) registers the tier explicitly — a top-level `Columns\*.php` glob (which keeps `Concerns/` out without an exclude list) and `->set(Table::class)`, both `autowire()` + `autoconfigure()`.
 
-Two more registrations ride along on the same mechanism for a different reason: the `Colors/Components/` globs — `*/*.php` and `*/*/*.php`, one per directory level the policies nest to, since [`TextColumnComponent\ItemComponent\IconComponent`](../renames.md#namespace-segments) sits a level below its item — are `autowire()` + **`public()`**, not `autoconfigure()`.
+Two more registrations ride along on the same mechanism for a different reason: the `Colors/Components/` globs — `*/*.php` and `*/*/*.php`, one per directory level the policies nest to, since [`TextColumnComponent\ItemComponent\IconComponent`](../translations.md#namespace-segments) sits a level below its item — are `autowire()` + **`public()`**, not `autoconfigure()`.
 A colour policy is not a component and wants no `sylament.component` tag; what it needs is to survive `Container::get()`, because [`ColorManager`](../support/color-manager.md) resolves a policy from the container by the class-string a template names, and a private service is not reachable that way.
 Same rule and same comment as schemas' policy glob.
 
@@ -167,7 +161,7 @@ It reads the host from the render context (`context['this']`, the UX LiveCompone
 One shape difference from its two siblings, and it is not an omission: **there is no name argument**.
 `renderSchema(name = 'schema')` and `renderAction(name)` select one of many, where a host has exactly one table — [`HasTable::getTable()`](has-table.md) takes no key and caches a single instance.
 Adding a parameter nothing could vary would be API noise.
-Recorded in the [rename table](../renames.md#names-with-no-filament-source) as a name with no Filament source, alongside the reason `renderSchema()`/`renderAction()` are not renames either.
+Recorded in the [rename table](../translations.md#names-with-no-filament-source) as a name with no Filament source, alongside the reason `renderSchema()`/`renderAction()` are not renames either.
 
 ### The manifest declares `ext-mbstring`
 

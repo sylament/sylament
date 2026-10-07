@@ -1,20 +1,21 @@
+---
+description: '`Sylament\Support\SylamentSupportBundle` (extending the shared `Sylament\Support\SylamentBundle`) — the Symfony `AbstractBundle` that ports Filament''s… (draft)'
+ports:
+  - vendor/filament/support/src/SupportServiceProvider.php
+owns:
+  - packages/support/src/DependencyInjection/
+  - packages/support/src/SylamentBundle.php
+  - packages/support/src/SylamentSupportBundle.php
+---
 # Support bundle (support)
 
 `Sylament\Support\SylamentSupportBundle` (extending the shared `Sylament\Support\SylamentBundle`) — the Symfony `AbstractBundle` that ports Filament's `SupportServiceProvider`.
 It wires the package's services through the PHP DI configurator, registers the Twig extensions, boots the static-instance registry, and prepends the bundle's built assets into AssetMapper.
 Filament's provider is a Spatie `PackageServiceProvider` whose register/boot surface is mostly Laravel/Livewire/Blade bootstrapping — only the parts with a Symfony analog are ported; the rest are divergences below or tracked as their own rows in the [package README](README.md).
 
-**Status:** in progress — see the [status vocabulary](../README.md#statuses).
-
-Reference — the Filament source this is diffed against:
-
-- [`support/src/SupportServiceProvider.php`](../../../vendor/filament/support/src/SupportServiceProvider.php) — `configurePackage()`, `packageRegistered()`, `packageBooted()`
-
 ## Surface
 
 Every point of the bundle wiring.
-_Blocked by_ names what has to land first.
-_Detail_ carries **detail** → the write-up in [Details](#details) and/or **diverges** → a permanent note in [Divergences](#divergences), or `—`.
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
@@ -51,7 +52,7 @@ The guard's false branch is **this** package's to pin for all three, since [`Syl
 The provider's `DataStore` override, `PartialsComponentHook`, the `originalRequest` scoped binding, and the `ScopedComponentManager` clone are all Livewire-runtime plumbing — request-scoped state, per-request component hooks, and config isolation.
 There is no Livewire here (the idiom translation is UX LiveComponent), and Filament's specific seams won't be ported verbatim; but the equivalent live-component request wiring is wanted, so the row is **blocked** on the live-component-state work, where Sylament grows its own data store, component hooks, and per-request scope.
 
-_See also: the [Livewire → UX LiveComponent](../renames.md#idiom) idiom translation._
+_See also: the [Livewire → UX LiveComponent](../translations.md#idiom) idiom translation._
 
 ## Divergences
 

@@ -1,3 +1,9 @@
+---
+description: '`Sylament\Schemas\State\ViolationPathTranslator` and the `HasKeyedItems` component contract it consults — Sylament-only, with no Filament counterpart… (draft)'
+ports: []
+owns:
+  - packages/schemas/src/State/ViolationPathTranslator.php
+---
 # ViolationPathTranslator (schemas)
 
 [`Sylament\Schemas\State\ViolationPathTranslator`](../../../packages/schemas/src/State/ViolationPathTranslator.php) and the [`HasKeyedItems`](../../../packages/schemas/src/Components/Contracts/HasKeyedItems.php) component contract it consults — Sylament-only, with no Filament counterpart: Filament never validates a mapped model, so it never has to speak a violation path back in state terms.
@@ -6,32 +12,26 @@ It exists because the two sides of [`getData()`'s record tail](can-be-validated.
 A `ConstraintViolation` carries a property path that indexes the **record graph** (`title`, `author.name`, `sections[2].heading`), while the error bag [`getErrorsForSchemaStatePath()`](has-schemas.md) reads is keyed by the **absolute state paths** components declare (`data.title`, `data.sections.record-9.heading`).
 The translator is the inverse of the mapping walk: it walks the same [record path map](belongs-to-record.md#mapping-walks-the-record-graph-by-declared-leaf-paths) `getData()` wrote through, so a violation lands under the component that put the offending value there — or at the schema's own path when that component shows no errors of its own.
 
-**Status:** done — see the [status vocabulary](../README.md#statuses).
-
 ## Surface
 
 Every point of the translator and the contract.
-_Detail_ carries a **semantics** link (a permanent note in [Semantics](#semantics)) or `—`.
 Nothing here ports a Filament source, so the _Ports_ column is dropped, and nothing here diverges from one, so there is no Divergences section.
 
-| Feature | Status | Blocked by | Detail |
-| --- | --- | --- | --- |
-| [`__construct(array $recordPathMap, ?string $rootStatePath)`](../../../packages/schemas/src/State/ViolationPathTranslator.php) — built by [`Schema::getRecordViolationPathTranslator()`](../../../packages/schemas/src/Concerns/BelongsToRecord.php), over the record path map and the paths it drops beneath a subtree owner | done | — | [semantics](#the-state-path-is-rebuilt-from-the-prefix-rather-than-read-off-the-component) |
-| [`translate(string $violationPropertyPath): ?string`](../../../packages/schemas/src/State/ViolationPathTranslator.php) — deepest declared path wins | done | — | [semantics](#a-violation-beneath-a-declared-leaf-folds-onto-that-leaf) |
-| The `null` return — a violation no declared path owns | done | — | [semantics](#an-unowned-violation-returns-null-so-the-caller-folds-it-at-the-schema-root) |
-| [`translateToErrorPath(string $violationPropertyPath): ?string`](../../../packages/schemas/src/State/ViolationPathTranslator.php) — `translate()`'s answer when the owning component implements [`HasValidationConstraints`](../../../packages/schemas/src/Components/Contracts/HasValidationConstraints.php) or `HasKeyedItems` and the answer is no keyed item's own path, else `null`; the path `validateSchemaRecord()` files a message under | done | — | [semantics](#a-message-is-filed-only-under-a-component-that-shows-its-own-errors) |
-| The index arm — `sections[2].heading` → the item key the record's collection holds at key `2` | done | — | [semantics](#the-index-is-a-collection-key-not-a-position) |
-| The in-item fold — a violation naming a path the item schema declares nothing for | done | — | [semantics](#a-violation-inside-an-item-folds-by-the-same-rule-as-one-at-the-root) |
-| [`HasKeyedItems::getItemKeys()`](../../../packages/schemas/src/Components/Contracts/HasKeyedItems.php) — implemented by [`Repeater`](../forms/repeater.md) | done | — | [semantics](#the-index-is-a-collection-key-not-a-position) |
-| [`HasKeyedItems::getItemStatePaths()`](../../../packages/schemas/src/Components/Contracts/HasKeyedItems.php) — implemented by [`Repeater`](../forms/repeater.md) | done | — | [semantics](#a-violation-inside-an-item-folds-by-the-same-rule-as-one-at-the-root) |
-| Parsing — `Symfony\Component\PropertyAccess\PropertyPath` | done | — | [semantics](#the-path-is-parsed-by-symfonys-own-parser-not-by-splitting-on-dots) |
+| Feature | Ports | Status | Blocked by | Detail |
+| --- | --- | --- | --- | --- |
+| [`__construct(array $recordPathMap, ?string $rootStatePath)`](../../../packages/schemas/src/State/ViolationPathTranslator.php) — built by [`Schema::getRecordViolationPathTranslator()`](../../../packages/schemas/src/Concerns/BelongsToRecord.php), over the record path map and the paths it drops beneath a subtree owner | — | done | — | [semantics](#the-state-path-is-rebuilt-from-the-prefix-rather-than-read-off-the-component) |
+| [`translate(string $violationPropertyPath): ?string`](../../../packages/schemas/src/State/ViolationPathTranslator.php) — deepest declared path wins | — | done | — | [semantics](#a-violation-beneath-a-declared-leaf-folds-onto-that-leaf) |
+| The `null` return — a violation no declared path owns | — | done | — | [semantics](#an-unowned-violation-returns-null-so-the-caller-folds-it-at-the-schema-root) |
+| [`translateToErrorPath(string $violationPropertyPath): ?string`](../../../packages/schemas/src/State/ViolationPathTranslator.php) — `translate()`'s answer when the owning component implements [`HasValidationConstraints`](../../../packages/schemas/src/Components/Contracts/HasValidationConstraints.php) or `HasKeyedItems` and the answer is no keyed item's own path, else `null`; the path `validateSchemaRecord()` files a message under | — | done | — | [semantics](#a-message-is-filed-only-under-a-component-that-shows-its-own-errors) |
+| The index arm — `sections[2].heading` → the item key the record's collection holds at key `2` | — | done | — | [semantics](#the-index-is-a-collection-key-not-a-position) |
+| The in-item fold — a violation naming a path the item schema declares nothing for | — | done | — | [semantics](#a-violation-inside-an-item-folds-by-the-same-rule-as-one-at-the-root) |
+| [`HasKeyedItems::getItemKeys()`](../../../packages/schemas/src/Components/Contracts/HasKeyedItems.php) — implemented by [`Repeater`](../forms/repeater.md) | — | done | — | [semantics](#the-index-is-a-collection-key-not-a-position) |
+| [`HasKeyedItems::getItemStatePaths()`](../../../packages/schemas/src/Components/Contracts/HasKeyedItems.php) — implemented by [`Repeater`](../forms/repeater.md) | — | done | — | [semantics](#a-violation-inside-an-item-folds-by-the-same-rule-as-one-at-the-root) |
+| Parsing — `Symfony\Component\PropertyAccess\PropertyPath` | — | done | — | [semantics](#the-path-is-parsed-by-symfonys-own-parser-not-by-splitting-on-dots) |
 
 Coverage: every arm by [`ViolationPathTranslatorTest`](../../../packages/schemas/tests/Unit/State/ViolationPathTranslatorTest.php) (leaf, nested leaf, deepest-wins, fold-onto-owner, no-prefix, the three `null` arms, the index hop over a list key / a sparse key / a string key, the collection's own path, and the five stop conditions — an index naming no item, an in-item path the item declares nothing for, a class-level violation on the item record, a fold onto a declared item path, and a second index nesting inside the item — and `translateToErrorPath()`'s arms: a constrained field, a keyed item, a component showing no errors, the four `null` paths, the three shapes that stop at an item's own path, an item field taking the remainder, and the collection's own path); end-to-end against real Doctrine records by [`BelongsToRecordValidationTest`](../../../packages/schemas/tests/Integration/Concerns/BelongsToRecordValidationTest.php), the error placement by [`HasSchemasRecordErrorPlacementTest`](../../../packages/schemas/tests/Integration/Concerns/HasSchemasRecordErrorPlacementTest.php) and, for the index arm over a real `Repeater::relationship()`, by [`RepeaterRecordValidationTest`](../../../packages/forms/tests/Integration/Components/RepeaterRecordValidationTest.php) — which pins the attribution through a deletion and through a reorder, and that both in-item fold shapes are filed at the schema's own path.
 
 ## Semantics
-
-Faithful-in-spirit behaviour a reader would plausibly misread from the source.
-Permanent — these outlive the detail sections above.
 
 ### The state path is rebuilt from the prefix rather than read off the component
 

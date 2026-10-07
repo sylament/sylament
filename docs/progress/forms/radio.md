@@ -1,3 +1,13 @@
+---
+description: The single-choice option field, rendering one native `<input type="radio">` per option inside an `aria-labelledby`-pointed `role="radiogroup"`… (draft)
+ports:
+  - vendor/filament/forms/src/Components/Radio.php
+  - vendor/filament/forms/resources/css/components/radio.css
+  - vendor/filament/support/resources/css/components/input/radio.css
+owns:
+  - packages/forms/src/Components/Radio.php
+  - packages/forms/templates/partials/Radio/
+---
 # Radio (forms)
 
 `Sylament\Forms\Components\Radio` — the single-choice option field, rendering one native `<input type="radio">` per option inside an `aria-labelledby`-pointed `role="radiogroup"` container.
@@ -5,20 +15,10 @@ Extends [`Field`](../../../packages/forms/src/Components/Field.php), casts state
 It is the first field to render an option **set** rather than one control, so it is also the first consumer of support's [`grid()`](../../../packages/support/src/Twig/Extension/GridExtension.php) helper from a field template and the first to ask the wrapper for a [heading label](field.md#labeltag-is-a-boolean-labelasheading) instead of a `<label for>`.
 It ships no JavaScript: the controls are real radios bound with `data-model`, and `ux-live-component` reads and repaints them natively.
 
-**Status:** done — see the [status vocabulary](../README.md#statuses).
-
-Reference — the Filament source this is diffed against:
-
-- [`forms/src/Components/Radio.php`](../../../vendor/filament/forms/src/Components/Radio.php) — the field class and its embedded view
-- [`forms/resources/css/components/radio.css`](../../../vendor/filament/forms/resources/css/components/radio.css) — the option-set chrome
-- [`support/resources/css/components/input/radio.css`](../../../vendor/filament/support/resources/css/components/input/radio.css) — the control chrome, which vendor files a package down
-
 ## Surface
 
 Every point this field adds over `Field`.
 `Field`'s own surface is tracked in [`field.md`](field.md), not here.
-_Blocked by_ names what has to land first.
-_Detail_ links a permanent note in [Semantics](#semantics) / [Divergences](#divergences).
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
@@ -43,8 +43,6 @@ Coverage: one input per option with the shared group name and per-option ids and
 The binding mechanism itself needs a live host, so it is driven through a real round-trip by [`LiveRadioTest`](../../../packages/forms/tests/Integration/LiveRadioTest.php) against the [`RadioForm`](../../../packages/forms/tests/Fixtures/Twig/Components/RadioForm.php) fixture.
 
 ## Semantics
-
-Behaviour that is faithful to Filament but easy to misread here.
 
 ### `inline()` is Radio's own property, not the `CanBeInline` trait
 
@@ -82,9 +80,6 @@ A required `boolean()` radio therefore accepts either answer and rejects only *n
 `RadioTest` pins the **No** case so a future change to the cast cannot quietly turn `required()` into [`accepted()`](can-be-accepted.md).
 
 ## Divergences
-
-Deliberate deviations from Filament, and the reason each holds.
-Provisional ones say what would reverse them.
 
 ### The `checked` attribute is rendered server-side
 

@@ -1,3 +1,11 @@
+---
+description: '`Sylament\Schemas\Components\Grid` is the basic layout component: it holds a column count and a host element, and nothing else. (draft)'
+ports:
+  - vendor/filament/schemas/src/Components/Grid.php
+owns:
+  - packages/schemas/src/Components/Grid.php
+  - packages/schemas/templates/partials/Grid/
+---
 # Grid (schemas)
 
 [`Sylament\Schemas\Components\Grid`](../../../packages/schemas/src/Components/Grid.php) is the basic layout component: it holds a column count and a host element, and nothing else.
@@ -6,17 +14,7 @@ So `Grid::make(3)` contributes a column map and a `<div>` carrying its id and ex
 
 It composes the shared [`EntanglesStateWithSingularRelationship`](entangles-state-with-singular-relationship.md) concern and implements its `CanEntangleWithSingularRelationships` contract, so `Grid::make()->relationship('profile')` binds its children to a to-one Doctrine association; that concern's file carries the status of what is and is not ported.
 
-**Status:** done — see the [status vocabulary](../README.md#statuses).
-
-Reference — the Filament source this is diffed against:
-
-- [`schemas/src/Components/Grid.php`](../../../vendor/filament/schemas/src/Components/Grid.php) — the constructor's column forwarding and the `toEmbeddedHtml()` render path
-
 ## Surface
-
-Every point of this component.
-_Blocked by_ names what has to land first.
-_Detail_ carries a **diverges** link to the permanent note in [Divergences](#divergences), or `—`.
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |

@@ -1,3 +1,10 @@
+---
+description: 'The two-way binding between an action and the schema it was rendered inside: `schemaComponent()` / `schemaContainer()` set it, and the two getters… (draft)'
+ports:
+  - vendor/filament/actions/src/Concerns/BelongsToSchemaComponent.php
+owns:
+  - packages/actions/src/Concerns/BelongsToSchemaComponent.php
+---
 # BelongsToSchemaComponent (actions)
 
 [`Sylament\Actions\Concerns\BelongsToSchemaComponent`](../../../packages/actions/src/Concerns/BelongsToSchemaComponent.php) — the two-way binding between an action and the schema it was rendered inside: `schemaComponent()` / `schemaContainer()` set it, and the two getters resolve it by falling back through the action's own binding, its container's parent component, and its group.
@@ -5,15 +12,7 @@
 Both [`Action`](action.md) and [`ActionGroup`](action-group.md) use it, and both lean on it for the same thing — the `$get` / `$set` utilities injected into evaluated closures.
 It earns a file of its own only because of the divergence below, which constrains the trait rather than either consumer.
 
-**Status:** done — see the [status vocabulary](../README.md#statuses).
-
-Reference — the Filament source this is diffed against:
-
-- [`actions/src/Concerns/BelongsToSchemaComponent.php`](../../../vendor/filament/actions/src/Concerns/BelongsToSchemaComponent.php) — the trait this ports
-
 ## Divergences
-
-Deliberate deviations from Filament — permanent, and the reason they hold.
 
 ### `getSchemaComponentOrFail()` throws where Filament fatals
 

@@ -33,7 +33,7 @@ A lane agent starts in the main checkout, because an agent cannot be started in 
 
 ## 5. Keep lanes disjoint
 
-- Split lanes by the files each owns, and check the claim mechanically before starting: one broad search-and-replace or shared test file reaching into another lane breaks it. Progress-doc tables under `docs/progress/` are the usual conflict.
+- Split lanes by the files each owns, and check the claim mechanically before starting: one broad search-and-replace or shared test file reaching into another lane breaks it. Give each lane the trail files that own its code (`owns:`); README indexes are generated, so a lane never edits them: regenerate after integrating.
 - Exactly one task owns each shared artifact, at the end. Each `packages/*/assets/dist` is committed and CI fails when it differs from a fresh build, so one lane rebuilds `dist` at close-out and the others restore it after their own builds.
 
 ## 6. When PHPStan misbehaves in a worktree

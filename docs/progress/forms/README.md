@@ -5,54 +5,56 @@ Ports [`filament/forms`](../../../vendor/filament/forms) into [`packages/forms`]
 ## Files
 
 <!-- trail-index:start -->
-- [can-allow-html.md](can-allow-html.md)
-- [can-be-accepted.md](can-be-accepted.md)
-- [can-be-autocompleted.md](can-be-autocompleted.md)
-- [can-be-inline.md](can-be-inline.md)
-- [can-be-length-constrained.md](can-be-length-constrained.md)
-- [can-be-native.md](can-be-native.md)
-- [can-be-read-only.md](can-be-read-only.md)
-- [can-be-searchable.md](can-be-searchable.md)
-- [can-be-validated.md](can-be-validated.md)
-- [can-disable-options-when-selected-in-sibling-repeater-items.md](can-disable-options-when-selected-in-sibling-repeater-items.md)
-- [can-disable-options.md](can-disable-options.md)
-- [can-fix-indistinct-state.md](can-fix-indistinct-state.md)
-- [can-limit-items-length.md](can-limit-items-length.md)
-- [checkbox-list.md](checkbox-list.md)
-- [checkbox.md](checkbox.md)
-- [date-comparison.md](date-comparison.md)
-- [date-picker.md](date-picker.md)
-- [date-time-picker.md](date-time-picker.md)
-- [field.md](field.md)
-- [file-upload.md](file-upload.md)
-- [forms-bundle.md](forms-bundle.md)
-- [forms-icon-alias.md](forms-icon-alias.md)
-- [fused-group.md](fused-group.md)
-- [has-affixes.md](has-affixes.md)
-- [has-datalist-options.md](has-datalist-options.md)
-- [has-descriptions.md](has-descriptions.md)
-- [has-enum.md](has-enum.md)
-- [has-extra-input-attributes.md](has-extra-input-attributes.md)
-- [has-grid-direction.md](has-grid-direction.md)
-- [has-options.md](has-options.md)
-- [has-relationship.md](has-relationship.md)
-- [has-step.md](has-step.md)
-- [hidden.md](hidden.md)
-- [key-value.md](key-value.md)
-- [probes-records.md](probes-records.md)
-- [radio.md](radio.md)
-- [repeater-relationship.md](repeater-relationship.md)
-- [repeater.md](repeater.md)
-- [select.md](select.md)
-- [styles.md](styles.md)
-- [tags-input.md](tags-input.md)
-- [temporary-uploads.md](temporary-uploads.md)
-- [text-input.md](text-input.md)
-- [textarea.md](textarea.md)
-- [time-picker.md](time-picker.md)
-- [toggle-buttons.md](toggle-buttons.md)
-- [toggle.md](toggle.md)
-- [view-field.md](view-field.md)
+| File | Status | Open | Ports | Description |
+| --- | --- | --- | --- | --- |
+| [can-allow-html.md](can-allow-html.md) | done | — | `Components/Concerns/CanAllowHtml.php`, `Components/CheckboxList.php`, `Components/Select.php` | The `allowHtml()` / `isHtmlAllowed()` switch that lets a string option label render raw on CheckboxList and Select. |
+| [can-be-accepted.md](can-be-accepted.md) | done | — | `Components/Concerns/CanBeAccepted.php` | The `accepted()` / `declined()` concern Checkbox and Toggle compose, registering an IsTrue or IsFalse constraint. |
+| [can-be-autocompleted.md](can-be-autocompleted.md) | done | — | `Components/Concerns/CanBeAutocompleted.php` | The `autocomplete()` / `getAutocomplete()` concern behind the native `autocomplete` attribute of TextInput and Textarea. |
+| [can-be-inline.md](can-be-inline.md) | done | — | `Components/Concerns/CanBeInline.php` | The boolean fields' layout concern, whose `inline()` / `isInline()` pair decides whether the control sits beside its label text or above it. |
+| [can-be-length-constrained.md](can-be-length-constrained.md) | done | — | `Components/Concerns/CanBeLengthConstrained.php`, `Components/Contracts/CanBeLengthConstrained.php`, `Components/Contracts/CanHaveNumericState.php` | The `length()` / `maxLength()` / `minLength()` concern of TextInput and Textarea, its `Length` constraint builder and its contract. |
+| [can-be-native.md](can-be-native.md) | in progress | 1 blocked | `Components/Concerns/CanBeNative.php`, `Components/Select.php`, `Components/DateTimePicker.php` | The `native()` / `isNative()` switch between a field's native browser control and its JavaScript one, on Select and the date pickers. |
+| [can-be-read-only.md](can-be-read-only.md) | done | — | `Components/Concerns/CanBeReadOnly.php` | The `readOnly()` / `readOnlyOn()` / `isReadOnly()` concern behind the native `readonly` attribute of the text fields and date pickers. |
+| [can-be-searchable.md](can-be-searchable.md) | done | — | `Components/Concerns/CanBeSearchable.php`, `Components/Select.php`, `resources/lang/en/components.php` | The searchable switch, its four messages, the search debounce and the label/value switches that Select and CheckboxList compose. |
+| [can-be-validated.md](can-be-validated.md) | done | — | `Components/Concerns/CanBeValidated.php`, `Components/Contracts/HasValidationRules.php`, `Components/Concerns/HasNestedRecursiveValidationRules.php`, `Components/Contracts/HasNestedRecursiveValidationRules.php` | The field-side validation trait on `Field`, its rule-string sugar as Symfony constraints, and the first-party constraints that sugar needs. |
+| [can-disable-options-when-selected-in-sibling-repeater-items.md](can-disable-options-when-selected-in-sibling-repeater-items.md) | done | — | `Components/Concerns/CanDisableOptionsWhenSelectedInSiblingRepeaterItems.php` | The concern that greys out an option another item of the parent repeater already holds, the read half of `distinct()`. |
+| [can-disable-options.md](can-disable-options.md) | done | — | `Components/Concerns/CanDisableOptions.php`, `Components/Contracts/CanDisableOptions.php` | The `disableOptionWhen()` concern and its contract, which filter an option field's map and build the choices its `Choice` constraint validates against. |
+| [can-fix-indistinct-state.md](can-fix-indistinct-state.md) | done | — | `Components/Concerns/CanFixIndistinctState.php` | The repair half of `distinct()`, which takes a value picked in one repeater item away from every sibling item holding it. |
+| [can-limit-items-length.md](can-limit-items-length.md) | done | — | `Components/Concerns/CanLimitItemsLength.php` | The `minItems()` / `maxItems()` item-count bounds and the raw-state `getItemsCount()` of Repeater, CheckboxList and multiple Select. |
+| [checkbox-list.md](checkbox-list.md) | done | — | `Components/CheckboxList.php`, `resources/js/components/checkbox-list.js` | The multi-choice option field, one native checkbox per option inside an `aria-labelledby`-pointed group, with its search filter and bulk-toggle controller. |
+| [checkbox.md](checkbox.md) | done | — | `Components/Checkbox.php` | The boolean field rendering a native `<input type="checkbox">`, with its boolean constraint and its must-be-ticked `required()`. |
+| [date-comparison.md](date-comparison.md) | done | — | `Components/Concerns/CanBeValidated.php`, `Components/DateTimePicker.php` | The `after()` / `before()` date comparison arms of CanBeValidated and the `DateComparison` and `ValidDate` constraints with their validators. |
+| [date-picker.md](date-picker.md) | done | — | `Components/DatePicker.php` | The date-only field: a `DateTimePicker` whose `hasTime()` is a constant `false`. |
+| [date-time-picker.md](date-time-picker.md) | in progress | 9 blocked | `Components/DateTimePicker.php`, `resources/css/components/date-time-picker.css` | The native date-and-time field that DatePicker and TimePicker extend; the surface it adds over Field. |
+| [field.md](field.md) | in progress | 1 in progress · 1 blocked | `Components/Field.php`, `Components/Concerns/CanBeAutofocused.php`, `Components/Concerns/HasExtraFieldWrapperAttributes.php`, `Components/Concerns/HasHelperText.php`, `Components/Concerns/HasHint.php`, `Components/Concerns/HasPlaceholder.php`, `resources/views/components/field-wrapper.blade.php` | The abstract base every user-instantiable form field extends, with its field wrapper and the field concerns it composes. |
+| [file-upload.md](file-upload.md) | in progress | 4 in progress · 1 blocked | `resources/css/components/file-upload.css`, `Components/BaseFileUpload.php`, `Components/Concerns/HasUploadingMessage.php`, `Components/FileUpload.php`, `vendor/filament/schemas/src/Concerns/RestrictsFileUploadsToSchemaComponents.php` | BaseFileUpload, the upload lifecycle from browser upload to stored path, and FileUpload, its FilePond field, image editor and stylesheet |
+| [forms-bundle.md](forms-bundle.md) | in progress | 2 blocked · 2 todo | `FormsServiceProvider.php`, `FakerProvider.php`, `resources/js/components/select.js`, `vendor/filament/support/resources/js/utilities/select.js`, `resources/js/components/file-upload.js` | The forms bundle class and its service and asset wiring, plus the select, repeater and file-upload controllers and the shared scripts of the forms workspace. |
+| [forms-icon-alias.md](forms-icon-alias.md) | in progress | 3 blocked | `View/FormsIconAlias.php` | The overridable icon-slot names the forms package exposes, as `FormsIconAlias` constants. |
+| [fused-group.md](fused-group.md) | in progress | 3 todo | `vendor/filament/schemas/src/Components/FusedGroup.php`, `vendor/filament/schemas/src/Concerns/HasFieldWrapper.php`, `resources/views/components/plain-field-wrapper.blade.php`, `vendor/filament/schemas/resources/css/components/fused-group.css` | The container fusing several controls into one bordered box under a single label, rendered through forms' `FieldWrapper` with its children's chrome off. |
+| [has-affixes.md](has-affixes.md) | done | — | `Components/Concerns/HasAffixes.php`, `Components/Contracts/HasAffixes.php` | The prefix/suffix surface of the text-like controls and its contract: affix labels, icons and their colours, affix actions and the inline flags. |
+| [has-datalist-options.md](has-datalist-options.md) | done | — | `Components/Concerns/HasDatalistOptions.php` | The concern behind the native `<datalist>`, the `datalist()` setter and the `getDatalistOptions()` reader the field templates render suggestions from. |
+| [has-descriptions.md](has-descriptions.md) | done | — | `Components/Concerns/HasDescriptions.php` | The per-option description map of Radio and CheckboxList: a literal array, a closure, or a map derived from the enum cases. |
+| [has-enum.md](has-enum.md) | done | — | `Components/Concerns/HasEnum.php`, `Components/Field.php`, `Components/Select.php`, `Components/ToggleButtons.php`, `Components/Concerns/CanBeValidated.php` | The enum seam on every field: `enum()` / `getEnum()` and the field-tier enum state cast they drive, swapped for the array cast under `multiple()`. |
+| [has-extra-input-attributes.md](has-extra-input-attributes.md) | done | — | `Components/Concerns/HasExtraInputAttributes.php` | The `extraInputAttributes()` escape hatch for attributes on a field's control element, and the precedence the field templates give it. |
+| [has-grid-direction.md](has-grid-direction.md) | done | — | `Components/Concerns/HasGridDirection.php` | The `gridDirection()` declaration deciding whether Radio, CheckboxList and ToggleButtons options flow across the grid's columns or down them. |
+| [has-options.md](has-options.md) | done | — | `Components/Concerns/HasOptions.php` | The option map the option-shaped fields are configured with: a literal array, a closure or an enum class-string, plus the state templates compare against. |
+| [has-relationship.md](has-relationship.md) | done | — | `Components/Select.php`, `Components/Concerns/HasPivotData.php` | `HasRelationship`, the Doctrine association arm `Select` and `CheckboxList` share, with `Select`'s relationship search, label and ignore-record arms |
+| [has-step.md](has-step.md) | done | — | `Components/Concerns/HasStep.php`, `Components/TextInput.php`, `Components/DateTimePicker.php` | The concern behind the native `step` attribute: the `step()` setter and the `getStep()` reader the control templates emit from. |
+| [hidden.md](hidden.md) | done | — | `Components/Hidden.php`, `docs/21-hidden.md` | The `Hidden` field, which holds a value in one bare `<input type="hidden">` without showing one. |
+| [key-value.md](key-value.md) | in progress | 1 blocked | `Components/KeyValue.php`, `vendor/filament/schemas/src/Components/StateCasts/KeyValueStateCast.php`, `resources/js/components/key-value.js`, `resources/css/components/key-value.css`, `vendor/filament/support/src/Concerns/HasReorderAnimationDuration.php` | The map-backed key/value field and its state cast, with rows added, removed and reordered through mounted actions. |
+| [probes-records.md](probes-records.md) | done | — | `Components/Concerns/CanBeValidated.php` | The data-layer validation arms `unique()` and `exists()`, their `UniqueValue` and `ExistingValue` constraints and the DQL probe their validators share. |
+| [radio.md](radio.md) | done | — | `Components/Radio.php` | The single-choice option field, one native radio input per option inside an `aria-labelledby`-pointed `role="radiogroup"` container. |
+| [repeater-relationship.md](repeater-relationship.md) | in progress | 2 todo | `Components/Repeater.php` | `Repeater::relationship()`: a Doctrine collection mapped item by item, its fill, save, order and mutate arms, and relation-backed fields inside an item |
+| [repeater.md](repeater.md) | in progress | 1 blocked | `Components/Repeater.php`, `Components/Repeater/TableColumn.php`, `Components/Concerns/CanBeCloned.php`, `Components/Concerns/CanGenerateUuids.php`, `Components/Concerns/HasExtraItemActions.php`, `helpers.php`, `vendor/filament/schemas/src/Components/Concerns/HasContainerGridLayout.php`, `vendor/filament/support/src/Concerns/HasReorderAnimationDuration.php` | The repeatable field over a plain array, its item pipeline, structural actions, table mode and value-object items; relationship() has its own file. |
+| [select.md](select.md) | in progress | 1 todo | `Components/Select.php`, `Components/Concerns/CanSelectPlaceholder.php`, `Components/Concerns/CanBePreloaded.php`, `Components/Concerns/HasLoadingMessage.php`, `vendor/filament/support/resources/js/utilities/select.js`, `resources/js/components/select.js`, `resources/lang/en/components.php` | The select field over a static option map, an enum or a Doctrine association, rendered as the native `<select>` or as the ported JS control. |
+| [styles.md](styles.md) | in progress | 7 in progress · 4 blocked | `resources/css/components/builder.css`, `resources/css/components/checkbox-list.css`, `resources/css/components/code-editor.css`, `resources/css/components/color-picker.css`, `resources/css/components/date-time-picker.css`, `resources/css/components/field.css`, `resources/css/components/file-upload/filepond-plugin-media-preview.css`, `resources/css/components/markdown-editor.css`, `resources/css/components/modal-table-select.css`, `resources/css/components/radio.css`, `resources/css/components/repeater.css`, `resources/css/components/rich-editor.css`, `resources/css/components/select.css`, `resources/css/components/slider.css`, `resources/css/components/tags-input.css`, `resources/css/components/text-input.css`, `resources/css/components/textarea.css`, `resources/css/components/toggle-buttons.css`, `vendor/filament/support/resources/css/components/input/checkbox.css`, `vendor/filament/support/resources/css/components/input/index.css`, `vendor/filament/support/resources/css/components/input/one-time-code.css`, `vendor/filament/support/resources/css/components/input/radio.css`, `vendor/filament/support/resources/css/components/input/select.css`, `vendor/filament/support/resources/css/components/toggle.css` | The forms stylesheets no component file owns, the Filament forms and support stylesheets they port, and the forms stylesheets with no port yet. |
+| [tags-input.md](tags-input.md) | in progress | 1 blocked | `Components/TagsInput.php`, `resources/js/components/tags-input.js`, `resources/css/components/tags-input.css` | The free-text tag list field, an unbound text box plus a client-owned chip list written through the live component's value store. |
+| [temporary-uploads.md](temporary-uploads.md) | done | — | — | The temporary-upload store and its value object, which hold a browser upload behind a signed token between its request and the form's save. |
+| [text-input.md](text-input.md) | in progress | 2 blocked | `Components/TextInput.php`, `Components/TextInput/Actions/`, `Components/Concerns/CanBeAutocapitalized.php`, `Components/Concerns/HasInputMode.php` | The single-line text field, with its type sugar, value bounds, reveal and copy affix actions, and trim and strip state hooks. |
+| [textarea.md](textarea.md) | done | — | `Components/Textarea.php`, `Components/Concerns/CanDisableGrammarly.php`, `resources/js/components/textarea.js` | The multi-line text field, with its `rows` / `cols` sizing and the autosize controller. |
+| [time-picker.md](time-picker.md) | done | — | `Components/TimePicker.php` | The time-only field: a `DateTimePicker` whose `hasDate()` is a constant `false`. |
+| [toggle-buttons.md](toggle-buttons.md) | in progress | 3 todo | `Components/ToggleButtons.php`, `Components/Concerns/HasColors.php`, `Components/Concerns/HasIcons.php`, `Components/Concerns/HasTooltips.php` | The option field whose controls are buttons, a hidden input under a `sy-btn` label per option, and the colour, icon and tooltip maps only it composes. |
+| [toggle.md](toggle.md) | done | — | `Components/Toggle.php`, `Components/Concerns/HasToggleColors.php`, `Components/Concerns/HasToggleIcons.php` | The boolean switch field, a styled native checkbox, with the on/off icon and colour concerns it shares with ToggleColumn. |
+| [view-field.md](view-field.md) | done | — | `Components/ViewField.php`, `vendor/filament/support/src/Components/ViewComponent.php`, `docs/22-custom-fields.md` | The escape-hatch field whose entire body is a Twig template the user writes, with a fail-fast guard for a missing template. |
 <!-- trail-index:end -->
 
 ## Unported

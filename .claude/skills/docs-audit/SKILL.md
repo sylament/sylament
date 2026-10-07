@@ -7,11 +7,12 @@ description: Use when closing a milestone or epic, to check that CLAUDE.md, the 
 `composer test` already runs the mechanical half on every change:
 - `InstructionFilesTest` checks budgets, anchored globs, the rule index and that there is no history.
 - `DocumentationFilesTest` checks links and anchors, the paths and scripts the instruction files name, and that no trail file is orphaned.
+- `TrailFilesTest` checks the trail's frontmatter, rows and ownership, that the README indexes are current, and that no trail file passes 90 KB.
 
 This skill is the judgment half: are the sentences still true, and what did the milestone add that nothing states yet?
 
 1. **Make the mechanical half green first.** A broken link or a stale glob is not worth an agent's judgment.
-   `vendor/bin/pest -c packages/schemas/phpunit.dist.xml --test-directory=packages/schemas/tests packages/schemas/tests/Architecture/InstructionFilesTest.php packages/schemas/tests/Architecture/DocumentationFilesTest.php`
+   `vendor/bin/pest -c packages/schemas/phpunit.dist.xml --test-directory=packages/schemas/tests packages/schemas/tests/Architecture/InstructionFilesTest.php packages/schemas/tests/Architecture/DocumentationFilesTest.php packages/schemas/tests/Architecture/TrailFilesTest.php`
 2. **Fix the range.**
    - BASE is the commit the milestone started from: its first commit's parent, or `git merge-base main HEAD` on a milestone branch.
    - HEAD is the milestone's last commit.
@@ -19,7 +20,7 @@ This skill is the judgment half: are the sentences still true, and what did the 
 3. **Map each changed file to everything that documents it:**
    - the rules whose `paths:` match it (the "Rule files" index in `CLAUDE.md` lists every glob)
    - the skills that name it or the commands it changes
-   - its component's trail file, `docs/progress/<pkg>/<component>.md`, found through the package README
+   - the trail file whose `owns:` covers it (`grep -rlF -- '- <path>' docs/progress`, or the nearest directory entry)
    - the `docs/internals/` file that explains its subsystem
    - `CLAUDE.md` itself, when the change touches a command, a gate, the map or a package's dependencies
 4. **Fan out, one agent per affected file.** Use a Workflow: a cheaper model maps, a strong one verifies. Each agent:

@@ -5,47 +5,49 @@ Ports [`filament/tables`](../../../vendor/filament/tables) into [`packages/table
 ## Files
 
 <!-- trail-index:start -->
-- [base-filter.md](base-filter.md)
-- [can-aggregate-related-records.md](can-aggregate-related-records.md)
-- [can-defer-loading.md](can-defer-loading.md)
-- [can-paginate-records.md](can-paginate-records.md)
-- [can-persist-table-state.md](can-persist-table-state.md)
-- [can-search-records.md](can-search-records.md)
-- [can-sort-records.md](can-sort-records.md)
-- [checkbox-column.md](checkbox-column.md)
-- [color-column.md](color-column.md)
-- [column-manager.md](column-manager.md)
-- [column.md](column.md)
-- [filter.md](filter.md)
-- [grouping.md](grouping.md)
-- [has-actions.md](has-actions.md)
-- [has-cell-state.md](has-cell-state.md)
-- [has-columns.md](has-columns.md)
-- [has-empty-state.md](has-empty-state.md)
-- [has-filters.md](has-filters.md)
-- [has-query.md](has-query.md)
-- [has-table.md](has-table.md)
-- [host-can-paginate-records.md](host-can-paginate-records.md)
-- [host-can-reorder-records.md](host-can-reorder-records.md)
-- [host-can-search-records.md](host-can-search-records.md)
-- [host-can-sort-records.md](host-can-sort-records.md)
-- [host-has-bulk-actions.md](host-has-bulk-actions.md)
-- [host-has-filters.md](host-has-filters.md)
-- [icon-column.md](icon-column.md)
-- [image-column.md](image-column.md)
-- [indicator.md](indicator.md)
-- [interacts-with-table-query.md](interacts-with-table-query.md)
-- [interacts-with-table.md](interacts-with-table.md)
-- [select-column.md](select-column.md)
-- [select-filter.md](select-filter.md)
-- [summarizer.md](summarizer.md)
-- [table.md](table.md)
-- [tables-bundle.md](tables-bundle.md)
-- [ternary-filter.md](ternary-filter.md)
-- [text-column.md](text-column.md)
-- [text-input-column.md](text-input-column.md)
-- [toggle-column.md](toggle-column.md)
-- [view-column.md](view-column.md)
+| File | Status | Open | Ports | Description |
+| --- | --- | --- | --- | --- |
+| [base-filter.md](base-filter.md) | done | — | `Filters/BaseFilter.php`, `Filters/Concerns/BelongsToTable.php`, `Filters/Concerns/CanBeHidden.php`, `Filters/Concerns/CanResetState.php`, `Filters/Concerns/CanSpanColumns.php`, `Filters/Concerns/HasColumns.php`, `Filters/Concerns/HasDefaultState.php`, `Filters/Concerns/HasIndicators.php`, `Filters/Concerns/HasLabel.php`, `Filters/Concerns/HasName.php`, `Filters/Concerns/HasSchema.php`, `Filters/Concerns/InteractsWithTableQuery.php` | The root object of the filter tier: `BaseFilter` and the concerns carrying a filter's identity, visibility, state, schema and query application. |
+| [can-aggregate-related-records.md](can-aggregate-related-records.md) | done | — | `vendor/filament/support/src/Concerns/CanAggregateRelatedModels.php` | The column's relationship aggregate declarations and the declaration its cell reads. |
+| [can-defer-loading.md](can-defer-loading.md) | done | — | `Table/Concerns/CanDeferLoading.php`, `Table/Concerns/CanPollRecords.php`, `Concerns/CanDeferLoading.php` | The table's deferred first load and polling interval, and the host flag and action that close the deferred window. |
+| [can-paginate-records.md](can-paginate-records.md) | in progress | 1 blocked · 2 todo | `Table/Concerns/CanPaginateRecords.php`, `Enums/PaginationMode.php` | The table's pagination settings — page options, the default page size, extreme links, the pagination mode and its enum. |
+| [can-persist-table-state.md](can-persist-table-state.md) | in progress | 1 blocked | `Concerns/InteractsWithTable.php`, `Table/Concerns/CanPersistInSession.php` | The host trait that remembers a table's browsing state in the session, and the table's `persistInSession()` shortcut over its flags. |
+| [can-search-records.md](can-search-records.md) | in progress | 1 in progress · 1 todo | `Table/Concerns/CanSearchRecords.php`, `resources/views/components/search-field.blade.php`, `resources/views/index.blade.php`, `vendor/filament/support/resources/css/components/input/wrapper.css`, `vendor/filament/support/resources/css/components/input/index.css` | The table's search configuration: global and per-column search, the search chrome, the search field component and the per-column search row |
+| [can-sort-records.md](can-sort-records.md) | in progress | 1 blocked | `Table/Concerns/CanSortRecords.php` | The table's sort settings — the sortable-column resolver, the default sort and its tiebreaker, and the sort's session flag. |
+| [checkbox-column.md](checkbox-column.md) | in progress | 1 in progress | `Columns/CheckboxColumn.php`, `resources/css/columns/checkbox.css` | The editable `CheckboxColumn`, whose checkbox cell writes a boolean back onto the record. |
+| [color-column.md](color-column.md) | done | — | `Columns/ColorColumn.php`, `resources/css/columns/color.css` | The swatch column, one sanitized `background-color` square per state value, optionally copyable or linked. |
+| [column-manager.md](column-manager.md) | in progress | 3 in progress · 1 blocked | `Table/Concerns/HasColumnManager.php`, `Concerns/HasColumnManager.php`, `Enums/ColumnManagerLayout.php`, `Enums/ColumnManagerResetActionPosition.php`, `resources/views/components/column-manager/index.blade.php`, `resources/views/components/column-manager/content.blade.php`, `resources/js/components/column-manager.js`, `resources/css/column-manager.css` | The chrome that lets a user hide, show and reorder a table's columns, and the state behind it, across the table and host tiers. |
+| [column.md](column.md) | in progress | 2 in progress · 1 todo | `Columns/Column.php`, `Columns/Concerns/BelongsToTable.php`, `Columns/Concerns/CanBeDisabled.php`, `Columns/Concerns/CanBeHidden.php`, `Columns/Concerns/CanBeHiddenResponsively.php`, `Columns/Concerns/CanBeInline.php`, `Columns/Concerns/CanBeToggled.php`, `Columns/Concerns/CanCallAction.php`, `Columns/Concerns/CanOpenUrl.php`, `Columns/Concerns/HasExtraCellAttributes.php`, `Columns/Concerns/HasExtraHeaderAttributes.php`, `Columns/Concerns/HasLabel.php`, `Columns/Concerns/HasName.php`, `Columns/Concerns/HasRecord.php`, `Columns/Concerns/HasRowLoopObject.php`, `Columns/Concerns/HasTooltip.php`, `Columns/Concerns/InteractsWithTableQuery.php`, `resources/views/index.blade.php`, `vendor/filament/support/src/Concerns/CanGrow.php`, `vendor/filament/support/src/Concerns/CanWrapHeader.php`, `vendor/filament/support/src/Concerns/HasCellState.php`, `vendor/filament/support/src/Concerns/HasWidth.php` | The column base class: a `ViewComponent` named after the record path it reads, bound to a `Table` and handed one record at a time. |
+| [filter.md](filter.md) | done | — | `Filters/Filter.php` | The checkbox filter, a `BaseFilter` whose form is one boolean `isActive` field that gates its query pass and its indicator. |
+| [grouping.md](grouping.md) | in progress | 2 todo | `Grouping/Group.php`, `Grouping/Concerns/BelongsToTable.php`, `Table/Concerns/CanGroupRecords.php`, `Concerns/CanGroupRecords.php`, `Concerns/InteractsWithTable.php`, `Concerns/CanSortRecords.php`, `Concerns/HasRecords.php`, `Table/Concerns/CanPaginateRecords.php`, `vendor/filament/filament/src/Resources/Pages/ListRecords.php`, `vendor/filament/filament/src/Resources/Pages/ManageRelatedRecords.php`, `resources/views/index.blade.php`, `resources/js/components/table.js`, `resources/css/row.css`, `resources/css/cell.css`, `resources/css/container.css` | Record grouping: the `Group` value object, the table and host grouping settings and state, and the selector and group header row that render them. |
+| [has-actions.md](has-actions.md) | in progress | 2 in progress · 4 todo | `Table/Concerns/HasActions.php`, `Table/Concerns/HasRecordActions.php`, `Table/Concerns/HasToolbarActions.php`, `Table/Concerns/HasHeaderActions.php`, `Table/Concerns/HasBulkActions.php`, `Enums/RecordActionsPosition.php`, `Actions/HeaderActionsPosition.php`, `Enums/RecordCheckboxPosition.php` | The table's action sets: the flat action maps, record, header, toolbar and bulk actions, and the selection settings and chrome |
+| [has-cell-state.md](has-cell-state.md) | done | — | `vendor/filament/support/src/Concerns/HasCellState.php` | The column's cell state — the record read by dotted path, the per-record cache, the default, the split and the distinct list. |
+| [has-columns.md](has-columns.md) | in progress | 1 blocked | `Concerns/HasColumns.php`, `Columns/Concerns/CanBeValidated.php`, `Columns/Concerns/CanUpdateState.php`, `Columns/Contracts/Editable.php`, `resources/js/components/columns/checkbox.js`, `resources/js/components/columns/select.js`, `resources/js/components/columns/text-input.js`, `resources/js/components/columns/toggle.js` | The host-tier HasColumns live actions and the column traits behind an editable cell: the write, its validation, the refusal bag and the repaint. |
+| [has-empty-state.md](has-empty-state.md) | done | — | `Table/Concerns/HasEmptyState.php`, `resources/css/empty-state.css` | The table's empty state: its heading, description, icon and actions, the whole-block replacement, and the block the table partial renders |
+| [has-filters.md](has-filters.md) | in progress | 2 in progress · 1 blocked · 2 todo | `Table/Concerns/HasFilters.php`, `Table/Concerns/HasFilterIndicators.php`, `Enums/FiltersLayout.php`, `Enums/FiltersResetActionPosition.php`, `resources/views/components/filters.blade.php` | The table's filters surface: `HasFilters`, the filter indicators, the layouts and the filters chrome. |
+| [has-query.md](has-query.md) | done | — | `Table/Concerns/HasQuery.php`, `Table/Concerns/HasRecords.php` | The table's Doctrine query lane: HasQuery, the relation-scoped table, and the relation arm's path resolution, search, sort and aggregate shapes. |
+| [has-table.md](has-table.md) | in progress | 1 blocked · 1 todo | `Concerns/InteractsWithTable.php`, `Concerns/HasRecords.php`, `Concerns/CanPollRecords.php`, `Concerns/HasActions.php`, `Concerns/HasRecordAction.php`, `Concerns/CanBeStriped.php`, `Concerns/HasEmptyState.php`, `Concerns/HasContent.php`, `Concerns/HasHeader.php` | The tables host trait `HasTable`: building the table, resolving and keying its records, the all-records count, the query seams, the host id and URL hooks |
+| [host-can-paginate-records.md](host-can-paginate-records.md) | done | — | `Concerns/CanPaginateRecords.php` | The host trait `CanPaginateRecords` that `HasTable` composes: the page and per-page state, `gotoTablePage()` and the query lane's page read. |
+| [host-can-reorder-records.md](host-can-reorder-records.md) | done | — | `Concerns/CanReorderRecords.php` | The host trait `CanReorderRecords` that `HasTable` composes: the reorder mode flag, its toggle and the `reorderTable()` write. |
+| [host-can-search-records.md](host-can-search-records.md) | done | — | `Concerns/CanSearchRecords.php` | The host trait that holds the global search term and the per-column terms, and applies both to the query lane's builder. |
+| [host-can-sort-records.md](host-can-sort-records.md) | done | — | `Concerns/CanSortRecords.php` | The host trait `CanSortRecords` that `HasTable` composes: the sort state, `sortTable()` and the ordering the query lane composes. |
+| [host-has-bulk-actions.md](host-has-bulk-actions.md) | in progress | 1 blocked | `Concerns/HasBulkActions.php` | The host trait `HasBulkActions` that `HasTable` composes: the selection props, the selected-records resolution and select-all. |
+| [host-has-filters.md](host-has-filters.md) | in progress | 2 blocked | `Concerns/HasFilters.php`, `Concerns/InteractsWithTable.php` | The host trait `Concerns\HasFilters`: the applied and deferred filter bags, the filters form, and the live actions that apply, remove and reset filters. |
+| [icon-column.md](icon-column.md) | done | — | `Columns/IconColumn.php`, `View/Components/Columns/IconColumnComponent/IconComponent.php`, `resources/css/columns/icon.css` | The icon column, one coloured icon per state value with a screen-reader name, and a boolean mode that renders a check or a cross. |
+| [image-column.md](image-column.md) | in progress | 1 in progress | `Columns/ImageColumn.php`, `resources/css/columns/image.css` | The `ImageColumn`, which renders its cell state as `<img>` elements from URLs, `data:` URIs or storage paths the filesystem registry mints URLs for. |
+| [indicator.md](indicator.md) | done | — | `Filters/Indicator.php` | One chip in the active-filters row — its label, colour, removability and removal field — and the carrier pairing it with its removal action. |
+| [interacts-with-table-query.md](interacts-with-table-query.md) | done | — | `Columns/Concerns/CanBeSearchable.php`, `Columns/Concerns/CanBeSortable.php`, `Columns/Concerns/InteractsWithTableQuery.php` | How a column sorts, searches and fetch-joins: the sortable and searchable declarations and the query seams that apply them. |
+| [interacts-with-table.md](interacts-with-table.md) | in progress | 1 blocked · 2 todo | `Contracts/HasTable.php` | The contract `Contracts\InteractsWithTable`, the host methods a table, its columns, filters and templates and the actions package may call back into. |
+| [select-column.md](select-column.md) | in progress | 9 blocked | `Columns/SelectColumn.php`, `resources/css/columns/select.css` | The editable select column, a native `<select>` whose choice writes the option key back onto the record. |
+| [select-filter.md](select-filter.md) | in progress | 3 in progress · 3 blocked · 1 todo | `Filters/SelectFilter.php`, `Filters/Concerns/HasOptions.php`, `Filters/Concerns/HasPlaceholder.php`, `Filters/Concerns/HasRelationship.php` | The option-list filter: a `BaseFilter` whose form is one `Select` and whose query pass is a bound equality or `IN` on a column the developer names. |
+| [summarizer.md](summarizer.md) | in progress | 1 in progress · 1 blocked · 1 todo | `Columns/Summarizers/Summarizer.php`, `Columns/Summarizers/Average.php`, `Columns/Summarizers/Count.php`, `Columns/Summarizers/Range.php`, `Columns/Summarizers/Sum.php`, `Columns/Summarizers/Values.php`, `Columns/Summarizers/Concerns/BelongsToColumn.php`, `Columns/Summarizers/Concerns/CanBeHidden.php`, `Columns/Summarizers/Concerns/CanFormatState.php`, `Columns/Summarizers/Concerns/HasLabel.php`, `Columns/Summarizers/Concerns/InteractsWithTableQuery.php`, `Columns/Concerns/CanBeSummarized.php`, `Table/Concerns/CanSummarizeRecords.php`, `Concerns/CanSummarizeRecords.php`, `resources/views/components/summary/index.blade.php`, `resources/views/components/summary/row.blade.php`, `resources/views/index.blade.php`, `resources/css/columns/summaries/icon-count.css`, `resources/css/columns/summaries/range.css`, `resources/css/columns/summaries/text.css`, `resources/css/columns/summaries/values.css` | The figures under a table: the summarizer classes, the column, table and host members that feed them, and the summary rows the partial renders |
+| [table.md](table.md) | in progress | 1 in progress · 6 todo | `Table.php`, `Table/Concerns/BelongsToLivewire.php`, `Table/Concerns/HasRecords.php`, `Table/Concerns/HasColumns.php`, `Table/Concerns/CanBeStriped.php`, `Table/Concerns/CanReorderRecords.php`, `Table/Concerns/HasQueryStringIdentifier.php`, `Table/Concerns/HasRecordAction.php`, `Table/Concerns/HasRecordClasses.php`, `Table/Concerns/HasRecordUrl.php`, `Table/Concerns/HasHeader.php`, `Table/Concerns/HasHeadings.php`, `resources/views/index.blade.php`, `resources/js/components/table.js`, `resources/css/container.css`, `resources/css/table.css`, `resources/css/header-cell.css`, `resources/css/cell.css`, `resources/css/row.css`, `resources/css/actions.css` | The tables root object: the record data source, labels and keys, the columns, the row and header settings, and the partial that renders the table |
+| [tables-bundle.md](tables-bundle.md) | in progress | 3 in progress · 2 blocked · 2 todo | `TablesServiceProvider.php`, `View/TablesIconAlias.php`, `resources/js/index.js` | The tables bundle class, its renderTable() Twig extension, the TablesIconAlias slots, the package manifest and the asset registration. |
+| [ternary-filter.md](ternary-filter.md) | in progress | 2 in progress | `Filters/TernaryFilter.php` | The yes / no / either filter: a `SelectFilter` with a two-option boolean field and a three-arm query dispatcher. |
+| [text-column.md](text-column.md) | in progress | 1 blocked · 2 todo | `Columns/TextColumn.php`, `Columns/Concerns/CanFormatState.php`, `Columns/Concerns/HasColor.php`, `Columns/Concerns/HasIcon.php`, `Columns/Concerns/HasIconColor.php`, `Columns/Concerns/HasDescription.php`, `View/Components/Columns/TextColumnComponent/ItemComponent.php`, `View/Components/Columns/TextColumnComponent/ItemComponent/IconComponent.php`, `resources/css/columns/text.css`, `vendor/filament/support/src/Concerns/CanConfigureCommonMark.php`, `vendor/filament/support/src/Concerns/HasLineClamp.php` | The text column and its state pipeline, from date, number, money and HTML formatting to badges, icons, colours, descriptions and lists. |
+| [text-input-column.md](text-input-column.md) | in progress | 1 blocked · 2 todo | `Columns/TextInputColumn.php`, `resources/css/columns/text-input.css` | The editable `TextInputColumn`, whose text-input cell writes the typed value back onto the record on `change`. |
+| [toggle-column.md](toggle-column.md) | in progress | 1 in progress | `Columns/ToggleColumn.php`, `resources/css/columns/toggle.css` | The editable `ToggleColumn`, whose switch cell writes a boolean back onto the record. |
+| [view-column.md](view-column.md) | done | — | `Columns/ViewColumn.php` | The `ViewColumn` escape hatch, whose entire cell body is a Twig template the user writes. |
 <!-- trail-index:end -->
 
 ## Unported

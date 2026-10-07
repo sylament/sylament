@@ -5,10 +5,12 @@ Ports [`filament/notifications`](../../../vendor/filament/notifications) into [`
 ## Files
 
 <!-- trail-index:start -->
-- [notification.md](notification.md)
-- [notifications-bundle.md](notifications-bundle.md)
-- [notifications-icon-alias.md](notifications-icon-alias.md)
-- [notifications.md](notifications.md)
+| File | Status | Open | Ports | Description |
+| --- | --- | --- | --- | --- |
+| [notification.md](notification.md) | in progress | 2 in progress · 3 blocked · 5 todo | `Notification.php`, `Concerns/CanBeInline.php`, `Concerns/HasActions.php`, `Concerns/HasBody.php`, `Concerns/HasDate.php`, `Concerns/HasDuration.php`, `Concerns/HasIcon.php`, `Concerns/HasIconColor.php`, `Concerns/HasId.php`, `Concerns/HasStatus.php`, `Concerns/HasTitle.php`, `View/Components/NotificationComponent.php`, `View/Components/NotificationComponent/IconComponent.php`, `resources/css/notification.css`, `resources/js/components/notification.js` | The notification builder: its concerns, the array round trip, `send()`, the toast markup, its colour policies, stylesheet and Stimulus controller. |
+| [notifications-bundle.md](notifications-bundle.md) | in progress | 2 in progress · 1 blocked · 1 todo | `NotificationsServiceProvider.php`, `composer.json`, `resources/css/index.css`, `resources/js/index.js` | The notifications bundle class, the session and live delivery pair it wires, its asset registration and the package manifest. |
+| [notifications-icon-alias.md](notifications-icon-alias.md) | in progress | 1 blocked | `View/NotificationsIconAlias.php` | The overridable icon aliases the notifications package exposes, ported from Filament's `View\NotificationsIconAlias`. |
+| [notifications.md](notifications.md) | in progress | 1 blocked · 1 todo | `Livewire/Notifications.php`, `resources/views/notifications.blade.php`, `resources/css/notifications.css` | The toast stack `<twig:SylamentNotifications:Notifications />`, placed once in an application layout, with its template and Stimulus controller. |
 <!-- trail-index:end -->
 
 ## Unported

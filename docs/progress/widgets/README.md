@@ -5,7 +5,9 @@ Ports [`filament/widgets`](../../../vendor/filament/widgets) into [`packages/wid
 ## Files
 
 <!-- trail-index:start -->
-- [widgets-bundle.md](widgets-bundle.md)
+| File | Status | Open | Ports | Description |
+| --- | --- | --- | --- | --- |
+| [widgets-bundle.md](widgets-bundle.md) | in progress | 2 in progress · 4 todo | `WidgetsServiceProvider.php`, `Commands/MakeWidgetCommand.php`, `resources/css/index.css` | The widgets bundle class and the package's stylesheet entry point. |
 <!-- trail-index:end -->
 
 ## Unported

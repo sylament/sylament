@@ -5,33 +5,35 @@ Ports [`filament/filament`](../../../vendor/filament/filament), the package Fila
 ## Files
 
 <!-- trail-index:start -->
-- [assets.md](assets.md)
-- [create-record.md](create-record.md)
-- [custom-pages.md](custom-pages.md)
-- [dashboard.md](dashboard.md)
-- [edit-record.md](edit-record.md)
-- [form-actions.md](form-actions.md)
-- [global-search.md](global-search.md)
-- [has-relation-managers.md](has-relation-managers.md)
-- [has-sub-navigation.md](has-sub-navigation.md)
-- [has-tabs.md](has-tabs.md)
-- [interacts-with-record.md](interacts-with-record.md)
-- [interacts-with-relationship-table.md](interacts-with-relationship-table.md)
-- [layout-templates.md](layout-templates.md)
-- [list-records.md](list-records.md)
-- [manage-related-records.md](manage-related-records.md)
-- [navigation-group.md](navigation-group.md)
-- [navigation-item.md](navigation-item.md)
-- [nested-resources.md](nested-resources.md)
-- [page.md](page.md)
-- [panel.md](panel.md)
-- [relation-group.md](relation-group.md)
-- [relation-manager.md](relation-manager.md)
-- [resource-pages.md](resource-pages.md)
-- [resource.md](resource.md)
-- [routing.md](routing.md)
-- [simple-page.md](simple-page.md)
-- [unsaved-changes-alert.md](unsaved-changes-alert.md)
+| File | Status | Open | Ports | Description |
+| --- | --- | --- | --- | --- |
+| [assets.md](assets.md) | in progress | 2 blocked · 4 todo | `resources/js/stores/sidebar.js`, `resources/js/dark-mode.js`, `resources/js/scroll-sidebar.js`, `resources/js/error-notifications.js`, `resources/js/echo.js`, `resources/js/reset-restored-resource-create-record-pages.js`, `resources/css/base.css`, `resources/css/utilities.css`, `resources/css/components/layout.css`, `resources/css/components/logo.css`, `resources/css/components/sidebar.css`, `resources/css/components/topbar.css`, `resources/css/components/user-menu.css`, `resources/css/components/theme-switcher.css`, `resources/css/components/header.css`, `resources/css/components/page.css`, `resources/css/components/tenant-menu.css` | The @sylament/panels asset workspace: the sidebar and theme Stimulus controllers and the sy-pa-* shell stylesheets compiled into support. |
+| [create-record.md](create-record.md) | in progress | 2 in progress · 2 blocked · 5 todo | `Resources/Pages/CreateRecord.php` | The resource's create page, which binds the resource form to the record class, builds and persists the record, then redirects. |
+| [custom-pages.md](custom-pages.md) | in progress | 5 blocked · 2 todo · unaudited | `Pages/BasePage.php`, `Pages/Page.php`, `Pages/Concerns/InteractsWithHeaderActions.php`, `resources/views/components/page/index.blade.php`, `Resources/Pages/Page.php` | The panel page as a surface a user writes against, with its action and schema hosts, the chrome blocks, header actions and the page-level seams. |
+| [dashboard.md](dashboard.md) | in progress | 1 blocked | `Pages/Dashboard.php` | The dashboard, the one concrete page the package ships, mounted at the panel root. |
+| [edit-record.md](edit-record.md) | in progress | 3 blocked · 7 todo | `Resources/Pages/EditRecord.php` | The resource's edit page: the resource form bound to a resolved record and saved in place. |
+| [form-actions.md](form-actions.md) | in progress | 2 blocked · unaudited | `Pages/Concerns/InteractsWithFormActions.php`, `Resources/Pages/CreateRecord.php`, `Resources/Pages/EditRecord.php`, `Pages/BasePage.php` | The row of buttons below a page's form: InteractsWithFormActions, the form and table template variants, and the record pages' Save, Create and Cancel actions. |
+| [global-search.md](global-search.md) | in progress | 2 blocked · unaudited | `GlobalSearch/GlobalSearchResult.php`, `GlobalSearch/GlobalSearchResults.php`, `Resources/Resource/Concerns/HasGlobalSearch.php`, `GlobalSearch/Providers/Contracts/GlobalSearchProvider.php`, `GlobalSearch/Providers/DefaultGlobalSearchProvider.php`, `Panel/Concerns/HasGlobalSearch.php`, `Livewire/GlobalSearch.php`, `resources/views/livewire/global-search.blade.php` | The topbar search across a panel's resources: the result value objects, the resource concern, the providers, the panel knobs and the live component. |
+| [has-relation-managers.md](has-relation-managers.md) | in progress | 1 in progress · 1 blocked · 1 todo | `Resources/Pages/Concerns/HasRelationManagers.php` | The page half of relation managers: the registrations a resource declares, filtered for the record, and the one component that mounts them. |
+| [has-sub-navigation.md](has-sub-navigation.md) | in progress | 5 blocked · 1 todo | `Pages/Concerns/HasSubNavigation.php`, `Pages/Enums/SubNavigationPosition.php`, `Panel/Concerns/HasSubNavigation.php`, `Resources/Resource/Concerns/HasNavigation.php`, `resources/views/components/page/sub-navigation/`, `resources/css/components/page.css` | The band of sibling pages a page draws beside its content, its three positions and the position ladder, and the item factory that fills it. |
+| [has-tabs.md](has-tabs.md) | in progress | 1 todo | `Resources/Concerns/HasTabs.php`, `Resources/Pages/ListRecords.php` | The record-filter tab strip above a listing: the tabs a host declares, the active one, and the scope it lays over the table query. |
+| [interacts-with-record.md](interacts-with-record.md) | in progress | 3 blocked | `Resources/Pages/Concerns/InteractsWithRecord.php` | The record a resource page is opened on: the route key on the wire, its lazy scoped resolution, the record title and crumb, and the sub-navigation bridge. |
+| [interacts-with-relationship-table.md](interacts-with-relationship-table.md) | in progress | 2 blocked | `Resources/Concerns/InteractsWithRelationshipTable.php`, `Resources/Pages/ManageRelatedRecords.php`, `Resources/RelationManagers/RelationManager.php` | The relationship-table tier: one owner record's association as a table, plus what a related resource answers for it. |
+| [layout-templates.md](layout-templates.md) | in progress | 5 blocked · 3 todo · unaudited | `resources/views/components/layout/index.blade.php`, `resources/views/components/logo.blade.php`, `resources/views/components/sidebar/group.blade.php`, `resources/views/components/sidebar/item.blade.php`, `resources/views/components/theme-switcher/`, `resources/views/components/user-menu.blade.php`, `resources/views/livewire/sidebar.blade.php`, `resources/views/livewire/topbar.blade.php`, `View/PanelsIconAlias.php` | The panel shell's Twig components (layout, topbar, sidebar, logo, theme switcher, user menu) and the panel icon aliases. |
+| [list-records.md](list-records.md) | in progress | 1 in progress · 2 blocked | `Resources/Pages/ListRecords.php` | The resource index page: a live component hosting the table the resource configures, with its table template variant. |
+| [manage-related-records.md](manage-related-records.md) | in progress | 2 blocked | `Resources/Pages/ManageRelatedRecords.php` | ManageRelatedRecords, one owner record's association as a routed page: the sibling of a relation manager and the listing of a nested resource. |
+| [navigation-group.md](navigation-group.md) | in progress | 3 todo | `Navigation/NavigationGroup.php`, `Navigation/Concerns/HasExtraSidebarAttributes.php`, `Navigation/Concerns/HasExtraTopbarAttributes.php` | The sidebar navigation group: label, icon, items, the collapsible pair and the active state. |
+| [navigation-item.md](navigation-item.md) | in progress | 4 todo | `Navigation/NavigationItem.php` | The sidebar navigation item: label, icon, url, badge, sort, group, visibility and active state. |
+| [nested-resources.md](nested-resources.md) | in progress | 2 blocked · 2 todo | `Resources/ParentResourceRegistration.php`, `Resources/Resource/Concerns/BelongsToParent.php`, `Resources/Pages/Concerns/InteractsWithParentRecord.php`, `Resources/Resource/Concerns/CanGenerateUrls.php`, `Resources/Resource/Concerns/HasRoutes.php`, `Resources/Resource/Concerns/HasBreadcrumbs.php` | Resources nested under a parent resource: the registration, parent-scoped reads, nested routes, URLs and attach, and the page chain of ancestor records. |
+| [page.md](page.md) | in progress | 2 blocked · 6 todo · unaudited | `Pages/Page.php`, `Pages/BasePage.php`, `Pages/Concerns/HasRoutes.php`, `Panel/Concerns/HasComponents.php`, `vendor/filament/support/src/Concerns/CanCallHooks.php` | The panel page base Pages\Page: title, heading, navigation statics, routes, breadcrumbs and its registration as a live component. |
+| [panel.md](panel.md) | in progress | 1 blocked · 10 todo · unaudited | `Panel.php`, `Panel/Concerns/HasBrandLogo.php`, `Panel/Concerns/HasBrandName.php`, `Panel/Concerns/HasComponents.php`, `Panel/Concerns/HasId.php`, `Panel/Concerns/HasNavigation.php`, `Panel/Concerns/HasRoutes.php`, `Panel/Concerns/HasSidebar.php`, `PanelProvider.php`, `PanelRegistry.php`, `FilamentManager.php`, `FilamentServiceProvider.php`, `Http/Middleware/SetUpPanel.php` | The panel definition a provider configures, the provider contract, the registry that collects panels, the current-panel lookup and the bundle wiring. |
+| [relation-group.md](relation-group.md) | done | — | `Resources/RelationManagers/RelationGroup.php`, `Resources/RelationManagers/RelationManagerConfiguration.php` | RelationGroup, several relation managers behind one tab, and RelationManagerConfiguration, one manager registration with its mount props. |
+| [relation-manager.md](relation-manager.md) | in progress | 1 in progress · 4 blocked · 1 todo | `Resources/RelationManagers/RelationManager.php`, `Resources/RelationManagers/Concerns/CanAuthorizeAccess.php` | The relation manager, one owner record's association as an embedded live component with its scoped table, its actions and their modals. |
+| [resource-pages.md](resource-pages.md) | in progress | 5 blocked · 3 todo | `Resources/Pages/Page.php` | The base every resource page extends: the resource hop, route registration, breadcrumb trail and host action defaults it adds to the panel page. |
+| [resource.md](resource.md) | in progress | 6 blocked · 5 todo | `Resources/Resource.php`, `Resources/Resource/Concerns/HasLabels.php`, `Resources/Resource/Concerns/HasPages.php`, `Resources/Resource/Concerns/HasRoutes.php`, `Resources/Resource/Concerns/HasNavigation.php`, `Resources/Resource/Concerns/CanGenerateUrls.php`, `Resources/Resource/Concerns/HasAuthorization.php`, `Resources/Resource/Concerns/HasConfiguration.php`, `Resources/Resource/Concerns/BelongsToTenant.php`, `Resources/Resource/Concerns/BelongsToCluster.php`, `Resources/Pages/PageRegistration.php` | The abstract resource base a user extends once per record type, the registry resolving its class-string, its page registrations and the pass collecting it. |
+| [routing.md](routing.md) | in progress | 1 in progress · unaudited | `routes/web.php`, `Pages/Concerns/HasRoutes.php`, `Resources/Resource/Concerns/HasRoutes.php`, `resources/views/components/layout/base.blade.php` | The panel route loader, the page controller every panel route points at, and the document template it renders. |
+| [simple-page.md](simple-page.md) | in progress | 2 blocked · unaudited | `Pages/SimplePage.php`, `Pages/Concerns/HasMaxWidth.php`, `Pages/Concerns/HasTopbar.php`, `Panel/Concerns/HasMaxContentWidth.php`, `vendor/filament/support/src/Enums/Width.php`, `resources/views/components/layout/simple.blade.php`, `resources/views/components/header/simple.blade.php`, `resources/views/components/page/simple.blade.php` | SimplePage, the panel page rendered as a centred card with no sidebar, and the width vocabulary: the Width enum, the sy-width ladder and the panel knobs. |
+| [unsaved-changes-alert.md](unsaved-changes-alert.md) | done | — | `Pages/Concerns/HasUnsavedDataChangesAlert.php`, `Panel/Concerns/HasUnsavedChangesAlerts.php`, `resources/js/unsaved-changes-alert.js`, `resources/views/components/unsaved-action-changes-alert.blade.php` | The browser's "leave site?" prompt on a panel page with unsaved edits or a mounted action, its server marker, the panel knob and the Stimulus guard. |
 <!-- trail-index:end -->
 
 ## Unported

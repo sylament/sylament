@@ -44,6 +44,7 @@ Two principles outrank every rule below; their tests and worked cases are in `do
 | MySQL, PostgreSQL, the mutation gate | `composer test:mysql`, `composer test:postgresql`, `composer test:mutation` (skill: `server-gates`) |
 | one tool | `composer test:static` (PHPStan), `test:lint` (PHP-CS-Fixer), `test:rector`, `test:twig` |
 | apply Rector, PHP-CS-Fixer and Twig-CS-Fixer | `composer format` |
+| regenerate the port-trail indexes | `composer docs:index` |
 | build or watch every asset workspace | `pnpm build`, `pnpm watch` |
 | TypeScript, Biome check, Biome fix | `pnpm test:types`, `pnpm test:lint`, `pnpm format` |
 

@@ -102,7 +102,7 @@ A consumer that needs client-side repainting can write the classes itself, becau
 ### The wrapper carries a hover ring Filament does not
 
 Filament's `.fi-input-wrp` has no `:hover` rule: it goes straight from the resting ring to `focus-within`.
-Ours carries `hover:ring-gray-950/20 dark:hover:ring-white/20`, the pair `.sy-fo-input` and `.sy-fo-select` carried as a divergence from Filament's controls when each painted its own ring, so a text field and a select behave alike and every other wrapped control joins them.
+Ours carries `hover:ring-gray-950/20 dark:hover:ring-white/20`, so a text field, a select and every other wrapped control share one hover.
 It paints only the ring colour, and the invalid arm, a later rule of equal specificity, keeps the danger ring on a hovered invalid field.
 Only the light half does anything: `dark:hover:ring-white/20` is the same value as the resting `dark:ring-white/20`, so the dark hover is inert, and it is kept so both halves of the pair stay visible where a reviewer reads them.
 Deepening the dark shade is not a fix; it would invent a dark hover Filament has no counterpart for.

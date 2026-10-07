@@ -79,7 +79,7 @@ There is no property to hydrate, so there is nothing for a `Wireable` carrier to
 
 What that buys is the absence of a whole bug class.
 A server-held collection has to stay in sync with the screen: closing a toast must tell the server, or the next render morphs it back; adding one costs a round trip; and the two can disagree in between.
-Symfony UX also has no synthesizer equivalent, so the hydration Livewire supplies for free would have to be hand-built.
+Symfony UX's counterpart to a Livewire synthesizer is a tagged `HydrationExtensionInterface` (`supports()`, `hydrate()`, `dehydrate()`), so a server-held collection would also need one written for it rather than the `Wireable` pair `Collection` implements.
 
 Permanent for the toast stack.
 It says nothing about the **database-notifications panel**, which is a separate Livewire component in Filament too, with its own actions host and its own stored state, and is free to be a live component.

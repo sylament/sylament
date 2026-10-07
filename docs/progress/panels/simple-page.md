@@ -80,7 +80,7 @@ The `sy-width-*` name is deliberately shared with schemas' `sy-width-full`: that
 
 [`partials/SimplePage/index.html.twig`](../../../packages/panels/templates/partials/SimplePage/index.html.twig) repeats the base partial's three unsaved-changes `{% set %}` lines and its sentinel block **byte for byte**, including reading `this.getPanel` a second time in the same template.
 That is a deliberate copy, not an oversight: a simple page has no header band, no breadcrumbs and no sub-navigation, so a `{% extends %}` would inherit a chrome whose every element the child would then have to empty, and the two templates would be coupled through blocks that exist only to be blanked.
-What they genuinely share is nine lines, and the alternative — a third partial holding just the guard, included by both — trades a duplicated fragment for an indirection that is harder to read than the fragment.
+What they genuinely share is the guard, and the alternative — a third partial holding just the guard, included by both — trades a duplicated fragment for an indirection that is harder to read than the fragment.
 
 The copy is verbatim on purpose: the two must agree, and a *reworded* copy is what would let them drift.
 If the guard grows a fourth value, both templates change together.

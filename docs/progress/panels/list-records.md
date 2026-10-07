@@ -43,7 +43,7 @@ No test mounts a header action holding an object record on a list page, so the a
 ### `content()` waits on `EmbeddedTable`
 
 Filament's `content()` places the tabs component, the `RESOURCE_PAGES_LIST_RECORDS_TABLE_BEFORE` and `_AFTER` render hooks and an `EmbeddedTable` in one schema.
-Schemas has no `EmbeddedTable` yet, so the [table variant](#the-template-is-required-and-extends-the-chrome) renders the strip and the table directly.
+Schemas has no `EmbeddedTable`, so the [table variant](#the-template-is-required-and-extends-the-chrome) renders the strip and the table directly.
 
 ## Semantics
 

@@ -203,7 +203,7 @@ So every `Panel::configureUsing()` closure Filament runs sees a panel that alrea
 Ours follows the house `make()` shape instead: `Panel::make()` calls `newInstance()` then `configure()`, the same two lines every other Sylament component's factory has, and `id()` is a plain write-once setter.
 The ordering inverts — configuration runs first, the id arrives after — and the cost is narrow but real: a `Panel::configureUsing()` closure that reads `getId()` does not see a different id, it throws, because `HasId::getId()` throws a `LogicException` while no id is set.
 Nothing in-repo does that (the panels suite registers no panel-level `configureUsing()`), so the divergence is recorded rather than fixed.
-Adopting Filament's placement would mean `id()` calling `configure()`, which double-configures every panel built through `make()` unless `make()` stops doing it — a change to the one factory shape the whole toolkit shares, for a closure nobody has written yet.
+Adopting Filament's placement would mean `id()` calling `configure()`, which double-configures every panel built through `make()` unless `make()` stops doing it — a change to the one factory shape the whole toolkit shares, for a closure nobody has written.
 Revisit the moment a consumer hits it.
 
 ### `getBrandName()` returns null where Filament falls back to the app name

@@ -84,7 +84,7 @@ Reaching them at all takes a page-level action whose related resource registers 
 
 `getDefaultActionSchemaResolver()` is declared on this class rather than hoisted onto the relationship-table trait, matching Filament: Create and Edit resolve `$this->form(...)`, View resolves `$this->infolist($this->form($schema))`, and `RelationManager` keeps its own.
 The resolver is the **host's** action contract — each host decides which of its schemas an action opens — where the URL arms it sits beside are pure related-resource logic and therefore hoisted.
-The two resolvers are not identical either: the manager's view arm shares the form builder, because [`ViewAction` disables its own schema](relation-manager.md#the-view-arm-shares-the-form-builder-because-viewaction-disables-its-own-schema) and no infolist tier exists yet.
+The two resolvers are not identical either: the manager's view arm shares the form builder, because [`ViewAction` disables its own schema](relation-manager.md#the-view-arm-shares-the-form-builder-because-viewaction-disables-its-own-schema) and no infolist tier exists.
 
 ### Filament's redirect narrowing answers null for every action, as the inherited hook does
 

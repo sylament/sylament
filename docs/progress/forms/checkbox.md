@@ -58,7 +58,7 @@ The failure is loud, so this is a note for whoever tries to "simplify" the templ
 ### required() on a checkbox means "must be checked"
 
 Filament's `required()` adds Laravel's `required` rule, and [`validateRequired()`](../../../vendor/laravel/framework/src/Illuminate/Validation/Concerns/ValidatesAttributes.php) reads `false` as present, so a required Filament checkbox passes server-side validation unticked; only the native `required` attribute in its markup makes the browser insist.
-The port overrides `getRequiredConstraint()` to Symfony's `NotBlank`, which rejects `false` outright — `false === $value` is the first clause of [`NotBlankValidator`](../../../vendor/symfony/validator/Constraints/NotBlankValidator.php).
+The port overrides `getRequiredConstraint()` to Symfony's `NotBlank`, which rejects `false` outright — `false === $value` is the first clause of [`NotBlankValidator`](../../../vendor/symfony/validator/Constraints/NotBlankValidator.php)'s blank test.
 That agrees with the native `required` attribute the template emits, which browsers read as "this box must be ticked", so the client and the server say the same thing.
 [`accepted()`](can-be-accepted.md) is the explicit spelling of the same rule and is what to reach for when the intent matters to a reader.
 

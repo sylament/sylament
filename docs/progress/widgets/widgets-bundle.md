@@ -21,7 +21,7 @@ owns:
 | [Stylesheet entry point](../../../packages/widgets/assets/src/styles/index.css) | [`resources/css/index.css`](../../../vendor/filament/widgets/resources/css/index.css) | in progress | — | [detail](#the-stylesheet-entry-point-imports-no-widget-sheet) |
 | `@SylamentWidgets` template namespace | [`->hasViews()`](../../../vendor/filament/widgets/src/WidgetsServiceProvider.php) | todo | — | [detail](#there-is-no-template-namespace-because-the-package-has-no-templates-directory) |
 | Asset registration (the `chart` and `stats-overview/stat/chart` Alpine components) | [`packageBooted()`](../../../vendor/filament/widgets/src/WidgetsServiceProvider.php) | todo | — | [detail](#the-chart-component-gives-way-to-symfonyux-chartjs) |
-| `MakeWidgetCommand` + stub publishing | [`Commands/MakeWidgetCommand.php`](../../../vendor/filament/widgets/src/Commands/MakeWidgetCommand.php), [`packageBooted()`](../../../vendor/filament/widgets/src/WidgetsServiceProvider.php) | todo | — | — |
+| `MakeWidgetCommand` + stub publishing (`packageBooted()`) | [`Commands/MakeWidgetCommand.php`](../../../vendor/filament/widgets/src/Commands/MakeWidgetCommand.php) | todo | — | — |
 | Translations (`->hasTranslations()`) | [`configurePackage()`](../../../vendor/filament/widgets/src/WidgetsServiceProvider.php) | todo | — | [i18n](../../internals/i18n.md#translation-is-one-deferred-pass-not-a-per-component-port) |
 
 ## Details
@@ -36,7 +36,7 @@ What is missing is a test that boots the kernel with the bundle registered.
 
 Filament's `index.css` imports the chart, stats-overview and base widget sheets under `layer(components)`.
 The port's file holds only a comment, because no widget exists to style.
-Support's `index.css` already imports it, so a sheet imported here reaches the built stylesheet with no further wiring.
+Support's `index.css` imports it, so a sheet imported here reaches the built stylesheet with no further wiring.
 
 ### There is no template namespace, because the package has no `templates/` directory
 
@@ -47,6 +47,6 @@ The port relies on TwigBundle's convention instead ([schemas-bundle.md](../schem
 ### The chart component gives way to `symfony/ux-chartjs`
 
 Filament registers two Alpine components from its prebuilt `dist/`: `chart`, which `ChartWidget` mounts, and `stats-overview/stat/chart`, a stat's sparkline.
-`ChartWidget` and its typed subclasses render through `symfony/ux-chartjs`, a pre-approved Symfony package, rather than through a port of Filament's Chart.js wiring, so the `chart` component has no port of its own to register.
+The `chart` component has no port of its own to register, because a ported `ChartWidget` would render through `symfony/ux-chartjs`, a pre-approved Symfony package, rather than through a port of Filament's Chart.js wiring.
 The sparkline component follows the stats-overview widget.
 No manifest requires `symfony/ux-chartjs`, because no chart widget exists.

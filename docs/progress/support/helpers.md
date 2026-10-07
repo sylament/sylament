@@ -121,17 +121,18 @@ A helper call PHPStan has proved constant is a signal to reorder the guard (or t
 ### `sanitize_url()` is a helper because the macro target does not exist here
 
 Filament declares it as a `Str::macro` (and a `Stringable::macro` forwarding to it) in [`SupportServiceProvider::packageBooted()`](../../../vendor/filament/support/src/SupportServiceProvider.php), so it is neither a `helpers.php` function nor a class method.
-Macro-based extension is a rejected pattern here ([why](component.md#macroable-is-not-ported)) and there is no `Str` to extend, so the body lands in this file: it is pure and takes only its arguments, and its consumers (forms' `FileUpload`, support's `FilesystemRegistry`, tables' record URLs) import it with `use function` because each embeds the result in an `href` or `src`.
+Macro-based extension is a rejected pattern here ([why](component.md#macroable-is-not-ported)) and there is no `Str` to extend, so the body lands in this file: it is pure and takes only its arguments, and its consumers (forms' `BaseFileUpload`, support's `FilesystemRegistry`, tables' record URLs and `ImageColumn`'s default image URL, which also allows `data`) import it with `use function` because each embeds the result in an `href` or `src`.
 The `Stringable` forwarder has no analog and is dropped.
 
-The body is otherwise verbatim, including the comments Filament carries: they state *why* each of the four refusals exists (which obfuscation each one catches), which the code cannot.
-Two mechanical adjustments: `preg_match()` results are compared `=== 1` rather than used as booleans, and `strtolower()` becomes `mb_strtolower()` to match the rest of the codebase (schemes matched by the regex are ASCII, so the two agree).
+The body otherwise follows Filament's step for step, and keeps the comments Filament carries, lightly reworded: they state *why* each of the four refusals exists (which obfuscation each one catches), which the code cannot.
+Three mechanical adjustments: `preg_match()` results are compared `=== 1` rather than used as booleans, `strtolower()` becomes `mb_strtolower()` to match the rest of the codebase (schemes matched by the regex are ASCII, so the two agree), and the entity callback is a `static` closure that casts `hexdec()` before comparing.
 One behavioural addition: a `null` from `preg_replace_callback()`, a PCRE failure, is a **refusal** rather than a crash, because a sanitizer that cannot decode its input must not pass it through.
 
 ### `get_record_label()` is a rename, and it is what put `symfony/string` in support's manifest
 
 The name follows the toolkit-wide [collapse of the model vocabulary onto record](../renames.md#the-model-vocabulary-collapses-onto-record); the body is Filament's, translated helper for helper: `str($model)->classBasename()->kebab()->replace('-', ' ')` becomes `u($class)->afterLast('\\')->kebab()->replace('-', ' ')`.
 The `class-string<Model>` parameter type loses its bound with Eloquent: any class-string is a record class here, and the function never loads one.
+Filament memoises each label in a `static $modelLabels` array; the port recomputes it on every call.
 
 It has to be `kebab()` rather than a regex.
 `panels`' `Resource::getRecordLabel()` and the actions' record label must agree byte for byte, or a resource page and a modal action would disagree about what the record is called, and `AbstractUnicodeString::kebab()`'s acronym handling (`PDFDocument` → `pdf document`, not `p-d-f document`) is not something a hand-rolled expression reproduces by accident.
@@ -147,7 +148,7 @@ Because Sylament ships no Laravel runtime, they are reimplemented here in the `S
 `wrap()` is a free-function port of the static `Arr::wrap()` method, kept minimal (the `null → []`, array-passthrough, scalar-to-single-element contract), with no `Collection` or `Arrayable` handling, because nothing in the port needs it.
 Its main job is guarding the `foreach (wrap($this->evaluate(…)))` shape the schemas and actions concerns use: a closure that returns `null` or a single item would otherwise silently empty the loop or fatal it.
 
-`only()` and `except()` are the same trade one layer up: one-line `array_intersect_key()` / `array_diff_key()` bodies over `array_flip($keys)`, without the `Collection`, `Arrayable` or dotted-path arms Laravel's methods carry, because their two consumers ask for neither: `CreateAction`'s `preserveFormDataWhenCreatingAnother()` keeps a flat list of field names, and `ReplicateAction`'s `excludeAttributes()` drops one.
+`only()` and `except()` are the same trade one layer up: one-line `array_intersect_key()` / `array_diff_key()` bodies over `array_flip($keys)`, without the `Collection`, `Arrayable` or dotted-path arms Laravel's methods carry, because none of their consumers asks for them: `CreateAction`'s `preserveFormDataWhenCreatingAnother()` keeps a flat list of field names, while `ReplicateAction`'s `excludeAttributes()`, actions' `CanMutateRecordData` and forms' `CanFixIndistinctState` drop flat keys.
 
 `plural()` is that trade a third time, and the one whose body is not a one-liner: Laravel's `Str::plural` runs the **last word** of a phrase through an inflector and leaves the rest alone, so `blog post` becomes `blog posts`, the inflector seeing only `post`.
 symfony/string's `EnglishInflector` is the inflector; `pluralize()` returns *candidates* rather than one answer (`person` → `['persons', 'people']`), and the port takes the last.

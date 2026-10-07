@@ -15,7 +15,7 @@ It creates one SortableJS instance on the element carrying `sylament--support--s
 It is deliberately **live-host-agnostic**: it never calls a live action, never imports `@symfony/ux-live-component`, and holds no opinion about what an order means.
 `support` is the base workspace: it cannot reach schemas' `resolveLiveHost`, and a live-component peer here would push that dependency onto every consumer of the base package, so the write lives in the consumer, which binds the event and decides what to do with the keys.
 Forms' `sylament--forms--repeater`, [`KeyValue`](../forms/key-value.md) (on its row `<tbody>`) and [`TagsInput`](../forms/tags-input.md) (on its chip container, inside a `data-live-ignore` subtree the consumer's own controller repaints) carry the control whenever the field can be reordered at all.
-Tables' [`reorderable()`](../tables/table.md#the-drag-control-mounts-per-mode-where-vendors-instance-outlives-every-render) mounts it on the `<tbody>` only while the table is in reorder mode, so the contract also holds for a control mounted and unmounted rather than connected once.
+Tables' [`reorderable()`](../tables/table.md#the-drag-control-mounts-per-mode-where-vendors-instance-outlives-every-render) mounts it on the `<tbody>` only while the table is in reorder mode, so the contract also holds for a control mounted and unmounted rather than connected once, and the [column manager](../tables/column-manager.md) mounts it on its item grid while columns are reorderable.
 `FileUpload` is **not** a consumer: FilePond owns its own list and reorders through its `allowReorder` option.
 
 ## Surface
@@ -38,13 +38,13 @@ What a consumer writes, and what it gets back; every consumer builds against thi
 
 | Piece | Value |
 | --- | --- |
-| Identifier | `sylament--support--sortable`, on the **list element** (the repeater's items `<ul>`, the simple list `<ul>`, the table `<tbody>`, the key-value rows' `<tbody>`, the tags input's chip container `<div>`) |
+| Identifier | `sylament--support--sortable`, on the **list element** (the repeater's items `<ul>`, its simple list `<ul>` and its table layout's `<tbody>`, the key-value rows' `<tbody>`, the tags input's chip container `<div>`, tables' `<tbody>` and the column manager's item grid `<div>`) |
 | Values | `animationDuration` (Number, default `300`); `group` (String, default `""`) |
 | Item marker | `data-sortable-item="<key>"` on each draggable child — it is Sortable's `draggable` selector **and** its `dataIdAttr`, so a child without it is neither draggable nor enumerated, which is exactly how a list may interleave chrome (the repeater's between-items `<li>`s) that stays put |
 | Handle marker | `data-sortable-handle` on the element a drag starts from; a list whose items carry no handle is undraggable |
 | Options | `{ group, draggable: "[data-sortable-item]", handle: "[data-sortable-handle]", dataIdAttr: "data-sortable-item", animation, ghostClass: "sy-sortable-ghost", onEnd }` — nothing else |
 | Event | `sylament--support--sortable:end`, dispatched on the list element with `bubbles: false`, so nested sortables never hear each other and a consumer binds it on the same element it put the controller on |
-| Event detail | `{ items: string[], item: string \| null, oldDraggableIndex: number, newDraggableIndex: number }` — `items` is `toArray()` (every draggable child's key in the new DOM order), `item` the dragged child's key, and the index pair counts **draggable children only** (a chrome-free list's draggable index is its absolute index; `KeyValue` splices by it, tables passes `item` as its second argument) |
+| Event detail | `{ items: string[], item: string \| null, oldDraggableIndex: number, newDraggableIndex: number }` — `items` is `toArray()` (every draggable child's key in the new DOM order), `item` the dragged child's key, and the index pair counts **draggable children only** (a chrome-free list's draggable index is its absolute index); every shipped consumer reads only `items` |
 | Lifecycle | `connect()` calls `Sortable.create(this.element, …)`; `disconnect()` destroys the instance and nulls the field. The instance is a private field — never `Sortable.get()`, which cannot see across two bundled copies (each carries its own expando key) |
 | Touch | native HTML5 drag-and-drop where the browser has it; iOS and Android Chrome take SortableJS' fallback, whose cloned ghost is appended inside the list (`fallbackOnBody` left at `false`) |
 
@@ -62,7 +62,7 @@ No shipped consumer sets a group; the value exists because Filament's directive 
 
 Filament parses `el.dataset.sortableAnimationDuration` with `parseInt` and falls back to `300` when the result is `NaN` — `if (animation !== 0 && !animation)` — which deliberately keeps an explicit `0` (drag with no animation).
 A Stimulus Number value with `default: 300` behaves the same way: the attribute absent gives `300`, `data-…-animation-duration-value="0"` gives `0`.
-The attribute name differs, because a Stimulus value attribute is namespaced by the controller identifier (`data-sylament--support--sortable-animation-duration-value`), and that is the systematic Alpine → Stimulus translation the [rename table](../renames.md) records, not a rename of the feature.
+The attribute name differs, because a Stimulus value attribute is namespaced by the controller identifier (`data-sylament--support--sortable-animation-duration-value`), and that is the systematic Alpine → Stimulus translation the [rename table](../renames.md#the-sortable-directive-becomes-a-controller-whose-markers-stay-plain-attributes) records, not a rename of the feature.
 
 ### The #17402 workaround, and why a chrome-carrying list needs it
 
@@ -109,7 +109,7 @@ Filament's directive dispatches nothing of its own: its consumers bind SortableJ
 The port answers on `this.dispatch("end", { detail, bubbles: false })` instead, i.e. `sylament--support--sortable:end` on the list element only.
 Three things follow.
 The name cannot collide with another library's `end`.
-Nested sortables are isolated by construction rather than by every consumer remembering `.stop` — which matters more here than in Filament, because Stimulus 3 has no `:stop` action option and a consumer would have to call `event.stopPropagation()` in a method body.
+Nested sortables are isolated by construction rather than by every consumer remembering to add Stimulus's `:stop` action option (or an `event.stopPropagation()` call in a method body) to each `sylament--support--sortable:end` action.
 And the event carries a typed `detail` (the key list, the dragged key and the draggable-index pair), where SortableJS sets its payload as own properties on the event object and leaves `detail` unused.
 
 The port also **only** dispatches on a real move — `from !== to` or a changed draggable index — where SortableJS' `end` fires on every drop, including one that put the item back where it started.

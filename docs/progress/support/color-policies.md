@@ -66,7 +66,7 @@ Policies a package above support declares are tracked in that package, such as s
 | [`InputComponent\WrapperComponent\IconComponent`](../../../packages/support/src/Colors/Components/InputComponent/WrapperComponent/IconComponent.php) | [`InputComponent/WrapperComponent/IconComponent.php`](../../../vendor/filament/support/src/View/Components/InputComponent/WrapperComponent/IconComponent.php) | done | — | [semantics](#an-empty-map-is-a-real-answer-not-a-missing-one) |
 | `DropdownComponent\HeaderComponent` | [`DropdownComponent/HeaderComponent.php`](../../../vendor/filament/support/src/View/Components/DropdownComponent/HeaderComponent.php) | blocked | the dropdown header | [detail](#three-policies-wait-on-the-elements-they-would-colour) |
 | `DropdownComponent\ItemComponent\IconComponent` | [`DropdownComponent/ItemComponent/IconComponent.php`](../../../vendor/filament/support/src/View/Components/DropdownComponent/ItemComponent/IconComponent.php) | blocked | the dropdown item's `iconColor` prop | [detail](#three-policies-wait-on-the-elements-they-would-colour) |
-| `CalloutComponent` + `CalloutComponent\IconComponent` | [`CalloutComponent.php`](../../../vendor/filament/support/src/View/Components/CalloutComponent.php) and its `IconComponent` | blocked | a `Callout` component | [detail](#three-policies-wait-on-the-elements-they-would-colour) |
+| `CalloutComponent` + `CalloutComponent\IconComponent` | [`CalloutComponent.php`](../../../vendor/filament/support/src/View/Components/CalloutComponent.php) + [`IconComponent.php`](../../../vendor/filament/support/src/View/Components/CalloutComponent/IconComponent.php) | blocked | a `Callout` component | [detail](#three-policies-wait-on-the-elements-they-would-colour) |
 
 ## Details
 
@@ -136,7 +136,7 @@ Composing the class on the actions side would let the two drift, outlined stylin
 
 Filament's `IconButtonComponentColorMap` computes its hover shades by literal arithmetic: `$lightShade + 100`, `$darkShade - 100`.
 That assumes every palette is a 100-spaced grid with no ends, and it is wrong twice over: the grid's first step is 50 apart (50 → 100), and a search that lands on 950 or 50 walks straight off the end.
-Either produces a shade number no `sy-text-color-<shade>` rule exists for, which sets no variable and paints nothing, silently.
+Off the ends, and from 50 upward, it produces a shade number no `sy-text-color-<shade>` rule exists for, which sets no variable and paints nothing, silently; from 100 downward it produces shade 0, which the utilities paint white.
 
 Sylament replaces the arithmetic with `darkerShade()` / `lighterShade()`, which walk the palette's own sorted keys to the next one and return the input shade unchanged when it is already at the end.
 On the eleven-step grid this agrees with Filament everywhere except at the 50/100 boundary and at the two ends, which is precisely where Filament is broken.

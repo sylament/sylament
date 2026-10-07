@@ -165,7 +165,7 @@ Filament's horizontal scroll is on `fi-ta-content-ctn` — the wrapper around th
 So no ancestor of Filament's filters panel clips it, and its dropdown needs no escape.
 Ours puts `overflow-x-auto` on `.sy-ta-ctn`, the one container holding toolbar, indicators, table and footer alike — so without an escape the panel of a short or narrow table is clipped by the box the table itself is scrolled in.
 
-The fix is the remedy Filament applies to the dropdowns that *are* inside its clipping container: `HasRecordActions` stamps every record `ActionGroup` with `->defaultDropdownTeleport(true)` ([`HasRecordActions.php:106`](../../../vendor/filament/tables/src/Table/Concerns/HasRecordActions.php)).
+The fix is the remedy Filament applies to the dropdowns that *are* inside its clipping container: `HasRecordActions` stamps every record `ActionGroup` with `->defaultDropdownTeleport(true)` ([`HasRecordActions.php:107`](../../../vendor/filament/tables/src/Table/Concerns/HasRecordActions.php)).
 Teleport is [a positioning strategy, not a DOM move](../actions/action-group.md#dropdownteleport-is-a-positioning-strategy-not-a-dom-move-in-either-codebase) in both codebases — the panel stays exactly where it was rendered and switches to `position: fixed`, which no `overflow` ancestor can clip — so the open-state machinery that survives a live morph (the `hidden` `MutationObserver` and `panelTargetConnected`, [dropdown.md](../support/dropdown.md#the-open-state-is-a-controller-field-re-asserted-through-a-mutationobserver)) is untouched by it, and nothing about the panel's contents or its live wiring changes.
 
 Two things bound the claim.

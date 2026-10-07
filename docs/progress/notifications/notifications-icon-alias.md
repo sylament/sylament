@@ -21,11 +21,11 @@ Every shipped constant is read by [the toast template](../../../packages/notific
 | [`NOTIFICATION_INFO`](../../../packages/notifications/src/Twig/NotificationsIconAlias.php) | [`NotificationsIconAlias`](../../../vendor/filament/notifications/src/View/NotificationsIconAlias.php) | done | — | [diverges](#the-alias-values-drop-filaments-package-prefix) |
 | [`NOTIFICATION_SUCCESS`](../../../packages/notifications/src/Twig/NotificationsIconAlias.php) | [`NotificationsIconAlias`](../../../vendor/filament/notifications/src/View/NotificationsIconAlias.php) | done | — | [diverges](#the-alias-values-drop-filaments-package-prefix) |
 | [`NOTIFICATION_WARNING`](../../../packages/notifications/src/Twig/NotificationsIconAlias.php) | [`NotificationsIconAlias`](../../../vendor/filament/notifications/src/View/NotificationsIconAlias.php) | done | — | [diverges](#the-alias-values-drop-filaments-package-prefix) |
-| `DATABASE_MODAL_EMPTY_STATE` | [`NotificationsIconAlias`](../../../vendor/filament/notifications/src/View/NotificationsIconAlias.php) | blocked | the database-notifications panel | [detail](#the-sixth-constant-waits-for-the-panel-that-renders-it) |
+| `DATABASE_MODAL_EMPTY_STATE` | [`NotificationsIconAlias`](../../../vendor/filament/notifications/src/View/NotificationsIconAlias.php) | blocked | the database-notifications panel | [detail](#database_modal_empty_state-waits-for-the-panel-that-renders-it) |
 
 ## Details
 
-### The sixth constant waits for the panel that renders it
+### `DATABASE_MODAL_EMPTY_STATE` waits for the panel that renders it
 
 `DATABASE_MODAL_EMPTY_STATE = 'notifications::database.modal.empty-state'` names the icon of the empty state inside the database-notifications modal, the one Filament constant with no toast-side consumer.
 Declaring it before the panel would ship a name an application could register an override for that nothing ever reads.

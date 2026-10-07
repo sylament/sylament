@@ -232,7 +232,7 @@ What the pass collects is every registered `Resource` service, not the resources
 
 Filament splits its `Resource` across traits in [`Resources/Resource/Concerns`](../../../vendor/filament/filament/src/Resources/Resource/Concerns), and ours holds the members of `HasLabels`, `HasPages`, `HasRoutes`, `HasNavigation` and `CanGenerateUrls` in `Resource.php` itself.
 Only self-contained clusters arrive as traits under Filament's names — `HasGlobalSearch`, `BelongsToParent` and `HasBreadcrumbs` — because nothing of the five is entangled in them.
-Splitting the five now would file each trait against a guess at where the unported members land, and a trait whose contents are guessed is harder to move than a method; the names stay available.
+Splitting the five would file each trait against a guess at where the unported members land, and a trait whose contents are guessed is harder to move than a method; the names stay available.
 Revisit when the authorization cluster lands, since that is what would push the class past one screenful per concern.
 
 ### The deprecated label pair is not ported

@@ -38,6 +38,8 @@ The rows inside those sections are `<twig:SylamentSupport:DropdownItem>`, tracke
 | Staged Escape (`data-dropdown-escape`, cancelable `dropdown-escape` event) | [`dropdown.js`](../../../vendor/filament/support/resources/js/components/dropdown.js) `handleEscape()` | todo | — | [diverges](#a-prevented-escape-does-not-close-the-panel) |
 | Close on SPA navigation | [`dropdown.js`](../../../vendor/filament/support/resources/js/components/dropdown.js) `livewire:navigate` listener | todo | — | — |
 | Dropdown header | [`dropdown/header.blade.php`](../../../vendor/filament/support/resources/views/components/dropdown/header.blade.php) + `header.css` | todo | — | — |
+| `shift` prop | [`dropdown/index.blade.php`](../../../vendor/filament/support/resources/views/components/dropdown/index.blade.php) `shift` prop, default `false` | todo | — | [detail](#the-controller-always-shifts-where-filaments-shift-is-opt-in) |
+| Panel enter/leave fade | [`dropdown/index.blade.php`](../../../vendor/filament/support/resources/views/components/dropdown/index.blade.php) `x-transition:enter-start` / `x-transition:leave-end` + `fi-opacity-0` | todo | — | — |
 
 ## Details
 
@@ -52,6 +54,12 @@ That matches Filament's own primary consumer: `ActionGroup` writes its own dropd
 Filament's `size`, `sizePadding`, `availableHeight` and `availableWidth` props enable `x-float`'s `.size` modifier, which wraps Floating UI's `size()` middleware to shrink the panel to fit the visible viewport.
 Sylament's `maxHeight` prop is a static CSS value (`--sy-dropdown-max-height`), so a panel taller than the viewport is not reflowed.
 The scrollbar half of Filament's feature, the `fi-scrollable` class, is the conditional-scrolling row, which is done.
+
+### The controller always shifts, where Filament's `shift` is opt-in
+
+Filament's `shift` prop defaults to `false` and adds `x-float`'s `.shift` modifier only when set, and `ActionGroup`'s own dropdown markup never sets it.
+[`dropdown_controller.ts`](../../../packages/support/assets/src/controllers/dropdown_controller.ts) passes `shift({ padding: 8 })` to every `computePosition()` call, and the template has no `shift` prop to turn it off.
+What is missing is the prop and the conditional around the middleware.
 
 ## Semantics
 
@@ -105,6 +113,7 @@ What it relies on is the parent panel not being a clipping container (see the [c
 
 Flattened sections with dividers are a `.sy-dropdown-list` element, the port of Filament's `fi-dropdown-list`: `grid gap-px px-1`, with a `& + &` rule adding the top border and spacing, so a divider appears exactly between two adjacent sections and never above the first.
 The panel pads only vertically (`py-1`), so a divider spans the panel's full width rather than stopping short at an inset.
+Filament draws the same picture with `p-1` on every list and `divide-y` on the panel.
 
 Each nested dropdown carries its own controller instance and neither panel traps focus, so the parent needs no focus or Escape handling one level down.
 A shell-level submenu prop would be speculative: the consumer composes the primitive instead.
@@ -114,7 +123,7 @@ A shell-level submenu prop would be speculative: the consumer composes the primi
 Filament has nothing to port here.
 Its dropdown is `x-data="filamentDropdown"`, and Livewire's morph leaves an Alpine component's own reactive state alone, so a re-render simply re-runs the binding and the panel stays open.
 This port's visibility is a server-rendered `hidden` attribute on the panel, which idiomorph re-applies from the freshly rendered markup, so without the controller field an open dropdown would snap shut on every live re-render.
-A `deferFilters(false)` table re-renders on every field change ([tables' filters chrome](../tables/table.md)), and a deferred panel's Apply button issues a request from an open panel; both keep the panel open, as Filament's do.
+A `deferFilters(false)` table re-renders on every field change ([tables' filters chrome](../tables/has-filters.md)), and a deferred panel's Apply button issues a request from an open panel; both keep the panel open, as Filament's do.
 
 The state lives in a private instance field on the controller, which outlives the morph because the controller's root element does, and the panel is re-asserted from it.
 **Two paths, because a morph can do two different things to the panel.**

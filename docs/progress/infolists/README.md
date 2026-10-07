@@ -15,4 +15,6 @@ Ports [`filament/infolists`](../../../vendor/filament/infolists) into [`packages
 | Filament | Status | Blocked by | Detail |
 | --- | --- | --- | --- |
 | [`Components/CodeEntry.php`](../../../vendor/filament/infolists/src/Components/CodeEntry.php) | blocked | a syntax-highlighting vendor sign-off | [detail](infolists-bundle.md#codeentry-waits-on-a-syntax-highlighting-vendor) |
+| [`Components/Entry.php`](../../../vendor/filament/infolists/src/Components/Entry.php) | todo | — | [diverges](infolists-bundle.md#an-entry-is-a-schemas-component-not-a-second-tree-beside-the-schema) |
+| [`Components/TextEntry.php`](../../../vendor/filament/infolists/src/Components/TextEntry.php) | todo | — | [diverges](infolists-bundle.md#textentry-shares-the-columns-formatting-trait-instead-of-porting-the-infolists-copy) |
 | _rest not audited yet_ | — | — | — |

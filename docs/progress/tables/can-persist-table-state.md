@@ -56,6 +56,6 @@ The read runs below the filters' [query-string seed](host-has-filters.md#a-seede
 
 ### A stale per-page choice is forgotten without a substitute, and the default is not written back
 
-A remembered per-page option that is no longer in `getPaginationPageOptions()` is forgotten at mount rather than left to fail validation on every later visit; Filament removes it too, but returns `$pageOptions[0]` where ours returns null and lets [the getter](host-can-paginate-records.md#per-page-is-validated-in-the-getter-on-every-read) answer.
+A remembered per-page option that `getPaginationPageOptions()` does not list is forgotten at mount rather than left to fail validation on every later visit; Filament removes it too, but returns `$pageOptions[0]` where ours returns null and lets [the getter](host-can-paginate-records.md#per-page-is-validated-in-the-getter-on-every-read) answer.
 And the resolved default is **not written back**: Filament's mount assigns the resolved option onto `$tableRecordsPerPage`, ours leaves the prop null when the session holds nothing usable, so the session entry is only created by the user's first pick.
 `persistTableRecordsPerPageInSession()` early-returns on a null prop, which is what makes that true on the mount path as well as the update one.

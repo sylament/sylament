@@ -14,4 +14,5 @@ Ports [`filament/widgets`](../../../vendor/filament/widgets) into [`packages/wid
 
 | Filament | Status | Blocked by | Detail |
 | --- | --- | --- | --- |
-| _not audited yet_ | — | — | — |
+| [`ChartWidget.php`](../../../vendor/filament/widgets/src/ChartWidget.php) | todo | — | [detail](widgets-bundle.md#the-chart-component-gives-way-to-symfonyux-chartjs) |
+| _rest not audited yet_ | — | — | — |

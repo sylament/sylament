@@ -91,7 +91,7 @@ The controller writes `element.style.height` itself, which the live component's 
 Under autosize the sizer is `overflow-hidden` and the control is `resize-none`, so a value longer than the box does not grow it: the control scrolls internally with its grip off, which is the shape `autosize()` exists to avoid.
 
 Closing it needs a fourth trigger — the host's `render:finished`, which tables' [`table` controller](../tables/has-table.md) already subscribes to.
-The resolver that reaches the host is not part of the cost: forms' own [`utils/live_host.ts`](../../../packages/forms/assets/src/utils/live_host.ts) already serves the `key-value`, `tags-input` and `file-upload` controllers, and this one builds per-file and unbundled exactly as those do, so it would take the identical relative `../utils/live_host.js` import.
+The resolver that reaches the host is not part of the cost: forms' own [`utils/live_host.ts`](../../../packages/forms/assets/src/utils/live_host.ts) already serves the `key-value` and `tags-input` controllers, and this one builds per-file and unbundled exactly as those do, so it would take the identical relative `../utils/live_host.js` import.
 What is left is the subscription and the shape [`tags_input_controller.ts`](../../../packages/forms/assets/src/controllers/tags_input_controller.ts) already carries around one: an `async connect()` that returns quietly when no live host answers, a generation counter so a disconnect during the resolve cannot bind a listener on behalf of a dead element, and a `disconnect()` that calls `component.off()`.
 It stays deliberate on that smaller ground: every shipped arm drives the field from its own keyboard.
 

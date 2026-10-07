@@ -169,7 +169,7 @@ Both methods read the same `$cachedTableRecords`, so asking for the paginator do
 ### A host trait is analysed only through a class that composes it
 
 PHPStan skips a trait no analysed class uses, and the repo ignores `trait.unused` globally, so the skip is silent.
-This trait sat in exactly that position from the day it landed until panels' `ListRecords` became the first shipped class to `use` it; composing it turned on both the standalone and the per-using-class analysis at once and surfaced **eleven** latent level-max errors here, plus eight in [`HasActions`](../actions/has-actions.md#a-host-trait-is-analysed-only-through-a-class-that-composes-it).
+This trait sat in exactly that position from the day it landed until panels' `ListRecords` became the first shipped class to `use` it; composing it turned on both the standalone and the per-using-class analysis at once and surfaced **eleven** latent level-max errors here, plus eight in [`HasActions`](../actions/has-actions.md#the-mounted-action-descriptor-is-typed-string-keyed-and-the-client-fills-two-thirds-of-it).
 Four were real runtime gaps rather than narrowing noise, and all four are fixed: the two unguarded `(string)` casts on a record key, the unchecked row type behind an `is_iterable()` PHPStan had proved unreachable, and the half-implemented shape check on a [filter slice](host-has-filters.md#one-filter-slice-is-a-plain-array-read-not-a-propertyaccessor-walk).
 The rest were type-flow noise — a `blank()` call ordered after the narrowing that makes its `@phpstan-assert-if-false` vacuous, and `evaluate()`'s generic binding `T` to `Closure` when the value handed to it is statically a closure.
 

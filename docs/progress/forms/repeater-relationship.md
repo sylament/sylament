@@ -1,25 +1,38 @@
 ---
-description: '`Repeater::relationship()`, a Doctrine collection mapped item by item, with its fill, save, order and mutate arms and nested relation-backed fields (draft)'
+description: '`Repeater::relationship()`: a Doctrine collection mapped item by item, its fill, save, order and mutate arms, and relation-backed fields inside an item'
 ports:
   - vendor/filament/forms/src/Components/Repeater.php
 owns: []
 ---
 # Repeater relationship (forms)
 
+The relationship arm of [`Repeater`](repeater.md), whose class, templates and remaining surface that file owns; every member below is a method of [`Repeater.php`](../../../packages/forms/src/Components/Repeater.php).
+
 ## Surface
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
-| Relationship family — **shipped**: `relationship()`, `hasRelationship()` / `getRelationshipName()`, `orderColumn()` / `getOrderColumn()`, the three setters `mutateRelationshipDataBeforeFillUsing()` / `mutateRelationshipDataBeforeCreateUsing()` / `mutateRelationshipDataBeforeSaveUsing()`, the fill and save arms (Filament's `fillFromRelationship()` / `getStateFromRelatedRecords()` / `saveToRelationship()`, here the two [component-tier hooks](../schemas/belongs-to-record.md#the-relationship-hooks-are-consulted-by-the-two-mapping-edges-not-by-a-schema-level-walk)). **Not ported**: `getRelationship()` / `getRelatedModel()` (Eloquent objects with no Doctrine counterpart — `AssociationTarget` answers both), `getCachedExistingRecords()` / `clearCachedExistingRecords()`, `afterCreate()` / `afterUpdate()` / `afterDelete()`, the three public callers `mutateRelationshipDataBeforeFill()` / `mutateRelationshipDataBeforeCreate()` / `mutateRelationshipDataBeforeSave()` (the arms call the callbacks through one private helper instead), the `getLabel()` override, item `constantState()` (its record half [ships](#a-nested-relation-backed-field-is-routed-by-the-item-not-by-the-map), since a nested relationship hook cannot fire without it) | [`Repeater.php`](../../../vendor/filament/forms/src/Components/Repeater.php) | done | — | [semantics](#a-relationship-repeater-keys-its-items-by-identity-and-diffs-the-collection) · [diverges](#the-relationship-family-loses-its-caches-its-lifecycle-hooks-and-its-query-scope) |
-| Relation-backed fields inside an item — Filament's `$item->model($record)->saveRelationships()` recursion, plus the item-schema record stamp it needs | [`Repeater::saveToRelationship()`](../../../vendor/filament/forms/src/Components/Repeater.php) | done | — | [semantics](#a-nested-relation-backed-field-is-routed-by-the-item-not-by-the-map) · [diverges](#a-mutate-callback-can-rewrite-what-a-nested-hook-consumes) |
+| [`relationship()`](../../../packages/forms/src/Components/Repeater.php) — over a Doctrine collection | [`Repeater.php`](../../../vendor/filament/forms/src/Components/Repeater.php) | done | — | [semantics](#a-relationship-repeater-keys-its-items-by-identity-and-diffs-the-collection) · [diverges](#the-relationship-family-loses-its-caches-its-lifecycle-hooks-and-its-query-scope) |
+| `relationship()`'s `$modifyQueryUsing` | [`Repeater.php`](../../../vendor/filament/forms/src/Components/Repeater.php) | skipped | — | [diverges](#the-relationship-family-loses-its-caches-its-lifecycle-hooks-and-its-query-scope) |
+| `relationship()`'s `$modifyRecordsUsing` | [`Repeater.php`](../../../vendor/filament/forms/src/Components/Repeater.php) | todo | — | — |
+| [`hasRelationship()` / `getRelationshipName()`](../../../packages/schemas/src/Components/Concerns/BelongsToRelationship.php) | [`Repeater.php`](../../../vendor/filament/forms/src/Components/Repeater.php) | done | — | — |
+| [`orderColumn()` / `getOrderColumn()`](../../../packages/forms/src/Components/Repeater.php) | [`Repeater.php`](../../../vendor/filament/forms/src/Components/Repeater.php) | done | — | [semantics](#a-relationship-repeater-keys-its-items-by-identity-and-diffs-the-collection) · [diverges](#the-order-stamp-is-0-based-written-onto-the-child-and-out-of-the-callbacks-reach) |
+| [`mutateRelationshipDataBeforeFillUsing()` / `mutateRelationshipDataBeforeCreateUsing()` / `mutateRelationshipDataBeforeSaveUsing()`](../../../packages/forms/src/Components/Repeater.php) | [`Repeater.php`](../../../vendor/filament/forms/src/Components/Repeater.php) | done | — | [diverges](#the-fill-callback-may-not-decline-an-item) · [diverges](#the-relationship-family-loses-its-caches-its-lifecycle-hooks-and-its-query-scope) |
+| The fill and save arms — Filament's `fillFromRelationship()` / `getStateFromRelatedRecords()` / `saveToRelationship()` | [`Repeater.php`](../../../vendor/filament/forms/src/Components/Repeater.php) | done | — | [semantics](#a-relationship-repeater-keys-its-items-by-identity-and-diffs-the-collection) · [diverges](#a-new-item-whose-identifier-is-incomplete-is-refused-before-the-save-returns) |
+| Relation-backed fields inside an item — Filament's `$item->model($record)->saveRelationships()` | [`Repeater::saveToRelationship()`](../../../vendor/filament/forms/src/Components/Repeater.php) | done | — | [semantics](#a-nested-relation-backed-field-is-routed-by-the-item-not-by-the-map) · [semantics](#an-item-schema-is-stamped-with-the-child-it-maps) · [diverges](#a-mutate-callback-can-rewrite-what-a-nested-hook-consumes) |
+| `getRelationship()` / `getRelatedModel()` | [`Repeater.php`](../../../vendor/filament/forms/src/Components/Repeater.php) | skipped | — | [diverges](#the-relationship-family-loses-its-caches-its-lifecycle-hooks-and-its-query-scope) |
+| `getCachedExistingRecords()` / `clearCachedExistingRecords()` | [`Repeater.php`](../../../vendor/filament/forms/src/Components/Repeater.php) | skipped | — | [diverges](#the-relationship-family-loses-its-caches-its-lifecycle-hooks-and-its-query-scope) |
+| `afterCreate()` / `afterUpdate()` / `afterDelete()` | [`Repeater.php`](../../../vendor/filament/forms/src/Components/Repeater.php) | skipped | — | [diverges](#the-relationship-family-loses-its-caches-its-lifecycle-hooks-and-its-query-scope) |
+| `mutateRelationshipDataBeforeFill()` / `mutateRelationshipDataBeforeCreate()` / `mutateRelationshipDataBeforeSave()` | [`Repeater.php`](../../../vendor/filament/forms/src/Components/Repeater.php) | skipped | — | [diverges](#the-relationship-family-loses-its-caches-its-lifecycle-hooks-and-its-query-scope) |
+| `getLabel()`'s relationship-name fallback | [`Repeater.php`](../../../vendor/filament/forms/src/Components/Repeater.php) | todo | — | — |
 
 ## Semantics
 
 ### A relationship repeater keys its items by identity and diffs the collection
 
 `relationship()` swaps the item pipeline's two ends and leaves everything between them alone.
-`fill()` no longer reads the property (an object collection would be skipped as an object leaf anyway) — the [component-tier load hook](../schemas/belongs-to-record.md#the-relationship-hooks-are-consulted-by-the-two-mapping-edges-not-by-a-schema-level-walk) reads the collection and returns one item per child, keyed `record-<recordKey>` (Filament's shape, over [`AssociationReader::getRecordKey()`](../schemas/association-reader.md#the-record-key-is-tables-semantics-moved-onto-the-mapping), so an item of a child keyed by two fields is `record-1~zh=20Hans` — [the key's alphabet](../schemas/record-key-contract.md#where-a-key-travels-and-what-each-context-forbids) is what lets that survive the dotted state path, both `HasState` sanitisers and the live `data-model` reserved set), each item filled by reading the item schema's own declared leaf paths off that child through the record accessor.
-So the keys stop being per-request uuids and start being *identity*, and three places follow from it: `hydrateItems()` returns before it re-keys (the map is already keyed, and re-keying would erase the identity), `dehydrateItems()` returns before it positionalises (position is not what the save reads), and an item the add action mints keeps its uuid key — which is precisely how the save tells a new child from a loaded one.
+`fill()` does not read the property (an object collection would be skipped as an object leaf anyway) — the [component-tier load hook](../schemas/belongs-to-record.md#the-relationship-hooks-are-consulted-by-the-two-mapping-edges-not-by-a-schema-level-walk) reads the collection and returns one item per child, keyed `record-<recordKey>` (Filament's shape, over [`AssociationReader::getRecordKey()`](../schemas/association-reader.md#the-record-key-is-tables-semantics-moved-onto-the-mapping), so an item of a child keyed by two fields is `record-1~zh=20Hans` — [the key's alphabet](../schemas/record-key-contract.md#where-a-key-travels-and-what-each-context-forbids) is what lets that survive the dotted state path, both `HasState` sanitisers and the live `data-model` reserved set), each item filled by reading the item schema's own declared leaf paths off that child through the record accessor.
+So the keys are *identity* rather than per-request uuids, and three places follow from it: `hydrateItems()` returns before it re-keys (the map is already keyed, and re-keying would erase the identity), `dehydrateItems()` returns before it positionalises (position is not what the save reads), and an item the add action mints keeps its uuid key — which is precisely how the save tells a new child from a loaded one.
 
 An item leaf is read as the root fill reads one ([the rule](../schemas/belongs-to-record.md#reads-are-lenient-writes-are-strict)): an object-valued leaf enters the item only where the item field's own state casts flatten it, so a `DateTimePicker` or an enum-backed field fills from the child, as does a `Uuid` under a cast that flattens it, and a fill hook receives the object at its item path, while an association, and an object no cast flattens, still skip.
 Skipping **every** object leaf would lose data: such a field would fill empty, and the next save — one that never touched it — would write NULL over the stored value.
@@ -31,8 +44,8 @@ Nothing is deleted by the repeater itself, which is why an association not mappe
 A to-one association is refused there too: a repeater over one has nothing to repeat.
 Item fields are written per declared leaf path with the *child* as the root, so a dotted item path (`address.city`) reaches through the child's own graph on [`setOnRecord()`](../schemas/property-accessor.md#the-record-pair-completes-the-data_getdata_set-port-for-object-graphs)'s terms.
 
-Five consequences worth stating.
-A `record-` key naming a child the collection no longer holds **throws** — it means the record changed under a filled form, and resurrecting it as a new row would be worse than a refusal.
+Several consequences follow.
+A `record-` key naming a child the collection does not hold **throws** — it means the record changed under a filled form, and resurrecting it as a new row would be worse than a refusal.
 The clone action mints a uuid key, so cloning a loaded item creates a *new* record rather than double-writing the old one.
 `orderColumn()` stamps `0..n-1` in state order onto each child before the write, and the read side is Doctrine's — the association needs its own `#[ORM\OrderBy]` on that property, since nothing here orders the query.
 A mutation callback returning **null** declines the item, Filament-exact: before-create skips constructing it (nothing is written, nothing joins the desired list), before-save skips writing it but the child stays in the desired list, so declining a save is not a deletion.
@@ -40,7 +53,7 @@ And the whole diff runs inside the single `getData()` call, with no flush of its
 
 An added item keeps its uuid key until something reads the collection back, and the save does not.
 `EditRecord` does: it calls [`Schema::loadStateFromRelationships()`](../schemas/belongs-to-record.md#loadstatefromrelationships-is-the-hosts-reload-after-its-flush-and-takes-no-parameter) after its flush — Filament's own post-save step — which runs this load hook again and keys every item `record-<key>` by the identifier the flush gave it, so the next save updates what this one created.
-Without it the next save constructed the item again: an `EntityIdentityCollisionException` for an assigned key, and a `DELETE` plus an `INSERT` of every added item, on every save, for a generated id.
+Without it the next save constructs the item again: an `EntityIdentityCollisionException` for an assigned key, and a `DELETE` plus an `INSERT` of every added item, on every save, for a generated id.
 A host that flushes itself adds that one call after its flush.
 
 Reorderability is coupled to the order column, and the coupling is call-order-sensitive exactly as in Filament.
@@ -96,7 +109,9 @@ Filament reads the same way (`getRecord()` walks to the nearest `model()`), and 
 
 ### The relationship family loses its caches, its lifecycle hooks and its query scope
 
-Four members of Filament's relationship surface have no counterpart here, each for a stated reason rather than as deferral.
+Several members of Filament's relationship surface have no counterpart here, each for a stated reason rather than as deferral.
+
+`getRelationship()` and `getRelatedModel()` **are not ported**: the first returns an Eloquent relation object, which Doctrine has no counterpart for, and the second's class-string is what the protected `getRelationshipTarget()` resolves off the mapping as an `AssociationTarget`, which every arm here reads instead.
 
 `getCachedExistingRecords()` / `clearCachedExistingRecords()` **are not ported**: Filament caches the related rows because its fill and its save each run their own Eloquent query.
 Ours reads the collection off the record through the accessor both times, and the collection *is* the cache — Doctrine's identity map already guarantees the same instances come back, which is the very property the strict-identity update depends on.
@@ -106,6 +121,9 @@ A memo on top would only add a second source of truth.
 Firing them at map time would be a lie about when they run.
 Consumers that need a post-write moment use Doctrine's own lifecycle events (`postPersist`, `postUpdate`, `postRemove`, or an `onFlush` subscriber) — the same seam the ORM already gives every other write in the application.
 Reverses only if a `saveRelationships()` phase with its own flush is ever adopted, which the port [decided against](../schemas/belongs-to-record.md#the-relationship-hooks-are-consulted-by-the-two-mapping-edges-not-by-a-schema-level-walk).
+
+The three public callers `mutateRelationshipDataBeforeFill()`, `mutateRelationshipDataBeforeCreate()` and `mutateRelationshipDataBeforeSave()` **are not ported**: Filament's own fill and save arms are their callers, and ours run the three callbacks through one private helper that injects the item array and, on a save, the child.
+The setters that register the callbacks ship.
 
 `dehydrated(false)` **is not applied**.
 Filament prunes the repeater's state from the dehydrated bag because its record save would otherwise try to write an array into a relation.
@@ -119,7 +137,7 @@ Reverses if the fill ever grows a query of its own (a paginated or filtered rela
 
 Two smaller shapes go with them.
 The mutation callbacks are evaluated with the item array injected as **`state`**, not Filament's `$data` — every other mutation seam in the port names it `state` (`mutateDehydratedStateUsing`, `dehydrateStateUsing`), and the evaluation vocabulary is one word per meaning; `mutateRelationshipDataBeforeSaveUsing` additionally receives the child as `record` **and** typed by its own class, so `fn (PostSection $section)` resolves the way the [component-tier hooks](../schemas/belongs-to-record.md#the-relationship-hooks-are-consulted-by-the-two-mapping-edges-not-by-a-schema-level-walk) already inject the record.
-And `simple()`, `itemsAs()` and `relationship()` are now a **three-way** mode exclusion, each pair refusing in either declaration order for the reason that pair fails: the simple pluck would reduce a related record to one scalar, and a freshly constructed value object would throw away the identity the relationship exists to preserve.
+And `simple()`, `itemsAs()` and `relationship()` are a **three-way** mode exclusion, each pair refusing in either declaration order for the reason that pair fails: the simple pluck would reduce a related record to one scalar, and a freshly constructed value object would throw away the identity the relationship exists to preserve.
 
 ### A new item whose identifier is incomplete is refused before the save returns
 
@@ -149,7 +167,7 @@ Pinned as behaviour by [`RepeaterKeyWritesTest`](../../../packages/forms/tests/I
 
 **A pending owner is not incomplete.**
 A derived-identity child under an owner that has not been flushed yet — a repeater on a **create** form — carries an identifier association whose target's generated id is still pending, and Doctrine writes both in one flush, deferring the child's identifier to the parent's insert.
-Reading that as "incomplete" would refuse a working create page with advice that is false, which is exactly what the first spelling of this rule did.
+Reading that as "incomplete" would refuse a working create page with advice that is false.
 
 **It fires for a field that never reaches the item's state**, which is not the same as a field absent from `components()`.
 A declared component left blank dies earlier and better, as the field's own `NotBlank`, with zero statements and an error beside the input.
@@ -161,7 +179,7 @@ Validating a key that is *taken*, or a key half edited on an existing item, is t
 A new item on a key a stored row, an existing item or another new item claims is *"This value is already used."* under every identifier field of the new item that is no association and that the item's schema maps — a join entity's, whose identifier is associations only, under the one that does not point back at the owner ([the rule](../schemas/can-be-validated.md#a-taken-assigned-key-is-a-field-error-not-a-unique-violation)) — and an existing item's key half edited is *"This value cannot be changed."*, put back, with nothing written ([the rule](../schemas/can-be-validated.md#a-changed-key-is-refused-and-put-back-not-handed-to-doctrine)).
 Two new items claiming one key are compared in memory, so under an owner that has no identifier yet the second is refused without a statement.
 A new item on the key of an item the **same** save removes is refused too, and the message blames the key the user just removed: Doctrine inserts before it deletes, so that save could not succeed either way — recorded rather than closed.
-Pinned by [`RepeaterKeyWritesTest`](../../../packages/forms/tests/Integration/Components/RepeaterKeyWritesTest.php), beside [`RepeaterCompositeRelationshipTest`](../../../packages/forms/tests/Integration/Components/RepeaterCompositeRelationshipTest.php), whose insert case now reads the new item's key once before its `INSERT`.
+Pinned by [`RepeaterKeyWritesTest`](../../../packages/forms/tests/Integration/Components/RepeaterKeyWritesTest.php), beside [`RepeaterCompositeRelationshipTest`](../../../packages/forms/tests/Integration/Components/RepeaterCompositeRelationshipTest.php).
 
 ### A mutate callback can rewrite what a nested hook consumes
 
@@ -174,7 +192,7 @@ A callback declining the item (returning `null`) skips its nested hooks along wi
 
 ### The order stamp is 0-based, written onto the child, and out of the callbacks' reach
 
-Filament stamps `$itemData[$orderColumn] = $itemOrder` with `$itemOrder` starting at **1**, *before* either mutation callback sees the item — so a hook reads the position it is about to be given and may overwrite it, and the value reaches the record through the same `fill()` that writes every other key (`vendor/filament/forms/src/Components/Repeater.php:1024-1030`).
+Filament stamps `$itemData[$orderColumn] = $itemOrder` with `$itemOrder` starting at **1**, *before* either mutation callback sees the item — so a hook reads the position it is about to be given and may overwrite it, and the value reaches the record through the same `fill()` that writes every other key (`vendor/filament/forms/src/Components/Repeater.php:1035-1046`).
 Here the stamp is `0..n-1`, written straight onto the child with [`setOnRecord()`](../schemas/property-accessor.md#the-record-pair-completes-the-data_getdata_set-port-for-object-graphs) *after* the callbacks have run, and never present in the item array at all.
 
 Two reasons, one per half.

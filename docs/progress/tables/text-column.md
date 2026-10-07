@@ -65,7 +65,7 @@ The icon one carries the sharper edge: its class-string sits a namespace level d
 The icon-position case reads the item's inner HTML rather than its element children, and that is deliberate: the content is a *text node*, so `children()` holds the one `<svg>` whichever side it renders on and an assertion over it passes for both orderings.
 It asserts `before` and `after` against the same column, each pinned at both ends of the markup — deleting either arm of the template's position check fails exactly one of them.
 
-The two colour policies the partial names have their rows in the [package README](README.md#supporting-surface) rather than here, per [one row per file](../../internals/trail.md#one-file-per-piece-of-code-one-row-per-feature); both link back to the notes below.
+The two colour policies the partial names have their rows in the [package README](README.md#files) rather than here, per [one row per file](../../internals/trail.md#one-file-per-piece-of-code-one-row-per-feature); both link back to the notes below.
 What pins them is [`PolicyShadeGridTest`](../../../packages/tables/tests/Unit/Colors/Components/PolicyShadeGridTest.php), the same adversarial-palette sweep schemas runs — every emitted shade class has a rule in support's `utilities.css`, the slot variables those classes set are exactly the ones `text-column.css` reads, and the icon policy emits the two carriers and nothing else.
 It also pins the [`gray` asymmetry](#gray-is-a-colour-on-the-item-and-the-absence-of-one-on-the-icon) in **both** directions, that being the one decision here a later reader is most likely to "correct": the item must emit classes for `gray` and the icon must emit none, so re-adding `HasDefaultGrayColor` to `ItemComponent` — which nothing else in the suite notices — now fails.
 
@@ -108,7 +108,7 @@ The two policies the partial names disagree about `gray` on purpose, and the asy
 [`ItemComponent`](../../../packages/tables/src/Colors/Components/TextColumnComponent/ItemComponent.php) implements `HasColor` **only**, so `->color('gray')` emits the full class set — `sy-color`, `sy-color-gray` and the resolved shade classes — and [`text-column.css`](../../../packages/tables/assets/src/styles/components/text-column.css)'s `.sy-color-gray` branch, declared after the `.sy-color` one and matching at the same specificity, paints the item `gray-500` / `dark:gray-400`.
 Gray is therefore a *visible* choice on a cell, distinct from leaving the colour unset (which leaves the base `gray-950` / `dark:white`).
 [`IconComponent`](../../../packages/tables/src/Colors/Components/TextColumnComponent/ItemComponent/IconComponent.php) does implement `HasDefaultGrayColor`, so `->iconColor('gray')` emits nothing at all and the icon's own base grey stands.
-Adding the contract to `ItemComponent` — the obvious symmetry, and what schemas' [`TextComponent`](../schemas/README.md#supporting-surface) does — would make `->color('gray')` a silent no-op and leave the `.sy-color-gray` rule dead.
+Adding the contract to `ItemComponent` — the obvious symmetry, and what schemas' [`TextComponent`](../schemas/README.md#files) does — would make `->color('gray')` a silent no-op and leave the `.sy-color-gray` rule dead.
 
 The icon's shade comes from the stylesheet rather than from its policy, which is what an empty `getColorMap()` [means](../support/color-policies.md#an-empty-map-is-a-real-answer-not-a-missing-one): the two carrier classes swap the palette and `text-column.css` reads `text-color-500` off it.
 Writing the icon rule the way the item's is written — `text-(--sy-text)` — would compile, ship, and paint nothing, because no class an empty map emits ever sets that variable.
@@ -333,7 +333,7 @@ A class with no rule, or a rule no class reaches, renders the icon flush again w
 The surface argument is not a style choice — it is a claim about what is actually behind the text, and the shipped `sy-ta` chrome paints its container `bg-white dark:bg-gray-900` ([`table.css`](../../../packages/tables/assets/src/styles/components/table.css)), so `gray-800` would be measuring against a background this port does not render.
 Copying the literal would silently understate the contrast ratio of every dark cell.
 
-The same reasoning is why the surfaces are not schemas' [`TextComponent`](../schemas/README.md#supporting-surface)'s either — that one sits on a different container and measures `$gray[50]` / `$gray[700]`.
+The same reasoning is why the surfaces are not schemas' [`TextComponent`](../schemas/README.md#files)'s either — that one sits on a different container and measures `$gray[50]` / `$gray[700]`.
 Revisit if the table chrome's background changes, and re-run [`PolicyShadeGridTest`](../../../packages/tables/tests/Unit/Colors/Components/PolicyShadeGridTest.php) when it does.
 
 ### `getFormattedState()` replaces the embedded view's local preamble

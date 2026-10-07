@@ -1,5 +1,5 @@
 ---
-description: '`HasRelationship`, the Doctrine association arm `Select` and `CheckboxList` share, with `Select`''s relationship search, label and save arms (draft)'
+description: '`HasRelationship`, the Doctrine association arm `Select` and `CheckboxList` share, with `Select`''s relationship search, label and ignore-record arms'
 ports:
   - vendor/filament/forms/src/Components/Select.php
   - vendor/filament/forms/src/Components/Concerns/HasPivotData.php
@@ -9,26 +9,27 @@ owns:
 ---
 # HasRelationship (forms)
 
+[`HasRelationship`](../../../packages/forms/src/Components/Concerns/HasRelationship.php) is composed by [`Select`](select.md) and [`CheckboxList`](checkbox-list.md#the-to-many-relationship-arm-serves-this-field-unchanged).
+`Select`'s own relationship-only members (the search, label and ignore-record arms) are methods of `Select.php`, and they are written up here beside the trait they build on rather than in [select.md](select.md), which owns the class.
+
 ## Surface
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
-| [`relationship()`](../../../packages/forms/src/Components/Concerns/HasRelationship.php) — to-one and to-many, over the [association reader](../schemas/association-reader.md) | [`Components/Select.php`](../../../vendor/filament/forms/src/Components/Select.php) | done | — | [detail](#relationship-is-three-lazy-closures-over-the-association-reader) · [semantics](#a-relationship-map-is-full-or-an-exception-except-where-search-makes-it-partial-by-design) · [diverges](#the-save-arm-writes-a-desired-list-not-attachdetach) |
+| [`relationship()`](../../../packages/forms/src/Components/Concerns/HasRelationship.php) — to-one and to-many, over the [association reader](../schemas/association-reader.md) | [`Components/Select.php`](../../../vendor/filament/forms/src/Components/Select.php) | done | — | [semantics](#relationship-is-three-lazy-closures-over-the-association-reader) · [semantics](#a-relationship-map-is-full-or-an-exception-except-where-search-makes-it-partial-by-design) · [diverges](#the-save-arm-writes-a-desired-list-not-attachdetach) |
 | The relationship search and label arms — `getSearchResultsFromRelationship()`, `getOptionsFromRelationship()` (searchable / preload / limit / ordering), `getOptionLabelFromRelationship()`, `getOptionLabelsFromRelationship()`, and the shared `getOptionLabelFromRecordUsing()` trio | [`Components/Select.php`](../../../vendor/filament/forms/src/Components/Select.php) | done | — | [semantics](#the-relationship-search-arm-runs-a-like-per-column-over-the-scoped-option-query) · [diverges](#a-search-column-is-a-mapped-field-and-the-title-ordering-skips-what-it-cannot-order) |
 | `relationship()` `ignoreRecord:` | [`Components/Select.php`](../../../vendor/filament/forms/src/Components/Select.php) | done | — | [semantics](#ignorerecord-narrows-the-two-option-arms-and-neither-label-arm) · [diverges](#a-record-of-another-class-than-the-association-target-is-refused) |
 | `pivotData()` | [`Concerns/HasPivotData.php`](../../../vendor/filament/forms/src/Components/Concerns/HasPivotData.php) | skipped | — | [diverges](#the-save-arm-writes-a-desired-list-not-attachdetach) |
 
-## Details
-
-Specifics for rows that are not finished, and the standing write-up of the relationship arm.
+## Semantics
 
 ### `relationship()` is three lazy closures over the association reader
 
 [`HasRelationship`](../../../packages/forms/src/Components/Concerns/HasRelationship.php) stores the title attribute and the optional query scope, then wires three closures and nothing else.
-Each takes its component as `self`, which resolves to whichever class composed the trait, so [`CheckboxList`](checkbox-list.md#the-to-many-relationship-arm-serves-this-field-unchanged) takes the same three unchanged; the option query the first of them runs is built and scoped in one place — `createScopedOptionQuery()`, the builder *before* it runs, which `getRecordsFromRelationship()` executes for the trait's own map and which this field's [search, label and selected-record arms](#the-relationship-search-arm-runs-a-like-per-column-over-the-scoped-option-query) constrain, limit and order first.
-Those four arms are `Select`'s, installed by its own `relationship()` override on top of the trait's three; the trait keeps what both fields use, which also includes the record-label trio (`getOptionLabelFromRecordUsing()` / `hasOptionLabelFromRecordUsingCallback()` / `getOptionLabelFromRecord()`, moved here from `CheckboxList` — Filament duplicates it on both fields because it has no shared trait) and the one record→label mapping both maps are built from, `resolveOptionLabelFromRecord()`: the callback when declared, the title attribute read through the accessor otherwise.
-The association *name* and the target resolution below moved one level down into [`BelongsToRelationship`](../../../packages/forms/src/Components/Concerns/BelongsToRelationship.php) when [`Repeater::relationship()`](repeater-relationship.md#a-relationship-repeater-keys-its-items-by-identity-and-diffs-the-collection) needed the same three-arm refusal, and one package down into [schemas' trait of the same name](../schemas/entangles-state-with-singular-relationship.md#the-association-core-is-shared-with-forms-relation-backed-fields) when the entangled layout components needed it too — what is left in forms is the adapter that says "The [name] field" and that a field has its own name to fall back on.
-The clauses that differ per field — why an unresolvable relationship is fatal for *this* field, and what to do instead — stay with each field as small hooks, so no message lost a word to the sharing:
+Each takes its component as `self`, which resolves to whichever class composed the trait, so [`CheckboxList`](checkbox-list.md#the-to-many-relationship-arm-serves-this-field-unchanged) takes the same three unchanged; the option query the first of them runs is built and scoped in one place — `createScopedOptionQuery()`, the builder *before* it runs, which `getRecordsFromRelationship()` executes for the trait's own map and which `Select`'s [search, label and selected-record arms](#the-relationship-search-arm-runs-a-like-per-column-over-the-scoped-option-query) constrain, limit and order first.
+Those four arms are `Select`'s, installed by its own `relationship()` override on top of the trait's three; the trait keeps what both fields use, which also includes the record-label trio (`getOptionLabelFromRecordUsing()` / `hasOptionLabelFromRecordUsingCallback()` / `getOptionLabelFromRecord()`, which Filament declares on both `Select` and `CheckboxList` because it has no shared trait) and the one record→label mapping both maps are built from, `resolveOptionLabelFromRecord()`: the callback when declared, the title attribute read through the accessor otherwise.
+The association *name* and the target resolution below live in [`BelongsToRelationship`](../../../packages/forms/src/Components/Concerns/BelongsToRelationship.php), which [`Repeater::relationship()`](repeater-relationship.md#a-relationship-repeater-keys-its-items-by-identity-and-diffs-the-collection) composes too for the same three-arm refusal, over [schemas' trait of the same name](../schemas/entangles-state-with-singular-relationship.md#the-association-core-is-shared-with-forms-relation-backed-fields) that the entangled layout components share — the forms trait is only the adapter that says "The [name] field" and that a field has its own name to fall back on.
+The clauses that differ per field — why an unresolvable relationship is fatal for *this* field, and what to do instead — stay with each field as small hooks, so no message loses a word to the sharing:
 
 - **`options()`** — [`AssociationReader::describe()`](../schemas/association-reader.md) resolves the record class's mapping at that property, `createOptionQuery()` builds `SELECT record FROM <target> record`, `modifyQueryUsing` scopes it, and each row becomes its `getRecordKey()` mapped to the title attribute, read through [`PropertyAccessor::getFromRecord()`](../schemas/property-accessor.md).
   The keys are the identifier strings the client speaks, so PHP canonicalizes numeric ones to `int` array keys — the same vocabulary [`getEnabledOptionValues()`](can-disable-options.md#the-choice-choices-cover-both-forms-the-raw-state-can-take) already reconciles, which is why the `Choice` guard needed no relationship arm.
@@ -43,9 +44,9 @@ Every one of them resolves the record class and the reader **at evaluation time*
 The to-one/to-many branch is read off the mapping on each call rather than captured: all three go through `getMultiplicityMatchedRelationshipTarget()`, which reads `isMultiple()` on the same call and refuses the two shapes where the field and the mapping disagree — a to-many association the field never declared `multiple()` for (every selection but one would be dropped on the way in, and the save would write a single reference over the collection), and a to-one association it did (a list of selections has no single record to map onto).
 Both sides are still read per call rather than snapshotted, so `multiple()` may be declared on either side of `relationship()`; it is the *pairing* that is fixed, not the declaration order.
 
-All three take the component as an injected parameter (`static function (Select $component)`, Filament-exact) rather than closing over `$this`.
+All three take the component as an injected parameter (`static function (self $component)`, where Filament types it `Select $component`) rather than closing over `$this`.
 [`getClone()`](../schemas/component.md) is a shallow `clone`, so a closure bound to `$this` would keep pointing at the *original* component after the clone — every per-item schema a `Repeater` builds is a clone of the child schema, so a relationship select inside one would read the template's configuration, not the item's.
-The values it reads happen to be instance-invariant today, which is precisely why the binding has to be right before something instance-varying (`ignoreRecord:`, a per-item scope) makes it observable.
+`Select`'s `ignoreRecord:` is where that is observable: it excludes the record bound to the item schema, which a closure bound to the template would never see.
 
 `$name` defaults to the field's own name at declaration time (`$name ?? $this->getName()`, Filament-exact), which is what keeps `hasRelationship()` false for a select that never declared one — the fallback lives in the assignment, not in the getter.
 
@@ -54,8 +55,6 @@ A field declaring `modifyQueryUsing` neither reads nor writes the memo, because 
 The map is read exactly once per render, in [`getExtraTemplateData()`](select.md#getextratemplatedata-makes-the-one-getoptions-read-both-branches-share), for the same reason.
 
 The concern imports `Doctrine\ORM\QueryBuilder` directly, so `forms` declares `doctrine/orm` in its own `require` rather than inheriting it through `schemas` — the split-repo rule, since each package is published standalone.
-
-## Semantics
 
 ### A relationship map is full or an exception, except where search makes it partial by design
 
@@ -67,8 +66,8 @@ There is no fallback option map anywhere in the concern; a select whose options 
 
 One empty-map arm is **not** an accident: `Select::getOptionsFromRelationship()` answers `[]` for a searchable select that is not preloaded (Filament returns `null` there; ours keeps the `array` type and the validation builder distinguishes the two by predicate), and a limited map for one that is.
 Neither is the truth about a submitted value, and neither reaches the `Choice`: `hasFullOptionMap()` is false for every searchable relationship select, and the [label probe](select.md#the-choice-constraint-is-the-fields-only-server-side-guard) — which fetches the submitted key through the same scoped query — guards it instead.
-So the invariant is unchanged where it matters: a full map is validated as a full map, and a partial one is never validated as if it were full.
-Because `isSearchable()` [defaults to `isMultiple()`](select.md#multiple-forces-the-js-control-and-is-searchable-by-default), a `multiple()` relationship select is on this arm unless it says `preload()` — the four shipped tests that build one gained the call, and the trait's "always a full map" docblock became this paragraph.
+So the invariant holds where it matters: a full map is validated as a full map, and a partial one is never validated as if it were full.
+Because `isSearchable()` [defaults to `isMultiple()`](select.md#multiple-forces-the-js-control-and-is-searchable-by-default), a `multiple()` relationship select is on this arm unless it says `preload()`.
 
 One consequence worth stating: on either arm the save hook receives an identifier that has already been checked against the target table — through the map or through the probe — by the time it runs.
 Its own "not an identifier" throw is therefore a belt-and-braces guard for a state that reached `getData()` without validation, not the primary defence.
@@ -76,12 +75,12 @@ Its own "not an identifier" throw is therefore a belt-and-braces guard for a sta
 ### The relationship search arm runs a `LIKE` per column over the scoped option query
 
 Every searchable, preload, limit and label arm lives on `Select`, not in the shared trait — as in Filament, where every one of these members sits on `Select` — because [`CheckboxList`](checkbox-list.md#the-to-many-relationship-arm-serves-this-field-unchanged) composes the same trait and has none of `isPreloaded()`, `getSearchColumns()`, `getOptionsLimit()` or the closures.
-The trait keeps what both use: the cardinality guard, `createScopedOptionQuery(?string $search)` (create + scope, with `modifyQueryUsing` now receiving the term as `$search` — `null` outside a search — beside `$query`), and the record→label mapping.
+The trait keeps what both use: the cardinality guard, `createScopedOptionQuery(?string $search)` (create + scope, with `modifyQueryUsing` receiving the term as `$search` — `null` outside a search — beside `$query`), and the record→label mapping.
 `Select::relationship()` calls the trait's, then installs four arms unconditionally on top of the three option-action defaults:
 
 - **`getSearchResultsUsing` ⇒ `getSearchResultsFromRelationship(?string $search)`.**
   Blank `getSearchColumns()` ⇒ `[]` (an untitled relationship has nothing to search; Filament's empty nested `where` is a no-op, and an empty `orX()` would be malformed DQL).
-  Otherwise the scoped query gains `andWhere(orX(SearchConstraint::like(...) per column))` — schemas' [`SearchConstraint::like()`](../schemas/search-constraint.md), the engine tables' filter chain moved down for this, which lowers both sides on Postgres or when `forceSearchCaseInsensitive()` says so — then a limit **unconditionally**: a `setMaxResults()` the scope set wins and is written back through `optionsLimit()` (so the control's own cap agrees), else `getOptionsLimit()` (50); then the title ordering; then execute and map.
+  Otherwise the scoped query gains `andWhere(orX(SearchConstraint::like(...) per column))` — schemas' [`SearchConstraint::like()`](../schemas/search-constraint.md), the engine tables' own `SearchConstraint` delegates to, which lowers both sides on Postgres or when `forceSearchCaseInsensitive()` says so — then a limit **unconditionally**: a `setMaxResults()` the scope set wins and is written back through `optionsLimit()` (so the control's own cap agrees), else `getOptionsLimit()` (50); then the title ordering; then execute and map.
   Search columns are DQL field paths on the target (`name`, or `address.city` into an embeddable), and `getSearchColumns()` defaults to `[$titleAttribute]` when `searchable()` named none.
 - **`getOptionLabelUsing` ⇒ `getOptionLabelFromRelationship()`.**
   `getSelectedRecord()` first, `null` when it answers none, else the record's label — the record-label callback when declared, the title attribute through the accessor otherwise, the same two branches Filament's install has.
@@ -94,7 +93,7 @@ The trait keeps what both use: the cardinality guard, `createScopedOptionQuery(?
 `getOptionsFromRelationship()` is overridden on `Select` too, composing gates → query → limit → ordering → execute → map so the limit and the ordering are on the query before it runs: the searchable-and-not-preloaded gate, the memo, then the limit under Filament's narrower condition (`isSearchable() && filled(getSearchColumns())`, the scope's own limit still winning and writing back), then the title ordering, then the trait's mapping.
 Two Filament-parity details ride along.
 Both relationship option arms **order by the title attribute** when the scoped query carries no `orderBy` — on the title-attribute path only, exactly where Filament puts it; the record-label-callback branch orders nothing, so a `CheckboxList` with a callback and no title attribute is untouched, and the trait's own map is unordered ([recorded on that field](checkbox-list.md#the-relationship-option-map-is-unordered)).
-And the callback branch is what the moved `getOptionLabelFromRecordUsing()` trio makes reachable on `Select`: with it, both the map and the search results label rows through the callback, in the order the database returns them.
+And the callback branch is what the shared `getOptionLabelFromRecordUsing()` trio makes reachable on `Select`: with it, both the map and the search results label rows through the callback, in the order the database returns them.
 
 ### `ignoreRecord:` narrows the two option arms, and neither label arm
 
@@ -124,16 +123,10 @@ It is kept as a type-level statement — the relation layer speaks record keys, 
 ### A composite label read runs one statement per batch, and a composite submission past `maxItems()` reads no label
 
 `getOptionLabelsFromRelationship()` reads one statement per batch of `IdentifierConstraint::batch()`, and merges the answers into a map keyed by record key.
-That is the whole list for a single identifier, and at most 500 keys a statement for a composite one.
-A `multiple()` relationship select whose target is keyed by more than one field, and whose submission holds more values than `maxItems()` allows, answers with the `Count` violation alone.
-The label read behind the membership check is skipped: the submission is refused either way, and that read is what a forged list would make expensive.
-
-The short-circuit is composite-only, and on purpose.
-A composite label read is the one a forged list makes expensive — a balanced OR of ANDs per batch, a statement per batch of at most 500 keys.
-A single identifier's is one statement over one array parameter, as cheap for a long list as for a short one, so there is nothing to save by skipping it.
-Every other `multiple()` select — a single-identifier relationship, static `options()`, an enum — therefore keeps reporting both the `Count` and the membership `Choice` violation.
+For a single identifier that is the whole list in one statement over one array parameter, as cheap for a long list as for a short one.
+For a composite one it is a balanced OR of ANDs per batch, at most 500 keys a statement, which is the read a forged list makes expensive.
+That cost is why a composite submission longer than `maxItems()` skips the label read and answers with the `Count` violation alone, while every other `multiple()` select keeps reporting both ([the divergence](#a-composite-relationship-select-past-maxitems-answers-the-count-alone)).
 `hasCompositeRelationshipTarget()` asks the target's class metadata (`isIdentifierComposite`) and issues no statement.
-[`SelectCompositeRelationshipTest`](../../../packages/forms/tests/Integration/Components/SelectCompositeRelationshipTest.php) pins both arms, and the membership violation alone for a forged key with no limit and at the limit, and [`SelectMultipleTest`](../../../packages/forms/tests/Integration/Components/SelectMultipleTest.php) keeps the static-options `[Count, Choice]` pin.
 
 ### The relation tier reads the owner's class and never its identity
 
@@ -160,8 +153,9 @@ Laravel's validator, which Filament validates through, reports every failing rul
 A `multiple()` relationship select whose target is keyed by more than one field answers only the `Count` violation once the submission is longer than `maxItems()`.
 The membership check behind it is skipped: for a searchable select it is a batched label read that a forged list would make expensive, and for one with a full option map it is a `Choice` over every option, skipped with it.
 The submission is refused either way ([why](#a-composite-label-read-runs-one-statement-per-batch-and-a-composite-submission-past-maxitems-reads-no-label)).
-Single-identifier relationship, static-options and enum selects report both, as Filament does.
+Single-identifier relationship, static-options and enum selects report both the `Count` and the membership `Choice` violation, as Filament does.
 Reversible if the composite label read ever costs what the single-identifier one does.
+Pinned by [`SelectCompositeRelationshipTest`](../../../packages/forms/tests/Integration/Components/SelectCompositeRelationshipTest.php), with [`SelectMultipleTest`](../../../packages/forms/tests/Integration/Components/SelectMultipleTest.php) pinning the static-options pair.
 
 ### The save arm writes a desired list, not attach/detach
 
@@ -188,12 +182,12 @@ So a to-many `relationship()` field on the inverse side — a [`CheckboxList`](c
 Filament never meets it: `BelongsToMany` writes the pivot from either end.
 
 The to-many arm therefore asks the mapping which side persists.
-On the inverse side of a many-to-many it first reconciles the desired list onto the owning side through the [association reader](../schemas/relationship.md#a-write-lands-on-the-side-doctrine-persists) — every current member no longer desired is `detach()`ed and every new one `attach()`ed, both of which already flip to the related record's own collection — and **then** writes the record's own collection exactly as before.
+On the inverse side of a many-to-many it first reconciles the desired list onto the owning side through the [association reader](../schemas/relationship.md#a-write-lands-on-the-side-doctrine-persists) — every current member missing from the desired list is `detach()`ed and every new one `attach()`ed, both of which flip to the related record's own collection — and **then** writes the record's own collection as the owning side does.
 Kept members are touched by neither, so dropping one member and adding another costs one join-row `DELETE` and one `INSERT`, for a single-identifier record and a composite one alike.
-The second write is not redundant: it is what the form re-fills from when it re-renders in the same request, and reconciling the owning side alone re-rendered the **old** selection; it costs no statement, the reconcile's own read having loaded that collection already.
-The owning side is untouched, statement for statement, and a one-to-many never reaches the reconcile — the guard names a many-to-many, since a one-to-many is always inverse and routing it through `detach()` would refuse an `orphanRemoval` mapping by name, which the composite-owner one-to-many saves of [`CompositeOwnerRelationshipTest`](../../../packages/forms/tests/Integration/Components/CompositeOwnerRelationshipTest.php) would meet at once.
+The second write is not redundant: it is what the form re-fills from when it re-renders in the same request, and reconciling the owning side alone would re-render the **old** selection; it costs no statement, the reconcile's own read having loaded that collection already.
+A field on the owning side never reaches the reconcile, and neither does a one-to-many — the guard names a many-to-many, since a one-to-many is always inverse and routing it through `detach()` would refuse an `orphanRemoval` mapping by name, which the composite-owner one-to-many saves of [`CompositeOwnerRelationshipTest`](../../../packages/forms/tests/Integration/Components/CompositeOwnerRelationshipTest.php) would meet at once.
 
-One save is refused rather than written, and it is the step's one added refusal.
+One save is refused rather than written.
 Reaching the owning side means `detach()`, which takes **this** record out of the target's collection; where that collection declares `orphanRemoval` Doctrine treats its members as privately owned and deletes the one taken out rather than unlinking it — here the record the form is saving, with every join row it had.
 So the arm computes its removals first and, only when there is one, reads the owning side's own mapping and throws:
 
@@ -205,11 +199,11 @@ Nothing that would otherwise work is refused, since without the reconcile such a
 The reader refuses the analogous **one-to-many** by name and cannot see this one ([why](../schemas/relationship.md#a-write-lands-on-the-side-doctrine-persists)), which is what puts the refusal here.
 
 Two costs come with it.
-The adder-and-remover contract now reaches the **related** records' collections, so a getter-only owning collection behind an inverse-side field throws Symfony's `NoSuchPropertyException` where the save used to write nothing in silence — the right direction, executed while the arm was designed, and unpinned, since every owning collection the fixtures carry has its adder.
+The adder-and-remover contract reaches the **related** records' collections too, so a getter-only owning collection behind an inverse-side field throws Symfony's `NoSuchPropertyException` rather than saving nothing in silence; no test pins that arm, since every owning collection the fixtures carry has its adder.
 And each added member is read before it is written: `N + 1` reads for `N` added members in a real form, whose options are already loaded, and `2N + 1` cold.
 Adding to each related record's `PersistentCollection` directly would skip those reads, but it bypasses the entity's own adder, which is what this whole arm rests on, so it is not taken.
 
-Pinned by [`InverseSideRelationshipTest`](../../../packages/forms/tests/Integration/Components/InverseSideRelationshipTest.php), nine cases — a `Select` and a `CheckboxList` on the inverse side, the same-request re-fill, an empty submission, a record persisted only after the field was filled (the create page's path, and the only case that writes a record's first join row), a record keyed by two columns holding the inverse side, the refusal with the record and its join rows read back through the connection, the add-only save that rides past it, and the owning side as a control — over fixtures whose inverse adders deliberately heal nothing, since a healing adder makes the base pass too, and whose `orphanRemoval` many-to-many is a pair of its own, the only one the forms tree carries.
+Pinned by [`InverseSideRelationshipTest`](../../../packages/forms/tests/Integration/Components/InverseSideRelationshipTest.php), over fixtures whose inverse adders deliberately heal nothing, since a healing adder would make the save pass without the reconcile too.
 
 ### A record of another class than the association target is refused
 

@@ -196,7 +196,7 @@ Recorded in the [rename table](../renames.md#renames); permanent, and the rule t
 `packageBooted()` registers six `Testable` mixins — `TestsActions`, `TestsBulkActions`, `TestsColumns`, `TestsFilters`, `TestsRecords`, `TestsSummaries` — whose every method drives a mounted Livewire component through `$this->call()` / `$this->set()`.
 Sylament tests are Pest/`KernelTestCase`, not Livewire `Testable`; the Integration suite renders through `ViewComponent::render(Environment $twig)` and asserts on markup and container state instead.
 A deliberate non-goal — **skipped** — for the same reason actions' [`TestsActions`](../actions/actions-bundle.md#livewire-specific-provider-responsibilities-are-dropped-not-ported) and schemas' `TestsSchemas` are.
-What is skipped is the **mixin registration**, not the idea of test helpers: Filament's [`src/Testing`](../../../vendor/filament/tables/src/Testing) subtree carries six **todo** rows in the package README's [supporting surface](README.md#supporting-surface) — one per `Tests*.php` file, `TestsActions` through `TestsSummaries` — because the helpers may still be worth porting in a Pest shape.
+What is skipped is the **mixin registration**, not the idea of test helpers: Filament's [`src/Testing`](../../../vendor/filament/tables/src/Testing) subtree carries six **todo** rows in the package README's [supporting surface](README.md#files) — one per `Tests*.php` file, `TestsActions` through `TestsSummaries` — because the helpers may still be worth porting in a Pest shape.
 
 ### The manifest declares `sylament/forms`
 

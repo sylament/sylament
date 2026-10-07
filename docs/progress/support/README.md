@@ -1,175 +1,119 @@
-# Support — port progress
+# Support — port trail
 
-Ports [`filament/support`](../../../vendor/filament/support) into [`packages/support`](../../../packages/support).
-Foundation for every other bundle: the base component model, shared UI components, colors, icons, assets, helpers.
+Ports [`filament/support`](../../../vendor/filament/support) into [`packages/support`](../../../packages/support): the foundation every other bundle builds on, from the base component model and the shared UI components to colours, icons, assets and helpers.
 
-**Status:** in progress — see the [status vocabulary](../README.md#statuses) and [what goes where](../../internals/trail.md#one-file-per-piece-of-code-one-row-per-feature).
+## Files
 
-These tables map the full `support/src` surface end to end.
-A linked name in the first column is code that already exists in the port; the per-component audit against Filament has now resolved every one to a real [status](../README.md#statuses) — **done** or **in progress** — linking a detail file wherever a divergence, an open gap, or real sub-structure earns one.
-A plain-text name is not built yet and carries **Status** `todo`.
-A row named for a directory (`Commands`, `Facades`, `Translations`, `Color policies`, …) collapses a whole subtree into one navigational entry — a cluster we expect to port, if at all, as a unit rather than file by file.
+<!-- trail-index:start -->
+- [array-record.md](array-record.md)
+- [badge.md](badge.md)
+- [breadcrumbs.md](breadcrumbs.md)
+- [button.md](button.md)
+- [can-be-contained.md](can-be-contained.md)
+- [can-be-copied.md](can-be-copied.md)
+- [can-order-columns.md](can-order-columns.md)
+- [can-span-columns.md](can-span-columns.md)
+- [can-wrap.md](can-wrap.md)
+- [cancel.md](cancel.md)
+- [color-manager.md](color-manager.md)
+- [color-policies.md](color-policies.md)
+- [color.md](color.md)
+- [component-attribute-bag.md](component-attribute-bag.md)
+- [component-manager.md](component-manager.md)
+- [component.md](component.md)
+- [contracts.md](contracts.md)
+- [copyable.md](copyable.md)
+- [dropdown-item.md](dropdown-item.md)
+- [dropdown.md](dropdown.md)
+- [enums.md](enums.md)
+- [exposed-live-component-method.md](exposed-live-component-method.md)
+- [fieldset.md](fieldset.md)
+- [filesystem-registry.md](filesystem-registry.md)
+- [halt.md](halt.md)
+- [has-alignment.md](has-alignment.md)
+- [has-color.md](has-color.md)
+- [has-default-data-formatting-settings.md](has-default-data-formatting-settings.md)
+- [has-extra-attributes.md](has-extra-attributes.md)
+- [has-font-family.md](has-font-family.md)
+- [has-icon-color.md](has-icon-color.md)
+- [has-icon-size.md](has-icon-size.md)
+- [has-icon.md](has-icon.md)
+- [has-placeholder.md](has-placeholder.md)
+- [has-tooltip.md](has-tooltip.md)
+- [has-vertical-alignment.md](has-vertical-alignment.md)
+- [has-weight.md](has-weight.md)
+- [helpers.md](helpers.md)
+- [icon-button.md](icon-button.md)
+- [icon-manager.md](icon-manager.md)
+- [icon-size.md](icon-size.md)
+- [icon.md](icon.md)
+- [input-wrapper.md](input-wrapper.md)
+- [link.md](link.md)
+- [loading-indicator.md](loading-indicator.md)
+- [modal.md](modal.md)
+- [pagination.md](pagination.md)
+- [section.md](section.md)
+- [sortable.md](sortable.md)
+- [support-bundle.md](support-bundle.md)
+- [support-icon-alias.md](support-icon-alias.md)
+- [tabs.md](tabs.md)
+- [vertical-alignment.md](vertical-alignment.md)
+- [view-component.md](view-component.md)
+<!-- trail-index:end -->
 
-## Components
+## Unported
 
-The shared UI kit — the component model in [`src/Components`](../../../vendor/filament/support/src/Components) and the rendered widgets in [`src/View/Components`](../../../vendor/filament/support/src/View/Components)
-+ [`resources/views/components`](../../../vendor/filament/support/resources/views/components).
-  Several `View/Components/*Component.php` files are **colour policies** rather than renderable widgets; where one backs a widget the row below owns both, and the policy tier itself — including `ToggleComponent`, which backs no support-level widget at all — is the `Color policies` row in the [Supporting surface](#supporting-surface).
-
-| Component | Ports | Status | Detail |
+| Filament | Status | Blocked by | Detail |
 | --- | --- | --- | --- |
-| [`Component`](../../../packages/support/src/Components/Component.php) | [`Components/Component.php`](../../../vendor/filament/support/src/Components/Component.php) | done | [component.md](component.md) — every row settled, the arity probe included |
-| [`ViewComponent`](../../../packages/support/src/Components/ViewComponent.php) | [`Components/ViewComponent.php`](../../../vendor/filament/support/src/Components/ViewComponent.php) | done | [view-component.md](view-component.md) |
-| [`ComponentManager`](../../../packages/support/src/Configuration/ComponentManager.php) | [`Components/ComponentManager.php`](../../../vendor/filament/support/src/Components/ComponentManager.php) | in progress | [component-manager.md](component-manager.md) |
-| Actions | [`views/components/actions.blade.php`](../../../vendor/filament/support/resources/views/components/actions.blade.php) | todo | — |
-| Avatar | [`views/components/avatar.blade.php`](../../../vendor/filament/support/resources/views/components/avatar.blade.php) | todo | — |
-| [`Badge`](../../../packages/support/templates/components/Badge/index.html.twig) | [`View/Components/BadgeComponent.php`](../../../vendor/filament/support/src/View/Components/BadgeComponent.php) | in progress | [badge.md](badge.md) |
-| [`Breadcrumbs`](../../../packages/support/templates/components/Breadcrumbs/index.html.twig) | [`views/components/breadcrumbs.blade.php`](../../../vendor/filament/support/resources/views/components/breadcrumbs.blade.php) | done | [breadcrumbs.md](breadcrumbs.md) |
-| [`Button`](../../../packages/support/templates/components/Button/index.html.twig) | [`View/Components/ButtonComponent.php`](../../../vendor/filament/support/src/View/Components/ButtonComponent.php) | in progress | [button.md](button.md) |
-| Callout | [`View/Components/CalloutComponent.php`](../../../vendor/filament/support/src/View/Components/CalloutComponent.php) | todo | — |
-| Card | [`views/components/card.blade.php`](../../../vendor/filament/support/resources/views/components/card.blade.php) | todo | — |
-| Checkbox | [`views/components/input/checkbox.blade.php`](../../../vendor/filament/support/resources/views/components/input/checkbox.blade.php) | todo | Deliberately still a class rather than a component — the [checkbox skin](#supporting-surface) ships as `.sy-checkbox` and every emitter writes its own `<input>`, which is what Filament's own tables package does rather than calling this Blade component |
-| [`Dropdown`](../../../packages/support/templates/components/Dropdown/index.html.twig) | [`views/components/dropdown/index.blade.php`](../../../vendor/filament/support/resources/views/components/dropdown/index.blade.php) | in progress | [dropdown.md](dropdown.md) |
-| [`Dropdown item`](../../../packages/support/templates/components/DropdownItem/index.html.twig) | [`views/components/dropdown/list/item.blade.php`](../../../vendor/filament/support/resources/views/components/dropdown/list/item.blade.php) | in progress | [dropdown-item.md](dropdown-item.md) |
-| Empty state | [`views/components/empty-state.blade.php`](../../../vendor/filament/support/resources/views/components/empty-state.blade.php) | todo | — |
-| [`Fieldset`](../../../packages/support/templates/components/Fieldset/index.html.twig) | [`views/components/fieldset.blade.php`](../../../vendor/filament/support/resources/views/components/fieldset.blade.php) | done | — |
-| [`Icon`](../../../packages/support/templates/components/Icon/index.html.twig) | [`views/components/icon.blade.php`](../../../vendor/filament/support/resources/views/components/icon.blade.php) | done | — |
-| [`Icon button`](../../../packages/support/templates/components/IconButton/index.html.twig) | [`View/Components/IconButtonComponent.php`](../../../vendor/filament/support/src/View/Components/IconButtonComponent.php) | in progress | [icon-button.md](icon-button.md) |
-| Input | [`views/components/input/index.blade.php`](../../../vendor/filament/support/resources/views/components/input/index.blade.php) | todo | — |
-| [`Input wrapper`](../../../packages/support/templates/components/InputWrapper/index.html.twig) | [`views/components/input/wrapper.blade.php`](../../../vendor/filament/support/resources/views/components/input/wrapper.blade.php) | in progress | [input-wrapper.md](input-wrapper.md) |
-| [`Link`](../../../packages/support/templates/components/Link/index.html.twig) | [`View/Components/LinkComponent.php`](../../../vendor/filament/support/src/View/Components/LinkComponent.php) | in progress | [link.md](link.md) |
-| [`Loading indicator`](../../../packages/support/templates/components/LoadingIndicator/index.html.twig) | [`views/components/loading-indicator.blade.php`](../../../vendor/filament/support/resources/views/components/loading-indicator.blade.php) | in progress | [loading-indicator.md](loading-indicator.md) |
-| Loading section | [`views/components/loading-section.blade.php`](../../../vendor/filament/support/resources/views/components/loading-section.blade.php) | todo | — |
-| [`Modal`](../../../packages/support/templates/components/Modal/index.html.twig) | [`View/Components/ModalComponent.php`](../../../vendor/filament/support/src/View/Components/ModalComponent.php) | in progress | [modal.md](modal.md) |
-| One-time code | [`views/components/input/one-time-code.blade.php`](../../../vendor/filament/support/resources/views/components/input/one-time-code.blade.php) | todo | — |
-| [`Pagination`](../../../packages/support/templates/components/Pagination/index.html.twig) | [`views/components/pagination/index.blade.php`](../../../vendor/filament/support/resources/views/components/pagination/index.blade.php) | in progress | [pagination.md](pagination.md) |
-| Radio | [`views/components/input/radio.blade.php`](../../../vendor/filament/support/resources/views/components/input/radio.blade.php) | todo | — |
-| [`Section`](../../../packages/support/templates/components/Section/index.html.twig) | [`views/components/section/index.blade.php`](../../../vendor/filament/support/resources/views/components/section/index.blade.php) | in progress | [section.md](section.md) |
-| Select | [`views/components/input/select.blade.php`](../../../vendor/filament/support/resources/views/components/input/select.blade.php) | skipped | Filament's is one `<select>` carrying `fi-select-input` and an inline-prefix modifier and nothing else. Forms' `Select` template emits exactly that pair, as `sy-fo-select` / `sy-fo-select-has-inline-prefix`, inside support's [`InputWrapper`](input-wrapper.md) — and it does so for **both** branches, the native `<select>` and the JS control the `sylament--forms--select` controller builds beside the same element ([select.md](../forms/select.md#nativefalse-switches-to-the-js-control)), the JS branch additionally carrying the controller's values. A support-tier component would hold nothing the forms template does not |
-| [`Tabs`](../../../packages/support/templates/components/Tabs/index.html.twig) · [`Tabs item`](../../../packages/support/templates/components/TabsItem/index.html.twig) | [`views/components/tabs/index.blade.php`](../../../vendor/filament/support/resources/views/components/tabs/index.blade.php) · [`tabs/item.blade.php`](../../../vendor/filament/support/resources/views/components/tabs/item.blade.php) | done | [tabs.md](tabs.md) |
-
-## Features
-
-Cross-cutting concerns and traits — [`src/Concerns`](../../../vendor/filament/support/src/Concerns).
-The base `Component`'s own traits (`Configurable`, `EvaluatesClosures`, `Macroable`, and the Laravel `Conditionable`/`Tappable`) are tracked in [`component.md`](component.md), not here.
-
-| Feature | Ports | Status | Detail |
-| --- | --- | --- | --- |
-| CanAggregateRelatedModels → [`Tables\Columns\Concerns\CanAggregateRelatedRecords`](../../../packages/tables/src/Columns/Concerns/CanAggregateRelatedRecords.php) | [`Concerns/CanAggregateRelatedModels.php`](../../../vendor/filament/support/src/Concerns/CanAggregateRelatedModels.php) | done | [translations.md](../translations.md#namespace-segments) · [tables/has-cell-state.md](../tables/has-cell-state.md#hascellstate-is-relocated-into-the-column-tier) |
-| [`CanBeContained`](../../../packages/support/src/Components/Concerns/CanBeContained.php) | [`Concerns/CanBeContained.php`](../../../vendor/filament/support/src/Concerns/CanBeContained.php) | done | — |
-| [`CanBeCopied`](../../../packages/support/src/Components/Concerns/CanBeCopied.php) | [`Concerns/CanBeCopied.php`](../../../vendor/filament/support/src/Concerns/CanBeCopied.php) | done | [can-be-copied.md](can-be-copied.md) |
-| CanBeLazy | [`Concerns/CanBeLazy.php`](../../../vendor/filament/support/src/Concerns/CanBeLazy.php) | todo | — |
-| CanConfigureCommonMark → inlined on [`Tables\Columns\Concerns\CanFormatState`](../../../packages/tables/src/Columns/Concerns/CanFormatState.php) | [`Concerns/CanConfigureCommonMark.php`](../../../vendor/filament/support/src/Concerns/CanConfigureCommonMark.php) | done | All four members (`commonMarkOptions()` / `getCommonMarkOptions()` / `commonMarkExtensions()` / `getCommonMarkExtensions()`) ship with `TextColumn::markdown()`, declared on the tables trait rather than in a support trait of their own — one consumer, and `CanFormatState` is where the converter that reads them runs ([text-column.md](../tables/text-column.md#markdown-throws-for-the-package-it-suggests-rather-than-falling-through)). A support trait arrives with the `CanFormatState` hoist below, if it arrives at all |
-| CanFormatState — the hoist | [`Tables\Columns\Concerns\CanFormatState`](../../../vendor/filament/tables/src/Columns/Concerns/CanFormatState.php) and its three siblings ([infolists](../../../vendor/filament/infolists/src/Components/Concerns/CanFormatState.php), [summarizers](../../../vendor/filament/tables/src/Columns/Summarizers/Concerns/CanFormatState.php), [exports](../../../vendor/filament/actions/src/Exports/Concerns/CanFormatState.php)) | todo | Filament files **four** copies and none of them in support, so this is a Sylament dedupe rather than a port. The whole formatting pipeline stays in the tables tier: the tables/infolists diff is three lines of substance, so the hoist is mechanical and belongs to whichever change brings the second reader. **That reader arrived, and as a second copy.** The summarizer tier ships [`Columns\Summarizers\Concerns\CanFormatState`](../tables/summarizer.md#the-formatting-trait-is-a-copy-of-the-columns-and-the-hoist-is-owed) — Filament's own four-copy shape, taken deliberately so a feature did not refactor the column's shipped trait from inside itself. It is a **subset**, not a duplicate: `money()`, `numeric()`, `html()`, `markdown()`, the CommonMark pair, `prefix()`/`suffix()`, `limit()` and five private helpers are the column trait's bodies with the closure receiver retyped (`TextColumn` → `Summarizer`) and four `LogicException` subjects changed, while `formatState()` (an array pass-through and a placeholder tail) and `placeholder()` deliberately differ and the date and word families are absent altogether — 393 lines against 599. So the debt is no longer hypothetical, and it is a scoped one: a fix to a **shared** member is owed to the other copy, a mechanical copy-back over the whole file is not. The hoist itself belongs to infolists' `TextEntry` or to a dedupe change of its own; until then `CanFormatState` is tracked as a folded concern of [`text-column.md`](../tables/text-column.md) and of [`summarizer.md`](../tables/summarizer.md) |
-| [`CanGrow`](../../../packages/support/src/Components/Concerns/CanGrow.php) | [`Concerns/CanGrow.php`](../../../vendor/filament/support/src/Concerns/CanGrow.php) | done | — |
-| [`CanOrderColumns`](../../../packages/support/src/Components/Concerns/CanOrderColumns.php) | [`Concerns/CanOrderColumns.php`](../../../vendor/filament/support/src/Concerns/CanOrderColumns.php) | done | — |
-| [`CanSpanColumns`](../../../packages/support/src/Components/Concerns/CanSpanColumns.php) | [`Concerns/CanSpanColumns.php`](../../../vendor/filament/support/src/Concerns/CanSpanColumns.php) | done | [can-span-columns.md](can-span-columns.md) |
-| [`CanWrap`](../../../packages/support/src/Components/Concerns/CanWrap.php) | [`Concerns/CanWrap.php`](../../../vendor/filament/support/src/Concerns/CanWrap.php) | done | — |
-| [`CanWrapHeader`](../../../packages/support/src/Components/Concerns/CanWrapHeader.php) | [`Concerns/CanWrapHeader.php`](../../../vendor/filament/support/src/Concerns/CanWrapHeader.php) | done | — |
-| [`HasAlignment`](../../../packages/support/src/Components/Concerns/HasAlignment.php) | [`Concerns/HasAlignment.php`](../../../vendor/filament/support/src/Concerns/HasAlignment.php) | done | [has-alignment.md](has-alignment.md) |
-| [`HasBadge`](../../../packages/support/src/Components/Concerns/HasBadge.php) | [`Concerns/HasBadge.php`](../../../vendor/filament/support/src/Concerns/HasBadge.php) | done | `getBadge()` casts a non-null evaluated badge to string, so the closure arm coerces exactly as `badge(3)` does on set — `->badge(fn () => count($x))` is *the* Filament idiom, and under `declare(strict_types=1)` the `?string` return would otherwise `TypeError` on the number Filament's non-strict file coerces; a closure returning something unprintable (an array) surfaces as PHP's own "Array to string conversion" warning — an `ErrorException` under Symfony's debug error handler — rather than a `TypeError`, since PHPStan's generic `evaluate()` already types the value `?string` and leaves no legal branch to guard it |
-| [`HasBadgeTooltip`](../../../packages/support/src/Components/Concerns/HasBadgeTooltip.php) | [`Concerns/HasBadgeTooltip.php`](../../../vendor/filament/support/src/Concerns/HasBadgeTooltip.php) | done | — |
-| HasCellState → [`Tables\Columns\Concerns\HasCellState`](../../../packages/tables/src/Columns/Concerns/HasCellState.php) | [`Concerns/HasCellState.php`](../../../vendor/filament/support/src/Concerns/HasCellState.php) | done | [translations.md](../translations.md#namespace-segments) · [tables/has-cell-state.md](../tables/has-cell-state.md#hascellstate-is-relocated-into-the-column-tier) |
-| [`HasColor`](../../../packages/support/src/Components/Concerns/HasColor.php) | [`Concerns/HasColor.php`](../../../vendor/filament/support/src/Concerns/HasColor.php) | done | — |
-| [`Concerns\HasDefaultDataFormattingSettings`](../../../packages/support/src/Concerns/HasDefaultDataFormattingSettings.php) | [`Concerns/HasDefaultDataFormattingSettings.php`](../../../vendor/filament/support/src/Concerns/HasDefaultDataFormattingSettings.php) | in progress | [has-default-data-formatting-settings.md](has-default-data-formatting-settings.md) — support's root `Concerns/`, composed on `Tables\Table` today and on `Schema` once infolists ship `TextEntry` |
-| HasExtraAlpineAttributes | [`Concerns/HasExtraAlpineAttributes.php`](../../../vendor/filament/support/src/Concerns/HasExtraAlpineAttributes.php) | skipped | There is no Alpine here, and against [`ComponentAttributeBag`](component-attribute-bag.md) a ported `extraAlpineAttributes()` would emit byte-identical output to `extraInputAttributes()` — a second name for one behaviour rather than a capability — so every component's row settles on the one write-up ([diverges](component-attribute-bag.md#extra-alpine-attributes-are-not-ported)) |
-| [`HasExtraAttributes`](../../../packages/support/src/Components/Concerns/HasExtraAttributes.php) | [`Concerns/HasExtraAttributes.php`](../../../vendor/filament/support/src/Concerns/HasExtraAttributes.php) | done | — |
-| [`HasFontFamily`](../../../packages/support/src/Components/Concerns/HasFontFamily.php) | [`Concerns/HasFontFamily.php`](../../../vendor/filament/support/src/Concerns/HasFontFamily.php) | done | [has-font-family.md](has-font-family.md) |
-| [`HasFromBreakpoint`](../../../packages/support/src/Components/Concerns/HasFromBreakpoint.php) | [`Concerns/HasFromBreakpoint.php`](../../../vendor/filament/support/src/Concerns/HasFromBreakpoint.php) | done | — |
-| [`HasIcon`](../../../packages/support/src/Components/Concerns/HasIcon.php) | [`Concerns/HasIcon.php`](../../../vendor/filament/support/src/Concerns/HasIcon.php) | done | [has-icon.md](has-icon.md) |
-| [`HasIconColor`](../../../packages/support/src/Components/Concerns/HasIconColor.php) | [`Concerns/HasIconColor.php`](../../../vendor/filament/support/src/Concerns/HasIconColor.php) | done | — |
-| [`HasIconPosition`](../../../packages/support/src/Components/Concerns/HasIconPosition.php) | [`Concerns/HasIconPosition.php`](../../../vendor/filament/support/src/Concerns/HasIconPosition.php) | done | — |
-| [`HasIconSize`](../../../packages/support/src/Components/Concerns/HasIconSize.php) | [`Concerns/HasIconSize.php`](../../../vendor/filament/support/src/Concerns/HasIconSize.php) | done | — |
-| [`HasLineClamp`](../../../packages/support/src/Components/Concerns/HasLineClamp.php) | [`Concerns/HasLineClamp.php`](../../../vendor/filament/support/src/Concerns/HasLineClamp.php) | done | — |
-| [`HasPlaceholder`](../../../packages/support/src/Components/Concerns/HasPlaceholder.php) | [`Concerns/HasPlaceholder.php`](../../../vendor/filament/support/src/Concerns/HasPlaceholder.php) | done | [has-placeholder.md](has-placeholder.md) |
-| [`HasReorderAnimationDuration`](../../../packages/support/src/Components/Concerns/HasReorderAnimationDuration.php) | [`Concerns/HasReorderAnimationDuration.php`](../../../vendor/filament/support/src/Concerns/HasReorderAnimationDuration.php) | done | — |
-| [`HasTooltip`](../../../packages/support/src/Components/Concerns/HasTooltip.php) | [`Concerns/HasTooltip.php`](../../../vendor/filament/support/src/Concerns/HasTooltip.php) | done | — |
-| [`HasVerticalAlignment`](../../../packages/support/src/Components/Concerns/HasVerticalAlignment.php) | [`Concerns/HasVerticalAlignment.php`](../../../vendor/filament/support/src/Concerns/HasVerticalAlignment.php) | done | [has-vertical-alignment.md](has-vertical-alignment.md) |
-| [`HasWeight`](../../../packages/support/src/Components/Concerns/HasWeight.php) | [`Concerns/HasWeight.php`](../../../vendor/filament/support/src/Concerns/HasWeight.php) | done | [has-weight.md](has-weight.md) |
-| [`HasWidth`](../../../packages/support/src/Components/Concerns/HasWidth.php) | [`Concerns/HasWidth.php`](../../../vendor/filament/support/src/Concerns/HasWidth.php) | done | — |
-
-## Supporting surface
-
-Everything with no user-facing UI class of its own: enums, contracts, colors, icons, assets, storage, facades, the view layer, exceptions, events, CLI commands, Eloquent query services, root value classes, translations, and the bundle wiring — [`src/Enums`](../../../vendor/filament/support/src/Enums), [`src/Contracts`](../../../vendor/filament/support/src/Contracts), [`src/Colors`](../../../vendor/filament/support/src/Colors), [`src/Icons`](../../../vendor/filament/support/src/Icons), [`src/Assets`](../../../vendor/filament/support/src/Assets), [`src/View`](../../../vendor/filament/support/src/View), [`src/Commands`](../../../vendor/filament/support/src/Commands) — plus the shipped front-end resources that back no `src/` class at all ([`resources/js`](../../../vendor/filament/support/resources/js), [`resources/css`](../../../vendor/filament/support/resources/css)), whose ports are this package's Stimulus controllers and `assets/src/styles/components/*.css` rules.
-
-Three symbols in this package share the name `HasColor`, and Filament collides the same way.
-**[`Components\Concerns\HasColor`](../../../packages/support/src/Components/Concerns/HasColor.php)** is the fluent setter trait a component uses (`color()` / `defaultColor()` / `getColor()`); it is tracked in the [Features](#features) table above.
-**[`Colors\Contracts\HasColor`](../../../packages/support/src/Colors/Contracts/HasColor.php)** is the policy contract every contrast policy implements (`getColorMap()`); it shipped with the colour registry and is tracked in [color-policies.md](color-policies.md).
-**`Contracts\HasColor`** — the row below — is the *state* contract: one method, `getColor(): string|array|null`, meant for a user's status enum so a table column can colour itself from record state; it has no consumer in this package yet.
-Filament carries the same two contracts (`Support\Contracts\HasColor` and `Support\View\Components\Contracts\HasColor`) and hits the same clash one level up: `infolists/Components/Concerns/HasColor.php` declares `trait HasColor` and needs the enum contract, so it imports it `as ColorInterface` — unaliased, the `use` would collide with the trait's own declaration of the same unqualified name.
-
-| Item | Ports | Status | Detail |
-| --- | --- | --- | --- |
-| [`Alignment`](../../../packages/support/src/Enums/Alignment.php) | [`Enums/Alignment.php`](../../../vendor/filament/support/src/Enums/Alignment.php) | done | — |
-| [`ArgumentValue`](../../../packages/support/src/Enums/ArgumentValue.php) | [`Enums/ArgumentValue.php`](../../../vendor/filament/support/src/Enums/ArgumentValue.php) | done | the not-passed sentinel a pure enum makes unforgeable — `TextColumn::numeric()`'s two separators default to it, so `null` reads as *explicitly passed* and routes to `number_format()` ([text-column.md](../tables/text-column.md)) |
-| [`FontFamily`](../../../packages/support/src/Enums/FontFamily.php) | [`Enums/FontFamily.php`](../../../vendor/filament/support/src/Enums/FontFamily.php) | done | — |
-| [`FontWeight`](../../../packages/support/src/Enums/FontWeight.php) | [`Enums/FontWeight.php`](../../../vendor/filament/support/src/Enums/FontWeight.php) | done | — |
-| [`GridDirection`](../../../packages/support/src/Enums/GridDirection.php) | [`Enums/GridDirection.php`](../../../vendor/filament/support/src/Enums/GridDirection.php) | done | — |
-| [`IconPosition`](../../../packages/support/src/Enums/IconPosition.php) | [`Enums/IconPosition.php`](../../../vendor/filament/support/src/Enums/IconPosition.php) | done | — |
-| [`IconSize`](../../../packages/support/src/Enums/IconSize.php) | [`Enums/IconSize.php`](../../../vendor/filament/support/src/Enums/IconSize.php) | done | [icon-size.md](icon-size.md) |
-| [`Operation`](../../../packages/support/src/Enums/Operation.php) | [`Enums/Operation.php`](../../../vendor/filament/support/src/Enums/Operation.php) | done | — |
-| Platform | [`Enums/Platform.php`](../../../vendor/filament/support/src/Enums/Platform.php) | todo | — |
-| [`Size`](../../../packages/support/src/Enums/Size.php) | [`Enums/Size.php`](../../../vendor/filament/support/src/Enums/Size.php) | done | — |
-| [`SlideOverPosition`](../../../packages/support/src/Enums/SlideOverPosition.php) | [`Enums/SlideOverPosition.php`](../../../vendor/filament/support/src/Enums/SlideOverPosition.php) | done | — |
-| [`TextSize`](../../../packages/support/src/Enums/TextSize.php) | [`Enums/TextSize.php`](../../../vendor/filament/support/src/Enums/TextSize.php) | done | — |
-| [`VerticalAlignment`](../../../packages/support/src/Enums/VerticalAlignment.php) | [`Enums/VerticalAlignment.php`](../../../vendor/filament/support/src/Enums/VerticalAlignment.php) | done | [vertical-alignment.md](vertical-alignment.md) |
-| [`Width`](../../../packages/support/src/Enums/Width.php) | [`Enums/Width.php`](../../../vendor/filament/support/src/Enums/Width.php) | done | consumed by panels' page and panel width surfaces; the modal and filters ladders keep their string tokens — see [`support/modal.md`](modal.md) and [`tables/table.md`](../tables/table.md) |
-| Collapsible | [`Contracts/Collapsible.php`](../../../vendor/filament/support/src/Contracts/Collapsible.php) | todo | — |
-| [`HasColor` (state contract)](../../../packages/support/src/Contracts/HasColor.php) | [`Contracts/HasColor.php`](../../../vendor/filament/support/src/Contracts/HasColor.php) | done | — |
-| [`HasDescription`](../../../packages/support/src/Contracts/HasDescription.php) | [`Contracts/HasDescription.php`](../../../vendor/filament/support/src/Contracts/HasDescription.php) | done | — |
-| [`HasIcon` (contract)](../../../packages/support/src/Contracts/HasIcon.php) | [`Contracts/HasIcon.php`](../../../vendor/filament/support/src/Contracts/HasIcon.php) | done | — |
-| [`HasLabel`](../../../packages/support/src/Contracts/HasLabel.php) | [`Contracts/HasLabel.php`](../../../vendor/filament/support/src/Contracts/HasLabel.php) | done | — |
-| LoadingIndicator | [`Contracts/LoadingIndicator.php`](../../../vendor/filament/support/src/Contracts/LoadingIndicator.php) | todo | — |
-| [`ScalableIcon`](../../../packages/support/src/Contracts/ScalableIcon.php) | [`Contracts/ScalableIcon.php`](../../../vendor/filament/support/src/Contracts/ScalableIcon.php) | done | — |
-| TranslatableContentDriver | [`Contracts/TranslatableContentDriver.php`](../../../vendor/filament/support/src/Contracts/TranslatableContentDriver.php) | todo | — |
-| HasEmbeddedView | [`Components/Contracts/HasEmbeddedView.php`](../../../vendor/filament/support/src/Components/Contracts/HasEmbeddedView.php) | todo | — |
-| ScopedComponentManager | [`Components/Contracts/ScopedComponentManager.php`](../../../vendor/filament/support/src/Components/Contracts/ScopedComponentManager.php) | todo | — |
-| [`ExposedLiveComponentMethod`](../../../packages/support/src/Components/Attributes/ExposedLiveComponentMethod.php) | [`Components/Attributes/ExposedLivewireMethod.php`](../../../vendor/filament/support/src/Components/Attributes/ExposedLivewireMethod.php) | done | — |
-| [`Color`](../../../packages/support/src/Colors/Color.php) | [`Colors/Color.php`](../../../vendor/filament/support/src/Colors/Color.php) | in progress | [color.md](color.md) |
-| [`ColorManager`](../../../packages/support/src/Colors/ColorManager.php) | [`Colors/ColorManager.php`](../../../vendor/filament/support/src/Colors/ColorManager.php) | in progress | [color-manager.md](color-manager.md) |
-| Heroicon | [`Icons/Heroicon.php`](../../../vendor/filament/support/src/Icons/Heroicon.php) | todo | — |
-| [`IconManager`](../../../packages/support/src/Icons/IconManager.php) | [`Icons/IconManager.php`](../../../vendor/filament/support/src/Icons/IconManager.php) | done | [icon-manager.md](icon-manager.md) |
-| [`FilesystemRegistry`](../../../packages/support/src/Filesystem/FilesystemRegistry.php) | — (Sylament-only; Filament reaches storage through Laravel's `Storage` facade) | done | [filesystem-registry.md](filesystem-registry.md) |
-| Asset | [`Assets/Asset.php`](../../../vendor/filament/support/src/Assets/Asset.php) | todo | — |
-| AlpineComponent | [`Assets/AlpineComponent.php`](../../../vendor/filament/support/src/Assets/AlpineComponent.php) | todo | — |
-| Css | [`Assets/Css.php`](../../../vendor/filament/support/src/Assets/Css.php) | todo | — |
-| Font | [`Assets/Font.php`](../../../vendor/filament/support/src/Assets/Font.php) | todo | — |
-| Js | [`Assets/Js.php`](../../../vendor/filament/support/src/Assets/Js.php) | todo | — |
-| Theme | [`Assets/Theme.php`](../../../vendor/filament/support/src/Assets/Theme.php) | todo | — |
-| AssetManager | [`Assets/AssetManager.php`](../../../vendor/filament/support/src/Assets/AssetManager.php) | todo | — |
-| [Checkbox skin](../../../packages/support/assets/src/styles/components/checkbox.css) — the code-less `.sy-checkbox` class, `:indeterminate` arm included, that forms' `Checkbox`/`CheckboxList` and tables' selection column both emit | [`resources/css/components/input/checkbox.css`](../../../vendor/filament/support/resources/css/components/input/checkbox.css) | done | [forms' styles.md](../forms/styles.md#the-checkbox-skin-lives-in-support-because-tables-renders-it-too) |
-| [Sortable control](../../../packages/support/assets/src/controllers/sortable_controller.ts) — the `sylament--support--sortable` Stimulus controller and its [ghost-class rule](../../../packages/support/assets/src/styles/components/sortable.css) | [`resources/js/sortable.js`](../../../vendor/filament/support/resources/js/sortable.js) · [`resources/css/sortable.css`](../../../vendor/filament/support/resources/css/sortable.css) | done | [sortable.md](sortable.md) |
-| [Clipboard control](../../../packages/support/assets/src/controllers/clipboard_controller.ts) — the `sylament--support--clipboard` Stimulus controller and the two rules its chip and live region need ([`copyable.css`](../../../packages/support/assets/src/styles/components/copyable.css)), the client half of `CanBeCopied` | [`Columns/TextColumn.php`](../../../vendor/filament/tables/src/Columns/TextColumn.php) — the `x-on:click.prevent.stop` clipboard-plus-`$tooltip()` handler · [`columns/color.css`](../../../vendor/filament/tables/resources/css/columns/color.css) — the `fi-copyable` rule | done | [copyable.md](copyable.md) |
-| Tooltip control — a floating tooltip over the already-bundled `@floating-ui/dom`, the client half `HasTooltip` has never had | [`resources/js/index.js`](../../../vendor/filament/support/resources/js/index.js)'s Tippy `x-tooltip` directive, plus its `x-tooltip.html` variant | todo | Every tooltip the toolkit renders is a native `title` attribute, and a column is the sixth surface to want more: [`Link`](link.md), [`IconButton`](icon-button.md), [`Badge`](badge.md) and [`DropdownItem`](dropdown-item.md) each carry a **blocked** row naming this control, and [`Button`](button.md) and [schemas' `Text`](../schemas/text.md) a **todo** one. A `Markup` tooltip is flattened with `striptags` on the way into the attribute ([column.md](../tables/column.md#a-tooltip-renders-as-a-native-title-and-markup-is-flattened-to-text)). Deferred deliberately: the PHP surface does not change when it arrives, only the rendering, so no ported API waits on it |
-| [Screen-reader-only utility](../../../packages/support/assets/src/styles/utilities.css) — the code-less `.sy-sr-only` class forms' field wrapper, table repeater, select control, tags input and key-value chrome all emit | [`resources/css/utilities.css`](../../../vendor/filament/support/resources/css/utilities.css) | done | [forms' styles.md](../forms/styles.md#most-screen-reader-markup-still-inlines-the-utility-instead-of-the-shared-class) |
-| [`ComponentAttributeBag`](../../../packages/support/src/Twig/ComponentAttributeBag.php) | [`View/ComponentAttributeBag.php`](../../../vendor/filament/support/src/View/ComponentAttributeBag.php) | done | [component-attribute-bag.md](component-attribute-bag.md) |
-| ViewManager | [`View/ViewManager.php`](../../../vendor/filament/support/src/View/ViewManager.php) | todo | — |
-| [`SupportIconAlias`](../../../packages/support/src/Twig/SupportIconAlias.php) | [`View/SupportIconAlias.php`](../../../vendor/filament/support/src/View/SupportIconAlias.php) | in progress | [support-icon-alias.md](support-icon-alias.md) |
-| DefaultLoadingIndicator | [`View/DefaultLoadingIndicator.php`](../../../vendor/filament/support/src/View/DefaultLoadingIndicator.php) | todo | — |
-| [Color policies](../../../packages/support/src/Colors/Components) | [`View/Components/`](../../../vendor/filament/support/src/View/Components) — the policy objects, `ColorMaps/` and `Contracts/` | in progress | [color-policies.md](color-policies.md) |
-| HTML generators | [`View/Concerns/`](../../../vendor/filament/support/src/View/Concerns) | todo | — |
-| [`Cancel`](../../../packages/support/src/Exceptions/Cancel.php) | [`Exceptions/Cancel.php`](../../../vendor/filament/support/src/Exceptions/Cancel.php) | done | [cancel.md](cancel.md) |
-| [`Halt`](../../../packages/support/src/Exceptions/Halt.php) | [`Exceptions/Halt.php`](../../../vendor/filament/support/src/Exceptions/Halt.php) | done | [halt.md](halt.md) |
-| FilamentUpgraded | [`Events/FilamentUpgraded.php`](../../../vendor/filament/support/src/Events/FilamentUpgraded.php) | todo | — |
-| Facades | [`Facades/`](../../../vendor/filament/support/src/Facades) | todo | — |
-| Commands | [`Commands/`](../../../vendor/filament/support/src/Commands) | todo | — |
-| Commands / FileGenerators | [`Commands/FileGenerators/`](../../../vendor/filament/support/src/Commands/FileGenerators) | todo | — |
-| Commands / Concerns | [`Commands/Concerns/`](../../../vendor/filament/support/src/Commands/Concerns) | todo | — |
-| Livewire partials | [`Livewire/Partials/`](../../../vendor/filament/support/src/Livewire/Partials) | todo | — |
-| RelationshipJoiner | [`Services/RelationshipJoiner.php`](../../../vendor/filament/support/src/Services/RelationshipJoiner.php) | todo | — |
-| RelationshipOrderer | [`Services/RelationshipOrderer.php`](../../../vendor/filament/support/src/Services/RelationshipOrderer.php) | todo | — |
-| DenyResponse | [`Authorization/DenyResponse.php`](../../../vendor/filament/support/src/Authorization/DenyResponse.php) | todo | — |
-| [`ArrayRecord`](../../../packages/support/src/ArrayRecord.php) | [`ArrayRecord.php`](../../../vendor/filament/support/src/ArrayRecord.php) | done | — |
-| [`Paginator`](../../../packages/support/src/Pagination/Paginator.php) | — (Sylament-only; Filament carries a page in Laravel's `LengthAwarePaginator`) | done | [pagination.md](pagination.md) |
-| ChunkIterator | [`ChunkIterator.php`](../../../vendor/filament/support/src/ChunkIterator.php) | todo | — |
-| CliManager | [`CliManager.php`](../../../vendor/filament/support/src/CliManager.php) | todo | — |
-| Markdown | [`Markdown.php`](../../../vendor/filament/support/src/Markdown.php) | todo | — |
-| RawJs | [`RawJs.php`](../../../vendor/filament/support/src/RawJs.php) | todo | — |
-| TimezoneManager | [`TimezoneManager.php`](../../../vendor/filament/support/src/TimezoneManager.php) | todo | — |
-| [`SupportServiceProvider`](../../../packages/support/src/SylamentSupportBundle.php) | [`SupportServiceProvider.php`](../../../vendor/filament/support/src/SupportServiceProvider.php) | in progress | [support-bundle.md](support-bundle.md) |
-| [`helpers.php`](../../../packages/support/src/helpers.php) | [`helpers.php`](../../../vendor/filament/support/src/helpers.php) | in progress | [helpers.md](helpers.md) |
-| Translations | [`resources/lang/`](../../../vendor/filament/support/resources/lang) | todo | — |
-
-<!-- split-links:start -->
-Also in this package: [array-record.md](array-record.md) · [can-be-contained.md](can-be-contained.md) · [can-order-columns.md](can-order-columns.md) · [can-wrap.md](can-wrap.md) · [contracts.md](contracts.md) · [enums.md](enums.md) · [exposed-live-component-method.md](exposed-live-component-method.md) · [fieldset.md](fieldset.md) · [has-color.md](has-color.md) · [has-extra-attributes.md](has-extra-attributes.md) · [has-icon-color.md](has-icon-color.md) · [has-icon-size.md](has-icon-size.md) · [has-tooltip.md](has-tooltip.md) · [icon.md](icon.md).
-<!-- split-links:end -->
+| [`views/components/actions.blade.php`](../../../vendor/filament/support/resources/views/components/actions.blade.php) | todo | — | — |
+| [`views/components/avatar.blade.php`](../../../vendor/filament/support/resources/views/components/avatar.blade.php) | todo | — | — |
+| [`resources/css/components/avatar.css`](../../../vendor/filament/support/resources/css/components/avatar.css) | todo | — | — |
+| [`View/Components/CalloutComponent.php`](../../../vendor/filament/support/src/View/Components/CalloutComponent.php) | todo | — | — |
+| [`views/components/callout.blade.php`](../../../vendor/filament/support/resources/views/components/callout.blade.php) | todo | — | — |
+| [`resources/css/components/callout.css`](../../../vendor/filament/support/resources/css/components/callout.css) | todo | — | — |
+| [`views/components/card.blade.php`](../../../vendor/filament/support/resources/views/components/card.blade.php) | todo | — | — |
+| [`views/components/input/checkbox.blade.php`](../../../vendor/filament/support/resources/views/components/input/checkbox.blade.php) | todo | — | [checkbox skin](../forms/styles.md#the-checkbox-skin-lives-in-support-because-tables-renders-it-too) |
+| [`views/components/empty-state.blade.php`](../../../vendor/filament/support/resources/views/components/empty-state.blade.php) | todo | — | — |
+| [`resources/css/components/empty-state.css`](../../../vendor/filament/support/resources/css/components/empty-state.css) | todo | — | — |
+| [`views/components/input/index.blade.php`](../../../vendor/filament/support/resources/views/components/input/index.blade.php) | todo | — | — |
+| [`views/components/loading-section.blade.php`](../../../vendor/filament/support/resources/views/components/loading-section.blade.php) | todo | — | — |
+| [`resources/css/components/loading-section.css`](../../../vendor/filament/support/resources/css/components/loading-section.css) | todo | — | — |
+| [`views/components/input/one-time-code.blade.php`](../../../vendor/filament/support/resources/views/components/input/one-time-code.blade.php) | todo | — | — |
+| [`resources/js/components/one-time-code.js`](../../../vendor/filament/support/resources/js/components/one-time-code.js) | todo | — | — |
+| [`views/components/input/radio.blade.php`](../../../vendor/filament/support/resources/views/components/input/radio.blade.php) | todo | — | — |
+| [`views/components/input/select.blade.php`](../../../vendor/filament/support/resources/views/components/input/select.blade.php) | skipped | — | — |
+| [`views/components/toggle.blade.php`](../../../vendor/filament/support/resources/views/components/toggle.blade.php) | todo | — | — |
+| [`views/components/button/group.blade.php`](../../../vendor/filament/support/resources/views/components/button/group.blade.php) | todo | — | — |
+| [`resources/js/components/tooltip.js`](../../../vendor/filament/support/resources/js/components/tooltip.js) | todo | — | — |
+| [`resources/css/components/tooltip.css`](../../../vendor/filament/support/resources/css/components/tooltip.css) | todo | — | — |
+| [`resources/js/components/form-button.js`](../../../vendor/filament/support/resources/js/components/form-button.js) | todo | — | — |
+| [`Concerns/CanBeLazy.php`](../../../vendor/filament/support/src/Concerns/CanBeLazy.php) | todo | — | — |
+| [`Enums/Platform.php`](../../../vendor/filament/support/src/Enums/Platform.php) | todo | — | — |
+| [`Contracts/Collapsible.php`](../../../vendor/filament/support/src/Contracts/Collapsible.php) | todo | — | — |
+| [`Contracts/TranslatableContentDriver.php`](../../../vendor/filament/support/src/Contracts/TranslatableContentDriver.php) | todo | — | — |
+| [`Icons/Heroicon.php`](../../../vendor/filament/support/src/Icons/Heroicon.php) | todo | — | — |
+| [`Assets/Asset.php`](../../../vendor/filament/support/src/Assets/Asset.php) | todo | — | — |
+| [`Assets/AlpineComponent.php`](../../../vendor/filament/support/src/Assets/AlpineComponent.php) | todo | — | — |
+| [`Assets/Css.php`](../../../vendor/filament/support/src/Assets/Css.php) | todo | — | — |
+| [`Assets/Font.php`](../../../vendor/filament/support/src/Assets/Font.php) | todo | — | — |
+| [`Assets/Js.php`](../../../vendor/filament/support/src/Assets/Js.php) | todo | — | — |
+| [`Assets/Theme.php`](../../../vendor/filament/support/src/Assets/Theme.php) | todo | — | — |
+| [`views/assets.blade.php`](../../../vendor/filament/support/resources/views/assets.blade.php) | todo | — | — |
+| [`View/ViewManager.php`](../../../vendor/filament/support/src/View/ViewManager.php) | todo | — | — |
+| [`View/Concerns/`](../../../vendor/filament/support/src/View/Concerns) | todo | — | — |
+| [`views/anonymous-partial.blade.php`](../../../vendor/filament/support/resources/views/anonymous-partial.blade.php) | todo | — | — |
+| [`resources/js/partials.js`](../../../vendor/filament/support/resources/js/partials.js) | todo | — | — |
+| [`resources/js/utilities/pluralize.js`](../../../vendor/filament/support/resources/js/utilities/pluralize.js) | todo | — | — |
+| [`Events/FilamentUpgraded.php`](../../../vendor/filament/support/src/Events/FilamentUpgraded.php) | todo | — | — |
+| [`Facades/`](../../../vendor/filament/support/src/Facades) | todo | — | — |
+| [`Commands/`](../../../vendor/filament/support/src/Commands) | todo | — | — |
+| [`Livewire/Partials/`](../../../vendor/filament/support/src/Livewire/Partials) | todo | — | — |
+| [`Services/RelationshipJoiner.php`](../../../vendor/filament/support/src/Services/RelationshipJoiner.php) | todo | — | — |
+| [`Services/RelationshipOrderer.php`](../../../vendor/filament/support/src/Services/RelationshipOrderer.php) | todo | — | — |
+| [`Authorization/DenyResponse.php`](../../../vendor/filament/support/src/Authorization/DenyResponse.php) | todo | — | — |
+| [`ChunkIterator.php`](../../../vendor/filament/support/src/ChunkIterator.php) | todo | — | — |
+| [`CliManager.php`](../../../vendor/filament/support/src/CliManager.php) | todo | — | — |
+| [`Markdown.php`](../../../vendor/filament/support/src/Markdown.php) | todo | — | — |
+| [`RawJs.php`](../../../vendor/filament/support/src/RawJs.php) | todo | — | — |
+| [`TimezoneManager.php`](../../../vendor/filament/support/src/TimezoneManager.php) | todo | — | — |
+| [`resources/lang/`](../../../vendor/filament/support/resources/lang) | todo | — | — |

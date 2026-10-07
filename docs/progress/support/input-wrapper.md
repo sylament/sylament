@@ -38,7 +38,7 @@ Tables is the second home: its [`TextInputColumnTest`](../../../packages/tables/
 | [`inlinePrefix` / `inlineSuffix` → `sy-inline`](../../../packages/support/templates/components/InputWrapper/index.html.twig) | [`'fi-inline' => $inlinePrefix`](../../../vendor/filament/support/resources/views/components/input/wrapper.blade.php) | done | — | — |
 | [`content` block → `sy-input-wrp-content-ctn`](../../../packages/support/templates/components/InputWrapper/index.html.twig) | [`{{ $slot }}`](../../../vendor/filament/support/resources/views/components/input/wrapper.blade.php) | done | — | — |
 | [`input-wrapper.css`](../../../packages/support/assets/src/styles/components/input-wrapper.css) | [`components/input/wrapper.css`](../../../vendor/filament/support/resources/css/components/input/wrapper.css) | done | — | [semantics](#the-focus-ring-stands-down-while-an-affix-action-has-focus) · [diverges](#the-hover-ring-the-text-controls-carried-moves-onto-the-wrapper) · [diverges](#the-prefixs-non-inline-arm-drops-a-padding-it-already-has) |
-| Livewire loading indicator (`wire:loading` branch, `fi-input-wrp-prefix-has-content`, `fi-input-wrp-content-ctn-ps`) | [the `$hasLoadingIndicator` arms](../../../vendor/filament/support/resources/views/components/input/wrapper.blade.php) | blocked | a loading-indicator component and a live-request signal, neither ported — [README](README.md#components) | [diverges](#no-loading-indicator-and-three-css-hooks-go-with-it) |
+| Livewire loading indicator (`wire:loading` branch, `fi-input-wrp-prefix-has-content`, `fi-input-wrp-content-ctn-ps`) | [the `$hasLoadingIndicator` arms](../../../vendor/filament/support/resources/views/components/input/wrapper.blade.php) | blocked | a loading-indicator component and a live-request signal, neither ported — [README](README.md#files) | [diverges](#no-loading-indicator-and-three-css-hooks-go-with-it) |
 | Click-to-focus relay (`x-on:click="$dispatch('focus-input')"`) | [`$canClickPrefixAffix` / `$canClickSuffixAffix`](../../../vendor/filament/support/resources/views/components/input/wrapper.blade.php) | todo | — | [diverges](#the-click-to-focus-relay-is-not-ported) |
 | `alpineDisabled` / `alpineValid` | [the `x-bind:class` pair](../../../vendor/filament/support/resources/views/components/input/wrapper.blade.php) | skipped | — | [diverges](#alpinedisabled-and-alpinevalid-are-not-ported) |
 
@@ -87,7 +87,7 @@ Three hooks exist only to serve that: `fi-input-wrp-prefix-has-content` (the pre
 
 None is ported.
 Our affixes render only when they hold content, so the base prefix rule is `flex` outright and the `-has-content` toggle has nothing to toggle; the content container always renders, so the `:has()` fallback has nothing to fall back for.
-The row is **blocked** rather than skipped: a loading indicator is wanted at parity, and it needs both a loading-indicator component (unported — see the [README](README.md#components)) and a signal that a live request is in flight, which the UX LiveComponent stack expresses differently from `wire:loading`.
+The row is **blocked** rather than skipped: a loading indicator is wanted at parity, and it needs both a loading-indicator component (unported — see the [README](README.md#files)) and a signal that a live request is in flight, which the UX LiveComponent stack expresses differently from `wire:loading`.
 Reinstating it later reinstates the two classes and the fallback arm with it.
 
 ### The click-to-focus relay is not ported

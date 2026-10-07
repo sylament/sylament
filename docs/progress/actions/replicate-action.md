@@ -185,7 +185,7 @@ Porting a deprecated alias would publish an API we would then have to deprecate,
 ### The strings are literals, not translation keys
 
 `label('Replicate')`, the `Replicate :label` modal heading, the submit label and the `Replicated` toast title are the English literals read from [`resources/lang/en/replicate.php`](../../../vendor/filament/actions/resources/lang/en/replicate.php), where Filament reads `__('filament-actions::replicate.single…')` — the same call [create-action.md](create-action.md#the-strings-are-literals-not-translation-keys) records.
-The `:label` interpolation becomes string interpolation over [`Action::getRecordTitle()`](interacts-with-record.md#the-record-chain-reaches-the-schema-the-component-and-the-host), so the heading is a closure with the bare-verb fallback its siblings carry: `Replicate` where Filament would render a trailing-space `Replicate `.
+The `:label` interpolation becomes string interpolation over [`Action::getRecordTitle()`](action.md#the-record-chain-reaches-the-schema-the-component-and-the-host), so the heading is a closure with the bare-verb fallback its siblings carry: `Replicate` where Filament would render a trailing-space `Replicate `.
 
 ### The icon is a literal name, and a plain `icon()` stands in for `tableIcon()`
 

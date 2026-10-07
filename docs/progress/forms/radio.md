@@ -1,34 +1,28 @@
 ---
-description: The single-choice option field, rendering one native `<input type="radio">` per option inside an `aria-labelledby`-pointed `role="radiogroup"`… (draft)
+description: The single-choice option field, one native radio input per option inside an `aria-labelledby`-pointed `role="radiogroup"` container.
 ports:
   - vendor/filament/forms/src/Components/Radio.php
-  - vendor/filament/forms/resources/css/components/radio.css
-  - vendor/filament/support/resources/css/components/input/radio.css
 owns:
   - packages/forms/src/Components/Radio.php
   - packages/forms/templates/partials/Radio/
 ---
 # Radio (forms)
 
-`Sylament\Forms\Components\Radio` — the single-choice option field, rendering one native `<input type="radio">` per option inside an `aria-labelledby`-pointed `role="radiogroup"` container.
-Extends [`Field`](../../../packages/forms/src/Components/Field.php), casts state through schemas' [`OptionStateCast`](../../../packages/schemas/src/State/Casts/OptionStateCast.php), and composes the five option-field concerns ([`HasOptions`](has-options.md), [`CanDisableOptions`](can-disable-options.md), [`HasDescriptions`](has-descriptions.md), [`HasGridDirection`](has-grid-direction.md), [`HasExtraInputAttributes`](has-extra-input-attributes.md)).
-It is the first field to render an option **set** rather than one control, so it is also the first consumer of support's [`grid()`](../../../packages/support/src/Twig/Extension/GridExtension.php) helper from a field template and the first to ask the wrapper for a [heading label](field.md#labeltag-is-a-boolean-labelasheading) instead of a `<label for>`.
+`Sylament\Forms\Components\Radio` extends [`Field`](field.md) and casts state through schemas' [`OptionStateCast`](../../../packages/schemas/src/State/Casts/OptionStateCast.php).
+It renders an option set rather than one control, so its template lays the options out with support's [`grid()`](../../../packages/support/src/Twig/Extension/GridExtension.php) helper and asks the wrapper for a [heading label](field.md#labeltag-is-a-boolean-labelasheading) instead of a `<label for>`.
 It ships no JavaScript: the controls are real radios bound with `data-model`, and `ux-live-component` reads and repaints them natively.
 
 ## Surface
 
-Every point this field adds over `Field`.
-`Field`'s own surface is tracked in [`field.md`](field.md), not here.
-
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
-| Construction &amp; rendering — the radiogroup, the implicit option labels, the description line | [`Components/Radio.php`](../../../vendor/filament/forms/src/Components/Radio.php) | done | — | [diverges](#the-checked-attribute-is-rendered-server-side) · [diverges](#every-radio-carries-the-same-data-model) · [diverges](#the-group-name-is-the-field-id-not-the-field-name) · [diverges](#the-option-inputs-carry-aria-invalid-instead-of-a-fi-valid--fi-invalid-class-pair) · [diverges](#the-control-class-is-sy-fo-radio-input-one-tier-up-from-vendors) |
+| Construction &amp; rendering — the radiogroup, the implicit option labels, the description line | [`Components/Radio.php`](../../../vendor/filament/forms/src/Components/Radio.php) | done | — | [diverges](#the-checked-attribute-is-rendered-server-side) · [diverges](#every-radio-carries-the-same-data-model) · [semantics](#the-group-name-is-the-field-id-not-the-field-name) · [diverges](#the-option-inputs-carry-aria-invalid-instead-of-a-fi-valid--fi-invalid-class-pair) · [diverges](styles.md#the-control-stylesheets-carry-forms-coded-names-for-support-tier-classes) |
 | `boolean()` — the `1`/`0` option pair and the int-backed cast | [`Components/Radio.php`](../../../vendor/filament/forms/src/Components/Radio.php) | done | — | [semantics](#the-cast-chain-collapses-to-whatever-boolean-installs) · [diverges](#the-boolean-labels-are-untranslated-literals) |
 | `inline()` / `isInline()` | [`Components/Radio.php`](../../../vendor/filament/forms/src/Components/Radio.php) | done | — | [semantics](#inline-is-radios-own-property-not-the-canbeinline-trait) |
 | `getDefaultState()` — a `bool` default coerced to `1`/`0` | [`Components/Radio.php`](../../../vendor/filament/forms/src/Components/Radio.php) | done | — | — |
 | `getDefaultStateCasts()` — `OptionStateCast(isNullable: true)` unless custom casts or an enum | [`Components/Radio.php`](../../../vendor/filament/forms/src/Components/Radio.php) | done | — | [semantics](#the-cast-chain-collapses-to-whatever-boolean-installs) |
 | `hasNullableBooleanState()` | [`Components/Radio.php`](../../../vendor/filament/forms/src/Components/Radio.php) | done | — | [semantics](field.md#hasnullablebooleanstate-has-exactly-one-consumer) |
-| `getInValidationConstraintValues()` → `buildValidationConstraints()`, a `Choice` over the enabled options — replaced by a user `in()` list | [`Components/Radio.php`](../../../vendor/filament/forms/src/Components/Radio.php) | done | — | [semantics](select.md#the-choice-constraint-is-the-fields-only-server-side-guard) · [semantics](can-disable-options.md#the-choice-choices-cover-both-forms-the-raw-state-can-take) · [semantics](can-be-validated.md#a-user-in-list-is-emitted-in-both-spellings-and-replaces-the-derived-check) |
+| `getInValidationConstraintValues()` → `buildValidationConstraints()`, a `Choice` over the enabled options, replaced by a user `in()` list | [`Components/Radio.php`](../../../vendor/filament/forms/src/Components/Radio.php) | done | — | [semantics](select.md#the-choice-constraint-is-the-fields-only-server-side-guard) · [semantics](can-disable-options.md#the-choice-choices-cover-both-forms-the-raw-state-can-take) · [semantics](can-be-validated.md#a-user-in-list-is-emitted-in-both-spellings-and-replaces-the-derived-check) |
 | `required()` — the standard `RequiredValue` | [`Concerns/CanBeValidated.php`](../../../vendor/filament/forms/src/Components/Concerns/CanBeValidated.php) | done | — | [semantics](#required-means-presence-and-needs-no-override) |
 | The grid, and its `Column` default | [`Components/Radio.php`](../../../vendor/filament/forms/src/Components/Radio.php) | done | — | [semantics](has-grid-direction.md#the-column-default-belongs-to-the-field-not-to-this-getter) |
 | [`HasOptions`](../../../packages/forms/src/Components/Concerns/HasOptions.php) | [`Concerns/HasOptions.php`](../../../vendor/filament/forms/src/Components/Concerns/HasOptions.php) | done | — | [detail](has-options.md) |
@@ -36,21 +30,18 @@ Every point this field adds over `Field`.
 | [`HasDescriptions`](../../../packages/forms/src/Components/Concerns/HasDescriptions.php) | [`Concerns/HasDescriptions.php`](../../../vendor/filament/forms/src/Components/Concerns/HasDescriptions.php) | done | — | [detail](has-descriptions.md) |
 | [`HasGridDirection`](../../../packages/forms/src/Components/Concerns/HasGridDirection.php) | [`Concerns/HasGridDirection.php`](../../../vendor/filament/forms/src/Components/Concerns/HasGridDirection.php) | done | — | [detail](has-grid-direction.md) |
 | [`HasExtraInputAttributes`](../../../packages/forms/src/Components/Concerns/HasExtraInputAttributes.php) | [`Concerns/HasExtraInputAttributes.php`](../../../vendor/filament/forms/src/Components/Concerns/HasExtraInputAttributes.php) | done | — | [detail](has-extra-input-attributes.md) · [diverges](#extraattributes-stays-on-the-field-wrapper) |
-| `CanFixIndistinctState` | [`Concerns/CanFixIndistinctState.php`](../../../vendor/filament/forms/src/Components/Concerns/CanFixIndistinctState.php) | done | — | [detail](can-fix-indistinct-state.md) |
-| `CanDisableOptionsWhenSelectedInSiblingRepeaterItems` | [`Concerns/CanDisableOptionsWhenSelectedInSiblingRepeaterItems.php`](../../../vendor/filament/forms/src/Components/Concerns/CanDisableOptionsWhenSelectedInSiblingRepeaterItems.php) | done | — | [detail](can-disable-options-when-selected-in-sibling-repeater-items.md) |
-
-Coverage: one input per option with the shared group name and per-option ids and values; the `data-model` every input shares; `checked` on the matching option and on no other, including a state that is unset against a `0`-keyed option; the enum arms (labels from `HasLabel`, an enum-valued state matching, descriptions from `HasDescription` with the null-describing case emitting nothing); explicit descriptions; per-option and whole-field `disabled`; `autofocus` on the first option only; the default column grid, `columns(2)`, `gridDirection('row')` and `inline()` dropping the grid entirely; `aria-labelledby` asserted at both ends in the visible and hidden-label branches; `aria-invalid`; extra input attributes reaching every input and outranking the field's own; `extraAttributes()` landing on the wrapper rather than the group; the `OptionStateCast` round-trip; the `boolean()` collapse to a single `BooleanStateCast`, its rendered `1`/`0` options and its coerced `bool` default; the `Choice` constraint including the disabled filter, both stored forms of a `boolean()` option, the enum-only arm, the blank short-circuit, the [filled gate](select.md#the-filled-gate-reads-the-raw-state-because-a-cast-can-null-a-tampered-value-out) rejecting a value the enum cast nulls out (driven end to end through a host, so the tampered string is the field's *own* raw state) and the no-options `LogicException`; and a required radio failing with nothing selected, passing once selected, and passing on the `0`-keyed false option in both stored forms — by [`RadioTest`](../../../packages/forms/tests/Integration/Components/RadioTest.php).
-The binding mechanism itself needs a live host, so it is driven through a real round-trip by [`LiveRadioTest`](../../../packages/forms/tests/Integration/LiveRadioTest.php) against the [`RadioForm`](../../../packages/forms/tests/Fixtures/Twig/Components/RadioForm.php) fixture.
+| [`CanFixIndistinctState`](../../../packages/forms/src/Components/Concerns/CanFixIndistinctState.php) | [`Concerns/CanFixIndistinctState.php`](../../../vendor/filament/forms/src/Components/Concerns/CanFixIndistinctState.php) | done | — | [detail](can-fix-indistinct-state.md) |
+| [`CanDisableOptionsWhenSelectedInSiblingRepeaterItems`](../../../packages/forms/src/Components/Concerns/CanDisableOptionsWhenSelectedInSiblingRepeaterItems.php) | [`Concerns/CanDisableOptionsWhenSelectedInSiblingRepeaterItems.php`](../../../vendor/filament/forms/src/Components/Concerns/CanDisableOptionsWhenSelectedInSiblingRepeaterItems.php) | done | — | [detail](can-disable-options-when-selected-in-sibling-repeater-items.md) |
 
 ## Semantics
 
 ### `inline()` is Radio's own property, not the `CanBeInline` trait
 
 Radio declares `protected bool|Closure $isInline = false;` with its own `inline()` / `isInline()` pair, and composes **no** trait for it.
-That is vendor-exact — Filament's `Radio` hand-rolls the same two methods rather than using `Concerns\CanBeInline` — and it matters here because the port *does* ship a [`CanBeInline`](can-be-inline.md) trait with the same two method names, which `Checkbox` and `Toggle` compose.
+That is vendor-exact — Filament's `Radio` hand-rolls the same two methods rather than using `Concerns\CanBeInline` — and it matters here because the port *does* ship a [`CanBeInline`](can-be-inline.md) trait with the same method names, which `Checkbox` and `Toggle` compose.
 
 The two are not interchangeable and share no code.
-The trait defaults to **`true`** (a checkbox sits beside its label unless told otherwise) and its getter carries a deferred [`hasInlineLabel()` guard](can-be-inline.md#isinline-drops-the-hasinlinelabel-guard); Radio's property defaults to **`false`** (options stack in a grid unless told otherwise) and has no guard to defer.
+The trait defaults to **`true`** (a checkbox sits beside its label unless told otherwise), and Filament's trait getter answers `false` under `hasInlineLabel()`, a guard the port's trait [drops](can-be-inline.md#isinline-drops-the-hasinlinelabel-guard); Radio's property defaults to **`false`** (options stack in a grid unless told otherwise) and has no such guard on either side.
 The word also means different things on each: on a boolean field it places the control relative to the field label, on a radio it swaps the option grid for a wrapping flex row.
 Composing the trait here would silently flip the default and hand the field a guard written for the other question.
 
@@ -70,14 +61,20 @@ Same shape as [`Select::boolean()`](select.md), and the reason a `boolean()` rad
 ### required() means presence, and needs no override
 
 `required()` builds the default [`RequiredValue`](can-be-validated.md#required-carries-laravels-blank-set-not-symfonys) and the field overrides `getRequiredConstraint()` nowhere, so a required radio with nothing selected fails and any selected option passes.
-Nothing in the option vocabulary needs the carve-outs the two boolean fields argued over: `Checkbox` swaps to Symfony's `NotBlank` because [it means "must be ticked"](checkbox.md#required-on-a-checkbox-means-must-be-checked) against the native `required` attribute it emits, and `Toggle` swaps to `NotNull` because [it means presence, not truth](toggle.md#required-means-presence-not-truth).
+Nothing in the option vocabulary needs the carve-outs the two boolean fields make: `Checkbox` swaps to Symfony's `NotBlank` because [it means "must be ticked"](checkbox.md#required-on-a-checkbox-means-must-be-checked) against the native `required` attribute it emits, and `Toggle` swaps to `NotNull` because [it means presence, not truth](toggle.md#required-means-presence-not-truth).
 
 A radio sits outside that argument because its resting state is `null`, not `false` — even in the `boolean()` arm, whose cast is nullable — so "blank" and "nothing selected" are already the same value, and the template emits no `required` attribute for a browser to disagree with.
 
 The case worth checking rather than assuming is the `boolean()` arm's **No** option, whose key is `0`.
 `RequiredValue` is one call to [`filled()`](../support/helpers.md), which counts `null` and `''` blank but **accepts** `int 0` and the string `'0'` a browser submits.
 A required `boolean()` radio therefore accepts either answer and rejects only *no answer*, which is what `required()` should mean.
-`RadioTest` pins the **No** case so a future change to the cast cannot quietly turn `required()` into [`accepted()`](can-be-accepted.md).
+`RadioTest` pins the **No** case so a change to the cast cannot quietly turn `required()` into [`accepted()`](can-be-accepted.md).
+
+### The group name is the field id, not the field name
+
+The `name` attribute every radio shares is [`getId()`](../../../packages/schemas/src/Components/Concerns/HasId.php), where the port's other single-control fields emit `getName()`.
+That is vendor-exact and it is the point: `name` is what groups radios in the browser, so it has to be unique per *rendered group*, and `getName()` is the bare field name — identical across every item of a repeater, which would fuse their radio groups into one.
+The id is the absolute key, so it stays distinct.
 
 ## Divergences
 
@@ -97,17 +94,11 @@ So the two halves converge on one option and a re-render moves the attribute rat
 ### Every radio carries the same `data-model`
 
 One `data-model` per input, all naming the field's one state path — the translation of Filament's one `wire:model` per input.
-It reads like a double-binding and is not, because a radio group only ever fires events from the input the user just checked: `live_controller`'s `getValueFromElement()` has no radio branch, so it falls through to `element.value` and the shared path receives the clicked option's `value` attribute.
+It reads like a double-binding and is not, because a radio group only ever fires events from the input the user just checked: `live_controller`'s `getValueFromElement()` has no radio branch, so it falls through to `inputValue()`, and the shared path receives the clicked option's `value` attribute.
 The unchecked siblings fire nothing.
 
-The alternative shapes — one binding on the group, or a `change`-only listener — were considered and rejected: the group element is a `<div>`, which the controller reads through `element.value` / `data-value` and would find empty, and a bespoke listener would give up the repaint the plugin above performs for free.
-Pinned by a real round-trip in [`LiveRadioTest`](../../../packages/forms/tests/Integration/LiveRadioTest.php), which drives a selection through the live host and asserts both the prop and which input the re-render checked.
-
-### The group name is the field id, not the field name
-
-The `name` attribute every radio shares is [`getId()`](../../../packages/schemas/src/Components/Concerns/HasId.php), where the port's other four controls emit `getName()`.
-That is vendor-exact and it is the point: `name` is what groups radios in the browser, so it has to be unique per *rendered group*, and `getName()` is the bare field name — identical across every item of a repeater, which would fuse their radio groups into one.
-The id is the absolute key, so it stays distinct.
+The alternative shapes — one binding on the group, or a `change`-only listener — are rejected: the group element is a `<div>`, which the controller reads through `element.value` / `data-value` and would find empty, and a bespoke listener would give up the repaint the plugin above performs for free.
+[`LiveRadioTest`](../../../packages/forms/tests/Integration/LiveRadioTest.php) drives a selection through the live host and asserts both the prop and which input the re-render checked.
 
 ### The boolean labels are untranslated literals
 
@@ -120,24 +111,15 @@ The two keys are recorded here so the strings can be found when a translation la
 Filament puts `fi-valid` or `fi-invalid` on every radio input and keys the danger ring off the latter.
 The port emits neither class and writes `aria-invalid` on each input instead, with [`radio.css`](../../../packages/forms/assets/src/styles/components/radio.css) keying its danger arm off `[aria-invalid='true']`.
 
-This is not a Radio decision — it is the translation already made for [`checkbox.css`](../../../packages/support/assets/src/styles/components/checkbox.css) and [`select.css`](../../../packages/forms/assets/src/styles/components/select.css), whose vendor sources key off `.fi-invalid` in exactly the same way, and it holds for the same two reasons: the attribute is the part a screen reader reads, and one emission serves both jobs where the vendor pair serves only styling.
+This is not a Radio decision — it is the translation already made for [`checkbox.css`](../../../packages/support/assets/src/styles/components/checkbox.css), whose vendor source keys off `.fi-invalid` in exactly the same way, and it holds for the same two reasons: the attribute is the part a screen reader reads, and one emission serves both jobs where the vendor pair serves only styling.
 The `valid` half has nothing to key at all — the base rule *is* the valid state — so it is dropped rather than emitted as a class no stylesheet mentions.
-It is passed as a bare boolean rather than the plan's `'true'`-or-`null` ternary, so a valid field renders `aria-invalid="false"` instead of dropping the attribute: that is what `Checkbox`, `Toggle`, `Select`, `Textarea` and `TextInput` already emit — the bag [stringifies booleans for `aria-` names](../../internals/templates.md#how-do-the-two-attribute-bags-render-a-value) — and one spelling across every control beats a per-field ternary.
-Reversible by adding the pair back if a consumer's CSS ever needs a class hook the attribute selector cannot give it; nothing in the toolkit styles either name today.
-
-### The control class is `sy-fo-radio-input`, one tier up from vendor's
-
-Vendor splits Radio's chrome across two packages: `fi-fo-radio*` for the option set in `forms/resources/css/components/radio.css`, and a package-code-less `fi-radio-input` for the control itself in `support/resources/css/components/input/radio.css`.
-The port names the control `.sy-fo-radio-input` and files its rules in forms' [`radio.css`](../../../packages/forms/assets/src/styles/components/radio.css) beside the option set.
-
-That is the rule [`styles.md`](styles.md#the-control-stylesheets-carry-forms-coded-names-for-support-tier-classes) already records for `.sy-fo-checkbox`, `.sy-fo-input`, `.sy-fo-select` and `.sy-fo-toggle`, applied to the fifth control of the same kind: forms is the only package rendering it, and filing a rule beside the one template that emits it beats filing it beside the vendor that happened to author it.
-It reverses the same way — the moment a second package renders a radio, the rule moves down to support and loses the code.
-Worth noting because the research trail and the plan for this field both wrote `sy-radio-input`, the straight `fi` → `sy` rename, which would have left this field emitting a support-tier name while [`CheckboxList`](README.md#components) reuses the forms-coded `.sy-fo-checkbox` for the identical category one task later.
+It is a bare boolean, so a valid field renders `aria-invalid="false"` instead of dropping the attribute: that is what `Checkbox`, `Toggle`, `Select`, `Textarea` and `TextInput` emit — the bag [stringifies booleans for `aria-` names](../../internals/templates.md#how-do-the-two-attribute-bags-render-a-value) — and one spelling across every control beats a per-field ternary.
+Reversible by adding the pair back if a consumer's CSS needs a class hook the attribute selector cannot give it.
 
 ### `extraAttributes()` stays on the field wrapper
 
 Vendor's Radio starts the radiogroup's attribute bag from `getExtraAttributeBag()`, so `extraAttributes()` lands on the group.
-The port's [`FieldWrapper`](../../../packages/forms/templates/components/FieldWrapper/index.html.twig) already spreads it on the wrapper `<div>` for every field, and the radiogroup does not repeat it — a second emission would duplicate whatever the consumer set, including an `id`.
+The port's [`FieldWrapper`](../../../packages/forms/templates/components/FieldWrapper/index.html.twig) spreads it on the wrapper `<div>` for every field, and the radiogroup does not repeat it — a second emission would duplicate whatever the consumer set, including an `id`.
 
-This is the existing port-wide placement, not a Radio-specific choice: the reasons are in [`field.md`](field.md#extra-attribute-precedence-is-fixed-by-source-order), and [`Repeater`](repeater.md) — the other field with a real inner element — resolves it the same way.
+This is the port-wide placement, not a Radio-specific choice: the reasons are in [`field.md`](field.md#extra-attribute-precedence-is-fixed-by-source-order), and [`Repeater`](repeater.md) — the other field with a real inner element — resolves it the same way.
 `extraInputAttributes()` is the hatch that reaches the controls, and on a radio it reaches **every** one of them.

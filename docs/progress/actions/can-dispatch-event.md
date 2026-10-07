@@ -11,10 +11,10 @@ owns:
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
-| [`CanDispatchEvent`](../../../packages/actions/src/Concerns/CanDispatchEvent.php) | [`Concerns/CanDispatchEvent.php`](../../../vendor/filament/actions/src/Concerns/CanDispatchEvent.php) | done | — | Filament-exact port of the whole non-deprecated surface. `dispatch()` / `dispatchSelf()` / `dispatchTo()` store the event and its payload and stamp `$dispatchDirection` — `false` for a plain dispatch, `'self'`, `'to'` — with only `dispatchTo()` recording a target component; both directed setters route through `dispatch()` first, so a re-`dispatch()` after them resets the direction to `false` exactly as upstream. `eventData()` sets the payload alone, and `getEvent()` / `getEventData()` evaluate at read time, so a closure sees the action's state when it is read rather than when it was declared. Composed onto `Action` only — vendor's `ActionGroup` composes it nowhere either. All five trigger templates read the getters, as an arm of their shared click precedence that emits [payload attributes rather than a click binding](#a-dispatch-action-renders-payload-attributes-not-a-click-binding). Covered by [`CanDispatchEventTest`](../../../packages/actions/tests/Unit/Concerns/CanDispatchEventTest.php) and [`ActionDispatchRenderTest`](../../../packages/actions/tests/Integration/ActionDispatchRenderTest.php) |
+| [`CanDispatchEvent`](../../../packages/actions/src/Concerns/CanDispatchEvent.php) | [`Concerns/CanDispatchEvent.php`](../../../vendor/filament/actions/src/Concerns/CanDispatchEvent.php) | done | — | [diverges](#a-dispatch-action-renders-payload-attributes-not-a-click-binding) |
 | `emit()` / `emitSelf()` / `emitTo()` (deprecated) | [`Concerns/CanDispatchEvent.php`](../../../vendor/filament/actions/src/Concerns/CanDispatchEvent.php) | skipped | — | [diverges](#the-deprecated-emit-aliases-are-not-ported) |
 
-## Semantics
+## Divergences
 
 ### A dispatch action renders payload attributes, not a click binding
 
@@ -43,18 +43,14 @@ One delta against Filament, and it is the shape rather than the rank.
 Filament emits `getLivewireEventClickHandler()` — a `$dispatch(...)` / `$dispatchSelf(...)` / `$dispatchTo(...)` **JavaScript expression** on `wire:click`; the port has no arbitrary-JS seam and does not want one ([same reading](has-action.md#string-click-handlers-are-live-action-names-and-close-dismisses-client-side) as the string click handler), so the payload crosses as data instead of code.
 The **rank** is vendor-exact: `getLivewireClickHandler()` tries the string handler, then the event, then `getParentActionCallLivewireClickHandler()`, and the five templates rank them the same way, so an action carrying both a `callParent()` handler and a `dispatch()` dispatches rather than calling the parent — in both codebases.
 
-Pinned by [`ActionDispatchRenderTest`](../../../packages/actions/tests/Integration/ActionDispatchRenderTest.php), which covers the payload, the direction branch (including the stale-target `dispatchTo(…)->dispatch(…)` case and the self marker's presence for `dispatchSelf()` alone), the empty-payload omission, the close marker on both arms, the url arm still winning, the rank against the client and parent-call handlers across all five templates, and the icon-button shape reaching the same arms through its own guard expressions.
-
 The click wiring is one `{% if %}` chain written out in each trigger template — the same text in `Badge`, `Button`, `Grouped` and `Link`, and the same arms as ternaries in `IconButton` — so an arm added, removed or reordered changes all five templates together.
-The render test above pins the rank behaviourally across the five; nothing compares the templates' text, which is why the chain is kept identical by hand rather than factored out.
+[`ActionDispatchRenderTest`](../../../packages/actions/tests/Integration/ActionDispatchRenderTest.php) pins the rank behaviourally across the five, but nothing compares their text, so an edit keeps the five chains identical by hand.
 
 The delivery half — who reads these attributes, and how a `'self'` emitter is resolved — is [actions-bundle.md](actions-bundle.md#the-dispatch-controller-is-page-wide-and-filament-has-no-counterpart-for-it).
-
-## Divergences
 
 ### The deprecated `emit*` aliases are not ported
 
 Filament's `CanDispatchEvent` carries three `@deprecated` aliases — `emit()`, `emitSelf()` and `emitTo()` — each a one-line forward to its `dispatch*` twin, kept for callers written against the older `emit` vocabulary.
-The port carries the three `dispatch*` methods and nothing else: Sylament has no deprecation-shim policy, and a fresh codebase has no older vocabulary to keep compatible with — the same call already made for [`disableLabel()`](action.md#label-translation-and-the-deprecated-disablelabel-alias-are-not-ported), `CanNotify`'s `*NotificationMessage()` pair, and `HasData`'s `*FormData*` pair.
+The port carries the `dispatch*` methods and nothing else: Sylament has no deprecation-shim policy, and a fresh codebase has no older vocabulary to keep compatible with — the same call already made for [`disableLabel()`](action.md#label-translation-and-the-deprecated-disablelabel-alias-are-not-ported), `CanNotify`'s `*NotificationMessage()` pair, and `HasData`'s `*FormData*` pair.
 Nothing is lost, since every alias's target is ported.
 Stays out regardless.

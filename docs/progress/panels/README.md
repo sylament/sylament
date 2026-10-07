@@ -1,74 +1,41 @@
-# Panels — port progress
+# Panels — port trail
 
-Ports [`filament/filament`](../../../vendor/filament/filament) into [`packages/panels`](../../../packages/panels) — Filament ships its panel builder as the `filament/filament` package.
-The admin shell: panel config, routing, auth, resources, pages, navigation.
+Ports [`filament/filament`](../../../vendor/filament/filament), the package Filament ships its panel builder as, into [`packages/panels`](../../../packages/panels): the admin shell, from panel configuration, routing and auth to resources, pages and navigation.
 
-**Status:** in progress — see the [status vocabulary](../README.md#statuses) and [what goes where](../../internals/trail.md#one-file-per-piece-of-code-one-row-per-feature).
+## Files
 
-The tables below are structure plus the first ported rows; nothing has been audited end to end yet.
-[`support/component.md`](../support/component.md) is the shape each detail file follows.
-The package's docs are in a deliberate mixed state: most detail lives as in-file anchors in this README (a recorded divergence from the tree rule), while the relation-manager tier started the per-component detail files and every surface since has followed that shape, fourteen so far — the relation-manager tier ([relation-manager.md](relation-manager.md), [relation-group.md](relation-group.md), [has-relation-managers.md](has-relation-managers.md), [interacts-with-relationship-table.md](interacts-with-relationship-table.md), [manage-related-records.md](manage-related-records.md)), the record and navigation concerns ([interacts-with-record.md](interacts-with-record.md), [has-sub-navigation.md](has-sub-navigation.md), [nested-resources.md](nested-resources.md)), the page tier ([custom-pages.md](custom-pages.md), [form-actions.md](form-actions.md), [simple-page.md](simple-page.md), [unsaved-changes-alert.md](unsaved-changes-alert.md)), [global-search.md](global-search.md), and [has-tabs.md](has-tabs.md).
-The inline sections stay until each is migrated.
+<!-- trail-index:start -->
+- [assets.md](assets.md)
+- [create-record.md](create-record.md)
+- [custom-pages.md](custom-pages.md)
+- [dashboard.md](dashboard.md)
+- [edit-record.md](edit-record.md)
+- [form-actions.md](form-actions.md)
+- [global-search.md](global-search.md)
+- [has-relation-managers.md](has-relation-managers.md)
+- [has-sub-navigation.md](has-sub-navigation.md)
+- [has-tabs.md](has-tabs.md)
+- [interacts-with-record.md](interacts-with-record.md)
+- [interacts-with-relationship-table.md](interacts-with-relationship-table.md)
+- [layout-templates.md](layout-templates.md)
+- [list-records.md](list-records.md)
+- [manage-related-records.md](manage-related-records.md)
+- [navigation-group.md](navigation-group.md)
+- [navigation-item.md](navigation-item.md)
+- [nested-resources.md](nested-resources.md)
+- [page.md](page.md)
+- [panel.md](panel.md)
+- [relation-group.md](relation-group.md)
+- [relation-manager.md](relation-manager.md)
+- [resource-pages.md](resource-pages.md)
+- [resource.md](resource.md)
+- [routing.md](routing.md)
+- [simple-page.md](simple-page.md)
+- [unsaved-changes-alert.md](unsaved-changes-alert.md)
+<!-- trail-index:end -->
 
-## Carried decisions
+## Unported
 
-Settled while porting other packages, recorded here because they constrain how this one is built and would otherwise be re-litigated.
-All three now govern the code: the `Resource` decision is implemented, and the two shell constraints hold.
-
-## Components
-
-The panel surface — [`src/Panel.php`](../../../vendor/filament/filament/src/Panel.php), [`src/Resources`](../../../vendor/filament/filament/src/Resources), [`src/Pages`](../../../vendor/filament/filament/src/Pages), [`src/Navigation`](../../../vendor/filament/filament/src/Navigation), [`src/Auth`](../../../vendor/filament/filament/src/Auth), [`src/Clusters`](../../../vendor/filament/filament/src/Clusters), [`src/GlobalSearch`](../../../vendor/filament/filament/src/GlobalSearch), [`src/Widgets`](../../../vendor/filament/filament/src/Widgets).
-
-| Component | Ports | Status | Detail |
+| Filament | Status | Blocked by | Detail |
 | --- | --- | --- | --- |
-| [`Pages\SimplePage`](../../../packages/panels/src/Pages/SimplePage.php) | [`Pages/SimplePage.php`](../../../vendor/filament/filament/src/Pages/SimplePage.php) | in progress | [simple-page.md](simple-page.md) |
-| [`Resources\Pages\ManageRelatedRecords`](../../../packages/panels/src/Resources/Pages/ManageRelatedRecords.php) | [`Resources/Pages/ManageRelatedRecords.php`](../../../vendor/filament/filament/src/Resources/Pages/ManageRelatedRecords.php) | in progress | [ManageRelatedRecords](manage-related-records.md) |
-| [`GlobalSearch\GlobalSearchResult`](../../../packages/panels/src/GlobalSearch/GlobalSearchResult.php), [`GlobalSearchResults`](../../../packages/panels/src/GlobalSearch/GlobalSearchResults.php) | [`GlobalSearch/GlobalSearchResult.php`](../../../vendor/filament/filament/src/GlobalSearch/GlobalSearchResult.php), [`GlobalSearchResults.php`](../../../vendor/filament/filament/src/GlobalSearch/GlobalSearchResults.php) | in progress | [global-search.md](global-search.md) |
-| [`GlobalSearch\Providers\DefaultGlobalSearchProvider`](../../../packages/panels/src/GlobalSearch/Providers/DefaultGlobalSearchProvider.php) and its [contract](../../../packages/panels/src/GlobalSearch/Providers/Contracts/GlobalSearchProvider.php) | [`GlobalSearch/Providers`](../../../vendor/filament/filament/src/GlobalSearch/Providers) | in progress | [global-search.md](global-search.md) |
-| [`GlobalSearch\GlobalSearchProviderRegistry`](../../../packages/panels/src/GlobalSearch/GlobalSearchProviderRegistry.php) | no Filament counterpart — a provider is resolved with `app($panel->getGlobalSearchProvider())` | in progress | [global-search.md](global-search.md#the-provider-is-resolved-through-a-tagged-registry-rather-than-app) |
-| [`Twig\Components\GlobalSearch`](../../../packages/panels/src/Twig/Components/GlobalSearch.php) | [`Livewire/GlobalSearch.php`](../../../vendor/filament/filament/src/Livewire/GlobalSearch.php) | in progress | [global-search.md](global-search.md), and [the shell's first live root](layout-templates.md#the-shell-is-not-live) |
-| [`Resources\RelationManagers\RelationManager`](../../../packages/panels/src/Resources/RelationManagers/RelationManager.php) | [`Resources/RelationManagers/RelationManager.php`](../../../vendor/filament/filament/src/Resources/RelationManagers/RelationManager.php), [`Resources/Concerns/InteractsWithRelationshipTable.php`](../../../vendor/filament/filament/src/Resources/Concerns/InteractsWithRelationshipTable.php) | in progress | [RelationManager](relation-manager.md) |
-| [`Resources\RelationManagers\RelationGroup`](../../../packages/panels/src/Resources/RelationManagers/RelationGroup.php) (+ `RelationManagerConfiguration`) | [`Resources/RelationManagers/RelationGroup.php`](../../../vendor/filament/filament/src/Resources/RelationManagers/RelationGroup.php), [`Resources/RelationManagers/RelationManagerConfiguration.php`](../../../vendor/filament/filament/src/Resources/RelationManagers/RelationManagerConfiguration.php) | in progress | [RelationGroup](relation-group.md) |
-| _rest not audited yet_ | | | |
-
-## Features
-
-Cross-cutting concerns and traits — this package has no top-level `Concerns/`; they sit per subsystem: [`src/Panel/Concerns`](../../../vendor/filament/filament/src/Panel/Concerns), [`src/Pages/Concerns`](../../../vendor/filament/filament/src/Pages/Concerns), [`src/Resources/Concerns`](../../../vendor/filament/filament/src/Resources/Concerns), [`src/Navigation/Concerns`](../../../vendor/filament/filament/src/Navigation/Concerns).
-
-| Feature | Ports | Status | Detail |
-| --- | --- | --- | --- |
-| [`DependencyInjection\Compiler\PageComponentPass`](../../../packages/panels/src/DependencyInjection/Compiler/PageComponentPass.php) | [`Panel/Concerns/HasComponents.php`](../../../vendor/filament/filament/src/Panel/Concerns/HasComponents.php) — `registerLivewireComponents()` / `queueLivewireComponentForRegistration()` | in progress | every `Page` service is autoconfigured `sylament.panels.page`; the pass throws for a page class missing the bare `#[AsLiveComponent]` UX reflects for, clears the attribute-derived `twig.component` tag and re-adds a live one keyed by `Page::getComponentName()`, rendering through `template_from_method: getTemplate`; it also builds the class-keyed `ServiceLocator` `PageController` reads pages from — [the attribute and the pass, and why both](page.md#pages-register-as-live-components-through-a-compiler-pass-over-a-per-class-attribute) |
-| [`DependencyInjection\Compiler\RelationManagerComponentPass`](../../../packages/panels/src/DependencyInjection/Compiler/RelationManagerComponentPass.php) | [`Panel/Concerns/HasComponents.php`](../../../vendor/filament/filament/src/Panel/Concerns/HasComponents.php) — the same Livewire component registration, which Filament reaches for relation managers through a resource's `getRelations()` | in progress | every `RelationManager` service is autoconfigured `sylament.panels.relation_manager`, and the pass is `PageComponentPass` minus the controller locator — [the attribute, the tag swap, and why a manager needs both](relation-manager.md#a-manager-must-carry-aslivecomponent-and-the-pass-enforces-it) |
-| [`Resources\Pages\Concerns\HasRelationManagers`](../../../packages/panels/src/Resources/Pages/Concerns/HasRelationManagers.php) (+ [`Resource::getRelations()`](../../../packages/panels/src/Resources/Resource.php) and [`EditRecord::content()`](../../../packages/panels/src/Resources/Pages/EditRecord.php)) | [`Resources/Pages/Concerns/HasRelationManagers.php`](../../../vendor/filament/filament/src/Resources/Pages/Concerns/HasRelationManagers.php), [`Resources/Resource.php`](../../../vendor/filament/filament/src/Resources/Resource.php) `getRelations()` | in progress | the registrations a record page mounts, filtered by the record, and the one component that carries them — a tab bar, a bare embed, a group's embeds, or a hidden group — [HasRelationManagers](has-relation-managers.md) |
-| [`Resources\Pages\Concerns\InteractsWithRecord`](../../../packages/panels/src/Resources/Pages/Concerns/InteractsWithRecord.php) | [`Resources/Pages/Concerns/InteractsWithRecord.php`](../../../vendor/filament/filament/src/Resources/Pages/Concerns/InteractsWithRecord.php) | in progress | the record a page is opened on — the key on the wire, the scoped lazy resolution, the title, the record crumb and the sub-navigation bridge, extracted out of `EditRecord` for the second and third record pages — [InteractsWithRecord](interacts-with-record.md) |
-| [`Resource\Concerns\BelongsToParent`](../../../packages/panels/src/Resources/Resource/Concerns/BelongsToParent.php) (+ [`Resources\ParentResourceRegistration`](../../../packages/panels/src/Resources/ParentResourceRegistration.php), [`Pages\Concerns\InteractsWithParentRecord`](../../../packages/panels/src/Resources/Pages/Concerns/InteractsWithParentRecord.php)) | [`Resources/Resource/Concerns/BelongsToParent.php`](../../../vendor/filament/filament/src/Resources/Resource/Concerns/BelongsToParent.php), [`ParentResourceRegistration.php`](../../../vendor/filament/filament/src/Resources/ParentResourceRegistration.php), [`Resources/Pages/Concerns/InteractsWithParentRecord.php`](../../../vendor/filament/filament/src/Resources/Pages/Concerns/InteractsWithParentRecord.php) | in progress | a resource mounted under its parent's records: the derived relationship, the nested routes, the scoped bindings, the attach and the two suppressions — [nested-resources.md](nested-resources.md) |
-| [`Resources\Concerns\InteractsWithRelationshipTable`](../../../packages/panels/src/Resources/Concerns/InteractsWithRelationshipTable.php) | [`Resources/Concerns/InteractsWithRelationshipTable.php`](../../../vendor/filament/filament/src/Resources/Concerns/InteractsWithRelationshipTable.php) | in progress | the tier both relationship-table hosts compose — the association, the title, and the schemas, labels and page URLs a `$relatedResource` answers with — [interacts-with-relationship-table.md](interacts-with-relationship-table.md) |
-| [`Pages\Concerns\InteractsWithHeaderActions`](../../../packages/panels/src/Pages/Concerns/InteractsWithHeaderActions.php) | [`Pages/Concerns/InteractsWithHeaderActions.php`](../../../vendor/filament/filament/src/Pages/Concerns/InteractsWithHeaderActions.php) | in progress | the header list every page template renders, bound and registered by a lazy walk, plus its alignment and the placement default a bare group takes — [custom-pages.md](custom-pages.md), [the walk itself](custom-pages.md#header-actions-are-bound-lazily-rather-than-at-boot) |
-| [`Pages\Concerns\InteractsWithFormActions`](../../../packages/panels/src/Pages/Concerns/InteractsWithFormActions.php) | [`Pages/Concerns/InteractsWithFormActions.php`](../../../vendor/filament/filament/src/Pages/Concerns/InteractsWithFormActions.php) — the name; the shape comes from [`CreateRecord`](../../../vendor/filament/filament/src/Resources/Pages/CreateRecord.php) and [`EditRecord`](../../../vendor/filament/filament/src/Resources/Pages/EditRecord.php) | in progress | the button row below a page's form: the declaration hook, the bound list, the one keyed `Actions` component and the named `formActions` schema it hangs under — [form-actions.md](form-actions.md) |
-| [`Pages\Concerns\HasMaxWidth`](../../../packages/panels/src/Pages/Concerns/HasMaxWidth.php) + [`HasTopbar`](../../../packages/panels/src/Pages/Concerns/HasTopbar.php) | [`Pages/Concerns/HasMaxWidth.php`](../../../vendor/filament/filament/src/Pages/Concerns/HasMaxWidth.php), [`HasTopbar.php`](../../../vendor/filament/filament/src/Pages/Concerns/HasTopbar.php) | in progress | the two [`SimplePage`](simple-page.md)-only knobs — the card's own width, and whether the shell draws its top strip; the width trait shares its name with a [component-tier twin](../schemas/README.md) that is still todo |
-| [`Pages\Concerns\HasUnsavedDataChangesAlert`](../../../packages/panels/src/Pages/Concerns/HasUnsavedDataChangesAlert.php) (+ [`Panel\Concerns\HasUnsavedChangesAlerts`](../../../packages/panels/src/Panel/Concerns/HasUnsavedChangesAlerts.php)) | [`Pages/Concerns/HasUnsavedDataChangesAlert.php`](../../../vendor/filament/filament/src/Pages/Concerns/HasUnsavedDataChangesAlert.php), [`Panel/Concerns/HasUnsavedChangesAlerts.php`](../../../vendor/filament/filament/src/Panel/Concerns/HasUnsavedChangesAlerts.php) | in progress | the saved-state marker, the panel switch and the fourth Stimulus controller that raises the browser's leave-site prompt off three client signals — [unsaved-changes-alert.md](unsaved-changes-alert.md) |
-| [`Panel\Concerns\HasMaxContentWidth`](../../../packages/panels/src/Panel/Concerns/HasMaxContentWidth.php) | [`Panel/Concerns/HasMaxContentWidth.php`](../../../vendor/filament/filament/src/Panel/Concerns/HasMaxContentWidth.php) | in progress | the two panel-wide width defaults the controller's ladder ends at, over support's [`Width`](../support/README.md) enum — [simple-page.md](simple-page.md#the-width-resolution-is-one-ladder-in-the-controller) |
-| [`Pages\Concerns\HasSubNavigation`](../../../packages/panels/src/Pages/Concerns/HasSubNavigation.php) (+ [`Pages\Enums\SubNavigationPosition`](../../../packages/panels/src/Pages/Enums/SubNavigationPosition.php), [`Panel\Concerns\HasSubNavigation`](../../../packages/panels/src/Panel/Concerns/HasSubNavigation.php)) | [`Pages/Concerns/HasSubNavigation.php`](../../../vendor/filament/filament/src/Pages/Concerns/HasSubNavigation.php), [`Pages/Enums/SubNavigationPosition.php`](../../../vendor/filament/filament/src/Pages/Enums/SubNavigationPosition.php) | in progress | the band of sibling pages, its normalization, its three positions and the four templates that draw it — [has-sub-navigation.md](has-sub-navigation.md) |
-| [`DependencyInjection\Compiler\GlobalSearchProviderPass`](../../../packages/panels/src/DependencyInjection/Compiler/GlobalSearchProviderPass.php) | no Filament counterpart — a provider class-string is handed straight to `app()` | in progress | the same three-piece shape one feature over: every `GlobalSearchProvider` service is autoconfigured `sylament.panels.global_search_provider` and the pass collects the tagged definitions into the class-keyed `ServiceLocator` `GlobalSearchProviderRegistry` reads — [global-search.md](global-search.md#the-provider-is-resolved-through-a-tagged-registry-rather-than-app) |
-| _rest not audited yet_ | | | |
-
-## Supporting surface
-
-Enums, contracts, HTTP layer, events, templates — [`src/Enums`](../../../vendor/filament/filament/src/Enums), [`src/Contracts`](../../../vendor/filament/filament/src/Contracts), [`src/Http`](../../../vendor/filament/filament/src/Http), [`src/Events`](../../../vendor/filament/filament/src/Events), [`src/View`](../../../vendor/filament/filament/src/View).
-
-| Item | Ports | Status | Detail |
-| --- | --- | --- | --- |
-| [RelationManager template](../../../packages/panels/templates/partials/RelationManager/index.html.twig) | [`resources/views/resources/relation-manager.blade.php`](../../../vendor/filament/filament/resources/views/resources/relation-manager.blade.php) | in progress | [RelationManager](relation-manager.md#the-manager-renders-a-template-not-a-content-schema) |
-| [SubNavigation templates](../../../packages/panels/templates/components/SubNavigation/index.html.twig) — the dispatcher plus the sidebar, tabs and mobile-menu components | [`components/page/sub-navigation/`](../../../vendor/filament/filament/resources/views/components/page/sub-navigation) | in progress | [has-sub-navigation.md](has-sub-navigation.md#three-sibling-components-not-one-with-variants) |
-| [`SylamentPanelsBundle`](../../../packages/panels/src/SylamentPanelsBundle.php) | [`FilamentServiceProvider.php`](../../../vendor/filament/filament/src/FilamentServiceProvider.php) | in progress | autoconfigures the four tags (`sylament.panels.panel_provider` / `.page` / `.resource` / `.relation_manager`), registers `PageComponentPass`, `RelationManagerComponentPass` and `ResourcePass`, wires `Panel`, the two registries, `CurrentPanel`, `RelationGroup`, `PageController` and the `routing.route_loader`, and prepends `@sylament/panels` into AssetMapper — [providers are collected by tag](panel.md#panels-are-collected-from-tagged-providers-not-registered-imperatively), [pages register through a pass](page.md#pages-register-as-live-components-through-a-compiler-pass-over-a-per-class-attribute), [relation managers through their own](relation-manager.md#a-manager-must-carry-aslivecomponent-and-the-pass-enforces-it), [the group needs a definition of its own to reach the container](relation-group.md#the-two-constructor-arguments-arrive-through-setters), [resources from a tag](resource.md#resources-are-collected-from-a-tag-not-discovered-on-the-filesystem) |
-| _rest not audited yet_ | | | |
-
-## Semantics
-
-Faithful ports subtle enough that re-deriving them from the source would plausibly get them wrong.
-
-## Divergences
-
-<!-- split-links:start -->
-Also in this package: [assets.md](assets.md) · [create-record.md](create-record.md) · [dashboard.md](dashboard.md) · [edit-record.md](edit-record.md) · [list-records.md](list-records.md) · [navigation-group.md](navigation-group.md) · [navigation-item.md](navigation-item.md) · [resource-pages.md](resource-pages.md) · [routing.md](routing.md).
-<!-- split-links:end -->
+| _not audited yet_ | — | — | — |

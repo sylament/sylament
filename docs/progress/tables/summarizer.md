@@ -326,19 +326,19 @@ The two files are 393 lines against 599, and the shared bodies differ in `!` spa
 - `formatState()` is structurally different.
   The column `json_encode`s an array state and returns `null` for a null one; the summarizer returns an array **whole** — vendor's affix and placeholder tail would fatal on a `Range`'s pair, and the pass-through is what makes [the per-entry / whole-pair split](#the-list-summary-formats-per-entry-where-the-range-formats-its-pair-whole) work — throws only for a non-null non-stringable, and ends on a placeholder tail (`mb_trim((string) $affixed) === '' ? placeholder : affixed`) the column trait has not got.
 - `placeholder()` is declared inside this trait and nowhere on the column side.
-  A column's is support's [`Components\Concerns\HasPlaceholder`](../support/README.md#features), composed on the `Column` base and read by the cell; a summarizer's is a `string|Closure|null` prop of the formatter itself, because `formatState()` is the only thing that reads it.
+  A column's is support's [`Components\Concerns\HasPlaceholder`](../support/README.md#files), composed on the `Column` base and read by the cell; a summarizer's is a `string|Closure|null` prop of the formatter itself, because `formatState()` is the only thing that reads it.
 - The date family (`date()` / `dateTime()` / `time()` / `since()` and their four tooltip siblings, `timezone()`, `resolveTimeZone()`, `toDateTimeImmutable()`) and the word family (`words()`, `getWordLimit()` / `getWordLimitEnd()`) are absent, as they are on vendor's summarizer trait — and with no `words()` the word half of `truncateState()` is dropped from the copy rather than left unfed.
 
 One thing differs from vendor inside the copy: `limit()` is the column's **property pair** (`getCharacterLimit()` / `getCharacterLimitEnd()`) rather than vendor's formatter install, which comes with the bodies.
 
 The debt this creates is Sylament's own rather than Filament's: the toolkit now ships **two** copies of these mechanics — the same bodies under two receivers — so a fix to one of the shared members is owed to the other, while the three partings above are meant to stay apart.
-It is recorded on the [`CanFormatState` hoist row](../support/README.md#features) and stays **todo** until a third reader is wanted.
+It is recorded on the [`CanFormatState` hoist row](../support/README.md#files) and stays **todo** until a third reader is wanted.
 
 ### `hiddenLabel()` is honoured in all three markups where vendor honours it in one
 
 Vendor's `hiddenLabel()` lives on the shared `HasLabel` trait and is read only by the text summarizer's view — a range or a list renders its label whatever the flag says.
 All three bodies here wrap the label in `sy-sr-only` when the flag is set, which is what a shared API implies.
-The class is support's [`.sy-sr-only`](../support/README.md#supporting-surface), not a tables-tier spelling of the same idea.
+The class is support's [`.sy-sr-only`](../support/README.md#files), not a tables-tier spelling of the same idea.
 
 ### Every row of the band carries a host-scoped id
 

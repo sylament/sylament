@@ -112,7 +112,7 @@ Eight members split across the two out-of-request deliveries: `broadcast()`/`toB
 Both lean on Laravel's notification infrastructure — `Illuminate\Notifications\Notification`, the `notify()` trait on the user model, Echo — none of which has been mapped to a Symfony counterpart yet.
 
 **Next step:** each waits on infrastructure the port does not have yet.
-The broadcast arm's Symfony shape is Mercure, the database arm's is a Doctrine entity plus the panel that reads it, and each carries its own delivery class (`BroadcastNotification`, `DatabaseNotification`) and its own **blocked** row in the [package README](README.md#components).
+The broadcast arm's Symfony shape is Mercure, the database arm's is a Doctrine entity plus the panel that reads it, and each carries its own delivery class (`BroadcastNotification`, `DatabaseNotification`) and its own **blocked** row in the [package README](README.md#files).
 
 ### The assertion helpers read a collection that no longer exists
 
@@ -120,7 +120,7 @@ The broadcast arm's Symfony shape is Mercure, the database arm's is a Doctrine e
 Here the stack [holds no collection](notifications.md#the-stack-holds-no-server-side-collection-so-filaments-collection-is-not-ported) — the equivalent read is [`SessionNotifications::pull()`](../../../packages/notifications/src/Delivery/SessionNotifications.php), which is what the shipped tests assert against directly today.
 
 **Next step:** port as a Pest-shaped helper over `SessionNotifications`, not as a Livewire `Testable` mixin — the mixin registration is [skipped for the same reason tables' is](notifications-bundle.md#livewire-specific-provider-responsibilities-are-dropped-not-ported).
-The two `src/Testing/` files keep their **todo** rows in the [package README](README.md#supporting-surface) until then.
+The two `src/Testing/` files keep their **todo** rows in the [package README](README.md#files) until then.
 
 ## Semantics
 

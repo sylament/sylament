@@ -1,22 +1,23 @@
 ---
-description: The boolean switch field. (draft)
+description: The boolean switch field, a styled native checkbox, with the on/off icon and colour concerns it shares with ToggleColumn.
 ports:
   - vendor/filament/forms/src/Components/Toggle.php
-  - vendor/filament/forms/src/Components/Concerns/
+  - vendor/filament/forms/src/Components/Concerns/HasToggleColors.php
+  - vendor/filament/forms/src/Components/Concerns/HasToggleIcons.php
 owns:
+  - packages/forms/src/Components/Concerns/HasToggleColors.php
+  - packages/forms/src/Components/Concerns/HasToggleIcons.php
   - packages/forms/src/Components/Toggle.php
   - packages/forms/templates/partials/Toggle/
 ---
 # Toggle (forms)
 
-`Sylament\Forms\Components\Toggle` — the boolean switch field.
-Extends [`Field`](../../../packages/forms/src/Components/Field.php), defaults its state to `false`, casts it to a non-nullable `bool`, and renders a real `<input type="checkbox" role="switch">` that CSS replaces with a track and a thumb.
-It composes the two shared boolean concerns ([`CanBeInline`](can-be-inline.md), [`CanBeAccepted`](can-be-accepted.md)) and adds its own on/off icon pair.
+`Sylament\Forms\Components\Toggle` is the boolean switch field.
+It extends [`Field`](field.md), whose shared surface is tracked in that file, defaults its state to `false`, casts it to a non-nullable `bool`, and renders a real `<input type="checkbox" role="switch">` that CSS replaces with a track and a thumb.
+It composes the shared boolean concerns [`CanBeInline`](can-be-inline.md) and [`CanBeAccepted`](can-be-accepted.md), and the on/off icon and colour concerns it shares with tables' [`ToggleColumn`](../tables/toggle-column.md).
+The Surface table carries no [unaudited row](../../internals/trail.md#an-unaudited-table-says-so) because every member of the vendor class and its toggle concerns has a row.
 
 ## Surface
-
-Every point this field adds over `Field`.
-`Field`'s own surface is tracked in [`field.md`](field.md), not here.
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
@@ -27,14 +28,13 @@ Every point this field adds over `Field`.
 | Acceptance (`CanBeAccepted`) | [`Concerns/CanBeAccepted.php`](../../../vendor/filament/forms/src/Components/Concerns/CanBeAccepted.php) | done | — | [detail](can-be-accepted.md) |
 | [`HasToggleIcons`](../../../packages/forms/src/Components/Concerns/HasToggleIcons.php) | [`Concerns/HasToggleIcons.php`](../../../vendor/filament/forms/src/Components/Concerns/HasToggleIcons.php) | done | — | [diverges](#hastoggleicons-tests-for-null-not-truthiness) · [diverges](#the-icon-rules-select-by-name-where-filament-selects-by-position) |
 | Error display (`aria-invalid` on the input) | [`Components/Field.php`](../../../vendor/filament/forms/src/Components/Field.php) | done | — | [diverges](field.md#error-display-shows-every-message-for-the-path) |
-| `required()` — no attribute, and a `NotNull` constraint | [`Components/Toggle.php`](../../../vendor/filament/forms/src/Components/Toggle.php) | done | — | [diverges](#required-means-presence-not-truth) |
-| [`isBlankStateValue()`](../../../packages/forms/src/Components/Toggle.php) — an untouched switch reads blank | — | done | — | [semantics](../schemas/has-nullable-branch.md#the-built-in-blank-test-asks-the-branchs-own-leaves) |
-| [`HasToggleColors`](../../../packages/forms/src/Components/Concerns/HasToggleColors.php) (`onColor()` / `offColor()`) | [`Concerns/HasToggleColors.php`](../../../vendor/filament/forms/src/Components/Concerns/HasToggleColors.php) | done | — | [diverges](#the-two-colours-ride-on-two-elements) |
+| `required()`: no attribute, and a `NotNull` constraint | [`Components/Toggle.php`](../../../vendor/filament/forms/src/Components/Toggle.php) | done | — | [diverges](#required-means-presence-not-truth) |
+| [`isBlankStateValue()`](../../../packages/forms/src/Components/Toggle.php): an untouched switch reads blank | — | done | — | [semantics](../schemas/has-nullable-branch.md#the-built-in-blank-test-asks-the-branchs-own-leaves) |
+| [`isRequiredByRecord()`](../../../packages/forms/src/Components/Toggle.php): no requirement derived from a non-nullable `bool` target | — | done | — | [semantics](can-be-validated.md#requirement-is-derived-from-the-records-write-side-types) |
+| [`HasToggleColors`](../../../packages/forms/src/Components/Concerns/HasToggleColors.php) (`onColor()` / `offColor()`) | [`Concerns/HasToggleColors.php`](../../../vendor/filament/forms/src/Components/Concerns/HasToggleColors.php) | done | — | [diverges](#the-two-colours-ride-on-two-elements) · [diverges](#oncolor-and-offcolor-accept-an-array-palette) |
 | `CanFixIndistinctState` (`fixIndistinctState()`) | [`Concerns/CanFixIndistinctState.php`](../../../vendor/filament/forms/src/Components/Concerns/CanFixIndistinctState.php) | done | — | [detail](can-fix-indistinct-state.md) |
 | [`HasExtraInputAttributes`](../../../packages/forms/src/Components/Concerns/HasExtraInputAttributes.php) | [`Concerns/HasExtraInputAttributes.php`](../../../vendor/filament/forms/src/Components/Concerns/HasExtraInputAttributes.php) | done | — | [detail](has-extra-input-attributes.md) · [diverges](#the-toggle-carries-extra-input-attributes-filaments-does-not) |
 | Extra Alpine attributes (`HasExtraAlpineAttributes`) | [`support/Concerns/HasExtraAlpineAttributes.php`](../../../vendor/filament/support/src/Concerns/HasExtraAlpineAttributes.php) | skipped | — | [diverges](../support/component-attribute-bag.md#extra-alpine-attributes-are-not-ported) |
-
-Coverage: [`ToggleTest`](../../../packages/forms/tests/Integration/Components/ToggleTest.php) renders the field through a real `Schema` and asserts the switch markup, the input's identity and binding attributes, the absence of a `value` attribute, the inline/not-inline placement (in both directions, that the control renders exactly *once* — the guard against the hoisted-`{% block %}` trap described below — and that its root element is the `<span>` or the `<label for>` the layout calls for), the hydrated `false` default and its `bool` round trip, the `checked` attribute in both states, the icon spans present and absent and each one alone (so the on and off branches cannot pass for each other), the `bool` `Type` constraint and its post-hoc message, `required()` building `NotNull` and validating an off switch, `disabled` / `autofocus`, `aria-invalid` in both directions (the `true` case against a real validator run, which the `.sy-fo-toggle-input[aria-invalid='true']` ring depends on), the deliberately missing `required` attribute, the two colours landing on the elements that carry them — the resolved class list for a named palette, the inline `--sy-color-*` declarations for an array one, primary on the track and nothing on the root when neither is set, and nothing at all for gray — the extra input attributes reaching the input rather than the root and outranking what the field computes, and `isBlankStateValue()` answering `true` for `false` and `null` but not `true`, the override that keeps a resting switch from holding a [`nullWhenBlank()` branch](../schemas/has-nullable-branch.md#the-built-in-blank-test-asks-the-branchs-own-leaves) alive.
 
 ## Divergences
 
@@ -56,7 +56,7 @@ Three things this buys, and they are why it holds:
   The input is a real form control, so it submits inside the modal `<form>` an action renders.
 
 The consequence worth stating plainly: **this field ships no JavaScript.**
-There is no Stimulus controller and no `assets/src` entry for it.
+There is no Stimulus controller for it.
 
 The input is `sr-only`, **not** `display: none`.
 The latter would remove it from the tab order and from form submission, which is precisely the platform behaviour the divergence exists to keep.
@@ -68,7 +68,7 @@ The control's root element therefore changes with the layout: a `<span>` in the 
 Without that swap a non-inline toggle is keyboard-only, and a non-inline toggle with no visible label has nothing associated with it at all.
 
 One implementation constraint the template must respect: Twig hoists `{% block %}` definitions at parse time, so a `<twig:block>` nested inside an `{% if %}` is still registered and the wrapper's `block('labelPrefix')` returns its content regardless of the condition.
-The template therefore declares **both** the `labelPrefix` and `content` blocks unconditionally and puts the `component.isInline` test *inside* each; the "renders exactly once" tests pin it.
+The template therefore declares **both** the `labelPrefix` and `content` blocks unconditionally and puts the `component.isInline` test *inside* each, and `ToggleTest` asserts the control renders once in each layout.
 
 ### The icon rules select by name where Filament selects by position
 
@@ -84,7 +84,7 @@ A named class cannot pick the wrong element whichever of the two is present, and
 
 The other way to keep vendor's selectors would be to emit both spans always, as Filament does.
 That buys nothing back: it puts an empty element in every toggle's DOM and gives up two names [`docs/internals/styling.md`](../../internals/styling.md#why-are-the-emitted-classes-public) counts as public hook surface, in exchange for a selector that has to be reasoned about each time it is read.
-So this is settled rather than provisional — recorded because a future audit against the vendor stylesheet will find the selectors differ and should not "correct" them.
+So this is settled rather than provisional, and a future audit against the vendor stylesheet that finds the selectors differ should not "correct" them.
 
 ### The toggle carries extra input attributes, Filament's does not
 
@@ -95,8 +95,7 @@ The port's toggle is [a real `<input type="checkbox" role="switch">`](#the-toggl
 Withholding the concern would therefore leave the toggle the one field whose control no setter can reach — the opposite of what Filament's omission achieves.
 
 The extras merge onto `.sy-fo-toggle-input`, not the `.sy-fo-toggle` root that CSS paints the track from.
-The input is the element the other four fields' extras land on, so `extraInputAttributes()` means the same thing on every field: it addresses the form control.
-`ToggleTest` pins both halves — the attribute on the input, and no attribute on the root.
+The input is the element every other field's extras land on, so `extraInputAttributes()` means the same thing on every field: it addresses the form control.
 
 ### The two colours ride on two elements
 
@@ -113,9 +112,7 @@ And the track clears the three slots it reads, so one marked `.sy-color` by an u
 The clear cannot swallow a real on colour, because [`forms/index.css`](../../../packages/forms/assets/src/styles/index.css) imports this stylesheet into the `components` layer and support's [`index.css`](../../../packages/support/assets/src/styles/index.css) orders that below the `utilities` layer holding `sy-bg-color-*`; an array palette arrives as an inline style and outranks both.
 
 Both getters return `null` when unset, as Filament's do; the template supplies Filament's `'gray'` off and `'primary'` on fallbacks at the point Filament's `toEmbeddedHtml()` does.
-Gray resolves to no classes at all ([`ToggleComponent`](../../../packages/support/src/Colors/Components/ToggleComponent.php) implements `HasDefaultGrayColor`), so the unchecked track keeps the stylesheet's `bg-gray-200`, and the checked track is painted by primary's resolved slots instead of a hardcoded `bg-primary-600`.
-That hardcoding is what the fallback replaces: it fired on *any* uncoloured track, so an explicit `onColor('gray')` rendered an amber switch where Filament renders a gray one.
-Its dark half was hardcoded too, so a default checked toggle is now `primary-600` in dark mode — the shade the contrast map picks against `gray-700` — rather than `primary-500`.
+Gray resolves to no classes at all ([`ToggleComponent`](../../../packages/support/src/Colors/Components/ToggleComponent.php) implements `HasDefaultGrayColor`), so the unchecked track keeps the stylesheet's `bg-gray-200`, the checked track is painted by primary's resolved slots, and an explicit `onColor('gray')` renders a gray switch, as Filament's does.
 
 ### The boolean rule becomes a Type constraint
 
@@ -128,8 +125,7 @@ What guarantees a real `bool` is the client: `live_controller` sends `element.ch
 A payload that says otherwise is a tampered one, and the `Type` constraint failing closed on it is the behaviour we want.
 
 The constraint is a plain instance, and a message keys it as `validationMessages([Type::class => …])`.
-Call order does not matter — the [post-pass](can-be-validated.md#validation-messages-apply-after-the-constraints-are-built) applies messages over the finished list, so a call made after construction still lands.
-It was registered as a closure until that post-pass existed, purely to defer the message read.
+Call order does not matter: the [post-pass](can-be-validated.md#validation-messages-apply-after-the-constraints-are-built) applies messages over the finished list, so a call made after construction still lands.
 
 ### required() means presence, not truth
 
@@ -139,8 +135,8 @@ Two consequences, both divergences from the port's own defaults:
 
 - **The constraint is `NotNull`.**
   The toggle overrides `getRequiredConstraint()`, the [subclass seam](can-be-validated.md#the-required-constraint-is-swappable-per-field) that ports Filament's `getRequiredValidationRule()` hook, and returns `NotNull`.
-  It was written when the shared constraint was Symfony's `NotBlank`, which violates on `false === $value` and so would have made a required toggle unsubmittable while off — `required()` silently meaning `accepted()`.
-  The shared constraint is now [`RequiredValue`](can-be-validated.md#required-carries-laravels-blank-set-not-symfonys), which reads `false` as present, so the override no longer carries that job; it still says something narrower, namely that presence here is *not null* and nothing more, so the blank string a tampered payload could put on a boolean path passes where the shared constraint would violate.
+  The shared [`RequiredValue`](can-be-validated.md#required-carries-laravels-blank-set-not-symfonys) reads `false` as present too, so the override says something narrower: presence here is *not null* and nothing more, and the blank string a tampered payload could put on a boolean path passes where `RequiredValue` would violate.
+  Symfony's `NotBlank` would be wrong here, because it violates on `false` and would make `required()` mean `accepted()`.
   A message for it keys `NotNull::class`, not `RequiredValue::class` — the constraint the field actually emits, which is the whole rule under [class keying](can-be-validated.md#validation-messages-apply-after-the-constraints-are-built).
 - **No `required` attribute on the input.**
   `TextInput` and `Textarea` emit it from `isMarkedAsRequired()`; the toggle does not, because a native `required` on a checkbox means "must be checked" — the browser would block the submit the server constraint accepts.
@@ -151,7 +147,7 @@ The label asterisk is unaffected: it follows `isMarkedAsRequired()`, which is st
 
 **[`Checkbox`](checkbox.md#required-on-a-checkbox-means-must-be-checked) swaps to Symfony's `NotBlank` on purpose**, so `required()` there does mean "must be checked".
 That is not an inconsistency waiting to be tidied away: the checkbox emits the native `required` attribute and the toggle does not, so each field's server constraint says exactly what its own markup already enforces in the browser.
-A review read the checkbox as carrying the same defect the toggle had — it does not, and this paragraph exists because that reading is the natural one.
+The natural reading is that the checkbox carries a defect the toggle avoids, and it does not.
 
 ### HasToggleIcons tests for null, not truthiness
 
@@ -160,3 +156,10 @@ The port returns `$this->getOnIcon() !== null`.
 The difference only shows for a falsy-but-set icon — an empty string, or a `Markup` wrapping `''` — which Filament treats as unset and the port treats as set.
 `null` is the trait's own unset sentinel (there is no `false` sentinel here, unlike support's `HasIcon`), so asking for `null` is asking the question the property's type actually poses.
 An empty icon name is a caller bug either way; hiding it behind a truthiness test would only make it silent.
+
+### `onColor()` and `offColor()` accept an array palette
+
+Filament's `HasToggleColors` types both properties and setters `string | Closure | null` and both getters `?string`, a colour name only; the setter names, the `null` default and the getters' evaluation are otherwise identical.
+The port types the properties and setters `string|array<string>|Closure|null` and the getters `string|array<string>|null`, the shape Filament's own support `HasColor` takes, so a toggle accepts the inline palette every other colour setter in the port accepts.
+The template hands both getters to `colorAttributes()`, which renders an array palette as the `.sy-color` marker plus inline `--sy-color-*` declarations, and the [two-element split](#the-two-colours-ride-on-two-elements) above keeps the two palettes apart.
+`ToggleColumn` composes the same trait, so the widening reaches it too.

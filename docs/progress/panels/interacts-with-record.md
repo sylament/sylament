@@ -15,7 +15,7 @@ The trait is mostly an extraction rather than new behaviour: the record prop and
 What the trait adds on top is what every record page shares and neither of them had: the record's own breadcrumb, the sub-navigation bridge, and `mountRecord()`, where the mount assignment order now lives.
 `EditRecord` composes it and keeps only its own form, save and action hooks; `ViewRecord` will compose it once the view page lands, which is the reason the extraction happened rather than three copies being reconciled later.
 
-⚠️ **Not to be confused with [`Sylament\Actions\Concerns\InteractsWithRecord`](../actions/interacts-with-record.md#the-record-chain-reaches-the-schema-the-component-and-the-host)**, a different object tier that shares three member names.
+⚠️ **Not to be confused with [`Sylament\Actions\Concerns\InteractsWithRecord`](../actions/action.md#the-record-chain-reaches-the-schema-the-component-and-the-host)**, a different object tier that shares three member names.
 That one is composed by an `Action` and answers *what an action is acting on* (`getRecord()`, `getRecordTitle()`, `recordTitle()`); this one is composed by a page and answers *what the page is open on*.
 Both are Filament's own names in Filament's own places, so neither moves — read the trait by its **import**, never by the bare `use InteractsWithRecord;` in a class body, which is the standing rule for every name this codebase carries in two tiers.
 

@@ -60,7 +60,7 @@ The URL hook answers null, the action mounts, and the schema inside the modal co
 `getMountedActionSchemaRecord()` answers the resource's record **class**, which is what a page showing no single record can seed a mounted schema with — the row actions get their record from the table frame instead.
 
 `getDefaultActionRecordTitle(Action)` answers a mounted action's title for the actions the page itself owns.
-A **row** action no longer reaches it: `table()` pushes the resource's `recordLabel()`, `pluralRecordLabel()` and `recordTitleAttribute()` onto the table — Filament's `Resource::configureTable()` — and `Action::getRecordTitle()` hops through the table before the host hook ([semantics](../actions/interacts-with-record.md#a-table-bound-action-titles-and-labels-through-its-table)), so a `ViewAction` on a row reads *"View Alpha"* through the table's own title read.
+A **row** action no longer reaches it: `table()` pushes the resource's `recordLabel()`, `pluralRecordLabel()` and `recordTitleAttribute()` onto the table — Filament's `Resource::configureTable()` — and `Action::getRecordTitle()` hops through the table before the host hook ([semantics](../actions/action.md#a-table-bound-action-titles-and-labels-through-its-table)), so a `ViewAction` on a row reads *"View Alpha"* through the table's own title read.
 The hook still serves the page's header actions, which carry no table: when the action holds an object record and the resource declares a `$recordTitleAttribute` it returns `Resource::getRecordTitle($record)`, otherwise `null`, handing `Action::getRecordTitle()` back its record-label fallback.
 The edit page's override is the sibling shape and reads its *own* record instead, since a record page has one.
 
@@ -126,7 +126,7 @@ return $resource->table($table
 The **ordering** is what carries over: the query and the labels are stamped before the resource sees the table, so `Resource::table()` can override any of them (`->query()` again, `->modifyQueryUsing()`, `->recordLabel()`), and the resource's configuration is applied last so it wins.
 The four label setters are Filament's `configureTable()` stamp, arriving here rather than on `Resource` because ours is an instance seam and Filament's is a static one; they are passed as first-class callables, so the table evaluates each only if it reads it.
 `recordTitle()` is the one that looks redundant beside the attribute already stamped and is not: `Resource::getRecordTitle()` is overridable, and without the stamp the table would read the raw attribute through its own accessor and the override would never reach a row action.
-What they buy is the whole [record-title chain](../actions/interacts-with-record.md#a-table-bound-action-titles-and-labels-through-its-table) for row actions — a `ViewAction`'s heading reads the record, and the empty state reads *"No articles"* rather than *"No records"*.
+What they buy is the whole [record-title chain](../actions/action.md#a-table-bound-action-titles-and-labels-through-its-table) for row actions — a `ViewAction`'s heading reads the record, and the empty state reads *"No articles"* rather than *"No records"*.
 What is still gone is the middle of the chain, each piece with its own reason — the deprecated `getTableQuery()` seeding is a deprecated delegate, and the rest of `configureTable()`'s stamp (`authorizeReorder()`) is resource metadata whose table-side authorization arm is unported.
 
 #### The row click falls through to the resource's own view or edit page

@@ -52,7 +52,7 @@ And the rows below track the **policy objects**; how each rendered element *reac
 | `DropdownComponent\ItemComponent\IconComponent` | [`DropdownComponent/ItemComponent/IconComponent.php`](../../../vendor/filament/support/src/View/Components/DropdownComponent/ItemComponent/IconComponent.php) | blocked | the item's `iconColor` row — [dropdown-item.md](dropdown-item.md#iconcolor) | [detail](#three-policies-wait-on-the-elements-they-would-colour) |
 | `CalloutComponent` + `CalloutComponent\IconComponent` | [`CalloutComponent.php`](../../../vendor/filament/support/src/View/Components/CalloutComponent.php), [`CalloutComponent/IconComponent.php`](../../../vendor/filament/support/src/View/Components/CalloutComponent/IconComponent.php) | blocked | `Callout`, unbuilt in both support and schemas | [detail](#three-policies-wait-on-the-elements-they-would-colour) |
 
-Two more policies exist one package up and are tracked there, because the tier is per package: schemas' [`TextComponent` and `IconComponent`](../schemas/README.md#supporting-surface).
+Two more policies exist one package up and are tracked there, because the tier is per package: schemas' [`TextComponent` and `IconComponent`](../schemas/README.md#files).
 That split is not cosmetic — the CI split publishes each package standalone, so schemas' templates may not reach a policy class only support declares.
 
 ## Details

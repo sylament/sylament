@@ -58,7 +58,7 @@ Filament's view emits **two** presentations at once and lets CSS choose: a pair 
 Sylament's component emits one of each — the numbered list and a single labelled select.
 
 Nothing is dropped in principle.
-The second per-page label is a [`fi-compact`](../../internals/styling.md#why-do-templates-carry-only-semantic-classes) responsive variant, and it needs the `input.wrapper` / `input.select` support components the port has not built (both are **todo** rows in [README](README.md#components)), so today the select is a bare `<select class="sy-pagination-per-page-select">`.
+The second per-page label is a [`fi-compact`](../../internals/styling.md#why-do-templates-carry-only-semantic-classes) responsive variant, and it needs the `input.wrapper` / `input.select` support components the port has not built (both are **todo** rows in [README](README.md#files)), so today the select is a bare `<select class="sy-pagination-per-page-select">`.
 The standalone previous/next buttons were the **simple paginator's** whole UI, and that shape has landed without them — the footer branches on a null `totalRecordCount` and serves simple mode from the item list's own prev/next ([diverges](#the-simple-footer-keeps-the-overview-and-the-item-list-where-filament-drops-both)) — so what is left of the pair is the mobile layout, a stylesheet question the `sy-pagination-items` list can answer on its own.
 
 ### The select's compact twin is the last unported arm
@@ -67,7 +67,7 @@ Filament renders the per-page control **twice** inside its container — a `fi-c
 This port renders one labelled `<select>`, so all five arms are unported.
 
 What is missing is the markup, not the rules.
-The prefixed label is an `input.wrapper` carrying a `prefix` around an `input.select`, and neither component is built ([both **todo**](README.md#components)) — so this row flips with [the component's own layout row](#the-component-renders-one-of-filaments-two-layouts), which owns that second label, and not before.
+The prefixed label is an `input.wrapper` carrying a `prefix` around an `input.select`, and neither component is built ([both **todo**](README.md#files)) — so this row flips with [the component's own layout row](#the-component-renders-one-of-filaments-two-layouts), which owns that second label, and not before.
 Everything else in `pagination.css` that reaches an element this footer renders is ported, with the collapses and the drops accounted for in the divergences below.
 
 ## Semantics
@@ -205,7 +205,7 @@ The button is not rendered ([the component emits one of the two layouts](#the-co
 ### The per-page select carries the input wrapper's chrome because it has no wrapper
 
 Filament's select is an `input.select` inside an `input.wrapper`, and the two split the work: the wrapper paints the surface — `rounded-lg bg-white shadow-sm ring-1 ring-gray-950/10 dark:bg-white/5 dark:ring-white/20` — and owns the focus ring through `focus-within:ring-2`, while `select.fi-select-input` is `border-none bg-transparent w-full` with `focus:ring-0 focus:outline-none` so it defers to it.
-Support ships the wrapper now ([input-wrapper.md](input-wrapper.md)), but the select itself is still [**todo**](README.md#components) and this footer is not migrated onto the wrapper yet, so the footer renders a bare `<select class="sy-pagination-per-page-select">` and that one element carries both halves: the wrapper's surface, the select's own `block appearance-none py-1.5 ps-3 pe-8 text-sm leading-6 text-gray-950 dark:text-white` with the chevron data URI and the `[&_option]` colours, and the wrapper's focus ring re-expressed as `focus:ring-2 focus:ring-primary-600 dark:focus:ring-primary-500` — `focus-within` on an ancestor becomes plain `focus` once the styled element is itself the focus target.
+Support ships the wrapper now ([input-wrapper.md](input-wrapper.md)), but the select itself is still [**todo**](README.md#files) and this footer is not migrated onto the wrapper yet, so the footer renders a bare `<select class="sy-pagination-per-page-select">` and that one element carries both halves: the wrapper's surface, the select's own `block appearance-none py-1.5 ps-3 pe-8 text-sm leading-6 text-gray-950 dark:text-white` with the chevron data URI and the `[&_option]` colours, and the wrapper's focus ring re-expressed as `focus:ring-2 focus:ring-primary-600 dark:focus:ring-primary-500` — `focus-within` on an ancestor becomes plain `focus` once the styled element is itself the focus target.
 
 What does not come across is what only made sense inside a wrapper: `w-full`, `border-none bg-transparent`, the `focus:ring-0` that existed to leave the ring to the wrapper, and `fi-select-input-has-inline-prefix`'s `ps-0`, which zeroes the start padding only when a wrapper prefix already supplies it.
 Two more arms are dropped because the footer's select never reaches them — it is never disabled and renders no groups — so the `disabled:` colours and `[&_optgroup]` go with them, and the `@variant rtl` background-position goes with [the rest of the RTL work](#the-footer-has-no-rtl-branch).

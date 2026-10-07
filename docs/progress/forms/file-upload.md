@@ -1,21 +1,23 @@
 ---
-description: 'One file for both halves of the vertical: the abstract `Sylament\Forms\Components\BaseFileUpload`, which carries the whole upload lifecycle, and the… (draft)'
+description: 'BaseFileUpload, the upload lifecycle from browser upload to stored path, and FileUpload, its FilePond field, image editor and stylesheet'
 ports:
+  - vendor/filament/forms/resources/css/components/file-upload.css
   - vendor/filament/forms/src/Components/BaseFileUpload.php
+  - vendor/filament/forms/src/Components/Concerns/HasUploadingMessage.php
   - vendor/filament/forms/src/Components/FileUpload.php
-  - vendor/filament/schemas/src/Components/StateCasts/FileUploadStateCast.php
+  - vendor/filament/schemas/src/Concerns/RestrictsFileUploadsToSchemaComponents.php
 owns:
   - packages/forms/assets/src/styles/components/file-upload.css
   - packages/forms/src/Components/BaseFileUpload.php
   - packages/forms/src/Components/FileUpload.php
   - packages/forms/templates/partials/FileUpload/
 ---
-# File upload
+# FileUpload (forms)
 
-One file for both halves of the vertical: the abstract [`Sylament\Forms\Components\BaseFileUpload`](../../../packages/forms/src/Components/BaseFileUpload.php), which carries the whole upload lifecycle, and the shipped field [`Sylament\Forms\Components\FileUpload`](../../../packages/forms/src/Components/FileUpload.php), which adds only what FilePond needs.
-They are one row each in the [README](README.md) and one page here because every divergence below is a property of the lifecycle rather than of the control: Filament's own split puts the storage, validation and state work on the base and the render on the subclass, and so does ours.
+The abstract [`Sylament\Forms\Components\BaseFileUpload`](../../../packages/forms/src/Components/BaseFileUpload.php) carries the whole upload lifecycle, and the shipped field [`Sylament\Forms\Components\FileUpload`](../../../packages/forms/src/Components/FileUpload.php) adds only what FilePond needs.
+Filament splits the two the same way, putting the storage, validation and state work on the base and the render on the subclass, which is why most divergences below are properties of the lifecycle rather than of the control.
 
-Two neighbours own the pieces this page leans on.
+Neighbours own the pieces this file leans on.
 The bytes live on [`TemporaryUploads`](temporary-uploads.md) between the upload and the save, and the token in raw state is what stands in for them; the minimum-size constraint Symfony has no counterpart for is [`MinFileSize`](can-be-validated.md), filed with the other first-party constraints.
 The storage seam itself is support's [`FilesystemRegistry`](../support/filesystem-registry.md), and the browser reaches the field through schemas' [`uploadSchemaComponentFile()`](../schemas/interacts-with-schemas.md).
 
@@ -41,35 +43,36 @@ The storage seam itself is support's [`FilesystemRegistry`](../support/filesyste
 | [`acceptedFileTypes()` / `getAcceptedFileTypes()`](../../../packages/forms/src/Components/BaseFileUpload.php) | [`acceptedFileTypes()`](../../../vendor/filament/forms/src/Components/BaseFileUpload.php) | done | — | [diverges](#the-arrayable-arm-of-acceptedfiletypes-becomes-iterable) |
 | [`maxSize()` / `minSize()` / `getMaxSize()` / `getMinSize()`](../../../packages/forms/src/Components/BaseFileUpload.php) | [`maxSize()` / `minSize()`](../../../vendor/filament/forms/src/Components/BaseFileUpload.php) | done | — | [diverges](#per-file-constraints-run-at-upload-time-collection-constraints-at-save) |
 | [`maxFiles()` / `minFiles()` / `getMaxFiles()` / `getMinFiles()`](../../../packages/forms/src/Components/BaseFileUpload.php) | [`maxFiles()` / `minFiles()`](../../../vendor/filament/forms/src/Components/BaseFileUpload.php) | done | — | [semantics](#the-ceiling-on-browser-driven-writes) |
-| [`maxParallelUploads()` / `getMaxParallelUploads()`](../../../packages/forms/src/Components/BaseFileUpload.php) | [`maxParallelUploads()`](../../../vendor/filament/forms/src/Components/BaseFileUpload.php) | done | — | — |
+| [`maxParallelUploads()` / `getMaxParallelUploads()`](../../../packages/forms/src/Components/BaseFileUpload.php) | [`maxParallelUploads()`](../../../vendor/filament/forms/src/Components/BaseFileUpload.php) | in progress | — | [detail](#several-setters-are-ported-but-no-test-exercises-them) |
 | [`multiple()` / `isMultiple()`](../../../packages/forms/src/Components/BaseFileUpload.php) | [`multiple()`](../../../vendor/filament/forms/src/Components/BaseFileUpload.php) | done | — | — |
-| [`deletable()` / `downloadable()` / `openable()` / `reorderable()` / `pasteable()` / `previewable()` and their `is*()` getters](../../../packages/forms/src/Components/BaseFileUpload.php) | [`BaseFileUpload`](../../../vendor/filament/forms/src/Components/BaseFileUpload.php) | done | — | — |
+| [`deletable()` / `downloadable()` / `openable()` / `reorderable()` / `pasteable()` / `previewable()` and their `is*()` getters](../../../packages/forms/src/Components/BaseFileUpload.php) | [`BaseFileUpload`](../../../vendor/filament/forms/src/Components/BaseFileUpload.php) | in progress | — | [detail](#several-setters-are-ported-but-no-test-exercises-them) |
 | [`directory()` / `getDirectory()`](../../../packages/forms/src/Components/BaseFileUpload.php) | [`directory()`](../../../vendor/filament/forms/src/Components/BaseFileUpload.php) | done | — | — |
 | [`disk()` / `getDiskName()` / `getDisk()`](../../../packages/forms/src/Components/BaseFileUpload.php) | [`disk()` / `getDiskName()`](../../../vendor/filament/forms/src/Components/BaseFileUpload.php) | done | — | [diverges](#disk-names-a-flysystem-storage-and-there-is-no-publiclocal-swap) |
 | [`visibility()` / `getVisibility()`](../../../packages/forms/src/Components/BaseFileUpload.php) | [`visibility()` / `getVisibility()`](../../../vendor/filament/forms/src/Components/BaseFileUpload.php) | done | — | [diverges](#visibility-defers-to-the-storage-and-a-private-file-never-falls-through-to-a-public-url) |
 | `getCustomVisibility()` | [`getCustomVisibility()`](../../../vendor/filament/forms/src/Components/BaseFileUpload.php) | skipped | — | [diverges](#visibility-defers-to-the-storage-and-a-private-file-never-falls-through-to-a-public-url) |
 | [`preserveFilenames()` / `shouldPreserveFilenames()`](../../../packages/forms/src/Components/BaseFileUpload.php) | [`preserveFilenames()`](../../../vendor/filament/forms/src/Components/BaseFileUpload.php) | done | — | — |
 | [`moveFiles()` / `shouldMoveFiles()`](../../../packages/forms/src/Components/BaseFileUpload.php) | [`moveFiles()`](../../../vendor/filament/forms/src/Components/BaseFileUpload.php) | done | — | [semantics](#the-store-step-moves-on-one-storage-and-streams-across-two) |
-| [`storeFiles()` / `shouldStoreFiles()`](../../../packages/forms/src/Components/BaseFileUpload.php) | [`storeFiles()`](../../../vendor/filament/forms/src/Components/BaseFileUpload.php) | done | — | — |
+| [`storeFiles()` / `shouldStoreFiles()`](../../../packages/forms/src/Components/BaseFileUpload.php) | [`storeFiles()`](../../../vendor/filament/forms/src/Components/BaseFileUpload.php) | in progress | — | [detail](#several-setters-are-ported-but-no-test-exercises-them) |
 | [`fetchFileInformation()` / `shouldFetchFileInformation()`](../../../packages/forms/src/Components/BaseFileUpload.php) | [`fetchFileInformation()`](../../../vendor/filament/forms/src/Components/BaseFileUpload.php) | done | — | — |
 | [`storeFileNamesIn()` / `getFileNamesStatePath()` / `storeFileName()` / `removeStoredFileName()` / `getStoredFileNames()`](../../../packages/forms/src/Components/BaseFileUpload.php) | [`BaseFileUpload`](../../../vendor/filament/forms/src/Components/BaseFileUpload.php) | done | — | [semantics](#the-filename-map-keeps-filaments-resolved-vs-raw-asymmetry) |
 | [`getStateToDehydrate()`](../../../packages/forms/src/Components/BaseFileUpload.php) | [`getStateToDehydrate()`](../../../vendor/filament/forms/src/Components/BaseFileUpload.php) | done | — | — |
-| [`getDefaultStateCasts()`](../../../packages/forms/src/Components/BaseFileUpload.php) | [`getDefaultStateCasts()`](../../../vendor/filament/forms/src/Components/BaseFileUpload.php) | done | — | [schemas](../schemas/README.md) |
+| [`getDefaultStateCasts()`](../../../packages/forms/src/Components/BaseFileUpload.php) | [`getDefaultStateCasts()`](../../../vendor/filament/forms/src/Components/BaseFileUpload.php) | done | — | [file-upload-state-cast.md](../schemas/file-upload-state-cast.md) |
 | [`imageAspectRatio()` / `getImageAspectRatio()` / `calculateAspectRatio()` / `normalizeAspectRatio()`](../../../packages/forms/src/Components/BaseFileUpload.php) | [`imageAspectRatio()`](../../../vendor/filament/forms/src/Components/BaseFileUpload.php) | done | — | [semantics](#imageaspectratio-validates-and-automaticallycropimagestoaspectratio-crops) |
-| [The six `*Using` setters](../../../packages/forms/src/Components/BaseFileUpload.php) — `deleteUploadedFileUsing()`, `getUploadedFileUsing()`, `getOpenableFileUrlUsing()`, `getDownloadableFileUrlUsing()`, `reorderUploadedFilesUsing()`, `saveUploadedFileUsing()` | [`BaseFileUpload`](../../../vendor/filament/forms/src/Components/BaseFileUpload.php) | done | — | — |
+| [`deleteUploadedFileUsing()` / `getUploadedFileUsing()` / `saveUploadedFileUsing()`](../../../packages/forms/src/Components/BaseFileUpload.php) | [`BaseFileUpload`](../../../vendor/filament/forms/src/Components/BaseFileUpload.php) | done | — | — |
+| [`getOpenableFileUrlUsing()` / `getDownloadableFileUrlUsing()` / `reorderUploadedFilesUsing()`](../../../packages/forms/src/Components/BaseFileUpload.php) | [`BaseFileUpload`](../../../vendor/filament/forms/src/Components/BaseFileUpload.php) | in progress | — | [detail](#several-setters-are-ported-but-no-test-exercises-them) |
 | [`getUploadedFileNameForStorageUsing()` / `getUploadedFileNameForStorage()`](../../../packages/forms/src/Components/BaseFileUpload.php) | [`BaseFileUpload`](../../../vendor/filament/forms/src/Components/BaseFileUpload.php) | done | — | [diverges](#a-generator-that-names-nothing-throws) |
 | [`getMaxUploadSize(): int`](../../../packages/forms/src/Components/BaseFileUpload.php) | — | done | — | [diverges](#the-client-side-size-ceiling-is-the-minimum-of-the-fields-and-phps) |
 | [`setTemporaryUploads()` / `setFilesystemRegistry()` / `setValidator()` and their getters](../../../packages/forms/src/Components/BaseFileUpload.php) | — (Filament reaches `Storage::` and `Validator::` facades) | done | — | [diverges](#the-three-services-arrive-by-required-setter-not-by-facade) |
-| `uploadingMessage()` / `HasUploadingMessage` | [`Concerns/HasUploadingMessage.php`](../../../vendor/filament/forms/src/Components/Concerns/HasUploadingMessage.php) | blocked | a form-processing channel | [diverges](#uploadingmessage-has-no-render-site) |
-| [`HasNestedRecursiveValidationConstraints`](../../../packages/forms/src/Components/Concerns/HasNestedRecursiveValidationConstraints.php) | [`Concerns/HasNestedRecursiveValidationRules.php`](../../../vendor/filament/forms/src/Components/Concerns/HasNestedRecursiveValidationRules.php) | done | — | [diverges](#per-file-constraints-run-at-upload-time-collection-constraints-at-save) |
+| `uploadingMessage()` / `HasUploadingMessage` | [`Concerns/HasUploadingMessage.php`](../../../vendor/filament/forms/src/Components/Concerns/HasUploadingMessage.php) | blocked | a form-processing channel | [detail](#uploadingmessage-has-no-render-site) |
+| [`HasNestedRecursiveValidationConstraints`](../../../packages/forms/src/Components/Concerns/HasNestedRecursiveValidationConstraints.php) | [`Concerns/HasNestedRecursiveValidationRules.php`](../../../vendor/filament/forms/src/Components/Concerns/HasNestedRecursiveValidationRules.php) | done | — | [diverges](#per-file-constraints-run-at-upload-time-collection-constraints-at-save) · [diverges](can-be-validated.md#nested-constraints-land-as-one-all-where-laravel-keys-a-path) |
 | `RestrictsFileUploadsToSchemaComponents` | [`schemas/…/RestrictsFileUploadsToSchemaComponents.php`](../../../vendor/filament/schemas/src/Concerns/RestrictsFileUploadsToSchemaComponents.php) | skipped | — | [diverges](#the-upload-action-is-closed-by-construction-so-there-is-nothing-to-restrict) |
-| `enableDownload()` / `enableOpen()` / `enableReordering()` / `disablePreview()` / `moveFile()` / `storeFile()` | [`BaseFileUpload`](../../../vendor/filament/forms/src/Components/BaseFileUpload.php) | skipped | — | the port ships no deprecated surface |
+| `enableDownload()` / `enableOpen()` / `enableReordering()` / `disablePreview()` / `moveFile()` / `storeFile()` | [`BaseFileUpload`](../../../vendor/filament/forms/src/Components/BaseFileUpload.php) | skipped | — | [diverges](#deprecated-filament-members-are-not-ported) |
 
 ## Surface — `FileUpload`
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
-| [The partial](../../../packages/forms/templates/partials/FileUpload/index.html.twig) and its 51 Stimulus values | [`toEmbeddedHtml()`](../../../vendor/filament/forms/src/Components/FileUpload.php) | done | — | [semantics](#the-dom-contract-is-the-controllers-only-input) |
+| [The partial](../../../packages/forms/templates/partials/FileUpload/index.html.twig) and its Stimulus values | [`toEmbeddedHtml()`](../../../vendor/filament/forms/src/Components/FileUpload.php) | done | — | [semantics](#the-dom-contract-is-the-controllers-only-input) |
 | [`getExtraTemplateData()`](../../../packages/forms/src/Components/FileUpload.php) | the `toEmbeddedHtml()` preamble | done | — | [diverges](#the-three-maps-are-object-cast-so-an-empty-one-serialises-as-) |
 | [`avatar()` / `isAvatar()`](../../../packages/forms/src/Components/FileUpload.php) | [`avatar()`](../../../vendor/filament/forms/src/Components/FileUpload.php) | done | — | — |
 | [`image()`](../../../packages/forms/src/Components/FileUpload.php) | [`image()`](../../../vendor/filament/forms/src/Components/FileUpload.php) | done | — | — |
@@ -80,13 +83,32 @@ The storage seam itself is support's [`FilesystemRegistry`](../support/filesyste
 | [`panelLayout()` / `getPanelLayout()`](../../../packages/forms/src/Components/FileUpload.php) | [`panelLayout()`](../../../vendor/filament/forms/src/Components/FileUpload.php) | done | — | — |
 | [`loadingIndicatorPosition()` / `removeUploadedFileButtonPosition()` / `uploadButtonPosition()` / `uploadProgressIndicatorPosition()` and their getters](../../../packages/forms/src/Components/FileUpload.php) | [`FileUpload`](../../../vendor/filament/forms/src/Components/FileUpload.php) | done | — | — |
 | [`mimeTypeMap()` / `getMimeTypeMap()`](../../../packages/forms/src/Components/FileUpload.php) | [`mimeTypeMap()`](../../../vendor/filament/forms/src/Components/FileUpload.php) | done | — | [diverges](#the-bundle-drops-fileponds-mime-database) |
-| `automaticallyCropImagesToAspectRatio()` and the whole resize family (`automaticallyResizeImagesMode()`, `automaticallyResizeImagesToHeight()`, `automaticallyResizeImagesToWidth()`, `automaticallyUpscaleImagesWhenResizing()`) | [`FileUpload`](../../../vendor/filament/forms/src/Components/FileUpload.php) | done | — | [semantics](#imageaspectratio-validates-and-automaticallycropimagestoaspectratio-crops) |
-| `orientImagesFromExif()` / `shouldOrientImagesFromExif()` | [`FileUpload`](../../../vendor/filament/forms/src/Components/FileUpload.php) | done | — | — |
-| The image-editor family — `imageEditor()`, `circleCropper()`, `editableSvgs()`, `confirmSvgEditing()`, `automaticallyOpenImageEditorForAspectRatio()`, `imageEditorViewportWidth()` / `Height()`, `imageEditorMode()`, `imageEditorEmptyFillColor()`, `imageEditorAspectRatioOptions()`, `getImageEditorActions()` | [`FileUpload`](../../../vendor/filament/forms/src/Components/FileUpload.php) | done | — | [diverges](#getimageeditoractions-carries-methods-and-params-not-alpine) |
-| `idleLabel()` / `imageCropAspectRatio()` / `imageResizeMode()` / `imageResizeTargetHeight()` / `imageResizeTargetWidth()` / `imageResizeUpscale()` / `orientImageFromExif()` / `imageEditorAspectRatios()` and their deprecated getters | [`FileUpload`](../../../vendor/filament/forms/src/Components/FileUpload.php) | skipped | — | the port ships no deprecated surface |
-| `$publishedViewOverrideCheckPath` | [`FileUpload`](../../../vendor/filament/forms/src/Components/FileUpload.php) | skipped | — | there is no published-view mechanism to probe for |
+| `automaticallyCropImagesToAspectRatio()` / `automaticallyResizeImagesMode()` / `automaticallyResizeImagesToHeight()` / `automaticallyResizeImagesToWidth()` / `automaticallyUpscaleImagesWhenResizing()` and their getters | [`FileUpload`](../../../vendor/filament/forms/src/Components/FileUpload.php) | done | — | [semantics](#imageaspectratio-validates-and-automaticallycropimagestoaspectratio-crops) |
+| `orientImagesFromExif()` / `shouldOrientImagesFromExif()` | [`FileUpload`](../../../vendor/filament/forms/src/Components/FileUpload.php) | done | — | [semantics](#exif-orientation-is-the-browsers-on-current-engines) |
+| `imageEditor()` / `circleCropper()` / `editableSvgs()` / `confirmSvgEditing()` / `automaticallyOpenImageEditorForAspectRatio()` / `imageEditorViewportWidth()` / `imageEditorViewportHeight()` / `imageEditorMode()` / `imageEditorEmptyFillColor()` / `imageEditorAspectRatioOptions()` / `getImageEditorActions()` and their getters | [`FileUpload`](../../../vendor/filament/forms/src/Components/FileUpload.php) | done | — | [diverges](#getimageeditoractions-carries-methods-and-params-not-alpine) |
+| [`HasAlignment`](../support/has-alignment.md) | [`support/Concerns/HasAlignment.php`](../../../vendor/filament/support/src/Concerns/HasAlignment.php) | done | — | — |
+| [`HasExtraInputAttributes`](has-extra-input-attributes.md) | [`Concerns/HasExtraInputAttributes.php`](../../../vendor/filament/forms/src/Components/Concerns/HasExtraInputAttributes.php) | done | — | — |
+| `placeholder()` | [`Concerns/HasPlaceholder.php`](../../../vendor/filament/forms/src/Components/Concerns/HasPlaceholder.php) | done | — | [diverges](field.md#hasplaceholder-is-composed-on-the-base-field) |
+| `HasExtraAlpineAttributes` | [`support/Concerns/HasExtraAlpineAttributes.php`](../../../vendor/filament/support/src/Concerns/HasExtraAlpineAttributes.php) | skipped | — | [diverges](../support/component-attribute-bag.md#extra-alpine-attributes-are-not-ported) |
+| `idleLabel()` / `imageCropAspectRatio()` / `imageResizeMode()` / `imageResizeTargetHeight()` / `imageResizeTargetWidth()` / `imageResizeUpscale()` / `orientImageFromExif()` / `imageEditorAspectRatios()` and their deprecated getters | [`FileUpload`](../../../vendor/filament/forms/src/Components/FileUpload.php) | skipped | — | [diverges](#deprecated-filament-members-are-not-ported) |
+| `$publishedViewOverrideCheckPath` | [`FileUpload`](../../../vendor/filament/forms/src/Components/FileUpload.php) | skipped | — | [diverges](../support/view-component.md#render-returns-a-string-the-htmlable--embedded-view-machinery-is-dropped) |
+| [`file-upload.css`](../../../packages/forms/assets/src/styles/components/file-upload.css) — the field and editor-dialog skin | [`components/file-upload.css`](../../../vendor/filament/forms/resources/css/components/file-upload.css) | done | — | [diverges](#the-filepond-base-stylesheet-is-redistributed-scoped-by-the-build) · [diverges](#filepond--label-action-takes-the-link-colour-policy-not-vendors-hardcoded-shade) · [diverges](#the-download-and-open-action-anchors-are-the-ports-own) · [diverges](#the-dark-backdrop-arm-sits-in-an-variant-dark-block) |
+| `filepond.generated.css` — FilePond's sheets, scoped by the build | — | done | — | [diverges](#the-filepond-base-stylesheet-is-redistributed-scoped-by-the-build) |
+| `cropper.generated.css` — Cropper.js's sheet, scoped by the build | — | done | — | [diverges](#the-filepond-base-stylesheet-is-redistributed-scoped-by-the-build) |
 
-Coverage: [`Unit/Components/BaseFileUploadTest`](../../../packages/forms/tests/Unit/Components/BaseFileUploadTest.php) — the constraint split read through the public getter (one `RequiredValue`, never two), the aspect-ratio constraints, the three record arms of `getOriginalFilePaths()`, the disk fallback, both filename arms, the nullable visibility, the state cast, the PHP ceiling, and the hydration filter; [`Unit/Components/FileUploadTest`](../../../packages/forms/tests/Unit/Components/FileUploadTest.php) — Filament's twelve-call `avatar()`, the editor family's defaults, derivations and throws, the aspect-ratio option map, the thirteen toolbar actions, the transform flag and the FilePond-facing getters; [`Integration/Components/FileUploadTest`](../../../packages/forms/tests/Integration/Components/FileUploadTest.php) — the DOM contract, both `{}` maps, the single extra-attribute spread, the `data-live-ignore` pond, and the public/absent URL arms; [`Integration/LiveFileUploadTest`](../../../packages/forms/tests/Integration/LiveFileUploadTest.php) — the round trip: accept, refuse (type, over, under), save, reorder, rename, move vs stream, visibility, remove, delete, disabled, the tampering gate on both faces, and the state hook.
+## Details
+
+### Several setters are ported but no test exercises them
+
+`maxParallelUploads()`, `storeFiles()`, the `deletable()` / `downloadable()` / `openable()` / `pasteable()` / `previewable()` toggles, and the `getOpenableFileUrlUsing()` / `getDownloadableFileUrlUsing()` / `reorderUploadedFilesUsing()` callbacks exist with their getters, and the code reads each one: the partial passes the toggles and the parallel-upload cap to the controller, `getUploadedFiles()` evaluates the two URL callbacks when the item is openable or downloadable, and `saveUploadedFiles()` honours `shouldStoreFiles()` and the reorder callback.
+No test in `packages/forms/tests` calls any of these setters, so a value they set never reaches an assertion.
+`reorderable()` is the exception in its row, exercised by `LiveFileUploadTest`'s reorder cases; `deletable()`'s default arm is exercised by the remove cases, its `false` arm by nothing.
+What is missing is a test per setter that sets a non-default value and reads it back where the code consumes it: the rendered value map, the `uploadedFiles` payload, or the state after a save.
+
+### `uploadingMessage()` has no render site
+
+`HasUploadingMessage` renders on the **submit button**, through a `form-processing-started` event Filament's file-upload component dispatches and its form button listens for, a channel between the form and the surrounding action that support does not have.
+The row is blocked on that channel rather than on anything about file uploads.
 
 ## Semantics
 
@@ -96,12 +118,12 @@ This is the toolkit's first browser-writable file endpoint, so the ceiling is wo
 A client may add **one temporary file per `fileKey` it mints**, and it mints those itself.
 Each file is bounded by the field's own `acceptedFileTypes()` and `maxSize()`, which run before anything is written, and by PHP's `upload_max_filesize` / `post_max_size`.
 In **aggregate** the only bound is the 24-hour sweep [`TemporaryUploads::prune()`](temporary-uploads.md#the-sweep-rides-on-upload-traffic-and-races-itself-on-purpose) performs on every successful upload: `maxFiles()` is a save-time `Count`, not an upload-time gate, so a client that never submits the form can hold as many temporary files as it is willing to upload.
-That is Filament parity — the same is true there — and it is why a storage quota, not `maxFiles()`, is what bounds the disk.
+That is Filament parity, and it is why a storage quota, not `maxFiles()`, is what bounds the disk.
 
 ### `hydrateFiles()` is not a security boundary
 
 It runs from `afterStateHydrated`, so it only sees state that came off the record at form load; a path a live request later writes into the bag never passes through it.
-Its job is to drop blanks and paths the storage no longer holds (`fetchFileInformation(false)` skips the round trip), so a deleted file does not render as a broken item.
+Its job is to drop blanks and paths the storage does not hold (`fetchFileInformation(false)` skips the round trip), so a deleted file does not render as a broken item.
 What authorises a *submitted* path is [`preventFilePathTampering()`](#the-tampering-gate-reads-the-records-current-value), and nothing else.
 Filament carries the same warning at the same place.
 
@@ -109,21 +131,21 @@ Filament carries the same warning at the same place.
 
 `saveUploadedFile()` moves the bytes only when `moveFiles()` is on **and** the field's storage is the same one the temporary store writes to — `move()` is a single-storage operation, so the names have to match.
 Otherwise it opens a read stream on the temporary file and `writeStream()`s it onto the field's storage.
-Either way the temporary file and its sidecar are deleted; both deletes are idempotent, because `saveUploadedFiles()` deletes as well (Filament's placement, kept, so a custom `saveUploadedFileUsing` cannot leak the temporary file by forgetting to).
+Either way the temporary file and its sidecar end up deleted; the deletes are idempotent, because `saveUploadedFiles()` deletes as well (Filament's placement, kept, so a custom `saveUploadedFileUsing` cannot leak the temporary file by forgetting to).
 A storage failure is **not** swallowed: `UnableToWriteFile` and `UnableToMoveFile` propagate, because a file the user was told was saved must not vanish quietly.
 
-Deleting the temporary file is what makes the store pass a **commit**, and it is the reason a state *read* must never reach a `beforeStateDehydrated` hook: the pass can run only once per held file, and a second run resolves the same token against a temporary file that is no longer there, drops the entry, and leaves the field null.
-That is exactly what a repeater item's per-render state snapshot used to do to a nested file field — [schema.md](../schemas/schema.md#getstatesnapshot-never-runs-the-beforestatedehydrated-hooks) carries the reasoning and the two pins.
+Deleting the temporary file is what makes the store pass a **commit**, and it is the reason a state *read* must never reach a `beforeStateDehydrated` hook: the pass can run only once per held file, and a second run resolves the same token against a temporary file that is gone, drops the entry, and leaves the field null.
+A repeater item's per-render state snapshot would do exactly that to a nested file field if it ran the hooks, which is why it does not — [schema.md](../schemas/schema.md#getstatesnapshot-never-runs-the-beforestatedehydrated-hooks) carries the reasoning.
 
 ### The filename map keeps Filament's resolved-vs-raw asymmetry
 
 `storeFileName()`, `removeStoredFileName()` and `getStoredFileNames()` address the sibling path through `makeGetUtility()` / `makeSetUtility()`, which resolve a relative path themselves, while `getFileNamesStatePath()` resolves it to the absolute path the dehydrated bag is keyed by.
 That is Filament's shape and it is kept: the utilities need the relative form and the dehydration needs the absolute one.
-Ours evaluates the declaration in both places, where Filament reads the raw property in three of the four.
+Ours evaluates the declaration in all four places, where Filament reads the raw property in all four, so a closure-valued `storeFileNamesIn()` resolves here and is handed on unevaluated there.
 
 ### The DOM contract is the controller's only input
 
-The partial renders the controller element with all 51 Stimulus values and a `data-live-ignore` subtree for FilePond to build into.
+The partial renders the controller element with its full Stimulus value map and a `data-live-ignore` subtree for FilePond to build into.
 That split is the whole contract: the element **morphs**, so every value is re-read after a live update — which is how `uploadedFiles` and `state` stay the server's truth, exactly as the [select's option map](select.md) does — while the pond subtree never does, because FilePond owns its DOM after `create()`.
 A `disabled` flip therefore reaches the pond through its value and `setOptions()`, never through the `<input>`, whose attributes stop updating the moment FilePond adopts it.
 
@@ -142,7 +164,7 @@ Two rounding regimes meet on the same ratio, and the window between them is Fila
 The client skips the auto-open editor when the picked image is within `0.01` of the target ratio, while the server's `Image` constraint compares `round(w / h, 2)` against bounds Symfony also rounds to two decimals — so a 1.009 image passes the client and still fails `minRatio: 1.0`.
 The window closes whenever `automaticallyCropImagesToAspectRatio()` is on as well, because the transform then crops to the ratio before the bytes are sent.
 
-An aspect-ratio rule also buys a MIME rule: the `Image` constraint carries Symfony's `'image/*'` default set, so declaring a ratio enforces "sniffs as an image" too — true since the constraint landed, written down here.
+An aspect-ratio rule also buys a MIME rule: the `Image` constraint carries Symfony's `'image/*'` default set, so declaring a ratio enforces "sniffs as an image" too.
 
 ### The editor re-adds the edited file as a new upload
 
@@ -164,18 +186,19 @@ A file uploaded in this session is a processed item, so FilePond calls `server.r
 A file loaded from the record is a `local` item, so it calls `server.remove` — our `deleteUploadedFile`, which disowns the state entry and leaves the stored file to the deleter closure, as a plain remove does.
 Editing a stored file is therefore a replace, not a copy.
 
-The swap needs a guard, because the pond subtree is `data-live-ignore` and the reconcile runs on every morph: `#editorSwapName` holds the new file's name from just before the remove until the re-added item starts processing, and `#reconcile()` returns early while it is set — so a morph landing between the remove and the add cannot rebuild `pond.files` from a state that no longer describes the pond.
+The swap needs a guard, because the pond subtree is `data-live-ignore` and the reconcile runs on every morph: `#editorSwapName` holds the new file's name from just before the remove until the re-added item starts processing, and `#reconcile()` returns early while it is set — so a morph landing between the remove and the add cannot rebuild `pond.files` from a state that does not yet describe the pond.
 It is cleared at the top of `#process()`, on an `addFile()` rejection, by the `removefile` event when the re-added item is removed before it ever uploaded, and by `disconnect()`, which drops it with the rest of the editor's state so a reconnected controller starts unguarded.
 
-One upstream override does nothing here. image-edit installs a `SHOULD_REMOVE_ON_REVERT` filter, but FilePond 4.32.12's core has no site for it (`REVERT_ITEM_PROCESSING` decides removal from `instantUpload` and `isMockItem` alone), so the filter is inert and the ✕ button behaves as it does without image-edit.
+One upstream override does nothing here.
+image-edit installs a `SHOULD_REMOVE_ON_REVERT` filter, but FilePond 4.32.12's core has no site for it (`REVERT_ITEM_PROCESSING` decides removal from `instantUpload` and `isMockItem` alone), so the filter is inert and the ✕ button behaves as it does without image-edit.
 
 ### EXIF orientation is the browser's on current engines
 
 `orientImagesFromExif()` ports with Filament's `true` default, and on every current browser it writes nothing at all.
-The exif-orientation plugin probes the engine with a 2×1 JPEG carrying a 90° rotation tag and reads a file's orientation only when the engine did **not** auto-orient that probe; since `image-orientation: from-image` became the CSS default, no current engine fails it, so no `exif` metadata is written.
+The exif-orientation plugin probes the engine with a 2×1 JPEG carrying a 90° rotation tag and reads a file's orientation only when the engine did **not** auto-orient that probe; with `image-orientation: from-image` as the CSS default, no current engine fails it, so no `exif` metadata is written.
 The transform plugin then sees `orientation: null`, its `getBitmap()` short-circuits (`null <= 1` is true), and it draws the already-oriented bitmap — the right result by a different route.
 The plugin earns its keep only on a non-auto-orienting engine, where it is also what feeds image-resize's dimension swap.
-So the default stays `true`: it costs nothing today and costs correctness there.
+So the default stays `true`: it costs nothing on a current engine and buys correctness on an old one.
 
 ### A strict CSP needs `worker-src blob:`
 
@@ -202,7 +225,7 @@ And Filament's order orphans files on a failed submit and never re-runs size or 
 The signed token is what makes skipping save-time per-file validation safe: a token is proof that *this* field validated *this* file.
 
 The split hangs off `buildValidationConstraints()`, never the public `getValidationConstraints()` — which is `applyValidationMessages(buildValidationConstraints())` and whose parent hook already emits the required constraint.
-Overriding the getter would render `RequiredValue` twice and skip the message layer; six shipped fields override the hook and none the getter.
+Overriding the getter would render `RequiredValue` twice and skip the message layer, which is why no shipped field overrides the getter and several override the hook.
 `getUploadedFileConstraints()` returns through `applyValidationMessages()` too, so a field's own message overrides reach an upload refusal.
 
 `HasNestedRecursiveValidationConstraints` is composed here, and it lands on the **collection** side of this split: what it emits is an `All`, a non-`File` constraint, so it runs at save over the whole set rather than per file at upload time.
@@ -244,11 +267,9 @@ Ours: `getVisibility(): ?string` returns the custom value or `null`; a write pas
 The URL arm reads `getVisibility() ?? $storage->visibility($path)`, with an unreadable visibility read as **private**, and the private arm returns `null` rather than falling through to `publicUrl()` — otherwise a storage that cannot mint a temporary URL would hand the browser a public link to a file the user marked private.
 Both `temporaryUrl()` and `publicUrl()` are guarded by `method_exists()`, since neither is on `FilesystemOperator`, and by their `UnableToGenerate*` exceptions.
 Every URL leaves through [`sanitize_url()`](../support/helpers.md).
-Those mechanics shipped here first and were hoisted to [`FilesystemRegistry::getFileUrl()`](../support/filesystem-registry.md#getfileurl-mints-the-browser-facing-url) when tables' [`ImageColumn`](../tables/image-column.md) became their second consumer — `getUploadedFileUrl()` is now a one-line delegate, and the invariants above are pinned at the registry beside this file's own URL cases.
+Those mechanics live in [`FilesystemRegistry::getFileUrl()`](../support/filesystem-registry.md#getfileurl-mints-the-browser-facing-url), which tables' [`ImageColumn`](../tables/image-column.md) calls as well, and `getUploadedFileUrl()` is a one-line delegate to it.
 
-**Recorded gap:** no serving route ships.
-A private file on a local storage gets no URL at all — no thumbnail, no open, no download — until a `temporary_url_generator` is configured.
-Filament's `FilePreviewController` twin is deferred with the rich editor.
+No serving route ships, which is a recorded gap: a private file on a local storage gets no URL at all — no thumbnail, no open, no download — until the storage is given a `temporary_url_generator`.
 
 ### `disk()` names a flysystem storage, and there is no `public`→`local` swap
 
@@ -299,8 +320,8 @@ The dialog's static chrome is first-render only, so a closure-valued `imageEdito
 And there is no body-scroll lock: support's modal has none either, so `noscroll`'s half of `x-trap` is the one piece of Filament's overlay with no replacement here.
 
 Opening is ordered against the platform rather than against a timer.
-The dialog is `showModal()`ed first and Cropper constructed on the image it now contains, and `replace()` runs one `requestAnimationFrame` later — by which point the dialog has been laid out and the image container has a size to measure.
-Filament reaches that point with a 200 ms `setTimeout` instead, which the port does not need: the browser pass measured the container at 928×749 on that frame (Chrome 151), so the crop box binds to real dimensions on the first open.
+The dialog is `showModal()`ed first and Cropper constructed on the image it contains, and `replace()` runs one `requestAnimationFrame` after the image is read — by which point the dialog has been laid out and the image container has a size to measure.
+Filament reaches that point with a 200 ms `setTimeout` instead, which the port does not need: the crop box binds to real dimensions on the first open.
 
 ### The bundle drops FilePond's mime database
 
@@ -312,14 +333,14 @@ The server-side `File(mimeTypes:)` constraint still refuses it, so the failure m
 
 `getExtraTemplateData()` returns `uploadedFiles`, `stateMap` and `mimeTypeMap` cast to `stdClass`.
 `StimulusAttributes::getFormattedValue()` JSON-encodes a non-scalar value, and PHP cannot tell an empty map from an empty list — so a bare `[]` would hand the controller's `Object` value an array.
-That is not a cosmetic mismatch: Stimulus's `object` reader **throws** on an array, and the first read sits inside `#detectType`, whose synchronous throw the type plugin's promise chain turns into a refusal — an uncast empty `mimeTypeMap()` made every file on an `acceptedFileTypes()` field "of invalid type" client-side.
+That is not a cosmetic mismatch: Stimulus's `object` reader **throws** on an array, and the first read sits inside `#detectType`, whose synchronous throw the type plugin's promise chain turns into a refusal — so an uncast empty `mimeTypeMap()` would make every file on an `acceptedFileTypes()` field "of invalid type" client-side.
 There is no in-repo precedent (`Select`'s option map is never empty-and-object), so this is a deliberate new one; the render test pins all three as `{}`.
 
-A new value, `transformImages`, is a plain boolean; no fourth map exists — the aspect-ratio options render as buttons.
+The `transformImages` value is a plain boolean; no fourth map exists — the aspect-ratio options render as buttons.
 
-The same encoding rule runs one level down on the `Array` side, which is why `getAcceptedFileTypes()` now returns `array_values()` on both arms: a *keyed* iterable or array — the only latent hazard an audit of the casts found — encodes as `{}`-shaped JSON and Stimulus's `array` reader throws on it exactly as its `object` reader throws on a list.
+The same encoding rule runs one level down on the `Array` side, which is why `getAcceptedFileTypes()` returns `array_values()` on both arms: a *keyed* iterable or array encodes as `{}`-shaped JSON, and Stimulus's `array` reader throws on it exactly as its `object` reader throws on a list.
 
-The same method must not use `filter_var()` anywhere in the `maxFileSize` expression: with no filter it returns a **string**, which `min()` would then compare as a string and Stimulus would emit into a `Number` value.
+`getExtraTemplateData()` must not use `filter_var()` anywhere in the `maxFileSize` expression: with no filter it returns a **string**, which `min()` would then compare as a string and Stimulus would emit into a `Number` value.
 
 ### Two Filament defects in the store pass are not ported
 
@@ -346,22 +367,25 @@ Every array call site is unchanged.
 
 Filament reaches `Storage::`, `Validator::` and Livewire's temporary-upload configuration through facades.
 Ours takes `TemporaryUploads`, `FilesystemRegistry` and `ValidatorInterface` through `#[Required]` setters, which the container calls because every component is a registered, non-shared service.
-A field built with `new` therefore cannot upload: the first two getters throw a `LogicException` naming the field and saying so, while `getValidator()` falls back to `Validation::createValidator()` — the same shape [`RecordTypeReader`](../schemas/record-type-reader.md) uses, and enough to keep `getUploadedFileConstraints()` usable outside a container.
+A field built with `new` therefore cannot upload: the first two getters throw a `LogicException` naming the field and saying so, while `getValidator()` falls back to `Validation::createValidator()`, a dependency-free validator that keeps `getUploadedFileConstraints()` usable outside a container.
 
 ### The filename map's path needs no `nullable` entry
 
 Filament's `dehydrateValidationRules()` adds `['nullable']` for the sibling filename path so Laravel's validator does not treat the key as absent-and-required.
 Our runner validates only the paths a component **declares**, so an undeclared key is already unvalidated and the override has nothing to add.
 
-### `uploadingMessage()` has no render site
-
-`HasUploadingMessage` renders on the **submit button**, through a `form-processing-started` channel between the form and the surrounding action that support does not have.
-The row is blocked on that channel rather than on anything about file uploads.
-
 ### The upload action is closed by construction, so there is nothing to restrict
 
 Filament's `RestrictsFileUploadsToSchemaComponents` exists because Livewire opens every property path to an upload.
 Our [`uploadSchemaComponentFile()`](../schemas/interacts-with-schemas.md) resolves the component through `getSchemaComponent()`, checks it against the `AcceptsUploadedFiles` contract, and shape-checks the file key before it becomes a state key — there is no open path to restrict.
+
+### Deprecated Filament members are not ported
+
+Each of these members is tagged `@deprecated` upstream, and each notice names its replacement, which ships here.
+On `BaseFileUpload`: `enableDownload()` → `downloadable()`, `enableOpen()` → `openable()`, `enableReordering()` → `reorderable()`, `disablePreview()` → `previewable()`, `moveFile()` → `moveFiles()` and `storeFile()` → `storeFiles()`.
+On `FileUpload`: `idleLabel()` → `placeholder()`, `imageCropAspectRatio()` → `imageAspectRatio()` plus `automaticallyCropImagesToAspectRatio()`, `imageResizeMode()` → `automaticallyResizeImagesMode()`, `imageResizeTargetHeight()` → `automaticallyResizeImagesToHeight()`, `imageResizeTargetWidth()` → `automaticallyResizeImagesToWidth()`, `imageResizeUpscale()` → `automaticallyUpscaleImagesWhenResizing()`, `orientImageFromExif()` → `orientImagesFromExif()` and `imageEditorAspectRatios()` → `imageEditorAspectRatioOptions()`.
+Their getters follow the same mapping, down to `getImageEditorAspectRatiosForJs()` → `getImageEditorAspectRatioOptionsForJs()`.
+A migrating call breaks loudly as a missing method, and the fix is the spelling the notice names, per [the toolkit-wide rule](../renames.md#a-deprecated-filament-member-is-not-ported).
 
 ### Literals, not translation keys
 
@@ -381,7 +405,7 @@ Livewire's store has the same shape, so Filament ships that mismatch too.
 
 We rename at the origin instead, and after the encoder rather than before it.
 The name follows the type the blob actually carries: `versionedName()` keeps the source extension when that extension already denotes the blob's type and writes the canonical one otherwise — `png`, `jpg` or `webp`, the only three a canvas encodes.
-So a circle-cropped `photo.jpg` still comes back as `photo-v1.png`, and the arm Filament's rule cannot reach is covered with it: `toBlob()` silently falls back to PNG for any type the engine cannot encode — `image/gif`, `image/bmp`, `image/tiff`, WebP where it is unsupported, or the empty type a stored item's `fetch()` may hand back — so keying the rename to the *requested* type would name PNG bytes `photo-v1.gif`, the same lie one source further along.
+So a circle-cropped `photo.jpg` comes back as `photo-v1.png`, and the arm Filament's rule cannot reach is covered with it: `toBlob()` silently falls back to PNG for any type the engine cannot encode — `image/gif`, `image/bmp`, `image/tiff`, WebP where it is unsupported, or the empty type a stored item's `fetch()` may hand back — so keying the rename to the *requested* type would name PNG bytes `photo-v1.gif`, the same lie one source further along.
 One expression, the server untouched, and the storage-side naming semantics intact.
 
 A name carrying no dot at all is handled rather than mangled on the way through: `versionedName()` reads a missing dot as an empty extension and appends the one the blob earns, so `photo` cropped to PNG becomes `photo-v1.png`.
@@ -390,13 +414,49 @@ Filament's `slice(0, lastIndexOf('.'))` on `-1` drops the last character and its
 Everything else in `saveEditor()` ports verbatim, including three things worth not "fixing".
 The circle mask is an ellipse inscribed in the crop box, so a non-square crop yields an oval rather than a circle — Filament's.
 `toBlob()` is called with no quality argument, so a JPEG source re-encodes at the canvas default.
-And the version bump matches `-v(\d+)` **unanchored**, so `report-v2-final.png` bumps the first match and becomes `report-v3-final.png` instead of gaining a `-v1` at the end — Filament's quirk, kept for parity and written down here rather than silently corrected.
+And the version bump matches `-v(\d+)` **unanchored**, so `report-v2-final.png` bumps the first match and becomes `report-v3-final.png` instead of gaining a `-v1` at the end — Filament's quirk, kept for parity.
 The transform plugin's own rename-on-type-change (its `ExtensionMap`) is never reached, because `imageTransformOutputMimeType` is never set.
 
 ### The editor reads the dimension-fixed SVG, not the original
 
 `#fixImageDimensions()` exists to give Cropper something to measure: an SVG sized only by its `viewBox` has an intrinsic ratio and no intrinsic size, so the function rewrites the markup with `width`/`height` in `pt` taken from the viewBox and hands the rewritten copy on.
-Filament then reads the **original** into the `FileReader` that feeds the editor (`file-upload.js:808`), so the copy reaches only `editingFile`, the file the save is named and typed after — the rewrite never touches what the user sees.
-Cropper is left measuring the browser's fallback for a ratio-only replaced element (300×150 shrunk to the ratio, which the browser pass watched open a 400×300 viewBox at 200×150).
+Filament then reads the **original** into the `FileReader` that feeds the editor (`file-upload.js:904`), so the copy reaches only `editingFile`, the file the save is named and typed after — the rewrite never touches what the user sees.
+Cropper is left measuring the browser's fallback for a ratio-only replaced element: 300×150 shrunk to the ratio.
 Ours reads the fixed copy instead, so a viewBox-only SVG opens at its viewBox size and the crop box is dragged over the dimensions the saved file will have.
 The function itself ports verbatim, its `pt` unit and its three-spelling `viewBox` probe included.
+
+### The FilePond base stylesheet is redistributed scoped by the build
+
+Filament imports `filepond/dist/filepond.min.css` and the image-preview plugin's CSS through a JS entry, so its compiled `dist/index.css` carries bare top-level `.filepond--*` selectors and three global `@keyframes` (`spin`, `shake`, `fall`) — only a cascade layer scopes them.
+Sylament's stylesheet is page-wide in a host application, so shipping that verbatim would style a host app's own `filepond--*` markup and — worse — steal `@keyframes spin`, which support's loading indicator declares.
+[The bundled-library rule](../../internals/styling.md#why-is-a-bundled-library-styled-under-a-sylament-class) forbids it, and FilePond exposes no class-prefix option (its `className` only adds a class to the root), so the base sheet is **regenerated** instead of imported.
+
+`packages/support/assets/scripts/scope-vendor-css.mjs` runs in support's `build:css` chain — between `scope-preflight.mjs` and Tailwind — and writes `packages/forms/assets/src/styles/filepond.generated.css` from FilePond's base sheet and its image-preview and image-edit plugins' sheets, which forms' [`index.css`](../../../packages/forms/assets/src/styles/index.css) imports **first** so our skin, in the same layer, wins on order.
+About the script:
+
+- It resolves its sources through a `createRequire` rooted at **forms'** `package.json`, because `hoistPattern: []` keeps `filepond` in forms' workspace while `postcss` lives in support's — and pnpm builds forms *after* support, so a forms-side generator would not exist when support's Tailwind runs.
+- Every rule takes the **descendant** variant only (`:where(.sy-fo-file-upload) .filepond--root`), not preflight's self+descendant pair: FilePond builds inside the wrapper we render, so the wrapper is always an ancestor and the self variant would double the output for nothing.
+- The `@keyframes` (prefixed and unprefixed) are renamed `sy-fo-file-upload-*`, and the shorthand `animation:` / `-webkit-animation:` declarations that reference them are rewritten to match.
+  Rules *inside* a `@keyframes` are left alone — a percentage selector is not an element selector, and scoping one produces invalid CSS the browser drops silently.
+- The file is gitignored by the `packages/*/assets/src/styles/*.generated.css` glob (one level deep — hence the location) and carries a generated-file banner plus one MIT notice per source package, composed from the installed `package.json` the way `build-js.mjs`'s `licenseBanner()` composes its.
+  The compiled result lands in support's committed `dist/styles/index.css`, which is what CI's byte-stable build gate checks.
+
+The selector walker is a shared `scope-css.mjs` that `scope-preflight.mjs` uses too; preflight's two adaptations (map the `html, :host` rule onto the scope root with its `font-*` declarations dropped, drop `body`) are options to it rather than a second copy.
+
+Cropper.js's stylesheet is the second generated vendor sheet: `scope-vendor-css.mjs` rewrites `cropperjs/dist/cropper.css` as forms' gitignored `cropper.generated.css`, every rule scoped under `.sy-fo-file-upload-editor` — the dialog's class rather than the field's, since Cropper's DOM only ever lives inside it.
+
+### `.filepond--label-action` takes the link colour policy, not vendor's hardcoded shade
+
+`.filepond--label-action` — FilePond's "Browse" link — is `text-(--sy-text) hover:opacity-80 dark:text-(--sy-dark-text)` where vendor hardcodes `text-primary-700 hover:text-primary-600 …`; the link colour policy sits on the pond container and supplies the slots, per [the colour policies](../../internals/styling.md#why-does-a-policy-pick-the-shade-instead-of-the-stylesheet).
+
+### The download and open action anchors are the port's own
+
+The two action anchors are ours (`sy-fo-file-upload-download-action` / `-open-action` with an inner `-icon` span) rather than vendor's `filepond--download-icon` / `filepond--open-icon`: our JS builds those anchors, so there is no vendor class to select at all — [the bundled-library rule](../../internals/styling.md#why-is-a-bundled-library-styled-under-a-sylament-class)'s second branch has nothing to reach here.
+Their mask-image payloads are copied verbatim from vendor (`file-upload.css:82-83, 92-93`), which is why the download glyph is a Feather arrow and the open glyph a Heroicons external-link rather than a matched pair; both are MIT and the layout/mask split onto two elements is the port's own, so the anchor carries the box and the span carries the mask.
+
+### The dark backdrop arm sits in an `@variant dark` block
+
+The editor dialog's `::backdrop` takes its light shade inline (`bg-gray-950/50`) and its dark one from an `@variant dark` block one nesting level up, rather than from a `dark:` prefix beside it.
+Written inline, the dark variant compiles to a `:where()` compound sitting next to the pseudo-element, and the optimiser Tailwind runs over the compiled sheet mangles that pairing into `::backdrop:where()` — a selector that matches nothing, with no error anywhere.
+Hoisting the arm one level up keeps the two rules apart through the build, and support's committed `dist/styles/index.css` carries both (50 % light, 75 % under `.dark`).
+It is the only `@variant dark` block in the forms tree, and it is there for the build rather than for the design.

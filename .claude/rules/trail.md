@@ -13,6 +13,7 @@ description: How a port-trail file is shaped, where status lives, what each file
 - **Statuses** are todo, in progress, blocked, done and skipped, as `docs/progress/README.md` defines them; *Blocked by* names the prerequisite of a blocked row and is `—` on every other row, so a todo row never names one.
 - **A Detail cell holds only links** (`[detail](#…)`, `[semantics](#…)`, `[diverges](#…)` or a link into another file) joined by ` · `, or `—`; reasoning goes in the `###` entry it links, because a cell has no anchor of its own.
 - **Entries** are `###` statement headings under `## Details` (an unfinished row's gap, deleted with its section once the row is done), `## Semantics` (faithful but easy to misread) or `## Divergences` (a deliberate deviation); never a bullet, because a bullet cannot be linked.
+- **A reference section** (a contract or grammar the code implements, such as a controller's values and actions) may keep its own `##` heading after the Surface, because its rows specify an interface rather than track features; it is a named exception, never a home for entries.
 - **Put an entry in the file that owns the code it constrains** and link it from elsewhere; a restated fact drifts.
 - **One sentence per line** in prose and list items, never hard-wrapped, so a phrase grep finds it and an edit touches one line.
 - **State what the code does and why:** no "used to", "no longer" or "so far" narration and no counts that restate a table, since git holds the history.

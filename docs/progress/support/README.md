@@ -89,6 +89,7 @@ Ports [`filament/support`](../../../vendor/filament/support) into [`packages/sup
 | [`resources/css/components/tooltip.css`](../../../vendor/filament/support/resources/css/components/tooltip.css) | todo | — | — |
 | [`resources/js/components/form-button.js`](../../../vendor/filament/support/resources/js/components/form-button.js) | todo | — | — |
 | [`Concerns/CanBeLazy.php`](../../../vendor/filament/support/src/Concerns/CanBeLazy.php) | todo | — | — |
+| [`Concerns/HasExtraAlpineAttributes.php`](../../../vendor/filament/support/src/Concerns/HasExtraAlpineAttributes.php) | skipped | — | [diverges](component-attribute-bag.md#extra-alpine-attributes-are-not-ported) |
 | [`Enums/Platform.php`](../../../vendor/filament/support/src/Enums/Platform.php) | todo | — | — |
 | [`Contracts/Collapsible.php`](../../../vendor/filament/support/src/Contracts/Collapsible.php) | todo | — | — |
 | [`Contracts/TranslatableContentDriver.php`](../../../vendor/filament/support/src/Contracts/TranslatableContentDriver.php) | todo | — | — |

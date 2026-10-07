@@ -4,6 +4,7 @@ ports:
   - vendor/filament/forms/src/Components/Textarea.php
   - vendor/filament/forms/src/Components/Concerns/CanDisableGrammarly.php
   - vendor/filament/forms/resources/js/components/textarea.js
+  - vendor/filament/schemas/src/Components/Concerns/CanStripCharactersFromState.php
 owns:
   - packages/forms/assets/src/controllers/textarea_controller.ts
   - packages/forms/src/Components/Concerns/CanDisableGrammarly.php

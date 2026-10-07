@@ -10,7 +10,7 @@ owns:
 # CanBeNative (forms)
 
 `Sylament\Forms\Components\Concerns\CanBeNative` — the `native()` / `isNative()` switch between a field's native browser control and its JavaScript one.
-Two families compose it: the [date pickers](date-time-picker.md), where the JS calendar is not ported and `native(false)` throws, and [`Select`](select.md), where `native(false)` is one of the four things that put the field on the JS control — so it is promoted out of the picker's fold to a file of its own per [one row per file](../README.md#one-row-per-file-one-file-per-thing).
+Two families compose it: the [date pickers](date-time-picker.md), where the JS calendar is not ported and `native(false)` throws, and [`Select`](select.md), where `native(false)` is one of the four things that put the field on the JS control — so it is promoted out of the picker's fold to a file of its own per [one row per file](../../internals/trail.md#one-file-per-piece-of-code-one-row-per-feature).
 Filament composes it on the same two families, unchanged between them.
 
 ## Surface

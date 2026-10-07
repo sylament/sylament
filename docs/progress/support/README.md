@@ -3,7 +3,7 @@
 Ports [`filament/support`](../../../vendor/filament/support) into [`packages/support`](../../../packages/support).
 Foundation for every other bundle: the base component model, shared UI components, colors, icons, assets, helpers.
 
-**Status:** in progress — see the [status vocabulary](../README.md#statuses) and [what goes where](../README.md#one-row-per-file-one-file-per-thing).
+**Status:** in progress — see the [status vocabulary](../README.md#statuses) and [what goes where](../../internals/trail.md#one-file-per-piece-of-code-one-row-per-feature).
 
 These tables map the full `support/src` surface end to end.
 A linked name in the first column is code that already exists in the port; the per-component audit against Filament has now resolved every one to a real [status](../README.md#statuses) — **done** or **in progress** — linking a detail file wherever a divergence, an open gap, or real sub-structure earns one.

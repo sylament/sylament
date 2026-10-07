@@ -3,7 +3,7 @@
 Ports [`filament/widgets`](../../../vendor/filament/widgets) into [`packages/widgets`](../../../packages/widgets).
 Dashboard widgets: stats overview, charts, and table widgets.
 
-**Status:** todo — see the [status vocabulary](../README.md#statuses) and [what goes where](../README.md#one-row-per-file-one-file-per-thing).
+**Status:** todo — see the [status vocabulary](../README.md#statuses) and [what goes where](../../internals/trail.md#one-file-per-piece-of-code-one-row-per-feature).
 
 The tables below are structure only; nothing has been audited yet.
 [`support/component.md`](../support/component.md) is the shape each detail file follows.

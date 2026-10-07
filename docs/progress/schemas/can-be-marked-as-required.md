@@ -9,7 +9,7 @@ owns:
 
 [`Sylament\Schemas\Components\Concerns\CanBeMarkedAsRequired`](../../../packages/schemas/src/Components/Concerns/CanBeMarkedAsRequired.php) — the required-marker toggle: `markAsRequired()` sets it, `isMarkedAsRequired()` reads it and falls back to `$this->isRequired()` when nothing explicit was set.
 That fallback is a contract on the **using class**, which must declare `isRequired()`: the forms [`Field`](../../../packages/forms/src/Components/Field.php) gets it from [`CanBeValidated`](../forms/can-be-validated.md) and reports the real validation state, while schemas' [`Fieldset`](fieldset.md) declares a constant `false`, so its legend takes an asterisk only after an explicit `markAsRequired()`.
-Two consumers in two packages is what earns this its own file rather than a fold into either — see [one row per file](../README.md#one-row-per-file-one-file-per-thing).
+Two consumers in two packages is what earns this its own file rather than a fold into either — see [one row per file](../../internals/trail.md#one-file-per-piece-of-code-one-row-per-feature).
 
 ## Surface
 

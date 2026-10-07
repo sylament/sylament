@@ -14,7 +14,7 @@ A component's status is its row in the port trail; what to build next is decided
 | `packages/<pkg>/assets/` | pnpm workspace `@sylament/<pkg>`; `dist/` is committed |
 | `packages/support/tests/{Doctrine,PHPUnit}/` | test infrastructure the Doctrine suites share (dev-only) |
 | `vendor/filament/` | Filament's source: read it before designing anything |
-| `docs/progress/` | the port trail: status and reasoning per component (rules in its `README.md`) |
+| `docs/progress/` | the port trail: status and reasoning per component (rules: `.claude/rules/trail.md`) |
 | `docs/internals/` | the reasoning behind the rules, and the dev-only infrastructure |
 | `../demo` | the peer demo app, its own repo (skill: `demo`) |
 
@@ -66,13 +66,14 @@ Rules in `.claude/rules/` load by themselves when you read or edit a file their 
 | `bundles.md` | `packages/*/src/*Bundle.php`, `packages/*/src/DependencyInjection/**` | How a bundle class wires its services, config tree, asset path and component registration. |
 | `colors.md` | `packages/*/src/Colors/**`, `packages/support/src/Twig/Extension/ColorExtension.php` | How a colour is named, how a contrast policy picks its shade, and how policies are registered. |
 | `css.md` | `packages/*/assets/src/styles/**` | How component stylesheets are written, scoped and coloured, and what support's CSS build generates. |
-| `docs.md` | `/docs/**` | Where documentation lives and the rules for the port trail. |
+| `docs.md` | `/docs/progress/**`, `/docs/internals/**` | Where documentation lives, and the rules every docs file follows. |
 | `doctrine-tests.md` | `packages/{actions,forms,panels,schemas,tables}/tests/**`, `packages/support/tests/Doctrine/**`, `packages/support/tests/PHPUnit/**`, `packages/support/tests/Unit/Doctrine/**`, `packages/support/tests/Fixtures/Doctrine/**` | The database contract, the platform rule and the shared Doctrine test infrastructure the five Doctrine suites run on. |
 | `frontend.md` | `packages/*/assets/**/*.{ts,mjs,json}`, `/package.json`, `/pnpm-workspace.yaml`, `/tsconfig.base.json`, `/biome.json` | TypeScript, the asset workspaces, the JS build script and how Stimulus controllers ship. |
 | `instructions.md` | `/CLAUDE.md`, `/.claude/**` | How instruction files are placed, scoped, sized and kept free of history. |
 | `manifests.md` | `/composer.json`, `packages/*/composer.json`, `packages/*/assets/package.json` | What each package manifest declares, when a dependency is a require or a suggest, and which omissions are deliberate. |
 | `php.md` | `packages/*/src/**/*.php` | How shipped PHP is written, from closure evaluation and typing to construction, static instances, trait placement, record identity, helpers and comments. |
 | `tests.md` | `packages/*/tests/**` | How a package's Pest suite is laid out, booted and wired, and where support's Twig components are render-tested. |
+| `trail.md` | `/docs/progress/**` | How a port-trail file is shaped, where status lives, what each file owns, and how its prose and tables are written. |
 | `twig.md` | `packages/*/templates/**` | Template layout, component invocation, props and attribute rendering in the bundles' Twig templates. |
 
 ## Where a new fact goes

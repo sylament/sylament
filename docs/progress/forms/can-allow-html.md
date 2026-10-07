@@ -10,7 +10,7 @@ owns:
 # CanAllowHtml (forms)
 
 `Sylament\Forms\Components\Concerns\CanAllowHtml` — the `allowHtml()` / `isHtmlAllowed()` switch that lets an option label render raw.
-Two fields compose it — [`CheckboxList`](checkbox-list.md), where it opens exactly one hole in the template, and [`Select`](select.md), where it is one of the three things that force the JS control — so it is promoted out of the former's fold to a file of its own per [one row per file](../README.md#one-row-per-file-one-file-per-thing).
+Two fields compose it — [`CheckboxList`](checkbox-list.md), where it opens exactly one hole in the template, and [`Select`](select.md), where it is one of the three things that force the JS control — so it is promoted out of the former's fold to a file of its own per [one row per file](../../internals/trail.md#one-file-per-piece-of-code-one-row-per-feature).
 Filament composes it on the same two plus `ToggleButtons`, `Radio`'s infolist twin and several table columns, unchanged between them.
 
 ## Surface

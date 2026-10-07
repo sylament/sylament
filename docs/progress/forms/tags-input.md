@@ -42,7 +42,7 @@ Every point this field adds over `Field`.
 | `HasExtraAlpineAttributes` | [`support/Concerns/HasExtraAlpineAttributes.php`](../../../vendor/filament/support/src/Concerns/HasExtraAlpineAttributes.php) | skipped | — | [diverges](../support/component-attribute-bag.md#extra-alpine-attributes-are-not-ported) |
 | `$publishedViewOverrideCheckPath` | [`Components/TagsInput.php`](../../../vendor/filament/forms/src/Components/TagsInput.php) | skipped | — | [diverges](#there-is-no-published-view-to-probe-for) |
 
-This table carries no [unaudited row](../README.md#an-unaudited-table-says-so): every member of the vendor class has a row above.
+This table carries no [unaudited row](../../internals/trail.md#an-unaudited-table-says-so): every member of the vendor class has a row above.
 
 ## Semantics
 

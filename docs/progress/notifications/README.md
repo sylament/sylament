@@ -3,16 +3,16 @@
 Ports [`filament/notifications`](../../../vendor/filament/notifications) into [`packages/notifications`](../../../packages/notifications).
 The notification builder, toasts, and database / real-time delivery.
 
-**Status:** in progress — see the [status vocabulary](../README.md#statuses) and [what goes where](../README.md#one-row-per-file-one-file-per-thing).
+**Status:** in progress — see the [status vocabulary](../README.md#statuses) and [what goes where](../../internals/trail.md#one-file-per-piece-of-code-one-row-per-feature).
 
-These tables map the full `notifications/src` surface end to end — all 23 files — plus the rendered views, the stylesheets, the scripts and the translations, so no table carries an [unaudited row](../README.md#an-unaudited-table-says-so).
+These tables map the full `notifications/src` surface end to end — all 23 files — plus the rendered views, the stylesheets, the scripts and the translations, so no table carries an [unaudited row](../../internals/trail.md#an-unaudited-table-says-so).
 The minimal notifications vertical is what has landed: `Notification::make()->…->send()` delivered as a toast stack, on page loads through the session flash and on live round trips through a browser event carrying server-rendered HTML.
 A linked first-column name is built and carries a real [status](../README.md#statuses); a plain-text name is not built yet and is **todo**, **blocked** or **skipped**.
 
 **blocked** rows outnumber **todo** ones here, and the split is the [vocabulary's](../README.md#statuses) rather than a mood: three whole arms of Filament's notifications package — the database panel, database storage and broadcast — are wanted for parity and each waits on infrastructure the port does not have yet (a notifications entity and the live panel that lists it; a Symfony transport for broadcast, where Mercure is the direction).
 A row whose detail section names one of those is **blocked**; a row waiting on nothing at all — `date()`, `inline()`, custom views, the client-side builder, the test helpers, translations — is **todo**.
 
-Six ported concerns are **folded** into [`notification.md`](notification.md) and carry no row below, per [one row per file](../README.md#one-row-per-file-one-file-per-thing): `HasId`, `HasTitle`, `HasBody`, `HasStatus`, `HasDuration` and `HasActions`, each with exactly one consumer today.
+Six ported concerns are **folded** into [`notification.md`](notification.md) and carry no row below, per [one row per file](../../internals/trail.md#one-file-per-piece-of-code-one-row-per-feature): `HasId`, `HasTitle`, `HasBody`, `HasStatus`, `HasDuration` and `HasActions`, each with exactly one consumer today.
 Filament's `Concerns\HasIcon` and `Concerns\HasIconColor` fold there too — they are status fallbacks over support's traits, and this port [resolves them in the template](notification.md#the-status-fallbacks-for-icon-and-icon-colour-live-in-the-template); so do the two unported concerns (`HasDate` and `CanBeInline`), which are rows in that file's surface table because that is where their write-ups are.
 Both Blade views fold the same way: Filament renders a toast from `Notification::toEmbeddedHtml()` rather than a view file, so the toast partial is a row in [`notification.md`](notification.md), and [`notifications.blade.php`](../../../vendor/filament/notifications/resources/views/notifications.blade.php) is the stack's container markup, folded into [`notifications.md`](notifications.md).
 [`support/component.md`](../support/component.md) is the shape each detail file follows.
@@ -49,7 +49,7 @@ The bundle owns the two `Delivery\` classes as well as its own wiring, so all th
 The toast stylesheet and the two Stimulus controllers are split by which component they dress — the `.sy-no` container rules and the stack controller are rows in [notifications.md](notifications.md), the `.sy-no-notification` rules and the toast controller rows in [notification.md](notification.md) — so the rows here point at whichever file carries the gap.
 
 Two rows below name the provider in _Ports_ — once for the bundle as a whole, once for the `on('dehydrate')` hook `LiveDeliverySubscriber` replaces — and carry different statuses, because they describe different things.
-Neither is the hook's own status: that lives in [notifications-bundle.md](notifications-bundle.md)'s surface table, and both rows here are navigational entries pointing at it, per [one row per file](../README.md#one-row-per-file-one-file-per-thing).
+Neither is the hook's own status: that lives in [notifications-bundle.md](notifications-bundle.md)'s surface table, and both rows here are navigational entries pointing at it, per [one row per file](../../internals/trail.md#one-file-per-piece-of-code-one-row-per-feature).
 Update the hook there; if these two ever disagree about it, that file wins.
 
 | Item | Ports | Status | Detail |

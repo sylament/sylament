@@ -20,7 +20,7 @@ owns:
 # BaseFilter (tables)
 
 [`Sylament\Tables\Filters\BaseFilter`](../../../packages/tables/src/Filters/BaseFilter.php) — the root object of the filter tier: a support [`Component`](../support/component.md) composing the eleven `Filters\Concerns\` traits that carry a filter's identity, visibility, state, schema and query application.
-It ports Filament's [`Filters\BaseFilter`](../../../vendor/filament/tables/src/Filters/BaseFilter.php) and the eleven concerns it composes, folded into the surface table below per [one row per file](../README.md#one-row-per-file-one-file-per-thing).
+It ports Filament's [`Filters\BaseFilter`](../../../vendor/filament/tables/src/Filters/BaseFilter.php) and the eleven concerns it composes, folded into the surface table below per [one row per file](../../internals/trail.md#one-file-per-piece-of-code-one-row-per-feature).
 [`Indicator`](indicator.md) is tracked separately, because it is a component of its own rather than a concern, and so is each subclass that extends this one — [`Filter`](filter.md), [`SelectFilter`](select-filter.md) and [`TernaryFilter`](ternary-filter.md), each carrying its own status in its own file.
 
 ## Surface

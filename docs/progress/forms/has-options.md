@@ -13,7 +13,7 @@ owns:
 `Sylament\Forms\Components\Concerns\HasOptions` — the option map every option-shaped field is configured with: a literal array (flat or one optgroup level deep), a closure evaluated per render, or an **enum class-string**, which also seeds [`HasEnum`](has-enum.md) so the same declaration drives the field's state cast.
 It carries one member Filament has no counterpart for, `getOptionComparisonState()`, because the port emits `selected` / `checked` server-side where Filament leaves that to Livewire.
 
-Promoted out of [`select.md`](select.md) ahead of the option fields that share it, per [one row per file](../README.md#one-row-per-file-one-file-per-thing).
+Promoted out of [`select.md`](select.md) ahead of the option fields that share it, per [one row per file](../../internals/trail.md#one-file-per-piece-of-code-one-row-per-feature).
 
 ## Surface
 

@@ -10,7 +10,7 @@ owns:
 # CanBeSearchable (forms)
 
 `Sylament\Forms\Components\Concerns\CanBeSearchable` — the searchable switch and the six messages around it: `searchable()`, the `noOptionsMessage()` / `noSearchResultsMessage()` / `searchPrompt()` / `searchingMessage()` quartet, `searchDebounce()`, and the `searchLabels()` / `searchValues()` pair that `getSearchableOptionFields()` composes.
-Two fields compose it — [`CheckboxList`](checkbox-list.md), whose search is a client-side filter over the options it already rendered, and [`Select`](select.md), whose search is the server-side arm the whole trait exists for — so it is promoted out of the former's fold to a file of its own per [one row per file](../README.md#one-row-per-file-one-file-per-thing).
+Two fields compose it — [`CheckboxList`](checkbox-list.md), whose search is a client-side filter over the options it already rendered, and [`Select`](select.md), whose search is the server-side arm the whole trait exists for — so it is promoted out of the former's fold to a file of its own per [one row per file](../../internals/trail.md#one-file-per-piece-of-code-one-row-per-feature).
 Filament composes it on the same two fields, and `Select` overrides two of its members there exactly as it does here.
 
 ## Surface

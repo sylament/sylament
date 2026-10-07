@@ -12,7 +12,7 @@ owns:
 The port's two text fields compose it, `TextInput` and `Textarea`, so it keeps a row of its own rather than folding into either — and those are the only two Filament composes it on, so no unported field is waiting to widen it.
 
 Its sibling `CanBeAutocapitalized` is the same trait over the `autocapitalize` attribute, line for line.
-Filament composes that one on `TextInput` alone, so it folds into [`text-input.md`](text-input.md) per [one row per file](../README.md#one-row-per-file-one-file-per-thing); the [divergence](#the-deprecated-disable-aliases-are-not-ported) below covers both, since the trimmed method is the same on each.
+Filament composes that one on `TextInput` alone, so it folds into [`text-input.md`](text-input.md) per [one row per file](../../internals/trail.md#one-file-per-piece-of-code-one-row-per-feature); the [divergence](#the-deprecated-disable-aliases-are-not-ported) below covers both, since the trimmed method is the same on each.
 
 ## Surface
 

@@ -157,7 +157,7 @@ The systematic translations that are not renames, and the names and namespaces w
 ## Divergences
 
 Deliberate deviations that are **global** rather than component-local — permanent, and the reason they hold.
-A divergence constraining one component lives in that component's file, per [the placement rule](README.md#divergences-are-addressable); what earns a heading here is a decision every ported component inherits.
+A divergence constraining one component lives in that component's file, per [the placement rule](../internals/trail.md#divergences-are-addressable); what earns a heading here is a decision every ported component inherits.
 The first three are the `make()` mechanics; the rest came with the colour registry, and each states the decision and links the write-up rather than repeating it.
 
 ### `make()` arguments move from constructors to setters

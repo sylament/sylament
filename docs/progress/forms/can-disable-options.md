@@ -12,7 +12,7 @@ owns:
 `Sylament\Forms\Components\Concerns\CanDisableOptions` and its [`Contracts\CanDisableOptions`](../../../packages/forms/src/Components/Contracts/CanDisableOptions.php) interface — per-option disabling over the map [`HasOptions`](has-options.md) supplies: `disableOptionWhen()` registers the predicates, `isOptionDisabled()` answers per option, and `getEnabledOptions()` flattens one optgroup level and filters.
 It carries one member Filament has no counterpart for, `getEnabledOptionValues()`, which builds the choice list a field's `Choice` constraint validates against.
 
-Promoted out of [`select.md`](select.md) ahead of the option fields that share it, per [one row per file](../README.md#one-row-per-file-one-file-per-thing).
+Promoted out of [`select.md`](select.md) ahead of the option fields that share it, per [one row per file](../../internals/trail.md#one-file-per-piece-of-code-one-row-per-feature).
 
 ## Surface
 

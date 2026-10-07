@@ -59,7 +59,7 @@ Both bindings need a live host, so they are driven through real round-trips by [
 ### `HasColors`, `HasIcons` and `HasTooltips` are this field's alone
 
 All three are per-option maps keyed the way `getOptions()` is, all three memoise (`$cachedX` + `$hasCachedX`, reset by the setter), and all three are read once per option by the two templates.
-`ToggleButtons` is the only field in Filament that composes any of them, which is why their detail is folded here rather than given three files of its own — the [one row per file](../README.md#one-row-per-file-one-file-per-thing) rule.
+`ToggleButtons` is the only field in Filament that composes any of them, which is why their detail is folded here rather than given three files of its own — the [one row per file](../../internals/trail.md#one-file-per-piece-of-code-one-row-per-feature) rule.
 They split on one axis:
 
 | Trait | Getter | Enum fallback |

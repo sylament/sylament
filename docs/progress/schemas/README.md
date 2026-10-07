@@ -3,12 +3,12 @@
 Ports [`filament/schemas`](../../../vendor/filament/schemas) into [`packages/schemas`](../../../packages/schemas).
 The component model: the base `Component`, the `Schema` container, the layout and content components, the shared concerns, and the state loop (`$get`/`$set`, state casts).
 
-**Status:** in progress — see the [status vocabulary](../README.md#statuses) and [what goes where](../README.md#one-row-per-file-one-file-per-thing).
+**Status:** in progress — see the [status vocabulary](../README.md#statuses) and [what goes where](../../internals/trail.md#one-file-per-piece-of-code-one-row-per-feature).
 
 These tables map the full `schemas` surface — every class, trait, contract, template, asset, and translation set.
 The per-component audit against Filament has now resolved every **started** row (a linked first-column source) to a real [status](../README.md#statuses) — **done** or **in progress** — with a detail file wherever a divergence, an open gap, or real sub-structure earns one.
 A plain-text name is not built yet and stays **todo**.
-Single-use concerns have folded into the detail file of the component that uses them (Schema's into [`schema.md`](schema.md), the base Component's into [`component.md`](component.md), Section's into [`section.md`](section.md), Tabs' into [`tabs.md`](tabs.md)) and left the Features tables, per [one row per file](../README.md#one-row-per-file-one-file-per-thing).
+Single-use concerns have folded into the detail file of the component that uses them (Schema's into [`schema.md`](schema.md), the base Component's into [`component.md`](component.md), Section's into [`section.md`](section.md), Tabs' into [`tabs.md`](tabs.md)) and left the Features tables, per [one row per file](../../internals/trail.md#one-file-per-piece-of-code-one-row-per-feature).
 [`support/component.md`](../support/component.md) is the shape each detail file follows.
 
 A first-column link whose target file is named differently from the row is a rename or relocation the port already made — the idiom translations (Livewire → UX LiveComponent, Blade view → Twig template, `Htmlable` → `Markup`), the `BelongsToLivewire` → `BelongsToLiveComponent`, `BelongsToModel` → `BelongsToRecord` (both tiers, with `model()` absorbed into `record()`), and `SchemasServiceProvider` → `SylamentSchemasBundle` renames, and the schema-host `HasSchemas` (interface) ⇄ `InteractsWithSchemas` (trait) name swap.

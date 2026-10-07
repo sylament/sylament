@@ -3,7 +3,7 @@
 Ports [`filament/filament`](../../../vendor/filament/filament) into [`packages/panels`](../../../packages/panels) — Filament ships its panel builder as the `filament/filament` package.
 The admin shell: panel config, routing, auth, resources, pages, navigation.
 
-**Status:** in progress — see the [status vocabulary](../README.md#statuses) and [what goes where](../README.md#one-row-per-file-one-file-per-thing).
+**Status:** in progress — see the [status vocabulary](../README.md#statuses) and [what goes where](../../internals/trail.md#one-file-per-piece-of-code-one-row-per-feature).
 
 The tables below are structure plus the first ported rows; nothing has been audited end to end yet.
 [`support/component.md`](../support/component.md) is the shape each detail file follows.

@@ -562,7 +562,7 @@ The names below are what is left — nothing started, captured as one list rathe
 - **Dispatch/mark conveniences**: `livewireTarget()`, custom `alpineClickHandler()`/`actionJs()` — the port's click wiring is the single `live_action('mountAction', …)` call baked into the template (`CanDispatchEvent` and `CanBeMarkedAsRead` are both ported, each with a Surface row above; only the mark flags' *click behaviour* is still missing).
 - **Rendering variants**: `HasBadge`, `HasBadgeTooltip` and `CanBeLabeledFrom` (the `toArray()`/`fromArray()` pair Filament files beside them has landed — Surface row above).
 
-None of these is a per-row **blocked**/**todo** entry because none has any ported surface yet to anchor a row to — they will earn Surface rows (and likely their own detail files, per the [one-row-per-file rule](../README.md#one-row-per-file-one-file-per-thing)) the moment work starts on each.
+None of these is a per-row **blocked**/**todo** entry because none has any ported surface yet to anchor a row to — they will earn Surface rows (and likely their own detail files, per the [one-row-per-file rule](../../internals/trail.md#one-file-per-piece-of-code-one-row-per-feature)) the moment work starts on each.
 
 ### The live-component chain narrows inline instead of through a second getter
 

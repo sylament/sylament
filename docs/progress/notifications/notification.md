@@ -17,7 +17,7 @@ owns:
 [`Sylament\Notifications\Notification`](../../../packages/notifications/src/Notification.php) — the notification builder: `Notification::make()->title('Saved')->success()->send()`.
 It ports Filament's [`Filament\Notifications\Notification`](../../../vendor/filament/notifications/src/Notification.php), a `ViewComponent` subclass that sits at `src/` root the way actions' [`Action`](../actions/action.md) does, and it is the only class the toast surface exposes to application code.
 
-The six ported concerns carry no rows of their own upstairs: each has exactly one consumer, so they are folded into the table below per [one row per file](../README.md#one-row-per-file-one-file-per-thing).
+The six ported concerns carry no rows of their own upstairs: each has exactly one consumer, so they are folded into the table below per [one row per file](../../internals/trail.md#one-file-per-piece-of-code-one-row-per-feature).
 Filament's toast markup lives in `toEmbeddedHtml()` rather than in a Blade view, so its port — [`partials/Notification/index.html.twig`](../../../packages/notifications/templates/partials/Notification/index.html.twig) — is folded here too, together with the toast stylesheet and the toast Stimulus controller, which port `resources/css/notification.css` and the Alpine `notificationComponent` in `resources/js/components/notification.js`.
 
 ## Surface

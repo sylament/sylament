@@ -13,7 +13,7 @@ owns:
 `Sylament\Forms\Components\Concerns\CanLimitItemsLength` — the item-count bounds a multi-value field carries: `minItems()` / `maxItems()` configure them, `getMinItems()` / `getMaxItems()` read them back (each closure-evaluable), and `getItemsCount()` counts the field's raw state.
 
 Three fields compose it.
-`Repeater` was the first, while the trait was still folded into [`repeater.md`](repeater.md); `CheckboxList` is the second consumer, which is what promoted it to a file of its own per [one row per file](../README.md#one-row-per-file-one-file-per-thing); and [`Select`](select.md) is the third, taking `maxItems()` for its `multiple()` chips control (the JS control refuses a further pick and shows `getMaxItemsMessage()`) and both bounds as a `Count` in the same shape as the checkbox list's.
+`Repeater` was the first, while the trait was still folded into [`repeater.md`](repeater.md); `CheckboxList` is the second consumer, which is what promoted it to a file of its own per [one row per file](../../internals/trail.md#one-file-per-piece-of-code-one-row-per-feature); and [`Select`](select.md) is the third, taking `maxItems()` for its `multiple()` chips control (the JS control refuses a further pick and shows `getMaxItemsMessage()`) and both bounds as a `Count` in the same shape as the checkbox list's.
 Filament composes the same trait on all three fields, unchanged between them.
 
 ## Surface

@@ -2,13 +2,13 @@
 
 Ports [`filament/actions`](../../../vendor/filament/actions) into [`packages/actions`](../../../packages/actions): action objects — button / link / icon-button / badge styling, modals, and the mount/call lifecycle — plus the bulk, relationship, and import/export action families built on the `Action` base.
 
-**Status:** in progress — see the [status vocabulary](../README.md#statuses) and [what goes where](../README.md#one-row-per-file-one-file-per-thing).
+**Status:** in progress — see the [status vocabulary](../README.md#statuses) and [what goes where](../../internals/trail.md#one-file-per-piece-of-code-one-row-per-feature).
 
-These tables map the full `actions/src` surface end to end (plus the rendered views, translations, and assets), so no table carries an [unaudited row](../README.md#an-unaudited-table-says-so).
+These tables map the full `actions/src` surface end to end (plus the rendered views, translations, and assets), so no table carries an [unaudited row](../../internals/trail.md#an-unaudited-table-says-so).
 The per-component audit against Filament has now resolved every **started** row (a linked first-column source) to a real [status](../README.md#statuses) — **done**, **in progress**, **blocked**, or **skipped** — with a detail file wherever a divergence, an open gap, or real sub-structure earns one.
 A plain-text name is not built yet and stays **todo**.
 
-The 26 concerns Filament composes onto the `Action` base — `BelongsToLiveComponent`, `CanBeDisabled`, `CanBeHidden`, `CanBeOutlined`, `CanCallParentAction`, `CanClose`, `CanDeselectRecordsAfterCompletion`, `CanDispatchEvent`, `CanFetchSelectedRecords`, `CanNotify`, `CanOpenModal`, `CanOpenUrl`, `CanRedirect`, `CanRequireConfirmation`, `CanUseDatabaseTransactions`, `HasAction`, `HasArguments`, `HasGroupedIcon`, `HasLabel`, `HasLifecycleHooks`, `HasMountableArguments`, `HasName`, `HasParentActions`, `HasSize`, `InteractsWithRecord` and `InteractsWithSelectedRecords` — have folded into [`action.md`](action.md) and left the Features table, per [one row per file](../README.md#one-row-per-file-one-file-per-thing).
+The 26 concerns Filament composes onto the `Action` base — `BelongsToLiveComponent`, `CanBeDisabled`, `CanBeHidden`, `CanBeOutlined`, `CanCallParentAction`, `CanClose`, `CanDeselectRecordsAfterCompletion`, `CanDispatchEvent`, `CanFetchSelectedRecords`, `CanNotify`, `CanOpenModal`, `CanOpenUrl`, `CanRedirect`, `CanRequireConfirmation`, `CanUseDatabaseTransactions`, `HasAction`, `HasArguments`, `HasGroupedIcon`, `HasLabel`, `HasLifecycleHooks`, `HasMountableArguments`, `HasName`, `HasParentActions`, `HasSize`, `InteractsWithRecord` and `InteractsWithSelectedRecords` — have folded into [`action.md`](action.md) and left the Features table, per [one row per file](../../internals/trail.md#one-file-per-piece-of-code-one-row-per-feature).
 Most are single-consumer in the port; the four `ActionGroup` also composes — `CanBeOutlined`, `HasGroupedIcon`, `HasLabel`, `HasSize` — stay written up once in `action.md`, with reference rows in [`action-group.md`](action-group.md); the host-side `HasActions` trait keeps its own row.
 `Action`'s rendering templates fold in the same way (see the [Supporting surface](#supporting-surface) note).
 [`support/component.md`](../support/component.md) is the shape each detail file follows.

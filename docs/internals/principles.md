@@ -8,7 +8,7 @@ reasoning behind each.
 Each one states the position, the test that makes it decidable, and what it does
 *not* cover. They are judgment rules, not gates — nothing in CI checks them.
 Where one is knowingly broken, the
-[divergence convention](../progress/README.md#divergences-are-addressable) is where
+[divergence convention](trail.md#divergences-are-addressable) is where
 the reason gets written down.
 
 ## 1. Symfony idiom, not Laravel idiom

@@ -8,7 +8,7 @@ use FilesystemIterator;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
 use RuntimeException;
-use Symfony\Component\Finder\Glob;
+use Sylament\Schemas\Tests\Architecture\Rules\RuleHook;
 use Symfony\Component\Yaml\Exception\ParseException;
 use Symfony\Component\Yaml\Yaml;
 
@@ -109,7 +109,7 @@ function instructionGlobIsAnchored(string $glob): bool
 
 function instructionGlobMatches(string $glob, string $path): bool
 {
-    return 1 === preg_match(Glob::toRegex(mb_ltrim($glob, '/'), strictLeadingDot: false), $path);
+    return RuleHook::globMatches($glob, $path);
 }
 
 /**

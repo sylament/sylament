@@ -1,5 +1,54 @@
 {
     "claudeMdExcludes": [
         "**/docs/superpowers/**"
-    ]
+    ],
+    "hooks": {
+        "PostToolUse": [
+            {
+                "matcher": "Bash",
+                "hooks": [
+                    {
+                        "type": "command",
+                        "command": "php \"$CLAUDE_PROJECT_DIR/packages/schemas/tests/Architecture/Rules/rule-hook.php\"",
+                        "timeout": 10
+                    }
+                ]
+            }
+        ],
+        "PostToolUseFailure": [
+            {
+                "matcher": "Bash",
+                "hooks": [
+                    {
+                        "type": "command",
+                        "command": "php \"$CLAUDE_PROJECT_DIR/packages/schemas/tests/Architecture/Rules/rule-hook.php\"",
+                        "timeout": 10
+                    }
+                ]
+            }
+        ],
+        "InstructionsLoaded": [
+            {
+                "matcher": "path_glob_match",
+                "hooks": [
+                    {
+                        "type": "command",
+                        "command": "php \"$CLAUDE_PROJECT_DIR/packages/schemas/tests/Architecture/Rules/rule-hook.php\"",
+                        "timeout": 10
+                    }
+                ]
+            }
+        ],
+        "PostCompact": [
+            {
+                "hooks": [
+                    {
+                        "type": "command",
+                        "command": "php \"$CLAUDE_PROJECT_DIR/packages/schemas/tests/Architecture/Rules/rule-hook.php\"",
+                        "timeout": 10
+                    }
+                ]
+            }
+        ]
+    }
 }

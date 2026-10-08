@@ -10,15 +10,17 @@ A subagent's first request does not read its parent's prompt cache. In practice,
 
 ## How the files load
 
-These facts were verified on Claude Code 2.1.291 with live probes. Each probe was a `claude -p --model haiku` session in a scratch git repository, and every load was attributed through the `attachment` entries of the session transcripts.
+These facts were verified with live probes on Claude Code 2.1.291, and the Bash and hook facts on 2.1.293. Each probe was a `claude -p` session in a scratch git repository, and every load was attributed through the `attachment` entries of the session transcripts.
 
 **`@path` imports** in `CLAUDE.md` are expanded at launch. They organise a file but save nothing.
 
 **`.claude/rules/**/*.md`** is discovered recursively.
 - A rule without `paths:` frontmatter loads at launch, like `CLAUDE.md`.
 - A rule with `paths:` loads when the Read, Write or Edit tool touches a matching file, in the main session and in subagents alike.
+- A plain single-file `cat`, `head`, `tail`, `sed -n` or `grep` in the Bash tool loads it too, also when chained to another command with `&&` or `;`. A `cd` prefix, a pipe, a redirect such as `2>/dev/null`, a second file, a recursive grep, a loop or a script loads nothing.
+- A rule arrives with the result of the call that touched its file. Write creates a new file before the rule loads, and Edit accepts a file the agent has seen only through a Bash read, so that first edit is also made without the rule.
 - `paths` is the only frontmatter field Claude Code reads; other fields, such as our `description`, are ignored without error.
-- A rule loads at most once per session.
+- A rule loads at most once per session. Compaction summarizes it away, and Claude Code reloads it on the next matching call; that is documented, not probed.
 
 **Glob matching** is gitignore-like, with one deviation.
 - A pattern with a slash in the middle is anchored at the project root. `packages/*/src/**/*.php` matches `packages/x/src/f.php`, but not `vendor/y/packages/x/src/f.php` or `other/packages/x/src/f.php`.
@@ -44,6 +46,13 @@ These facts were verified on Claude Code 2.1.291 with live probes. Each probe wa
 ## Decisions
 
 **Path-scoped rules, with an index in the root file.** A rule that loads when its file is touched needs no judgment from the agent, cannot be skipped, and arrives exactly when it is relevant. An index alone, where the agent must notice a table, judge that its task matches a row and spend a read, misses most often when a change drifts into a new area mid-task. The index still earns its place: a planner reads rules before any file is touched, and lanes outside the repository have nothing else.
+
+**A hook loads rules for Bash commands.** Agents read through Bash far more than through Read: across 176 transcripts there were about 7,500 Bash reads against 489 Read calls. Of the 6,581 Bash reads that touched a rule-covered file, 1.3% had a shape Claude Code loads rules for: 73% started with `cd … &&`, and most of the rest were piped. Planners and reviewers, who read and never edit, therefore worked without the rules, and implementers got them only with their first edit. `RuleHook` (`packages/schemas/tests/Architecture/Rules/`), registered in `.claude/settings.json`, closes that gap:
+- On `PostToolUse` and `PostToolUseFailure` for Bash, it finds the project paths the command names and adds each rule covering one that the agent has not loaded yet, through `additionalContext`.
+- A file path matches as Claude Code matches it. A directory or wildcard path counts only at or below the rule's fixed prefix (the segments before its first `**`), and only when it holds a tracked file the rule covers. Without that limit, a search over a whole package would load every rule of the package.
+- State is kept per session and agent. Hooks fire inside Agent and Workflow subagents with their own `agent_id`, and each agent has its own context. `InstructionsLoaded` marks the rules Claude Code loaded itself, and `PostCompact` clears the state, because compaction summarizes the rules away.
+- Claude Code replaces hook context over 10,000 characters with a file path and a 2,000-character preview. The hook therefore adds rules up to 9,900 characters and names the rest in a pointer; each loads with the next command that touches its files. `RuleHookTest` fails on a rule too long to be delivered whole.
+- Paths in a worktree outside the project are skipped, as Claude Code skips them.
 
 **`CLAUDE.md`, not `AGENTS.md`.**
 - Claude Code reads `AGENTS.md` only when no `CLAUDE.md`, `.claude/CLAUDE.md` or `CLAUDE.local.md` exists in the working directory or any directory above it. It also depends on a built-in plugin and a user-level `instructionFiles` setting.

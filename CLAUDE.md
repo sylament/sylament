@@ -60,7 +60,7 @@ Two principles outrank every rule below; their tests and worked cases are in `do
 
 ## Rule files
 
-Rules in `.claude/rules/` load by themselves when you read or edit a file their `paths:` match. A lane working in a worktree outside the repo gets none of them, so its plan task names the files it needs and it reads them first.
+Rules in `.claude/rules/` load after any tool call that touches a file their `paths:` match: Claude Code loads them for Read, Edit, Write and a plain single-file `cat`, `sed -n` or `grep`, and the rule hook (`packages/schemas/tests/Architecture/Rules/`) for every other Bash command. A rule arrives after the call that touched its files, so read it before you create a file it covers. A lane working in a worktree outside the repo gets none of them, so its plan task names the files it needs and it reads them first.
 
 | File | Paths | Covers |
 | --- | --- | --- |

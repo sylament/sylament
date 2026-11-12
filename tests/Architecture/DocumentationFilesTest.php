@@ -212,7 +212,7 @@ it('names only repository paths that exist in the instruction files', function (
     $violations = [];
 
     foreach (documentationInstructionFiles() as $file) {
-        preg_match_all('/`((?:packages|docs|\.claude|vendor\/filament)\/[^`\s]*|CLAUDE\.md|composer\.json|package\.json|pnpm-workspace\.yaml|biome\.json|tsconfig\.base\.json)`/', (string) file_get_contents($root . '/' . $file), $matches);
+        preg_match_all('/`((?:packages|docs|\.claude|tests|vendor\/filament)\/[^`\s]*|CLAUDE\.md|composer\.json|package\.json|pnpm-workspace\.yaml|biome\.json|tsconfig\.base\.json)`/', (string) file_get_contents($root . '/' . $file), $matches);
 
         foreach (array_unique($matches[1]) as $path) {
             if (1 === preg_match('/[*{}<>$]|\.\.\./', $path) || file_exists($root . '/' . mb_rtrim($path, '/')) || documentationIsIgnored($path)) {

@@ -7,12 +7,13 @@ description: Where a root-suite test lives, what kind it is, how much it covers,
 
 ## Where a test lives
 
-- **Mirror `src/` per package:** `packages/forms/src/Components/TextInput.php` is tested in `tests/Forms/Components/TextInputTest.php`, so a test is found from its class without searching; the suite's own machinery mirrors `tests/` the same way (`tests/TestCase.php` → `tests/TestCaseTest.php`).
-- **A trait with behaviour to pin gets its own file** at its mirrored path (`tests/Forms/Components/Concerns/HasAffixesTest.php`); a class or trait with nothing to pin gets none, and a missing file is not a gap.
+- **Mirror `src/` per package:** `packages/support/src/Colors/Color.php` is tested in `tests/Support/Colors/ColorTest.php`, so a test is found from its class without searching; the suite's own machinery mirrors `tests/` the same way (`tests/TestCase.php` → `tests/TestCaseTest.php`).
+- **A trait with behaviour to pin gets its own file** at its mirrored path (forms' `Components/Concerns/HasAffixesTest.php`); a class or trait with nothing to pin gets none, and a missing file is not a gap.
 - **A class's file holds only that class's own behaviour;** what it composes from a trait is tested in the trait's file, so each behaviour has one home.
-- **A case that crosses packages goes in the file of the class the user configures for it** (a table row's delete belongs to `DeleteAction`, so `tests/Actions/DeleteActionTest.php`); there is no flows folder, because a flow has no class to be found from.
+- **A case that crosses packages goes in the file of the class the user configures for it** (a table row's delete belongs to `DeleteAction`, so to actions' `DeleteActionTest.php`); there is no flows folder, because a flow has no class to be found from.
 - **Declare no namespace in a test file** outside `tests/Architecture/`; Pest names the class from its path.
-- **A scan of the repository's files lives in `tests/Architecture/`,** since no class leads to it; one that declares functions takes `namespace Sylament\Tests\Architecture` and prefixes each with its subject (`trailDocs()`), because every scan shares that namespace.
+- **A scan of the repository's files lives in `tests/Architecture/`,** since no class leads to it; one that declares functions takes `namespace Sylament\Tests\Architecture`, which keeps them out of the global namespace.
+- **Prefix each function you add to a scan with its subject** (`trailDocs()`), because every scan shares that namespace.
 - **Call a function a test file declares only from that file:** under `--parallel` a worker loads only its share of the test files, so a call from another file fails there alone; `TestFileFunctionsTest` enforces it.
 
 ## Kinds of test

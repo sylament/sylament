@@ -8,7 +8,7 @@ description: How the per-package Pest suites are laid out, booted and wired, and
 These suites take mechanical edits only; a new test goes to `/tests`.
 
 - **Three buckets.** `Unit/` boots no kernel, `Integration/` boots it or reaches the container, and the optional `Architecture/` scans files rather than exercising a class; the bucket decides the base class, so a test in the wrong one runs on the wrong base.
-- **Mirror `src/` exactly** inside `Unit/` and `Integration/`, and name the file after its class (`src/DependencyInjection/Compiler/StaticInstancePass.php` → `tests/Unit/DependencyInjection/Compiler/StaticInstancePassTest.php`); a mirrored test is found without searching.
+- **Mirror `src/` exactly** inside `Unit/` and `Integration/`, and name the file after its class (`packages/support/src/DependencyInjection/Compiler/StaticInstancePass.php` → `packages/support/tests/Unit/DependencyInjection/Compiler/StaticInstancePassTest.php`); a mirrored test is found without searching.
 - **Two allowed departures:** a cross-cutting Integration scenario sits beside the mirrored test under a scenario name (`CompositeRecordPagesTest`), and one class's cases may split across prefix-named files (`AssociationReader*Test`); anything else mirrors.
 - **`tests/Pest.php` owns the hooks.** It extends `TestCase` only `->in('Integration')`, and its `Unit` block unsets `ComponentManager` and `ComponentResolver` after each test; never add a per-file unset hook, since the registry's own reset already runs from `TestCase::tearDown()` for kernel tests.
 - **Fixtures mirror `src/`** under `tests/Fixtures/`, next to the subsystem they exercise; only the `Kernel` and its service-config files sit at the `Fixtures/` root.

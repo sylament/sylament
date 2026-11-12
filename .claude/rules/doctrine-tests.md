@@ -7,7 +7,7 @@ description: The database contract, the platform rule and the shim and fixtures 
 ---
 # Doctrine test rules
 
-- **Build a manager through the suite's shim,** `tests/Fixtures/Doctrine/EntityManagerFactory::create()`, which delegates to `TestEntityManagers`; a manager built by hand misses the pool, the foreign keys and the custom types.
+- **Build a manager through the suite's shim,** `packages/<pkg>/tests/Fixtures/Doctrine/EntityManagerFactory::create()`, which delegates to `TestEntityManagers`; a manager built by hand misses the pool, the foreign keys and the custom types.
 - **The database contract:** every manager a test obtains starts empty, identity counters included, and isolated from the test's other managers, on every platform; write no test that leans on rows or ids a previous test left.
 - **SQLite enforces foreign keys** (the `EnableForeignKeys` middleware), as MySQL and PostgreSQL do, so a test that passes on SQLite is not hiding an orphan the servers would refuse.
 - **Seed through `EntityManagerFactory::seed()`,** which flushes and then clears the identity map, so the next read goes to the database rather than answering from memory.

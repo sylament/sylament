@@ -20,6 +20,14 @@ use function dirname;
  */
 
 /**
+ * @return list<PhpToken> the source's tokens without whitespace and comments
+ */
+function testFileFunctionTokens(string $source): array
+{
+    return array_values(array_filter(PhpToken::tokenize($source), static fn (PhpToken $token): bool => !$token->isIgnorable()));
+}
+
+/**
  * @param list<PhpToken> $tokens a file's tokens without whitespace and comments
  *
  * @return list<string> the functions the file declares outside any class body
@@ -34,16 +42,16 @@ function testFileFunctionDeclarations(array $tokens): array
     foreach ($tokens as $index => $token) {
         $previous = $tokens[$index - 1] ?? null;
 
-        if ($token->is([T_CLASS, T_INTERFACE, T_TRAIT, T_ENUM]) && !$previous?->is(T_DOUBLE_COLON)) {
+        if ($token->is([T_CLASS, T_INTERFACE, T_TRAIT, T_ENUM]) && !$previous?->is(T_DOUBLE_COLON) && true !== ($tokens[$index + 1] ?? null)?->is(':')) {
             $classPending = true;
-        } elseif ($token->is(['{', T_CURLY_OPEN, T_DOLLAR_OPEN_CURLY_BRACES])) {
+        } elseif ($token->id === ord('{') || $token->is([T_CURLY_OPEN, T_DOLLAR_OPEN_CURLY_BRACES])) {
             $depth++;
 
             if ($classPending) {
                 $classDepths[] = $depth;
                 $classPending = false;
             }
-        } elseif ($token->is('}')) {
+        } elseif ($token->id === ord('}')) {
             if ($depth === array_last($classDepths)) {
                 array_pop($classDepths);
             }
@@ -72,8 +80,7 @@ function testFileFunctionCalls(string $directory): array
 
     foreach (new RecursiveIteratorIterator(new RecursiveDirectoryIterator($directory, FilesystemIterator::SKIP_DOTS)) as $file) {
         if ($file->isFile() && str_ends_with((string) $file->getFilename(), '.php')) {
-            $tokens = PhpToken::tokenize((string) file_get_contents($file->getPathname()));
-            $files[str_replace($directory . '/', '', $file->getPathname())] = array_values(array_filter($tokens, static fn (PhpToken $token): bool => !$token->isIgnorable()));
+            $files[str_replace($directory . '/', '', $file->getPathname())] = testFileFunctionTokens((string) file_get_contents($file->getPathname()));
         }
     }
 
@@ -116,13 +123,27 @@ function testFileFunctionCalls(string $directory): array
     return $calls;
 }
 
+it('reads the functions a file declares outside any class', function (string $source, array $names): void {
+    expect(testFileFunctionDeclarations(testFileFunctionTokens("<?php\n" . $source)))->toBe($names);
+})->with([
+    'a function' => ['function a() {}', ['a']],
+    'a function returning by reference' => ['function &a() {}', ['a']],
+    'a method' => ['class A { function b() {} }', []],
+    'a closure' => ['$a = function () {};', []],
+    'a function import' => ['use function b;', []],
+    'a method after a brace in an interpolated string' => ['$a = new class { function b($x) { return "{$x}}"; } function c() {} };', []],
+    'a function after a class name constant' => ['$a = A::class; if (true) { function a() {} }', ['a']],
+    'a function after a class: named argument' => ['f(class: 1); if (true) { function a() {} }', ['a']],
+]);
+
 it("finds a call into another test file's function", function (): void {
     $directory = WorkerDirectory::path() . '/' . uniqid('test-file-functions-', true);
-    mkdir($directory . '/Area', recursive: true);
-    file_put_contents($directory . '/Area/HelperTest.php', "<?php\n\nfunction plantedHelper(): int\n{\n    return 1;\n}\n\nit('uses its own helper', fn () => expect(plantedHelper())->toBe(1));\n");
-    file_put_contents($directory . '/Area/CallerTest.php', "<?php\n\nit('borrows a helper', fn () => expect(plantedHelper())->toBe(1));\n");
 
     try {
+        mkdir($directory . '/Area', recursive: true);
+        file_put_contents($directory . '/Area/HelperTest.php', "<?php\n\nfunction plantedHelper(): int\n{\n    return 1;\n}\n\nit('uses its own helper', fn () => expect(plantedHelper())->toBe(1));\n");
+        file_put_contents($directory . '/Area/CallerTest.php', "<?php\n\nit('borrows a helper', fn () => expect(plantedHelper())->toBe(1));\n");
+
         expect(testFileFunctionCalls($directory))->toBe(['Area/CallerTest.php:3 reaches plantedHelper(), declared in Area/HelperTest.php']);
     } finally {
         new Filesystem()->remove($directory);

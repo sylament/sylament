@@ -41,7 +41,7 @@ A pure test still reaches the static instances: `make()` falls back to `new` whe
 
 ## Why are there no free helper functions?
 
-Every root-suite test file shares one namespace, and the per-package suites already define eight helper names in two or more places (`renderToHtml`, `registryWith`, …), which would collide. A function defined in one test file and called from another also breaks under `--parallel`, where the defining file may not have loaded in that worker. Helpers that need the container are methods of `TestCase` from traits, and pure ones are static methods, both of which PHPStan sees. Pest `include_once`s every file under `tests/Expectations/` and `tests/Helpers/` at boot, and Composer autoloads a class again, so a class placed there is declared twice.
+Every root-suite test file outside `tests/Architecture/` shares the global namespace, and the per-package suites already define eight helper names in two or more places (`renderToHtml`, `registryWith`, …), which would collide. A function defined in one test file and called from another also breaks under `--parallel`, where the defining file may not have loaded in that worker. Helpers that need the container are methods of `TestCase` from traits, and pure ones are static methods, both of which PHPStan sees. Pest `include_once`s every file under `tests/Expectations/` and `tests/Helpers/` at boot, and Composer autoloads a class again, so a class placed there is declared twice.
 
 ## What does PHPStan analyse in the root suite?
 

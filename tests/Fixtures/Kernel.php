@@ -76,8 +76,9 @@ class Kernel extends BaseKernel
     }
 
     /**
-     * Reads a parameter from the compiled container without booting: no bundle's `boot()`
-     * runs, so nothing process-wide (an error handler, a static instance) outlives the read.
+     * Reads a parameter from a container it compiles (and on a cold cache warms) without
+     * booting it: no bundle's `boot()` runs, so neither an error handler nor a static
+     * instance outlives the read.
      *
      * @return array<mixed>|bool|string|int|float|UnitEnum|null
      */

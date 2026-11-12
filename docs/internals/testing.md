@@ -48,6 +48,8 @@ A trait's behaviour is tested once, through one component, but when each compone
 
 The filter is the trait's contract wherever Filament has one, because Filament sometimes puts a trait on a base class that only some subclasses use (`HasColumns` on `Component`). Implementing the contract is the component saying "I offer this"; a component that merely inherits the trait does not. A trait with no contract is matched through the component's parents and through the traits its traits use.
 
+A trait that a shared base class carries with no contract gets no derived list at all. Every subclass inherits it, so no component says "I offer this", and the list would be every component minus exceptions: the "everything except" list the next paragraph rules out.
+
 An exception is named with its reason, never by listing the members to keep: a list of members, even one written as "everything except", is a typed list again and goes stale the same way. How the list leaves the container is in [test-infrastructure.md](test-infrastructure.md#how-does-a-test-get-every-component-that-offers-something).
 
 ## Why is a bug test named after the behaviour?

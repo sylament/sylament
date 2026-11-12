@@ -21,6 +21,7 @@ it('refuses a malformed key without running a statement', function (string $key)
     $query = $em->createQueryBuilder()->select('l')->from(OrderLine::class, 'l');
 
     expect(IdentifierConstraint::equals($query, 'l', OrderLine::class, $key, 'key'))->toBeNull()
+        ->and($query->getParameters())->toBeEmpty()
         ->and($this->statementsRun())->toBeEmpty();
 })->with([
     'leading zero' => '07~2',

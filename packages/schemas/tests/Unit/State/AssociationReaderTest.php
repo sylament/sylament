@@ -18,7 +18,7 @@ use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\PostSection;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\Profile;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\Tag;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\EntityManagerFactory;
-use Sylament\Support\Tests\Doctrine\SqlNormalizer;
+use Sylament\Tests\Infrastructure\Doctrine\SqlNormalizer;
 use Symfony\Component\PropertyAccess\PropertyAccess;
 
 /**

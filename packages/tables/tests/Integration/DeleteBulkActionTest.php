@@ -7,14 +7,14 @@ namespace Sylament\Tables\Tests\Integration;
 use Doctrine\ORM\EntityManagerInterface;
 use LogicException;
 use RuntimeException;
-use Sylament\Support\Tests\Doctrine\FailingWrite;
-use Sylament\Support\Tests\Doctrine\RecordingConnection;
-use Sylament\Support\Tests\Doctrine\RecordingMiddleware;
 use Sylament\Tables\Tests\Fixtures\Actions\RecordingDeleteBulkAction;
 use Sylament\Tables\Tests\Fixtures\Doctrine\Entity\Artist;
 use Sylament\Tables\Tests\Fixtures\Doctrine\Entity\Shortcut;
 use Sylament\Tables\Tests\Fixtures\Doctrine\Entity\Song;
 use Sylament\Tables\Tests\Fixtures\Doctrine\EntityManagerFactory;
+use Sylament\Tests\Infrastructure\Doctrine\FailingWrite;
+use Sylament\Tests\Infrastructure\Doctrine\RecordingConnection;
+use Sylament\Tests\Infrastructure\Doctrine\RecordingMiddleware;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\UX\LiveComponent\Test\InteractsWithLiveComponents;
 

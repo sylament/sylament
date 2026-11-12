@@ -12,7 +12,7 @@ A component's status is its row in the port trail; what to build next is decided
 | `packages/<pkg>/tests/` | Pest: `Unit/` and `Integration/` mirror `src/`; `Architecture/` scans files |
 | `packages/<pkg>/templates/` | Twig: `components/` are `<twig:>` tags, `partials/` are rendered from PHP |
 | `packages/<pkg>/assets/` | pnpm workspace `@sylament/<pkg>`; `dist/` is committed |
-| `packages/support/tests/{Doctrine,PHPUnit}/` | test infrastructure the Doctrine suites share (dev-only) |
+| `tests/Infrastructure/{Doctrine,PHPUnit}/` | the Doctrine rig the root suite and the old suites share (dev-only) |
 | `tests/` | the root Pest suite, `Sylament\Tests\` (PSR-4): one kernel and one base class for every package |
 | `tests/Fixtures/`, `tests/Infrastructure/` | its kernel, config and per-area fixtures, and the machinery every test shares |
 | `vendor/filament/` | Filament's source: read it before designing anything |
@@ -71,7 +71,7 @@ Rules in `.claude/rules/` load after any tool call that touches a file their `pa
 | `colors.md` | `packages/*/src/Colors/**`, `packages/support/src/Twig/Extension/ColorExtension.php` | How a colour is named, how a contrast policy picks its shade, and how policies are registered. |
 | `css.md` | `packages/*/assets/src/styles/**` | How component stylesheets are written, scoped and coloured, and what support's CSS build generates. |
 | `docs.md` | `/docs/progress/**`, `/docs/internals/**` | Where documentation lives, and the rules every docs file follows. |
-| `doctrine-tests.md` | `packages/{actions,forms,panels,schemas,tables}/tests/**`, `packages/support/tests/Doctrine/**`, `packages/support/tests/PHPUnit/**`, `packages/support/tests/Unit/Doctrine/**`, `packages/support/tests/Fixtures/Doctrine/**` | The database contract, the platform rule and the shared Doctrine test infrastructure the five Doctrine suites run on. |
+| `doctrine-tests.md` | `packages/{actions,forms,panels,schemas,tables}/tests/**`, `packages/support/tests/Unit/Doctrine/**`, `packages/support/tests/Fixtures/Doctrine/**` | The database contract, the platform rule and the shim and fixtures the five Doctrine suites build on the shared rig. |
 | `frontend.md` | `packages/*/assets/**/*.{ts,mjs,json}`, `/package.json`, `/pnpm-workspace.yaml`, `/tsconfig.base.json`, `/biome.json` | TypeScript, the asset workspaces, the JS build script and how Stimulus controllers ship. |
 | `instructions.md` | `/CLAUDE.md`, `/.claude/**` | How instruction files are placed, scoped, sized and kept free of history. |
 | `legacy-tests.md` | `packages/*/tests/**` | How the per-package Pest suites are laid out, booted and wired, and where support's Twig components are render-tested; they take mechanical edits only. |

@@ -11,7 +11,7 @@ use Sylament\Panels\Tests\Fixtures\Resources\Pages\EditCatalogue;
 use Sylament\Panels\Tests\Fixtures\Resources\Pages\ListImprints;
 use Sylament\Panels\Tests\Fixtures\Resources\Pages\ManageCatalogueStamps;
 use Sylament\Panels\Tests\Fixtures\Resources\RelationManagers\PlainStampsRelationManager;
-use Sylament\Support\Tests\Doctrine\RecordingMiddleware;
+use Sylament\Tests\Infrastructure\Doctrine\RecordingMiddleware;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Component\DomCrawler\Crawler;
 use Symfony\UX\LiveComponent\Test\InteractsWithLiveComponents;

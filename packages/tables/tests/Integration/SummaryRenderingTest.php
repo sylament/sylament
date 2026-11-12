@@ -9,7 +9,6 @@ use Doctrine\ORM\QueryBuilder;
 use SortDirection;
 use Sylament\Actions\Action;
 use Sylament\Actions\BulkAction;
-use Sylament\Support\Tests\Doctrine\RecordingMiddleware;
 use Sylament\Tables\Columns\Column;
 use Sylament\Tables\Columns\Summarizers\Average;
 use Sylament\Tables\Columns\Summarizers\Count;
@@ -28,6 +27,7 @@ use Sylament\Tables\Tests\Fixtures\Doctrine\Entity\Venue;
 use Sylament\Tables\Tests\Fixtures\Doctrine\EntityManagerFactory;
 use Sylament\Tables\Tests\Fixtures\Doctrine\Handle;
 use Sylament\Tables\Tests\Fixtures\Twig\Components\SummarySongsTable;
+use Sylament\Tests\Infrastructure\Doctrine\RecordingMiddleware;
 use Symfony\Component\DomCrawler\Crawler;
 
 use function Sylament\Tables\Tests\renderToHtml;

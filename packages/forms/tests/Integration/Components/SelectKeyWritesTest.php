@@ -18,7 +18,7 @@ use Sylament\Forms\Tests\Fixtures\Doctrine\Entity\PostSeal;
 use Sylament\Forms\Tests\Fixtures\Doctrine\Entity\PostTranslation;
 use Sylament\Schemas\Exceptions\ValidationException;
 use Sylament\Schemas\Schema;
-use Sylament\Support\Tests\Doctrine\RecordingMiddleware;
+use Sylament\Tests\Infrastructure\Doctrine\RecordingMiddleware;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
 
 /*

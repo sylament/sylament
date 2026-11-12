@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Sylament\Support\Tests\Doctrine;
+namespace Sylament\Tests\Infrastructure\Doctrine;
 
 use Closure;
 use Doctrine\DBAL\Driver\AbstractSQLiteDriver\Middleware\EnableForeignKeys;

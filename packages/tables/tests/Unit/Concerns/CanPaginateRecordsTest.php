@@ -6,7 +6,6 @@ use Doctrine\ORM\EntityManager;
 use Doctrine\ORM\Query;
 use Doctrine\ORM\Tools\Pagination\CountOutputWalker;
 use Sylament\Support\Pagination\Paginator;
-use Sylament\Support\Tests\Doctrine\RecordingMiddleware;
 use Sylament\Tables\Enums\PaginationMode;
 use Sylament\Tables\Table;
 use Sylament\Tables\Tests\Fixtures\Concerns\TableHost;
@@ -22,6 +21,7 @@ use Sylament\Tables\Tests\Fixtures\Doctrine\Entity\Venue;
 use Sylament\Tables\Tests\Fixtures\Doctrine\EntityManagerFactory;
 use Sylament\Tables\Tests\Fixtures\Doctrine\Handle;
 use Sylament\Tables\Tests\Fixtures\Doctrine\PassthroughOutputWalker;
+use Sylament\Tests\Infrastructure\Doctrine\RecordingMiddleware;
 
 /*
  * Covers the query half of host-side pagination — the slice `paginateTableQuery()`

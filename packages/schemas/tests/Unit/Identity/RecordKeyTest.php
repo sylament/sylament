@@ -35,7 +35,7 @@ use Sylament\Schemas\Tests\Fixtures\Doctrine\IdentityRig;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\Moniker;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\Sku;
 use Sylament\Schemas\Tests\Fixtures\Identity\UntypedTranslation;
-use Sylament\Support\Tests\Doctrine\TestPlatform;
+use Sylament\Tests\Infrastructure\Doctrine\TestPlatform;
 use Symfony\Component\Uid\Uuid;
 
 it('keys a record of every identifier flavour', function (): void {

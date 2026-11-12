@@ -10,7 +10,7 @@ use Sylament\Panels\Tests\Fixtures\Doctrine\EntityManagerFactory;
 use Sylament\Panels\Tests\Fixtures\Resources\Pages\CreateGalleryImprint;
 use Sylament\Panels\Tests\Fixtures\Resources\Pages\EditGallery;
 use Sylament\Panels\Tests\Fixtures\Resources\RelationManagers\GalleryImprintsRelationManager;
-use Sylament\Support\Tests\Doctrine\RecordingMiddleware;
+use Sylament\Tests\Infrastructure\Doctrine\RecordingMiddleware;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Component\DomCrawler\Crawler;
 use Symfony\UX\LiveComponent\Test\InteractsWithLiveComponents;

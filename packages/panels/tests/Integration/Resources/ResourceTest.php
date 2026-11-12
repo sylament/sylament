@@ -28,7 +28,7 @@ use Sylament\Panels\Tests\Fixtures\Resources\StampResource;
 use Sylament\Panels\Tests\Fixtures\Resources\VerseResource;
 use Sylament\Schemas\State\AssociationReader;
 use Sylament\Schemas\State\PropertyAccessor;
-use Sylament\Support\Tests\Doctrine\RecordingMiddleware;
+use Sylament\Tests\Infrastructure\Doctrine\RecordingMiddleware;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 
 function panelsArticleResource(): ArticleResource

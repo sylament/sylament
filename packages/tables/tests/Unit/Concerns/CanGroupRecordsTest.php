@@ -3,8 +3,6 @@
 declare(strict_types=1);
 
 use Doctrine\ORM\EntityManager;
-use Sylament\Support\Tests\Doctrine\RecordingMiddleware;
-use Sylament\Support\Tests\Doctrine\TestPlatform;
 use Sylament\Tables\Columns\Summarizers\Sum;
 use Sylament\Tables\Columns\TextColumn;
 use Sylament\Tables\Grouping\Group;
@@ -13,6 +11,8 @@ use Sylament\Tables\Tests\Fixtures\Concerns\TableHost;
 use Sylament\Tables\Tests\Fixtures\Doctrine\Entity\Artist;
 use Sylament\Tables\Tests\Fixtures\Doctrine\Entity\Song;
 use Sylament\Tables\Tests\Fixtures\Doctrine\EntityManagerFactory;
+use Sylament\Tests\Infrastructure\Doctrine\RecordingMiddleware;
+use Sylament\Tests\Infrastructure\Doctrine\TestPlatform;
 
 /*
  * The host half of grouping: which group the property resolves to, what the

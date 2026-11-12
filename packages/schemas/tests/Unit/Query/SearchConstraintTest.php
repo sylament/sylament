@@ -10,7 +10,7 @@ use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\Post;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\Ticket;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\EntityManagerFactory;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\IdentityRig;
-use Sylament\Support\Tests\Doctrine\TestPlatform;
+use Sylament\Tests\Infrastructure\Doctrine\TestPlatform;
 
 it('assembles a case-sensitive LIKE by default, and a lowered one on PostgreSQL', function (): void {
     $query = EntityManagerFactory::create()->createQueryBuilder()->select('post')->from(Post::class, 'post');

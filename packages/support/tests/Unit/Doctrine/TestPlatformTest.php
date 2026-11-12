@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-use Sylament\Support\Tests\Doctrine\TestPlatform;
+use Sylament\Tests\Infrastructure\Doctrine\TestPlatform;
 
 beforeEach(function (): void {
     $this->previousUrl = getenv(TestPlatform::URL_VARIABLE);

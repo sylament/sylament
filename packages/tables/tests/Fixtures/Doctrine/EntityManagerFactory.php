@@ -9,8 +9,8 @@ use Doctrine\ORM\Cache\DefaultCacheFactory;
 use Doctrine\ORM\Cache\RegionsConfiguration;
 use Doctrine\ORM\Configuration;
 use Doctrine\ORM\EntityManager;
-use Sylament\Support\Tests\Doctrine\RecordingMiddleware;
-use Sylament\Support\Tests\Doctrine\TestEntityManagers;
+use Sylament\Tests\Infrastructure\Doctrine\RecordingMiddleware;
+use Sylament\Tests\Infrastructure\Doctrine\TestEntityManagers;
 use Symfony\Component\Cache\Adapter\ArrayAdapter;
 
 final class EntityManagerFactory

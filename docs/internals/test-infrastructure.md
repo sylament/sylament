@@ -47,13 +47,13 @@ Every root-suite test file shares one namespace, and the per-package suites alre
 
 Everything under `tests/` except every `*Test.php` file in it, `tests/Pest.php` and `tests/Expectations/`. PHPStan types a Pest closure's `$this` as `Pest\PendingCalls\TestCall`, so `$this::getContainer()` fails at any level, and custom expectations are reached through `__call`. The kernel, its configuration, the infrastructure and the fixtures are ordinary PHP and are held to level max like shipped code.
 
-## Why does the shared infrastructure live in support's test tree?
+## Why does the Doctrine rig live in the root suite's infrastructure?
 
-Five suites run against Doctrine (`actions`, `forms`, `panels`, `schemas`, `tables`) and share one rig. It sits in `packages/support/tests/Doctrine/` and `packages/support/tests/PHPUnit/`, beside `Sylament\Support\Tests\TestCase`, which every package's own `TestCase` already extends. The root `composer.json` `autoload-dev` entry for `Sylament\Support\Tests\` covers it, so no new autoload entry or package was needed.
+Five suites run against Doctrine (`actions`, `forms`, `panels`, `schemas`, `tables`) and share one rig. It sits in `tests/Infrastructure/Doctrine/` and `tests/Infrastructure/PHPUnit/` (`Sylament\Tests\Infrastructure\Doctrine\`, `\PHPUnit\`), beside the root suite's own infrastructure, and the per-package suites import it from there. The root `composer.json` `autoload-dev` entry for `Sylament\Tests\` covers it, so no new autoload entry or package was needed.
 
 It is dev-only. Support's `.gitattributes` export-ignores `/tests`, so none of it ships, and nothing under any `src/` imports it. Two consequences follow:
 
-- `phpstan.neon.dist` names the two directories explicitly, so they are analysed at level max like shipped code. No other file under `packages/*/tests/` is analysed.
+- PHPStan analyses them at level max like shipped code, because they sit under `tests/`, whose infrastructure it covers. No file under `packages/*/tests/` is analysed.
 - The architecture tests that scan `packages/*/src` (`StaticAnalysisSuppressionTest`, `DbalParameterTypeDeclarationTest`, `AssociationReaderConstructionTest`) do not see it. The infrastructure is free to use what those checks forbid in shipped code.
 
 Support's own suite tests the rig: its tests sit in `tests/Unit/Doctrine/` and its fixtures in `tests/Fixtures/Doctrine/`, mirroring the infrastructure rather than `src/`. Support's fixture kernel boots no Doctrine, so it excludes `Fixtures/Doctrine` from its service glob. Support's `phpunit.dist.xml` registers the pool extension too, because those tests exercise the pool.

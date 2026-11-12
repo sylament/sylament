@@ -5,8 +5,6 @@ declare(strict_types=1);
 use Doctrine\ORM\EntityManager;
 use Doctrine\ORM\QueryBuilder;
 use Sylament\Schemas\Identity\RecordKey;
-use Sylament\Support\Tests\Doctrine\DriverValues;
-use Sylament\Support\Tests\Doctrine\RecordingMiddleware;
 use Sylament\Tables\Query\AggregateDeclaration;
 use Sylament\Tables\Query\AggregateQuery;
 use Sylament\Tables\Tests\Fixtures\Doctrine\Entity\Artist;
@@ -27,6 +25,8 @@ use Sylament\Tables\Tests\Fixtures\Doctrine\Entity\Venue;
 use Sylament\Tables\Tests\Fixtures\Doctrine\EntityManagerFactory;
 use Sylament\Tables\Tests\Fixtures\Doctrine\Handle;
 use Sylament\Tables\Tests\Fixtures\Doctrine\HexKeyRig;
+use Sylament\Tests\Infrastructure\Doctrine\DriverValues;
+use Sylament\Tests\Infrastructure\Doctrine\RecordingMiddleware;
 
 /**
  * Radiohead with two songs, Adele with none, Björk with one — so a batch over

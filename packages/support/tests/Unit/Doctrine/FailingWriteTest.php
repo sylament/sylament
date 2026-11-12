@@ -5,11 +5,11 @@ declare(strict_types=1);
 use Doctrine\DBAL\Connection;
 use Doctrine\DBAL\Exception\DriverException;
 use Doctrine\ORM\EntityManager;
-use Sylament\Support\Tests\Doctrine\DatabasePool;
-use Sylament\Support\Tests\Doctrine\FailingWrite;
-use Sylament\Support\Tests\Doctrine\TestEntityManagers;
-use Sylament\Support\Tests\Doctrine\TestPlatform;
 use Sylament\Support\Tests\Fixtures\Doctrine\Entity\Shelf;
+use Sylament\Tests\Infrastructure\Doctrine\DatabasePool;
+use Sylament\Tests\Infrastructure\Doctrine\FailingWrite;
+use Sylament\Tests\Infrastructure\Doctrine\TestEntityManagers;
+use Sylament\Tests\Infrastructure\Doctrine\TestPlatform;
 
 function shelvesLabelled(string ...$labels): EntityManager
 {

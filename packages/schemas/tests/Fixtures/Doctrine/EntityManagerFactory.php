@@ -8,8 +8,8 @@ use Doctrine\DBAL\DriverManager;
 use Doctrine\DBAL\Types\Type;
 use Doctrine\ORM\EntityManager;
 use Doctrine\ORM\ORMSetup;
-use Sylament\Support\Tests\Doctrine\RecordingMiddleware;
-use Sylament\Support\Tests\Doctrine\TestEntityManagers;
+use Sylament\Tests\Infrastructure\Doctrine\RecordingMiddleware;
+use Sylament\Tests\Infrastructure\Doctrine\TestEntityManagers;
 use Symfony\Bridge\Doctrine\Types\UlidType;
 use Symfony\Bridge\Doctrine\Types\UuidType;
 

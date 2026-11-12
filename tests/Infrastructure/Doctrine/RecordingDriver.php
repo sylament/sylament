@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Sylament\Support\Tests\Doctrine;
+namespace Sylament\Tests\Infrastructure\Doctrine;
 
 use Doctrine\DBAL\Driver as DriverInterface;
 use Doctrine\DBAL\Driver\Connection as ConnectionInterface;

@@ -4,12 +4,12 @@ declare(strict_types=1);
 
 use Doctrine\ORM\EntityManager;
 use Doctrine\ORM\QueryBuilder;
-use Sylament\Support\Tests\Doctrine\DriverValues;
-use Sylament\Support\Tests\Doctrine\RecordingMiddleware;
 use Sylament\Tables\Query\SummaryQuery;
 use Sylament\Tables\Tests\Fixtures\Doctrine\Entity\Artist;
 use Sylament\Tables\Tests\Fixtures\Doctrine\Entity\Song;
 use Sylament\Tables\Tests\Fixtures\Doctrine\EntityManagerFactory;
+use Sylament\Tests\Infrastructure\Doctrine\DriverValues;
+use Sylament\Tests\Infrastructure\Doctrine\RecordingMiddleware;
 
 /**
  * Three songs across two artists, plays 10, 20 and 300 — so a sum, a count and a

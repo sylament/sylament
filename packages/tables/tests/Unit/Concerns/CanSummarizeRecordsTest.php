@@ -7,8 +7,6 @@ use Doctrine\ORM\EntityManager;
 use Doctrine\ORM\Query;
 use Doctrine\ORM\QueryBuilder;
 use Doctrine\ORM\Tools\Pagination\CountOutputWalker;
-use Sylament\Support\Tests\Doctrine\DriverValues;
-use Sylament\Support\Tests\Doctrine\RecordingMiddleware;
 use Sylament\Tables\Columns\Column;
 use Sylament\Tables\Columns\Summarizers\Average;
 use Sylament\Tables\Columns\Summarizers\Count;
@@ -29,6 +27,8 @@ use Sylament\Tables\Tests\Fixtures\Doctrine\Entity\Song;
 use Sylament\Tables\Tests\Fixtures\Doctrine\Entity\Venue;
 use Sylament\Tables\Tests\Fixtures\Doctrine\EntityManagerFactory;
 use Sylament\Tables\Tests\Fixtures\Doctrine\Handle;
+use Sylament\Tests\Infrastructure\Doctrine\DriverValues;
+use Sylament\Tests\Infrastructure\Doctrine\RecordingMiddleware;
 
 /**
  * Six songs summing to 210, in ascending play order across two artists — so a page

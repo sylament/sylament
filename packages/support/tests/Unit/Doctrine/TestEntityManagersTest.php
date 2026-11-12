@@ -9,12 +9,12 @@ use Doctrine\ORM\Cache\CacheConfiguration;
 use Doctrine\ORM\Cache\DefaultCacheFactory;
 use Doctrine\ORM\Cache\RegionsConfiguration;
 use Doctrine\ORM\Configuration;
-use Sylament\Support\Tests\Doctrine\RecordingMiddleware;
-use Sylament\Support\Tests\Doctrine\TestEntityManagers;
-use Sylament\Support\Tests\Doctrine\TestPlatform;
 use Sylament\Support\Tests\Fixtures\Doctrine\Entity\Book;
 use Sylament\Support\Tests\Fixtures\Doctrine\Entity\Shelf;
 use Sylament\Support\Tests\Fixtures\Doctrine\ShoutType;
+use Sylament\Tests\Infrastructure\Doctrine\RecordingMiddleware;
+use Sylament\Tests\Infrastructure\Doctrine\TestEntityManagers;
+use Sylament\Tests\Infrastructure\Doctrine\TestPlatform;
 use Symfony\Component\Cache\Adapter\ArrayAdapter;
 
 /**

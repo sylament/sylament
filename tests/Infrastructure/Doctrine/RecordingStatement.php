@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Sylament\Support\Tests\Doctrine;
+namespace Sylament\Tests\Infrastructure\Doctrine;
 
 use Doctrine\DBAL\Driver\Middleware\AbstractStatementMiddleware;
 use Doctrine\DBAL\Driver\Result;

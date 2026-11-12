@@ -5,7 +5,6 @@ declare(strict_types=1);
 use Doctrine\ORM\EntityManager;
 use Doctrine\ORM\Query\Expr\Comparison;
 use Doctrine\ORM\QueryBuilder;
-use Sylament\Support\Tests\Doctrine\TestPlatform;
 use Sylament\Tables\Columns\TextColumn;
 use Sylament\Tables\Table;
 use Sylament\Tables\Tests\Fixtures\Concerns\TableHost;
@@ -20,6 +19,7 @@ use Sylament\Tables\Tests\Fixtures\Doctrine\Entity\Song;
 use Sylament\Tables\Tests\Fixtures\Doctrine\Entity\Venue;
 use Sylament\Tables\Tests\Fixtures\Doctrine\EntityManagerFactory;
 use Sylament\Tables\Tests\Fixtures\Doctrine\Handle;
+use Sylament\Tests\Infrastructure\Doctrine\TestPlatform;
 
 /*
  * Covers the query half of host-side search — the WHERE the lane composes. The

@@ -13,8 +13,6 @@ parameters:
         - packages/schemas/tests/Architecture/Rules
         - packages/schemas/tests/Architecture/Trail
         - packages/support/src
-        - packages/support/tests/Doctrine
-        - packages/support/tests/PHPUnit
         - packages/tables/src
         - packages/widgets/src
         - tests

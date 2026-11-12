@@ -22,7 +22,7 @@ use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\Sigil;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\SigilChild;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\EntityManagerFactory;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\IdentityRig;
-use Sylament\Support\Tests\Doctrine\TestPlatform;
+use Sylament\Tests\Infrastructure\Doctrine\TestPlatform;
 
 /*
  * `inColumns()` is `in()` spelled in SQL for a statement with no

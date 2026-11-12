@@ -5,7 +5,6 @@ declare(strict_types=1);
 use Doctrine\ORM\EntityManager;
 use Sylament\Schemas\Identity\IdentifierConstraint;
 use Sylament\Schemas\Identity\RecordKey;
-use Sylament\Support\Tests\Doctrine\TestPlatform;
 use Sylament\Tables\Query\Hop;
 use Sylament\Tables\Query\RelationConstraint;
 use Sylament\Tables\Query\ResolvedRelationPath;
@@ -26,6 +25,7 @@ use Sylament\Tables\Tests\Fixtures\Doctrine\Entity\Song;
 use Sylament\Tables\Tests\Fixtures\Doctrine\Entity\Venue;
 use Sylament\Tables\Tests\Fixtures\Doctrine\EntityManagerFactory;
 use Sylament\Tables\Tests\Fixtures\Doctrine\Handle;
+use Sylament\Tests\Infrastructure\Doctrine\TestPlatform;
 
 /**
  * One artist carrying two songs and one carrying none, so a predicate that

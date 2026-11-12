@@ -17,7 +17,7 @@ use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\Redirect;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\EntityManagerFactory;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\IdentifierGuardRig;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\KeyShapeRig;
-use Sylament\Support\Tests\Doctrine\RecordingMiddleware;
+use Sylament\Tests\Infrastructure\Doctrine\RecordingMiddleware;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
 
 /*

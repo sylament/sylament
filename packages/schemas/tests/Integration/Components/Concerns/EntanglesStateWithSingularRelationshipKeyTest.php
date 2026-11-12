@@ -19,7 +19,7 @@ use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\LintelPair;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\TrestleOwner;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\TrestleTop;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\EntityManagerFactory;
-use Sylament\Support\Tests\Doctrine\RecordingMiddleware;
+use Sylament\Tests\Infrastructure\Doctrine\RecordingMiddleware;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
 
 /*

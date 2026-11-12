@@ -30,8 +30,8 @@ use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\Zone;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\IdentifierGuardRig;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\IdentityRig;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\Sku;
-use Sylament\Support\Tests\Doctrine\RecordingMiddleware;
-use Sylament\Support\Tests\Doctrine\TestPlatform;
+use Sylament\Tests\Infrastructure\Doctrine\RecordingMiddleware;
+use Sylament\Tests\Infrastructure\Doctrine\TestPlatform;
 use Symfony\Component\Uid\Uuid;
 
 /*

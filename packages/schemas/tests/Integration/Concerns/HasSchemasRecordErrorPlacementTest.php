@@ -15,7 +15,7 @@ use Sylament\Schemas\Tests\Fixtures\Concerns\StateHostFixture;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\Headband;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\LintelHolder;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\EntityManagerFactory;
-use Sylament\Support\Tests\Doctrine\RecordingMiddleware;
+use Sylament\Tests\Infrastructure\Doctrine\RecordingMiddleware;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
 
 /*

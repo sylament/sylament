@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-use Sylament\Support\Tests\Doctrine\RecordingMiddleware;
+use Sylament\Tests\Infrastructure\Doctrine\RecordingMiddleware;
 
 it('records what runs, and nothing while suspended', function (): void {
     $recorder = new RecordingMiddleware();

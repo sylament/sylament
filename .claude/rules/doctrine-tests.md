@@ -1,16 +1,12 @@
 ---
 paths:
   - "packages/{actions,forms,panels,schemas,tables}/tests/**"
-  - "packages/support/tests/Doctrine/**"
-  - "packages/support/tests/PHPUnit/**"
   - "packages/support/tests/Unit/Doctrine/**"
   - "packages/support/tests/Fixtures/Doctrine/**"
-description: The database contract, the platform rule and the shared Doctrine test infrastructure the five Doctrine suites run on.
+description: The database contract, the platform rule and the shim and fixtures the five Doctrine suites build on the shared rig.
 ---
 # Doctrine test rules
 
-- **The shared infrastructure** lives in `packages/support/tests/Doctrine/` and `tests/PHPUnit/` (`Sylament\Support\Tests\Doctrine\`, `\PHPUnit\`); never import it from any `src/`, because support's `.gitattributes` export-ignores `/tests` and a split package would fatal.
-- **It is analysed like shipped code:** `phpstan.neon.dist` names both directories at level max, unlike every other test file.
 - **Build a manager through the suite's shim,** `tests/Fixtures/Doctrine/EntityManagerFactory::create()`, which delegates to `TestEntityManagers`; a manager built by hand misses the pool, the foreign keys and the custom types.
 - **The database contract:** every manager a test obtains starts empty, identity counters included, and isolated from the test's other managers, on every platform; write no test that leans on rows or ids a previous test left.
 - **SQLite enforces foreign keys** (the `EnableForeignKeys` middleware), as MySQL and PostgreSQL do, so a test that passes on SQLite is not hiding an orphan the servers would refuse.

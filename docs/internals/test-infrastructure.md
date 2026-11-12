@@ -51,7 +51,7 @@ Everything under `tests/` except every `*Test.php` file in it, `tests/Pest.php` 
 
 Five suites run against Doctrine (`actions`, `forms`, `panels`, `schemas`, `tables`) and share one rig. It sits in `tests/Infrastructure/Doctrine/` and `tests/Infrastructure/PHPUnit/` (`Sylament\Tests\Infrastructure\Doctrine\`, `\PHPUnit\`), beside the root suite's own infrastructure, and the per-package suites import it from there. The root `composer.json` `autoload-dev` entry for `Sylament\Tests\` covers it, so no new autoload entry or package was needed.
 
-It is dev-only. Support's `.gitattributes` export-ignores `/tests`, so none of it ships, and nothing under any `src/` imports it. Two consequences follow:
+It is dev-only. The root `tests/` belongs to no package, so none of it ships in a split package, and nothing under any `src/` imports it. Two consequences follow:
 
 - PHPStan analyses them at level max like shipped code, because they sit under `tests/`, whose infrastructure it covers. No file under `packages/*/tests/` is analysed.
 - The architecture tests that scan `packages/*/src` (`StaticAnalysisSuppressionTest`, `DbalParameterTypeDeclarationTest`, `AssociationReaderConstructionTest`) do not see it. The infrastructure is free to use what those checks forbid in shipped code.

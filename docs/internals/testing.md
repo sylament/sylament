@@ -42,6 +42,14 @@ There is no size limit per feature. A small method with dense logic, such as `Id
 
 As a worked example, `TextInput::email()` gets two cases: the `type="email"` render, and a submit that is rejected and then accepted. Filament's own suite has a third, reading the type back through a getter, which the list below excludes.
 
+## Why is a list of components derived?
+
+A trait's behaviour is tested once, through one component, but when each component's template passes the trait's output on by hand, one case runs over every component that offers it, to catch a template that forgot. A list typed into that test goes stale the day a component is added, and nothing fails: the new component is simply not covered. Derived from the container's registered components, the list grows with them, and a subclass counts too (`DatePicker` extends `DateTimePicker`, so it offers `HasAffixes` as well).
+
+The filter is the trait's contract wherever Filament has one, because Filament sometimes puts a trait on a base class that only some subclasses use (`HasColumns` on `Component`). Implementing the contract is the component saying "I offer this"; a component that merely inherits the trait does not. A trait with no contract is matched through the component's parents and through the traits its traits use.
+
+An exception is named with its reason, never by listing the members to keep: a list of members, even one written as "everything except", is a typed list again and goes stale the same way. How the list leaves the container is in [test-infrastructure.md](test-infrastructure.md#how-does-a-test-get-every-component-that-offers-something).
+
 ## Why is a bug test named after the behaviour?
 
 Once the bug is fixed, its name, issue number or commit means nothing to a reader of the test, while the behaviour it guarantees ("refuses a malformed key without running a statement") stays true and readable. The test lives in the mirrored file like any other test of that behaviour, with no regression folder and no comment linking the commit: git holds the history, and the trail's semantics entry holds the why. A fix starts with a case that fails without it, which proves the case pins the bug; when an existing case is one assertion short of that, extending it keeps the behaviour in one place.

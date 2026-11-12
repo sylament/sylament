@@ -14,6 +14,7 @@ use Sylament\Panels\SylamentPanelsBundle;
 use Sylament\Schemas\SylamentSchemasBundle;
 use Sylament\Support\SylamentSupportBundle;
 use Sylament\Tables\SylamentTablesBundle;
+use Sylament\Tests\Infrastructure\DependencyInjection\ComponentListPass;
 use Sylament\Tests\Infrastructure\Doctrine\TestPlatform;
 use Sylament\Tests\Infrastructure\WorkerDirectory;
 use Sylament\Widgets\SylamentWidgetsBundle;
@@ -21,12 +22,14 @@ use Symfony\Bundle\FrameworkBundle\FrameworkBundle;
 use Symfony\Bundle\FrameworkBundle\Kernel\MicroKernelTrait;
 use Symfony\Bundle\TwigBundle\TwigBundle;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
+use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\HttpKernel\Kernel as BaseKernel;
 use Symfony\Component\Routing\Loader\Configurator\RoutingConfigurator;
 use Symfony\UX\Icons\UXIconsBundle;
 use Symfony\UX\LiveComponent\LiveComponentBundle;
 use Symfony\UX\StimulusBundle\StimulusBundle;
 use Symfony\UX\TwigComponent\TwigComponentBundle;
+use UnitEnum;
 
 class Kernel extends BaseKernel
 {
@@ -73,6 +76,22 @@ class Kernel extends BaseKernel
     }
 
     /**
+     * Reads a parameter from the compiled container without booting: no bundle's `boot()`
+     * runs, so nothing process-wide (an error handler, a static instance) outlives the read.
+     *
+     * @return array<mixed>|bool|string|int|float|UnitEnum|null
+     */
+    public function getCompiledParameter(string $name): array|bool|string|int|float|UnitEnum|null
+    {
+        if (!$this->container instanceof ContainerInterface) {
+            $this->initializeBundles();
+            $this->initializeContainer();
+        }
+
+        return $this->getContainer()->getParameter($name);
+    }
+
+    /**
      * @return array<string, mixed>
      */
     protected function getKernelParameters(): array
@@ -89,6 +108,7 @@ class Kernel extends BaseKernel
     protected function build(ContainerBuilder $container): void
     {
         $container->setParameter('sylament_tests.worker_dir', WorkerDirectory::path());
+        $container->addCompilerPass(new ComponentListPass());
     }
 
     private function getConfigDir(): string

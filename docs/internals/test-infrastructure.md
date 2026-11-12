@@ -19,7 +19,7 @@ The per-package suites grew nine fixture kernels, and they disagree: different d
 
 ## How is the kernel configured?
 
-`MicroKernelTrait` already imports `packages/*.php`, `packages/<env>/*.php`, `services.php` and `routes/*.php` from the kernel's config directory. The kernel points `getConfigDir()` at `tests/Fixtures/config/` and keeps the trait's `configureContainer()`, so the configuration is Symfony's own file layout, one file per extension. The class itself keeps what a file cannot: the bundle list, the writable paths and the route order.
+`MicroKernelTrait` already imports `packages/*.php`, `packages/<env>/*.php`, `services.php` and `routes/*.php` from the kernel's config directory. The kernel points `getConfigDir()` at `tests/Fixtures/config/` and keeps the trait's `configureContainer()`, so the configuration is Symfony's own file layout, one file per extension. The class itself keeps what a file cannot: the bundle list, the writable paths, the route order, and the component-list pass with the compile-only read behind it (below).
 
 `services.php` registers `Sylament\Tests\Fixtures\` by glob with autowire and autoconfigure, so a class placed in an area's fixture folder is its own registration. The glob excludes the directories that hold no services, and entity folders, which are mapped by Doctrine rather than registered.
 
@@ -38,6 +38,18 @@ Debug stays on: a worker recompiles its container when a fixture changes, and Sy
 ## Why does `tearDown()` reset every static instance?
 
 A pure test still reaches the static instances: `make()` falls back to `new` when no kernel is booted, and `configureUsing()` resolves a `ComponentManager` of its own. So `TestCase::tearDown()` calls `unsetInstance()` on every loaded class implementing `StaticInstance` after every test, booted or not. The list comes from `get_declared_classes()`, recomputed only when the count of declared classes changes: a class never loaded holds no instance, so the loaded classes are the whole list, and no kernel has to boot to name them. A new static instance is therefore reset without anyone editing a list. `TestCaseTest` pins it: a `configureUsing()` closure registered in one case is gone in the next. Its second case is meaningful only when it runs after the first in the same process, so a filtered run of that case alone passes vacuously. The same teardown removes the worker's `storage/`, so no upload survives into the next test.
+
+## How does a test get every component that offers something?
+
+A case that must run over every component offering a behaviour takes its dataset from `ComponentRegistry` (why a list is derived rather than typed is in [testing.md](testing.md#why-is-a-list-of-components-derived)). The components are the services tagged `sylament.component`, which support's bundle adds by autoconfiguration, and a compiled container keeps no tags. So `ComponentListPass`, which the kernel's `build()` adds, exports their classes as the `sylament_tests.components` parameter: sorted, without duplicates, and without `Sylament\Tests\` classes, since a fixture subclass of a component is no component a user gets.
+
+Pest resolves a dataset while it collects the suite, before any test or `$this` exists, so the registry cannot ask a test for the container. It reads the parameter once per process and memoises it, from a kernel of its own that compiles its container and never boots: `Kernel::getCompiledParameter()` runs the kernel's `initializeBundles()` and `initializeContainer()` and stops there. Booting would run every bundle's `boot()`. Support's binds the static instances, and FrameworkBundle's registers Symfony's error handler. In Pest's parallel coordinator and workers no handler is installed while the suite is collected, so Symfony's would stay installed as the process's error and exception handler, and the first test would start with both. Compiling alone leaves neither, and costs one container compile on a cold cache. A process that collects no derived dataset never reads it.
+
+The datasets are keyed by short class name, so a test reads as "with dataset \"TextInput\"". Two components sharing a short name in one result throw rather than one silently replacing the other; `Sylament\Schemas\Components\Group` and `Sylament\Tables\Grouping\Group` already share one.
+
+`tests/Infrastructure/ComponentRegistryTest.php` pins the residue: after the list is read, no static instance is bound. Like `TestCaseTest`'s second case, that case means something only when the registry is cold in its process, which it is when the file runs alone: once any earlier read has memoised the list, the case reads nothing, and an earlier test's `tearDown()` has already unset every static instance.
+
+Symfony checks a compiler pass for changes by its signature, not its method bodies, so an edit inside `ComponentListPass::process()` reaches a worker's cached container only after that worker's `cache/` under `var/tests/` is removed.
 
 ## Why are there no free helper functions?
 

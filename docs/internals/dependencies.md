@@ -59,7 +59,7 @@ An omission is safe only while a package the importer requires hard-requires the
 |---|---|---|
 | `twig/twig` | `actions`, `forms`, `notifications`, `panels`, `schemas`, `tables` | `sylament/support` requires `twig/twig: ^3.27` |
 | `symfony/type-info` | `schemas` (`State\RecordTypeReader`, five symbols) | `symfony/property-info` requires `^7.4.7\|^8.0.7` |
-| `doctrine/dbal` | `actions`, `schemas`, `tables`, support's test infrastructure | `doctrine/orm` requires `^3.8.2 \|\| ^4` |
+| `doctrine/dbal` | `actions`, `schemas`, `tables`, the root suite's `tests/Infrastructure/` | `doctrine/orm` requires `^3.8.2 \|\| ^4` |
 | `doctrine/persistence` | `actions` (`ManagerRegistry`, `ObjectManager`), `tables` (`ManagerRegistry`) | `doctrine/orm` requires `^3.3.1 \|\| ^4` |
 | `doctrine/collections` | `actions` (`new ArrayCollection()`), `tables` (`instanceof Collection`) | `doctrine/orm` requires `^2.2 \|\| ^3.1` |
 | `symfony/polyfill-php86` | `schemas`, `tables` (the global `SortDirection` enum) | `doctrine/orm` requires `^1.37` |

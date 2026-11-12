@@ -22,7 +22,7 @@ description: Where a root-suite test lives, what kind it is, how much it covers,
 - **Use `$this::` for `KernelTestCase` statics** inside `it()`/`test()` closures (`$this::getContainer()`), never `static::` or `self::`: Pest binds `$this` to the test case, while `static::` resolves against the closure's scope.
 - **Behaviour is the default kind:** drive a component as its user does, rendering it or calling it, and assert what comes out.
 - **Pure logic touches no container and states its cases as a dataset,** and only for a dense algorithm where a table of inputs and outputs is the clearest statement (`Color::calculateContrastRatio()`).
-- **A database test sits in the file of the class whose behaviour it pins,** beside that class's other cases, seeding with `$this->seed()` and reading back with `$this->reload()` and `$this->statementsRun()`; the platform comes from the run's environment (`composer test:mysql`), never from the test.
+- **A database test sits in the file of the class whose behaviour it pins,** beside that class's other cases, seeding with `$this->seed()` and reading back with `$this->reload()` and `$this->statementsRun()`, which counts from the last `seed()` or kernel reboot, whichever came later, so a count is asserted within one request; the platform comes from the run's environment (`composer test:mysql`), never from the test.
 - **The platform rule.** A database test runs on SQLite, MySQL and PostgreSQL, or is skipped by premise with `->skip(<condition>, '<the platform fact>')`, and a differing expectation is written literally per platform with `match (TestPlatform::current())`, never computed by a helper that mirrors the product and would agree with it either way.
 
 ## How a render is asserted

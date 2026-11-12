@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Sylament\Tests\Infrastructure\PHPUnit;
 
-use PHPUnit\Event\EventFacadeIsSealedException;
+use Pest\Plugins\Parallel;
 use PHPUnit\Runner\Extension\Extension;
 use PHPUnit\Runner\Extension\Facade;
 use PHPUnit\Runner\Extension\ParameterCollection;
@@ -22,11 +22,12 @@ final class TestDatabaseExtension implements Extension
     {
         $_ENV[TestDatabase::URL_VARIABLE] = $_SERVER[TestDatabase::URL_VARIABLE] = TestDatabase::url();
 
-        try {
-            $facade->registerSubscriber(new TestDatabaseTestStarted());
-        } catch (EventFacadeIsSealedException) {
-            // Pest's parallel coordinator seals the facade before it bootstraps extensions,
-            // and runs no test; left uncaught, the warning PHPUnit records fails the run.
+        // Pest's parallel coordinator runs no test and bootstraps extensions after sealing
+        // the event facade, where registering throws a warning that fails the run unprinted.
+        if (Parallel::isEnabled() && !Parallel::isWorker()) {
+            return;
         }
+
+        $facade->registerSubscriber(new TestDatabaseTestStarted());
     }
 }

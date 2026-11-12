@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Sylament\Tests\Infrastructure\Concerns;
 
 use Doctrine\ORM\EntityManagerInterface;
+use Doctrine\ORM\Query;
 use Doctrine\Persistence\ManagerRegistry;
 use LogicException;
 use Sylament\Tests\Infrastructure\Doctrine\RecordingMiddleware;
@@ -53,8 +54,8 @@ trait InteractsWithDatabase
     }
 
     /**
-     * Reads the record's row again by its identifier, through the current manager,
-     * even when that manager already holds the record.
+     * Reads the record's row again by its identifier, through the current manager, in
+     * one statement, overwriting whatever instance of it that manager already holds.
      *
      * @template T of object
      *
@@ -66,21 +67,33 @@ trait InteractsWithDatabase
     {
         $entityManager = $this->entityManager();
         $metadata = $entityManager->getClassMetadata($entity::class);
-        $reloaded = $entityManager->find($metadata->getName(), $metadata->getIdentifierValues($entity))
+        $identifier = $metadata->getIdentifierValues($entity);
+
+        if ($identifier === []) {
+            throw new LogicException(sprintf('The [%s] given carries no identifier to reload it by.', $metadata->getName()));
+        }
+
+        $query = $entityManager->createQueryBuilder()->select('record')->from($metadata->getName(), 'record');
+
+        foreach ($identifier as $field => $value) {
+            $query->andWhere(sprintf('record.%s = :%s', $field, $field))->setParameter($field, $value);
+        }
+
+        $reloaded = $query->getQuery()->setHint(Query::HINT_REFRESH, true)->getOneOrNullResult()
             ?? throw new LogicException(sprintf('No [%s] row has the identifier of the record given.', $metadata->getName()));
 
-        $entityManager->refresh($reloaded);
-
         if (!$reloaded instanceof $entity) {
-            throw new LogicException(sprintf('Reloading a [%s] answered a [%s].', $entity::class, $reloaded::class));
+            throw new LogicException(sprintf('Reloading a [%s] answered a [%s].', $entity::class, get_debug_type($reloaded)));
         }
 
         return $reloaded;
     }
 
     /**
-     * The statements the default connection ran since the last {@see seed()}, with
-     * Doctrine's minted names renumbered.
+     * The statements the default connection ran since the last {@see seed()} or kernel
+     * reboot, whichever came later, with Doctrine's minted names renumbered: each
+     * request after the first reboots the kernel, whose connection has a recorder of
+     * its own, so assert a count within one request.
      *
      * @return list<string>
      */

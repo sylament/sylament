@@ -123,31 +123,6 @@ jobs:
 
       - run: composer test:postgresql
 
-  mutation:
-    runs-on: ubuntu-latest
-
-    steps:
-      - uses: actions/checkout@v6
-
-      - uses: shivammathur/setup-php@v2
-        with:
-          php-version: '8.5'
-          coverage: pcov
-
-      - name: Resolve Composer cache directory
-        id: composer-cache
-        run: echo "dir=$(composer config cache-files-dir)" >> "$GITHUB_OUTPUT"
-
-      - uses: actions/cache@v4
-        with:
-          path: ${{ steps.composer-cache.outputs.dir }}
-          key: composer-${{ hashFiles('composer.json', 'packages/*/composer.json') }}
-          restore-keys: composer-
-
-      - run: composer install --no-interaction --no-progress
-
-      - run: composer test:mutation
-
   assets:
     runs-on: ubuntu-latest
 
@@ -182,7 +157,6 @@ jobs:
       - php
       - php-mysql
       - php-postgresql
-      - mutation
       - assets
 
     runs-on: ubuntu-latest

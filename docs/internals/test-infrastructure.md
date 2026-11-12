@@ -72,7 +72,7 @@ A helper that computes the expected value for each platform tends to mirror the 
 
 - a searched boolean prints `true` on PostgreSQL and `1` elsewhere: `docs/progress/schemas/search-constraint.md`, "A field that holds no character data is cast to text on PostgreSQL";
 - the delete by key under enforced foreign keys: `docs/progress/actions/delete-action.md`, "The by-key arm is a DQL delete over the plucked keys";
-- the key shapes, the property test and the mutation gate: `docs/progress/schemas/record-key.md`, "The shapes the fixtures pin".
+- the key shapes and the property test: `docs/progress/schemas/record-key.md`, "The shapes the fixtures pin".
 
 A skipped test states its platform fact in the skip message, so the skip says why the premise cannot exist there rather than just that it was turned off.
 

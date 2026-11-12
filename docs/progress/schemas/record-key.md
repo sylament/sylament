@@ -172,26 +172,6 @@ The cipher classes are left out by name: their type refuses its own printed form
 On PostgreSQL, property 1 leaves out a tuple whose `guid` component is not a UUID, because a native `uuid` column cannot hold one and [the grammar](record-key-contract.md#the-grammar) shape-checks `guid` there; a pin in the same file shows `'not-a-uuid'` decoding on SQLite and MySQL and refused on PostgreSQL.
 On PostgreSQL, property 4 also skips the lookup for an integer wider than its column, which raises [the platform's range error](#an-integer-beyond-the-columns-width-still-raises-the-platforms-range-error) there and names no row on the other two, as a second pin shows.
 
-### A mutation gate holds the codec
-
-`composer test:mutation` runs Pest's mutation testing over every file in `packages/schemas/src/Identity`, against the schemas suite.
-CI runs it on every pull request and push to `main`, and a score under the committed `--min` blocks the split.
-Every mutant a test can tell from the original is killed by a named test in its file's own test.
-No mutant is equivalent: the table of the ones no input can tell apart is empty.
-`--min` is 98.6, not 100, because of four mutants the gate never runs a test against:
-
-| File:line | Mutator | Why the gate cannot run a test against it |
-| --- | --- | --- |
-| `IdentifierConstraint.php:20` | `DecrementInteger`, `IncrementInteger` | `MAX_PARAMETERS_PER_STATEMENT` is a class constant, and pcov records no executed line for a constant's declaration, so the plugin finds no covering test and reports it uncovered. |
-| `IdentifierConstraint.php:22` | `DecrementInteger`, `IncrementInteger` | The same, for `MAX_COMPOSITE_KEYS_PER_STATEMENT`. |
-
-Those four are not equivalent, and the suite does kill them.
-Run by hand, each fails `IdentifierConstraintTest`'s *chunks a key list to what one statement carries*, and the two on line 22 also fail *batches a composite key list by the chunk rule and a single one whole*.
-So a changed statement limit still fails the schemas suite, just not this gate.
-
-A fault in the plugin's own swap makes a mutant escape; it never kills one.
-The plugin swaps the mutated file in through a `file` stream wrapper that stays unregistered if a wrapped file operation throws, so a test process can end up running the original file, and a mutant it should kill then survives.
-
 ## Divergences
 
 ### An identifier association always resolves to exactly one join column

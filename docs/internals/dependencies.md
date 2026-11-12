@@ -113,4 +113,4 @@ The rule is broken in a few places, and no decision covers these imports. Each i
 
 Every FilePond plugin and `cropperjs` is bundled into forms' `file-upload` controller beside FilePond, and its licence heads that bundle.
 
-Development tooling needs no row of its own: the root `require-dev` carries Pest (whose mutation plugin runs `composer test:mutation`), PHPStan, Rector, PHP-CS-Fixer and Twig-CS-Fixer, and the asset workspaces' `devDependencies` and the root `package.json` carry the build and lint tools (esbuild, TypeScript, Tailwind CSS and its CLI, PostCSS, concurrently, Biome). None of them ships.
+Development tooling needs no row of its own: the root `require-dev` carries Pest, PHPStan, Rector, PHP-CS-Fixer and Twig-CS-Fixer, and the asset workspaces' `devDependencies` and the root `package.json` carry the build and lint tools (esbuild, TypeScript, Tailwind CSS and its CLI, PostCSS, concurrently, Biome). None of them ships.

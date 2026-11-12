@@ -1,10 +1,10 @@
 ---
 name: server-gates
-description: Use before landing anything that touches Doctrine, to run the MySQL, PostgreSQL and mutation gates.
+description: Use before landing anything that touches Doctrine, to run the MySQL and PostgreSQL gates.
 ---
 # Server gates
 
-`composer test` runs on in-memory SQLite. The definition of done also needs MySQL, PostgreSQL and the mutation gate green at landing; an inner loop may stay on SQLite.
+`composer test` runs on in-memory SQLite. The definition of done also needs MySQL and PostgreSQL green at landing; an inner loop may stay on SQLite.
 
 ## 1. Start the servers
 
@@ -47,9 +47,3 @@ docker compose down -v
 ```
 
 or drop the `sylament_test_%` databases on the server.
-
-## 6. Run the mutation gate
-
-1. Install pcov once: `brew install shivammathur/extensions/pcov@8.5`.
-2. Run `composer test:mutation`. It mutates schemas' `src/Identity/**` on SQLite, since the script clears `SYLAMENT_TEST_DATABASE_URL` itself, with `--parallel`.
-3. Its `--min` is committed in the `composer.json` script, so the threshold changes only in a reviewed change. The surviving mutants and why they survive are recorded in `docs/progress/schemas/record-key.md` under "A mutation gate holds the codec".

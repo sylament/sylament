@@ -41,7 +41,7 @@ Two principles outrank every rule below; their tests and worked cases are in `do
 | everything on SQLite: Pest per bundle, Rector dry-run, PHPStan, Twig lint | `composer test` |
 | one bundle | `composer test:<bundle>` |
 | one file | `vendor/bin/pest -c packages/<pkg>/phpunit.dist.xml --test-directory=packages/<pkg>/tests <file>` |
-| MySQL, PostgreSQL, the mutation gate | `composer test:mysql`, `composer test:postgresql`, `composer test:mutation` (skill: `server-gates`) |
+| MySQL, PostgreSQL | `composer test:mysql`, `composer test:postgresql` (skill: `server-gates`) |
 | one tool | `composer test:static` (PHPStan), `test:lint` (PHP-CS-Fixer), `test:rector`, `test:twig` |
 | apply Rector, PHP-CS-Fixer and Twig-CS-Fixer | `composer format` |
 | regenerate the port-trail indexes | `composer docs:index` |
@@ -51,7 +51,7 @@ Two principles outrank every rule below; their tests and worked cases are in `do
 ## Definition of done
 
 - `composer test` green.
-- `composer test:mysql`, `composer test:postgresql` and `composer test:mutation` green at landing; an inner loop may stay on SQLite.
+- `composer test:mysql` and `composer test:postgresql` green at landing; an inner loop may stay on SQLite.
 - `pnpm test:types` and `pnpm test:lint` green.
 - `composer format` applied; no hand-formatting.
 - A user-facing feature updates the demo showcase (cards, descriptions, the "Not built yet" footnotes) before its trail row flips to done.

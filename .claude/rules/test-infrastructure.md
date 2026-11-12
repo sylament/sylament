@@ -24,7 +24,7 @@ description: How the root suite's kernel, configuration, fixture areas, writable
 - **`TestCase::tearDown()` is the reset:** it unsets every loaded `StaticInstance`, booted or not, and removes the worker's `storage/`; never add an `afterEach` that repeats it.
 - **No free helper functions.** Every test file shares one namespace, so two areas defining one name collide; a helper that needs the container is a `TestCase` method from a trait (a shared one under `tests/Infrastructure/`, an area's own `<Area>Helpers` in its fixture folder, each with one `use` line in `TestCase`), and a pure one is a static method.
 - **Keep classes out of Pest's auto-loaded folders** (`tests/Expectations/`, `tests/Helpers/`): Pest `include_once`s every file there at boot and Composer autoloads the class again, so it is declared twice.
-- **Infrastructure and fixtures are analysed like shipped code:** PHPStan covers `tests/` at level max except `*Test.php`, `tests/Pest.php` and `tests/Expectations/`, and a fixture deliberately ill-typed for the behaviour it exercises takes an identifier-scoped `@phpstan-ignore` with its reason.
+- **Infrastructure and fixtures are analysed like shipped code:** PHPStan covers `tests/` at level max except `tests/**/*Test.php` (so not a test file at the root itself), `tests/Pest.php` and `tests/Expectations/`, and a fixture deliberately ill-typed for the behaviour it exercises takes an identifier-scoped `@phpstan-ignore` with its reason.
 - **Run the suite as CI does:** `composer test:pest` runs it `--parallel`, so a race shows the day it is written.
 
 Background: `docs/internals/test-infrastructure.md`.

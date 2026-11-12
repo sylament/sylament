@@ -1,23 +1,60 @@
 ---
 paths:
-  - "packages/*/tests/**"
-description: How a package's Pest suite is laid out, booted and wired, and where support's Twig components are render-tested.
+  - "/tests/**"
+description: Where a root-suite test lives, what kind it is, how much it covers, how it asserts a render, and what never gets a test.
 ---
 # Test rules
 
-- **Three buckets.** `Unit/` boots no kernel, `Integration/` boots it or reaches the container, and the optional `Architecture/` scans files rather than exercising a class; the bucket decides the base class, so a test in the wrong one runs on the wrong base.
-- **Mirror `src/` exactly** inside `Unit/` and `Integration/`, and name the file after its class (`src/DependencyInjection/Compiler/StaticInstancePass.php` → `tests/Unit/DependencyInjection/Compiler/StaticInstancePassTest.php`); a mirrored test is found without searching.
-- **Two allowed departures:** a cross-cutting Integration scenario sits beside the mirrored test under a scenario name (`CompositeRecordPagesTest`), and one class's cases may split across prefix-named files (`AssociationReader*Test`); anything else mirrors.
-- **`tests/Pest.php` owns the hooks.** It extends `TestCase` only `->in('Integration')`, and its `Unit` block unsets `ComponentManager` and `ComponentResolver` after each test; never add a per-file unset hook, since the registry's own reset already runs from `TestCase::tearDown()` for kernel tests.
-- **Fixtures mirror `src/`** under `tests/Fixtures/`, next to the subsystem they exercise; only the `Kernel` and its service-config files sit at the `Fixtures/` root.
-- **Never edit the `Kernel` to register a fixture.** It loads all of `tests/Fixtures/` with autowire and autoconfigure, so dropping a class in the right folder is the whole registration.
-- **Fixtures stay private.** `$this::getContainer()` returns `test.service_container`, which reaches private services; a fixture that must be public in the real container carries `#[Autoconfigure(public: true)]` on its own class, never wider Kernel defaults.
-- **Special construction goes in a config file** at the `Fixtures/` root that the Kernel `import()`s, as `services_doctrine.php` does; the glob then excludes that file.
-- **Use `$this::` for `KernelTestCase` statics** inside `it()`/`test()` closures (`$this::getContainer()`), never `static::` or `self::`: Pest binds `$this` to the configured `TestCase`, while `static::` resolves against the closure's scope.
-- **Do not call `bootKernel()`** just to get a container, because `getContainer()` boots on demand; boot explicitly only to pass options (`$this::bootKernel(['environment' => 'icons'])`) or to hold the kernel itself.
-- **Support's Twig components are render-tested from other suites,** because support's fixture kernel registers no TwigComponentBundle; `composer test:support` alone never renders them.
-- **Assert a toast through a live request** (`createLiveComponent()` and `call()`): a notification is a session flash, and an in-process call on a host has no request to carry a session, so it throws before it can toast.
-- **When a change lifts a refusal, rewrite the tests that pinned it into tests that pin the support,** never delete them, so the shape the refusal guarded stays covered.
-- **The placeholder bundles** (`infolists`, `widgets`) keep their `Feature/ExampleTest.php` only until real tests land, which then take `Unit/` and `Integration/`; never add to `Feature/`.
+## Where a test lives
 
-Background: `docs/internals/test-infrastructure.md`.
+- **Mirror `src/` per package:** `packages/forms/src/Components/TextInput.php` is tested in `tests/Forms/Components/TextInputTest.php`, so a test is found from its class without searching; the suite's own machinery mirrors `tests/` the same way (`tests/TestCase.php` → `tests/TestCaseTest.php`).
+- **A trait with behaviour to pin gets its own file** at its mirrored path (`tests/Forms/Components/Concerns/HasAffixesTest.php`); a class or trait with nothing to pin gets none, and a missing file is not a gap.
+- **A class's file holds only that class's own behaviour;** what it composes from a trait is tested in the trait's file, so each behaviour has one home.
+- **A case that crosses packages goes in the file of the class the user configures for it** (a table row's delete belongs to `DeleteAction`, so `tests/Actions/DeleteActionTest.php`); there is no flows folder, because a flow has no class to be found from.
+- **Declare no namespace in a test file;** Pest names the class from its path.
+
+## Kinds of test
+
+- **One base class, no `Unit/`/`Integration/` split, no marker:** a test boots the kernel only by asking for the container, because `getContainer()` boots on demand; never call `bootKernel()` just to get one.
+- **Use `$this::` for `KernelTestCase` statics** inside `it()`/`test()` closures (`$this::getContainer()`), never `static::` or `self::`: Pest binds `$this` to the test case, while `static::` resolves against the closure's scope.
+- **Behaviour is the default kind:** drive a component as its user does, rendering it or calling it, and assert what comes out.
+- **Pure logic touches no container and states its cases as a dataset,** and only for a dense algorithm where a table of inputs and outputs is the clearest statement (`Color::calculateContrastRatio()`).
+- **A database test sits in the file of the class whose behaviour it pins,** beside that class's other cases; the platform comes from the run's environment (`composer test:mysql`), never from the test.
+- **The platform rule.** A database test runs on SQLite, MySQL and PostgreSQL, or is skipped by premise with `->skip(<condition>, '<the platform fact>')`, and a differing expectation is written literally per platform, never computed by a helper that mirrors the product and would agree with it either way.
+
+## How a render is asserted
+
+- **Query the rendered HTML with DomCrawler and CSS selectors,** never by matching an HTML string, so the test survives markup changes around what it asserts.
+- **Assert what a user perceives,** in this order: text; a role or an accessible name (a button named "copy", `aria-invalid`, `input[type=email]`); a `data-` attribute or Stimulus controller when the behaviour is a JS hook; a semantic `sy-` class only when the class is the behaviour, since those classes are the stylesheet's contract.
+- **Never assert document structure** (`div > span:nth-child(2)`), a whole HTML string or a snapshot: each breaks on every markup change, and a snapshot is rewritten without anyone reading it.
+
+## How much is enough
+
+1. **One case per trail row a user can observe** (`done` rows and the shipped part of `in progress` rows); its semantics and divergence entries become assertions in that case, or an extra case only when they describe a different outcome a user can trigger.
+2. **One case per branch a user can trigger:** a different input leading to a different visible outcome; code branches do not count.
+3. **One deep case where the risk is:** a composite key, a platform difference, record identity.
+4. **One case per fixed bug,** unless an existing case already fails without the fix.
+5. **A dataset row only for a different class of input,** never more of the same.
+
+There is no size limit per feature, since dense logic rightly gets more test than code; a change whose test lines exceed its `src/` and template lines is checked case by case against these rules and the list below.
+
+## Bug tests
+
+- **Name it after the behaviour it guarantees** (`'refuses a malformed key without running a statement'`), never the bug, an issue or a commit, because the name must still mean something once the bug is gone.
+- **Put it in the mirrored file** like any test of that behaviour: no regression folder and no comment linking the commit; the trail's semantics entry holds the why.
+- **Start a fix with a case that fails without it;** if an existing case is one assertion short, extend it instead.
+
+## What never gets a test
+
+1. **Reading a setter back through its getter** (`prefix('€')` then `getPrefixLabel()`), at any level; render it instead, once.
+2. **A closure or `Markup` variant of a property:** `evaluate()` and `Markup` rendering are each tested once, where they live.
+3. **A default nobody sees** (`getPrefixIconColor()` is `null`); a default a user sees (the gray icon) is behaviour.
+4. **What PHPStan proves:** return types, a contract's method list, that a class implements an interface.
+5. **Symfony, Doctrine, Twig, UX or Pest behaviour** (that Twig escapes, that Doctrine flushes).
+6. **A trait's behaviour again per component;** its cases run once, through one real component that composes it.
+7. **A case added only because a mutant survived.**
+8. **A Filament-parity detail no user relies on:** the trail documents it, and no test pins it.
+
+Setters that interact (`inlinePrefix()->prefix('kg')` leaves the prefix outside, because the last call on a side wins) are logic, not item 1: they get a case, asserted through what renders.
+
+Background: `docs/internals/testing.md`.

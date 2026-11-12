@@ -1,6 +1,6 @@
 # Test infrastructure
 
-The reasoning behind the test rules in `.claude/rules/tests.md`, `.claude/rules/test-infrastructure.md` and `.claude/rules/doctrine-tests.md`. The rules say what to do; this file says why, and how the machinery underneath works. The commands for running the suites on a server are in the `server-gates` skill.
+The reasoning behind the test rules in `.claude/rules/test-infrastructure.md`, `.claude/rules/legacy-tests.md` and `.claude/rules/doctrine-tests.md`; the rules for writing a test, `.claude/rules/tests.md`, are explained in [testing.md](testing.md). The rules say what to do; this file says why, and how the machinery underneath works. The commands for running the suites on a server are in the `server-gates` skill.
 
 Two kinds of suite run side by side: the root suite under `tests/`, one kernel and one base class for every package, and the per-package suites under `packages/<pkg>/tests/`, each with its own kernel. The first sections describe the root suite; the rest describe the per-package suites and the Doctrine rig they share.
 
@@ -19,7 +19,7 @@ The per-package suites grew nine fixture kernels, and they disagree: different d
 
 ## How is the kernel configured?
 
-`MicroKernelTrait` already imports `packages/*.php`, `packages/<env>/*.php`, `services.php` and `routes/*.php` from the kernel's config directory. The kernel overrides only `getConfigDir()`, pointing it at `tests/Fixtures/config/`, so the configuration is Symfony's own file layout, one file per extension. The class itself keeps what a file cannot: the bundle list, the writable paths and the route order.
+`MicroKernelTrait` already imports `packages/*.php`, `packages/<env>/*.php`, `services.php` and `routes/*.php` from the kernel's config directory. The kernel points `getConfigDir()` at `tests/Fixtures/config/` and keeps the trait's `configureContainer()`, so the configuration is Symfony's own file layout, one file per extension. The class itself keeps what a file cannot: the bundle list, the writable paths and the route order.
 
 `services.php` registers `Sylament\Tests\Fixtures\` by glob with autowire and autoconfigure, so a class placed in an area's fixture folder is its own registration. The glob excludes the directories that hold no services, and entity folders, which are mapped by Doctrine rather than registered.
 
@@ -45,7 +45,7 @@ Every root-suite test file shares one namespace, and the per-package suites alre
 
 ## What does PHPStan analyse in the root suite?
 
-Everything under `tests/` except the `*Test.php` files, `tests/Pest.php` and `tests/Expectations/`. PHPStan types a Pest closure's `$this` as `Pest\PendingCalls\TestCall`, so `$this::getContainer()` fails at any level, and custom expectations are reached through `__call`. The kernel, its configuration, the infrastructure and the fixtures are ordinary PHP and are held to level max like shipped code.
+Everything under `tests/` except the test files below its root (`tests/**/*Test.php`), `tests/Pest.php` and `tests/Expectations/`; a test file at the root itself, such as `TestCaseTest.php`, falls outside that pattern and is analysed. PHPStan types a Pest closure's `$this` as `Pest\PendingCalls\TestCall`, so `$this::getContainer()` fails at any level, and custom expectations are reached through `__call`. The kernel, its configuration, the infrastructure and the fixtures are ordinary PHP and are held to level max like shipped code.
 
 ## Why does the shared infrastructure live in support's test tree?
 
@@ -53,7 +53,7 @@ Five suites run against Doctrine (`actions`, `forms`, `panels`, `schemas`, `tabl
 
 It is dev-only. Support's `.gitattributes` export-ignores `/tests`, so none of it ships, and nothing under any `src/` imports it. Two consequences follow:
 
-- `phpstan.neon.dist` names the two directories explicitly, so they are analysed at level max like shipped code. No other test file is analysed.
+- `phpstan.neon.dist` names the two directories explicitly, so they are analysed at level max like shipped code. No other file under `packages/*/tests/` is analysed.
 - The architecture tests that scan `packages/*/src` (`StaticAnalysisSuppressionTest`, `DbalParameterTypeDeclarationTest`, `AssociationReaderConstructionTest`) do not see it. The infrastructure is free to use what those checks forbid in shipped code.
 
 Support's own suite tests the rig: its tests sit in `tests/Unit/Doctrine/` and its fixtures in `tests/Fixtures/Doctrine/`, mirroring the infrastructure rather than `src/`. Support's fixture kernel boots no Doctrine, so it excludes `Fixtures/Doctrine` from its service glob. Support's `phpunit.dist.xml` registers the pool extension too, because those tests exercise the pool.

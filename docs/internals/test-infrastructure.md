@@ -37,7 +37,7 @@ Debug stays on: a worker recompiles its container when a fixture changes, and Sy
 
 ## Why does `tearDown()` reset every static instance?
 
-A pure test still reaches the static instances: `make()` falls back to `new` when no kernel is booted, and `configureUsing()` resolves a `ComponentManager` of its own. So `TestCase::tearDown()` calls `unsetInstance()` on every loaded class implementing `StaticInstance` after every test, booted or not. The list comes from `get_declared_classes()`, recomputed only when the count of declared classes changes: a class never loaded holds no instance, so the loaded classes are the whole list, and no kernel has to boot to name them. A new static instance is therefore reset without anyone editing a list. `TestCaseTest` pins it: a `configureUsing()` closure registered in one case is gone in the next. The same teardown removes the worker's `storage/`, so no upload survives into the next test.
+A pure test still reaches the static instances: `make()` falls back to `new` when no kernel is booted, and `configureUsing()` resolves a `ComponentManager` of its own. So `TestCase::tearDown()` calls `unsetInstance()` on every loaded class implementing `StaticInstance` after every test, booted or not. The list comes from `get_declared_classes()`, recomputed only when the count of declared classes changes: a class never loaded holds no instance, so the loaded classes are the whole list, and no kernel has to boot to name them. A new static instance is therefore reset without anyone editing a list. `TestCaseTest` pins it: a `configureUsing()` closure registered in one case is gone in the next. Its second case is meaningful only when it runs after the first in the same process, so a filtered run of that case alone passes vacuously. The same teardown removes the worker's `storage/`, so no upload survives into the next test.
 
 ## Why are there no free helper functions?
 
@@ -45,7 +45,7 @@ Every root-suite test file shares one namespace, and the per-package suites alre
 
 ## What does PHPStan analyse in the root suite?
 
-Everything under `tests/` except the test files below its root (`tests/**/*Test.php`), `tests/Pest.php` and `tests/Expectations/`; a test file at the root itself, such as `TestCaseTest.php`, falls outside that pattern and is analysed. PHPStan types a Pest closure's `$this` as `Pest\PendingCalls\TestCall`, so `$this::getContainer()` fails at any level, and custom expectations are reached through `__call`. The kernel, its configuration, the infrastructure and the fixtures are ordinary PHP and are held to level max like shipped code.
+Everything under `tests/` except every `*Test.php` file in it, `tests/Pest.php` and `tests/Expectations/`. PHPStan types a Pest closure's `$this` as `Pest\PendingCalls\TestCall`, so `$this::getContainer()` fails at any level, and custom expectations are reached through `__call`. The kernel, its configuration, the infrastructure and the fixtures are ordinary PHP and are held to level max like shipped code.
 
 ## Why does the shared infrastructure live in support's test tree?
 

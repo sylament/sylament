@@ -57,4 +57,6 @@ There is no size limit per feature, since dense logic rightly gets more test tha
 
 Setters that interact (`inlinePrefix()->prefix('kg')` leaves the prefix outside, because the last call on a side wins) are logic, not item 1: they get a case, asserted through what renders.
 
+A pin of the suite's own infrastructure (`TestCaseTest`) may observe state through any reader, a getter or a default included, because the mechanism under test is the reset, not the reader.
+
 Background: `docs/internals/testing.md`.

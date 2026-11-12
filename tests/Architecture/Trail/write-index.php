@@ -10,9 +10,9 @@ declare(strict_types=1);
  * the reason on STDERR when a README lacks its markers or a trail file cannot be parsed; it then writes nothing.
  */
 
-use Sylament\Schemas\Tests\Architecture\Trail\Trail;
+use Sylament\Tests\Architecture\Trail\Trail;
 
-$root = dirname(__DIR__, 5);
+$root = dirname(__DIR__, 3);
 
 require $root . '/vendor/autoload.php';
 

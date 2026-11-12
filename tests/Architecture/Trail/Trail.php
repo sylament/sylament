@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Sylament\Schemas\Tests\Architecture\Trail;
+namespace Sylament\Tests\Architecture\Trail;
 
 use Closure;
 use RuntimeException;
@@ -513,8 +513,8 @@ final class Trail
     }
 
     /**
-     * Check 7: every docs/progress path named in packages/**.php or docs/internals/*.md exists, and a quoted title
-     * after it is contained in one of that file's headings, backticks ignored.
+     * Check 7: every docs/progress path named in packages/**.php, tests/**.php or docs/internals/*.md exists, and a
+     * quoted title after it is contained in one of that file's headings, backticks ignored.
      *
      * @return list<string>
      */
@@ -523,7 +523,7 @@ final class Trail
         $violations = [];
         $sources = array_filter(
             $this->tracked(),
-            static fn (string $path): bool => 1 === preg_match('#^packages/.+\.php$|^docs/internals/[^/]+\.md$#', $path),
+            static fn (string $path): bool => 1 === preg_match('#^packages/.+\.php$|^tests/.+\.php$|^docs/internals/[^/]+\.md$#', $path),
         );
 
         foreach ($sources as $source) {

@@ -7,11 +7,11 @@ namespace Sylament\Schemas\Tests\Architecture;
 use FilesystemIterator;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
-use Sylament\Schemas\Tests\Architecture\Trail\DetailFile;
-use Sylament\Schemas\Tests\Architecture\Trail\Row;
-use Sylament\Schemas\Tests\Architecture\Trail\Status;
-use Sylament\Schemas\Tests\Architecture\Trail\Table;
-use Sylament\Schemas\Tests\Architecture\Trail\Trail;
+use Sylament\Tests\Architecture\Trail\DetailFile;
+use Sylament\Tests\Architecture\Trail\Row;
+use Sylament\Tests\Architecture\Trail\Status;
+use Sylament\Tests\Architecture\Trail\Table;
+use Sylament\Tests\Architecture\Trail\Trail;
 use UnexpectedValueException;
 
 use function dirname;

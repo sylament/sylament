@@ -10,7 +10,6 @@ parameters:
         - packages/notifications/src
         - packages/panels/src
         - packages/schemas/src
-        - packages/schemas/tests/Architecture/Trail
         - packages/support/src
         - packages/tables/src
         - packages/widgets/src

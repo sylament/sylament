@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Sylament\Schemas\Tests\Architecture\Trail;
+namespace Sylament\Tests\Architecture\Trail;
 
 /**
  * One Surface or Unported row. Cells keep their markdown, escaped pipes included; an Unported row has

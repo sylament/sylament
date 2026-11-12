@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Sylament\Schemas\Tests\Architecture\Trail;
+namespace Sylament\Tests\Architecture\Trail;
 
 /**
  * The port trail's status vocabulary, as docs/progress/README.md defines it.

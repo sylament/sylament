@@ -42,4 +42,5 @@ return $config->setFinder(
     new Finder()
         ->in(__DIR__ . '/packages')
         ->path('#/(templates|tests)/#')
+        ->append(new Finder()->in(__DIR__ . '/tests/Fixtures/templates'))
 );

@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<phpunit xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:noNamespaceSchemaLocation="vendor/phpunit/phpunit/phpunit.xsd"
+         bootstrap="vendor/autoload.php"
+         colors="true"
+>
+    <php>
+        <env name="KERNEL_CLASS" value="Sylament\Tests\Fixtures\Kernel"/>
+        <env name="APP_ENV" value="test"/>
+    </php>
+
+    <testsuites>
+        <testsuite name="Sylament Test Suite">
+            <directory suffix="Test.php">tests</directory>
+        </testsuite>
+    </testsuites>
+
+    <source>
+        <include>
+            <directory>packages/actions/src</directory>
+            <directory>packages/forms/src</directory>
+            <directory>packages/infolists/src</directory>
+            <directory>packages/notifications/src</directory>
+            <directory>packages/panels/src</directory>
+            <directory>packages/schemas/src</directory>
+            <directory>packages/support/src</directory>
+            <directory>packages/tables/src</directory>
+            <directory>packages/widgets/src</directory>
+        </include>
+    </source>
+</phpunit>

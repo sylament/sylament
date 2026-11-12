@@ -9,6 +9,7 @@ return RectorConfig::configure()
     ->withPaths([
         __DIR__ . '/packages/*/src',
         __DIR__ . '/packages/*/tests',
+        __DIR__ . '/tests',
     ])
     ->withPhpSets(php85: true)
     ->withPreparedSets(

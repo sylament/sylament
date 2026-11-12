@@ -1,6 +1,51 @@
 # Test infrastructure
 
-The reasoning behind the test rules in `.claude/rules/tests.md` and `.claude/rules/doctrine-tests.md`. The rules say what to do; this file says why, and how the machinery underneath works. The commands for running the suites on a server are in the `server-gates` skill.
+The reasoning behind the test rules in `.claude/rules/tests.md`, `.claude/rules/test-infrastructure.md` and `.claude/rules/doctrine-tests.md`. The rules say what to do; this file says why, and how the machinery underneath works. The commands for running the suites on a server are in the `server-gates` skill.
+
+Two kinds of suite run side by side: the root suite under `tests/`, one kernel and one base class for every package, and the per-package suites under `packages/<pkg>/tests/`, each with its own kernel. The first sections describe the root suite; the rest describe the per-package suites and the Doctrine rig they share.
+
+## Why does the root suite have one kernel and one base class?
+
+The per-package suites grew nine fixture kernels, and they disagree: different default disks, a session in some and not others, asset mapper in one, seven icon directories whose same-named icons differ, live routes prefixed in one kernel only. A test passing on its own package's kernel says nothing about the others. The root suite resolves each conflict once, in `Sylament\Tests\Fixtures\Kernel`, and every test runs against that one world:
+
+- a `mock_file` session, because a toast is a session flash;
+- asset mapper with an importmap, plus `@TwigBundle/Resources/config/importmap.php`, because TwigBundle registers `importmap()` behind a `willBeAvailable()` check that refuses `symfony/asset-mapper` as a dev-only package beside a production `symfony/twig-bundle`, which is this monorepo's shape and no application's;
+- one icon directory with a subfolder per area, since UX Icons maps the `<area>:` prefix of `<area>:<name>` to that subfolder;
+- one Twig namespace, `@Fixtures`, with a folder per area;
+- two local disks, `primary.storage` (public, with a `public_url`, so it can mint a URL) and `secondary.storage` (the no-URL and foreign-disk arms), and `primary.storage` as the default disk;
+- every bundle, Sylament's nine included, in every environment, so no test depends on a bundle being absent.
+
+`Sylament\Tests\TestCase` extends `KernelTestCase` and uses UX's `InteractsWithTwigComponents`. `KernelTestCase::getContainer()` boots on demand and its teardown shuts down only a booted kernel, so a test that never asks for the container never boots one, and there is no separate base class for pure tests.
+
+## How is the kernel configured?
+
+`MicroKernelTrait` already imports `packages/*.php`, `packages/<env>/*.php`, `services.php` and `routes/*.php` from the kernel's config directory. The kernel overrides only `getConfigDir()`, pointing it at `tests/Fixtures/config/`, so the configuration is Symfony's own file layout, one file per extension. The class itself keeps what a file cannot: the bundle list, the writable paths and the route order.
+
+`services.php` registers `Sylament\Tests\Fixtures\` by glob with autowire and autoconfigure, so a class placed in an area's fixture folder is its own registration. The glob excludes the directories that hold no services, and entity folders, which are mapped by Doctrine rather than registered.
+
+The routes are imported in a fixed order: the live routes under `/_components`, then the panel route loader, then every other `routes/*.php`. UX's live route is `/{_live_component}/{_live_action}`, which would match any two-segment fixture path or panel URL if it were mounted at the root; the recipe's prefix keeps it out of the way. A glob import sorts files by name, so the kernel imports `routes/live_component.php` itself and excludes it from the glob that follows.
+
+In debug mode FrameworkBundle dumps a `reference.php` into the kernel's config directory on every container build. Here that directory is source, shared by every worker and every environment, and the dumped content differs per environment, so two environments would keep rewriting it and invalidating each other's container. The kernel drops the `.kernel.config_dir` parameter, which only that dump reads, and the file is never written.
+
+The `@Fixtures` folder exists even before an area adds a template, because Twig's `FilesystemLoader::addPath()` throws on a missing directory the moment the Twig environment is built.
+
+## Why is every writable path per worker?
+
+`pest --parallel` runs each worker as its own process with its own `TEST_TOKEN`. `WorkerDirectory::path()` answers `var/tests/<TEST_TOKEN or 0>`, and everything the suite writes lives under it: the compiled container and the router's cache files (the build directory defaults to the cache directory), the logs, the session files, and the disks under `storage/`. The kernel exposes it as the `sylament_tests.worker_dir` parameter for configuration files. Two workers compiling one container into one directory corrupt each other's fixed-name files, which is why nothing writes to `sys_get_temp_dir()` or a fixed path. `composer test:pest` runs in parallel from the start, so a race shows on the day it is written.
+
+Debug stays on: a worker recompiles its container when a fixture changes, and Symfony checks freshness once per process.
+
+## Why does `tearDown()` reset every static instance?
+
+A pure test still reaches the static instances: `make()` falls back to `new` when no kernel is booted, and `configureUsing()` resolves a `ComponentManager` of its own. So `TestCase::tearDown()` calls `unsetInstance()` on every loaded class implementing `StaticInstance` after every test, booted or not. The list comes from `get_declared_classes()`, recomputed only when the count of declared classes changes: a class never loaded holds no instance, so the loaded classes are the whole list, and no kernel has to boot to name them. A new static instance is therefore reset without anyone editing a list. `TestCaseTest` pins it: a `configureUsing()` closure registered in one case is gone in the next. The same teardown removes the worker's `storage/`, so no upload survives into the next test.
+
+## Why are there no free helper functions?
+
+Every root-suite test file shares one namespace, and the per-package suites already define eight helper names in two or more places (`renderToHtml`, `registryWith`, …), which would collide. A function defined in one test file and called from another also breaks under `--parallel`, where the defining file may not have loaded in that worker. Helpers that need the container are methods of `TestCase` from traits, and pure ones are static methods, both of which PHPStan sees. Pest `include_once`s every file under `tests/Expectations/` and `tests/Helpers/` at boot, and Composer autoloads a class again, so a class placed there is declared twice.
+
+## What does PHPStan analyse in the root suite?
+
+Everything under `tests/` except the `*Test.php` files, `tests/Pest.php` and `tests/Expectations/`. PHPStan types a Pest closure's `$this` as `Pest\PendingCalls\TestCall`, so `$this::getContainer()` fails at any level, and custom expectations are reached through `__call`. The kernel, its configuration, the infrastructure and the fixtures are ordinary PHP and are held to level max like shipped code.
 
 ## Why does the shared infrastructure live in support's test tree?
 

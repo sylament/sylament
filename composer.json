@@ -36,7 +36,9 @@
         "rector/rector": "^2.4",
         "symfony/asset-mapper": "^8.1",
         "symfony/cache": "^8.1",
+        "symfony/css-selector": "^8.1",
         "symfony/doctrine-bridge": "^8.1",
+        "symfony/dom-crawler": "^8.1",
         "symfony/finder": "^8.1",
         "symfony/framework-bundle": "^8.0",
         "symfony/security-core": "^8.1",
@@ -68,6 +70,7 @@
             "Sylament\\Schemas\\Tests\\": "packages/schemas/tests/",
             "Sylament\\Support\\Tests\\": "packages/support/tests/",
             "Sylament\\Tables\\Tests\\": "packages/tables/tests/",
+            "Sylament\\Tests\\": "tests/",
             "Sylament\\Widgets\\Tests\\": "packages/widgets/tests/"
         }
     },
@@ -97,6 +100,7 @@
             "@test:support",
             "@test:tables",
             "@test:widgets",
+            "@test:pest",
             "@test:rector",
             "@test:static",
             "@test:twig"
@@ -118,6 +122,10 @@
             "@test"
         ],
         "test:widgets": "pest -c packages/widgets/phpunit.dist.xml --test-directory=packages/widgets/tests",
+        "test:pest": [
+            "Composer\\Config::disableProcessTimeout",
+            "pest --parallel"
+        ],
         "test:static": "phpstan analyse",
         "test:lint": "php-cs-fixer --dry-run --diff fix",
         "test:rector": "rector --dry-run",

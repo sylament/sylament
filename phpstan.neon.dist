@@ -17,6 +17,12 @@ parameters:
         - packages/support/tests/PHPUnit
         - packages/tables/src
         - packages/widgets/src
+        - tests
+
+    excludePaths:
+        - tests/**/*Test.php
+        - tests/Pest.php
+        - tests/Expectations (?)
 
     ignoreErrors:
         -

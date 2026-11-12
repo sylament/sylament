@@ -13,6 +13,8 @@ A component's status is its row in the port trail; what to build next is decided
 | `packages/<pkg>/templates/` | Twig: `components/` are `<twig:>` tags, `partials/` are rendered from PHP |
 | `packages/<pkg>/assets/` | pnpm workspace `@sylament/<pkg>`; `dist/` is committed |
 | `packages/support/tests/{Doctrine,PHPUnit}/` | test infrastructure the Doctrine suites share (dev-only) |
+| `tests/` | the root Pest suite, `Sylament\Tests\` (PSR-4): one kernel and one base class for every package |
+| `tests/Fixtures/`, `tests/Infrastructure/` | its kernel, config and per-area fixtures, and the machinery every test shares |
 | `vendor/filament/` | Filament's source: read it before designing anything |
 | `docs/progress/` | the port trail: status and reasoning per component (rules: `.claude/rules/trail.md`) |
 | `docs/internals/` | the reasoning behind the rules, and the dev-only infrastructure |
@@ -38,9 +40,10 @@ Two principles outrank every rule below; their tests and worked cases are in `do
 
 | Task | Command |
 | --- | --- |
-| everything on SQLite: Pest per bundle, Rector dry-run, PHPStan, Twig lint | `composer test` |
+| everything on SQLite: Pest per bundle and the root suite, Rector dry-run, PHPStan, Twig lint | `composer test` |
+| the root suite, one area of it, one file of it | `composer test:pest`, `vendor/bin/pest tests/<Area>`, `vendor/bin/pest tests/<Area>/<path>Test.php` |
 | one bundle | `composer test:<bundle>` |
-| one file | `vendor/bin/pest -c packages/<pkg>/phpunit.dist.xml --test-directory=packages/<pkg>/tests <file>` |
+| one file of a bundle's suite | `vendor/bin/pest -c packages/<pkg>/phpunit.dist.xml --test-directory=packages/<pkg>/tests <file>` |
 | MySQL, PostgreSQL | `composer test:mysql`, `composer test:postgresql` (skill: `server-gates`) |
 | one tool | `composer test:static` (PHPStan), `test:lint` (PHP-CS-Fixer), `test:rector`, `test:twig` |
 | apply Rector, PHP-CS-Fixer and Twig-CS-Fixer | `composer format` |
@@ -73,6 +76,7 @@ Rules in `.claude/rules/` load after any tool call that touches a file their `pa
 | `instructions.md` | `/CLAUDE.md`, `/.claude/**` | How instruction files are placed, scoped, sized and kept free of history. |
 | `manifests.md` | `/composer.json`, `packages/*/composer.json`, `packages/*/assets/package.json` | What each package manifest declares, when a dependency is a require or a suggest, and which omissions are deliberate. |
 | `php.md` | `packages/*/src/**/*.php` | How shipped PHP is written, from closure evaluation and typing to construction, static instances, trait placement, record identity, helpers and comments. |
+| `test-infrastructure.md` | `/tests/Fixtures/**`, `/tests/Infrastructure/**`, `/tests/TestCase.php`, `/tests/Pest.php`, `/phpunit.dist.xml` | How the root suite's kernel, configuration, fixture areas, writable paths and base class are laid out and kept parallel-safe. |
 | `tests.md` | `packages/*/tests/**` | How a package's Pest suite is laid out, booted and wired, and where support's Twig components are render-tested. |
 | `trail.md` | `/docs/progress/**` | How a port-trail file is shaped, where status lives, what each file owns, and how its prose and tables are written. |
 | `twig.md` | `packages/*/templates/**` | Template layout, component invocation, props and attribute rendering in the bundles' Twig templates. |

@@ -9,7 +9,7 @@
                 "hooks": [
                     {
                         "type": "command",
-                        "command": "php \"$CLAUDE_PROJECT_DIR/packages/schemas/tests/Architecture/Rules/rule-hook.php\"",
+                        "command": "php \"$CLAUDE_PROJECT_DIR/tests/Architecture/Rules/rule-hook.php\"",
                         "timeout": 10
                     }
                 ]
@@ -21,7 +21,7 @@
                 "hooks": [
                     {
                         "type": "command",
-                        "command": "php \"$CLAUDE_PROJECT_DIR/packages/schemas/tests/Architecture/Rules/rule-hook.php\"",
+                        "command": "php \"$CLAUDE_PROJECT_DIR/tests/Architecture/Rules/rule-hook.php\"",
                         "timeout": 10
                     }
                 ]
@@ -33,7 +33,7 @@
                 "hooks": [
                     {
                         "type": "command",
-                        "command": "php \"$CLAUDE_PROJECT_DIR/packages/schemas/tests/Architecture/Rules/rule-hook.php\"",
+                        "command": "php \"$CLAUDE_PROJECT_DIR/tests/Architecture/Rules/rule-hook.php\"",
                         "timeout": 10
                     }
                 ]
@@ -44,7 +44,7 @@
                 "hooks": [
                     {
                         "type": "command",
-                        "command": "php \"$CLAUDE_PROJECT_DIR/packages/schemas/tests/Architecture/Rules/rule-hook.php\"",
+                        "command": "php \"$CLAUDE_PROJECT_DIR/tests/Architecture/Rules/rule-hook.php\"",
                         "timeout": 10
                     }
                 ]

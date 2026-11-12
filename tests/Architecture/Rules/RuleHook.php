@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Sylament\Schemas\Tests\Architecture\Rules;
+namespace Sylament\Tests\Architecture\Rules;
 
 use Closure;
 use LogicException;

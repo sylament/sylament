@@ -9,7 +9,7 @@ use LogicException;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
 use RuntimeException;
-use Sylament\Schemas\Tests\Architecture\Rules\RuleHook;
+use Sylament\Tests\Architecture\Rules\RuleHook;
 use Symfony\Component\Yaml\Yaml;
 
 use function dirname;
@@ -282,7 +282,7 @@ it('delivers every rule of this repository whole through a Bash read of a file i
 });
 
 it('runs as a command and reports a failure on STDERR', function (): void {
-    $script = ruleHookRepositoryRoot() . '/packages/schemas/tests/Architecture/Rules/rule-hook.php';
+    $script = ruleHookRepositoryRoot() . '/tests/Architecture/Rules/rule-hook.php';
     $run = static function (string $stdin) use ($script): array {
         $process = proc_open(['php', $script], [0 => ['pipe', 'r'], 1 => ['pipe', 'w'], 2 => ['pipe', 'w']], $pipes);
         fwrite($pipes[0], $stdin);

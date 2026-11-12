@@ -11,9 +11,9 @@ declare(strict_types=1);
  * agent after a Bash command.
  */
 
-use Sylament\Schemas\Tests\Architecture\Rules\RuleHook;
+use Sylament\Tests\Architecture\Rules\RuleHook;
 
-$root = dirname(__DIR__, 5);
+$root = dirname(__DIR__, 3);
 
 require $root . '/vendor/autoload.php';
 

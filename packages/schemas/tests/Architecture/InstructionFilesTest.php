@@ -8,7 +8,7 @@ use FilesystemIterator;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
 use RuntimeException;
-use Sylament\Schemas\Tests\Architecture\Rules\RuleHook;
+use Sylament\Tests\Architecture\Rules\RuleHook;
 use Symfony\Component\Yaml\Exception\ParseException;
 use Symfony\Component\Yaml\Yaml;
 

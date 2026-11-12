@@ -42,7 +42,7 @@ Templates reach the manager through two functions on [`ColorExtension`](../../..
 `overrideShades()`, `addShades()` and `removeShades()`, with their three getters, restate per component alias which shades of a palette are emitted as `--color-<shade>` variables.
 Their only reader in Filament is the `get_color_css_variables()` helper, and no Filament code calls that helper.
 Sylament ports neither: the helper is a todo row in [helpers.md](helpers.md#surface), and the six methods only mean something once it exists.
-The shade set the port emits is `ColorManager::SHADES`, pinned against the stylesheet by [`CssPaletteFloorTest`](../../../packages/support/tests/Architecture/CssPaletteFloorTest.php).
+The shade set the port emits is `ColorManager::SHADES`, pinned against the stylesheet by [`CssPaletteFloorTest`](../../../tests/Architecture/CssPaletteFloorTest.php).
 
 ## Semantics
 
@@ -103,7 +103,7 @@ Changing either would be a design decision about Sylament's default look, not a 
 That is not fixable by shade selection: red-500, the shade the candidate list hovers to, admits **no** readable text at all, neither white nor any shade of its own palette, the best being red-950 at 4.34:1.
 Both facts are pinned by exact-list assertions in [`PolicyContrastTest`](../../../packages/support/tests/Unit/Colors/Components/PolicyContrastTest.php), so the pair goes red in either direction; closing it means changing which shades a filled button paints, a visible change to every danger button rather than a port fix.
 
-The CSS floor moves with `DEFAULT_COLORS` and is pinned to it shade by shade by [`CssPaletteFloorTest`](../../../packages/support/tests/Architecture/CssPaletteFloorTest.php).
+The CSS floor moves with `DEFAULT_COLORS` and is pinned to it shade by shade by [`CssPaletteFloorTest`](../../../tests/Architecture/CssPaletteFloorTest.php).
 
 ### A registered palette must fill the shade grid exactly
 
@@ -169,4 +169,4 @@ And on a page that never calls `sylamentStyles()`, a newly registered name paint
 
 The trade is deliberate.
 Filament gets away with requiring the directive because the panel owns the page layout and its scaffolding generates one containing it; Sylament cannot count on either, because its pitch is embedding into an app it does not control, where a missing call would render every component colourless with no error.
-The cost is that the six palettes exist twice, once in `ColorManager::DEFAULT_COLORS` and once in `index.css`, which [`CssPaletteFloorTest`](../../../packages/support/tests/Architecture/CssPaletteFloorTest.php) keeps in step.
+The cost is that the six palettes exist twice, once in `ColorManager::DEFAULT_COLORS` and once in `index.css`, which [`CssPaletteFloorTest`](../../../tests/Architecture/CssPaletteFloorTest.php) keeps in step.

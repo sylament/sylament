@@ -14,7 +14,7 @@ description: What each package manifest declares, when a dependency is a require
 - **A guarded optional throws where the user opts in.** Throw a `LogicException` that names the package to install, and never fall through to degraded output, which reads as a working feature.
 - **Pin every guard with a test.** A renamed or moved contract dead-ends the branch silently, and no composer-level check sees a `suggest`.
 - **A return type forces a `require`.** No guard can stand in front of a method that builds and returns the class, which is why `actions` requires `forms` (`AttachAction::getRecordSelect(): Select`).
-- **A cycle is allowed when each side's `src/` imports the other** (`actions`⇄`schemas`, `actions`⇄`forms`); pin a line no other test would miss with a manifest test, as `packages/actions/tests/Architecture/ManifestTest.php` does.
+- **A cycle is allowed when each side's `src/` imports the other** (`actions`⇄`schemas`, `actions`⇄`forms`); pin a line no other test would miss with a manifest test, as `tests/Architecture/ManifestTest.php` does.
 - **Never push a dependency into `support` that support's own code does not use**; every other package would inherit it.
 - **Record a non-`symfony/*` grant in the third-party grants table of `docs/internals/dependencies.md`**, naming which manifests take it as `require`, `suggest` or root `require-dev`; that table is where the next change checks whether a vendor is already signed off.
 - **Put a JS peer in both `peerDependencies` and `devDependencies`.** The workspace sets `autoInstallPeers: false` and `strictPeerDependencies: true`, so a peer nobody installs fails the build.

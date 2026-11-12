@@ -11,7 +11,8 @@ description: Where a root-suite test lives, what kind it is, how much it covers,
 - **A trait with behaviour to pin gets its own file** at its mirrored path (`tests/Forms/Components/Concerns/HasAffixesTest.php`); a class or trait with nothing to pin gets none, and a missing file is not a gap.
 - **A class's file holds only that class's own behaviour;** what it composes from a trait is tested in the trait's file, so each behaviour has one home.
 - **A case that crosses packages goes in the file of the class the user configures for it** (a table row's delete belongs to `DeleteAction`, so `tests/Actions/DeleteActionTest.php`); there is no flows folder, because a flow has no class to be found from.
-- **Declare no namespace in a test file;** Pest names the class from its path.
+- **Declare no namespace in a test file** outside `tests/Architecture/`; Pest names the class from its path.
+- **A scan of the repository's files lives in `tests/Architecture/`,** since no class leads to it; one that declares functions takes `namespace Sylament\Tests\Architecture` and prefixes each with its subject (`trailDocs()`), because every scan shares that namespace.
 
 ## Kinds of test
 

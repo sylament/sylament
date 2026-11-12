@@ -158,11 +158,11 @@ The exception is an integration that Filament itself treats as ambient. An actio
 
 No package declares `doctrine/dbal`. The omission rests on `doctrine/orm: ^3.7`, which requires `^3.8.2 || ^4`, and on `ParameterType` and `ArrayParameterType` keeping their names across that range.
 
-A name is all that buys. Both are final classes of int constants on DBAL 3 and native enums on DBAL 4, so they may be used as values only: a constant read, a `match` subject, a `setParameter()` argument, or a negative `instanceof` guard. A declared `: ParameterType` is a `TypeError` on every DBAL 3 application, and no suite here can see it, because only DBAL 4 is installed. `packages/schemas/tests/Architecture/DbalParameterTypeDeclarationTest.php` is the gate that stands in for the missing Composer-level check.
+A name is all that buys. Both are final classes of int constants on DBAL 3 and native enums on DBAL 4, so they may be used as values only: a constant read, a `match` subject, a `setParameter()` argument, or a negative `instanceof` guard. A declared `: ParameterType` is a `TypeError` on every DBAL 3 application, and no suite here can see it, because only DBAL 4 is installed. `tests/Architecture/DbalParameterTypeDeclarationTest.php` is the gate that stands in for the missing Composer-level check.
 
 ## No inline PHPStan ignores
 
-PHPStan runs at level max over every `src/`, with `trait.unused` as the only global ignore, and `reportUnmatchedIgnoredErrors` is on, so a stale ignore fails the run. An inline `@phpstan-ignore` hides a real defect at the one place a reader is least likely to question it. The three that once existed all masked the same unguarded nullable, and the fix was to make it throw: `BelongsToSchemaComponent::getSchemaComponentOrFail()`. An error that genuinely cannot be fixed belongs in a baseline file, where it is counted and reviewable. `packages/schemas/tests/Architecture/StaticAnalysisSuppressionTest.php` enforces the ban.
+PHPStan runs at level max over every `src/`, with `trait.unused` as the only global ignore, and `reportUnmatchedIgnoredErrors` is on, so a stale ignore fails the run. An inline `@phpstan-ignore` hides a real defect at the one place a reader is least likely to question it. The three that once existed all masked the same unguarded nullable, and the fix was to make it throw: `BelongsToSchemaComponent::getSchemaComponentOrFail()`. An error that genuinely cannot be fixed belongs in a baseline file, where it is counted and reviewable. `tests/Architecture/StaticAnalysisSuppressionTest.php` enforces the ban.
 
 ## Comments
 

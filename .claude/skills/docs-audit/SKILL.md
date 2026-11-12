@@ -12,7 +12,7 @@ description: Use when closing a milestone or epic, to check that CLAUDE.md, the 
 This skill is the judgment half: are the sentences still true, and what did the milestone add that nothing states yet?
 
 1. **Make the mechanical half green first.** A broken link or a stale glob is not worth an agent's judgment.
-   `vendor/bin/pest -c packages/schemas/phpunit.dist.xml --test-directory=packages/schemas/tests packages/schemas/tests/Architecture/InstructionFilesTest.php packages/schemas/tests/Architecture/DocumentationFilesTest.php packages/schemas/tests/Architecture/TrailFilesTest.php`
+   `vendor/bin/pest tests/Architecture/InstructionFilesTest.php tests/Architecture/DocumentationFilesTest.php tests/Architecture/TrailFilesTest.php`
 2. **Fix the range.**
    - BASE is the commit the milestone started from: its first commit's parent, or `git merge-base main HEAD` on a milestone branch.
    - HEAD is the milestone's last commit.

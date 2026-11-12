@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Sylament\Actions\Tests\Architecture;
+namespace Sylament\Tests\Architecture;
 
 use JsonException;
 
@@ -31,7 +31,7 @@ use function dirname;
  */
 function actionsManifest(): array
 {
-    $contents = file_get_contents(dirname(__DIR__, 2) . '/composer.json');
+    $contents = file_get_contents(dirname(__DIR__, 2) . '/packages/actions/composer.json');
 
     expect($contents)->toBeString();
 

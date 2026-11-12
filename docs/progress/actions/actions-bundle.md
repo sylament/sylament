@@ -214,7 +214,7 @@ Two integrations stay a `suggest` behind a guard.
 [`CanNotifyTest`](../../../packages/notifications/tests/Integration/CanNotifyTest.php), in the suite that has both packages, keeps that reference honest.
 
 The monorepo resolves every package out of one root `vendor/`, so dropping a require would fail nothing here and break only the split repository.
-[`ManifestTest`](../../../packages/actions/tests/Architecture/ManifestTest.php) therefore reads `composer.json` and asserts the three `sylament/*` requires and the two suggestions directly.
+[`ManifestTest`](../../../tests/Architecture/ManifestTest.php) therefore reads `composer.json` and asserts the three `sylament/*` requires and the two suggestions directly.
 
 ### Livewire-specific provider responsibilities are dropped, not ported
 

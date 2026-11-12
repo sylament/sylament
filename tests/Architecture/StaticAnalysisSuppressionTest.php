@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Sylament\Schemas\Tests\Architecture;
+namespace Sylament\Tests\Architecture;
 
 use FilesystemIterator;
 use RecursiveDirectoryIterator;
@@ -30,7 +30,7 @@ use function dirname;
  */
 function shippedSourceFiles(): array
 {
-    $packagesDirectory = dirname(__DIR__, 3);
+    $packagesDirectory = dirname(__DIR__, 2) . '/packages';
 
     $files = [];
 
@@ -52,7 +52,7 @@ function shippedSourceFiles(): array
 }
 
 it('suppresses no PHPStan error inline', function (string $file): void {
-    $content = (string) file_get_contents(dirname(__DIR__, 3) . '/' . $file);
+    $content = (string) file_get_contents(dirname(__DIR__, 2) . '/packages/' . $file);
 
     expect(str_contains($content, '@phpstan-ignore'))->toBeFalse(
         "Remove the @phpstan-ignore from {$file}. PHPStan runs at level max with no baseline, so an "

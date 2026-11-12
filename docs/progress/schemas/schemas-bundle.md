@@ -51,7 +51,7 @@ The reader rows live in their own files.
 
 [`packages/schemas/composer.json`](../../../packages/schemas/composer.json) requires `sylament/actions`, because schemas' own source imports `Action` and `ActionGroup` throughout the schemas↔actions integration; the reverse edge and Filament's matching cycle are recorded in [actions-bundle.md](../actions/actions-bundle.md#every-package-declares-what-its-own-source-needs-transitives-notwithstanding).
 The monorepo resolves every package out of one root `vendor/`, so dropping the line fails nothing in the schemas suite and breaks only the split repository.
-What is missing is a manifest test in the schemas suite asserting the require, the shape actions' [`ManifestTest`](../../../packages/actions/tests/Architecture/ManifestTest.php) has.
+What is missing is a manifest test in the schemas suite asserting the require, the shape actions' [`ManifestTest`](../../../tests/Architecture/ManifestTest.php) has.
 
 ### The `Make*` commands and stub publishing are not ported
 

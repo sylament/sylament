@@ -59,7 +59,7 @@ The guard's false branch is this package's to pin for all three, since [`Sylamen
 
 [`core_controller.ts`](../../../packages/support/assets/src/controllers/core_controller.ts) is an empty controller, registered `eager` and `enabled` under `symfony.controllers.core` in [`package.json`](../../../packages/support/assets/package.json), whose `autoimport` of `@sylament/support/styles/index.css` puts the whole toolkit stylesheet on the page and keeps `@sylament/support` in AssetMapper's eager import graph.
 No test reads that manifest entry, so a change to its `fetch` mode, its `enabled` flag or the autoimport path fails nothing.
-**Next step:** an Architecture test reading `package.json` that pins the three, on the model of [`ManifestTest`](../../../packages/actions/tests/Architecture/ManifestTest.php).
+**Next step:** an Architecture test reading `package.json` that pins the three, on the model of [`ManifestTest`](../../../tests/Architecture/ManifestTest.php).
 
 ### Livewire request and component wiring is not ported
 

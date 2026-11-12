@@ -50,7 +50,7 @@ Copy it here; the guard's false branch is `support`'s to pin, since [`SylamentBu
 ### No test pins the manifest's `symfony/*` requires
 
 The monorepo resolves every package out of one root `vendor/`, so a require dropped from [`composer.json`](../../../packages/notifications/composer.json) fails nothing in this suite and breaks only the split repository.
-A manifest entry is assertable all the same: actions' [`ManifestTest`](../../../packages/actions/tests/Architecture/ManifestTest.php) decodes its package's `composer.json` and pins each require and suggest, and [`SylamentTablesBundleTest`](../../../packages/tables/tests/Integration/SylamentTablesBundleTest.php) pins tables' `symfony/html-sanitizer` require the same way.
+A manifest entry is assertable all the same: actions' [`ManifestTest`](../../../tests/Architecture/ManifestTest.php) decodes its package's `composer.json` and pins each require and suggest, and [`SylamentTablesBundleTest`](../../../packages/tables/tests/Integration/SylamentTablesBundleTest.php) pins tables' `symfony/html-sanitizer` require the same way.
 Nothing under `packages/notifications/tests/` reads the manifest.
 What is missing is an Architecture `ManifestTest` that pins each `symfony/*` key the [divergence below](#the-manifest-declares-every-symfony-package-src-imports) names and `sylament/actions` as a require rather than a suggest.
 

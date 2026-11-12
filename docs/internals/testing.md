@@ -10,7 +10,7 @@ A trait with behaviour of its own gets its own file at its mirrored path, and a 
 
 A case that crosses packages, such as deleting a table row, is filed under the class the user configures to get it, here `DeleteAction`. A flows folder would hold tests that no class leads to, and it tends to collect whatever does not obviously belong elsewhere.
 
-Pest test files declare no namespace: Pest derives the test class's name from the file's path, so a namespace would only restate it.
+Pest test files declare no namespace: Pest derives the test class's name from the file's path, so a namespace would only restate it. The scans in `tests/Architecture/` are the exception, because they declare functions of their own, and `Sylament\Tests\Architecture` keeps those out of the global namespace that Pest's functions and every other test file share.
 
 ## Why is there one kind of test file?
 

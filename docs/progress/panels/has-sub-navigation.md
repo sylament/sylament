@@ -173,7 +173,7 @@ A hand-built `NavigationItem` in `getRecordSubNavigation()` keeps whatever `isAc
 ### Three sibling components, not one with variants
 
 The band is four templates under `templates/components/` — `SubNavigation/index.html.twig` dispatching to `SubNavigationSidebar`, `SubNavigationTabs` and `SubNavigationMobileMenu` — rather than one `SubNavigation` with `<Variant>.html.twig` files beside its index.
-That is not a preference: schemas' [`ComponentTemplateLocationTest`](../../../packages/schemas/tests/Architecture/ComponentTemplateLocationTest.php) admits only `components/<Name>/index.html.twig`, and variants only under `partials/` — so a variant file here would fail an architecture test in another package.
+That is not a preference: [`ComponentTemplateLocationTest`](../../../tests/Architecture/ComponentTemplateLocationTest.php) admits only `components/<Name>/index.html.twig`, and variants only under `partials/` — so a variant file here would fail an architecture test.
 The rule and its enforcement agree in [`.claude/rules/twig.md`](../../../.claude/rules/twig.md) (*Variants only under `partials/`*).
 
 The dispatcher is where the `end` flag is read: the base page chrome mounts the component **twice**, once before its content and once after with `:end="true"`, and the component draws the sidebar at exactly one of them (`Start` before, `End` after), the tabs before, and the mobile menu on the pre-content pass only.

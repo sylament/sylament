@@ -84,7 +84,7 @@ public function withEntityManager(EntityManagerInterface $entityManager): static
 
 It exists for the write seams that read through the manager they flush through, which rebind the reader they already hold rather than constructing one: `CreateAction`, `EditAction` and `ReplicateAction` their mounted schema's reader — `ReplicateAction`'s arm without a schema the action's own — tables' editable cell its table's, and the resource create and edit pages their form's.
 Built with `new`, each would drop a subclassed `sylament_schemas.association_reader` service — the service an application may decorate — and the container's property accessor with it.
-[`AssociationReaderConstructionTest`](../../../packages/schemas/tests/Architecture/AssociationReaderConstructionTest.php) keeps it so: in `packages/*/src` only `CanAccessAssociations`' manager-less fallback constructs a reader.
+[`AssociationReaderConstructionTest`](../../../tests/Architecture/AssociationReaderConstructionTest.php) keeps it so: in `packages/*/src` only `CanAccessAssociations`' manager-less fallback constructs a reader.
 
 A reader taking its manager per call instead — or resolving one from a `ManagerRegistry` per class — is deferred indefinitely.
 The record check runs inside `getData()`, through `InteractsWithSchemas::validateSchemaRecord()`, and only the caller knows which manager it will flush through, so a per-call manager would have to change that host contract; and a registry answers the first manager whose mapping knows a class, so it cannot pick a second manager over the same mapping — the shape a table whose `query()` runs on another manager has ([below](#what-the-taken-key-probe-cannot-see)).

@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Sylament\Forms\Tests\Architecture;
+namespace Sylament\Tests\Architecture;
 
 use Sylament\Support\Colors\ColorManager;
 use Sylament\Support\Colors\Components\ToggleComponent;
@@ -42,7 +42,7 @@ dataset('adversarial palettes', function (): iterable {
 
 function supportStylesheet(string $name): string
 {
-    return stylesheetAt(dirname(__DIR__, 3) . "/support/assets/src/styles/{$name}");
+    return stylesheetAt(dirname(__DIR__, 2) . "/packages/support/assets/src/styles/{$name}");
 }
 
 /**
@@ -51,7 +51,7 @@ function supportStylesheet(string $name): string
  */
 function toggleStylesheet(): string
 {
-    return preg_replace('#/\*.*?\*/#s', '', stylesheetAt(dirname(__DIR__, 2) . '/assets/src/styles/components/toggle.css')) ?? '';
+    return preg_replace('#/\*.*?\*/#s', '', stylesheetAt(dirname(__DIR__, 2) . '/packages/forms/assets/src/styles/components/toggle.css')) ?? '';
 }
 
 function stylesheetAt(string $path): string

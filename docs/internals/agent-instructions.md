@@ -65,7 +65,7 @@ These facts were verified with live probes on Claude Code 2.1.291, and the Bash 
 
 **No history in instruction files.** Milestone tags, dates, hashes and inventories of what shipped cannot be acted on and bury the rules. Git and `docs/progress/` hold them.
 
-**The check.** `packages/schemas/tests/Architecture/InstructionFilesTest.php` enforces:
+**The check.** `tests/Architecture/InstructionFilesTest.php` enforces:
 - the budgets
 - that every rule is scoped by anchored globs that each match a tracked file
 - that the root index agrees with the frontmatter

@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Sylament\Schemas\Tests\Architecture;
+namespace Sylament\Tests\Architecture;
 
 use FilesystemIterator;
 use RecursiveDirectoryIterator;
@@ -30,7 +30,7 @@ use function dirname;
  */
 function bundleTemplatesIn(string $half): array
 {
-    $packagesDirectory = dirname(__DIR__, 3);
+    $packagesDirectory = dirname(__DIR__, 2) . '/packages';
 
     $files = [];
 

@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Sylament\Schemas\Tests\Architecture;
+namespace Sylament\Tests\Architecture;
 
 use FilesystemIterator;
 use RecursiveDirectoryIterator;
@@ -22,7 +22,7 @@ use function dirname;
  */
 function instructionRepositoryRoot(): string
 {
-    return dirname(__DIR__, 4);
+    return dirname(__DIR__, 2);
 }
 
 /**

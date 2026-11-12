@@ -50,7 +50,7 @@ Each new alias needs its default glyph in [the fixture icon set](../../../packag
 [`SylamentTablesBundleTest`](../../../packages/tables/tests/Integration/SylamentTablesBundleTest.php) reads `packages/tables/composer.json` and asserts the `league/commonmark` suggest and the `symfony/html-sanitizer` and `ext-intl` requires, and nothing else in the manifest.
 The monorepo resolves every package out of one root `vendor/`, so dropping `ext-mbstring`, `sylament/forms` or `symfony/validator` fails nothing in the tables suite and breaks only the split repository.
 The kernel's `SylamentFormsBundle` registration is asserted (the `SylamentForms` Twig namespace and a `Checkbox` rendering inside a `Schema`), but that is the test kernel's half, not the manifest line.
-What is missing is the same manifest test asserting the three requires, the shape actions' [`ManifestTest`](../../../packages/actions/tests/Architecture/ManifestTest.php) has.
+What is missing is the same manifest test asserting the three requires, the shape actions' [`ManifestTest`](../../../tests/Architecture/ManifestTest.php) has.
 
 ### The `Make*` commands and stub publishing are not ported
 

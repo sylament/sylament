@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Sylament\Tables\Tests\Architecture;
+namespace Sylament\Tests\Architecture;
 
 use Sylament\Tables\Contracts\InteractsWithTable;
 
@@ -19,7 +19,7 @@ use function dirname;
  */
 function tablesTemplateHostCalls(): array
 {
-    $packagesDirectory = dirname(__DIR__, 3);
+    $packagesDirectory = dirname(__DIR__, 2) . '/packages';
 
     $calls = [];
 

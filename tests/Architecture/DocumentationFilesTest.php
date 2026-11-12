@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Sylament\Schemas\Tests\Architecture;
+namespace Sylament\Tests\Architecture;
 
 use RuntimeException;
 
@@ -17,7 +17,7 @@ use function dirname;
  */
 function documentationRepositoryRoot(): string
 {
-    return dirname(__DIR__, 4);
+    return dirname(__DIR__, 2);
 }
 
 /**

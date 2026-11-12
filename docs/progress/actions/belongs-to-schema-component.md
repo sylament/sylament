@@ -33,5 +33,5 @@ An action evaluated outside a schema therefore dies with *Call to a member funct
 Sylament routes those arms, and the by-type `Get` / `Set` arms beside them, through `getSchemaComponentOrFail()`, which throws a `LogicException` naming the class and what the utilities need.
 The failure mode is unchanged, since both stop the request on the same input, and an exception message is not API, so nothing a migrating user depends on moves.
 
-The method exists because the unguarded dereference cannot pass PHPStan at level max without an inline `@phpstan-ignore`, and shipped `src/` carries none: [`StaticAnalysisSuppressionTest`](../../../packages/schemas/tests/Architecture/StaticAnalysisSuppressionTest.php) fails the suite on one.
+The method exists because the unguarded dereference cannot pass PHPStan at level max without an inline `@phpstan-ignore`, and shipped `src/` carries none: [`StaticAnalysisSuppressionTest`](../../../tests/Architecture/StaticAnalysisSuppressionTest.php) fails the suite on one.
 A `LogicException` that says how to fix a missing required relationship is the house pattern, as in [`Modals::getLiveComponent()`](../../../packages/actions/src/Twig/Components/Modals.php), [`HasName`](../../../packages/actions/src/Concerns/HasName.php) and [`IconManager`](../../../packages/support/src/Icons/IconManager.php).

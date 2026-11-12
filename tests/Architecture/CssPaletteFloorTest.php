@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Sylament\Support\Tests\Architecture;
+namespace Sylament\Tests\Architecture;
 
 use Sylament\Support\Colors\ColorManager;
 use UnexpectedValueException;
@@ -63,7 +63,7 @@ function sortPalettes(array $palettes): array
 
 function stylesheet(string $name): string
 {
-    $path = dirname(__DIR__, 2) . "/assets/src/styles/{$name}";
+    $path = dirname(__DIR__, 2) . "/packages/support/assets/src/styles/{$name}";
 
     $css = file_get_contents($path);
 

@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Sylament\Schemas\Tests\Architecture;
+namespace Sylament\Tests\Architecture;
 
 use FilesystemIterator;
 use RecursiveDirectoryIterator;
@@ -29,7 +29,7 @@ function associationReaderConstructionIn(string $source): bool
 }
 
 it('constructs an AssociationReader only in the manager-less fallback', function (): void {
-    $packagesDirectory = dirname(__DIR__, 3);
+    $packagesDirectory = dirname(__DIR__, 2) . '/packages';
     $constructors = [];
 
     foreach (glob($packagesDirectory . '/*/src') ?: [] as $sourceDirectory) {

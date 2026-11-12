@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Sylament\Schemas\Tests\Architecture;
+namespace Sylament\Tests\Architecture;
 
 use FilesystemIterator;
 use RecursiveDirectoryIterator;
@@ -46,7 +46,7 @@ function dbalParameterTypeDeclarationIn(string $source): bool
 }
 
 it('names no DBAL parameter-type class in a type position', function (): void {
-    $packagesDirectory = dirname(__DIR__, 3);
+    $packagesDirectory = dirname(__DIR__, 2) . '/packages';
     $offenders = [];
 
     foreach (glob($packagesDirectory . '/*/src') ?: [] as $sourceDirectory) {

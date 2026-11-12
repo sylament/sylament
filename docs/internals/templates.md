@@ -8,7 +8,7 @@ Because ux-twig-component decides what is a tag by path. `ComponentTemplateFinde
 
 The second finder path is also why an anonymous component gets `<Name>/index.html.twig` for free.
 
-`packages/schemas/tests/Architecture/ComponentTemplateLocationTest.php` pins the shape of each half: every file under `components/` must be `components/<Name>/index.html.twig`, and every file under `partials/` must sit one directory deep, `partials/<Name>/<anything>.html.twig`. A component rendered from PHP can therefore grow variants without restructuring, while a second rendering of a tag component has to be a sibling component (panels' `SubNavigationSidebar`, `SubNavigationTabs` and `SubNavigationMobileMenu` beside `SubNavigation`).
+`tests/Architecture/ComponentTemplateLocationTest.php` pins the shape of each half: every file under `components/` must be `components/<Name>/index.html.twig`, and every file under `partials/` must sit one directory deep, `partials/<Name>/<anything>.html.twig`. A component rendered from PHP can therefore grow variants without restructuring, while a second rendering of a tag component has to be a sibling component (panels' `SubNavigationSidebar`, `SubNavigationTabs` and `SubNavigationMobileMenu` beside `SubNavigation`).
 
 ## What kinds of template sit under `partials/`?
 

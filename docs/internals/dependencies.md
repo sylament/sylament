@@ -45,7 +45,7 @@ A guard can only stand in front of a branch. `AttachAction::getRecordSelect()` a
 
 Filament's manifests have `actions`⇄`forms` directly and `schemas` → `actions`, but `filament/actions` reaches `filament/schemas` only through `filament/forms`. Here `actions` requires `schemas` directly, because its `src/` imports it.
 
-`packages/actions/tests/Architecture/ManifestTest.php` reads actions' `composer.json`, because removing the `sylament/forms` line would fail nothing else in the monorepo.
+`tests/Architecture/ManifestTest.php` reads actions' `composer.json`, because removing the `sylament/forms` line would fail nothing else in the monorepo.
 
 ## Why support stays lean
 
@@ -69,7 +69,7 @@ An omission is safe only while a package the importer requires hard-requires the
 | `league/flysystem` | `tables` (`Columns\ImageColumn`) | `sylament/forms` requires `^3` |
 
 Notes on particular rows:
-- **`doctrine/dbal`.** Every imported name exists on DBAL 3 and DBAL 4. That was checked against a cached DBAL 3 archive as well as the installed DBAL 4, because only DBAL 4 is installed here. `ParameterType` and `ArrayParameterType` are the trap: on DBAL 3 they are final classes of `int` constants, and on DBAL 4 they are native enums. A declared `: ParameterType` is therefore a `TypeError` on every DBAL 3 application, and no gate here can see it. `packages/schemas/tests/Architecture/DbalParameterTypeDeclarationTest.php` stands in for the check Composer cannot make. A negative `instanceof` guard, as in `tables`' `Query\AggregateQuery`, is a value test and is allowed.
+- **`doctrine/dbal`.** Every imported name exists on DBAL 3 and DBAL 4. That was checked against a cached DBAL 3 archive as well as the installed DBAL 4, because only DBAL 4 is installed here. `ParameterType` and `ArrayParameterType` are the trap: on DBAL 3 they are final classes of `int` constants, and on DBAL 4 they are native enums. A declared `: ParameterType` is therefore a `TypeError` on every DBAL 3 application, and no gate here can see it. `tests/Architecture/DbalParameterTypeDeclarationTest.php` stands in for the check Composer cannot make. A negative `instanceof` guard, as in `tables`' `Query\AggregateQuery`, is a value test and is allowed.
 - **`doctrine/collections`.** `actions`' `Replication\RecordReplicator` instantiates `ArrayCollection`, so an ORM-less `sylament/actions` would fatal there; `tables` only tests `instanceof`, which PHP does not autoload for. This is the omission to declare first if `doctrine/orm` ever stops being an `actions` requirement.
 - **The framework-bundle trio.** `panels`' `Routing\PanelRouteLoader` implements `RouteLoaderInterface` from framework-bundle itself. That import is still guaranteed, because `support` requires `symfony/ux-icons`, which requires framework-bundle; declare framework-bundle in `panels` the day `support` stops requiring `ux-icons`.
 - **`league/flysystem` in `tables`.** Only `ImageColumn`'s disk-path arm reaches the flysystem symbols, through the registry. A column whose state is already a URL works with no flysystem installed.

@@ -19,7 +19,7 @@ parameters:
         - tests/*Test.php
         - tests/**/*Test.php
         - tests/Pest.php
-        - tests/Expectations (?)
+        - tests/Expectations
 
     ignoreErrors:
         -

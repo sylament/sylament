@@ -31,7 +31,7 @@ The `@Fixtures` folder exists even before an area adds a template, because Twig'
 
 ## Why is every writable path per worker?
 
-`pest --parallel` runs each worker as its own process with its own `TEST_TOKEN`. `WorkerDirectory::path()` answers `var/tests/<TEST_TOKEN or 0>`, and everything the suite writes lives under it: the compiled container and the router's cache files (the build directory defaults to the cache directory), the logs, the session files, and the disks under `storage/`. The kernel exposes it as the `sylament_tests.worker_dir` parameter for configuration files. Two workers compiling one container into one directory corrupt each other's fixed-name files, which is why nothing writes to `sys_get_temp_dir()` or a fixed path. `composer test:pest` runs in parallel from the start, so a race shows on the day it is written.
+`pest --parallel` runs each worker as its own process with its own `TEST_TOKEN`. `WorkerDirectory::path()` answers `var/tests/<TEST_TOKEN or 0>`, and everything the suite writes lives under it: the compiled container and the router's cache files (the build directory defaults to the cache directory), the logs, the session files, the SQLite files under `database/`, and the disks under `storage/`. The cache directory is `cache/<env>/<platform>` (see the database section below). The kernel exposes the worker directory as the `sylament_tests.worker_dir` parameter for configuration files. Two workers compiling one container into one directory corrupt each other's fixed-name files, which is why nothing writes to `sys_get_temp_dir()` or a fixed path. `composer test:pest` runs in parallel from the start, so a race shows on the day it is written.
 
 Debug stays on: a worker recompiles its container when a fixture changes, and Symfony checks freshness once per process.
 
@@ -46,6 +46,46 @@ Every root-suite test file outside `tests/Architecture/` shares the global names
 ## What does PHPStan analyse in the root suite?
 
 Everything under `tests/` except every `*Test.php` file in it, `tests/Pest.php` and `tests/Expectations/`. PHPStan types a Pest closure's `$this` as `Pest\PendingCalls\TestCall`, so `$this::getContainer()` fails at any level, and custom expectations are reached through `__call`. The kernel, its configuration, the infrastructure and the fixtures are ordinary PHP and are held to level max like shipped code.
+
+## How does the root suite give every test one database?
+
+Every manager the kernel's `doctrine` registry holds, in the test itself or in any request it sends, works on one database, and that database starts each test empty, identity counters included, on SQLite, MySQL and PostgreSQL. The per-package suites give each manager a database of its own, which suits a manager built by hand; the root suite's managers come from DoctrineBundle and a request runs on its own container, so a request has to see what the test seeded.
+
+### Configuration
+
+`tests/Fixtures/config/packages/doctrine.php` configures DoctrineBundle:
+
+- One `default` connection, whose URL the container reads at runtime from `SYLAMENT_TEST_CONNECTION_URL`. `TestDatabaseExtension` publishes it in every process, the parallel workers included, before any test is collected: on SQLite the worker's `database/test.sqlite`, on a server the URL `SYLAMENT_TEST_DATABASE_URL` names with its database renamed `<base>_suite_<TEST_TOKEN or 0>`. A value read through `getenv()` while the container compiles is not a tracked resource, so a compiled container would keep a URL after the environment changed; the kernel's cache directory is keyed by platform as well, because `EnableForeignKeys` is registered only on SQLite.
+- The ORM in `entity_managers:` form, so an area can add a named manager without restructuring the file. Its mappings are globbed: one `attribute` mapping per `tests/Fixtures/<Area>/Entity/`, with the area's namespace as prefix. The services glob excludes an `Entity/` folder once it exists and stops watching it, so a `GlobResource` over the folders is what recompiles the container when one appears or goes; without it, removing a folder left a container mapping a missing directory.
+- One metadata cache for the whole process, `TestDatabase::metadataCache()`. DoctrineBundle's default pool lives in each container, so every boot would read the attributes again; `cache.system` lives on disk and would outlast an entity edit. The service is not shared, because `Container::reset()`, which `KernelTestCase` runs at every kernel shutdown, resets every shared service it holds, and that would empty the cache. It deep-clones what it stores and what it hands out (`ArrayAdapter`'s default), so no two managers share a `ClassMetadata` object. Query and result caches, filters, hints and listeners stay per container, because tests change them.
+- The second-level cache, on with an in-memory region cache per container; it caches only entities marked `#[ORM\Cache]`.
+- DBAL's logging and profiling, off, so no container collects every statement it runs.
+- Custom DBAL types go under `dbal.types`, in the area's own config file.
+
+### Lifecycle
+
+The client reboots the kernel between requests, Symfony's default, so each request after the first builds a new container and a new manager, as production does. If building a manager prepared the database, the second request would erase the test's seed. The state therefore lives in the process, in `TestDatabase`, never in a container service:
+
+1. At each test's start, the extension's subscriber calls `TestDatabase::testStarted()`, which closes the connections the kernel opened in the previous test and marks the database stale. DoctrineBundle already closes every connection when its kernel shuts down, which `KernelTestCase` does after every test; this closes one reopened afterwards.
+2. `TestDatabaseMiddleware` wraps the driver, and its `connect()` has `TestDatabase` prepare the database before connecting, once per test. On SQLite that deletes the worker's `test.sqlite` with its `-journal`, `-wal` and `-shm` sidecars, since a stale one would replay onto the fresh copy, and copies the template over it. On a server the pool wipes the worker's database, after running the clean-ups queued under its name. DBAL connects lazily, so building a manager prepares nothing, and a test that never connects pays nothing.
+3. The schema is built once per process, at the first preparation: from every manager the registry holds, through a manager built over that manager's configuration and event manager on a connection of `TestDatabase`'s or the pool's own. Neither the recorder nor the connecting connection sees it, and preparing never reaches the connection being opened; a nested preparation throws rather than recursing. On SQLite the template goes to the worker's `database/template.sqlite`, deleted and rebuilt by every process, never reused from an earlier run; on a server the pool drops and creates the worker's database and builds it there.
+4. `entityManager()` fetches from the current container on every call, so after a request it answers the rebooted kernel's manager.
+
+`tests/Infrastructure/Doctrine/TestDatabaseTest.php` pins the lifecycle: a seed survives two requests through a rebooting client, and the next test starts empty with an identifier of 1. Its second case means something only after the first, in the same process.
+
+### SQLite runs as a file
+
+The test connection turns off `synchronous` and keeps its journal in memory, because the file lives for one test. Measured, 200 cycles of preparing, seeding one row and reading it back took 78.5 ms with SQLite's defaults and 41.3 ms with both pragmas. The middleware runs them after connecting, below the recorder.
+
+### The middleware order
+
+DoctrineBundle sorts the `doctrine.middleware` services by descending priority, and DBAL wraps the driver in that order, so the highest priority is the innermost layer. `EnableForeignKeys` (SQLite only) sits innermost, `TestDatabaseMiddleware` in the middle and `RecordingMiddleware` outermost, so the recorder sees neither a preparation nor a `PRAGMA`. DoctrineBundle builds one instance of each per connection from the registered definition, which is therefore abstract: a recorder fetched by its class would be a different object that never records. `InteractsWithDatabase` reads it from the connection's configuration instead.
+
+### Why the extension catches a sealed facade
+
+Pest's parallel coordinator seals PHPUnit's event facade before it bootstraps the configured extensions, so registering a subscriber there throws. PHPUnit records the throw as a warning, and Pest fails the run without printing it. The coordinator runs no test, so `TestDatabaseExtension` lets that registration go; the workers bootstrap before sealing.
+
+Booting the kernel inside a test needs no error-handler bootstrap: FrameworkBundle registers Symfony's error handler without replacing one, and finding PHPUnit's in place, it restores both handlers, so PHPUnit sees nothing left behind.
 
 ## Why does the Doctrine rig live in the root suite's infrastructure?
 
@@ -62,10 +102,11 @@ Support's own suite tests the rig: its tests sit in `tests/Unit/Doctrine/` and i
 
 | Piece | Job |
 |---|---|
-| `TestPlatform` | Reads `SYLAMENT_TEST_DATABASE_URL`: unset or empty means in-memory SQLite, `mysql://` or `postgresql://` (or `pgsql://`) names a server, any other scheme throws. |
+| `TestPlatform` | Reads `SYLAMENT_TEST_DATABASE_URL`: unset or empty means SQLite (in memory for the per-package suites, a file for the root suite), `mysql://` or `postgresql://` (or `pgsql://`) names a server, any other scheme throws. |
 | `TestEntityManagers` | Builds a package's manager. On SQLite it creates the schema in memory; on a server it asks the pool. `createSqlite()` always answers SQLite. It registers custom types once per process and takes an optional configuration callback. |
-| `DatabasePool` | Hands a server test the databases SQLite would give it (below). `cleanUpBeforeNextWipe()` queues statements to drop a test's own trigger or helper table. |
+| `DatabasePool` | Hands a server test the databases SQLite would give it (below), and the root suite its one database per worker (`prepareWorld()`, `worldName()`). `cleanUpBeforeNextWipe()` queues statements to drop a test's own trigger or helper table. |
 | `DatabasePoolExtension`, `DatabasePoolTestStarted` | The PHPUnit extension and the subscriber it registers, telling the pool where each test starts. Both are inert on SQLite. |
+| `TestDatabase`, `TestDatabaseMiddleware`, `TestDatabaseExtension`, `TestDatabaseTestStarted` | The root suite's one database per test, its preparation on connect, and the extension that publishes its URL and tells it where each test starts (above). |
 | `RecordingMiddleware` (with `RecordingDriver`, `RecordingConnection`, `RecordingStatement`) | Records every statement's SQL, so a test can assert what a read costs. `withoutRecording()` suspends it. |
 | `SqlNormalizer` | Renumbers Doctrine's minted aliases (`s0_` → `a0_`, `t0` → `p0`, result aliases by stem), so a pinned statement survives a Doctrine release that renumbers them. |
 | `DriverValues` | Canonicalises driver values: MySQL and PostgreSQL return `SUM` and `AVG` as decimal strings where SQLite returns numbers. |
@@ -90,7 +131,9 @@ The pool runs all of this on connections of its own, so none of it reaches a tes
 - One housekeeping connection per database carries the schema build and every wipe, and holds the session settings: on MySQL `foreign_key_checks = 0`, `information_schema_stats_expiry = 0` and 10-second lock timeouts; on PostgreSQL `lock_timeout = '10s'`.
 - A test's own connection carries only the recorder, if the test gave one.
 
-The housekeeping connections stay open for the life of the process, one per pool slot. That is why a server run holds many connections at once, why server runs are serial, and why `TEST_TOKEN` keeps two parallel processes' databases apart without keeping them inside the server's connection limit.
+The root suite's database is one more name, `<base>_suite_<TEST_TOKEN or 0>`, built the same way on its first use in a process and wiped before every later test.
+
+The housekeeping connections stay open for the life of the process, one per pool slot. That is why a per-package server run holds many connections at once, why those runs are serial, and why `TEST_TOKEN` keeps two parallel processes' databases apart without keeping them inside the server's connection limit.
 
 ## How is a database wiped?
 

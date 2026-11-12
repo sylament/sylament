@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Sylament\Tests\Infrastructure\Doctrine;
 
+use Closure;
 use Doctrine\DBAL\Connection;
 use Doctrine\DBAL\DriverManager;
 use Doctrine\DBAL\Tools\DsnParser;
@@ -15,8 +16,9 @@ use LogicException;
 /**
  * Gives every test the databases in-memory SQLite would. The k-th entity manager a
  * test creates gets a server database of its own, built once per process and
- * wiped, identity counters included, whenever a later test takes it. Nothing the
- * pool runs reaches a test's recorder.
+ * wiped, identity counters included, whenever a later test takes it. The root
+ * suite's kernel instead shares one database per process, {@see prepareWorld()}.
+ * Nothing the pool runs reaches a test's recorder.
  *
  * @internal
  *
@@ -41,14 +43,14 @@ final class DatabasePool
     private array $housekeeping = [];
 
     /**
-     * Quoted table names, by package.
+     * Quoted table names, by package, and the root suite's by its database name.
      *
      * @var array<string, list<string>>
      */
     private array $tables = [];
 
     /**
-     * MySQL's auto-increment table names, by package.
+     * MySQL's auto-increment table names, keyed as the tables are.
      *
      * @var array<string, list<string>>
      */
@@ -110,7 +112,7 @@ final class DatabasePool
         $database = sprintf('%s_%s_%s_%d', $this->base, $package, getenv('TEST_TOKEN') ?: '0', ++$this->slot);
 
         if (isset($this->housekeeping[$database])) {
-            $this->wipe($package, $database);
+            $this->wipe($database, $this->tables[$package] ?? [], $this->counters[$package] ?? []);
         } else {
             $this->build($package, $database, $config);
         }
@@ -121,6 +123,40 @@ final class DatabasePool
         $this->handedOut[] = $connection;
 
         return new EntityManager($connection, $config);
+    }
+
+    /**
+     * The root suite's database for this process: `<base>_suite_<TEST_TOKEN or 0>`.
+     */
+    public function worldName(): string
+    {
+        return sprintf('%s_suite_%s', $this->base, getenv('TEST_TOKEN') ?: '0');
+    }
+
+    /**
+     * Readies the root suite's database for the next test. The first call creates it
+     * and hands `$build` the pool's own connection to it, and creates it again after
+     * a build that threw; every later call runs the clean-ups queued under its name,
+     * then wipes it, identity counters included.
+     *
+     * @param Closure(Connection): void $build
+     */
+    public function prepareWorld(Closure $build): void
+    {
+        $database = $this->worldName();
+
+        if (isset($this->housekeeping[$database])) {
+            $this->wipe($database, $this->tables[$database] ?? [], $this->counters[$database] ?? []);
+
+            return;
+        }
+
+        $connection = $this->create($database);
+        $build($connection);
+
+        $this->housekeeping[$database] = $connection;
+        $this->tables[$database] = $this->readTables($connection);
+        $this->counters[$database] = $this->readCounters($connection);
     }
 
     /**
@@ -136,15 +172,7 @@ final class DatabasePool
 
     private function build(string $package, string $database, Configuration $config): void
     {
-        $server = $this->server();
-        $name = $server->getDatabasePlatform()->quoteSingleIdentifier($database);
-
-        $server->executeStatement($this->platform === TestPlatform::PostgreSql
-            ? "DROP DATABASE IF EXISTS {$name} WITH (FORCE)"
-            : "DROP DATABASE IF EXISTS {$name}");
-        $server->executeStatement("CREATE DATABASE {$name}");
-
-        $connection = $this->housekeeping[$database] = $this->connect($database);
+        $connection = $this->housekeeping[$database] = $this->create($database);
         $schemaManager = new EntityManager($connection, $config);
 
         foreach (new SchemaTool($schemaManager)->getCreateSchemaSql($schemaManager->getMetadataFactory()->getAllMetadata()) as $sql) {
@@ -155,7 +183,27 @@ final class DatabasePool
         $this->counters[$package] ??= $this->readCounters($connection);
     }
 
-    private function wipe(string $package, string $database): void
+    /**
+     * Drops and creates the database, and opens the pool's own connection to it.
+     */
+    private function create(string $database): Connection
+    {
+        $server = $this->server();
+        $name = $server->getDatabasePlatform()->quoteSingleIdentifier($database);
+
+        $server->executeStatement($this->platform === TestPlatform::PostgreSql
+            ? "DROP DATABASE IF EXISTS {$name} WITH (FORCE)"
+            : "DROP DATABASE IF EXISTS {$name}");
+        $server->executeStatement("CREATE DATABASE {$name}");
+
+        return $this->connect($database);
+    }
+
+    /**
+     * @param list<string> $tables
+     * @param list<string> $counters
+     */
+    private function wipe(string $database, array $tables, array $counters): void
     {
         $connection = $this->housekeeping[$database];
 
@@ -164,8 +212,6 @@ final class DatabasePool
         }
 
         unset($this->cleanups[$database]);
-
-        $tables = $this->tables[$package] ?? [];
 
         if ($tables === []) {
             return;
@@ -185,8 +231,6 @@ final class DatabasePool
         foreach ($nonEmpty as $table) {
             $connection->executeStatement('DELETE FROM ' . self::name($table));
         }
-
-        $counters = $this->counters[$package] ?? [];
 
         if ($counters === []) {
             return;

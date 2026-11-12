@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Sylament\Tests;
 
 use Sylament\Support\DependencyInjection\Contracts\StaticInstance;
+use Sylament\Tests\Infrastructure\Concerns\InteractsWithDatabase;
 use Sylament\Tests\Infrastructure\WorkerDirectory;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
 use Symfony\Component\Filesystem\Filesystem;
@@ -12,6 +13,7 @@ use Symfony\UX\TwigComponent\Test\InteractsWithTwigComponents;
 
 abstract class TestCase extends KernelTestCase
 {
+    use InteractsWithDatabase;
     use InteractsWithTwigComponents;
 
     private static int $declaredClassCount = 0;

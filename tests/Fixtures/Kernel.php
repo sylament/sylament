@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Sylament\Tests\Fixtures;
 
+use Doctrine\Bundle\DoctrineBundle\DoctrineBundle;
 use League\FlysystemBundle\FlysystemBundle;
 use Sylament\Actions\SylamentActionsBundle;
 use Sylament\Forms\SylamentFormsBundle;
@@ -13,6 +14,7 @@ use Sylament\Panels\SylamentPanelsBundle;
 use Sylament\Schemas\SylamentSchemasBundle;
 use Sylament\Support\SylamentSupportBundle;
 use Sylament\Tables\SylamentTablesBundle;
+use Sylament\Tests\Infrastructure\Doctrine\TestPlatform;
 use Sylament\Tests\Infrastructure\WorkerDirectory;
 use Sylament\Widgets\SylamentWidgetsBundle;
 use Symfony\Bundle\FrameworkBundle\FrameworkBundle;
@@ -36,6 +38,7 @@ class Kernel extends BaseKernel
     {
         return [
             new FrameworkBundle(),
+            new DoctrineBundle(),
             new TwigBundle(),
             new TwigComponentBundle(),
             new UXIconsBundle(),
@@ -55,9 +58,13 @@ class Kernel extends BaseKernel
         ];
     }
 
+    /**
+     * Keyed by platform too: the container registers SQLite's foreign-key middleware
+     * only on SQLite, and nothing tells a compiled container the platform changed.
+     */
     public function getCacheDir(): string
     {
-        return WorkerDirectory::path() . '/cache/' . $this->environment;
+        return WorkerDirectory::path() . '/cache/' . $this->environment . '/' . mb_strtolower(TestPlatform::current()->name);
     }
 
     public function getLogDir(): string

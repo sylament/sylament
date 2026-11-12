@@ -15,6 +15,10 @@
         </testsuite>
     </testsuites>
 
+    <extensions>
+        <bootstrap class="Sylament\Tests\Infrastructure\PHPUnit\TestDatabaseExtension"/>
+    </extensions>
+
     <source>
         <include>
             <directory>packages/actions/src</directory>

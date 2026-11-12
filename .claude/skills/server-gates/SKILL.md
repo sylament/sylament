@@ -4,7 +4,7 @@ description: Use before landing anything that touches Doctrine, to run the MySQL
 ---
 # Server gates
 
-`composer test` runs on in-memory SQLite. The definition of done also needs MySQL and PostgreSQL green at landing; an inner loop may stay on SQLite.
+`composer test` runs on SQLite: in memory for the per-package suites, a file per worker for the root suite. The definition of done also needs MySQL and PostgreSQL green at landing; an inner loop may stay on SQLite.
 
 ## 1. Start the servers
 
@@ -21,7 +21,7 @@ composer test:mysql
 composer test:postgresql
 ```
 
-Each sets `SYLAMENT_TEST_DATABASE_URL` and runs the whole `composer test`. Run them one after the other, never side by side (step 4).
+Each sets `SYLAMENT_TEST_DATABASE_URL` and runs the whole `composer test`, the root suite under `--parallel` included. Run them one after the other, never side by side (step 4).
 
 ## 3. Run one package on one server
 
@@ -30,12 +30,12 @@ SYLAMENT_TEST_DATABASE_URL='postgresql://postgres:sylament@127.0.0.1:55433/sylam
 SYLAMENT_TEST_DATABASE_URL='mysql://root:sylament@127.0.0.1:33307/sylament_test?serverVersion=8.4.0&charset=utf8mb4' composer test:<package>
 ```
 
-With the variable unset or empty, a suite runs on in-memory SQLite. The URL must name a database (`…/sylament_test`): the pool derives its own databases from that name.
+With the variable unset or empty, a suite runs on SQLite. The URL must name a database (`…/sylament_test`): the pool derives its own databases from that name. The root suite takes a path the same way: `SYLAMENT_TEST_DATABASE_URL='<url>' vendor/bin/pest --parallel tests/<Area>`.
 
 ## 4. Keep server runs serial
 
-- The pool gives each entity manager a test builds a database of its own, named `<base>_<package>_<TEST_TOKEN>_<slot>`. The `TEST_TOKEN` a parallel run sets keeps two processes' databases apart.
-- It separates databases, not connections: the pool keeps its own housekeeping connection to every database it has built, open for the life of the process, beside the connections the tests hold.
+- For the per-package suites the pool gives each entity manager a test builds a database of its own, named `<base>_<package>_<TEST_TOKEN>_<slot>`; for the root suite it keeps one per worker, `<base>_suite_<TEST_TOKEN>`. The `TEST_TOKEN` a parallel run sets keeps two processes' databases apart.
+- It separates databases, not connections: the pool keeps its own housekeeping connection to every database it has built, open for the life of the process, beside the connections the tests hold. A root-suite worker holds about three, which is why that suite alone runs in parallel on a server.
 - PostgreSQL allows 100 connections and every concurrent run shares them, so run one server suite at a time and stop a stale one before starting the next.
 
 ## 5. Clean up pool databases

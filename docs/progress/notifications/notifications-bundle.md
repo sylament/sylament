@@ -31,6 +31,7 @@ What the port adds on top of the provider's responsibilities is container wiring
 | `Livewire::component('database-notifications', …)` | [`packageBooted()`](../../../vendor/filament/notifications/src/NotificationsServiceProvider.php) | blocked | the database-notifications panel | [detail](#the-database-notifications-registration-waits-on-its-panel) |
 | Translations (`->hasTranslations()`) | [`configurePackage()`](../../../vendor/filament/notifications/src/NotificationsServiceProvider.php) | todo | — | [detail](#the-translation-catalogue-is-unported-so-the-close-label-is-an-english-literal) |
 | `Testable::mixin(new TestsNotifications)` | [`packageBooted()`](../../../vendor/filament/notifications/src/NotificationsServiceProvider.php) | skipped | — | [diverges](#livewire-specific-provider-responsibilities-are-dropped-not-ported) |
+| [The tester's `NotificationRecorder`, registered only in test mode](../../../packages/notifications/src/SylamentNotificationsBundle.php) (`configureTesting()`, `build()`) | — | done | — | [tests-notifications.md](tests-notifications.md#the-recorder-exists-only-when-frameworktest-is-on-and-answers-for-one-request) |
 
 ## Details
 
@@ -167,5 +168,5 @@ Two absences are deliberate.
 ### Livewire-specific provider responsibilities are dropped, not ported
 
 `packageBooted()` ends with `Testable::mixin(new TestsNotifications)`, which grafts `assertNotified()` / `assertNotNotified()` onto Livewire's fluent test object.
-Sylament tests are Pest over `KernelTestCase`, with no `Testable` to mix into: the same **skipped** call the [tables](../tables/tables-bundle.md#livewire-specific-provider-responsibilities-are-dropped-not-ported) and [actions](../actions/actions-bundle.md#livewire-specific-provider-responsibilities-are-dropped-not-ported) bundles record.
-What is skipped is the **mixin registration**, not the helpers: both `src/Testing/` files keep **todo** rows in the [package README](README.md#unported), and [what a Pest-shaped port would read instead](notification.md#the-assertion-helpers-read-a-collection-the-stack-does-not-hold) is written up with them.
+The registration is not ported, because there is no Livewire `Testable` to attach to, as actions' [is not](../actions/actions-bundle.md#livewire-specific-provider-responsibilities-are-dropped-not-ported).
+The helpers are: actions' [`Testable`](../actions/testable.md) carries `assertNotified()` and `assertNotNotified()` as real methods, which match through [`TestsNotifications`](tests-notifications.md) against what the bundle's test-mode recorder kept.

@@ -6,12 +6,23 @@ namespace Sylament\Notifications;
 
 use Sylament\Notifications\Delivery\LiveDeliverySubscriber;
 use Sylament\Notifications\Delivery\SessionNotifications;
+use Sylament\Notifications\DependencyInjection\Compiler\NotificationRecorderPass;
+use Sylament\Notifications\Testing\NotificationRecorder;
 use Sylament\Support\SylamentBundle;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
 
+use function Symfony\Component\DependencyInjection\Loader\Configurator\service;
+
 class SylamentNotificationsBundle extends SylamentBundle
 {
+    public function build(ContainerBuilder $container): void
+    {
+        parent::build($container);
+
+        $container->addCompilerPass(new NotificationRecorderPass());
+    }
+
     /**
      * @param array<string, mixed> $config
      */
@@ -21,6 +32,7 @@ class SylamentNotificationsBundle extends SylamentBundle
         $this->configureColorPolicies($configurator);
         $this->configureDelivery($configurator);
         $this->configureTwigComponents($configurator);
+        $this->configureTesting($configurator);
     }
 
     public function prependExtension(ContainerConfigurator $configurator, ContainerBuilder $container): void
@@ -70,6 +82,16 @@ class SylamentNotificationsBundle extends SylamentBundle
             ->load(__NAMESPACE__ . '\\Twig\\Components\\', __DIR__ . '/Twig/Components/')
             ->autowire()
             ->autoconfigure();
+    }
+
+    private function configureTesting(ContainerConfigurator $configurator): void
+    {
+        $configurator->services()
+            ->set(NotificationRecorder::class)
+            ->decorate(SessionNotifications::class)
+            ->args([service('.inner')])
+            ->public()
+            ->tag('kernel.reset', ['method' => 'reset']);
     }
 
     private function prependAssetMapper(ContainerBuilder $container): void

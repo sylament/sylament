@@ -19,10 +19,10 @@ A test case creates one through [`InteractsWithLiveComponents::createLiveCompone
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
-| [`call()` / `set()`, fluent, and `component()` / `response()`](../../../packages/actions/src/Testing/Testable.php) | — (no Filament source) | done | — | [semantics](#the-kernel-catches-exceptions-and-the-tester-rethrows-the-original) |
-| [`refresh()` / `emit()` / `submitForm()` / `actingAs()` / `setRouteLocale()` / `render()`](../../../packages/actions/src/Testing/Testable.php) | — (no Filament source) | in progress | — | [detail](#the-other-primitives-wait-for-a-test-that-needs-them) |
-| `assertRedirect()` / `assertNoRedirect()` | — (Livewire's) | todo | — | — |
-| `assertNotified()` / `assertNotNotified()` | [`TestsNotifications.php`](../../../vendor/filament/notifications/src/Testing/TestsNotifications.php) | todo | — | — |
+| [`call()` / `set()`, fluent, and `component()` / `response()` / `render()`](../../../packages/actions/src/Testing/Testable.php) | — (no Filament source) | done | — | [semantics](#the-kernel-catches-exceptions-and-the-tester-rethrows-the-original) · [semantics](#after-a-redirect-only-the-response-and-the-notifications-can-be-read) |
+| [`refresh()` / `emit()` / `submitForm()` / `actingAs()` / `setRouteLocale()`](../../../packages/actions/src/Testing/Testable.php) | — (no Filament source) | in progress | — | [detail](#the-other-primitives-wait-for-a-test-that-needs-them) |
+| [`assertRedirect()` / `assertNoRedirect()`](../../../packages/actions/src/Testing/Testable.php) | — (Livewire's `TestsRedirects`) | done | — | [semantics](#a-redirect-is-a-3xx-response-and-its-location-is-compared-as-a-full-url) · [diverges](#assertnoredirect-names-the-location-it-failed-on) |
+| [`assertNotified()` / `assertNotNotified()`, a guarded optional over `sylament/notifications`](../../../packages/actions/src/Testing/Testable.php) | [`TestsNotifications.php`](../../../vendor/filament/notifications/src/Testing/TestsNotifications.php) | done | — | [semantics](#the-notification-assertions-read-what-the-testers-requests-sent) · [tests-notifications.md](../notifications/tests-notifications.md#a-title-matches-the-sent-title-and-a-notification-everything-but-the-id) |
 | [`InteractsWithLiveComponents::createLiveComponent()`](../../../packages/actions/src/Testing/InteractsWithLiveComponents.php) | — (no Filament source) | done | — | [semantics](#createlivecomponent-builds-uxs-tester-through-uxs-own-method) |
 | [`ExceptionRecorder`](../../../packages/actions/src/Testing/ExceptionRecorder.php), registered only in test mode | — (no Filament source) | done | — | [semantics](#the-recorder-exists-only-when-frameworktest-is-on) |
 
@@ -30,7 +30,7 @@ A test case creates one through [`InteractsWithLiveComponents::createLiveCompone
 
 ### The other primitives wait for a test that needs them
 
-`refresh()`, `emit()`, `submitForm()`, `actingAs()`, `setRouteLocale()` and `render()` delegate to UX's tester as `call()` and `set()` do, and no test uses them yet; each is covered by the first test that does, since every ported helper is exercised by the suite.
+`refresh()`, `emit()`, `submitForm()`, `actingAs()` and `setRouteLocale()` delegate to UX's tester as `call()` and `set()` do, and no test uses them yet; each is covered by the first test that does, since every ported helper is exercised by the suite.
 
 ## Semantics
 
@@ -53,3 +53,27 @@ It resolves `test.client` itself and hands the same client to UX and to the test
 [`SylamentActionsBundle`](actions-bundle.md) registers `ExceptionRecorder` as a public `kernel.exception` listener at priority 128, ahead of UX's 422 re-render (20) and the framework's error page (-128), and [`ExceptionRecorderPass`](../../../packages/actions/src/DependencyInjection/Compiler/ExceptionRecorderPass.php) removes it unless `test.service_container` is defined.
 FrameworkBundle defines that service only under `framework.test`, and an extension's `load()` runs on a container of its own that never sees another extension's services, so test mode is read in a compiler pass, which runs before the listeners are collected.
 The recorder keeps the first exception since the tester last took one, because an exception thrown while the error page renders would otherwise replace the one the host threw.
+
+### After a redirect, only the response and the notifications can be read
+
+A redirect answers a raw 302 in test mode, with no component to re-hydrate, so after one `response()`, `assertRedirect()`, `assertNoRedirect()`, `assertNotified()` and `assertNotNotified()` keep working.
+Anything else that reads or drives the component, `render()` and `component()` included, throws a `LogicException` naming the `Location`: `A live component action has redirected to [<location>] and you can no longer access the component.`, where UX's own message stops before the location.
+`callAction()` reads the response, so a redirecting action ends the call without the exception.
+
+### A redirect is a 3xx response, and its `Location` is compared as a full URL
+
+`assertRedirect()` fails with Livewire's `Component did not perform a redirect.` unless the last response is a redirect, and with a URI it compares the `Location` through HttpFoundation's `ResponseHeaderLocationSame`, which resolves a relative URL against the request as Livewire's `url()` does, so `/products/1` and `http://localhost/products/1` match.
+Livewire also takes a component class, resolved to its route; a live component here has no route of its own, so that arm is not ported.
+
+### The notification assertions read what the tester's requests sent
+
+After each of its requests the tester reads [`NotificationRecorder`](../notifications/tests-notifications.md#the-recorder-exists-only-when-frameworktest-is-on-and-answers-for-one-request) through the client's container and keeps what it found, and `assertNotified()` and `assertNotNotified()` hand that list to [`TestsNotifications`](../notifications/tests-notifications.md) and empty it.
+Both make the mount request first, so a notification sent on mount counts.
+`sylament/notifications` is a `suggest` of actions, so both are a guarded optional: without the package they throw a `LogicException` naming it, and with the package but no recorder in the kernel they throw one naming `SylamentNotificationsBundle` and `framework.test`, rather than pass on a list nothing recorded.
+The suite's one kernel has both the package and its bundle, so neither refusal runs there; the guard is pinned by use instead, since a renamed recorder or matcher dead-ends every `assertNotified()`, which every toast the suite asserts then fails.
+
+## Divergences
+
+### `assertNoRedirect()` names the location it failed on
+
+Livewire's `assertNoRedirect()` asserts with no message, so it fails as `Failed asserting that false is true.`; here it fails as `Component performed a redirect to [<location>].`

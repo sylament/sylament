@@ -16,20 +16,15 @@ owns:
 | --- | --- | --- | --- | --- |
 | [`make(string $name)` with an action's name](../../../packages/actions/src/Testing/TestAction.php) | [`Testing/TestAction.php`](../../../vendor/filament/actions/src/Testing/TestAction.php) | done | — | [diverges](#make-constructs-directly) |
 | [`schemaComponent()` and `toArray(?string $defaultSchema = null)`](../../../packages/actions/src/Testing/TestAction.php) | [`Testing/TestAction.php`](../../../vendor/filament/actions/src/Testing/TestAction.php) | done | — | — |
-| [`make()` with an action class-string, and `table()`](../../../packages/actions/src/Testing/TestAction.php) | [`Testing/TestAction.php`](../../../vendor/filament/actions/src/Testing/TestAction.php) | in progress | — | [detail](#a-class-string-and-a-table-record-wait-for-a-table-host-test) · [diverges](#an-object-record-keeps-its-place-until-the-host-mints-its-key) |
-| [`bulk()` / `arguments()`](../../../packages/actions/src/Testing/TestAction.php) | [`Testing/TestAction.php`](../../../vendor/filament/actions/src/Testing/TestAction.php) | in progress | — | [detail](#bulk-and-arguments-wait-for-a-test-that-needs-them) |
+| [`make()` with an action class-string, and `table()` with a record object](../../../packages/actions/src/Testing/TestAction.php) | [`Testing/TestAction.php`](../../../vendor/filament/actions/src/Testing/TestAction.php) | done | — | [diverges](#an-object-record-keeps-its-place-until-the-host-mints-its-key) |
+| [`table()` with a key, an array record or no record, and `bulk()` / `arguments()`](../../../packages/actions/src/Testing/TestAction.php) | [`Testing/TestAction.php`](../../../vendor/filament/actions/src/Testing/TestAction.php) | in progress | — | [detail](#the-other-table-arms-bulk-and-arguments-wait-for-a-test-that-needs-them) |
 | `checkArguments()` | [`Testing/TestAction.php`](../../../vendor/filament/actions/src/Testing/TestAction.php) | todo | — | — |
 
 ## Details
 
-### A class-string and a table record wait for a table host test
+### The other `table()` arms, `bulk()` and `arguments()` wait for a test that needs them
 
-`make()` takes an action class-string, which [`TestsActions`](tests-actions.md) resolves by the class's default name, and `table()` takes a row's record, whose key the table host mints; both are ported, and no test drives them yet.
-They are covered when the first table host test, `DeleteActionTest`'s row delete, names `DeleteAction::class` on a record.
-
-### `bulk()` and `arguments()` wait for a test that needs them
-
-Both are ported and land in `toArray()`'s descriptor, and no test drives a bulk action or passes arguments yet; each is covered by the first test that does, since every ported helper is exercised by the suite.
+`table()` with a key, an array record or no record (a table's header action), `bulk()` and `arguments()` are ported and land in `toArray()`'s descriptor, and no test drives any of them yet; each is covered by the first test that does, since every ported helper is exercised by the suite.
 
 ## Divergences
 

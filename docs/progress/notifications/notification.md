@@ -61,7 +61,7 @@ Filament's toast markup lives in `toEmbeddedHtml()` rather than in a Blade view,
 | `view()` / `viewData()` / `safeViews()` | [`safeViews()` / `isViewSafe()`](../../../vendor/filament/notifications/src/Notification.php) | todo | — | [detail](#custom-views-and-their-safe-view-gate-are-unported) |
 | `broadcast()` / `toBroadcast()` / `getBroadcastMessage()` | [`Notification.php`](../../../vendor/filament/notifications/src/Notification.php) | blocked | the broadcast delivery arm | [detail](#the-broadcast-and-database-delivery-arms-are-deferred-whole) |
 | `sendToDatabase()` / `toDatabase()` / `getDatabaseMessage()` / `fromDatabase()` | [`Notification.php`](../../../vendor/filament/notifications/src/Notification.php) | blocked | notification storage | [detail](#the-broadcast-and-database-delivery-arms-are-deferred-whole) |
-| `assertNotified()` / `assertNotNotified()` | [`Notification.php`](../../../vendor/filament/notifications/src/Notification.php) | todo | — | [detail](#the-assertion-helpers-read-a-collection-the-stack-does-not-hold) |
+| [`assertNotified()` / `assertNotNotified()`, on `TestsNotifications`](../../../packages/notifications/src/Testing/TestsNotifications.php) | [`Notification.php`](../../../vendor/filament/notifications/src/Notification.php) | done | — | [diverges](#the-assertion-helpers-read-what-a-tests-requests-sent-not-a-stack-collection) · [tests-notifications.md](tests-notifications.md#a-title-matches-the-sent-title-and-a-notification-everything-but-the-id) |
 | `Arrayable` / `HasEmbeddedView` | [`Notification.php`](../../../vendor/filament/notifications/src/Notification.php) (the `implements` list) | skipped | — | [diverges](#the-laravel-array-and-embedded-view-contracts-have-no-counterpart) |
 
 ## Details
@@ -127,14 +127,6 @@ Both lean on Laravel's notification infrastructure (`Illuminate\Notifications\No
 
 **Next step:** each waits on infrastructure the port does not have.
 The broadcast arm's Symfony shape is Mercure, the database arm's is a Doctrine entity plus the panel that reads it, and each carries its own delivery class (`BroadcastNotification`, `DatabaseNotification`) and its own **blocked** row in the [package README](README.md#unported).
-
-### The assertion helpers read a collection the stack does not hold
-
-`Notification::assertNotified()` / `assertNotNotified()` mount Filament's `Notifications` Livewire component and assert against its `notifications` collection; `Testing/TestsNotifications` wraps both statics for Livewire's `Testable`, and `Testing/helpers.php` wraps `assertNotified()` as a Pest function.
-Here the stack [holds no collection](notifications.md#the-stack-holds-no-server-side-collection-so-filaments-collection-is-not-ported): the equivalent read is [`SessionNotifications::pull()`](../../../packages/notifications/src/Delivery/SessionNotifications.php), which the shipped tests assert against directly.
-
-**Next step:** port as a Pest-shaped helper over `SessionNotifications`, not as a Livewire `Testable` mixin, because the mixin registration is [skipped for the same reason tables' is](notifications-bundle.md#livewire-specific-provider-responsibilities-are-dropped-not-ported).
-The two `src/Testing/` files keep their **todo** rows in the [package README](README.md#unported) until then.
 
 ## Semantics
 
@@ -316,3 +308,9 @@ Filament's class declares `implements Arrayable, HasEmbeddedView`.
 Neither is ported.
 `Illuminate\Contracts\Support\Arrayable` is a Laravel marker for `toArray()`, which PHP needs no interface to call and Symfony ships no equivalent of; `HasEmbeddedView` marks a component that renders through `toEmbeddedHtml()` instead of a view file, and Sylament's rendering seam is `ViewComponent::render(Environment $twig)` against a Twig template, the same Blade → Twig translation recorded in [translations.md](../translations.md#idiom).
 `toArray()` itself ships as a plain method, and it is what crosses the session boundary either way.
+
+### The assertion helpers read what a test's requests sent, not a stack collection
+
+`Notification::assertNotified()` / `assertNotNotified()` mount Filament's `Notifications` Livewire component and assert against its `notifications` collection, which pulls the session.
+Here the stack [holds no collection](notifications.md#the-stack-holds-no-server-side-collection-so-filaments-collection-is-not-ported), and a live render drains the flash into its own response, so the session still holds a toast only after a redirect.
+The two statics are therefore [`TestsNotifications::assertNotified()` / `assertNotNotified()`](tests-notifications.md), matching against what a test-mode recorder kept of each `SessionNotifications::push()`, and a test reaches them through the tester's own [`assertNotified()` / `assertNotNotified()`](../actions/testable.md#the-notification-assertions-read-what-the-testers-requests-sent), never through `Notification`.

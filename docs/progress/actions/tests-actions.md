@@ -18,7 +18,7 @@ The sending helpers send the host's own `mountAction()` and `callMountedAction()
 | [`mountAction()` / `callAction()`](../../../packages/actions/src/Testing/TestsActions.php) | [`Testing/TestsActions.php`](../../../vendor/filament/actions/src/Testing/TestsActions.php) | done | — | [semantics](#callaction-stops-without-failing-when-the-action-ran-on-mount-or-redirected) · [diverges](#callaction-counts-the-levels-it-parsed) |
 | [`assertActionExists()` / `assertActionVisible()`](../../../packages/actions/src/Testing/TestsActions.php) | [`Testing/TestsActions.php`](../../../vendor/filament/actions/src/Testing/TestsActions.php) | done | — | [diverges](#a-missing-action-is-always-an-assertion-failure) |
 | [`parseNestedActions()` with a name, a `TestAction` or a list of them, and its refusal of a table record on a host that is not a table](../../../packages/actions/src/Testing/TestsActions.php) | [`Testing/TestsActions.php`](../../../vendor/filament/actions/src/Testing/TestsActions.php) | done | — | [diverges](#a-table-record-is-keyed-by-the-host) |
-| [`callMountedAction()`, and `parseNestedActions()`'s action class-string and table record key](../../../packages/actions/src/Testing/TestsActions.php) | [`Testing/TestsActions.php`](../../../vendor/filament/actions/src/Testing/TestsActions.php) | in progress | — | [detail](#a-modal-action-a-class-string-and-a-table-record-wait-for-a-table-host-test) |
+| [`callMountedAction()`, and `parseNestedActions()`'s action class-string and table record key](../../../packages/actions/src/Testing/TestsActions.php) | [`Testing/TestsActions.php`](../../../vendor/filament/actions/src/Testing/TestsActions.php) | done | — | [diverges](#a-table-record-is-keyed-by-the-host) |
 | [`parseNestedActions()`'s dotted path, and the helpers' `$arguments`](../../../packages/actions/src/Testing/TestsActions.php) | [`Testing/TestsActions.php`](../../../vendor/filament/actions/src/Testing/TestsActions.php) | in progress | — | [detail](#a-dotted-path-and-arguments-wait-for-a-test-that-needs-them) |
 | `unmountAction()` / `setActionData()` / `assertActionDataSet()` / `assertHasActionErrors()` / `assertHasNoActionErrors()` | [`Testing/TestsActions.php`](../../../vendor/filament/actions/src/Testing/TestsActions.php) | todo | — | — |
 | `assertActionDoesNotExist()` / `assertActionHidden()` / `assertActionEnabled()` / `assertActionDisabled()` | [`Testing/TestsActions.php`](../../../vendor/filament/actions/src/Testing/TestsActions.php) | todo | — | — |
@@ -29,11 +29,6 @@ The sending helpers send the host's own `mountAction()` and `callMountedAction()
 | `assertActionHeld()` | [`Testing/TestsActions.php`](../../../vendor/filament/actions/src/Testing/TestsActions.php) | skipped | — | [deprecated for `assertActionHalted()`](../README.md#statuses) |
 
 ## Details
-
-### A modal action, a class-string and a table record wait for a table host test
-
-`callMountedAction()` sends only for an action left mounted, one with a modal, and `parseNestedActions()` turns an action class-string into its default name and a table record into the host's key; all are ported, and no test drives them yet.
-They are covered when the first table host test, `DeleteActionTest`'s row delete, confirms `DeleteAction::class`'s modal on a record.
 
 ### A dotted path and arguments wait for a test that needs them
 

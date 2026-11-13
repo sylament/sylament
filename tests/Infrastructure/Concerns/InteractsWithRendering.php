@@ -5,9 +5,11 @@ declare(strict_types=1);
 namespace Sylament\Tests\Infrastructure\Concerns;
 
 use LogicException;
+use Sylament\Actions\Testing\ExceptionRecorder;
 use Sylament\Schemas\Components\Component;
 use Sylament\Schemas\Concerns\HasSchemas;
 use Sylament\Schemas\Contracts\InteractsWithSchemas;
+use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Component\DomCrawler\Crawler;
 use Twig\Environment;
 
@@ -38,5 +40,35 @@ trait InteractsWithRendering
         }
 
         return new Crawler((string) $schema->render($twig));
+    }
+
+    /**
+     * Requests the page as a browser opens it, a GET through its route, and answers its
+     * markup. Any response but a success rethrows the exception the request threw, which
+     * the actions bundle's test-mode recorder kept, never an error page.
+     */
+    protected function visit(string $uri): Crawler
+    {
+        $client = static::getContainer()->get('test.client');
+
+        if (!$client instanceof KernelBrowser) {
+            throw new LogicException('The kernel has no [test.client]: turn framework.test on.');
+        }
+
+        $crawler = $client->request('GET', $uri);
+        $recorder = $client->getContainer()->get(ExceptionRecorder::class);
+
+        if (!$recorder instanceof ExceptionRecorder) {
+            throw new LogicException(sprintf('The kernel has no [%s]: SylamentActionsBundle registers it when framework.test is on.', ExceptionRecorder::class));
+        }
+
+        $throwable = $recorder->takeThrowable();
+        $response = $client->getResponse();
+
+        if ($response->isSuccessful()) {
+            return $crawler;
+        }
+
+        throw $throwable ?? new LogicException(sprintf('[GET %s] answered [%d] without an exception to rethrow.', $uri, $response->getStatusCode()));
     }
 }

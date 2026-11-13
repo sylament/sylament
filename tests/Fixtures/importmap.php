@@ -2,4 +2,9 @@
 
 declare(strict_types=1);
 
-return [];
+return [
+    'app' => [
+        'path' => 'app.js',
+        'entrypoint' => true,
+    ],
+];

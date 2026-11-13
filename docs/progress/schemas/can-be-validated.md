@@ -30,7 +30,8 @@ The host contract declarations these rows implement are tracked in [`interacts-w
 | [`HasSchemas::validateSchema()`](../../../packages/schemas/src/Concerns/HasSchemas.php) | [`InteractsWithSchemas::validate()`](../../../vendor/filament/schemas/src/Concerns/InteractsWithSchemas.php) | done | — | [diverges](#validateschema-runs-symfonys-validator-per-state-path-instead-of-livewires-whole-component-validate) · [semantics](#the-bag-section-is-replaced-wholesale-on-every-validation) |
 | [`PresenceGate::apply()`](../../../packages/schemas/src/Validation/PresenceGate.php) in front of each path's run | [`Validator::presentOrRuleIsImplicit()`](../../../vendor/laravel/framework/src/Illuminate/Validation/Validator.php) (Laravel) | done | — | [detail](presence-gate.md) |
 | [`HasSchemas::getErrorsForSchemaStatePath()`](../../../packages/schemas/src/Concerns/HasSchemas.php) | — | done | — | [semantics](#the-read-across-identities-de-duplicates) |
-| [`HasSchemas::getErrorConstraintsForSchemaStatePath()`](../../../packages/schemas/src/Concerns/HasSchemas.php) — each error's constraint class | [`TestsValidation::failedRules()`](../../../vendor/livewire/livewire/src/Features/SupportValidation/TestsValidation.php) (Livewire) | done | — | [diverges](#the-bag-keeps-each-errors-constraint-class-beside-its-message) · [semantics](#the-read-across-identities-de-duplicates) |
+| [`HasSchemas::getErrorConstraintsForSchemaStatePath()`](../../../packages/schemas/src/Concerns/HasSchemas.php) — each state error's constraint class | [`TestsValidation::failedRules()`](../../../vendor/livewire/livewire/src/Features/SupportValidation/TestsValidation.php) (Livewire) | done | — | [diverges](#the-bag-keeps-each-errors-constraint-class-beside-its-message) · [semantics](#the-read-across-identities-de-duplicates) |
+| [The constraint class a record violation leaves, filed by `validateSchemaRecord()`](../../../packages/schemas/src/Concerns/HasSchemas.php) | [`TestsValidation::failedRules()`](../../../vendor/livewire/livewire/src/Features/SupportValidation/TestsValidation.php) (Livewire) | in progress | — | [detail](#no-test-pins-the-class-a-record-violation-leaves) · [diverges](#the-bag-keeps-each-errors-constraint-class-beside-its-message) |
 | [The validation identity (`getSchemaValidationKey()` + `clearNestedSchemaValidation()`)](../../../packages/schemas/src/Concerns/HasSchemas.php) | — | done | — | [diverges](#a-components-child-schema-is-keyed-by-that-component-not-by-the-root) |
 | [`form-validation-error` dispatch on the throwing branch](../../../packages/schemas/src/Concerns/HasSchemas.php) | [`InteractsWithSchemas::validate()`](../../../vendor/filament/schemas/src/Concerns/InteractsWithSchemas.php) | done | — | [semantics](#the-throwing-branch-announces-form-validation-error-carrying-the-schema-identity) |
 | [`HasSchemas::clearSchemaValidation()`](../../../packages/schemas/src/Concerns/HasSchemas.php) | — | done | — | [diverges](interacts-with-schemas.md#clearschemavalidation-is-scoped-where-filament-resets-the-whole-livewire-error-bag) |
@@ -53,6 +54,12 @@ Filament's host trait ships an empty `onValidationError(ValidationException $exc
 Its one Filament override is the panel `BasePage`'s, which hands the exception to a static `$reportValidationErrorUsing` callback; the scroll to the first error is the client's `form-validation-error` handler, not this hook.
 `validateSchema()`'s throwing branch has no such hook, and nothing in the port calls one: the panel consumer is its own row in [custom-pages.md](../panels/custom-pages.md).
 Porting it means a protected hook called on `validateSchema()`'s throw path, before the dispatch.
+
+### No test pins the class a record violation leaves
+
+`validateSchemaRecord()` files each record violation's constraint class beside its message, as `validateSchema()` does for a state violation, and a probe read `Callback` under an edited composite key's field.
+No committed case asserts it: the key refusals are the `@internal` `RecordKeyGuard`'s `Callback`, so a pin wants a record carrying a constraint of its own, such as a `UniqueEntity` an edit page refuses.
+The row is done once such a case asserts the class through forms' `assertHasFormErrors()`.
 
 ## Semantics
 

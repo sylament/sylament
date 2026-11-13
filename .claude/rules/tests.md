@@ -37,7 +37,7 @@ description: Where a root-suite test lives, what kind it is, how much it covers,
 
 - **Query the rendered HTML with DomCrawler and CSS selectors,** never by matching an HTML string, so the test survives markup changes around what it asserts.
 - **Assert what a user perceives,** in this order: text; a role or an accessible name (a button named "copy", `aria-invalid`, `input[type=email]`); a `data-` attribute or Stimulus controller when the behaviour is a JS hook; a semantic `sy-` class only when the class is the behaviour, since those classes are the stylesheet's contract.
-- **Tell which icon rendered by a `<title>` in the area's own fixture SVG,** read as the icon's text: ux-icons copies the file's markup into the page, and a drawn shape cannot be asserted.
+- **Tell icons apart by the fixture SVG's `<title>`,** in an area's icons and the shared `heroicons` alike, read as the icon's text: ux-icons copies the file's markup into the page, so the title names the icon a drawn shape cannot.
 - **Define each selector once per area,** as a constant of `tests/Fixtures/<Area>/Selectors.php`, so a markup rename edits one line.
 - **Never assert document structure** (`div > span:nth-child(2)`), a whole HTML string or a snapshot: each breaks on every markup change, and a snapshot is rewritten without anyone reading it.
 

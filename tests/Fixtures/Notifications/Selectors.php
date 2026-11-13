@@ -21,6 +21,8 @@ final class Selectors
 
     public const string TOAST_HANDLING_ACTION_CLICKS = self::TOAST . '[data-action~="click->sylament--notifications--notification#handleActionClick"]';
 
+    public const string DURATION = 'data-sylament--notifications--notification-duration-value';
+
     public const string TITLE = self::TOAST . ' h3';
 
     public const string BODY = '.sy-no-notification-body';

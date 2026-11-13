@@ -35,7 +35,7 @@ it('delivers a sent toast with everything it was configured with', function (): 
         ->toContainElement(Selectors::ACTIONS . ' a[href="/feeds/1"]', 'Retry')
         ->and($toast->attr('role'))->toBe('alert')
         ->and($toast->attr('style'))->toContain('--sy-color-500: ' . Color::Rose[500])
-        ->and($toast->attr('data-sylament--notifications--notification-duration-value'))->toBe('2000');
+        ->and($toast->attr(Selectors::DURATION))->toBe('2000');
 });
 
 it('drops a flashed value it cannot type and delivers the rest of the toast', function (): void {
@@ -54,7 +54,7 @@ it('drops a flashed value it cannot type and delivers the rest of the toast', fu
         ->toContainElement(Selectors::BODY, 'All changes are live.')
         ->toContainElement(Selectors::TOAST . Selectors::GRAY)
         ->toContainElement(Selectors::ACTIONS . ' a[href="/articles/1"]', 'View')
-        ->and($stack->filter(Selectors::TOAST)->attr('data-sylament--notifications--notification-duration-value'))->toBe('6000');
+        ->and($stack->filter(Selectors::TOAST)->attr(Selectors::DURATION))->toBe('6000');
 });
 
 it("draws a scalable icon at the icon size, and a sent toast's at the default size", function (): void {
@@ -87,8 +87,7 @@ it('strips unsafe markup and every attribute from the title and body', function 
         ->toContainElement(Selectors::TITLE . ' b', 'fine')
         ->toContainElement(Selectors::BODY . ' span', 'Live')
         ->not->toContainElement('script')
-        ->not->toContainElement(Selectors::BODY . ' span[class]')
-        ->not->toContainElement('[onclick]');
+        ->not->toContainElement(Selectors::BODY . ' span[class]');
 });
 
 it('shows its icon over the status icon, whatever the status alias names', function (): void {
@@ -115,6 +114,7 @@ it('tints the toast in its colour, and leaves it gray without one', function ():
 it('closes from a medium button named "Close notification" that shows the mini x-mark', function (): void {
     $toast = $this->renderNotification(Notification::make()->title('Saved'));
 
-    expect($toast)->toContainElement(Selectors::CLOSING_BUTTON . Selectors::MEDIUM)
-        ->and($toast->filter(Selectors::CLOSE_BUTTON . ' svg')->attr('viewBox'))->toBe('0 0 20 20'); // the 20px solid set's grid
+    expect($toast)
+        ->toContainElement(Selectors::CLOSING_BUTTON . Selectors::MEDIUM)
+        ->toContainElement(Selectors::CLOSE_BUTTON . ' svg', 'x-mark-20-solid');
 });

@@ -9,8 +9,10 @@ use Symfony\Component\DomCrawler\Crawler;
 
 it('hands the stack the toasts a live action sends in its own response, once', function (): void {
     $tester = $this->createLiveComponent(NotifyingHost::class)->call('save');
+    $toasts = $this->deliveredToasts($tester);
 
-    expect($this->deliveredToasts($tester)->filter(Selectors::TITLE)->each(fn (Crawler $title): string => $title->text()))->toBe(['Saved', 'Synced'])
+    expect($toasts->filter(Selectors::TITLE)->each(fn (Crawler $title): string => $title->text()))->toBe(['Saved', 'Synced'])
+        ->and($toasts->filter(Selectors::TOAST)->last())->not->toContainElement(Selectors::ICON) // each make() is a fresh notification, and only the first set a status
         ->and($this->deliveredToasts($tester->refresh()))->not->toContainElement(Selectors::TOAST);
 });
 

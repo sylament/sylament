@@ -20,8 +20,8 @@ it("skips a flashed entry that is not a toast's array and delivers the rest", fu
 });
 
 it('refuses a session without a flash bag, naming its class', function (): void {
-    $this->startSessionRequest($this->createStub(SessionInterface::class));
+    $session = $this->startSessionRequest($this->createStub(SessionInterface::class));
 
     expect(fn (): Notification => Notification::make()->title('Saved')->send())
-        ->toThrow(LogicException::class, 'Notifications need a flash-bag-aware session, got "');
+        ->toThrow(LogicException::class, sprintf('Notifications need a flash-bag-aware session, got "%s".', $session::class));
 });

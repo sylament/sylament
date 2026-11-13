@@ -30,6 +30,7 @@ The host contract declarations these rows implement are tracked in [`interacts-w
 | [`HasSchemas::validateSchema()`](../../../packages/schemas/src/Concerns/HasSchemas.php) | [`InteractsWithSchemas::validate()`](../../../vendor/filament/schemas/src/Concerns/InteractsWithSchemas.php) | done | — | [diverges](#validateschema-runs-symfonys-validator-per-state-path-instead-of-livewires-whole-component-validate) · [semantics](#the-bag-section-is-replaced-wholesale-on-every-validation) |
 | [`PresenceGate::apply()`](../../../packages/schemas/src/Validation/PresenceGate.php) in front of each path's run | [`Validator::presentOrRuleIsImplicit()`](../../../vendor/laravel/framework/src/Illuminate/Validation/Validator.php) (Laravel) | done | — | [detail](presence-gate.md) |
 | [`HasSchemas::getErrorsForSchemaStatePath()`](../../../packages/schemas/src/Concerns/HasSchemas.php) | — | done | — | [semantics](#the-read-across-identities-de-duplicates) |
+| [`HasSchemas::getErrorConstraintsForSchemaStatePath()`](../../../packages/schemas/src/Concerns/HasSchemas.php) — each error's constraint class | [`TestsValidation::failedRules()`](../../../vendor/livewire/livewire/src/Features/SupportValidation/TestsValidation.php) (Livewire) | done | — | [diverges](#the-bag-keeps-each-errors-constraint-class-beside-its-message) · [semantics](#the-read-across-identities-de-duplicates) |
 | [The validation identity (`getSchemaValidationKey()` + `clearNestedSchemaValidation()`)](../../../packages/schemas/src/Concerns/HasSchemas.php) | — | done | — | [diverges](#a-components-child-schema-is-keyed-by-that-component-not-by-the-root) |
 | [`form-validation-error` dispatch on the throwing branch](../../../packages/schemas/src/Concerns/HasSchemas.php) | [`InteractsWithSchemas::validate()`](../../../vendor/filament/schemas/src/Concerns/InteractsWithSchemas.php) | done | — | [semantics](#the-throwing-branch-announces-form-validation-error-carrying-the-schema-identity) |
 | [`HasSchemas::clearSchemaValidation()`](../../../packages/schemas/src/Concerns/HasSchemas.php) | — | done | — | [diverges](interacts-with-schemas.md#clearschemavalidation-is-scoped-where-filament-resets-the-whole-livewire-error-bag) |
@@ -89,7 +90,7 @@ Stickiness is harmless while clean and is cleared by the next successful submit 
 
 ### The read across identities de-duplicates
 
-`getErrorsForSchemaStatePath()` merges every identity's bag section and returns `array_values(array_unique($messages))`.
+`getErrorsForSchemaStatePath()` merges every identity's bag section and returns `array_values(array_unique($messages))`, and `getErrorConstraintsForSchemaStatePath()` merges and de-duplicates the constraint classes the same way.
 Two identities can legitimately hold the same path's message at once — a root submit fails and stays sticky, then a Wizard step's Next re-validates that step's child schema — and both re-validate on every request, so the raw merge would render one message twice under one field.
 The de-duplication is on read rather than on write because each bag section is still owned wholesale by the pass that filled it.
 
@@ -133,6 +134,14 @@ Filament has no automatic key rules, so the name is the toolkit's; it follows Fi
 Pinned by [`CanBeValidatedRecordKeyTest`](../../../packages/schemas/tests/Unit/Concerns/CanBeValidatedRecordKeyTest.php) — the default, a literal and a closure flag, and `configureUsing()`'s reach — and [`HasSchemasRecordKeySwitchTest`](../../../packages/schemas/tests/Integration/Concerns/HasSchemasRecordKeySwitchTest.php): switched off, a taken key reaches the flush and a blank mapped one is not refused, with no statement either way, while a changed key is still refused and put back and the record's own constraints still answer.
 
 ## Divergences
+
+### The bag keeps each error's constraint class beside its message
+
+Filament's `assertHasFormErrors(['title' => 'required'])` matches a rule name because Livewire's tester reads the failed rules off the validator the last validation ran (`failedRules()`).
+The host here keeps no validator, so `validateSchema()` and `validateSchemaRecord()` file the class of each violation's constraint under the same schema identity and state path as its message, and `getErrorConstraintsForSchemaStatePath()` reads them back.
+A constraint class is Symfony's counterpart of a rule name, and the one a test can name whatever the locale or the message's wording.
+A violation built without a constraint keeps its message and adds no class.
+Every write and drop of a bag section moves both together, so a class lives exactly as long as its message: the sticky pass rebuilds a state error's class with its message on a re-hydrated host, and a record error's class goes with its message on the next request ([why](#record-errors-are-sticky-but-the-silent-pass-cannot-reproduce-them)).
 
 ### Record-sourced constraints are validated on the mapped object
 

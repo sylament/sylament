@@ -9,6 +9,7 @@ use Sylament\Actions\ActionGroup;
 use Sylament\Schemas\Components\Component;
 use Sylament\Schemas\Schema;
 use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\Validator\Constraint;
 
 interface InteractsWithSchemas
 {
@@ -158,6 +159,14 @@ interface InteractsWithSchemas
      * @return list<string>
      */
     public function getErrorsForSchemaStatePath(?string $path): array;
+
+    /**
+     * The class of every constraint whose violation the bag records for an absolute state
+     * path, beside {@see getErrorsForSchemaStatePath()}'s messages; null returns none.
+     *
+     * @return list<class-string<Constraint>>
+     */
+    public function getErrorConstraintsForSchemaStatePath(?string $path): array;
 
     /**
      * Drop one schema's stickiness and bag section, or all of both when the key

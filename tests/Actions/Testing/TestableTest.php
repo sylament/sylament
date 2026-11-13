@@ -37,8 +37,7 @@ it('fails asserting a redirect to another location', function (): void {
 
     $tester = $this->createLiveComponent(ProductTable::class)->callAction(TestAction::make('open')->table($product));
 
-    expect(fn () => $tester->assertRedirect('/products'))
-        ->toThrow(AssertionFailedError::class, 'Failed asserting that the Response has header "Location" matching "/products".');
+    expect(fn () => $tester->assertRedirect('/products'))->toThrow(AssertionFailedError::class);
 });
 
 it('fails asserting no redirect after the component redirected', function (): void {

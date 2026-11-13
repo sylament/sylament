@@ -174,14 +174,18 @@ class Testable
 
     public function assertNotified(Notification|string|null $notification = null): static
     {
-        TestsNotifications::assertNotified($this->takeSentNotifications(), $notification);
+        $sentNotifications = $this->takeSentNotifications();
+
+        TestsNotifications::assertNotified($sentNotifications, $notification);
 
         return $this;
     }
 
     public function assertNotNotified(Notification|string|null $notification = null): static
     {
-        TestsNotifications::assertNotNotified($this->takeSentNotifications(), $notification);
+        $sentNotifications = $this->takeSentNotifications();
+
+        TestsNotifications::assertNotNotified($sentNotifications, $notification);
 
         return $this;
     }
@@ -233,6 +237,9 @@ class Testable
     }
 
     /**
+     * Call it before naming `TestsNotifications`: PHP resolves a static call's class before
+     * evaluating its arguments, so the package guard here would otherwise never run.
+     *
      * @return list<array<string, mixed>>
      */
     private function takeSentNotifications(): array

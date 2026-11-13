@@ -14,7 +14,7 @@ Its assertions read the last response's render, as Filament's do, and take each 
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
-| [`assertCanSeeTableRecords()` / `assertCanNotSeeTableRecords()` with record objects, and `$inOrder`](../../../packages/tables/src/Testing/TestsRecords.php) | [`Testing/TestsRecords.php`](../../../vendor/filament/tables/src/Testing/TestsRecords.php) | done | — | [semantics](#a-record-is-seen-when-a-rendered-row-carries-its-whole-key) · [diverges](#the-failure-messages-name-the-row-key) |
+| [`assertCanSeeTableRecords()` / `assertCanNotSeeTableRecords()` with record objects, and `$inOrder`](../../../packages/tables/src/Testing/TestsRecords.php) | [`Testing/TestsRecords.php`](../../../vendor/filament/tables/src/Testing/TestsRecords.php) | done | — | [semantics](#a-record-is-seen-when-a-rendered-row-carries-its-whole-key) · [diverges](#the-failure-messages-name-the-row-key) · [diverges](#records-are-any-iterable) |
 | [`assertCanSeeTableRecords()` / `assertCanNotSeeTableRecords()` with a key or an array record](../../../packages/tables/src/Testing/TestsRecords.php) | [`Testing/TestsRecords.php`](../../../vendor/filament/tables/src/Testing/TestsRecords.php) | in progress | — | [detail](#a-key-and-an-array-record-wait-for-a-test-that-needs-them) |
 | `assertCountTableRecords()` / `loadTable()` | [`Testing/TestsRecords.php`](../../../vendor/filament/tables/src/Testing/TestsRecords.php) | todo | — | — |
 
@@ -39,3 +39,7 @@ Filament matches the id as a substring of the HTML, so key `1` is seen in a page
 
 Filament's assertions fail with PHPUnit's string-containment message, which prints the whole rendered HTML.
 Here each names the key and the host, in the phrasing Filament's other table assertions use: `Failed asserting that a table row with key [<key>] is visible on the [<host>] component.`, `… is not visible …`, and, for `$inOrder`, `Failed asserting that table rows with keys [<keys>] are visible in that order on the [<host>] component.`
+
+### Records are any iterable
+
+Filament types `$records` as `array|Collection`, Laravel's `Collection`; here it is `iterable`, so an array, a Doctrine `Collection` or a generator is read the same way.

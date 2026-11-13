@@ -34,6 +34,7 @@ The tester's two assertions consume the list they read, as Filament's pull from 
 
 [`SylamentNotificationsBundle`](notifications-bundle.md) registers `NotificationRecorder` as a public decorator of `SessionNotifications`, tagged `kernel.reset`, and [`NotificationRecorderPass`](../../../packages/notifications/src/DependencyInjection/Compiler/NotificationRecorderPass.php) removes it before the decoration is resolved unless `test.service_container` is defined, the same test-mode check as actions' [exception recorder](../actions/testable.md#the-recorder-exists-only-when-frameworktest-is-on).
 It records each `push()` and passes it on, so the stack still drains the toast into the live response, or keeps it in the flash across a redirect.
+It extends `SessionNotifications` without running its constructor, so every public method of `SessionNotifications` must be overridden and delegated to `.inner`: an inherited one would touch the parent's uninitialised state or bypass `.inner`.
 A client that keeps one kernel (`disableReboot()`) has the kernel reset the recorder as the next request starts, and a rebooted kernel builds a new one, so a read after a request sees that request's notifications only and the tester never collects one twice.
 
 ## Divergences

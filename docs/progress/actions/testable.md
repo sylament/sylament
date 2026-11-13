@@ -70,7 +70,8 @@ Livewire also takes a component class, resolved to its route; a live component h
 After each of its requests the tester reads [`NotificationRecorder`](../notifications/tests-notifications.md#the-recorder-exists-only-when-frameworktest-is-on-and-answers-for-one-request) through the client's container and keeps what it found, and `assertNotified()` and `assertNotNotified()` hand that list to [`TestsNotifications`](../notifications/tests-notifications.md) and empty it.
 Both make the mount request first, so a notification sent on mount counts.
 `sylament/notifications` is a `suggest` of actions, so both are a guarded optional: without the package they throw a `LogicException` naming it, and with the package but no recorder in the kernel they throw one naming `SylamentNotificationsBundle` and `framework.test`, rather than pass on a list nothing recorded.
-The suite's one kernel has both the package and its bundle, so neither refusal runs there; the guard is pinned by use instead, since a renamed recorder or matcher dead-ends every `assertNotified()`, which every toast the suite asserts then fails.
+Each takes the list before it names `TestsNotifications`, because PHP resolves a static call's class before evaluating its arguments, so a guard inside the argument would surface as a class-not-found `Error` instead.
+The suite's one kernel has both the package and its bundle, so neither refusal runs there; the guard's condition is pinned by use instead, since a renamed recorder or matcher dead-ends every `assertNotified()`, which every toast the suite asserts then fails.
 
 ## Divergences
 

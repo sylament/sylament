@@ -88,7 +88,7 @@ It works there because the card does not re-render; a card that did would watch 
 ### The shell templates' render tests live under `tests/Integration/Twig/`
 
 The repo convention is to mirror `src/` inside each test bucket, but the anonymous shell templates have no `src/` counterpart — they live in `packages/panels/templates/` and are rendered by name.
-The other packages settled it differently from each other: `actions` puts component render tests in `tests/Integration/Components/`, `notifications` in `tests/Integration/Twig/Components/`.
+The other packages settled it differently: `actions` puts component render tests in `tests/Integration/Components/`.
 Panels renders its templates from `tests/Integration/Twig/`, and the one class-backed component, `Twig\Components\GlobalSearch`, is tested from `tests/Integration/Twig/Components/`, which mirrors its `src/` path.
 
 ## Divergences

@@ -178,7 +178,7 @@ A skipped test states its platform fact in the skip message, so the skip says wh
 
 ## Why are support's Twig components render-tested elsewhere?
 
-Support's fixture kernel registers FrameworkBundle, TwigBundle, UXIconsBundle and FlysystemBundle, but no TwigComponentBundle or StimulusBundle. So support's suite cannot render a `<twig:SylamentSupport:…>` tag. The six packages whose kernels do register TwigComponentBundle (`actions`, `forms`, `notifications`, `panels`, `schemas`, `tables`) render them through their own templates. This is deliberate, and `packages/forms/tests/Integration/Components/InputWrapperRenderTest.php` notes it. Revisit it only if support grows its own Twig-component test kernel.
+Support's fixture kernel registers FrameworkBundle, TwigBundle, UXIconsBundle and FlysystemBundle, but no TwigComponentBundle or StimulusBundle. So support's suite cannot render a `<twig:SylamentSupport:…>` tag. The five packages whose kernels do register TwigComponentBundle (`actions`, `forms`, `panels`, `schemas`, `tables`) render them through their own templates. This is deliberate, and `packages/forms/tests/Integration/Components/InputWrapperRenderTest.php` notes it. Revisit it only if support grows its own Twig-component test kernel.
 
 Coverage follows whichever package first needed a component, so no single suite has it all. Derive the current map rather than trusting a written list:
 

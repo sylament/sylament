@@ -5,7 +5,11 @@ declare(strict_types=1);
 namespace Sylament\Forms\Testing;
 
 use Closure;
+use LogicException;
+use PHPUnit\Framework\Assert;
 use Sylament\Actions\Testing\Testable;
+use Sylament\Schemas\Contracts\InteractsWithSchemas;
+use Sylament\Schemas\Schema;
 use Sylament\Schemas\State\PropertyAccessor;
 
 use function Sylament\Support\filled;
@@ -77,6 +81,147 @@ trait TestsForms
     public function assertFormSet(array|Closure $state, string $form = 'form'): static
     {
         return $this->assertSchemaStateSet($state, $form);
+    }
+
+    /**
+     * Each key names a field relative to the form's state path: alone it asserts the
+     * field has an error, and with a value the class of a constraint the field failed or
+     * one of its messages. The errors are those of the component that answered the last
+     * request; after a redirect there are none, since no validation failed.
+     *
+     * @param array<int|string, string> $keys
+     */
+    public function assertHasFormErrors(array $keys = [], ?string $form = null): static
+    {
+        Assert::assertFalse($this->response()->isRedirection(), 'Component has no errors.');
+
+        [$host, $schema] = $this->getFormErrorsHostAndSchema($form);
+
+        Assert::assertTrue($this->getFormErrors($host, $schema) !== [], 'Component has no errors.');
+
+        foreach ($keys as $key => $value) {
+            if (is_int($key)) {
+                $path = $this->getFormErrorPath($schema, $value);
+
+                Assert::assertTrue($host->getErrorsForSchemaStatePath($path) !== [], "Component missing error: {$path}");
+
+                continue;
+            }
+
+            $path = $this->getFormErrorPath($schema, $key);
+
+            Assert::assertContains(
+                $value,
+                [...$host->getErrorConstraintsForSchemaStatePath($path), ...$host->getErrorsForSchemaStatePath($path)],
+                "Component has no matching failed rule or error message [{$value}] for [{$path}] attribute.",
+            );
+        }
+
+        return $this;
+    }
+
+    /**
+     * With no keys it asserts the form has no error at all; otherwise each key is read as
+     * {@see assertHasFormErrors()} reads it. A redirect passes, since no validation failed.
+     *
+     * @param array<int|string, string> $keys
+     */
+    public function assertHasNoFormErrors(array $keys = [], ?string $form = null): static
+    {
+        if ($this->response()->isRedirection()) {
+            return $this;
+        }
+
+        [$host, $schema] = $this->getFormErrorsHostAndSchema($form);
+
+        if ($keys === []) {
+            $errors = $this->getFormErrors($host, $schema);
+
+            Assert::assertTrue($errors === [], 'Component has errors: ' . implode(', ', array_map(
+                static fn (string $path, array $messages): string => '"' . $path . '" => ["' . implode('", "', $messages) . '"]',
+                array_keys($errors),
+                $errors,
+            )));
+
+            return $this;
+        }
+
+        foreach ($keys as $key => $value) {
+            if (is_int($key)) {
+                $path = $this->getFormErrorPath($schema, $value);
+
+                Assert::assertFalse($host->getErrorsForSchemaStatePath($path) !== [], "Component has error: {$path}");
+
+                continue;
+            }
+
+            $path = $this->getFormErrorPath($schema, $key);
+
+            Assert::assertNotContains(
+                $value,
+                [...$host->getErrorConstraintsForSchemaStatePath($path), ...$host->getErrorsForSchemaStatePath($path)],
+                "Component has [{$value}] errors for [{$path}] attribute.",
+            );
+        }
+
+        return $this;
+    }
+
+    /**
+     * The form is resolved on the re-hydrated host, as `fillForm()` resolves it, and its
+     * errors are read off the host that answered the last request.
+     *
+     * @return array{InteractsWithSchemas, Schema}
+     */
+    private function getFormErrorsHostAndSchema(?string $form): array
+    {
+        $form = $this->resolveTestedSchemaName($form);
+
+        $this->assertSchemaExists($form);
+
+        $schema = $this->getTestedSchema($this->getTestedSchemasHost(), $form);
+        $host = $this->getRespondingComponent();
+
+        if (!$host instanceof InteractsWithSchemas) {
+            throw new LogicException(sprintf('The [%s] component holds no schemas: it does not implement [%s].', $host::class, InteractsWithSchemas::class));
+        }
+
+        return [$host, $schema];
+    }
+
+    private function getFormErrorPath(Schema $schema, string $key): string
+    {
+        $schemaStatePath = $schema->getStatePath();
+
+        return filled($schemaStatePath) ? "{$schemaStatePath}.{$key}" : $key;
+    }
+
+    /**
+     * Every error the form shows, by state path: under a component's own path, a path a
+     * component constrains, or the form's own path, where a record violation no
+     * component maps is filed.
+     *
+     * @return array<string, list<string>>
+     */
+    private function getFormErrors(InteractsWithSchemas $host, Schema $schema): array
+    {
+        $paths = [(string) $schema->getStatePath(), ...array_keys($schema->getValidationConstraints())];
+
+        foreach ($schema->getFlatComponents(withActions: false, withHidden: true) as $component) {
+            $paths[] = $component->getStatePath();
+        }
+
+        $errors = [];
+
+        foreach (array_unique(array_filter($paths, is_string(...))) as $path) {
+            $messages = $host->getErrorsForSchemaStatePath($path);
+
+            if ($messages !== []) {
+                $errors[$path] = $messages;
+            }
+        }
+
+        return $errors;
     }
 
     /**

@@ -18,6 +18,7 @@ use Symfony\Component\HttpFoundation\Test\Constraint\ResponseHeaderLocationSame;
 use Symfony\Component\HttpKernel\Exception\UnprocessableEntityHttpException;
 use Symfony\Component\Security\Core\User\UserInterface;
 use Symfony\UX\LiveComponent\Test\TestLiveComponent;
+use Symfony\UX\TwigComponent\MountedComponent;
 use Symfony\UX\TwigComponent\Test\RenderedComponent;
 use Throwable;
 
@@ -188,6 +189,26 @@ class Testable
         TestsNotifications::assertNotNotified($sentNotifications, $notification);
 
         return $this;
+    }
+
+    /**
+     * The component as it answered the last request. {@see component()} re-hydrates it
+     * from the response, which re-runs only what hydration runs, so it no longer holds
+     * what that request alone produced, such as a record's refusal in the error bag the
+     * 422 re-render showed; UX keeps the instance it answered with on the request.
+     */
+    protected function getRespondingComponent(): object
+    {
+        $this->performInitialRequest();
+        $this->failIfRedirected();
+
+        $mountedComponent = $this->client->getRequest()->attributes->get('_mounted_component');
+
+        if (!$mountedComponent instanceof MountedComponent) {
+            throw new LogicException('The last request mounted no live component to read.');
+        }
+
+        return $mountedComponent->getComponent();
     }
 
     /**

@@ -25,6 +25,7 @@ A test case creates one through [`InteractsWithLiveComponents::createLiveCompone
 | [`assertNotified()` / `assertNotNotified()`, a guarded optional over `sylament/notifications`](../../../packages/actions/src/Testing/Testable.php) | [`TestsNotifications.php`](../../../vendor/filament/notifications/src/Testing/TestsNotifications.php) | done | — | [semantics](#the-notification-assertions-read-what-the-testers-requests-sent) · [tests-notifications.md](../notifications/tests-notifications.md#a-title-matches-the-sent-title-and-a-notification-everything-but-the-id) |
 | [`InteractsWithLiveComponents::createLiveComponent()`](../../../packages/actions/src/Testing/InteractsWithLiveComponents.php) | — (no Filament source) | done | — | [semantics](#createlivecomponent-builds-uxs-tester-through-uxs-own-method) |
 | [`ExceptionRecorder`](../../../packages/actions/src/Testing/ExceptionRecorder.php), registered only in test mode | — (no Filament source) | done | — | [semantics](#the-recorder-exists-only-when-frameworktest-is-on) |
+| [`getRespondingComponent()`](../../../packages/actions/src/Testing/Testable.php), the host that answered the last request | — (Livewire's `Testable::instance()`) | done | — | [semantics](#the-error-assertions-read-the-component-that-answered-the-last-request) |
 
 ## Details
 
@@ -54,9 +55,15 @@ It resolves `test.client` itself and hands the same client to UX and to the test
 FrameworkBundle defines that service only under `framework.test`, and an extension's `load()` runs on a container of its own that never sees another extension's services, so test mode is read in a compiler pass, which runs before the listeners are collected.
 The recorder keeps the first exception since the tester last took one, because an exception thrown while the error page renders would otherwise replace the one the host threw.
 
+### The error assertions read the component that answered the last request
+
+`component()` builds a fresh host from the last response's props, so it holds only what hydration rebuilds: the sticky pass re-runs a schema's state constraints, but nothing re-runs the record check a save ran, and a record's refusal lives only on the instance that rendered the 422 ([why](../schemas/can-be-validated.md#record-errors-are-sticky-but-the-silent-pass-cannot-reproduce-them)).
+The protected `getRespondingComponent()` returns that instance, which UX keeps on the request as its `_mounted_component` attribute, and forms' [error assertions](../forms/tests-forms.md#the-errors-are-the-ones-the-last-response-showed) read their bag from it, as Livewire's tester reads the error bag its last request left.
+It is read before the next request reboots the kernel, and it throws the redirect's `LogicException` after a redirect, as `component()` does.
+
 ### After a redirect, only the response and the notifications can be read
 
-A redirect answers a raw 302 in test mode, with no component to re-hydrate, so after one `response()`, `assertRedirect()`, `assertNoRedirect()`, `assertNotified()` and `assertNotNotified()` keep working.
+A redirect answers a raw 302 in test mode, with no component to re-hydrate, so after one `response()`, `assertRedirect()`, `assertNoRedirect()`, `assertNotified()` and `assertNotNotified()` keep working, and forms' error assertions [decide from the redirect](../forms/tests-forms.md#the-errors-are-the-ones-the-last-response-showed).
 Anything else that reads or drives the component, `render()` and `component()` included, throws a `LogicException` naming the `Location`: `A live component action has redirected to [<location>] and you can no longer access the component.`, where UX's own message stops before the location.
 `callAction()` reads the response, so a redirecting action ends the call without the exception.
 

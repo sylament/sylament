@@ -15,7 +15,7 @@ Its assertions read the re-hydrated host, the state after the last response, and
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
 | [`assertSchemaExists()`](../../../packages/schemas/src/Testing/TestsSchemas.php) | [`Testing/TestsSchemas.php`](../../../vendor/filament/schemas/src/Testing/TestsSchemas.php) | done | — | — |
-| [`assertSchemaStateSet()`](../../../packages/schemas/src/Testing/TestsSchemas.php) | [`Testing/TestsSchemas.php`](../../../vendor/filament/schemas/src/Testing/TestsSchemas.php) | done | — | [semantics](#a-key-names-a-component-or-else-a-path-under-the-schemas-state-path) |
+| [`assertSchemaStateSet()`](../../../packages/schemas/src/Testing/TestsSchemas.php) | [`Testing/TestsSchemas.php`](../../../vendor/filament/schemas/src/Testing/TestsSchemas.php) | done | — | [semantics](#a-key-names-a-component-or-else-a-path-under-the-schemas-state-path) · [diverges](#the-default-schema-is-the-first-one-schemas-declares) |
 | `assertSchemaComponentExists()` / `assertSchemaComponentDoesNotExist()` / `assertSchemaComponentVisible()` / `assertSchemaComponentHidden()` | [`Testing/TestsSchemas.php`](../../../vendor/filament/schemas/src/Testing/TestsSchemas.php) | todo | — | — |
 | `assertSchemaComponentStateSet()` / `assertSchemaComponentStateNotSet()` | [`Testing/TestsSchemas.php`](../../../vendor/filament/schemas/src/Testing/TestsSchemas.php) | todo | — | — |
 | `assertWizardStepExists()` / `assertWizardCurrentStep()` / `goToWizardStep()` / `goToNextWizardStep()` / `goToPreviousWizardStep()` | [`Testing/TestsSchemas.php`](../../../vendor/filament/schemas/src/Testing/TestsSchemas.php) | todo | — | — |
@@ -26,4 +26,12 @@ Its assertions read the re-hydrated host, the state after the last response, and
 
 `assertSchemaStateSet()` compares each key's value with the state of the component that key names in the schema, hidden ones included, and a key naming no component with the host's value at that path under the schema's state path, both with `assertEquals()`, as Filament's does.
 A closure receives the schema's raw state and returns the array to compare.
-With no schema named, the helpers test the mounted action's schema when an action is mounted, and otherwise the first schema the host's `schemas()` declares: Filament's host answers its first cached schema, which is the same one whenever no action is mounted, the only case the default is read.
+The fallback reads a path the host does not hold as `null`, as Filament's `assertSet()` does through `data_get()`, so `assertFormSet(['typo' => null])` passes.
+
+## Divergences
+
+### The default schema is the first one `schemas()` declares
+
+With no schema named, the helpers test the mounted action's schema when an action is mounted, and otherwise the first schema the host's `schemas()` declares, since the host contract has no `getDefaultTestingSchemaName()` ([interacts-with-schemas.md](interacts-with-schemas.md#the-testing-contract-method-is-not-declared)).
+Filament asks the host, whose default answers its first cached schema, the same one for a host that declares its schemas.
+A host whose `schemas()` lists none, as panels' `Page` does, throws "declares no schema to test" here, where Filament's `Page` answers `form`, else `content`.

@@ -12,8 +12,8 @@ use Sylament\Tests\Infrastructure\ComponentRegistry;
 
 it('renders prefix and suffix labels around the input', function (): void {
     expect($this->renderSchemaComponent(TextInput::make('price')->prefix('€')->suffix('per kg')))
-        ->toContainElement(Selectors::PREFIX_LABEL, '€')
-        ->toContainElement(Selectors::SUFFIX_LABEL, 'per kg');
+        ->toContainElement(Selectors::PREFIX, '€')
+        ->toContainElement(Selectors::SUFFIX, 'per kg');
 });
 
 it('puts an inline prefix inside the border; the last call on a side wins', function (): void {
@@ -21,7 +21,7 @@ it('puts an inline prefix inside the border; the last call on a side wins', func
         ->toContainElement(Selectors::INLINE_PREFIX);
 
     expect($this->renderSchemaComponent(TextInput::make('w')->inlinePrefix()->prefix('kg')))
-        ->toContainElement(Selectors::PREFIX_LABEL, 'kg')
+        ->toContainElement(Selectors::PREFIX, 'kg')
         ->not->toContainElement(Selectors::INLINE_PREFIX);
 });
 
@@ -48,10 +48,11 @@ it('renders an affix action as a small icon button unless the action says otherw
 it('runs an affix action when it is clicked', function (): void {
     $this->createLiveComponent(CodeForm::class)
         ->fillForm(['code' => 'X1'])
+        ->assertFormSet(['code' => 'X1'])
         ->callAction(TestAction::make('clear')->schemaComponent('code'))
         ->assertFormSet(['code' => null]);
 });
 
 it('renders the prefix on every field that offers one', function (string $field): void {
-    expect($this->renderSchemaComponent($field::make('a')->prefix('€')))->toContainElement(Selectors::PREFIX_LABEL, '€');
+    expect($this->renderSchemaComponent($field::make('a')->prefix('€')))->toContainElement(Selectors::PREFIX, '€');
 })->with(fn (): array => ComponentRegistry::componentsImplementing(HasAffixes::class));

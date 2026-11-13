@@ -19,12 +19,18 @@ A test case creates one through [`InteractsWithLiveComponents::createLiveCompone
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
-| [`call()` / `set()` / `refresh()` / `emit()` / `submitForm()` / `actingAs()` / `setRouteLocale()`, fluent](../../../packages/actions/src/Testing/Testable.php) | — (no Filament source) | done | — | [semantics](#the-kernel-catches-exceptions-and-the-tester-rethrows-the-original) |
-| [`render()` / `component()` / `response()`](../../../packages/actions/src/Testing/Testable.php) | — (no Filament source) | done | — | [semantics](#the-kernel-catches-exceptions-and-the-tester-rethrows-the-original) |
+| [`call()` / `set()`, fluent, and `component()` / `response()`](../../../packages/actions/src/Testing/Testable.php) | — (no Filament source) | done | — | [semantics](#the-kernel-catches-exceptions-and-the-tester-rethrows-the-original) |
+| [`refresh()` / `emit()` / `submitForm()` / `actingAs()` / `setRouteLocale()` / `render()`](../../../packages/actions/src/Testing/Testable.php) | — (no Filament source) | in progress | — | [detail](#the-other-primitives-wait-for-a-test-that-needs-them) |
 | `assertRedirect()` / `assertNoRedirect()` | — (Livewire's) | todo | — | — |
 | `assertNotified()` / `assertNotNotified()` | [`TestsNotifications.php`](../../../vendor/filament/notifications/src/Testing/TestsNotifications.php) | todo | — | — |
 | [`InteractsWithLiveComponents::createLiveComponent()`](../../../packages/actions/src/Testing/InteractsWithLiveComponents.php) | — (no Filament source) | done | — | [semantics](#createlivecomponent-builds-uxs-tester-through-uxs-own-method) |
 | [`ExceptionRecorder`](../../../packages/actions/src/Testing/ExceptionRecorder.php), registered only in test mode | — (no Filament source) | done | — | [semantics](#the-recorder-exists-only-when-frameworktest-is-on) |
+
+## Details
+
+### The other primitives wait for a test that needs them
+
+`refresh()`, `emit()`, `submitForm()`, `actingAs()`, `setRouteLocale()` and `render()` delegate to UX's tester as `call()` and `set()` do, and no test uses them yet; each is covered by the first test that does, since every ported helper is exercised by the suite.
 
 ## Semantics
 

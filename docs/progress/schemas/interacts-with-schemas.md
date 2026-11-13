@@ -49,7 +49,7 @@ Next step: declare it with the translatable-content driver port, renamed off the
 ### The testing contract method is not declared
 
 `getDefaultTestingSchemaName()` names the schema Filament's testing helpers test when none is named.
-The ported helpers resolve that default themselves, as the first schema `schemas()` declares ([tests-schemas.md](tests-schemas.md#a-key-names-a-component-or-else-a-path-under-the-schemas-state-path)), which is what Filament's default answers whenever it is read.
+The ported helpers resolve that default themselves, as the first schema `schemas()` declares, which differs from Filament's for a host that declares none ([tests-schemas.md](tests-schemas.md#the-default-schema-is-the-first-one-schemas-declares)).
 Next step: declare it when a host needs to override the default, as Filament's panel `Page` does to prefer `form`.
 
 ## Divergences

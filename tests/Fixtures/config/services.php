@@ -20,6 +20,7 @@ return static function (ContainerConfigurator $container): void {
                 '../assets',
                 '../importmap.php',
                 '../*/Entity',
+                '../*/Selectors.php',
             ]);
 
     $container->services()

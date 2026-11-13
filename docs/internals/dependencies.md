@@ -31,6 +31,7 @@ A `suggest` is invisible to Composer's own checks, and a renamed contract turns 
 | Package | Optional | Guard | Failure when used without it | Pin |
 |---|---|---|---|---|
 | `actions` | `sylament/tables` | `instanceof InteractsWithTable` in `Concerns\HasActions` | `LogicException` when a table context reaches a host that is not a table | `packages/tables/tests/Integration/RecordActionsResolutionTest.php` |
+| `actions` | `sylament/tables` | `instanceof InteractsWithTable` in `Testing\TestsActions` | `LogicException` naming the host and the contract when a test names a table record on a host that is not a table | `tests/Actions/Testing/TestsActionsTest.php` |
 | `actions` | `sylament/notifications` | `class_exists(Notification::class)` in `Concerns\CanNotify` | none: the notification is skipped silently | `packages/notifications/tests/Integration/CanNotifyTest.php`, which boots both bundles because no actions-only kernel can reach the branch |
 | `support` | `league/flysystem`, `league/flysystem-bundle` | structural: `FilesystemRegistry` is never built without them | — | `packages/support/tests/Integration/SylamentSupportBundleTest.php` ("collects the flysystem storages by name") |
 | `tables` | `league/commonmark` | `class_exists(GithubFlavoredMarkdownConverter::class)` in the column and the summarizer `CanFormatState` | `LogicException` naming the package | `packages/tables/tests/Unit/Columns/Concerns/CanFormatStateTest.php`, which reads the guard site, because no install that has the library can reach the other branch |

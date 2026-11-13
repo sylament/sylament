@@ -138,7 +138,7 @@ trait TestsActions
      * @param array<string, mixed> $arguments
      * @return list<array{name: string, arguments: array<mixed>, context: array<mixed>}>
      */
-    protected function parseNestedActions(string|TestAction|array $actions, array $arguments = [], bool $areRelativeToMountedActions = true): array
+    public function parseNestedActions(string|TestAction|array $actions, array $arguments = [], bool $areRelativeToMountedActions = true): array
     {
         $host = $this->getTestedActionsHost();
         $initialMountedActionsCount = $areRelativeToMountedActions ? count($host->getMountedActions()) : 0;

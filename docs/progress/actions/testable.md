@@ -24,10 +24,16 @@ A test case creates one through [`InteractsWithLiveComponents::createLiveCompone
 | [`assertRedirect()` / `assertNoRedirect()`](../../../packages/actions/src/Testing/Testable.php) | — (Livewire's `TestsRedirects`) | done | — | [semantics](#a-redirect-is-a-3xx-response-and-its-location-is-compared-as-a-full-url) · [diverges](#assertnoredirect-names-the-location-it-failed-on) |
 | [`assertNotified()` / `assertNotNotified()`, a guarded optional over `sylament/notifications`](../../../packages/actions/src/Testing/Testable.php) | [`TestsNotifications.php`](../../../vendor/filament/notifications/src/Testing/TestsNotifications.php) | done | — | [semantics](#the-notification-assertions-read-what-the-testers-requests-sent) · [tests-notifications.md](../notifications/tests-notifications.md#a-title-matches-the-sent-title-and-a-notification-everything-but-the-id) |
 | [`InteractsWithLiveComponents::createLiveComponent()`](../../../packages/actions/src/Testing/InteractsWithLiveComponents.php) | — (no Filament source) | done | — | [semantics](#createlivecomponent-builds-uxs-tester-through-uxs-own-method) |
-| [`ExceptionRecorder`](../../../packages/actions/src/Testing/ExceptionRecorder.php), registered only in test mode | — (no Filament source) | done | — | [semantics](#the-recorder-exists-only-when-frameworktest-is-on) |
+| [`ExceptionRecorder`](../../../packages/actions/src/Testing/ExceptionRecorder.php), a public `kernel.exception` listener | — (no Filament source) | done | — | [semantics](#the-recorder-exists-only-when-frameworktest-is-on) |
+| [`ExceptionRecorderPass`](../../../packages/actions/src/DependencyInjection/Compiler/ExceptionRecorderPass.php), removing the recorder unless `framework.test` is on | — (no Filament source) | in progress | — | [detail](#no-committed-case-compiles-a-container-with-frameworktest-off) |
 | [`getRespondingComponent()`](../../../packages/actions/src/Testing/Testable.php), the host that answered the last request | — (Livewire's `Testable::instance()`) | done | — | [semantics](#the-error-assertions-read-the-component-that-answered-the-last-request) |
 
 ## Details
+
+### No committed case compiles a container with `framework.test` off
+
+The suite's one kernel always has `framework.test` on, so every case sees the recorder registered, and the branch of `ExceptionRecorderPass` that removes it when `test.service_container` is absent has no committed test, only a scratch probe.
+The row turns done with a case that compiles a container without `framework.test` and asserts the recorder is gone.
 
 ### The other primitives wait for a test that needs them
 

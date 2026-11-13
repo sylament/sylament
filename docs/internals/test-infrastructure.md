@@ -15,7 +15,7 @@ The per-package suites grew a fixture kernel each, and they disagree: different 
 - two local disks, `primary.storage` (public, with a `public_url`, so it can mint a URL) and `secondary.storage` (the no-URL and foreign-disk arms), and `primary.storage` as the default disk;
 - every bundle, Sylament's nine included, in every environment, so no test depends on a bundle being absent.
 
-`Sylament\Tests\TestCase` extends `KernelTestCase` and uses UX's `InteractsWithTwigComponents`. `KernelTestCase::getContainer()` boots on demand and its teardown shuts down only a booted kernel, so a test that never asks for the container never boots one, and there is no separate base class for pure tests.
+`Sylament\Tests\TestCase` extends `KernelTestCase` and uses UX's `InteractsWithTwigComponents`, tables' `InteractsWithLiveComponents`, the shared `InteractsWithDatabase` and `InteractsWithRendering`, and the notifications area's `NotificationsHelpers`. `KernelTestCase::getContainer()` boots on demand and its teardown shuts down only a booted kernel, so a test that never asks for the container never boots one, and there is no separate base class for pure tests.
 
 ## How is the kernel configured?
 

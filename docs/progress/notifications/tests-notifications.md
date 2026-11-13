@@ -19,7 +19,15 @@ Why the list is a recorder's and not the session's is [Notification's divergence
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
 | [`assertNotified()` / `assertNotNotified()`, by any notification, a title or a `Notification`](../../../packages/notifications/src/Testing/TestsNotifications.php) | [`Testing/TestsNotifications.php`](../../../vendor/filament/notifications/src/Testing/TestsNotifications.php), [`Notification::assertNotified()` / `assertNotNotified()`](../../../vendor/filament/notifications/src/Notification.php) | done | — | [semantics](#a-title-matches-the-sent-title-and-a-notification-everything-but-the-id) |
-| [`NotificationRecorder`, decorating `SessionNotifications` in test mode only](../../../packages/notifications/src/Testing/NotificationRecorder.php) | — (no Filament source) | done | — | [semantics](#the-recorder-exists-only-when-frameworktest-is-on-and-answers-for-one-request) |
+| [`NotificationRecorder`, decorating `SessionNotifications`](../../../packages/notifications/src/Testing/NotificationRecorder.php) | — (no Filament source) | done | — | [semantics](#the-recorder-exists-only-when-frameworktest-is-on-and-answers-for-one-request) |
+| [`NotificationRecorderPass`, removing the recorder unless `framework.test` is on](../../../packages/notifications/src/DependencyInjection/Compiler/NotificationRecorderPass.php) | — (no Filament source) | in progress | — | [detail](#no-committed-case-compiles-a-container-with-frameworktest-off) |
+
+## Details
+
+### No committed case compiles a container with `framework.test` off
+
+The suite's one kernel always has `framework.test` on, so every case sees the recorder registered, and the branch of `NotificationRecorderPass` that removes it when `test.service_container` is absent has no committed test, only a scratch probe.
+The row turns done with a case that compiles a container without `framework.test` and asserts the recorder is gone and `SessionNotifications` is undecorated.
 
 ## Semantics
 

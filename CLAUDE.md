@@ -12,9 +12,9 @@ A component's status is its row in the port trail; what to build next is decided
 | `packages/<pkg>/tests/` | Pest: `Unit/` and `Integration/` mirror `src/` |
 | `packages/<pkg>/templates/` | Twig: `components/` are `<twig:>` tags, `partials/` are rendered from PHP |
 | `packages/<pkg>/assets/` | pnpm workspace `@sylament/<pkg>`; `dist/` is committed |
-| `tests/Infrastructure/{Doctrine,PHPUnit}/` | the Doctrine rig the root suite and the old suites share (dev-only) |
 | `tests/` | the root Pest suite, `Sylament\Tests\` (PSR-4): one kernel and one base class for every package |
-| `tests/Fixtures/`, `tests/Infrastructure/` | its kernel, config and per-area fixtures, and the machinery every test shares |
+| `tests/Fixtures/` | its kernel, config and per-area fixtures |
+| `tests/Infrastructure/` | the machinery every test shares, and in `{Doctrine,PHPUnit}/` the Doctrine rig the root suite and the old suites share (dev-only) |
 | `tests/Architecture/` | the scans of the repository's files, the rule hook (`Rules/`) and the port-trail tools (`Trail/`) |
 | `vendor/filament/` | Filament's source: read it before designing anything |
 | `docs/progress/` | the port trail: status and reasoning per component (rules: `.claude/rules/trail.md`) |

@@ -3,10 +3,8 @@
 declare(strict_types=1);
 
 use PHPUnit\Framework\AssertionFailedError;
-use Sylament\Actions\Testing\TestAction;
 use Sylament\Forms\Validation\RequiredValue;
-use Sylament\Tests\Fixtures\Actions\Entity\Product;
-use Sylament\Tests\Fixtures\Actions\ProductTable;
+use Sylament\Tests\Fixtures\Forms\RedirectingForm;
 use Sylament\Tests\Fixtures\Schemas\CodeForm;
 use Symfony\Component\Validator\Constraints\Length;
 
@@ -52,10 +50,10 @@ it('asserts a form has errors only after a failed save, and none only after a pa
 });
 
 it('passes asserting no form errors after a redirect and fails asserting some, since no validation failed', function (): void {
-    $this->seed($product = new Product('Lamp'));
-
-    $tester = $this->createLiveComponent(ProductTable::class)
-        ->callAction(TestAction::make('open')->table($product))
+    $tester = $this->createLiveComponent(RedirectingForm::class)
+        ->fillForm(['code' => 'X1'])
+        ->call('save')
+        ->assertRedirect(RedirectingForm::REDIRECT_URL)
         ->assertHasNoFormErrors();
 
     expect(fn () => $tester->assertHasFormErrors())->toThrow(AssertionFailedError::class, 'Component has no errors.');

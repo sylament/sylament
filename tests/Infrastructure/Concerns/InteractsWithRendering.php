@@ -11,6 +11,7 @@ use Sylament\Schemas\Concerns\HasSchemas;
 use Sylament\Schemas\Contracts\InteractsWithSchemas;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Component\DomCrawler\Crawler;
+use Throwable;
 use Twig\Environment;
 
 trait InteractsWithRendering
@@ -45,7 +46,8 @@ trait InteractsWithRendering
     /**
      * Requests the page as a browser opens it, a GET through its route, and answers its
      * markup. Any response but a success rethrows the exception the request threw, which
-     * the actions bundle's test-mode recorder kept, never an error page.
+     * the actions bundle's test-mode recorder kept, never an error page; a redirect is
+     * not followed, and its `Location` is named instead.
      */
     protected function visit(string $uri): Crawler
     {
@@ -67,6 +69,10 @@ trait InteractsWithRendering
 
         if ($response->isSuccessful()) {
             return $crawler;
+        }
+
+        if (!$throwable instanceof Throwable && $response->isRedirection()) {
+            throw new LogicException(sprintf('[GET %s] redirected to [%s].', $uri, $response->headers->get('Location')));
         }
 
         throw $throwable ?? new LogicException(sprintf('[GET %s] answered [%d] without an exception to rethrow.', $uri, $response->getStatusCode()));

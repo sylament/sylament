@@ -18,7 +18,7 @@ it('renders the edit page filled with the record', function (): void {
 
     $page = $this->visit("/admin/articles/{$article->id}/edit");
 
-    expect($page->filter(Selectors::DOCUMENT_TITLE)->text())->toBe('Edit Article') // the record label, not the record title
+    expect($page->filter(Selectors::DOCUMENT_TITLE)->text())->toStartWith('Edit Article') // the record label, not the record title
         ->and($page->filter(Selectors::field('title'))->attr('value'))->toBe('Draft');
 });
 

@@ -6,6 +6,7 @@ namespace Sylament\Tests;
 
 use Sylament\Support\DependencyInjection\Contracts\StaticInstance;
 use Sylament\Tables\Testing\InteractsWithLiveComponents;
+use Sylament\Tests\Fixtures\Notifications\NotificationsHelpers;
 use Sylament\Tests\Infrastructure\Concerns\InteractsWithDatabase;
 use Sylament\Tests\Infrastructure\Concerns\InteractsWithRendering;
 use Sylament\Tests\Infrastructure\WorkerDirectory;
@@ -19,6 +20,7 @@ abstract class TestCase extends KernelTestCase
     use InteractsWithLiveComponents;
     use InteractsWithRendering;
     use InteractsWithTwigComponents;
+    use NotificationsHelpers;
 
     private static int $declaredClassCount = 0;
 

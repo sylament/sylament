@@ -23,7 +23,7 @@ What the port adds on top of the provider's responsibilities is container wiring
 | [`Notification`, the delivery pair, the colour policies and the Twig component as services](../../../packages/notifications/src/SylamentNotificationsBundle.php) | — (Sylament-only; Filament's provider binds no services) | done | — | [diverges](#the-bundle-registers-container-services-which-filaments-provider-has-no-counterpart-for) |
 | [`SessionNotifications` — the `sylament.notifications` flash key](../../../packages/notifications/src/Delivery/SessionNotifications.php) | [`session()->push()`](../../../vendor/filament/notifications/src/Notification.php), [`session()->pull()`](../../../vendor/filament/notifications/src/NotificationsServiceProvider.php) | done | — | [diverges](#the-flash-bag-replaces-laravels-session-push-and-owns-the-key) |
 | [`LiveDeliverySubscriber` — the live arm](../../../packages/notifications/src/Delivery/LiveDeliverySubscriber.php) | [`on('dehydrate', …)`](../../../vendor/filament/notifications/src/NotificationsServiceProvider.php) | done | — | [diverges](#the-live-delivery-decision-point-is-a-prerenderevent-subscriber-not-a-dehydrate-hook) · [diverges](#there-is-no-claimed-notifications-key-because-the-toast-travels-in-the-same-response) · [diverges](#a-send-during-the-acting-components-own-render-waits-for-the-next-request) · [semantics](#a-redirecting-live-action-keeps-its-toast-for-the-destination-page-for-free) |
-| [AssetMapper prepend — `@sylament/notifications`](../../../packages/notifications/src/SylamentNotificationsBundle.php) | [`FilamentAsset::register([Js::make('notifications', …)])`](../../../vendor/filament/notifications/src/NotificationsServiceProvider.php), [`resources/js/index.js`](../../../vendor/filament/notifications/resources/js/index.js) | in progress | — | [detail](#nothing-asserts-the-assetmapper-prepend) · [diverges](#asset-registration-is-an-assetmapper-prepend-and-the-css-rides-supports-build) |
+| [AssetMapper prepend — `@sylament/notifications`](../../../packages/notifications/src/SylamentNotificationsBundle.php) | [`FilamentAsset::register([Js::make('notifications', …)])`](../../../vendor/filament/notifications/src/NotificationsServiceProvider.php), [`resources/js/index.js`](../../../vendor/filament/notifications/resources/js/index.js) | in progress | — | [detail](#nothing-pins-the-false-branch-of-the-assetmapper-guard) · [diverges](#asset-registration-is-an-assetmapper-prepend-and-the-css-rides-supports-build) |
 | [Stylesheet entry point](../../../packages/notifications/assets/src/styles/index.css) | [`resources/css/index.css`](../../../vendor/filament/notifications/resources/css/index.css) | done | — | [diverges](#asset-registration-is-an-assetmapper-prepend-and-the-css-rides-supports-build) |
 | [`@SylamentNotifications` template namespace](../../../packages/notifications/templates) | [`->hasViews()`](../../../vendor/filament/notifications/src/NotificationsServiceProvider.php) | done | — | [diverges](../schemas/schemas-bundle.md#the-view-namespace-is-registered-by-symfony-convention-not-by-an-explicit-provider-call) |
 | [The package manifest's `symfony/*` requires](../../../packages/notifications/composer.json) | [`notifications/composer.json`](../../../vendor/filament/notifications/composer.json) | in progress | — | [detail](#no-test-pins-the-manifests-symfony-requires) · [diverges](#the-manifest-declares-every-symfony-package-src-imports) |
@@ -35,18 +35,15 @@ What the port adds on top of the provider's responsibilities is container wiring
 
 ## Details
 
-### Nothing asserts the AssetMapper prepend
+### Nothing pins the false branch of the AssetMapper guard
 
 `prependExtension()` registers `packages/notifications/assets/dist` into `framework.asset_mapper.paths` under the alias `@sylament/notifications`, but only when [`isAssetMapperAvailable()`](../../../packages/support/src/SylamentBundle.php) confirms AssetMapper is installed, the guard that keeps `symfony/asset-mapper` optional for production consumers.
 The shape and its reasoning are the [divergence below](#asset-registration-is-an-assetmapper-prepend-and-the-css-rides-supports-build).
 
-What is missing is a test.
-Nothing asserts the path and alias are prepended when AssetMapper is present, and nothing exercises the negative branch of `isAssetMapperAvailable()` (the short-circuit that returns without prepending).
-The prepend is assertable against the compiled container, which is why its row is **in progress** rather than done, on the same terms support's [identical row](../support/support-bundle.md#asset-registration) holds.
+The prepend itself is pinned where AssetMapper is present: the real `AssetMapperInterface` answers a built controller's source path with its `@sylament/notifications` logical path, which is the call StimulusBundle's controllers-map generator makes.
+What is missing is the negative branch of `isAssetMapperAvailable()` (the short-circuit that returns without prepending), which keeps the row **in progress** on the same terms support's [identical row](../support/support-bundle.md#asset-registration) holds.
 
-**Next step:** an Integration test asserting `@sylament/notifications` maps the built directory, plus a Unit test for the guard's false branch, and then this row flips to **done**.
-The positive half is written for actions: [`SylamentActionsBundleTest`](../../../packages/actions/tests/Integration/SylamentActionsBundleTest.php) asks the real `AssetMapperInterface` for a built controller by source path and requires the logical path back, which is the same call StimulusBundle's controllers-map generator makes.
-Copy it here; the guard's false branch is `support`'s to pin, since [`SylamentBundle`](../../../packages/support/src/SylamentBundle.php) owns it for every bundle.
+**Next step:** a test for the guard's false branch, which is `support`'s to pin, since [`SylamentBundle`](../../../packages/support/src/SylamentBundle.php) owns it for every bundle; then this row flips to **done**.
 
 ### No test pins the manifest's `symfony/*` requires
 
@@ -78,7 +75,6 @@ Nothing about notifications makes its strings a special case, and doing them fir
 Filament's dehydrate hook guards on the redirect store (`store($component)->has('redirect')`) and skips delivery when the component is redirecting, so the notification stays in the session and renders on the page the user lands on.
 The port needs no equivalent check: a redirecting live action returns a `Response`, so UX's `onKernelView()` never renders the component, no `PreRenderEvent` fires, the subscriber never runs, and the flash survives to the next request untouched.
 Same semantics, arrived at by not having a code path rather than by adding a guard, which is why a reader looking for the redirect check finds nothing.
-No test drives a redirecting live action; the third case of [`LiveDeliverySubscriberTest`](../../../packages/notifications/tests/Integration/Delivery/LiveDeliverySubscriberTest.php) pins the neighbouring guard, a live component rendered on a non-live request leaving the flash alone.
 
 ## Divergences
 
@@ -129,6 +125,7 @@ Filament's hook moves the pending notifications from `filament.notifications` in
 
 The port has no race to protect against.
 The subscriber renders each notification to HTML and queues it as a `sylament:notification` browser event on the response already in flight, so the content never waits in the session for a second request to come and fetch it.
+A notification whose template resolves to nothing fails that request with a `LogicException` rather than dispatching an event with no toast in it, since the pull has already drained the flash.
 One key, one response, and the "multiple sends in one request" case is simply multiple events.
 This is [the same decision](notifications.md#live-delivery-appends-server-rendered-html-instead-of-re-requesting-the-stack) seen from the delivery side rather than the stack's.
 

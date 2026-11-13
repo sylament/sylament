@@ -23,6 +23,20 @@ class ToolbarHost implements InteractsWithActions
         return Action::make('purge')->hidden();
     }
 
+    public function archiveAction(): Action
+    {
+        return Action::make('archive')->successNotificationTitle('Archived');
+    }
+
+    public function restoreAction(): Action
+    {
+        return Action::make('restore')
+            ->failureNotificationTitle('Could not restore')
+            ->action(function (Action $action): void {
+                $action->failure();
+            });
+    }
+
     #[LiveAction]
     public function fail(): never
     {

@@ -6,7 +6,7 @@ The reasoning behind `.claude/rules/tests.md`, the rules for writing a test in t
 
 A test is found from the class it pins, without searching and without a naming convention to remember: `packages/forms/src/Components/TextInput.php` is tested in `tests/Forms/Components/TextInputTest.php`. The same holds for the suite's own machinery, which mirrors `tests/` (`tests/TestCase.php` is pinned by `tests/TestCaseTest.php`).
 
-A trait with behaviour of its own gets its own file at its mirrored path, and a class's file holds only that class's own behaviour. Filament composes most components from traits, so a test of `TextInput` that also pinned `HasAffixes` would repeat in every component composing the trait; with one file per trait, each behaviour has exactly one home. A class or trait with nothing to pin gets no file, so a missing file is not a gap to fill.
+A trait with behaviour of its own gets its own file at its mirrored path, and a class's file holds only that class's own behaviour. Filament composes most components from traits, so a test of `TextInput` that also pinned `HasAffixes` would repeat in every component composing the trait; with one file per trait, each behaviour has exactly one home. A class or trait with nothing to pin gets no file, so a missing file is not a gap to fill. A trait with a single case still gets its file: the file is where a reader of the trait looks, however little it holds.
 
 A case that crosses packages, such as deleting a table row, is filed under the class the user configures to get it, here `DeleteAction`. A flows folder would hold tests that no class leads to, and it tends to collect whatever does not obviously belong elsewhere.
 
@@ -15,6 +15,8 @@ Pest test files declare no namespace: Pest derives the test class's name from th
 ## Why is there one kind of test file?
 
 The per-package suites split tests into `Unit/` and `Integration/`, and the folder decided the base class, so a test filed in the wrong one ran on the wrong base. The split is not needed: `KernelTestCase::getContainer()` boots the kernel on demand, and its teardown shuts down only a booted kernel. A test is pure as long as it never asks for the container, and one base class serves both.
+
+A component that needs a service must be made after the test first asks for the container. Until the kernel boots, `make()` has no container to resolve the class through and falls back to `new`, which runs no `#[Required]` setter, so a `Notification` made before the boot cannot `send()`: it throws for want of the container-built instance. Asking first, directly or through a helper that does, builds the component as an application does.
 
 Inside a Pest closure, `$this` is bound to the test case, so `$this::getContainer()` reaches `KernelTestCase`'s statics; `static::` and `self::` resolve against the scope the closure was declared in, which is not the test case.
 
@@ -31,6 +33,8 @@ A behaviour that passes on SQLite and fails on MySQL or PostgreSQL is a bug user
 Matching an HTML string couples the test to whitespace, attribute order and every element around the one it is about, so any markup change breaks it whether the behaviour changed or not. DomCrawler with CSS selectors finds the one element the test asserts and ignores the rest.
 
 The order of preference follows what a user perceives: the text first, then a role or an accessible name, then a `data-` attribute or a Stimulus controller when the behaviour is a JavaScript hook. A semantic `sy-` class is asserted only when the class is itself the behaviour, as `sy-inline` places a prefix inside the border, because those classes are already the stylesheet's contract.
+
+An icon is told apart by its fixture SVG's `<title>`. ux-icons copies the SVG file's markup into the page, so the title arrives as text the test can read, while the drawn paths name nothing a reader can check. The SVG's attributes are no substitute: CssSelector lower-cases an attribute name in an HTML document, while the HTML5 parser DomCrawler uses keeps an SVG attribute's case, so `svg[viewBox="0 0 20 20"]` matches nothing, and only `attr('viewBox')` reads it.
 
 Document structure (`div > span:nth-child(2)`), whole HTML strings and snapshots are never asserted. Each breaks on any markup change, and a snapshot is regenerated on every such change without anyone reading what changed, so it pins nothing.
 
@@ -63,10 +67,17 @@ Each item on the list is checkable against a diff:
 - **A setter read back through its getter** passes as long as the property is stored, even when nothing renders it; rendering it once tests what the user sees, and the getter along with it.
 - **A closure or `Markup` variant of a property** goes through `evaluate()` or `Markup` rendering, each tested once where it lives; repeating it per property tests the same code again.
 - **A default nobody sees** is an implementation detail; a default a user sees, such as the gray icon, is behaviour and gets its case.
-- **What PHPStan proves**, such as return types and implemented interfaces, is already checked on every run at level max.
+- **What PHPStan or PHP's types enforce**, such as return types and implemented interfaces, is already checked on every run at level max. A divergence whose only mechanism is a declared type, such as a toast's duration closure returning `null` where Filament falls back to persistent and Sylament's `int|string` getter raises a `TypeError`, is a different outcome a user can trigger, but PHP produces it, not Sylament: a case would pin the language's check, so this item outranks "a case per different outcome".
 - **Symfony, Doctrine, Twig, UX and Pest behaviour** is tested by those projects; a test here would pin their release, not ours.
 - **A trait's behaviour repeated per component** multiplies cases without adding risk, so its cases run once, through one real component that composes it; a stub class built for the test would pin a component nobody uses.
 - **A case added only because a mutant survived** pins the implementation rather than an outcome a user can observe.
 - **A Filament-parity detail no user relies on**, such as the affix-action cache not refilling after a late setter, is documented in the trail and left unpinned, so the implementation stays free to change.
 
 Setters that interact are the boundary case. `inlinePrefix()->prefix('kg')` leaves the prefix outside the border, because the last call on a side wins; that is logic rather than a stored value, so it gets a case, asserted through what renders rather than through `isPrefixInline()`.
+
+A trail row or entry left without a case says why in one word, so a reviewer checks the omission against one rule instead of weighing an argument. Each item above has its word (`getter`, `closure`, `default`, `PHPStan`, `framework`, `trait`, `mutant`, `parity`). Four more words name reasons that are not items, because they say why this suite cannot or need not pin a behaviour rather than that nobody should:
+
+- **`no harness`:** CSS and JavaScript behaviour, such as a transition or a controller's timer. The suite runs no browser, so it pins only the PHP half, such as the `data-` value a controller reads.
+- **`absence`:** a divergence that only says Sylament lacks something Filament has; there is nothing to observe.
+- **`elsewhere`:** another class's behaviour that this one only passes through, pinned in that class's file, its one home. The trait item is the narrower case of a trait's behaviour repeated per component; this word covers any class.
+- **`unreachable`:** a defensive throw that no path through the API reaches; a case could only reach it by forging a state no user can.

@@ -2,7 +2,9 @@
 
 declare(strict_types=1);
 
+use Sylament\Tests\Infrastructure\WorkerLogger;
 use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
+use Symfony\Component\HttpKernel\Log\Logger;
 
 return static function (ContainerConfigurator $container): void {
     $container->services()
@@ -19,4 +21,9 @@ return static function (ContainerConfigurator $container): void {
                 '../importmap.php',
                 '../*/Entity',
             ]);
+
+    $container->services()
+        ->set('logger', Logger::class)
+        ->factory(WorkerLogger::create(...))
+        ->args(['%kernel.logs_dir%']);
 };

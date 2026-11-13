@@ -4,13 +4,23 @@ declare(strict_types=1);
 
 namespace Sylament\Actions;
 
+use Sylament\Actions\DependencyInjection\Compiler\ExceptionRecorderPass;
+use Sylament\Actions\Testing\ExceptionRecorder;
 use Sylament\Actions\Twig\Extension\ActionExtension;
 use Sylament\Support\SylamentBundle;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
+use Symfony\Component\HttpKernel\KernelEvents;
 
 class SylamentActionsBundle extends SylamentBundle
 {
+    public function build(ContainerBuilder $container): void
+    {
+        parent::build($container);
+
+        $container->addCompilerPass(new ExceptionRecorderPass());
+    }
+
     /**
      * @param array<string, mixed> $config
      */
@@ -19,6 +29,7 @@ class SylamentActionsBundle extends SylamentBundle
         $this->configureComponents($configurator);
         $this->configureTwigComponents($configurator);
         $this->configureTwigExtensions($configurator);
+        $this->configureTesting($configurator);
     }
 
     public function prependExtension(ContainerConfigurator $configurator, ContainerBuilder $container): void
@@ -64,6 +75,18 @@ class SylamentActionsBundle extends SylamentBundle
             ->set('sylament_actions.action_extension', ActionExtension::class)
             ->autowire()
             ->tag('twig.extension');
+    }
+
+    private function configureTesting(ContainerConfigurator $configurator): void
+    {
+        $configurator->services()
+            ->set(ExceptionRecorder::class)
+            ->public()
+            ->tag('kernel.event_listener', [
+                'event' => KernelEvents::EXCEPTION,
+                'method' => 'onKernelException',
+                'priority' => 128,
+            ]);
     }
 
     private function prependAssetMapper(ContainerBuilder $container): void

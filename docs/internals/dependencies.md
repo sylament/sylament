@@ -74,6 +74,13 @@ Notes on particular rows:
 - **The framework-bundle trio.** `panels`' `Routing\PanelRouteLoader` implements `RouteLoaderInterface` from framework-bundle itself. That import is still guaranteed, because `support` requires `symfony/ux-icons`, which requires framework-bundle; declare framework-bundle in `panels` the day `support` stops requiring `ux-icons`.
 - **`league/flysystem` in `tables`.** Only `ImageColumn`'s disk-path arm reaches the flysystem symbols, through the registry. A column whose state is already a URL works with no flysystem installed.
 
+## Test tooling is imported, never declared
+
+`src/Testing` imports PHPUnit (`PHPUnit\Framework\Assert`, in `actions` and `schemas`) and Symfony's test tooling: framework-bundle's `KernelBrowser` (in `actions` and `tables`), which runs on `symfony/browser-kit`, `symfony/dom-crawler` and `symfony/css-selector`, and `symfony/security-core`'s `UserInterface` in a PHPDoc (in `actions`).
+No manifest declares any of them, not even as a `suggest`, which is how Symfony's own `Test\` namespaces ship: framework-bundle's `KernelTestCase` and UX LiveComponent's `TestLiveComponent` import PHPUnit and browser-kit, and their manifests list them only as `require-dev`.
+Only an application's test suite loads a tester, and that suite has installed PHPUnit and the test tooling to run at all; a `require` would push them into every production install, and a `suggest` would advertise as optional what the tester cannot run without.
+It stays safe because no bundle registers a class that imports them: every bundle's component glob names component levels only, and the one test-mode service, actions' `ExceptionRecorder`, imports neither and exists only under `framework.test`.
+
 ## Known gaps
 
 The rule is broken in a few places, and no decision covers these imports. Each is safe today only through a sibling, which is the hazard the rule exists for. None is recorded as a deliberate omission:

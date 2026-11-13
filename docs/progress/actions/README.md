@@ -36,6 +36,9 @@ Ports [`filament/actions`](../../../vendor/filament/actions) into [`packages/act
 | [interacts-with-record.md](interacts-with-record.md) | done | — | `Concerns/InteractsWithRecord.php` | The trait that binds an action to a record and resolves its record, class, label and title chains, plus the record key it emits. |
 | [modals.md](modals.md) | done | — | `resources/views/components/modals.blade.php`, `resources/views/action-modal.blade.php`, `Concerns/InteractsWithActions.php`, `resources/js/components/modals.js`, `resources/js/index.js` | The `<twig:SylamentActions:Modals />` component that renders one ActionModal per mounted frame, and the host's per-frame id and open-state helpers it reads. |
 | [replicate-action.md](replicate-action.md) | done | — | `ReplicateAction.php`, `Concerns/CanCustomizeProcess.php`, `resources/lang/en/replicate.php` | The prebuilt per-record duplicate that copies the bound record through Doctrine metadata, optionally opens a form on the copy, and saves it. |
+| [test-action.md](test-action.md) | in progress | 1 todo | `Testing/TestAction.php` | The value a test names an action by for the testing helpers, and the mount descriptor it becomes. |
+| [testable.md](testable.md) | in progress | 2 todo | — | The fluent tester a test drives a live component through, the test-case trait that creates it, and the test-mode recorder that hands it the exception a request threw. |
+| [tests-actions.md](tests-actions.md) | in progress | 6 todo | `Testing/TestsActions.php` | The testing helpers that mount, call and assert a live host's actions, on the tester a test drives. |
 | [view-action.md](view-action.md) | in progress | 1 in progress | `ViewAction.php`, `resources/lang/en/view.php` | The prebuilt read-only record action, a modal that fills the record's schema, disables it and offers only a Close button. |
 <!-- trail-index:end -->
 
@@ -87,8 +90,6 @@ Ports [`filament/actions`](../../../vendor/filament/actions) into [`packages/act
 | [`Imports/Http/`](../../../vendor/filament/actions/src/Imports/Http) | todo | — | — |
 | [`Imports/Jobs/`](../../../vendor/filament/actions/src/Imports/Jobs) | todo | — | — |
 | [`Commands/`](../../../vendor/filament/actions/src/Commands) | todo | — | — |
-| [`Testing/TestAction.php`](../../../vendor/filament/actions/src/Testing/TestAction.php) | todo | — | — |
-| [`Testing/TestsActions.php`](../../../vendor/filament/actions/src/Testing/TestsActions.php) | todo | — | — |
 | [`Testing/ExportFake.php`](../../../vendor/filament/actions/src/Testing/ExportFake.php) | todo | — | — |
 | [`Testing/ImportFake.php`](../../../vendor/filament/actions/src/Testing/ImportFake.php) | todo | — | — |
 | [`Testing/TestableExport.php`](../../../vendor/filament/actions/src/Testing/TestableExport.php) | todo | — | — |

@@ -228,5 +228,6 @@ The bundled `file-upload` controller imports schemas' `live_host.js` directly, b
 
 ### Livewire-specific provider responsibilities are dropped, not ported
 
-`packageBooted()` calls `Testable::mixin()` twice (`TestsForms`, `TestsFormComponentActions`).
-The Testable mixins are a deliberate non-goal: Sylament tests are Pest/`KernelTestCase`, not Livewire `Testable`, and [`LiveFieldTest`](../../../packages/forms/tests/Integration/LiveFieldTest.php) drives fields through UX LiveComponent's `InteractsWithLiveComponents` instead.
+`packageBooted()` calls `Testable::mixin()` twice (`TestsForms`, `TestsFormComponentActions`), attaching Livewire `Testable` mixins reached through `__call()`.
+The registration is not ported, because there is no Livewire `Testable` to attach to; the helpers are, as real methods: [`TestsForms`](tests-forms.md) is a trait on actions' [`Testable`](../actions/testable.md), the tester a test drives a live component through.
+`TestsFormComponentActions` is a per-location adapter family over actions' helpers, which `TestAction::schemaComponent()` replaces, so its row in the [package README](README.md#unported) stays todo.

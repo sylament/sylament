@@ -22,6 +22,8 @@ description: Where a root-suite test lives, what kind it is, how much it covers,
 - **One base class, no `Unit/`/`Integration/` split, no marker:** a test boots the kernel only by asking for the container, because `getContainer()` boots on demand; never call `bootKernel()` just to get one.
 - **Use `$this::` for `KernelTestCase` statics** inside `it()`/`test()` closures (`$this::getContainer()`), never `static::` or `self::`: Pest binds `$this` to the test case, while `static::` resolves against the closure's scope.
 - **Behaviour is the default kind:** drive a component as its user does, rendering it or calling it, and assert what comes out.
+- **Drive a live host through `$this->createLiveComponent()` and the testing API** (`fillForm()`, `callAction()`, `assertFormSet()`), never through UX's `TestLiveComponent` itself, because the tester answers a failed validation as a browser sees it and rethrows any other exception the host threw.
+- **Render a schema component through `$this->renderSchemaComponent()`,** which places it in a schema as a page renders it, so the markup asserted is the markup a page shows.
 - **Pure logic touches no container and states its cases as a dataset,** and only for a dense algorithm where a table of inputs and outputs is the clearest statement (`Color::calculateContrastRatio()`).
 - **Derive a list a test must keep complete** (every component that offers a trait's behaviour) from `ComponentRegistry`, by the trait's contract where Filament has one (`componentsImplementing()`), else by the trait (`componentsUsing()`), never by typing it, so a new component is covered without anyone editing the test; name an exception with its reason, never the members.
 - **Derive no list for a trait a shared base class carries without a contract:** every subclass inherits it, so nothing signals "offers it" and the list would be every component minus exceptions.
@@ -32,6 +34,7 @@ description: Where a root-suite test lives, what kind it is, how much it covers,
 
 - **Query the rendered HTML with DomCrawler and CSS selectors,** never by matching an HTML string, so the test survives markup changes around what it asserts.
 - **Assert what a user perceives,** in this order: text; a role or an accessible name (a button named "copy", `aria-invalid`, `input[type=email]`); a `data-` attribute or Stimulus controller when the behaviour is a JS hook; a semantic `sy-` class only when the class is the behaviour, since those classes are the stylesheet's contract.
+- **Define each selector once per area,** as a constant of `tests/Fixtures/<Area>/Selectors.php`, so a markup rename edits one line.
 - **Never assert document structure** (`div > span:nth-child(2)`), a whole HTML string or a snapshot: each breaks on every markup change, and a snapshot is rewritten without anyone reading it.
 
 ## How much is enough

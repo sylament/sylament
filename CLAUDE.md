@@ -35,7 +35,7 @@ Two principles outrank every rule below; their tests and worked cases are in `do
 5. **Comments** state only what the code cannot. Reasoning belongs in `docs/progress/` or `docs/internals/`; never delete reasoning that has no home there yet.
 6. **Name arguments** instead of padding defaults to reach a later parameter, in PHP and in Twig.
 7. **Reuse before writing.** Check `packages/support/src/helpers.php` before writing Laravel-helper-shaped code, and prefer the construct the language or library ships over manual mechanics.
-8. **Same change:** a feature lands with its `docs/progress/` entry, and anything user-facing with its demo showcase card.
+8. **Same change:** a feature lands with its `docs/progress/` entry, and anything user-facing with its demo showcase card; the testing API in `src/Testing` gets no card and no demo test, because the demo is a dev-only app that runs no application's tests.
 
 ## Commands
 
@@ -58,7 +58,7 @@ Two principles outrank every rule below; their tests and worked cases are in `do
 - `composer test:mysql` and `composer test:postgresql` green at landing; an inner loop may stay on SQLite.
 - `pnpm test:types` and `pnpm test:lint` green.
 - `composer format` applied; no hand-formatting.
-- A user-facing feature updates the demo showcase (cards, descriptions, the "Not built yet" footnotes) before its trail row flips to done.
+- A user-facing feature updates the demo showcase (cards, descriptions, the "Not built yet" footnotes) before its trail row flips to done; `src/Testing` is exempt.
 - Closing a milestone: run the `docs-audit` skill.
 - Instruction files current: a change that makes a rule or skill wrong, or sets a convention for files no rule covers, updates or creates the `.claude/rules/` or `.claude/skills/` file in the same change (shape: `.claude/rules/instructions.md`).
 

@@ -29,6 +29,7 @@ owns:
 | Exports/Imports provider wiring (`hasMigrations()`, `hasRoutes('web')`, the `filament.actions` middleware group, `hasCommands()`) | [`ActionsServiceProvider.php`](../../../vendor/filament/actions/src/ActionsServiceProvider.php) · [`routes/web.php`](../../../vendor/filament/actions/routes/web.php) | blocked | the Exports/Imports subsystem | [detail](#the-exportsimports-provider-wiring-waits-on-the-exportsimports-subsystem) |
 | Translations (`hasTranslations()`) | [`ActionsServiceProvider.php`](../../../vendor/filament/actions/src/ActionsServiceProvider.php) | todo | — | [detail](#translations-are-unported-independently-of-exportsimports) |
 | `Testable::mixin(new TestsActions)` | [`ActionsServiceProvider.php`](../../../vendor/filament/actions/src/ActionsServiceProvider.php) (`packageBooted()`) | skipped | — | [diverges](#livewire-specific-provider-responsibilities-are-dropped-not-ported) |
+| [The tester's `ExceptionRecorder`, registered only in test mode](../../../packages/actions/src/SylamentActionsBundle.php) (`configureTesting()`, `build()`) | — | done | — | [testable.md](testable.md#the-recorder-exists-only-when-frameworktest-is-on) |
 
 ## Details
 
@@ -218,7 +219,5 @@ The monorepo resolves every package out of one root `vendor/`, so dropping a req
 
 ### Livewire-specific provider responsibilities are dropped, not ported
 
-`packageBooted()` registers `Testable::mixin(new TestsActions)`, a Livewire `Testable` mixin (`mountAction()`, `callAction()`, `assertActionExists()`, …) whose every method calls into `$this->instance()` (a Livewire component) through `$this->call()`/`$this->set()`.
-Sylament tests are Pest/`KernelTestCase`, not Livewire `Testable`; the Integration suite renders `Action` directly through `ViewComponent::render(Environment $twig)` ([`ActionRenderTest`](../../../packages/actions/tests/Integration/ActionRenderTest.php)) rather than driving a mounted host component's action lifecycle through assertion helpers.
-This is a deliberate non-goal, **skipped**, for the same reason forms' `TestsForms`/`TestsFormComponentActions` mixins are skipped ([forms-bundle.md](../forms/forms-bundle.md#livewire-specific-provider-responsibilities-are-dropped-not-ported)).
-`TestsActions` and its `TestAction` helper have their own rows in the [package README](README.md).
+`packageBooted()` registers `Testable::mixin(new TestsActions)`, a Livewire `Testable` mixin (`mountAction()`, `callAction()`, `assertActionExists()`, …) reached through `__call()`.
+The registration is not ported, because there is no Livewire `Testable` to attach to; the helpers are, as real methods: [`TestsActions`](tests-actions.md) is a trait on [`Testable`](testable.md), the tester a test drives a live component through, as forms' [are](../forms/forms-bundle.md#livewire-specific-provider-responsibilities-are-dropped-not-ported).

@@ -45,14 +45,9 @@ The trait's validation members (`validateSchema()`, the error bag, `clearSchemaV
 | Livewire file-upload integration (`use WithFileUploads`, `componentFileAttachments`, `isFileUploadForSchemaComponent()`, `getSchemaComponentForFileUpload()`) | [`InteractsWithSchemas`](../../../vendor/filament/schemas/src/Concerns/InteractsWithSchemas.php) | skipped | — | [interacts-with-schemas.md](interacts-with-schemas.md#uploadschemacomponentfile-carries-the-bytes-beside-the-seam) |
 | `ResolvesDynamicLivewireProperties` (used trait) | [`InteractsWithSchemas`](../../../vendor/filament/schemas/src/Concerns/InteractsWithSchemas.php) | skipped | — | [diverges](#dynamic-livewire-properties-are-not-ported-because-they-hide-from-phpstan) |
 | Translatable content driver (`getFilamentTranslatableContentDriver()`, `makeFilamentTranslatableContentDriver()`, `getActiveSchemaLocale()`) | [`InteractsWithSchemas`](../../../vendor/filament/schemas/src/Concerns/InteractsWithSchemas.php) | todo | — | [detail](#the-translatable-content-driver-is-not-ported) |
-| Testing helpers (`fillFormDataForTesting()`, `disableSchemaStateUpdateHooksForTesting()`, `enableSchemaStateUpdateHooksForTesting()`, `unsetMissingNumericArrayKeys()`) | [`InteractsWithSchemas`](../../../vendor/filament/schemas/src/Concerns/InteractsWithSchemas.php) | blocked | `TestsSchemas` | [detail](#the-testing-helpers-arrive-with-testsschemas) |
+| Testing helpers (`fillFormDataForTesting()`, `disableSchemaStateUpdateHooksForTesting()`, `enableSchemaStateUpdateHooksForTesting()`, `unsetMissingNumericArrayKeys()`) | [`InteractsWithSchemas`](../../../vendor/filament/schemas/src/Concerns/InteractsWithSchemas.php) | skipped | — | [diverges](#the-host-carries-no-testing-helpers) |
 
 ## Details
-
-### The testing helpers arrive with `TestsSchemas`
-
-Filament folds the testing helpers into `InteractsWithSchemas` as inline methods beside the `#[Locked]` `$areSchemaStateUpdateHooksDisabledForTesting` flag; here they are **blocked** on the `TestsSchemas` testing helper that owns them, so the trait stays a thin schema host.
-[`getDefaultTestingSchemaName()`](interacts-with-schemas.md#the-testing-contract-method-is-not-declared) waits on the same helper.
 
 ### The translatable content driver is not ported
 
@@ -126,3 +121,8 @@ Twig reaches a schema through `getSchema()` or `renderSchema()` instead, so the 
 Filament names the host method `updatedInteractsWithSchemas` (mirroring the Livewire `updated<Trait>` convention).
 Sylament names it `callAfterSchemaStateUpdated` to keep it distinct from the component-level `afterStateUpdated()` setter that lives on the state concern (see [`component.md`](component.md)), with which a host-level `afterStateUpdated` would collide.
 The rename is deliberate and permanent.
+
+### The host carries no testing helpers
+
+Filament folds `fillFormDataForTesting()`, the hook toggles and `unsetMissingNumericArrayKeys()` into `InteractsWithSchemas`, beside the `#[Locked]` `$areSchemaStateUpdateHooksDisabledForTesting` flag, so its `fillForm()` can write state in process.
+Here [`fillForm()`](../forms/tests-forms.md#fillform-sends-one-live-request-per-key) writes through live requests and prunes numeric keys itself, so the host needs no method that exists only for tests.

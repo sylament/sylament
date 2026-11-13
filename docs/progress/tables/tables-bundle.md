@@ -154,9 +154,8 @@ The test kernel registers `SylamentFormsBundle` (`tests/Fixtures/Kernel.php`), w
 ### Livewire-specific provider responsibilities are dropped, not ported
 
 `packageBooted()` registers six `Testable` mixins — `TestsActions`, `TestsBulkActions`, `TestsColumns`, `TestsFilters`, `TestsRecords`, `TestsSummaries` — whose every method drives a mounted Livewire component through `$this->call()` / `$this->set()`.
-Sylament tests are Pest over `KernelTestCase`, not Livewire `Testable`; the Integration suite renders through `ViewComponent::render(Environment $twig)` and asserts on markup and container state instead.
-The registration is a deliberate non-goal, **skipped** for the same reason actions' [`TestsActions`](../actions/actions-bundle.md#livewire-specific-provider-responsibilities-are-dropped-not-ported) and schemas' `TestsSchemas` are.
-What is skipped is the **mixin registration**, not the idea of test helpers: Filament's [`src/Testing`](../../../vendor/filament/tables/src/Testing) files are rows in the package README's [Unported table](README.md#unported), because the helpers may still be worth porting in a Pest shape.
+The registration is not ported, because there is no Livewire `Testable` to attach to, as actions' [is not](../actions/actions-bundle.md#livewire-specific-provider-responsibilities-are-dropped-not-ported).
+The helpers port as real methods on tables' [`Testable`](testable.md), the tester a test drives a live component through; Filament's [`src/Testing`](../../../vendor/filament/tables/src/Testing) files keep their rows in the package README's [Unported table](README.md#unported) until each lands there.
 
 ### The assets register through AssetMapper as Stimulus controllers, not as Alpine components
 

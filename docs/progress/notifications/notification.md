@@ -190,21 +190,18 @@ So a junk value out of the session is an uncaught `TypeError` there, and the por
 Tolerant is the deliberate reading here, and it does not soften the house fail-fast rule, which is about **our own callers'** mistakes, while this is a deserializer reading input it does not control.
 The values cross a session boundary, so they are attacker-adjacent by the time `fromArray()` sees them, and the reader is a *delivery* path: one malformed entry throwing would take down the page that was trying to show the user a message, and take the other notifications in the bag with it.
 A field that does not type is a data fact, not a bug, so it is dropped and the rest of the notification is delivered.
-Both arms are pinned by the junk-type and array-shade cases in [`NotificationTest`](../../../packages/notifications/tests/Unit/NotificationTest.php).
 
 ### A `ScalableIcon` crosses the session unflattened and resolves at render size
 
 Filament's `toArray()` resolves a scalable icon at serialization time (`$icon instanceof ScalableIcon` takes `getIconForSize(IconSize::Large)`, a hardcoded size chosen before anyone knows how the toast will render it), and only a plain `BackedEnum` falls through to `->value`.
 The port inverts the order of the same two arms: a `BackedEnum` that implements [`ScalableIcon`](../../../packages/support/src/Contracts/ScalableIcon.php) is **kept as the enum** (the session PHP-serializes enums; `fromArray()` admits a `BackedEnum` back through `icon()`), and only a plain enum flattens to its value.
 Resolution then happens where every other icon resolves, in [`generateIconHtml()`](../../../packages/support/src/Twig/Extension/IconExtension.php)'s `ScalableIcon` → `BackedEnum` cascade at the size the template passes, so a scalable icon is size-correct on the delivery path where Filament's is pinned to `Large` whatever renders it.
-The round trip is pinned by the `ScalableFixtureIcon` case in [`NotificationTest`](../../../packages/notifications/tests/Unit/NotificationTest.php).
 
 ### The `actions` key is a list on both sides of the hop
 
 Filament's `array_map` preserves whatever keys `getActions()` returned, on both `toArray()` and `fromArray()`, so `actions(['undo' => $action])` serializes to `['undo' => […]]` and comes back keyed.
 The port re-indexes at both ends, with `array_values()` around the serializing map and again around the restoring one, which makes the key a genuine `list<array<string, mixed>>` (the shape the `toArray()` docblock declares) and makes the round trip idempotent: a keyed input would otherwise serialize keyed, restore re-indexed, and serialize differently the second time.
 Nothing reads those keys, since the toast renders the actions in order, so the only thing given up is a label the payload never used.
-Pinned by the keyed round-trip case in [`NotificationTest`](../../../packages/notifications/tests/Unit/NotificationTest.php).
 
 The restoring map also skips a non-array entry rather than passing it into `Action::fromArray()`, and drops any non-string key inside an entry it keeps: the same [tolerant-deserializer stance](#fromarray-drops-a-value-it-cannot-type-where-filaments-typed-setters-throw) every other key here takes, applied to a value that crossed the session boundary.
 
@@ -215,7 +212,7 @@ Sylament's `send()` does the same one thing, pushing `toArray()` onto the flash 
 What changes is everything downstream of it, recorded where the machinery lives: the [`PreRenderEvent` subscriber](notifications-bundle.md#the-live-delivery-decision-point-is-a-prerenderevent-subscriber-not-a-dehydrate-hook) that replaces the dehydrate hook, and the [browser event carrying rendered HTML](notifications-bundle.md#there-is-no-claimed-notifications-key-because-the-toast-travels-in-the-same-response) that replaces Livewire's re-request.
 
 Two consequences belong to `send()` itself.
-It needs the container-built instance: `SessionNotifications` reaches the object through the `#[Required]` `setSessionNotifications()` setter, so `send()` on a `new Notification()` throws a `LogicException` naming the fix rather than silently dropping the notification (pinned by [`SendTest`](../../../packages/notifications/tests/Integration/SendTest.php)).
+It needs the container-built instance: `SessionNotifications` reaches the object through the `#[Required]` `setSessionNotifications()` setter, so `send()` on a `new Notification()` throws a `LogicException` naming the fix rather than silently dropping the notification.
 And an out-of-request `send()` (console command, worker) fails fast on the missing session: a toast is a browser artifact, and the delivery arms that work without a browser are the database and broadcast ones, both deferred above.
 
 ### The status fallbacks for icon and icon colour live in the template
@@ -235,7 +232,7 @@ Reversal condition: a **PHP** consumer that needs the resolved icon (the databas
 
 Filament's `getDuration()` ends `?? 'persistent'`.
 That fallback is unreachable for a literal, because the property is typed `int|string|Closure` and `duration(null)` already stores `'persistent'`, so it fires in one case only: when a **closure** duration evaluates to `null`.
-Sylament's getter returns `$this->evaluate($this->duration)` against an `int|string` return type, so that same case is a `TypeError` at the boundary rather than a silent persistent toast, pinned by [`HasDurationTest`](../../../packages/notifications/tests/Unit/Concerns/HasDurationTest.php).
+Sylament's getter returns `$this->evaluate($this->duration)` against an `int|string` return type, so that same case is a `TypeError` at the boundary rather than a silent persistent toast.
 `duration(null)` still means persistent, because the **setter** coerces it, exactly as Filament's does.
 
 Fail-fast over a silent fallback, per the house rule: a closure that returns `null` by accident produces a toast that never leaves the screen, and the type error names the callback that did it.

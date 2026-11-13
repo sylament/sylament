@@ -49,7 +49,7 @@ What is missing is the negative branch of `isAssetMapperAvailable()` (the short-
 
 The monorepo resolves every package out of one root `vendor/`, so a require dropped from [`composer.json`](../../../packages/notifications/composer.json) fails nothing in this suite and breaks only the split repository.
 A manifest entry is assertable all the same: actions' [`ManifestTest`](../../../tests/Architecture/ManifestTest.php) decodes its package's `composer.json` and pins each require and suggest, and [`SylamentTablesBundleTest`](../../../packages/tables/tests/Integration/SylamentTablesBundleTest.php) pins tables' `symfony/html-sanitizer` require the same way.
-Nothing under `packages/notifications/tests/` reads the manifest.
+No test reads this manifest.
 What is missing is an Architecture `ManifestTest` that pins each `symfony/*` key the [divergence below](#the-manifest-declares-every-symfony-package-src-imports) names and `sylament/actions` as a require rather than a suggest.
 
 ### The database-notifications registration waits on its panel
@@ -108,7 +108,6 @@ The port keeps "decide late" and moves the point earlier in the lifecycle, becau
 The priority is the whole reason the shape works, and it is not tunable: UX's own `AddLiveAttributesSubscriber` listens to the same event at priority 0 and drains `LiveResponder`'s queues into the component's root attributes (`LiveControllerAttributesCreator::attributesForRendering()` drains **and** resets).
 A browser event queued after that point would be written into no response at all.
 Two guards keep the subscriber to live components on live requests: the render metadata's `live` flag (so a plain Twig component rendered mid-request is ignored) and the `_live_component` request attribute on the **main** request (so full page loads no-op and the stack's own flash read stays the page-load path).
-The second and third cases of [`LiveDeliverySubscriberTest`](../../../packages/notifications/tests/Integration/Delivery/LiveDeliverySubscriberTest.php) pin them in that order.
 
 ### A `send()` during the acting component's own render waits for the next request
 

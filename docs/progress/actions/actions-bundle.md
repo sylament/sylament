@@ -212,7 +212,7 @@ The rule and its omissions are in [`.claude/rules/manifests.md`](../../../.claud
 Two integrations stay a `suggest` behind a guard.
 `sylament/tables`: `HasActions` names tables' [`InteractsWithTable`](../../../packages/tables/src/Contracts/InteractsWithTable.php) in `src/` behind an `instanceof` guard, so the branch is dead in an install without the package ([has-actions.md](has-actions.md#the-table-branch-reaches-tables-through-a-guarded-soft-reference)); `filament/actions` does not require `filament/tables` either.
 `sylament/notifications`: [`CanNotify`](can-notify.md#the-notification-arm-is-a-guarded-soft-integration-not-a-require) sends a real toast behind a `class_exists()` guard, because `sylament/notifications` requires `sylament/actions` (its notifications carry `Action`s) and a require back would close a composer cycle; Filament's `filament/actions` requires `filament/notifications` outright.
-[`CanNotifyTest`](../../../packages/notifications/tests/Integration/CanNotifyTest.php), in the suite that has both packages, keeps that reference honest.
+A test on a kernel that registers both bundles keeps that reference honest.
 
 The monorepo resolves every package out of one root `vendor/`, so dropping a require would fail nothing here and break only the split repository.
 [`ManifestTest`](../../../tests/Architecture/ManifestTest.php) therefore reads `composer.json` and asserts the three `sylament/*` requires and the two suggestions directly.

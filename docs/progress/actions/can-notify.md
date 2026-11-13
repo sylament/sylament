@@ -68,7 +68,7 @@ So the send arm takes the shape the repo reserves for exactly this case, the one
   `Notification::class` on an imported name is a compile-time string and autoloads nothing, so in an install without the package the symbol is never resolved and both send methods are chainable no-ops.
   The object arms *type* two properties and two setter parameters `Notification|Closure|null`, which is inert for the same reason: PHP resolves a property or parameter type lazily, only when a value meets it, and a caller with a `Notification` to pass has the package.
 - **the declaration** — `sylament/notifications` is a composer `suggest` on `sylament/actions`, the strongest declaration an optional integration gets.
-- **the pin** — a soft reference fails *silently* when it rots (a renamed or moved `Notification` leaves `class_exists()` false and every toast quietly disappears), so it is pinned by [`CanNotifyTest`](../../../packages/notifications/tests/Integration/CanNotifyTest.php) in the **notifications** Integration suite, whose kernel boots both bundles.
+- **the pin** — a soft reference fails *silently* when it rots (a renamed or moved `Notification` leaves `class_exists()` false and every toast quietly disappears), so it is pinned by a test on a kernel that boots both bundles.
 
 The guard's known limit, stated because it is loud rather than silent: it tests for the *package*, and sending also needs the *bundle* booted, since [`Notification::send()`](../notifications/notification.md) throws unless the instance came from the container.
 An application that installs `sylament/notifications` but never registers `SylamentNotificationsBundle` therefore gets a `LogicException` naming that exact fix on the first successful action, instead of a missing toast.

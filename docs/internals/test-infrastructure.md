@@ -6,7 +6,7 @@ Two kinds of suite run side by side: the root suite under `tests/`, one kernel a
 
 ## Why does the root suite have one kernel and one base class?
 
-The per-package suites grew nine fixture kernels, and they disagree: different default disks, a session in some and not others, asset mapper in one, seven icon directories whose same-named icons differ, live routes prefixed in one kernel only. A test passing on its own package's kernel says nothing about the others. The root suite resolves each conflict once, in `Sylament\Tests\Fixtures\Kernel`, and every test runs against that one world:
+The per-package suites grew a fixture kernel each, and they disagree: different default disks, a session in some and not others, asset mapper in one, icon directories whose same-named icons differ, live routes prefixed in one kernel only. A test passing on its own package's kernel says nothing about the others. The root suite resolves each conflict once, in `Sylament\Tests\Fixtures\Kernel`, and every test runs against that one world:
 
 - a `mock_file` session, because a toast is a session flash;
 - asset mapper with an importmap declaring the `app` entrypoint the panels' document layout imports, plus `@TwigBundle/Resources/config/importmap.php`, because TwigBundle registers `importmap()` behind a `willBeAvailable()` check that refuses `symfony/asset-mapper` as a dev-only package beside a production `symfony/twig-bundle`, which is this monorepo's shape and no application's;

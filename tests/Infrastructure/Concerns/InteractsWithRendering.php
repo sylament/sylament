@@ -58,7 +58,13 @@ trait InteractsWithRendering
         }
 
         $crawler = $client->request('GET', $uri);
-        $recorder = $client->getContainer()->get(ExceptionRecorder::class);
+        $container = $client->getContainer();
+
+        if (!$container->has(ExceptionRecorder::class)) {
+            throw new LogicException(sprintf('The kernel has no [%s]: SylamentActionsBundle registers it when framework.test is on.', ExceptionRecorder::class));
+        }
+
+        $recorder = $container->get(ExceptionRecorder::class);
 
         if (!$recorder instanceof ExceptionRecorder) {
             throw new LogicException(sprintf('The kernel has no [%s]: SylamentActionsBundle registers it when framework.test is on.', ExceptionRecorder::class));

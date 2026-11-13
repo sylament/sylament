@@ -86,7 +86,8 @@ class SylamentActionsBundle extends SylamentBundle
                 'event' => KernelEvents::EXCEPTION,
                 'method' => 'onKernelException',
                 'priority' => 128,
-            ]);
+            ])
+            ->tag('kernel.reset', ['method' => 'reset']);
     }
 
     private function prependAssetMapper(ContainerBuilder $container): void

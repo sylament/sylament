@@ -60,6 +60,7 @@ It resolves `test.client` itself and hands the same client to UX and to the test
 [`SylamentActionsBundle`](actions-bundle.md) registers `ExceptionRecorder` as a public `kernel.exception` listener at priority 128, ahead of UX's 422 re-render (20) and the framework's error page (-128), and [`ExceptionRecorderPass`](../../../packages/actions/src/DependencyInjection/Compiler/ExceptionRecorderPass.php) removes it unless `test.service_container` is defined.
 FrameworkBundle defines that service only under `framework.test`, and an extension's `load()` runs on a container of its own that never sees another extension's services, so test mode is read in a compiler pass, which runs before the listeners are collected.
 The recorder keeps the first exception since the tester last took one, because an exception thrown while the error page renders would otherwise replace the one the host threw.
+The recorder is tagged `kernel.reset`, so a client that keeps one kernel (`disableReboot()`) clears a kept exception as the next request starts, and the tester never rethrows one from a request it did not send.
 
 ### The error assertions read the component that answered the last request
 

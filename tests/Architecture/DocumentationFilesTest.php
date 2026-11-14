@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace Sylament\Tests\Architecture;
 
 use Sylament\Tests\Architecture\Documentation\DocumentationFiles;
+use Sylament\Tests\Infrastructure\WorkerDirectory;
+use Symfony\Component\Filesystem\Filesystem;
 
 /**
  * Convention test for the repository's markdown: CLAUDE.md, .claude/ and docs/. It holds what a machine
@@ -24,14 +26,14 @@ it('turns headings into GitHub anchors', function (string $heading, string $anch
 ]);
 
 it('finds a broken link and a broken anchor', function (): void {
-    $file = 'docs/' . uniqid('documentation-probe-', true) . '.md';
-    $path = DocumentationFiles::repositoryRoot() . '/' . $file;
-    file_put_contents($path, "# Probe `Code` heading\n\n[here](#probe-code-heading) [gone](no-such-file.md) [bad](internals/principles.md#no-such-heading) [ok](internals/principles.md) `[code](ignored.md)`\n");
+    $root = WorkerDirectory::path() . '/' . uniqid('documentation-probe-', true);
+    new Filesystem()->dumpFile($root . '/docs/internals/principles.md', "# Principles\n");
+    new Filesystem()->dumpFile($root . '/docs/probe.md', "# Probe `Code` heading\n\n[here](#probe-code-heading) [gone](no-such-file.md) [bad](internals/principles.md#no-such-heading) [ok](internals/principles.md) `[code](ignored.md)`\n");
 
     try {
-        expect(DocumentationFiles::brokenLinks($file))->toBe(['no-such-file.md (no such file)', 'internals/principles.md#no-such-heading (no such heading)']);
+        expect(DocumentationFiles::brokenLinks($root, 'docs/probe.md'))->toBe(['no-such-file.md (no such file)', 'internals/principles.md#no-such-heading (no such heading)']);
     } finally {
-        unlink($path);
+        new Filesystem()->remove($root);
     }
 });
 
@@ -39,7 +41,7 @@ it('resolves every relative link and anchor in CLAUDE.md, .claude/ and docs/', f
     $violations = [];
 
     foreach (DocumentationFiles::markdownFiles() as $file) {
-        foreach (DocumentationFiles::brokenLinks($file) as $link) {
+        foreach (DocumentationFiles::brokenLinks(DocumentationFiles::repositoryRoot(), $file) as $link) {
             $violations[] = "{$file}: {$link}";
         }
     }

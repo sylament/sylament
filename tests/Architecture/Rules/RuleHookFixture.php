@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Sylament\Tests\Architecture\Rules;
 
 use RuntimeException;
+use Sylament\Tests\Infrastructure\WorkerDirectory;
 use UnexpectedValueException;
 
 /**
@@ -22,7 +23,7 @@ final class RuleHookFixture
      */
     public static function project(array $files): string
     {
-        $root = sys_get_temp_dir() . '/' . uniqid('rule-hook-', true);
+        $root = WorkerDirectory::path() . '/' . uniqid('rule-hook-', true);
 
         foreach ($files as $path => $content) {
             if (!is_dir(dirname($root . '/' . $path))) {

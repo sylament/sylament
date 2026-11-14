@@ -7,6 +7,7 @@ namespace Sylament\Tests\Architecture;
 use LogicException;
 use Sylament\Tests\Architecture\Rules\RuleHook;
 use Sylament\Tests\Architecture\Rules\RuleHookFixture;
+use Sylament\Tests\Infrastructure\WorkerDirectory;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Yaml\Yaml;
 
@@ -157,7 +158,7 @@ it('refuses an event it is not registered for', function (): void {
 
 it('delivers every rule of this repository whole through a Bash read of a file it covers', function (): void {
     $root = RuleHookFixture::repositoryRoot();
-    $store = sys_get_temp_dir() . '/' . uniqid('rule-hook-store-', true);
+    $store = WorkerDirectory::path() . '/' . uniqid('rule-hook-store-', true);
     $hook = new RuleHook($root, $store);
     $rules = glob($root . '/.claude/rules/*.md') ?: [];
     $tracked = TrackedFiles::in($root);

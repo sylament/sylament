@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Sylament\Tests\Architecture\Trail;
 
+use Sylament\Tests\Infrastructure\WorkerDirectory;
+
 /**
  * Builds the port-trail trees the trail's own cases run against.
  */
@@ -28,7 +30,7 @@ final class TrailFixture
      */
     public static function tree(array $files): string
     {
-        $root = sys_get_temp_dir() . '/' . uniqid('trail-', true);
+        $root = WorkerDirectory::path() . '/' . uniqid('trail-', true);
 
         foreach ($files as $path => $content) {
             $directory = str_ends_with($path, '/') ? $root . '/' . $path : dirname($root . '/' . $path);

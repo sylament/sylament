@@ -74,11 +74,11 @@ final class DocumentationFiles
     }
 
     /**
-     * @return list<string> the broken relative links in a markdown file, each as "<target> (<reason>)"
+     * @return list<string> the broken relative links in the markdown file at the path under the root, each as
+     *                      "<target> (<reason>)"
      */
-    public static function brokenLinks(string $file): array
+    public static function brokenLinks(string $root, string $file): array
     {
-        $root = self::repositoryRoot();
         $broken = [];
 
         preg_match_all('/\]\(([^)\s]+)\)/', self::prose((string) file_get_contents($root . '/' . $file)), $matches);

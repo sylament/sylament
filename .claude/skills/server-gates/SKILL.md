@@ -34,7 +34,7 @@ With the variable unset or empty, a suite runs on SQLite. The URL must name a da
 
 ## 4. Keep server runs serial
 
-- For the per-package suites the pool gives each entity manager a test builds a database of its own, named `<base>_<package>_<TEST_TOKEN>_<slot>`; for the root suite it keeps one per worker, `<base>_suite_<TEST_TOKEN>`. The `TEST_TOKEN` a parallel run sets keeps two processes' databases apart.
+- For the per-package suites the pool gives each entity manager a test builds a database of its own, named `<base>_<package>_<TEST_TOKEN>_<slot>`; for the root suite it keeps one per worker, `<base>_suite_<TEST_TOKEN>`. A run that sets `SYLAMENT_TEST_RUN` gets `_<run>` after `<base>` in both. The `TEST_TOKEN` a parallel run sets keeps its processes' databases apart, and `SYLAMENT_TEST_RUN` keeps two runs' apart.
 - It separates databases, not connections: the pool keeps its own housekeeping connection to every database it has built, open for the life of the process, beside the connections the tests hold. A root-suite worker holds about three, which is why that suite alone runs in parallel on a server.
 - PostgreSQL allows 100 connections and every concurrent run shares them, so run one server suite at a time and stop a stale one before starting the next.
 

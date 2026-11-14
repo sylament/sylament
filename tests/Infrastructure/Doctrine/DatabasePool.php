@@ -12,13 +12,15 @@ use Doctrine\ORM\Configuration;
 use Doctrine\ORM\EntityManager;
 use Doctrine\ORM\Tools\SchemaTool;
 use LogicException;
+use Sylament\Tests\Infrastructure\WorkerDirectory;
 
 /**
  * Gives every test the databases in-memory SQLite would. The k-th entity manager a
  * test creates gets a server database of its own, built once per process and
  * wiped, identity counters included, whenever a later test takes it. The root
  * suite's kernel instead shares one database per process, {@see prepareWorld()}.
- * Nothing the pool runs reaches a test's recorder.
+ * Every name starts with the URL's database, followed by `_<run>` when
+ * `SYLAMENT_TEST_RUN` names one. Nothing the pool runs reaches a test's recorder.
  *
  * @internal
  *
@@ -88,8 +90,9 @@ final class DatabasePool
         }
 
         unset($params['dbname']);
+        $run = WorkerDirectory::run();
 
-        return new self(isset($params['driver']) && $params['driver'] === 'pdo_mysql' ? TestPlatform::MySql : TestPlatform::PostgreSql, $params, $base);
+        return new self(isset($params['driver']) && $params['driver'] === 'pdo_mysql' ? TestPlatform::MySql : TestPlatform::PostgreSql, $params, $run === null ? $base : $base . '_' . $run);
     }
 
     /**
@@ -126,7 +129,7 @@ final class DatabasePool
     }
 
     /**
-     * The root suite's database for this process: `<base>_suite_<TEST_TOKEN or 0>`.
+     * The root suite's database for this process: `<base>[_<run>]_suite_<TEST_TOKEN or 0>`.
      */
     public function worldName(): string
     {

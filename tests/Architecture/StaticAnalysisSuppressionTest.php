@@ -4,9 +4,7 @@ declare(strict_types=1);
 
 namespace Sylament\Tests\Architecture;
 
-use FilesystemIterator;
-use RecursiveDirectoryIterator;
-use RecursiveIteratorIterator;
+use Sylament\Tests\Architecture\Source\ShippedSource;
 
 use function dirname;
 
@@ -25,32 +23,6 @@ use function dirname;
  * fixed, it belongs in a baseline file, where it is counted and reviewable, never inline.
  */
 
-/**
- * @return list<string> every shipped PHP source file, relative to the packages/ dir
- */
-function shippedSourceFiles(): array
-{
-    $packagesDirectory = dirname(__DIR__, 2) . '/packages';
-
-    $files = [];
-
-    foreach (glob($packagesDirectory . '/*/src') ?: [] as $sourceDirectory) {
-        $iterator = new RecursiveIteratorIterator(
-            new RecursiveDirectoryIterator($sourceDirectory, FilesystemIterator::SKIP_DOTS),
-        );
-
-        foreach ($iterator as $file) {
-            if ($file->isFile() && str_ends_with((string) $file->getFilename(), '.php')) {
-                $files[] = str_replace($packagesDirectory . '/', '', $file->getPathname());
-            }
-        }
-    }
-
-    sort($files);
-
-    return $files;
-}
-
 it('suppresses no PHPStan error inline', function (string $file): void {
     $content = (string) file_get_contents(dirname(__DIR__, 2) . '/packages/' . $file);
 
@@ -60,4 +32,4 @@ it('suppresses no PHPStan error inline', function (string $file): void {
         . 'cause instead (an unguarded nullable usually wants a throw). If an error genuinely cannot '
         . 'be fixed, add a baseline file so it is counted and reviewable rather than buried in source.',
     );
-})->with(shippedSourceFiles());
+})->with(ShippedSource::files());

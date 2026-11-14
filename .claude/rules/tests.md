@@ -12,8 +12,8 @@ description: Where a root-suite test lives, what kind it is, how much it covers,
 - **A class's file holds only that class's own behaviour;** what it composes from a trait is tested in the trait's file, so each behaviour has one home.
 - **A case that crosses packages goes in the file of the class the user configures for it** (a table row's delete belongs to `DeleteAction`, so to actions' `DeleteActionTest.php`); there is no flows folder, because a flow has no class to be found from.
 - **Declare no namespace in a test file** outside `tests/Architecture/`; Pest names the class from its path.
-- **A scan of the repository's files lives in `tests/Architecture/`,** since no class leads to it; one that declares functions takes `namespace Sylament\Tests\Architecture`, which keeps them out of the global namespace, and prefixes each with its subject (`trailDocs()`), since every scan shares that namespace.
-- **Call a function a test file declares only from that file:** under `--parallel` a worker loads only its share of the test files, so a call from another file fails there alone; `TestFileFunctionsTest` enforces it.
+- **A scan of the repository's files lives in `tests/Architecture/`,** since no class leads to it, and exists only for a rule no tool checks, keeping one case that proves it can fail.
+- **Declare no function in a test file:** a worker loads only its share of files, so a scan's helper is a static method of a class under `tests/Architecture/` and a test's helper a `TestCase` method.
 - **Define an expectation more than one test file uses once, in `tests/Expectations/`** (`toBeRecord()` in `Records.php`), never in a test file: Pest loads that folder in every process before any test, while a test file's `expect()->extend()` exists only in a worker that has loaded that file.
 
 ## Kinds of test

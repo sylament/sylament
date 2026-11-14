@@ -4,11 +4,7 @@ declare(strict_types=1);
 
 namespace Sylament\Tests\Architecture;
 
-use FilesystemIterator;
-use RecursiveDirectoryIterator;
-use RecursiveIteratorIterator;
-
-use function dirname;
+use Sylament\Tests\Architecture\Templates\BundleTemplates;
 
 /**
  * Architectural convention test for where a bundle's Twig templates live.
@@ -25,32 +21,6 @@ use function dirname;
  * `ViewComponent::$template`, an `{% include %}` target.
  */
 
-/**
- * @return list<string> paths under the named half of every bundle's templates/, relative to the packages/ dir
- */
-function bundleTemplatesIn(string $half): array
-{
-    $packagesDirectory = dirname(__DIR__, 2) . '/packages';
-
-    $files = [];
-
-    foreach (glob($packagesDirectory . '/*/templates/' . $half) ?: [] as $directory) {
-        $iterator = new RecursiveIteratorIterator(
-            new RecursiveDirectoryIterator($directory, FilesystemIterator::SKIP_DOTS),
-        );
-
-        foreach ($iterator as $file) {
-            if ($file->isFile() && str_ends_with((string) $file->getFilename(), '.twig')) {
-                $files[] = str_replace($packagesDirectory . '/', '', $file->getPathname());
-            }
-        }
-    }
-
-    sort($files);
-
-    return $files;
-}
-
 it('keeps templates/components/ to tag-invoked components', function (string $template): void {
     expect($template)->toMatch(
         '#^[^/]+/templates/components/[^/]+/index\.html\.twig$#',
@@ -62,7 +32,7 @@ it('keeps templates/components/ to tag-invoked components', function (string $te
         . 'ViewComponent::$template, an {% include %} target) depends on a context no tag invocation '
         . 'supplies and belongs in templates/partials/<Name>/.',
     );
-})->with(bundleTemplatesIn('components'));
+})->with(BundleTemplates::in('components'));
 
 it('groups templates/partials/ per component', function (string $template): void {
     expect($template)->toMatch(
@@ -72,4 +42,4 @@ it('groups templates/partials/ per component', function (string $template): void
         . 'for the default, partials/<Name>/<Variant>.html.twig for the rest), so a component can grow '
         . 'variants without restructuring and no file is left flat among the directories.',
     );
-})->with(bundleTemplatesIn('partials'));
+})->with(BundleTemplates::in('partials'));

@@ -7,6 +7,7 @@ namespace Sylament\Tests\Architecture;
 use FilesystemIterator;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
+use Sylament\Tests\Architecture\Source\ShippedSource;
 
 use function dirname;
 
@@ -19,14 +20,6 @@ use function dirname;
  * application's in silence. The one construction left is the manager-less fallback a component built outside the
  * container takes.
  */
-
-/**
- * Whether the source constructs an `AssociationReader`, by its short or its qualified name.
- */
-function associationReaderConstructionIn(string $source): bool
-{
-    return preg_match('/\bnew\s+\\\\?(?:\w+\\\\)*AssociationReader\s*\(/', $source) === 1;
-}
 
 it('constructs an AssociationReader only in the manager-less fallback', function (): void {
     $packagesDirectory = dirname(__DIR__, 2) . '/packages';
@@ -42,7 +35,7 @@ it('constructs an AssociationReader only in the manager-less fallback', function
                 continue;
             }
 
-            if (associationReaderConstructionIn((string) file_get_contents($file->getPathname()))) {
+            if (ShippedSource::constructsAssociationReader((string) file_get_contents($file->getPathname()))) {
                 $constructors[] = str_replace($packagesDirectory . '/', '', $file->getPathname());
             }
         }
@@ -60,7 +53,7 @@ it('constructs an AssociationReader only in the manager-less fallback', function
 });
 
 it('sees a construction and looks past a reference', function (string $source, bool $constructs): void {
-    expect(associationReaderConstructionIn($source))->toBe($constructs);
+    expect(ShippedSource::constructsAssociationReader($source))->toBe($constructs);
 })->with([
     'a construction on a manager' => ['new AssociationReader($manager)', true],
     'the manager-less fallback' => ['return $this->associationReader ??= new AssociationReader();', true],

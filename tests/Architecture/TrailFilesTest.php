@@ -4,17 +4,14 @@ declare(strict_types=1);
 
 namespace Sylament\Tests\Architecture;
 
-use FilesystemIterator;
-use RecursiveDirectoryIterator;
-use RecursiveIteratorIterator;
 use Sylament\Tests\Architecture\Trail\DetailFile;
 use Sylament\Tests\Architecture\Trail\Row;
 use Sylament\Tests\Architecture\Trail\Status;
 use Sylament\Tests\Architecture\Trail\Table;
 use Sylament\Tests\Architecture\Trail\Trail;
+use Sylament\Tests\Architecture\Trail\TrailFixture;
+use Symfony\Component\Filesystem\Filesystem;
 use UnexpectedValueException;
-
-use function dirname;
 
 /**
  * Convention test for the port trail under docs/progress/: frontmatter, ownership of every source file,
@@ -22,122 +19,6 @@ use function dirname;
  * size alarm.
  * The logic is in Trail/; the rules are in .claude/rules/trail.md.
  */
-function trailRepositoryRoot(): string
-{
-    return dirname(__DIR__, 2);
-}
-
-/**
- * A docs/progress path for a fixture, assembled so that the reference check reading this file finds no
- * reference to a trail file that does not exist.
- */
-function trailDocs(string $relative): string
-{
-    return 'docs/progress/' . $relative;
-}
-
-/**
- * @param array<string, string> $files content keyed by path; a path ending in / is an empty directory
- */
-function trailTree(array $files): string
-{
-    $root = sys_get_temp_dir() . '/' . uniqid('trail-', true);
-
-    foreach ($files as $path => $content) {
-        $directory = str_ends_with($path, '/') ? $root . '/' . $path : dirname($root . '/' . $path);
-
-        if (!is_dir($directory)) {
-            mkdir($directory, recursive: true);
-        }
-
-        if (!str_ends_with($path, '/')) {
-            file_put_contents($root . '/' . $path, $content);
-        }
-    }
-
-    return $root;
-}
-
-function trailRemoveTree(string $root): void
-{
-    foreach (new RecursiveIteratorIterator(new RecursiveDirectoryIterator($root, FilesystemIterator::SKIP_DOTS), RecursiveIteratorIterator::CHILD_FIRST) as $file) {
-        $file->isDir() ? rmdir($file->getPathname()) : unlink($file->getPathname());
-    }
-
-    rmdir($root);
-}
-
-/**
- * @param list<string> $ports
- * @param list<string> $owns
- */
-function trailFrontmatter(string $description, array $ports, array $owns): string
-{
-    $list = static fn (array $entries): string => [] === $entries ? ' []' : implode('', array_map(static fn (string $entry): string => "\n  - {$entry}", $entries));
-
-    return "---\ndescription: {$description}\nports:{$list($ports)}\nowns:{$list($owns)}\n---\n";
-}
-
-/**
- * @param list<string> $rows each "| … |" line under the five-column header
- */
-function trailSurface(array $rows): string
-{
-    return "## Surface\n\n| Feature | Ports | Status | Blocked by | Detail |\n| --- | --- | --- | --- | --- |\n" . implode("\n", $rows) . "\n";
-}
-
-/**
- * Two packages and three detail files that pass every check once the indexes are written.
- *
- * @return array<string, string>
- */
-function trailGreenTree(): array
-{
-    $readme = static fn (string $title, string $unported): string => "# {$title} — port trail\n\nPorts it.\n\n## Files\n\n" . Trail::INDEX_START . "\n" . Trail::INDEX_END . "\n\n## Unported\n\n| Filament | Status | Blocked by | Detail |\n| --- | --- | --- | --- |\n{$unported}";
-
-    return [
-        'packages/alpha/src/Widget.php' => "<?php\n// The engine question is in " . trailDocs('alpha/widget.md') . ', section "Widget waits on the engine".' . "\n",
-        'packages/alpha/src/Concerns/HasThing.php' => "<?php\n",
-        'packages/alpha/templates/widget.html.twig' => "<div></div>\n",
-        'packages/alpha/tests/WidgetTest.php' => "<?php\n",
-        'packages/panels/src/Panel.php' => "<?php\n",
-        'packages/panels/assets/src/panel.ts' => "export {};\n",
-        'vendor/filament/alpha/src/Widget.php' => "<?php\n",
-        'vendor/filament/alpha/src/Gadget.php' => "<?php\n",
-        'vendor/filament/alpha/src/Concerns/HasThing.php' => "<?php\n",
-        'vendor/filament/filament/src/Panel.php' => "<?php\n",
-        'docs/internals/notes.md' => "# Notes\n\nSee `" . trailDocs('panels/panel.md') . "` (\"The panel waits on\nrouting\").\n",
-        trailDocs('README.md') => "# Progress\n\n## Packages\n\n" . Trail::INDEX_START . "\nstale\n" . Trail::INDEX_END . "\n\n## Statuses\n",
-        trailDocs('alpha/README.md') => $readme('Alpha', "| [`Gadget.php`](../../../vendor/filament/alpha/src/Gadget.php) | todo | — | — |\n"),
-        trailDocs('panels/README.md') => $readme('Panels', ''),
-        trailDocs('alpha/widget.md') => trailFrontmatter('The widget; its concerns are in has-thing.md.', ['vendor/filament/alpha/src/Widget.php'], ['packages/alpha/src/', 'packages/alpha/templates/widget.html.twig'])
-            . "# Widget (alpha)\n\n" . trailSurface([
-                '| `make()` | `Widget.php` | done | — | — |',
-                '| `render()` | `Widget.php` | in progress | — | [detail](#widget-waits-on-the-engine) |',
-                '| `mask()` | `Widget.php` | todo | — | — |',
-            ]) . "\n## Details\n\n### `Widget` waits on the engine\n\nOne sentence.\n",
-        trailDocs('alpha/has-thing.md') => trailFrontmatter('The HasThing concern.', ['vendor/filament/alpha/src/Concerns/'], ['packages/alpha/src/Concerns/'])
-            . "# HasThing (alpha)\n\n" . trailSurface([
-                '| `thing()` | `HasThing.php` | done | — | [semantics](#thing-is-subtle) |',
-                '| `legacyThing()` | `HasThing.php` | skipped | — | — |',
-            ]) . "\n## Semantics\n\n### Thing is subtle\n\nOne sentence.\n",
-        trailDocs('panels/panel.md') => trailFrontmatter('The panel | its assets.', ['vendor/filament/filament/src/Panel.php'], ['packages/panels/src/Panel.php', 'packages/panels/assets/src/'])
-            . "# Panel (panels)\n\n" . trailSurface([
-                '| `route()` | `Panel.php` | blocked | routing | [detail](#the-panel-waits-on-routing) |',
-                '| _rest not audited yet_ | — | — | — | — |',
-            ]) . "\n## Details\n\n### The panel waits on routing\n\nOne sentence.\n",
-    ];
-}
-
-/**
- * @param array<string, string> $files
- *
- * @return list<string> the fixture's tracked files: everything except vendor/
- */
-function trailTracked(array $files): array
-{
-    return array_values(array_filter(array_keys($files), static fn (string $path): bool => !str_starts_with($path, 'vendor/') && !str_ends_with($path, '/')));
-}
 
 it('rolls row statuses up', function (array $statuses, bool $unaudited, Status $expected): void {
     expect(Trail::rollup($statuses, $unaudited))->toBe($expected);
@@ -164,7 +45,7 @@ it('refuses to roll up nothing', function (): void {
 })->throws(UnexpectedValueException::class, 'has no Surface row');
 
 it('reads a Surface table into rows with their lines', function (): void {
-    $markdown = "# X (forms)\n\n" . trailSurface([
+    $markdown = "# X (forms)\n\n" . TrailFixture::surface([
         '| [`a()`](../a.php) | [`A.php`](../A.php) | done | — | — |',
         '| `b() \| c()` | — | blocked | a masking engine | [detail](#b) · [diverges](other.md#c) |',
     ]) . "\n## Details\n\n| Not | A | Surface |\n| --- | --- | --- |\n";
@@ -178,7 +59,7 @@ it('reads a Surface table into rows with their lines', function (): void {
 });
 
 it('keeps the unaudited row out of the rows and flags the table', function (): void {
-    $tables = Trail::tables(trailSurface(['| `a()` | — | todo | — | — |', '| _rest not audited yet_ | — | — | — | — |']), 'Surface');
+    $tables = Trail::tables(TrailFixture::surface(['| `a()` | — | todo | — | — |', '| _rest not audited yet_ | — | — | — | — |']), 'Surface');
 
     expect($tables)->toHaveCount(1)
         ->and($tables[0]->unaudited)->toBeTrue()
@@ -213,15 +94,15 @@ it('rejects a malformed table', function (string $markdown, string $message): vo
         '1: ## Surface holds 2 tables; it holds exactly one',
     ],
     'a section without a table' => ["## Surface\n\nNothing yet.\n", '1: ## Surface holds 0 tables; it holds exactly one'],
-    'a status outside the vocabulary' => [trailSurface(['| `a()` | — | **done** | — | — |']), '5: "**done**" is not a status in the vocabulary'],
-    'a short row' => [trailSurface(['| `a()` | — | done | — |']), '5: the row has 4 cells and the header 5'],
-    'an unpipe-escaped code span' => [trailSurface(['| `a | b` | — | done | — | — |']), '5: the row has 6 cells and the header 5'],
-    'an unaudited row with blank cells' => [trailSurface(['| _not audited yet_ | | | | |']), '5: an unaudited row has — in every other cell'],
+    'a status outside the vocabulary' => [TrailFixture::surface(['| `a()` | — | **done** | — | — |']), '5: "**done**" is not a status in the vocabulary'],
+    'a short row' => [TrailFixture::surface(['| `a()` | — | done | — |']), '5: the row has 4 cells and the header 5'],
+    'an unpipe-escaped code span' => [TrailFixture::surface(['| `a | b` | — | done | — | — |']), '5: the row has 6 cells and the header 5'],
+    'an unaudited row with blank cells' => [TrailFixture::surface(['| _not audited yet_ | | | | |']), '5: an unaudited row has — in every other cell'],
     'no separator row' => ["## Surface\n\n| Feature | Ports | Status | Blocked by | Detail |\n| `a()` | — | done | — | — |\n", '3: the table has no --- separator row under its header'],
 ]);
 
 it('parses frontmatter', function (): void {
-    expect(Trail::frontmatter(trailFrontmatter('The field.', [], ['packages/forms/src/X.php']) . "# X\n"))
+    expect(Trail::frontmatter(TrailFixture::frontmatter('The field.', [], ['packages/forms/src/X.php']) . "# X\n"))
         ->toBe(['description' => 'The field.', 'ports' => [], 'owns' => ['packages/forms/src/X.php']]);
 });
 
@@ -245,12 +126,12 @@ it('accepts a # that is not a YAML comment', function (string $line): void {
 ]);
 
 it('lists what a frontmatter breaks', function (array $frontmatter, array $violations): void {
-    $root = trailTree(['vendor/filament/forms/src/Field.php' => '', 'vendor/filament/forms/src/Concerns/' => '']);
+    $root = TrailFixture::tree(['vendor/filament/forms/src/Field.php' => '', 'vendor/filament/forms/src/Concerns/' => '']);
 
     try {
         expect(new Trail($root, [])->frontmatterViolations($frontmatter))->toBe($violations);
     } finally {
-        trailRemoveTree($root);
+        new Filesystem()->remove($root);
     }
 })->with([
     'valid' => [['description' => 'X.', 'ports' => ['vendor/filament/forms/src/Field.php', 'vendor/filament/forms/src/Concerns/'], 'owns' => []], []],
@@ -316,7 +197,7 @@ it('counts open rows and rolls a file up', function (): void {
 });
 
 it('resolves every ownable file to the longest entry that matches it', function (): void {
-    $owns = static fn (array $entries): string => trailFrontmatter('X.', [], $entries) . "# X (alpha)\n";
+    $owns = static fn (array $entries): string => TrailFixture::frontmatter('X.', [], $entries) . "# X (alpha)\n";
     $files = [
         'packages/alpha/src/X.php' => '',
         'packages/alpha/src/Sub/Y.php' => '',
@@ -324,65 +205,65 @@ it('resolves every ownable file to the longest entry that matches it', function 
         'packages/alpha/templates/t.html.twig' => '',
         'packages/alpha/tests/XTest.php' => '',
         'packages/beta/src/' => '',
-        trailDocs('alpha/one.md') => $owns(['packages/alpha/src/']),
-        trailDocs('alpha/two.md') => $owns(['packages/alpha/src/Sub/', 'packages/alpha/src/Gone.php', 'packages/alpha/composer.json', 'packages/alpha/src/Sub']),
-        trailDocs('alpha/three.md') => $owns(['packages/alpha/src/Z.php']),
-        trailDocs('alpha/four.md') => $owns(['packages/alpha/src/Z.php']),
-        trailDocs('alpha/five.md') => "# No frontmatter (alpha)\n",
+        TrailFixture::docs('alpha/one.md') => $owns(['packages/alpha/src/']),
+        TrailFixture::docs('alpha/two.md') => $owns(['packages/alpha/src/Sub/', 'packages/alpha/src/Gone.php', 'packages/alpha/composer.json', 'packages/alpha/src/Sub']),
+        TrailFixture::docs('alpha/three.md') => $owns(['packages/alpha/src/Z.php']),
+        TrailFixture::docs('alpha/four.md') => $owns(['packages/alpha/src/Z.php']),
+        TrailFixture::docs('alpha/five.md') => "# No frontmatter (alpha)\n",
     ];
-    $root = trailTree($files);
+    $root = TrailFixture::tree($files);
 
     try {
-        expect(new Trail($root, trailTracked($files))->ownership())->toBe([
+        expect(new Trail($root, TrailFixture::tracked($files))->ownership())->toBe([
             'owners' => [
-                'packages/alpha/src/X.php' => trailDocs('alpha/one.md'),
-                'packages/alpha/src/Sub/Y.php' => trailDocs('alpha/two.md'),
+                'packages/alpha/src/X.php' => TrailFixture::docs('alpha/one.md'),
+                'packages/alpha/src/Sub/Y.php' => TrailFixture::docs('alpha/two.md'),
             ],
             'violations' => [
-                'unreadable owns: ' . trailDocs('alpha/five.md') . ' declares no owns list, so it owns nothing',
-                'not ownable: ' . trailDocs('alpha/two.md') . ': packages/alpha/composer.json is outside packages/*/src/, templates/ and assets/src/',
+                'unreadable owns: ' . TrailFixture::docs('alpha/five.md') . ' declares no owns list, so it owns nothing',
+                'not ownable: ' . TrailFixture::docs('alpha/two.md') . ': packages/alpha/composer.json is outside packages/*/src/, templates/ and assets/src/',
                 'unowned: packages/alpha/templates/t.html.twig',
-                'owned twice: packages/alpha/src/Z.php is in ' . trailDocs('alpha/four.md') . ', ' . trailDocs('alpha/three.md'),
-                'stale entry: ' . trailDocs('alpha/two.md') . ': packages/alpha/src/Gone.php matches no tracked ownable file',
-                'stale entry: ' . trailDocs('alpha/two.md') . ': packages/alpha/src/Sub matches no tracked ownable file (a directory entry ends with /)',
+                'owned twice: packages/alpha/src/Z.php is in ' . TrailFixture::docs('alpha/four.md') . ', ' . TrailFixture::docs('alpha/three.md'),
+                'stale entry: ' . TrailFixture::docs('alpha/two.md') . ': packages/alpha/src/Gone.php matches no tracked ownable file',
+                'stale entry: ' . TrailFixture::docs('alpha/two.md') . ': packages/alpha/src/Sub matches no tracked ownable file (a directory entry ends with /)',
             ],
         ]);
     } finally {
-        trailRemoveTree($root);
+        new Filesystem()->remove($root);
     }
 });
 
 it('checks the trail paths and quoted titles that code and docs/internals cite', function (): void {
     $files = [
-        trailDocs('alpha/widget.md') => "# Widget (alpha)\n\n## Details\n\n### `fill()` resurrects its pre-fill items\n",
-        'packages/alpha/src/Ref.php' => "<?php\n/*\n * Recorded in `" . trailDocs('alpha/widget.md') . "` (\"fill() resurrects its\n * pre-fill items\"), and in " . trailDocs('alpha/gone.md') . ".\n */\n",
-        'docs/internals/notes.md' => "# Notes\n\nSee `" . trailDocs('alpha/widget.md') . "`, section \"Details\".\nSee `" . trailDocs('alpha/widget.md') . "`, \"A heading that is gone\".\nSee " . trailDocs('alpha/widget.md') . ' ("Gadget") too.' . "\n",
-        'docs/internals/deep/skipped.md' => trailDocs('alpha/gone.md') . "\n",
+        TrailFixture::docs('alpha/widget.md') => "# Widget (alpha)\n\n## Details\n\n### `fill()` resurrects its pre-fill items\n",
+        'packages/alpha/src/Ref.php' => "<?php\n/*\n * Recorded in `" . TrailFixture::docs('alpha/widget.md') . "` (\"fill() resurrects its\n * pre-fill items\"), and in " . TrailFixture::docs('alpha/gone.md') . ".\n */\n",
+        'docs/internals/notes.md' => "# Notes\n\nSee `" . TrailFixture::docs('alpha/widget.md') . "`, section \"Details\".\nSee `" . TrailFixture::docs('alpha/widget.md') . "`, \"A heading that is gone\".\nSee " . TrailFixture::docs('alpha/widget.md') . ' ("Gadget") too.' . "\n",
+        'docs/internals/deep/skipped.md' => TrailFixture::docs('alpha/gone.md') . "\n",
     ];
-    $root = trailTree($files);
+    $root = TrailFixture::tree($files);
 
     try {
-        expect(new Trail($root, trailTracked($files))->referenceViolations())->toBe([
-            'packages/alpha/src/Ref.php:4: names ' . trailDocs('alpha/gone.md') . ', which does not exist',
-            'docs/internals/notes.md:4: ' . trailDocs('alpha/widget.md') . ' has no heading containing "A heading that is gone"',
-            'docs/internals/notes.md:5: ' . trailDocs('alpha/widget.md') . ' has no heading containing "Gadget"',
+        expect(new Trail($root, TrailFixture::tracked($files))->referenceViolations())->toBe([
+            'packages/alpha/src/Ref.php:4: names ' . TrailFixture::docs('alpha/gone.md') . ', which does not exist',
+            'docs/internals/notes.md:4: ' . TrailFixture::docs('alpha/widget.md') . ' has no heading containing "A heading that is gone"',
+            'docs/internals/notes.md:5: ' . TrailFixture::docs('alpha/widget.md') . ' has no heading containing "Gadget"',
         ]);
     } finally {
-        trailRemoveTree($root);
+        new Filesystem()->remove($root);
     }
 });
 
 it('raises the size alarm one byte past 90 KB', function (int $bytes, bool $alarm): void {
-    $files = trailGreenTree();
+    $files = TrailFixture::greenTree();
     $head = "# Big (alpha)\n\n";
-    $files[trailDocs('alpha/big.md')] = $head . str_repeat('x', $bytes - mb_strlen($head, '8bit'));
-    $root = trailTree($files);
+    $files[TrailFixture::docs('alpha/big.md')] = $head . str_repeat('x', $bytes - mb_strlen($head, '8bit'));
+    $root = TrailFixture::tree($files);
 
     try {
-        expect(new Trail($root, trailTracked($files))->sizeViolations())
-            ->toBe($alarm ? [trailDocs('alpha/big.md') . ": {$bytes} bytes, past the 90 KB alarm — split it along the code it owns"] : []);
+        expect(new Trail($root, TrailFixture::tracked($files))->sizeViolations())
+            ->toBe($alarm ? [TrailFixture::docs('alpha/big.md') . ": {$bytes} bytes, past the 90 KB alarm — split it along the code it owns"] : []);
     } finally {
-        trailRemoveTree($root);
+        new Filesystem()->remove($root);
     }
 })->with([
     'at the alarm' => [Trail::SIZE_ALARM_BYTES, false],
@@ -390,23 +271,23 @@ it('raises the size alarm one byte past 90 KB', function (int $bytes, bool $alar
 ]);
 
 it('writes the indexes between the markers and passes every check afterwards', function (): void {
-    $files = trailGreenTree();
-    $root = trailTree($files);
-    $trail = new Trail($root, trailTracked($files));
+    $files = TrailFixture::greenTree();
+    $root = TrailFixture::tree($files);
+    $trail = new Trail($root, TrailFixture::tracked($files));
 
     try {
         expect($trail->indexViolations())->toBe([
-            trailDocs('README.md') . ': the trail index is stale; run `composer docs:index`',
-            trailDocs('alpha/README.md') . ': the trail index is stale; run `composer docs:index`',
-            trailDocs('panels/README.md') . ': the trail index is stale; run `composer docs:index`',
-        ])->and($trail->writeIndexes())->toBe([trailDocs('README.md'), trailDocs('alpha/README.md'), trailDocs('panels/README.md')])
+            TrailFixture::docs('README.md') . ': the trail index is stale; run `composer docs:index`',
+            TrailFixture::docs('alpha/README.md') . ': the trail index is stale; run `composer docs:index`',
+            TrailFixture::docs('panels/README.md') . ': the trail index is stale; run `composer docs:index`',
+        ])->and($trail->writeIndexes())->toBe([TrailFixture::docs('README.md'), TrailFixture::docs('alpha/README.md'), TrailFixture::docs('panels/README.md')])
             ->and($trail->writeIndexes())->toBe([])
             ->and($trail->formatViolations())->toBe([])
             ->and($trail->ownership()['violations'])->toBe([])
             ->and($trail->indexViolations())->toBe([])
             ->and($trail->referenceViolations())->toBe([])
             ->and($trail->sizeViolations())->toBe([])
-            ->and((string) file_get_contents($root . '/' . trailDocs('README.md')))->toContain(implode("\n", [
+            ->and((string) file_get_contents($root . '/' . TrailFixture::docs('README.md')))->toContain(implode("\n", [
                 Trail::INDEX_START,
                 '| Package | Ports | Status | Detail |',
                 '| --- | --- | --- | --- |',
@@ -416,7 +297,7 @@ it('writes the indexes between the markers and passes every check afterwards', f
                 '',
                 '## Statuses',
             ]))
-            ->and((string) file_get_contents($root . '/' . trailDocs('alpha/README.md')))->toContain(implode("\n", [
+            ->and((string) file_get_contents($root . '/' . TrailFixture::docs('alpha/README.md')))->toContain(implode("\n", [
                 Trail::INDEX_START,
                 '| File | Status | Open | Ports | Description |',
                 '| --- | --- | --- | --- | --- |',
@@ -431,37 +312,37 @@ it('writes the indexes between the markers and passes every check afterwards', f
             ->and($trail->unported('panels'))->toBe([])
             ->and(array_map(count(...), $trail->detailFiles()))->toBe(['alpha' => 2, 'panels' => 1]);
     } finally {
-        trailRemoveTree($root);
+        new Filesystem()->remove($root);
     }
 });
 
 it('names composer docs:index when an index block is edited by hand', function (): void {
-    $files = trailGreenTree();
-    $root = trailTree($files);
-    $trail = new Trail($root, trailTracked($files));
+    $files = TrailFixture::greenTree();
+    $root = TrailFixture::tree($files);
+    $trail = new Trail($root, TrailFixture::tracked($files));
 
     try {
         $trail->writeIndexes();
-        $readme = $root . '/' . trailDocs('alpha/README.md');
+        $readme = $root . '/' . TrailFixture::docs('alpha/README.md');
         file_put_contents($readme, str_replace('| done |', '| in progress |', (string) file_get_contents($readme)));
 
-        expect($trail->indexViolations())->toBe([trailDocs('alpha/README.md') . ': the trail index is stale; run `composer docs:index`']);
+        expect($trail->indexViolations())->toBe([TrailFixture::docs('alpha/README.md') . ': the trail index is stale; run `composer docs:index`']);
     } finally {
-        trailRemoveTree($root);
+        new Filesystem()->remove($root);
     }
 });
 
 it('refuses to write when a README lacks its markers, and writes nothing', function (string $block): void {
-    $files = trailGreenTree();
-    $files[trailDocs('panels/README.md')] = "# Panels — port trail\n\n## Files\n\n{$block}\n## Unported\n\n| Filament | Status | Blocked by | Detail |\n| --- | --- | --- | --- |\n";
-    $root = trailTree($files);
+    $files = TrailFixture::greenTree();
+    $files[TrailFixture::docs('panels/README.md')] = "# Panels — port trail\n\n## Files\n\n{$block}\n## Unported\n\n| Filament | Status | Blocked by | Detail |\n| --- | --- | --- | --- |\n";
+    $root = TrailFixture::tree($files);
 
     try {
-        expect(static fn (): array => new Trail($root, trailTracked($files))->writeIndexes())
-            ->toThrow(UnexpectedValueException::class, trailDocs('panels/README.md') . ' needs exactly one ' . Trail::INDEX_START . ' … ' . Trail::INDEX_END . ' pair')
-            ->and((string) file_get_contents($root . '/' . trailDocs('README.md')))->toBe($files[trailDocs('README.md')]);
+        expect(static fn (): array => new Trail($root, TrailFixture::tracked($files))->writeIndexes())
+            ->toThrow(UnexpectedValueException::class, TrailFixture::docs('panels/README.md') . ' needs exactly one ' . Trail::INDEX_START . ' … ' . Trail::INDEX_END . ' pair')
+            ->and((string) file_get_contents($root . '/' . TrailFixture::docs('README.md')))->toBe($files[TrailFixture::docs('README.md')]);
     } finally {
-        trailRemoveTree($root);
+        new Filesystem()->remove($root);
     }
 })->with([
     'no markers' => [''],
@@ -470,73 +351,73 @@ it('refuses to write when a README lacks its markers, and writes nothing', funct
 ]);
 
 it('refuses a package with no detail file and no Unported row', function (): void {
-    $files = trailGreenTree();
-    unset($files[trailDocs('panels/panel.md')]);
-    $root = trailTree($files);
+    $files = TrailFixture::greenTree();
+    unset($files[TrailFixture::docs('panels/panel.md')]);
+    $root = TrailFixture::tree($files);
 
     try {
-        expect(static fn (): Status => new Trail($root, trailTracked($files))->packageStatus('panels'))
-            ->toThrow(UnexpectedValueException::class, trailDocs('panels/README.md') . ': the package has no detail file and no Unported row');
+        expect(static fn (): Status => new Trail($root, TrailFixture::tracked($files))->packageStatus('panels'))
+            ->toThrow(UnexpectedValueException::class, TrailFixture::docs('panels/README.md') . ': the package has no detail file and no Unported row');
     } finally {
-        trailRemoveTree($root);
+        new Filesystem()->remove($root);
     }
 });
 
 it('lists every format violation of a broken trail', function (): void {
-    $files = trailGreenTree();
-    $files[trailDocs('alpha/widget.md')] = "# Widget (alpha)\n\n**Status:** done\n\n## Surface\n\n| Feature | Status | Blocked by | Detail |\n| --- | --- | --- | --- |\n| `a()` | done | — | see below |\n\n## Details\n";
-    $files[trailDocs('alpha/has-thing.md')] = trailFrontmatter('X.', ['vendor/filament/alpha/src/Gone.php'], []) . "# HasThing (alpha)\n\n" . trailSurface(['| `a()` | — | skipped | — | — |']) . "\n## Details\n\n### Stale\n";
-    $files[trailDocs('alpha/empty.md')] = trailFrontmatter('X.', [], []) . "# Empty (alpha)\n";
-    $files[trailDocs('alpha/README.md')] = "# Alpha\n\n## Unported\n\n| Filament | Status | Blocked by | Detail |\n| --- | --- | --- | --- |\n| `Gadget` | blocked | — | — |\n| [`Gone.php`](../../../vendor/filament/alpha/src/Gone.php) | todo | — | — |\n";
-    $files[trailDocs('panels/README.md')] = "# Panels\n";
-    $root = trailTree($files);
+    $files = TrailFixture::greenTree();
+    $files[TrailFixture::docs('alpha/widget.md')] = "# Widget (alpha)\n\n**Status:** done\n\n## Surface\n\n| Feature | Status | Blocked by | Detail |\n| --- | --- | --- | --- |\n| `a()` | done | — | see below |\n\n## Details\n";
+    $files[TrailFixture::docs('alpha/has-thing.md')] = TrailFixture::frontmatter('X.', ['vendor/filament/alpha/src/Gone.php'], []) . "# HasThing (alpha)\n\n" . TrailFixture::surface(['| `a()` | — | skipped | — | — |']) . "\n## Details\n\n### Stale\n";
+    $files[TrailFixture::docs('alpha/empty.md')] = TrailFixture::frontmatter('X.', [], []) . "# Empty (alpha)\n";
+    $files[TrailFixture::docs('alpha/README.md')] = "# Alpha\n\n## Unported\n\n| Filament | Status | Blocked by | Detail |\n| --- | --- | --- | --- |\n| `Gadget` | blocked | — | — |\n| [`Gone.php`](../../../vendor/filament/alpha/src/Gone.php) | todo | — | — |\n";
+    $files[TrailFixture::docs('panels/README.md')] = "# Panels\n";
+    $root = TrailFixture::tree($files);
 
     try {
-        expect(new Trail($root, trailTracked($files))->formatViolations())->toBe([
-            trailDocs('alpha/empty.md') . ': has no Surface row',
-            trailDocs('alpha/has-thing.md') . ': ports entry vendor/filament/alpha/src/Gone.php does not exist',
-            trailDocs('alpha/has-thing.md') . ': a skipped file has no ## Details section',
-            trailDocs('alpha/widget.md') . ': has no frontmatter (a --- block on its first line)',
-            trailDocs('alpha/widget.md') . ':7: the table header is "| Feature | Status | Blocked by | Detail |", not "| Feature | Ports | Status | Blocked by | Detail |"',
-            trailDocs('alpha/widget.md') . ':9: the Detail cell holds only links joined by " · ", or —, not "see below"',
-            trailDocs('alpha/README.md') . ':7: a blocked row names its prerequisite in Blocked by',
-            trailDocs('alpha/README.md') . ':7: the Filament cell is one link to an existing vendor/filament/ path, not "`Gadget`"',
-            trailDocs('alpha/README.md') . ':7: a blocked Unported row links its reason from Detail',
-            trailDocs('alpha/README.md') . ':8: the Filament cell is one link to an existing vendor/filament/ path, not "[`Gone.php`](../../../vendor/filament/alpha/src/Gone.php)"',
-            trailDocs('panels/README.md') . ': holds 0 ## Unported sections; it holds exactly one',
-            trailDocs('alpha/widget.md') . ':3: a **Status:** line; status lives on rows and the generated indexes',
+        expect(new Trail($root, TrailFixture::tracked($files))->formatViolations())->toBe([
+            TrailFixture::docs('alpha/empty.md') . ': has no Surface row',
+            TrailFixture::docs('alpha/has-thing.md') . ': ports entry vendor/filament/alpha/src/Gone.php does not exist',
+            TrailFixture::docs('alpha/has-thing.md') . ': a skipped file has no ## Details section',
+            TrailFixture::docs('alpha/widget.md') . ': has no frontmatter (a --- block on its first line)',
+            TrailFixture::docs('alpha/widget.md') . ':7: the table header is "| Feature | Status | Blocked by | Detail |", not "| Feature | Ports | Status | Blocked by | Detail |"',
+            TrailFixture::docs('alpha/widget.md') . ':9: the Detail cell holds only links joined by " · ", or —, not "see below"',
+            TrailFixture::docs('alpha/README.md') . ':7: a blocked row names its prerequisite in Blocked by',
+            TrailFixture::docs('alpha/README.md') . ':7: the Filament cell is one link to an existing vendor/filament/ path, not "`Gadget`"',
+            TrailFixture::docs('alpha/README.md') . ':7: a blocked Unported row links its reason from Detail',
+            TrailFixture::docs('alpha/README.md') . ':8: the Filament cell is one link to an existing vendor/filament/ path, not "[`Gone.php`](../../../vendor/filament/alpha/src/Gone.php)"',
+            TrailFixture::docs('panels/README.md') . ': holds 0 ## Unported sections; it holds exactly one',
+            TrailFixture::docs('alpha/widget.md') . ':3: a **Status:** line; status lives on rows and the generated indexes',
         ]);
     } finally {
-        trailRemoveTree($root);
+        new Filesystem()->remove($root);
     }
 });
 
 it('gives every detail file valid frontmatter and well-formed tables, and no trail file a Status line (checks 1, 3, 4, 5)', function (): void {
-    $violations = new Trail(trailRepositoryRoot())->formatViolations();
+    $violations = new Trail(TrailFixture::repositoryRoot())->formatViolations();
 
     expect($violations)->toBe([], "Trail format violations (.claude/rules/trail.md):\n" . implode("\n", $violations));
 });
 
 it('gives every ownable file exactly one owner (check 2)', function (): void {
-    $violations = new Trail(trailRepositoryRoot())->ownership()['violations'];
+    $violations = new Trail(TrailFixture::repositoryRoot())->ownership()['violations'];
 
     expect($violations)->toBe([], "Ownership violations: add the path to the owns of the trail file that documents it:\n" . implode("\n", $violations));
 });
 
 it('keeps every generated index current (check 6)', function (): void {
-    $violations = new Trail(trailRepositoryRoot())->indexViolations();
+    $violations = new Trail(TrailFixture::repositoryRoot())->indexViolations();
 
     expect($violations)->toBe([], "Stale trail indexes; run `composer docs:index`:\n" . implode("\n", $violations));
 });
 
 it('names only trail paths and headings that exist (check 7)', function (): void {
-    $violations = new Trail(trailRepositoryRoot())->referenceViolations();
+    $violations = new Trail(TrailFixture::repositoryRoot())->referenceViolations();
 
     expect($violations)->toBe([], "References to trail files or sections that do not exist:\n" . implode("\n", $violations));
 });
 
 it('keeps every trail file under the 90 KB alarm (check 9)', function (): void {
-    $violations = new Trail(trailRepositoryRoot())->sizeViolations();
+    $violations = new Trail(TrailFixture::repositoryRoot())->sizeViolations();
 
     expect($violations)->toBe([], "Trail files past the size alarm (.claude/rules/trail.md):\n" . implode("\n", $violations));
 });

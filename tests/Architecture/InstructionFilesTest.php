@@ -4,13 +4,8 @@ declare(strict_types=1);
 
 namespace Sylament\Tests\Architecture;
 
-use FilesystemIterator;
-use RecursiveDirectoryIterator;
-use RecursiveIteratorIterator;
-use RuntimeException;
-use Sylament\Tests\Architecture\Rules\RuleHook;
+use Sylament\Tests\Architecture\Instructions\InstructionFiles;
 use Symfony\Component\Yaml\Exception\ParseException;
-use Symfony\Component\Yaml\Yaml;
 
 use function dirname;
 
@@ -20,124 +15,9 @@ use function dirname;
  * and every matching read pays for a rule, so their size, scope and content are held here;
  * the loading behaviour the glob helpers mirror is recorded in docs/internals/agent-instructions.md.
  */
-function instructionRepositoryRoot(): string
-{
-    return dirname(__DIR__, 2);
-}
-
-/**
- * @return list<string> every tracked file, relative to the repository root
- */
-function instructionTrackedFiles(): array
-{
-    static $files = null;
-
-    if (null === $files) {
-        exec('git -C ' . escapeshellarg(instructionRepositoryRoot()) . ' ls-files', $output, $status);
-
-        if (0 !== $status) {
-            throw new RuntimeException('git ls-files failed; the instruction-file check reads tracked files through git.');
-        }
-
-        $files = $output;
-    }
-
-    return $files;
-}
-
-/**
- * @return list<string> every rule file under .claude/rules/, relative to the repository root
- */
-function instructionRuleFiles(): array
-{
-    $directory = instructionRepositoryRoot() . '/.claude/rules';
-
-    if (!is_dir($directory)) {
-        return [];
-    }
-
-    $files = [];
-
-    foreach (new RecursiveIteratorIterator(new RecursiveDirectoryIterator($directory, FilesystemIterator::SKIP_DOTS)) as $file) {
-        if ($file->isFile() && str_ends_with((string) $file->getFilename(), '.md')) {
-            $files[] = str_replace(instructionRepositoryRoot() . '/', '', $file->getPathname());
-        }
-    }
-
-    sort($files);
-
-    return $files;
-}
-
-/**
- * @return list<string> every skill file, relative to the repository root
- */
-function instructionSkillFiles(): array
-{
-    $files = array_map(
-        static fn (string $path): string => str_replace(instructionRepositoryRoot() . '/', '', $path),
-        glob(instructionRepositoryRoot() . '/.claude/skills/*/SKILL.md') ?: [],
-    );
-
-    sort($files);
-
-    return $files;
-}
-
-/**
- * @return array<string, mixed> the YAML frontmatter, or an empty array when the file has none
- */
-function instructionFrontmatter(string $content): array
-{
-    if (1 !== preg_match('/\A---\n(.*?)\n---\n/s', $content, $match)) {
-        return [];
-    }
-
-    $parsed = Yaml::parse($match[1]);
-
-    return is_array($parsed) ? $parsed : [];
-}
-
-function instructionGlobIsAnchored(string $glob): bool
-{
-    if (str_starts_with($glob, '/')) {
-        return true;
-    }
-
-    return !str_starts_with($glob, '**') && str_contains((string) preg_replace('#/\*\*$#', '', $glob), '/');
-}
-
-function instructionGlobMatches(string $glob, string $path): bool
-{
-    return RuleHook::globMatches($glob, $path);
-}
-
-/**
- * @return list<string> the milestone tags, ISO dates and hash-like tokens in the content
- */
-function instructionHistoryMarkers(string $content): array
-{
-    preg_match_all(
-        '/\bM\d+(?:\s?·\s?\d+[a-z]?)?\b|\b20\d\d\-\d\d\-\d\d\b|\b(?=[0-9a-f]*\d)(?=[0-9a-f]*[a-f])[0-9a-f]{7,40}\b/u',
-        $content,
-        $matches,
-    );
-
-    return array_values(array_unique($matches[0]));
-}
-
-function instructionFileBytes(string $file): int
-{
-    return (int) filesize(instructionRepositoryRoot() . '/' . $file);
-}
-
-function instructionFileContent(string $file): string
-{
-    return (string) file_get_contents(instructionRepositoryRoot() . '/' . $file);
-}
 
 it('matches globs the way Claude Code does', function (string $glob, string $path, bool $matches): void {
-    expect(instructionGlobMatches($glob, $path))->toBe($matches);
+    expect(InstructionFiles::globMatches($glob, $path))->toBe($matches);
 })->with([
     'a nested package source file' => ['packages/*/src/**/*.php', 'packages/forms/src/Components/TextInput.php', true],
     'a file directly in src' => ['packages/*/src/**/*.php', 'packages/forms/src/helpers.php', true],
@@ -151,7 +31,7 @@ it('matches globs the way Claude Code does', function (string $glob, string $pat
 ]);
 
 it('tells an anchored glob from one Claude Code matches at any depth', function (string $glob, bool $anchored): void {
-    expect(instructionGlobIsAnchored($glob))->toBe($anchored);
+    expect(InstructionFiles::globIsAnchored($glob))->toBe($anchored);
 })->with([
     'a path with a middle slash' => ['packages/*/src/**/*.php', true],
     'a path ending in /**' => ['packages/*/tests/**', true],
@@ -163,7 +43,7 @@ it('tells an anchored glob from one Claude Code matches at any depth', function 
 ]);
 
 it('finds the history markers instruction files must not carry', function (string $content, array $markers): void {
-    expect(instructionHistoryMarkers($content))->toBe($markers);
+    expect(InstructionFiles::historyMarkers($content))->toBe($markers);
 })->with([
     'a milestone tag' => ['since M7 · 5 the table', ['M7 · 5']],
     'a compact tag' => ['the M4·6 grouping', ['M4·6']],
@@ -174,14 +54,14 @@ it('finds the history markers instruction files must not carry', function (strin
 ]);
 
 it('keeps the root CLAUDE.md within its budget', function (): void {
-    $size = instructionFileBytes('CLAUDE.md');
+    $size = InstructionFiles::fileBytes('CLAUDE.md');
 
     expect($size)->toBeLessThanOrEqual(12 * 1024, "CLAUDE.md is {$size} bytes; every session and subagent loads it, so it holds only what every task needs (12 KB budget). Move file-specific rules to .claude/rules/ and reasoning to docs/.");
 });
 
 it('tracks no CLAUDE.md below the root', function (): void {
     $nested = array_values(array_filter(
-        instructionTrackedFiles(),
+        InstructionFiles::trackedFiles(),
         static fn (string $file): bool => 'CLAUDE.md' !== $file && 'CLAUDE.md' === basename($file),
     ));
 
@@ -191,11 +71,11 @@ it('tracks no CLAUDE.md below the root', function (): void {
 it('scopes, describes and sizes every rule file', function (): void {
     $violations = [];
 
-    foreach (instructionRuleFiles() as $file) {
-        $content = instructionFileContent($file);
+    foreach (InstructionFiles::ruleFiles() as $file) {
+        $content = InstructionFiles::fileContent($file);
 
         try {
-            $frontmatter = instructionFrontmatter($content);
+            $frontmatter = InstructionFiles::frontmatter($content);
         } catch (ParseException $exception) {
             $violations[] = "{$file}: frontmatter is not valid YAML, so Claude Code would load it as if it had no paths: " . $exception->getMessage();
 
@@ -205,8 +85,8 @@ it('scopes, describes and sizes every rule file', function (): void {
         $description = $frontmatter['description'] ?? null;
         $paths = $frontmatter['paths'] ?? null;
 
-        if (instructionFileBytes($file) > 16 * 1024) {
-            $violations[] = "{$file}: " . instructionFileBytes($file) . ' bytes, past the 16 KB alarm — split it by paths or move background to docs/';
+        if (InstructionFiles::fileBytes($file) > 16 * 1024) {
+            $violations[] = "{$file}: " . InstructionFiles::fileBytes($file) . ' bytes, past the 16 KB alarm — split it by paths or move background to docs/';
         }
 
         if (!is_string($description) || '' === mb_trim($description) || str_contains(mb_trim($description), "\n")) {
@@ -220,13 +100,13 @@ it('scopes, describes and sizes every rule file', function (): void {
         }
 
         foreach ($paths as $glob) {
-            if (!is_string($glob) || !instructionGlobIsAnchored($glob)) {
+            if (!is_string($glob) || !InstructionFiles::globIsAnchored($glob)) {
                 $violations[] = "{$file}: glob " . var_export($glob, true) . ' is not anchored — start it with packages/… or a leading /';
 
                 continue;
             }
 
-            $matched = array_filter(instructionTrackedFiles(), static fn (string $path): bool => instructionGlobMatches($glob, $path));
+            $matched = array_filter(InstructionFiles::trackedFiles(), static fn (string $path): bool => InstructionFiles::globMatches($glob, $path));
 
             if ([] === $matched) {
                 $violations[] = "{$file}: glob {$glob} matches no tracked file";
@@ -240,11 +120,11 @@ it('scopes, describes and sizes every rule file', function (): void {
 it('names, describes and sizes every skill', function (): void {
     $violations = [];
 
-    foreach (instructionSkillFiles() as $file) {
-        $content = instructionFileContent($file);
+    foreach (InstructionFiles::skillFiles() as $file) {
+        $content = InstructionFiles::fileContent($file);
 
         try {
-            $frontmatter = instructionFrontmatter($content);
+            $frontmatter = InstructionFiles::frontmatter($content);
         } catch (ParseException $exception) {
             $violations[] = "{$file}: frontmatter is not valid YAML, so Claude Code would load it as if it had no paths: " . $exception->getMessage();
 
@@ -254,8 +134,8 @@ it('names, describes and sizes every skill', function (): void {
         $directory = basename(dirname($file));
         $description = $frontmatter['description'] ?? null;
 
-        if (instructionFileBytes($file) > 16 * 1024) {
-            $violations[] = "{$file}: " . instructionFileBytes($file) . ' bytes, past the 16 KB alarm';
+        if (InstructionFiles::fileBytes($file) > 16 * 1024) {
+            $violations[] = "{$file}: " . InstructionFiles::fileBytes($file) . ' bytes, past the 16 KB alarm';
         }
 
         if (($frontmatter['name'] ?? null) !== $directory) {
@@ -273,8 +153,8 @@ it('names, describes and sizes every skill', function (): void {
 it('keeps history out of every instruction file', function (): void {
     $violations = [];
 
-    foreach (['CLAUDE.md', ...instructionRuleFiles(), ...instructionSkillFiles()] as $file) {
-        $markers = instructionHistoryMarkers(instructionFileContent($file));
+    foreach (['CLAUDE.md', ...InstructionFiles::ruleFiles(), ...InstructionFiles::skillFiles()] as $file) {
+        $markers = InstructionFiles::historyMarkers(InstructionFiles::fileContent($file));
 
         if ([] !== $markers) {
             $violations[] = "{$file}: " . implode(', ', $markers);
@@ -285,13 +165,13 @@ it('keeps history out of every instruction file', function (): void {
 });
 
 it('lists every rule file in the CLAUDE.md index with its paths and description', function (): void {
-    $claude = instructionFileContent('CLAUDE.md');
+    $claude = InstructionFiles::fileContent('CLAUDE.md');
     $section = (string) preg_replace('/\A.*?^## Rule files$(.*?)(?=^## |\z).*\z/ms', '$1', $claude);
     $violations = [];
 
-    foreach (instructionRuleFiles() as $file) {
+    foreach (InstructionFiles::ruleFiles() as $file) {
         try {
-            $frontmatter = instructionFrontmatter(instructionFileContent($file));
+            $frontmatter = InstructionFiles::frontmatter(InstructionFiles::fileContent($file));
         } catch (ParseException) {
             continue;
         }
@@ -309,7 +189,7 @@ it('lists every rule file in the CLAUDE.md index with its paths and description'
     preg_match_all('/^\| `([^`]+\.md)` \|/m', $section, $rows);
 
     foreach ($rows[1] as $name) {
-        if (!is_file(instructionRepositoryRoot() . '/.claude/rules/' . $name)) {
+        if (!is_file(InstructionFiles::repositoryRoot() . '/.claude/rules/' . $name)) {
             $violations[] = "index row for a rule that does not exist: {$name}";
         }
     }

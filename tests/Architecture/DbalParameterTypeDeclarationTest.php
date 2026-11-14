@@ -7,6 +7,7 @@ namespace Sylament\Tests\Architecture;
 use FilesystemIterator;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
+use Sylament\Tests\Architecture\Source\ShippedSource;
 
 use function dirname;
 
@@ -26,25 +27,6 @@ use function dirname;
  * test is the gate, in the shape .claude/rules/manifests.md gives every guarded soft dependency.
  */
 
-/**
- * Whether the source puts either class anywhere but a constant read, its own
- * import or a negative `instanceof` guard.
- */
-function dbalParameterTypeDeclarationIn(string $source): bool
-{
-    $allowed = preg_replace(
-        [
-            '/^\s*use\s+Doctrine\\\\DBAL\\\\(?:Array)?ParameterType;\s*$/m',
-            '/\b(?:Array)?ParameterType::/',
-            '/instanceof\s+(?:Array)?ParameterType\b/',
-        ],
-        '',
-        $source,
-    ) ?? $source;
-
-    return preg_match('/\b(?:Array)?ParameterType\b/', $allowed) === 1;
-}
-
 it('names no DBAL parameter-type class in a type position', function (): void {
     $packagesDirectory = dirname(__DIR__, 2) . '/packages';
     $offenders = [];
@@ -59,7 +41,7 @@ it('names no DBAL parameter-type class in a type position', function (): void {
                 continue;
             }
 
-            if (dbalParameterTypeDeclarationIn((string) file_get_contents($file->getPathname()))) {
+            if (ShippedSource::declaresDbalParameterType((string) file_get_contents($file->getPathname()))) {
                 $offenders[] = str_replace($packagesDirectory . '/', '', $file->getPathname());
             }
         }
@@ -77,7 +59,7 @@ it('names no DBAL parameter-type class in a type position', function (): void {
 });
 
 it('sees a type position and looks past a constant, an import and a guard', function (string $source, bool $declared): void {
-    expect(dbalParameterTypeDeclarationIn($source))->toBe($declared);
+    expect(ShippedSource::declaresDbalParameterType($source))->toBe($declared);
 })->with([
     'a return type' => ['private static function bindingType(): ParameterType', true],
     'a nullable return type' => ['function typeOf(): ?ArrayParameterType', true],

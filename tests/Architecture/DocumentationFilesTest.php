@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Sylament\Tests\Architecture;
 
-use RuntimeException;
+use Sylament\Tests\Architecture\Documentation\DocumentationFiles;
 
 use function dirname;
 
@@ -15,138 +15,9 @@ use function dirname;
  * docs/ carries no milestone label. Whether a sentence is still true is a judgment, which the docs-audit
  * skill makes at a milestone's end.
  */
-function documentationRepositoryRoot(): string
-{
-    return dirname(__DIR__, 2);
-}
-
-/**
- * @return list<string> the tracked markdown files under CLAUDE.md, .claude/ and docs/
- */
-function documentationMarkdownFiles(): array
-{
-    exec('git -C ' . escapeshellarg(documentationRepositoryRoot()) . ' ls-files -- CLAUDE.md .claude docs', $output, $status);
-
-    if (0 !== $status) {
-        throw new RuntimeException('git ls-files failed; the documentation check reads tracked files through git.');
-    }
-
-    return array_values(array_filter($output, static fn (string $file): bool => str_ends_with($file, '.md')));
-}
-
-/**
- * A path git ignores on purpose, such as the local docs/superpowers/, which a clean checkout does not have.
- */
-function documentationIsIgnored(string $path): bool
-{
-    exec('git -C ' . escapeshellarg(documentationRepositoryRoot()) . ' check-ignore -q ' . escapeshellarg($path), $output, $status);
-
-    return 0 === $status;
-}
-
-/**
- * @return list<string> CLAUDE.md, the rules and the skills
- */
-function documentationInstructionFiles(): array
-{
-    return array_values(array_filter(
-        documentationMarkdownFiles(),
-        static fn (string $file): bool => 'CLAUDE.md' === $file || str_starts_with($file, '.claude/'),
-    ));
-}
-
-function documentationWithoutFences(string $content): string
-{
-    return (string) preg_replace('/^(`{3,}|~{3,}).*?^\1/ms', '', $content);
-}
-
-/**
- * The content with fenced code blocks and inline code spans blanked out, so examples are not read as links.
- */
-function documentationProse(string $content): string
-{
-    return (string) preg_replace('/`[^`\n]*`/', '``', documentationWithoutFences($content));
-}
-
-/**
- * GitHub's heading anchor: lowercased, punctuation dropped, spaces turned into hyphens.
- */
-function documentationSlug(string $heading): string
-{
-    $text = mb_strtolower(mb_trim($heading));
-    $text = (string) preg_replace('/[^\p{L}\p{N}\s_-]/u', '', $text);
-
-    return (string) preg_replace('/\s/u', '-', $text);
-}
-
-/**
- * @return list<string> every anchor the file's headings produce, with GitHub's -1, -2 suffixes for repeats
- */
-function documentationAnchors(string $file): array
-{
-    static $cache = [];
-
-    if (!isset($cache[$file])) {
-        preg_match_all('/^#{1,6}\s+(.+?)\s*#*$/m', documentationWithoutFences((string) file_get_contents($file)), $matches);
-        $anchors = [];
-        $seen = [];
-
-        foreach ($matches[1] as $heading) {
-            $slug = documentationSlug($heading);
-            $anchors[] = isset($seen[$slug]) ? $slug . '-' . $seen[$slug] : $slug;
-            $seen[$slug] = ($seen[$slug] ?? 0) + 1;
-        }
-
-        $cache[$file] = $anchors;
-    }
-
-    return $cache[$file];
-}
-
-/**
- * @return list<string> the broken relative links in a markdown file, each as "<target> (<reason>)"
- */
-function documentationBrokenLinks(string $file): array
-{
-    $root = documentationRepositoryRoot();
-    $broken = [];
-
-    preg_match_all('/\]\(([^)\s]+)\)/', documentationProse((string) file_get_contents($root . '/' . $file)), $matches);
-
-    foreach ($matches[1] as $target) {
-        if (1 === preg_match('#^[a-z][a-z0-9+.-]*:#i', $target)) {
-            continue;
-        }
-
-        [$path, $anchor] = array_pad(explode('#', $target, 2), 2, null);
-        $resolved = '' === $path ? $root . '/' . $file : dirname($root . '/' . $file) . '/' . rawurldecode($path);
-
-        if (!file_exists($resolved)) {
-            $broken[] = "{$target} (no such file)";
-
-            continue;
-        }
-
-        if (null !== $anchor && '' !== $anchor && str_ends_with($resolved, '.md') && !in_array(rawurldecode($anchor), documentationAnchors($resolved), true)) {
-            $broken[] = "{$target} (no such heading)";
-        }
-    }
-
-    return $broken;
-}
-
-/**
- * @return list<string> the milestone labels in the content's prose, such as `M3` or `M7 · 5`
- */
-function documentationMilestoneLabels(string $content): array
-{
-    preg_match_all('/\bM\d+(?:\s?·\s?\d+[a-z]?)?\b/u', documentationProse($content), $matches);
-
-    return array_values(array_unique($matches[0]));
-}
 
 it('turns headings into GitHub anchors', function (string $heading, string $anchor): void {
-    expect(documentationSlug($heading))->toBe($anchor);
+    expect(DocumentationFiles::slug($heading))->toBe($anchor);
 })->with([
     'plain words' => ['The component model', 'the-component-model'],
     'code and punctuation' => ["`evaluate()`'s generic", 'evaluates-generic'],
@@ -157,11 +28,11 @@ it('turns headings into GitHub anchors', function (string $heading, string $anch
 
 it('finds a broken link and a broken anchor', function (): void {
     $file = 'docs/' . uniqid('documentation-probe-', true) . '.md';
-    $path = documentationRepositoryRoot() . '/' . $file;
+    $path = DocumentationFiles::repositoryRoot() . '/' . $file;
     file_put_contents($path, "# Probe `Code` heading\n\n[here](#probe-code-heading) [gone](no-such-file.md) [bad](internals/principles.md#no-such-heading) [ok](internals/principles.md) `[code](ignored.md)`\n");
 
     try {
-        expect(documentationBrokenLinks($file))->toBe(['no-such-file.md (no such file)', 'internals/principles.md#no-such-heading (no such heading)']);
+        expect(DocumentationFiles::brokenLinks($file))->toBe(['no-such-file.md (no such file)', 'internals/principles.md#no-such-heading (no such heading)']);
     } finally {
         unlink($path);
     }
@@ -170,8 +41,8 @@ it('finds a broken link and a broken anchor', function (): void {
 it('resolves every relative link and anchor in CLAUDE.md, .claude/ and docs/', function (): void {
     $violations = [];
 
-    foreach (documentationMarkdownFiles() as $file) {
-        foreach (documentationBrokenLinks($file) as $link) {
+    foreach (DocumentationFiles::markdownFiles() as $file) {
+        foreach (DocumentationFiles::brokenLinks($file) as $link) {
             $violations[] = "{$file}: {$link}";
         }
     }
@@ -180,7 +51,7 @@ it('resolves every relative link and anchor in CLAUDE.md, .claude/ and docs/', f
 });
 
 it('finds the milestone labels docs/ must not carry', function (string $content, array $labels): void {
-    expect(documentationMilestoneLabels($content))->toBe($labels);
+    expect(DocumentationFiles::milestoneLabels($content))->toBe($labels);
 })->with([
     'a milestone tag' => ['since M7 · 5 the table', ['M7 · 5']],
     'a compact tag' => ['the M4·6 grouping', ['M4·6']],
@@ -189,15 +60,15 @@ it('finds the milestone labels docs/ must not carry', function (string $content,
 ]);
 
 it('keeps milestone labels out of docs/', function (): void {
-    $root = documentationRepositoryRoot();
+    $root = DocumentationFiles::repositoryRoot();
     $violations = [];
 
-    foreach (documentationMarkdownFiles() as $file) {
+    foreach (DocumentationFiles::markdownFiles() as $file) {
         if (!str_starts_with($file, 'docs/')) {
             continue;
         }
 
-        $labels = documentationMilestoneLabels((string) file_get_contents($root . '/' . $file));
+        $labels = DocumentationFiles::milestoneLabels((string) file_get_contents($root . '/' . $file));
 
         if ([] !== $labels) {
             $violations[] = "{$file}: " . implode(', ', $labels);
@@ -208,14 +79,14 @@ it('keeps milestone labels out of docs/', function (): void {
 });
 
 it('names only repository paths that exist in the instruction files', function (): void {
-    $root = documentationRepositoryRoot();
+    $root = DocumentationFiles::repositoryRoot();
     $violations = [];
 
-    foreach (documentationInstructionFiles() as $file) {
+    foreach (DocumentationFiles::instructionFiles() as $file) {
         preg_match_all('/`((?:packages|docs|\.claude|tests|vendor\/filament)\/[^`\s]*|CLAUDE\.md|composer\.json|package\.json|pnpm-workspace\.yaml|biome\.json|tsconfig\.base\.json)`/', (string) file_get_contents($root . '/' . $file), $matches);
 
         foreach (array_unique($matches[1]) as $path) {
-            if (1 === preg_match('/[*{}<>$]|\.\.\./', $path) || file_exists($root . '/' . mb_rtrim($path, '/')) || documentationIsIgnored($path)) {
+            if (1 === preg_match('/[*{}<>$]|\.\.\./', $path) || file_exists($root . '/' . mb_rtrim($path, '/')) || DocumentationFiles::isIgnored($path)) {
                 continue;
             }
 
@@ -227,14 +98,14 @@ it('names only repository paths that exist in the instruction files', function (
 });
 
 it('names only composer and pnpm scripts that exist in the instruction files', function (): void {
-    $root = documentationRepositoryRoot();
+    $root = DocumentationFiles::repositoryRoot();
     $composer = json_decode((string) file_get_contents($root . '/composer.json'), true, flags: JSON_THROW_ON_ERROR);
     $pnpm = json_decode((string) file_get_contents($root . '/package.json'), true, flags: JSON_THROW_ON_ERROR);
     $composerScripts = is_array($composer) && is_array($composer['scripts'] ?? null) ? array_keys($composer['scripts']) : [];
     $pnpmScripts = is_array($pnpm) && is_array($pnpm['scripts'] ?? null) ? array_keys($pnpm['scripts']) : [];
     $violations = [];
 
-    foreach (documentationInstructionFiles() as $file) {
+    foreach (DocumentationFiles::instructionFiles() as $file) {
         $content = (string) file_get_contents($root . '/' . $file);
         preg_match_all('/`composer ((?:test|format|docs)(?::[a-z-]+)?)\b/', $content, $composerNames);
         preg_match_all('/`pnpm ((?:test|format|build|watch|clean)(?::[a-z-]+)?)\b/', $content, $pnpmNames);
@@ -256,11 +127,11 @@ it('names only composer and pnpm scripts that exist in the instruction files', f
 });
 
 it('links every port-trail detail file from its package README', function (): void {
-    $root = documentationRepositoryRoot();
+    $root = DocumentationFiles::repositoryRoot();
     $orphans = [];
 
     foreach (glob($root . '/docs/progress/*/README.md') ?: [] as $readme) {
-        $index = documentationProse((string) file_get_contents($readme));
+        $index = DocumentationFiles::prose((string) file_get_contents($readme));
 
         foreach (glob(dirname($readme) . '/*.md') ?: [] as $detail) {
             $name = basename($detail);

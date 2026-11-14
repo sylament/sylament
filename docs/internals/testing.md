@@ -10,7 +10,11 @@ A trait with behaviour of its own gets its own file at its mirrored path, and a 
 
 A case that crosses packages, such as deleting a table row, is filed under the class the user configures to get it, here `DeleteAction`. A flows folder would hold tests that no class leads to, and it tends to collect whatever does not obviously belong elsewhere.
 
-Pest test files declare no namespace: Pest derives the test class's name from the file's path, so a namespace would only restate it. The scans in `tests/Architecture/` are the exception, because they declare functions of their own, and `Sylament\Tests\Architecture` keeps those out of the global namespace that Pest's functions and every other test file share.
+Pest test files declare no namespace: Pest derives the test class's name from the file's path, so a namespace would only restate it. The scans in `tests/Architecture/` may keep `Sylament\Tests\Architecture`, the namespace of the classes beside them.
+
+A test file declares no function at all. Paratest gives each worker a share of the test files, so a function one file declares is missing in a worker that never loaded that file, and two files declaring one name fatal in a worker that loads both; each shows only under `--parallel`, and only in some splits. A scan's helper is therefore a static method of a class under `tests/Architecture/`, which Composer autoloads in every worker and PHPStan analyses, and a test's helper is a `TestCase` method. `FreeHelperFunctionTest` enforces it.
+
+A scan exists only for a rule no tool checks: PHPStan, Rector, PHP-CS-Fixer, Twig-CS-Fixer and the suites cover the rest, and a second check of their rules only drifts from them. A scan that collects a list of violations keeps one case that feeds it a planted violation, because a pattern that matches nothing passes as green as a clean repository. A scan run over a dataset needs none: Pest fails a test whose dataset is empty.
 
 ## Why is there one kind of test file?
 

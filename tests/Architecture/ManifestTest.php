@@ -4,9 +4,7 @@ declare(strict_types=1);
 
 namespace Sylament\Tests\Architecture;
 
-use JsonException;
-
-use function dirname;
+use Sylament\Tests\Architecture\Manifests\PackageManifest;
 
 /**
  * Guards the package's declared dependencies, which nothing else in this suite can
@@ -24,32 +22,15 @@ use function dirname;
  * file rather than exercising a class.
  */
 
-/**
- * @return array<string, mixed>
- *
- * @throws JsonException
- */
-function actionsManifest(): array
-{
-    $contents = file_get_contents(dirname(__DIR__, 2) . '/packages/actions/composer.json');
-
-    expect($contents)->toBeString();
-
-    /** @var array<string, mixed> $manifest */
-    $manifest = json_decode((string) $contents, associative: true, flags: JSON_THROW_ON_ERROR);
-
-    return $manifest;
-}
-
 it('requires the three sylament packages its src resolves unconditionally', function (): void {
-    expect(actionsManifest()['require'])
+    expect(PackageManifest::of('actions')['require'])
         ->toHaveKey('sylament/forms', 'self.version')
         ->toHaveKey('sylament/schemas', 'self.version')
         ->toHaveKey('sylament/support', 'self.version');
 });
 
 it('keeps the two guarded integrations as suggestions', function (): void {
-    $manifest = actionsManifest();
+    $manifest = PackageManifest::of('actions');
 
     expect($manifest['suggest'])
         ->toHaveKeys(['sylament/notifications', 'sylament/tables'])

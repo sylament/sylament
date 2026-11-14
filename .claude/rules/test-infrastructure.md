@@ -3,6 +3,7 @@ paths:
   - "/tests/Fixtures/**"
   - "/tests/Infrastructure/**"
   - "/tests/TestCase.php"
+  - "/tests/TestCaseTest.php"
   - "/tests/Pest.php"
   - "/phpunit.dist.xml"
 description: How the root suite's kernel, configuration, fixture areas, writable paths, database and base class are laid out and kept parallel-safe.
@@ -21,6 +22,7 @@ description: How the root suite's kernel, configuration, fixture areas, writable
 - **Remove every `cache/` under `var/tests/` after editing a fixture SVG, or a body inside `Kernel::build()` or a compiler pass:** debug's freshness check misses both, since ux-icons caches each icon it renders and Symfony tracks a class by its signature, so every worker keeps the old markup or container.
 - **Name templates, icons and live fixtures by area:** a template is `@Fixtures/<area>/…`, an icon `<area>:<name>` from `icons/<area>/` and a live component `<Area>:<Name>`, except a panel page, whose bare `#[AsLiveComponent]` the panels bundle names from its class; one Twig namespace and one icon directory serve every area.
 - **Put a shipped template's own `heroicons:*` icon in the shared `icons/heroicons/`,** and only one the suite renders, because the template names it and no area owns it.
+- **A test outside `tests/Packages/` asks for the container before it `make()`s a component that needs a service** (`Notification::make()->send()`), because the boot hook covers only `tests/Packages/` and, until the kernel boots, `make()` falls back to `new`, which runs no `#[Required]` setter.
 - **Leave the `logger` service to `WorkerLogger`,** which writes to the worker's `log/`: FrameworkBundle's fallback prints every error a request logs to stderr, and the tester logs each exception it rethrows.
 - **Write only under `WorkerDirectory::path()`** (`var/tests/[<run>/]<TEST_TOKEN or 0>`): the kernel's cache and logs, the session files, the SQLite files under `database/`, and the `primary.storage` and `secondary.storage` disks under `storage/`, reached in config as `%sylament_tests.worker_dir%`; never `sys_get_temp_dir()`, a fixed path or a source directory, because parallel workers would share it.
 - **A second concurrent run in one checkout sets its own `SYLAMENT_TEST_RUN`** (`[a-z0-9_]{1,16}`), the `<run>` in the worker directory and every pool database name, since two runs sharing either fail each other's tests; `TestDatabaseExtension` stops a process whose directory another holds.

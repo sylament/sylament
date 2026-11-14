@@ -18,8 +18,7 @@ description: Where a root-suite test lives, what kind it is, how much it covers,
 
 ## Kinds of test
 
-- **One base class, no `Unit/`/`Integration/` split, no marker:** a test boots the kernel only by asking for the container, because `getContainer()` boots on demand; never call `bootKernel()` just to get one.
-- **Ask for the container before you `make()` a component that needs a service** (`Notification::make()->send()`): until the kernel boots, `make()` falls back to `new`, which runs no `#[Required]` setter.
+- **One base class, no `Unit/`/`Integration/` split, no marker:** every test under `tests/Packages/` boots the kernel before it runs (`tests/Pest.php`), so a component `make()`d anywhere in the test, a helper's argument included, is container-built; never call `bootKernel()`.
 - **Use `$this::` for `KernelTestCase` statics** inside `it()`/`test()` closures (`$this::getContainer()`), never `static::` or `self::`: Pest binds `$this` to the test case, while `static::` resolves against the closure's scope.
 - **Behaviour is the default kind:** drive a component as its user does, rendering it or calling it, and assert what comes out.
 - **Drive a live host through `$this->createLiveComponent()` and the testing API** (`fillForm()`, `callAction()`, `assertFormSet()`), never through UX's `TestLiveComponent` itself, because the tester answers a failed validation as a browser sees it and rethrows any other exception the host threw.
@@ -27,7 +26,7 @@ description: Where a root-suite test lives, what kind it is, how much it covers,
 - **Open a page through `$this->visit()`,** a GET through its route: any answer but a success rethrows the exception behind it, so a broken page fails with its cause, not an error page's markup, and a redirect, never followed, fails naming its `Location`.
 - **Follow a live action's redirect with the tester's own client** (`createLiveComponent(…, client: $client)`, then `$client->followRedirect()`): `test.client` is not shared, so `visit()` opens a session without the flash the action left.
 - **Read what a request did from a fixture service through `$this::getContainer()` after the call** (`HookLog`), never from a `LiveProp` kept for the test: the client reboots the kernel before every request after its first, so the container read after a call is the one that call ran in.
-- **Pure logic touches no container and states its cases as a dataset,** and only for a dense algorithm where a table of inputs and outputs is the clearest statement (`Color::calculateContrastRatio()`).
+- **Pure logic states its cases as a dataset,** and only for a dense algorithm where a table of inputs and outputs is the clearest statement (`Color::calculateContrastRatio()`).
 - **Derive a list a test must keep complete** (every component that offers a trait's behaviour) from `ComponentRegistry`, by the trait's contract where Filament has one (`componentsImplementing()`), else by the trait (`componentsUsing()`), never by typing it, so a new component is covered without anyone editing the test; name an exception with its reason, never the members.
 - **Derive no list for a trait a shared base class carries without a contract:** every subclass inherits it, so nothing signals "offers it" and the list would be every component minus exceptions.
 - **A database test sits in the file of the class whose behaviour it pins,** beside that class's other cases, seeding with `$this->seed()` and reading back with `$this->reload()` and `$this->statementsRun()` (counting: `test-infrastructure.md`); the platform comes from the run's environment (`composer test:mysql`), never from the test.

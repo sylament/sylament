@@ -14,9 +14,9 @@ Pest test files declare no namespace: Pest derives the test class's name from th
 
 ## Why is there one kind of test file?
 
-The per-package suites split tests into `Unit/` and `Integration/`, and the folder decided the base class, so a test filed in the wrong one ran on the wrong base. The split is not needed: `KernelTestCase::getContainer()` boots the kernel on demand, and its teardown shuts down only a booted kernel. A test is pure as long as it never asks for the container, and one base class serves both.
+The per-package suites split tests into `Unit/` and `Integration/`, and the folder decided the base class, so a test filed in the wrong one ran on the wrong base. The split is not needed: `KernelTestCase::getContainer()` boots the kernel on demand, and its teardown shuts down only a booted kernel. One base class serves both.
 
-A component that needs a service must be made after the test first asks for the container. Until the kernel boots, `make()` has no container to resolve the class through and falls back to `new`, which runs no `#[Required]` setter, so a `Notification` made before the boot cannot `send()`: it throws for want of the container-built instance. Asking first, directly or through a helper that does, builds the component as an application does.
+A component that needs a service must be made after the kernel boots. Until then, `make()` has no container to resolve the class through and falls back to `new`, which runs no `#[Required]` setter, so a `Notification` made before the boot cannot `send()`: it throws for want of the container-built instance. A helper that boots the kernel does not help when the component is built in its argument (`$this->renderNotification(Notification::make()->title('Saved'))`), since PHP evaluates the argument first and the instance is a silent `new`-built one. `tests/Pest.php` therefore boots the kernel in a `beforeEach` over `tests/Packages/`, which costs no measurable time, and every component a package test makes is container-built; a test elsewhere, such as the infrastructure pins, asks for the container itself.
 
 Inside a Pest closure, `$this` is bound to the test case, so `$this::getContainer()` reaches `KernelTestCase`'s statics; `static::` and `self::` resolve against the scope the closure was declared in, which is not the test case.
 

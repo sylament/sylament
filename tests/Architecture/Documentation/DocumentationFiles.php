@@ -106,6 +106,52 @@ final class DocumentationFiles
     }
 
     /**
+     * @return list<string> each repository path the content names in backticks that neither exists nor is ignored
+     */
+    public static function missingPaths(string $content): array
+    {
+        $root = self::repositoryRoot();
+        $missing = [];
+
+        preg_match_all('/`((?:packages|docs|\.claude|tests|vendor\/filament)\/[^`\s]*|CLAUDE\.md|composer\.json|package\.json|pnpm-workspace\.yaml|biome\.json|tsconfig\.base\.json)`/', $content, $matches);
+
+        foreach (array_unique($matches[1]) as $path) {
+            if (1 === preg_match('/[*{}<>$]|\.\.\./', $path) || file_exists($root . '/' . mb_rtrim($path, '/')) || self::isIgnored($path)) {
+                continue;
+            }
+
+            $missing[] = $path;
+        }
+
+        return $missing;
+    }
+
+    /**
+     * @return list<string> each `composer` or `pnpm` script the content names that its manifest does not define
+     */
+    public static function unknownScripts(string $content): array
+    {
+        $unknown = [];
+
+        preg_match_all('/`composer ((?:test|format|docs)(?::[a-z-]+)?)\b/', $content, $composerNames);
+        preg_match_all('/`pnpm ((?:test|format|build|watch|clean)(?::[a-z-]+)?)\b/', $content, $pnpmNames);
+
+        foreach (array_unique($composerNames[1]) as $script) {
+            if (!in_array($script, self::scripts('composer.json'), true)) {
+                $unknown[] = "`composer {$script}` is not a script in composer.json";
+            }
+        }
+
+        foreach (array_unique($pnpmNames[1]) as $script) {
+            if (!in_array($script, self::scripts('package.json'), true)) {
+                $unknown[] = "`pnpm {$script}` is not a script in package.json";
+            }
+        }
+
+        return $unknown;
+    }
+
+    /**
      * @return list<string> the milestone labels in the content's prose, such as `M3` or `M7 · 5`
      */
     public static function milestoneLabels(string $content): array
@@ -113,6 +159,16 @@ final class DocumentationFiles
         preg_match_all('/\bM\d+(?:\s?·\s?\d+[a-z]?)?\b/u', self::prose($content), $matches);
 
         return array_values(array_unique($matches[0]));
+    }
+
+    /**
+     * @return list<array-key> the script names the root manifest defines
+     */
+    private static function scripts(string $manifest): array
+    {
+        $decoded = json_decode((string) file_get_contents(self::repositoryRoot() . '/' . $manifest), true, flags: JSON_THROW_ON_ERROR);
+
+        return is_array($decoded) && is_array($decoded['scripts'] ?? null) ? array_keys($decoded['scripts']) : [];
     }
 
     private static function withoutFences(string $content): string

@@ -77,18 +77,17 @@ it('keeps milestone labels out of docs/', function (): void {
     expect($violations)->toBe([], "Milestone labels in docs/ (state the behaviour or the missing capability instead):\n" . implode("\n", $violations));
 });
 
+it('finds a named path that does not exist', function (): void {
+    expect(DocumentationFiles::missingPaths('`CLAUDE.md`, `docs/internals/no-such-file.md`, `packages/*/src/` and `docs/superpowers/plan.md`'))
+        ->toBe(['docs/internals/no-such-file.md']);
+});
+
 it('names only repository paths that exist in the instruction files', function (): void {
     $root = DocumentationFiles::repositoryRoot();
     $violations = [];
 
     foreach (DocumentationFiles::instructionFiles() as $file) {
-        preg_match_all('/`((?:packages|docs|\.claude|tests|vendor\/filament)\/[^`\s]*|CLAUDE\.md|composer\.json|package\.json|pnpm-workspace\.yaml|biome\.json|tsconfig\.base\.json)`/', (string) file_get_contents($root . '/' . $file), $matches);
-
-        foreach (array_unique($matches[1]) as $path) {
-            if (1 === preg_match('/[*{}<>$]|\.\.\./', $path) || file_exists($root . '/' . mb_rtrim($path, '/')) || DocumentationFiles::isIgnored($path)) {
-                continue;
-            }
-
+        foreach (DocumentationFiles::missingPaths((string) file_get_contents($root . '/' . $file)) as $path) {
             $violations[] = "{$file}: `{$path}` does not exist";
         }
     }
@@ -96,29 +95,18 @@ it('names only repository paths that exist in the instruction files', function (
     expect($violations)->toBe([], "Instruction files name paths that do not exist:\n" . implode("\n", $violations));
 });
 
+it('finds a named composer or pnpm script that does not exist', function (): void {
+    expect(DocumentationFiles::unknownScripts('`composer test`, `composer test:nope`, `pnpm build` and `pnpm test:nope`'))
+        ->toBe(['`composer test:nope` is not a script in composer.json', '`pnpm test:nope` is not a script in package.json']);
+});
+
 it('names only composer and pnpm scripts that exist in the instruction files', function (): void {
     $root = DocumentationFiles::repositoryRoot();
-    $composer = json_decode((string) file_get_contents($root . '/composer.json'), true, flags: JSON_THROW_ON_ERROR);
-    $pnpm = json_decode((string) file_get_contents($root . '/package.json'), true, flags: JSON_THROW_ON_ERROR);
-    $composerScripts = is_array($composer) && is_array($composer['scripts'] ?? null) ? array_keys($composer['scripts']) : [];
-    $pnpmScripts = is_array($pnpm) && is_array($pnpm['scripts'] ?? null) ? array_keys($pnpm['scripts']) : [];
     $violations = [];
 
     foreach (DocumentationFiles::instructionFiles() as $file) {
-        $content = (string) file_get_contents($root . '/' . $file);
-        preg_match_all('/`composer ((?:test|format|docs)(?::[a-z-]+)?)\b/', $content, $composerNames);
-        preg_match_all('/`pnpm ((?:test|format|build|watch|clean)(?::[a-z-]+)?)\b/', $content, $pnpmNames);
-
-        foreach (array_unique($composerNames[1]) as $script) {
-            if (!in_array($script, $composerScripts, true)) {
-                $violations[] = "{$file}: `composer {$script}` is not a script in composer.json";
-            }
-        }
-
-        foreach (array_unique($pnpmNames[1]) as $script) {
-            if (!in_array($script, $pnpmScripts, true)) {
-                $violations[] = "{$file}: `pnpm {$script}` is not a script in package.json";
-            }
+        foreach (DocumentationFiles::unknownScripts((string) file_get_contents($root . '/' . $file)) as $script) {
+            $violations[] = "{$file}: {$script}";
         }
     }
 

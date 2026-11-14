@@ -107,6 +107,16 @@ final class InstructionFiles
         return array_values(array_unique($matches[0]));
     }
 
+    /**
+     * @return list<string> each rule the index section lists that has no file under .claude/rules/
+     */
+    public static function indexRowsWithoutRule(string $section): array
+    {
+        preg_match_all('/^\| `([^`]+\.md)` \|/m', $section, $rows);
+
+        return array_values(array_filter($rows[1], static fn (string $name): bool => !is_file(self::repositoryRoot() . '/.claude/rules/' . $name)));
+    }
+
     public static function fileBytes(string $file): int
     {
         return (int) filesize(self::repositoryRoot() . '/' . $file);

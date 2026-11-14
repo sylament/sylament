@@ -161,6 +161,11 @@ it('keeps history out of every instruction file', function (): void {
     expect($violations)->toBe([], "Instruction files carry rules, never history — move these to docs/:\n" . implode("\n", $violations));
 });
 
+it('finds an index row for a rule that does not exist', function (): void {
+    expect(InstructionFiles::indexRowsWithoutRule("| File | Paths | Covers |\n| --- | --- | --- |\n| `php.md` | `packages/*/src/**/*.php` | PHP. |\n| `gone.md` | `/gone/**` | Gone. |\n"))
+        ->toBe(['gone.md']);
+});
+
 it('lists every rule file in the CLAUDE.md index with its paths and description', function (): void {
     $claude = InstructionFiles::fileContent('CLAUDE.md');
     $section = (string) preg_replace('/\A.*?^## Rule files$(.*?)(?=^## |\z).*\z/ms', '$1', $claude);
@@ -183,12 +188,8 @@ it('lists every rule file in the CLAUDE.md index with its paths and description'
         }
     }
 
-    preg_match_all('/^\| `([^`]+\.md)` \|/m', $section, $rows);
-
-    foreach ($rows[1] as $name) {
-        if (!is_file(InstructionFiles::repositoryRoot() . '/.claude/rules/' . $name)) {
-            $violations[] = "index row for a rule that does not exist: {$name}";
-        }
+    foreach (InstructionFiles::indexRowsWithoutRule($section) as $name) {
+        $violations[] = "index row for a rule that does not exist: {$name}";
     }
 
     expect($violations)->toBe([], implode("\n", $violations));

@@ -160,7 +160,7 @@ it('delivers every rule of this repository whole through a Bash read of a file i
     $store = sys_get_temp_dir() . '/' . uniqid('rule-hook-store-', true);
     $hook = new RuleHook($root, $store);
     $rules = glob($root . '/.claude/rules/*.md') ?: [];
-    exec('git -C ' . escapeshellarg($root) . ' ls-files', $tracked);
+    $tracked = TrackedFiles::in($root);
     $undelivered = [];
 
     foreach ($rules as $rule) {

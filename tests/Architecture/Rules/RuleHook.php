@@ -7,6 +7,7 @@ namespace Sylament\Tests\Architecture\Rules;
 use Closure;
 use LogicException;
 use RuntimeException;
+use Sylament\Tests\Architecture\TrackedFiles;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Finder\Finder;
 use Symfony\Component\Finder\Glob;
@@ -295,17 +296,7 @@ final class RuleHook
      */
     private function trackedFiles(): array
     {
-        if (null === $this->trackedFiles) {
-            exec('git -C ' . escapeshellarg($this->root) . ' ls-files', $output, $status);
-
-            if (0 !== $status) {
-                throw new RuntimeException("git ls-files failed in {$this->root}; the rule hook matches directories against tracked files.");
-            }
-
-            $this->trackedFiles = $output;
-        }
-
-        return $this->trackedFiles;
+        return $this->trackedFiles ??= TrackedFiles::in($this->root);
     }
 
     private function relative(string $path): ?string

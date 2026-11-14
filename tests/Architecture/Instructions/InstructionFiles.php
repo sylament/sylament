@@ -4,8 +4,7 @@ declare(strict_types=1);
 
 namespace Sylament\Tests\Architecture\Instructions;
 
-use RuntimeException;
-use Sylament\Tests\Architecture\Rules\RuleHook;
+use Sylament\Tests\Architecture\TrackedFiles;
 use Symfony\Component\Finder\Finder;
 use Symfony\Component\Yaml\Yaml;
 
@@ -31,17 +30,7 @@ final class InstructionFiles
      */
     public static function trackedFiles(): array
     {
-        if (null === self::$trackedFiles) {
-            exec('git -C ' . escapeshellarg(self::repositoryRoot()) . ' ls-files', $output, $status);
-
-            if (0 !== $status) {
-                throw new RuntimeException('git ls-files failed; the instruction-file check reads tracked files through git.');
-            }
-
-            self::$trackedFiles = $output;
-        }
-
-        return self::$trackedFiles;
+        return self::$trackedFiles ??= TrackedFiles::in(self::repositoryRoot());
     }
 
     /**
@@ -102,11 +91,6 @@ final class InstructionFiles
         }
 
         return !str_starts_with($glob, '**') && str_contains((string) preg_replace('#/\*\*$#', '', $glob), '/');
-    }
-
-    public static function globMatches(string $glob, string $path): bool
-    {
-        return RuleHook::globMatches($glob, $path);
     }
 
     /**

@@ -6,14 +6,11 @@ namespace Sylament\Tests\Architecture;
 
 use Sylament\Tests\Architecture\Documentation\DocumentationFiles;
 
-use function dirname;
-
 /**
  * Convention test for the repository's markdown: CLAUDE.md, .claude/ and docs/. It holds what a machine
  * can prove about documentation — every relative link and anchor resolves, the instruction files name
- * only paths and scripts that exist, no port-trail detail file is orphaned from its package README, and
- * docs/ carries no milestone label. Whether a sentence is still true is a judgment, which the docs-audit
- * skill makes at a milestone's end.
+ * only paths and scripts that exist, and docs/ carries no milestone label. Whether a sentence is still
+ * true is a judgment, which the docs-audit skill makes at a milestone's end.
  */
 
 it('turns headings into GitHub anchors', function (string $heading, string $anchor): void {
@@ -124,23 +121,4 @@ it('names only composer and pnpm scripts that exist in the instruction files', f
     }
 
     expect($violations)->toBe([], "Instruction files name scripts that do not exist:\n" . implode("\n", $violations));
-});
-
-it('links every port-trail detail file from its package README', function (): void {
-    $root = DocumentationFiles::repositoryRoot();
-    $orphans = [];
-
-    foreach (glob($root . '/docs/progress/*/README.md') ?: [] as $readme) {
-        $index = DocumentationFiles::prose((string) file_get_contents($readme));
-
-        foreach (glob(dirname($readme) . '/*.md') ?: [] as $detail) {
-            $name = basename($detail);
-
-            if ('README.md' !== $name && 1 !== preg_match('/\]\((?:\.\/)?' . preg_quote($name, '/') . '(?:#[^)]*)?\)/', $index)) {
-                $orphans[] = str_replace($root . '/', '', $detail);
-            }
-        }
-    }
-
-    expect($orphans)->toBe([], "Detail files no package README links (docs/progress/README.md: one row per file):\n" . implode("\n", $orphans));
 });

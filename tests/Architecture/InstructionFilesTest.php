@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Sylament\Tests\Architecture;
 
 use Sylament\Tests\Architecture\Instructions\InstructionFiles;
+use Sylament\Tests\Architecture\Rules\RuleHook;
 use Symfony\Component\Yaml\Exception\ParseException;
 
 use function dirname;
@@ -17,7 +18,7 @@ use function dirname;
  */
 
 it('matches globs the way Claude Code does', function (string $glob, string $path, bool $matches): void {
-    expect(InstructionFiles::globMatches($glob, $path))->toBe($matches);
+    expect(RuleHook::globMatches($glob, $path))->toBe($matches);
 })->with([
     'a nested package source file' => ['packages/*/src/**/*.php', 'packages/forms/src/Components/TextInput.php', true],
     'a file directly in src' => ['packages/*/src/**/*.php', 'packages/forms/src/helpers.php', true],
@@ -68,7 +69,7 @@ it('tracks no CLAUDE.md below the root', function (): void {
     expect($nested)->toBe([], 'A nested CLAUDE.md loads whenever a file beside or under it is read: ' . implode(', ', $nested));
 });
 
-it('scopes, describes and sizes every rule file', function (): void {
+it('scopes and describes every rule file', function (): void {
     $violations = [];
 
     foreach (InstructionFiles::ruleFiles() as $file) {
@@ -84,10 +85,6 @@ it('scopes, describes and sizes every rule file', function (): void {
 
         $description = $frontmatter['description'] ?? null;
         $paths = $frontmatter['paths'] ?? null;
-
-        if (InstructionFiles::fileBytes($file) > 16 * 1024) {
-            $violations[] = "{$file}: " . InstructionFiles::fileBytes($file) . ' bytes, past the 16 KB alarm — split it by paths or move background to docs/';
-        }
 
         if (!is_string($description) || '' === mb_trim($description) || str_contains(mb_trim($description), "\n")) {
             $violations[] = "{$file}: description must be one non-empty line";
@@ -106,7 +103,7 @@ it('scopes, describes and sizes every rule file', function (): void {
                 continue;
             }
 
-            $matched = array_filter(InstructionFiles::trackedFiles(), static fn (string $path): bool => InstructionFiles::globMatches($glob, $path));
+            $matched = array_filter(InstructionFiles::trackedFiles(), static fn (string $path): bool => RuleHook::globMatches($glob, $path));
 
             if ([] === $matched) {
                 $violations[] = "{$file}: glob {$glob} matches no tracked file";

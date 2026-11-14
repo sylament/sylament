@@ -6,7 +6,7 @@ description: Use when closing a milestone or epic, to check that CLAUDE.md, the 
 
 `composer test` already runs the mechanical half on every change:
 - `InstructionFilesTest` checks budgets, anchored globs, the rule index and that there is no history.
-- `DocumentationFilesTest` checks links and anchors, the paths and scripts the instruction files name, and that no trail file is orphaned.
+- `DocumentationFilesTest` checks links and anchors, and the paths and scripts the instruction files name.
 - `TrailFilesTest` checks the trail's frontmatter, rows and ownership, that the README indexes are current, and that no trail file passes 90 KB.
 
 This skill is the judgment half: are the sentences still true, and what did the milestone add that nothing states yet?

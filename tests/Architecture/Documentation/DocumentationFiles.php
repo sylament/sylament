@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Sylament\Tests\Architecture\Documentation;
 
-use RuntimeException;
+use Sylament\Tests\Architecture\TrackedFiles;
 
 /**
  * Reads the repository's markdown (CLAUDE.md, .claude/ and docs/) for the documentation scans: its links, anchors
@@ -27,13 +27,10 @@ final class DocumentationFiles
      */
     public static function markdownFiles(): array
     {
-        exec('git -C ' . escapeshellarg(self::repositoryRoot()) . ' ls-files -- CLAUDE.md .claude docs', $output, $status);
-
-        if (0 !== $status) {
-            throw new RuntimeException('git ls-files failed; the documentation check reads tracked files through git.');
-        }
-
-        return array_values(array_filter($output, static fn (string $file): bool => str_ends_with($file, '.md')));
+        return array_values(array_filter(
+            TrackedFiles::in(self::repositoryRoot()),
+            static fn (string $file): bool => ('CLAUDE.md' === $file || str_starts_with($file, '.claude/') || str_starts_with($file, 'docs/')) && str_ends_with($file, '.md'),
+        ));
     }
 
     /**

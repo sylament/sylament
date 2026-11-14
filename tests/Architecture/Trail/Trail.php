@@ -6,6 +6,7 @@ namespace Sylament\Tests\Architecture\Trail;
 
 use Closure;
 use RuntimeException;
+use Sylament\Tests\Architecture\TrackedFiles;
 use Symfony\Component\Yaml\Exception\ParseException;
 use Symfony\Component\Yaml\Yaml;
 use UnexpectedValueException;
@@ -871,17 +872,7 @@ final class Trail
      */
     private function tracked(): array
     {
-        if (null === $this->tracked) {
-            exec('git -C ' . escapeshellarg($this->root) . ' ls-files', $output, $status);
-
-            if (0 !== $status) {
-                throw new RuntimeException('git ls-files failed; the trail reads tracked files through git.');
-            }
-
-            $this->tracked = $output;
-        }
-
-        return $this->tracked;
+        return $this->tracked ??= TrackedFiles::in($this->root);
     }
 
     /**

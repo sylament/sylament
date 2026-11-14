@@ -7,7 +7,7 @@ description: Where a root-suite test lives, what kind it is, how much it covers,
 
 ## Where a test lives
 
-- **Mirror `src/` per package:** `packages/support/src/Colors/Color.php` → `tests/Support/Colors/ColorTest.php`, so a test is found from its class without searching; the suite's own machinery mirrors `tests/` the same way (`tests/TestCase.php` → `tests/TestCaseTest.php`).
+- **Mirror each package's `src/` under `tests/Packages/`:** `packages/support/src/Colors/Color.php` → `tests/Packages/Support/Colors/ColorTest.php`, so a test is found from its class without searching and a package never shares a level with the suite's machinery; that machinery mirrors `tests/` the same way (`tests/TestCase.php` → `tests/TestCaseTest.php`).
 - **A trait with behaviour to pin gets its own file** at its mirrored path (forms' `Components/Concerns/HasAffixesTest.php`), even for one case; a class or trait with nothing to pin gets none, and a missing file is not a gap.
 - **A class's file holds only that class's own behaviour;** what it composes from a trait is tested in the trait's file, so each behaviour has one home.
 - **A case that crosses packages goes in the file of the class the user configures for it** (a table row's delete belongs to `DeleteAction`, so to actions' `DeleteActionTest.php`); there is no flows folder, because a flow has no class to be found from.

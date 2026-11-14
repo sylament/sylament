@@ -4,7 +4,7 @@ The reasoning behind `.claude/rules/tests.md`, the rules for writing a test in t
 
 ## Why does a test mirror `src/`?
 
-A test is found from the class it pins, without searching and without a naming convention to remember: `packages/forms/src/Components/TextInput.php` is tested in `tests/Forms/Components/TextInputTest.php`. The same holds for the suite's own machinery, which mirrors `tests/` (`tests/TestCase.php` is pinned by `tests/TestCaseTest.php`).
+A test is found from the class it pins, without searching and without a naming convention to remember: `packages/forms/src/Components/TextInput.php` is tested in `tests/Packages/Forms/Components/TextInputTest.php`. The same holds for the suite's own machinery, which mirrors `tests/` (`tests/TestCase.php` is pinned by `tests/TestCaseTest.php`). Package tests sit one level down, in `tests/Packages/`, so a package folder such as `Support` never sits beside the suite's own `Infrastructure/` or `Fixtures/` and is never read as one of them.
 
 A trait with behaviour of its own gets its own file at its mirrored path, and a class's file holds only that class's own behaviour. Filament composes most components from traits, so a test of `TextInput` that also pinned `HasAffixes` would repeat in every component composing the trait; with one file per trait, each behaviour has exactly one home. A class or trait with nothing to pin gets no file, so a missing file is not a gap to fill. A trait with a single case still gets its file: the file is where a reader of the trait looks, however little it holds.
 

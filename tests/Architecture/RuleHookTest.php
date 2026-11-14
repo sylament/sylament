@@ -109,6 +109,41 @@ it('skips a rule Claude Code already loaded for the agent', function (): void {
     expect(RuleHookFixture::context($this->hook, RuleHookFixture::bash('cat packages/forms/src/Components/TextInput.php | head', $this->root)))->toBeNull();
 });
 
+it('skips a rule the agent has printed whole with cat', function (string $command): void {
+    RuleHookFixture::context($this->hook, RuleHookFixture::bash(str_replace('{root}', $this->root, $command), $this->root));
+
+    expect(RuleHookFixture::context($this->hook, RuleHookFixture::bash('cat packages/forms/tests/Unit/TextInputTest.php | head', $this->root)))->toBeNull();
+})->with([
+    'a plain cat' => ['cat .claude/rules/tests.md'],
+    'a cat after a cd' => ['cd {root}/.claude && cat rules/tests.md'],
+    'an absolute path' => ['cat {root}/.claude/rules/tests.md'],
+    'a cat of two rules' => ['cat .claude/rules/php.md .claude/rules/tests.md'],
+    'a numbered cat' => ['cat -n .claude/rules/tests.md'],
+    'a cat silencing its errors' => ['cat .claude/rules/tests.md 2>/dev/null'],
+]);
+
+it('skips a rule the same command prints whole before touching its files', function (): void {
+    expect(RuleHookFixture::context($this->hook, RuleHookFixture::bash('cat .claude/rules/tests.md && cat packages/forms/tests/Unit/TextInputTest.php | head', $this->root)))->toBeNull();
+});
+
+it('loads a rule the agent has seen only part of', function (string $command, string $event): void {
+    RuleHookFixture::context($this->hook, RuleHookFixture::bash($command, $this->root, event: $event));
+
+    expect(RuleHookFixture::context($this->hook, RuleHookFixture::bash('cat packages/forms/tests/Unit/TextInputTest.php | head', $this->root)))->toContain('- tests rule');
+})->with([
+    'head' => ['head -5 .claude/rules/tests.md', 'PostToolUse'],
+    'grep' => ['grep -n rule .claude/rules/tests.md', 'PostToolUse'],
+    'sed -n' => ["sed -n '1,3p' .claude/rules/tests.md", 'PostToolUse'],
+    'a cat piped onward' => ['cat .claude/rules/tests.md | head -5', 'PostToolUse'],
+    'a cat fed from a pipe' => ['echo | cat .claude/rules/tests.md', 'PostToolUse'],
+    'a cat in a substitution' => ['rules=$(cat .claude/rules/tests.md)', 'PostToolUse'],
+    'a cat redirected away' => ['cat .claude/rules/tests.md > /dev/null', 'PostToolUse'],
+    'a cat writing the rule' => ["cat > .claude/rules/tests.md <<'EOF'\n- tests rule\nEOF", 'PostToolUse'],
+    'a cat continued into a pipe' => ["cat .claude/rules/tests.md \\\n  | head -5", 'PostToolUse'],
+    'a cat inside a heredoc body' => ["cat > notes.txt <<'EOF'\ncat .claude/rules/tests.md\nEOF", 'PostToolUse'],
+    'a failed cat' => ['cat .claude/rules/tests.md', 'PostToolUseFailure'],
+]);
+
 it("ignores an instruction file outside the project's rules", function (): void {
     $this->hook->handle(RuleHookFixture::nativeLoad('/elsewhere/.claude/rules/php.md'));
 
@@ -146,6 +181,26 @@ it('points to a rule that does not fit beside another, and loads it with the nex
     expect($first)->toContain('- php rule')->not->toContain('- tests rule')->toContain('.claude/rules/tests.md')
         ->and(mb_strlen((string) $first))->toBeLessThanOrEqual(10_000)
         ->and($second)->toContain('- tests rule');
+});
+
+it('never sends a pointed rule the agent has printed whole with cat', function (): void {
+    $root = RuleHookFixture::project([
+        '.claude/rules/php.md' => RuleHookFixture::rule(['packages/*/src/**/*.php'], str_repeat("- php rule\n", 550)),
+        '.claude/rules/tests.md' => RuleHookFixture::rule(['packages/*/tests/**'], str_repeat("- tests rule\n", 500)),
+        'packages/forms/src/X.php' => "<?php\n",
+        'packages/forms/tests/XTest.php' => "<?php\n",
+    ]);
+    $hook = new RuleHook($root, $root . '-store');
+
+    $pointer = RuleHookFixture::context($hook, RuleHookFixture::bash('grep -n x packages/forms/src/X.php packages/forms/tests/XTest.php', $root));
+    RuleHookFixture::context($hook, RuleHookFixture::bash('cat .claude/rules/tests.md', $root));
+    $later = RuleHookFixture::context($hook, RuleHookFixture::bash('cat packages/forms/tests/XTest.php | head', $root));
+
+    new Filesystem()->remove($root);
+    new Filesystem()->remove($root . '-store');
+
+    expect($pointer)->toContain('cat .claude/rules/tests.md')
+        ->and($later)->toBeNull();
 });
 
 it('refuses a tool other than Bash', function (): void {

@@ -74,13 +74,17 @@ final class RuleHook
             throw new UnexpectedValueException('The hook input lacks tool_input.');
         }
 
-        $rules = $this->rulesTouchedBy($this->field($toolInput, 'command'), $this->field($input, 'cwd'));
+        $command = $this->field($toolInput, 'command');
+        $cwd = $this->field($input, 'cwd');
+        $rules = $this->rules();
+        $read = 'PostToolUse' === $input['hook_event_name'] ? $this->rulesPrintedWhole($rules, $command, $cwd) : [];
+        $touched = $this->rulesTouchedBy($rules, $command, $cwd);
 
-        if ([] === $rules) {
+        if ([] === $touched && [] === $read) {
             return null;
         }
 
-        $context = $this->withState($input, fn (array $state): array => $this->contextFor($state, $rules));
+        $context = $this->withState($input, fn (array $state): array => $this->contextFor([...$state, ...array_fill_keys($read, 'loaded')], $touched));
 
         if ('' === $context) {
             return null;
@@ -158,15 +162,53 @@ final class RuleHook
             return '';
         }
 
-        return 'Read ' . implode(', ', $files) . ' as well: ' . (1 === count($files) ? 'it covers' : 'they cover') . ' files your last command touched and did not fit in this message.';
+        return 'Run `cat ' . implode(' ', $files) . '` as well: ' . (1 === count($files) ? 'it covers' : 'they cover') . ' files your last command touched and did not fit in this message.';
     }
 
     /**
+     * A cat segment prints a file whole unless a pipe or a substitution feeds it or takes its output, it
+     * redirects its output elsewhere, or a backslash continues it onto the next line; head, tail, grep and sed -n
+     * print a part. A command with a heredoc counts nothing, since its body lines only look like commands.
+     *
+     * @param list<array{file: string, globs: list<string>, body: string}> $rules
+     *
+     * @return list<string> the rule files the command printed whole
+     */
+    private function rulesPrintedWhole(array $rules, string $command, string $cwd): array
+    {
+        if (str_contains($command, '<<')) {
+            return [];
+        }
+
+        $files = array_column($rules, 'file');
+        $printed = [];
+
+        foreach ($this->segments($command, $cwd) as $segment) {
+            $redirects = (string) preg_replace('/(?<!\S)2>(?:&1|\S+)/', '', $segment['text']);
+
+            if ('cat' !== ($segment['words'][0] ?? null) || in_array($segment['before'], ['|', '('], true) || in_array($segment['after'], ['|', ')'], true) || 1 === preg_match('/[<>]|\\\\\s*$/', $redirects)) {
+                continue;
+            }
+
+            foreach (array_slice($segment['words'], 1) as $word) {
+                $file = $this->relative($this->resolve($segment['directory'], $word));
+
+                if (null !== $file && in_array($file, $files, true)) {
+                    $printed[] = $file;
+                }
+            }
+        }
+
+        return array_values(array_unique($printed));
+    }
+
+    /**
+     * @param list<array{file: string, globs: list<string>, body: string}> $rules
+     *
      * @return list<array{file: string, body: string}> the rules covering a path the command names, in the order it names them
      */
-    private function rulesTouchedBy(string $command, string $cwd): array
+    private function rulesTouchedBy(array $rules, string $command, string $cwd): array
     {
-        $rules = $this->rules();
         $touched = [];
 
         foreach ($this->pathsIn($command, $cwd) as $path) {
@@ -231,18 +273,11 @@ final class RuleHook
     private function pathsIn(string $command, string $cwd): array
     {
         $paths = [];
-        $directory = $cwd;
 
-        foreach (preg_split('/&&|\|\||[;|()\n]/', $command) ?: [] as $segment) {
-            $words = preg_split('/[\s\'"`<>=]+/', $segment, flags: PREG_SPLIT_NO_EMPTY) ?: [];
+        foreach ($this->segments($command, $cwd) as $segment) {
+            $directory = $segment['directory'];
 
-            if ('cd' === ($words[0] ?? null)) {
-                $directory = isset($words[1]) ? $this->resolve($directory, $words[1]) : $directory;
-
-                continue;
-            }
-
-            foreach ($words as $word) {
+            foreach ($segment['words'] as $word) {
                 $word = (string) preg_replace('/:\d+(?::\d+)?$/', '', $word);
                 $word = str_contains($word, ':') ? mb_substr($word, (int) mb_strrpos($word, ':') + 1) : $word;
 
@@ -259,6 +294,37 @@ final class RuleHook
         }
 
         return array_values(array_unique($paths));
+    }
+
+    /**
+     * The command's segments other than cd, each with the directory a cd before it moved to and the separators
+     * around it.
+     *
+     * @return list<array{directory: string, words: list<string>, text: string, before: string, after: string}>
+     */
+    private function segments(string $command, string $cwd): array
+    {
+        $parts = preg_split('/(&&|\|\||[;|()\n])/', $command, flags: PREG_SPLIT_DELIM_CAPTURE) ?: [];
+        $segments = [];
+        $directory = $cwd;
+
+        foreach ($parts as $index => $text) {
+            if (1 === $index % 2) {
+                continue;
+            }
+
+            $words = preg_split('/[\s\'"`<>=]+/', $text, flags: PREG_SPLIT_NO_EMPTY) ?: [];
+
+            if ('cd' === ($words[0] ?? null)) {
+                $directory = isset($words[1]) ? $this->resolve($directory, $words[1]) : $directory;
+
+                continue;
+            }
+
+            $segments[] = ['directory' => $directory, 'words' => $words, 'text' => $text, 'before' => $parts[$index - 1] ?? '', 'after' => $parts[$index + 1] ?? ''];
+        }
+
+        return $segments;
     }
 
     /**

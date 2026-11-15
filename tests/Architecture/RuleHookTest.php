@@ -109,39 +109,50 @@ it('skips a rule Claude Code already loaded for the agent', function (): void {
     expect(RuleHookFixture::context($this->hook, RuleHookFixture::bash('cat packages/forms/src/Components/TextInput.php | head', $this->root)))->toBeNull();
 });
 
-it('skips a rule the agent has printed whole with cat', function (string $command): void {
-    RuleHookFixture::context($this->hook, RuleHookFixture::bash(str_replace('{root}', $this->root, $command), $this->root));
+it('skips a rule the agent has printed whole with cat', function (string $command, array $printed): void {
+    $output = mb_trim(implode('', array_map(fn (string $rule): string => (string) file_get_contents("{$this->root}/.claude/rules/{$rule}"), $printed)));
+    RuleHookFixture::context($this->hook, RuleHookFixture::bash(str_replace('{root}', $this->root, $command), $this->root, response: ['stdout' => $output]));
 
     expect(RuleHookFixture::context($this->hook, RuleHookFixture::bash('cat packages/forms/tests/Unit/TextInputTest.php | head', $this->root)))->toBeNull();
 })->with([
-    'a plain cat' => ['cat .claude/rules/tests.md'],
-    'a cat after a cd' => ['cd {root}/.claude && cat rules/tests.md'],
-    'an absolute path' => ['cat {root}/.claude/rules/tests.md'],
-    'a cat of two rules' => ['cat .claude/rules/php.md .claude/rules/tests.md'],
-    'a numbered cat' => ['cat -n .claude/rules/tests.md'],
-    'a cat silencing its errors' => ['cat .claude/rules/tests.md 2>/dev/null'],
+    'a plain cat' => ['cat .claude/rules/tests.md', ['tests.md']],
+    'a cat after a cd' => ['cd {root}/.claude && cat rules/tests.md', ['tests.md']],
+    'an absolute path' => ['cat {root}/.claude/rules/tests.md', ['tests.md']],
+    'a cat of two rules' => ['cat .claude/rules/php.md .claude/rules/tests.md', ['php.md', 'tests.md']],
+    'a cat silencing its errors' => ['cat .claude/rules/tests.md 2>/dev/null', ['tests.md']],
 ]);
 
 it('skips a rule the same command prints whole before touching its files', function (): void {
-    expect(RuleHookFixture::context($this->hook, RuleHookFixture::bash('cat .claude/rules/tests.md && cat packages/forms/tests/Unit/TextInputTest.php | head', $this->root)))->toBeNull();
+    $output = file_get_contents($this->root . '/.claude/rules/tests.md') . '<?php';
+
+    expect(RuleHookFixture::context($this->hook, RuleHookFixture::bash('cat .claude/rules/tests.md && cat packages/forms/tests/Unit/TextInputTest.php | head', $this->root, response: ['stdout' => $output])))->toBeNull();
 });
 
-it('loads a rule the agent has seen only part of', function (string $command, string $event): void {
-    RuleHookFixture::context($this->hook, RuleHookFixture::bash($command, $this->root, event: $event));
+it('loads a rule the agent has seen only part of', function (string $command, string $event, ?array $response): void {
+    $rule = mb_trim((string) file_get_contents($this->root . '/.claude/rules/tests.md'));
+    $response = null === $response ? null : array_map(static fn (mixed $value): mixed => '{rule}' === $value ? $rule : $value, $response);
+    RuleHookFixture::context($this->hook, RuleHookFixture::bash($command, $this->root, event: $event, response: $response));
 
     expect(RuleHookFixture::context($this->hook, RuleHookFixture::bash('cat packages/forms/tests/Unit/TextInputTest.php | head', $this->root)))->toContain('- tests rule');
 })->with([
-    'head' => ['head -5 .claude/rules/tests.md', 'PostToolUse'],
-    'grep' => ['grep -n rule .claude/rules/tests.md', 'PostToolUse'],
-    'sed -n' => ["sed -n '1,3p' .claude/rules/tests.md", 'PostToolUse'],
-    'a cat piped onward' => ['cat .claude/rules/tests.md | head -5', 'PostToolUse'],
-    'a cat fed from a pipe' => ['echo | cat .claude/rules/tests.md', 'PostToolUse'],
-    'a cat in a substitution' => ['rules=$(cat .claude/rules/tests.md)', 'PostToolUse'],
-    'a cat redirected away' => ['cat .claude/rules/tests.md > /dev/null', 'PostToolUse'],
-    'a cat writing the rule' => ["cat > .claude/rules/tests.md <<'EOF'\n- tests rule\nEOF", 'PostToolUse'],
-    'a cat continued into a pipe' => ["cat .claude/rules/tests.md \\\n  | head -5", 'PostToolUse'],
-    'a cat inside a heredoc body' => ["cat > notes.txt <<'EOF'\ncat .claude/rules/tests.md\nEOF", 'PostToolUse'],
-    'a failed cat' => ['cat .claude/rules/tests.md', 'PostToolUseFailure'],
+    // A {rule} output holds the rule whole, so the command's shape alone must refuse it.
+    'head' => ['head -5 .claude/rules/tests.md', 'PostToolUse', ['stdout' => '{rule}']],
+    'grep' => ['grep -n rule .claude/rules/tests.md', 'PostToolUse', ['stdout' => '{rule}']],
+    'sed -n' => ["sed -n '1,3p' .claude/rules/tests.md", 'PostToolUse', ['stdout' => '{rule}']],
+    'a cat piped onward' => ['cat .claude/rules/tests.md | head -5', 'PostToolUse', ['stdout' => '{rule}']],
+    'a cat fed from a pipe' => ['echo | cat .claude/rules/tests.md', 'PostToolUse', ['stdout' => '{rule}']],
+    'a cat in a substitution' => ['rules=$(cat .claude/rules/tests.md)', 'PostToolUse', ['stdout' => '{rule}']],
+    'a cat redirected away' => ['cat .claude/rules/tests.md > /dev/null', 'PostToolUse', ['stdout' => '{rule}']],
+    'a cat writing the rule' => ["cat > .claude/rules/tests.md <<'EOF'\n- tests rule\nEOF", 'PostToolUse', ['stdout' => '{rule}']],
+    'a cat continued into a pipe' => ["cat .claude/rules/tests.md \\\n  | head -5", 'PostToolUse', ['stdout' => '{rule}']],
+    'a cat inside a heredoc body' => ["cat > notes.txt <<'EOF'\ncat .claude/rules/tests.md\nEOF", 'PostToolUse', ['stdout' => '{rule}']],
+    'a failed cat' => ['cat .claude/rules/tests.md', 'PostToolUseFailure', ['stdout' => '{rule}']],
+    'a cat whose output Claude Code cut to a preview' => ['cat .claude/rules/tests.md', 'PostToolUse', ['stdout' => '{rule}', 'persistedOutputPath' => '/Users/agent/.claude/projects/p/s/tool-results/b1', 'persistedOutputSize' => 34_501]],
+    'a cat in a substitution among other commands' => ['x=$(echo a && cat .claude/rules/tests.md && echo b)', 'PostToolUse', ['stdout' => '']],
+    'a cat in a group piped onward' => ['(echo; cat .claude/rules/tests.md; echo) | head -3', 'PostToolUse', ['stdout' => "\n---\npaths:"]],
+    'a cat a failed command skips' => ['false && cat .claude/rules/tests.md; true', 'PostToolUse', ['stdout' => '']],
+    'a numbered cat' => ['cat -n .claude/rules/tests.md', 'PostToolUse', ['stdout' => "     1\t---\n     2\tpaths:\n     3\t  - \"packages/*/tests/**\"\n     4\tdescription: A rule.\n     5\t---\n     6\t# Test rules\n     7\t\n     8\t- tests rule"]],
+    'a cat without its output in the hook input' => ['cat .claude/rules/tests.md', 'PostToolUse', null],
 ]);
 
 it("ignores an instruction file outside the project's rules", function (): void {
@@ -193,7 +204,7 @@ it('never sends a pointed rule the agent has printed whole with cat', function (
     $hook = new RuleHook($root, $root . '-store');
 
     $pointer = RuleHookFixture::context($hook, RuleHookFixture::bash('grep -n x packages/forms/src/X.php packages/forms/tests/XTest.php', $root));
-    RuleHookFixture::context($hook, RuleHookFixture::bash('cat .claude/rules/tests.md', $root));
+    RuleHookFixture::context($hook, RuleHookFixture::bash('cat .claude/rules/tests.md', $root, response: ['stdout' => mb_trim((string) file_get_contents($root . '/.claude/rules/tests.md'))]));
     $later = RuleHookFixture::context($hook, RuleHookFixture::bash('cat packages/forms/tests/XTest.php | head', $root));
 
     new Filesystem()->remove($root);

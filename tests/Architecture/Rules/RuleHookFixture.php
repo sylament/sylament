@@ -51,11 +51,14 @@ final class RuleHookFixture
     }
 
     /**
+     * @param array<string, mixed>|null $response tool_response fields over those of a command that printed nothing, or null for no tool_response
+     *
      * @return array<string, mixed>
      */
-    public static function bash(string $command, string $cwd, ?string $agent = null, string $event = 'PostToolUse'): array
+    public static function bash(string $command, string $cwd, ?string $agent = null, string $event = 'PostToolUse', ?array $response = []): array
     {
         $input = ['session_id' => 'session', 'hook_event_name' => $event, 'tool_name' => 'Bash', 'tool_input' => ['command' => $command], 'cwd' => $cwd];
+        $input = null === $response ? $input : [...$input, 'tool_response' => [...['stdout' => '', 'stderr' => '', 'interrupted' => false, 'isImage' => false, 'noOutputExpected' => false], ...$response]];
 
         return null === $agent ? $input : [...$input, 'agent_id' => $agent];
     }

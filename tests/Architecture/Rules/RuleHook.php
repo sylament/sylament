@@ -77,7 +77,8 @@ final class RuleHook
         $command = $this->field($toolInput, 'command');
         $cwd = $this->field($input, 'cwd');
         $rules = $this->rules();
-        $read = 'PostToolUse' === $input['hook_event_name'] ? $this->rulesPrintedWhole($rules, $command, $cwd) : [];
+        $output = 'PostToolUse' === $input['hook_event_name'] ? $this->outputShown($input) : null;
+        $read = null === $output ? [] : $this->rulesPrintedWhole($rules, $command, $cwd, $output);
         $touched = $this->rulesTouchedBy($rules, $command, $cwd);
 
         if ([] === $touched && [] === $read) {
@@ -166,21 +167,39 @@ final class RuleHook
     }
 
     /**
+     * @param array<mixed> $input
+     *
+     * @return string|null the command's output, or null when Claude Code showed the agent only a preview of it or the input lacks it
+     */
+    private function outputShown(array $input): ?string
+    {
+        $response = $input['tool_response'] ?? null;
+
+        if (!is_array($response) || isset($response['persistedOutputPath']) || !is_string($response['stdout'] ?? null)) {
+            return null;
+        }
+
+        return $response['stdout'];
+    }
+
+    /**
      * A cat segment prints a file whole unless a pipe or a substitution feeds it or takes its output, it
      * redirects its output elsewhere, or a backslash continues it onto the next line; head, tail, grep and sed -n
-     * print a part. A command with a heredoc counts nothing, since its body lines only look like commands.
+     * print a part. A command with a heredoc counts nothing, since its body lines only look like commands. A
+     * rule counts only when its text is in the output, which a group, a substitution or a skipped short-circuit
+     * around the cat keeps out.
      *
      * @param list<array{file: string, globs: list<string>, body: string}> $rules
      *
      * @return list<string> the rule files the command printed whole
      */
-    private function rulesPrintedWhole(array $rules, string $command, string $cwd): array
+    private function rulesPrintedWhole(array $rules, string $command, string $cwd, string $output): array
     {
         if (str_contains($command, '<<')) {
             return [];
         }
 
-        $files = array_column($rules, 'file');
+        $bodies = array_column($rules, 'body', 'file');
         $printed = [];
 
         foreach ($this->segments($command, $cwd) as $segment) {
@@ -193,7 +212,7 @@ final class RuleHook
             foreach (array_slice($segment['words'], 1) as $word) {
                 $file = $this->relative($this->resolve($segment['directory'], $word));
 
-                if (null !== $file && in_array($file, $files, true)) {
+                if (null !== $file && isset($bodies[$file]) && str_contains($output, $bodies[$file])) {
                     $printed[] = $file;
                 }
             }

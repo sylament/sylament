@@ -29,8 +29,8 @@ it("teleports a group's dropdown out of the toast unless the group says otherwis
     Notification::make()->title('Saved')->actions([ActionGroup::make([Action::make('share')->url('/share')])->dropdownTeleport(false)])->send();
     $kept = $this->renderTwigComponent('SylamentNotifications:Notifications')->crawler();
 
-    expect($teleported)->toContainElement(Selectors::ACTIONS . ' ' . Selectors::TELEPORTED_DROPDOWN)
-        ->and($kept)->toContainElement(Selectors::ACTIONS . ' ' . Selectors::KEPT_DROPDOWN);
+    expect($teleported)->toContainElement(Selectors::ACTIONS . ' ' . SupportSelectors::TELEPORTED_DROPDOWN)
+        ->and($kept)->toContainElement(Selectors::ACTIONS . ' ' . SupportSelectors::KEPT_DROPDOWN);
 });
 
 it("closes the toast from an action that closes, through the toast's own click handler", function (): void {

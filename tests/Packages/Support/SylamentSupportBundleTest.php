@@ -9,6 +9,7 @@ use Sylament\Support\Colors\Components\ModalComponent\IconComponent as ModalIcon
 use Sylament\Support\DependencyInjection\ComponentResolver;
 use Sylament\Support\Icons\IconManager;
 use Sylament\Support\SylamentSupportBundle;
+use Sylament\Tests\Fixtures\Support\Selectors as SupportSelectors;
 use Symfony\Component\AssetMapper\AssetMapperInterface;
 use Symfony\Component\Config\Definition\Exception\InvalidConfigurationException;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
@@ -29,11 +30,11 @@ it('registers the icon overrides under sylament.icons, a dashed alias kept as wr
 
     $modal = fn (): Crawler => $this->renderTwigComponent('SylamentSupport:Modal', ['heading' => 'Delete order'])->crawler();
 
-    expect($modal())->toContainElement('button[aria-label="Close"] svg', 'Heart');
+    expect($modal())->toContainElement(SupportSelectors::MODAL_CLOSE_BUTTON . ' svg', 'Heart');
 
     $this::getContainer()->get(IconManager::class)->register(['modal.close-button' => 'support:star']);
 
-    expect($modal())->toContainElement('button[aria-label="Close"] svg', 'Star');
+    expect($modal())->toContainElement(SupportSelectors::MODAL_CLOSE_BUTTON . ' svg', 'Star');
 });
 
 it('refuses a temporary file URL expiry under one minute', function (): void {

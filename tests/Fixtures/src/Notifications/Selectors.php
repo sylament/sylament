@@ -36,10 +36,6 @@ final class Selectors
 
     public const string CLOSING_ACTION = '[data-sylament-action-close]';
 
-    public const string TELEPORTED_DROPDOWN = '[data-sylament--support--dropdown-teleport-value="true"]';
-
-    public const string KEPT_DROPDOWN = '[data-sylament--support--dropdown-teleport-value="false"]';
-
     public static function aligned(string $alignment): string
     {
         return self::STACK . ".sy-align-{$alignment}";

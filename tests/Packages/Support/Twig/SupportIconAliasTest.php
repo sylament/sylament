@@ -17,7 +17,7 @@ it('swaps the icon of its own control for the one an application registers under
         ->and(array_count_values($rendered->filter('svg')->each(fn (Crawler $svg): string => $svg->text()))['Heart'] ?? 0)->toBe(1);
 })->with([
     'the section collapse button' => [SupportIconAlias::SECTION_COLLAPSE_BUTTON, 'SylamentSupport:Section', ['heading' => 'Details', 'collapsible' => true], null, 'button[aria-label="Collapse section"] svg'],
-    'the modal close button' => [SupportIconAlias::MODAL_CLOSE_BUTTON, 'SylamentSupport:Modal', ['heading' => 'Delete order'], null, 'button[aria-label="Close"] svg'],
+    'the modal close button' => [SupportIconAlias::MODAL_CLOSE_BUTTON, 'SylamentSupport:Modal', ['heading' => 'Delete order'], null, SupportSelectors::MODAL_CLOSE_BUTTON . ' svg'],
     'the first page button' => [SupportIconAlias::PAGINATION_FIRST_BUTTON, 'SylamentSupport:Pagination', ['paginator' => new Paginator([], 30, 2, 10), 'extremeLinks' => true], null, 'button[aria-label="Go to the first page"] svg'],
     'the previous page button' => [SupportIconAlias::PAGINATION_PREVIOUS_BUTTON, 'SylamentSupport:Pagination', ['paginator' => new Paginator([], 30, 2, 10), 'extremeLinks' => true], null, 'button[aria-label="Previous page"] svg'],
     'the next page button' => [SupportIconAlias::PAGINATION_NEXT_BUTTON, 'SylamentSupport:Pagination', ['paginator' => new Paginator([], 30, 2, 10), 'extremeLinks' => true], null, 'button[aria-label="Next page"] svg'],

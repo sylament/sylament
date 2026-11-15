@@ -7,7 +7,8 @@ namespace Sylament\Tests\Fixtures\Support;
 /**
  * The looks support's components give any area's markup: colour, size, state, button,
  * icon button, icon, link, badge and breadcrumb separator, named by the `sy-` class the
- * stylesheet paints them by.
+ * stylesheet paints them by; the modal's close button by its name, and a dropdown's
+ * teleport by its Stimulus value.
  */
 final class Selectors
 {
@@ -37,6 +38,12 @@ final class Selectors
     public const string BREADCRUMB_SEPARATOR = '.sy-breadcrumbs-item-separator.sy-ltr';
 
     public const string RTL_BREADCRUMB_SEPARATOR = '.sy-breadcrumbs-item-separator.sy-rtl';
+
+    public const string MODAL_CLOSE_BUTTON = 'button[aria-label="Close"]';
+
+    public const string TELEPORTED_DROPDOWN = '[data-sylament--support--dropdown-teleport-value="true"]';
+
+    public const string KEPT_DROPDOWN = '[data-sylament--support--dropdown-teleport-value="false"]';
 
     public static function color(string $name): string
     {

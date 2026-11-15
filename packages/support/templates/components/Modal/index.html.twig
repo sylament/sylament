@@ -92,7 +92,7 @@
 {% set overlayExtra = extraOverlayAttributes ?: {} %}
 
 <dialog
-    {{ attributes.defaults({
+    {{ attributes.without('style').defaults({
         class: classes('sy sy-modal sy-fixed-positioning-context', {
             'sy-modal-slide-over': slideOver,
             'sy-modal-slide-over-from-start': slideOver and slideOverPositionValue == 'start',
@@ -104,12 +104,13 @@
             'sy-modal-screen': sizeValue == 'screen',
             'sy-clickable': closeByClickingAway,
         }, overlayExtra.class ?? null),
+        style: styles(overlayExtra.style ?? null, attributes.all.style ?? null) ?: false,
         id: id ?: false,
         open: open ?: false,
         'aria-labelledby': hasHeading and headingId ? headingId : null,
         'aria-describedby': descriptionId ?: null,
         ...modalStimulus,
-        ...(overlayExtra|filter((value, name) => name != 'class')),
+        ...(overlayExtra|filter((value, name) => name not in ['class', 'style'])),
     }) }}
 >
     <{{ hasSubmitHandler ? 'form' : 'div' }} {{ attrs({

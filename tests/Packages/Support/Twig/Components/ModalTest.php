@@ -190,13 +190,20 @@ it('lets clicks through to the page, never closing on a click away', function ()
         ->toContainElement('dialog.sy-modal.sy-clickable:not(.sy-modal-click-through):not([data-sylament--support--modal-click-through-value])');
 });
 
-it('puts its extra window attributes on the window and its extra overlay attributes on the dialog, appending classes', function (): void {
+it('puts its extra window attributes on the window and its extra overlay attributes on the dialog, appending classes and styles', function (): void {
     expect($this->renderTwigComponent('SylamentSupport:Modal', [
         'class' => 'danger-zone',
-        'extraOverlayAttributes' => ['class' => 'dimmed', 'data-overlay' => 'order'],
+        'style' => 'color: red',
+        'extraOverlayAttributes' => ['class' => 'dimmed', 'style' => 'top: 0', 'data-overlay' => 'order'],
         'extraWindowAttributes' => ['class' => 'roomy', 'data-window' => 'order'],
     ])->crawler())
-        ->toContainElement('dialog.sy-modal.danger-zone.dimmed[data-overlay="order"]:not([data-window]) .sy-modal-window.sy-modal-md.roomy[data-window="order"]:not([data-overlay])');
+        ->toContainElement('dialog.sy-modal.danger-zone.dimmed[style^="top: 0"][style$="color: red"][data-overlay="order"]:not([data-window]) .sy-modal-window.sy-modal-md.roomy[data-window="order"]:not([data-overlay])')
+        ->and($this->renderTwigComponent('SylamentSupport:Modal', ['extraOverlayAttributes' => ['style' => 'top: 0']])->crawler())
+        ->toContainElement('dialog.sy-modal[style="top: 0"]')
+        ->and($this->renderTwigComponent('SylamentSupport:Modal', ['style' => 'color: red'])->crawler())
+        ->toContainElement('dialog.sy-modal[style="color: red"]')
+        ->and($this->renderTwigComponent('SylamentSupport:Modal')->crawler())
+        ->toContainElement('dialog.sy-modal:not([style])');
 });
 
 it('submits its window as a form to the live action it names, and is no form without one', function (): void {

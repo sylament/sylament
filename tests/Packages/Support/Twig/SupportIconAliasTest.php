@@ -5,6 +5,7 @@ declare(strict_types=1);
 use Sylament\Support\Icons\IconManager;
 use Sylament\Support\Pagination\Paginator;
 use Sylament\Support\Twig\SupportIconAlias;
+use Sylament\Tests\Fixtures\Support\Selectors as SupportSelectors;
 use Symfony\Component\DomCrawler\Crawler;
 
 it('swaps the icon of its own control for the one an application registers under the alias', function (string $alias, string $component, array $props, ?string $content, string $icon): void {
@@ -22,6 +23,6 @@ it('swaps the icon of its own control for the one an application registers under
     'the next page button' => [SupportIconAlias::PAGINATION_NEXT_BUTTON, 'SylamentSupport:Pagination', ['paginator' => new Paginator([], 30, 2, 10), 'extremeLinks' => true], null, 'button[aria-label="Next page"] svg'],
     'the last page button' => [SupportIconAlias::PAGINATION_LAST_BUTTON, 'SylamentSupport:Pagination', ['paginator' => new Paginator([], 30, 2, 10), 'extremeLinks' => true], null, 'button[aria-label="Go to the last page"] svg'],
     'the badge delete button' => [SupportIconAlias::BADGE_DELETE_BUTTON, 'SylamentSupport:Badge', ['deletable' => true], 'Urgent', 'button[aria-label="Remove"] svg'],
-    'the breadcrumb separator' => [SupportIconAlias::BREADCRUMBS_SEPARATOR, 'SylamentSupport:Breadcrumbs', ['breadcrumbs' => ['/orders' => 'Orders', '/orders/1' => 'Order 1']], null, '.sy-breadcrumbs-item-separator.sy-ltr'],
-    'the right-to-left breadcrumb separator' => [SupportIconAlias::BREADCRUMBS_SEPARATOR_RTL, 'SylamentSupport:Breadcrumbs', ['breadcrumbs' => ['/orders' => 'Orders', '/orders/1' => 'Order 1']], null, '.sy-breadcrumbs-item-separator.sy-rtl'],
+    'the breadcrumb separator' => [SupportIconAlias::BREADCRUMBS_SEPARATOR, 'SylamentSupport:Breadcrumbs', ['breadcrumbs' => ['/orders' => 'Orders', '/orders/1' => 'Order 1']], null, SupportSelectors::BREADCRUMB_SEPARATOR],
+    'the right-to-left breadcrumb separator' => [SupportIconAlias::BREADCRUMBS_SEPARATOR_RTL, 'SylamentSupport:Breadcrumbs', ['breadcrumbs' => ['/orders' => 'Orders', '/orders/1' => 'Order 1']], null, SupportSelectors::RTL_BREADCRUMB_SEPARATOR],
 ]);

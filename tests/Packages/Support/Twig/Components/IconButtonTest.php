@@ -11,7 +11,7 @@ it('renders a medium button, a link when asked, and a size outside the scale as 
         ->and($this->renderTwigComponent('SylamentSupport:IconButton', ['icon' => 'support:star', 'tag' => 'a', 'href' => '/orders'])->crawler())
         ->toContainElement('a.sy.sy-icon-btn' . SupportSelectors::MEDIUM, 'Star')
         ->and($this->renderTwigComponent('SylamentSupport:IconButton', ['icon' => 'support:star', 'size' => 'lg'])->crawler())
-        ->toContainElement('button.sy-icon-btn.sy-size-lg', 'Star')
+        ->toContainElement('button.sy-icon-btn' . SupportSelectors::size('lg'), 'Star')
         ->and($this->renderTwigComponent('SylamentSupport:IconButton', ['icon' => 'support:star', 'size' => 'huge'])->crawler())
         ->toContainElement('button.sy-icon-btn.huge:not([class*="sy-size-"])', 'Star');
 });
@@ -20,10 +20,10 @@ it('draws its glyph at the size its button size calls for, unless given one', fu
     expect($this->renderTwigComponent('SylamentSupport:IconButton', ['icon' => 'support:star', ...$props])->crawler())
         ->toContainElement($glyph, 'Star');
 })->with([
-    'a small glyph on an extra-small button' => [['size' => 'xs'], '.sy-icon-btn.sy-size-xs ' . SupportSelectors::ICON . '.sy-size-sm'],
+    'a small glyph on an extra-small button' => [['size' => 'xs'], '.sy-icon-btn' . SupportSelectors::size('xs') . ' ' . SupportSelectors::ICON . SupportSelectors::size('sm')],
     'a medium glyph on a small button' => [['size' => 'sm'], SupportSelectors::SMALL_ICON_BUTTON . ' ' . SupportSelectors::ICON . SupportSelectors::MEDIUM],
-    'a large glyph on a large button' => [['size' => 'lg'], '.sy-icon-btn.sy-size-lg ' . SupportSelectors::ICON . '.sy-size-lg'],
-    "the given glyph size over the button's" => [['size' => 'lg', 'iconSize' => 'xs'], '.sy-icon-btn.sy-size-lg ' . SupportSelectors::ICON . '.sy-size-xs'],
+    'a large glyph on a large button' => [['size' => 'lg'], '.sy-icon-btn' . SupportSelectors::size('lg') . ' ' . SupportSelectors::ICON . SupportSelectors::size('lg')],
+    "the given glyph size over the button's" => [['size' => 'lg', 'iconSize' => 'xs'], '.sy-icon-btn' . SupportSelectors::size('lg') . ' ' . SupportSelectors::ICON . SupportSelectors::size('xs')],
 ]);
 
 it('is named by its label stripped of markup, titled by it, and neither without one', function (): void {
@@ -37,11 +37,11 @@ it('is named by its label stripped of markup, titled by it, and neither without 
 
 it('disables a button with the disabled attribute and a link without it, and marks neither when enabled', function (): void {
     expect($this->renderTwigComponent('SylamentSupport:IconButton', ['icon' => 'support:star', 'disabled' => true])->crawler())
-        ->toContainElement('button.sy-icon-btn.sy-disabled[aria-disabled="true"][disabled]', 'Star')
+        ->toContainElement('button.sy-icon-btn' . SupportSelectors::DISABLED . '[aria-disabled="true"][disabled]', 'Star')
         ->and($this->renderTwigComponent('SylamentSupport:IconButton', ['icon' => 'support:star', 'tag' => 'a', 'href' => '/orders', 'disabled' => true])->crawler())
-        ->toContainElement('a.sy-icon-btn.sy-disabled[aria-disabled="true"]:not([disabled])', 'Star')
+        ->toContainElement('a.sy-icon-btn' . SupportSelectors::DISABLED . '[aria-disabled="true"]:not([disabled])', 'Star')
         ->and($this->renderTwigComponent('SylamentSupport:IconButton', ['icon' => 'support:star'])->crawler())
-        ->toContainElement('button.sy-icon-btn:not(.sy-disabled):not([aria-disabled]):not([disabled])', 'Star');
+        ->toContainElement('button.sy-icon-btn:not(' . SupportSelectors::DISABLED . '):not([aria-disabled]):not([disabled])', 'Star');
 });
 
 it('links to its href, in a new tab only when asked for one', function (): void {
@@ -66,5 +66,5 @@ it("paints in primary unless coloured, gray uncoloured, and a shade map inline b
         ->and($this->renderTwigComponent('SylamentSupport:IconButton', ['icon' => 'support:star', 'color' => 'gray'])->crawler())
         ->toContainElement('.sy-icon-btn' . SupportSelectors::GRAY, 'Star')
         ->and($this->renderTwigComponent('SylamentSupport:IconButton', ['icon' => 'support:star', 'color' => Color::Rose, 'style' => 'width: 2rem'])->crawler())
-        ->toContainElement('.sy-icon-btn.sy-color[style*="--sy-color-500: ' . Color::Rose[500] . ';"][style$="width: 2rem"]', 'Star');
+        ->toContainElement('.sy-icon-btn' . SupportSelectors::COLORED . '[style*="--sy-color-500: ' . Color::Rose[500] . ';"][style$="width: 2rem"]', 'Star');
 });

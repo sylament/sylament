@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use Sylament\Schemas\Components\Tabs;
 use Sylament\Schemas\Components\Tabs\Tab;
+use Sylament\Tests\Fixtures\Support\Selectors as SupportSelectors;
 
 it('shows the number a badge closure returns, as it shows a number set directly', function (): void {
     $tabs = $this->renderSchemaComponent(Tabs::make('Orders')->tabs([
@@ -12,7 +13,7 @@ it('shows the number a badge closure returns, as it shows a number set directly'
         Tab::make('Closed')->badge(7),
     ]));
 
-    expect($tabs)->toContainElement('[role="tab"] .sy-badge', '3')
-        ->toContainElement('[role="tab"] .sy-badge', '2.5')
-        ->toContainElement('[role="tab"] .sy-badge', '7');
+    expect($tabs)->toContainElement('[role="tab"] ' . SupportSelectors::BADGE, '3')
+        ->toContainElement('[role="tab"] ' . SupportSelectors::BADGE, '2.5')
+        ->toContainElement('[role="tab"] ' . SupportSelectors::BADGE, '7');
 });

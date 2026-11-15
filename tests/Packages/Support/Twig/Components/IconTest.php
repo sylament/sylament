@@ -25,7 +25,7 @@ it('draws the icon last registered for its alias, and its own icon for an alias 
 
 it('draws the icon at the size it is given', function (): void {
     expect($this->renderTwigComponent('SylamentSupport:Icon', ['icon' => 'support:star', 'size' => 'lg'])->crawler())
-        ->toContainElement(SupportSelectors::ICON . '.sy-size-lg', 'Star');
+        ->toContainElement(SupportSelectors::ICON . SupportSelectors::size('lg'), 'Star');
 });
 
 it("keeps the caller's attributes on the icon beside its own classes", function (): void {

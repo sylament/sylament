@@ -38,8 +38,8 @@ it('draws a named icon at the medium size unless sized, an unknown size drawing 
     $template = $this::getContainer()->get('twig')->createTemplate('{{ generateIconHtml("support:star", size: size) }}');
 
     expect(new Crawler($template->render(['size' => null])))->toContainElement('svg.sy-icon' . SupportSelectors::MEDIUM, 'Star')
-        ->and(new Crawler($template->render(['size' => IconSize::Large])))->toContainElement('svg.sy-icon.sy-size-lg', 'Star')
-        ->and(new Crawler($template->render(['size' => 'xs'])))->toContainElement('svg.sy-icon.sy-size-xs', 'Star')
+        ->and(new Crawler($template->render(['size' => IconSize::Large])))->toContainElement('svg' . SupportSelectors::ICON . SupportSelectors::size('lg'), 'Star')
+        ->and(new Crawler($template->render(['size' => 'xs'])))->toContainElement('svg' . SupportSelectors::ICON . SupportSelectors::size('xs'), 'Star')
         ->and(new Crawler($template->render(['size' => 'huge'])))->toContainElement('svg.sy-icon' . SupportSelectors::MEDIUM, 'Star');
 });
 

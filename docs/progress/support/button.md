@@ -25,7 +25,7 @@ Its render tests live in the actions suite ([`ButtonRenderTest`](../../../packag
 | [`color` → `sy-color*` classes + resolved shade classes](../../../packages/support/templates/components/Button/index.html.twig) | [`->color(ButtonComponent::make($outlined), $color)`](../../../vendor/filament/support/src/View/Components/ButtonComponent.php) | done | — | [diverges](#the-outlined-variant-is-selected-by-a-prop-and-by-a-second-policy-class) |
 | [`outlined`](../../../packages/support/templates/components/Button/index.html.twig) | [`ButtonComponent::make($outlined)` + `fi-outlined`](../../../vendor/filament/support/resources/views/components/button/index.blade.php) | done | — | [diverges](#the-outlined-variant-is-selected-by-a-prop-and-by-a-second-policy-class) |
 | [Leading icon](../../../packages/support/templates/components/Button/index.html.twig) | [`generate_icon_html(...)`](../../../vendor/filament/support/resources/views/components/button/index.blade.php) | in progress | — | [detail](#the-icon-takes-no-size-from-the-buttons-size) |
-| [`iconPosition` (before/after)](../../../packages/support/templates/components/Button/index.html.twig) | [`IconPosition::Before` / `::After`](../../../vendor/filament/support/resources/views/components/button/index.blade.php) | in progress | — | [detail](#no-render-test-pins-the-after-icon-position) |
+| [`iconPosition` (before/after)](../../../packages/support/templates/components/Button/index.html.twig) | [`IconPosition::Before` / `::After`](../../../vendor/filament/support/resources/views/components/button/index.blade.php) | done | — | — |
 | `badge` / `badgeColor` / `badgeSize` | [`fi-btn-badge-ctn`](../../../vendor/filament/support/resources/views/components/button/index.blade.php) | todo | — | [detail](#the-badge-and-label-props-need-no-client-layer) |
 | `labelSrOnly` / `aria-label` | [`'aria-label' => …`](../../../vendor/filament/support/resources/views/components/button/index.blade.php) | todo | — | [detail](#the-badge-and-label-props-need-no-client-layer) |
 | `labeledFrom` → icon-button delegation | [`<x-filament::icon-button … />`](../../../vendor/filament/support/resources/views/components/button/index.blade.php) | todo | — | [detail](#the-badge-and-label-props-need-no-client-layer) |
@@ -43,12 +43,6 @@ Its render tests live in the actions suite ([`ButtonRenderTest`](../../../packag
 The template renders the icon through `generateIconHtml(icon, iconAlias, size: iconSize)`, and the render test asserts an `<svg>` is emitted.
 Filament defaults `iconSize` from `size` (`xs`/`sm` → `IconSize::Small`, everything else none), while the template passes the `iconSize` prop straight through with no size-derived default.
 **Next step:** derive the default in the template and add a case asserting the icon's size class.
-
-### No render test pins the after icon position
-
-The template renders the icon before the label or, for `iconPosition` `after`, after it, and actions' button partial passes `getIconPosition`.
-No render test covers the `after` arm.
-**Next step:** a `ButtonRenderTest` case that renders `iconPosition: 'after'` and asserts the `<svg>` follows the label.
 
 ### The badge and label props need no client layer
 

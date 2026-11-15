@@ -8,6 +8,7 @@ use Closure;
 use Doctrine\Common\EventManager;
 use Doctrine\DBAL\Connection;
 use Doctrine\DBAL\DriverManager;
+use Doctrine\ORM\Configuration;
 use Doctrine\ORM\EntityManager;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\Tools\SchemaTool;
@@ -167,6 +168,19 @@ final class TestDatabase
         }
     }
 
+    /**
+     * Builds the schema a manager over `$configuration` and `$eventManager` maps, on
+     * `$connection`, through a manager of its own, so the caller's managers never see it.
+     */
+    public static function buildSchema(Connection $connection, Configuration $configuration, EventManager $eventManager): void
+    {
+        $schemaManager = new EntityManager($connection, $configuration, $eventManager);
+
+        foreach (new SchemaTool($schemaManager)->getCreateSchemaSql($schemaManager->getMetadataFactory()->getAllMetadata()) as $sql) {
+            $connection->executeStatement($sql);
+        }
+    }
+
     private static function createSchema(Connection $connection, ManagerRegistry $registry): void
     {
         foreach ($registry->getManagers() as $name => $manager) {
@@ -180,11 +194,7 @@ final class TestDatabase
                 throw new LogicException(sprintf('The manager [%s] dispatches through a [%s], not an event manager.', $name, $eventManager::class));
             }
 
-            $schemaManager = new EntityManager($connection, $manager->getConfiguration(), $eventManager);
-
-            foreach (new SchemaTool($schemaManager)->getCreateSchemaSql($schemaManager->getMetadataFactory()->getAllMetadata()) as $sql) {
-                $connection->executeStatement($sql);
-            }
+            self::buildSchema($connection, $manager->getConfiguration(), $eventManager);
         }
     }
 

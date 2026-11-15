@@ -87,7 +87,18 @@ The client reboots the kernel between requests, Symfony's default, so each reque
 3. The schema is built once per process, at the first preparation: from every manager the registry holds, through a manager built over that manager's configuration and event manager on a connection of `TestDatabase`'s or the pool's own. Neither the recorder nor the connecting connection sees it, and preparing never reaches the connection being opened; a nested preparation throws rather than recursing. On SQLite the template goes to the worker's `database/template.sqlite`, deleted and rebuilt by every process, never reused from an earlier run; on a server the pool drops and creates the worker's database and builds it there.
 4. `entityManager()` fetches from the current container on every call, so after a request it answers the rebooted kernel's manager.
 
-`tests/Infrastructure/Doctrine/TestDatabaseTest.php` pins the lifecycle: a seed survives two requests through a rebooting client, and the next test starts empty with an identifier of 1. Its second case means something only after the first, in the same process.
+`tests/Infrastructure/Doctrine/TestDatabaseTest.php` pins the lifecycle: a seed survives two requests through a rebooting client, and the next test starts empty with an identifier of 1. Its second case means something only after the first, in the same process. Its third crosses the boundary inside one case, calling `testStarted()` as the subscriber does, because between two real tests the kernel's shutdown already closes the connection and would hide a `testStarted()` that closed nothing; `DatabasePoolTest` and `FailingWriteTest` cross it the same way.
+
+### Platform-pinned managers
+
+A premise that compares platforms, such as a shape check that only PostgreSQL's guid type makes necessary, needs a manager whose platform the test names rather than the run. `InteractsWithDatabase::platformEntityManager()` builds one over the world's mapping:
+
+- **SQLite** answers a manager on an in-memory database of its own, its schema built by `TestDatabase::buildSchema()`, the same build the world's preparation runs, and `EnableForeignKeys` added by hand, because `doctrine.php` registers it only on a SQLite run.
+- **MySQL and PostgreSQL** answer a manager over a connection that never opens: told its server version, DBAL names the platform without connecting, which is all a platform read needs, so nothing on it may run a statement.
+
+Each clones the world's ORM configuration and shares nothing the world could see. Its connection carries neither the recorder nor `TestDatabaseMiddleware`, so its statements stay out of `statementsRun()` and it never prepares the world's database. It has a metadata cache of its own, because loaded metadata can depend on the platform (the identifier strategy `AUTO` resolves to) and the shared cache would hand a manager on one platform another's. The second-level cache is off, since its regions belong to the world's container, and the repository factory is Doctrine's default, since a repository service answers for the world's manager whatever manager asked for it.
+
+`tests/Infrastructure/Concerns/InteractsWithDatabaseTest.php` pins the isolation, the recorder, the separate caches and repository factory, the foreign keys and the platform reads without a connection, on all three gates.
 
 ### SQLite runs as a file
 
@@ -112,7 +123,8 @@ It is dev-only. The root `tests/` belongs to no package, so none of it ships in 
 - PHPStan analyses them at level max like shipped code, because they sit under `tests/`, whose infrastructure it covers. No file under `packages/*/tests/` is analysed.
 - The architecture tests that scan `packages/*/src` (`StaticAnalysisSuppressionTest`, `DbalParameterTypeDeclarationTest`, `AssociationReaderConstructionTest`) do not see it. The infrastructure is free to use what those checks forbid in shipped code.
 
-Support's own suite tests the rig: its tests sit in `tests/Unit/Doctrine/` and its fixtures in `tests/Fixtures/Doctrine/`, mirroring the infrastructure rather than `src/`. Support's fixture kernel boots no Doctrine, so it excludes `Fixtures/Doctrine` from its service glob. Support's `phpunit.dist.xml` registers the pool extension too, because those tests exercise the pool.
+The root suite pins the pieces it keeps at their mirrored paths (`tests/Infrastructure/Doctrine/<Class>Test.php`), against the world's database, each only for the behaviour the root suite relies on; `TestEntityManagers` and the pool's per-manager databases get no root pin, since only the per-package suites use them.
+Support's own suite also tests the rig: its tests sit in `tests/Unit/Doctrine/` and its fixtures in `tests/Fixtures/Doctrine/`, mirroring the infrastructure rather than `src/`. Support's fixture kernel boots no Doctrine, so it excludes `Fixtures/Doctrine` from its service glob. Support's `phpunit.dist.xml` registers the pool extension too, because those tests exercise the pool.
 
 ## What is in the rig?
 

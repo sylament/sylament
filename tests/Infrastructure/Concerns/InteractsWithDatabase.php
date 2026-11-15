@@ -4,11 +4,20 @@ declare(strict_types=1);
 
 namespace Sylament\Tests\Infrastructure\Concerns;
 
+use Doctrine\Common\EventManager;
+use Doctrine\DBAL\Configuration as ConnectionConfiguration;
+use Doctrine\DBAL\Driver\AbstractSQLiteDriver\Middleware\EnableForeignKeys;
+use Doctrine\DBAL\DriverManager;
+use Doctrine\ORM\EntityManager;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\Query;
+use Doctrine\ORM\Repository\DefaultRepositoryFactory;
 use Doctrine\Persistence\ManagerRegistry;
 use LogicException;
 use Sylament\Tests\Infrastructure\Doctrine\RecordingMiddleware;
+use Sylament\Tests\Infrastructure\Doctrine\TestDatabase;
+use Sylament\Tests\Infrastructure\Doctrine\TestPlatform;
+use Symfony\Component\Cache\Adapter\ArrayAdapter;
 
 /**
  * Reads and writes the test's database through the current kernel. Nothing here is
@@ -32,6 +41,48 @@ trait InteractsWithDatabase
         }
 
         return $entityManager;
+    }
+
+    /**
+     * A manager over the world's mapping pinned to `$platform`, whatever the run names,
+     * for a premise that compares platforms. SQLite answers one on an in-memory database
+     * of its own, carrying the schema and enforcing foreign keys; MySQL and PostgreSQL
+     * answer one over a connection that never opens, which names its platform from its
+     * server version, so nothing on it may run a statement.
+     *
+     * It shares nothing the world could see: neither the recorder nor the preparation,
+     * nor the metadata cache, second-level cache or repository services; the reasons are
+     * in `docs/internals/test-infrastructure.md`, "Platform-pinned managers".
+     */
+    protected function platformEntityManager(TestPlatform $platform): EntityManagerInterface
+    {
+        $world = $this->entityManager();
+        $eventManager = $world->getEventManager();
+
+        if (!$eventManager instanceof EventManager) {
+            throw new LogicException(sprintf('The default manager dispatches through a [%s], not an event manager.', $eventManager::class));
+        }
+
+        $configuration = clone $world->getConfiguration();
+        $configuration->setMetadataCache(new ArrayAdapter());
+        $configuration->setSecondLevelCacheEnabled(false);
+        $configuration->setRepositoryFactory(new DefaultRepositoryFactory());
+
+        if ($platform !== TestPlatform::Sqlite) {
+            $connection = DriverManager::getConnection($platform === TestPlatform::MySql
+                ? ['driver' => 'pdo_mysql', 'serverVersion' => '8.4.0']
+                : ['driver' => 'pdo_pgsql', 'serverVersion' => '18']);
+
+            return new EntityManager($connection, $configuration, $eventManager);
+        }
+
+        $connectionConfiguration = new ConnectionConfiguration();
+        $connectionConfiguration->setMiddlewares([new EnableForeignKeys()]);
+
+        $connection = DriverManager::getConnection(['driver' => 'pdo_sqlite', 'memory' => true], $connectionConfiguration);
+        TestDatabase::buildSchema($connection, $configuration, $eventManager);
+
+        return new EntityManager($connection, $configuration, $eventManager);
     }
 
     /**

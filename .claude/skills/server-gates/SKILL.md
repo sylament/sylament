@@ -21,7 +21,7 @@ composer test:mysql
 composer test:postgresql
 ```
 
-Each sets `SYLAMENT_TEST_DATABASE_URL` and runs `composer test:suites`, every per-bundle suite and the root suite under `--parallel`, and not Rector, PHPStan or Twig lint, which no database changes. Run them one after the other, never side by side (step 4).
+Each sets `SYLAMENT_TEST_DATABASE_URL` and runs `composer test:suites`, every per-bundle suite and the root suite, and not Rector, PHPStan or Twig lint, which no database changes. Run them one after the other, never side by side (step 4).
 
 ## 3. Run one bundle or one package on one server
 

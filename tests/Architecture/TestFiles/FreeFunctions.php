@@ -8,9 +8,8 @@ use PhpToken;
 use Symfony\Component\Finder\Finder;
 
 /**
- * The functions a test file declares outside any class body. Paratest gives each worker a share of the test files,
- * so a function one file declares is missing in a worker that never loaded it, and two files declaring one name
- * fatal in a worker that loads both.
+ * The functions a test file declares outside any class body. A run of one file loads no other test file, so a
+ * function another file declares is missing there, and two files declaring one name fatal in a run that loads both.
  */
 final class FreeFunctions
 {

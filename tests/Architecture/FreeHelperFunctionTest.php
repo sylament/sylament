@@ -39,5 +39,5 @@ it('finds a function a test file declares, and only in a test file', function ()
 it('declares no function in a test file', function (): void {
     $declared = FreeFunctions::inTestFiles(dirname(__DIR__));
 
-    expect($declared)->toBe([], "A test file declares a function, which a worker that never loaded the file lacks under --parallel; make it a static method of a class under tests/Architecture/ or a TestCase method (.claude/rules/tests.md):\n" . implode("\n", $declared));
+    expect($declared)->toBe([], "A test file declares a function, which a run of another file alone lacks; make it a static method of a class under tests/Architecture/ or a TestCase method (.claude/rules/tests.md):\n" . implode("\n", $declared));
 });

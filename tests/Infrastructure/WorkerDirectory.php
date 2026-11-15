@@ -9,9 +9,9 @@ use RuntimeException;
 use Symfony\Component\Filesystem\Filesystem;
 
 /**
- * The writable root of one test process: Paratest numbers its workers through `TEST_TOKEN`,
- * and a serial run is worker 0. A run that sets `SYLAMENT_TEST_RUN` gets a directory of
- * its own above the workers', so two runs in one checkout never share one.
+ * The writable root of one test process, under `TEST_TOKEN`, which only a parallel run sets,
+ * or 0. A run that sets `SYLAMENT_TEST_RUN` gets a directory of its own above it, so two
+ * runs in one checkout never share one.
  */
 final class WorkerDirectory
 {
@@ -57,7 +57,7 @@ final class WorkerDirectory
             fclose($handle);
 
             throw new RuntimeException($wouldBlock === 1
-                ? sprintf('Another test process holds %s. Give each concurrent run in one checkout its own %s, as in `%2$s=lane_a vendor/bin/pest --parallel`.', $directory, self::RUN_VARIABLE)
+                ? sprintf('Another test process holds %s. Give each concurrent run in one checkout its own %s, as in `%2$s=lane_a vendor/bin/pest`.', $directory, self::RUN_VARIABLE)
                 : sprintf('Could not lock %s/.lock.', $directory));
         }
 

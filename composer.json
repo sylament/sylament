@@ -126,7 +126,7 @@
         "test:widgets": "pest -c packages/widgets/phpunit.dist.xml --test-directory=packages/widgets/tests",
         "test:pest": [
             "Composer\\Config::disableProcessTimeout",
-            "pest --parallel"
+            "pest"
         ],
         "test:static": "phpstan analyse",
         "test:lint": "php-cs-fixer --dry-run --diff fix",

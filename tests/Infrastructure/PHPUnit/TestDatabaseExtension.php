@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Sylament\Tests\Infrastructure\PHPUnit;
 
+use LogicException;
 use Pest\Plugins\Parallel;
 use PHPUnit\Runner\Extension\Extension;
 use PHPUnit\Runner\Extension\Facade;
@@ -14,10 +15,9 @@ use Sylament\Tests\Infrastructure\WorkerDirectory;
 use Throwable;
 
 /**
- * Publishes the root suite's connection URL to the kernel, before any test is
- * collected and in every parallel worker, claims the worker directory in every
- * process that runs tests, and tells the database where each test starts, on
- * every platform.
+ * Refuses a parallel run, publishes the root suite's connection URL to the kernel
+ * before any test is collected, claims the worker directory, and tells the database
+ * where each test starts, on every platform.
  */
 final class TestDatabaseExtension implements Extension
 {
@@ -36,13 +36,11 @@ final class TestDatabaseExtension implements Extension
 
     private function start(Facade $facade): void
     {
-        $_ENV[TestDatabase::URL_VARIABLE] = $_SERVER[TestDatabase::URL_VARIABLE] = TestDatabase::url();
-
-        // Pest's parallel coordinator runs no test and bootstraps extensions after sealing
-        // the event facade, where registering throws a warning that fails the run unprinted.
-        if (Parallel::isEnabled() && !Parallel::isWorker()) {
-            return;
+        if (Parallel::isEnabled() || Parallel::isWorker()) {
+            throw new LogicException('The root suite runs in one process: drop --parallel.');
         }
+
+        $_ENV[TestDatabase::URL_VARIABLE] = $_SERVER[TestDatabase::URL_VARIABLE] = TestDatabase::url();
 
         WorkerDirectory::claim();
 

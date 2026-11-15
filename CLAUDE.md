@@ -80,7 +80,7 @@ Rules in `.claude/rules/` load after any tool call that touches a file their `pa
 | `legacy-tests.md` | `packages/*/tests/**` | What a mechanical edit to a per-package Pest suite needs, from its hooks to its kernel registration and fixture wiring. |
 | `manifests.md` | `/composer.json`, `packages/*/composer.json`, `packages/*/assets/package.json` | What each package manifest declares, when a dependency is a require or a suggest, and which omissions are deliberate. |
 | `php.md` | `packages/*/src/**/*.php` | How shipped PHP is written, from closure evaluation and typing to construction, static instances, trait placement, record identity, helpers and comments. |
-| `test-infrastructure.md` | `/tests/Fixtures/**`, `/tests/Infrastructure/**`, `/tests/TestCase.php`, `/tests/TestCaseTest.php`, `/tests/Pest.php`, `/phpunit.dist.xml` | How the root suite's kernel, configuration, fixture areas, writable paths, database and base class are laid out and kept parallel-safe. |
+| `test-infrastructure.md` | `/tests/Fixtures/**`, `/tests/Infrastructure/**`, `/tests/TestCase.php`, `/tests/TestCaseTest.php`, `/tests/Pest.php`, `/phpunit.dist.xml` | How the root suite's kernel, configuration, fixture areas, writable paths, database and base class are laid out and kept apart between concurrent runs. |
 | `test-scope.md` | `/tests/Packages/**` | How much a package test covers, how a bug is pinned, and what never gets a test. |
 | `testing-api.md` | `packages/*/src/Testing/**` | When a testing-API helper is ported, what visibility and status it keeps, how it guards a suggested package, and what stays out of it. |
 | `tests.md` | `/tests/**` | Where a root-suite test lives, what kind it is and how it asserts a render. |

@@ -71,7 +71,7 @@ final class ComponentRegistry
             throw new LogicException('APP_ENV is not a string.');
         }
 
-        $parameter = new Kernel($environment, true)->getCompiledParameter(ComponentListPass::PARAMETER);
+        $parameter = new Kernel($environment, true)->getCompiledContainer()->getParameter(ComponentListPass::PARAMETER);
 
         if (!is_array($parameter)) {
             throw new LogicException(sprintf('The "%s" parameter is not a list.', ComponentListPass::PARAMETER));

@@ -29,7 +29,6 @@ use Symfony\UX\Icons\UXIconsBundle;
 use Symfony\UX\LiveComponent\LiveComponentBundle;
 use Symfony\UX\StimulusBundle\StimulusBundle;
 use Symfony\UX\TwigComponent\TwigComponentBundle;
-use UnitEnum;
 
 class Kernel extends BaseKernel
 {
@@ -76,20 +75,18 @@ class Kernel extends BaseKernel
     }
 
     /**
-     * Reads a parameter from a container it compiles (and on a cold cache warms) without
-     * booting it: no bundle's `boot()` runs, so neither an error handler nor a static
-     * instance outlives the read.
-     *
-     * @return array<mixed>|bool|string|int|float|UnitEnum|null
+     * The container it compiles (and on a cold cache warms) without booting it: no
+     * bundle's `boot()` runs, so neither an error handler nor a static instance outlives
+     * a read from it.
      */
-    public function getCompiledParameter(string $name): array|bool|string|int|float|UnitEnum|null
+    public function getCompiledContainer(): ContainerInterface
     {
         if (!$this->container instanceof ContainerInterface) {
             $this->initializeBundles();
             $this->initializeContainer();
         }
 
-        return $this->getContainer()->getParameter($name);
+        return $this->getContainer();
     }
 
     /**

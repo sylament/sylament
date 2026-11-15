@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Sylament\Actions;
 
-use Sylament\Actions\DependencyInjection\Compiler\ExceptionRecorderPass;
 use Sylament\Actions\Testing\ExceptionRecorder;
 use Sylament\Actions\Twig\Extension\ActionExtension;
+use Sylament\Support\DependencyInjection\Compiler\RemoveTestOnlyServicesPass;
 use Sylament\Support\SylamentBundle;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
@@ -14,13 +14,6 @@ use Symfony\Component\HttpKernel\KernelEvents;
 
 class SylamentActionsBundle extends SylamentBundle
 {
-    public function build(ContainerBuilder $container): void
-    {
-        parent::build($container);
-
-        $container->addCompilerPass(new ExceptionRecorderPass());
-    }
-
     /**
      * @param array<string, mixed> $config
      */
@@ -87,7 +80,8 @@ class SylamentActionsBundle extends SylamentBundle
                 'method' => 'onKernelException',
                 'priority' => 128,
             ])
-            ->tag('kernel.reset', ['method' => 'reset']);
+            ->tag('kernel.reset', ['method' => 'reset'])
+            ->tag(RemoveTestOnlyServicesPass::TAG);
     }
 
     private function prependAssetMapper(ContainerBuilder $container): void

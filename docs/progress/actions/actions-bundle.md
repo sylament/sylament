@@ -29,7 +29,7 @@ owns:
 | Exports/Imports provider wiring (`hasMigrations()`, `hasRoutes('web')`, the `filament.actions` middleware group, `hasCommands()`) | [`ActionsServiceProvider.php`](../../../vendor/filament/actions/src/ActionsServiceProvider.php) · [`routes/web.php`](../../../vendor/filament/actions/routes/web.php) | blocked | the Exports/Imports subsystem | [detail](#the-exportsimports-provider-wiring-waits-on-the-exportsimports-subsystem) |
 | Translations (`hasTranslations()`) | [`ActionsServiceProvider.php`](../../../vendor/filament/actions/src/ActionsServiceProvider.php) | todo | — | [detail](#translations-are-unported-independently-of-exportsimports) |
 | `Testable::mixin(new TestsActions)` | [`ActionsServiceProvider.php`](../../../vendor/filament/actions/src/ActionsServiceProvider.php) (`packageBooted()`) | skipped | — | [diverges](#livewire-specific-provider-responsibilities-are-dropped-not-ported) |
-| [The tester's `ExceptionRecorder`, registered only in test mode](../../../packages/actions/src/SylamentActionsBundle.php) (`configureTesting()`, `build()`) | — | done | — | [testable.md](testable.md#the-recorder-exists-only-when-frameworktest-is-on) |
+| [The tester's `ExceptionRecorder`, registered only in test mode](../../../packages/actions/src/SylamentActionsBundle.php) (`configureTesting()`) | — | done | — | [testable.md](testable.md#the-recorder-exists-only-when-frameworktest-is-on) |
 
 ## Details
 

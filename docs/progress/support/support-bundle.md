@@ -29,6 +29,7 @@ The file also tracks the package's asset entry points: the stylesheet every pack
 | [Service wiring: `loadExtension()`](../../../packages/support/src/SylamentSupportBundle.php) | [`packageRegistered()`](../../../vendor/filament/support/src/SupportServiceProvider.php) | done | — | [semantics](#the-colour-policies-are-registered-public) |
 | [Semantic config: `configure()`](../../../packages/support/src/SylamentSupportBundle.php) | `config/filament.php` for `default_filesystem_disk` and `temporary_file_url_expiry_minutes` | done | — | [diverges](icon-manager.md#alias-overrides-are-declarable-from-bundle-configuration) · [filesystem-registry.md](filesystem-registry.md) |
 | [Static-instance boot](../../../packages/support/src/SylamentSupportBundle.php) | [`packageRegistered()`](../../../vendor/filament/support/src/SupportServiceProvider.php) (`scoped`/`singleton` + `app->booted`) | done | — | [diverges](#static-instance-boot-replaces-laravels-container-scoping) |
+| [`RemoveTestOnlyServicesPass`, removing every `sylament.test_only` service unless `framework.test` is on](../../../packages/support/src/DependencyInjection/Compiler/RemoveTestOnlyServicesPass.php) | — (no Filament source) | done | — | [semantics](#a-test-only-service-is-removed-unless-frameworktest-is-on) |
 | [Asset registration](../../../packages/support/src/SylamentSupportBundle.php) | [`FilamentAsset::register([Js::make('support', …)])`](../../../vendor/filament/support/src/SupportServiceProvider.php) | in progress | — | [detail](#asset-registration) |
 | [Stylesheet entry (`index.css`, `components.css`, `fonts.css`)](../../../packages/support/assets/src/styles/index.css) | [`css/index.css`](../../../vendor/filament/support/resources/css/index.css) | done | — | [color-manager.md](color-manager.md) |
 | [Base layer (`base.css`)](../../../packages/support/assets/src/styles/base.css) | [`css/base.css`](../../../vendor/filament/support/resources/css/base.css) | done | — | [diverges](#the-base-layer-is-scoped-to-sy-and-adds-the-cloak-and-colour-scheme-rules) |
@@ -72,6 +73,15 @@ Livewire → UX LiveComponent is a systematic [translation](../translations.md#i
 ### The colour policies are registered public
 
 `loadExtension()` registers the managers, the Twig extensions and the `Components/*.php` glob, and the colour-policy glob under `Colors/Components/` stays public, because `ColorManager` resolves a policy from the container by class-string and a private service is not reachable through `Container::get()`.
+
+### A test-only service is removed unless `framework.test` is on
+
+A bundle registers a service only tests use in `loadExtension()` and tags it `sylament.test_only`, as actions' [`ExceptionRecorder`](../actions/testable.md#the-recorder-exists-only-when-frameworktest-is-on) and notifications' [`NotificationRecorder`](../notifications/tests-notifications.md#the-recorder-exists-only-when-frameworktest-is-on-and-answers-for-one-request) are, and support's `build()` adds `RemoveTestOnlyServicesPass`, which removes every tagged definition unless `test.service_container` is defined.
+FrameworkBundle defines that service only under `framework.test`, and an extension's `load()` runs on a container of its own that never sees another extension's services, so test mode is read in a compiler pass.
+The pass runs before optimisation, so a removed service is gone before the decorations are resolved and the listeners collected: `SessionNotifications` stays undecorated, and the exception recorder never listens.
+Run after the decorations, the same removal would leave every consumer of `SessionNotifications` pointing at a service that no longer exists, and the container would not compile.
+One pass serves every package, since each package that ships a test-only service requires support.
+[`RemoveTestOnlyServicesPassTest`](../../../tests/Packages/Support/DependencyInjection/Compiler/RemoveTestOnlyServicesPassTest.php) compiles the suite's kernel in `test` and in `test_mode_off`, the environment that turns `framework.test` off and nothing else.
 
 ## Divergences
 

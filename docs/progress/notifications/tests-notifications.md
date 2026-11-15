@@ -3,7 +3,6 @@ description: The matching logic behind the tester's notification assertions, and
 ports:
   - vendor/filament/notifications/src/Testing/TestsNotifications.php
 owns:
-  - packages/notifications/src/DependencyInjection/Compiler/NotificationRecorderPass.php
   - packages/notifications/src/Testing/NotificationRecorder.php
   - packages/notifications/src/Testing/TestsNotifications.php
 ---
@@ -20,14 +19,6 @@ Why the list is a recorder's and not the session's is [Notification's divergence
 | --- | --- | --- | --- | --- |
 | [`assertNotified()` / `assertNotNotified()`, by any notification, a title or a `Notification`](../../../packages/notifications/src/Testing/TestsNotifications.php) | [`Testing/TestsNotifications.php`](../../../vendor/filament/notifications/src/Testing/TestsNotifications.php), [`Notification::assertNotified()` / `assertNotNotified()`](../../../vendor/filament/notifications/src/Notification.php) | done | — | [semantics](#a-title-matches-the-sent-title-and-a-notification-everything-but-the-id) |
 | [`NotificationRecorder`, decorating `SessionNotifications`](../../../packages/notifications/src/Testing/NotificationRecorder.php) | — (no Filament source) | done | — | [semantics](#the-recorder-exists-only-when-frameworktest-is-on-and-answers-for-one-request) |
-| [`NotificationRecorderPass`, removing the recorder unless `framework.test` is on](../../../packages/notifications/src/DependencyInjection/Compiler/NotificationRecorderPass.php) | — (no Filament source) | in progress | — | [detail](#no-committed-case-compiles-a-container-with-frameworktest-off) |
-
-## Details
-
-### No committed case compiles a container with `framework.test` off
-
-The suite's one kernel always has `framework.test` on, so every case sees the recorder registered, and the branch of `NotificationRecorderPass` that removes it when `test.service_container` is absent has no committed test, only a scratch probe.
-The row turns done with a case that compiles a container without `framework.test` and asserts the recorder is gone and `SessionNotifications` is undecorated.
 
 ## Semantics
 
@@ -40,7 +31,7 @@ The tester's two assertions consume the list they read, as Filament's pull from 
 
 ### The recorder exists only when `framework.test` is on, and answers for one request
 
-[`SylamentNotificationsBundle`](notifications-bundle.md) registers `NotificationRecorder` as a public decorator of `SessionNotifications`, tagged `kernel.reset`, and [`NotificationRecorderPass`](../../../packages/notifications/src/DependencyInjection/Compiler/NotificationRecorderPass.php) removes it before the decoration is resolved unless `test.service_container` is defined, the same test-mode check as actions' [exception recorder](../actions/testable.md#the-recorder-exists-only-when-frameworktest-is-on).
+[`SylamentNotificationsBundle`](notifications-bundle.md) registers `NotificationRecorder` as a public decorator of `SessionNotifications`, tagged `kernel.reset` and `sylament.test_only`, so support's [`RemoveTestOnlyServicesPass`](../support/support-bundle.md#a-test-only-service-is-removed-unless-frameworktest-is-on) removes it outside test mode before the decoration is resolved, as it removes actions' [exception recorder](../actions/testable.md#the-recorder-exists-only-when-frameworktest-is-on).
 It records each `push()` and passes it on, so the stack still drains the toast into the live response, or keeps it in the flash across a redirect.
 It extends `SessionNotifications` without running its constructor, so every public method of `SessionNotifications` must be overridden and delegated to `.inner`: an inherited one would touch the parent's uninitialised state or bypass `.inner`.
 A client that keeps one kernel (`disableReboot()`) has the kernel reset the recorder as the next request starts, and a rebooted kernel builds a new one, so a read after a request sees that request's notifications only and the tester never collects one twice.

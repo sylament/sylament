@@ -6,8 +6,8 @@ namespace Sylament\Notifications;
 
 use Sylament\Notifications\Delivery\LiveDeliverySubscriber;
 use Sylament\Notifications\Delivery\SessionNotifications;
-use Sylament\Notifications\DependencyInjection\Compiler\NotificationRecorderPass;
 use Sylament\Notifications\Testing\NotificationRecorder;
+use Sylament\Support\DependencyInjection\Compiler\RemoveTestOnlyServicesPass;
 use Sylament\Support\SylamentBundle;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
@@ -16,13 +16,6 @@ use function Symfony\Component\DependencyInjection\Loader\Configurator\service;
 
 class SylamentNotificationsBundle extends SylamentBundle
 {
-    public function build(ContainerBuilder $container): void
-    {
-        parent::build($container);
-
-        $container->addCompilerPass(new NotificationRecorderPass());
-    }
-
     /**
      * @param array<string, mixed> $config
      */
@@ -91,7 +84,8 @@ class SylamentNotificationsBundle extends SylamentBundle
             ->decorate(SessionNotifications::class)
             ->args([service('.inner')])
             ->public()
-            ->tag('kernel.reset', ['method' => 'reset']);
+            ->tag('kernel.reset', ['method' => 'reset'])
+            ->tag(RemoveTestOnlyServicesPass::TAG);
     }
 
     private function prependAssetMapper(ContainerBuilder $container): void

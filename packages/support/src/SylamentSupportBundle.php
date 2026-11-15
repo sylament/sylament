@@ -9,6 +9,7 @@ use Sylament\Support\Colors\ColorManager;
 use Sylament\Support\Components\Component;
 use Sylament\Support\Configuration\ComponentManager;
 use Sylament\Support\DependencyInjection\Compiler\ComponentResolverPass;
+use Sylament\Support\DependencyInjection\Compiler\RemoveTestOnlyServicesPass;
 use Sylament\Support\DependencyInjection\Compiler\StaticInstancePass;
 use Sylament\Support\DependencyInjection\ComponentResolver;
 use Sylament\Support\DependencyInjection\Contracts\StaticInstance;
@@ -42,6 +43,7 @@ class SylamentSupportBundle extends SylamentBundle
 
         $container->addCompilerPass(new StaticInstancePass());
         $container->addCompilerPass(new ComponentResolverPass());
+        $container->addCompilerPass(new RemoveTestOnlyServicesPass());
 
         $container->registerForAutoconfiguration(Component::class)
             ->addTag('sylament.component');

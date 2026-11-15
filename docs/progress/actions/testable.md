@@ -2,7 +2,6 @@
 description: The fluent tester a test drives a live component through, the test-case trait that creates it, and the test-mode recorder that hands it the exception a request threw.
 ports: []
 owns:
-  - packages/actions/src/DependencyInjection/Compiler/ExceptionRecorderPass.php
   - packages/actions/src/Testing/ExceptionRecorder.php
   - packages/actions/src/Testing/InteractsWithLiveComponents.php
   - packages/actions/src/Testing/Testable.php
@@ -25,15 +24,9 @@ A test case creates one through [`InteractsWithLiveComponents::createLiveCompone
 | [`assertNotified()` / `assertNotNotified()`, a guarded optional over `sylament/notifications`](../../../packages/actions/src/Testing/Testable.php) | [`TestsNotifications.php`](../../../vendor/filament/notifications/src/Testing/TestsNotifications.php) | done | — | [semantics](#the-notification-assertions-read-what-the-testers-requests-sent) · [tests-notifications.md](../notifications/tests-notifications.md#a-title-matches-the-sent-title-and-a-notification-everything-but-the-id) |
 | [`InteractsWithLiveComponents::createLiveComponent()`](../../../packages/actions/src/Testing/InteractsWithLiveComponents.php) | — (no Filament source) | done | — | [semantics](#createlivecomponent-builds-uxs-tester-through-uxs-own-method) |
 | [`ExceptionRecorder`](../../../packages/actions/src/Testing/ExceptionRecorder.php), a public `kernel.exception` listener | — (no Filament source) | done | — | [semantics](#the-recorder-exists-only-when-frameworktest-is-on) |
-| [`ExceptionRecorderPass`](../../../packages/actions/src/DependencyInjection/Compiler/ExceptionRecorderPass.php), removing the recorder unless `framework.test` is on | — (no Filament source) | in progress | — | [detail](#no-committed-case-compiles-a-container-with-frameworktest-off) |
 | [`getRespondingComponent()`](../../../packages/actions/src/Testing/Testable.php), the host that answered the last request | — (Livewire's `Testable::instance()`) | done | — | [semantics](#the-error-assertions-read-the-component-that-answered-the-last-request) |
 
 ## Details
-
-### No committed case compiles a container with `framework.test` off
-
-The suite's one kernel always has `framework.test` on, so every case sees the recorder registered, and the branch of `ExceptionRecorderPass` that removes it when `test.service_container` is absent has no committed test, only a scratch probe.
-The row turns done with a case that compiles a container without `framework.test` and asserts the recorder is gone.
 
 ### The other primitives wait for a test that needs them
 
@@ -57,8 +50,7 @@ It resolves `test.client` itself and hands the same client to UX and to the test
 
 ### The recorder exists only when `framework.test` is on
 
-[`SylamentActionsBundle`](actions-bundle.md) registers `ExceptionRecorder` as a public `kernel.exception` listener at priority 128, ahead of UX's 422 re-render (20) and the framework's error page (-128), and [`ExceptionRecorderPass`](../../../packages/actions/src/DependencyInjection/Compiler/ExceptionRecorderPass.php) removes it unless `test.service_container` is defined.
-FrameworkBundle defines that service only under `framework.test`, and an extension's `load()` runs on a container of its own that never sees another extension's services, so test mode is read in a compiler pass, which runs before the listeners are collected.
+[`SylamentActionsBundle`](actions-bundle.md) registers `ExceptionRecorder` as a public `kernel.exception` listener at priority 128, ahead of UX's 422 re-render (20) and the framework's error page (-128), and tags it `sylament.test_only`, so support's [`RemoveTestOnlyServicesPass`](../support/support-bundle.md#a-test-only-service-is-removed-unless-frameworktest-is-on) removes it outside test mode before the listeners are collected.
 The recorder keeps the first exception since the tester last took one, because an exception thrown while the error page renders would otherwise replace the one the host threw.
 The recorder is tagged `kernel.reset`, so a client that keeps one kernel (`disableReboot()`) clears a kept exception as the next request starts, and the tester never rethrows one from a request it did not send.
 

@@ -31,7 +31,7 @@ What the port adds on top of the provider's responsibilities is container wiring
 | `Livewire::component('database-notifications', …)` | [`packageBooted()`](../../../vendor/filament/notifications/src/NotificationsServiceProvider.php) | blocked | the database-notifications panel | [detail](#the-database-notifications-registration-waits-on-its-panel) |
 | Translations (`->hasTranslations()`) | [`configurePackage()`](../../../vendor/filament/notifications/src/NotificationsServiceProvider.php) | todo | — | [detail](#the-translation-catalogue-is-unported-so-the-close-label-is-an-english-literal) |
 | `Testable::mixin(new TestsNotifications)` | [`packageBooted()`](../../../vendor/filament/notifications/src/NotificationsServiceProvider.php) | skipped | — | [diverges](#livewire-specific-provider-responsibilities-are-dropped-not-ported) |
-| [The tester's `NotificationRecorder`, registered only in test mode](../../../packages/notifications/src/SylamentNotificationsBundle.php) (`configureTesting()`, `build()`) | — | done | — | [tests-notifications.md](tests-notifications.md#the-recorder-exists-only-when-frameworktest-is-on-and-answers-for-one-request) |
+| [The tester's `NotificationRecorder`, registered only in test mode](../../../packages/notifications/src/SylamentNotificationsBundle.php) (`configureTesting()`) | — | done | — | [tests-notifications.md](tests-notifications.md#the-recorder-exists-only-when-frameworktest-is-on-and-answers-for-one-request) |
 
 ## Details
 

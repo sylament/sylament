@@ -11,7 +11,7 @@ Ports [`filament/notifications`](../../../vendor/filament/notifications) into [`
 | [notifications-bundle.md](notifications-bundle.md) | in progress | 2 in progress · 1 blocked · 1 todo | `NotificationsServiceProvider.php`, `composer.json`, `resources/css/index.css`, `resources/js/index.js` | The notifications bundle class, the session and live delivery pair it wires, its asset registration and the package manifest. |
 | [notifications-icon-alias.md](notifications-icon-alias.md) | in progress | 1 blocked | `View/NotificationsIconAlias.php` | The overridable icon aliases the notifications package exposes, ported from Filament's `View\NotificationsIconAlias`. |
 | [notifications.md](notifications.md) | in progress | 1 blocked · 1 todo | `Livewire/Notifications.php`, `resources/views/notifications.blade.php`, `resources/css/notifications.css` | The toast stack `<twig:SylamentNotifications:Notifications />`, placed once in an application layout, with its template and Stimulus controller. |
-| [tests-notifications.md](tests-notifications.md) | in progress | 1 in progress | `Testing/TestsNotifications.php` | The matching logic behind the tester's notification assertions, and the test-mode recorder that keeps what a request sent. |
+| [tests-notifications.md](tests-notifications.md) | done | — | `Testing/TestsNotifications.php` | The matching logic behind the tester's notification assertions, and the test-mode recorder that keeps what a request sent. |
 <!-- trail-index:end -->
 
 ## Unported

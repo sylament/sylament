@@ -6,7 +6,7 @@ description: Use when creating a git worktree for a lane of parallel work, or st
 
 ## 1. Ask first
 
-Never create a worktree without asking Martin, every time, even when an approved plan mentions worktrees. Say what it buys (which lanes could then run at once) and what it costs (a `composer install` per worktree, a `pnpm install` when it touches assets, its own setup time). With no answer or a no, work in the main checkout, where each lane's test runs set the lane's own `SYLAMENT_TEST_RUN` (`SYLAMENT_TEST_RUN=lane_a composer test:pest`): two runs in one checkout otherwise share their worker directories and databases, and the later one stops before its first test.
+Never create a worktree without asking Martin, every time, even when an approved plan mentions worktrees. Say what it buys (which lanes could then run at once) and what it costs (a `composer install` per worktree, a `pnpm install` when it touches assets, its own setup time). With no answer or a no, work in the main checkout, where each lane's test runs set the lane's own `SYLAMENT_TEST_RUN` (`SYLAMENT_TEST_RUN=lane_a composer test:pest`): two root-suite runs in one checkout otherwise share their worker directories and databases, and the later one stops before its first test. The variable covers the root suite only: a per-bundle suite (`composer test:<bundle>`, and so `composer test`) writes `packages/<pkg>/var/`, so one lane at a time runs those.
 
 ## 2. Create it outside the repository
 

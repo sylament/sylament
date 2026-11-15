@@ -50,7 +50,7 @@ trait InteractsWithDatabase
      * answer one over a connection that never opens, which names its platform from its
      * server version, so nothing on it may run a statement.
      *
-     * It shares nothing the world could see: neither the recorder nor the preparation,
+     * It shares only the world's event manager: neither the recorder nor the preparation,
      * nor the metadata cache, second-level cache or repository services; the reasons are
      * in `docs/internals/test-infrastructure.md`, "Platform-pinned managers".
      */

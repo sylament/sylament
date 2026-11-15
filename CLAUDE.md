@@ -60,7 +60,7 @@ Two principles outrank every rule below; their tests and worked cases are in `do
 - `composer test:mysql` and `composer test:postgresql` green at landing; an inner loop may stay on SQLite.
 - `pnpm test:types` and `pnpm test:lint` green.
 - `composer format` applied; no hand-formatting.
-- A user-facing feature updates the demo showcase (cards, descriptions, the "Not built yet" footnotes) in the same change, before its trail row flips to done; the testing API in `src/Testing` gets no card and no demo test, because the demo is a dev-only app that runs no application's tests.
+- A user-facing feature updates the demo showcase (cards, descriptions, the "Not built yet" footnotes) in the same change, before its trail row flips to done; the testing API in `src/Testing` gets no card, because the demo is a dev-only app that runs no application's tests.
 - Closing a milestone: run the `docs-audit` skill.
 - Instruction files current: a change that makes a rule or skill wrong, or sets a convention for files no rule covers, updates or creates the `.claude/rules/` or `.claude/skills/` file in the same change (shape: `.claude/rules/instructions.md`).
 

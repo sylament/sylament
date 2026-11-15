@@ -3,7 +3,6 @@
 declare(strict_types=1);
 
 use Doctrine\DBAL\Driver\AbstractSQLiteDriver\Middleware\EnableForeignKeys;
-use Sylament\Tests\Infrastructure\Doctrine\RecordingMiddleware;
 use Sylament\Tests\Infrastructure\Doctrine\TestDatabase;
 use Sylament\Tests\Infrastructure\Doctrine\TestDatabaseMiddleware;
 use Sylament\Tests\Infrastructure\Doctrine\TestPlatform;
@@ -17,7 +16,7 @@ return static function (ContainerConfigurator $container): void {
         'dbal' => [
             'url' => '%env(' . TestDatabase::URL_VARIABLE . ')%',
             'logging' => false,
-            'profiling' => false,
+            'profiling' => true,
         ],
         'orm' => [
             'entity_managers' => [
@@ -50,11 +49,9 @@ return static function (ContainerConfigurator $container): void {
         ->share(false);
 
     // DBAL wraps the driver in the order of the list, which DoctrineBundle sorts by
-    // descending priority: the highest priority is the innermost layer.
-    $services->set(RecordingMiddleware::class)
-        ->abstract()
-        ->tag('doctrine.middleware', ['priority' => -100]);
-
+    // descending priority: the highest priority is the innermost layer. Both sit inside
+    // DoctrineBundle's profiling middleware (priority 10), so `statementsRun()`, which
+    // reads what it collects, sees neither a preparation nor a PRAGMA.
     $services->set(TestDatabaseMiddleware::class)
         ->args([service_closure('doctrine')])
         ->abstract()

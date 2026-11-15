@@ -8,7 +8,7 @@ use JsonException;
 use UnexpectedValueException;
 
 /**
- * Reads a package's composer.json for the scans of what it declares.
+ * Reads a package's composer.json, or its asset workspace's package.json, for the scans of what it declares.
  */
 final class PackageManifest
 {
@@ -19,7 +19,26 @@ final class PackageManifest
      */
     public static function of(string $package): array
     {
-        $path = dirname(__DIR__, 3) . "/packages/{$package}/composer.json";
+        return self::read(dirname(__DIR__, 3) . "/packages/{$package}/composer.json");
+    }
+
+    /**
+     * @return array<mixed>
+     *
+     * @throws JsonException
+     */
+    public static function assets(string $package): array
+    {
+        return self::read(dirname(__DIR__, 3) . "/packages/{$package}/assets/package.json");
+    }
+
+    /**
+     * @return array<mixed>
+     *
+     * @throws JsonException
+     */
+    private static function read(string $path): array
+    {
         $contents = file_get_contents($path);
 
         if ($contents === false) {

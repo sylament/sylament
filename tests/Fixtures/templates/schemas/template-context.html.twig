@@ -1,0 +1,12 @@
+<dl data-template="context">
+    <dt>component</dt>
+    <dd data-variable="component">{{ component.getContent }}</dd>
+    <dt>source</dt>
+    <dd data-variable="source">{{ source ?? '' }}</dd>
+    <dt>extra</dt>
+    <dd data-variable="extra">{{ extra ?? '' }}</dd>
+    <dt>first</dt>
+    <dd data-variable="first">{{ first ?? '' }}</dd>
+    <dt>attributes</dt>
+    <dd data-variable="attributes">{{ attributes is defined ? 'defined' : 'undefined' }}</dd>
+</dl>

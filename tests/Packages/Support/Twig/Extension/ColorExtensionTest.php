@@ -54,3 +54,23 @@ it('gives a blank colour, an empty palette included, no classes and no styles', 
     'no colour' => [null],
     'an empty palette' => [[]],
 ]);
+
+it("gives a palette name the policy's classes and no style", function (): void {
+    $div = new Crawler($this::getContainer()->get('twig')->createTemplate('<div {{ attrs(colorAttributes(policy, color)) }}></div>')->render([
+        'policy' => BadgeComponent::class,
+        'color' => 'primary',
+    ]))->filter('div');
+
+    expect(explode(' ', (string) $div->attr('class')))->toContain('sy-color', 'sy-color-primary')
+        ->and($div->attr('style'))->toBeNull();
+});
+
+it('gives a shade map the sy-color class and its shades as custom properties', function (): void {
+    $div = new Crawler($this::getContainer()->get('twig')->createTemplate('<div {{ attrs(colorAttributes(policy, color)) }}></div>')->render([
+        'policy' => BadgeComponent::class,
+        'color' => Color::Teal,
+    ]))->filter('div');
+
+    expect($div->attr('class'))->toBe('sy-color')
+        ->and($div->attr('style'))->toContain('--sy-color-500: ' . Color::Teal[500]);
+});

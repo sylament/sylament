@@ -30,37 +30,16 @@ The file also tracks the package's asset entry points: the stylesheet every pack
 | [Semantic config: `configure()`](../../../packages/support/src/SylamentSupportBundle.php) | `config/filament.php` for `default_filesystem_disk` and `temporary_file_url_expiry_minutes` | done | — | [diverges](icon-manager.md#alias-overrides-are-declarable-from-bundle-configuration) · [filesystem-registry.md](filesystem-registry.md) |
 | [Static-instance boot](../../../packages/support/src/SylamentSupportBundle.php) | [`packageRegistered()`](../../../vendor/filament/support/src/SupportServiceProvider.php) (`scoped`/`singleton` + `app->booted`) | done | — | [diverges](#static-instance-boot-replaces-laravels-container-scoping) |
 | [`RemoveTestOnlyServicesPass`, removing every `sylament.test_only` service unless `framework.test` is on](../../../packages/support/src/DependencyInjection/Compiler/RemoveTestOnlyServicesPass.php) | — (no Filament source) | done | — | [semantics](#a-test-only-service-is-removed-unless-frameworktest-is-on) |
-| [Asset registration](../../../packages/support/src/SylamentSupportBundle.php) | [`FilamentAsset::register([Js::make('support', …)])`](../../../vendor/filament/support/src/SupportServiceProvider.php) | in progress | — | [detail](#asset-registration) |
+| [Asset registration](../../../packages/support/src/SylamentSupportBundle.php) | [`FilamentAsset::register([Js::make('support', …)])`](../../../vendor/filament/support/src/SupportServiceProvider.php) | done | — | [semantics](#the-asset-prepend-is-guarded-and-the-built-directory-needs-only-stimulus-from-the-importmap) |
 | [Stylesheet entry (`index.css`, `components.css`, `fonts.css`)](../../../packages/support/assets/src/styles/index.css) | [`css/index.css`](../../../vendor/filament/support/resources/css/index.css) | done | — | [color-manager.md](color-manager.md) |
 | [Base layer (`base.css`)](../../../packages/support/assets/src/styles/base.css) | [`css/base.css`](../../../vendor/filament/support/resources/css/base.css) | done | — | [diverges](#the-base-layer-is-scoped-to-sy-and-adds-the-cloak-and-colour-scheme-rules) |
 | [`uncloak()` helper](../../../packages/support/assets/src/utils/cloak.ts) | Alpine's `x-cloak` | done | — | [diverges](#the-base-layer-is-scoped-to-sy-and-adds-the-cloak-and-colour-scheme-rules) |
-| [Eager `core` controller and its stylesheet autoimport](../../../packages/support/assets/src/controllers/core_controller.ts) | — | in progress | — | [detail](#nothing-asserts-the-core-controllers-manifest-entry) |
+| [Eager `core` controller and its stylesheet autoimport](../../../packages/support/assets/src/controllers/core_controller.ts) | — | done | — | [semantics](#the-eager-core-controller-puts-the-toolkit-stylesheet-on-the-page) |
 | Livewire request / component wiring | [`packageRegistered()`/`packageBooted()`](../../../vendor/filament/support/src/SupportServiceProvider.php) | blocked | live-component-state work | [detail](#livewire-request-and-component-wiring-is-not-ported) |
 | Blade directives & string macros | [`packageBooted()`](../../../vendor/filament/support/src/SupportServiceProvider.php) | skipped | — | [diverges](#blade-directives-and-string-macros-are-not-ported) |
 | PackageServiceProvider bootstrapping: config, views and translations publishing, commands, `AboutCommand`, `optimizes` | [`configurePackage()`/`packageBooted()`](../../../vendor/filament/support/src/SupportServiceProvider.php) | skipped | — | [diverges](#packageserviceprovider-bootstrapping-is-replaced-by-abstractbundle-mechanics) |
 
 ## Details
-
-### Asset registration
-
-`prependAssetMapper()` registers `packages/support/assets/dist` into `framework.asset_mapper.paths` under the alias `@sylament/support`, but only when [`isAssetMapperAvailable()`](../../../packages/support/src/SylamentBundle.php) confirms `AssetMapperInterface` exists and FrameworkBundle ships `Resources/config/asset_mapper.php`, the guard that keeps `symfony/asset-mapper` an optional dependency for production consumers.
-It is the Symfony analog of Filament registering `Js::make('support', …)` with `FilamentAsset`.
-
-What lands in that directory is [`assets/scripts/build-js.mjs`](../../../packages/support/assets/scripts/build-js.mjs)'s business: every `src/**/*.ts` builds per file and unbundled, its import specifiers shipped verbatim for the consuming app's importmap to resolve, except the entries in that script's `BUNDLED_ENTRIES` table, the `dropdown` controller bundling `@floating-ui/dom` and the `sortable` controller bundling `sortablejs` ([sortable.md](sortable.md#sortablejs-is-bundled-twice-pinned-to-one-version)), which inline their library behind a licence banner composed from the installed package and keep `@hotwired/stimulus` external.
-So the prepended directory needs no importmap entry beyond Stimulus itself.
-
-**Missing:** a test.
-Nothing asserts the path and alias are prepended when AssetMapper is present, and nothing exercises the negative branch of `isAssetMapperAvailable()`; [`SylamentSupportBundleTest`](../../../packages/support/tests/Integration/SylamentSupportBundleTest.php) covers the bundle's other wiring but never inspects the prepended asset config.
-**Next step:** an Integration test asserting `@sylament/support` maps the built directory, plus a Unit test for the guard's false branch.
-The positive half has a shape to copy, [`SylamentActionsBundleTest`](../../../packages/actions/tests/Integration/SylamentActionsBundleTest.php), which asks the real `AssetMapperInterface` for a built asset by source path and requires the logical path back ([written there to be copied](../actions/actions-bundle.md#asset-registration-is-an-assetmapper-prepend), by this row and by [notifications'](../notifications/notifications-bundle.md#nothing-pins-the-false-branch-of-the-assetmapper-guard)).
-That seam is the call StimulusBundle's controllers-map generator makes, so a prepend that is present but misaliased fails it where an assertion on the compiled `framework.asset_mapper.paths` array passes.
-The guard's false branch is this package's to pin for all three, since [`SylamentBundle`](../../../packages/support/src/SylamentBundle.php) owns it.
-
-### Nothing asserts the core controller's manifest entry
-
-[`core_controller.ts`](../../../packages/support/assets/src/controllers/core_controller.ts) is an empty controller, registered `eager` and `enabled` under `symfony.controllers.core` in [`package.json`](../../../packages/support/assets/package.json), whose `autoimport` of `@sylament/support/styles/index.css` puts the whole toolkit stylesheet on the page and keeps `@sylament/support` in AssetMapper's eager import graph.
-No test reads that manifest entry, so a change to its `fetch` mode, its `enabled` flag or the autoimport path fails nothing.
-**Next step:** an Architecture test reading `package.json` that pins the three, on the model of [`ManifestTest`](../../../tests/Architecture/ManifestTest.php).
 
 ### Livewire request and component wiring is not ported
 
@@ -69,6 +48,21 @@ There is no Livewire here (the idiom translation is UX LiveComponent), and Filam
 Livewire → UX LiveComponent is a systematic [translation](../translations.md#idiom).
 
 ## Semantics
+
+### The asset prepend is guarded, and the built directory needs only Stimulus from the importmap
+
+`prependAssetMapper()` registers `packages/support/assets/dist` into `framework.asset_mapper.paths` under the alias `@sylament/support`, but only when [`isAssetMapperAvailable()`](../../../packages/support/src/SylamentBundle.php) confirms `AssetMapperInterface` exists and FrameworkBundle ships `Resources/config/asset_mapper.php`, the guard that keeps `symfony/asset-mapper` an optional dependency for production consumers.
+It is the Symfony analog of Filament registering `Js::make('support', …)` with `FilamentAsset`.
+The guard lives on [`SylamentBundle`](../../../packages/support/src/SylamentBundle.php), so its false branch, which returns without prepending, is one behaviour for every bundle that prepends.
+The prepend is checked where StimulusBundle's controllers-map generator checks it, by asking `AssetMapperInterface` for a built controller by source path and requiring the `@sylament/support` logical path back, so a prepend that is present but misaliased fails where an assertion on the compiled `framework.asset_mapper.paths` array would pass.
+
+What lands in that directory is [`assets/scripts/build-js.mjs`](../../../packages/support/assets/scripts/build-js.mjs)'s business: every `src/**/*.ts` builds per file and unbundled, its import specifiers shipped verbatim for the consuming app's importmap to resolve, except the entries in that script's `BUNDLED_ENTRIES` table, the `dropdown` controller bundling `@floating-ui/dom` and the `sortable` controller bundling `sortablejs` ([sortable.md](sortable.md#sortablejs-is-bundled-twice-pinned-to-one-version)), which inline their library behind a licence banner composed from the installed package and keep `@hotwired/stimulus` external.
+So the prepended directory needs no importmap entry beyond Stimulus itself.
+
+### The eager `core` controller puts the toolkit stylesheet on the page
+
+[`core_controller.ts`](../../../packages/support/assets/src/controllers/core_controller.ts) is an empty controller, registered `eager` and `enabled` under `symfony.controllers.core` in [`package.json`](../../../packages/support/assets/package.json), whose `autoimport` of `@sylament/support/styles/index.css` puts the whole toolkit stylesheet on the page and keeps `@sylament/support` in AssetMapper's eager import graph.
+A lazy or disabled entry, or a moved autoimport path, drops every package's styles without an error, since nothing else loads the stylesheet.
 
 ### The colour policies are registered public
 

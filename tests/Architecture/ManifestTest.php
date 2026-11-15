@@ -38,3 +38,16 @@ it('keeps the two guarded integrations as suggestions', function (): void {
         ->not->toHaveKey('sylament/notifications')
         ->not->toHaveKey('sylament/tables');
 });
+
+/**
+ * The toolkit stylesheet reaches a page only through this entry: StimulusBundle loads an enabled, eager controller up
+ * front with its autoimports, so a lazy or disabled `core`, or a moved stylesheet path, drops every package's styles
+ * without an error.
+ */
+it("loads support's core controller eagerly, autoimporting the toolkit stylesheet", function (): void {
+    expect(PackageManifest::assets('support')['symfony']['controllers']['core'] ?? null)->toMatchArray([
+        'fetch' => 'eager',
+        'enabled' => true,
+        'autoimport' => ['@sylament/support/styles/index.css' => true],
+    ]);
+});

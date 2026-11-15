@@ -15,8 +15,14 @@ use Symfony\Component\DependencyInjection\ServiceLocator;
 
 it('collects the flysystem storages by name', function (): void {
     $registry = $this::getContainer()->get(FilesystemRegistry::class);
+    $storage = $registry->get('primary.storage');
+    $outOfOrder = new FilesystemRegistry(new ServiceLocator([
+        'b.storage' => fn (): FilesystemOperator => $storage,
+        'a.storage' => fn (): FilesystemOperator => $storage,
+    ]));
 
     expect($registry->getNames())->toBe(['primary.storage', 'secondary.storage'])
+        ->and($outOfOrder->getNames())->toBe(['a.storage', 'b.storage'])
         ->and($registry->has('secondary.storage'))->toBeTrue()
         ->and($registry->has('missing.storage'))->toBeFalse()
         ->and($registry->get('secondary.storage'))->toBeInstanceOf(FilesystemOperator::class)

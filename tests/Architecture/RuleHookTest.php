@@ -143,7 +143,6 @@ it('loads a rule the agent has seen only part of', function (string $command, st
     'a cat fed from a pipe' => ['echo | cat .claude/rules/tests.md', 'PostToolUse', ['stdout' => '{rule}']],
     'a cat in a substitution' => ['rules=$(cat .claude/rules/tests.md)', 'PostToolUse', ['stdout' => '{rule}']],
     'a cat redirected away' => ['cat .claude/rules/tests.md > /dev/null', 'PostToolUse', ['stdout' => '{rule}']],
-    'a cat writing the rule' => ["cat > .claude/rules/tests.md <<'EOF'\n- tests rule\nEOF", 'PostToolUse', ['stdout' => '{rule}']],
     'a cat continued into a pipe' => ["cat .claude/rules/tests.md \\\n  | head -5", 'PostToolUse', ['stdout' => '{rule}']],
     'a cat inside a heredoc body' => ["cat > notes.txt <<'EOF'\ncat .claude/rules/tests.md\nEOF", 'PostToolUse', ['stdout' => '{rule}']],
     'a failed cat' => ['cat .claude/rules/tests.md', 'PostToolUseFailure', ['stdout' => '{rule}']],

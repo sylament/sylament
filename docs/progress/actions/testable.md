@@ -19,7 +19,7 @@ A test case creates one through [`InteractsWithLiveComponents::createLiveCompone
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
 | [`call()` / `set()`, fluent, and `component()` / `response()` / `render()`](../../../packages/actions/src/Testing/Testable.php) | — (no Filament source) | done | — | [semantics](#the-kernel-catches-exceptions-and-the-tester-rethrows-the-original) · [semantics](#after-a-redirect-only-the-response-and-the-notifications-can-be-read) |
-| [`refresh()` / `emit()` / `submitForm()` / `actingAs()` / `setRouteLocale()`](../../../packages/actions/src/Testing/Testable.php) | — (no Filament source) | in progress | — | [detail](#the-other-primitives-wait-for-a-test-that-needs-them) |
+| [`refresh()` / `emit()` / `submitForm()` / `setRouteLocale()`](../../../packages/actions/src/Testing/Testable.php) | — (no Filament source) | in progress | — | [detail](#the-other-primitives-wait-for-a-test-that-needs-them) |
 | [`assertRedirect()` / `assertNoRedirect()`](../../../packages/actions/src/Testing/Testable.php) | — (Livewire's `TestsRedirects`) | done | — | [semantics](#a-redirect-is-a-3xx-response-and-its-location-is-compared-as-a-full-url) · [diverges](#assertnoredirect-names-the-location-it-failed-on) |
 | [`assertNotified()` / `assertNotNotified()`, a guarded optional over `sylament/notifications`](../../../packages/actions/src/Testing/Testable.php) | [`TestsNotifications.php`](../../../vendor/filament/notifications/src/Testing/TestsNotifications.php) | done | — | [semantics](#the-notification-assertions-read-what-the-testers-requests-sent) · [tests-notifications.md](../notifications/tests-notifications.md#a-title-matches-the-sent-title-and-a-notification-everything-but-the-id) |
 | [`InteractsWithLiveComponents::createLiveComponent()`](../../../packages/actions/src/Testing/InteractsWithLiveComponents.php) | — (no Filament source) | done | — | [semantics](#createlivecomponent-builds-uxs-tester-through-uxs-own-method) |
@@ -30,7 +30,7 @@ A test case creates one through [`InteractsWithLiveComponents::createLiveCompone
 
 ### The other primitives wait for a test that needs them
 
-`refresh()`, `emit()`, `submitForm()`, `actingAs()` and `setRouteLocale()` delegate to UX's tester as `call()` and `set()` do, and no test uses them yet; each is covered by the first test that does, since every ported helper is exercised by the suite.
+`refresh()`, `emit()`, `submitForm()` and `setRouteLocale()` delegate to UX's tester as `call()` and `set()` do, and no test uses them yet; each is covered by the first test that does, since every ported helper is exercised by the suite.
 
 ## Semantics
 

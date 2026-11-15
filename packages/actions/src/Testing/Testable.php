@@ -16,7 +16,6 @@ use Symfony\Component\HttpFoundation\File\UploadedFile;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpFoundation\Test\Constraint\ResponseHeaderLocationSame;
 use Symfony\Component\HttpKernel\Exception\UnprocessableEntityHttpException;
-use Symfony\Component\Security\Core\User\UserInterface;
 use Symfony\UX\LiveComponent\Test\TestLiveComponent;
 use Symfony\UX\TwigComponent\MountedComponent;
 use Symfony\UX\TwigComponent\Test\RenderedComponent;
@@ -106,16 +105,6 @@ class Testable
         $this->failIfRedirected();
         $this->testLiveComponent->submitForm($formValues, $action);
         $this->afterRequest();
-
-        return $this;
-    }
-
-    /**
-     * @param UserInterface $user
-     */
-    public function actingAs(object $user, string $firewallContext = 'main'): static
-    {
-        $this->testLiveComponent->actingAs($user, $firewallContext);
 
         return $this;
     }
@@ -303,7 +292,7 @@ class Testable
         $recorder = $container->get(ExceptionRecorder::class);
 
         if (!$recorder instanceof ExceptionRecorder) {
-            throw new LogicException(sprintf('The kernel has no [%s]: SylamentActionsBundle registers it when framework.test is on.', ExceptionRecorder::class));
+            throw new LogicException(sprintf('The [%s] service is not the exception recorder.', ExceptionRecorder::class));
         }
 
         $throwable = $recorder->takeThrowable();

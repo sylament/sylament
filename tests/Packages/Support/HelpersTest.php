@@ -59,16 +59,16 @@ it('wraps null into an empty array and a scalar or object into a one-element arr
         ->and(wrap($object))->toBe([$object]);
 });
 
-it('refuses a URL the browser could read as something other than it shows', function (?string $url, array $allowedSchemes): void {
-    expect(sanitize_url($url, $allowedSchemes))->toBeNull();
+it('refuses a URL the browser could read as something other than it shows', function (mixed ...$arguments): void {
+    expect(sanitize_url(...$arguments))->toBeNull();
 })->with([
-    'a blank URL' => ['  ', ['http', 'https']],
-    'raw whitespace' => ['https://example.test/a b', ['http', 'https']],
-    'a raw control character' => ["https://example.test/\x01", ['http', 'https']],
-    'a control character behind an entity' => ['java&#x09;script:alert(1)', ['http', 'https']],
-    'a control character behind a percent escape' => ['https://example.test/%00', ['http', 'https']],
-    'a scheme outside the default list' => ['javascript:alert(1)', ['http', 'https']],
-    'a scheme hidden behind an entity' => ['&#106;avascript:alert(1)', ['http', 'https']],
+    'a blank URL' => ['  '],
+    'raw whitespace' => ['https://example.test/a b'],
+    'a raw control character' => ["https://example.test/\x01"],
+    'a control character behind an entity' => ['java&#x09;script:alert(1)'],
+    'a control character behind a percent escape' => ['https://example.test/%00'],
+    'a scheme outside the default list' => ['javascript:alert(1)'],
+    'a scheme hidden behind an entity' => ['&#106;avascript:alert(1)'],
     "a default scheme outside the caller's list" => ['https://example.test', ['mailto']],
 ]);
 

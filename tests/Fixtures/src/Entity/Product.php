@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace Sylament\Tests\Fixtures\Panels\Entity;
+namespace Sylament\Tests\Fixtures\Entity;
 
 use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity]
-class HookedArticle
+class Product
 {
     #[ORM\Id]
     #[ORM\GeneratedValue]
@@ -16,7 +16,7 @@ class HookedArticle
 
     public function __construct(
         #[ORM\Column]
-        public string $title,
+        public string $name,
     ) {
     }
 }

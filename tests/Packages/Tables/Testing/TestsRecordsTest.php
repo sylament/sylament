@@ -5,8 +5,8 @@ declare(strict_types=1);
 use PHPUnit\Framework\AssertionFailedError;
 use Sylament\Actions\DeleteAction;
 use Sylament\Actions\Testing\TestAction;
-use Sylament\Tests\Fixtures\Actions\Entity\Product;
 use Sylament\Tests\Fixtures\Actions\ProductTable;
+use Sylament\Tests\Fixtures\Entity\Product;
 
 it('fails asserting that the table shows a record it no longer shows', function (): void {
     $this->seed(new Product('Kept'), $gone = new Product('Gone'));

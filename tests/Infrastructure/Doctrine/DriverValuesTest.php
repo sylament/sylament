@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-use Sylament\Tests\Fixtures\Infrastructure\Entity\Tally;
+use Sylament\Tests\Fixtures\Entity\Tally;
 use Sylament\Tests\Infrastructure\Doctrine\DriverValues;
 
 it('reads an aggregate as the same numbers on every platform', function (): void {

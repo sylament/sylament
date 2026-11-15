@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace Sylament\Tests\Fixtures\Panels\Entity;
+namespace Sylament\Tests\Fixtures\Entity;
 
 use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity]
-class Article
+class HookedArticle
 {
     #[ORM\Id]
     #[ORM\GeneratedValue]

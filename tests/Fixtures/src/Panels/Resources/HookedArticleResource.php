@@ -9,7 +9,7 @@ use Sylament\Panels\Resources\Resource;
 use Sylament\Schemas\Schema;
 use Sylament\Tables\Columns\TextColumn;
 use Sylament\Tables\Table;
-use Sylament\Tests\Fixtures\Panels\Entity\HookedArticle;
+use Sylament\Tests\Fixtures\Entity\HookedArticle;
 use Sylament\Tests\Fixtures\Panels\Resources\Pages\CreateHookedArticle;
 use Sylament\Tests\Fixtures\Panels\Resources\Pages\EditHookedArticle;
 use Sylament\Tests\Fixtures\Panels\Resources\Pages\ListHookedArticles;

@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 use Doctrine\DBAL\Connection;
 use Doctrine\DBAL\Exception\DriverException;
-use Sylament\Tests\Fixtures\Infrastructure\Entity\Tally;
+use Sylament\Tests\Fixtures\Entity\Tally;
 use Sylament\Tests\Infrastructure\Doctrine\FailingWrite;
 use Sylament\Tests\Infrastructure\Doctrine\TestDatabase;
 

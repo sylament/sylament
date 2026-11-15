@@ -9,9 +9,9 @@ use Sylament\Panels\Resources\Resource;
 use Sylament\Schemas\Schema;
 use Sylament\Tables\Columns\TextColumn;
 use Sylament\Tables\Table;
+use Sylament\Tests\Fixtures\Entity\OrderLine;
 use Sylament\Tests\Fixtures\Panels\Resources\Pages\EditOrderLine;
 use Sylament\Tests\Fixtures\Panels\Resources\Pages\ListOrderLines;
-use Sylament\Tests\Fixtures\Schemas\Entity\OrderLine;
 
 /**
  * Its key fields are ordinary inputs, so a request can write the composite key the

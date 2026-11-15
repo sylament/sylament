@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-use Sylament\Tests\Fixtures\Infrastructure\Entity\Tally;
+use Sylament\Tests\Fixtures\Entity\Tally;
 
 it("records the test's statements, and neither the database's preparation nor a PRAGMA", function (): void {
     $this->entityManager()->getRepository(Tally::class)->count();

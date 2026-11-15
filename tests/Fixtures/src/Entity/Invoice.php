@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Sylament\Tests\Fixtures\Schemas\Entity;
+namespace Sylament\Tests\Fixtures\Entity;
 
 use Doctrine\ORM\Mapping as ORM;
 

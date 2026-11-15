@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Sylament\Tests\Fixtures\Panels\Resources\Pages;
 
 use Sylament\Panels\Resources\Pages\EditRecord;
-use Sylament\Tests\Fixtures\Panels\Entity\HookedArticle;
+use Sylament\Tests\Fixtures\Entity\HookedArticle;
 use Sylament\Tests\Fixtures\Panels\HookLog;
 use Sylament\Tests\Fixtures\Panels\Resources\HookedArticleResource;
 use Symfony\Contracts\Service\Attribute\Required;

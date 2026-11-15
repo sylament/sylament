@@ -8,31 +8,11 @@ use Sylament\Tests\Infrastructure\Doctrine\TestDatabase;
 use Sylament\Tests\Infrastructure\Doctrine\TestDatabaseMiddleware;
 use Sylament\Tests\Infrastructure\Doctrine\TestPlatform;
 use Symfony\Component\Cache\Adapter\ArrayAdapter;
-use Symfony\Component\Config\Resource\GlobResource;
-use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
 
 use function Symfony\Component\DependencyInjection\Loader\Configurator\service_closure;
 
-return static function (ContainerConfigurator $container, ContainerBuilder $builder): void {
-    $source = dirname(__DIR__, 2) . '/src';
-    $directories = glob($source . '/*/Entity', GLOB_ONLYDIR)
-        ?: throw new RuntimeException(sprintf('No entity folder under %s.', $source));
-    $mappings = [];
-
-    foreach ($directories as $directory) {
-        $area = basename(dirname($directory));
-        $mappings[$area] = [
-            'type' => 'attribute',
-            'dir' => $directory,
-            'prefix' => 'Sylament\\Tests\\Fixtures\\' . $area . '\\Entity',
-        ];
-    }
-
-    // Recompiles the container when an area's Entity folder appears or goes: the services
-    // glob stops watching a folder once it excludes it.
-    $builder->addResource(new GlobResource($source, '/*/Entity', true));
-
+return static function (ContainerConfigurator $container): void {
     $container->extension('doctrine', [
         'dbal' => [
             'url' => '%env(' . TestDatabase::URL_VARIABLE . ')%',
@@ -42,7 +22,13 @@ return static function (ContainerConfigurator $container, ContainerBuilder $buil
         'orm' => [
             'entity_managers' => [
                 'default' => [
-                    'mappings' => $mappings,
+                    'mappings' => [
+                        'Fixtures' => [
+                            'type' => 'attribute',
+                            'dir' => '%kernel.project_dir%/src/Entity',
+                            'prefix' => 'Sylament\\Tests\\Fixtures\\Entity',
+                        ],
+                    ],
                     'metadata_cache_driver' => [
                         'type' => 'service',
                         'id' => 'sylament_tests.metadata_cache',

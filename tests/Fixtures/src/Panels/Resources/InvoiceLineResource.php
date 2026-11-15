@@ -9,9 +9,9 @@ use Sylament\Panels\Resources\Resource;
 use Sylament\Schemas\Schema;
 use Sylament\Tables\Columns\TextColumn;
 use Sylament\Tables\Table;
+use Sylament\Tests\Fixtures\Entity\InvoiceLine;
 use Sylament\Tests\Fixtures\Panels\Resources\Pages\EditInvoiceLine;
 use Sylament\Tests\Fixtures\Panels\Resources\Pages\ListInvoiceLines;
-use Sylament\Tests\Fixtures\Schemas\Entity\InvoiceLine;
 
 /**
  * Its scalar key field is an ordinary input, so a request can write the half of the

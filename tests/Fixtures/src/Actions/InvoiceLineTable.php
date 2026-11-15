@@ -12,7 +12,7 @@ use Sylament\Tables\Columns\TextColumn;
 use Sylament\Tables\Concerns\HasTable;
 use Sylament\Tables\Contracts\InteractsWithTable;
 use Sylament\Tables\Table;
-use Sylament\Tests\Fixtures\Schemas\Entity\InvoiceLine;
+use Sylament\Tests\Fixtures\Entity\InvoiceLine;
 use Symfony\UX\LiveComponent\Attribute\AsLiveComponent;
 use Symfony\UX\LiveComponent\DefaultActionTrait;
 

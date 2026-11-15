@@ -9,7 +9,7 @@ use Sylament\Panels\Resources\Resource;
 use Sylament\Schemas\Schema;
 use Sylament\Tables\Columns\TextColumn;
 use Sylament\Tables\Table;
-use Sylament\Tests\Fixtures\Panels\Entity\Article;
+use Sylament\Tests\Fixtures\Entity\Article;
 use Sylament\Tests\Fixtures\Panels\Resources\Pages\CreateArticle;
 use Sylament\Tests\Fixtures\Panels\Resources\Pages\EditArticle;
 use Sylament\Tests\Fixtures\Panels\Resources\Pages\ListArticles;

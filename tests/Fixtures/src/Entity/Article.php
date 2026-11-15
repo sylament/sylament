@@ -2,18 +2,21 @@
 
 declare(strict_types=1);
 
-namespace Sylament\Tests\Fixtures\Infrastructure\Entity;
+namespace Sylament\Tests\Fixtures\Entity;
 
 use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity]
-class Tally
+class Article
 {
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
     public int $id;
 
-    #[ORM\Column]
-    public int $count = 0;
+    public function __construct(
+        #[ORM\Column]
+        public string $title,
+    ) {
+    }
 }

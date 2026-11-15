@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 use Sylament\Schemas\Identity\IdentifierConstraint;
 use Sylament\Schemas\Identity\RecordKey;
-use Sylament\Tests\Fixtures\Schemas\Entity\Invoice;
-use Sylament\Tests\Fixtures\Schemas\Entity\InvoiceLine;
-use Sylament\Tests\Fixtures\Schemas\Entity\OrderLine;
+use Sylament\Tests\Fixtures\Entity\Invoice;
+use Sylament\Tests\Fixtures\Entity\InvoiceLine;
+use Sylament\Tests\Fixtures\Entity\OrderLine;
 
 it('finds a composite-keyed record by its key, and only that record', function (object $line, object $sameHead, object $sameLine): void {
     $em = $this->entityManager();

@@ -6,7 +6,7 @@ namespace Sylament\Tests\Fixtures\Infrastructure;
 
 use Doctrine\ORM\EntityManagerInterface;
 use LogicException;
-use Sylament\Tests\Fixtures\Infrastructure\Entity\Tally;
+use Sylament\Tests\Fixtures\Entity\Tally;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Attribute\AsController;
 

@@ -6,7 +6,7 @@ use Doctrine\DBAL\Platforms\AbstractMySQLPlatform;
 use Doctrine\DBAL\Platforms\PostgreSQLPlatform;
 use Doctrine\DBAL\Platforms\SQLitePlatform;
 use Doctrine\ORM\Repository\DefaultRepositoryFactory;
-use Sylament\Tests\Fixtures\Infrastructure\Entity\Tally;
+use Sylament\Tests\Fixtures\Entity\Tally;
 use Sylament\Tests\Infrastructure\Doctrine\TestDatabase;
 use Sylament\Tests\Infrastructure\Doctrine\TestPlatform;
 

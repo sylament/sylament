@@ -13,7 +13,7 @@ return static function (ContainerConfigurator $container): void {
         ->load('Sylament\\Tests\\Fixtures\\', '../src/')
             ->exclude([
                 '../src/Kernel.php',
-                '../src/*/Entity',
+                '../src/Entity',
                 '../src/*/Selectors.php',
             ]);
 

@@ -8,10 +8,11 @@ use Sylament\Support\Colors\ColorManager;
 use Sylament\Support\Colors\Contracts\HasColor;
 use Sylament\Support\Configuration\ComponentManager;
 use Sylament\Support\DependencyInjection\ComponentResolver;
+use Sylament\Tests\Infrastructure\PHPUnit\LegacyTestCase;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 
 pest()
-    ->extend(TestCase::class)
+    ->extend(LegacyTestCase::class)
     ->in('Integration');
 
 pest()

@@ -64,6 +64,8 @@ An exception is named with its reason, never by listing the members to keep: a l
 
 Once the bug is fixed, its name, issue number or commit means nothing to a reader of the test, while the behaviour it guarantees ("refuses a malformed key without running a statement") stays true and readable. The test lives in the mirrored file like any other test of that behaviour, with no regression folder and no comment linking the commit: git holds the history, and the trail's semantics entry holds the why. A fix starts with a case that fails without it, which proves the case pins the bug; when an existing case is one assertion short of that, extending it keeps the behaviour in one place.
 
+A fix that brings Sylament closer to Filament is a bug fix like any other when a user perceives the change, so it gets its case. When nothing observable here changes, it is the parity item of the list below, and it is logged `parity`, or `no harness` when only a browser would show the difference.
+
 ## Why does some code never get a test?
 
 Each item on the list is checkable against a diff:
@@ -74,14 +76,14 @@ Each item on the list is checkable against a diff:
 - **What PHPStan or PHP's types enforce**, such as return types and implemented interfaces, is already checked on every run at level max. A divergence whose only mechanism is a declared type, such as a toast's duration closure returning `null` where Filament falls back to persistent and Sylament's `int|string` getter raises a `TypeError`, is a different outcome a user can trigger, but PHP produces it, not Sylament: a case would pin the language's check, so this item outranks "a case per different outcome".
 - **Symfony, Doctrine, Twig, UX and Pest behaviour** is tested by those projects; a test here would pin their release, not ours.
 - **A trait's behaviour repeated per component** multiplies cases without adding risk, so its cases run once, through one real component that composes it; a stub class built for the test would pin a component nobody uses.
-- **A case added only because a mutant survived** pins the implementation rather than an outcome a user can observe.
 - **A Filament-parity detail no user relies on**, such as the affix-action cache not refilling after a late setter, is documented in the trail and left unpinned, so the implementation stays free to change.
 
 Setters that interact are the boundary case. `inlinePrefix()->prefix('kg')` leaves the prefix outside the border, because the last call on a side wins; that is logic rather than a stored value, so it gets a case, asserted through what renders rather than through `isPrefixInline()`.
 
-A trail row or entry left without a case says why in one word, so a reviewer checks the omission against one rule instead of weighing an argument. Each item above has its word (`getter`, `closure`, `default`, `PHPStan`, `framework`, `trait`, `mutant`, `parity`). Four more words name reasons that are not items, because they say why this suite cannot or need not pin a behaviour rather than that nobody should:
+A trail row or entry left without a case says why in one word, so a reviewer checks the omission against one rule instead of weighing an argument. The word goes in the commit body of the change that adds or changes the row: a reviewer reads it beside the diff, and git keeps it with the change. Each item above has its word (`getter`, `closure`, `default`, `PHPStan`, `framework`, `trait`, `parity`). Five more words name reasons that are not items, because they say why this suite cannot or need not pin a behaviour rather than that nobody should:
 
 - **`no harness`:** CSS and JavaScript behaviour, such as a transition or a controller's timer. The suite runs no browser, so it pins only the PHP half, such as the `data-` value a controller reads.
-- **`absence`:** a divergence that only says Sylament lacks something Filament has; there is nothing to observe.
+- **`absence`:** a divergence that only says Sylament lacks something Filament has; there is nothing to observe. It is also the word for a row one would call `none needed`, which names no rule to check.
 - **`elsewhere`:** another class's behaviour that this one only passes through, pinned in that class's file, its one home. The trait item is the narrower case of a trait's behaviour repeated per component; this word covers any class.
 - **`unreachable`:** a defensive throw that no path through the API reaches; a case could only reach it by forging a state no user can.
+- **`by use`:** a wiring row with no class or trait file of its own, such as a service registration or a guard's condition, which every case that runs through the wiring already exercises. It is kept to such rows: a row whose class or trait has a file gets its case there.

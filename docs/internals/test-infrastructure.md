@@ -51,7 +51,7 @@ Pest resolves a dataset while it collects the suite, before any test or `$this` 
 
 The datasets are keyed by short class name, so a test reads as "with dataset \"TextInput\"". Two components sharing a short name in one result throw rather than one silently replacing the other; `Sylament\Schemas\Components\Group` and `Sylament\Tables\Grouping\Group` already share one.
 
-`tests/Infrastructure/ComponentRegistryTest.php` pins the residue: after the list is read, no static instance is bound. Like `TestCaseTest`'s second case, that case means something only when the registry is cold in its process, which it is when the file runs alone: once any earlier read has memoised the list, the case reads nothing, and an earlier test's `tearDown()` has already unset every static instance.
+`tests/Infrastructure/ComponentRegistryTest.php` pins the residue: after the list is read, no static instance is bound. The case resets the registry's memo through reflection before it reads, because once any earlier read has memoised the list the case would read nothing, and an earlier test's `tearDown()` has already unset every static instance, so it would pass whatever the registry did. The same file pins `componentsUsing()` through a trait that `Select` composes by way of another trait and `TextInput` does not use.
 
 Symfony checks the kernel class and each compiler pass for changes by their signatures, not their method bodies, so an edit inside `Kernel::build()` or `ComponentListPass::process()` reaches a worker's cached container only after that worker's `cache/` under `var/tests/` is removed.
 

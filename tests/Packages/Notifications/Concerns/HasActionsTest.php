@@ -6,17 +6,18 @@ use Sylament\Actions\Action;
 use Sylament\Actions\ActionGroup;
 use Sylament\Notifications\Notification;
 use Sylament\Tests\Fixtures\Notifications\Selectors;
+use Sylament\Tests\Fixtures\Support\Selectors as SupportSelectors;
 
 it('renders its actions and groups as small links in the actions row, unless one chose its own look', function (): void {
-    $toast = $this->renderNotification(Notification::make()->title('Saved')->actions([
+    $toast = $this->renderViewComponent(Notification::make()->title('Saved')->actions([
         Action::make('view')->url('/articles/1'),
         ActionGroup::make([Action::make('share')->url('/articles/1/share')])->label('More'),
         Action::make('undo')->button(),
     ]));
 
     expect($toast)
-        ->toContainButtons(Selectors::ACTIONS . ' ' . Selectors::SMALL_LINK, ['View', 'More'])
-        ->toContainButtons(Selectors::ACTIONS . ' ' . Selectors::BUTTON, ['Undo']);
+        ->toContainButtons(Selectors::ACTIONS . ' ' . SupportSelectors::SMALL_LINK, ['View', 'More'])
+        ->toContainButtons(Selectors::ACTIONS . ' ' . SupportSelectors::BUTTON, ['Undo']);
 });
 
 it("teleports a group's dropdown out of the toast unless the group says otherwise, also once sent", function (): void {
@@ -33,7 +34,7 @@ it("teleports a group's dropdown out of the toast unless the group says otherwis
 });
 
 it("closes the toast from an action that closes, through the toast's own click handler", function (): void {
-    $toast = $this->renderNotification(Notification::make()->title('Saved')->actions([
+    $toast = $this->renderViewComponent(Notification::make()->title('Saved')->actions([
         Action::make('undo')->dispatch('undo')->close(),
     ]));
 

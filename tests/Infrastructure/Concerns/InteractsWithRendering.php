@@ -9,6 +9,7 @@ use Sylament\Actions\Testing\ExceptionRecorder;
 use Sylament\Schemas\Components\Component;
 use Sylament\Schemas\Concerns\HasSchemas;
 use Sylament\Schemas\Contracts\InteractsWithSchemas;
+use Sylament\Support\Components\ViewComponent;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Component\DomCrawler\Crawler;
 use Throwable;
@@ -34,13 +35,16 @@ trait InteractsWithRendering
         $schema = $host->makeSchema()->statePath('data')->components([$component]);
         $host->cacheSchema('schema', $schema);
 
-        $twig = static::getContainer()->get('twig');
+        return new Crawler((string) $schema->render($this->twig()));
+    }
 
-        if (!$twig instanceof Environment) {
-            throw new LogicException("The kernel's [twig] service is not a Twig environment.");
-        }
-
-        return new Crawler((string) $schema->render($twig));
+    /**
+     * Renders the component from the instance itself, as `render()` does outside a
+     * schema or a delivery hop.
+     */
+    protected function renderViewComponent(ViewComponent $component): Crawler
+    {
+        return new Crawler($component->render($this->twig()) ?? throw new LogicException(sprintf('[%s] has no template to render.', $component::class)));
     }
 
     /**
@@ -82,5 +86,16 @@ trait InteractsWithRendering
         }
 
         throw $throwable ?? new LogicException(sprintf('[GET %s] answered [%d] without an exception to rethrow.', $uri, $response->getStatusCode()));
+    }
+
+    private function twig(): Environment
+    {
+        $twig = static::getContainer()->get('twig');
+
+        if (!$twig instanceof Environment) {
+            throw new LogicException("The kernel's [twig] service is not a Twig environment.");
+        }
+
+        return $twig;
     }
 }

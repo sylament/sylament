@@ -4,10 +4,11 @@ declare(strict_types=1);
 
 use Sylament\Notifications\Notification;
 use Sylament\Tests\Fixtures\Notifications\Selectors;
+use Sylament\Tests\Fixtures\Support\Selectors as SupportSelectors;
 
 it('shows the icon of its status in the status colour', function (string $status, string $icon): void {
-    expect($this->renderNotification(Notification::make()->title('Check the feed')->{$status}()))
-        ->toContainElement(Selectors::ICON . Selectors::color($status), $icon);
+    expect($this->renderViewComponent(Notification::make()->title('Check the feed')->{$status}()))
+        ->toContainElement(Selectors::ICON . SupportSelectors::color($status), $icon);
 })->with([
     'danger' => ['danger', 'x-circle'],
     'info' => ['info', 'information-circle'],
@@ -16,5 +17,5 @@ it('shows the icon of its status in the status colour', function (string $status
 ]);
 
 it('shows no icon without a status', function (): void {
-    expect($this->renderNotification(Notification::make()->title('Check the feed')))->not->toContainElement(Selectors::ICON);
+    expect($this->renderViewComponent(Notification::make()->title('Check the feed')))->not->toContainElement(Selectors::ICON);
 });

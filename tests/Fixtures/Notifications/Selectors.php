@@ -8,8 +8,7 @@ namespace Sylament\Tests\Fixtures\Notifications;
  * The notifications area's render selectors. The stack is found by its role, a toast by
  * its Stimulus controller, its title by its heading and its close button by its name;
  * the body, the icon and the actions row have no role to name them, so each is named by
- * the `sy-` class the stylesheet lays it out by, as are the look and the size of an
- * action and the placement of the stack.
+ * the `sy-` class the stylesheet lays it out by, as is the placement of the stack.
  */
 final class Selectors
 {
@@ -37,25 +36,9 @@ final class Selectors
 
     public const string CLOSING_ACTION = '[data-sylament-action-close]';
 
-    public const string SMALL_LINK = '.sy-link.sy-size-sm';
-
-    public const string BUTTON = '.sy-btn';
-
-    public const string MEDIUM = '.sy-size-md';
-
     public const string TELEPORTED_DROPDOWN = '[data-sylament--support--dropdown-teleport-value="true"]';
 
     public const string KEPT_DROPDOWN = '[data-sylament--support--dropdown-teleport-value="false"]';
-
-    /**
-     * Gray paints an element carrying no colour class, so a gray toast is an uncoloured one.
-     */
-    public const string GRAY = ':not(.sy-color)';
-
-    public static function color(string $name): string
-    {
-        return ".sy-color-{$name}";
-    }
 
     public static function aligned(string $alignment): string
     {

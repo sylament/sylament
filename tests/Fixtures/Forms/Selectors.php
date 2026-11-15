@@ -24,18 +24,4 @@ final class Selectors
     public const string PREFIX_ACTIONS = '.sy-input-wrp-prefix button';
 
     public const string SUFFIX_ACTIONS = '.sy-input-wrp-suffix button';
-
-    /**
-     * Gray paints an element carrying no colour class, so a gray icon is an uncoloured one.
-     */
-    public const string GRAY = ':not(.sy-color)';
-
-    public const string SMALL_ICON_BUTTON = '.sy-icon-btn.sy-size-sm';
-
-    public const string LINK = '.sy-link';
-
-    public static function color(string $name): string
-    {
-        return ".sy-color-{$name}";
-    }
 }

@@ -10,6 +10,7 @@ use Sylament\Support\Enums\IconSize;
 use Sylament\Support\Icons\IconManager;
 use Sylament\Tests\Fixtures\Notifications\Selectors;
 use Sylament\Tests\Fixtures\Notifications\SizedIcon;
+use Sylament\Tests\Fixtures\Support\Selectors as SupportSelectors;
 
 it('delivers a sent toast with everything it was configured with', function (): void {
     $this->startSessionRequest();
@@ -31,7 +32,7 @@ it('delivers a sent toast with everything it was configured with', function (): 
     expect($stack)
         ->toContainElement(Selectors::TITLE, 'Publishing failed')
         ->toContainElement(Selectors::BODY, 'The feed is offline.')
-        ->toContainElement(Selectors::ICON . Selectors::color('info'), 'Bell')
+        ->toContainElement(Selectors::ICON . SupportSelectors::color('info'), 'Bell')
         ->toContainElement(Selectors::ACTIONS . ' a[href="/feeds/1"]', 'Retry')
         ->and($toast->attr('role'))->toBe('alert')
         ->and($toast->attr('style'))->toContain('--sy-color-500: ' . Color::Rose[500])
@@ -52,7 +53,7 @@ it('drops a flashed value it cannot type and delivers the rest of the toast', fu
     expect($stack)
         ->not->toContainElement(Selectors::TITLE)
         ->toContainElement(Selectors::BODY, 'All changes are live.')
-        ->toContainElement(Selectors::TOAST . Selectors::GRAY)
+        ->toContainElement(Selectors::TOAST . SupportSelectors::GRAY)
         ->toContainElement(Selectors::ACTIONS . ' a[href="/articles/1"]', 'View')
         ->and($stack->filter(Selectors::TOAST)->attr(Selectors::DURATION))->toBe('6000');
 });
@@ -61,7 +62,7 @@ it("draws a scalable icon at the icon size, and a sent toast's at the default si
     $this->startSessionRequest();
     $notification = Notification::make()->title('Saved')->icon(SizedIcon::Bell)->iconSize(IconSize::Large);
 
-    expect($this->renderNotification($notification))->toContainElement(Selectors::ICON, 'Bell, large');
+    expect($this->renderViewComponent($notification))->toContainElement(Selectors::ICON, 'Bell, large');
 
     $notification->send();
 
@@ -74,12 +75,12 @@ it('refuses to send from an instance the container did not build', function (): 
 });
 
 it('interrupts with a danger toast and leaves any other to the polite stack', function (): void {
-    expect($this->renderNotification(Notification::make()->title('Failed')->danger())->filter(Selectors::TOAST)->attr('role'))->toBe('alert')
-        ->and($this->renderNotification(Notification::make()->title('Saved')->success())->filter(Selectors::TOAST)->attr('role'))->toBeNull();
+    expect($this->renderViewComponent(Notification::make()->title('Failed')->danger())->filter(Selectors::TOAST)->attr('role'))->toBe('alert')
+        ->and($this->renderViewComponent(Notification::make()->title('Saved')->success())->filter(Selectors::TOAST)->attr('role'))->toBeNull();
 });
 
 it('strips unsafe markup and every attribute from the title and body', function (): void {
-    $toast = $this->renderNotification(Notification::make()
+    $toast = $this->renderViewComponent(Notification::make()
         ->title('Saved <b>fine</b><script>alert(1)</script>')
         ->body('<span class="badge" onclick="steal()">Live</span>'));
 
@@ -93,28 +94,28 @@ it('strips unsafe markup and every attribute from the title and body', function 
 it('shows its icon over the status icon, whatever the status alias names', function (): void {
     $this::getContainer()->get(IconManager::class)->register(['notification.success' => 'notifications:bell-lg']);
 
-    expect($this->renderNotification(Notification::make()->title('Saved')->success()->icon('notifications:bell')))
+    expect($this->renderViewComponent(Notification::make()->title('Saved')->success()->icon('notifications:bell')))
         ->toContainElement(Selectors::ICON, 'Bell');
 });
 
 it('paints its icon in the icon colour over the status colour, and gray without either', function (): void {
-    expect($this->renderNotification(Notification::make()->title('Saved')->success()->iconColor('info')))
-        ->toContainElement(Selectors::ICON . Selectors::color('info'))
-        ->and($this->renderNotification(Notification::make()->title('Saved')->icon('notifications:bell')))
-        ->toContainElement(Selectors::ICON . Selectors::GRAY);
+    expect($this->renderViewComponent(Notification::make()->title('Saved')->success()->iconColor('info')))
+        ->toContainElement(Selectors::ICON . SupportSelectors::color('info'))
+        ->and($this->renderViewComponent(Notification::make()->title('Saved')->icon('notifications:bell')))
+        ->toContainElement(Selectors::ICON . SupportSelectors::GRAY);
 });
 
 it('tints the toast in its colour, and leaves it gray without one', function (): void {
-    expect($this->renderNotification(Notification::make()->title('Saved')->color('primary')))
-        ->toContainElement(Selectors::TOAST . Selectors::color('primary'))
-        ->and($this->renderNotification(Notification::make()->title('Saved')))
-        ->toContainElement(Selectors::TOAST . Selectors::GRAY);
+    expect($this->renderViewComponent(Notification::make()->title('Saved')->color('primary')))
+        ->toContainElement(Selectors::TOAST . SupportSelectors::color('primary'))
+        ->and($this->renderViewComponent(Notification::make()->title('Saved')))
+        ->toContainElement(Selectors::TOAST . SupportSelectors::GRAY);
 });
 
 it('closes from a medium button named "Close notification" that shows the mini x-mark', function (): void {
-    $toast = $this->renderNotification(Notification::make()->title('Saved'));
+    $toast = $this->renderViewComponent(Notification::make()->title('Saved'));
 
     expect($toast)
-        ->toContainElement(Selectors::CLOSING_BUTTON . Selectors::MEDIUM)
+        ->toContainElement(Selectors::CLOSING_BUTTON . SupportSelectors::MEDIUM)
         ->toContainElement(Selectors::CLOSE_BUTTON . ' svg', 'x-mark-20-solid');
 });

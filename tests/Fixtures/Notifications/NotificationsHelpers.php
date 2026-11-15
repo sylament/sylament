@@ -6,31 +6,15 @@ namespace Sylament\Tests\Fixtures\Notifications;
 
 use LogicException;
 use Sylament\Actions\Testing\Testable;
-use Sylament\Notifications\Notification;
 use Symfony\Component\DomCrawler\Crawler;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Component\HttpFoundation\Session\Session;
 use Symfony\Component\HttpFoundation\Session\SessionInterface;
 use Symfony\Component\HttpFoundation\Session\Storage\MockArraySessionStorage;
-use Twig\Environment;
 
 trait NotificationsHelpers
 {
-    /**
-     * Renders the toast from the instance itself, as `render()` does outside the delivery hop.
-     */
-    protected function renderNotification(Notification $notification): Crawler
-    {
-        $twig = static::getContainer()->get('twig');
-
-        if (!$twig instanceof Environment) {
-            throw new LogicException("The kernel's [twig] service is not a Twig environment.");
-        }
-
-        return new Crawler($notification->render($twig) ?? throw new LogicException('The notification has no template to render.'));
-    }
-
     /**
      * Starts a request that carries the session, as a page's request does, so a test can
      * send a toast and render the stack in-process.

@@ -9,7 +9,7 @@ use Sylament\Tests\Fixtures\Notifications\Selectors;
 it('shows the icon an application registers for a toast alias', function (?string $status, string $alias, string $icon): void {
     $this::getContainer()->get(IconManager::class)->register([$alias => 'notifications:bell']);
 
-    expect($this->renderNotification(Notification::make()->title('Saved')->status($status)))->toContainElement($icon, 'Bell');
+    expect($this->renderViewComponent(Notification::make()->title('Saved')->status($status)))->toContainElement($icon, 'Bell');
 })->with([
     'the close button' => [null, 'notification.close-button', Selectors::CLOSE_BUTTON . ' svg'],
     'danger' => ['danger', 'notification.danger', Selectors::ICON],

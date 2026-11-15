@@ -6,6 +6,6 @@ use Sylament\Notifications\Notification;
 use Sylament\Tests\Fixtures\Notifications\Selectors;
 
 it('renders the body as the toast text', function (): void {
-    expect($this->renderNotification(Notification::make()->body('All changes are live.')))
+    expect($this->renderViewComponent(Notification::make()->body('All changes are live.')))
         ->toContainElement(Selectors::BODY, 'All changes are live.');
 });

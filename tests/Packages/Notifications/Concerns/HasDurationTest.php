@@ -6,7 +6,7 @@ use Sylament\Notifications\Notification;
 use Sylament\Tests\Fixtures\Notifications\Selectors;
 
 it('hands the toast controller its duration in milliseconds, six seconds unless set and 0 to stay', function (): void {
-    $duration = fn (Notification $notification): ?string => $this->renderNotification($notification)
+    $duration = fn (Notification $notification): ?string => $this->renderViewComponent($notification)
         ->filter(Selectors::TOAST)
         ->attr(Selectors::DURATION);
 

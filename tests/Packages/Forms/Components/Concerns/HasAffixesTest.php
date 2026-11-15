@@ -8,6 +8,7 @@ use Sylament\Forms\Components\Contracts\HasAffixes;
 use Sylament\Forms\Components\TextInput;
 use Sylament\Tests\Fixtures\Forms\Selectors;
 use Sylament\Tests\Fixtures\Schemas\CodeForm;
+use Sylament\Tests\Fixtures\Support\Selectors as SupportSelectors;
 use Sylament\Tests\Infrastructure\ComponentRegistry;
 
 it('renders prefix and suffix labels around the input', function (): void {
@@ -27,8 +28,8 @@ it('puts an inline prefix inside the border; the last call on a side wins', func
 
 it('renders an affix icon in gray unless a colour is set', function (): void {
     expect($this->renderSchemaComponent(TextInput::make('a')->prefixIcon('forms:envelope')->suffixIcon('forms:check')->suffixIconColor('success')))
-        ->toContainElement(Selectors::PREFIX_ICON . Selectors::GRAY)
-        ->toContainElement(Selectors::SUFFIX_ICON . Selectors::color('success'));
+        ->toContainElement(Selectors::PREFIX_ICON . SupportSelectors::GRAY)
+        ->toContainElement(Selectors::SUFFIX_ICON . SupportSelectors::color('success'));
 });
 
 it('renders affix actions in order; plural calls append and a closure may return several or none', function (): void {
@@ -41,8 +42,8 @@ it('renders affix actions in order; plural calls append and a closure may return
 
 it('renders an affix action as a small icon button unless the action says otherwise', function (): void {
     expect($this->renderSchemaComponent(TextInput::make('a')->suffixActions([Action::make('copy'), Action::make('open')->link()])))
-        ->toContainButtons(Selectors::SUFFIX_ACTIONS . Selectors::SMALL_ICON_BUTTON, ['Copy'])
-        ->toContainButtons(Selectors::SUFFIX_ACTIONS . Selectors::LINK, ['Open']);
+        ->toContainButtons(Selectors::SUFFIX_ACTIONS . SupportSelectors::SMALL_ICON_BUTTON, ['Copy'])
+        ->toContainButtons(Selectors::SUFFIX_ACTIONS . SupportSelectors::LINK, ['Open']);
 });
 
 it('runs an affix action when it is clicked', function (): void {

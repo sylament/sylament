@@ -13,7 +13,7 @@ description: Where a root-suite test lives, what kind it is and how it asserts a
 - **A case that crosses packages goes in the file of the class the user configures for it** (a table row's delete belongs to `DeleteAction`, so to actions' `DeleteActionTest.php`); there is no flows folder, because a flow has no class to be found from.
 - **Declare no namespace in a test file** outside `tests/Architecture/`; Pest names the class from its path.
 - **A scan of the repository's files lives in `tests/Architecture/`,** since no class leads to it, and exists only for a rule no tool checks, keeping one case that proves it can fail.
-- **Declare no function in a test file:** a worker loads only its share of files, so a scan's helper is a static method of a class under `tests/Architecture/` and a test's helper a `TestCase` method.
+- **Declare no function in a test file:** a worker loads only its share of files, so a scan's helper is a static method of a class under `tests/Architecture/` and a test's helper a `TestCase` method, or a static method when it needs no container.
 - **Define an expectation more than one test file uses once, in `tests/Expectations/`** (`toBeRecord()` in `Records.php`), never in a test file: Pest loads that folder in every process before any test, while a test file's `expect()->extend()` exists only in a worker that has loaded that file.
 
 ## Kinds of test
@@ -37,7 +37,7 @@ description: Where a root-suite test lives, what kind it is and how it asserts a
 - **Query the rendered HTML with DomCrawler and CSS selectors,** never by matching an HTML string, so the test survives markup changes around what it asserts.
 - **Assert what a user perceives,** in this order: text; a role or an accessible name (a button named "copy", `aria-invalid`, `input[type=email]`); a `data-` attribute or Stimulus controller when the behaviour is a JS hook; a semantic `sy-` class only when the class is the behaviour, since those classes are the stylesheet's contract.
 - **Tell icons apart by the fixture SVG's `<title>`,** in an area's icons and the shared `heroicons` alike, read as the icon's text, because a drawn shape names no icon.
-- **Define each selector once per area,** as a constant of `tests/Fixtures/<Area>/Selectors.php`, so a markup rename edits one line.
+- **A selector more than one test file uses is defined once, in the lowest area whose package owns the markup, and higher areas import it** (`Support\Selectors` for support's colour, size and button looks), as a constant of that area's `tests/Fixtures/<Area>/Selectors.php`, so a markup rename edits one line.
 - **Never assert document structure** (`div > span:nth-child(2)`), a whole HTML string or a snapshot: each breaks on every markup change, and a snapshot is rewritten without anyone reading it.
 
 Background: `docs/internals/testing.md`.

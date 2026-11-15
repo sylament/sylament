@@ -6,5 +6,5 @@ use Sylament\Notifications\Notification;
 use Sylament\Tests\Fixtures\Notifications\Selectors;
 
 it('renders the title as the toast heading', function (): void {
-    expect($this->renderNotification(Notification::make()->title('Saved')))->toContainElement(Selectors::TITLE, 'Saved');
+    expect($this->renderViewComponent(Notification::make()->title('Saved')))->toContainElement(Selectors::TITLE, 'Saved');
 });

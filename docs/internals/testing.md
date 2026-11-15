@@ -38,7 +38,7 @@ Matching an HTML string couples the test to whitespace, attribute order and ever
 
 The order of preference follows what a user perceives: the text first, then a role or an accessible name, then a `data-` attribute or a Stimulus controller when the behaviour is a JavaScript hook. A semantic `sy-` class is asserted only when the class is itself the behaviour, as `sy-inline` places a prefix inside the border, because those classes are already the stylesheet's contract.
 
-A selector is a constant, so a markup rename edits one line. It lives in the lowest area whose package owns the markup: the `sy-` looks support's components give every area (colour, size, button, icon button, link) are in `tests/Fixtures/Support/Selectors.php`, which a higher area imports under an alias (`Selectors as SupportSelectors`) beside its own, so two areas never define one `sy-` class string.
+A selector is a constant, so a markup rename edits one line. It lives in the lowest area whose package owns the markup: the `sy-` looks support's components give every area (colour, size, button, icon button, link) are in `tests/Fixtures/src/Support/Selectors.php`, which a higher area imports under an alias (`Selectors as SupportSelectors`) beside its own, so two areas never define one `sy-` class string.
 
 An icon is told apart by its fixture SVG's `<title>`. ux-icons copies the SVG file's markup into the page, so the title arrives as text the test can read, while the drawn paths name nothing a reader can check. The SVG's attributes are no substitute: CssSelector lower-cases an attribute name in an HTML document, while the HTML5 parser DomCrawler uses keeps an SVG attribute's case, so `svg[viewBox="0 0 20 20"]` matches nothing, and only `attr('viewBox')` reads it.
 

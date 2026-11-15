@@ -71,6 +71,7 @@
             "Sylament\\Support\\Tests\\": "packages/support/tests/",
             "Sylament\\Tables\\Tests\\": "packages/tables/tests/",
             "Sylament\\Tests\\": "tests/",
+            "Sylament\\Tests\\Fixtures\\": "tests/Fixtures/src/",
             "Sylament\\Widgets\\Tests\\": "packages/widgets/tests/"
         }
     },

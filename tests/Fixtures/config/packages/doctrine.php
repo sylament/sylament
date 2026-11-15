@@ -15,9 +15,9 @@ use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigura
 use function Symfony\Component\DependencyInjection\Loader\Configurator\service_closure;
 
 return static function (ContainerConfigurator $container, ContainerBuilder $builder): void {
-    $fixtures = dirname(__DIR__, 2);
-    $directories = glob($fixtures . '/*/Entity', GLOB_ONLYDIR)
-        ?: throw new RuntimeException(sprintf('No entity folder under %s.', $fixtures));
+    $source = dirname(__DIR__, 2) . '/src';
+    $directories = glob($source . '/*/Entity', GLOB_ONLYDIR)
+        ?: throw new RuntimeException(sprintf('No entity folder under %s.', $source));
     $mappings = [];
 
     foreach ($directories as $directory) {
@@ -31,7 +31,7 @@ return static function (ContainerConfigurator $container, ContainerBuilder $buil
 
     // Recompiles the container when an area's Entity folder appears or goes: the services
     // glob stops watching a folder once it excludes it.
-    $builder->addResource(new GlobResource($fixtures, '/*/Entity', true));
+    $builder->addResource(new GlobResource($source, '/*/Entity', true));
 
     $container->extension('doctrine', [
         'dbal' => [

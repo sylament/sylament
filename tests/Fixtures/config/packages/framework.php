@@ -12,10 +12,7 @@ return static function (ContainerConfigurator $container): void {
             'storage_factory_id' => 'session.storage.factory.mock_file',
         ],
         'asset_mapper' => [
-            'paths' => [
-                dirname(__DIR__, 2) . '/assets' => '',
-            ],
-            'importmap_path' => dirname(__DIR__, 2) . '/importmap.php',
+            'paths' => ['assets/'],
         ],
     ]);
 };

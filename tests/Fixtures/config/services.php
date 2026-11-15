@@ -10,16 +10,11 @@ return static function (ContainerConfigurator $container): void {
         ->defaults()
             ->autowire()
             ->autoconfigure()
-        ->load('Sylament\\Tests\\Fixtures\\', '../')
+        ->load('Sylament\\Tests\\Fixtures\\', '../src/')
             ->exclude([
-                '../Kernel.php',
-                '../config',
-                '../templates',
-                '../icons',
-                '../assets',
-                '../importmap.php',
-                '../*/Entity',
-                '../*/Selectors.php',
+                '../src/Kernel.php',
+                '../src/*/Entity',
+                '../src/*/Selectors.php',
             ]);
 
     $container->services()

@@ -60,6 +60,11 @@ class Kernel extends BaseKernel
         ];
     }
 
+    public function getProjectDir(): string
+    {
+        return dirname(__DIR__);
+    }
+
     /**
      * Keyed by platform too: the container registers SQLite's foreign-key middleware
      * only on SQLite, and nothing tells a compiled container the platform changed.
@@ -107,11 +112,6 @@ class Kernel extends BaseKernel
     {
         $container->setParameter('sylament_tests.worker_dir', WorkerDirectory::path());
         $container->addCompilerPass(new ComponentListPass());
-    }
-
-    private function getConfigDir(): string
-    {
-        return __DIR__ . '/config';
     }
 
     protected function configureRoutes(RoutingConfigurator $routes): void

@@ -7,7 +7,7 @@ use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigura
 return static function (ContainerConfigurator $container): void {
     $container->extension('twig', [
         'paths' => [
-            dirname(__DIR__, 2) . '/templates' => 'Fixtures',
+            '%kernel.project_dir%/templates' => 'Fixtures',
         ],
     ]);
 

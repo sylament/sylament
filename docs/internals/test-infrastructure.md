@@ -92,6 +92,15 @@ The client reboots the kernel between requests, Symfony's default, so each reque
 
 `tests/Infrastructure/Doctrine/TestDatabaseTest.php` pins the lifecycle: a seed survives two requests through a rebooting client, and the next test starts empty with an identifier of 1. Its second case means something only after the first, in the same process. Its third crosses the boundary inside one case, calling `testStarted()` as the subscriber does, because between two real tests the kernel's shutdown already closes the connection and would hide a `testStarted()` that closed nothing; `DatabasePoolTest` and `FailingWriteTest` cross it the same way.
 
+### Why not roll each test back instead?
+
+Symfony applications usually get a clean database per test, across kernel reboots, from `dama/doctrine-test-bundle`: it keeps one static connection per process, opens a transaction before each test and rolls it back afterwards, and turns the application's own transactions into savepoints. It would replace the per-test preparation above, though not the schema build, the per-worker database or the URL each process publishes, which it leaves to the suite. Two guarantees of the contract break under it:
+
+- **Fresh identity counters.** A rolled-back insert still consumes MySQL's `AUTO_INCREMENT` value and PostgreSQL's sequence value, so identifiers would restart at 1 on SQLite alone, and a test leaning on one would pass on SQLite and fail only at the server gates.
+- **DDL inside a test.** `FailingWrite` creates a table and a trigger while the test runs, and MySQL commits implicitly before such a statement, which ends the wrapping transaction and leaves the test's rows to the next test.
+
+It is also a third-party package from outside the circle the project builds on ([dependencies.md](dependencies.md#third-party-grants)), so the suite keeps its own preparation.
+
 ### Platform-pinned managers
 
 A premise that compares platforms, such as a shape check that only PostgreSQL's guid type makes necessary, needs a manager whose platform the test names rather than the run. `InteractsWithDatabase::platformEntityManager()` builds one over the world's mapping:

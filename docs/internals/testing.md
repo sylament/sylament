@@ -1,6 +1,6 @@
 # Testing
 
-The reasoning behind `.claude/rules/tests.md`, the rules for writing a test in the root suite under `tests/`, and `.claude/rules/test-scope.md`, how much a package test covers and what it leaves out. The rules say what to do; this file says why. How the suite's kernel, base class and writable paths work is in [test-infrastructure.md](test-infrastructure.md).
+The reasoning behind `.claude/rules/tests.md`, the rules for writing a test in the root suite under `tests/`, `.claude/rules/test-scope.md`, how much a package test covers and what it leaves out, and `.claude/rules/testing-api.md`, how the testing API in `packages/*/src/Testing` is ported. The rules say what to do; this file says why. How the suite's kernel, base class and writable paths work is in [test-infrastructure.md](test-infrastructure.md).
 
 ## Why does a test mirror `src/`?
 
@@ -50,6 +50,8 @@ The port trail already lists what a user can observe, row by row, so one case pe
 
 There is no size limit per feature. A small method with dense logic, such as `IdentifierConstraint`, rightly gets more test than code. A change whose tests outgrow its code is checked case by case against these rules and the list of what never gets a test.
 
+An assertion helper of the testing API is a test's own tool, so it gets one case that makes it fail, which proves it can: a helper that passed whatever it read would leave every test using it green. The case is for a helper with logic of its own, a matcher or a message built from what it read. An alias that only forwards, such as forms' `assertFormSet()` over schemas' `assertSchemaStateSet()`, fails with the other helper's message from the same code, so a failing case of its own would pin that code twice; the tests that use it cover the forwarding.
+
 As a worked example, `TextInput::email()` gets two cases: the `type="email"` render, and a submit that is rejected and then accepted. Filament's own suite has a third, reading the type back through a getter, which the list below excludes.
 
 ## Why is a list of components derived?
@@ -89,3 +91,13 @@ A trail row or entry left without a case says why in one word, so a reviewer che
 - **`elsewhere`:** another class's behaviour that this one only passes through, pinned in that class's file, its one home. The trait item is the narrower case of a trait's behaviour repeated per component; this word covers any class.
 - **`unreachable`:** a defensive throw that no path through the API reaches; a case could only reach it by forging a state no user can.
 - **`by use`:** a wiring row with no class or trait file of its own, such as a service registration or a guard's condition, which every case that runs through the wiring already exercises. It is kept to such rows: a row whose class or trait has a file gets its case there.
+
+## Why is the testing API ported only when a test needs it?
+
+Filament's testing helpers are many, and most assert features the port reaches later. A helper ported ahead of any test is public API nothing exercises, and the first test to use it often shows that its signature, the instance it reads or its failure message must change. Ported in the commit whose test first uses it, a helper is exercised from the start, and the rest keep their `todo` rows. Filament's upstream-deprecated aliases are `skipped`, and so is its Pest `helpers.php`, which reaches the running test globally where the tester's chained methods already cover it.
+
+A helper or arm that is ported but that no committed case exercises stays `in progress`, and its Details entry names the case that would close it, because `done` tells a reader that a test pins the row. A ported helper keeps Filament's visibility unless the trail records a reason to differ: an application's tests and a tester subclass, such as tables' `Testable`, reach it as Filament declares it, so `parseNestedActions()` stays `public`.
+
+`sylament/notifications` is a `suggest` of actions, so the tester's notification assertions guard on it, and the guard must run before the class is named. PHP resolves the class of a static call before it evaluates the call's arguments, so a guard inside the argument, as in `TestsNotifications::assertNotified($this->takeSentNotifications(), …)`, never runs without the package: the call fails with a class-not-found `Error` instead of the `LogicException` that names what to install. The tester takes the list into a variable first.
+
+The selector helpers that query a render stay in the suite, in each area's `Selectors.php`. They encode Sylament's markup, so shipping them would freeze that markup as public API, and Filament ships nothing like them. The public testing API asserts state, records and notifications; the one render it reads, in `assertCanSeeTableRecords()`, is the row ids the tables template gives every record.

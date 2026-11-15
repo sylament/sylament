@@ -12,6 +12,7 @@ description: How much a package test covers, how a bug is pinned, and what never
 3. **One deep case where the risk is:** a composite key, a platform difference, record identity.
 4. **One case per fixed bug,** unless an existing case already fails without the fix.
 5. **A dataset row only for a different class of input,** never more of the same.
+6. **One failing case per testing-API assertion helper with logic of its own;** an alias that only forwards to another helper is covered by use, since its failure message is that helper's.
 
 There is no size limit per feature: a change whose test lines exceed its `src/` and template lines is checked case by case against these rules and the list below.
 

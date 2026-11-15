@@ -81,6 +81,7 @@ Rules in `.claude/rules/` load after any tool call that touches a file their `pa
 | `php.md` | `packages/*/src/**/*.php` | How shipped PHP is written, from closure evaluation and typing to construction, static instances, trait placement, record identity, helpers and comments. |
 | `test-infrastructure.md` | `/tests/Fixtures/**`, `/tests/Infrastructure/**`, `/tests/TestCase.php`, `/tests/TestCaseTest.php`, `/tests/Pest.php`, `/phpunit.dist.xml` | How the root suite's kernel, configuration, fixture areas, writable paths, database and base class are laid out and kept parallel-safe. |
 | `test-scope.md` | `/tests/Packages/**` | How much a package test covers, how a bug is pinned, and what never gets a test. |
+| `testing-api.md` | `packages/*/src/Testing/**` | When a testing-API helper is ported, what visibility and status it keeps, how it guards a suggested package, and what stays out of it. |
 | `tests.md` | `/tests/**` | Where a root-suite test lives, what kind it is and how it asserts a render. |
 | `trail.md` | `/docs/progress/**` | How a port-trail file is shaped, where status lives, what each file owns, and how its prose and tables are written. |
 | `twig.md` | `packages/*/templates/**` | Template layout, component invocation, props and attribute rendering in the bundles' Twig templates. |

@@ -8,13 +8,6 @@ use Sylament\Tests\Fixtures\Forms\RedirectingForm;
 use Sylament\Tests\Fixtures\Schemas\CodeForm;
 use Symfony\Component\Validator\Constraints\Length;
 
-it('fails asserting a form state the host does not hold', function (): void {
-    $tester = $this->createLiveComponent(CodeForm::class)->fillForm(['code' => 'X1']);
-
-    expect(fn () => $tester->assertFormSet(['code' => null]))
-        ->toThrow(AssertionFailedError::class, 'Failed asserting that a component [code] has the expected state');
-});
-
 it('asserts an error a failed save left by its field, its constraint or its message, and fails on one it did not leave', function (array $left, array $notLeft, string $message): void {
     $tester = $this->createLiveComponent(CodeForm::class)
         ->fillForm(['code' => ''])

@@ -17,9 +17,9 @@ use function dirname;
  * test of any single class (hence it does not mirror src/).
  *
  * The rule: shipped source carries no `@phpstan-ignore` of any form. PHPStan runs at
- * level max with no baseline, and an inline ignore hides a real defect at the one place
- * a reader is least likely to question it — the three that existed were all masking the
- * same unguarded nullable, fixed by making it throw. When an error genuinely cannot be
+ * level max, and an inline ignore hides a real defect at the one place a reader is
+ * least likely to question it — the three that existed were all masking the same
+ * unguarded nullable, fixed by making it throw. When an error genuinely cannot be
  * fixed, it belongs in a baseline file, where it is counted and reviewable, never inline.
  */
 
@@ -27,9 +27,9 @@ it('suppresses no PHPStan error inline', function (string $file): void {
     $content = (string) file_get_contents(dirname(__DIR__, 2) . '/packages/' . $file);
 
     expect(str_contains($content, '@phpstan-ignore'))->toBeFalse(
-        "Remove the @phpstan-ignore from {$file}. PHPStan runs at level max with no baseline, so an "
-        . 'inline ignore hides a real defect where a reader is least likely to question it — fix the '
-        . 'cause instead (an unguarded nullable usually wants a throw). If an error genuinely cannot '
-        . 'be fixed, add a baseline file so it is counted and reviewable rather than buried in source.',
+        "Remove the @phpstan-ignore from {$file}. An inline ignore hides a real defect where a reader "
+        . 'is least likely to question it — fix the cause instead (an unguarded nullable usually wants a '
+        . 'throw). If an error genuinely cannot be fixed, put it in a baseline file, where it is counted '
+        . 'and reviewable rather than buried in source.',
     );
 })->with(ShippedSource::files());

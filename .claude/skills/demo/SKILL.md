@@ -24,10 +24,8 @@ Read `../demo/CLAUDE.md` first. It holds the layout, the card bases and template
 2. Never set component ids by hand to tell cards apart: `ShowcaseCard::getSchema()` prefixes them per card already.
 3. Add the card to `templates/pages/showcase/<package>.html.twig`.
 4. Update the page's closing "Not built yet" footnote, and any card `description()` that named the feature as unbuilt.
-5. Add or extend the test in `../demo/tests/Functional/Showcase/` (or `Admin/` for a panel page).
-6. Run `task test` in `../demo`, which is the demo's gate.
 
-The showcase demonstrates every user-facing feature, so a feature lands with its card, footnote and descriptions in the same change, and a stale one is a bug.
+The showcase demonstrates every user-facing feature: `CLAUDE.md`'s definition of done says when a card is due, and a stale card, footnote or description is a bug.
 
 ## 4. Verify in a browser
 

@@ -2,7 +2,7 @@
 
 The reasoning behind the test rules in `.claude/rules/test-infrastructure.md`, `.claude/rules/legacy-tests.md` and `.claude/rules/doctrine-tests.md`; the rules for writing a test, `.claude/rules/tests.md` and `.claude/rules/test-scope.md`, are explained in [testing.md](testing.md). The rules say what to do; this file says why, and how the machinery underneath works. The commands for running the suites on a server are in the `server-gates` skill.
 
-Two kinds of suite run side by side: the root suite under `tests/`, one kernel and one base class for every package, and the per-package suites under `packages/<pkg>/tests/`, each with its own kernel. The first sections describe the root suite; the rest describe the per-package suites and the Doctrine rig they share.
+Two kinds of suite run side by side: the root suite under `tests/`, one kernel and one base class for every package, and the per-package suites under `packages/<pkg>/tests/`, each with its own kernel. The first sections describe the root suite, the middle ones the Doctrine rig both kinds share, and the last, under [The per-package suites](#the-per-package-suites), what only those suites need.
 
 ## Why does the root suite have one kernel and one base class?
 
@@ -15,7 +15,7 @@ The per-package suites grew a fixture kernel each, and they disagree: different 
 - two local disks, `primary.storage` (public, with a `public_url`, so it can mint a URL) and `secondary.storage` (the no-URL and foreign-disk arms), and `primary.storage` as the default disk;
 - every bundle, Sylament's nine included, in every environment, so no test depends on a bundle being absent.
 
-`Sylament\Tests\TestCase` extends `KernelTestCase` and uses UX's `InteractsWithTwigComponents`, tables' `InteractsWithLiveComponents`, the shared `InteractsWithDatabase` and `InteractsWithRendering`, and the notifications area's `NotificationsHelpers`. `KernelTestCase::getContainer()` boots on demand and its teardown shuts down only a booted kernel; `tests/Pest.php` asks for the container in a `beforeEach` over `tests/Packages/`, so every package test starts on a booted kernel and a component it makes anywhere, in a helper's argument included, is container-built, and there is no separate base class for pure tests. A test outside `tests/Packages/` boots only by asking.
+`Sylament\Tests\TestCase` extends `KernelTestCase` and uses UX's `InteractsWithTwigComponents`, tables' `InteractsWithLiveComponents`, the shared `InteractsWithDatabase` and `InteractsWithRendering`, and the notifications area's `NotificationsHelpers`. `KernelTestCase::getContainer()` boots on demand and its teardown shuts down only a booted kernel; `tests/Pest.php` asks for the container in a `beforeEach` over `tests/Packages/`, so every package test starts on a booted kernel and a component it makes anywhere, in a helper's argument included, is container-built, and there is no separate base class for pure tests. A test outside `tests/Packages/` asks for the container itself.
 
 ## How is the kernel configured?
 
@@ -152,17 +152,9 @@ The housekeeping connections stay open for the life of the process, one per pool
 ## How is a database wiped?
 
 - **PostgreSQL:** one `TRUNCATE … RESTART IDENTITY CASCADE` over every table.
-- **MySQL:** truncating every table was too slow per wipe, so the pool asks which tables hold rows and `DELETE`s only those. It then resets `AUTO_INCREMENT` to 1 only on the tables whose counter moved. The per-table timings that motivated this were measured once and are not re-run here.
+- **MySQL:** truncating every table was too slow per wipe, so the pool asks which tables hold rows and `DELETE`s only those. It then resets `AUTO_INCREMENT` to 1 only on the tables whose counter moved.
 
 Both run under the bounded lock timeouts above, so a wipe that meets a lock left by a test fails loudly instead of hanging the run.
-
-## Why does a recorder never see a wipe, a schema build or a `PRAGMA`?
-
-- On a server, wipes and schema builds run on the housekeeping connection, which has no recorder.
-- On SQLite, `TestEntityManagers` builds the schema inside `withoutRecording()`.
-- SQLite's `PRAGMA foreign_keys=ON` comes from DBAL's `EnableForeignKeys` middleware. The middleware list is `[EnableForeignKeys, recorder]`, and DBAL wraps the driver in list order, so the recorder is the outer layer. The `PRAGMA` runs on the inner connection during connect, below the recorder.
-
-Keep that order if the list changes: putting the recorder first would record the `PRAGMA` on every SQLite connection.
 
 ## Why does SQLite enforce foreign keys?
 
@@ -178,7 +170,19 @@ A helper that computes the expected value for each platform tends to mirror the 
 
 A skipped test states its platform fact in the skip message, so the skip says why the premise cannot exist there rather than just that it was turned off.
 
-## Why are support's Twig components render-tested elsewhere?
+## The per-package suites
+
+What follows describes the suites under `packages/<pkg>/tests/`, each on its own kernel; the root suite's counterparts are in the sections above.
+
+### Why does a recorder never see a wipe, a schema build or a `PRAGMA`?
+
+- On a server, wipes and schema builds run on the housekeeping connection, which has no recorder.
+- On SQLite, `TestEntityManagers` builds the schema inside `withoutRecording()`.
+- SQLite's `PRAGMA foreign_keys=ON` comes from DBAL's `EnableForeignKeys` middleware. The middleware list is `[EnableForeignKeys, recorder]`, and DBAL wraps the driver in list order, so the recorder is the outer layer. The `PRAGMA` runs on the inner connection during connect, below the recorder.
+
+Keep that order if the list changes: putting the recorder first would record the `PRAGMA` on every SQLite connection.
+
+### Why are support's Twig components render-tested elsewhere?
 
 Support's fixture kernel registers FrameworkBundle, TwigBundle, UXIconsBundle and FlysystemBundle, but no TwigComponentBundle or StimulusBundle. So support's suite cannot render a `<twig:SylamentSupport:…>` tag. The five packages whose kernels do register TwigComponentBundle (`actions`, `forms`, `panels`, `schemas`, `tables`) render them through their own templates. This is deliberate, and `packages/forms/tests/Integration/Components/InputWrapperRenderTest.php` notes it. Revisit it only if support grows its own Twig-component test kernel.
 
@@ -192,33 +196,15 @@ for c in packages/support/templates/components/*/; do
 done
 ```
 
-A hit under a package's `templates/` means that package's suite renders the component. So does every suite that renders that package's templates in turn: `forms` renders schemas' `Tabs` partial, and `panels` renders tables' `Table` partial and forms' controls. A snapshot of the direct hits, taken when this file was written:
-
-| Component | Invoked from |
-|---|---|
-| Badge | actions, forms, panels, schemas, support, tables templates; actions tests |
-| Breadcrumbs | panels templates |
-| Button | actions, forms, panels, tables templates; actions tests |
-| Dropdown | actions, panels, schemas, tables templates; actions tests |
-| DropdownItem | actions, panels, schemas templates; actions tests |
-| Fieldset | schemas templates and tests |
-| Icon | forms, panels, support, tables templates; schemas and tables tests |
-| IconButton | actions, notifications, panels, support, tables templates; schemas tests |
-| InputWrapper | forms, panels, tables templates; forms tests |
-| Link | actions, tables templates; actions tests |
-| LoadingIndicator | schemas, tables templates |
-| Modal | actions, tables templates; actions tests |
-| Pagination | tables templates |
-| Section | schemas templates and tests; actions tests |
-| Tabs, TabsItem | panels, schemas templates |
+A hit under a package's `templates/` means that package's suite renders the component. So does every suite that renders that package's templates in turn: `forms` renders schemas' `Tabs` partial, and `panels` renders tables' `Table` partial and forms' controls.
 
 `InputWrapper` is the case to remember: forms' text-like controls and tables' `TextInputColumn` and `SelectColumn` cells both render it directly, so a change to it runs against both suites.
 
-## Why does a test that asserts a toast run as a live request?
+### Why does a test that asserts a toast run as a live request?
 
 A notification is a session flash: `Notification::send()` reads the session off the `RequestStack`, and an in-process call on a host object has no request carrying one, so `callMountedAction()` throws `SessionNotFoundException` before it can toast. A test that asserts a toast, or anything the toast's re-render paints, therefore drives the host through `InteractsWithLiveComponents` (`createLiveComponent()` and `call()`), as `packages/actions/tests/Integration/CreateActionTest.php` does. A case that only checks state stays in-process, which is cheaper. The live cases disable the kernel reboot between requests, because the fixture database lives in memory on a container service and a reboot would hand the next request a freshly migrated, empty one.
 
-## Which fixtures carry a composite identifier?
+### Which fixtures carry a composite identifier?
 
 Every package that keys a record exercises both composite flavours in a test: two scalar fields, and an association plus a scalar. `CompositePair` (two scalar fields) sits in schemas', forms' and tables' `tests/Fixtures/Doctrine/Entity/`, and `Membership` (an association plus a scalar) in actions'. A new by-key site is tested over both.
 

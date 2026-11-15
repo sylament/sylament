@@ -8,7 +8,8 @@ use LogicException;
 
 /**
  * The database the test suites run on, read from SYLAMENT_TEST_DATABASE_URL:
- * unset or empty means in-memory SQLite.
+ * unset or empty means SQLite, in memory for the per-package suites and a file
+ * per worker for the root suite.
  */
 enum TestPlatform
 {

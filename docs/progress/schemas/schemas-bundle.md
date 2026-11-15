@@ -113,7 +113,7 @@ The wiring is therefore invisible in the bundle — intentional, and the reason 
 ### Livewire-specific provider responsibilities are dropped, not ported
 
 The provider's `Testable::mixin(new TestsSchemas)` and its two `on('call', ...)` hooks are Livewire-runtime concerns.
-The Testable mixin is a deliberate non-goal (Sylament tests are Pest/`KernelTestCase`, not Livewire `Testable`).
+The `Testable` mixin is replaced by composition: `TestsSchemas` is a trait on actions' `Testable`, the testing API's tester, since Sylament tests are Pest/`KernelTestCase` and not Livewire `Testable`.
 The first hook aborts a browser call to `validate` / `validateOnly` on a schema host, because Livewire lets the client call any public method; UX Live calls only a `#[LiveAction]`, and [`HasSchemas`](has-schemas.md)' validation methods are not live actions, so there is nothing to fence.
 The second hook aborts unauthorized `_startUpload` / `_finishUpload` / `_uploadErrored` / `_removeUpload` calls; uploads reach a schema component through a single `#[LiveAction]`, [`uploadSchemaComponentFile()`](interacts-with-schemas.md#uploadschemacomponentfile-carries-the-bytes-beside-the-seam), which is gated on the `AcceptsUploadedFiles` contract and reads one named multipart part.
 There are no `_startUpload` / `_finishUpload` / `_uploadErrored` / `_removeUpload` endpoints to abort, so the hook — and `RestrictsFileUploadsToSchemaComponents`, the flag it reads — fence a surface that does not exist here.

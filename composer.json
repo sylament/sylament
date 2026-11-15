@@ -91,6 +91,12 @@
         "format:lint": "php-cs-fixer --diff fix",
         "format:twig": "twig-cs-fixer fix",
         "test": [
+            "@test:suites",
+            "@test:rector",
+            "@test:static",
+            "@test:twig"
+        ],
+        "test:suites": [
             "@test:actions",
             "@test:forms",
             "@test:infolists",
@@ -99,10 +105,7 @@
             "@test:support",
             "@test:tables",
             "@test:widgets",
-            "@test:pest",
-            "@test:rector",
-            "@test:static",
-            "@test:twig"
+            "@test:pest"
         ],
         "test:actions": "pest -c packages/actions/phpunit.dist.xml --test-directory=packages/actions/tests",
         "test:forms": "pest -c packages/forms/phpunit.dist.xml --test-directory=packages/forms/tests",
@@ -113,11 +116,11 @@
         "test:tables": "pest -c packages/tables/phpunit.dist.xml --test-directory=packages/tables/tests",
         "test:mysql": [
             "@putenv SYLAMENT_TEST_DATABASE_URL=mysql://root:sylament@127.0.0.1:33307/sylament_test?serverVersion=8.4.0&charset=utf8mb4",
-            "@test"
+            "@test:suites"
         ],
         "test:postgresql": [
             "@putenv SYLAMENT_TEST_DATABASE_URL=postgresql://postgres:sylament@127.0.0.1:55433/sylament_test?serverVersion=18&charset=utf8",
-            "@test"
+            "@test:suites"
         ],
         "test:widgets": "pest -c packages/widgets/phpunit.dist.xml --test-directory=packages/widgets/tests",
         "test:pest": [

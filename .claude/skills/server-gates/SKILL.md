@@ -21,16 +21,16 @@ composer test:mysql
 composer test:postgresql
 ```
 
-Each sets `SYLAMENT_TEST_DATABASE_URL` and runs the whole `composer test`, the root suite under `--parallel` included. Run them one after the other, never side by side (step 4).
+Each sets `SYLAMENT_TEST_DATABASE_URL` and runs `composer test:suites`, every per-bundle suite and the root suite under `--parallel`, and not Rector, PHPStan or Twig lint, which no database changes. Run them one after the other, never side by side (step 4).
 
-## 3. Run one package on one server
+## 3. Run one bundle or one package on one server
 
 ```sh
-SYLAMENT_TEST_DATABASE_URL='postgresql://postgres:sylament@127.0.0.1:55433/sylament_test?serverVersion=18&charset=utf8' composer test:<package>
-SYLAMENT_TEST_DATABASE_URL='mysql://root:sylament@127.0.0.1:33307/sylament_test?serverVersion=8.4.0&charset=utf8mb4' composer test:<package>
+SYLAMENT_TEST_DATABASE_URL='postgresql://postgres:sylament@127.0.0.1:55433/sylament_test?serverVersion=18&charset=utf8' composer test:<bundle>
+SYLAMENT_TEST_DATABASE_URL='mysql://root:sylament@127.0.0.1:33307/sylament_test?serverVersion=8.4.0&charset=utf8mb4' composer test:<bundle>
 ```
 
-With the variable unset or empty, a suite runs on SQLite. The URL must name a database (`…/sylament_test`): the pool derives its own databases from that name. The root suite takes a path the same way: `SYLAMENT_TEST_DATABASE_URL='<url>' vendor/bin/pest --parallel tests/<Area>`.
+With the variable unset or empty, a suite runs on SQLite. A migrated package has no `composer test:<bundle>`: its tests are in the root suite. The URL must name a database (`…/sylament_test`): the pool derives its own databases from that name. The root suite takes a path the same way: `SYLAMENT_TEST_DATABASE_URL='<url>' vendor/bin/pest --parallel tests/Packages/<Pkg>`.
 
 ## 4. Keep server runs serial
 

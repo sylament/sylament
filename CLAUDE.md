@@ -46,7 +46,8 @@ Two principles outrank every rule below; their tests and worked cases are in `do
 | the root suite, one package of it, one file of it | `composer test:pest`, `vendor/bin/pest tests/Packages/<Pkg>`, `vendor/bin/pest tests/Packages/<Pkg>/<path>Test.php` |
 | one bundle | `composer test:<bundle>` |
 | one file of a bundle's suite | `vendor/bin/pest -c packages/<pkg>/phpunit.dist.xml --test-directory=packages/<pkg>/tests <file>` |
-| MySQL, PostgreSQL | `composer test:mysql`, `composer test:postgresql` (skill: `server-gates`) |
+| the per-bundle suites and the root suite, no tools | `composer test:suites` |
+| MySQL, PostgreSQL: `composer test:suites` on a server | `composer test:mysql`, `composer test:postgresql` (skill: `server-gates`) |
 | one tool | `composer test:static` (PHPStan), `test:lint` (PHP-CS-Fixer), `test:rector`, `test:twig` |
 | apply Rector, PHP-CS-Fixer and Twig-CS-Fixer | `composer format` |
 | regenerate the port-trail indexes | `composer docs:index` |

@@ -3,6 +3,9 @@
          xsi:noNamespaceSchemaLocation="vendor/phpunit/phpunit/phpunit.xsd"
          bootstrap="vendor/autoload.php"
          colors="true"
+         failOnDeprecation="true"
+         failOnNotice="true"
+         failOnWarning="true"
 >
     <php>
         <env name="KERNEL_CLASS" value="Sylament\Tests\Fixtures\Kernel"/>
@@ -19,7 +22,7 @@
         <bootstrap class="Sylament\Tests\Infrastructure\PHPUnit\TestDatabaseExtension"/>
     </extensions>
 
-    <source>
+    <source ignoreIndirectDeprecations="true">
         <include>
             <directory>packages/actions/src</directory>
             <directory>packages/forms/src</directory>

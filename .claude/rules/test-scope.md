@@ -9,7 +9,7 @@ description: How much a package test covers, how a bug is pinned, and what never
 
 1. **One case per trail row a user can observe** (`done` rows and the shipped part of `in progress` rows); its semantics and divergence entries become assertions in that case, or an extra case only when they describe a different outcome a user can trigger.
 2. **One case per branch a user can trigger:** a different input leading to a different visible outcome; code branches do not count.
-3. **One deep case where the risk is:** a composite key, a platform difference, record identity.
+3. **One deep case where the risk is:** a composite key over both flavours (scalar fields; an association plus a scalar), a platform difference, record identity; a composite case runs as a two-row dataset over schemas' `OrderLine` and `InvoiceLine`, since a by-key site can handle one flavour and miss the other.
 4. **One case per fixed bug,** unless an existing case already fails without the fix.
 5. **A dataset row only for a different class of input,** never more of the same.
 6. **One failing case per testing-API assertion helper with logic of its own;** an alias that only forwards to another helper is covered by use, since its failure message is that helper's.
@@ -21,7 +21,7 @@ There is no size limit per feature: a change whose test lines exceed its `src/` 
 - **Name it after the behaviour it guarantees** (`'refuses a malformed key without running a statement'`), never the bug, an issue or a commit, because the name must still mean something once the bug is gone.
 - **Put it in the mirrored file** like any test of that behaviour: no regression folder and no comment linking the commit; the trail's semantics entry holds the why.
 - **Start a fix with a case that fails without it;** if an existing case is one assertion short, extend it instead.
-- **Pin a parity fix that changes what a user perceives** like any bug; log one that changes nothing observable here `parity`, or `no harness` when only a browser would show it, because item 7 below then holds.
+- **Pin a parity fix that changes what a user perceives** like any bug; log one that changes nothing observable here `parity` (item 7 below), or `no harness` when only a browser would show it.
 
 ## What never gets a test
 

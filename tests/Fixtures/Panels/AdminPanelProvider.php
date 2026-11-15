@@ -8,6 +8,7 @@ use Sylament\Panels\Panel;
 use Sylament\Panels\PanelProvider;
 use Sylament\Tests\Fixtures\Panels\Resources\ArticleResource;
 use Sylament\Tests\Fixtures\Panels\Resources\HookedArticleResource;
+use Sylament\Tests\Fixtures\Panels\Resources\InvoiceLineResource;
 use Sylament\Tests\Fixtures\Panels\Resources\OrderLineResource;
 
 /**
@@ -21,6 +22,6 @@ final class AdminPanelProvider extends PanelProvider
             ->id('admin')
             ->path('admin')
             ->default()
-            ->resources([ArticleResource::class, HookedArticleResource::class, OrderLineResource::class]);
+            ->resources([ArticleResource::class, HookedArticleResource::class, OrderLineResource::class, InvoiceLineResource::class]);
     }
 }

@@ -14,7 +14,7 @@ description: How component stylesheets are written, scoped and coloured, and wha
 - **Read colours through the `--sy-*` tokens,** and in plain CSS write `var(--sy-gray-950)`, never `var(--color-gray-950)`: `--sy-*` is the runtime palette, while `--color-*` is only Tailwind's `@theme inline` alias of it, emitted wherever something happens to reference it.
 - **Never hardcode a shade a contrast policy picks;** read its slot variable (`text-(--sy-text)`), since palettes do not share a lightness curve and one fixed shade fails contrast on some.
 - **Hardcode a shade only where the element's policy returns `[]`** (icons do); an empty policy means the stylesheet picks the shade.
-- **Read only a slot the element's policy sets;** an unset slot paints its default in silence, which `PolicyShadeGridTest` and `ToggleColorSlotsTest` catch by scanning these files.
+- **Read only a slot the element's policy sets;** an unset slot paints its default in silence, which `ColorPolicyStylesheetTest` catches by scanning these files.
 - **Write dark styles with the `dark:` variant, never a `prefers-color-scheme` query;** the variant is class-based (`@variant dark (&:where(.dark, .dark *))`) because the page, or a panel's theme switcher, decides by putting `.dark` on `<html>`, and `base.css`'s `:root.dark { color-scheme: dark }` is the one rule that follows that class outside a component.
 - **Never ship preflight page-wide;** `scope-preflight.mjs` regenerates it scoped to `.sy` markup, so a host page is never reset.
 - **Keep `fonts.css` a sibling of support's `index.css`;** its relative `url('./fonts/…')` resolves only because source and built output sit at the same depth.

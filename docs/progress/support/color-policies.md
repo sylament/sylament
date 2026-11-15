@@ -141,8 +141,8 @@ Off the ends, and from 50 upward, it produces a shade number no `sy-text-color-<
 Sylament replaces the arithmetic with `darkerShade()` / `lighterShade()`, which walk the palette's own sorted keys to the next one and return the input shade unchanged when it is already at the end.
 On the eleven-step grid this agrees with Filament everywhere except at the 50/100 boundary and at the two ends, which is precisely where Filament is broken.
 
-[`PolicyShadeGridTest`](../../../packages/support/tests/Unit/Colors/Components/PolicyShadeGridTest.php) checks the guarantee directly: it drives every slot-resolving policy with adversarial palettes (uniformly dark, pale but for the darkest shade, dark but for the lightest, and each shipped palette) and asserts that every class emitted has a matching rule in `utilities.css`.
-A second case pins the emitted classes against the slot variables each component's stylesheet reads, which catches a policy resolving a slot nothing paints with.
+The colour-policy scan checks the guarantee directly: it drives every registered policy with adversarial palettes (uniformly dark, pale but for the darkest shade, dark but for the lightest, and each shipped palette) and asserts that every class emitted has a matching rule in `utilities.css`.
+It also pins the emitted classes against the slot variables each component's stylesheet reads, which catches a policy resolving a slot nothing paints with.
 
 ### A policy is a public container service, resolved by class-string
 

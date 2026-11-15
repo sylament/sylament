@@ -52,7 +52,7 @@ final class PaletteCopies
      */
     public static function cssFloor(): array
     {
-        $css = self::stylesheet('index.css');
+        $css = self::stylesheet('support', 'index.css');
 
         if (preg_match('/@layer theme\s*\{\s*:root\s*\{(?<declarations>.*?)\}\s*\}/s', $css, $block) !== 1) {
             throw new UnexpectedValueException('No `@layer theme { :root { … } }` block in index.css — the palette floor has moved or gone.');
@@ -79,7 +79,7 @@ final class PaletteCopies
      */
     public static function themeBridge(): array
     {
-        $css = self::stylesheet('index.css');
+        $css = self::stylesheet('support', 'index.css');
 
         if (preg_match('/@theme inline\s*\{(?<declarations>[^}]*)\}/', $css, $block) !== 1) {
             throw new UnexpectedValueException('No `@theme inline { … }` block in index.css — the Tailwind colour bridge has moved or gone.');
@@ -108,7 +108,7 @@ final class PaletteCopies
     {
         preg_match_all(
             '/^\.sy-color-(?<palette>[a-z]+)\s*\{(?<declarations>[^}]*)\}/m',
-            self::stylesheet('utilities.css'),
+            self::stylesheet('support', 'utilities.css'),
             $rules,
             PREG_SET_ORDER,
         );
@@ -165,9 +165,12 @@ final class PaletteCopies
         return $palettes;
     }
 
-    private static function stylesheet(string $name): string
+    /**
+     * @param string $name the path under the package's `assets/src/styles/`
+     */
+    public static function stylesheet(string $package, string $name): string
     {
-        $path = dirname(__DIR__, 3) . "/packages/support/assets/src/styles/{$name}";
+        $path = self::stylesheetPath($package, $name);
 
         $css = file_get_contents($path);
 
@@ -176,5 +179,10 @@ final class PaletteCopies
         }
 
         return $css;
+    }
+
+    public static function stylesheetPath(string $package, string $name): string
+    {
+        return dirname(__DIR__, 3) . "/packages/{$package}/assets/src/styles/{$name}";
     }
 }

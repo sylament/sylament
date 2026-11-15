@@ -105,7 +105,7 @@ The two policies the partial names disagree about `gray` on purpose, and the asy
 [`ItemComponent`](../../../packages/tables/src/Colors/Components/TextColumnComponent/ItemComponent.php) implements `HasColor` **only**, so `->color('gray')` emits the full class set, `sy-color`, `sy-color-gray` and the resolved shade classes, and [`text-column.css`](../../../packages/tables/assets/src/styles/components/text-column.css)'s `.sy-color-gray` branch, declared after the `.sy-color` one and matching at the same specificity, paints the item `gray-500` / `dark:gray-400`.
 Gray is therefore a *visible* choice on a cell, distinct from leaving the colour unset, which leaves the base `gray-950` / `dark:white`.
 [`IconComponent`](../../../packages/tables/src/Colors/Components/TextColumnComponent/ItemComponent/IconComponent.php) does implement `HasDefaultGrayColor`, so `->iconColor('gray')` emits nothing at all and the icon's own base grey stands.
-Adding the contract to `ItemComponent`, the obvious symmetry and what schemas' [`TextComponent`](../schemas/text.md) does, would make `->color('gray')` a silent no-op and leave the `.sy-color-gray` rule dead; [`PolicyShadeGridTest`](../../../packages/tables/tests/Unit/Colors/Components/PolicyShadeGridTest.php) pins the asymmetry in both directions.
+Adding the contract to `ItemComponent`, the obvious symmetry and what schemas' [`TextComponent`](../schemas/text.md) does, would make `->color('gray')` a silent no-op and leave the `.sy-color-gray` rule dead, so the asymmetry is pinned in both directions.
 
 The icon's shade comes from the stylesheet rather than from its policy, which is what an empty `getColorMap()` [means](../support/color-policies.md#an-empty-map-is-a-real-answer-not-a-missing-one): the two carrier classes swap the palette and `text-column.css` reads `text-color-500` off it.
 Writing the icon rule the way the item's is written, `text-(--sy-text)`, would compile, ship, and paint nothing, because no class an empty map emits ever sets that variable.
@@ -113,7 +113,7 @@ Writing the icon rule the way the item's is written, `text-(--sy-text)`, would c
 Those stylesheet shades are Filament's own, copied from its `columns/text.css` and `badge.css`: `text-color-500` on an `iconColor()`-coloured item icon, `text-gray-400 dark:text-gray-500` on an uncoloured one, and the same gray pair on a gray badge's icon.
 Against the surface each sits on, the table chrome's `bg-white dark:bg-gray-900` on `.sy-ta-ctn` for the item icons and the gray badge's own `bg-gray-50` for its icon, five pairings fall under the 3.0:1 a non-text element owes, all in light mode: the coloured item icon on `primary`, `success` and `warning`, the uncoloured item icon, and the gray badge icon.
 They stay as Filament ships them, because raising them is a sweep of both packages' stylesheets rather than anything this column's surface can reach, and no policy ever touches them.
-`PolicyShadeGridTest` pins the failing list exactly, over every shipped palette, so it goes red when a shade is raised and when a palette lands that fails a pairing the others pass.
+The failing list is pinned exactly, over every shipped palette, so it goes red when a shade is raised and when a palette lands that fails a pairing the others pass.
 A consumer palette is outside that net: a theme that moves `primary` or `warning` changes which pairings fail.
 
 ### A `description()` position is compared, never evaluated
@@ -326,7 +326,7 @@ A margin is what the rest of the toolkit means by this.
 `Button`, `Link` and `Badge` each space their icon from their label with `gap-1.5` on a flex or grid container, and `.sy-ta-text-item` is the one place that cannot: the unconditional `line-clamp-(--sy-line-clamp,none)` that makes [`lineClamp()`](../../../packages/support/src/Components/Concerns/HasLineClamp.php) work sets this element's `display` itself, `-webkit-box` with no clamp value and `flow-root` once one lands, so there is never a flex box here to hang a gap on, and taking one by force would break the clamp.
 The partial stamps the icon `sy-ta-text-icon-before` or `sy-ta-text-icon-after` from the position it already computes, and `text-column.css` gives each the matching `me-1.5` / `ms-1.5`, the same 6px those container gaps produce, which survives both `display` values.
 
-Both halves are pinned because either one failing alone is silent: the Integration case asserts the partial stamps exactly one position class per position, and [`PolicyShadeGridTest`](../../../packages/tables/tests/Unit/Colors/Components/PolicyShadeGridTest.php) asserts `text-column.css` defines a rule for both.
+Both halves are pinned because either one failing alone is silent: the Integration case asserts the partial stamps exactly one position class per position, and a stylesheet check asserts `text-column.css` defines a rule for both.
 A class with no rule, or a rule no class reaches, renders the icon flush against its value with nothing in the console.
 
 ### The item policy measures the dark surface against `gray-900`
@@ -336,7 +336,7 @@ The surface argument is a claim about what is actually behind the text, and the 
 Copying the literal would silently understate the contrast ratio of every dark cell.
 
 The same reasoning is why the surfaces are not schemas' [`TextComponent`](../schemas/text.md)'s either: that one sits on a different container and measures `$gray[50]` / `$gray[700]`.
-Revisit if the table chrome's background changes, and re-run [`PolicyShadeGridTest`](../../../packages/tables/tests/Unit/Colors/Components/PolicyShadeGridTest.php) when it does.
+Revisit if the table chrome's background changes.
 
 ### `getFormattedState()` replaces the embedded view's local preamble
 

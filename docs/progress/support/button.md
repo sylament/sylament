@@ -90,7 +90,7 @@ Filament applies `bg-white … dark:bg-white/5` to every non-outlined button and
 This stylesheet merges those two into one `&:not(.sy-color)` branch, so it adds `label&` to that branch's selector list and qualifies the colour rule `:not(label)`, Filament's own qualifier, on the flattened rule instead of inside its nested `&.fi-color` node.
 The computed result matches: a label gets the plain treatment until its input is checked, and a non-label button, which every other `.sy-btn` in the toolkit is, is untouched.
 
-[`PolicyShadeGridTest`](../../../packages/support/tests/Unit/Colors/Components/PolicyShadeGridTest.php) locates each policy's coloured rule by its selector text, and `&.sy-color` introduces two rules here, the outlined arm and the checked label arm, so it takes a nested selector path rather than one selector, resolving each step inside the block the step before it opened.
+The colour-policy scan locates each policy's coloured rules by their selector, nesting parents included, and this one stylesheet holds two policies' rules: `&.sy-color` introduces both the outlined arm and the checked label arm, so the outlined policy's rules are the coloured ones under `.sy-outlined` and the filled policy's every other coloured rule.
 
 ### The outlined variant is selected by a prop, and by a second policy class
 

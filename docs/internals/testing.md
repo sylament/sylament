@@ -1,6 +1,6 @@
 # Testing
 
-The reasoning behind `.claude/rules/tests.md`, the rules for writing a test in the root suite under `tests/`. The rules say what to do; this file says why. How the suite's kernel, base class and writable paths work is in [test-infrastructure.md](test-infrastructure.md).
+The reasoning behind `.claude/rules/tests.md`, the rules for writing a test in the root suite under `tests/`, and `.claude/rules/test-scope.md`, how much a package test covers and what it leaves out. The rules say what to do; this file says why. How the suite's kernel, base class and writable paths work is in [test-infrastructure.md](test-infrastructure.md).
 
 ## Why does a test mirror `src/`?
 

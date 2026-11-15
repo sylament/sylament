@@ -1,6 +1,6 @@
 # Test infrastructure
 
-The reasoning behind the test rules in `.claude/rules/test-infrastructure.md`, `.claude/rules/legacy-tests.md` and `.claude/rules/doctrine-tests.md`; the rules for writing a test, `.claude/rules/tests.md`, are explained in [testing.md](testing.md). The rules say what to do; this file says why, and how the machinery underneath works. The commands for running the suites on a server are in the `server-gates` skill.
+The reasoning behind the test rules in `.claude/rules/test-infrastructure.md`, `.claude/rules/legacy-tests.md` and `.claude/rules/doctrine-tests.md`; the rules for writing a test, `.claude/rules/tests.md` and `.claude/rules/test-scope.md`, are explained in [testing.md](testing.md). The rules say what to do; this file says why, and how the machinery underneath works. The commands for running the suites on a server are in the `server-gates` skill.
 
 Two kinds of suite run side by side: the root suite under `tests/`, one kernel and one base class for every package, and the per-package suites under `packages/<pkg>/tests/`, each with its own kernel. The first sections describe the root suite; the rest describe the per-package suites and the Doctrine rig they share.
 

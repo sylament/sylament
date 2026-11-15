@@ -23,18 +23,15 @@ The registry that holds palettes is [`color-manager.md`](color-manager.md); the 
 | [`generatePalette()`](../../../packages/support/src/Colors/Color.php) | [`generatePalette()`](../../../vendor/filament/support/src/Colors/Color.php) | done | — | — |
 | [`isLight()`](../../../packages/support/src/Colors/Color.php) | [`isLight()`](../../../vendor/filament/support/src/Colors/Color.php) | done | — | — |
 | [`all()`](../../../packages/support/src/Colors/Color.php) | [`all()`](../../../vendor/filament/support/src/Colors/Color.php) | done | — | — |
-| [`convertToHex()`, `hex()`, `rgb()`, `is*ContrastRatioAccessible()`](../../../packages/support/src/Colors/Color.php) | [same names](../../../vendor/filament/support/src/Colors/Color.php) | in progress | — | [detail](#five-public-helpers-are-ported-with-no-caller-and-no-test) |
+| [`convertToHex()`, `hex()`, `rgb()`, `is*ContrastRatioAccessible()`](../../../packages/support/src/Colors/Color.php) | [same names](../../../vendor/filament/support/src/Colors/Color.php) | done | — | [semantics](#five-public-helpers-are-kept-for-migrating-callers-with-no-caller-in-the-port) |
 | `generateV3Palette()` | [`generateV3Palette()`](../../../vendor/filament/support/src/Colors/Color.php) | skipped | — | [diverges](#generatev3palette-is-not-ported) |
 
-## Details
-
-### Five public helpers are ported with no caller and no test
-
-`convertToHex()`, the `hex()` / `rgb()` aliases of `generatePalette()`, and the two `is*ContrastRatioAccessible()` predicates carry over verbatim so a migrating user's call still resolves, but nothing in the port calls them and no test exercises them.
-Filament's own callers are few: `hex()` / `rgb()` serve userland palette registration, which here a colour string in the `sylament.colors` node covers by going through `generatePalette()` in [`ColorManager::getColors()`](../../../packages/support/src/Colors/ColorManager.php); `convertToHex()` is called only by panels' `UiAvatarsProvider`, which the port does not ship; and the two predicates have no caller in Filament.
-The row needs a test case per helper and no code change.
-
 ## Semantics
+
+### Five public helpers are kept for migrating callers, with no caller in the port
+
+`convertToHex()`, the `hex()` / `rgb()` aliases of `generatePalette()`, and the two `is*ContrastRatioAccessible()` predicates carry over verbatim so a migrating user's call still resolves, but nothing in the port calls them.
+Filament's own callers are few: `hex()` / `rgb()` serve userland palette registration, which here a colour string in the `sylament.colors` node covers by going through `generatePalette()` in [`ColorManager::getColors()`](../../../packages/support/src/Colors/ColorManager.php); `convertToHex()` is called only by panels' `UiAvatarsProvider`, which the port does not ship; and the two predicates have no caller in Filament.
 
 ### The contrast maths approximates WCAG's formula rather than implementing it
 

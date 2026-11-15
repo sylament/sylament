@@ -5,14 +5,12 @@ declare(strict_types=1);
 namespace Sylament\Tests\Infrastructure\Concerns;
 
 use LogicException;
-use Sylament\Actions\Testing\ExceptionRecorder;
 use Sylament\Schemas\Components\Component;
 use Sylament\Schemas\Concerns\HasSchemas;
 use Sylament\Schemas\Contracts\InteractsWithSchemas;
 use Sylament\Support\Components\ViewComponent;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Component\DomCrawler\Crawler;
-use Throwable;
 use Twig\Environment;
 
 trait InteractsWithRendering
@@ -49,9 +47,9 @@ trait InteractsWithRendering
 
     /**
      * Requests the page as a browser opens it, a GET through its route, and answers its
-     * markup. Any response but a success rethrows the exception the request threw, which
-     * the actions bundle's test-mode recorder kept, never an error page; a redirect is
-     * not followed, and its `Location` is named instead.
+     * markup. The kernel catches no exception, so one the request throws reaches the
+     * test, never an error page; a redirect is not followed, and its `Location` is named
+     * instead.
      */
     protected function visit(string $uri): Crawler
     {
@@ -61,31 +59,19 @@ trait InteractsWithRendering
             throw new LogicException('The kernel has no [test.client]: turn framework.test on.');
         }
 
+        $client->catchExceptions(false);
         $crawler = $client->request('GET', $uri);
-        $container = $client->getContainer();
-
-        if (!$container->has(ExceptionRecorder::class)) {
-            throw new LogicException(sprintf('The kernel has no [%s]: SylamentActionsBundle registers it when framework.test is on.', ExceptionRecorder::class));
-        }
-
-        $recorder = $container->get(ExceptionRecorder::class);
-
-        if (!$recorder instanceof ExceptionRecorder) {
-            throw new LogicException(sprintf('The kernel has no [%s]: SylamentActionsBundle registers it when framework.test is on.', ExceptionRecorder::class));
-        }
-
-        $throwable = $recorder->takeThrowable();
         $response = $client->getResponse();
 
         if ($response->isSuccessful()) {
             return $crawler;
         }
 
-        if (!$throwable instanceof Throwable && $response->isRedirection()) {
+        if ($response->isRedirection()) {
             throw new LogicException(sprintf('[GET %s] redirected to [%s].', $uri, $response->headers->get('Location')));
         }
 
-        throw $throwable ?? new LogicException(sprintf('[GET %s] answered [%d] without an exception to rethrow.', $uri, $response->getStatusCode()));
+        throw new LogicException(sprintf('[GET %s] answered [%d] without throwing.', $uri, $response->getStatusCode()));
     }
 
     private function twig(): Environment

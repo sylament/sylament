@@ -6,7 +6,7 @@ namespace Sylament\Tests\Fixtures\Support;
 
 /**
  * The looks support's components give any area's markup: colour, size, button, icon
- * button and link, named by the `sy-` class the stylesheet paints them by.
+ * button, icon and link, named by the `sy-` class the stylesheet paints them by.
  */
 final class Selectors
 {
@@ -20,6 +20,8 @@ final class Selectors
     public const string BUTTON = '.sy-btn';
 
     public const string SMALL_ICON_BUTTON = '.sy-icon-btn.sy-size-sm';
+
+    public const string ICON = '.sy-icon';
 
     public const string LINK = '.sy-link';
 

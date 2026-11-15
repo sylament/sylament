@@ -7,10 +7,12 @@ use Sylament\Support\Colors\ColorManager;
 use Sylament\Support\Colors\Components\InputComponent\WrapperComponent\IconComponent;
 use Sylament\Support\Colors\Components\ModalComponent\IconComponent as ModalIconComponent;
 use Sylament\Support\DependencyInjection\ComponentResolver;
+use Sylament\Support\Icons\IconManager;
 use Sylament\Support\SylamentSupportBundle;
 use Symfony\Component\AssetMapper\AssetMapperInterface;
 use Symfony\Component\Config\Definition\Exception\InvalidConfigurationException;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
+use Symfony\Component\DomCrawler\Crawler;
 
 it('registers the palettes under sylament.colors, a dashed name kept as written', function (): void {
     $this::bootKernel(['environment' => 'registered_colors']);
@@ -20,6 +22,18 @@ it('registers the palettes under sylament.colors, a dashed name kept as written'
     expect($colors->getColor('brand'))->toBe(Color::generatePalette('#7c3aed'))
         ->and($colors->getColor('brand-alt'))->toBe(Color::Rose)
         ->and($colors->getColor('brand_alt'))->toBeNull();
+});
+
+it('registers the icon overrides under sylament.icons, a dashed alias kept as written, a later registration winning', function (): void {
+    $this::bootKernel(['environment' => 'registered_icons']);
+
+    $modal = fn (): Crawler => $this->renderTwigComponent('SylamentSupport:Modal', ['heading' => 'Delete order'])->crawler();
+
+    expect($modal())->toContainElement('button[aria-label="Close"] svg', 'Heart');
+
+    $this::getContainer()->get(IconManager::class)->register(['modal.close-button' => 'support:star']);
+
+    expect($modal())->toContainElement('button[aria-label="Close"] svg', 'Star');
 });
 
 it('refuses a temporary file URL expiry under one minute', function (): void {

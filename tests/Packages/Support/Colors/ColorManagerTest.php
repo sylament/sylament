@@ -45,22 +45,28 @@ it('ignores a registration made after the palettes were first read', function ()
         ->and($colors->getColor('brand'))->toBeNull();
 });
 
-it('refuses a shade map that does not fill the shade grid exactly, registered or inline, when it is first read', function (Closure $read, string $message): void {
-    expect(fn (): mixed => $read($this::getContainer()->get(ColorManager::class)))->toThrow(InvalidArgumentException::class, $message);
+it('refuses a shade map that does not fill the shade grid exactly, registered or inline, when it is first read', function (array $registered, Closure $read, string $message): void {
+    $colors = $this::getContainer()->get(ColorManager::class)->register($registered);
+
+    expect(fn (): mixed => $read($colors))->toThrow(InvalidArgumentException::class, $message);
 })->with([
     'a registered palette missing a shade' => [
-        fn (ColorManager $colors): array => $colors->register(['brand' => array_diff_key(Color::Teal, [950 => true])])->getColors(),
+        ['brand' => array_diff_key(Color::Teal, [950 => true])],
+        fn (ColorManager $colors): array => $colors->getColors(),
         'The color palette [brand] is missing the shades [950].',
     ],
     'a registered palette with a shade off the grid' => [
-        fn (ColorManager $colors): array => $colors->register(['brand' => Color::Teal + [975 => Color::Teal[950]]])->getColors(),
+        ['brand' => Color::Teal + [975 => Color::Teal[950]]],
+        fn (ColorManager $colors): array => $colors->getColors(),
         'The color palette [brand] carries the shade [975], which is outside the shade grid',
     ],
     'an inline palette missing a shade' => [
+        [],
         fn (ColorManager $colors): array => $colors->getComponentCustomStyles(BadgeComponent::class, array_diff_key(Color::Teal, [50 => true])),
         'The color palette passed to [' . BadgeComponent::class . '] is missing the shades [50].',
     ],
     'an inline palette with a shade off the grid' => [
+        [],
         fn (ColorManager $colors): array => $colors->getComponentCustomStyles(BadgeComponent::class, Color::Teal + [975 => Color::Teal[950]]),
         'The color palette passed to [' . BadgeComponent::class . '] carries the shade [975], which is outside the shade grid',
     ],

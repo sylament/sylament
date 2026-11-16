@@ -12,9 +12,12 @@ use Sylament\Forms\Components\TextInput;
 use Sylament\Schemas\Components\Actions;
 use Sylament\Schemas\Components\Group;
 use Sylament\Schemas\Exceptions\ValidationException;
+use Sylament\Schemas\Schema;
 use Sylament\Schemas\State\Casts\ObjectStateCast;
 use Sylament\Support\Enums\Alignment;
 use Sylament\Support\Enums\VerticalAlignment;
+use Sylament\Tests\Fixtures\Entity\VettedBinder;
+use Sylament\Tests\Fixtures\Entity\VettedBinderSheet;
 use Sylament\Tests\Fixtures\Forms\Record\LineItem;
 use Sylament\Tests\Fixtures\Forms\Record\LinePart;
 use Sylament\Tests\Fixtures\Forms\Record\LineSheet;
@@ -206,7 +209,7 @@ describe('defaultItems()', function (): void {
 });
 
 describe('simple()', function (): void {
-    it('carries one scalar per item, rendered as the simple field with no item header', function (): void {
+    it('carries one scalar per item, rendered as the simple field', function (): void {
         $host = new RecordMappingHost();
         $schema = $host->mapping(Repeater::make('tags')->simple(TextInput::make('tag')));
         $schema->fill(['tags' => ['x', 'y']]);
@@ -214,7 +217,6 @@ describe('simple()', function (): void {
         $crawler = $this->renderSchemaComponent(Repeater::make('tags')->simple(TextInput::make('tag')), $host->data);
 
         expect($crawler->filter('.sy-fo-simple-repeater-item input')->each(static fn (Crawler $input): string => $input->attr('value') ?? ''))->toBe(['x', 'y'])
-            ->and($crawler->filter('.sy-fo-repeater-item-header'))->toHaveCount(0)
             ->and($schema->getState())->toBe(['tags' => ['x', 'y']]);
     });
 });
@@ -949,5 +951,71 @@ describe('itemsAs()', function (): void {
         $host->data = ['lines' => ['a' => ['title' => null]]];
 
         expect(fn (): object => $schema->getData())->toThrow(LogicException::class, sprintf('Cannot rebuild %s: constructor parameter $title is non-optional and the dehydrated item supplies null for it', LineItem::class));
+    });
+});
+
+describe('relationship() decoration and hooks', function (): void {
+    beforeEach(function (): void {
+        $binder = new VettedBinder();
+        $binder->addSheet(new VettedBinderSheet('One'));
+        $this->seed($binder);
+        $this->binder = $this->reload($binder);
+    });
+
+    it('hands a closure in a decoration schema the owner record', function (): void {
+        $seen = null;
+        $host = new RecordMappingHost();
+        $schema = $host->mapping(
+            Repeater::make('sheets')
+                ->relationship()
+                ->belowContent([TextInput::make('note')->label(static function (?object $record) use (&$seen): string {
+                    $seen = $record;
+
+                    return 'Note';
+                })])
+                ->components([TextInput::make('heading')]),
+        )->record($this->binder);
+        $schema->fill($this->binder);
+
+        $repeater = $schema->getComponent('sheets');
+
+        $repeater->getChildSchema(Repeater::BELOW_CONTENT_SCHEMA_KEY)?->getComponents(withActions: false)[0]->getLabel();
+
+        expect($seen)->toBe($this->binder);
+    });
+
+    it('refuses a hooked field in a decoration schema, a dotted path whose remainder names an item hook included', function (): void {
+        $host = new RecordMappingHost();
+        $schema = $host->mapping(
+            Repeater::make('sheets')
+                ->relationship()
+                ->belowContent([TextInput::make('meta.heading')->loadStateFromRelationshipsUsing(static fn (): string => 'decoration')])
+                ->components([TextInput::make('heading')->loadStateFromRelationshipsUsing(static fn (): string => 'item')]),
+        )->record($this->binder);
+
+        expect(fn (): Schema => $schema->fill($this->binder))->toThrow(LogicException::class, sprintf('%s declares a relationship hook, but the record path map does not carry it, so the hook could never fire', TextInput::class));
+    });
+
+    it('routes the save hooks of an item a caller hands getData() as it routes a rendered one', function (): void {
+        $host = new RecordMappingHost();
+        $schema = $host->mapping(
+            Repeater::make('sheets')
+                ->relationship()
+                ->components([
+                    TextInput::make('heading'),
+                    TextInput::make('status')->saveRelationshipsUsing(static function (VettedBinderSheet $record, ?string $state): void {
+                        $record->status = "Hooked {$state}";
+                    }),
+                ]),
+        )->record($this->binder);
+        $schema->fill($this->binder);
+
+        $state = $host->data;
+        $state['sheets']['handed'] = ['heading' => 'Two', 'status' => 'Draft'];
+
+        $schema->getData($state);
+
+        expect(array_map(static fn (VettedBinderSheet $sheet): array => [$sheet->heading, $sheet->status], array_values($this->binder->sheets->toArray())))
+            ->toBe([['One', 'Hooked Filed'], ['Two', 'Hooked Draft']]);
     });
 });

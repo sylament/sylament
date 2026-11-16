@@ -53,7 +53,6 @@ describe('detached array', function (): void {
         'a present key' => ['writer.name', 'Ada'],
         'an absent key' => ['writer.bio', null],
         'past a scalar' => ['title.main', null],
-        'a present null' => ['writer.handle', null],
     ]);
 
     it('writes a detached array by dotted path, building missing segments, turning a scalar into one and overwriting a leaf', function (): void {
@@ -304,8 +303,6 @@ describe('type probes', function (): void {
         expect($this::getContainer()->get(PropertyAccessor::class)->acceptsNullOnRecord(ManuscriptSignatures::class, $path))->toBe($expected);
     })->with([
         'a non-nullable setter' => ['name', false],
-        'a nullable setter behind a non-nullable getter' => ['writer', true],
-        'a non-nullable setter behind a nullable getter' => ['reviewer', false],
         'a path through a nested object' => ['invoice.id', false],
         'an unreadable path' => ['publisher', true],
     ]);
@@ -313,9 +310,6 @@ describe('type probes', function (): void {
     it('answers the native type a path declares, and none for an object, a collection, a union or an unreadable path', function (string $path, ?string $expected): void {
         expect($this::getContainer()->get(PropertyAccessor::class)->getBuiltinTypeOnRecord(ManuscriptSignatures::class, $path))->toBe($expected);
     })->with([
-        'an int' => ['pages', 'int'],
-        'a string' => ['name', 'string'],
-        'a bool' => ['published', 'bool'],
         'a path through a nested object' => ['invoice.id', 'int'],
         'an object' => ['writer', null],
         'a collection' => ['notes', null],

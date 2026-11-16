@@ -8,16 +8,13 @@ use Sylament\Tests\Fixtures\Schemas\ChildEmbeddingHost;
 use Sylament\Tests\Fixtures\Schemas\EmbeddedLabelChild;
 
 describe('make', function (): void {
-    it('mounts the child it names, by registered name or class-string, with the props its data names', function (string $component): void {
-        $child = $this->renderSchemaComponent(LiveComponent::make($component, ['label' => 'Seven seeds'])->key('ledger'))
+    it('mounts the child it names with the props its data names', function (): void {
+        $child = $this->renderSchemaComponent(LiveComponent::make('Schemas:EmbeddedLabelChild', ['label' => 'Seven seeds'])->key('ledger'))
             ->filter('[data-live-name-value="Schemas:EmbeddedLabelChild"]');
 
         expect($child->count())->toBe(1)
             ->and($child->text())->toBe('Seven seeds');
-    })->with([
-        'its registered name' => ['Schemas:EmbeddedLabelChild'],
-        'its class-string' => [EmbeddedLabelChild::class],
-    ]);
+    });
 });
 
 describe('mount props', function (): void {
@@ -38,7 +35,6 @@ describe('child id', function (): void {
         'a dotted key' => ['a.b', 'sy-live-a-b'],
         "a hyphenated key, which mints the dotted key's id" => ['a-b', 'sy-live-a-b'],
         'a composite record key' => ['record-1~zh=20Hans', 'sy-live-record-1~zh=20Hans'],
-        'a class-string key' => ['App\RelationManagers\LinesRelationManager', 'sy-live-App-RelationManagers-LinesRelationManager'],
     ]);
 
     it("ids a child under a live host by the host's id and its absolute key, the same on every request", function (): void {

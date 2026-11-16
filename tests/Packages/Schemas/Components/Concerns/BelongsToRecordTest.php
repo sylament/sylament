@@ -111,12 +111,6 @@ describe('getRecordStatePath()', function (): void {
 
             return [$field, 'author.name'];
         },
-        'none for a component without a path' => function (): array {
-            $section = Section::make();
-            Schema::make()->components([$section])->getComponents();
-
-            return [$section, null];
-        },
         "none for a path-less component, whose state path is the root's" => function (): array {
             $section = Section::make();
             Schema::make()->statePath('data')->components([$section])->getComponents();

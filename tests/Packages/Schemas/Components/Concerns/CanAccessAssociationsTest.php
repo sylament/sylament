@@ -6,11 +6,9 @@ use Sylament\Schemas\Schema;
 use Sylament\Schemas\State\AssociationReader;
 
 it("holds the container's reader, and its entity manager, in a schema made through make()", function (): void {
-    $container = $this::getContainer();
     $reader = Schema::make()->getAssociationReader();
 
-    expect($reader)->toBe($container->get(AssociationReader::class))
-        ->and($container->get('sylament_schemas.association_reader'))->toBe($reader)
+    expect($reader)->toBe($this::getContainer()->get(AssociationReader::class))
         ->and($reader->hasEntityManager())->toBeTrue();
 });
 

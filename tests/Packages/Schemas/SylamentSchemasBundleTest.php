@@ -8,6 +8,9 @@ use Sylament\Schemas\Components\Section;
 use Sylament\Schemas\Components\Tabs\Tab;
 use Sylament\Schemas\Components\Wizard\Step;
 use Sylament\Schemas\Schema;
+use Sylament\Schemas\State\AssociationReader;
+use Sylament\Schemas\State\PropertyAccessor;
+use Sylament\Schemas\State\RecordTypeReader;
 use Sylament\Schemas\SylamentSchemasBundle;
 use Symfony\Bundle\FrameworkBundle\FrameworkBundle;
 use Symfony\Component\AssetMapper\AssetMapperInterface;
@@ -48,6 +51,14 @@ it('registers every colour policy public, so ColorManager resolves it by class-s
 
     expect($policies)->toContain(IconComponent::class, TextComponent::class)
         ->and(array_values(array_filter($policies, fn (string $policy): bool => !$container->has($policy))))->toBe([]);
+});
+
+it('registers its property accessor, record type reader and association reader under their sylament_schemas ids, each aliased by its class', function (): void {
+    $container = $this::getContainer();
+
+    expect($container->get('sylament_schemas.property_accessor'))->toBe($container->get(PropertyAccessor::class))
+        ->and($container->get('sylament_schemas.record_type_reader'))->toBe($container->get(RecordTypeReader::class))
+        ->and($container->get('sylament_schemas.association_reader'))->toBe($container->get(AssociationReader::class));
 });
 
 it('prepends the built assets into AssetMapper only when FrameworkBundle ships it', function (): void {

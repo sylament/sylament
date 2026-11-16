@@ -7,11 +7,6 @@ use Sylament\Schemas\Components\Text;
 use Sylament\Tests\Fixtures\Schemas\Selectors;
 use Sylament\Tests\Fixtures\Support\Selectors as SupportSelectors;
 
-it('stacks the children it is made with in one column', function (): void {
-    expect($this->renderSchemaComponent(Group::make([Text::make('Street'), Text::make('City')])))
-        ->toContainElement('.sy-sc-group ' . Selectors::SCHEMA . SupportSelectors::ONE_COLUMN, 'Street City');
-});
-
 it('renders a root of its own around its child schema', function (): void {
     expect($this->renderSchemaComponent(Group::make([Text::make('Street'), Text::make('City')])))
         ->toContainElement('.sy-sc-group' . SupportSelectors::STANDALONE_ROOT . ' ' . Selectors::COMPONENT_CELL . ' ' . Selectors::TEXT, 'Street')

@@ -7,10 +7,7 @@ use Sylament\Schemas\State\PropertyAccessor;
 use Sylament\Tests\Fixtures\Schemas\Record\ManuscriptStateBag;
 
 it("holds the container's one accessor in a component made through make()", function (): void {
-    $container = $this::getContainer();
-
-    expect(Section::make()->getPropertyAccessor())->toBe($container->get(PropertyAccessor::class))
-        ->and($container->get('sylament_schemas.property_accessor'))->toBe($container->get(PropertyAccessor::class));
+    expect(Section::make()->getPropertyAccessor())->toBe($this::getContainer()->get(PropertyAccessor::class));
 });
 
 it('builds a working accessor of its own, once, for a component made with new', function (): void {

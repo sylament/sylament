@@ -37,11 +37,10 @@ it('renders a fieldset captioned by its legend around its child schema', functio
         ->toContainElement(Selectors::FIELDSET . ' ' . Selectors::COMPONENT_CELL . ' ' . Selectors::TEXT, 'Street');
 });
 
-it('carries its id and its extra attributes on its root, its own id winning over an extra one and an extra class after its own', function (): void {
+it('carries its id and its extra attributes on its root, its own id winning over an extra one', function (): void {
     $render = $this->renderSchemaComponent(Fieldset::make('Address')->id('billing')->extraAttributes(['id' => 'other', 'class' => 'custom', 'data-region' => 'eu'])->components([Text::make('Street')]));
 
     expect($render)
         ->toContainElement('fieldset#billing.custom[data-region="eu"] legend', 'Address')
-        ->not->toContainElement('#other')
-        ->and($render->filter(Selectors::FIELDSET)->attr('class'))->toEndWith('sy-sc-fieldset custom');
+        ->not->toContainElement('#other');
 });

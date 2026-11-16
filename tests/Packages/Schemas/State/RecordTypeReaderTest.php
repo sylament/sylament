@@ -77,11 +77,8 @@ describe('collection flags', function (): void {
 });
 
 describe('service', function (): void {
-    it("is the container's reader, which answers from the setter where the promoted constructor and its docblock disagree", function (): void {
-        $container = $this::getContainer();
-
-        expect($container->get('sylament_schemas.record_type_reader'))->toBe($container->get(RecordTypeReader::class))
-            ->and($container->get(RecordTypeReader::class)->describeProperty(ManuscriptCatalogEntry::class, 'code'))
+    it("answers, as the container builds it, from the setter where the promoted constructor and its docblock disagree", function (): void {
+        expect($this::getContainer()->get(RecordTypeReader::class)->describeProperty(ManuscriptCatalogEntry::class, 'code'))
             ->toEqual(new RecordTarget(objectClass: null, isNullable: true, isCollection: false, isObjectCollection: false, builtinType: 'int'));
     });
 });

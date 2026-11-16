@@ -159,12 +159,13 @@ describe('a record that holds no related record', function (): void {
         $this->host->data['log']['keeper'] = 'Grace';
 
         $log = $schema->getData()->getLog();
-        $this->entityManager()->flush();
-        $this->entityManager()->clear();
 
         expect($log)->toBeInstanceOf(LighthouseLog::class)
-            ->lighthouse->toBe($lighthouse)
-            ->and($this->entityManager()->find(LighthouseLog::class, $log->id))
+            ->lighthouse->toBe($lighthouse);
+
+        $this->entityManager()->flush();
+
+        expect($this->reload($log))
             ->keeper->toBe('Grace')
             ->lighthouse->id->toBe($lighthouse->id);
     });
@@ -195,7 +196,7 @@ describe('the key of a related record it builds', function (): void {
         'the owner and a blank string' => ['cleat', ['slot', 'label'], ['slot' => '   ', 'label' => 'Spaced'], BerthCleat::class],
     ]);
 
-    it('saves one whose key the fields and the setter fill', function (string $relationship, array $fields, array $state, Closure $key): void {
+    it('saves one whose key the fields and the setter fill', function (string $relationship, array $fields, array $state, Closure $key, array $expected): void {
         $berth = new Berth();
         $schema = $this->host->mapping(Group::make(array_map(TextInput::make(...), $fields))->relationship($relationship))->record($berth);
         $this->host->data = [$relationship => $state];
@@ -203,10 +204,11 @@ describe('the key of a related record it builds', function (): void {
         $schema->getData();
         $this->seed($berth);
 
-        expect($this->entityManager()->find($relationship === 'mooring' ? BerthMooring::class : BerthCleat::class, $key($berth)))->label->toBe('Moored');
+        expect($key($berth))->toBe($expected)
+            ->and($this->reload($relationship === 'mooring' ? $berth->mooring : $berth->getCleat()))->label->toBe('Moored');
     })->with([
-        'two strings' => ['mooring', ['pier', 'slot', 'label'], ['pier' => 'North', 'slot' => 'S1', 'label' => 'Moored'], fn (Berth $berth): array => ['pier' => 'North', 'slot' => 'S1']],
-        'the owner and a string' => ['cleat', ['slot', 'label'], ['slot' => 'S1', 'label' => 'Moored'], fn (Berth $berth): array => ['berth' => $berth->id, 'slot' => 'S1']],
+        'two strings' => ['mooring', ['pier', 'slot', 'label'], ['pier' => 'North', 'slot' => 'S1', 'label' => 'Moored'], fn (Berth $berth): array => [$berth->mooring?->pier, $berth->mooring?->slot], ['North', 'S1']],
+        'the owner and a string' => ['cleat', ['slot', 'label'], ['slot' => 'S1', 'label' => 'Moored'], fn (Berth $berth): array => [$berth->getCleat()?->berth === $berth, $berth->getCleat()?->slot], [true, 'S1']],
     ]);
 
     it('leaves a blank single string key to the application', function (): void {
@@ -272,7 +274,7 @@ describe('a relationship switched off', function (): void {
         $this->entityManager()->clear();
 
         expect($this->entityManager()->find(LighthouseLog::class, $logId))->toBeNull()
-            ->and($this->entityManager()->find(Lighthouse::class, $lighthouse->id))->toBeInstanceOf(Lighthouse::class)
+            ->and($this->reload($lighthouse))->toBeInstanceOf(Lighthouse::class)
             ->and($hooked)->toBe(0);
     });
 

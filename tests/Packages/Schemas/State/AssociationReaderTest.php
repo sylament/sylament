@@ -698,6 +698,18 @@ describe('the relationship queries', function (): void {
         );
     });
 
+    it('refuses to scope an owner that has no identifier yet', function (Closure $owner, string $class): void {
+        $reader = $this::getContainer()->get(AssociationReader::class);
+
+        expect(fn (): QueryBuilder => $reader->createRelationshipQuery(new Relationship($owner(), 'plants')))->toThrow(
+            LogicException::class,
+            'Object records must expose a readable non-blank identifier; [' . $class . '] has none set.',
+        );
+    })->with([
+        'a generated key' => [fn (): Garden => new Garden(), Garden::class],
+        'an association and a scalar' => [fn (): Allotment => new Allotment(new Garden(), 1), Allotment::class],
+    ]);
+
     it('lists the records of an owner not loaded yet', function (): void {
         $ash = $this->entityManager()->getRepository(Garden::class)->findOneBy(['name' => 'Ash']);
         $this->entityManager()->clear();
@@ -745,18 +757,6 @@ describe('describeRelationship()', function (): void {
             'supplier',
             'The relationship [supplier] declared on [' . Garden::class . '] is single-valued; a relation-scoped table lists a collection. Declare a to-many association, or query() the related record yourself.',
         ],
-    ]);
-
-    it('refuses to scope an owner that has no identifier yet', function (Closure $owner, string $class): void {
-        $reader = $this::getContainer()->get(AssociationReader::class);
-
-        expect(fn (): QueryBuilder => $reader->createRelationshipQuery(new Relationship($owner(), 'plants')))->toThrow(
-            LogicException::class,
-            'Object records must expose a readable non-blank identifier; [' . $class . '] has none set.',
-        );
-    })->with([
-        'a generated key' => [fn (): Garden => new Garden(), Garden::class],
-        'an association and a scalar' => [fn (): Allotment => new Allotment(new Garden(), 1), Allotment::class],
     ]);
 });
 
@@ -898,6 +898,7 @@ describe('an owner keyed by several fields', function (): void {
 
         expect($names($this->reader->createRelationshipQuery(new Relationship($owner, 'plants'))))->toBe(['Fern'])
             ->and($names($this->reader->createRelationshipQuery(new Relationship($owner, 'seedlings'))))->toBe(['Leek'])
+            ->and($this->reader->createRelationshipQuery(new Relationship($owner, 'seedlings'))->getParameters())->toHaveCount(2)
             ->and($names($this->reader->createRelationshipCandidateQuery(new Relationship($owner, 'plants'))))->toEqualCanonicalizing(['Moss', 'Sage'])
             ->and($names($this->reader->createRelationshipCandidateQuery(new Relationship($owner, 'seedlings'))))->toEqualCanonicalizing(['Kale', 'Half']);
     })->with([

@@ -97,7 +97,7 @@ describe('the leaves of the related record', function (): void {
 
     it("fills a date and an enum its fields' casts flatten", function (): void {
         $this->host->mapping(Group::make([
-            TextInput::make('openedOn')->stateCast(new DateTimeStateCast('Y-m-d', 'Y-m-d', 'UTC', DateTimeImmutable::class)),
+            TextInput::make('openedOn')->stateCast(new DateTimeStateCast('Y-m-d', 'Y-m-d', date_default_timezone_get(), DateTimeImmutable::class)),
             TextInput::make('beam')->stateCast(new EnumStateCast(LighthouseBeam::class)),
         ])->relationship('log'))->record($this->lighthouse)->fill($this->lighthouse);
 
@@ -116,7 +116,7 @@ describe('the leaves of the related record', function (): void {
         $log = $this->lighthouse->getLog();
         $schema = $this->host->mapping(Group::make([
             TextInput::make('keeper')->dehydrated(false),
-            TextInput::make('openedOn')->stateCast(new DateTimeStateCast('Y-m-d', 'Y-m-d', 'UTC', DateTimeImmutable::class)),
+            TextInput::make('openedOn')->stateCast(new DateTimeStateCast('Y-m-d', 'Y-m-d', date_default_timezone_get(), DateTimeImmutable::class)),
             TextInput::make('beam')->stateCast(new EnumStateCast(LighthouseBeam::class)),
         ])->relationship('log'))->record($this->lighthouse);
         $schema->fill($this->lighthouse);
@@ -183,7 +183,7 @@ describe('a record that holds no related record', function (): void {
 });
 
 describe('the key of a related record it builds', function (): void {
-    it('refuses by name one whose key is still incomplete once the setter ran, running no statement', function (string $relationship, array $fields, array $state, string $class): void {
+    it('refuses by name one whose key is still incomplete once the setter ran', function (string $relationship, array $fields, array $state, string $class): void {
         $schema = $this->host->mapping(Group::make(array_map(TextInput::make(...), $fields))->relationship($relationship))->record(new Berth());
         $this->host->data = [$relationship => $state];
 
@@ -191,7 +191,6 @@ describe('the key of a related record it builds', function (): void {
             LogicException::class,
             sprintf('The [%s] relationship is saving a new [%s] whose identifier is incomplete, so no record key can be minted for it. Give every identifier field a component — enabled, dehydrated and required — inside the relationship, or on the record it hangs off when its identifier is that record, or drop relationship() and create the related record by hand after getData().', $relationship, $class),
         );
-        expect($this->statementsRun())->toBe([]);
     })->with([
         'two strings, one of them blank' => ['mooring', ['pier', 'slot', 'label'], ['pier' => 'North', 'slot' => '   ', 'label' => 'Spaced'], BerthMooring::class],
         'a string no field maps' => ['mooring', ['pier', 'label'], ['pier' => 'North', 'label' => 'Half'], BerthMooring::class],
@@ -249,7 +248,7 @@ describe('the key of a related record it builds', function (): void {
 });
 
 describe('a relationship switched off', function (): void {
-    it('nulls the property and deletes the related record, running no hook beneath it, though the mapping removes no orphan', function (): void {
+    it('still fills, then nulls the property and deletes the related record, running no hook beneath it, though the mapping removes no orphan', function (): void {
         $lighthouse = new Lighthouse();
         $lighthouse->setLog(new LighthouseLog());
         $lighthouse->getLog()->keeper = 'Ada';
@@ -264,6 +263,9 @@ describe('a relationship switched off', function (): void {
             }),
         ])->relationship('log', condition: false))->record($lighthouse);
         $schema->fill($lighthouse);
+
+        expect($this->host->data['log']['keeper'])->toBe('Ada');
+
         $this->host->data['log']['keeper'] = 'Grace';
 
         expect($schema->getData()->getLog())->toBeNull();

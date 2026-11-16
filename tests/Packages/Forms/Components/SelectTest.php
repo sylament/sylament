@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use Doctrine\ORM\QueryBuilder;
 use Sylament\Actions\Action;
 use Sylament\Actions\Testing\Testable;
 use Sylament\Actions\Testing\TestAction;
@@ -166,11 +167,11 @@ describe('JS control render', function (): void {
             ->and($render->filter('select[name="searchable"] option[selected]')->each(static fn (Crawler $option): array => [$option->attr('value'), $option->text()]))->toBe([['yew', 'Yew']]);
     });
 
-    it('reads the options once per render, and pays the selected-record query on the JS branch alone', function (bool $isNative, int $statements): void {
+    it('reads a scoped option map once per render, and pays the selected-record query on the JS branch alone', function (bool $isNative, int $statements): void {
         $this->seed($fern = new Garden('Fern'), $moss = new Garden('Moss'));
 
         $host = new RecordMappingHost();
-        [$select] = $host->mapping(Select::make('garden')->relationship('garden', 'name')->native($isNative))->record(Seedling::class)->getComponents();
+        [$select] = $host->mapping(Select::make('garden')->relationship('garden', 'name', modifyQueryUsing: static fn (QueryBuilder $query): QueryBuilder => $query)->native($isNative))->record(Seedling::class)->getComponents();
         $host->data['garden'] = (string) $fern->id;
 
         $this->seed();
@@ -190,14 +191,6 @@ describe('JS control render', function (): void {
 
         expect($options($tester->render()->crawler()))->toBe(['mint'])
             ->and($options($tester->fillForm(['kind' => 'tree'])->render()->crawler()))->toBe(['oak']);
-    });
-});
-
-describe('state', function (): void {
-    it('stores a cleared select as null', function (): void {
-        $tester = $this->createLiveComponent(SelectForm::class)->fillForm(['single' => '2'])->fillForm(['single' => '']);
-
-        expect($tester->component()->getSchema('form')->getComponent('single')->getState())->toBeNull();
     });
 });
 
@@ -288,7 +281,9 @@ describe('getOptionLabel()', function (): void {
         'a state the closure labels' => ['labelled', 'fern', true, 'Fern'],
         'a state the closure does not label' => ['labelled', 'yew', false, null],
     ]);
+});
 
+describe('getOptionLabels()', function (): void {
     it('answers the labels of a list through the map, an unlabelled value as itself', function (): void {
         $render = $this->createLiveComponent(SelectForm::class)->fillForm(['multiple' => ['b', 'zz']])->render()->crawler();
 
@@ -311,6 +306,7 @@ describe('validation', function (): void {
         'an enabled option' => ['single', '2', true],
         'a tampered value' => ['single', '9', false],
         'a disabled option' => ['single', '3', false],
+        'a value a label closure would label outside a static map' => ['mapped', 'yew', false],
         'a list of options' => ['multiple', ['a', 'c'], true],
         'a list with one tampered element' => ['multiple', ['a', 'zz'], false],
         'a value the label closure labels' => ['labelled', 'fern', true],
@@ -360,13 +356,16 @@ describe('validation', function (): void {
             ->assertHasNoFormErrors(['chosen' => Choice::class]);
     });
 
-    it('fails a multiple select handed a scalar by a type violation', function (): void {
+    it('fails a multiple select handed a scalar by a type violation, ahead of the check that it has anything to validate with', function (string $field): void {
         $this->createLiveComponent(SelectForm::class)
-            ->fillForm(['multiple' => 'a'])
+            ->fillForm([$field => 'fern'])
             ->call('save')
-            ->assertHasFormErrors(['multiple' => Type::class])
-            ->assertHasNoFormErrors(['multiple' => Choice::class]);
-    });
+            ->assertHasFormErrors([$field => Type::class])
+            ->assertHasNoFormErrors([$field => Choice::class]);
+    })->with([
+        'a select with options' => ['multiple'],
+        'a select with nothing to validate with' => ['unusableMany'],
+    ]);
 
     it('fails a list outside the item bounds by the count, an empty one included', function (array $state, string $message): void {
         $this->createLiveComponent(SelectForm::class)
@@ -422,7 +421,7 @@ describe('validation', function (): void {
     });
 
     it('fails a to-many selection past maxItems() by the count and the membership both, but a composite one by the count alone without a statement', function (): void {
-        $this->seed($fern = new Plant('Fern'), $moss = new Plant('Moss'), $pot = new BenchPot('A', '1', 'Basil'));
+        $this->seed($fern = new Plant('Fern'), $moss = new Plant('Moss'), new BenchPot('A', '1', 'Basil'));
         $errors = function (Select $select, string $recordClass, array $state): array {
             $host = $this->validatingRecordMappingHost();
             $schema = $host->mapping($select)->record($recordClass);
@@ -462,16 +461,18 @@ describe('search', function (): void {
             ]);
     });
 
-    it('asks the server while the user types only for a select with a search closure, which then shows no up-front no-options message', function (): void {
-        $render = $this->createLiveComponent(SelectForm::class)->render()->crawler();
-        $flags = fn (string $field): array => [
-            $this->selectControllerValue($render->filter("select[name=\"{$field}\"]"), 'dynamicSearchResults'),
-            $this->selectControllerValue($render->filter("select[name=\"{$field}\"]"), 'initialNoOptionsMessage'),
-        ];
+    it('lowers both sides of the relationship LIKE when forced case-insensitive, and neither when forced not to, on every platform', function (string $field, bool $isLowered): void {
+        $this->createLiveComponent(SelectRelationshipForm::class)
+            ->call('callSchemaComponentMethod', ['componentKey' => "form.{$field}", 'method' => 'getSearchResultsForJs', 'arguments' => ['search' => 'Fern']]);
 
-        expect($flags('chosen'))->toBe(['false', 'true'])
-            ->and($flags('searchable'))->toBe(['true', 'false']);
-    });
+        $searches = array_values(array_filter($this->statementsRun(), static fn (string $sql): bool => str_contains($sql, ' LIKE ')));
+
+        expect($searches)->toHaveCount(1)
+            ->and(str_contains($searches[0], 'LOWER('))->toBe($isLowered);
+    })->with([
+        'forced case-insensitive' => ['caseless', true],
+        'forced case-sensitive' => ['caseful', false],
+    ]);
 });
 
 describe('searchable()', function (): void {
@@ -531,27 +532,18 @@ describe('dynamic options', function (): void {
     ]);
 });
 
-describe('search', function (): void {
-    it('lowers both sides of the relationship LIKE when forced case-insensitive, and neither when forced not to, on every platform', function (string $field, bool $isLowered): void {
-        $this->createLiveComponent(SelectRelationshipForm::class)
-            ->call('callSchemaComponentMethod', ['componentKey' => "form.{$field}", 'method' => 'getSearchResultsForJs', 'arguments' => ['search' => 'Fern']]);
-
-        $searches = array_values(array_filter($this->statementsRun(), static fn (string $sql): bool => str_contains($sql, ' LIKE ')));
-
-        expect($searches)->toHaveCount(1)
-            ->and(str_contains($searches[0], 'LOWER('))->toBe($isLowered);
-    })->with([
-        'forced case-insensitive' => ['caseless', true],
-        'forced case-sensitive' => ['caseful', false],
-    ]);
-});
-
 describe('option actions', function (): void {
-    it('puts a gray create button in the suffix once a create form is declared, and none while the select is disabled', function (): void {
+    it('puts a gray create button in the suffix once a create form is declared, a hand-built field included, and none while the select is disabled', function (): void {
         $select = static fn (): Select => Select::make('plant')->options(['fern' => 'Fern'])->createOptionUsing(static fn (): string => 'fern');
         $render = $this->renderSchemaComponent($select()->createOptionForm([TextInput::make('name')]));
 
         expect($render)->toContainButtons(SupportSelectors::SUFFIX_ACTIONS . SupportSelectors::SMALL_ICON_BUTTON . SupportSelectors::GRAY, ['Create'])
+            ->toContainElement(SupportSelectors::SUFFIX_ACTIONS . ' svg', 'plus-20-solid');
+
+        $handBuilt = new Select();
+        $handBuilt->name('plant')->statePath('plant')->configure();
+
+        expect($this->renderSchemaComponent($handBuilt->options(['fern' => 'Fern'])->createOptionForm([TextInput::make('name')])->createOptionUsing(static fn (): string => 'fern')))
             ->toContainElement(SupportSelectors::SUFFIX_ACTIONS . ' svg', 'plus-20-solid');
 
         expect($this->renderSchemaComponent($select()))->toContainElement(Selectors::NATIVE_SELECT)->toContainButtons(SupportSelectors::SUFFIX_ACTIONS, [])

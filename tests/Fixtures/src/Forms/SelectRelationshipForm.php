@@ -26,12 +26,13 @@ use Symfony\UX\LiveComponent\DefaultActionTrait;
 /**
  * A new {@see Seedling}'s form whose selects all pick its {@see Garden}, one per way a
  * relationship select lists, searches, labels and creates its options: the full map with
- * both option forms and their modal headings, an edit modal filled from an array, a searchable map with and without
- * `preload()` and a limit, a search forced case-insensitive and one forced not to be, a
- * scope leaving `Moss` out, a label closure declared before and after `relationship()`, a
- * create closure declared before and after it (the later one recording in the request's
- * {@see HookLog}), and option actions whose `mutateDataUsing()` adds an unmapped path, sets
- * a `Hidden` one, or overwrites the mapped name.
+ * both option forms and their modal headings, an edit modal filled from an array, a
+ * searchable map with and without `preload()` and a limit, a search forced
+ * case-insensitive and one forced not to be, a scope leaving `Moss` out, a label closure
+ * declared before and after `relationship()`, a create closure declared before and after
+ * it (the later one recording in the request's {@see HookLog}), and option actions whose
+ * `mutateDataUsing()` adds an unmapped path, sets a `Hidden` one, or overwrites the
+ * mapped name.
  */
 #[AsLiveComponent(name: 'Forms:SelectRelationshipForm', template: '@Fixtures/forms/SelectRelationshipForm.html.twig')]
 class SelectRelationshipForm implements InteractsWithActions, InteractsWithSchemas

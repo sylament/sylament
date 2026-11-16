@@ -21,10 +21,10 @@ use Symfony\UX\LiveComponent\DefaultActionTrait;
 /**
  * One select per way a select reads, casts and guards its state: a static map with a
  * disabled option, a list with and without item bounds, a backed enum single and
- * multiple, `boolean()`, labels by closure only (single and multiple), none of either
- * (single, and a multiple carrying only the single closure), a required searchable one, a
- * search closure that records what it was handed in the request's {@see HookLog} beside a
- * label closure capitalising the value, a map
+ * multiple, `boolean()`, a static map beside a label closure, labels by closure only
+ * (single and multiple), none of either (single, and a multiple carrying only the single
+ * closure), a required searchable one, a search closure that records what it was handed
+ * in the request's {@see HookLog} beside a label closure capitalising the value, a map
  * following a live field, a message for the `Choice`, and an `in()` list. A save validates
  * every field, so a case asserts the errors of the field it fills.
  */
@@ -71,6 +71,7 @@ class SelectForm implements InteractsWithSchemas
                 Select::make('labelled')
                     ->getOptionLabelUsing(static fn (mixed $value): ?string => is_string($value) ? ($plants[$value] ?? null) : null)
                     ->disableOptionWhen(static fn (mixed $value): bool => $value === 'moss'),
+                Select::make('mapped')->options($plants)->getOptionLabelUsing(static fn (): string => 'Any plant'),
                 Select::make('labelledMany')
                     ->multiple()
                     ->getOptionLabelsUsing(static fn (array $values): array => array_intersect_key([...$plants, 'bare' => ''], array_flip(array_filter($values, is_string(...))))),

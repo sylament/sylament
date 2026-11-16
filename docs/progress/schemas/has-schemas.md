@@ -59,6 +59,7 @@ The trait's validation members (`validateSchema()`, the error bag, `clearSchemaV
 
 Filament's trait relies on Livewire's path-keyed `updating*`/`updated*` lifecycle: `updatingInteractsWithSchemas` snapshots into a protected `$oldSchemaState` via `data_get`, and `updatedInteractsWithSchemas` fires `callAfterStateUpdated` on every cached schema for each changed path.
 UX Live Components have no per-property update hook, so the port snapshots every bound component's raw state keyed by absolute state path at `#[PreDehydrate]` (`persistOldState`) and, after re-hydration, diffs each component's raw state against that snapshot at `#[PostHydrate]` (`callAfterSchemaStateUpdated`) to fire the `afterStateUpdated` hooks.
+The changed set is taken before any hook runs, so a hook's write runs the written field's hooks only through [`Set`](set.md)'s `shouldCallUpdatedHooks`, as Filament's per-path hook runs them only for the paths the request updated.
 The raw-state reads route through Symfony PropertyAccess, the state backend owned by [`property-accessor.md`](property-accessor.md).
 Because UX must reconstruct the object across the wire, the snapshot lives in a public `#[LiveProp]` array `$oldState` rather than Filament's protected property, roughly doubling the wire state.
 Reverses only if UX gains a native per-property `updated` hook.

@@ -17,22 +17,17 @@ Composed by six fields: [`Checkbox`](checkbox.md), [`Toggle`](toggle.md), [`Radi
 | --- | --- | --- | --- | --- |
 | `fixIndistinctState(bool\|Closure $condition = true)` | [`Concerns/CanFixIndistinctState.php`](../../../vendor/filament/forms/src/Components/Concerns/CanFixIndistinctState.php) | done | — | — |
 | The `distinct()` + `live(condition:)` installs | [`Concerns/CanFixIndistinctState.php`](../../../vendor/filament/forms/src/Components/Concerns/CanFixIndistinctState.php) | done | — | — |
-| The array arm — the picked values subtracted from a sibling selection, reindexed | [`Concerns/CanFixIndistinctState.php`](../../../vendor/filament/forms/src/Components/Concerns/CanFixIndistinctState.php) | done | — | [semantics](#the-array-arm-cascades-because-our-hooks-fire-for-every-changed-path) · [diverges](#the-comparison-reads-the-raw-state-not-the-cast-one) |
+| The array arm — the picked values subtracted from a sibling selection, reindexed | [`Concerns/CanFixIndistinctState.php`](../../../vendor/filament/forms/src/Components/Concerns/CanFixIndistinctState.php) | done | — | [semantics](#the-array-arm-writes-each-sibling-without-running-its-hooks) · [diverges](#the-comparison-reads-the-raw-state-not-the-cast-one) |
 | The scalar / bool arm — a matching sibling becomes `false` if it was `true`, else `null` | [`Concerns/CanFixIndistinctState.php`](../../../vendor/filament/forms/src/Components/Concerns/CanFixIndistinctState.php) | done | — | [semantics](#the-false-skip-comes-before-the-blank-test-and-nothing-can-observe-it) · [diverges](#the-comparison-reads-the-raw-state-not-the-cast-one) |
 | The sibling path arithmetic | [`Concerns/CanFixIndistinctState.php`](../../../vendor/filament/forms/src/Components/Concerns/CanFixIndistinctState.php) | done | — | [diverges](field.md#the-five-sibling-facts-are-one-value-object-not-string-surgery) |
 
 ## Semantics
 
-### The array arm cascades because our hooks fire for every changed path
+### The array arm writes each sibling without running its hooks
 
-Filament runs the hook only for the path Livewire reported as updated; ours runs for **every** component whose raw state differs from the pre-dehydrate snapshot (`callAfterSchemaStateUpdated()` in schemas' `HasSchemas`).
-So a repair that edits a sibling makes that sibling's *own* hook run in the same pass, and it may edit a third item in turn.
-The cascade is monotone — values only ever leave a selection — and terminates, so no re-entrancy guard is added.
-
-It is **iteration-order dependent**, and that is the part to remember: the walk considers each component once, in flat-component order, so a repair that dirties an item the walk has already passed does not re-fire it.
-Picking in the *first* item cascades forward through the third; picking in the *third* clears the first and stops there.
-Both directions are pinned as tests, so the behaviour is a recorded fact rather than an accident.
-The scalar and bool arms cannot cascade at all: a sibling written to `null` is blank and returns at the guard, and one written to `false` is skipped by the filter below.
+The repair writes each sibling through `$set()` without `shouldCallUpdatedHooks`, as Filament's does, so the sibling's own hook does not run for that write.
+The host takes its changed set before any hook runs ([has-schemas.md](../schemas/has-schemas.md#livewires-updatingupdated-state-hooks-become-a-predehydrateposthydrate-snapshot-and-diff)), so a sibling the repair writes is not in that set either.
+So a pick takes its values off every sibling holding them and stops there, whatever the item order: picking `['a']` in the first of three items holding `[]`, `['a', 'b']` and `['b', 'c']` leaves the second holding `['b']` and the third `['b', 'c']`.
 
 ### The false skip comes before the blank test, and nothing can observe it
 

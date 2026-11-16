@@ -78,24 +78,6 @@ it('subtracts the picked values from a sibling selection and reindexes it', func
         ->and($component->component()->data['rows'][$keys[1]]['roles'])->toBe(['a']);
 });
 
-it('cascades the array arm forward through a third item in one pass', function (): void {
-    [$component, $keys] = mountIndistinctRows([
-        ['roles' => []],
-        ['roles' => ['a', 'b']],
-        ['roles' => ['b', 'c']],
-    ]);
-
-    $component->set("data.rows.{$keys[0]}.roles", ['a']);
-
-    // Item 0's pick takes 'a' off item 1, leaving ['b']; our hooks fire for every
-    // component whose raw state changed, so item 1's own hook runs later in the same
-    // pass and takes 'b' off item 2. Filament fires only for the updated path and
-    // would leave item 2 holding ['b', 'c'].
-    expect($component->component()->data['rows'][$keys[0]]['roles'])->toBe(['a'])
-        ->and($component->component()->data['rows'][$keys[1]]['roles'])->toBe(['b'])
-        ->and($component->component()->data['rows'][$keys[2]]['roles'])->toBe(['c']);
-});
-
 it('does not cascade back into an item the walk has already passed', function (): void {
     [$component, $keys] = mountIndistinctRows([
         ['roles' => ['a', 'b']],

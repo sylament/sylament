@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use Sylament\Forms\Components\TextInput;
 use Sylament\Schemas\Components\Group;
+use Sylament\Tests\Fixtures\Schemas\ForwardWriterForm;
 use Sylament\Tests\Fixtures\Schemas\HookLog;
 use Sylament\Tests\Fixtures\Schemas\NoteForm;
 use Sylament\Tests\Fixtures\Schemas\OldStateForm;
@@ -100,6 +101,18 @@ describe('afterStateUpdated', function (): void {
         $tester->fillForm(['slug' => 'by-hand']);
 
         expect($this::getContainer()->get(HookLog::class)->hooks)->toBe(['slug: by-hand']);
+    });
+
+    it('runs the hooks of a field a hook writes once when the write asks for them, and none when it does not, wherever the field sits', function (): void {
+        $tester = $this->createLiveComponent(ForwardWriterForm::class)
+            ->fillForm(['loud' => 'Hello'])
+            ->assertFormSet(['echoed' => 'hello']);
+
+        expect($this::getContainer()->get(HookLog::class)->hooks)->toBe(['echoed: hello']);
+
+        $tester->fillForm(['quiet' => 'Hush'])->assertFormSet(['muted' => 'hush']);
+
+        expect($this::getContainer()->get(HookLog::class)->hooks)->toBe([]);
     });
 
     it('runs no hook of a field whose value the request left as it was', function (): void {

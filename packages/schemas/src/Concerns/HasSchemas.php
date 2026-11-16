@@ -358,6 +358,8 @@ trait HasSchemas
     #[PostHydrate(priority: -10)]
     public function callAfterSchemaStateUpdated(): void
     {
+        $updatedComponents = [];
+
         foreach ($this->getCachedSchemas() as $schema) {
             foreach ($schema->getFlatComponents(withActions: false) as $component) {
                 if (!$component->hasStatePath()) {
@@ -368,8 +370,12 @@ trait HasSchemas
                     continue;
                 }
 
-                $component->callAfterStateUpdatedHooks();
+                $updatedComponents[] = $component;
             }
+        }
+
+        foreach ($updatedComponents as $component) {
+            $component->callAfterStateUpdatedHooks();
         }
     }
 

@@ -21,7 +21,8 @@ use Symfony\UX\LiveComponent\DefaultActionTrait;
  * flag stored as an int, a field and a group recording their update hooks in the
  * request's {@see HookLog}, a closure value, a path no field owns, and two groups writing
  * their own child, one searching inside itself. Every field a writer writes sits before
- * it, so the host's own update pass has already passed it and runs no hook of its own.
+ * it; the host's own update pass takes its changed fields before any hook writes, so a
+ * written field runs a hook only when its writer asks.
  */
 #[AsLiveComponent(name: 'Schemas:WriterForm', template: '@Fixtures/schemas/WriterForm.html.twig')]
 class WriterForm implements InteractsWithSchemas

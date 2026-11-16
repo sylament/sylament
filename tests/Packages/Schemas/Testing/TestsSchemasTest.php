@@ -3,10 +3,10 @@
 declare(strict_types=1);
 
 use PHPUnit\Framework\AssertionFailedError;
-use Sylament\Tests\Fixtures\Actions\ToolbarHost;
 use Sylament\Tests\Fixtures\Schemas\CodeForm;
 use Sylament\Tests\Fixtures\Schemas\EmptySchemaListForm;
 use Sylament\Tests\Fixtures\Schemas\ReactiveSchemaForm;
+use Sylament\Tests\Fixtures\Schemas\SchemalessLiveHost;
 
 it('fails asserting that a schema the host lacks exists', function (): void {
     expect(fn () => $this->createLiveComponent(CodeForm::class)->assertSchemaExists('settings'))
@@ -28,8 +28,8 @@ describe('assertSchemaExists()', function (): void {
     });
 
     it('fails naming the host for a host that holds no schemas', function (): void {
-        expect(fn () => $this->createLiveComponent(ToolbarHost::class)->assertSchemaExists('form'))
-            ->toThrow(AssertionFailedError::class, 'Failed asserting that a schema with the name [form] exists on the [' . ToolbarHost::class . '] component.');
+        expect(fn () => $this->createLiveComponent(SchemalessLiveHost::class)->assertSchemaExists('form'))
+            ->toThrow(AssertionFailedError::class, 'Failed asserting that a schema with the name [form] exists on the [' . SchemalessLiveHost::class . '] component.');
     });
 });
 

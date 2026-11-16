@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use Sylament\Schemas\Components\Fieldset;
 use Sylament\Schemas\Components\Text;
+use Sylament\Schemas\Schema;
 use Sylament\Tests\Fixtures\Schemas\ClosureForm;
 
 describe('closure injection', function (): void {
@@ -23,6 +24,15 @@ describe('closure injection', function (): void {
             ->toContainElement('label', 'By Minutes')
             ->toContainElement('label', 'edit and edit')
             ->toContainElement('label', 'This host');
+    });
+
+    it('hands a closure the raw state as it is stored: null where no state path leads, and the empty string a field holds', function (): void {
+        $fieldset = Fieldset::make()
+            ->label(static fn ($rawState): string => ($rawState === null) ? 'Raw null' : 'Raw ' . get_debug_type($rawState))
+            ->components([Text::make('a')]);
+
+        expect($this->renderViewComponent(Schema::make()->components([$fieldset])))->toContainElement('legend', 'Raw null')
+            ->and($this->createLiveComponent(ClosureForm::class)->render()->crawler())->toContainElement('label', 'Raw empty string');
     });
 
     it('hands a closure a writer by name', function (): void {

@@ -69,6 +69,7 @@ class StateForm implements InteractsWithSchemas
                     ->afterStateUpdated(static fn (Set $set, ?string $state): mixed => $set('slug', mb_strtolower((string) $state), shouldCallUpdatedHooks: true)),
                 TextInput::make('code')
                     ->required()
+                    ->maxLength(2)
                     ->mutateStateForValidationUsing(static fn (?string $state): string => mb_trim((string) $state)),
                 TextInput::make('locked')->disabled(),
                 TextInput::make('tag'),

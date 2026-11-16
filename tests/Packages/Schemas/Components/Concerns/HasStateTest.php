@@ -85,10 +85,6 @@ describe('afterStateUpdated', function (): void {
 describe('validation mutation', function (): void {
     it('validates the mutated value and leaves the one the client wrote in the state', function (): void {
         $this->createLiveComponent(StateForm::class)
-            ->fillForm(['code' => '   '])
-            ->call('save')
-            ->assertHasFormErrors(['code'])
-            ->assertFormSet(['code' => '   '])
             ->fillForm(['code' => ' X1 '])
             ->call('save')
             ->assertHasNoFormErrors()

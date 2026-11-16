@@ -31,7 +31,7 @@ class ClosureForm implements InteractsWithSchemas
      * @var array<string, mixed>
      */
     #[LiveProp(writable: true)]
-    public array $data = ['title' => 'Draft'];
+    public array $data = ['title' => 'Draft', 'remark' => ''];
 
     public function schemas(): array
     {
@@ -49,6 +49,8 @@ class ClosureForm implements InteractsWithSchemas
                     ->label(static fn (?string $state, ?string $rawState): string => "State {$state}, raw {$rawState}")
                     ->afterStateUpdated(static fn (callable $set, ?string $state): mixed => $set('slug', "{$state} slug")),
                 TextInput::make('slug'),
+                TextInput::make('remark')
+                    ->label(static fn ($rawState): string => ($rawState === '') ? 'Raw empty string' : 'Raw ' . get_debug_type($rawState)),
                 TextInput::make('subtitle')
                     ->label(static fn (callable $get): string => 'Under ' . (is_string($title = $get('title')) ? $title : 'nothing'))
                     ->afterStateUpdated(static fn (Set $write, ?string $state): mixed => $write('summary', "{$state} summary")),

@@ -51,6 +51,7 @@ describe('getComponent', function (): void {
         expect($schema->getComponent('billing.city'))->toBe($city)
             ->and($schema->getComponent('form.billing.city', isAbsoluteKey: true))->toBe($city)
             ->and($schema->getComponent(static fn (object $component): bool => $component instanceof Section))->toBe($section)
+            ->and($schema->getComponent(static fn (object $component): bool => $component instanceof Group))->toBeNull()
             ->and($schema->getComponent('billing.zip'))->toBeNull()
             ->and($schema->getComponent('billing.zip', withHidden: true))->toBe($zip);
     });

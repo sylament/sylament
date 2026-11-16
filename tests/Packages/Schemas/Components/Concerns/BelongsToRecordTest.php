@@ -149,14 +149,17 @@ describe('getRecordStatePath()', function (): void {
 });
 
 describe('the nearest record frame', function (): void {
-    it('is the root when nothing between binds, so its path is the root-relative one', function (): void {
+    it('is the root when nothing between binds, so its path is the root-relative one', function (?string $rootStatePath): void {
         $field = TextInput::make('author.name');
-        Schema::make()->statePath('data')->record(new CatalogueCard())->components([$field])->getComponents();
+        Schema::make()->statePath($rootStatePath)->record(new CatalogueCard())->components([$field])->getComponents();
 
         expect($field->getNearestRecordClass())->toBe(CatalogueCard::class)
             ->and($field->getNearestRecordStatePath())->toBe('author.name')
             ->and($field->getRecordStatePath())->toBe('author.name');
-    });
+    })->with([
+        'a root under a state path' => ['data'],
+        'a root without one' => [null],
+    ]);
 
     it('is the nearest component binding a record, even a class-string that binds no instance', function (): void {
         $field = TextInput::make('name');

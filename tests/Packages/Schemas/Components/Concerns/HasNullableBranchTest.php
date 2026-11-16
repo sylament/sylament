@@ -70,6 +70,20 @@ describe('the built-in blank test', function (): void {
         'nothing' => [[], null],
     ]);
 
+    it('keeps a branch holding a subtree owner whose slice has an entry, though every field the owner declares is blank', function (): void {
+        $record = new stdClass();
+        $record->author = new stdClass();
+        $record->author->notes = null;
+
+        $schema = $this->host->mapping(Section::make()->statePath('author')->nullWhenBlank()->components([
+            SubtreeOwningGroup::make([TextInput::make('margin')])->statePath('notes'),
+        ]))->record($record);
+        $this->host->data = ['author' => ['notes' => ['margin' => null]]];
+
+        expect($schema->getData()->author)->toBe($record->author)
+            ->notes->toBe(['margin' => null]);
+    });
+
     it('ignores a key of the slice no component declares', function (): void {
         $schema = $this->host->mapping(Section::make()->statePath('author')->nullWhenBlank()->components([TextInput::make('name')]))->record($this->card);
         $this->host->data = ['author' => ['name' => null, 'nickname' => 'Countess']];

@@ -52,7 +52,7 @@ class ReaderForm implements InteractsWithSchemas
                     ->label(static fn (Get $get): string => 'Own ' . var_export($get('subscribed'), true)),
                 Group::make([
                     TextInput::make('city')
-                        ->label(static fn (Get $get): string => 'Up ' . var_export($get('../subscribed'), true) . ', absolute ' . var_export($get('data.subscribed', isAbsolute: true), true)),
+                        ->label(static fn (Get $get): string => 'Up ' . var_export($get('../subscribed'), true) . ', absolute ' . var_export($get('data.subscribed', isAbsolute: true), true) . ', from the root ' . var_export($get('/data.subscribed'), true)),
                 ])->statePath('address'),
                 TextInput::make('note')
                     ->label(static fn (Get $get): string => 'Bag ' . var_export($get('extra'), true)),

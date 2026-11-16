@@ -6,6 +6,7 @@ use Sylament\Forms\Components\TextInput;
 use Sylament\Schemas\Components\Group;
 use Sylament\Tests\Fixtures\Schemas\HookLog;
 use Sylament\Tests\Fixtures\Schemas\NoteForm;
+use Sylament\Tests\Fixtures\Schemas\OldStateForm;
 use Sylament\Tests\Fixtures\Schemas\Selectors;
 use Sylament\Tests\Fixtures\Schemas\StateForm;
 use Sylament\Tests\Fixtures\Schemas\TaggingStateCast;
@@ -44,6 +45,16 @@ describe('state casts', function (): void {
         expect($host->data)->toBe(['code' => 'X1 second:set first:set'])
             ->and($field->getState())->toBe('X1 second:set first:set first:get second:get')
             ->and($schema->getStateSnapshot())->toBe(['code' => 'X1 second:set first:set first:get second:get']);
+    });
+
+    it('casts a path two fields share once as it fills, through the casts of the first', function (): void {
+        $host = new NoteForm();
+        $host->makeSchema()->statePath('data')->components([
+            TextInput::make('code')->stateCast(TaggingStateCast::First),
+            TextInput::make('code')->stateCast(TaggingStateCast::Second),
+        ])->fill(['code' => 'X1']);
+
+        expect($host->data)->toBe(['code' => 'X1 first:set']);
     });
 });
 
@@ -97,6 +108,12 @@ describe('afterStateUpdated', function (): void {
             ->fillForm(['code' => 'X1']);
 
         expect($this::getContainer()->get(HookLog::class)->hooks)->toBe([]);
+    });
+
+    it('hands a hook the value its field held before the request, read through its casts and as stored', function (): void {
+        $this->createLiveComponent(OldStateForm::class)->fillForm(['motto' => 'After']);
+
+        expect($this::getContainer()->get(HookLog::class)->hooks)->toBe(["old: Before first:get; raw: 'Before'"]);
     });
 });
 

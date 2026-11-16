@@ -48,6 +48,8 @@ use Sylament\Tests\Fixtures\Entity\StatuePlinth;
 use Sylament\Tests\Fixtures\Entity\SubtypedVoucher;
 use Sylament\Tests\Fixtures\Entity\Terrace;
 use Sylament\Tests\Fixtures\Entity\UidReceipt;
+use Sylament\Tests\Fixtures\Entity\Wharf;
+use Sylament\Tests\Fixtures\Entity\WharfCrane;
 use Sylament\Tests\Fixtures\Schemas\Doctrine\Cipher;
 use Sylament\Tests\Fixtures\Schemas\Doctrine\WithdrawnNoteFilter;
 use Sylament\Tests\Fixtures\Schemas\Record\UnmappedHostPathRedirect;
@@ -362,6 +364,20 @@ describe('revertIdentifierChanges()', function (): void {
 
         expect($this::getContainer()->get(AssociationReader::class)->revertIdentifierChanges($apprentice))->toBe(['commission.line' => 'This value cannot be changed.'])
             ->and($apprentice->commission->line)->toBe(2);
+    });
+
+    it('refuses a key association cleared, putting its related record back', function (): void {
+        $wharf = new Wharf();
+        $wharf->code = 'north';
+        $wharf->setCrane(new WharfCrane());
+        $this->seed($wharf);
+
+        $crane = $this->entityManager()->getRepository(WharfCrane::class)->findAll()[0];
+        $held = $crane->wharf;
+        $crane->wharf = null;
+
+        expect($this::getContainer()->get(AssociationReader::class)->revertIdentifierChanges($crane))->toBe(['wharf' => 'This value cannot be changed.'])
+            ->and($crane->wharf)->toBe($held);
     });
 
     it('refuses another spelling of a key, even one its column stores alike', function (): void {

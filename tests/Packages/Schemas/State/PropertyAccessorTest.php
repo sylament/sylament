@@ -206,6 +206,7 @@ describe('leaf no setter can change', function (): void {
         'two numeric strings' => ['007', '7', 'string', 'string'],
         'a written number that does not print as the held string' => ['05', 5, 'string', 'int'],
         'arrays whose strings differ' => [['007'], ['7'], 'array', 'array'],
+        'arrays of different lengths' => [['a'], ['a', 'b'], 'array', 'array'],
         'arrays whose string element does not print as the written number' => [['05'], [5], 'array', 'array'],
         'a bool over a held number' => [1, true, 'int', 'bool'],
         'null over a held zero' => [0, null, 'int', 'null'],
@@ -290,6 +291,11 @@ describe('setAssociationOnRecord()', function (): void {
         expect($anthology->founder)->toBe($founder)
             ->and(fn () => $accessor->setAssociationOnRecord($anthology, 'founder', new ManuscriptWriter('Ada')))
             ->toThrow(LogicException::class, sprintf('Cannot write association "founder" onto %s: no setter can change that property, and it already holds another value (the record holds [%2$s], the write [%2$s]). Build the record around the record it is attached to, or give the property a setter.', Anthology::class, ManuscriptWriter::class));
+    });
+
+    it('refuses a related record on a property no setter can change that holds none yet, which only the constructor can give', function (): void {
+        expect(fn () => $this::getContainer()->get(PropertyAccessor::class)->setAssociationOnRecord(new ManuscriptKey(), 'badge', new ManuscriptWriter('Ada')))
+            ->toThrow(LogicException::class, sprintf("Cannot write association \"badge\" onto %s: no setter can change that property, and it holds no value yet, so only the record's constructor can give it one. Build the record with its related record before attaching it.", ManuscriptKey::class));
     });
 });
 

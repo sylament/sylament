@@ -91,6 +91,13 @@ class SchemaResolutionHost implements InteractsWithSchemas
         return $text;
     }
 
+    public function badge(Schema|string $schema): Schema
+    {
+        $this->hookLog->record('badge()');
+
+        return $schema instanceof Schema ? $schema : $this->makeSchema();
+    }
+
     public function pair(Schema $schema, string $label): Schema
     {
         $this->hookLog->record('pair()');

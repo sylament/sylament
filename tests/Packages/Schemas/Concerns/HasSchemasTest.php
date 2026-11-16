@@ -157,6 +157,7 @@ describe('resolveSchemaByName()', function (): void {
         'no method' => ['missing'],
         'a parameterless method returning no schema' => ['heading'],
         'a first parameter that is no schema' => ['caption'],
+        'a first parameter typed as a union, even one naming a schema' => ['badge'],
         'a second required parameter' => ['pair'],
         'a member of the host contract' => ['validateSchema'],
         'a member of the host contract by its Schema suffix' => ['make'],

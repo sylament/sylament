@@ -47,6 +47,11 @@ describe('printable', function (): void {
         'a NUL byte' => ["a\0b"],
     ]);
 
+    it('names a value object it refuses by what it prints', function (): void {
+        expect(fn (): string => RecordKey::fromValues($this->entityManager(), CodeKeyedSlate::class, [new Cipher('  ')]))
+            ->toThrow(LogicException::class, sprintf('The identifier of [%s] is not a printable value. It holds code "  ".', CodeKeyedSlate::class));
+    });
+
     it('decodes no component carrying a NUL byte', function (): void {
         expect(RecordKey::toIdentifier($this->entityManager(), HostPathRedirect::class, 'a=00b~c'))->toBeNull()
             ->and(RecordKey::toIdentifier($this->entityManager(), HostPathRedirect::class, 'a=01b~c'))->toBe(['host' => "a\x01b", 'path' => 'c']);

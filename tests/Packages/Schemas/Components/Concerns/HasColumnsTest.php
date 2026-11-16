@@ -23,3 +23,8 @@ it('lays its content out in the columns of every call: an int counts from lg, ea
         ->toContainElement(Selectors::SECTION_CONTENT . SupportSelectors::columns('md', 2) . SupportSelectors::columns('lg', 3) . SupportSelectors::columns('xl', 6))
         ->not->toContainElement(Selectors::SECTION_CONTENT . SupportSelectors::columns('default', 3));
 });
+
+it('lays its content out from lg in the count a closure answers with', function (): void {
+    expect($this->renderSchemaComponent(Section::make('Counted')->columns(static fn (): int => 4)->components([Text::make('a')])))
+        ->toContainElement(Selectors::SECTION_CONTENT . SupportSelectors::columns('lg', 4));
+});

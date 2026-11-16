@@ -28,8 +28,8 @@ use Symfony\UX\LiveComponent\DefaultActionTrait;
  * (`notes`), each field required; a hidden Survey step and a text sit between the first
  * two. Account's before- and after-validation hooks record in the request's {@see HookLog},
  * and the one `haltIn` names halts after recording. `skippable` and `startStep` configure
- * the wizard; the live actions reach `goToStep()`, alone or after a `previousStep()` or
- * `nextStep()` in the same request.
+ * the wizard; the live actions reach `goToStep()`, alone or after a `previousStep()`, a
+ * `nextStep()` or another `goToStep()` in the same request.
  */
 #[AsLiveComponent(name: 'Schemas:WizardForm', template: '@Fixtures/schemas/WizardForm.html.twig')]
 class WizardForm implements InteractsWithSchemas
@@ -114,6 +114,15 @@ class WizardForm implements InteractsWithSchemas
         $wizard = $this->wizard();
 
         $wizard->nextStep($from);
+        $wizard->goToStep($step);
+    }
+
+    #[LiveAction]
+    public function goToThenGoTo(#[LiveArg] string $first, #[LiveArg] string $step): void
+    {
+        $wizard = $this->wizard();
+
+        $wizard->goToStep($first);
         $wizard->goToStep($step);
     }
 

@@ -94,10 +94,11 @@ it('refuses what it cannot convert, naming the class and the fix', function (Clo
     'a value a property rejects' => [fn (): mixed => new ObjectStateCast(ParcelLabel::class)->get(['name' => 'box', 'weight' => 'heavy']), 'property "weight" rejects the dehydrated value (string). Declare required() on the field that feeds it'],
 ]);
 
-it('passes null and a plain item array through untouched', function (): void {
+it('passes null, a plain item array and an item instance through untouched', function (): void {
     $cast = new ObjectStateCast(ParcelLabel::class);
 
     expect($cast->get(null))->toBeNull()
         ->and($cast->set(null))->toBeNull()
-        ->and($cast->set(['name' => 'box']))->toBe(['name' => 'box']);
+        ->and($cast->set(['name' => 'box']))->toBe(['name' => 'box'])
+        ->and($cast->get($label = new ParcelLabel('box')))->toBe($label);
 });

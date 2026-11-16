@@ -41,13 +41,13 @@ describe('assertSchemaStateSet()', function (): void {
     });
 
     it("compares the array a closure returns from the schema's raw state", function (): void {
-        $this->createLiveComponent(ReactiveSchemaForm::class)
-            ->fillForm(['title' => 'First'])
-            ->assertSchemaStateSet(function (array $state): array {
-                expect($state)->toMatchArray(['title' => 'First', 'secret' => 'kept']);
+        $tester = $this->createLiveComponent(ReactiveSchemaForm::class)->fillForm(['title' => 'First']);
 
-                return ['title' => 'First'];
-            });
+        expect(fn () => $tester->assertSchemaStateSet(function (array $state): array {
+            expect($state)->toMatchArray(['title' => 'First', 'secret' => 'kept']);
+
+            return ['title' => 'Other'];
+        }))->toThrow(AssertionFailedError::class, 'Failed asserting that a component [title] has the expected state');
     });
 
     it('fails for a path no component names whose value on the host differs', function (): void {

@@ -269,6 +269,13 @@ describe('moving between steps', function (): void {
             ->and($this->dispatchedBrowserEvents($previous, 'go-to-wizard-step'))->toBe([]);
     });
 
+    it('moves the step it has reached to the step it goes to, so a later step is refused for the rest of the request', function (): void {
+        $tester = $this->createLiveComponent(WizardForm::class, ['startStep' => 3])
+            ->call('goToThenGoTo', ['first' => 'form.account::data::wizard-step', 'step' => 'form.address::data::wizard-step']);
+
+        expect($this->dispatchedBrowserEvents($tester, 'go-to-wizard-step'))->toBe([['key' => 'form.data::wizard', 'step' => 'form.account::data::wizard-step']]);
+    });
+
     it('moves the step it has reached on as it advances, and a failing step aborts the request before anything reads it', function (): void {
         $passing = $this->createLiveComponent(WizardForm::class, ['data' => ['name' => 'Ada']])
             ->call('advanceThenGoTo', ['from' => 0, 'step' => 'form.address::data::wizard-step']);

@@ -28,7 +28,7 @@ it('binds a field that sets no liveness of its own as its container does', funct
     'a lazy parent' => [fn (): Section => Section::make()->lazy()->components([TextInput::make('title')]), 'on(change)|data.title'],
     'a debounced parent' => [fn (): Section => Section::make()->debounce(300)->components([TextInput::make('title')]), 'debounce(300)|data.title'],
     'a lazy schema' => [fn (): Section => Section::make()->components(Schema::make()->lazy()->components([TextInput::make('title')])), 'on(change)|data.title'],
-    'its own live() inside a lazy parent' => [fn (): Section => Section::make()->lazy()->components([TextInput::make('title')->live()]), 'data.title'],
+    'its own live() inside a parent on blur with a debounce' => [fn (): Section => Section::make()->live(onBlur: true, debounce: 300)->components([TextInput::make('title')->live()]), 'data.title'],
 ]);
 
 it('binds each key and value cell at the liveness of the field', function (): void {

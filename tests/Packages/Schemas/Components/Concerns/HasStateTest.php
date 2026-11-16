@@ -113,7 +113,7 @@ describe('afterStateUpdated', function (): void {
     it('hands a hook the value its field held before the request, read through its casts and as stored', function (): void {
         $this->createLiveComponent(OldStateForm::class)->fillForm(['motto' => 'After']);
 
-        expect($this::getContainer()->get(HookLog::class)->hooks)->toBe(["old: Before first:get; raw: 'Before'"]);
+        expect($this::getContainer()->get(HookLog::class)->hooks)->toBe(["old: Before first:get second:get; raw: 'Before'"]);
     });
 });
 

@@ -7,6 +7,7 @@ use Sylament\Forms\Components\TextInput;
 use Sylament\Schemas\Components\Component;
 use Sylament\Schemas\Components\Group;
 use Sylament\Schemas\State\ViolationPathTranslator;
+use Sylament\Tests\Fixtures\Schemas\KeyedItemsGroup;
 use Sylament\Tests\Fixtures\Schemas\RecordMappingHost;
 use Sylament\Tests\Fixtures\Schemas\SubtreeOwningGroup;
 
@@ -52,6 +53,7 @@ describe('translateToErrorPath()', function (): void {
     })->with([
         'a field' => [fn (): Component => TextInput::make('plaque'), 'data.plaque'],
         'a group with a relationship' => [fn (): Component => Group::make([TextInput::make('title')])->relationship('plaque'), null],
+        'a keyed-items component that is no field' => [fn (): Component => KeyedItemsGroup::make([TextInput::make('title')])->statePath('plaque'), 'data.plaque'],
     ]);
 });
 

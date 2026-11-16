@@ -14,7 +14,7 @@ use Symfony\UX\LiveComponent\Attribute\LiveProp;
 use Symfony\UX\LiveComponent\DefaultActionTrait;
 
 /**
- * A form whose one field reads its state through a {@see TaggingStateCast} and records,
+ * A form whose one field reads its state through two {@see TaggingStateCast}s and records,
  * in the request's {@see HookLog}, the value it held before the request changed it, read
  * through its casts and as stored.
  */
@@ -50,6 +50,7 @@ class OldStateForm implements InteractsWithSchemas
             ->components([
                 TextInput::make('motto')
                     ->stateCast(TaggingStateCast::First)
+                    ->stateCast(TaggingStateCast::Second)
                     ->afterStateUpdated(function (?string $old, mixed $oldRaw): void {
                         $this->hookLog->record("old: {$old}; raw: " . var_export($oldRaw, true));
                     }),

@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use Doctrine\DBAL\Exception\DriverException;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\QueryBuilder;
 use Sylament\Schemas\State\AssociationReader;
@@ -573,6 +574,14 @@ describe('findTakenIdentifiers()', function (): void {
         'two scalars' => fn (): array => [new OrderLine(order: 7, line: 2, note: 'withdrawn'), static fn (): OrderLine => new OrderLine(order: 7, line: 2), ['order', 'line']],
         'an association plus a scalar' => fn (): array => [new InvoiceLine(new Invoice(7), line: 2, note: 'withdrawn'), static fn (EntityManagerInterface $em): InvoiceLine => new InvoiceLine($em->find(Invoice::class, 7), line: 2), ['line']],
     ]);
+
+    it('turns a SQL filter it suspended back on when the lookup throws', function (): void {
+        $this->entityManager()->getFilters()->enable(WithdrawnNoteFilter::NAME);
+
+        expect(fn (): array => $this::getContainer()->get(AssociationReader::class)->findTakenIdentifiers(new SubtypedVoucher('not-a-uuid', 7, '12.25', true)))
+            ->toThrow(DriverException::class, 'invalid input syntax for type uuid')
+            ->and($this->entityManager()->getFilters()->isEnabled(WithdrawnNoteFilter::NAME))->toBeTrue();
+    })->skip(TestPlatform::current() !== TestPlatform::PostgreSql, 'Only PostgreSQL refuses a malformed guid in a lookup, since only it declares a native uuid type.');
 
     it('answers a free key free in one lookup while a SQL filter is on', function (): void {
         $this->entityManager()->getFilters()->enable(WithdrawnNoteFilter::NAME);

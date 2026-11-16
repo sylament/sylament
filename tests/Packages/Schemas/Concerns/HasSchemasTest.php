@@ -587,6 +587,13 @@ describe('validateSchemaRecord()', function (): void {
         });
     });
 
+    it('refuses to map a record onto a schema registered under no key, even a clean one', function (): void {
+        $schema = $this->host->makeSchema()->statePath('data')->components([TextInput::make('title')])->record(new VettedCard());
+        $this->host->data = ['title' => 'Fine'];
+
+        expect(fn () => $schema->getData())->toThrow(LogicException::class, 'Cannot validate a schema without a key');
+    });
+
     it("files a violation no component maps at a pathless schema's empty path", function (): void {
         $this->seed(new CappedHeadline(code: 'H1', title: 'Old', slug: 'news'));
 

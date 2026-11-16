@@ -104,12 +104,12 @@ describe('the leaves of the related record', function (): void {
         expect($this->host->data)->toBe(['log' => ['openedOn' => '2026-03-14', 'beam' => 'fixed']]);
     });
 
-    it('fills an association and an object no cast flattens empty', function (): void {
-        $this->host->mapping(Group::make([TextInput::make('openedOn'), TextInput::make('supplier')])->relationship('log'))
+    it('fills an association, an object no cast flattens and a leaf the related record lacks empty', function (): void {
+        $this->host->mapping(Group::make([TextInput::make('openedOn'), TextInput::make('supplier'), TextInput::make('nickname')])->relationship('log'))
             ->record($this->lighthouse)
             ->fill($this->lighthouse);
 
-        expect($this->host->data)->toBe(['log' => ['openedOn' => null, 'supplier' => null]]);
+        expect($this->host->data)->toBe(['log' => ['openedOn' => null, 'supplier' => null, 'nickname' => null]]);
     });
 
     it('saves onto the related record in place, writing only the leaves the submission carries', function (): void {

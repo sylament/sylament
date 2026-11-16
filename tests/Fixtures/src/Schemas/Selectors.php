@@ -55,4 +55,6 @@ final class Selectors
     {
         return "[data-model=\"norender|{$statePath}\"]";
     }
+
+    public const string TABS = '.sy-sc-tabs';
 }

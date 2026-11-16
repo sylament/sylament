@@ -6,30 +6,29 @@ use Sylament\Actions\Action;
 use Sylament\Actions\Testing\TestAction;
 use Sylament\Forms\Components\Contracts\HasAffixes;
 use Sylament\Forms\Components\TextInput;
-use Sylament\Tests\Fixtures\Forms\Selectors;
 use Sylament\Tests\Fixtures\Schemas\CodeForm;
 use Sylament\Tests\Fixtures\Support\Selectors as SupportSelectors;
 use Sylament\Tests\Infrastructure\ComponentRegistry;
 
 it('renders prefix and suffix labels around the input', function (): void {
     expect($this->renderSchemaComponent(TextInput::make('price')->prefix('€')->suffix('per kg')))
-        ->toContainElement(Selectors::PREFIX, '€')
-        ->toContainElement(Selectors::SUFFIX, 'per kg');
+        ->toContainElement(SupportSelectors::PREFIX, '€')
+        ->toContainElement(SupportSelectors::SUFFIX, 'per kg');
 });
 
 it('puts an inline prefix inside the border; the last call on a side wins', function (): void {
     expect($this->renderSchemaComponent(TextInput::make('w')->prefix('kg', isInline: true)))
-        ->toContainElement(Selectors::INLINE_PREFIX);
+        ->toContainElement(SupportSelectors::INLINE_PREFIX);
 
     expect($this->renderSchemaComponent(TextInput::make('w')->inlinePrefix()->prefix('kg')))
-        ->toContainElement(Selectors::PREFIX, 'kg')
-        ->not->toContainElement(Selectors::INLINE_PREFIX);
+        ->toContainElement(SupportSelectors::PREFIX, 'kg')
+        ->not->toContainElement(SupportSelectors::INLINE_PREFIX);
 });
 
 it('renders an affix icon in gray unless a colour is set', function (): void {
     expect($this->renderSchemaComponent(TextInput::make('a')->prefixIcon('forms:envelope')->suffixIcon('forms:check')->suffixIconColor('success')))
-        ->toContainElement(Selectors::PREFIX_ICON . SupportSelectors::GRAY)
-        ->toContainElement(Selectors::SUFFIX_ICON . SupportSelectors::color('success'));
+        ->toContainElement(SupportSelectors::PREFIX_ICON . SupportSelectors::GRAY)
+        ->toContainElement(SupportSelectors::SUFFIX_ICON . SupportSelectors::color('success'));
 });
 
 it('renders affix actions in order; plural calls append and a closure may return several or none', function (): void {
@@ -37,13 +36,13 @@ it('renders affix actions in order; plural calls append and a closure may return
         ->prefixAction(Action::make('one'))
         ->prefixActions([fn (): array => [Action::make('two'), Action::make('three')], fn (): null => null]);
 
-    expect($this->renderSchemaComponent($field))->toContainButtons(Selectors::PREFIX_ACTIONS, ['One', 'Two', 'Three']);
+    expect($this->renderSchemaComponent($field))->toContainButtons(SupportSelectors::PREFIX_ACTIONS, ['One', 'Two', 'Three']);
 });
 
 it('renders an affix action as a small icon button unless the action says otherwise', function (): void {
     expect($this->renderSchemaComponent(TextInput::make('a')->suffixActions([Action::make('copy'), Action::make('open')->link()])))
-        ->toContainButtons(Selectors::SUFFIX_ACTIONS . SupportSelectors::SMALL_ICON_BUTTON, ['Copy'])
-        ->toContainButtons(Selectors::SUFFIX_ACTIONS . SupportSelectors::LINK, ['Open']);
+        ->toContainButtons(SupportSelectors::SUFFIX_ACTIONS . SupportSelectors::SMALL_ICON_BUTTON, ['Copy'])
+        ->toContainButtons(SupportSelectors::SUFFIX_ACTIONS . SupportSelectors::LINK, ['Open']);
 });
 
 it('runs an affix action when it is clicked', function (): void {
@@ -55,5 +54,5 @@ it('runs an affix action when it is clicked', function (): void {
 });
 
 it('renders the prefix on every field that offers one', function (string $field): void {
-    expect($this->renderSchemaComponent($field::make('a')->prefix('€')))->toContainElement(Selectors::PREFIX, '€');
+    expect($this->renderSchemaComponent($field::make('a')->prefix('€')))->toContainElement(SupportSelectors::PREFIX, '€');
 })->with(fn (): array => ComponentRegistry::componentsImplementing(HasAffixes::class));

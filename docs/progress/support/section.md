@@ -43,8 +43,8 @@ The template carries `liveComponentId` and `schemaKey` props, both defaulting to
 
 **In:** the branch, the two props and the controller's `resetState()` exist.
 **Missing:** nothing supplies the props: the schemas `Section` template ([`Section/index.html.twig`](../../../packages/schemas/templates/partials/Section/index.html.twig)) threads `collapseId`, ids and flags but no `liveComponentId` or `schemaKey`, so the branch is never taken.
-[`SectionRenderTest`](../../../packages/schemas/tests/Integration/Components/SectionRenderTest.php) asserts only that the action is absent; the positive path has no render test.
-**Next step:** land it with the first live-component-state consumer that populates the two props, adding a render test that sets them and asserts the `resetState` action appears, or drop the forward stub if live-component state reshapes the contract.
+[`SectionRenderTest`](../../../packages/schemas/tests/Integration/Components/SectionRenderTest.php) asserts only that the action is absent.
+**Next step:** land it with the first live-component-state consumer that populates the two props, or drop the forward stub if live-component state reshapes the contract.
 
 ### Two collapsed-state rules differ from Filament's with no recorded reason
 
@@ -79,7 +79,7 @@ It is revisited when the `support` translations (`resources/lang/`) are ported.
 ### The live-component-state reset wiring is a Sylament addition
 
 The `liveComponentId` / `schemaKey` props and the `reset-schema-component-state@window → resetState` Stimulus action have no counterpart in Filament's section view: they are forward wiring for a live-component-state consumer.
-The branch has no caller and no positive-path test, which is why the row is in progress rather than done; see its [detail](#the-live-state-reset-branch-has-no-caller).
+The branch has no caller, which is why the row is in progress rather than done; see its [detail](#the-live-state-reset-branch-has-no-caller).
 
 ### Section CSS adds a dark-mode text color to the content container
 

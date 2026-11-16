@@ -8,7 +8,9 @@ namespace Sylament\Tests\Fixtures\Support;
  * The looks support's components give any area's markup: colour, size, state, button,
  * icon button, icon, link, badge and breadcrumb separator, named by the `sy-` class the
  * stylesheet paints them by; the modal's close button by its name, and a dropdown's
- * teleport by its Stimulus value.
+ * teleport by its Stimulus value. A side of the input wrapper is named by its `sy-` class,
+ * because which side an affix sits on is the stylesheet's contract; what sits there is
+ * asserted by its text, its role or its element.
  */
 final class Selectors
 {
@@ -44,6 +46,20 @@ final class Selectors
     public const string TELEPORTED_DROPDOWN = '[data-sylament--support--dropdown-teleport-value="true"]';
 
     public const string KEPT_DROPDOWN = '[data-sylament--support--dropdown-teleport-value="false"]';
+
+    public const string PREFIX = '.sy-input-wrp-prefix';
+
+    public const string SUFFIX = '.sy-input-wrp-suffix';
+
+    public const string INLINE_PREFIX = '.sy-input-wrp-prefix.sy-inline';
+
+    public const string PREFIX_ICON = '.sy-input-wrp-prefix svg';
+
+    public const string SUFFIX_ICON = '.sy-input-wrp-suffix svg';
+
+    public const string PREFIX_ACTIONS = '.sy-input-wrp-prefix button';
+
+    public const string SUFFIX_ACTIONS = '.sy-input-wrp-suffix button';
 
     public static function color(string $name): string
     {

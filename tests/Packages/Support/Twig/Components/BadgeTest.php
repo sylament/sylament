@@ -52,7 +52,7 @@ it("paints in primary unless coloured, gray uncoloured, and a shade map inline b
     expect($this->renderTwigComponent('SylamentSupport:Badge', content: 'Urgent')->crawler())
         ->toContainElement(SupportSelectors::BADGE . SupportSelectors::COLORED . SupportSelectors::color('primary') . SupportSelectors::textShades(700, 400), 'Urgent')
         ->and($this->renderTwigComponent('SylamentSupport:Badge', ['color' => 'gray'], content: 'Urgent')->crawler())
-        ->toContainElement(SupportSelectors::BADGE . SupportSelectors::GRAY . '', 'Urgent')
+        ->toContainElement(SupportSelectors::BADGE . SupportSelectors::GRAY, 'Urgent')
         ->and($this->renderTwigComponent('SylamentSupport:Badge', ['color' => Color::Rose, 'style' => 'width: 2rem'], content: 'Urgent')->crawler())
         ->toContainElement(SupportSelectors::BADGE . SupportSelectors::COLORED . SupportSelectors::palette(Color::Rose[500]) . '[style$="width: 2rem"]', 'Urgent');
 });

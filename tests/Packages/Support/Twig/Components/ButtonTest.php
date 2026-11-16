@@ -54,7 +54,7 @@ it("paints in primary unless coloured, gray uncoloured, and a shade map inline b
     expect($this->renderTwigComponent('SylamentSupport:Button', content: 'Save')->crawler())
         ->toContainElement(SupportSelectors::BUTTON . SupportSelectors::COLORED . SupportSelectors::color('primary') . '[class~="sy-bg-color-400"]', 'Save')
         ->and($this->renderTwigComponent('SylamentSupport:Button', ['color' => 'gray'], content: 'Save')->crawler())
-        ->toContainElement(SupportSelectors::BUTTON . SupportSelectors::GRAY . '', 'Save')
+        ->toContainElement(SupportSelectors::BUTTON . SupportSelectors::GRAY, 'Save')
         ->and($this->renderTwigComponent('SylamentSupport:Button', ['color' => Color::Rose, 'style' => 'width: 2rem'], content: 'Save')->crawler())
         ->toContainElement(SupportSelectors::BUTTON . SupportSelectors::COLORED . SupportSelectors::palette(Color::Rose[500]) . '[style$="width: 2rem"]', 'Save');
 });

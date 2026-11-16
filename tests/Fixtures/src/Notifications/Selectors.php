@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Sylament\Tests\Fixtures\Notifications;
 
+use Sylament\Tests\Fixtures\Support\Selectors as SupportSelectors;
+
 /**
  * The notifications area's render selectors. The stack is found by its role, a toast by
  * its Stimulus controller, its title by its heading and its close button by its name;
@@ -38,11 +40,11 @@ final class Selectors
 
     public static function aligned(string $alignment): string
     {
-        return self::STACK . ".sy-align-{$alignment}";
+        return self::STACK . SupportSelectors::align($alignment);
     }
 
     public static function verticallyAligned(string $alignment): string
     {
-        return self::STACK . ".sy-vertical-align-{$alignment}";
+        return self::STACK . SupportSelectors::verticalAlign($alignment);
     }
 }

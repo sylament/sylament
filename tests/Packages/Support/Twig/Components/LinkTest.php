@@ -57,7 +57,7 @@ it("paints in primary unless coloured, gray uncoloured, and a shade map inline b
     expect($this->renderTwigComponent('SylamentSupport:Link', content: 'Orders')->crawler())
         ->toContainElement(SupportSelectors::LINK . SupportSelectors::COLORED . SupportSelectors::color('primary') . SupportSelectors::textShades(700, 400), 'Orders')
         ->and($this->renderTwigComponent('SylamentSupport:Link', ['color' => 'gray'], content: 'Orders')->crawler())
-        ->toContainElement(SupportSelectors::LINK . SupportSelectors::GRAY . '', 'Orders')
+        ->toContainElement(SupportSelectors::LINK . SupportSelectors::GRAY, 'Orders')
         ->and($this->renderTwigComponent('SylamentSupport:Link', ['color' => Color::Rose, 'style' => 'width: 2rem'], content: 'Orders')->crawler())
         ->toContainElement(SupportSelectors::LINK . SupportSelectors::COLORED . SupportSelectors::palette(Color::Rose[500]) . '[style$="width: 2rem"]', 'Orders');
 });

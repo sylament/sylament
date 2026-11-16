@@ -40,3 +40,8 @@ it('renders attributes as html_attr() does', function (array $attributes, string
     'a name with an invalid byte, escaped byte by byte' => [["a\xFFb" => 'y'], '&#x61;&#xFF;&#x62;="y"'],
     'a value with an invalid byte, substituted' => [['title' => "a\xFFb"], "title=\"a\u{FFFD}b\""],
 ]);
+
+it('refuses an attribute value that is an object but not Stringable, as html_attr() does', function (): void {
+    expect(fn (): string => new ComponentAttributeBag(['title' => new stdClass()])->toHtml())
+        ->toThrow(RuntimeException::class, 'The "title" attribute value should be a scalar, an iterable, or an object implementing "Stringable", got "stdClass".');
+});

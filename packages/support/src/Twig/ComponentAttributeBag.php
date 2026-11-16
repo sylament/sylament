@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Sylament\Support\Twig;
 
 use BackedEnum;
+use RuntimeException;
 use Stringable;
 
 class ComponentAttributeBag
@@ -130,7 +131,7 @@ class ComponentAttributeBag
             }
 
             if (!is_scalar($value) && !$value instanceof Stringable) {
-                continue;
+                throw new RuntimeException(sprintf('The "%s" attribute value should be a scalar, an iterable, or an object implementing "%s", got "%s".', $name, Stringable::class, get_debug_type($value)));
             }
 
             $scalars[$name] = (string) $value;

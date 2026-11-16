@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Sylament\Support\Tests\Unit\Twig;
 
-use stdClass;
 use Stringable;
 use Sylament\Support\Enums\IconSize;
 use Sylament\Support\Twig\ComponentAttributeBag;
@@ -131,7 +130,7 @@ it('toHtml drops an empty class or style list', function (): void {
     expect($bag->toHtml())->toBe('data-a="1"');
 });
 
-it('toHtml renders stringable values and skips non-stringable ones', function (): void {
+it('toHtml renders stringable values', function (): void {
     $stringable = new class implements Stringable {
         public function __toString(): string
         {
@@ -139,7 +138,7 @@ it('toHtml renders stringable values and skips non-stringable ones', function ()
         }
     };
 
-    $bag = new ComponentAttributeBag(['title' => $stringable, 'alt' => new stdClass()]);
+    $bag = new ComponentAttributeBag(['title' => $stringable]);
 
     expect($bag->toHtml())->toBe('title="stringable"');
 });

@@ -100,6 +100,7 @@ Nothing reverses it.
 
 Filament never renders attributes from this class: Blade echoes the bag and Laravel's base `__toString` handles escaping.
 With no Blade echo path, Sylament adds `toScalarAttributes()` and `toHtml()` (no Filament-class counterpart), which reproduce Twig's `html_attr()` semantics: `BackedEnum` → backing value, `aria-*` booleans → literal `"true"`/`"false"`, `data-*` `true` → `"true"` and non-scalar `data-*` → JSON, class joined on spaces and style on `; `, generic iterables joined on spaces (dropping `null`/`false`, keeping a lone `true` as an empty value), and hostile attribute names entity-escaped with the `html_attr_relaxed` strategy so a key cannot break out to inject a handler.
+A value that is an object but not `Stringable`, outside `data-*`, throws a `RuntimeException` naming the attribute where `html_attr()` throws its `RuntimeError`, so a misplaced object fails loudly rather than vanishing from the markup; such an object inside an iterable, `class` or `style` value is skipped as a token instead.
 
 Two escaping details the renderer owns, both with no Filament counterpart:
 

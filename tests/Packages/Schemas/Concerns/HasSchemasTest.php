@@ -19,11 +19,15 @@ use Sylament\Tests\Fixtures\Entity\BerthMooring;
 use Sylament\Tests\Fixtures\Entity\BoundVolume;
 use Sylament\Tests\Fixtures\Entity\CappedHeadline;
 use Sylament\Tests\Fixtures\Entity\HostPathAlias;
+use Sylament\Tests\Fixtures\Entity\IndexedBinder;
+use Sylament\Tests\Fixtures\Entity\IndexedBinderSheet;
 use Sylament\Tests\Fixtures\Entity\Invoice;
 use Sylament\Tests\Fixtures\Entity\InvoiceLine;
 use Sylament\Tests\Fixtures\Entity\NurseryBench;
 use Sylament\Tests\Fixtures\Entity\OrderLine;
 use Sylament\Tests\Fixtures\Entity\StampedBulletin;
+use Sylament\Tests\Fixtures\Entity\VettedBinder;
+use Sylament\Tests\Fixtures\Entity\VettedBinderSheet;
 use Sylament\Tests\Fixtures\Schemas\CappedHeadlineForm;
 use Sylament\Tests\Fixtures\Schemas\CodeForm;
 use Sylament\Tests\Fixtures\Schemas\ComponentSeamForm;
@@ -768,5 +772,65 @@ describe('validateSchemaRecord()', function (): void {
             expect($exception->getErrors())->toBe(['data.author.name' => ['The author name is too short.']]);
         })
             ->and($card->author->name)->toBe('');
+    });
+
+    it('files a violation inside an item under the item the record collection holds it at, after a save that thins and grows it', function (): void {
+        $binder = new VettedBinder();
+        $binder->addSheet(new VettedBinderSheet('One'));
+        $binder->addSheet(new VettedBinderSheet('Two'));
+        $this->seed($binder);
+        $binder = $this->reload($binder);
+
+        $schema = $this->host->mapping(Repeater::make('sheets')->relationship()->components([TextInput::make('heading')]))->record($binder);
+        $schema->fill($binder);
+        [$removed, $kept] = array_keys($this->host->data['sheets']);
+        unset($this->host->data['sheets'][$removed]);
+        $this->host->data['sheets'][$kept]['heading'] = 'Overlong';
+        $this->host->data['sheets']['added'] = ['heading' => 'Overlong too'];
+
+        expect(fn () => $schema->getData())->toThrow(function (ValidationException $exception) use ($kept): void {
+            expect($exception->getErrors())->toBe([
+                "data.sheets.{$kept}.heading" => ['A sheet heading is too long.'],
+                'data.sheets.added.heading' => ['A sheet heading is too long.'],
+            ]);
+        });
+    });
+
+    it('files a violation inside an item under the item a collection indexed by a string holds it at', function (): void {
+        $binder = new IndexedBinder();
+        $binder->addSheet(new IndexedBinderSheet(code: 'alpha', heading: 'One'));
+        $binder->addSheet(new IndexedBinderSheet(code: 'beta', heading: 'Two'));
+        $this->seed($binder);
+        $binder = $this->reload($binder);
+
+        $schema = $this->host->mapping(Repeater::make('sheets')->relationship()->components([TextInput::make('code'), TextInput::make('heading')]))->record($binder);
+        $schema->fill($binder);
+
+        $beta = array_find_key($this->host->data['sheets'], static fn (array $item): bool => $item['code'] === 'beta');
+        $this->host->data['sheets'][$beta]['heading'] = 'Overlong';
+
+        expect(fn () => $schema->getData())->toThrow(function (ValidationException $exception) use ($beta): void {
+            expect($exception->getErrors())->toBe(["data.sheets.{$beta}.heading" => ['A sheet heading is too long.']]);
+        });
+    });
+
+    it("files a violation on the collection under the repeater, and one on an item property no item field maps at the schema's own path", function (): void {
+        $binder = new VettedBinder();
+        $binder->addSheet(new VettedBinderSheet('One', status: VettedBinderSheet::DRAFT));
+        $binder->addSheet(new VettedBinderSheet('Two'));
+        $this->seed($binder);
+        $binder = $this->reload($binder);
+
+        $schema = $this->host->mapping(Repeater::make('sheets')->relationship()->components([TextInput::make('heading')]))->record($binder);
+        $schema->fill($binder);
+        $this->host->data['sheets']['added'] = ['heading' => 'Three'];
+
+        expect(fn () => $schema->getData())->toThrow(function (ValidationException $exception): void {
+            expect($exception->getErrors())->toBe([
+                'data.sheets' => ['A binder holds two sheets at most.'],
+                'data' => ['A sheet cannot stay a draft.'],
+            ]);
+        })
+            ->and($this->host->getErrorsForSchemaStatePath('data'))->toBe(['A sheet cannot stay a draft.']);
     });
 });

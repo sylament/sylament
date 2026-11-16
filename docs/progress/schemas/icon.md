@@ -63,3 +63,4 @@ Restoring the branch reverses it.
 
 Filament gives the icon an Alpine `x-tooltip` attribute, rendering a `Htmlable` tooltip as markup.
 The port's template sets the tooltip as the icon's `title` attribute, because the toolkit ships no tooltip primitive, the call [column.md](../tables/column.md#a-tooltip-renders-as-a-native-title-and-markup-is-flattened-to-text) records for table columns.
+A `Markup` tooltip is flattened to its text with `striptags` first, because an attribute value cannot hold markup.

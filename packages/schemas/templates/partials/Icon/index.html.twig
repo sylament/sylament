@@ -4,5 +4,5 @@
 {{ generateIconHtml(component.getIcon, attributes: {
     class: ['sy-sc-icon', colorAttrs.class],
     style: colorAttrs.style,
-    ...(tooltip ? {title: tooltip} : {}),
+    ...(tooltip ? {title: tooltip is markup ? tooltip|striptags : tooltip} : {}),
 }, size: component.getSize) }}

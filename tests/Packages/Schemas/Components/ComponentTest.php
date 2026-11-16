@@ -6,6 +6,7 @@ use Sylament\Schemas\Components\Fieldset;
 use Sylament\Schemas\Components\Text;
 use Sylament\Schemas\Schema;
 use Sylament\Tests\Fixtures\Schemas\ClosureForm;
+use Sylament\Tests\Fixtures\Schemas\Selectors;
 
 describe('closure injection', function (): void {
     it('hands a closure the component itself, by name or by its class', function (): void {
@@ -33,6 +34,12 @@ describe('closure injection', function (): void {
 
         expect($this->renderViewComponent(Schema::make()->components([$fieldset])))->toContainElement('legend', 'Raw null')
             ->and($this->createLiveComponent(ClosureForm::class)->render()->crawler())->toContainElement('label', 'Raw empty string');
+    });
+
+    it('evaluates a closure of a component no schema holds, with no operation or record to hand it', function (): void {
+        $text = Text::make(static fn ($operation, $context, $record): string => (($operation ?? $context ?? $record) === null) ? 'Detached' : 'Attached');
+
+        expect($this->renderViewComponent($text))->toContainElement(Selectors::TEXT, 'Detached');
     });
 
     it('hands a closure a writer by name', function (): void {

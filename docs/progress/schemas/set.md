@@ -18,18 +18,17 @@ It then writes through the owning component's `state()`, optionally firing its a
 | [`__invoke` component-branch write: resolve path → `state()` with target cast](../../../packages/schemas/src/State/Set.php) | [`Set::__invoke()`](../../../vendor/filament/schemas/src/Components/Utilities/Set.php) | done | — | — |
 | [Closure-valued state evaluated before writing; evaluated value returned](../../../packages/schemas/src/State/Set.php) | [`Set::__invoke()`](../../../vendor/filament/schemas/src/Components/Utilities/Set.php) | done | — | — |
 | [`shouldCallUpdatedHooks` gating of after-update hooks](../../../packages/schemas/src/State/Set.php) | [`Set::__invoke()`](../../../vendor/filament/schemas/src/Components/Utilities/Set.php) | done | — | [diverges](#shouldcallupdatedhooks-fires-the-non-bubbling-hook-set-dropping-filaments-parent-bubbling) |
-| [Raw-bag else-branch](../../../packages/schemas/src/State/Set.php) | [`Set::__invoke()`](../../../vendor/filament/schemas/src/Components/Utilities/Set.php) | in progress | — | [detail](#the-raw-bag-write-is-untested-and-skips-the-roots-child-schema-cache-clear) |
+| [Raw-bag else-branch](../../../packages/schemas/src/State/Set.php) | [`Set::__invoke()`](../../../vendor/filament/schemas/src/Components/Utilities/Set.php) | in progress | — | [detail](#the-raw-bag-write-skips-the-roots-child-schema-cache-clear) |
 | [`skipComponentsChildContainersWhileSearching(bool)` toggle](../../../packages/schemas/src/State/Set.php) | [`Set::skipComponentsChildContainersWhileSearching()`](../../../vendor/filament/schemas/src/Components/Utilities/Set.php) | done | — | — |
 
 ## Details
 
-### The raw-bag write is untested and skips the root's child-schema cache clear
+### The raw-bag write skips the root's child-schema cache clear
 
 The else-branch writes a path no component owns with `$this->component->getPropertyAccessor()->set($liveComponent, $path, $state)`.
-No test runs it: every `SetTest` write resolves to a component.
 Filament follows the bag write with `getRootContainer()->clearCachedChildSchemas()`, so child schemas that depend on the written value rebuild.
 The port omits that call, because the Schema-level `clearCachedChildSchemas()` it needs is not ported ([schema.md](schema.md#the-schema-level-clearcachedchildschemas-has-every-prerequisite)); the component-level one and its cache exist ([component.md](component.md#haschildcomponents-only-the-materialization-core-is-ported)).
-The row is done once a `SetTest` case writes an undeclared path and the call follows the bag write.
+The row is done once the call follows the bag write.
 
 ## Divergences
 

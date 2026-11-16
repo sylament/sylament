@@ -42,9 +42,9 @@ The host contract it binds to is [`InteractsWithSchemas`](interacts-with-schemas
 | [`resolveDefaultClosureDependencyForEvaluationByType` (record probe)](../../../packages/schemas/src/Schema.php) | [`Schema`](../../../vendor/filament/schemas/src/Schema.php) | done | — | [diverges](#the-record-type-probe-is-instanceof-not-a-model-gate) |
 | `$model` by name | [`Schema`](../../../vendor/filament/schemas/src/Schema.php) | skipped | — | [diverges](#the-model-closure-parameter-is-not-ported) |
 | [alignment factories `start`/`end`/`center`/`between`](../../../packages/schemas/src/Schema.php) | [`Schema::start()` …](../../../vendor/filament/schemas/src/Schema.php) | done | — | — |
-| [`isLive`/`isLiveOnBlur`/`isLiveDebounced`/`getLiveDebounce` parent-walk overrides](../../../packages/schemas/src/Schema.php) | [`Schema`](../../../vendor/filament/schemas/src/Schema.php) | in progress | — | [detail](#the-parent-walk-inheritance-overrides-are-untested) |
+| [`isLive`/`isLiveOnBlur`/`isLiveDebounced`/`getLiveDebounce` parent-walk overrides](../../../packages/schemas/src/Schema.php) | [`Schema`](../../../vendor/filament/schemas/src/Schema.php) | done | — | — |
 | [`hasGap`/`isDense` parent-walk overrides](../../../packages/schemas/src/Schema.php) | [`Schema`](../../../vendor/filament/schemas/src/Schema.php) | done | — | — |
-| [`getAllColumns` parent inheritance override](../../../packages/schemas/src/Schema.php) | [`Schema`](../../../vendor/filament/schemas/src/Schema.php) | in progress | — | [detail](#the-parent-walk-inheritance-overrides-are-untested) |
+| [`getAllColumns` parent inheritance override](../../../packages/schemas/src/Schema.php) | [`Schema`](../../../vendor/filament/schemas/src/Schema.php) | done | — | — |
 | [Twig-template rendering (`Schema/index.html.twig`)](../../../packages/schemas/templates/partials/Schema/index.html.twig) | [`Schema`](../../../vendor/filament/schemas/src/Schema.php) | done | — | [diverges](#the-schema-renders-visible-children-only-without-hidden-placeholders) |
 | [`dispatchClientSideStateReset()`](../../../packages/schemas/src/Schema.php) | [`Schema::dispatchClientSideStateReset()`](../../../vendor/filament/schemas/src/Schema.php) | done | — | [diverges](#the-root-schema-drops-livewire-partial-render-and-alpine-wiring) |
 | Root Livewire/Alpine render wiring (`wire:partial`, `x-data filamentSchema`) | [`Schema`](../../../vendor/filament/schemas/src/Schema.php) | skipped | — | [diverges](#the-root-schema-drops-livewire-partial-render-and-alpine-wiring) |
@@ -82,11 +82,6 @@ The host contract it binds to is [`InteractsWithSchemas`](interacts-with-schemas
 | [`HasFieldWrapper`](../../../packages/schemas/src/Concerns/HasFieldWrapper.php) | [`Concerns/HasFieldWrapper.php`](../../../vendor/filament/schemas/src/Concerns/HasFieldWrapper.php) | done | — | [diverges](#the-field-wrapper-view-is-opaque-data-with-no-closure-arm-and-no-parent-walk) |
 
 ## Details
-
-### The parent-walk inheritance overrides are untested
-
-`isLive()`/`isLiveOnBlur()`/`isLiveDebounced()`/`getLiveDebounce()` and `getAllColumns()` each fall through to `getParentComponent()?->…()` when the schema declares no own value, which is the container's inheritance semantics.
-The own-value branches are exercised (state-binding-modifier reads, `SchemaRenderTest` column counts), but no test builds a parent→child schema pair and asserts the child inherits the parent's live mode or column count.
 
 ### `getComponent()` lacks the skip-child-containers arm
 

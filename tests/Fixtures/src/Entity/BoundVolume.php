@@ -1,0 +1,20 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Sylament\Tests\Fixtures\Entity;
+
+use Doctrine\ORM\Mapping as ORM;
+
+/**
+ * A record keyed by its association onto a {@see VolumeSpine}, so its key is blank
+ * while the spine's code is.
+ */
+#[ORM\Entity]
+class BoundVolume
+{
+    #[ORM\Id]
+    #[ORM\OneToOne]
+    #[ORM\JoinColumn(name: 'spine_code', referencedColumnName: 'code')]
+    public ?VolumeSpine $spine = null;
+}

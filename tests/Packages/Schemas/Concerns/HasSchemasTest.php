@@ -2,15 +2,27 @@
 
 declare(strict_types=1);
 
+use Sylament\Forms\Components\Repeater;
+use Sylament\Forms\Components\TextInput;
 use Sylament\Forms\Validation\RequiredValue;
+use Sylament\Schemas\Components\Group;
+use Sylament\Schemas\Exceptions\ValidationException;
 use Sylament\Schemas\Schema;
+use Sylament\Tests\Fixtures\Entity\BenchPot;
+use Sylament\Tests\Fixtures\Entity\BoundVolume;
+use Sylament\Tests\Fixtures\Entity\HostPathAlias;
+use Sylament\Tests\Fixtures\Entity\NurseryBench;
+use Sylament\Tests\Fixtures\Entity\StampedBulletin;
 use Sylament\Tests\Fixtures\Schemas\CodeForm;
 use Sylament\Tests\Fixtures\Schemas\ComponentSeamForm;
 use Sylament\Tests\Fixtures\Schemas\HookLog;
 use Sylament\Tests\Fixtures\Schemas\ReactiveSchemaForm;
+use Sylament\Tests\Fixtures\Schemas\RecordCheckHost;
 use Sylament\Tests\Fixtures\Schemas\SchemaResolutionHost;
+use Sylament\Tests\Fixtures\Schemas\ScopedValidationForm;
 use Sylament\Tests\Fixtures\Schemas\UnnamedSchemaHost;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
+use Symfony\Component\Validator\Validator\ValidatorInterface;
 
 it('keeps the constraint each error failed beside its message, which the re-rendered host still holds', function (): void {
     $host = $this->createLiveComponent(CodeForm::class)->call('save')->component();
@@ -284,4 +296,100 @@ describe('uploadSchemaComponentFile()', function (): void {
         'a file key over 64 characters' => ['form.attachment', str_repeat('k', 65), 'sylament_upload_' . str_repeat('k', 65)],
         'no part under the file key' => ['form.attachment', 'k1', 'sylament_upload_k2'],
     ]);
+});
+
+describe('validateSchema()', function (): void {
+    it("files each failing path's message, announces the failure and throws, and a passing run drops the errors and the stickiness", function (): void {
+        $tester = $this->createLiveComponent(ScopedValidationForm::class)
+            ->call('save')
+            ->assertHasFormErrors(['code' => 'This value should not be blank.', 'city']);
+
+        expect($this->dispatchedBrowserEvents($tester, 'form-validation-error'))->toBe([['schemaKey' => 'form']]);
+
+        $tester->fillForm(['code' => 'X1', 'city' => 'Prague'])
+            ->call('save')
+            ->assertHasNoFormErrors()
+            ->fillForm(['code' => ''])
+            ->assertHasNoFormErrors();
+    });
+});
+
+describe('clearSchemaValidation()', function (): void {
+    it("drops one schema's errors with those of the schemas nested in it, keeping another's, and every schema's with no key", function (): void {
+        $tester = $this->createLiveComponent(ScopedValidationForm::class)
+            ->call('saveDetails')
+            ->call('saveSettings')
+            ->assertHasFormErrors(['city'])
+            ->assertHasFormErrors(['theme'], 'settings');
+
+        $tester->call('clearErrors', ['schemaKey' => 'form'])
+            ->assertHasNoFormErrors(['city'])
+            ->assertHasFormErrors(['theme'], 'settings');
+
+        $tester->call('clearErrors')
+            ->assertHasNoFormErrors(form: 'settings');
+    });
+});
+
+describe('validateSchemaRecord()', function (): void {
+    beforeEach(function (): void {
+        $this->host = new RecordCheckHost();
+        $this->host->setSchemaStateValidator($this::getContainer()->get(ValidatorInterface::class));
+    });
+
+    it('files a blank key refusal under the first blank key field a component maps, past one it does not', function (): void {
+        $schema = $this->host->check(new HostPathAlias(), TextInput::make('path'), TextInput::make('label'));
+        $this->host->data = ['path' => '   ', 'label' => 'Hostless'];
+
+        expect(fn () => $schema->getData())->toThrow(function (ValidationException $exception): void {
+            expect($exception->getErrors())->toBe(['data.path' => ['This value should not be blank.']]);
+        })
+            ->and($this->host->getErrorsForSchemaStatePath('data.path'))->toBe(['This value should not be blank.']);
+    });
+
+    it('leaves a blank key no component maps to the create that persists the record, running no statement', function (): void {
+        $alias = new HostPathAlias();
+        $schema = $this->host->check($alias, TextInput::make('label'));
+        $this->host->data = ['label' => 'Orphan'];
+
+        expect($schema->getData())->toBe($alias)
+            ->and($alias->label)->toBe('Orphan')
+            ->and($this->statementsRun())->toBe([]);
+    });
+
+    it('refuses a blank key field a component maps on a record whose prePersist callback fills the other half', function (): void {
+        $schema = $this->host->check(new StampedBulletin(), TextInput::make('scope'), TextInput::make('label'));
+        $this->host->data = ['scope' => '   ', 'label' => 'Spaced'];
+
+        expect(fn () => $schema->getData())->toThrow(function (ValidationException $exception): void {
+            expect($exception->getErrors())->toBe(['data.scope' => ['This value should not be blank.']]);
+        });
+    });
+
+    it("files a related record's blank key refusal at the schema's own path when only a layout component entangling it maps the key", function (): void {
+        $schema = $this->host->check(new BoundVolume(), Group::make([TextInput::make('label')])->relationship('spine'));
+        $this->host->data = ['spine' => ['label' => 'Unnumbered']];
+
+        expect(fn () => $schema->getData())->toThrow(function (ValidationException $exception): void {
+            expect($exception->getErrors())->toBe(['data' => ['This value should not be blank.']]);
+        })
+            ->and($this->host->getErrorsForSchemaStatePath('data'))->toBe(['This value should not be blank.']);
+    });
+
+    it('files a taken key under the one half a relationship repeater item maps, and nothing at the item', function (): void {
+        $this->seed(new BenchPot(bay: 'north', slot: '1', plant: 'basil'));
+
+        $bench = new NurseryBench();
+        $bench->addPot(new BenchPot(bay: 'south', slot: '1'));
+
+        $schema = $this->host->check($bench, TextInput::make('name'), Repeater::make('pots')->relationship()->components([TextInput::make('bay'), TextInput::make('plant')]));
+        $itemKey = array_key_first($this->host->data['pots']);
+        $this->host->data['name'] = 'North';
+        $this->host->data['pots'][$itemKey]['bay'] = 'north';
+        $this->host->data['pots'][$itemKey]['plant'] = 'thyme';
+
+        expect(fn () => $schema->getData())->toThrow(function (ValidationException $exception) use ($itemKey): void {
+            expect($exception->getErrors())->toBe(["data.pots.{$itemKey}.bay" => ['This value is already used.']]);
+        });
+    });
 });

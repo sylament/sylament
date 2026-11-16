@@ -37,6 +37,9 @@ class ReaderForm implements InteractsWithSchemas
         'search' => ['flag' => 1],
     ];
 
+    #[LiveProp]
+    public string $heading = 'Outside';
+
     public function schemas(): array
     {
         return ['form'];
@@ -56,6 +59,8 @@ class ReaderForm implements InteractsWithSchemas
                 ])->statePath('address'),
                 TextInput::make('note')
                     ->label(static fn (Get $get): string => 'Bag ' . var_export($get('extra'), true)),
+                TextInput::make('caption')
+                    ->label(static fn (Get $get): string => 'Host ' . var_export($get('../heading'), true)),
                 Fieldset::make()
                     ->statePath('lookup')
                     ->label(static fn (Get $get): string => 'Skipped ' . var_export($get('lookup.flag'), true))

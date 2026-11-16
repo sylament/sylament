@@ -14,6 +14,10 @@ it('reads a path no field owns from the host', function (): void {
     expect($this->createLiveComponent(ReaderForm::class)->render()->crawler())->toContainElement('label', "Bag 'Kept'");
 });
 
+it('reads a host property outside its bag through a path that climbs out of the root container', function (): void {
+    expect($this->createLiveComponent(ReaderForm::class)->render()->crawler())->toContainElement('label', "Host 'Outside'");
+});
+
 it('reads a path inside its own component from the host, unless told to search that component too', function (): void {
     expect($this->createLiveComponent(ReaderForm::class)->render()->crawler())
         ->toContainElement('legend', 'Skipped 1')

@@ -223,7 +223,7 @@ describe('the key of a related record it builds', function (): void {
         $berth = new Berth();
         $berth->mooring = new BerthMooring();
         $berth->mooring->pier = 'North';
-        $berth->mooring->slot = 'S1';
+        $berth->mooring->slot = '   ';
         $this->seed($berth);
         $berth = $this->entityManager()->find(Berth::class, $berth->id);
         $schema = $this->host->mapping(Group::make([TextInput::make('label')])->relationship('mooring'))->record($berth);
@@ -325,11 +325,13 @@ describe('the subtree', function (): void {
             })]);
         $this->host->mapping($section)->record($lighthouse)->fill($lighthouse);
 
-        $belowContent = $section->getChildSchema(Section::BELOW_CONTENT_SCHEMA_KEY);
+        $crawler = $this->renderSchemaComponent(Section::make()->relationship('log')
+            ->components([TextInput::make('keeper')])
+            ->belowContent([TextInput::make('openedOn')]));
 
         expect($seen)->toBe($lighthouse->getLog())
-            ->and($belowContent?->isInline())->toBeTrue()
-            ->and($belowContent?->isEmbeddedInParentComponent())->toBeTrue();
+            ->and($crawler->filter('.sy-inline [name="openedOn"]')->count())->toBe(1)
+            ->and($crawler->filter('.sy-inline [name="keeper"]')->count())->toBe(0);
     });
 
     it('fills a hooked path from its hook, from any child schema, and leaves a path hooked only on the other edge to the leaf walk', function (): void {

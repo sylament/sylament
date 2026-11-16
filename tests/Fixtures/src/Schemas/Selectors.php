@@ -12,8 +12,9 @@ namespace Sylament\Tests\Fixtures\Schemas;
  * asserting what a trait puts on them; a section's content schema, the child schema a
  * component's gap, density and columns reach, which the schema every render wraps a
  * component in would otherwise answer for; a control bound to a state path, by the
- * `data-model` value schemas' binding modifiers write; and a tab and its panel, by the
- * roles the Tabs and Tab partials give them.
+ * `data-model` value schemas' binding modifiers write; a tab and its panel, by the
+ * roles the Tabs and Tab partials give them; and a wizard step's header button and panel,
+ * by the step key the Wizard and Step partials put on both.
  */
 final class Selectors
 {
@@ -62,4 +63,10 @@ final class Selectors
     public const string TAB = '[role="tab"]';
 
     public const string TAB_PANEL = '[role="tabpanel"]';
+
+    public const string WIZARD = '.sy-sc-wizard';
+
+    public const string WIZARD_STEP_BUTTON = 'button[data-step-key]';
+
+    public const string WIZARD_STEP = '[role="group"][data-step-key]';
 }

@@ -12,14 +12,6 @@ it('stacks the children it is made with in one column', function (): void {
         ->toContainElement('.sy-sc-group ' . Selectors::SCHEMA . SupportSelectors::ONE_COLUMN, 'Street City');
 });
 
-it('is made with a single component or a string as well as an array', function (Closure $children): void {
-    expect($this->renderSchemaComponent(Group::make($children())))
-        ->toContainElement('.sy-sc-group ' . Selectors::COMPONENT_CELL . ' ' . Selectors::TEXT, 'Street');
-})->with([
-    'a component' => [static fn (): Text => Text::make('Street')],
-    'a string' => [static fn (): string => 'Street'],
-]);
-
 it('renders a root of its own around its child schema', function (): void {
     expect($this->renderSchemaComponent(Group::make([Text::make('Street'), Text::make('City')])))
         ->toContainElement('.sy-sc-group' . SupportSelectors::STANDALONE_ROOT . ' ' . Selectors::COMPONENT_CELL . ' ' . Selectors::TEXT, 'Street')

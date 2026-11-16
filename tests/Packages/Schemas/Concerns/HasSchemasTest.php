@@ -5,10 +5,12 @@ declare(strict_types=1);
 use Sylament\Forms\Validation\RequiredValue;
 use Sylament\Schemas\Schema;
 use Sylament\Tests\Fixtures\Schemas\CodeForm;
+use Sylament\Tests\Fixtures\Schemas\ComponentSeamForm;
 use Sylament\Tests\Fixtures\Schemas\HookLog;
 use Sylament\Tests\Fixtures\Schemas\ReactiveSchemaForm;
 use Sylament\Tests\Fixtures\Schemas\SchemaResolutionHost;
 use Sylament\Tests\Fixtures\Schemas\UnnamedSchemaHost;
+use Symfony\Component\HttpFoundation\File\UploadedFile;
 
 it('keeps the constraint each error failed beside its message, which the re-rendered host still holds', function (): void {
     $host = $this->createLiveComponent(CodeForm::class)->call('save')->component();
@@ -208,4 +210,78 @@ describe('getOldSchemaState()', function (): void {
             ->and($host->getOldSchemaState('data.missing'))->toBeNull()
             ->and($host->getOldSchemaState(null))->toBeNull();
     });
+});
+
+describe('callSchemaComponentMethod()', function (): void {
+    it('calls an exposed public method with the arguments named, and answers its result in a browser event', function (): void {
+        $tester = $this->createLiveComponent(ComponentSeamForm::class)
+            ->call('callSchemaComponentMethod', ['componentKey' => 'form.greeter', 'method' => 'greet', 'arguments' => ['name' => 'Ada']]);
+
+        expect($this::getContainer()->get(HookLog::class)->hooks)->toBe(['greet: Ada'])
+            ->and($this->dispatchedBrowserEvents($tester, 'sylament:schema-component-method-result'))->toBe([
+                ['componentKey' => 'form.greeter', 'method' => 'greet', 'fileKey' => null, 'result' => 'Hello, Ada'],
+            ]);
+    });
+
+    it('calls nothing and answers a null result for a call the gate refuses', function (string $componentKey, string $method, array $arguments): void {
+        $tester = $this->createLiveComponent(ComponentSeamForm::class)
+            ->call('callSchemaComponentMethod', ['componentKey' => $componentKey, 'method' => $method, 'arguments' => $arguments]);
+
+        expect($this::getContainer()->get(HookLog::class)->hooks)->toBe([])
+            ->and($this->dispatchedBrowserEvents($tester, 'sylament:schema-component-method-result'))->toBe([
+                ['componentKey' => $componentKey, 'method' => $method, 'fileKey' => null, 'result' => null],
+            ]);
+    })->with([
+        'a method not exposed' => ['form.greeter', 'unexposed', []],
+        'an exposed method that is not public' => ['form.greeter', 'guarded', []],
+        'a method the component lacks' => ['form.greeter', 'missing', []],
+        'an unknown component' => ['form.nobody', 'greet', ['name' => 'Ada']],
+        'a key naming a member of the host contract' => ['validateSchemaRecord.greeter', 'greet', ['name' => 'Ada']],
+        'an argument the method does not take' => ['form.greeter', 'greet', ['name' => 'Ada', 'nickname' => 'A']],
+        'a required argument missing' => ['form.greeter', 'greet', []],
+        'an argument of the wrong type' => ['form.greeter', 'greet', ['name' => ['Ada']]],
+    ]);
+
+    it('throws naming the method and the component for a result JSON cannot carry', function (): void {
+        expect(fn () => $this->createLiveComponent(ComponentSeamForm::class)->call('callSchemaComponentMethod', ['componentKey' => 'form.greeter', 'method' => 'rawBytes']))
+            ->toThrow(LogicException::class, 'The method "rawBytes" on schema component "form.greeter" returned a value that is not JSON-serialisable; a browser-callable method must.');
+    });
+});
+
+describe('uploadSchemaComponentFile()', function (): void {
+    it('hands the part named after the file key to the component, and answers its result with that key', function (): void {
+        $tester = $this->createLiveComponent(ComponentSeamForm::class)->call(
+            'uploadSchemaComponentFile',
+            ['componentKey' => 'form.attachment', 'fileKey' => 'second'],
+            [
+                'sylament_upload_first' => new UploadedFile(__FILE__, 'first.txt', 'text/plain', test: true),
+                'sylament_upload_second' => new UploadedFile(__FILE__, 'second.txt', 'text/plain', test: true),
+            ],
+        );
+
+        expect($this::getContainer()->get(HookLog::class)->hooks)->toBe(['upload: second second.txt'])
+            ->and($this->dispatchedBrowserEvents($tester, 'sylament:schema-component-method-result'))->toBe([
+                ['componentKey' => 'form.attachment', 'method' => 'uploadSchemaComponentFile', 'fileKey' => 'second', 'result' => ['ok' => true, 'fileKey' => 'second', 'name' => 'second.txt']],
+            ]);
+    });
+
+    it('hands no file over and answers a null result for an upload the gate refuses', function (string $componentKey, string $fileKey, string $part): void {
+        $tester = $this->createLiveComponent(ComponentSeamForm::class)->call(
+            'uploadSchemaComponentFile',
+            ['componentKey' => $componentKey, 'fileKey' => $fileKey],
+            [$part => new UploadedFile(__FILE__, 'note.txt', 'text/plain', test: true)],
+        );
+
+        expect($this::getContainer()->get(HookLog::class)->hooks)->toBe([])
+            ->and($this->dispatchedBrowserEvents($tester, 'sylament:schema-component-method-result'))->toBe([
+                ['componentKey' => $componentKey, 'method' => 'uploadSchemaComponentFile', 'fileKey' => $fileKey, 'result' => null],
+            ]);
+    })->with([
+        'a component accepting no uploads' => ['form.plain', 'k1', 'sylament_upload_k1'],
+        'a hidden component' => ['form.hiddenAttachment', 'k1', 'sylament_upload_k1'],
+        'a file key with a dot' => ['form.attachment', 'k.1', 'sylament_upload_k.1'],
+        'a file key ending in a newline' => ['form.attachment', "k1\n", "sylament_upload_k1\n"],
+        'a file key over 64 characters' => ['form.attachment', str_repeat('k', 65), 'sylament_upload_' . str_repeat('k', 65)],
+        'no part under the file key' => ['form.attachment', 'k1', 'sylament_upload_k2'],
+    ]);
 });

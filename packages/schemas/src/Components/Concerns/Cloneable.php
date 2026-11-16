@@ -26,6 +26,7 @@ trait Cloneable
         $clone->flushCachedAbsoluteKey();
         $clone->flushCachedAbsoluteStatePath();
         $clone->flushCachedAbsoluteInheritanceKey();
+        $clone->executedAfterStateUpdatedCallbacks = [];
         $clone->cloneChildComponents();
 
         foreach ($this->afterCloned as $callback) {

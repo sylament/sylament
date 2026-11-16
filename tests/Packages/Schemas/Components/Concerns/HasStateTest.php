@@ -103,7 +103,7 @@ describe('afterStateUpdated', function (): void {
         expect($this::getContainer()->get(HookLog::class)->hooks)->toBe(['slug: by-hand']);
     });
 
-    it('runs the hooks of a field a hook writes once when the write asks for them, and none when it does not, wherever the field sits', function (): void {
+    it('runs the hooks of a field a hook writes once when the write asks for them, and none when it does not, when the field sits after its writer', function (): void {
         $tester = $this->createLiveComponent(ForwardWriterForm::class)
             ->fillForm(['loud' => 'Hello'])
             ->assertFormSet(['echoed' => 'hello']);
@@ -113,6 +113,18 @@ describe('afterStateUpdated', function (): void {
         $tester->fillForm(['quiet' => 'Hush'])->assertFormSet(['muted' => 'hush']);
 
         expect($this::getContainer()->get(HookLog::class)->hooks)->toBe([]);
+    });
+
+    it('runs the hook of a field the client and a hook both write in one request once when they write the same value, and once for each value when they differ', function (): void {
+        $tester = $this->createLiveComponent(StateForm::class)
+            ->set('data', ['slug' => 'hello world', 'title' => 'Hello World'])
+            ->assertFormSet(['slug' => 'hello world']);
+
+        expect($this::getContainer()->get(HookLog::class)->hooks)->toBe(['slug: hello world']);
+
+        $tester->set('data', ['slug' => 'by-hand', 'title' => 'Bye'])->assertFormSet(['slug' => 'bye']);
+
+        expect($this::getContainer()->get(HookLog::class)->hooks)->toBe(['slug: by-hand', 'slug: bye']);
     });
 
     it('runs no hook of a field whose value the request left as it was', function (): void {

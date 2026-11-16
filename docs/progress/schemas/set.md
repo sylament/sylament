@@ -36,5 +36,5 @@ The row is done once the call follows the bag write.
 
 Filament's `Set` calls `$component->callAfterStateUpdated()`, which runs the component's hooks, applies its partial-render and skip-render settings, and bubbles the notification to the parent component.
 Sylament's `Set` calls [`callAfterStateUpdatedHooks()`](../../../packages/schemas/src/Components/Concerns/HasState.php), Filament's protected hook runner made public, which runs only this component's own hooks.
-The port has no `callAfterStateUpdated()` orchestrator to call, because firing and de-duplication belong to the LiveComponent host ([component.md](component.md#afterstateupdated-firing-de-dup-and-bubbling-move-out-of-the-trait-to-the-livecomponent-host)).
+The port has no `callAfterStateUpdated()` orchestrator to call, because firing belongs to the LiveComponent host and de-duplication to `callAfterStateUpdatedHooks()` itself ([component.md](component.md#afterstateupdated-firing-and-bubbling-move-out-of-the-trait-to-the-livecomponent-host)).
 Porting parent bubbling into `HasState` and repointing `Set` at it would reverse this.

@@ -32,6 +32,11 @@ trait HasState
      */
     protected array $afterStateUpdated = [];
 
+    /**
+     * @var array<int, array<string, true>>
+     */
+    protected array $executedAfterStateUpdatedCallbacks = [];
+
     protected bool|Closure|null $isDehydrated = null;
 
     protected bool|Closure $isSaved = true;
@@ -262,12 +267,22 @@ trait HasState
      * Fire every registered `afterStateUpdated` hook. Invoked by the host's
      * `#[PostHydrate]` pass for each component whose state changed on the
      * round-trip; each hook receives the pre-change `$old` (cast) / `$oldRaw`
-     * (raw) values injected by name.
+     * (raw) values injected by name. Each hook runs once per state this
+     * component instance holds, however many writes ask for it.
      */
     public function callAfterStateUpdatedHooks(): static
     {
         foreach ($this->afterStateUpdated as $callback) {
+            $callbackId = spl_object_id($callback);
+            $state = serialize($this->getRawState());
+
+            if (isset($this->executedAfterStateUpdatedCallbacks[$callbackId][$state])) {
+                continue;
+            }
+
             $this->callAfterStateUpdatedHook($callback);
+
+            $this->executedAfterStateUpdatedCallbacks[$callbackId][$state] = true;
         }
 
         return $this;

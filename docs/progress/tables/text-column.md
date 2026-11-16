@@ -326,8 +326,8 @@ A margin is what the rest of the toolkit means by this.
 `Button`, `Link` and `Badge` each space their icon from their label with `gap-1.5` on a flex or grid container, and `.sy-ta-text-item` is the one place that cannot: the unconditional `line-clamp-(--sy-line-clamp,none)` that makes [`lineClamp()`](../../../packages/support/src/Components/Concerns/HasLineClamp.php) work sets this element's `display` itself, `-webkit-box` with no clamp value and `flow-root` once one lands, so there is never a flex box here to hang a gap on, and taking one by force would break the clamp.
 The partial stamps the icon `sy-ta-text-icon-before` or `sy-ta-text-icon-after` from the position it already computes, and `text-column.css` gives each the matching `me-1.5` / `ms-1.5`, the same 6px those container gaps produce, which survives both `display` values.
 
-Both halves are pinned because either one failing alone is silent: the Integration case asserts the partial stamps exactly one position class per position, and a stylesheet check asserts `text-column.css` defines a rule for both.
-A class with no rule, or a rule no class reaches, renders the icon flush against its value with nothing in the console.
+Either half failing alone is silent: a class with no rule, or a rule no class reaches, renders the icon flush against its value with nothing in the console.
+The partial's half is pinned, exactly one position class per position; the stylesheet's half is a margin only a browser shows, so no case stands behind it.
 
 ### The item policy measures the dark surface against `gray-900`
 

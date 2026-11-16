@@ -268,9 +268,11 @@ describe('the record path map', function (): void {
     it('round-trips a nested object in place', function (): void {
         $card = new CatalogueCard();
         $card->author = new CardAuthor();
+
         $author = $card->author;
 
         $author->name = 'Ada';
+
         $schema = $this->host->mapping(Section::make()->statePath('author')->components([TextInput::make('name')]))->record($card);
 
         $schema->fill($card);
@@ -396,6 +398,7 @@ describe('the nullable branch pass', function (): void {
     it('leaves a branch alone that the submission no longer carries', function (): void {
         $card = new CatalogueCard();
         $card->author = new CardAuthor();
+
         $author = $card->author;
 
         $schema = $this->host->mapping(
@@ -422,6 +425,7 @@ describe('the relationship hooks', function (): void {
     it('hands a hooked path to its save hook, which owns the write, even on a record never saved', function (): void {
         $card = new CatalogueCard();
         $card->author = new CardAuthor();
+
         $author = $card->author;
 
         $received = [];
@@ -581,7 +585,7 @@ describe('findUnmappedAdditions()', function (): void {
         'an overwrite of a mapped key' => [['title' => 'Dune'], ['title' => 'Messiah'], []],
         "a hidden or dehydrated(false) field's key" => [[], ['shelfMark' => 'A1', 'catalogued' => '2026-03-04'], []],
         "a key inside an owner's value" => [['meta' => ['note' => 'a']], ['meta' => ['note' => 'a', 'extra' => 'b']], []],
-        'a dotted key naming a mapped path, read as one key' => [[], ['author.name' => 'Ada'], []],
+        'a dotted key, read as one key rather than as the path the state already holds' => [['flags' => ['a' => 1]], ['flags' => ['a' => 1], 'flags.a' => 1], ['flags.a']],
         'a removed key' => [['title' => 'Dune', 'author' => ['name' => 'Ada']], ['title' => 'Dune'], []],
         'a mapped branch emptied' => [['author' => ['name' => 'Ada']], ['author' => []], []],
     ]);

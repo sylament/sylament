@@ -43,7 +43,7 @@ The template carries `liveComponentId` and `schemaKey` props, both defaulting to
 
 **In:** the branch, the two props and the controller's `resetState()` exist.
 **Missing:** nothing supplies the props: the schemas `Section` template ([`Section/index.html.twig`](../../../packages/schemas/templates/partials/Section/index.html.twig)) threads `collapseId`, ids and flags but no `liveComponentId` or `schemaKey`, so the branch is never taken.
-[`SectionRenderTest`](../../../packages/schemas/tests/Integration/Components/SectionRenderTest.php) asserts only that the action is absent.
+Until then a section renders no reset action.
 **Next step:** land it with the first live-component-state consumer that populates the two props, or drop the forward stub if live-component state reshapes the contract.
 
 ### Two collapsed-state rules differ from Filament's with no recorded reason

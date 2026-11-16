@@ -10,6 +10,7 @@ use Sylament\Schemas\Schema;
 use Sylament\Tests\Fixtures\Schemas\HookLog;
 use Sylament\Tests\Fixtures\Schemas\Selectors;
 use Sylament\Tests\Fixtures\Schemas\WizardForm;
+use Sylament\Tests\Fixtures\Support\Selectors as SupportSelectors;
 use Symfony\Component\DomCrawler\Crawler;
 use Twig\Error\RuntimeError;
 
@@ -71,8 +72,8 @@ it('lays out what it holds in the columns of its wizard, unless it names its own
         Step::make('Review')->columns(3)->components([TextInput::make('notes')]),
     ])->columns(2));
 
-    expect($wizard)->toContainElement(Selectors::WIZARD_STEP . '[data-step-key="schema.account::data::wizard-step"] [style*="--cols-lg: repeat(2, minmax(0, 1fr))"] input[name="name"]')
-        ->toContainElement(Selectors::WIZARD_STEP . '[data-step-key="schema.review::data::wizard-step"] [style*="--cols-lg: repeat(3, minmax(0, 1fr))"] input[name="notes"]');
+    expect($wizard)->toContainElement(Selectors::WIZARD_STEP . '[data-step-key="schema.account::data::wizard-step"] ' . SupportSelectors::columns('lg', 2) . ' input[name="name"]')
+        ->toContainElement(Selectors::WIZARD_STEP . '[data-step-key="schema.review::data::wizard-step"] ' . SupportSelectors::columns('lg', 3) . ' input[name="notes"]');
 });
 
 it('keeps a hidden label as screen-reader text, so its header button and its panel keep their name', function (): void {

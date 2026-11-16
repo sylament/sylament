@@ -33,7 +33,7 @@ it('marks no asterisk on its legend for a required field it holds', function ():
 
 it('renders a fieldset captioned by its legend around its child schema', function (): void {
     expect($this->renderSchemaComponent(Fieldset::make('Address')->components([Text::make('Street')])))
-        ->toContainElement('fieldset' . SupportSelectors::STANDALONE_ROOT . '.sy-fieldset' . Selectors::FIELDSET . ' legend', 'Address')
+        ->toContainElement('fieldset' . SupportSelectors::STANDALONE_ROOT . SupportSelectors::FIELDSET . Selectors::FIELDSET . ' legend', 'Address')
         ->toContainElement(Selectors::FIELDSET . ' ' . Selectors::COMPONENT_CELL . ' ' . Selectors::TEXT, 'Street');
 });
 

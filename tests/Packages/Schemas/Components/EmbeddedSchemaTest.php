@@ -3,11 +3,12 @@
 declare(strict_types=1);
 
 use Sylament\Tests\Fixtures\Schemas\EmbeddedSchemaHost;
+use Sylament\Tests\Fixtures\Schemas\Selectors;
 
 it('renders the schema of its host it is named by where it sits, and no schema it is not named by', function (): void {
     $page = $this->createLiveComponent(EmbeddedSchemaHost::class)->render()->crawler();
 
-    expect($page)->toContainElement('[data-sylament--schemas--schema-schema-key-value="page"]', 'Before Notes Title After Archive')
+    expect($page)->toContainElement(Selectors::schemaKeyed('page'), 'Before Notes Title After Archive')
         ->toContainElement('label', 'Notes')
         ->not->toContainElement('label', 'Reason');
 });

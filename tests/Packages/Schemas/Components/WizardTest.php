@@ -72,7 +72,7 @@ describe('render', function (): void {
             . '[data-action~="keydown->sylament--schemas--wizard#onKeydown"]';
 
         expect($wizard)->toContainElement($controller)
-            ->toContainElement($controller . ' ol[data-sylament--schemas--wizard-target="header"] li[data-sylament--schemas--wizard-target="headerStep"][data-step-key="schema.review::data::wizard-step"] button[data-sylament--schemas--wizard-target="headerButton"][data-action="click->sylament--schemas--wizard#goToStepFromHeader"][data-step-key="schema.review::data::wizard-step"][aria-controls="schema.review::data::wizard-step"]', 'check 02 Review Not completed')
+            ->toContainElement($controller . ' ol[data-sylament--schemas--wizard-target="header"] li' . Selectors::WIZARD_HEADER_STEP . '[data-step-key="schema.review::data::wizard-step"] button[data-sylament--schemas--wizard-target="headerButton"][data-action="click->sylament--schemas--wizard#goToStepFromHeader"][data-step-key="schema.review::data::wizard-step"][aria-controls="schema.review::data::wizard-step"]', 'check 02 Review Not completed')
             ->toContainElement($controller . ' [data-sylament--schemas--wizard-target="previousSlot"]', 'Back')
             ->toContainElement($controller . ' [data-sylament--schemas--wizard-target="cancelSlot"]')
             ->toContainElement($controller . ' [data-sylament--schemas--wizard-target="nextSlot"]', 'Next')

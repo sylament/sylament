@@ -72,7 +72,7 @@ describe('render', function (): void {
 
         expect($render)
             ->toContainElement(Selectors::SCHEMA . SupportSelectors::STANDALONE_ROOT . '[data-purpose="billing"]' . SupportSelectors::columns('lg', 3))
-            ->toContainElement('[style*="--col-span-lg: span 2 / span 2"][style*="--col-start-lg: 2"][style*="--col-order-lg: 1"] ' . Selectors::COMPONENT_CELL . ' ' . Selectors::TEXT, 'Wide')
+            ->toContainElement(SupportSelectors::columnSpan('lg', 2) . SupportSelectors::columnStart('lg', 2) . SupportSelectors::columnOrder('lg', 1) . ' ' . Selectors::COMPONENT_CELL . ' ' . Selectors::TEXT, 'Wide')
             ->toContainElement(Selectors::COMPONENT_CELL . ' ' . Selectors::TEXT, 'Plain')
             ->and($render->filter(Selectors::COMPONENT_CELL))->toHaveCount(2);
     });
@@ -93,7 +93,7 @@ describe('render', function (): void {
         $render = $this->renderSchemaComponent(Section::make('Billing')->components([Text::make('a')]));
 
         expect($render)
-            ->toContainElement(Selectors::ROOT_SCHEMA . '[data-sylament--schemas--schema-schema-key-value="schema"][data-action~="form-validation-error@window->sylament--schemas--schema#onValidationError"][data-action~="reset-schema-component-state@window->sylament--schemas--schema#onStateReset"]')
+            ->toContainElement(Selectors::ROOT_SCHEMA . Selectors::schemaKeyed('schema') . '[data-action~="form-validation-error@window->sylament--schemas--schema#onValidationError"][data-action~="reset-schema-component-state@window->sylament--schemas--schema#onStateReset"]')
             ->toContainElement(Selectors::SECTION_CONTENT . Selectors::UNCONTROLLED)
             ->and($this->renderViewComponent(Schema::make()->components([Text::make('a')])))
             ->toContainElement(Selectors::SCHEMA . Selectors::UNCONTROLLED);
@@ -103,7 +103,7 @@ describe('render', function (): void {
         expect(Schema::make()->components([Text::make('a')->hidden()])->render($this::getContainer()->get('twig')))->toBeNull()
             ->and($this->renderSchemaComponent(Section::make('Empty')->components([Text::make('a')->hidden()])))
             ->toContainElement('h2', 'Empty')
-            ->not->toContainElement('[id="schema.empty::section-content"]');
+            ->not->toContainElement(Selectors::sectionContentOf('schema.empty'));
     });
 });
 

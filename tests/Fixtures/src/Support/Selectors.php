@@ -7,9 +7,9 @@ namespace Sylament\Tests\Fixtures\Support;
 /**
  * The standalone-root marker, and the looks support's components give any area's markup:
  * colour, palette, size, font, alignment, state, button, icon button, icon, link, badge,
- * breadcrumb separator and a section's container, variants and collapsibility, named by the `sy-` class or custom
- * property the stylesheet paints them by; the column counts support's grid gives a schema, by
- * the custom property the stylesheet lays its grid out by; a section's collapse button by its place and its state, whose name changes;
+ * breadcrumb separator, a fieldset with its hidden label and required mark, and a section's container, variants and collapsibility, named by the `sy-` class or custom
+ * property the stylesheet paints them by; the column counts, spans, starts and orders support's grid gives a schema, by
+ * the custom property the stylesheet lays its grid out by; a section's Stimulus controller and the values it reads; a section's collapse button by its place and its state, whose name changes;
  * the modal's close, the badge's delete and the pagination's chevron buttons by their
  * names, and a dropdown's teleport by its Stimulus value. A side of the input wrapper is
  * named by its `sy-` class, because which side an affix sits on is the stylesheet's
@@ -60,6 +60,14 @@ final class Selectors
     public const string COLLAPSIBLE = '.sy-collapsible';
 
     public const string COLLAPSED = '.sy-collapsed';
+
+    public const string SECTION_CONTROLLER = '[data-controller="sylament--support--section"]';
+
+    public const string FIELDSET = '.sy-fieldset';
+
+    public const string FIELDSET_LABEL_HIDDEN = '.sy-fieldset-label-hidden';
+
+    public const string FIELDSET_REQUIRED_MARK = '.sy-fieldset-label-required-mark';
 
     /**
      * A grid of one column at every breakpoint: the default map and nothing over it.
@@ -152,6 +160,29 @@ final class Selectors
     public static function columns(string $breakpoint, int $count): string
     {
         return "[style*=\"--cols-{$breakpoint}: repeat({$count}, minmax(0, 1fr))\"]";
+    }
+
+    public static function columnSpan(string $breakpoint, int $span): string
+    {
+        return "[style*=\"--col-span-{$breakpoint}: span {$span} / span {$span}\"]";
+    }
+
+    public static function columnStart(string $breakpoint, int $column): string
+    {
+        return "[style*=\"--col-start-{$breakpoint}: {$column}\"]";
+    }
+
+    public static function columnOrder(string $breakpoint, int $order): string
+    {
+        return "[style*=\"--col-order-{$breakpoint}: {$order}\"]";
+    }
+
+    /**
+     * A value the section controller reads, or, without one, the value's presence.
+     */
+    public static function sectionValue(string $name, ?string $value = null): string
+    {
+        return $value === null ? "[data-sylament--support--section-{$name}-value]" : "[data-sylament--support--section-{$name}-value=\"{$value}\"]";
     }
 
     public static function verticalAlign(string $value): string

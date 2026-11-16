@@ -42,8 +42,8 @@ it('lays out what it holds in the columns of its tabs, unless it sets its own', 
         Tab::make('Open')->components([Text::make('Awaiting dispatch')]),
         Tab::make('Closed')->columns(3)->components([Text::make('Delivered')]),
     ])))
-        ->toContainElement(Selectors::TAB_PANEL . ' [style*="--cols-lg: repeat(2, minmax(0, 1fr))"]', 'Awaiting dispatch')
-        ->toContainElement(Selectors::TAB_PANEL . ' [style*="--cols-lg: repeat(3, minmax(0, 1fr))"]', 'Delivered');
+        ->toContainElement(Selectors::TAB_PANEL . ' ' . SupportSelectors::columns('lg', 2), 'Awaiting dispatch')
+        ->toContainElement(Selectors::TAB_PANEL . ' ' . SupportSelectors::columns('lg', 3), 'Delivered');
 });
 
 it('shows its icon beside its label, after it when told', function (): void {

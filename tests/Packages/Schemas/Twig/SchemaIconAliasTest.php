@@ -9,6 +9,7 @@ use Sylament\Schemas\Components\Wizard;
 use Sylament\Schemas\Components\Wizard\Step;
 use Sylament\Schemas\Twig\SchemaIconAlias;
 use Sylament\Support\Icons\IconManager;
+use Sylament\Tests\Fixtures\Schemas\Selectors;
 use Symfony\Component\DomCrawler\Crawler;
 
 it('swaps the icon of its own control for the one an application registers under the alias', function (string $alias, Closure $component, string $icon): void {
@@ -21,5 +22,5 @@ it('swaps the icon of its own control for the one an application registers under
 })->with([
     'the tab dropdown trigger' => [SchemaIconAlias::COMPONENTS_TABS_DROPDOWN_TRIGGER_BUTTON, fn (): Component => Tabs::make('Order')->scrollable(false)->tabs([Tab::make('Details')]), '[data-sylament--schemas--tabs-target="triggerTab"] svg'],
     'the more tabs button' => [SchemaIconAlias::COMPONENTS_TABS_MORE_TABS_BUTTON, fn (): Component => Tabs::make('Order')->scrollable(false)->tabs([Tab::make('Details')]), '[data-sylament--schemas--tabs-target="moreButton"] svg'],
-    'the completed wizard step' => [SchemaIconAlias::COMPONENTS_WIZARD_COMPLETED_STEP, fn (): Component => Wizard::make([Step::make('Details')]), '[data-sylament--schemas--wizard-target="headerStep"] svg'],
+    'the completed wizard step' => [SchemaIconAlias::COMPONENTS_WIZARD_COMPLETED_STEP, fn (): Component => Wizard::make([Step::make('Details')]), Selectors::WIZARD_HEADER_STEP . ' svg'],
 ]);

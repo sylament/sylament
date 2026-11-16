@@ -22,8 +22,8 @@ describe('gap', function (): void {
         ]));
 
         expect($render)
-            ->toContainElement('[id="schema.inheriting::section-content"] ' . Selectors::SECTION_CONTENT . ':not(' . Selectors::GAP . ')')
-            ->toContainElement('[id="schema.respaced::section-content"] ' . Selectors::SECTION_CONTENT . Selectors::GAP);
+            ->toContainElement(Selectors::sectionContentOf('schema.inheriting') . ' ' . Selectors::SECTION_CONTENT . ':not(' . Selectors::GAP . ')')
+            ->toContainElement(Selectors::sectionContentOf('schema.respaced') . ' ' . Selectors::SECTION_CONTENT . Selectors::GAP);
     });
 });
 
@@ -43,7 +43,7 @@ describe('dense', function (): void {
         ]));
 
         expect($render)
-            ->toContainElement('[id="schema.inheriting::section-content"] ' . Selectors::SECTION_CONTENT . Selectors::DENSE)
-            ->toContainElement('[id="schema.loosened::section-content"] ' . Selectors::SECTION_CONTENT . ':not(' . Selectors::DENSE . ')');
+            ->toContainElement(Selectors::sectionContentOf('schema.inheriting') . ' ' . Selectors::SECTION_CONTENT . Selectors::DENSE)
+            ->toContainElement(Selectors::sectionContentOf('schema.loosened') . ' ' . Selectors::SECTION_CONTENT . ':not(' . Selectors::DENSE . ')');
     });
 });

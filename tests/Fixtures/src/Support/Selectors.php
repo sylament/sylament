@@ -7,10 +7,10 @@ namespace Sylament\Tests\Fixtures\Support;
 /**
  * The looks support's components give any area's markup: colour, size, state, button,
  * icon button, icon, link, badge and breadcrumb separator, named by the `sy-` class the
- * stylesheet paints them by; the modal's close button by its name, and a dropdown's
- * teleport by its Stimulus value. A side of the input wrapper is named by its `sy-` class,
- * because which side an affix sits on is the stylesheet's contract; what sits there is
- * asserted by its text, its role or its element.
+ * stylesheet paints them by; the modal's close button and the pagination's chevron
+ * buttons by their names, and a dropdown's teleport by its Stimulus value. A side of the
+ * input wrapper is named by its `sy-` class, because which side an affix sits on is the
+ * stylesheet's contract; what sits there is asserted by its text, its role or its element.
  */
 final class Selectors
 {
@@ -42,6 +42,14 @@ final class Selectors
     public const string RTL_BREADCRUMB_SEPARATOR = '.sy-breadcrumbs-item-separator.sy-rtl';
 
     public const string MODAL_CLOSE_BUTTON = 'button[aria-label="Close"]';
+
+    public const string FIRST_PAGE_BUTTON = 'button[aria-label="Go to the first page"]';
+
+    public const string PREVIOUS_PAGE_BUTTON = 'button[aria-label="Previous page"]';
+
+    public const string NEXT_PAGE_BUTTON = 'button[aria-label="Next page"]';
+
+    public const string LAST_PAGE_BUTTON = 'button[aria-label="Go to the last page"]';
 
     public const string TELEPORTED_DROPDOWN = '[data-sylament--support--dropdown-teleport-value="true"]';
 

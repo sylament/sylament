@@ -34,8 +34,8 @@ it('pages through a window of numbered buttons, each going to its page, the curr
         ->toContainButtons('.sy-pagination-items button', ['Previous page', 'Go to page 1', 'Go to page 2', 'Go to page 3', 'Go to page 4', 'Go to page 14', 'Go to page 15', 'Next page'])
         ->toContainElement('button[aria-label="Go to page 2"][aria-current="page"][disabled][data-action="live#action"][data-live-action-param="gotoTablePage"][data-live-page-param="2"]', '2')
         ->toContainElement('button[aria-label="Go to page 14"]:not([aria-current]):not([disabled])[data-action="live#action"][data-live-action-param="gotoTablePage"][data-live-page-param="14"]', '14')
-        ->toContainElement('button[aria-label="Previous page"][data-action="live#action"][data-live-action-param="gotoTablePage"][data-live-page-param="1"]')
-        ->toContainElement('button[aria-label="Next page"][data-action="live#action"][data-live-action-param="gotoTablePage"][data-live-page-param="3"]')
+        ->toContainElement(SupportSelectors::PREVIOUS_PAGE_BUTTON . '[data-action="live#action"][data-live-action-param="gotoTablePage"][data-live-page-param="1"]')
+        ->toContainElement(SupportSelectors::NEXT_PAGE_BUTTON . '[data-action="live#action"][data-live-action-param="gotoTablePage"][data-live-page-param="3"]')
         ->toContainElement('.sy-pagination-items [aria-hidden="true"]:not(button)', Paginator::GAP);
 });
 
@@ -52,8 +52,8 @@ it('goes back only after the first page and forward only before the last, and of
 it('offers the first and the last page beside the previous and the next when asked', function (): void {
     expect($this->renderTwigComponent('SylamentSupport:Pagination', ['paginator' => new Paginator([['id' => 3], ['id' => 4]], 30, 2, 2), 'extremeLinks' => true])->crawler())
         ->toContainButtons('.sy-pagination-items button[rel]', ['Go to the first page', 'Previous page', 'Next page', 'Go to the last page'])
-        ->toContainElement('button[aria-label="Go to the first page"][data-live-action-param="gotoTablePage"][data-live-page-param="1"]')
-        ->toContainElement('button[aria-label="Go to the last page"][data-live-action-param="gotoTablePage"][data-live-page-param="15"]')
+        ->toContainElement(SupportSelectors::FIRST_PAGE_BUTTON . '[data-live-action-param="gotoTablePage"][data-live-page-param="1"]')
+        ->toContainElement(SupportSelectors::LAST_PAGE_BUTTON . '[data-live-action-param="gotoTablePage"][data-live-page-param="15"]')
         ->and($this->renderTwigComponent('SylamentSupport:Pagination', ['paginator' => new Paginator([['id' => 1]], 30, 1, 2), 'extremeLinks' => true])->crawler())
         ->toContainButtons('.sy-pagination-items button[rel]', ['Next page', 'Go to the last page'])
         ->and($this->renderTwigComponent('SylamentSupport:Pagination', ['paginator' => new Paginator([['id' => 3], ['id' => 4]], 30, 2, 2)])->crawler())
@@ -65,10 +65,10 @@ it('draws its first, previous, next and last chevrons at the medium icon size', 
     $icon = ' ' . SupportSelectors::ICON . SupportSelectors::MEDIUM;
 
     expect($chevrons)
-        ->toContainElement('button[aria-label="Go to the first page"]' . $icon, 'chevron-double-left-20-solid')
-        ->toContainElement('button[aria-label="Previous page"]' . $icon, 'chevron-left-20-solid')
-        ->toContainElement('button[aria-label="Next page"]' . $icon, 'chevron-right-20-solid')
-        ->toContainElement('button[aria-label="Go to the last page"]' . $icon, 'chevron-double-right-20-solid');
+        ->toContainElement(SupportSelectors::FIRST_PAGE_BUTTON . $icon, 'chevron-double-left-20-solid')
+        ->toContainElement(SupportSelectors::PREVIOUS_PAGE_BUTTON . $icon, 'chevron-left-20-solid')
+        ->toContainElement(SupportSelectors::NEXT_PAGE_BUTTON . $icon, 'chevron-right-20-solid')
+        ->toContainElement(SupportSelectors::LAST_PAGE_BUTTON . $icon, 'chevron-double-right-20-solid');
 });
 
 it('pages without a total through the previous and the next alone, saying which records the page shows', function (): void {

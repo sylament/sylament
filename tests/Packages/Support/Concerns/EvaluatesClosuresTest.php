@@ -12,13 +12,13 @@ it('injects the component into a closure by its evaluation identifier and by its
 });
 
 it('returns a value that is not a closure as it is, a function name included', function (): void {
-    expect($this->renderViewComponent(Html::make('date'))->text())->toBe('date');
+    expect($this->renderSchemaComponent(Html::make('date'))->text())->toBe('date');
 });
 
 it('resolves a container service into a closure of a make()-built component, and nothing for a new-built one', function (): void {
     $content = fn (StaticInstanceRegistry $registry): string => '<p>Resolved</p>';
 
-    expect($this->renderViewComponent(Html::make($content)))->toContainElement('p', 'Resolved')
+    expect($this->renderSchemaComponent(Html::make($content)))->toContainElement('p', 'Resolved')
         ->and(fn (): mixed => new Html()->content($content)->getContent())
         ->toThrow(RuntimeException::class, 'An attempt was made to evaluate a closure for [Sylament\Schemas\Components\Html], but [$registry] was unresolvable.');
 });

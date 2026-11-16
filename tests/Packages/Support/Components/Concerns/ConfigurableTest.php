@@ -9,12 +9,12 @@ it('configures every make() of the class and its subclasses, until the closure i
     $remove = Html::configureUsing(fn (Html $html): Html => $html->content('<p>Configured</p>'));
     $removeImportant = Html::configureUsing(fn (Html $html): Html => $html->content("{$html->getContent()}<p>Important</p>"), isImportant: true);
 
-    $configured = $this->renderViewComponent(Html::make('<p>Made</p>'));
-    $configuredSubclass = $this->renderViewComponent($subclass::make('<p>Made</p>'));
+    $configured = $this->renderSchemaComponent(Html::make('<p>Made</p>'));
+    $configuredSubclass = $this->renderSchemaComponent($subclass::make('<p>Made</p>'));
     $remove();
     $removeImportant();
 
     expect($configured)->toContainElement('p', 'Configured')->toContainElement('p', 'Important')
         ->and($configuredSubclass)->toContainElement('p', 'Configured')
-        ->and($this->renderViewComponent(Html::make('<p>Made</p>')))->toContainElement('p', 'Made')->not->toContainElement('p', 'Important');
+        ->and($this->renderSchemaComponent(Html::make('<p>Made</p>')))->toContainElement('p', 'Made')->not->toContainElement('p', 'Important');
 });

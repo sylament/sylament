@@ -8,9 +8,9 @@ use Sylament\Tests\Fixtures\Schemas\ExtraDataHtml;
 it('renders the explicit template over the default one, and the default once template(null) clears it', function (): void {
     $html = Html::make('<p>Greeting</p>')->defaultTemplate('@Fixtures/schemas/template-context.html.twig');
 
-    expect($this->renderViewComponent($html))->toContainElement('p', 'Greeting')
+    expect($this->renderSchemaComponent($html))->toContainElement('p', 'Greeting')
         ->not->toContainElement('[data-template]')
-        ->and($this->renderViewComponent($html->template(null)))->toContainElement('[data-template="context"] [data-variable="component"]', '<p>Greeting</p>');
+        ->and($this->renderSchemaComponent($html->template(null)))->toContainElement('[data-template="context"] [data-variable="component"]', '<p>Greeting</p>');
 });
 
 it("hands the template the component, the extra data and each data layer, template()'s and templateData()'s, in order, the later key winning", function (): void {
@@ -19,7 +19,7 @@ it("hands the template the component, the extra data and each data layer, templa
         ->templateData(['source' => 'first layer'])
         ->templateData(fn (): array => ['source' => 'second layer']);
 
-    expect($this->renderViewComponent($html))
+    expect($this->renderSchemaComponent($html))
         ->toContainElement('[data-variable="component"]', 'Greeting')
         ->toContainElement('[data-variable="extra"]', 'extra data')
         ->toContainElement('[data-variable="first"]', 'template() layer')

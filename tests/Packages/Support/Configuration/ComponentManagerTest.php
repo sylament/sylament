@@ -14,8 +14,8 @@ it('applies a during: registration to that call alone and returns its result, re
 
     expect(fn (): mixed => Html::configureUsing($configure, during: fn (): never => throw new RuntimeException('The call failed.')))
         ->toThrow(RuntimeException::class, 'The call failed.')
-        ->and($this->renderViewComponent($made))->toContainElement('p', 'Configured')
-        ->and($this->renderViewComponent(Html::make('<p>Made</p>')))->toContainElement('p', 'Made');
+        ->and($this->renderSchemaComponent($made))->toContainElement('p', 'Configured')
+        ->and($this->renderSchemaComponent(Html::make('<p>Made</p>')))->toContainElement('p', 'Made');
 });
 
 it('configures root class first, setUp() at the class declaring it and each class after its closures, important closures last', function (): void {

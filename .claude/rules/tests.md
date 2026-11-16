@@ -8,6 +8,7 @@ description: Where a root-suite test lives, what kind it is and how it asserts a
 ## Where a test lives
 
 - **Mirror each package's `src/` under `tests/Packages/`:** `packages/support/src/Colors/Color.php` → `tests/Packages/Support/Colors/ColorTest.php`, so a test is found from its class without searching and a package never shares a level with the suite's machinery; that machinery mirrors `tests/` the same way (`tests/TestCase.php` → `tests/TestCaseTest.php`).
+- **One file per class or trait, however many cases it holds:** never split its cases into prefix files (`AssociationReader<Shape>Test.php`), because a test is found from its class's path; a long file groups its cases with Pest's `describe()`, one block per behaviour.
 - **A trait with behaviour to pin gets its own file** at its mirrored path (forms' `Components/Concerns/HasAffixesTest.php`), even for one case; a class or trait with nothing to pin gets none, and a missing file is not a gap.
 - **Drive a trait that no component of its own package composes through a component of the lowest package that does** (support's `HasWeight` through schemas' `Text`), so its one home stays at its own package's mirrored path.
 - **Test an anonymous `<twig:>` component where its class would sit:** support's `templates/components/Button/index.html.twig` → its mirror's `Twig/Components/ButtonTest.php`, beside the class-backed ones in `src/Twig/Components/`, so its test is found from the tag and stays put if it gains a class.

@@ -14,6 +14,7 @@ return static function (ContainerConfigurator $container): void {
             ->exclude([
                 '../src/Kernel.php',
                 '../src/Entity',
+                '../src/*/Record',
                 '../src/*/Selectors.php',
             ]);
 

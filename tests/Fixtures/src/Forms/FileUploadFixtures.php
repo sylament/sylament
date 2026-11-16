@@ -7,16 +7,20 @@ namespace Sylament\Tests\Fixtures\Forms;
 use DOMElement;
 use JsonException;
 use LogicException;
+use Sylament\Tests\Fixtures\Schemas\HookLog;
 use Symfony\Component\DomCrawler\Crawler;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
 
 /**
  * The files a file-upload test sends, from `assets/uploads/` (`pixel.png` 1x1, `wide.png` 2x1,
- * `large.png` over 1 KiB, `note.txt`), and the Stimulus values a rendered file field hands its
- * controller, decoded as the controller reads them.
+ * `large.png` over 1 KiB, `note.txt`), the Stimulus values a rendered file field hands its
+ * controller, decoded as the controller reads them, and the state a host's save recorded in
+ * the request's {@see HookLog} under {@see self::SAVED}.
  */
 final class FileUploadFixtures
 {
+    public const string SAVED = 'saved: ';
+
     private const string VALUE_PREFIX = 'data-sylament--forms--file-upload-';
 
     public static function path(string $fixture): string
@@ -74,5 +78,28 @@ final class FileUploadFixtures
         }
 
         return $values;
+    }
+
+    /**
+     * The state the last save of the request recorded.
+     *
+     * @return array<string, mixed>
+     */
+    public static function savedState(HookLog $hookLog): array
+    {
+        foreach (array_reverse($hookLog->hooks) as $hook) {
+            if (str_starts_with($hook, self::SAVED)) {
+                $state = json_decode(mb_substr($hook, mb_strlen(self::SAVED)), true, flags: JSON_THROW_ON_ERROR);
+
+                if (!is_array($state)) {
+                    throw new LogicException('The saved state is not an array.');
+                }
+
+                /** @var array<string, mixed> $state */
+                return $state;
+            }
+        }
+
+        throw new LogicException('The request saved nothing.');
     }
 }

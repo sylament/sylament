@@ -43,23 +43,23 @@ The storage seam itself is support's [`FilesystemRegistry`](../support/filesyste
 | [`acceptedFileTypes()` / `getAcceptedFileTypes()`](../../../packages/forms/src/Components/BaseFileUpload.php) | [`acceptedFileTypes()`](../../../vendor/filament/forms/src/Components/BaseFileUpload.php) | done | — | [diverges](#the-arrayable-arm-of-acceptedfiletypes-becomes-iterable) |
 | [`maxSize()` / `minSize()` / `getMaxSize()` / `getMinSize()`](../../../packages/forms/src/Components/BaseFileUpload.php) | [`maxSize()` / `minSize()`](../../../vendor/filament/forms/src/Components/BaseFileUpload.php) | done | — | [diverges](#per-file-constraints-run-at-upload-time-collection-constraints-at-save) |
 | [`maxFiles()` / `minFiles()` / `getMaxFiles()` / `getMinFiles()`](../../../packages/forms/src/Components/BaseFileUpload.php) | [`maxFiles()` / `minFiles()`](../../../vendor/filament/forms/src/Components/BaseFileUpload.php) | done | — | [semantics](#the-ceiling-on-browser-driven-writes) |
-| [`maxParallelUploads()` / `getMaxParallelUploads()`](../../../packages/forms/src/Components/BaseFileUpload.php) | [`maxParallelUploads()`](../../../vendor/filament/forms/src/Components/BaseFileUpload.php) | in progress | — | [detail](#several-setters-are-ported-but-no-test-exercises-them) |
+| [`maxParallelUploads()` / `getMaxParallelUploads()`](../../../packages/forms/src/Components/BaseFileUpload.php) | [`maxParallelUploads()`](../../../vendor/filament/forms/src/Components/BaseFileUpload.php) | done | — | — |
 | [`multiple()` / `isMultiple()`](../../../packages/forms/src/Components/BaseFileUpload.php) | [`multiple()`](../../../vendor/filament/forms/src/Components/BaseFileUpload.php) | done | — | — |
-| [`deletable()` / `downloadable()` / `openable()` / `reorderable()` / `pasteable()` / `previewable()` and their `is*()` getters](../../../packages/forms/src/Components/BaseFileUpload.php) | [`BaseFileUpload`](../../../vendor/filament/forms/src/Components/BaseFileUpload.php) | in progress | — | [detail](#several-setters-are-ported-but-no-test-exercises-them) |
+| [`deletable()` / `downloadable()` / `openable()` / `reorderable()` / `pasteable()` / `previewable()` and their `is*()` getters](../../../packages/forms/src/Components/BaseFileUpload.php) | [`BaseFileUpload`](../../../vendor/filament/forms/src/Components/BaseFileUpload.php) | done | — | — |
 | [`directory()` / `getDirectory()`](../../../packages/forms/src/Components/BaseFileUpload.php) | [`directory()`](../../../vendor/filament/forms/src/Components/BaseFileUpload.php) | done | — | — |
 | [`disk()` / `getDiskName()` / `getDisk()`](../../../packages/forms/src/Components/BaseFileUpload.php) | [`disk()` / `getDiskName()`](../../../vendor/filament/forms/src/Components/BaseFileUpload.php) | done | — | [diverges](#disk-names-a-flysystem-storage-and-there-is-no-publiclocal-swap) |
 | [`visibility()` / `getVisibility()`](../../../packages/forms/src/Components/BaseFileUpload.php) | [`visibility()` / `getVisibility()`](../../../vendor/filament/forms/src/Components/BaseFileUpload.php) | done | — | [diverges](#visibility-defers-to-the-storage-and-a-private-file-never-falls-through-to-a-public-url) |
 | `getCustomVisibility()` | [`getCustomVisibility()`](../../../vendor/filament/forms/src/Components/BaseFileUpload.php) | skipped | — | [diverges](#visibility-defers-to-the-storage-and-a-private-file-never-falls-through-to-a-public-url) |
 | [`preserveFilenames()` / `shouldPreserveFilenames()`](../../../packages/forms/src/Components/BaseFileUpload.php) | [`preserveFilenames()`](../../../vendor/filament/forms/src/Components/BaseFileUpload.php) | done | — | — |
 | [`moveFiles()` / `shouldMoveFiles()`](../../../packages/forms/src/Components/BaseFileUpload.php) | [`moveFiles()`](../../../vendor/filament/forms/src/Components/BaseFileUpload.php) | done | — | [semantics](#the-store-step-moves-on-one-storage-and-streams-across-two) |
-| [`storeFiles()` / `shouldStoreFiles()`](../../../packages/forms/src/Components/BaseFileUpload.php) | [`storeFiles()`](../../../vendor/filament/forms/src/Components/BaseFileUpload.php) | in progress | — | [detail](#several-setters-are-ported-but-no-test-exercises-them) |
+| [`storeFiles()` / `shouldStoreFiles()`](../../../packages/forms/src/Components/BaseFileUpload.php) | [`storeFiles()`](../../../vendor/filament/forms/src/Components/BaseFileUpload.php) | done | — | — |
 | [`fetchFileInformation()` / `shouldFetchFileInformation()`](../../../packages/forms/src/Components/BaseFileUpload.php) | [`fetchFileInformation()`](../../../vendor/filament/forms/src/Components/BaseFileUpload.php) | done | — | — |
 | [`storeFileNamesIn()` / `getFileNamesStatePath()` / `storeFileName()` / `removeStoredFileName()` / `getStoredFileNames()`](../../../packages/forms/src/Components/BaseFileUpload.php) | [`BaseFileUpload`](../../../vendor/filament/forms/src/Components/BaseFileUpload.php) | done | — | [semantics](#the-filename-map-keeps-filaments-resolved-vs-raw-asymmetry) |
 | [`getStateToDehydrate()`](../../../packages/forms/src/Components/BaseFileUpload.php) | [`getStateToDehydrate()`](../../../vendor/filament/forms/src/Components/BaseFileUpload.php) | done | — | — |
 | [`getDefaultStateCasts()`](../../../packages/forms/src/Components/BaseFileUpload.php) | [`getDefaultStateCasts()`](../../../vendor/filament/forms/src/Components/BaseFileUpload.php) | done | — | [file-upload-state-cast.md](../schemas/file-upload-state-cast.md) |
 | [`imageAspectRatio()` / `getImageAspectRatio()` / `calculateAspectRatio()` / `normalizeAspectRatio()`](../../../packages/forms/src/Components/BaseFileUpload.php) | [`imageAspectRatio()`](../../../vendor/filament/forms/src/Components/BaseFileUpload.php) | done | — | [semantics](#imageaspectratio-validates-and-automaticallycropimagestoaspectratio-crops) |
 | [`deleteUploadedFileUsing()` / `getUploadedFileUsing()` / `saveUploadedFileUsing()`](../../../packages/forms/src/Components/BaseFileUpload.php) | [`BaseFileUpload`](../../../vendor/filament/forms/src/Components/BaseFileUpload.php) | done | — | — |
-| [`getOpenableFileUrlUsing()` / `getDownloadableFileUrlUsing()` / `reorderUploadedFilesUsing()`](../../../packages/forms/src/Components/BaseFileUpload.php) | [`BaseFileUpload`](../../../vendor/filament/forms/src/Components/BaseFileUpload.php) | in progress | — | [detail](#several-setters-are-ported-but-no-test-exercises-them) |
+| [`getOpenableFileUrlUsing()` / `getDownloadableFileUrlUsing()` / `reorderUploadedFilesUsing()`](../../../packages/forms/src/Components/BaseFileUpload.php) | [`BaseFileUpload`](../../../vendor/filament/forms/src/Components/BaseFileUpload.php) | done | — | — |
 | [`getUploadedFileNameForStorageUsing()` / `getUploadedFileNameForStorage()`](../../../packages/forms/src/Components/BaseFileUpload.php) | [`BaseFileUpload`](../../../vendor/filament/forms/src/Components/BaseFileUpload.php) | done | — | [diverges](#a-generator-that-names-nothing-throws) |
 | [`getMaxUploadSize(): int`](../../../packages/forms/src/Components/BaseFileUpload.php) | — | done | — | [diverges](#the-client-side-size-ceiling-is-the-minimum-of-the-fields-and-phps) |
 | [`setTemporaryUploads()` / `setFilesystemRegistry()` / `setValidator()` and their getters](../../../packages/forms/src/Components/BaseFileUpload.php) | — (Filament reaches `Storage::` and `Validator::` facades) | done | — | [diverges](#the-three-services-arrive-by-required-setter-not-by-facade) |
@@ -98,13 +98,6 @@ The storage seam itself is support's [`FilesystemRegistry`](../support/filesyste
 
 ## Details
 
-### Several setters are ported but no test exercises them
-
-`maxParallelUploads()`, `storeFiles()`, the `deletable()` / `downloadable()` / `openable()` / `pasteable()` / `previewable()` toggles, and the `getOpenableFileUrlUsing()` / `getDownloadableFileUrlUsing()` / `reorderUploadedFilesUsing()` callbacks exist with their getters, and the code reads each one: the partial passes the toggles and the parallel-upload cap to the controller, `getUploadedFiles()` evaluates the two URL callbacks when the item is openable or downloadable, and `saveUploadedFiles()` honours `shouldStoreFiles()` and the reorder callback.
-No test in `packages/forms/tests` calls any of these setters, so a value they set never reaches an assertion.
-`reorderable()` is the exception in its row, exercised by `LiveFileUploadTest`'s reorder cases; `deletable()`'s default arm is exercised by the remove cases, its `false` arm by nothing.
-What is missing is a test per setter that sets a non-default value and reads it back where the code consumes it: the rendered value map, the `uploadedFiles` payload, or the state after a save.
-
 ### `uploadingMessage()` has no render site
 
 `HasUploadingMessage` renders on the **submit button**, through a `form-processing-started` event Filament's file-upload component dispatches and its form button listens for, a channel between the form and the surrounding action that support does not have.
@@ -115,7 +108,7 @@ The row is blocked on that channel rather than on anything about file uploads.
 ### The ceiling on browser-driven writes
 
 This is the toolkit's first browser-writable file endpoint, so the ceiling is worth stating rather than leaving a reader to infer.
-A client may add **one temporary file per `fileKey` it mints**, and it mints those itself.
+A client may add **one temporary file per accepted upload**, under a `fileKey` it mints itself; an upload under a key already in state replaces that entry and leaves the earlier file to the sweep.
 Each file is bounded by the field's own `acceptedFileTypes()` and `maxSize()`, which run before anything is written, and by PHP's `upload_max_filesize` / `post_max_size`.
 In **aggregate** the only bound is the 24-hour sweep [`TemporaryUploads::prune()`](temporary-uploads.md#the-sweep-rides-on-upload-traffic-and-races-itself-on-purpose) performs on every successful upload: `maxFiles()` is a save-time `Count`, not an upload-time gate, so a client that never submits the form can hold as many temporary files as it is willing to upload.
 That is Filament parity, and it is why a storage quota, not `maxFiles()`, is what bounds the disk.

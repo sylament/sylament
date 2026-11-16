@@ -19,11 +19,11 @@ use Symfony\UX\LiveComponent\DefaultActionTrait;
 
 /**
  * A form of single file fields, one per upload-time outcome: a PNG-only `document` of at most
- * 1 KiB whose update hook and delete callback record in the request's {@see HookLog}, a
- * disabled one, one that is not deletable, a 2 KiB floor, a 2:1 ratio in each of its three
- * spellings, a choice of two ratios, a user's own image constraint, a type list with its own
- * message, one that fetches no file information and a private one. `mount()` fills the form
- * from the record it is given.
+ * 1 KiB whose update hook and delete callback record in the request's {@see HookLog}, a disabled
+ * one, one that is not deletable, a 2 KiB floor, a 2:1 ratio in each of its three spellings, a
+ * choice of two ratios, a user's own image constraint, a type list with its own message, a
+ * private one that fetches no file information and a private one that does. `mount()` fills the
+ * form from the record it is given.
  */
 #[AsLiveComponent(name: 'Forms:UploadForm', template: '@Fixtures/forms/UploadForm.html.twig')]
 class UploadForm implements InteractsWithSchemas
@@ -83,7 +83,7 @@ class UploadForm implements InteractsWithSchemas
                 FileUpload::make('typed')
                     ->acceptedFileTypes(['image/png'])
                     ->validationMessages([File::class => ['mimeTypesMessage' => 'Only PNG images.']]),
-                FileUpload::make('fetchless')->fetchFileInformation(false),
+                FileUpload::make('fetchless')->fetchFileInformation(false)->visibility('private'),
                 FileUpload::make('private')->visibility('private'),
             ]);
     }

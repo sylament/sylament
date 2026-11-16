@@ -8,7 +8,7 @@ use Doctrine\ORM\Mapping as ORM;
 
 /**
  * A record keyed by its association onto a {@see VolumeSpine}, so its key is blank
- * while the spine's code is.
+ * while the spine's code is, and a new record may leave the spine unset.
  */
 #[ORM\Entity]
 class BoundVolume

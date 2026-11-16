@@ -30,12 +30,12 @@ SYLAMENT_TEST_DATABASE_URL='postgresql://postgres:sylament@127.0.0.1:55433/sylam
 SYLAMENT_TEST_DATABASE_URL='mysql://root:sylament@127.0.0.1:33307/sylament_test?serverVersion=8.4.0&charset=utf8mb4' composer test:<bundle>
 ```
 
-With the variable unset or empty, a suite runs on SQLite. A migrated package has no `composer test:<bundle>`: its tests are in the root suite. The URL must name a database (`…/sylament_test`): the pool derives its own databases from that name. The root suite takes a path the same way: `SYLAMENT_TEST_DATABASE_URL='<url>' vendor/bin/pest --parallel tests/Packages/<Pkg>`.
+With the variable unset or empty, a suite runs on SQLite. A migrated package has no `composer test:<bundle>`: its tests are in the root suite. The URL must name a database (`…/sylament_test`): the pool derives its own databases from that name. The root suite takes a path the same way: `SYLAMENT_TEST_DATABASE_URL='<url>' vendor/bin/pest tests/Packages/<Pkg>`, in one process, since `TestDatabaseExtension` refuses `--parallel`.
 
 ## 4. Keep server runs serial
 
 - For the per-package suites the pool gives each entity manager a test builds a database of its own, named `<base>_<package>_<TEST_TOKEN>_<slot>`; for the root suite it keeps one per worker, `<base>_suite_<TEST_TOKEN>`. A run that sets `SYLAMENT_TEST_RUN` gets `_<run>` after `<base>` in both. The `TEST_TOKEN` a parallel run sets keeps its processes' databases apart, and `SYLAMENT_TEST_RUN` keeps two runs' apart.
-- It separates databases, not connections: the pool keeps its own housekeeping connection to every database it has built, open for the life of the process, beside the connections the tests hold. A root-suite worker holds about three, which is why that suite alone runs in parallel on a server.
+- It separates databases, not connections: the pool keeps its own housekeeping connection to every database it has built, open for the life of the process, beside the connections the tests hold. A root-suite run holds about three.
 - PostgreSQL allows 100 connections and every concurrent run shares them, so run one server suite at a time and stop a stale one before starting the next.
 
 ## 5. Clean up pool databases

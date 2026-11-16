@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Sylament\Tests\Architecture\Styles;
 
+use Sylament\Support\Colors\Color;
+use Sylament\Support\Colors\ColorManager;
 use UnexpectedValueException;
 
 /**
@@ -14,17 +16,50 @@ use UnexpectedValueException;
 final class TextColumnIconShades
 {
     /**
+     * Each icon pairing that misses the non-text ratio over the shipped palettes: the coloured item icon on every
+     * palette and the uncoloured one against the table chrome's `bg-white dark:bg-gray-900`, and the gray badge's icon
+     * against its own light background; the badge's dark background is an alpha overlay this ratio cannot express.
+     *
+     * @return list<string>
+     */
+    public static function failingPairings(string $textColumnCss, string $badgeCss): array
+    {
+        $shades = self::read($textColumnCss, $badgeCss);
+        $gray = ColorManager::DEFAULT_COLORS['gray'];
+        $surfaces = ['light' => 'oklch(1 0 0)', 'dark' => $gray[900]];
+        $pairings = [];
+
+        foreach (ColorManager::DEFAULT_COLORS as $palette => $colors) {
+            foreach ($surfaces as $mode => $surface) {
+                $pairings["coloured item icon · {$palette} {$mode}"] = [$surface, $colors[$shades['itemColor']]];
+            }
+        }
+
+        [$itemLight, $itemDark] = $shades['itemGray'];
+        $pairings['uncoloured item icon light'] = [$surfaces['light'], $gray[$itemLight]];
+        $pairings['uncoloured item icon dark'] = [$surfaces['dark'], $gray[$itemDark]];
+
+        [$badgeLight] = $shades['badgeGray'];
+        $pairings['gray badge icon light'] = [$gray[$shades['badgeSurface']], $gray[$badgeLight]];
+
+        return array_keys(array_filter(
+            $pairings,
+            static fn (array $pairing): bool => Color::calculateContrastRatio(...$pairing) < Color::WCAG_AA_NON_TEXT,
+        ));
+    }
+
+    /**
      * The uncoloured item icon's light and dark gray, the coloured item icon's palette shade, the gray badge's light
      * background and its icon's light and dark gray.
      *
      * @return array{itemGray: array{int, int}, itemColor: int, badgeSurface: int, badgeGray: array{int, int}}
      */
-    public static function read(): array
+    private static function read(string $textColumnCss, string $badgeCss): array
     {
-        $item = mb_strstr(PaletteCopies::stylesheet('tables', 'components/text-column.css'), '& > .sy-icon {');
+        $item = mb_strstr($textColumnCss, '& > .sy-icon {');
 
         if ($item === false) {
-            throw new UnexpectedValueException('No `& > .sy-icon` rule in tables components/text-column.css: the item icon has moved or gone.');
+            throw new UnexpectedValueException('No `& > .sy-icon` rule in the text-column stylesheet: the item icon has moved or gone.');
         }
 
         if (preg_match('/@apply[^;]*\btext-gray-(?<light>\d+)\b[^;]*\bdark:text-gray-(?<dark>\d+)\b[^;]*;/', $item, $itemGray) !== 1) {
@@ -39,10 +74,10 @@ final class TextColumnIconShades
             throw new UnexpectedValueException("The coloured item icon applies [{$itemColor['utilities']}] where a single `text-color-<shade>` is measured.");
         }
 
-        $badge = mb_strstr(PaletteCopies::stylesheet('support', 'components/badge.css'), '&:not(.sy-color) {');
+        $badge = mb_strstr($badgeCss, '&:not(.sy-color) {');
 
         if ($badge === false) {
-            throw new UnexpectedValueException('No `&:not(.sy-color)` rule in support components/badge.css: the gray badge has moved or gone.');
+            throw new UnexpectedValueException('No `&:not(.sy-color)` rule in the badge stylesheet: the gray badge has moved or gone.');
         }
 
         if (preg_match('/@apply[^;]*\bbg-gray-(?<shade>\d+)\b[^;]*;/', $badge, $badgeSurface) !== 1) {

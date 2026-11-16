@@ -41,7 +41,7 @@ it('renders at the medium size unless sized, and a size outside the scale as its
         ->and($this->renderTwigComponent('SylamentSupport:Link', ['size' => Size::Large], content: 'Orders')->crawler())
         ->toContainElement(SupportSelectors::LINK . SupportSelectors::size('lg'), 'Orders')
         ->and($this->renderTwigComponent('SylamentSupport:Link', ['size' => 'huge'], content: 'Orders')->crawler())
-        ->toContainElement(SupportSelectors::LINK . '.huge:not([class*="sy-size-"])', 'Orders');
+        ->toContainElement(SupportSelectors::LINK . '.huge' . SupportSelectors::UNSIZED, 'Orders');
 });
 
 it('sets its font weight when given one, and a weight outside the scale as its own class', function (): void {
@@ -55,11 +55,11 @@ it('sets its font weight when given one, and a weight outside the scale as its o
 
 it("paints in primary unless coloured, gray uncoloured, and a shade map inline beside the caller's style", function (): void {
     expect($this->renderTwigComponent('SylamentSupport:Link', content: 'Orders')->crawler())
-        ->toContainElement(SupportSelectors::LINK . SupportSelectors::COLORED . SupportSelectors::color('primary') . '[class~="sy-text-color-700"][class~="dark:sy-text-color-400"]', 'Orders')
+        ->toContainElement(SupportSelectors::LINK . SupportSelectors::COLORED . SupportSelectors::color('primary') . SupportSelectors::textShades(700, 400), 'Orders')
         ->and($this->renderTwigComponent('SylamentSupport:Link', ['color' => 'gray'], content: 'Orders')->crawler())
-        ->toContainElement(SupportSelectors::LINK . SupportSelectors::GRAY . ':not([class*="color"])', 'Orders')
+        ->toContainElement(SupportSelectors::LINK . SupportSelectors::GRAY . '', 'Orders')
         ->and($this->renderTwigComponent('SylamentSupport:Link', ['color' => Color::Rose, 'style' => 'width: 2rem'], content: 'Orders')->crawler())
-        ->toContainElement(SupportSelectors::LINK . SupportSelectors::COLORED . '[style*="--sy-color-500: ' . Color::Rose[500] . ';"][style$="width: 2rem"]', 'Orders');
+        ->toContainElement(SupportSelectors::LINK . SupportSelectors::COLORED . SupportSelectors::palette(Color::Rose[500]) . '[style$="width: 2rem"]', 'Orders');
 });
 
 it('draws its icon before or after its label', function (): void {

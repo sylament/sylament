@@ -47,16 +47,16 @@ it('renders at the medium size unless sized, and a size outside the scale as its
         ->and($this->renderTwigComponent('SylamentSupport:Button', ['size' => Size::Large], content: 'Save')->crawler())
         ->toContainElement(SupportSelectors::BUTTON . SupportSelectors::size('lg'), 'Save')
         ->and($this->renderTwigComponent('SylamentSupport:Button', ['size' => 'huge'], content: 'Save')->crawler())
-        ->toContainElement(SupportSelectors::BUTTON . '.huge:not([class*="sy-size-"])', 'Save');
+        ->toContainElement(SupportSelectors::BUTTON . '.huge' . SupportSelectors::UNSIZED, 'Save');
 });
 
 it("paints in primary unless coloured, gray uncoloured, and a shade map inline beside the caller's style", function (): void {
     expect($this->renderTwigComponent('SylamentSupport:Button', content: 'Save')->crawler())
         ->toContainElement(SupportSelectors::BUTTON . SupportSelectors::COLORED . SupportSelectors::color('primary') . '[class~="sy-bg-color-400"]', 'Save')
         ->and($this->renderTwigComponent('SylamentSupport:Button', ['color' => 'gray'], content: 'Save')->crawler())
-        ->toContainElement(SupportSelectors::BUTTON . SupportSelectors::GRAY . ':not([class*="color"])', 'Save')
+        ->toContainElement(SupportSelectors::BUTTON . SupportSelectors::GRAY . '', 'Save')
         ->and($this->renderTwigComponent('SylamentSupport:Button', ['color' => Color::Rose, 'style' => 'width: 2rem'], content: 'Save')->crawler())
-        ->toContainElement(SupportSelectors::BUTTON . SupportSelectors::COLORED . '[style*="--sy-color-500: ' . Color::Rose[500] . ';"][style$="width: 2rem"]', 'Save');
+        ->toContainElement(SupportSelectors::BUTTON . SupportSelectors::COLORED . SupportSelectors::palette(Color::Rose[500]) . '[style$="width: 2rem"]', 'Save');
 });
 
 it('paints an outlined button in its text shades alone and a filled one with its backgrounds', function (): void {

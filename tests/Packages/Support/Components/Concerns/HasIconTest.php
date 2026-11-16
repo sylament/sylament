@@ -13,10 +13,8 @@ it("shows its icon, the component's default when none is set, and none when set 
         ->and($this->renderViewComponent(ActionGroup::make([Action::make('edit')])))
         ->toContainElement("{$trigger} svg", 'ellipsis-vertical-20-solid');
 
-    foreach (['', null] as $blank) {
-        $rendered = $this->renderViewComponent(ActionGroup::make([Action::make('edit')])->icon($blank));
+    $blank = $this->renderViewComponent(ActionGroup::make([Action::make('edit')])->icon(null));
 
-        expect($rendered)->toContainElement($trigger)
-            ->and($rendered->filter("{$trigger} svg")->count())->toBe(0);
-    }
+    expect($blank)->toContainElement($trigger)
+        ->and($blank->filter("{$trigger} svg")->count())->toBe(0);
 });

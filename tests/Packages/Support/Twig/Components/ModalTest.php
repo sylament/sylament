@@ -79,11 +79,11 @@ it('shows a header with a close button for an icon or a description alone, and n
 
 it('centres a heading beside an icon vertically when nothing describes it and it is aligned to the start', function (): void {
     expect($this->renderTwigComponent('SylamentSupport:Modal', ['heading' => 'Delete order', 'icon' => 'support:star'])->crawler())
-        ->toContainElement('header.sy-modal-header.sy-vertical-align-center h2', 'Delete order')
+        ->toContainElement('header.sy-modal-header' . SupportSelectors::verticalAlign('center') . ' h2', 'Delete order')
         ->and($this->renderTwigComponent('SylamentSupport:Modal', ['heading' => 'Delete order', 'icon' => 'support:star', 'description' => 'This cannot be undone.'])->crawler())
-        ->toContainElement('header.sy-modal-header:not(.sy-vertical-align-center) h2', 'Delete order')
+        ->toContainElement('header.sy-modal-header:not(' . SupportSelectors::verticalAlign('center') . ') h2', 'Delete order')
         ->and($this->renderTwigComponent('SylamentSupport:Modal', ['heading' => 'Delete order', 'icon' => 'support:star', 'alignment' => Alignment::Center])->crawler())
-        ->toContainElement('header.sy-modal-header:not(.sy-vertical-align-center) h2', 'Delete order');
+        ->toContainElement('header.sy-modal-header:not(' . SupportSelectors::verticalAlign('center') . ') h2', 'Delete order');
 });
 
 it('paints its icon in primary unless coloured, gray and an empty colour uncoloured, and a shade map inline', function (): void {
@@ -92,11 +92,11 @@ it('paints its icon in primary unless coloured, gray and an empty colour uncolou
         ->and($this->renderTwigComponent('SylamentSupport:Modal', ['icon' => 'support:star', 'iconColor' => 'danger'])->crawler())
         ->toContainElement('.sy-modal-icon-ctn ' . SupportSelectors::ICON . SupportSelectors::COLORED . SupportSelectors::color('danger'), 'Star')
         ->and($this->renderTwigComponent('SylamentSupport:Modal', ['icon' => 'support:star', 'iconColor' => 'gray'])->crawler())
-        ->toContainElement('.sy-modal-icon-ctn ' . SupportSelectors::ICON . SupportSelectors::GRAY . ':not([class*="color"]):not([style])', 'Star')
+        ->toContainElement('.sy-modal-icon-ctn ' . SupportSelectors::ICON . SupportSelectors::GRAY . ':not([style])', 'Star')
         ->and($this->renderTwigComponent('SylamentSupport:Modal', ['icon' => 'support:star', 'iconColor' => ''])->crawler())
-        ->toContainElement('.sy-modal-icon-ctn ' . SupportSelectors::ICON . SupportSelectors::GRAY . ':not([class*="color"]):not([style])', 'Star')
+        ->toContainElement('.sy-modal-icon-ctn ' . SupportSelectors::ICON . SupportSelectors::GRAY . ':not([style])', 'Star')
         ->and($this->renderTwigComponent('SylamentSupport:Modal', ['icon' => 'support:star', 'iconColor' => Color::Rose])->crawler())
-        ->toContainElement('.sy-modal-icon-ctn ' . SupportSelectors::ICON . SupportSelectors::COLORED . '[style*="--sy-color-500: ' . Color::Rose[500] . ';"]', 'Star');
+        ->toContainElement('.sy-modal-icon-ctn ' . SupportSelectors::ICON . SupportSelectors::COLORED . SupportSelectors::palette(Color::Rose[500]), 'Star');
 });
 
 it('shows its content in a content region, and no region without content', function (): void {
@@ -119,13 +119,13 @@ it('lays its footer actions out in the footer unless a footer block replaces the
     $actions = [Html::make('<button type="button">Confirm</button>'), Html::make('<button type="button">Cancel</button>')];
 
     expect($this->renderTwigComponent('SylamentSupport:Modal', ['footerActions' => $actions])->crawler())
-        ->toContainButtons('.sy-modal-window.sy-modal-window-has-footer footer.sy-modal-footer:not([class*="sy-align-"]) .sy-modal-footer-actions button', ['Confirm', 'Cancel'])
+        ->toContainButtons('.sy-modal-window.sy-modal-window-has-footer footer.sy-modal-footer' . SupportSelectors::NO_ALIGN . ' .sy-modal-footer-actions button', ['Confirm', 'Cancel'])
         ->and($this->renderTwigComponent('SylamentSupport:Modal', ['footerActions' => $actions], blocks: ['footer' => '<button type="button">Done</button>'])->crawler())
         ->toContainButtons('footer.sy-modal-footer button', ['Done'])
         ->and($this->renderTwigComponent('SylamentSupport:Modal', ['footerActions' => $actions, 'footerActionsAlignment' => Alignment::Center])->crawler())
-        ->toContainButtons('footer.sy-modal-footer.sy-align-center .sy-modal-footer-actions button', ['Confirm', 'Cancel'])
+        ->toContainButtons('footer.sy-modal-footer' . SupportSelectors::align('center') . ' .sy-modal-footer-actions button', ['Confirm', 'Cancel'])
         ->and($this->renderTwigComponent('SylamentSupport:Modal', ['footerActions' => $actions, 'footerActionsAlignment' => 'spread'])->crawler())
-        ->toContainButtons('footer.sy-modal-footer.spread:not([class*="sy-align-"]) .sy-modal-footer-actions button', ['Confirm', 'Cancel']);
+        ->toContainButtons('footer.sy-modal-footer.spread' . SupportSelectors::NO_ALIGN . ' .sy-modal-footer-actions button', ['Confirm', 'Cancel']);
 });
 
 it('is medium wide unless sized, the screen width also stretching the dialog', function (): void {
@@ -176,11 +176,11 @@ it('sticks its header and its footer each on its own', function (): void {
 
 it('aligns its window to the start unless aligned, and an alignment outside the known ones as its own class', function (): void {
     expect($this->renderTwigComponent('SylamentSupport:Modal')->crawler())
-        ->toContainElement('.sy-modal-window.sy-align-start')
+        ->toContainElement('.sy-modal-window' . SupportSelectors::align('start'))
         ->and($this->renderTwigComponent('SylamentSupport:Modal', ['alignment' => Alignment::Center])->crawler())
-        ->toContainElement('.sy-modal-window.sy-align-center:not(.sy-align-start)')
+        ->toContainElement('.sy-modal-window' . SupportSelectors::align('center') . ':not(' . SupportSelectors::align('start') . ')')
         ->and($this->renderTwigComponent('SylamentSupport:Modal', ['alignment' => 'spread'])->crawler())
-        ->toContainElement('.sy-modal-window.spread:not([class*="sy-align-"])');
+        ->toContainElement('.sy-modal-window.spread' . SupportSelectors::NO_ALIGN);
 });
 
 it('lets clicks through to the page, never closing on a click away', function (): void {

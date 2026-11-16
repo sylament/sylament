@@ -15,5 +15,5 @@ it('sizes the spinner on its own scale, medium unless sized, and an unknown size
         ->and($this->renderTwigComponent('SylamentSupport:LoadingIndicator', ['size' => '2xl'])->crawler())
         ->toContainElement('.sy-loading-indicator' . SupportSelectors::size('2xl'))
         ->and($this->renderTwigComponent('SylamentSupport:LoadingIndicator', ['size' => 'huge'])->crawler())
-        ->toContainElement('.sy-loading-indicator:not([class*="sy-size-"])');
+        ->toContainElement('.sy-loading-indicator' . SupportSelectors::UNSIZED);
 });

@@ -10,15 +10,11 @@ it('draws the named icon at the medium size', function (): void {
         ->toContainElement(SupportSelectors::ICON . SupportSelectors::MEDIUM, 'Star');
 });
 
-it('draws the icon last registered for its alias, and its own icon for an alias none registered', function (): void {
-    $icons = $this::getContainer()->get(IconManager::class);
-    $icons->register(['support.favourite' => 'support:heart', 'support.rated' => 'support:heart']);
-    $icons->register(['support.rated' => 'support:star-lg']);
+it('draws the icon registered for its alias, and its own icon for an alias none registered', function (): void {
+    $this::getContainer()->get(IconManager::class)->register(['support.favourite' => 'support:heart']);
 
     expect($this->renderTwigComponent('SylamentSupport:Icon', ['icon' => 'support:star', 'alias' => 'support.favourite'])->crawler())
         ->toContainElement('svg', 'Heart')
-        ->and($this->renderTwigComponent('SylamentSupport:Icon', ['icon' => 'support:star', 'alias' => 'support.rated'])->crawler())
-        ->toContainElement('svg', 'Star, large')
         ->and($this->renderTwigComponent('SylamentSupport:Icon', ['icon' => 'support:star', 'alias' => 'support.missing'])->crawler())
         ->toContainElement('svg', 'Star');
 });

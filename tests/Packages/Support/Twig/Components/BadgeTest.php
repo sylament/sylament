@@ -45,16 +45,16 @@ it('renders at the medium size unless sized, and a size outside the scale as its
         ->and($this->renderTwigComponent('SylamentSupport:Badge', ['size' => Size::Large], content: 'Urgent')->crawler())
         ->toContainElement(SupportSelectors::BADGE . SupportSelectors::size('lg'), 'Urgent')
         ->and($this->renderTwigComponent('SylamentSupport:Badge', ['size' => 'huge'], content: 'Urgent')->crawler())
-        ->toContainElement(SupportSelectors::BADGE . '.huge:not([class*="sy-size-"])', 'Urgent');
+        ->toContainElement(SupportSelectors::BADGE . '.huge' . SupportSelectors::UNSIZED, 'Urgent');
 });
 
 it("paints in primary unless coloured, gray uncoloured, and a shade map inline beside the caller's style", function (): void {
     expect($this->renderTwigComponent('SylamentSupport:Badge', content: 'Urgent')->crawler())
-        ->toContainElement(SupportSelectors::BADGE . SupportSelectors::COLORED . SupportSelectors::color('primary') . '[class~="sy-text-color-700"][class~="dark:sy-text-color-400"]', 'Urgent')
+        ->toContainElement(SupportSelectors::BADGE . SupportSelectors::COLORED . SupportSelectors::color('primary') . SupportSelectors::textShades(700, 400), 'Urgent')
         ->and($this->renderTwigComponent('SylamentSupport:Badge', ['color' => 'gray'], content: 'Urgent')->crawler())
-        ->toContainElement(SupportSelectors::BADGE . SupportSelectors::GRAY . ':not([class*="color"])', 'Urgent')
+        ->toContainElement(SupportSelectors::BADGE . SupportSelectors::GRAY . '', 'Urgent')
         ->and($this->renderTwigComponent('SylamentSupport:Badge', ['color' => Color::Rose, 'style' => 'width: 2rem'], content: 'Urgent')->crawler())
-        ->toContainElement(SupportSelectors::BADGE . SupportSelectors::COLORED . '[style*="--sy-color-500: ' . Color::Rose[500] . ';"][style$="width: 2rem"]', 'Urgent');
+        ->toContainElement(SupportSelectors::BADGE . SupportSelectors::COLORED . SupportSelectors::palette(Color::Rose[500]) . '[style$="width: 2rem"]', 'Urgent');
 });
 
 it('draws a small icon before or after its label, at the size it is given', function (): void {

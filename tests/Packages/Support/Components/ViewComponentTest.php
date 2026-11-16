@@ -13,7 +13,7 @@ it('renders the explicit template over the default one, and the default once tem
         ->and($this->renderViewComponent($html->template(null)))->toContainElement('[data-template="context"] [data-variable="component"]', '<p>Greeting</p>');
 });
 
-it('hands the template the component, the extra data and each templateData() layer in order, the later key winning', function (): void {
+it("hands the template the component, the extra data and each data layer, template()'s and templateData()'s, in order, the later key winning", function (): void {
     $html = ExtraDataHtml::make('Greeting')
         ->template('@Fixtures/schemas/template-context.html.twig', ['first' => 'template() layer'])
         ->templateData(['source' => 'first layer'])

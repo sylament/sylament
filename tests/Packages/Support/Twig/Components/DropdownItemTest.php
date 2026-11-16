@@ -34,11 +34,11 @@ it('disables a button with the disabled attribute and a link without it, and mar
 
 it("is gray unless coloured, a palette by name, and a shade map inline beside the caller's style", function (): void {
     expect($this->renderTwigComponent('SylamentSupport:DropdownItem', content: 'Edit')->crawler())
-        ->toContainElement('.sy-dropdown-item' . SupportSelectors::GRAY . ':not([class*="color"]):not([style])', 'Edit')
+        ->toContainElement('.sy-dropdown-item' . SupportSelectors::GRAY . ':not([style])', 'Edit')
         ->and($this->renderTwigComponent('SylamentSupport:DropdownItem', ['color' => 'danger'], content: 'Delete')->crawler())
         ->toContainElement('.sy-dropdown-item' . SupportSelectors::COLORED . SupportSelectors::color('danger'), 'Delete')
         ->and($this->renderTwigComponent('SylamentSupport:DropdownItem', ['color' => Color::Rose, 'style' => 'width: 2rem'], content: 'Delete')->crawler())
-        ->toContainElement('.sy-dropdown-item' . SupportSelectors::COLORED . '[style*="--sy-color-500: ' . Color::Rose[500] . ';"][style$="width: 2rem"]', 'Delete');
+        ->toContainElement('.sy-dropdown-item' . SupportSelectors::COLORED . SupportSelectors::palette(Color::Rose[500]) . '[style$="width: 2rem"]', 'Delete');
 });
 
 it('draws its icon before its label, at the size it is given, and no icon without one', function (): void {

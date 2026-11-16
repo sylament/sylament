@@ -23,13 +23,13 @@ it('wraps a Markup icon in a medium icon span', function (): void {
         'icon' => new Markup('<svg><title>Inline</title></svg>', 'UTF-8'),
     ]);
 
-    expect(new Crawler($html))->toContainElement('span.sy-icon' . SupportSelectors::MEDIUM . ' svg', 'Inline');
+    expect(new Crawler($html))->toContainElement('span' . SupportSelectors::ICON . SupportSelectors::MEDIUM . ' svg', 'Inline');
 });
 
 it('renders an image path as a decorative image unless the caller names it', function (): void {
     $template = $this::getContainer()->get('twig')->createTemplate('{{ generateIconHtml("/images/logo.png", attributes: attributes) }}');
 
-    expect(new Crawler($template->render(['attributes' => null]))->filter('img.sy-icon[src="/images/logo.png"]')->attr('alt'))->toBe('')
+    expect(new Crawler($template->render(['attributes' => null]))->filter('img' . SupportSelectors::ICON . '[src="/images/logo.png"]')->attr('alt'))->toBe('')
         ->and(new Crawler($template->render(['attributes' => ['alt' => 'Logo']]))->filter('img')->attr('alt'))->toBe('Logo')
         ->and(new Crawler($template->render(['attributes' => ['aria-label' => 'Logo']]))->filter('img[aria-label="Logo"]')->attr('alt'))->toBeNull();
 });
@@ -37,10 +37,10 @@ it('renders an image path as a decorative image unless the caller names it', fun
 it('draws a named icon at the medium size unless sized, an unknown size drawing it medium', function (): void {
     $template = $this::getContainer()->get('twig')->createTemplate('{{ generateIconHtml("support:star", size: size) }}');
 
-    expect(new Crawler($template->render(['size' => null])))->toContainElement('svg.sy-icon' . SupportSelectors::MEDIUM, 'Star')
+    expect(new Crawler($template->render(['size' => null])))->toContainElement('svg' . SupportSelectors::ICON . SupportSelectors::MEDIUM, 'Star')
         ->and(new Crawler($template->render(['size' => IconSize::Large])))->toContainElement('svg' . SupportSelectors::ICON . SupportSelectors::size('lg'), 'Star')
         ->and(new Crawler($template->render(['size' => 'xs'])))->toContainElement('svg' . SupportSelectors::ICON . SupportSelectors::size('xs'), 'Star')
-        ->and(new Crawler($template->render(['size' => 'huge'])))->toContainElement('svg.sy-icon' . SupportSelectors::MEDIUM, 'Star');
+        ->and(new Crawler($template->render(['size' => 'huge'])))->toContainElement('svg' . SupportSelectors::ICON . SupportSelectors::MEDIUM, 'Star');
 });
 
 it('draws the icon an alias resolves to over the given one, and the given one for an unregistered alias', function (): void {

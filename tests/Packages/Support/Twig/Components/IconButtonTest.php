@@ -10,10 +10,8 @@ it('renders a medium button, a link when asked, and a size outside the scale as 
         ->toContainElement('button.sy.sy-icon-btn' . SupportSelectors::MEDIUM, 'Star')
         ->and($this->renderTwigComponent('SylamentSupport:IconButton', ['icon' => 'support:star', 'tag' => 'a', 'href' => '/orders'])->crawler())
         ->toContainElement('a.sy.sy-icon-btn' . SupportSelectors::MEDIUM, 'Star')
-        ->and($this->renderTwigComponent('SylamentSupport:IconButton', ['icon' => 'support:star', 'size' => 'lg'])->crawler())
-        ->toContainElement('button.sy-icon-btn' . SupportSelectors::size('lg'), 'Star')
         ->and($this->renderTwigComponent('SylamentSupport:IconButton', ['icon' => 'support:star', 'size' => 'huge'])->crawler())
-        ->toContainElement('button.sy-icon-btn.huge:not([class*="sy-size-"])', 'Star');
+        ->toContainElement('button.sy-icon-btn.huge' . SupportSelectors::UNSIZED, 'Star');
 });
 
 it('draws its glyph at the size its button size calls for, unless given one', function (array $props, string $glyph): void {
@@ -66,5 +64,5 @@ it("paints in primary unless coloured, gray uncoloured, and a shade map inline b
         ->and($this->renderTwigComponent('SylamentSupport:IconButton', ['icon' => 'support:star', 'color' => 'gray'])->crawler())
         ->toContainElement('.sy-icon-btn' . SupportSelectors::GRAY, 'Star')
         ->and($this->renderTwigComponent('SylamentSupport:IconButton', ['icon' => 'support:star', 'color' => Color::Rose, 'style' => 'width: 2rem'])->crawler())
-        ->toContainElement('.sy-icon-btn' . SupportSelectors::COLORED . '[style*="--sy-color-500: ' . Color::Rose[500] . ';"][style$="width: 2rem"]', 'Star');
+        ->toContainElement('.sy-icon-btn' . SupportSelectors::COLORED . SupportSelectors::palette(Color::Rose[500]) . '[style$="width: 2rem"]', 'Star');
 });

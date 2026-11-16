@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use Sylament\Tables\Columns\TextColumn;
+use Sylament\Tests\Fixtures\Tables\Selectors as TablesSelectors;
 
 it('offers its text as a control that copies it, operated from the keyboard, and none unless copyable', function (): void {
     $copyable = $this->renderViewComponent(TextColumn::make('sku')->record(['sku' => 'L-1'])->copyable());
@@ -10,7 +11,7 @@ it('offers its text as a control that copies it, operated from the keyboard, and
 
     expect($copyable)->toContainElement('[role="button"][data-controller="sylament--support--clipboard"]:not([tabindex])', 'L-1')
         ->and($copyable->filter('[data-action~="click->sylament--support--clipboard#copy"][data-action~="keydown.enter->sylament--support--clipboard#copy"][data-action~="keydown.space->sylament--support--clipboard#copy"]')->count())->toBe(1)
-        ->and($plain)->toContainElement('.sy', 'L-1')
+        ->and($plain)->toContainElement(TablesSelectors::TEXT_COLUMN, 'L-1')
         ->and($plain->filter('[data-controller~="sylament--support--clipboard"]')->count())->toBe(0);
 });
 

@@ -5,23 +5,27 @@ declare(strict_types=1);
 namespace Sylament\Tests\Fixtures\Support;
 
 /**
- * The looks support's components give any area's markup: colour, size, font, state,
- * button, icon button, icon, link, badge, breadcrumb separator and a section's container,
- * named by the `sy-` class the stylesheet paints them by; the modal's close button and the pagination's chevron
- * buttons by their names, and a dropdown's teleport by its Stimulus value. A side of the
- * input wrapper is named by its `sy-` class, because which side an affix sits on is the
- * stylesheet's contract; what sits there is asserted by its text, its role or its element.
+ * The looks support's components give any area's markup: colour, palette, size, font,
+ * alignment, state, button, icon button, icon, link, badge, breadcrumb separator and a
+ * section's container, named by the `sy-` class or custom property the stylesheet paints
+ * them by; the modal's close button and the pagination's chevron buttons by their names,
+ * and a dropdown's teleport by its Stimulus value. A side of the input wrapper is named by
+ * its `sy-` class, because which side an affix sits on is the stylesheet's contract; what
+ * sits there is asserted by its text, its role or its element.
  */
 final class Selectors
 {
     /**
-     * Gray paints an element carrying no colour class, so a gray element is an uncoloured one.
+     * Gray paints an element carrying no colour class, so a gray element is an uncoloured one:
+     * neither the `sy-color` marker, a named colour nor a text shade.
      */
-    public const string GRAY = ':not(.sy-color)';
+    public const string GRAY = ':not([class*="color"])';
 
     public const string COLORED = '.sy-color';
 
     public const string MEDIUM = '.sy-size-md';
+
+    public const string UNSIZED = ':not([class*="sy-size-"])';
 
     public const string DISABLED = '.sy-disabled';
 
@@ -29,6 +33,10 @@ final class Selectors
      * Neither a font weight nor a font family, which share the `sy-font-` prefix.
      */
     public const string NO_FONT = ':not([class*="sy-font-"])';
+
+    public const string NO_ALIGN = ':not([class*="sy-align-"])';
+
+    public const string NO_VERTICAL_ALIGN = ':not([class*="sy-vertical-align-"])';
 
     public const string NOT_CONTAINED = '.sy-section-not-contained';
 
@@ -81,6 +89,19 @@ final class Selectors
         return ".sy-color-{$name}";
     }
 
+    /**
+     * A colour given as a value rather than a name, painted through the palette's 500 shade.
+     */
+    public static function palette(string $shade500): string
+    {
+        return "[style*=\"--sy-color-500: {$shade500};\"]";
+    }
+
+    public static function textShades(int $light, int $dark): string
+    {
+        return "[class~=\"sy-text-color-{$light}\"][class~=\"dark:sy-text-color-{$dark}\"]";
+    }
+
     public static function size(string $name): string
     {
         return ".sy-size-{$name}";
@@ -89,5 +110,15 @@ final class Selectors
     public static function font(string $name): string
     {
         return ".sy-font-{$name}";
+    }
+
+    public static function align(string $value): string
+    {
+        return ".sy-align-{$value}";
+    }
+
+    public static function verticalAlign(string $value): string
+    {
+        return ".sy-vertical-align-{$value}";
     }
 }

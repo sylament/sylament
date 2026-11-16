@@ -121,18 +121,18 @@ describe('render', function (): void {
 });
 
 describe('footer', function (): void {
-    it('advances through a Next button whose wrapper the controller clicks, which a disabled Next leaves inert', function (): void {
+    it('advances through a Next button whose wrapper the controller clicks, its icon after its label, which a disabled Next leaves inert', function (): void {
         expect($this->renderSchemaComponent(Wizard::make([Step::make('Account'), Step::make('Review')])))
-            ->toContainElement('[data-sylament--schemas--wizard-target="nextSlot"][data-action="click->sylament--schemas--wizard#requestNextStep"][data-loading="addClass(sy-disabled)"] ' . SupportSelectors::BUTTON . SupportSelectors::COLORED . ':not([disabled])', 'Next')
-            ->and($this->renderSchemaComponent(Wizard::make([Step::make('Account'), Step::make('Review')])->nextAction(fn (Action $action): Action => $action->label('Continue')->disabled())))
-            ->toContainElement('[data-sylament--schemas--wizard-target="nextSlot"]:not([data-action])[data-loading="addClass(sy-disabled)"] ' . SupportSelectors::BUTTON . '[disabled]', 'Continue');
+            ->toContainElement('[data-sylament--schemas--wizard-target="nextSlot"][data-action="click->sylament--schemas--wizard#requestNextStep"][data-loading="addClass(sy-disabled)"] ' . SupportSelectors::BUTTON . SupportSelectors::COLORED . ':not([disabled]):not([data-action])', 'Next')
+            ->and($this->renderSchemaComponent(Wizard::make([Step::make('Account'), Step::make('Review')])->nextAction(fn (Action $action): Action => $action->label('Continue')->icon('support:star')->disabled())))
+            ->toContainElement('[data-sylament--schemas--wizard-target="nextSlot"]:not([data-action])[data-loading="addClass(sy-disabled)"] ' . SupportSelectors::BUTTON . '[disabled]', 'ContinueStar');
     });
 
     it('steps back through a gray Back button whose wrapper the controller clicks, a disabled Back also disabling every header button', function (): void {
         $steps = static fn (): array => [Step::make('Account'), Step::make('Review')];
 
         expect($this->renderSchemaComponent(Wizard::make($steps())->startOnStep(2)))
-            ->toContainElement('[data-sylament--schemas--wizard-target="previousSlot"][data-action="click->sylament--schemas--wizard#goToPreviousStep"] ' . SupportSelectors::BUTTON . SupportSelectors::GRAY . ':not([disabled])', 'Back')
+            ->toContainElement('[data-sylament--schemas--wizard-target="previousSlot"][data-action="click->sylament--schemas--wizard#goToPreviousStep"] ' . SupportSelectors::BUTTON . SupportSelectors::GRAY . ':not([disabled]):not([data-action])', 'Back')
             ->toContainElement(Selectors::WIZARD_STEP_BUTTON . ':not([disabled])', 'check 01 Account Completed')
             ->and($disabled = $this->renderSchemaComponent(Wizard::make($steps())->startOnStep(2)->skippable()->previousAction(fn (Action $action): Action => $action->label('Previous')->disabled())))
             ->toContainElement('[data-sylament--schemas--wizard-target="previousSlot"]:not([data-action]) ' . SupportSelectors::BUTTON . '[disabled]', 'Previous')

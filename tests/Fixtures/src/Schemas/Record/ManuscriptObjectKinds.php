@@ -25,7 +25,7 @@ final class ManuscriptObjectKinds
 
     public ?RevisionedBase $revision = null;
 
-    public ?ManuscriptSeal $seal = null;
+    public ?SealedCard $seal = null;
 
     public ?Countable $countable = null;
 

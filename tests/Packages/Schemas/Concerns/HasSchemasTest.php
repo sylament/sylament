@@ -18,7 +18,6 @@ use Sylament\Tests\Fixtures\Entity\BerthCleat;
 use Sylament\Tests\Fixtures\Entity\BerthMooring;
 use Sylament\Tests\Fixtures\Entity\BoundVolume;
 use Sylament\Tests\Fixtures\Entity\CappedHeadline;
-use Sylament\Tests\Fixtures\Entity\HostPathAlias;
 use Sylament\Tests\Fixtures\Entity\IndexedBinder;
 use Sylament\Tests\Fixtures\Entity\IndexedBinderSheet;
 use Sylament\Tests\Fixtures\Entity\Invoice;
@@ -340,7 +339,7 @@ describe('validateSchema()', function (): void {
     });
 
     it('throws without announcing the failure on a host built outside the container', function (): void {
-        $schema = $this->host->mapping(TextInput::make('label')->required())->record($alias = new HostPathAlias())->fill($alias);
+        $schema = $this->host->mapping(TextInput::make('label')->required())->record($mooring = new BerthMooring())->fill($mooring);
 
         expect(fn () => $this->host->validateSchema($schema))->toThrow(function (ValidationException $exception): void {
             expect($exception->getErrors())->toBe(['data.label' => ['This value should not be blank.']]);
@@ -460,22 +459,22 @@ describe('validateSchemaRecord()', function (): void {
     });
 
     it('files a blank key refusal under the first blank key field a component maps, past one it does not', function (): void {
-        $schema = $this->host->mapping(TextInput::make('path'), TextInput::make('label'))->record($alias = new HostPathAlias())->fill($alias);
-        $this->host->data = ['path' => '   ', 'label' => 'Hostless'];
+        $schema = $this->host->mapping(TextInput::make('slot'), TextInput::make('label'))->record($mooring = new BerthMooring())->fill($mooring);
+        $this->host->data = ['slot' => '   ', 'label' => 'Pierless'];
 
         expect(fn () => $schema->getData())->toThrow(function (ValidationException $exception): void {
-            expect($exception->getErrors())->toBe(['data.path' => ['This value should not be blank.']]);
+            expect($exception->getErrors())->toBe(['data.slot' => ['This value should not be blank.']]);
         })
-            ->and($this->host->getErrorsForSchemaStatePath('data.path'))->toBe(['This value should not be blank.']);
+            ->and($this->host->getErrorsForSchemaStatePath('data.slot'))->toBe(['This value should not be blank.']);
     });
 
     it('leaves a blank key no component maps to the create that persists the record, running no statement', function (): void {
-        $alias = new HostPathAlias();
-        $schema = $this->host->mapping(TextInput::make('label'))->record($alias)->fill($alias);
+        $mooring = new BerthMooring();
+        $schema = $this->host->mapping(TextInput::make('label'))->record($mooring)->fill($mooring);
         $this->host->data = ['label' => 'Orphan'];
 
-        expect($schema->getData())->toBe($alias)
-            ->and($alias->label)->toBe('Orphan')
+        expect($schema->getData())->toBe($mooring)
+            ->and($mooring->label)->toBe('Orphan')
             ->and($this->statementsRun())->toBe([]);
     });
 

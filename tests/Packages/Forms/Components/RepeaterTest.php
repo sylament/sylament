@@ -1,0 +1,953 @@
+<?php
+
+declare(strict_types=1);
+
+use Sylament\Actions\Action;
+use Sylament\Actions\Testing\TestAction;
+use Sylament\Forms\Components\Hidden;
+use Sylament\Forms\Components\Repeater;
+use Sylament\Forms\Components\Repeater\TableColumn;
+use Sylament\Forms\Components\Select;
+use Sylament\Forms\Components\TextInput;
+use Sylament\Schemas\Components\Actions;
+use Sylament\Schemas\Components\Group;
+use Sylament\Schemas\Exceptions\ValidationException;
+use Sylament\Schemas\State\Casts\ObjectStateCast;
+use Sylament\Support\Enums\Alignment;
+use Sylament\Support\Enums\VerticalAlignment;
+use Sylament\Tests\Fixtures\Forms\Record\LineItem;
+use Sylament\Tests\Fixtures\Forms\Record\LinePart;
+use Sylament\Tests\Fixtures\Forms\Record\LineSheet;
+use Sylament\Tests\Fixtures\Forms\Record\PackedLineItem;
+use Sylament\Tests\Fixtures\Forms\RepeaterHost;
+use Sylament\Tests\Fixtures\Forms\Selectors as FormsSelectors;
+use Sylament\Tests\Fixtures\Schemas\HookLog;
+use Sylament\Tests\Fixtures\Schemas\Record\Anthology;
+use Sylament\Tests\Fixtures\Schemas\Record\Manuscript;
+use Sylament\Tests\Fixtures\Schemas\RecordMappingHost;
+use Sylament\Tests\Fixtures\Schemas\StringBackedLetter;
+use Sylament\Tests\Fixtures\Support\Selectors as SupportSelectors;
+use Symfony\Component\DomCrawler\Crawler;
+use Symfony\Component\Uid\Uuid;
+use Symfony\Component\Uid\UuidV4;
+use Twig\Error\RuntimeError;
+
+describe('make() and components()', function (): void {
+    it('renders one item per item in the state, each holding its own fields', function (): void {
+        $crawler = $this->renderSchemaComponent(
+            Repeater::make('lines')->components([TextInput::make('name')]),
+            ['lines' => ['a' => ['name' => 'Ada'], 'b' => ['name' => 'Grace']]],
+        );
+
+        expect($crawler->filter(FormsSelectors::REPEATER_ITEM)->each(static fn (Crawler $item): string => $item->attr('data-item-key') ?? ''))->toBe(['a', 'b'])
+            ->and($crawler->filter(FormsSelectors::repeaterItem('a') . ' input')->attr('value'))->toBe('Ada')
+            ->and($crawler->filter(FormsSelectors::repeaterItem('b') . ' input')->attr('value'))->toBe('Grace');
+    });
+});
+
+describe('item schemas', function (): void {
+    it('gives each item its own field ids', function (): void {
+        $crawler = $this->renderSchemaComponent(
+            Repeater::make('lines')->components([TextInput::make('name')]),
+            ['lines' => [['name' => 'Ada'], ['name' => 'Grace']]],
+        );
+
+        expect($crawler->filter(FormsSelectors::REPEATER_ITEM . ' input')->each(static fn (Crawler $input): string => $input->attr('id') ?? ''))->toBe(['schema.lines.0.name', 'schema.lines.1.name'])
+            ->and($crawler->filter(FormsSelectors::REPEATER_ITEM . ' label')->each(static fn (Crawler $label): string => $label->attr('for') ?? ''))->toBe(['schema.lines.0.name', 'schema.lines.1.name'])
+            ->and($crawler->filter(FormsSelectors::REPEATER_ITEM)->each(static fn (Crawler $item): string => $item->attr('id') ?? ''))->toBe(['schema.lines.0', 'schema.lines.1']);
+    });
+
+    it('gives each item its own action instances', function (): void {
+        $host = new RecordMappingHost();
+        $repeater = $host->mapping(Repeater::make('lines')->components([TextInput::make('name'), Actions::make([Action::make('ping')])]))->getComponent('lines');
+        $host->data = ['lines' => ['a' => ['name' => 'Ada'], 'b' => ['name' => 'Grace']]];
+        $items = $repeater->getItems();
+
+        expect($items['a']->getAction('ping'))->toBeInstanceOf(Action::class)
+            ->and($items['a']->getAction('ping'))->not->toBe($items['b']->getAction('ping'))
+            ->and($items['b']->getAction('ping'))->not->toBe($repeater->getChildSchema()?->getAction('ping'));
+
+        $this->createLiveComponent(RepeaterHost::class, ['data' => ['lines' => ['a' => ['name' => 'Ada'], 'b' => ['name' => 'Grace']]]])
+            ->callAction(TestAction::make('ping')->schemaComponent('lines.b'));
+
+        expect($this::getContainer()->get(HookLog::class)->hooks)->toBe(['ping {"name":"Grace"}']);
+    });
+});
+
+describe('the item pipeline', function (): void {
+    it('keys items by uuid until dehydration', function (): void {
+        $host = $this->validatingRecordMappingHost();
+        $schema = $host->mapping($repeater = Repeater::make('lines')->components([TextInput::make('name')->maxLength(5)]));
+
+        $schema->fill(['lines' => [['name' => 'Ada'], ['name' => 'Grace']]]);
+
+        $firstKeys = array_keys($host->data['lines']);
+        $schema->fill(['lines' => [['name' => 'Ada'], ['name' => 'Grace']]]);
+        $secondKeys = array_keys($host->data['lines']);
+
+        expect(array_map(static fn (string $key): bool => Uuid::fromString($key) instanceof UuidV4, $firstKeys))->toBe([true, true])
+            ->and(array_unique($firstKeys))->toHaveCount(2)
+            ->and(array_intersect($firstKeys, $secondKeys))->toBe([])
+            ->and(array_keys($repeater->getState()))->toBe($secondKeys)
+            ->and($schema->getState())->toBe(['lines' => [['name' => 'Ada'], ['name' => 'Grace']]]);
+
+        $host->data['lines'][$secondKeys[1]]['name'] = 'Grace H.';
+
+        expect(fn () => $host->validateSchema($schema))->toThrow(function (ValidationException $exception) use ($secondKeys): void {
+            expect(array_keys($exception->getErrors()))->toBe(["data.lines.{$secondKeys[1]}.name"]);
+        });
+    });
+
+    it('keys items by position end to end under fake()', function (): void {
+        Repeater::fake();
+        $host = new RecordMappingHost();
+        $schema = $host->mapping(Repeater::make('lines')->components([TextInput::make('name')]));
+
+        $schema->fill(['lines' => [['name' => 'Ada'], ['name' => 'Grace']]]);
+
+        expect($host->data['lines'])->toBe([['name' => 'Ada'], ['name' => 'Grace']])
+            ->and($schema->getState())->toBe(['lines' => [['name' => 'Ada'], ['name' => 'Grace']]]);
+    });
+
+    it('fills a simple repeater without clobbering its scalars', function (): void {
+        $host = new RecordMappingHost();
+        $schema = $host->mapping(Repeater::make('tags')->simple(TextInput::make('tag')));
+
+        $schema->fill(['tags' => ['x', 'y']]);
+
+        expect(array_values($host->data['tags']))->toBe([['tag' => 'x'], ['tag' => 'y']])
+            ->and($schema->getState())->toBe(['tags' => ['x', 'y']]);
+    });
+
+    it('fills a nested repeater without phantom items', function (): void {
+        $host = new RecordMappingHost();
+        $schema = $host->mapping(Repeater::make('lines')->components([
+            TextInput::make('title'),
+            Repeater::make('parts')->components([TextInput::make('label')]),
+        ]));
+
+        $schema->fill(['lines' => [['title' => 'One', 'parts' => [['label' => 'a'], ['label' => 'b']]]]]);
+
+        $line = array_first($host->data['lines']);
+
+        expect($host->data['lines'])->toHaveCount(1)
+            ->and(array_column(array_values($line['parts']), 'label'))->toBe(['a', 'b'])
+            ->and($schema->getState())->toBe(['lines' => [['title' => 'One', 'parts' => [['label' => 'a'], ['label' => 'b']]]]]);
+    });
+});
+
+describe('getItems()', function (): void {
+    beforeEach(function (): void {
+        $this->host = new RecordMappingHost();
+        $this->repeater = $this->host->mapping(Repeater::make('lines')->components([TextInput::make('name')]))->getComponent('lines');
+        $this->host->data = ['lines' => ['a' => ['name' => 'Ada'], 'b' => ['name' => 'Grace']]];
+    });
+
+    it('keeps its item schemas until the item structure changes', function (): void {
+        $items = $this->repeater->getItems();
+        $this->host->data['lines']['a']['name'] = 'Ada L.';
+
+        expect($this->repeater->getItems())->toBe($items);
+
+        $this->repeater->rawState([...$this->host->data['lines'], 'c' => ['name' => 'Hedy']]);
+
+        expect(array_keys($this->repeater->getItems()))->toBe(['a', 'b', 'c'])
+            ->and($this->repeater->getItems()['c']->getStatePath())->toBe('data.lines.c');
+    });
+
+    it('drops the cache when it is cleared', function (): void {
+        $items = $this->repeater->getItems();
+
+        $this->repeater->clearCachedChildSchemas();
+
+        expect($this->repeater->getItems()['a'])->not->toBe($items['a'])
+            ->and(array_keys($this->repeater->getItems()))->toBe(['a', 'b']);
+    });
+
+    it("finds an item's schema by its key", function (): void {
+        expect($this->repeater->getChildSchema('b'))->toBe($this->repeater->getItems()['b'])
+            ->and($this->repeater->getChildSchema('z'))->toBeNull();
+    });
+});
+
+describe('defaultItems()', function (): void {
+    it('starts a new repeater with one empty item, or as many as defaultItems() names', function (Closure $repeater, int $count): void {
+        $host = new RecordMappingHost();
+        $schema = $host->mapping($repeater()->components([TextInput::make('name')]));
+
+        $schema->fill();
+
+        expect(array_values($host->data['lines']))->toBe(array_fill(0, $count, ['name' => null]))
+            ->and($this->renderSchemaComponent($repeater()->components([TextInput::make('name')]), $host->data)->filter(FormsSelectors::REPEATER_ITEM))->toHaveCount($count);
+    })->with([
+        'by default' => [fn (): Repeater => Repeater::make('lines'), 1],
+        'a count from a closure' => [fn (): Repeater => Repeater::make('lines')->defaultItems(static fn (): int => 2), 2],
+        'none' => [fn (): Repeater => Repeater::make('lines')->defaultItems(0), 0],
+    ]);
+
+    it('starts a new repeater with the items a declared default holds, each under its own key', function (): void {
+        $host = new RecordMappingHost();
+        $schema = $host->mapping(Repeater::make('lines')->default([['name' => 'Ada'], ['name' => 'Grace']])->components([TextInput::make('name')]));
+
+        $schema->fill();
+
+        expect(array_values($host->data['lines']))->toBe([['name' => 'Ada'], ['name' => 'Grace']])
+            ->and(array_unique(array_keys($host->data['lines'])))->toHaveCount(2);
+    });
+
+    it('fills from the record instead of the default', function (): void {
+        $host = new RecordMappingHost();
+        $schema = $host->mapping(Repeater::make('lines')->default([['name' => 'Ada']])->components([TextInput::make('name')]));
+
+        $schema->fill(['lines' => [['name' => 'Hedy']]]);
+
+        expect(array_values($host->data['lines']))->toBe([['name' => 'Hedy']]);
+    });
+});
+
+describe('simple()', function (): void {
+    it('carries one scalar per item, rendered as the simple field with no item header', function (): void {
+        $host = new RecordMappingHost();
+        $schema = $host->mapping(Repeater::make('tags')->simple(TextInput::make('tag')));
+        $schema->fill(['tags' => ['x', 'y']]);
+
+        $crawler = $this->renderSchemaComponent(Repeater::make('tags')->simple(TextInput::make('tag')), $host->data);
+
+        expect($crawler->filter('.sy-fo-simple-repeater-item input')->each(static fn (Crawler $input): string => $input->attr('value') ?? ''))->toBe(['x', 'y'])
+            ->and($crawler->filter('.sy-fo-repeater-item-header'))->toHaveCount(0)
+            ->and($schema->getState())->toBe(['tags' => ['x', 'y']]);
+    });
+});
+
+describe('getItemState()', function (): void {
+    it("reads one item's state, validated, while getRawItemState() reads it unvalidated", function (): void {
+        $host = $this->validatingRecordMappingHost();
+        $repeater = $host->mapping(Repeater::make('lines')->components([
+            Select::make('letter')->options(StringBackedLetter::class),
+            TextInput::make('name')->required(),
+        ]))->getComponent('lines');
+        $host->data = ['lines' => ['a' => ['letter' => 'a', 'name' => 'Ada'], 'b' => ['letter' => 'b', 'name' => '']]];
+
+        expect($repeater->getItemState('a'))->toBe(['letter' => StringBackedLetter::A, 'name' => 'Ada'])
+            ->and($repeater->getRawItemState('b'))->toBe(['letter' => StringBackedLetter::B, 'name' => null])
+            ->and(fn () => $repeater->getItemState('b'))->toThrow(ValidationException::class);
+    });
+});
+
+describe('getItemKeys()', function (): void {
+    it('answers the state keys in order before any save, and each path the item schema declares once', function (): void {
+        $host = new RecordMappingHost();
+        $repeater = $host->mapping(Repeater::make('lines')->components([
+            TextInput::make('name'),
+            Group::make([TextInput::make('city'), TextInput::make('zip')])->statePath('address'),
+            TextInput::make('name')->label('Name again'),
+        ]))->getComponent('lines');
+        $host->data = ['lines' => ['b' => [], 'a' => []]];
+
+        expect($repeater->getItemKeys())->toBe(['b', 'a'])
+            ->and($repeater->getItemStatePaths())->toBe(['name', 'address', 'address.city', 'address.zip']);
+    });
+});
+
+describe('getTemplate()', function (): void {
+    it('renders the default, simple and table views, the table outranking simple and an explicit template outranking both', function (Closure $repeater, string $root): void {
+        $crawler = $this->renderSchemaComponent($repeater(), ['lines' => ['a' => ['name' => 'Ada']]]);
+
+        expect($crawler->filter($root))->toHaveCount(1)
+            ->and($crawler->filter("{$root} [data-item-key=\"a\"] input")->attr('value'))->toBe('Ada')
+            ->and($crawler->filter("{$root} button")->last()->text())->toBe('Add to lines');
+    })->with([
+        'default' => [fn (): Repeater => Repeater::make('lines')->components([TextInput::make('name')]), '.sy-fo-repeater'],
+        'simple' => [fn (): Repeater => Repeater::make('lines')->simple(TextInput::make('name')), '.sy-fo-simple-repeater'],
+        'table' => [fn (): Repeater => Repeater::make('lines')->table([TableColumn::make('Name')])->components([TextInput::make('name')]), '.sy-fo-table-repeater'],
+        'table over simple' => [fn (): Repeater => Repeater::make('lines')->simple(TextInput::make('name'))->table([TableColumn::make('Name')]), '.sy-fo-table-repeater'],
+        'a template over a table' => [fn (): Repeater => Repeater::make('lines')->table([TableColumn::make('Name')])->template(Repeater::TEMPLATE)->components([TextInput::make('name')]), '.sy-fo-repeater'],
+    ]);
+});
+
+describe('the add action', function (): void {
+    it('appends one empty item', function (): void {
+        $tester = $this->createLiveComponent(RepeaterHost::class, ['data' => ['lines' => ['a' => ['name' => 'Ada']]]])
+            ->callAction(TestAction::make('add')->schemaComponent('lines'));
+
+        $lines = $tester->component()->data['lines'];
+
+        expect(array_slice($lines, 0, 1))->toBe(['a' => ['name' => 'Ada']])
+            ->and(array_slice($lines, 1))->toHaveCount(1)
+            ->and(array_values(array_slice($lines, 1)))->toBe([['name' => null]])
+            ->and($tester->render()->crawler()->filter(FormsSelectors::REPEATER_ITEM . '[id^="form.lines."]'))->toHaveCount(2);
+    });
+
+    it("renders a button labelled after the field, aligned as asked, and none when the repeater is not addable", function (): void {
+        $items = ['lines' => ['a' => ['name' => 'Ada']]];
+
+        expect($this->renderSchemaComponent(Repeater::make('lines')->components([TextInput::make('name')]), $items))
+            ->toContainElement(FormsSelectors::REPEATER_ADD_BUTTON, 'Add to lines')
+            ->and($this->renderSchemaComponent(Repeater::make('lines')->addActionLabel('Add a line')->addActionAlignment(Alignment::End)->components([TextInput::make('name')]), $items))
+            ->toContainElement('.sy-fo-repeater-add' . SupportSelectors::align('end') . ' button', 'Add a line');
+
+        $crawler = $this->renderSchemaComponent(Repeater::make('lines')->addable(false)->components([TextInput::make('name')]), $items);
+
+        expect($crawler->filter(FormsSelectors::REPEATER_ITEM))->toHaveCount(1)
+            ->and($crawler->filter('.sy-fo-repeater-add'))->toHaveCount(0);
+    });
+
+    it('takes the button an addAction() modifier makes of it', function (): void {
+        expect($this->renderSchemaComponent(
+            Repeater::make('lines')->addAction(static fn (Action $action): Action => $action->label('New line'))->components([TextInput::make('name')]),
+            ['lines' => []],
+        ))->toContainElement(FormsSelectors::REPEATER_ADD_BUTTON, 'New line');
+    });
+});
+
+describe('the delete action', function (): void {
+    it('removes the item its trigger names', function (): void {
+        $this->createLiveComponent(RepeaterHost::class, ['data' => ['lines' => ['a' => ['name' => 'Ada'], 'b' => ['name' => 'Grace']]]])
+            ->callAction(TestAction::make('delete')->schemaComponent('lines'), arguments: ['item' => 'b'])
+            ->assertFormSet(['lines' => ['a' => ['name' => 'Ada']]]);
+    });
+
+    it('leaves the items alone when its trigger names an item the state no longer holds', function (): void {
+        $this->createLiveComponent(RepeaterHost::class, ['data' => ['lines' => ['a' => ['name' => 'Ada']]]])
+            ->callAction(TestAction::make('delete')->schemaComponent('lines'), arguments: ['item' => 'gone'])
+            ->assertFormSet(['lines' => ['a' => ['name' => 'Ada']]]);
+    });
+
+    it('renders a delete button in each item header, and none when the repeater is not deletable', function (): void {
+        $items = ['lines' => ['a' => ['name' => 'Ada'], 'b' => ['name' => 'Grace']]];
+
+        expect($this->renderSchemaComponent(Repeater::make('lines')->components([TextInput::make('name')]), $items)->filter('.sy-fo-repeater-item-header button[aria-label="Delete"]'))->toHaveCount(2);
+
+        $crawler = $this->renderSchemaComponent(Repeater::make('lines')->deletable(false)->components([TextInput::make('name')]), $items);
+
+        expect($crawler->filter('.sy-fo-repeater-item-header'))->toHaveCount(2)
+            ->and($crawler->filter('button[aria-label="Delete"]'))->toHaveCount(0);
+    });
+});
+
+describe('the clone action', function (): void {
+    it("copies the named item's state under a fresh key", function (): void {
+        $lines = $this->createLiveComponent(RepeaterHost::class, ['data' => ['lines' => ['a' => ['name' => 'Ada'], 'b' => ['name' => 'Grace']]]])
+            ->callAction(TestAction::make('clone')->schemaComponent('lines'), arguments: ['item' => 'a'])
+            ->component()->data['lines'];
+
+        expect(array_slice($lines, 0, 2))->toBe(['a' => ['name' => 'Ada'], 'b' => ['name' => 'Grace']])
+            ->and(array_values(array_slice($lines, 2)))->toBe([['name' => 'Ada']])
+            ->and(array_key_last($lines))->not->toBeIn(['a', 'b']);
+    });
+
+    it('renders a clone button in each item header only when the repeater is cloneable', function (): void {
+        $items = ['lines' => ['a' => ['name' => 'Ada'], 'b' => ['name' => 'Grace']]];
+
+        expect($this->renderSchemaComponent(Repeater::make('lines')->cloneable()->components([TextInput::make('name')]), $items)->filter('.sy-fo-repeater-item-header button[aria-label="Clone"]'))->toHaveCount(2);
+
+        $crawler = $this->renderSchemaComponent(Repeater::make('lines')->components([TextInput::make('name')]), $items);
+
+        expect($crawler->filter('.sy-fo-repeater-item-header'))->toHaveCount(2)
+            ->and($crawler->filter('button[aria-label="Clone"]'))->toHaveCount(0);
+    });
+});
+
+describe('the move actions', function (): void {
+    it('swaps the named item with its neighbour', function (string $action, array $order): void {
+        $tester = $this->createLiveComponent(RepeaterHost::class, ['data' => ['lines' => ['a' => ['name' => 'Ada'], 'b' => ['name' => 'Grace'], 'c' => ['name' => 'Hedy']]]])
+            ->callAction(TestAction::make($action)->schemaComponent('lines'), arguments: ['item' => 'b']);
+
+        expect($tester->render()->crawler()->filter(FormsSelectors::REPEATER_ITEM . '[id^="form.lines."]')->each(static fn (Crawler $item): string => $item->attr('data-item-key') ?? ''))->toBe($order);
+    })->with([
+        'up' => ['moveUp', ['b', 'a', 'c']],
+        'down' => ['moveDown', ['a', 'c', 'b']],
+    ]);
+
+    it("disables the first item's up and the last item's down button", function (): void {
+        $crawler = $this->renderSchemaComponent(
+            Repeater::make('lines')->reorderableWithButtons()->components([TextInput::make('name')]),
+            ['lines' => ['a' => ['name' => 'Ada'], 'b' => ['name' => 'Grace']]],
+        );
+
+        expect($crawler->filter(FormsSelectors::REPEATER_ITEM . ' button[aria-label="Move up"]')->each(static fn (Crawler $button): bool => $button->attr('disabled') !== null))->toBe([true, false])
+            ->and($crawler->filter(FormsSelectors::REPEATER_ITEM . ' button[aria-label="Move down"]')->each(static fn (Crawler $button): bool => $button->attr('disabled') !== null))->toBe([false, true]);
+    });
+
+    it('renders no move buttons unless the repeater is reorderable with buttons', function (Closure $repeater): void {
+        $crawler = $this->renderSchemaComponent($repeater()->components([TextInput::make('name')]), ['lines' => ['a' => ['name' => 'Ada'], 'b' => ['name' => 'Grace']]]);
+
+        expect($crawler->filter(FormsSelectors::REPEATER_ITEM))->toHaveCount(2)
+            ->and($crawler->filter('button[aria-label="Move up"], button[aria-label="Move down"]'))->toHaveCount(0);
+    })->with([
+        'without buttons' => [fn (): Repeater => Repeater::make('lines')],
+        'not reorderable' => [fn (): Repeater => Repeater::make('lines')->reorderableWithButtons()->reorderable(false)],
+    ]);
+});
+
+describe('the reorder action', function (): void {
+    it('marks the drag handle, the items and the controllers that reorder them', function (): void {
+        $crawler = $this->renderSchemaComponent(Repeater::make('lines')->components([TextInput::make('name')]), ['lines' => ['a' => ['name' => 'Ada'], 'b' => ['name' => 'Grace']]]);
+        $list = $crawler->filter('ul.sy-fo-repeater-items');
+
+        expect($crawler->filter(FormsSelectors::REPEATER_ITEM . ' button[data-sortable-handle]')->each(static fn (Crawler $handle): string => $handle->attr('aria-label') ?? ''))->toBe(['Move', 'Move'])
+            ->and($crawler->filter('button[data-sortable-handle][data-live-action-param]'))->toHaveCount(0)
+            ->and($crawler->filter('li[data-sortable-item]')->each(static fn (Crawler $item): string => $item->attr('data-sortable-item') ?? ''))->toBe(['a', 'b'])
+            ->and($list->attr('data-controller'))->toBe('sylament--support--sortable')
+            ->and($list->attr('data-action'))->toBe('sylament--support--sortable:end->sylament--forms--repeater#reorder')
+            ->and($crawler->filter('.sy-fo-repeater')->attr('data-controller'))->toBe('sylament--forms--repeater');
+    });
+
+    it('hands the animation duration to the sortable controller', function (): void {
+        $crawler = $this->renderSchemaComponent(Repeater::make('lines')->reorderAnimationDuration(150)->components([TextInput::make('name')]), ['lines' => ['a' => ['name' => 'Ada']]]);
+
+        expect($crawler->filter('ul.sy-fo-repeater-items')->attr('data-sylament--support--sortable-animation-duration-value'))->toBe('150');
+    });
+
+    it('drops the handle, the control and the markers together', function (Closure $repeater): void {
+        $crawler = $this->renderSchemaComponent($repeater()->components([TextInput::make('name')]), ['lines' => ['a' => ['name' => 'Ada'], 'b' => ['name' => 'Grace']]]);
+
+        expect($crawler->filter(FormsSelectors::REPEATER_ITEM))->toHaveCount(2)
+            ->and($crawler->filter('[data-sortable-handle], [data-sortable-item], [data-controller="sylament--support--sortable"]'))->toHaveCount(0)
+            ->and($crawler->filter('.sy-fo-repeater[data-controller]'))->toHaveCount(0);
+    })->with([
+        'not reorderable' => [fn (): Repeater => Repeater::make('lines')->reorderable(false)],
+        'disabled' => [fn (): Repeater => Repeater::make('lines')->disabled()],
+    ]);
+
+    it('writes back the order the client sent', function (): void {
+        $tester = $this->createLiveComponent(RepeaterHost::class, ['data' => ['lines' => ['a' => ['name' => 'Ada'], 'b' => ['name' => 'Grace']]]])
+            ->callAction(TestAction::make('reorder')->schemaComponent('lines'), arguments: ['items' => ['b', 'a']]);
+
+        expect(array_keys($tester->component()->data['lines']))->toBe(['b', 'a'])
+            ->and($tester->render()->crawler()->filter(FormsSelectors::REPEATER_ITEM . '[id^="form.lines."]')->each(static fn (Crawler $item): string => $item->attr('data-item-key') ?? ''))->toBe(['b', 'a']);
+    });
+
+    it('drops an unknown key and keeps an omitted item after the sent ones', function (): void {
+        $tester = $this->createLiveComponent(RepeaterHost::class, ['data' => ['lines' => ['a' => ['name' => 'Ada'], 'b' => ['name' => 'Grace'], 'c' => ['name' => 'Hedy']]]])
+            ->callAction(TestAction::make('reorder')->schemaComponent('lines'), arguments: ['items' => ['c', 'gone']]);
+
+        expect($tester->component()->data['lines'])->toBe(['c' => ['name' => 'Hedy'], 'a' => ['name' => 'Ada'], 'b' => ['name' => 'Grace']]);
+    });
+
+    it('finds a positional item by the numeric string the client sends', function (): void {
+        $tester = $this->createLiveComponent(RepeaterHost::class, ['data' => ['lines' => [['name' => 'Ada'], ['name' => 'Grace']]]])
+            ->callAction(TestAction::make('reorder')->schemaComponent('lines'), arguments: ['items' => ['1', '0']]);
+
+        expect($tester->component()->data['lines'])->toBe([1 => ['name' => 'Grace'], 0 => ['name' => 'Ada']]);
+    });
+
+    it('refuses an items argument that is not a list of keys, naming the argument', function (mixed $items): void {
+        $tester = $this->createLiveComponent(RepeaterHost::class, ['data' => ['lines' => ['a' => ['name' => 'Ada']]]]);
+
+        expect(fn () => $tester->callAction(TestAction::make('reorder')->schemaComponent('lines'), arguments: ['items' => $items]))
+            ->toThrow(LogicException::class, 'without an "items" argument listing the item keys');
+    })->with([
+        'a map' => [['first' => 'a']],
+        'a string' => ['a'],
+    ]);
+});
+
+describe('addBetween', function (): void {
+    it('renders the between-item button only once it is made visible, between items and never after the last', function (): void {
+        $items = ['lines' => ['a' => ['name' => 'Ada'], 'b' => ['name' => 'Grace'], 'c' => ['name' => 'Hedy']]];
+        $crawler = $this->renderSchemaComponent(Repeater::make('lines')->addBetweenAction(static fn (Action $action): Action => $action->visible())->components([TextInput::make('name')]), $items);
+
+        expect($crawler->filter('.sy-fo-repeater-add-between-items button')->each(static fn (Crawler $button): string => $button->text()))->toBe(['Insert between', 'Insert between'])
+            ->and($crawler->filter(FormsSelectors::repeaterItem('c') . ' ~ li .sy-fo-repeater-add-between-items'))->toHaveCount(0)
+            ->and($crawler->filter('[data-sortable-item]'))->toHaveCount(3)
+            ->and($this->renderSchemaComponent(Repeater::make('lines')->addBetweenActionLabel('Add here')->addBetweenAction(static fn (Action $action): Action => $action->visible())->components([TextInput::make('name')]), $items))
+            ->toContainElement('.sy-fo-repeater-add-between-items button', 'Add here');
+
+        $hidden = $this->renderSchemaComponent(Repeater::make('lines')->components([TextInput::make('name')]), $items);
+
+        expect($hidden->filter(FormsSelectors::REPEATER_ITEM))->toHaveCount(3)
+            ->and($hidden->filter('.sy-fo-repeater-add-between-items'))->toHaveCount(0);
+    });
+
+    it('shows the label between items where no button shows, and the button instead when both are declared', function (): void {
+        $items = ['lines' => ['a' => ['name' => 'Ada'], 'b' => ['name' => 'Grace']]];
+        $labelled = $this->renderSchemaComponent(Repeater::make('lines')->labelBetweenItems('or')->components([TextInput::make('name')]), $items);
+        $both = $this->renderSchemaComponent(Repeater::make('lines')->labelBetweenItems('or')->addBetweenAction(static fn (Action $action): Action => $action->visible())->components([TextInput::make('name')]), $items);
+
+        expect($labelled->filter('.sy-fo-repeater-label-between-items')->each(static fn (Crawler $label): string => $label->text()))->toBe(['or'])
+            ->and($labelled->filter('[data-sortable-item]'))->toHaveCount(2)
+            ->and($both->filter('.sy-fo-repeater-add-between-items button'))->toHaveCount(1)
+            ->and($both->filter('.sy-fo-repeater-label-between-items'))->toHaveCount(0);
+    });
+
+    it('inserts an empty item after the named item', function (): void {
+        $lines = $this->createLiveComponent(RepeaterHost::class, ['data' => ['lines' => ['a' => ['name' => 'Ada'], 'b' => ['name' => 'Grace']]]])
+            ->callAction(TestAction::make('addBetween')->schemaComponent('lines'), arguments: ['afterItem' => 'a'])
+            ->component()->data['lines'];
+
+        expect(array_keys($lines)[0])->toBe('a')
+            ->and(array_keys($lines)[2])->toBe('b')
+            ->and(array_values($lines)[1])->toBe(['name' => null]);
+    });
+
+    it('mounts nothing while hidden', function (): void {
+        $this->createLiveComponent(RepeaterHost::class, ['data' => ['unbounded' => ['a' => ['name' => 'Ada'], 'b' => ['name' => 'Grace']]]])
+            ->mountAction(TestAction::make('addBetween')->schemaComponent('unbounded'), arguments: ['afterItem' => 'a'])
+            ->callMountedAction()
+            ->assertFormSet(['unbounded' => ['a' => ['name' => 'Ada'], 'b' => ['name' => 'Grace']]]);
+    });
+});
+
+describe('structural actions', function (): void {
+    it('fires afterStateUpdated once per action', function (string $action, array $arguments): void {
+        $this->createLiveComponent(RepeaterHost::class, ['data' => ['lines' => ['a' => ['name' => 'Ada'], 'b' => ['name' => 'Grace']]]])
+            ->callAction(TestAction::make($action)->schemaComponent('lines'), arguments: $arguments);
+
+        expect($this::getContainer()->get(HookLog::class)->hooks)->toBe(['lines updated']);
+    })->with([
+        'add' => ['add', []],
+        'delete' => ['delete', ['item' => 'a']],
+        'clone' => ['clone', ['item' => 'a']],
+        'move up' => ['moveUp', ['item' => 'b']],
+        'move up at the top' => ['moveUp', ['item' => 'a']],
+        'move down' => ['moveDown', ['item' => 'a']],
+        'add between' => ['addBetween', ['afterItem' => 'a']],
+        'reorder' => ['reorder', ['items' => ['b', 'a']]],
+    ]);
+});
+
+describe('collapsing', function (): void {
+    it('renders the collapse and expand pair in each item header of a collapsible repeater', function (): void {
+        $items = ['lines' => ['a' => ['name' => 'Ada'], 'b' => ['name' => 'Grace']]];
+        $collapsible = $this->renderSchemaComponent(Repeater::make('lines')->collapsible()->components([TextInput::make('name')]), $items);
+        $plain = $this->renderSchemaComponent(Repeater::make('lines')->components([TextInput::make('name')]), $items);
+
+        expect($collapsible)->toContainButtons('.sy-fo-repeater-item-header-collapsible-actions button', ['Collapse', 'Expand', 'Collapse', 'Expand'])
+            ->and($collapsible->filter('.sy-fo-repeater')->attr('data-controller'))->toBe('sylament--forms--repeater')
+            ->and($collapsible->filter('[data-sylament--forms--repeater-persist-value]'))->toHaveCount(0)
+            ->and($collapsible->filter('li.sy-collapsed'))->toHaveCount(0)
+            ->and($plain->filter('.sy-fo-repeater-item-header'))->toHaveCount(2)
+            ->and($plain->filter('button[aria-label="Collapse"]'))->toHaveCount(0);
+    });
+
+    it('seeds the items of a collapsed() repeater collapsed, and cloaks a persistCollapsed() one until its controller replays the state', function (): void {
+        $items = ['lines' => ['a' => ['name' => 'Ada']]];
+        $collapsed = $this->renderSchemaComponent(Repeater::make('lines')->collapsed()->components([TextInput::make('name')]), $items);
+        $persisted = $this->renderSchemaComponent(Repeater::make('lines')->collapsible()->persistCollapsed()->components([TextInput::make('name')]), $items);
+
+        expect($collapsed->filter(FormsSelectors::repeaterItem('a') . SupportSelectors::COLLAPSED))->toHaveCount(1)
+            ->and($collapsed->filter(FormsSelectors::repeaterItem('a') . ' input')->attr('value'))->toBe('Ada')
+            ->and($persisted->filter('.sy-fo-repeater' . SupportSelectors::CLOAK)->attr('data-sylament--forms--repeater-persist-value'))->toBe('true');
+    });
+
+    it('hides the collapse-all and expand-all row below two items', function (): void {
+        $repeater = static fn (): Repeater => Repeater::make('lines')->collapsible()->components([TextInput::make('name')]);
+        $one = $this->renderSchemaComponent($repeater(), ['lines' => ['a' => ['name' => 'Ada']]]);
+        $two = $this->renderSchemaComponent($repeater(), ['lines' => ['a' => ['name' => 'Ada'], 'b' => ['name' => 'Grace']]]);
+
+        expect($two)->toContainButtons('.sy-fo-repeater-actions:not(.sy-hidden) button', ['Collapse all', 'Expand all'])
+            ->and($one->filter('.sy-fo-repeater-actions.sy-hidden button'))->toHaveCount(2);
+    });
+
+    it('marks a compact table view', function (): void {
+        expect($this->renderSchemaComponent(Repeater::make('lines')->table([TableColumn::make('Name')])->compact()->components([TextInput::make('name')]), ['lines' => ['a' => ['name' => 'Ada']]]))
+            ->toContainElement('.sy-fo-table-repeater' . SupportSelectors::COMPACT);
+    });
+
+    it('reopens a collapsed repeater when an item is added, cloned or added between', function (string $action, array $arguments): void {
+        $tester = $this->createLiveComponent(RepeaterHost::class, ['data' => ['folded' => ['a' => ['name' => 'Ada'], 'b' => ['name' => 'Grace']]]]);
+
+        expect($tester->render()->crawler()->filter('li[id^="form.folded."]' . SupportSelectors::COLLAPSED))->toHaveCount(2);
+
+        $crawler = $tester->callAction(TestAction::make($action)->schemaComponent('folded'), arguments: $arguments)->render()->crawler();
+
+        expect($crawler->filter(FormsSelectors::REPEATER_ITEM . '[id^="form.folded."]'))->toHaveCount(3)
+            ->and($crawler->filter('li[id^="form.folded."]' . SupportSelectors::COLLAPSED))->toHaveCount(0)
+            ->and($crawler->filter('li[id^="form.folded."] button[aria-label="Collapse"]'))->toHaveCount(3);
+    })->with([
+        'add' => ['add', []],
+        'clone' => ['clone', ['item' => 'a']],
+        'add between' => ['addBetween', ['afterItem' => 'a']],
+    ]);
+
+    it('leaves a repeater that is not collapsible uncollapsible when an item is added', function (): void {
+        $crawler = $this->createLiveComponent(RepeaterHost::class, ['data' => ['lines' => ['a' => ['name' => 'Ada']]]])
+            ->callAction(TestAction::make('add')->schemaComponent('lines'))
+            ->render()->crawler();
+
+        expect($crawler->filter(FormsSelectors::REPEATER_ITEM . '[id^="form.lines."]'))->toHaveCount(2)
+            ->and($crawler->filter('li[id^="form.lines."] button[aria-label="Collapse"]'))->toHaveCount(0);
+    });
+
+    it("conceals the native constraints of a collapsible repeater's controls", function (): void {
+        $items = ['lines' => ['a' => ['name' => '']]];
+        $repeater = static fn (): Repeater => Repeater::make('lines')->components([TextInput::make('name')->required()->maxLength(5)]);
+
+        expect($this->renderSchemaComponent($repeater()->collapsible(), $items)->filter(FormsSelectors::repeaterItem('a') . ' input:not([required]):not([maxlength])'))->toHaveCount(1)
+            ->and($this->renderSchemaComponent($repeater(), $items)->filter(FormsSelectors::repeaterItem('a') . ' input[required][maxlength="5"]'))->toHaveCount(1);
+    });
+
+    it('still validates the controls it conceals', function (): void {
+        $this->createLiveComponent(RepeaterHost::class, ['data' => ['concealed' => ['a' => ['name' => '']]]])
+            ->call('save')
+            ->assertHasFormErrors(['concealed.a.name' => 'This value should not be blank.']);
+    });
+});
+
+describe('item labels', function (): void {
+    it('shows the item label and its number in each header, truncated unless told otherwise', function (): void {
+        $items = ['lines' => ['a' => ['name' => 'Ada'], 'b' => ['name' => 'Grace']]];
+        $numbered = $this->renderSchemaComponent(Repeater::make('lines')->itemLabel('Line')->itemNumbers()->components([TextInput::make('name')]), $items);
+        $untruncated = $this->renderSchemaComponent(Repeater::make('lines')->itemLabel('Line')->truncateItemLabel(false)->components([TextInput::make('name')]), $items);
+
+        expect($numbered->filter('.sy-fo-repeater-item-header-label.sy-truncated')->each(static fn (Crawler $label): string => $label->text()))->toBe(['Line 1', 'Line 2'])
+            ->and($untruncated->filter('.sy-fo-repeater-item-header-label:not(.sy-truncated)')->each(static fn (Crawler $label): string => $label->text()))->toBe(['Line', 'Line']);
+    });
+
+    it("labels each item from a closure given the item's state, key and index", function (): void {
+        $crawler = $this->renderSchemaComponent(
+            Repeater::make('lines')
+                ->itemLabel(static fn (array $state, string $uuid, int $index): string => "{$state['name']} ({$uuid}, {$index})")
+                ->components([TextInput::make('name')]),
+            ['lines' => ['a' => ['name' => 'Ada'], 'b' => ['name' => 'Grace']]],
+        );
+
+        expect($crawler->filter('.sy-fo-repeater-item-header-label')->each(static fn (Crawler $label): string => $label->text()))->toBe(['Ada (a, 0)', 'Grace (b, 1)']);
+    });
+
+    it('renders no item header under itemHeaders(false), nor when nothing would fill it', function (Closure $repeater): void {
+        $items = ['lines' => ['a' => ['name' => 'Ada']]];
+
+        expect($this->renderSchemaComponent(Repeater::make('lines')->components([TextInput::make('name')]), $items)->filter('.sy-fo-repeater-item-header'))->toHaveCount(1);
+
+        $crawler = $this->renderSchemaComponent($repeater()->components([TextInput::make('name')]), $items);
+
+        expect($crawler->filter(FormsSelectors::repeaterItem('a') . ' input')->attr('value'))->toBe('Ada')
+            ->and($crawler->filter('.sy-fo-repeater-item-header'))->toHaveCount(0);
+    })->with([
+        'itemHeaders(false)' => [fn (): Repeater => Repeater::make('lines')->itemLabel('Line')->itemHeaders(false)],
+        'nothing to show' => [fn (): Repeater => Repeater::make('lines')->reorderable(false)->deletable(false)],
+    ]);
+});
+
+describe('item action icons', function (): void {
+    it('renders each item trigger with its icon', function (): void {
+        $crawler = $this->renderSchemaComponent(
+            Repeater::make('lines')->cloneable()->collapsible()->reorderableWithButtons()->components([TextInput::make('name')]),
+            ['lines' => ['a' => ['name' => 'Ada'], 'b' => ['name' => 'Grace']]],
+        );
+        $iconOf = static fn (string $name): string => $crawler->filter(FormsSelectors::repeaterItem('a') . " button[aria-label=\"{$name}\"] svg")->text();
+
+        expect(array_map($iconOf, ['Move', 'Move down', 'Clone', 'Collapse', 'Expand']))->toBe(['arrows-up-down-20-solid', 'arrow-down-20-solid', 'square-2-stack-20-solid', 'chevron-up-20-solid', 'chevron-down-20-solid'])
+            ->and($crawler->filter(FormsSelectors::repeaterItem('b') . ' button[aria-label="Move up"] svg')->text())->toBe('arrow-up-20-solid')
+            ->and($crawler->filter(FormsSelectors::repeaterItem('a') . ' button[aria-label="Delete"] svg'))->toHaveCount(1);
+    });
+});
+
+describe('grid()', function (): void {
+    it("lays the items out on support's grid, in one column by default", function (Closure $repeater, string $list, array $columns): void {
+        $crawler = $this->renderSchemaComponent($repeater(), ['lines' => ['a' => ['name' => 'Ada'], 'b' => ['name' => 'Grace']]]);
+
+        foreach ($columns as $breakpoint => $count) {
+            expect($crawler)->toContainElement($list . '.sy-grid' . SupportSelectors::columns($breakpoint, $count));
+        }
+    })->with([
+        'without grid()' => [fn (): Repeater => Repeater::make('lines')->components([TextInput::make('name')]), 'ul.sy-fo-repeater-items', ['default' => 1]],
+        'a column count' => [fn (): Repeater => Repeater::make('lines')->grid(3)->components([TextInput::make('name')]), 'ul.sy-fo-repeater-items', ['default' => 1, 'lg' => 3]],
+        'counts per breakpoint' => [fn (): Repeater => Repeater::make('lines')->grid(['md' => 2, 'lg' => 4])->components([TextInput::make('name')]), 'ul.sy-fo-repeater-items', ['md' => 2, 'lg' => 4]],
+        'the simple view' => [fn (): Repeater => Repeater::make('lines')->grid(3)->simple(TextInput::make('name')), 'ul.sy-fo-simple-repeater-items', ['lg' => 3]],
+    ]);
+
+    it('lays the table view out in rows, without the grid', function (): void {
+        $crawler = $this->renderSchemaComponent(Repeater::make('lines')->grid(3)->table([TableColumn::make('Name')])->components([TextInput::make('name')]), ['lines' => ['a' => ['name' => 'Ada']]]);
+
+        expect($crawler->filter('.sy-fo-table-repeater tr[data-item-key="a"]'))->toHaveCount(1)
+            ->and($crawler->filter('.sy-fo-table-repeater [style*="--cols-"]'))->toHaveCount(0);
+    });
+});
+
+describe('table()', function (): void {
+    it('switches to a table with one header cell per column, and back to the default view for no columns', function (): void {
+        $items = ['lines' => ['a' => ['name' => 'Ada', 'code' => 'A1']]];
+        $table = $this->renderSchemaComponent(Repeater::make('lines')->reorderable(false)->deletable(false)->table([TableColumn::make('Name'), TableColumn::make('Code')])->components([TextInput::make('name'), TextInput::make('code')]), $items);
+        $none = $this->renderSchemaComponent(Repeater::make('lines')->table([])->components([TextInput::make('name')]), $items);
+
+        expect($table->filter('.sy-fo-table-repeater thead th')->each(static fn (Crawler $cell): string => $cell->text()))->toBe(['Name', 'Code'])
+            ->and($table->filter('tr[data-item-key="a"] td input')->each(static fn (Crawler $input): string => $input->attr('value') ?? ''))->toBe(['Ada', 'A1'])
+            ->and($none->filter('.sy-fo-repeater ' . FormsSelectors::repeaterItem('a')))->toHaveCount(1)
+            ->and($none->filter('table'))->toHaveCount(0);
+    });
+
+    it('refuses an item schema holding anything but schema components, naming it', function (): void {
+        $repeater = Repeater::make('lines')->table([TableColumn::make('Name')])->components([TextInput::make('name'), Action::make('ping')]);
+
+        expect(fn () => $this->renderSchemaComponent($repeater, ['lines' => ['a' => ['name' => 'Ada']]]))
+            ->toThrow(RuntimeError::class, sprintf('Table repeaters must only contain schema components, but [%s] was used.', Action::class));
+    });
+
+    it('pairs columns to components by position', function (): void {
+        $crawler = $this->renderSchemaComponent(
+            Repeater::make('lines')
+                ->reorderable(false)
+                ->deletable(false)
+                ->table([TableColumn::make('Name')->verticalAlignment(VerticalAlignment::Center), TableColumn::make('Code'), TableColumn::make('Note')])
+                ->components([
+                    TextInput::make('name'),
+                    Hidden::make('id'),
+                    TextInput::make('code')->visible(false),
+                    TextInput::make('note'),
+                    TextInput::make('dropped'),
+                    Hidden::make('trailing'),
+                ]),
+            ['lines' => ['a' => ['name' => 'Ada', 'id' => '7', 'code' => 'A1', 'note' => 'n', 'dropped' => 'd', 'trailing' => 't']]],
+        );
+        $cells = $crawler->filter('tr[data-item-key="a"] > td');
+
+        expect($cells)->toHaveCount(4)
+            ->and($cells->eq(0)->filter('input')->attr('value'))->toBe('Ada')
+            ->and($cells->eq(0)->attr('class'))->toBe('sy-vertical-align-center')
+            ->and($cells->eq(1)->attr('class'))->toBe('sy-hidden')
+            ->and($cells->eq(1)->children())->toHaveCount(0)
+            ->and($cells->eq(2)->filter('input')->attr('value'))->toBe('n')
+            ->and($crawler->filter('input[value="d"]'))->toHaveCount(0);
+    });
+
+    it('renders hidden fields in a trailing cell inside their row, dropping one past the last column', function (): void {
+        $crawler = $this->renderSchemaComponent(
+            Repeater::make('lines')->table([TableColumn::make('Name')])->components([Hidden::make('id'), TextInput::make('name'), Hidden::make('trailing')]),
+            ['lines' => ['a' => ['id' => '7', 'name' => 'Ada', 'trailing' => 't']]],
+        );
+
+        expect($crawler->filter('tr[data-item-key="a"] > td.sy-fo-table-repeater-hidden-cell input[type="hidden"]')->each(static fn (Crawler $input): string => $input->attr('value') ?? ''))->toBe(['7'])
+            ->and($crawler->filter('input[value="t"]'))->toHaveCount(0);
+    });
+
+    it('shows the reorder and actions header cells only when a row can use them', function (): void {
+        $columns = [TableColumn::make('Name')];
+        $two = ['lines' => ['a' => ['name' => 'Ada'], 'b' => ['name' => 'Grace']]];
+        $headers = fn (Repeater $repeater, array $items): array => $this->renderSchemaComponent($repeater->table($columns)->components([TextInput::make('name')]), $items)
+            ->filter('thead th')->each(static fn (Crawler $cell): string => $cell->text());
+
+        expect($headers(Repeater::make('lines'), $two))->toBe(['Reorder', 'Name', 'Actions'])
+            ->and($headers(Repeater::make('lines'), ['lines' => ['a' => ['name' => 'Ada']]]))->toBe(['Name', 'Actions'])
+            ->and($headers(Repeater::make('lines')->reorderable(false), $two))->toBe(['Name', 'Actions'])
+            ->and($headers(Repeater::make('lines')->deletable(false), $two))->toBe(['Reorder', 'Name'])
+            ->and($headers(Repeater::make('lines')->deletable(false)->cloneable(), $two))->toBe(['Reorder', 'Name', 'Actions'])
+            ->and($this->renderSchemaComponent(Repeater::make('lines')->table($columns)->components([TextInput::make('name')]), $two)->filter('thead th.sy-fo-table-repeater-empty-header-cell .sy-sr-only'))->toHaveCount(2);
+    });
+});
+
+describe('nullWhenBlank()', function (): void {
+    it('writes an empty repeater as an empty list, or as null under nullWhenBlank()', function (Closure $repeater, ?array $meta): void {
+        $host = new RecordMappingHost();
+        $schema = $host->mapping($repeater()->components([TextInput::make('name')]))->record($manuscript = new Manuscript());
+        $schema->fill($manuscript);
+
+        $schema->getData();
+
+        expect($manuscript->getMeta())->toBe($meta);
+    })->with([
+        'by default' => [fn (): Repeater => Repeater::make('meta'), []],
+        'nullWhenBlank()' => [fn (): Repeater => Repeater::make('meta')->nullWhenBlank(), null],
+    ]);
+
+    it('judges a repeater by its own slice', function (): void {
+        $host = $this->validatingRecordMappingHost();
+        $schema = $host->mapping(Repeater::make('meta')->required()->nullWhenBlank()->components([TextInput::make('name')]))->record($manuscript = new Manuscript());
+        $host->data = ['meta' => ['a' => ['name' => null]]];
+
+        $host->validateSchema($schema);
+
+        $schema->getData();
+
+        expect($manuscript->getMeta())->toBe([['name' => null]]);
+
+        $host->data = ['meta' => []];
+
+        expect(fn () => $host->validateSchema($schema))->toThrow(function (ValidationException $exception): void {
+            expect(array_keys($exception->getErrors()))->toBe(['data.meta']);
+        });
+    });
+
+    it('refuses to write an empty repeater onto a record property that cannot hold null', function (): void {
+        $host = new RecordMappingHost();
+        $schema = $host->mapping(Repeater::make('lines')->nullWhenBlank()->components([TextInput::make('name')]))->record($sheet = new LineSheet());
+        $schema->fill($sheet);
+
+        expect(fn (): object => $schema->getData())->toThrow(LogicException::class, sprintf('Cannot map state path "lines" onto %s: the record declares that property non-nullable, so the nullWhenBlank() on the component that owns it can never apply.', LineSheet::class));
+    });
+});
+
+describe('requirement', function (): void {
+    it('derives no requirement for an item field of a plain array, and validates an item field declared required() in each item', function (): void {
+        $host = $this->validatingRecordMappingHost();
+        $plain = $host->mapping(Repeater::make('lines')->components([TextInput::make('name')]))->record(new LineSheet());
+        $host->data = ['lines' => ['a' => ['name' => null], 'b' => ['name' => null]]];
+
+        $host->validateSchema($plain);
+
+        $required = $host->mapping(Repeater::make('lines')->components([TextInput::make('name')->required()]))->record(new LineSheet());
+
+        expect(fn () => $host->validateSchema($required))->toThrow(function (ValidationException $exception): void {
+            expect($exception->getErrors())->toBe([
+                'data.lines.a.name' => ['This value should not be blank.'],
+                'data.lines.b.name' => ['This value should not be blank.'],
+            ]);
+        });
+
+        $host->data = ['lines' => []];
+
+        $host->validateSchema($plain);
+    });
+});
+
+describe('record ownership', function (): void {
+    it("maps the repeater's list onto the record as one value", function (): void {
+        $host = new RecordMappingHost();
+        $schema = $host->mapping(Repeater::make('meta')->components([TextInput::make('name')]))->record($manuscript = new Manuscript());
+        $manuscript->setMeta([['name' => 'Ada'], ['name' => 'Grace']]);
+        $schema->fill($manuscript);
+        $host->data['meta'][array_key_first($host->data['meta'])]['name'] = 'Ada L.';
+
+        $schema->getData();
+
+        expect($manuscript->getMeta())->toBe([['name' => 'Ada L.'], ['name' => 'Grace']]);
+    });
+
+    it("refuses a path-bearing component nested under the repeater's path, naming both", function (): void {
+        $host = new RecordMappingHost();
+        $schema = $host->mapping(Repeater::make('meta')->components([TextInput::make('name')]), TextInput::make('meta.extra'))->record($manuscript = new Manuscript());
+
+        expect(fn (): Schema => $schema->fill($manuscript))->toThrow(LogicException::class, sprintf('%s declares state path "meta.extra", which nests under "meta" — a path %s maps wholesale', TextInput::class, Repeater::class));
+    });
+});
+
+describe('an object collection', function (): void {
+    it('refuses early, naming relationship(), and takes a list whose objects only a docblock names as plain items', function (): void {
+        $host = new RecordMappingHost();
+        $refused = $host->mapping(Repeater::make('contributors')->components([TextInput::make('name')]))->record($anthology = new Anthology());
+
+        expect(fn (): Schema => $refused->fill($anthology))->toThrow(LogicException::class, sprintf('Cannot map state path "contributors" onto the %s framing it: "contributors" is an object collection. Collection items need identity mapping (which state item is which entity), which only relationship() supplies', Anthology::class));
+
+        $drafts = $host->mapping(Repeater::make('drafts')->components([TextInput::make('name')]))->record($anthology);
+        $drafts->fill($anthology);
+        $host->data['drafts'] = ['a' => ['name' => 'Ada']];
+        $drafts->getData();
+
+        expect($anthology->drafts)->toBe([['name' => 'Ada']]);
+    });
+});
+
+describe('a defaults fill', function (): void {
+    it('characterises the ghost items a defaults fill leaves over a populated repeater', function (): void {
+        $host = new RecordMappingHost();
+        $schema = $host->mapping(Repeater::make('tags')->generateUuidUsing(static fn (): string => 'fresh')->components([TextInput::make('name')]));
+        $host->data = ['tags' => [['name' => 'a'], ['name' => 'b']]];
+
+        $schema->fill();
+
+        expect($host->data['tags'])->toBe(['fresh' => ['name' => null], 0 => ['name' => null], 1 => ['name' => null]]);
+    });
+});
+
+describe('unmanaged item keys', function (): void {
+    it('carries a key no item field declares through a save', function (): void {
+        $host = new RecordMappingHost();
+        $schema = $host->mapping(Repeater::make('meta')->components([TextInput::make('name')]))->record($manuscript = new Manuscript());
+        $manuscript->setMeta([['name' => 'Ada', 'legacy' => true]]);
+
+        $schema->fill($manuscript);
+
+        expect(array_values($host->data['meta']))->toBe([['name' => 'Ada', 'legacy' => true]]);
+
+        $schema->getData();
+
+        expect($manuscript->getMeta())->toBe([['name' => 'Ada', 'legacy' => true]]);
+    });
+
+    it('sends the key to the client and back through the structural actions', function (): void {
+        $tester = $this->createLiveComponent(RepeaterHost::class, ['data' => ['lines' => ['a' => ['name' => 'Ada', 'legacy' => true], 'b' => ['name' => 'Grace'], 'c' => ['name' => 'Hedy']]]])
+            ->callAction(TestAction::make('reorder')->schemaComponent('lines'), arguments: ['items' => ['c', 'b', 'a']])
+            ->callAction(TestAction::make('delete')->schemaComponent('lines'), arguments: ['item' => 'b'])
+            ->callAction(TestAction::make('add')->schemaComponent('lines'));
+
+        expect(array_slice($tester->component()->data['lines'], 0, 2))->toBe(['c' => ['name' => 'Hedy'], 'a' => ['name' => 'Ada', 'legacy' => true]]);
+    });
+});
+
+describe('itemsAs()', function (): void {
+    it('builds DTOs only at the pipeline boundaries', function (): void {
+        $host = new RecordMappingHost();
+        $schema = $host->mapping($repeater = Repeater::make('lines')->itemsAs(LineItem::class)->components([TextInput::make('title')]))->record($sheet = new LineSheet());
+        $sheet->setLines([new LineItem('One', note: 'kept'), new LineItem('Two')]);
+
+        $schema->fill($sheet);
+
+        expect(array_values($host->data['lines']))->toBe([['title' => 'One', 'note' => 'kept'], ['title' => 'Two', 'note' => null]])
+            ->and(array_values($repeater->getState()))->toBe([['title' => 'One', 'note' => 'kept'], ['title' => 'Two', 'note' => null]]);
+
+        $host->data['lines'][array_key_last($host->data['lines'])]['title'] = 'Three';
+        $schema->getData();
+
+        expect($sheet->getLines())->toEqual([new LineItem('One', note: 'kept'), new LineItem('Three')]);
+    });
+
+    it('is schema-complete: a key the item class does not declare is dropped at construction', function (): void {
+        $host = new RecordMappingHost();
+        $schema = $host->mapping(Repeater::make('lines')->itemsAs(LineItem::class)->components([TextInput::make('title')]))->record($sheet = new LineSheet());
+        $host->data = ['lines' => ['a' => ['title' => 'One', 'tampered' => 'x']]];
+
+        $schema->getData();
+
+        expect($sheet->getLines())->toEqual([new LineItem('One')]);
+    });
+
+    it('nulls an empty cast repeater under nullWhenBlank() and keeps a filled one', function (): void {
+        $host = new RecordMappingHost();
+        $schema = $host->mapping(Repeater::make('meta')->itemsAs(LineItem::class)->nullWhenBlank()->components([TextInput::make('title')]))->record($manuscript = new Manuscript());
+        $host->data = ['meta' => []];
+
+        $schema->getData();
+
+        expect($manuscript->getMeta())->toBeNull();
+
+        $host->data = ['meta' => ['a' => ['title' => 'One']]];
+        $schema->getData();
+
+        expect($manuscript->getMeta())->toEqual([new LineItem('One')]);
+    });
+
+    it('composes nested repeaters, cast or plain, in either position', function (bool $outerCast, bool $innerCast, Closure $lines): void {
+        $parts = Repeater::make('parts')->components([TextInput::make('label')]);
+        $repeater = Repeater::make('lines')->components([TextInput::make('title'), $innerCast ? $parts->itemsAs(LinePart::class) : $parts]);
+        $host = new RecordMappingHost();
+        $schema = $host->mapping($outerCast ? $repeater->itemsAs(PackedLineItem::class) : $repeater)->record($sheet = new LineSheet());
+        $sheet->setLines($lines());
+
+        $schema->fill($sheet);
+        $sheet->setLines([]);
+        $schema->getData();
+
+        expect($sheet->getLines())->toEqual($lines());
+    })->with([
+        'plain in plain' => [false, false, fn (): array => [['title' => 'One', 'parts' => [['label' => 'a']]]]],
+        'cast in plain' => [false, true, fn (): array => [['title' => 'One', 'parts' => [new LinePart('a')]]]],
+        'plain in cast' => [true, false, fn (): array => [new PackedLineItem('One', [['label' => 'a']])]],
+        'cast in cast' => [true, true, fn (): array => [new PackedLineItem('One', [new LinePart('a')])]],
+    ]);
+
+    it('refuses simple() beside it in either order', function (): void {
+        expect(fn (): Repeater => Repeater::make('lines')->simple(TextInput::make('title'))->itemsAs(LineItem::class))
+            ->toThrow(LogicException::class, 'itemsAs() cannot compose with simple()')
+            ->and(fn (): Repeater => Repeater::make('lines')->itemsAs(LineItem::class)->simple(TextInput::make('title')))
+            ->toThrow(LogicException::class, 'simple() cannot compose with itemsAs()');
+    });
+
+    it('refuses a prebuilt cast beside conversion closures, declared or resolved from a closure', function (): void {
+        $denormalize = static fn (array $item): LineItem => new LineItem((string) $item['title']);
+
+        expect(fn (): Repeater => Repeater::make('lines')->itemsAs(new ObjectStateCast(LineItem::class), denormalizeUsing: $denormalize))
+            ->toThrow(LogicException::class, 'itemsAs() received a prebuilt ObjectStateCast beside conversion closures')
+            ->and(fn (): ?ObjectStateCast => Repeater::make('lines')->itemsAs(static fn (): ObjectStateCast => new ObjectStateCast(LineItem::class), denormalizeUsing: $denormalize)->getItemCast())
+            ->toThrow(LogicException::class, 'itemsAs() resolved a prebuilt ObjectStateCast beside conversion closures');
+    });
+
+    it('names required() when a non-optional constructor parameter meets null', function (): void {
+        $host = new RecordMappingHost();
+        $schema = $host->mapping(Repeater::make('lines')->itemsAs(LineItem::class)->components([TextInput::make('title')]))->record(new LineSheet());
+        $host->data = ['lines' => ['a' => ['title' => null]]];
+
+        expect(fn (): object => $schema->getData())->toThrow(LogicException::class, sprintf('Cannot rebuild %s: constructor parameter $title is non-optional and the dehydrated item supplies null for it', LineItem::class));
+    });
+});

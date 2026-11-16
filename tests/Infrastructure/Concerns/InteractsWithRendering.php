@@ -17,9 +17,12 @@ trait InteractsWithRendering
 {
     /**
      * Renders the component as a page renders a schema's field: the only child of a
-     * schema registered on its host and bound to the host's `data` bag.
+     * schema registered on its host and bound to the host's `data` bag, which holds
+     * `$data` as a fill or a client's request left it.
+     *
+     * @param array<string, mixed> $data
      */
-    protected function renderSchemaComponent(Component $component): Crawler
+    protected function renderSchemaComponent(Component $component, array $data = []): Crawler
     {
         $host = new class implements InteractsWithSchemas {
             use HasSchemas;
@@ -29,6 +32,7 @@ trait InteractsWithRendering
              */
             public array $data = [];
         };
+        $host->data = $data;
 
         $schema = $host->makeSchema()->statePath('data')->components([$component]);
         $host->cacheSchema('schema', $schema);

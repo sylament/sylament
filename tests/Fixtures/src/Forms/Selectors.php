@@ -15,6 +15,8 @@ namespace Sylament\Tests\Fixtures\Forms;
  * container FilePond builds inside, and the image editor's dialog; a toggle's control root and track, and a
  * toggle-buttons option's button label, which must follow its input, named by the `sy-fo-`
  * class the stylesheet lays out or paints each by.
+ *
+ * A repeater's item in its default and simple views, one by its key, and its add button.
  */
 final class Selectors
 {
@@ -51,6 +53,10 @@ final class Selectors
      */
     public const string TOGGLE_BUTTONS_OPTION = 'input.sy-fo-toggle-buttons-input + label.sy-btn';
 
+    public const string REPEATER_ITEM = 'li[data-item-key]';
+
+    public const string REPEATER_ADD_BUTTON = '.sy-fo-repeater-add button';
+
     public static function textInputAction(string $method): string
     {
         return "[data-action=\"sylament--forms--text-input#{$method}\"]:not([data-live-action-param])";
@@ -59,5 +65,10 @@ final class Selectors
     public static function fileUpload(string $statePath): string
     {
         return self::FILE_UPLOAD . '[data-sylament--forms--file-upload-state-path-value="' . $statePath . '"]';
+    }
+
+    public static function repeaterItem(string $key): string
+    {
+        return "li[data-item-key=\"{$key}\"]";
     }
 }

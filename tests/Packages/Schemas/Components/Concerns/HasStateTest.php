@@ -5,8 +5,10 @@ declare(strict_types=1);
 use Sylament\Forms\Components\TextInput;
 use Sylament\Schemas\Components\Group;
 use Sylament\Tests\Fixtures\Schemas\HookLog;
+use Sylament\Tests\Fixtures\Schemas\NoteForm;
 use Sylament\Tests\Fixtures\Schemas\Selectors;
 use Sylament\Tests\Fixtures\Schemas\StateForm;
+use Sylament\Tests\Fixtures\Schemas\TaggingStateCast;
 
 describe('state path', function (): void {
     it('binds a field under the state path of every ancestor that has one, and of no pathless one', function (): void {
@@ -26,6 +28,22 @@ describe('state path', function (): void {
         $field->statePath('town');
 
         expect($this->renderSchemaComponent($field))->toContainElement('input' . Selectors::boundTo('data.town'));
+    });
+});
+
+describe('state casts', function (): void {
+    it('stores a value it is given through its casts last cast first, and reads and saves it through them first cast first', function (): void {
+        $host = new NoteForm();
+        $schema = $host->makeSchema()->statePath('data')->components([
+            TextInput::make('code')->stateCast(TaggingStateCast::First)->stateCast(TaggingStateCast::Second),
+        ]);
+        [$field] = $schema->getComponents();
+
+        $field->state('X1');
+
+        expect($host->data)->toBe(['code' => 'X1 second:set first:set'])
+            ->and($field->getState())->toBe('X1 second:set first:set first:get second:get')
+            ->and($schema->getStateSnapshot())->toBe(['code' => 'X1 second:set first:set first:get second:get']);
     });
 });
 

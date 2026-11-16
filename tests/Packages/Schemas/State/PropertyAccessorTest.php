@@ -303,6 +303,7 @@ describe('type probes', function (): void {
         expect($this::getContainer()->get(PropertyAccessor::class)->acceptsNullOnRecord(ManuscriptSignatures::class, $path))->toBe($expected);
     })->with([
         'a non-nullable setter' => ['name', false],
+        'a nullable property' => ['bio', true],
         'a path through a nested object' => ['invoice.id', false],
         'an unreadable path' => ['publisher', true],
     ]);

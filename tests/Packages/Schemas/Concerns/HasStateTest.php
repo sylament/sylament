@@ -2,7 +2,9 @@
 
 declare(strict_types=1);
 
+use Sylament\Forms\Components\TextInput;
 use Sylament\Tests\Fixtures\Schemas\HookLog;
+use Sylament\Tests\Fixtures\Schemas\NoteForm;
 use Sylament\Tests\Fixtures\Schemas\ProfileForm;
 
 describe('fill', function (): void {
@@ -25,6 +27,19 @@ describe('fill', function (): void {
         $this->createLiveComponent(ProfileForm::class)
             ->call('fillFromMemo')
             ->assertFormSet(['subject' => 'Minutes']);
+    });
+});
+
+describe('state path', function (): void {
+    it('binds its state under the path it was given last, even once it has answered the earlier one', function (): void {
+        $host = new NoteForm();
+        $schema = $host->makeSchema()->statePath('data.draft')->components([TextInput::make('code')]);
+
+        expect($schema->getStatePath())->toBe('data.draft');
+
+        $schema->statePath('data')->fill(['code' => 'X1']);
+
+        expect($host->data)->toBe(['code' => 'X1']);
     });
 });
 

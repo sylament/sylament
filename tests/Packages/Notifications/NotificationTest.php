@@ -9,7 +9,7 @@ use Sylament\Support\Colors\Color;
 use Sylament\Support\Enums\IconSize;
 use Sylament\Support\Icons\IconManager;
 use Sylament\Tests\Fixtures\Notifications\Selectors;
-use Sylament\Tests\Fixtures\Notifications\SizedIcon;
+use Sylament\Tests\Fixtures\Support\Icons\SizedIcon;
 use Sylament\Tests\Fixtures\Support\Selectors as SupportSelectors;
 
 it('delivers a sent toast with everything it was configured with', function (): void {
@@ -60,13 +60,13 @@ it('drops a flashed value it cannot type and delivers the rest of the toast', fu
 
 it("draws a scalable icon at the icon size, and a sent toast's at the default size", function (): void {
     $this->startSessionRequest();
-    $notification = Notification::make()->title('Saved')->icon(SizedIcon::Bell)->iconSize(IconSize::Large);
+    $notification = Notification::make()->title('Saved')->icon(SizedIcon::Star)->iconSize(IconSize::Large);
 
-    expect($this->renderViewComponent($notification))->toContainElement(Selectors::ICON, 'Bell, large');
+    expect($this->renderViewComponent($notification))->toContainElement(Selectors::ICON, 'Star, large');
 
     $notification->send();
 
-    expect($this->renderTwigComponent('SylamentNotifications:Notifications')->crawler())->toContainElement(Selectors::ICON, 'Bell, medium');
+    expect($this->renderTwigComponent('SylamentNotifications:Notifications')->crawler())->toContainElement(Selectors::ICON, 'Star, medium');
 });
 
 it('refuses to send from an instance the container did not build', function (): void {

@@ -8,7 +8,7 @@ use Twig\Markup;
 
 it('shows a header with its heading in the tag it is given, its description and its after-header block, and no header with nothing to put in it', function (): void {
     expect($this->renderTwigComponent('SylamentSupport:Section', ['heading' => 'Orders', 'description' => 'Every order placed.'], blocks: ['afterHeader' => '<button type="button">Export</button>'])->crawler())
-        ->toContainElement('section.sy.sy-section header.sy-section-header h2', 'Orders')
+        ->toContainElement('section' . SupportSelectors::STANDALONE_ROOT . '.sy-section header.sy-section-header h2', 'Orders')
         ->toContainElement('section.sy-section header p', 'Every order placed.')
         ->toContainElement('section.sy-section header .sy-section-header-after-ctn button', 'Export')
         ->and($this->renderTwigComponent('SylamentSupport:Section', ['heading' => 'Orders', 'headingTag' => 'h3'])->crawler())

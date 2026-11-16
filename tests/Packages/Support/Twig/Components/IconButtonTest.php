@@ -7,9 +7,9 @@ use Sylament\Tests\Fixtures\Support\Selectors as SupportSelectors;
 
 it('renders a medium button, a link when asked, and a size outside the scale as its own class', function (): void {
     expect($this->renderTwigComponent('SylamentSupport:IconButton', ['icon' => 'support:star'])->crawler())
-        ->toContainElement('button.sy' . SupportSelectors::ICON_BUTTON . SupportSelectors::MEDIUM, 'Star')
+        ->toContainElement('button' . SupportSelectors::STANDALONE_ROOT . SupportSelectors::ICON_BUTTON . SupportSelectors::MEDIUM, 'Star')
         ->and($this->renderTwigComponent('SylamentSupport:IconButton', ['icon' => 'support:star', 'tag' => 'a', 'href' => '/orders'])->crawler())
-        ->toContainElement('a.sy' . SupportSelectors::ICON_BUTTON . SupportSelectors::MEDIUM, 'Star')
+        ->toContainElement('a' . SupportSelectors::STANDALONE_ROOT . SupportSelectors::ICON_BUTTON . SupportSelectors::MEDIUM, 'Star')
         ->and($this->renderTwigComponent('SylamentSupport:IconButton', ['icon' => 'support:star', 'size' => 'huge'])->crawler())
         ->toContainElement('button' . SupportSelectors::ICON_BUTTON . '.huge' . SupportSelectors::UNSIZED, 'Star');
 });

@@ -2,9 +2,11 @@
 
 declare(strict_types=1);
 
+use Sylament\Tests\Fixtures\Support\Selectors as SupportSelectors;
+
 it('is a navigation around its tabs with no role of its own, contained or vertical only when told', function (): void {
     expect($this->renderTwigComponent('SylamentSupport:Tabs', content: '<button type="button">Orders</button>')->crawler())
-        ->toContainElement('nav.sy.sy-tabs:not([role]):not(.sy-contained):not(.sy-vertical) button', 'Orders')
+        ->toContainElement('nav' . SupportSelectors::STANDALONE_ROOT . '.sy-tabs:not([role]):not(.sy-contained):not(.sy-vertical) button', 'Orders')
         ->and($this->renderTwigComponent('SylamentSupport:Tabs', ['contained' => true])->crawler())
         ->toContainElement('nav.sy-tabs.sy-contained:not(.sy-vertical)')
         ->and($this->renderTwigComponent('SylamentSupport:Tabs', ['vertical' => true])->crawler())

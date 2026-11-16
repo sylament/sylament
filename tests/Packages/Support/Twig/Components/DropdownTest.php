@@ -6,7 +6,7 @@ use Sylament\Tests\Fixtures\Support\Selectors as SupportSelectors;
 
 it('toggles a hidden panel of its content from a trigger, placed below its start and flipping unless placed otherwise', function (): void {
     $dropdown = $this->renderTwigComponent('SylamentSupport:Dropdown', ['class' => 'order-menu'], content: '<a href="/orders/1/edit">Edit</a>', blocks: ['trigger' => '<button type="button">Actions</button>'])->crawler();
-    $root = 'div.sy.sy-dropdown.order-menu[data-controller="sylament--support--dropdown"]';
+    $root = 'div' . SupportSelectors::STANDALONE_ROOT . '.sy-dropdown.order-menu[data-controller="sylament--support--dropdown"]';
 
     expect($dropdown)
         ->toContainElement($root . '[data-sylament--support--dropdown-placement-value="bottom-start"][data-sylament--support--dropdown-offset-value="8"][data-sylament--support--dropdown-flip-value="true"]')

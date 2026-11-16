@@ -11,7 +11,7 @@ use Sylament\Tests\Fixtures\Support\Selectors as SupportSelectors;
 
 it('is a dialog around one window, wired to its controller and to the open and close events naming its id', function (): void {
     $modal = $this->renderTwigComponent('SylamentSupport:Modal', ['id' => 'delete-order', 'class' => 'danger-zone'])->crawler();
-    $dialog = 'dialog#delete-order.sy.sy-modal.sy-fixed-positioning-context.danger-zone'
+    $dialog = 'dialog#delete-order' . SupportSelectors::STANDALONE_ROOT . '.sy-modal.sy-fixed-positioning-context.danger-zone'
         . '[data-controller="sylament--support--modal"]'
         . '[data-sylament--support--modal-id-value="delete-order"]'
         . '[data-action~="sylament-open-modal@window->sylament--support--modal#open"]'

@@ -9,7 +9,7 @@ use Twig\Markup;
 
 it('wraps its content, carrying every caller attribute whole and appending its class', function (): void {
     expect($this->renderTwigComponent('SylamentSupport:InputWrapper', ['class' => 'price', 'tabindex' => '0', 'data-field' => 'price'], content: '<input name="price">')->crawler())
-        ->toContainElement('div.sy.sy-input-wrp.price[tabindex="0"][data-field="price"] .sy-input-wrp-content-ctn input[name="price"]');
+        ->toContainElement('div' . SupportSelectors::STANDALONE_ROOT . '.sy-input-wrp.price[tabindex="0"][data-field="price"] .sy-input-wrp-content-ctn input[name="price"]');
 });
 
 it('is disabled and invalid only when told', function (): void {

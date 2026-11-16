@@ -32,5 +32,5 @@ it("keeps the caller's attributes on the icon beside its own classes", function 
         'data-rating' => '5',
     ])->crawler();
 
-    expect($icon)->toContainElement('.sy' . SupportSelectors::ICON . SupportSelectors::MEDIUM . '.favourite[aria-label="Favourite"][data-rating="5"]', 'Star');
+    expect($icon)->toContainElement(SupportSelectors::STANDALONE_ROOT . SupportSelectors::ICON . SupportSelectors::MEDIUM . '.favourite[aria-label="Favourite"][data-rating="5"]', 'Star');
 });

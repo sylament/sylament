@@ -2,9 +2,11 @@
 
 declare(strict_types=1);
 
+use Sylament\Tests\Fixtures\Support\Selectors as SupportSelectors;
+
 it('is a fieldset around its content, carrying the caller attributes and appending its class', function (): void {
     expect($this->renderTwigComponent('SylamentSupport:Fieldset', ['class' => 'billing', 'data-step' => '2', 'label' => 'Address'], content: '<input name="street">')->crawler())
-        ->toContainElement('fieldset.sy.sy-fieldset.billing[data-step="2"] legend', 'Address')
+        ->toContainElement('fieldset' . SupportSelectors::STANDALONE_ROOT . '.sy-fieldset.billing[data-step="2"] legend', 'Address')
         ->toContainElement('fieldset.sy-fieldset input[name="street"]');
 });
 

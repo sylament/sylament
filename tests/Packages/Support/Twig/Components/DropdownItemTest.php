@@ -7,11 +7,11 @@ use Sylament\Tests\Fixtures\Support\Selectors as SupportSelectors;
 
 it('renders a button, and a link to its href when tagged a, in a new tab only when asked for one', function (): void {
     expect($this->renderTwigComponent('SylamentSupport:DropdownItem', ['href' => '/orders/1/edit', 'target' => '_blank'], content: 'Edit')->crawler())
-        ->toContainElement('button.sy.sy-dropdown-item:not([href]):not([target])', 'Edit')
+        ->toContainElement('button' . SupportSelectors::STANDALONE_ROOT . '.sy-dropdown-item:not([href]):not([target])', 'Edit')
         ->and($this->renderTwigComponent('SylamentSupport:DropdownItem', ['tag' => 'a', 'href' => '/orders/1/edit', 'target' => '_blank'], content: 'Edit')->crawler())
-        ->toContainElement('a.sy.sy-dropdown-item[href="/orders/1/edit"][target="_blank"]', 'Edit')
+        ->toContainElement('a' . SupportSelectors::STANDALONE_ROOT . '.sy-dropdown-item[href="/orders/1/edit"][target="_blank"]', 'Edit')
         ->and($this->renderTwigComponent('SylamentSupport:DropdownItem', ['tag' => 'a', 'href' => '/orders/1/edit', 'target' => '_self'], content: 'Edit')->crawler())
-        ->toContainElement('a.sy.sy-dropdown-item[href="/orders/1/edit"]:not([target])', 'Edit');
+        ->toContainElement('a' . SupportSelectors::STANDALONE_ROOT . '.sy-dropdown-item[href="/orders/1/edit"]:not([target])', 'Edit');
 });
 
 it('is a plain button unless typed submit, submitting the form it names, and a link takes no type', function (): void {

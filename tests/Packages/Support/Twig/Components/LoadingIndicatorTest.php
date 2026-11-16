@@ -6,7 +6,7 @@ use Sylament\Tests\Fixtures\Support\Selectors as SupportSelectors;
 
 it('draws a spinner hidden from assistive technology', function (): void {
     expect($this->renderTwigComponent('SylamentSupport:LoadingIndicator')->crawler())
-        ->toContainElement('svg.sy.sy-loading-indicator[aria-hidden="true"]');
+        ->toContainElement('svg' . SupportSelectors::STANDALONE_ROOT . '.sy-loading-indicator[aria-hidden="true"]');
 });
 
 it('sizes the spinner on its own scale, medium unless sized, and an unknown size not at all', function (): void {

@@ -8,7 +8,7 @@ use Symfony\Component\DomCrawler\Crawler;
 
 it('tells which records the page shows out of the total, and that it shows none on an empty page', function (): void {
     expect($this->renderTwigComponent('SylamentSupport:Pagination', ['paginator' => new Paginator([['id' => 3], ['id' => 4]], 30, 2, 2)])->crawler())
-        ->toContainElement('nav.sy.sy-pagination[aria-label="Pagination"] .sy-pagination-overview', 'Showing 3 to 4 of 30 results')
+        ->toContainElement('nav' . SupportSelectors::STANDALONE_ROOT . '.sy-pagination[aria-label="Pagination"] .sy-pagination-overview', 'Showing 3 to 4 of 30 results')
         ->and($this->renderTwigComponent('SylamentSupport:Pagination', ['paginator' => new Paginator([], 30, 4, 10)])->crawler())
         ->toContainElement('.sy-pagination-overview', 'Showing 0 results of 30');
 });

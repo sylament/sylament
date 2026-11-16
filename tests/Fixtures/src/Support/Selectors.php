@@ -5,10 +5,10 @@ declare(strict_types=1);
 namespace Sylament\Tests\Fixtures\Support;
 
 /**
- * The looks support's components give any area's markup: colour, palette, size, font,
- * alignment, state, button, icon button, icon, link, badge, breadcrumb separator and a
- * section's container, named by the `sy-` class or custom property the stylesheet paints
- * them by; a section's collapse button by its place and its state, whose name changes;
+ * The standalone-root marker, and the looks support's components give any area's markup:
+ * colour, palette, size, font, alignment, state, button, icon button, icon, link, badge,
+ * breadcrumb separator and a section's container, named by the `sy-` class or custom
+ * property the stylesheet paints them by; a section's collapse button by its place and its state, whose name changes;
  * the modal's close, the badge's delete and the pagination's chevron buttons by their
  * names, and a dropdown's teleport by its Stimulus value. A side of the input wrapper is
  * named by its `sy-` class, because which side an affix sits on is the stylesheet's
@@ -16,6 +16,11 @@ namespace Sylament\Tests\Fixtures\Support;
  */
 final class Selectors
 {
+    /**
+     * The bare `sy` marker on a component root that can render standalone, which the scoped preflight matches.
+     */
+    public const string STANDALONE_ROOT = '.sy';
+
     /**
      * Gray paints an element carrying no colour class, so a gray element is an uncoloured one:
      * neither the `sy-color` marker, a named colour nor a text shade.

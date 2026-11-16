@@ -11,8 +11,9 @@ namespace Sylament\Tests\Fixtures\Schemas;
  * layout, prose, icon and action-row components, named by the `sy-sc-` class that marks each, for an area
  * asserting what a trait puts on them; a section's content schema, the child schema a
  * component's gap, density and columns reach, which the schema every render wraps a
- * component in would otherwise answer for; and a control bound to a state path, by the
- * `data-model` value schemas' binding modifiers write.
+ * component in would otherwise answer for; a control bound to a state path, by the
+ * `data-model` value schemas' binding modifiers write; and a tab and its panel, by the
+ * roles the Tabs and Tab partials give them.
  */
 final class Selectors
 {
@@ -57,4 +58,8 @@ final class Selectors
     }
 
     public const string TABS = '.sy-sc-tabs';
+
+    public const string TAB = '[role="tab"]';
+
+    public const string TAB_PANEL = '[role="tabpanel"]';
 }

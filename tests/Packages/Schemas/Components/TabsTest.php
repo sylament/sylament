@@ -22,10 +22,10 @@ describe('client mode', function (): void {
             Tab::make('Closed')->components([Text::make('Delivered')]),
         ]));
 
-        expect($tabs)->toContainButtons('nav[role="tablist"][aria-label="Orders"] [role="tab"]', ['Open', 'Closed'])
-            ->toContainElement('[role="tabpanel"]', 'Awaiting dispatch')
-            ->toContainElement('[role="tabpanel"]', 'Delivered')
-            ->and($tabs->filter('[role="tabpanel"]')->count())->toBe(2);
+        expect($tabs)->toContainButtons('nav[role="tablist"][aria-label="Orders"] ' . Selectors::TAB, ['Open', 'Closed'])
+            ->toContainElement(Selectors::TAB_PANEL, 'Awaiting dispatch')
+            ->toContainElement(Selectors::TAB_PANEL, 'Delivered')
+            ->and($tabs->filter(Selectors::TAB_PANEL)->count())->toBe(2);
     });
 
     it('is keyed by its label under the state path, and leaves the key of what its tabs hold as it was', function (): void {
@@ -47,34 +47,34 @@ describe('client mode', function (): void {
         ];
 
         expect($this->renderSchemaComponent(Tabs::make('Orders')->tabs($tabs())))
-            ->toContainElement('[role="tab"][aria-selected="true"]', 'Open')
-            ->toContainElement('[role="tab"][aria-selected="false"]', 'Closed')
-            ->toContainElement('[role="tabpanel"].sy-active', 'Awaiting dispatch')
-            ->toContainElement('[role="tabpanel"]:not(.sy-active)', 'Delivered')
+            ->toContainElement(Selectors::TAB . '[aria-selected="true"]', 'Open')
+            ->toContainElement(Selectors::TAB . '[aria-selected="false"]', 'Closed')
+            ->toContainElement(Selectors::TAB_PANEL . '.sy-active', 'Awaiting dispatch')
+            ->toContainElement(Selectors::TAB_PANEL . ':not(.sy-active)', 'Delivered')
             ->and($this->renderSchemaComponent(Tabs::make('Orders')->activeTab(2)->tabs($tabs())))
             ->toContainElement(Selectors::TABS . '[data-sylament--schemas--tabs-active-tab-value="2"]')
-            ->toContainElement('[role="tab"][aria-selected="true"]', 'Closed')
-            ->toContainElement('[role="tab"][aria-selected="false"]', 'Open')
-            ->toContainElement('[role="tabpanel"].sy-active', 'Delivered');
+            ->toContainElement(Selectors::TAB . '[aria-selected="true"]', 'Closed')
+            ->toContainElement(Selectors::TAB . '[aria-selected="false"]', 'Open')
+            ->toContainElement(Selectors::TAB_PANEL . '.sy-active', 'Delivered');
     });
 
     it('wires the tabs controller to its nav, its tabs and its panels', function (): void {
         expect($this->renderSchemaComponent(Tabs::make('Orders')->tabs([Tab::make('Open')->components([Text::make('Awaiting dispatch')])])))
             ->toContainElement(Selectors::TABS . '.sy-contained[data-controller="sylament--schemas--tabs"][data-sylament--schemas--tabs-schema-key-value="schema"][data-action~="reset-schema-component-state@window->sylament--schemas--tabs#resetState"]')
             ->toContainElement('nav[role="tablist"][data-sylament--schemas--tabs-target="nav"]')
-            ->toContainElement('[role="tab"][data-sylament--schemas--tabs-target="tab"][data-action="click->sylament--schemas--tabs#select"][data-tab-key="open::data::tab"][aria-controls="schema.open::data::tab"]', 'Open')
-            ->toContainElement('[role="tabpanel"][data-sylament--schemas--tabs-target="panel"][data-action="expand->sylament--schemas--tabs#expand"]', 'Awaiting dispatch');
+            ->toContainElement(Selectors::TAB . '[data-sylament--schemas--tabs-target="tab"][data-action="click->sylament--schemas--tabs#select"][data-tab-key="open::data::tab"][aria-controls="schema.open::data::tab"]', 'Open')
+            ->toContainElement(Selectors::TAB_PANEL . '[data-sylament--schemas--tabs-target="panel"][data-action="expand->sylament--schemas--tabs#expand"]', 'Awaiting dispatch');
     });
 
     it('points a tab at no panel when the tab has no id', function (): void {
         expect($this->renderSchemaComponent(Tabs::make('Orders')->tabs([Tab::make('Open')->id('')->components([Text::make('Awaiting dispatch')])])))
-            ->toContainElement('[role="tab"]:not([id]):not([aria-controls])', 'Open');
+            ->toContainElement(Selectors::TAB . ':not([id]):not([aria-controls])', 'Open');
     });
 
     it("lets a tab's extra attributes override its ARIA props but never its controller wiring", function (): void {
         expect($this->renderSchemaComponent(Tabs::make('Orders')->tabs([
             Tab::make('Open')->extraAttributes(['title' => 'Awaiting dispatch', 'aria-selected' => 'mixed', 'data-action' => 'click->tracker#log']),
-        ])))->toContainElement('[role="tab"][title="Awaiting dispatch"][aria-selected="mixed"][data-action="click->sylament--schemas--tabs#select"]', 'Open');
+        ])))->toContainElement(Selectors::TAB . '[title="Awaiting dispatch"][aria-selected="mixed"][data-action="click->sylament--schemas--tabs#select"]', 'Open');
     });
 
     it('stacks its tab strip vertically when told', function (): void {
@@ -94,7 +94,7 @@ describe('client mode', function (): void {
             ->toContainElement('[data-sylament--schemas--tabs-target="dropdownItem"].sy-selected', 'Closed')
             ->and($this->renderSchemaComponent(Tabs::make('Orders')->tabs($tabs())))
             ->toContainElement(Selectors::TABS . ':not([data-sylament--schemas--tabs-scrollable-value])')
-            ->toContainButtons('[role="tab"]', ['Open 3', 'Closed'])
+            ->toContainButtons(Selectors::TAB, ['Open 3', 'Closed'])
             ->not->toContainElement('[data-sylament--schemas--tabs-target="dropdown"]');
     });
 
@@ -115,20 +115,20 @@ describe('query string', function (): void {
 
         expect($this->renderSchemaComponent(Tabs::make('Orders')->persistTabInQueryString()->tabs($tabs())))
             ->toContainElement(Selectors::TABS . '[data-sylament--schemas--tabs-query-string-key-value="tab"]')
-            ->toContainElement('[role="tab"][aria-selected="true"]', 'Closed')
+            ->toContainElement(Selectors::TAB . '[aria-selected="true"]', 'Closed')
             ->and($this->renderSchemaComponent(Tabs::make('Orders')->persistTabInQueryString('view')->tabs($tabs())))
             ->toContainElement(Selectors::TABS . '[data-sylament--schemas--tabs-query-string-key-value="view"]')
-            ->toContainElement('[role="tab"][aria-selected="true"]', 'Returned')
+            ->toContainElement(Selectors::TAB . '[aria-selected="true"]', 'Returned')
             ->and($this->renderSchemaComponent(Tabs::make('Orders')->tabs($tabs())))
             ->toContainElement(Selectors::TABS . ':not([data-sylament--schemas--tabs-query-string-key-value])')
-            ->toContainElement('[role="tab"][aria-selected="true"]', 'Open');
+            ->toContainElement(Selectors::TAB . '[aria-selected="true"]', 'Open');
     });
 
     it('keeps its declared tab when the query string names none of its tabs', function (string $uri): void {
         $this::getContainer()->get('request_stack')->push(Request::create($uri));
 
         expect($this->renderSchemaComponent(Tabs::make('Orders')->persistTabInQueryString()->activeTab(2)->tabs([Tab::make('Open'), Tab::make('Closed')])))
-            ->toContainElement('[role="tab"][aria-selected="true"]', 'Closed');
+            ->toContainElement(Selectors::TAB . '[aria-selected="true"]', 'Closed');
     })->with([
         'an unknown key' => '/orders?tab=returned::data::tab',
         'a list' => '/orders?tab[]=open::data::tab',
@@ -147,9 +147,9 @@ describe('deferred badges', function (): void {
 
         expect($rendered)
             ->toContainElement(Selectors::TABS . '[data-sylament--schemas--tabs-deferred-badges-value="true"][data-sylament--schemas--tabs-key-value="schema.orders::data::tabs"]')
-            ->toContainElement('[role="tab"] [data-sylament--schemas--tabs-target="badgePlaceholder"][data-tab-key="open::data::tab"]')
-            ->toContainElement('[role="tab"] ' . SupportSelectors::BADGE, '5')
-            ->not->toContainElement('[role="tab"] ' . SupportSelectors::BADGE, '3')
+            ->toContainElement(Selectors::TAB . ' [data-sylament--schemas--tabs-target="badgePlaceholder"][data-tab-key="open::data::tab"]')
+            ->toContainElement(Selectors::TAB . ' ' . SupportSelectors::BADGE, '5')
+            ->not->toContainElement(Selectors::TAB . ' ' . SupportSelectors::BADGE, '3')
             ->and(array_keys($badges))->toBe(['open::data::tab'])
             ->and($badges['open::data::tab'])->toMatchArray(['badge' => '3', 'badgeIconPosition' => 'after', 'badgeTooltip' => 'Awaiting dispatch'])
             ->and(new Crawler((string) $badges['open::data::tab']['badgeIconHtml'])->text())->toBe('check')
@@ -177,30 +177,30 @@ describe('server mode', function (): void {
 
         expect($tester->render()->crawler())
             ->toContainElement(Selectors::TABS . ':not([data-controller]):not(.sy-cloak)')
-            ->toContainElement('[role="tab"][aria-selected="true"][data-action="live#update"][data-model="activeTab"][data-value="open"][data-loading="addAttribute(disabled)"]', 'Open 7')
-            ->toContainElement('[role="tab"][aria-selected="false"][data-action="live#update"][data-model="activeTab"][data-value="closed"]', 'Archived')
-            ->toContainElement('[role="tab"] ' . SupportSelectors::BADGE, '7')
+            ->toContainElement(Selectors::TAB . '[aria-selected="true"][data-action="live#update"][data-model="activeTab"][data-value="open"][data-loading="addAttribute(disabled)"]', 'Open 7')
+            ->toContainElement(Selectors::TAB . '[aria-selected="false"][data-action="live#update"][data-model="activeTab"][data-value="closed"]', 'Archived')
+            ->toContainElement(Selectors::TAB . ' ' . SupportSelectors::BADGE, '7')
             ->not->toContainElement('[data-sylament--schemas--tabs-target="badgePlaceholder"]')
-            ->toContainElement('[role="tabpanel"]', 'Orders awaiting dispatch')
-            ->not->toContainElement('[role="tabpanel"]', 'Orders delivered')
+            ->toContainElement(Selectors::TAB_PANEL, 'Orders awaiting dispatch')
+            ->not->toContainElement(Selectors::TAB_PANEL, 'Orders delivered')
             ->and($tester->set('activeTab', 'closed')->render()->crawler())
-            ->toContainElement('[role="tab"][aria-selected="true"]', 'Archived')
-            ->toContainElement('[role="tabpanel"]', 'Orders delivered')
-            ->not->toContainElement('[role="tabpanel"]', 'Orders awaiting dispatch')
+            ->toContainElement(Selectors::TAB . '[aria-selected="true"]', 'Archived')
+            ->toContainElement(Selectors::TAB_PANEL, 'Orders delivered')
+            ->not->toContainElement(Selectors::TAB_PANEL, 'Orders awaiting dispatch')
             ->and($tester->component()->getSchema()->getComponent('delivered'))->toBeInstanceOf(Text::class);
     });
 
     it('opens no tab when its host property names none of them', function (): void {
         $tabs = $this->createLiveComponent(PropertyDrivenTabsHost::class)->set('activeTab', 'returned')->render()->crawler();
 
-        expect($tabs)->toContainButtons('[role="tab"][aria-selected="false"]', ['Open 7', 'Archived'])
-            ->and($tabs->filter('[role="tab"][aria-selected="true"], [role="tabpanel"]')->count())->toBe(0);
+        expect($tabs)->toContainButtons(Selectors::TAB . '[aria-selected="false"]', ['Open 7', 'Archived'])
+            ->and($tabs->filter(Selectors::TAB . '[aria-selected="true"], ' . Selectors::TAB_PANEL)->count())->toBe(0);
     });
 
     it('switches tabs in the browser when its property name is empty', function (): void {
         expect($this->renderSchemaComponent(Tabs::make('Orders')->liveComponentProperty('')->tabs([Tab::make('Open')->components([Text::make('Awaiting dispatch')])])))
             ->toContainElement(Selectors::TABS . '[data-controller="sylament--schemas--tabs"]')
-            ->toContainElement('[role="tab"][aria-selected="true"][data-action="click->sylament--schemas--tabs#select"]', 'Open')
-            ->toContainElement('[role="tabpanel"]', 'Awaiting dispatch');
+            ->toContainElement(Selectors::TAB . '[aria-selected="true"][data-action="click->sylament--schemas--tabs#select"]', 'Open')
+            ->toContainElement(Selectors::TAB_PANEL, 'Awaiting dispatch');
     });
 });

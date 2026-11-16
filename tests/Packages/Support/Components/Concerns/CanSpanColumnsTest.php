@@ -13,6 +13,11 @@ it('spans the columns it is given: a number one column until lg, a map per break
         ->toContainElement('[style*="--col-span-default: span 2 / span 2"]:not([style*="--col-span-lg"])', 'Total');
 });
 
+it('spans each breakpoint the closures it is given answer with a map', function (): void {
+    expect($this->renderSchemaComponent(Text::make('Total')->columnSpan(fn (): array => ['md' => 2])->columnSpan(fn (): array => ['xl' => 4])))
+        ->toContainElement('[style*="--col-span-md: span 2 / span 2"][style*="--col-span-xl: span 4 / span 4"]', 'Total');
+});
+
 it('spans the full row when told to', function (): void {
     expect($this->renderSchemaComponent(Text::make('Total')->columnSpanFull()))
         ->toContainElement('[style*="--col-span-default: 1 / -1"]', 'Total');

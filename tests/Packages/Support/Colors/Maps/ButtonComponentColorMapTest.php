@@ -21,3 +21,10 @@ it('takes the first background candidate that carries light text, else the last 
         'text' => 900, 'hover:text' => 800, 'dark:text' => 950, 'dark:hover:text' => 950,
     ]],
 ]);
+
+it('refuses to resolve before a light and a dark background candidate are configured', function (): void {
+    expect(fn (): array => ButtonComponentColorMap::make(Color::Indigo)->darkBackground(bg: 600, hover: 500)->get())
+        ->toThrow(LogicException::class, 'At least one `lightBackground()` candidate must be configured before calling `get()`.')
+        ->and(fn (): array => ButtonComponentColorMap::make(Color::Indigo)->lightBackground(bg: 600, hover: 500)->get())
+        ->toThrow(LogicException::class, 'At least one `darkBackground()` candidate must be configured before calling `get()`.');
+});

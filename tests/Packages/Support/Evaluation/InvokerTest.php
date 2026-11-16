@@ -38,6 +38,7 @@ it('throws naming the parameter no source fills, and the class the closure was e
     $closure = fn (DateTimeImmutable $date): DateTimeImmutable => $date;
 
     expect(fn (): mixed => $invoker->call($closure))->toThrow(RuntimeException::class, 'Cannot resolve parameter DateTimeImmutable $date')
+        ->and(fn (): mixed => $invoker->call(fn (string $value): string => $value))->toThrow(RuntimeException::class, 'Cannot resolve parameter $value')
         ->and(fn (): mixed => $invoker->call($closure, context: Html::class))
         ->toThrow(RuntimeException::class, 'An attempt was made to evaluate a closure for [Sylament\Schemas\Components\Html], but [$date] was unresolvable.');
 });

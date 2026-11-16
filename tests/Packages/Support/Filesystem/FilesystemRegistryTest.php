@@ -96,3 +96,9 @@ it('gives a public file its public URL, and never one to a private file or to on
         ->and($visibilityBlind->publicUrl('report.txt'))->toBe('/files/report.txt')
         ->and($registry->getFileUrl($visibilityBlind, 'report.txt'))->toBeNull();
 });
+
+it('gives no URL to a public file on a storage that cannot mint a public one', function (): void {
+    $storage = new Filesystem(new LocalFilesystemAdapter(WorkerDirectory::path() . '/storage/unlinked'));
+
+    expect($this::getContainer()->get(FilesystemRegistry::class)->getFileUrl($storage, 'public.txt', Visibility::PUBLIC))->toBeNull();
+});

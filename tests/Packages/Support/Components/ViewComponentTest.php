@@ -15,14 +15,14 @@ it('renders the explicit template over the default one, and the default once tem
 
 it('hands the template the component, the extra data and each templateData() layer in order, the later key winning', function (): void {
     $html = ExtraDataHtml::make('Greeting')
-        ->template('@Fixtures/schemas/template-context.html.twig')
-        ->templateData(['source' => 'first layer', 'first' => 'first layer'])
+        ->template('@Fixtures/schemas/template-context.html.twig', ['first' => 'template() layer'])
+        ->templateData(['source' => 'first layer'])
         ->templateData(fn (): array => ['source' => 'second layer']);
 
     expect($this->renderViewComponent($html))
         ->toContainElement('[data-variable="component"]', 'Greeting')
         ->toContainElement('[data-variable="extra"]', 'extra data')
-        ->toContainElement('[data-variable="first"]', 'first layer')
+        ->toContainElement('[data-variable="first"]', 'template() layer')
         ->toContainElement('[data-variable="source"]', 'second layer')
         ->toContainElement('[data-variable="attributes"]', 'undefined');
 });

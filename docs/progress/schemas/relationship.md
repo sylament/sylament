@@ -105,7 +105,7 @@ A `null` out of `equals()` **throws**:
 
 Dropping the scope instead would list every record that has *any* owner, which is the one failure this seam must not have; and the shape that reaches it is the one the codec records for a DBAL type that can neither read back nor take back what it prints, so the message names the cause rather than the width.
 A type that refuses its printed form on read only is not that shape: its key decodes [through the type's writer](record-key.md#a-type-that-refuses-its-printed-form-on-read-only-decodes-it-through-its-own-writer), and an owner with such a half — `Pallet` — scopes both queries on both arms, while `Vault`, whose half refuses it both ways, throws before anything is executed.
-The same refusal fires for an owner whose PHP value is spelled other than its DBAL type prints it — a `bigint` held as `'007'`, a decimal as `'.5'` — which no loaded record carries.
+The same refusal fires for an owner whose PHP value is spelled other than its DBAL type prints it — a `bigint` or a decimal held as `'.5'` — which no loaded record carries.
 
 **The negation is `NOT EXISTS`, and that is not cosmetic.**
 A candidate arm written as `NOT (<the equality text>)` drops a target whose composite foreign key is **partially** `NULL` — half-null rows are exactly what an unenforced schema leaves behind — where `NOT EXISTS` keeps them, together with the records that belong to nobody.

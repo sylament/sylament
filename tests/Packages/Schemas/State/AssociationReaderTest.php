@@ -3,9 +3,12 @@
 declare(strict_types=1);
 
 use Doctrine\ORM\EntityManagerInterface;
+use Doctrine\ORM\QueryBuilder;
 use Sylament\Schemas\State\AssociationReader;
 use Sylament\Schemas\State\AssociationTarget;
+use Sylament\Schemas\State\Relationship;
 use Sylament\Tests\Fixtures\Entity\AisleSeat;
+use Sylament\Tests\Fixtures\Entity\Allotment;
 use Sylament\Tests\Fixtures\Entity\Atelier;
 use Sylament\Tests\Fixtures\Entity\AtelierApprentice;
 use Sylament\Tests\Fixtures\Entity\AtelierEasel;
@@ -22,18 +25,27 @@ use Sylament\Tests\Fixtures\Entity\CodeKeyedSlate;
 use Sylament\Tests\Fixtures\Entity\Convoy;
 use Sylament\Tests\Fixtures\Entity\ConvoyWagon;
 use Sylament\Tests\Fixtures\Entity\ExhibitPlinth;
+use Sylament\Tests\Fixtures\Entity\Garden;
+use Sylament\Tests\Fixtures\Entity\GardenLabel;
+use Sylament\Tests\Fixtures\Entity\GardenPatch;
+use Sylament\Tests\Fixtures\Entity\GardenRow;
+use Sylament\Tests\Fixtures\Entity\Greenhouse;
+use Sylament\Tests\Fixtures\Entity\GreenhouseVent;
 use Sylament\Tests\Fixtures\Entity\HostPathRedirect;
 use Sylament\Tests\Fixtures\Entity\Invoice;
 use Sylament\Tests\Fixtures\Entity\InvoiceLine;
 use Sylament\Tests\Fixtures\Entity\ListenedLedgerEntry;
 use Sylament\Tests\Fixtures\Entity\MarkedCodeLabel;
 use Sylament\Tests\Fixtures\Entity\OrderLine;
+use Sylament\Tests\Fixtures\Entity\Plant;
 use Sylament\Tests\Fixtures\Entity\PrefilledLedgerEntry;
 use Sylament\Tests\Fixtures\Entity\Product;
+use Sylament\Tests\Fixtures\Entity\Seedling;
 use Sylament\Tests\Fixtures\Entity\StageResidency;
 use Sylament\Tests\Fixtures\Entity\StageVenue;
 use Sylament\Tests\Fixtures\Entity\StatuePlinth;
 use Sylament\Tests\Fixtures\Entity\SubtypedVoucher;
+use Sylament\Tests\Fixtures\Entity\Terrace;
 use Sylament\Tests\Fixtures\Entity\UidReceipt;
 use Sylament\Tests\Fixtures\Entity\VenueKeyedPlaybill;
 use Sylament\Tests\Fixtures\Schemas\Doctrine\Cipher;
@@ -608,3 +620,371 @@ describe('remove(), persist() and flush()', function (): void {
             ->and($em->find(Product::class, 1))->toBeNull();
     });
 });
+
+describe('the relationship queries', function (): void {
+    beforeEach(function (): void {
+        $ash = new Garden('Ash');
+        $birch = new Garden('Birch');
+        $fern = new Plant('Fern');
+        $moss = new Plant('Moss');
+        $ivy = new Plant('Ivy');
+        $ash->addPlant($fern);
+        $ash->addPlant($ivy);
+
+        $birch->addPlant($moss);
+        $birch->addPlant($ivy);
+
+        $leek = new Seedling('Leek');
+        $leek->garden = $ash;
+
+        $kale = new Seedling('Kale');
+        $kale->garden = $birch;
+        $this->seed($ash, $birch, $fern, $moss, $ivy, new Plant('Sage'), $leek, $kale, new Seedling('Bean'));
+        $this->reader = $this::getContainer()->get(AssociationReader::class);
+    });
+
+    it("lists the owner's records, rooted at the target under the alias it is given", function (string $ownerClass, string $owner, string $name, string $targetClass, array $expected): void {
+        $owner = $this->entityManager()->getRepository($ownerClass)->findOneBy(['name' => $owner]);
+        $query = $this->reader->createRelationshipQuery(new Relationship($owner, $name), 'shoot');
+
+        expect(array_map(fn (object $record): string => $record->name, $query->getQuery()->getResult()))->toEqualCanonicalizing($expected)
+            ->and($query->getRootAliases())->toBe(['shoot'])
+            ->and($query->getRootEntities())->toBe([$targetClass])
+            ->and($query->getParameters())->toHaveCount(1)
+            ->and($query->getDQLPart('orderBy'))->toBe([]);
+    })->with([
+        'the owning side of a many-to-many' => [Garden::class, 'Ash', 'plants', Plant::class, ['Fern', 'Ivy']],
+        'the inverse side of a many-to-many' => [Plant::class, 'Fern', 'gardens', Garden::class, ['Ash']],
+        'a one-to-many' => [Garden::class, 'Ash', 'seedlings', Seedling::class, ['Leek']],
+    ]);
+
+    it("offers every record that is not the owner's, one that belongs to nobody included", function (string $ownerClass, string $owner, string $name, array $expected): void {
+        $owner = $this->entityManager()->getRepository($ownerClass)->findOneBy(['name' => $owner]);
+        $query = $this->reader->createRelationshipCandidateQuery(new Relationship($owner, $name));
+
+        expect(array_map(fn (object $record): string => $record->name, $query->getQuery()->getResult()))->toEqualCanonicalizing($expected);
+    })->with([
+        'the owning side of a many-to-many' => [Garden::class, 'Ash', 'plants', ['Moss', 'Sage']],
+        'the inverse side of a many-to-many' => [Plant::class, 'Fern', 'gardens', ['Birch']],
+        'a one-to-many' => [Garden::class, 'Ash', 'seedlings', ['Kale', 'Bean']],
+    ]);
+
+    it("keeps a caller's condition on the one-to-many candidates apart from the owner's", function (): void {
+        $ash = $this->entityManager()->getRepository(Garden::class)->findOneBy(['name' => 'Ash']);
+        $query = $this->reader->createRelationshipCandidateQuery(new Relationship($ash, 'seedlings'))
+            ->andWhere('record.name = :name')
+            ->setParameter('name', 'Kale');
+
+        expect(array_map(fn (Seedling $seedling): string => $seedling->name, $query->getQuery()->getResult()))->toBe(['Kale']);
+    });
+
+    it("narrows a caller's own query in place, keeping its conditions", function (): void {
+        $ash = $this->entityManager()->getRepository(Garden::class)->findOneBy(['name' => 'Ash']);
+        $query = $this->entityManager()->createQueryBuilder()->select('shoot')->from(Plant::class, 'shoot')
+            ->andWhere('shoot.name <> :skipped')
+            ->setParameter('skipped', 'Fern');
+
+        expect($this->reader->scopeToRelationship($query, new Relationship($ash, 'plants'), 'shoot'))->toBe($query)
+            ->and(array_map(fn (Plant $plant): string => $plant->name, $query->getQuery()->getResult()))->toBe(['Ivy']);
+    });
+
+    it('refuses to narrow a query with no root under the alias it is given', function (): void {
+        $ash = $this->entityManager()->getRepository(Garden::class)->findOneBy(['name' => 'Ash']);
+        $query = $this->entityManager()->createQueryBuilder()->select('record')->from(Plant::class, 'record');
+
+        expect(fn (): QueryBuilder => $this->reader->scopeToRelationship($query, new Relationship($ash, 'plants'), 'shoot'))->toThrow(
+            LogicException::class,
+            'Cannot scope a query to the relationship [plants] of [' . Garden::class . ']: it has no root under the alias [shoot], which the scope narrows.',
+        );
+    });
+
+    it('lists the records of an owner not loaded yet', function (): void {
+        $ash = $this->entityManager()->getRepository(Garden::class)->findOneBy(['name' => 'Ash']);
+        $this->entityManager()->clear();
+        $owner = $this->entityManager()->getReference(Garden::class, $ash->id);
+        $query = $this->reader->createRelationshipQuery(new Relationship($owner, 'plants'));
+
+        expect(array_map(fn (Plant $plant): string => $plant->name, $query->getQuery()->getResult()))->toEqualCanonicalizing(['Fern', 'Ivy']);
+    });
+});
+
+describe('describeRelationship()', function (): void {
+    it('answers the mapping at a collection', function (): void {
+        $target = $this::getContainer()->get(AssociationReader::class)->describeRelationship(new Relationship(new Garden(), 'seedlings'));
+
+        expect($target)->targetClass->toBe(Seedling::class)
+            ->mappedBy->toBe('garden');
+    });
+
+    it('refuses what a relationship cannot list, naming the fix', function (bool $withoutManager, object $owner, string $name, string $message): void {
+        $reader = $withoutManager ? new AssociationReader() : $this::getContainer()->get(AssociationReader::class);
+
+        expect(fn (): AssociationTarget => $reader->describeRelationship(new Relationship($owner, $name)))->toThrow(LogicException::class, $message);
+    })->with([
+        'no entity manager' => [
+            true,
+            new Garden(),
+            'plants',
+            'The sylament AssociationReader has no Doctrine EntityManager, so this operation cannot run — it was built outside the container, or no EntityManagerInterface service exists. Register Doctrine (doctrine/doctrine-bundle) or bind the record by hand after getData().',
+        ],
+        'an owner that is no entity' => [
+            false,
+            new stdClass(),
+            'plants',
+            '[stdClass] is not a managed entity, so it cannot own a relationship.',
+        ],
+        'no association at the property' => [
+            false,
+            new Garden(),
+            'name',
+            'The relationship [name] declared on [' . Garden::class . '] cannot be read: that class maps no association at "name" — name the property Doctrine maps.',
+        ],
+        'a single-valued association' => [
+            false,
+            new Garden(),
+            'supplier',
+            'The relationship [supplier] declared on [' . Garden::class . '] is single-valued; a relation-scoped table lists a collection. Declare a to-many association, or query() the related record yourself.',
+        ],
+    ]);
+
+    it('refuses to scope an owner that has no identifier yet', function (Closure $owner, string $class): void {
+        $reader = $this::getContainer()->get(AssociationReader::class);
+
+        expect(fn (): QueryBuilder => $reader->createRelationshipQuery(new Relationship($owner(), 'plants')))->toThrow(
+            LogicException::class,
+            'Object records must expose a readable non-blank identifier; [' . $class . '] has none set.',
+        );
+    })->with([
+        'a generated key' => [fn (): Garden => new Garden(), Garden::class],
+        'an association and a scalar' => [fn (): Allotment => new Allotment(new Garden(), 1), Allotment::class],
+    ]);
+});
+
+describe('attach() and detach()', function (): void {
+    beforeEach(function (): void {
+        $this->ash = new Garden('Ash');
+        $this->birch = new Garden('Birch');
+        $this->seed($this->ash, $this->birch, new Plant('Sage'), new Seedling('Bean'));
+        $this->ash = $this->entityManager()->find(Garden::class, $this->ash->id);
+        $this->birch = $this->entityManager()->find(Garden::class, $this->birch->id);
+        $this->sage = $this->entityManager()->getRepository(Plant::class)->findOneBy(['name' => 'Sage']);
+        $this->bean = $this->entityManager()->getRepository(Seedling::class)->findOneBy(['name' => 'Bean']);
+        $this->reader = $this::getContainer()->get(AssociationReader::class);
+    });
+
+    it('writes the owning collection of a many-to-many, once, whichever side the relationship names', function (bool $fromInverse): void {
+        [$owner, $name, $related] = $fromInverse ? [$this->sage, 'gardens', $this->ash] : [$this->ash, 'plants', $this->sage];
+        $relationship = new Relationship($owner, $name);
+        $listed = fn (): array => array_map(fn (Plant $plant): string => $plant->name, $this->reader->createRelationshipQuery(new Relationship($this->ash, 'plants'))->getQuery()->getResult());
+
+        $this->reader->attach($relationship, $related);
+        $this->reader->attach($relationship, $related);
+
+        expect($this->ash->plants->count())->toBe(1)
+            ->and($this->ash->plants->contains($this->sage))->toBeTrue()
+            ->and($this->sage->gardens->count())->toBe(0);
+
+        $this->entityManager()->flush();
+
+        expect($listed())->toBe(['Sage']);
+
+        $this->reader->detach($relationship, $related);
+        $this->entityManager()->flush();
+
+        expect($this->ash->plants->count())->toBe(0)
+            ->and($listed())->toBe([]);
+    })->with([
+        'the owning side' => [false],
+        'the inverse side' => [true],
+    ]);
+
+    it('points a one-to-many child at the owner, and at nothing once detached', function (): void {
+        $relationship = new Relationship($this->ash, 'seedlings');
+
+        $this->reader->attach($relationship, $this->bean);
+        $this->entityManager()->flush();
+
+        expect($this->reload($this->bean)->garden)->toBe($this->ash);
+
+        $this->reader->detach($relationship, $this->bean);
+        $this->entityManager()->flush();
+
+        expect($this->reload($this->bean)->garden)->toBeNull();
+    });
+
+    it('refuses to point an existing child at a new owner when the owner is half its identifier', function (): void {
+        $patch = new GardenPatch($this->birch, 'North');
+        $this->entityManager()->persist($patch);
+
+        expect(fn () => $this->reader->attach(new Relationship($this->ash, 'patches'), $patch))->toThrow(
+            LogicException::class,
+            '[' . GardenPatch::class . '::$garden] is part of the identifier of [' . GardenPatch::class . '], so an existing record cannot be associated into [' . Garden::class . '::$patches] — pointing it at another owner would move its primary key. Create the record under this owner instead, or move the association out of the identifier.',
+        );
+    });
+
+    it('points a child the owner is half the identifier of at it while the child is new or already its own', function (): void {
+        $new = new GardenPatch($this->birch, 'North');
+        $own = new GardenPatch($this->ash, 'South');
+        $this->entityManager()->persist($own);
+        $relationship = new Relationship($this->ash, 'patches');
+
+        $this->reader->attach($relationship, $new);
+        $this->reader->attach($relationship, $own);
+
+        expect($new->garden)->toBe($this->ash)
+            ->and($own->garden)->toBe($this->ash);
+    });
+
+    it('refuses to offer candidates into a one-to-many the owner is half the identifier of', function (): void {
+        $relationship = new Relationship($this->ash, 'patches');
+        $message = '[' . GardenPatch::class . '::$garden] is part of the identifier of [' . GardenPatch::class . '], so an existing record cannot be associated into [' . Garden::class . '::$patches] — pointing it at another owner would move its primary key. Create the record under this owner instead, or move the association out of the identifier.';
+
+        expect(fn () => $this->reader->createRelationshipCandidateQuery($relationship))->toThrow(LogicException::class, $message)
+            ->and(fn () => $this->reader->assertRelationshipAcceptsAssociate($relationship))->toThrow(LogicException::class, $message);
+    });
+
+    it('refuses to dissociate the children of a one-to-many whose mapping forbids it, for the first reason that applies', function (string $name, string $message): void {
+        expect(fn () => $this->reader->assertRelationshipAcceptsDetach(new Relationship($this->ash, $name)))->toThrow(LogicException::class, $message);
+    })->with([
+        'its orphans are removed' => ['plots', '[' . Garden::class . '::$plots] declares orphanRemoval, so a record removed from it is deleted rather than dissociated — dissociating is not something the mapping permits; use DeleteAction.'],
+        'the owner is half their identifier' => ['patches', '[' . GardenPatch::class . '::$garden] is part of the identifier of [' . GardenPatch::class . '], so a [' . GardenPatch::class . '] cannot be dissociated from its [' . Garden::class . '] — nulling it would erase half the record\'s identity; use DeleteAction.'],
+        'their join column is not nullable' => ['rows', '[' . GardenRow::class . '::$garden] is mapped with a `nullable: false` join column, so a [' . GardenRow::class . '] cannot be dissociated from its [' . Garden::class . ']; make the column nullable or use DeleteAction.'],
+        'their property does not accept null' => ['labels', '[' . GardenLabel::class . '::$garden] does not accept null — type its setter or property nullable so a record can be dissociated.'],
+    ]);
+
+    it('refuses to detach what the mapping forbids dissociating, before writing anything', function (): void {
+        $row = new GardenRow();
+        $row->garden = $this->ash;
+
+        expect(fn () => $this->reader->detach(new Relationship($this->ash, 'rows'), $row))->toThrow(LogicException::class, 'is mapped with a `nullable: false` join column')
+            ->and($row->garden)->toBe($this->ash);
+    });
+
+    it('lets every many-to-many and an ordinary one-to-many be associated and dissociated', function (string $name): void {
+        $relationship = new Relationship($this->ash, $name);
+
+        expect(fn () => $this->reader->assertRelationshipAcceptsAssociate($relationship))->not->toThrow(LogicException::class)
+            ->and(fn () => $this->reader->assertRelationshipAcceptsDetach($relationship))->not->toThrow(LogicException::class);
+    })->with([
+        'a many-to-many' => ['plants'],
+        'a one-to-many' => ['seedlings'],
+    ]);
+});
+
+describe('an owner keyed by several fields', function (): void {
+    beforeEach(function (): void {
+        $this->reader = $this::getContainer()->get(AssociationReader::class);
+    });
+
+    it('lists and offers its records on both arms, keeping a child whose key to it is half null among the candidates', function (Closure $owners, string $mappedBy): void {
+        [$owner, $other] = $owners();
+        $fern = new Plant('Fern');
+        $moss = new Plant('Moss');
+        $owner->addPlant($fern);
+        $other->addPlant($moss);
+        $leek = new Seedling('Leek');
+        $leek->{$mappedBy} = $owner;
+
+        $kale = new Seedling('Kale');
+        $kale->{$mappedBy} = $other;
+
+        $half = new Seedling('Half');
+        $half->{$mappedBy} = $owner;
+        $this->seed($owner, $other, $fern, $moss, new Plant('Sage'), $leek, $kale, $half);
+        $metadata = $this->entityManager()->getClassMetadata(Seedling::class);
+        $this->entityManager()->getConnection()->update($metadata->getTableName(), [$metadata->getAssociationMapping($mappedBy)->joinColumns[1]->name => null], ['id' => $half->id]);
+        $owner = $this->entityManager()->find($owner::class, $this->entityManager()->getClassMetadata($owner::class)->getIdentifierValues($owner));
+        $names = fn (QueryBuilder $query): array => array_map(fn (object $record): string => $record->name, $query->getQuery()->getResult());
+
+        expect($names($this->reader->createRelationshipQuery(new Relationship($owner, 'plants'))))->toBe(['Fern'])
+            ->and($names($this->reader->createRelationshipQuery(new Relationship($owner, 'seedlings'))))->toBe(['Leek'])
+            ->and($names($this->reader->createRelationshipCandidateQuery(new Relationship($owner, 'plants'))))->toEqualCanonicalizing(['Moss', 'Sage'])
+            ->and($names($this->reader->createRelationshipCandidateQuery(new Relationship($owner, 'seedlings'))))->toEqualCanonicalizing(['Kale', 'Half']);
+    })->with([
+        'two scalars' => [fn (): array => [new Terrace(1, 1), new Terrace(1, 2)], 'terrace'],
+        'an association and a scalar' => [function (): array {
+            $garden = new Garden('Ash');
+
+            return [new Allotment($garden, 1), new Allotment($garden, 2)];
+        }, 'allotment'],
+    ]);
+
+    it('attaches and detaches its records on both arms', function (Closure $owner): void {
+        $owner = $owner();
+        $this->seed($owner, new Plant('Sage'), new Seedling('Bean'));
+        $owner = $this->entityManager()->find($owner::class, $this->entityManager()->getClassMetadata($owner::class)->getIdentifierValues($owner));
+        $sage = $this->entityManager()->getRepository(Plant::class)->findOneBy(['name' => 'Sage']);
+        $bean = $this->entityManager()->getRepository(Seedling::class)->findOneBy(['name' => 'Bean']);
+        $plants = new Relationship($owner, 'plants');
+        $seedlings = new Relationship($owner, 'seedlings');
+        $names = fn (QueryBuilder $query): array => array_map(fn (object $record): string => $record->name, $query->getQuery()->getResult());
+
+        $this->reader->attach($plants, $sage);
+        $this->reader->attach($seedlings, $bean);
+        $this->entityManager()->flush();
+
+        expect($names($this->reader->createRelationshipQuery($plants)))->toBe(['Sage'])
+            ->and($names($this->reader->createRelationshipQuery($seedlings)))->toBe(['Bean']);
+
+        $this->reader->detach($plants, $sage);
+        $this->reader->detach($seedlings, $bean);
+        $this->entityManager()->flush();
+
+        expect($names($this->reader->createRelationshipQuery($plants)))->toBe([])
+            ->and($names($this->reader->createRelationshipQuery($seedlings)))->toBe([]);
+    })->with([
+        'two scalars' => [fn (): Terrace => new Terrace(1, 1)],
+        'an association and a scalar' => [fn (): Allotment => new Allotment(new Garden('Ash'), 1)],
+    ]);
+
+    it('keeps its scope through a bulk update over its related records', function (): void {
+        $owner = new Terrace(1, 1);
+        $leek = new Seedling('Leek');
+        $leek->terrace = $owner;
+        $this->seed($owner, $leek, new Seedling('Kale'));
+        $owner = $this->entityManager()->find(Terrace::class, ['estate' => 1, 'number' => 1]);
+
+        $this->reader->createRelationshipQuery(new Relationship($owner, 'seedlings'))
+            ->update()
+            ->set('record.name', ':renamed')
+            ->setParameter('renamed', 'Moved')
+            ->getQuery()
+            ->execute();
+
+        expect($this->entityManager()->getConnection()->fetchFirstColumn('SELECT name FROM ' . $this->entityManager()->getClassMetadata(Seedling::class)->getTableName() . ' ORDER BY name'))->toBe(['Kale', 'Moved']);
+    });
+
+    it('refuses an owner whose own key does not decode against its mapping', function (): void {
+        $owner = new Terrace('.5', 1);
+
+        expect(fn (): QueryBuilder => $this->reader->createRelationshipQuery(new Relationship($owner, 'plants')))->toThrow(
+            LogicException::class,
+            'The owner [' . Terrace::class . '] mints the key [=2E5~1], which does not decode against its own mapping, so the relationship [plants] cannot be scoped to it — an identifier type that cannot read its own printed form.',
+        );
+    });
+});
+
+it('scopes an owner keyed by a converting type by its identifier value, on both arms of both queries', function (Closure $owners): void {
+    [$owner, $other] = $owners();
+    $fern = new Plant('Fern');
+    $moss = new Plant('Moss');
+    $owner->plants->add($fern);
+    $other->plants->add($moss);
+    $leek = new Seedling('Leek');
+    $leek->{$owner instanceof Greenhouse ? 'greenhouse' : 'vent'} = $owner;
+
+    $kale = new Seedling('Kale');
+    $kale->{$owner instanceof Greenhouse ? 'greenhouse' : 'vent'} = $other;
+    $this->seed(...[...($owner instanceof GreenhouseVent ? [$owner->greenhouse, $other->greenhouse] : []), $owner, $other, $fern, $moss, $leek, $kale]);
+    $owner = $this->entityManager()->find($owner::class, $this->entityManager()->getClassMetadata($owner::class)->getIdentifierValues($owner));
+    $reader = $this::getContainer()->get(AssociationReader::class);
+    $names = fn (QueryBuilder $query): array => array_map(fn (object $record): string => $record->name, $query->getQuery()->getResult());
+
+    expect($names($reader->createRelationshipQuery(new Relationship($owner, 'plants'))))->toBe(['Fern'])
+        ->and($names($reader->createRelationshipQuery(new Relationship($owner, 'seedlings'))))->toBe(['Leek'])
+        ->and($names($reader->createRelationshipCandidateQuery(new Relationship($owner, 'plants'))))->toBe(['Moss'])
+        ->and($names($reader->createRelationshipCandidateQuery(new Relationship($owner, 'seedlings'))))->toBe(['Kale']);
+})->with([
+    'a uuid' => [fn (): array => [new Greenhouse(Uuid::v7()), new Greenhouse(Uuid::v7())]],
+    'an identity derived from a uuid' => [fn (): array => [new GreenhouseVent(new Greenhouse(Uuid::v7())), new GreenhouseVent(new Greenhouse(Uuid::v7()))]],
+]);

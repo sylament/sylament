@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace Sylament\Tests\Fixtures\Support;
 
 /**
- * The looks support's components give any area's markup: colour, size, state, button,
- * icon button, icon, link, badge and breadcrumb separator, named by the `sy-` class the
- * stylesheet paints them by; the modal's close button and the pagination's chevron
+ * The looks support's components give any area's markup: colour, size, font, state,
+ * button, icon button, icon, link, badge, breadcrumb separator and a section's container,
+ * named by the `sy-` class the stylesheet paints them by; the modal's close button and the pagination's chevron
  * buttons by their names, and a dropdown's teleport by its Stimulus value. A side of the
  * input wrapper is named by its `sy-` class, because which side an affix sits on is the
  * stylesheet's contract; what sits there is asserted by its text, its role or its element.
@@ -24,6 +24,13 @@ final class Selectors
     public const string MEDIUM = '.sy-size-md';
 
     public const string DISABLED = '.sy-disabled';
+
+    /**
+     * Neither a font weight nor a font family, which share the `sy-font-` prefix.
+     */
+    public const string NO_FONT = ':not([class*="sy-font-"])';
+
+    public const string NOT_CONTAINED = '.sy-section-not-contained';
 
     public const string BUTTON = '.sy-btn';
 
@@ -77,5 +84,10 @@ final class Selectors
     public static function size(string $name): string
     {
         return ".sy-size-{$name}";
+    }
+
+    public static function font(string $name): string
+    {
+        return ".sy-font-{$name}";
     }
 }

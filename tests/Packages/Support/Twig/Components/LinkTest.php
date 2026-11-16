@@ -46,11 +46,11 @@ it('renders at the medium size unless sized, and a size outside the scale as its
 
 it('sets its font weight when given one, and a weight outside the scale as its own class', function (): void {
     expect($this->renderTwigComponent('SylamentSupport:Link', ['weight' => FontWeight::Bold], content: 'Orders')->crawler())
-        ->toContainElement(SupportSelectors::LINK . '.sy-font-bold', 'Orders')
+        ->toContainElement(SupportSelectors::LINK . SupportSelectors::font('bold'), 'Orders')
         ->and($this->renderTwigComponent('SylamentSupport:Link', ['weight' => 'heavy'], content: 'Orders')->crawler())
-        ->toContainElement(SupportSelectors::LINK . '.heavy:not([class*="sy-font-"])', 'Orders')
+        ->toContainElement(SupportSelectors::LINK . '.heavy' . SupportSelectors::NO_FONT, 'Orders')
         ->and($this->renderTwigComponent('SylamentSupport:Link', content: 'Orders')->crawler())
-        ->toContainElement(SupportSelectors::LINK . ':not([class*="sy-font-"])', 'Orders');
+        ->toContainElement(SupportSelectors::LINK . SupportSelectors::NO_FONT, 'Orders');
 });
 
 it("paints in primary unless coloured, gray uncoloured, and a shade map inline beside the caller's style", function (): void {

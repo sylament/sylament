@@ -55,9 +55,9 @@ it('draws its icon in the header, large and gray unless sized or coloured, and a
 
 it('takes its variant classes from its props', function (): void {
     expect($this->renderTwigComponent('SylamentSupport:Section', ['heading' => 'Orders', 'contained' => false, 'contentBefore' => true, 'aside' => true, 'compact' => true, 'divided' => true, 'secondary' => true])->crawler())
-        ->toContainElement('section.sy-section.sy-section-not-contained.sy-section-has-header.sy-section-has-content-before.sy-aside.sy-compact.sy-divided.sy-secondary')
+        ->toContainElement('section.sy-section' . SupportSelectors::NOT_CONTAINED . '.sy-section-has-header.sy-section-has-content-before.sy-aside.sy-compact.sy-divided.sy-secondary')
         ->and($this->renderTwigComponent('SylamentSupport:Section', content: 'Ten orders.')->crawler())
-        ->toContainElement('section.sy-section:not(.sy-section-not-contained):not(.sy-section-has-header):not(.sy-section-has-content-before):not(.sy-aside):not(.sy-compact):not(.sy-divided):not(.sy-secondary):not(.sy-collapsible)', 'Ten orders.');
+        ->toContainElement('section.sy-section:not(' . SupportSelectors::NOT_CONTAINED . '):not(.sy-section-has-header):not(.sy-section-has-content-before):not(.sy-aside):not(.sy-compact):not(.sy-divided):not(.sy-secondary):not(.sy-collapsible)', 'Ten orders.');
 });
 
 it('is a disclosure toggled from its header and from a chevron button controlling its body, and none of it unless collapsible', function (): void {

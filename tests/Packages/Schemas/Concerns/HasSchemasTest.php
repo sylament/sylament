@@ -2,25 +2,40 @@
 
 declare(strict_types=1);
 
+use Doctrine\ORM\EntityManagerInterface;
 use Sylament\Forms\Components\Repeater;
 use Sylament\Forms\Components\TextInput;
 use Sylament\Forms\Validation\RequiredValue;
+use Sylament\Schemas\Components\Component;
 use Sylament\Schemas\Components\Group;
+use Sylament\Schemas\Components\Section;
 use Sylament\Schemas\Exceptions\ValidationException;
 use Sylament\Schemas\Schema;
+use Sylament\Tests\Fixtures\Entity\Article;
 use Sylament\Tests\Fixtures\Entity\BenchPot;
+use Sylament\Tests\Fixtures\Entity\BerthCleat;
+use Sylament\Tests\Fixtures\Entity\BerthMooring;
 use Sylament\Tests\Fixtures\Entity\BoundVolume;
+use Sylament\Tests\Fixtures\Entity\CappedHeadline;
 use Sylament\Tests\Fixtures\Entity\HostPathAlias;
+use Sylament\Tests\Fixtures\Entity\Invoice;
+use Sylament\Tests\Fixtures\Entity\InvoiceLine;
 use Sylament\Tests\Fixtures\Entity\NurseryBench;
+use Sylament\Tests\Fixtures\Entity\OrderLine;
 use Sylament\Tests\Fixtures\Entity\StampedBulletin;
+use Sylament\Tests\Fixtures\Schemas\CappedHeadlineForm;
 use Sylament\Tests\Fixtures\Schemas\CodeForm;
 use Sylament\Tests\Fixtures\Schemas\ComponentSeamForm;
 use Sylament\Tests\Fixtures\Schemas\HookLog;
 use Sylament\Tests\Fixtures\Schemas\ReactiveSchemaForm;
+use Sylament\Tests\Fixtures\Schemas\Record\VettedCard;
 use Sylament\Tests\Fixtures\Schemas\RecordCheckHost;
+use Sylament\Tests\Fixtures\Schemas\RecordMappingHost;
 use Sylament\Tests\Fixtures\Schemas\SchemaResolutionHost;
 use Sylament\Tests\Fixtures\Schemas\ScopedValidationForm;
+use Sylament\Tests\Fixtures\Schemas\StickyValidationForm;
 use Sylament\Tests\Fixtures\Schemas\UnnamedSchemaHost;
+use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
 
@@ -405,5 +420,300 @@ describe('validateSchemaRecord()', function (): void {
             expect($exception->getErrors())->toBe(["data.pots.{$itemKey}.bay" => ['This value is already used.']]);
         })
             ->and($this->statementsRun())->toHaveCount(1);
+    });
+});
+
+describe('validateSchema()', function (): void {
+    beforeEach(function (): void {
+        $this->host = new RecordMappingHost();
+        $this->host->setSchemaStateValidator($this::getContainer()->get(ValidatorInterface::class));
+    });
+
+    it('validates the value each component rewrites for validation', function (): void {
+        $schema = $this->host->mapping(
+            TextInput::make('code')->maxLength(3)->mutateStateForValidationUsing(fn (?string $state): string => str_replace('-', '', (string) $state)),
+            TextInput::make('reference')->maxLength(3),
+        );
+        $this->host->data = ['code' => 'A-B-C', 'reference' => 'A-B-C'];
+
+        expect(fn () => $this->host->validateSchema($schema))->toThrow(function (ValidationException $exception): void {
+            expect($exception->getErrors())->toBe(['data.reference' => ['This value is too long. It should have 3 characters or less.']]);
+        });
+    });
+
+    it("rewrites a schema's errors whole on every run, so a field whose constraint a sibling took away loses its error", function (): void {
+        $schema = $this->host->mapping(
+            TextInput::make('kind'),
+            TextInput::make('reference')->requiredIf('kind', 'invoice'),
+            TextInput::make('code')->required(),
+        );
+        $this->host->data = ['kind' => 'invoice', 'reference' => '', 'code' => ''];
+
+        expect(fn () => $this->host->validateSchema($schema))->toThrow(ValidationException::class)
+            ->and($this->host->getErrorsForSchemaStatePath('data.reference'))->toBe(['This value should not be blank.']);
+
+        $this->host->data['kind'] = 'note';
+
+        expect(fn () => $this->host->validateSchema($schema))->toThrow(ValidationException::class)
+            ->and($this->host->getErrorsForSchemaStatePath('data.reference'))->toBe([])
+            ->and($this->host->getErrorsForSchemaStatePath('data.code'))->toBe(['This value should not be blank.']);
+    });
+
+    it('refuses to validate on a host holding no validator, naming its setter, while such a host still maps a record unchecked', function (): void {
+        $host = new RecordMappingHost();
+
+        expect(fn () => $host->validateSchema($host->mapping(TextInput::make('code')->required())))
+            ->toThrow(LogicException::class, 'setSchemaStateValidator()');
+
+        $card = new VettedCard();
+        $schema = $host->mapping(TextInput::make('title'))->record($card);
+        $host->data = ['title' => VettedCard::WITHDRAWN];
+
+        expect($schema->getData())->toBe($card)
+            ->and($card->title)->toBe(VettedCard::WITHDRAWN);
+    });
+
+    it('brings an error back when a fixed field breaks again before any submit, announcing only the submit', function (): void {
+        $tester = $this->createLiveComponent(CodeForm::class)->call('save');
+
+        expect($this->dispatchedBrowserEvents($tester, 'form-validation-error'))->toBe([['schemaKey' => 'form']]);
+
+        $tester->fillForm(['code' => 'X1'])
+            ->assertHasNoFormErrors()
+            ->fillForm(['code' => ''])
+            ->assertHasFormErrors(['code' => RequiredValue::class]);
+
+        expect($this->dispatchedBrowserEvents($tester, 'form-validation-error'))->toBe([]);
+    });
+
+    it('validates the value an afterStateUpdated hook wrote in the same request', function (): void {
+        $this->createLiveComponent(StickyValidationForm::class)
+            ->fillForm(['city' => 'Prague'])
+            ->call('save')
+            ->assertHasFormErrors(['slug'])
+            ->fillForm(['title' => 'Harbour'])
+            ->assertFormSet(['slug' => 'harbour'])
+            ->assertHasNoFormErrors();
+    });
+});
+
+describe('the validation identity', function (): void {
+    beforeEach(function (): void {
+        $this->host = new RecordMappingHost();
+        $this->host->setSchemaStateValidator($this::getContainer()->get(ValidatorInterface::class));
+
+        $this->schema = $this->host->mapping(
+            TextInput::make('code')->required(),
+            Section::make()->key('details', isInheritable: false)->components([TextInput::make('city')->required()]),
+        );
+        $details = $this->host->getSchemaComponent('schema.details');
+        $this->details = $details instanceof Component ? $details->getChildSchema() : null;
+    });
+
+    it("files a component's child schema under that component, leaving the root schema's errors alone", function (): void {
+        expect(fn () => $this->host->validateSchema($this->schema))->toThrow(ValidationException::class);
+
+        $this->host->data['city'] = 'Prague';
+        $this->host->validateSchema($this->details);
+
+        expect($this->host->getErrorsForSchemaStatePath('data.code'))->toBe(['This value should not be blank.']);
+    });
+
+    it("drops a component's child schema errors when its root schema validates", function (): void {
+        expect(fn () => $this->host->validateSchema($this->details))->toThrow(ValidationException::class)
+            ->and($this->host->getErrorsForSchemaStatePath('data.city'))->toBe(['This value should not be blank.']);
+
+        $this->host->data = ['code' => 'X1', 'city' => 'Prague'];
+        $this->host->validateSchema($this->schema);
+
+        expect($this->host->getErrorsForSchemaStatePath('data.city'))->toBe([]);
+    });
+
+    it('reads a message two schemas hold for one path once, and nothing for no path or an unknown one', function (): void {
+        expect(fn () => $this->host->validateSchema($this->schema))->toThrow(ValidationException::class)
+            ->and(fn () => $this->host->validateSchema($this->details))->toThrow(ValidationException::class)
+            ->and($this->host->getErrorsForSchemaStatePath('data.city'))->toBe(['This value should not be blank.'])
+            ->and($this->host->getErrorConstraintsForSchemaStatePath('data.city'))->toBe([RequiredValue::class])
+            ->and($this->host->getErrorsForSchemaStatePath(null))->toBe([])
+            ->and($this->host->getErrorsForSchemaStatePath('data.street'))->toBe([])
+            ->and($this->host->getErrorConstraintsForSchemaStatePath(null))->toBe([]);
+    });
+
+    it("keeps a component's child schema errors across requests until its field is fixed", function (): void {
+        $this->createLiveComponent(StickyValidationForm::class)
+            ->call('saveDetails')
+            ->fillForm(['title' => 'Harbour'])
+            ->assertHasFormErrors(['city'])
+            ->fillForm(['city' => 'Prague'])
+            ->assertHasNoFormErrors();
+    });
+
+    it("forgets a child schema's errors once its component leaves the form, so they stay gone when it returns", function (): void {
+        $this->createLiveComponent(StickyValidationForm::class)
+            ->call('saveDetails')
+            ->assertHasFormErrors(['city'])
+            ->set('showDetails', false)
+            ->set('showDetails', true)
+            ->assertHasNoFormErrors();
+    });
+});
+
+describe('validateSchemaRecord()', function (): void {
+    beforeEach(function (): void {
+        $this->host = new RecordMappingHost();
+        $this->host->setSchemaStateValidator($this::getContainer()->get(ValidatorInterface::class));
+    });
+
+    it("answers a record's own constraints first, and a taken key only once they pass", function (): void {
+        $this->seed(new CappedHeadline(code: 'H1', title: 'Old', slug: 'old'));
+
+        $schema = $this->host->mapping(TextInput::make('code'), TextInput::make('title'))->record(new CappedHeadline(slug: 'new'));
+        $this->host->data = ['code' => 'H1', 'title' => 'Far too long'];
+
+        expect(fn () => $schema->getData())->toThrow(function (ValidationException $exception): void {
+            expect($exception->getErrors())->toBe(['data.title' => ['This value is too long. It should have 5 characters or less.']]);
+        });
+
+        $this->host->data['title'] = 'Short';
+
+        expect(fn () => $schema->getData())->toThrow(function (ValidationException $exception): void {
+            expect($exception->getErrors())->toBe(['data.code' => ['This value is already used.']]);
+        });
+    });
+
+    it("files a violation no component maps at a pathless schema's empty path", function (): void {
+        $this->seed(new CappedHeadline(code: 'H1', title: 'Old', slug: 'news'));
+
+        $schema = $this->host->makeSchema()->record(new CappedHeadline(code: 'H2', title: 'New', slug: 'news'));
+        $this->host->cacheSchema('schema', $schema);
+
+        expect(fn () => $schema->getData())->toThrow(function (ValidationException $exception): void {
+            expect($exception->getErrors())->toBe(['' => ['This value is already used.']]);
+        })
+            ->and($this->host->getErrorsForSchemaStatePath(''))->toBe(['This value is already used.']);
+    });
+
+    it('shows a record constraint with its class on the refused submit, writing nothing, and drops it on the next request', function (): void {
+        $this->seed(new CappedHeadline(code: 'H1', title: 'Old', slug: 'news'));
+
+        $tester = $this->createLiveComponent(CappedHeadlineForm::class)
+            ->fillForm(['code' => 'H2', 'title' => 'Fresh', 'slug' => 'news'])
+            ->call('save')
+            ->assertHasFormErrors(['slug' => UniqueEntity::class]);
+
+        expect($this->entityManager()->getRepository(CappedHeadline::class)->count())->toBe(1);
+
+        $tester->fillForm(['title' => 'Later'])
+            ->assertHasNoFormErrors();
+    });
+
+    it('refuses a new record whose assigned key a stored row holds, under each key field the form maps but never the association', function (object $stored, Closure $candidate, array $mapped, array $state, array $expected): void {
+        $this->seed($stored);
+
+        $schema = $this->host->mapping(...array_map(TextInput::make(...), $mapped))->record($candidate($this->entityManager()));
+        $this->host->data = $state;
+
+        expect(fn () => $schema->getData())->toThrow(function (ValidationException $exception) use ($expected): void {
+            expect($exception->getErrors())->toBe($expected);
+        })
+            ->and($this->statementsRun())->toHaveCount(1)
+            ->and($this->entityManager()->isOpen())->toBeTrue();
+    })->with([
+        'scalar fields' => fn (): array => [
+            new OrderLine(order: 1, line: 1, note: 'Stored'),
+            fn (): OrderLine => new OrderLine(order: 0, line: 0),
+            ['order', 'line', 'note'],
+            ['order' => '1', 'line' => '1', 'note' => 'Copy'],
+            ['data.order' => ['This value is already used.'], 'data.line' => ['This value is already used.']],
+        ],
+        'an association plus a scalar' => fn (): array => [
+            new InvoiceLine(new Invoice(7), line: 1, note: 'Stored'),
+            fn (EntityManagerInterface $entityManager): InvoiceLine => new InvoiceLine($entityManager->getReference(Invoice::class, 7), line: 0),
+            ['line', 'note'],
+            ['line' => '1', 'note' => 'Copy'],
+            ['data.line' => ['This value is already used.']],
+        ],
+    ]);
+
+    it('refuses a key a record the manager already holds, without a statement', function (): void {
+        $this->entityManager()->persist(new OrderLine(order: 1, line: 1));
+
+        $schema = $this->host->mapping(TextInput::make('order'), TextInput::make('line'))->record(new OrderLine(order: 0, line: 0));
+        $this->host->data = ['order' => '1', 'line' => '1'];
+
+        expect(fn () => $schema->getData())->toThrow(function (ValidationException $exception): void {
+            expect($exception->getErrors())->toBe(['data.order' => ['This value is already used.'], 'data.line' => ['This value is already used.']]);
+        })
+            ->and($this->statementsRun())->toBe([]);
+    });
+
+    it('asks nothing for a new record whose identifier is generated', function (): void {
+        $article = new Article('Draft');
+        $schema = $this->host->mapping(TextInput::make('title'))->record($article);
+        $this->host->data = ['title' => 'Published'];
+
+        expect($schema->getData())->toBe($article)
+            ->and($article->title)->toBe('Published')
+            ->and($this->statementsRun())->toBe([]);
+    });
+
+    it("refuses a new record's blank key under its first blank key field the form maps, a string before an association", function (Closure $record, array $state, array $expected): void {
+        $schema = $this->host->mapping(...array_map(TextInput::make(...), array_keys($state)))->record($record());
+        $this->host->data = $state;
+
+        expect(fn () => $schema->getData())->toThrow(function (ValidationException $exception) use ($expected): void {
+            expect($exception->getErrors())->toBe($expected);
+        })
+            ->and($this->statementsRun())->toBe([]);
+    })->with([
+        'scalar fields' => [fn (): BerthMooring => new BerthMooring(), ['pier' => '   ', 'slot' => '   ', 'label' => 'North'], ['data.pier' => ['This value should not be blank.']]],
+        'an association plus a scalar' => [fn (): BerthCleat => new BerthCleat(), ['slot' => '   ', 'label' => 'North'], ['data.slot' => ['This value should not be blank.']]],
+    ]);
+
+    it('refuses a key field the form maps but does not dehydrate, whose typed value never reaches the record', function (): void {
+        $schema = $this->host->mapping(TextInput::make('pier')->dehydrated(false), TextInput::make('slot'))->record(new BerthMooring());
+        $this->host->data = ['pier' => 'P1', 'slot' => 'S1'];
+
+        expect(fn () => $schema->getData())->toThrow(function (ValidationException $exception): void {
+            expect($exception->getErrors())->toBe(['data.pier' => ['This value should not be blank.']]);
+        });
+    });
+
+    it('refuses a changed key under its field and puts the stored key back, leaving the rest of the mapping on the record', function (object $stored, string $keyField, string $otherField, string $movedKey): void {
+        $this->seed($stored);
+        $record = $this->reload($stored);
+        $storedKey = $record->{$keyField};
+
+        $schema = $this->host->mapping(TextInput::make($keyField), TextInput::make($otherField))->record($record);
+        $schema->fill($record);
+        $this->host->data[$keyField] = $movedKey;
+        $this->host->data[$otherField] = 'Edited';
+
+        $entityManager = $this->entityManager();
+
+        expect(fn () => $schema->getData())->toThrow(function (ValidationException $exception) use ($keyField): void {
+            expect($exception->getErrors())->toBe(["data.{$keyField}" => ['This value cannot be changed.']]);
+        })
+            ->and($record->{$keyField})->toBe($storedKey)
+            ->and($record->{$otherField})->toBe('Edited')
+            ->and($entityManager->find($record::class, $entityManager->getClassMetadata($record::class)->getIdentifierValues($record)))->toBe($record)
+            ->and($this->reload($record)->{$otherField})->toBe('Stored');
+    })->with([
+        'a generated identifier' => fn (): array => [new Article('Stored'), 'id', 'title', '99'],
+        'scalar fields' => fn (): array => [new OrderLine(order: 1, line: 1, note: 'Stored'), 'line', 'note', '2'],
+        'an association plus a scalar' => fn (): array => [new InvoiceLine(new Invoice(7), line: 1, note: 'Stored'), 'line', 'note', '2'],
+    ]);
+
+    it('takes the stored key typed back as a string for no change', function (): void {
+        $this->seed($stored = new Article('Stored'));
+        $article = $this->reload($stored);
+
+        $schema = $this->host->mapping(TextInput::make('id'), TextInput::make('title'))->record($article);
+        $schema->fill($article);
+        $this->host->data['id'] = (string) $article->id;
+        $this->host->data['title'] = 'Edited';
+
+        expect($schema->getData())->toBe($article)
+            ->and($article->title)->toBe('Edited');
     });
 });

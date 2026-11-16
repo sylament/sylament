@@ -6,9 +6,28 @@ namespace Sylament\Tests\Fixtures\Schemas;
 
 use LogicException;
 use Sylament\Actions\Testing\Testable;
+use Symfony\Component\Validator\Validator\ValidatorInterface;
 
 trait SchemasHelpers
 {
+    /**
+     * A record-mapping host holding the container's validator, as the `#[Required]` setter
+     * hands it to a host the container builds.
+     */
+    protected function validatingRecordMappingHost(): RecordMappingHost
+    {
+        $validator = static::getContainer()->get(ValidatorInterface::class);
+
+        if (!$validator instanceof ValidatorInterface) {
+            throw new LogicException("The kernel's validator is not a validator.");
+        }
+
+        $host = new RecordMappingHost();
+        $host->setSchemaStateValidator($validator);
+
+        return $host;
+    }
+
     /**
      * The payload of each `$event` browser event the tester's last response dispatches, in
      * order, read from the events UX writes onto the host's root.

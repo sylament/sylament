@@ -11,12 +11,9 @@ use Sylament\Schemas\Schema;
 use Sylament\Tests\Fixtures\Entity\BerthMooring;
 use Sylament\Tests\Fixtures\Entity\CappedHeadline;
 use Sylament\Tests\Fixtures\Entity\OrderLine;
-use Sylament\Tests\Fixtures\Schemas\RecordMappingHost;
-use Symfony\Component\Validator\Validator\ValidatorInterface;
 
 beforeEach(function (): void {
-    $this->host = new RecordMappingHost();
-    $this->host->setSchemaStateValidator($this::getContainer()->get(ValidatorInterface::class));
+    $this->host = $this->validatingRecordMappingHost();
 });
 
 describe('getValidationConstraints()', function (): void {

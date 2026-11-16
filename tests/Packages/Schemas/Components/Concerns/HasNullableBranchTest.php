@@ -12,13 +12,10 @@ use Sylament\Tests\Fixtures\Schemas\Record\AnnotatedCard;
 use Sylament\Tests\Fixtures\Schemas\Record\CardAddress;
 use Sylament\Tests\Fixtures\Schemas\Record\CardAuthor;
 use Sylament\Tests\Fixtures\Schemas\Record\CatalogueCard;
-use Sylament\Tests\Fixtures\Schemas\RecordMappingHost;
 use Sylament\Tests\Fixtures\Schemas\SubtreeOwningGroup;
-use Symfony\Component\Validator\Validator\ValidatorInterface;
 
 beforeEach(function (): void {
-    $this->host = new RecordMappingHost();
-    $this->host->setSchemaStateValidator($this::getContainer()->get(ValidatorInterface::class));
+    $this->host = $this->validatingRecordMappingHost();
 
     $this->card = new CatalogueCard();
     $this->card->author = new CardAuthor();

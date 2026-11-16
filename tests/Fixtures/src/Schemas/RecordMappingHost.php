@@ -12,8 +12,8 @@ use Sylament\Schemas\Schema;
 /**
  * A schema host outside any request, for the mapping edges between a schema and its
  * record: `mapping()` registers the schema a test hands its components to, bound to the
- * `data` bag. A test wires the validator through the `#[Required]` setter when the
- * validation passes, the record's included, are part of what it asserts.
+ * `data` bag. A test that asserts the validation passes, the record's included, builds it
+ * through `validatingRecordMappingHost()`, which wires the container's validator.
  */
 class RecordMappingHost implements InteractsWithSchemas
 {

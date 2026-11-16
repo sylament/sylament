@@ -18,14 +18,11 @@ use Sylament\Tests\Fixtures\Schemas\Record\CardShade;
 use Sylament\Tests\Fixtures\Schemas\Record\CatalogueCard;
 use Sylament\Tests\Fixtures\Schemas\Record\SealedCard;
 use Sylament\Tests\Fixtures\Schemas\Record\VettedCard;
-use Sylament\Tests\Fixtures\Schemas\RecordMappingHost;
 use Sylament\Tests\Fixtures\Schemas\SubtreeOwningGroup;
 use Symfony\Component\PropertyAccess\Exception\NoSuchPropertyException;
-use Symfony\Component\Validator\Validator\ValidatorInterface;
 
 beforeEach(function (): void {
-    $this->host = new RecordMappingHost();
-    $this->host->setSchemaStateValidator($this::getContainer()->get(ValidatorInterface::class));
+    $this->host = $this->validatingRecordMappingHost();
 });
 
 describe('the binding', function (): void {

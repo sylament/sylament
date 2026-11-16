@@ -18,12 +18,9 @@ use Sylament\Tests\Fixtures\Entity\LighthouseLog;
 use Sylament\Tests\Fixtures\Entity\Product;
 use Sylament\Tests\Fixtures\Entity\Wharf;
 use Sylament\Tests\Fixtures\Entity\WharfCrane;
-use Sylament\Tests\Fixtures\Schemas\RecordMappingHost;
-use Symfony\Component\Validator\Validator\ValidatorInterface;
 
 beforeEach(function (): void {
-    $this->host = new RecordMappingHost();
-    $this->host->setSchemaStateValidator($this::getContainer()->get(ValidatorInterface::class));
+    $this->host = $this->validatingRecordMappingHost();
 });
 
 describe('relationship()', function (): void {

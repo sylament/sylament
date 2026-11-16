@@ -160,7 +160,7 @@ describe('getSchemaComponent()', function (): void {
     })->with([
         'no dot' => ['title'],
         'an unknown schema' => ['missing.title'],
-        'a member of the host contract' => ['makeSchema.title'],
+        'a member of the host contract' => ['validateSchema.title'],
     ]);
 });
 
@@ -306,11 +306,24 @@ describe('validateSchema()', function (): void {
 
         expect($this->dispatchedBrowserEvents($tester, 'form-validation-error'))->toBe([['schemaKey' => 'form']]);
 
-        $tester->fillForm(['code' => 'X1', 'city' => 'Prague'])
+        $tester->fillForm(['city' => 'Prague'])
+            ->assertHasFormErrors(['code'])
+            ->fillForm(['code' => 'X1'])
             ->call('save')
             ->assertHasNoFormErrors()
             ->fillForm(['code' => ''])
             ->assertHasNoFormErrors();
+    });
+
+    it('throws without announcing the failure on a host built outside the container', function (): void {
+        $host = new RecordCheckHost();
+        $host->setSchemaStateValidator($this::getContainer()->get(ValidatorInterface::class));
+
+        $schema = $host->check(new HostPathAlias(), TextInput::make('label')->required());
+
+        expect(fn () => $host->validateSchema($schema))->toThrow(function (ValidationException $exception): void {
+            expect($exception->getErrors())->toBe(['data.label' => ['This value should not be blank.']]);
+        });
     });
 });
 
@@ -390,6 +403,7 @@ describe('validateSchemaRecord()', function (): void {
 
         expect(fn () => $schema->getData())->toThrow(function (ValidationException $exception) use ($itemKey): void {
             expect($exception->getErrors())->toBe(["data.pots.{$itemKey}.bay" => ['This value is already used.']]);
-        });
+        })
+            ->and($this->statementsRun())->toHaveCount(1);
     });
 });

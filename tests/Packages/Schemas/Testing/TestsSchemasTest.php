@@ -55,6 +55,13 @@ describe('assertSchemaStateSet()', function (): void {
 
         expect(fn () => $tester->assertSchemaStateSet(['typo' => 'Anything']))->toThrow(AssertionFailedError::class);
     });
+
+    it('fails naming a hidden component whose state differs', function (): void {
+        $tester = $this->createLiveComponent(ReactiveSchemaForm::class);
+
+        expect(fn () => $tester->assertSchemaStateSet(['secret' => 'changed']))
+            ->toThrow(AssertionFailedError::class, 'Failed asserting that a component [secret] has the expected state');
+    });
 });
 
 describe('default schema', function (): void {

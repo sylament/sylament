@@ -31,7 +31,10 @@ it('resolves a spelling of a backing value to its case, and anything else to no 
 ]);
 
 it('resolves only the canonical decimal spelling of an int backing value', function (string $state): void {
-    expect(new EnumStateCast(IntBackedNumber::class)->get($state))->toBeNull();
+    $cast = new EnumStateCast(IntBackedNumber::class);
+
+    expect($cast->get('1'))->toBe(IntBackedNumber::One)
+        ->and($cast->get($state))->toBeNull();
 })->with(['01', ' 1', '1 ', '+1', '1.0', '1e0']);
 
 it('reads a payload that is neither an int nor a string as no case', function (mixed $state): void {

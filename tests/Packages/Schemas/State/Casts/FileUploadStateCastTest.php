@@ -7,7 +7,9 @@ use Symfony\Component\Uid\Uuid;
 use Symfony\Component\Uid\UuidV4;
 
 it('reads the files as a list when multiple, and the first file otherwise', function (bool $isMultiple, mixed $state, mixed $expected): void {
-    expect(new FileUploadStateCast(isMultiple: $isMultiple)->get($state))->toBe($expected);
+    $cast = $isMultiple ? new FileUploadStateCast(isMultiple: true) : new FileUploadStateCast();
+
+    expect($cast->get($state))->toBe($expected);
 })->with([
     'multiple, keyed files' => [true, ['k1' => 'a.png', 'k2' => 'b.png'], ['a.png', 'b.png']],
     'multiple, one file' => [true, 'a.png', ['a.png']],

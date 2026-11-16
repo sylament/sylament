@@ -28,14 +28,14 @@ it('drops a nested-list or object element and keeps the rest of the selection', 
 });
 
 it('reads and writes blank state as an empty list, or as no selection when nullable', function (bool $isNullable, ?array $expected): void {
-    $cast = new OptionsArrayStateCast(isNullable: $isNullable);
+    $cast = $isNullable ? new OptionsArrayStateCast(isNullable: true) : new OptionsArrayStateCast();
 
     foreach ([null, '', []] as $state) {
         expect($cast->get($state))->toBe($expected)
             ->and($cast->set($state))->toBe($expected);
     }
 })->with([
-    'not nullable' => [false, []],
+    'by default' => [false, []],
     'nullable' => [true, null],
 ]);
 

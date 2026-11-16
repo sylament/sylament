@@ -16,6 +16,14 @@ it('reads blank state as no answer when nullable, and anything else as a bool', 
     'null, not nullable' => [false, null, false],
 ]);
 
+it('reads and writes blank state as no answer, and anything else as a bool, by default', function (): void {
+    $cast = new BooleanStateCast();
+
+    expect($cast->get(''))->toBeNull()
+        ->and($cast->set(''))->toBeNull()
+        ->and($cast->set('1'))->toBe(true);
+});
+
 it('writes blank state as no answer when nullable, and a bool or its int otherwise', function (bool $isNullable, bool $isStoredAsInt, mixed $state, bool|int|null $expected): void {
     expect(new BooleanStateCast(isNullable: $isNullable, isStoredAsInt: $isStoredAsInt)->set($state))->toBe($expected);
 })->with([

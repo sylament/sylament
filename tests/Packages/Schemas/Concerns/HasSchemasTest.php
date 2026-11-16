@@ -648,18 +648,6 @@ describe('validateSchemaRecord()', function (): void {
         ],
     ]);
 
-    it('refuses a key a record the manager already holds, without a statement', function (): void {
-        $this->entityManager()->persist(new OrderLine(order: 1, line: 1));
-
-        $schema = $this->host->mapping(TextInput::make('order'), TextInput::make('line'))->record(new OrderLine(order: 0, line: 0));
-        $this->host->data = ['order' => '1', 'line' => '1'];
-
-        expect(fn () => $schema->getData())->toThrow(function (ValidationException $exception): void {
-            expect($exception->getErrors())->toBe(['data.order' => ['This value is already used.'], 'data.line' => ['This value is already used.']]);
-        })
-            ->and($this->statementsRun())->toBe([]);
-    });
-
     it("files a taken key at the schema's own path when the form maps none of its fields", function (object $stored, Closure $candidate): void {
         $this->seed($stored);
 

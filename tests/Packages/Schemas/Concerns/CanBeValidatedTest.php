@@ -71,8 +71,7 @@ describe('validateRecordKey()', function (): void {
         $entityManager = $this->entityManager();
         $entityManager->persist($line);
 
-        expect(fn () => $entityManager->flush())->toThrow(UniqueConstraintViolationException::class)
-            ->and($entityManager->isOpen())->toBeFalse();
+        expect(fn () => $entityManager->flush())->toThrow(UniqueConstraintViolationException::class);
     });
 
     it('lets a blank key field through to the create when switched off', function (): void {

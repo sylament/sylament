@@ -22,7 +22,7 @@ A dev tool, or the wiring a consuming application installs for itself, is a root
 `league/flysystem` shows all three:
 - `forms` requires `league/flysystem: ^3`, because its upload code writes through `FilesystemOperator` on every save.
 - `support` only suggests `league/flysystem` and `league/flysystem-bundle`. Its `Filesystem\FilesystemRegistry` imports the operator, but support never constructs that service; without flysystem the definition is never instantiated.
-- `league/flysystem-bundle: ^3.7` is a root `require-dev`. The bundle turns configuration into tagged storages, and that wiring belongs to the consuming application. Support's test kernel registers the bundle over two local storages so the tag the registry collects is tested.
+- `league/flysystem-bundle: ^3.7` is a root `require-dev`. The bundle turns configuration into tagged storages, and that wiring belongs to the consuming application. The root suite's kernel registers the bundle over two local storages so the tag the registry collects is tested.
 
 ## The guarded optionals and their pins
 
@@ -34,10 +34,10 @@ A `suggest` is invisible to Composer's own checks, and a renamed contract turns 
 | `actions` | `sylament/tables` | `instanceof InteractsWithTable` in `Testing\TestsActions` | `LogicException` naming the host and the contract when a test names a table record on a host that is not a table | `tests/Packages/Actions/Testing/TestsActionsTest.php` |
 | `actions` | `sylament/notifications` | `class_exists(Notification::class)` in `Concerns\CanNotify` | none: the notification is skipped silently | `tests/Packages/Actions/Concerns/CanNotifyTest.php`, one case per arm, on the root suite's kernel, which registers both bundles |
 | `actions` | `sylament/notifications` | `class_exists(TestsNotifications::class)` in `Testing\Testable`, beside a `class_exists(NotificationRecorder::class)` that skips collecting after each request | `LogicException` naming the package when `assertNotified()` or `assertNotNotified()` runs without it, thrown before either names `TestsNotifications` | the condition, by use: no kernel here lacks the package, and a renamed recorder or matcher dead-ends every `assertNotified()`, which fails `tests/Packages/Actions/DeleteActionTest.php`; the throw itself needs an install without the package, so no test reaches it |
-| `support` | `league/flysystem`, `league/flysystem-bundle` | structural: `FilesystemRegistry` is never built without them | — | `packages/support/tests/Integration/SylamentSupportBundleTest.php` ("collects the flysystem storages by name") |
+| `support` | `league/flysystem`, `league/flysystem-bundle` | structural: `FilesystemRegistry` is never built without them | — | `tests/Packages/Support/Filesystem/FilesystemRegistryTest.php` ("collects the flysystem storages by name") |
 | `tables` | `league/commonmark` | `class_exists(GithubFlavoredMarkdownConverter::class)` in the column and the summarizer `CanFormatState` | `LogicException` naming the package | `packages/tables/tests/Unit/Columns/Concerns/CanFormatStateTest.php`, which reads the guard site, because no install that has the library can reach the other branch |
 | `forms` | `symfony/security-core`, `symfony/security-bundle` | `class_exists(UserPassword::class)` in `TextInput::currentPassword()` | `LogicException` naming both packages | `packages/forms/tests/Integration/Components/TextInputTest.php` |
-| `support` | `symfony/asset-mapper` | `SylamentBundle::isAssetMapperAvailable()` around each bundle's `prependExtension()` | none: the asset path is not registered | no `suggest` entry (see the gaps below) |
+| `support` | `symfony/asset-mapper` | `SylamentBundle::isAssetMapperAvailable()` around each bundle's `prependExtension()` | none: the asset path is not registered | `tests/Packages/Support/SylamentBundleTest.php`, both arms in one case; no `suggest` entry (see the gaps below) |
 
 The rule is to throw where the user opts in. `CanNotify` is the one guard that degrades silently. Filament has no counterpart guard, because `filament/actions` requires `filament/notifications`. `actions` cannot require `sylament/notifications` back, because `notifications` requires `actions`, so the toast arm is a `suggest` behind the guard and its pin needs a kernel that registers both bundles.
 

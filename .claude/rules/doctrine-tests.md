@@ -1,8 +1,6 @@
 ---
 paths:
   - "packages/{actions,forms,panels,schemas,tables}/tests/**"
-  - "packages/support/tests/Unit/Doctrine/**"
-  - "packages/support/tests/Fixtures/Doctrine/**"
 description: The database contract and the shim, helpers and fixtures the five Doctrine suites build on the shared rig.
 ---
 # Doctrine test rules

@@ -22,4 +22,4 @@ owns:
 
 `columnOrder(2)` stores `['lg' => 2]`, while `columnOrder(fn () => 3)` appends the closure under the next integer key, and `getColumnOrder()` files a scalar it evaluates from an integer key under `default`.
 Once any order is set, `getColumnOrder()` returns only the breakpoints that were set, so `columnOrder(2)` reads back as `['lg' => 2]` with no `default` key.
-Filament behaves the same, and [`CanOrderColumnsTest`](../../../packages/support/tests/Unit/Components/Concerns/CanOrderColumnsTest.php) pins both cases.
+Filament behaves the same, and both cases are pinned.

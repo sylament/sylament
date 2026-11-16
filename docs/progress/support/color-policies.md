@@ -101,7 +101,7 @@ Two consequences.
 The `(bg, hover, alternateHover)` candidate list is an ordered preference, not a set of rules: the **last** candidate is the guaranteed fallback for a palette where nothing produces light text, which is how a pale palette like amber ends up painting `bg-400` with `text-900` instead of white on `bg-600`.
 And a text shade of **0** is not a palette shade at all: it means white, emitted as `oklch(1 0 0)` by `getComponentCustomStyles()` and carried by the `sy-text-color-0` family of utilities, which is why the text utilities have one more step than the background ones.
 
-This is also why the regression suite tests the button separately from the other policies: its slots are checked as four `(background, text)` **pairs** (resting, hover, dark, dark hover) in [`PolicyContrastTest`](../../../packages/support/tests/Unit/Colors/Components/PolicyContrastTest.php), rather than slot by slot.
+This is also why the button's contrast is checked separately from the other policies: its slots are checked as four `(background, text)` **pairs** (resting, hover, dark, dark hover), rather than slot by slot.
 
 ## Divergences
 
@@ -153,7 +153,7 @@ That forces the one exception to the repo's private-by-default service rule: eve
 A private service is not reachable through `Container::get()` at all, and the call site has only a class-string: there is no tag or locator to route it through, because the class-string comes from a Twig template, not from a compiled dependency.
 
 Resolving by service id makes **replacing a policy** a supported application-level extension point: an application redefining the service id gets its own `getColorMap()` everywhere the component renders, because Symfony re-applies application definitions after the extension merge (`MergeExtensionConfigurationPass::process()` captures them up front and calls `addDefinitions()` last).
-`Integration/Colors/PolicyOverrideTest` pins both halves (shipped behaviour in the default environment, substituted behaviour in `color_policy`) and fails if the globs stop being `->public()`.
-A redefinition replaces the extension's definition wholesale, `->public()` included, so it must declare itself public or `Container::get()` cannot reach it; the `color_policy` environment in the test [`Kernel`](../../../packages/support/tests/Fixtures/Kernel.php) does exactly that.
+Every support policy is pinned public at each depth support's globs reach, so one of those globs that stops being `->public()` fails; the substitution itself is Symfony's merge order, which no test here pins.
+A redefinition replaces the extension's definition wholesale, `->public()` included, so it must declare itself public or `Container::get()` cannot reach it.
 
 Policies are autowired but **not** autoconfigured and carry no `sylament.component` tag: they are not `Component` subclasses and never go through `make()`.

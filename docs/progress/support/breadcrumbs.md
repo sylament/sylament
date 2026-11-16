@@ -13,7 +13,7 @@ owns:
 It renders one `<nav>` holding an `<ol>` of crumbs, each crumb either a link or a plain label, separated by a direction-aware chevron pair.
 It takes a single `breadcrumbs` prop, a map whose key is the URL and whose value is the label, and the key's kind, not its content, decides whether the crumb links.
 Filament's breadcrumbs Blade has no PHP class behind it, so the port is the view and its stylesheet.
-Panels' [`Header`](../panels/layout-templates.md) renders it, filled from `Page::getBreadcrumbs()`, and the panels suite holds its render tests, because support's fixture kernel registers no TwigComponentBundle.
+Panels' [`Header`](../panels/layout-templates.md) renders it, filled from `Page::getBreadcrumbs()`.
 
 ## Surface
 

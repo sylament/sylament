@@ -136,7 +136,6 @@ It is dev-only. The root `tests/` belongs to no package, so none of it ships in 
 - The architecture tests that scan `packages/*/src` (`StaticAnalysisSuppressionTest`, `DbalParameterTypeDeclarationTest`, `AssociationReaderConstructionTest`) do not see it. The infrastructure is free to use what those checks forbid in shipped code.
 
 The root suite pins the pieces it keeps at their mirrored paths (`tests/Infrastructure/Doctrine/<Class>Test.php`), against the world's database, each only for the behaviour the root suite relies on; `TestEntityManagers`, `RecordingMiddleware` and the pool's per-manager databases get no root pin, since only the per-package suites use them.
-Support's own suite also tests the rig: its tests sit in `tests/Unit/Doctrine/` and its fixtures in `tests/Fixtures/Doctrine/`, mirroring the infrastructure rather than `src/`. Support's fixture kernel boots no Doctrine, so it excludes `Fixtures/Doctrine` from its service glob. Support's `phpunit.dist.xml` registers the pool extension too, because those tests exercise the pool.
 
 ## What is in the rig?
 
@@ -208,11 +207,11 @@ What follows describes the suites under `packages/<pkg>/tests/`, each on its own
 
 Keep that order if the list changes: putting the recorder first would record the `PRAGMA` on every SQLite connection.
 
-### Why are support's Twig components render-tested elsewhere?
+### Which suites render a support Twig component?
 
-Support's fixture kernel registers FrameworkBundle, TwigBundle, UXIconsBundle and FlysystemBundle, but no TwigComponentBundle or StimulusBundle. So support's suite cannot render a `<twig:SylamentSupport:…>` tag. The five packages whose kernels do register TwigComponentBundle (`actions`, `forms`, `panels`, `schemas`, `tables`) render them through their own templates. This is deliberate, and `packages/forms/tests/Integration/Components/InputWrapperRenderTest.php` notes it. Revisit it only if support grows its own Twig-component test kernel.
+The root suite renders every `<twig:SylamentSupport:…>` tag in `tests/Packages/Support/Twig/Components/`. The five per-package suites whose kernels register TwigComponentBundle (`actions`, `forms`, `panels`, `schemas`, `tables`) render them too, through their own templates and tests, so a change to a support component also runs against those suites.
 
-Coverage follows whichever package first needed a component, so no single suite has it all. Derive the current map rather than trusting a written list:
+Which per-package suites reach a component follows whichever package needed it. Derive the current map rather than trusting a written list:
 
 ```bash
 for c in packages/support/templates/components/*/; do

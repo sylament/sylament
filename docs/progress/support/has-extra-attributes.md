@@ -32,4 +32,4 @@ With the same closure merged twice, `getExtraAttributes()` evaluates it twice an
 
 `getExtraAttributes()` folds the entries in order, and each step merges the accumulated bag into the next entry as Laravel-style defaults.
 So `data-owner` set by the first entry survives a second entry setting it again, and `class` from `['class' => 'one']` followed by `['class' => 'two three']` comes out as `['two', 'three', 'one']`.
-Filament folds the same way, and [`HasExtraAttributesTest`](../../../packages/support/tests/Unit/Components/Concerns/HasExtraAttributesTest.php) pins both cases.
+Filament folds the same way, and both cases are pinned.

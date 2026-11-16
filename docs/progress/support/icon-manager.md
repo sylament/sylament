@@ -129,7 +129,7 @@ A package shipping its own *default* aliases has a clean seam regardless: `prepe
 
 **`->normalizeKeys(false)` is load-bearing and its absence is silent.**
 `ArrayNode::preNormalize()` rewrites any key that holds a dash and no underscore, which is the shape of most aliases the toolkit ships, such as `modal.close-button`: the override would register as `modal.close_button`, `resolve()` would never match it, and the app would simply keep seeing the default icon with no error anywhere.
-Two tests in [`SylamentSupportBundleTest`](../../../packages/support/tests/Integration/SylamentSupportBundleTest.php) pin it; both fail if the call is removed.
+A test that configures an override under `modal.close-button` and sees the modal's close icon swap fails if the call is removed.
 
 ### The manager is a process-lifetime singleton, not request-scoped
 

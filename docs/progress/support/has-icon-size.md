@@ -23,4 +23,4 @@ owns:
 
 `iconSize('lg')` stores the string, and `getIconSize()` returns `'lg'` rather than `IconSize::Large`.
 The sibling readers [`getAlignment()`](has-alignment.md) and [`getWeight()`](has-weight.md) normalize a known string to its enum case, so a caller of this one has to accept both shapes.
-Filament's `getIconSize()` is the same, and [`HasIconSizeTest`](../../../packages/support/tests/Unit/Components/Concerns/HasIconSizeTest.php) pins it.
+Filament's `getIconSize()` is the same.

@@ -101,7 +101,7 @@ Changing either would be a design decision about Sylament's default look, not a 
 
 `danger` (Red) is the palette that does not come out clean, and it is Filament's too: a filled danger button fails AA in its hover and dark-hover states at 3.85:1.
 That is not fixable by shade selection: red-500, the shade the candidate list hovers to, admits **no** readable text at all, neither white nor any shade of its own palette, the best being red-950 at 4.34:1.
-Both facts are pinned by exact-list assertions in [`PolicyContrastTest`](../../../packages/support/tests/Unit/Colors/Components/PolicyContrastTest.php), so the pair goes red in either direction; closing it means changing which shades a filled button paints, a visible change to every danger button rather than a port fix.
+The failing pair is pinned by an exact list of the filled button's short states over every catalog palette, so it goes red in either direction; closing it means changing which shades a filled button paints, a visible change to every danger button rather than a port fix.
 
 The CSS floor moves with `DEFAULT_COLORS` and is pinned to it shade by shade by [`CssPaletteFloorTest`](../../../tests/Architecture/CssPaletteFloorTest.php).
 
@@ -145,7 +145,7 @@ Sylament keys on `$component::class`.
 It has to.
 A Sylament policy is a container service holding a `ColorManager`, which holds the container; `serialize()` would walk that whole graph, and `ContainerBuilder` is not serialisable.
 The key is not lossy either, because a policy carries no per-instance state: the one variant Filament expresses as constructor state, the outlined button, is [a subclass here](color-policies.md#the-outlined-button-is-a-subclass-not-a-constructor-flag), so the class *is* the whole identity.
-Pinned by "caches a policy instance apart from a sibling policy sharing its dependencies" in [`ColorManagerTest`](../../../packages/support/tests/Unit/Colors/ColorManagerTest.php).
+A policy instance is pinned to be cached apart from a sibling policy sharing its dependencies.
 
 ### The CSS colour sanitizer is a method on the manager and drops rather than nulls
 

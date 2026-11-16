@@ -97,4 +97,4 @@ It stays a `suggest` because the import is a guarded optional integration of the
 The consumer that needs the library, `sylament/forms`, declares `league/flysystem: ^3` itself.
 
 The cost of a softer link is that no Composer-level check catches a break, so the seam is pinned by a test instead.
-[`SylamentSupportBundleTest`](../../../packages/support/tests/Integration/SylamentSupportBundleTest.php) boots the real `FlysystemBundle` (a root dev dependency) with two `local` storages and asserts the registry collects both by name, so a change to the tag name or its index attribute upstream fails that test rather than the seam quietly returning nothing.
+The root suite's kernel boots the real `FlysystemBundle` (a root dev dependency) with two `local` storages, and a test asserts the registry collects both by name, so a change to the tag name or its index attribute upstream fails that test rather than the seam quietly returning nothing.

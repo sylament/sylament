@@ -196,7 +196,7 @@ Reverses by nesting the rules back under `.sy-fo-field`, a mechanical change whe
 ### Most screen-reader markup still inlines the utility instead of the shared class
 
 Filament's screen-reader class is `.fi-sr-only`, defined in [`support/resources/css/utilities.css`](../../../vendor/filament/support/resources/css/utilities.css) and emitted from several of its packages.
-Sylament's is [`.sy-sr-only`](../../../packages/support/assets/src/styles/utilities.css), filed the same way: a code-less utility in support, on the tier that lets any package name it, held in place by support's [`CssScreenReaderUtilityTest`](../../../packages/support/tests/Architecture/CssScreenReaderUtilityTest.php) because every emitter of it lives in another package.
+Sylament's is [`.sy-sr-only`](../../../packages/support/assets/src/styles/utilities.css), filed the same way: a code-less utility in support, on the tier that lets any package name it, because every emitter of it lives in another package.
 
 The rest of the port's screen-reader markup does not reach it.
 Eight component rules across four packages write `@apply sr-only` into a rule of their own: forms' `.sy-fo-toggle-input`, panels' [`.sy-pa-skip-link`](../../../packages/panels/assets/src/styles/components/layout.css) and `.sy-pa-global-search-label`, schemas' `.sy-sc-section-label-hidden`, `.sy-sc-wizard-header-step-label-hidden` and `.sy-sc-wizard-header-step-status`, and support's hidden `<legend>` under `.sy-fieldset-label-hidden` plus the [`.sy-copyable-live-region`](../../../packages/support/assets/src/styles/components/copyable.css) its clipboard controller mints.

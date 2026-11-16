@@ -35,7 +35,7 @@ The realistic claimant is our own: a concrete bundle named `SylamentBundle` deri
 
 ## Why `normalizeKeys(false)`?
 
-`ArrayNode::preNormalize()` rewrites any key that contains a dash and no underscore, unless the underscored form is already present. An icon alias such as `modal.close-button` would become `modal.close_button` and match nothing, with no error anywhere. `SylamentSupportBundleTest` resolves the underscored form to null for both `icons` and `colors`. The colour node's reasoning is also in `docs/progress/support/color-manager.md`, section "The config node is a variable prototype with key normalisation off".
+`ArrayNode::preNormalize()` rewrites any key that contains a dash and no underscore, unless the underscored form is already present. An icon alias such as `modal.close-button` would become `modal.close_button` and match nothing, with no error anywhere. `SylamentSupportBundleTest` configures a dashed palette name and a dashed icon alias and finds each as written, and the palette under its underscored form nowhere. The colour node's reasoning is also in `docs/progress/support/color-manager.md`, section "The config node is a variable prototype with key normalisation off".
 
 ## How do components reach the container?
 

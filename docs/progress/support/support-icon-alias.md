@@ -38,6 +38,6 @@ The class reaches Filament's constant set once every slot's component ships.
 ### The section alias is a pinned literal, not referenced from the template
 
 Filament's Section blade wires the alias by referencing the constant: `:icon-alias="\Filament\Support\View\SupportIconAlias::SECTION_COLLAPSE_BUTTON"` ([section/index.blade.php](../../../vendor/filament/support/resources/views/components/section/index.blade.php)).
-Sylament's [Section template](../../../packages/support/templates/components/Section/index.html.twig) hardcodes the literal `iconAlias="section.collapse-button"` instead, and [`SupportIconAliasTest`](../../../packages/support/tests/Unit/Twig/SupportIconAliasTest.php) pins the constant to that literal, so for this one slot the class mirrors the alias the template carries rather than being its single source.
+Sylament's [Section template](../../../packages/support/templates/components/Section/index.html.twig) hardcodes the literal `iconAlias="section.collapse-button"` instead, and an override registered under the constant is pinned to swap Section's collapse icon, which holds the constant to that literal, so for this one slot the class mirrors the alias the template carries rather than being its single source.
 The Modal, Pagination, Badge and Breadcrumbs templates do it Filament's way, with `constant('Sylament\\Support\\Twig\\SupportIconAlias::…')`, Twig's equivalent of Blade's constant reference.
 Section reverses by adopting the same `constant()` call.

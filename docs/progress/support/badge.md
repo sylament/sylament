@@ -55,7 +55,7 @@ Gray and empty emit nothing, because the policy implements `HasDefaultGrayColor`
 
 The policy resolves **two** slots, `text` and `dark:text`, and nothing else: the badge's background (`bg-color-50`, `dark:bg-color-400/10`) and ring (`ring-color-600/10`, `dark:ring-color-400/30`) stay hardcoded shades in the stylesheet.
 Filament does the same, and it is defensible for exactly the reason the text slot is not: a 10 %-alpha ring and a shade-50 fill are decorative at any lightness, while the text has to be read.
-[`PolicyContrastTest`](../../../packages/support/tests/Unit/Colors/Components/PolicyContrastTest.php) holds every palette × slot pairing above its declared ratio.
+Every catalog palette's text slot is pinned at 4.5:1 or above against its surface in both modes.
 
 ## Divergences
 

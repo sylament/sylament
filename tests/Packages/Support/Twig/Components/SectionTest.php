@@ -55,9 +55,9 @@ it('draws its icon in the header, large and gray unless sized or coloured, and a
 
 it('takes its variant classes from its props', function (): void {
     expect($this->renderTwigComponent('SylamentSupport:Section', ['heading' => 'Orders', 'contained' => false, 'contentBefore' => true, 'aside' => true, 'compact' => true, 'divided' => true, 'secondary' => true])->crawler())
-        ->toContainElement('section.sy-section' . SupportSelectors::NOT_CONTAINED . '.sy-section-has-header.sy-section-has-content-before.sy-aside.sy-compact.sy-divided.sy-secondary')
+        ->toContainElement('section.sy-section' . SupportSelectors::NOT_CONTAINED . '.sy-section-has-header' . SupportSelectors::CONTENT_BEFORE . SupportSelectors::ASIDE . SupportSelectors::COMPACT . SupportSelectors::DIVIDED . SupportSelectors::SECONDARY)
         ->and($this->renderTwigComponent('SylamentSupport:Section', content: 'Ten orders.')->crawler())
-        ->toContainElement('section.sy-section:not(' . SupportSelectors::NOT_CONTAINED . '):not(.sy-section-has-header):not(.sy-section-has-content-before):not(.sy-aside):not(.sy-compact):not(.sy-divided):not(.sy-secondary):not(.sy-collapsible)', 'Ten orders.');
+        ->toContainElement('section.sy-section:not(' . SupportSelectors::NOT_CONTAINED . '):not(.sy-section-has-header):not(' . SupportSelectors::CONTENT_BEFORE . '):not(' . SupportSelectors::ASIDE . '):not(' . SupportSelectors::COMPACT . '):not(' . SupportSelectors::DIVIDED . '):not(' . SupportSelectors::SECONDARY . '):not(' . SupportSelectors::COLLAPSIBLE . ')', 'Ten orders.');
 });
 
 it('is a disclosure toggled from its header and from a chevron button controlling its body, and none of it unless collapsible', function (): void {
@@ -73,24 +73,24 @@ it('is a disclosure toggled from its header and from a chevron button controllin
     $button = SupportSelectors::SECTION_COLLAPSE_BUTTON . '[data-action="click->sylament--support--section#toggleFromButton"][data-sylament--support--section-target="button"]';
 
     expect($this->renderTwigComponent('SylamentSupport:Section', ['heading' => 'Orders', 'collapsible' => true, 'collapseId' => 'orders', 'contentId' => 'orders-content'], content: 'Ten orders.')->crawler())
-        ->toContainElement('section.sy-section.sy-collapsible' . $section . ' header[data-action="click->sylament--support--section#toggleFromHeader"] h2', 'Orders')
+        ->toContainElement('section.sy-section' . SupportSelectors::COLLAPSIBLE . $section . ' header[data-action="click->sylament--support--section#toggleFromHeader"] h2', 'Orders')
         ->toContainElement($button . '[aria-expanded="true"][aria-controls="orders-content"] svg', 'chevron-up-20-solid')
         ->toContainElement('.sy-section-content-ctn#orders-content[data-sylament--support--section-target="content"]', 'Ten orders.')
         ->and($this->renderTwigComponent('SylamentSupport:Section', ['heading' => 'Orders', 'collapsible' => true, 'persistCollapsed' => true, 'contentId' => 'orders-content'])->crawler())
         ->toContainElement('section.sy-section[data-sylament--support--section-persist-value="true"]:not([data-sylament--support--section-id-value])')
         ->toContainElement($button . '[aria-expanded="true"]:not([aria-controls])', 'chevron-up-20-solid')
         ->and($this->renderTwigComponent('SylamentSupport:Section', ['heading' => 'Orders', 'contentId' => 'orders-content'], content: 'Ten orders.')->crawler())
-        ->toContainElement('section.sy-section:not(.sy-collapsible):not([data-controller]):not([data-action]) header:not([data-action]) h2', 'Orders')
+        ->toContainElement('section.sy-section:not(' . SupportSelectors::COLLAPSIBLE . '):not([data-controller]):not([data-action]) header:not([data-action]) h2', 'Orders')
         ->toContainElement('.sy-section-content-ctn#orders-content:not([data-sylament--support--section-target])', 'Ten orders.')
         ->not->toContainElement('button');
 });
 
 it('is collapsed on first paint only when collapsible', function (): void {
     expect($this->renderTwigComponent('SylamentSupport:Section', ['heading' => 'Orders', 'collapsible' => true, 'collapsed' => true])->crawler())
-        ->toContainElement('section.sy-section.sy-collapsed[data-sylament--support--section-collapsed-value="true"]')
+        ->toContainElement('section.sy-section' . SupportSelectors::COLLAPSED . '[data-sylament--support--section-collapsed-value="true"]')
         ->toContainElement(SupportSelectors::SECTION_COLLAPSE_BUTTON . '[aria-expanded="false"]')
         ->and($this->renderTwigComponent('SylamentSupport:Section', ['heading' => 'Orders', 'collapsed' => true])->crawler())
-        ->toContainElement('section.sy-section:not(.sy-collapsed) h2', 'Orders');
+        ->toContainElement('section.sy-section:not(' . SupportSelectors::COLLAPSED . ') h2', 'Orders');
 });
 
 it('hides its body until its controller connects only when it restores a stored collapsed state', function (): void {

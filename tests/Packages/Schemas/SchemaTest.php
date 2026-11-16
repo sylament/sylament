@@ -71,7 +71,7 @@ describe('render', function (): void {
         ]));
 
         expect($render)
-            ->toContainElement(Selectors::SCHEMA . SupportSelectors::STANDALONE_ROOT . '[data-purpose="billing"][style*="--cols-lg: repeat(3, minmax(0, 1fr))"]')
+            ->toContainElement(Selectors::SCHEMA . SupportSelectors::STANDALONE_ROOT . '[data-purpose="billing"]' . SupportSelectors::columns('lg', 3))
             ->toContainElement('[style*="--col-span-lg: span 2 / span 2"][style*="--col-start-lg: 2"][style*="--col-order-lg: 1"] ' . Selectors::COMPONENT_CELL . ' ' . Selectors::TEXT, 'Wide')
             ->toContainElement(Selectors::COMPONENT_CELL . ' ' . Selectors::TEXT, 'Plain')
             ->and($render->filter(Selectors::COMPONENT_CELL))->toHaveCount(2);

@@ -7,8 +7,9 @@ namespace Sylament\Tests\Fixtures\Support;
 /**
  * The standalone-root marker, and the looks support's components give any area's markup:
  * colour, palette, size, font, alignment, state, button, icon button, icon, link, badge,
- * breadcrumb separator and a section's container, named by the `sy-` class or custom
- * property the stylesheet paints them by; a section's collapse button by its place and its state, whose name changes;
+ * breadcrumb separator and a section's container, variants and collapsibility, named by the `sy-` class or custom
+ * property the stylesheet paints them by; the column counts support's grid gives a schema, by
+ * the custom property the stylesheet lays its grid out by; a section's collapse button by its place and its state, whose name changes;
  * the modal's close, the badge's delete and the pagination's chevron buttons by their
  * names, and a dropdown's teleport by its Stimulus value. A side of the input wrapper is
  * named by its `sy-` class, because which side an affix sits on is the stylesheet's
@@ -45,6 +46,25 @@ final class Selectors
     public const string NO_VERTICAL_ALIGN = ':not([class*="sy-vertical-align-"])';
 
     public const string NOT_CONTAINED = '.sy-section-not-contained';
+
+    public const string ASIDE = '.sy-aside';
+
+    public const string COMPACT = '.sy-compact';
+
+    public const string DIVIDED = '.sy-divided';
+
+    public const string SECONDARY = '.sy-secondary';
+
+    public const string CONTENT_BEFORE = '.sy-section-has-content-before';
+
+    public const string COLLAPSIBLE = '.sy-collapsible';
+
+    public const string COLLAPSED = '.sy-collapsed';
+
+    /**
+     * A grid of one column at every breakpoint: the default map and nothing over it.
+     */
+    public const string ONE_COLUMN = '[style="--cols-default: repeat(1, minmax(0, 1fr))"]';
 
     public const string BUTTON = '.sy-btn';
 
@@ -127,6 +147,11 @@ final class Selectors
     public static function align(string $value): string
     {
         return ".sy-align-{$value}";
+    }
+
+    public static function columns(string $breakpoint, int $count): string
+    {
+        return "[style*=\"--cols-{$breakpoint}: repeat({$count}, minmax(0, 1fr))\"]";
     }
 
     public static function verticalAlign(string $value): string

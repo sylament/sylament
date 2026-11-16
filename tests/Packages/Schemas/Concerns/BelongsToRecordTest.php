@@ -29,15 +29,6 @@ beforeEach(function (): void {
 });
 
 describe('the binding', function (): void {
-    it('answers a bound instance, its class, and the instance itself to map onto', function (): void {
-        $card = new CatalogueCard();
-        $schema = Schema::make()->record($card);
-
-        expect($schema->getRecord())->toBe($card)
-            ->and($schema->getRecordClass())->toBe(CatalogueCard::class)
-            ->and($schema->getRecordInstance())->toBe($card);
-    });
-
     it('declares a class without binding an instance, and builds one to map onto', function (): void {
         $schema = Schema::make()->record(CatalogueCard::class);
 

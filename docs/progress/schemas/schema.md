@@ -219,7 +219,7 @@ Sylament returns `array` only and, when the schema has no state path (top-level 
 
 Filament declares `protected string $cachedAbsoluteStatePath;` and detects a hit with `isset()`, flushing via a public `flushCachedAbsoluteStatePath()` that `unset()`s it (with a phpstan-ignore for `unset.possiblyHookedProperty`).
 Sylament declares `?string $cachedAbsoluteStatePath = null` plus `bool $hasCachedAbsoluteStatePath`, caching through a try/finally that sets value then flag and flushing both through a protected `flushCachedAbsoluteStatePath()`, which only `statePath()` and `getClone()` call, to avoid `unset()` of a typed property and keep PHPStan level max clean without an ignore.
-Behaviourally identical; not provisional.
+Not provisional, and not identical: Sylament's `statePath()` also flushes the cached absolute path, where Filament's flushes nothing, so a schema given a new state path after its absolute path was read binds under the new one.
 
 ### Schema-level afterStateUpdated dispatch moves to the host's PostHydrate pass
 

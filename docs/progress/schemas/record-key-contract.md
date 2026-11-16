@@ -319,14 +319,14 @@ Its caller is the by-key dissociate over a mapped-by spanning several join colum
 So the operands are the class's identifier **columns** in identifier order, as `QuoteStrategy::getIdentifierColumnNames()` names them — quoted only where the mapping quotes them, so an ordinary mapping's statement carries bare `host = ?` — with no alias, and the parameters are bound on the DBAL builder it is handed.
 A DBAL builder carries no entity manager, so the manager is the leading argument, as it is for `chunk()`.
 
-Worked over the schemas fixtures its own test runs on — `Post` (`int $id`), `Redirect` (`host` plus `path`), `PostTranslation` (`#[Id]` `Post` plus `locale`) and `PostSeal` (a single derived identity onto `Post`) — each as the `WHERE` of a real statement:
+Worked over four key shapes — a single integer `id`, two strings `host` plus `path`, an `#[Id]` association `post` onto an integer-keyed record plus a string `locale`, and a single derived identity onto that integer-keyed record — each as the `WHERE` of a real statement:
 
-| Class | `inColumns($entityManager, $query, …, $keys, 'keys')` | Bound |
+| Key shape | `inColumns($entityManager, $query, …, $keys, 'keys')` | Bound |
 | --- | --- | --- |
-| `Post`, keys `1`, `3`, `abc`, `3` | `id IN (:keys)` | `[1, 3]` as `ArrayParameterType::INTEGER` — `abc` dropped, the repeat bound once |
-| `Redirect`, two keys | `((host = :keys_0_0 AND path = :keys_0_1) OR (host = :keys_1_0 AND path = :keys_1_1))` | four `ParameterType::STRING` |
-| `PostTranslation`, two keys | `((post_id = :keys_0_0 AND locale = :keys_0_1) OR (post_id = :keys_1_0 AND locale = :keys_1_1))` — the **join column**, never the field | `INTEGER`, `STRING` per key |
-| `PostSeal`, keys `1`, `2` | `post_id IN (:keys)` | `[1, 2]` as `ArrayParameterType::INTEGER` |
+| a single integer `id`, keys `1`, `3`, `abc`, `3` | `id IN (:keys)` | `[1, 3]` as `ArrayParameterType::INTEGER` — `abc` dropped, the repeat bound once |
+| `host` plus `path`, two keys | `((host = :keys_0_0 AND path = :keys_0_1) OR (host = :keys_1_0 AND path = :keys_1_1))` | four `ParameterType::STRING` |
+| `post` plus `locale`, two keys | `((post_id = :keys_0_0 AND locale = :keys_0_1) OR (post_id = :keys_1_0 AND locale = :keys_1_1))` — the **join column**, never the field | `INTEGER`, `STRING` per key |
+| a derived identity onto the integer-keyed record, keys `1`, `2` | `post_id IN (:keys)` | `[1, 2]` as `ArrayParameterType::INTEGER` |
 | any class, no key, or none well-formed | `1 = 0` | nothing |
 
 **One membership body, two vocabularies.**

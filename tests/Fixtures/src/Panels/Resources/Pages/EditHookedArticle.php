@@ -6,8 +6,8 @@ namespace Sylament\Tests\Fixtures\Panels\Resources\Pages;
 
 use Sylament\Panels\Resources\Pages\EditRecord;
 use Sylament\Tests\Fixtures\Entity\HookedArticle;
-use Sylament\Tests\Fixtures\Panels\HookLog;
 use Sylament\Tests\Fixtures\Panels\Resources\HookedArticleResource;
+use Sylament\Tests\Fixtures\Schemas\HookLog;
 use Symfony\Contracts\Service\Attribute\Required;
 use Symfony\UX\LiveComponent\Attribute\AsLiveComponent;
 

@@ -10,6 +10,8 @@ use Sylament\Schemas\Components\Section;
 use Sylament\Schemas\Concerns\HasSchemas;
 use Sylament\Schemas\Contracts\InteractsWithSchemas;
 use Sylament\Schemas\Schema;
+use Sylament\Schemas\State\Set;
+use Symfony\Contracts\Service\Attribute\Required;
 use Symfony\UX\LiveComponent\Attribute\AsLiveComponent;
 use Symfony\UX\LiveComponent\Attribute\LiveAction;
 use Symfony\UX\LiveComponent\Attribute\LiveProp;
@@ -17,9 +19,10 @@ use Symfony\UX\LiveComponent\DefaultActionTrait;
 
 /**
  * A form whose fields each show one part of the state engine: a group default, a
- * formatted default, a value trimmed for validation only, fields kept out of the saved
- * state, and one sharing its path with a saved one. `fillDefaults()` runs a
- * defaults fill over whatever the bag holds.
+ * formatted default, an update hook writing a field placed before it and asking for that
+ * field's hook, which records in the request's {@see HookLog}, a value trimmed for
+ * validation only, fields kept out of the saved state, and one sharing its path with a
+ * saved one. `fillDefaults()` runs a defaults fill over whatever the bag holds.
  */
 #[AsLiveComponent(name: 'Schemas:StateForm', template: '@Fixtures/schemas/StateForm.html.twig')]
 class StateForm implements InteractsWithSchemas
@@ -32,6 +35,14 @@ class StateForm implements InteractsWithSchemas
      */
     #[LiveProp(writable: true)]
     public array $data = [];
+
+    private HookLog $hookLog;
+
+    #[Required]
+    public function setHookLog(HookLog $hookLog): void
+    {
+        $this->hookLog = $hookLog;
+    }
 
     public function schemas(): array
     {
@@ -50,7 +61,12 @@ class StateForm implements InteractsWithSchemas
                 TextInput::make('nickname')
                     ->default('ada')
                     ->formatStateUsing(static fn (?string $state): string => ucfirst((string) $state)),
-                TextInput::make('title'),
+                TextInput::make('slug')
+                    ->afterStateUpdated(function (?string $state): void {
+                        $this->hookLog->record("slug: {$state}");
+                    }),
+                TextInput::make('title')
+                    ->afterStateUpdated(static fn (Set $set, ?string $state): mixed => $set('slug', mb_strtolower((string) $state), shouldCallUpdatedHooks: true)),
                 TextInput::make('code')
                     ->required()
                     ->mutateStateForValidationUsing(static fn (?string $state): string => mb_trim((string) $state)),

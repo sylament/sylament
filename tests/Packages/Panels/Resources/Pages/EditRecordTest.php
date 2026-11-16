@@ -9,12 +9,12 @@ use Sylament\Tests\Fixtures\Entity\HookedArticle;
 use Sylament\Tests\Fixtures\Entity\Invoice;
 use Sylament\Tests\Fixtures\Entity\InvoiceLine;
 use Sylament\Tests\Fixtures\Entity\OrderLine;
-use Sylament\Tests\Fixtures\Panels\HookLog;
 use Sylament\Tests\Fixtures\Panels\Resources\Pages\EditArticle;
 use Sylament\Tests\Fixtures\Panels\Resources\Pages\EditHookedArticle;
 use Sylament\Tests\Fixtures\Panels\Resources\Pages\EditInvoiceLine;
 use Sylament\Tests\Fixtures\Panels\Resources\Pages\EditOrderLine;
 use Sylament\Tests\Fixtures\Panels\Selectors;
+use Sylament\Tests\Fixtures\Schemas\HookLog;
 
 it('renders the edit page filled with the record', function (): void {
     $this->seed($article = new Article('Draft'));

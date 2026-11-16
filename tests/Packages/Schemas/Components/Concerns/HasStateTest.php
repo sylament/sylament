@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use Sylament\Forms\Components\TextInput;
 use Sylament\Schemas\Components\Group;
+use Sylament\Tests\Fixtures\Schemas\HookLog;
 use Sylament\Tests\Fixtures\Schemas\Selectors;
 use Sylament\Tests\Fixtures\Schemas\StateForm;
 
@@ -56,6 +57,28 @@ describe('dehydration', function (): void {
             ->not->toHaveKey('note')
             ->and(array_key_exists('tag', $empty))->toBeTrue()
             ->and($empty['tag'])->toBeNull();
+    });
+});
+
+describe('afterStateUpdated', function (): void {
+    it('runs the hooks of a field the client changed, and of a field a hook writes with its hooks asked for', function (): void {
+        $tester = $this->createLiveComponent(StateForm::class)
+            ->fillForm(['title' => 'Hello World'])
+            ->assertFormSet(['slug' => 'hello world']);
+
+        expect($this::getContainer()->get(HookLog::class)->hooks)->toBe(['slug: hello world']);
+
+        $tester->fillForm(['slug' => 'by-hand']);
+
+        expect($this::getContainer()->get(HookLog::class)->hooks)->toBe(['slug: by-hand']);
+    });
+
+    it('runs no hook of a field whose value the request left as it was', function (): void {
+        $this->createLiveComponent(StateForm::class)
+            ->fillForm(['title' => 'Hello World'])
+            ->fillForm(['code' => 'X1']);
+
+        expect($this::getContainer()->get(HookLog::class)->hooks)->toBe([]);
     });
 });
 

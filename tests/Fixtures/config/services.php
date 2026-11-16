@@ -16,6 +16,7 @@ return static function (ContainerConfigurator $container): void {
                 '../src/Entity',
                 '../src/*/Record',
                 '../src/*/Selectors.php',
+                '../src/*/Doctrine',
             ]);
 
     $container->services()

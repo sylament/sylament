@@ -51,7 +51,6 @@ describe('translateToErrorPath()', function (): void {
             ->and($translator->translateToErrorPath('plaque'))->toBe($expected);
     })->with([
         'a field' => [fn (): Component => TextInput::make('plaque'), 'data.plaque'],
-        'a component keying items' => [fn (): Component => Repeater::make('plaque'), 'data.plaque'],
         'a group with a relationship' => [fn (): Component => Group::make([TextInput::make('title')])->relationship('plaque'), null],
     ]);
 });

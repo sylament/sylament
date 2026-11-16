@@ -104,7 +104,7 @@ A `null` out of `equals()` **throws**:
 > `The owner [%s] mints the key [%s], which does not decode against its own mapping, so the relationship [%s] cannot be scoped to it — an identifier type that cannot read its own printed form.`
 
 Dropping the scope instead would list every record that has *any* owner, which is the one failure this seam must not have; and the shape that reaches it is the one the codec records for a DBAL type that can neither read back nor take back what it prints, so the message names the cause rather than the width.
-A type that refuses its printed form on read only is not that shape: its key decodes [through the type's writer](record-key.md#a-type-that-refuses-its-printed-form-on-read-only-decodes-it-through-its-own-writer), and an owner with such a half — `Pallet` — scopes both queries on both arms, while `Vault`, whose half refuses it both ways, throws before anything is executed.
+A type that refuses its printed form on read only is not that shape: its key decodes [through the type's writer](record-key.md#a-type-that-refuses-its-printed-form-on-read-only-decodes-it-through-its-own-writer), and an owner with such a half scopes both queries on both arms, while an owner whose half refuses it both ways throws before anything is executed.
 The same refusal fires for an owner whose PHP value is spelled other than its DBAL type prints it — a `bigint` or a decimal held as `'.5'` — which no loaded record carries.
 
 **The negation is `NOT EXISTS`, and that is not cosmetic.**
@@ -122,7 +122,7 @@ A scope that narrowed by **joining** the owner would not survive it: a predicate
 ### A single-identifier owner binds its identifier value, typed by the field's own DBAL type
 
 The parameter a single-identifier owner binds is its identifier **value** under that field's DBAL type, never the owner entity, for a plain **field** mapping and for a single **derived** identity alike, in one arm for both: the value is `RecordKey::values($entityManager, $owner, $ownerClass)[0]` — the codec's own walk, `@internal`, which reduces an identifier association to its target's value at any depth — and the type is `IdentifierFields::of(…)->types[0]`, the **terminal** field's, resolved through the association exactly as the decode resolves it.
-So an owner keyed on a `Post` binds the integer `1` under `integer`, one keyed on a `Listing` that listing's `Sku` under `sku`, and one keyed on a raw-bytes `Crate` its `Uuid` under `binary_uuid`; a `bigint` binds as a string, as Doctrine's own `BigIntType` does.
+So an owner keyed by an integer binds the integer `1` under `integer`, one keyed by an association onto a record keyed by a `Sku` binds that `Sku` under `sku`, and one keyed by a raw-bytes uuid binds its `Uuid` under `binary_uuid`; a `bigint` binds as a string, as Doctrine's own `BigIntType` does.
 `getRecordKey()` runs first, as the gate: it carries the codec's refusals, so an owner with no identifier yet, or one whose target's identifier is blank or unprintable, is refused before anything is bound — and the `?? throw` behind it is there for the type system alone.
 `AssociationReader` is the one class outside `Identity\` that reads the `@internal` `IdentifierFields`, in the same package.
 

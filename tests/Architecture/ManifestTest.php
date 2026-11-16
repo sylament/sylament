@@ -29,6 +29,12 @@ it('requires the three sylament packages its src resolves unconditionally', func
         ->toHaveKey('sylament/support', 'self.version');
 });
 
+it("requires the two sylament packages schemas' src resolves", function (): void {
+    expect(PackageManifest::of('schemas')['require'])
+        ->toHaveKey('sylament/actions', 'self.version')
+        ->toHaveKey('sylament/support', 'self.version');
+});
+
 it('keeps the two guarded integrations as suggestions', function (): void {
     $manifest = PackageManifest::of('actions');
 

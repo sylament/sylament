@@ -38,7 +38,7 @@ The reader rows live in their own files.
 | `actions` AlpineComponent (the sticky actions row) | [`resources/js/components/actions.js`](../../../vendor/filament/schemas/resources/js/components/actions.js) | todo | — | [actions.md](actions.md#sticky-mode-is-not-ported) |
 | [`SchemaIconAlias`](../../../packages/schemas/src/Twig/SchemaIconAlias.php): `COMPONENTS_TABS_DROPDOWN_TRIGGER_BUTTON`, `COMPONENTS_TABS_MORE_TABS_BUTTON`, `COMPONENTS_WIZARD_COMPLETED_STEP` | [`View/SchemaIconAlias.php`](../../../vendor/filament/schemas/src/View/SchemaIconAlias.php) | done | — | [diverges](#the-icon-alias-values-drop-filaments-schema-prefix) |
 | `SchemaIconAlias::COMPONENTS_CALLOUT_DANGER` / `_INFO` / `_SUCCESS` / `_WARNING` | [`View/SchemaIconAlias.php`](../../../vendor/filament/schemas/src/View/SchemaIconAlias.php) | blocked | the unported `Callout` component | — |
-| `composer.json` requires `sylament/actions` | — | in progress | — | [detail](#no-test-pins-the-sylamentactions-require) |
+| `composer.json` requires `sylament/actions` | — | done | — | — |
 | `Make*` commands + stub publishing | [`configurePackage()` / `packageBooted()`](../../../vendor/filament/schemas/src/SchemasServiceProvider.php) | todo | — | [detail](#the-make-commands-and-stub-publishing-are-not-ported) |
 | Translations (`hasTranslations`) | [`configurePackage()`](../../../vendor/filament/schemas/src/SchemasServiceProvider.php) | todo | — | [detail](#the-translations-namespace-is-not-registered) |
 | `validate` / `validateOnly` call abort (`on('call')`) | [`packageBooted()`](../../../vendor/filament/schemas/src/SchemasServiceProvider.php) | skipped | — | [diverges](#livewire-specific-provider-responsibilities-are-dropped-not-ported) |
@@ -46,12 +46,6 @@ The reader rows live in their own files.
 | `Testable::mixin(new TestsSchemas)` | [`packageBooted()`](../../../vendor/filament/schemas/src/SchemasServiceProvider.php) | skipped | — | [diverges](#livewire-specific-provider-responsibilities-are-dropped-not-ported) |
 
 ## Details
-
-### No test pins the `sylament/actions` require
-
-[`packages/schemas/composer.json`](../../../packages/schemas/composer.json) requires `sylament/actions`, because schemas' own source imports `Action` and `ActionGroup` throughout the schemas↔actions integration; the reverse edge and Filament's matching cycle are recorded in [actions-bundle.md](../actions/actions-bundle.md#every-package-declares-what-its-own-source-needs-transitives-notwithstanding).
-The monorepo resolves every package out of one root `vendor/`, so dropping the line fails nothing in the schemas suite and breaks only the split repository.
-What is missing is a manifest test in `tests/Architecture/` asserting the require, the shape actions' [`ManifestTest`](../../../tests/Architecture/ManifestTest.php) has.
 
 ### The `Make*` commands and stub publishing are not ported
 

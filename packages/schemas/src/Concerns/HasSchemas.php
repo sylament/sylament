@@ -34,6 +34,8 @@ use Symfony\UX\LiveComponent\Attribute\PreDehydrate;
 use Symfony\UX\LiveComponent\ComponentToolsTrait;
 use TypeError;
 
+use function Sylament\Support\blank;
+
 trait HasSchemas
 {
     use ComponentToolsTrait;
@@ -465,8 +467,9 @@ trait HasSchemas
     {
         $key = $schema->getParentComponent()?->getKey() ?? $schema->getKey();
 
-        return $key
-            ?? throw new LogicException('Cannot validate a schema without a key — register it through getSchema()/cacheSchema() so it is keyed, or validate a keyed component\'s child schema.');
+        return !blank($key)
+            ? $key
+            : throw new LogicException('Cannot validate a schema without a key — register it through getSchema()/cacheSchema() so it is keyed, or validate a keyed component\'s child schema.');
     }
 
     /**

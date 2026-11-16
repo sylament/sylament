@@ -473,6 +473,12 @@ describe('validateSchema()', function (): void {
             ->and($card->title)->toBe(VettedCard::WITHDRAWN);
     });
 
+    it('refuses to validate a schema registered under no key', function (): void {
+        $schema = $this->host->makeSchema()->statePath('data')->components([TextInput::make('code')->required()]);
+
+        expect(fn () => $this->host->validateSchema($schema))->toThrow(LogicException::class, 'Cannot validate a schema without a key');
+    });
+
     it('brings an error back when a fixed field breaks again before any submit, announcing only the submit', function (): void {
         $tester = $this->createLiveComponent(CodeForm::class)->call('save');
 

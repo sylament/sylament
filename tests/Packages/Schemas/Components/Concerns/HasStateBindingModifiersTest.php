@@ -42,14 +42,14 @@ it('binds each key and value cell at the liveness of the field', function (): vo
 });
 
 it('reports a debounce set on the field or inherited from its container, never one on blur', function (): void {
-    $lazy = TextInput::make('lazy')->lazy();
+    $onBlur = TextInput::make('onBlur')->live(onBlur: true, debounce: 300);
     $debounced = TextInput::make('debounced')->debounce(300);
     $live = TextInput::make('live')->live();
     $inherits = TextInput::make('inherits');
 
-    $this->renderSchemaComponent(Section::make()->components([$lazy, $debounced, $live]));
+    $this->renderSchemaComponent(Section::make()->components([$onBlur, $debounced, $live]));
     $this->renderSchemaComponent(Section::make()->debounce(300)->components([$inherits]));
 
-    expect([$lazy->isLiveDebounced(), $debounced->isLiveDebounced(), $live->isLiveDebounced(), $inherits->isLiveDebounced()])
+    expect([$onBlur->isLiveDebounced(), $debounced->isLiveDebounced(), $live->isLiveDebounced(), $inherits->isLiveDebounced()])
         ->toBe([false, true, false, true]);
 });

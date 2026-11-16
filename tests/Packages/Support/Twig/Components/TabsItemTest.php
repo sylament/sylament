@@ -24,11 +24,11 @@ it('still opens in a new tab when asked as an anchor with no href', function ():
 
 it('marks itself the current tab while active, and the current page as an anchor, and neither while inactive', function (): void {
     expect($this->renderTwigComponent('SylamentSupport:TabsItem', ['active' => true], content: 'Orders')->crawler())
-        ->toContainElement('button.sy-tabs-item.sy-active[aria-current="true"]', 'Orders')
+        ->toContainElement('button.sy-tabs-item' . SupportSelectors::ACTIVE . '[aria-current="true"]', 'Orders')
         ->and($this->renderTwigComponent('SylamentSupport:TabsItem', ['tag' => 'a', 'href' => '/orders', 'active' => true], content: 'Orders')->crawler())
-        ->toContainElement('a.sy-tabs-item.sy-active[aria-current="page"]', 'Orders')
+        ->toContainElement('a.sy-tabs-item' . SupportSelectors::ACTIVE . '[aria-current="page"]', 'Orders')
         ->and($this->renderTwigComponent('SylamentSupport:TabsItem', content: 'Orders')->crawler())
-        ->toContainElement('button.sy-tabs-item:not(.sy-active):not([aria-current])', 'Orders');
+        ->toContainElement('button.sy-tabs-item:not(' . SupportSelectors::ACTIVE . '):not([aria-current])', 'Orders');
 });
 
 it('draws its icon before its label, after it when positioned after, and the icon an application registers under its alias', function (): void {

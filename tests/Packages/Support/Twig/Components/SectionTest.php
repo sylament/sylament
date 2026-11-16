@@ -95,11 +95,11 @@ it('is collapsed on first paint only when collapsible', function (): void {
 
 it('hides its body until its controller connects only when it restores a stored collapsed state', function (): void {
     expect($this->renderTwigComponent('SylamentSupport:Section', ['collapsible' => true, 'persistCollapsed' => true], content: 'Ten orders.')->crawler())
-        ->toContainElement('.sy-section-content-ctn.sy-cloak', 'Ten orders.')
+        ->toContainElement('.sy-section-content-ctn' . SupportSelectors::CLOAK, 'Ten orders.')
         ->and($this->renderTwigComponent('SylamentSupport:Section', ['collapsible' => true, 'collapsed' => true], content: 'Ten orders.')->crawler())
-        ->toContainElement('.sy-section-content-ctn:not(.sy-cloak)', 'Ten orders.')
+        ->toContainElement('.sy-section-content-ctn:not(' . SupportSelectors::CLOAK . ')', 'Ten orders.')
         ->and($this->renderTwigComponent('SylamentSupport:Section', ['persistCollapsed' => true], content: 'Ten orders.')->crawler())
-        ->toContainElement('.sy-section-content-ctn:not(.sy-cloak)', 'Ten orders.');
+        ->toContainElement('.sy-section-content-ctn:not(' . SupportSelectors::CLOAK . ')', 'Ten orders.');
 });
 
 it('is labelled by its heading and described by its description through the ids it is given, and by neither without them', function (): void {

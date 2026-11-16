@@ -87,10 +87,10 @@ it('renders as a focusable group its header button names, active on the start st
     $panel = 'div' . Selectors::WIZARD_STEP . '[tabindex="0"][data-sylament--schemas--wizard-target="step"][data-action="expand->sylament--schemas--wizard#expand"]';
 
     expect($wizard)->toContainElement(Selectors::WIZARD_STEP_BUTTON . '[id="schema.review::data::wizard-step-tab"]', 'check 02 Review')
-        ->toContainElement($panel . '.sy-active[id="schema.review::data::wizard-step"][aria-labelledby="schema.review::data::wizard-step-tab"]:not([aria-label])')
-        ->toContainElement($panel . ':not(.sy-active)[id="schema.account::data::wizard-step"][aria-labelledby="schema.account::data::wizard-step-tab"]')
+        ->toContainElement($panel . SupportSelectors::ACTIVE . '[id="schema.review::data::wizard-step"][aria-labelledby="schema.review::data::wizard-step-tab"]:not([aria-label])')
+        ->toContainElement($panel . ':not(' . SupportSelectors::ACTIVE . ')[id="schema.account::data::wizard-step"][aria-labelledby="schema.account::data::wizard-step-tab"]')
         ->and($this->renderSchemaComponent(Wizard::make([Step::make('Account')])->hiddenHeader()))
-        ->toContainElement($panel . '.sy-active[aria-label="Account"]:not([aria-labelledby])');
+        ->toContainElement($panel . SupportSelectors::ACTIVE . '[aria-label="Account"]:not([aria-labelledby])');
 });
 
 it('refuses to render outside a wizard, naming both classes', function (): void {

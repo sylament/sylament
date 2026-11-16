@@ -49,18 +49,18 @@ describe('client mode', function (): void {
         expect($this->renderSchemaComponent(Tabs::make('Orders')->tabs($tabs())))
             ->toContainElement(Selectors::TAB . '[aria-selected="true"]', 'Open')
             ->toContainElement(Selectors::TAB . '[aria-selected="false"]', 'Closed')
-            ->toContainElement(Selectors::TAB_PANEL . '.sy-active', 'Awaiting dispatch')
-            ->toContainElement(Selectors::TAB_PANEL . ':not(.sy-active)', 'Delivered')
+            ->toContainElement(Selectors::TAB_PANEL . SupportSelectors::ACTIVE, 'Awaiting dispatch')
+            ->toContainElement(Selectors::TAB_PANEL . ':not(' . SupportSelectors::ACTIVE . ')', 'Delivered')
             ->and($this->renderSchemaComponent(Tabs::make('Orders')->activeTab(2)->tabs($tabs())))
             ->toContainElement(Selectors::TABS . '[data-sylament--schemas--tabs-active-tab-value="2"]')
             ->toContainElement(Selectors::TAB . '[aria-selected="true"]', 'Closed')
             ->toContainElement(Selectors::TAB . '[aria-selected="false"]', 'Open')
-            ->toContainElement(Selectors::TAB_PANEL . '.sy-active', 'Delivered');
+            ->toContainElement(Selectors::TAB_PANEL . SupportSelectors::ACTIVE, 'Delivered');
     });
 
     it('wires the tabs controller to its nav, its tabs and its panels', function (): void {
         expect($this->renderSchemaComponent(Tabs::make('Orders')->tabs([Tab::make('Open')->components([Text::make('Awaiting dispatch')])])))
-            ->toContainElement(Selectors::TABS . '.sy-contained[data-controller="sylament--schemas--tabs"][data-sylament--schemas--tabs-schema-key-value="schema"][data-action~="reset-schema-component-state@window->sylament--schemas--tabs#resetState"]')
+            ->toContainElement(Selectors::TABS . SupportSelectors::CONTAINED . '[data-controller="sylament--schemas--tabs"][data-sylament--schemas--tabs-schema-key-value="schema"][data-action~="reset-schema-component-state@window->sylament--schemas--tabs#resetState"]')
             ->toContainElement('nav[role="tablist"][data-sylament--schemas--tabs-target="nav"]')
             ->toContainElement(Selectors::TAB . '[data-sylament--schemas--tabs-target="tab"][data-action="click->sylament--schemas--tabs#select"][data-tab-key="open::data::tab"][aria-controls="schema.open::data::tab"]', 'Open')
             ->toContainElement(Selectors::TAB_PANEL . '[data-sylament--schemas--tabs-target="panel"][data-action="expand->sylament--schemas--tabs#expand"]', 'Awaiting dispatch');
@@ -79,7 +79,7 @@ describe('client mode', function (): void {
 
     it('stacks its tab strip vertically when told', function (): void {
         expect($this->renderSchemaComponent(Tabs::make('Orders')->vertical()->tabs([Tab::make('Open')])))
-            ->toContainElement(Selectors::TABS . '.sy-vertical nav.sy-vertical[role="tablist"]', 'Open');
+            ->toContainElement(Selectors::TABS . SupportSelectors::VERTICAL . ' nav' . SupportSelectors::VERTICAL . '[role="tablist"]', 'Open');
     });
 
     it('folds its tabs into an overflow dropdown when not scrollable, and keeps them all in the strip otherwise', function (): void {
@@ -100,11 +100,11 @@ describe('client mode', function (): void {
 
     it('hides itself until its controller has restored a persisted tab, and only then', function (): void {
         expect($this->renderSchemaComponent(Tabs::make('Orders')->persistTab()->tabs([Tab::make('Open')])))
-            ->toContainElement(Selectors::TABS . '.sy-cloak', 'Open')
+            ->toContainElement(Selectors::TABS . SupportSelectors::CLOAK, 'Open')
             ->and($this->renderSchemaComponent(Tabs::make()->persistTab()->tabs([Tab::make('Open')])))
-            ->toContainElement(Selectors::TABS . ':not(.sy-cloak)', 'Open')
+            ->toContainElement(Selectors::TABS . ':not(' . SupportSelectors::CLOAK . ')', 'Open')
             ->and($this->renderSchemaComponent(Tabs::make('Orders')->tabs([Tab::make('Open')])))
-            ->toContainElement(Selectors::TABS . ':not(.sy-cloak)', 'Open');
+            ->toContainElement(Selectors::TABS . ':not(' . SupportSelectors::CLOAK . ')', 'Open');
     });
 });
 
@@ -176,7 +176,7 @@ describe('server mode', function (): void {
         $tester = $this->createLiveComponent(PropertyDrivenTabsHost::class);
 
         expect($tester->render()->crawler())
-            ->toContainElement(Selectors::TABS . ':not([data-controller]):not(.sy-cloak)')
+            ->toContainElement(Selectors::TABS . ':not([data-controller]):not(' . SupportSelectors::CLOAK . ')')
             ->toContainElement(Selectors::TAB . '[aria-selected="true"][data-action="live#update"][data-model="activeTab"][data-value="open"][data-loading="addAttribute(disabled)"]', 'Open 7')
             ->toContainElement(Selectors::TAB . '[aria-selected="false"][data-action="live#update"][data-model="activeTab"][data-value="closed"]', 'Archived')
             ->toContainElement(Selectors::TAB . ' ' . SupportSelectors::BADGE, '7')

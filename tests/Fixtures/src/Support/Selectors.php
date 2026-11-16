@@ -7,7 +7,8 @@ namespace Sylament\Tests\Fixtures\Support;
 /**
  * The standalone-root marker, and the looks support's components give any area's markup:
  * colour, palette, size, font, alignment, state, button, icon button, icon, link, badge,
- * breadcrumb separator, a fieldset with its hidden label and required mark, and a section's container, variants and collapsibility, named by the `sy-` class or custom
+ * breadcrumb separator, a fieldset with its hidden label and required mark, a section's container, variants and collapsibility, a tabs
+ * layout, the active tab or step, and the cloak a persisted state hides behind until its controller connects, named by the `sy-` class or custom
  * property the stylesheet paints them by; the column counts, spans, starts and orders support's grid gives a schema, by
  * the custom property the stylesheet lays its grid out by; a section's Stimulus controller and the values it reads; a section's collapse button by its place and its state, whose name changes;
  * the modal's close, the badge's delete and the pagination's chevron buttons by their
@@ -61,6 +62,14 @@ final class Selectors
 
     public const string COLLAPSED = '.sy-collapsed';
 
+    public const string CONTAINED = '.sy-contained';
+
+    public const string VERTICAL = '.sy-vertical';
+
+    public const string ACTIVE = '.sy-active';
+
+    public const string CLOAK = '.sy-cloak';
+
     public const string SECTION_CONTROLLER = '[data-controller="sylament--support--section"]';
 
     public const string FIELDSET = '.sy-fieldset';
@@ -73,6 +82,11 @@ final class Selectors
      * A grid of one column at every breakpoint: the default map and nothing over it.
      */
     public const string ONE_COLUMN = '[style="--cols-default: repeat(1, minmax(0, 1fr))"]';
+
+    /**
+     * A cell given a column span at any breakpoint.
+     */
+    public const string ANY_COLUMN_SPAN = '[style*="--col-span-"]';
 
     public const string BUTTON = '.sy-btn';
 
@@ -162,9 +176,18 @@ final class Selectors
         return "[style*=\"--cols-{$breakpoint}: repeat({$count}, minmax(0, 1fr))\"]";
     }
 
-    public static function columnSpan(string $breakpoint, int $span): string
+    /**
+     * A cell spanning a number of columns at a breakpoint, the full row when told `full`, or any span there without a span.
+     *
+     * @param int|'full'|null $span
+     */
+    public static function columnSpan(string $breakpoint, int|string|null $span = null): string
     {
-        return "[style*=\"--col-span-{$breakpoint}: span {$span} / span {$span}\"]";
+        return match ($span) {
+            null => "[style*=\"--col-span-{$breakpoint}:\"]",
+            'full' => "[style*=\"--col-span-{$breakpoint}: 1 / -1\"]",
+            default => "[style*=\"--col-span-{$breakpoint}: span {$span} / span {$span}\"]",
+        };
     }
 
     public static function columnStart(string $breakpoint, int $column): string

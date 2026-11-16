@@ -22,8 +22,8 @@ it('renders its panel as a tabpanel named by its tab button, active while its ta
         Tab::make('Closed')->components([Text::make('Delivered')]),
     ])))
         ->toContainElement(Selectors::TAB . '[id="schema.open::data::tab-tab"][aria-controls="schema.open::data::tab"]', 'Open')
-        ->toContainElement(Selectors::TAB_PANEL . '[id="schema.open::data::tab"][aria-labelledby="schema.open::data::tab-tab"][data-tab-key="open::data::tab"].sy-active', 'Awaiting dispatch')
-        ->toContainElement(Selectors::TAB_PANEL . '[aria-labelledby="schema.closed::data::tab-tab"][data-tab-key="closed::data::tab"]:not(.sy-active)', 'Delivered');
+        ->toContainElement(Selectors::TAB_PANEL . '[id="schema.open::data::tab"][aria-labelledby="schema.open::data::tab-tab"][data-tab-key="open::data::tab"]' . SupportSelectors::ACTIVE, 'Awaiting dispatch')
+        ->toContainElement(Selectors::TAB_PANEL . '[aria-labelledby="schema.closed::data::tab-tab"][data-tab-key="closed::data::tab"]:not(' . SupportSelectors::ACTIVE . ')', 'Delivered');
 });
 
 it('keeps its tab button but renders no panel when everything it holds is hidden', function (): void {

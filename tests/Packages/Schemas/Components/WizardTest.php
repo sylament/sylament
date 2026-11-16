@@ -36,7 +36,7 @@ describe('render', function (): void {
         ]));
 
         expect($wizard)->toContainButtons(Selectors::WIZARD_STEP_BUTTON, ['check 01 Account Completed', 'check 02 Address'])
-            ->toContainElement(Selectors::WIZARD_STEP . '.sy-active[data-step-key="schema.address::data::wizard-step"]')
+            ->toContainElement(Selectors::WIZARD_STEP . SupportSelectors::ACTIVE . '[data-step-key="schema.address::data::wizard-step"]')
             ->and($wizard->filter(Selectors::WIZARD_STEP)->count())->toBe(2)
             ->and($wizard->filter(Selectors::WIZARD)->text())->not->toContain('Three short steps');
     });
@@ -83,10 +83,10 @@ describe('render', function (): void {
         $wizard = $this->renderSchemaComponent(Wizard::make([Step::make('Account'), Step::make('Address'), Step::make('Review')])->startOnStep(2));
 
         expect($wizard)->toContainElement(Selectors::WIZARD . '[data-sylament--schemas--wizard-start-step-value="2"]')
-            ->toContainElement('li.sy-completed:not(.sy-active) ' . Selectors::WIZARD_STEP_BUTTON . ':not([disabled]):not([aria-current])', 'check 01 Account Completed')
-            ->toContainElement('li.sy-active:not(.sy-completed) ' . Selectors::WIZARD_STEP_BUTTON . '[disabled][aria-current="step"]', 'check 02 Address')
-            ->toContainElement('li:not(.sy-active):not(.sy-completed) ' . Selectors::WIZARD_STEP_BUTTON . '[disabled]:not([aria-current])', 'check 03 Review Not completed')
-            ->and($wizard->filter(Selectors::WIZARD_STEP . '.sy-active')->each(static fn (Crawler $panel): ?string => $panel->attr('data-step-key')))
+            ->toContainElement('li.sy-completed:not(' . SupportSelectors::ACTIVE . ') ' . Selectors::WIZARD_STEP_BUTTON . ':not([disabled]):not([aria-current])', 'check 01 Account Completed')
+            ->toContainElement('li' . SupportSelectors::ACTIVE . ':not(.sy-completed) ' . Selectors::WIZARD_STEP_BUTTON . '[disabled][aria-current="step"]', 'check 02 Address')
+            ->toContainElement('li:not(' . SupportSelectors::ACTIVE . '):not(.sy-completed) ' . Selectors::WIZARD_STEP_BUTTON . '[disabled]:not([aria-current])', 'check 03 Review Not completed')
+            ->and($wizard->filter(Selectors::WIZARD_STEP . SupportSelectors::ACTIVE)->each(static fn (Crawler $panel): ?string => $panel->attr('data-step-key')))
             ->toBe(['schema.address::data::wizard-step']);
     });
 

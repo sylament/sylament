@@ -1,0 +1,5 @@
+<twig:SylamentForms:FieldWrapper :field="component" :labelAsHeading="heading">
+    <twig:block name="labelPrefix">{{ prefix }}</twig:block>
+    <twig:block name="labelSuffix">{{ suffix }}</twig:block>
+    <twig:block name="content"><input type="text" id="{{ component.getId }}"></twig:block>
+</twig:SylamentForms:FieldWrapper>

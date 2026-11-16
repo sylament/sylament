@@ -1,0 +1,12 @@
+<twig:SylamentForms:FieldWrapper :field="component">
+    <twig:SylamentSupport:InputWrapper :disabled="component.isDisabled" :valid="component.getErrorMessages is empty">
+        <input {{ attrs({
+            class: 'sy-fo-input',
+            type: 'text',
+            id: component.getId,
+            'data-model': component.getDataModel,
+            value: component.getState ?? '',
+        }) }}>
+        {% if note is defined %}<span>{{ note }}</span>{% endif %}
+    </twig:SylamentSupport:InputWrapper>
+</twig:SylamentForms:FieldWrapper>

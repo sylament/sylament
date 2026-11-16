@@ -8,7 +8,7 @@ namespace Sylament\Tests\Fixtures\Schemas;
  * A schema's root, the root of one a live host renders as its own, which carries the
  * schema's Stimulus controller, a schema carrying none, its gap, density and inline
  * layout, and the cells its children and its actions sit in, a growing one included; the roots of schemas'
- * layout, prose and icon components, named by the `sy-sc-` class that marks each, for an area
+ * layout, prose, icon and action-row components, named by the `sy-sc-` class that marks each, for an area
  * asserting what a trait puts on them; a section's content schema, the child schema a
  * component's gap, density and columns reach, which the schema every render wraps a
  * component in would otherwise answer for; and a control bound to a state path, by the
@@ -43,6 +43,8 @@ final class Selectors
     public const string TEXT = '.sy-sc-text';
 
     public const string ICON = '.sy-sc-icon';
+
+    public const string ACTIONS = '.sy-sc-actions';
 
     public const string SECTION_CONTENT = '.sy-sc.sy-section-content';
 

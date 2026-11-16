@@ -89,7 +89,7 @@ So the schemas host contract gains `getSchemasHostId()`, implemented on [`HasSch
 This is a verbatim copy of tables' [`getTableHostId()`](../tables/has-table.md), which solved the identical problem for row and cell morph keys, and it is why `getLiveComponentKey()` is `{host id}.{absolute key}` rather than `{live id}.{absolute key}`.
 
 `getLiveComponentKey()` answers `null` on both empty arms, no live host or no key, as Filament's `blank($key)` guard does.
-The emptiness test is spelled `=== null || === ''` rather than `blank()` so PHPStan narrows the value at level max; the two part only over a whitespace-only key, which the key sanitizer keeps (it strips quotes, angle brackets, backticks and control characters, not spaces), so the port keys such an embed where Filament treats it as keyless.
+The emptiness test is spelled `=== null || === ''` rather than `blank()` so PHPStan narrows the value at level max; the two never part, because `getKey()` already answers `null` for a blank key, a whitespace-only one included, so such an embed is keyless and throws, as in Filament.
 The schema-level `HasKey` has no `getLiveComponentKey()`; [schema.md](schema.md#haskey-ports-the-schema-key-chain-minus-the-state-path-fallback) tracks it.
 
 ### The mount is a Twig frame, not a PHP call

@@ -89,7 +89,7 @@ Built with `new`, each would drop a subclassed `sylament_schemas.association_rea
 A reader taking its manager per call instead — or resolving one from a `ManagerRegistry` per class — is deferred indefinitely.
 The record check runs inside `getData()`, through `InteractsWithSchemas::validateSchemaRecord()`, and only the caller knows which manager it will flush through, so a per-call manager would have to change that host contract; and a registry answers the first manager whose mapping knows a class, so it cannot pick a second manager over the same mapping — the shape a table whose `query()` runs on another manager has ([below](#what-the-taken-key-probe-cannot-see)).
 
-Pinned by [`AssociationReaderWithEntityManagerTest`](../../../packages/schemas/tests/Unit/State/AssociationReaderWithEntityManagerTest.php): a clone bound to the manager with the original untouched, the accessor kept, a subclass and its own constructor argument kept, a bound reader rebound, and the manager used for real — a key moved on a record a second manager keeps is refused only by the reader rebound to that manager.
+Pinned: a copy of the reader's own class bound to the manager, a subclass and its own constructor argument kept, the reader it came from left unbound, and the bound manager used for real while the original keeps its own.
 
 ### A null target means "no Doctrine answer", not "no such property"
 
@@ -132,7 +132,7 @@ So `05`, ` 5`, `5abc` and `1~2` against a one-field class each name no record at
 
 Where a DBAL type's `convertToPHPValue()` reads only the database form, a strict decode would refuse the very key `getRecordKey()` minted, and a relation-backed `Select`, `CheckboxList` or by-key `DetachBulkAction` over that type would fail.
 The codec reads such a component back [through the type's own writer](record-key.md#a-type-that-refuses-its-printed-form-on-read-only-decodes-it-through-its-own-writer), so the key decodes and the reference is taken — built at zero statements where every identifier field is scalar, loaded at one behind a single derived identity.
-What stays refused is the type that refuses its printed form on **write** too — [the doubly-strict shape](record-key.md#a-type-that-cannot-read-its-own-printed-form-mints-keys-that-never-decode) — by construction rather than by omission, at zero statements ([`AssociationReaderCompositeKeyTest`](../../../packages/schemas/tests/Unit/State/AssociationReaderCompositeKeyTest.php) pins both).
+What stays refused is the type that refuses its printed form on **write** too — [the doubly-strict shape](record-key.md#a-type-that-cannot-read-its-own-printed-form-mints-keys-that-never-decode) — by construction rather than by omission, at zero statements (both pinned).
 
 **Then `find()` where any identifier field is an association, and `getReference()` everywhere else.**
 The predicate is `array_any($metadata->identifier, $metadata->hasAssociation(...))` — never `isIdentifierComposite`, which is false for a **single derived identity** and so misses one of the three flavours that need the loading route.
@@ -212,8 +212,6 @@ The last is a derived-identity child of an owner created in the same flush.
 `RecordKey::find()` reads it as null too, but Doctrine defers the child's key to the owner's insert, so refusing it would refuse a working create.
 That exemption holds only while no scalar identifier field is blank: a blank string half beside a pending owner answers `true`, since the flush would write it as `''`.
 
-Pinned by [`AssociationReaderBlankIdentifierTest`](../../../packages/schemas/tests/Unit/State/AssociationReaderBlankIdentifierTest.php).
-
 ### A new record's blank key fields are the record check's candidates
 
 `findBlankAssignedIdentifiers(object $record)` answers every field a new record's blank assigned key could be refused under, keyed by property path, in the order the record check picks from: each identifier field holding a blank string — null, empty or whitespace-only — then each identifier association left unset, or onto a record whose own assigned key is blank.
@@ -223,7 +221,6 @@ The record check refuses under the first candidate a component of the schema map
 It answers nothing for a record the unit of work already holds, for a generated identifier and for a single scalar one, and a target whose identifier is generated is never blank here.
 It reads the record's fields rather than [`hasIncompleteAssignedIdentifier()`](#an-incomplete-assigned-identifier-is-the-question-the-create-paths-ask), so a `prePersist` callback or entity listener the class declares changes nothing: a key field the form maps is the user's to fill.
 It does not ask that predicate first, whose short-circuits would exempt such a class, and it falls back to no other field when no candidate matches, since an empty list means nothing is blank.
-Pinned by [`HasSchemasIdentifierGuardTest`](../../../packages/schemas/tests/Integration/Concerns/HasSchemasIdentifierGuardTest.php).
 
 ### A changed identifier is put back and refused, and costs no statement
 
@@ -244,7 +241,7 @@ The restore is load-bearing rather than tidy: without it a flush later in the sa
 It runs no statement; the walk costs about 3 µs per loaded managed record per save, measured as an unchanged save of a record holding 5 000 loaded children taking 16 ms against 0.02 ms without it.
 Its limit is the walk's: a key written into a related record **nobody loaded** is not seen, and is Doctrine's to drop — it writes the raw identifier, and a later load overwrites it.
 
-Pinned by [`AssociationReaderChangedIdentifierTest`](../../../packages/schemas/tests/Unit/State/AssociationReaderChangedIdentifierTest.php) — every shape the rigs seed untouched, the same key in another type, the skipped states, the paths through a collection, a to-one and a cycle, the unloaded proxy and collection, and the named `LogicException`.
+Pinned over both composite flavours: a changed key put back at no statement, the same key in another PHP type and another spelling its column stores alike, the paths through a loaded collection and a loaded to-one, a cleared key association, nothing loaded that the record has not loaded, and the skipped states.
 
 ### A taken identifier is looked up once per new record, after the record's own constraints pass
 
@@ -271,8 +268,8 @@ The record check calls it **only when** the changed-key pass and the record's ow
 The cost is one primary-key `SELECT` per new assigned-key record, none when the holder is managed, none for a generated id — so a save adding 200 assigned-key repeater items runs 200.
 Batching it per class through [`IdentifierConstraint::in()`](record-key-contract.md#the-operations-and-their-dql) is the known remedy, and is not built for a cost nobody has met.
 
-Pinned by [`AssociationReaderTakenIdentifierTest`](../../../packages/schemas/tests/Unit/State/AssociationReaderTakenIdentifierTest.php): a stored, a managed and a persisted-unflushed holder, a free key after one `SELECT`, the sibling claim under a stored and a new owner, the cascade-only walk, the generated id, blank and `null` components, the unflushed association half, the record itself, both inheritance hierarchies through their root, and the placement over every shape, every field of a scalar pair or triple included ([`AssociationReaderKeyShapesTest`](../../../packages/schemas/tests/Unit/State/AssociationReaderKeyShapesTest.php) beside it).
-The host's half — keeping the mapped fields, else the first — by [`HasSchemasTakenKeyPlacementTest`](../../../packages/schemas/tests/Integration/Concerns/HasSchemasTakenKeyPlacementTest.php) and forms' [`TakenKeyPlacementTest`](../../../packages/forms/tests/Integration/Components/TakenKeyPlacementTest.php): both halves, one, neither, a derived identity's scalar half, two of three, a hidden half that carries the message while only the visible one shows it, and a relationship repeater's items each under their own halves.
+Pinned: a stored, a managed and a persisted-unflushed holder, a free key after one `SELECT`, the sibling claim under a stored and a new owner, a spelling its column stores alike, a holder a SQL filter hides, a detached record read as a new one, the generated id, blank and `null` components, a key half that prints blank, a hierarchy through its root, and the placement of a key with no scalar field.
+The host's half — keeping the mapped fields, else the first — is pinned on the host and by forms' [`TakenKeyPlacementTest`](../../../packages/forms/tests/Integration/Components/TakenKeyPlacementTest.php): both halves, one, neither, a derived identity's scalar half, two of three, a hidden half that carries the message while only the visible one shows it, and a relationship repeater's items each under their own halves.
 
 ### What the taken-key probe cannot see
 
@@ -385,7 +382,7 @@ The pair is the trait [`CanAccessAssociations`](../../../packages/schemas/src/Co
 It keeps the `Components/Concerns/` namespace under the repo's placement rule: a trait a component uses at all lives there, whether or not something else uses it too.
 
 The root [`Schema`](schema.md) composes it as well, beside `CanAccessProperties`, so the host's record check reaches the reader through the schema it validates — `$schema->getAssociationReader()` — and no host contract changed for it.
-A schema built with `new` holds the manager-less fallback and so guards nothing, the standing `#[Required]` trade; every host builds its schemas through the container, and [`HasSchemasIdentifierGuardTest`](../../../packages/schemas/tests/Integration/Concerns/HasSchemasIdentifierGuardTest.php) pins both faces.
+A schema built with `new` holds the manager-less fallback and so guards nothing, the standing `#[Required]` trade; every host builds its schemas through the container, and both faces are pinned.
 
 The blast radius is worth stating because it is wider than it looks.
 `BelongsToRecord` sits on the base `Component`, so **every** schemas component — and every component of every package built on schemas — consumes the reader service.

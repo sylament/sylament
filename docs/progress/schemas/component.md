@@ -118,7 +118,7 @@ The null-write cannot stand alone, and that is what `$hydratedDefaultState` is f
 It is a by-ref record, threaded through the whole walk by the [`Schema`](schema.md)-level `hydrateState()`, of every default already written, keyed by absolute state path; a component whose path the record already covers returns untouched.
 Without it, a container's default is destroyed by its own children: `Group::make([...])->statePath('author')->default(['name' => 'Ada'])` writes the whole map, and then the defaultless `author.name` inside it — visited next, because `getFlatComponents()` is parent-first — nulls the very key the parent just filled.
 With the record, `author.name` is already covered and skips; its sibling `author.surname`, which the parent default never mentioned, is not covered and still nulls.
-Both halves are pinned in [Unit/Concerns/HasStateTest](../../../packages/schemas/tests/Unit/Concerns/HasStateTest.php).
+Both halves are pinned.
 
 What the record cannot protect is a container whose child paths are *derived from the state the default replaces* — a repeater, whose item schemas the flat walk materialised before the default rewrote their keys: those children sit at paths the new default never mentions, so the record waves them through and their null-writes rebuild the items the default just dropped ([the repeater divergence](../forms/repeater.md#a-defaults-fill-over-a-populated-repeater-resurrects-its-pre-fill-items)).
 
@@ -225,7 +225,7 @@ The shared record itself is ported, along with the `hydrateDefaultState` it feed
 
 Filament's `callAfterStateUpdated` orchestrates `partiallyRender`/`skipRender`/parent bubbling and dedups each hook run via `Livewire\store` run-ids; it also supports `afterStateUpdatedJs` client-side expressions.
 Sylament ports the hook registry (`afterStateUpdated`, `clearAfterStateUpdatedHooks`), a public `callAfterStateUpdatedHooks()` (protected upstream) and the protected `callAfterStateUpdatedHook()`, which injects `old`/`oldRaw`.
-Firing and value-change de-dup are the [`HasSchemas` host](has-schemas.md)'s `#[PostHydrate]` responsibility (proven by [`LiveStateTest`](../../../packages/schemas/tests/Integration/LiveStateTest.php)), and `$set(..., shouldCallUpdatedHooks: true)` fires them for the component it writes; no orchestrator and no JS-hook surface are ported.
+Firing and value-change de-dup are the [`HasSchemas` host](has-schemas.md)'s `#[PostHydrate]` responsibility, and `$set(..., shouldCallUpdatedHooks: true)` fires them for the component it writes; no orchestrator and no JS-hook surface are ported.
 `resolveRelativeKey()`, the key-path twin of `resolveRelativeStatePath()`, goes with the orchestrator: its one caller upstream is the parent bubbling.
 
 ### getRawState returns null (not []) for a pathless component and skips blank-to-null coercion

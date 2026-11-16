@@ -65,7 +65,7 @@ Closing it needs the component that declared the in-item path, which `HasKeyedIt
 
 Only the filing follows `translateToErrorPath()`.
 The record check asks `translate()` whether a component maps a blank or taken key candidate, so a group entangling the related record still counts as mapping it and the refusal is still raised; it is shown above the form rather than nowhere.
-Pinned by [`HasSchemasRecordErrorPlacementTest`](../../../packages/schemas/tests/Integration/Concerns/HasSchemasRecordErrorPlacementTest.php) and, rendered, by panels' [`EditRecordRelationshipsTest`](../../../packages/panels/tests/Integration/Resources/Pages/EditRecordRelationshipsTest.php).
+Pinned, and rendered by panels' [`EditRecordRelationshipsTest`](../../../packages/panels/tests/Integration/Resources/Pages/EditRecordRelationshipsTest.php).
 
 ### An unowned violation returns null so the caller folds it at the schema root
 
@@ -99,7 +99,7 @@ Appending the remainder unconditionally would invent a path no component owns.
 The in-item remainder stops at the next index, because an item's own collection is a second keying the translator cannot resolve.
 So a violation on a **grandchild** — a field of an item of a repeater nested inside another repeater's item, such as the taken-key refusal on that grandchild's key — folds onto the inner repeater's own path and shows under the inner repeater, not under the grandchild's field: `sections[0].tags[1].name` translates to `data.sections.record-7.tags`.
 It is not specific to the key rules, and it is recorded rather than closed.
-Pinned by [`ViolationPathTranslatorTest`](../../../packages/schemas/tests/Unit/State/ViolationPathTranslatorTest.php) (*stops at the item when a second index nests inside it*).
+Pinned: `sections[0].tags[1].name` folds onto the inner repeater.
 
 ### The path is parsed by Symfony's own parser, not by splitting on dots
 

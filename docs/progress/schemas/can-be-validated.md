@@ -81,7 +81,7 @@ That is the intended shape (a `UniqueEntity` verdict is stale the moment anythin
 The fold destination is the schema's **own** state path, and a schema declared without one has `''` for it — so a class-level or otherwise untranslatable violation is filed under the empty-string key rather than being dropped.
 Consistent rather than degenerate: `getErrorsForSchemaStatePath('')` reads that key back, and the message rides the `ValidationException` payload either way.
 It is worth stating because the empty key belongs to no input, so a host wanting those messages on screen has to ask for `''` explicitly — the same requirement a `data`-rooted schema has for `data`, only easier to mistake for a missing value.
-Pinned by a case in `BelongsToRecordValidationTest`, so the shape cannot drift into a silent drop.
+It is pinned, so the shape cannot drift into a silent drop.
 
 ### A clean silent re-validation keeps the schema sticky
 
@@ -99,7 +99,7 @@ The de-duplication is on read rather than on write because each bag section is s
 
 The `form-validation-error` dispatch is guarded on the `LiveResponder` that UX LiveComponent's `ComponentToolsTrait` injects through a `#[Required]` setter: a host built with `new` (every schemas/forms render fixture that never boots a live request) never received one, and there is no browser to announce to.
 The bag, the stickiness and the throw are unchanged for such a host — only the announcement is skipped.
-The Integration cases asserting the event's payload on a container-built host ([`HasSchemasValidationTest`](../../../packages/schemas/tests/Integration/Concerns/HasSchemasValidationTest.php), [`WizardLiveTest`](../../../packages/schemas/tests/Integration/Concerns/WizardLiveTest.php)) keep the guard from silently becoming always-false if the vendor property is renamed.
+The cases asserting the event's payload on a container-built host keep the guard from silently becoming always-false if the vendor property is renamed.
 
 ### The throwing branch announces form-validation-error, carrying the schema identity
 
@@ -132,7 +132,7 @@ The flag is the schema's own, with no parent walk: the record check runs on the 
 One reach is recorded rather than closed: the edit page's `EditAction` modal wraps the form in a fresh schema ([`EditRecord`](../../../packages/panels/src/Resources/Pages/EditRecord.php)), so a flag set in `Resource::form()` does not reach it there — which matters only for the new records an edit creates.
 
 Filament has no automatic key rules, so the name is the toolkit's; it follows Filament's `bool | Closure $condition = true` switches (`deferLoading()`, `persistTab()`), and [translations.md](../translations.md) carries the row.
-Pinned by [`CanBeValidatedRecordKeyTest`](../../../packages/schemas/tests/Unit/Concerns/CanBeValidatedRecordKeyTest.php) — the default, a literal and a closure flag, and `configureUsing()`'s reach — and [`HasSchemasRecordKeySwitchTest`](../../../packages/schemas/tests/Integration/Concerns/HasSchemasRecordKeySwitchTest.php): switched off, a taken key reaches the flush and a blank mapped one is not refused, with no statement either way, while a changed key is still refused and put back and the record's own constraints still answer.
+Pinned: the closure flag handed the bound record, `configureUsing()`'s reach, and, switched off, a taken key reaching the flush and a blank mapped one not refused, with no statement either way, while a changed key is still refused and put back and the record's own constraints still answer.
 
 ## Divergences
 
@@ -159,7 +159,7 @@ The `Callback` is [`RecordKeyGuard::constraint()`](../../../packages/schemas/src
 It lives outside the host for its second reader, tables' editable cell, which validates its own refusal through it so the column's validator translates the message as the form's does ([has-columns.md](../tables/has-columns.md)).
 The blank and taken passes run only while the schema's [`validateRecordKey()`](#the-key-rules-switch-off-per-schema-never-the-changed-key-one) switch is on, which it is by default; the changed-key pass and the record's own constraints run either way.
 The host files a message **once per path**, so a `ValidationException` never lists one twice under a field.
-The order and the four are pinned by [`HasSchemasIdentifierGuardTest`](../../../packages/schemas/tests/Integration/Concerns/HasSchemasIdentifierGuardTest.php), and the constraint itself by [`RecordKeyGuardTest`](../../../packages/schemas/tests/Unit/Validation/RecordKeyGuardTest.php).
+Each of the four passes is pinned, and the record's own constraints answering before the taken key, as is the constraint itself.
 
 The alternative — pulling `getMetadataFor($class)` property constraints into the per-field [`buildValidationConstraints()`](../forms/can-be-validated.md#the-subclass-seam-is-a-protected-builder-not-the-public-getter) seam before validation — is **rejected**: typed constraints (a `#[Assert\Positive]` on an `int` property) misfire against the raw, pre-cast string state a form bag holds, and every message would then travel two different pipelines depending on where the constraint was declared.
 

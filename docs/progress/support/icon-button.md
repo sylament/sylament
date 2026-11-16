@@ -71,7 +71,7 @@ The template emits `href` and `target="_blank"` itself, the half of the helper t
 Filament merges `'disabled' => $disabled && blank($tooltip)` onto the root regardless of tag, so a disabled `<a>` with no tooltip receives a `disabled` attribute, which is not valid on an anchor.
 Sylament guards the attribute with `disabled and tag == 'button'`, so a disabled link carries only `aria-disabled` and `sy-disabled`.
 The `aria-disabled` / `sy-disabled` signalling is identical across tags; only the native attribute is withheld from non-buttons.
-The "disables a link without the invalid disabled attribute" case in [`IconButtonRenderTest`](../../../packages/schemas/tests/Integration/Components/IconButtonRenderTest.php) pins it.
+It is pinned: a disabled link carries no `disabled` attribute.
 
 ### The `aria-label` is double-encoded, where Filament suppresses it
 

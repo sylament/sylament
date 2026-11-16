@@ -147,7 +147,7 @@ it('clears every data frame and cached schema when the mounted action is replace
  */
 
 it('fires afterStateUpdated for a live field inside a mounted-action schema', function (): void {
-    // Two sets, as in schemas' LiveStateTest: the first fires the hook with a null
+    // Two sets: the first fires the hook with a null
     // old value, the second with "Hello" — so `slug` holding "Hello" proves the hook
     // ran on a plain state round-trip, with the modal schema served from the cache
     // that `afterMountedActionsHydrated()` refills at hydrate.

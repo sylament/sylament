@@ -138,7 +138,7 @@ What follows:
 - a key the hook spells with a dot (`'a.b' => 1`) is read as one key, where `getData()` reads it as a path — at most a missed refusal, recorded;
 - a removed key, and a mapped branch emptied to `[]`, are no addition: the record keeps what it held — recorded.
 
-Pinned by [`BelongsToRecordUnmappedAdditionsTest`](../../../packages/schemas/tests/Unit/Concerns/BelongsToRecordUnmappedAdditionsTest.php), the null-over-a-branch case by name; each seam pins its own refusal.
+Pinned, a branch a hook replaced with null included; each seam pins its own refusal.
 
 ### A refused submit on the query lane shows in the row until the next request
 
@@ -208,7 +208,7 @@ The component is the home because the answer is its casts, and because it is the
 Each walk asks the field that reads the leaf — the last declared, where two share a path, as the record path map keeps it.
 The object enters the bag only where a hydration pass runs right behind the read and converts it — `fill()`, the array fill after `getStateFromRecord()`, and the host's [reload](#loadstatefromrelationships-is-the-hosts-reload-after-its-flush-and-takes-no-parameter), whose child-schema hydration is load-bearing for that reason — and a fill hook (`mutateFormDataBeforeFill()`, `mutateRecordDataUsing()`) receives it at its path inside a relationship as it does at the root.
 An association, a collection and an object no cast flattens still skip.
-Pinned by [`EntanglesStateWithSingularRelationshipObjectLeafTest`](../../../packages/schemas/tests/Integration/Components/Concerns/EntanglesStateWithSingularRelationshipObjectLeafTest.php) and forms' [`RepeaterRelationshipObjectLeafTest`](../../../packages/forms/tests/Integration/Components/RepeaterRelationshipObjectLeafTest.php).
+Pinned for a singular relationship, and for a relationship repeater by forms' [`RepeaterRelationshipObjectLeafTest`](../../../packages/forms/tests/Integration/Components/RepeaterRelationshipObjectLeafTest.php).
 
 One hole is inherited rather than introduced, and is worth naming because the gate does not cover it: an **array** leaf is not object-valued, so a `list<MyEnum>` property enters the bag whole and relies on the component's cast (`EnumArrayStateCast`) to scalarize its elements.
 A cast-less component bound to one can leave instances nested in the bag; the exemption neither widens nor narrows that.
@@ -321,7 +321,7 @@ Over the map alone, under an entangled owner a nested field's record-level viola
 So `getRecordPathMap()` is a wrapper over a private `collectRecordPaths()`, which answers the map beside the paths it dropped beneath a subtree owner, computed by the one walk that always computed them, and `getRecordViolationPathTranslator()` builds the translator over both.
 So `plaque.title` lands as `data.plaque.title`, under its field, with no contract member added.
 A class-level violation on the related record names no path inside it and still folds at the owner, which renders nothing, so the host files it at the schema's own path instead, where the page and the modal render it ([why](violation-path-translator.md#a-message-is-filed-only-under-a-component-that-shows-its-own-errors)).
-Pinned by [`BelongsToRecordRelatedRecordTest`](../../../packages/schemas/tests/Integration/Concerns/BelongsToRecordRelatedRecordTest.php) and, rendered, by panels' [`EditRecordRelationshipsTest`](../../../packages/panels/tests/Integration/Resources/Pages/EditRecordRelationshipsTest.php).
+The field case is pinned, and, rendered, by panels' [`EditRecordRelationshipsTest`](../../../packages/panels/tests/Integration/Resources/Pages/EditRecordRelationshipsTest.php).
 
 ### `loadStateFromRelationships()` is the host's reload after its flush, and takes no parameter
 
@@ -345,7 +345,7 @@ A relationship repeater item keyed by a single natural string key that no `prePe
 The reload then keys the item through `RecordKey::of()`, which refuses the blank component with a `LogicException` after the commit — so the save's own response is the 500, where without the reload it would answer *Saved* and the next request's fill would be the 500, the row written either way.
 `required()` on the key field is the application's guard.
 `EditAction`, `CreateAction` and the option modals unmount on success or refill for create-another, so none needs the reload.
-Pinned by [`BelongsToRecordReloadTest`](../../../packages/schemas/tests/Unit/Concerns/BelongsToRecordReloadTest.php) and, through the page, by panels' [`EditRecordRelationshipsTest`](../../../packages/panels/tests/Integration/Resources/Pages/EditRecordRelationshipsTest.php), a repeater item's and a singular relationship's reset included.
+Pinned, and through the page by panels' [`EditRecordRelationshipsTest`](../../../packages/panels/tests/Integration/Resources/Pages/EditRecordRelationshipsTest.php), a repeater item's and a singular relationship's reset included.
 
 ### A missing singular intermediate is constructed from its declared type
 

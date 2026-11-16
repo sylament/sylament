@@ -51,7 +51,7 @@ The one distinction it draws is that encoding: a **list** is written raw, while 
 What it must never become is a general "write without checks" escape hatch: everything else on a record still goes through `setOnRecord()`, and the refusal it raises stays the default answer for a state-array write.
 
 Its callers write both shapes.
-Forms' [`HasRelationship`](../forms/has-relationship.md#the-save-arm-writes-a-desired-list-not-attachdetach) and the [relationship repeater](../forms/repeater-relationship.md#a-relationship-repeater-keys-its-items-by-identity-and-diffs-the-collection) write a desired list, whose semantics (identity diffing, surviving collection instance, adders maintaining the owning side) are the vendor behaviour characterized in [`DoctrineCollectionWriteTest`](../../../packages/schemas/tests/Integration/State/DoctrineCollectionWriteTest.php); the [association reader](association-reader.md)'s `attach()` and `detach()` write a list onto a many-to-many and the owner, or `null`, onto a one-to-many child.
+Forms' [`HasRelationship`](../forms/has-relationship.md#the-save-arm-writes-a-desired-list-not-attachdetach) and the [relationship repeater](../forms/repeater-relationship.md#a-relationship-repeater-keys-its-items-by-identity-and-diffs-the-collection) write a desired list, whose semantics (identity diffing, surviving collection instance, adders maintaining the owning side) are the vendor behaviour of Symfony's accessor and Doctrine's collections; the [association reader](association-reader.md)'s `attach()` and `detach()` write a list onto a many-to-many and the owner, or `null`, onto a one-to-many child.
 
 ### A throwing `setOnRecord()` can leave a constructed intermediate behind
 
@@ -89,7 +89,7 @@ Two strings compare strictly too: PHP compares two numeric strings as numbers, s
 The number tier exists to bridge a type the form's state and the record disagree on — a string state over an `int` or `float` property, or a number over a string one — and it reads the two sides the way the property would.
 A held number is compared numerically, so every numeric spelling (`' 5'`, `'05'`, `'5.0'`, `'5e0'`) of the number held is that number, exactly as a writable `int` setter would receive `5` for each.
 A held string meets a written number only when the number prints as that string, because a writable `string` setter — Symfony's accessor writes without `strict_types` — would receive `'5'` for `5`: a held `'05'` and a written `5` are another value, refused rather than left alone.
-That second arm matters because `OptionStateCast` hands a canonical digit option over as an `int`, so without it a `Select`, `Radio` or `ToggleButtons` option `5` written over a held `'05'` would be a changed value dropped in silence, the save reporting success; [`PropertyAccessorTest`](../../../packages/schemas/tests/Unit/State/PropertyAccessorTest.php) pins both arms, for a leaf and for an array element.
+That second arm matters because `OptionStateCast` hands a canonical digit option over as an `int`, so without it a `Select`, `Radio` or `ToggleButtons` option `5` written over a held `'05'` would be a changed value dropped in silence, the save reporting success; both arms are pinned, for a leaf and for an array element.
 Two values of the same type, two strings, never meet there.
 Two arrays are compared element by element under the same rule rather than by PHP's array `<=>`, which compares its elements loosely — `['007']` would meet `['7']` and `[false]` `[0]` — and compares an entity element by its fields.
 A **record** compares by identity alone, because comparing an entity reads its fields — which loads a lazy one and recurses without end through a bidirectional association, a PHP `Error` (*Nesting level too deep*).
@@ -144,7 +144,7 @@ It is monotonic — every write it handles would otherwise be Symfony's `NoSuchP
 
 `PropertyAccessor` is a plain service — no `StaticInstance`, no `HasStaticInstance`, nothing to boot or unset between tests.
 `CanAccessProperties` takes it through a `#[Required]` setter and exposes it only as `getPropertyAccessor()`; the property itself is `private`, so neither a sibling concern nor a subclass can reach around the getter.
-Because components are registered services, `make()` builds them through the container and the setter runs: a `Section::make()` holds the container's accessor before anything reads it ([`PropertyAccessorBootTest`](../../../packages/schemas/tests/Integration/State/PropertyAccessorBootTest.php)).
+Because components are registered services, `make()` builds them through the container and the setter runs: a `Section::make()` holds the container's accessor before anything reads it.
 
 What it does **not** do is require the container.
 `getPropertyAccessor()` builds one locally — `new PropertyAccessor(PropertyAccess::createPropertyAccessor(), new RecordTypeReader())` — when the setter never ran, because a component built with `new` is a supported shape, not a mistake: the Unit bucket boots no kernel at all, `ComponentResolver` keeps a null-locator path for exactly this, and the suites construct components directly.
@@ -178,7 +178,7 @@ Reads are lenient like `getFromArray()` (null past a null/scalar intermediate, a
 Objects *inside* the array remainder are out of scope until repeaters need them — `setInArray()`'s documented clobber contract applies past the boundary.
 
 That `LogicException` rides on Symfony's own classification of the rejected write: `PropertyAccessor::setValue()` converts the setter's `TypeError` into an `InvalidTypeException` (an `InvalidArgumentException`) only when it can `preg_match` the message, and PHP renders an anonymous class's method as `class@anonymous()` with no `::method` segment, so that one record shape rethrows the raw `TypeError` instead.
-Catching `TypeError` alongside is not an option — `PropertyAccessorInterface::setValue()` does not declare it, so PHPStan calls the catch dead — which scopes the friendly message to named records, every shape a schema actually binds to, and is why the fixtures under [`tests/Fixtures/State/`](../../../packages/schemas/tests/Fixtures/State) are named classes rather than the anonymous ones the rest of the suite reaches for.
+Catching `TypeError` alongside is not an option — `PropertyAccessorInterface::setValue()` does not declare it, so PHPStan calls the catch dead — which scopes the friendly message to named records, every shape a schema actually binds to, and is why the [record fixtures](../../../tests/Fixtures/src/Schemas/Record) are named classes rather than the anonymous ones the rest of the suite reaches for.
 
 ### A missing singular intermediate is constructed; an object collection is refused
 

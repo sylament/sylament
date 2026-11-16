@@ -75,7 +75,7 @@ Filament's `get()` converts **both** arms: the parse is guarded by `if (! $state
 The port converts the string arm only, and normalises the object arm's PHP type without touching its zone.
 The arm is defensive in both: `state()`, `Set` and hydration pass every value through `set()`, which stores the wire string, so an object reaches `get()` only from a raw-state write or a direct call.
 Such an object was built by application code, not typed into the field's zone, so its moment is already the one the application means: shifting it does not correct a zone, it moves the moment.
-An object holding 14:30 UTC under a field declaring `timezone('Europe/Bratislava')` would come back as 12:30 UTC, two hours off a value that was never on the wire, which is what [`DateTimeStateCastTest`](../../../packages/schemas/tests/Unit/State/Casts/DateTimeStateCastTest.php) pins as "normalizes an already-typed value without reinterpreting its wall time".
+An object holding 14:30 UTC under a field declaring `timezone('Europe/Bratislava')` would come back as 12:30 UTC, two hours off a value that was never on the wire; the cast is pinned to normalize an already-typed value without reinterpreting its wall time.
 
 ### Missing format fields pin to midnight, and a date-less format to today
 

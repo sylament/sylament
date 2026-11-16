@@ -65,7 +65,7 @@ The shared ones have their own files: the label is [`HasLabel`](has-label.md), t
 Filament builds the auto key as `Str::slug(Str::transliterate($heading, strict: true)) . '::' . (filled($statePath) ? "{$statePath}::section" : 'section')`.
 Sylament emits `AsciiSlugger()->slug($heading)->lower() . '::section'` with no state-path segment, so two same-heading sections at different state paths collide on one key.
 The `AsciiSlugger` swap is the standard string-helper translation; the missing `{$statePath}::` segment is a gap, since components carry `getStatePath()` and [`Wizard`](wizard.md#the-key-keeps-filaments-state-path-segment-which-section-drops) and `Step` already build their keys with it.
-**Next step:** read `getStatePath()` in the key closure as Filament does, and pin a keyed section under a `statePath()` in `SectionTest`.
+**Next step:** read `getStatePath()` in the key closure as Filament does, and pin a keyed section under a `statePath()`.
 
 ## Semantics
 

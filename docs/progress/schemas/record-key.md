@@ -86,8 +86,8 @@ So through `keyOf()` alone a lenient type would offer options under `0`, fill ag
 
 `keyOfHydrated()` is the reader for those rows: it takes every field value as the hydrator handed it and converts only the indexes `IdentifierFields` marks as associations, since an `IDENTITY()` half arrives raw under every hydrator.
 The four consumers read through it, and tables' by-key selection pluck, which reads `getScalarResult()`, keeps `keyOf()`.
-A converting association half stays covered — `ListingNote`, keyed through `IDENTITY()` onto a `Sku`, keys from an array row as its record does.
-Pinned in [`KeySelectionTest`](../../../packages/schemas/tests/Unit/Identity/KeySelectionTest.php) over both types at both widths, and at the four consumers in tables' [`AggregateQueryTest`](../../../packages/tables/tests/Unit/Query/AggregateQueryTest.php), [`FetchJoinPageQueryTest`](../../../packages/tables/tests/Unit/Query/FetchJoinPageQueryTest.php) and [`HexKeyAttachAssociateActionsTest`](../../../packages/tables/tests/Integration/HexKeyAttachAssociateActionsTest.php).
+A converting association half stays covered — a key through `IDENTITY()` onto a converting target keys from an array row as its record does.
+Pinned over both types, and the lenient one behind an association too, and at the four consumers in tables' [`AggregateQueryTest`](../../../packages/tables/tests/Unit/Query/AggregateQueryTest.php), [`FetchJoinPageQueryTest`](../../../packages/tables/tests/Unit/Query/FetchJoinPageQueryTest.php) and [`HexKeyAttachAssociateActionsTest`](../../../packages/tables/tests/Integration/HexKeyAttachAssociateActionsTest.php).
 
 ### A malformed key never reaches the database
 
@@ -120,7 +120,7 @@ Under a type whose writer rewrites what was typed — the panels fixture's `Stam
 Two defects follow, and neither depends on the key's width — a **single** assigned identifier under such a type meets both: `CreateRecord`'s redirect lands on a 404 for a record that exists under `1~NEW=2F1`, and a relationship `Select`'s created option is named by a key its option list does not hold, so nothing is selected and the parent's save refuses *"The value you selected is not a valid choice."*.
 Both remedies at the call site were measured and lost: `refresh()` registers a **second** managed instance and leaves the key where it was, and `detach()` plus `find()` costs a `SELECT` and detaches the record the page just created.
 
-A loaded record's key does not move — it already holds `convertToPHPValue()` of its row, and the round trip is idempotent for a well-behaved type — which [`RecordKeyTest`](../../../packages/schemas/tests/Unit/Identity/RecordKeyTest.php) pins over every converting fixture type, a raw-bytes uuid, a cipher, a decimal and a boolean.
+A loaded record's key does not move — it already holds `convertToPHPValue()` of its row, and the round trip is idempotent for a well-behaved type — which is pinned over a raw-bytes uuid, a cipher, a decimal and a boolean.
 A **new** record's key is normalised through its type: an integer half typed `'0007'` mints `…~7`, the key its row will answer to, through `of()` and `find()` alike.
 `fromValues()` converts nothing — it prints what it is handed, values already in their PHP form — and `toIdentifier()` decodes no spelling the type would rewrite.
 And a blank component is no key at all: `find()` reads it **before** its type converts it and answers `null`, and `asStored()` hands a blank component — whitespace alone, or a `Stringable` printing that — back unconverted, so `of()` refuses it with its documented *"… is not a printable value."*.
@@ -134,8 +134,8 @@ No fixture property can hold such a value, so no test reaches it.
 
 ### The shapes the fixtures pin
 
-Every identifier shape the codec supports by construction has a fixture and runs through the whole battery ([`KeyShapesTest`](../../../packages/schemas/tests/Unit/Identity/KeyShapesTest.php), [`AssociationReaderKeyShapesTest`](../../../packages/schemas/tests/Unit/State/AssociationReaderKeyShapesTest.php)) on SQLite, MySQL and PostgreSQL.
-The battery covers the mint, the decode, `equals()`, `in()`, `correlate()`, the key selection with `keyOf()`, group-by, order-by, a reference — which costs no statement for a scalar-keyed shape and one load for a key with an association, [the reader's route](association-reader.md#getreference-decodes-first-and-then-picks-its-route) — the taken key on create and the changed key on edit.
+Every identifier shape the codec supports by construction has a fixture and runs through the battery on SQLite, MySQL and PostgreSQL.
+The battery covers the mint, the decode, `equals()`, `in()`, `correlate()`, the key selection with `keyOf()`, group-by and order-by; the reference — which costs no statement for a scalar-keyed shape and one load for a key with an association, [the reader's route](association-reader.md#getreference-decodes-first-and-then-picks-its-route) — the taken key on create and the changed key on edit are pinned on the reader over the key flavours rather than over every shape.
 
 - **Three scalar fields.**
   Chunked at 500, the same as two.
@@ -151,11 +151,10 @@ The battery covers the mint, the decode, `equals()`, `in()`, `correlate()`, the 
 
 A NUL byte never reaches PostgreSQL as part of a key.
 The decoder refuses one on every platform, and pdo_pgsql would truncate it silently in a bound string.
-The two tests about a NUL-byte identifier are therefore restricted to SQLite and MySQL.
 
 ### A property test carries the fuzz harness's claims
 
-`RecordKeyPropertyTest` runs a seeded, deterministic slice of the validation's fuzz harness on every platform the suites run on.
+A seeded, deterministic slice of the validation's fuzz harness runs on every platform the suite runs on.
 It checks four properties:
 
 1. **Round trip.**
@@ -169,7 +168,7 @@ It checks four properties:
 The cipher classes are left out by name: their type refuses its own printed form.
 `SYLAMENT_PROPERTY_SEED` and `SYLAMENT_PROPERTY_ITERATIONS` widen a local run.
 
-On PostgreSQL, property 1 leaves out a tuple whose `guid` component is not a UUID, because a native `uuid` column cannot hold one and [the grammar](record-key-contract.md#the-grammar) shape-checks `guid` there; a pin in the same file shows `'not-a-uuid'` decoding on SQLite and MySQL and refused on PostgreSQL.
+On PostgreSQL, property 1 leaves out a tuple whose `guid` component is not a UUID, because a native `uuid` column cannot hold one and [the grammar](record-key-contract.md#the-grammar) shape-checks `guid` there; a pin shows `'not-a-uuid'` decoding on SQLite and MySQL and refused on PostgreSQL.
 On PostgreSQL, property 4 also skips the lookup for an integer wider than its column, which raises [the platform's range error](#an-integer-beyond-the-columns-width-still-raises-the-platforms-range-error) there and names no row on the other two, as a second pin shows.
 
 ## Divergences
@@ -298,7 +297,7 @@ A **single** owner of the type, and a single derived identity onto one, are not 
 As the **selected records** of a by-key bulk write it is silent: the plucked keys decode to nothing, so a by-key dissociate narrows to `1 = 0` and reports a zero count with every row left owned — executed on SQLite and PostgreSQL 18.4 — and the by-key delete narrows through the same `in()` to the same `1 = 0`.
 The owner side throws and the child side does not.
 Recorded rather than fixed: the type breaks the round trip every key depends on, and nothing on this side of the codec can mend that.
-The decode and the reference are pinned over a single (`Strongbox`), a composite (`Vault`, one half of the type) and a single derived identity onto one (`StrongboxSeal`) in [`IdentifierFieldsTest`](../../../packages/schemas/tests/Unit/Identity/IdentifierFieldsTest.php) and [`AssociationReaderCompositeKeyTest`](../../../packages/schemas/tests/Unit/State/AssociationReaderCompositeKeyTest.php), `Vault`'s owner throw in [`AssociationReaderOwnerScopeTest`](../../../packages/schemas/tests/Unit/State/AssociationReaderOwnerScopeTest.php), and `StrongboxSeal` scoping by value in [`AssociationReaderOwnerBindTest`](../../../packages/schemas/tests/Unit/State/AssociationReaderOwnerBindTest.php).
+The decode is pinned over a single identifier of the type (`CipherStrongbox`) and a composite with one such half (`CipherVault`), and the reference's refusal over the single one; a composite owner's throw, a single derived identity onto such a record and a single owner's scoping by value are not pinned.
 The child side is not pinned: it was executed as a probe.
 
 ### A type that refuses its printed form on read only decodes it through its own writer
@@ -321,14 +320,14 @@ Nothing is mis-keyed by that: the print-back rule holds there too, and one key s
 The fallback costs three or four conversions instead of one for a component the reader refuses or reads as another value, unmeasured, and only such a component pays — that includes a forged non-canonical spelling of any type, `05` for an `integer` half among them.
 A reference to a class whose every identifier field is scalar is built at zero statements; one behind an association — a single derived identity onto such a target — is loaded, at one.
 
-Pinned over [`BinaryUuidType`](../../../packages/schemas/tests/Fixtures/Doctrine/BinaryUuidType.php), a mimic of ramsey's `UuidBinaryType` over `symfony/uid` — ramsey deliberately not a dependency — and three owners of it, `Crate` (one such identifier), `Pallet` (such a half beside a string) and `CrateSeal` (a single derived identity onto `Crate`), in [`IdentifierFieldsTest`](../../../packages/schemas/tests/Unit/Identity/IdentifierFieldsTest.php), [`IdentifierConstraintTest`](../../../packages/schemas/tests/Unit/Identity/IdentifierConstraintTest.php), [`AssociationReaderCompositeKeyTest`](../../../packages/schemas/tests/Unit/State/AssociationReaderCompositeKeyTest.php) and [`AssociationReaderOwnerScopeTest`](../../../packages/schemas/tests/Unit/State/AssociationReaderOwnerScopeTest.php).
+Pinned over [`BinaryUuidType`](../../../tests/Fixtures/src/Schemas/Doctrine/BinaryUuidType.php), a mimic of ramsey's `UuidBinaryType` over `symfony/uid` — ramsey deliberately not a dependency — and two owners of it, `RawUuidCrate` (one such identifier) and `RawUuidPallet` (such a half beside a string).
 It reaches the per-field `BINARY` bind and its array twin, and it reads a **stream** where PostgreSQL's hydrator hands `bytea` back as one — a mimic without that arm passes every SQLite suite and breaks on PostgreSQL alone.
 
 The fallback serves an **object**-returning type, the `uuid_binary` shape, and a scalar one too.
 The fixtures' `HexCodeType` holds an integer column as its lower-case hex spelling and reads whatever it is handed as a decimal number, so its reader takes the printed `ff` without refusing and answers `0`; a fallback reached only on a `ConversionException` would never run for it, and every key such a class mints — the record side's `ff~north`, through the writer and back — would be refused at every decode site.
 The retry on a failed print-back reaches the writer (`ff` → 255) and reads 255 back as `ff`, while `FF` (the writer refuses), `0ff` (the writer takes it, and it prints back without the zero) and `+ff` stay refused.
 The retry depends on the row side's [second reader](#a-hydrated-row-is-keyed-without-reading-its-fields-a-second-time): without it, such a type's silent `0` options would be keys that decode, to the wrong record.
-Pinned over `HexSwatch` and `HexTile` in [`IdentifierFieldsTest`](../../../packages/schemas/tests/Unit/Identity/IdentifierFieldsTest.php), beside the boolean shape check over `Flagged` on a PostgreSQL and a SQLite platform.
+Pinned over `HexCodedSwatch` and `HexCodedTile`, beside the boolean shape check on a PostgreSQL and a SQLite platform.
 
 ### Identifier order is declaration order, so reordering two `#[Id]` properties invalidates every minted key
 
@@ -342,7 +341,7 @@ Treat the order of `#[Id]` declarations as part of the schema, like a column nam
 The shape check reaches `BigIntType`, `DecimalType`, `GuidType` and `BooleanType` by class, so a type registered under a name of its own is checked as the family it extends — which is the point, since such a type inherits the conversion that hands a malformed string back untouched — or, for `BooleanType`, whose PostgreSQL writer refuses an unrecognised literal with no `ConversionException`, the reason that arm exists once the decode offers a component to the writer.
 The cost is a subclass whose PHP value prints **outside** its parent's shape — a `BigIntType` whose reader answers a `T-123` value object, or a `BooleanType` whose value is not a bool — whose every key the decode refuses.
 No such type is known, and the way out is not to extend a family whose shape it does not print.
-Pinned by `Voucher` in `IdentifierFieldsTest` and `RecordKeyTest`.
+Pinned over `SubtypedVoucher`, whose guid, bigint, decimal and boolean halves each extend DBAL's own type under a name of its own.
 
 ### There is no owner-scoping operation, because one `equals()` on the owner's own collection scopes an owner of any width
 

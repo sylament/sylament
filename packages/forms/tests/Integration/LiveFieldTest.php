@@ -10,7 +10,7 @@ uses(InteractsWithLiveComponents::class);
 
 /*
  * Drives real TextInput/Textarea fields through the T2 live-state loop on a
- * shipped-shape #[AsLiveComponent] host. Mirrors schemas' LiveStateTest, with two
+ * shipped-shape #[AsLiveComponent] host. Mirrors schemas' live-state loop, with two
  * deliberate deltas forced by the shipped field surface:
  *
  *  - The field templates bind via Symfony UX `data-model` (not Livewire's

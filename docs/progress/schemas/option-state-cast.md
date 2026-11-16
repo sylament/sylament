@@ -34,5 +34,5 @@ The port returns an int state unchanged, before the comparison.
 The overflow arm exists to protect a digit-*string* too wide to survive `intval()`; an `int` has by construction already survived, so running the check on one can only produce a false positive.
 Filament's answer is also wrong downstream: an option value stringified this way does not match its own integer array key under the `Choice(strict: true)` constraint [`Select`](../forms/select.md#the-choice-constraint-is-the-fields-only-server-side-guard) adds, so a legitimate selection would be rejected.
 
-`OptionStateCastTest` pins the port's answer for both `PHP_INT_MAX` and `PHP_INT_MIN`.
+The port's answer is pinned for both `PHP_INT_MAX` and `PHP_INT_MIN`.
 This reverses only if a case is found where Filament's stringification is the wanted answer, which would mean the option key was a string all along.

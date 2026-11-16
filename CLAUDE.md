@@ -74,7 +74,7 @@ Rules in `.claude/rules/` load after any tool call that touches a file their `pa
 | `colors.md` | `packages/*/src/Colors/**`, `packages/support/src/Twig/Extension/ColorExtension.php` | How a colour is named, how a contrast policy picks its shade, and how policies are registered. |
 | `css.md` | `packages/*/assets/src/styles/**` | How component stylesheets are written, scoped and coloured, and what support's CSS build generates. |
 | `docs.md` | `/docs/progress/**`, `/docs/internals/**` | Where documentation lives, and the rules every docs file follows. |
-| `doctrine-tests.md` | `packages/{actions,forms,panels,schemas,tables}/tests/**` | The database contract and the shim, helpers and fixtures the five Doctrine suites build on the shared rig. |
+| `doctrine-tests.md` | `packages/{actions,forms,panels,tables}/tests/**` | The database contract and the shim, helpers and fixtures the four Doctrine suites build on the shared rig. |
 | `frontend.md` | `packages/*/assets/**/*.{ts,mjs,json}`, `/package.json`, `/pnpm-workspace.yaml`, `/tsconfig.base.json`, `/biome.json` | TypeScript, the asset workspaces, the JS build script and how Stimulus controllers ship. |
 | `instructions.md` | `/CLAUDE.md`, `/.claude/**` | How instruction files are placed, scoped, sized and kept free of history. |
 | `legacy-tests.md` | `packages/*/tests/**` | What a mechanical edit to a per-package Pest suite needs, from its hooks to its kernel registration and fixture wiring. |

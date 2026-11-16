@@ -70,7 +70,7 @@ Its consumers are [panels' `HasTabs`](../panels/has-tabs.md), which builds this 
 
 `key(..., isInheritable: false)` means the tabs' own key names *it* but never joins its descendants' absolute keys: a `Text` keyed `inner` inside a tab of a root schema keyed `schema` stays `schema.inner`, not `schema.article::tabs.content::tab.inner`.
 That is what lets an existing form be wrapped in tabs without renaming a single state path or breaking a `getComponent()` lookup, which the demo's article form relies on.
-Both `Tabs` and `Tab` do it, as in Filament, and `TabsTest` pins it.
+Both `Tabs` and `Tab` do it, as in Filament, and it is pinned.
 
 ### The re-keying hook must run before any key is read
 
@@ -83,7 +83,7 @@ The two hooks differ in what they reach, and that decides where the loop reads i
 Filament's hook *returns* the component array, so mutating it in place hits the objects the schema then receives.
 Ours is handed the finished `Schema`, and the evaluation that produced its components already happened in [`HasChildComponents::getChildSchema()`](../../../packages/schemas/src/Components/Concerns/HasChildComponents.php).
 So the loop reads `$schema->getComponents()` — which preserves the source array keys — and never re-evaluates `$childComponents`: a second evaluation of a `Closure`-valued `tabs()` builds a *fresh* set of tabs, keys those, and throws them away, leaving the rendered tabs with their label-derived keys and no tab matching the host property.
-Pinned by `TabsTest`'s closure-valued case.
+Pinned over a `Closure`-valued `tabs()`.
 
 One deliberate delta from vendor in the same loop: Filament's `$tab->key(strval($tabKey))` takes `key()`'s default `$isInheritable = true`, so in its `livewireProperty` mode a tab's descendants are re-addressed as `{root}.{arrayKey}.{child}`; ours re-keys with `isInheritable: false`, so descendant keys stay `{root}.{child}` in both modes — the same rule that applies everywhere else (a child's absolute key never moves because a tab was renamed), and the relation managers' tabs, which use this mode, inherit it.
 
@@ -97,7 +97,7 @@ The port's [`HasComponents::getComponents()`](../../../packages/schemas/src/Conc
 
 `data-model` passed to a Twig component is read by ux-live-component's [`DataModelPropsSubscriber`](../../../vendor/symfony/ux-live-component/src/EventListener/DataModelPropsSubscriber.php), which resolves the named property on the parent live component and adds it to the child's mount data under the binding's child name — `value` by default.
 Support's `TabsItem` declares no `value` prop, so it lands as a `value="all"` attribute on every server-mode tab button.
-It is inert (a `type="button"` element submits nothing) and the tabs' own wiring reads `data-value`, so it is left alone rather than papered over with a swallowing prop on a support component; `TabsRenderTest` pins it so the extra attribute reads as a known consequence.
+It is inert (a `type="button"` element submits nothing) and the tabs' own wiring reads `data-value`, so it is left alone rather than papered over with a swallowing prop on a support component.
 
 ## Divergences
 
@@ -158,7 +158,7 @@ The colour arms are the two Filament has — a string colour becomes `ColorManag
 ### A deferred badge renders eagerly in server mode
 
 Filament's server arm defers badges too: its root carries an `x-data` that calls `getDeferredTabBadges()` once, and each placeholder is keyed by the tab's array key.
-Server mode here renders no controller, so nothing could fill a placeholder; the partial treats a deferred badge as an ordinary one and evaluates it during the render, which `TabsRenderTest` pins.
+Server mode here renders no controller, so nothing could fill a placeholder; the partial treats a deferred badge as an ordinary one and evaluates it during the render, which is pinned.
 The badge therefore costs its query on every server-mode render rather than on a follow-up call.
 Reverse it by giving server mode a badge-only controller that calls the seam.
 

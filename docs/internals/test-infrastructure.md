@@ -134,7 +134,7 @@ A recorder of the suite's own is not needed: DoctrineBundle's profiling already 
 
 ## Why does the Doctrine rig live in the root suite's infrastructure?
 
-Five suites run against Doctrine (`actions`, `forms`, `panels`, `schemas`, `tables`) and share one rig. It sits in `tests/Infrastructure/Doctrine/` and `tests/Infrastructure/PHPUnit/` (`Sylament\Tests\Infrastructure\Doctrine\`, `\PHPUnit\`), beside the root suite's own infrastructure, and the per-package suites import it from there. The root `composer.json` `autoload-dev` entry for `Sylament\Tests\` covers it, so no new autoload entry or package was needed. The per-package suites' common base class, `LegacyTestCase`, sits in `tests/Infrastructure/PHPUnit/` for the same reason: each package's `TestCase` extends it, so no legacy suite depends on another's.
+Four suites run against Doctrine (`actions`, `forms`, `panels`, `tables`) and share one rig. It sits in `tests/Infrastructure/Doctrine/` and `tests/Infrastructure/PHPUnit/` (`Sylament\Tests\Infrastructure\Doctrine\`, `\PHPUnit\`), beside the root suite's own infrastructure, and the per-package suites import it from there. The root `composer.json` `autoload-dev` entry for `Sylament\Tests\` covers it, so no new autoload entry or package was needed. The per-package suites' common base class, `LegacyTestCase`, sits in `tests/Infrastructure/PHPUnit/` for the same reason: each package's `TestCase` extends it, so no legacy suite depends on another's.
 
 It is dev-only. The root `tests/` belongs to no package, so none of it ships in a split package, and nothing under any `src/` imports it. Two consequences follow:
 
@@ -157,10 +157,7 @@ The root suite pins the pieces it keeps at their mirrored paths (`tests/Infrastr
 | `DriverValues` | Canonicalises driver values: MySQL and PostgreSQL return `SUM` and `AVG` as decimal strings where SQLite returns numbers. |
 | `FailingWrite` | Makes the (n+1)-th delete from an entity's table fail on every platform, through a counter and a trigger, so a test can watch a transaction roll back. |
 
-Each Doctrine suite's `tests/Fixtures/Doctrine/EntityManagerFactory` is a thin shim over `TestEntityManagers`: its entity path, its custom types and a `seed()` helper. Two carry more:
-
-- **schemas** adds `createForSqlite()`, the SQLite side of a test comparing platforms, and `createForPostgres()`, a manager over a PostgreSQL connection that never opens, for shape checks that only read the platform.
-- **tables** passes a configuration callback that turns on an in-memory second-level cache, which caches only entities marked `#[ORM\Cache]`.
+Each Doctrine suite's `tests/Fixtures/Doctrine/EntityManagerFactory` is a thin shim over `TestEntityManagers`: its entity path, its custom types and a `seed()` helper. **tables** also passes a configuration callback that turns on an in-memory second-level cache, which caches only entities marked `#[ORM\Cache]`.
 
 ## How does a server run give every test an empty, isolated database?
 
@@ -215,7 +212,7 @@ Keep that order if the list changes: putting the recorder first would record the
 
 ### Which suites render a support Twig component?
 
-The root suite renders every `<twig:SylamentSupport:…>` tag in `tests/Packages/Support/Twig/Components/`. The five per-package suites whose kernels register TwigComponentBundle (`actions`, `forms`, `panels`, `schemas`, `tables`) render them too, through their own templates and tests, so a change to a support component also runs against those suites.
+The root suite renders every `<twig:SylamentSupport:…>` tag in `tests/Packages/Support/Twig/Components/`. The four per-package suites whose kernels register TwigComponentBundle (`actions`, `forms`, `panels`, `tables`) render them too, through their own templates and tests, so a change to a support component also runs against those suites.
 
 Which per-package suites reach a component follows whichever package needed it. Derive the current map rather than trusting a written list:
 
@@ -237,7 +234,7 @@ A notification is a session flash: `Notification::send()` reads the session off 
 
 ### Which fixtures carry a composite identifier?
 
-Every package that keys a record exercises both composite flavours in a test: two scalar fields, and an association plus a scalar. `CompositePair` (two scalar fields) sits in schemas', forms' and tables' `tests/Fixtures/Doctrine/Entity/`, and `Membership` (an association plus a scalar) in actions'. A new by-key site is tested over both.
+Every package that keys a record exercises both composite flavours in a test: two scalar fields, and an association plus a scalar. `CompositePair` (two scalar fields) sits in forms' and tables' `tests/Fixtures/Doctrine/Entity/`, and `Membership` (an association plus a scalar) in actions'. A new by-key site is tested over both.
 
 Panels has a family of its own: `Catalogue`, the single-identifier parent and owner; `Stamp`, that parent association plus a converting `string` code; `Colophon`, one identifier association alone — a single derived identity, the flavour an `isIdentifierComposite` check misses; `Imprint`, two strings seeded with `.`, `/`, a space, `~`, `=` and non-ASCII; and `Edition`, an `id` plus a `locale`. Their resources mount on a non-default `key` panel of their own (`tests/Fixtures/KeyPanelProvider.php`), because the navigation and global-search suites' enumerating assertions name the `admin` and `nest` panels, and a second default panel would reorder the one they resolve.
 

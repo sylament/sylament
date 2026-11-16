@@ -134,7 +134,7 @@ PostgreSQL's native `uuid` is unaffected.
 The derived arm is the same defect one hop deeper, and an **unflushed** derived owner whose target's identifier is assigned fails loudly as an entity bind, a PHP `Error` (*could not be converted to string*), where the value bind answers nothing related.
 Reaching into another class's identifier is exactly what the codec already does for every identifier association, so the bind asks the codec rather than doing it itself.
 The route not taken is the **key**: scoping a derived owner through the key it mints would refuse one onto a doubly-strict target, whose key never decodes, although a single owner of that same type scopes by value — a refusal the route would invent rather than inherit.
-[`AssociationReaderOwnerBindTest`](../../../packages/schemas/tests/Unit/State/AssociationReaderOwnerBindTest.php) pins the bind over `ListingSeal`, `CrateSeal` and `StrongboxSeal`, one onto each shape, on both arms of both queries.
+The bind is pinned over an owner keyed by a uuid and an identity derived from one, on both arms of both queries.
 
 ### A write lands on the side Doctrine persists
 

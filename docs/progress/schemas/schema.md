@@ -106,7 +106,7 @@ Decide whether targeted re-render is a goal before porting either; [`fillPartial
 
 ### `HasKey` ports the schema key chain, minus the state-path fallback
 
-The schema-scope key model — `key()`, the absolute prefix from the parent component's inheritance key, the `getInheritanceKey()` fallback, attribute/JS-character sanitization, and the absolute/inheritance-key caches with their flushes — is ported and covered by [`HasKeyTest`](../../../packages/schemas/tests/Unit/Concerns/HasKeyTest.php).
+The schema-scope key model — `key()`, the absolute prefix from the parent component's inheritance key, the `getInheritanceKey()` fallback, attribute/JS-character sanitization, and the absolute/inheritance-key caches with their flushes — is ported.
 `getKey()` omits Filament's `?? $this->getStatePath(isAbsolute: false)` fallback, although `getStatePath()` is live on the schema through `HasState` and the component-tier `HasKey` keeps it; no test or recorded decision covers the omission.
 Forms' `Repeater` compensates by stamping `->key($itemKey)` beside `->statePath($itemKey)` on every item schema it clones, because an unkeyed one inherits the repeater's key and collapses every item's field keys, and DOM ids, onto one value ([repeater.md](../forms/repeater.md#every-item-schema-is-keyed-as-well-as-re-pathed)); restoring the fallback removes that stamp.
 The schema-tier `getLiveComponentKey()` has its prerequisite, the host id [`getSchemasHostId()`](live-component.md#the-host-id-is-minted-by-the-host-because-ux-has-no-stable-component-id), and no consumer.
@@ -151,7 +151,7 @@ Reverses only if a Livewire-shaped base is reintroduced.
 ### The root schema drops Livewire partial-render and Alpine wiring
 
 Filament's `renderEmbeddedHtml()` emits `wire:partial` (`schema.{key}`), `x-data="filamentSchema({ livewireId, schemaKey })"`, and `x-on:form-validation-error`/`reset-schema-component-state` on the root div.
-Sylament's `Schema/index.html.twig` emits no `wire:partial` and no client-side state object: live binding runs field-side through UX LiveComponent `data-model` attributes plus a full component re-render (proven by `LiveStateTest`), so per-schema partial rendering has no port and reverses only if it becomes a goal.
+Sylament's `Schema/index.html.twig` emits no `wire:partial` and no client-side state object: live binding runs field-side through UX LiveComponent `data-model` attributes plus a full component re-render, so per-schema partial rendering has no port and reverses only if it becomes a goal.
 
 The two window listeners do port, as a Stimulus controller on the root schema element rather than an Alpine `x-on:` pair.
 [`validateSchema()`'s throwing branch](can-be-validated.md#the-throwing-branch-announces-form-validation-error-carrying-the-schema-identity) announces `form-validation-error`, and `dispatchClientSideStateReset()` announces `reset-schema-component-state` with `{schemaKey: getKey()}`.
@@ -178,7 +178,7 @@ Correct but not memoized; revisit if flat/state-path lookups become hot.
 
 Filament's [`HasComponents::cloneComponents()`](../../../vendor/filament/schemas/src/Concerns/HasComponents.php) stamps `container($this)` onto each **original** component child before copying it, mutating an instance the source schema still holds; ours only copies, because `getComponents()` re-stamps `container`/`schemaContainer` when it rebuilds its cache, so the stamp is redundant on the clone and damaging on the original.
 Filament resets its component caches only inside the non-`Closure` arm, so cloning a schema whose `components()` is a closure hands the clone the original's already-built component list, with the *original* as their container; ours resets `$cachedComponents` unconditionally.
-Both are pinned by [`CloneableTest`](../../../packages/schemas/tests/Unit/Concerns/CloneableTest.php).
+Both are pinned.
 Actions and action groups are shallow `clone`s here and in `cloneChildComponents()`, matching the component tier: `Action` has no `getClone()` ([action.md](../actions/action.md)).
 
 ### `getState()` validates without a prepareForValidation mutation layer
@@ -205,7 +205,7 @@ The live case is [`BaseFileUpload`](../forms/file-upload.md), whose hook is the 
 Any snapshot that ran the hooks during a render would be destructive, and a repeater takes one per item per request: [`Repeater::getItemLabel()`](../forms/repeater.md) computes its `state` injection eagerly, whether or not an `itemLabel()` was ever declared.
 A file field inside a repeater item would then have its upload consumed by the render that followed it: the store runs against a throwaway pass whose `rawState()` write never reaches the wire, the browser posts the same token back, and the save's own pass can no longer resolve it, because the token's temporary file is gone.
 The entry drops, `FileUploadStateCast::get()` answers `null` for the emptied map, and the field saves as null: on a non-nullable column that surfaces as `PropertyAccessor`'s `Expected argument of type "string", "null" given`, and on a nullable one it is silent data loss.
-Pinned at both levels: the hook-free snapshot in [`HasStateTest`](../../../packages/schemas/tests/Unit/Concerns/HasStateTest.php), and the repeater-item upload surviving its renders in [`LiveFileUploadTest`](../../../packages/forms/tests/Integration/LiveFileUploadTest.php).
+Pinned at both levels: the hook-free snapshot, and the repeater-item upload surviving its renders in forms' [`LiveFileUploadTest`](../../../packages/forms/tests/Integration/LiveFileUploadTest.php).
 `Repeater::getItemState()` passes `shouldCallHooksBefore: false` for the same reason; `getRawItemState()` and `getItemLabel()` reach the hooks only through `getStateSnapshot()`.
 
 ### `getRawState()` seeds an empty array on a blank or top-level path

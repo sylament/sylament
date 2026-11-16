@@ -67,7 +67,7 @@ It follows from the systematic Alpine → Stimulus [translation](../translations
 Filament never emits `fi-collapsed` on the server: Alpine applies the class (`x-bind:class="isCollapsed && 'fi-collapsed'"`), so the initial paint is always the expanded markup, and the content container is `x-cloak`ed whenever the section starts collapsed (`@if ($collapsed || $persistCollapsed) x-cloak`) to hide the flash until Alpine settles the state.
 Sylament renders `sy-collapsed` server-side (`'sy-collapsed': collapsible and collapsed`), so an initially collapsed section is correct on first paint, with no flash and no cloak.
 The only case that can still flash is a persisted section, whose localStorage value may override the server default on connect, so `sy-cloak` is emitted for `collapsible and persistCollapsed` alone, a narrower condition than Filament's.
-[`SectionRenderTest`](../../../packages/schemas/tests/Integration/Components/SectionRenderTest.php) pins it, asserting `sy-cloak` absent on a plain collapsible section and present under `persistCollapsed`.
+It is pinned: `sy-cloak` is absent on a collapsible section that persists nothing and present under `persistCollapsed`.
 
 ### The expand/collapse labels are English prop defaults, not translations
 

@@ -336,12 +336,12 @@ Everything else is `in()`'s: a single identifier is one `IN` under the array typ
 **It names columns, never a table.**
 The table, the `SET` half and the quoting of both are the statement's author's — [the dissociate's](../actions/dissociate-action.md#the-by-key-arm-is-a-dql-update-and-a-dbal-one-where-the-foreign-key-spans-several-columns) reads them off the mapping through the same quote strategy, and that is where a JOINED leaf, a reserved word and a single-table leaf are pinned, through the real action.
 The column count agrees with the field count by an ORM guarantee rather than a check: an identifier association always resolves to [exactly one join column](record-key.md#an-identifier-association-always-resolves-to-exactly-one-join-column).
-The rest of the vocabulary is pinned over fixtures the test brings along: a JOINED subclass is named by the identifier column its root declares — `ledger_id IN (:keys)` for `LedgerDraft`, whose field is `id` — which its own table keys by too; a composite identifier of reserved words comes out as `(("where" = :keys_0_0 AND "having" = :keys_0_1) OR …)`; and a raw-bytes `Crate` or `Pallet` half is bound as its sixteen bytes under `ArrayParameterType::BINARY` or `ParameterType::BINARY`, where the same bytes bound as text match no row on SQLite.
+The rest of the vocabulary: a JOINED subclass is named by the identifier column its root declares — `ledger_id IN (:keys)` for a subclass whose root's field is `id` — which its own table keys by too; a composite identifier of reserved words comes out as `(("where" = :keys_0_0 AND "having" = :keys_0_1) OR …)`; and a raw-bytes uuid half is bound as its sixteen bytes under `ParameterType::BINARY`, a single uuid identifier under `ArrayParameterType::BINARY`, where the same bytes bound as text match no row on SQLite.
+The column names, the per-field typed binds and the raw-bytes half (over `RawUuidPallet`) are pinned; the JOINED subclass and the reserved words are not.
 
 **It applies no discriminator and no SQL filter.**
-A single-table subclass is named by the columns it shares with its root, so a key naming a row of the root class selects that row too — pinned as such — and no enabled Doctrine SQL filter reaches a DBAL statement.
+A single-table subclass is named by the columns it shares with its root, so a key naming a row of the root class selects that row too, unpinned, and no enabled Doctrine SQL filter reaches a DBAL statement.
 A caller narrows by keys a discriminated, filtered query already produced, which the one caller does ([why that is enough there](../actions/dissociate-action.md#the-by-key-arm-is-a-dql-update-and-a-dbal-one-where-the-foreign-key-spans-several-columns)).
-Pinned by [`IdentifierConstraintColumnsTest`](../../../packages/schemas/tests/Unit/Identity/IdentifierConstraintColumnsTest.php).
 
 ### Invariants
 

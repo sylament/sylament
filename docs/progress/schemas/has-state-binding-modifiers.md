@@ -21,27 +21,14 @@ It ports Filament's identically-named trait, translating the Livewire `wire:mode
 | [`getDataModel()` UX `data-model` string builder](../../../packages/schemas/src/Components/Concerns/HasStateBindingModifiers.php) | [`applyStateBindingModifiers()`](../../../vendor/filament/schemas/src/Concerns/HasStateBindingModifiers.php) | done | — | [diverges](#livewire-modifier-array-grammar-becomes-a-single-getdatamodel-data-model-string) |
 | [`getDataModel(statePath)` over a caller-supplied path](../../../packages/schemas/src/Components/Concerns/HasStateBindingModifiers.php) | — (no Filament equivalent) | done | — | [diverges](#the-optional-state-path-is-a-sylament-addition) |
 | [`getLiveDebounce()`](../../../packages/schemas/src/Components/Concerns/HasStateBindingModifiers.php) | [`getLiveDebounce()`](../../../vendor/filament/schemas/src/Concerns/HasStateBindingModifiers.php) | done | — | — |
-| [`reactive()` alias of `live()`](../../../packages/schemas/src/Components/Concerns/HasStateBindingModifiers.php) | [`reactive()`](../../../vendor/filament/schemas/src/Concerns/HasStateBindingModifiers.php) | in progress | — | [detail](#reactive-and-islivedebounced-are-ported-but-untested) |
-| [`isLive()` / `isLiveOnBlur()` container fallback](../../../packages/schemas/src/Components/Concerns/HasStateBindingModifiers.php) | [`isLive()`](../../../vendor/filament/schemas/src/Concerns/HasStateBindingModifiers.php) | in progress | — | [detail](#the-blur-and-debounce-container-fallbacks-are-untested) · [diverges](#the-trait-carries-the-component-flavor-while-schema-overrides-the-getters) |
-| [`isLiveDebounced()`](../../../packages/schemas/src/Components/Concerns/HasStateBindingModifiers.php) | [`isLiveDebounced()`](../../../vendor/filament/schemas/src/Concerns/HasStateBindingModifiers.php) | in progress | — | [detail](#reactive-and-islivedebounced-are-ported-but-untested) |
+| [`reactive()` alias of `live()`](../../../packages/schemas/src/Components/Concerns/HasStateBindingModifiers.php) | [`reactive()`](../../../vendor/filament/schemas/src/Concerns/HasStateBindingModifiers.php) | done | — | — |
+| [`isLive()` / `isLiveOnBlur()` container fallback](../../../packages/schemas/src/Components/Concerns/HasStateBindingModifiers.php) | [`isLive()`](../../../vendor/filament/schemas/src/Concerns/HasStateBindingModifiers.php) | done | — | [diverges](#the-trait-carries-the-component-flavor-while-schema-overrides-the-getters) |
+| [`isLiveDebounced()`](../../../packages/schemas/src/Components/Concerns/HasStateBindingModifiers.php) | [`isLiveDebounced()`](../../../vendor/filament/schemas/src/Concerns/HasStateBindingModifiers.php) | done | — | — |
 | `stateBindingModifiers()` / `applyStateBindingModifiers()` / `getStateBindingModifiers()` Livewire grammar | [`getStateBindingModifiers()`](../../../vendor/filament/schemas/src/Concerns/HasStateBindingModifiers.php) | skipped | — | [diverges](#livewire-modifier-array-grammar-becomes-a-single-getdatamodel-data-model-string) |
 | `isLazy()` alias | [`isLazy()`](../../../vendor/filament/schemas/src/Concerns/HasStateBindingModifiers.php) | todo | — | [detail](#islazy-and-getnormalizedlivedebounce-are-not-yet-ported) |
 | `getNormalizedLiveDebounce()` ms/s parser | [`getNormalizedLiveDebounce()`](../../../vendor/filament/schemas/src/Concerns/HasStateBindingModifiers.php) | todo | — | [detail](#islazy-and-getnormalizedlivedebounce-are-not-yet-ported) |
 
 ## Details
-
-### `reactive()` and `isLiveDebounced()` are ported but untested
-
-Both exist: `reactive()` calls `live()` with defaults, and `isLiveDebounced()` returns `false` on blur, `true` when a local debounce is set, and otherwise delegates to the container.
-No test calls either.
-**Next step:** add a focused Unit test asserting `reactive()` produces the same binding as `live()`, and `isLiveDebounced()` true/false across the blur / debounce / plain cases.
-
-### The blur and debounce container fallbacks are untested
-
-`isLive()`'s delegation, `$this->evaluate($this->isLive) ?? $this->getContainer()->isLive()` and the `getParentComponent()` arm on [`Schema`](../../../packages/schemas/src/Schema.php), is exercised by tables' [`HasFiltersTest`](../../../packages/tables/tests/Integration/Concerns/HasFiltersTest.php), whose leaf filter field inherits the live filters form's `live()`.
-The same fallback in `isLiveOnBlur()` and `getLiveDebounce()` has no test.
-**Next step:** a Unit test with a field that sets no own `isLive`, asserting it inherits `isLiveOnBlur` and `getLiveDebounce` from its container.
-See [`has-schemas.md`](has-schemas.md) for the container wiring the fallback walks.
 
 ### `isLazy()` and `getNormalizedLiveDebounce()` are not yet ported
 

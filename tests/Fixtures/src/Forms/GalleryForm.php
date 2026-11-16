@@ -18,9 +18,10 @@ use Symfony\UX\LiveComponent\DefaultActionTrait;
  * A form of multiple file fields: a required, reorderable `gallery` of one or two files whose
  * names are kept at `galleryNames` and whose items open at `/open/<path>` and download at a
  * `javascript:` URL, a twin `closed` whose two URL callbacks are set but whose toggles are off,
- * a `described` one whose file information comes from a callback, a `fixed` one that is not
- * reorderable, a `capped` one of at most one file, and a `brief` one whose every path is at most
- * five characters. `mount()` fills the form from the record it is given; `save()` validates it.
+ * a `downloads` one whose items download at `/download/<path>`, a `described` one whose file
+ * information comes from a callback, a `fixed` one that is not reorderable, a `capped` one of at
+ * most one file, and a `brief` one whose every path is at most five characters. `mount()` fills
+ * the form from the record it is given; `save()` validates it.
  */
 #[AsLiveComponent(name: 'Forms:GalleryForm', template: '@Fixtures/forms/GalleryForm.html.twig')]
 class GalleryForm implements InteractsWithSchemas
@@ -67,6 +68,10 @@ class GalleryForm implements InteractsWithSchemas
                 FileUpload::make('closed')
                     ->multiple()
                     ->getOpenableFileUrlUsing(static fn (string $file): string => '/open/' . $file)
+                    ->getDownloadableFileUrlUsing(static fn (string $file): string => '/download/' . $file),
+                FileUpload::make('downloads')
+                    ->multiple()
+                    ->downloadable()
                     ->getDownloadableFileUrlUsing(static fn (string $file): string => '/download/' . $file),
                 FileUpload::make('described')
                     ->multiple()

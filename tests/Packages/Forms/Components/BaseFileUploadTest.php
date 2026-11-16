@@ -324,10 +324,15 @@ describe('getUploadedFiles()', function (): void {
             'gallery' => ['a' => 'photos/a.png', 'b' => 'photos/b.png'],
             'galleryNames' => ['photos/a.png' => 'Holiday.png'],
             'closed' => ['a' => 'photos/a.png'],
+            'downloads' => ['a' => 'photos/a.png'],
         ]]);
         ($this->upload)($tester, 'gallery', 'k3', FileUploadFixtures::file('pixel.png'));
 
         $crawler = $tester->render()->crawler();
+        $single = $this->createLiveComponent(SavingUploadForm::class)
+            ->fillForm(['document' => 'photos/a.png', 'documentName' => 'Photo.png'])
+            ->render()
+            ->crawler();
 
         expect(FileUploadFixtures::values($crawler, 'data.gallery')['uploadedFiles'])->toBe([
             'a' => ['name' => 'Holiday.png', 'size' => 90, 'type' => 'image/png', 'url' => '/files/photos/a.png', 'openableUrl' => '/open/photos/a.png'],
@@ -336,6 +341,12 @@ describe('getUploadedFiles()', function (): void {
         ])
             ->and(FileUploadFixtures::values($crawler, 'data.closed')['uploadedFiles'])->toBe([
                 'a' => ['name' => 'a.png', 'size' => 90, 'type' => 'image/png', 'url' => '/files/photos/a.png'],
+            ])
+            ->and(FileUploadFixtures::values($crawler, 'data.downloads')['uploadedFiles'])->toBe([
+                'a' => ['name' => 'a.png', 'size' => 90, 'type' => 'image/png', 'url' => '/files/photos/a.png', 'downloadableUrl' => '/download/photos/a.png'],
+            ])
+            ->and(FileUploadFixtures::values($single, 'data.document')['uploadedFiles'])->toBe([
+                '0' => ['name' => 'Photo.png', 'size' => 90, 'type' => 'image/png', 'url' => '/files/photos/a.png'],
             ]);
     });
 

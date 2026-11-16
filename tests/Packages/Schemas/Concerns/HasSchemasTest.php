@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use Doctrine\ORM\EntityManagerInterface;
+use Sylament\Forms\Components\Checkbox;
 use Sylament\Forms\Components\Repeater;
 use Sylament\Forms\Components\TextInput;
 use Sylament\Forms\Validation\RequiredValue;
@@ -37,6 +38,7 @@ use Sylament\Tests\Fixtures\Schemas\StickyValidationForm;
 use Sylament\Tests\Fixtures\Schemas\UnnamedSchemaHost;
 use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
+use Symfony\Component\Validator\Constraints\Type;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
 
 it('keeps the constraint each error failed beside its message, which the re-rendered host still holds', function (): void {
@@ -501,6 +503,22 @@ describe('validateSchema()', function (): void {
             ->assertFormSet(['slug' => 'harbour'])
             ->assertHasNoFormErrors();
     });
+
+    it('runs only the implicit constraints against a blank string, so a cleared optional bound passes while required() and accepted() still refuse it', function (): void {
+        $schema = $this->host->mapping(
+            TextInput::make('quantity')->numeric()->minValue(1)->maxValue(10),
+            TextInput::make('code')->required(),
+            Checkbox::make('terms')->accepted(),
+        );
+        $this->host->data = ['quantity' => '', 'code' => '', 'terms' => ''];
+
+        expect(fn () => $this->host->validateSchema($schema))->toThrow(function (ValidationException $exception): void {
+            expect($exception->getErrors())->toBe([
+                'data.code' => ['This value should not be blank.'],
+                'data.terms' => ['This value should be true.'],
+            ]);
+        });
+    });
 });
 
 describe('the validation identity', function (): void {
@@ -737,5 +755,18 @@ describe('validateSchemaRecord()', function (): void {
 
         expect($schema->getData())->toBe($article)
             ->and($article->title)->toBe('Edited');
+    });
+
+    it("gates a blank string in front of the state run only, so a constraint a field adds passes it while the record's own still refuses it", function (): void {
+        $card = new VettedCard();
+        $schema = $this->host->mapping(Section::make()->statePath('author')->components([
+            TextInput::make('name')->constraint(new Type('alpha'))->dehydrateStateUsing(fn (?string $state): string => $state ?? ''),
+        ]))->record($card);
+        $this->host->data = ['author' => ['name' => '']];
+
+        expect(fn () => $schema->getData())->toThrow(function (ValidationException $exception): void {
+            expect($exception->getErrors())->toBe(['data.author.name' => ['The author name is too short.']]);
+        })
+            ->and($card->author->name)->toBe('');
     });
 });

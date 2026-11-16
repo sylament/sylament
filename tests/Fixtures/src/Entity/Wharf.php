@@ -15,7 +15,7 @@ use Doctrine\ORM\Mapping as ORM;
 class Wharf
 {
     #[ORM\Id]
-    #[ORM\Column]
+    #[ORM\Column(length: 40)]
     public ?string $code = null;
 
     #[ORM\OneToOne(mappedBy: 'wharf', cascade: ['persist'])]

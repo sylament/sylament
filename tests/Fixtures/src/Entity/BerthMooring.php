@@ -14,11 +14,11 @@ use Doctrine\ORM\Mapping as ORM;
 class BerthMooring
 {
     #[ORM\Id]
-    #[ORM\Column]
+    #[ORM\Column(length: 40)]
     public ?string $pier = null;
 
     #[ORM\Id]
-    #[ORM\Column]
+    #[ORM\Column(length: 40)]
     public ?string $slot = null;
 
     #[ORM\Column]

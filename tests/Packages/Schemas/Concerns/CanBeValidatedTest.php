@@ -121,4 +121,15 @@ describe('validateRecordKey()', function (): void {
         expect($schema->getData())->toBe($line)
             ->and($received)->toBe($line);
     });
+
+    it('takes the switch a Schema::configureUsing() registration sets as the default of every schema made', function (): void {
+        $this->seed(new OrderLine(order: 1, line: 1, note: 'Stored'));
+        Schema::configureUsing(fn (Schema $schema): Schema => $schema->validateRecordKey(false));
+
+        $schema = $this->host->mapping(TextInput::make('order'), TextInput::make('line'))->record($line = new OrderLine(order: 0, line: 0));
+        $this->host->data = ['order' => '1', 'line' => '1'];
+
+        expect($schema->getData())->toBe($line)
+            ->and($this->statementsRun())->toBe([]);
+    });
 });

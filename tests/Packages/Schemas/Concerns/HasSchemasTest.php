@@ -653,6 +653,27 @@ describe('validateSchemaRecord()', function (): void {
             ->and($this->statementsRun())->toBe([]);
     });
 
+    it("files a taken key at the schema's own path when the form maps none of its fields", function (object $stored, Closure $candidate): void {
+        $this->seed($stored);
+
+        $schema = $this->host->mapping(TextInput::make('note'))->record($candidate($this->entityManager()));
+        $this->host->data = ['note' => 'Copy'];
+
+        expect(fn () => $schema->getData())->toThrow(function (ValidationException $exception): void {
+            expect($exception->getErrors())->toBe(['data' => ['This value is already used.']]);
+        })
+            ->and($this->host->getErrorsForSchemaStatePath('data'))->toBe(['This value is already used.']);
+    })->with([
+        'scalar fields' => fn (): array => [
+            new OrderLine(order: 1, line: 1, note: 'Stored'),
+            fn (): OrderLine => new OrderLine(order: 1, line: 1),
+        ],
+        'an association plus a scalar' => fn (): array => [
+            new InvoiceLine(new Invoice(7), line: 1, note: 'Stored'),
+            fn (EntityManagerInterface $entityManager): InvoiceLine => new InvoiceLine($entityManager->getReference(Invoice::class, 7), line: 1),
+        ],
+    ]);
+
     it('asks nothing for a new record whose identifier is generated', function (): void {
         $article = new Article('Draft');
         $schema = $this->host->mapping(TextInput::make('title'))->record($article);

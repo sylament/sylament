@@ -83,7 +83,7 @@ it('is named by its label stripped of markup when the label is hidden, and by it
 it('offers a button after its label that removes it, named Remove unless named otherwise, carrying the caller attributes', function (): void {
     expect($this->renderTwigComponent('SylamentSupport:Badge', ['deletable' => true], content: 'Urgent')->crawler())
         ->toContainElement(SupportSelectors::BADGE, 'Urgentx-mark-16-solid')
-        ->toContainElement(SupportSelectors::BADGE . ' button.sy-badge-delete-btn[type="button"][aria-label="Remove"] svg' . SupportSelectors::ICON . SupportSelectors::size('xs') . '[aria-hidden="true"]', 'x-mark-16-solid')
+        ->toContainElement(SupportSelectors::BADGE . ' ' . SupportSelectors::BADGE_DELETE_BUTTON . '[type="button"] svg' . SupportSelectors::ICON . SupportSelectors::size('xs') . '[aria-hidden="true"]', 'x-mark-16-solid')
         ->and($this->renderTwigComponent('SylamentSupport:Badge', ['deletable' => true, 'deleteLabel' => ' <b>Discard</b> ', 'deleteAttributes' => ['class' => 'js-discard', 'data-tag' => 'urgent']], content: 'Urgent')->crawler())
         ->toContainElement('button.sy-badge-delete-btn.js-discard[aria-label="Discard"][data-tag="urgent"]', 'x-mark-16-solid')
         ->and($this->renderTwigComponent('SylamentSupport:Badge', ['deletable' => true, 'deleteAttributes' => ['aria-label' => 'Remove tag']], content: 'Urgent')->crawler())

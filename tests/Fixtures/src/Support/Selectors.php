@@ -8,10 +8,11 @@ namespace Sylament\Tests\Fixtures\Support;
  * The looks support's components give any area's markup: colour, palette, size, font,
  * alignment, state, button, icon button, icon, link, badge, breadcrumb separator and a
  * section's container, named by the `sy-` class or custom property the stylesheet paints
- * them by; the modal's close button and the pagination's chevron buttons by their names,
- * and a dropdown's teleport by its Stimulus value. A side of the input wrapper is named by
- * its `sy-` class, because which side an affix sits on is the stylesheet's contract; what
- * sits there is asserted by its text, its role or its element.
+ * them by; a section's collapse button by its place and its state, whose name changes;
+ * the modal's close, the badge's delete and the pagination's chevron buttons by their
+ * names, and a dropdown's teleport by its Stimulus value. A side of the input wrapper is
+ * named by its `sy-` class, because which side an affix sits on is the stylesheet's
+ * contract; what sits there is asserted by its text, its role or its element.
  */
 final class Selectors
 {
@@ -42,7 +43,9 @@ final class Selectors
 
     public const string BUTTON = '.sy-btn';
 
-    public const string SMALL_ICON_BUTTON = '.sy-icon-btn.sy-size-sm';
+    public const string ICON_BUTTON = '.sy-icon-btn';
+
+    public const string SMALL_ICON_BUTTON = self::ICON_BUTTON . '.sy-size-sm';
 
     public const string ICON = '.sy-icon';
 
@@ -55,6 +58,10 @@ final class Selectors
     public const string BREADCRUMB_SEPARATOR = '.sy-breadcrumbs-item-separator.sy-ltr';
 
     public const string RTL_BREADCRUMB_SEPARATOR = '.sy-breadcrumbs-item-separator.sy-rtl';
+
+    public const string SECTION_COLLAPSE_BUTTON = 'header button[aria-expanded]';
+
+    public const string BADGE_DELETE_BUTTON = 'button[aria-label="Remove"]';
 
     public const string MODAL_CLOSE_BUTTON = 'button[aria-label="Close"]';
 

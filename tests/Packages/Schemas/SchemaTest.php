@@ -35,11 +35,11 @@ describe('alignment factories', function (): void {
 describe('gap and density', function (): void {
     it('spaces a root schema, and packs an inline one unless told otherwise', function (): void {
         expect($this->renderViewComponent(Schema::make()->components([Text::make('a')])))
-            ->toContainElement(Selectors::SCHEMA . '.sy-sc-has-gap:not(.sy-sc-dense)')
+            ->toContainElement(Selectors::SCHEMA . Selectors::GAP . ':not(' . Selectors::DENSE . ')')
             ->and($this->renderViewComponent(Schema::make()->inline()->components([Text::make('a')])))
-            ->toContainElement(Selectors::SCHEMA . '.sy-sc-dense')
+            ->toContainElement(Selectors::SCHEMA . Selectors::DENSE)
             ->and($this->renderViewComponent(Schema::make()->inline()->dense(false)->components([Text::make('a')])))
-            ->toContainElement(Selectors::SCHEMA . '.sy-inline:not(.sy-sc-dense)');
+            ->toContainElement(Selectors::SCHEMA . Selectors::INLINE . ':not(' . Selectors::DENSE . ')');
     });
 });
 
@@ -94,9 +94,9 @@ describe('render', function (): void {
 
         expect($render)
             ->toContainElement(Selectors::ROOT_SCHEMA . '[data-sylament--schemas--schema-schema-key-value="schema"][data-action~="form-validation-error@window->sylament--schemas--schema#onValidationError"][data-action~="reset-schema-component-state@window->sylament--schemas--schema#onStateReset"]')
-            ->toContainElement(Selectors::SECTION_CONTENT . ':not([data-controller])')
+            ->toContainElement(Selectors::SECTION_CONTENT . Selectors::UNCONTROLLED)
             ->and($this->renderViewComponent(Schema::make()->components([Text::make('a')])))
-            ->toContainElement(Selectors::SCHEMA . ':not([data-controller])');
+            ->toContainElement(Selectors::SCHEMA . Selectors::UNCONTROLLED);
     });
 
     it('renders nothing when no child is visible, so a section leaves out the content around it', function (): void {

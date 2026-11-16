@@ -6,12 +6,13 @@ namespace Sylament\Tests\Fixtures\Schemas;
 
 /**
  * A schema's root, the root of one a live host renders as its own, which carries the
- * schema's Stimulus controller, and the cells its children and its actions sit in; the
- * roots of schemas' layout and prose components, named by the `sy-sc-` class that marks
- * each, for an area asserting what a trait puts on them; a section's content schema, the
- * child schema a component's gap, density and columns reach, which the schema every
- * render wraps a component in would otherwise answer for; and a control bound to a state
- * path, by the `data-model` value schemas' binding modifiers write.
+ * schema's Stimulus controller, a schema carrying none, its gap, density and inline
+ * layout, and the cells its children and its actions sit in; the roots of schemas'
+ * layout and prose components, named by the `sy-sc-` class that marks each, for an area
+ * asserting what a trait puts on them; a section's content schema, the child schema a
+ * component's gap, density and columns reach, which the schema every render wraps a
+ * component in would otherwise answer for; and a control bound to a state path, by the
+ * `data-model` value schemas' binding modifiers write.
  */
 final class Selectors
 {
@@ -22,6 +23,14 @@ final class Selectors
     public const string COMPONENT_CELL = '.sy-sc-component';
 
     public const string ACTION_CELL = '.sy-sc-action';
+
+    public const string UNCONTROLLED = ':not([data-controller])';
+
+    public const string GAP = '.sy-sc-has-gap';
+
+    public const string DENSE = '.sy-sc-dense';
+
+    public const string INLINE = '.sy-inline';
 
     public const string FIELDSET = '.sy-sc-fieldset';
 

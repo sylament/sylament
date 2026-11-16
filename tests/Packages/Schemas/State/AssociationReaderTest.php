@@ -964,27 +964,29 @@ describe('an owner keyed by several fields', function (): void {
     });
 });
 
-it('scopes an owner keyed by a converting type by its identifier value, on both arms of both queries', function (Closure $owners): void {
-    [$owner, $other] = $owners();
-    $fern = new Plant('Fern');
-    $moss = new Plant('Moss');
-    $owner->plants->add($fern);
-    $other->plants->add($moss);
-    $leek = new Seedling('Leek');
-    $leek->{$owner instanceof Greenhouse ? 'greenhouse' : 'vent'} = $owner;
+describe('an owner keyed by a converting type', function (): void {
+    it('scopes an owner keyed by a converting type by its identifier value, on both arms of both queries', function (Closure $owners): void {
+        [$owner, $other] = $owners();
+        $fern = new Plant('Fern');
+        $moss = new Plant('Moss');
+        $owner->plants->add($fern);
+        $other->plants->add($moss);
+        $leek = new Seedling('Leek');
+        $leek->{$owner instanceof Greenhouse ? 'greenhouse' : 'vent'} = $owner;
 
-    $kale = new Seedling('Kale');
-    $kale->{$owner instanceof Greenhouse ? 'greenhouse' : 'vent'} = $other;
-    $this->seed(...[...($owner instanceof GreenhouseVent ? [$owner->greenhouse, $other->greenhouse] : []), $owner, $other, $fern, $moss, $leek, $kale]);
-    $owner = $this->entityManager()->find($owner::class, $this->entityManager()->getClassMetadata($owner::class)->getIdentifierValues($owner));
-    $reader = $this::getContainer()->get(AssociationReader::class);
-    $names = fn (QueryBuilder $query): array => array_map(fn (object $record): string => $record->name, $query->getQuery()->getResult());
+        $kale = new Seedling('Kale');
+        $kale->{$owner instanceof Greenhouse ? 'greenhouse' : 'vent'} = $other;
+        $this->seed(...[...($owner instanceof GreenhouseVent ? [$owner->greenhouse, $other->greenhouse] : []), $owner, $other, $fern, $moss, $leek, $kale]);
+        $owner = $this->entityManager()->find($owner::class, $this->entityManager()->getClassMetadata($owner::class)->getIdentifierValues($owner));
+        $reader = $this::getContainer()->get(AssociationReader::class);
+        $names = fn (QueryBuilder $query): array => array_map(fn (object $record): string => $record->name, $query->getQuery()->getResult());
 
-    expect($names($reader->createRelationshipQuery(new Relationship($owner, 'plants'))))->toBe(['Fern'])
-        ->and($names($reader->createRelationshipQuery(new Relationship($owner, 'seedlings'))))->toBe(['Leek'])
-        ->and($names($reader->createRelationshipCandidateQuery(new Relationship($owner, 'plants'))))->toBe(['Moss'])
-        ->and($names($reader->createRelationshipCandidateQuery(new Relationship($owner, 'seedlings'))))->toBe(['Kale']);
-})->with([
-    'a uuid' => [fn (): array => [new Greenhouse(Uuid::v7()), new Greenhouse(Uuid::v7())]],
-    'an identity derived from a uuid' => [fn (): array => [new GreenhouseVent(new Greenhouse(Uuid::v7())), new GreenhouseVent(new Greenhouse(Uuid::v7()))]],
-]);
+        expect($names($reader->createRelationshipQuery(new Relationship($owner, 'plants'))))->toBe(['Fern'])
+            ->and($names($reader->createRelationshipQuery(new Relationship($owner, 'seedlings'))))->toBe(['Leek'])
+            ->and($names($reader->createRelationshipCandidateQuery(new Relationship($owner, 'plants'))))->toBe(['Moss'])
+            ->and($names($reader->createRelationshipCandidateQuery(new Relationship($owner, 'seedlings'))))->toBe(['Kale']);
+    })->with([
+        'a uuid' => [fn (): array => [new Greenhouse(Uuid::v7()), new Greenhouse(Uuid::v7())]],
+        'an identity derived from a uuid' => [fn (): array => [new GreenhouseVent(new Greenhouse(Uuid::v7())), new GreenhouseVent(new Greenhouse(Uuid::v7()))]],
+    ]);
+});

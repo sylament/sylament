@@ -35,6 +35,7 @@ use Sylament\Tests\Fixtures\Entity\StageVenue;
 use Sylament\Tests\Fixtures\Entity\StatuePlinth;
 use Sylament\Tests\Fixtures\Entity\SubtypedVoucher;
 use Sylament\Tests\Fixtures\Entity\UidReceipt;
+use Sylament\Tests\Fixtures\Entity\VenueKeyedPlaybill;
 use Sylament\Tests\Fixtures\Schemas\Doctrine\Cipher;
 use Sylament\Tests\Fixtures\Schemas\Doctrine\WithdrawnNoteFilter;
 use Sylament\Tests\Fixtures\Schemas\Record\UnmappedHostPathRedirect;
@@ -242,6 +243,7 @@ describe('hasIncompleteAssignedIdentifier()', function (): void {
         'one of three scalars left null' => fn (): AisleSeat => new AisleSeat('north', aisle: 3),
         'a half whose value prints blank' => fn (): CipherVault => new CipherVault(new Cipher(''), 'north'),
         'an association onto a record whose own key is blank' => fn (): StageResidency => new StageResidency(new StageVenue(''), 'autumn'),
+        'an identifier association left unset' => fn (): VenueKeyedPlaybill => new VenueKeyedPlaybill(),
         'a blank half beside an owner whose generated identifier is pending' => fn (): AtelierPlaque => new AtelierPlaque(new Atelier(), ''),
     ]);
 
@@ -284,6 +286,7 @@ describe('findBlankAssignedIdentifiers()', function (): void {
         'one of three scalars left null' => fn (): array => [new AisleSeat('north', aisle: 3), ['seat']],
         'a blank half' => fn (): array => [new HostPathRedirect('', '/home'), ['host']],
         'a blank half beside an association onto a blank key' => fn (): array => [new StageResidency(new StageVenue(''), ''), ['season', 'venue.handle', 'venue']],
+        'an identifier association left unset' => fn (): array => [new VenueKeyedPlaybill(), ['venue']],
         'a class whose prePersist callback would fill one half' => fn (): array => [new PrefilledLedgerEntry('', ''), ['book', 'folio']],
     ]);
 

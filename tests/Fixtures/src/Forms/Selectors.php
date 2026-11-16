@@ -18,6 +18,10 @@ namespace Sylament\Tests\Fixtures\Forms;
  *
  * A repeater's item in its default and simple views, one by its key, and its add button.
  * A simple view's item, a table view's row (one by its key) and header cell, and the add row.
+ *
+ * A select's `<select>` by the `sy-fo-` class that marks it, the same element carrying the
+ * JS control's Stimulus controller, the one with no controller, and the inline-prefix class
+ * that strips its padding, the class being the behaviour.
  */
 final class Selectors
 {
@@ -65,6 +69,14 @@ final class Selectors
     public const string TABLE_REPEATER_HEADER_CELL = '.sy-fo-table-repeater thead th';
 
     public const string REPEATER_ADD = '.sy-fo-repeater-add';
+
+    public const string SELECT = 'select.sy-fo-select';
+
+    public const string JS_CONTROL = 'select.sy-fo-select[data-controller~="sylament--forms--select"]';
+
+    public const string NATIVE_SELECT = 'select.sy-fo-select:not([data-controller])';
+
+    public const string INLINE_PREFIX_SELECT = 'select.sy-fo-select.sy-fo-select-has-inline-prefix';
 
     public static function textInputAction(string $method): string
     {

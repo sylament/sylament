@@ -6,6 +6,7 @@ namespace Sylament\Tests;
 
 use Sylament\Support\DependencyInjection\Contracts\StaticInstance;
 use Sylament\Tables\Testing\InteractsWithLiveComponents;
+use Sylament\Tests\Fixtures\Forms\FormsHelpers;
 use Sylament\Tests\Fixtures\Notifications\NotificationsHelpers;
 use Sylament\Tests\Fixtures\Schemas\SchemasHelpers;
 use Sylament\Tests\Infrastructure\Concerns\InteractsWithDatabase;
@@ -17,6 +18,7 @@ use Symfony\UX\TwigComponent\Test\InteractsWithTwigComponents;
 
 abstract class TestCase extends KernelTestCase
 {
+    use FormsHelpers;
     use InteractsWithDatabase;
     use InteractsWithLiveComponents;
     use InteractsWithRendering;

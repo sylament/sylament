@@ -20,6 +20,16 @@ describe('rendering', function (): void {
             ->toContainElement('input[name="startsAt"][disabled]:not([placeholder]):not([autofocus]):not([required])');
     });
 
+    it('renders readonly, a datalist the input points at and the extra input attributes when set, and none of them otherwise', function (): void {
+        $render = $this->renderSchemaComponent(DateTimePicker::make('startsAt')->readOnly()->datalist(['2026-03-01 09:00:00', '2026-03-02 09:00:00'])->extraInputAttributes(['data-shift' => 'early']));
+
+        expect($render)->toContainElement('input[name="startsAt"][readonly][list="schema.startsAt-list"][data-shift="early"]')
+            ->and($render->filter('datalist[id="schema.startsAt-list"] option')->each(static fn ($option): ?string => $option->attr('value')))->toBe(['2026-03-01 09:00:00', '2026-03-02 09:00:00'])
+            ->and($this->renderSchemaComponent(DateTimePicker::make('startsAt')))
+            ->toContainElement('input[name="startsAt"]:not([readonly]):not([list]):not([data-shift])')
+            ->not->toContainElement('datalist');
+    });
+
     it('omits required while a container may hide the field, and keeps it otherwise', function (): void {
         expect($this->renderSchemaComponent(Section::make('When')->collapsible()->components([DateTimePicker::make('startsAt')->required()])))
             ->toContainElement('input[name="startsAt"]:not([required])')

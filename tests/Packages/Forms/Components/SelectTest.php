@@ -600,6 +600,15 @@ describe('dynamic options', function (): void {
         'a preloaded search closure' => [static fn (): Select => Select::make('garden')->searchable()->getSearchResultsUsing(static fn (): array => [])->preload(), ['true', 'true']],
         'a relationship with no search column' => [static fn (): Select => Select::make('garden')->relationship('garden', 'name')->searchable([]), ['false', 'false']],
     ]);
+
+    it('answers no search result to a client that asks a select no search closure answers for', function (): void {
+        $tester = $this->createLiveComponent(SelectForm::class)
+            ->call('callSchemaComponentMethod', ['componentKey' => 'form.single', 'method' => 'getSearchResultsForJs', 'arguments' => ['search' => 'On']]);
+
+        expect($this->dispatchedBrowserEvents($tester, 'sylament:schema-component-method-result'))->toBe([
+            ['componentKey' => 'form.single', 'method' => 'getSearchResultsForJs', 'fileKey' => null, 'result' => []],
+        ]);
+    });
 });
 
 describe('option actions', function (): void {

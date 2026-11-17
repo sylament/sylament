@@ -217,23 +217,31 @@ describe('state', function (): void {
 });
 
 describe('trim', function (): void {
-    it('trims each tag when saved, leaving the bag as typed', function (): void {
+    it('trims each tag when saved, and a string a live write left whole, leaving the bag as typed', function (): void {
         $host = new RecordMappingHost();
         $schema = $host->mapping(TagsInput::make('tags')->trim());
         $host->data = ['tags' => [' php ', 'twig ']];
 
         expect($schema->getState())->toBe(['tags' => ['php', 'twig']])
             ->and($host->data['tags'])->toBe([' php ', 'twig ']);
+
+        $host->data = ['tags' => ' php,twig '];
+
+        expect($schema->getState())->toBe(['tags' => 'php,twig']);
     });
 });
 
 describe('strip', function (): void {
-    it('strips the characters from each tag the state reads', function (): void {
+    it('strips the characters from each tag the state reads, and from a string a live write left whole', function (): void {
         $host = new RecordMappingHost();
         $schema = $host->mapping(TagsInput::make('tags')->stripCharacters(['#']));
         $host->data = ['tags' => ['#php', 'twig#']];
 
         expect($schema->getState())->toBe(['tags' => ['php', 'twig']]);
+
+        $host->data = ['tags' => '#php,twig#'];
+
+        expect($schema->getState())->toBe(['tags' => 'php,twig']);
     });
 });
 

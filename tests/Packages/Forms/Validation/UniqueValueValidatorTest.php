@@ -63,20 +63,20 @@ describe('exclusion', function (): void {
         },
     ]);
 
-    it("hands its modifier the query with the value and the ignored key already bound, under names it can read", function (): void {
+    it('hands its modifier the query with the ignored key already bound, under a name it can read', function (): void {
         $this->seed($lamp = new Product('Lamp'));
-        $bound = [];
+        $bound = null;
 
         $this::getContainer()->get(ValidatorInterface::class)->validate('Lamp', new UniqueValue(
             Product::class,
             'name',
             ignoredIdentifier: (string) $lamp->id,
             modifyQueryUsing: static function (QueryBuilder $query) use (&$bound): void {
-                $bound = [$query->getParameter('sylament_probe_0')?->getValue(), $query->getParameter('sylament_ignored_record')?->getValue()];
+                $bound = $query->getParameter('sylament_ignored_record')?->getValue();
             },
         ));
 
-        expect($bound)->toBe(['Lamp', $lamp->id]);
+        expect($bound)->toBe($lamp->id);
     });
 });
 

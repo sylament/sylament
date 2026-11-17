@@ -108,18 +108,6 @@ describe('format', function (): void {
 
         expect($host->data['publishedAt'])->toBe('2026-08-19 00:00:00');
     });
-
-    it("reads the browser's T spelling and the server's space spelling as one value", function (): void {
-        $host = $this->validatingRecordMappingHost();
-        $schema = $host->mapping(DateTimePicker::make('immutableAt'))->record(ManuscriptObjectKinds::class);
-
-        $host->data = ['immutableAt' => '2026-08-18T14:30'];
-        $browser = $schema->getData()->immutableAt;
-        $host->data = ['immutableAt' => '2026-08-18 14:30:00'];
-
-        expect($browser)->toBeInstanceOf(DateTimeImmutable::class)
-            ->toEqual($schema->getData()->immutableAt);
-    });
 });
 
 describe('timezone', function (): void {

@@ -117,16 +117,19 @@ describe('required()', function (): void {
         $this->host = $this->validatingRecordMappingHost();
     });
 
-    it('accepts an off switch and a blank string and refuses only a missing state, with no native required attribute but its asterisk', function (): void {
+    it('accepts an off switch and a blank string and refuses a missing state, or an off switch accepted() asks to be on, with no native required attribute but its asterisk', function (): void {
         $schema = $this->host->mapping(
             Toggle::make('notify')->required(),
             Toggle::make('muted')->required()->validationMessages([NotNull::class => 'Say on or off.']),
+            Toggle::make('agreed')->required()->accepted(),
         );
-        $this->host->data = ['notify' => false, 'muted' => ''];
+        $this->host->data = ['notify' => false, 'muted' => '', 'agreed' => false];
 
-        expect($this->host->validateSchema($schema))->toBeNull();
+        expect(fn () => $this->host->validateSchema($schema))->toThrow(function (ValidationException $exception): void {
+            expect($exception->getErrors())->toBe(['data.agreed' => ['This value should be true.']]);
+        });
 
-        $this->host->data = ['notify' => null, 'muted' => null];
+        $this->host->data = ['notify' => null, 'muted' => null, 'agreed' => true];
 
         expect(fn () => $this->host->validateSchema($schema))->toThrow(function (ValidationException $exception): void {
             expect($exception->getErrors())->toBe([
@@ -137,15 +140,6 @@ describe('required()', function (): void {
             ->and($this->renderSchemaComponent(Toggle::make('notify')->required()))
             ->toContainElement('input[role="switch"]:not([required])')
             ->toContainElement('label[for="schema.notify"] ' . Selectors::REQUIRED_MARK);
-    });
-
-    it('asks for an on switch through accepted()', function (): void {
-        $schema = $this->host->mapping(Toggle::make('notify')->required()->accepted());
-        $this->host->data = ['notify' => false];
-
-        expect(fn () => $this->host->validateSchema($schema))->toThrow(function (ValidationException $exception): void {
-            expect($exception->getErrors())->toBe(['data.notify' => ['This value should be true.']]);
-        });
     });
 
     it('is not marked required by a non-nullable bool target, where a text field over a non-nullable target is', function (): void {

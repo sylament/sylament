@@ -6,6 +6,7 @@ use PHPUnit\Framework\AssertionFailedError;
 use Sylament\Actions\DeleteAction;
 use Sylament\Actions\Testing\TestAction;
 use Sylament\Tests\Fixtures\Entity\Product;
+use Sylament\Tests\Fixtures\Tables\BrowsableProductTable;
 use Sylament\Tests\Fixtures\Tables\ProductTable;
 
 it('fails asserting that the table shows a record it no longer shows', function (): void {
@@ -31,4 +32,21 @@ it('fails asserting records in an order the table does not show them in', functi
 
     expect(fn () => $tester->assertCanSeeTableRecords([$second, $first], inOrder: true))
         ->toThrow(AssertionFailedError::class, "Failed asserting that table rows with keys [{$second->id}, {$first->id}] are visible in that order on the [" . ProductTable::class . '] component.');
+});
+
+it('fails asserting a total the table does not count', function (): void {
+    $this->seed(new Product('Lamp'), new Product('Desk'));
+
+    $tester = $this->createLiveComponent(ProductTable::class)->assertCountTableRecords(2);
+
+    expect(fn () => $tester->assertCountTableRecords(3))
+        ->toThrow(AssertionFailedError::class, 'Failed asserting that the [' . ProductTable::class . '] table has [3] records in total.');
+});
+
+it('loads a table that defers loading', function (): void {
+    $this->seed($lamp = new Product('Lamp'));
+
+    $this->createLiveComponent(BrowsableProductTable::class, ['defersLoading' => true])
+        ->loadTable()
+        ->assertCanSeeTableRecords([$lamp]);
 });

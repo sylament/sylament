@@ -72,6 +72,31 @@ trait TestsRecords
         return $this;
     }
 
+    public function assertCountTableRecords(int $count): static
+    {
+        $host = $this->getTestedTableHost();
+        $hostClass = $host::class;
+
+        if (!method_exists($host, 'getAllTableRecordsCount')) {
+            throw new LogicException(sprintf('The [%s] component cannot count its table records: it has no [getAllTableRecordsCount()].', $hostClass));
+        }
+
+        Assert::assertSame(
+            $count,
+            $host->getAllTableRecordsCount(),
+            "Failed asserting that the [{$hostClass}] table has [{$count}] records in total.",
+        );
+
+        return $this;
+    }
+
+    public function loadTable(): static
+    {
+        $this->call('loadTable');
+
+        return $this;
+    }
+
     private function getTestedTableHost(): InteractsWithTable
     {
         $host = $this->component();

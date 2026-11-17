@@ -12,17 +12,22 @@ use Sylament\Tables\Table;
 use Sylament\Tests\Fixtures\Entity\Product;
 use Sylament\Tests\Fixtures\Schemas\HookLog;
 use Symfony\UX\LiveComponent\Attribute\AsLiveComponent;
+use Symfony\UX\LiveComponent\Attribute\LiveProp;
 use Symfony\UX\LiveComponent\DefaultActionTrait;
 
 /**
  * A product table a user browses: sorts and searches by name, searches the name column
- * on its own, shows the id column on request and opens a product from its name.
+ * on its own, shows the id column on request and opens a product from its name; with
+ * `defersLoading` it loads its rows only when asked.
  */
 #[AsLiveComponent(name: 'Tables:BrowsableProductTable', template: '@Fixtures/tables/table.html.twig')]
 class BrowsableProductTable implements InteractsWithTable
 {
     use DefaultActionTrait;
     use HasTable;
+
+    #[LiveProp]
+    public bool $defersLoading = false;
 
     public function __construct(
         private readonly EntityManagerInterface $entityManager,
@@ -43,6 +48,7 @@ class BrowsableProductTable implements InteractsWithTable
                     }),
                 TextColumn::make('id')->toggleable(isToggledHiddenByDefault: true),
             ])
-            ->defaultSort('name');
+            ->defaultSort('name')
+            ->deferLoading($this->defersLoading);
     }
 }

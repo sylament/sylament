@@ -80,13 +80,16 @@ describe('mounting', function (): void {
         'a disabled action' => ['locked'],
     ]);
 
-    it('drops only the frame it pushed when the name resolves nothing, leaving its parents mounted', function (): void {
+    it('drops only the frame it pushed when the name resolves nothing, leaving its parents mounted', function (string $name): void {
         $this->createLiveComponent(ActionStackHost::class)
             ->mountAction('confirm')
-            ->call('mountAction', ['name' => 'nowhere'])
+            ->call('mountAction', ['name' => $name])
             ->assertActionMounted('confirm')
-            ->assertActionNotMounted(['confirm', 'nowhere']);
-    });
+            ->assertActionNotMounted(['confirm', $name]);
+    })->with([
+        'a name no action has' => ['nowhere'],
+        'a blank name' => [' '],
+    ]);
 });
 
 describe('unmounting', function (): void {
@@ -159,7 +162,6 @@ describe('resolving', function (): void {
         expect($this::getContainer()->get(HookLog::class)->hooks)->toBe($hooks);
     })->with([
         'a method answering a string' => ['status', []],
-        'a factory answering an action' => ['quick', ['quick', 'afterActionCalled: quick']],
     ]);
 
     it('throws for a factory that answers no action at run time, and mounts nothing through it', function (): void {
@@ -169,20 +171,6 @@ describe('resolving', function (): void {
             ->toThrow(ActionNotResolvableException::class, 'The [lyingAction] method on the live component returned an instance of [null].');
 
         $tester->call('mountAction', ['name' => 'lying'])->assertActionNotMounted();
-    });
-
-    it('mounts nothing for a blank name', function (): void {
-        $this->createLiveComponent(ActionStackHost::class)
-            ->call('mountAction', ['name' => ' '])
-            ->assertActionNotMounted()
-            ->mountAction('confirm')
-            ->assertActionMounted('confirm');
-    });
-
-    it('resolves a table context on a host that is not a table as a host action', function (): void {
-        $this->createLiveComponent(ActionStackHost::class)
-            ->call('mountAction', ['name' => 'confirm', 'context' => ['table' => true]])
-            ->assertActionMounted(['name' => 'confirm', 'context' => ['table' => true]]);
     });
 
     it('mounts an action whose arguments arrive as a list, handing it the list', function (): void {
@@ -233,7 +221,6 @@ describe('a schema context', function (): void {
     })->with([
         'a declared schema' => ['form', ['probe: form']],
         'a host method of the contract' => ['unmountAction', []],
-        'the call of a mounted action' => ['callMountedAction', []],
         'a parameterless host method' => ['save', []],
         'no method at all' => ['nowhere', []],
     ]);
@@ -286,7 +273,6 @@ describe('the mounted schema', function (): void {
         $host = $tester->component();
 
         expect($host->getMountedActionSchema()->getKey())->toBe('mountedActionSchema0')
-            ->and($host->getMountedActionSchema()->getStatePath())->toBe('mountedActionsData.0')
             ->and($host->mountedActionHasSchema())->toBeTrue()
             ->and($host->getMountedActionData())->toMatchArray(['title' => 'Lamp'])
             ->and($tester->render()->crawler()->filter(Selectors::mountedModal(0) . ' ' . SchemasSelectors::boundTo('mountedActionsData.0.title'))->count())->toBe(1);

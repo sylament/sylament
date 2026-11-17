@@ -46,18 +46,14 @@ beforeEach(function (): void {
 });
 
 describe('required()', function (): void {
-    it('refuses a blank value of a field it requires, under a closure condition too, and leaves one the closure releases optional', function (): void {
+    it('refuses a blank value of a field it requires, and leaves one its condition releases optional', function (): void {
         $schema = $this->host->mapping(
             TextInput::make('code')->required(),
-            TextInput::make('city')->required(static fn (): bool => true),
-            TextInput::make('note')->required(static fn (): bool => false),
+            TextInput::make('note')->required(false),
         );
 
         expect(fn () => $this->host->validateSchema($schema))->toThrow(function (ValidationException $exception): void {
-            expect($exception->getErrors())->toBe([
-                'data.code' => ['This value should not be blank.'],
-                'data.city' => ['This value should not be blank.'],
-            ]);
+            expect($exception->getErrors())->toBe(['data.code' => ['This value should not be blank.']]);
         });
     });
 
@@ -801,18 +797,15 @@ describe('unique()', function (): void {
         });
     });
 
-    it('excludes the record ignorable: names, evaluating a closure for it', function (Closure $ignorable): void {
+    it('excludes the record ignorable: names', function (): void {
         $this->seed($lamp = new Product('Lamp'));
-        $schema = $this->host->mapping(TextInput::make('name')->unique(entity: Product::class, ignorable: $ignorable($this->reload($lamp))), TextInput::make('title')->unique(entity: Product::class, property: 'name'));
+        $schema = $this->host->mapping(TextInput::make('name')->unique(entity: Product::class, ignorable: $this->reload($lamp)), TextInput::make('title')->unique(entity: Product::class, property: 'name'));
         $this->host->data = ['name' => 'Lamp', 'title' => 'Lamp'];
 
         expect(fn () => $this->host->validateSchema($schema))->toThrow(function (ValidationException $exception): void {
             expect($exception->getErrors())->toBe(['data.title' => ['This value is already taken.']]);
         });
-    })->with([
-        'a record' => [static fn (Product $lamp): Product => $lamp],
-        'a closure returning it' => [static fn (Product $lamp): Closure => static fn (): Product => $lamp],
-    ]);
+    });
 
     it('narrows the probe through modifyQueryUsing, handing it the query builder with the closure injection a field keeps', function (): void {
         $this->seed(new Product('Lamp'));

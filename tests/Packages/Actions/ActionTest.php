@@ -40,7 +40,7 @@ describe('trigger rendering', function (): void {
     })->with([
         'a button by default' => [fn (): Action => Action::make('save'), SupportSelectors::BUTTON],
         'a badge' => [fn (): Action => Action::make('save')->badge(), SupportSelectors::BADGE],
-        'a dropdown item' => [fn (): Action => Action::make('save')->grouped(), '.sy-dropdown-item'],
+        'a dropdown item' => [fn (): Action => Action::make('save')->grouped(), SupportSelectors::DROPDOWN_ITEM],
         'an icon button' => [fn (): Action => Action::make('save')->iconButton(), SupportSelectors::ICON_BUTTON],
         'a link' => [fn (): Action => Action::make('save')->link(), SupportSelectors::LINK],
     ]);
@@ -49,7 +49,7 @@ describe('trigger rendering', function (): void {
         $render = $this->renderViewComponent(ActionGroup::make([Action::make('save')->link(), Action::make('drop')]));
 
         expect($render)->toContainElement(Selectors::TRIGGER . SupportSelectors::LINK, 'Save')
-            ->toContainElement(Selectors::TRIGGER . '.sy-dropdown-item', 'Drop');
+            ->toContainElement(Selectors::TRIGGER . SupportSelectors::DROPDOWN_ITEM, 'Drop');
     });
 
     it('renders an uncoloured action in primary', function (Closure $action, string $look): void {
@@ -62,8 +62,8 @@ describe('trigger rendering', function (): void {
     ]);
 
     it('renders an uncoloured dropdown item gray', function (): void {
-        expect($this->renderViewComponent(Action::make('save')->grouped()))->toContainElement('.sy-dropdown-item' . SupportSelectors::GRAY, 'Save')
-            ->and($this->renderViewComponent(Action::make('save')->grouped()->color('danger')))->toContainElement('.sy-dropdown-item' . SupportSelectors::color('danger'), 'Save');
+        expect($this->renderViewComponent(Action::make('save')->grouped()))->toContainElement(SupportSelectors::DROPDOWN_ITEM . SupportSelectors::GRAY, 'Save')
+            ->and($this->renderViewComponent(Action::make('save')->grouped()->color('danger')))->toContainElement(SupportSelectors::DROPDOWN_ITEM . SupportSelectors::color('danger'), 'Save');
     });
 
     it("titles its trigger with its tooltip, over an icon button's own label", function (): void {
@@ -162,7 +162,7 @@ describe('serialization', function (): void {
         expect($this->renderViewComponent(Action::fromArray(['name' => 'save', 'template' => '@Evil/anything.html.twig'])))
             ->toContainElement(SupportSelectors::BUTTON, 'Save')
             ->and($this->renderViewComponent(Action::fromArray(['name' => 'save', 'template' => Action::GROUPED_TEMPLATE])))
-            ->toContainElement('.sy-dropdown-item', 'Save');
+            ->toContainElement(SupportSelectors::DROPDOWN_ITEM, 'Save');
     });
 
     it('dispatches a restored event to the component it names, and plainly when it names none', function (): void {
@@ -305,12 +305,12 @@ describe('record labels', function (): void {
         $this->seed($lamp = new Product('Lamp'), new Product('Vase'));
 
         expect($this->createLiveComponent(InjectingProductTable::class)->mountAction(TestAction::make('delete')->table($lamp))->render()->crawler())
-            ->toContainElement('.sy-modal-heading', 'Delete Lamp');
+            ->toContainElement(SupportSelectors::MODAL_HEADING, 'Delete Lamp');
     });
 
     it("titles a record outside a table by its host's title, else by its host's label for the host's own record class, else by the class", function (string $action, string $heading): void {
         expect($this->createLiveComponent(RecordDefaultsHost::class)->mountAction($action)->render()->crawler())
-            ->toContainElement('.sy-modal-heading', $heading);
+            ->toContainElement(SupportSelectors::MODAL_HEADING, $heading);
     })->with([
         "the host's title" => ['titled', 'Delete The lamp'],
         "the host's label" => ['labelled', 'Delete stock item'],

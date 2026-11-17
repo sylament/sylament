@@ -23,30 +23,30 @@ it('is a dialog around one window, wired to its controller and to the open and c
         . '[data-action~="close->sylament--support--modal#restoreFocus"]';
 
     expect($modal)->toContainElement($dialog)
-        ->and($modal->filter($dialog . ' .sy-modal-window'))->toHaveCount(1);
+        ->and($modal->filter($dialog . ' ' . SupportSelectors::MODAL_WINDOW))->toHaveCount(1);
 });
 
 it('closes on escape and on a click away unless told not to', function (): void {
     expect($this->renderTwigComponent('SylamentSupport:Modal')->crawler())
-        ->toContainElement('dialog.sy-modal.sy-clickable:not([data-sylament--support--modal-close-by-escaping-value]):not([data-sylament--support--modal-close-by-clicking-away-value])')
+        ->toContainElement(SupportSelectors::MODAL . SupportSelectors::MODAL_CLICKABLE . ':not(' . SupportSelectors::modalValue('close-by-escaping') . '):not(' . SupportSelectors::modalValue('close-by-clicking-away') . ')')
         ->and($this->renderTwigComponent('SylamentSupport:Modal', ['closeByEscaping' => false])->crawler())
-        ->toContainElement('dialog.sy-modal.sy-clickable[data-sylament--support--modal-close-by-escaping-value="false"]')
+        ->toContainElement(SupportSelectors::MODAL . SupportSelectors::MODAL_CLICKABLE . SupportSelectors::modalValue('close-by-escaping', 'false'))
         ->and($this->renderTwigComponent('SylamentSupport:Modal', ['closeByClickingAway' => false])->crawler())
-        ->toContainElement('dialog.sy-modal:not(.sy-clickable)[data-sylament--support--modal-close-by-clicking-away-value="false"]:not([data-sylament--support--modal-close-by-escaping-value])');
+        ->toContainElement(SupportSelectors::MODAL . ':not(' . SupportSelectors::MODAL_CLICKABLE . ')' . SupportSelectors::modalValue('close-by-clicking-away', 'false') . ':not(' . SupportSelectors::modalValue('close-by-escaping') . ')');
 });
 
 it('renders open, natively and as its open value, only when open', function (): void {
     expect($this->renderTwigComponent('SylamentSupport:Modal', ['open' => true])->crawler())
-        ->toContainElement('dialog.sy-modal[open][data-sylament--support--modal-open-value="true"]')
+        ->toContainElement(SupportSelectors::MODAL . '[open]' . SupportSelectors::modalValue('open', 'true'))
         ->and($this->renderTwigComponent('SylamentSupport:Modal')->crawler())
-        ->toContainElement('dialog.sy-modal:not([open]):not([data-sylament--support--modal-open-value])');
+        ->toContainElement(SupportSelectors::MODAL . ':not([open]):not(' . SupportSelectors::modalValue('open') . ')');
 });
 
 it('marks a modal opened over another as overlaid', function (): void {
     expect($this->renderTwigComponent('SylamentSupport:Modal', ['overlaid' => true])->crawler())
-        ->toContainElement('dialog.sy-modal.sy-modal-overlaid')
+        ->toContainElement(SupportSelectors::MODAL . SupportSelectors::MODAL_OVERLAID)
         ->and($this->renderTwigComponent('SylamentSupport:Modal')->crawler())
-        ->toContainElement('dialog.sy-modal:not(.sy-modal-overlaid)');
+        ->toContainElement(SupportSelectors::MODAL . ':not(' . SupportSelectors::MODAL_OVERLAID . ')');
 });
 
 it('is labelled by its heading and described by its description when it has an id, and by neither without them', function (): void {
@@ -60,7 +60,7 @@ it('is labelled by its heading and described by its description when it has an i
         ->toContainElement('dialog#delete-order:not([aria-labelledby]):not([aria-describedby])')
         ->toContainElement('p.sy-modal-description:not([id])', 'This cannot be undone.')
         ->and($this->renderTwigComponent('SylamentSupport:Modal', ['heading' => 'Delete order'])->crawler())
-        ->toContainElement('dialog.sy-modal:not([aria-labelledby])')
+        ->toContainElement(SupportSelectors::MODAL . ':not([aria-labelledby])')
         ->toContainElement('h2:not([id])', 'Delete order');
 });
 
@@ -72,7 +72,7 @@ it('shows a header with a close button for an icon or a description alone, and n
         ->toContainElement('header.sy-modal-header p', 'This cannot be undone.')
         ->toContainElement('header.sy-modal-header ' . SupportSelectors::MODAL_CLOSE_BUTTON)
         ->and($this->renderTwigComponent('SylamentSupport:Modal', content: 'Are you sure?')->crawler())
-        ->toContainElement('.sy-modal-window', 'Are you sure?')
+        ->toContainElement(SupportSelectors::MODAL_WINDOW, 'Are you sure?')
         ->not->toContainElement('header')
         ->not->toContainElement(SupportSelectors::MODAL_CLOSE_BUTTON);
 });
@@ -101,17 +101,17 @@ it('paints its icon in primary unless coloured, gray and an empty colour uncolou
 
 it('shows its content in a content region, and no region without content', function (): void {
     expect($this->renderTwigComponent('SylamentSupport:Modal', content: 'Are you sure?')->crawler())
-        ->toContainElement('.sy-modal-window.sy-modal-window-has-content .sy-modal-content', 'Are you sure?')
+        ->toContainElement(SupportSelectors::MODAL_WINDOW . '.sy-modal-window-has-content .sy-modal-content', 'Are you sure?')
         ->and($this->renderTwigComponent('SylamentSupport:Modal', blocks: ['footer' => '<button type="button">Confirm</button>'])->crawler())
-        ->toContainElement('.sy-modal-window:not(.sy-modal-window-has-content) footer button', 'Confirm')
+        ->toContainElement(SupportSelectors::MODAL_WINDOW . ':not(.sy-modal-window-has-content) footer button', 'Confirm')
         ->not->toContainElement('.sy-modal-content');
 });
 
 it('shows its footer block in a footer, and no footer without one', function (): void {
     expect($this->renderTwigComponent('SylamentSupport:Modal', blocks: ['footer' => '<button type="button">Confirm</button>'])->crawler())
-        ->toContainElement('.sy-modal-window.sy-modal-window-has-footer footer.sy-modal-footer button', 'Confirm')
+        ->toContainElement(SupportSelectors::MODAL_WINDOW . '.sy-modal-window-has-footer footer' . SupportSelectors::MODAL_FOOTER . ' button', 'Confirm')
         ->and($this->renderTwigComponent('SylamentSupport:Modal', content: 'Are you sure?')->crawler())
-        ->toContainElement('.sy-modal-window:not(.sy-modal-window-has-footer)', 'Are you sure?')
+        ->toContainElement(SupportSelectors::MODAL_WINDOW . ':not(.sy-modal-window-has-footer)', 'Are you sure?')
         ->not->toContainElement('footer');
 });
 
@@ -119,75 +119,75 @@ it('lays its footer actions out in the footer unless a footer block replaces the
     $actions = [Html::make('<button type="button">Confirm</button>'), Html::make('<button type="button">Cancel</button>')];
 
     expect($this->renderTwigComponent('SylamentSupport:Modal', ['footerActions' => $actions])->crawler())
-        ->toContainButtons('.sy-modal-window.sy-modal-window-has-footer footer.sy-modal-footer' . SupportSelectors::NO_ALIGN . ' .sy-modal-footer-actions button', ['Confirm', 'Cancel'])
+        ->toContainButtons(SupportSelectors::MODAL_WINDOW . '.sy-modal-window-has-footer footer' . SupportSelectors::MODAL_FOOTER . SupportSelectors::NO_ALIGN . ' .sy-modal-footer-actions button', ['Confirm', 'Cancel'])
         ->and($this->renderTwigComponent('SylamentSupport:Modal', ['footerActions' => $actions], blocks: ['footer' => '<button type="button">Done</button>'])->crawler())
-        ->toContainButtons('footer.sy-modal-footer button', ['Done'])
+        ->toContainButtons('footer' . SupportSelectors::MODAL_FOOTER . ' button', ['Done'])
         ->and($this->renderTwigComponent('SylamentSupport:Modal', ['footerActions' => $actions, 'footerActionsAlignment' => Alignment::Center])->crawler())
-        ->toContainButtons('footer.sy-modal-footer' . SupportSelectors::align('center') . ' .sy-modal-footer-actions button', ['Confirm', 'Cancel'])
+        ->toContainButtons('footer' . SupportSelectors::MODAL_FOOTER . SupportSelectors::align('center') . ' .sy-modal-footer-actions button', ['Confirm', 'Cancel'])
         ->and($this->renderTwigComponent('SylamentSupport:Modal', ['footerActions' => $actions, 'footerActionsAlignment' => 'spread'])->crawler())
-        ->toContainButtons('footer.sy-modal-footer.spread' . SupportSelectors::NO_ALIGN . ' .sy-modal-footer-actions button', ['Confirm', 'Cancel']);
+        ->toContainButtons('footer' . SupportSelectors::MODAL_FOOTER . '.spread' . SupportSelectors::NO_ALIGN . ' .sy-modal-footer-actions button', ['Confirm', 'Cancel']);
 });
 
 it('is medium wide unless sized, the screen width also stretching the dialog', function (): void {
     expect($this->renderTwigComponent('SylamentSupport:Modal')->crawler())
-        ->toContainElement('dialog.sy-modal:not(.sy-modal-screen) .sy-modal-window.sy-modal-md')
+        ->toContainElement(SupportSelectors::MODAL . ':not(' . SupportSelectors::modalWidth('screen') . ') ' . SupportSelectors::MODAL_WINDOW . SupportSelectors::modalWidth('md'))
         ->and($this->renderTwigComponent('SylamentSupport:Modal', ['width' => Width::Large])->crawler())
-        ->toContainElement('.sy-modal-window.sy-modal-lg:not(.sy-modal-md)')
+        ->toContainElement(SupportSelectors::MODAL_WINDOW . SupportSelectors::modalWidth('lg') . ':not(' . SupportSelectors::modalWidth('md') . ')')
         ->and($this->renderTwigComponent('SylamentSupport:Modal', ['width' => Width::Screen])->crawler())
-        ->toContainElement('dialog.sy-modal.sy-modal-screen .sy-modal-window.sy-modal-screen');
+        ->toContainElement(SupportSelectors::MODAL . SupportSelectors::modalWidth('screen') . ' ' . SupportSelectors::MODAL_WINDOW . SupportSelectors::modalWidth('screen'));
 });
 
 it('returns focus to its opener unless told not to', function (): void {
     expect($this->renderTwigComponent('SylamentSupport:Modal', ['returnsFocus' => false])->crawler())
-        ->toContainElement('dialog.sy-modal[data-sylament--support--modal-returns-focus-value="false"]')
+        ->toContainElement(SupportSelectors::MODAL . '[data-sylament--support--modal-returns-focus-value="false"]')
         ->and($this->renderTwigComponent('SylamentSupport:Modal')->crawler())
-        ->toContainElement('dialog.sy-modal:not([data-sylament--support--modal-returns-focus-value])');
+        ->toContainElement(SupportSelectors::MODAL . ':not([data-sylament--support--modal-returns-focus-value])');
 });
 
 it('closes from a button named Close in its header, kept out of the tab order while escape closes, and focuses its window when asked', function (): void {
     $closing = SupportSelectors::MODAL_CLOSE_BUTTON . '[data-action~="sylament--support--modal#dismiss"]';
 
     expect($this->renderTwigComponent('SylamentSupport:Modal', ['heading' => 'Delete order'])->crawler())
-        ->toContainElement('.sy-modal-window.sy-modal-window-has-close-btn:not([autofocus]):not([tabindex]) header ' . $closing . '[tabindex="-1"]')
+        ->toContainElement(SupportSelectors::MODAL_WINDOW . '.sy-modal-window-has-close-btn:not([autofocus]):not([tabindex]) header ' . $closing . '[tabindex="-1"]')
         ->and($this->renderTwigComponent('SylamentSupport:Modal', ['heading' => 'Delete order', 'closeByEscaping' => false])->crawler())
-        ->toContainElement('.sy-modal-window[autofocus][tabindex="-1"] header ' . $closing . ':not([tabindex])')
+        ->toContainElement(SupportSelectors::MODAL_WINDOW . '[autofocus][tabindex="-1"] header ' . $closing . ':not([tabindex])')
         ->and($this->renderTwigComponent('SylamentSupport:Modal', ['heading' => 'Delete order', 'closeButton' => false])->crawler())
-        ->toContainElement('.sy-modal-window:not(.sy-modal-window-has-close-btn) h2', 'Delete order')
+        ->toContainElement(SupportSelectors::MODAL_WINDOW . ':not(.sy-modal-window-has-close-btn) h2', 'Delete order')
         ->not->toContainElement(SupportSelectors::MODAL_CLOSE_BUTTON)
         ->and($this->renderTwigComponent('SylamentSupport:Modal', ['autofocus' => false])->crawler())
-        ->toContainElement('.sy-modal-window[autofocus][tabindex="-1"]');
+        ->toContainElement(SupportSelectors::MODAL_WINDOW . '[autofocus][tabindex="-1"]');
 });
 
 it('slides over from the end unless told to slide from the start', function (): void {
     expect($this->renderTwigComponent('SylamentSupport:Modal', ['slideOver' => true])->crawler())
-        ->toContainElement('dialog.sy-modal.sy-modal-slide-over.sy-modal-slide-over-from-end:not(.sy-modal-slide-over-from-start)')
+        ->toContainElement(SupportSelectors::MODAL . SupportSelectors::modalSlideOver() . SupportSelectors::modalSlideOver('end') . ':not(' . SupportSelectors::modalSlideOver('start') . ')')
         ->and($this->renderTwigComponent('SylamentSupport:Modal', ['slideOver' => true, 'slideOverPosition' => SlideOverPosition::Start])->crawler())
-        ->toContainElement('dialog.sy-modal.sy-modal-slide-over.sy-modal-slide-over-from-start:not(.sy-modal-slide-over-from-end)')
+        ->toContainElement(SupportSelectors::MODAL . SupportSelectors::modalSlideOver() . SupportSelectors::modalSlideOver('start') . ':not(' . SupportSelectors::modalSlideOver('end') . ')')
         ->and($this->renderTwigComponent('SylamentSupport:Modal')->crawler())
-        ->toContainElement('dialog.sy-modal:not([class*="sy-modal-slide-over"])');
+        ->toContainElement(SupportSelectors::MODAL . ':not([class*="sy-modal-slide-over"])');
 });
 
 it('sticks its header and its footer each on its own', function (): void {
     expect($this->renderTwigComponent('SylamentSupport:Modal', ['stickyHeader' => true])->crawler())
-        ->toContainElement('dialog.sy-modal.sy-modal-has-sticky-header:not(.sy-modal-has-sticky-footer)')
+        ->toContainElement(SupportSelectors::MODAL . SupportSelectors::modalSticky('header') . ':not(' . SupportSelectors::modalSticky('footer') . ')')
         ->and($this->renderTwigComponent('SylamentSupport:Modal', ['stickyFooter' => true])->crawler())
-        ->toContainElement('dialog.sy-modal.sy-modal-has-sticky-footer:not(.sy-modal-has-sticky-header)');
+        ->toContainElement(SupportSelectors::MODAL . SupportSelectors::modalSticky('footer') . ':not(' . SupportSelectors::modalSticky('header') . ')');
 });
 
 it('aligns its window to the start unless aligned, and an alignment outside the known ones as its own class', function (): void {
     expect($this->renderTwigComponent('SylamentSupport:Modal')->crawler())
-        ->toContainElement('.sy-modal-window' . SupportSelectors::align('start'))
+        ->toContainElement(SupportSelectors::MODAL_WINDOW . SupportSelectors::align('start'))
         ->and($this->renderTwigComponent('SylamentSupport:Modal', ['alignment' => Alignment::Center])->crawler())
-        ->toContainElement('.sy-modal-window' . SupportSelectors::align('center') . ':not(' . SupportSelectors::align('start') . ')')
+        ->toContainElement(SupportSelectors::MODAL_WINDOW . SupportSelectors::align('center') . ':not(' . SupportSelectors::align('start') . ')')
         ->and($this->renderTwigComponent('SylamentSupport:Modal', ['alignment' => 'spread'])->crawler())
-        ->toContainElement('.sy-modal-window.spread' . SupportSelectors::NO_ALIGN);
+        ->toContainElement(SupportSelectors::MODAL_WINDOW . '.spread' . SupportSelectors::NO_ALIGN);
 });
 
 it('lets clicks through to the page, never closing on a click away', function (): void {
     expect($this->renderTwigComponent('SylamentSupport:Modal', ['clickThrough' => true, 'closeByClickingAway' => true])->crawler())
-        ->toContainElement('dialog.sy-modal.sy-modal-click-through:not(.sy-clickable)[data-sylament--support--modal-click-through-value="true"][data-sylament--support--modal-close-by-clicking-away-value="false"]')
+        ->toContainElement(SupportSelectors::MODAL . SupportSelectors::MODAL_CLICK_THROUGH . ':not(' . SupportSelectors::MODAL_CLICKABLE . ')' . SupportSelectors::modalValue('click-through', 'true') . SupportSelectors::modalValue('close-by-clicking-away', 'false'))
         ->and($this->renderTwigComponent('SylamentSupport:Modal')->crawler())
-        ->toContainElement('dialog.sy-modal.sy-clickable:not(.sy-modal-click-through):not([data-sylament--support--modal-click-through-value])');
+        ->toContainElement(SupportSelectors::MODAL . SupportSelectors::MODAL_CLICKABLE . ':not(' . SupportSelectors::MODAL_CLICK_THROUGH . '):not(' . SupportSelectors::modalValue('click-through') . ')');
 });
 
 it('puts its extra window attributes on the window and its extra overlay attributes on the dialog, appending classes and styles', function (): void {
@@ -197,19 +197,19 @@ it('puts its extra window attributes on the window and its extra overlay attribu
         'extraOverlayAttributes' => ['class' => 'dimmed', 'style' => 'top: 0', 'data-overlay' => 'order'],
         'extraWindowAttributes' => ['class' => 'roomy', 'data-window' => 'order'],
     ])->crawler())
-        ->toContainElement('dialog.sy-modal.danger-zone.dimmed[style^="top: 0"][style$="color: red"][data-overlay="order"]:not([data-window]) .sy-modal-window.sy-modal-md.roomy[data-window="order"]:not([data-overlay])')
+        ->toContainElement(SupportSelectors::MODAL . '.danger-zone.dimmed[style^="top: 0"][style$="color: red"][data-overlay="order"]:not([data-window]) ' . SupportSelectors::MODAL_WINDOW . SupportSelectors::modalWidth('md') . '.roomy[data-window="order"]:not([data-overlay])')
         ->and($this->renderTwigComponent('SylamentSupport:Modal', ['extraOverlayAttributes' => ['style' => 'top: 0']])->crawler())
-        ->toContainElement('dialog.sy-modal[style="top: 0"]')
+        ->toContainElement(SupportSelectors::MODAL . '[style="top: 0"]')
         ->and($this->renderTwigComponent('SylamentSupport:Modal', ['style' => 'color: red'])->crawler())
-        ->toContainElement('dialog.sy-modal[style="color: red"]')
+        ->toContainElement(SupportSelectors::MODAL . '[style="color: red"]')
         ->and($this->renderTwigComponent('SylamentSupport:Modal')->crawler())
-        ->toContainElement('dialog.sy-modal:not([style])');
+        ->toContainElement(SupportSelectors::MODAL . ':not([style])');
 });
 
 it('submits its window as a form to the live action it names, and is no form without one', function (): void {
     expect($this->renderTwigComponent('SylamentSupport:Modal', ['submitHandler' => 'callMountedAction'], content: 'Are you sure?')->crawler())
-        ->toContainElement('form.sy-modal-window.sy-modal-md[data-action="submit->live#action:prevent"][data-live-action-param="callMountedAction"]', 'Are you sure?')
+        ->toContainElement('form' . SupportSelectors::MODAL_WINDOW . SupportSelectors::modalWidth('md') . '[data-action="submit->live#action:prevent"][data-live-action-param="callMountedAction"]', 'Are you sure?')
         ->and($this->renderTwigComponent('SylamentSupport:Modal', content: 'Are you sure?')->crawler())
-        ->toContainElement('div.sy-modal-window.sy-modal-md:not([data-action])', 'Are you sure?')
+        ->toContainElement('div' . SupportSelectors::MODAL_WINDOW . SupportSelectors::modalWidth('md') . ':not([data-action])', 'Are you sure?')
         ->not->toContainElement('form');
 });

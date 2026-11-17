@@ -32,15 +32,15 @@ beforeEach(function (): void {
 
 it('puts a danger "Dissociate" with the x-mark on each row, confirmed in a modal headed by the record title, with the x-mark and a "Dissociate" submit', function (?string $titleAttribute, string $heading): void {
     $tester = ($this->table)($titleAttribute);
-    $trigger = $tester->render()->crawler()->filter(Selectors::trigger('dissociate') . SupportSelectors::color('danger') . ':not(' . TablesSelectors::BULK_ONLY . ')');
+    $trigger = $tester->render()->crawler()->filter(Selectors::trigger('dissociate') . SupportSelectors::color('danger') . ':not(' . Selectors::BULK_ONLY . ')');
     $modal = $tester->mountAction(TestAction::make('dissociate')->table($this->bramble))->render()->crawler();
 
-    expect($trigger->each(static fn (Crawler $button): string => $button->filter('.sy-link-label')->text()))->toBe(['Dissociate', 'Dissociate'])
+    expect($trigger->each(static fn (Crawler $button): string => $button->filter(SupportSelectors::LINK_LABEL)->text()))->toBe(['Dissociate', 'Dissociate'])
         ->and($trigger->first()->filter(SupportSelectors::ICON)->text())->toBe('x-mark-20-solid')
-        ->and($modal->filter(Selectors::MODAL_HEADING)->text())->toBe($heading)
-        ->and($modal->filter(Selectors::MODAL_DESCRIPTION)->text())->toBe('Are you sure you would like to do this?')
-        ->and($modal->filter(Selectors::MODAL_ICON)->text())->toBe('x-mark')
-        ->and($modal->filter(Selectors::MODAL_SUBMIT . SupportSelectors::color('danger'))->text())->toBe('Dissociate');
+        ->and($modal->filter(SupportSelectors::MODAL_HEADING)->text())->toBe($heading)
+        ->and($modal->filter(SupportSelectors::MODAL_DESCRIPTION)->text())->toBe('Are you sure you would like to do this?')
+        ->and($modal->filter(SupportSelectors::MODAL_ICON)->text())->toBe('x-mark')
+        ->and($modal->filter(SupportSelectors::MODAL_SUBMIT . SupportSelectors::color('danger'))->text())->toBe('Dissociate');
 })->with([
     "titled by the table's title attribute" => ['name', 'Dissociate Bramble'],
     'titled by nothing but the record label' => [null, 'Dissociate seedling'],

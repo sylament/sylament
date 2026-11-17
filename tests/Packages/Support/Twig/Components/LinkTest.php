@@ -82,7 +82,7 @@ it('is named by its label stripped of markup when the label is hidden, and by it
     $hidden = $this->renderTwigComponent('SylamentSupport:Link', ['href' => '/orders', 'labelSrOnly' => true], content: ' <b>Orders</b> ')->crawler();
 
     expect($hidden)->toContainElement('a' . SupportSelectors::LINK . '[aria-label="Orders"]')
-        ->and($hidden->filter('.sy-link-label'))->toHaveCount(0)
+        ->and($hidden->filter(SupportSelectors::LINK_LABEL))->toHaveCount(0)
         ->and($this->renderTwigComponent('SylamentSupport:Link', ['href' => '/orders'], content: 'Orders')->crawler())
-        ->toContainElement('a' . SupportSelectors::LINK . ':not([aria-label]) .sy-link-label', 'Orders');
+        ->toContainElement('a' . SupportSelectors::LINK . ':not([aria-label]) ' . SupportSelectors::LINK_LABEL, 'Orders');
 });

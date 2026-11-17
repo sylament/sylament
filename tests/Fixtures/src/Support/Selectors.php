@@ -16,10 +16,13 @@ namespace Sylament\Tests\Fixtures\Support;
  * by the custom property or class the stylesheet lays its grid out by; a section's Stimulus
  * controller and the values it reads, and the sortable controller with its handles, items and
  * animation duration, by the `data-` hooks it reads; a section's collapse button by its place
- * and its state, whose name changes; the modal's dialog and the window inside it, the outlined
+ * and its state, whose name changes; the modal's dialog, an open one and the heading,
+ * description, icon, footer actions and submit read off it, its window, width, footer, slide-over,
+ * sticky parts and the clickable, click-through and overlaid looks, a link's label, the outlined
  * look, and a dropdown, its panel and its items by the `sy-` classes the stylesheet paints them
  * by; the modal's close, the badge's delete and the pagination's chevron buttons by their names;
- * a dropdown's placement, offset, flip and teleport by the Stimulus values its controller reads.
+ * the values the modal controller reads, and a dropdown's placement, offset, flip and teleport by
+ * the Stimulus values its controller reads.
  * The input wrapper, its invalid state and each side of it are named by their `sy-` classes,
  * because which side an affix sits on is the stylesheet's contract; what sits there is asserted
  * by its text, its role or its element.
@@ -142,7 +145,27 @@ final class Selectors
 
     public const string MODAL = 'dialog.sy-modal';
 
+    public const string OPEN_MODAL = 'dialog.sy-modal[open]';
+
+    public const string MODAL_HEADING = self::OPEN_MODAL . ' .sy-modal-heading';
+
+    public const string MODAL_DESCRIPTION = self::OPEN_MODAL . ' .sy-modal-description';
+
+    public const string MODAL_ICON = self::OPEN_MODAL . ' .sy-modal-icon-ctn svg';
+
+    public const string MODAL_FOOTER_ACTIONS = self::OPEN_MODAL . ' .sy-modal-footer-actions button';
+
+    public const string MODAL_SUBMIT = self::MODAL_FOOTER_ACTIONS . '[type="submit"]';
+
     public const string MODAL_WINDOW = '.sy-modal-window';
+
+    public const string MODAL_FOOTER = '.sy-modal-footer';
+
+    public const string MODAL_CLICKABLE = '.sy-clickable';
+
+    public const string MODAL_CLICK_THROUGH = '.sy-modal-click-through';
+
+    public const string MODAL_OVERLAID = '.sy-modal-overlaid';
 
     public const string MODAL_CLOSE_BUTTON = 'button[aria-label="Close"]';
 
@@ -155,6 +178,8 @@ final class Selectors
     public const string LAST_PAGE_BUTTON = 'button[aria-label="Go to the last page"]';
 
     public const string OUTLINED = '.sy-outlined';
+
+    public const string LINK_LABEL = '.sy-link-label';
 
     public const string DROPDOWN = '.sy-dropdown';
 
@@ -268,6 +293,38 @@ final class Selectors
     public static function dropdownValue(string $name, string $value): string
     {
         return "[data-sylament--support--dropdown-{$name}-value=\"{$value}\"]";
+    }
+
+    /**
+     * A value the modal controller reads, or, without one, the value's presence.
+     */
+    public static function modalValue(string $name, ?string $value = null): string
+    {
+        return $value === null ? "[data-sylament--support--modal-{$name}-value]" : "[data-sylament--support--modal-{$name}-value=\"{$value}\"]";
+    }
+
+    /**
+     * A modal window's width, which the dialog repeats for a full-screen one.
+     */
+    public static function modalWidth(string $width): string
+    {
+        return ".sy-modal-{$width}";
+    }
+
+    /**
+     * A slide-over, or one sliding in from the side it names.
+     */
+    public static function modalSlideOver(?string $from = null): string
+    {
+        return $from === null ? '.sy-modal-slide-over' : ".sy-modal-slide-over-from-{$from}";
+    }
+
+    /**
+     * A modal whose header or footer stays in view while its content scrolls.
+     */
+    public static function modalSticky(string $part): string
+    {
+        return ".sy-modal-has-sticky-{$part}";
     }
 
     public static function sortableAnimationDuration(string $milliseconds): string

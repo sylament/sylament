@@ -36,8 +36,6 @@ final class Selectors
 
     public const string CLOSING_BUTTON = self::CLOSE_BUTTON . '[data-action~="sylament--notifications--notification#close"]';
 
-    public const string CLOSING_ACTION = '[data-sylament-action-close]';
-
     public static function aligned(string $alignment): string
     {
         return self::STACK . SupportSelectors::align($alignment);

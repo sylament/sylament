@@ -66,33 +66,33 @@ describe('chrome', function (): void {
     it('opens at 4xl aligned to its start, closable by its button, a click away or ESC, its first field taking the focus, with Submit before Cancel', function (): void {
         $modal = ($this->modal)(Action::make('archive'));
 
-        expect($modal)->toContainElement(Selectors::MODAL_WINDOW . '.sy-modal-4xl' . SupportSelectors::align('start') . ':not([autofocus])')
-            ->toContainElement('dialog.sy-clickable:not([data-sylament--support--modal-close-by-escaping-value]):not([data-sylament--support--modal-close-by-clicking-away-value])')
+        expect($modal)->toContainElement(SupportSelectors::MODAL_WINDOW . SupportSelectors::modalWidth('4xl') . SupportSelectors::align('start') . ':not([autofocus])')
+            ->toContainElement('dialog' . SupportSelectors::MODAL_CLICKABLE . ':not(' . SupportSelectors::modalValue('close-by-escaping') . '):not(' . SupportSelectors::modalValue('close-by-clicking-away') . ')')
             ->toContainElement(SupportSelectors::MODAL_CLOSE_BUTTON)
-            ->toContainButtons(Selectors::MODAL_FOOTER . ' ' . SupportSelectors::BUTTON, ['Submit', 'Cancel']);
+            ->toContainButtons(SupportSelectors::MODAL_FOOTER . ' ' . SupportSelectors::BUTTON, ['Submit', 'Cancel']);
     });
 
     it('lays its modal out at the width, alignment and side it is given, a narrow one centred and a slide-over sticking its header and footer unless told otherwise', function (): void {
         expect(($this->modal)(Action::make('archive')->modalWidth('2xl')->modalAlignment(Alignment::Center)))
-            ->toContainElement(Selectors::MODAL_WINDOW . '.sy-modal-2xl' . SupportSelectors::align('center'))
+            ->toContainElement(SupportSelectors::MODAL_WINDOW . SupportSelectors::modalWidth('2xl') . SupportSelectors::align('center'))
             ->and(($this->modal)(Action::make('archive')->modalWidth('sm')))
-            ->toContainElement(Selectors::MODAL_WINDOW . '.sy-modal-sm' . SupportSelectors::align('center'))
+            ->toContainElement(SupportSelectors::MODAL_WINDOW . SupportSelectors::modalWidth('sm') . SupportSelectors::align('center'))
             ->and(($this->modal)(Action::make('archive')->slideOver()->slideOverPosition(SlideOverPosition::Start)))
-            ->toContainElement('dialog.sy-modal-slide-over-from-start.sy-modal-has-sticky-header.sy-modal-has-sticky-footer')
+            ->toContainElement('dialog' . SupportSelectors::modalSlideOver('start') . SupportSelectors::modalSticky('header') . SupportSelectors::modalSticky('footer'))
             ->and(($this->modal)(Action::make('archive')->slideOver()->stickyModalFooter(false)))
-            ->toContainElement('dialog.sy-modal-slide-over-from-end.sy-modal-has-sticky-header:not(.sy-modal-has-sticky-footer)')
+            ->toContainElement('dialog' . SupportSelectors::modalSlideOver('end') . SupportSelectors::modalSticky('header') . ':not(' . SupportSelectors::modalSticky('footer') . ')')
             ->and(($this->modal)(Action::make('archive')->stickyModalHeader()))
-            ->toContainElement('dialog.sy-modal-has-sticky-header:not(.sy-modal-slide-over):not(.sy-modal-has-sticky-footer)');
+            ->toContainElement('dialog' . SupportSelectors::modalSticky('header') . ':not(' . SupportSelectors::modalSlideOver() . '):not(' . SupportSelectors::modalSticky('footer') . ')');
     });
 
     it('drops its close button, its click-away and ESC dismissal and its autofocus when told, and lets clicks through to the page', function (): void {
         $modal = ($this->modal)(Action::make('archive')->modalCloseButton(false)->closeModalByClickingAway(false)->closeModalByEscaping(false)->modalAutofocus(false));
 
-        expect($modal)->toContainElement('dialog[data-sylament--support--modal-close-by-escaping-value="false"][data-sylament--support--modal-close-by-clicking-away-value="false"]:not(.sy-clickable)')
-            ->toContainElement(Selectors::MODAL_WINDOW . '[autofocus][tabindex="-1"]')
+        expect($modal)->toContainElement('dialog' . SupportSelectors::modalValue('close-by-escaping', 'false') . SupportSelectors::modalValue('close-by-clicking-away', 'false') . ':not(' . SupportSelectors::MODAL_CLICKABLE . ')')
+            ->toContainElement(SupportSelectors::MODAL_WINDOW . '[autofocus][tabindex="-1"]')
             ->and($modal->filter(SupportSelectors::MODAL_CLOSE_BUTTON)->count())->toBe(0)
             ->and(($this->modal)(Action::make('archive')->modalClickThrough()))
-            ->toContainElement('dialog.sy-modal-click-through[data-sylament--support--modal-click-through-value="true"]:not(.sy-clickable)');
+            ->toContainElement('dialog' . SupportSelectors::MODAL_CLICK_THROUGH . SupportSelectors::modalValue('click-through', 'true') . ':not(' . SupportSelectors::MODAL_CLICKABLE . ')');
     });
 });
 
@@ -100,10 +100,10 @@ describe('a confirmation', function (): void {
     it('asks whether to go on in a medium modal centred under a warning icon, Cancel before Confirm in a centred footer', function (): void {
         $modal = ($this->modal)(Action::make('archive')->requiresConfirmation());
 
-        expect($modal)->toContainElement(Selectors::MODAL_WINDOW . '.sy-modal-md' . SupportSelectors::align('center'))
+        expect($modal)->toContainElement(SupportSelectors::MODAL_WINDOW . SupportSelectors::modalWidth('md') . SupportSelectors::align('center'))
             ->toContainElement('p', 'Are you sure you would like to do this?')
-            ->toContainElement(Selectors::MODAL_FOOTER . SupportSelectors::align('center'))
-            ->toContainButtons(Selectors::MODAL_FOOTER . ' ' . SupportSelectors::BUTTON, ['Cancel', 'Confirm'])
+            ->toContainElement(SupportSelectors::MODAL_FOOTER . SupportSelectors::align('center'))
+            ->toContainButtons(SupportSelectors::MODAL_FOOTER . ' ' . SupportSelectors::BUTTON, ['Cancel', 'Confirm'])
             ->and($modal->filter('header svg')->each(static fn (Crawler $icon): string => $icon->text()))->toBe(['x-mark', 'exclamation-triangle'])
             ->and(($this->modal)(Action::make('archive'))->filter('header svg')->each(static fn (Crawler $icon): string => $icon->text()))->toBe(['x-mark']);
     });
@@ -117,10 +117,10 @@ describe('a confirmation', function (): void {
             ->modalAlignment(Alignment::Start)
             ->modalFooterActionsAlignment(Alignment::End));
 
-        expect($modal)->toContainElement(Selectors::MODAL_WINDOW . '.sy-modal-2xl' . SupportSelectors::align('start'))
+        expect($modal)->toContainElement(SupportSelectors::MODAL_WINDOW . SupportSelectors::modalWidth('2xl') . SupportSelectors::align('start'))
             ->toContainElement('p', 'It leaves the list.')
-            ->toContainElement(Selectors::MODAL_FOOTER . SupportSelectors::align('end'))
-            ->toContainButtons(Selectors::MODAL_FOOTER . ' ' . SupportSelectors::BUTTON, ['Archive', 'Cancel'])
+            ->toContainElement(SupportSelectors::MODAL_FOOTER . SupportSelectors::align('end'))
+            ->toContainButtons(SupportSelectors::MODAL_FOOTER . ' ' . SupportSelectors::BUTTON, ['Archive', 'Cancel'])
             ->and($modal->filter('header svg')->each(static fn (Crawler $icon): string => $icon->text()))->toBe(['x-mark', 'Star'])
             ->and($modal->filter('p')->each(static fn (Crawler $paragraph): string => $paragraph->text()))->not->toContain('Are you sure you would like to do this?');
     });
@@ -134,13 +134,13 @@ describe('footer', function (): void {
             ->modalCancelActionLabel('Keep it');
 
         expect(($this->modal)($action()))
-            ->toContainButtons(Selectors::MODAL_FOOTER . ' ' . SupportSelectors::BUTTON, ['Archive', 'Save draft', 'Keep it'])
+            ->toContainButtons(SupportSelectors::MODAL_FOOTER . ' ' . SupportSelectors::BUTTON, ['Archive', 'Save draft', 'Keep it'])
             ->and(($this->modal)($action()->modalFooterActionsAlignment(Alignment::Center)))
-            ->toContainButtons(Selectors::MODAL_FOOTER . SupportSelectors::align('center') . ' ' . SupportSelectors::BUTTON, ['Keep it', 'Save draft', 'Archive']);
+            ->toContainButtons(SupportSelectors::MODAL_FOOTER . SupportSelectors::align('center') . ' ' . SupportSelectors::BUTTON, ['Keep it', 'Save draft', 'Archive']);
     });
 
     it('leaves out a Submit or Cancel set to false, renders the one a closure makes of it, and shows only the visible actions that replace the row', function (): void {
-        $buttons = fn (Action $action): array => ($this->modal)($action)->filter(Selectors::MODAL_FOOTER . ' ' . SupportSelectors::BUTTON)->each(static fn (Crawler $button): string => $button->text());
+        $buttons = fn (Action $action): array => ($this->modal)($action)->filter(SupportSelectors::MODAL_FOOTER . ' ' . SupportSelectors::BUTTON)->each(static fn (Crawler $button): string => $button->text());
 
         expect($buttons(Action::make('archive')->modalSubmitAction(false)))->toBe(['Cancel'])
             ->and($buttons(Action::make('archive')->modalCancelAction(false)))->toBe(['Submit'])
@@ -150,13 +150,13 @@ describe('footer', function (): void {
 
     it('submits the form from its Submit and dismisses the modal in the browser from its Cancel', function (): void {
         expect(($this->modal)(Action::make('archive')))
-            ->toContainElement('form' . Selectors::MODAL_WINDOW . Selectors::liveParameter('action', 'callMountedAction') . ' ' . Selectors::MODAL_FOOTER . ' button[type="submit"]', 'Submit')
-            ->toContainElement(Selectors::MODAL_FOOTER . ' button[type="button"]' . Selectors::DISMISS, 'Cancel');
+            ->toContainElement('form' . SupportSelectors::MODAL_WINDOW . Selectors::liveParameter('action', 'callMountedAction') . ' ' . SupportSelectors::MODAL_FOOTER . ' button[type="submit"]', 'Submit')
+            ->toContainElement(SupportSelectors::MODAL_FOOTER . ' button[type="button"]' . Selectors::DISMISS, 'Cancel');
     });
 
     it("paints Submit primary for a gray or uncoloured action and in the action's colour otherwise", function (?string $color, string $submit): void {
         expect(($this->modal)(Action::make('archive')->color($color)))
-            ->toContainElement(Selectors::MODAL_FOOTER . ' button[type="submit"]' . SupportSelectors::color($submit), 'Submit');
+            ->toContainElement(SupportSelectors::MODAL_FOOTER . ' button[type="submit"]' . SupportSelectors::color($submit), 'Submit');
     })->with([
         'gray' => ['gray', 'primary'],
         'uncoloured' => [null, 'primary'],
@@ -170,7 +170,7 @@ describe('footer', function (): void {
         expect(($this->modal)(Action::make('archive')->record($lamp)->extraModalFooterActions([
             Action::make('stamp')->label($label),
             Action::make('stampOwn')->record($desk)->label($label),
-        ])))->toContainButtons(Selectors::MODAL_FOOTER . ' ' . SupportSelectors::BUTTON, ['Submit', 'Stamp Lamp', 'Stamp Desk', 'Cancel']);
+        ])))->toContainButtons(SupportSelectors::MODAL_FOOTER . ' ' . SupportSelectors::BUTTON, ['Submit', 'Stamp Lamp', 'Stamp Desk', 'Cancel']);
     });
 });
 
@@ -185,7 +185,7 @@ describe('extra footer actions', function (): void {
 
     it('runs a footer action, or one in a footer group, under the open modal, and the parent again from a create-another action', function (): void {
         $tester = $this->createLiveComponent(ModalChromeHost::class)->mountAction('compose');
-        $footer = $tester->render()->crawler()->filter(Selectors::mountedModal(0) . ' ' . Selectors::MODAL_FOOTER);
+        $footer = $tester->render()->crawler()->filter(Selectors::mountedModal(0) . ' ' . SupportSelectors::MODAL_FOOTER);
 
         expect($footer)->toContainButtons(SupportSelectors::BUTTON, ['Submit', 'Compose another', 'Save draft', 'Cancel'])
             ->toContainElement(SupportSelectors::BUTTON . Selectors::liveParameter('action', 'callMountedAction') . Selectors::liveParameter('arguments', '{"another":true}'), 'Compose another')

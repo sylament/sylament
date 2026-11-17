@@ -6,6 +6,7 @@ use Sylament\Tests\Fixtures\Actions\ActionStackHost;
 use Sylament\Tests\Fixtures\Actions\SchemaModalHost;
 use Sylament\Tests\Fixtures\Actions\SectionedModalsHost;
 use Sylament\Tests\Fixtures\Actions\Selectors;
+use Sylament\Tests\Fixtures\Support\Selectors as SupportSelectors;
 use Symfony\Component\DomCrawler\Crawler;
 use Twig\Error\RuntimeError;
 
@@ -24,12 +25,12 @@ it('keeps a parent shut but rendered under a child with a modal of its own, and 
     $tester = $this->createLiveComponent(ActionStackHost::class)->mountAction('confirm')->mountAction('details');
     $crawler = $tester->render()->crawler();
 
-    expect($crawler->filter(Selectors::mountedModal(0) . ':not([open]):not([data-sylament--support--modal-open-value])')->count())->toBe(1)
-        ->and($crawler->filter(Selectors::mountedModal(1) . Selectors::OPEN . '[data-sylament--support--modal-open-value="true"]')->count())->toBe(1);
+    expect($crawler->filter(Selectors::mountedModal(0) . ':not([open]):not(' . SupportSelectors::modalValue('open') . ')')->count())->toBe(1)
+        ->and($crawler->filter(Selectors::mountedModal(1) . Selectors::OPEN . SupportSelectors::modalValue('open', 'true'))->count())->toBe(1);
 
     $crawler = $tester->unmountAction()->render()->crawler();
 
-    expect($crawler->filter(Selectors::mountedModal(0) . Selectors::OPEN . '[data-sylament--support--modal-open-value="true"]')->count())->toBe(1)
+    expect($crawler->filter(Selectors::mountedModal(0) . Selectors::OPEN . SupportSelectors::modalValue('open', 'true'))->count())->toBe(1)
         ->and($crawler->filter(Selectors::mountedModal(1))->count())->toBe(0);
 });
 
@@ -37,9 +38,9 @@ it('marks an open parent under an overlaying child as overlaid, never the top fr
     $overlaid = $this->createLiveComponent(ActionStackHost::class)->mountAction('confirm')->mountAction('overlay')->render()->crawler();
     $shut = $this->createLiveComponent(ActionStackHost::class)->mountAction('confirm')->mountAction('details')->render()->crawler();
 
-    expect($overlaid->filter(Selectors::mountedModal(0) . Selectors::OPEN . '.sy-modal-overlaid')->count())->toBe(1)
-        ->and($overlaid->filter(Selectors::mountedModal(1) . Selectors::OPEN . ':not(.sy-modal-overlaid)')->count())->toBe(1)
-        ->and($shut->filter(Selectors::mountedModal(0) . ':not([open]):not(.sy-modal-overlaid)')->count())->toBe(1);
+    expect($overlaid->filter(Selectors::mountedModal(0) . Selectors::OPEN . SupportSelectors::MODAL_OVERLAID)->count())->toBe(1)
+        ->and($overlaid->filter(Selectors::mountedModal(1) . Selectors::OPEN . ':not(' . SupportSelectors::MODAL_OVERLAID . ')')->count())->toBe(1)
+        ->and($shut->filter(Selectors::mountedModal(0) . ':not([open]):not(' . SupportSelectors::MODAL_OVERLAID . ')')->count())->toBe(1);
 });
 
 it('keeps the dialog id of a frame whose action replaces itself, renaming only its wrapper', function (): void {

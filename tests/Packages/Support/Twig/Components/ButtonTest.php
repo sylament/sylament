@@ -64,10 +64,10 @@ it('paints an outlined button in its text shades alone and a filled one with its
     $filled = $this->renderTwigComponent('SylamentSupport:Button', ['color' => 'primary'], content: 'Save')->crawler();
 
     expect($outlined)
-        ->toContainElement(SupportSelectors::BUTTON . '.sy-outlined' . SupportSelectors::color('primary') . '[class~="dark:sy-text-color-500"]', 'Save')
+        ->toContainElement(SupportSelectors::BUTTON . SupportSelectors::OUTLINED . SupportSelectors::color('primary') . '[class~="dark:sy-text-color-500"]', 'Save')
         ->not->toContainElement('[class*="sy-bg-color-"]')
         ->and($filled)
-        ->toContainElement(SupportSelectors::BUTTON . SupportSelectors::color('primary') . ':not(.sy-outlined)[class~="hover:sy-bg-color-300"]', 'Save');
+        ->toContainElement(SupportSelectors::BUTTON . SupportSelectors::color('primary') . ':not(' . SupportSelectors::OUTLINED . ')[class~="hover:sy-bg-color-300"]', 'Save');
 });
 
 it('draws its icon before its label, at the size it is given', function (): void {

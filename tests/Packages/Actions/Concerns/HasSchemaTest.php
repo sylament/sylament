@@ -61,12 +61,12 @@ describe('declaring', function (): void {
 
     it('wraps its modal in a form its Submit submits, or without one puts the call on Submit itself', function (): void {
         expect($this->createLiveComponent(SchemaDeclarationHost::class)->mountAction('listed')->render()->crawler()->filter(Selectors::mountedModal(0)))
-            ->toContainElement('form' . Selectors::MODAL_WINDOW . Selectors::liveParameter('action', 'callMountedAction') . ' ' . Selectors::MODAL_FOOTER . ' button[type="submit"]:not([data-action])', 'Submit');
+            ->toContainElement('form' . SupportSelectors::MODAL_WINDOW . Selectors::liveParameter('action', 'callMountedAction') . ' ' . SupportSelectors::MODAL_FOOTER . ' button[type="submit"]:not([data-action])', 'Submit');
 
         $tester = $this->createLiveComponent(SchemaDeclarationHost::class)->mountAction('unwrapped');
         $modal = $tester->render()->crawler()->filter(Selectors::mountedModal(0));
 
-        expect($modal)->toContainElement('div' . Selectors::MODAL_WINDOW . ' ' . Selectors::MODAL_FOOTER . ' button[type="button"][data-action="live#action"]' . Selectors::liveParameter('action', 'callMountedAction'), 'Submit')
+        expect($modal)->toContainElement('div' . SupportSelectors::MODAL_WINDOW . ' ' . SupportSelectors::MODAL_FOOTER . ' button[type="button"][data-action="live#action"]' . Selectors::liveParameter('action', 'callMountedAction'), 'Submit')
             ->and($modal->filter('form')->count())->toBe(0);
 
         $tester->setActionData(['title' => 'Lamp'])->callMountedAction();
@@ -112,9 +112,9 @@ describe('a wizard', function (): void {
         $modal = $tester->render()->crawler()->filter(Selectors::mountedModal(0) . Selectors::OPEN);
 
         expect($modal)->toContainElement(SchemasSelectors::WIZARD . ':not(' . SupportSelectors::CONTAINED . ')')
-            ->toContainElement('[data-sylament--schemas--wizard-target="cancelSlot"] ' . SupportSelectors::BUTTON . Selectors::DISMISS, 'Cancel')
-            ->toContainElement('form' . Selectors::MODAL_WINDOW . Selectors::liveParameter('action', 'callMountedAction') . ' [data-sylament--schemas--wizard-target="submitSlot"] button[type="submit"]', 'Submit')
-            ->and($modal->filter(Selectors::MODAL_FOOTER)->count())->toBe(0);
+            ->toContainElement(SchemasSelectors::WIZARD_CANCEL_SLOT . ' ' . SupportSelectors::BUTTON . Selectors::DISMISS, 'Cancel')
+            ->toContainElement('form' . SupportSelectors::MODAL_WINDOW . Selectors::liveParameter('action', 'callMountedAction') . ' ' . SchemasSelectors::WIZARD_SUBMIT_SLOT . ' button[type="submit"]', 'Submit')
+            ->and($modal->filter(SupportSelectors::MODAL_FOOTER)->count())->toBe(0);
 
         $tester->setActionData(['name' => 'Ada', 'note' => 'Welcome'])->callMountedAction();
 

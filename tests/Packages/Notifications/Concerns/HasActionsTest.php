@@ -5,6 +5,7 @@ declare(strict_types=1);
 use Sylament\Actions\Action;
 use Sylament\Actions\ActionGroup;
 use Sylament\Notifications\Notification;
+use Sylament\Tests\Fixtures\Actions\Selectors as ActionsSelectors;
 use Sylament\Tests\Fixtures\Notifications\Selectors;
 use Sylament\Tests\Fixtures\Support\Selectors as SupportSelectors;
 
@@ -40,5 +41,5 @@ it("closes the toast from an action that closes, through the toast's own click h
 
     expect($toast)
         ->toContainElement(Selectors::TOAST_HANDLING_ACTION_CLICKS)
-        ->toContainElement(Selectors::ACTIONS . ' ' . Selectors::CLOSING_ACTION, 'Undo');
+        ->toContainElement(Selectors::ACTIONS . ' ' . ActionsSelectors::CLOSE_MARKER, 'Undo');
 });

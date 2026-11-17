@@ -32,18 +32,18 @@ describe('the trigger and its confirmation', function (): void {
 
         $tester = $this->createLiveComponent(DeletingProductTable::class)->selectTableRecords([$lamp]);
 
-        expect($tester->render()->crawler())->toContainElement(TablesSelectors::BULK_ONLY . ':not([hidden]) ' . SupportSelectors::BUTTON . SupportSelectors::color('danger'), 'trash-20-solidDelete selected');
+        expect($tester->render()->crawler())->toContainElement(Selectors::BULK_ONLY . ':not([hidden]) ' . SupportSelectors::BUTTON . SupportSelectors::color('danger'), 'trash-20-solidDelete selected');
 
         $tester->mountAction(TestAction::make('delete')->table()->bulk())
             ->assertCanSeeTableRecords([$lamp]);
 
-        expect($tester->render()->crawler())->toContainElement(Selectors::MODAL_HEADING, 'Delete selected Products')
-            ->toContainButtons(Selectors::MODAL_FOOTER_ACTIONS, ['Cancel', 'Delete']);
+        expect($tester->render()->crawler())->toContainElement(SupportSelectors::MODAL_HEADING, 'Delete selected Products')
+            ->toContainButtons(SupportSelectors::MODAL_FOOTER_ACTIONS, ['Cancel', 'Delete']);
     });
 
     it('is headed by the bare verb with no table to name its records', function (): void {
         expect($this->createLiveComponent(TablelessBulkHost::class)->mountAction('deleteSelected')->render()->crawler())
-            ->toContainElement(Selectors::MODAL_HEADING, 'Delete selected');
+            ->toContainElement(SupportSelectors::MODAL_HEADING, 'Delete selected');
     });
 });
 
@@ -62,7 +62,7 @@ describe('the fetching arm', function (): void {
         expect(array_map(static fn (string $statement): string => implode(' ', array_slice(explode(' ', $statement), 0, 3)), array_values(array_filter($this->statementsRun(), static fn (string $statement): bool => !str_starts_with($statement, 'SELECT')))))->toBe(['"START TRANSACTION"', 'DELETE FROM Product', 'DELETE FROM Product', '"COMMIT"'])
             ->and($selected)->toBe(2)
             ->and($tester->render()->crawler()->filter(TablesSelectors::SELECTED_RECORD))->toHaveCount(0)
-            ->and($tester->render()->crawler()->filter(TablesSelectors::BULK_ONLY . '[hidden]'))->not->toHaveCount(0);
+            ->and($tester->render()->crawler()->filter(Selectors::BULK_ONLY . '[hidden]'))->not->toHaveCount(0);
     });
 
     it('deletes none of the selection when one of its deletes fails, and toasts the failure instead of failing the request', function (): void {

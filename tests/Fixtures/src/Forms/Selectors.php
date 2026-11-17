@@ -14,7 +14,8 @@ use Sylament\Tests\Fixtures\Support\Selectors as SupportSelectors;
  * option's button label, which must follow its input; a repeater's item in its default and simple
  * views, a table view's row and header cell, and the add row and its button; a select's
  * `<select>`, the same element carrying the JS control's Stimulus controller, the one with no
- * controller, and the inline-prefix class that strips its padding; a checkbox list's options
+ * controller, the inline-prefix class that strips its padding, and its options past the empty
+ * placeholder; a checkbox list's options
  * grid and the label and description an option shows; and a radio's group by its role, its
  * option inputs by their type, and the label and description a radio option shows. Each is named
  * by the `sy-fo-` class the stylesheet lays out or paints it by, the class being the behaviour,
@@ -79,6 +80,8 @@ final class Selectors
     public const string JS_CONTROL = 'select.sy-fo-select[data-controller~="sylament--forms--select"]';
 
     public const string NATIVE_SELECT = 'select.sy-fo-select:not([data-controller])';
+
+    public const string OPTION = 'option:not([value=""])';
 
     public const string INLINE_PREFIX_SELECT = 'select.sy-fo-select.sy-fo-select-has-inline-prefix';
 

@@ -14,7 +14,8 @@ namespace Sylament\Tests\Fixtures\Schemas;
  * component in would otherwise answer for, and a section's content by the id its key gives it; a schema root by the key its controller is given; a control bound to a state path, by the
  * `data-model` value schemas' binding modifiers write; a tab and its panel, by the
  * roles the Tabs and Tab partials give them; a wizard step's header button and panel,
- * by the step key the Wizard and Step partials put on both, and its header entry, by its controller target.
+ * by the step key the Wizard and Step partials put on both, its header entry and its cancel and
+ * submit slots, by their controller targets, and the values its controller reads.
  */
 final class Selectors
 {
@@ -71,6 +72,18 @@ final class Selectors
     public const string WIZARD_STEP = '[role="group"][data-step-key]';
 
     public const string WIZARD_HEADER_STEP = '[data-sylament--schemas--wizard-target="headerStep"]';
+
+    public const string WIZARD_CANCEL_SLOT = '[data-sylament--schemas--wizard-target="cancelSlot"]';
+
+    public const string WIZARD_SUBMIT_SLOT = '[data-sylament--schemas--wizard-target="submitSlot"]';
+
+    /**
+     * A value the wizard controller reads, or, without one, the value's presence.
+     */
+    public static function wizardValue(string $name, ?string $value = null): string
+    {
+        return $value === null ? "[data-sylament--schemas--wizard-{$name}-value]" : "[data-sylament--schemas--wizard-{$name}-value=\"{$value}\"]";
+    }
 
     public static function sectionContentOf(string $key): string
     {

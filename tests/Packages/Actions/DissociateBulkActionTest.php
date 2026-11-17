@@ -25,7 +25,6 @@ use Sylament\Tests\Fixtures\Entity\TramToaster;
 use Sylament\Tests\Fixtures\Schemas\HookLog;
 use Sylament\Tests\Fixtures\Support\Selectors as SupportSelectors;
 use Sylament\Tests\Fixtures\Tables\AssociableRelationTable;
-use Sylament\Tests\Fixtures\Tables\Selectors as TablesSelectors;
 use Sylament\Tests\Infrastructure\Doctrine\FailingWrite;
 
 beforeEach(function (): void {
@@ -63,15 +62,15 @@ describe('over a garden', function (): void {
 
     it('puts a danger "Dissociate selected" with the x-mark in the toolbar, confirmed in a modal headed by the plural label, with the x-mark and a "Dissociate" submit', function (): void {
         $tester = ($this->table)();
-        $trigger = $tester->render()->crawler()->filter(Selectors::trigger('dissociate') . SupportSelectors::color('danger') . TablesSelectors::BULK_ONLY);
+        $trigger = $tester->render()->crawler()->filter(Selectors::trigger('dissociate') . SupportSelectors::color('danger') . Selectors::BULK_ONLY);
         $modal = $tester->selectTableRecords([$this->bramble])->mountAction(TestAction::make('dissociate')->table()->bulk())->render()->crawler();
 
         expect($trigger->filter(SupportSelectors::ICON)->text())->toBe('x-mark-20-solid')
             ->and(mb_trim(str_replace('x-mark-20-solid', '', $trigger->text())))->toBe('Dissociate selected')
-            ->and($modal->filter(Selectors::MODAL_HEADING)->text())->toBe('Dissociate selected Seedlings')
-            ->and($modal->filter(Selectors::MODAL_DESCRIPTION)->text())->toBe('Are you sure you would like to do this?')
-            ->and($modal->filter(Selectors::MODAL_ICON)->text())->toBe('x-mark')
-            ->and($modal->filter(Selectors::MODAL_SUBMIT . SupportSelectors::color('danger'))->text())->toBe('Dissociate');
+            ->and($modal->filter(SupportSelectors::MODAL_HEADING)->text())->toBe('Dissociate selected Seedlings')
+            ->and($modal->filter(SupportSelectors::MODAL_DESCRIPTION)->text())->toBe('Are you sure you would like to do this?')
+            ->and($modal->filter(SupportSelectors::MODAL_ICON)->text())->toBe('x-mark')
+            ->and($modal->filter(SupportSelectors::MODAL_SUBMIT . SupportSelectors::color('danger'))->text())->toBe('Dissociate');
     });
 
     it("nulls every selected seedling's garden, keeping the seedlings, toasts \"Dissociated\" and clears the selection", function (array $variants, Closure $writes): void {

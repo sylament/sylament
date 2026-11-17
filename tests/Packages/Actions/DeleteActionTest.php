@@ -5,7 +5,6 @@ declare(strict_types=1);
 use Sylament\Actions\DeleteAction;
 use Sylament\Actions\Testing\TestAction;
 use Sylament\Tests\Fixtures\Actions\Record\IdlessTicket;
-use Sylament\Tests\Fixtures\Actions\Selectors;
 use Sylament\Tests\Fixtures\Actions\TablelessBulkHost;
 use Sylament\Tests\Fixtures\Entity\Invoice;
 use Sylament\Tests\Fixtures\Entity\InvoiceLine;
@@ -54,7 +53,7 @@ it('offers each row a danger "Delete" beside a trash icon, and deletes only once
         ->assertActionMounted(TestAction::make('delete')->table($lamp))
         ->assertCanSeeTableRecords([$lamp]);
 
-    expect($tester->render()->crawler())->toContainButtons(Selectors::MODAL_FOOTER_ACTIONS, ['Cancel', 'Confirm']);
+    expect($tester->render()->crawler())->toContainButtons(SupportSelectors::MODAL_FOOTER_ACTIONS, ['Cancel', 'Confirm']);
 
     $tester->callMountedAction()
         ->assertNotified('Deleted')
@@ -66,7 +65,7 @@ it("heads its confirmation with the row's title, else the record label, else the
 
     $tester = $this->createLiveComponent($host)->mountAction($onRow ? TestAction::make('delete')->table($lamp) : 'delete');
 
-    expect($tester->render()->crawler())->toContainElement(Selectors::MODAL_HEADING, $heading);
+    expect($tester->render()->crawler())->toContainElement(SupportSelectors::MODAL_HEADING, $heading);
 })->with([
     'a table titling its rows' => [DeletingProductTable::class, true, 'Delete Lamp'],
     'a table that does not' => [ProductTable::class, true, 'Delete product'],

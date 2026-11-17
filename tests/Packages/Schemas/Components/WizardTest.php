@@ -47,9 +47,9 @@ describe('render', function (): void {
         $schema = Schema::make()->key('schema')->components([$wizard]);
 
         expect($this->renderSchemaComponent(Wizard::make([Step::make('Account')])))
-            ->toContainElement(Selectors::WIZARD . '[data-sylament--schemas--wizard-key-value="schema.data::wizard"]')
+            ->toContainElement(Selectors::WIZARD . Selectors::wizardValue('key', 'schema.data::wizard'))
             ->and($this->renderSchemaComponent(Wizard::make([Step::make('Account')])->label('Checkout Flow')))
-            ->toContainElement(Selectors::WIZARD . '[data-sylament--schemas--wizard-key-value="schema.checkout-flow::data::wizard"]')
+            ->toContainElement(Selectors::WIZARD . Selectors::wizardValue('key', 'schema.checkout-flow::data::wizard'))
             ->and($schema->getComponent('wizard'))->toBe($wizard)
             ->and($schema->getComponent('inner'))->toBe($inner);
     });
@@ -64,8 +64,8 @@ describe('render', function (): void {
     it('wires its controller to its root, its header steps and its footer slots, and passes extra attributes to its root', function (): void {
         $wizard = $this->renderSchemaComponent(Wizard::make([Step::make('Account'), Step::make('Review')])->extraAttributes(['data-tour' => 'checkout']));
         $controller = Selectors::WIZARD . '[data-controller="sylament--schemas--wizard"][data-tour="checkout"]'
-            . '[data-sylament--schemas--wizard-schema-key-value="schema"][data-sylament--schemas--wizard-start-step-value="1"]'
-            . ':not([data-sylament--schemas--wizard-skippable-value]):not([data-sylament--schemas--wizard-query-string-key-value])'
+            . Selectors::wizardValue('schema-key', 'schema') . Selectors::wizardValue('start-step', '1')
+            . ':not(' . Selectors::wizardValue('skippable') . '):not(' . Selectors::wizardValue('query-string-key') . ')'
             . '[data-action~="next-wizard-step@window->sylament--schemas--wizard#onNextStepEvent"]'
             . '[data-action~="go-to-wizard-step@window->sylament--schemas--wizard#onGoToStepEvent"]'
             . '[data-action~="reset-schema-component-state@window->sylament--schemas--wizard#resetState"]'
@@ -74,15 +74,15 @@ describe('render', function (): void {
         expect($wizard)->toContainElement($controller)
             ->toContainElement($controller . ' ol[data-sylament--schemas--wizard-target="header"] li' . Selectors::WIZARD_HEADER_STEP . '[data-step-key="schema.review::data::wizard-step"] button[data-sylament--schemas--wizard-target="headerButton"][data-action="click->sylament--schemas--wizard#goToStepFromHeader"][data-step-key="schema.review::data::wizard-step"][aria-controls="schema.review::data::wizard-step"]', 'check 02 Review Not completed')
             ->toContainElement($controller . ' [data-sylament--schemas--wizard-target="previousSlot"]', 'Back')
-            ->toContainElement($controller . ' [data-sylament--schemas--wizard-target="cancelSlot"]')
+            ->toContainElement($controller . ' ' . Selectors::WIZARD_CANCEL_SLOT)
             ->toContainElement($controller . ' [data-sylament--schemas--wizard-target="nextSlot"]', 'Next')
-            ->toContainElement($controller . ' [data-sylament--schemas--wizard-target="submitSlot"]');
+            ->toContainElement($controller . ' ' . Selectors::WIZARD_SUBMIT_SLOT);
     });
 
     it('opens on the step startOnStep() names, the earlier ones completed and reachable from the header, the later ones not', function (): void {
         $wizard = $this->renderSchemaComponent(Wizard::make([Step::make('Account'), Step::make('Address'), Step::make('Review')])->startOnStep(2));
 
-        expect($wizard)->toContainElement(Selectors::WIZARD . '[data-sylament--schemas--wizard-start-step-value="2"]')
+        expect($wizard)->toContainElement(Selectors::WIZARD . Selectors::wizardValue('start-step', '2'))
             ->toContainElement('li.sy-completed:not(' . SupportSelectors::ACTIVE . ') ' . Selectors::WIZARD_STEP_BUTTON . ':not([disabled]):not([aria-current])', 'check 01 Account Completed')
             ->toContainElement('li' . SupportSelectors::ACTIVE . ':not(.sy-completed) ' . Selectors::WIZARD_STEP_BUTTON . '[disabled][aria-current="step"]', 'check 02 Address')
             ->toContainElement('li:not(' . SupportSelectors::ACTIVE . '):not(.sy-completed) ' . Selectors::WIZARD_STEP_BUTTON . '[disabled]:not([aria-current])', 'check 03 Review Not completed')
@@ -107,7 +107,7 @@ describe('render', function (): void {
     it('lets every header button be clicked when skippable', function (): void {
         $wizard = $this->renderSchemaComponent(Wizard::make([Step::make('Account'), Step::make('Address'), Step::make('Review')])->skippable());
 
-        expect($wizard)->toContainElement(Selectors::WIZARD . '[data-sylament--schemas--wizard-skippable-value="true"]')
+        expect($wizard)->toContainElement(Selectors::WIZARD . Selectors::wizardValue('skippable', 'true'))
             ->toContainButtons(Selectors::WIZARD_STEP_BUTTON . ':not([disabled])', ['check 01 Account', 'check 02 Address Not completed', 'check 03 Review Not completed']);
     });
 
@@ -144,8 +144,8 @@ describe('footer', function (): void {
         $wizard = Wizard::make([Step::make('Account')])->cancelAction($slot())->submitAction($slot());
         $rendered = $this->renderSchemaComponent($wizard);
 
-        expect($rendered)->toContainElement('[data-sylament--schemas--wizard-target="cancelSlot"]' . $selector, $text)
-            ->toContainElement('[data-sylament--schemas--wizard-target="submitSlot"]' . $selector, $text)
+        expect($rendered)->toContainElement(Selectors::WIZARD_CANCEL_SLOT . $selector, $text)
+            ->toContainElement(Selectors::WIZARD_SUBMIT_SLOT . $selector, $text)
             ->and($wizard->getAction('next'))->toBeInstanceOf(Action::class)
             ->and($wizard->getAction('previous'))->toBeInstanceOf(Action::class)
             ->and($wizard->getAction('leave'))->toBeNull();
@@ -162,10 +162,10 @@ describe('query string', function (): void {
         $steps = static fn (): array => [Step::make('Account'), Step::make('Address'), Step::make('Review')];
 
         expect($this->renderSchemaComponent(Wizard::make($steps())->persistStepInQueryString()))
-            ->toContainElement(Selectors::WIZARD . '[data-sylament--schemas--wizard-query-string-key-value="step"][data-sylament--schemas--wizard-start-step-value="3"]')
+            ->toContainElement(Selectors::WIZARD . Selectors::wizardValue('query-string-key', 'step') . Selectors::wizardValue('start-step', '3'))
             ->toContainElement(Selectors::WIZARD_STEP_BUTTON . '[aria-current="step"]', 'check 03 Review')
             ->and($this->renderSchemaComponent(Wizard::make($steps())->persistStepInQueryString('stage')))
-            ->toContainElement(Selectors::WIZARD . '[data-sylament--schemas--wizard-query-string-key-value="stage"]')
+            ->toContainElement(Selectors::WIZARD . Selectors::wizardValue('query-string-key', 'stage'))
             ->toContainElement(Selectors::WIZARD_STEP_BUTTON . '[aria-current="step"]', 'check 02 Address')
             ->and($this->renderSchemaComponent(Wizard::make($steps())))
             ->toContainElement(Selectors::WIZARD_STEP_BUTTON . '[aria-current="step"]', 'check 01 Account');

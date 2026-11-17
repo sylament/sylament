@@ -8,7 +8,6 @@ use Sylament\Actions\ActionGroup;
 use Sylament\Actions\CreateAction;
 use Sylament\Actions\Testing\TestAction;
 use Sylament\Tests\Fixtures\Actions\RecordActionsHost;
-use Sylament\Tests\Fixtures\Actions\Selectors;
 use Sylament\Tests\Fixtures\Entity\Allotment;
 use Sylament\Tests\Fixtures\Entity\CappedHeadline;
 use Sylament\Tests\Fixtures\Entity\CharmSatchel;
@@ -37,7 +36,7 @@ describe('the trigger', function (): void {
         $grouped = $this->renderViewComponent(ActionGroup::make([CreateAction::make()->recordClass(CappedHeadline::class)]));
         $bare = $this->renderViewComponent(CreateAction::make()->recordClass(CappedHeadline::class));
 
-        expect($grouped)->toContainElement(Selectors::DROPDOWN_ITEM . ' ' . SupportSelectors::ICON, 'plus-20-solid')
+        expect($grouped)->toContainElement(SupportSelectors::DROPDOWN_ITEM . ' ' . SupportSelectors::ICON, 'plus-20-solid')
             ->and($bare)->toContainElement('button', 'New capped headline')
             ->and($bare->filter(SupportSelectors::ICON))->toHaveCount(0);
     });
@@ -52,7 +51,7 @@ describe('the trigger', function (): void {
 
         $tester->mountAction('linkedForced');
 
-        expect($tester->render()->crawler())->toContainElement(Selectors::MODAL_HEADING, 'Create Capped Headline');
+        expect($tester->render()->crawler())->toContainElement(SupportSelectors::MODAL_HEADING, 'Create Capped Headline');
     });
 });
 
@@ -60,15 +59,15 @@ describe('the modal', function (): void {
     it('is headed "Create" and its title-cased record label, and offers Create, Create & create another and Cancel', function (): void {
         $tester = $this->createLiveComponent(RecordActionsHost::class)->mountAction('create');
 
-        expect($tester->render()->crawler())->toContainElement(Selectors::MODAL_HEADING, 'Create Capped Headline')
-            ->toContainButtons(Selectors::MODAL_FOOTER_ACTIONS, ['Create', 'Create & create another', 'Cancel']);
+        expect($tester->render()->crawler())->toContainElement(SupportSelectors::MODAL_HEADING, 'Create Capped Headline')
+            ->toContainButtons(SupportSelectors::MODAL_FOOTER_ACTIONS, ['Create', 'Create & create another', 'Cancel']);
     });
 
     it('drops the create-another button with createAnother(false), and createAnotherAction() reshapes it', function (): void {
         expect($this->createLiveComponent(RecordActionsHost::class)->mountAction('createLone')->render()->crawler())
-            ->toContainButtons(Selectors::MODAL_FOOTER_ACTIONS, ['Create', 'Cancel'])
+            ->toContainButtons(SupportSelectors::MODAL_FOOTER_ACTIONS, ['Create', 'Cancel'])
             ->and($this->createLiveComponent(RecordActionsHost::class)->mountAction('createRelabelled')->render()->crawler())
-            ->toContainButtons(Selectors::MODAL_FOOTER_ACTIONS, ['Create', 'Create & add another', 'Cancel']);
+            ->toContainButtons(SupportSelectors::MODAL_FOOTER_ACTIONS, ['Create', 'Create & add another', 'Cancel']);
     });
 
     it('creates a record of its class from the modal in one transaction, and toasts "Created"', function (): void {

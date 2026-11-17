@@ -42,15 +42,15 @@ beforeEach(function (): void {
 
 it('puts a danger "Detach selected" with the x-mark in the toolbar, confirmed in a modal headed by the plural label, with the x-mark and a "Detach" submit', function (): void {
     $tester = ($this->table)();
-    $trigger = $tester->render()->crawler()->filter(Selectors::trigger('detach') . SupportSelectors::color('danger') . '[data-sy-table-bulk-only]');
+    $trigger = $tester->render()->crawler()->filter(Selectors::trigger('detach') . SupportSelectors::color('danger') . Selectors::BULK_ONLY);
     $modal = $tester->selectTableRecords([$this->rock])->mountAction(TestAction::make('detach')->table()->bulk())->render()->crawler();
 
     expect($trigger->filter(SupportSelectors::ICON)->text())->toBe('x-mark-20-solid')
         ->and(mb_trim(str_replace('x-mark-20-solid', '', $trigger->text())))->toBe('Detach selected')
-        ->and($modal->filter(Selectors::MODAL_HEADING)->text())->toBe('Detach selected Plants')
-        ->and($modal->filter(Selectors::MODAL . ' .sy-modal-description')->count())->toBe(1)
-        ->and($modal->filter(Selectors::MODAL_ICON)->text())->toBe('x-mark')
-        ->and($modal->filter(Selectors::MODAL_SUBMIT . SupportSelectors::color('danger'))->text())->toBe('Detach');
+        ->and($modal->filter(SupportSelectors::MODAL_HEADING)->text())->toBe('Detach selected Plants')
+        ->and($modal->filter(SupportSelectors::MODAL_DESCRIPTION)->text())->toBe('Are you sure you would like to do this?')
+        ->and($modal->filter(SupportSelectors::MODAL_ICON)->text())->toBe('x-mark')
+        ->and($modal->filter(SupportSelectors::MODAL_SUBMIT . SupportSelectors::color('danger'))->text())->toBe('Detach');
 });
 
 it('detaches every selected plant from the garden in one flush, keeping the plants, toasts "Detached" and clears the selection', function (array $variants): void {

@@ -16,6 +16,7 @@ use Sylament\Tests\Fixtures\Entity\TramCrate;
 use Sylament\Tests\Fixtures\Entity\TramDepot;
 use Sylament\Tests\Fixtures\Entity\TramParcel;
 use Sylament\Tests\Fixtures\Entity\TramTariff;
+use Sylament\Tests\Fixtures\Forms\Selectors as FormsSelectors;
 use Sylament\Tests\Fixtures\Schemas\HookLog;
 use Sylament\Tests\Fixtures\Support\Selectors as SupportSelectors;
 use Sylament\Tests\Fixtures\Tables\AssociableRelationTable;
@@ -57,26 +58,26 @@ describe('over a garden', function (): void {
             $modal = $tester->mountAction(TestAction::make('associate')->table())->render()->crawler();
 
             expect($trigger->text())->toBe('Associate')
-                ->and($modal->filter(Selectors::MODAL_HEADING)->text())->toBe('Associate Seedling')
-                ->and($modal->filter(Selectors::MODAL . ' .sy-modal-lg')->count())->toBe(1)
-                ->and($modal->filter(Selectors::MODAL . ' .sy-fo-field')->count())->toBe(1)
-                ->and($modal->filter(Selectors::MODAL . ' label[for="mountedActionSchema0.recordId"]' . SupportSelectors::SCREEN_READER_ONLY)->text())->toBe('Record')
-                ->and($modal->filter(Selectors::MODAL . ' select[name="recordId"][aria-required="true"]:not([multiple])')->count())->toBe(1)
-                ->and($modal->filter(Selectors::MODAL_SUBMIT)->text())->toBe('Associate')
-                ->and($modal->filter(Selectors::MODAL_FOOTER_ACTIONS)->each(static fn (Crawler $button): string => $button->text()))->toBe(['Associate', 'Associate & associate another', 'Cancel']);
+                ->and($modal->filter(SupportSelectors::MODAL_HEADING)->text())->toBe('Associate Seedling')
+                ->and($modal->filter(SupportSelectors::OPEN_MODAL . ' ' . SupportSelectors::modalWidth('lg'))->count())->toBe(1)
+                ->and($modal->filter(SupportSelectors::OPEN_MODAL . ' ' . FormsSelectors::FIELD_WRAPPER)->count())->toBe(1)
+                ->and($modal->filter(Selectors::RECORD_SELECT_LABEL . SupportSelectors::SCREEN_READER_ONLY)->text())->toBe('Record')
+                ->and($modal->filter(Selectors::RECORD_SELECT . '[aria-required="true"]:not([multiple])')->count())->toBe(1)
+                ->and($modal->filter(SupportSelectors::MODAL_SUBMIT)->text())->toBe('Associate')
+                ->and($modal->filter(SupportSelectors::MODAL_FOOTER_ACTIONS)->each(static fn (Crawler $button): string => $button->text()))->toBe(['Associate', 'Associate & associate another', 'Cancel']);
         });
 
         it('offers no "Associate & associate another" under associateAnother(false)', function (): void {
             $modal = ($this->mounted)(['noAssociateAnother'])->render()->crawler();
 
-            expect($modal->filter(Selectors::MODAL_FOOTER_ACTIONS)->each(static fn (Crawler $button): string => $button->text()))->toBe(['Associate', 'Cancel']);
+            expect($modal->filter(SupportSelectors::MODAL_FOOTER_ACTIONS)->each(static fn (Crawler $button): string => $button->text()))->toBe(['Associate', 'Cancel']);
         });
 
         it('renders a multiple select under multiple(), and a single one when multiple() answers false through a closure', function (string $variant, int $multiple): void {
             $modal = ($this->mounted)([$variant])->render()->crawler();
 
-            expect($modal->filter(Selectors::MODAL . ' select[name="recordId"]')->count())->toBe(1)
-                ->and($modal->filter(Selectors::MODAL . ' select[name="recordId"][multiple]')->count())->toBe($multiple);
+            expect($modal->filter(Selectors::RECORD_SELECT)->count())->toBe(1)
+                ->and($modal->filter(Selectors::RECORD_SELECT . '[multiple]')->count())->toBe($multiple);
         })->with([
             'multiple()' => ['multiple', 1],
             'a closure answering false' => ['singleByClosure', 0],
@@ -95,7 +96,7 @@ describe('over a garden', function (): void {
         it("lists nothing until the user types, then every seedling not the garden's own, another garden's included, whose title matches, in title order", function (): void {
             $tester = ($this->mounted)();
 
-            expect($tester->render()->crawler()->filter(Selectors::MODAL . ' select[name="recordId"] option:not([value=""])')->count())->toBe(0)
+            expect($tester->render()->crawler()->filter(Selectors::RECORD_SELECT . ' ' . FormsSelectors::OPTION)->count())->toBe(0)
                 ->and($this->recordSelectSearch($tester, ''))->toBe([($this->key)($this->clover) => 'Clover', ($this->key)($this->nettle) => 'Nettle', ($this->key)($this->yarrow) => 'Yarrow'])
                 ->and($this->recordSelectSearch($tester, 'arr'))->toBe([($this->key)($this->yarrow) => 'Yarrow']);
         });
@@ -103,13 +104,13 @@ describe('over a garden', function (): void {
         it('lists the candidates in the select as it opens once preloadRecordSelect() says so', function (): void {
             $modal = ($this->mounted)(['preloaded'])->render()->crawler();
 
-            expect($modal->filter(Selectors::MODAL . ' select[name="recordId"] option:not([value=""])')->each(static fn (Crawler $option): string => $option->text()))->toBe(['Clover', 'Nettle', 'Yarrow']);
+            expect($modal->filter(Selectors::RECORD_SELECT . ' ' . FormsSelectors::OPTION)->each(static fn (Crawler $option): string => $option->text()))->toBe(['Clover', 'Nettle', 'Yarrow']);
         });
 
         it('labels what the user picked by its title, one pick or several', function (array $variants, array|string $picks, array $labels): void {
             $modal = ($this->mounted)($variants)->setActionData(['recordId' => $picks])->render()->crawler();
 
-            expect($modal->filter(Selectors::MODAL . ' select[name="recordId"] option[selected]')->each(static fn (Crawler $option): string => $option->text()))->toEqualCanonicalizing($labels);
+            expect($modal->filter(Selectors::RECORD_SELECT . ' option[selected]')->each(static fn (Crawler $option): string => $option->text()))->toEqualCanonicalizing($labels);
         })->with([
             'one pick' => [[], fn (): string => ($this->key)($this->nettle), ['Nettle']],
             'two picks' => [['multiple'], fn (): array => [($this->key)($this->nettle), ($this->key)($this->clover)], ['Nettle', 'Clover']],
@@ -122,7 +123,7 @@ describe('over a garden', function (): void {
         it('carries the select a recordSelect() closure returns in place of its own', function (): void {
             $modal = ($this->mounted)(['swappedSelect'])->render()->crawler();
 
-            expect($modal->filter(Selectors::MODAL . ' select[name="recordId"] option:not([value=""])')->each(static fn (Crawler $option): string => $option->text()))->toBe(['Spare']);
+            expect($modal->filter(Selectors::RECORD_SELECT . ' ' . FormsSelectors::OPTION)->each(static fn (Crawler $option): string => $option->text()))->toBe(['Spare']);
         });
 
         it("titles the options through the table's recordTitle() closure, still in the title attribute's order, and projects the title attribute without loading a candidate otherwise", function (): void {

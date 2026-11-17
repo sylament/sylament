@@ -32,7 +32,7 @@ describe('the trigger', function (): void {
 
         expect($bare)->toContainElement('button', 'square-2-stack-20-solidReplicate')
             ->and($bare)->toContainElement(SupportSelectors::ICON, 'square-2-stack-20-solid')
-            ->and($grouped)->toContainElement(Selectors::DROPDOWN_ITEM . ' ' . SupportSelectors::ICON, 'square-2-stack-20-solid');
+            ->and($grouped)->toContainElement(SupportSelectors::DROPDOWN_ITEM . ' ' . SupportSelectors::ICON, 'square-2-stack-20-solid');
     });
 });
 
@@ -44,13 +44,13 @@ describe('the modal', function (): void {
             ->mountAction('replicate')
             ->assertActionDataSet(['title' => 'Sun']);
 
-        expect($tester->render()->crawler())->toContainElement(Selectors::MODAL_HEADING, 'Replicate Sun')
-            ->toContainButtons(Selectors::MODAL_FOOTER_ACTIONS, ['Replicate', 'Cancel']);
+        expect($tester->render()->crawler())->toContainElement(SupportSelectors::MODAL_HEADING, 'Replicate Sun')
+            ->toContainButtons(SupportSelectors::MODAL_FOOTER_ACTIONS, ['Replicate', 'Cancel']);
     });
 
     it('is headed by the bare verb when nothing names its record', function (): void {
         expect($this->createLiveComponent(ReplicateHost::class)->mountAction('replicateUnbound')->render()->crawler())
-            ->toContainElement(Selectors::MODAL_HEADING, 'Replicate');
+            ->toContainElement(SupportSelectors::MODAL_HEADING, 'Replicate');
     });
 
     it('leaves an excluded name out of the fill, and fills what mutateRecordDataUsing() answers', function (): void {
@@ -143,8 +143,8 @@ describe('the write', function (): void {
 
         $tester = $this->createLiveComponent(ReplicateHost::class)->mountAction('replicateBare');
 
-        expect($tester->render()->crawler())->toContainElement(Selectors::MODAL_HEADING, 'Replicate Sun')
-            ->toContainButtons(Selectors::MODAL_FOOTER_ACTIONS, ['Replicate', 'Cancel']);
+        expect($tester->render()->crawler())->toContainElement(SupportSelectors::MODAL_HEADING, 'Replicate Sun')
+            ->toContainButtons(SupportSelectors::MODAL_FOOTER_ACTIONS, ['Replicate', 'Cancel']);
 
         $tester->callMountedAction()->assertNotified('Replicated');
 
@@ -321,7 +321,7 @@ describe('the key', function (): void {
             ->callAction('replicateStockTubes', data: ['tubes' => 9])
             ->assertActionMounted('replicateStockTubes');
 
-        expect($tester->render()->crawler())->toContainElement('dialog[open] [data-record-errors] li', 'This value is already used.')
+        expect($tester->render()->crawler())->toContainElement(SupportSelectors::OPEN_MODAL . ' ' . Selectors::RECORD_ERROR, 'This value is already used.')
             ->and($this->entityManager()->getRepository(AtelierStock::class)->count())->toBe(1)
             ->and($this->reload($stock))->toBeRecord(tubes: 4);
     });

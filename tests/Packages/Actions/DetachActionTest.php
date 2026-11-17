@@ -33,15 +33,15 @@ beforeEach(function (): void {
 
 it('puts a danger "Detach" with the x-mark on each row, confirmed in a modal headed by the record title, with the x-mark and a "Detach" submit', function (?string $titleAttribute, string $heading): void {
     $tester = $this->createLiveComponent(AttachableRelationTable::class, AttachableRelationTable::props($this->entityManager(), $this->kew, 'plants', $titleAttribute));
-    $trigger = $tester->render()->crawler()->filter(Selectors::trigger('detach') . SupportSelectors::color('danger') . ':not([data-sy-table-bulk-only])');
+    $trigger = $tester->render()->crawler()->filter(Selectors::trigger('detach') . SupportSelectors::color('danger') . ':not(' . Selectors::BULK_ONLY . ')');
     $modal = $tester->mountAction(TestAction::make('detach')->table($this->rock))->render()->crawler();
 
-    expect($trigger->each(static fn (Crawler $button): string => $button->filter('.sy-link-label')->text()))->toBe(['Detach', 'Detach'])
+    expect($trigger->each(static fn (Crawler $button): string => $button->filter(SupportSelectors::LINK_LABEL)->text()))->toBe(['Detach', 'Detach'])
         ->and($trigger->first()->filter(SupportSelectors::ICON)->text())->toBe('x-mark-20-solid')
-        ->and($modal->filter(Selectors::MODAL_HEADING)->text())->toBe($heading)
-        ->and($modal->filter(Selectors::MODAL . ' .sy-modal-description')->count())->toBe(1)
-        ->and($modal->filter(Selectors::MODAL_ICON)->text())->toBe('x-mark')
-        ->and($modal->filter(Selectors::MODAL_SUBMIT . SupportSelectors::color('danger'))->text())->toBe('Detach');
+        ->and($modal->filter(SupportSelectors::MODAL_HEADING)->text())->toBe($heading)
+        ->and($modal->filter(SupportSelectors::MODAL_DESCRIPTION)->text())->toBe('Are you sure you would like to do this?')
+        ->and($modal->filter(SupportSelectors::MODAL_ICON)->text())->toBe('x-mark')
+        ->and($modal->filter(SupportSelectors::MODAL_SUBMIT . SupportSelectors::color('danger'))->text())->toBe('Detach');
 })->with([
     "titled by the table's title attribute" => ['name', 'Detach Rock'],
     'titled by nothing but the record label' => [null, 'Detach plant'],

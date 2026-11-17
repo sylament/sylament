@@ -17,6 +17,7 @@ use Sylament\Tests\Fixtures\Entity\OrderLine;
 use Sylament\Tests\Fixtures\Entity\Plant;
 use Sylament\Tests\Fixtures\Entity\TariffBand;
 use Sylament\Tests\Fixtures\Entity\Terrace;
+use Sylament\Tests\Fixtures\Forms\Selectors as FormsSelectors;
 use Sylament\Tests\Fixtures\Schemas\HookLog;
 use Sylament\Tests\Fixtures\Support\Selectors as SupportSelectors;
 use Sylament\Tests\Fixtures\Tables\AttachableRelationTable;
@@ -53,19 +54,19 @@ describe('over a garden', function (): void {
             $modal = $tester->mountAction(TestAction::make('attach')->table())->render()->crawler();
 
             expect($trigger->text())->toBe('Attach')
-                ->and($modal->filter(Selectors::MODAL_HEADING)->text())->toBe('Attach Plant')
-                ->and($modal->filter(Selectors::MODAL . ' .sy-modal-lg')->count())->toBe(1)
-                ->and($modal->filter(Selectors::MODAL . ' .sy-fo-field')->count())->toBe(1)
-                ->and($modal->filter(Selectors::MODAL . ' label[for="mountedActionSchema0.recordId"]' . SupportSelectors::SCREEN_READER_ONLY)->text())->toBe('Record')
-                ->and($modal->filter(Selectors::MODAL . ' select[name="recordId"][aria-required="true"]')->count())->toBe(1)
-                ->and($modal->filter(Selectors::MODAL_SUBMIT)->text())->toBe('Attach')
-                ->and($modal->filter(Selectors::MODAL_FOOTER_ACTIONS)->each(static fn (Crawler $button): string => $button->text()))->toBe(['Attach', 'Attach & attach another', 'Cancel']);
+                ->and($modal->filter(SupportSelectors::MODAL_HEADING)->text())->toBe('Attach Plant')
+                ->and($modal->filter(SupportSelectors::OPEN_MODAL . ' ' . SupportSelectors::modalWidth('lg'))->count())->toBe(1)
+                ->and($modal->filter(SupportSelectors::OPEN_MODAL . ' ' . FormsSelectors::FIELD_WRAPPER)->count())->toBe(1)
+                ->and($modal->filter(Selectors::RECORD_SELECT_LABEL . SupportSelectors::SCREEN_READER_ONLY)->text())->toBe('Record')
+                ->and($modal->filter(Selectors::RECORD_SELECT . '[aria-required="true"]')->count())->toBe(1)
+                ->and($modal->filter(SupportSelectors::MODAL_SUBMIT)->text())->toBe('Attach')
+                ->and($modal->filter(SupportSelectors::MODAL_FOOTER_ACTIONS)->each(static fn (Crawler $button): string => $button->text()))->toBe(['Attach', 'Attach & attach another', 'Cancel']);
         });
 
         it('offers no "Attach & attach another" under attachAnother(false)', function (): void {
             $modal = ($this->mounted)(['noAttachAnother'])->render()->crawler();
 
-            expect($modal->filter(Selectors::MODAL_FOOTER_ACTIONS)->each(static fn (Crawler $button): string => $button->text()))->toBe(['Attach', 'Cancel']);
+            expect($modal->filter(SupportSelectors::MODAL_FOOTER_ACTIONS)->each(static fn (Crawler $button): string => $button->text()))->toBe(['Attach', 'Cancel']);
         });
 
         it('refuses a submit that picks no record', function (): void {
@@ -81,7 +82,7 @@ describe('over a garden', function (): void {
         it('lists nothing until the user types, then every plant the garden lacks whose title matches, in title order', function (): void {
             $tester = ($this->mounted)();
 
-            expect($tester->render()->crawler()->filter(Selectors::MODAL . ' select[name="recordId"] option:not([value=""])')->count())->toBe(0)
+            expect($tester->render()->crawler()->filter(Selectors::RECORD_SELECT . ' ' . FormsSelectors::OPTION)->count())->toBe(0)
                 ->and($this->recordSelectSearch($tester, ''))->toBe([(string) $this->basil->id => 'Basil', (string) $this->fern->id => 'Fern', (string) $this->ivy->id => 'Ivy'])
                 ->and($this->recordSelectSearch($tester, 'er'))->toBe([(string) $this->fern->id => 'Fern']);
         });
@@ -89,7 +90,7 @@ describe('over a garden', function (): void {
         it('lists the candidates in the select as it opens once preloadRecordSelect() says so', function (): void {
             $modal = ($this->mounted)(['preloaded'])->render()->crawler();
 
-            expect($modal->filter(Selectors::MODAL . ' select[name="recordId"] option:not([value=""])')->each(static fn (Crawler $option): string => $option->text()))->toBe(['Basil', 'Fern', 'Ivy']);
+            expect($modal->filter(Selectors::RECORD_SELECT . ' ' . FormsSelectors::OPTION)->each(static fn (Crawler $option): string => $option->text()))->toBe(['Basil', 'Fern', 'Ivy']);
         });
 
         it("caps the options at the select's optionsLimit, which a recordSelect() closure reshapes", function (): void {

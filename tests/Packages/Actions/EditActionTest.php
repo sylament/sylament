@@ -26,7 +26,7 @@ describe('the trigger', function (): void {
 
         expect($bare)->toContainElement('button' . SupportSelectors::color('primary'), 'pencil-square-20-solidEdit')
             ->and($bare)->toContainElement(SupportSelectors::ICON, 'pencil-square-20-solid')
-            ->and($grouped)->toContainElement(Selectors::DROPDOWN_ITEM . SupportSelectors::color('primary') . ' ' . SupportSelectors::ICON, 'pencil-square-20-solid');
+            ->and($grouped)->toContainElement(SupportSelectors::DROPDOWN_ITEM . SupportSelectors::color('primary') . ' ' . SupportSelectors::ICON, 'pencil-square-20-solid');
     });
 
     it('links to the page its host routes it to', function (): void {
@@ -42,13 +42,13 @@ describe('the modal', function (): void {
             ->mountAction(TestAction::make(EditAction::class)->table($sun))
             ->assertActionDataSet(['title' => 'Sun']);
 
-        expect($tester->render()->crawler())->toContainElement(Selectors::MODAL_HEADING, 'Edit Sun')
-            ->toContainButtons(Selectors::MODAL_FOOTER_ACTIONS, ['Save changes', 'Cancel']);
+        expect($tester->render()->crawler())->toContainElement(SupportSelectors::MODAL_HEADING, 'Edit Sun')
+            ->toContainButtons(SupportSelectors::MODAL_FOOTER_ACTIONS, ['Save changes', 'Cancel']);
     });
 
     it('is headed by the bare verb when nothing names its record', function (): void {
         expect($this->createLiveComponent(RecordActionsHost::class)->mountAction('editUntitled')->render()->crawler())
-            ->toContainElement(Selectors::MODAL_HEADING, 'Edit');
+            ->toContainElement(SupportSelectors::MODAL_HEADING, 'Edit');
     });
 
     it("saves the row's record in one transaction, toasts \"Saved\" and shows the new value in the row", function (): void {
@@ -170,7 +170,7 @@ describe('a composite-keyed row', function (): void {
             ->callAction(TestAction::make('editShifted')->table($line), data: ['note' => 'Edited'])
             ->assertActionMounted(TestAction::make('editShifted')->table($line));
 
-        expect($tester->render()->crawler())->toContainElement('dialog[open] [data-record-errors] li', 'This value cannot be changed.')
+        expect($tester->render()->crawler())->toContainElement(SupportSelectors::OPEN_MODAL . ' ' . Selectors::RECORD_ERROR, 'This value cannot be changed.')
             ->and($this->reload($line))->toBeRecord(line: 2, note: 'Old');
     });
 });

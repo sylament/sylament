@@ -21,7 +21,8 @@ namespace Sylament\Tests\Fixtures\Forms;
  *
  * A select's `<select>` by the `sy-fo-` class that marks it, the same element carrying the
  * JS control's Stimulus controller, the one with no controller, and the inline-prefix class
- * that strips its padding, the class being the behaviour.
+ * that strips its padding, the class being the behaviour; a checkbox list's options grid, and
+ * the label and the description an option shows, by the `sy-fo-` class each carries.
  */
 final class Selectors
 {
@@ -77,6 +78,12 @@ final class Selectors
     public const string NATIVE_SELECT = 'select.sy-fo-select:not([data-controller])';
 
     public const string INLINE_PREFIX_SELECT = 'select.sy-fo-select.sy-fo-select-has-inline-prefix';
+
+    public const string CHECKBOX_LIST_OPTIONS = '.sy-fo-checkbox-list-options';
+
+    public const string CHECKBOX_LIST_OPTION_LABEL = '.sy-fo-checkbox-list-option-label';
+
+    public const string CHECKBOX_LIST_OPTION_DESCRIPTION = '.sy-fo-checkbox-list-option-description';
 
     public static function textInputAction(string $method): string
     {

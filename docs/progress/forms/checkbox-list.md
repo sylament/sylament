@@ -75,6 +75,7 @@ Both paths read the trait's `getRecordsFromRelationship()`, so the option query 
 
 `getOptionLabelFromRecordUsing()` replaces the title attribute as the source of each option's label, and `getOptionDescriptionFromRecordUsing()` adds a description per option.
 Declaring **either** switches the option build onto the record path, and the descriptions are installed as a **side effect** of it — the component calls its own `descriptions()` while building the map, exactly as vendor does (`CheckboxList.php:222-230`), because both maps come off the one query and running it twice to keep them separate would be worse.
+With the description closure alone the labels still come from the title attribute, so the build reads the records for the descriptions and then runs the title-attribute query for the labels: two statements where the pair takes one, as vendor's does.
 
 The label trio — `getOptionLabelFromRecordUsing()`, `hasOptionLabelFromRecordUsingCallback()`, `getOptionLabelFromRecord()` — lives in the shared [`HasRelationship`](../../../packages/forms/src/Components/Concerns/HasRelationship.php) trait, because [`Select`](has-relationship.md#the-relationship-search-arm-runs-a-like-per-column-over-the-scoped-option-query) reads the same callback for its search and label arms.
 Filament duplicates the three on both fields because it has no shared trait; the port has one, so both fields carry one copy, and the trait's own option build reads the callback too (`resolveOptionLabelFromRecord()`, callback first, title attribute otherwise).
@@ -126,7 +127,8 @@ The port renders `checked` from [`getOptionComparisonState()`](has-options.md#th
 Same addition [`Radio`](radio.md#the-checked-attribute-is-rendered-server-side), [`ToggleButtons`](toggle-buttons.md) and [`Select`](select.md#the-template-renders-the-selected-state-itself) make.
 
 The comparison is `state is iterable and value in state` — Twig's `in` is loose for scalars, deliberately, because an option key may be an `int` where the state holds the `'1'` a browser submitted.
-The `is iterable` guard is what a non-array state falls into: a tampered scalar checks nothing rather than matching an option by accident, and the strict [`Choice`](#the-three-server-side-guards-are-ordered-so-they-never-collide) is what admits or rejects it.
+The state compared is the cast one, so `OptionsArrayStateCast` (or the enum cast) has already wrapped a tampered scalar into a one-element list: it checks the option it names exactly, never one whose key it merely contains, and the [`Type` guard](#the-three-server-side-guards-are-ordered-so-they-never-collide) rejects it on save.
+The `is iterable` guard is what a custom cast answering a string falls into: that state checks nothing rather than every option whose key it contains, because Twig's `in` against a string is a substring test.
 
 It also means the bulk-toggle's "are they all checked?" question is answerable from the DOM on the controller's first frame.
 Vendor defers that read to `$nextTick` because Livewire has not hydrated the checkboxes yet when the Alpine component initialises; here they are already correct in the HTML.

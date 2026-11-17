@@ -78,6 +78,11 @@ describe('rendering', function (): void {
             ->toHaveCount(2);
     })->with('variants');
 
+    it('puts its extra input attributes on every option input of its grouped template too', function (): void {
+        expect($this->renderSchemaComponent(ToggleButtons::make('level')->options(['low' => 'Low', 'high' => 'High'])->grouped()->extraInputAttributes(['data-probe' => 'extra']))
+            ->filter('input.sy-fo-toggle-buttons-input[data-probe="extra"]'))->toHaveCount(2);
+    });
+
     it('puts its extra attributes on the field wrapper, not on its options', function (bool $grouped): void {
         expect($this->renderSchemaComponent(ToggleButtons::make('level')->options(['low' => 'Low', 'high' => 'High'])->extraAttributes(['data-panel' => 'levels'])->grouped($grouped)))
             ->toContainElement(Selectors::FIELD_WRAPPER . '[data-panel="levels"] .sy-fo-toggle-buttons:not([data-panel])');

@@ -14,5 +14,5 @@ it('replaces the default write with using(), handing it the data, the schema as 
 
     expect($this::getContainer()->get(HookLog::class)->hooks)->toBe(['using() made a ' . CappedHeadline::class . ' from code, title, slug, body'])
         ->and($this->reload(new CappedHeadline('MOON')))->toBeRecord(title: 'By using()')
-        ->and($this->entityManager()->find(CappedHeadline::class, 'moon'))->toBeNull();
+        ->and($this->entityManager()->getRepository(CappedHeadline::class)->count([]))->toBe(1);
 });

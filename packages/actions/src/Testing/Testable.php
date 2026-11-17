@@ -272,9 +272,9 @@ class Testable
     }
 
     /**
-     * A redirect and a failure the tester rethrew both answer without the component's props,
-     * which UX's tester would report as a redirect either way; only a success and UX's 422
-     * re-render carry them.
+     * A redirect and a failure, rethrown or answered without an exception, both answer
+     * without the component's props, which UX's tester would report as a redirect either
+     * way; only a success and UX's 422 re-render carry them.
      */
     private function failWithoutComponent(): void
     {
@@ -288,7 +288,7 @@ class Testable
             return;
         }
 
-        throw new LogicException(sprintf('The live component answered [%d] to the last request, whose exception the tester rethrew, so no component is left to read or drive.', $response->getStatusCode()));
+        throw new LogicException(sprintf('The live component answered [%d] to the last request, which failed, so no component is left to read or drive.', $response->getStatusCode()));
     }
 
     private function rethrowCaughtException(): void

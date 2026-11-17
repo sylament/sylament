@@ -65,14 +65,16 @@ it('mounts the component again on the locale it sets, readable after a redirect,
         ->and($tester->refresh()->render()->crawler())->toContainElement('[data-locale]', 'sk');
 });
 
-it('throws naming the status when a host answers a failure without throwing', function (): void {
-    expect(fn () => $this->createLiveComponent(UnavailableHost::class)->call('pause'))
-        ->toThrow(LogicException::class, 'The live component answered [503] without an exception to rethrow.');
+it('throws naming the status when a host answers a failure without throwing, and reads nothing of the component after it', function (): void {
+    $tester = $this->createLiveComponent(UnavailableHost::class);
+
+    expect(fn () => $tester->call('pause'))->toThrow(LogicException::class, 'The live component answered [503] without an exception to rethrow.')
+        ->and(fn () => $tester->render())->toThrow(LogicException::class, 'The live component answered [503] to the last request, which failed, so no component is left to read or drive.');
 });
 
 it('reads nothing of the component after a request whose exception it rethrew, naming the status that request answered', function (): void {
     $tester = $this->createLiveComponent(ToolbarHost::class);
-    $message = 'The live component answered [500] to the last request, whose exception the tester rethrew, so no component is left to read or drive.';
+    $message = 'The live component answered [500] to the last request, which failed, so no component is left to read or drive.';
 
     expect(fn () => $tester->call('fail'))->toThrow(RuntimeException::class, 'The toolbar failed.')
         ->and(fn () => $tester->call('fail'))->toThrow(LogicException::class, $message)

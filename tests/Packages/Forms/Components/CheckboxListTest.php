@@ -223,7 +223,7 @@ describe('search', function (): void {
 
         expect([$group->attr('data-controller'), $group->attr('data-sylament--forms--checkbox-list-debounce-value')])->toBe(['sylament--forms--checkbox-list', '0'])
             ->and([$search->attr('placeholder'), $search->attr('aria-label'), $search->attr('data-sylament--forms--checkbox-list-target')])->toBe(['Start typing to search...', 'Start typing to search...', 'search'])
-            ->and($group->filter(SupportSelectors::INLINE_PREFIX . ' svg')->count())->toBe(1)
+            ->and($group->filter(SupportSelectors::INLINE_PREFIX . ' svg')->text())->toBe('magnifying-glass-20-solid')
             ->and($group->filter('[data-sylament--forms--checkbox-list-target="option"]')->count())->toBe(2)
             ->and([$status->text(), $status->attr('hidden'), $status->attr('data-sylament--forms--checkbox-list-target')])->toBe(['No options match your search.', '', 'noResults']);
     });

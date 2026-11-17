@@ -666,7 +666,7 @@ describe('item action icons', function (): void {
 
         expect(array_map($iconOf, ['Move', 'Move down', 'Clone', 'Collapse', 'Expand']))->toBe(['arrows-up-down-20-solid', 'arrow-down-20-solid', 'square-2-stack-20-solid', 'chevron-up-20-solid', 'chevron-down-20-solid'])
             ->and($crawler->filter(FormsSelectors::repeaterItem('b') . ' button[aria-label="Move up"] svg')->text())->toBe('arrow-up-20-solid')
-            ->and($crawler->filter(FormsSelectors::repeaterItem('a') . ' button[aria-label="Delete"] svg'))->toHaveCount(1);
+            ->and($crawler->filter(FormsSelectors::repeaterItem('a') . ' button[aria-label="Delete"] svg')->text())->toBe('trash-20-solid');
     });
 });
 

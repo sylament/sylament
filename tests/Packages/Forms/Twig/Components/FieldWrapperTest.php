@@ -10,11 +10,11 @@ use Sylament\Tests\Fixtures\Forms\Selectors;
 describe('label', function (): void {
     it('labels the control it wraps, out of view only when hidden, and renders no label for a field with none', function (): void {
         expect($this->renderSchemaComponent(TextInput::make('email')))
-            ->toContainElement('.sy-fo-field-label-col label[for="schema.email"]:not(.sy-sr-only)', 'Email')
+            ->toContainElement(Selectors::LABEL_COLUMN . ' label[for="schema.email"]:not(.sy-sr-only)', 'Email')
             ->toContainElement('input[id="schema.email"]')
             ->and($this->renderSchemaComponent(TextInput::make('email')->hiddenLabel()))
             ->toContainElement('label.sy-sr-only[for="schema.email"]', 'Email')
-            ->not->toContainElement('.sy-fo-field-label-col')
+            ->not->toContainElement(Selectors::LABEL_COLUMN)
             ->and($this->renderSchemaComponent(TextInput::make('email')->name(null)))
             ->toContainElement('input[id="schema.email"]')
             ->not->toContainElement('label');
@@ -39,16 +39,16 @@ describe('labelAsHeading', function (): void {
             ->templateData(['heading' => true, 'prefix' => '', 'suffix' => '']);
 
         expect($this->renderSchemaComponent($field()))
-            ->toContainElement('div.sy-fo-field-label[id="schema.agree-label"]:not(.sy-sr-only)', 'Agree')
+            ->toContainElement(Selectors::LABEL_HEADING . '[id="schema.agree-label"]:not(.sy-sr-only)', 'Agree')
             ->not->toContainElement('label')
             ->and($this->renderSchemaComponent($field()->hiddenLabel()))
-            ->toContainElement('div.sy-fo-field-label.sy-sr-only[id="schema.agree-label"]', 'Agree')
+            ->toContainElement(Selectors::LABEL_HEADING . '.sy-sr-only[id="schema.agree-label"]', 'Agree')
             ->not->toContainElement('label');
     });
 
     it('gives the heading of a field with no id no id of its own', function (): void {
         expect($this->renderSchemaComponent(FusedGroup::make([TextInput::make('first')])->label('Name')))
-            ->toContainElement('div.sy-fo-field-label', 'Name')
+            ->toContainElement(Selectors::LABEL_HEADING, 'Name')
             ->not->toContainElement('[id$="-label"]');
     });
 });
@@ -60,10 +60,10 @@ describe('plain wrapper', function (): void {
         ])->key('name'));
 
         expect($render)
-            ->toContainElement('.sy-fo-fused-group ' . Selectors::FIELD_WRAPPER . ' label.sy-sr-only', 'First')
-            ->toContainElement('.sy-fo-fused-group ' . Selectors::FIELD_WRAPPER . ' input[name="first"]')
-            ->and($render->filter('.sy-fo-fused-group .sy-fo-field-label-col, .sy-fo-fused-group ' . Selectors::REQUIRED_MARK))->toHaveCount(0)
-            ->and($render->filter('.sy-fo-fused-group')->text())->toBe('First');
+            ->toContainElement(Selectors::FUSED_GROUP . ' ' . Selectors::FIELD_WRAPPER . ' label.sy-sr-only', 'First')
+            ->toContainElement(Selectors::FUSED_GROUP . ' ' . Selectors::FIELD_WRAPPER . ' input[name="first"]')
+            ->and($render->filter(Selectors::FUSED_GROUP . ' ' . Selectors::LABEL_COLUMN . ', ' . Selectors::FUSED_GROUP . ' ' . Selectors::REQUIRED_MARK))->toHaveCount(0)
+            ->and($render->filter(Selectors::FUSED_GROUP)->text())->toBe('First');
     });
 });
 
@@ -71,5 +71,5 @@ it('marks the root of both wrapper branches as the target a validation error scr
     expect($this->renderSchemaComponent(TextInput::make('first')))
         ->toContainElement(Selectors::FIELD_WRAPPER . ' input[name="first"]')
         ->and($this->renderSchemaComponent(FusedGroup::make([TextInput::make('first')])->key('name')))
-        ->toContainElement('.sy-fo-fused-group ' . Selectors::FIELD_WRAPPER . ' input[name="first"]');
+        ->toContainElement(Selectors::FUSED_GROUP . ' ' . Selectors::FIELD_WRAPPER . ' input[name="first"]');
 });

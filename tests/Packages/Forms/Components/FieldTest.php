@@ -50,7 +50,7 @@ describe('wrapper slots', function (): void {
             ->beforeLabel('Before label')
             ->afterLabel(Action::make('explain')));
 
-        expect($render->filter('.sy-fo-field-label-col')->text())->toBe('Above label Before label Name Explain Below label')
+        expect($render->filter(Selectors::LABEL_COLUMN)->text())->toBe('Above label Before label Name Explain Below label')
             ->and($render->filter(Selectors::LABEL_ROW)->text())->toBe('Before label Name Explain')
             ->and($render)
             ->toContainElement(SchemasSelectors::SCHEMA . SchemasSelectors::INLINE . SupportSelectors::align('end'), 'Explain')
@@ -64,7 +64,7 @@ describe('wrapper slots', function (): void {
             ->beforeContent('Before content')
             ->afterContent('After content'));
 
-        expect($render->filter('.sy-fo-field-content-col')->text())->toBe('Above content Before content After content Below content')
+        expect($render->filter(Selectors::CONTENT_COLUMN)->text())->toBe('Above content Before content After content Below content')
             ->and($render)
             ->toContainElement('.sy-fo-field-content-ctn input[name="name"]')
             ->toContainElement(SchemasSelectors::SCHEMA . SchemasSelectors::INLINE . SupportSelectors::align('end'), 'After content');
@@ -73,9 +73,9 @@ describe('wrapper slots', function (): void {
     it('renders the error-message slots around its error list, only while it has errors', function (): void {
         $tester = $this->createLiveComponent(MessageListForm::class);
 
-        expect($tester->render()->crawler())->toContainElement('.sy-fo-field-content-col input[name="code"]')
-            ->and($tester->render()->crawler()->filter('.sy-fo-field-content-col')->first()->text())->toBe('')
-            ->and($tester->fillForm(['code' => ''])->call('save')->render()->crawler()->filter('.sy-fo-field-content-col')->first()->text())
+        expect($tester->render()->crawler())->toContainElement(Selectors::CONTENT_COLUMN . ' input[name="code"]')
+            ->and($tester->render()->crawler()->filter(Selectors::CONTENT_COLUMN)->first()->text())->toBe('')
+            ->and($tester->fillForm(['code' => ''])->call('save')->render()->crawler()->filter(Selectors::CONTENT_COLUMN)->first()->text())
             ->toBe('Above the errors This value should not be blank. Below the errors');
     });
 });

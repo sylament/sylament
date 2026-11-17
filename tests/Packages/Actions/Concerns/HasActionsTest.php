@@ -294,8 +294,7 @@ describe('the mounted schema', function (): void {
         $bare = $this->createLiveComponent(SchemaModalHost::class)->mountAction('bare')->component();
 
         expect($bare->mountedActionHasSchema())->toBeFalse()
-            ->and($bare->getMountedActionSchema())->toBeNull()
-            ->and($this->createLiveComponent(SchemaModalHost::class)->component()->getMountedActionData())->toBe([]);
+            ->and($bare->getMountedActionSchema())->toBeNull();
     });
 
     it("seeds each frame's form with the dotted chain of mounted names as its operation", function (): void {

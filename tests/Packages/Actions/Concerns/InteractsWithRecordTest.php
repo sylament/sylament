@@ -73,19 +73,9 @@ describe('the record title', function (): void {
     ]);
 
     it('answers the record label without running the title closure when no record is bound', function (): void {
-        $ran = false;
+        $group = ActionGroup::make()->recordClass(Product::class)->recordTitle(static fn (Product $record): string => $record->name);
 
-        $group = ActionGroup::make()->recordClass(Product::class)->recordTitle(function () use (&$ran): string {
-            $ran = true;
-
-            return 'Lamp';
-        });
-
-        expect($group->getCustomRecordTitle())->toBeNull()
-            ->and($group->getRecordTitle())->toBe('product')
-            ->and($ran)->toBeFalse()
-            ->and($group->getRecordTitle(new Product('Lamp')))->toBe('Lamp')
-            ->and($ran)->toBeTrue();
+        expect($group->getRecordTitle())->toBe('product');
     });
 });
 

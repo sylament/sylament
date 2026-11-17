@@ -151,7 +151,7 @@ describe('footer', function (): void {
     it('submits the form from its Submit and dismisses the modal in the browser from its Cancel', function (): void {
         expect(($this->modal)(Action::make('archive')))
             ->toContainElement('form' . SupportSelectors::MODAL_WINDOW . Selectors::liveParameter('action', 'callMountedAction') . ' ' . SupportSelectors::MODAL_FOOTER . ' button[type="submit"]', 'Submit')
-            ->toContainElement(SupportSelectors::MODAL_FOOTER . ' button[type="button"]' . Selectors::DISMISS, 'Cancel');
+            ->toContainElement(SupportSelectors::MODAL_FOOTER . ' button[type="button"]' . SupportSelectors::MODAL_DISMISS, 'Cancel');
     });
 
     it("paints Submit primary for a gray or uncoloured action and in the action's colour otherwise", function (?string $color, string $submit): void {

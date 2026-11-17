@@ -19,8 +19,8 @@ it('unmounts its frame when the browser dismisses its dialog, cancelling the par
     $wrapper = fn (Action $action): Crawler => $this->renderTwigComponent('SylamentActions:ActionModal', ['action' => $action, 'id' => 'archive-modal'])->crawler()->filter('[id="archive-modal-w-archive"]');
     $dismissal = '[data-action="sylament--support--modal:dismissed->live#action"]' . Selectors::liveParameter('action', 'unmountAction');
 
-    expect($wrapper(Action::make('archive')))->toContainElement($dismissal . '[data-live-cancel-parent-actions-param="false"] dialog#archive-modal')
-        ->and($wrapper(Action::make('archive')->cancelParentActionsOnClose('details')))->toContainElement($dismissal . '[data-live-cancel-parent-actions-param="details"] dialog#archive-modal');
+    expect($wrapper(Action::make('archive')))->toContainElement($dismissal . Selectors::liveParameter('cancel-parent-actions', 'false') . ' dialog#archive-modal')
+        ->and($wrapper(Action::make('archive')->cancelParentActionsOnClose('details')))->toContainElement($dismissal . Selectors::liveParameter('cancel-parent-actions', 'details') . ' dialog#archive-modal');
 });
 
 it('lists above its form the violations that name none of its fields, keeping the modal open, and lists nothing without them', function (): void {

@@ -17,12 +17,13 @@ namespace Sylament\Tests\Fixtures\Support;
  * controller and the values it reads, and the sortable controller with its handles, items and
  * animation duration, by the `data-` hooks it reads; a section's collapse button by its place
  * and its state, whose name changes; the modal's dialog, an open one and the heading,
- * description, icon, footer actions and submit read off it, its window, width, footer, slide-over,
- * sticky parts and the clickable, click-through and overlaid looks, a link's label, the outlined
- * look, and a dropdown, its trigger, its panel and its items by the `sy-` classes the stylesheet
- * paints them by, and its controller; the modal's close, the badge's delete and the pagination's chevron buttons by their names;
- * the values the modal controller reads, and a dropdown's placement, offset, flip and teleport by
- * the Stimulus values its controller reads.
+ * description, icon, footer actions and submit read off it, its window, width, footer,
+ * slide-over, sticky parts and the clickable, click-through and overlaid looks, a link's label,
+ * the outlined look, and a dropdown, its trigger, its panel and its items by the `sy-` classes
+ * the stylesheet paints them by, and its panel's size by the custom properties it sets there;
+ * the modal's close, the badge's delete and the pagination's chevron buttons by their names;
+ * the values the modal controller reads and the dismiss a button wires to it, and a dropdown's
+ * controller and its placement, offset, flip and teleport by the Stimulus hooks it reads.
  * The input wrapper, its invalid state and each side of it are named by their `sy-` classes,
  * because which side an affix sits on is the stylesheet's contract; what sits there is asserted
  * by its text, its role or its element.
@@ -169,6 +170,8 @@ final class Selectors
 
     public const string MODAL_CLOSE_BUTTON = 'button[aria-label="Close"]';
 
+    public const string MODAL_DISMISS = '[data-action~="sylament--support--modal#dismiss"]';
+
     public const string FIRST_PAGE_BUTTON = 'button[aria-label="Go to the first page"]';
 
     public const string PREVIOUS_PAGE_BUTTON = 'button[aria-label="Previous page"]';
@@ -297,6 +300,14 @@ final class Selectors
     public static function dropdownValue(string $name, string $value): string
     {
         return "[data-sylament--support--dropdown-{$name}-value=\"{$value}\"]";
+    }
+
+    /**
+     * A custom property sizing a dropdown's panel (its width, max height or overflow), or, without a value, its presence.
+     */
+    public static function dropdownPanelStyle(string $property, ?string $value = null): string
+    {
+        return $value === null ? "[style*=\"--sy-dropdown-{$property}\"]" : "[style*=\"--sy-dropdown-{$property}: {$value}\"]";
     }
 
     /**

@@ -109,17 +109,17 @@ describe('trigger rendering', function (): void {
 
         expect($submit)->toContainElement('button[type="submit"]', 'Submit')
             ->and($submit->filter(Selectors::LIVE_CLICK))->toHaveCount(0)
-            ->and($closingSubmit)->toContainElement('button[type="submit"]' . Selectors::DISMISS, 'Submit')
+            ->and($closingSubmit)->toContainElement('button[type="submit"]' . SupportSelectors::MODAL_DISMISS, 'Submit')
             ->and($closingSubmit->filter(Selectors::LIVE_CLICK))->toHaveCount(0)
             ->and($this->renderViewComponent(Action::make('submit')))->toContainElement('button[type="button"]' . Selectors::LIVE_CLICK, 'Submit');
     });
 
     it('dismisses its modal from a closing icon button, unless it links away or is disabled', function (): void {
         expect($this->renderViewComponent(Action::make('cancel')->iconButton()->close()))
-            ->toContainElement(SupportSelectors::ICON_BUTTON . Selectors::DISMISS)
-            ->and($this->renderViewComponent(Action::make('cancel')->iconButton()->close()->url('/back'))->filter(Selectors::DISMISS))->toHaveCount(0)
+            ->toContainElement(SupportSelectors::ICON_BUTTON . SupportSelectors::MODAL_DISMISS)
+            ->and($this->renderViewComponent(Action::make('cancel')->iconButton()->close()->url('/back'))->filter(SupportSelectors::MODAL_DISMISS))->toHaveCount(0)
             ->and($this->renderViewComponent(Action::make('cancel')->iconButton()->close()->url('/back')))->toContainElement('a[href="/back"]' . SupportSelectors::ICON_BUTTON)
-            ->and($this->renderViewComponent(Action::make('cancel')->iconButton()->close()->disabled())->filter(Selectors::DISMISS))->toHaveCount(0)
+            ->and($this->renderViewComponent(Action::make('cancel')->iconButton()->close()->disabled())->filter(SupportSelectors::MODAL_DISMISS))->toHaveCount(0)
             ->and($this->renderViewComponent(Action::make('cancel')->iconButton()->close()->disabled()))->toContainElement('button[disabled]' . SupportSelectors::ICON_BUTTON);
     });
 });

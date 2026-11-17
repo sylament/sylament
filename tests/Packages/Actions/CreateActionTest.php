@@ -8,6 +8,7 @@ use Sylament\Actions\ActionGroup;
 use Sylament\Actions\CreateAction;
 use Sylament\Actions\Testing\TestAction;
 use Sylament\Tests\Fixtures\Actions\RecordActionsHost;
+use Sylament\Tests\Fixtures\Actions\Selectors;
 use Sylament\Tests\Fixtures\Entity\Allotment;
 use Sylament\Tests\Fixtures\Entity\CappedHeadline;
 use Sylament\Tests\Fixtures\Entity\CharmSatchel;
@@ -46,8 +47,8 @@ describe('the trigger', function (): void {
 
         expect($tester->render()->crawler())->toContainElement('a[href="/headlines/linkedCreate"]', 'New capped headline')
             ->and($tester->render()->crawler()->filter('a[href="/headlines/linkedCreate"][data-action]'))->toHaveCount(0)
-            ->and($tester->render()->crawler())->toContainElement('button[data-live-name-param="linkedForced"]', 'New capped headline')
-            ->and($tester->render()->crawler())->toContainElement('button[data-live-name-param="linkedArticle"]', 'New article');
+            ->and($tester->render()->crawler())->toContainElement('button' . Selectors::liveParameter('name', 'linkedForced'), 'New capped headline')
+            ->and($tester->render()->crawler())->toContainElement('button' . Selectors::liveParameter('name', 'linkedArticle'), 'New article');
 
         $tester->mountAction('linkedForced');
 

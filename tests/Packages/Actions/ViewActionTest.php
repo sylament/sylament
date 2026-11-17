@@ -24,7 +24,7 @@ it("fills a disabled form from the bound record, headed \"View\" and the record'
         ->assertActionDataSet(['name' => 'Lamp']);
 
     expect($tester->render()->crawler())->toContainElement(SupportSelectors::MODAL_HEADING, 'View Lamp')
-        ->toContainElement('dialog[open] input[name="name"][disabled]')
+        ->toContainElement(SupportSelectors::OPEN_MODAL . ' input[name="name"][disabled]')
         ->toContainButtons(SupportSelectors::MODAL_FOOTER_ACTIONS, ['Close']);
 });
 
@@ -47,7 +47,7 @@ it("shows the schema its host's resolver answers when it declares none, disabled
         ->call('mountAction', ['name' => 'viewResolved', 'context' => ['recordKey' => (string) $lamp->id]])
         ->assertActionDataSet(['name' => 'Lamp']);
 
-    expect($tester->render()->crawler())->toContainElement('dialog[open] input[name="name"][disabled]');
+    expect($tester->render()->crawler())->toContainElement(SupportSelectors::OPEN_MODAL . ' input[name="name"][disabled]');
 });
 
 it('is headed by the bare verb when nothing names its record', function (): void {

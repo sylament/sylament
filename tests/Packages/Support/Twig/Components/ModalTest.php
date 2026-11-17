@@ -13,7 +13,7 @@ it('is a dialog around one window, wired to its controller and to the open and c
     $modal = $this->renderTwigComponent('SylamentSupport:Modal', ['id' => 'delete-order', 'class' => 'danger-zone'])->crawler();
     $dialog = 'dialog#delete-order' . SupportSelectors::STANDALONE_ROOT . '.sy-modal.sy-fixed-positioning-context.danger-zone'
         . '[data-controller="sylament--support--modal"]'
-        . '[data-sylament--support--modal-id-value="delete-order"]'
+        . SupportSelectors::modalValue('id', 'delete-order')
         . '[data-action~="sylament-open-modal@window->sylament--support--modal#open"]'
         . '[data-action~="sylament-close-modal@window->sylament--support--modal#close"]'
         . '[data-action~="cancel->sylament--support--modal#handleCancel"]'
@@ -37,7 +37,7 @@ it('closes on escape and on a click away unless told not to', function (): void 
 
 it('renders open, natively and as its open value, only when open', function (): void {
     expect($this->renderTwigComponent('SylamentSupport:Modal', ['open' => true])->crawler())
-        ->toContainElement(SupportSelectors::MODAL . '[open]' . SupportSelectors::modalValue('open', 'true'))
+        ->toContainElement(SupportSelectors::OPEN_MODAL . SupportSelectors::modalValue('open', 'true'))
         ->and($this->renderTwigComponent('SylamentSupport:Modal')->crawler())
         ->toContainElement(SupportSelectors::MODAL . ':not([open]):not(' . SupportSelectors::modalValue('open') . ')');
 });
@@ -139,13 +139,13 @@ it('is medium wide unless sized, the screen width also stretching the dialog', f
 
 it('returns focus to its opener unless told not to', function (): void {
     expect($this->renderTwigComponent('SylamentSupport:Modal', ['returnsFocus' => false])->crawler())
-        ->toContainElement(SupportSelectors::MODAL . '[data-sylament--support--modal-returns-focus-value="false"]')
+        ->toContainElement(SupportSelectors::MODAL . SupportSelectors::modalValue('returns-focus', 'false'))
         ->and($this->renderTwigComponent('SylamentSupport:Modal')->crawler())
-        ->toContainElement(SupportSelectors::MODAL . ':not([data-sylament--support--modal-returns-focus-value])');
+        ->toContainElement(SupportSelectors::MODAL . ':not(' . SupportSelectors::modalValue('returns-focus') . ')');
 });
 
 it('closes from a button named Close in its header, kept out of the tab order while escape closes, and focuses its window when asked', function (): void {
-    $closing = SupportSelectors::MODAL_CLOSE_BUTTON . '[data-action~="sylament--support--modal#dismiss"]';
+    $closing = SupportSelectors::MODAL_CLOSE_BUTTON . SupportSelectors::MODAL_DISMISS;
 
     expect($this->renderTwigComponent('SylamentSupport:Modal', ['heading' => 'Delete order'])->crawler())
         ->toContainElement(SupportSelectors::MODAL_WINDOW . '.sy-modal-window-has-close-btn:not([autofocus]):not([tabindex]) header ' . $closing . '[tabindex="-1"]')

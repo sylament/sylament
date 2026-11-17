@@ -21,10 +21,10 @@ it('closes only its own modal once it runs, unless it cancels its parents, every
 it("closes its parent's modal while it is open, unless it overlays it", function (): void {
     $render = fn (string $path) => $this->createLiveComponent(NestedModalHost::class)->mountAction($path)->render()->crawler();
 
-    expect($render('outer.overlaying'))->toContainElement(Selectors::mountedModal(0) . '[open]')
-        ->toContainElement(Selectors::mountedModal(1) . '[open]')
-        ->and($render('outer.inner'))->toContainElement(Selectors::mountedModal(0) . ':not([open])')
-        ->toContainElement(Selectors::mountedModal(1) . '[open]');
+    expect($render('outer.overlaying'))->toContainElement(Selectors::mountedModal(0) . Selectors::OPEN)
+        ->toContainElement(Selectors::mountedModal(1) . Selectors::OPEN)
+        ->and($render('outer.inner'))->toContainElement(Selectors::mountedModal(0) . ':not(' . Selectors::OPEN . ')')
+        ->toContainElement(Selectors::mountedModal(1) . Selectors::OPEN);
 });
 
 it('cancels its parents when its modal is dismissed, if told to', function (): void {

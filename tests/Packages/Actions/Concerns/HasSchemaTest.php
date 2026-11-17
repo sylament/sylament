@@ -112,7 +112,7 @@ describe('a wizard', function (): void {
         $modal = $tester->render()->crawler()->filter(Selectors::mountedModal(0) . Selectors::OPEN);
 
         expect($modal)->toContainElement(SchemasSelectors::WIZARD . ':not(' . SupportSelectors::CONTAINED . ')')
-            ->toContainElement(SchemasSelectors::WIZARD_CANCEL_SLOT . ' ' . SupportSelectors::BUTTON . Selectors::DISMISS, 'Cancel')
+            ->toContainElement(SchemasSelectors::WIZARD_CANCEL_SLOT . ' ' . SupportSelectors::BUTTON . SupportSelectors::MODAL_DISMISS, 'Cancel')
             ->toContainElement('form' . SupportSelectors::MODAL_WINDOW . Selectors::liveParameter('action', 'callMountedAction') . ' ' . SchemasSelectors::WIZARD_SUBMIT_SLOT . ' button[type="submit"]', 'Submit')
             ->and($modal->filter(SupportSelectors::MODAL_FOOTER)->count())->toBe(0);
 

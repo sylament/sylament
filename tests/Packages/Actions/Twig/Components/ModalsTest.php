@@ -25,7 +25,7 @@ it('keeps a parent shut but rendered under a child with a modal of its own, and 
     $tester = $this->createLiveComponent(ActionStackHost::class)->mountAction('confirm')->mountAction('details');
     $crawler = $tester->render()->crawler();
 
-    expect($crawler->filter(Selectors::mountedModal(0) . ':not([open]):not(' . SupportSelectors::modalValue('open') . ')')->count())->toBe(1)
+    expect($crawler->filter(Selectors::mountedModal(0) . ':not(' . Selectors::OPEN . '):not(' . SupportSelectors::modalValue('open') . ')')->count())->toBe(1)
         ->and($crawler->filter(Selectors::mountedModal(1) . Selectors::OPEN . SupportSelectors::modalValue('open', 'true'))->count())->toBe(1);
 
     $crawler = $tester->unmountAction()->render()->crawler();
@@ -40,7 +40,7 @@ it('marks an open parent under an overlaying child as overlaid, never the top fr
 
     expect($overlaid->filter(Selectors::mountedModal(0) . Selectors::OPEN . SupportSelectors::MODAL_OVERLAID)->count())->toBe(1)
         ->and($overlaid->filter(Selectors::mountedModal(1) . Selectors::OPEN . ':not(' . SupportSelectors::MODAL_OVERLAID . ')')->count())->toBe(1)
-        ->and($shut->filter(Selectors::mountedModal(0) . ':not([open]):not(' . SupportSelectors::MODAL_OVERLAID . ')')->count())->toBe(1);
+        ->and($shut->filter(Selectors::mountedModal(0) . ':not(' . Selectors::OPEN . '):not(' . SupportSelectors::MODAL_OVERLAID . ')')->count())->toBe(1);
 });
 
 it('keeps the dialog id of a frame whose action replaces itself, renaming only its wrapper', function (): void {

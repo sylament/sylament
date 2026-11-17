@@ -17,7 +17,7 @@ describe('payload attributes', function (): void {
             ->and($withPayload->filter(Selectors::CLOSE_MARKER))->toHaveCount(0)
             ->and($bare)->toContainElement($selector . Selectors::dispatchedEvent('refreshed') . ':not([data-sylament-action-event-data])')
             ->and($closing)->toContainElement($selector . Selectors::dispatchedEvent('refreshed') . Selectors::CLOSE_MARKER)
-            ->and($closing->filter(Selectors::DISMISS))->toHaveCount(0);
+            ->and($closing->filter(SupportSelectors::MODAL_DISMISS))->toHaveCount(0);
     })->with('trigger looks');
 
     it('dispatches to itself or to the component it names, as its last dispatch call says', function (Closure $look, string $selector): void {

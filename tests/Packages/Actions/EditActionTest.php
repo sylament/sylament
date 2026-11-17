@@ -147,7 +147,7 @@ describe('a composite-keyed row', function (): void {
 
         $locked = $this->createLiveComponent($table)->mountAction(TestAction::make(EditAction::class)->table($line));
 
-        expect($locked->render()->crawler())->toContainElement('dialog[open] input[name="line"][disabled]');
+        expect($locked->render()->crawler())->toContainElement(SupportSelectors::OPEN_MODAL . ' input[name="line"][disabled]');
 
         $this->createLiveComponent($table)
             ->mountAction(TestAction::make('editRenamed')->table($line))

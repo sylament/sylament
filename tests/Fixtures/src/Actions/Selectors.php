@@ -11,12 +11,12 @@ use Sylament\Tests\Fixtures\Support\Selectors as SupportSelectors;
  * carries beside its look, one trigger by the action name its live parameters mount, a
  * group's inline row by its layout class, and the bulk-only marker a bulk trigger and a bulk
  * group's dropdown carry; the click wiring the trigger templates emit, by the `data-` hooks
- * the controllers read: the live action binding and a parameter it sends, the modal's
- * client-side dismiss, the marker of a closing trigger and the browser event a dispatching
- * trigger names and the component it sends it to; a mounted action's dialog, by the frame index its host-scoped id ends in,
- * and an open one, by the `open` attribute the host's modal renderer sets on the frames it
- * shows; the list of a record's own violations an action modal shows above its form, and each
- * one in it; and the record select an attach or associate modal opens, with its label.
+ * the controllers read: the live action binding and a parameter it sends, the marker of a
+ * closing trigger, and the browser event a dispatching trigger names and the component it
+ * sends it to; a mounted action's dialog, by the frame index its host-scoped id ends in, and
+ * an open one, by the `open` attribute the host's modal renderer sets on the frames it shows;
+ * the list of a record's own violations an action modal shows above its form, and each one in
+ * it; and the record select an attach or associate modal opens, with its label.
  */
 final class Selectors
 {
@@ -27,8 +27,6 @@ final class Selectors
     public const string BULK_ONLY = '[data-sy-table-bulk-only]';
 
     public const string LIVE_CLICK = '[data-action~="live#action"]';
-
-    public const string DISMISS = '[data-action~="sylament--support--modal#dismiss"]';
 
     public const string CLOSE_MARKER = '[data-sylament-action-close]';
 

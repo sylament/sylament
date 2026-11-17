@@ -57,7 +57,7 @@ describe('click precedence', function (): void {
         $render = $this->renderViewComponent($look(Action::make('save')->callParent('callMountedAction')->close()));
 
         expect($render)->toContainElement($selector . Selectors::LIVE_CLICK . Selectors::liveParameter('action', 'callMountedAction'))
-            ->and($render->filter(Selectors::DISMISS))->toHaveCount(0);
+            ->and($render->filter(SupportSelectors::MODAL_DISMISS))->toHaveCount(0);
     })->with([
         'a button' => [static fn (Action $action): Action => $action, SupportSelectors::BUTTON],
         'an icon button' => [static fn (Action $action): Action => $action->iconButton(), SupportSelectors::ICON_BUTTON],
@@ -68,7 +68,7 @@ describe('click precedence', function (): void {
 
         expect($render)->toContainElement('a[href="/back"]' . $selector)
             ->and($render->filter(Selectors::LIVE_CLICK))->toHaveCount(0)
-            ->and($render->filter(Selectors::DISMISS))->toHaveCount(0)
+            ->and($render->filter(SupportSelectors::MODAL_DISMISS))->toHaveCount(0)
             ->and($render->filter(Selectors::dispatchedEvent('saved')))->toHaveCount(0);
     })->with([
         'a button' => [static fn (Action $action): Action => $action, SupportSelectors::BUTTON],

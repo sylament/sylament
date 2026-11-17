@@ -27,7 +27,7 @@ it('sizes its panel by the width and the maximum height it is given, scrolling p
     $sized = $this->renderViewComponent(ActionGroup::make([Action::make('edit')])->dropdownWidth('20rem')->dropdownMaxHeight('10rem'));
     $plain = $this->renderViewComponent(ActionGroup::make([Action::make('edit')]));
 
-    expect($sized)->toContainElement(SupportSelectors::DROPDOWN_PANEL . '[style*="--sy-dropdown-width: 20rem"][style*="--sy-dropdown-max-height: 10rem"][style*="--sy-dropdown-overflow: auto"]')
+    expect($sized)->toContainElement(SupportSelectors::DROPDOWN_PANEL . SupportSelectors::dropdownPanelStyle('width', '20rem') . SupportSelectors::dropdownPanelStyle('max-height', '10rem') . SupportSelectors::dropdownPanelStyle('overflow', 'auto'))
         ->and($plain)->toContainElement(SupportSelectors::DROPDOWN_PANEL . ':not([style])');
 });
 

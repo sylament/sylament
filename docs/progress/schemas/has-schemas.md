@@ -26,7 +26,7 @@ The trait's validation members (`validateSchema()`, the error bag, `clearSchemaV
 | [`getCachedSchemas()` — build every declared name, reuse cached](../../../packages/schemas/src/Concerns/HasSchemas.php) | [`InteractsWithSchemas::getCachedSchemas()`](../../../vendor/filament/schemas/src/Concerns/InteractsWithSchemas.php) | done | — | — |
 | [`schemasHostId` `#[LiveProp]` + `getSchemasHostId()`](../../../packages/schemas/src/Concerns/HasSchemas.php) — the key prefix | [`Components/Concerns/HasKey::getLivewireKey()`](../../../vendor/filament/schemas/src/Components/Concerns/HasKey.php) | done | — | [diverges](live-component.md#the-host-id-is-minted-by-the-host-because-ux-has-no-stable-component-id) |
 | [`makeSchema()` — `Schema::make($this)`](../../../packages/schemas/src/Concerns/HasSchemas.php) | [`InteractsWithSchemas::makeSchema()`](../../../vendor/filament/schemas/src/Concerns/InteractsWithSchemas.php) | done | — | — |
-| [`fill(object\|array\|null $state = null)` default schema](../../../packages/schemas/src/Concerns/HasSchemas.php) | [`InteractsWithSchemas`](../../../vendor/filament/schemas/src/Concerns/InteractsWithSchemas.php) | done | — | [belongs-to-record.md](belongs-to-record.md#fillobject-reads-only-the-paths-the-schema-declares) |
+| [`fill(object\|array\|null $state = null)` default schema](../../../packages/schemas/src/Concerns/HasSchemas.php) | [`InteractsWithSchemas`](../../../vendor/filament/schemas/src/Concerns/InteractsWithSchemas.php) | done | — | [belongs-to-record.md](belongs-to-record.md#fillobject-reads-only-the-paths-the-schema-declares) · [semantics](#a-host-fills-its-schemas-as-it-mounts) |
 | [`oldState` `#[LiveProp]` + `persistOldState()` `#[PreDehydrate]`](../../../packages/schemas/src/Concerns/HasSchemas.php) | [`InteractsWithSchemas::updatingInteractsWithSchemas()`](../../../vendor/filament/schemas/src/Concerns/InteractsWithSchemas.php) | done | — | [diverges](#livewires-updatingupdated-state-hooks-become-a-predehydrateposthydrate-snapshot-and-diff) |
 | [`callAfterSchemaStateUpdated()` `#[PostHydrate]` — diff snapshot, fire hooks](../../../packages/schemas/src/Concerns/HasSchemas.php) | [`InteractsWithSchemas::updatedInteractsWithSchemas()`](../../../vendor/filament/schemas/src/Concerns/InteractsWithSchemas.php) | done | — | [diverges](#the-host-level-afterstateupdated-hook-is-renamed-to-callafterschemastateupdated) |
 | [`getOldSchemaState(?string)` — path-keyed pre-change lookup](../../../packages/schemas/src/Concerns/HasSchemas.php) | [`InteractsWithSchemas::getOldSchemaState()`](../../../vendor/filament/schemas/src/Concerns/InteractsWithSchemas.php) | done | — | — |
@@ -52,6 +52,16 @@ The trait's validation members (`validateSchema()`, the error bag, `clearSchemaV
 ### The translatable content driver is not ported
 
 `getFilamentTranslatableContentDriver()` / `makeFilamentTranslatableContentDriver()` / `getActiveSchemaLocale()` — the per-locale content driver Filament threads through schema state — has no consumer and nothing blocking it, so it is plain **todo**.
+
+## Semantics
+
+### A host fills its schemas as it mounts
+
+A host fills each schema before the first render a user types into, and every shipped host does: panels' `CreateRecord` and `EditRecord` in `mount()`, a mounted action's form through its `mountUsing`, and tables' filters form as the table mounts.
+A fill creates every container a field's state path crosses, so a filled host never meets the gap below.
+A host that never fills loses the first write to a field under a container path its state lacks: typing into `data.address.city` leaves `address` as `[]`, and only the second write lands, because the first left that empty container behind.
+The write is lost inside UX's hydrator, before any `HasSchemas` hook runs: `LiveComponentHydrator::adjustPropertyPathForData()` stops bracketing the path once an intermediate value is missing, so `[address].city` reaches PropertyAccess as a property write on an array, and the `NoSuchPropertyException` it throws is swallowed as bad user data.
+Filament's Livewire starts the missing level as `[]` before it descends, so the same write lands there.
 
 ## Divergences
 

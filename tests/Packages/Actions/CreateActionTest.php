@@ -124,7 +124,7 @@ describe('the modal', function (): void {
 
     it('refuses by name a record class whose constructor requires arguments, advising using()', function (): void {
         expect(fn () => $this->createLiveComponent(RecordActionsHost::class)->callAction('createProduct', data: ['name' => 'Lamp']))
-            ->toThrow(LogicException::class, "build it in the action's using() closure.");
+            ->toThrow(LogicException::class, 'Cannot map a new record for the [createProduct] action: ' . Product::class . " requires constructor arguments, so the mapper cannot build it. Give the constructor defaults, or build it in the action's using() closure.");
 
         expect($this->entityManager()->getRepository(Product::class)->count())->toBe(0);
     });
@@ -278,7 +278,7 @@ describe('a create on a relationship', function (): void {
         $this->seed($lighthouse->lamp, $lighthouse);
 
         expect(fn () => $this->createLiveComponent(RecordActionsHost::class)->callAction('createSpare', data: ['name' => 'Lamp']))
-            ->toThrow(LogicException::class, "build it in the action's using() closure.");
+            ->toThrow(LogicException::class, 'Cannot map a new record for the [createSpare] action: ' . Product::class . " requires constructor arguments, so the mapper cannot build it. Give the constructor defaults, or build it in the action's using() closure.");
 
         expect($this->entityManager()->getRepository(Product::class)->count())->toBe(1);
     });

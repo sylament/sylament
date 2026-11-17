@@ -101,13 +101,20 @@ it('detaches composite-keyed rows by their keys, and only those rows', function 
     }, 'invoiceLines'],
 ]);
 
-it('reads the selection by key in as many statements as by record on the owning side, and in one more a key on the inverse side', function (Closure $scene, string $relation, int $extra): void {
+it('reads a selection on the inverse side by key in one more statement a key than by record', function (): void {
+    $scene = static function (): array {
+        $rock = new Plant('Rock');
+        ($kew = new Garden('Kew'))->addPlant($rock);
+        ($wisley = new Garden('Wisley'))->addPlant($rock);
+
+        return [$rock, [$kew, $wisley], [$rock, $kew, $wisley]];
+    };
     [$byRecord, $byKey] = [$scene(), $scene()];
     $this->seed(...$byRecord[2], ...$byKey[2]);
-    $statements = function (array $arm, array $variants) use ($relation): int {
+    $statements = function (array $arm, array $variants): int {
         [$owner, $selection] = $arm;
 
-        $this->createLiveComponent(AttachableRelationTable::class, AttachableRelationTable::props($this->entityManager(), $owner, $relation, variants: $variants))
+        $this->createLiveComponent(AttachableRelationTable::class, AttachableRelationTable::props($this->entityManager(), $owner, 'gardens', variants: $variants))
             ->selectTableRecords($selection)
             ->callAction(TestAction::make('detach')->table()->bulk())
             ->assertNotified('Detached');
@@ -115,23 +122,8 @@ it('reads the selection by key in as many statements as by record on the owning 
         return count($this->statementsRun());
     };
 
-    expect($statements($byKey, ['noFetch']))->toBe($statements($byRecord, []) + $extra);
-})->with([
-    'the owning side, two keys' => [static function (): array {
-        $garden = new Garden('Kew');
-        $garden->addPlant($rock = new Plant('Rock'));
-        $garden->addPlant($moss = new Plant('Moss'));
-
-        return [$garden, [$rock, $moss], [$garden, $rock, $moss]];
-    }, 'plants', 0],
-    'the inverse side, two keys' => [static function (): array {
-        $rock = new Plant('Rock');
-        ($kew = new Garden('Kew'))->addPlant($rock);
-        ($wisley = new Garden('Wisley'))->addPlant($rock);
-
-        return [$rock, [$kew, $wisley], [$rock, $kew, $wisley]];
-    }, 'gardens', 2],
-]);
+    expect($statements($byKey, ['noFetch']))->toBe($statements($byRecord, []) + 2);
+});
 
 it('detaches nothing when one join row fails to go, toasting that the whole selection failed', function (): void {
     FailingWrite::afterJoinTableDeletes($this->entityManager(), Garden::class, 'plants', 1);

@@ -19,8 +19,8 @@ namespace Sylament\Tests\Fixtures\Support;
  * and its state, whose name changes; the modal's dialog, an open one and the heading,
  * description, icon, footer actions and submit read off it, its window, width, footer, slide-over,
  * sticky parts and the clickable, click-through and overlaid looks, a link's label, the outlined
- * look, and a dropdown, its panel and its items by the `sy-` classes the stylesheet paints them
- * by; the modal's close, the badge's delete and the pagination's chevron buttons by their names;
+ * look, and a dropdown, its trigger, its panel and its items by the `sy-` classes the stylesheet
+ * paints them by, and its controller; the modal's close, the badge's delete and the pagination's chevron buttons by their names;
  * the values the modal controller reads, and a dropdown's placement, offset, flip and teleport by
  * the Stimulus values its controller reads.
  * The input wrapper, its invalid state and each side of it are named by their `sy-` classes,
@@ -182,6 +182,10 @@ final class Selectors
     public const string LINK_LABEL = '.sy-link-label';
 
     public const string DROPDOWN = '.sy-dropdown';
+
+    public const string DROPDOWN_CONTROLLER = '[data-controller="sylament--support--dropdown"]';
+
+    public const string DROPDOWN_TRIGGER = '.sy-dropdown-trigger';
 
     public const string DROPDOWN_PANEL = '.sy-dropdown-panel';
 

@@ -27,7 +27,7 @@ describe('renderAction()', function (): void {
 
         expect($render->filter('[data-slot="bound"]'))->toContainElement(Selectors::LIVE_CLICK . Selectors::liveParameter('name', 'delete') . Selectors::liveParameter('arguments', '{"id":5}'), 'Delete')
             ->and($render->filter('[data-slot="plain"] ' . Selectors::TRIGGER))->toHaveCount(1)
-            ->and($render->filter('[data-slot="plain"] [data-live-arguments-param]'))->toHaveCount(0);
+            ->and($render->filter('[data-slot="plain"] ' . Selectors::liveParameter('arguments')))->toHaveCount(0);
     });
 
     it('checks visibility after binding, so a visibility closure reads the bound arguments', function (): void {

@@ -13,7 +13,7 @@ use Sylament\Tests\Fixtures\Support\Selectors as SupportSelectors;
  * group's dropdown carry; the click wiring the trigger templates emit, by the `data-` hooks
  * the controllers read: the live action binding and a parameter it sends, the modal's
  * client-side dismiss, the marker of a closing trigger and the browser event a dispatching
- * trigger names; a mounted action's dialog, by the frame index its host-scoped id ends in,
+ * trigger names and the component it sends it to; a mounted action's dialog, by the frame index its host-scoped id ends in,
  * and an open one, by the `open` attribute the host's modal renderer sets on the frames it
  * shows; the list of a record's own violations an action modal shows above its form, and each
  * one in it; and the record select an attach or associate modal opens, with its label.
@@ -50,16 +50,24 @@ final class Selectors
     }
 
     /**
-     * A parameter the live action binding sends, by its name and the value it carries.
+     * A parameter the live action binding sends, by its name and the value it carries, or, without one, its presence.
      */
-    public static function liveParameter(string $name, string $value): string
+    public static function liveParameter(string $name, ?string $value = null): string
     {
-        return "[data-live-{$name}-param='{$value}']";
+        return $value === null ? "[data-live-{$name}-param]" : "[data-live-{$name}-param='{$value}']";
     }
 
     public static function dispatchedEvent(string $event): string
     {
         return "[data-sylament-action-event=\"{$event}\"]";
+    }
+
+    /**
+     * The component a dispatching trigger sends its event to, or, without one, that it names any.
+     */
+    public static function dispatchedTo(?string $component = null): string
+    {
+        return $component === null ? '[data-sylament-action-dispatch-to]' : "[data-sylament-action-dispatch-to=\"{$component}\"]";
     }
 
     public static function mountedModal(int $index): string

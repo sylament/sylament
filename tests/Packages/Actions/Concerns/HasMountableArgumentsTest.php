@@ -13,5 +13,5 @@ it('mounts with the arguments it was invoked with, leaving the action it was inv
 
     expect($this->renderViewComponent($invoked))->toContainElement(Selectors::LIVE_CLICK . Selectors::liveParameter('name', 'edit') . Selectors::liveParameter('arguments', '{"line":5}'), 'Edit')
         ->and($plain)->toContainElement(Selectors::LIVE_CLICK . Selectors::liveParameter('name', 'edit'), 'Edit')
-        ->and($plain->filter('[data-live-arguments-param]'))->toHaveCount(0);
+        ->and($plain->filter(Selectors::liveParameter('arguments')))->toHaveCount(0);
 });

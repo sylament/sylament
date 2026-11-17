@@ -169,9 +169,9 @@ describe('serialization', function (): void {
         $untargeted = $this->renderViewComponent(Action::fromArray(['name' => 'notify', 'event' => 'saved', 'dispatchDirection' => 'to']));
 
         expect($untargeted)->toContainElement(Selectors::dispatchedEvent('saved'), 'Notify')
-            ->and($untargeted->filter('[data-sylament-action-dispatch-to]'))->toHaveCount(0)
+            ->and($untargeted->filter(Selectors::dispatchedTo()))->toHaveCount(0)
             ->and($this->renderViewComponent(Action::fromArray(['name' => 'notify', 'event' => 'saved', 'dispatchDirection' => 'to', 'dispatchToComponent' => 'Inbox'])))
-            ->toContainElement(Selectors::dispatchedEvent('saved') . '[data-sylament-action-dispatch-to="Inbox"]', 'Notify');
+            ->toContainElement(Selectors::dispatchedEvent('saved') . Selectors::dispatchedTo('Inbox'), 'Notify');
     });
 });
 

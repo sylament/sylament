@@ -158,7 +158,7 @@ describe('triggers', function (): void {
     });
 
     it('triggers its dropdown from the look it picks over the one it was given by default, an icon button with neither', function (Closure $group, string $look): void {
-        expect($this->renderViewComponent($group()))->toContainButtons('.sy-dropdown-trigger ' . $look, ['Actions']);
+        expect($this->renderViewComponent($group()))->toContainButtons(SupportSelectors::DROPDOWN_TRIGGER . ' ' . $look, ['Actions']);
     })->with([
         'neither' => [fn (): ActionGroup => ActionGroup::make([Action::make('edit')]), SupportSelectors::ICON_BUTTON],
         'a button by default' => [fn (): ActionGroup => ActionGroup::make([Action::make('edit')])->defaultTriggerTemplate(ActionGroup::BUTTON_TEMPLATE), SupportSelectors::BUTTON],
@@ -238,7 +238,7 @@ describe('triggers', function (): void {
             ->filter(SupportSelectors::DROPDOWN);
 
         expect($dropdown->matches(SupportSelectors::DROPDOWN . '.x-wide.x-dark[data-tour="more"]:not([data-first]):not([data-none]):not([data-off])'))->toBeTrue()
-            ->and($dropdown->filter('.sy-dropdown-trigger [data-tour]'))->toHaveCount(0);
+            ->and($dropdown->filter(SupportSelectors::DROPDOWN_TRIGGER . ' [data-tour]'))->toHaveCount(0);
     });
 
     it("renders its link trigger as a button, its label for screen readers only when it hides it", function (): void {
@@ -272,9 +272,9 @@ describe('members', function (): void {
     it("turns a nested group into a row of a dropdown parent and into a button of an inline one, unless it picks its own trigger", function (): void {
         $nested = static fn (): ActionGroup => ActionGroup::make([Action::make('view')])->label('More');
 
-        expect($this->renderViewComponent(ActionGroup::make([$nested()])))->toContainElement(SupportSelectors::DROPDOWN_PANEL . ' .sy-dropdown-trigger ' . SupportSelectors::DROPDOWN_ITEM . Selectors::TRIGGER, 'More')
-            ->and($this->renderViewComponent(ActionGroup::make([$nested()])->dropdown(false)))->toContainElement(Selectors::INLINE_GROUP . ' .sy-dropdown-trigger ' . SupportSelectors::BUTTON, 'More')
-            ->and($this->renderViewComponent(ActionGroup::make([$nested()->iconButton()])))->toContainButtons(SupportSelectors::DROPDOWN_PANEL . ' .sy-dropdown-trigger ' . SupportSelectors::ICON_BUTTON, ['More']);
+        expect($this->renderViewComponent(ActionGroup::make([$nested()])))->toContainElement(SupportSelectors::DROPDOWN_PANEL . ' ' . SupportSelectors::DROPDOWN_TRIGGER . ' ' . SupportSelectors::DROPDOWN_ITEM . Selectors::TRIGGER, 'More')
+            ->and($this->renderViewComponent(ActionGroup::make([$nested()])->dropdown(false)))->toContainElement(Selectors::INLINE_GROUP . ' ' . SupportSelectors::DROPDOWN_TRIGGER . ' ' . SupportSelectors::BUTTON, 'More')
+            ->and($this->renderViewComponent(ActionGroup::make([$nested()->iconButton()])))->toContainButtons(SupportSelectors::DROPDOWN_PANEL . ' ' . SupportSelectors::DROPDOWN_TRIGGER . ' ' . SupportSelectors::ICON_BUTTON, ['More']);
     });
 
     it("opens a nested group's dropdown to the right unless it is placed, its own below", function (): void {

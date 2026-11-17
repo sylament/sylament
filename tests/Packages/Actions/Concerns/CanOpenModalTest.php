@@ -189,7 +189,7 @@ describe('extra footer actions', function (): void {
 
         expect($footer)->toContainButtons(SupportSelectors::BUTTON, ['Submit', 'Compose another', 'Save draft', 'Cancel'])
             ->toContainElement(SupportSelectors::BUTTON . Selectors::liveParameter('action', 'callMountedAction') . Selectors::liveParameter('arguments', '{"another":true}'), 'Compose another')
-            ->toContainElement('[data-controller="sylament--support--dropdown"] button' . Selectors::liveParameter('action', 'mountAction') . Selectors::liveParameter('name', 'share'), 'Share');
+            ->toContainElement(SupportSelectors::DROPDOWN_CONTROLLER . ' button' . Selectors::liveParameter('action', 'mountAction') . Selectors::liveParameter('name', 'share'), 'Share');
 
         $tester->mountAction('saveDraft')->assertActionMounted('compose');
 

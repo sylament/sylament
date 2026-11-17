@@ -24,11 +24,11 @@ describe('payload attributes', function (): void {
         $event = $selector . Selectors::dispatchedEvent('refreshed');
 
         expect($this->renderViewComponent($look(Action::make('refresh')->dispatchSelf('refreshed'))))
-            ->toContainElement($event . '[data-sylament-action-dispatch-self]:not([data-sylament-action-dispatch-to])')
+            ->toContainElement($event . '[data-sylament-action-dispatch-self]:not(' . Selectors::dispatchedTo() . ')')
             ->and($this->renderViewComponent($look(Action::make('refresh')->dispatchTo('Cart', 'refreshed'))))
-            ->toContainElement($event . '[data-sylament-action-dispatch-to="Cart"]:not([data-sylament-action-dispatch-self])')
+            ->toContainElement($event . Selectors::dispatchedTo('Cart') . ':not([data-sylament-action-dispatch-self])')
             ->and($this->renderViewComponent($look(Action::make('refresh')->dispatchTo('Cart', 'refreshed')->dispatch('refreshed'))))
-            ->toContainElement($event . ':not([data-sylament-action-dispatch-to]):not([data-sylament-action-dispatch-self])');
+            ->toContainElement($event . ':not(' . Selectors::dispatchedTo() . '):not([data-sylament-action-dispatch-self])');
     })->with('trigger looks');
 
     it('dispatches nothing from a disabled icon button', function (): void {

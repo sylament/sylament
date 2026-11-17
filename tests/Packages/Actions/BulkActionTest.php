@@ -24,7 +24,7 @@ it("runs from the table's toolbar over the selected records, as a plain action m
 
 it('hides its trigger while no row is selected and shows it once one is', function (): void {
     $this->seed($lamp = new Product('Lamp'));
-    $archive = '[data-live-name-param="archive"]';
+    $archive = Selectors::liveParameter('name', 'archive');
 
     $tester = $this->createLiveComponent(SelectionReadingProductTable::class);
 

@@ -120,6 +120,21 @@ describe('over a garden', function (): void {
             expect($this->recordSelectSearch(($this->mounted)([$variant]), ''))->toBe([($this->key)($this->clover) => 'Clover']);
         })->with(['limitedToOne', 'limitedToOneInPlace']);
 
+        it('offers what the builder recordSelectOptionsQuery() returns instead of the candidate query', function (): void {
+            expect($this->recordSelectSearch(($this->mounted)(['replaced']), ''))->toBe([($this->key)($this->yarrow) => 'Yarrow']);
+        });
+
+        it('hands recordSelectOptionsQuery() the candidate query by its type, whatever the parameter is called', function (): void {
+            expect($this->recordSelectSearch(($this->mounted)(['scopedByType']), ''))->toBe([($this->key)($this->clover) => 'Clover', ($this->key)($this->yarrow) => 'Yarrow']);
+        });
+
+        it('matches everything the candidate query admits when neither a search column nor a title attribute names a field', function (): void {
+            $tester = $this->createLiveComponent(AssociableRelationTable::class, AssociableRelationTable::props($this->entityManager(), $this->kew, 'seedlings', titleAttribute: null))
+                ->mountAction(TestAction::make('associate')->table());
+
+            expect(array_keys($this->recordSelectSearch($tester, 'zzz')))->toEqualCanonicalizing([$this->clover->id, $this->nettle->id, $this->yarrow->id]);
+        });
+
         it('carries the select a recordSelect() closure returns in place of its own', function (): void {
             $modal = ($this->mounted)(['swappedSelect'])->render()->crawler();
 

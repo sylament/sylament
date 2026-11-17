@@ -37,8 +37,9 @@ use Symfony\UX\LiveComponent\DefaultActionTrait;
  * by returning nothing, `swappedSelect`, which returns a select of its own, `permissive`, which
  * neither requires a pick nor refuses a label, `searchContents`, `searchContentsKeyed`,
  * `searchUnmapped`, `caseless`), its candidate query (`scoped` leaves out every target titled
- * Nettle, recording the search it was handed in the {@see HookLog}, `selfOrdered` orders by
- * ascending id), the titles (`tableTitleClosure` upper-cases them through the table's
+ * Nettle, recording the search it was handed in the {@see HookLog}, `scopedByType` does the same
+ * through a builder named otherwise, `replaced` offers Yarrow alone through a builder of its own,
+ * `selfOrdered` orders by ascending id), the titles (`tableTitleClosure` upper-cases them through the table's
  * `recordTitle()`, `actionTitleClosure` prefixes them through the associate's own,
  * `actionTitleAttribute` gives the associate the table's attribute as its own), the persistence
  * steps instead of writing (`recordingAssociate` and `recordingBulk` record
@@ -191,6 +192,20 @@ class AssociableRelationTable implements InteractsWithActions, InteractsWithSche
             $action->recordSelectOptionsQuery(function (QueryBuilder $query, ?string $search): void {
                 $this->hookLog->record('options query: ' . ($search ?? 'null'));
                 $query->andWhere("record.{$this->titleAttribute} <> 'Nettle'");
+            });
+        }
+
+        if ($this->has('scopedByType')) {
+            $action->recordSelectOptionsQuery(function (QueryBuilder $candidates): void {
+                $candidates->andWhere("record.{$this->titleAttribute} <> 'Nettle'");
+            });
+        }
+
+        if ($this->has('replaced')) {
+            $action->recordSelectOptionsQuery(function (): QueryBuilder {
+                $target = $this->entityManager->getClassMetadata($this->ownerClass)->getAssociationTargetClass($this->relation);
+
+                return $this->entityManager->createQueryBuilder()->select('record')->from($target, 'record')->where("record.{$this->titleAttribute} = 'Yarrow'");
             });
         }
 

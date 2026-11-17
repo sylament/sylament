@@ -21,19 +21,13 @@ The sending helpers send the host's own `mountAction()`, `callMountedAction()` a
 | [`callMountedAction()`, and `parseNestedActions()`'s action class-string and table record key](../../../packages/actions/src/Testing/TestsActions.php) | [`Testing/TestsActions.php`](../../../vendor/filament/actions/src/Testing/TestsActions.php) | done | — | [diverges](#a-table-record-is-keyed-by-the-host) |
 | [`parseNestedActions()`'s `$arguments` for every level, and a level given none](../../../packages/actions/src/Testing/TestsActions.php) | [`Testing/TestsActions.php`](../../../vendor/filament/actions/src/Testing/TestsActions.php) | done | — | [semantics](#a-level-carries-arguments-only-when-the-call-gives-some) |
 | [`parseNestedActions()`'s dotted path, and the helpers' `$arguments` keyed by action name](../../../packages/actions/src/Testing/TestsActions.php) | [`Testing/TestsActions.php`](../../../vendor/filament/actions/src/Testing/TestsActions.php) | done | — | [semantics](#arguments-keyed-by-action-name-stop-at-the-first-level-that-names-one) |
-| [`unmountAction()` / `setActionData()` / `assertActionDataSet()` / `assertHasActionErrors()` / `assertHasNoActionErrors()`](../../../packages/actions/src/Testing/TestsActions.php) | [`Testing/TestsActions.php`](../../../vendor/filament/actions/src/Testing/TestsActions.php) | in progress | — | [detail](#unmountactions-cancelparentactions-waits-for-a-test-that-needs-it) |
+| [`unmountAction()` / `setActionData()` / `assertActionDataSet()` / `assertHasActionErrors()` / `assertHasNoActionErrors()`](../../../packages/actions/src/Testing/TestsActions.php) | [`Testing/TestsActions.php`](../../../vendor/filament/actions/src/Testing/TestsActions.php) | done | — | — |
 | `assertActionDoesNotExist()` / `assertActionHidden()` / `assertActionEnabled()` / `assertActionDisabled()` | [`Testing/TestsActions.php`](../../../vendor/filament/actions/src/Testing/TestsActions.php) | todo | — | — |
 | `assertActionHas…()` / `assertActionDoesNotHave…()` (icon, label, colour, URL) / `assertActionShouldOpenUrlInNewTab()` / `assertActionShouldNotOpenUrlInNewTab()` | [`Testing/TestsActions.php`](../../../vendor/filament/actions/src/Testing/TestsActions.php) | todo | — | — |
-| [`assertActionMounted()` / `assertActionNotMounted()` / `assertActionHalted()`](../../../packages/actions/src/Testing/TestsActions.php) | [`Testing/TestsActions.php`](../../../vendor/filament/actions/src/Testing/TestsActions.php) | done | — | [semantics](#the-mounted-assertions-compare-the-hosts-raw-frames-from-the-stacks-end) · [diverges](#the-mounted-assertions-name-the-action-they-failed-on) |
+| [`assertActionMounted()` / `assertActionNotMounted()` / `assertActionHalted()`](../../../packages/actions/src/Testing/TestsActions.php) | [`Testing/TestsActions.php`](../../../vendor/filament/actions/src/Testing/TestsActions.php) | done | — | [semantics](#the-mounted-assertions-compare-the-hosts-raw-frames-from-the-stacks-end) · [diverges](#the-mounted-assertions-name-the-action-they-failed-on) · [diverges](#only-an-empty-array-means-no-actions) · [diverges](#the-closure-check-needs-a-frames-arguments-named) |
 | `assertMountedActionModalSee()` / `assertMountedActionModalDontSee()` / their `…Html` variants / `getMountedActionModalHtml()` | [`Testing/TestsActions.php`](../../../vendor/filament/actions/src/Testing/TestsActions.php) | todo | — | — |
 | `assertActionListInOrder()` | [`Testing/TestsActions.php`](../../../vendor/filament/actions/src/Testing/TestsActions.php) | todo | — | — |
 | `assertActionHeld()` | [`Testing/TestsActions.php`](../../../vendor/filament/actions/src/Testing/TestsActions.php) | skipped | — | [deprecated for `assertActionHalted()`](../README.md#statuses) |
-
-## Details
-
-### `unmountAction()`'s `$cancelParentActions` waits for a test that needs it
-
-`unmountAction()` sends `$cancelParentActions` to the host's own `unmountAction()`, and only its default is driven, on a stack of one action; `true`, `false` and a parent action's name differ only on a nested stack, which no test mounts yet.
 
 ## Semantics
 
@@ -55,7 +49,6 @@ They read the frame as the host keeps it, never an action's `getContext()`, whic
 With no actions, `assertActionMounted()` asserts that the stack is not empty and `assertActionNotMounted()` that it is.
 Otherwise the parsed levels, never relative to the mounted stack, are lined up with its last frames, and each level's name and context are compared, its arguments when the call gives some, and a `TestAction`'s closure `arguments()` through `checkArguments()` on the frame's arguments.
 `assertActionMounted()` compares loosely, as Livewire's `assertSet()` does, and `assertActionNotMounted()` strictly, failing only when every level matches, as Filament's two do.
-Only an empty array means "no actions", where Filament's `empty()` also reads `''` and `'0'` so.
 
 ### Arguments keyed by action name stop at the first level that names one
 
@@ -68,6 +61,15 @@ A level before that one gets the whole array, as Filament's does, so a map that 
 
 Filament's `assertActionMounted()` fails with Livewire's `assertSet()` message, PHPUnit's bare comparison; here each comparison names the action: `Failed asserting that the action [<name>] is mounted.`, `… is mounted with the expected arguments.`, `… is mounted in the expected context.`, and with no actions `Failed asserting that an action is mounted.` or `Failed asserting that no action is mounted.`
 The closure check and `assertActionNotMounted()` keep Filament's messages.
+
+### Only an empty array means no actions
+
+The mounted assertions read `$actions` as "no actions" only when it is `[]`, where Filament's `empty()` also reads `''` and `'0'` so; here `''` and `'0'` are read as action names, as any other string is.
+
+### The closure check needs a frame's arguments named
+
+Before a `TestAction`'s closure `arguments()` sees a frame's arguments through `checkArguments()`, the mounted assertions refuse a frame whose arguments are a list, or any map with a key that is not a string, with a `LogicException`: `A mounted action frame keeps arguments that are not named.`
+Filament hands such arguments to the closure as they are; the host's `mountAction()` accepts any array, but `checkArguments()` takes an argument map, so the assertion names the frame that breaks it rather than passing the closure keys it cannot read by name.
 
 ### `callAction()` counts the levels it parsed
 

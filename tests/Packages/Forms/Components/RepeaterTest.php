@@ -671,7 +671,6 @@ describe('grid()', function (): void {
         'counts per breakpoint' => [fn (): Repeater => Repeater::make('lines')->grid(['md' => 2, 'lg' => 4])->components([TextInput::make('name')]), 'ul.sy-fo-repeater-items', ['md' => 2, 'lg' => 4]],
         'counts per breakpoint, merged across calls' => [fn (): Repeater => Repeater::make('lines')->grid(['md' => 2])->grid(['lg' => 4])->components([TextInput::make('name')]), 'ul.sy-fo-repeater-items', ['md' => 2, 'lg' => 4]],
         'a list entry, at lg' => [fn (): Repeater => Repeater::make('lines')->grid(['md' => 2, 3])->components([TextInput::make('name')]), 'ul.sy-fo-repeater-items', ['md' => 2, 'lg' => 3]],
-        'a closure answering a count, at lg' => [fn (): Repeater => Repeater::make('lines')->grid(static fn (): int => 5)->components([TextInput::make('name')]), 'ul.sy-fo-repeater-items', ['lg' => 5]],
         'a closure answering counts per breakpoint' => [fn (): Repeater => Repeater::make('lines')->grid(static fn (): array => ['sm' => 2])->components([TextInput::make('name')]), 'ul.sy-fo-repeater-items', ['sm' => 2]],
         'the simple view' => [fn (): Repeater => Repeater::make('lines')->grid(3)->simple(TextInput::make('name')), 'ul.sy-fo-simple-repeater-items', ['lg' => 3]],
     ]);

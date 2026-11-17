@@ -31,16 +31,21 @@ it('binds its click to the live action a string names, and a closure action to m
     'a link' => [static fn (Action $action): Action => $action->link(), SupportSelectors::LINK],
 ]);
 
-it('wires no live click when its click handler is switched off or it submits a form, and mounts even a form submit when switched on', function (Closure $look, string $selector): void {
+it('wires no live click or dispatch when its click handler is switched off or it submits a form, and wires either even for a form submit when switched on', function (Closure $look, string $selector): void {
     $off = $this->renderViewComponent($look(Action::make('save')->liveComponentClickHandlerEnabled(false)));
+    $dispatchOff = $this->renderViewComponent($look(Action::make('save')->dispatch('saved')->liveComponentClickHandlerEnabled(false)));
     $submit = $this->renderViewComponent($look(Action::make('save')->submit('order-form')));
 
     expect($off)->toContainElement(Selectors::TRIGGER . $selector)
         ->and($off->filter(Selectors::LIVE_CLICK))->toHaveCount(0)
+        ->and($dispatchOff)->toContainElement(Selectors::TRIGGER . $selector)
+        ->and($dispatchOff->filter(Selectors::dispatchedEvent('saved')))->toHaveCount(0)
         ->and($submit)->toContainElement(Selectors::TRIGGER . $selector . '[type="submit"]')
         ->and($submit->filter(Selectors::LIVE_CLICK))->toHaveCount(0)
         ->and($this->renderViewComponent($look(Action::make('save')->submit('order-form')->liveComponentClickHandlerEnabled(true))))
-        ->toContainElement($selector . '[type="submit"]' . Selectors::LIVE_CLICK . Selectors::liveParameter('action', 'mountAction'));
+        ->toContainElement($selector . '[type="submit"]' . Selectors::LIVE_CLICK . Selectors::liveParameter('action', 'mountAction'))
+        ->and($this->renderViewComponent($look(Action::make('save')->submit('order-form')->dispatch('saved')->liveComponentClickHandlerEnabled(true))))
+        ->toContainElement($selector . '[type="submit"]' . Selectors::dispatchedEvent('saved'));
 })->with([
     'a badge' => [static fn (Action $action): Action => $action->badge(), SupportSelectors::BADGE],
     'a button' => [static fn (Action $action): Action => $action, SupportSelectors::BUTTON],

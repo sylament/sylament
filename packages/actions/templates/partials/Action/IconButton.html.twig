@@ -1,7 +1,7 @@
 {% set clickWiringSuppressed = component.getUrl or component.isDisabled %}
-{% set hasEventBinding = component.getEvent
+{% set hasEventBinding = component.isLiveComponentClickHandlerEnabled
+    and component.getEvent
     and not component.getClientClickHandler
-    and not component.canSubmitForm
     and not clickWiringSuppressed %}
 {% set dispatchAttributes = hasEventBinding
     ? {

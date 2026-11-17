@@ -64,7 +64,7 @@ The first two rows have no such exit at any depth: a path-less component and a p
 
 The guard collects hook-declaring components in the map build's own walk and tests membership after the owner pass, so it costs no extra traversal and sees the map exactly as the two edges will consult it.
 It fires from `fill()` as well as `getData()` — both go through the map — so a misconfigured hook is reported on the first render, not first on submit.
-A fill handed a record, or made on a schema bound to one (the edit page fills the state it read off its record), pays for one more map walk once its state is hydrated, because the read walked the map before a container that builds its children from its state held any: a hook in a plain repeater's item is in that second walk, which is where Filament's recursive load would reach it too.
+A fill handed a record, or made on a schema bound to one (the edit page fills the state it read off its record), pays for one more map walk once its state is hydrated, because the read walked the map before a container that builds its children from its state held any: a hook in a plain repeater's item is in that second walk, so it is refused at `fill()` too, where Filament's recursive load reaches the same item and runs the hook against the owner record ([the hooks divergence](#the-relationship-hooks-are-consulted-by-the-two-mapping-edges-not-by-a-schema-level-walk)).
 
 ### A hook a subtree owner routes is delegated rather than refused
 

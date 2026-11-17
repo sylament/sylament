@@ -37,6 +37,7 @@ The tester turns it back on, so a failed validation answers as the browser sees 
 Every other failure rethrows the exception the host threw, never an error page: after each request the tester takes what the [recorder](#the-recorder-exists-only-when-frameworktest-is-on) kept and throws it unless the response is a success, a redirect, or that 422.
 The 422 counts only when it is UX's re-render (`application/vnd.live-component+html`), because an `UnprocessableEntityHttpException` thrown before UX mounted the component reaches the framework's error page with the same status.
 A failing response with nothing recorded throws a `LogicException` naming the status.
+A failure leaves no component behind either, so once the tester has rethrown it, anything that reads or drives the component throws a `LogicException` naming the status, `The live component answered [<status>] to the last request, whose exception the tester rethrew, so no component is left to read or drive.`, where UX's own props read would report a redirect; `response()` still answers the failure.
 UX sends the mount request on the tester's first use, so the tester makes it before anything reads a response or builds the next request from its props, and `setRouteLocale()` makes it again on a host whose live route carries `{_locale}`, so the component can be read afresh even after a redirect.
 
 ### `createLiveComponent()` builds UX's tester through UX's own method
@@ -54,7 +55,7 @@ The recorder is tagged `kernel.reset`, so a client that keeps one kernel (`disab
 
 `component()` builds a fresh host from the last response's props, so it holds only what hydration rebuilds: the sticky pass re-runs a schema's state constraints, but nothing re-runs the record check a save ran, and a record's refusal lives only on the instance that rendered the 422 ([why](../schemas/can-be-validated.md#record-errors-are-sticky-but-the-silent-pass-cannot-reproduce-them)).
 The protected `getRespondingComponent()` returns that instance, which UX keeps on the request as its `_mounted_component` attribute, and forms' [error assertions](../forms/tests-forms.md#the-errors-are-the-ones-the-last-response-showed) read their bag from it, as Livewire's tester reads the error bag its last request left.
-It is read before the next request reboots the kernel, and it throws the redirect's `LogicException` after a redirect, as `component()` does.
+It is read before the next request reboots the kernel, and it throws the redirect's or the failure's `LogicException` after either, as `component()` does.
 
 ### After a redirect, only the response and the notifications can be read
 

@@ -25,7 +25,8 @@ use Throwable;
  * Drives one live component through UX's `TestLiveComponent` with the kernel catching
  * exceptions, as a browser's request would: a failed validation answers its 422
  * re-render, and any other failure rethrows the exception the host threw. After a
- * redirect only the response and the notifications its requests sent can be read.
+ * redirect, or a failure it rethrew, only the response and the notifications its requests
+ * sent can be read.
  */
 class Testable
 {
@@ -56,7 +57,7 @@ class Testable
     public function call(string $action, array $arguments = [], array $files = []): static
     {
         $this->performInitialRequest();
-        $this->failIfRedirected();
+        $this->failWithoutComponent();
         $this->testLiveComponent->call($action, $arguments, $files);
         $this->afterRequest();
 
@@ -66,7 +67,7 @@ class Testable
     public function set(string $prop, mixed $value): static
     {
         $this->performInitialRequest();
-        $this->failIfRedirected();
+        $this->failWithoutComponent();
         $this->testLiveComponent->set($prop, $value);
         $this->afterRequest();
 
@@ -76,7 +77,7 @@ class Testable
     public function refresh(): static
     {
         $this->performInitialRequest();
-        $this->failIfRedirected();
+        $this->failWithoutComponent();
         $this->testLiveComponent->refresh();
         $this->afterRequest();
 
@@ -89,7 +90,7 @@ class Testable
     public function emit(string $event, array $arguments = []): static
     {
         $this->performInitialRequest();
-        $this->failIfRedirected();
+        $this->failWithoutComponent();
         $this->testLiveComponent->emit($event, $arguments);
         $this->afterRequest();
 
@@ -102,7 +103,7 @@ class Testable
     public function submitForm(array $formValues, ?string $action = null): static
     {
         $this->performInitialRequest();
-        $this->failIfRedirected();
+        $this->failWithoutComponent();
         $this->testLiveComponent->submitForm($formValues, $action);
         $this->afterRequest();
 
@@ -120,7 +121,7 @@ class Testable
     public function render(): RenderedComponent
     {
         $this->performInitialRequest();
-        $this->failIfRedirected();
+        $this->failWithoutComponent();
 
         return $this->testLiveComponent->render();
     }
@@ -128,7 +129,7 @@ class Testable
     public function component(): object
     {
         $this->performInitialRequest();
-        $this->failIfRedirected();
+        $this->failWithoutComponent();
 
         return $this->testLiveComponent->component();
     }
@@ -189,7 +190,7 @@ class Testable
     protected function getRespondingComponent(): object
     {
         $this->performInitialRequest();
-        $this->failIfRedirected();
+        $this->failWithoutComponent();
 
         $mountedComponent = $this->client->getRequest()->attributes->get('_mounted_component');
 
@@ -270,15 +271,24 @@ class Testable
         return $sentNotifications;
     }
 
-    private function failIfRedirected(): void
+    /**
+     * A redirect and a failure the tester rethrew both answer without the component's props,
+     * which UX's tester would report as a redirect either way; only a success and UX's 422
+     * re-render carry them.
+     */
+    private function failWithoutComponent(): void
     {
         $response = $this->client->getResponse();
 
-        if (!$response->isRedirection()) {
+        if ($response->isRedirection()) {
+            throw new LogicException(sprintf('A live component action has redirected to [%s] and you can no longer access the component.', $response->headers->get('Location')));
+        }
+
+        if ($response->isSuccessful() || str_starts_with((string) $response->headers->get('Content-Type'), self::LIVE_RESPONSE_CONTENT_TYPE)) {
             return;
         }
 
-        throw new LogicException(sprintf('A live component action has redirected to [%s] and you can no longer access the component.', $response->headers->get('Location')));
+        throw new LogicException(sprintf('The live component answered [%d] to the last request, whose exception the tester rethrew, so no component is left to read or drive.', $response->getStatusCode()));
     }
 
     private function rethrowCaughtException(): void

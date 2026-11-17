@@ -70,6 +70,16 @@ it('throws naming the status when a host answers a failure without throwing', fu
         ->toThrow(LogicException::class, 'The live component answered [503] without an exception to rethrow.');
 });
 
+it('reads nothing of the component after a request whose exception it rethrew, naming the status that request answered', function (): void {
+    $tester = $this->createLiveComponent(ToolbarHost::class);
+    $message = 'The live component answered [500] to the last request, whose exception the tester rethrew, so no component is left to read or drive.';
+
+    expect(fn () => $tester->call('fail'))->toThrow(RuntimeException::class, 'The toolbar failed.')
+        ->and(fn () => $tester->call('fail'))->toThrow(LogicException::class, $message)
+        ->and(fn () => $tester->render())->toThrow(LogicException::class, $message)
+        ->and($tester->response()->getStatusCode())->toBe(500);
+});
+
 it('asserts the redirect an action answered and its toast, and reads nothing else of the component after it', function (): void {
     $this->seed($product = new Product('Lamp'));
 

@@ -21,7 +21,7 @@ owns:
 
 `getUrl()` returns `null` outright when `hasModal()` is true, with Filament's precision: the guard reads `hasModal()` (an explicit `->modal()` call), **not** `shouldOpenModal()`, so `->url(…)` with `->modalHeading(…)` still renders a link while `->url(…)` with `->modal()` suppresses the URL.
 The trait expects the composing class to supply `hasModal()`; `Action` does through [`CanOpenModal`](can-open-modal.md).
-Exercised in [`CanOpenUrlTest`](../../../packages/actions/tests/Unit/Concerns/CanOpenUrlTest.php) against the [`CanOpenUrlFixture`](../../../packages/actions/tests/Fixtures/Concerns/CanOpenUrlFixture.php), which stubs `hasModal()`.
+Exercised in `CanOpenUrlTest` through a rendered `Action`, whose `CanOpenModal` supplies `hasModal()`.
 
 ### `getUrl()` falls back to the host's default URL through the nullable accessor
 
@@ -29,7 +29,7 @@ When no explicit `url` closure resolves a value, `getUrl()` asks the host: `$thi
 The throwing `getLiveComponent()` would turn "this action is not on a host" into an exception at render time, which is the case that has to answer `null`.
 The hook is [on the contract, with a `null` default on the trait](interacts-with-actions.md#a-host-answering-the-url-hook-must-discriminate-by-action), and it is what makes the prebuilt [`CreateAction`](create-action.md) and [`EditAction`](edit-action.md) open a page.
 Precedence is Filament's: an explicit `url()` never consults the host, and the `hasModal()` guard wins over both.
-Covered by `CanOpenUrlTest`'s host-hook cases and, rendered, by the Integration [`CanOpenUrlTest`](../../../packages/actions/tests/Integration/Concerns/CanOpenUrlTest.php).
+Covered by `CanOpenUrlTest`, rendered on a host that answers the hook for one action name only.
 
 ## Divergences
 

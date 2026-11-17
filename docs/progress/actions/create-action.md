@@ -15,7 +15,7 @@ owns:
 It works both of Filament's ways off one class.
 With a create page to link to it renders as a link; without one it opens a modal, fills a form from whatever [`HasSchema::getSchema()`](has-schema.md#the-host-resolver-answers-only-when-the-action-declares-nothing) resolves, maps the validated state onto a new record of the action's class, persists it through Doctrine and reports `success()`.
 
-The modal arm is tested by the unit [`CreateActionTest`](../../../packages/actions/tests/Unit/CreateActionTest.php) and the integration [`CreateActionTest`](../../../packages/actions/tests/Integration/CreateActionTest.php); the relationship arm by tables' [`CreateActionRelationshipTest`](../../../packages/tables/tests/Integration/CreateActionRelationshipTest.php), because only that kernel boots a table and a forms field, the reason [`PrebuiltDeleteActionTest`](../../../packages/tables/tests/Integration/PrebuiltDeleteActionTest.php) sits there too.
+`CreateActionTest` covers both arms, the relationship arm on a relation table and on hosts that name a relationship; tables' [`CreateActionRelationshipTest`](../../../packages/tables/tests/Integration/CreateActionRelationshipTest.php) runs the relationship arm too, as [`PrebuiltDeleteActionTest`](../../../packages/tables/tests/Integration/PrebuiltDeleteActionTest.php) runs the delete.
 The tests that pin each rule are named in its entry below.
 
 ## Surface
@@ -69,7 +69,7 @@ A relation-scoped create whose form maps the relationship's own association (a p
 The attach after the mapping makes the relationship win, so the record lands under the owner the relationship names, which is Filament's outcome too.
 But the record check ran while the form's pick still stood, so the taken-key lookup asked about the **picked** owner: a key free under the relationship's owner and taken under the pick is refused as *"This value is already used."*, and the converse, free under the pick and taken under the relationship's owner, passes the check and meets the database's constraint at the flush, which follows from the order and is unpinned.
 It is a misconfiguration, because the relationship already supplies the field, and refusing it by name would mean inspecting the form for an association the mapping names.
-Pinned by [`CreateActionRelationshipKeyTest`](../../../packages/actions/tests/Integration/CreateActionRelationshipKeyTest.php) and, on a nested create page, by panels' [`CreateRecordTakenKeyTest`](../../../packages/panels/tests/Integration/Resources/Pages/CreateRecordTakenKeyTest.php).
+Pinned by a relationship-arm case and, on a nested create page, by panels' [`CreateRecordTakenKeyTest`](../../../packages/panels/tests/Integration/Resources/Pages/CreateRecordTakenKeyTest.php).
 
 ### A key the modal leaves blank is refused by name after `persist()`
 
@@ -80,25 +80,25 @@ Give every identifier field a field in the action's schema() — a Hidden one fo
 Nothing is flushed.
 Before the throw, a many-to-many owner gives the record back through the reader's `detach()`, as the mapping's own refusal does, and the record is detached from the manager, so a later flush in the same request does not insert it.
 Without the read, the row would be written with its blank key half.
-Pinned by [`CreateActionBlankKeyTest`](../../../packages/actions/tests/Integration/CreateActionBlankKeyTest.php), which also pins that a global `prePersist` listener filling the key lets the create save, and that a blank key field the modal maps on a class carrying a `prePersist` callback is the field error rather than this refusal; the many-to-many hand-back is pinned by tables' [`CreateActionRelationshipTest`](../../../packages/tables/tests/Integration/CreateActionRelationshipTest.php).
+Pinned by a blank-key case, beside one where a `prePersist` callback filling the key lets the create save and one where a blank key field the modal maps on that class is the field error rather than this refusal; the many-to-many hand-back is pinned by a relationship-arm case and by tables' [`CreateActionRelationshipTest`](../../../packages/tables/tests/Integration/CreateActionRelationshipTest.php).
 
 Doctrine makes one exception to the detach.
 A record whose whole key flattens to `''` (a single derived identity whose target's single string key is still `''`) is filed under an identity hash of `''`, which Doctrine can neither detach nor remove, the shape [`ReplicateAction` meets](replicate-action.md#a-replica-keeps-its-parent-and-one-whose-key-is-still-incomplete-is-refused-by-name) too.
 There the `detach()` raises Doctrine's *Entity has no identity, therefore remove from identity map cannot be performed* in place of the named refusal; the action catches it and throws the named refusal all the same.
 Nothing is written, because nothing flushes after the refusal, but that record stays scheduled for the rest of the request.
-Pinned by [`CreateActionBlankIdentityHashTest`](../../../packages/actions/tests/Integration/CreateActionBlankIdentityHashTest.php), over a record whose no-argument constructor builds the record it derives from; panels' create page catches the same refusal, pinned by its [`CreateRecordBlankIdentityHashTest`](../../../packages/panels/tests/Integration/Resources/Pages/CreateRecordBlankIdentityHashTest.php).
+Pinned by a blank-key case over a single derived identity whose target's key is still `''`; panels' create page catches the same refusal, pinned by its [`CreateRecordBlankIdentityHashTest`](../../../packages/panels/tests/Integration/Resources/Pages/CreateRecordBlankIdentityHashTest.php).
 
 A key component still **null** never reaches the read: Doctrine's `AssignedGenerator` refuses it inside `persist()` with its own `EntityMissingAssignedId` (*Entity of type … is missing an assigned ID for field '…'*), once every `prePersist` filler has run, and the action lets that refusal through unchanged.
 On the relationship arm the record is already in a many-to-many owner's collection by then, and left there it would fail a later flush in the same request on *A new entity was found through the relationship*.
 So the hand-back runs in a `finally` around `persist()` and the read, so whatever fails there, Doctrine's refusal or the named one, gives the record back.
-Pinned by [`CreateActionMissingAssignedIdTest`](../../../packages/actions/tests/Integration/CreateActionMissingAssignedIdTest.php).
+Pinned by the relationship-arm hand-back case, Doctrine's refusal let through unchanged.
 
 A schema that switches the key rules off with [`validateRecordKey(false)`](../schemas/can-be-validated.md) skips the blank rule.
 A blank key field over a non-nullable property left at the `required()` forms derives for it is still refused under the field, because `required()` trims, so only a field that is not required (one declaring `required(false)`, or one over a nullable property) reaches the save blank, and what happens there depends on what the blank reaches the record as.
 A blank that reaches it as a **string** (whitespace, which no text field trims by default) meets this refusal, where the advice to give every identifier field a field would be wrong.
 The message then closes with *The schema switches the key rules off with validateRecordKey(false), so a key field it maps is not refused while blank; switch them back on to have the blank field refused under it.*
 With the rules on, the message is unchanged.
-Pinned by [`KeyAdviceTest`](../../../packages/actions/tests/Integration/KeyAdviceTest.php), beside the plain arm's construction refusal naming `using()`.
+Pinned by a blank-key case typed as whitespace, beside the plain arm's construction refusal naming `using()`.
 An **empty** field dehydrates to `null` instead: over a nullable property it is Doctrine's `EntityMissingAssignedId` above, never this message, and over a non-nullable property, on a field that declares `required(false)`, the save fails earlier, at the mapping, with Symfony's `InvalidTypeException`, because `null` cannot be written there.
 The reader's [own section](../schemas/association-reader.md#a-blank-assigned-identifier-is-read-after-persist-where-a-record-is-created) says why a null never reaches its read.
 
@@ -106,7 +106,7 @@ The reader's [own section](../schemas/association-reader.md#a-blank-assigned-ide
 
 The reader the record check and the blank-key read go through is the mounted schema's own (the container's `sylament_schemas.association_reader` service, or whatever a host set on the schema), rebound to the manager the flush writes through with [`AssociationReader::withEntityManager()`](../schemas/association-reader.md), a clone, and set back on the schema for the mapping.
 A `new AssociationReader($manager)` built there instead would never reach a subclassed or decorated reader service.
-Pinned for create, edit and both replicate arms by [`SubclassedAssociationReaderTest`](../../../packages/actions/tests/Integration/SubclassedAssociationReaderTest.php).
+Pinned for create, edit and replicate by a spy reader the schema holds, which shows the rebind but not which manager it rebinds to.
 The relationship arm's `attach()`, `detach()` and `describeRelationship()` go through the action's **own** reader, the container's, on its default manager, and that is recorded rather than changed: they read the owner's mapping and write the object graph through the property accessor, touching no unit of work but the `contains()` an attach's identifier guard asks, and a relation-scoped table's base query was built through that same default reader, so a second manager over the same mapping reads the same answer.
 Moving them onto the rebound reader would be a behaviour change no case needs.
 
@@ -163,7 +163,7 @@ Writing an unmapped path instead is not an option: the data bag is client-writab
 Filament has no counterpart (`fill()` writes the key, or with `$fillable` declared drops it in silence unless `preventSilentlyDiscardingAttributes()` is on), so this is that strict Eloquent branch, always on and narrowed to what a hook added.
 The port's shape for the job is a component that owns the path, a `Hidden::make('position')->default(…)` in the create schema, which is what the demo's sections card does.
 The guard is the trait [`RefusesUnmappedData`](../../../packages/actions/src/Concerns/RefusesUnmappedData.php), and the same call opens [`EditAction`](edit-action.md#the-modal-arm-maps-the-validated-state-onto-the-bound-record)'s and the modal arm of [`ReplicateAction`](replicate-action.md#a-key-mutatedatausing-adds-that-no-component-of-the-modal-maps-is-refused-by-name)'s default writes.
-Pinned by [`UnmappedHookDataTest`](../../../packages/actions/tests/Integration/UnmappedHookDataTest.php).
+Pinned through a create by the trait's own cases.
 
 ### Two create-another members are not ported
 

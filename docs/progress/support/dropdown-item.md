@@ -13,7 +13,6 @@ owns:
 [`DropdownItem/index.html.twig`](../../../packages/support/templates/components/DropdownItem/index.html.twig) is the anonymous `<twig:SylamentSupport:DropdownItem>` primitive: one row inside a [dropdown](dropdown.md) panel, rendered as a `<button>` or an `<a>` carrying an optional leading icon and a label span.
 It ports Filament's `<x-filament::dropdown.list.item>`, the component `Action`'s `GROUPED_VIEW` points at.
 There is no Sylament PHP class, matching the other trigger primitives: the colour map Filament's `ItemComponent` computes is the [`ItemComponent`](color-policies.md) policy, and the template is the rest of the component.
-Its render tests live in the actions suite ([`DropdownItemRenderTest`](../../../packages/actions/tests/Integration/Components/DropdownItemRenderTest.php)), whose kernel registers TwigComponentBundle.
 
 ## Surface
 
@@ -96,7 +95,7 @@ Forms' select engine ([forms styles.md](../forms/styles.md#the-js-select-skin-is
 
 Neither the Blade view nor `CanGenerateDropdownItemHtml` has a form-association prop, and `toGroupedHtml()` passes none: `getFormId()` reaches only the button and icon-button generators.
 So a Filament grouped action can render `type="submit"` with nothing naming the form it submits, and works only while the item sits inside that form.
-The port takes `formId` and emits `form`, matching the pair the other trigger primitives carry ([`Button`](button.md), [`IconButton`](icon-button.md)), and it is load-bearing: the grouped case of [`ActionViewVariantsRenderTest`](../../../packages/actions/tests/Integration/ActionViewVariantsRenderTest.php) pins `type="submit"` together with `form="my-form"`.
+The port takes `formId` and emits `form`, matching the pair the other trigger primitives carry ([`Button`](button.md), [`IconButton`](icon-button.md)), and it is load-bearing for a grouped submit action: a render case pins `type="submit"` together with the `form` the item names.
 Filament's own route to a submitting item, the `tag: 'form'` wrapper, costs a `shouldPostToUrl()` port and solves a different problem: POSTing to a URL, not submitting a named form.
 
 ### The colour slots ride on the row, the label reads them

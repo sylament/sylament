@@ -118,7 +118,7 @@ See [interacts-with-schemas.md](interacts-with-schemas.md#callschemacomponentmet
 ### `HasSchemas` composes `ComponentToolsTrait` alongside `HasActions`
 
 `Symfony\UX\LiveComponent\ComponentToolsTrait` supplies `dispatchBrowserEvent()` (and its `emit*()` siblings), which both `HasActions` and `HasSchemas` need, so both compose it.
-PHP's trait flattening dedupes a trait pulled in through two different composing traits without an `insteadof` — [`BothContractsHostFixture`](../../../packages/actions/tests/Fixtures/Concerns/BothContractsHostFixture.php), composing both `HasActions` and `HasSchemas` on one host, is exercised by actions' own suite.
+PHP's trait flattening dedupes a trait pulled in through two different composing traits without an `insteadof`, which the test table hosts composing both `HasActions` and `HasSchemas` exercise.
 No conflict resolution is needed.
 
 ### Dynamic Livewire properties are not ported because they hide from PHPStan

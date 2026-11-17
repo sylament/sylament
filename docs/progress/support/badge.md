@@ -46,7 +46,7 @@ The pin is load-bearing without the loading indicator Filament's comment names (
 Support's [`Link`](link.md) reaches the same alignment with one span, `sy-link-label` carrying `self-baseline` and nothing else, which is why the badge reads as one span too many until the wrap arms on the inner span are noticed.
 
 Folding the pair into one span costs the alignment and nothing names it.
-[`BadgeRenderTest`](../../../packages/actions/tests/Integration/Components/BadgeRenderTest.php) asserts the two spans as a literal markup string, so the change surfaces as a failed string comparison that reads like a stale assertion and invites updating; no test asserts the baseline.
+A render case finds the label inside its container span by selector, so the fold surfaces as a missing element; no test asserts the baseline.
 
 ### The color map resolves the text shade, not the ring or the background
 

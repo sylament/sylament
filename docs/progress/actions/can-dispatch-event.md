@@ -44,7 +44,7 @@ Filament emits `getLivewireEventClickHandler()` — a `$dispatch(...)` / `$dispa
 The **rank** is vendor-exact: `getLivewireClickHandler()` tries the string handler, then the event, then `getParentActionCallLivewireClickHandler()`, and the five templates rank them the same way, so an action carrying both a `callParent()` handler and a `dispatch()` dispatches rather than calling the parent — in both codebases.
 
 The click wiring is one `{% if %}` chain written out in each trigger template — the same text in `Badge`, `Button`, `Grouped` and `Link`, and the same arms as ternaries in `IconButton` — so an arm added, removed or reordered changes all five templates together.
-[`ActionDispatchRenderTest`](../../../packages/actions/tests/Integration/ActionDispatchRenderTest.php) pins the rank behaviourally across the five, but nothing compares their text, so an edit keeps the five chains identical by hand.
+A render case pins the rank behaviourally on the Button and IconButton chains, but nothing compares the five chains' text, so an edit keeps them identical by hand.
 
 The delivery half — who reads these attributes, and how a `'self'` emitter is resolved — is [actions-bundle.md](actions-bundle.md#the-dispatch-controller-is-page-wide-and-filament-has-no-counterpart-for-it).
 

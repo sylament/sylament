@@ -175,7 +175,7 @@ It reverses only if migration friction proves it wrong in practice.
 `getLiveComponent()` (like its schema-level counterpart) throws when the chain is unbound, where Filament's `getLivewire()` is nullable — so the actions package's live-component fallback chain, which probes a bound schema component for its host, needs a non-throwing read.
 `getLiveComponentOrNull()` is that peek: `null` while the `$container` back-reference is uninitialized, otherwise the container's own [`getLiveComponentOrNull()`](belongs-to-live-component.md) (the raw nullable property).
 Filament has no counterpart method because its primary getters already return `null`.
-The actions-side [`BelongsToLiveComponentTest`](../../../packages/actions/tests/Unit/Concerns/BelongsToLiveComponentTest.php) exercises it through its schema-component hop.
+The actions-side `BelongsToLiveComponentTest` exercises it through its schema-component hop.
 
 ### renderWrapperBladeComponent() is a Blade shim with no Twig counterpart
 

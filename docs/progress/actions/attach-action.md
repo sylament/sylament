@@ -15,7 +15,7 @@ It only makes sense on a [relation-scoped table](../tables/table.md): `Table::re
 
 Its undo, [`DetachAction`](detach-action.md), is a file of its own, with [`DetachBulkAction`](detach-action.md#surface--detachbulkaction) riding along in it.
 
-[`AttachActionTest`](../../../packages/actions/tests/Unit/AttachActionTest.php) covers the class alone; the end-to-end cases live in the tables suite's [`AttachDetachActionsTest`](../../../packages/tables/tests/Integration/AttachDetachActionsTest.php), because only a table host supplies a relationship and the actions test kernel registers neither the tables nor the forms bundle, so the record select could not even be built there.
+`AttachActionTest` covers the class end to end on a relation table, record select included, and the tables suite's [`AttachDetachActionsTest`](../../../packages/tables/tests/Integration/AttachDetachActionsTest.php) runs it too.
 
 ## Surface
 

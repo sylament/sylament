@@ -14,7 +14,7 @@ owns:
 Like [`CreateAction`](create-action.md) it works both of Filament's ways off one class: with an edit page to link to it renders an anchor, and without one it opens a modal, fills a form from the bound record, maps the validated state back onto that record and flushes it.
 [A page beats a modal](create-action.md#a-page-beats-a-modal-for-every-record-action) here as on every record action.
 
-The unit [`EditActionTest`](../../../packages/actions/tests/Unit/EditActionTest.php) covers the chrome and the URL fallthrough, the integration [`EditActionTest`](../../../packages/actions/tests/Integration/EditActionTest.php) the modal arm end to end, and the integration [`CanOpenUrlTest`](../../../packages/actions/tests/Integration/Concerns/CanOpenUrlTest.php) the rendered anchor; the tests that pin each rule are named in its entry below.
+`EditActionTest` covers the chrome, the rendered link to the page its host routes it to and the modal arm end to end; the entries below say what each rule's case pins.
 
 ## Surface
 
@@ -64,7 +64,7 @@ Filament's own page has no counterpart to compare against, because its `EditReco
 A modal that declares the key field shows it under that field; one whose `before()` hook moved a key half the modal does not declare gets it on the mounted schema's own path, which the [modal's record-error list](can-open-modal.md#the-action-modal-renders-the-record-errors-that-name-no-field) renders above the form.
 Either way the key is put back and nothing is written.
 The UI half is `disabledOn('edit')`, and it is bound to the operation's **name** (a modal's operation is the action's name), so an `EditAction::make('editRenamed')` leaves such a field enabled and the refusal is what holds there.
-Pinned by [`EditActionChangedKeyTest`](../../../packages/actions/tests/Integration/EditActionChangedKeyTest.php).
+Pinned by a composite-keyed-row case over both key flavours, which also reads the disabled key field under the edit operation, and by one whose `before()` hook moves a key half the modal does not declare.
 
 **The record check reads the schema's own reader, rebound.**
 The default write binds the mounted schema's reader to the manager the flush writes through with [`withEntityManager()`](../schemas/association-reader.md), a clone, rather than building a `new AssociationReader($manager)`, for the reason [create-action.md](create-action.md#the-record-check-reads-the-containers-reader-rebound-the-relationship-arm-keeps-the-actions-own) records.
@@ -84,7 +84,7 @@ So `getRecordDataForFill(Schema $schema, object|array $record, array $except = [
 `mutateRecordData()` re-checks the closure's return through the same [`HasData::assertFieldKeyedData()`](../../../packages/actions/src/Concerns/HasData.php) that `data()` runs `mutateDataUsing()`'s through, throwing a `TypeError` that names the setter.
 `getRecordForFill()` answers an array record through `array_filter(..., ARRAY_FILTER_USE_KEY)` on string keys, the normalisation [`HasActions`](has-actions.md#the-per-mount-schema-is-seeded-with-the-actions-record-and-the-dotted-operation) applies to the same value: `getRecord()` is `mixed`, so an `is_array()` narrowing alone cannot prove the `array<string, mixed>` the seam declares.
 No member changed name, so it needs no `renames.md` row.
-Covered by [`CanMutateRecordDataTest`](../../../packages/actions/tests/Unit/Concerns/CanMutateRecordDataTest.php).
+Covered by `CanMutateRecordDataTest`, through a modal fill.
 
 ### One plain icon replaces Filament's table-and-grouped pair
 

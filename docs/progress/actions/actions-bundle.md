@@ -61,9 +61,9 @@ It does not wait on the Exports/Imports subsystem, because the confirmation-moda
 
 `configureComponents()` registers `Action`, `ActionGroup` and every prebuilt action with `->set()`, autowired and autoconfigured.
 A class the bundle does not name falls back to `new $class()` in [`ComponentResolver::instantiate()`](../../../packages/support/src/DependencyInjection/ComponentResolver.php), where every `#[Required]` setter on it (the manager registry a write body persists through, the event dispatcher) silently never runs and nothing errors.
-[`SylamentActionsBundleTest`](../../../packages/actions/tests/Integration/SylamentActionsBundleTest.php) pins the list for `AttachAction`, `BulkAction`, `BulkActionGroup`, `DetachAction`, `DetachBulkAction`, `ReplicateAction`, `ViewAction` and the associate family (`AssociateAction`, `DissociateAction`, `DissociateBulkAction`); `Action`, `ActionGroup`, `CreateAction`, `DeleteAction`, `DeleteBulkAction` and `EditAction` are named by no case, which is a gap in the test rather than a decision.
-A new prebuilt action therefore lands with a line in `configureComponents()` and a name in one of those cases.
-The same test boots the fixture Kernel's Doctrine rig ([`services_doctrine.php`](../../../packages/actions/tests/Fixtures/services_doctrine.php) and the single-manager [`FixtureManagerRegistry`](../../../packages/actions/tests/Fixtures/Doctrine/FixtureManagerRegistry.php)) beside `SylamentNotificationsBundle` and a mock-file session, because a record action's write body persists through the registry and sends a titled toast, and `Notification::send()` throws on an instance the container did not build.
+`SylamentActionsBundleTest` derives the classes from the package root, `Action`, `ActionGroup` and every concrete subclass of either there, and requires the container to hold each one.
+A new prebuilt action therefore lands with a line in `configureComponents()`, and that case fails until it does.
+The root suite's kernel registers DoctrineBundle, `SylamentNotificationsBundle` and a session beside the bundle, because a record action's write body persists through the manager registry and sends a titled toast, and `Notification::send()` throws on an instance the container did not build.
 
 ## Divergences
 
@@ -73,7 +73,7 @@ Filament calls `->hasViews()` to register its Blade namespace.
 The bundle registers no view namespace: `AbstractBundle::getPath()` returns `packages/actions`, and TwigBundle maps `packages/actions/templates` to `@SylamentActions` by convention.
 That is why [`Action`](../../../packages/actions/src/Action.php) can default `$defaultTemplate` to `self::BUTTON_TEMPLATE` (`'@SylamentActions/partials/Action/Button.html.twig'`) with no explicit Twig path config.
 Same divergence as [forms-bundle.md](../forms/forms-bundle.md#the-view-namespace-is-registered-by-symfony-convention-not-by-an-explicit-provider-call) and [schemas-bundle.md](../schemas/schemas-bundle.md#the-view-namespace-is-registered-by-symfony-convention-not-by-an-explicit-provider-call).
-Every Integration test that renders an action through the fixture [`Kernel`](../../../packages/actions/tests/Fixtures/Kernel.php), [`ActionRenderTest`](../../../packages/actions/tests/Integration/ActionRenderTest.php) among them, proves the bundle loads and its templates resolve.
+`SylamentActionsBundleTest` pins it: `@SylamentActions` maps to `packages/actions/templates` with no Twig path configured, and an action renders its trigger partial.
 
 ### The bundle registers a Twig component service, which Filament has no counterpart for
 
@@ -82,7 +82,7 @@ Sylament's [`Modals`](../../../packages/actions/src/Twig/Components/Modals.php) 
 [`configureTwigComponents()`](../../../packages/actions/src/SylamentActionsBundle.php) loads the `Twig/Components/` directory with `->autowire()->autoconfigure()`, and autoconfiguration lets the `#[AsTwigComponent]` attribute supply the tag (ux-twig-component registers it for autoconfiguration), so the attribute is the single source of truth for the component's name and template.
 `Modals` takes the component stack by **service id**, through `#[Autowire(service: 'ux.twig_component.component_stack')]` on its constructor, not by type: ux-twig-component registers no class alias for it, so autowiring by type would fail.
 Registration is unconditional, unlike [`isAssetMapperAvailable()`](../../../packages/support/src/SylamentBundle.php)'s optional-dependency guard, because `symfony/ux-twig-component` is a hard `require` of this package.
-[`ModalsRenderTest`](../../../packages/actions/tests/Integration/Components/ModalsRenderTest.php) covers it: `<twig:SylamentActions:Modals />` only resolves if the service was registered and tagged.
+`ModalsTest` covers it: `<twig:SylamentActions:Modals />` only resolves if the service was registered and tagged.
 
 ### The bundle registers a `renderAction()` Twig extension, which Filament has no counterpart for
 
@@ -91,7 +91,7 @@ Twig has no equivalent implicit-render path, so the bundle registers [`ActionExt
 The helper resolves the name through the **surrounding live component's** `getAction()` (so the rendered action is bound to its host), renders nothing when the name does not resolve or the action is hidden, and throws a `RuntimeException` when the enclosing `this` is not an [`InteractsWithActions`](../../../packages/actions/src/Contracts/InteractsWithActions.php) host.
 An optional second parameter binds per-render arguments, `renderAction('delete', { id: 5 })`, through `HasMountableArguments`'s `__invoke()`, which Twig syntax cannot call directly: the bound instance is a clone, so the host-cached action stays argument-free, and the serialized `arguments` mount param reaches the trigger markup.
 The order is resolve, bind, hidden-check, so a visibility closure can read the bound arguments.
-[`ActionExtensionTest`](../../../packages/actions/tests/Integration/Twig/Extension/ActionExtensionTest.php) covers it through a fixture host template's `{{ renderAction('delete') }}`.
+`ActionExtensionTest` covers it through a fixture host template's `{{ renderAction('delete') }}`.
 
 ### Asset registration is an AssetMapper prepend
 
@@ -102,7 +102,7 @@ The base [`SylamentBundle`](../../../packages/support/src/SylamentBundle.php) su
 Without it the failure is loud rather than silent, which is worth knowing because it lands nowhere near a click.
 StimulusBundle resolves a `controllers.json` entry by reading the PHP package's `assets/package.json` ([`UxPackageReader`](../../../vendor/symfony/stimulus-bundle/src/Ux/UxPackageReader.php) turns `@sylament/actions` back into the `sylament/actions` install path), then calls `assetMapper->getAssetFromSourcePath()` on `<packageDirectory>/` plus the controller's `main` and **throws** `Could not find an asset mapper path that points to the "…" controller` when the path sits outside every registered one ([`ControllersMapGenerator`](../../../vendor/symfony/stimulus-bundle/src/AssetMapper/ControllersMapGenerator.php)).
 So an app that enables the controller without the prepend fails at controllers-map generation.
-That is the call [`SylamentActionsBundleTest`](../../../packages/actions/tests/Integration/SylamentActionsBundleTest.php) makes against the compiled container, asking the real `AssetMapperInterface` for the built controller by source path, which is why the test is written at the AssetMapper seam rather than against the raw config array.
+That is the call `SylamentActionsBundleTest` makes against the compiled container, asking the real `AssetMapperInterface` for the built controller by source path, which is why the test is written at the AssetMapper seam rather than against the raw config array.
 
 ### The asset workspace is JS-only, and its importmap block names only Stimulus
 

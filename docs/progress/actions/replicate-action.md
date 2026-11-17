@@ -15,7 +15,7 @@ Filament duplicates through Eloquent's `Model::replicate()`; Doctrine ships no s
 
 It is modal-only, and unlike [`CreateAction`](create-action.md) and [`EditAction`](edit-action.md) it has no URL arm to grow: Filament routes no page at a replication either.
 
-The unit [`ReplicateActionTest`](../../../packages/actions/tests/Unit/ReplicateActionTest.php) covers the class alone, the integration [`ReplicateActionTest`](../../../packages/actions/tests/Integration/ReplicateActionTest.php) both arms end to end, and [`RecordReplicatorTest`](../../../packages/actions/tests/Integration/Replication/RecordReplicatorTest.php) the copy rules against real Doctrine metadata; the tests that pin each rule are named in its entry below.
+`ReplicateActionTest` covers both arms end to end, and `RecordReplicatorTest` the copy rules against real Doctrine metadata; the entries below say what each rule's case pins.
 
 ## Surface
 
@@ -134,13 +134,13 @@ One shape Doctrine cannot take back.
 A class that carries a `prePersist` hook — or any class, once a `prePersist` listener sits on its manager's event manager — passes the first point, and a **single** string key that every hook still leaves blank reaches the second point with an identity hash of `''`, which Doctrine can neither detach nor remove.
 The arm catches that refusal and throws the named one all the same: nothing is written, and the replica stays scheduled for the rest of the request, since nothing flushes after the refusal.
 A composite blank key detaches, its identity hash being `' '` rather than `''`.
-The Integration [`ReplicateActionTest`](../../../packages/actions/tests/Integration/ReplicateActionTest.php) pins both faces — the class callback and a no-op listener on the event manager.
+A key case pins the class-callback face, the refused replica still scheduled after the call; the event-manager face has no case, because the one test kernel's event manager carries no `prePersist` listener and one registered there would reach every other test's writes.
 
 A key the record's **constructor** sets and no setter can change cannot be copied.
 The replicator builds the copy with `newInstance()`, which bypasses the constructor, so a `readonly` key property on the copy holds no value and nothing outside the class can give it one.
 A modal that maps the key field meets the [property accessor's rule](../schemas/property-accessor.md) for a property no setter can change: the mapping refuses by name a property that holds no value yet — naming the state path and the record class, never the value — rather than letting Symfony's `NoSuchPropertyException` speak, and nothing is written.
 There is no replicate construction hook; a `using()` closure that builds the copy through the constructor is the way to replicate such a record.
-Pinned by [`KeyAdviceTest`](../../../packages/actions/tests/Integration/KeyAdviceTest.php).
+Pinned by a key case over a record whose `readonly` key only its constructor sets.
 
 There is no default replicate schema: no panels host answers `ReplicateAction` with the resource form, and neither do Filament's pages.
 A modal's operation is the action's **name**, so a key field declared `disabledOn('edit')` is enabled under `replicate`, and reusing the resource form is `->schema(fn (Schema $schema): Schema => $this->form($schema))`.
@@ -171,7 +171,7 @@ An action replicating a uniquely-indexed record without a form arm, and without 
 A modal replicate's default write opens with [`CreateAction`'s guard](create-action.md#a-key-mutatedatausing-adds-that-no-component-maps-is-refused-by-name), so a path the hook adds that no component of the modal maps is refused by name, before the copy is even built, where Filament's `$this->replica->fill($data)` would mass-assign it or drop it.
 An overwritten key, a key a client typed into the data bag, a key a hidden component maps and a `using()` override pass.
 The arm with no modal has no hook state to compare — the host hands the action no data — and its `mutateRecordDataUsing()` already refuses an unknown key through `RecordReplicator::setFieldValues()` ([above](#the-no-schema-arm-is-the-only-place-mutaterecorddatausing-writes-the-record-itself)).
-Pinned by [`UnmappedHookDataTest`](../../../packages/actions/tests/Integration/UnmappedHookDataTest.php).
+Pinned by a hooks case, which also saves a path the hook overwrites.
 
 ### `mutateRecordDataUsing()` is one shared trait, not three copies
 

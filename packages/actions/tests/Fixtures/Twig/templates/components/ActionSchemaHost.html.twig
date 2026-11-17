@@ -1,7 +1,0 @@
-<div {{ attributes }}>
-    {% set mountedActionSchema = this.getMountedActionSchema() %}
-
-    {% if mountedActionSchema is not null %}
-        {{ renderComponent(mountedActionSchema) }}
-    {% endif %}
-</div>

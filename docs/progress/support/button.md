@@ -11,7 +11,6 @@ owns:
 
 [`Button/index.html.twig`](../../../packages/support/templates/components/Button/index.html.twig) is the anonymous `<twig:SylamentSupport:Button>` template, the shared text-button widget.
 It has no Sylament PHP class: it ports Filament's Blade `button/index.blade.php`, its runtime colour map is the [`ButtonComponent` policy](color-policies.md), and this file tracks the `button.css` chrome beside it, including the two arms with no template of their own: `.sy-btn-group`, which joins a row of buttons into one control, and the `input:checked + label.sy-btn` arms, which paint a label-shaped button while the input it covers is checked.
-Its render tests live in the actions suite ([`ButtonRenderTest`](../../../packages/actions/tests/Integration/Components/ButtonRenderTest.php)), whose kernel registers TwigComponentBundle.
 
 ## Surface
 

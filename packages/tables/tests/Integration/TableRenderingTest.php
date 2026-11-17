@@ -463,7 +463,7 @@ it('moves the reset control into the footer for the footer position', function (
  * The refusal is a `LogicException` from the layout probe, and Twig wraps
  * anything a template throws in a `RuntimeError` carrying the original message
  * (`Template::yield()`), so that is what a consumer sees — the same shape
- * actions' `ModalsRenderTest` pins for its host-resolution throw.
+ * actions' `ModalsTest` pins for its host-resolution throw.
  */
 it('refuses an unshipped filters layout on render', function (FiltersLayout $layout): void {
     expect(static fn (): string => filtersTableHtml(

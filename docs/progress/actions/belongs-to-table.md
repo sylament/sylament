@@ -10,7 +10,7 @@ owns:
 Both [`Action`](action.md) and [`ActionGroup`](action-group.md) compose it.
 `getTable()` falls back to the action's group, and `hasTable()` is the predicate the mount context and the live-component chain branch on.
 
-Covered by [`ActionsBelongsToTableTest`](../../../packages/tables/tests/Unit/ActionsBelongsToTableTest.php), which lives in the **tables** suite rather than the actions one: the binding takes a real `Sylament\Tables\Table`, and the actions test kernel registers no tables bundle to build one from.
+Covered by `BelongsToTableTest`, over a real `Sylament\Tables\Table`, and by the tables suite's [`ActionsBelongsToTableTest`](../../../packages/tables/tests/Unit/ActionsBelongsToTableTest.php).
 
 ## Surface
 

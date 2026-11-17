@@ -277,11 +277,11 @@ Six limits, recorded rather than closed:
 
 - **A detached record reads as new.**
   A reader reads its own entity manager's unit of work and database, and `UnitOfWork::getEntityState()` cannot tell a detached record from a new one on a taken key without the database — so a record that manager does not keep, a detached one or one another manager keeps over the same mapping, reads as new, and an unchanged write of it answers *already used*.
-  Pinned as behaviour: *reads a detached record, or one another manager keeps, as a new one — so its own unchanged key answers taken*.
+  Pinned as behaviour: *reads a detached record as a new one, so its own unchanged key answers taken*.
   The hosts keep the second-manager half out of reach.
   An action rebinds its schema's reader to the manager it writes through, with [`withEntityManager()`](#withentitymanager-is-a-clone-so-a-subclassed-reader-survives-the-rebind) — `getEntityManagerForRecord()`, the table query's manager, else the registry's for the class — so on a table whose `query()` runs on a second manager both rules read that manager's unit of work and database, where the flush runs; panels' create and edit pages bind their form's reader to the manager they flush through, the container's unless a page overrides `setRecordPersistence()`; and a custom host that writes through another manager binds its schema's reader the same way, `$schema->setAssociationReader($schema->getAssociationReader()->withEntityManager($manager))`.
   The detached record is what remains, and its write fails without the probe too: `persist()` takes a detached record for a new one, so its flush meets the stored key.
-  The hosts' half is pinned by actions' [`TableQueryManagerKeyTest`](../../../packages/actions/tests/Integration/TableQueryManagerKeyTest.php): on a table over a second manager, an unchanged edit saves, a changed key is refused, and a create or a replica on a key only that manager's database holds is *already used*.
+  The hosts' half has no case: a table whose query runs on a second manager needs a second database, which the test rig does not prepare, so a spy reader on the create, edit and replicate actions pins the rebind but not which manager it rebinds to.
 - **A record whose class only another entity manager maps is skipped by both passes** of a reader over a manager that does not map it: the walk asks the reader's own manager's metadata factory, to which that class is transient, so neither this probe nor the changed-key pass sees it.
   An action writing such a record binds its schema's reader to the manager that maps it, so both passes run there; what is left is a custom host that writes through that manager without binding its schema's reader.
   Unexecuted.

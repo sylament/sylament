@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 use Sylament\Actions\Testing\TestAction;
 use Sylament\Notifications\Notification;
-use Sylament\Tests\Fixtures\Actions\NotificationOverrideHost;
 use Sylament\Tests\Fixtures\Actions\ToolbarHost;
 use Sylament\Tests\Fixtures\Entity\Product;
+use Sylament\Tests\Fixtures\Notifications\NotificationOverrideHost;
 use Sylament\Tests\Fixtures\Tables\PartlyFailingBulkTable;
 
 it('toasts its success title when the action succeeds', function (): void {

@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Sylament\Tests\Fixtures\Actions;
+namespace Sylament\Tests\Fixtures\Notifications;
 
 use Sylament\Actions\Action;
 use Sylament\Actions\Concerns\HasActions;
@@ -15,7 +15,7 @@ use Symfony\UX\LiveComponent\DefaultActionTrait;
  * A host whose actions override the notification a call sends, one shape each, as their
  * names say: the success arm's first, then the failure arm's, whose actions fail.
  */
-#[AsLiveComponent(name: 'Actions:NotificationOverrideHost', template: '@Fixtures/actions/NotificationOverrideHost.html.twig')]
+#[AsLiveComponent(name: 'Notifications:NotificationOverrideHost', template: '@Fixtures/notifications/NotificationOverrideHost.html.twig')]
 class NotificationOverrideHost implements InteractsWithActions
 {
     use DefaultActionTrait;

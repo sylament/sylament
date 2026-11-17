@@ -33,6 +33,9 @@ it('puts an inline suffix inside the border, and pads the control on an inline s
     expect($this->renderSchemaComponent(TextInput::make('w')->prefix('kg', isInline: true)->suffix('EUR', isInline: true)))
         ->toContainElement(SupportSelectors::SUFFIX . '.sy-inline', 'EUR')
         ->toContainElement('input.sy-fo-input-has-inline-prefix.sy-fo-input-has-inline-suffix[name="w"]')
+        ->and($this->renderSchemaComponent(TextInput::make('w')->prefix('kg')->inlinePrefix()->suffix('EUR')->inlineSuffix()))
+        ->toContainElement(SupportSelectors::INLINE_PREFIX, 'kg')
+        ->toContainElement(SupportSelectors::SUFFIX . '.sy-inline', 'EUR')
         ->and($this->renderSchemaComponent(TextInput::make('w')->prefix('kg')->inlineSuffix()))
         ->toContainElement('input[name="w"]:not(.sy-fo-input-has-inline-prefix):not(.sy-fo-input-has-inline-suffix)');
 });

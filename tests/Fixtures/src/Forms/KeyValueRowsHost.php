@@ -15,6 +15,7 @@ use Sylament\Schemas\State\Get;
 use Sylament\Tests\Fixtures\Schemas\HookLog;
 use Symfony\Contracts\Service\Attribute\Required;
 use Symfony\UX\LiveComponent\Attribute\AsLiveComponent;
+use Symfony\UX\LiveComponent\Attribute\LiveAction;
 use Symfony\UX\LiveComponent\Attribute\LiveProp;
 use Symfony\UX\LiveComponent\DefaultActionTrait;
 
@@ -23,6 +24,10 @@ use Symfony\UX\LiveComponent\DefaultActionTrait;
  * `afterStateUpdated` hook records the state it reads in the request's {@see HookLog};
  * `locked`, reorderable and disabled; and `gated`, addable only while the `allowAdd`
  * checkbox beside it is ticked. `mount()` fills the form from the record it is given.
+ *
+ * `deleteFirstPair()` and `swapPairs()` mount a structural action on `pairs` with its
+ * arguments built in, so `submitForm()` can send a cell write and the action in one
+ * request: it sends no action arguments of its own.
  */
 #[AsLiveComponent(name: 'Forms:KeyValueRowsHost', template: '@Fixtures/forms/KeyValueRowsHost.html.twig')]
 class KeyValueRowsHost implements InteractsWithActions, InteractsWithSchemas
@@ -51,6 +56,18 @@ class KeyValueRowsHost implements InteractsWithActions, InteractsWithSchemas
     public function mount(array $record = []): void
     {
         $this->getSchema('form')->fill($record);
+    }
+
+    #[LiveAction]
+    public function deleteFirstPair(): mixed
+    {
+        return $this->mountAction('delete', ['row' => 0], ['schemaComponent' => 'form.pairs']);
+    }
+
+    #[LiveAction]
+    public function swapPairs(): mixed
+    {
+        return $this->mountAction('reorder', ['items' => [1, 0]], ['schemaComponent' => 'form.pairs']);
     }
 
     public function schemas(): array

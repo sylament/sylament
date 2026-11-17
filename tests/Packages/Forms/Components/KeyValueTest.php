@@ -166,10 +166,9 @@ describe('delete', function (): void {
             ->and($tester->render()->crawler()->filter('input[data-model*="data.pairs."][aria-label="Key"]'))->toHaveCount(1);
     });
 
-    it('reads the rows as the last request left them, so a value typed into a later row moves up with it', function (): void {
+    it('keeps a value typed into a later row in the delete request itself, moving it up with its row', function (): void {
         $tester = $this->createLiveComponent(KeyValueRowsHost::class, ['record' => ['pairs' => ['colour' => 'red', 'size' => 'L']]])
-            ->set('data.pairs.1.value', 'XL')
-            ->callAction(TestAction::make('delete')->schemaComponent('pairs'), arguments: ['row' => 0]);
+            ->submitForm(['data' => ['pairs' => [1 => ['value' => 'XL']]]], 'deleteFirstPair');
 
         expect($tester->component()->data['pairs'])->toBe([['key' => 'size', 'value' => 'XL']]);
     });
@@ -198,6 +197,13 @@ describe('reorder', function (): void {
         'an index left out, which follows in its old order' => [[2], ['fit', 'colour', 'size']],
         'an index the rows do not hold' => [[1, 7, 0], ['size', 'colour', 'fit']],
     ]);
+
+    it('keeps a value typed into a row in the drag request itself, moving it with its row', function (): void {
+        $tester = $this->createLiveComponent(KeyValueRowsHost::class, ['record' => ['pairs' => ['colour' => 'red', 'size' => 'L']]])
+            ->submitForm(['data' => ['pairs' => [0 => ['value' => 'crimson']]]], 'swapPairs');
+
+        expect($tester->component()->data['pairs'])->toBe([['key' => 'size', 'value' => 'L'], ['key' => 'colour', 'value' => 'crimson']]);
+    });
 
     it('refuses an order that is not a list', function (mixed $items): void {
         $tester = $this->createLiveComponent(KeyValueRowsHost::class, ['record' => ['pairs' => ['colour' => 'red', 'size' => 'L']]]);

@@ -232,6 +232,19 @@ trait BelongsToRecord
     }
 
     /**
+     * Walk the map again over the tree a record fill has just hydrated: the read
+     * walked it before a container that builds its children from its state (a
+     * repeater's items) held any, so only this walk sees a hook declared inside
+     * one, and refuses it on the first render rather than first on submit.
+     *
+     * @throws LogicException as {@see getRecordPathMap()} does
+     */
+    private function refuseUnmappedRelationshipHooksAfterFill(): void
+    {
+        $this->collectRecordPaths();
+    }
+
+    /**
      * Every relationship hook declared beneath this schema that no nested subtree
      * owner speaks for, keyed by the hook-declaring component's state path
      * relative to this schema's own — the same derivation

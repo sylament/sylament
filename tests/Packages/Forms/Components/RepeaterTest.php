@@ -1050,7 +1050,7 @@ describe('relationship() decoration and hooks', function (): void {
         'a dotted path whose remainder names an item hook' => ['meta.heading'],
     ]);
 
-    it('refuses a hooked field beneath a repeater without relationship(), in its decoration as it fills and in an item as it saves', function (): void {
+    it('refuses a hooked field beneath a repeater without relationship() as it fills, in its decoration and in an item the record fills', function (): void {
         $manuscript = new Manuscript();
         $manuscript->setMeta([['heading' => 'One']]);
 
@@ -1059,12 +1059,11 @@ describe('relationship() decoration and hooks', function (): void {
             Repeater::make('meta')->belowContent([TextInput::make('note')->loadStateFromRelationshipsUsing(static fn (): string => 'decoration')])->components([TextInput::make('heading')]),
         )->record($manuscript);
         $hooked = new RecordMappingHost()->mapping(
-            Repeater::make('meta')->components([TextInput::make('heading')->saveRelationshipsUsing(static function (): void {
-            })]),
-        )->record($manuscript)->fill($manuscript);
+            Repeater::make('meta')->components([TextInput::make('heading')->loadStateFromRelationshipsUsing(static fn (): string => 'item')]),
+        )->record($manuscript);
 
         expect(fn (): Schema => $decorated->fill($manuscript))->toThrow(LogicException::class, $refusal)
-            ->and(fn (): mixed => $hooked->getData())->toThrow(LogicException::class, $refusal);
+            ->and(fn (): Schema => $hooked->fill($manuscript))->toThrow(LogicException::class, $refusal);
     });
 
     it('routes the save hooks of an item a caller hands getData() as it routes a rendered one', function (): void {

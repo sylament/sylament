@@ -113,6 +113,8 @@ trait HasState
      */
     public function fill(object|array|null $state = null): static
     {
+        $isRecordFill = is_object($state);
+
         if (is_object($state)) {
             $state = $this->readStateFromRecord($state);
         }
@@ -126,6 +128,10 @@ trait HasState
 
         $this->callAfterStateHydrated();
         $this->fillStateWithNull();
+
+        if ($isRecordFill) {
+            $this->refuseUnmappedRelationshipHooksAfterFill();
+        }
 
         return $this;
     }

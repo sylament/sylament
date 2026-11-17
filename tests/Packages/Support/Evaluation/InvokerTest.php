@@ -33,6 +33,13 @@ it('fills a closure parameter from the first source that has it', function (Clos
     'an explicit injection, for a variadic' => [fn (string ...$values): string => implode(',', $values), ['values' => 'given'], [], null, 'given'],
 ]);
 
+it('fills a parameter typed self from the injection typed as the class the closure is declared in', function (): void {
+    $html = Html::make('<p>Kept</p>');
+    $closure = Closure::bind(static fn (self $owner): object => $owner, null, Html::class);
+
+    expect($this::getContainer()->get(Invoker::class)->call($closure, typedInjections: [Html::class => $html]))->toBe($html);
+});
+
 it('throws naming the parameter no source fills, and the class the closure was evaluated for', function (): void {
     $invoker = $this::getContainer()->get(Invoker::class);
     $closure = fn (DateTimeImmutable $date): DateTimeImmutable => $date;

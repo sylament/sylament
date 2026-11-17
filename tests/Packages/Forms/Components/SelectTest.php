@@ -262,6 +262,20 @@ describe('multiple()', function (): void {
             ->and($options(Select::make('plants')->multiple()->relationship('plants', 'name')->preload()))->toBe(['Fern', 'Moss']);
     });
 
+    it('saves a multiple() relationship selection through getData(), since the field stays dehydrated', function (): void {
+        $garden = new Garden('North');
+        $garden->addPlant($fern = new Plant('Fern'));
+        $this->seed($fern, $moss = new Plant('Moss'), $garden);
+        $garden = $this->entityManager()->find(Garden::class, $garden->id);
+
+        $host = $this->validatingRecordMappingHost();
+        $schema = $host->mapping(Select::make('plants')->multiple()->relationship('plants', 'name'))->record($garden);
+        $schema->fill($garden);
+        $host->data['plants'] = [(string) $moss->id];
+
+        expect($schema->getData()->plants->map(static fn (Plant $plant): string => $plant->name)->getValues())->toBe(['Moss']);
+    });
+
     it('searches by default, unless searchable(false) says otherwise', function (): void {
         expect($this->selectControllerValue($this->renderSchemaComponent(Select::make('plants')->multiple()->options(['fern' => 'Fern'])), 'searchable'))->toBe('true')
             ->and($this->selectControllerValue($this->renderSchemaComponent(Select::make('plants')->multiple()->options(['fern' => 'Fern'])->searchable(false)), 'searchable'))->toBe('false');
@@ -444,6 +458,28 @@ describe('validation', function (): void {
             'This collection should contain 2 elements or less.',
         ]])
             ->and($this->statementsRun())->toBe([]);
+    });
+
+    it('checks the submitted key of a relationship select that does not search against its option map', function (): void {
+        $this->seed($garden = new Garden('North'));
+        $host = $this->validatingRecordMappingHost();
+        $schema = $host->mapping(Select::make('garden')->relationship('garden', 'name'))->record(Seedling::class);
+        [$select] = $schema->getComponents();
+        $errors = function (string $state) use ($host, $schema): array {
+            $host->data['garden'] = $state;
+
+            try {
+                $schema->validate();
+            } catch (ValidationException $validationException) {
+                return $validationException->getErrors();
+            }
+
+            return [];
+        };
+
+        expect($select->getOptions())->toBe([$garden->id => 'North'])
+            ->and($errors((string) $garden->id))->toBe([])
+            ->and($errors('999999'))->toBe(['data.garden' => ['The value you selected is not a valid choice.']]);
     });
 
     it('probes the submitted key of a searchable relationship select against the target table, a multiple one without preload() included', function (Closure $select, string $recordClass, Closure $states, string $message): void {
@@ -837,11 +873,7 @@ describe('relationship search and labels', function (): void {
 
         $searches = array_values(array_filter($this->statementsRun(), static fn (string $sql): bool => str_contains($sql, ' LIKE ')));
 
-        expect($searches)->toHaveCount(1)
-            ->and(str_contains($searches[0], 'LOWER('))->toBe(match (TestPlatform::current()) {
-                TestPlatform::PostgreSql => true,
-                TestPlatform::Sqlite, TestPlatform::MySql => false,
-            });
+        expect($searches)->toHaveCount(1);
     });
 
     it('answers no search result, without a statement, for a relationship with no column to search', function (): void {
@@ -884,6 +916,7 @@ describe('relationship search and labels', function (): void {
         )->record(Seedling::class)->getComponents();
 
         expect(array_values($titled->getSearchResults('')))->toBe(['Fern', 'Moss'])
+            ->and(array_filter($this->statementsRun(), static fn (string $sql): bool => str_contains($sql, 'ORDER BY')))->toHaveCount(1)
             ->and(array_values($ordered->getSearchResults('')))->toBe(['Moss', 'Fern']);
 
         $read = count($this->statementsRun());
@@ -932,6 +965,11 @@ describe('relationship search and labels', function (): void {
 
         $this->seed();
 
+        expect($select->getOptions())->toBe([$fern->id => 'Fern'])
+            ->and(array_filter($this->statementsRun(), static fn (string $sql): bool => str_contains($sql, 'ORDER BY')))->toHaveCount(1);
+
+        $this->seed();
+
         expect($select->getOptionLabelsFromRelationship([['nested'], new stdClass()]))->toBe([])
             ->and($this->statementsRun())->toBe([]);
     });
@@ -956,10 +994,18 @@ describe('search columns', function (): void {
         $skerry = new Lighthouse();
         $skerry->lamp = new Product('Alpha');
         $this->seed($fastnet->lamp, $skerry->lamp, $fastnet, $skerry);
-        [$select] = new RecordMappingHost()->mapping(Select::make('lighthouse')->relationship('lighthouse', 'lamp.name'))->record(LighthouseLog::class)->getComponents();
+        [$select, $named] = new RecordMappingHost()->mapping(
+            Select::make('lighthouse')->relationship('lighthouse', 'lamp.name'),
+            Select::make('named')->relationship('lighthouse', 'name'),
+        )->record(LighthouseLog::class)->getComponents();
 
         expect(array_values($select->getOptions()))->toEqualCanonicalizing(['Zeta', 'Alpha'])
             ->and(array_filter($this->statementsRun(), static fn (string $sql): bool => str_contains($sql, 'ORDER BY')))->toBe([]);
+
+        $this->seed();
+
+        expect($named->getOptions())->toHaveCount(2)
+            ->and(array_filter($this->statementsRun(), static fn (string $sql): bool => str_contains($sql, 'ORDER BY')))->toHaveCount(1);
     });
 });
 

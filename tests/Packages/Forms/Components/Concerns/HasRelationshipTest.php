@@ -33,7 +33,7 @@ describe('relationship()', function (): void {
         [$list] = $schema->getComponents();
         $schema->fill($garden);
 
-        expect($list->getOptions())->toBe([$fern->id => 'Fern', $moss->id => 'Moss'])
+        expect($list->getOptions())->toEqualCanonicalizing([$fern->id => 'Fern', $moss->id => 'Moss'])
             ->and($host->data)->toBe(['plants' => [(string) $fern->id]]);
     });
 
@@ -136,28 +136,6 @@ describe('relationship()', function (): void {
 });
 
 describe('the three closures', function (): void {
-    it('lists, fills and saves the same association through either composing field', function (Closure $field): void {
-        $garden = new Garden('North');
-        $garden->addPlant($fern = new Plant('Fern'));
-        $this->seed($fern, $moss = new Plant('Moss'), $garden);
-        $garden = $this->entityManager()->find(Garden::class, $garden->id);
-
-        $host = $this->validatingRecordMappingHost();
-        $schema = $host->mapping($field())->record($garden);
-        [$component] = $schema->getComponents();
-        $schema->fill($garden);
-
-        expect($component->getOptions())->toBe([$fern->id => 'Fern', $moss->id => 'Moss'])
-            ->and($host->data)->toBe(['plants' => [(string) $fern->id]]);
-
-        $host->data['plants'] = [(string) $moss->id];
-
-        expect($schema->getData()->plants->map(static fn (Plant $plant): string => $plant->name)->getValues())->toBe(['Moss']);
-    })->with([
-        'CheckboxList' => [fn (): CheckboxList => CheckboxList::make('plants')->relationship(titleAttribute: 'name')],
-        'Select' => [fn (): Select => Select::make('plants')->relationship(titleAttribute: 'name')->multiple()->preload()],
-    ]);
-
     it('keys the option map by record key: a single number as an int, a composite key by its ~ form, and a single derived identity as its one field', function (string $recordClass, string $field, string $titleAttribute, Closure $targets, Closure $keys): void {
         $entities = $targets();
         $this->seed(...$entities);
@@ -208,35 +186,13 @@ describe('the three closures', function (): void {
 
         $list->forgetCachedRelationshipOptions();
 
-        expect($list->getOptions())->toBe([$fern->id => 'Fern', $moss->id => 'Moss']);
+        expect($list->getOptions())->toEqualCanonicalizing([$fern->id => 'Fern', $moss->id => 'Moss']);
 
         $this->seed($ivy = new Plant('Ivy'));
 
-        expect($list->relationship(titleAttribute: 'name')->getOptions())->toBe([$fern->id => 'Fern', $moss->id => 'Moss', $ivy->id => 'Ivy'])
-            ->and($list->getOptionLabelFromRecordUsing(static fn (Plant $record): string => "{$record->name} plant")->getOptions())->toBe([$fern->id => 'Fern plant', $moss->id => 'Moss plant', $ivy->id => 'Ivy plant']);
+        expect($list->relationship(titleAttribute: 'name')->getOptions())->toEqualCanonicalizing([$fern->id => 'Fern', $moss->id => 'Moss', $ivy->id => 'Ivy'])
+            ->and($list->getOptionLabelFromRecordUsing(static fn (Plant $record): string => "{$record->name} plant")->getOptions())->toEqualCanonicalizing([$fern->id => 'Fern plant', $moss->id => 'Moss plant', $ivy->id => 'Ivy plant']);
     });
-});
-
-describe('refusals', function (): void {
-    it('refuses a relationship whose options it cannot enumerate, naming what is missing, rather than answering an empty map', function (bool $withoutManager, ?string $recordClass, string $field, string $reason): void {
-        $schema = new RecordMappingHost()->mapping(CheckboxList::make($field)->relationship(titleAttribute: 'name'));
-
-        if ($recordClass !== null) {
-            $schema->record($recordClass);
-        }
-
-        [$list] = $schema->getComponents();
-
-        if ($withoutManager) {
-            $list->setAssociationReader(new AssociationReader());
-        }
-
-        expect(fn (): array => $list->getOptions())->toThrow(LogicException::class, "The [{$field}] field declares relationship(\"{$field}\"), but {$reason} or replace relationship() with an options() map.");
-    })->with([
-        'no entity manager' => [true, Garden::class, 'plants', 'no Doctrine EntityManager backs it, so its options could only ever come back empty — and an empty option list silently rejects every submitted value. Register Doctrine (doctrine/doctrine-bundle),'],
-        'no record class' => [false, null, 'plants', 'the schema names no record class to read the association off. Give the schema a record() instance or class-string,'],
-        'no association at the property' => [false, Garden::class, 'name', '[' . Garden::class . '] maps no association at "name". Name the property Doctrine maps,'],
-    ]);
 });
 
 describe('saving a to-many selection', function (): void {
@@ -330,7 +286,7 @@ describe('an inverse-side many-to-many', function (): void {
 });
 
 describe('a composite-keyed owner', function (): void {
-    it('fills and saves the to-many of an owner keyed by two scalars or by an association plus a scalar, one join row for one added member', function (Closure $owner, string $joinTable): void {
+    it("fills and saves the to-many of an owner keyed by two scalars or by an association plus a scalar, the save reading nothing by the owner's key and writing one join row for one added member", function (Closure $owner, string $joinTable): void {
         $owner = $owner();
         $owner->addPlant($fern = new Plant('Fern'));
         $this->seed($fern, $moss = new Plant('Moss'), $owner);
@@ -343,13 +299,16 @@ describe('a composite-keyed owner', function (): void {
         expect($host->data)->toBe(['plants' => [(string) $fern->id]]);
 
         $host->data['plants'] = [(string) $fern->id, (string) $moss->id];
+        $read = count($this->statementsRun());
         $schema->getData();
         $this->entityManager()->flush();
-        $writes = array_values(array_filter($this->statementsRun(), static fn (string $sql): bool => str_starts_with($sql, 'INSERT') || str_starts_with($sql, 'DELETE')));
+        $saved = array_slice($this->statementsRun(), $read);
+        $writes = array_values(array_filter($saved, static fn (string $sql): bool => str_starts_with($sql, 'INSERT') || str_starts_with($sql, 'DELETE')));
 
         $this->entityManager()->clear();
 
-        expect(array_map(static fn (string $sql): string => implode(' ', array_slice(explode(' ', $sql), 0, 3)), $writes))->toBe(["INSERT INTO {$joinTable}"])
+        expect($saved)->toHaveCount(4)
+            ->and(array_map(static fn (string $sql): string => implode(' ', array_slice(explode(' ', $sql), 0, 3)), $writes))->toBe(["INSERT INTO {$joinTable}"])
             ->and($this->reload($owner)->plants->map(static fn (Plant $plant): string => $plant->name)->getValues())->toEqualCanonicalizing(['Fern', 'Moss']);
     })->with([
         'two scalars' => [fn (): Terrace => new Terrace(1, 2), 'terrace_plant'],

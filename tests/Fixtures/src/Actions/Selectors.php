@@ -11,6 +11,9 @@ namespace Sylament\Tests\Fixtures\Actions;
  * closing trigger, and the browser event a dispatching trigger names, by the `data-`
  * hooks the controllers read; a group's inline row by its layout class, and the
  * bulk-only marker the table controller reads off a bulk group's dropdown.
+ *
+ * A mounted action's dialog, by the frame index its host-scoped id ends in, and an open
+ * one, by the `open` attribute the host's modal renderer sets on the frames it shows.
  */
 final class Selectors
 {
@@ -26,6 +29,10 @@ final class Selectors
 
     public const string BULK_ONLY = '[data-sy-table-bulk-only]';
 
+    public const string MOUNTED_MODAL = 'dialog[id^="sy-"][id*="-action-"]';
+
+    public const string OPEN = '[open]';
+
     /**
      * A parameter the live action binding sends, by its name and the value it carries.
      */
@@ -37,5 +44,10 @@ final class Selectors
     public static function dispatchedEvent(string $event): string
     {
         return "[data-sylament-action-event=\"{$event}\"]";
+    }
+
+    public static function mountedModal(int $index): string
+    {
+        return self::MOUNTED_MODAL . "[id\$=\"-action-{$index}\"]";
     }
 }

@@ -1,0 +1,9 @@
+<div {{ attributes }}>
+    {{ renderComponent(this.getAction('edit')) }}
+    {{ renderComponent(this.getAction('delete')) }}
+    {{ renderComponent(this.getAction('review')) }}
+    {{ renderComponent(this.getAction('visit')) }}
+    {{ renderComponent(this.getAction('create')) }}
+
+    <twig:SylamentActions:Modals />
+</div>

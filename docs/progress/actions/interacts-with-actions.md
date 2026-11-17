@@ -68,7 +68,7 @@ The two authorization hooks stay out because nothing on this side reads them: th
 
 `getDefaultActionUrl()` is asked for **every** action the host renders that has no `url()` of its own, and an action that returns a URL renders as an anchor: [`CanOpenUrl::getUrl()`](../../../packages/actions/src/Concerns/CanOpenUrl.php) is what the trigger templates branch on, and only an explicit `->modal()` call suppresses it.
 So a host that answers unconditionally turns its [`DeleteAction`](delete-action.md) into a link and its confirmation modal never opens.
-Filament's own implementation (`Resources\Pages\Page::getDefaultActionUrl()`) is a chain of `$action instanceof CreateAction` / `instanceof EditAction` guards for exactly this reason; the port's [`DefaultActionUrlHostFixture`](../../../packages/actions/tests/Fixtures/Concerns/DefaultActionUrlHostFixture.php) mirrors the shape, answering only for an `EditAction`.
+Filament's own implementation (`Resources\Pages\Page::getDefaultActionUrl()`) is a chain of `$action instanceof CreateAction` / `instanceof EditAction` guards for exactly this reason, and a host answering only for its `EditAction` keeps its `DeleteAction` a button whose confirmation opens.
 The default the trait ships returns `null`, so the trap is reachable only by a host that overrides it.
 
 ## Divergences

@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use Sylament\Forms\Components\TextInput;
+use Sylament\Tests\Fixtures\Forms\Selectors;
 
 describe('extraInputAttributes()', function (): void {
     it('puts its attributes on the control, a second call replacing them unless told to merge, a closure answering nothing adding none', function (): void {
@@ -19,6 +20,6 @@ describe('extraInputAttributes()', function (): void {
         expect($this->renderSchemaComponent(TextInput::make('amount')->numeric()->disabled()->extraInputAttributes(['inputmode' => 'email', 'disabled' => false, 'class' => 'wide'])))
             ->toContainElement('input.sy-fo-input.wide[name="amount"][inputmode="email"]:not([disabled])')
             ->and($this->renderSchemaComponent(TextInput::make('code')->copyable()->extraInputAttributes(['data-sylament--forms--text-input-target' => 'other'])))
-            ->toContainElement('input[name="code"][data-sylament--forms--text-input-target="input"]');
+            ->toContainElement('input[name="code"]' . Selectors::TEXT_INPUT_TARGET);
     });
 });

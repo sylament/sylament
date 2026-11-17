@@ -22,7 +22,8 @@ use Symfony\UX\LiveComponent\DefaultActionTrait;
  * A host whose actions open modal forms, recording in the request's {@see HookLog} what
  * ran: `edit` validates a required title, shows one field per operation, holds two actions
  * of its own (one asking for `$set`, one for its arguments and data) and opens `attachFile`
- * above it; `swap` and `bare` replace each other, one with a form and one without. Its own
+ * above it; `quickRename` runs its required form without a modal; `swap` and `bare` replace
+ * each other, one with a form and one without. Its own
  * form holds a required live `outside` field, an `annotate` action with a form of its own
  * and a modal-less `probe` action; `sidebar()` builds an undeclared schema holding `peek`,
  * `save()` is a host method no context may reach, and `broken()` a schema builder that
@@ -129,6 +130,18 @@ class SchemaModalHost implements InteractsWithActions, InteractsWithSchemas
                         $this->hookLog->record('attachFile');
                     }),
             ]);
+    }
+
+    public function quickRenameAction(): Action
+    {
+        return Action::make('quickRename')
+            ->modal(false)
+            ->schema([
+                TextInput::make('name')->required(),
+            ])
+            ->action(function (): void {
+                $this->hookLog->record('quickRename');
+            });
     }
 
     public function swapAction(): Action

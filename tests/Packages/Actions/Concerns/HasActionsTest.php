@@ -185,6 +185,13 @@ describe('resolving', function (): void {
             ->assertActionMounted(['name' => 'confirm', 'context' => ['table' => true]]);
     });
 
+    it('mounts an action whose arguments arrive as a list, handing it the list', function (): void {
+        $host = $this->createLiveComponent(ActionStackHost::class)->call('mountAction', ['name' => 'confirm', 'arguments' => ['a', 'b']])->component();
+
+        expect($host->mountedActions)->toBe([['name' => 'confirm', 'arguments' => ['a', 'b'], 'context' => []]])
+            ->and($host->getMountedAction()->getArguments())->toBe(['a', 'b']);
+    });
+
     it('throws when a frame names a record key on a host that registered no resolver', function (): void {
         expect(fn () => $this->createLiveComponent(ActionStackHost::class)->call('mountAction', ['name' => 'confirm', 'context' => ['recordKey' => '7']]))
             ->toThrow(LogicException::class, 'An action context supplied a recordKey but the host registered no resolveRecordUsing() callback to resolve it.');
@@ -405,6 +412,15 @@ describe('calling', function (): void {
         expect($this::getContainer()->get(HookLog::class)->hooks)->toBe(['annotate: {"remark":"Fragile"}']);
     });
 
+    it('unmounts a modal-less action whose form fails, answering the failed validation', function (): void {
+        $tester = $this->createLiveComponent(SchemaModalHost::class)->mountAction('quickRename');
+
+        expect($tester->response()->getStatusCode())->toBe(422)
+            ->and($this::getContainer()->get(HookLog::class)->hooks)->toBe([]);
+
+        $tester->assertActionNotMounted();
+    });
+
     it('commits the work before a halt or a cancel unless it asks for a rollback, keeping a halted action mounted', function (array $arguments, int $rows, string $marker, bool $mounted): void {
         $tester = $this->createLiveComponent(ActionStackHost::class)->callAction('tally', arguments: $arguments);
 
@@ -440,6 +456,8 @@ describe('records', function (): void {
         $tester = $this->createLiveComponent(AtelierResolvingHost::class)->mountAction(['name' => $name, 'context' => [...$context, 'recordKey' => (string) $atelier->id]]);
 
         expect($tester->render()->crawler()->filter(Selectors::mountedModal(0) . Selectors::OPEN)->text())->toContain("Inspect atelier {$atelier->id}");
+
+        expect($tester->component()->getMountedActionSchema()->getRecord())->toBeInstanceOf(Atelier::class)->toBeRecord(id: $atelier->id);
 
         $tester->assertActionDataSet(['name' => 'Loft'])->callMountedAction();
 

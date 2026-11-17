@@ -26,7 +26,6 @@ use Sylament\Tests\Fixtures\Entity\ColumnKindSample;
 use Sylament\Tests\Fixtures\Entity\Larder;
 use Sylament\Tests\Fixtures\Entity\OrderLine;
 use Sylament\Tests\Fixtures\Entity\Product;
-use Sylament\Tests\Fixtures\Entity\Trellis;
 use Sylament\Tests\Fixtures\Schemas\StringBackedLetter;
 use Symfony\Component\Validator\Constraint;
 use Symfony\Component\Validator\Constraints\All;
@@ -113,7 +112,7 @@ describe('isRequiredByRecord()', function (): void {
         'a non-nullable property the field leaves undehydrated' => [fn (): TextInput => TextInput::make('name')->dehydrated(false), Product::class, 'data.name', true],
         'a nullable property' => [fn (): TextInput => TextInput::make('title'), CappedHeadline::class, 'data.title', false],
         'a path the record does not declare' => [fn (): TextInput => TextInput::make('nickname'), Product::class, 'data.nickname', false],
-        'a collection' => [fn (): TextInput => TextInput::make('panels'), Trellis::class, 'data.panels', false],
+        'a collection' => [fn (): TextInput => TextInput::make('jars'), Larder::class, 'data.jars', false],
         'no record' => [fn (): TextInput => TextInput::make('name'), null, 'data.name', false],
     ]);
 

@@ -28,8 +28,6 @@ use Sylament\Tests\Fixtures\Entity\LarderCrock;
 use Sylament\Tests\Fixtures\Entity\LarderJar;
 use Sylament\Tests\Fixtures\Entity\NurseryBench;
 use Sylament\Tests\Fixtures\Entity\Product;
-use Sylament\Tests\Fixtures\Entity\Trellis;
-use Sylament\Tests\Fixtures\Entity\TrellisPanel;
 use Sylament\Tests\Fixtures\Entity\VettedBinder;
 use Sylament\Tests\Fixtures\Entity\VettedBinderSheet;
 use Sylament\Tests\Fixtures\Forms\Record\LineItem;
@@ -867,19 +865,19 @@ describe('an object collection', function (): void {
     });
 
     it("refuses early inside a relationship item, naming the path the item's child holds the collection at", function (): void {
-        $trellis = new Trellis();
-        $trellis->addPanel(new TrellisPanel('North'));
-        $this->seed($trellis);
-        $trellis = $this->reload($trellis);
+        $larder = new Larder();
+        $larder->addBin(new LarderBin('dry'));
+        $this->seed($larder);
+        $larder = $this->reload($larder);
         $host = new RecordMappingHost();
         $schema = $host->mapping(
-            Repeater::make('panels')->relationship()->components([
-                TextInput::make('label'),
-                Repeater::make('plants')->components([TextInput::make('name')]),
+            Repeater::make('bins')->relationship()->components([
+                TextInput::make('code'),
+                Repeater::make('notes')->components([TextInput::make('text')]),
             ]),
-        )->record($trellis);
+        )->record($larder);
 
-        expect(fn (): Schema => $schema->fill($trellis))->toThrow(LogicException::class, sprintf('Cannot map state path "plants" onto the %s framing it: "plants" is an object collection.', TrellisPanel::class));
+        expect(fn (): Schema => $schema->fill($larder))->toThrow(LogicException::class, sprintf('Cannot map state path "notes" onto the %s framing it: "notes" is an object collection.', LarderBin::class));
     });
 });
 
